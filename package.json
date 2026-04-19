@@ -1,0 +1,51 @@
+{
+    "name": "planview",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc -b && vite build",
+        "lint": "eslint .",
+        "preview": "vite preview",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "@radix-ui/react-dialog": "^1.1.4",
+        "@radix-ui/react-scroll-area": "^1.2.3",
+        "@radix-ui/react-switch": "^1.1.2",
+        "@radix-ui/react-tabs": "^1.1.2",
+        "@radix-ui/react-tooltip": "^1.1.6",
+        "@tanstack/react-virtual": "^3.13.24",
+        "@thatopen/components": "^3.4.2",
+        "@thatopen/components-front": "^3.4.2",
+        "@thatopen/fragments": "^3.4.3",
+        "@types/three": "^0.184.0",
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "framer-motion": "^11.15.0",
+        "gsap": "^3.12.5",
+        "lucide-react": "^0.469.0",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "tailwind-merge": "^2.6.0",
+        "three": "^0.184.0",
+        "web-ifc": "^0.0.77",
+        "zustand": "^5.0.12"
+    },
+    "devDependencies": {
+        "@types/react": "^18.3.18",
+        "@types/react-dom": "^18.3.5",
+        "@vitejs/plugin-react": "^4.3.4",
+        "@vitest/browser": "^4.1.4",
+        "@vitest/coverage-v8": "^4.1.4",
+        "autoprefixer": "^10.4.20",
+        "jsdom": "^29.0.2",
+        "postcss": "^8.4.47",
+        "tailwindcss": "^3.4.17",
+        "typescript": "~5.6.2",
+        "vite": "^6.0.5",
+        "vitest": "^4.1.4"
+    }
+}

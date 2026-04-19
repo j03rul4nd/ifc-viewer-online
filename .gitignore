@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Vite
+.vite/
+
+# Runtime state — generado por mcp-bridge-server.js, no commitear
+# El archivo inicial vacío (mcp-state.json) sí está en el repo
+# pero los cambios en runtime se ignoran
+# Si quieres ignorarlo completamente, descomenta la siguiente línea:
+# mcp-state.json
+dist-tmp/
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+.claude/
+.claude/worktrees/interesting-bhabha-44e327
+.claude/worktrees/interesting-bhabha-44e327
