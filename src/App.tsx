@@ -9,6 +9,7 @@ import ModelTree from './components/ModelTree'
 import ValidationPanel from './components/ValidationPanel'
 import { lighten } from './lib/utils'
 import { useIfcLoader } from './lib/loader'
+import { runValidation } from './lib/validator'
 import { useEditorHistory } from './hooks/useEditorHistory'
 import { useValidationStore } from './stores/validationStore'
 import { useUIStore } from './stores/uiStore'
@@ -41,7 +42,7 @@ export default function App() {
 
   // Stores
   const { validationMode, result } = useValidationStore()
-  const { treeVisible, treeWidth }  = useUIStore()
+  const { treeVisible, treeWidth, hiddenElements, clearHiddenElements } = useUIStore()
 
   // Undo/redo keyboard shortcuts
   useEditorHistory()
@@ -65,6 +66,10 @@ export default function App() {
         (fromCache ? ' — from cache ⚡' : ' — parsed fresh'),
       )
       setTimeout(() => setShowUpload(false), 400)
+      // Auto-build spatial tree (arrives as first worker message, fast)
+      runValidation().catch((err: unknown) => {
+        console.error('[App] Validation failed:', err)
+      })
     },
     onError: (msg) => {
       console.error('[IFC] Load error:', msg)
@@ -87,8 +92,24 @@ export default function App() {
     setSelected(null)
     setHidden(new Set())
     setIsolated(null)
+    clearHiddenElements()
     setRoute('viewer')
     void loadFile(file)
+  }
+
+  const handleLaunch = (): void => {
+    setRoute('viewer')
+    void (async () => {
+      try {
+        const res  = await fetch('/Ifc2x3_Duplex_Architecture.ifc')
+        const buf  = await res.arrayBuffer()
+        const file = new File([buf], 'Ifc2x3_Duplex_Architecture.ifc', { type: '' })
+        handleFileLoad(file)
+      } catch {
+        // Fetch failed — fall back to upload dialog
+        setShowUpload(true)
+      }
+    })()
   }
 
   const handleToggleHidden = (id: string): void => {
@@ -108,6 +129,15 @@ export default function App() {
     viewerApiRef.current?.selectElement(expressId)
   }, [])
 
+  const handleFocusElements = useCallback((ids: number[]) => {
+    viewerApiRef.current?.frameElements(ids)
+  }, [])
+
+  const handleFrameElement = useCallback((expressId: number) => {
+    viewerApiRef.current?.focusElement(expressId)
+    viewerApiRef.current?.selectElement(expressId)
+  }, [])
+
   return (
     <>
       <AnimatePresence>
@@ -119,7 +149,7 @@ export default function App() {
             transition={{ duration: 0.35 }}
             className="absolute inset-0"
           >
-            <Landing onLaunch={() => { setShowUpload(true); setRoute('viewer') }} />
+            <Landing onLaunch={handleLaunch} />
           </motion.div>
         )}
 
@@ -148,12 +178,12 @@ export default function App() {
               {treeVisible && modelInfo && (
                 <div
                   className="flex-none border-r border-[var(--border)] bg-[var(--surface)] flex flex-col overflow-hidden"
-                  style={{ width: treeWidth }}
+                  style={{ width: treeWidth, maxWidth: '38vw', minWidth: 180 }}
                 >
                   <ModelTree
                     onSelectElement={handleSelectTreeElement}
+                    onFocusElements={handleFocusElements}
                     onFilterBySubtree={(ids) => {
-                      // Filter validation panel to this subtree
                       useValidationStore.getState().setFilters({
                         ruleIds: [],
                         search: '',
@@ -174,6 +204,7 @@ export default function App() {
                     onSelect={setSelected}
                     hiddenCategories={hidden}
                     isolatedCategory={isolated}
+                    hiddenElementIds={hiddenElements}
                     selectedId={selected?.id ?? null}
                     viewerStyle={viewerStyle}
                   />
@@ -188,6 +219,8 @@ export default function App() {
                     isolated={isolated}
                     onSetIsolated={setIsolated}
                     onFrame={(id) => viewerRef.current?.frameCategory(id)}
+                    onSelectElement={(id) => viewerApiRef.current?.selectElement(id)}
+                    onFrameElement={handleFrameElement}
                   />
 
                   {/* Back to landing */}

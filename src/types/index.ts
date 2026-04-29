@@ -7,6 +7,7 @@ export interface Category {
   label: string   // Human-readable, e.g. "Walls"
   count: number
   color: number   // Hex number, e.g. 0xCDD0DC
+  elementIds: number[]
 }
 
 export interface ModelInfo {

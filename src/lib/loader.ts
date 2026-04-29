@@ -198,6 +198,11 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
       setProgress({ phase: 'uploading', percent: 85 })
       const viewer = await waitForViewer()
 
+      // ✅ Revalidar que el viewer no fue destruido entre el poll y ahora
+      if (viewerApiRef.current !== viewer) {
+        throw new Error('Viewer was replaced during load, retrying...')
+      }
+      
       const { modelInfo, modelObject } = await viewer.loadFragments(
         fragmentsBinary,
         file.name,

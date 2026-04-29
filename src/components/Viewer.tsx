@@ -9,6 +9,7 @@ interface ViewerProps {
   onSelect: (info: SelectedInfo | null) => void
   hiddenCategories: Set<string>
   isolatedCategory: string | null
+  hiddenElementIds?: Set<number>
   selectedId: string | null
   viewerStyle: ViewerStyle
 }
@@ -28,26 +29,26 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(props, ref)
 
     const api = createViewer(mount)
     apiRef.current = api
-
-    // Expose API to the parent hook (useIfcLoader)
     if (props.viewerApiRef) props.viewerApiRef.current = api
 
-    api.setSelectCallback((info) => {
-      propsRef.current.onSelect(info)
-    })
+    api.setSelectCallback((info) => propsRef.current.onSelect(info))
 
     return () => {
       api.dispose()
       apiRef.current = null
-      if (props.viewerApiRef) props.viewerApiRef.current = null
+      // ✅ Solo limpiar si esta instancia sigue siendo la activa
+      // StrictMode desmonta/remonta: la 2ª montada sobreescribirá el ref
+      if (props.viewerApiRef?.current === api) {
+        props.viewerApiRef.current = null
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ── Reactive filter / style effects ─────────────────────────────────────
   useEffect(() => {
-    apiRef.current?.applyFilters(props.hiddenCategories, props.isolatedCategory)
-  }, [props.hiddenCategories, props.isolatedCategory])
+    apiRef.current?.applyFilters(props.hiddenCategories, props.isolatedCategory, props.hiddenElementIds)
+  }, [props.hiddenCategories, props.isolatedCategory, props.hiddenElementIds])
 
   useEffect(() => {
     apiRef.current?.applyStyle(props.viewerStyle)

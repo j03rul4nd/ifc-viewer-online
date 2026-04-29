@@ -4,6 +4,7 @@ import React, {
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useValidationStore } from '../stores/validationStore'
 import { useEditorStore } from '../stores/editorStore'
+import { useUIStore } from '../stores/uiStore'
 import { useEditorHistory } from '../hooks/useEditorHistory'
 import { buildRenameCommand, buildFixGuidCommand } from '../lib/diffStore'
 import { generateIfcGuid } from '../lib/diffStore'
@@ -246,9 +247,10 @@ const ROW_HEIGHT = 30
 interface ModelTreeProps {
   onSelectElement?: (expressId: number) => void
   onFilterBySubtree?: (expressIds: number[]) => void
+  onFocusElements?: (ids: number[]) => void
 }
 
-export default function ModelTree({ onSelectElement, onFilterBySubtree }: ModelTreeProps) {
+export default function ModelTree({ onSelectElement, onFilterBySubtree, onFocusElements }: ModelTreeProps) {
   const { spatialTree, result, partialIssues } = useValidationStore()
   const { selection, setSelection }            = useEditorStore()
   const { addCommand }                         = useEditorHistory()
@@ -401,6 +403,7 @@ export default function ModelTree({ onSelectElement, onFilterBySubtree }: ModelT
                     editingField={editingField}
                     onToggle={toggleExpand}
                     onSelect={handleSelectNode}
+                    onFocusElements={onFocusElements}
                     onStartEdit={startEdit}
                     onCommitEdit={commitEdit}
                     onCancelEdit={() => setEditingId(null)}
@@ -416,6 +419,10 @@ export default function ModelTree({ onSelectElement, onFilterBySubtree }: ModelT
                     directIssues={issueRollup.direct}
                     isSelected={selection.includes(flat.element.expressId)}
                     onSelect={handleSelectNode}
+                    onFocusElements={onFocusElements}
+                    onCommitRename={(expressId, oldName, newName) =>
+                      addCommand(buildRenameCommand(expressId, 'Name', oldName, newName))
+                    }
                   />
                 )}
               </div>
@@ -440,11 +447,48 @@ export default function ModelTree({ onSelectElement, onFilterBySubtree }: ModelT
   )
 }
 
+// ── Collect all physical element IDs within a spatial subtree ─────────────────
+
+function collectElementIds(node: SpatialNode): number[] {
+  const ids: number[] = node.containedElements.map((e) => e.expressId)
+  for (const child of node.children) ids.push(...collectElementIds(child))
+  return ids
+}
+
+// ── Eye icon (visibility toggle) ──────────────────────────────────────────────
+
+function EyeBtn({
+  hidden, partial = false, onClick,
+}: { hidden: boolean; partial?: boolean; onClick: (e: React.MouseEvent) => void }) {
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onClick(e) }}
+      className="w-5 h-5 flex items-center justify-center rounded shrink-0 transition-colors hover:bg-[var(--border)]"
+      style={{ opacity: hidden || partial ? 1 : undefined }}
+      title={hidden ? 'Show' : partial ? 'Show all' : 'Hide'}
+    >
+      {hidden ? (
+        /* eye-off */
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+          <path d="M1 1l12 12M5.5 5.6A2 2 0 009.4 9.5" />
+          <path d="M3 3.5C1.5 4.7 1 7 1 7s2 4 6 4a6.5 6.5 0 003.5-1M11.5 10C12.8 8.8 13 7 13 7s-2-4-6-4c-.7 0-1.4.1-2 .3" />
+        </svg>
+      ) : (
+        /* eye-on */
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+          <path d="M1 7s2-4 6-4 6 4 6 4-2 4-6 4-6-4-6-4z" />
+          <circle cx="7" cy="7" r="1.7" fill="currentColor" stroke="none" style={{ opacity: partial ? 0.4 : 1 }} />
+        </svg>
+      )}
+    </button>
+  )
+}
+
 // ── Spatial structure row ─────────────────────────────────────────────────────
 
 function SpatialRow({
   flat, issueRollup, isSelected, editingId, editingField,
-  onToggle, onSelect, onStartEdit, onCommitEdit, onCancelEdit, onBadgeClick, getNodeCurrentName,
+  onToggle, onSelect, onFocusElements, onStartEdit, onCommitEdit, onCancelEdit, onBadgeClick, getNodeCurrentName,
 }: {
   flat: FlatNode & { kind: 'spatial' }
   issueRollup: Map<number, { errors: number; warnings: number; info: number }>
@@ -453,6 +497,7 @@ function SpatialRow({
   editingField: 'Name' | 'LongName' | 'Description' | 'GlobalId'
   onToggle: (id: number) => void
   onSelect: (id: number) => void
+  onFocusElements?: (ids: number[]) => void
   onStartEdit: (id: number, field: 'Name' | 'LongName' | 'Description' | 'GlobalId') => void
   onCommitEdit: (id: number, field: 'Name' | 'LongName' | 'Description', old: string, newVal: string) => void
   onCancelEdit: () => void
@@ -460,11 +505,20 @@ function SpatialRow({
   getNodeCurrentName: (id: number, def: string) => string
 }) {
   const { node, depth, isExpanded, hasChildren } = flat
-  const rollup   = issueRollup.get(node.expressId)
+  const rollup    = issueRollup.get(node.expressId)
   const isEditing = editingId === node.expressId && editingField === 'Name'
   const displayName = getNodeCurrentName(node.expressId, node.name)
+  const childCount  = node.containedElements.length + node.children.length
 
-  const childCount = node.containedElements.length + node.children.length
+  const { hiddenElements, setElementsVisible } = useUIStore()
+  const elemIds   = useMemo(() => collectElementIds(node), [node])
+  const anyHidden = elemIds.length > 0 && elemIds.some((id) => hiddenElements.has(id))
+  const allHidden = elemIds.length > 0 && elemIds.every((id) => hiddenElements.has(id))
+
+  const handleVisibilityToggle = (e: React.MouseEvent): void => {
+    e.stopPropagation()
+    setElementsVisible(elemIds, allHidden) // if all hidden → show; else hide all
+  }
 
   return (
     <div
@@ -472,8 +526,16 @@ function SpatialRow({
         ${isSelected
           ? 'bg-[var(--accent)]20 text-[var(--text)]'
           : 'hover:bg-[var(--surface-2)] text-[var(--text-dim)]'}`}
-      style={{ paddingLeft: 8 + depth * 16 }}
+      style={{
+        paddingLeft: 8 + depth * 16,
+        opacity: allHidden ? 0.45 : 1,
+      }}
       onClick={() => onSelect(node.expressId)}
+      onDoubleClick={(e) => {
+        e.stopPropagation()
+        const ids = collectElementIds(node)
+        if (ids.length > 0) onFocusElements?.(ids)
+      }}
     >
       {/* Expand toggle */}
       <button
@@ -499,13 +561,23 @@ function SpatialRow({
           onCancel={onCancelEdit}
         />
       ) : (
-        <span
-          className="flex-1 min-w-0 truncate text-[12px] leading-none"
-          onDoubleClick={(e) => { e.stopPropagation(); onStartEdit(node.expressId, 'Name') }}
-          title={displayName}
-        >
-          {displayName}
-        </span>
+        <>
+          <span
+            className="flex-1 min-w-0 truncate text-[12px] leading-none"
+            title={displayName}
+          >
+            {displayName}
+          </span>
+          <button
+            className="shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--border)]"
+            title="Rename"
+            onClick={(e) => { e.stopPropagation(); onStartEdit(node.expressId, 'Name') }}
+          >
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 2l2 2-6 6H2V8l6-6z" />
+            </svg>
+          </button>
+        </>
       )}
 
       {/* Container count */}
@@ -527,12 +599,19 @@ function SpatialRow({
       )}
 
       {/* Issue badge */}
-      {rollup && (rollup.errors > 0 || rollup.warnings > 0) && (
+      {rollup && (rollup.errors > 0 || rollup.warnings > 0) && !isEditing && (
         <IssueBadge
           errors={rollup.errors}
           warnings={rollup.warnings}
           onClick={(e) => { e.stopPropagation(); onBadgeClick(node.expressId) }}
         />
+      )}
+
+      {/* Visibility toggle — always shown if hidden, on hover otherwise */}
+      {elemIds.length > 0 && !isEditing && (
+        <span className={anyHidden ? 'shrink-0' : 'shrink-0 opacity-0 group-hover:opacity-100'}>
+          <EyeBtn hidden={allHidden} partial={anyHidden && !allHidden} onClick={handleVisibilityToggle} />
+        </span>
       )}
     </div>
   )
@@ -541,15 +620,38 @@ function SpatialRow({
 // ── Element row ───────────────────────────────────────────────────────────────
 
 function ElementRow({
-  flat, directIssues, isSelected, onSelect,
+  flat, directIssues, isSelected, onSelect, onFocusElements, onCommitRename,
 }: {
   flat: FlatNode & { kind: 'element' }
   directIssues: Map<number, { errors: number; warnings: number; info: number }>
   isSelected: boolean
   onSelect: (id: number) => void
+  onFocusElements?: (ids: number[]) => void
+  onCommitRename: (expressId: number, oldName: string, newName: string) => void
 }) {
   const { element, depth } = flat
   const issues = directIssues.get(element.expressId)
+
+  const [editing, setEditing] = useState(false)
+  const [editVal, setEditVal] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const { hiddenElements, setElementsVisible } = useUIStore()
+  const isHidden = hiddenElements.has(element.expressId)
+
+  useLayoutEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
+
+  const startEdit = (e: React.MouseEvent): void => {
+    e.stopPropagation()
+    setEditVal(element.name)
+    setEditing(true)
+  }
+
+  const commitEdit = (): void => {
+    const trimmed = editVal.trim()
+    if (trimmed && trimmed !== element.name) onCommitRename(element.expressId, element.name, trimmed)
+    setEditing(false)
+  }
 
   return (
     <div
@@ -557,8 +659,9 @@ function ElementRow({
         ${isSelected
           ? 'bg-[var(--accent)]20 text-[var(--text)]'
           : 'hover:bg-[var(--surface-2)] text-[var(--text-dim)]'}`}
-      style={{ paddingLeft: 8 + depth * 16 }}
-      onClick={() => onSelect(element.expressId)}
+      style={{ paddingLeft: 8 + depth * 16, opacity: isHidden ? 0.4 : 1 }}
+      onClick={() => !editing && onSelect(element.expressId)}
+      onDoubleClick={(e) => { e.stopPropagation(); if (!editing) onFocusElements?.([element.expressId]) }}
     >
       {/* Leaf indent */}
       <span className="w-4 shrink-0" />
@@ -567,15 +670,41 @@ function ElementRow({
       <ClassBadge cls={element.ifcClass} />
 
       {/* Name */}
-      <span
-        className="flex-1 min-w-0 truncate text-[12px] leading-none"
-        title={element.name}
-      >
-        {element.name}
-      </span>
+      {editing ? (
+        <input
+          ref={inputRef}
+          value={editVal}
+          onChange={(e) => setEditVal(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter')  { e.stopPropagation(); commitEdit() }
+            if (e.key === 'Escape') { e.stopPropagation(); setEditing(false) }
+          }}
+          onBlur={commitEdit}
+          onClick={(e) => e.stopPropagation()}
+          className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--accent)] rounded px-1 text-[12px] text-[var(--text)] outline-none h-5"
+        />
+      ) : (
+        <>
+          <span
+            className="flex-1 min-w-0 truncate text-[12px] leading-none"
+            title={element.name}
+          >
+            {element.name}
+          </span>
+          <button
+            className="shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--border)]"
+            title="Rename"
+            onClick={startEdit}
+          >
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 2l2 2-6 6H2V8l6-6z" />
+            </svg>
+          </button>
+        </>
+      )}
 
       {/* GlobalId */}
-      {element.globalId && (
+      {element.globalId && !editing && (
         <span className="text-[9px] font-mono text-[var(--text-faint)] shrink-0 truncate opacity-0 group-hover:opacity-100 max-w-[60px]"
           title={element.globalId}
         >
@@ -584,8 +713,18 @@ function ElementRow({
       )}
 
       {/* Issue badge */}
-      {issues && (issues.errors > 0 || issues.warnings > 0) && (
+      {issues && (issues.errors > 0 || issues.warnings > 0) && !editing && (
         <IssueBadge errors={issues.errors} warnings={issues.warnings} />
+      )}
+
+      {/* Visibility toggle */}
+      {!editing && (
+        <span className={isHidden ? 'shrink-0' : 'shrink-0 opacity-0 group-hover:opacity-100'}>
+          <EyeBtn
+            hidden={isHidden}
+            onClick={(e) => { e.stopPropagation(); setElementsVisible([element.expressId], isHidden) }}
+          />
+        </span>
       )}
     </div>
   )

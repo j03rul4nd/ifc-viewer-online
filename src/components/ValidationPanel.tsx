@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react'
+import React, { useState, useRef, useEffect, useMemo, useCallback, useLayoutEffect } from 'react'
 import { useValidationStore } from '../stores/validationStore'
 import { useEditorStore } from '../stores/editorStore'
 import { useUIStore } from '../stores/uiStore'
@@ -34,8 +34,8 @@ const RULE_COLORS: Record<string, string> = {
 }
 
 function RuleBadge({ ruleId }: { ruleId: string }) {
-  const color  = RULE_COLORS[ruleId] ?? '#54555E'
-  const short  = ruleId.replace('RULE_', '').replace(/_/g, ' ').toLowerCase()
+  const color = RULE_COLORS[ruleId] ?? '#54555E'
+  const short = ruleId.replace('RULE_', '').replace(/_/g, ' ').toLowerCase()
   return (
     <span
       className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase leading-none shrink-0"
@@ -58,57 +58,152 @@ function PathBreadcrumb({ path }: { path: string[] }) {
   )
 }
 
+// ── Which rules allow inline name editing ─────────────────────────────────────
+
+const NAME_EDIT_RULES = new Set([
+  'RULE_EMPTY_NAME',
+  'RULE_EMPTY_LONGNAME',
+  'RULE_DUPLICATE_NAME',
+  'RULE_NAMING_CONVENTION',
+])
+
+function getEditField(ruleId: string): 'Name' | 'LongName' {
+  return ruleId === 'RULE_EMPTY_LONGNAME' ? 'LongName' : 'Name'
+}
+
 // ── Issue row ─────────────────────────────────────────────────────────────────
 
 function IssueRow({
   issue,
+  hasPendingFix,
   onJumpTo,
   onAutoFix,
+  onNameFix,
 }: {
   issue: ValidationIssue
+  hasPendingFix: boolean
   onJumpTo: (issue: ValidationIssue) => void
   onAutoFix: (issue: ValidationIssue) => void
+  onNameFix: (issue: ValidationIssue, field: 'Name' | 'LongName', newValue: string) => void
 }) {
+  const [editing, setEditing] = useState(false)
+  const [editValue, setEditValue] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const isNameEditable = NAME_EDIT_RULES.has(issue.ruleId)
+
+  const startEdit = (): void => {
+    const defaultVal = issue.elementName === '(empty)' ? '' : issue.elementName
+    setEditValue(defaultVal)
+    setEditing(true)
+  }
+
+  useLayoutEffect(() => {
+    if (editing) inputRef.current?.focus()
+  }, [editing])
+
+  const commitEdit = (): void => {
+    const trimmed = editValue.trim()
+    if (trimmed) onNameFix(issue, getEditField(issue.ruleId), trimmed)
+    setEditing(false)
+  }
+
   return (
-    <div className="flex items-start gap-2.5 px-3 py-2 border-b border-[var(--border)] hover:bg-[var(--surface-2)] group transition-colors">
-      {/* Severity */}
-      <div className="w-4 flex justify-center shrink-0 pt-0.5">
-        <SeverityIcon severity={issue.severity} />
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <RuleBadge ruleId={issue.ruleId} />
-          <span className="text-[12px] text-[var(--text)] font-medium truncate max-w-[200px]">
-            {issue.elementName}
-          </span>
-          <span className="text-[10px] text-[var(--text-faint)] font-mono shrink-0">
-            {issue.ifcClass}
-          </span>
+    <>
+      <div
+        className="flex items-start gap-2.5 px-3 py-2 border-b border-[var(--border)] hover:bg-[var(--surface-2)] group transition-colors"
+        style={hasPendingFix ? { borderLeft: '2px solid var(--ok)', paddingLeft: 10 } : undefined}
+      >
+        {/* Severity */}
+        <div className="w-4 flex justify-center shrink-0 pt-0.5">
+          <SeverityIcon severity={issue.severity} />
         </div>
-        <p className="text-[11px] text-[var(--text-dim)]">{issue.message}</p>
-        <PathBreadcrumb path={issue.path} />
+
+        {/* Main content */}
+        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <RuleBadge ruleId={issue.ruleId} />
+            <span className="text-[12px] text-[var(--text)] font-medium truncate max-w-[200px]">
+              {issue.elementName}
+            </span>
+            <span className="text-[10px] text-[var(--text-faint)] font-mono shrink-0">
+              {issue.ifcClass}
+            </span>
+            {hasPendingFix && (
+              <span className="text-[9px] font-mono text-[var(--ok)] border border-[var(--ok)]44 px-1 rounded">
+                edited
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-[var(--text-dim)]">{issue.message}</p>
+          <PathBreadcrumb path={issue.path} />
+        </div>
+
+        {/* Actions (visible on hover) */}
+        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          {isNameEditable && (
+            <button
+              onClick={() => editing ? setEditing(false) : startEdit()}
+              className="px-2 h-6 rounded text-[10px] font-medium border transition-colors"
+              style={
+                editing
+                  ? { background: 'var(--surface-2)', color: 'var(--text-dim)', borderColor: 'var(--border)' }
+                  : { background: 'var(--accent)18', color: 'var(--accent)', borderColor: 'var(--accent)33' }
+              }
+            >
+              {editing ? 'Cancel' : hasPendingFix ? 'Re-edit' : 'Fix name'}
+            </button>
+          )}
+          {issue.autoFixable && !isNameEditable && (
+            <button
+              onClick={() => onAutoFix(issue)}
+              className="px-2 h-6 rounded text-[10px] bg-[var(--ok)]18 text-[var(--ok)] border border-[var(--ok)]33 hover:brightness-125 font-medium"
+            >
+              Auto-fix
+            </button>
+          )}
+          <button
+            onClick={() => onJumpTo(issue)}
+            className="px-2 h-6 rounded text-[10px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] font-medium"
+          >
+            Jump
+          </button>
+        </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        {issue.autoFixable && (
+      {/* Inline edit panel */}
+      {editing && (
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border)] bg-[var(--surface-2)]">
+          <span className="text-[10px] text-[var(--text-dim)] shrink-0 font-medium">
+            {getEditField(issue.ruleId)}:
+          </span>
+          <input
+            ref={inputRef}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter')  { e.preventDefault(); commitEdit() }
+              if (e.key === 'Escape') setEditing(false)
+            }}
+            placeholder={`Enter ${getEditField(issue.ruleId).toLowerCase()}…`}
+            className="flex-1 h-7 px-2 text-[12px] bg-[var(--surface)] border border-[var(--accent)] rounded text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none"
+          />
           <button
-            onClick={() => onAutoFix(issue)}
-            className="px-2 h-6 rounded text-[10px] bg-[var(--ok)]18 text-[var(--ok)] border border-[var(--ok)]33 hover:brightness-125 font-medium"
+            onClick={commitEdit}
+            disabled={!editValue.trim()}
+            className="px-2.5 h-7 rounded text-[11px] bg-[var(--accent)] text-white font-medium hover:brightness-110 disabled:opacity-40"
           >
-            Fix
+            Apply
           </button>
-        )}
-        <button
-          onClick={() => onJumpTo(issue)}
-          className="px-2 h-6 rounded text-[10px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] font-medium"
-        >
-          Jump
-        </button>
-      </div>
-    </div>
+          <button
+            onClick={() => setEditing(false)}
+            className="px-2 h-7 rounded text-[11px] text-[var(--text-dim)] hover:text-[var(--text)]"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -134,18 +229,23 @@ interface ValidationPanelProps {
 }
 
 export default function ValidationPanel({ onJumpToElement }: ValidationPanelProps) {
-  const { result, partialIssues, isRunning, progress, filters, setFilters, rules } =
+  const { result, partialIssues, isRunning, progress, filters, setFilters } =
     useValidationStore()
-  const { validationPanelOpen, toggleValidationPanel, validationPanelFloating, setValidationPanelFloating } =
-    useUIStore()
+  const { validationPanelOpen, toggleValidationPanel } = useUIStore()
   const { ifcBuffer } = useModelStore()
   const { addCommand } = useEditorHistory()
-  const { setSelection } = useEditorStore()
+  const { setSelection, diffs } = useEditorStore()
 
   const [search, setSearch] = useState('')
 
   const issues = result?.issues ?? partialIssues
   const stats  = result?.stats
+
+  // Set of expressIds that already have a pending rename diff
+  const pendingFixIds = useMemo(
+    () => new Set(diffs.filter((d) => d.type === 'RENAME').map((d) => d.expressId)),
+    [diffs],
+  )
 
   // ── Filter / group ─────────────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -189,7 +289,6 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
       }
       return map
     }
-    // group by class
     const map = new Map<string, ValidationIssue[]>()
     for (const issue of filtered) {
       const g = map.get(issue.ifcClass) ?? []
@@ -209,15 +308,17 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
   const handleAutoFix = useCallback((issue: ValidationIssue) => {
     if (issue.ruleId === 'RULE_DUPLICATE_GUID') {
       addCommand(buildFixGuidCommand(issue.expressId, issue.globalId))
-    } else if (issue.ruleId === 'RULE_EMPTY_NAME') {
-      addCommand(buildRenameCommand(issue.expressId, 'Name', '', `Element_${issue.expressId}`))
     }
   }, [addCommand])
 
-  const handleAutoFixAll = useCallback(() => {
-    const fixable = filtered.filter((i) => i.autoFixable)
-    for (const issue of fixable) handleAutoFix(issue)
-  }, [filtered, handleAutoFix])
+  const handleNameFix = useCallback((
+    issue: ValidationIssue,
+    field: 'Name' | 'LongName',
+    newValue: string,
+  ) => {
+    const oldValue = issue.elementName === '(empty)' ? '' : issue.elementName
+    addCommand(buildRenameCommand(issue.expressId, field, oldValue, newValue))
+  }, [addCommand])
 
   const handleExportJson = useCallback(() => {
     if (!result) return
@@ -240,13 +341,11 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
     downloadBlob(blob, 'validation-report.csv')
   }, [result])
 
-  const handleRunValidation = useCallback(() => {
-    void runValidation()
-  }, [])
+  const handleRunValidation = useCallback(() => { void runValidation() }, [])
+
+  const fixableCount = filtered.filter((i) => i.autoFixable || NAME_EDIT_RULES.has(i.ruleId)).length
 
   // ── Collapsed state ────────────────────────────────────────────────────
-  const fixableCount = filtered.filter((i) => i.autoFixable).length
-
   if (!validationPanelOpen) {
     return (
       <button
@@ -293,7 +392,6 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
           Validation
         </span>
 
-        {/* Stats summary */}
         {stats && (
           <div className="flex items-center gap-2 text-[11px] font-mono">
             {stats.errors > 0 && (
@@ -342,14 +440,11 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
           </div>
         )}
 
-        {/* Auto-fix all */}
-        {fixableCount > 0 && (
-          <button
-            onClick={handleAutoFixAll}
-            className="px-2 h-6 rounded text-[11px] bg-[var(--ok)]18 text-[var(--ok)] border border-[var(--ok)]33 hover:brightness-125 font-medium"
-          >
-            Fix {fixableCount}
-          </button>
+        {/* Pending fixes count */}
+        {pendingFixIds.size > 0 && (
+          <span className="px-2 h-6 flex items-center rounded text-[11px] text-[var(--ok)] border border-[var(--ok)]33 font-mono">
+            {pendingFixIds.size} fixed
+          </span>
         )}
 
         {/* Collapse */}
@@ -362,7 +457,6 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
 
       {/* Toolbar: tabs + group by + search */}
       <div className="flex items-center gap-2 px-3 h-9 border-b border-[var(--border)] shrink-0">
-        {/* Tabs */}
         <div className="flex items-center gap-0.5">
           {(['all', 'errors', 'warnings', 'info'] as const).map((tab) => {
             const count =
@@ -389,7 +483,6 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
 
         <div className="w-px h-4 bg-[var(--border)]" />
 
-        {/* Group by */}
         <div className="flex items-center gap-0.5">
           <span className="text-[10px] text-[var(--text-faint)] mr-1">Group:</span>
           {(['rule', 'storey', 'class'] as const).map((g) => (
@@ -408,7 +501,6 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
 
         <div className="flex-1" />
 
-        {/* Search */}
         <input
           type="text"
           value={search}
@@ -460,8 +552,10 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
               <IssueRow
                 key={issue.id}
                 issue={issue}
+                hasPendingFix={pendingFixIds.has(issue.expressId)}
                 onJumpTo={handleJumpTo}
                 onAutoFix={handleAutoFix}
+                onNameFix={handleNameFix}
               />
             ))}
           </div>

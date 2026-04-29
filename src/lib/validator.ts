@@ -43,10 +43,11 @@ export async function runValidation(rules?: RulesConfig): Promise<void> {
 
   const activeRules = rules ?? storedRules
 
-  // Check cache for instant result on re-validation
+  // Check cache for instant result on re-validation — only skip worker if tree is already built
   if (opfsCacheKey) {
     const cached = useValidationStore.getState().cachedResults[opfsCacheKey]
-    if (cached && !rules) {
+    const treeBuilt = useValidationStore.getState().spatialTree.length > 0
+    if (cached && !rules && treeBuilt) {
       useValidationStore.getState().setResult(cached)
       return
     }
@@ -78,17 +79,29 @@ export async function runValidation(rules?: RulesConfig): Promise<void> {
           setResult(msg.result)
           if (opfsCacheKey) cacheResult(opfsCacheKey, msg.result)
           worker.removeEventListener('message', handler)
+          worker.removeEventListener('error', errorHandler)
           resolve()
           break
         case 'error':
+          console.error('[Validator] Worker reported error:', msg.message)
           setRunning(false)
           worker.removeEventListener('message', handler)
+          worker.removeEventListener('error', errorHandler)
           reject(new Error(msg.message))
           break
       }
     }
 
+    const errorHandler = (e: ErrorEvent): void => {
+      console.error('[Validator] Worker script error:', e.message, e)
+      setRunning(false)
+      worker.removeEventListener('message', handler)
+      worker.removeEventListener('error', errorHandler)
+      reject(new Error(e.message))
+    }
+
     worker.addEventListener('message', handler)
+    worker.addEventListener('error', errorHandler)
     ;(worker.postMessage as (msg: unknown, transfer: Transferable[]) => void)(
       { type: 'validate', id, buffer: bufferCopy, rules: activeRules },
       [bufferCopy],

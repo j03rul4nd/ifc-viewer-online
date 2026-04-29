@@ -13,8 +13,13 @@
 import { IfcAPI } from 'web-ifc'
 import type { ValidationIssue, ValidationResult, SpatialNode, SpatialElement, RulesConfig } from '../types'
 
-const WEB_IFC_VERSION = '0.0.77'
-const WASM_CDN = `https://unpkg.com/web-ifc@${WEB_IFC_VERSION}/`
+// Force single-threaded WASM — nested workers (pthreads) fail inside a worker context
+;((): void => {
+  const _orig = IfcAPI.prototype.Init
+  IfcAPI.prototype.Init = function (locateFile) {
+    return _orig.call(this, locateFile, /* forceSingleThread */ true)
+  }
+})()
 
 // ── IFC type constants (web-ifc numeric hashes) ───────────────────────────────
 
@@ -791,14 +796,18 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
   const startTime = Date.now()
   const allIssues: ValidationIssue[] = []
 
-  const api = new IfcAPI()
-  api.SetWasmPath(WASM_CDN)
-  await api.Init()
-
-  const data = new Uint8Array(buffer)
-  const modelId = api.OpenModel(data)
+  let api: IfcAPI | null = null
+  let modelId = -1
 
   try {
+    api = new IfcAPI()
+    // In dev mode Vite serves node_modules directly; in prod WASM is at dist root.
+    api.SetWasmPath(import.meta.env.DEV ? '/node_modules/web-ifc/' : '/')
+    await api.Init()
+
+    const data = new Uint8Array(buffer)
+    modelId = api.OpenModel(data)
+
     // ── Build spatial index ──────────────────────────────────────────
     const idx = buildSpatialIndex(api, modelId)
 
@@ -807,7 +816,7 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
     post({ type: 'tree', id, tree })
 
     // ── Define enabled rules ─────────────────────────────────────────
-    const totalRules = Object.values(rules).filter(Boolean).length || 1
+    const totalRules = Object.entries(rules).filter(([, v]) => typeof v === 'boolean' && v).length || 1
     let completedRules = 0
 
     const runRule = async (
@@ -822,36 +831,36 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
     }
 
     if (rules.RULE_EMPTY_NAME)
-      await runRule('RULE_EMPTY_NAME', () => ruleEmptyName(api, modelId, idx))
+      await runRule('RULE_EMPTY_NAME', () => ruleEmptyName(api!, modelId, idx))
 
     if (rules.RULE_EMPTY_LONGNAME)
-      await runRule('RULE_EMPTY_LONGNAME', () => ruleEmptyLongName(api, modelId, idx))
+      await runRule('RULE_EMPTY_LONGNAME', () => ruleEmptyLongName(api!, modelId, idx))
 
     if (rules.RULE_DUPLICATE_NAME)
-      await runRule('RULE_DUPLICATE_NAME', () => ruleDuplicateName(api, modelId, idx))
+      await runRule('RULE_DUPLICATE_NAME', () => ruleDuplicateName(api!, modelId, idx))
 
     if (rules.RULE_NAMING_CONVENTION)
       await runRule('RULE_NAMING_CONVENTION', () =>
-        ruleNamingConvention(api, modelId, idx, rules.namingConventionPatterns ?? {}))
+        ruleNamingConvention(api!, modelId, idx, rules.namingConventionPatterns ?? {}))
 
     if (rules.RULE_MISSING_TYPE)
-      await runRule('RULE_MISSING_TYPE', () => ruleMissingType(api, modelId, idx))
+      await runRule('RULE_MISSING_TYPE', () => ruleMissingType(api!, modelId, idx))
 
     if (rules.RULE_DUPLICATE_GUID)
-      await runRule('RULE_DUPLICATE_GUID', () => ruleDuplicateGuid(api, modelId))
+      await runRule('RULE_DUPLICATE_GUID', () => ruleDuplicateGuid(api!, modelId))
 
     if (rules.RULE_MISSING_PROPERTY_SET)
       await runRule('RULE_MISSING_PROPERTY_SET', () =>
-        ruleMissingPropertySet(api, modelId, idx, rules.requiredPsets ?? {}))
+        ruleMissingPropertySet(api!, modelId, idx, rules.requiredPsets ?? {}))
 
     if (rules.RULE_ORPHAN_ELEMENT)
-      await runRule('RULE_ORPHAN_ELEMENT', () => ruleOrphanElement(api, modelId, idx))
+      await runRule('RULE_ORPHAN_ELEMENT', () => ruleOrphanElement(api!, modelId, idx))
 
     if (rules.RULE_WRONG_CONTAINER)
-      await runRule('RULE_WRONG_CONTAINER', () => ruleWrongContainer(api, modelId, idx))
+      await runRule('RULE_WRONG_CONTAINER', () => ruleWrongContainer(api!, modelId, idx))
 
     if (rules.RULE_BROKEN_AGGREGATE)
-      await runRule('RULE_BROKEN_AGGREGATE', () => ruleBrokenAggregate(api, modelId))
+      await runRule('RULE_BROKEN_AGGREGATE', () => ruleBrokenAggregate(api!, modelId))
 
     // ── Compile final result ─────────────────────────────────────────
     const byRule: Record<string, number> = {}
@@ -871,8 +880,12 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
 
     post({ type: 'done', id, result })
 
+  } catch (err: unknown) {
+    post({ type: 'error', id, message: err instanceof Error ? err.message : String(err) })
   } finally {
-    api.CloseModel(modelId)
+    if (api && modelId !== -1) {
+      try { api.CloseModel(modelId) } catch { /* ignore cleanup errors */ }
+    }
   }
 }
 

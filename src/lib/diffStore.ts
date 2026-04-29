@@ -62,11 +62,9 @@ export async function exportAsIfc(): Promise<Uint8Array> {
 
   // Dynamic import to avoid loading web-ifc on main thread unless needed
   const { IfcAPI } = await import('web-ifc')
-  const WEB_IFC_VERSION = '0.0.77'
-  const WASM_CDN = `https://unpkg.com/web-ifc@${WEB_IFC_VERSION}/`
 
   const api = new IfcAPI()
-  api.SetWasmPath(WASM_CDN)
+  api.SetWasmPath(import.meta.env.DEV ? '/node_modules/web-ifc/' : '/')
   await api.Init()
 
   const data    = new Uint8Array(ifcBuffer.slice(0))
