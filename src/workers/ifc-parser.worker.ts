@@ -48,8 +48,8 @@ async function handleParse(msg: ParseMessage): Promise<void> {
 
     // Use local WASM files; CDN is blocked by COEP require-corp
     importer.wasm = import.meta.env.DEV
-      ? { path: '/node_modules/web-ifc/', absolute: true }
-      : { path: '/', absolute: true }
+      ? { path: `${import.meta.env.BASE_URL}node_modules/web-ifc/`, absolute: true }
+      : { path: import.meta.env.BASE_URL, absolute: true }
 
     const bytes = new Uint8Array(buffer)
 

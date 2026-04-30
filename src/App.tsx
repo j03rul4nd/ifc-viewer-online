@@ -101,7 +101,7 @@ export default function App() {
     setRoute('viewer')
     void (async () => {
       try {
-        const res  = await fetch('/Ifc2x3_Duplex_Architecture.ifc')
+        const res  = await fetch(`${import.meta.env.BASE_URL}Ifc2x3_Duplex_Architecture.ifc`)
         const buf  = await res.arrayBuffer()
         const file = new File([buf], 'Ifc2x3_Duplex_Architecture.ifc', { type: '' })
         handleFileLoad(file)

@@ -64,7 +64,7 @@ export async function exportAsIfc(): Promise<Uint8Array> {
   const { IfcAPI } = await import('web-ifc')
 
   const api = new IfcAPI()
-  api.SetWasmPath(import.meta.env.DEV ? '/node_modules/web-ifc/' : '/')
+  api.SetWasmPath(import.meta.env.DEV ? `${import.meta.env.BASE_URL}node_modules/web-ifc/` : import.meta.env.BASE_URL)
   await api.Init()
 
   const data    = new Uint8Array(ifcBuffer.slice(0))

@@ -48,51 +48,16 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 
 function HeroPreview() {
   return (
-    <div className="relative h-[520px] bg-[var(--bg)] flex overflow-hidden">
-      {/* Left: isometric building SVG */}
-      <div className="flex-1 relative flex items-center justify-center">
-        <svg viewBox="0 0 520 420" width="90%" style={{ maxWidth: 520 }}>
-          <defs>
-            <linearGradient id="wallG" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#D0D3DE" /><stop offset="1" stopColor="#8E91A1" />
-            </linearGradient>
-            <linearGradient id="wallG2" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stopColor="#B9BCCB" /><stop offset="1" stopColor="#7A7D8D" />
-            </linearGradient>
-            <linearGradient id="roofG" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#9A6850" /><stop offset="1" stopColor="#6B4333" />
-            </linearGradient>
-            <linearGradient id="glassG" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#8FCDE6" stopOpacity="0.7" /><stop offset="1" stopColor="#4680A0" stopOpacity="0.6" />
-            </linearGradient>
-          </defs>
-          <ellipse cx="260" cy="380" rx="210" ry="16" fill="rgba(94,106,210,0.12)" />
-          <polygon points="80,330 260,380 440,330 260,290" fill="#52556A" />
-          <polygon points="80,330 260,380 260,370 80,320" fill="#3E4154" />
-          <polygon points="260,380 440,330 440,320 260,370" fill="#2F3244" />
-          <polygon points="80,320 260,370 260,230 80,180" fill="url(#wallG)" />
-          <polygon points="260,370 440,320 440,180 260,230" fill="url(#wallG2)" />
-          <polygon points="80,180 260,230 440,180 260,130" fill="#E1E3EC" />
-          {[0, 1, 2, 3].map(i => (
-            <polygon key={i} points={`${105 + i * 38},${310 - i * 10.5} ${135 + i * 38},${318 - i * 10.5} ${135 + i * 38},${275 - i * 10.5} ${105 + i * 38},${267 - i * 10.5}`} fill="url(#glassG)" />
-          ))}
-          {[0, 1, 2, 3].map(i => (
-            <polygon key={i} points={`${278 + i * 38},${365 - i * 10.5} ${308 + i * 38},${357 - i * 10.5} ${308 + i * 38},${310 - i * 10.5} ${278 + i * 38},${318 - i * 10.5}`} fill="url(#glassG)" />
-          ))}
-          <polygon points="235,345 255,350 255,290 235,285" fill="#8B93E8" />
-          <polygon points="80,180 260,230 260,110 80,60" fill="url(#roofG)" opacity="0.55" />
-          <polygon points="260,230 440,180 440,60 260,110" fill="url(#roofG)" />
-          <polygon points="80,60 260,110 440,60 260,10" fill="#7F5340" />
-          <g stroke="#2A2D38" strokeWidth="1" fill="none" opacity="0.6">
-            <polygon points="80,320 260,370 440,320 260,230 80,180" />
-            <line x1="260" y1="370" x2="260" y2="230" />
-            <polygon points="80,180 260,230 440,180 260,130" />
-          </g>
-          <polygon points="278,365 440,320 440,220 278,265" fill="rgba(94,106,210,0.25)" stroke="#5E6AD2" strokeWidth="1.5" />
-          <circle cx="360" cy="290" r="4" fill="#5E6AD2" stroke="white" strokeWidth="1.5" />
-        </svg>
+    <div className="relative bg-[var(--bg)] flex overflow-hidden">
+      {/* Left: rendered building image */}
+      <div className="flex-1 relative overflow-hidden bg-black">
+        <img
+          src={`${import.meta.env.BASE_URL}Renderizado_3D_detallado_de_edificio_modular.png`}
+          alt="IFC building render"
+          className="w-full h-auto block"
+        />
         {/* Floating callout */}
-        <div className="absolute top-[48%] right-[16%] bg-[rgba(16,16,20,0.92)] border border-[var(--border-strong)] rounded-lg px-3 py-2 text-[11.5px] backdrop-blur-md">
+        <div className="absolute top-[48%] right-[4%] bg-[rgba(16,16,20,0.92)] border border-[var(--border-strong)] rounded-lg px-3 py-2 text-[11.5px] backdrop-blur-md">
           <div className="font-mono text-[10px] text-[var(--accent-2)] mb-0.5">IfcWall</div>
           <div className="font-medium">Exterior — 300mm</div>
           <div className="text-[var(--text-dim)] text-[10.5px] mt-0.5">REI 60 · Load bearing</div>
@@ -129,7 +94,6 @@ function HeroPreview() {
     </div>
   )
 }
-
 const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }
 
 export default function Landing({ onLaunch }: LandingProps) {

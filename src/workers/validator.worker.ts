@@ -802,7 +802,7 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
   try {
     api = new IfcAPI()
     // In dev mode Vite serves node_modules directly; in prod WASM is at dist root.
-    api.SetWasmPath(import.meta.env.DEV ? '/node_modules/web-ifc/' : '/')
+    api.SetWasmPath(import.meta.env.DEV ? `${import.meta.env.BASE_URL}node_modules/web-ifc/` : import.meta.env.BASE_URL)
     await api.Init()
 
     const data = new Uint8Array(buffer)
