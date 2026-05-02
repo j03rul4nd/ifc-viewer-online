@@ -59,6 +59,15 @@ const IFC_DISPLAY_NAMES: Record<string, string> = {
   IFCCOVERING:           'Coverings',
 }
 
+// ─── Tipos IFC contenedores espaciales — se omiten en el raycast ─────────────
+const SPATIAL_CONTAINER_TYPES = new Set([
+  'IFCSPACE',
+  'IFCBUILDING',
+  'IFCBUILDINGSTOREY',
+  'IFCSITE',
+  'IFCZONE',
+])
+
 function canonicalType(raw: string): string {
   return raw.replace('STANDARDCASE', '').replace('ELEMENTEDCASE', '')
 }
@@ -189,7 +198,6 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   const fragmentsManager = components.get(OBC.FragmentsManager)
   const ifcLoader        = components.get(OBC.IfcLoader)
 
-  // Trigger tile streaming whenever the camera moves or comes to rest
   const triggerUpdate = (): void => { void fragmentsManager.core.update() }
   world.camera.controls.addEventListener('control', triggerUpdate)
   world.camera.controls.addEventListener('rest',    triggerUpdate)
@@ -211,6 +219,12 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   const validationHighlightedIds = new Set<number>()
 
   let selectionBox: THREE.Box3Helper | null = null
+
+  const canvas = wr.domElement
+
+  // ─── Mouse position — actualizado en cada pointermove ────────────────────
+  // model.raycast() espera clientX/clientY absolutos (igual que el tutorial).
+  const mouse = new THREE.Vector2()
 
   function removeSelectionBox(): void {
     if (selectionBox) {
@@ -236,70 +250,69 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     }).catch(() => { /* ignore */ })
   }
 
-  const canvas = wr.domElement
-  const mouse  = new THREE.Vector2()
-  let raycasting = false
+  // ─── Raycast usando model.raycast() — API oficial de @thatopen/fragments ──
+  // Según la documentación, mouse recibe clientX/clientY absolutos y
+  // dom es el canvas del renderer. La librería resuelve DPR y offset internamente.
+  // Filtramos contenedores espaciales para que los elementos físicos ganen.
+  async function getBestHit(): Promise<number | null> {
+    if (!currentModel) return null
 
-  const onPointerMove = (e: PointerEvent): void => {
-    if (raycasting || !currentModel) return
-    // FRAGS RaycastData.mouse expects CLIENT pixel coordinates (not NDC).
-    // Its internal screenToCast() converts pixel→NDC by subtracting rect.left/top
-    // and dividing by canvas dimensions. Passing pre-computed NDC here corrupts
-    // the frustum and ray, causing all raycasts to return null.
-    mouse.x = e.clientX
-    mouse.y = e.clientY
+    const result = await currentModel.raycast({
+      camera: world.camera.three,
+      mouse,
+      dom: canvas,
+    }) as { localId?: number; distance?: number } | null
 
-    raycasting = true
-    fragmentsManager
-      .raycast({ camera: world.camera.three, mouse, dom: canvas })
-      .then(async (result) => {
-        const hitId = result?.localId ?? null
+    if (!result || result.localId === undefined) return null
 
-        if (hoveredLocalId !== null && hoveredLocalId !== selectedLocalId) {
-          await currentModel?.resetHighlight([hoveredLocalId])
+    const rawType = expressIDToType.get(result.localId) ?? ''
+    const canon   = canonicalType(rawType)
+
+    // Si el hit es un contenedor espacial, intentamos un segundo raycast
+    // ignorándolo. Como model.raycast solo devuelve el hit más cercano,
+    // ocultamos temporalmente los espacios y repetimos.
+    if (SPATIAL_CONTAINER_TYPES.has(canon)) {
+      // Recogemos todos los localIds de contenedores espaciales
+      const spatialIds: number[] = []
+      for (const [id, raw] of expressIDToType.entries()) {
+        if (SPATIAL_CONTAINER_TYPES.has(canonicalType(raw))) {
+          spatialIds.push(id)
         }
+      }
 
-        hoveredLocalId = hitId
+      // Ocultamos temporalmente los contenedores
+      await currentModel.setVisible(spatialIds, false)
+      void fragmentsManager.core.update()
 
-        if (hoveredLocalId !== null && hoveredLocalId !== selectedLocalId) {
-          await currentModel?.highlight([hoveredLocalId], HOVER_MAT)
-          canvas.style.cursor = 'pointer'
-        } else {
-          canvas.style.cursor = 'default'
-        }
-      })
-      .catch(() => { /* ignore mid-frame errors */ })
-      .finally(() => { raycasting = false })
+      let secondHit: number | null = null
+      try {
+        const result2 = await currentModel.raycast({
+          camera: world.camera.three,
+          mouse,
+          dom: canvas,
+        }) as { localId?: number } | null
+        secondHit = result2?.localId ?? null
+      } catch { /* ignore */ }
+
+      // Restauramos visibilidad
+      await currentModel.setVisible(spatialIds, true)
+      void fragmentsManager.core.update()
+
+      return secondHit
+    }
+
+    return result.localId
   }
 
-  // Use pointerdown/pointerup instead of 'click' because camera-controls
-  // calls preventDefault() on pointerdown which can suppress the click event.
-  let pdTime = 0
-  let pdX    = 0
-  let pdY    = 0
+  // ─── Throttle por timestamp ───────────────────────────────────────────────
+  let lastRaycastTime = 0
+  const RAYCAST_THROTTLE_MS = 32 // ~2 frames — el raycast async es más costoso
 
-  const onPointerDown = (e: PointerEvent): void => {
-    pdTime = Date.now()
-    pdX    = e.clientX
-    pdY    = e.clientY
-  }
-
-  const onPointerUp = (e: PointerEvent): void => {
-    const dt   = Date.now() - pdTime
-    const dist = Math.hypot(e.clientX - pdX, e.clientY - pdY)
-    // Only treat as a selection click if it was brief and the pointer barely moved
-    if (dt > 300 || dist > 5) return
-    void commitSelection()
-  }
-
-  // Promote the current hover state into a selection.
-  // onPointerMove already raycasts every frame, so hoveredLocalId is always
-  // accurate — re-raycasting here is redundant and can fail on first click
-  // before the render loop has warmed up.
+  // ─── commitSelection ──────────────────────────────────────────────────────
   const commitSelection = async (): Promise<void> => {
     if (!currentModel) return
 
-    const hitId = hoveredLocalId
+    const hitId = await getBestHit()
 
     try {
       if (selectedLocalId !== null) await currentModel.resetHighlight([selectedLocalId])
@@ -325,9 +338,60 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     }
   }
 
+  // ─── Pointer move: actualiza mouse + hover ────────────────────────────────
+  const onPointerMove = async (e: PointerEvent): Promise<void> => {
+    // Siempre actualizamos la posición del mouse
+    mouse.set(e.clientX, e.clientY)
+
+    if (!currentModel) return
+
+    const now = performance.now()
+    if (now - lastRaycastTime < RAYCAST_THROTTLE_MS) return
+    lastRaycastTime = now
+
+    try {
+      const hitId = await getBestHit()
+
+      if (hoveredLocalId !== null && hoveredLocalId !== selectedLocalId) {
+        await currentModel.resetHighlight([hoveredLocalId])
+      }
+
+      hoveredLocalId = hitId
+
+      if (hoveredLocalId !== null && hoveredLocalId !== selectedLocalId) {
+        await currentModel.highlight([hoveredLocalId], HOVER_MAT)
+        canvas.style.cursor = 'pointer'
+      } else {
+        canvas.style.cursor = 'default'
+      }
+    } catch { /* ignore mid-frame errors */ }
+  }
+
+  // ─── Pointer down/up: selección ───────────────────────────────────────────
+  let pdTime = 0
+  let pdX    = 0
+  let pdY    = 0
+
+  const onPointerDown = (e: PointerEvent): void => {
+    pdTime = Date.now()
+    pdX    = e.clientX
+    pdY    = e.clientY
+  }
+
+  const onPointerUp = (e: PointerEvent): void => {
+    const dt   = Date.now() - pdTime
+    const dist = Math.hypot(e.clientX - pdX, e.clientY - pdY)
+    if (dt > 300 || dist > 5) return
+    // Aseguramos que mouse tiene las coords del click
+    mouse.set(e.clientX, e.clientY)
+    void commitSelection()
+  }
+
   canvas.addEventListener('pointermove', onPointerMove)
   canvas.addEventListener('pointerdown', onPointerDown)
   canvas.addEventListener('pointerup',   onPointerUp)
+
+  // ─── Setup post-carga ─────────────────────────────────────────────────────
 
   async function setupLoadedModel(
     model: FRAGS.FragmentsModel,
@@ -369,7 +433,6 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     onProgress?.(100)
 
-    // Build element-ids-per-canonical-category map
     const categoryElements = new Map<string, number[]>()
     for (const [localId, rawType] of expressIDToType.entries()) {
       const canon = canonicalType(rawType)
@@ -416,6 +479,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     hoveredLocalId  = null
     selectedLocalId = null
   }
+
+  // ─── API pública ──────────────────────────────────────────────────────────
 
   return {
 
@@ -533,9 +598,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
       for (const issue of issues) {
         if (expressIDToType.has(issue.expressId)) {
-          if (issue.severity === 'error')   errIds.push(issue.expressId)
+          if (issue.severity === 'error')        errIds.push(issue.expressId)
           else if (issue.severity === 'warning') warnIds.push(issue.expressId)
-          else infoIds.push(issue.expressId)
+          else                                   infoIds.push(issue.expressId)
           validationHighlightedIds.add(issue.expressId)
         }
       }
@@ -558,7 +623,6 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
       if (toHide.length) void currentModel.setVisible(toHide, false)
       if (toShow.length) void currentModel.setVisible(toShow, true)
-      // Force tile re-render so visibility changes appear immediately
       void fragmentsManager.core.update()
     },
 

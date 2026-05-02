@@ -17,6 +17,13 @@ import type { ViewerAPI } from './lib/viewer'
 import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo } from './types'
 import * as Icons from './components/Icons'
 
+// ── ModelTree imperative handle ───────────────────────────────────────────────
+// ModelTree exposes this via useImperativeHandle so App can trigger
+// "reveal & scroll to element" without prop drilling.
+export interface ModelTreeHandle {
+  revealElement: (expressId: number) => void
+}
+
 export default function App() {
   const [route, setRoute] = useState<Route>('landing')
   const [accent] = useState('#5E6AD2')
@@ -26,8 +33,9 @@ export default function App() {
     document.documentElement.style.setProperty('--accent-2', lighten(accent, 22))
   }, [accent])
 
-  const viewerApiRef = useRef<ViewerAPI | null>(null)
-  const viewerRef    = useRef<ViewerHandle>(null)
+  const viewerApiRef   = useRef<ViewerAPI | null>(null)
+  const viewerRef      = useRef<ViewerHandle>(null)
+  const modelTreeRef   = useRef<ModelTreeHandle>(null)
 
   // Model & loading state
   const [modelInfo, setModelInfo]       = useState<ModelInfo | null>(null)
@@ -66,7 +74,6 @@ export default function App() {
         (fromCache ? ' — from cache ⚡' : ' — parsed fresh'),
       )
       setTimeout(() => setShowUpload(false), 400)
-      // Auto-build spatial tree (arrives as first worker message, fast)
       runValidation().catch((err: unknown) => {
         console.error('[App] Validation failed:', err)
       })
@@ -106,7 +113,6 @@ export default function App() {
         const file = new File([buf], 'Ifc2x3_Duplex_Architecture.ifc', { type: '' })
         handleFileLoad(file)
       } catch {
-        // Fetch failed — fall back to upload dialog
         setShowUpload(true)
       }
     })()
@@ -136,6 +142,20 @@ export default function App() {
   const handleFrameElement = useCallback((expressId: number) => {
     viewerApiRef.current?.focusElement(expressId)
     viewerApiRef.current?.selectElement(expressId)
+  }, [])
+
+  // ── Reveal in tree ────────────────────────────────────────────────────
+  // Called from Sidebar when user clicks "Tree" or a breadcrumb node.
+  // Opens the tree panel if hidden, then asks ModelTree to expand + scroll.
+  const handleRevealInTree = useCallback((expressId: number) => {
+    // If tree panel is hidden, show it first
+    if (!useUIStore.getState().treeVisible) {
+      useUIStore.getState().setTreeVisible(true)
+    }
+    // Small delay so the panel has time to mount/render before scroll
+    setTimeout(() => {
+      modelTreeRef.current?.revealElement(expressId)
+    }, 80)
   }, [])
 
   return (
@@ -180,6 +200,7 @@ export default function App() {
                   style={{ width: treeWidth, maxWidth: '38vw', minWidth: 180 }}
                 >
                   <ModelTree
+                    ref={modelTreeRef}
                     onSelectElement={handleSelectTreeElement}
                     onFocusElements={handleFocusElements}
                     onFilterBySubtree={(ids) => {
@@ -214,6 +235,7 @@ export default function App() {
                     onFrame={(id) => viewerRef.current?.frameCategory(id)}
                     onSelectElement={(id) => viewerApiRef.current?.selectElement(id)}
                     onFrameElement={handleFrameElement}
+                    onRevealInTree={handleRevealInTree}
                   />
 
                   <button

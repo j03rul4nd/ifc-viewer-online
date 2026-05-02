@@ -36,8 +36,6 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(props, ref)
     return () => {
       api.dispose()
       apiRef.current = null
-      // ✅ Solo limpiar si esta instancia sigue siendo la activa
-      // StrictMode desmonta/remonta: la 2ª montada sobreescribirá el ref
       if (props.viewerApiRef?.current === api) {
         props.viewerApiRef.current = null
       }
@@ -60,7 +58,17 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(props, ref)
     frameCategory: (id) => apiRef.current?.frameCategory(id),
   }), [])
 
-  return <div ref={mountRef} className="absolute inset-0" />
+  return (
+    <div
+      ref={mountRef}
+      className="absolute inset-0"
+      // FIX 5: evita que el browser intercepte gestos táctiles/trackpad
+      // antes de que lleguen a los pointer events del canvas de Three.js.
+      // Sin esto, en móvil y algunos trackpads el pan/zoom del browser
+      // compite con camera-controls y los pointer events se suprimen.
+      style={{ touchAction: 'none' }}
+    />
+  )
 })
 
 export default Viewer
