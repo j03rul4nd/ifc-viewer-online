@@ -77,6 +77,46 @@ function prettyType(raw: string): string {
   return noPrefix.charAt(0) + noPrefix.slice(1).toLowerCase()
 }
 
+// ─── IFC Item Data types ─────────────────────────────────────────────────────
+
+/** A single IFC attribute value from getItemsData() */
+export interface IFCAttribute {
+  type?: string
+  value: string | number | boolean | null
+}
+
+/** A Property Set (Pset) with its contained properties */
+export interface IFCPropertySet {
+  name: string
+  properties: Array<{
+    name: string
+    value: string | number | boolean | null
+    type?: string
+  }>
+}
+
+/** Structured data returned by getItemData() */
+export interface IFCItemData {
+  /** IFC Name attribute */
+  name: string | null
+  /** IFC LongName attribute */
+  longName: string | null
+  /** IFC Description attribute */
+  description: string | null
+  /** IFC GlobalId attribute */
+  globalId: string | null
+  /** IFC ObjectType attribute */
+  objectType: string | null
+  /** IFC Tag attribute */
+  tag: string | null
+  /** Storey name from ContainedInStructure relation */
+  storey: string | null
+  /** All property sets from IsDefinedBy relation */
+  propertySets: IFCPropertySet[]
+  /** Raw data for debugging / future use */
+  raw: Record<string, unknown>
+}
+
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export interface ViewerAPI {
@@ -97,6 +137,11 @@ export interface ViewerAPI {
     modelObject: unknown
     getElementInfo: (id: string) => SelectedInfo | null
   }>
+  /**
+   * Fetches real IFC data for a given expressId from the loaded model.
+   * Returns null if no model is loaded or the element is not found.
+   */
+  getItemData(expressId: number): Promise<IFCItemData | null>
   resetCamera(): void
   frameCategory(id: string): void
   focusElement(expressId: number): void
@@ -150,6 +195,93 @@ const VALIDATION_INFO_MAT: FRAGS.MaterialDefinition = {
   opacity: 0.5,
   transparent: true,
   preserveOriginalMaterial: true,
+}
+
+// ─── Helper: extract string value from IFC attribute ─────────────────────────
+
+function attrStr(attr: unknown): string | null {
+  if (!attr || typeof attr !== 'object') return null
+  const a = attr as Record<string, unknown>
+  if ('value' in a && (typeof a.value === 'string' || a.value === null)) {
+    return (a.value as string | null)
+  }
+  return null
+}
+
+// ─── Helper: format raw IsDefinedBy into IFCPropertySet[] ────────────────────
+
+function formatPsets(isDefinedBy: unknown): IFCPropertySet[] {
+  if (!Array.isArray(isDefinedBy)) return []
+
+  const result: IFCPropertySet[] = []
+
+  for (const pset of isDefinedBy) {
+    if (!pset || typeof pset !== 'object') continue
+    const p = pset as Record<string, unknown>
+
+    const psetNameAttr = p['Name']
+    const psetName = attrStr(psetNameAttr)
+    if (!psetName) continue
+
+    const hasProperties = p['HasProperties']
+    if (!Array.isArray(hasProperties)) continue
+
+    const properties: IFCPropertySet['properties'] = []
+
+    for (const prop of hasProperties) {
+      if (!prop || typeof prop !== 'object') continue
+      const pr = prop as Record<string, unknown>
+
+      const nameAttr    = pr['Name']
+      const nominalAttr = pr['NominalValue']
+
+      const propName = attrStr(nameAttr)
+      if (!propName) continue
+
+      let propValue: string | number | boolean | null = null
+      let propType: string | undefined
+
+      if (nominalAttr && typeof nominalAttr === 'object') {
+        const n = nominalAttr as Record<string, unknown>
+        if ('value' in n) {
+          const v = n.value
+          if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean' || v === null) {
+            propValue = v
+          }
+        }
+        if ('type' in n && typeof n.type === 'string') {
+          propType = n.type
+        }
+      }
+
+      properties.push({ name: propName, value: propValue, type: propType })
+    }
+
+    result.push({ name: psetName, properties })
+  }
+
+  return result
+}
+
+// ─── Helper: extract storey name from ContainedInStructure ───────────────────
+
+function extractStorey(containedInStructure: unknown): string | null {
+  if (!Array.isArray(containedInStructure) || containedInStructure.length === 0) return null
+
+  // ContainedInStructure → array of IfcRelContainedInSpatialStructure
+  // Each has a RelatingStructure → IfcBuildingStorey with Name
+  for (const rel of containedInStructure) {
+    if (!rel || typeof rel !== 'object') continue
+    const r = rel as Record<string, unknown>
+
+    // The relation object itself might be the storey when attributes:true
+    // Its Name would be the storey name if it's an IfcBuildingStorey
+    const nameAttr = r['Name']
+    const name = attrStr(nameAttr)
+    if (name) return name
+  }
+
+  return null
 }
 
 // ─── Factory ─────────────────────────────────────────────────────────────────
@@ -223,7 +355,6 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   const canvas = wr.domElement
 
   // ─── Mouse position — actualizado en cada pointermove ────────────────────
-  // model.raycast() espera clientX/clientY absolutos (igual que el tutorial).
   const mouse = new THREE.Vector2()
 
   function removeSelectionBox(): void {
@@ -250,10 +381,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     }).catch(() => { /* ignore */ })
   }
 
-  // ─── Raycast usando model.raycast() — API oficial de @thatopen/fragments ──
-  // Según la documentación, mouse recibe clientX/clientY absolutos y
-  // dom es el canvas del renderer. La librería resuelve DPR y offset internamente.
-  // Filtramos contenedores espaciales para que los elementos físicos ganen.
+  // ─── Raycast ─────────────────────────────────────────────────────────────
   async function getBestHit(): Promise<number | null> {
     if (!currentModel) return null
 
@@ -268,11 +396,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     const rawType = expressIDToType.get(result.localId) ?? ''
     const canon   = canonicalType(rawType)
 
-    // Si el hit es un contenedor espacial, intentamos un segundo raycast
-    // ignorándolo. Como model.raycast solo devuelve el hit más cercano,
-    // ocultamos temporalmente los espacios y repetimos.
     if (SPATIAL_CONTAINER_TYPES.has(canon)) {
-      // Recogemos todos los localIds de contenedores espaciales
       const spatialIds: number[] = []
       for (const [id, raw] of expressIDToType.entries()) {
         if (SPATIAL_CONTAINER_TYPES.has(canonicalType(raw))) {
@@ -280,7 +404,6 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         }
       }
 
-      // Ocultamos temporalmente los contenedores
       await currentModel.setVisible(spatialIds, false)
       void fragmentsManager.core.update()
 
@@ -294,7 +417,6 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         secondHit = result2?.localId ?? null
       } catch { /* ignore */ }
 
-      // Restauramos visibilidad
       await currentModel.setVisible(spatialIds, true)
       void fragmentsManager.core.update()
 
@@ -304,11 +426,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     return result.localId
   }
 
-  // ─── Throttle por timestamp ───────────────────────────────────────────────
   let lastRaycastTime = 0
-  const RAYCAST_THROTTLE_MS = 32 // ~2 frames — el raycast async es más costoso
+  const RAYCAST_THROTTLE_MS = 32
 
-  // ─── commitSelection ──────────────────────────────────────────────────────
   const commitSelection = async (): Promise<void> => {
     if (!currentModel) return
 
@@ -338,9 +458,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     }
   }
 
-  // ─── Pointer move: actualiza mouse + hover ────────────────────────────────
   const onPointerMove = async (e: PointerEvent): Promise<void> => {
-    // Siempre actualizamos la posición del mouse
     mouse.set(e.clientX, e.clientY)
 
     if (!currentModel) return
@@ -367,7 +485,6 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     } catch { /* ignore mid-frame errors */ }
   }
 
-  // ─── Pointer down/up: selección ───────────────────────────────────────────
   let pdTime = 0
   let pdX    = 0
   let pdY    = 0
@@ -382,7 +499,6 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     const dt   = Date.now() - pdTime
     const dist = Math.hypot(e.clientX - pdX, e.clientY - pdY)
     if (dt > 300 || dist > 5) return
-    // Aseguramos que mouse tiene las coords del click
     mouse.set(e.clientX, e.clientY)
     void commitSelection()
   }
@@ -536,6 +652,55 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       world.scene.three.add(model.object)
 
       return setupLoadedModel(model, fileName, onProgress)
+    },
+
+    // ─── NEW: getItemData ────────────────────────────────────────────────────
+    // Fetches real IFC attributes + Psets + spatial containment for an element.
+    async getItemData(expressId: number): Promise<IFCItemData | null> {
+      if (!currentModel) return null
+
+      try {
+        const [data] = await currentModel.getItemsData([expressId], {
+          attributesDefault: false,
+          attributes: ['Name', 'LongName', 'Description', 'GlobalId', 'ObjectType', 'Tag'],
+          relations: {
+            // Property sets
+            IsDefinedBy: {
+              attributes: true,
+              relations: true,
+            },
+            // Spatial containment — to extract storey name
+            ContainedInStructure: {
+              attributes: true,
+              relations: false,
+            },
+            // Suppress inverse relations we don't need
+            DefinesOccurrence: {
+              attributes: false,
+              relations: false,
+            },
+          },
+        })
+
+        if (!data) return null
+
+        const raw = data as Record<string, unknown>
+
+        return {
+          name:         attrStr(raw['Name']),
+          longName:     attrStr(raw['LongName']),
+          description:  attrStr(raw['Description']),
+          globalId:     attrStr(raw['GlobalId']),
+          objectType:   attrStr(raw['ObjectType']),
+          tag:          attrStr(raw['Tag']),
+          storey:       extractStorey(raw['ContainedInStructure']),
+          propertySets: formatPsets(raw['IsDefinedBy']),
+          raw,
+        }
+      } catch (err) {
+        console.warn('[Viewer] getItemData error:', err)
+        return null
+      }
     },
 
     resetCamera() {

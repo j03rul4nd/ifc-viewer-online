@@ -18,8 +18,6 @@ import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo } from '
 import * as Icons from './components/Icons'
 
 // ── ModelTree imperative handle ───────────────────────────────────────────────
-// ModelTree exposes this via useImperativeHandle so App can trigger
-// "reveal & scroll to element" without prop drilling.
 export interface ModelTreeHandle {
   revealElement: (expressId: number) => void
 }
@@ -123,7 +121,13 @@ export default function App() {
   }
 
   const handleIsolate = (): void => {
-    if (selected) { setIsolated(selected.type); viewerRef.current?.frameCategory(selected.type) }
+    if (!selected) return
+    if (isolated === selected.type) {
+      setIsolated(null)
+    } else {
+      setIsolated(selected.type)
+      viewerRef.current?.frameCategory(selected.type)
+    }
   }
 
   const handleJumpToElement = useCallback((expressId: number) => {
@@ -145,14 +149,10 @@ export default function App() {
   }, [])
 
   // ── Reveal in tree ────────────────────────────────────────────────────
-  // Called from Sidebar when user clicks "Tree" or a breadcrumb node.
-  // Opens the tree panel if hidden, then asks ModelTree to expand + scroll.
   const handleRevealInTree = useCallback((expressId: number) => {
-    // If tree panel is hidden, show it first
     if (!useUIStore.getState().treeVisible) {
       useUIStore.getState().setTreeVisible(true)
     }
-    // Small delay so the panel has time to mount/render before scroll
     setTimeout(() => {
       modelTreeRef.current?.revealElement(expressId)
     }, 80)
@@ -236,6 +236,7 @@ export default function App() {
                     onSelectElement={(id) => viewerApiRef.current?.selectElement(id)}
                     onFrameElement={handleFrameElement}
                     onRevealInTree={handleRevealInTree}
+                    viewerApiRef={viewerApiRef}
                   />
 
                   <button

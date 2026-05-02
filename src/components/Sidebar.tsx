@@ -7,6 +7,7 @@ import { useEditorHistory } from '../hooks/useEditorHistory'
 import { useEditorStore } from '../stores/editorStore'
 import { buildRenameCommand } from '../lib/diffStore'
 import type { Category, SelectedInfo, SpatialNode, SpatialElement, ValidationIssue } from '../types'
+import type { IFCItemData, IFCPropertySet, ViewerAPI } from '../lib/viewer'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -32,7 +33,6 @@ function findSpatialPath(
   for (const node of nodes) {
     const path = [...ancestors, node]
     if (node.expressId === targetId) return path
-    // check contained elements
     for (const el of node.containedElements) {
       if (el.expressId === targetId) return path
     }
@@ -67,9 +67,22 @@ function prettyType(raw: string): string {
   return noPrefix.charAt(0) + noPrefix.slice(1).toLowerCase()
 }
 
+function formatPropValue(value: string | number | boolean | null): string {
+  if (value === null || value === undefined) return '—'
+  if (typeof value === 'boolean') return value ? 'True' : 'False'
+  if (typeof value === 'number') return String(value)
+  if (value === '') return '—'
+  return value
+}
+
 // ─── sub-components ───────────────────────────────────────────────────────────
 
-function SectionHeader({ label, open, onToggle }: { label: string; open: boolean; onToggle: () => void }) {
+function SectionHeader({ label, open, onToggle, badge }: {
+  label: string
+  open: boolean
+  onToggle: () => void
+  badge?: number
+}) {
   return (
     <button
       onClick={onToggle}
@@ -83,6 +96,11 @@ function SectionHeader({ label, open, onToggle }: { label: string; open: boolean
         <path d="M2.5 0L6.5 4L2.5 8L1.5 7L4.5 4L1.5 1Z" />
       </svg>
       {label}
+      {badge !== undefined && badge > 0 && (
+        <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded-full bg-[var(--surface-2)] text-[var(--text-faint)] font-mono border border-[var(--border)]">
+          {badge}
+        </span>
+      )}
     </button>
   )
 }
@@ -142,10 +160,7 @@ function EditableField({ label, value, isDirty, onCommit }: EditableFieldProps) 
       <div className="w-[38%] flex-shrink-0 flex items-center gap-1">
         <span className="text-[11px] text-[var(--text-dim)]">{label}</span>
         {isDirty && (
-          <span
-            className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0"
-            title="Unsaved change"
-          />
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0" title="Unsaved change" />
         )}
       </div>
       {editing ? (
@@ -183,6 +198,28 @@ function EditableField({ label, value, isDirty, onCommit }: EditableFieldProps) 
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── ReadOnlyField ─────────────────────────────────────────────────────────────
+
+function ReadOnlyField({ label, value, mono = false, copyable = false }: {
+  label: string
+  value: string | null
+  mono?: boolean
+  copyable?: boolean
+}) {
+  if (!value) return null
+  return (
+    <div className="flex items-baseline px-4 py-1">
+      <div className="w-[38%] flex-shrink-0 text-[11px] text-[var(--text-dim)]">{label}</div>
+      <div className="flex-1 flex items-center gap-1 min-w-0">
+        <span className={`flex-1 text-[12px] text-[var(--text)] truncate ${mono ? 'font-mono text-[11px]' : ''}`} title={value}>
+          {value}
+        </span>
+        {copyable && <CopyButton value={value} />}
+      </div>
     </div>
   )
 }
@@ -245,18 +282,128 @@ function IssuePill({ issue }: { issue: ValidationIssue }) {
   )
 }
 
+// ─── PsetSection ──────────────────────────────────────────────────────────────
+
+function PsetRow({ pset }: { pset: IFCPropertySet }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="mx-4 mb-1.5 rounded-lg overflow-hidden border border-[var(--border)]">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-[var(--surface-2)] transition-colors text-left"
+      >
+        <svg
+          width="7" height="7" viewBox="0 0 8 8" fill="currentColor"
+          className="transition-transform shrink-0 text-[var(--text-faint)]"
+          style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}
+        >
+          <path d="M2.5 0L6.5 4L2.5 8L1.5 7L4.5 4L1.5 1Z" />
+        </svg>
+        <span className="flex-1 text-[12px] font-medium text-[var(--text)] truncate">{pset.name}</span>
+        <span className="text-[10px] font-mono text-[var(--text-faint)] shrink-0">{pset.properties.length}</span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
+            transition={{ duration: 0.15 }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div className="border-t border-[var(--border)]">
+              {pset.properties.map((prop, i) => (
+                <div
+                  key={i}
+                  className="flex items-baseline px-2.5 py-1 gap-2 hover:bg-[var(--surface-2)] transition-colors group/prop"
+                >
+                  <span className="w-[45%] flex-shrink-0 text-[11px] text-[var(--text-dim)] truncate" title={prop.name}>
+                    {prop.name}
+                  </span>
+                  <div className="flex-1 flex items-center gap-1 min-w-0">
+                    <span
+                      className={`flex-1 text-[11.5px] truncate ${
+                        prop.value === null || prop.value === ''
+                          ? 'text-[var(--text-faint)] italic'
+                          : 'text-[var(--text)]'
+                      }`}
+                      title={String(prop.value ?? '—')}
+                    >
+                      {formatPropValue(prop.value)}
+                    </span>
+                    {prop.value !== null && prop.value !== '' && (
+                      <CopyButton
+                        value={String(prop.value)}
+                        label=""
+                      />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ─── IFC Data loading hook ────────────────────────────────────────────────────
+
+type IFCDataState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'loaded'; data: IFCItemData }
+  | { status: 'error' }
+
+function useIFCItemData(
+  expressId: number | null,
+  viewerApiRef: React.MutableRefObject<ViewerAPI | null> | undefined,
+): IFCDataState {
+  const [state, setState] = useState<IFCDataState>({ status: 'idle' })
+
+  useEffect(() => {
+    if (expressId === null || !viewerApiRef) {
+      setState({ status: 'idle' })
+      return
+    }
+
+    let cancelled = false
+    setState({ status: 'loading' })
+
+    viewerApiRef.current?.getItemData(expressId)
+      .then((data) => {
+        if (cancelled) return
+        if (data) {
+          setState({ status: 'loaded', data })
+        } else {
+          setState({ status: 'error' })
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setState({ status: 'error' })
+      })
+
+    return () => { cancelled = true }
+  }, [expressId, viewerApiRef])
+
+  return state
+}
+
 // ─── Properties Panel ──────────────────────────────────────────────────────────
 
 interface PropertiesPanelProps {
   selected: SelectedInfo | null
   categories: Category[]
+  isolated: string | null
+  viewerApiRef?: React.MutableRefObject<ViewerAPI | null>
   onFrame?: (expressId: number) => void
   onRevealInTree?: (expressId: number) => void
   onIsolate?: () => void
 }
 
 function PropertiesPanel({
-  selected, categories, onFrame, onRevealInTree, onIsolate,
+  selected, categories, isolated, viewerApiRef, onFrame, onRevealInTree, onIsolate,
 }: PropertiesPanelProps) {
   const { spatialTree, result } = useValidationStore()
   const { hiddenElements, setElementsVisible } = useUIStore()
@@ -267,25 +414,31 @@ function PropertiesPanel({
     location: true,
     visibility: true,
     attributes: true,
+    psets: true,
     validation: true,
   })
   const toggle = (key: keyof typeof sections) =>
     setSections(s => ({ ...s, [key]: !s[key] }))
 
-  // Spatial path
+  const expressId = selected ? parseInt(selected.id, 10) : null
+
+  // ── Load real IFC data ──────────────────────────────────────────────────
+  const ifcState = useIFCItemData(expressId, viewerApiRef)
+
+  // ── Spatial path from tree (still used for Location breadcrumb) ──────────
   const spatialPath = useMemo(() => {
     if (!selected) return null
     return findSpatialPath(spatialTree, parseInt(selected.id, 10))
   }, [selected, spatialTree])
 
-  // Issues for this element
+  // ── Issues for this element ──────────────────────────────────────────────
   const elementIssues = useMemo(() => {
     if (!selected || !result) return []
     const id = parseInt(selected.id, 10)
     return result.issues.filter(i => i.expressId === id)
   }, [selected, result])
 
-  // Pending diffs for this element
+  // ── Pending diffs for this element ───────────────────────────────────────
   const pendingDiffs = useMemo(() => {
     if (!selected) return new Map<string, string>()
     const id = parseInt(selected.id, 10)
@@ -298,8 +451,12 @@ function PropertiesPanel({
     return map
   }, [selected, diffs])
 
-  const getDisplayValue = (field: string, fallback: string) =>
-    pendingDiffs.get(field) ?? fallback
+  // Resolve display value: pending diff → real IFC data → synthetic fallback
+  const getDisplayValue = useCallback((field: string, ifcFallback: string | null): string => {
+    if (pendingDiffs.has(field)) return pendingDiffs.get(field)!
+    if (ifcFallback !== null && ifcFallback !== '') return ifcFallback
+    return ''
+  }, [pendingDiffs])
 
   const handleRename = useCallback((field: 'Name' | 'LongName' | 'Description', newVal: string) => {
     if (!selected) return
@@ -308,7 +465,7 @@ function PropertiesPanel({
     addCommand(buildRenameCommand(id, field, currentVal, newVal))
   }, [selected, pendingDiffs, addCommand])
 
-  if (!selected) {
+  if (!selected || expressId === null) {
     return (
       <div className="px-6 py-10 text-center">
         <div className="w-10 h-10 mx-auto mb-3 rounded-[10px] bg-[var(--surface-2)] flex items-center justify-center text-[var(--text-dim)] border border-[var(--border)]">
@@ -322,13 +479,28 @@ function PropertiesPanel({
     )
   }
 
-  const expressId = parseInt(selected.id, 10)
   const cat = categories.find(c => c.id === selected.type || c.id === selected.type.replace('STANDARDCASE', ''))
   const catColor = cat ? `#${cat.color.toString(16).padStart(6, '0')}` : 'var(--text-dim)'
   const isHidden = hiddenElements.has(expressId)
   const hasDirty = pendingDiffs.size > 0
   const errorCount   = elementIssues.filter(i => i.severity === 'error').length
   const warningCount = elementIssues.filter(i => i.severity === 'warning').length
+
+  // Resolved display values from real IFC data
+  const ifcData = ifcState.status === 'loaded' ? ifcState.data : null
+
+  // The "display name" shown in the header: prefer real IFC Name, fall back to synthetic
+  const displayName = getDisplayValue('Name', ifcData?.name ?? null) || selected.name
+  const displayLongName = getDisplayValue('LongName', ifcData?.longName ?? null)
+  const displayDescription = getDisplayValue('Description', ifcData?.description ?? null)
+
+  // Storey: prefer real IFC ContainedInStructure, fall back to spatial tree path
+  const storeyName = ifcData?.storey
+    ?? spatialPath?.find(n => n.ifcClass === 'IfcBuildingStorey')?.name
+    ?? null
+
+  const psets = ifcData?.propertySets ?? []
+  const totalProps = psets.reduce((acc, ps) => acc + ps.properties.length, 0)
 
   return (
     <motion.div
@@ -341,10 +513,7 @@ function PropertiesPanel({
       <div className="px-4 pt-3.5 pb-3 border-b border-[var(--border)]">
         {/* Type badge row */}
         <div className="flex items-center gap-2 mb-2">
-          <div
-            className="w-2.5 h-2.5 rounded-[3px] shrink-0"
-            style={{ background: catColor }}
-          />
+          <div className="w-2.5 h-2.5 rounded-[3px] shrink-0" style={{ background: catColor }} />
           <span className="font-mono text-[10px] text-[var(--text-faint)] tracking-wider uppercase">
             {selected.type}
           </span>
@@ -363,19 +532,26 @@ function PropertiesPanel({
               {warningCount} warn
             </span>
           )}
+          {/* IFC data loading indicator */}
+          {ifcState.status === 'loading' && (
+            <span className="ml-auto text-[10px] text-[var(--text-faint)] italic">loading…</span>
+          )}
         </div>
 
         {/* Name */}
         <div className="text-[15px] font-semibold tracking-tight mb-1.5 leading-snug">
-          {getDisplayValue('Name', selected.name)}
+          {displayName}
         </div>
 
         {/* Express ID + copy */}
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10.5px] text-[var(--text-faint)]">
-            #{selected.id}
-          </span>
+          <span className="font-mono text-[10.5px] text-[var(--text-faint)]">#{selected.id}</span>
           <CopyButton value={selected.id} label="ID" />
+          {storeyName && (
+            <span className="ml-auto text-[10.5px] text-[var(--text-faint)] truncate max-w-[120px]" title={storeyName}>
+              📍 {storeyName}
+            </span>
+          )}
         </div>
 
         {/* Quick actions */}
@@ -392,13 +568,23 @@ function PropertiesPanel({
             </svg>
             Frame
           </button>
-          <button
-            onClick={() => onIsolate?.()}
-            className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors"
-          >
-            <Icons.Isolate size={11} />
-            Isolate
-          </button>
+          {(() => {
+            const isIsolated = isolated === selected.type
+            return (
+              <button
+                onClick={() => onIsolate?.()}
+                className={`flex items-center gap-1.5 h-7 px-2.5 rounded-lg border text-[11px] transition-colors ${
+                  isIsolated
+                    ? 'bg-[var(--accent)] border-[var(--accent)] text-white hover:brightness-110'
+                    : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)]'
+                }`}
+                title={isIsolated ? 'Clear isolation' : 'Isolate this category'}
+              >
+                <Icons.Isolate size={11} />
+                {isIsolated ? 'Clear' : 'Isolate'}
+              </button>
+            )
+          })()}
           <button
             onClick={() => onRevealInTree?.(expressId)}
             className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors"
@@ -491,13 +677,8 @@ function PropertiesPanel({
             <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
               <div className="px-4 pb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ background: isHidden ? '#E5484D' : '#30A46C' }}
-                  />
-                  <span className="text-[12px] text-[var(--text)]">
-                    {isHidden ? 'Hidden' : 'Visible'}
-                  </span>
+                  <div className="w-2 h-2 rounded-full" style={{ background: isHidden ? '#E5484D' : '#30A46C' }} />
+                  <span className="text-[12px] text-[var(--text)]">{isHidden ? 'Hidden' : 'Visible'}</span>
                 </div>
                 <button
                   onClick={() => setElementsVisible([expressId], isHidden)}
@@ -522,26 +703,27 @@ function PropertiesPanel({
           {sections.attributes && (
             <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
               <div className="pb-2">
+                {/* Editable fields — use real IFC data as initial value */}
                 <EditableField
                   label="Name"
-                  value={getDisplayValue('Name', selected.name)}
+                  value={getDisplayValue('Name', ifcData?.name ?? null) || selected.name}
                   isDirty={pendingDiffs.has('Name')}
                   onCommit={v => handleRename('Name', v)}
                 />
                 <EditableField
                   label="LongName"
-                  value={getDisplayValue('LongName', '')}
+                  value={displayLongName}
                   isDirty={pendingDiffs.has('LongName')}
                   onCommit={v => handleRename('LongName', v)}
                 />
                 <EditableField
                   label="Description"
-                  value={getDisplayValue('Description', '')}
+                  value={displayDescription}
                   isDirty={pendingDiffs.has('Description')}
                   onCommit={v => handleRename('Description', v)}
                 />
 
-                {/* Read-only fields */}
+                {/* Read-only IFC fields */}
                 <div className="flex items-baseline px-4 py-1">
                   <div className="w-[38%] flex-shrink-0 text-[11px] text-[var(--text-dim)]">Type</div>
                   <div className="flex-1 flex items-center gap-1.5">
@@ -549,6 +731,7 @@ function PropertiesPanel({
                     <CopyButton value={selected.type} />
                   </div>
                 </div>
+
                 <div className="flex items-baseline px-4 py-1">
                   <div className="w-[38%] flex-shrink-0 text-[11px] text-[var(--text-dim)]">Express ID</div>
                   <div className="flex-1 flex items-center gap-1.5">
@@ -556,6 +739,25 @@ function PropertiesPanel({
                     <CopyButton value={selected.id} />
                   </div>
                 </div>
+
+                {/* Real IFC read-only attributes (when loaded) */}
+                {ifcData?.globalId && (
+                  <div className="flex items-baseline px-4 py-1">
+                    <div className="w-[38%] flex-shrink-0 text-[11px] text-[var(--text-dim)]">GlobalId</div>
+                    <div className="flex-1 flex items-center gap-1 min-w-0">
+                      <span
+                        className="font-mono text-[11px] text-[var(--text)] truncate flex-1"
+                        title={ifcData.globalId}
+                      >
+                        {ifcData.globalId}
+                      </span>
+                      <CopyButton value={ifcData.globalId} />
+                    </div>
+                  </div>
+                )}
+
+                <ReadOnlyField label="ObjectType" value={ifcData?.objectType ?? null} />
+                <ReadOnlyField label="Tag" value={ifcData?.tag ?? null} />
 
                 {/* Dirty indicator + undo tip */}
                 {hasDirty && (
@@ -569,11 +771,55 @@ function PropertiesPanel({
                     </span>
                   </div>
                 )}
+
+                {/* IFC data load error notice */}
+                {ifcState.status === 'error' && (
+                  <div className="mx-4 mt-2 px-2.5 py-1.5 rounded-lg bg-[#F5A62312] border border-[#F5A62330] flex items-center gap-2">
+                    <span className="text-[10.5px] text-[#F5A623]">Could not load IFC attributes</span>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      {/* ── Property Sets ── */}
+      {(psets.length > 0 || ifcState.status === 'loading') && (
+        <div className="border-b border-[var(--border)]">
+          <SectionHeader
+            label="Property Sets"
+            open={sections.psets}
+            onToggle={() => toggle('psets')}
+            badge={psets.length > 0 ? totalProps : undefined}
+          />
+          <AnimatePresence initial={false}>
+            {sections.psets && (
+              <motion.div
+                initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
+                transition={{ duration: 0.15 }}
+                style={{ overflow: 'hidden' }}
+              >
+                {ifcState.status === 'loading' ? (
+                  <div className="px-4 pb-3 flex items-center gap-2 text-[var(--text-faint)]">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="animate-spin shrink-0">
+                      <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.3" />
+                      <path d="M6 1.5A4.5 4.5 0 0110.5 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                    <span className="text-[11.5px] italic">Loading property sets…</span>
+                  </div>
+                ) : (
+                  <div className="pt-1 pb-2">
+                    {psets.map((pset, i) => (
+                      <PsetRow key={i} pset={pset} />
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
 
       {/* ── Validation ── */}
       {elementIssues.length > 0 && (
@@ -793,11 +1039,14 @@ interface SidebarProps {
   onFrameElement?: (expressId: number) => void
   /** Called when user clicks "Reveal in tree" — parent should expand tree & scroll */
   onRevealInTree?: (expressId: number) => void
+  /** ViewerAPI ref — used to fetch real IFC data for the selected element */
+  viewerApiRef?: React.MutableRefObject<ViewerAPI | null>
 }
 
 export default function Sidebar({
   categories, elementCount, selected, hidden, onToggleHidden,
-  isolated, onSetIsolated, onFrame, onSelectElement, onFrameElement, onRevealInTree,
+  isolated, onSetIsolated, onFrame, onSelectElement, onFrameElement,
+  onRevealInTree, viewerApiRef,
 }: SidebarProps) {
   const [tab, setTab] = useState<'props' | 'cats'>('props')
 
@@ -809,8 +1058,8 @@ export default function Sidebar({
 
   const handleIsolate = useCallback(() => {
     if (!selected) return
-    onSetIsolated(selected.type)
-  }, [selected, onSetIsolated])
+    onSetIsolated(isolated === selected.type ? null : selected.type)
+  }, [selected, isolated, onSetIsolated])
 
   return (
     <motion.div
@@ -843,6 +1092,8 @@ export default function Sidebar({
               <PropertiesPanel
                 selected={selected}
                 categories={categories}
+                isolated={isolated}
+                viewerApiRef={viewerApiRef}
                 onFrame={handleFrame}
                 onRevealInTree={onRevealInTree}
                 onIsolate={handleIsolate}
