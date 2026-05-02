@@ -109,14 +109,14 @@ export default function Toolbar({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="absolute top-3 left-3 right-3 z-10 flex items-center gap-2.5 pointer-events-none"
+      className="relative z-10 flex items-center gap-2.5 pointer-events-none px-3 py-3"
     >
       {/* Logo */}
       <div className="flex items-center gap-2.5 bg-[rgba(16,16,20,0.72)] backdrop-blur-md border border-[var(--border)] rounded-[10px] px-2.5 py-1.5 pointer-events-auto">
         <Icons.Logo size={22} />
-        <div className="flex flex-col leading-none gap-0.5">
-          <div className="text-[13px] font-semibold tracking-tight">IFC Validator</div>
-          <div className="text-[10.5px] text-[var(--text-faint)] font-mono">
+        <div className="flex flex-col leading-none gap-0.5 min-w-0">
+          <div className="text-[13px] font-semibold tracking-tight whitespace-nowrap">IFC Validator</div>
+          <div className="text-[10.5px] text-[var(--text-faint)] font-mono whitespace-nowrap max-w-[180px] truncate">
             {fileName ?? 'No file loaded'}
           </div>
         </div>

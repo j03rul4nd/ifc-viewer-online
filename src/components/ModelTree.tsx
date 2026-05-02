@@ -366,12 +366,12 @@ export default function ModelTree({ onSelectElement, onFilterBySubtree, onFocusE
   return (
     <div className="relative flex flex-col h-full">
       {/* Header */}
-      <div className="flex-none px-3 py-2 border-b border-[var(--border)] flex items-center justify-between">
+      <div className="flex-none px-3 py-2.5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--surface)]">
         <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider">
           Spatial Tree
         </span>
-        <span className="text-[10px] text-[var(--text-faint)] font-mono">
-          {flatNodes.length} nodes
+        <span className="text-[10px] text-[var(--text-faint)] font-mono bg-[var(--surface-2)] px-1.5 py-0.5 rounded-md">
+          {flatNodes.length}
         </span>
       </div>
 
@@ -524,11 +524,12 @@ function SpatialRow({
     <div
       className={`flex items-center gap-1.5 px-2 h-[30px] cursor-pointer select-none group transition-colors
         ${isSelected
-          ? 'bg-[var(--accent)]20 text-[var(--text)]'
+          ? 'text-[var(--text)]'
           : 'hover:bg-[var(--surface-2)] text-[var(--text-dim)]'}`}
       style={{
         paddingLeft: 8 + depth * 16,
         opacity: allHidden ? 0.45 : 1,
+        backgroundColor: isSelected ? 'rgba(94,106,210,0.12)' : undefined,
       }}
       onClick={() => onSelect(node.expressId)}
       onDoubleClick={(e) => {
@@ -657,9 +658,9 @@ function ElementRow({
     <div
       className={`flex items-center gap-1.5 px-2 h-[30px] cursor-pointer select-none group transition-colors
         ${isSelected
-          ? 'bg-[var(--accent)]20 text-[var(--text)]'
+          ? 'text-[var(--text)]'
           : 'hover:bg-[var(--surface-2)] text-[var(--text-dim)]'}`}
-      style={{ paddingLeft: 8 + depth * 16, opacity: isHidden ? 0.4 : 1 }}
+      style={{ paddingLeft: 8 + depth * 16, opacity: isHidden ? 0.4 : 1, backgroundColor: isSelected ? 'rgba(94,106,210,0.12)' : undefined }}
       onClick={() => !editing && onSelect(element.expressId)}
       onDoubleClick={(e) => { e.stopPropagation(); if (!editing) onFocusElements?.([element.expressId]) }}
     >

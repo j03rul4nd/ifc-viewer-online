@@ -160,43 +160,37 @@ export default function App() {
             transition={{ duration: 0.3 }}
             className="fixed inset-0 bg-[var(--bg)] flex flex-col"
           >
-            {/* ── Top toolbar (absolute overlay) ── */}
-            <Toolbar
-              fileName={modelInfo?.fileName ?? null}
-              elementCount={modelInfo?.elementCount ?? 0}
-              loadingState={loadingState}
-              canIsolate={!!selected}
-              onReset={() => viewerRef.current?.resetCamera()}
-              onIsolate={handleIsolate}
-              onUpload={() => setShowUpload(true)}
-            />
+            <div className="flex-none z-20">
+              <Toolbar
+                fileName={modelInfo?.fileName ?? null}
+                elementCount={modelInfo?.elementCount ?? 0}
+                loadingState={loadingState}
+                canIsolate={!!selected}
+                onReset={() => viewerRef.current?.resetCamera()}
+                onIsolate={handleIsolate}
+                onUpload={() => setShowUpload(true)}
+              />
+            </div>
 
-            {/* ── Main content area (below toolbar overlap zone) ── */}
             <div className="flex flex-1 overflow-hidden">
 
-              {/* LEFT: Spatial tree panel */}
               {treeVisible && modelInfo && (
                 <div
-                  className="flex-none border-r border-[var(--border)] bg-[var(--surface)] flex flex-col overflow-hidden"
+                  className="flex-none bg-[var(--surface)] flex flex-col overflow-hidden border-r border-[var(--border)]"
                   style={{ width: treeWidth, maxWidth: '38vw', minWidth: 180 }}
                 >
                   <ModelTree
                     onSelectElement={handleSelectTreeElement}
                     onFocusElements={handleFocusElements}
                     onFilterBySubtree={(ids) => {
-                      useValidationStore.getState().setFilters({
-                        ruleIds: [],
-                        search: '',
-                      })
+                      useValidationStore.getState().setFilters({ ruleIds: [], search: '' })
                     }}
                   />
                 </div>
               )}
 
-              {/* CENTER + BOTTOM: Viewer + Validation panel */}
               <div className="flex-1 flex flex-col overflow-hidden relative">
 
-                {/* 3D viewer — fills remaining space */}
                 <div className="flex-1 relative">
                   <Viewer
                     ref={viewerRef}
@@ -209,7 +203,6 @@ export default function App() {
                     viewerStyle={viewerStyle}
                   />
 
-                  {/* Sidebar (floating panel on right) */}
                   <Sidebar
                     categories={modelInfo?.categories ?? []}
                     elementCount={modelInfo?.elementCount ?? 0}
@@ -223,17 +216,15 @@ export default function App() {
                     onFrameElement={handleFrameElement}
                   />
 
-                  {/* Back to landing */}
                   <button
                     onClick={() => setRoute('landing')}
-                    className="absolute top-[68px] right-[364px] z-[9] h-[30px] px-3 bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
+                    className="absolute top-3 right-[364px] z-[9] h-[30px] px-3 bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
                   >
                     <Icons.Chevron size={12} className="rotate-180" />
                     Home
                   </button>
                 </div>
 
-                {/* BOTTOM: Validation panel */}
                 <ValidationPanel onJumpToElement={handleJumpToElement} />
               </div>
             </div>
@@ -241,7 +232,6 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Upload modal */}
       <AnimatePresence>
         {showUpload && (
           <UploadOverlay
@@ -253,7 +243,6 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Cache status badge */}
       {opfsAvailable && cacheEntries.length > 0 && (
         <div
           title={`${cacheEntries.length} model(s) cached in OPFS. Click to clear all.`}
