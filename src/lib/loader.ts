@@ -236,7 +236,12 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
         worker.removeEventListener('message', handler)
         worker.removeEventListener('error',   errorHandler)
         resetWorker()
-        reject(new Error(`Parser worker script error: ${e.message}`))
+        // e.message can be "" or undefined when the worker module fails to load
+        // (e.g. unresolved bare import in the worker bundle). Include all available
+        // ErrorEvent fields so the error is actionable rather than "undefined".
+        const msg = e.message || '(no message — likely a module load failure in the worker)'
+        const loc = e.filename ? ` [${e.filename}:${e.lineno}:${e.colno}]` : ''
+        reject(new Error(`Parser worker script error: ${msg}${loc}`))
       }
 
       worker.addEventListener('message', handler)

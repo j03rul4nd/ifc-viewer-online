@@ -38,7 +38,11 @@ export default defineConfig({
   worker: {
     format: 'es',
     plugins: () => [],
-    rollupOptions: { external: ['three'] },
+    // Do NOT externalize 'three' here. Web Workers have no module resolution
+    // for bare specifiers — externalizing three leaves an unresolvable
+    // `import ... from 'three'` in the built worker bundle, which causes a
+    // silent module-load failure in production (GitHub Pages / any static host).
+    // three must be bundled inline into the worker chunk.
   },
   server: {
     port: 3000,
