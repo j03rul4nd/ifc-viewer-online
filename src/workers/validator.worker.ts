@@ -12,6 +12,7 @@
 
 import { IfcAPI } from 'web-ifc'
 import type { ValidationIssue, ValidationResult, SpatialNode, SpatialElement, RulesConfig } from '../types'
+import { validateIfcBuffer, assertModelId } from '../lib/ifc-guards'
 
 // Force single-threaded WASM — nested workers (pthreads) fail inside a worker context
 ;((): void => {
@@ -796,17 +797,66 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
   const startTime = Date.now()
   const allIssues: ValidationIssue[] = []
 
+  // ── Pre-flight: validate the IFC buffer before attempting WASM init ────────
+  // Uses the shared ifc-guards utility (same checks as the parser worker).
+  const bufferCheck = validateIfcBuffer(buffer, 'the model buffer')
+  if (!bufferCheck.ok) {
+    post({ type: 'error', id, message: bufferCheck.reason! })
+    return
+  }
+
+  // ── Pre-flight: confirm at least one rule is enabled ──────────────────────
+  const enabledRules = Object.entries(rules).filter(([, v]) => v === true)
+  if (enabledRules.length === 0) {
+    // Nothing to do — emit an empty result rather than initialising WASM for nothing
+    post({
+      type: 'done',
+      id,
+      result: {
+        issues: [],
+        stats: { total: 0, errors: 0, warnings: 0, info: 0, byRule: {} },
+        durationMs: 0,
+      },
+    })
+    return
+  }
+
   let api: IfcAPI | null = null
   let modelId = -1
 
   try {
     api = new IfcAPI()
     // In dev mode Vite serves node_modules directly; in prod WASM is at dist root.
-    api.SetWasmPath(import.meta.env.DEV ? `${import.meta.env.BASE_URL}node_modules/web-ifc/` : import.meta.env.BASE_URL)
-    await api.Init()
+    api.SetWasmPath(
+      import.meta.env.DEV
+        ? `${import.meta.env.BASE_URL}node_modules/web-ifc/`
+        : import.meta.env.BASE_URL,
+    )
+
+    try {
+      await api.Init()
+    } catch (initErr: unknown) {
+      throw new Error(
+        `WebAssembly (web-ifc) failed to initialise: ${initErr instanceof Error ? initErr.message : String(initErr)}. ` +
+        'This can happen on GitHub Pages if WASM files are not correctly served or if the browser lacks SharedArrayBuffer support.',
+      )
+    }
 
     const data = new Uint8Array(buffer)
-    modelId = api.OpenModel(data)
+
+    try {
+      modelId = api.OpenModel(data)
+    } catch (openErr: unknown) {
+      throw new Error(
+        `web-ifc could not open the model: ${openErr instanceof Error ? openErr.message : String(openErr)}. ` +
+        'The IFC file may be corrupted or use an unsupported schema version.',
+      )
+    }
+
+    const modelIdError = assertModelId(modelId, 'validation')
+    if (modelIdError) {
+      throw new Error(modelIdError)
+    }
 
     // ── Build spatial index ──────────────────────────────────────────
     const idx = buildSpatialIndex(api, modelId)
@@ -816,7 +866,7 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
     post({ type: 'tree', id, tree })
 
     // ── Define enabled rules ─────────────────────────────────────────
-    const totalRules = Object.entries(rules).filter(([, v]) => typeof v === 'boolean' && v).length || 1
+    const totalRules = enabledRules.length
     let completedRules = 0
 
     const runRule = async (
@@ -881,7 +931,8 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
     post({ type: 'done', id, result })
 
   } catch (err: unknown) {
-    post({ type: 'error', id, message: err instanceof Error ? err.message : String(err) })
+    const raw = err instanceof Error ? err.message : String(err)
+    post({ type: 'error', id, message: `Validation failed: ${raw}` })
   } finally {
     if (api && modelId !== -1) {
       try { api.CloseModel(modelId) } catch { /* ignore cleanup errors */ }
