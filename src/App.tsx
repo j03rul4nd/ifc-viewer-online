@@ -7,12 +7,14 @@ import UploadOverlay from './components/UploadOverlay'
 import Landing from './components/Landing'
 import ModelTree from './components/ModelTree'
 import ValidationPanel from './components/ValidationPanel'
+import ToastContainer from './components/ToastContainer'
 import { lighten } from './lib/utils'
 import { useIfcLoader } from './lib/loader'
 import { runValidation } from './lib/validator'
 import { useEditorHistory } from './hooks/useEditorHistory'
 import { useValidationStore } from './stores/validationStore'
 import { useUIStore } from './stores/uiStore'
+import { toast } from './stores/toastStore'
 import type { ViewerAPI } from './lib/viewer'
 import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo } from './types'
 import * as Icons from './components/Icons'
@@ -31,19 +33,21 @@ export default function App() {
     document.documentElement.style.setProperty('--accent-2', lighten(accent, 22))
   }, [accent])
 
-  const viewerApiRef   = useRef<ViewerAPI | null>(null)
-  const viewerRef      = useRef<ViewerHandle>(null)
-  const modelTreeRef   = useRef<ModelTreeHandle>(null)
+  const viewerApiRef = useRef<ViewerAPI | null>(null)
+  const viewerRef    = useRef<ViewerHandle>(null)
+  const modelTreeRef = useRef<ModelTreeHandle>(null)
 
   // Model & loading state
-  const [modelInfo, setModelInfo]       = useState<ModelInfo | null>(null)
-  const [loadingState, setLoadingState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
+  const [modelInfo,     setModelInfo]     = useState<ModelInfo | null>(null)
+  const [loadingState,  setLoadingState]  = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
+  /** Last error message from the loader — displayed inside the upload modal. */
+  const [loadError,     setLoadError]     = useState<string | null>(null)
 
   // Viewer interaction state
   const [viewerStyle] = useState<ViewerStyle>('shaded')
-  const [selected, setSelected]     = useState<SelectedInfo | null>(null)
-  const [hidden, setHidden]         = useState<Set<string>>(new Set())
-  const [isolated, setIsolated]     = useState<string | null>(null)
+  const [selected,  setSelected]  = useState<SelectedInfo | null>(null)
+  const [hidden,    setHidden]    = useState<Set<string>>(new Set())
+  const [isolated,  setIsolated]  = useState<string | null>(null)
   const [showUpload, setShowUpload] = useState(false)
 
   // Stores
@@ -53,10 +57,11 @@ export default function App() {
   // Undo/redo keyboard shortcuts
   useEditorHistory()
 
-  // ── Loading pipeline ──────────────────────────────────────────────────
+  // ── Loading pipeline ──────────────────────────────────────────────────────
 
   const {
     loadFile,
+    resetProgress,
     progress,
     cacheEntries,
     deleteFromCache,
@@ -67,11 +72,21 @@ export default function App() {
     onModelLoaded: (info, fromCache) => {
       setModelInfo(info)
       setLoadingState('loaded')
+      setLoadError(null)
       console.info(
         `[IFC] Loaded "${info.fileName}" (${info.elementCount} elements)` +
         (fromCache ? ' — from cache ⚡' : ' — parsed fresh'),
       )
+      toast(
+        `"${info.fileName}" loaded — ${info.elementCount.toLocaleString()} elements` +
+        (fromCache ? ' (from cache ⚡)' : ''),
+        'success',
+      )
+      // Auto-close modal after a short "Model ready" display
       setTimeout(() => setShowUpload(false), 400)
+      // Kick off validation asynchronously — errors are non-blocking.
+      // validator.ts already shows a toast for validation errors, so we only
+      // log here to avoid showing a duplicate notification.
       runValidation().catch((err: unknown) => {
         console.error('[App] Validation failed:', err)
       })
@@ -79,20 +94,24 @@ export default function App() {
     onError: (msg) => {
       console.error('[IFC] Load error:', msg)
       setLoadingState('error')
+      setLoadError(msg)
+      // toast() is already called inside loader.ts for every error path,
+      // so we don't duplicate here.
     },
   })
 
-  // ── Sync validation overlay with viewer ───────────────────────────────
+  // ── Sync validation overlay with viewer ───────────────────────────────────
 
   useEffect(() => {
     const issues = result?.issues ?? []
     viewerApiRef.current?.setValidationHighlights(issues, validationMode)
   }, [validationMode, result])
 
-  // ── Handlers ─────────────────────────────────────────────────────────
+  // ── Handlers ─────────────────────────────────────────────────────────────
 
   const handleFileLoad = (file: File): void => {
     setLoadingState('loading')
+    setLoadError(null)
     setModelInfo(null)
     setSelected(null)
     setHidden(new Set())
@@ -102,22 +121,38 @@ export default function App() {
     void loadFile(file)
   }
 
+  /** Open the upload modal — always reset progress so we never show a stale
+   *  "Model ready" screen from a previous successful load. */
+  const openUploadModal = useCallback((): void => {
+    if (loadingState === 'loading') return   // guard: don't interrupt active load
+    resetProgress()
+    setLoadError(null)
+    setShowUpload(true)
+  }, [loadingState, resetProgress])
+
   const handleLaunch = (): void => {
     setRoute('viewer')
     void (async () => {
       try {
         const res  = await fetch(`${import.meta.env.BASE_URL}Ifc2x3_Duplex_Architecture.ifc`)
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
         const buf  = await res.arrayBuffer()
         const file = new File([buf], 'Ifc2x3_Duplex_Architecture.ifc', { type: '' })
         handleFileLoad(file)
-      } catch {
+      } catch (err: unknown) {
+        console.warn('[App] Demo file unavailable:', err)
+        toast('Demo file could not be loaded. Please open your own IFC file.', 'warning')
         setShowUpload(true)
       }
     })()
   }
 
   const handleToggleHidden = (id: string): void => {
-    setHidden((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+    setHidden((prev) => {
+      const n = new Set(prev)
+      n.has(id) ? n.delete(id) : n.add(id)
+      return n
+    })
   }
 
   const handleIsolate = (): void => {
@@ -148,7 +183,6 @@ export default function App() {
     viewerApiRef.current?.selectElement(expressId)
   }, [])
 
-  // ── Reveal in tree ────────────────────────────────────────────────────
   const handleRevealInTree = useCallback((expressId: number) => {
     if (!useUIStore.getState().treeVisible) {
       useUIStore.getState().setTreeVisible(true)
@@ -157,6 +191,8 @@ export default function App() {
       modelTreeRef.current?.revealElement(expressId)
     }, 80)
   }, [])
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -188,7 +224,7 @@ export default function App() {
                 canIsolate={!!selected}
                 onReset={() => viewerRef.current?.resetCamera()}
                 onIsolate={handleIsolate}
-                onUpload={() => setShowUpload(true)}
+                onUpload={openUploadModal}
               />
             </div>
 
@@ -203,7 +239,7 @@ export default function App() {
                     ref={modelTreeRef}
                     onSelectElement={handleSelectTreeElement}
                     onFocusElements={handleFocusElements}
-                    onFilterBySubtree={(ids) => {
+                    onFilterBySubtree={() => {
                       useValidationStore.getState().setFilters({ ruleIds: [], search: '' })
                     }}
                   />
@@ -255,6 +291,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* ── Upload modal ── */}
       <AnimatePresence>
         {showUpload && (
           <UploadOverlay
@@ -262,10 +299,12 @@ export default function App() {
             onLoad={handleFileLoad}
             isLoading={loadingState === 'loading'}
             loadProgress={progress.percent}
+            loadError={loadError}
           />
         )}
       </AnimatePresence>
 
+      {/* ── OPFS cache badge ── */}
       {opfsAvailable && cacheEntries.length > 0 && (
         <div
           title={`${cacheEntries.length} model(s) cached in OPFS. Click to clear all.`}
@@ -275,6 +314,9 @@ export default function App() {
           {isFromCache ? '⚡ from cache' : `${cacheEntries.length} cached`}
         </div>
       )}
+
+      {/* ── Global toast notifications ── */}
+      <ToastContainer />
     </>
   )
 }

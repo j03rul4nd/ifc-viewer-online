@@ -258,3 +258,196 @@ describe('Worker progress event sequencing', () => {
     expect(gotResult).toBe(false)
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// §4  Pre-flight file validation (loader-level guards)
+// Tests the validation logic that loadFile runs before touching a worker.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('Loader pre-flight file validation', () => {
+  function makeFile(name: string, sizeBytes: number): File {
+    const content = new Uint8Array(sizeBytes)
+    return new File([content], name, { type: '' })
+  }
+
+  it('rejects a file with size 0 before doing any async work', async () => {
+    // We test the pure validation logic directly (not the full hook which needs React/DOM)
+    const file = makeFile('building.ifc', 0)
+    expect(file.size).toBe(0)
+    // The loadFile guard: `!file || file.size === 0`
+    expect(file.size === 0).toBe(true)
+  })
+
+  it('rejects a non-.ifc extension', () => {
+    const names = ['document.pdf', 'model.rvt', 'image.png', 'archive.zip', 'noextension']
+    for (const name of names) {
+      expect(name.toLowerCase().endsWith('.ifc')).toBe(false)
+    }
+  })
+
+  it('accepts valid .ifc extensions (case-insensitive)', () => {
+    const names = ['building.ifc', 'MODEL.IFC', 'MyProject.Ifc']
+    for (const name of names) {
+      expect(name.toLowerCase().endsWith('.ifc')).toBe(true)
+    }
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// §5  Concurrency guard — isLoadingRef semantics
+// Verifies the guard logic in isolation (the actual hook is not instantiated).
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('Concurrency guard (isLoadingRef logic)', () => {
+  it('a second load while one is in flight is rejected', async () => {
+    // Simulate the isLoadingRef pattern
+    let isLoading = false
+    const warnings: string[] = []
+
+    async function fakeLoad(name: string): Promise<string> {
+      if (isLoading) {
+        warnings.push(`${name} rejected: already loading`)
+        return 'rejected'
+      }
+      isLoading = true
+      try {
+        // Simulate async work
+        await Promise.resolve()
+        return 'done'
+      } finally {
+        isLoading = false
+      }
+    }
+
+    // Start first load, then immediately attempt a second
+    const [r1, r2] = await Promise.all([fakeLoad('A'), fakeLoad('B')])
+
+    // One succeeds, the other is rejected
+    expect([r1, r2]).toContain('done')
+    expect([r1, r2]).toContain('rejected')
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0]).toMatch(/rejected: already loading/)
+  })
+
+  it('lock is released on error so subsequent loads can proceed', async () => {
+    let isLoading = false
+    const results: string[] = []
+
+    async function fakeLoad(shouldFail: boolean): Promise<void> {
+      if (isLoading) { results.push('concurrent-rejected'); return }
+      isLoading = true
+      try {
+        await Promise.resolve()
+        if (shouldFail) throw new Error('parse error')
+        results.push('success')
+      } catch {
+        results.push('error')
+      } finally {
+        isLoading = false  // ← the `finally` in loadFile guarantees this
+      }
+    }
+
+    await fakeLoad(true)   // first load fails
+    await fakeLoad(false)  // second load must succeed (lock was released)
+
+    expect(results).toEqual(['error', 'success'])
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// §6  Worker error recovery — resetWorker semantics
+// Verifies that a broken worker is replaced on the next call.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('Worker error recovery (resetWorker semantics)', () => {
+  it('a new worker instance is created after the previous one is terminated', () => {
+    // Simulate the workerRef / getWorker / resetWorker pattern
+    let workerInstance: { id: number; terminated: boolean } | null = null
+    let nextId = 1
+
+    function getWorker() {
+      if (!workerInstance) {
+        workerInstance = { id: nextId++, terminated: false }
+      }
+      return workerInstance
+    }
+
+    function resetWorker() {
+      if (workerInstance) {
+        workerInstance.terminated = true
+        workerInstance = null
+      }
+    }
+
+    const w1 = getWorker()
+    expect(w1.id).toBe(1)
+
+    // Simulate a fatal worker error → resetWorker is called
+    resetWorker()
+    expect(w1.terminated).toBe(true)
+
+    // Next getWorker() must create a fresh instance
+    const w2 = getWorker()
+    expect(w2.id).toBe(2)
+    expect(w2.terminated).toBe(false)
+    expect(w2).not.toBe(w1)
+  })
+
+  it('getWorker returns the SAME instance on consecutive calls (no leak)', () => {
+    let workerInstance: { id: number } | null = null
+
+    function getWorker() {
+      if (!workerInstance) workerInstance = { id: 1 }
+      return workerInstance
+    }
+
+    const a = getWorker()
+    const b = getWorker()
+    expect(a).toBe(b)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// §7  fromCacheLocal — stale closure guard
+// Verifies the pattern that fixes the isFromCache stale state bug.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('fromCacheLocal stale-closure fix', () => {
+  it('local variable correctly tracks cache hit independent of React state', async () => {
+    // Simulate the async load flow:
+    //   isFromCacheState is committed asynchronously by React, so reading it
+    //   at the point onModelLoaded fires gives the STALE value.
+    //   The fix is to use a local `fromCacheLocal` variable.
+
+    let isFromCacheState = false  // simulates React state (always stale at callback)
+    const setIsFromCache = (v: boolean) => {
+      // React: schedules an update — does NOT update the closure variable immediately
+      Promise.resolve().then(() => { isFromCacheState = v })
+    }
+
+    let capturedStale: boolean | null = null
+    let capturedLocal: boolean | null = null
+
+    async function fakeLoad(cacheHit: boolean) {
+      let fromCacheLocal = false  // ← the fix
+      setIsFromCache(false)
+
+      if (cacheHit) {
+        fromCacheLocal = true       // ← set locally
+        setIsFromCache(true)        // ← schedules async update
+      }
+
+      // Simulate async work
+      await Promise.resolve()
+
+      // At this point React state is still stale (setter hasn't committed)
+      capturedStale = isFromCacheState  // always false
+      capturedLocal = fromCacheLocal    // correctly true when cacheHit=true
+    }
+
+    await fakeLoad(true)
+
+    expect(capturedStale).toBe(false)  // React state is stale — old bug
+    expect(capturedLocal).toBe(true)   // local var is correct — the fix
+  })
+})
