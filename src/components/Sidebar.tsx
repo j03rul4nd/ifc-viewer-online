@@ -1041,16 +1041,26 @@ interface SidebarProps {
   onRevealInTree?: (expressId: number) => void
   /** ViewerAPI ref — used to fetch real IFC data for the selected element */
   viewerApiRef?: React.MutableRefObject<ViewerAPI | null>
+  /** Mobile-only: whether the drawer is open (ignored on md+ where it's always visible) */
+  mobileOpen?: boolean
+  /** Mobile-only: called when user taps close button or backdrop */
+  onMobileClose?: () => void
 }
 
 export default function Sidebar({
   categories, elementCount, selected, hidden, onToggleHidden,
   isolated, onSetIsolated, onFrame, onSelectElement, onFrameElement,
-  onRevealInTree, viewerApiRef,
+  onRevealInTree, viewerApiRef, mobileOpen = false, onMobileClose,
 }: SidebarProps) {
   const [tab, setTab] = useState<'props' | 'cats'>('props')
 
   useEffect(() => { if (selected) setTab('props') }, [selected])
+
+  // Close mobile drawer when user navigates to tree
+  const handleRevealInTree = useCallback((id: number) => {
+    onRevealInTree?.(id)
+    onMobileClose?.()
+  }, [onRevealInTree, onMobileClose])
 
   const handleFrame = useCallback((id: number) => {
     onFrameElement?.(id)
@@ -1063,18 +1073,50 @@ export default function Sidebar({
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 16 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.4, ease: 'easeOut', delay: 0.1 }}
-      className="absolute top-[68px] right-3 bottom-3 w-[340px] z-[9] bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-xl flex flex-col overflow-hidden"
+      // Only fade opacity — NO x/y transform from Framer Motion.
+      // The mobile drawer translate is handled entirely by CSS classes so that
+      // Framer's inline `transform` style doesn't override Tailwind's translate-x-*.
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      // Desktop (md+): absolute floating panel anchored top-right of viewer
+      // Mobile (<md): fixed full-height drawer from right edge
+      className={[
+        // Shared
+        'glass border border-[var(--border)] flex flex-col overflow-hidden',
+        // Desktop
+        'md:absolute md:top-[68px] md:right-3 md:bottom-3 md:w-[340px] md:rounded-xl md:z-[9]',
+        // Mobile: full-height drawer from the right edge
+        'max-md:fixed max-md:right-0 max-md:top-0 max-md:bottom-0 max-md:w-full max-md:max-w-[360px] max-md:z-[19] max-md:rounded-l-2xl',
+        // Mobile slide animation (CSS transition, not FM transform)
+        'max-md:transition-transform max-md:duration-300 max-md:ease-[cubic-bezier(0.32,0.72,0,1)]',
+        mobileOpen ? 'max-md:translate-x-0' : 'max-md:translate-x-full',
+      ].join(' ')}
+      style={{ WebkitBackfaceVisibility: 'hidden' }}
     >
+      {/* Mobile close bar */}
+      <div className="md:hidden flex items-center justify-between px-4 pt-safe h-12 border-b border-[var(--border)] shrink-0"
+        style={{ paddingTop: `max(16px, env(safe-area-inset-top))` }}
+      >
+        <span className="text-[13px] font-semibold text-[var(--text)]">Panel</span>
+        <button
+          onClick={onMobileClose}
+          className="w-9 h-9 flex items-center justify-center rounded-lg text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] transition-colors"
+          aria-label="Close panel"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <path d="M2 2l10 10M12 2L2 12" />
+          </svg>
+        </button>
+      </div>
+
       {/* Tabs */}
-      <div className="flex p-1.5 gap-0.5 border-b border-[var(--border)]">
+      <div className="flex p-1.5 gap-0.5 border-b border-[var(--border)] shrink-0">
         {([['props', 'Properties'], ['cats', 'Categories']] as const).map(([id, label]) => (
           <button
             key={id}
             onClick={() => setTab(id)}
-            className="flex-1 h-7 text-[12px] font-medium rounded-[6px] transition-colors"
+            className="flex-1 h-8 xs:h-7 text-[13px] xs:text-[12px] font-medium rounded-[6px] transition-colors"
             style={{
               background: tab === id ? 'var(--surface-2)' : 'transparent',
               color:      tab === id ? 'var(--text)' : 'var(--text-dim)',
@@ -1085,7 +1127,7 @@ export default function Sidebar({
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scroll-contain">
         <AnimatePresence mode="wait">
           {tab === 'props' && (
             <motion.div key="props" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -1095,7 +1137,7 @@ export default function Sidebar({
                 isolated={isolated}
                 viewerApiRef={viewerApiRef}
                 onFrame={handleFrame}
-                onRevealInTree={onRevealInTree}
+                onRevealInTree={handleRevealInTree}
                 onIsolate={handleIsolate}
               />
             </motion.div>
@@ -1117,6 +1159,11 @@ export default function Sidebar({
           )}
         </AnimatePresence>
       </div>
+
+      {/* Mobile: safe-area bottom spacer */}
+      <div className="md:hidden shrink-0"
+        style={{ height: 'env(safe-area-inset-bottom, 0px)' }}
+      />
     </motion.div>
   )
 }

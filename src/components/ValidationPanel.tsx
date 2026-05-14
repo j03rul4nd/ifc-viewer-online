@@ -139,12 +139,12 @@ function IssueRow({
           <PathBreadcrumb path={issue.path} />
         </div>
 
-        {/* Actions (visible on hover) */}
-        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Actions: visible on hover (desktop) or always visible on touch */}
+        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-opacity">
           {isNameEditable && (
             <button
               onClick={() => editing ? setEditing(false) : startEdit()}
-              className="px-2 h-6 rounded text-[10px] font-medium border transition-colors"
+              className="px-2 h-7 xs:h-6 rounded text-[10px] font-medium border transition-colors"
               style={
                 editing
                   ? { background: 'var(--surface-2)', color: 'var(--text-dim)', borderColor: 'var(--border)' }
@@ -157,14 +157,14 @@ function IssueRow({
           {issue.autoFixable && !isNameEditable && (
             <button
               onClick={() => onAutoFix(issue)}
-              className="px-2 h-6 rounded text-[10px] bg-[var(--ok)]18 text-[var(--ok)] border border-[var(--ok)]33 hover:brightness-125 font-medium"
+              className="px-2 h-7 xs:h-6 rounded text-[10px] bg-[var(--ok)]18 text-[var(--ok)] border border-[var(--ok)]33 hover:brightness-125 active:brightness-90 font-medium"
             >
               Auto-fix
             </button>
           )}
           <button
             onClick={() => onJumpTo(issue)}
-            className="px-2 h-6 rounded text-[10px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] font-medium"
+            className="px-2 h-7 xs:h-6 rounded text-[10px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] active:bg-[var(--border)] font-medium"
           >
             Jump
           </button>
@@ -350,7 +350,7 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
     return (
       <button
         onClick={toggleValidationPanel}
-        className="flex items-center gap-2 px-3 h-9 border-t border-[var(--border)] bg-[var(--surface)] w-full text-left hover:bg-[var(--surface-2)] transition-colors shrink-0"
+        className="flex items-center gap-2 px-3 h-10 xs:h-9 border-t border-[var(--border)] bg-[var(--surface)] w-full text-left hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] transition-colors shrink-0"
       >
         <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider">
           Validation
@@ -383,8 +383,12 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
   }
 
   return (
-    <div className="flex flex-col border-t border-[var(--border)] bg-[var(--surface)] shrink-0"
-      style={{ height: 300 }}
+    <div
+      className="flex flex-col border-t border-[var(--border)] bg-[var(--surface)] shrink-0"
+      style={{
+        // Responsive height: 40vh on mobile (≤ 640px), 300px on desktop
+        height: 'clamp(200px, 40vh, 300px)',
+      }}
     >
       {/* Panel header */}
       <div className="flex items-center gap-2 px-3 h-10 border-b border-[var(--border)] shrink-0">

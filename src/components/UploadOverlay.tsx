@@ -1,136 +1,371 @@
-// ─── UploadOverlay ────────────────────────────────────────────────────────────
-// Full-screen modal for loading IFC files.
+// ─── src/components/UploadOverlay.tsx ────────────────────────────────────────
+// Pure presentation — zero business logic.
+// All state and behaviour lives in useIfcUploadFlow.
 //
-// State machine (based on `isLoading`, `loadProgress`, `loadError`):
-//
-//   DROP ZONE  ←──────────────────────────────────────────────────────┐
-//      │ user drops / picks file                                       │
-//      ▼                                                               │ error
-//   PROGRESS (isLoading = true)                                        │
-//      │ onModelLoaded fires → isLoading = false, progress = 100      │
-//      ▼                                                               │
-//   DONE (400 ms auto-close by parent)                                 │
-//      │ load error → progress reset to 0, loadError set              │
-//      └──────────────────────────────────────────────────────────────┘
-//
-// Fix vs. previous version:
-//   • The "done" gate (loadProgress ≥ 100) was sticky — reopening the modal
-//     after a successful load showed "Model ready" instead of the drop zone.
-//     Now "done" is derived from a local `wasLoading` flag that resets on
-//     component mount (the component is unmounted/remounted by AnimatePresence
-//     each time showUpload toggles), so re-opening always starts fresh.
-//   • Non-.ifc files now show an inline error message instead of being silently
-//     ignored.
-//   • A `loadError` prop surfaces server/worker errors directly inside the modal
-//     so the user knows what went wrong and can retry.
+// Sub-views:
+//   IdleView       — drop zone (idle + dragging)
+//   ActiveView     — progress bar (validating / queued / parsing / building-scene)
+//   SuccessView    — model ready + "Open viewer" CTA
+//   ErrorView      — typed error + optional retry
+//   CancelledView  — cancelled + retry
 
-import React, { useEffect, useRef, useState } from 'react'
+import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import * as Icons from './Icons'
+import { useIfcUploadFlow }       from '../hooks/useIfcUploadFlow'
+import type { UploadOverlayProps, UploadState } from '../types/upload.types'
+import { STAGE_THRESHOLDS, progressToStage }    from '../lib/upload.constants'
+import { formatFileSize, formatDuration }        from '../lib/upload.utils'
 
-// ── Props ─────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Sub-views
+// ─────────────────────────────────────────────────────────────────────────────
 
-interface UploadOverlayProps {
-  onClose:      () => void
-  onLoad:       (file: File) => void
-  isLoading:    boolean
-  loadProgress: number
-  /** Error message from the loader (parse / viewer failure). */
-  loadError?:   string | null
+// ── Idle ──────────────────────────────────────────────────────────────────────
+
+function IdleView({
+  isDragging,
+  onClose,
+  openFilePicker,
+  dragHandlers,
+}: {
+  isDragging:     boolean
+  onClose:        () => void
+  openFilePicker: () => void
+  dragHandlers:   ReturnType<typeof useIfcUploadFlow>['dragHandlers']
+}) {
+  return (
+    <motion.div
+      key="idle"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.18 }}
+      className="p-8"
+    >
+      {/* Header */}
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h2 className="text-[17px] font-semibold tracking-tight">Open an IFC file</h2>
+          <p className="text-[12.5px] text-[var(--text-dim)] mt-1">
+            Processed locally — nothing leaves your browser.
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          className="text-[var(--text-dim)] hover:text-[var(--text)] p-1 transition-colors"
+          aria-label="Close"
+        >
+          <Icons.X size={18} />
+        </button>
+      </div>
+
+      {/* Drop zone */}
+      <div
+        {...dragHandlers}
+        onClick={openFilePicker}
+        role="button"
+        tabIndex={0}
+        onKeyDown={e => e.key === 'Enter' && openFilePicker()}
+        aria-label="Drop IFC file or click to browse"
+        className="relative py-14 px-5 rounded-xl text-center cursor-pointer transition-all overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+        style={{
+          border:     `2px dashed ${isDragging ? 'var(--accent)' : 'var(--border-strong)'}`,
+          background: isDragging ? 'rgba(94,106,210,0.06)' : 'var(--surface-2)',
+        }}
+      >
+        {isDragging && (
+          <div className="absolute inset-0 shimmer pointer-events-none" />
+        )}
+        <div
+          className="w-14 h-14 mx-auto mb-3.5 rounded-xl bg-[var(--bg)] border border-[var(--border-strong)] flex items-center justify-center transition-colors"
+          style={{ color: isDragging ? 'var(--accent-2)' : 'var(--text-dim)' }}
+        >
+          <Icons.Upload size={22} />
+        </div>
+        <p className="text-[14px] font-medium mb-1">
+          {isDragging ? 'Release to open' : 'Drop your .ifc file here'}
+        </p>
+        <p className="text-[12px] text-[var(--text-dim)]">
+          or{' '}
+          <span className="text-[var(--accent-2)] underline underline-offset-2">
+            click to browse
+          </span>
+          {' · '}IFC2x3 / IFC4 / IFC4x3
+        </p>
+      </div>
+
+      {/* Footer */}
+      <div className="mt-4 flex gap-2.5 text-[11px] text-[var(--text-faint)] justify-center flex-wrap">
+        <span>🔒 WebAssembly — runs in-browser</span>
+        <span>·</span>
+        <span>No login required</span>
+        <span>·</span>
+        <span>Up to 2 GB</span>
+      </div>
+    </motion.div>
+  )
 }
 
-// ── Stage labels ──────────────────────────────────────────────────────────────
+// ── Active (validating / queued / parsing / building-scene) ───────────────────
 
-const stageLabel = (pct: number): string =>
-  pct < 20 ? 'Initialising WebAssembly' :
-  pct < 35 ? 'Reading file'             :
-  pct < 60 ? 'Parsing geometry'         :
-  pct < 90 ? 'Building scene'           : 'Finalising'
+function ActiveView({
+  state,
+  onCancel,
+  canCancel,
+}: {
+  state:     Extract<UploadState, { id: 'validating' | 'queued' | 'parsing' | 'building-scene' }>
+  onCancel:  () => void
+  canCancel: boolean
+}) {
+  const progress   = 'progress' in state ? state.progress : 0
+  const stage      = progressToStage(progress)
+  const stageInfo  = STAGE_THRESHOLDS[stage]
+  const isPre      = state.id === 'validating' || state.id === 'queued'
 
-// ── Component ─────────────────────────────────────────────────────────────────
+  const heading =
+    state.id === 'validating'     ? 'Validating file…'      :
+    state.id === 'queued'         ? 'Preparing loader…'     :
+    state.id === 'building-scene' ? 'Building 3D scene…'    :
+    'Loading IFC model…'
 
-export default function UploadOverlay({
+  return (
+    <motion.div
+      key="active"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.18 }}
+      className="p-9"
+    >
+      {/* File chip */}
+      {'file' in state && state.file && (
+        <div className="flex items-center gap-2 mb-5 px-3.5 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)]">
+          <Icons.FileIfc size={13} className="text-[var(--text-dim)] flex-none" />
+          <span className="text-[12px] text-[var(--text-dim)] truncate flex-1 font-mono">
+            {state.file.name}
+          </span>
+          <span className="text-[11px] text-[var(--text-faint)] flex-none">
+            {formatFileSize(state.file.size)}
+          </span>
+        </div>
+      )}
+
+      <p className="text-[15px] font-semibold mb-1">{heading}</p>
+      <p className="text-[12px] text-[var(--text-dim)] mb-5">
+        {isPre ? 'Checking IFC schema and file integrity' : stageInfo.label}
+      </p>
+
+      {/* Progress bar */}
+      <div
+        className="h-1.5 bg-[var(--surface-2)] rounded-full overflow-hidden mb-3"
+        role="progressbar"
+        aria-valuenow={Math.round(progress)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <motion.div
+          className="h-full rounded-full bg-[var(--accent)]"
+          initial={{ width: 0 }}
+          animate={{ width: isPre ? '8%' : `${progress}%` }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+        />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-[11px] text-[var(--text-faint)]">
+          {isPre ? 'Initialising…' : `${Math.round(progress)}% · ${stageInfo.label}`}
+        </span>
+        {canCancel && (
+          <button
+            onClick={onCancel}
+            className="text-[11.5px] text-[var(--text-dim)] hover:text-red-400 transition-colors"
+          >
+            Cancel
+          </button>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
+// ── Success ───────────────────────────────────────────────────────────────────
+
+function SuccessView({
+  state,
   onClose,
-  onLoad,
-  isLoading,
-  loadProgress,
-  loadError,
-}: UploadOverlayProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [dragOver,   setDragOver]   = useState(false)
-  const [localError, setLocalError] = useState<string | null>(null)
+}: {
+  state:   Extract<UploadState, { id: 'success' }>
+  onClose: () => void
+}) {
+  return (
+    <motion.div
+      key="success"
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.97 }}
+      transition={{ duration: 0.2 }}
+      className="p-9 text-center"
+    >
+      <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+        <Icons.Check size={22} className="text-emerald-400" />
+      </div>
+      <h2 className="text-[16px] font-semibold mb-1">Model ready</h2>
+      <p className="text-[12.5px] text-[var(--text-dim)] mb-1 font-mono truncate max-w-[320px] mx-auto">
+        {state.file.name}
+      </p>
+      <p className="text-[12px] text-[var(--text-faint)] mb-6">
+        {formatFileSize(state.file.size)} · loaded in {formatDuration(state.durationMs)}
+      </p>
+      <button
+        onClick={onClose}
+        className="px-5 py-2.5 rounded-lg bg-[var(--accent)] text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
+      >
+        Open viewer →
+      </button>
+    </motion.div>
+  )
+}
 
-  // ── "done" gate: local wasLoading flag ────────────────────────────────────
-  // Component remounts each time the overlay opens (AnimatePresence unmounts it
-  // when showUpload=false), so wasLoading always starts as false — ensuring the
-  // drop zone is shown on re-open, not the stale "Model ready" screen.
-  const [wasLoading, setWasLoading] = useState(false)
-  useEffect(() => {
-    if (isLoading) setWasLoading(true)
-  }, [isLoading])
+// ── Error ─────────────────────────────────────────────────────────────────────
 
-  const done         = wasLoading && !isLoading && loadProgress >= 100
-  const showProgress = isLoading || done
+function ErrorView({
+  state,
+  onRetry,
+  onClose,
+}: {
+  state:   Extract<UploadState, { id: 'error' }>
+  onRetry: () => void
+  onClose: () => void
+}) {
+  const { error } = state
+  return (
+    <motion.div
+      key="error"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.18 }}
+      className="p-9"
+    >
+      <div className="flex justify-between items-start mb-5">
+        <div className="w-11 h-11 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-none">
+          <Icons.ErrorIcon size={20} className="text-red-400" />
+        </div>
+        <button
+          onClick={onClose}
+          className="text-[var(--text-dim)] hover:text-[var(--text)] p-1 transition-colors"
+          aria-label="Close"
+        >
+          <Icons.X size={18} />
+        </button>
+      </div>
 
-  // ── Error display & dismiss ────────────────────────────────────────────────
-  // `loadError` comes from the parent (worker/scene errors); `localError` is
-  // set locally for client-side issues (wrong file type).
-  // A local `errorDismissed` flag lets the user close the banner for EITHER
-  // source without requiring a prop callback back to the parent.
-  // The flag resets whenever a new loadError prop value arrives so a fresh
-  // error from a new load attempt is always shown.
-  const [errorDismissed, setErrorDismissed] = useState(false)
-  const prevLoadErrorRef = useRef(loadError)
-  useEffect(() => {
-    if (loadError !== prevLoadErrorRef.current) {
-      prevLoadErrorRef.current = loadError
-      setErrorDismissed(false)   // new error → show it
-    }
-  }, [loadError])
+      <h2 className="text-[15px] font-semibold mb-1.5">Failed to load model</h2>
+      <p className="text-[13px] text-[var(--text-dim)] mb-2">{error.message}</p>
 
-  const displayError = errorDismissed ? null : (loadError ?? localError)
+      {error.technical && (
+        <details className="mb-5">
+          <summary className="text-[11px] text-[var(--text-faint)] cursor-pointer hover:text-[var(--text-dim)] select-none">
+            Technical details
+          </summary>
+          <pre className="mt-2 p-2.5 rounded-lg bg-[var(--surface-2)] text-[10.5px] text-[var(--text-faint)] font-mono overflow-auto max-h-24 whitespace-pre-wrap">
+            {error.technical}
+          </pre>
+        </details>
+      )}
 
-  const dismissError = (): void => {
-    setLocalError(null)
-    setErrorDismissed(true)
-  }
+      <div className="flex gap-2.5 mt-5">
+        {error.retryable && (
+          <button
+            onClick={onRetry}
+            className="flex-1 py-2 rounded-lg bg-[var(--accent)] text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
+          >
+            Try again
+          </button>
+        )}
+        <button
+          onClick={onClose}
+          className="flex-1 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[13px] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
+        >
+          Close
+        </button>
+      </div>
+    </motion.div>
+  )
+}
 
-  // ── File handling ──────────────────────────────────────────────────────────
+// ── Cancelled ─────────────────────────────────────────────────────────────────
 
-  const handleFile = (file: File): void => {
-    if (!file.name.toLowerCase().endsWith('.ifc')) {
-      setLocalError(`"${file.name}" is not an IFC file. Please select a .ifc file.`)
-      return
-    }
-    setLocalError(null)
-    onLoad(file)
-  }
+function CancelledView({ onRetry, onClose }: { onRetry: () => void; onClose: () => void }) {
+  return (
+    <motion.div
+      key="cancelled"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.18 }}
+      className="p-9 text-center"
+    >
+      <p className="text-[14px] text-[var(--text-dim)] mb-5">Load cancelled.</p>
+      <div className="flex gap-2.5 justify-center">
+        <button
+          onClick={onRetry}
+          className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
+        >
+          Load another file
+        </button>
+        <button
+          onClick={onClose}
+          className="px-4 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[13px] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
+        >
+          Close
+        </button>
+      </div>
+    </motion.div>
+  )
+}
 
-  const onFileInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    const file = e.target.files?.[0]
-    if (file) handleFile(file)
-    // Reset so the same file can be re-selected after an error
-    e.target.value = ''
-  }
+// ─────────────────────────────────────────────────────────────────────────────
+// Main component
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const onDrop = (e: React.DragEvent): void => {
-    e.preventDefault()
-    setDragOver(false)
-    const file = e.dataTransfer.files[0]
-    if (file) handleFile(file)
-  }
+export default function UploadOverlay(props: UploadOverlayProps) {
+  const {
+    state,
+    fileInputRef,
+    canClose,
+    canCancel,
+    isActive,
+    dragHandlers,
+    handleClose,
+    handleCancel,
+    handleRetry,
+    onFileInputChange,
+    openFilePicker,
+  } = useIfcUploadFlow(props)
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  const isDragging = state.id === 'dragging'
+
+  const isActiveState =
+    state.id === 'validating'     ||
+    state.id === 'queued'         ||
+    state.id === 'parsing'        ||
+    state.id === 'building-scene'
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
       className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-xl flex items-center justify-center p-5"
-      onClick={!isLoading ? onClose : undefined}
+      onClick={canClose ? handleClose : undefined}
+      aria-modal="true"
+      role="dialog"
+      aria-label="Open IFC file"
     >
-      {/* Hidden real file input */}
+      {/* Native file input — hidden */}
       <input
         ref={fileInputRef}
         type="file"
@@ -139,122 +374,62 @@ export default function UploadOverlay({
         onChange={onFileInputChange}
       />
 
+      {/* Card */}
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="w-[560px] bg-[var(--surface)] border border-[var(--border-strong)] rounded-2xl overflow-hidden shadow-[0_40px_80px_-20px_rgba(0,0,0,0.7)]"
+        className="w-[560px] max-w-full bg-[var(--surface)] border border-[var(--border-strong)] rounded-2xl overflow-hidden shadow-[0_40px_80px_-20px_rgba(0,0,0,0.7)]"
         onClick={e => e.stopPropagation()}
       >
+        {/* Top loading indicator while active */}
+        {isActive && (
+          <div className="h-0.5 bg-[var(--surface-2)] overflow-hidden">
+            <motion.div
+              className="h-full bg-[var(--accent)]"
+              animate={{ x: ['-100%', '200%'] }}
+              transition={{ duration: 1.4, ease: 'easeInOut', repeat: Infinity }}
+              style={{ width: '40%' }}
+            />
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
 
-          {/* ── PROGRESS / DONE ── */}
-          {showProgress && (
-            <motion.div
-              key="progress"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="p-9"
-            >
-              <div className="text-[15px] font-semibold mb-1">
-                {done ? 'Model ready' : 'Loading IFC…'}
-              </div>
-              <div className="text-[12px] text-[var(--text-dim)] mb-5">
-                {done
-                  ? 'Opening viewer'
-                  : 'Parsing STEP entities via web-ifc WebAssembly'}
-              </div>
-              <div className="h-1.5 bg-[var(--surface-2)] rounded-full overflow-hidden mb-4">
-                <motion.div
-                  className="h-full rounded-full bg-[var(--accent)]"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${loadProgress}%` }}
-                  transition={{ duration: 0.4, ease: 'easeOut' }}
-                />
-              </div>
-              <div className="font-mono text-[11px] text-[var(--text-faint)]">
-                {Math.round(loadProgress)}% · {stageLabel(loadProgress)}
-              </div>
-            </motion.div>
+          {/* IDLE / DRAGGING */}
+          {(state.id === 'idle' || state.id === 'dragging') && (
+            <IdleView
+              key="idle"
+              isDragging={isDragging}
+              onClose={handleClose}
+              openFilePicker={openFilePicker}
+              dragHandlers={dragHandlers}
+            />
           )}
 
-          {/* ── DROP ZONE (idle or error) ── */}
-          {!showProgress && (
-            <motion.div
-              key="drop"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="p-8"
-            >
-              <div className="flex justify-between items-start mb-5">
-                <div>
-                  <div className="text-[17px] font-semibold tracking-tight">Open an IFC file</div>
-                  <div className="text-[12.5px] text-[var(--text-dim)] mt-1">
-                    Processed locally — nothing is uploaded to any server.
-                  </div>
-                </div>
-                <button onClick={onClose} className="text-[var(--text-dim)] p-1 hover:text-[var(--text)]">
-                  <Icons.X size={18} />
-                </button>
-              </div>
+          {/* ACTIVE */}
+          {isActiveState && (
+            <ActiveView
+              key="active"
+              state={state as Extract<UploadState, { id: 'validating' | 'queued' | 'parsing' | 'building-scene' }>}
+              onCancel={handleCancel}
+              canCancel={canCancel}
+            />
+          )}
 
-              {/* ── Error banner ── */}
-              <AnimatePresence>
-                {displayError && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                    animate={{ opacity: 1, height: 'auto', marginBottom: 12 }}
-                    exit={{   opacity: 0, height: 0, marginBottom: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300">
-                      <Icons.X size={13} className="mt-0.5 flex-none opacity-80" />
-                      <p className="text-[12px] leading-snug flex-1">{displayError}</p>
-                      <button
-                        onClick={dismissError}
-                        className="flex-none opacity-50 hover:opacity-100 transition-opacity"
-                        aria-label="Dismiss error"
-                      >
-                        <Icons.X size={11} />
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+          {/* SUCCESS */}
+          {state.id === 'success' && (
+            <SuccessView key="success" state={state} onClose={handleClose} />
+          )}
 
-              {/* ── Drop zone ── */}
-              <div
-                onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={onDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className="relative py-14 px-5 rounded-xl text-center cursor-pointer transition-all overflow-hidden"
-                style={{
-                  border:     `2px dashed ${dragOver ? 'var(--accent)' : 'var(--border-strong)'}`,
-                  background: dragOver ? 'rgba(94,106,210,0.05)' : 'var(--surface-2)',
-                }}
-              >
-                {dragOver && <div className="absolute inset-0 shimmer pointer-events-none" />}
-                <div
-                  className="w-14 h-14 mx-auto mb-3.5 rounded-xl bg-[var(--bg)] border border-[var(--border-strong)] flex items-center justify-center transition-colors"
-                  style={{ color: dragOver ? 'var(--accent-2)' : 'var(--text-dim)' }}
-                >
-                  <Icons.Upload size={22} />
-                </div>
-                <div className="text-[14px] font-medium mb-1">
-                  {dragOver ? 'Drop to open' : 'Drop your .ifc file here'}
-                </div>
-                <div className="text-[12px] text-[var(--text-dim)]">
-                  or <span className="text-[var(--accent-2)] underline">click to browse</span>
-                  {' · '}IFC2x3 / IFC4 / IFC4x3
-                </div>
-              </div>
+          {/* ERROR */}
+          {state.id === 'error' && (
+            <ErrorView key="error" state={state} onRetry={handleRetry} onClose={handleClose} />
+          )}
 
-              <div className="mt-3.5 flex gap-2.5 text-[11.5px] text-[var(--text-faint)] justify-center">
-                <span>🔒 Runs in-browser via WebAssembly</span>
-                <span>·</span><span>No login</span>
-                <span>·</span><span>Free</span>
-              </div>
-            </motion.div>
+          {/* CANCELLED */}
+          {state.id === 'cancelled' && (
+            <CancelledView key="cancelled" onRetry={handleRetry} onClose={handleClose} />
           )}
 
         </AnimatePresence>

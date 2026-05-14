@@ -69,7 +69,7 @@ function validateBufferForWorker(buffer: ArrayBuffer | null): string | null {
 export async function runValidation(rules?: RulesConfig): Promise<void> {
   const { ifcBuffer, opfsCacheKey } = useModelStore.getState()
   const {
-    setRunning, setProgress, addPartialIssues,
+    setValidationStatus, setProgress, addPartialIssues,
     setSpatialTree, setResult, cacheResult, rules: storedRules,
   } = useValidationStore.getState()
 
@@ -107,7 +107,7 @@ export async function runValidation(rules?: RulesConfig): Promise<void> {
     const msg = `Failed to create validator worker: ${err instanceof Error ? err.message : String(err)}`
     console.error('[Validator]', msg)
     toast(msg, 'error')
-    setRunning(false)
+    setValidationStatus('error', msg)
     throw new Error(msg)
   }
 
@@ -143,7 +143,7 @@ export async function runValidation(rules?: RulesConfig): Promise<void> {
         case 'error':
           console.error('[Validator] Worker reported error:', msg.message)
           toast(`Validation error: ${msg.message}`, 'warning')
-          setRunning(false)
+          setValidationStatus('error', msg.message)
           cleanup()
           reject(new Error(msg.message))
           break
@@ -152,12 +152,10 @@ export async function runValidation(rules?: RulesConfig): Promise<void> {
 
     const errorHandler = (e: ErrorEvent): void => {
       console.error('[Validator] Worker script error:', e.message, e)
-      // The worker encountered a fatal error (WASM SIGABRT, OOM, etc.).
-      // Clear the singleton so the next call creates a fresh instance.
       disposeValidatorWorker()
       const msg = `Validator worker crashed: ${e.message}. Validation is temporarily unavailable.`
       toast(msg, 'error')
-      setRunning(false)
+      setValidationStatus('error', msg)
       cleanup()
       reject(new Error(msg))
     }

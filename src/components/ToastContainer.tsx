@@ -1,6 +1,7 @@
 // ─── Toast notification container ─────────────────────────────────────────────
-// Renders ephemeral notification toasts in the bottom-right corner.
-// Toasts auto-dismiss; click dismisses immediately.
+// Renders ephemeral notification toasts.
+// Desktop: bottom-right corner, fixed 340px wide.
+// Mobile:  bottom-center, full-width with horizontal padding.
 
 import React from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -26,7 +27,18 @@ export default function ToastContainer() {
   const { toasts, removeToast } = useToastStore()
 
   return (
-    <div className="fixed bottom-5 right-5 z-[300] flex flex-col gap-2.5 w-[340px] pointer-events-none">
+    // Desktop: bottom-right, fixed width.
+    // Mobile: bottom-center, full-width minus safe horizontal insets.
+    <div
+      className="fixed z-[300] flex flex-col gap-2.5 pointer-events-none
+                 bottom-5 right-5 w-[340px]
+                 xs:bottom-5 xs:right-5 xs:w-[340px]
+                 max-xs:bottom-0 max-xs:right-0 max-xs:left-0 max-xs:w-auto max-xs:px-3"
+      style={{
+        // On very small screens, respect safe area at bottom
+        paddingBottom: 'max(0px, env(safe-area-inset-bottom))',
+      }}
+    >
       <AnimatePresence initial={false}>
         {toasts.map((t) => {
           const s = SEVERITY_STYLE[t.severity]
@@ -39,7 +51,8 @@ export default function ToastContainer() {
               exit={{   opacity: 0, y: 8,   scale: 0.96 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
               onClick={() => removeToast(t.id)}
-              className={`relative overflow-hidden rounded-xl border backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.45)] cursor-pointer pointer-events-auto ${s.bg}`}
+              className={`relative overflow-hidden rounded-xl border -webkit-backdrop-filter backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.45)] cursor-pointer pointer-events-auto ${s.bg}`}
+              style={{ WebkitBackdropFilter: 'blur(20px)' }}
             >
               {/* Severity accent bar */}
               <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${s.bar}`} />

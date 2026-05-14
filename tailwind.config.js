@@ -2,6 +2,14 @@
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
+    screens: {
+      xs:  '480px',   // compact phones (landscape or small)
+      sm:  '640px',   // large phones / small tablets
+      md:  '768px',   // tablets / small laptops
+      lg:  '1024px',  // laptops
+      xl:  '1280px',  // desktops
+      '2xl': '1536px',
+    },
     extend: {
       colors: {
         accent: 'var(--accent)',

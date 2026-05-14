@@ -2,6 +2,9 @@ export type Route = 'landing' | 'viewer'
 export type ViewerStyle = 'shaded' | 'blueprint' | 'xray'
 export type LoadPhase = 'reading' | 'parsing' | 'uploading' | 'done'
 
+/** Lifecycle of a single validation run */
+export type ValidationStatus = 'idle' | 'running' | 'complete' | 'error' | 'cancelled'
+
 export interface Category {
   id: string      // Uppercase IFC type, e.g. "IFCWALL"
   label: string   // Human-readable, e.g. "Walls"

@@ -38,21 +38,23 @@ export default function App() {
   const modelTreeRef = useRef<ModelTreeHandle>(null)
 
   // Model & loading state
-  const [modelInfo,     setModelInfo]     = useState<ModelInfo | null>(null)
-  const [loadingState,  setLoadingState]  = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
-  /** Last error message from the loader — displayed inside the upload modal. */
-  const [loadError,     setLoadError]     = useState<string | null>(null)
+  const [modelInfo,    setModelInfo]    = useState<ModelInfo | null>(null)
+  const [loadingState, setLoadingState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
+  const [loadError,    setLoadError]    = useState<string | null>(null)
 
   // Viewer interaction state
   const [viewerStyle] = useState<ViewerStyle>('shaded')
-  const [selected,  setSelected]  = useState<SelectedInfo | null>(null)
-  const [hidden,    setHidden]    = useState<Set<string>>(new Set())
-  const [isolated,  setIsolated]  = useState<string | null>(null)
+  const [selected,   setSelected]   = useState<SelectedInfo | null>(null)
+  const [hidden,     setHidden]     = useState<Set<string>>(new Set())
+  const [isolated,   setIsolated]   = useState<string | null>(null)
   const [showUpload, setShowUpload] = useState(false)
 
   // Stores
   const { validationMode, result } = useValidationStore()
-  const { treeVisible, treeWidth, hiddenElements, clearHiddenElements } = useUIStore()
+  const {
+    treeVisible, treeWidth, hiddenElements, clearHiddenElements,
+    mobileSidebarOpen, setMobileSidebarOpen,
+  } = useUIStore()
 
   // Undo/redo keyboard shortcuts
   useEditorHistory()
@@ -61,7 +63,6 @@ export default function App() {
 
   const {
     loadFile,
-    resetProgress,
     progress,
     cacheEntries,
     deleteFromCache,
@@ -82,11 +83,8 @@ export default function App() {
         (fromCache ? ' (from cache ⚡)' : ''),
         'success',
       )
-      // Auto-close modal after a short "Model ready" display
-      setTimeout(() => setShowUpload(false), 400)
-      // Kick off validation asynchronously — errors are non-blocking.
-      // validator.ts already shows a toast for validation errors, so we only
-      // log here to avoid showing a duplicate notification.
+      // No auto-close here — UploadOverlay closes itself via SuccessView
+      // when the user clicks "Open viewer →", triggered by loadDone prop.
       runValidation().catch((err: unknown) => {
         console.error('[App] Validation failed:', err)
       })
@@ -95,8 +93,6 @@ export default function App() {
       console.error('[IFC] Load error:', msg)
       setLoadingState('error')
       setLoadError(msg)
-      // toast() is already called inside loader.ts for every error path,
-      // so we don't duplicate here.
     },
   })
 
@@ -106,6 +102,14 @@ export default function App() {
     const issues = result?.issues ?? []
     viewerApiRef.current?.setValidationHighlights(issues, validationMode)
   }, [validationMode, result])
+
+  // ── Auto-open mobile sidebar when an element is selected ──────────────────
+  // On desktop (md+) the sidebar is always visible, so no action needed there.
+  useEffect(() => {
+    if (selected && window.innerWidth < 768) {
+      setMobileSidebarOpen(true)
+    }
+  }, [selected, setMobileSidebarOpen])
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -121,14 +125,10 @@ export default function App() {
     void loadFile(file)
   }
 
-  /** Open the upload modal — always reset progress so we never show a stale
-   *  "Model ready" screen from a previous successful load. */
   const openUploadModal = useCallback((): void => {
-    if (loadingState === 'loading') return   // guard: don't interrupt active load
-    resetProgress()
-    setLoadError(null)
+    if (loadingState === 'loading') return
     setShowUpload(true)
-  }, [loadingState, resetProgress])
+  }, [loadingState])
 
   const handleLaunch = (): void => {
     setRoute('viewer')
@@ -232,8 +232,8 @@ export default function App() {
 
               {treeVisible && modelInfo && (
                 <div
-                  className="flex-none bg-[var(--surface)] flex flex-col overflow-hidden border-r border-[var(--border)]"
-                  style={{ width: treeWidth, maxWidth: '38vw', minWidth: 180 }}
+                  className="hidden md:flex flex-none bg-[var(--surface)] flex-col overflow-hidden border-r border-[var(--border)]"
+                  style={{ width: treeWidth, maxWidth: '38vw', minWidth: 220 }}
                 >
                   <ModelTree
                     ref={modelTreeRef}
@@ -260,6 +260,13 @@ export default function App() {
                     viewerStyle={viewerStyle}
                   />
 
+                  {mobileSidebarOpen && (
+                    <div
+                      className="md:hidden drawer-backdrop"
+                      onClick={() => setMobileSidebarOpen(false)}
+                    />
+                  )}
+
                   <Sidebar
                     categories={modelInfo?.categories ?? []}
                     elementCount={modelInfo?.elementCount ?? 0}
@@ -273,15 +280,45 @@ export default function App() {
                     onFrameElement={handleFrameElement}
                     onRevealInTree={handleRevealInTree}
                     viewerApiRef={viewerApiRef}
+                    mobileOpen={mobileSidebarOpen}
+                    onMobileClose={() => setMobileSidebarOpen(false)}
                   />
 
                   <button
                     onClick={() => setRoute('landing')}
-                    className="absolute top-3 right-[364px] z-[9] h-[30px] px-3 bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
+                    className="absolute top-3 left-3 md:left-auto md:right-[364px] z-[9] h-[30px] min-w-[30px] px-3 bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
                   >
                     <Icons.Chevron size={12} className="rotate-180" />
-                    Home
+                    <span className="hidden xs:inline">Home</span>
                   </button>
+
+                  {/* Mobile FAB: toggle sidebar (only on < md) */}
+                  {modelInfo && (
+                    <button
+                      onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+                      className="md:hidden absolute right-4 z-[10] w-12 h-12 rounded-full bg-[var(--accent)] shadow-[0_4px_20px_rgba(94,106,210,0.4)] flex items-center justify-center text-white"
+                      style={{ bottom: `max(16px, env(safe-area-inset-bottom))` }}
+                      aria-label="Toggle properties panel"
+                    >
+                      {mobileSidebarOpen ? (
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                          <path d="M3 3l10 10M13 3L3 13" />
+                        </svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                          <circle cx="8" cy="8" r="2" fill="currentColor" />
+                          <path d="M2 8h2M12 8h2M8 2v2M8 12v2" strokeWidth="1.4" />
+                        </svg>
+                      )}
+                      {/* Pulsing badge: element selected but panel is closed */}
+                      {selected && !mobileSidebarOpen && (
+                        <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-white border-2 border-[var(--accent)]">
+                          <span className="absolute inset-0.5 rounded-full bg-[var(--accent)] animate-ping opacity-75" />
+                          <span className="absolute inset-0.5 rounded-full bg-[var(--accent)]" />
+                        </span>
+                      )}
+                    </button>
+                  )}
                 </div>
 
                 <ValidationPanel onJumpToElement={handleJumpToElement} />
@@ -295,11 +332,12 @@ export default function App() {
       <AnimatePresence>
         {showUpload && (
           <UploadOverlay
-            onClose={() => { if (loadingState !== 'loading') setShowUpload(false) }}
+            onClose={() => setShowUpload(false)}
             onLoad={handleFileLoad}
             isLoading={loadingState === 'loading'}
             loadProgress={progress.percent}
             loadError={loadError}
+            loadDone={loadingState === 'loaded'}
           />
         )}
       </AnimatePresence>

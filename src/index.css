@@ -24,6 +24,12 @@
   padding: 0;
 }
 
+html {
+  /* Prevent iOS text size adjustment on orientation change */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 html, body {
   height: 100%;
 }
@@ -36,20 +42,86 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow: hidden;
+  /* Prevent elastic/bounce scroll on iOS at root level */
+  overscroll-behavior: none;
+  /* Remove blue tap flash on iOS/Android */
+  -webkit-tap-highlight-color: transparent;
 }
 
 #root {
+  /* 100vh fallback for old Safari, then dvh for dynamic viewport (iOS URL bar) */
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
 }
 
-/* Scrollbars */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; border: 2px solid var(--bg); }
-::-webkit-scrollbar-thumb:hover { background: #3A3B45; }
+/* ── Scrollbars ─────────────────────────────────────────────────────────────── */
 
-/* Keyboard key */
+/* Desktop: styled scrollbars */
+@media (pointer: fine) {
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #3A3B45; }
+}
+
+/* Touch devices: hide scrollbars, they're handled by momentum */
+@media (pointer: coarse) {
+  ::-webkit-scrollbar { display: none; }
+  * { scrollbar-width: none; }
+}
+
+/* ── Safe area utilities ────────────────────────────────────────────────────── */
+/* Applied where content must not overlap device notches / home indicators     */
+
+.safe-top    { padding-top:    env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.safe-left   { padding-left:   env(safe-area-inset-left); }
+.safe-right  { padding-right:  env(safe-area-inset-right); }
+
+/* Inset helpers for absolute/fixed elements */
+.inset-safe-bottom { bottom: max(12px, env(safe-area-inset-bottom)); }
+.inset-safe-top    { top:    max(0px,  env(safe-area-inset-top)); }
+
+/* ── Scroll containers ──────────────────────────────────────────────────────── */
+
+/* Prevent scroll chaining — child scrollable areas don't leak to body */
+.scroll-contain {
+  overscroll-behavior: contain;
+}
+
+/* ── Backdrop-filter compatibility ──────────────────────────────────────────── */
+/* Safari needs -webkit- prefix for backdrop-filter */
+
+.glass {
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  background: rgba(16, 16, 20, 0.82);
+}
+
+.glass-md {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  background: rgba(16, 16, 20, 0.72);
+}
+
+.glass-xl {
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  background: rgba(0, 0, 0, 0.70);
+}
+
+/* Fallback when backdrop-filter is not supported (older WebKit) */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .glass, .glass-md { background: rgba(10, 10, 12, 0.96) !important; }
+  .glass-xl         { background: rgba(0, 0, 0, 0.92) !important; }
+}
+
+/* ── Keyboard key ───────────────────────────────────────────────────────────── */
+
 kbd {
   font-family: 'Geist Mono', monospace;
   font-size: 10.5px;
@@ -61,7 +133,8 @@ kbd {
   color: var(--text-dim);
 }
 
-/* Subtle animated grid for landing */
+/* ── Landing decoratives ────────────────────────────────────────────────────── */
+
 .grid-bg {
   background-image:
     linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
@@ -69,7 +142,6 @@ kbd {
   background-size: 48px 48px;
 }
 
-/* Noise overlay */
 .noise::after {
   content: '';
   position: absolute;
@@ -79,7 +151,6 @@ kbd {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>");
 }
 
-/* Shimmer for upload */
 .shimmer {
   background: linear-gradient(90deg, transparent, rgba(94,106,210,0.5), transparent);
   background-size: 200% 100%;
@@ -87,6 +158,18 @@ kbd {
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
+  0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* ── Mobile drawer overlay ──────────────────────────────────────────────────── */
+
+/* Full-screen dark scrim behind mobile drawers */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 18;
+  background: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
 }

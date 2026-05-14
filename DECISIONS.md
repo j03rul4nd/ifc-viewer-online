@@ -21,7 +21,7 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 **Consequences:**
 - Locked to `@thatopen/fragments` binary format for caching. Format is specific to the installed version; upgrading minor versions may break cached data (mitigated: cache key includes `lastModified`, so users re-download when the file changes, but not when the library upgrades — needs a version prefix in the cache key in future).
 - Cannot use WebGPU with `OBC.SimpleRenderer` without writing a custom renderer class that satisfies `BaseRenderer`. (Deferred.)
-- `@thatopen` must be excluded from Vite's pre-bundling (`optimizeDeps.exclude`) because its WASM-loading code breaks when Vite inlines it.
+- `@thatopen/*` must be excluded from Vite's pre-bundling (`optimizeDeps.exclude`) because its WASM-loading code breaks when Vite inlines it.
 
 ---
 
@@ -39,10 +39,10 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 **Reason:** `IfcImporter` is a pure IFC→fragments converter with no DOM dependencies. It takes `Uint8Array` bytes and returns `Uint8Array` (fragments binary) with a `progressCallback`. This makes it the cleanest option for a worker: zero DOM coupling, real progress events, and the output (fragments binary) is exactly what the cache stores. The main thread only receives the binary result and hands it to `fragmentsManager.core.load()`.
 
 **Consequences:**
-- Parse time is isolated from main thread; UI stays responsive during parse (acceptance criterion: main thread idle > 90%).
-- Worker WASM path currently points to unpkg CDN. Production builds must either serve WASM locally (the `copyWebIfcWasm` Vite plugin does this) or accept the CDN dependency.
-- First parse still requires WASM download (~2 MB). Subsequent parses use cached WASM via browser HTTP cache.
+- Parse time is isolated from main thread; UI stays responsive during parse.
+- WASM is loaded locally via the `copyWebIfcWasm` Vite plugin (copies `web-ifc.wasm` / `web-ifc-mt.wasm` to `dist/`). `import.meta.env.BASE_URL` points to the correct path in production.
 - `ArrayBuffer` is *transferred* to the worker (zero-copy). The `file.arrayBuffer()` call on the main thread renders the buffer detached after transfer; the original `File` object remains accessible.
+- `forceSingleThread: true` is passed to `IfcAPI.Init` to prevent Emscripten from spawning pthread sub-workers (which would fail inside a nested ES module worker context).
 
 ---
 
@@ -58,12 +58,12 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 - `localStorage` (5 MB limit; not viable)
 - No cache (parse every time)
 
-**Reason:** OPFS gives direct file handle access (`FileSystemFileHandle.createWritable()`), which is faster than IndexedDB for large binary blobs because there is no serialisation/deserialisation overhead. For 200 MB+ fragment binaries, IndexedDB read latency is measurably higher. OPFS also supports synchronous access from a `SharedWorker` (useful if we later move cache I/O off main thread). The `for await...of` directory handle iteration is simple for listing entries.
+**Reason:** OPFS gives direct file handle access (`FileSystemFileHandle.createWritable()`), which is faster than IndexedDB for large binary blobs because there is no serialisation/deserialisation overhead. For 200 MB+ fragment binaries, IndexedDB read latency is measurably higher. OPFS also supports synchronous access from a `SharedWorker`.
 
 **Consequences:**
-- OPFS is not available in all environments (e.g., some private browsing modes, older Safari). The cache silently no-ops (`loadFromCache` returns `null`; `saveToCache` returns without error). A `opfsAvailable` boolean is exposed by `useIfcLoader` so the UI can indicate cache is disabled.
-- OPFS is origin-scoped. Models cached in development (`localhost:5173`) are not accessible in production (different origin).
-- The TypeScript DOM lib does not declare `FileSystemDirectoryHandle` as `AsyncIterable`; a cast is required in `opfs-cache.ts`.
+- OPFS is not available in all environments (e.g., some private browsing modes, older Safari). The cache silently no-ops. A `opfsAvailable` boolean is exposed by `useIfcLoader`.
+- OPFS is origin-scoped. Models cached in development (`localhost:3000`) are not accessible in production (different origin).
+- Both `.frag` (fragments binary) and `.ifc` (original IFC bytes) are stored per cache key. The IFC bytes are needed for validation and future IFC export.
 
 ---
 
@@ -78,32 +78,25 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 - `file.name` only (collides on different versions of same-named file)
 - UUID generated per session (no persistence benefit)
 
-**Reason:** Hashing a 200 MB file on the main thread takes 100–400 ms — a perceptible delay before the progress bar even starts. `lastModified` changes whenever the file is saved by the BIM tool, which is the correct semantics (if the model changed, re-parse it). Name + size + lastModified has no practical collision risk for the use case.
+**Reason:** Hashing a 200 MB file on the main thread takes 100–400 ms — a perceptible delay before the progress bar even starts. `lastModified` changes whenever the file is saved by the BIM tool. Name + size + lastModified has no practical collision risk for the use case.
 
 **Consequences:**
-- If the user saves a file with identical bytes but `lastModified` changes (e.g., touching the file), the cache misses unnecessarily and re-parses. This is acceptable — it is the rare case and always produces a correct result.
-- Cache key is stored in `.meta.json`. Upgrading the cache format (e.g., adding a library version prefix) requires a migration or cache invalidation.
+- If the user touches a file (identical bytes, changed `lastModified`), the cache misses unnecessarily and re-parses. Acceptable — always produces a correct result.
+- Cache key is stored in `.meta.json`. Upgrading the cache format requires a migration or cache invalidation.
 
 > ⚠️ NOTE: The cache key should eventually include the `@thatopen/fragments` version (e.g., `v3.4.3`) so that a library upgrade automatically invalidates stale binaries. Not implemented yet.
 
 ---
 
-## D-05 · No state library in Sprint 1–2 (plain React useState)
+## D-05 · Zustand for cross-component state (introduced Sprint 3)
 
-**Sprint:** 1
+**Sprint:** 1 (deferred) → **3 (implemented)**
 
-**Decision:** All application state lives as `useState` in `App.tsx`. No Zustand, Redux, Jotai, or Context.
+**Original decision (Sprint 1–2):** All application state lives as `useState` in `App.tsx`. No Zustand, Redux, Jotai, or Context.
 
-**Alternatives considered:**
-- Zustand (lightweight, minimal boilerplate)
-- React Context (built-in; verbose for complex derived state)
-- Jotai (atomic model; good for derived state)
+**Sprint 3 update:** Zustand was added as predicted. Five stores are now active: `modelStore`, `validationStore`, `editorStore`, `uiStore`, `toastStore`. The validation engine produces results consumed by three UI areas simultaneously (spatial tree, validation panel, toolbar badge) — prop-drilling was no longer viable.
 
-**Reason:** In Sprint 1–2 the state is shallow and co-located: file, model info, selected element, hidden/isolated categories. There is one component tree and no cross-cutting derived state. Adding a state library before it is needed creates indirection for no benefit.
-
-**Consequences:**
-- Sprint 3 will introduce the validation engine, which produces results that must be consumed by three different UI areas (spatial tree, 3D highlight layer, report panel). At that point, prop-drilling becomes unwieldy and Zustand (or equivalent) should be added. The `ROADMAP.md` Sprint 3 entry notes this.
-- The `useIfcLoader` hook is the only piece of state that is already partially decoupled from `App.tsx`. It communicates via a `viewerApiRef` callback pattern rather than shared state.
+**Constraint (still applies):** Zustand stores must not hold Three.js objects (non-serialisable). Store references by ID only; let `viewer.ts` manage geometry.
 
 ---
 
@@ -114,33 +107,33 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 **Decision:** Pass the raw IFC file buffer to `ifc-parser.worker.ts` using the `Transferable` mechanism (`postMessage(msg, [buffer])`), not by copying.
 
 **Alternatives considered:**
-- `SharedArrayBuffer` (requires `Atomics`; overkill for a one-shot transfer; COOP/COEP already satisfy the security requirement but Atomics coordination is complex)
+- `SharedArrayBuffer` (requires `Atomics`; overkill for a one-shot transfer)
 - Structured clone (default `postMessage` behaviour; copies the entire buffer — up to 200 MB)
 - Reading the file inside the worker (workers cannot access `File` objects directly without transfer)
 
-**Reason:** Transferring a 200 MB `ArrayBuffer` takes < 1 ms (ownership transfer, no copy). Cloning it takes ~200 ms and doubles peak memory usage. For large files this is the correct default.
+**Reason:** Transferring a 200 MB `ArrayBuffer` takes < 1 ms (ownership transfer, no copy). Cloning it takes ~200 ms and doubles peak memory usage.
 
 **Consequences:**
-- The `ArrayBuffer` becomes **detached** on the main thread after transfer. `file.arrayBuffer()` must be called exactly once. The `File` object is still valid (its bytes can be re-read), but the `ArrayBuffer` instance is neutered.
-- If `loadFile` is called concurrently (two files in quick succession), the second call creates a new buffer from the second `File` — there is no state conflict.
+- The `ArrayBuffer` becomes **detached** on the main thread after transfer. A copy is made before transfer so the IFC bytes are retained for validation and export.
+- The validator worker receives its own copy (`ifcBuffer.slice(0)`), so the original is never detached.
 
 ---
 
 ## D-07 · COOP/COEP headers always enabled
 
-**Sprint:** 1 (vite.config.ts)
+**Sprint:** 1 (vite.config.ts) + production via coi-serviceworker
 
-**Decision:** `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` are set in the Vite dev server headers and must be set in production.
+**Decision:** `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` are set in the Vite dev server headers and in production via `coi-serviceworker.js`.
 
 **Alternatives considered:**
-- Only enable for routes that need `SharedArrayBuffer` (complex; OBC's fragments worker needs it at startup)
-- Polyfill with `coi-serviceworker` (bypasses the requirement via a service worker; adds complexity and doesn't work in all environments)
+- Only enable for routes that need `SharedArrayBuffer`
+- Ship without cross-origin isolation and lose `performance.measureUserAgentSpecificMemory()`
 
-**Reason:** `@thatopen/fragments` uses a worker that requires `SharedArrayBuffer`. `performance.measureUserAgentSpecificMemory()` also requires `crossOriginIsolated`. Enabling COOP/COEP globally is the correct solution; the app has no cross-origin embeds (no iframes from other origins, no `<script src="external">` that lacks CORS headers).
+**Reason:** `@thatopen/fragments` uses a worker that requires `SharedArrayBuffer`. `performance.measureUserAgentSpecificMemory()` also requires `crossOriginIsolated`. GitHub Pages does not support custom HTTP headers, so `coi-serviceworker.js` is registered in `index.html` to inject them at the service worker level.
 
 **Consequences:**
-- Any future embedded content (e.g., a third-party analytics widget, a map embed) must serve `Cross-Origin-Resource-Policy: cross-origin` or the app will fail to load it.
-- unpkg CDN (used for WASM download by `IfcImporter`) must support CORS — it does.
+- Any future embedded content must serve `Cross-Origin-Resource-Policy: cross-origin`.
+- WASM files must be served from the same origin (satisfied by the `copyWebIfcWasm` plugin).
 
 ---
 
@@ -150,15 +143,11 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 
 **Decision:** After Sprint 2, all loads go through `viewer.loadFragments()` (fragments binary → scene). `viewer.loadIfc()` exists but is not called from `App.tsx`.
 
-**Alternatives considered:**
-- Keep `loadIfc()` as primary and add caching as a parallel path
-- Remove `loadIfc()` entirely
-
-**Reason:** Both cache-hit and cache-miss paths produce the same artifact (fragments binary). Having a single GPU-upload entry point (`loadFragments`) keeps `viewer.ts` simpler and ensures cache-hit behaviour is identical to cache-miss behaviour. `loadIfc()` is retained as a direct fallback for testing and for future CLI/headless use cases.
+**Reason:** Both cache-hit and cache-miss paths produce the same artifact (fragments binary). Having a single GPU-upload entry point keeps `viewer.ts` simpler and ensures cache-hit behaviour is identical to cache-miss behaviour.
 
 **Consequences:**
-- The model setup code (`setupLoadedModel`, colour application, camera fit) runs identically on both paths — verified by design.
-- `loadIfc()` becoming dead code means it could drift from `loadFragments()` if both are not maintained. If it is needed again, check that `setupLoadedModel` is still called correctly.
+- The model setup code (`setupLoadedModel`, colour application, camera fit) runs identically on both paths.
+- `loadIfc()` is dead code in the current app flow. If reactivated, verify that `setupLoadedModel` is still called.
 
 ---
 
@@ -166,18 +155,52 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 
 **Sprint:** 2
 
-**Decision:** WebGPU support is planned but not implemented. `navigator.gpu` detection is documented; `three/webgpu` is available in the installed `three` version (r184); but no WebGPU renderer is wired up.
+**Decision:** WebGPU support is planned but not implemented. `navigator.gpu` detection is documented; `three/webgpu` is available in the installed `three` version (r184+); but no WebGPU renderer is wired up.
 
-**Alternatives considered:**
-- Implement WebGPU in Sprint 2 (rejected: too much scope; requires custom `BaseRenderer` wrapper for OBC)
-- Use Three.js WebGPU renderer for the whole app (bypasses OBC.SimpleRenderer; requires manual render loop)
-
-**Reason:** Integrating WebGPU with `OBC.SimpleRenderer` requires subclassing or replacing it with a custom renderer that satisfies OBC's `BaseRenderer` interface. This is a non-trivial change to `viewer.ts` that belongs in a dedicated sprint where it can be properly tested. The Sprint 2 loading pipeline does not depend on WebGPU.
+**Reason:** Integrating WebGPU with `OBC.SimpleRenderer` requires subclassing or replacing it with a custom renderer that satisfies OBC's `BaseRenderer` interface. This is a non-trivial change belonging in a dedicated sprint.
 
 **Consequences:**
-- The `getGpuEstimateBytes()` method on `ViewerAPI` exists as a placeholder for memory tracking; it uses WebGL renderer info and is not GPU-API-specific.
-- When WebGPU is implemented, `createViewer()` in `viewer.ts` should be split into `createWebGPUViewer()` and `createWebGLViewer()` with a shared setup, or the renderer selection should be injected as a factory parameter.
+- `getGpuEstimateBytes()` uses WebGL renderer info and is not GPU-API-specific.
+- When implemented, `createViewer()` should accept a renderer factory parameter.
 
 ---
 
-*Last updated: 2026-04-19 · Current sprint: 2 (complete)*
+## D-10 · Validator runs in a second dedicated worker (not the parser worker)
+
+**Sprint:** 3
+
+**Decision:** IFC validation runs in `src/workers/validator.worker.ts`, a separate worker from `ifc-parser.worker.ts`. It receives a **copy** of the IFC buffer (not transferred) so the original is preserved.
+
+**Alternatives considered:**
+- Reusing the parser worker for validation (rejected: the parser worker is tied to the `IfcImporter` API; the validator needs `IfcAPI` directly for property sets and relationships)
+- Running validation on the main thread (rejected: `IfcAPI` WASM operations block the thread; large models take several seconds)
+- Sharing one worker that does both (rejected: would create ordering dependencies and make the worker protocol more complex)
+
+**Reason:** `IfcImporter` converts IFC → fragments; `IfcAPI` provides direct entity/relationship access needed for validation rules. These are separate use cases with separate lifetimes. A dedicated validator worker can be terminated and recreated on WASM errors without affecting the parse worker.
+
+**Consequences:**
+- Two WASM instances may be active simultaneously (one in each worker). Memory cost is ~60–80 MB each. Acceptable on desktop; may be tight on mobile.
+- The buffer copy (`ifcBuffer.slice(0)`) before postMessage preserves the original for export.
+- The validator worker is a singleton managed by `validator.ts`; it is recreated after fatal errors (e.g., WASM SIGABRT).
+
+---
+
+## D-11 · Worker rollupOptions must not externalize bare specifiers
+
+**Sprint:** 3 (production bug fix — 2026-05-09)
+
+**Decision:** The `worker` section of `vite.config.ts` must not include `rollupOptions: { external: [...] }` with bare module specifiers like `'three'`.
+
+**Background:** The previous config had `rollupOptions: { external: ['three'] }` in the worker build. This told Rollup not to bundle `three` into the worker chunk. The built worker JS contained `import { ... } from 'three'` — a bare specifier that browsers cannot resolve in a Web Worker context (no `node_modules`, no import map for `three` in the worker). The worker failed silently on GitHub Pages; the error event fired with `message: undefined`.
+
+**Why it worked in dev:** Vite's dev server resolves all imports through its own middleware, including inside workers. In production the worker is a self-contained Rollup bundle where external dependencies must be resolvable by the browser.
+
+**Fix:** Removed `rollupOptions: { external: ['three'] }` from the `worker` config. Rollup now bundles `three` inline into the worker chunk.
+
+**Consequences:**
+- The worker bundle is larger (~4.2 MB uncompressed). Acceptable because the worker is loaded once and cached by the browser HTTP cache.
+- Any future addition of `external` to worker rollupOptions must be limited to modules that are genuinely importable in a browser worker context (e.g., via an import map that covers the worker scope).
+
+---
+
+*Last updated: 2026-05-09 · Current sprint: 3 (in progress)*

@@ -19,6 +19,7 @@ interface ToolbarProps {
   onUpload: () => void
 }
 
+// ── Desktop button (text + icon) ──────────────────────────────────────────────
 const Btn = ({
   icon: Icon, children, onClick, disabled, variant = 'ghost', title,
 }: {
@@ -26,235 +27,393 @@ const Btn = ({
   children?: React.ReactNode
   onClick?: () => void
   disabled?: boolean
-  variant?: 'ghost' | 'primary' | 'secondary' | 'danger'
+  variant?: 'ghost' | 'secondary'
   title?: string
 }) => {
-  const base = 'inline-flex items-center gap-1.5 px-2.5 h-[30px] rounded-[7px] text-[13px] font-medium transition-all duration-100 whitespace-nowrap select-none'
+  const base = 'inline-flex items-center gap-1.5 px-2.5 h-[30px] rounded-[7px] text-[13px] font-medium transition-all duration-100 whitespace-nowrap select-none min-w-[30px] justify-center'
   const variants = {
-    ghost:     'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] disabled:opacity-40',
-    primary:   'bg-[var(--accent)] text-white hover:brightness-110 h-[38px] px-4 rounded-[9px]',
-    secondary: 'bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)] hover:brightness-110',
-    danger:    'text-[var(--danger)] hover:bg-[var(--danger)]18 disabled:opacity-40',
+    ghost:     'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:bg-[var(--surface-2)] disabled:opacity-40',
+    secondary: 'bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)] hover:brightness-110 active:brightness-90 disabled:opacity-40',
   }
   return (
-    <button onClick={onClick} disabled={disabled} title={title}
-      className={`${base} ${variants[variant]}`}>
+    <button onClick={onClick} disabled={disabled} title={title} className={`${base} ${variants[variant]}`}>
       {Icon && <Icon size={14} />}
       {children}
     </button>
   )
 }
 
+// ── Mobile icon-only button ───────────────────────────────────────────────────
+const IBtn = ({
+  children, onClick, disabled, active = false, title,
+}: {
+  children: React.ReactNode
+  onClick?: () => void
+  disabled?: boolean
+  active?: boolean
+  title?: string
+}) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    title={title}
+    className={[
+      'relative inline-flex items-center justify-center w-[36px] h-[36px] rounded-[8px] transition-all duration-100 select-none shrink-0 active:scale-95',
+      active
+        ? 'bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)]'
+        : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] disabled:opacity-40',
+    ].join(' ')}
+  >
+    {children}
+  </button>
+)
+
+// ── Shared export dropdown ────────────────────────────────────────────────────
+function ExportDropdown({
+  diffs,
+  onExportIfc,
+  onExportGlb,
+}: {
+  diffs: number
+  onExportIfc: () => void
+  onExportGlb: () => void
+}) {
+  return (
+    <div className="absolute right-0 top-full mt-1.5 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[10px] shadow-2xl z-[60] py-1.5 min-w-[168px]">
+      <div className="px-3 py-1 text-[10px] text-[var(--text-faint)] uppercase tracking-wider font-semibold">
+        Export as…
+      </div>
+      <button
+        onClick={onExportIfc}
+        className="w-full text-left px-3 py-2.5 xs:py-2 text-[12px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
+      >
+        <span className="font-mono text-[var(--accent)] text-[10px]">IFC</span>
+        {diffs > 0 ? `IFC with ${diffs} edits` : 'Original IFC'}
+      </button>
+      <button
+        onClick={onExportGlb}
+        className="w-full text-left px-3 py-2.5 xs:py-2 text-[12px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
+      >
+        <span className="font-mono text-[var(--ok)] text-[10px]">GLB</span>
+        3D model (GLB)
+      </button>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function Toolbar({
   fileName, elementCount, loadingState, canIsolate, onReset, onIsolate, onUpload,
 }: ToolbarProps) {
-  const statusColor = loadingState === 'loaded' ? 'var(--ok)' : loadingState === 'error' ? 'var(--danger)' : 'var(--warn)'
-  const statusLabel =
-    loadingState === 'loading' ? 'Loading IFC…' :
-    loadingState === 'loaded'  ? 'Model loaded' :
-    loadingState === 'error'   ? 'Load failed'  : ''
+  const statusColor = loadingState === 'loaded' ? 'var(--ok)'     :
+                      loadingState === 'error'  ? 'var(--danger)' : 'var(--warn)'
+  const statusLabel = loadingState === 'loading' ? 'Loading…' :
+                      loadingState === 'loaded'  ? 'Loaded'   :
+                      loadingState === 'error'   ? 'Error'    : ''
 
   const { diffs, canUndo, canRedo } = useEditorStore()
   const { undo, redo }              = useEditorHistory()
   const { validationMode, toggleValidationMode, result, isRunning } = useValidationStore()
-  const { ifcBuffer } = useModelStore()
+  const { ifcBuffer }               = useModelStore()
   const { treeVisible, setTreeVisible } = useUIStore()
 
-  const [exportOpen, setExportOpen]   = useState(false)
-  const exportRef = useRef<HTMLDivElement>(null)
-  const [exporting, setExporting]     = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
+  const desktopExportRef            = useRef<HTMLDivElement>(null)
+  const mobileExportRef             = useRef<HTMLDivElement>(null)
+  const [exporting, setExporting]   = useState(false)
 
-  // Close export dropdown on outside click
+  // Close export dropdown on outside click (checks both desktop & mobile refs)
   useEffect(() => {
     if (!exportOpen) return
     const handler = (e: MouseEvent): void => {
-      if (!exportRef.current?.contains(e.target as Node)) setExportOpen(false)
+      const inD = desktopExportRef.current?.contains(e.target as Node)
+      const inM = mobileExportRef.current?.contains(e.target as Node)
+      if (!inD && !inM) setExportOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [exportOpen])
 
   const handleExportIfc = async (): Promise<void> => {
-    setExporting(true)
-    setExportOpen(false)
+    setExporting(true); setExportOpen(false)
     try {
       const bytes = await exportAsIfc()
       downloadBlob(new Blob([bytes], { type: 'application/x-step' }), 'model-edited.ifc')
-    } catch (err) {
-      console.error('[Export] IFC export failed:', err)
-    } finally {
-      setExporting(false)
-    }
+    } catch (err) { console.error('[Export] IFC export failed:', err) }
+    finally { setExporting(false) }
   }
 
   const handleExportGlb = async (): Promise<void> => {
-    setExporting(true)
-    setExportOpen(false)
+    setExporting(true); setExportOpen(false)
     try {
       const blob = await exportAsGlb()
       downloadBlob(blob, 'model.glb')
-    } catch (err) {
-      console.error('[Export] GLB export failed:', err)
-    } finally {
-      setExporting(false)
-    }
+    } catch (err) { console.error('[Export] GLB export failed:', err) }
+    finally { setExporting(false) }
   }
 
   const issueCount = result?.stats.total ?? 0
   const errorCount = result?.stats.errors ?? 0
   const hasIssues  = issueCount > 0
 
+  // SVGs reused in both rows
+  const ValidateSVG = (
+    <svg width="15" height="15" viewBox="0 0 14 14" fill="currentColor">
+      <path d="M2 2h10v2H2zM2 6h7v2H2zM2 10h4v2H2z" opacity="0.6"/>
+      <path d="M10 8l3 2-3 2V8z" />
+    </svg>
+  )
+  const SpinSVG = (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+      strokeLinecap="round" className="animate-spin opacity-70">
+      <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+      <path d="M12 2a10 10 0 0 1 7.07 2.93" />
+    </svg>
+  )
+  const TreeSVG = (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" className="opacity-80">
+      <rect x="1" y="1" width="4" height="12" rx="1" opacity="0.5" />
+      <rect x="7" y="1" width="6" height="3" rx="1" />
+      <rect x="7" y="5.5" width="6" height="3" rx="1" />
+      <rect x="7" y="10" width="6" height="3" rx="1" />
+    </svg>
+  )
+  const UndoSVG = (size = 14) => (
+    <svg width={size} height={size} viewBox="0 0 14 14" fill="currentColor">
+      <path d="M4 3L1 6l3 3V7c2.5 0 4.5 1 5.5 3-.5-3-2.5-5-5.5-5V3z" />
+    </svg>
+  )
+  const RedoSVG = (size = 14) => (
+    <svg width={size} height={size} viewBox="0 0 14 14" fill="currentColor" style={{ transform: 'scaleX(-1)' }}>
+      <path d="M4 3L1 6l3 3V7c2.5 0 4.5 1 5.5 3-.5-3-2.5-5-5.5-5V3z" />
+    </svg>
+  )
+  const DownloadSVG = (
+    <svg width="15" height="15" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+      <path d="M6.5 1v7M3.5 5.5l3 3.5 3-3.5M1 10v2h11v-2" />
+    </svg>
+  )
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="relative z-10 flex items-center gap-2.5 pointer-events-none px-3 py-3"
+      className="relative z-10 flex flex-col md:flex-row md:items-center gap-1 md:gap-1.5 px-2 xs:px-3 pt-2 pb-1.5 md:py-3 pointer-events-none"
     >
-      {/* Logo */}
-      <div className="flex items-center gap-2.5 bg-[rgba(16,16,20,0.72)] backdrop-blur-md border border-[var(--border)] rounded-[10px] px-2.5 py-1.5 pointer-events-auto">
-        <Icons.Logo size={22} />
-        <div className="flex flex-col leading-none gap-0.5 min-w-0">
-          <div className="text-[13px] font-semibold tracking-tight whitespace-nowrap">IFC Validator</div>
-          <div className="text-[10.5px] text-[var(--text-faint)] font-mono whitespace-nowrap max-w-[180px] truncate">
-            {fileName ?? 'No file loaded'}
+
+      {/* ── Row 1: Branding (always) + Desktop actions (md+) ── */}
+      <div className="flex items-center gap-1.5 min-w-0">
+
+        {/* Logo pill */}
+        <div className="flex items-center gap-2 glass-md border border-[var(--border)] rounded-[10px] px-2 xs:px-2.5 py-1.5 pointer-events-auto shrink-0 min-w-0"
+          style={{ maxWidth: 'clamp(140px, 38vw, 260px)' }}>
+          <Icons.Logo size={18} className="shrink-0" />
+          <div className="flex flex-col leading-none gap-0.5 min-w-0">
+            <div className="text-[12px] font-semibold tracking-tight whitespace-nowrap">IFC Validator</div>
+            <div className="text-[10px] text-[var(--text-faint)] font-mono truncate">
+              {fileName ?? 'No file loaded'}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Main actions */}
-      <div className="flex items-center gap-0.5 bg-[rgba(16,16,20,0.72)] backdrop-blur-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto">
-        <Btn icon={Icons.Upload} onClick={onUpload}>Open</Btn>
-        <div className="w-px h-[18px] bg-[var(--border)]" />
-        <Btn icon={Icons.Reset} onClick={onReset} title="Reset camera">Reset</Btn>
-        <Btn icon={Icons.Isolate} onClick={onIsolate} disabled={!canIsolate} title="Isolate category">Isolate</Btn>
-        <div className="w-px h-[18px] bg-[var(--border)]" />
-        {/* Tree toggle */}
-        <Btn
-          onClick={() => setTreeVisible(!treeVisible)}
-          title="Toggle spatial tree"
-          variant={treeVisible ? 'secondary' : 'ghost'}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" className="opacity-80">
-            <rect x="1" y="1" width="4" height="12" rx="1" opacity="0.5" />
-            <rect x="7" y="1" width="6" height="3" rx="1" />
-            <rect x="7" y="5.5" width="6" height="3" rx="1" />
-            <rect x="7" y="10" width="6" height="3" rx="1" />
-          </svg>
-          Tree
-        </Btn>
-      </div>
+        {/* ── Mobile-only: spacer + export icon + status dot ── */}
+        <div className="flex-1 md:hidden" />
 
-      {/* Validation */}
-      <div className="flex items-center gap-0.5 bg-[rgba(16,16,20,0.72)] backdrop-blur-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto">
-        <Btn
-          onClick={() => ifcBuffer && void runValidation()}
-          disabled={!ifcBuffer || isRunning}
-          title="Run validation"
-          variant="ghost"
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-            <path d="M2 2h10v2H2zM2 6h7v2H2zM2 10h4v2H2z" opacity="0.6"/>
-            <path d="M10 8l3 2-3 2V8z" />
-          </svg>
-          {isRunning ? 'Validating…' : 'Validate'}
-        </Btn>
-        <Btn
-          onClick={toggleValidationMode}
-          disabled={!hasIssues}
-          title="Toggle validation overlay in 3D view"
-          variant={validationMode ? 'secondary' : 'ghost'}
-        >
-          <span
-            className="text-[11px] font-mono"
-            style={{ color: validationMode ? (errorCount > 0 ? 'var(--danger)' : '#F5A623') : undefined }}
-          >
-            {hasIssues ? `${issueCount}` : '●'}
-          </span>
-          Overlay
-        </Btn>
-      </div>
-
-      {/* Undo/Redo */}
-      {(canUndo || canRedo) && (
-        <div className="flex items-center gap-0.5 bg-[rgba(16,16,20,0.72)] backdrop-blur-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto">
-          <Btn onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-              <path d="M4 3L1 6l3 3V7c2.5 0 4.5 1 5.5 3-.5-3-2.5-5-5.5-5V3z" />
-            </svg>
-            Undo
-          </Btn>
-          <Btn onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" style={{ transform: 'scaleX(-1)' }}>
-              <path d="M4 3L1 6l3 3V7c2.5 0 4.5 1 5.5 3-.5-3-2.5-5-5.5-5V3z" />
-            </svg>
-            Redo
-          </Btn>
-        </div>
-      )}
-
-      <div className="flex-1" />
-
-      {/* Pending changes + Export */}
-      {ifcBuffer && (
-        <div ref={exportRef} className="relative pointer-events-auto">
-          <button
-            onClick={() => setExportOpen((v) => !v)}
-            disabled={exporting}
-            className="flex items-center gap-1.5 h-[30px] px-2.5 bg-[rgba(16,16,20,0.72)] backdrop-blur-md border rounded-[10px] text-[13px] font-medium transition-colors hover:text-[var(--text)]"
-            style={{
-              borderColor: diffs.length > 0 ? 'var(--accent)' : 'var(--border)',
-              color:       diffs.length > 0 ? 'var(--accent)' : 'var(--text-dim)',
-            }}
-          >
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor">
-              <path d="M6.5 1v7.5M3.5 6l3 3.5 3-3.5M1 10v2h11v-2" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-            </svg>
-            Export
-            {diffs.length > 0 && (
-              <span className="ml-0.5 px-1.5 py-0.5 text-[9px] font-mono rounded-full bg-[var(--accent)] text-white leading-none">
-                {diffs.length}
-              </span>
+        {/* Mobile export button (in Row 1 so dropdown isn't clipped by Row 2 overflow) */}
+        {ifcBuffer && (
+          <div ref={mobileExportRef} className="md:hidden relative pointer-events-auto shrink-0">
+            <IBtn
+              onClick={() => setExportOpen(v => !v)}
+              active={exportOpen}
+              title="Export model"
+              disabled={exporting}
+            >
+              {DownloadSVG}
+              {diffs.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-[14px] h-[14px] rounded-full bg-[var(--accent)] text-white text-[8px] font-mono leading-none flex items-center justify-center">
+                  {diffs.length}
+                </span>
+              )}
+            </IBtn>
+            {exportOpen && (
+              <ExportDropdown
+                diffs={diffs.length}
+                onExportIfc={() => void handleExportIfc()}
+                onExportGlb={() => void handleExportGlb()}
+              />
             )}
-          </button>
+          </div>
+        )}
 
-          {exportOpen && (
-            <div className="absolute right-0 top-full mt-1.5 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[10px] shadow-2xl z-50 py-1.5 min-w-[160px]">
-              <div className="px-3 py-1 text-[10px] text-[var(--text-faint)] uppercase tracking-wider font-semibold">
-                Export as…
-              </div>
-              <button
-                onClick={() => void handleExportIfc()}
-                className="w-full text-left px-3 py-2 text-[12px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
+        {/* Mobile status dot */}
+        {loadingState !== 'idle' && (
+          <div className="md:hidden flex items-center gap-1.5 h-[36px] px-2.5 glass-md border border-[var(--border)] rounded-[10px] pointer-events-auto shrink-0">
+            <span className="font-mono text-[13px]" style={{ color: statusColor }}>●</span>
+            <span className="hidden xs:inline text-[11px] text-[var(--text-dim)] whitespace-nowrap">
+              {statusLabel}
+              {loadingState === 'loaded' && elementCount > 0 && (
+                <span className="font-mono text-[var(--text-faint)]"> · {elementCount.toLocaleString()}</span>
+              )}
+            </span>
+          </div>
+        )}
+
+        {/* ── Desktop-only: all actions inline after logo ── */}
+        <div className="hidden md:flex items-center gap-1.5 flex-1 min-w-0">
+
+          {/* Main actions */}
+          <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto shrink-0">
+            <Btn icon={Icons.Upload} onClick={onUpload} title="Open file">Open</Btn>
+            <div className="w-px h-[18px] bg-[var(--border)]" />
+            <Btn icon={Icons.Reset} onClick={onReset} title="Reset camera">Reset</Btn>
+            <Btn icon={Icons.Isolate} onClick={onIsolate} disabled={!canIsolate} title="Isolate category">Isolate</Btn>
+            <div className="w-px h-[18px] bg-[var(--border)]" />
+            <Btn
+              onClick={() => setTreeVisible(!treeVisible)}
+              title="Toggle spatial tree"
+              variant={treeVisible ? 'secondary' : 'ghost'}
+            >
+              {TreeSVG}
+              Tree
+            </Btn>
+          </div>
+
+          {/* Validation */}
+          <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto shrink-0">
+            <Btn
+              onClick={() => ifcBuffer && void runValidation()}
+              disabled={!ifcBuffer || isRunning}
+              title="Run validation"
+            >
+              {isRunning ? SpinSVG : ValidateSVG}
+              {isRunning ? 'Validating…' : 'Validate'}
+            </Btn>
+            <Btn
+              onClick={toggleValidationMode}
+              disabled={!hasIssues}
+              title="Toggle validation overlay in 3D view"
+              variant={validationMode ? 'secondary' : 'ghost'}
+            >
+              <span
+                className="text-[11px] font-mono"
+                style={{ color: validationMode ? (errorCount > 0 ? 'var(--danger)' : '#F5A623') : undefined }}
               >
-                <span className="font-mono text-[var(--accent)] text-[10px]">IFC</span>
-                {diffs.length > 0 ? `IFC with ${diffs.length} edits` : 'Original IFC'}
-              </button>
+                {hasIssues ? `${issueCount}` : '●'}
+              </span>
+              Overlay
+            </Btn>
+          </div>
+
+          {/* Undo / Redo */}
+          {(canUndo || canRedo) && (
+            <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto shrink-0">
+              <Btn onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">{UndoSVG()} Undo</Btn>
+              <Btn onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)">{RedoSVG()} Redo</Btn>
+            </div>
+          )}
+
+          <div className="flex-1" />
+
+          {/* Export */}
+          {ifcBuffer && (
+            <div ref={desktopExportRef} className="relative pointer-events-auto shrink-0">
               <button
-                onClick={() => void handleExportGlb()}
-                className="w-full text-left px-3 py-2 text-[12px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
+                onClick={() => setExportOpen(v => !v)}
+                disabled={exporting}
+                className="flex items-center gap-1.5 h-[30px] px-2.5 glass-md border rounded-[10px] text-[13px] font-medium transition-colors hover:text-[var(--text)] active:brightness-110 whitespace-nowrap"
+                style={{
+                  borderColor: diffs.length > 0 ? 'var(--accent)' : 'var(--border)',
+                  color:       diffs.length > 0 ? 'var(--accent)' : 'var(--text-dim)',
+                }}
               >
-                <span className="font-mono text-[var(--ok)] text-[10px]">GLB</span>
-                3D model (GLB)
+                {DownloadSVG}
+                Export
+                {diffs.length > 0 && (
+                  <span className="px-1.5 py-0.5 text-[9px] font-mono rounded-full bg-[var(--accent)] text-white leading-none">
+                    {diffs.length}
+                  </span>
+                )}
               </button>
+              {exportOpen && (
+                <ExportDropdown
+                  diffs={diffs.length}
+                  onExportIfc={() => void handleExportIfc()}
+                  onExportGlb={() => void handleExportGlb()}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Status chip */}
+          {loadingState !== 'idle' && (
+            <div className="flex items-center gap-2 h-auto py-1.5 px-3 glass-md border border-[var(--border)] rounded-[10px] text-[12px] text-[var(--text-dim)] pointer-events-auto shrink-0 whitespace-nowrap">
+              <span className="font-mono" style={{ color: statusColor }}>●</span>
+              {statusLabel}
+              {loadingState === 'loaded' && elementCount > 0 && (
+                <span className="font-mono text-[var(--text-faint)]">· {elementCount.toLocaleString()}</span>
+              )}
             </div>
           )}
         </div>
-      )}
+      </div>
 
-      {/* Status chip */}
-      {loadingState !== 'idle' && (
-        <div className="flex items-center gap-2 h-[38px] px-3 bg-[rgba(16,16,20,0.72)] backdrop-blur-md border border-[var(--border)] rounded-[10px] text-[12px] text-[var(--text-dim)] pointer-events-auto">
-          <span className="font-mono" style={{ color: statusColor }}>●</span>
-          {statusLabel}
-          {loadingState === 'loaded' && (
-            <>
-              <span className="text-[var(--text-faint)]">·</span>
-              <span className="font-mono">{elementCount}</span> elements
-            </>
-          )}
+      {/* ── Row 2: Mobile action bar — icon-only, no overflow clipping of dropdowns ── */}
+      <div
+        className="flex md:hidden items-center gap-1 pointer-events-auto"
+        style={{ overflowX: 'auto', overflowY: 'visible', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' } as React.CSSProperties}
+      >
+        {/* Main actions */}
+        <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 shrink-0">
+          <IBtn onClick={onUpload} title="Open file">
+            <Icons.Upload size={15} />
+          </IBtn>
+          <div className="w-px h-[18px] bg-[var(--border)]" />
+          <IBtn onClick={onReset} title="Reset camera">
+            <Icons.Reset size={15} />
+          </IBtn>
+          <IBtn onClick={onIsolate} disabled={!canIsolate} title="Isolate category">
+            <Icons.Isolate size={15} />
+          </IBtn>
         </div>
-      )}
+
+        {/* Validation */}
+        <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 shrink-0">
+          <IBtn
+            onClick={() => ifcBuffer && void runValidation()}
+            disabled={!ifcBuffer || isRunning}
+            title={isRunning ? 'Validating…' : 'Validate'}
+          >
+            {isRunning ? SpinSVG : ValidateSVG}
+          </IBtn>
+          <IBtn
+            onClick={toggleValidationMode}
+            disabled={!hasIssues}
+            active={validationMode}
+            title={`Toggle overlay${hasIssues ? ` · ${issueCount} issues` : ''}`}
+          >
+            <span
+              className="text-[11px] font-mono leading-none"
+              style={{ color: validationMode ? (errorCount > 0 ? 'var(--danger)' : '#F5A623') : undefined }}
+            >
+              {hasIssues ? issueCount : '●'}
+            </span>
+          </IBtn>
+        </div>
+
+        {/* Undo / Redo (only when there's history) */}
+        {(canUndo || canRedo) && (
+          <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 shrink-0">
+            <IBtn onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">{UndoSVG(15)}</IBtn>
+            <IBtn onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)">{RedoSVG(15)}</IBtn>
+          </div>
+        )}
+
+        {/* Trailing spacer for scroll breathing room */}
+        <div className="w-1 shrink-0" />
+      </div>
+
     </motion.div>
   )
 }
