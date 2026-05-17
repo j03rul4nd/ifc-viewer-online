@@ -7,51 +7,73 @@
 
 ## What this product is
 
-A browser-only IFC model viewer and validator targeting architects who work with large, complex building models. The app runs entirely client-side: IFC files are parsed in a Web Worker via WebAssembly, rendered via WebGL (Three.js / @thatopen), and never leave the user's machine. The product roadmap extends this viewer into a validator and non-destructive editor — Sprint 3 is in progress; Sprint 4 is planned.
+A browser-only IFC model viewer, validator, and non-destructive editor targeting architects and BIM coordinators who work with large, complex building models. The app runs entirely client-side: IFC files are parsed in a Web Worker via WebAssembly, rendered via WebGL (Three.js / @thatopen), and never leave the user's machine. Multiple IFC files can be loaded simultaneously for side-by-side inspection and comparison.
 
 ## Who uses it and why
 
 Architects and BIM coordinators who need to quickly inspect and validate IFC exports from authoring tools (Revit, ArchiCAD, Tekla, Allplan). The primary pain point is that competing web viewers are slow on large files (100–200 MB) and require upload. This product is faster because it caches parsed geometry in the browser's Origin Private File System and skips re-parsing on subsequent loads.
 
+**Live app:** `https://j03rul4nd.github.io/ifc-viewer-online/`  
+**GitHub:** `https://github.com/j03rul4nd/ifc-viewer-online`
+
 ---
 
-## Current state (as of Sprint 3 — in progress)
+## Current state (Sprint 6 complete — 2026-05-17)
 
 ### Works
 
 - **Landing page** — marketing page with hero, feature grid, FAQ, CTA. Fully static, no data dependencies.
-- **IFC loading pipeline** — `useIfcLoader` hook orchestrates: OPFS cache check → Web Worker parse (IfcImporter) → fragments binary → viewer render. Real progress events. Cache persists across page reloads.
+- **IFC loading pipeline** — `useIfcLoader` hook orchestrates: OPFS cache check → Web Worker parse (IfcImporter) → fragments binary → viewer render. Real progress events. Cache persists across page reloads. Emits `model:loaded` (with `modelId`) on `appBus` after every successful load.
+- **Multi-model loading** — N simultaneous IFC files; each model gets its own pivot group, own entry in sceneStore, modelRegistry, validationStore spatial tree, and takeoffStore.
 - **Pre-flight IFC guards** — `validateIfcBuffer()` in `ifc-guards.ts` checks for empty buffer, wrong file signature, and file size before WASM initialisation.
-- **Toast notifications** — `toastStore` + `ToastContainer.tsx`; all error/warning/info messages surface as non-blocking toasts.
+- **Toast notifications** — `toastStore` + `ToastContainer.tsx`; all error/warning/info messages surface as non-blocking toasts. `toastFromError()` handles any unknown error type.
 - **3D viewer** — OBC world with WebGL renderer, realistic lighting (hemisphere + directional with shadows), orbit/pan/zoom camera controls.
 - **Per-category palette** — 25 IFC types have assigned colours and opacity. Applied after every load.
-- **Element selection** — click any element to highlight it (blue overlay) and see its IFC type, display name, and Express ID in the Properties tab.
+- **Element selection** — click any element to highlight it and see its IFC attributes, GlobalId, LongName, Description, Storey, and full property sets in the Sidebar. Click stamps `modelId` on selection.
 - **Hover highlight** — lighter blue overlay on hover; cursor changes to pointer over elements.
 - **Category panel** — lists all IFC types in the loaded model with element counts, colour swatches, hide/show toggles, and isolation.
 - **Filter/isolate** — hide individual categories; isolate a single category; frame camera to a category's bounding box.
 - **Three viewer styles** — `shaded` (default palette), `blueprint` (flat grey), `xray` (global 20% opacity).
-- **OPFS cache management** — list, delete, quota display. Badge when models are cached.
+- **OPFS cache management** — list, delete, quota display. Badge when models are cached. Repository pattern wraps all OPFS I/O with `Result<T,E>` returns. Cache key prefix `v2`.
 - **Memory tracking** — polls `performance.measureUserAgentSpecificMemory()` (crossOriginIsolated) or `performance.memory` fallback every 4 s.
-- **Zustand stores** — `modelStore`, `validationStore`, `editorStore`, `uiStore`, `toastStore` all implemented and wired.
-- **IFC validation** — `validator.worker.ts` runs rule-based checks off the main thread; `runValidation()` in `validator.ts` streams partial results into the Zustand `validationStore`. Rules: empty name/longname, duplicate names, naming convention patterns, missing type, duplicate GUID, missing property sets, orphan elements, wrong container, broken aggregates.
-- **Spatial tree** — `ModelTree.tsx` renders the spatial hierarchy (Project → Site → Building → Storey → elements) from `validationStore.spatialTree`. Virtualised with `@tanstack/react-virtual`.
-- **ValidationPanel** — `ValidationPanel.tsx` shows validation results with filtering by severity, rule, grouping, and text search.
-- **Non-destructive editing** — `editorStore` holds edit diffs as `EditDiff[]` with full undo/redo command history. `diffStore.ts` provides `buildRenameCommand`, `buildFixGuidCommand` helpers. `useEditorHistory` binds keyboard shortcuts.
+- **Zustand stores** — `modelStore`, `validationStore`, `editorStore`, `uiStore`, `sceneStore`, `toastStore`, `takeoffStore` — all with Zustand devtools, named actions, and typed selectors. `editorStore` emits `appBus` events on every mutation.
+- **IFC validation — 18 rules** — `validator.worker.ts` runs rule-based checks off the main thread. Streams partial results into `validationStore`. Emits `appBus` events for full lifecycle. All messages validated via zod schemas before routing.
+- **Validation highlights per model** — `validationHighlightedByModel: Map<string, Set<number>>`; each model's errors are tracked independently.
+- **Spatial tree — auto-built on load** — `buildSpatialTree()` triggers automatically after every model load via `build-tree` worker message. `ModelTree.tsx` renders immediately. Virtualised with `@tanstack/react-virtual`.
+- **Inline editing in tree** — Name, LongName, Description fields editable inline. GlobalId regenerable via double-click + confirmation modal. All edits carry `modelId`.
+- **Property set editing in Sidebar** — Each Pset property value has an inline edit button that commits a `SET_PROPERTY` diff.
+- **ValidationPanel** — `ValidationPanel.tsx` shows validation results with filtering by severity, rule, grouping, text search, and model. **Batch auto-fix button** applies all auto-fixable issues at once. Run button works for multi-model sessions.
+- **Non-destructive editing** — `editorStore` holds `EditDiff[]` with full undo/redo command history. All commands carry `modelId`. `getDiffsForModel(modelId)` filters history for export. Diff types: `RENAME`, `FIX_GUID`, `REPARENT`, `SET_PROPERTY`.
+- **IFC export per model** — export worker applies diffs for a specific model; `ExportModal` for multi-model sessions.
+- **GLB export per model** — `viewer.getModelObject(id)` returns the Three.js Object3D for GLB export.
+- **Multi-model export** — `ExportModal.tsx` shows all loaded models with per-row IFC + GLB buttons and "Export all" footer actions.
+- **ScenePanel multi-model UX** — per-row Isolate, Frame, Validate, Delete; Frame All; "isolated" banner; active model highlighting; transform section with explicit model.id.
+- **Model transform controls** — ScenePanel position/rotation/scale inputs; "Snap to grid"; `modelPivot` group keeps IFC placement untouched. All transforms pass explicit `modelId`.
+- **Camera preset system** — `CameraControls.tsx` floating overlay (ISO/Top/Front/Back/Left/Right/Bottom), collapses to icon; numpad shortcuts.
+- **Model info panel** — `ModelInfoPanel.tsx` collapsible pill showing active model's file size, element count, health badges.
+- **Quantity takeoff** — `TakeoffPanel` in Sidebar "Quantities" tab; reads `IfcElementQuantity`; per-model results in `takeoffStore`.
+- **Clash detection** — `RULE_ELEMENT_CLASH` (18th rule, off by default); AABB O(n²) with 5 cm threshold.
+- **Infrastructure layer** — `Result<T,E>` monad, `TypedEventBus`, `createLogger`, `Brand<T,B>` nominal types, runtime type guards, `invariant/assertNever`, `safeVoid`, `ErrorBoundary`.
+- **Facade hooks** — `useModelSession()`, `useAppEvent()`, `useValidationRunner()`, `useElementFocus()`, `usePersistedPreferences()`, `useKeyboardShortcuts()`.
+- **Build optimisation** — Vite chunk splitting: `vendor-three`, `vendor-ifc`, `vendor-ui`, app entry; `--max-old-space-size=4096` for Windows OOM fix.
 - **Unit tests** — 11 tests in `loader.test.ts` (Vitest), additional tests in `ifc-guards.test.ts`.
 
 ### Partially implemented / stubs
 
 - `loadIfc()` on `ViewerAPI` — still exists and works for direct IFC loading without the cache/worker pipeline, but is not called from `App.tsx`. It is a fallback/testing entry point.
 - GPU memory estimate in `getGpuEstimateBytes()` — uses a rough heuristic based on `WebGLRenderer.info.memory`.
-- Inline attribute editing UI — `editorStore` and command infrastructure are complete; the tree-node editing form in `ModelTree.tsx` may not be fully wired to the viewer highlight layer.
+- `IFCPropertySet.expressId` per property — populated by `formatPsets()` in `viewer.ts` from the `@thatopen` data layer; available when `prop.expressId > 0`.
 
-### Not implemented (Sprint 4)
+### Not yet implemented (Sprint 7+)
 
-- 3D error highlights (red/amber materials on elements with validation issues)
-- IFC export (apply diffs via `web-ifc IfcAPI.WriteLine` → `ExportFileAsIFC` → browser download)
-- GLB export (Three.js `GLTFExporter`)
-- Explicit memory management / dispose on model unload
-- WebGPU renderer
+- Postproduction renderer (SSAO, edge rendering, bloom) — Sprint 7
+- Measurement tools (length, area, edge, volume) — Sprint 7
+- Floor plan 2D views from IfcBuildingStorey — Sprint 8
+- Clipping planes / section cuts — Sprint 8
+- BCF 2.1 / 3.0 import and export — Sprint 9
+- WebGPU renderer — Sprint 10
+- Point cloud overlays (LAS/LAZ/E57) — Sprint 11
+- AI-assisted validation / natural language query — Sprint 12
 
 ---
 
@@ -81,7 +103,14 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 8. **`loadIfc()` on ViewerAPI is a legacy entry point.** New code must call `loadFragments()` after producing a binary via the worker or cache.
 9. **Edits are keyed by GlobalId, not Express ID.** Express IDs are reassigned on every IFC re-export; GlobalId is the stable identifier.
 10. **Worker bundles must not externalize bare module specifiers** (`three`, etc.). Externalizing causes unresolvable imports in browser worker context (production-only crash). See `DECISIONS.md` D-11.
+11. **All user model transforms go through `modelPivot`.** Do not modify `model.object.matrix` or `.position` directly — use `ViewerAPI.setModelTransform(transform, modelId)`.
+12. **`sceneStore` holds only serialisable data.** Three.js geometry management stays in `viewer.ts`.
+13. **Worker messages must be validated via zod schemas** in `worker-schemas.ts` before routing. Extend the schemas when adding new message types.
+14. **`modelRegistry` is the authority for IFC buffers per model.** Do not read `modelStore.ifcBuffer` for multi-model operations. Use `modelRegistry.getBuffer(modelId)`.
+15. **`getDiffsForModel(modelId)` filters the diff history.** Always pass `modelId` when building per-model export payloads.
+16. **Clearing history (`clearHistory()`) only happens in `handleNavigateToLanding`.** Never call it inside `loadFile`.
+17. **Transform callbacks in ScenePanel pass explicit `model.id`.** Do not rely on the viewer's current active model — always be explicit.
 
 ---
 
-*Last updated: 2026-05-09 · Current sprint: 3 (in progress)*
+*Last updated: 2026-05-17 · Sprints 1–6 complete · Current sprint: 7 (planned)*

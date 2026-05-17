@@ -20,7 +20,7 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 
 **Consequences:**
 - Locked to `@thatopen/fragments` binary format for caching. Format is specific to the installed version; upgrading minor versions may break cached data (mitigated: cache key includes `lastModified`, so users re-download when the file changes, but not when the library upgrades — needs a version prefix in the cache key in future).
-- Cannot use WebGPU with `OBC.SimpleRenderer` without writing a custom renderer class that satisfies `BaseRenderer`. (Deferred.)
+- Cannot use WebGPU with `OBC.SimpleRenderer` without writing a custom renderer class that satisfies `BaseRenderer`. (Deferred to Sprint 10.)
 - `@thatopen/*` must be excluded from Vite's pre-bundling (`optimizeDeps.exclude`) because its WASM-loading code breaks when Vite inlines it.
 
 ---
@@ -96,6 +96,8 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 
 **Sprint 3 update:** Zustand was added as predicted. Five stores are now active: `modelStore`, `validationStore`, `editorStore`, `uiStore`, `toastStore`. The validation engine produces results consumed by three UI areas simultaneously (spatial tree, validation panel, toolbar badge) — prop-drilling was no longer viable.
 
+**Sprint 5 update:** `sceneStore` added as 6th store (multi-model foundation). `takeoffStore` added as 7th store (Sprint 5).
+
 **Constraint (still applies):** Zustand stores must not hold Three.js objects (non-serialisable). Store references by ID only; let `viewer.ts` manage geometry.
 
 ---
@@ -153,7 +155,7 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 
 ## D-09 · WebGPU: detect and plan, not yet implement
 
-**Sprint:** 2
+**Sprint:** 2 (deferred) → Sprint 10 (planned)
 
 **Decision:** WebGPU support is planned but not implemented. `navigator.gpu` detection is documented; `three/webgpu` is available in the installed `three` version (r184+); but no WebGPU renderer is wired up.
 
@@ -203,4 +205,177 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 
 ---
 
-*Last updated: 2026-05-09 · Current sprint: 3 (in progress)*
+## D-12 · Result<T,E> monad at all I/O boundaries
+
+**Sprint:** 3
+
+**Decision:** All OPFS operations, cache reads/writes, and worker orchestration functions return `Result<T, AppError>` rather than throwing or returning `T | null`.
+
+**Alternatives considered:**
+- Throwing exceptions (implicit control flow; callers must know what can throw)
+- Returning `T | null` / `T | undefined` (loses the error reason)
+- `try/catch` everywhere at call sites (repetitive; no shared error type)
+
+**Reason:** OPFS operations fail silently in private browsing. Worker errors arrive asynchronously. Having a single `Result<T,E>` type forces callers to handle both paths at compile time, making failure modes explicit without exceptions polluting the call stack.
+
+**Consequences:**
+- `unwrapOr(result, fallback)` is the idiomatic way to consume a `Result` when a default is acceptable.
+- `CacheRepository` class wraps all OPFS I/O and always returns `Result`. Raw OPFS calls must not appear outside `opfs-cache.ts`.
+- Worker message handlers validate payloads through type guards before passing to Zustand — a failed guard produces a typed `Result<never, AppError>`.
+
+---
+
+## D-13 · TypedEventBus (appBus) for cross-module communication
+
+**Sprint:** 3
+
+**Decision:** A typed singleton event bus (`appBus` in `src/lib/event-bus.ts`) replaces prop callbacks and direct store reads for cross-module lifecycle events. `AppEventMap` defines every event name and its payload type.
+
+**Alternatives considered:**
+- Custom React Context with callback props (only works inside the React tree; validator.ts and loader.ts are plain modules)
+- Direct Zustand store subscriptions at module level (couples the emitter to the consumer's store shape)
+- Native `EventTarget` / `CustomEvent` (untyped; no compile-time payload guarantee)
+
+**Reason:** `loader.ts`, `validator.ts`, and `editorStore.ts` all need to signal lifecycle events (load complete, validation started/done, command applied) to arbitrary consumers including UI components and other services. A typed bus decouples emitters from consumers at compile time while keeping runtime wiring minimal.
+
+**Consequences:**
+- `useAppEvent(eventName, handler)` is the React-side bridge — subscribes on mount, unsubscribes on unmount.
+- Every event name and payload is declared in `AppEventMap` in `src/types/index.ts`. Adding an event requires updating that interface first.
+- Avoid using the bus for data that belongs in a Zustand store (synchronous UI state). The bus is for fire-and-forget lifecycle signals.
+
+---
+
+## D-14 · Repository pattern for OPFS cache
+
+**Sprint:** 3
+
+**Decision:** All OPFS I/O is mediated through a `CacheRepository` class instance (`cacheRepo`) exported from `src/lib/opfs-cache.ts`. Direct `navigator.storage.getDirectory()` calls must not appear outside that module.
+
+**Alternatives considered:**
+- Plain functions (`loadFromCache`, `saveToCache`, etc.) — the Sprint 2 approach; harder to mock and harder to swap out the storage backend
+- IndexedDB adapter behind the same interface (kept as a future option)
+
+**Reason:** Wrapping OPFS in a repository makes `Result<T,E>` returns consistent (the repository constructor can return early if OPFS is unavailable), and makes the storage layer testable without a real browser.
+
+**Consequences:**
+- `cacheRepo` is created once at module scope in `opfs-cache.ts` and imported by `loader.ts`.
+- `CacheRepository.listEntries()`, `.load()`, `.save()`, `.delete()`, `.getStorageEstimate()` are the only public surface.
+
+---
+
+## D-15 · Branded / nominal types (Brand<T,B>)
+
+**Sprint:** 3
+
+**Decision:** Stable identifiers are wrapped in branded types: `ExpressId` (number), `GlobalId` (string), `CacheKey` (string), `IfcModelId` (number). TypeScript structural typing would otherwise allow any `number` where an `ExpressId` is expected.
+
+**Alternatives considered:**
+- Plain `number` / `string` aliases (no type safety at call sites)
+- Opaque class wrappers (runtime overhead; verbose construction)
+- Zod schemas (runtime parsing — overkill for internal invariants)
+
+**Reason:** Prevents the class of bug where an Express ID (reassigned on every re-export) is accidentally stored as the stable edit key. The compiler rejects the assignment; the developer must explicitly cast.
+
+**Consequences:**
+- `brand.ts` exports `Brand<T,B>` and cast helpers (`asExpressId`, `asGlobalId`, etc.).
+- Only the layer that first obtains the value from the IFC API should cast to a branded type. All downstream code uses the branded type directly.
+
+---
+
+## D-16 · Auto spatial tree build on model load (separate from validation)
+
+**Sprint:** 3
+
+**Decision:** `buildSpatialTree()` is called fire-and-forget from `loader.ts` after every successful model load. It sends a `build-tree` message to `validator.worker.ts` and populates `validationStore.spatialTree` without running any validation rules.
+
+**Alternatives considered:**
+- Build the tree only when the user opens the tree panel (lazy) — causes a visible delay the first time the panel opens
+- Build the tree as part of `runValidation()` — couples two independent workflows; tree unavailable until the user explicitly runs validation
+- Build the tree in the parser worker — the parser worker uses `IfcImporter`, not `IfcAPI`; relationship traversal requires `IfcAPI`
+
+**Reason:** The spatial tree is navigational UI — users expect it immediately after loading. Tying it to validation made the tree appear to be a validation output rather than a model structure view, which confused users.
+
+**Consequences:**
+- `validator.worker.ts` handles two message types: `validate` (rules + tree) and `build-tree` (tree only). The `build-tree` path skips all rule functions.
+- `buildSpatialTree()` in `validator.ts` defers if validation is already running; retries via `appBus.once('validation:complete')`.
+- The tree is rebuilt on every new model load. It is not persisted in OPFS.
+
+---
+
+## D-17 · Per-model pivot groups (not a single shared pivot)
+
+**Sprint:** 6a
+
+**Decision:** Each loaded model gets its own `THREE.Group` stored in `modelPivots: Map<string, THREE.Group>` (keyed by sceneModel ID). Sprint 5 used a single `modelPivot` group shared by all models.
+
+**Alternatives considered:**
+- Reuse the single pivot (rejected: transforms bleed across models when a user moves model A while model B is "active")
+- Use the model's own `model.object` group (rejected: modifying OBC's internal object breaks geometry batching and highlight state)
+
+**Reason:** With multi-model support, transforms are per-model by definition. A single shared pivot meant that whatever model happened to be the last "active" one in the viewer would receive all transform mutations. Per-model pivots also allow `frameActiveModel()`, `isolateModel()`, and `getModelBounds(id)` to operate independently.
+
+**Consequences:**
+- `setModelTransform(transform, modelId?)` must look up the correct pivot by modelId. Callers that omit `modelId` fall back to the current active model's pivot.
+- `frameAllModels()` computes the union bounding box of all pivot-transformed AABB values.
+
+---
+
+## D-18 · modelRegistry as authority for IFC buffers (replaces modelStore.ifcBuffer)
+
+**Sprint:** 6d
+
+**Decision:** `modelRegistry` (from `src/lib/model-registry.ts`) is the single source of truth for per-model IFC buffers and typeMaps. `modelStore.ifcBuffer` (the legacy single-model buffer field) is deprecated for multi-model operations.
+
+**Alternatives considered:**
+- Keep `modelStore.ifcBuffer` as the source, update it to point to the "active" model's buffer — rejected because active model changes break background operations (export running while user switches active model)
+- Store buffers in `sceneStore` — rejected because sceneStore is supposed to hold only serialisable data
+- Store buffers in Zustand with a Map — rejected because large ArrayBuffers are non-serialisable and Zustand's devtools would try to clone them
+
+**Reason:** `modelRegistry` is a plain JS Map outside the React/Zustand tree. It holds `ArrayBuffer` objects by reference, which are large and non-serialisable — they must not go into Zustand. Having a dedicated registry separates identity (sceneStore: `SceneModel[]`, stable UI metadata) from binary data (modelRegistry: IFC bytes).
+
+**Consequences:**
+- `getDiffsForModel(modelId)` and `exportAsIfc(buffer, diffs)` take explicit buffer arguments obtained via `modelRegistry.getBuffer(modelId)`.
+- `modelStore.ifcBuffer` still exists for single-model legacy paths. Do not use it in new multi-model code.
+- `modelRegistry.unregister(id)` must be called in `handleRemoveModel` to free the buffer from memory.
+
+---
+
+## D-19 · Conditional state reset: only on first model load
+
+**Sprint:** 6f
+
+**Decision:** `handleFileLoad` in `App.tsx` resets `selected`, `hidden`, `isolated`, `hiddenElements` only when `sceneModels.length === 0` (the first model load). Subsequent loads do not touch existing UI state.
+
+**Alternatives considered:**
+- Always reset on every load (Sprint 5 behaviour — broke multi-model workflows: loading model B cleared model A's selection and hidden state)
+- Never reset (leaves stale selection pointing to elements that no longer exist — only valid if models are related)
+
+**Reason:** Loading a second model is additive; the user's existing selection and category visibility for the first model are intentional. Clearing them is destructive and surprising. The reset is only meaningful when going from "no model" to "first model".
+
+**Consequences:**
+- If the user loads an entirely unrelated second model and wants a clean slate, they must manually clear selection and restore visibility.
+- `handleNavigateToLanding()` still resets everything — that path is a full session reset.
+
+---
+
+## D-20 · Vite chunk splitting for production build
+
+**Sprint:** 6 (build optimisation — 2026-05-17)
+
+**Decision:** `vite.config.ts` uses `manualChunks` in `rollupOptions.output` to split the production bundle into four chunks: `vendor-three` (three.js), `vendor-ifc` (@thatopen/* + web-ifc), `vendor-ui` (React, Radix, Framer, Zustand, everything else), and the app entry.
+
+**Alternatives considered:**
+- Default Vite chunking (produced a ~6.5 MB monolith that hit the JS heap OOM on Windows during build)
+- Split into more chunks (caused circular-dependency warnings between React ecosystem packages: e.g., `vendor-react → vendor-misc → vendor-react`)
+- Server-side rendering with streaming (not applicable — client-only app)
+
+**Reason:** three.js (~1.3 MB) and @thatopen (~4.5 MB) are large, change infrequently, and are perfect long-lived browser cache targets. Separating them from the app code means a code change to the app does not invalidate the vendor cache. Merging React ecosystem into one `vendor-ui` chunk avoids the circular-dependency warning caused by cross-imports between Radix, Framer, and React.
+
+**Consequences:**
+- Worker chunks (validator + export workers) still bundle three.js inline (~3.2–4.3 MB uncompressed each) — this is unavoidable because workers cannot resolve bare specifiers at runtime (see D-11).
+- `chunkSizeWarningLimit: 5000` is set to suppress the noise from unavoidably large worker bundles.
+- `node --max-old-space-size=4096` is required for the build on Windows (514+ modules exhaust the default 2 GB Node heap without this flag).
+
+---
+
+*Last updated: 2026-05-17 · Sprints 1–6 complete*
