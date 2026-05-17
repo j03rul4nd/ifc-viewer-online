@@ -5,8 +5,11 @@ import { useValidationStore } from '../stores/validationStore'
 import { useUIStore } from '../stores/uiStore'
 import { useEditorHistory } from '../hooks/useEditorHistory'
 import { useEditorStore } from '../stores/editorStore'
-import { buildRenameCommand } from '../lib/diffStore'
-import type { Category, SelectedInfo, SpatialNode, SpatialElement, ValidationIssue } from '../types'
+import { useTakeoffStore, selectTakeoffGroups, selectTakeoffStatus } from '../stores/takeoffStore'
+import { useSceneStore } from '../stores/sceneStore'
+import { computeTakeoff } from '../lib/takeoff'
+import { buildRenameCommand, buildSetPropertyCommand } from '../lib/diffStore'
+import type { Category, SelectedInfo, SpatialNode, SpatialElement, ValidationIssue, TakeoffGroup } from '../types'
 import type { IFCItemData, IFCPropertySet, ViewerAPI } from '../lib/viewer'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -284,8 +287,31 @@ function IssuePill({ issue }: { issue: ValidationIssue }) {
 
 // ─── PsetSection ──────────────────────────────────────────────────────────────
 
-function PsetRow({ pset }: { pset: IFCPropertySet }) {
+function PsetRow({
+  pset,
+  elementExpressId,
+  onEditProperty,
+}: {
+  pset: IFCPropertySet
+  elementExpressId: number
+  onEditProperty: (psetName: string, propName: string, propExpressId: number, oldValue: string, newValue: string) => void
+}) {
   const [open, setOpen] = useState(false)
+  const [editingPropId, setEditingPropId] = useState<number | null>(null)
+  const [editValue, setEditValue] = useState('')
+
+  const startEdit = (propExpressId: number, currentValue: string): void => {
+    setEditingPropId(propExpressId)
+    setEditValue(currentValue)
+  }
+
+  const commitEdit = (prop: IFCPropertySet['properties'][number]): void => {
+    const trimmed = editValue.trim()
+    if (trimmed !== String(prop.value ?? '')) {
+      onEditProperty(pset.name, prop.name, prop.expressId, String(prop.value ?? ''), trimmed)
+    }
+    setEditingPropId(null)
+  }
 
   return (
     <div className="mx-4 mb-1.5 rounded-lg overflow-hidden border border-[var(--border)]">
@@ -312,34 +338,69 @@ function PsetRow({ pset }: { pset: IFCPropertySet }) {
             style={{ overflow: 'hidden' }}
           >
             <div className="border-t border-[var(--border)]">
-              {pset.properties.map((prop, i) => (
-                <div
-                  key={i}
-                  className="flex items-baseline px-2.5 py-1 gap-2 hover:bg-[var(--surface-2)] transition-colors group/prop"
-                >
-                  <span className="w-[45%] flex-shrink-0 text-[11px] text-[var(--text-dim)] truncate" title={prop.name}>
-                    {prop.name}
-                  </span>
-                  <div className="flex-1 flex items-center gap-1 min-w-0">
-                    <span
-                      className={`flex-1 text-[11.5px] truncate ${
-                        prop.value === null || prop.value === ''
-                          ? 'text-[var(--text-faint)] italic'
-                          : 'text-[var(--text)]'
-                      }`}
-                      title={String(prop.value ?? '—')}
-                    >
-                      {formatPropValue(prop.value)}
+              {pset.properties.map((prop, i) => {
+                const isEditingThis = editingPropId === prop.expressId
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center px-2.5 py-1 gap-2 hover:bg-[var(--surface-2)] transition-colors group/prop"
+                  >
+                    <span className="w-[42%] flex-shrink-0 text-[11px] text-[var(--text-dim)] truncate" title={prop.name}>
+                      {prop.name}
                     </span>
-                    {prop.value !== null && prop.value !== '' && (
-                      <CopyButton
-                        value={String(prop.value)}
-                        label=""
-                      />
-                    )}
+                    <div className="flex-1 flex items-center gap-1 min-w-0">
+                      {isEditingThis ? (
+                        <>
+                          <input
+                            autoFocus
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter')  { e.preventDefault(); commitEdit(prop) }
+                              if (e.key === 'Escape') setEditingPropId(null)
+                            }}
+                            onBlur={() => commitEdit(prop)}
+                            className="flex-1 h-5 px-1 text-[11px] bg-[var(--surface)] border border-[var(--accent)] rounded text-[var(--text)] outline-none"
+                          />
+                          <button
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => setEditingPropId(null)}
+                            className="text-[10px] text-[var(--text-faint)] hover:text-[var(--text)] shrink-0 px-0.5"
+                          >✕</button>
+                        </>
+                      ) : (
+                        <>
+                          <span
+                            className={`flex-1 text-[11.5px] truncate ${
+                              prop.value === null || prop.value === ''
+                                ? 'text-[var(--text-faint)] italic'
+                                : 'text-[var(--text)]'
+                            }`}
+                            title={String(prop.value ?? '—')}
+                          >
+                            {formatPropValue(prop.value)}
+                          </span>
+                          {/* Only show edit button when prop has an expressId from the viewer */}
+                          {prop.expressId > 0 && (
+                            <button
+                              className="shrink-0 opacity-0 group-hover/prop:opacity-60 hover:!opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--border)]"
+                              title="Edit value"
+                              onClick={() => startEdit(prop.expressId, String(prop.value ?? ''))}
+                            >
+                              <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M8 2l2 2-6 6H2V8l6-6z" />
+                              </svg>
+                            </button>
+                          )}
+                          {prop.value !== null && prop.value !== '' && (
+                            <CopyButton value={String(prop.value)} label="" />
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </motion.div>
         )}
@@ -358,6 +419,7 @@ type IFCDataState =
 
 function useIFCItemData(
   expressId: number | null,
+  modelId:   string | null | undefined,
   viewerApiRef: React.MutableRefObject<ViewerAPI | null> | undefined,
 ): IFCDataState {
   const [state, setState] = useState<IFCDataState>({ status: 'idle' })
@@ -371,7 +433,9 @@ function useIFCItemData(
     let cancelled = false
     setState({ status: 'loading' })
 
-    viewerApiRef.current?.getItemData(expressId)
+    // Pass modelId so the viewer fetches attributes from the correct model
+    // when multiple IFC files are loaded simultaneously.
+    viewerApiRef.current?.getItemData(expressId, modelId ?? undefined)
       .then((data) => {
         if (cancelled) return
         if (data) {
@@ -385,7 +449,7 @@ function useIFCItemData(
       })
 
     return () => { cancelled = true }
-  }, [expressId, viewerApiRef])
+  }, [expressId, modelId, viewerApiRef])
 
   return state
 }
@@ -405,7 +469,9 @@ interface PropertiesPanelProps {
 function PropertiesPanel({
   selected, categories, isolated, viewerApiRef, onFrame, onRevealInTree, onIsolate,
 }: PropertiesPanelProps) {
-  const { spatialTree, result } = useValidationStore()
+  // Read raw record (stable reference) to avoid infinite-loop selector issue
+  const spatialTreesRecord = useValidationStore((s) => s.spatialTrees)
+  const result             = useValidationStore((s) => s.result)
   const { hiddenElements, setElementsVisible } = useUIStore()
   const { addCommand } = useEditorHistory()
   const { diffs } = useEditorStore()
@@ -422,12 +488,21 @@ function PropertiesPanel({
 
   const expressId = selected ? parseInt(selected.id, 10) : null
 
-  // ── Load real IFC data ──────────────────────────────────────────────────
-  const ifcState = useIFCItemData(expressId, viewerApiRef)
+  // Resolve the spatial tree for the selected element's model.
+  // If modelId is known, use that model's tree directly.
+  // Otherwise combine all trees so the Location breadcrumb still works in single-model mode.
+  const spatialTree = useMemo(() => {
+    if (!selected) return []
+    if (selected.modelId) return spatialTreesRecord[selected.modelId] ?? []
+    return Object.values(spatialTreesRecord).flat()
+  }, [selected?.modelId, spatialTreesRecord])
+
+  // ── Load real IFC data — pass modelId so the viewer targets the right model ──
+  const ifcState = useIFCItemData(expressId, selected?.modelId ?? null, viewerApiRef)
 
   // ── Spatial path from tree (still used for Location breadcrumb) ──────────
   const spatialPath = useMemo(() => {
-    if (!selected) return null
+    if (!selected || spatialTree.length === 0) return null
     return findSpatialPath(spatialTree, parseInt(selected.id, 10))
   }, [selected, spatialTree])
 
@@ -462,8 +537,19 @@ function PropertiesPanel({
     if (!selected) return
     const id = parseInt(selected.id, 10)
     const currentVal = pendingDiffs.get(field) ?? (field === 'Name' ? selected.name : '')
-    addCommand(buildRenameCommand(id, field, currentVal, newVal))
+    addCommand(buildRenameCommand(id, field, currentVal, newVal, selected.modelId))
   }, [selected, pendingDiffs, addCommand])
+
+  const handleEditProperty = useCallback((
+    psetName: string,
+    propName: string,
+    propExpressId: number,
+    oldValue: string,
+    newValue: string,
+  ) => {
+    if (!expressId) return
+    addCommand(buildSetPropertyCommand(expressId, psetName, propName, propExpressId, oldValue, newValue, selected?.modelId))
+  }, [expressId, selected, addCommand])
 
   if (!selected || expressId === null) {
     return (
@@ -811,7 +897,12 @@ function PropertiesPanel({
                 ) : (
                   <div className="pt-1 pb-2">
                     {psets.map((pset, i) => (
-                      <PsetRow key={i} pset={pset} />
+                      <PsetRow
+                        key={i}
+                        pset={pset}
+                        elementExpressId={expressId ?? 0}
+                        onEditProperty={handleEditProperty}
+                      />
                     ))}
                   </div>
                 )}
@@ -969,8 +1060,14 @@ function CategoryPanel({
   onSelectElement?: (expressId: number) => void
   onFrameElement?: (expressId: number) => void
 }) {
-  const { spatialTree } = useValidationStore()
-  const nameMap = useMemo(() => buildNameMap(spatialTree), [spatialTree])
+  // Combine all loaded models' trees so element names resolve correctly
+  // regardless of which model they belong to.
+  const spatialTreesRecord = useValidationStore((s) => s.spatialTrees)
+  const allNodes = useMemo(
+    () => Object.values(spatialTreesRecord).flat(),
+    [spatialTreesRecord],
+  )
+  const nameMap = useMemo(() => buildNameMap(allNodes), [allNodes])
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const toggleExpand = useCallback((id: string) => {
     setExpanded(prev => {
@@ -1024,6 +1121,171 @@ function CategoryPanel({
   )
 }
 
+// ─── Takeoff Panel ──────────────────────────────────────────────────────────────
+
+function TakeoffPanel() {
+  const sceneModels = useSceneStore((s) => s.models)
+  const activeModelId = useSceneStore((s) => s.activeModelId)
+
+  // Default to the active scene model; fall back to first loaded
+  const [selectedModelId, setSelectedModelId] = React.useState<string | null>(null)
+  const modelId = selectedModelId ?? activeModelId ?? sceneModels[0]?.id ?? ''
+
+  const groups    = useTakeoffStore(selectTakeoffGroups(modelId))
+  const status    = useTakeoffStore(selectTakeoffStatus(modelId))
+  const isRunning = status === 'running'
+
+  // Auto-select active model when it changes and we haven't pinned a choice
+  React.useEffect(() => {
+    if (!selectedModelId && activeModelId) setSelectedModelId(activeModelId)
+  }, [activeModelId, selectedModelId])
+
+  const modelSelector = sceneModels.length > 1 ? (
+    <div className="flex items-center gap-1 px-3 py-1.5 border-b border-[var(--border)] overflow-x-auto">
+      {sceneModels.map((m) => (
+        <button
+          key={m.id}
+          onClick={() => setSelectedModelId(m.id)}
+          className={`shrink-0 px-2 h-5 rounded text-[10px] font-medium transition-colors ${
+            m.id === modelId
+              ? 'bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border)]'
+              : 'text-[var(--text-faint)] hover:text-[var(--text-dim)]'
+          }`}
+        >
+          {m.fileName.replace(/\.ifc$/i, '')}
+        </button>
+      ))}
+    </div>
+  ) : null
+
+  if (!modelId) {
+    return (
+      <div className="px-6 py-10 text-center text-[var(--text-faint)] text-[12px]">
+        No model loaded.
+      </div>
+    )
+  }
+
+  if (status === 'idle') {
+    return (
+      <div>
+        {modelSelector}
+        <div className="px-6 py-8 text-center">
+          <div className="w-10 h-10 mx-auto mb-3 rounded-[10px] bg-[var(--surface-2)] flex items-center justify-center text-[var(--text-dim)]">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M1 14h2V8H1v6zm4 0h2V4H5v10zm4 0h2V6H9v8zm4 0h2V2h-2v12z" opacity="0.8"/>
+            </svg>
+          </div>
+          <div className="text-[13px] text-[var(--text-dim)] mb-1">Quantity Takeoff</div>
+          <div className="text-[11.5px] text-[var(--text-faint)] leading-relaxed mb-4">
+            Reads area, volume and length quantities from IFC quantity sets.
+          </div>
+          <button
+            onClick={() => void computeTakeoff(modelId)}
+            className="px-3.5 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[12px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--border-strong)] transition-colors"
+          >
+            Compute quantities
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (isRunning) {
+    return (
+      <div>
+        {modelSelector}
+        <div className="px-6 py-10 text-center text-[var(--text-faint)]">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            strokeLinecap="round" className="animate-spin mx-auto mb-3 opacity-50">
+            <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+            <path d="M12 2a10 10 0 0 1 7.07 2.93" />
+          </svg>
+          <div className="text-[12px]">Computing quantities…</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (status === 'error') {
+    return (
+      <div>
+        {modelSelector}
+        <div className="px-6 py-8 text-center">
+          <div className="text-[12px] text-[var(--danger)] mb-3">Quantity computation failed.</div>
+          <button
+            onClick={() => void computeTakeoff(modelId)}
+            className="px-3.5 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[12px] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (groups.length === 0) {
+    return (
+      <div>
+        {modelSelector}
+        <div className="px-6 py-8 text-center text-[var(--text-faint)] text-[12px]">
+          No quantity data found in this model.
+          <br />IFC quantity sets (Qto_*) may not be present.
+        </div>
+      </div>
+    )
+  }
+
+  const hasQuantities = groups.some(g => g.quantities.length > 0)
+
+  return (
+    <div className="py-2">
+      {modelSelector}
+      <div className="px-3.5 pt-1 pb-2.5 flex items-center justify-between">
+        <div>
+          <div className="text-[11.5px] font-semibold text-[var(--text-dim)] uppercase tracking-[0.06em]">Quantities</div>
+          <div className="text-[11px] text-[var(--text-faint)] mt-0.5">{groups.length} classes</div>
+        </div>
+        <button
+          onClick={() => void computeTakeoff(modelId)}
+          title="Recompute quantities"
+          className="text-[11px] text-[var(--text-faint)] hover:text-[var(--text-dim)] transition-colors"
+        >
+          Refresh
+        </button>
+      </div>
+
+      <div className="divide-y divide-[var(--border)]">
+        {groups.map((g: TakeoffGroup) => (
+          <div key={g.ifcClass} className="px-3.5 py-2.5 hover:bg-[var(--surface-2)] transition-colors">
+            <div className="flex items-baseline justify-between gap-2 mb-1">
+              <span className="text-[12.5px] font-medium text-[var(--text)]">{g.label}</span>
+              <span className="text-[11px] font-mono text-[var(--text-dim)] shrink-0">{g.count.toLocaleString()}</span>
+            </div>
+            {g.quantities.length > 0 ? (
+              <div className="space-y-0.5">
+                {g.quantities.map((q) => (
+                  <div key={q.name} className="flex justify-between text-[11px]">
+                    <span className="text-[var(--text-faint)] truncate pr-2">{q.name}</span>
+                    <span className="font-mono text-[var(--text-dim)] shrink-0">
+                      {q.value.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+                      {q.unit && <span className="text-[var(--text-faint)] ml-0.5">{q.unit}</span>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              hasQuantities && (
+                <div className="text-[11px] text-[var(--text-faint)]">No quantity data</div>
+              )
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Sidebar ───────────────────────────────────────────────────────────────
 
 interface SidebarProps {
@@ -1052,7 +1314,7 @@ export default function Sidebar({
   isolated, onSetIsolated, onFrame, onSelectElement, onFrameElement,
   onRevealInTree, viewerApiRef, mobileOpen = false, onMobileClose,
 }: SidebarProps) {
-  const [tab, setTab] = useState<'props' | 'cats'>('props')
+  const [tab, setTab] = useState<'props' | 'cats' | 'qty'>('props')
 
   useEffect(() => { if (selected) setTab('props') }, [selected])
 
@@ -1112,7 +1374,7 @@ export default function Sidebar({
 
       {/* Tabs */}
       <div className="flex p-1.5 gap-0.5 border-b border-[var(--border)] shrink-0">
-        {([['props', 'Properties'], ['cats', 'Categories']] as const).map(([id, label]) => (
+        {([['props', 'Properties'], ['cats', 'Categories'], ['qty', 'Quantities']] as const).map(([id, label]) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -1128,7 +1390,7 @@ export default function Sidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto scroll-contain">
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           {tab === 'props' && (
             <motion.div key="props" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <PropertiesPanel
@@ -1155,6 +1417,11 @@ export default function Sidebar({
                 onSelectElement={onSelectElement}
                 onFrameElement={onFrameElement}
               />
+            </motion.div>
+          )}
+          {tab === 'qty' && (
+            <motion.div key="qty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <TakeoffPanel />
             </motion.div>
           )}
         </AnimatePresence>

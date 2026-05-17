@@ -5,7 +5,7 @@
 //
 //   loadFile(file)
 //       │
-//       ├─ [pre-flight] file empty? wrong extension? → reject early
+//       ├─ [pre-flight] empty file / wrong extension → reject early
 //       │
 //       ├─ check OPFS cache ──── HIT ──▶ loadFragments() in viewer
 //       │                                (skip all parsing, ~10× faster)
@@ -19,73 +19,53 @@
 //                      ├─ save .frag + .ifc to OPFS
 //                      └─ loadFragments() in viewer
 //
-// Fixed bugs vs. first refactoring pass:
-//
+// Resilience features (vs first pass):
 //   1. isFromCache stale closure — uses local `fromCacheLocal` variable.
-//
-//   2. Worker not recovered after error — parser worker is terminated and its
-//      ref cleared on any error so the next load always starts fresh.
-//
-//   3. resetProgress API added — parent calls this before reopening the modal.
-//
-//   4. Double toast on worker-init failure — the old code toasted inside
-//      parseInWorker AND in the outer catch.  The inner toast is removed; all
-//      error-surface toasting happens exactly once in the outer catch block.
-//
-//   5. isMountedRef — guards every post-await setState call so a navigating-
-//      away user never triggers "Can't perform state update on unmounted
-//      component" warnings.  The ref is set false in the effect cleanup.
-//
-//   6. isLoadingRef — prevents concurrent loadFile executions.  If a second
-//      load starts while one is in flight, it rejects immediately with a clear
-//      error rather than corrupting the model store.
-//
-//   7. waitForViewer abort — the polling setTimeout chain now checks
-//      `isMountedRef.current` so it stops cleanly on unmount instead of
-//      leaking timers for up to 10 seconds.
-//
-//   8. Background OPFS save — the setCacheEntries callback is guarded by
-//      isMountedRef so it never fires on an unmounted component.
+//   2. Worker recovery — parser worker is terminated on error; next load starts fresh.
+//   3. Double toast — all user-facing toasting happens exactly once in the outer catch.
+//   4. isMountedRef — guards every post-await setState call against unmount.
+//   5. isLoadingRef — prevents concurrent loadFile() calls from corrupting state.
+//   6. waitForViewer abort — polling chain checks isMountedRef to stop on unmount.
+//   7. Background OPFS save — setCacheEntries callback is guarded by isMountedRef.
 
 import { useEffect, useRef, useCallback, useState } from 'react'
-import {
-  buildCacheKey,
-  loadFromCache,
-  saveToCache,
-  listCacheEntries,
-  deleteCacheEntry,
-  saveIfcBuffer,
-  loadIfcBuffer,
-} from './opfs-cache'
+import { buildCacheKey } from './opfs-cache'
+import { cacheRepo }     from './cache-repository'
+import { unwrapOr }      from './result'
 import { validateIfcBuffer } from './ifc-guards'
 import { startMemoryTracking } from './memory-tracker'
 import { yieldToMain } from './scheduler'
+import { createLogger } from './logger'
+import { appBus }             from './event-bus'
+import { buildSpatialTree }   from './validator'
+import { modelRegistry }      from './model-registry'
 import { useModelStore } from '../stores/modelStore'
-import { useValidationStore } from '../stores/validationStore'
-import { useEditorStore } from '../stores/editorStore'
-import { toast } from '../stores/toastStore'
+import { toast, toastFromError } from '../stores/toastStore'
 import type { ViewerAPI } from './viewer'
 import type { CacheEntry, LoadProgress, MemoryStats, ModelInfo } from '../types'
 import type { WorkerOutMessage } from '../workers/ifc-parser.worker'
+
+const log = createLogger('Loader')
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface UseIfcLoaderOptions {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
-  onModelLoaded?: (info: ModelInfo, fromCache: boolean) => void
+  /** Called once the model is fully loaded. modelId is the stable scene-level ID. */
+  onModelLoaded?: (info: ModelInfo, fromCache: boolean, modelId: string) => void
   onError?: (message: string) => void
 }
 
 export interface UseIfcLoaderResult {
-  loadFile:      (file: File) => Promise<void>
+  loadFile:        (file: File) => Promise<void>
   /** Reset progress to zero — call before reopening the upload modal. */
-  resetProgress: () => void
-  progress:      LoadProgress
-  memoryStats:   MemoryStats
-  cacheEntries:  CacheEntry[]
+  resetProgress:   () => void
+  progress:        LoadProgress
+  memoryStats:     MemoryStats
+  cacheEntries:    CacheEntry[]
   deleteFromCache: (key: string) => Promise<void>
-  isFromCache:   boolean
-  opfsAvailable: boolean
+  isFromCache:     boolean
+  opfsAvailable:   boolean
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -93,25 +73,21 @@ export interface UseIfcLoaderResult {
 export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
   const { viewerApiRef, onModelLoaded, onError } = opts
 
-  const [progress, setProgress]           = useState<LoadProgress>({ phase: 'reading', percent: 0 })
-  const [memoryStats, setMemoryStats]     = useState<MemoryStats>({ heapMB: 0, gpuEstimateMB: 0 })
-  const [cacheEntries, setCacheEntries]   = useState<CacheEntry[]>([])
-  const [isFromCache, setIsFromCache]     = useState(false)
+  const [progress,      setProgress]      = useState<LoadProgress>({ phase: 'reading', percent: 0 })
+  const [memoryStats,   setMemoryStats]   = useState<MemoryStats>({ heapMB: 0, gpuEstimateMB: 0 })
+  const [cacheEntries,  setCacheEntries]  = useState<CacheEntry[]>([])
+  const [isFromCache,   setIsFromCache]   = useState(false)
   const [opfsAvailable, setOpfsAvailable] = useState(false)
 
-  const workerRef     = useRef<Worker | null>(null)
-  /** Set to false in the cleanup effect — guards post-await setState calls. */
-  const isMountedRef  = useRef(true)
-  /** Prevents concurrent loadFile() executions from corrupting state. */
-  const isLoadingRef  = useRef(false)
+  const workerRef    = useRef<Worker | null>(null)
+  const isMountedRef = useRef(true)
+  const isLoadingRef = useRef(false)
 
-  // ── Mounted-safe setState wrappers ─────────────────────────────────────────
-  // Using tiny helpers keeps the async flow readable without scattering
-  // isMountedRef checks throughout the code.
+  // ── Mounted-safe state setters ─────────────────────────────────────────────
 
-  const safeSetProgress    = (v: LoadProgress):  void => { if (isMountedRef.current) setProgress(v) }
-  const safeSetIsFromCache = (v: boolean):        void => { if (isMountedRef.current) setIsFromCache(v) }
-  const safeSetCacheEntries= (v: CacheEntry[]):   void => { if (isMountedRef.current) setCacheEntries(v) }
+  const safeSetProgress     = (v: LoadProgress): void => { if (isMountedRef.current) setProgress(v) }
+  const safeSetIsFromCache  = (v: boolean):       void => { if (isMountedRef.current) setIsFromCache(v) }
+  const safeSetCacheEntries = (v: CacheEntry[]):  void => { if (isMountedRef.current) setCacheEntries(v) }
 
   // ── Worker lifecycle ────────────────────────────────────────────────────────
 
@@ -125,11 +101,10 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
     return workerRef.current
   }
 
-  /** Terminate and clear the parser worker ref.
-   *  Called on error so the next load always gets a fresh worker. */
   function resetWorker(): void {
     workerRef.current?.terminate()
     workerRef.current = null
+    log.debug('Parser worker disposed')
   }
 
   useEffect(() => {
@@ -140,15 +115,19 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
         'storage' in navigator && typeof navigator.storage.getDirectory === 'function'
       if (isMountedRef.current) setOpfsAvailable(available)
       if (available) {
-        const entries = await listCacheEntries()
+        const r = await cacheRepo.listEntries()
+        const entries = unwrapOr(r, [])
         safeSetCacheEntries(entries)
+        log.debug(`OPFS available — ${entries.length} cached entries`)
+      } else {
+        log.debug('OPFS not available')
       }
     })()
 
     const stopTracking = startMemoryTracking(
       (stats) => { if (isMountedRef.current) setMemoryStats(stats) },
       () => viewerApiRef.current?.getGpuEstimateBytes() ?? 0,
-      4000,
+      4_000,
     )
 
     return () => {
@@ -161,17 +140,11 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
 
   // ── Viewer readiness poll ──────────────────────────────────────────────────
 
-  /**
-   * Polls `viewerApiRef.current` until it is non-null, the timeout expires, or
-   * the component unmounts.  The timer chain is aborted immediately on unmount
-   * instead of leaking for the full `timeoutMs` duration.
-   */
   function waitForViewer(timeoutMs = 10_000): Promise<ViewerAPI> {
     return new Promise((resolve, reject) => {
       const deadline = Date.now() + timeoutMs
 
       const poll = (): void => {
-        // Stop polling if the component unmounted (e.g. user navigated back)
         if (!isMountedRef.current) {
           reject(new Error('Viewer polling aborted: component unmounted.'))
           return
@@ -198,10 +171,6 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
 
   function parseInWorker(file: File, rawBuffer: ArrayBuffer): Promise<Uint8Array> {
     return new Promise((resolve, reject) => {
-      // Worker init can throw (e.g. module URL not found in some sandboxes).
-      // We do NOT toast here — the outer catch in loadFile is responsible for
-      // all user-facing error toasting so there is exactly one notification per
-      // failure, regardless of which layer caught the error first.
       let worker: Worker
       try {
         worker = getWorker()
@@ -212,6 +181,7 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
       }
 
       const id = `${file.name}-${Date.now()}`
+      log.debug('Sending buffer to parser worker, id:', id, 'size:', rawBuffer.byteLength)
 
       const handler = (e: MessageEvent<WorkerOutMessage>): void => {
         const msg = e.data
@@ -222,11 +192,11 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
         } else if (msg.type === 'result') {
           worker.removeEventListener('message', handler)
           worker.removeEventListener('error',   errorHandler)
+          log.debug('Parser worker returned fragments:', msg.fragmentsBuffer.byteLength, 'bytes')
           resolve(new Uint8Array(msg.fragmentsBuffer))
         } else if (msg.type === 'error') {
           worker.removeEventListener('message', handler)
           worker.removeEventListener('error',   errorHandler)
-          // Terminate the broken worker — next load gets a fresh one.
           resetWorker()
           reject(new Error(msg.message))
         }
@@ -236,9 +206,6 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
         worker.removeEventListener('message', handler)
         worker.removeEventListener('error',   errorHandler)
         resetWorker()
-        // e.message can be "" or undefined when the worker module fails to load
-        // (e.g. unresolved bare import in the worker bundle). Include all available
-        // ErrorEvent fields so the error is actionable rather than "undefined".
         const msg = e.message || '(no message — likely a module load failure in the worker)'
         const loc = e.filename ? ` [${e.filename}:${e.lineno}:${e.colno}]` : ''
         reject(new Error(`Parser worker script error: ${msg}${loc}`))
@@ -264,9 +231,6 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
 
   const loadFile = useCallback(async (file: File): Promise<void> => {
 
-    // ── Concurrency guard ──────────────────────────────────────────────────
-    // Prevents two loads from running simultaneously (e.g. a background fetch
-    // and a manual drop happening at the same time).
     if (isLoadingRef.current) {
       const msg = 'Another IFC file is already loading. Please wait for it to finish.'
       toast(msg, 'warning')
@@ -289,40 +253,37 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
       return
     }
 
-    // ── Acquire loading lock ───────────────────────────────────────────────
     isLoadingRef.current = true
     safeSetIsFromCache(false)
     safeSetProgress({ phase: 'reading', percent: 5 })
 
-    // Reset previous model state
-    useValidationStore.getState().reset()
-    useEditorStore.getState().clearHistory()
+    // Do NOT clear history or validation here — that would wipe edits and spatial trees
+    // for already-loaded models. Full reset happens in handleNavigateToLanding only.
 
-    // ── fromCacheLocal tracks cache hit for this load.
-    //    We MUST NOT read the `isFromCache` state because React state updates
-    //    are asynchronous — the value is always stale at the call site.
+    log.info(`Loading "${file.name}" (${(file.size / 1024 / 1024).toFixed(1)} MB)`)
+    const loadStart = Date.now()
+
     let fromCacheLocal = false
 
     try {
-      const key = buildCacheKey(file)
-
+      const key     = buildCacheKey(file)
       safeSetProgress({ phase: 'reading', percent: 10 })
-      const cached = await loadFromCache(key)
+      const cached  = unwrapOr(await cacheRepo.findFragments(key), null)
 
       let fragmentsBinary: Uint8Array
       let ifcBuffer: ArrayBuffer | null = null
 
       if (cached) {
-        // ── Cache HIT — skip parsing ─────────────────────────────────────
+        // ── Cache HIT ───────────────────────────────────────────────────────
+        log.info('Cache HIT — skipping parse', key)
         fromCacheLocal = true
         safeSetIsFromCache(true)
         safeSetProgress({ phase: 'uploading', percent: 50 })
         fragmentsBinary = cached
-
-        // Load IFC buffer from OPFS (may be null for old cache entries)
-        ifcBuffer = await loadIfcBuffer(key)
+        ifcBuffer = unwrapOr(await cacheRepo.findIfcBuffer(key), null)
       } else {
-        // ── Cache MISS — read & parse ────────────────────────────────────
+        // ── Cache MISS — read & parse ────────────────────────────────────────
+        log.info('Cache MISS — parsing fresh')
         safeSetProgress({ phase: 'reading', percent: 15 })
 
         let rawBuffer: ArrayBuffer
@@ -334,9 +295,9 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
           )
         }
 
-        if (rawBuffer.byteLength === 0) {
-          throw new Error('The file appears to be empty after reading.')
-        }
+        // Validate IFC signature before sending to WASM
+        const guard = validateIfcBuffer(rawBuffer, file.name)
+        if (!guard.ok) throw new Error(guard.reason)
 
         // Retain a copy BEFORE transferring to worker (transfer detaches the buffer)
         const ifcCopy = rawBuffer.slice(0)
@@ -348,7 +309,6 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
         try {
           fragmentsBinary = await parseInWorker(file, rawBuffer)
         } catch (err: unknown) {
-          // Wrap the inner error with context; the outer catch toasts exactly once.
           throw new Error(
             `IFC parsing failed: ${err instanceof Error ? err.message : String(err)}`,
           )
@@ -356,24 +316,26 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
 
         safeSetProgress({ phase: 'uploading', percent: 80 })
 
-        // Persist both .frag and .ifc to OPFS in the background.
-        // Guard the setState callback with isMountedRef so it never fires
-        // after the component unmounts.
+        // Background OPFS save — guarded so it never fires after unmount
         void Promise.all([
-          saveToCache(key, fragmentsBinary, {
+          cacheRepo.saveFragments(key, fragmentsBinary, {
             fileName:      file.name,
             fileSize:      file.size,
             fragmentsSize: fragmentsBinary.byteLength,
-            cachedAt:      Date.now(),
           }),
-          saveIfcBuffer(key, new Uint8Array(ifcCopy)),
-        ]).then(async () => {
-          const entries = await listCacheEntries()
-          safeSetCacheEntries(entries)
+          cacheRepo.saveIfcBuffer(key, new Uint8Array(ifcCopy)),
+        ]).then(async ([fragResult, ifcResult]) => {
+          if (!fragResult.ok) log.warn('Fragment cache save failed:', fragResult.error.message)
+          if (!ifcResult.ok)  log.warn('IFC buffer cache save failed:', ifcResult.error.message)
+          const r = await cacheRepo.listEntries()
+          safeSetCacheEntries(unwrapOr(r, []))
+          if (r.ok) appBus.emit('cache:saved', { key, sizeBytes: fragmentsBinary.byteLength })
+        }).catch((err: unknown) => {
+          log.warn('Background OPFS save threw unexpectedly:', err instanceof Error ? err.message : String(err))
         })
       }
 
-      // ── Pre-flight: viewer readiness ─────────────────────────────────────
+      // ── Viewer readiness ───────────────────────────────────────────────────
       safeSetProgress({ phase: 'uploading', percent: 85 })
 
       let viewer: ViewerAPI
@@ -385,21 +347,22 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
         )
       }
 
-      // Guard against the viewer being replaced between poll resolution and now
       if (viewerApiRef.current !== viewer) {
         throw new Error(
           'The 3D viewer was replaced during loading. Please try loading the file again.',
         )
       }
 
-      // ── Load into scene ──────────────────────────────────────────────────
+      // ── Load into scene ────────────────────────────────────────────────────
       let modelInfo: ModelInfo
       let modelObject: unknown
+      let sceneModelId: string
 
       try {
-        ;({ modelInfo, modelObject } = await viewer.loadFragments(
+        ;({ modelInfo, modelObject, modelId: sceneModelId } = await viewer.loadFragments(
           fragmentsBinary,
           file.name,
+          file.size,
           (pct) => safeSetProgress({ phase: 'uploading', percent: 85 + Math.round(pct * 0.15) }),
         ))
       } catch (err: unknown) {
@@ -408,26 +371,46 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
         )
       }
 
-      // ── Update model store ───────────────────────────────────────────────
+      // ── Register in model-registry (per-model non-serialisable data) ────────
+      modelRegistry.register({
+        modelId:        sceneModelId,
+        fileName:       file.name,
+        ifcBuffer:      ifcBuffer ?? new ArrayBuffer(0),
+        opfsCacheKey:   key,
+        // expressIDToType is owned by viewer.ts; provide an empty placeholder here.
+        // The validator reads buffers from this registry; type lookups go through the viewer.
+        expressIDToType: new Map<number, string>(),
+        loadedAt: Date.now(),
+      })
+
       useModelStore.getState().setModel({
         modelInfo,
         ifcBuffer: ifcBuffer ?? new ArrayBuffer(0),
         cacheKey:  key,
         modelObject,
+        modelId:   sceneModelId,
       })
 
       safeSetProgress({ phase: 'done', percent: 100 })
-      onModelLoaded?.(modelInfo, fromCacheLocal)
+      const loadMs = Date.now() - loadStart
+      log.info(
+        `"${file.name}" (id: ${sceneModelId}) loaded in ${loadMs}ms` +
+        ` — ${modelInfo.elementCount} elements${fromCacheLocal ? ' (from cache)' : ''}`,
+      )
+
+      // Notify all subscribers (components, stores) that a model is ready
+      appBus.emit('model:loaded', { modelInfo, fromCache: fromCacheLocal, cacheKey: key, modelId: sceneModelId })
+      onModelLoaded?.(modelInfo, fromCacheLocal, sceneModelId)
+
+      // Build the spatial tree for this specific model in the background
+      void buildSpatialTree(sceneModelId)
 
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err)
-      console.error('[IFC Loader] Load failed:', msg)
-      // Single toast per error, regardless of which inner layer threw.
-      toast(msg, 'error')
-      onError?.(msg)
+      log.error('Load failed:', err)
+      toastFromError(err, 'error')
+      onError?.(err instanceof Error ? err.message : String(err))
       safeSetProgress({ phase: 'done', percent: 0 })
     } finally {
-      // Always release the loading lock, even on error
       isLoadingRef.current = false
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -436,9 +419,10 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
   // ── Cache helpers ──────────────────────────────────────────────────────────
 
   const deleteFromCacheFn = useCallback(async (key: string): Promise<void> => {
-    await deleteCacheEntry(key)
-    const entries = await listCacheEntries()
-    safeSetCacheEntries(entries)
+    await cacheRepo.deleteEntry(key)
+    const r = await cacheRepo.listEntries()
+    safeSetCacheEntries(unwrapOr(r, []))
+    appBus.emit('cache:deleted', { key })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

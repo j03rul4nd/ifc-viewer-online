@@ -17,31 +17,45 @@ declare global {
 
 /**
  * Yields control back to the browser event loop.
- * Priorities map directly to the Scheduler API; ignored on fallback.
+ *
+ * Strategy:
+ *   1. Use scheduler.postTask() when available — most accurate priority control.
+ *   2. When isInputPending() reports user input is queued, yield via setTimeout(0)
+ *      so the browser can process it immediately.
+ *   3. When no input is pending, resolve synchronously — no yield needed.
+ *      (Skipping the setTimeout avoids an unnecessary 4ms+ task-queue delay
+ *       and the comment "skip yield when no input queued" now actually does that.)
  */
 export function yieldToMain(priority: SchedulerPriority = 'user-visible'): Promise<void> {
   if (typeof globalThis.scheduler?.postTask === 'function') {
     return globalThis.scheduler.postTask(() => undefined, { priority })
   }
-  // isInputPending hint: skip yield when no input is queued (best-effort)
-  if (
-    'scheduling' in navigator &&
-    (navigator as unknown as { scheduling: { isInputPending(): boolean } }).scheduling.isInputPending()
-  ) {
-    return new Promise<void>(resolve => setTimeout(resolve, 0))
+
+  type NavigatorScheduling = { scheduling: { isInputPending(): boolean } }
+  const nav = navigator as unknown as NavigatorScheduling
+
+  if ('scheduling' in navigator && typeof nav.scheduling?.isInputPending === 'function') {
+    if (nav.scheduling.isInputPending()) {
+      // Input is queued — yield immediately so the browser can handle it
+      return new Promise<void>((resolve) => setTimeout(resolve, 0))
+    }
+    // No pending input — skip the yield for performance
+    return Promise.resolve()
   }
-  return new Promise<void>(resolve => setTimeout(resolve, 0))
+
+  // Fallback: always yield once (covers Safari, Firefox, etc.)
+  return new Promise<void>((resolve) => setTimeout(resolve, 0))
 }
 
 /**
- * Runs `fn` over `items` in chunks, yielding to the browser between each chunk
+ * Runs `fn` over `items` in chunks, yielding to the browser between chunks
  * so the UI stays responsive during heavy processing loops.
  */
 export async function runInChunks<T>(
-  items: T[],
-  fn: (item: T, index: number) => Promise<void> | void,
-  chunkSize = 64,
-  priority: SchedulerPriority = 'background',
+  items:     T[],
+  fn:        (item: T, index: number) => Promise<void> | void,
+  chunkSize  = 64,
+  priority:  SchedulerPriority = 'background',
 ): Promise<void> {
   for (let i = 0; i < items.length; i += chunkSize) {
     const chunk = items.slice(i, i + chunkSize)

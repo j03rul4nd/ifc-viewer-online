@@ -1,7 +1,7 @@
 // ─── src/hooks/useIfcUploadFlow.ts ───────────────────────────────────────────
 // Orchestrator. Connects the state machine with:
-//   - the validation pipeline
-//   - the drag-and-drop handlers
+//   - the file validation pipeline (useIfcValidation)
+//   - the drag-and-drop handlers (useDragAndDrop)
 //   - the parent App.tsx props (isLoading, loadProgress, loadError, loadDone)
 //
 // This is the ONLY hook UploadOverlay.tsx calls.
@@ -10,8 +10,11 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useUploadStateMachine }  from './useUploadStateMachine'
 import { useIfcValidation }       from './useIfcValidation'
 import { useDragAndDrop }         from './useDragAndDrop'
+import { createLogger }           from '../lib/logger'
 import type { UploadOverlayProps } from '../types/upload.types'
 import { makeError }              from '../lib/upload.utils'
+
+const log = createLogger('UploadFlow')
 
 type FlowInput = Pick<
   UploadOverlayProps,
@@ -33,13 +36,14 @@ export function useIfcUploadFlow({
   const startTimeRef = useRef<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const resetInput = () => {
+  const resetInput = (): void => {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  // ── When queued → trigger parent loader ──────────────────────────────────
+  // ── When queued → trigger parent loader ───────────────────────────────────
   useEffect(() => {
     if (state.id === 'queued') {
+      log.debug('File queued — handing off to parent loader:', state.file.name)
       startTimeRef.current = Date.now()
       onLoad(state.file)
       dispatch({ type: 'PARSE_START' })
@@ -48,7 +52,6 @@ export function useIfcUploadFlow({
   }, [state.id])
 
   // ── Forward parent isLoading / loadProgress ───────────────────────────────
-  // App.tsx drives progress via the existing `progress.percent` from useIfcLoader.
   useEffect(() => {
     if (!isLoading) return
     if (state.id === 'parsing') {
@@ -63,18 +66,18 @@ export function useIfcUploadFlow({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, loadProgress])
 
-  // ── Forward parent loadDone (optional prop) ───────────────────────────────
+  // ── Forward parent loadDone ───────────────────────────────────────────────
   useEffect(() => {
     if (!loadDone) return
     if (state.id === 'parsing' || state.id === 'building-scene') {
       const durationMs = startTimeRef.current ? Date.now() - startTimeRef.current : 0
+      log.info(`Load complete in ${durationMs}ms`)
       dispatch({ type: 'SUCCESS', durationMs })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadDone])
 
-  // ── Fallback: parent signals done via isLoading flipping to false ─────────
-  // Keeps backward-compat with App.tsx which doesn't pass loadDone yet.
+  // ── Fallback: isLoading flip (backward compat — App.tsx may not pass loadDone) ──
   const prevIsLoadingRef = useRef(isLoading)
   useEffect(() => {
     const wasLoading = prevIsLoadingRef.current
@@ -83,6 +86,7 @@ export function useIfcUploadFlow({
     if (wasLoading && !isLoading && !loadError) {
       if (state.id === 'parsing' || state.id === 'building-scene') {
         const durationMs = startTimeRef.current ? Date.now() - startTimeRef.current : 0
+        log.debug('Load done via isLoading flip, durationMs:', durationMs)
         dispatch({ type: 'SUCCESS', durationMs })
       }
     }
@@ -100,8 +104,9 @@ export function useIfcUploadFlow({
       state.id === 'parsing'        ||
       state.id === 'building-scene'
     ) {
+      log.warn('Parent reported load error:', loadError)
       dispatch({
-        type: 'ERROR',
+        type:  'ERROR',
         error: makeError('PARSE_FAILED', loadError, /* retryable */ true),
       })
     }
@@ -111,14 +116,15 @@ export function useIfcUploadFlow({
   // ── File pick ──────────────────────────────────────────────────────────────
   const handleFile = useCallback((file: File) => {
     resetInput()
+    log.debug('File picked:', file.name, `(${(file.size / 1024).toFixed(0)} KB)`)
     void validate(file)
   }, [validate])
 
-  // ── Drag handlers ──────────────────────────────────────────────────────────
+  // ── Drag ──────────────────────────────────────────────────────────────────
   const dragDisabled = isActive || state.id === 'success'
   const dragHandlers = useDragAndDrop(dispatch, handleFile, dragDisabled)
 
-  // ── Close (guarded) ───────────────────────────────────────────────────────
+  // ── Close ──────────────────────────────────────────────────────────────────
   const handleClose = useCallback(() => {
     if (!canClose) return
     dispatch({ type: 'RESET' })
@@ -134,6 +140,7 @@ export function useIfcUploadFlow({
 
   // ── Retry ─────────────────────────────────────────────────────────────────
   const handleRetry = useCallback(() => {
+    log.debug('User triggered retry')
     dispatch({ type: 'RETRY' })
     resetInput()
   }, [dispatch])

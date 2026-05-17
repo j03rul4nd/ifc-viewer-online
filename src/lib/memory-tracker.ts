@@ -4,15 +4,20 @@
 // GPU estimate is derived from an injected callback (provided by the viewer).
 
 import type { MemoryStats } from '../types'
+import { createLogger } from './logger'
 
-// Legacy Chrome memory API (not part of any standard, but widely available)
+const log = createLogger('Memory')
+
+// Legacy Chrome memory API (non-standard, but widely available in Chromium)
 interface LegacyMemory {
   usedJSHeapSize: number
 }
 
+type MeasureMemoryFn = () => Promise<{ bytes: number }>
+
 /**
  * One-shot heap + GPU memory snapshot.
- * @param getGpuEstimateBytes  Optional function that returns the caller's
+ * @param getGpuEstimateBytes  Optional function returning the caller's
  *   current GPU memory estimate in bytes (e.g. from THREE renderer info).
  */
 export async function getMemoryStats(
@@ -20,7 +25,6 @@ export async function getMemoryStats(
 ): Promise<MemoryStats> {
   let heapBytes = 0
 
-  type MeasureMemoryFn = () => Promise<{ bytes: number }>
   const measureFn = (performance as unknown as { measureUserAgentSpecificMemory?: MeasureMemoryFn })
     .measureUserAgentSpecificMemory
 
@@ -28,7 +32,8 @@ export async function getMemoryStats(
     try {
       const result = await measureFn.call(performance)
       heapBytes = result.bytes
-    } catch {
+    } catch (err) {
+      log.debug('measureUserAgentSpecificMemory failed, falling back:', err)
       heapBytes = legacyHeap()
     }
   } else {
@@ -38,32 +43,35 @@ export async function getMemoryStats(
   const gpuEstimateBytes = getGpuEstimateBytes?.() ?? 0
 
   return {
-    heapMB: Math.round(heapBytes / (1024 * 1024)),
+    heapMB:        Math.round(heapBytes        / (1024 * 1024)),
     gpuEstimateMB: Math.round(gpuEstimateBytes / (1024 * 1024)),
   }
 }
 
 function legacyHeap(): number {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mem = (performance as unknown as { memory?: LegacyMemory }).memory
   return mem?.usedJSHeapSize ?? 0
 }
 
 /**
- * Starts polling memory every `intervalMs` milliseconds.
- * Returns a stop function.
+ * Polls memory every `intervalMs` milliseconds.
+ * Returns a stop function. Automatically handles errors per tick.
  */
 export function startMemoryTracking(
-  callback: (stats: MemoryStats) => void,
+  callback:           (stats: MemoryStats) => void,
   getGpuEstimateBytes?: () => number,
-  intervalMs = 3000,
+  intervalMs         = 3_000,
 ): () => void {
   let stopped = false
 
   const tick = async (): Promise<void> => {
     if (stopped) return
-    const stats = await getMemoryStats(getGpuEstimateBytes)
-    if (!stopped) callback(stats)
+    try {
+      const stats = await getMemoryStats(getGpuEstimateBytes)
+      if (!stopped) callback(stats)
+    } catch (err) {
+      log.warn('Memory tick failed:', err)
+    }
     if (!stopped) setTimeout(() => { void tick() }, intervalMs)
   }
 

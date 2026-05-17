@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback, useLayoutEffect } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useValidationStore } from '../stores/validationStore'
 import { useEditorStore } from '../stores/editorStore'
 import { useUIStore } from '../stores/uiStore'
 import { useModelStore } from '../stores/modelStore'
+import { useSceneStore } from '../stores/sceneStore'
 import { buildFixGuidCommand, buildRenameCommand, downloadBlob } from '../lib/diffStore'
 import { useEditorHistory } from '../hooks/useEditorHistory'
 import { runValidation } from '../lib/validator'
@@ -21,16 +23,27 @@ function SeverityIcon({ severity }: { severity: ValidationIssue['severity'] }) {
 // ── Rule ID badge ─────────────────────────────────────────────────────────────
 
 const RULE_COLORS: Record<string, string> = {
-  RULE_EMPTY_NAME:          '#E5484D',
-  RULE_EMPTY_LONGNAME:      '#F5A623',
-  RULE_DUPLICATE_NAME:      '#F5A623',
-  RULE_NAMING_CONVENTION:   '#F5A623',
-  RULE_MISSING_TYPE:        '#5E9ED6',
-  RULE_DUPLICATE_GUID:      '#E5484D',
-  RULE_MISSING_PROPERTY_SET:'#F5A623',
-  RULE_ORPHAN_ELEMENT:      '#E5484D',
-  RULE_WRONG_CONTAINER:     '#E5484D',
-  RULE_BROKEN_AGGREGATE:    '#E5484D',
+  // Naming & identity
+  RULE_EMPTY_NAME:            '#E5484D',
+  RULE_EMPTY_LONGNAME:        '#F5A623',
+  RULE_DUPLICATE_NAME:        '#F5A623',
+  RULE_NAMING_CONVENTION:     '#F5A623',
+  RULE_DUPLICATE_GUID:        '#E5484D',
+  RULE_INVALID_GUID_FORMAT:   '#E5484D',
+  // Structure & hierarchy
+  RULE_ORPHAN_ELEMENT:        '#E5484D',
+  RULE_WRONG_CONTAINER:       '#E5484D',
+  RULE_BROKEN_AGGREGATE:      '#E5484D',
+  RULE_SPATIAL_HIERARCHY:     '#E5484D',
+  RULE_CIRCULAR_REFERENCE:    '#E5484D',
+  RULE_ELEMENT_IN_BUILDING:   '#F5A623',
+  // Properties & types
+  RULE_MISSING_TYPE:          '#5E9ED6',
+  RULE_MISSING_PROPERTY_SET:  '#F5A623',
+  RULE_EMPTY_PROPERTY_VALUE:  '#F5A623',
+  RULE_MISSING_MATERIAL:      '#F5A623',
+  RULE_INVALID_IFC_VERSION:   '#5E9ED6',
+  RULE_ELEMENT_CLASH:         '#F5A623',
 }
 
 function RuleBadge({ ruleId }: { ruleId: string }) {
@@ -229,14 +242,35 @@ interface ValidationPanelProps {
 }
 
 export default function ValidationPanel({ onJumpToElement }: ValidationPanelProps) {
+  // useShallow prevents re-renders when unrelated validationStore fields change
+  // (e.g. spatialTrees updates while a model loads should not repaint this panel)
   const { result, partialIssues, isRunning, progress, filters, setFilters } =
-    useValidationStore()
-  const { validationPanelOpen, toggleValidationPanel } = useUIStore()
-  const { ifcBuffer } = useModelStore()
+    useValidationStore(
+      useShallow((s) => ({
+        result:        s.result,
+        partialIssues: s.partialIssues,
+        isRunning:     s.isRunning,
+        progress:      s.progress,
+        filters:       s.filters,
+        setFilters:    s.setFilters,
+      })),
+    )
+  const { validationPanelOpen, toggleValidationPanel } = useUIStore(
+    useShallow((s) => ({ validationPanelOpen: s.validationPanelOpen, toggleValidationPanel: s.toggleValidationPanel })),
+  )
+  const ifcBuffer    = useModelStore((s) => s.ifcBuffer)
+  // Use sceneModelId (activeValidationModelId) — NOT modelStore.activeModelId (cacheKey).
+  // The two are different namespaces; mixing them creates duplicate spatialTree entries.
+  const activeValidationModelId = useValidationStore((s) => s.activeValidationModelId)
   const { addCommand } = useEditorHistory()
-  const { setSelection, diffs } = useEditorStore()
+  const { setSelection, diffs } = useEditorStore(
+    useShallow((s) => ({ setSelection: s.setSelection, diffs: s.diffs })),
+  )
 
-  const [search, setSearch] = useState('')
+  const [search, setSearch]         = useState('')
+  const [modelFilter, setModelFilter] = useState<string | null>(null)
+
+  const sceneModels = useSceneStore((s) => s.models)
 
   const issues = result?.issues ?? partialIssues
   const stats  = result?.stats
@@ -250,6 +284,9 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
   // ── Filter / group ─────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     let list = issues
+
+    // Per-model filter (only when multiple models are loaded)
+    if (modelFilter) list = list.filter((i) => i.modelId === modelFilter)
 
     if (filters.activeTab === 'errors')   list = list.filter((i) => i.severity === 'error')
     else if (filters.activeTab === 'warnings') list = list.filter((i) => i.severity === 'warning')
@@ -267,7 +304,7 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
     }
 
     return list
-  }, [issues, filters.activeTab, search])
+  }, [issues, filters.activeTab, search, modelFilter])
 
   const grouped = useMemo(() => {
     if (filters.groupBy === 'rule') {
@@ -306,10 +343,19 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
   }, [setSelection, onJumpToElement])
 
   const handleAutoFix = useCallback((issue: ValidationIssue) => {
-    if (issue.ruleId === 'RULE_DUPLICATE_GUID') {
-      addCommand(buildFixGuidCommand(issue.expressId, issue.globalId))
+    if ((issue.ruleId === 'RULE_DUPLICATE_GUID' || issue.ruleId === 'RULE_INVALID_GUID_FORMAT') && issue.globalId) {
+      addCommand(buildFixGuidCommand(issue.expressId, issue.globalId, issue.modelId))
     }
   }, [addCommand])
+
+  const handleBatchFix = useCallback(() => {
+    const fixable = filtered.filter((i) => i.autoFixable)
+    for (const issue of fixable) {
+      if ((issue.ruleId === 'RULE_DUPLICATE_GUID' || issue.ruleId === 'RULE_INVALID_GUID_FORMAT') && issue.globalId) {
+        addCommand(buildFixGuidCommand(issue.expressId, issue.globalId, issue.modelId))
+      }
+    }
+  }, [filtered, addCommand])
 
   const handleNameFix = useCallback((
     issue: ValidationIssue,
@@ -317,7 +363,7 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
     newValue: string,
   ) => {
     const oldValue = issue.elementName === '(empty)' ? '' : issue.elementName
-    addCommand(buildRenameCommand(issue.expressId, field, oldValue, newValue))
+    addCommand(buildRenameCommand(issue.expressId, field, oldValue, newValue, issue.modelId))
   }, [addCommand])
 
   const handleExportJson = useCallback(() => {
@@ -341,7 +387,9 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
     downloadBlob(blob, 'validation-report.csv')
   }, [result])
 
-  const handleRunValidation = useCallback(() => { void runValidation() }, [])
+  const handleRunValidation = useCallback(() => {
+    void runValidation(activeValidationModelId ?? undefined)
+  }, [activeValidationModelId])
 
   const fixableCount = filtered.filter((i) => i.autoFixable || NAME_EDIT_RULES.has(i.ruleId)).length
 
@@ -418,10 +466,24 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
 
         <div className="flex-1" />
 
+        {/* Batch auto-fix */}
+        {(() => {
+          const autoFixableCount = filtered.filter((i) => i.autoFixable).length
+          return autoFixableCount > 0 ? (
+            <button
+              onClick={handleBatchFix}
+              title={`Auto-fix all ${autoFixableCount} fixable issue${autoFixableCount !== 1 ? 's' : ''}`}
+              className="px-2 h-6 rounded text-[11px] bg-[var(--ok)]18 text-[var(--ok)] border border-[var(--ok)]33 hover:brightness-125 font-medium"
+            >
+              Fix {autoFixableCount}
+            </button>
+          ) : null
+        })()}
+
         {/* Run validation */}
         <button
           onClick={handleRunValidation}
-          disabled={!ifcBuffer || isRunning}
+          disabled={(sceneModels.length === 0 && !ifcBuffer) || isRunning}
           className="px-2 h-6 rounded text-[11px] bg-[var(--accent)]18 text-[var(--accent)] border border-[var(--accent)]33 hover:brightness-125 disabled:opacity-40 font-medium"
         >
           {isRunning ? `${progress}%` : 'Run'}
@@ -458,6 +520,39 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
           </svg>
         </button>
       </div>
+
+      {/* Model filter chips — shown only when 2+ models are loaded */}
+      {sceneModels.length > 1 && (
+        <div className="flex items-center gap-1 px-3 py-1.5 border-b border-[var(--border)] bg-[rgba(255,255,255,0.01)] overflow-x-auto shrink-0">
+          <button
+            onClick={() => setModelFilter(null)}
+            className={`shrink-0 px-2 h-5 rounded text-[10px] font-medium transition-colors ${
+              modelFilter === null
+                ? 'bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border)]'
+                : 'text-[var(--text-faint)] hover:text-[var(--text-dim)]'
+            }`}
+          >
+            All models
+          </button>
+          {sceneModels.map((m) => {
+            const count = issues.filter((i) => i.modelId === m.id).length
+            return (
+              <button
+                key={m.id}
+                onClick={() => setModelFilter(m.id === modelFilter ? null : m.id)}
+                className={`shrink-0 flex items-center gap-1 px-2 h-5 rounded text-[10px] font-medium transition-colors ${
+                  modelFilter === m.id
+                    ? 'bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border)]'
+                    : 'text-[var(--text-faint)] hover:text-[var(--text-dim)]'
+                }`}
+              >
+                <span className="max-w-[100px] truncate">{m.fileName.replace(/\.ifc$/i, '')}</span>
+                {count > 0 && <span className="font-mono text-[9px] opacity-70">{count}</span>}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* Toolbar: tabs + group by + search */}
       <div className="flex items-center gap-2 px-3 h-9 border-b border-[var(--border)] shrink-0">
@@ -529,7 +624,7 @@ export default function ValidationPanel({ onJumpToElement }: ValidationPanelProp
 
         {!isRunning && issues.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-2 text-center px-4">
-            {ifcBuffer ? (
+            {(ifcBuffer || sceneModels.length > 0) ? (
               <>
                 <span className="text-2xl">✓</span>
                 <p className="text-[12px] text-[var(--text-dim)]">

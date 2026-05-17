@@ -3,20 +3,29 @@ import { motion } from 'framer-motion'
 import * as Icons from './Icons'
 import { useEditorStore } from '../stores/editorStore'
 import { useValidationStore } from '../stores/validationStore'
-import { useModelStore } from '../stores/modelStore'
 import { useUIStore } from '../stores/uiStore'
+import { useSceneStore } from '../stores/sceneStore'
+import { toast } from '../stores/toastStore'
 import { useEditorHistory } from '../hooks/useEditorHistory'
-import { exportAsIfc, exportAsGlb, downloadBlob } from '../lib/diffStore'
-import { runValidation } from '../lib/validator'
+import { useValidationRunner } from '../hooks/useValidationRunner'
+import { useModelStore }  from '../stores/modelStore'
+import { modelRegistry } from '../lib/model-registry'
+import {
+  exportAsIfc, exportAsGlb, downloadBlob,
+  getDiffsForModel,
+} from '../lib/diffStore'
+import type { ViewerAPI } from '../lib/viewer'
 
 interface ToolbarProps {
   fileName: string | null
   elementCount: number
   loadingState: 'idle' | 'loading' | 'loaded' | 'error'
   canIsolate: boolean
+  viewerApiRef: React.MutableRefObject<ViewerAPI | null>
   onReset: () => void
   onIsolate: () => void
   onUpload: () => void
+  onOpenExportModal: () => void
 }
 
 // ── Desktop button (text + icon) ──────────────────────────────────────────────
@@ -104,7 +113,8 @@ function ExportDropdown({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Toolbar({
-  fileName, elementCount, loadingState, canIsolate, onReset, onIsolate, onUpload,
+  fileName, elementCount, loadingState, canIsolate,
+  viewerApiRef, onReset, onIsolate, onUpload, onOpenExportModal,
 }: ToolbarProps) {
   const statusColor = loadingState === 'loaded' ? 'var(--ok)'     :
                       loadingState === 'error'  ? 'var(--danger)' : 'var(--warn)'
@@ -114,9 +124,13 @@ export default function Toolbar({
 
   const { diffs, canUndo, canRedo } = useEditorStore()
   const { undo, redo }              = useEditorHistory()
-  const { validationMode, toggleValidationMode, result, isRunning } = useValidationStore()
-  const { ifcBuffer }               = useModelStore()
-  const { treeVisible, setTreeVisible } = useUIStore()
+  const { validationMode, toggleValidationMode } = useValidationStore()
+  const { treeVisible, setTreeVisible, scenePanelOpen, toggleScenePanel } = useUIStore()
+  const { models: sceneModels } = useSceneStore()
+  const {
+    run: runValidation, cancel: cancelValidation, canRun, isRunning, status: validationStatus,
+    issueCount, errorCount, hasIssues, progress: validationProgress,
+  } = useValidationRunner()
 
   const [exportOpen, setExportOpen] = useState(false)
   const desktopExportRef            = useRef<HTMLDivElement>(null)
@@ -135,27 +149,58 @@ export default function Toolbar({
     return () => document.removeEventListener('mousedown', handler)
   }, [exportOpen])
 
+  // Single-model export (used when only 1 model loaded)
   const handleExportIfc = async (): Promise<void> => {
     setExporting(true); setExportOpen(false)
     try {
-      const bytes = await exportAsIfc()
-      downloadBlob(new Blob([bytes], { type: 'application/x-step' }), 'model-edited.ifc')
-    } catch (err) { console.error('[Export] IFC export failed:', err) }
+      const model = sceneModels[0]
+      if (!model) throw new Error('No model is loaded')
+      const buffer = modelRegistry.getBuffer(model.id)
+      if (!buffer || buffer.byteLength === 0) {
+        throw new Error(
+          'IFC source buffer is unavailable. ' +
+          'This happens when the model was loaded from a fragments-only cache entry. ' +
+          'Reload the original .ifc file to export it.',
+        )
+      }
+      const modelDiffs = getDiffsForModel(model.id)
+      const bytes = await exportAsIfc(buffer, modelDiffs)
+      const stem  = model.fileName.replace(/\.ifc$/i, '')
+      downloadBlob(new Blob([bytes], { type: 'application/x-step' }), `${stem}-exported.ifc`)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('[Export] IFC export failed:', msg)
+      toast(`IFC export failed: ${msg}`, 'error')
+    }
     finally { setExporting(false) }
   }
 
   const handleExportGlb = async (): Promise<void> => {
     setExporting(true); setExportOpen(false)
     try {
-      const blob = await exportAsGlb()
-      downloadBlob(blob, 'model.glb')
-    } catch (err) { console.error('[Export] GLB export failed:', err) }
+      const model = sceneModels[0]
+      if (!model) throw new Error('No model is loaded')
+      if (!viewerApiRef.current) throw new Error('Viewer is not ready')
+      const obj = viewerApiRef.current.getModelObject(model.id)
+      if (!obj) throw new Error('Model object not found in the 3D scene — it may have been removed.')
+      const blob = await exportAsGlb(obj)
+      const stem = model.fileName.replace(/\.ifc$/i, '')
+      downloadBlob(blob, `${stem}.glb`)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('[Export] GLB export failed:', msg)
+      toast(`GLB export failed: ${msg}`, 'error')
+    }
     finally { setExporting(false) }
   }
 
-  const issueCount = result?.stats.total ?? 0
-  const errorCount = result?.stats.errors ?? 0
-  const hasIssues  = issueCount > 0
+  const handleExportClick = (): void => {
+    if (sceneModels.length > 1) {
+      onOpenExportModal()
+    } else {
+      setExportOpen((v) => !v)
+    }
+  }
 
   // SVGs reused in both rows
   const ValidateSVG = (
@@ -222,12 +267,12 @@ export default function Toolbar({
         <div className="flex-1 md:hidden" />
 
         {/* Mobile export button (in Row 1 so dropdown isn't clipped by Row 2 overflow) */}
-        {ifcBuffer && (
+        {canRun && (
           <div ref={mobileExportRef} className="md:hidden relative pointer-events-auto shrink-0">
             <IBtn
-              onClick={() => setExportOpen(v => !v)}
+              onClick={handleExportClick}
               active={exportOpen}
-              title="Export model"
+              title={sceneModels.length > 1 ? `Export ${sceneModels.length} models` : 'Export model'}
               disabled={exporting}
             >
               {DownloadSVG}
@@ -237,7 +282,7 @@ export default function Toolbar({
                 </span>
               )}
             </IBtn>
-            {exportOpen && (
+            {exportOpen && sceneModels.length <= 1 && (
               <ExportDropdown
                 diffs={diffs.length}
                 onExportIfc={() => void handleExportIfc()}
@@ -278,18 +323,46 @@ export default function Toolbar({
               {TreeSVG}
               Tree
             </Btn>
+            <Btn
+              onClick={toggleScenePanel}
+              title="Scene manager — model list, visibility, transform"
+              variant={scenePanelOpen ? 'secondary' : 'ghost'}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" className="opacity-80">
+                <rect x="1" y="1" width="5.5" height="5.5" rx="1" opacity="0.6"/>
+                <rect x="7.5" y="1" width="5.5" height="5.5" rx="1" opacity="0.6"/>
+                <rect x="1" y="7.5" width="5.5" height="5.5" rx="1" opacity="0.6"/>
+                <rect x="7.5" y="7.5" width="5.5" height="5.5" rx="1"/>
+              </svg>
+              Scene
+              {sceneModels.length > 0 && (
+                <span className="text-[10px] font-mono text-[var(--text-faint)] ml-0.5">
+                  {sceneModels.length}
+                </span>
+              )}
+            </Btn>
           </div>
 
           {/* Validation */}
           <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto shrink-0">
-            <Btn
-              onClick={() => ifcBuffer && void runValidation()}
-              disabled={!ifcBuffer || isRunning}
-              title="Run validation"
-            >
-              {isRunning ? SpinSVG : ValidateSVG}
-              {isRunning ? 'Validating…' : 'Validate'}
-            </Btn>
+            <div className="relative">
+              <Btn
+                onClick={isRunning ? cancelValidation : () => void runValidation()}
+                disabled={!isRunning && !canRun}
+                title={isRunning ? 'Cancel validation' : validationStatus === 'error' ? 'Validation failed — click to retry' : 'Run validation'}
+              >
+                {isRunning ? SpinSVG : ValidateSVG}
+                {isRunning
+                  ? `${validationProgress > 0 ? `${validationProgress}%` : 'Validating…'}`
+                  : validationStatus === 'error' ? 'Retry' : 'Validate'}
+              </Btn>
+              {isRunning && validationProgress > 0 && (
+                <div
+                  className="absolute bottom-0 left-0 h-[2px] bg-[var(--accent)] rounded-full transition-all duration-300 pointer-events-none"
+                  style={{ width: `${validationProgress}%` }}
+                />
+              )}
+            </div>
             <Btn
               onClick={toggleValidationMode}
               disabled={!hasIssues}
@@ -317,10 +390,10 @@ export default function Toolbar({
           <div className="flex-1" />
 
           {/* Export */}
-          {ifcBuffer && (
+          {canRun && (
             <div ref={desktopExportRef} className="relative pointer-events-auto shrink-0">
               <button
-                onClick={() => setExportOpen(v => !v)}
+                onClick={handleExportClick}
                 disabled={exporting}
                 className="flex items-center gap-1.5 h-[30px] px-2.5 glass-md border rounded-[10px] text-[13px] font-medium transition-colors hover:text-[var(--text)] active:brightness-110 whitespace-nowrap"
                 style={{
@@ -335,8 +408,13 @@ export default function Toolbar({
                     {diffs.length}
                   </span>
                 )}
+                {sceneModels.length > 1 && (
+                  <span className="text-[10px] font-mono text-[var(--text-faint)]">
+                    {sceneModels.length}
+                  </span>
+                )}
               </button>
-              {exportOpen && (
+              {exportOpen && sceneModels.length <= 1 && (
                 <ExportDropdown
                   diffs={diffs.length}
                   onExportIfc={() => void handleExportIfc()}
@@ -381,9 +459,9 @@ export default function Toolbar({
         {/* Validation */}
         <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 shrink-0">
           <IBtn
-            onClick={() => ifcBuffer && void runValidation()}
-            disabled={!ifcBuffer || isRunning}
-            title={isRunning ? 'Validating…' : 'Validate'}
+            onClick={() => void runValidation()}
+            disabled={!canRun}
+            title={isRunning ? 'Validating…' : validationStatus === 'error' ? 'Validation failed — tap to retry' : 'Validate'}
           >
             {isRunning ? SpinSVG : ValidateSVG}
           </IBtn>

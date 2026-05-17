@@ -2,10 +2,12 @@ import React, {
   useRef, useState, useCallback, useMemo, useEffect, useLayoutEffect,
   forwardRef, useImperativeHandle,
 } from 'react'
+import * as ContextMenu from '@radix-ui/react-context-menu'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useValidationStore } from '../stores/validationStore'
+import { useValidationStore, selectAllSpatialTrees } from '../stores/validationStore'
 import { useEditorStore } from '../stores/editorStore'
 import { useUIStore } from '../stores/uiStore'
+import { modelRegistry } from '../lib/model-registry'
 import { useEditorHistory } from '../hooks/useEditorHistory'
 import { buildRenameCommand, buildFixGuidCommand } from '../lib/diffStore'
 import { generateIfcGuid } from '../lib/diffStore'
@@ -21,21 +23,31 @@ export interface ModelTreeHandle {
 
 type FlatNode =
   | {
+      kind: 'model-header'
+      modelId: string
+      fileName: string
+      nodeCount: number
+      isCollapsed: boolean
+    }
+  | {
       kind: 'spatial'
       depth: number
       node: SpatialNode
       isExpanded: boolean
       hasChildren: boolean
+      modelId: string
     }
   | {
       kind: 'element'
       depth: number
       element: SpatialElement
       parentExpressId: number
+      modelId: string
     }
 
 function flattenTree(
   nodes: SpatialNode[],
+  modelId: string,
   expanded: Set<number>,
   depth = 0,
   result: FlatNode[] = [],
@@ -49,12 +61,40 @@ function flattenTree(
       node,
       isExpanded: expanded.has(node.expressId),
       hasChildren,
+      modelId,
     })
     if (expanded.has(node.expressId)) {
-      flattenTree(node.children, expanded, depth + 1, result)
+      flattenTree(node.children, modelId, expanded, depth + 1, result)
       for (const elem of node.containedElements) {
-        result.push({ kind: 'element', depth: depth + 1, element: elem, parentExpressId: node.expressId })
+        result.push({ kind: 'element', depth: depth + 1, element: elem, parentExpressId: node.expressId, modelId })
       }
+    }
+  }
+  return result
+}
+
+/** Strips the viewer-appended `-${Date.now()}` suffix to recover the file name. */
+function fileNameFromModelId(modelId: string): string {
+  return modelId.replace(/-\d{13,}$/, '') || modelId
+}
+
+function flattenAllTrees(
+  trees: Array<{ modelId: string; tree: SpatialNode[] }>,
+  expanded: Set<number>,
+  collapsedModels: Set<string>,
+  showHeaders: boolean,
+): FlatNode[] {
+  const result: FlatNode[] = []
+  for (const { modelId, tree } of trees) {
+    if (tree.length === 0) continue
+    const regEntry = modelRegistry.get(modelId)
+    const fileName = regEntry?.fileName ?? fileNameFromModelId(modelId)
+    const isCollapsed = collapsedModels.has(modelId)
+    if (showHeaders) {
+      result.push({ kind: 'model-header', modelId, fileName, nodeCount: tree.length, isCollapsed })
+    }
+    if (!isCollapsed) {
+      flattenTree(tree, modelId, expanded, 0, result)
     }
   }
   return result
@@ -64,9 +104,12 @@ function flattenTree(
 
 function buildIssueRollup(
   issues: ValidationIssue[],
+  modelId?: string,
 ): Map<number, { errors: number; warnings: number; info: number }> {
   const map = new Map<number, { errors: number; warnings: number; info: number }>()
   for (const issue of issues) {
+    // Filter by modelId when provided; include un-stamped issues for backward compat
+    if (modelId && issue.modelId && issue.modelId !== modelId) continue
     const cur = map.get(issue.expressId) ?? { errors: 0, warnings: 0, info: 0 }
     if (issue.severity === 'error')        cur.errors++
     else if (issue.severity === 'warning') cur.warnings++
@@ -138,6 +181,115 @@ const CLASS_COLOR: Record<string, string> = {
   IfcZone:           '#D4A373',
 }
 
+// ── Tree node context menu ────────────────────────────────────────────────────
+
+const menuItemCls = [
+  'flex items-center gap-2 px-3 py-1.5 rounded-[5px] text-[12px] cursor-pointer select-none outline-none',
+  'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]',
+  'data-[disabled]:opacity-35 data-[disabled]:pointer-events-none',
+].join(' ')
+
+const menuSepCls = 'my-1 h-px bg-[var(--border)]'
+
+function TreeContextMenu({
+  expressId,
+  globalId,
+  displayName,
+  onSelect,
+  onFocus,
+  onRename,
+  onFixGuid,
+  children,
+}: {
+  expressId:   number
+  globalId:    string | null
+  displayName: string
+  onSelect:    () => void
+  onFocus:     () => void
+  onRename:    () => void
+  onFixGuid?:  () => void
+  children:    React.ReactNode
+}) {
+  const handleCopyGuid = (): void => {
+    if (!globalId) return
+    void navigator.clipboard.writeText(globalId)
+  }
+
+  const handleCopyId = (): void => {
+    void navigator.clipboard.writeText(String(expressId))
+  }
+
+  return (
+    <ContextMenu.Root>
+      <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content
+          className="z-[200] min-w-[180px] bg-[var(--surface)] border border-[var(--border-strong)] rounded-[10px] shadow-2xl p-1.5 overflow-hidden"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
+          {/* Node label */}
+          <div className="px-3 py-1 text-[10px] text-[var(--text-faint)] font-mono truncate max-w-[220px]" title={displayName}>
+            #{expressId} · {displayName}
+          </div>
+          <div className={menuSepCls} />
+
+          <ContextMenu.Item className={menuItemCls} onSelect={onSelect}>
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+              <circle cx="7" cy="7" r="5" /><circle cx="7" cy="7" r="2" fill="currentColor" stroke="none" />
+            </svg>
+            Select in 3D
+          </ContextMenu.Item>
+
+          <ContextMenu.Item className={menuItemCls} onSelect={onFocus}>
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+              <path d="M1 5V1h4M9 1h4v4M13 9v4H9M5 13H1V9" />
+            </svg>
+            Frame camera
+          </ContextMenu.Item>
+
+          <div className={menuSepCls} />
+
+          <ContextMenu.Item className={menuItemCls} onSelect={onRename}>
+            <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 2l2 2-6 6H2V8l6-6z" />
+            </svg>
+            Rename
+          </ContextMenu.Item>
+
+          {onFixGuid && (
+            <ContextMenu.Item className={menuItemCls} onSelect={onFixGuid}>
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+                <path d="M2 7a5 5 0 1010 0 5 5 0 00-10 0zM7 4v4M5 6h4" />
+              </svg>
+              Fix GUID
+            </ContextMenu.Item>
+          )}
+
+          <div className={menuSepCls} />
+
+          <ContextMenu.Item
+            className={menuItemCls}
+            onSelect={handleCopyGuid}
+            disabled={!globalId}
+          >
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+              <rect x="4" y="4" width="8" height="8" rx="1.5" /><path d="M10 4V2.5A1.5 1.5 0 008.5 1h-6A1.5 1.5 0 001 2.5v6A1.5 1.5 0 002.5 10H4" />
+            </svg>
+            Copy GlobalId
+          </ContextMenu.Item>
+
+          <ContextMenu.Item className={menuItemCls} onSelect={handleCopyId}>
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor" opacity="0.7">
+              <text x="1" y="11" fontSize="9" fontFamily="monospace">#id</text>
+            </svg>
+            Copy express ID
+          </ContextMenu.Item>
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
+  )
+}
+
 function ClassBadge({ cls }: { cls: string }) {
   const abbr  = CLASS_ABBR[cls] ?? cls.replace('Ifc', '').slice(0, 3).toUpperCase()
   const color = CLASS_COLOR[cls] ?? '#54555E'
@@ -179,8 +331,8 @@ function IssueBadge({
 // ── Inline edit input ─────────────────────────────────────────────────────────
 
 function InlineEdit({
-  value, onCommit, onCancel,
-}: { value: string; onCommit: (v: string) => void; onCancel: () => void }) {
+  value, onCommit, onCancel, placeholder,
+}: { value: string; onCommit: (v: string) => void; onCancel: () => void; placeholder?: string }) {
   const [text, setText] = useState(value)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -193,13 +345,14 @@ function InlineEdit({
     <input
       ref={inputRef}
       value={text}
+      placeholder={placeholder}
       onChange={(e) => setText(e.target.value)}
       onKeyDown={(e) => {
         if (e.key === 'Enter')  { e.stopPropagation(); onCommit(text) }
         if (e.key === 'Escape') { e.stopPropagation(); onCancel() }
       }}
       onBlur={() => onCommit(text)}
-      className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--accent)] rounded px-1 text-[12px] text-[var(--text)] outline-none"
+      className="flex-1 min-w-0 bg-[var(--surface-2)] border border-[var(--accent)] rounded px-1 text-[12px] text-[var(--text)] outline-none placeholder:text-[var(--text-faint)]"
       onClick={(e) => e.stopPropagation()}
     />
   )
@@ -251,48 +404,73 @@ const ROW_HEIGHT = 30
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface ModelTreeProps {
-  onSelectElement?: (expressId: number) => void
+  onSelectElement?: (expressId: number, modelId?: string) => void
   onFilterBySubtree?: (expressIds: number[]) => void
   onFocusElements?: (ids: number[]) => void
 }
 
 const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
   function ModelTree({ onSelectElement, onFilterBySubtree, onFocusElements }, ref) {
-    const { spatialTree, result, partialIssues } = useValidationStore()
+    // Read the raw Record (stable reference when unchanged) — derive array in useMemo
+    // to avoid re-creating objects every render, which would trigger an infinite loop.
+    const spatialTreesRecord = useValidationStore((s) => s.spatialTrees)
+    const { result, partialIssues } = useValidationStore()
+
+    const allTrees = useMemo(
+      () => Object.entries(spatialTreesRecord).map(([modelId, tree]) => ({ modelId, tree })),
+      [spatialTreesRecord],
+    )
     const { selection, setSelection }            = useEditorStore()
     const { addCommand }                         = useEditorHistory()
 
-    const [expanded, setExpanded] = useState<Set<number>>(new Set())
+    const [expanded,        setExpanded]        = useState<Set<number>>(new Set())
+    const [collapsedModels, setCollapsedModels] = useState<Set<string>>(new Set())
     const [editingId, setEditingId]       = useState<number | null>(null)
     const [editingField, setEditingField] = useState<'Name' | 'LongName' | 'Description' | 'GlobalId'>('Name')
-    const [guidWarning, setGuidWarning]   = useState<{ expressId: number; currentGuid: string } | null>(null)
+    const [guidWarning, setGuidWarning]   = useState<{ expressId: number; currentGuid: string; modelId?: string } | null>(null)
 
     const parentRef = useRef<HTMLDivElement>(null)
 
-    // Auto-expand first two levels on tree load
+    // Backwards-compat: all spatial nodes across all trees (for GUID lookup etc.)
+    const spatialTree = useMemo(
+      () => allTrees.flatMap((m) => m.tree),
+      [allTrees],
+    )
+
+    const showModelHeaders = allTrees.length > 1
+
+    // Auto-expand first two levels when a new tree arrives
     useEffect(() => {
-      if (spatialTree.length === 0) return
-      const toExpand = new Set<number>()
-      for (const root of spatialTree) {
-        toExpand.add(root.expressId)
-        for (const child of root.children) toExpand.add(child.expressId)
+      if (allTrees.length === 0) return
+      setExpanded((prev) => {
+        const next = new Set(prev)
+        for (const { tree } of allTrees) {
+          for (const root of tree) {
+            next.add(root.expressId)
+            for (const child of root.children) next.add(child.expressId)
+          }
+        }
+        return next
+      })
+    }, [allTrees])
+
+    // Build per-model issue rollup (keyed by modelId)
+    const issueRollupByModel = useMemo(() => {
+      const allIssues = result?.issues ?? partialIssues
+      const byModel = new Map<string, { direct: Map<number, { errors: number; warnings: number; info: number }>; rollup: Map<number, { errors: number; warnings: number; info: number }> }>()
+      for (const { modelId, tree } of allTrees) {
+        const direct = buildIssueRollup(allIssues, modelId)
+        const rollup = new Map<number, { errors: number; warnings: number; info: number }>()
+        for (const root of tree) rollupSubtree(root, direct, rollup)
+        byModel.set(modelId, { direct, rollup })
       }
-      setExpanded(toExpand)
-    }, [spatialTree])
+      return byModel
+    }, [result, partialIssues, allTrees])
 
-    // Build issue rollup
-    const issueRollup = useMemo(() => {
-      const issues = result?.issues ?? partialIssues
-      const direct = buildIssueRollup(issues)
-      const rollup = new Map<number, { errors: number; warnings: number; info: number }>()
-      for (const root of spatialTree) rollupSubtree(root, direct, rollup)
-      return { direct, rollup }
-    }, [result, partialIssues, spatialTree])
-
-    // Flatten visible tree
+    // Flatten visible tree(s)
     const flatNodes = useMemo(
-      () => flattenTree(spatialTree, expanded),
-      [spatialTree, expanded],
+      () => flattenAllTrees(allTrees, expanded, collapsedModels, showModelHeaders),
+      [allTrees, expanded, collapsedModels, showModelHeaders],
     )
 
     const virtualizer = useVirtualizer({
@@ -311,7 +489,7 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
       })
     }, [])
 
-    const startEdit = useCallback((expressId: number, field: typeof editingField) => {
+    const startEdit = useCallback((expressId: number, field: typeof editingField, modelId?: string) => {
       if (field === 'GlobalId') {
         const findGuid = (nodes: SpatialNode[]): string | null => {
           for (const n of nodes) {
@@ -322,7 +500,7 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
           return null
         }
         const guid = findGuid(spatialTree) ?? ''
-        setGuidWarning({ expressId, currentGuid: guid })
+        setGuidWarning({ expressId, currentGuid: guid, modelId })
         return
       }
       setEditingId(expressId)
@@ -334,16 +512,17 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
       field: 'Name' | 'LongName' | 'Description',
       oldValue: string,
       newValue: string,
+      modelId?: string,
     ) => {
       setEditingId(null)
       const trimmed = newValue.trim()
       if (trimmed === oldValue) return
-      addCommand(buildRenameCommand(expressId, field, oldValue, trimmed))
+      addCommand(buildRenameCommand(expressId, field, oldValue, trimmed, modelId))
     }, [addCommand])
 
-    const handleSelectNode = useCallback((expressId: number) => {
+    const handleSelectNode = useCallback((expressId: number, modelId?: string) => {
       setSelection([expressId])
-      onSelectElement?.(expressId)
+      onSelectElement?.(expressId, modelId)
     }, [setSelection, onSelectElement])
 
     const getNodeCurrentName = useCallback((
@@ -360,23 +539,20 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
     // ── Imperative handle: revealElement ────────────────────────────────────
     useImperativeHandle(ref, () => ({
       revealElement(expressId: number) {
-        // Step 1 — expand all ancestors so the row exists in the flat list
+        // Step 1 — expand ancestors across all loaded models
         setExpanded(prev => {
           const next = new Set(prev)
 
           const expandAncestors = (nodes: SpatialNode[]): boolean => {
             for (const node of nodes) {
-              // Direct spatial node match
               if (node.expressId === expressId) {
                 next.add(node.expressId)
                 return true
               }
-              // Element contained in this node
               if (node.containedElements.some(e => e.expressId === expressId)) {
                 next.add(node.expressId)
                 return true
               }
-              // Recurse into children
               if (expandAncestors(node.children)) {
                 next.add(node.expressId)
                 return true
@@ -385,16 +561,22 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
             return false
           }
 
-          expandAncestors(spatialTree)
+          // Also make sure the owning model is not collapsed
+          for (const { modelId, tree } of allTrees) {
+            if (expandAncestors(tree)) {
+              setCollapsedModels(c => { const s = new Set(c); s.delete(modelId); return s })
+              break
+            }
+          }
+
           return next
         })
 
         // Step 2 — after React re-renders the expanded tree, scroll to the row.
-        // We need two rAFs: first for the state flush, second for virtualizer measurement.
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             setExpanded(prev => {
-              const flat = flattenTree(spatialTree, prev)
+              const flat = flattenAllTrees(allTrees, prev, collapsedModels, showModelHeaders)
               const idx  = flat.findIndex(f =>
                 (f.kind === 'spatial' && f.node.expressId === expressId) ||
                 (f.kind === 'element' && f.element.expressId === expressId),
@@ -402,20 +584,20 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
               if (idx !== -1) {
                 virtualizer.scrollToIndex(idx, { align: 'center', behavior: 'smooth' })
               }
-              return prev // no state change — side-effect only
+              return prev
             })
           })
         })
 
-        // Step 3 — select the element
+        // Step 3 — select the element (modelId unknown at this point — use best-effort)
         setSelection([expressId])
         onSelectElement?.(expressId)
       },
-    }), [spatialTree, virtualizer, setSelection, onSelectElement])
+    }), [allTrees, collapsedModels, showModelHeaders, virtualizer, setSelection, onSelectElement])
 
     // ────────────────────────────────────────────────────────────────────────
 
-    if (spatialTree.length === 0) {
+    if (allTrees.length === 0 || allTrees.every(({ tree }) => tree.length === 0)) {
       return (
         <div className="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
           <div className="w-10 h-10 rounded-full bg-[var(--surface-2)] flex items-center justify-center text-lg">🌲</div>
@@ -431,7 +613,7 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
         {/* Header */}
         <div className="flex-none px-3 py-2.5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--surface)]">
           <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider">
-            Spatial Tree
+            {showModelHeaders ? `${allTrees.length} Models` : 'Spatial Tree'}
           </span>
           <span className="text-[10px] text-[var(--text-faint)] font-mono bg-[var(--surface-2)] px-1.5 py-0.5 rounded-md">
             {flatNodes.length}
@@ -457,10 +639,22 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
                     transform: `translateY(${vRow.start}px)`,
                   }}
                 >
-                  {flat.kind === 'spatial' ? (
+                  {flat.kind === 'model-header' ? (
+                    <ModelHeaderRow
+                      flat={flat}
+                      onToggleCollapse={() =>
+                        setCollapsedModels((prev) => {
+                          const next = new Set(prev)
+                          if (next.has(flat.modelId)) next.delete(flat.modelId)
+                          else next.add(flat.modelId)
+                          return next
+                        })
+                      }
+                    />
+                  ) : flat.kind === 'spatial' ? (
                     <SpatialRow
                       flat={flat}
-                      issueRollup={issueRollup.rollup}
+                      issueRollup={issueRollupByModel.get(flat.modelId)?.rollup ?? new Map()}
                       isSelected={selection.includes(flat.node.expressId)}
                       editingId={editingId}
                       editingField={editingField}
@@ -479,12 +673,12 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
                   ) : (
                     <ElementRow
                       flat={flat}
-                      directIssues={issueRollup.direct}
+                      directIssues={issueRollupByModel.get(flat.modelId)?.direct ?? new Map()}
                       isSelected={selection.includes(flat.element.expressId)}
                       onSelect={handleSelectNode}
                       onFocusElements={onFocusElements}
                       onCommitRename={(expressId, oldName, newName) =>
-                        addCommand(buildRenameCommand(expressId, 'Name', oldName, newName))
+                        addCommand(buildRenameCommand(expressId, 'Name', oldName, newName, flat.modelId))
                       }
                     />
                   )}
@@ -500,7 +694,7 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
             expressId={guidWarning.expressId}
             currentGuid={guidWarning.currentGuid}
             onGenerate={(newGuid) => {
-              addCommand(buildFixGuidCommand(guidWarning.expressId, guidWarning.currentGuid))
+              addCommand(buildFixGuidCommand(guidWarning.expressId, guidWarning.currentGuid, guidWarning.modelId))
               setGuidWarning(null)
             }}
             onCancel={() => setGuidWarning(null)}
@@ -548,6 +742,40 @@ function EyeBtn({
   )
 }
 
+// ── Model header row ──────────────────────────────────────────────────────────
+
+function ModelHeaderRow({
+  flat, onToggleCollapse,
+}: {
+  flat: FlatNode & { kind: 'model-header' }
+  onToggleCollapse: () => void
+}) {
+  return (
+    <div
+      className="flex items-center gap-2 px-2 h-[30px] cursor-pointer select-none border-b border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-2)] transition-colors"
+      onClick={onToggleCollapse}
+      title={`${flat.isCollapsed ? 'Expand' : 'Collapse'} ${flat.fileName}`}
+    >
+      <svg
+        width="8" height="8" viewBox="0 0 8 8" fill="currentColor"
+        className="shrink-0 text-[var(--text-faint)]"
+        style={{ transform: flat.isCollapsed ? 'rotate(-90deg)' : undefined }}
+      >
+        <path d="M0 2.5L4 6.5L8 2.5L7 1.5L4 4.5L1 1.5Z" />
+      </svg>
+      <span
+        className="flex-1 min-w-0 truncate text-[11px] font-semibold text-[var(--text-dim)]"
+        title={flat.fileName}
+      >
+        {flat.fileName}
+      </span>
+      <span className="text-[10px] text-[var(--text-faint)] font-mono bg-[var(--surface-2)] px-1.5 py-0.5 rounded-md shrink-0">
+        {flat.nodeCount}
+      </span>
+    </div>
+  )
+}
+
 // ── Spatial row ───────────────────────────────────────────────────────────────
 
 function SpatialRow({
@@ -560,17 +788,21 @@ function SpatialRow({
   editingId: number | null
   editingField: 'Name' | 'LongName' | 'Description' | 'GlobalId'
   onToggle: (id: number) => void
-  onSelect: (id: number) => void
+  onSelect: (id: number, modelId?: string) => void
   onFocusElements?: (ids: number[]) => void
-  onStartEdit: (id: number, field: 'Name' | 'LongName' | 'Description' | 'GlobalId') => void
-  onCommitEdit: (id: number, field: 'Name' | 'LongName' | 'Description', old: string, newVal: string) => void
+  onStartEdit: (id: number, field: 'Name' | 'LongName' | 'Description' | 'GlobalId', modelId?: string) => void
+  onCommitEdit: (id: number, field: 'Name' | 'LongName' | 'Description', old: string, newVal: string, modelId?: string) => void
   onCancelEdit: () => void
   onBadgeClick: (id: number) => void
   getNodeCurrentName: (id: number, def: string) => string
 }) {
   const { node, depth, isExpanded, hasChildren } = flat
+  const modelId = flat.modelId
   const rollup    = issueRollup.get(node.expressId)
-  const isEditing = editingId === node.expressId && editingField === 'Name'
+  const isEditingName     = editingId === node.expressId && editingField === 'Name'
+  const isEditingLongName = editingId === node.expressId && editingField === 'LongName'
+  const isEditingDesc     = editingId === node.expressId && editingField === 'Description'
+  const isEditing         = isEditingName || isEditingLongName || isEditingDesc
   const displayName = getNodeCurrentName(node.expressId, node.name)
   const childCount  = node.containedElements.length + node.children.length
 
@@ -584,7 +816,34 @@ function SpatialRow({
     setElementsVisible(elemIds, allHidden)
   }
 
+  const { addCommand } = useEditorStore()
+
+  // Build Fix GUID handler if this node has a GUID issue in current results
+  const { result, partialIssues } = useValidationStore()
+  const hasGuidIssue = useMemo(() => {
+    const issues = result?.issues ?? partialIssues
+    return issues.some(
+      (i) => i.expressId === node.expressId &&
+        (i.ruleId === 'RULE_INVALID_GUID_FORMAT' || i.ruleId === 'RULE_DUPLICATE_GUID'),
+    )
+  }, [result, partialIssues, node.expressId])
+
   return (
+    <TreeContextMenu
+      expressId={node.expressId}
+      globalId={node.globalId}
+      displayName={displayName}
+      onSelect={() => onSelect(node.expressId, modelId)}
+      onFocus={() => {
+        const ids = collectElementIds(node)
+        if (ids.length > 0) onFocusElements?.(ids)
+      }}
+      onRename={() => onStartEdit(node.expressId, 'Name')}
+      onFixGuid={hasGuidIssue && node.globalId
+        ? () => addCommand(buildFixGuidCommand(node.expressId, node.globalId!, modelId))
+        : undefined
+      }
+    >
     <div
       className={`flex items-center gap-1.5 px-2 h-[30px] cursor-pointer select-none group transition-colors
         ${isSelected
@@ -595,7 +854,7 @@ function SpatialRow({
         opacity: allHidden ? 0.45 : 1,
         backgroundColor: isSelected ? 'rgba(94,106,210,0.12)' : undefined,
       }}
-      onClick={() => onSelect(node.expressId)}
+      onClick={() => onSelect(node.expressId, modelId)}
       onDoubleClick={(e) => {
         e.stopPropagation()
         const ids = collectElementIds(node)
@@ -616,25 +875,62 @@ function SpatialRow({
 
       <ClassBadge cls={node.ifcClass} />
 
-      {isEditing ? (
+      {isEditingName ? (
         <InlineEdit
           value={displayName}
-          onCommit={(v) => onCommitEdit(node.expressId, 'Name', node.name, v)}
+          onCommit={(v) => onCommitEdit(node.expressId, 'Name', node.name, v, modelId)}
           onCancel={onCancelEdit}
         />
+      ) : isEditingLongName ? (
+        <>
+          <span className="text-[9px] text-[var(--text-faint)] font-mono shrink-0">LN</span>
+          <InlineEdit
+            value={node.longName ?? ''}
+            onCommit={(v) => onCommitEdit(node.expressId, 'LongName', node.longName ?? '', v, modelId)}
+            onCancel={onCancelEdit}
+            placeholder="Long name…"
+          />
+        </>
+      ) : isEditingDesc ? (
+        <>
+          <span className="text-[9px] text-[var(--text-faint)] font-mono shrink-0">D</span>
+          <InlineEdit
+            value={node.description ?? ''}
+            onCommit={(v) => onCommitEdit(node.expressId, 'Description', node.description ?? '', v, modelId)}
+            onCancel={onCancelEdit}
+            placeholder="Description…"
+          />
+        </>
       ) : (
         <>
           <span className="flex-1 min-w-0 truncate text-[12px] leading-none" title={displayName}>
             {displayName}
           </span>
+          {/* Rename name */}
           <button
             className="shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--border)]"
-            title="Rename"
+            title="Edit Name"
             onClick={(e) => { e.stopPropagation(); onStartEdit(node.expressId, 'Name') }}
           >
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M8 2l2 2-6 6H2V8l6-6z" />
             </svg>
+          </button>
+          {/* Edit LongName */}
+          <button
+            className="shrink-0 opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--border)] text-[9px] font-mono leading-none"
+            title={`Edit LongName${node.longName ? `: ${node.longName}` : ' (empty)'}`}
+            onClick={(e) => { e.stopPropagation(); onStartEdit(node.expressId, 'LongName') }}
+          >
+            LN
+          </button>
+          {/* Edit Description */}
+          <button
+            className="shrink-0 opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--border)] text-[9px] font-mono leading-none"
+            title={`Edit Description${node.description ? `: ${node.description}` : ' (empty)'}`}
+            onClick={(e) => { e.stopPropagation(); onStartEdit(node.expressId, 'Description') }}
+          >
+            D
           </button>
         </>
       )}
@@ -649,7 +945,7 @@ function SpatialRow({
         <span
           className="text-[9px] font-mono text-[var(--text-faint)] shrink-0 truncate opacity-0 group-hover:opacity-100 max-w-[60px]"
           title={node.globalId}
-          onDoubleClick={(e) => { e.stopPropagation(); onStartEdit(node.expressId, 'GlobalId') }}
+          onDoubleClick={(e) => { e.stopPropagation(); onStartEdit(node.expressId, 'GlobalId', modelId) }}
         >
           {node.globalId.slice(0, 8)}
         </span>
@@ -669,6 +965,7 @@ function SpatialRow({
         </span>
       )}
     </div>
+    </TreeContextMenu>
   )
 }
 
@@ -680,11 +977,12 @@ function ElementRow({
   flat: FlatNode & { kind: 'element' }
   directIssues: Map<number, { errors: number; warnings: number; info: number }>
   isSelected: boolean
-  onSelect: (id: number) => void
+  onSelect: (id: number, modelId?: string) => void
   onFocusElements?: (ids: number[]) => void
   onCommitRename: (expressId: number, oldName: string, newName: string) => void
 }) {
   const { element, depth } = flat
+  const modelId = flat.modelId
   const issues = directIssues.get(element.expressId)
 
   const [editing, setEditing] = useState(false)
@@ -708,7 +1006,29 @@ function ElementRow({
     setEditing(false)
   }
 
+  const { addCommand } = useEditorStore()
+  const { result: vResult, partialIssues: vPartial } = useValidationStore()
+  const hasGuidIssue = useMemo(() => {
+    const issues = vResult?.issues ?? vPartial
+    return issues.some(
+      (i) => i.expressId === element.expressId &&
+        (i.ruleId === 'RULE_INVALID_GUID_FORMAT' || i.ruleId === 'RULE_DUPLICATE_GUID'),
+    )
+  }, [vResult, vPartial, element.expressId])
+
   return (
+    <TreeContextMenu
+      expressId={element.expressId}
+      globalId={element.globalId}
+      displayName={element.name}
+      onSelect={() => onSelect(element.expressId, modelId)}
+      onFocus={() => onFocusElements?.([element.expressId])}
+      onRename={() => { setEditVal(element.name); setEditing(true) }}
+      onFixGuid={hasGuidIssue && element.globalId
+        ? () => addCommand(buildFixGuidCommand(element.expressId, element.globalId!, modelId))
+        : undefined
+      }
+    >
     <div
       className={`flex items-center gap-1.5 px-2 h-[30px] cursor-pointer select-none group transition-colors
         ${isSelected
@@ -719,7 +1039,7 @@ function ElementRow({
         opacity: isHidden ? 0.4 : 1,
         backgroundColor: isSelected ? 'rgba(94,106,210,0.12)' : undefined,
       }}
-      onClick={() => !editing && onSelect(element.expressId)}
+      onClick={() => !editing && onSelect(element.expressId, modelId)}
       onDoubleClick={(e) => { e.stopPropagation(); if (!editing) onFocusElements?.([element.expressId]) }}
     >
       <span className="w-4 shrink-0" />
@@ -778,6 +1098,7 @@ function ElementRow({
         </span>
       )}
     </div>
+    </TreeContextMenu>
   )
 }
 

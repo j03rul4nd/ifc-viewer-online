@@ -5,13 +5,14 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "tsc -b && vite build",
+        "build": "tsc -b && node --max-old-space-size=4096 node_modules/vite/bin/vite.js build",
         "lint": "eslint .",
         "preview": "vite preview",
         "test": "vitest run",
         "test:watch": "vitest"
     },
     "dependencies": {
+        "@radix-ui/react-context-menu": "^2.2.16",
         "@radix-ui/react-dialog": "^1.1.4",
         "@radix-ui/react-scroll-area": "^1.2.3",
         "@radix-ui/react-switch": "^1.1.2",
@@ -29,9 +30,12 @@
         "lucide-react": "^0.469.0",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
+        "react-resizable-panels": "^4.11.1",
         "tailwind-merge": "^2.6.0",
         "three": "^0.184.0",
+        "ts-pattern": "^5.9.0",
         "web-ifc": "^0.0.77",
+        "zod": "^4.4.3",
         "zustand": "^5.0.12"
     },
     "devDependencies": {

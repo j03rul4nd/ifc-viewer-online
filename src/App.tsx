@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels'
 import Viewer from './components/Viewer'
 import Toolbar from './components/Toolbar'
 import Sidebar from './components/Sidebar'
@@ -8,12 +9,23 @@ import Landing from './components/Landing'
 import ModelTree from './components/ModelTree'
 import ValidationPanel from './components/ValidationPanel'
 import ToastContainer from './components/ToastContainer'
+import CameraControls from './components/CameraControls'
+import ModelInfoPanel from './components/ModelInfoPanel'
+import ScenePanel from './components/ScenePanel'
+import ExportModal from './components/ExportModal'
 import { lighten } from './lib/utils'
+import { modelRegistry } from './lib/model-registry'
 import { useIfcLoader } from './lib/loader'
-import { runValidation } from './lib/validator'
 import { useEditorHistory } from './hooks/useEditorHistory'
+import { useValidationRunner } from './hooks/useValidationRunner'
+import { useElementFocus } from './hooks/useElementFocus'
+import { usePersistedPreferences } from './hooks/usePersistedPreferences'
 import { useValidationStore } from './stores/validationStore'
 import { useUIStore } from './stores/uiStore'
+import { useModelStore } from './stores/modelStore'
+import { useEditorStore } from './stores/editorStore'
+import { useSceneStore } from './stores/sceneStore'
+import { useTakeoffStore } from './stores/takeoffStore'
 import { toast } from './stores/toastStore'
 import type { ViewerAPI } from './lib/viewer'
 import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo } from './types'
@@ -47,35 +59,63 @@ export default function App() {
   const [selected,   setSelected]   = useState<SelectedInfo | null>(null)
   const [hidden,     setHidden]     = useState<Set<string>>(new Set())
   const [isolated,   setIsolated]   = useState<string | null>(null)
-  const [showUpload, setShowUpload] = useState(false)
+  const [showUpload, setShowUpload]       = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
 
   // Stores
   const { validationMode, result } = useValidationStore()
   const {
     treeVisible, treeWidth, hiddenElements, clearHiddenElements,
     mobileSidebarOpen, setMobileSidebarOpen,
+    cameraControlsVisible, toggleCameraControls,
+    scenePanelOpen, toggleScenePanel, setScenePanelOpen,
   } = useUIStore()
+
+  const {
+    models: sceneModels,
+    activeModelId,
+    addModel:           addSceneModel,
+    setModelVisible:    setSceneModelVisible,
+    setModelTransform:  setSceneModelTransform,
+    setActiveModel:     setSceneActiveModel,
+    removeModel:        removeSceneModel,
+    clearScene,
+  } = useSceneStore()
 
   // Undo/redo keyboard shortcuts
   useEditorHistory()
+
+  // Persist tree preferences across sessions
+  usePersistedPreferences()
+
+  // Validation lifecycle
+  const validation = useValidationRunner()
+
+  // Element focus/select/reveal handlers
+  const elementFocus = useElementFocus(viewerApiRef, modelTreeRef)
 
   // ── Loading pipeline ──────────────────────────────────────────────────────
 
   const {
     loadFile,
     progress,
+    memoryStats,
     cacheEntries,
     deleteFromCache,
     isFromCache,
     opfsAvailable,
   } = useIfcLoader({
     viewerApiRef,
-    onModelLoaded: (info, fromCache) => {
+    onModelLoaded: (info, fromCache, modelId) => {
       setModelInfo(info)
       setLoadingState('loaded')
       setLoadError(null)
+
+      // Use the stable sceneModelId from the viewer so ScenePanel and multi-model code align
+      addSceneModel(modelId, info)
+
       console.info(
-        `[IFC] Loaded "${info.fileName}" (${info.elementCount} elements)` +
+        `[IFC] Loaded "${info.fileName}" (${info.elementCount} elements, id: ${modelId})` +
         (fromCache ? ' — from cache ⚡' : ' — parsed fresh'),
       )
       toast(
@@ -83,11 +123,7 @@ export default function App() {
         (fromCache ? ' (from cache ⚡)' : ''),
         'success',
       )
-      // No auto-close here — UploadOverlay closes itself via SuccessView
-      // when the user clicks "Open viewer →", triggered by loadDone prop.
-      runValidation().catch((err: unknown) => {
-        console.error('[App] Validation failed:', err)
-      })
+      void validation.run(undefined, modelId)
     },
     onError: (msg) => {
       console.error('[IFC] Load error:', msg)
@@ -103,6 +139,15 @@ export default function App() {
     viewerApiRef.current?.setValidationHighlights(issues, validationMode)
   }, [validationMode, result])
 
+  // ── Sync active model in sceneStore when the user clicks an element ───────
+  // commitSelection in the viewer auto-activates the hit model, but doesn't
+  // update the sceneStore. We derive it from the selected element's modelId.
+  useEffect(() => {
+    if (selected?.modelId && selected.modelId !== activeModelId) {
+      setSceneActiveModel(selected.modelId)
+    }
+  }, [selected, activeModelId, setSceneActiveModel])
+
   // ── Auto-open mobile sidebar when an element is selected ──────────────────
   // On desktop (md+) the sidebar is always visible, so no action needed there.
   useEffect(() => {
@@ -116,12 +161,16 @@ export default function App() {
   const handleFileLoad = (file: File): void => {
     setLoadingState('loading')
     setLoadError(null)
-    setModelInfo(null)
-    setSelected(null)
-    setHidden(new Set())
-    setIsolated(null)
-    clearHiddenElements()
     setRoute('viewer')
+    // Only reset viewer interaction state for the very first model load.
+    // Loading additional models must not disturb existing selections/visibility.
+    if (sceneModels.length === 0) {
+      setModelInfo(null)
+      setSelected(null)
+      setHidden(new Set())
+      setIsolated(null)
+      clearHiddenElements()
+    }
     void loadFile(file)
   }
 
@@ -165,32 +214,55 @@ export default function App() {
     }
   }
 
-  const handleJumpToElement = useCallback((expressId: number) => {
-    viewerApiRef.current?.focusElement(expressId)
-    viewerApiRef.current?.selectElement(expressId)
-  }, [])
+  const handleJumpToElement      = elementFocus.jumpToElement
+  const handleSelectTreeElement  = useCallback(
+    (expressId: number, modelId?: string) => elementFocus.selectElement(expressId, modelId),
+    [elementFocus],
+  )
+  const handleFocusElements      = elementFocus.focusElements
+  const handleFrameElement       = elementFocus.frameElement
+  const handleRevealInTree       = elementFocus.revealInTree
 
-  const handleSelectTreeElement = useCallback((expressId: number) => {
-    viewerApiRef.current?.selectElement(expressId)
-  }, [])
+  // ── Activate a specific model in both store and viewer ───────────────────
+  const handleSetActiveModel = useCallback((id: string): void => {
+    setSceneActiveModel(id)
+    viewerApiRef.current?.setActiveModel(id)
+  }, [setSceneActiveModel])
 
-  const handleFocusElements = useCallback((ids: number[]) => {
-    viewerApiRef.current?.frameElements(ids)
-  }, [])
-
-  const handleFrameElement = useCallback((expressId: number) => {
-    viewerApiRef.current?.focusElement(expressId)
-    viewerApiRef.current?.selectElement(expressId)
-  }, [])
-
-  const handleRevealInTree = useCallback((expressId: number) => {
-    if (!useUIStore.getState().treeVisible) {
-      useUIStore.getState().setTreeVisible(true)
+  // ── Remove a model from the scene, viewer, and all stores ────────────────
+  const handleRemoveModel = useCallback(async (id: string): Promise<void> => {
+    try {
+      await viewerApiRef.current?.removeModel(id)
+      removeSceneModel(id)
+      useModelStore.getState().removeModelEntry(id)
+      useValidationStore.getState().clearValidationForModel(id)
+      useTakeoffStore.getState().clearModelResult(id)
+      modelRegistry.unregister(id)
+      // Clear selection if the removed model owned the currently selected element
+      setSelected((prev) => (prev?.modelId === id ? null : prev))
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('[App] Failed to remove model:', msg)
+      toast(`Could not remove model: ${msg}`, 'error')
     }
-    setTimeout(() => {
-      modelTreeRef.current?.revealElement(expressId)
-    }, 80)
-  }, [])
+  }, [removeSceneModel])
+
+  // ── Navigate back to landing — reset all model/editor/validation state ────
+  const handleNavigateToLanding = useCallback((): void => {
+    setRoute('landing')
+    setModelInfo(null)
+    setLoadingState('idle')
+    setLoadError(null)
+    setSelected(null)
+    setHidden(new Set())
+    setIsolated(null)
+    useModelStore.getState().clearModel()
+    useEditorStore.getState().clearHistory()
+    useValidationStore.getState().reset()
+    useTakeoffStore.getState().reset()
+    modelRegistry.clear()
+    clearScene()
+  }, [clearScene])
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -217,36 +289,65 @@ export default function App() {
             className="fixed inset-0 bg-[var(--bg)] flex flex-col"
           >
             <div className="flex-none z-20">
-              <Toolbar
-                fileName={modelInfo?.fileName ?? null}
-                elementCount={modelInfo?.elementCount ?? 0}
-                loadingState={loadingState}
-                canIsolate={!!selected}
-                onReset={() => viewerRef.current?.resetCamera()}
-                onIsolate={handleIsolate}
-                onUpload={openUploadModal}
-              />
+              {/* Show the active model's name; fall back to last-loaded when only one model exists */}
+              {(() => {
+                const activeEntry = sceneModels.find((m) => m.id === activeModelId)
+                const displayName  = activeEntry?.fileName  ?? modelInfo?.fileName   ?? null
+                const displayCount = activeEntry?.elementCount ?? modelInfo?.elementCount ?? 0
+                return (
+                  <Toolbar
+                    fileName={displayName}
+                    elementCount={displayCount}
+                    loadingState={loadingState}
+                    canIsolate={!!selected}
+                    viewerApiRef={viewerApiRef}
+                    onReset={() => viewerRef.current?.resetCamera()}
+                    onIsolate={handleIsolate}
+                    onUpload={openUploadModal}
+                    onOpenExportModal={() => setShowExportModal(true)}
+                  />
+                )
+              })()}
             </div>
 
-            <div className="flex flex-1 overflow-hidden">
+            <PanelGroup
+              orientation="horizontal"
+              className="flex flex-1 overflow-hidden"
+              style={{ height: '100%' }}
+            >
 
-              {treeVisible && modelInfo && (
-                <div
-                  className="hidden md:flex flex-none bg-[var(--surface)] flex-col overflow-hidden border-r border-[var(--border)]"
-                  style={{ width: treeWidth, maxWidth: '38vw', minWidth: 220 }}
-                >
-                  <ModelTree
-                    ref={modelTreeRef}
-                    onSelectElement={handleSelectTreeElement}
-                    onFocusElements={handleFocusElements}
-                    onFilterBySubtree={() => {
-                      useValidationStore.getState().setFilters({ ruleIds: [], search: '' })
-                    }}
+              {treeVisible && sceneModels.length > 0 && (
+                <>
+                  <Panel
+                    id="tree"
+                    defaultSize="22%"
+                    minSize="13%"
+                    maxSize="45%"
+                    style={{ overflow: 'hidden' }}
+                  >
+                    <div className="hidden md:flex flex-col h-full bg-[var(--surface)] overflow-hidden border-r border-[var(--border)]">
+                      <ModelTree
+                        ref={modelTreeRef}
+                        onSelectElement={handleSelectTreeElement}
+                        onFocusElements={handleFocusElements}
+                        onFilterBySubtree={() => {
+                          useValidationStore.getState().setFilters({ ruleIds: [], search: '' })
+                        }}
+                      />
+                    </div>
+                  </Panel>
+                  <PanelResizeHandle
+                    id="tree-resize"
+                    className="hidden md:block w-[3px] bg-[var(--border)] hover:bg-[var(--accent)] active:bg-[var(--accent)] transition-colors duration-100 cursor-col-resize flex-none"
                   />
-                </div>
+                </>
               )}
 
-              <div className="flex-1 flex flex-col overflow-hidden relative">
+              <Panel
+                id="main"
+                style={{ overflow: 'hidden' }}
+              >
+              <div className="flex flex-col overflow-hidden relative h-full">
 
                 <div className="flex-1 relative">
                   <Viewer
@@ -267,9 +368,61 @@ export default function App() {
                     />
                   )}
 
+                  {/* Camera preset overlay */}
+                  {sceneModels.length > 0 && (
+                    <CameraControls
+                      viewerApiRef={viewerApiRef}
+                      visible={cameraControlsVisible}
+                      onToggle={toggleCameraControls}
+                    />
+                  )}
+
+                  {/* Model info / weight panel — always shows the active model's data */}
+                  {sceneModels.length > 0 && (() => {
+                    const displayInfo =
+                      sceneModels.find((m) => m.id === activeModelId) ?? modelInfo
+                    return displayInfo ? (
+                      <ModelInfoPanel
+                        modelInfo={displayInfo}
+                        memoryStats={memoryStats}
+                        isFromCache={isFromCache}
+                      />
+                    ) : null
+                  })()}
+
+                  {/* Scene panel (model list + transform) */}
+                  {scenePanelOpen && (
+                    <ScenePanel
+                      models={sceneModels}
+                      activeModelId={activeModelId}
+                      transformMode="none"
+                      viewerApiRef={viewerApiRef}
+                      onSetActive={handleSetActiveModel}
+                      onSetVisible={(id, v) => {
+                        setSceneModelVisible(id, v)
+                        viewerApiRef.current?.setModelVisible(id, v)
+                      }}
+                      onSetTransform={setSceneModelTransform}
+                      onTransformMode={() => {}}
+                      onRemove={(id) => { void handleRemoveModel(id) }}
+                      onValidate={(id) => { void validation.run(undefined, id) }}
+                      onFrame={(id) => { handleSetActiveModel(id); viewerApiRef.current?.frameActiveModel() }}
+                      onIsolate={(id) => { handleSetActiveModel(id) }}
+                      onShowAll={() => { /* visibility already restored by ScenePanel */ }}
+                      onClose={() => setScenePanelOpen(false)}
+                    />
+                  )}
+
                   <Sidebar
-                    categories={modelInfo?.categories ?? []}
-                    elementCount={modelInfo?.elementCount ?? 0}
+                    categories={
+                      // Use the active model's categories; fall back to last-loaded modelInfo
+                      sceneModels.find((m) => m.id === activeModelId)?.categories ??
+                      modelInfo?.categories ?? []
+                    }
+                    elementCount={
+                      sceneModels.find((m) => m.id === activeModelId)?.elementCount ??
+                      modelInfo?.elementCount ?? 0
+                    }
                     selected={selected}
                     hidden={hidden}
                     onToggleHidden={handleToggleHidden}
@@ -285,7 +438,7 @@ export default function App() {
                   />
 
                   <button
-                    onClick={() => setRoute('landing')}
+                    onClick={handleNavigateToLanding}
                     className="absolute top-3 left-3 md:left-auto md:right-[364px] z-[9] h-[30px] min-w-[30px] px-3 bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
                   >
                     <Icons.Chevron size={12} className="rotate-180" />
@@ -293,7 +446,7 @@ export default function App() {
                   </button>
 
                   {/* Mobile FAB: toggle sidebar (only on < md) */}
-                  {modelInfo && (
+                  {sceneModels.length > 0 && (
                     <button
                       onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
                       className="md:hidden absolute right-4 z-[10] w-12 h-12 rounded-full bg-[var(--accent)] shadow-[0_4px_20px_rgba(94,106,210,0.4)] flex items-center justify-center text-white"
@@ -323,10 +476,19 @@ export default function App() {
 
                 <ValidationPanel onJumpToElement={handleJumpToElement} />
               </div>
-            </div>
+              </Panel>
+            </PanelGroup>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Export modal ── */}
+      {showExportModal && (
+        <ExportModal
+          viewerApiRef={viewerApiRef}
+          onClose={() => setShowExportModal(false)}
+        />
+      )}
 
       {/* ── Upload modal ── */}
       <AnimatePresence>

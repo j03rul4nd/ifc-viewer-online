@@ -1,23 +1,28 @@
 // ─── OPFS fragments cache ─────────────────────────────────────────────────────
-// Stores pre-parsed fragments binaries + original IFC files in the Origin Private
-// File System so subsequent loads of the same IFC file skip web-ifc parsing.
+// Stores pre-parsed fragments binaries + original IFC files in the Origin
+// Private File System (OPFS) so subsequent loads skip web-ifc parsing.
 //
-// Layout (under the OPFS root):
+// OPFS layout:
 //   ifc-cache/
-//     <key>.frag          – raw fragments binary
-//     <key>.ifc           – original IFC bytes (for validation + export)
-//     <key>.meta.json     – CacheEntry metadata (JSON)
+//     <key>.frag       — raw fragments binary
+//     <key>.ifc        — original IFC bytes (for validation + export)
+//     <key>.meta.json  — CacheEntry metadata (JSON)
 //
-// Key format:  `${file.name}:${file.size}:${file.lastModified}`
+// Key format: `${file.name}:${file.size}:${file.lastModified}`
 
 import type { CacheEntry } from '../types'
+import { createLogger } from './logger'
 
+const log     = createLogger('OPFS')
 const DIR_NAME = 'ifc-cache'
 
-// ── Key ──────────────────────────────────────────────────────────────────────
+// Increment when the fragments binary format changes (forces cache invalidation)
+const CACHE_VERSION = 'v2'
+
+// ── Key helpers ───────────────────────────────────────────────────────────────
 
 export function buildCacheKey(file: { name: string; size: number; lastModified: number }): string {
-  return `${file.name}:${file.size}:${file.lastModified}`
+  return `${CACHE_VERSION}:${file.name}:${file.size}:${file.lastModified}`
 }
 
 function keyToFileName(key: string): string {
@@ -27,13 +32,16 @@ function keyToFileName(key: string): string {
 // ── OPFS access ───────────────────────────────────────────────────────────────
 
 async function getCacheDir(): Promise<FileSystemDirectoryHandle | null> {
-  if (!('storage' in navigator) || typeof navigator.storage.getDirectory !== 'function') {
+  if (typeof navigator === 'undefined' ||
+      !('storage' in navigator) ||
+      typeof navigator.storage.getDirectory !== 'function') {
     return null
   }
   try {
     const root = await navigator.storage.getDirectory()
     return root.getDirectoryHandle(DIR_NAME, { create: true })
-  } catch {
+  } catch (err) {
+    log.warn('Could not open OPFS cache dir:', err)
     return null
   }
 }
@@ -48,6 +56,7 @@ export async function loadFromCache(key: string): Promise<Uint8Array | null> {
   try {
     const fh   = await dir.getFileHandle(`${base}.frag`)
     const file = await fh.getFile()
+    log.debug('Loaded fragments from cache:', key)
     return new Uint8Array(await file.arrayBuffer())
   } catch {
     return null
@@ -63,7 +72,6 @@ export async function saveToCache(
   if (!dir) return
 
   const base = keyToFileName(key)
-
   try {
     const fragHandle   = await dir.getFileHandle(`${base}.frag`, { create: true })
     const fragWritable = await fragHandle.createWritable()
@@ -75,8 +83,10 @@ export async function saveToCache(
     const metaWritable = await metaHandle.createWritable()
     await metaWritable.write(JSON.stringify(entry))
     await metaWritable.close()
-  } catch {
-    // Non-fatal: proceed without caching
+
+    log.debug('Saved fragments to cache:', key, `(${data.byteLength} bytes)`)
+  } catch (err) {
+    log.warn('Failed to save fragments to cache:', err)
   }
 }
 
@@ -96,8 +106,9 @@ export async function saveIfcBuffer(key: string, data: Uint8Array): Promise<void
     const writable = await fh.createWritable()
     await writable.write(data)
     await writable.close()
-  } catch {
-    // Non-fatal
+    log.debug('Saved IFC buffer to cache:', key, `(${data.byteLength} bytes)`)
+  } catch (err) {
+    log.warn('Failed to save IFC buffer:', err)
   }
 }
 
@@ -113,6 +124,7 @@ export async function loadIfcBuffer(key: string): Promise<ArrayBuffer | null> {
   try {
     const fh   = await dir.getFileHandle(`${base}.ifc`)
     const file = await fh.getFile()
+    log.debug('Loaded IFC buffer from cache:', key)
     return file.arrayBuffer()
   } catch {
     return null
@@ -134,12 +146,12 @@ export async function listCacheEntries(): Promise<CacheEntry[]> {
         const file = await (handle as FileSystemFileHandle).getFile()
         const text = await file.text()
         entries.push(JSON.parse(text) as CacheEntry)
-      } catch {
-        // Skip corrupted entries
+      } catch (err) {
+        log.debug('Skipping corrupted cache entry:', name, err)
       }
     }
-  } catch {
-    // Return empty on iteration failure
+  } catch (err) {
+    log.warn('Failed to iterate cache dir:', err)
   }
 
   return entries.sort((a, b) => b.cachedAt - a.cachedAt)
@@ -155,10 +167,13 @@ export async function deleteCacheEntry(key: string): Promise<void> {
     dir.removeEntry(`${base}.ifc`),
     dir.removeEntry(`${base}.meta.json`),
   ])
+  log.debug('Deleted cache entry:', key)
 }
 
 export async function getStorageEstimate(): Promise<{ usedMB: number; quotaMB: number }> {
-  if (!('storage' in navigator) || typeof navigator.storage.estimate !== 'function') {
+  if (typeof navigator === 'undefined' ||
+      !('storage' in navigator) ||
+      typeof navigator.storage.estimate !== 'function') {
     return { usedMB: 0, quotaMB: 0 }
   }
   try {
@@ -167,7 +182,8 @@ export async function getStorageEstimate(): Promise<{ usedMB: number; quotaMB: n
       usedMB:  Math.round(usage  / (1024 * 1024)),
       quotaMB: Math.round(quota  / (1024 * 1024)),
     }
-  } catch {
+  } catch (err) {
+    log.warn('storage.estimate() failed:', err)
     return { usedMB: 0, quotaMB: 0 }
   }
 }

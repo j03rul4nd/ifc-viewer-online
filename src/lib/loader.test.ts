@@ -16,7 +16,8 @@ import { buildCacheKey, loadFromCache, saveToCache, listCacheEntries, deleteCach
 describe('buildCacheKey', () => {
   it('produces a deterministic key from file metadata', () => {
     const file = { name: 'office.ifc', size: 12_345_678, lastModified: 1_700_000_000_000 }
-    expect(buildCacheKey(file)).toBe('office.ifc:12345678:1700000000000')
+    // Key format: `${CACHE_VERSION}:${name}:${size}:${lastModified}`
+    expect(buildCacheKey(file)).toBe('v2:office.ifc:12345678:1700000000000')
   })
 
   it('differentiates files with the same name but different sizes', () => {
@@ -415,14 +416,14 @@ describe('Worker error recovery (resetWorker semantics)', () => {
 describe('fromCacheLocal stale-closure fix', () => {
   it('local variable correctly tracks cache hit independent of React state', async () => {
     // Simulate the async load flow:
-    //   isFromCacheState is committed asynchronously by React, so reading it
-    //   at the point onModelLoaded fires gives the STALE value.
-    //   The fix is to use a local `fromCacheLocal` variable.
+    //   React state is committed via setTimeout (macrotask), so reading it
+    //   immediately after an await (microtask) gives the STALE value.
+    //   The fix is to use a local `fromCacheLocal` variable instead.
 
-    let isFromCacheState = false  // simulates React state (always stale at callback)
+    let isFromCacheState = false  // simulates React state
     const setIsFromCache = (v: boolean) => {
-      // React: schedules an update — does NOT update the closure variable immediately
-      Promise.resolve().then(() => { isFromCacheState = v })
+      // Simulate React's batched commit via macrotask (not microtask)
+      setTimeout(() => { isFromCacheState = v }, 10)
     }
 
     let capturedStale: boolean | null = null
@@ -434,20 +435,20 @@ describe('fromCacheLocal stale-closure fix', () => {
 
       if (cacheHit) {
         fromCacheLocal = true       // ← set locally
-        setIsFromCache(true)        // ← schedules async update
+        setIsFromCache(true)        // ← schedules macrotask commit
       }
 
-      // Simulate async work
+      // Simulate async work via microtask — macrotask hasn't fired yet
       await Promise.resolve()
 
-      // At this point React state is still stale (setter hasn't committed)
-      capturedStale = isFromCacheState  // always false
-      capturedLocal = fromCacheLocal    // correctly true when cacheHit=true
+      // React state commit is still pending (setTimeout not yet executed)
+      capturedStale = isFromCacheState  // false — state not yet committed
+      capturedLocal = fromCacheLocal    // true — local var is correct
     }
 
     await fakeLoad(true)
 
-    expect(capturedStale).toBe(false)  // React state is stale — old bug
-    expect(capturedLocal).toBe(true)   // local var is correct — the fix
+    expect(capturedStale).toBe(false)  // state not yet committed — old bug scenario
+    expect(capturedLocal).toBe(true)   // local var always correct — the fix
   })
 })

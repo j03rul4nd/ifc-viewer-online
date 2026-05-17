@@ -13,6 +13,9 @@
 import { IfcAPI } from 'web-ifc'
 import type { ValidationIssue, ValidationResult, SpatialNode, SpatialElement, RulesConfig } from '../types'
 import { validateIfcBuffer, assertModelId } from '../lib/ifc-guards'
+import { createLogger } from '../lib/logger'
+
+const log = createLogger('ValidatorWorker')
 
 // Force single-threaded WASM — nested workers (pthreads) fail inside a worker context
 ;((): void => {
@@ -61,6 +64,13 @@ import {
   IFCRELDEFINESBYTYPE,
   IFCRELDEFINESBYPROPERTIES,
   IFCPROPERTYSET,
+  IFCPROPERTYSINGLEVALUE,
+  IFCRELASSOCIATESMATERIAL,
+  IFCELEMENTQUANTITY,
+  IFCQUANTITYAREA,
+  IFCQUANTITYVOLUME,
+  IFCQUANTITYLENGTH,
+  IFCQUANTITYCOUNT,
 } from 'web-ifc'
 
 // ── Typed IFC entity shapes ───────────────────────────────────────────────────
@@ -493,8 +503,8 @@ async function ruleNamingConvention(
   for (const [cls, pat] of Object.entries(patterns)) {
     try {
       compiled.push({ className: cls, regex: new RegExp(pat) })
-    } catch {
-      // Skip invalid patterns
+    } catch (err: unknown) {
+      log.warn(`RULE_NAMING_CONVENTION: invalid pattern for "${cls}": ${pat}`, err)
     }
   }
   if (compiled.length === 0) return issues
@@ -636,7 +646,10 @@ async function ruleMissingPropertySet(
       if (pset.type === IFCPROPERTYSET) {
         psetName = getStr(pset.Name)
       }
-    } catch { continue }
+    } catch (err: unknown) {
+      log.debug(`RULE_MISSING_PROPERTY_SET: failed to read pset #${psetId}:`, err)
+      continue
+    }
 
     for (const ref of rel.RelatedObjects ?? []) {
       const elemId = getRefId(ref)
@@ -787,6 +800,474 @@ async function ruleBrokenAggregate(
   return issues
 }
 
+// ── New rules ─────────────────────────────────────────────────────────────────
+
+const IFC_GUID_RE = /^[0-9A-Za-z_$]{22}$/
+
+async function ruleInvalidGuidFormat(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+  const allTypes = [...ELEMENT_TYPES, IFCPROJECT, IFCSITE, IFCBUILDING, IFCBUILDINGSTOREY, IFCSPACE]
+  for (const typeId of allTypes) {
+    const ids = api.GetLineIDsWithType(modelId, typeId)
+    for (let i = 0; i < ids.size(); i++) {
+      const id  = ids.get(i)
+      const ent = getLine<IfcBaseEntity>(api, modelId, id)
+      const guid = getStr(ent.GlobalId)
+      if (!guid || IFC_GUID_RE.test(guid)) continue
+      issues.push({
+        id: newIssueId(),
+        ruleId: 'RULE_INVALID_GUID_FORMAT',
+        severity: 'error',
+        expressId: id,
+        globalId: guid,
+        ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+        elementName: getStr(ent.Name) || '(unnamed)',
+        message: `GlobalId "${guid}" is not a valid IFC GUID — must be exactly 22 characters from the set [0-9A-Za-z_$].`,
+        path: getSpatialPath(id, idx),
+        autoFixable: true,
+      })
+    }
+  }
+  return issues
+}
+
+async function ruleSpatialHierarchy(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+
+  const check = (
+    typeId: number,
+    allowedParentTypes: number[],
+    message: string,
+  ): void => {
+    const ids = api.GetLineIDsWithType(modelId, typeId)
+    for (let i = 0; i < ids.size(); i++) {
+      const id       = ids.get(i)
+      const parentId = idx.aggParent.get(id)
+      if (parentId === undefined) return
+      const parentType = idx.entityTypes.get(parentId)
+      if (parentType !== undefined && !allowedParentTypes.includes(parentType)) {
+        const ent = getLine<IfcBaseEntity>(api, modelId, id)
+        issues.push({
+          id: newIssueId(),
+          ruleId: 'RULE_SPATIAL_HIERARCHY',
+          severity: 'error',
+          expressId: id,
+          globalId: getStr(ent.GlobalId),
+          ifcClass: TYPE_NAME[typeId] ?? '',
+          elementName: getStr(ent.Name) || '(unnamed)',
+          message,
+          path: getSpatialPath(id, idx),
+          autoFixable: false,
+        })
+      }
+    }
+  }
+
+  check(IFCSITE,          [IFCPROJECT],     'IfcSite must be directly under IfcProject.')
+  check(IFCBUILDING,      [IFCSITE],         'IfcBuilding must be under IfcSite, not directly under IfcProject.')
+  check(IFCBUILDINGSTOREY,[IFCBUILDING],     'IfcBuildingStorey must be under IfcBuilding.')
+  check(IFCSPACE,         [IFCBUILDINGSTOREY, IFCSPACE], 'IfcSpace must be under IfcBuildingStorey or another IfcSpace.')
+
+  return issues
+}
+
+async function ruleCircularReference(
+  _api: IfcAPI,
+  _modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+  const confirmed = new Set<number>()
+
+  for (const [startId] of idx.aggParent) {
+    if (confirmed.has(startId)) continue
+    const visited = new Set<number>()
+    let cur: number | undefined = startId
+    while (cur !== undefined) {
+      if (visited.has(cur)) {
+        confirmed.add(startId)
+        const ifcClass = TYPE_NAME[idx.entityTypes.get(startId) ?? -1] ?? 'IfcElement'
+        issues.push({
+          id: newIssueId(),
+          ruleId: 'RULE_CIRCULAR_REFERENCE',
+          severity: 'error',
+          expressId: startId,
+          globalId: idx.globalIds.get(startId) ?? '',
+          ifcClass,
+          elementName: idx.names.get(startId) ?? '(unnamed)',
+          message: `Circular reference detected — element #${startId} (${ifcClass}) is its own ancestor in the aggregation tree.`,
+          path: [],
+          autoFixable: false,
+        })
+        break
+      }
+      visited.add(cur)
+      cur = idx.aggParent.get(cur)
+    }
+  }
+  return issues
+}
+
+async function ruleEmptyPropertyValue(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+
+  // Build reverse map: propertySet expressId → element expressId
+  const psetToElem = new Map<number, number>()
+  const relPropIds = api.GetLineIDsWithType(modelId, IFCRELDEFINESBYPROPERTIES)
+  for (let i = 0; i < relPropIds.size(); i++) {
+    const rel    = getLine<IfcRelDefByProps>(api, modelId, relPropIds.get(i))
+    const psetId = getRefId(rel.RelatingPropertyDefinition)
+    if (psetId === null) continue
+    for (const ref of rel.RelatedObjects ?? []) {
+      const elemId = getRefId(ref)
+      if (elemId !== null) psetToElem.set(psetId, elemId)
+    }
+  }
+
+  // Check all property sets
+  const psetIds = api.GetLineIDsWithType(modelId, IFCPROPERTYSET)
+  for (let i = 0; i < psetIds.size(); i++) {
+    const psetId  = psetIds.get(i)
+    const pset    = getLine<IfcPSet & { HasProperties?: IfcRefValue[] }>(api, modelId, psetId)
+    const psetName = getStr(pset.Name)
+    const elemId   = psetToElem.get(psetId)
+    if (elemId === undefined) continue
+
+    for (const propRef of pset.HasProperties ?? []) {
+      const propId = getRefId(propRef)
+      if (propId === null) continue
+      try {
+        const prop = api.GetLine(modelId, propId, false) as unknown as {
+          type: number; Name?: { type: 1; value: string }; NominalValue: unknown
+        }
+        if (prop.type !== IFCPROPERTYSINGLEVALUE) continue
+        const name = prop.Name?.value ?? ''
+        const val  = prop.NominalValue
+        const isEmpty = val === null || val === undefined ||
+          (typeof val === 'object' && (val as { value?: unknown }).value === null) ||
+          (typeof val === 'object' && (val as { value?: unknown }).value === '$') ||
+          (typeof val === 'object' && typeof (val as { value?: unknown }).value === 'string' &&
+           ((val as { value: string }).value.trim() === '' || (val as { value: string }).value === 'Unknown'))
+        if (!isEmpty) continue
+        const elem = getLine<IfcBaseEntity>(api, modelId, elemId)
+        issues.push({
+          id: newIssueId(),
+          ruleId: 'RULE_EMPTY_PROPERTY_VALUE',
+          severity: 'warning',
+          expressId: elemId,
+          globalId: getStr(elem.GlobalId),
+          ifcClass: TYPE_NAME[elem.type] ?? 'IfcElement',
+          elementName: getStr(elem.Name) || '(unnamed)',
+          message: `Property "${name}" in Pset "${psetName}" has an empty or null value.`,
+          path: getSpatialPath(elemId, idx),
+          autoFixable: false,
+        })
+      } catch (err: unknown) {
+        log.debug(`RULE_EMPTY_PROPERTY_VALUE: failed to read property #${propId} in pset #${psetId}:`, err)
+        continue
+      }
+    }
+  }
+  return issues
+}
+
+// Structural element types that should have materials
+const MATERIAL_ELEMENT_TYPES = [
+  IFCWALL, IFCWALLSTANDARDCASE, IFCSLAB, IFCSLABSTANDARDCASE,
+  IFCBEAM, IFCBEAMSTANDARDCASE, IFCCOLUMN, IFCCOLUMNSTANDARDCASE,
+  IFCROOF, IFCFOOTING, IFCPILE, IFCMEMBER, IFCPLATE,
+]
+
+async function ruleMissingMaterial(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+  const hasMaterial = new Set<number>()
+
+  const matIds = api.GetLineIDsWithType(modelId, IFCRELASSOCIATESMATERIAL)
+  for (let i = 0; i < matIds.size(); i++) {
+    const rel = getLine<{ RelatedObjects?: IfcRefValue[] }>(api, modelId, matIds.get(i))
+    for (const ref of rel.RelatedObjects ?? []) {
+      const id = getRefId(ref)
+      if (id !== null) hasMaterial.add(id)
+    }
+  }
+
+  for (const typeId of MATERIAL_ELEMENT_TYPES) {
+    const ids = api.GetLineIDsWithType(modelId, typeId)
+    for (let i = 0; i < ids.size(); i++) {
+      const id = ids.get(i)
+      if (hasMaterial.has(id)) continue
+      const ent = getLine<IfcBaseEntity>(api, modelId, id)
+      issues.push({
+        id: newIssueId(),
+        ruleId: 'RULE_MISSING_MATERIAL',
+        severity: 'warning',
+        expressId: id,
+        globalId: getStr(ent.GlobalId),
+        ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+        elementName: getStr(ent.Name) || '(unnamed)',
+        message: `${TYPE_NAME[typeId] ?? 'Element'} has no associated material (IfcRelAssociatesMaterial).`,
+        path: getSpatialPath(id, idx),
+        autoFixable: false,
+      })
+    }
+  }
+  return issues
+}
+
+async function ruleElementInBuilding(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+  for (const typeId of ELEMENT_TYPES) {
+    const ids = api.GetLineIDsWithType(modelId, typeId)
+    for (let i = 0; i < ids.size(); i++) {
+      const id          = ids.get(i)
+      const containerId = idx.contained.get(id)
+      if (containerId === undefined) continue
+      if (idx.entityTypes.get(containerId) === IFCBUILDING) {
+        const ent = getLine<IfcBaseEntity>(api, modelId, id)
+        issues.push({
+          id: newIssueId(),
+          ruleId: 'RULE_ELEMENT_IN_BUILDING',
+          severity: 'warning',
+          expressId: id,
+          globalId: getStr(ent.GlobalId),
+          ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+          elementName: getStr(ent.Name) || '(unnamed)',
+          message: 'Element is directly contained in IfcBuilding — it should be placed inside an IfcBuildingStorey.',
+          path: getSpatialPath(id, idx),
+          autoFixable: false,
+        })
+      }
+    }
+  }
+  return issues
+}
+
+// ── Clash detection ───────────────────────────────────────────────────────────
+
+// Structural/envelope types checked for clashes (exclude MEP and furniture)
+const CLASH_ELEMENT_TYPES = [
+  IFCWALL, IFCWALLSTANDARDCASE, IFCSLAB, IFCSLABSTANDARDCASE,
+  IFCBEAM, IFCBEAMSTANDARDCASE, IFCCOLUMN, IFCCOLUMNSTANDARDCASE,
+  IFCROOF, IFCFOOTING, IFCPILE, IFCMEMBER, IFCPLATE,
+]
+const CLASH_ELEMENT_LIMIT = 800   // max elements to process (bounds O(n²) vertex work)
+const CLASH_ISSUE_LIMIT   = 100   // max issues to report
+const CLASH_PENETRATION   = 0.05  // min penetration depth in metres to report (5 cm)
+
+interface AABB {
+  minX: number; minY: number; minZ: number
+  maxX: number; maxY: number; maxZ: number
+  expressId: number; typeId: number
+  name: string; guid: string
+}
+
+function applyMat4(x: number, y: number, z: number, m: ArrayLike<number>): [number, number, number] {
+  // column-major 4×4 multiply (same convention as OpenGL / web-ifc flatTransformation)
+  return [
+    m[0]*x + m[4]*y + m[ 8]*z + m[12],
+    m[1]*x + m[5]*y + m[ 9]*z + m[13],
+    m[2]*x + m[6]*y + m[10]*z + m[14],
+  ]
+}
+
+function computeAABB(api: IfcAPI, modelId: number, expressId: number): AABB | null {
+  let mesh: ReturnType<IfcAPI['GetFlatMesh']>
+  try { mesh = api.GetFlatMesh(modelId, expressId) } catch { return null }
+  if (!mesh || mesh.geometries.size() === 0) return null
+
+  let minX = Infinity, minY = Infinity, minZ = Infinity
+  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity
+
+  for (let gi = 0; gi < mesh.geometries.size(); gi++) {
+    const placed = mesh.geometries.get(gi)
+    const m = placed.flatTransformation
+    let geom: ReturnType<IfcAPI['GetGeometry']>
+    try { geom = api.GetGeometry(modelId, placed.geometryExpressID) } catch { continue }
+    let verts: Float32Array
+    try { verts = api.GetVertexArray(geom.GetVertexData(), geom.GetVertexDataSize()) } catch { geom.delete(); continue }
+    for (let vi = 0; vi < verts.length; vi += 6) {
+      const [wx, wy, wz] = applyMat4(verts[vi], verts[vi + 1], verts[vi + 2], m)
+      if (wx < minX) minX = wx; if (wx > maxX) maxX = wx
+      if (wy < minY) minY = wy; if (wy > maxY) maxY = wy
+      if (wz < minZ) minZ = wz; if (wz > maxZ) maxZ = wz
+    }
+    geom.delete()
+  }
+
+  if (minX === Infinity) return null
+  return { minX, minY, minZ, maxX, maxY, maxZ, expressId, typeId: 0, name: '', guid: '' }
+}
+
+function aabbsClash(a: AABB, b: AABB, pen: number): boolean {
+  // Require penetration > pen in all 3 axes to avoid flagging touching faces
+  return a.minX + pen < b.maxX && a.maxX - pen > b.minX &&
+         a.minY + pen < b.maxY && a.maxY - pen > b.minY &&
+         a.minZ + pen < b.maxZ && a.maxZ - pen > b.minZ
+}
+
+async function ruleElementClash(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+
+  // Collect structural element IDs (capped to avoid O(n²) blow-up)
+  const candidates: Array<{ id: number; typeId: number }> = []
+  for (const typeId of CLASH_ELEMENT_TYPES) {
+    const ids = api.GetLineIDsWithType(modelId, typeId)
+    for (let i = 0; i < ids.size(); i++) {
+      candidates.push({ id: ids.get(i), typeId })
+      if (candidates.length >= CLASH_ELEMENT_LIMIT) break
+    }
+    if (candidates.length >= CLASH_ELEMENT_LIMIT) break
+  }
+
+  if (candidates.length < 2) return issues
+
+  // Compute AABBs
+  const boxes: AABB[] = []
+  for (const { id, typeId } of candidates) {
+    const box = computeAABB(api, modelId, id)
+    if (!box) continue
+    try {
+      const ent = getLine<IfcBaseEntity>(api, modelId, id)
+      box.typeId = typeId
+      box.name   = getStr(ent.Name) || `#${id}`
+      box.guid   = getStr(ent.GlobalId)
+    } catch (err: unknown) {
+      log.debug(`RULE_ELEMENT_CLASH: failed to read entity #${id} for AABB metadata:`, err)
+    }
+    boxes.push(box)
+  }
+
+  // O(n²) AABB intersection test — bounded by CLASH_ELEMENT_LIMIT
+  const reported = new Set<string>()
+  for (let i = 0; i < boxes.length && issues.length < CLASH_ISSUE_LIMIT; i++) {
+    for (let j = i + 1; j < boxes.length && issues.length < CLASH_ISSUE_LIMIT; j++) {
+      const a = boxes[i]
+      const b = boxes[j]
+      if (!aabbsClash(a, b, CLASH_PENETRATION)) continue
+
+      // Deduplicate: report each pair only once
+      const pairKey = `${Math.min(a.expressId, b.expressId)}-${Math.max(a.expressId, b.expressId)}`
+      if (reported.has(pairKey)) continue
+      reported.add(pairKey)
+
+      const classA = TYPE_NAME[a.typeId] ?? 'IfcElement'
+      const classB = TYPE_NAME[b.typeId] ?? 'IfcElement'
+      issues.push({
+        id: newIssueId(),
+        ruleId: 'RULE_ELEMENT_CLASH',
+        severity: 'warning',
+        expressId: a.expressId,
+        globalId: a.guid,
+        ifcClass: classA,
+        elementName: a.name,
+        message: `${classA} "${a.name}" (#${a.expressId}) clashes with ${classB} "${b.name}" (#${b.expressId})`,
+        path: getSpatialPath(a.expressId, idx),
+        autoFixable: false,
+      })
+    }
+  }
+
+  return issues
+}
+
+// ── IFC schema version check ──────────────────────────────────────────────────
+
+const KNOWN_IFC_SCHEMAS: Record<string, { label: string; current: boolean }> = {
+  IFC2X3:  { label: 'IFC 2x3',   current: false },
+  IFC4:    { label: 'IFC 4',     current: true  },
+  IFC4X3:  { label: 'IFC 4.3',   current: true  },
+  IFC4X1:  { label: 'IFC 4.1',   current: true  },
+  IFC4X2:  { label: 'IFC 4.2',   current: true  },
+  IFC2X2:  { label: 'IFC 2x2',   current: false },
+  IFC2X:   { label: 'IFC 2x',    current: false },
+  IFC1_5_1: { label: 'IFC 1.5.1', current: false },
+}
+
+function readIfcSchema(buffer: ArrayBuffer): string | null {
+  // Read only the first 2 KB — the FILE_SCHEMA section is always in the header
+  const bytes = new Uint8Array(buffer, 0, Math.min(buffer.byteLength, 2048))
+  const header = new TextDecoder('utf-8', { fatal: false }).decode(bytes).toUpperCase()
+  const match = /FILE_SCHEMA\s*\(\s*\(\s*'([^']+)'\s*\)\s*\)/.exec(header)
+  return match ? match[1].trim() : null
+}
+
+async function ruleInvalidIfcVersion(
+  buffer: ArrayBuffer,
+): Promise<ValidationIssue[]> {
+  const schema = readIfcSchema(buffer)
+  if (!schema) {
+    return [{
+      id: newIssueId(),
+      ruleId: 'RULE_INVALID_IFC_VERSION',
+      severity: 'warning',
+      expressId: 0,
+      globalId: null,
+      ifcClass: 'FILE_SCHEMA',
+      elementName: 'FILE_SCHEMA',
+      message: 'Could not determine the IFC schema version from the file header.',
+      path: [],
+      autoFixable: false,
+    }]
+  }
+
+  const info = KNOWN_IFC_SCHEMAS[schema]
+  if (!info) {
+    return [{
+      id: newIssueId(),
+      ruleId: 'RULE_INVALID_IFC_VERSION',
+      severity: 'info',
+      expressId: 0,
+      globalId: null,
+      ifcClass: 'FILE_SCHEMA',
+      elementName: 'FILE_SCHEMA',
+      message: `Unrecognised IFC schema version: "${schema}". Expected IFC2X3, IFC4, or IFC4X3.`,
+      path: [],
+      autoFixable: false,
+    }]
+  }
+
+  if (!info.current) {
+    return [{
+      id: newIssueId(),
+      ruleId: 'RULE_INVALID_IFC_VERSION',
+      severity: 'info',
+      expressId: 0,
+      globalId: null,
+      ifcClass: 'FILE_SCHEMA',
+      elementName: 'FILE_SCHEMA',
+      message: `File uses ${info.label} schema. Consider upgrading to IFC4 or IFC4X3 for full feature support.`,
+      path: [],
+      autoFixable: false,
+    }]
+  }
+
+  return []
+}
+
 // ── Main validation handler ───────────────────────────────────────────────────
 
 type PostFn = (msg: unknown, transfer?: Transferable[]) => void
@@ -912,6 +1393,30 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
     if (rules.RULE_BROKEN_AGGREGATE)
       await runRule('RULE_BROKEN_AGGREGATE', () => ruleBrokenAggregate(api!, modelId))
 
+    if (rules.RULE_INVALID_GUID_FORMAT)
+      await runRule('RULE_INVALID_GUID_FORMAT', () => ruleInvalidGuidFormat(api!, modelId, idx))
+
+    if (rules.RULE_SPATIAL_HIERARCHY)
+      await runRule('RULE_SPATIAL_HIERARCHY', () => ruleSpatialHierarchy(api!, modelId, idx))
+
+    if (rules.RULE_CIRCULAR_REFERENCE)
+      await runRule('RULE_CIRCULAR_REFERENCE', () => ruleCircularReference(api!, modelId, idx))
+
+    if (rules.RULE_EMPTY_PROPERTY_VALUE)
+      await runRule('RULE_EMPTY_PROPERTY_VALUE', () => ruleEmptyPropertyValue(api!, modelId, idx))
+
+    if (rules.RULE_MISSING_MATERIAL)
+      await runRule('RULE_MISSING_MATERIAL', () => ruleMissingMaterial(api!, modelId, idx))
+
+    if (rules.RULE_ELEMENT_IN_BUILDING)
+      await runRule('RULE_ELEMENT_IN_BUILDING', () => ruleElementInBuilding(api!, modelId, idx))
+
+    if (rules.RULE_INVALID_IFC_VERSION)
+      await runRule('RULE_INVALID_IFC_VERSION', () => ruleInvalidIfcVersion(buffer))
+
+    if (rules.RULE_ELEMENT_CLASH)
+      await runRule('RULE_ELEMENT_CLASH', () => ruleElementClash(api!, modelId, idx))
+
     // ── Compile final result ─────────────────────────────────────────
     const byRule: Record<string, number> = {}
     let errors = 0, warnings = 0, info = 0
@@ -935,17 +1440,221 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
     post({ type: 'error', id, message: `Validation failed: ${raw}` })
   } finally {
     if (api && modelId !== -1) {
-      try { api.CloseModel(modelId) } catch { /* ignore cleanup errors */ }
+      try { api.CloseModel(modelId) } catch (err: unknown) { log.debug('handleValidate: CloseModel failed:', err) }
+    }
+  }
+}
+
+// ── Build-tree-only handler ───────────────────────────────────────────────────
+
+async function handleBuildTree(msg: BuildTreeMessage): Promise<void> {
+  const { id, buffer } = msg
+
+  const bufferCheck = validateIfcBuffer(buffer, 'the model buffer')
+  if (!bufferCheck.ok) {
+    post({ type: 'error', id, message: bufferCheck.reason! })
+    return
+  }
+
+  let api: IfcAPI | null = null
+  let modelId = -1
+
+  try {
+    api = new IfcAPI()
+    api.SetWasmPath(
+      import.meta.env.DEV
+        ? `${import.meta.env.BASE_URL}node_modules/web-ifc/`
+        : import.meta.env.BASE_URL,
+    )
+    await api.Init()
+    modelId = api.OpenModel(new Uint8Array(buffer))
+
+    const idx  = buildSpatialIndex(api, modelId)
+    const tree = buildTree(api, modelId, idx)
+    post({ type: 'tree',      id, tree })
+    post({ type: 'tree-done', id })
+
+  } catch (err: unknown) {
+    const raw = err instanceof Error ? err.message : String(err)
+    post({ type: 'error', id, message: `Tree build failed: ${raw}` })
+  } finally {
+    if (api && modelId !== -1) {
+      try { api.CloseModel(modelId) } catch (err: unknown) { log.debug('handleBuildTree: CloseModel failed:', err) }
+    }
+  }
+}
+
+// ── Quantity takeoff handler ──────────────────────────────────────────────────
+
+// Human-readable labels for IFC classes in the takeoff panel
+const TAKEOFF_LABEL: Record<string, string> = {
+  IfcWall: 'Walls', IfcSlab: 'Slabs', IfcBeam: 'Beams', IfcColumn: 'Columns',
+  IfcDoor: 'Doors', IfcWindow: 'Windows', IfcRoof: 'Roofs',
+  IfcStair: 'Stairs', IfcStairFlight: 'Stair Flights', IfcRailing: 'Railings',
+  IfcFooting: 'Footings', IfcPile: 'Piles', IfcMember: 'Members',
+  IfcPlate: 'Plates', IfcCovering: 'Coverings',
+  IfcFurnishingElement: 'Furniture', IfcFlowSegment: 'MEP',
+  IfcPipeSegment: 'Pipes', IfcDuctSegment: 'Ducts',
+  IfcSpace: 'Spaces', IfcBuildingStorey: 'Storeys',
+}
+
+interface NumericValue { type: 4; value: number }
+type MaybeNum = NumericValue | null | undefined
+
+function getNum(val: MaybeNum): number | null {
+  return (val && val.type === 4) ? val.value : null
+}
+
+import type { TakeoffResult, TakeoffGroup, TakeoffQuantity } from '../types'
+
+async function handleComputeTakeoff(msg: ComputeTakeoffMessage): Promise<void> {
+  const { id, buffer } = msg
+  const startTime = Date.now()
+
+  const bufferCheck = validateIfcBuffer(buffer, 'the model buffer')
+  if (!bufferCheck.ok) {
+    post({ type: 'error', id, message: bufferCheck.reason! })
+    return
+  }
+
+  let api: IfcAPI | null = null
+  let modelId = -1
+
+  try {
+    api = new IfcAPI()
+    api.SetWasmPath(
+      import.meta.env.DEV
+        ? `${import.meta.env.BASE_URL}node_modules/web-ifc/`
+        : import.meta.env.BASE_URL,
+    )
+    await api.Init()
+    modelId = api.OpenModel(new Uint8Array(buffer))
+
+    // ── Count elements per class ─────────────────────────────────────
+    const elementCounts = new Map<string, number>()
+    for (const [hash, className] of Object.entries(TYPE_NAME)) {
+      if (['IfcProject', 'IfcSite', 'IfcBuilding', 'IfcBuildingStorey', 'IfcZone'].includes(className)) continue
+      const ids = api.GetLineIDsWithType(modelId, Number(hash))
+      if (ids.size() > 0) {
+        elementCounts.set(className, (elementCounts.get(className) ?? 0) + ids.size())
+      }
+    }
+
+    // ── Read IfcElementQuantity via IfcRelDefinesByProperties ────────
+    // Map: elementExpressId → accumulated quantities per name+unit
+    const elemQtys = new Map<number, Map<string, { value: number; unit: string }>>()
+
+    const relIds = api.GetLineIDsWithType(modelId, IFCRELDEFINESBYPROPERTIES)
+    for (let i = 0; i < relIds.size(); i++) {
+      let rel: { RelatingPropertyDefinition?: MaybeRef; RelatedObjects?: MaybeRef[] }
+      try { rel = api.GetLine(modelId, relIds.get(i), false) as typeof rel } catch { continue }
+
+      const defId = getRefId(rel.RelatingPropertyDefinition as MaybeRef)
+      if (defId === null) continue
+
+      let def: { type: number; Quantities?: MaybeRef[] }
+      try { def = api.GetLine(modelId, defId, false) as typeof def } catch { continue }
+      if (def.type !== IFCELEMENTQUANTITY) continue
+
+      // Collect quantity key → { value, unit }
+      const qtyMap = new Map<string, { value: number; unit: string }>()
+      for (const qRef of def.Quantities ?? []) {
+        const qId = getRefId(qRef as MaybeRef)
+        if (qId === null) continue
+        try {
+          const q = api.GetLine(modelId, qId, false) as {
+            type: number
+            Name?: MaybeString
+            AreaValue?:   MaybeNum
+            VolumeValue?: MaybeNum
+            LengthValue?: MaybeNum
+            CountValue?:  MaybeNum
+          }
+          const name = getStr(q.Name)
+          if (!name) continue
+          let value: number | null = null
+          let unit = ''
+          if      (q.type === IFCQUANTITYAREA   && q.AreaValue)   { value = getNum(q.AreaValue);   unit = 'm²' }
+          else if (q.type === IFCQUANTITYVOLUME  && q.VolumeValue) { value = getNum(q.VolumeValue); unit = 'm³' }
+          else if (q.type === IFCQUANTITYLENGTH  && q.LengthValue) { value = getNum(q.LengthValue); unit = 'm'  }
+          else if (q.type === IFCQUANTITYCOUNT   && q.CountValue)  { value = getNum(q.CountValue);  unit = ''   }
+          if (value !== null) qtyMap.set(`${name}|${unit}`, { value, unit })
+        } catch { continue }
+      }
+
+      // Apply to all related objects
+      for (const objRef of rel.RelatedObjects ?? []) {
+        const elemId = getRefId(objRef as MaybeRef)
+        if (elemId === null) continue
+        if (!elemQtys.has(elemId)) elemQtys.set(elemId, new Map())
+        const existing = elemQtys.get(elemId)!
+        for (const [key, qty] of qtyMap) {
+          const prev = existing.get(key)
+          existing.set(key, { value: (prev?.value ?? 0) + qty.value, unit: qty.unit })
+        }
+      }
+    }
+
+    // ── Aggregate quantities by IFC class ────────────────────────────
+    // Map: className → Map<key, { value, unit }>
+    const classQtys = new Map<string, Map<string, { value: number; unit: string }>>()
+
+    for (const [elemId, qtys] of elemQtys) {
+      let elemLine: { type: number }
+      try { elemLine = api.GetLine(modelId, elemId, false) as typeof elemLine } catch { continue }
+      const className = TYPE_NAME[elemLine.type]
+      if (!className) continue
+      if (!classQtys.has(className)) classQtys.set(className, new Map())
+      const dest = classQtys.get(className)!
+      for (const [key, qty] of qtys) {
+        const prev = dest.get(key)
+        dest.set(key, { value: (prev?.value ?? 0) + qty.value, unit: qty.unit })
+      }
+    }
+
+    // ── Build result groups ──────────────────────────────────────────
+    const groups: TakeoffGroup[] = []
+    for (const [className, count] of elementCounts) {
+      const quantities: TakeoffQuantity[] = []
+      const qMap = classQtys.get(className)
+      if (qMap) {
+        for (const [key, { value, unit }] of qMap) {
+          const name = key.split('|')[0]
+          quantities.push({ name, value: Math.round(value * 100) / 100, unit })
+        }
+        // Sort: area first, then volume, then length, then others
+        const ORDER = ['m²', 'm³', 'm', '']
+        quantities.sort((a, b) => ORDER.indexOf(a.unit) - ORDER.indexOf(b.unit))
+      }
+      groups.push({
+        ifcClass: className,
+        label: TAKEOFF_LABEL[className] ?? className,
+        count,
+        quantities,
+      })
+    }
+    // Sort groups: largest count first
+    groups.sort((a, b) => b.count - a.count)
+
+    const result: TakeoffResult = { groups, durationMs: Date.now() - startTime }
+    post({ type: 'takeoff-done', id, result })
+
+  } catch (err: unknown) {
+    const raw = err instanceof Error ? err.message : String(err)
+    post({ type: 'error', id, message: `Takeoff computation failed: ${raw}` })
+  } finally {
+    if (api && modelId !== -1) {
+      try { api.CloseModel(modelId) } catch (err: unknown) { log.debug('handleComputeTakeoff: CloseModel failed:', err) }
     }
   }
 }
 
 // ── Worker message handler ────────────────────────────────────────────────────
 
-self.onmessage = (e: MessageEvent<ValidateMessage>): void => {
-  if (e.data.type === 'validate') {
-    void handleValidate(e.data)
-  }
+self.onmessage = (e: MessageEvent<ValidateMessage | BuildTreeMessage | ComputeTakeoffMessage>): void => {
+  if (e.data.type === 'validate')        void handleValidate(e.data as ValidateMessage)
+  if (e.data.type === 'build-tree')      void handleBuildTree(e.data as BuildTreeMessage)
+  if (e.data.type === 'compute-takeoff') void handleComputeTakeoff(e.data as ComputeTakeoffMessage)
 }
 
 // ── Message types ─────────────────────────────────────────────────────────────
@@ -957,8 +1666,22 @@ interface ValidateMessage {
   rules: RulesConfig
 }
 
+interface BuildTreeMessage {
+  type: 'build-tree'
+  id: string
+  buffer: ArrayBuffer
+}
+
+interface ComputeTakeoffMessage {
+  type: 'compute-takeoff'
+  id: string
+  buffer: ArrayBuffer
+}
+
 export type ValidatorOutMessage =
-  | { type: 'tree';    id: string; tree: SpatialNode[] }
-  | { type: 'partial'; id: string; ruleId: string; issues: ValidationIssue[]; progress: number }
-  | { type: 'done';    id: string; result: ValidationResult }
-  | { type: 'error';   id: string; message: string }
+  | { type: 'tree';         id: string; tree: SpatialNode[] }
+  | { type: 'tree-done';    id: string }
+  | { type: 'partial';      id: string; ruleId: string; issues: ValidationIssue[]; progress: number }
+  | { type: 'done';         id: string; result: ValidationResult }
+  | { type: 'takeoff-done'; id: string; result: TakeoffResult }
+  | { type: 'error';        id: string; message: string }

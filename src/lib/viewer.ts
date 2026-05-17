@@ -1,7 +1,8 @@
 import * as THREE from 'three'
 import * as OBC from '@thatopen/components'
 import * as FRAGS from '@thatopen/fragments'
-import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue } from '../types'
+import { safeVoid } from './errors'
+import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform } from '../types'
 
 // ─── Palette & label tables ──────────────────────────────────────────────────
 
@@ -87,8 +88,12 @@ export interface IFCAttribute {
 
 /** A Property Set (Pset) with its contained properties */
 export interface IFCPropertySet {
+  /** express ID of the IfcPropertySet entity */
+  expressId: number
   name: string
   properties: Array<{
+    /** express ID of the IfcPropertySingleValue entity */
+    expressId: number
     name: string
     value: string | number | boolean | null
     type?: string
@@ -131,27 +136,93 @@ export interface ViewerAPI {
   loadFragments(
     buffer: Uint8Array,
     fileName: string,
+    fileSize?: number,
     onProgress?: (pct: number) => void,
   ): Promise<{
     modelInfo: ModelInfo
     modelObject: unknown
     getElementInfo: (id: string) => SelectedInfo | null
+    /** Stable ID assigned to this model load. Same ID used in sceneStore, modelRegistry, validationStore. */
+    modelId: string
   }>
   /**
-   * Fetches real IFC data for a given expressId from the loaded model.
-   * Returns null if no model is loaded or the element is not found.
+   * Fetches real IFC data for a given expressId.
+   * Pass modelId to target a specific loaded model; omit to query the current model.
+   * Returns null if no suitable model is loaded or the element is not found.
    */
-  getItemData(expressId: number): Promise<IFCItemData | null>
+  getItemData(expressId: number, modelId?: string): Promise<IFCItemData | null>
   resetCamera(): void
-  frameCategory(id: string): void
-  focusElement(expressId: number): void
-  selectElement(expressId: number): void
+  /** Frame camera on elements of a category. Targets the active model unless modelId is given. */
+  frameCategory(id: string, modelId?: string): void
+  /** Frame + zoom camera to a single element. Searches all models if modelId is omitted. */
+  focusElement(expressId: number, modelId?: string): void
+  /**
+   * Programmatically select an element.
+   * Pass modelId to target an element in a specific model (important with multiple models loaded).
+   */
+  selectElement(expressId: number, modelId?: string): void
   applyFilters(hidden: Set<string>, isolated: string | null, hiddenElements?: Set<number>): void
   applyStyle(style: ViewerStyle): void
-  frameElements(ids: number[]): void
+  /** Frame camera on a set of elements. Targets the active model unless modelId is given. */
+  frameElements(ids: number[], modelId?: string): void
   setValidationHighlights(issues: ValidationIssue[], enabled: boolean): void
   setSelectCallback(cb: (info: SelectedInfo | null) => void): void
   getGpuEstimateBytes(): number
+  /** Fly to a named camera preset (iso, top, front, right, left, back, bottom). */
+  setCameraPreset(preset: CameraPreset): void
+  /**
+   * Apply a positional/rotational/scale offset to a model's pivot group.
+   * Pass modelId to target a specific model; defaults to the active model.
+   * Rotation values are Euler angles in degrees (X, Y, Z order).
+   * Scale can be a uniform number or per-axis object.
+   */
+  setModelTransform(transform: ModelTransform, modelId?: string): void
+  /** Reset a model's transform back to identity. Defaults to the active model. */
+  resetModelTransform(modelId?: string): void
+  /**
+   * Return the world-space bounding box of a model after its pivot transform.
+   * Returns null when the model has no geometry or is not loaded.
+   */
+  getModelBounds(modelId?: string): { center: { x: number; y: number; z: number }; size: { x: number; y: number; z: number } } | null
+  /** Read back a model's transform values (in degrees for rotation). Defaults to active model. */
+  getModelTransform(modelId?: string): Required<ModelTransform>
+  /** Fit the camera to the combined bounding box of ALL loaded models. */
+  frameAllModels(): void
+  /**
+   * Hide all models except the specified one.
+   * Call showAllModels() to restore visibility.
+   */
+  isolateModel(modelId: string): void
+  /** Restore all models to visible. */
+  showAllModels(): void
+  /**
+   * Make a different loaded model the active target for hover/select/frame operations.
+   * No-ops silently if the modelId is not currently loaded in the viewer.
+   */
+  setActiveModel(modelId: string): void
+  /** IDs of all models currently loaded in the viewer, in load order. */
+  getLoadedModelIds(): string[]
+  /**
+   * Show or hide a model's geometry in the scene without unloading it.
+   * No-ops silently if the modelId is not currently loaded.
+   */
+  setModelVisible(modelId: string, visible: boolean): void
+  /**
+   * Fully unload a model from the scene and release its GPU/memory resources.
+   * After this call the modelId is no longer valid in the viewer.
+   */
+  removeModel(modelId: string): Promise<void>
+  /**
+   * Fit the camera to the active model's bounding box (after pivot transform).
+   * No-ops silently if no model is active or the model has no geometry.
+   */
+  frameActiveModel(): void
+  /**
+   * Return the Three.js pivot Object3D for the specified model.
+   * Used by the GLB exporter to get the correct mesh hierarchy.
+   * Returns null if the modelId is not currently loaded.
+   */
+  getModelObject(modelId: string): import('three').Object3D | null
   dispose(): void
 }
 
@@ -219,9 +290,10 @@ function formatPsets(isDefinedBy: unknown): IFCPropertySet[] {
     if (!pset || typeof pset !== 'object') continue
     const p = pset as Record<string, unknown>
 
-    const psetNameAttr = p['Name']
-    const psetName = attrStr(psetNameAttr)
+    const psetName = attrStr(p['Name'])
     if (!psetName) continue
+
+    const psetExpressId = typeof p['expressID'] === 'number' ? p['expressID'] : 0
 
     const hasProperties = p['HasProperties']
     if (!Array.isArray(hasProperties)) continue
@@ -232,11 +304,11 @@ function formatPsets(isDefinedBy: unknown): IFCPropertySet[] {
       if (!prop || typeof prop !== 'object') continue
       const pr = prop as Record<string, unknown>
 
-      const nameAttr    = pr['Name']
-      const nominalAttr = pr['NominalValue']
-
-      const propName = attrStr(nameAttr)
+      const propName = attrStr(pr['Name'])
       if (!propName) continue
+
+      const propExpressId = typeof pr['expressID'] === 'number' ? pr['expressID'] : 0
+      const nominalAttr   = pr['NominalValue']
 
       let propValue: string | number | boolean | null = null
       let propType: string | undefined
@@ -249,15 +321,13 @@ function formatPsets(isDefinedBy: unknown): IFCPropertySet[] {
             propValue = v
           }
         }
-        if ('type' in n && typeof n.type === 'string') {
-          propType = n.type
-        }
+        if ('type' in n && typeof n.type === 'string') propType = n.type
       }
 
-      properties.push({ name: propName, value: propValue, type: propType })
+      properties.push({ expressId: propExpressId, name: propName, value: propValue, type: propType })
     }
 
-    result.push({ name: psetName, properties })
+    result.push({ expressId: psetExpressId, name: psetName, properties })
   }
 
   return result
@@ -340,15 +410,30 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     await ifcLoader.setup()
   })()
 
-  let currentModel: FRAGS.FragmentsModel | null = null
+  // ─── Per-model pivot groups ───────────────────────────────────────────────────
+  // Each loaded model gets its own THREE.Group pivot so transforms are independent.
+  const modelPivots:     Map<string, THREE.Group>             = new Map()
+  const pivotTransforms: Map<string, Required<ModelTransform>> = new Map()
+  let   currentPivot:   THREE.Group | null = null
 
-  const expressIDToType = new Map<number, string>()
+  let currentModel:   FRAGS.FragmentsModel | null = null
+  let currentModelId: string | null = null
+
+  // Per-model maps — survive a model swap so past data stays addressable
+  const modelObjects:    Map<string, FRAGS.FragmentsModel> = new Map()
+  const typeMapByModel:  Map<string, Map<number, string>>  = new Map()
+
+  // Backward-compat reference: always points to the current model's type map
+  let expressIDToType: Map<number, string> = new Map()
 
   let selectCallback: ((info: SelectedInfo | null) => void) | null = null
   let hoveredLocalId:  number | null = null
+  let hoveredModelId:  string | null = null
   let selectedLocalId: number | null = null
+  let selectedModelId: string | null = null
 
-  const validationHighlightedIds = new Set<number>()
+  // Per-model validation highlights: modelId → set of highlighted expressIds
+  const validationHighlightedByModel = new Map<string, Set<number>>()
 
   let selectionBox: THREE.Box3Helper | null = null
 
@@ -365,94 +450,129 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     }
   }
 
-  function addSelectionBox(ids: number[]): void {
-    if (!currentModel || ids.length === 0) return
-    currentModel.getMergedBox(ids).then((box) => {
-      removeSelectionBox()
-      if (box.isEmpty()) return
-      box.expandByScalar(0.05)
-      const helper = new THREE.Box3Helper(box, new THREE.Color(0x6C7CEC))
-      const mat = helper.material as THREE.LineBasicMaterial
-      mat.depthTest    = false
-      mat.transparent  = true
-      mat.opacity      = 0.9
-      world.scene.three.add(helper)
-      selectionBox = helper
-    }).catch(() => { /* ignore */ })
+  function addSelectionBox(ids: number[], model: FRAGS.FragmentsModel | null): void {
+    if (!model || ids.length === 0) return
+    safeVoid(
+      model.getMergedBox(ids).then((box) => {
+        removeSelectionBox()
+        if (box.isEmpty()) return
+        box.expandByScalar(0.05)
+        const helper = new THREE.Box3Helper(box, new THREE.Color(0x6C7CEC))
+        const mat = helper.material as THREE.LineBasicMaterial
+        mat.depthTest    = false
+        mat.transparent  = true
+        mat.opacity      = 0.9
+        world.scene.three.add(helper)
+        selectionBox = helper
+      }),
+      'addSelectionBox',
+    )
   }
 
   // ─── Raycast ─────────────────────────────────────────────────────────────
-  async function getBestHit(): Promise<number | null> {
-    if (!currentModel) return null
+  async function getBestHit(): Promise<{ localId: number; modelId: string } | null> {
+    if (modelObjects.size === 0) return null
 
-    const result = await currentModel.raycast({
-      camera: world.camera.three,
-      mouse,
-      dom: canvas,
-    }) as { localId?: number; distance?: number } | null
+    let bestHit: { localId: number; modelId: string; distance: number } | null = null
 
-    if (!result || result.localId === undefined) return null
+    for (const [modelId, model] of modelObjects) {
+      const typeMap = typeMapByModel.get(modelId) ?? new Map<number, string>()
 
-    const rawType = expressIDToType.get(result.localId) ?? ''
-    const canon   = canonicalType(rawType)
+      const result = await model.raycast({
+        camera: world.camera.three,
+        mouse,
+        dom: canvas,
+      }) as { localId?: number; distance?: number } | null
 
-    if (SPATIAL_CONTAINER_TYPES.has(canon)) {
-      const spatialIds: number[] = []
-      for (const [id, raw] of expressIDToType.entries()) {
-        if (SPATIAL_CONTAINER_TYPES.has(canonicalType(raw))) {
-          spatialIds.push(id)
+      if (!result || result.localId === undefined) continue
+
+      const rawType = typeMap.get(result.localId) ?? ''
+      const canon   = canonicalType(rawType)
+
+      let finalLocalId: number | null = result.localId
+
+      if (SPATIAL_CONTAINER_TYPES.has(canon)) {
+        const spatialIds: number[] = []
+        for (const [id, raw] of typeMap.entries()) {
+          if (SPATIAL_CONTAINER_TYPES.has(canonicalType(raw))) spatialIds.push(id)
         }
+
+        await model.setVisible(spatialIds, false)
+        void fragmentsManager.core.update()
+
+        try {
+          const result2 = await model.raycast({
+            camera: world.camera.three,
+            mouse,
+            dom: canvas,
+          }) as { localId?: number } | null
+          finalLocalId = result2?.localId ?? null
+        } catch (err) {
+          console.debug('[Viewer] secondary raycast failed:', err instanceof Error ? err.message : err)
+        }
+
+        await model.setVisible(spatialIds, true)
+        void fragmentsManager.core.update()
+
+        if (finalLocalId === null) continue
       }
 
-      await currentModel.setVisible(spatialIds, false)
-      void fragmentsManager.core.update()
-
-      let secondHit: number | null = null
-      try {
-        const result2 = await currentModel.raycast({
-          camera: world.camera.three,
-          mouse,
-          dom: canvas,
-        }) as { localId?: number } | null
-        secondHit = result2?.localId ?? null
-      } catch { /* ignore */ }
-
-      await currentModel.setVisible(spatialIds, true)
-      void fragmentsManager.core.update()
-
-      return secondHit
+      const distance = result.distance ?? Infinity
+      if (!bestHit || distance < bestHit.distance) {
+        bestHit = { localId: finalLocalId, modelId, distance }
+      }
     }
 
-    return result.localId
+    return bestHit ? { localId: bestHit.localId, modelId: bestHit.modelId } : null
   }
 
   let lastRaycastTime = 0
   const RAYCAST_THROTTLE_MS = 32
 
   const commitSelection = async (): Promise<void> => {
-    if (!currentModel) return
+    if (modelObjects.size === 0) return
 
-    const hitId = await getBestHit()
+    const hit = await getBestHit()
 
-    try {
-      if (selectedLocalId !== null) await currentModel.resetHighlight([selectedLocalId])
-    } catch { /* ignore */ }
+    // Reset old selection highlight on whichever model it was on
+    if (selectedLocalId !== null && selectedModelId !== null) {
+      const oldModel = modelObjects.get(selectedModelId)
+      try { if (oldModel) await oldModel.resetHighlight([selectedLocalId]) } catch (e) {
+        console.debug('[Viewer] resetHighlight on deselect failed:', e instanceof Error ? e.message : e)
+      }
+    }
 
-    if (hitId !== null) {
-      selectedLocalId = hitId
+    if (hit !== null) {
+      // Auto-activate the clicked model so the sidebar/validator target it
+      if (hit.modelId !== currentModelId) {
+        const clickedModel = modelObjects.get(hit.modelId)
+        if (clickedModel) {
+          currentModel   = clickedModel
+          currentModelId = hit.modelId
+          expressIDToType = typeMapByModel.get(hit.modelId) ?? new Map()
+          currentPivot   = modelPivots.get(hit.modelId) ?? null
+        }
+      }
+
+      selectedLocalId = hit.localId
+      selectedModelId = hit.modelId
+
+      const hitModel = modelObjects.get(hit.modelId)
       try {
-        await currentModel.highlight([selectedLocalId], SELECT_MAT)
+        if (hitModel) await hitModel.highlight([hit.localId], SELECT_MAT)
       } catch (err) {
         console.warn('[Viewer] commitSelection highlight error:', err)
       }
-      addSelectionBox([selectedLocalId])
+      addSelectionBox([hit.localId], hitModel ?? null)
 
-      const rawType = expressIDToType.get(selectedLocalId) ?? 'IFCELEMENT'
+      const typeMap = typeMapByModel.get(hit.modelId) ?? expressIDToType
+      const rawType = typeMap.get(hit.localId) ?? 'IFCELEMENT'
       const canon   = canonicalType(rawType)
-      const name    = `${IFC_DISPLAY_NAMES[canon] ?? prettyType(canon)} #${selectedLocalId}`
-      selectCallback?.({ id: String(selectedLocalId), name, type: rawType, storey: '' })
+      const name    = `${IFC_DISPLAY_NAMES[canon] ?? prettyType(canon)} #${hit.localId}`
+      selectCallback?.({ id: String(hit.localId), name, type: rawType, storey: '', modelId: hit.modelId })
     } else {
       selectedLocalId = null
+      selectedModelId = null
       removeSelectionBox()
       selectCallback?.(null)
     }
@@ -461,28 +581,45 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   const onPointerMove = async (e: PointerEvent): Promise<void> => {
     mouse.set(e.clientX, e.clientY)
 
-    if (!currentModel) return
+    if (modelObjects.size === 0) return
 
     const now = performance.now()
     if (now - lastRaycastTime < RAYCAST_THROTTLE_MS) return
     lastRaycastTime = now
 
     try {
-      const hitId = await getBestHit()
+      const hit = await getBestHit()
 
-      if (hoveredLocalId !== null && hoveredLocalId !== selectedLocalId) {
-        await currentModel.resetHighlight([hoveredLocalId])
+      // Reset old hover on whichever model it was on (unless it's the selected element)
+      if (hoveredLocalId !== null && hoveredModelId !== null) {
+        const isSameAsSelect = hoveredLocalId === selectedLocalId && hoveredModelId === selectedModelId
+        if (!isSameAsSelect) {
+          const prevModel = modelObjects.get(hoveredModelId)
+          if (prevModel) await prevModel.resetHighlight([hoveredLocalId])
+        }
       }
 
-      hoveredLocalId = hitId
+      if (hit !== null) {
+        hoveredLocalId = hit.localId
+        hoveredModelId = hit.modelId
 
-      if (hoveredLocalId !== null && hoveredLocalId !== selectedLocalId) {
-        await currentModel.highlight([hoveredLocalId], HOVER_MAT)
-        canvas.style.cursor = 'pointer'
+        const isSameAsSelect = hit.localId === selectedLocalId && hit.modelId === selectedModelId
+        if (!isSameAsSelect) {
+          const hitModel = modelObjects.get(hit.modelId)
+          if (hitModel) await hitModel.highlight([hit.localId], HOVER_MAT)
+          canvas.style.cursor = 'pointer'
+        } else {
+          canvas.style.cursor = 'default'
+        }
       } else {
+        hoveredLocalId = null
+        hoveredModelId = null
         canvas.style.cursor = 'default'
       }
-    } catch { /* ignore mid-frame errors */ }
+    } catch (e) {
+      // Hover errors are non-fatal — pointer moves 60fps, a single frame failure is ignorable
+      console.debug('[Viewer] hover frame error:', e instanceof Error ? e.message : e)
+    }
   }
 
   let pdTime = 0
@@ -511,7 +648,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   async function setupLoadedModel(
     model: FRAGS.FragmentsModel,
+    modelId: string,
     fileName: string,
+    fileSize: number,
     onProgress?: (pct: number) => void,
   ): Promise<{ modelInfo: ModelInfo; modelObject: unknown; getElementInfo: (id: string) => SelectedInfo | null }> {
 
@@ -519,24 +658,46 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     const regexes    = categoryNames.map((c) => new RegExp(`^${c}$`, 'i'))
     const byCategory = await model.getItemsOfCategories(regexes)
 
-    const categoryAccum = new Map<string, number>()
+    // Build a fresh per-model type map (never mutates a map from another model)
+    const modelTypeMap = new Map<number, string>()
+
+    const categoryAccum    = new Map<string, number>()
+    const categoryElements = new Map<string, number[]>()
 
     for (const [rawKey, ids] of Object.entries(byCategory)) {
       const upperType = rawKey.replace(/[\^$]/g, '').toUpperCase()
       const canon     = canonicalType(upperType)
       categoryAccum.set(canon, (categoryAccum.get(canon) ?? 0) + ids.length)
-      for (const id of ids) expressIDToType.set(id, upperType)
+      const arr = categoryElements.get(canon) ?? []
+      for (const id of ids) {
+        modelTypeMap.set(id, upperType)
+        arr.push(id)
+      }
+      categoryElements.set(canon, arr)
     }
 
+    // Register per-model map and update the current alias
+    typeMapByModel.set(modelId, modelTypeMap)
+    expressIDToType = modelTypeMap
+
     onProgress?.(80)
+
+    // Batch setColor/setOpacity by palette entry (≤25 calls instead of one per element)
+    const colorBatches:   Map<number, number[]> = new Map()
+    const opacityBatches: Map<number, number[]> = new Map()
 
     for (const [localId, rawType] of expressIDToType.entries()) {
       const pal = IFC_PALETTE[rawType] ?? IFC_PALETTE[canonicalType(rawType)]
       if (!pal) continue
-      const col = new THREE.Color(pal.color)
-      await model.setColor([localId], col)
-      if (pal.opacity !== undefined) await model.setOpacity([localId], pal.opacity)
+      const cb = colorBatches.get(pal.color) ?? []; cb.push(localId); colorBatches.set(pal.color, cb)
+      if (pal.opacity !== undefined) {
+        const opKey = pal.opacity
+        const ob = opacityBatches.get(opKey) ?? []; ob.push(localId); opacityBatches.set(opKey, ob)
+      }
     }
+
+    for (const [hex, ids] of colorBatches)       await model.setColor(ids, new THREE.Color(hex))
+    for (const [opacity, ids] of opacityBatches) await model.setOpacity(ids, opacity)
 
     onProgress?.(90)
 
@@ -548,14 +709,6 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     void fragmentsManager.core.update()
 
     onProgress?.(100)
-
-    const categoryElements = new Map<string, number[]>()
-    for (const [localId, rawType] of expressIDToType.entries()) {
-      const canon = canonicalType(rawType)
-      const arr   = categoryElements.get(canon) ?? []
-      arr.push(localId)
-      categoryElements.set(canon, arr)
-    }
 
     const categories: Category[] = Array.from(categoryAccum.entries())
       .map(([id, count]) => ({
@@ -569,6 +722,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     const modelInfo: ModelInfo = {
       fileName,
+      fileSize,
       elementCount: expressIDToType.size,
       categories,
     }
@@ -578,22 +732,39 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const rawType = expressIDToType.get(localId) ?? 'IFCELEMENT'
       const canon   = canonicalType(rawType)
       const name    = `${IFC_DISPLAY_NAMES[canon] ?? prettyType(canon)} #${localId}`
-      return { id, name, type: rawType, storey: '' }
+      return { id, name, type: rawType, storey: '', modelId }
     }
 
     return { modelInfo, modelObject: model, getElementInfo }
   }
 
   async function teardownCurrentModel(): Promise<void> {
-    if (!currentModel) return
-    validationHighlightedIds.clear()
+    if (modelObjects.size === 0 && !currentModel) return
+    validationHighlightedByModel.clear()
     removeSelectionBox()
-    world.scene.three.remove(currentModel.object)
-    await currentModel.dispose()
-    currentModel = null
-    expressIDToType.clear()
+
+    // Remove all per-model pivot groups from scene
+    for (const pivot of modelPivots.values()) {
+      world.scene.three.remove(pivot)
+    }
+    modelPivots.clear()
+    pivotTransforms.clear()
+
+    // Dispose all loaded models
+    for (const model of modelObjects.values()) {
+      await model.dispose()
+    }
+    modelObjects.clear()
+    typeMapByModel.clear()
+
+    currentModel   = null
+    currentModelId = null
+    currentPivot   = null
+    expressIDToType = new Map()
     hoveredLocalId  = null
+    hoveredModelId  = null
     selectedLocalId = null
+    selectedModelId = null
   }
 
   // ─── API pública ──────────────────────────────────────────────────────────
@@ -608,6 +779,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const buffer = new Uint8Array(await file.arrayBuffer())
       onProgress?.(25)
 
+      const assignedId = `${file.name}-${Date.now()}`
+
       let model: FRAGS.FragmentsModel
       try {
         model = await ifcLoader.load(buffer, true, file.name)
@@ -617,16 +790,26 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         throw err
       }
 
-      currentModel = model
-      world.scene.three.add(model.object)
+      const pivot = new THREE.Group()
+      pivot.name = `ifc-model-pivot-${assignedId}`
+      world.scene.three.add(pivot)
+      pivot.add(model.object)
+      modelPivots.set(assignedId, pivot)
+      pivotTransforms.set(assignedId, { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: 1 })
+
+      currentModel   = model
+      currentModelId = assignedId
+      currentPivot   = pivot
+      modelObjects.set(assignedId, model)
       onProgress?.(60)
 
-      return setupLoadedModel(model, file.name, onProgress)
+      return setupLoadedModel(model, assignedId, file.name, file.size, onProgress)
     },
 
-    async loadFragments(buffer, fileName, onProgress) {
+    async loadFragments(buffer, fileName, fileSize, onProgress) {
       await initPromise
-      await teardownCurrentModel()
+      // Do NOT teardown here — multiple models can coexist in the scene.
+      // Use removeModel(modelId) for explicit unloading.
 
       onProgress?.(5)
       const modelId = `${fileName}-${Date.now()}`
@@ -648,19 +831,32 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         throw err
       }
 
-      currentModel = model
-      world.scene.three.add(model.object)
+      const pivot = new THREE.Group()
+      pivot.name = `ifc-model-pivot-${modelId}`
+      world.scene.three.add(pivot)
+      pivot.add(model.object)
+      modelPivots.set(modelId, pivot)
+      pivotTransforms.set(modelId, { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: 1 })
 
-      return setupLoadedModel(model, fileName, onProgress)
+      currentModel   = model
+      currentModelId = modelId
+      currentPivot   = pivot
+      modelObjects.set(modelId, model)
+
+      const result = await setupLoadedModel(model, modelId, fileName, fileSize ?? 0, onProgress)
+      return { ...result, modelId }
     },
 
-    // ─── NEW: getItemData ────────────────────────────────────────────────────
+    // ─── getItemData ─────────────────────────────────────────────────────────
     // Fetches real IFC attributes + Psets + spatial containment for an element.
-    async getItemData(expressId: number): Promise<IFCItemData | null> {
-      if (!currentModel) return null
+    // Pass modelId to target a specific loaded model; omit to use the current model.
+    async getItemData(expressId: number, modelId?: string): Promise<IFCItemData | null> {
+      // Resolve the correct model: prefer the explicitly requested one
+      const targetModel = (modelId && modelObjects.get(modelId)) ?? currentModel
+      if (!targetModel) return null
 
       try {
-        const [data] = await currentModel.getItemsData([expressId], {
+        const [data] = await targetModel.getItemsData([expressId], {
           attributesDefault: false,
           attributes: ['Name', 'LongName', 'Description', 'GlobalId', 'ObjectType', 'Tag'],
           relations: {
@@ -707,101 +903,147 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       void world.camera.controls.setLookAt(30, 24, 36, 0, 2, 0, true)
     },
 
-    frameCategory(id) {
-      if (!currentModel) return
-      const ids = [...expressIDToType.entries()]
+    frameCategory(id, modelId) {
+      const targetId = modelId ?? currentModelId
+      const typeMap  = (targetId ? typeMapByModel.get(targetId) : null) ?? expressIDToType
+      const model    = (targetId ? modelObjects.get(targetId) : null) ?? currentModel
+      if (!model) return
+      const ids = [...typeMap.entries()]
         .filter(([, raw]) => canonicalType(raw) === id)
         .map(([localId]) => localId)
       if (ids.length === 0) return
-      currentModel.getMergedBox(ids).then((box) => {
-        if (!box.isEmpty()) void world.camera.controls.fitToBox(box, true)
-      }).catch(() => { /* ignore */ })
+      safeVoid(
+        model.getMergedBox(ids).then((box) => {
+          if (!box.isEmpty()) void world.camera.controls.fitToBox(box, true)
+        }),
+        'frameCategory',
+      )
     },
 
-    focusElement(expressId) {
-      if (!currentModel) return
-      currentModel.getMergedBox([expressId]).then((box) => {
-        if (!box.isEmpty()) void world.camera.controls.fitToBox(box, true)
-      }).catch(() => { /* ignore */ })
+    focusElement(expressId, modelId) {
+      // If no modelId given, search all loaded models for the element
+      const targetId = modelId ?? [...typeMapByModel.entries()].find(([, m]) => m.has(expressId))?.[0] ?? currentModelId
+      const model = (targetId ? modelObjects.get(targetId) : null) ?? currentModel
+      if (!model) return
+      safeVoid(
+        model.getMergedBox([expressId]).then((box) => {
+          if (!box.isEmpty()) void world.camera.controls.fitToBox(box, true)
+        }),
+        'focusElement',
+      )
     },
 
-    frameElements(ids) {
-      if (!currentModel || ids.length === 0) return
-      currentModel.getMergedBox(ids).then((box) => {
-        if (!box.isEmpty()) void world.camera.controls.fitToBox(box, true)
-      }).catch(() => { /* ignore */ })
+    frameElements(ids, modelId) {
+      const model = (modelId ? modelObjects.get(modelId) : null) ?? currentModel
+      if (!model || ids.length === 0) return
+      safeVoid(
+        model.getMergedBox(ids).then((box) => {
+          if (!box.isEmpty()) void world.camera.controls.fitToBox(box, true)
+        }),
+        'frameElements',
+      )
     },
 
-    selectElement(expressId) {
-      if (!currentModel) return
+    selectElement(expressId, modelId) {
+      const targetModel = (modelId && modelObjects.get(modelId)) ?? currentModel
+      const targetId    = (modelId && modelObjects.has(modelId)) ? modelId : currentModelId
+      if (!targetModel) return
+
       void (async () => {
-        if (selectedLocalId !== null) await currentModel?.resetHighlight([selectedLocalId])
+        // Reset old selection on its model
+        if (selectedLocalId !== null && selectedModelId !== null) {
+          const oldModel = modelObjects.get(selectedModelId)
+          try { if (oldModel) await oldModel.resetHighlight([selectedLocalId]) } catch (e) {
+            console.debug('[Viewer] selectElement resetHighlight failed:', e instanceof Error ? e.message : e)
+          }
+        }
         selectedLocalId = expressId
-        await currentModel?.highlight([expressId], SELECT_MAT)
-        addSelectionBox([expressId])
-        const rawType = expressIDToType.get(expressId) ?? 'IFCELEMENT'
+        selectedModelId = targetId ?? null
+        try { await targetModel.highlight([expressId], SELECT_MAT) } catch (e) {
+          console.debug('[Viewer] selectElement highlight failed:', e instanceof Error ? e.message : e)
+        }
+        addSelectionBox([expressId], targetModel)
+        const typeMap = (targetId ? typeMapByModel.get(targetId) : undefined) ?? expressIDToType
+        const rawType = typeMap.get(expressId) ?? 'IFCELEMENT'
         const canon   = canonicalType(rawType)
         const name    = `${IFC_DISPLAY_NAMES[canon] ?? prettyType(canon)} #${expressId}`
-        selectCallback?.({ id: String(expressId), name, type: rawType, storey: '' })
+        selectCallback?.({ id: String(expressId), name, type: rawType, storey: '', modelId: targetId ?? undefined })
       })()
     },
 
     setValidationHighlights(issues, enabled) {
-      if (!currentModel) return
+      if (modelObjects.size === 0) return
 
-      if (validationHighlightedIds.size > 0) {
-        const toReset = [...validationHighlightedIds]
-        validationHighlightedIds.clear()
-        void currentModel.resetHighlight(toReset)
+      // Clear per-model tracked highlights precisely (no over-resetting other models)
+      for (const [mid, ids] of validationHighlightedByModel) {
+        const model = modelObjects.get(mid)
+        if (model && ids.size > 0) void model.resetHighlight([...ids])
       }
+      validationHighlightedByModel.clear()
 
       if (!enabled) return
 
-      const errIds:  number[] = []
-      const warnIds: number[] = []
-      const infoIds: number[] = []
+      const byModel = new Map<string, { errIds: number[]; warnIds: number[]; infoIds: number[] }>()
 
       for (const issue of issues) {
-        if (expressIDToType.has(issue.expressId)) {
-          if (issue.severity === 'error')        errIds.push(issue.expressId)
-          else if (issue.severity === 'warning') warnIds.push(issue.expressId)
-          else                                   infoIds.push(issue.expressId)
-          validationHighlightedIds.add(issue.expressId)
-        }
+        const mid = issue.modelId ?? currentModelId ?? ''
+        if (!mid || !modelObjects.has(mid)) continue
+        const typeMap = typeMapByModel.get(mid) ?? expressIDToType
+        if (!typeMap.has(issue.expressId)) continue
+
+        if (!byModel.has(mid)) byModel.set(mid, { errIds: [], warnIds: [], infoIds: [] })
+        const bucket = byModel.get(mid)!
+        if (issue.severity === 'error')        bucket.errIds.push(issue.expressId)
+        else if (issue.severity === 'warning') bucket.warnIds.push(issue.expressId)
+        else                                   bucket.infoIds.push(issue.expressId)
+
+        if (!validationHighlightedByModel.has(mid)) validationHighlightedByModel.set(mid, new Set())
+        validationHighlightedByModel.get(mid)!.add(issue.expressId)
       }
 
-      if (errIds.length)  void currentModel.highlight(errIds,  VALIDATION_ERROR_MAT)
-      if (warnIds.length) void currentModel.highlight(warnIds, VALIDATION_WARN_MAT)
-      if (infoIds.length) void currentModel.highlight(infoIds, VALIDATION_INFO_MAT)
+      for (const [mid, bucket] of byModel) {
+        const model = modelObjects.get(mid)
+        if (!model) continue
+        if (bucket.errIds.length)  void model.highlight(bucket.errIds,  VALIDATION_ERROR_MAT)
+        if (bucket.warnIds.length) void model.highlight(bucket.warnIds, VALIDATION_WARN_MAT)
+        if (bucket.infoIds.length) void model.highlight(bucket.infoIds, VALIDATION_INFO_MAT)
+      }
     },
 
     applyFilters(hidden, isolated, hiddenElements) {
-      if (!currentModel) return
-      const toHide: number[] = []
-      const toShow: number[] = []
-      for (const [localId, rawType] of expressIDToType.entries()) {
-        const canon   = canonicalType(rawType)
-        const catShow = isolated ? (canon === isolated) : !hidden.has(canon)
-        const show    = catShow && !(hiddenElements?.has(localId))
-        if (show) toShow.push(localId)
-        else      toHide.push(localId)
+      if (modelObjects.size === 0) return
+      // Apply category/element visibility to every loaded model
+      for (const [modelId, model] of modelObjects) {
+        const typeMap = typeMapByModel.get(modelId) ?? new Map<number, string>()
+        const toHide: number[] = []
+        const toShow: number[] = []
+        for (const [localId, rawType] of typeMap.entries()) {
+          const canon   = canonicalType(rawType)
+          const catShow = isolated ? (canon === isolated) : !hidden.has(canon)
+          const show    = catShow && !(hiddenElements?.has(localId))
+          if (show) toShow.push(localId)
+          else      toHide.push(localId)
+        }
+        if (toHide.length) void model.setVisible(toHide, false)
+        if (toShow.length) void model.setVisible(toShow, true)
       }
-      if (toHide.length) void currentModel.setVisible(toHide, false)
-      if (toShow.length) void currentModel.setVisible(toShow, true)
       void fragmentsManager.core.update()
     },
 
     applyStyle(style) {
-      if (!currentModel) return
-      if (style === 'xray') {
-        void currentModel.resetColor(undefined)
-        void currentModel.setOpacity(undefined, 0.2)
-      } else if (style === 'blueprint') {
-        void currentModel.resetOpacity(undefined)
-        void currentModel.setColor(undefined, new THREE.Color(0xE6E9F2))
-      } else {
-        void currentModel.resetOpacity(undefined)
-        void currentModel.resetColor(undefined)
+      if (modelObjects.size === 0) return
+      // Apply style to every loaded model
+      for (const model of modelObjects.values()) {
+        if (style === 'xray') {
+          void model.resetColor(undefined)
+          void model.setOpacity(undefined, 0.2)
+        } else if (style === 'blueprint') {
+          void model.resetOpacity(undefined)
+          void model.setColor(undefined, new THREE.Color(0xE6E9F2))
+        } else {
+          void model.resetOpacity(undefined)
+          void model.resetColor(undefined)
+        }
       }
     },
 
@@ -812,6 +1054,260 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const geomBytes = info.memory.geometries * 1024 * 128
       const texBytes  = info.memory.textures   * 1024 * 256
       return geomBytes + texBytes
+    },
+
+    // ─── Camera presets ───────────────────────────────────────────────────────
+
+    setCameraPreset(preset: CameraPreset) {
+      const box = currentModel?.box ?? new THREE.Box3(
+        new THREE.Vector3(-10, -10, -10),
+        new THREE.Vector3(10,  10,  10),
+      )
+      const center = new THREE.Vector3()
+      const size   = new THREE.Vector3()
+      box.getCenter(center)
+      box.getSize(size)
+
+      // Apply pivot offset so camera targets the transformed model
+      if (currentPivot) {
+        center.add(new THREE.Vector3(
+          currentPivot.position.x,
+          currentPivot.position.y,
+          currentPivot.position.z,
+        ))
+      }
+
+      const d = Math.max(size.x, size.y, size.z, 4) * 1.6
+
+      const OFFSETS: Record<CameraPreset, [number, number, number]> = {
+        iso:    [d,  d * 0.75, d],
+        top:    [0,  d * 2.2,  0.001],
+        bottom: [0, -d * 2.2,  0.001],
+        front:  [0,  0,         d * 2],
+        back:   [0,  0,        -d * 2],
+        left:   [-d * 2, 0,    0],
+        right:  [d * 2,  0,    0],
+      }
+      const [ox, oy, oz] = OFFSETS[preset]
+
+      void world.camera.controls.setLookAt(
+        center.x + ox, center.y + oy, center.z + oz,
+        center.x,       center.y,      center.z,
+        true,
+      )
+    },
+
+    // ─── Model transform ──────────────────────────────────────────────────────
+
+    setModelTransform(transform: ModelTransform, modelId?: string) {
+      const tid   = modelId ?? currentModelId
+      const pivot = (tid ? modelPivots.get(tid) : null) ?? currentPivot
+      if (!pivot || !tid) return
+      const DEG    = Math.PI / 180
+      const stored = pivotTransforms.get(tid) ?? { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: 1 }
+
+      if (transform.position) {
+        const p = transform.position
+        pivot.position.set(p.x, p.y, p.z)
+        stored.position = { ...p }
+      }
+      if (transform.rotation) {
+        const r = transform.rotation
+        pivot.rotation.set(r.x * DEG, r.y * DEG, r.z * DEG)
+        stored.rotation = { ...r }
+      }
+      if (transform.scale !== undefined) {
+        const s = transform.scale
+        if (typeof s === 'number') pivot.scale.setScalar(s)
+        else pivot.scale.set(s.x, s.y, s.z)
+        stored.scale = s
+      }
+
+      pivotTransforms.set(tid, stored)
+      void fragmentsManager.core.update()
+    },
+
+    resetModelTransform(modelId?: string) {
+      const tid   = modelId ?? currentModelId
+      const pivot = (tid ? modelPivots.get(tid) : null) ?? currentPivot
+      if (!pivot || !tid) return
+      pivot.position.set(0, 0, 0)
+      pivot.rotation.set(0, 0, 0)
+      pivot.scale.set(1, 1, 1)
+      pivotTransforms.set(tid, { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: 1 })
+      void fragmentsManager.core.update()
+    },
+
+    getModelBounds(modelId?: string) {
+      const tid   = modelId ?? currentModelId
+      const model = (tid ? modelObjects.get(tid) : null) ?? currentModel
+      const pivot = (tid ? modelPivots.get(tid) : null) ?? currentPivot
+      if (!model || !pivot) return null
+      const box = model.box
+      if (box.isEmpty()) return null
+
+      pivot.updateMatrixWorld(true)
+      const m  = pivot.matrixWorld
+      const wx = new THREE.Box3()
+      const corners: THREE.Vector3[] = [
+        new THREE.Vector3(box.min.x, box.min.y, box.min.z),
+        new THREE.Vector3(box.max.x, box.min.y, box.min.z),
+        new THREE.Vector3(box.min.x, box.max.y, box.min.z),
+        new THREE.Vector3(box.max.x, box.max.y, box.min.z),
+        new THREE.Vector3(box.min.x, box.min.y, box.max.z),
+        new THREE.Vector3(box.max.x, box.min.y, box.max.z),
+        new THREE.Vector3(box.min.x, box.max.y, box.max.z),
+        new THREE.Vector3(box.max.x, box.max.y, box.max.z),
+      ]
+      for (const v of corners) wx.expandByPoint(v.applyMatrix4(m))
+
+      const center = new THREE.Vector3()
+      const size   = new THREE.Vector3()
+      wx.getCenter(center)
+      wx.getSize(size)
+      return {
+        center: { x: center.x, y: center.y, z: center.z },
+        size:   { x: size.x,   y: size.y,   z: size.z   },
+      }
+    },
+
+    getModelTransform(modelId?: string) {
+      const tid    = modelId ?? currentModelId
+      const stored = tid ? (pivotTransforms.get(tid) ?? null) : null
+      return {
+        position: stored ? { ...stored.position } : { x: 0, y: 0, z: 0 },
+        rotation: stored ? { ...(stored.rotation as { x: number; y: number; z: number }) } : { x: 0, y: 0, z: 0 },
+        scale:    stored ? stored.scale : 1,
+      }
+    },
+
+    frameAllModels() {
+      if (modelObjects.size === 0) return
+      const combined = new THREE.Box3()
+      for (const [mid, model] of modelObjects) {
+        const box   = model.box
+        const pivot = modelPivots.get(mid)
+        if (box.isEmpty()) continue
+        if (pivot) {
+          pivot.updateMatrixWorld(true)
+          const m = pivot.matrixWorld
+          const corners: THREE.Vector3[] = [
+            new THREE.Vector3(box.min.x, box.min.y, box.min.z),
+            new THREE.Vector3(box.max.x, box.max.y, box.max.z),
+          ]
+          for (const v of corners) combined.expandByPoint(v.applyMatrix4(m))
+        } else {
+          combined.expandByPoint(box.min)
+          combined.expandByPoint(box.max)
+        }
+      }
+      if (!combined.isEmpty()) void world.camera.controls.fitToBox(combined, true)
+    },
+
+    isolateModel(modelId: string) {
+      for (const [mid, model] of modelObjects) {
+        model.object.visible = mid === modelId
+      }
+      void fragmentsManager.core.update()
+    },
+
+    showAllModels() {
+      for (const model of modelObjects.values()) {
+        model.object.visible = true
+      }
+      void fragmentsManager.core.update()
+    },
+
+    setActiveModel(modelId: string) {
+      const model = modelObjects.get(modelId)
+      if (!model) {
+        console.warn(`[Viewer] setActiveModel: "${modelId}" is not loaded`)
+        return
+      }
+      currentModel   = model
+      currentModelId = modelId
+      expressIDToType = typeMapByModel.get(modelId) ?? new Map()
+      currentPivot   = modelPivots.get(modelId) ?? null
+    },
+
+    getLoadedModelIds(): string[] {
+      return [...modelObjects.keys()]
+    },
+
+    setModelVisible(modelId: string, visible: boolean) {
+      const model = modelObjects.get(modelId)
+      if (!model) {
+        console.warn(`[Viewer] setModelVisible: "${modelId}" is not loaded`)
+        return
+      }
+      model.object.visible = visible
+      void fragmentsManager.core.update()
+    },
+
+    async removeModel(modelId: string) {
+      const model = modelObjects.get(modelId)
+      if (!model) {
+        console.warn(`[Viewer] removeModel: "${modelId}" is not loaded`)
+        return
+      }
+
+      // Remove and dispose the per-model pivot group
+      const pivot = modelPivots.get(modelId)
+      if (pivot) {
+        world.scene.three.remove(pivot)
+        modelPivots.delete(modelId)
+      }
+      pivotTransforms.delete(modelId)
+
+      await model.dispose()
+      modelObjects.delete(modelId)
+      typeMapByModel.delete(modelId)
+
+      // Clear hover/select state that referenced this model
+      if (hoveredModelId  === modelId) { hoveredLocalId  = null; hoveredModelId  = null }
+      if (selectedModelId === modelId) { selectedLocalId = null; selectedModelId = null; removeSelectionBox() }
+
+      // If the removed model was active, promote another
+      if (currentModelId === modelId) {
+        const nextId = modelObjects.keys().next().value ?? null
+        currentModel    = nextId ? (modelObjects.get(nextId) ?? null) : null
+        currentModelId  = nextId
+        expressIDToType = nextId ? (typeMapByModel.get(nextId) ?? new Map()) : new Map()
+        currentPivot    = nextId ? (modelPivots.get(nextId) ?? null) : null
+      }
+
+      validationHighlightedByModel.delete(modelId)
+      void fragmentsManager.core.update()
+    },
+
+    frameActiveModel() {
+      if (!currentModel) return
+      const box = currentModel.box
+      if (box.isEmpty()) return
+      // If the model has a pivot transform, compute the world-space box
+      if (currentPivot) {
+        currentPivot.updateMatrixWorld(true)
+        const m  = currentPivot.matrixWorld
+        const wx = new THREE.Box3()
+        const corners: THREE.Vector3[] = [
+          new THREE.Vector3(box.min.x, box.min.y, box.min.z),
+          new THREE.Vector3(box.max.x, box.min.y, box.min.z),
+          new THREE.Vector3(box.min.x, box.max.y, box.min.z),
+          new THREE.Vector3(box.max.x, box.max.y, box.min.z),
+          new THREE.Vector3(box.min.x, box.min.y, box.max.z),
+          new THREE.Vector3(box.max.x, box.min.y, box.max.z),
+          new THREE.Vector3(box.min.x, box.max.y, box.max.z),
+          new THREE.Vector3(box.max.x, box.max.y, box.max.z),
+        ]
+        for (const v of corners) wx.expandByPoint(v.applyMatrix4(m))
+        void world.camera.controls.fitToBox(wx, true)
+      } else {
+        void world.camera.controls.fitToBox(box, true)
+      }
+    },
+
+    getModelObject(modelId: string): THREE.Object3D | null {
+      return modelPivots.get(modelId) ?? null
     },
 
     dispose() {

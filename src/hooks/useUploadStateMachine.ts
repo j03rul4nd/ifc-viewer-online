@@ -5,8 +5,12 @@
 import { useReducer } from 'react'
 import type { UploadState, UploadEvent } from '../types/upload.types'
 import { progressToStage } from '../lib/upload.constants'
+import { assertNever } from '../lib/invariant'
+import { createLogger } from '../lib/logger'
 
-const INITIAL: UploadState = { id: 'idle' }
+const log = createLogger('UploadSM')
+
+// ── Reducer ────────────────────────────────────────────────────────────────────
 
 function reduce(state: UploadState, event: UploadEvent): UploadState {
   switch (event.type) {
@@ -68,8 +72,8 @@ function reduce(state: UploadState, event: UploadEvent): UploadState {
 
     case 'CANCEL': {
       if (
-        state.id === 'queued' ||
-        state.id === 'parsing' ||
+        state.id === 'queued'         ||
+        state.id === 'parsing'        ||
         state.id === 'building-scene'
       ) {
         const file = 'file' in state ? state.file : null
@@ -83,9 +87,22 @@ function reduce(state: UploadState, event: UploadEvent): UploadState {
       return { id: 'idle' }
 
     default:
-      return state
+      // TypeScript ensures all UploadEvent variants are handled above.
+      // This line fails to compile if a new event type is added without a case.
+      return assertNever(event, 'UploadEvent reducer')
   }
 }
+
+/** Wraps reducer with dev-only transition logging. */
+function loggedReduce(state: UploadState, event: UploadEvent): UploadState {
+  const next = reduce(state, event)
+  if (import.meta.env.DEV && next !== state) {
+    log.debug(`${state.id} → ${next.id}  (${event.type})`)
+  }
+  return next
+}
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
 
 export interface UploadStateMachine {
   state:     UploadState
@@ -96,7 +113,7 @@ export interface UploadStateMachine {
 }
 
 export function useUploadStateMachine(): UploadStateMachine {
-  const [state, dispatch] = useReducer(reduce, INITIAL)
+  const [state, dispatch] = useReducer(loggedReduce, { id: 'idle' })
 
   const canClose =
     state.id === 'idle'      || state.id === 'dragging' ||

@@ -21,6 +21,14 @@ export function useEditorHistory(): UseEditorHistoryResult {
       const ctrl = e.ctrlKey || e.metaKey
       if (!ctrl) return
 
+      // Don't hijack native undo/redo when focus is inside an editable element
+      const target = e.target as HTMLElement
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) return
+
       if (e.key === 'z' && !e.shiftKey) {
         e.preventDefault()
         if (canUndo) undo()

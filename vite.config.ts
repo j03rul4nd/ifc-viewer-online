@@ -51,7 +51,27 @@ export default defineConfig({
       'Cross-Origin-Embedder-Policy': 'require-corp',
     },
   },
-  build: { chunkSizeWarningLimit: 4000 },
+  build: {
+    // Workers must bundle three inline (see worker config note above),
+    // so their chunks will always be large. Raise the warning threshold
+    // to avoid noise for those unavoidable bundles.
+    chunkSizeWarningLimit: 5000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          // three.js — large 3D engine, changes infrequently
+          if (id.includes('/three/')) return 'vendor-three'
+          // IFC engine — @thatopen/* + web-ifc JS side
+          if (id.includes('@thatopen/') || id.includes('/web-ifc/')) return 'vendor-ifc'
+          // Everything else in node_modules (React, Framer, Radix, Zustand…)
+          // Kept as one chunk to avoid circular-dependency warnings from
+          // cross-imports between React ecosystem packages.
+          return 'vendor-ui'
+        },
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

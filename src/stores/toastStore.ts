@@ -1,50 +1,81 @@
 // ─── Toast notification store ─────────────────────────────────────────────────
-// Lightweight Zustand store for ephemeral user-facing messages.
 // Usage:
-//   import { toast } from '../stores/toastStore'
 //   toast('File loaded', 'success')
-//   toast('Worker failed: ' + err.message, 'error')
+//   toastFromError(err)               // extracts .message automatically
+//   toast('Worker failed', 'error', { duration: 8000 })
 
 import { create } from 'zustand'
+import { devtools } from 'zustand/middleware'
 
 export type ToastSeverity = 'error' | 'warning' | 'info' | 'success'
 
 export interface Toast {
-  id: string
-  message: string
+  id:       string
+  message:  string
   severity: ToastSeverity
-  /** Auto-dismiss delay in ms. Defaults to 5000 (errors) or 3500 (others). */
+  /** Auto-dismiss delay in ms. */
   duration: number
 }
 
 interface ToastStore {
   toasts: Toast[]
-  addToast: (opts: { message: string; severity: ToastSeverity; duration?: number }) => void
+  addToast:    (opts: { message: string; severity: ToastSeverity; duration?: number }) => void
   removeToast: (id: string) => void
-  clearAll: () => void
+  clearAll:    () => void
 }
 
-export const useToastStore = create<ToastStore>((set) => ({
-  toasts: [],
+const DEFAULT_DURATION: Record<ToastSeverity, number> = {
+  error:   6000,
+  warning: 4500,
+  info:    3500,
+  success: 3000,
+}
 
-  addToast({ message, severity, duration }) {
-    const id  = crypto.randomUUID()
-    const dur = duration ?? (severity === 'error' ? 5000 : 3500)
+export const useToastStore = create<ToastStore>()(
+  devtools(
+    (set) => ({
+      toasts: [],
 
-    set((s) => ({ toasts: [...s.toasts, { id, message, severity, duration: dur }] }))
+      addToast({ message, severity, duration }) {
+        const id  = crypto.randomUUID()
+        const dur = duration ?? DEFAULT_DURATION[severity]
 
-    // Auto-dismiss
-    setTimeout(() => {
-      set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }))
-    }, dur)
-  },
+        set(
+          (s) => ({ toasts: [...s.toasts, { id, message, severity, duration: dur }] }),
+          false,
+          'addToast',
+        )
 
-  removeToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
-  clearAll:    ()   => set({ toasts: [] }),
-}))
+        setTimeout(() => {
+          set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }), false, 'autoRemoveToast')
+        }, dur)
+      },
 
-// ── Convenience helper (callable from anywhere, including workers) ─────────────
+      removeToast: (id) =>
+        set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }), false, 'removeToast'),
 
-export function toast(message: string, severity: ToastSeverity = 'info', duration?: number): void {
-  useToastStore.getState().addToast({ message, severity, duration })
+      clearAll: () => set({ toasts: [] }, false, 'clearAll'),
+    }),
+    { name: 'ToastStore', enabled: import.meta.env.DEV },
+  ),
+)
+
+// ── Convenience helpers (callable from anywhere, including lib/ modules) ────────
+
+export function toast(
+  message: string,
+  severity: ToastSeverity = 'info',
+  opts?: { duration?: number },
+): void {
+  useToastStore.getState().addToast({ message, severity, duration: opts?.duration })
+}
+
+/** Extract the message from any Error-like and show it as a toast. */
+export function toastFromError(
+  error: unknown,
+  severity: ToastSeverity = 'error',
+  prefix?: string,
+): void {
+  const message = error instanceof Error ? error.message : String(error)
+  toast(prefix ? `${prefix}: ${message}` : message, severity)
 }
