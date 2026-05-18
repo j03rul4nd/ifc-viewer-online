@@ -58,16 +58,18 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(props, ref)
     frameCategory: (id) => apiRef.current?.frameCategory(id),
   }), [])
 
+  // The outer div owns the absolute-fill layout. PostproductionRenderer
+  // (via RendererWith2D) sets style.position = 'relative' on the mount
+  // container, which would collapse absolute inset-0. Keeping layout and
+  // OBC's container separate avoids that conflict.
   return (
-    <div
-      ref={mountRef}
-      className="absolute inset-0"
-      // FIX 5: evita que el browser intercepte gestos táctiles/trackpad
-      // antes de que lleguen a los pointer events del canvas de Three.js.
-      // Sin esto, en móvil y algunos trackpads el pan/zoom del browser
-      // compite con camera-controls y los pointer events se suprimen.
-      style={{ touchAction: 'none' }}
-    />
+    <div className="absolute inset-0">
+      <div
+        ref={mountRef}
+        className="w-full h-full"
+        style={{ touchAction: 'none', position: 'relative' }}
+      />
+    </div>
   )
 })
 
