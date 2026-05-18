@@ -240,6 +240,44 @@ export interface ViewerAPI {
   deleteLastMeasurement(): void
   /** Return the number of placed measurements of each type. */
   getMeasurementCount(): { length: number; area: number }
+
+  // ─── Clipping planes ─────────────────────────────────────────────────────────
+  /**
+   * Put the Clipper into creation mode — the next click on the model surface
+   * creates a clipping plane aligned to the face normal at that point.
+   */
+  startAddClipPlane(): void
+  /** Cancel clip-plane creation mode without placing a plane. */
+  stopAddClipPlane(): void
+  /** Delete the clip plane with the given ID, or the one under the cursor if omitted. */
+  deleteClipPlane(id?: string): Promise<void>
+  /** Remove every clipping plane from the scene. */
+  clearClipPlanes(): void
+  /** Toggle a single clip plane's enabled state. */
+  toggleClipPlane(id: string, enabled: boolean): void
+  /** Snapshot of all active clip planes. */
+  getClipPlanes(): { id: string; enabled: boolean; title: string }[]
+
+  // ─── Floor plan / storey views ───────────────────────────────────────────────
+  /**
+   * Detect IfcBuildingStorey entities and create a section view for each one.
+   * Returns an array of { id, name } descriptors for the UI.
+   * Must be called after at least one model is loaded.
+   */
+  createStoreyViews(): Promise<{ id: string; name: string }[]>
+  /**
+   * Open a storey section view by ID — switches the camera to 2D plan mode.
+   * Close with closeStoreyView().
+   */
+  openStoreyView(id: string): void
+  /** Exit the active section view and return the camera to 3D orbit mode. */
+  closeStoreyView(): void
+  /**
+   * Return all views currently in the Views component (storeys + any manually added).
+   * id is the key used by openStoreyView / closeStoreyView.
+   */
+  getViews(): { id: string; name: string }[]
+
   dispose(): void
 }
 
@@ -377,11 +415,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   const components = new OBC.Components()
   const worlds     = components.get(OBC.Worlds)
-  const world      = worlds.create<OBC.SimpleScene, OBC.SimpleCamera, OBCF.PostproductionRenderer>()
+  const world      = worlds.create<OBC.SimpleScene, OBC.OrthoPerspectiveCamera, OBCF.PostproductionRenderer>()
 
   world.scene    = new OBC.SimpleScene(components)
   world.renderer = new OBCF.PostproductionRenderer(components, container)
-  world.camera   = new OBC.SimpleCamera(components)
+  world.camera   = new OBC.OrthoPerspectiveCamera(components)
 
   const wr = world.renderer.three
   wr.shadowMap.enabled   = true
@@ -446,6 +484,15 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   areaMeasurement.enabled = false
 
   let activeMeasurementTool: 'none' | 'length' | 'area' = 'none'
+
+  // ─── Clipping planes (OBC.Clipper) ────────────────────────────────────────────
+  const clipper = components.get(OBC.Clipper)
+  clipper.enabled = false
+  clipper.orthogonalY = true
+
+  // ─── Floor plan / section views (OBC.Views) ───────────────────────────────────
+  const views = components.get(OBC.Views)
+  views.world = world
 
   const initPromise = (async () => {
     const workerURL = await OBC.FragmentsManager.getWorker()
@@ -684,6 +731,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     const dist = Math.hypot(e.clientX - pdX, e.clientY - pdY)
     if (dt > 300 || dist > 5) return
     mouse.set(e.clientX, e.clientY)
+    // When clipper is in creation mode, place a clip plane instead of selecting
+    if (clipper.enabled) {
+      void clipper.create(world)
+      return
+    }
     void commitSelection()
   }
 
@@ -1431,12 +1483,100 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
+    // ─── Clipping planes ───────────────────────────────────────────────────────
+
+    startAddClipPlane() {
+      clipper.enabled = true
+      canvas.style.cursor = 'crosshair'
+      // OBC.Clipper.create() is called when the user clicks on a face
+      // We listen for the click ourselves and delegate to clipper.create(world)
+    },
+
+    stopAddClipPlane() {
+      clipper.enabled = false
+      canvas.style.cursor = 'default'
+    },
+
+    async deleteClipPlane(id?: string) {
+      try {
+        if (id) {
+          const plane = clipper.list.get(id)
+          if (plane) {
+            plane.dispose()
+            clipper.list.delete(id)
+          }
+        } else {
+          await clipper.delete(world)
+        }
+      } catch (err) {
+        console.debug('[Viewer] deleteClipPlane:', err)
+      }
+    },
+
+    clearClipPlanes() {
+      try { clipper.deleteAll() } catch (err) {
+        console.debug('[Viewer] clearClipPlanes:', err)
+      }
+    },
+
+    toggleClipPlane(id: string, enabled: boolean) {
+      const plane = clipper.list.get(id)
+      if (plane) plane.enabled = enabled
+    },
+
+    getClipPlanes() {
+      const result: { id: string; enabled: boolean; title: string }[] = []
+      for (const [id, plane] of clipper.list) {
+        result.push({ id, enabled: plane.enabled, title: plane.title || `Plane ${result.length + 1}` })
+      }
+      return result
+    },
+
+    // ─── Floor plan / storey views ─────────────────────────────────────────────
+
+    async createStoreyViews() {
+      try {
+        const created = await views.createFromIfcStoreys()
+        return created.map((v) => ({ id: v.id, name: v.id }))
+      } catch (err) {
+        console.warn('[Viewer] createStoreyViews failed:', err)
+        return []
+      }
+    },
+
+    openStoreyView(id: string) {
+      try {
+        // Close any already-open view first
+        views.close()
+        views.open(id)
+      } catch (err) {
+        console.warn('[Viewer] openStoreyView failed:', err)
+      }
+    },
+
+    closeStoreyView() {
+      try {
+        views.close()
+      } catch (err) {
+        console.debug('[Viewer] closeStoreyView:', err)
+      }
+    },
+
+    getViews() {
+      const result: { id: string; name: string }[] = []
+      for (const [id] of views.list) {
+        result.push({ id, name: id })
+      }
+      return result
+    },
+
     dispose() {
       canvas.removeEventListener('pointermove', onPointerMove)
       canvas.removeEventListener('pointerdown', onPointerDown)
       canvas.removeEventListener('pointerup',   onPointerUp)
       try { lengthMeasurement.dispose() } catch { /* ok */ }
       try { areaMeasurement.dispose() } catch { /* ok */ }
+      try { clipper.dispose() } catch { /* ok */ }
       components.dispose()
     },
   }

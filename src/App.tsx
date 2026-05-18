@@ -13,6 +13,8 @@ import CameraControls from './components/CameraControls'
 import ModelInfoPanel from './components/ModelInfoPanel'
 import ScenePanel from './components/ScenePanel'
 import MeasurementPanel from './components/MeasurementPanel'
+import SectionPanel from './components/SectionPanel'
+import FloorPlanPanel from './components/FloorPlanPanel'
 import ExportModal from './components/ExportModal'
 import { lighten } from './lib/utils'
 import { modelRegistry } from './lib/model-registry'
@@ -394,6 +396,16 @@ export default function App() {
                   {/* Measurement panel */}
                   {sceneModels.length > 0 && (
                     <MeasurementPanel viewerApiRef={viewerApiRef} />
+                  )}
+
+                  {/* Section (clip plane) panel */}
+                  {sceneModels.length > 0 && (
+                    <SectionPanel viewerApiRef={viewerApiRef} />
+                  )}
+
+                  {/* Floor plan panel */}
+                  {sceneModels.length > 0 && (
+                    <FloorPlanPanel viewerApiRef={viewerApiRef} />
                   )}
 
                   {/* Scene panel (model list + transform) */}

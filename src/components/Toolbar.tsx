@@ -128,6 +128,8 @@ export default function Toolbar({
   const {
     treeVisible, setTreeVisible, scenePanelOpen, toggleScenePanel,
     measurementPanelOpen, toggleMeasurementPanel, activeMeasurementTool,
+    clipPanelOpen, toggleClipPanel, clipPlaneCount,
+    plansPanelOpen, togglePlansPanel, activePlanViewId,
   } = useUIStore()
   const { models: sceneModels } = useSceneStore()
   const {
@@ -390,7 +392,7 @@ export default function Toolbar({
             </div>
           )}
 
-          {/* Measure tools */}
+          {/* Measure / Section / Plans */}
           {canRun && (
             <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto shrink-0">
               <Btn
@@ -407,6 +409,38 @@ export default function Toolbar({
                 </svg>
                 Measure
                 {activeMeasurementTool !== 'none' && (
+                  <span className="text-[10px] font-mono text-[var(--accent)] leading-none">●</span>
+                )}
+              </Btn>
+              <div className="w-px h-[18px] bg-[var(--border)]" />
+              <Btn
+                onClick={toggleClipPanel}
+                variant={clipPanelOpen ? 'secondary' : 'ghost'}
+                title="Clipping planes — section cuts"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+                  <path d="M1 7h12M4 3l6 8M10 3l-6 8" opacity="0.4"/>
+                  <line x1="1" y1="7" x2="13" y2="7"/>
+                </svg>
+                Section
+                {clipPlaneCount > 0 && (
+                  <span className="text-[10px] font-mono text-[var(--text-faint)]">{clipPlaneCount}</span>
+                )}
+              </Btn>
+              <div className="w-px h-[18px] bg-[var(--border)]" />
+              <Btn
+                onClick={togglePlansPanel}
+                variant={plansPanelOpen ? 'secondary' : 'ghost'}
+                title="Floor plan views — storey sections"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+                  <rect x="1" y="1" width="12" height="12" rx="1"/>
+                  <line x1="1" y1="5" x2="13" y2="5"/>
+                  <line x1="1" y1="9" x2="13" y2="9"/>
+                  <line x1="5" y1="5" x2="5" y2="13"/>
+                </svg>
+                Plans
+                {activePlanViewId && (
                   <span className="text-[10px] font-mono text-[var(--accent)] leading-none">●</span>
                 )}
               </Btn>
@@ -514,7 +548,7 @@ export default function Toolbar({
           </div>
         )}
 
-        {/* Measure tools */}
+        {/* Measure / Section / Plans */}
         {canRun && (
           <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 shrink-0">
             <IBtn
@@ -530,6 +564,36 @@ export default function Toolbar({
                 <line x1="12" y1="5" x2="12" y2="3" />
               </svg>
               {activeMeasurementTool !== 'none' && (
+                <span className="absolute -top-1 -right-1 w-[8px] h-[8px] rounded-full bg-[var(--accent)]" />
+              )}
+            </IBtn>
+            <IBtn
+              onClick={toggleClipPanel}
+              active={clipPanelOpen}
+              title="Clipping planes"
+            >
+              <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+                <line x1="1" y1="7" x2="13" y2="7"/>
+                <path d="M4 4l6 6M10 4l-6 6" opacity="0.4"/>
+              </svg>
+              {clipPlaneCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-[14px] h-[14px] rounded-full bg-[var(--accent)] text-white text-[8px] font-mono leading-none flex items-center justify-center">
+                  {clipPlaneCount}
+                </span>
+              )}
+            </IBtn>
+            <IBtn
+              onClick={togglePlansPanel}
+              active={plansPanelOpen}
+              title="Floor plans"
+            >
+              <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+                <rect x="1" y="1" width="12" height="12" rx="1"/>
+                <line x1="1" y1="5" x2="13" y2="5"/>
+                <line x1="1" y1="9" x2="13" y2="9"/>
+                <line x1="5" y1="5" x2="5" y2="13"/>
+              </svg>
+              {activePlanViewId && (
                 <span className="absolute -top-1 -right-1 w-[8px] h-[8px] rounded-full bg-[var(--accent)]" />
               )}
             </IBtn>

@@ -36,6 +36,14 @@ interface UIStore {
   measurementCount:        number
   /** Whether the measurement panel is visible. */
   measurementPanelOpen:    boolean
+  /** Whether the section/clip-plane panel is visible. */
+  clipPanelOpen:           boolean
+  /** Number of active clipping planes (polled from viewer). */
+  clipPlaneCount:          number
+  /** Whether the floor-plan panel is visible. */
+  plansPanelOpen:          boolean
+  /** ID of the currently open storey view, or null in 3D mode. */
+  activePlanViewId:        string | null
 
   toggleValidationPanel:    () => void
   setValidationPanelOpen:   (open: boolean) => void
@@ -56,6 +64,12 @@ interface UIStore {
   setMeasurementCount:      (n: number) => void
   setMeasurementPanelOpen:  (open: boolean) => void
   toggleMeasurementPanel:   () => void
+  setClipPanelOpen:         (open: boolean) => void
+  toggleClipPanel:          () => void
+  setClipPlaneCount:        (n: number) => void
+  setPlansPanelOpen:        (open: boolean) => void
+  togglePlansPanel:         () => void
+  setActivePlanViewId:      (id: string | null) => void
 }
 
 const TREE_WIDTH_MIN = 220
@@ -79,6 +93,10 @@ export const useUIStore = create<UIStore>()(
       activeMeasurementTool:   'none' as MeasurementTool,
       measurementCount:        0,
       measurementPanelOpen:    false,
+      clipPanelOpen:           false,
+      clipPlaneCount:          0,
+      plansPanelOpen:          false,
+      activePlanViewId:        null,
 
       toggleValidationPanel: () =>
         set((s) => ({ validationPanelOpen: !s.validationPanelOpen }), false, 'toggleValidationPanel'),
@@ -144,6 +162,24 @@ export const useUIStore = create<UIStore>()(
 
       toggleMeasurementPanel: () =>
         set((s) => ({ measurementPanelOpen: !s.measurementPanelOpen }), false, 'toggleMeasurementPanel'),
+
+      setClipPanelOpen: (open) =>
+        set({ clipPanelOpen: open }, false, 'setClipPanelOpen'),
+
+      toggleClipPanel: () =>
+        set((s) => ({ clipPanelOpen: !s.clipPanelOpen }), false, 'toggleClipPanel'),
+
+      setClipPlaneCount: (n) =>
+        set({ clipPlaneCount: n }, false, 'setClipPlaneCount'),
+
+      setPlansPanelOpen: (open) =>
+        set({ plansPanelOpen: open }, false, 'setPlansPanelOpen'),
+
+      togglePlansPanel: () =>
+        set((s) => ({ plansPanelOpen: !s.plansPanelOpen }), false, 'togglePlansPanel'),
+
+      setActivePlanViewId: (id) =>
+        set({ activePlanViewId: id }, false, 'setActivePlanViewId'),
     }),
     { name: 'UIStore', enabled: import.meta.env.DEV },
   ),
@@ -162,3 +198,7 @@ export const selectRenderQuality         = (s: UIStore) => s.renderQuality
 export const selectActiveMeasurementTool = (s: UIStore) => s.activeMeasurementTool
 export const selectMeasurementCount      = (s: UIStore) => s.measurementCount
 export const selectMeasurementPanelOpen  = (s: UIStore) => s.measurementPanelOpen
+export const selectClipPanelOpen         = (s: UIStore) => s.clipPanelOpen
+export const selectClipPlaneCount        = (s: UIStore) => s.clipPlaneCount
+export const selectPlansPanelOpen        = (s: UIStore) => s.plansPanelOpen
+export const selectActivePlanViewId      = (s: UIStore) => s.activePlanViewId
