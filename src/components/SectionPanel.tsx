@@ -20,68 +20,109 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
 
   const [planes,   setPlanes]   = useState<PlaneEntry[]>([])
   const [adding,   setAdding]   = useState(false)
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [opError,  setOpError]  = useState<string | null>(null)
+  const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null)
+  const addingRef  = useRef(adding)
+  useEffect(() => { addingRef.current = adding }, [adding])
+
+  const cancelAddMode = useCallback(() => {
+    try { viewerApiRef.current?.stopAddClipPlane() } catch { }
+    try { viewerApiRef.current?.setClipCreationCallback(null) } catch { }
+    setAdding(false)
+  }, [viewerApiRef])
 
   const syncPlanes = useCallback(() => {
     const viewer = viewerApiRef.current
     if (!viewer) return
-    const next = viewer.getClipPlanes()
-    setPlanes(next)
-    setClipPlaneCount(next.length)
+    try {
+      const next = viewer.getClipPlanes()
+      setPlanes(next)
+      setClipPlaneCount(next.length)
+    } catch { }
   }, [viewerApiRef, setClipPlaneCount])
 
   // Poll plane list every 400 ms while panel is open
   useEffect(() => {
     if (!clipPanelOpen) {
-      if (pollRef.current) clearInterval(pollRef.current)
-      // Stop clip-creation mode when panel closes
-      if (adding) {
-        viewerApiRef.current?.stopAddClipPlane()
-        setAdding(false)
-      }
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
+      if (addingRef.current) cancelAddMode()
       return
     }
     syncPlanes()
     pollRef.current = setInterval(syncPlanes, 400)
-    return () => { if (pollRef.current) clearInterval(pollRef.current) }
-  }, [clipPanelOpen, syncPlanes, adding, viewerApiRef])
+    return () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null } }
+  }, [clipPanelOpen, syncPlanes, cancelAddMode])
+
+  // Unmount cleanup — prevent stale adding mode and dangling callbacks
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
+      try { viewerApiRef.current?.stopAddClipPlane() } catch { }
+      try { viewerApiRef.current?.setClipCreationCallback(null) } catch { }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ESC cancels add mode
   useEffect(() => {
     if (!clipPanelOpen) return
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape' && adding) {
-        viewerApiRef.current?.stopAddClipPlane()
-        setAdding(false)
-      }
+      if (e.key === 'Escape' && addingRef.current) cancelAddMode()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [clipPanelOpen, adding, viewerApiRef])
+  }, [clipPanelOpen, cancelAddMode])
 
   const handleStartAdd = (): void => {
-    viewerApiRef.current?.startAddClipPlane()
-    setAdding(true)
+    setOpError(null)
+    try {
+      // Register callback first so it's in place before the plane is created
+      viewerApiRef.current?.setClipCreationCallback(() => setAdding(false))
+      viewerApiRef.current?.startAddClipPlane()
+      setAdding(true)
+    } catch (err) {
+      setOpError('Could not start clip-plane mode')
+      console.warn('[SectionPanel] startAddClipPlane:', err)
+      try { viewerApiRef.current?.setClipCreationCallback(null) } catch { }
+    }
   }
 
   const handleStopAdd = (): void => {
-    viewerApiRef.current?.stopAddClipPlane()
-    setAdding(false)
+    cancelAddMode()
   }
 
   const handleDelete = (id: string): void => {
-    void viewerApiRef.current?.deleteClipPlane(id)
-    setTimeout(syncPlanes, 50)
+    if (!id) return
+    setOpError(null)
+    try {
+      void viewerApiRef.current?.deleteClipPlane(id)
+      setTimeout(syncPlanes, 50)
+    } catch (err) {
+      setOpError('Failed to delete plane')
+      console.warn('[SectionPanel] deleteClipPlane:', err)
+    }
   }
 
   const handleClear = (): void => {
-    viewerApiRef.current?.clearClipPlanes()
-    setTimeout(syncPlanes, 50)
+    setOpError(null)
+    try {
+      viewerApiRef.current?.clearClipPlanes()
+      setTimeout(syncPlanes, 50)
+    } catch (err) {
+      setOpError('Failed to clear planes')
+      console.warn('[SectionPanel] clearClipPlanes:', err)
+    }
   }
 
   const handleToggle = (id: string, enabled: boolean): void => {
-    viewerApiRef.current?.toggleClipPlane(id, enabled)
-    setPlanes((prev) => prev.map((p) => p.id === id ? { ...p, enabled } : p))
+    if (!id) return
+    try {
+      viewerApiRef.current?.toggleClipPlane(id, enabled)
+      setPlanes((prev) => prev.map((p) => p.id === id ? { ...p, enabled } : p))
+    } catch (err) {
+      console.warn('[SectionPanel] toggleClipPlane:', err)
+      syncPlanes()
+    }
   }
 
   return (
@@ -105,6 +146,9 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
                 <div className="text-[11px] text-[var(--text-dim)]">
                   {clipPlaneCount} plane{clipPlaneCount !== 1 ? 's' : ''}
                 </div>
+              )}
+              {opError && (
+                <div className="text-[10px] text-[var(--danger)] mt-0.5 leading-snug">{opError}</div>
               )}
             </div>
 

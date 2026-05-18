@@ -55,17 +55,33 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
   // Poll measurement count from viewer every 500 ms when panel is open
   useEffect(() => {
     if (!measurementPanelOpen) {
-      if (pollRef.current) clearInterval(pollRef.current)
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
+      // Deactivate measurement tool when panel closes
+      try {
+        viewerApiRef.current?.setMeasurementTool('none')
+      } catch { }
+      setActiveMeasurementTool('none')
       return
     }
     pollRef.current = setInterval(() => {
       const viewer = viewerApiRef.current
       if (!viewer) return
-      const counts = viewer.getMeasurementCount()
-      setMeasurementCount(counts.length + counts.area)
+      try {
+        const counts = viewer.getMeasurementCount()
+        setMeasurementCount(counts.length + counts.area)
+      } catch { }
     }, 500)
-    return () => { if (pollRef.current) clearInterval(pollRef.current) }
-  }, [measurementPanelOpen, viewerApiRef, setMeasurementCount])
+    return () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null } }
+  }, [measurementPanelOpen, viewerApiRef, setMeasurementCount, setActiveMeasurementTool])
+
+  // Unmount cleanup
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
+      try { viewerApiRef.current?.setMeasurementTool('none') } catch { }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleToolChange = (tool: MeasurementTool): void => {
     setActiveMeasurementTool(tool)

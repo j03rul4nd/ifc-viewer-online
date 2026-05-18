@@ -72,6 +72,9 @@ export default function App() {
     mobileSidebarOpen, setMobileSidebarOpen,
     cameraControlsVisible, toggleCameraControls,
     scenePanelOpen, toggleScenePanel, setScenePanelOpen,
+    setClipPanelOpen, setClipPlaneCount, setPlansPanelOpen,
+    activePlanViewId, setActivePlanViewId,
+    setMeasurementPanelOpen, setActiveMeasurementTool,
   } = useUIStore()
 
   const {
@@ -235,6 +238,11 @@ export default function App() {
   // ── Remove a model from the scene, viewer, and all stores ────────────────
   const handleRemoveModel = useCallback(async (id: string): Promise<void> => {
     try {
+      // If a 2D plan view is active, close it before removing the model
+      if (activePlanViewId) {
+        try { viewerApiRef.current?.closeStoreyView() } catch { }
+        setActivePlanViewId(null)
+      }
       await viewerApiRef.current?.removeModel(id)
       removeSceneModel(id)
       useModelStore.getState().removeModelEntry(id)
@@ -248,7 +256,7 @@ export default function App() {
       console.error('[App] Failed to remove model:', msg)
       toast(`Could not remove model: ${msg}`, 'error')
     }
-  }, [removeSceneModel])
+  }, [removeSceneModel, activePlanViewId, setActivePlanViewId])
 
   // ── Navigate back to landing — reset all model/editor/validation state ────
   const handleNavigateToLanding = useCallback((): void => {
@@ -265,7 +273,16 @@ export default function App() {
     useTakeoffStore.getState().reset()
     modelRegistry.clear()
     clearScene()
-  }, [clearScene])
+    // Clean up Sprint 7+8 panel state and viewer tools
+    setMeasurementPanelOpen(false)
+    setActiveMeasurementTool('none')
+    setClipPanelOpen(false)
+    setClipPlaneCount(0)
+    setPlansPanelOpen(false)
+    setActivePlanViewId(null)
+    try { viewerApiRef.current?.clearMeasurements() } catch { }
+    try { viewerApiRef.current?.cleanupSectionAndPlans() } catch { }
+  }, [clearScene, setMeasurementPanelOpen, setActiveMeasurementTool, setClipPanelOpen, setClipPlaneCount, setPlansPanelOpen, setActivePlanViewId])
 
   // ── Render ────────────────────────────────────────────────────────────────
 
