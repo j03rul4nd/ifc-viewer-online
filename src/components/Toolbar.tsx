@@ -125,7 +125,10 @@ export default function Toolbar({
   const { diffs, canUndo, canRedo } = useEditorStore()
   const { undo, redo }              = useEditorHistory()
   const { validationMode, toggleValidationMode } = useValidationStore()
-  const { treeVisible, setTreeVisible, scenePanelOpen, toggleScenePanel } = useUIStore()
+  const {
+    treeVisible, setTreeVisible, scenePanelOpen, toggleScenePanel,
+    measurementPanelOpen, toggleMeasurementPanel, activeMeasurementTool,
+  } = useUIStore()
   const { models: sceneModels } = useSceneStore()
   const {
     run: runValidation, cancel: cancelValidation, canRun, isRunning, status: validationStatus,
@@ -387,6 +390,29 @@ export default function Toolbar({
             </div>
           )}
 
+          {/* Measure tools */}
+          {canRun && (
+            <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto shrink-0">
+              <Btn
+                onClick={toggleMeasurementPanel}
+                variant={measurementPanelOpen ? 'secondary' : 'ghost'}
+                title="Measurement tools — length, area"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1" y="5" width="12" height="4" rx="1" />
+                  <line x1="3" y1="5" x2="3" y2="3" />
+                  <line x1="6" y1="5" x2="6" y2="4" />
+                  <line x1="9" y1="5" x2="9" y2="4" />
+                  <line x1="12" y1="5" x2="12" y2="3" />
+                </svg>
+                Measure
+                {activeMeasurementTool !== 'none' && (
+                  <span className="text-[10px] font-mono text-[var(--accent)] leading-none">●</span>
+                )}
+              </Btn>
+            </div>
+          )}
+
           <div className="flex-1" />
 
           {/* Export */}
@@ -485,6 +511,28 @@ export default function Toolbar({
           <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 shrink-0">
             <IBtn onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">{UndoSVG(15)}</IBtn>
             <IBtn onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)">{RedoSVG(15)}</IBtn>
+          </div>
+        )}
+
+        {/* Measure tools */}
+        {canRun && (
+          <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 shrink-0">
+            <IBtn
+              onClick={toggleMeasurementPanel}
+              active={measurementPanelOpen}
+              title={activeMeasurementTool !== 'none' ? `Measure — ${activeMeasurementTool} active` : 'Measurement tools'}
+            >
+              <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="1" y="5" width="12" height="4" rx="1" />
+                <line x1="3" y1="5" x2="3" y2="3" />
+                <line x1="6" y1="5" x2="6" y2="4" />
+                <line x1="9" y1="5" x2="9" y2="4" />
+                <line x1="12" y1="5" x2="12" y2="3" />
+              </svg>
+              {activeMeasurementTool !== 'none' && (
+                <span className="absolute -top-1 -right-1 w-[8px] h-[8px] rounded-full bg-[var(--accent)]" />
+              )}
+            </IBtn>
           </div>
         )}
 

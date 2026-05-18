@@ -7,6 +7,12 @@ import { clamp } from '../lib/utils'
 /** Which 3D transform gizmo is active for the model pivot. */
 export type TransformMode = 'none' | 'translate' | 'rotate' | 'scale'
 
+/** Render quality preset. 'quality' enables SSAO + edge detection via PostproductionRenderer. */
+export type RenderQuality = 'standard' | 'quality'
+
+/** Active measurement tool in the 3D viewport. */
+export type MeasurementTool = 'none' | 'length' | 'area'
+
 interface UIStore {
   validationPanelOpen:     boolean
   validationPanelFloating: boolean
@@ -22,6 +28,14 @@ interface UIStore {
   transformMode:           TransformMode
   /** Whether the scene panel (model list + transform) is open. */
   scenePanelOpen:          boolean
+  /** Render quality preset. 'quality' enables SSAO + edge detection postproduction. */
+  renderQuality:           RenderQuality
+  /** Active measurement tool. 'none' means interaction mode (select/hover). */
+  activeMeasurementTool:   MeasurementTool
+  /** Number of measurements placed in the scene (kept in sync by the viewer). */
+  measurementCount:        number
+  /** Whether the measurement panel is visible. */
+  measurementPanelOpen:    boolean
 
   toggleValidationPanel:    () => void
   setValidationPanelOpen:   (open: boolean) => void
@@ -37,6 +51,11 @@ interface UIStore {
   setTransformMode:         (mode: TransformMode) => void
   setScenePanelOpen:        (open: boolean) => void
   toggleScenePanel:         () => void
+  setRenderQuality:         (q: RenderQuality) => void
+  setActiveMeasurementTool: (tool: MeasurementTool) => void
+  setMeasurementCount:      (n: number) => void
+  setMeasurementPanelOpen:  (open: boolean) => void
+  toggleMeasurementPanel:   () => void
 }
 
 const TREE_WIDTH_MIN = 220
@@ -56,6 +75,10 @@ export const useUIStore = create<UIStore>()(
       cameraControlsVisible:   true,
       transformMode:           'none' as TransformMode,
       scenePanelOpen:          false,
+      renderQuality:           'standard' as RenderQuality,
+      activeMeasurementTool:   'none' as MeasurementTool,
+      measurementCount:        0,
+      measurementPanelOpen:    false,
 
       toggleValidationPanel: () =>
         set((s) => ({ validationPanelOpen: !s.validationPanelOpen }), false, 'toggleValidationPanel'),
@@ -106,6 +129,21 @@ export const useUIStore = create<UIStore>()(
 
       toggleScenePanel: () =>
         set((s) => ({ scenePanelOpen: !s.scenePanelOpen }), false, 'toggleScenePanel'),
+
+      setRenderQuality: (q) =>
+        set({ renderQuality: q }, false, 'setRenderQuality'),
+
+      setActiveMeasurementTool: (tool) =>
+        set({ activeMeasurementTool: tool }, false, 'setActiveMeasurementTool'),
+
+      setMeasurementCount: (n) =>
+        set({ measurementCount: n }, false, 'setMeasurementCount'),
+
+      setMeasurementPanelOpen: (open) =>
+        set({ measurementPanelOpen: open }, false, 'setMeasurementPanelOpen'),
+
+      toggleMeasurementPanel: () =>
+        set((s) => ({ measurementPanelOpen: !s.measurementPanelOpen }), false, 'toggleMeasurementPanel'),
     }),
     { name: 'UIStore', enabled: import.meta.env.DEV },
   ),
@@ -117,6 +155,10 @@ export const selectTreeVisible          = (s: UIStore) => s.treeVisible
 export const selectTreeWidth            = (s: UIStore) => s.treeWidth
 export const selectMobileSidebarOpen    = (s: UIStore) => s.mobileSidebarOpen
 export const selectHiddenElements       = (s: UIStore) => s.hiddenElements
-export const selectCameraControlsVisible= (s: UIStore) => s.cameraControlsVisible
-export const selectTransformMode        = (s: UIStore) => s.transformMode
-export const selectScenePanelOpen       = (s: UIStore) => s.scenePanelOpen
+export const selectCameraControlsVisible = (s: UIStore) => s.cameraControlsVisible
+export const selectTransformMode         = (s: UIStore) => s.transformMode
+export const selectScenePanelOpen        = (s: UIStore) => s.scenePanelOpen
+export const selectRenderQuality         = (s: UIStore) => s.renderQuality
+export const selectActiveMeasurementTool = (s: UIStore) => s.activeMeasurementTool
+export const selectMeasurementCount      = (s: UIStore) => s.measurementCount
+export const selectMeasurementPanelOpen  = (s: UIStore) => s.measurementPanelOpen

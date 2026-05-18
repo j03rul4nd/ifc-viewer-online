@@ -7,6 +7,7 @@ import React, { useState, useCallback, useEffect } from 'react'
 import type { ViewerAPI } from '../lib/viewer'
 import type { SceneModel, ModelTransform } from '../types'
 import type { TransformMode } from '../stores/uiStore'
+import { useUIStore } from '../stores/uiStore'
 
 interface ScenePanelProps {
   models:         SceneModel[]
@@ -326,6 +327,12 @@ export default function ScenePanel({
   const activeModel = models.find((m) => m.id === activeModelId) ?? null
   const [isolatedId, setIsolatedId] = useState<string | null>(null)
   const [expandTransform, setExpandTransform] = useState(true)
+  const { renderQuality, setRenderQuality } = useUIStore()
+
+  const handleQualityChange = useCallback((q: 'standard' | 'quality') => {
+    setRenderQuality(q)
+    viewerApiRef.current?.setRenderQuality(q)
+  }, [setRenderQuality, viewerApiRef])
 
   const handleIsolate = useCallback((id: string) => {
     if (isolatedId === id) {
@@ -458,6 +465,41 @@ export default function ScenePanel({
             )}
           </div>
         )}
+        {/* Render quality */}
+        <div className="border-t border-[var(--border)] px-3 py-2.5">
+          <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-2 font-medium">Render Quality</p>
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => handleQualityChange('standard')}
+              className={[
+                'flex-1 h-[28px] rounded-[7px] text-[11px] font-medium transition-all border',
+                renderQuality === 'standard'
+                  ? 'bg-[var(--surface-2)] text-[var(--text)] border-[var(--border-strong)]'
+                  : 'text-[var(--text-dim)] border-[var(--border)] hover:border-[var(--border-strong)] hover:text-[var(--text)]',
+              ].join(' ')}
+              title="Standard — WebGL rasterisation, best performance"
+            >
+              Performance
+            </button>
+            <button
+              onClick={() => handleQualityChange('quality')}
+              className={[
+                'flex-1 h-[28px] rounded-[7px] text-[11px] font-medium transition-all border',
+                renderQuality === 'quality'
+                  ? 'bg-[var(--surface-2)] text-[var(--accent)] border-[rgba(94,106,210,0.5)]'
+                  : 'text-[var(--text-dim)] border-[var(--border)] hover:border-[var(--border-strong)] hover:text-[var(--text)]',
+              ].join(' ')}
+              title="Quality — SSAO ambient occlusion + edge detection post-processing"
+            >
+              Quality
+            </button>
+          </div>
+          {renderQuality === 'quality' && (
+            <p className="text-[9.5px] text-[var(--text-faint)] mt-1.5 leading-snug">
+              SSAO + edge detection active. May impact performance on mobile.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Footer */}

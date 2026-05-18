@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import * as OBC from '@thatopen/components'
+import * as OBCF from '@thatopen/components-front'
 import * as FRAGS from '@thatopen/fragments'
 import { safeVoid } from './errors'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform } from '../types'
@@ -223,6 +224,22 @@ export interface ViewerAPI {
    * Returns null if the modelId is not currently loaded.
    */
   getModelObject(modelId: string): import('three').Object3D | null
+  /**
+   * Switch between standard WebGL rendering and quality mode (SSAO + edge detection).
+   * Falls back silently to standard if postproduction failed to initialise on this GPU.
+   */
+  setRenderQuality(quality: 'standard' | 'quality'): void
+  /**
+   * Activate a measurement tool ('length' or 'area') or return to normal interaction ('none').
+   * While a tool is active pointer click-select and hover-highlight are suppressed.
+   */
+  setMeasurementTool(tool: 'none' | 'length' | 'area'): void
+  /** Remove all placed measurements from the scene. */
+  clearMeasurements(): void
+  /** Delete the most recently placed measurement. */
+  deleteLastMeasurement(): void
+  /** Return the number of placed measurements of each type. */
+  getMeasurementCount(): { length: number; area: number }
   dispose(): void
 }
 
@@ -360,13 +377,13 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   const components = new OBC.Components()
   const worlds     = components.get(OBC.Worlds)
-  const world      = worlds.create<OBC.SimpleScene, OBC.SimpleCamera, OBC.SimpleRenderer>()
+  const world      = worlds.create<OBC.SimpleScene, OBC.SimpleCamera, OBCF.PostproductionRenderer>()
 
   world.scene    = new OBC.SimpleScene(components)
-  world.renderer = new OBC.SimpleRenderer(components, container)
+  world.renderer = new OBCF.PostproductionRenderer(components, container)
   world.camera   = new OBC.SimpleCamera(components)
 
-  const wr = (world.renderer as OBC.SimpleRenderer).three
+  const wr = world.renderer.three
   wr.shadowMap.enabled   = true
   wr.shadowMap.type      = THREE.PCFSoftShadowMap
   wr.outputColorSpace    = THREE.SRGBColorSpace
@@ -403,6 +420,32 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   const triggerUpdate = (): void => { void fragmentsManager.core.update() }
   world.camera.controls.addEventListener('control', triggerUpdate)
   world.camera.controls.addEventListener('rest',    triggerUpdate)
+
+  // ─── Postproduction — start disabled; enable on demand ───────────────────────
+  let postproductionReady = false
+  try {
+    const pp = world.renderer.postproduction
+    pp.enabled = false
+    // Tune AO defaults for architectural geometry
+    pp.defaultAoParameters.radius           = 0.3
+    pp.defaultAoParameters.samples          = 16
+    pp.defaultAoParameters.distanceFallOff  = 0.1
+    pp.defaultAoParameters.screenSpaceRadius = false
+    postproductionReady = true
+  } catch (err) {
+    console.warn('[Viewer] PostproductionRenderer not available on this GPU:', err)
+  }
+
+  // ─── Measurement tools ────────────────────────────────────────────────────────
+  const lengthMeasurement = components.get(OBCF.LengthMeasurement)
+  lengthMeasurement.world   = world
+  lengthMeasurement.enabled = false
+
+  const areaMeasurement = components.get(OBCF.AreaMeasurement)
+  areaMeasurement.world   = world
+  areaMeasurement.enabled = false
+
+  let activeMeasurementTool: 'none' | 'length' | 'area' = 'none'
 
   const initPromise = (async () => {
     const workerURL = await OBC.FragmentsManager.getWorker()
@@ -581,6 +624,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   const onPointerMove = async (e: PointerEvent): Promise<void> => {
     mouse.set(e.clientX, e.clientY)
 
+    // Measurement tools handle their own pointer feedback — skip hover highlight
+    if (activeMeasurementTool !== 'none') return
     if (modelObjects.size === 0) return
 
     const now = performance.now()
@@ -633,6 +678,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   }
 
   const onPointerUp = (e: PointerEvent): void => {
+    // Measurement tools handle their own click-to-place logic
+    if (activeMeasurementTool !== 'none') return
     const dt   = Date.now() - pdTime
     const dist = Math.hypot(e.clientX - pdX, e.clientY - pdY)
     if (dt > 300 || dist > 5) return
@@ -1310,10 +1357,86 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return modelPivots.get(modelId) ?? null
     },
 
+    // ─── Postproduction ───────────────────────────────────────────────────────
+
+    setRenderQuality(quality: 'standard' | 'quality') {
+      if (!postproductionReady) return
+      try {
+        const renderer = world.renderer
+        if (!renderer) return
+        const pp = renderer.postproduction
+        pp.enabled = (quality === 'quality')
+      } catch (err) {
+        console.warn('[Viewer] setRenderQuality failed:', err)
+      }
+    },
+
+    // ─── Measurements ─────────────────────────────────────────────────────────
+
+    setMeasurementTool(tool: 'none' | 'length' | 'area') {
+      // Deactivate all tools first
+      try { lengthMeasurement.endCreation() } catch { /* in-progress creation — ok */ }
+      try { areaMeasurement.endCreation?.() } catch { /* ok */ }
+
+      lengthMeasurement.enabled = false
+      areaMeasurement.enabled   = false
+      activeMeasurementTool     = tool
+
+      if (tool === 'length') {
+        lengthMeasurement.enabled = true
+        canvas.style.cursor = 'crosshair'
+      } else if (tool === 'area') {
+        areaMeasurement.enabled = true
+        canvas.style.cursor = 'crosshair'
+      } else {
+        canvas.style.cursor = 'default'
+      }
+    },
+
+    clearMeasurements() {
+      // DataSet<T> extends Set<T> — iterate and remove each item so the
+      // Measurement class receives onBeforeDelete events to clean up 3D objects.
+      try {
+        for (const item of [...lengthMeasurement.list]) {
+          try { lengthMeasurement.list.delete(item) } catch { /* ok */ }
+        }
+      } catch { /* ok */ }
+      try {
+        for (const item of [...areaMeasurement.list]) {
+          try { areaMeasurement.list.delete(item) } catch { /* ok */ }
+        }
+      } catch { /* ok */ }
+    },
+
+    deleteLastMeasurement() {
+      try {
+        if (activeMeasurementTool === 'length') {
+          const items = [...lengthMeasurement.list]
+          const last = items[items.length - 1]
+          if (last) lengthMeasurement.list.delete(last)
+        } else if (activeMeasurementTool === 'area') {
+          const items = [...areaMeasurement.list]
+          const last = items[items.length - 1]
+          if (last) areaMeasurement.list.delete(last)
+        }
+      } catch (err) {
+        console.debug('[Viewer] deleteLastMeasurement:', err)
+      }
+    },
+
+    getMeasurementCount(): { length: number; area: number } {
+      return {
+        length: lengthMeasurement.list.size,
+        area:   areaMeasurement.list.size,
+      }
+    },
+
     dispose() {
       canvas.removeEventListener('pointermove', onPointerMove)
       canvas.removeEventListener('pointerdown', onPointerDown)
       canvas.removeEventListener('pointerup',   onPointerUp)
+      try { lengthMeasurement.dispose() } catch { /* ok */ }
+      try { areaMeasurement.dispose() } catch { /* ok */ }
       components.dispose()
     },
   }

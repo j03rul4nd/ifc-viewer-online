@@ -12,6 +12,7 @@ import ToastContainer from './components/ToastContainer'
 import CameraControls from './components/CameraControls'
 import ModelInfoPanel from './components/ModelInfoPanel'
 import ScenePanel from './components/ScenePanel'
+import MeasurementPanel from './components/MeasurementPanel'
 import ExportModal from './components/ExportModal'
 import { lighten } from './lib/utils'
 import { modelRegistry } from './lib/model-registry'
@@ -389,6 +390,11 @@ export default function App() {
                       />
                     ) : null
                   })()}
+
+                  {/* Measurement panel */}
+                  {sceneModels.length > 0 && (
+                    <MeasurementPanel viewerApiRef={viewerApiRef} />
+                  )}
 
                   {/* Scene panel (model list + transform) */}
                   {scenePanelOpen && (
