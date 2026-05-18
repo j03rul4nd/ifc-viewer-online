@@ -201,7 +201,7 @@ Sprint-by-sprint plan. Each sprint builds on the previous and introduces archite
 
 ## Sprint 7 — Postproduction Renderer + Measurement Tools
 
-**Status:** 📋 PLANNED  
+**Status:** ✅ DONE  
 **Goal:** Add cinematic rendering quality and interactive in-viewer measurements using `@thatopen/components-front` APIs.
 
 ### Why now
@@ -249,7 +249,7 @@ Postproduction (AO, edges, bloom) and measurements are the two most-requested fe
 
 ## Sprint 8 — Floor Plans, Sections & Clipping
 
-**Status:** 📋 PLANNED  
+**Status:** ✅ DONE  
 **Goal:** Add 2D floor plan view generation, arbitrary section cuts, and clipping planes — the three spatial navigation features most requested by architects.
 
 ### Planned deliveries
@@ -410,4 +410,4 @@ BCF (BIM Collaboration Format) is the open standard for IFC issue communication.
 
 ---
 
-*Last updated: 2026-05-17 · Sprints 1–6 complete · Sprint 7 next*
+*Last updated: 2026-05-18 · Sprints 1–8 complete · Sprint 9 next*
