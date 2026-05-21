@@ -10,6 +10,9 @@ export type TransformMode = 'none' | 'translate' | 'rotate' | 'scale'
 /** Render quality preset. 'quality' enables SSAO + edge detection via PostproductionRenderer. */
 export type RenderQuality = 'standard' | 'quality'
 
+/** Which GPU backend the viewer is running on. 'detecting' while the async check is in flight. */
+export type GpuBackend = 'webgpu' | 'webgl' | 'detecting'
+
 /** Active measurement tool in the 3D viewport. */
 export type MeasurementTool = 'none' | 'length' | 'area'
 
@@ -44,6 +47,8 @@ interface UIStore {
   plansPanelOpen:          boolean
   /** ID of the currently open storey view, or null in 3D mode. */
   activePlanViewId:        string | null
+  /** Which GPU backend the viewer is running on. */
+  gpuBackend:              GpuBackend
 
   toggleValidationPanel:    () => void
   setValidationPanelOpen:   (open: boolean) => void
@@ -70,6 +75,7 @@ interface UIStore {
   setPlansPanelOpen:        (open: boolean) => void
   togglePlansPanel:         () => void
   setActivePlanViewId:      (id: string | null) => void
+  setGpuBackend:            (backend: GpuBackend) => void
 }
 
 const TREE_WIDTH_MIN = 220
@@ -97,6 +103,7 @@ export const useUIStore = create<UIStore>()(
       clipPlaneCount:          0,
       plansPanelOpen:          false,
       activePlanViewId:        null,
+      gpuBackend:              'detecting' as GpuBackend,
 
       toggleValidationPanel: () =>
         set((s) => ({ validationPanelOpen: !s.validationPanelOpen }), false, 'toggleValidationPanel'),
@@ -180,6 +187,9 @@ export const useUIStore = create<UIStore>()(
 
       setActivePlanViewId: (id) =>
         set({ activePlanViewId: id }, false, 'setActivePlanViewId'),
+
+      setGpuBackend: (backend) =>
+        set({ gpuBackend: backend }, false, 'setGpuBackend'),
     }),
     { name: 'UIStore', enabled: import.meta.env.DEV },
   ),
@@ -195,6 +205,7 @@ export const selectCameraControlsVisible = (s: UIStore) => s.cameraControlsVisib
 export const selectTransformMode         = (s: UIStore) => s.transformMode
 export const selectScenePanelOpen        = (s: UIStore) => s.scenePanelOpen
 export const selectRenderQuality         = (s: UIStore) => s.renderQuality
+export const selectGpuBackend            = (s: UIStore) => s.gpuBackend
 export const selectActiveMeasurementTool = (s: UIStore) => s.activeMeasurementTool
 export const selectMeasurementCount      = (s: UIStore) => s.measurementCount
 export const selectMeasurementPanelOpen  = (s: UIStore) => s.measurementPanelOpen

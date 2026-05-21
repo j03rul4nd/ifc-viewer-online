@@ -225,6 +225,16 @@ export interface ViewerAPI {
    */
   getModelObject(modelId: string): import('three').Object3D | null
   /**
+   * Move the camera to a specific BCF viewpoint.
+   * position: camera eye; direction: normalized look-at vector.
+   */
+  setCameraViewpoint(
+    position:  { x: number; y: number; z: number },
+    direction: { x: number; y: number; z: number },
+  ): void
+  /** Capture a PNG snapshot of the current renderer canvas. Returns a data URL. */
+  takeSnapshot(): string
+  /**
    * Switch between standard WebGL rendering and quality mode (SSAO + edge detection).
    * Falls back silently to standard if postproduction failed to initialise on this GPU.
    */
@@ -257,6 +267,13 @@ export interface ViewerAPI {
   toggleClipPlane(id: string, enabled: boolean): void
   /** Snapshot of all active clip planes. */
   getClipPlanes(): { id: string; enabled: boolean; title: string }[]
+  /**
+   * Register a one-shot callback that fires when the next clip plane is placed
+   * and auto-deactivates creation mode. Pass null to cancel without placing.
+   */
+  setClipCreationCallback(cb: (() => void) | null): void
+  /** Remove all clipping planes and close any open storey view. */
+  cleanupSectionAndPlans(): void
 
   // ─── Floor plan / storey views ───────────────────────────────────────────────
   /**
@@ -489,6 +506,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   const clipper = components.get(OBC.Clipper)
   clipper.enabled = false
   clipper.orthogonalY = true
+
+  // One-shot callback invoked when a clip plane is placed (auto-deactivates creation mode)
+  let clipCreationCallback: (() => void) | null = null
+  // Handler ref so we can remove it cleanly
+  let onAfterCreateHandler: ((plane: OBC.SimplePlane) => void) | null = null
 
   // ─── Floor plan / section views (OBC.Views) ───────────────────────────────────
   const views = components.get(OBC.Views)
@@ -1409,6 +1431,24 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return modelPivots.get(modelId) ?? null
     },
 
+    setCameraViewpoint(
+      position:  { x: number; y: number; z: number },
+      direction: { x: number; y: number; z: number },
+    ) {
+      const { x: px, y: py, z: pz } = position
+      const { x: dx, y: dy, z: dz } = direction
+      void world.camera.controls.setLookAt(px, py, pz, px + dx, py + dy, pz + dz, true)
+    },
+
+    takeSnapshot(): string {
+      try {
+        void fragmentsManager.core.update()
+        return wr.domElement.toDataURL('image/png')
+      } catch {
+        return ''
+      }
+    },
+
     // ─── Postproduction ───────────────────────────────────────────────────────
 
     setRenderQuality(quality: 'standard' | 'quality') {
@@ -1486,26 +1526,55 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     // ─── Clipping planes ───────────────────────────────────────────────────────
 
     startAddClipPlane() {
+      // Remove any stale one-shot listener before registering a fresh one
+      if (onAfterCreateHandler) {
+        try { clipper.onAfterCreate.remove(onAfterCreateHandler) } catch { /* ok */ }
+        onAfterCreateHandler = null
+      }
       clipper.enabled = true
       canvas.style.cursor = 'crosshair'
-      // OBC.Clipper.create() is called when the user clicks on a face
-      // We listen for the click ourselves and delegate to clipper.create(world)
+      // Auto-deactivate and fire UI callback after the first plane is placed
+      onAfterCreateHandler = (_plane: OBC.SimplePlane) => {
+        try { clipper.enabled = false } catch { /* ok */ }
+        canvas.style.cursor = 'default'
+        if (onAfterCreateHandler) {
+          try { clipper.onAfterCreate.remove(onAfterCreateHandler) } catch { /* ok */ }
+          onAfterCreateHandler = null
+        }
+        if (clipCreationCallback) {
+          const cb = clipCreationCallback
+          clipCreationCallback = null
+          try { cb() } catch (e) { console.debug('[Viewer] clipCreationCallback threw:', e) }
+        }
+      }
+      clipper.onAfterCreate.add(onAfterCreateHandler)
     },
 
     stopAddClipPlane() {
       clipper.enabled = false
       canvas.style.cursor = 'default'
+      if (onAfterCreateHandler) {
+        try { clipper.onAfterCreate.remove(onAfterCreateHandler) } catch { /* ok */ }
+        onAfterCreateHandler = null
+      }
+      clipCreationCallback = null
+    },
+
+    setClipCreationCallback(cb: (() => void) | null) {
+      clipCreationCallback = cb
     },
 
     async deleteClipPlane(id?: string) {
       try {
-        if (id) {
+        if (id !== undefined && id !== '') {
           const plane = clipper.list.get(id)
           if (plane) {
-            plane.dispose()
-            clipper.list.delete(id)
+            // dispose() removes from scene; list.delete() removes from registry
+            try { plane.dispose() } catch (e) { console.debug('[Viewer] plane.dispose:', e) }
+            try { clipper.list.delete(id) } catch (e) { console.debug('[Viewer] list.delete:', e) }
           }
         } else {
+          // No id — delete the one under cursor (raycasting)
           await clipper.delete(world)
         }
       } catch (err) {
@@ -1514,30 +1583,82 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     clearClipPlanes() {
-      try { clipper.deleteAll() } catch (err) {
+      try {
+        clipper.deleteAll()
+      } catch (err) {
+        // deleteAll may throw on empty list in some OBC versions
         console.debug('[Viewer] clearClipPlanes:', err)
       }
     },
 
     toggleClipPlane(id: string, enabled: boolean) {
-      const plane = clipper.list.get(id)
-      if (plane) plane.enabled = enabled
+      try {
+        const plane = clipper.list.get(id)
+        if (plane) plane.enabled = enabled
+      } catch (err) {
+        console.debug('[Viewer] toggleClipPlane:', err)
+      }
     },
 
     getClipPlanes() {
       const result: { id: string; enabled: boolean; title: string }[] = []
-      for (const [id, plane] of clipper.list) {
-        result.push({ id, enabled: plane.enabled, title: plane.title || `Plane ${result.length + 1}` })
+      try {
+        let index = 0
+        for (const [id, plane] of clipper.list) {
+          index++
+          const enabled = typeof plane?.enabled === 'boolean' ? plane.enabled : true
+          const title   = (typeof plane?.title === 'string' && plane.title.trim())
+            ? plane.title.trim()
+            : `Plane ${index}`
+          result.push({ id, enabled, title })
+        }
+      } catch (err) {
+        console.debug('[Viewer] getClipPlanes:', err)
       }
       return result
+    },
+
+    cleanupSectionAndPlans() {
+      // Remove all clip planes
+      try { clipper.deleteAll() } catch { /* ok */ }
+      // Stop any in-progress clip creation
+      try {
+        clipper.enabled = false
+        canvas.style.cursor = 'default'
+        if (onAfterCreateHandler) {
+          try { clipper.onAfterCreate.remove(onAfterCreateHandler) } catch { /* ok */ }
+          onAfterCreateHandler = null
+        }
+        clipCreationCallback = null
+      } catch { /* ok */ }
+      // Close any open storey view
+      try { views.close() } catch { /* ok */ }
+      // Restore perspective orbit camera mode
+      try {
+        const cam = world.camera
+        if (cam && 'set' in cam && typeof (cam as OBC.OrthoPerspectiveCamera).set === 'function') {
+          ;(cam as OBC.OrthoPerspectiveCamera).set('Orbit')
+        }
+      } catch { /* ok */ }
     },
 
     // ─── Floor plan / storey views ─────────────────────────────────────────────
 
     async createStoreyViews() {
       try {
+        // Dispose existing storey views to prevent duplicates on re-generate
+        const existing = [...views.list.keys()]
+        for (const id of existing) {
+          try { views.list.get(id)?.dispose() } catch { /* ok */ }
+        }
         const created = await views.createFromIfcStoreys()
-        return created.map((v) => ({ id: v.id, name: v.id }))
+        return created
+          .filter((v) => v && typeof v.id === 'string')
+          .map((v) => ({
+            id:   v.id,
+            // createFromIfcStoreys uses storey name as ID; sanitise for display
+            name: v.id.trim() || `Storey ${v.id}`,
+          }))
       } catch (err) {
         console.warn('[Viewer] createStoreyViews failed:', err)
         return []
@@ -1545,9 +1666,14 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     openStoreyView(id: string) {
+      if (!id || typeof id !== 'string') return
       try {
-        // Close any already-open view first
-        views.close()
+        // Close any already-open view
+        try { views.close() } catch { /* ok */ }
+        if (!views.list.has(id)) {
+          console.warn('[Viewer] openStoreyView: unknown view id', id)
+          return
+        }
         views.open(id)
       } catch (err) {
         console.warn('[Viewer] openStoreyView failed:', err)
@@ -1555,18 +1681,25 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     closeStoreyView() {
+      try { views.close() } catch (err) { console.debug('[Viewer] closeStoreyView:', err) }
+      // Restore perspective orbit mode on OrthoPerspectiveCamera
       try {
-        views.close()
-      } catch (err) {
-        console.debug('[Viewer] closeStoreyView:', err)
-      }
+        const cam = world.camera
+        if (cam && 'set' in cam && typeof (cam as OBC.OrthoPerspectiveCamera).set === 'function') {
+          ;(cam as OBC.OrthoPerspectiveCamera).set('Orbit')
+        }
+      } catch { /* ok */ }
     },
 
     getViews() {
       const result: { id: string; name: string }[] = []
-      for (const [id] of views.list) {
-        result.push({ id, name: id })
-      }
+      try {
+        for (const [id] of views.list) {
+          if (id && typeof id === 'string') {
+            result.push({ id, name: id.trim() || id })
+          }
+        }
+      } catch { /* ok */ }
       return result
     },
 

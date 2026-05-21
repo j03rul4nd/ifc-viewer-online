@@ -33,6 +33,8 @@ export type AppEventMap = {
   'editor:history-cleared': void
   'cache:saved':            { key: string; sizeBytes: number }
   'cache:deleted':          { key: string }
+  'bcf:imported':           { topicCount: number }
+  'bcf:exported':           { topicCount: number }
 }
 
 // ── Core bus class ─────────────────────────────────────────────────────────────

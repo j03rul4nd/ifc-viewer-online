@@ -71,6 +71,16 @@ import {
   IFCQUANTITYVOLUME,
   IFCQUANTITYLENGTH,
   IFCQUANTITYCOUNT,
+  IFCRELASSOCIATESCLASSIFICATION,
+  IFCRELASSIGNSTOGROUP,
+  IFCSYSTEM,
+  IFCMATERIALLAYERSETUSAGE,
+  IFCFLOWFITTING,
+  IFCFLOWTERMINAL,
+  IFCFLOWCONTROLLER,
+  IFCFLOWMOVINGDEVICE,
+  IFCFLOWTREATMENTDEVICE,
+  IFCFLOWSTORAGEDEVICE,
 } from 'web-ifc'
 
 // ── Typed IFC entity shapes ───────────────────────────────────────────────────
@@ -167,6 +177,12 @@ const TYPE_NAME: Record<number, string> = {
   [IFCMEMBER]: 'IfcMember',
   [IFCPLATE]: 'IfcPlate',
   [IFCCOVERING]: 'IfcCovering',
+  [IFCFLOWFITTING]: 'IfcFlowFitting',
+  [IFCFLOWTERMINAL]: 'IfcFlowTerminal',
+  [IFCFLOWCONTROLLER]: 'IfcFlowController',
+  [IFCFLOWMOVINGDEVICE]: 'IfcFlowMovingDevice',
+  [IFCFLOWTREATMENTDEVICE]: 'IfcFlowTreatmentDevice',
+  [IFCFLOWSTORAGEDEVICE]: 'IfcFlowStorageDevice',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -416,27 +432,44 @@ async function ruleEmptyLongName(
   idx: SpatialIndex,
 ): Promise<ValidationIssue[]> {
   const issues: ValidationIssue[] = []
-  const spaceIds = api.GetLineIDsWithType(modelId, IFCSPACE)
 
+  // IfcSpace — warning (LongName carries room usage)
+  const spaceIds = api.GetLineIDsWithType(modelId, IFCSPACE)
   for (let i = 0; i < spaceIds.size(); i++) {
     const id  = spaceIds.get(i)
     const ent = getLine<IfcBaseEntity>(api, modelId, id)
-    const longName = getStr(ent.LongName).trim()
-    if (longName === '') {
+    if (getStr(ent.LongName).trim() === '') {
       issues.push({
-        id: newIssueId(),
-        ruleId: 'RULE_EMPTY_LONGNAME',
-        severity: 'warning',
-        expressId: id,
-        globalId: getStr(ent.GlobalId),
-        ifcClass: 'IfcSpace',
+        id: newIssueId(), ruleId: 'RULE_EMPTY_LONGNAME', severity: 'warning',
+        expressId: id, globalId: getStr(ent.GlobalId), ifcClass: 'IfcSpace',
         elementName: getStr(ent.Name) || '(unnamed)',
         message: 'IfcSpace has no LongName',
-        path: getSpatialPath(id, idx),
-        autoFixable: false,
+        path: getSpatialPath(id, idx), autoFixable: false,
       })
     }
   }
+
+  // IfcBuildingStorey + IfcBuilding — info (floor/building label useful for documentation)
+  for (const [typeId, className] of [
+    [IFCBUILDINGSTOREY, 'IfcBuildingStorey'],
+    [IFCBUILDING, 'IfcBuilding'],
+  ] as const) {
+    const ids = api.GetLineIDsWithType(modelId, typeId)
+    for (let i = 0; i < ids.size(); i++) {
+      const id  = ids.get(i)
+      const ent = getLine<IfcBaseEntity>(api, modelId, id)
+      if (getStr(ent.LongName).trim() === '') {
+        issues.push({
+          id: newIssueId(), ruleId: 'RULE_EMPTY_LONGNAME', severity: 'info',
+          expressId: id, globalId: getStr(ent.GlobalId), ifcClass: className,
+          elementName: getStr(ent.Name) || '(unnamed)',
+          message: `${className} has no LongName`,
+          path: getSpatialPath(id, idx), autoFixable: false,
+        })
+      }
+    }
+  }
+
   return issues
 }
 
@@ -570,7 +603,7 @@ async function ruleMissingType(
         issues.push({
           id: newIssueId(),
           ruleId: 'RULE_MISSING_TYPE',
-          severity: 'info',
+          severity: 'warning',
           expressId: id,
           globalId: getStr(ent.GlobalId),
           ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
@@ -1047,7 +1080,7 @@ async function ruleElementInBuilding(
         issues.push({
           id: newIssueId(),
           ruleId: 'RULE_ELEMENT_IN_BUILDING',
-          severity: 'warning',
+          severity: 'error',
           expressId: id,
           globalId: getStr(ent.GlobalId),
           ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
@@ -1194,6 +1227,633 @@ async function ruleElementClash(
   return issues
 }
 
+// ── STEP header parser helpers ────────────────────────────────────────────────
+
+/** Read first 4 KB of the buffer as an uppercase ASCII string (header only). */
+function readStepHeaderRaw(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer, 0, Math.min(buffer.byteLength, 4096))
+  return new TextDecoder('utf-8', { fatal: false }).decode(bytes)
+}
+
+function parseHeaderField(header: string, field: string): string {
+  const re = new RegExp(`${field}\\s*\\(\\s*\\(\\s*'([^']*)'`, 'i')
+  const m = re.exec(header)
+  return m ? m[1].trim() : ''
+}
+
+/** Extract the filename from FILE_NAME('name', ...) — field 0 (before the first comma). */
+function parseFileNameFromHeader(header: string): string {
+  const m = /FILE_NAME\s*\(\s*'([^']*)'/i.exec(header)
+  return m ? m[1].trim() : ''
+}
+
+function parseFileAuthorFromHeader(header: string): string {
+  // FILE_NAME('filename','timestamp',('Author'),('Org'),'preproc','','')
+  const m = /FILE_NAME\s*\(\s*'[^']*'\s*,\s*'[^']*'\s*,\s*\(\s*'([^']*)'/i.exec(header)
+  return m ? m[1].trim() : ''
+}
+
+function parseFileOrgFromHeader(header: string): string {
+  const m = /FILE_NAME\s*\(\s*'[^']*'\s*,\s*'[^']*'\s*,\s*\([^)]*\)\s*,\s*\(\s*'([^']*)'/i.exec(header)
+  return m ? m[1].trim() : ''
+}
+
+// ── Sprint V3 rule implementations ────────────────────────────────────────────
+
+async function ruleMissingProject(
+  api: IfcAPI,
+  modelId: number,
+): Promise<ValidationIssue[]> {
+  if (api.GetLineIDsWithType(modelId, IFCPROJECT).size() > 0) return []
+  return [{
+    id: newIssueId(), ruleId: 'RULE_MISSING_PROJECT', severity: 'error',
+    expressId: 0, globalId: null, ifcClass: 'IfcProject', elementName: 'IfcProject',
+    message: 'The model contains no IfcProject entity — required root of every IFC file.',
+    path: [], autoFixable: false,
+  }]
+}
+
+async function ruleMissingBuilding(
+  api: IfcAPI,
+  modelId: number,
+): Promise<ValidationIssue[]> {
+  if (api.GetLineIDsWithType(modelId, IFCBUILDING).size() > 0) return []
+  return [{
+    id: newIssueId(), ruleId: 'RULE_MISSING_BUILDING', severity: 'warning',
+    expressId: 0, globalId: null, ifcClass: 'IfcBuilding', elementName: 'IfcBuilding',
+    message: 'The model contains no IfcBuilding entity.',
+    path: [], autoFixable: false,
+  }]
+}
+
+async function ruleMissingStorey(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+  const buildingIds = api.GetLineIDsWithType(modelId, IFCBUILDING)
+  for (let i = 0; i < buildingIds.size(); i++) {
+    const bid = buildingIds.get(i)
+    const children = idx.aggChildren.get(bid) ?? []
+    const hasStorey = children.some((cid) => idx.entityTypes.get(cid) === IFCBUILDINGSTOREY)
+    if (!hasStorey) {
+      const ent = getLine<IfcBaseEntity>(api, modelId, bid)
+      issues.push({
+        id: newIssueId(), ruleId: 'RULE_MISSING_STOREY', severity: 'warning',
+        expressId: bid, globalId: getStr(ent.GlobalId),
+        ifcClass: 'IfcBuilding', elementName: getStr(ent.Name) || '(unnamed)',
+        message: 'IfcBuilding has no IfcBuildingStorey — elements cannot be organized by floor.',
+        path: getSpatialPath(bid, idx), autoFixable: false,
+      })
+    }
+  }
+  return issues
+}
+
+async function ruleEmptyStorey(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+  const storeyIds = api.GetLineIDsWithType(modelId, IFCBUILDINGSTOREY)
+  for (let i = 0; i < storeyIds.size(); i++) {
+    const sid = storeyIds.get(i)
+    const elemCount = (idx.containerElements.get(sid) ?? []).length
+    const spaceCount = (idx.aggChildren.get(sid) ?? []).filter(
+      (cid) => idx.entityTypes.get(cid) === IFCSPACE,
+    ).length
+    if (elemCount === 0 && spaceCount === 0) {
+      const ent = getLine<IfcBaseEntity>(api, modelId, sid)
+      issues.push({
+        id: newIssueId(), ruleId: 'RULE_EMPTY_STOREY', severity: 'info',
+        expressId: sid, globalId: getStr(ent.GlobalId),
+        ifcClass: 'IfcBuildingStorey', elementName: getStr(ent.Name) || '(unnamed)',
+        message: 'IfcBuildingStorey has no contained elements or spaces.',
+        path: getSpatialPath(sid, idx), autoFixable: false,
+      })
+    }
+  }
+  return issues
+}
+
+async function ruleFileDescriptionMissing(
+  buffer: ArrayBuffer,
+): Promise<ValidationIssue[]> {
+  const header = readStepHeaderRaw(buffer)
+  const desc = parseHeaderField(header, 'FILE_DESCRIPTION')
+  if (desc) return []
+  return [{
+    id: newIssueId(), ruleId: 'RULE_FILE_DESCRIPTION_MISSING', severity: 'info',
+    expressId: 0, globalId: null, ifcClass: 'FILE_DESCRIPTION', elementName: 'FILE_DESCRIPTION',
+    message: 'IFC STEP header FILE_DESCRIPTION is empty — add a delivery description for traceability.',
+    path: [], autoFixable: false,
+  }]
+}
+
+async function ruleFileAuthorMissing(
+  buffer: ArrayBuffer,
+): Promise<ValidationIssue[]> {
+  const header = readStepHeaderRaw(buffer)
+  const author = parseFileAuthorFromHeader(header)
+  if (author) return []
+  return [{
+    id: newIssueId(), ruleId: 'RULE_FILE_AUTHOR_MISSING', severity: 'info',
+    expressId: 0, globalId: null, ifcClass: 'FILE_NAME', elementName: 'FILE_NAME',
+    message: 'IFC STEP header FILE_NAME has no author specified.',
+    path: [], autoFixable: false,
+  }]
+}
+
+async function ruleProjectLongNameMissing(
+  api: IfcAPI,
+  modelId: number,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+  const projectIds = api.GetLineIDsWithType(modelId, IFCPROJECT)
+  for (let i = 0; i < projectIds.size(); i++) {
+    const id = projectIds.get(i)
+    const ent = getLine<IfcBaseEntity>(api, modelId, id)
+    if (!getStr(ent.LongName).trim()) {
+      issues.push({
+        id: newIssueId(), ruleId: 'RULE_PROJECT_LONGNAME_MISSING', severity: 'warning',
+        expressId: id, globalId: getStr(ent.GlobalId),
+        ifcClass: 'IfcProject', elementName: getStr(ent.Name) || '(unnamed project)',
+        message: 'IfcProject has no LongName (official project name) — required for formal deliveries.',
+        path: [], autoFixable: false,
+      })
+    }
+  }
+  return issues
+}
+
+async function ruleStoreyElevationMissing(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+  const storeyIds = api.GetLineIDsWithType(modelId, IFCBUILDINGSTOREY)
+  for (let i = 0; i < storeyIds.size(); i++) {
+    const sid = storeyIds.get(i)
+    try {
+      const storey = getLine<IfcBaseEntity & { Elevation?: { type: 4; value: number } | null }>(
+        api, modelId, sid,
+      )
+      if (storey.Elevation == null) {
+        issues.push({
+          id: newIssueId(), ruleId: 'RULE_STOREY_ELEVATION_MISSING', severity: 'warning',
+          expressId: sid, globalId: getStr(storey.GlobalId),
+          ifcClass: 'IfcBuildingStorey', elementName: getStr(storey.Name) || '(unnamed)',
+          message: 'IfcBuildingStorey has no Elevation defined — required for floor plans and energy analysis.',
+          path: getSpatialPath(sid, idx), autoFixable: false,
+        })
+      }
+    } catch { continue }
+  }
+  return issues
+}
+
+async function ruleIso19650ProjectInfo(
+  api: IfcAPI,
+  modelId: number,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+  const projectIds = api.GetLineIDsWithType(modelId, IFCPROJECT)
+  for (let i = 0; i < projectIds.size(); i++) {
+    const id = projectIds.get(i)
+    const ent = getLine<IfcBaseEntity>(api, modelId, id)
+    const missing: string[] = []
+    if (!getStr(ent.LongName).trim())    missing.push('LongName (project name)')
+    if (!getStr(ent.Description).trim()) missing.push('Description (delivery phase)')
+    if (!getStr(ent.ObjectType).trim())  missing.push('ObjectType (delivery type)')
+    if (missing.length > 0) {
+      issues.push({
+        id: newIssueId(), ruleId: 'RULE_ISO19650_PROJECT_INFO', severity: 'warning',
+        expressId: id, globalId: getStr(ent.GlobalId),
+        ifcClass: 'IfcProject', elementName: getStr(ent.Name) || '(unnamed project)',
+        message: `IfcProject missing ISO 19650 required fields: ${missing.join(', ')}.`,
+        path: [], autoFixable: false,
+      })
+    }
+  }
+  return issues
+}
+
+async function ruleIso19650AuthorInfo(
+  buffer: ArrayBuffer,
+): Promise<ValidationIssue[]> {
+  const header = readStepHeaderRaw(buffer)
+  const author = parseFileAuthorFromHeader(header)
+  const org    = parseFileOrgFromHeader(header)
+  if (author || org) return []
+  return [{
+    id: newIssueId(), ruleId: 'RULE_ISO19650_AUTHOR_INFO', severity: 'info',
+    expressId: 0, globalId: null, ifcClass: 'FILE_NAME', elementName: 'FILE_NAME',
+    message: 'IFC header has no author or organisation — ISO 19650 requires traceable information responsibility.',
+    path: [], autoFixable: false,
+  }]
+}
+
+async function ruleIso19650Filename(
+  buffer: ArrayBuffer,
+  customPattern: string | undefined,
+): Promise<ValidationIssue[]> {
+  const header   = readStepHeaderRaw(buffer)
+  const fileName = parseFileNameFromHeader(header)
+
+  // If the header has no filename at all, skip — ruleFileAuthorMissing covers that
+  if (!fileName) return []
+
+  // Default ISO 19650 convention: at least 5 underscore-separated fields
+  // (e.g. PRJ_ORG_ZZ_M_DR_A_0001 or PRJ-ORG-ZZ-M-DR-A-0001)
+  const DEFAULT_ISO_PATTERN = /^[^_-]+[_-][^_-]+[_-][^_-]+[_-][^_-]+[_-][^_-]+/
+
+  if (customPattern) {
+    let re: RegExp
+    try { re = new RegExp(customPattern) } catch {
+      // Invalid regex in config — emit info rather than crashing
+      return [{
+        id: newIssueId(), ruleId: 'RULE_ISO19650_FILENAME', severity: 'info',
+        expressId: 0, globalId: null, ifcClass: 'FILE_NAME', elementName: fileName,
+        message: `RULE_ISO19650_FILENAME: invalid regex pattern "${customPattern}" in rules config.`,
+        path: [], autoFixable: false,
+      }]
+    }
+    if (!re.test(fileName)) {
+      return [{
+        id: newIssueId(), ruleId: 'RULE_ISO19650_FILENAME', severity: 'warning',
+        expressId: 0, globalId: null, ifcClass: 'FILE_NAME', elementName: fileName,
+        message: `Filename "${fileName}" does not match the ISO 19650 naming pattern "${customPattern}".`,
+        path: [], autoFixable: false,
+      }]
+    }
+    return []
+  }
+
+  // No custom pattern — apply default structural check (info only)
+  if (!DEFAULT_ISO_PATTERN.test(fileName)) {
+    return [{
+      id: newIssueId(), ruleId: 'RULE_ISO19650_FILENAME', severity: 'info',
+      expressId: 0, globalId: null, ifcClass: 'FILE_NAME', elementName: fileName,
+      message: `Filename "${fileName}" does not follow the ISO 19650 convention (expected ≥5 underscore/hyphen-separated fields).`,
+      path: [], autoFixable: false,
+    }]
+  }
+  return []
+}
+
+// ── Sprint V4 rules ───────────────────────────────────────────────────────────
+
+// MEP flow element types (all subtypes of IfcDistributionFlowElement)
+const MEP_ELEMENT_TYPES = [
+  IFCFLOWSEGMENT, IFCPIPESEGMENT, IFCDUCTSEGMENT,
+  IFCFLOWFITTING, IFCFLOWTERMINAL, IFCFLOWCONTROLLER,
+  IFCFLOWMOVINGDEVICE, IFCFLOWTREATMENTDEVICE, IFCFLOWSTORAGEDEVICE,
+]
+
+// Structural types for MEP vs structural clash
+const STRUCTURAL_TYPES = [
+  IFCWALL, IFCWALLSTANDARDCASE, IFCSLAB, IFCSLABSTANDARDCASE,
+  IFCBEAM, IFCBEAMSTANDARDCASE, IFCCOLUMN, IFCCOLUMNSTANDARDCASE,
+  IFCFOOTING, IFCPILE, IFCMEMBER, IFCPLATE,
+]
+
+// Minimum Psets required per element type at each LOD
+const LOD_REQUIRED_PSETS: Record<string, Record<number, string[]>> = {
+  IfcWall:   { 200: ['Pset_WallCommon'], 300: ['Pset_WallCommon'], 350: ['Pset_WallCommon'], 400: ['Pset_WallCommon'] },
+  IfcSlab:   { 200: ['Pset_SlabCommon'], 300: ['Pset_SlabCommon'], 350: ['Pset_SlabCommon'], 400: ['Pset_SlabCommon'] },
+  IfcBeam:   { 300: ['Pset_BeamCommon'], 350: ['Pset_BeamCommon'], 400: ['Pset_BeamCommon'] },
+  IfcColumn: { 300: ['Pset_ColumnCommon'], 350: ['Pset_ColumnCommon'], 400: ['Pset_ColumnCommon'] },
+  IfcDoor:   { 200: ['Pset_DoorCommon'], 300: ['Pset_DoorCommon'] },
+  IfcWindow: { 200: ['Pset_WindowCommon'], 300: ['Pset_WindowCommon'] },
+  IfcSpace:  { 100: ['Pset_SpaceCommon'], 200: ['Pset_SpaceCommon'] },
+}
+
+interface IfcRelAssociatesClassification {
+  expressID: number; type: number
+  RelatedObjects: IfcRefValue[]
+  RelatingClassification: IfcRefValue
+}
+
+interface IfcRelAssignsToGroup {
+  expressID: number; type: number
+  RelatedObjects: IfcRefValue[]
+  RelatingGroup: IfcRefValue
+}
+
+async function ruleMissingClassification(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+  allowedSystems: string[],
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+
+  // Build set of element expressIDs that have a classification
+  const classifiedIds = new Set<number>()
+  const relIds = api.GetLineIDsWithType(modelId, IFCRELASSOCIATESCLASSIFICATION)
+  for (let i = 0; i < relIds.size(); i++) {
+    try {
+      const rel = getLine<IfcRelAssociatesClassification>(api, modelId, relIds.get(i))
+      if (!rel.RelatedObjects) continue
+      // If caller restricts classification systems, check the source name
+      if (allowedSystems.length > 0) {
+        try {
+          const classRef = getLine<{ Name?: MaybeString }>(api, modelId, rel.RelatingClassification.value)
+          const sysName = getStr(classRef.Name).toLowerCase()
+          if (!allowedSystems.some((s) => sysName.includes(s.toLowerCase()))) continue
+        } catch { /* skip */ }
+      }
+      for (const ref of rel.RelatedObjects) {
+        if (ref?.value != null) classifiedIds.add(ref.value)
+      }
+    } catch { /* corrupt line */ }
+  }
+
+  for (const typeId of ELEMENT_TYPES) {
+    const ids = api.GetLineIDsWithType(modelId, typeId)
+    for (let i = 0; i < ids.size(); i++) {
+      const id = ids.get(i)
+      if (classifiedIds.has(id)) continue
+      try {
+        const ent = getLine<IfcBaseEntity>(api, modelId, id)
+        issues.push({
+          id: newIssueId(), ruleId: 'RULE_MISSING_CLASSIFICATION', severity: 'warning',
+          expressId: id, globalId: getStr(ent.GlobalId) || null, ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+          elementName: getStr(ent.Name) || `#${id}`,
+          message: `${TYPE_NAME[typeId] ?? 'IfcElement'} has no classification reference${allowedSystems.length > 0 ? ` from ${allowedSystems.join('/')}` : ''}.`,
+          path: getSpatialPath(id, idx), autoFixable: false,
+        })
+      } catch { /* corrupt */ }
+    }
+  }
+  return issues
+}
+
+async function ruleLodPsetMissing(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+  lodLevel: number,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+
+  // Build map: elementId → set of its pset names
+  const elementPsets = new Map<number, Set<string>>()
+  const relIds = api.GetLineIDsWithType(modelId, IFCRELDEFINESBYPROPERTIES)
+  for (let i = 0; i < relIds.size(); i++) {
+    try {
+      const rel = getLine<IfcRelDefByProps>(api, modelId, relIds.get(i))
+      if (!rel.RelatingPropertyDefinition || !rel.RelatedObjects) continue
+      const pset = getLine<IfcPSet>(api, modelId, rel.RelatingPropertyDefinition.value)
+      const psetName = getStr(pset.Name)
+      if (!psetName) continue
+      for (const ref of rel.RelatedObjects) {
+        if (ref?.value == null) continue
+        const existing = elementPsets.get(ref.value) ?? new Set<string>()
+        existing.add(psetName)
+        elementPsets.set(ref.value, existing)
+      }
+    } catch { /* corrupt */ }
+  }
+
+  const typeMap: Record<number, string> = {
+    [IFCWALL]: 'IfcWall', [IFCWALLSTANDARDCASE]: 'IfcWall',
+    [IFCSLAB]: 'IfcSlab', [IFCSLABSTANDARDCASE]: 'IfcSlab',
+    [IFCBEAM]: 'IfcBeam', [IFCBEAMSTANDARDCASE]: 'IfcBeam',
+    [IFCCOLUMN]: 'IfcColumn', [IFCCOLUMNSTANDARDCASE]: 'IfcColumn',
+    [IFCDOOR]: 'IfcDoor', [IFCWINDOW]: 'IfcWindow', [IFCSPACE]: 'IfcSpace',
+  }
+
+  for (const [typeId, className] of Object.entries(typeMap)) {
+    const required = LOD_REQUIRED_PSETS[className]?.[lodLevel]
+    if (!required || required.length === 0) continue
+    const ids = api.GetLineIDsWithType(modelId, Number(typeId))
+    for (let i = 0; i < ids.size(); i++) {
+      const id = ids.get(i)
+      const elemPsets = elementPsets.get(id) ?? new Set<string>()
+      const missing = required.filter((p) => !elemPsets.has(p))
+      if (missing.length === 0) continue
+      try {
+        const ent = getLine<IfcBaseEntity>(api, modelId, id)
+        issues.push({
+          id: newIssueId(), ruleId: 'RULE_LOD_PSET_MISSING', severity: 'warning',
+          expressId: id, globalId: getStr(ent.GlobalId) || null, ifcClass: className,
+          elementName: getStr(ent.Name) || `#${id}`,
+          message: `${className} missing required Pset(s) for LOD ${lodLevel}: ${missing.join(', ')}.`,
+          path: getSpatialPath(id, idx), autoFixable: false,
+        })
+      } catch { /* corrupt */ }
+    }
+  }
+  return issues
+}
+
+// Structural types that need IfcElementQuantity at LOD 300+
+const LOD_QUANTITY_TYPES = [
+  IFCWALL, IFCWALLSTANDARDCASE, IFCSLAB, IFCSLABSTANDARDCASE,
+  IFCBEAM, IFCBEAMSTANDARDCASE, IFCCOLUMN, IFCCOLUMNSTANDARDCASE,
+]
+
+async function ruleLodQuantityMissing(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+  lodLevel: number,
+): Promise<ValidationIssue[]> {
+  if (lodLevel < 300) return []
+  const issues: ValidationIssue[] = []
+
+  // Build set of elements that have at least one IfcElementQuantity
+  const quantifiedIds = new Set<number>()
+  const relIds = api.GetLineIDsWithType(modelId, IFCRELDEFINESBYPROPERTIES)
+  for (let i = 0; i < relIds.size(); i++) {
+    try {
+      const rel = getLine<IfcRelDefByProps>(api, modelId, relIds.get(i))
+      if (!rel.RelatingPropertyDefinition || !rel.RelatedObjects) continue
+      // Check if the definition is an IfcElementQuantity
+      const defLine = getLine<{ type: number }>(api, modelId, rel.RelatingPropertyDefinition.value)
+      if (defLine.type !== IFCELEMENTQUANTITY) continue
+      for (const ref of rel.RelatedObjects) {
+        if (ref?.value != null) quantifiedIds.add(ref.value)
+      }
+    } catch { /* corrupt */ }
+  }
+
+  for (const typeId of LOD_QUANTITY_TYPES) {
+    const ids = api.GetLineIDsWithType(modelId, typeId)
+    for (let i = 0; i < ids.size(); i++) {
+      const id = ids.get(i)
+      if (quantifiedIds.has(id)) continue
+      try {
+        const ent = getLine<IfcBaseEntity>(api, modelId, id)
+        const className = TYPE_NAME[typeId] ?? 'IfcElement'
+        issues.push({
+          id: newIssueId(), ruleId: 'RULE_LOD_QUANTITY_MISSING', severity: 'warning',
+          expressId: id, globalId: getStr(ent.GlobalId) || null, ifcClass: className,
+          elementName: getStr(ent.Name) || `#${id}`,
+          message: `${className} has no IfcElementQuantity — required at LOD ${lodLevel}.`,
+          path: getSpatialPath(id, idx), autoFixable: false,
+        })
+      } catch { /* corrupt */ }
+    }
+  }
+  return issues
+}
+
+// Walls and slabs that should have IfcMaterialLayerSetUsage at LOD ≥ 300
+const LAYERED_ELEMENT_TYPES = [
+  IFCWALL, IFCWALLSTANDARDCASE, IFCSLAB, IFCSLABSTANDARDCASE,
+]
+
+async function ruleLodMaterialLayerMissing(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+  lodLevel: number,
+): Promise<ValidationIssue[]> {
+  if (lodLevel < 300) return []
+  const issues: ValidationIssue[] = []
+
+  // Build set of elements associated with a MaterialLayerSetUsage
+  const layeredIds = new Set<number>()
+  const matRelIds = api.GetLineIDsWithType(modelId, IFCRELASSOCIATESMATERIAL)
+  for (let i = 0; i < matRelIds.size(); i++) {
+    try {
+      interface IfcRelAssocMat { RelatedObjects: IfcRefValue[]; RelatingMaterial: IfcRefValue }
+      const rel = getLine<IfcRelAssocMat>(api, modelId, matRelIds.get(i))
+      if (!rel.RelatingMaterial || !rel.RelatedObjects) continue
+      const matLine = getLine<{ type: number }>(api, modelId, rel.RelatingMaterial.value)
+      if (matLine.type !== IFCMATERIALLAYERSETUSAGE) continue
+      for (const ref of rel.RelatedObjects) {
+        if (ref?.value != null) layeredIds.add(ref.value)
+      }
+    } catch { /* corrupt */ }
+  }
+
+  for (const typeId of LAYERED_ELEMENT_TYPES) {
+    const ids = api.GetLineIDsWithType(modelId, typeId)
+    for (let i = 0; i < ids.size(); i++) {
+      const id = ids.get(i)
+      if (layeredIds.has(id)) continue
+      try {
+        const ent = getLine<IfcBaseEntity>(api, modelId, id)
+        const className = TYPE_NAME[typeId] ?? 'IfcElement'
+        issues.push({
+          id: newIssueId(), ruleId: 'RULE_LOD_MATERIAL_LAYER_MISSING', severity: 'warning',
+          expressId: id, globalId: getStr(ent.GlobalId) || null, ifcClass: className,
+          elementName: getStr(ent.Name) || `#${id}`,
+          message: `${className} has no IfcMaterialLayerSetUsage — required at LOD ${lodLevel}.`,
+          path: getSpatialPath(id, idx), autoFixable: false,
+        })
+      } catch { /* corrupt */ }
+    }
+  }
+  return issues
+}
+
+async function ruleMepSystemMissing(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+
+  // Build set of MEP elements assigned to at least one IfcSystem via IfcRelAssignsToGroup
+  const assignedIds = new Set<number>()
+  const relIds = api.GetLineIDsWithType(modelId, IFCRELASSIGNSTOGROUP)
+  for (let i = 0; i < relIds.size(); i++) {
+    try {
+      const rel = getLine<IfcRelAssignsToGroup>(api, modelId, relIds.get(i))
+      if (!rel.RelatingGroup || !rel.RelatedObjects) continue
+      // Check that the group is an IfcSystem
+      const grp = getLine<{ type: number }>(api, modelId, rel.RelatingGroup.value)
+      if (grp.type !== IFCSYSTEM) continue
+      for (const ref of rel.RelatedObjects) {
+        if (ref?.value != null) assignedIds.add(ref.value)
+      }
+    } catch { /* corrupt */ }
+  }
+
+  for (const typeId of MEP_ELEMENT_TYPES) {
+    const ids = api.GetLineIDsWithType(modelId, typeId)
+    for (let i = 0; i < ids.size(); i++) {
+      const id = ids.get(i)
+      if (assignedIds.has(id)) continue
+      try {
+        const ent = getLine<IfcBaseEntity>(api, modelId, id)
+        const className = TYPE_NAME[typeId] ?? 'IfcDistributionFlowElement'
+        issues.push({
+          id: newIssueId(), ruleId: 'RULE_MEP_SYSTEM_MISSING', severity: 'warning',
+          expressId: id, globalId: getStr(ent.GlobalId) || null, ifcClass: className,
+          elementName: getStr(ent.Name) || `#${id}`,
+          message: `${className} is not assigned to any IfcSystem.`,
+          path: getSpatialPath(id, idx), autoFixable: false,
+        })
+      } catch { /* corrupt */ }
+    }
+  }
+  return issues
+}
+
+async function ruleClashMepStructural(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+
+  const buildBoxes = async (types: number[], limit: number): Promise<AABB[]> => {
+    const boxes: AABB[] = []
+    for (const typeId of types) {
+      const ids = api.GetLineIDsWithType(modelId, typeId)
+      for (let i = 0; i < ids.size(); i++) {
+        const id = ids.get(i)
+        const box = computeAABB(api, modelId, id)
+        if (!box) continue
+        try {
+          const ent = getLine<IfcBaseEntity>(api, modelId, id)
+          box.typeId = typeId
+          box.name   = getStr(ent.Name) || `#${id}`
+          box.guid   = getStr(ent.GlobalId)
+        } catch { /* metadata optional */ }
+        boxes.push(box)
+        if (boxes.length >= limit) return boxes
+      }
+      if (boxes.length >= limit) break
+    }
+    return boxes
+  }
+
+  const mepBoxes  = await buildBoxes(MEP_ELEMENT_TYPES, CLASH_ELEMENT_LIMIT)
+  const struBoxes = await buildBoxes(STRUCTURAL_TYPES,  CLASH_ELEMENT_LIMIT)
+  if (mepBoxes.length === 0 || struBoxes.length === 0) return issues
+
+  const reported = new Set<string>()
+  for (const mep of mepBoxes) {
+    if (issues.length >= CLASH_ISSUE_LIMIT) break
+    for (const str of struBoxes) {
+      if (issues.length >= CLASH_ISSUE_LIMIT) break
+      if (!aabbsClash(mep, str, CLASH_PENETRATION)) continue
+      const pairKey = `${Math.min(mep.expressId, str.expressId)}-${Math.max(mep.expressId, str.expressId)}`
+      if (reported.has(pairKey)) continue
+      reported.add(pairKey)
+      const mepClass  = TYPE_NAME[mep.typeId]  ?? 'IfcFlowElement'
+      const struClass = TYPE_NAME[str.typeId] ?? 'IfcElement'
+      issues.push({
+        id: newIssueId(), ruleId: 'RULE_CLASH_MEP_STRUCTURAL', severity: 'warning',
+        expressId: mep.expressId, globalId: mep.guid || null, ifcClass: mepClass,
+        elementName: mep.name,
+        message: `MEP ${mepClass} "${mep.name}" (#${mep.expressId}) clashes with structural ${struClass} "${str.name}" (#${str.expressId}).`,
+        path: getSpatialPath(mep.expressId, idx), autoFixable: false,
+      })
+    }
+  }
+  return issues
+}
+
 // ── IFC schema version check ──────────────────────────────────────────────────
 
 const KNOWN_IFC_SCHEMAS: Record<string, { label: string; current: boolean }> = {
@@ -1274,7 +1934,7 @@ type PostFn = (msg: unknown, transfer?: Transferable[]) => void
 const post = self.postMessage.bind(self) as PostFn
 
 async function handleValidate(msg: ValidateMessage): Promise<void> {
-  const { id, buffer, rules } = msg
+  const { id, buffer, rules, skipTree } = msg
   const startTime = Date.now()
   const allIssues: ValidationIssue[] = []
 
@@ -1342,9 +2002,11 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
     // ── Build spatial index ──────────────────────────────────────────
     const idx = buildSpatialIndex(api, modelId)
 
-    // ── Build and stream tree ────────────────────────────────────────
-    const tree = buildTree(api, modelId, idx)
-    post({ type: 'tree', id, tree })
+    // ── Build and stream tree (skipped for secondary pool workers) ──
+    if (!skipTree) {
+      const tree = buildTree(api, modelId, idx)
+      post({ type: 'tree', id, tree })
+    }
 
     // ── Define enabled rules ─────────────────────────────────────────
     const totalRules = enabledRules.length
@@ -1416,6 +2078,59 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
 
     if (rules.RULE_ELEMENT_CLASH)
       await runRule('RULE_ELEMENT_CLASH', () => ruleElementClash(api!, modelId, idx))
+
+    // ── Sprint V3 rules ──────────────────────────────────────────────
+    if (rules.RULE_MISSING_PROJECT)
+      await runRule('RULE_MISSING_PROJECT', () => ruleMissingProject(api!, modelId))
+
+    if (rules.RULE_MISSING_BUILDING)
+      await runRule('RULE_MISSING_BUILDING', () => ruleMissingBuilding(api!, modelId))
+
+    if (rules.RULE_MISSING_STOREY)
+      await runRule('RULE_MISSING_STOREY', () => ruleMissingStorey(api!, modelId, idx))
+
+    if (rules.RULE_EMPTY_STOREY)
+      await runRule('RULE_EMPTY_STOREY', () => ruleEmptyStorey(api!, modelId, idx))
+
+    if (rules.RULE_FILE_DESCRIPTION_MISSING)
+      await runRule('RULE_FILE_DESCRIPTION_MISSING', () => ruleFileDescriptionMissing(buffer))
+
+    if (rules.RULE_FILE_AUTHOR_MISSING)
+      await runRule('RULE_FILE_AUTHOR_MISSING', () => ruleFileAuthorMissing(buffer))
+
+    if (rules.RULE_PROJECT_LONGNAME_MISSING)
+      await runRule('RULE_PROJECT_LONGNAME_MISSING', () => ruleProjectLongNameMissing(api!, modelId))
+
+    if (rules.RULE_STOREY_ELEVATION_MISSING)
+      await runRule('RULE_STOREY_ELEVATION_MISSING', () => ruleStoreyElevationMissing(api!, modelId, idx))
+
+    if (rules.RULE_ISO19650_PROJECT_INFO)
+      await runRule('RULE_ISO19650_PROJECT_INFO', () => ruleIso19650ProjectInfo(api!, modelId))
+
+    if (rules.RULE_ISO19650_AUTHOR_INFO)
+      await runRule('RULE_ISO19650_AUTHOR_INFO', () => ruleIso19650AuthorInfo(buffer))
+
+    if (rules.RULE_ISO19650_FILENAME)
+      await runRule('RULE_ISO19650_FILENAME', () =>
+        ruleIso19650Filename(buffer, rules.iso19650FilenamePattern),
+      )
+
+    // ── Sprint V4 rules ──────────────────────────────────────────────
+    const lodLvl = rules.lodLevel ?? 300
+    if (rules.RULE_MISSING_CLASSIFICATION)
+      await runRule('RULE_MISSING_CLASSIFICATION', () =>
+        ruleMissingClassification(api!, modelId, idx, rules.classificationSystems ?? []),
+      )
+    if (rules.RULE_LOD_PSET_MISSING)
+      await runRule('RULE_LOD_PSET_MISSING', () => ruleLodPsetMissing(api!, modelId, idx, lodLvl))
+    if (rules.RULE_LOD_QUANTITY_MISSING)
+      await runRule('RULE_LOD_QUANTITY_MISSING', () => ruleLodQuantityMissing(api!, modelId, idx, lodLvl))
+    if (rules.RULE_LOD_MATERIAL_LAYER_MISSING)
+      await runRule('RULE_LOD_MATERIAL_LAYER_MISSING', () => ruleLodMaterialLayerMissing(api!, modelId, idx, lodLvl))
+    if (rules.RULE_MEP_SYSTEM_MISSING)
+      await runRule('RULE_MEP_SYSTEM_MISSING', () => ruleMepSystemMissing(api!, modelId, idx))
+    if (rules.RULE_CLASH_MEP_STRUCTURAL)
+      await runRule('RULE_CLASH_MEP_STRUCTURAL', () => ruleClashMepStructural(api!, modelId, idx))
 
     // ── Compile final result ─────────────────────────────────────────
     const byRule: Record<string, number> = {}
@@ -1664,6 +2379,8 @@ interface ValidateMessage {
   id: string
   buffer: ArrayBuffer
   rules: RulesConfig
+  /** When true, skip spatial tree building (used for worker-pool secondary workers). */
+  skipTree?: boolean
 }
 
 interface BuildTreeMessage {

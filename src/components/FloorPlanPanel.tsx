@@ -2,7 +2,10 @@ import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUIStore } from '../stores/uiStore'
 import { useSceneStore } from '../stores/sceneStore'
+import { createLogger } from '../lib/logger'
 import type { ViewerAPI } from '../lib/viewer'
+
+const log = createLogger('FloorPlanPanel')
 
 interface FloorPlanPanelProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -69,7 +72,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       setError(`Failed to detect storeys: ${msg}`)
-      console.warn('[FloorPlanPanel] createStoreyViews:', err)
+      log.warn('createStoreyViews:', err)
     } finally {
       setLoading(false)
     }
@@ -90,7 +93,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       setError(`Could not open view: ${msg}`)
-      console.warn('[FloorPlanPanel] openStoreyView:', err)
+      log.warn('openStoreyView:', err)
     }
   }, [viewerApiRef, activePlanViewId, setActivePlanViewId])
 
@@ -99,7 +102,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
     try {
       viewerApiRef.current?.closeStoreyView()
     } catch (err) {
-      console.warn('[FloorPlanPanel] closeStoreyView:', err)
+      log.warn('closeStoreyView:', err)
     }
     setActivePlanViewId(null)
   }, [viewerApiRef, setActivePlanViewId])

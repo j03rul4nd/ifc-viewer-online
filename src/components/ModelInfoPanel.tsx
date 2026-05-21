@@ -4,11 +4,14 @@
 
 import React, { useState } from 'react'
 import type { ModelInfo, MemoryStats } from '../types'
+import type { GpuBackend } from '../stores/uiStore'
 
 interface ModelInfoPanelProps {
-  modelInfo:   ModelInfo
-  memoryStats: MemoryStats
-  isFromCache: boolean
+  modelInfo:    ModelInfo
+  memoryStats:  MemoryStats
+  isFromCache:  boolean
+  qualityScore?: number
+  gpuBackend?:  GpuBackend
 }
 
 function formatBytes(bytes: number): string {
@@ -74,7 +77,7 @@ function Row({ label, value, sub, badge }: {
   )
 }
 
-export default function ModelInfoPanel({ modelInfo, memoryStats, isFromCache }: ModelInfoPanelProps) {
+export default function ModelInfoPanel({ modelInfo, memoryStats, isFromCache, qualityScore, gpuBackend }: ModelInfoPanelProps) {
   const [expanded, setExpanded] = useState(false)
 
   const sizeHealth    = getSizeHealth(modelInfo.fileSize)
@@ -97,6 +100,31 @@ export default function ModelInfoPanel({ modelInfo, memoryStats, isFromCache }: 
         <span className="text-[11px] text-[var(--text-muted)] tabular-nums ml-auto shrink-0">
           {formatBytes(modelInfo.fileSize)}
         </span>
+        {qualityScore != null && (
+          <span
+            className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold border"
+            style={(() => {
+              const c = qualityScore >= 80 ? '#30A46C' : qualityScore >= 50 ? '#F5A623' : '#E5484D'
+              return { color: c, borderColor: `${c}44`, background: `${c}14` }
+            })()}
+            title={`Puntuación de calidad: ${qualityScore}/100`}
+          >
+            {qualityScore}
+          </span>
+        )}
+        {gpuBackend && gpuBackend !== 'detecting' && (
+          <span
+            className="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-mono font-semibold border leading-none"
+            style={
+              gpuBackend === 'webgpu'
+                ? { color: '#5E6AD2', borderColor: '#5E6AD244', background: '#5E6AD214' }
+                : { color: '#888', borderColor: '#88888844', background: '#88888814' }
+            }
+            title={gpuBackend === 'webgpu' ? 'WebGPU renderer activo — máximo rendimiento' : 'WebGL renderer'}
+          >
+            {gpuBackend === 'webgpu' ? 'WebGPU' : 'WebGL'}
+          </span>
+        )}
         <span className="text-[10px] opacity-50">{expanded ? '▲' : '▼'}</span>
       </button>
 
@@ -120,6 +148,34 @@ export default function ModelInfoPanel({ modelInfo, memoryStats, isFromCache }: 
               label="Memory"
               value={`${totalMemMB.toFixed(0)} MB`}
               sub={`${memoryStats.gpuEstimateMB.toFixed(0)} MB GPU`}
+            />
+          )}
+
+          {qualityScore != null && (
+            <Row
+              label="Calidad"
+              value={`${qualityScore} / 100`}
+              sub={qualityScore >= 80 ? 'Aceptable' : qualityScore >= 50 ? 'Mejorable' : 'Deficiente'}
+              badge={{
+                label: qualityScore >= 80 ? 'Bien' : qualityScore >= 50 ? 'Regular' : 'Bajo',
+                color: qualityScore >= 80 ? '#30A46C' : qualityScore >= 50 ? '#F5A623' : '#E5484D',
+                bg:    qualityScore >= 80 ? 'rgba(48,164,108,0.12)' : qualityScore >= 50 ? 'rgba(245,166,35,0.12)' : 'rgba(229,72,77,0.12)',
+                tip:   `Puntuación de calidad del modelo: ${qualityScore}/100`,
+              }}
+            />
+          )}
+
+          {gpuBackend && (
+            <Row
+              label="Renderer"
+              value={gpuBackend === 'detecting' ? 'Detecting…' : gpuBackend === 'webgpu' ? 'WebGPU' : 'WebGL'}
+              badge={
+                gpuBackend === 'webgpu'
+                  ? { label: 'GPU', color: '#5E6AD2', bg: 'rgba(94,106,210,0.12)', tip: 'WebGPU renderer activo — máximo rendimiento disponible en este dispositivo.' }
+                  : gpuBackend === 'webgl'
+                  ? { label: 'GL', color: '#888', bg: 'rgba(136,136,136,0.12)', tip: 'WebGL renderer. WebGPU no está disponible en este navegador.' }
+                  : undefined
+              }
             />
           )}
 

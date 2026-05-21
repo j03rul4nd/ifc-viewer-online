@@ -75,6 +75,7 @@ export default function App() {
     setClipPanelOpen, setClipPlaneCount, setPlansPanelOpen,
     activePlanViewId, setActivePlanViewId,
     setMeasurementPanelOpen, setActiveMeasurementTool,
+    gpuBackend, setGpuBackend,
   } = useUIStore()
 
   const {
@@ -161,6 +162,23 @@ export default function App() {
       setMobileSidebarOpen(true)
     }
   }, [selected, setMobileSidebarOpen])
+
+  // ── Detect WebGPU availability ────────────────────────────────────────────
+  useEffect(() => {
+    void (async () => {
+      try {
+        if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
+          const adapter = await (navigator as unknown as { gpu: { requestAdapter(): Promise<unknown> } }).gpu.requestAdapter()
+          setGpuBackend(adapter ? 'webgpu' : 'webgl')
+        } else {
+          setGpuBackend('webgl')
+        }
+      } catch {
+        setGpuBackend('webgl')
+      }
+    })()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -406,6 +424,8 @@ export default function App() {
                         modelInfo={displayInfo}
                         memoryStats={memoryStats}
                         isFromCache={isFromCache}
+                        qualityScore={result?.qualityScore}
+                        gpuBackend={gpuBackend}
                       />
                     ) : null
                   })()}
@@ -509,7 +529,7 @@ export default function App() {
                   )}
                 </div>
 
-                <ValidationPanel onJumpToElement={handleJumpToElement} />
+                <ValidationPanel onJumpToElement={handleJumpToElement} viewer={viewerRef.current} />
               </div>
               </Panel>
             </PanelGroup>

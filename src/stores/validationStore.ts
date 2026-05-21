@@ -1,7 +1,34 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import type { ValidationIssue, ValidationResult, SpatialNode, RulesConfig, ValidationStatus } from '../types'
-import { DEFAULT_RULES as DEFAULT_RULES_VALUE } from '../types'
+import type { ValidationIssue, ValidationResult, SpatialNode, RulesConfig, ValidationStatus, ValidationProfile } from '../types'
+import { DEFAULT_RULES as DEFAULT_RULES_VALUE, VALIDATION_PROFILES } from '../types'
+
+// ── Profile persistence ────────────────────────────────────────────────────────
+
+const PROFILE_STORAGE_KEY = 'ifc-validator:profile'
+const CUSTOM_PROFILES_KEY  = 'ifc-validator:custom-profiles'
+
+function loadPersistedProfileId(): string | null {
+  try { return localStorage.getItem(PROFILE_STORAGE_KEY) } catch { return null }
+}
+
+function savePersistedProfileId(id: string | null): void {
+  try {
+    if (id) localStorage.setItem(PROFILE_STORAGE_KEY, id)
+    else localStorage.removeItem(PROFILE_STORAGE_KEY)
+  } catch { /* quota */ }
+}
+
+function loadCustomProfiles(): ValidationProfile[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_PROFILES_KEY)
+    return raw ? (JSON.parse(raw) as ValidationProfile[]) : []
+  } catch { return [] }
+}
+
+function saveCustomProfiles(profiles: ValidationProfile[]): void {
+  try { localStorage.setItem(CUSTOM_PROFILES_KEY, JSON.stringify(profiles)) } catch { /* quota */ }
+}
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -78,6 +105,22 @@ interface ValidationStore {
 
   /** @deprecated Use setValidationStatus directly. */
   setRunning: (running: boolean) => void
+
+  // ── Profile management ───────────────────────────────────────────────────────
+
+  /** ID of the active predefined or custom profile, null = custom/manual rules */
+  activeProfileId: string | null
+  /** Select a predefined or custom profile by ID. Applies its RulesConfig and persists choice. */
+  setActiveProfile: (profileId: string | null) => void
+
+  /** User-defined profiles persisted in localStorage (max 5) */
+  customProfiles: ValidationProfile[]
+  addCustomProfile:    (profile: Omit<ValidationProfile, 'id'>) => void
+  removeCustomProfile: (profileId: string) => void
+
+  /** Whether to show the post-run coverage summary banner */
+  showCoverageSummary: boolean
+  dismissCoverageSummary: () => void
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -109,6 +152,9 @@ export const useValidationStore = create<ValidationStore>()(
       validationMode:          false,
       cachedResults:           {},
       cachedResultsByModel:    {},
+      activeProfileId:         loadPersistedProfileId(),
+      customProfiles:          loadCustomProfiles(),
+      showCoverageSummary:     false,
 
       setValidationStatus: (status, error) =>
         set(
@@ -133,7 +179,7 @@ export const useValidationStore = create<ValidationStore>()(
 
       setResult: (result) =>
         set(
-          { result, validationStatus: 'complete', isRunning: false, progress: 100 },
+          { result, validationStatus: 'complete', isRunning: false, progress: 100, showCoverageSummary: true },
           false,
           'setResult',
         ),
@@ -193,6 +239,58 @@ export const useValidationStore = create<ValidationStore>()(
           `clearValidationForModel:${modelId}`,
         ),
 
+      setActiveProfile: (profileId) => {
+        savePersistedProfileId(profileId)
+        if (profileId === null) {
+          return set({ activeProfileId: null }, false, 'setActiveProfile:null')
+        }
+        // Look in predefined profiles first, then custom profiles
+        const allProfiles = (s: { customProfiles: ValidationProfile[] }) =>
+          [...VALIDATION_PROFILES, ...s.customProfiles]
+        set(
+          (s) => {
+            const profile = allProfiles(s).find((p) => p.id === profileId)
+            if (!profile) return { activeProfileId: profileId }
+            return { activeProfileId: profileId, rules: profile.rules }
+          },
+          false,
+          `setActiveProfile:${profileId}`,
+        )
+      },
+
+      addCustomProfile: (profileData) =>
+        set(
+          (s) => {
+            if (s.customProfiles.length >= 5) return s
+            const id = `custom-${Date.now()}`
+            const profile: ValidationProfile = { ...profileData, id }
+            const next = [...s.customProfiles, profile]
+            saveCustomProfiles(next)
+            return { customProfiles: next }
+          },
+          false,
+          'addCustomProfile',
+        ),
+
+      removeCustomProfile: (profileId) =>
+        set(
+          (s) => {
+            const next = s.customProfiles.filter((p) => p.id !== profileId)
+            saveCustomProfiles(next)
+            const wasActive = s.activeProfileId === profileId
+            if (wasActive) savePersistedProfileId(null)
+            return {
+              customProfiles: next,
+              ...(wasActive ? { activeProfileId: null } : {}),
+            }
+          },
+          false,
+          `removeCustomProfile:${profileId}`,
+        ),
+
+      dismissCoverageSummary: () =>
+        set({ showCoverageSummary: false }, false, 'dismissCoverageSummary'),
+
       setRules: (rules) => set({ rules }, false, 'setRules'),
 
       setFilters: (filters) =>
@@ -228,6 +326,7 @@ export const useValidationStore = create<ValidationStore>()(
             activeValidationModelId: null,
             spatialTree:             [],
             cachedResultsByModel:    {},
+            showCoverageSummary:     false,
           },
           false,
           'reset',

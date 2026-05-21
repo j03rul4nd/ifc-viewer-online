@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUIStore } from '../stores/uiStore'
+import { createLogger } from '../lib/logger'
 import type { ViewerAPI } from '../lib/viewer'
+
+const log = createLogger('SectionPanel')
 
 interface SectionPanelProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -82,7 +85,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
       setAdding(true)
     } catch (err) {
       setOpError('Could not start clip-plane mode')
-      console.warn('[SectionPanel] startAddClipPlane:', err)
+      log.warn('startAddClipPlane:', err)
       try { viewerApiRef.current?.setClipCreationCallback(null) } catch { }
     }
   }
@@ -99,7 +102,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
       setTimeout(syncPlanes, 50)
     } catch (err) {
       setOpError('Failed to delete plane')
-      console.warn('[SectionPanel] deleteClipPlane:', err)
+      log.warn('deleteClipPlane:', err)
     }
   }
 
@@ -110,7 +113,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
       setTimeout(syncPlanes, 50)
     } catch (err) {
       setOpError('Failed to clear planes')
-      console.warn('[SectionPanel] clearClipPlanes:', err)
+      log.warn('clearClipPlanes:', err)
     }
   }
 
@@ -120,7 +123,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
       viewerApiRef.current?.toggleClipPlane(id, enabled)
       setPlanes((prev) => prev.map((p) => p.id === id ? { ...p, enabled } : p))
     } catch (err) {
-      console.warn('[SectionPanel] toggleClipPlane:', err)
+      log.warn('toggleClipPlane:', err)
       syncPlanes()
     }
   }

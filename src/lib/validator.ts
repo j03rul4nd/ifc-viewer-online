@@ -23,31 +23,84 @@ import { appBus }             from './event-bus'
 import { parseSpatialNodeArray } from './type-guards'
 import { parseValidationResultMsg, parseValidatorMsg } from './worker-schemas'
 import { WorkerError, ValidationError, toAppError, formatDevError } from './errors'
-import type { RulesConfig }        from '../types'
-import type { ValidatorOutMessage } from '../workers/validator.worker'
+import type { RulesConfig, ValidationResult, ValidationIssue } from '../types'
+import { RULE_METADATA }                      from '../types'
+import { recordValidationRun }                from './validation-analytics'
+import type { ValidatorOutMessage }            from '../workers/validator.worker'
+
+// ── Quality score ─────────────────────────────────────────────────────────────
+
+/** Penalty weights per category per severity */
+const CATEGORY_WEIGHTS: Record<string, Record<string, number>> = {
+  schema:         { error: 5, warning: 1.5, info: 0.3 },
+  spatial:        { error: 4, warning: 1.2, info: 0.2 },
+  quality:        { error: 3, warning: 1.0, info: 0.2 },
+  lod:            { error: 3, warning: 1.0, info: 0.2 },
+  iso19650:       { error: 3, warning: 0.8, info: 0.1 },
+  classification: { error: 2, warning: 0.6, info: 0.1 },
+  mep:            { error: 2, warning: 0.8, info: 0.1 },
+  clash:          { error: 4, warning: 1.5, info: 0.2 },
+}
+const DEFAULT_WEIGHTS = { error: 3, warning: 1, info: 0.2 }
+
+function calculateQualityScore(result: ValidationResult): number {
+  let penalty = 0
+  for (const issue of result.issues) {
+    const meta     = RULE_METADATA[issue.ruleId]
+    const weights  = (meta ? CATEGORY_WEIGHTS[meta.category] : null) ?? DEFAULT_WEIGHTS
+    penalty += weights[issue.severity] ?? 0
+  }
+  return Math.max(0, Math.round(100 - penalty))
+}
 
 const log = createLogger('Validator')
 
-// ── Singleton worker ──────────────────────────────────────────────────────────
+// ── Worker pool ───────────────────────────────────────────────────────────────
+// Two long-lived workers are kept warm to allow rule-parallel execution.
+// Pool slot 0 (primary): runs ~half the rules + spatial tree building.
+// Pool slot 1 (secondary): runs the other ~half, skipTree=true.
 
-let workerInstance: Worker | null = null
+const _pool: Array<Worker | null> = [null, null]
 
-function getWorker(): Worker {
-  if (!workerInstance) {
-    workerInstance = new Worker(
+function getPoolWorker(slot: 0 | 1): Worker {
+  if (!_pool[slot]) {
+    _pool[slot] = new Worker(
       new URL('../workers/validator.worker.ts', import.meta.url),
       { type: 'module' },
     )
+    _pool[slot]!.addEventListener('error', () => {
+      // Automatically reset slot so the next call spawns a fresh worker
+      _pool[slot] = null
+    })
   }
-  return workerInstance
+  return _pool[slot]!
 }
 
-/** Terminate and clear the validator worker singleton. */
+/** Terminate and clear the validator worker pool. */
 export function disposeValidatorWorker(): void {
-  workerInstance?.terminate()
-  workerInstance = null
-  log.debug('Worker disposed')
+  for (let i = 0; i < _pool.length; i++) {
+    _pool[i]?.terminate()
+    _pool[i] = null
+  }
+  log.debug('Worker pool disposed')
 }
+
+// ── Rule splitting helper ─────────────────────────────────────────────────────
+
+/**
+ * Build a filtered RulesConfig that only has the rules in `subset` set to true.
+ * Non-boolean config fields (namingConventionPatterns, requiredPsets, etc.) are preserved.
+ */
+function subsetRules(rules: RulesConfig, subset: Set<string>): RulesConfig {
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(rules)) {
+    result[key] = (typeof value === 'boolean') ? (value && subset.has(key)) : value
+  }
+  return result as RulesConfig
+}
+
+// Backward-compat alias — buildSpatialTree / runValidation used to call getWorker()
+function getWorker(): Worker { return getPoolWorker(0) }
 
 // Reject fn for the currently active runValidation() promise (null when idle)
 let activeReject: ((err: Error) => void) | null = null
@@ -313,9 +366,31 @@ export async function runValidation(modelId?: string, rules?: RulesConfig): Prom
 
   const bufferCopy = ifcBuffer!.slice(0)
 
-  let worker: Worker
+  // ── Rule splitting — distribute enabled rules across 2 pool workers ─────────
+  const enabledRuleKeys = Object.entries(activeRules)
+    .filter(([, v]) => v === true)
+    .map(([k]) => k)
+
+  const useTwoWorkers = enabledRuleKeys.length >= 4
+  const midpoint      = Math.ceil(enabledRuleKeys.length / 2)
+  const subset0       = new Set(enabledRuleKeys.slice(0, midpoint))
+  const subset1       = new Set(enabledRuleKeys.slice(midpoint))
+
+  const rules0 = useTwoWorkers ? subsetRules(activeRules, subset0) : activeRules
+  const rules1 = useTwoWorkers ? subsetRules(activeRules, subset1) : null
+
+  const started = Date.now()
+  log.info(
+    `Starting validation run ${id} for "${resolvedId ?? 'active'}" (${useTwoWorkers ? '2 workers' : '1 worker'})`,
+    'rules:', enabledRuleKeys,
+  )
+
+  // ── Acquire workers ────────────────────────────────────────────────────────
+  let worker0: Worker
+  let worker1: Worker | null = null
   try {
-    worker = getWorker()
+    worker0 = getPoolWorker(0)
+    if (useTwoWorkers) worker1 = getPoolWorker(1)
   } catch (err: unknown) {
     const appErr = toAppError(err, 'WORKER_INIT_FAILED')
     log.error('Worker creation failed:', formatDevError(appErr))
@@ -324,113 +399,178 @@ export async function runValidation(modelId?: string, rules?: RulesConfig): Prom
     throw appErr
   }
 
-  const started = Date.now()
-  log.info(
-    `Starting validation run ${id} for "${resolvedId ?? 'active'}"`,
-    'rules:', Object.keys(activeRules).filter((k) => (activeRules as Record<string, unknown>)[k] === true),
-  )
-
   return new Promise<void>((resolve, reject) => {
     activeReject = reject
 
+    // Track both workers completing (or just the one if no split)
+    let w0Done = false
+    let w1Done = !useTwoWorkers  // mark done immediately if not used
+    const w0Issues: ValidationIssue[] = []
+    const w1Issues: ValidationIssue[] = []
+    let w0Progress = 0
+    let w1Progress = 0
+    let w0Error: WorkerError | null = null
+
     const cleanup = (): void => {
       activeReject = null
-      worker.removeEventListener('message', handler)
-      worker.removeEventListener('error',   errorHandler)
+      worker0.removeEventListener('message', handler0)
+      worker0.removeEventListener('error',   errorHandler0)
+      worker1?.removeEventListener('message', handler1)
+      worker1?.removeEventListener('error',   errorHandler1)
     }
 
-    const handler = (e: MessageEvent<ValidatorOutMessage>): void => {
+    const tryFinalize = (): void => {
+      if (!w0Done || !w1Done) return
+
+      if (w0Error) {
+        // error already toasted by errorHandler0
+        cleanup()
+        reject(w0Error)
+        return
+      }
+
+      const durationMs  = Date.now() - started
+      const allIssues   = [...w0Issues, ...w1Issues]
+
+      const byRule: Record<string, number> = {}
+      let errors = 0, warnings = 0, info = 0
+      for (const issue of allIssues) {
+        byRule[issue.ruleId] = (byRule[issue.ruleId] ?? 0) + 1
+        if (issue.severity === 'error')        errors++
+        else if (issue.severity === 'warning') warnings++
+        else                                   info++
+      }
+
+      const mergedResult = {
+        issues:    allIssues,
+        stats:     { total: allIssues.length, errors, warnings, info, byRule },
+        durationMs,
+      }
+
+      const resultParsed = parseValidationResultMsg(mergedResult)
+      if (!resultParsed.ok) {
+        const errMsg = resultParsed.error.message
+        log.error('Invalid merged ValidationResult shape:', formatDevError(resultParsed.error))
+        toast(errMsg, 'error')
+        setValidationStatus('error', errMsg)
+        appBus.emit('validation:failed', { runId: id, error: errMsg })
+        cleanup()
+        reject(resultParsed.error)
+        return
+      }
+
+      const stampedResult = resolvedId
+        ? { ...resultParsed.data, issues: resultParsed.data.issues.map((issue) => ({ ...issue, modelId: resolvedId })) }
+        : resultParsed.data
+      const result = { ...stampedResult, qualityScore: calculateQualityScore(stampedResult) }
+
+      log.info(
+        `Validation complete for "${resolvedId ?? 'active'}" in ${durationMs}ms —`,
+        result.stats.total, 'issues',
+      )
+      setResult(result)
+
+      const storeSnap = useValidationStore.getState()
+      recordValidationRun({
+        timestamp:     Date.now(),
+        profileId:     storeSnap.activeProfileId,
+        rulesRun:      [...new Set(result.issues.map((i) => i.ruleId))],
+        durationMs:    result.durationMs,
+        issuesByRule:  result.stats.byRule,
+        qualityScore:  result.qualityScore ?? 100,
+        modelFileName: resolvedId ?? 'unknown',
+      })
+
+      if (cacheKey)   cacheResult(cacheKey, result)
+      if (resolvedId) cacheResultForModel(resolvedId, result)
+
+      appBus.emit('validation:complete', { runId: id, result, durationMs })
+      cleanup()
+      resolve()
+    }
+
+    // ── Worker 0 message handler ──────────────────────────────────────────────
+
+    const handler0 = (e: MessageEvent<ValidatorOutMessage>): void => {
       const raw = e.data
       if (!raw || raw.id !== id) return
 
       const parsed = parseValidatorMsg(raw)
-      if (!parsed.ok) {
-        log.warn('Dropping unrecognised worker message:', formatDevError(parsed.error))
-        return
-      }
+      if (!parsed.ok) { log.warn('Dropping unrecognised w0 message:', formatDevError(parsed.error)); return }
 
       match(parsed.data)
         .with({ type: 'tree' }, (msg) => {
           const tree = parseSpatialNodeArray(msg.tree, 'validator.worker/tree')
           log.debug(`Spatial tree received for "${resolvedId ?? 'active'}", nodes:`, tree.length)
-          if (resolvedId) {
-            setSpatialTreeForModel(resolvedId, tree)
-          } else {
-            setSpatialTree(tree)
-          }
+          if (resolvedId) setSpatialTreeForModel(resolvedId, tree)
+          else            setSpatialTree(tree)
         })
-
         .with({ type: 'partial' }, (msg) => {
-          // Stamp each partial issue with the modelId before storing
-          const stamped = resolvedId
-            ? msg.issues.map((issue) => ({ ...issue, modelId: resolvedId }))
-            : msg.issues
+          const stamped = resolvedId ? msg.issues.map((i) => ({ ...i, modelId: resolvedId })) : msg.issues
+          w0Issues.push(...stamped)
           addPartialIssues(stamped)
-          setProgress(msg.progress)
-          appBus.emit('validation:progress', { runId: id, progress: msg.progress })
+          w0Progress = msg.progress
+          const combined = Math.round((w0Progress + w1Progress) / (useTwoWorkers ? 2 : 1))
+          setProgress(Math.min(combined, 99))
+          appBus.emit('validation:progress', { runId: id, progress: combined })
         })
-
-        .with({ type: 'done' }, (msg) => {
-          const durationMs = Date.now() - started
-
-          const resultParsed = parseValidationResultMsg(msg.result)
-          if (!resultParsed.ok) {
-            const errMsg = resultParsed.error.message
-            log.error('Invalid ValidationResult shape:', formatDevError(resultParsed.error))
-            toast(errMsg, 'error')
-            setValidationStatus('error', errMsg)
-            appBus.emit('validation:failed', { runId: id, error: errMsg })
-            cleanup()
-            reject(resultParsed.error)
-            return
-          }
-
-          // Stamp all issues with the modelId
-          const result = resolvedId
-            ? {
-                ...resultParsed.data,
-                issues: resultParsed.data.issues.map((issue) => ({ ...issue, modelId: resolvedId })),
-              }
-            : resultParsed.data
-
-          log.info(
-            `Validation complete for "${resolvedId ?? 'active'}" in ${durationMs}ms —`,
-            result.stats.total, 'issues',
-          )
-          setResult(result)
-
-          // Cache under both the OPFS key and the modelId
-          if (cacheKey)    cacheResult(cacheKey, result)
-          if (resolvedId)  cacheResultForModel(resolvedId, result)
-
-          appBus.emit('validation:complete', { runId: id, result, durationMs })
-          cleanup()
-          resolve()
-        })
-
+        .with({ type: 'done' }, () => { w0Done = true; tryFinalize() })
         .with({ type: 'error' }, (msg) => {
-          const workerErr = new WorkerError('WORKER_CRASHED', msg.message)
-          log.error('Worker reported error:', formatDevError(workerErr))
+          w0Error = new WorkerError('WORKER_CRASHED', msg.message)
+          log.error('Worker 0 reported error:', formatDevError(w0Error))
           toast(`Validation error: ${msg.message}`, 'warning')
           setValidationStatus('error', msg.message)
           appBus.emit('validation:failed', { runId: id, error: msg.message })
-          cleanup()
-          reject(workerErr)
+          w0Done = true; w1Done = true
+          tryFinalize()
         })
-
-        .with({ type: 'tree-done' },    () => { /* no-op during full validation */ })
-        .with({ type: 'takeoff-done' }, () => { /* takeoff runs on a separate worker */ })
+        .with({ type: 'tree-done' },    () => { /* no-op */ })
+        .with({ type: 'takeoff-done' }, () => { /* no-op */ })
         .exhaustive()
     }
 
-    const errorHandler = (e: ErrorEvent): void => {
-      disposeValidatorWorker()
+    // ── Worker 1 message handler ──────────────────────────────────────────────
+
+    const handler1 = (e: MessageEvent<ValidatorOutMessage>): void => {
+      const raw = e.data
+      if (!raw || raw.id !== id) return
+
+      const parsed = parseValidatorMsg(raw)
+      if (!parsed.ok) { log.warn('Dropping unrecognised w1 message:', formatDevError(parsed.error)); return }
+
+      match(parsed.data)
+        .with({ type: 'tree' },         () => { /* worker 1 skips tree, but guard here anyway */ })
+        .with({ type: 'partial' }, (msg) => {
+          const stamped = resolvedId ? msg.issues.map((i) => ({ ...i, modelId: resolvedId })) : msg.issues
+          w1Issues.push(...stamped)
+          addPartialIssues(stamped)
+          w1Progress = msg.progress
+          const combined = Math.round((w0Progress + w1Progress) / 2)
+          setProgress(Math.min(combined, 99))
+          appBus.emit('validation:progress', { runId: id, progress: combined })
+        })
+        .with({ type: 'done' }, () => { w1Done = true; tryFinalize() })
+        .with({ type: 'error' }, (msg) => {
+          // Secondary worker error: log it but don't fail the whole run (primary results still valid)
+          log.warn('Worker 1 reported error (non-fatal):', msg.message)
+          w1Done = true
+          tryFinalize()
+        })
+        .with({ type: 'tree-done' },    () => { /* no-op */ })
+        .with({ type: 'takeoff-done' }, () => { /* no-op */ })
+        .exhaustive()
+    }
+
+    // ── Error handlers ────────────────────────────────────────────────────────
+
+    const errorHandler0 = (e: ErrorEvent): void => {
+      _pool[0] = null
       const workerErr = new WorkerError(
         'WORKER_CRASHED',
         `Validator worker crashed: ${e.message}. Validation is temporarily unavailable.`,
         { filename: e.filename, lineno: e.lineno, colno: e.colno },
       )
-      log.error('Worker script error — disposing instance:', formatDevError(workerErr))
+      log.error('Worker 0 script error — disposing instance:', formatDevError(workerErr))
       toast(workerErr.message, 'error')
       setValidationStatus('error', workerErr.message)
       appBus.emit('validation:failed', { runId: id, error: workerErr.message })
@@ -438,12 +578,32 @@ export async function runValidation(modelId?: string, rules?: RulesConfig): Prom
       reject(workerErr)
     }
 
-    worker.addEventListener('message', handler)
-    worker.addEventListener('error',   errorHandler)
+    const errorHandler1 = (e: ErrorEvent): void => {
+      _pool[1] = null
+      log.warn('Worker 1 script error (non-fatal):', e.message)
+      w1Done = true
+      tryFinalize()
+    }
 
-    ;(worker.postMessage as (msg: unknown, transfer: Transferable[]) => void)(
-      { type: 'validate', id, buffer: bufferCopy, rules: activeRules },
+    // ── Wire listeners + dispatch ─────────────────────────────────────────────
+
+    worker0.addEventListener('message', handler0)
+    worker0.addEventListener('error',   errorHandler0)
+    worker1?.addEventListener('message', handler1)
+    worker1?.addEventListener('error',   errorHandler1)
+
+    // Buffer: worker 0 gets the transfer; worker 1 gets a slice (safe copy)
+    const buf1 = useTwoWorkers ? bufferCopy.slice(0) : null
+
+    ;(worker0.postMessage as (msg: unknown, transfer: Transferable[]) => void)(
+      { type: 'validate', id, buffer: bufferCopy, rules: rules0, skipTree: false },
       [bufferCopy],
     )
+    if (worker1 && rules1 && buf1) {
+      ;(worker1.postMessage as (msg: unknown, transfer: Transferable[]) => void)(
+        { type: 'validate', id, buffer: buf1, rules: rules1, skipTree: true },
+        [buf1],
+      )
+    }
   })
 }

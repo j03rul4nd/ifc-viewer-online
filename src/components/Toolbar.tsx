@@ -14,7 +14,10 @@ import {
   exportAsIfc, exportAsGlb, downloadBlob,
   getDiffsForModel,
 } from '../lib/diffStore'
+import { createLogger } from '../lib/logger'
 import type { ViewerAPI } from '../lib/viewer'
+
+const log = createLogger('Toolbar')
 
 interface ToolbarProps {
   fileName: string | null
@@ -174,7 +177,7 @@ export default function Toolbar({
       downloadBlob(new Blob([bytes], { type: 'application/x-step' }), `${stem}-exported.ifc`)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      console.error('[Export] IFC export failed:', msg)
+      log.error('IFC export failed:', msg)
       toast(`IFC export failed: ${msg}`, 'error')
     }
     finally { setExporting(false) }
@@ -193,7 +196,7 @@ export default function Toolbar({
       downloadBlob(blob, `${stem}.glb`)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      console.error('[Export] GLB export failed:', msg)
+      log.error('GLB export failed:', msg)
       toast(`GLB export failed: ${msg}`, 'error')
     }
     finally { setExporting(false) }

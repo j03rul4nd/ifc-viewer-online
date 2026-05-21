@@ -54,8 +54,9 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(props, ref)
 
   // ── Imperative handle for parent controls ────────────────────────────────
   useImperativeHandle(ref, () => ({
-    resetCamera:   () => apiRef.current?.resetCamera(),
-    frameCategory: (id) => apiRef.current?.frameCategory(id),
+    resetCamera:          () => apiRef.current?.resetCamera(),
+    frameCategory:        (id) => apiRef.current?.frameCategory(id),
+    setCameraViewpoint:   (position, direction) => apiRef.current?.setCameraViewpoint(position, direction),
   }), [])
 
   // The outer div owns the absolute-fill layout. PostproductionRenderer

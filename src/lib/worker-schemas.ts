@@ -45,9 +45,10 @@ const ValidationStatsSchema = z.object({
  * Fields: issues, stats (with byRule), durationMs
  */
 const ValidationResultSchema = z.object({
-  issues:     z.array(ValidationIssueSchema),
-  stats:      ValidationStatsSchema,
-  durationMs: z.number().nonnegative(),
+  issues:       z.array(ValidationIssueSchema),
+  stats:        ValidationStatsSchema,
+  durationMs:   z.number().nonnegative(),
+  qualityScore: z.number().min(0).max(100).optional(),
 })
 
 const SpatialElementSchema = z.object({
@@ -168,6 +169,83 @@ export const ExportOutMsgSchema = z.discriminatedUnion('type', [
   ExportDoneMsgSchema,
   ExportErrorMsgSchema,
 ])
+
+// ── BCF parser worker OUT messages ────────────────────────────────────────────
+
+const BcfViewpointSchema = z.object({
+  guid:             z.string(),
+  snapshotBase64:   z.string().optional(),
+  cameraPosition:   z.object({ x: z.number(), y: z.number(), z: z.number() }).optional(),
+  cameraDirection:  z.object({ x: z.number(), y: z.number(), z: z.number() }).optional(),
+  cameraUp:         z.object({ x: z.number(), y: z.number(), z: z.number() }).optional(),
+  fieldOfView:      z.number().optional(),
+  aspectRatio:      z.number().optional(),
+  componentGuids:   z.array(z.string()).optional(),
+})
+
+const BcfCommentSchema = z.object({
+  guid:          z.string(),
+  date:          z.string(),
+  author:        z.string(),
+  text:          z.string(),
+  viewpointGuid: z.string().optional(),
+  local:         z.boolean().optional(),
+})
+
+const BcfTopicSchema = z.object({
+  guid:               z.string(),
+  title:              z.string(),
+  description:        z.string().optional(),
+  status:             z.string().optional(),
+  topicType:          z.string().optional(),
+  priority:           z.string().optional(),
+  creationDate:       z.string().optional(),
+  creationAuthor:     z.string().optional(),
+  assignedTo:         z.string().optional(),
+  labels:             z.array(z.string()).optional(),
+  viewpoints:         z.array(BcfViewpointSchema),
+  comments:           z.array(BcfCommentSchema),
+  source:             z.enum(['imported', 'generated']),
+  validationIssueId:  z.string().optional(),
+})
+
+export const BcfParseDoneMsgSchema = z.object({
+  type:    z.literal('done'),
+  id:      z.string(),
+  topics:  z.array(BcfTopicSchema),
+  version: z.string(),
+})
+
+export const BcfParseErrorMsgSchema = z.object({
+  type:    z.literal('error'),
+  id:      z.string(),
+  message: z.string(),
+})
+
+export const BcfParserOutMsgSchema = z.discriminatedUnion('type', [
+  BcfParseDoneMsgSchema,
+  BcfParseErrorMsgSchema,
+])
+
+export type BcfParserOutMsg  = z.infer<typeof BcfParserOutMsgSchema>
+export type BcfParseDoneMsg  = z.infer<typeof BcfParseDoneMsgSchema>
+
+export function parseBcfParserMsg(raw: unknown): ParseResult<BcfParserOutMsg> {
+  const result = BcfParserOutMsgSchema.safeParse(raw)
+  if (!result.success) {
+    const formatted = result.error.format()
+    log.warn('[worker-schemas] Invalid BCF parser message:', formatted)
+    return {
+      ok: false,
+      error: new WorkerError(
+        'WORKER_INVALID_MSG',
+        `BCF parser worker sent an unrecognised message: ${result.error.issues[0]?.message ?? 'unknown'}`,
+        { raw, zodErrors: formatted },
+      ),
+    }
+  }
+  return { ok: true, data: result.data }
+}
 
 // ── Inferred types (always derived from schemas — no manual duplication) ───────
 

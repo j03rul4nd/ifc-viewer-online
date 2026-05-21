@@ -13,7 +13,10 @@ import {
   getDiffsForModel, getDiffCountForModel,
 } from '../lib/diffStore'
 import { toast } from '../stores/toastStore'
+import { createLogger } from '../lib/logger'
 import type { ViewerAPI } from '../lib/viewer'
+
+const log = createLogger('ExportModal')
 
 interface ExportModalProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -78,7 +81,7 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
       return true
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      console.error('[ExportModal] IFC export failed:', msg)
+      log.error('IFC export failed:', msg)
       toast(`IFC export failed: ${msg}`, 'error')
       setStatus(modelId, 'ifc', 'error')
       return false
@@ -98,7 +101,7 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
       return true
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      console.error('[ExportModal] GLB export failed:', msg)
+      log.error('GLB export failed:', msg)
       toast(`GLB export failed: ${msg}`, 'error')
       setStatus(modelId, 'glb', 'error')
       return false

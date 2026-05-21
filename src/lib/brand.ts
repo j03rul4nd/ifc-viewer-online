@@ -10,6 +10,10 @@
 //
 // The brand is erased at runtime — zero overhead.
 
+import { createLogger } from './logger'
+
+const log = createLogger('Brand')
+
 declare const __brand: unique symbol
 export type Brand<T, B extends string> = T & { readonly [__brand]: B }
 
@@ -33,14 +37,14 @@ export type IfcModelId = Brand<number, 'IfcModelId'>
 
 export function asExpressId(n: number): ExpressId {
   if (import.meta.env.DEV && (!Number.isInteger(n) || n < 0)) {
-    console.warn(`[Brand] Suspicious ExpressId value: ${n}`)
+    log.once(`bad-express-id:${n}`, 'warn', `Suspicious ExpressId value: ${n}`)
   }
   return n as ExpressId
 }
 
 export function asGlobalId(s: string): GlobalId {
   if (import.meta.env.DEV && !/^[0-9A-Za-z_$]{1,22}$/.test(s)) {
-    console.warn(`[Brand] Suspicious GlobalId format: "${s}"`)
+    log.once(`bad-global-id:${s}`, 'warn', `Suspicious GlobalId format: "${s}"`)
   }
   return s as GlobalId
 }
@@ -51,7 +55,7 @@ export function asCacheKey(s: string): CacheKey {
 
 export function asIfcModelId(n: number): IfcModelId {
   if (import.meta.env.DEV && n === -1) {
-    console.warn('[Brand] IfcModelId is -1 — model may not be open')
+    log.once('model-id-minus-one', 'warn', 'IfcModelId is -1 — model may not be open')
   }
   return n as IfcModelId
 }
