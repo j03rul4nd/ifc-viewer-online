@@ -33,7 +33,13 @@ import BorderGlow    from './reactbits/BorderGlow'
 import ShapeGrid     from './reactbits/ShapeGrid'
 import GradualBlur   from './reactbits/GradualBlur'
 
-interface LandingProps { onLaunch: () => void }
+interface LandingProps {
+  onLaunch: () => void
+  // Opens the upload overlay so the user can pick their own IFC file.
+  // Used by "Open an IFC file" CTAs. onLaunch is kept for nav-bar buttons
+  // that demo the app by loading the bundled sample file.
+  onOpenUpload: () => void
+}
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const GRADIENT_HERO    = ['#5E6AD2', '#A78BFA', '#6FB8D9', '#5E6AD2'] as const
@@ -209,7 +215,7 @@ const FEATURES = [
 ] as const
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function Landing({ onLaunch }: LandingProps) {
+export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
   return (
     <Tooltip.Provider delayDuration={300}>
       {/*
@@ -396,7 +402,7 @@ export default function Landing({ onLaunch }: LandingProps) {
               color="rgba(94,106,210,0.9)"
               speed="5s"
               thickness={1}
-              onClick={onLaunch}
+              onClick={onOpenUpload}
               className="cursor-pointer"
             >
               <span className="inline-flex items-center gap-2 text-[13px] sm:text-[14px] font-medium">
@@ -839,12 +845,12 @@ export default function Landing({ onLaunch }: LandingProps) {
                 color="rgba(94,106,210,0.9)"
                 speed="4s"
                 thickness={1}
-                onClick={onLaunch}
+                onClick={onOpenUpload}
                 className="cursor-pointer"
               >
                 <span className="inline-flex items-center gap-2 text-[14px] sm:text-[15px] font-medium">
-                  <Icons.ArrowRight size={15} />
-                  Open the viewer
+                  <Icons.Upload size={15} />
+                  Open an IFC file
                 </span>
               </StarBorder>
             </motion.div>

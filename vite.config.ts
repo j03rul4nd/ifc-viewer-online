@@ -23,17 +23,39 @@ export default defineConfig({
   plugins: [react(), copyWebIfcWasm()],
   base: '/ifc-viewer-online/',
   resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+      // ── Single Three.js instance fix ─────────────────────────────────────────
+      // @thatopen/* packages are excluded from optimizeDeps (see below), so Vite
+      // serves them as raw ESM directly from node_modules.  When they import
+      // 'three' the bare-specifier would resolve to the raw ESM file on disk,
+      // while our app code imports the pre-bundled version from .vite/deps.
+      // Two different module URLs → two Three.js instances → __THREE__ warning.
+      //
+      // IMPORTANT: regex anchored to ^three$ so ONLY the bare specifier is
+      // aliased.  A plain string key is a prefix match in Vite and would also
+      // rewrite 'three/addons/...' → 'three.module.js/addons/...' (file, not
+      // directory) causing an ENOENT crash on startup.
+      { find: /^three$/, replacement: path.resolve(__dirname, 'node_modules/three/build/three.module.js') },
+    ],
     dedupe: ['three'],
   },
   assetsInclude: ['**/*.wasm'],
   optimizeDeps: {
+    // @thatopen packages are large and use dynamic imports that conflict with
+    // Vite's pre-bundler; serve them as raw ESM.  The 'three' alias above
+    // ensures they all share the same Three.js instance with the app code.
     exclude: [
       '@thatopen/components',
       '@thatopen/components-front',
       '@thatopen/fragments',
       'web-ifc',
     ],
+    // Force Vite to pre-bundle three so its .vite/deps chunk exists before the
+    // excluded packages request it.  Without this, on a cold start the
+    // excluded packages might race against three's pre-bundling and end up
+    // with an unresolved dependency.
+    include: ['three'],
   },
   worker: {
     format: 'es',

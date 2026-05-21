@@ -6,6 +6,7 @@
 import React, {
   useState, useRef, useEffect, useMemo, useCallback, useLayoutEffect,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { useShallow } from 'zustand/react/shallow'
 import { useValidationStore } from '../stores/validationStore'
 import { useEditorStore } from '../stores/editorStore'
@@ -422,36 +423,156 @@ interface ProfileDropdownProps {
 }
 
 function ProfileDropdown({ activeProfileId, customProfiles, onSelect, onPersonalize }: ProfileDropdownProps) {
-  const [open, setOpen] = useState(false)
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
-  const ref = useRef<HTMLDivElement>(null)
+  const [open, setOpen]       = useState(false)
+  const triggerRef            = useRef<HTMLButtonElement>(null)
+  const dropdownRef           = useRef<HTMLDivElement>(null)
+  // Bounding rect of the row-level container used to size + position the portal
+  const [dropRect, setDropRect] = useState<{ bottom: number; left: number; width: number } | null>(null)
 
+  // Compute position from the trigger's nearest [data-profile-row] ancestor
+  const computeRect = useCallback(() => {
+    const row = triggerRef.current?.closest<HTMLElement>('[data-profile-row]')
+    if (!row) return
+    const r = row.getBoundingClientRect()
+    setDropRect({
+      bottom: window.innerHeight - r.top + 4,  // gap above the row
+      left:   r.left + 12,                     // row's px-3 (12px) left padding
+      width:  r.width - 24,                    // subtract both sides of px-3
+    })
+  }, [])
+
+  const handleToggle = () => {
+    if (!open) computeRect()
+    setOpen((v) => !v)
+  }
+
+  // Re-compute on resize while open
+  useEffect(() => {
+    if (!open) return
+    window.addEventListener('resize', computeRect, { passive: true })
+    return () => window.removeEventListener('resize', computeRect)
+  }, [open, computeRect])
+
+  // Close on outside click (check both trigger area and the portal panel)
   useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      const t = e.target as Node
+      const inTrigger   = triggerRef.current?.contains(t)
+      const inDropdown  = dropdownRef.current?.contains(t)
+      if (!inTrigger && !inDropdown) setOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  const allProfiles = [...VALIDATION_PROFILES, ...customProfiles]
+  const allProfiles  = [...VALIDATION_PROFILES, ...customProfiles]
   const activeProfile = activeProfileId ? allProfiles.find((p) => p.id === activeProfileId) : null
 
+  // ── Portal dropdown ── rendered at document.body level to escape
+  // any overflow:hidden ancestor (Panel, flex containers, etc.)
+  const dropdownPortal = open && dropRect ? createPortal(
+    <div
+      ref={dropdownRef}
+      className="fixed rounded-xl border border-[var(--border)] bg-[rgba(18,18,24,0.97)] backdrop-blur-[16px] flex flex-col"
+      style={{
+        zIndex:    9999,
+        bottom:    dropRect.bottom,
+        left:      dropRect.left,
+        width:     dropRect.width,
+        maxHeight: 'min(60dvh, 480px)',
+        boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
+      }}
+    >
+      {/* Scrollable profile grid */}
+      <div className="overflow-y-auto flex-1 p-2">
+        <div className="grid grid-cols-2 gap-1.5">
+          {allProfiles.map((profile) => {
+            const isActive = activeProfileId === profile.id
+            return (
+              <button
+                key={profile.id}
+                onClick={() => { onSelect(isActive ? null : profile.id); setOpen(false) }}
+                className="relative flex flex-col items-start gap-1 p-2.5 rounded-lg text-left transition-all cursor-pointer min-w-0"
+                style={
+                  isActive
+                    ? { background: 'var(--accent)22', border: `1px solid var(--accent)` }
+                    : { background: 'var(--surface-2)', border: '1px solid var(--border)' }
+                }
+              >
+                {isActive && (
+                  <span
+                    className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: 'var(--accent)' }}
+                  >
+                    <svg width="7" height="7" viewBox="0 0 7 7" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 3.5l1.5 1.5 3.5-3" />
+                    </svg>
+                  </span>
+                )}
+                <div className="flex items-center gap-1.5 w-full min-w-0" style={{ paddingRight: isActive ? '1.25rem' : 0 }}>
+                  <span className="text-[14px] leading-none shrink-0">{profile.icon}</span>
+                  <span className="text-[11px] font-semibold truncate" style={{ color: isActive ? 'var(--accent)' : 'var(--text)' }}>
+                    {profile.name}
+                  </span>
+                </div>
+                <p className="text-[9px] text-[var(--text-faint)] leading-tight line-clamp-2 w-full">
+                  {profile.description}
+                </p>
+                <div className="flex flex-wrap gap-0.5 mt-0.5 w-full">
+                  {profile.coverageTypes.slice(0, 4).map((cat) => (
+                    <span
+                      key={cat}
+                      className="text-[8px] px-1 rounded font-mono leading-tight whitespace-nowrap"
+                      style={{ background: 'var(--accent)14', color: 'var(--accent)' }}
+                    >
+                      {cat}
+                    </span>
+                  ))}
+                  {profile.coverageTypes.length > 4 && (
+                    <span className="text-[8px] text-[var(--text-faint)] font-mono">
+                      +{profile.coverageTypes.length - 4}
+                    </span>
+                  )}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Footer: "Personalizar" lives here to free the header row */}
+      <div className="border-t border-[var(--border)] p-2 shrink-0">
+        <button
+          onClick={() => { setOpen(false); onPersonalize() }}
+          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-[11px] font-medium border border-dashed border-[var(--border)] text-[var(--text-faint)] hover:text-[var(--text-dim)] hover:border-[var(--text-dim)] transition-colors cursor-pointer"
+        >
+          <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M4.5 1.5v6M1.5 4.5h6" />
+          </svg>
+          Personalizar perfil
+          <span className="ml-auto text-[9px] font-mono opacity-60">{customProfiles.length}/5</span>
+        </button>
+      </div>
+    </div>,
+    document.body,
+  ) : null
+
   return (
-    <div ref={ref} className="relative flex items-center gap-1 min-w-0">
-      {/* Trigger button */}
+    <div className="flex items-center gap-1 min-w-0 flex-1">
+      {/* Trigger */}
       <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-[11px] font-medium border transition-colors min-w-0 cursor-pointer"
+        ref={triggerRef}
+        onClick={handleToggle}
+        className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-[11px] font-medium border transition-colors min-w-0 flex-1 cursor-pointer text-left"
         style={
           activeProfileId
-            ? { color: 'var(--accent)', borderColor: 'var(--accent)44', background: 'var(--accent)10', maxWidth: 180 }
-            : { color: 'var(--text-dim)', borderColor: 'var(--border)', background: 'transparent', maxWidth: 180 }
+            ? { color: 'var(--accent)', borderColor: 'var(--accent)44', background: 'var(--accent)10' }
+            : { color: 'var(--text-dim)', borderColor: 'var(--border)', background: 'transparent' }
         }
       >
-        <span className="truncate">
-          {activeProfile ? `${activeProfile.icon} ${activeProfile.name}` : 'Seleccionar perfil'}
+        <span className="truncate flex-1">
+          {activeProfile ? `${activeProfile.icon} ${activeProfile.name}` : 'Seleccionar perfil…'}
         </span>
         <svg
           width="10" height="10" viewBox="0 0 10 10" fill="currentColor" className="shrink-0 opacity-60"
@@ -461,7 +582,7 @@ function ProfileDropdown({ activeProfileId, customProfiles, onSelect, onPersonal
         </svg>
       </button>
 
-      {/* Clear button */}
+      {/* Clear */}
       {activeProfileId && (
         <button
           onClick={() => onSelect(null)}
@@ -474,88 +595,7 @@ function ProfileDropdown({ activeProfileId, customProfiles, onSelect, onPersonal
         </button>
       )}
 
-      {/* Personalizar button */}
-      <button
-        onClick={() => { setOpen(false); onPersonalize() }}
-        className="flex items-center gap-1 px-2.5 h-8 rounded-lg text-[11px] font-medium border border-dashed border-[var(--border)] text-[var(--text-faint)] hover:text-[var(--text-dim)] hover:border-[var(--text-dim)] transition-colors shrink-0 cursor-pointer"
-        title={`Crear perfil personalizado (${customProfiles.length}/5)`}
-      >
-        <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-          <path d="M4.5 1.5v6M1.5 4.5h6" />
-        </svg>
-        <span className="hidden sm:inline">Personalizar</span>
-      </button>
-
-      {/* Dropdown panel — opens upward */}
-      {open && (
-        <div
-          className="absolute bottom-full left-0 mb-1.5 z-50 rounded-xl border border-[var(--border)] bg-[rgba(18,18,24,0.97)] backdrop-blur-[16px] p-2"
-          style={{ minWidth: 280, maxWidth: 'min(440px, calc(100vw - 24px))', boxShadow: '0 -8px 32px rgba(0,0,0,0.4)' }}
-        >
-          <div className="grid grid-cols-2 gap-1.5 min-w-0">
-            {allProfiles.map((profile) => {
-              const isActive = activeProfileId === profile.id
-              const isHovered = hoveredId === profile.id
-              return (
-                <button
-                  key={profile.id}
-                  onClick={() => { onSelect(isActive ? null : profile.id); setOpen(false) }}
-                  onMouseEnter={() => setHoveredId(profile.id)}
-                  onMouseLeave={() => setHoveredId(null)}
-                  className="relative flex flex-col items-start gap-1 p-2.5 rounded-lg text-left transition-all cursor-pointer min-w-0"
-                  style={
-                    isActive
-                      ? { background: 'var(--accent)22', border: `1px solid var(--accent)` }
-                      : isHovered
-                        ? { background: 'var(--border-strong)', border: '1px solid var(--border-strong)' }
-                        : { background: 'var(--surface-2)', border: '1px solid var(--border)' }
-                  }
-                >
-                  {/* Selected checkmark */}
-                  {isActive && (
-                    <span
-                      className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0"
-                      style={{ background: 'var(--accent)' }}
-                    >
-                      <svg width="7" height="7" viewBox="0 0 7 7" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 3.5l1.5 1.5 3.5-3" />
-                      </svg>
-                    </span>
-                  )}
-                  <div className="flex items-center gap-1.5 w-full min-w-0" style={{ paddingRight: isActive ? '1.25rem' : 0 }}>
-                    <span className="text-[14px] leading-none shrink-0">{profile.icon}</span>
-                    <span
-                      className="text-[11px] font-semibold truncate"
-                      style={{ color: isActive ? 'var(--accent)' : 'var(--text)' }}
-                    >
-                      {profile.name}
-                    </span>
-                  </div>
-                  <p className="text-[9px] text-[var(--text-faint)] leading-tight line-clamp-2 w-full">
-                    {profile.description}
-                  </p>
-                  <div className="flex flex-wrap gap-0.5 mt-0.5 w-full">
-                    {profile.coverageTypes.slice(0, 4).map((cat) => (
-                      <span
-                        key={cat}
-                        className="text-[8px] px-1 rounded font-mono leading-tight whitespace-nowrap"
-                        style={{ background: 'var(--accent)14', color: 'var(--accent)' }}
-                      >
-                        {cat}
-                      </span>
-                    ))}
-                    {profile.coverageTypes.length > 4 && (
-                      <span className="text-[8px] text-[var(--text-faint)] font-mono">
-                        +{profile.coverageTypes.length - 4}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
+      {dropdownPortal}
     </div>
   )
 }
@@ -810,10 +850,12 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
 
   // ── Resize state ──────────────────────────────────────────────────────
 
-  // Lazy initializer: clamp default to 82 vh so we never start taller than
-  // the viewport even on very small screens.
+  // Lazy initializer: on mobile start at MIN_PANEL_H so the 3D canvas keeps
+  // as much vertical space as possible when the panel is first opened.
+  // On desktop clamp to 82 dvh so we never start taller than the viewport.
   const [panelHeight, setPanelHeight] = useState<number>(() => {
     if (typeof window === 'undefined') return DEFAULT_PANEL_H
+    if (window.innerWidth < 768) return MIN_PANEL_H
     return Math.min(DEFAULT_PANEL_H, Math.floor(window.innerHeight * 0.82))
   })
   const panelHRef   = useRef(panelHeight)
@@ -829,44 +871,52 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     setPanelHeight(clamped)
   }, [])
 
-  const startResize = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    const startY = e.clientY
-    const startH = panelHRef.current
+  // ── Resize grip (native DOM, bypasses React delegation) ─────────────────
+  // We attach the pointerdown listener directly to the DOM node instead of
+  // using React's onPointerDown synthetic event.  React 18 delegates events
+  // to the root container — if Three.js's OrbitControls calls
+  // stopPropagation() on any pointer event between the grip and the root,
+  // React's handler never fires.  A native listener on the element itself
+  // fires in the TARGET phase (before any propagation can be stopped).
+  const gripRef = useRef<HTMLDivElement>(null)
 
-    // Prevent text selection and lock cursor during drag
-    document.body.style.userSelect = 'none'
-    document.body.style.cursor = 'ns-resize'
+  useEffect(() => {
+    const el = gripRef.current
+    if (!el) return
 
-    const cleanup = (): void => {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup',   cleanup)
-      document.body.style.userSelect = ''
-      document.body.style.cursor = ''
-    }
-    const onMove = (ev: MouseEvent): void => {
-      // Panel is bottom-anchored → drag up (negative deltaY) increases height
-      updatePanelHeight(startH + (startY - ev.clientY))
-    }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup',   cleanup)
-  }, [updatePanelHeight])
+    const handleDown = (e: PointerEvent) => {
+      if (e.button > 0) return          // ignore right / middle click
+      e.preventDefault()
+      e.stopPropagation()               // prevent OrbitControls from activating
 
-  const startTouchResize = useCallback((e: React.TouchEvent) => {
-    const startY = e.touches[0].clientY
-    const startH = panelHRef.current
+      const startY = e.clientY
+      const startH = panelHRef.current
 
-    const cleanup = (): void => {
-      window.removeEventListener('touchmove', onMove)
-      window.removeEventListener('touchend',  cleanup)
-      window.removeEventListener('touchcancel', cleanup)
+      // Pointer capture routes all future move/up events here even when the
+      // cursor drifts over the Three.js canvas.
+      try { el.setPointerCapture(e.pointerId) } catch { /* already released */ }
+
+      document.body.style.userSelect = 'none'
+      document.body.style.cursor     = 'ns-resize'
+
+      const handleMove = (ev: PointerEvent) => {
+        // Panel is bottom-anchored → drag UP decreases ev.clientY → height grows
+        updatePanelHeight(startH + (startY - ev.clientY))
+      }
+      const handleUp = () => {
+        el.removeEventListener('pointermove',   handleMove)
+        el.removeEventListener('pointerup',     handleUp)
+        el.removeEventListener('pointercancel', handleUp)
+        document.body.style.userSelect = ''
+        document.body.style.cursor     = ''
+      }
+      el.addEventListener('pointermove',   handleMove)
+      el.addEventListener('pointerup',     handleUp)
+      el.addEventListener('pointercancel', handleUp)
     }
-    const onMove = (ev: TouchEvent): void => {
-      updatePanelHeight(startH + (startY - ev.touches[0].clientY))
-    }
-    window.addEventListener('touchmove',   onMove,   { passive: true })
-    window.addEventListener('touchend',    cleanup)
-    window.addEventListener('touchcancel', cleanup)
+
+    el.addEventListener('pointerdown', handleDown)
+    return () => el.removeEventListener('pointerdown', handleDown)
   }, [updatePanelHeight])
 
   // ── Data ──────────────────────────────────────────────────────────────
@@ -1073,13 +1123,12 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   return (
     <div
       className="flex flex-col border-t border-[var(--border)] bg-[var(--surface)] shrink-0"
-      style={{ height: panelHeight, minHeight: MIN_PANEL_H, maxHeight: '82dvh' }}
+      style={{ height: panelHeight, minHeight: MIN_PANEL_H, maxHeight: 'min(82dvh, calc(100% - 120px))' }}
     >
       {/* ── Resize grip ── */}
       <div
-        onMouseDown={startResize}
-        onTouchStart={startTouchResize}
-        className="h-3 shrink-0 cursor-ns-resize flex items-center justify-center group hover:bg-[var(--accent)]14 active:bg-[var(--accent)]20 transition-colors select-none"
+        ref={gripRef}
+        className="h-3 shrink-0 cursor-ns-resize flex items-center justify-center group hover:bg-[var(--accent)]14 active:bg-[var(--accent)]20 transition-colors select-none touch-none"
         title="Arrastrar para redimensionar"
       >
         <div className="flex gap-[3px] items-center">
@@ -1182,7 +1231,8 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
       </div>
 
       {/* ── Row 2: profile dropdown + run button ── */}
-      <div className="flex items-center gap-2 px-3 py-1 border-b border-[var(--border)] shrink-0 min-w-0">
+      {/* data-profile-row is used by ProfileDropdown's portal to anchor its bounding rect */}
+      <div data-profile-row className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border)] shrink-0 min-w-0">
         <ProfileDropdown
           activeProfileId={activeProfileId}
           customProfiles={customProfiles}

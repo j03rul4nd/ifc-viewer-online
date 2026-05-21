@@ -1315,6 +1315,7 @@ export default function Sidebar({
   onRevealInTree, viewerApiRef, mobileOpen = false, onMobileClose,
 }: SidebarProps) {
   const [tab, setTab] = useState<'props' | 'cats' | 'qty'>('props')
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false)
 
   useEffect(() => { if (selected) setTab('props') }, [selected])
 
@@ -1334,28 +1335,52 @@ export default function Sidebar({
   }, [selected, isolated, onSetIsolated])
 
   return (
-    <motion.div
-      // Only fade opacity — NO x/y transform from Framer Motion.
-      // The mobile drawer translate is handled entirely by CSS classes so that
-      // Framer's inline `transform` style doesn't override Tailwind's translate-x-*.
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      // Desktop (md+): absolute floating panel anchored top-right of viewer
-      // Mobile (<md): fixed full-height drawer from right edge
-      className={[
-        // Shared
-        'glass border border-[var(--border)] flex flex-col overflow-hidden',
-        // Desktop
-        'md:absolute md:top-[68px] md:right-3 md:bottom-3 md:w-[340px] md:rounded-xl md:z-[9]',
-        // Mobile: full-height drawer from the right edge
-        'max-md:fixed max-md:right-0 max-md:top-0 max-md:bottom-0 max-md:w-full max-md:max-w-[360px] max-md:z-[19] max-md:rounded-l-2xl',
-        // Mobile slide animation (CSS transition, not FM transform)
-        'max-md:transition-transform max-md:duration-300 max-md:ease-[cubic-bezier(0.32,0.72,0,1)]',
-        mobileOpen ? 'max-md:translate-x-0' : 'max-md:translate-x-full',
-      ].join(' ')}
-      style={{ WebkitBackfaceVisibility: 'hidden' }}
-    >
+    <>
+      {/* Desktop: expand button — visible only when sidebar is collapsed */}
+      <AnimatePresence>
+        {desktopCollapsed && (
+          <motion.button
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 8 }}
+            transition={{ duration: 0.18 }}
+            onClick={() => setDesktopCollapsed(false)}
+            title="Show panel"
+            className="hidden md:flex absolute top-[68px] right-3 z-[9] glass border border-[var(--border)] rounded-xl w-8 h-8 items-center justify-center text-[var(--text-dim)] hover:text-[var(--text)] transition-colors pointer-events-auto"
+          >
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <path d="M9 2L4 7l5 5" />
+            </svg>
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        // Only fade opacity — NO x/y transform from Framer Motion.
+        // The mobile drawer translate is handled entirely by CSS classes so that
+        // Framer's inline `transform` style doesn't override Tailwind's translate-x-*.
+        // Desktop collapse also uses CSS classes (translate-x) for the same reason.
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        // Desktop (md+): absolute floating panel anchored top-right of viewer
+        // Mobile (<md): fixed full-height drawer from right edge
+        className={[
+          // Shared
+          'glass border border-[var(--border)] flex flex-col overflow-hidden',
+          // Desktop
+          'md:absolute md:top-[68px] md:right-3 md:bottom-3 md:w-[340px] md:rounded-xl md:z-[9]',
+          // Mobile: full-height drawer from the right edge
+          'max-md:fixed max-md:right-0 max-md:top-0 max-md:bottom-0 max-md:w-full max-md:max-w-[360px] max-md:z-[19] max-md:rounded-l-2xl',
+          // Mobile slide animation (CSS transition, not FM transform)
+          'max-md:transition-transform max-md:duration-300 max-md:ease-[cubic-bezier(0.32,0.72,0,1)]',
+          mobileOpen ? 'max-md:translate-x-0' : 'max-md:translate-x-full',
+          // Desktop collapse: slide off to the right (CSS transition, not FM)
+          'md:transition-transform md:duration-[220ms] md:ease-[cubic-bezier(0.32,0.72,0,1)]',
+          desktopCollapsed ? 'md:translate-x-[calc(100%+12px)] md:pointer-events-none' : 'md:translate-x-0',
+        ].join(' ')}
+        style={{ WebkitBackfaceVisibility: 'hidden' }}
+      >
       {/* Mobile close bar */}
       <div className="md:hidden flex items-center justify-between px-4 pt-safe h-12 border-b border-[var(--border)] shrink-0"
         style={{ paddingTop: `max(16px, env(safe-area-inset-top))` }}
@@ -1373,7 +1398,7 @@ export default function Sidebar({
       </div>
 
       {/* Tabs */}
-      <div className="flex p-1.5 gap-0.5 border-b border-[var(--border)] shrink-0">
+      <div className="flex items-center p-1.5 gap-0.5 border-b border-[var(--border)] shrink-0">
         {([['props', 'Properties'], ['cats', 'Categories'], ['qty', 'Quantities']] as const).map(([id, label]) => (
           <button
             key={id}
@@ -1387,6 +1412,16 @@ export default function Sidebar({
             {label}
           </button>
         ))}
+        {/* Desktop only: collapse button */}
+        <button
+          onClick={() => setDesktopCollapsed(true)}
+          title="Hide panel"
+          className="hidden md:flex shrink-0 items-center justify-center w-7 h-7 rounded-[6px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors ml-0.5"
+        >
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <path d="M5 2l5 5-5 5" />
+          </svg>
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto scroll-contain">
@@ -1432,5 +1467,6 @@ export default function Sidebar({
         style={{ height: 'env(safe-area-inset-bottom, 0px)' }}
       />
     </motion.div>
+    </>
   )
 }

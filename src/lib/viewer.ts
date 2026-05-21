@@ -440,7 +440,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   const wr = world.renderer.three
   wr.shadowMap.enabled   = true
-  wr.shadowMap.type      = THREE.PCFSoftShadowMap
+  wr.shadowMap.type      = THREE.PCFShadowMap   // PCFSoftShadowMap deprecated in Three.js r175+
   wr.outputColorSpace    = THREE.SRGBColorSpace
   wr.toneMapping         = THREE.ACESFilmicToneMapping
   wr.toneMappingExposure = 1.05
@@ -488,7 +488,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     pp.defaultAoParameters.screenSpaceRadius = false
     postproductionReady = true
   } catch (err) {
-    console.warn('[Viewer] PostproductionRenderer not available on this GPU:', err)
+    // Expected on some GPUs / headless environments — postproduction is
+    // optional.  Use info level so it doesn't alarm in normal dev sessions.
+    console.info('[Viewer] PostproductionRenderer unavailable, using standard renderer:', (err as Error)?.message ?? err)
   }
 
   // ─── Measurement tools ────────────────────────────────────────────────────────

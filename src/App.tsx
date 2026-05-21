@@ -163,6 +163,20 @@ export default function App() {
     }
   }, [selected, setMobileSidebarOpen])
 
+  // ── Track desktop breakpoint so tree Panel is never rendered on mobile ──
+  // react-resizable-panels allocates the Panel's flex share even when its
+  // inner content is hidden, so we must not mount the Panel at all on mobile.
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : true,
+  )
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const handler = (e: MediaQueryListEvent): void => setIsDesktop(e.matches)
+    mq.addEventListener('change', handler)
+    setIsDesktop(mq.matches)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
   // ── Detect WebGPU availability ────────────────────────────────────────────
   useEffect(() => {
     void (async () => {
@@ -202,6 +216,13 @@ export default function App() {
     if (loadingState === 'loading') return
     setShowUpload(true)
   }, [loadingState])
+
+  // "Open an IFC file" CTA — go to viewer and immediately show the upload overlay
+  // so the user can pick their own file instead of the demo being auto-loaded.
+  const handleOpenUpload = (): void => {
+    setRoute('viewer')
+    setShowUpload(true)
+  }
 
   const handleLaunch = (): void => {
     setRoute('viewer')
@@ -315,7 +336,7 @@ export default function App() {
             transition={{ duration: 0.35 }}
             className="absolute inset-0"
           >
-            <Landing onLaunch={handleLaunch} />
+            <Landing onLaunch={handleLaunch} onOpenUpload={handleOpenUpload} />
           </motion.div>
         )}
 
@@ -354,7 +375,10 @@ export default function App() {
               style={{ height: '100%' }}
             >
 
-              {treeVisible && sceneModels.length > 0 && (
+              {/* Tree panel: only mounted on desktop — react-resizable-panels
+                  allocates the Panel's flex share even when content is hidden,
+                  so mounting it on mobile would shrink the canvas by 22%. */}
+              {treeVisible && sceneModels.length > 0 && isDesktop && (
                 <>
                   <Panel
                     id="tree"
@@ -363,7 +387,7 @@ export default function App() {
                     maxSize="45%"
                     style={{ overflow: 'hidden' }}
                   >
-                    <div className="hidden md:flex flex-col h-full bg-[var(--surface)] overflow-hidden border-r border-[var(--border)]">
+                    <div className="flex flex-col h-full bg-[var(--surface)] overflow-hidden border-r border-[var(--border)]">
                       <ModelTree
                         ref={modelTreeRef}
                         onSelectElement={handleSelectTreeElement}
@@ -376,7 +400,7 @@ export default function App() {
                   </Panel>
                   <PanelResizeHandle
                     id="tree-resize"
-                    className="hidden md:block w-[3px] bg-[var(--border)] hover:bg-[var(--accent)] active:bg-[var(--accent)] transition-colors duration-100 cursor-col-resize flex-none"
+                    className="w-[3px] bg-[var(--border)] hover:bg-[var(--accent)] active:bg-[var(--accent)] transition-colors duration-100 cursor-col-resize flex-none"
                   />
                 </>
               )}
@@ -494,38 +518,42 @@ export default function App() {
 
                   <button
                     onClick={handleNavigateToLanding}
-                    className="absolute top-3 left-3 md:left-auto md:right-[364px] z-[9] h-[30px] min-w-[30px] px-3 bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
+                    className="absolute top-3 left-3 z-[9] h-[30px] min-w-[30px] px-3 bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
                   >
                     <Icons.Chevron size={12} className="rotate-180" />
                     <span className="hidden xs:inline">Home</span>
                   </button>
 
-                  {/* Mobile FAB: toggle sidebar (only on < md) */}
+                  {/* ── Mobile FAB cluster (only on < md) ── */}
                   {sceneModels.length > 0 && (
-                    <button
-                      onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-                      className="md:hidden absolute right-4 z-[10] w-12 h-12 rounded-full bg-[var(--accent)] shadow-[0_4px_20px_rgba(94,106,210,0.4)] flex items-center justify-center text-white"
+                    <div
+                      className="md:hidden absolute right-4 z-[10] flex flex-col items-center gap-2.5"
                       style={{ bottom: `max(16px, env(safe-area-inset-bottom))` }}
-                      aria-label="Toggle properties panel"
                     >
-                      {mobileSidebarOpen ? (
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                          <path d="M3 3l10 10M13 3L3 13" />
-                        </svg>
-                      ) : (
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                          <circle cx="8" cy="8" r="2" fill="currentColor" />
-                          <path d="M2 8h2M12 8h2M8 2v2M8 12v2" strokeWidth="1.4" />
-                        </svg>
-                      )}
-                      {/* Pulsing badge: element selected but panel is closed */}
-                      {selected && !mobileSidebarOpen && (
-                        <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-white border-2 border-[var(--accent)]">
-                          <span className="absolute inset-0.5 rounded-full bg-[var(--accent)] animate-ping opacity-75" />
-                          <span className="absolute inset-0.5 rounded-full bg-[var(--accent)]" />
-                        </span>
-                      )}
-                    </button>
+                      {/* Properties panel toggle */}
+                      <button
+                        onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+                        className="w-12 h-12 rounded-full bg-[var(--accent)] shadow-[0_4px_20px_rgba(94,106,210,0.35)] flex items-center justify-center text-white active:scale-95 transition-transform"
+                        aria-label="Toggle properties panel"
+                      >
+                        {mobileSidebarOpen ? (
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                            <path d="M3 3l10 10M13 3L3 13" />
+                          </svg>
+                        ) : (
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                            <path d="M2 5h12M2 8h9M2 11h6" />
+                          </svg>
+                        )}
+                        {/* Badge: element selected but panel is closed */}
+                        {selected && !mobileSidebarOpen && (
+                          <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-white border-2 border-[var(--accent)]">
+                            <span className="absolute inset-0.5 rounded-full bg-[var(--accent)] animate-ping opacity-75" />
+                            <span className="absolute inset-0.5 rounded-full bg-[var(--accent)]" />
+                          </span>
+                        )}
+                      </button>
+                    </div>
                   )}
                 </div>
 
