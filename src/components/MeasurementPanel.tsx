@@ -125,7 +125,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
           exit={{ opacity: 0, x: 12 }}
           transition={{ duration: 0.2 }}
           className="absolute right-3 top-1/2 -translate-y-1/2 z-20 pointer-events-auto select-none"
-          style={{ width: 160 }}
+          style={{ width: 'min(160px, calc(100vw - 24px))' }}
         >
           <div className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl">
             {/* Header */}

@@ -133,6 +133,18 @@ kbd {
   color: var(--text-dim);
 }
 
+/* ── Landing scroll root ────────────────────────────────────────────────────── */
+/*
+ * The Landing page renders inside an `absolute inset-0 overflow-auto` div.
+ * On iOS Safari the outer body has overflow:hidden, so this container owns
+ * the scroll.  We attach -webkit-overflow-scrolling for older Safari compat
+ * and overscroll-behavior:none so the page can't rubber-band into the body.
+ */
+.landing-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+}
+
 /* ── Landing decoratives ────────────────────────────────────────────────────── */
 
 .grid-bg {

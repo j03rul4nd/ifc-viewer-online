@@ -564,7 +564,8 @@ export default function App() {
         <div
           title={`${cacheEntries.length} model(s) cached in OPFS. Click to clear all.`}
           onClick={() => { void Promise.all(cacheEntries.map((e) => deleteFromCache(e.key))) }}
-          className="fixed bottom-4 left-4 z-50 px-2.5 py-1 bg-[rgba(16,16,20,0.82)] backdrop-blur border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[11px] cursor-pointer hover:text-[var(--text)] transition-colors select-none"
+          className="fixed left-4 z-50 px-2.5 py-1 bg-[rgba(16,16,20,0.82)] backdrop-blur border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[11px] cursor-pointer hover:text-[var(--text)] transition-colors select-none"
+          style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}
         >
           {isFromCache ? '⚡ from cache' : `${cacheEntries.length} cached`}
         </div>

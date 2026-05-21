@@ -244,11 +244,11 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
           style={{ animation: 'fadeIn 150ms ease' }}
         />
         <Dialog.Content
-          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-[520px] max-w-[96vw] max-h-[85vh] flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] outline-none"
+          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-[520px] max-w-[calc(100vw-1.5rem)] max-h-[90dvh] flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] outline-none"
           style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}
         >
           {/* ── Header ── */}
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border)] shrink-0">
+          <div className="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-4 border-b border-[var(--border)] shrink-0">
             <div className="flex-1 min-w-0">
               <Dialog.Title className="text-[14px] font-semibold text-[var(--text)] leading-none">
                 Nuevo perfil personalizado
@@ -271,7 +271,7 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
           </div>
 
           {/* ── Name field ── */}
-          <div className="px-5 pt-4 pb-3 shrink-0 border-b border-[var(--border)]">
+          <div className="px-4 sm:px-5 pt-3 sm:pt-4 pb-3 shrink-0 border-b border-[var(--border)]">
             <label className="block text-[11px] font-medium text-[var(--text-dim)] mb-1.5">
               Nombre del perfil
             </label>
@@ -294,7 +294,7 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
           </div>
 
           {/* ── Rule groups ── */}
-          <div className="flex-1 overflow-y-auto px-5 py-3">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-3">
             {CATEGORY_ORDER.map((cat) => {
               const ruleIds = grouped.get(cat)
               if (!ruleIds || ruleIds.length === 0) return null
@@ -311,7 +311,7 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
           </div>
 
           {/* ── Footer ── */}
-          <div className="flex items-center gap-3 px-5 py-3 border-t border-[var(--border)] shrink-0">
+          <div className="flex items-center gap-3 px-4 sm:px-5 py-3 border-t border-[var(--border)] shrink-0">
             {atLimit && (
               <span className="text-[10px] text-[var(--danger)] flex-1">
                 Límite de 5 perfiles alcanzado.

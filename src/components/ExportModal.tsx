@@ -150,7 +150,8 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: -8 }}
         transition={{ duration: 0.18 }}
-        className="fixed z-[71] top-16 right-4 w-[380px] max-w-[calc(100vw-2rem)] rounded-2xl bg-[rgba(12,12,16,0.97)] backdrop-blur-[20px] border border-[var(--border-strong)] shadow-[0_24px_64px_rgba(0,0,0,0.6)] overflow-hidden"
+        className="fixed z-[71] top-16 right-4 w-[380px] max-w-[calc(100vw-2rem)] rounded-2xl bg-[rgba(12,12,16,0.97)] backdrop-blur-[20px] border border-[var(--border-strong)] shadow-[0_24px_64px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col"
+        style={{ maxHeight: 'calc(100dvh - 5rem)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -175,7 +176,7 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
         </div>
 
         {/* Model rows */}
-        <div className="divide-y divide-[var(--border)]">
+        <div className="divide-y divide-[var(--border)] overflow-y-auto flex-1">
           {models.map((model) => {
             const st       = statuses[model.id] ?? { ifc: 'idle', glb: 'idle' }
             const diffCount = getDiffCountForModel(model.id)

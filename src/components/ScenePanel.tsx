@@ -362,8 +362,8 @@ export default function ScenePanel({
 
   return (
     <div
-      className="absolute top-14 right-4 z-[15] w-[292px] rounded-xl bg-[rgba(12,12,16,0.95)] backdrop-blur-[18px] border border-[var(--border)] shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden"
-      style={{ maxHeight: 'calc(100vh - 100px)' }}
+      className="absolute top-14 right-4 z-[15] rounded-xl bg-[rgba(12,12,16,0.95)] backdrop-blur-[18px] border border-[var(--border)] shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden"
+      style={{ width: 'min(292px, calc(100vw - 24px))', maxHeight: 'calc(100dvh - 100px)' }}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-[var(--border)]">

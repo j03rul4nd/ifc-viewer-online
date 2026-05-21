@@ -41,10 +41,10 @@ function IdleView({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
       transition={{ duration: 0.18 }}
-      className="p-8"
+      className="p-5 sm:p-8"
     >
       {/* Header */}
-      <div className="flex justify-between items-start mb-6">
+      <div className="flex justify-between items-start mb-4 sm:mb-6">
         <div>
           <h2 className="text-[17px] font-semibold tracking-tight">Open an IFC file</h2>
           <p className="text-[12.5px] text-[var(--text-dim)] mt-1">
@@ -68,7 +68,7 @@ function IdleView({
         tabIndex={0}
         onKeyDown={e => e.key === 'Enter' && openFilePicker()}
         aria-label="Drop IFC file or click to browse"
-        className="relative py-14 px-5 rounded-xl text-center cursor-pointer transition-all overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+        className="relative py-8 sm:py-14 px-5 rounded-xl text-center cursor-pointer transition-all overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         style={{
           border:     `2px dashed ${isDragging ? 'var(--accent)' : 'var(--border-strong)'}`,
           background: isDragging ? 'rgba(94,106,210,0.06)' : 'var(--surface-2)',
@@ -136,7 +136,7 @@ function ActiveView({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
       transition={{ duration: 0.18 }}
-      className="p-9"
+      className="p-5 sm:p-9"
     >
       {/* File chip */}
       {'file' in state && state.file && (
@@ -205,7 +205,7 @@ function SuccessView({
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.2 }}
-      className="p-9 text-center"
+      className="p-5 sm:p-9 text-center"
     >
       <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
         <Icons.Check size={22} className="text-emerald-400" />
@@ -246,7 +246,7 @@ function ErrorView({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
       transition={{ duration: 0.18 }}
-      className="p-9"
+      className="p-5 sm:p-9"
     >
       <div className="flex justify-between items-start mb-5">
         <div className="w-11 h-11 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-none">
@@ -305,7 +305,7 @@ function CancelledView({ onRetry, onClose }: { onRetry: () => void; onClose: () 
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
       transition={{ duration: 0.18 }}
-      className="p-9 text-center"
+      className="p-5 sm:p-9 text-center"
     >
       <p className="text-[14px] text-[var(--text-dim)] mb-5">Load cancelled.</p>
       <div className="flex gap-2.5 justify-center">

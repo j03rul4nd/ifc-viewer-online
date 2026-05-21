@@ -85,8 +85,10 @@ export default function ModelInfoPanel({ modelInfo, memoryStats, isFromCache, qu
   const totalMemMB    = memoryStats.heapMB + memoryStats.gpuEstimateMB
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[8] select-none pointer-events-auto"
-         style={{ maxWidth: 320, minWidth: 200 }}>
+    <div
+      className="absolute bottom-[76px] sm:bottom-4 left-1/2 -translate-x-1/2 z-[8] select-none pointer-events-auto"
+      style={{ maxWidth: 'min(320px, calc(100vw - 120px))', minWidth: 200 }}
+    >
       {/* Collapsed pill */}
       <button
         onClick={() => setExpanded((e) => !e)}

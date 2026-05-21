@@ -490,7 +490,7 @@ function ProfileDropdown({ activeProfileId, customProfiles, onSelect, onPersonal
       {open && (
         <div
           className="absolute bottom-full left-0 mb-1.5 z-50 rounded-xl border border-[var(--border)] bg-[rgba(18,18,24,0.97)] backdrop-blur-[16px] p-2"
-          style={{ minWidth: 300, maxWidth: 440, boxShadow: '0 -8px 32px rgba(0,0,0,0.4)' }}
+          style={{ minWidth: 280, maxWidth: 'min(440px, calc(100vw - 24px))', boxShadow: '0 -8px 32px rgba(0,0,0,0.4)' }}
         >
           <div className="grid grid-cols-2 gap-1.5 min-w-0">
             {allProfiles.map((profile) => {
@@ -1073,7 +1073,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   return (
     <div
       className="flex flex-col border-t border-[var(--border)] bg-[var(--surface)] shrink-0"
-      style={{ height: panelHeight, minHeight: MIN_PANEL_H, maxHeight: '82vh' }}
+      style={{ height: panelHeight, minHeight: MIN_PANEL_H, maxHeight: '82dvh' }}
     >
       {/* ── Resize grip ── */}
       <div

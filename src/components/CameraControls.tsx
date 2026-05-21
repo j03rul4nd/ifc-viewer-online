@@ -116,7 +116,7 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
 
   return (
     <div
-      className="absolute bottom-4 right-4 z-[8] select-none"
+      className="absolute bottom-[76px] sm:bottom-4 right-4 z-[8] select-none"
       style={{ pointerEvents: 'auto' }}
     >
       {visible ? (

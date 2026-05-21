@@ -116,7 +116,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
           exit={{ opacity: 0, x: 12 }}
           transition={{ duration: 0.2 }}
           className="absolute right-3 z-20 pointer-events-auto select-none"
-          style={{ width: 200, top: '50%', transform: 'translateY(-70%)' }}
+          style={{ width: 'min(200px, calc(100vw - 24px))', top: '50%', transform: 'translateY(-70%)' }}
         >
           <div className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl">
             {/* Header */}
