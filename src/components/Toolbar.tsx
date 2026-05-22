@@ -181,7 +181,7 @@ export default function Toolbar({
       const modelDiffs = getDiffsForModel(model.id)
       const bytes = await exportAsIfc(buffer, modelDiffs)
       const stem  = model.fileName.replace(/\.ifc$/i, '')
-      downloadBlob(new Blob([bytes], { type: 'application/x-step' }), `${stem}-exported.ifc`)
+      downloadBlob(new Blob([bytes.buffer as ArrayBuffer], { type: 'application/x-step' }), `${stem}-exported.ifc`)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       log.error('IFC export failed:', msg)
@@ -370,6 +370,19 @@ export default function Toolbar({
                 {isRunning
                   ? (validationProgress > 0 ? t('validationProgress', { progress: validationProgress }) : t('validating'))
                   : validationStatus === 'error' ? t('retry') : t('validate')}
+                {/* Issue count badge — lives on the Validate button so it's obviously the result */}
+                {hasIssues && !isRunning && (
+                  <span
+                    className="px-1 py-0.5 text-[9px] font-mono rounded leading-none tabular-nums"
+                    style={{
+                      background: errorCount > 0 ? 'var(--danger)22' : '#F5A62322',
+                      color:      errorCount > 0 ? 'var(--danger)'   : '#F5A623',
+                      border:     `1px solid ${errorCount > 0 ? 'var(--danger)33' : '#F5A62333'}`,
+                    }}
+                  >
+                    {errorCount > 0 ? `${errorCount}E` : issueCount}
+                  </span>
+                )}
               </Btn>
               {isRunning && validationProgress > 0 && (
                 <div
@@ -378,19 +391,27 @@ export default function Toolbar({
                 />
               )}
             </div>
+            {/* Overlay toggle — eye icon makes the "show/hide in 3D" purpose obvious */}
             <Btn
               onClick={toggleValidationMode}
               disabled={!hasIssues}
               title={validationMode ? t('overlayOn') : t('overlayOff')}
               variant={validationMode ? 'secondary' : 'ghost'}
             >
-              <span
-                className="text-[11px] font-mono"
-                style={{ color: validationMode ? (errorCount > 0 ? 'var(--danger)' : '#F5A623') : undefined }}
-              >
-                {hasIssues ? `${issueCount}` : '●'}
-              </span>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 7c1.5-3 3.5-4.5 6-4.5S11.5 4 13 7c-1.5 3-3.5 4.5-6 4.5S2.5 10 1 7z"/>
+                <circle cx="7" cy="7" r="1.8" fill="currentColor" stroke="none" opacity="0.7"/>
+              </svg>
               {t('overlay')}
+              {/* Dim the count when overlay is off so it reads as state, not a new number */}
+              {hasIssues && (
+                <span
+                  className="text-[10px] font-mono tabular-nums leading-none"
+                  style={{ color: validationMode ? (errorCount > 0 ? 'var(--danger)' : '#F5A623') : 'var(--text-faint)' }}
+                >
+                  {issueCount}
+                </span>
+              )}
             </Btn>
           </div>
 
@@ -534,6 +555,12 @@ export default function Toolbar({
             title={isRunning ? t('validating') : validationStatus === 'error' ? t('validationFailed') : t('validate')}
           >
             {isRunning ? SpinSVG : ValidateSVG}
+            {/* Small error badge on the Validate button */}
+            {hasIssues && !isRunning && errorCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-[14px] h-[14px] rounded-full bg-[var(--danger)] text-white text-[8px] font-mono leading-none flex items-center justify-center">
+                {errorCount > 9 ? '!' : errorCount}
+              </span>
+            )}
           </IBtn>
           <IBtn
             onClick={toggleValidationMode}
@@ -541,12 +568,12 @@ export default function Toolbar({
             active={validationMode}
             title={validationMode ? t('overlayOn') : t('overlayOff')}
           >
-            <span
-              className="text-[11px] font-mono leading-none"
-              style={{ color: validationMode ? (errorCount > 0 ? 'var(--danger)' : '#F5A623') : undefined }}
-            >
-              {hasIssues ? issueCount : '●'}
-            </span>
+            <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 7c1.5-3 3.5-4.5 6-4.5S11.5 4 13 7c-1.5 3-3.5 4.5-6 4.5S2.5 10 1 7z"/>
+              <circle cx="7" cy="7" r="1.8" fill="currentColor" stroke="none" opacity="0.7"
+                style={{ color: validationMode ? (errorCount > 0 ? 'var(--danger)' : '#F5A623') : 'currentColor' }}
+              />
+            </svg>
           </IBtn>
         </div>
 

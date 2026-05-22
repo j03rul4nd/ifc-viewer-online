@@ -1011,7 +1011,6 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     if (e.button > 0) return
     e.preventDefault()
     e.stopPropagation()
-    console.log('[GRIP] pointerdown — startY:', e.clientY, 'startH:', panelHRef.current)
 
     const startY = e.clientY
     const startH = panelHRef.current
