@@ -27,19 +27,6 @@ import { VALIDATION_PROFILES, RULE_METADATA, getRuleLabel, VALIDATION_CATEGORY_L
 import { getCoveredCategories, ALL_CATEGORIES } from './ValidationCoverageSummary'
 import CustomProfileModal from './CustomProfileModal'
 
-// ── Locale detection ──────────────────────────────────────────────────────────
-
-function detectLocale(): SupportedLocale {
-  const lang = (typeof navigator !== 'undefined' ? navigator.language : 'es').toLowerCase()
-  if (lang.startsWith('en')) return 'en'
-  if (lang.startsWith('de')) return 'de'
-  if (lang.startsWith('fr')) return 'fr'
-  if (lang.startsWith('pt')) return 'pt'
-  return 'es'
-}
-
-const UI_LOCALE = detectLocale()
-
 // ── Resize constants ──────────────────────────────────────────────────────────
 
 const MIN_PANEL_H = 180
@@ -65,8 +52,9 @@ function SeverityDot({ severity }: { severity: ValidationIssue['severity'] }) {
 // ── Rule badge ────────────────────────────────────────────────────────────────
 
 function RuleBadge({ ruleId }: { ruleId: string }) {
+  const { i18n } = useTranslation('validation')
   const meta   = RULE_METADATA[ruleId]
-  const label  = getRuleLabel(ruleId, UI_LOCALE)
+  const label  = getRuleLabel(ruleId, i18n.language as SupportedLocale)
   const sev    = meta?.defaultSeverity ?? 'info'
   const color  = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? '#F5A623' : '#5E9ED6'
   const std    = meta?.standard
@@ -124,6 +112,7 @@ function IssueRow({
   onAutoFix: (issue: ValidationIssue) => void
   onNameFix: (issue: ValidationIssue, field: 'Name' | 'LongName', newValue: string) => void
 }) {
+  const { t } = useTranslation('validation')
   const [editing, setEditing]     = useState(false)
   const [editValue, setEditValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -161,7 +150,7 @@ function IssueRow({
             <RuleBadge ruleId={issue.ruleId} />
             {hasPendingFix && (
               <span className="text-[9px] font-mono text-[var(--ok)] border border-[var(--ok)]33 px-1 rounded leading-none">
-                editado
+                {t('issue.edited')}
               </span>
             )}
           </div>
@@ -191,7 +180,7 @@ function IssueRow({
                   : { background: 'var(--accent)18', color: 'var(--accent)', borderColor: 'var(--accent)33' }
               }
             >
-              {editing ? 'Cancelar' : hasPendingFix ? 'Re-editar' : 'Renombrar'}
+              {editing ? t('issue.cancel') : hasPendingFix ? t('issue.reEdit') : t('issue.rename')}
             </button>
           )}
           {issue.autoFixable && !isNameEditable && (
@@ -200,14 +189,14 @@ function IssueRow({
               className="px-2 h-6 rounded text-[10px] font-medium border transition-colors"
               style={{ background: 'var(--ok)18', color: 'var(--ok)', borderColor: 'var(--ok)33' }}
             >
-              Auto-fix
+              {t('issue.applyFix')}
             </button>
           )}
           <button
             onClick={() => onJumpTo(issue)}
             className="px-2 h-6 rounded text-[10px] font-medium bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] active:bg-[var(--border)] transition-colors"
           >
-            Ver
+            {t('issue.view')}
           </button>
         </div>
       </div>
@@ -225,7 +214,7 @@ function IssueRow({
               if (e.key === 'Enter')  { e.preventDefault(); commitEdit() }
               if (e.key === 'Escape') setEditing(false)
             }}
-            placeholder={`Nuevo ${getEditField(issue.ruleId).toLowerCase()}…`}
+            placeholder={t('issue.newNamePlaceholder', { field: getEditField(issue.ruleId) })}
             className="flex-1 h-7 px-2 text-[12px] bg-[var(--surface)] border border-[var(--accent)] rounded text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none"
           />
           <button
@@ -233,7 +222,7 @@ function IssueRow({
             disabled={!editValue.trim()}
             className="px-2.5 h-7 rounded text-[11px] bg-[var(--accent)] text-white font-medium hover:brightness-110 disabled:opacity-40"
           >
-            Aplicar
+            {t('issue.apply')}
           </button>
           <button
             onClick={() => setEditing(false)}
@@ -278,6 +267,7 @@ function GroupHeader({ label, count, ruleId }: { label: string; count: number; r
 // ── Empty states ──────────────────────────────────────────────────────────────
 
 function EmptyStateNoModel() {
+  const { t } = useTranslation('validation')
   return (
     <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6 py-4">
       <svg width="48" height="48" viewBox="0 0 48 48" fill="none" className="opacity-25">
@@ -288,9 +278,9 @@ function EmptyStateNoModel() {
         <path d="M36 31v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
       <div className="space-y-1">
-        <p className="text-[12px] font-medium text-[var(--text-dim)]">Sin modelo cargado</p>
+        <p className="text-[12px] font-medium text-[var(--text-dim)]">{t('empty.noModel')}</p>
         <p className="text-[10px] text-[var(--text-faint)] max-w-[180px] leading-relaxed">
-          Carga un archivo IFC para comenzar la validación
+          {t('empty.noModelDesc')}
         </p>
       </div>
     </div>
@@ -298,6 +288,7 @@ function EmptyStateNoModel() {
 }
 
 function EmptyStateNotValidated() {
+  const { t } = useTranslation('validation')
   return (
     <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6 py-4">
       <svg width="48" height="48" viewBox="0 0 48 48" fill="none" className="opacity-25">
@@ -307,9 +298,9 @@ function EmptyStateNotValidated() {
         <path d="M24 21v4M24 27h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
       <div className="space-y-1">
-        <p className="text-[12px] font-medium text-[var(--text-dim)]">Modelo listo para validar</p>
+        <p className="text-[12px] font-medium text-[var(--text-dim)]">{t('empty.modelReady')}</p>
         <p className="text-[10px] text-[var(--text-faint)] max-w-[200px] leading-relaxed">
-          Selecciona un perfil y pulsa <strong className="text-[var(--text-dim)]">Validar</strong> para analizar el modelo
+          {t('empty.modelReadyDesc')}
         </p>
       </div>
     </div>
@@ -317,6 +308,7 @@ function EmptyStateNotValidated() {
 }
 
 function EmptyStateError({ error }: { error: string | null }) {
+  const { t } = useTranslation('validation')
   return (
     <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6 py-4">
       <svg width="48" height="48" viewBox="0 0 48 48" fill="none" className="opacity-40">
@@ -324,9 +316,9 @@ function EmptyStateError({ error }: { error: string | null }) {
         <path d="M24 16v10M24 31h.01" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round" />
       </svg>
       <div className="space-y-1">
-        <p className="text-[12px] font-semibold" style={{ color: 'var(--danger)' }}>Error de validación</p>
+        <p className="text-[12px] font-semibold" style={{ color: 'var(--danger)' }}>{t('empty.validationError')}</p>
         <p className="text-[10px] text-[var(--text-faint)] max-w-[240px] leading-relaxed">
-          {error ?? 'La validación falló. Pulsa Reintentar para volver a intentarlo.'}
+          {error ?? t('empty.validationErrorDesc')}
         </p>
       </div>
     </div>
@@ -334,6 +326,7 @@ function EmptyStateError({ error }: { error: string | null }) {
 }
 
 function EmptyStateClean() {
+  const { t } = useTranslation('validation')
   return (
     <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6 py-4">
       <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
@@ -342,9 +335,9 @@ function EmptyStateClean() {
         <path d="M18 24l4 4 8-8" stroke="var(--ok)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       <div className="space-y-1">
-        <p className="text-[12px] font-semibold" style={{ color: 'var(--ok)' }}>Sin incidencias</p>
+        <p className="text-[12px] font-semibold" style={{ color: 'var(--ok)' }}>{t('empty.noIssues')}</p>
         <p className="text-[10px] text-[var(--text-faint)] max-w-[180px] leading-relaxed">
-          El modelo supera todas las comprobaciones activas
+          {t('results.allGood')}
         </p>
       </div>
     </div>
@@ -382,6 +375,7 @@ function RunButton({
   disabled: boolean
   onClick: () => void
 }) {
+  const { t } = useTranslation('validation')
   if (status === 'running') {
     return (
       <div className="relative flex items-center shrink-0">
@@ -404,7 +398,7 @@ function RunButton({
             <path d="M6 1.5a4.5 4.5 0 014.5 4.5" strokeLinecap="round" />
           </svg>
           <span className="relative tabular-nums">
-            {progress > 0 ? `${progress}%` : 'Validando…'}
+            {progress > 0 ? `${progress}%` : t('run.validating')}
           </span>
         </button>
       </div>
@@ -422,7 +416,7 @@ function RunButton({
         <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="shrink-0">
           <polyline points="2,6 4.5,8.5 9,3" />
         </svg>
-        Volver a validar
+        {t('run.revalidate')}
       </button>
     )
   }
@@ -434,13 +428,13 @@ function RunButton({
         disabled={disabled}
         className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-[11px] font-semibold border transition-all disabled:opacity-40 shrink-0"
         style={{ color: 'var(--danger)', borderColor: 'var(--danger)44', background: 'var(--danger)12' }}
-        title="La validación falló — pulsa para reintentar"
+        title={t('empty.validationErrorDesc')}
       >
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="shrink-0">
           <path d="M5 3v3M5 7.5h.01" />
           <circle cx="5" cy="5" r="4" />
         </svg>
-        Reintentar
+        {t('run.retry')}
       </button>
     )
   }
@@ -456,7 +450,7 @@ function RunButton({
         <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" className="shrink-0">
           <path d="M3 2.5l5 2.5-5 2.5V2.5z" />
         </svg>
-        Validar de nuevo
+        {t('run.validateAgain')}
       </button>
     )
   }
@@ -471,7 +465,7 @@ function RunButton({
       <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" className="shrink-0">
         <path d="M3 2.5l5 2.5-5 2.5V2.5z" />
       </svg>
-      Validar
+      {t('run.validate')}
     </button>
   )
 }
@@ -486,6 +480,7 @@ interface ProfileDropdownProps {
 }
 
 function ProfileDropdown({ activeProfileId, customProfiles, onSelect, onPersonalize }: ProfileDropdownProps) {
+  const { t } = useTranslation('validation')
   const [open, setOpen]       = useState(false)
   const triggerRef            = useRef<HTMLButtonElement>(null)
   const dropdownRef           = useRef<HTMLDivElement>(null)
@@ -613,7 +608,7 @@ function ProfileDropdown({ activeProfileId, customProfiles, onSelect, onPersonal
           <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
             <path d="M4.5 1.5v6M1.5 4.5h6" />
           </svg>
-          Personalizar perfil
+          {t('profile.customize')}
           <span className="ml-auto text-[9px] font-mono opacity-60">{customProfiles.length}/5</span>
         </button>
       </div>
@@ -635,7 +630,7 @@ function ProfileDropdown({ activeProfileId, customProfiles, onSelect, onPersonal
         }
       >
         <span className="truncate flex-1">
-          {activeProfile ? `${activeProfile.icon} ${activeProfile.name}` : 'Seleccionar perfil…'}
+          {activeProfile ? `${activeProfile.icon} ${activeProfile.name}` : t('profile.selectProfile')}
         </span>
         <svg
           width="10" height="10" viewBox="0 0 10 10" fill="currentColor" className="shrink-0 opacity-60"
@@ -650,7 +645,7 @@ function ProfileDropdown({ activeProfileId, customProfiles, onSelect, onPersonal
         <button
           onClick={() => onSelect(null)}
           className="w-7 h-7 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors shrink-0 cursor-pointer"
-          title="Limpiar perfil"
+          title={t('profile.clearProfile')}
         >
           <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
             <path d="M1.5 1.5l6 6M7.5 1.5l-6 6" />
@@ -678,17 +673,7 @@ const CAT_COLOR: Record<string, string> = {
   clash:          'var(--danger)',
 }
 
-// Short labels that fit nicely at 8–9px font in chips
-const CAT_SHORT: Record<string, string> = {
-  schema:         'IFC',
-  spatial:        'Espac.',
-  quality:        'Cal.',
-  lod:            'LOD',
-  iso19650:       'ISO',
-  classification: 'Clas.',
-  mep:            'MEP',
-  clash:          'Col.',
-}
+// CAT_SHORT is now resolved via i18n inside CoverageStrip using t(`catShort.${cat}`)
 
 interface CoverageStripProps {
   rules: Parameters<typeof getCoveredCategories>[0]
@@ -697,6 +682,7 @@ interface CoverageStripProps {
 }
 
 function CoverageStrip({ rules, qualityScore, onDismiss }: CoverageStripProps) {
+  const { t } = useTranslation('validation')
   // Guard: getCoveredCategories iterates rules safely, but wrap in case rules
   // shape ever diverges from RulesConfig at runtime.
   let covered: ReturnType<typeof getCoveredCategories> = []
@@ -714,7 +700,7 @@ function CoverageStrip({ rules, qualityScore, onDismiss }: CoverageStripProps) {
       <span
         className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border shrink-0 leading-none"
         style={{ color: scoreColor, borderColor: `${scoreColor}44`, background: `${scoreColor}14` }}
-        title="Puntuación de calidad (0–100)"
+        title={t('coverage.qualityTitle')}
       >
         {score}
       </span>
@@ -727,7 +713,8 @@ function CoverageStrip({ rules, qualityScore, onDismiss }: CoverageStripProps) {
         {ALL_CATEGORIES.map((cat) => {
           const isActive = covered.includes(cat as ValidationCategoryType)
           const color = CAT_COLOR[cat] ?? 'var(--accent)'
-          const short = CAT_SHORT[cat] ?? VALIDATION_CATEGORY_LABELS[cat as ValidationCategoryType]
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const short = (t as (k: string) => string)(`catShort.${cat}`) || VALIDATION_CATEGORY_LABELS[cat as ValidationCategoryType]
           return (
             <span
               key={cat}
@@ -749,7 +736,7 @@ function CoverageStrip({ rules, qualityScore, onDismiss }: CoverageStripProps) {
       <button
         onClick={onDismiss}
         className="shrink-0 w-5 h-5 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface)] transition-colors"
-        title="Ocultar resumen"
+        title={t('coverage.hideTitle')}
       >
         <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
           <path d="M1.5 1.5l5 5M6.5 1.5l-5 5" />
@@ -778,6 +765,7 @@ function BcfStatusBadge({ status }: { status?: string }) {
 }
 
 function BcfTopicRow({ topic, onNavigate }: { topic: BcfTopic; onNavigate: (t: BcfTopic) => void }) {
+  const { t } = useTranslation('validation')
   const vp          = topic.viewpoints[0]
   const hasCamera   = vp && vp.cameraPosition && vp.cameraDirection
   const hasSnapshot = vp?.snapshotBase64
@@ -805,12 +793,12 @@ function BcfTopicRow({ topic, onNavigate }: { topic: BcfTopic; onNavigate: (t: B
         <div className="flex items-center gap-2 mt-0.5">
           {topic.comments.length > 0 && (
             <span className="text-[10px] text-[var(--text-faint)] font-mono">
-              {topic.comments.length} comentario{topic.comments.length !== 1 ? 's' : ''}
+              {t('bcf.comments', { count: topic.comments.length })}
             </span>
           )}
           {topic.source === 'generated' && (
             <span className="text-[9px] text-[var(--text-faint)] border border-[var(--border)] px-1 rounded font-mono">
-              generado
+              {t('bcf.generated')}
             </span>
           )}
         </div>
@@ -820,7 +808,7 @@ function BcfTopicRow({ topic, onNavigate }: { topic: BcfTopic; onNavigate: (t: B
           onClick={() => onNavigate(topic)}
           className="shrink-0 px-2 h-7 rounded text-[10px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] font-medium opacity-0 group-hover:opacity-100 transition-opacity"
         >
-          Navegar
+          {t('bcf.navigate')}
         </button>
       )}
     </div>
@@ -830,6 +818,7 @@ function BcfTopicRow({ topic, onNavigate }: { topic: BcfTopic; onNavigate: (t: B
 // ── Search input ──────────────────────────────────────────────────────────────
 
 function SearchInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t } = useTranslation('validation')
   const inputRef = useRef<HTMLInputElement>(null)
   return (
     <div className="relative flex items-center shrink-0">
@@ -845,7 +834,7 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Buscar…"
+        placeholder={t('filters.search')}
         className="h-6 pl-6 pr-6 text-[11px] bg-[var(--surface-2)] border border-[var(--border)] rounded text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] w-28 transition-colors"
       />
       {value && (
@@ -872,6 +861,7 @@ function ExportDropdown({
   onExportCertificate: () => void
   onExportBcf:  () => void
 }) {
+  const { t } = useTranslation('validation')
   const [open, setOpen]       = useState(false)
   const wrapRef               = useRef<HTMLDivElement>(null)
 
@@ -893,7 +883,7 @@ function ExportDropdown({
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-1 px-2 h-6 rounded text-[10px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] font-medium transition-colors"
       >
-        Exportar
+        {t('actions.export')}
         <svg
           width="9" height="9" viewBox="0 0 9 9" fill="currentColor" className="opacity-50"
           style={{ transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 150ms' }}
@@ -904,18 +894,18 @@ function ExportDropdown({
       {open && (
         <div className="absolute right-0 top-full mt-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-xl z-50 py-1 min-w-[148px]">
           <button onClick={() => act(onExportJson)}        className="w-full text-left px-3 py-2 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:bg-[var(--surface-2)] transition-colors">
-            <span className="font-mono text-[var(--accent)] text-[9px] mr-1.5">JSON</span>Informe completo
+            <span className="font-mono text-[var(--accent)] text-[9px] mr-1.5">JSON</span>{t('actions.exportJson')}
           </button>
           <button onClick={() => act(onExportCsv)}         className="w-full text-left px-3 py-2 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:bg-[var(--surface-2)] transition-colors">
-            <span className="font-mono text-[var(--ok)] text-[9px] mr-1.5">CSV</span>Tabla de incidencias
+            <span className="font-mono text-[var(--ok)] text-[9px] mr-1.5">CSV</span>{t('actions.exportCsv')}
           </button>
           <div className="h-px bg-[var(--border)] mx-2 my-0.5" />
           <button onClick={() => act(onExportCertificate)} className="w-full text-left px-3 py-2 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:bg-[var(--surface-2)] transition-colors">
-            <span className="font-mono text-[#F5A623] text-[9px] mr-1.5">CERT</span>Certificado
+            <span className="font-mono text-[#F5A623] text-[9px] mr-1.5">CERT</span>{t('actions.exportCertificate')}
           </button>
           <div className="h-px bg-[var(--border)] mx-2 my-0.5" />
           <button onClick={() => act(onExportBcf)}         className="w-full text-left px-3 py-2 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:bg-[var(--surface-2)] transition-colors">
-            <span className="font-mono text-[var(--accent)] text-[9px] mr-1.5">BCF</span>Exportar BCF
+            <span className="font-mono text-[var(--accent)] text-[9px] mr-1.5">BCF</span>{t('actions.exportBcf')}
           </button>
         </div>
       )}
@@ -968,6 +958,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     useShallow((s) => ({ topics: s.topics, isParsing: s.isParsing })),
   )
 
+  const { t, i18n } = useTranslation('validation')
   const [search, setSearch]             = useState('')
   const [modelFilter, setModelFilter]   = useState<string | null>(null)
   const [profileModalOpen, setProfileModalOpen] = useState(false)
@@ -1079,7 +1070,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     for (const issue of filtered) {
       let key = ''
       if (filters.groupBy === 'rule')        key = issue.ruleId
-      else if (filters.groupBy === 'storey') key = issue.path[issue.path.length - 2] ?? issue.path[0] ?? 'Desconocida'
+      else if (filters.groupBy === 'storey') key = issue.path[issue.path.length - 2] ?? issue.path[0] ?? t('filters.unknownStorey')
       else                                   key = issue.ifcClass
       const g = map.get(key) ?? []
       g.push(issue)
@@ -1198,7 +1189,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
         className="flex items-center gap-2 px-3 h-10 xs:h-9 border-t border-[var(--border)] bg-[var(--surface)] w-full text-left hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] transition-colors shrink-0"
       >
         <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider shrink-0">
-          Validación
+          {t('panel.title')}
         </span>
 
         {stats ? (
@@ -1214,7 +1205,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
               <span className="text-[11px] font-mono" style={{ color: '#5E9ED6' }}>{stats.info}I</span>
             )}
             {stats.errors === 0 && stats.warnings === 0 && stats.info === 0 && (
-              <span className="text-[11px] text-[var(--ok)] font-mono">✓ Sin incidencias</span>
+              <span className="text-[11px] text-[var(--ok)] font-mono">✓ {t('results.noIssues')}</span>
             )}
             {result?.qualityScore != null && (
               <span
@@ -1230,7 +1221,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
           </div>
         ) : isRunning ? (
           <span className="text-[11px] text-[var(--accent)] font-mono animate-pulse">
-            Validando… {progress}%
+            {t('validating', { progress })}
           </span>
         ) : null}
 
@@ -1285,7 +1276,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
       {/* ── Row 1: identity + stats + actions ── */}
       <div className="flex items-center gap-2 px-3 h-9 border-b border-[var(--border)] shrink-0 overflow-hidden">
         <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider shrink-0">
-          Validación
+          {t('panel.title')}
         </span>
 
         {stats && (
@@ -1309,7 +1300,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                   const c = result.qualityScore >= 80 ? 'var(--ok)' : result.qualityScore >= 50 ? '#F5A623' : 'var(--danger)'
                   return { color: c, borderColor: `${c}44`, background: `${c}14` }
                 })()}
-                title="Puntuación de calidad (0–100)"
+                title={t('coverage.qualityTitle')}
               >
                 {result.qualityScore}
               </span>
@@ -1328,7 +1319,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
         {autoFixableCount > 0 && (
           <button
             onClick={handleBatchFix}
-            title={`Auto-fix ${autoFixableCount} incidencia${autoFixableCount !== 1 ? 's' : ''}`}
+            title={t('actions.fixAllCount', { count: autoFixableCount })}
             className="px-2 h-6 rounded text-[10px] border transition-colors font-medium shrink-0"
             style={{ background: 'var(--ok)14', color: 'var(--ok)', borderColor: 'var(--ok)33' }}
           >
@@ -1349,7 +1340,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
         {/* Pending fixes count */}
         {pendingFixIds.size > 0 && (
           <span className="px-2 h-6 flex items-center rounded text-[10px] text-[var(--ok)] border border-[var(--ok)]33 font-mono shrink-0">
-            {pendingFixIds.size} editado{pendingFixIds.size !== 1 ? 's' : ''}
+            {t('pendingFixes', { count: pendingFixIds.size })}
           </span>
         )}
 
@@ -1394,7 +1385,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                 : { background: 'transparent', color: 'var(--text-faint)', borderColor: 'transparent' }
             }
           >
-            Todos
+            {t('allModels')}
           </button>
           {sceneModels.map((m) => {
             const count = issues.filter((i) => i.modelId === m.id).length
@@ -1441,7 +1432,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                   : { color: 'var(--text-faint)', border: '1px solid transparent' }
               }
             >
-              {panel === 'issues' ? 'Incidencias' : 'BCF'}
+              {panel === 'issues' ? t('tabs.issues') : t('tabs.bcf')}
               {panel === 'bcf' && bcfTopics.length > 0 && (
                 <span className="ml-1 text-[9px] font-mono">{bcfTopics.length}</span>
               )}
@@ -1478,7 +1469,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                         : { color: 'var(--text-faint)', border: '1px solid transparent' }
                     }
                   >
-                    {tab === 'all' ? 'Todo' : tab === 'errors' ? 'E' : tab === 'warnings' ? 'W' : 'I'}
+                    {tab === 'all' ? t('filters.all') : tab === 'errors' ? 'E' : tab === 'warnings' ? 'W' : 'I'}
                     {count > 0 && (
                       <span
                         className="ml-0.5 text-[9px] font-mono"
@@ -1503,7 +1494,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
               disabled={bcfParsing}
               className="px-2 h-6 rounded text-[10px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] disabled:opacity-40 font-medium transition-colors shrink-0"
             >
-              {bcfParsing ? 'Importando…' : 'Importar BCF'}
+              {bcfParsing ? t('bcf.importing') : t('bcf.import')}
             </button>
             {result && result.issues.length > 0 && (
               <button
@@ -1511,7 +1502,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                 className="px-2 h-6 rounded text-[10px] font-medium border transition-colors shrink-0"
                 style={{ background: 'var(--accent)14', color: 'var(--accent)', borderColor: 'var(--accent)33' }}
               >
-                Exportar BCF
+                {t('bcf.export')}
               </button>
             )}
           </>
@@ -1522,7 +1513,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
       {activePanel === 'issues' && (
         <div className="flex items-center gap-1.5 px-3 h-7 border-b border-[var(--border)] shrink-0 overflow-x-auto">
           <span className="text-[9px] text-[var(--text-faint)] uppercase tracking-wider shrink-0 font-medium">
-            Agrupar
+            {t('filters.groupBy')}
           </span>
           {/* Group by */}
           <div className="flex items-center gap-0.5 shrink-0">
@@ -1537,7 +1528,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                     : { color: 'var(--text-faint)', border: '1px solid transparent' }
                 }
               >
-                {g === 'rule' ? 'Regla' : g === 'storey' ? 'Planta' : 'Clase'}
+                {g === 'rule' ? t('filters.rule') : g === 'storey' ? t('filters.storey') : t('filters.class')}
               </button>
             ))}
           </div>
@@ -1555,13 +1546,13 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
           <>
             {bcfParsing && (
               <div className="px-3 py-2 text-[11px] text-[var(--accent)] animate-pulse border-b border-[var(--border)]">
-                Importando BCF…
+                {t('bcf.importing')}
               </div>
             )}
             {!bcfParsing && bcfTopics.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full gap-2 text-center px-4">
                 <p className="text-[11px] text-[var(--text-dim)]">
-                  Sin topics BCF. Importa un .bcfzip o exporta incidencias como BCF.
+                  {t('bcf.noTopicsDesc')}
                 </p>
               </div>
             )}
@@ -1600,7 +1591,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                 <GroupHeader
                   label={
                     filters.groupBy === 'rule'
-                      ? (getRuleLabel(groupKey, UI_LOCALE))
+                      ? (getRuleLabel(groupKey, i18n.language as SupportedLocale))
                       : groupKey
                   }
                   count={groupIssues.length}

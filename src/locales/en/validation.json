@@ -44,7 +44,8 @@
     "groupBy": "Group",
     "rule": "Rule",
     "storey": "Storey",
-    "class": "Class"
+    "class": "Class",
+    "unknownStorey": "Unknown"
   },
   "issue": {
     "fixable": "Auto-fixable",
@@ -142,6 +143,16 @@
   "pendingFixes": "{{count}} edited",
   "pendingFix": "1 edited",
   "allModels": "All",
+  "catShort": {
+    "schema":         "IFC",
+    "spatial":        "Spat.",
+    "quality":        "Qual.",
+    "lod":            "LOD",
+    "iso19650":       "ISO",
+    "classification": "Class.",
+    "mep":            "MEP",
+    "clash":          "Clash"
+  },
   "customProfile": {
     "title": "New custom profile",
     "subtitle": "Select the rules to apply in this configuration",

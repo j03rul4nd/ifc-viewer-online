@@ -44,7 +44,8 @@
     "groupBy": "Agrupar",
     "rule": "Regla",
     "storey": "Planta",
-    "class": "Clase"
+    "class": "Clase",
+    "unknownStorey": "Desconocida"
   },
   "issue": {
     "fixable": "Corregible automáticamente",
@@ -142,6 +143,16 @@
   "pendingFixes": "{{count}} editado",
   "pendingFix": "1 editado",
   "allModels": "Todos",
+  "catShort": {
+    "schema":         "IFC",
+    "spatial":        "Espac.",
+    "quality":        "Cal.",
+    "lod":            "LOD",
+    "iso19650":       "ISO",
+    "classification": "Clas.",
+    "mep":            "MEP",
+    "clash":          "Col."
+  },
   "customProfile": {
     "title": "Nuevo perfil personalizado",
     "subtitle": "Selecciona las reglas a aplicar en esta configuración",
