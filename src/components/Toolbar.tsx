@@ -355,9 +355,9 @@ export default function Toolbar({
           <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto shrink-0">
             <div className="relative">
               <Btn
-                onClick={isRunning ? cancelValidation : () => void runValidation()}
+                onClick={isRunning ? cancelValidation : () => void runValidation(undefined, undefined, true)}
                 disabled={!isRunning && !canRun}
-                title={isRunning ? 'Cancel validation' : validationStatus === 'error' ? 'Validation failed — click to retry' : 'Run validation'}
+                title={isRunning ? 'Cancel validation' : validationStatus === 'error' ? 'Validation failed — click to retry' : 'Run validation (Ctrl+Shift+V)'}
               >
                 {isRunning ? SpinSVG : ValidateSVG}
                 {isRunning
@@ -522,7 +522,7 @@ export default function Toolbar({
         {/* Validation */}
         <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 shrink-0">
           <IBtn
-            onClick={() => void runValidation()}
+            onClick={() => void runValidation(undefined, undefined, true)}
             disabled={!canRun}
             title={isRunning ? 'Validating…' : validationStatus === 'error' ? 'Validation failed — tap to retry' : 'Validate'}
           >

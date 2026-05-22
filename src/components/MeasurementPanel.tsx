@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUIStore } from '../stores/uiStore'
 import type { ViewerAPI } from '../lib/viewer'
@@ -8,7 +8,9 @@ interface MeasurementPanelProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
 }
 
-const TOOLS: { id: MeasurementTool; label: string; icon: React.ReactNode; hint: string }[] = [
+type MeasurementEntry = { id: string; type: 'length' | 'area'; value: number }
+
+const TOOLS: { id: MeasurementTool; label: string; icon: React.ReactNode; hint: string; hintExtra?: string }[] = [
   {
     id: 'none',
     label: 'Select',
@@ -22,7 +24,7 @@ const TOOLS: { id: MeasurementTool; label: string; icon: React.ReactNode; hint: 
   {
     id: 'length',
     label: 'Length',
-    hint: 'Click two points to measure distance',
+    hint: 'Click start · click end',
     icon: (
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
         <line x1="2" y1="7" x2="12" y2="7"/>
@@ -34,7 +36,7 @@ const TOOLS: { id: MeasurementTool; label: string; icon: React.ReactNode; hint: 
   {
     id: 'area',
     label: 'Area',
-    hint: 'Click vertices to define a polygon',
+    hint: 'Click vertices · Enter or dbl-click to close',
     icon: (
       <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" opacity="0.85">
         <path d="M7 2L12 5v4L7 12 2 9V5z"/>
@@ -43,38 +45,75 @@ const TOOLS: { id: MeasurementTool; label: string; icon: React.ReactNode; hint: 
   },
 ]
 
+// ── Format helpers ────────────────────────────────────────────────────────────
+
+function formatLength(m: number): string {
+  if (m >= 1000) return `${(m / 1000).toFixed(2)} km`
+  if (m >= 1)    return `${m.toFixed(2)} m`
+  return `${(m * 100).toFixed(1)} cm`
+}
+
+function formatArea(m2: number): string {
+  if (m2 >= 10000) return `${(m2 / 10000).toFixed(2)} ha`
+  return `${m2.toFixed(2)} m²`
+}
+
+function formatValue(entry: MeasurementEntry): string {
+  return entry.type === 'length' ? formatLength(entry.value) : formatArea(entry.value)
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps) {
   const {
     activeMeasurementTool, setActiveMeasurementTool,
-    measurementCount, setMeasurementCount,
+    setMeasurementCount,
     measurementPanelOpen,
   } = useUIStore()
 
+  const [measurements, setMeasurements] = useState<MeasurementEntry[]>([])
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Poll measurement count from viewer every 500 ms when panel is open
+  // ── Tool change (stable reference needed for ESC handler dep array) ────────
+  const handleToolChange = useCallback((tool: MeasurementTool): void => {
+    setActiveMeasurementTool(tool)
+    viewerApiRef.current?.setMeasurementTool(tool)
+  }, [setActiveMeasurementTool, viewerApiRef])
+
+  // ── Poll measurements from viewer every 500 ms when panel is open ─────────
   useEffect(() => {
     if (!measurementPanelOpen) {
       if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
-      // Deactivate measurement tool when panel closes
-      try {
-        viewerApiRef.current?.setMeasurementTool('none')
-      } catch { }
+      // Deactivate measurement tool + clear display when panel closes
+      try { viewerApiRef.current?.setMeasurementTool('none') } catch { }
       setActiveMeasurementTool('none')
+      setMeasurements([])
+      setMeasurementCount(0)
       return
     }
-    pollRef.current = setInterval(() => {
+
+    const poll = () => {
       const viewer = viewerApiRef.current
       if (!viewer) return
       try {
-        const counts = viewer.getMeasurementCount()
-        setMeasurementCount(counts.length + counts.area)
-      } catch { }
-    }, 500)
+        const entries = viewer.getMeasurements()
+        setMeasurements(entries)
+        setMeasurementCount(entries.length)
+      } catch {
+        // fallback: at least update the count via the simpler API
+        try {
+          const counts = viewer.getMeasurementCount()
+          setMeasurementCount(counts.length + counts.area)
+        } catch { /* ok */ }
+      }
+    }
+
+    poll() // immediate first read
+    pollRef.current = setInterval(poll, 500)
     return () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null } }
   }, [measurementPanelOpen, viewerApiRef, setMeasurementCount, setActiveMeasurementTool])
 
-  // Unmount cleanup
+  // ── Unmount cleanup ───────────────────────────────────────────────────────
   useEffect(() => {
     return () => {
       if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
@@ -83,38 +122,44 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleToolChange = (tool: MeasurementTool): void => {
-    setActiveMeasurementTool(tool)
-    viewerApiRef.current?.setMeasurementTool(tool)
-  }
-
-  const handleClear = (): void => {
-    viewerApiRef.current?.clearMeasurements()
-    setMeasurementCount(0)
-  }
-
-  const handleDeleteLast = (): void => {
-    viewerApiRef.current?.deleteLastMeasurement()
-    // count will sync on next poll
-  }
-
-  // ESC cancels active measurement tool
+  // ── Keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
     if (!measurementPanelOpen) return
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape' && activeMeasurementTool !== 'none') {
         handleToolChange('none')
+        return
       }
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (activeMeasurementTool !== 'none') {
-          e.preventDefault()
-          handleDeleteLast()
-        }
+      // Enter — close the in-progress area polygon (no-op for length / select)
+      if (e.key === 'Enter' && activeMeasurementTool === 'area') {
+        e.preventDefault()
+        viewerApiRef.current?.finishCurrentMeasurement()
+        return
+      }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && activeMeasurementTool !== 'none') {
+        e.preventDefault()
+        handleDeleteLast()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [measurementPanelOpen, activeMeasurementTool])
+  // handleDeleteLast is defined below but stable (no deps) — safe to omit from
+  // the array. handleToolChange is now stable via useCallback.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [measurementPanelOpen, activeMeasurementTool, handleToolChange, viewerApiRef])
+
+  const handleClear = (): void => {
+    viewerApiRef.current?.clearMeasurements()
+    setMeasurements([])
+    setMeasurementCount(0)
+  }
+
+  const handleDeleteLast = (): void => {
+    viewerApiRef.current?.deleteLastMeasurement()
+    // Measurement list will sync on the next poll tick (≤500 ms)
+  }
+
+  const count = measurements.length
 
   return (
     <AnimatePresence>
@@ -125,7 +170,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
           exit={{ opacity: 0, x: 12 }}
           transition={{ duration: 0.2 }}
           className="absolute right-3 top-1/2 -translate-y-1/2 z-20 pointer-events-auto select-none"
-          style={{ width: 'min(160px, calc(100vw - 24px))' }}
+          style={{ width: 'min(180px, calc(100vw - 24px))' }}
         >
           <div className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl">
             {/* Header */}
@@ -133,9 +178,9 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
               <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase mb-0.5">
                 Measure
               </div>
-              {measurementCount > 0 && (
+              {count > 0 && (
                 <div className="text-[11px] text-[var(--text-dim)]">
-                  {measurementCount} measurement{measurementCount !== 1 ? 's' : ''}
+                  {count} measurement{count !== 1 ? 's' : ''}
                 </div>
               )}
             </div>
@@ -165,8 +210,61 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
               })}
             </div>
 
+            {/* Measurement values list */}
+            {measurements.length > 0 && (
+              <div className="border-t border-[var(--border)] max-h-[160px] overflow-y-auto">
+                {measurements.map((m, idx) => (
+                  <div
+                    key={m.id}
+                    className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border)] last:border-0"
+                  >
+                    {/* Type icon */}
+                    <span className="shrink-0 text-[var(--text-faint)]">
+                      {m.type === 'length' ? (
+                        <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                          <line x1="2" y1="7" x2="12" y2="7"/>
+                          <line x1="2" y1="5" x2="2" y2="9"/>
+                          <line x1="12" y1="5" x2="12" y2="9"/>
+                        </svg>
+                      ) : (
+                        <svg width="11" height="11" viewBox="0 0 14 14" fill="currentColor" opacity="0.7">
+                          <path d="M7 2L12 5v4L7 12 2 9V5z"/>
+                        </svg>
+                      )}
+                    </span>
+                    {/* Index */}
+                    <span className="text-[10px] font-mono text-[var(--text-faint)] shrink-0 w-3 text-right">
+                      {idx + 1}
+                    </span>
+                    {/* Value */}
+                    <span className="text-[11px] font-mono text-[var(--text)] flex-1 text-right tabular-nums">
+                      {formatValue(m)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* "Finish area" button — shown while area tool is active, completes the polygon */}
+            {activeMeasurementTool === 'area' && (
+              <div className="border-t border-[var(--border)] p-1.5">
+                <button
+                  onClick={() => viewerApiRef.current?.finishCurrentMeasurement()}
+                  className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-[7px] text-[11px] font-semibold transition-colors"
+                  style={{ background: 'var(--accent)18', color: 'var(--accent)', border: '1px solid var(--accent)33' }}
+                  title="Close polygon and create area measurement (Enter)"
+                >
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="2,5 4,7.5 8,2.5" />
+                  </svg>
+                  Finish area
+                  <span className="opacity-50 text-[9px] font-mono ml-auto">↵</span>
+                </button>
+              </div>
+            )}
+
             {/* Actions */}
-            {measurementCount > 0 && (
+            {count > 0 && (
               <div className="border-t border-[var(--border)] p-1.5 flex flex-col gap-0.5">
                 <button
                   onClick={handleDeleteLast}
@@ -191,7 +289,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
               </div>
             )}
 
-            {/* Hint */}
+            {/* Active tool hint */}
             {activeMeasurementTool !== 'none' && (
               <div className="border-t border-[var(--border)] px-3 py-2 text-[10.5px] text-[var(--text-faint)] leading-snug">
                 {TOOLS.find(t => t.id === activeMeasurementTool)?.hint}

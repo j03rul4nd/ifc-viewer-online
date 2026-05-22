@@ -315,6 +315,23 @@ function EmptyStateNotValidated() {
   )
 }
 
+function EmptyStateError({ error }: { error: string | null }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6 py-4">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" className="opacity-40">
+        <circle cx="24" cy="24" r="16" stroke="var(--danger)" strokeWidth="1.5" />
+        <path d="M24 16v10M24 31h.01" stroke="var(--danger)" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+      <div className="space-y-1">
+        <p className="text-[12px] font-semibold" style={{ color: 'var(--danger)' }}>Error de validación</p>
+        <p className="text-[10px] text-[var(--text-faint)] max-w-[240px] leading-relaxed">
+          {error ?? 'La validación falló. Pulsa Reintentar para volver a intentarlo.'}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 function EmptyStateClean() {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6 py-4">
@@ -366,19 +383,30 @@ function RunButton({
 }) {
   if (status === 'running') {
     return (
-      <button
-        disabled
-        className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-[11px] font-medium text-[var(--accent)] border border-[var(--accent)]33 bg-[var(--accent)]0a cursor-not-allowed shrink-0"
-      >
-        <svg
-          width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"
-          className="animate-spin shrink-0"
+      <div className="relative flex items-center shrink-0">
+        <button
+          disabled
+          className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-[11px] font-medium text-[var(--accent)] border border-[var(--accent)]33 bg-[var(--accent)]0a cursor-not-allowed overflow-hidden"
         >
-          <circle cx="6" cy="6" r="4.5" strokeOpacity="0.25" />
-          <path d="M6 1.5a4.5 4.5 0 014.5 4.5" strokeLinecap="round" />
-        </svg>
-        {progress}%
-      </button>
+          {/* Animated fill behind the text */}
+          {progress > 0 && (
+            <div
+              className="absolute inset-0 rounded-lg pointer-events-none transition-all duration-300"
+              style={{ width: `${progress}%`, background: 'var(--accent)', opacity: 0.08 }}
+            />
+          )}
+          <svg
+            width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"
+            className="animate-spin shrink-0 relative"
+          >
+            <circle cx="6" cy="6" r="4.5" strokeOpacity="0.25" />
+            <path d="M6 1.5a4.5 4.5 0 014.5 4.5" strokeLinecap="round" />
+          </svg>
+          <span className="relative tabular-nums">
+            {progress > 0 ? `${progress}%` : 'Validando…'}
+          </span>
+        </button>
+      </div>
     )
   }
 
@@ -394,6 +422,40 @@ function RunButton({
           <polyline points="2,6 4.5,8.5 9,3" />
         </svg>
         Volver a validar
+      </button>
+    )
+  }
+
+  if (status === 'error') {
+    return (
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-[11px] font-semibold border transition-all disabled:opacity-40 shrink-0"
+        style={{ color: 'var(--danger)', borderColor: 'var(--danger)44', background: 'var(--danger)12' }}
+        title="La validación falló — pulsa para reintentar"
+      >
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="shrink-0">
+          <path d="M5 3v3M5 7.5h.01" />
+          <circle cx="5" cy="5" r="4" />
+        </svg>
+        Reintentar
+      </button>
+    )
+  }
+
+  if (status === 'cancelled') {
+    return (
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-[11px] font-medium border transition-all disabled:opacity-40 shrink-0"
+        style={{ color: 'var(--text-dim)', borderColor: 'var(--border)', background: 'var(--surface-2)' }}
+      >
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" className="shrink-0">
+          <path d="M3 2.5l5 2.5-5 2.5V2.5z" />
+        </svg>
+        Validar de nuevo
       </button>
     )
   }
@@ -799,6 +861,67 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
   )
 }
 
+// ── Export dropdown (click-based, works on touch) ─────────────────────────────
+
+function ExportDropdown({
+  onExportJson, onExportCsv, onExportCertificate, onExportBcf,
+}: {
+  onExportJson: () => void
+  onExportCsv:  () => void
+  onExportCertificate: () => void
+  onExportBcf:  () => void
+}) {
+  const [open, setOpen]       = useState(false)
+  const wrapRef               = useRef<HTMLDivElement>(null)
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  const act = (fn: () => void) => { fn(); setOpen(false) }
+
+  return (
+    <div ref={wrapRef} className="relative shrink-0">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 px-2 h-6 rounded text-[10px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] font-medium transition-colors"
+      >
+        Exportar
+        <svg
+          width="9" height="9" viewBox="0 0 9 9" fill="currentColor" className="opacity-50"
+          style={{ transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 150ms' }}
+        >
+          <path d="M1 3L4.5 6.5L8 3" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-xl z-50 py-1 min-w-[148px]">
+          <button onClick={() => act(onExportJson)}        className="w-full text-left px-3 py-2 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:bg-[var(--surface-2)] transition-colors">
+            <span className="font-mono text-[var(--accent)] text-[9px] mr-1.5">JSON</span>Informe completo
+          </button>
+          <button onClick={() => act(onExportCsv)}         className="w-full text-left px-3 py-2 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:bg-[var(--surface-2)] transition-colors">
+            <span className="font-mono text-[var(--ok)] text-[9px] mr-1.5">CSV</span>Tabla de incidencias
+          </button>
+          <div className="h-px bg-[var(--border)] mx-2 my-0.5" />
+          <button onClick={() => act(onExportCertificate)} className="w-full text-left px-3 py-2 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:bg-[var(--surface-2)] transition-colors">
+            <span className="font-mono text-[#F5A623] text-[9px] mr-1.5">CERT</span>Certificado
+          </button>
+          <div className="h-px bg-[var(--border)] mx-2 my-0.5" />
+          <button onClick={() => act(onExportBcf)}         className="w-full text-left px-3 py-2 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:bg-[var(--surface-2)] transition-colors">
+            <span className="font-mono text-[var(--accent)] text-[9px] mr-1.5">BCF</span>Exportar BCF
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface ValidationPanelProps {
@@ -808,7 +931,8 @@ interface ValidationPanelProps {
 
 export default function ValidationPanel({ onJumpToElement, viewer }: ValidationPanelProps) {
   const {
-    result, partialIssues, isRunning, progress, validationStatus, filters, setFilters,
+    result, partialIssues, isRunning, progress, validationStatus, validationError,
+    filters, setFilters,
     rules, activeProfileId, customProfiles, showCoverageSummary, dismissCoverageSummary,
     setActiveProfile,
   } = useValidationStore(
@@ -818,6 +942,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
       isRunning:              s.isRunning,
       progress:               s.progress,
       validationStatus:       s.validationStatus,
+      validationError:        s.validationError,
       filters:                s.filters,
       setFilters:             s.setFilters,
       rules:                  s.rules,
@@ -858,10 +983,17 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     if (window.innerWidth < 768) return MIN_PANEL_H
     return Math.min(DEFAULT_PANEL_H, Math.floor(window.innerHeight * 0.82))
   })
+  const [isDragging,   setIsDragging]   = useState(false)
+  const [gripHovered,  setGripHovered]  = useState(false)
   const panelHRef   = useRef(panelHeight)
   const mountedRef  = useRef(true)
+  const rafRef      = useRef<number>(0)
+  const pendingHRef = useRef<number>(0)
 
-  useEffect(() => () => { mountedRef.current = false }, [])
+  useEffect(() => {
+    mountedRef.current = true              // reset after StrictMode double-invoke
+    return () => { mountedRef.current = false }
+  }, [])
 
   const updatePanelHeight = useCallback((h: number) => {
     if (!mountedRef.current) return
@@ -871,52 +1003,43 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     setPanelHeight(clamped)
   }, [])
 
-  // ── Resize grip (native DOM, bypasses React delegation) ─────────────────
-  // We attach the pointerdown listener directly to the DOM node instead of
-  // using React's onPointerDown synthetic event.  React 18 delegates events
-  // to the root container — if Three.js's OrbitControls calls
-  // stopPropagation() on any pointer event between the grip and the root,
-  // React's handler never fires.  A native listener on the element itself
-  // fires in the TARGET phase (before any propagation can be stopped).
-  const gripRef = useRef<HTMLDivElement>(null)
+  // ── Resize grip ──────────────────────────────────────────────────────────
+  // Using React onPointerDown so no timing/ref issues; move+up go to
+  // document so they always fire even when the pointer leaves the grip.
+  const handleGripPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button > 0) return
+    e.preventDefault()
+    e.stopPropagation()
+    console.log('[GRIP] pointerdown — startY:', e.clientY, 'startH:', panelHRef.current)
 
-  useEffect(() => {
-    const el = gripRef.current
-    if (!el) return
+    const startY = e.clientY
+    const startH = panelHRef.current
 
-    const handleDown = (e: PointerEvent) => {
-      if (e.button > 0) return          // ignore right / middle click
-      e.preventDefault()
-      e.stopPropagation()               // prevent OrbitControls from activating
+    setIsDragging(true)
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor     = 'ns-resize'
 
-      const startY = e.clientY
-      const startH = panelHRef.current
-
-      // Pointer capture routes all future move/up events here even when the
-      // cursor drifts over the Three.js canvas.
-      try { el.setPointerCapture(e.pointerId) } catch { /* already released */ }
-
-      document.body.style.userSelect = 'none'
-      document.body.style.cursor     = 'ns-resize'
-
-      const handleMove = (ev: PointerEvent) => {
-        // Panel is bottom-anchored → drag UP decreases ev.clientY → height grows
-        updatePanelHeight(startH + (startY - ev.clientY))
-      }
-      const handleUp = () => {
-        el.removeEventListener('pointermove',   handleMove)
-        el.removeEventListener('pointerup',     handleUp)
-        el.removeEventListener('pointercancel', handleUp)
-        document.body.style.userSelect = ''
-        document.body.style.cursor     = ''
-      }
-      el.addEventListener('pointermove',   handleMove)
-      el.addEventListener('pointerup',     handleUp)
-      el.addEventListener('pointercancel', handleUp)
+    const handleMove = (ev: PointerEvent): void => {
+      pendingHRef.current = startH + (startY - ev.clientY)
+      if (rafRef.current) return
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = 0
+        updatePanelHeight(pendingHRef.current)
+      })
+    }
+    const handleUp = (): void => {
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0 }
+      setIsDragging(false)
+      document.removeEventListener('pointermove',   handleMove)
+      document.removeEventListener('pointerup',     handleUp)
+      document.removeEventListener('pointercancel', handleUp)
+      document.body.style.userSelect = ''
+      document.body.style.cursor     = ''
     }
 
-    el.addEventListener('pointerdown', handleDown)
-    return () => el.removeEventListener('pointerdown', handleDown)
+    document.addEventListener('pointermove',   handleMove)
+    document.addEventListener('pointerup',     handleUp)
+    document.addEventListener('pointercancel', handleUp)
   }, [updatePanelHeight])
 
   // ── Data ──────────────────────────────────────────────────────────────
@@ -1041,7 +1164,9 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   }, [result, activeProfileId, customProfiles, rules, sceneModels, activeValidationModelId])
 
   const handleRunValidation = useCallback(() => {
-    void runValidation(activeValidationModelId ?? undefined)
+    // force=true bypasses the OPFS result cache so that changed profiles /
+    // rule configs always produce a fresh run instead of returning stale data.
+    void runValidation(activeValidationModelId ?? undefined, undefined, true)
   }, [activeValidationModelId])
 
   const handleBcfImport = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1123,17 +1248,36 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   return (
     <div
       className="flex flex-col border-t border-[var(--border)] bg-[var(--surface)] shrink-0"
-      style={{ height: panelHeight, minHeight: MIN_PANEL_H, maxHeight: 'min(82dvh, calc(100% - 120px))' }}
+      style={{
+        height:     panelHeight,
+        minHeight:  MIN_PANEL_H,
+        maxHeight:  'min(82dvh, calc(100% - 120px))',
+        willChange: isDragging ? 'height' : 'auto',
+      }}
     >
       {/* ── Resize grip ── */}
       <div
-        ref={gripRef}
-        className="h-3 shrink-0 cursor-ns-resize flex items-center justify-center group hover:bg-[var(--accent)]14 active:bg-[var(--accent)]20 transition-colors select-none touch-none"
-        title="Arrastrar para redimensionar"
+        onPointerDown={handleGripPointerDown}
+        onMouseEnter={() => setGripHovered(true)}
+        onMouseLeave={() => setGripHovered(false)}
+        className="h-5 shrink-0 cursor-ns-resize flex items-center justify-center select-none touch-none"
+        style={{
+          background: isDragging
+            ? 'var(--accent)33'
+            : gripHovered
+              ? 'var(--accent)1a'
+              : 'var(--surface-2)',
+          borderBottom: '1px solid var(--border)',
+        }}
+        title="Drag to resize"
       >
-        <div className="flex gap-[3px] items-center">
-          {[0,1,2,3,4].map((i) => (
-            <div key={i} className="w-[3px] h-[3px] rounded-full bg-[var(--border-strong)] group-hover:bg-[var(--accent)] transition-colors" />
+        <div className="flex gap-[4px] items-center">
+          {[0,1,2,3,4,5,6].map((i) => (
+            <div
+              key={i}
+              className="w-[4px] h-[4px] rounded-full"
+              style={{ background: (isDragging || gripHovered) ? 'var(--accent)' : 'var(--text-faint)' }}
+            />
           ))}
         </div>
       </div>
@@ -1192,24 +1336,14 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
           </button>
         )}
 
-        {/* Export dropdown */}
+        {/* Export dropdown — click-based so it works on mobile/touch */}
         {result && (
-          <div className="relative group/export shrink-0">
-            <button className="flex items-center gap-1 px-2 h-6 rounded text-[10px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] font-medium transition-colors">
-              Exportar
-              <svg width="9" height="9" viewBox="0 0 9 9" fill="currentColor" className="opacity-50">
-                <path d="M1 3L4.5 6.5L8 3" />
-              </svg>
-            </button>
-            <div className="absolute right-0 top-full mt-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-xl z-50 py-1 hidden group-hover/export:block min-w-[130px]">
-              <button onClick={handleExportJson}        className="w-full text-left px-3 py-1.5 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors">JSON</button>
-              <button onClick={handleExportCsv}         className="w-full text-left px-3 py-1.5 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors">CSV</button>
-              <div className="h-px bg-[var(--border)] mx-2 my-0.5" />
-              <button onClick={handleExportCertificate} className="w-full text-left px-3 py-1.5 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors">Certificado JSON</button>
-              <div className="h-px bg-[var(--border)] mx-2 my-0.5" />
-              <button onClick={handleBcfExport}         className="w-full text-left px-3 py-1.5 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors">BCF</button>
-            </div>
-          </div>
+          <ExportDropdown
+            onExportJson={handleExportJson}
+            onExportCsv={handleExportCsv}
+            onExportCertificate={handleExportCertificate}
+            onExportBcf={handleBcfExport}
+          />
         )}
 
         {/* Pending fixes count */}
@@ -1453,9 +1587,11 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
             {!isRunning && issues.length === 0 && (
               !hasModel
                 ? <EmptyStateNoModel />
-                : result === null
-                  ? <EmptyStateNotValidated />
-                  : <EmptyStateClean />
+                : validationStatus === 'error'
+                  ? <EmptyStateError error={validationError} />
+                  : result === null
+                    ? <EmptyStateNotValidated />
+                    : <EmptyStateClean />
             )}
 
             {/* Issue groups */}

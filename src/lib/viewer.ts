@@ -250,6 +250,13 @@ export interface ViewerAPI {
   deleteLastMeasurement(): void
   /** Return the number of placed measurements of each type. */
   getMeasurementCount(): { length: number; area: number }
+  /** Return all placed measurements with their computed values. */
+  getMeasurements(): Array<{ id: string; type: 'length' | 'area'; value: number }>
+  /**
+   * Finish the area polygon currently being drawn (calls endCreation on the
+   * area measurement tool). No-op if < 3 points have been placed.
+   */
+  finishCurrentMeasurement(): void
 
   // ─── Clipping planes ─────────────────────────────────────────────────────────
   /**
@@ -749,23 +756,46 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   }
 
   const onPointerUp = (e: PointerEvent): void => {
-    // Measurement tools handle their own click-to-place logic
-    if (activeMeasurementTool !== 'none') return
     const dt   = Date.now() - pdTime
     const dist = Math.hypot(e.clientX - pdX, e.clientY - pdY)
-    if (dt > 300 || dist > 5) return
+    if (dt > 300 || dist > 5) return   // ignore drags / long-press
+
+    // ── Measurement tools ────────────────────────────────────────────────────
+    // ThatOpen's Measurement base class only registers pointermove + keydown(Esc)
+    // via setEvents(). It does NOT add a click/pointerdown listener.
+    // We must call create() ourselves on each quick click.
+    if (activeMeasurementTool === 'length') {
+      void lengthMeasurement.create()
+      return
+    }
+    if (activeMeasurementTool === 'area') {
+      void areaMeasurement.create()
+      return
+    }
+
     mouse.set(e.clientX, e.clientY)
-    // When clipper is in creation mode, place a clip plane instead of selecting
+
+    // ── Clipper ───────────────────────────────────────────────────────────────
     if (clipper.enabled) {
       void clipper.create(world)
       return
     }
+
+    // ── Element selection ─────────────────────────────────────────────────────
     void commitSelection()
+  }
+
+  // Double-click: finish in-progress area polygon (needs ≥ 3 points already placed)
+  const onDoubleClick = (): void => {
+    if (activeMeasurementTool === 'area') {
+      try { areaMeasurement.endCreation?.() } catch { /* ok */ }
+    }
   }
 
   canvas.addEventListener('pointermove', onPointerMove)
   canvas.addEventListener('pointerdown', onPointerDown)
   canvas.addEventListener('pointerup',   onPointerUp)
+  canvas.addEventListener('dblclick',    onDoubleClick)
 
   // ─── Setup post-carga ─────────────────────────────────────────────────────
 
@@ -1525,6 +1555,25 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
+    getMeasurements(): Array<{ id: string; type: 'length' | 'area'; value: number }> {
+      const out: Array<{ id: string; type: 'length' | 'area'; value: number }> = []
+      try {
+        let i = 0
+        for (const item of lengthMeasurement.list) {
+          try { out.push({ id: `length-${i++}`, type: 'length', value: item.value ?? 0 }) } catch { /* skip */ }
+        }
+        i = 0
+        for (const item of areaMeasurement.list) {
+          try { out.push({ id: `area-${i++}`, type: 'area', value: item.value ?? 0 }) } catch { /* skip */ }
+        }
+      } catch { /* ok */ }
+      return out
+    },
+
+    finishCurrentMeasurement(): void {
+      try { areaMeasurement.endCreation?.() } catch { /* ok */ }
+    },
+
     // ─── Clipping planes ───────────────────────────────────────────────────────
 
     startAddClipPlane() {
@@ -1709,6 +1758,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       canvas.removeEventListener('pointermove', onPointerMove)
       canvas.removeEventListener('pointerdown', onPointerDown)
       canvas.removeEventListener('pointerup',   onPointerUp)
+      canvas.removeEventListener('dblclick',    onDoubleClick)
       try { lengthMeasurement.dispose() } catch { /* ok */ }
       try { areaMeasurement.dispose() } catch { /* ok */ }
       try { clipper.dispose() } catch { /* ok */ }

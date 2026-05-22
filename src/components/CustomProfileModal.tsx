@@ -16,6 +16,7 @@ import {
   getRuleDescription,
 } from '../types'
 import type { RulesConfig, ValidationCategoryType, SupportedLocale } from '../types'
+import { getCoveredCategories } from './ValidationCoverageSummary'
 
 // ── Locale detection ─────────────────────────────────────────────────────────
 
@@ -37,6 +38,10 @@ function severityColor(sev: 'error' | 'warning' | 'info'): string {
   if (sev === 'warning') return '#F5A623'
   return '#5E9ED6'
 }
+
+// ── Icon options ──────────────────────────────────────────────────────────────
+
+const ICON_OPTIONS = ['⚙️', '🏗️', '🏢', '📐', '🔧', '🔍', '📋', '✅', '🌍', '🏛️']
 
 // ── Category order ────────────────────────────────────────────────────────────
 
@@ -185,13 +190,17 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
     })),
   )
 
-  const [name, setName]           = useState('')
+  const [name, setName]             = useState('')
+  const [description, setDescription] = useState('')
+  const [icon, setIcon]             = useState(ICON_OPTIONS[0])
   const [localRules, setLocalRules] = useState<RulesConfig>(() => ({ ...DEFAULT_RULES, ...storeRules }))
-  const [error, setError]         = useState<string | null>(null)
+  const [error, setError]           = useState<string | null>(null)
 
   const handleOpenChange = (isOpen: boolean): void => {
     if (isOpen) {
       setName('')
+      setDescription('')
+      setIcon(ICON_OPTIONS[0])
       setLocalRules({ ...DEFAULT_RULES, ...storeRules })
       setError(null)
     } else {
@@ -207,12 +216,14 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
     const trimmed = name.trim()
     if (!trimmed) { setError('El nombre no puede estar vacío.'); return }
     if (customProfiles.length >= 5) { setError('Máximo 5 perfiles personalizados.'); return }
+    // Derive coverage categories automatically from the active rule set
+    const coverageTypes = getCoveredCategories(localRules)
     addCustomProfile({
-      name: trimmed,
-      description: 'Perfil personalizado',
-      icon: '⚙️',
-      rules: localRules,
-      coverageTypes: [],
+      name:        trimmed,
+      description: description.trim() || 'Perfil personalizado',
+      icon,
+      rules:       localRules,
+      coverageTypes,
     })
     onClose()
   }
@@ -270,27 +281,68 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
             </Dialog.Close>
           </div>
 
-          {/* ── Name field ── */}
-          <div className="px-4 sm:px-5 pt-3 sm:pt-4 pb-3 shrink-0 border-b border-[var(--border)]">
-            <label className="block text-[11px] font-medium text-[var(--text-dim)] mb-1.5">
-              Nombre del perfil
-            </label>
-            <input
-              value={name}
-              onChange={(e) => { setName(e.target.value); setError(null) }}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }}
-              placeholder="Ej. Entrega cliente 2024…"
-              className="w-full h-9 px-3 text-[12px] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] transition-colors"
-            />
-            {error && (
-              <p className="text-[10px] text-[var(--danger)] mt-1.5 flex items-center gap-1">
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <circle cx="5" cy="5" r="4" />
-                  <path d="M5 3v2.5M5 7h.01" />
-                </svg>
-                {error}
-              </p>
-            )}
+          {/* ── Name + icon + description ── */}
+          <div className="px-4 sm:px-5 pt-3 sm:pt-4 pb-3 shrink-0 border-b border-[var(--border)] flex flex-col gap-3">
+            {/* Name row: icon picker + name input together */}
+            <div className="flex items-end gap-2">
+              {/* Icon picker */}
+              <div className="shrink-0">
+                <label className="block text-[11px] font-medium text-[var(--text-dim)] mb-1.5">Icono</label>
+                <div className="flex flex-wrap gap-1">
+                  {ICON_OPTIONS.map((em) => (
+                    <button
+                      key={em}
+                      type="button"
+                      onClick={() => setIcon(em)}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-[15px] border transition-all"
+                      style={
+                        icon === em
+                          ? { borderColor: 'var(--accent)', background: 'var(--accent)18' }
+                          : { borderColor: 'var(--border)', background: 'var(--surface-2)' }
+                      }
+                    >
+                      {em}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Name input */}
+            <div>
+              <label className="block text-[11px] font-medium text-[var(--text-dim)] mb-1.5">
+                Nombre del perfil <span className="text-[var(--danger)]">*</span>
+              </label>
+              <input
+                value={name}
+                onChange={(e) => { setName(e.target.value); setError(null) }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }}
+                placeholder="Ej. Entrega cliente 2024…"
+                className="w-full h-9 px-3 text-[12px] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] transition-colors"
+              />
+              {error && (
+                <p className="text-[10px] text-[var(--danger)] mt-1.5 flex items-center gap-1">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="5" cy="5" r="4" />
+                    <path d="M5 3v2.5M5 7h.01" />
+                  </svg>
+                  {error}
+                </p>
+              )}
+            </div>
+
+            {/* Description (optional) */}
+            <div>
+              <label className="block text-[11px] font-medium text-[var(--text-dim)] mb-1.5">
+                Descripción <span className="text-[var(--text-faint)]">(opcional)</span>
+              </label>
+              <input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Breve descripción del perfil…"
+                className="w-full h-8 px-3 text-[12px] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] transition-colors"
+              />
+            </div>
           </div>
 
           {/* ── Rule groups ── */}

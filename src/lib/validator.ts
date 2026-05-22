@@ -317,8 +317,11 @@ export async function buildSpatialTree(modelId?: string): Promise<void> {
  * @param modelId - The sceneStore/registry ID of the model to validate.
  *                  Falls back to the active model when omitted.
  * @param rules   - Override the stored rules config for this run.
+ * @param force   - When true, bypass the OPFS result cache and always run the
+ *                  worker. Pass true when the user explicitly triggers a re-run
+ *                  so that changed profiles / rules always take effect.
  */
-export async function runValidation(modelId?: string, rules?: RulesConfig): Promise<void> {
+export async function runValidation(modelId?: string, rules?: RulesConfig, force = false): Promise<void> {
   // Resolve the target model — explicit arg wins; otherwise use the active scene model
   const resolvedId  = modelId ?? useSceneStore.getState().activeModelId ?? null
   const ifcBuffer   = resolveBuffer(resolvedId ?? undefined)
@@ -342,7 +345,9 @@ export async function runValidation(modelId?: string, rules?: RulesConfig): Prom
   const activeRules = rules ?? storedRules
 
   // ── Cache check — skip worker if we have a fresh result ──────────────────
-  if (cacheKey) {
+  // Bypassed when `force` is true (explicit user re-run) so that changed
+  // profiles / rule configs are always reflected in the new result.
+  if (cacheKey && !force) {
     const storeState = useValidationStore.getState()
     // Check model-specific cache first, fall back to cacheKey-indexed cache
     const cached =

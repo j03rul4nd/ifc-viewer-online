@@ -162,7 +162,9 @@ export const useValidationStore = create<ValidationStore>()(
             validationStatus: status,
             validationError:  error ?? null,
             isRunning:        status === 'running',
-            ...(status === 'running' ? { partialIssues: [] } : {}),
+            // Clear stale data when a new run starts so the panel shows
+            // streaming partial issues instead of the previous run's results.
+            ...(status === 'running' ? { partialIssues: [], result: null } : {}),
           },
           false,
           `setValidationStatus:${status}`,
@@ -242,7 +244,11 @@ export const useValidationStore = create<ValidationStore>()(
       setActiveProfile: (profileId) => {
         savePersistedProfileId(profileId)
         if (profileId === null) {
-          return set({ activeProfileId: null }, false, 'setActiveProfile:null')
+          return set(
+            { activeProfileId: null, validationStatus: 'idle', result: null, partialIssues: [] },
+            false,
+            'setActiveProfile:null',
+          )
         }
         // Look in predefined profiles first, then custom profiles
         const allProfiles = (s: { customProfiles: ValidationProfile[] }) =>
@@ -251,7 +257,15 @@ export const useValidationStore = create<ValidationStore>()(
           (s) => {
             const profile = allProfiles(s).find((p) => p.id === profileId)
             if (!profile) return { activeProfileId: profileId }
-            return { activeProfileId: profileId, rules: profile.rules }
+            // Reset status + clear stale result so the panel shows "Validar"
+            // (not "Volver a validar") until the new profile has been run.
+            return {
+              activeProfileId:  profileId,
+              rules:            profile.rules,
+              validationStatus: 'idle' as ValidationStatus,
+              result:           null,
+              partialIssues:    [],
+            }
           },
           false,
           `setActiveProfile:${profileId}`,

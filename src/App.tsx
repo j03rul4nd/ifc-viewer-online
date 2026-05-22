@@ -98,6 +98,24 @@ export default function App() {
   // Validation lifecycle
   const validation = useValidationRunner()
 
+  // ── Global keyboard shortcuts ─────────────────────────────────────────────
+  // Ctrl+Shift+V (or Cmd+Shift+V on Mac) — run / re-run validation
+  useEffect(() => {
+    const handler = (e: KeyboardEvent): void => {
+      if (route !== 'viewer') return
+      const mod = e.ctrlKey || e.metaKey
+      if (mod && e.shiftKey && e.key === 'V') {
+        e.preventDefault()
+        if (!validation.isRunning && validation.canRun) {
+          void validation.run(undefined, undefined, true)
+        }
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route, validation.isRunning, validation.canRun])
+
   // Element focus/select/reveal handlers
   const elementFocus = useElementFocus(viewerApiRef, modelTreeRef)
 
@@ -484,7 +502,7 @@ export default function App() {
                       onSetTransform={setSceneModelTransform}
                       onTransformMode={() => {}}
                       onRemove={(id) => { void handleRemoveModel(id) }}
-                      onValidate={(id) => { void validation.run(undefined, id) }}
+                      onValidate={(id) => { void validation.run(undefined, id, true) }}
                       onFrame={(id) => { handleSetActiveModel(id); viewerApiRef.current?.frameActiveModel() }}
                       onIsolate={(id) => { handleSetActiveModel(id) }}
                       onShowAll={() => { /* visibility already restored by ScenePanel */ }}
