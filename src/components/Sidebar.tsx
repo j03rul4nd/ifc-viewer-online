@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import { useValidationStore } from '../stores/validationStore'
 import { useUIStore } from '../stores/uiStore'
@@ -135,6 +136,13 @@ function CopyButton({ value, label }: { value: string; label?: string }) {
   )
 }
 
+// ─── EmptyText ────────────────────────────────────────────────────────────────
+
+function EmptyText() {
+  const { t } = useTranslation('sidebar')
+  return <span className="text-[var(--text-faint)] italic">{t('properties.empty')}</span>
+}
+
 // ─── EditableField ─────────────────────────────────────────────────────────────
 
 interface EditableFieldProps {
@@ -188,7 +196,7 @@ function EditableField({ label, value, isDirty, onCommit }: EditableFieldProps) 
               isDirty ? 'text-[var(--accent-2)]' : 'text-[var(--text)]'
             }`}
           >
-            {value || <span className="text-[var(--text-faint)] italic">empty</span>}
+            {value || <EmptyText />}
           </span>
           <button
             className="shrink-0 opacity-0 group-hover/field:opacity-50 hover:!opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--border)]"
@@ -469,6 +477,7 @@ interface PropertiesPanelProps {
 function PropertiesPanel({
   selected, categories, isolated, viewerApiRef, onFrame, onRevealInTree, onIsolate,
 }: PropertiesPanelProps) {
+  const { t } = useTranslation('sidebar')
   // Read raw record (stable reference) to avoid infinite-loop selector issue
   const spatialTreesRecord = useValidationStore((s) => s.spatialTrees)
   const result             = useValidationStore((s) => s.result)
@@ -557,9 +566,9 @@ function PropertiesPanel({
         <div className="w-10 h-10 mx-auto mb-3 rounded-[10px] bg-[var(--surface-2)] flex items-center justify-center text-[var(--text-dim)] border border-[var(--border)]">
           <Icons.Isolate size={18} />
         </div>
-        <div className="text-[13px] text-[var(--text-dim)] mb-1">Nothing selected</div>
+        <div className="text-[13px] text-[var(--text-dim)] mb-1">{t('nothingSelected')}</div>
         <div className="text-[11.5px] text-[var(--text-faint)] leading-relaxed">
-          Click any element in the viewer to inspect its IFC properties.
+          {t('nothingSelectedDesc')}
         </div>
       </div>
     )
@@ -605,7 +614,7 @@ function PropertiesPanel({
           </span>
           {hasDirty && (
             <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--accent)] text-white font-medium leading-none">
-              edited
+              {t('properties.edited')}
             </span>
           )}
           {errorCount > 0 && (
@@ -620,7 +629,7 @@ function PropertiesPanel({
           )}
           {/* IFC data loading indicator */}
           {ifcState.status === 'loading' && (
-            <span className="ml-auto text-[10px] text-[var(--text-faint)] italic">loading…</span>
+            <span className="ml-auto text-[10px] text-[var(--text-faint)] italic">{t('properties.loading')}</span>
           )}
         </div>
 
@@ -652,7 +661,7 @@ function PropertiesPanel({
               <rect x="1" y="7" width="4" height="4" rx="0.5" />
               <rect x="7" y="7" width="4" height="4" rx="0.5" />
             </svg>
-            Frame
+            {t('actions.frame')}
           </button>
           {(() => {
             const isIsolated = isolated === selected.type
@@ -664,24 +673,24 @@ function PropertiesPanel({
                     ? 'bg-[var(--accent)] border-[var(--accent)] text-white hover:brightness-110'
                     : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)]'
                 }`}
-                title={isIsolated ? 'Clear isolation' : 'Isolate this category'}
+                title={isIsolated ? t('actions.clearIsolation') : t('actions.isolate')}
               >
                 <Icons.Isolate size={11} />
-                {isIsolated ? 'Clear' : 'Isolate'}
+                {isIsolated ? t('actions.clearIsolation') : t('actions.isolate')}
               </button>
             )
           })()}
           <button
             onClick={() => onRevealInTree?.(expressId)}
             className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors"
-            title="Reveal in spatial tree"
+            title={t('actions.revealInTree')}
           >
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <path d="M1 2h2M1 6h4M1 10h2" />
               <circle cx="9" cy="6" r="3" />
               <path d="M11 8l1.5 1.5" />
             </svg>
-            Tree
+            {t('actions.revealInTree')}
           </button>
           <button
             onClick={() => setElementsVisible([expressId], isHidden)}
@@ -692,14 +701,14 @@ function PropertiesPanel({
             }`}
           >
             {isHidden ? <Icons.EyeOff size={11} /> : <Icons.Eye size={11} />}
-            {isHidden ? 'Show' : 'Hide'}
+            {isHidden ? t('actions.show') : t('actions.hide')}
           </button>
         </div>
       </div>
 
       {/* ── Location ── */}
       <div className="border-b border-[var(--border)]">
-        <SectionHeader label="Location" open={sections.location} onToggle={() => toggle('location')} />
+        <SectionHeader label={t('properties.location')} open={sections.location} onToggle={() => toggle('location')} />
         <AnimatePresence initial={false}>
           {sections.location && (
             <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
@@ -732,13 +741,13 @@ function PropertiesPanel({
                   </div>
                 ) : (
                   <span className="text-[11.5px] text-[var(--text-faint)] italic">
-                    Not found in spatial tree
+                    {t('properties.notInTree')}
                   </span>
                 )}
 
                 {/* Category */}
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="text-[11px] text-[var(--text-dim)]">Category</span>
+                  <span className="text-[11px] text-[var(--text-dim)]">{t('properties.category')}</span>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-sm" style={{ background: catColor }} />
                     <span className="text-[11.5px] text-[var(--text)]">
@@ -757,14 +766,14 @@ function PropertiesPanel({
 
       {/* ── Visibility ── */}
       <div className="border-b border-[var(--border)]">
-        <SectionHeader label="Visibility" open={sections.visibility} onToggle={() => toggle('visibility')} />
+        <SectionHeader label={t('properties.visibility')} open={sections.visibility} onToggle={() => toggle('visibility')} />
         <AnimatePresence initial={false}>
           {sections.visibility && (
             <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
               <div className="px-4 pb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full" style={{ background: isHidden ? '#E5484D' : '#30A46C' }} />
-                  <span className="text-[12px] text-[var(--text)]">{isHidden ? 'Hidden' : 'Visible'}</span>
+                  <span className="text-[12px] text-[var(--text)]">{isHidden ? t('properties.hidden') : t('properties.visible')}</span>
                 </div>
                 <button
                   onClick={() => setElementsVisible([expressId], isHidden)}
@@ -774,7 +783,7 @@ function PropertiesPanel({
                       : 'bg-[#E5484D22] border-[#E5484D44] text-[#E5484D] hover:bg-[#E5484D33]'
                   }`}
                 >
-                  {isHidden ? 'Show element' : 'Hide element'}
+                  {isHidden ? t('actions.showElement') : t('actions.hideElement')}
                 </button>
               </div>
             </motion.div>
@@ -784,7 +793,7 @@ function PropertiesPanel({
 
       {/* ── IFC Attributes ── */}
       <div className="border-b border-[var(--border)]">
-        <SectionHeader label="IFC Attributes" open={sections.attributes} onToggle={() => toggle('attributes')} />
+        <SectionHeader label={t('properties.ifcAttributes')} open={sections.attributes} onToggle={() => toggle('attributes')} />
         <AnimatePresence initial={false}>
           {sections.attributes && (
             <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
@@ -853,7 +862,7 @@ function PropertiesPanel({
                       <path d="M6 4v3M6 8.5v.5" />
                     </svg>
                     <span className="text-[10.5px] text-[var(--accent-2)]">
-                      {pendingDiffs.size} unsaved change{pendingDiffs.size > 1 ? 's' : ''} · Ctrl+Z to undo
+                      {t('properties.unsavedChanges', { count: pendingDiffs.size })}
                     </span>
                   </div>
                 )}
@@ -861,7 +870,7 @@ function PropertiesPanel({
                 {/* IFC data load error notice */}
                 {ifcState.status === 'error' && (
                   <div className="mx-4 mt-2 px-2.5 py-1.5 rounded-lg bg-[#F5A62312] border border-[#F5A62330] flex items-center gap-2">
-                    <span className="text-[10.5px] text-[#F5A623]">Could not load IFC attributes</span>
+                    <span className="text-[10.5px] text-[#F5A623]">{t('properties.loadError')}</span>
                   </div>
                 )}
               </div>
@@ -874,7 +883,7 @@ function PropertiesPanel({
       {(psets.length > 0 || ifcState.status === 'loading') && (
         <div className="border-b border-[var(--border)]">
           <SectionHeader
-            label="Property Sets"
+            label={t('properties.psets')}
             open={sections.psets}
             onToggle={() => toggle('psets')}
             badge={psets.length > 0 ? totalProps : undefined}
@@ -892,7 +901,7 @@ function PropertiesPanel({
                       <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.3" />
                       <path d="M6 1.5A4.5 4.5 0 0110.5 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
-                    <span className="text-[11.5px] italic">Loading property sets…</span>
+                    <span className="text-[11.5px] italic">{t('properties.loadingPsets')}</span>
                   </div>
                 ) : (
                   <div className="pt-1 pb-2">
@@ -916,7 +925,7 @@ function PropertiesPanel({
       {elementIssues.length > 0 && (
         <div className="border-b border-[var(--border)]">
           <SectionHeader
-            label={`Validation · ${elementIssues.length} issue${elementIssues.length > 1 ? 's' : ''}`}
+            label={t('validation.issueCount', { count: elementIssues.length })}
             open={sections.validation}
             onToggle={() => toggle('validation')}
           />
@@ -940,6 +949,15 @@ function PropertiesPanel({
 // ─── Category Panel ─────────────────────────────────────────────────────────────
 
 const MAX_VISIBLE = 80
+
+function MoreElementsText({ count }: { count: number }) {
+  const { t } = useTranslation('sidebar')
+  return (
+    <div className="px-2.5 py-1 text-[11px] text-[var(--text-faint)] italic">
+      {t('categories.moreElements', { count })}
+    </div>
+  )
+}
 
 function CategoryRow({
   cat, isHidden, isIsolated, isExpanded,
@@ -1034,9 +1052,7 @@ function CategoryRow({
                 )
               })}
               {overflow > 0 && (
-                <div className="px-2.5 py-1 text-[11px] text-[var(--text-faint)] italic">
-                  + {overflow} more elements
-                </div>
+                <MoreElementsText count={overflow} />
               )}
             </div>
           </motion.div>
@@ -1060,6 +1076,7 @@ function CategoryPanel({
   onSelectElement?: (expressId: number) => void
   onFrameElement?: (expressId: number) => void
 }) {
+  const { t } = useTranslation('sidebar')
   // Combine all loaded models' trees so element names resolve correctly
   // regardless of which model they belong to.
   const spatialTreesRecord = useValidationStore((s) => s.spatialTrees)
@@ -1080,8 +1097,8 @@ function CategoryPanel({
   if (categories.length === 0) {
     return (
       <div className="px-6 py-10 text-center text-[var(--text-faint)]">
-        <div className="text-[13px] text-[var(--text-dim)] mb-1">No model loaded</div>
-        <div className="text-[11.5px]">Open an IFC file to see categories.</div>
+        <div className="text-[13px] text-[var(--text-dim)] mb-1">{t('categories.noModel')}</div>
+        <div className="text-[11.5px]">{t('categories.noModelDesc')}</div>
       </div>
     )
   }
@@ -1090,12 +1107,12 @@ function CategoryPanel({
     <div className="py-2">
       <div className="px-3.5 pt-1 pb-2.5 flex items-center justify-between">
         <div>
-          <div className="text-[11.5px] font-semibold text-[var(--text-dim)] uppercase tracking-[0.06em]">Categories</div>
-          <div className="text-[11px] text-[var(--text-faint)] mt-0.5">{categories.length} types · {elementCount} elements</div>
+          <div className="text-[11.5px] font-semibold text-[var(--text-dim)] uppercase tracking-[0.06em]">{t('categories.title')}</div>
+          <div className="text-[11px] text-[var(--text-faint)] mt-0.5">{t('categories.types', { count: categories.length })} · {t('categories.elements', { count: elementCount })}</div>
         </div>
         {isolated && (
           <button onClick={() => onSetIsolated(null)} className="text-[11px] text-[var(--accent-2)]">
-            Clear isolation
+            {t('categories.clearIsolation')}
           </button>
         )}
       </div>
@@ -1124,6 +1141,7 @@ function CategoryPanel({
 // ─── Takeoff Panel ──────────────────────────────────────────────────────────────
 
 function TakeoffPanel() {
+  const { t } = useTranslation('sidebar')
   const sceneModels = useSceneStore((s) => s.models)
   const activeModelId = useSceneStore((s) => s.activeModelId)
 
@@ -1161,7 +1179,7 @@ function TakeoffPanel() {
   if (!modelId) {
     return (
       <div className="px-6 py-10 text-center text-[var(--text-faint)] text-[12px]">
-        No model loaded.
+        {t('takeoff.noModel')}
       </div>
     )
   }
@@ -1176,15 +1194,15 @@ function TakeoffPanel() {
               <path d="M1 14h2V8H1v6zm4 0h2V4H5v10zm4 0h2V6H9v8zm4 0h2V2h-2v12z" opacity="0.8"/>
             </svg>
           </div>
-          <div className="text-[13px] text-[var(--text-dim)] mb-1">Quantity Takeoff</div>
+          <div className="text-[13px] text-[var(--text-dim)] mb-1">{t('takeoff.title')}</div>
           <div className="text-[11.5px] text-[var(--text-faint)] leading-relaxed mb-4">
-            Reads area, volume and length quantities from IFC quantity sets.
+            {t('takeoff.description')}
           </div>
           <button
             onClick={() => void computeTakeoff(modelId)}
             className="px-3.5 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[12px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--border-strong)] transition-colors"
           >
-            Compute quantities
+            {t('takeoff.computeQuantities')}
           </button>
         </div>
       </div>
@@ -1201,7 +1219,7 @@ function TakeoffPanel() {
             <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
             <path d="M12 2a10 10 0 0 1 7.07 2.93" />
           </svg>
-          <div className="text-[12px]">Computing quantities…</div>
+          <div className="text-[12px]">{t('takeoff.running')}</div>
         </div>
       </div>
     )
@@ -1212,12 +1230,12 @@ function TakeoffPanel() {
       <div>
         {modelSelector}
         <div className="px-6 py-8 text-center">
-          <div className="text-[12px] text-[var(--danger)] mb-3">Quantity computation failed.</div>
+          <div className="text-[12px] text-[var(--danger)] mb-3">{t('takeoff.failed')}</div>
           <button
             onClick={() => void computeTakeoff(modelId)}
             className="px-3.5 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[12px] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
           >
-            Retry
+            {t('takeoff.retry')}
           </button>
         </div>
       </div>
@@ -1229,8 +1247,8 @@ function TakeoffPanel() {
       <div>
         {modelSelector}
         <div className="px-6 py-8 text-center text-[var(--text-faint)] text-[12px]">
-          No quantity data found in this model.
-          <br />IFC quantity sets (Qto_*) may not be present.
+          {t('takeoff.noData')}
+          <br />{t('takeoff.noDataIfc')}
         </div>
       </div>
     )
@@ -1243,15 +1261,15 @@ function TakeoffPanel() {
       {modelSelector}
       <div className="px-3.5 pt-1 pb-2.5 flex items-center justify-between">
         <div>
-          <div className="text-[11.5px] font-semibold text-[var(--text-dim)] uppercase tracking-[0.06em]">Quantities</div>
-          <div className="text-[11px] text-[var(--text-faint)] mt-0.5">{groups.length} classes</div>
+          <div className="text-[11.5px] font-semibold text-[var(--text-dim)] uppercase tracking-[0.06em]">{t('takeoff.title')}</div>
+          <div className="text-[11px] text-[var(--text-faint)] mt-0.5">{t('takeoff.classes', { count: groups.length })}</div>
         </div>
         <button
           onClick={() => void computeTakeoff(modelId)}
-          title="Recompute quantities"
+          title={t('takeoff.refresh')}
           className="text-[11px] text-[var(--text-faint)] hover:text-[var(--text-dim)] transition-colors"
         >
-          Refresh
+          {t('takeoff.refresh')}
         </button>
       </div>
 
@@ -1276,7 +1294,7 @@ function TakeoffPanel() {
               </div>
             ) : (
               hasQuantities && (
-                <div className="text-[11px] text-[var(--text-faint)]">No quantity data</div>
+                <div className="text-[11px] text-[var(--text-faint)]">{t('takeoff.noQuantityData')}</div>
               )
             )}
           </div>
@@ -1314,6 +1332,7 @@ export default function Sidebar({
   isolated, onSetIsolated, onFrame, onSelectElement, onFrameElement,
   onRevealInTree, viewerApiRef, mobileOpen = false, onMobileClose,
 }: SidebarProps) {
+  const { t } = useTranslation('sidebar')
   const [tab, setTab] = useState<'props' | 'cats' | 'qty'>('props')
   const [desktopCollapsed, setDesktopCollapsed] = useState(false)
 
@@ -1345,7 +1364,7 @@ export default function Sidebar({
             exit={{ opacity: 0, x: 8 }}
             transition={{ duration: 0.18 }}
             onClick={() => setDesktopCollapsed(false)}
-            title="Show panel"
+            title={t('actions.showPanel')}
             className="hidden md:flex absolute top-[68px] right-3 z-[9] glass border border-[var(--border)] rounded-xl w-8 h-8 items-center justify-center text-[var(--text-dim)] hover:text-[var(--text)] transition-colors pointer-events-auto"
           >
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
@@ -1385,11 +1404,11 @@ export default function Sidebar({
       <div className="md:hidden flex items-center justify-between px-4 pt-safe h-12 border-b border-[var(--border)] shrink-0"
         style={{ paddingTop: `max(16px, env(safe-area-inset-top))` }}
       >
-        <span className="text-[13px] font-semibold text-[var(--text)]">Panel</span>
+        <span className="text-[13px] font-semibold text-[var(--text)]">{t('panel')}</span>
         <button
           onClick={onMobileClose}
           className="w-9 h-9 flex items-center justify-center rounded-lg text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] transition-colors"
-          aria-label="Close panel"
+          aria-label={t('actions.hidePanel')}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
             <path d="M2 2l10 10M12 2L2 12" />
@@ -1399,7 +1418,7 @@ export default function Sidebar({
 
       {/* Tabs */}
       <div className="flex items-center p-1.5 gap-0.5 border-b border-[var(--border)] shrink-0">
-        {([['props', 'Properties'], ['cats', 'Categories'], ['qty', 'Quantities']] as const).map(([id, label]) => (
+        {([['props', t('tabs.properties')], ['cats', t('tabs.categories')], ['qty', t('tabs.takeoff')]] as const).map(([id, label]) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -1415,7 +1434,7 @@ export default function Sidebar({
         {/* Desktop only: collapse button */}
         <button
           onClick={() => setDesktopCollapsed(true)}
-          title="Hide panel"
+          title={t('actions.hidePanel')}
           className="hidden md:flex shrink-0 items-center justify-center w-7 h-7 rounded-[6px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors ml-0.5"
         >
           <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">

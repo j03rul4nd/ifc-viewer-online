@@ -11,6 +11,7 @@
 
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import { useIfcUploadFlow }       from '../hooks/useIfcUploadFlow'
 import type { UploadOverlayProps, UploadState } from '../types/upload.types'
@@ -34,6 +35,7 @@ function IdleView({
   openFilePicker: () => void
   dragHandlers:   ReturnType<typeof useIfcUploadFlow>['dragHandlers']
 }) {
+  const { t } = useTranslation('common')
   return (
     <motion.div
       key="idle"
@@ -46,15 +48,15 @@ function IdleView({
       {/* Header */}
       <div className="flex justify-between items-start mb-4 sm:mb-6">
         <div>
-          <h2 className="text-[17px] font-semibold tracking-tight">Open an IFC file</h2>
+          <h2 className="text-[17px] font-semibold tracking-tight">{t('upload.idle.title')}</h2>
           <p className="text-[12.5px] text-[var(--text-dim)] mt-1">
-            Processed locally — nothing leaves your browser.
+            {t('upload.idle.subtitle')}
           </p>
         </div>
         <button
           onClick={onClose}
           className="text-[var(--text-dim)] hover:text-[var(--text)] p-1 transition-colors"
-          aria-label="Close"
+          aria-label={t('upload.idle.closeAriaLabel')}
         >
           <Icons.X size={18} />
         </button>
@@ -67,7 +69,7 @@ function IdleView({
         role="button"
         tabIndex={0}
         onKeyDown={e => e.key === 'Enter' && openFilePicker()}
-        aria-label="Drop IFC file or click to browse"
+        aria-label={t('upload.idle.dropAriaLabel')}
         className="relative py-8 sm:py-14 px-5 rounded-xl text-center cursor-pointer transition-all overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         style={{
           border:     `2px dashed ${isDragging ? 'var(--accent)' : 'var(--border-strong)'}`,
@@ -84,12 +86,12 @@ function IdleView({
           <Icons.Upload size={22} />
         </div>
         <p className="text-[14px] font-medium mb-1">
-          {isDragging ? 'Release to open' : 'Drop your .ifc file here'}
+          {isDragging ? t('upload.idle.releaseToOpen') : t('upload.idle.dropHint')}
         </p>
         <p className="text-[12px] text-[var(--text-dim)]">
           or{' '}
           <span className="text-[var(--accent-2)] underline underline-offset-2">
-            click to browse
+            {t('upload.idle.clickToBrowse')}
           </span>
           {' · '}IFC2x3 / IFC4 / IFC4x3
         </p>
@@ -97,11 +99,11 @@ function IdleView({
 
       {/* Footer */}
       <div className="mt-4 flex gap-2.5 text-[11px] text-[var(--text-faint)] justify-center flex-wrap">
-        <span>🔒 WebAssembly — runs in-browser</span>
+        <span>🔒 {t('upload.idle.trust1')}</span>
         <span>·</span>
-        <span>No login required</span>
+        <span>{t('upload.idle.trust2')}</span>
         <span>·</span>
-        <span>Up to 2 GB</span>
+        <span>{t('upload.idle.trust3')}</span>
       </div>
     </motion.div>
   )
@@ -118,16 +120,17 @@ function ActiveView({
   onCancel:  () => void
   canCancel: boolean
 }) {
+  const { t } = useTranslation('common')
   const progress   = 'progress' in state ? state.progress : 0
   const stage      = progressToStage(progress)
   const stageInfo  = STAGE_THRESHOLDS[stage]
   const isPre      = state.id === 'validating' || state.id === 'queued'
 
   const heading =
-    state.id === 'validating'     ? 'Validating file…'      :
-    state.id === 'queued'         ? 'Preparing loader…'     :
-    state.id === 'building-scene' ? 'Building 3D scene…'    :
-    'Loading IFC model…'
+    state.id === 'validating'     ? t('upload.active.validating')    :
+    state.id === 'queued'         ? t('upload.active.queued')         :
+    state.id === 'building-scene' ? t('upload.active.buildingScene') :
+    t('upload.active.loading')
 
   return (
     <motion.div
@@ -153,7 +156,7 @@ function ActiveView({
 
       <p className="text-[15px] font-semibold mb-1">{heading}</p>
       <p className="text-[12px] text-[var(--text-dim)] mb-5">
-        {isPre ? 'Checking IFC schema and file integrity' : stageInfo.label}
+        {isPre ? t('upload.active.checkingSchema') : stageInfo.label}
       </p>
 
       {/* Progress bar */}
@@ -174,14 +177,14 @@ function ActiveView({
 
       <div className="flex items-center justify-between">
         <span className="font-mono text-[11px] text-[var(--text-faint)]">
-          {isPre ? 'Initialising…' : `${Math.round(progress)}% · ${stageInfo.label}`}
+          {isPre ? t('upload.active.initialising') : `${Math.round(progress)}% · ${stageInfo.label}`}
         </span>
         {canCancel && (
           <button
             onClick={onCancel}
             className="text-[11.5px] text-[var(--text-dim)] hover:text-red-400 transition-colors"
           >
-            Cancel
+            {t('upload.active.cancel')}
           </button>
         )}
       </div>
@@ -198,6 +201,7 @@ function SuccessView({
   state:   Extract<UploadState, { id: 'success' }>
   onClose: () => void
 }) {
+  const { t } = useTranslation('common')
   return (
     <motion.div
       key="success"
@@ -210,7 +214,7 @@ function SuccessView({
       <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
         <Icons.Check size={22} className="text-emerald-400" />
       </div>
-      <h2 className="text-[16px] font-semibold mb-1">Model ready</h2>
+      <h2 className="text-[16px] font-semibold mb-1">{t('upload.success.title')}</h2>
       <p className="text-[12.5px] text-[var(--text-dim)] mb-1 font-mono truncate max-w-[320px] mx-auto">
         {state.file.name}
       </p>
@@ -221,7 +225,7 @@ function SuccessView({
         onClick={onClose}
         className="px-5 py-2.5 rounded-lg bg-[var(--accent)] text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
       >
-        Open viewer →
+        {t('upload.success.viewModel')}
       </button>
     </motion.div>
   )
@@ -238,6 +242,7 @@ function ErrorView({
   onRetry: () => void
   onClose: () => void
 }) {
+  const { t } = useTranslation('common')
   const { error } = state
   return (
     <motion.div
@@ -255,19 +260,19 @@ function ErrorView({
         <button
           onClick={onClose}
           className="text-[var(--text-dim)] hover:text-[var(--text)] p-1 transition-colors"
-          aria-label="Close"
+          aria-label={t('upload.idle.closeAriaLabel')}
         >
           <Icons.X size={18} />
         </button>
       </div>
 
-      <h2 className="text-[15px] font-semibold mb-1.5">Failed to load model</h2>
+      <h2 className="text-[15px] font-semibold mb-1.5">{t('upload.error.title')}</h2>
       <p className="text-[13px] text-[var(--text-dim)] mb-2">{error.message}</p>
 
       {error.technical && (
         <details className="mb-5">
           <summary className="text-[11px] text-[var(--text-faint)] cursor-pointer hover:text-[var(--text-dim)] select-none">
-            Technical details
+            {t('upload.error.technicalDetails')}
           </summary>
           <pre className="mt-2 p-2.5 rounded-lg bg-[var(--surface-2)] text-[10.5px] text-[var(--text-faint)] font-mono overflow-auto max-h-24 whitespace-pre-wrap">
             {error.technical}
@@ -281,14 +286,14 @@ function ErrorView({
             onClick={onRetry}
             className="flex-1 py-2 rounded-lg bg-[var(--accent)] text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
           >
-            Try again
+            {t('upload.error.tryAgain')}
           </button>
         )}
         <button
           onClick={onClose}
           className="flex-1 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[13px] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
         >
-          Close
+          {t('upload.error.close')}
         </button>
       </div>
     </motion.div>
@@ -298,6 +303,7 @@ function ErrorView({
 // ── Cancelled ─────────────────────────────────────────────────────────────────
 
 function CancelledView({ onRetry, onClose }: { onRetry: () => void; onClose: () => void }) {
+  const { t } = useTranslation('common')
   return (
     <motion.div
       key="cancelled"
@@ -307,19 +313,19 @@ function CancelledView({ onRetry, onClose }: { onRetry: () => void; onClose: () 
       transition={{ duration: 0.18 }}
       className="p-5 sm:p-9 text-center"
     >
-      <p className="text-[14px] text-[var(--text-dim)] mb-5">Load cancelled.</p>
+      <p className="text-[14px] text-[var(--text-dim)] mb-5">{t('upload.cancelled.title')}</p>
       <div className="flex gap-2.5 justify-center">
         <button
           onClick={onRetry}
           className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
         >
-          Load another file
+          {t('upload.cancelled.loadAnother')}
         </button>
         <button
           onClick={onClose}
           className="px-4 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[13px] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
         >
-          Close
+          {t('upload.cancelled.close')}
         </button>
       </div>
     </motion.div>

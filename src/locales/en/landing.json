@@ -1,0 +1,203 @@
+{
+  "hero": {
+    "title": "IFC Viewer Online",
+    "subtitle": "Professional BIM validation & editing",
+    "description": "Validate, inspect and edit IFC files directly in your browser. No installation required.",
+    "badge": "No login required — runs entirely in your browser",
+    "badgeMobile": "No login · runs in your browser",
+    "h1": "IFC Viewer",
+    "h1Accent": "Online",
+    "subtitleFull": "Open, validate, measure, and non-destructively edit IFC files directly in your browser. No installation, no server, no account — WebAssembly parsing, WebGL rendering, 18 validation rules, 2D floor plans, measurements, and IFC export.",
+    "trustLine": "Free · Open source · 100% client-side · IFC2x3 · IFC4 · IFC4x1 · IFC4x3",
+    "trustLineMobile": "Free · Open source · IFC2x3 · IFC4 · IFC4x3"
+  },
+  "typing": [
+    "Open any .ifc file instantly — no upload",
+    "Validate with 18 built-in rules",
+    "Measure lengths, areas, and volumes in 3D",
+    "Generate 2D floor plans from any storey",
+    "Edit GUIDs, names, and property sets",
+    "Export corrected IFC in one click"
+  ],
+  "actions": {
+    "getStarted": "Get started",
+    "loadDemo": "Load demo model",
+    "openFile": "Open IFC file",
+    "learnMore": "Learn more",
+    "openViewer": "Open viewer",
+    "launch": "Launch",
+    "openAnIfc": "Open an IFC file",
+    "viewOnGithub": "View on GitHub",
+    "viewSourceOnGithub": "View source on GitHub",
+    "contactForWork": "Contact for custom work"
+  },
+  "nav": {
+    "features": "Features",
+    "howItWorks": "How it works",
+    "faq": "FAQ",
+    "github": "GitHub"
+  },
+  "compatible": {
+    "label": "Compatible with every major BIM authoring tool"
+  },
+  "stats": [
+    { "label": "Validation rules" },
+    { "label": "IFC schema versions" },
+    { "label": "Runs in the browser" },
+    { "label": "Server uploads" }
+  ],
+  "featuresSection": {
+    "label": "FEATURES",
+    "title": "View, validate, measure, and edit IFC",
+    "subtitle": "Every tool you need in a single browser tab — private, fast, and completely free."
+  },
+  "features": [
+    {
+      "title": "Drag & drop, no upload",
+      "body": "Open any .ifc file instantly. Parsed client-side via web-ifc WebAssembly — your data never leaves the browser. No account, no server, works fully offline.",
+      "tip": "Client-side WebAssembly parsing"
+    },
+    {
+      "title": "18-rule IFC validator",
+      "body": "Stream results as each rule runs in a background worker. Covers GUID duplicates, spatial hierarchy, orphan elements, naming conventions, missing type assignments, and more.",
+      "tip": "IFC / ISO 19650 rule engine"
+    },
+    {
+      "title": "Non-destructive editing",
+      "body": "Edit GlobalIds, names, LongNames, and property set values inline. Every change is held as a diff with full undo/redo history — the source file is never mutated.",
+      "tip": "Full undo/redo diff stack"
+    },
+    {
+      "title": "Measurement tools",
+      "body": "Measure length, area, volume, and edge dimensions directly in the 3D viewport. Results persist as labelled annotations and export alongside your model.",
+      "tip": "Length · area · volume · edge measurements"
+    },
+    {
+      "title": "Floor plans & section cuts",
+      "body": "Generate accurate 2D floor plan views from any storey. Cut live section planes at any angle or axis to inspect internal structure without hiding geometry.",
+      "tip": "2D floor plans · clipping planes"
+    },
+    {
+      "title": "Postproduction renderer",
+      "body": "Toggle SSAO (ambient occlusion), edge rendering, and bloom postprocessing for presentation-quality stills — no external render farm needed.",
+      "tip": "SSAO · edge rendering · bloom"
+    },
+    {
+      "title": "Multi-model support",
+      "body": "Load multiple IFC files simultaneously. Independent visibility, transforms, validation, quantity takeoff, and export per model. Manage everything from the Scene panel.",
+      "tip": "Independent per-model state"
+    },
+    {
+      "title": "OPFS geometry cache",
+      "body": "Parsed geometry is stored in the browser's Origin Private File System. Repeat loads are ~10× faster with no re-parsing — and it works completely offline.",
+      "tip": "Origin Private File System cache"
+    },
+    {
+      "title": "IFC2x3, IFC4, IFC4x1, IFC4x3",
+      "body": "All current IFC schema versions supported — Revit, ArchiCAD, Tekla, Allplan, Vectorworks, BricsCAD BIM, Solibri and more. Outdated schemas are flagged by the validator.",
+      "tip": "All major IFC schema versions"
+    },
+    {
+      "title": "Quantity takeoff",
+      "body": "Reads IfcElementQuantity data to aggregate area, volume, and length per IFC class. Per-model results update in real time as you load or filter models.",
+      "tip": "IfcElementQuantity aggregation"
+    },
+    {
+      "title": "IFC + GLB export",
+      "body": "Export the corrected IFC binary (all diffs applied in a Web Worker) or export visible geometry as a standard GLB file. Multi-model batch export supported.",
+      "tip": "Server-free binary IFC export"
+    },
+    {
+      "title": "IfcRelationsIndexer",
+      "body": "Every relationship in the model is pre-indexed on load. Near-instant lookup for spatial containment, classification trees, type assignments, and element properties.",
+      "tip": "Pre-indexed relationship graph"
+    }
+  ],
+  "howItWorksSection": {
+    "label": "HOW IT WORKS",
+    "title": "From file to validated, measured model"
+  },
+  "steps": [
+    {
+      "n": "01",
+      "title": "Open your IFC",
+      "body": "Drag & drop or click to open any IFC file. web-ifc WebAssembly parses it entirely in your browser — no upload, no network required. OPFS caches geometry for instant repeat loads."
+    },
+    {
+      "n": "02",
+      "title": "Inspect & validate",
+      "body": "Explore the model tree, filter by category, and run 18 built-in validation rules in a background worker. Duplicate GUIDs, spatial hierarchy errors, missing type assignments — all flagged instantly."
+    },
+    {
+      "n": "03",
+      "title": "Edit & measure",
+      "body": "Fix GUIDs with one click. Edit names and property values inline with full undo/redo. Measure lengths, areas, and volumes in 3D. View 2D floor plans and cut live section planes."
+    },
+    {
+      "n": "04",
+      "title": "Visualise & export",
+      "body": "Toggle SSAO, edge rendering, and bloom for presentation renders. Export the corrected IFC binary (all diffs applied server-free) or visible geometry as a standard GLB."
+    }
+  ],
+  "openSource": {
+    "label": "OPEN SOURCE",
+    "title": "Built in public, free forever",
+    "body": "The source code is on GitHub. Built with @thatopen/components, three.js, web-ifc, and React. If you need a custom BIM web viewer, validator, or IFC tooling — the author is available for contract work."
+  },
+  "finalCta": {
+    "title": "Open an IFC now.",
+    "subtitle": "No login. No upload. Runs in your browser.",
+    "githubLine": "Or explore the source on"
+  },
+  "faqSection": {
+    "title": "Questions"
+  },
+  "faq": [
+    {
+      "q": "Is my IFC file uploaded anywhere?",
+      "a": "No. Files are parsed entirely in your browser via web-ifc, a WebAssembly build of the open-source IFC parser. Nothing leaves your machine. The app works completely offline once loaded."
+    },
+    {
+      "q": "What IFC versions are supported?",
+      "a": "IFC2x3, IFC4, IFC4x1, and IFC4x3. The viewer uses the open-source web-ifc parser — the same engine used by most modern BIM tools and @thatopen/components. Outdated schemas are automatically flagged by the validator."
+    },
+    {
+      "q": "What measurement tools are available?",
+      "a": "You can measure lengths between any two points, areas of surfaces, volumes of enclosed elements, and individual edge lengths — all directly in the 3D viewport. Measurements persist as labelled annotations and can be exported alongside your model."
+    },
+    {
+      "q": "Can I view floor plans and cut sections?",
+      "a": "Yes. Floor plan mode generates accurate 2D orthographic views from any IfcBuildingStorey in the model. Section cuts let you define clipping planes at any position and angle to inspect internal structure without hiding geometry."
+    },
+    {
+      "q": "How does the validation work?",
+      "a": "The validator runs 18 built-in rules in a background Web Worker so the UI stays responsive. Rules cover GUID duplicates, spatial hierarchy, orphan elements, naming conventions, missing type assignments, clash detection, and more. Results stream in as each rule completes."
+    },
+    {
+      "q": "Can I fix errors and re-export a corrected IFC?",
+      "a": "Yes. All edits (GUID fixes, renames, property value changes) are held as non-destructive diffs with full undo/redo. Clicking Export IFC applies all diffs to the original binary in a Web Worker and downloads the corrected file — no server involved."
+    },
+    {
+      "q": "Can I load multiple IFC files at once?",
+      "a": "Yes. Load as many IFC files as your device memory allows. Each model has independent visibility, transforms, validation, quantity takeoff, and export. Use the Scene panel to manage, reorder, or remove models at any time."
+    },
+    {
+      "q": "Does it work offline?",
+      "a": "Yes, once the page is loaded. The WebAssembly parser and WebGL renderer run entirely in the browser. Parsed geometry is cached in OPFS so repeat loads are instant even without a network connection."
+    },
+    {
+      "q": "What are the file size limits?",
+      "a": "There is no enforced limit — performance depends on your device. Files up to ~200 MB typically load well on modern hardware. The OPFS geometry cache means you only pay the parse cost once per file."
+    },
+    {
+      "q": "Is it free? Can I use it for commercial projects?",
+      "a": "Yes, completely free. The source code is MIT-licensed. You can use the live app or fork the repository for your own projects, including commercial ones."
+    }
+  ],
+  "footer": {
+    "poweredBy": "Powered by IFC.js",
+    "openSource": "Open source",
+    "copyright": "IFC Viewer Online © 2026",
+    "builtWith": "Built with @thatopen/components · three.js · web-ifc"
+  }
+}

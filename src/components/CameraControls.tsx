@@ -4,6 +4,7 @@
 // Collapses to a single icon when the user hides it.
 
 import React, { useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ViewerAPI } from '../lib/viewer'
 import type { CameraPreset } from '../types'
 
@@ -82,17 +83,18 @@ const Icon = {
   ),
 }
 
-const PRESETS: { label: string; key: CameraPreset; shortcut: string; Icon: React.FC }[] = [
-  { label: '3D',     key: 'iso',    shortcut: 'Num5', Icon: Icon.Iso    },
-  { label: 'Top',    key: 'top',    shortcut: 'Num7', Icon: Icon.Top    },
-  { label: 'Front',  key: 'front',  shortcut: 'Num1', Icon: Icon.Front  },
-  { label: 'Right',  key: 'right',  shortcut: 'Num3', Icon: Icon.Right  },
-  { label: 'Left',   key: 'left',   shortcut: '',     Icon: Icon.Left   },
-  { label: 'Back',   key: 'back',   shortcut: '',     Icon: Icon.Back   },
-  { label: 'Bottom', key: 'bottom', shortcut: '',     Icon: Icon.Bottom },
-]
-
 export default function CameraControls({ viewerApiRef, visible, onToggle }: CameraControlsProps) {
+  const { t } = useTranslation('viewer')
+
+  const PRESETS: { label: string; key: CameraPreset; shortcut: string; Icon: React.FC }[] = [
+    { label: '3D',                         key: 'iso',    shortcut: 'Num5', Icon: Icon.Iso    },
+    { label: t('camera.top'),              key: 'top',    shortcut: 'Num7', Icon: Icon.Top    },
+    { label: t('camera.front'),            key: 'front',  shortcut: 'Num1', Icon: Icon.Front  },
+    { label: t('camera.right'),            key: 'right',  shortcut: 'Num3', Icon: Icon.Right  },
+    { label: t('camera.left'),             key: 'left',   shortcut: '',     Icon: Icon.Left   },
+    { label: t('camera.back'),             key: 'back',   shortcut: '',     Icon: Icon.Back   },
+    { label: t('camera.bottom'),           key: 'bottom', shortcut: '',     Icon: Icon.Bottom },
+  ]
 
   const go = useCallback((preset: CameraPreset) => {
     viewerApiRef.current?.setCameraPreset(preset)
@@ -124,10 +126,12 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
           {/* Header */}
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[rgba(12,12,16,0.88)] backdrop-blur-[14px] border border-[var(--border)]">
             <Icon.Camera />
-            <span className="text-[11px] text-[var(--text-dim)] font-medium tracking-wide uppercase">Views</span>
+            <span className="text-[11px] text-[var(--text-dim)] font-medium tracking-wide uppercase">
+              {t('cameraControls.title')}
+            </span>
             <button
               onClick={onToggle}
-              title="Hide camera controls"
+              title={t('cameraControls.hide')}
               className="ml-1 text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
             >
               <Icon.Collapse />
@@ -159,7 +163,7 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
         /* Collapsed: just a small camera icon button */
         <button
           onClick={onToggle}
-          title="Show camera views"
+          title={t('cameraControls.show')}
           className="flex items-center justify-center w-8 h-8 rounded-lg bg-[rgba(12,12,16,0.82)] backdrop-blur-[14px] border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
         >
           <Icon.Camera />

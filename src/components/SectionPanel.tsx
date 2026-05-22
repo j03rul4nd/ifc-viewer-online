@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useUIStore } from '../stores/uiStore'
 import { createLogger } from '../lib/logger'
 import type { ViewerAPI } from '../lib/viewer'
@@ -17,6 +18,7 @@ interface PlaneEntry {
 }
 
 export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
+  const { t } = useTranslation('viewer')
   const {
     clipPanelOpen, clipPlaneCount, setClipPlaneCount,
   } = useUIStore()
@@ -143,11 +145,11 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
             {/* Header */}
             <div className="px-3 pt-2.5 pb-1.5 border-b border-[var(--border)]">
               <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase mb-0.5">
-                Section
+                {t('section.title')}
               </div>
               {clipPlaneCount > 0 && (
                 <div className="text-[11px] text-[var(--text-dim)]">
-                  {clipPlaneCount} plane{clipPlaneCount !== 1 ? 's' : ''}
+                  {t('section.planes', { count: clipPlaneCount })}
                 </div>
               )}
               {opError && (
@@ -165,7 +167,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
                   <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                     <path d="M2 2l10 10M12 2L2 12"/>
                   </svg>
-                  Click face to place…
+                  {t('section.clickToPlace')}
                 </button>
               ) : (
                 <button
@@ -176,7 +178,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
                     <line x1="7" y1="1" x2="7" y2="13"/>
                     <line x1="1" y1="7" x2="13" y2="7"/>
                   </svg>
-                  Add clip plane
+                  {t('section.addPlane')}
                 </button>
               )}
             </div>
@@ -189,7 +191,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
                     {/* Enable toggle */}
                     <button
                       onClick={() => handleToggle(plane.id, !plane.enabled)}
-                      title={plane.enabled ? 'Disable plane' : 'Enable plane'}
+                      title={plane.enabled ? t('section.disablePlane') : t('section.enablePlane')}
                       className={`flex-none w-4 h-4 flex items-center justify-center rounded transition-colors ${
                         plane.enabled ? 'text-[var(--accent)]' : 'text-[var(--text-faint)]'
                       }`}
@@ -199,11 +201,11 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
                       </svg>
                     </button>
                     <span className="flex-1 text-[11px] text-[var(--text-dim)] truncate">
-                      {plane.title || `Plane ${i + 1}`}
+                      {plane.title || t('section.planeName', { number: i + 1 })}
                     </span>
                     <button
                       onClick={() => handleDelete(plane.id)}
-                      title="Delete plane"
+                      title={t('section.deletePlane')}
                       className="flex-none opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--danger)] transition-all"
                     >
                       <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
@@ -225,7 +227,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
                   <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                     <path d="M2 2l10 10M12 2L2 12"/>
                   </svg>
-                  Clear all
+                  {t('section.clearAll')}
                 </button>
               </div>
             )}
@@ -233,8 +235,8 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
             {/* Hint */}
             {adding && (
               <div className="border-t border-[var(--border)] px-3 py-2 text-[10.5px] text-[var(--text-faint)] leading-snug">
-                Click any model surface to place a clipping plane aligned to its face normal.
-                <div className="mt-0.5 opacity-70">Esc to cancel</div>
+                {t('section.clickHint')}
+                <div className="mt-0.5 opacity-70">{t('section.escToCancel')}</div>
               </div>
             )}
           </div>

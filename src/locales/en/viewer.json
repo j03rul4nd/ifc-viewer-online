@@ -1,0 +1,127 @@
+{
+  "controls": {
+    "resetCamera": "Reset camera",
+    "fitToView": "Fit to view",
+    "perspective": "Perspective",
+    "orthographic": "Orthographic",
+    "home": "Home"
+  },
+  "camera": {
+    "front": "Front",
+    "back": "Back",
+    "left": "Left",
+    "right": "Right",
+    "top": "Top",
+    "bottom": "Bottom",
+    "isometric": "Isometric"
+  },
+  "cameraControls": {
+    "title": "Views",
+    "hide": "Hide camera controls",
+    "show": "Show camera views"
+  },
+  "overlays": {
+    "validationHighlights": "Validation highlights",
+    "measurements": "Measurements"
+  },
+  "info": {
+    "title": "Model Info",
+    "elementsLoaded": "{{count}} elements",
+    "fromCache": "from cache",
+    "gpuBackend": "GPU: {{backend}}",
+    "memoryUsage": "{{mb}} MB",
+    "fileSize": "File size",
+    "elements": "Elements",
+    "memory": "Memory",
+    "renderer": "Renderer",
+    "quality": "Quality",
+    "categories": "{{count}} categories",
+    "gpuMemory": "{{mb}} MB GPU",
+    "detecting": "Detecting…",
+    "sizeUnavailable": "Size unavailable — model was loaded from the OPFS cache. Reload from disk to see file size.",
+    "qualityScore": "Quality score: {{score}}/100"
+  },
+  "health": {
+    "unknown": "Unknown",
+    "tiny": "Tiny",
+    "light": "Light",
+    "normal": "Normal",
+    "large": "Large",
+    "heavy": "Heavy",
+    "small": "Small",
+    "typical": "Typical",
+    "complex": "Complex",
+    "dense": "Dense",
+    "good": "Good",
+    "fair": "Fair",
+    "poor": "Poor",
+    "acceptable": "Acceptable",
+    "improvable": "Improvable",
+    "deficient": "Deficient",
+    "excellent": "Excellent",
+    "critical": "Critical"
+  },
+  "error": {
+    "rendererUnavailable": "Renderer unavailable",
+    "loadFailed": "Failed to load model"
+  },
+  "section": {
+    "title": "Section",
+    "planes": "{{count}} plane",
+    "planes_other": "{{count}} planes",
+    "addPlane": "Add clip plane",
+    "clickToPlace": "Click face to place…",
+    "clearAll": "Clear all",
+    "clickHint": "Click any model surface to place a clipping plane aligned to its face normal.",
+    "escToCancel": "Esc to cancel",
+    "planeName": "Plane {{number}}",
+    "enablePlane": "Enable plane",
+    "disablePlane": "Disable plane",
+    "deletePlane": "Delete plane"
+  },
+  "floorPlan": {
+    "title": "Floor Plans",
+    "active2D": "2D view active",
+    "detectStoreys": "Detect storeys",
+    "detecting": "Detecting storeys…",
+    "noStoreys": "No storeys found in this model.",
+    "returnTo3D": "Return to 3D view",
+    "refresh": "Refresh",
+    "view2D": "2D"
+  },
+  "scene": {
+    "title": "Scene",
+    "models": "{{count}} model",
+    "models_other": "{{count}} models",
+    "transform": "Transform",
+    "visibility": "Visibility",
+    "close": "Close",
+    "isolated": "isolated",
+    "hideModel": "Hide model",
+    "showModel": "Show model",
+    "isolateModel": "Isolate — hide all other models",
+    "showAllModels": "Showing all models",
+    "frameCamera": "Frame camera on this model",
+    "validateModel": "Validate this model",
+    "removeModel": "Remove model from scene",
+    "cannotRemoveOnly": "Cannot remove the only model",
+    "noModels": "No models loaded",
+    "showAllModelsBtn": "↑ Show all models",
+    "clickHint": "Click a model to activate · use ⊙ to isolate",
+    "transformTitle": "Transform · {{fileName}}"
+  },
+  "transform": {
+    "position": "Position",
+    "rotation": "Rotation (°)",
+    "scale": "Scale",
+    "uniform": "Uniform",
+    "snapToGrid": "Snap to grid",
+    "reset": "Reset"
+  },
+  "renderQuality": {
+    "title": "Render Quality",
+    "performance": "Performance",
+    "quality": "Quality",
+    "ssaoNote": "SSAO + edge detection active. May impact performance on mobile."
+  }
+}

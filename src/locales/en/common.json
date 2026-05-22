@@ -1,0 +1,103 @@
+{
+  "app": {
+    "name": "IFC Validator",
+    "tagline": "Professional IFC validation & editing"
+  },
+  "actions": {
+    "open": "Open",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "delete": "Delete",
+    "clear": "Clear",
+    "reset": "Reset",
+    "confirm": "Confirm",
+    "retry": "Retry",
+    "export": "Export",
+    "import": "Import",
+    "upload": "Upload",
+    "download": "Download",
+    "apply": "Apply",
+    "edit": "Edit",
+    "add": "Add",
+    "remove": "Remove",
+    "show": "Show",
+    "hide": "Hide",
+    "copy": "Copy",
+    "select": "Select",
+    "deselect": "Deselect",
+    "back": "Back",
+    "home": "Home",
+    "refresh": "Refresh"
+  },
+  "status": {
+    "loading": "Loading…",
+    "loaded": "Loaded",
+    "error": "Error",
+    "idle": "Idle",
+    "running": "Running",
+    "done": "Done",
+    "saving": "Saving…",
+    "noFileLoaded": "No file loaded"
+  },
+  "file": {
+    "noFileLoaded": "No file loaded",
+    "elements": "{{count}} element",
+    "elements_other": "{{count}} elements"
+  },
+  "pagination": {
+    "of": "of",
+    "items": "items"
+  },
+  "severity": {
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info"
+  },
+  "upload": {
+    "idle": {
+      "title": "Open an IFC file",
+      "subtitle": "Processed locally — nothing leaves your browser",
+      "browse": "Browse file",
+      "dropHint": "Drop your .ifc file here",
+      "releaseToOpen": "Release to open",
+      "clickToBrowse": "click to browse",
+      "orDrop": "or drop it anywhere",
+      "dropAriaLabel": "Drop IFC file or click to browse",
+      "closeAriaLabel": "Close",
+      "trust1": "WebAssembly — runs in-browser",
+      "trust2": "No login required",
+      "trust3": "Up to 2 GB"
+    },
+    "active": {
+      "drop": "Drop your .ifc file here",
+      "validating": "Validating file…",
+      "queued": "Preparing loader…",
+      "buildingScene": "Building 3D scene…",
+      "loading": "Loading IFC model…",
+      "checkingSchema": "Checking IFC schema and file integrity",
+      "initialising": "Initialising…",
+      "cancel": "Cancel"
+    },
+    "success": {
+      "title": "Model ready",
+      "viewModel": "Open viewer →"
+    },
+    "error": {
+      "title": "Failed to load model",
+      "technicalDetails": "Technical details",
+      "tryAgain": "Try again",
+      "close": "Close"
+    },
+    "cancelled": {
+      "title": "Load cancelled.",
+      "loadAnother": "Load another file",
+      "tryAgain": "Try again",
+      "close": "Close"
+    },
+    "parsing": "Parsing…",
+    "loading": "Loading…",
+    "processing": "Processing…",
+    "fromCache": "From cache"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "title": "Model Tree",
+  "spatialTree": "Spatial Tree",
+  "search": "Search elements…",
+  "noResults": "No elements match «{{query}}»",
+  "noModel": "No model loaded",
+  "noModelDesc": "Load an IFC file and run validation to see the spatial tree.",
+  "nodes": {
+    "site": "Site",
+    "building": "Building",
+    "storey": "Storey",
+    "element": "Element",
+    "unclassified": "Unclassified"
+  },
+  "actions": {
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "focusElement": "Focus element in 3D",
+    "selectElement": "Select element",
+    "selectIn3D": "Select in 3D",
+    "frameCamera": "Frame camera",
+    "rename": "Rename",
+    "fixGuid": "Fix GUID",
+    "copyGlobalId": "Copy GlobalId",
+    "copyExpressId": "Copy express ID"
+  },
+  "models": {
+    "count": "{{count}} model",
+    "count_other": "{{count}} models",
+    "active": "Active model"
+  },
+  "context": {
+    "changeGuid": "Change GlobalId?",
+    "changeGuidWarning": "Changing a GlobalId breaks external references (BCF issues, links, COBie).",
+    "current": "Current: {{guid}}",
+    "generateNew": "Generate new GUID"
+  },
+  "editName": "Edit Name",
+  "editLongName": "Edit LongName",
+  "editDescription": "Edit Description"
+}

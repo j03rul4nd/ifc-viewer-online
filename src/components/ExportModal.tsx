@@ -3,8 +3,9 @@
 // Shown instead of the simple dropdown when 2+ models are loaded.
 // Each model row offers IFC (with applied edits) or GLB download.
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useSceneStore } from '../stores/sceneStore'
 import { useEditorStore } from '../stores/editorStore'
 import { modelRegistry } from '../lib/model-registry'
@@ -37,6 +38,7 @@ function formatBytes(bytes: number): string {
 }
 
 export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps) {
+  const { t } = useTranslation('toolbar')
   const models  = useSceneStore((s) => s.models)
   const history = useEditorStore((s) => s.history)
   const historyIndex = useEditorStore((s) => s.historyIndex)
@@ -160,9 +162,9 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
             <svg width="14" height="14" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" className="text-[var(--accent)]">
               <path d="M6.5 1v7M3.5 5.5l3 3.5 3-3.5M1 10v2h11v-2" />
             </svg>
-            <span className="text-[13px] font-semibold text-[var(--text)]">Export</span>
+            <span className="text-[13px] font-semibold text-[var(--text)]">{t('exportModal.title')}</span>
             <span className="text-[10px] text-[var(--text-muted)] bg-[rgba(255,255,255,0.06)] px-1.5 py-0.5 rounded-full">
-              {models.length} model{models.length !== 1 ? 's' : ''}
+              {t('exportModal.elements', { count: models.length })}
             </span>
           </div>
           <button
@@ -189,9 +191,9 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
                   <div className="min-w-0 flex-1">
                     <p className="text-[12px] font-medium text-[var(--text)] truncate leading-tight">{model.fileName}</p>
                     <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
-                      {model.elementCount.toLocaleString()} elements · {formatBytes(model.fileSize)}
+                      {t('exportModal.elements', { count: model.elementCount })} · {formatBytes(model.fileSize)}
                       {diffCount > 0 && (
-                        <span className="ml-2 text-[var(--accent)] font-mono">{diffCount} edit{diffCount !== 1 ? 's' : ''}</span>
+                        <span className="ml-2 text-[var(--accent)] font-mono">{t('exportModal.edits', { count: diffCount })}</span>
                       )}
                     </p>
                   </div>
@@ -203,7 +205,7 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
                   <button
                     onClick={() => void handleExportIfc(model.id, model.fileName)}
                     disabled={st.ifc === 'exporting' || !hasBuffer}
-                    title={!hasBuffer ? 'IFC buffer not available (model loaded from fragments cache only)' : undefined}
+                    title={!hasBuffer ? t('exportModal.ifcNotAvailable') : undefined}
                     className={`flex-1 h-8 flex items-center justify-center gap-1.5 rounded-lg text-[11px] font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                       st.ifc === 'done'
                         ? 'border-[var(--ok)]40 text-[var(--ok)] bg-[var(--ok)]10'
@@ -222,7 +224,7 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
                     ) : (
                       <span className="font-mono text-[10px] text-[var(--accent)]">IFC</span>
                     )}
-                    {st.ifc === 'done' ? 'Saved' : st.ifc === 'error' ? 'Failed' : st.ifc === 'exporting' ? 'Exporting…' : diffCount > 0 ? `IFC + ${diffCount} edits` : 'Export IFC'}
+                    {st.ifc === 'done' ? t('exportModal.saved') : st.ifc === 'error' ? t('exportModal.failed') : st.ifc === 'exporting' ? t('exportModal.exporting') : diffCount > 0 ? t('exportModal.withEdits', { count: diffCount }) : t('exportModal.exportIfc')}
                   </button>
 
                   {/* GLB export */}
@@ -247,7 +249,7 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
                     ) : (
                       <span className="font-mono text-[10px] text-[var(--ok)]">GLB</span>
                     )}
-                    {st.glb === 'done' ? 'Saved' : st.glb === 'error' ? 'Failed' : st.glb === 'exporting' ? 'Exporting…' : '3D (GLB)'}
+                    {st.glb === 'done' ? t('exportModal.saved') : st.glb === 'error' ? t('exportModal.failed') : st.glb === 'exporting' ? t('exportModal.exporting') : t('exportModal.exportGlb')}
                   </button>
                 </div>
               </div>
@@ -258,21 +260,21 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
         {/* Footer — bulk actions when multiple models */}
         {models.length > 1 && (
           <div className="px-4 py-3 border-t border-[var(--border)] bg-[rgba(255,255,255,0.02)]">
-            <p className="text-[10px] text-[var(--text-muted)] mb-2">Export all models</p>
+            <p className="text-[10px] text-[var(--text-muted)] mb-2">{t('exportModal.exportAll')}</p>
             <div className="flex gap-2">
               <button
                 onClick={() => void handleExportAllIfc()}
                 disabled={anyExporting}
                 className="flex-1 h-7 rounded-lg border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors disabled:opacity-40"
               >
-                All as IFC
+                {t('exportModal.allAsIfc')}
               </button>
               <button
                 onClick={() => void handleExportAllGlb()}
                 disabled={anyExporting}
                 className="flex-1 h-7 rounded-lg border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--ok)] transition-colors disabled:opacity-40"
               >
-                All as GLB
+                {t('exportModal.allAsGlb')}
               </button>
             </div>
           </div>

@@ -1,0 +1,31 @@
+{
+  "generic": "An unexpected error occurred",
+  "reloadPage": "Please reload the page",
+  "boundary": {
+    "title": "Something went wrong",
+    "description": "An error occurred while rendering this component.",
+    "reload": "Try again",
+    "details": "Error details",
+    "stackTrace": "Stack trace"
+  },
+  "model": {
+    "noModelLoaded": "No model is loaded",
+    "bufferUnavailable": "IFC source buffer is unavailable. Reload the original .ifc file to export it.",
+    "objectNotFound": "Model object not found in the 3D scene — it may have been removed.",
+    "viewerNotReady": "Viewer is not ready",
+    "loadFailed": "Failed to load model: {{message}}",
+    "removeFailed": "Could not remove model: {{message}}"
+  },
+  "export": {
+    "ifcFailed": "IFC export failed: {{message}}",
+    "glbFailed": "GLB export failed: {{message}}"
+  },
+  "validation": {
+    "failed": "Validation failed",
+    "workerError": "Validation worker error: {{message}}"
+  },
+  "bcf": {
+    "importFailed": "BCF import failed: {{message}}",
+    "exportFailed": "BCF export failed: {{message}}"
+  }
+}

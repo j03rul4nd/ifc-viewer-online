@@ -1,0 +1,127 @@
+{
+  "controls": {
+    "resetCamera": "Restablecer cámara",
+    "fitToView": "Ajustar a la vista",
+    "perspective": "Perspectiva",
+    "orthographic": "Ortográfica",
+    "home": "Inicio"
+  },
+  "camera": {
+    "front": "Frontal",
+    "back": "Trasera",
+    "left": "Izquierda",
+    "right": "Derecha",
+    "top": "Superior",
+    "bottom": "Inferior",
+    "isometric": "Isométrica"
+  },
+  "cameraControls": {
+    "title": "Vistas",
+    "hide": "Ocultar controles de cámara",
+    "show": "Mostrar vistas de cámara"
+  },
+  "overlays": {
+    "validationHighlights": "Resaltado de validación",
+    "measurements": "Mediciones"
+  },
+  "info": {
+    "title": "Info del modelo",
+    "elementsLoaded": "{{count}} elementos",
+    "fromCache": "desde caché",
+    "gpuBackend": "GPU: {{backend}}",
+    "memoryUsage": "{{mb}} MB",
+    "fileSize": "Tamaño del archivo",
+    "elements": "Elementos",
+    "memory": "Memoria",
+    "renderer": "Renderizador",
+    "quality": "Calidad",
+    "categories": "{{count}} categorías",
+    "gpuMemory": "{{mb}} MB GPU",
+    "detecting": "Detectando…",
+    "sizeUnavailable": "Tamaño no disponible — el modelo se cargó desde la caché OPFS. Recarga desde disco para ver el tamaño del archivo.",
+    "qualityScore": "Puntuación de calidad: {{score}}/100"
+  },
+  "health": {
+    "unknown": "Desconocido",
+    "tiny": "Mínimo",
+    "light": "Ligero",
+    "normal": "Normal",
+    "large": "Grande",
+    "heavy": "Pesado",
+    "small": "Pequeño",
+    "typical": "Típico",
+    "complex": "Complejo",
+    "dense": "Denso",
+    "good": "Bueno",
+    "fair": "Aceptable",
+    "poor": "Deficiente",
+    "acceptable": "Aceptable",
+    "improvable": "Mejorable",
+    "deficient": "Deficiente",
+    "excellent": "Excelente",
+    "critical": "Crítico"
+  },
+  "error": {
+    "rendererUnavailable": "Renderizador no disponible",
+    "loadFailed": "Error al cargar el modelo"
+  },
+  "section": {
+    "title": "Sección",
+    "planes": "{{count}} plano",
+    "planes_other": "{{count}} planos",
+    "addPlane": "Añadir plano de corte",
+    "clickToPlace": "Haz clic en una cara para colocar…",
+    "clearAll": "Limpiar todo",
+    "clickHint": "Haz clic en cualquier superficie del modelo para colocar un plano de corte alineado a su normal.",
+    "escToCancel": "Esc para cancelar",
+    "planeName": "Plano {{number}}",
+    "enablePlane": "Activar plano",
+    "disablePlane": "Desactivar plano",
+    "deletePlane": "Eliminar plano"
+  },
+  "floorPlan": {
+    "title": "Plantas",
+    "active2D": "Vista 2D activa",
+    "detectStoreys": "Detectar plantas",
+    "detecting": "Detectando plantas…",
+    "noStoreys": "No se encontraron plantas en este modelo.",
+    "returnTo3D": "Volver a la vista 3D",
+    "refresh": "Actualizar",
+    "view2D": "2D"
+  },
+  "scene": {
+    "title": "Escena",
+    "models": "{{count}} modelo",
+    "models_other": "{{count}} modelos",
+    "transform": "Transformación",
+    "visibility": "Visibilidad",
+    "close": "Cerrar",
+    "isolated": "aislado",
+    "hideModel": "Ocultar modelo",
+    "showModel": "Mostrar modelo",
+    "isolateModel": "Aislar — ocultar todos los demás modelos",
+    "showAllModels": "Mostrando todos los modelos",
+    "frameCamera": "Enfocar cámara en este modelo",
+    "validateModel": "Validar este modelo",
+    "removeModel": "Eliminar modelo de la escena",
+    "cannotRemoveOnly": "No se puede eliminar el único modelo",
+    "noModels": "Sin modelos cargados",
+    "showAllModelsBtn": "↑ Mostrar todos los modelos",
+    "clickHint": "Haz clic en un modelo para activarlo · usa ⊙ para aislarlo",
+    "transformTitle": "Transformación · {{fileName}}"
+  },
+  "transform": {
+    "position": "Posición",
+    "rotation": "Rotación (°)",
+    "scale": "Escala",
+    "uniform": "Uniforme",
+    "snapToGrid": "Ajustar a cuadrícula",
+    "reset": "Restablecer"
+  },
+  "renderQuality": {
+    "title": "Calidad de renderizado",
+    "performance": "Rendimiento",
+    "quality": "Calidad",
+    "ssaoNote": "SSAO + detección de bordes activo. Puede afectar al rendimiento en móvil."
+  }
+}

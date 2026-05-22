@@ -1,0 +1,103 @@
+{
+  "app": {
+    "name": "IFC Validator",
+    "tagline": "Validación y edición profesional de IFC"
+  },
+  "actions": {
+    "open": "Abrir",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "delete": "Eliminar",
+    "clear": "Limpiar",
+    "reset": "Restablecer",
+    "confirm": "Confirmar",
+    "retry": "Reintentar",
+    "export": "Exportar",
+    "import": "Importar",
+    "upload": "Subir",
+    "download": "Descargar",
+    "apply": "Aplicar",
+    "edit": "Editar",
+    "add": "Añadir",
+    "remove": "Eliminar",
+    "show": "Mostrar",
+    "hide": "Ocultar",
+    "copy": "Copiar",
+    "select": "Seleccionar",
+    "deselect": "Deseleccionar",
+    "back": "Volver",
+    "home": "Inicio",
+    "refresh": "Actualizar"
+  },
+  "status": {
+    "loading": "Cargando…",
+    "loaded": "Cargado",
+    "error": "Error",
+    "idle": "Inactivo",
+    "running": "Ejecutando",
+    "done": "Completado",
+    "saving": "Guardando…",
+    "noFileLoaded": "Sin archivo cargado"
+  },
+  "file": {
+    "noFileLoaded": "Sin archivo cargado",
+    "elements": "{{count}} elemento",
+    "elements_other": "{{count}} elementos"
+  },
+  "pagination": {
+    "of": "de",
+    "items": "elementos"
+  },
+  "severity": {
+    "error": "Error",
+    "warning": "Advertencia",
+    "info": "Información"
+  },
+  "upload": {
+    "idle": {
+      "title": "Abrir un archivo IFC",
+      "subtitle": "Procesado localmente — nada sale de tu navegador",
+      "browse": "Explorar archivo",
+      "dropHint": "Suelta tu archivo .ifc aquí",
+      "releaseToOpen": "Suelta para abrir",
+      "clickToBrowse": "hacer clic para buscar",
+      "orDrop": "o suéltalo en cualquier lugar",
+      "dropAriaLabel": "Suelta un archivo IFC o haz clic para buscar",
+      "closeAriaLabel": "Cerrar",
+      "trust1": "WebAssembly — ejecutado en el navegador",
+      "trust2": "Sin registro requerido",
+      "trust3": "Hasta 2 GB"
+    },
+    "active": {
+      "drop": "Suelta tu archivo .ifc aquí",
+      "validating": "Validando archivo…",
+      "queued": "Preparando cargador…",
+      "buildingScene": "Construyendo escena 3D…",
+      "loading": "Cargando modelo IFC…",
+      "checkingSchema": "Comprobando esquema IFC e integridad del archivo",
+      "initialising": "Inicializando…",
+      "cancel": "Cancelar"
+    },
+    "success": {
+      "title": "Modelo listo",
+      "viewModel": "Abrir visor →"
+    },
+    "error": {
+      "title": "Error al cargar modelo",
+      "technicalDetails": "Detalles técnicos",
+      "tryAgain": "Intentar de nuevo",
+      "close": "Cerrar"
+    },
+    "cancelled": {
+      "title": "Carga cancelada.",
+      "loadAnother": "Cargar otro archivo",
+      "tryAgain": "Intentar de nuevo",
+      "close": "Cerrar"
+    },
+    "parsing": "Analizando…",
+    "loading": "Cargando…",
+    "processing": "Procesando…",
+    "fromCache": "Desde caché"
+  }
+}

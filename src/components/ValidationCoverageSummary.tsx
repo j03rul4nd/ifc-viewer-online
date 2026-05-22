@@ -3,6 +3,7 @@
 // suggestion. Auto-dismisses after autoDismissMs (default 6 s).
 
 import React, { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ValidationCategoryType, RulesConfig } from '../types'
 import { RULE_METADATA, VALIDATION_CATEGORY_LABELS, VALIDATION_PROFILES } from '../types'
 
@@ -79,15 +80,16 @@ function getSuggestedProfile(uncovered: ValidationCategoryType[]): string | null
 // ── Score ring ────────────────────────────────────────────────────────────────
 
 function ScoreRing({ score }: { score: number }) {
+  const { t } = useTranslation('validation')
   const color =
     score >= 80 ? '#30A46C' :
     score >= 50 ? '#F5A623' :
     'var(--danger)'
 
   const label =
-    score >= 80 ? 'Excelente' :
-    score >= 50 ? 'Aceptable' :
-    'Crítico'
+    score >= 80 ? t('coverage.excellent') :
+    score >= 50 ? t('coverage.acceptable') :
+    t('coverage.critical')
 
   const r = 18
   const circ = 2 * Math.PI * r
@@ -150,6 +152,7 @@ export default function ValidationCoverageSummary({
   onDismiss,
   autoDismissMs = 6000,
 }: ValidationCoverageSummaryProps) {
+  const { t } = useTranslation('validation')
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -183,7 +186,7 @@ export default function ValidationCoverageSummary({
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <span className="text-[11px] font-semibold text-[var(--text)]">
-                Cobertura de validación
+                {t('coverage.scoreLabel')}
               </span>
               {activeProfileName && (
                 <span className="ml-1.5 text-[10px] text-[var(--text-faint)]">
@@ -193,12 +196,12 @@ export default function ValidationCoverageSummary({
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-[10px] font-mono text-[var(--text-dim)]">
-                {covered.length}/{ALL_CATEGORIES.length} categorías
+                {covered.length}/{ALL_CATEGORIES.length} {t('coverage.allCovered')}
               </span>
               <button
                 onClick={onDismiss}
                 className="text-[var(--text-faint)] hover:text-[var(--text)] w-5 h-5 flex items-center justify-center rounded hover:bg-[var(--border)] transition-colors"
-                aria-label="Cerrar"
+                aria-label={t('customProfile.close')}
               >
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                   <path d="M2 2l6 6M8 2L2 8" />
@@ -217,9 +220,8 @@ export default function ValidationCoverageSummary({
           {/* Smart suggestion */}
           {suggested && uncovered.length > 0 && (
             <p className="text-[10px] text-[var(--text-faint)] leading-tight">
-              <span className="text-[var(--accent)] font-medium">Sugerencia:</span>
-              {' '}usa «{suggested}» para cubrir también{' '}
-              {uncovered.map((c) => VALIDATION_CATEGORY_LABELS[c]).join(', ')}.
+              <span className="text-[var(--accent)] font-medium">{t('coverage.suggestedProfile')}:</span>
+              {' '}«{suggested}» — {uncovered.map((c) => VALIDATION_CATEGORY_LABELS[c]).join(', ')}.
             </p>
           )}
         </div>

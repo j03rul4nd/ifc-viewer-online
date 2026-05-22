@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import { useEditorStore } from '../stores/editorStore'
 import { useValidationStore } from '../stores/validationStore'
@@ -90,24 +91,27 @@ function ExportDropdown({
   onExportIfc: () => void
   onExportGlb: () => void
 }) {
+  const { t } = useTranslation('toolbar')
   return (
     <div className="absolute right-0 top-full mt-1.5 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[10px] shadow-2xl z-[60] py-1.5 min-w-[168px]">
       <div className="px-3 py-1 text-[10px] text-[var(--text-faint)] uppercase tracking-wider font-semibold">
-        Export as…
+        {t('exportAs')}
       </div>
       <button
         onClick={onExportIfc}
         className="w-full text-left px-3 py-2.5 xs:py-2 text-[12px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
       >
         <span className="font-mono text-[var(--accent)] text-[10px]">IFC</span>
-        {diffs > 0 ? `IFC with ${diffs} edits` : 'Original IFC'}
+        {diffs > 0
+          ? t('exportIfcWithEdits', { count: diffs })
+          : t('exportIfc')}
       </button>
       <button
         onClick={onExportGlb}
         className="w-full text-left px-3 py-2.5 xs:py-2 text-[12px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
       >
         <span className="font-mono text-[var(--ok)] text-[10px]">GLB</span>
-        3D model (GLB)
+        {t('exportGlb')}
       </button>
     </div>
   )
@@ -119,11 +123,14 @@ export default function Toolbar({
   fileName, elementCount, loadingState, canIsolate,
   viewerApiRef, onReset, onIsolate, onUpload, onOpenExportModal,
 }: ToolbarProps) {
+  const { t } = useTranslation('toolbar')
+  const { t: tCommon } = useTranslation('common')
+
   const statusColor = loadingState === 'loaded' ? 'var(--ok)'     :
                       loadingState === 'error'  ? 'var(--danger)' : 'var(--warn)'
-  const statusLabel = loadingState === 'loading' ? 'Loading…' :
-                      loadingState === 'loaded'  ? 'Loaded'   :
-                      loadingState === 'error'   ? 'Error'    : ''
+  const statusLabel = loadingState === 'loading' ? t('status.loading') :
+                      loadingState === 'loaded'  ? t('status.loaded')  :
+                      loadingState === 'error'   ? t('status.error')   : ''
 
   const { diffs, canUndo, canRedo } = useEditorStore()
   const { undo, redo }              = useEditorHistory()
@@ -178,7 +185,7 @@ export default function Toolbar({
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       log.error('IFC export failed:', msg)
-      toast(`IFC export failed: ${msg}`, 'error')
+      toast(t('exportFailed', { message: msg }), 'error')
     }
     finally { setExporting(false) }
   }
@@ -197,7 +204,7 @@ export default function Toolbar({
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       log.error('GLB export failed:', msg)
-      toast(`GLB export failed: ${msg}`, 'error')
+      toast(t('exportGlbFailed', { message: msg }), 'error')
     }
     finally { setExporting(false) }
   }
@@ -266,7 +273,7 @@ export default function Toolbar({
           <div className="flex flex-col leading-none gap-0.5 min-w-0">
             <div className="text-[12px] font-semibold tracking-tight whitespace-nowrap">IFC Validator</div>
             <div className="text-[10px] text-[var(--text-faint)] font-mono truncate">
-              {fileName ?? 'No file loaded'}
+              {fileName ?? tCommon('file.noFileLoaded')}
             </div>
           </div>
         </div>
@@ -280,7 +287,7 @@ export default function Toolbar({
             <IBtn
               onClick={handleExportClick}
               active={exportOpen}
-              title={sceneModels.length > 1 ? `Export ${sceneModels.length} models` : 'Export model'}
+              title={sceneModels.length > 1 ? t('exportModels', { count: sceneModels.length }) : t('exportModel')}
               disabled={exporting}
             >
               {DownloadSVG}
@@ -318,22 +325,22 @@ export default function Toolbar({
 
           {/* Main actions */}
           <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto shrink-0">
-            <Btn icon={Icons.Upload} onClick={onUpload} title="Open file">Open</Btn>
+            <Btn icon={Icons.Upload} onClick={onUpload} title={t('openFile')}>{t('open')}</Btn>
             <div className="w-px h-[18px] bg-[var(--border)]" />
-            <Btn icon={Icons.Reset} onClick={onReset} title="Reset camera">Reset</Btn>
-            <Btn icon={Icons.Isolate} onClick={onIsolate} disabled={!canIsolate} title="Isolate category">Isolate</Btn>
+            <Btn icon={Icons.Reset} onClick={onReset} title={t('resetCamera')}>{t('reset')}</Btn>
+            <Btn icon={Icons.Isolate} onClick={onIsolate} disabled={!canIsolate} title={t('isolateCategory')}>{t('isolate')}</Btn>
             <div className="w-px h-[18px] bg-[var(--border)]" />
             <Btn
               onClick={() => setTreeVisible(!treeVisible)}
-              title="Toggle spatial tree"
+              title={t('toggleSpatialTree')}
               variant={treeVisible ? 'secondary' : 'ghost'}
             >
               {TreeSVG}
-              Tree
+              {t('tree')}
             </Btn>
             <Btn
               onClick={toggleScenePanel}
-              title="Scene manager — model list, visibility, transform"
+              title={t('sceneManager')}
               variant={scenePanelOpen ? 'secondary' : 'ghost'}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" className="opacity-80">
@@ -342,7 +349,7 @@ export default function Toolbar({
                 <rect x="1" y="7.5" width="5.5" height="5.5" rx="1" opacity="0.6"/>
                 <rect x="7.5" y="7.5" width="5.5" height="5.5" rx="1"/>
               </svg>
-              Scene
+              {t('scene')}
               {sceneModels.length > 0 && (
                 <span className="text-[10px] font-mono text-[var(--text-faint)] ml-0.5">
                   {sceneModels.length}
@@ -357,12 +364,12 @@ export default function Toolbar({
               <Btn
                 onClick={isRunning ? cancelValidation : () => void runValidation(undefined, undefined, true)}
                 disabled={!isRunning && !canRun}
-                title={isRunning ? 'Cancel validation' : validationStatus === 'error' ? 'Validation failed — click to retry' : 'Run validation (Ctrl+Shift+V)'}
+                title={isRunning ? t('cancelValidation') : validationStatus === 'error' ? t('validationFailed') : t('runValidation')}
               >
                 {isRunning ? SpinSVG : ValidateSVG}
                 {isRunning
-                  ? `${validationProgress > 0 ? `${validationProgress}%` : 'Validating…'}`
-                  : validationStatus === 'error' ? 'Retry' : 'Validate'}
+                  ? (validationProgress > 0 ? t('validationProgress', { progress: validationProgress }) : t('validating'))
+                  : validationStatus === 'error' ? t('retry') : t('validate')}
               </Btn>
               {isRunning && validationProgress > 0 && (
                 <div
@@ -374,7 +381,7 @@ export default function Toolbar({
             <Btn
               onClick={toggleValidationMode}
               disabled={!hasIssues}
-              title="Toggle validation overlay in 3D view"
+              title={validationMode ? t('overlayOn') : t('overlayOff')}
               variant={validationMode ? 'secondary' : 'ghost'}
             >
               <span
@@ -383,15 +390,15 @@ export default function Toolbar({
               >
                 {hasIssues ? `${issueCount}` : '●'}
               </span>
-              Overlay
+              {t('overlay')}
             </Btn>
           </div>
 
           {/* Undo / Redo */}
           {(canUndo || canRedo) && (
             <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto shrink-0">
-              <Btn onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">{UndoSVG()} Undo</Btn>
-              <Btn onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)">{RedoSVG()} Redo</Btn>
+              <Btn onClick={undo} disabled={!canUndo} title={t('undoShortcut')}>{UndoSVG()} {t('undo')}</Btn>
+              <Btn onClick={redo} disabled={!canRedo} title={t('redoShortcut')}>{RedoSVG()} {t('redo')}</Btn>
             </div>
           )}
 
@@ -401,7 +408,7 @@ export default function Toolbar({
               <Btn
                 onClick={toggleMeasurementPanel}
                 variant={measurementPanelOpen ? 'secondary' : 'ghost'}
-                title="Measurement tools — length, area"
+                title={t('measurementTools')}
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="1" y="5" width="12" height="4" rx="1" />
@@ -410,7 +417,7 @@ export default function Toolbar({
                   <line x1="9" y1="5" x2="9" y2="4" />
                   <line x1="12" y1="5" x2="12" y2="3" />
                 </svg>
-                Measure
+                {t('measure')}
                 {activeMeasurementTool !== 'none' && (
                   <span className="text-[10px] font-mono text-[var(--accent)] leading-none">●</span>
                 )}
@@ -419,13 +426,13 @@ export default function Toolbar({
               <Btn
                 onClick={toggleClipPanel}
                 variant={clipPanelOpen ? 'secondary' : 'ghost'}
-                title="Clipping planes — section cuts"
+                title={t('clippingPlanes')}
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
                   <path d="M1 7h12M4 3l6 8M10 3l-6 8" opacity="0.4"/>
                   <line x1="1" y1="7" x2="13" y2="7"/>
                 </svg>
-                Section
+                {t('section')}
                 {clipPlaneCount > 0 && (
                   <span className="text-[10px] font-mono text-[var(--text-faint)]">{clipPlaneCount}</span>
                 )}
@@ -434,7 +441,7 @@ export default function Toolbar({
               <Btn
                 onClick={togglePlansPanel}
                 variant={plansPanelOpen ? 'secondary' : 'ghost'}
-                title="Floor plan views — storey sections"
+                title={t('floorPlanViews')}
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
                   <rect x="1" y="1" width="12" height="12" rx="1"/>
@@ -442,7 +449,7 @@ export default function Toolbar({
                   <line x1="1" y1="9" x2="13" y2="9"/>
                   <line x1="5" y1="5" x2="5" y2="13"/>
                 </svg>
-                Plans
+                {t('plans')}
                 {activePlanViewId && (
                   <span className="text-[10px] font-mono text-[var(--accent)] leading-none">●</span>
                 )}
@@ -465,7 +472,7 @@ export default function Toolbar({
                 }}
               >
                 {DownloadSVG}
-                Export
+                {t('export')}
                 {diffs.length > 0 && (
                   <span className="px-1.5 py-0.5 text-[9px] font-mono rounded-full bg-[var(--accent)] text-white leading-none">
                     {diffs.length}
@@ -507,14 +514,14 @@ export default function Toolbar({
       >
         {/* Main actions */}
         <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 shrink-0">
-          <IBtn onClick={onUpload} title="Open file">
+          <IBtn onClick={onUpload} title={t('openFile')}>
             <Icons.Upload size={15} />
           </IBtn>
           <div className="w-px h-[18px] bg-[var(--border)]" />
-          <IBtn onClick={onReset} title="Reset camera">
+          <IBtn onClick={onReset} title={t('resetCamera')}>
             <Icons.Reset size={15} />
           </IBtn>
-          <IBtn onClick={onIsolate} disabled={!canIsolate} title="Isolate category">
+          <IBtn onClick={onIsolate} disabled={!canIsolate} title={t('isolateCategory')}>
             <Icons.Isolate size={15} />
           </IBtn>
         </div>
@@ -524,7 +531,7 @@ export default function Toolbar({
           <IBtn
             onClick={() => void runValidation(undefined, undefined, true)}
             disabled={!canRun}
-            title={isRunning ? 'Validating…' : validationStatus === 'error' ? 'Validation failed — tap to retry' : 'Validate'}
+            title={isRunning ? t('validating') : validationStatus === 'error' ? t('validationFailed') : t('validate')}
           >
             {isRunning ? SpinSVG : ValidateSVG}
           </IBtn>
@@ -532,7 +539,7 @@ export default function Toolbar({
             onClick={toggleValidationMode}
             disabled={!hasIssues}
             active={validationMode}
-            title={`Toggle overlay${hasIssues ? ` · ${issueCount} issues` : ''}`}
+            title={validationMode ? t('overlayOn') : t('overlayOff')}
           >
             <span
               className="text-[11px] font-mono leading-none"
@@ -546,8 +553,8 @@ export default function Toolbar({
         {/* Undo / Redo (only when there's history) */}
         {(canUndo || canRedo) && (
           <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 shrink-0">
-            <IBtn onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">{UndoSVG(15)}</IBtn>
-            <IBtn onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)">{RedoSVG(15)}</IBtn>
+            <IBtn onClick={undo} disabled={!canUndo} title={t('undoShortcut')}>{UndoSVG(15)}</IBtn>
+            <IBtn onClick={redo} disabled={!canRedo} title={t('redoShortcut')}>{RedoSVG(15)}</IBtn>
           </div>
         )}
 
@@ -557,7 +564,7 @@ export default function Toolbar({
             <IBtn
               onClick={toggleMeasurementPanel}
               active={measurementPanelOpen}
-              title={activeMeasurementTool !== 'none' ? `Measure — ${activeMeasurementTool} active` : 'Measurement tools'}
+              title={activeMeasurementTool !== 'none' ? t('measureActive', { tool: activeMeasurementTool }) : t('measurementTools')}
             >
               <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="1" y="5" width="12" height="4" rx="1" />
@@ -573,7 +580,7 @@ export default function Toolbar({
             <IBtn
               onClick={toggleClipPanel}
               active={clipPanelOpen}
-              title="Clipping planes"
+              title={t('clippingPlanes')}
             >
               <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
                 <line x1="1" y1="7" x2="13" y2="7"/>
@@ -588,7 +595,7 @@ export default function Toolbar({
             <IBtn
               onClick={togglePlansPanel}
               active={plansPanelOpen}
-              title="Floor plans"
+              title={t('floorPlanViews')}
             >
               <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
                 <rect x="1" y="1" width="12" height="12" rx="1"/>

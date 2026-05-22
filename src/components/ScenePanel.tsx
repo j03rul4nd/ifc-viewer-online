@@ -4,6 +4,7 @@
 // Designed to scale to multiple models when Sprint 6 multi-model lands.
 
 import React, { useState, useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ViewerAPI } from '../lib/viewer'
 import type { SceneModel, ModelTransform } from '../types'
 import type { TransformMode } from '../stores/uiStore'
@@ -98,6 +99,7 @@ interface ModelRowProps {
 }
 
 function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActivate, onVisible, onRemove, onValidate, onFrame, onIsolate }: ModelRowProps) {
+  const { t } = useTranslation('viewer')
   return (
     <div
       className={`w-full flex items-center gap-1 px-2 py-2 rounded-lg transition-colors cursor-default ${
@@ -109,7 +111,7 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
       {/* Visibility toggle */}
       <button
         onClick={(e) => { e.stopPropagation(); onVisible(!model.visible) }}
-        title={model.visible ? 'Hide model' : 'Show model'}
+        title={model.visible ? t('scene.hideModel') : t('scene.showModel')}
         className={`flex-none w-5 h-5 flex items-center justify-center rounded transition-colors ${
           model.visible ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
         } hover:text-[var(--text)]`}
@@ -141,7 +143,7 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
       {multiModel && (
         <button
           onClick={(e) => { e.stopPropagation(); onIsolate() }}
-          title={isIsolated ? 'Showing all models' : 'Isolate — hide all other models'}
+          title={isIsolated ? t('scene.showAllModels') : t('scene.isolateModel')}
           className={`flex-none w-6 h-6 flex items-center justify-center rounded transition-colors ${
             isIsolated ? 'text-[var(--warn)] bg-[rgba(245,166,35,0.12)]' : 'text-[var(--text-muted)] hover:text-[var(--warn)]'
           }`}
@@ -156,7 +158,7 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
       {/* Frame button — fit camera to this model */}
       <button
         onClick={(e) => { e.stopPropagation(); onFrame() }}
-        title="Frame camera on this model"
+        title={t('scene.frameCamera')}
         className="flex-none w-6 h-6 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
@@ -167,7 +169,7 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
       {/* Validate button */}
       <button
         onClick={(e) => { e.stopPropagation(); onValidate() }}
-        title="Validate this model"
+        title={t('scene.validateModel')}
         className="flex-none w-6 h-6 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors"
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
@@ -179,7 +181,7 @@ function ModelRow({ model, isActive, isIsolated, canDelete, multiModel, onActiva
       {/* Delete button — disabled when it's the last model */}
       <button
         onClick={(e) => { e.stopPropagation(); if (canDelete) onRemove() }}
-        title={canDelete ? 'Remove model from scene' : 'Cannot remove the only model'}
+        title={canDelete ? t('scene.removeModel') : t('scene.cannotRemoveOnly')}
         disabled={!canDelete}
         className={`flex-none w-6 h-6 flex items-center justify-center rounded transition-colors ${
           canDelete
@@ -204,6 +206,7 @@ interface TransformSectionProps {
 }
 
 function TransformSection({ model, viewerApiRef, onSetTransform }: TransformSectionProps) {
+  const { t: tViewer } = useTranslation('viewer')
   const t = model.transform
   const pos = (t.position as { x: number; y: number; z: number }) ?? { x: 0, y: 0, z: 0 }
   const rot = (t.rotation as { x: number; y: number; z: number }) ?? { x: 0, y: 0, z: 0 }
@@ -263,7 +266,7 @@ function TransformSection({ model, viewerApiRef, onSetTransform }: TransformSect
     <div className="space-y-3 pt-2">
       {/* Translate */}
       <div>
-        <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1.5 font-medium">Position</p>
+        <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1.5 font-medium">{tViewer('transform.position')}</p>
         <div className="flex gap-1.5">
           <NumberInput label="X" value={pos.x} step={0.5} onChange={(v) => applyPos('x', v)} />
           <NumberInput label="Y" value={pos.y} step={0.5} onChange={(v) => applyPos('y', v)} />
@@ -273,7 +276,7 @@ function TransformSection({ model, viewerApiRef, onSetTransform }: TransformSect
 
       {/* Rotate */}
       <div>
-        <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1.5 font-medium">Rotation (°)</p>
+        <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1.5 font-medium">{tViewer('transform.rotation')}</p>
         <div className="flex gap-1.5">
           <NumberInput label="X" value={rot.x} step={5} min={-360} max={360} onChange={(v) => applyRot('x', v)} />
           <NumberInput label="Y" value={rot.y} step={5} min={-360} max={360} onChange={(v) => applyRot('y', v)} />
@@ -283,9 +286,9 @@ function TransformSection({ model, viewerApiRef, onSetTransform }: TransformSect
 
       {/* Scale — uniform + per-axis */}
       <div>
-        <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1.5 font-medium">Scale</p>
+        <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1.5 font-medium">{tViewer('transform.scale')}</p>
         <div className="flex gap-1.5 mb-1.5">
-          <NumberInput label="Uniform" value={uniformScale} step={0.1} min={0.001} onChange={applyUniformScale} />
+          <NumberInput label={tViewer('transform.uniform')} value={uniformScale} step={0.1} min={0.001} onChange={applyUniformScale} />
         </div>
         <div className="flex gap-1.5">
           <NumberInput label="X" value={scale.x} step={0.1} min={0.001} onChange={(v) => applyScale('x', v)} />
@@ -301,14 +304,14 @@ function TransformSection({ model, viewerApiRef, onSetTransform }: TransformSect
           title="Move model so its bottom sits on the Y=0 grid plane and is centred on X/Z"
           className="flex-1 h-7 rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors"
         >
-          Snap to grid
+          {tViewer('transform.snapToGrid')}
         </button>
         <button
           onClick={resetAll}
           title="Reset all transform values to identity"
           className="flex-1 h-7 rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[rgba(229,72,77,0.6)] transition-colors"
         >
-          Reset
+          {tViewer('transform.reset')}
         </button>
       </div>
     </div>
@@ -324,6 +327,7 @@ export default function ScenePanel({
   onIsolate, onShowAll,
   onClose,
 }: ScenePanelProps) {
+  const { t } = useTranslation('viewer')
   const activeModel = models.find((m) => m.id === activeModelId) ?? null
   const [isolatedId, setIsolatedId] = useState<string | null>(null)
   const [expandTransform, setExpandTransform] = useState(true)
@@ -374,13 +378,13 @@ export default function ScenePanel({
             <rect x="1" y="7" width="5" height="5" rx="0.8" />
             <rect x="7" y="7" width="5" height="5" rx="0.8" />
           </svg>
-          <span className="text-[12px] font-semibold text-[var(--text)]">Scene</span>
+          <span className="text-[12px] font-semibold text-[var(--text)]">{t('scene.title')}</span>
           <span className="text-[10px] text-[var(--text-muted)] bg-[rgba(255,255,255,0.06)] px-1.5 py-0.5 rounded-full">
-            {models.length} model{models.length !== 1 ? 's' : ''}
+            {t('scene.models', { count: models.length })}
           </span>
           {isolatedId && (
             <span className="text-[10px] text-[var(--warn)] bg-[rgba(245,166,35,0.12)] px-1.5 py-0.5 rounded-full">
-              isolated
+              {t('scene.isolated')}
             </span>
           )}
         </div>
@@ -413,7 +417,7 @@ export default function ScenePanel({
         {/* Model list */}
         <div className="p-2 space-y-1">
           {models.length === 0 && (
-            <p className="text-[11px] text-[var(--text-muted)] text-center py-4">No models loaded</p>
+            <p className="text-[11px] text-[var(--text-muted)] text-center py-4">{t('scene.noModels')}</p>
           )}
           {models.map((model) => (
             <ModelRow
@@ -445,7 +449,7 @@ export default function ScenePanel({
               className="w-full flex items-center justify-between px-3 py-2 text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
             >
               <span className="font-medium uppercase tracking-wider text-[10px]">
-                Transform · {activeModel.fileName.replace(/\.ifc$/i, '')}
+                {t('scene.transformTitle', { fileName: activeModel.fileName.replace(/\.ifc$/i, '') })}
               </span>
               <svg
                 width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"
@@ -467,7 +471,7 @@ export default function ScenePanel({
         )}
         {/* Render quality */}
         <div className="border-t border-[var(--border)] px-3 py-2.5">
-          <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-2 font-medium">Render Quality</p>
+          <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-2 font-medium">{t('renderQuality.title')}</p>
           <div className="flex gap-1.5">
             <button
               onClick={() => handleQualityChange('standard')}
@@ -479,7 +483,7 @@ export default function ScenePanel({
               ].join(' ')}
               title="Standard — WebGL rasterisation, best performance"
             >
-              Performance
+              {t('renderQuality.performance')}
             </button>
             <button
               onClick={() => handleQualityChange('quality')}
@@ -491,12 +495,12 @@ export default function ScenePanel({
               ].join(' ')}
               title="Quality — SSAO ambient occlusion + edge detection post-processing"
             >
-              Quality
+              {t('renderQuality.quality')}
             </button>
           </div>
           {renderQuality === 'quality' && (
             <p className="text-[9.5px] text-[var(--text-faint)] mt-1.5 leading-snug">
-              SSAO + edge detection active. May impact performance on mobile.
+              {t('renderQuality.ssaoNote')}
             </p>
           )}
         </div>
@@ -509,11 +513,11 @@ export default function ScenePanel({
             onClick={() => handleIsolate(isolatedId)}
             className="w-full text-[10px] text-[var(--warn)] hover:text-[var(--text)] transition-colors text-left"
           >
-            ↑ Show all models
+            {t('scene.showAllModelsBtn')}
           </button>
         ) : (
           <p className="text-[10px] text-[var(--text-muted)]">
-            Click a model to activate · use <span className="text-[var(--text-dim)]">⊙</span> to isolate
+            {t('scene.clickHint')}
           </p>
         )}
       </div>
