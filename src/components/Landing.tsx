@@ -21,6 +21,7 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { LanguageSelectorNav } from './LanguageSelector'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import * as Icons from './Icons'
 import GradientText  from './reactbits/GradientText'
@@ -223,6 +224,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
             >
               {t('nav.github')}
             </a>
+            <LanguageSelectorNav />
             <button
               onClick={onLaunch}
               className="inline-flex items-center gap-2 h-[30px] px-3 text-[13px] font-medium rounded-[9px] bg-[var(--accent)] text-white hover:brightness-110 active:brightness-90 transition-all cursor-pointer"
@@ -232,7 +234,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
             </button>
           </div>
 
-          {/* Mobile: GitHub icon + primary CTA */}
+          {/* Mobile: GitHub icon + language selector + primary CTA */}
           <div className="flex md:hidden items-center gap-2">
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"
               className="w-9 h-9 flex items-center justify-center rounded-lg text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
@@ -240,6 +242,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
             >
               {GITHUB_SVG}
             </a>
+            <LanguageSelectorNav />
             <button
               onClick={onLaunch}
               className="inline-flex items-center gap-1.5 h-9 px-3.5 text-[13px] font-semibold rounded-[9px] bg-[var(--accent)] text-white active:brightness-90 cursor-pointer"

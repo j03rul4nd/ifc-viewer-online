@@ -17,6 +17,11 @@
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://j03rul4nd.github.io/ifc-viewer-online/" />
 
+    <!-- hreflang — single-URL SPA; both locales served at the same address -->
+    <link rel="alternate" hreflang="en"       href="https://j03rul4nd.github.io/ifc-viewer-online/" />
+    <link rel="alternate" hreflang="es"       href="https://j03rul4nd.github.io/ifc-viewer-online/" />
+    <link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/" />
+
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://j03rul4nd.github.io/ifc-viewer-online/" />
@@ -24,11 +29,15 @@
     <meta property="og:description" content="Open any IFC file in your browser. Validate 18 rules, fix GUIDs, edit properties, export corrected IFC — all client-side with no login required." />
     <meta property="og:site_name" content="IFC Viewer Online" />
     <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="https://j03rul4nd.github.io/ifc-viewer-online/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="IFC Viewer Online — Free BIM Viewer, Validator & Editor" />
     <meta name="twitter:description" content="Browser-only IFC viewer with validation, GUID auto-fix, property editing and IFC/GLB export. No login, no upload. Runs via WebAssembly." />
+    <meta name="twitter:image" content="https://j03rul4nd.github.io/ifc-viewer-online/og-image.png" />
 
     <!-- JSON-LD Structured Data: WebApplication -->
     <script type="application/ld+json">
@@ -73,7 +82,6 @@
         "url": "https://github.com/j03rul4nd"
       },
       "softwareVersion": "0.1.0",
-      "dateModified": "2026-05-17",
       "license": "https://opensource.org/licenses/MIT",
       "codeRepository": "https://github.com/j03rul4nd/ifc-viewer-online",
       "keywords": "IFC, BIM, viewer, validator, WebAssembly, three.js, web-ifc, @thatopen/components, BuildingSMART, IFC4, IFC2x3"

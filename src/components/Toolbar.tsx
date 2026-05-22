@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
+import { LanguageSelector } from './LanguageSelector'
 import { useEditorStore } from '../stores/editorStore'
 import { useValidationStore } from '../stores/validationStore'
 import { useUIStore } from '../stores/uiStore'
@@ -525,6 +526,11 @@ export default function Toolbar({
               )}
             </div>
           )}
+
+          {/* Language selector */}
+          <div className="glass-md border border-[var(--border)] rounded-[10px] px-1 py-1 pointer-events-auto shrink-0">
+            <LanguageSelector />
+          </div>
         </div>
       </div>
 

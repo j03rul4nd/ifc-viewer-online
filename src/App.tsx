@@ -34,6 +34,7 @@ import { toast } from './stores/toastStore'
 import type { ViewerAPI } from './lib/viewer'
 import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo } from './types'
 import * as Icons from './components/Icons'
+import { useSeo } from './seo'
 
 // ── ModelTree imperative handle ───────────────────────────────────────────────
 export interface ModelTreeHandle {
@@ -43,6 +44,7 @@ export interface ModelTreeHandle {
 export default function App() {
   const { t: tToasts } = useTranslation('toasts')
   const { t: tCommon } = useTranslation('common')
+  useSeo()
   const [route, setRoute] = useState<Route>('landing')
   const [accent] = useState('#5E6AD2')
 
