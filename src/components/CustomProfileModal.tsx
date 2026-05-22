@@ -16,7 +16,7 @@ import {
   getRuleLabel,
   getRuleDescription,
 } from '../types'
-import type { RulesConfig, ValidationCategoryType, SupportedLocale } from '../types'
+import type { RulesConfig, ValidationCategoryType } from '../types'
 import { getCoveredCategories } from './ValidationCoverageSummary'
 
 // ── Severity color ────────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ function RuleRow({
   onChange: (val: boolean) => void
 }) {
   const { i18n } = useTranslation()
-  const locale = (i18n.language?.split('-')[0] ?? 'en') as SupportedLocale
+  const locale = i18n.language?.split('-')[0] ?? 'en'
   const meta = RULE_METADATA[ruleId]
   if (!meta) return null
 

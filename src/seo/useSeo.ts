@@ -13,7 +13,6 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LOCALE_META, OG_IMAGE_URL } from './config'
-import type { SupportedLocale } from '../i18n/config'
 import { SUPPORTED_LOCALES } from '../i18n/config'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -35,11 +34,9 @@ function patchLink(rel: string, hreflang: string, href: string): void {
   el.href = href
 }
 
-function normaliseLang(raw: string): SupportedLocale {
+function normaliseLang(raw: string): string {
   const code = raw.split('-')[0]
-  return (SUPPORTED_LOCALES as readonly string[]).includes(code)
-    ? (code as SupportedLocale)
-    : 'en'
+  return SUPPORTED_LOCALES.includes(code) ? code : 'en'
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────

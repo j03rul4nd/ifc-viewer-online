@@ -20,7 +20,7 @@ import { useEditorHistory } from '../hooks/useEditorHistory'
 import { runValidation } from '../lib/validator'
 import { importBcf, issuesToBcfTopics, downloadBcfBlob } from '../lib/bcf'
 import type {
-  ValidationIssue, ValidationCertificate, SupportedLocale, BcfTopic, ViewerHandle,
+  ValidationIssue, ValidationCertificate, BcfTopic, ViewerHandle,
   ValidationCategoryType,
 } from '../types'
 import { VALIDATION_PROFILES, RULE_METADATA, getRuleLabel, VALIDATION_CATEGORY_LABELS } from '../types'
@@ -54,7 +54,7 @@ function SeverityDot({ severity }: { severity: ValidationIssue['severity'] }) {
 function RuleBadge({ ruleId }: { ruleId: string }) {
   const { i18n } = useTranslation('validation')
   const meta   = RULE_METADATA[ruleId]
-  const label  = getRuleLabel(ruleId, i18n.language as SupportedLocale)
+  const label  = getRuleLabel(ruleId, i18n.language)
   const sev    = meta?.defaultSeverity ?? 'info'
   const color  = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? '#F5A623' : '#5E9ED6'
   const std    = meta?.standard
@@ -1591,7 +1591,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                 <GroupHeader
                   label={
                     filters.groupBy === 'rule'
-                      ? (getRuleLabel(groupKey, i18n.language as SupportedLocale))
+                      ? (getRuleLabel(groupKey, i18n.language))
                       : groupKey
                   }
                   count={groupIssues.length}

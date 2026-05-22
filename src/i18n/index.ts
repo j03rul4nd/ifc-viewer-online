@@ -6,18 +6,28 @@
  *  2. The configured i18n instance is guaranteed to be initialised.
  *
  * Usage:
- *   import { useTranslation, Trans } from '@/i18n'
- *   import { useLocale }              from '@/i18n'
- *   import { useToolbarT, useViewerT } from '@/i18n'
+ *   import { useTranslation, Trans }         from '@/i18n'
+ *   import { useLocale }                     from '@/i18n'
+ *   import { useToolbarT, useViewerT }       from '@/i18n'
+ *   import { LOCALE_REGISTRY, LOCALE_MAP }   from '@/i18n'
  */
 
 // Side-effect: registers CustomTypeOptions declaration merge
 import './types'
 
 // Re-export the configured instance
-export { default as i18n } from './config'
-export { SUPPORTED_LOCALES, DEFAULT_LOCALE, LOCALE_LABELS, LOCALE_SHORT, formatNumber, formatDate } from './config'
-export type { SupportedLocale } from './config'
+export { default as i18n }                                     from './config'
+export {
+  SUPPORTED_LOCALES,
+  DEFAULT_LOCALE,
+  LOCALE_LABELS,
+  LOCALE_SHORT,
+  LOCALE_MAP,
+  LOCALE_REGISTRY,
+  formatNumber,
+  formatDate,
+} from './config'
+export type { SupportedLocale, LocaleDefinition } from './config'
 
 // Re-export react-i18next primitives so callers have one import
 export { useTranslation, Trans, I18nextProvider } from 'react-i18next'

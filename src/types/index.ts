@@ -666,12 +666,11 @@ export interface ValidationCertificate {
 }
 
 // ── Rule i18n ─────────────────────────────────────────────────────────────────
-// Minimal translation layer — no i18n framework, just a static lookup table.
-// Base locale is 'es' (labels in RULE_METADATA). Add entries here to support more locales.
+// Minimal translation layer for rule labels/descriptions.
+// Keys are BCP-47 language codes (any string).  Base locale is 'en'.
+// Add more locales by adding entries to this map — no other file needs changing.
 
-export type SupportedLocale = 'en' | 'es' | 'de' | 'fr' | 'pt'
-
-export const RULE_TRANSLATIONS: Partial<Record<SupportedLocale, Record<string, { label: string; description: string }>>> = {
+export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: string; description: string }>>> = {
   en: {
     RULE_EMPTY_NAME:                 { label: 'Empty name',             description: 'Element with Name = "" or null' },
     RULE_EMPTY_LONGNAME:             { label: 'Empty long name',        description: 'IfcSpace/Storey/Building with no LongName' },
@@ -713,18 +712,30 @@ export const RULE_TRANSLATIONS: Partial<Record<SupportedLocale, Record<string, {
 
 /**
  * Returns the translated label for a rule ID.
- * Falls back to the base Spanish label from RULE_METADATA when no translation exists.
+ * Falls back to EN label, then RULE_METADATA base label, then the raw ruleId.
  */
-export function getRuleLabel(ruleId: string, locale: SupportedLocale = 'es'): string {
-  return RULE_TRANSLATIONS[locale]?.[ruleId]?.label ?? RULE_METADATA[ruleId]?.label ?? ruleId
+export function getRuleLabel(ruleId: string, locale = 'en'): string {
+  const lang = locale.split('-')[0]  // 'en-US' → 'en'
+  return (
+    RULE_TRANSLATIONS[lang]?.[ruleId]?.label ??
+    RULE_TRANSLATIONS['en']?.[ruleId]?.label ??
+    RULE_METADATA[ruleId]?.label ??
+    ruleId
+  )
 }
 
 /**
  * Returns the translated description for a rule ID.
- * Falls back to the base Spanish description from RULE_METADATA.
+ * Falls back to EN description, then RULE_METADATA base description.
  */
-export function getRuleDescription(ruleId: string, locale: SupportedLocale = 'es'): string {
-  return RULE_TRANSLATIONS[locale]?.[ruleId]?.description ?? RULE_METADATA[ruleId]?.description ?? ruleId
+export function getRuleDescription(ruleId: string, locale = 'en'): string {
+  const lang = locale.split('-')[0]
+  return (
+    RULE_TRANSLATIONS[lang]?.[ruleId]?.description ??
+    RULE_TRANSLATIONS['en']?.[ruleId]?.description ??
+    RULE_METADATA[ruleId]?.description ??
+    ruleId
+  )
 }
 
 // ── Editor diffs ──────────────────────────────────────────────────────────────

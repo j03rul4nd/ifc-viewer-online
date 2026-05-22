@@ -6,8 +6,6 @@
  * entries to `SEO_PAGES`.
  */
 
-import type { SupportedLocale } from '../i18n/config'
-
 // ── Site-wide constants ───────────────────────────────────────────────────────
 export const SITE_URL  = 'https://j03rul4nd.github.io/ifc-viewer-online/'
 export const SITE_NAME = 'IFC Viewer Online'
@@ -24,7 +22,12 @@ export interface LocaleMeta {
   twitterDescription?: string
 }
 
-export const LOCALE_META: Record<SupportedLocale, LocaleMeta> = {
+/**
+ * Per-locale SEO metadata.
+ * Keys are BCP-47 language codes.  When a new locale is added to the registry,
+ * add an entry here; otherwise the app falls back to 'en'.
+ */
+export const LOCALE_META: Record<string, LocaleMeta> = {
   en: {
     title:       'IFC Viewer Online — Free Browser-Based BIM Viewer, Validator & Editor',
     description: 'Free online IFC viewer, validator and non-destructive editor. Open any IFC file directly in your browser — no login, no upload, no plugin. Multi-model, 18 rules, GUID auto-fix, IFC export.',
