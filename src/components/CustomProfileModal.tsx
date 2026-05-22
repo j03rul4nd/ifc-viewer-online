@@ -7,6 +7,7 @@ import React, { useState, useMemo } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import * as Switch from '@radix-ui/react-switch'
 import { useShallow } from 'zustand/react/shallow'
+import { useTranslation } from 'react-i18next'
 import { useValidationStore } from '../stores/validationStore'
 import {
   RULE_METADATA,
@@ -17,19 +18,6 @@ import {
 } from '../types'
 import type { RulesConfig, ValidationCategoryType, SupportedLocale } from '../types'
 import { getCoveredCategories } from './ValidationCoverageSummary'
-
-// ── Locale detection ─────────────────────────────────────────────────────────
-
-function detectLocale(): SupportedLocale {
-  const lang = (typeof navigator !== 'undefined' ? navigator.language : 'es').toLowerCase()
-  if (lang.startsWith('en')) return 'en'
-  if (lang.startsWith('de')) return 'de'
-  if (lang.startsWith('fr')) return 'fr'
-  if (lang.startsWith('pt')) return 'pt'
-  return 'es'
-}
-
-const UI_LOCALE = detectLocale()
 
 // ── Severity color ────────────────────────────────────────────────────────────
 
@@ -60,6 +48,8 @@ function RuleRow({
   checked: boolean
   onChange: (val: boolean) => void
 }) {
+  const { i18n } = useTranslation()
+  const locale = (i18n.language?.split('-')[0] ?? 'en') as SupportedLocale
   const meta = RULE_METADATA[ruleId]
   if (!meta) return null
 
@@ -84,7 +74,7 @@ function RuleRow({
       <label htmlFor={`rule-${ruleId}`} className="flex-1 min-w-0 cursor-pointer">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[11px] text-[var(--text)] font-medium leading-tight">
-            {getRuleLabel(ruleId, UI_LOCALE)}
+            {getRuleLabel(ruleId, locale)}
           </span>
           {meta.standard && (
             <span
@@ -105,7 +95,7 @@ function RuleRow({
           )}
         </div>
         <p className="text-[10px] text-[var(--text-dim)] mt-0.5 leading-tight">
-          {getRuleDescription(ruleId, UI_LOCALE)}
+          {getRuleDescription(ruleId, locale)}
         </p>
       </label>
 
@@ -132,6 +122,7 @@ function CategorySection({
   localRules: RulesConfig
   onToggle: (ruleId: string, val: boolean) => void
 }) {
+  const { t } = useTranslation('validation')
   const rulesRecord = localRules as Record<string, unknown>
   const checkedCount = ruleIds.filter((id) => rulesRecord[id] === true).length
 
@@ -155,7 +146,7 @@ function CategorySection({
           onClick={toggleAll}
           className="text-[9px] text-[var(--text-faint)] hover:text-[var(--accent)] transition-colors font-medium"
         >
-          {checkedCount === ruleIds.length ? 'Quitar todo' : 'Todo'}
+          {checkedCount === ruleIds.length ? t('customProfile.removeAll') : t('customProfile.toggleAll')}
         </button>
       </div>
 
@@ -182,6 +173,7 @@ interface CustomProfileModalProps {
 }
 
 export default function CustomProfileModal({ open, onClose }: CustomProfileModalProps) {
+  const { t } = useTranslation('validation')
   const { rules: storeRules, customProfiles, addCustomProfile } = useValidationStore(
     useShallow((s) => ({
       rules:            s.rules,
@@ -214,13 +206,13 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
 
   const handleSave = (): void => {
     const trimmed = name.trim()
-    if (!trimmed) { setError('El nombre no puede estar vacío.'); return }
-    if (customProfiles.length >= 5) { setError('Máximo 5 perfiles personalizados.'); return }
+    if (!trimmed) { setError(t('customProfile.errorNameEmpty')); return }
+    if (customProfiles.length >= 5) { setError(t('customProfile.errorMaxProfiles')); return }
     // Derive coverage categories automatically from the active rule set
     const coverageTypes = getCoveredCategories(localRules)
     addCustomProfile({
       name:        trimmed,
-      description: description.trim() || 'Perfil personalizado',
+      description: description.trim() || t('customProfile.defaultDescription'),
       icon,
       rules:       localRules,
       coverageTypes,
@@ -262,18 +254,18 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
           <div className="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-4 border-b border-[var(--border)] shrink-0">
             <div className="flex-1 min-w-0">
               <Dialog.Title className="text-[14px] font-semibold text-[var(--text)] leading-none">
-                Nuevo perfil personalizado
+                {t('customProfile.title')}
               </Dialog.Title>
               <p className="text-[11px] text-[var(--text-faint)] mt-0.5">
-                Selecciona las reglas a aplicar en esta configuración
+                {t('customProfile.subtitle')}
               </p>
             </div>
             <span className="shrink-0 text-[10px] font-mono text-[var(--text-dim)] border border-[var(--border)] px-2 py-0.5 rounded-full">
-              {activeCount} reglas
+              {t('customProfile.activeRules', { count: activeCount })}
             </span>
             <Dialog.Close
               className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
-              aria-label="Cerrar"
+              aria-label={t('customProfile.close')}
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                 <path d="M2 2l8 8M10 2L2 10" />
@@ -287,7 +279,7 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
             <div className="flex items-end gap-2">
               {/* Icon picker */}
               <div className="shrink-0">
-                <label className="block text-[11px] font-medium text-[var(--text-dim)] mb-1.5">Icono</label>
+                <label className="block text-[11px] font-medium text-[var(--text-dim)] mb-1.5">{t('customProfile.icon')}</label>
                 <div className="flex flex-wrap gap-1">
                   {ICON_OPTIONS.map((em) => (
                     <button
@@ -311,13 +303,13 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
             {/* Name input */}
             <div>
               <label className="block text-[11px] font-medium text-[var(--text-dim)] mb-1.5">
-                Nombre del perfil <span className="text-[var(--danger)]">*</span>
+                {t('customProfile.profileName')} <span className="text-[var(--danger)]">*</span>
               </label>
               <input
                 value={name}
                 onChange={(e) => { setName(e.target.value); setError(null) }}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }}
-                placeholder="Ej. Entrega cliente 2024…"
+                placeholder={t('customProfile.profileNamePlaceholder')}
                 className="w-full h-9 px-3 text-[12px] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] transition-colors"
               />
               {error && (
@@ -334,12 +326,12 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
             {/* Description (optional) */}
             <div>
               <label className="block text-[11px] font-medium text-[var(--text-dim)] mb-1.5">
-                Descripción <span className="text-[var(--text-faint)]">(opcional)</span>
+                {t('customProfile.descriptionLabel')} <span className="text-[var(--text-faint)]">{t('customProfile.descriptionOptional')}</span>
               </label>
               <input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Breve descripción del perfil…"
+                placeholder={t('customProfile.descriptionPlaceholder')}
                 className="w-full h-8 px-3 text-[12px] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] transition-colors"
               />
             </div>
@@ -366,19 +358,19 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
           <div className="flex items-center gap-3 px-4 sm:px-5 py-3 border-t border-[var(--border)] shrink-0">
             {atLimit && (
               <span className="text-[10px] text-[var(--danger)] flex-1">
-                Límite de 5 perfiles alcanzado.
+                {t('customProfile.atLimit')}
               </span>
             )}
             <div className="flex gap-2 ml-auto">
               <Dialog.Close className="px-4 h-8 rounded-lg text-[11px] font-medium text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] hover:border-[var(--text-dim)] transition-colors">
-                Cancelar
+                {t('customProfile.cancel')}
               </Dialog.Close>
               <button
                 onClick={handleSave}
                 disabled={!name.trim() || atLimit}
                 className="px-5 h-8 rounded-lg text-[11px] font-semibold bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-40 transition-all"
               >
-                Guardar perfil
+                {t('customProfile.save')}
               </button>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useUIStore } from '../stores/uiStore'
 import { useSceneStore } from '../stores/sceneStore'
 import { createLogger } from '../lib/logger'
@@ -17,6 +18,7 @@ interface ViewEntry {
 }
 
 export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
+  const { t } = useTranslation('viewer')
   const {
     plansPanelOpen, activePlanViewId, setActivePlanViewId,
   } = useUIStore()
@@ -122,11 +124,11 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
             {/* Header */}
             <div className="px-3 pt-2.5 pb-1.5 border-b border-[var(--border)]">
               <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase mb-0.5">
-                Floor Plans
+                {t('floorPlan.title')}
               </div>
               {activePlanViewId && (
                 <div className="text-[11px] text-[var(--accent)]">
-                  2D view active
+                  {t('floorPlan.active2D')}
                 </div>
               )}
               {error && (
@@ -148,7 +150,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
                         <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
                         <path d="M12 2a10 10 0 0 1 7.07 2.93"/>
                       </svg>
-                      Detecting storeys…
+                      {t('floorPlan.detecting')}
                     </>
                   ) : (
                     <>
@@ -157,7 +159,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
                         <line x1="1" y1="5" x2="13" y2="5"/>
                         <line x1="1" y1="9" x2="13" y2="9"/>
                       </svg>
-                      Detect storeys
+                      {t('floorPlan.detectStoreys')}
                     </>
                   )}
                 </button>
@@ -187,7 +189,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
                       </svg>
                       <span className="truncate">{v.name}</span>
                       {isActive && (
-                        <span className="ml-auto text-[10px] opacity-70">2D</span>
+                        <span className="ml-auto text-[10px] opacity-70">{t('floorPlan.view2D')}</span>
                       )}
                     </button>
                   )
@@ -198,7 +200,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
             {/* Empty state */}
             {generated && views.length === 0 && !error && (
               <div className="px-3 py-4 text-center">
-                <p className="text-[11px] text-[var(--text-faint)]">No storeys found in this model.</p>
+                <p className="text-[11px] text-[var(--text-faint)]">{t('floorPlan.noStoreys')}</p>
               </div>
             )}
 
@@ -212,7 +214,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
                   <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
                     <path d="M7 1L13 4v6L7 13 1 10V4z"/>
                   </svg>
-                  Return to 3D view
+                  {t('floorPlan.returnTo3D')}
                 </button>
               </div>
             )}
@@ -229,7 +231,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
                     <path d="M13 7A6 6 0 1 1 7 1"/>
                     <path d="M13 1v6h-6"/>
                   </svg>
-                  Refresh
+                  {t('floorPlan.refresh')}
                 </button>
               </div>
             )}

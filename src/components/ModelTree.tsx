@@ -2,6 +2,7 @@ import React, {
   useRef, useState, useCallback, useMemo, useEffect, useLayoutEffect,
   forwardRef, useImperativeHandle,
 } from 'react'
+import { useTranslation } from 'react-i18next'
 import * as ContextMenu from '@radix-ui/react-context-menu'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useValidationStore, selectAllSpatialTrees } from '../stores/validationStore'
@@ -210,6 +211,7 @@ function TreeContextMenu({
   onFixGuid?:  () => void
   children:    React.ReactNode
 }) {
+  const { t } = useTranslation('tree')
   const handleCopyGuid = (): void => {
     if (!globalId) return
     void navigator.clipboard.writeText(globalId)
@@ -237,14 +239,14 @@ function TreeContextMenu({
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
               <circle cx="7" cy="7" r="5" /><circle cx="7" cy="7" r="2" fill="currentColor" stroke="none" />
             </svg>
-            Select in 3D
+            {t('actions.selectIn3D')}
           </ContextMenu.Item>
 
           <ContextMenu.Item className={menuItemCls} onSelect={onFocus}>
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
               <path d="M1 5V1h4M9 1h4v4M13 9v4H9M5 13H1V9" />
             </svg>
-            Frame camera
+            {t('actions.frameCamera')}
           </ContextMenu.Item>
 
           <div className={menuSepCls} />
@@ -253,7 +255,7 @@ function TreeContextMenu({
             <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M8 2l2 2-6 6H2V8l6-6z" />
             </svg>
-            Rename
+            {t('actions.rename')}
           </ContextMenu.Item>
 
           {onFixGuid && (
@@ -261,7 +263,7 @@ function TreeContextMenu({
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
                 <path d="M2 7a5 5 0 1010 0 5 5 0 00-10 0zM7 4v4M5 6h4" />
               </svg>
-              Fix GUID
+              {t('actions.fixGuid')}
             </ContextMenu.Item>
           )}
 
@@ -275,14 +277,14 @@ function TreeContextMenu({
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
               <rect x="4" y="4" width="8" height="8" rx="1.5" /><path d="M10 4V2.5A1.5 1.5 0 008.5 1h-6A1.5 1.5 0 001 2.5v6A1.5 1.5 0 002.5 10H4" />
             </svg>
-            Copy GlobalId
+            {t('actions.copyGlobalId')}
           </ContextMenu.Item>
 
           <ContextMenu.Item className={menuItemCls} onSelect={handleCopyId}>
             <svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor" opacity="0.7">
               <text x="1" y="11" fontSize="9" fontFamily="monospace">#id</text>
             </svg>
-            Copy express ID
+            {t('actions.copyExpressId')}
           </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Portal>

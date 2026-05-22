@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { createLogger } from '../lib/logger'
 
 const log = createLogger('ErrorBoundary')
@@ -22,11 +23,12 @@ interface State {
 // ── Default fallback UI ────────────────────────────────────────────────────────
 
 function DefaultFallback({ error, reset }: { error: Error; reset: () => void }) {
+  const { t } = useTranslation('errors')
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[var(--bg,#0e0e12)] text-[var(--text,#e2e2e8)] p-8 gap-5">
       <div style={{ fontSize: 32 }}>⚠</div>
       <div className="text-[18px] font-semibold tracking-tight text-[var(--danger,#f04040)]">
-        Something went wrong
+        {t('boundary.title')}
       </div>
       <pre className="text-[12px] text-[var(--text-dim,#888)] max-w-lg text-center bg-[var(--surface,#1a1a22)] border border-[var(--border,#2e2e3a)] rounded-[10px] p-4 whitespace-pre-wrap break-words font-mono leading-relaxed">
         {error.message}
@@ -35,11 +37,11 @@ function DefaultFallback({ error, reset }: { error: Error; reset: () => void }) 
         onClick={reset}
         className="px-5 py-2 bg-[var(--accent,#5E6AD2)] text-white rounded-[8px] text-[13px] font-medium hover:brightness-110 active:brightness-90 transition"
       >
-        Try again
+        {t('boundary.reload')}
       </button>
       {import.meta.env.DEV && error.stack && (
         <details className="text-[10px] text-[var(--text-faint,#555)] max-w-lg w-full">
-          <summary className="cursor-pointer mb-1 select-none">Stack trace</summary>
+          <summary className="cursor-pointer mb-1 select-none">{t('boundary.stackTrace')}</summary>
           <pre className="whitespace-pre-wrap break-all">{error.stack}</pre>
         </details>
       )}

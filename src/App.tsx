@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels'
 import Viewer from './components/Viewer'
@@ -40,6 +41,8 @@ export interface ModelTreeHandle {
 }
 
 export default function App() {
+  const { t: tToasts } = useTranslation('toasts')
+  const { t: tCommon } = useTranslation('common')
   const [route, setRoute] = useState<Route>('landing')
   const [accent] = useState('#5E6AD2')
 
@@ -144,8 +147,9 @@ export default function App() {
         (fromCache ? ' — from cache ⚡' : ' — parsed fresh'),
       )
       toast(
-        `"${info.fileName}" loaded — ${info.elementCount.toLocaleString()} elements` +
-        (fromCache ? ' (from cache ⚡)' : ''),
+        fromCache
+          ? tToasts('model.loadedFromCache', { fileName: info.fileName, count: info.elementCount })
+          : tToasts('model.loaded', { fileName: info.fileName, count: info.elementCount }),
         'success',
       )
       void validation.run(undefined, modelId)
@@ -253,7 +257,7 @@ export default function App() {
         handleFileLoad(file)
       } catch (err: unknown) {
         console.warn('[App] Demo file unavailable:', err)
-        toast('Demo file could not be loaded. Please open your own IFC file.', 'warning')
+        toast(tToasts('model.demoUnavailable'), 'warning')
         setShowUpload(true)
       }
     })()
@@ -311,7 +315,7 @@ export default function App() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
       console.error('[App] Failed to remove model:', msg)
-      toast(`Could not remove model: ${msg}`, 'error')
+      toast(tToasts('model.removeFailed', { message: msg }), 'error')
     }
   }, [removeSceneModel, activePlanViewId, setActivePlanViewId])
 
@@ -539,7 +543,7 @@ export default function App() {
                     className="absolute top-3 left-3 z-[9] h-[30px] min-w-[30px] px-3 bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
                   >
                     <Icons.Chevron size={12} className="rotate-180" />
-                    <span className="hidden xs:inline">Home</span>
+                    <span className="hidden xs:inline">{tCommon('actions.home')}</span>
                   </button>
 
                   {/* ── Mobile FAB cluster (only on < md) ── */}

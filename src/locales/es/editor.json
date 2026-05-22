@@ -1,0 +1,20 @@
+{
+  "actions": {
+    "undo": "Deshacer",
+    "undoShortcut": "Deshacer (Ctrl+Z)",
+    "redo": "Rehacer",
+    "redoShortcut": "Rehacer (Ctrl+Shift+Z)",
+    "applyFix": "Aplicar corrección",
+    "revertFix": "Revertir corrección",
+    "applyAll": "Aplicar todas las correcciones"
+  },
+  "diff": {
+    "rename": "Renombrado: {{from}} → {{to}}",
+    "pendingChanges": "{{count}} cambio pendiente",
+    "pendingChanges_other": "{{count}} cambios pendientes",
+    "noChanges": "Sin cambios pendientes"
+  },
+  "history": {
+    "empty": "Sin historial"
+  }
+}

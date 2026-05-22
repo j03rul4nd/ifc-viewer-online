@@ -20,6 +20,7 @@
 
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import * as Icons from './Icons'
 import GradientText  from './reactbits/GradientText'
@@ -138,84 +139,26 @@ function HeroPreview() {
 // ── Animation helpers ─────────────────────────────────────────────────────────
 const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }
 
-// ── Feature data ──────────────────────────────────────────────────────────────
-const FEATURES = [
-  {
-    icon: Icons.Upload,
-    title: 'Drag & drop, no upload',
-    body: 'Open any .ifc file instantly. Parsed client-side via web-ifc WebAssembly — your data never leaves the browser. No account, no server, works fully offline.',
-    tip: 'Client-side WebAssembly parsing',
-  },
-  {
-    icon: Icons.Sparkles,
-    title: '18-rule IFC validator',
-    body: 'Stream results as each rule runs in a background worker. Covers GUID duplicates, spatial hierarchy, orphan elements, naming conventions, missing type assignments, and more.',
-    tip: 'IFC / ISO 19650 rule engine',
-  },
-  {
-    icon: Icons.Layers,
-    title: 'Non-destructive editing',
-    body: 'Edit GlobalIds, names, LongNames, and property set values inline. Every change is held as a diff with full undo/redo history — the source file is never mutated.',
-    tip: 'Full undo/redo diff stack',
-  },
-  {
-    icon: Icons.Ruler,
-    title: 'Measurement tools',
-    body: 'Measure length, area, volume, and edge dimensions directly in the 3D viewport. Results persist as labelled annotations and export alongside your model.',
-    tip: 'Length · area · volume · edge measurements',
-  },
-  {
-    icon: Icons.Building,
-    title: 'Floor plans & section cuts',
-    body: 'Generate accurate 2D floor plan views from any storey. Cut live section planes at any angle or axis to inspect internal structure without hiding geometry.',
-    tip: '2D floor plans · clipping planes',
-  },
-  {
-    icon: Icons.Zap,
-    title: 'Postproduction renderer',
-    body: 'Toggle SSAO (ambient occlusion), edge rendering, and bloom postprocessing for presentation-quality stills — no external render farm needed.',
-    tip: 'SSAO · edge rendering · bloom',
-  },
-  {
-    icon: Icons.Ruler,
-    title: 'Multi-model support',
-    body: 'Load multiple IFC files simultaneously. Independent visibility, transforms, validation, quantity takeoff, and export per model. Manage everything from the Scene panel.',
-    tip: 'Independent per-model state',
-  },
-  {
-    icon: Icons.Zap,
-    title: 'OPFS geometry cache',
-    body: "Parsed geometry is stored in the browser's Origin Private File System. Repeat loads are ~10× faster with no re-parsing — and it works completely offline.",
-    tip: 'Origin Private File System cache',
-  },
-  {
-    icon: Icons.Building,
-    title: 'IFC2x3, IFC4, IFC4x1, IFC4x3',
-    body: 'All current IFC schema versions supported — Revit, ArchiCAD, Tekla, Allplan, Vectorworks, BricsCAD BIM, Solibri and more. Outdated schemas are flagged by the validator.',
-    tip: 'All major IFC schema versions',
-  },
-  {
-    icon: Icons.Sparkles,
-    title: 'Quantity takeoff',
-    body: 'Reads IfcElementQuantity data to aggregate area, volume, and length per IFC class. Per-model results update in real time as you load or filter models.',
-    tip: 'IfcElementQuantity aggregation',
-  },
-  {
-    icon: Icons.Layers,
-    title: 'IFC + GLB export',
-    body: 'Export the corrected IFC binary (all diffs applied in a Web Worker) or export visible geometry as a standard GLB file. Multi-model batch export supported.',
-    tip: 'Server-free binary IFC export',
-  },
-  {
-    icon: Icons.Upload,
-    title: 'IfcRelationsIndexer',
-    body: 'Every relationship in the model is pre-indexed on load. Near-instant lookup for spatial containment, classification trees, type assignments, and element properties.',
-    tip: 'Pre-indexed relationship graph',
-  },
+// ── Feature icon map (static — icons don't need i18n) ─────────────────────────
+const FEATURE_ICONS = [
+  Icons.Upload, Icons.Sparkles, Icons.Layers, Icons.Ruler, Icons.Building,
+  Icons.Zap, Icons.Ruler, Icons.Zap, Icons.Building, Icons.Sparkles,
+  Icons.Layers, Icons.Upload,
 ] as const
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
+  const { t } = useTranslation('landing')
+
+  // Build arrays inside component so t() is in scope
+  const FEATURES = (t('features', { returnObjects: true }) as Array<{ title: string; body: string; tip: string }>)
+    .map((f, i) => ({ ...f, icon: FEATURE_ICONS[i] ?? Icons.Upload }))
+
+  const TYPING_TEXTS = t('typing', { returnObjects: true }) as string[]
+  const STATS        = t('stats',  { returnObjects: true }) as Array<{ label: string }>
+  const STEPS        = t('steps',  { returnObjects: true }) as Array<{ n: string; title: string; body: string }>
+  const FAQ          = t('faq',    { returnObjects: true }) as Array<{ q: string; a: string }>
+
   return (
     <Tooltip.Provider delayDuration={300}>
       {/*
@@ -271,21 +214,21 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
 
           {/* Desktop nav links */}
           <div className="hidden md:flex items-center gap-5 text-[13px] text-[var(--text-dim)]">
-            <a href="#features" className="text-inherit no-underline hover:text-[var(--text)] transition-colors">Features</a>
-            <a href="#how"      className="text-inherit no-underline hover:text-[var(--text)] transition-colors">How it works</a>
-            <a href="#faq"      className="text-inherit no-underline hover:text-[var(--text)] transition-colors">FAQ</a>
+            <a href="#features" className="text-inherit no-underline hover:text-[var(--text)] transition-colors">{t('nav.features')}</a>
+            <a href="#how"      className="text-inherit no-underline hover:text-[var(--text)] transition-colors">{t('nav.howItWorks')}</a>
+            <a href="#faq"      className="text-inherit no-underline hover:text-[var(--text)] transition-colors">{t('nav.faq')}</a>
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"
               className="text-inherit no-underline hover:text-[var(--text)] transition-colors"
               aria-label="View source code on GitHub"
             >
-              GitHub
+              {t('nav.github')}
             </a>
             <button
               onClick={onLaunch}
               className="inline-flex items-center gap-2 h-[30px] px-3 text-[13px] font-medium rounded-[9px] bg-[var(--accent)] text-white hover:brightness-110 active:brightness-90 transition-all cursor-pointer"
             >
               <Icons.ArrowRight size={14} />
-              Open viewer
+              {t('actions.openViewer')}
             </button>
           </div>
 
@@ -301,7 +244,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
               onClick={onLaunch}
               className="inline-flex items-center gap-1.5 h-9 px-3.5 text-[13px] font-semibold rounded-[9px] bg-[var(--accent)] text-white active:brightness-90 cursor-pointer"
             >
-              Launch
+              {t('actions.launch')}
             </button>
           </div>
         </nav>
@@ -319,11 +262,11 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
               </span>
               {/* Shortened text on mobile */}
               <span className="sm:hidden text-[11px] text-[var(--text-dim)] truncate">
-                No login · runs in your browser
+                {t('hero.badgeMobile')}
               </span>
               <span className="hidden sm:inline">
                 <ShinyText
-                  text="No login required — runs entirely in your browser"
+                  text={t('hero.badge')}
                   speed={6}
                   color="var(--text-dim)"
                   shineColor="var(--text)"
@@ -359,14 +302,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
             aria-hidden="true"
           >
             <TextType
-              text={[
-                'Open any .ifc file instantly — no upload',
-                'Validate with 18 built-in rules',
-                'Measure lengths, areas, and volumes in 3D',
-                'Generate 2D floor plans from any storey',
-                'Edit GUIDs, names, and property sets',
-                'Export corrected IFC in one click',
-              ]}
+              text={TYPING_TEXTS}
               typingSpeed={52}
               deletingSpeed={26}
               pauseDuration={1800}
@@ -383,13 +319,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
             className="text-[var(--text-dim)] leading-[1.5] sm:leading-[1.45] max-w-[700px] mx-auto tracking-[-0.005em]"
             style={{ fontSize: 'clamp(14px, 3.5vw, 19px)' }}
           >
-            Open, validate, measure, and{' '}
-            <GradientText colors={[...GRADIENT_SUBTEXT]} animationSpeed={7}>
-              non-destructively edit
-            </GradientText>{' '}
-            IFC files directly in your browser.
-            No installation, no server, no account — WebAssembly parsing, WebGL rendering,
-            18 validation rules, 2D floor plans, measurements, and IFC export.
+            {t('hero.subtitleFull')}
           </motion.p>
 
           {/* CTA row */}
@@ -407,7 +337,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
             >
               <span className="inline-flex items-center gap-2 text-[13px] sm:text-[14px] font-medium">
                 <Icons.Upload size={14} />
-                Open an IFC file
+                {t('actions.openAnIfc')}
               </span>
             </StarBorder>
 
@@ -418,7 +348,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
               aria-label="View source code on GitHub"
             >
               {GITHUB_SVG}
-              View on GitHub
+              {t('actions.viewOnGithub')}
             </a>
           </motion.div>
 
@@ -427,8 +357,8 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
             variants={fadeUp} initial="hidden" animate="show" transition={{ duration: 0.5, delay: 0.35 }}
             className="mt-4 text-[10.5px] sm:text-[11.5px] text-[var(--text-faint)]"
           >
-            <span className="hidden sm:inline">Free · Open source · 100% client-side · IFC2x3 · IFC4 · IFC4x1 · IFC4x3</span>
-            <span className="sm:hidden">Free · Open source · IFC2x3 · IFC4 · IFC4x3</span>
+            <span className="hidden sm:inline">{t('hero.trustLine')}</span>
+            <span className="sm:hidden">{t('hero.trustLineMobile')}</span>
           </motion.div>
 
           {/* Hero card */}
@@ -472,11 +402,11 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
           aria-label="Supported BIM authoring tools"
         >
           <div className="text-[10.5px] sm:text-[11.5px] text-[var(--text-faint)] mb-3 sm:mb-4 tracking-[0.08em] uppercase">
-            Compatible with every major BIM authoring tool
+            {t('compatible.label')}
           </div>
           <div className="flex gap-4 sm:gap-10 justify-center flex-wrap text-[13px] sm:text-[15px] font-medium text-[var(--text-dim)] tracking-tight">
-            {['Revit', 'ArchiCAD', 'Tekla', 'Allplan', 'Vectorworks', 'BricsCAD BIM', 'Solibri'].map((t) => (
-              <span key={t}>{t}</span>
+            {['Revit', 'ArchiCAD', 'Tekla', 'Allplan', 'Vectorworks', 'BricsCAD BIM', 'Solibri'].map((name) => (
+              <span key={name}>{name}</span>
             ))}
           </div>
         </section>
@@ -489,16 +419,16 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
         >
           <div className="max-w-[900px] mx-auto grid grid-cols-2 gap-y-8 sm:gap-y-10 gap-x-4 sm:gap-x-6 sm:grid-cols-4">
             {[
-              { to: 18,  suffix: '+', label: 'Validation rules',    stiffness: 70 },
-              { to: 4,   suffix: '',  label: 'IFC schema versions', stiffness: 90 },
-              { to: 100, suffix: '%', label: 'Runs in the browser', stiffness: 60 },
-              { to: 0,   suffix: '',  label: 'Server uploads',      stiffness: 90 },
+              { to: 18,  suffix: '+', stiffness: 70 },
+              { to: 4,   suffix: '',  stiffness: 90 },
+              { to: 100, suffix: '%', stiffness: 60 },
+              { to: 0,   suffix: '',  stiffness: 90 },
             ].map((s, i) => (
               <CountUp
                 key={i}
                 to={s.to}
                 suffix={s.suffix}
-                label={s.label}
+                label={STATS[i]?.label ?? ''}
                 stiffness={s.stiffness}
                 damping={22}
                 numberClassName="text-[38px] sm:text-[52px] font-semibold tracking-[-0.04em] text-[var(--text)]"
@@ -513,7 +443,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
           <div className="text-center mb-10 sm:mb-[60px]">
             <div className="text-[11px] sm:text-[12px] text-[var(--accent-2)] tracking-[0.1em] font-mono mb-2 sm:mb-2.5">
               <DecryptedText
-                text="FEATURES"
+                text={t('featuresSection.label')}
                 animateOn="view"
                 sequential
                 revealDirection="start"
@@ -527,10 +457,10 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
               className="font-semibold tracking-[-0.03em] m-0"
               style={{ fontSize: 'clamp(24px, 6.5vw, 42px)' }}
             >
-              View, validate, measure, and edit IFC
+              {t('featuresSection.title')}
             </h2>
             <p className="text-[14px] sm:text-[16px] text-[var(--text-dim)] mt-3 max-w-[600px] mx-auto">
-              Every tool you need in a single browser tab — private, fast, and completely free.
+              {t('featuresSection.subtitle')}
             </p>
           </div>
 
@@ -603,7 +533,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
             <div className="text-center mb-10 sm:mb-[60px]">
               <div className="text-[11px] sm:text-[12px] text-[var(--accent-2)] tracking-[0.1em] font-mono mb-2 sm:mb-2.5">
                 <DecryptedText
-                  text="HOW IT WORKS"
+                  text={t('howItWorksSection.label')}
                   animateOn="view"
                   sequential
                   revealDirection="start"
@@ -617,33 +547,12 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
                 className="font-semibold tracking-[-0.03em] m-0"
                 style={{ fontSize: 'clamp(24px, 6.5vw, 42px)' }}
               >
-                From file to validated, measured model
+                {t('howItWorksSection.title')}
               </h2>
             </div>
 
             <div className="grid gap-4 sm:gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-              {[
-                {
-                  n: '01',
-                  title: 'Open your IFC',
-                  body: 'Drag & drop or click to open any IFC file. web-ifc WebAssembly parses it entirely in your browser — no upload, no network required. OPFS caches geometry for instant repeat loads.',
-                },
-                {
-                  n: '02',
-                  title: 'Inspect & validate',
-                  body: 'Explore the model tree, filter by category, and run 18 built-in validation rules in a background worker. Duplicate GUIDs, spatial hierarchy errors, missing type assignments — all flagged instantly.',
-                },
-                {
-                  n: '03',
-                  title: 'Edit & measure',
-                  body: 'Fix GUIDs with one click. Edit names and property values inline with full undo/redo. Measure lengths, areas, and volumes in 3D. View 2D floor plans and cut live section planes.',
-                },
-                {
-                  n: '04',
-                  title: 'Visualise & export',
-                  body: 'Toggle SSAO, edge rendering, and bloom for presentation renders. Export the corrected IFC binary (all diffs applied server-free) or visible geometry as a standard GLB.',
-                },
-              ].map((s, i) => (
+              {STEPS.map((s, i) => (
                 <BorderGlow
                   key={i}
                   backgroundColor="#18181f"
@@ -684,7 +593,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
           <div className="max-w-[760px] mx-auto text-center">
             <div className="text-[11px] sm:text-[12px] text-[var(--accent-2)] tracking-[0.1em] font-mono mb-2 sm:mb-2.5">
               <DecryptedText
-                text="OPEN SOURCE"
+                text={t('openSource.label')}
                 animateOn="view"
                 sequential
                 revealDirection="center"
@@ -698,12 +607,10 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
               className="font-semibold tracking-[-0.03em] mb-3 sm:mb-4"
               style={{ fontSize: 'clamp(20px, 5.5vw, 32px)' }}
             >
-              Built in public, free forever
+              {t('openSource.title')}
             </h2>
             <p className="text-[13.5px] sm:text-[15px] text-[var(--text-dim)] leading-[1.55] mb-6 sm:mb-7 max-w-[540px] mx-auto">
-              The source code is on GitHub. Built with <strong>@thatopen/components</strong>,{' '}
-              <strong>three.js</strong>, <strong>web-ifc</strong>, and <strong>React</strong>.
-              If you need a custom BIM web viewer, validator, or IFC tooling — the author is available for contract work.
+              {t('openSource.body')}
             </p>
             <div className="flex gap-3 justify-center flex-wrap">
               <a
@@ -713,14 +620,14 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
                 aria-label="View source code on GitHub"
               >
                 {GITHUB_SVG}
-                View source on GitHub
+                {t('actions.viewSourceOnGithub')}
               </a>
               <a
                 href="mailto:joelbenitezdonari@gmail.com"
                 className="inline-flex items-center gap-2 h-[38px] px-4 sm:px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] bg-[var(--accent)] text-white hover:brightness-110 transition-all no-underline"
                 aria-label="Contact for custom BIM development"
               >
-                Contact for custom work
+                {t('actions.contactForWork')}
               </a>
             </div>
           </div>
@@ -740,50 +647,9 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
               className="font-semibold tracking-[-0.03em] mb-6 sm:mb-8 text-center"
               style={{ fontSize: 'clamp(22px, 6vw, 36px)' }}
             >
-              Questions
+              {t('faqSection.title')}
             </h2>
-            {[
-              {
-                q: 'Is my IFC file uploaded anywhere?',
-                a: 'No. Files are parsed entirely in your browser via web-ifc, a WebAssembly build of the open-source IFC parser. Nothing leaves your machine. The app works completely offline once loaded.',
-              },
-              {
-                q: 'What IFC versions are supported?',
-                a: 'IFC2x3, IFC4, IFC4x1, and IFC4x3. The viewer uses the open-source web-ifc parser — the same engine used by most modern BIM tools and @thatopen/components. Outdated schemas are automatically flagged by the validator.',
-              },
-              {
-                q: 'What measurement tools are available?',
-                a: 'You can measure lengths between any two points, areas of surfaces, volumes of enclosed elements, and individual edge lengths — all directly in the 3D viewport. Measurements persist as labelled annotations and can be exported alongside your model.',
-              },
-              {
-                q: 'Can I view floor plans and cut sections?',
-                a: 'Yes. Floor plan mode generates accurate 2D orthographic views from any IfcBuildingStorey in the model. Section cuts let you define clipping planes at any position and angle to inspect internal structure without hiding geometry.',
-              },
-              {
-                q: 'How does the validation work?',
-                a: 'The validator runs 18 built-in rules in a background Web Worker so the UI stays responsive. Rules cover GUID duplicates, spatial hierarchy, orphan elements, naming conventions, missing type assignments, clash detection, and more. Results stream in as each rule completes.',
-              },
-              {
-                q: 'Can I fix errors and re-export a corrected IFC?',
-                a: 'Yes. All edits (GUID fixes, renames, property value changes) are held as non-destructive diffs with full undo/redo. Clicking Export IFC applies all diffs to the original binary in a Web Worker and downloads the corrected file — no server involved.',
-              },
-              {
-                q: 'Can I load multiple IFC files at once?',
-                a: 'Yes. Load as many IFC files as your device memory allows. Each model has independent visibility, transforms, validation, quantity takeoff, and export. Use the Scene panel to manage, reorder, or remove models at any time.',
-              },
-              {
-                q: 'Does it work offline?',
-                a: 'Yes, once the page is loaded. The WebAssembly parser and WebGL renderer run entirely in the browser. Parsed geometry is cached in OPFS so repeat loads are instant even without a network connection.',
-              },
-              {
-                q: 'What are the file size limits?',
-                a: 'There is no enforced limit — performance depends on your device. Files up to ~200 MB typically load well on modern hardware. The OPFS geometry cache means you only pay the parse cost once per file.',
-              },
-              {
-                q: 'Is it free? Can I use it for commercial projects?',
-                a: 'Yes, completely free. The source code is MIT-licensed. You can use the live app or fork the repository for your own projects, including commercial ones.',
-              },
-            ].map((f, i) => <FAQItem key={i} q={f.q} a={f.a} />)}
+            {FAQ.map((f, i) => <FAQItem key={i} q={f.q} a={f.a} />)}
           </div>
         </section>
 
@@ -810,7 +676,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
               className="font-semibold tracking-[-0.03em] mb-3 sm:mb-4"
               style={{ fontSize: 'clamp(28px, 8vw, 48px)' }}
             >
-              Open an <span className="font-serif italic font-normal">IFC</span> now.
+              {t('finalCta.title')}
             </motion.h2>
 
             <motion.p
@@ -818,7 +684,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
               transition={{ delay: 0.08 }}
               className="text-[14px] sm:text-[16px] text-[var(--text-dim)] mb-2 sm:mb-3"
             >
-              No login. No upload. Runs in your browser.
+              {t('finalCta.subtitle')}
             </motion.p>
 
             <motion.p
@@ -826,7 +692,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
               transition={{ delay: 0.12 }}
               className="text-[12px] sm:text-[13px] text-[var(--text-faint)] mb-7 sm:mb-8"
             >
-              Or explore the source on{' '}
+              {t('finalCta.githubLine')}{' '}
               <a
                 href={GITHUB_URL}
                 target="_blank" rel="noopener noreferrer"
@@ -850,7 +716,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
               >
                 <span className="inline-flex items-center gap-2 text-[14px] sm:text-[15px] font-medium">
                   <Icons.Upload size={15} />
-                  Open an IFC file
+                  {t('actions.openAnIfc')}
                 </span>
               </StarBorder>
             </motion.div>
@@ -862,7 +728,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
           <div className="flex items-center gap-2">
             <Icons.Logo size={16} aria-hidden="true" />
             <span>
-              IFC Viewer Online © 2026 —{' '}
+              {t('footer.copyright')} —{' '}
               <a
                 href="https://github.com/j03rul4nd"
                 target="_blank" rel="noopener noreferrer"
@@ -879,9 +745,9 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
               className="hover:text-[var(--text)] transition-colors no-underline"
               aria-label="GitHub repository"
             >
-              GitHub
+              {t('nav.github')}
             </a>
-            <span className="text-[var(--text-faint)]">Built with @thatopen/components · three.js · web-ifc</span>
+            <span className="text-[var(--text-faint)]">{t('footer.builtWith')}</span>
           </div>
         </footer>
 

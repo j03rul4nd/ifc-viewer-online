@@ -1,0 +1,28 @@
+{
+  "panel": {
+    "title": "Medir",
+    "measurements": "{{count}} medición",
+    "measurements_other": "{{count}} mediciones"
+  },
+  "tools": {
+    "select": "Seleccionar",
+    "selectHint": "Haz clic en los elementos para seleccionarlos",
+    "length": "Longitud",
+    "lengthHint": "Clic en inicio · clic en fin",
+    "area": "Área",
+    "areaHint": "Clic en vértices · Enter o doble clic para cerrar"
+  },
+  "actions": {
+    "finishArea": "Finalizar área",
+    "deleteLast": "Eliminar última",
+    "clearAll": "Limpiar todo",
+    "escToCancel": "Esc para cancelar"
+  },
+  "units": {
+    "km": "{{value}} km",
+    "m": "{{value}} m",
+    "cm": "{{value}} cm",
+    "ha": "{{value}} ha",
+    "m2": "{{value}} m²"
+  }
+}

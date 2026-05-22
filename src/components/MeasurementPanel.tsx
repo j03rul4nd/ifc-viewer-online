@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { useUIStore } from '../stores/uiStore'
 import type { ViewerAPI } from '../lib/viewer'
 import type { MeasurementTool } from '../stores/uiStore'
@@ -9,41 +10,6 @@ interface MeasurementPanelProps {
 }
 
 type MeasurementEntry = { id: string; type: 'length' | 'area'; value: number }
-
-const TOOLS: { id: MeasurementTool; label: string; icon: React.ReactNode; hint: string; hintExtra?: string }[] = [
-  {
-    id: 'none',
-    label: 'Select',
-    hint: 'Click elements to select them',
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-        <path d="M2 2l10 4-5 1.5L5.5 12 2 2z" opacity="0.85"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'length',
-    label: 'Length',
-    hint: 'Click start · click end',
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-        <line x1="2" y1="7" x2="12" y2="7"/>
-        <line x1="2" y1="5" x2="2" y2="9"/>
-        <line x1="12" y1="5" x2="12" y2="9"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'area',
-    label: 'Area',
-    hint: 'Click vertices · Enter or dbl-click to close',
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" opacity="0.85">
-        <path d="M7 2L12 5v4L7 12 2 9V5z"/>
-      </svg>
-    ),
-  },
-]
 
 // ── Format helpers ────────────────────────────────────────────────────────────
 
@@ -65,11 +31,47 @@ function formatValue(entry: MeasurementEntry): string {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps) {
+  const { t } = useTranslation('measurement')
   const {
     activeMeasurementTool, setActiveMeasurementTool,
     setMeasurementCount,
     measurementPanelOpen,
   } = useUIStore()
+
+  const TOOLS: { id: MeasurementTool; label: string; icon: React.ReactNode; hint: string }[] = [
+    {
+      id: 'none',
+      label: t('tools.select'),
+      hint: t('tools.selectHint'),
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+          <path d="M2 2l10 4-5 1.5L5.5 12 2 2z" opacity="0.85"/>
+        </svg>
+      ),
+    },
+    {
+      id: 'length',
+      label: t('tools.length'),
+      hint: t('tools.lengthHint'),
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <line x1="2" y1="7" x2="12" y2="7"/>
+          <line x1="2" y1="5" x2="2" y2="9"/>
+          <line x1="12" y1="5" x2="12" y2="9"/>
+        </svg>
+      ),
+    },
+    {
+      id: 'area',
+      label: t('tools.area'),
+      hint: t('tools.areaHint'),
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" opacity="0.85">
+          <path d="M7 2L12 5v4L7 12 2 9V5z"/>
+        </svg>
+      ),
+    },
+  ]
 
   const [measurements, setMeasurements] = useState<MeasurementEntry[]>([])
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -176,11 +178,11 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
             {/* Header */}
             <div className="px-3 pt-2.5 pb-1.5 border-b border-[var(--border)]">
               <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase mb-0.5">
-                Measure
+                {t('panel.title')}
               </div>
               {count > 0 && (
                 <div className="text-[11px] text-[var(--text-dim)]">
-                  {count} measurement{count !== 1 ? 's' : ''}
+                  {t('panel.measurements', { count })}
                 </div>
               )}
             </div>
@@ -257,7 +259,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="2,5 4,7.5 8,2.5" />
                   </svg>
-                  Finish area
+                  {t('actions.finishArea')}
                   <span className="opacity-50 text-[9px] font-mono ml-auto">↵</span>
                 </button>
               </div>
@@ -274,7 +276,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                   <svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor" opacity="0.7">
                     <path d="M5 2h4l1 2H4L5 2zM2 5h10l-1 7H3L2 5zm4 2v4m2-4v4" stroke="currentColor" strokeWidth="1" fill="none"/>
                   </svg>
-                  Delete last
+                  {t('actions.deleteLast')}
                 </button>
                 <button
                   onClick={handleClear}
@@ -284,7 +286,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                   <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                     <path d="M2 2l10 10M12 2L2 12"/>
                   </svg>
-                  Clear all
+                  {t('actions.clearAll')}
                 </button>
               </div>
             )}
@@ -292,8 +294,8 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
             {/* Active tool hint */}
             {activeMeasurementTool !== 'none' && (
               <div className="border-t border-[var(--border)] px-3 py-2 text-[10.5px] text-[var(--text-faint)] leading-snug">
-                {TOOLS.find(t => t.id === activeMeasurementTool)?.hint}
-                <div className="mt-0.5 opacity-70">Esc to cancel</div>
+                {TOOLS.find(tool => tool.id === activeMeasurementTool)?.hint}
+                <div className="mt-0.5 opacity-70">{t('actions.escToCancel')}</div>
               </div>
             )}
           </div>

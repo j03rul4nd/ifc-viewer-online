@@ -7,6 +7,7 @@ import React, {
   useState, useRef, useEffect, useMemo, useCallback, useLayoutEffect,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/react/shallow'
 import { useValidationStore } from '../stores/validationStore'
 import { useEditorStore } from '../stores/editorStore'

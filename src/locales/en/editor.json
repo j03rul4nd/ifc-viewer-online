@@ -1,0 +1,20 @@
+{
+  "actions": {
+    "undo": "Undo",
+    "undoShortcut": "Undo (Ctrl+Z)",
+    "redo": "Redo",
+    "redoShortcut": "Redo (Ctrl+Shift+Z)",
+    "applyFix": "Apply fix",
+    "revertFix": "Revert fix",
+    "applyAll": "Apply all fixes"
+  },
+  "diff": {
+    "rename": "Renamed: {{from}} → {{to}}",
+    "pendingChanges": "{{count}} pending change",
+    "pendingChanges_other": "{{count}} pending changes",
+    "noChanges": "No pending changes"
+  },
+  "history": {
+    "empty": "No history"
+  }
+}
