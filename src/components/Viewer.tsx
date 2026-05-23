@@ -57,6 +57,7 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(props, ref)
     resetCamera:          () => apiRef.current?.resetCamera(),
     frameCategory:        (id) => apiRef.current?.frameCategory(id),
     setCameraViewpoint:   (position, direction) => apiRef.current?.setCameraViewpoint(position, direction),
+    takeSnapshot:         () => apiRef.current?.takeSnapshot() ?? '',
   }), [])
 
   // The outer div owns the absolute-fill layout. PostproductionRenderer

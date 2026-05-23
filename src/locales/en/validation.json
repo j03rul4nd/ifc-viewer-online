@@ -62,7 +62,8 @@
     "view": "View",
     "edited": "edited",
     "newNamePlaceholder": "New {{field}} name…",
-    "apply": "Apply"
+    "apply": "Apply",
+    "addToBcf": "Add to BCF"
   },
   "actions": {
     "runValidation": "Run validation",
@@ -137,7 +138,18 @@
     "comments": "{{count}} comment",
     "comments_other": "{{count}} comments",
     "generated": "generated",
-    "navigate": "Navigate"
+    "navigate": "Navigate",
+    "addToBcf": "Add to BCF",
+    "addedToBcf": "Topic added to BCF",
+    "comment": {
+      "add": "Add comment",
+      "placeholder": "Write a comment…",
+      "author": "Your name",
+      "submit": "Post",
+      "delete": "Delete",
+      "noComments": "No comments yet",
+      "local": "local"
+    }
   },
   "validating": "Validating… {{progress}}%",
   "pendingFixes": "{{count}} edited",

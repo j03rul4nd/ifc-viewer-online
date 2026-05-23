@@ -62,7 +62,8 @@
     "view": "Ver",
     "edited": "editado",
     "newNamePlaceholder": "Nuevo nombre de {{field}}…",
-    "apply": "Aplicar"
+    "apply": "Aplicar",
+    "addToBcf": "Añadir a BCF"
   },
   "actions": {
     "runValidation": "Ejecutar validación",
@@ -137,7 +138,18 @@
     "comments": "{{count}} comentario",
     "comments_other": "{{count}} comentarios",
     "generated": "generado",
-    "navigate": "Navegar"
+    "navigate": "Navegar",
+    "addToBcf": "Añadir a BCF",
+    "addedToBcf": "Tema añadido a BCF",
+    "comment": {
+      "add": "Añadir comentario",
+      "placeholder": "Escribe un comentario…",
+      "author": "Tu nombre",
+      "submit": "Publicar",
+      "delete": "Eliminar",
+      "noComments": "Sin comentarios",
+      "local": "local"
+    }
   },
   "validating": "Validando… {{progress}}%",
   "pendingFixes": "{{count}} editado",

@@ -15,6 +15,7 @@ import { useUIStore } from '../stores/uiStore'
 import { useModelStore } from '../stores/modelStore'
 import { useSceneStore } from '../stores/sceneStore'
 import { useBcfStore } from '../stores/bcfStore'
+import { toast } from '../stores/toastStore'
 import { buildFixGuidCommand, buildRenameCommand, downloadBlob } from '../lib/diffStore'
 import { useEditorHistory } from '../hooks/useEditorHistory'
 import { runValidation } from '../lib/validator'
@@ -104,13 +105,14 @@ function getEditField(ruleId: string): 'Name' | 'LongName' {
 // ── Issue row ─────────────────────────────────────────────────────────────────
 
 function IssueRow({
-  issue, hasPendingFix, onJumpTo, onAutoFix, onNameFix,
+  issue, hasPendingFix, onJumpTo, onAutoFix, onNameFix, onAddToBcf,
 }: {
   issue: ValidationIssue
   hasPendingFix: boolean
   onJumpTo: (issue: ValidationIssue) => void
   onAutoFix: (issue: ValidationIssue) => void
   onNameFix: (issue: ValidationIssue, field: 'Name' | 'LongName', newValue: string) => void
+  onAddToBcf?: (issue: ValidationIssue) => void
 }) {
   const { t } = useTranslation('validation')
   const [editing, setEditing]     = useState(false)
@@ -198,6 +200,17 @@ function IssueRow({
           >
             {t('issue.view')}
           </button>
+          {onAddToBcf && (
+            <button
+              onClick={() => onAddToBcf(issue)}
+              title={t('issue.addToBcf')}
+              className="w-6 h-6 flex items-center justify-center rounded text-[10px] font-bold bg-[var(--surface-2)] text-[var(--text-faint)] border border-[var(--border)] hover:text-[var(--accent)] hover:border-[var(--accent)] active:bg-[var(--border)] transition-colors"
+            >
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M5 1v8M1 5h8" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -766,50 +779,157 @@ function BcfStatusBadge({ status }: { status?: string }) {
 
 function BcfTopicRow({ topic, onNavigate }: { topic: BcfTopic; onNavigate: (t: BcfTopic) => void }) {
   const { t } = useTranslation('validation')
+  const { addLocalComment, removeLocalComment } = useBcfStore(
+    useShallow((s) => ({ addLocalComment: s.addLocalComment, removeLocalComment: s.removeLocalComment })),
+  )
+
   const vp          = topic.viewpoints[0]
   const hasCamera   = vp && vp.cameraPosition && vp.cameraDirection
   const hasSnapshot = vp?.snapshotBase64
 
+  // Comment thread state
+  const [expanded, setExpanded]     = useState(false)
+  const [commentText, setCommentText] = useState('')
+  const [authorName, setAuthorName]   = useState(() => localStorage.getItem('bcf-author') ?? '')
+
+  const submitComment = () => {
+    const text = commentText.trim()
+    if (!text) return
+    const author = authorName.trim() || 'Anonymous'
+    localStorage.setItem('bcf-author', author)
+    addLocalComment(topic.guid, {
+      date:   new Date().toISOString(),
+      author,
+      text,
+    })
+    setCommentText('')
+  }
+
   return (
-    <div className="flex items-start gap-2.5 px-3 py-2 border-b border-[var(--border)] hover:bg-[var(--surface-2)] group transition-colors">
-      {hasSnapshot && (
-        <img
-          src={hasSnapshot}
-          alt="snapshot"
-          className="w-12 h-9 object-cover rounded-md border border-[var(--border)] shrink-0"
-        />
-      )}
-      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <BcfStatusBadge status={topic.status} />
-          {topic.topicType && (
-            <span className="text-[9px] text-[var(--text-faint)] font-mono uppercase">{topic.topicType}</span>
-          )}
-          <span className="text-[12px] text-[var(--text)] font-medium truncate max-w-[220px]">{topic.title}</span>
-        </div>
-        {topic.description && (
-          <p className="text-[11px] text-[var(--text-dim)] line-clamp-2">{topic.description}</p>
+    <div className="border-b border-[var(--border)]">
+      {/* ── Main row ── */}
+      <div className="flex items-start gap-2.5 px-3 py-2 hover:bg-[var(--surface-2)] group transition-colors">
+        {hasSnapshot && (
+          <img
+            src={hasSnapshot}
+            alt="snapshot"
+            className="w-12 h-9 object-cover rounded-md border border-[var(--border)] shrink-0"
+          />
         )}
-        <div className="flex items-center gap-2 mt-0.5">
-          {topic.comments.length > 0 && (
-            <span className="text-[10px] text-[var(--text-faint)] font-mono">
-              {t('bcf.comments', { count: topic.comments.length })}
-            </span>
+        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <BcfStatusBadge status={topic.status} />
+            {topic.topicType && (
+              <span className="text-[9px] text-[var(--text-faint)] font-mono uppercase">{topic.topicType}</span>
+            )}
+            <span className="text-[12px] text-[var(--text)] font-medium truncate max-w-[200px]">{topic.title}</span>
+          </div>
+          {topic.description && (
+            <p className="text-[11px] text-[var(--text-dim)] line-clamp-2">{topic.description}</p>
           )}
-          {topic.source === 'generated' && (
-            <span className="text-[9px] text-[var(--text-faint)] border border-[var(--border)] px-1 rounded font-mono">
-              {t('bcf.generated')}
-            </span>
-          )}
+          <div className="flex items-center gap-2 mt-0.5">
+            {/* Comment count / expand toggle */}
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="text-[10px] text-[var(--text-faint)] hover:text-[var(--accent)] font-mono transition-colors flex items-center gap-1"
+            >
+              <svg
+                width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.3"
+                className={`transition-transform ${expanded ? 'rotate-90' : ''}`}
+              >
+                <path d="M2 1.5L6 4L2 6.5" />
+              </svg>
+              {topic.comments.length > 0
+                ? t('bcf.comments', { count: topic.comments.length })
+                : t('bcf.comment.add')}
+            </button>
+            {topic.source === 'generated' && (
+              <span className="text-[9px] text-[var(--text-faint)] border border-[var(--border)] px-1 rounded font-mono">
+                {t('bcf.generated')}
+              </span>
+            )}
+          </div>
         </div>
+        {hasCamera && (
+          <button
+            onClick={() => onNavigate(topic)}
+            className="shrink-0 px-2 h-7 rounded text-[10px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            {t('bcf.navigate')}
+          </button>
+        )}
       </div>
-      {hasCamera && (
-        <button
-          onClick={() => onNavigate(topic)}
-          className="shrink-0 px-2 h-7 rounded text-[10px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] font-medium opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          {t('bcf.navigate')}
-        </button>
+
+      {/* ── Comment thread (expanded) ── */}
+      {expanded && (
+        <div className="bg-[var(--surface-2)] border-t border-[var(--border)] px-3 py-2 flex flex-col gap-2">
+          {/* Existing comments */}
+          {topic.comments.length === 0 ? (
+            <p className="text-[10px] text-[var(--text-faint)] italic">{t('bcf.comment.noComments')}</p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {topic.comments.map((c) => (
+                <li key={c.guid} className="flex items-start gap-2 group/comment">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-semibold text-[var(--text)]">{c.author || 'Anonymous'}</span>
+                      {c.date && (
+                        <span className="text-[9px] text-[var(--text-faint)] font-mono">
+                          {new Date(c.date).toLocaleDateString()}
+                        </span>
+                      )}
+                      {c.local && (
+                        <span className="text-[8px] text-[var(--text-faint)] border border-[var(--border)] px-1 rounded font-mono">
+                          {t('bcf.comment.local')}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-[var(--text-dim)] leading-snug">{c.text}</p>
+                  </div>
+                  {c.local && (
+                    <button
+                      onClick={() => removeLocalComment(topic.guid, c.guid)}
+                      title={t('bcf.comment.delete')}
+                      className="opacity-0 group-hover/comment:opacity-100 w-5 h-5 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--danger)] transition-all"
+                    >
+                      <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                        <path d="M1.5 1.5l5 5M6.5 1.5l-5 5" />
+                      </svg>
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Add comment form */}
+          <div className="flex flex-col gap-1 pt-1 border-t border-[var(--border)]">
+            <input
+              type="text"
+              value={authorName}
+              onChange={(e) => setAuthorName(e.target.value)}
+              placeholder={t('bcf.comment.author')}
+              className="h-6 px-2 text-[10px] bg-[var(--surface)] border border-[var(--border)] rounded text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] transition-colors"
+            />
+            <div className="flex gap-1">
+              <input
+                type="text"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitComment() } }}
+                placeholder={t('bcf.comment.placeholder')}
+                className="flex-1 h-6 px-2 text-[11px] bg-[var(--surface)] border border-[var(--border)] rounded text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] transition-colors"
+              />
+              <button
+                onClick={submitComment}
+                disabled={!commentText.trim()}
+                className="px-2.5 h-6 rounded text-[10px] font-medium bg-[var(--accent)] text-white disabled:opacity-40 hover:brightness-110 transition-all"
+              >
+                {t('bcf.comment.submit')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
@@ -917,7 +1037,7 @@ function ExportDropdown({
 
 interface ValidationPanelProps {
   onJumpToElement?: (expressId: number) => void
-  viewer?: Pick<ViewerHandle, 'setCameraViewpoint'> | null | undefined
+  viewer?: Pick<ViewerHandle, 'setCameraViewpoint' | 'takeSnapshot'> | null | undefined
 }
 
 export default function ValidationPanel({ onJumpToElement, viewer }: ValidationPanelProps) {
@@ -1169,8 +1289,18 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
 
   const handleBcfExport = useCallback(() => {
     if (!result) return
-    void downloadBcfBlob(issuesToBcfTopics(result.issues), 'validation-issues.bcfzip')
-  }, [result])
+    const snapshot = viewer?.takeSnapshot?.() ?? undefined
+    void downloadBcfBlob(issuesToBcfTopics(result.issues, snapshot), 'validation-issues.bcfzip')
+  }, [result, viewer])
+
+  const handleAddIssueToBcf = useCallback((issue: ValidationIssue) => {
+    const snapshot = viewer?.takeSnapshot?.() ?? undefined
+    const [topic]  = issuesToBcfTopics([issue], snapshot)
+    if (!topic) return
+    useBcfStore.getState().addTopics([topic])
+    setActivePanel('bcf')
+    toast(t('bcf.addedToBcf'), 'success')
+  }, [viewer, t])
 
   const handleNavigateToBcfTopic = useCallback((topic: BcfTopic) => {
     const vp = topic.viewpoints[0]
@@ -1505,6 +1635,17 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                 {t('bcf.export')}
               </button>
             )}
+            {bcfTopics.length > 0 && (
+              <button
+                onClick={() => useBcfStore.getState().clearTopics()}
+                title={t('actions.clearBcf')}
+                className="w-6 h-6 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--danger)] border border-transparent hover:border-[var(--danger)]33 transition-colors"
+              >
+                <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+                  <path d="M1.5 1.5l6 6M7.5 1.5l-6 6" />
+                </svg>
+              </button>
+            )}
           </>
         )}
       </div>
@@ -1605,6 +1746,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                     onJumpTo={handleJumpTo}
                     onAutoFix={handleAutoFix}
                     onNameFix={handleNameFix}
+                    onAddToBcf={handleAddIssueToBcf}
                   />
                 ))}
               </div>

@@ -66,6 +66,8 @@ export interface ViewerHandle {
     position:  { x: number; y: number; z: number },
     direction: { x: number; y: number; z: number },
   ) => void
+  /** Capture the current renderer canvas as a PNG data-URL. Returns '' on failure. */
+  takeSnapshot: () => string
 }
 
 // ── Loading pipeline ──────────────────────────────────────────────────────────
