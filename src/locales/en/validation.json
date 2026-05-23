@@ -31,7 +31,21 @@
   },
   "tabs": {
     "issues": "Issues",
-    "bcf": "BCF"
+    "bcf": "BCF",
+    "history": "History"
+  },
+  "history": {
+    "noRuns": "No runs yet",
+    "noRunsDesc": "Run validation to start tracking your model quality over time",
+    "runs": "{{count}} run",
+    "runs_other": "{{count}} runs",
+    "avgScore": "Avg. score",
+    "topIssues": "Top issues",
+    "duration": "{{ms}} ms",
+    "profile": "Profile",
+    "noProfile": "Default",
+    "clearHistory": "Clear history",
+    "clearConfirm": "Clear all {{count}} runs?"
   },
   "filters": {
     "all": "All",

@@ -27,6 +27,8 @@ import type {
 import { VALIDATION_PROFILES, RULE_METADATA, getRuleLabel, VALIDATION_CATEGORY_LABELS } from '../types'
 import { getCoveredCategories, ALL_CATEGORIES } from './ValidationCoverageSummary'
 import CustomProfileModal from './CustomProfileModal'
+import { getRecentRuns, getAverageQualityScore, getMostUsedRules } from '../lib/validation-analytics'
+import type { ValidationRunRecord } from '../lib/validation-analytics'
 
 // ── Resize constants ──────────────────────────────────────────────────────────
 
@@ -935,6 +937,188 @@ function BcfTopicRow({ topic, onNavigate }: { topic: BcfTopic; onNavigate: (t: B
   )
 }
 
+// ── Validation history panel ──────────────────────────────────────────────────
+
+/** Tiny sparkline chart — renders up to 20 quality-score dots as an SVG polyline. */
+function ScoreSparkline({ runs }: { runs: ValidationRunRecord[] }) {
+  if (runs.length < 2) return null
+  const scores = runs.map((r) => r.qualityScore)
+  const min = Math.min(...scores)
+  const max = Math.max(...scores)
+  const range = max - min || 1
+  const W = 120, H = 28, pad = 4
+  const pts = scores.map((s, i) => {
+    const x = pad + (i / (scores.length - 1)) * (W - pad * 2)
+    const y = H - pad - ((s - min) / range) * (H - pad * 2)
+    return `${x.toFixed(1)},${y.toFixed(1)}`
+  }).join(' ')
+  const lastScore = scores[scores.length - 1]
+  const lineColor = lastScore >= 80 ? 'var(--ok)' : lastScore >= 50 ? '#F5A623' : 'var(--danger)'
+  return (
+    <svg width={W} height={H} className="shrink-0">
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={lineColor}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity="0.7"
+      />
+      {/* Last point dot */}
+      {(() => {
+        const parts = pts.split(' '); const last = parts[parts.length - 1]?.split(',')
+        if (!last) return null
+        return <circle cx={last[0]} cy={last[1]} r="2.5" fill={lineColor} />
+      })()}
+    </svg>
+  )
+}
+
+function scoreColor(s: number): string {
+  return s >= 80 ? 'var(--ok)' : s >= 50 ? '#F5A623' : 'var(--danger)'
+}
+
+function ValidationHistoryPanel({ onClose }: { onClose: () => void }) {
+  const { t, i18n } = useTranslation('validation')
+  const [runs, setRuns]     = useState<ValidationRunRecord[]>([])
+  const [clearing, setClearing] = useState(false)
+
+  useEffect(() => {
+    setRuns(getRecentRuns(20))
+  }, [])
+
+  const avgScore   = getAverageQualityScore()
+  const topIssues  = getMostUsedRules(5)
+  const totalRuns  = runs.length
+
+  const handleClear = () => {
+    if (!clearing) { setClearing(true); return }
+    localStorage.removeItem('ifc-validator-runs')
+    setRuns([])
+    setClearing(false)
+    onClose()
+  }
+
+  const fmt = (ms: number) => ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`
+
+  if (totalRuns === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-2 text-center px-4 py-8">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" strokeWidth="1.2" strokeLinecap="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
+        <p className="text-[12px] text-[var(--text-dim)] font-medium">{t('history.noRuns')}</p>
+        <p className="text-[11px] text-[var(--text-faint)]">{t('history.noRunsDesc')}</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* ── Summary strip ── */}
+      <div className="flex items-center gap-3 px-3 py-2 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
+        {/* Sparkline of last 20 runs */}
+        <ScoreSparkline runs={[...runs].reverse()} />
+
+        <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-[var(--text-faint)] font-mono uppercase tracking-wider">
+              {t('history.avgScore')}
+            </span>
+            {avgScore != null && (
+              <span
+                className="px-1.5 py-0.5 rounded-full font-mono font-bold text-[10px] border leading-none"
+                style={{ color: scoreColor(avgScore), borderColor: `${scoreColor(avgScore)}44`, background: `${scoreColor(avgScore)}14` }}
+              >
+                {avgScore}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] text-[var(--text-faint)]">
+            {t('history.runs', { count: totalRuns })}
+          </span>
+        </div>
+
+        {/* Clear button */}
+        <button
+          onClick={handleClear}
+          className={`px-2 h-6 rounded text-[10px] font-medium border transition-colors shrink-0 ${clearing ? 'text-[var(--danger)] border-[var(--danger)]44 bg-[var(--danger)]08' : 'text-[var(--text-faint)] border-[var(--border)] bg-transparent hover:text-[var(--danger)]'}`}
+        >
+          {clearing ? t('history.clearConfirm', { count: totalRuns }) : t('history.clearHistory')}
+        </button>
+      </div>
+
+      {/* ── Top issues ── */}
+      {topIssues.length > 0 && (
+        <div className="px-3 py-2 border-b border-[var(--border)] shrink-0">
+          <span className="text-[9px] text-[var(--text-faint)] uppercase tracking-wider font-medium">{t('history.topIssues')}</span>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {topIssues.map((ruleId) => (
+              <span key={ruleId} className="text-[9px] font-mono text-[var(--text-dim)] border border-[var(--border)] px-1.5 py-0.5 rounded bg-[var(--surface-2)]">
+                {ruleId.replace('RULE_', '')}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Run list ── */}
+      <div className="flex-1 overflow-y-auto">
+        {runs.map((run, idx) => {
+          const date = new Date(run.timestamp)
+          const locale = i18n.language
+          const sc = run.qualityScore
+          const c = scoreColor(sc)
+          const issueTotal = Object.values(run.issuesByRule).reduce((a, b) => a + b, 0)
+          return (
+            <div
+              key={idx}
+              className="flex items-center gap-2.5 px-3 py-2 border-b border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors"
+            >
+              {/* Score pill */}
+              <span
+                className="w-9 text-center px-1.5 py-0.5 rounded-full font-mono font-bold text-[11px] border leading-none shrink-0"
+                style={{ color: c, borderColor: `${c}44`, background: `${c}14` }}
+              >
+                {sc}
+              </span>
+
+              <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                {/* File + date */}
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-[11px] text-[var(--text)] font-medium truncate">
+                    {(() => { const p = run.modelFileName.split('/'); return p[p.length - 1] ?? run.modelFileName })()}
+                  </span>
+                  <span className="text-[9px] text-[var(--text-faint)] font-mono shrink-0">
+                    {date.toLocaleDateString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+                {/* Meta row */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[9px] text-[var(--text-faint)] font-mono">
+                    {fmt(run.durationMs)}
+                  </span>
+                  {issueTotal > 0 && (
+                    <span className="text-[9px] text-[var(--text-faint)] font-mono">
+                      {issueTotal} issue{issueTotal !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {run.profileId && (
+                    <span className="text-[9px] text-[var(--accent)] border border-[var(--accent)]33 px-1 rounded font-mono bg-[var(--accent)]08">
+                      {run.profileId}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Search input ──────────────────────────────────────────────────────────────
 
 function SearchInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -1082,7 +1266,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   const [search, setSearch]             = useState('')
   const [modelFilter, setModelFilter]   = useState<string | null>(null)
   const [profileModalOpen, setProfileModalOpen] = useState(false)
-  const [activePanel, setActivePanel]   = useState<'issues' | 'bcf'>('issues')
+  const [activePanel, setActivePanel]   = useState<'issues' | 'bcf' | 'history'>('issues')
   const bcfFileRef = useRef<HTMLInputElement>(null)
 
   // ── Resize state ──────────────────────────────────────────────────────
@@ -1549,9 +1733,9 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
 
       {/* ── Toolbar row A: tab toggle + severity filter ── */}
       <div className="flex items-center gap-1.5 px-3 h-8 border-b border-[var(--border)] shrink-0 overflow-x-auto">
-        {/* Issues / BCF toggle */}
+        {/* Issues / BCF / History toggle */}
         <div className="flex items-center gap-0.5 shrink-0">
-          {(['issues', 'bcf'] as const).map((panel) => (
+          {(['issues', 'bcf', 'history'] as const).map((panel) => (
             <button
               key={panel}
               onClick={() => setActivePanel(panel)}
@@ -1562,7 +1746,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                   : { color: 'var(--text-faint)', border: '1px solid transparent' }
               }
             >
-              {panel === 'issues' ? t('tabs.issues') : t('tabs.bcf')}
+              {panel === 'issues' ? t('tabs.issues') : panel === 'bcf' ? t('tabs.bcf') : t('tabs.history')}
               {panel === 'bcf' && bcfTopics.length > 0 && (
                 <span className="ml-1 text-[9px] font-mono">{bcfTopics.length}</span>
               )}
@@ -1683,7 +1867,9 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
 
       {/* ── Content ── */}
       <div className="flex-1 overflow-y-auto">
-        {activePanel === 'bcf' ? (
+        {activePanel === 'history' ? (
+          <ValidationHistoryPanel onClose={() => setActivePanel('issues')} />
+        ) : activePanel === 'bcf' ? (
           <>
             {bcfParsing && (
               <div className="px-3 py-2 text-[11px] text-[var(--accent)] animate-pulse border-b border-[var(--border)]">

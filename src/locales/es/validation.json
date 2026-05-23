@@ -31,7 +31,21 @@
   },
   "tabs": {
     "issues": "Incidencias",
-    "bcf": "BCF"
+    "bcf": "BCF",
+    "history": "Historial"
+  },
+  "history": {
+    "noRuns": "Sin ejecuciones",
+    "noRunsDesc": "Ejecuta la validación para registrar la calidad de tu modelo a lo largo del tiempo",
+    "runs": "{{count}} ejecución",
+    "runs_other": "{{count}} ejecuciones",
+    "avgScore": "Puntuación media",
+    "topIssues": "Problemas frecuentes",
+    "duration": "{{ms}} ms",
+    "profile": "Perfil",
+    "noProfile": "Por defecto",
+    "clearHistory": "Borrar historial",
+    "clearConfirm": "¿Borrar {{count}} ejecuciones?"
   },
   "filters": {
     "all": "Todos",
