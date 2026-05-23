@@ -54,6 +54,34 @@
     "warning": "Advertencia",
     "info": "Información"
   },
+  "shortcuts": {
+    "title": "Atajos de teclado",
+    "close": "Cerrar",
+    "groups": {
+      "navigation": "Navegación",
+      "validation": "Validación",
+      "measurement": "Medición",
+      "sections": "Secciones",
+      "editing": "Edición",
+      "camera": "Vistas de cámara"
+    },
+    "keys": {
+      "openFile": "Abrir archivo",
+      "validate": "Ejecutar / volver a validar",
+      "cancelMeasure": "Cancelar medición activa",
+      "closePoly": "Cerrar polígono de área",
+      "deleteLastMeasure": "Eliminar última medición",
+      "addSection": "Añadir plano de sección (alineado a eje)",
+      "cancelSection": "Cancelar adición de sección",
+      "undo": "Deshacer edición",
+      "redo": "Rehacer edición",
+      "isoView": "Vista isométrica",
+      "topView": "Vista superior",
+      "frontView": "Vista frontal",
+      "rightView": "Vista derecha",
+      "showShortcuts": "Mostrar atajos de teclado"
+    }
+  },
   "upload": {
     "idle": {
       "title": "Abrir un archivo IFC",

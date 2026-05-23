@@ -54,6 +54,34 @@
     "warning": "Warning",
     "info": "Info"
   },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "close": "Close",
+    "groups": {
+      "navigation": "Navigation",
+      "validation": "Validation",
+      "measurement": "Measurement",
+      "sections": "Sections",
+      "editing": "Editing",
+      "camera": "Camera presets"
+    },
+    "keys": {
+      "openFile": "Open file",
+      "validate": "Run / re-run validation",
+      "cancelMeasure": "Cancel active measurement",
+      "closePoly": "Close area polygon",
+      "deleteLastMeasure": "Delete last measurement",
+      "addSection": "Add section plane (axis-aligned)",
+      "cancelSection": "Cancel section add",
+      "undo": "Undo edit",
+      "redo": "Redo edit",
+      "isoView": "Isometric view",
+      "topView": "Top view",
+      "frontView": "Front view",
+      "rightView": "Right view",
+      "showShortcuts": "Show keyboard shortcuts"
+    }
+  },
   "upload": {
     "idle": {
       "title": "Open an IFC file",

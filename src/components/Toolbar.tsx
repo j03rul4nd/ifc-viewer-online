@@ -31,6 +31,7 @@ interface ToolbarProps {
   onIsolate: () => void
   onUpload: () => void
   onOpenExportModal: () => void
+  onOpenHelp: () => void
 }
 
 // ── Desktop button (text + icon) ──────────────────────────────────────────────
@@ -122,7 +123,7 @@ function ExportDropdown({
 
 export default function Toolbar({
   fileName, elementCount, loadingState, canIsolate,
-  viewerApiRef, onReset, onIsolate, onUpload, onOpenExportModal,
+  viewerApiRef, onReset, onIsolate, onUpload, onOpenExportModal, onOpenHelp,
 }: ToolbarProps) {
   const { t } = useTranslation('toolbar')
   const { t: tCommon } = useTranslation('common')
@@ -530,6 +531,17 @@ export default function Toolbar({
           {/* Language selector */}
           <div className="glass-md border border-[var(--border)] rounded-[10px] px-1 py-1 pointer-events-auto shrink-0">
             <LanguageSelector />
+          </div>
+
+          {/* Help button */}
+          <div className="glass-md border border-[var(--border)] rounded-[10px] pointer-events-auto shrink-0">
+            <button
+              onClick={onOpenHelp}
+              title={tCommon('shortcuts.title') + ' (?)'}
+              className="w-8 h-8 flex items-center justify-center rounded-[8px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors text-[13px] font-bold font-mono"
+            >
+              ?
+            </button>
           </div>
         </div>
       </div>

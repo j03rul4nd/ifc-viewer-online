@@ -17,6 +17,7 @@ import MeasurementPanel from './components/MeasurementPanel'
 import SectionPanel from './components/SectionPanel'
 import FloorPlanPanel from './components/FloorPlanPanel'
 import ExportModal from './components/ExportModal'
+import KeyboardHelpModal from './components/KeyboardHelpModal'
 import { lighten } from './lib/utils'
 import { modelRegistry } from './lib/model-registry'
 import { useIfcLoader } from './lib/loader'
@@ -67,8 +68,9 @@ export default function App() {
   const [selected,   setSelected]   = useState<SelectedInfo | null>(null)
   const [hidden,     setHidden]     = useState<Set<string>>(new Set())
   const [isolated,   setIsolated]   = useState<string | null>(null)
-  const [showUpload, setShowUpload]       = useState(false)
+  const [showUpload, setShowUpload]           = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
+  const [showHelp,   setShowHelp]             = useState(false)
 
   // Stores
   const { validationMode, result } = useValidationStore()
@@ -104,16 +106,25 @@ export default function App() {
   const validation = useValidationRunner()
 
   // ── Global keyboard shortcuts ─────────────────────────────────────────────
-  // Ctrl+Shift+V (or Cmd+Shift+V on Mac) — run / re-run validation
+  // Ctrl+Shift+V — validate | ? — shortcut help
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
       if (route !== 'viewer') return
+      // Don't fire shortcuts when typing in an input / textarea / contenteditable
+      const target = e.target as HTMLElement
+      const inInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
       const mod = e.ctrlKey || e.metaKey
+
       if (mod && e.shiftKey && e.key === 'V') {
         e.preventDefault()
         if (!validation.isRunning && validation.canRun) {
           void validation.run(undefined, undefined, true)
         }
+      }
+
+      if (e.key === '?' && !inInput && !mod) {
+        e.preventDefault()
+        setShowHelp((v) => !v)
       }
     }
     document.addEventListener('keydown', handler)
@@ -388,6 +399,7 @@ export default function App() {
                     onIsolate={handleIsolate}
                     onUpload={openUploadModal}
                     onOpenExportModal={() => setShowExportModal(true)}
+                    onOpenHelp={() => setShowHelp(true)}
                   />
                 )
               })()}
@@ -596,6 +608,9 @@ export default function App() {
           onClose={() => setShowExportModal(false)}
         />
       )}
+
+      {/* ── Keyboard help modal ── */}
+      <KeyboardHelpModal open={showHelp} onClose={() => setShowHelp(false)} />
 
       {/* ── Upload modal ── */}
       <AnimatePresence>
