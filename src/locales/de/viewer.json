@@ -1,0 +1,127 @@
+{
+  "controls": {
+    "resetCamera": "Kamera zurücksetzen",
+    "fitToView": "An Ansicht anpassen",
+    "perspective": "Perspektive",
+    "orthographic": "Orthografisch",
+    "home": "Start"
+  },
+  "camera": {
+    "front": "Vorne",
+    "back": "Hinten",
+    "left": "Links",
+    "right": "Rechts",
+    "top": "Oben",
+    "bottom": "Unten",
+    "isometric": "Isometrisch"
+  },
+  "cameraControls": {
+    "title": "Ansichten",
+    "hide": "Kamera-Steuerung ausblenden",
+    "show": "Kameraansichten anzeigen"
+  },
+  "overlays": {
+    "validationHighlights": "Validierungs-Hervorhebungen",
+    "measurements": "Messungen"
+  },
+  "info": {
+    "title": "Modell-Info",
+    "elementsLoaded": "{{count}} Elemente",
+    "fromCache": "aus Cache",
+    "gpuBackend": "GPU: {{backend}}",
+    "memoryUsage": "{{mb}} MB",
+    "fileSize": "Dateigröße",
+    "elements": "Elemente",
+    "memory": "Speicher",
+    "renderer": "Renderer",
+    "quality": "Qualität",
+    "categories": "{{count}} Kategorien",
+    "gpuMemory": "{{mb}} MB GPU",
+    "detecting": "Ermittle…",
+    "sizeUnavailable": "Größe nicht verfügbar — Modell wurde aus dem OPFS-Cache geladen. Von Festplatte neu laden, um die Dateigröße zu sehen.",
+    "qualityScore": "Qualitätsbewertung: {{score}}/100"
+  },
+  "health": {
+    "unknown": "Unbekannt",
+    "tiny": "Winzig",
+    "light": "Leicht",
+    "normal": "Normal",
+    "large": "Groß",
+    "heavy": "Schwer",
+    "small": "Klein",
+    "typical": "Typisch",
+    "complex": "Komplex",
+    "dense": "Dicht",
+    "good": "Gut",
+    "fair": "Akzeptabel",
+    "poor": "Schlecht",
+    "acceptable": "Akzeptabel",
+    "improvable": "Verbesserbar",
+    "deficient": "Mangelhaft",
+    "excellent": "Ausgezeichnet",
+    "critical": "Kritisch"
+  },
+  "error": {
+    "rendererUnavailable": "Renderer nicht verfügbar",
+    "loadFailed": "Modell konnte nicht geladen werden"
+  },
+  "section": {
+    "title": "Schnitt",
+    "planes": "{{count}} Ebene",
+    "planes_other": "{{count}} Ebenen",
+    "addPlane": "Schnittebene hinzufügen",
+    "clickToPlace": "Fläche anklicken zum Platzieren…",
+    "clearAll": "Alle löschen",
+    "clickHint": "Klicken Sie auf eine Modellfläche, um eine Schnittebene entlang ihrer Flächennormale zu platzieren.",
+    "escToCancel": "Esc zum Abbrechen",
+    "planeName": "Ebene {{number}}",
+    "enablePlane": "Ebene aktivieren",
+    "disablePlane": "Ebene deaktivieren",
+    "deletePlane": "Ebene löschen"
+  },
+  "floorPlan": {
+    "title": "Grundrisse",
+    "active2D": "2D-Ansicht aktiv",
+    "detectStoreys": "Geschosse erkennen",
+    "detecting": "Geschosse werden erkannt…",
+    "noStoreys": "Keine Geschosse in diesem Modell gefunden.",
+    "returnTo3D": "Zurück zur 3D-Ansicht",
+    "refresh": "Aktualisieren",
+    "view2D": "2D"
+  },
+  "scene": {
+    "title": "Szene",
+    "models": "{{count}} Modell",
+    "models_other": "{{count}} Modelle",
+    "transform": "Transformation",
+    "visibility": "Sichtbarkeit",
+    "close": "Schließen",
+    "isolated": "isoliert",
+    "hideModel": "Modell ausblenden",
+    "showModel": "Modell einblenden",
+    "isolateModel": "Isolieren — alle anderen Modelle ausblenden",
+    "showAllModels": "Alle Modelle werden angezeigt",
+    "frameCamera": "Kamera auf dieses Modell ausrichten",
+    "validateModel": "Dieses Modell validieren",
+    "removeModel": "Modell aus der Szene entfernen",
+    "cannotRemoveOnly": "Das einzige Modell kann nicht entfernt werden",
+    "noModels": "Keine Modelle geladen",
+    "showAllModelsBtn": "↑ Alle Modelle anzeigen",
+    "clickHint": "Modell anklicken zum Aktivieren · ⊙ zum Isolieren",
+    "transformTitle": "Transformation · {{fileName}}"
+  },
+  "transform": {
+    "position": "Position",
+    "rotation": "Rotation (°)",
+    "scale": "Skalierung",
+    "uniform": "Gleichmäßig",
+    "snapToGrid": "Am Raster ausrichten",
+    "reset": "Zurücksetzen"
+  },
+  "renderQuality": {
+    "title": "Renderqualität",
+    "performance": "Leistung",
+    "quality": "Qualität",
+    "ssaoNote": "SSAO + Kantenerkennung aktiv. Kann die Leistung auf Mobilgeräten beeinträchtigen."
+  }
+}

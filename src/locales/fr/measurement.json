@@ -1,0 +1,28 @@
+{
+  "panel": {
+    "title": "Mesurer",
+    "measurements": "{{count}} mesure",
+    "measurements_other": "{{count}} mesures"
+  },
+  "tools": {
+    "select": "Sélectionner",
+    "selectHint": "Cliquez sur des éléments pour les sélectionner",
+    "length": "Longueur",
+    "lengthHint": "Cliquez sur le début · cliquez sur la fin",
+    "area": "Surface",
+    "areaHint": "Cliquez sur les sommets · Entrée ou double-clic pour fermer"
+  },
+  "actions": {
+    "finishArea": "Terminer la surface",
+    "deleteLast": "Supprimer la dernière",
+    "clearAll": "Tout effacer",
+    "escToCancel": "Échap pour annuler"
+  },
+  "units": {
+    "km": "{{value}} km",
+    "m": "{{value}} m",
+    "cm": "{{value}} cm",
+    "ha": "{{value}} ha",
+    "m2": "{{value}} m²"
+  }
+}

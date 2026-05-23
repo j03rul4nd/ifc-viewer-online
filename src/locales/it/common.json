@@ -1,0 +1,131 @@
+{
+  "app": {
+    "name": "IFC Validator",
+    "tagline": "Validazione e modifica IFC professionale"
+  },
+  "actions": {
+    "open": "Apri",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "close": "Chiudi",
+    "delete": "Elimina",
+    "clear": "Svuota",
+    "reset": "Ripristina",
+    "confirm": "Conferma",
+    "retry": "Riprova",
+    "export": "Esporta",
+    "import": "Importa",
+    "upload": "Carica",
+    "download": "Scarica",
+    "apply": "Applica",
+    "edit": "Modifica",
+    "add": "Aggiungi",
+    "remove": "Rimuovi",
+    "show": "Mostra",
+    "hide": "Nascondi",
+    "copy": "Copia",
+    "select": "Seleziona",
+    "deselect": "Deseleziona",
+    "back": "Indietro",
+    "home": "Home",
+    "refresh": "Aggiorna"
+  },
+  "status": {
+    "loading": "Caricamento…",
+    "loaded": "Caricato",
+    "error": "Errore",
+    "idle": "Inattivo",
+    "running": "In esecuzione",
+    "done": "Completato",
+    "saving": "Salvataggio…",
+    "noFileLoaded": "Nessun file caricato"
+  },
+  "file": {
+    "noFileLoaded": "Nessun file caricato",
+    "elements": "{{count}} elemento",
+    "elements_other": "{{count}} elementi"
+  },
+  "pagination": {
+    "of": "di",
+    "items": "elementi"
+  },
+  "severity": {
+    "error": "Errore",
+    "warning": "Avviso",
+    "info": "Info"
+  },
+  "shortcuts": {
+    "title": "Scorciatoie da tastiera",
+    "close": "Chiudi",
+    "groups": {
+      "navigation": "Navigazione",
+      "validation": "Validazione",
+      "measurement": "Misurazione",
+      "sections": "Sezioni",
+      "editing": "Modifica",
+      "camera": "Viste fotocamera"
+    },
+    "keys": {
+      "openFile": "Apri file",
+      "validate": "Esegui / ripeti validazione",
+      "cancelMeasure": "Annulla misurazione attiva",
+      "closePoly": "Chiudi poligono area",
+      "deleteLastMeasure": "Elimina ultima misurazione",
+      "addSection": "Aggiungi piano di sezione (allineato agli assi)",
+      "cancelSection": "Annulla aggiunta sezione",
+      "undo": "Annulla modifica",
+      "redo": "Ripeti modifica",
+      "isoView": "Vista isometrica",
+      "topView": "Vista dall'alto",
+      "frontView": "Vista frontale",
+      "rightView": "Vista laterale destra",
+      "showShortcuts": "Mostra scorciatoie da tastiera"
+    }
+  },
+  "upload": {
+    "idle": {
+      "title": "Apri un file IFC",
+      "subtitle": "Elaborazione locale — nulla lascia il tuo browser",
+      "browse": "Sfoglia file",
+      "dropHint": "Trascina qui il tuo file .ifc",
+      "releaseToOpen": "Rilascia per aprire",
+      "clickToBrowse": "clicca per sfogliare",
+      "orDrop": "o trascinalo ovunque",
+      "dropAriaLabel": "Trascina un file IFC o clicca per sfogliare",
+      "closeAriaLabel": "Chiudi",
+      "trust1": "WebAssembly — eseguito nel browser",
+      "trust2": "Nessun accesso richiesto",
+      "trust3": "Fino a 2 GB"
+    },
+    "active": {
+      "drop": "Trascina qui il tuo file .ifc",
+      "validating": "Validazione file…",
+      "queued": "Preparazione caricatore…",
+      "buildingScene": "Costruzione scena 3D…",
+      "loading": "Caricamento modello IFC…",
+      "checkingSchema": "Verifica schema IFC e integrità del file",
+      "initialising": "Inizializzazione…",
+      "cancel": "Annulla"
+    },
+    "success": {
+      "title": "Modello pronto",
+      "viewModel": "Apri visualizzatore →"
+    },
+    "error": {
+      "title": "Caricamento del modello fallito",
+      "technicalDetails": "Dettagli tecnici",
+      "tryAgain": "Riprova",
+      "close": "Chiudi"
+    },
+    "cancelled": {
+      "title": "Caricamento annullato.",
+      "loadAnother": "Carica un altro file",
+      "tryAgain": "Riprova",
+      "close": "Chiudi"
+    },
+    "parsing": "Analisi…",
+    "loading": "Caricamento…",
+    "processing": "Elaborazione…",
+    "fromCache": "Dalla cache"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "generic": "Ein unerwarteter Fehler ist aufgetreten",
+  "reloadPage": "Bitte laden Sie die Seite neu",
+  "boundary": {
+    "title": "Etwas ist schiefgelaufen",
+    "description": "Beim Rendern dieser Komponente ist ein Fehler aufgetreten.",
+    "reload": "Erneut versuchen",
+    "details": "Fehlerdetails",
+    "stackTrace": "Stack-Trace"
+  },
+  "model": {
+    "noModelLoaded": "Kein Modell geladen",
+    "bufferUnavailable": "IFC-Quellpuffer nicht verfügbar. Laden Sie die Original-.ifc-Datei neu, um sie zu exportieren.",
+    "objectNotFound": "Modellobjekt in der 3D-Szene nicht gefunden — es wurde möglicherweise entfernt.",
+    "viewerNotReady": "Viewer ist nicht bereit",
+    "loadFailed": "Modell konnte nicht geladen werden: {{message}}",
+    "removeFailed": "Modell konnte nicht entfernt werden: {{message}}"
+  },
+  "export": {
+    "ifcFailed": "IFC-Export fehlgeschlagen: {{message}}",
+    "glbFailed": "GLB-Export fehlgeschlagen: {{message}}"
+  },
+  "validation": {
+    "failed": "Validierung fehlgeschlagen",
+    "workerError": "Validierungs-Worker-Fehler: {{message}}"
+  },
+  "bcf": {
+    "importFailed": "BCF-Import fehlgeschlagen: {{message}}",
+    "exportFailed": "BCF-Export fehlgeschlagen: {{message}}"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "title": "Árvore do modelo",
+  "spatialTree": "Árvore espacial",
+  "search": "Buscar elementos…",
+  "noResults": "Nenhum elemento corresponde a «{{query}}»",
+  "noModel": "Nenhum modelo carregado",
+  "noModelDesc": "Carregue um arquivo IFC e execute a validação para ver a árvore espacial.",
+  "nodes": {
+    "site": "Terreno",
+    "building": "Edifício",
+    "storey": "Pavimento",
+    "element": "Elemento",
+    "unclassified": "Não classificado"
+  },
+  "actions": {
+    "expandAll": "Expandir tudo",
+    "collapseAll": "Recolher tudo",
+    "focusElement": "Focar elemento em 3D",
+    "selectElement": "Selecionar elemento",
+    "selectIn3D": "Selecionar em 3D",
+    "frameCamera": "Enquadrar câmera",
+    "rename": "Renomear",
+    "fixGuid": "Corrigir GUID",
+    "copyGlobalId": "Copiar GlobalId",
+    "copyExpressId": "Copiar Express ID"
+  },
+  "models": {
+    "count": "{{count}} modelo",
+    "count_other": "{{count}} modelos",
+    "active": "Modelo ativo"
+  },
+  "context": {
+    "changeGuid": "Alterar GlobalId?",
+    "changeGuidWarning": "Alterar um GlobalId quebra referências externas (problemas BCF, links, COBie).",
+    "current": "Atual: {{guid}}",
+    "generateNew": "Gerar novo GUID"
+  },
+  "editName": "Editar nome",
+  "editLongName": "Editar nome longo",
+  "editDescription": "Editar descrição"
+}

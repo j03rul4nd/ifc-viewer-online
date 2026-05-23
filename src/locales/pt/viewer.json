@@ -1,0 +1,127 @@
+{
+  "controls": {
+    "resetCamera": "Redefinir câmera",
+    "fitToView": "Ajustar à vista",
+    "perspective": "Perspectiva",
+    "orthographic": "Ortográfico",
+    "home": "Início"
+  },
+  "camera": {
+    "front": "Frente",
+    "back": "Trás",
+    "left": "Esquerda",
+    "right": "Direita",
+    "top": "Topo",
+    "bottom": "Base",
+    "isometric": "Isométrico"
+  },
+  "cameraControls": {
+    "title": "Vistas",
+    "hide": "Ocultar controles de câmera",
+    "show": "Exibir vistas de câmera"
+  },
+  "overlays": {
+    "validationHighlights": "Destaques de validação",
+    "measurements": "Medições"
+  },
+  "info": {
+    "title": "Info do modelo",
+    "elementsLoaded": "{{count}} elementos",
+    "fromCache": "do cache",
+    "gpuBackend": "GPU: {{backend}}",
+    "memoryUsage": "{{mb}} MB",
+    "fileSize": "Tamanho do arquivo",
+    "elements": "Elementos",
+    "memory": "Memória",
+    "renderer": "Renderizador",
+    "quality": "Qualidade",
+    "categories": "{{count}} categorias",
+    "gpuMemory": "{{mb}} MB GPU",
+    "detecting": "Detectando…",
+    "sizeUnavailable": "Tamanho indisponível — modelo carregado do cache OPFS. Recarregue do disco para ver o tamanho do arquivo.",
+    "qualityScore": "Pontuação de qualidade: {{score}}/100"
+  },
+  "health": {
+    "unknown": "Desconhecido",
+    "tiny": "Minúsculo",
+    "light": "Leve",
+    "normal": "Normal",
+    "large": "Grande",
+    "heavy": "Pesado",
+    "small": "Pequeno",
+    "typical": "Típico",
+    "complex": "Complexo",
+    "dense": "Denso",
+    "good": "Bom",
+    "fair": "Razoável",
+    "poor": "Ruim",
+    "acceptable": "Aceitável",
+    "improvable": "Melhorável",
+    "deficient": "Deficiente",
+    "excellent": "Excelente",
+    "critical": "Crítico"
+  },
+  "error": {
+    "rendererUnavailable": "Renderizador indisponível",
+    "loadFailed": "Falha ao carregar modelo"
+  },
+  "section": {
+    "title": "Corte",
+    "planes": "{{count}} plano",
+    "planes_other": "{{count}} planos",
+    "addPlane": "Adicionar plano de corte",
+    "clickToPlace": "Clique na face para posicionar…",
+    "clearAll": "Limpar tudo",
+    "clickHint": "Clique em qualquer superfície do modelo para posicionar um plano de corte alinhado à sua normal.",
+    "escToCancel": "Esc para cancelar",
+    "planeName": "Plano {{number}}",
+    "enablePlane": "Ativar plano",
+    "disablePlane": "Desativar plano",
+    "deletePlane": "Excluir plano"
+  },
+  "floorPlan": {
+    "title": "Plantas baixas",
+    "active2D": "Vista 2D ativa",
+    "detectStoreys": "Detectar pavimentos",
+    "detecting": "Detectando pavimentos…",
+    "noStoreys": "Nenhum pavimento encontrado neste modelo.",
+    "returnTo3D": "Voltar à vista 3D",
+    "refresh": "Atualizar",
+    "view2D": "2D"
+  },
+  "scene": {
+    "title": "Cena",
+    "models": "{{count}} modelo",
+    "models_other": "{{count}} modelos",
+    "transform": "Transformação",
+    "visibility": "Visibilidade",
+    "close": "Fechar",
+    "isolated": "isolado",
+    "hideModel": "Ocultar modelo",
+    "showModel": "Exibir modelo",
+    "isolateModel": "Isolar — ocultar todos os outros modelos",
+    "showAllModels": "Exibindo todos os modelos",
+    "frameCamera": "Enquadrar câmera neste modelo",
+    "validateModel": "Validar este modelo",
+    "removeModel": "Remover modelo da cena",
+    "cannotRemoveOnly": "Não é possível remover o único modelo",
+    "noModels": "Nenhum modelo carregado",
+    "showAllModelsBtn": "↑ Exibir todos os modelos",
+    "clickHint": "Clique em um modelo para ativá-lo · use ⊙ para isolar",
+    "transformTitle": "Transformação · {{fileName}}"
+  },
+  "transform": {
+    "position": "Posição",
+    "rotation": "Rotação (°)",
+    "scale": "Escala",
+    "uniform": "Uniforme",
+    "snapToGrid": "Encaixar na grade",
+    "reset": "Redefinir"
+  },
+  "renderQuality": {
+    "title": "Qualidade de renderização",
+    "performance": "Desempenho",
+    "quality": "Qualidade",
+    "ssaoNote": "SSAO + detecção de bordas ativo. Pode impactar o desempenho em dispositivos móveis."
+  }
+}

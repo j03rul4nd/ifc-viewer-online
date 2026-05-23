@@ -1,0 +1,31 @@
+{
+  "generic": "Ocorreu um erro inesperado",
+  "reloadPage": "Por favor, recarregue a página",
+  "boundary": {
+    "title": "Algo deu errado",
+    "description": "Ocorreu um erro ao renderizar este componente.",
+    "reload": "Tentar novamente",
+    "details": "Detalhes do erro",
+    "stackTrace": "Rastreamento de pilha"
+  },
+  "model": {
+    "noModelLoaded": "Nenhum modelo carregado",
+    "bufferUnavailable": "Buffer de origem IFC indisponível. Recarregue o arquivo .ifc original para exportá-lo.",
+    "objectNotFound": "Objeto do modelo não encontrado na cena 3D — pode ter sido removido.",
+    "viewerNotReady": "O visualizador não está pronto",
+    "loadFailed": "Falha ao carregar modelo: {{message}}",
+    "removeFailed": "Não foi possível remover o modelo: {{message}}"
+  },
+  "export": {
+    "ifcFailed": "Falha na exportação IFC: {{message}}",
+    "glbFailed": "Falha na exportação GLB: {{message}}"
+  },
+  "validation": {
+    "failed": "Validação falhou",
+    "workerError": "Erro no worker de validação: {{message}}"
+  },
+  "bcf": {
+    "importFailed": "Falha na importação BCF: {{message}}",
+    "exportFailed": "Falha na exportação BCF: {{message}}"
+  }
+}

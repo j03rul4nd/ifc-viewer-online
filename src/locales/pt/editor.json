@@ -1,0 +1,20 @@
+{
+  "actions": {
+    "undo": "Desfazer",
+    "undoShortcut": "Desfazer (Ctrl+Z)",
+    "redo": "Refazer",
+    "redoShortcut": "Refazer (Ctrl+Shift+Z)",
+    "applyFix": "Aplicar correção",
+    "revertFix": "Reverter correção",
+    "applyAll": "Aplicar todas as correções"
+  },
+  "diff": {
+    "rename": "Renomeado: {{from}} → {{to}}",
+    "pendingChanges": "{{count}} alteração pendente",
+    "pendingChanges_other": "{{count}} alterações pendentes",
+    "noChanges": "Nenhuma alteração pendente"
+  },
+  "history": {
+    "empty": "Sem histórico"
+  }
+}

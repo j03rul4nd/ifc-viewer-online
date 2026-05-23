@@ -1,0 +1,41 @@
+{
+  "title": "Albero del modello",
+  "spatialTree": "Albero spaziale",
+  "search": "Cerca elementi…",
+  "noResults": "Nessun elemento corrisponde a «{{query}}»",
+  "noModel": "Nessun modello caricato",
+  "noModelDesc": "Carica un file IFC ed esegui la validazione per vedere l'albero spaziale.",
+  "nodes": {
+    "site": "Sito",
+    "building": "Edificio",
+    "storey": "Piano",
+    "element": "Elemento",
+    "unclassified": "Non classificato"
+  },
+  "actions": {
+    "expandAll": "Espandi tutto",
+    "collapseAll": "Comprimi tutto",
+    "focusElement": "Metti a fuoco elemento in 3D",
+    "selectElement": "Seleziona elemento",
+    "selectIn3D": "Seleziona in 3D",
+    "frameCamera": "Inquadra fotocamera",
+    "rename": "Rinomina",
+    "fixGuid": "Correggi GUID",
+    "copyGlobalId": "Copia GlobalId",
+    "copyExpressId": "Copia Express ID"
+  },
+  "models": {
+    "count": "{{count}} modello",
+    "count_other": "{{count}} modelli",
+    "active": "Modello attivo"
+  },
+  "context": {
+    "changeGuid": "Cambiare GlobalId?",
+    "changeGuidWarning": "Cambiare un GlobalId rompe i riferimenti esterni (problemi BCF, link, COBie).",
+    "current": "Attuale: {{guid}}",
+    "generateNew": "Genera nuovo GUID"
+  },
+  "editName": "Modifica nome",
+  "editLongName": "Modifica nome lungo",
+  "editDescription": "Modifica descrizione"
+}

@@ -1,0 +1,219 @@
+{
+  "hero": {
+    "title": "Visualiseur IFC en ligne",
+    "subtitle": "Validation et édition BIM professionnelle",
+    "description": "Validez, inspectez et modifiez des fichiers IFC directement dans votre navigateur. Aucune installation requise.",
+    "badge": "Sans connexion — fonctionne entièrement dans votre navigateur",
+    "badgeMobile": "Sans connexion · fonctionne dans votre navigateur",
+    "h1": "Visualiseur IFC",
+    "h1Accent": "en ligne",
+    "subtitleFull": "Détectez les erreurs IFC avant votre client. Ouvrez, validez et corrigez des fichiers IFC entièrement dans votre navigateur — sans installation, sans serveur, sans compte. Vos modèles ne quittent jamais votre machine.",
+    "trustLine": "Gratuit · Open source · 100% côté client · IFC2x3 · IFC4 · IFC4x1 · IFC4x3",
+    "trustLineMobile": "Gratuit · Open source · IFC2x3 · IFC4 · IFC4x3"
+  },
+  "typing": [
+    "Détectez les erreurs IFC avant votre client",
+    "Validez les GUID dupliqués et la hiérarchie spatiale en quelques secondes",
+    "Ouvrez n'importe quel fichier IFC — sans upload, sans licence Revit",
+    "Corrigez les violations de nommage et réexportez en un seul flux",
+    "Vérifiez votre modèle avant chaque réunion de coordination",
+    "Aucune donnée ne quitte votre navigateur. Aucune."
+  ],
+  "actions": {
+    "getStarted": "Commencer",
+    "loadDemo": "Charger un modèle démo",
+    "openFile": "Ouvrir un fichier IFC",
+    "learnMore": "En savoir plus",
+    "openViewer": "Ouvrir le visualiseur",
+    "launch": "Lancer",
+    "openAnIfc": "Ouvrir un fichier IFC",
+    "viewOnGithub": "Voir sur GitHub",
+    "viewSourceOnGithub": "Voir le code source sur GitHub",
+    "contactForWork": "Contact pour travail personnalisé"
+  },
+  "nav": {
+    "features": "Fonctionnalités",
+    "howItWorks": "Comment ça marche",
+    "faq": "FAQ",
+    "github": "GitHub"
+  },
+  "compatible": {
+    "label": "Compatible avec tous les grands outils de création BIM"
+  },
+  "stats": [
+    { "label": "Règles de validation" },
+    { "label": "Versions de schéma IFC" },
+    { "label": "Fonctionne dans le navigateur" },
+    { "label": "Transferts serveur" }
+  ],
+  "featuresSection": {
+    "label": "FONCTIONNALITÉS",
+    "title": "Visualisez, validez, mesurez et modifiez l'IFC",
+    "subtitle": "Tous les outils dont votre équipe a besoin avant une livraison IFC. Privé, rapide, gratuit."
+  },
+  "features": [
+    {
+      "title": "Validateur IFC à 18 règles",
+      "body": "Détectez les GUID dupliqués, les violations de hiérarchie spatiale et les éléments orphelins avant votre client. Les résultats arrivent en temps réel depuis un worker en arrière-plan — l'interface reste fluide.",
+      "tip": "Moteur de règles IFC / ISO 19650"
+    },
+    {
+      "title": "Prise en charge multi-modèles",
+      "body": "Chargez plusieurs fichiers IFC simultanément. Visibilité, transformations, validation, métrés et export indépendants par modèle. Gérez tout depuis le panneau Scène.",
+      "tip": "État indépendant par modèle"
+    },
+    {
+      "title": "Glisser-déposer, sans upload",
+      "body": "Ouvrez n'importe quel fichier .ifc instantanément. Analysé côté client via web-ifc WebAssembly — vos données ne quittent jamais le navigateur. Sans compte, sans serveur, fonctionne hors ligne.",
+      "tip": "Analyse WebAssembly côté client"
+    },
+    {
+      "title": "Cache de géométrie OPFS",
+      "body": "La géométrie analysée est stockée dans le système de fichiers privé du navigateur. Les rechargements sont ~10× plus rapides sans ré-analyse — et fonctionnent complètement hors ligne.",
+      "tip": "Cache Origin Private File System"
+    },
+    {
+      "title": "Édition non destructive",
+      "body": "Corrigez ce que le validateur trouve — sans toucher au fichier original. Modifiez les GlobalIds, noms et valeurs de propriétés en ligne avec un historique complet d'annulation/rétablissement.",
+      "tip": "Pile de diffs annulation/rétablissement complète"
+    },
+    {
+      "title": "Métrés",
+      "body": "Lit les données IfcElementQuantity pour agréger surface, volume et longueur par classe IFC. Les résultats par modèle se mettent à jour en temps réel.",
+      "tip": "Agrégation IfcElementQuantity"
+    },
+    {
+      "title": "Outils de mesure",
+      "body": "Mesurez longueurs, surfaces, volumes et dimensions d'arêtes directement dans le viewport 3D. Les résultats persistent comme annotations étiquetées.",
+      "tip": "Longueur · surface · volume · arêtes"
+    },
+    {
+      "title": "Plans d'étage et coupes",
+      "body": "Générez des vues 2D précises depuis n'importe quel niveau. Coupez des plans de section à n'importe quel angle pour inspecter la structure interne.",
+      "tip": "Plans 2D · plans de coupe"
+    },
+    {
+      "title": "Export IFC + GLB",
+      "body": "Exportez le binaire IFC corrigé (tous les diffs appliqués dans un Web Worker) ou la géométrie visible en GLB standard. Export par lot multi-modèles supporté.",
+      "tip": "Export binaire IFC sans serveur"
+    },
+    {
+      "title": "IFC2x3, IFC4, IFC4x1, IFC4x3",
+      "body": "Toutes les versions de schéma IFC actuelles supportées — Revit, ArchiCAD, Tekla, Allplan, Vectorworks, BricsCAD BIM, Solibri et plus. Les schémas obsolètes sont signalés par le validateur.",
+      "tip": "Toutes les versions majeures de schéma IFC"
+    },
+    {
+      "title": "Rendu post-production",
+      "body": "Activez SSAO, le rendu de contours et le bloom pour des visuels de qualité présentation — sans ferme de rendu externe.",
+      "tip": "SSAO · rendu de contours · bloom"
+    },
+    {
+      "title": "IfcRelationsIndexer",
+      "body": "Toutes les relations du modèle sont pré-indexées au chargement. Recherche quasi instantanée de containment spatial, arbres de classification, affectations de types et propriétés d'éléments.",
+      "tip": "Graphe de relations pré-indexé"
+    }
+  ],
+  "howItWorksSection": {
+    "label": "COMMENT ÇA MARCHE",
+    "title": "Du fichier au modèle validé et mesuré"
+  },
+  "steps": [
+    {
+      "n": "01",
+      "title": "Ouvrez votre IFC",
+      "body": "Glissez-déposez ou cliquez pour ouvrir n'importe quel fichier IFC. web-ifc WebAssembly l'analyse entièrement dans votre navigateur — sans upload, sans réseau. OPFS met en cache la géométrie pour des rechargements instantanés."
+    },
+    {
+      "n": "02",
+      "title": "Inspectez et validez",
+      "body": "Explorez l'arbre du modèle, filtrez par catégorie et exécutez 18 règles de validation intégrées dans un worker en arrière-plan. GUID dupliqués, erreurs de hiérarchie spatiale, affectations de types manquantes — tout est signalé instantanément."
+    },
+    {
+      "n": "03",
+      "title": "Modifiez et mesurez",
+      "body": "Corrigez les GUID en un clic. Modifiez les noms et valeurs de propriétés en ligne avec annulation/rétablissement complet. Mesurez longueurs, surfaces et volumes en 3D. Affichez les plans 2D et coupez des plans de section."
+    },
+    {
+      "n": "04",
+      "title": "Visualisez et exportez",
+      "body": "Activez SSAO, le rendu de contours et le bloom pour des rendus de présentation. Exportez le binaire IFC corrigé (tous les diffs appliqués sans serveur) ou la géométrie visible en GLB standard."
+    }
+  ],
+  "openSource": {
+    "label": "OPEN SOURCE",
+    "title": "Construit en public, gratuit pour toujours",
+    "body": "Le code source est sur GitHub. Construit avec @thatopen/components, three.js, web-ifc et React. Si vous avez besoin d'un visualiseur BIM web personnalisé, d'un validateur ou d'outils IFC — l'auteur est disponible pour des missions."
+  },
+  "finalCta": {
+    "title": "Ouvrez un IFC maintenant.",
+    "subtitle": "Sans connexion. Sans upload. Fonctionne dans votre navigateur.",
+    "githubLine": "Ou explorez le code source sur"
+  },
+  "faqSection": {
+    "title": "Questions"
+  },
+  "faq": [
+    {
+      "q": "Mon fichier IFC est-il uploadé quelque part ?",
+      "a": "Non. Les fichiers sont analysés entièrement dans votre navigateur via web-ifc, une version WebAssembly du parseur IFC open source. Rien ne quitte votre machine. L'application fonctionne complètement hors ligne une fois chargée."
+    },
+    {
+      "q": "Puis-je l'utiliser avec des modèles confidentiels sous NDA ?",
+      "a": "Oui. Comme tout le traitement se passe dans votre navigateur et qu'aucune donnée n'est jamais transmise à un serveur, vous pouvez l'utiliser en toute sécurité avec des modèles de projet confidentiels sous NDA."
+    },
+    {
+      "q": "Puis-je partager les résultats de validation avec mon équipe ou mon client ?",
+      "a": "Oui. Après la validation, utilisez le bouton Partager le rapport pour générer une URL encodant les résultats complets. Votre client l'ouvre dans n'importe quel navigateur sans rien installer ni créer de compte."
+    },
+    {
+      "q": "Fonctionne-t-il sur Mac ?",
+      "a": "Oui, entièrement. IFC Viewer Online fonctionne sur n'importe quel navigateur moderne — Chrome, Edge, Firefox et Safari sur Mac et Windows."
+    },
+    {
+      "q": "Que se passe-t-il si mon fichier IFC est très grand ?",
+      "a": "L'application gère des fichiers jusqu'à 2 Go. Les performances dépendent de votre appareil — les fichiers inférieurs à 200 Mo se chargent bien sur du matériel moderne. Une fois analysée, la géométrie est mise en cache dans OPFS pour des rechargements instantanés."
+    },
+    {
+      "q": "Quelles versions IFC sont supportées ?",
+      "a": "IFC2x3, IFC4, IFC4x1 et IFC4x3. Le visualiseur utilise le parseur open source web-ifc — le même moteur que la plupart des outils BIM modernes. Les schémas obsolètes sont automatiquement signalés par le validateur."
+    },
+    {
+      "q": "Quels outils de mesure sont disponibles ?",
+      "a": "Vous pouvez mesurer des longueurs entre deux points, des surfaces, des volumes d'éléments fermés et des longueurs d'arêtes — directement dans le viewport 3D."
+    },
+    {
+      "q": "Puis-je voir les plans d'étage et couper des sections ?",
+      "a": "Oui. Le mode plan d'étage génère des vues orthographiques 2D précises depuis n'importe quel IfcBuildingStorey. Les coupes vous permettent de définir des plans de coupe à n'importe quelle position et angle."
+    },
+    {
+      "q": "Comment fonctionne la validation ?",
+      "a": "Le validateur exécute 18 règles intégrées dans un Web Worker en arrière-plan. Les règles couvrent les GUID dupliqués, la hiérarchie spatiale, les éléments orphelins, les conventions de nommage, les affectations de types manquantes, la détection de clash et plus encore."
+    },
+    {
+      "q": "Puis-je corriger les erreurs et réexporter un IFC corrigé ?",
+      "a": "Oui. Toutes les modifications sont conservées comme diffs non destructifs avec annulation/rétablissement complet. Cliquer sur Exporter IFC applique tous les diffs au binaire original dans un Web Worker."
+    },
+    {
+      "q": "Puis-je charger plusieurs fichiers IFC à la fois ?",
+      "a": "Oui. Chargez autant de fichiers IFC que la mémoire de votre appareil le permet. Chaque modèle a une visibilité, des transformations, une validation, des métrés et un export indépendants."
+    },
+    {
+      "q": "Fonctionne-t-il hors ligne ?",
+      "a": "Oui, une fois la page chargée. Le parseur WebAssembly et le rendu WebGL fonctionnent entièrement dans le navigateur. La géométrie analysée est mise en cache dans OPFS."
+    },
+    {
+      "q": "Quelles sont les limites de taille de fichier ?",
+      "a": "Il n'y a pas de limite imposée — les performances dépendent de votre appareil. Les fichiers jusqu'à ~200 Mo se chargent bien sur du matériel moderne. Le cache de géométrie OPFS signifie que vous ne payez le coût d'analyse qu'une seule fois par fichier."
+    },
+    {
+      "q": "Est-ce gratuit ? Puis-je l'utiliser pour des projets commerciaux ?",
+      "a": "Oui, entièrement gratuit. Le code source est sous licence MIT. Vous pouvez utiliser l'application en ligne ou forker le dépôt pour vos propres projets, y compris commerciaux."
+    }
+  ],
+  "footer": {
+    "poweredBy": "Propulsé par IFC.js",
+    "openSource": "Open source",
+    "copyright": "IFC Viewer Online © 2026",
+    "builtWith": "Construit avec @thatopen/components · three.js · web-ifc"
+  }
+}

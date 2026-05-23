@@ -1,0 +1,32 @@
+{
+  "model": {
+    "loaded": "\"{{fileName}}\" carregado — {{count}} elementos",
+    "loadedFromCache": "\"{{fileName}}\" carregado — {{count}} elementos (do cache ⚡)",
+    "loadFailed": "Falha ao carregar: {{message}}",
+    "demoUnavailable": "O arquivo de demonstração não pôde ser carregado. Abra seu próprio arquivo IFC.",
+    "removeFailed": "Não foi possível remover o modelo: {{message}}"
+  },
+  "validation": {
+    "complete": "Validação concluída — {{count}} problema(s) encontrado(s)",
+    "passed": "Validação aprovada — nenhum problema encontrado",
+    "failed": "Validação falhou: {{message}}",
+    "fixApplied": "Correção aplicada",
+    "allFixesApplied": "{{count}} correção(ões) aplicada(s)"
+  },
+  "export": {
+    "ifcSuccess": "IFC exportado com sucesso",
+    "glbSuccess": "GLB exportado com sucesso",
+    "ifcFailed": "Falha na exportação IFC: {{message}}",
+    "glbFailed": "Falha na exportação GLB: {{message}}"
+  },
+  "bcf": {
+    "imported": "BCF importado — {{count}} tópico(s)",
+    "exported": "BCF exportado",
+    "importFailed": "Falha na importação BCF: {{message}}"
+  },
+  "editor": {
+    "fixApplied": "Correção aplicada: {{description}}",
+    "undone": "Desfeito: {{description}}",
+    "redone": "Refeito: {{description}}"
+  }
+}

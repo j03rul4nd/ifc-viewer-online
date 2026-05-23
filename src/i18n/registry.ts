@@ -29,11 +29,11 @@ export type LocaleDefinition = {
 export const LOCALE_REGISTRY: LocaleDefinition[] = [
   { code: 'en', label: 'English',    labelNative: 'English',             short: 'EN',  dir: 'ltr', flag: '🇬🇧' },
   { code: 'es', label: 'Spanish',    labelNative: 'Español',             short: 'ES',  dir: 'ltr', flag: '🇪🇸' },
+  { code: 'fr', label: 'French',     labelNative: 'Français',            short: 'FR',  dir: 'ltr', flag: '🇫🇷' },
+  { code: 'de', label: 'German',     labelNative: 'Deutsch',             short: 'DE',  dir: 'ltr', flag: '🇩🇪' },
+  { code: 'pt', label: 'Portuguese', labelNative: 'Português',           short: 'PT',  dir: 'ltr', flag: '🇵🇹' },
+  { code: 'it', label: 'Italian',    labelNative: 'Italiano',            short: 'IT',  dir: 'ltr', flag: '🇮🇹' },
   // ── Add more locales below ──────────────────────────────────────────────────
-  // { code: 'fr', label: 'French',     labelNative: 'Français',            short: 'FR',  dir: 'ltr', flag: '🇫🇷' },
-  // { code: 'de', label: 'German',     labelNative: 'Deutsch',             short: 'DE',  dir: 'ltr', flag: '🇩🇪' },
-  // { code: 'pt', label: 'Portuguese', labelNative: 'Português',           short: 'PT',  dir: 'ltr', flag: '🇵🇹' },
-  // { code: 'it', label: 'Italian',    labelNative: 'Italiano',            short: 'IT',  dir: 'ltr', flag: '🇮🇹' },
   // { code: 'nl', label: 'Dutch',      labelNative: 'Nederlands',          short: 'NL',  dir: 'ltr', flag: '🇳🇱' },
   // { code: 'pl', label: 'Polish',     labelNative: 'Polski',              short: 'PL',  dir: 'ltr', flag: '🇵🇱' },
   // { code: 'zh', label: 'Chinese',    labelNative: '中文',                short: 'ZH',  dir: 'ltr', flag: '🇨🇳' },

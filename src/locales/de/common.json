@@ -1,0 +1,131 @@
+{
+  "app": {
+    "name": "IFC Validator",
+    "tagline": "Professionelle IFC-Validierung & -Bearbeitung"
+  },
+  "actions": {
+    "open": "Öffnen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "delete": "Löschen",
+    "clear": "Leeren",
+    "reset": "Zurücksetzen",
+    "confirm": "Bestätigen",
+    "retry": "Wiederholen",
+    "export": "Exportieren",
+    "import": "Importieren",
+    "upload": "Hochladen",
+    "download": "Herunterladen",
+    "apply": "Anwenden",
+    "edit": "Bearbeiten",
+    "add": "Hinzufügen",
+    "remove": "Entfernen",
+    "show": "Anzeigen",
+    "hide": "Ausblenden",
+    "copy": "Kopieren",
+    "select": "Auswählen",
+    "deselect": "Auswahl aufheben",
+    "back": "Zurück",
+    "home": "Start",
+    "refresh": "Aktualisieren"
+  },
+  "status": {
+    "loading": "Laden…",
+    "loaded": "Geladen",
+    "error": "Fehler",
+    "idle": "Bereit",
+    "running": "Läuft",
+    "done": "Fertig",
+    "saving": "Speichern…",
+    "noFileLoaded": "Keine Datei geladen"
+  },
+  "file": {
+    "noFileLoaded": "Keine Datei geladen",
+    "elements": "{{count}} Element",
+    "elements_other": "{{count}} Elemente"
+  },
+  "pagination": {
+    "of": "von",
+    "items": "Elemente"
+  },
+  "severity": {
+    "error": "Fehler",
+    "warning": "Warnung",
+    "info": "Info"
+  },
+  "shortcuts": {
+    "title": "Tastaturkürzel",
+    "close": "Schließen",
+    "groups": {
+      "navigation": "Navigation",
+      "validation": "Validierung",
+      "measurement": "Messung",
+      "sections": "Schnitte",
+      "editing": "Bearbeitung",
+      "camera": "Kameraansichten"
+    },
+    "keys": {
+      "openFile": "Datei öffnen",
+      "validate": "Validierung starten / wiederholen",
+      "cancelMeasure": "Aktive Messung abbrechen",
+      "closePoly": "Flächenpolygon schließen",
+      "deleteLastMeasure": "Letzte Messung löschen",
+      "addSection": "Schnittebene hinzufügen (achsenausgerichtet)",
+      "cancelSection": "Schnitt abbrechen",
+      "undo": "Bearbeitung rückgängig machen",
+      "redo": "Bearbeitung wiederherstellen",
+      "isoView": "Isometrische Ansicht",
+      "topView": "Draufsicht",
+      "frontView": "Vorderansicht",
+      "rightView": "Rechte Seitenansicht",
+      "showShortcuts": "Tastaturkürzel anzeigen"
+    }
+  },
+  "upload": {
+    "idle": {
+      "title": "IFC-Datei öffnen",
+      "subtitle": "Lokale Verarbeitung — nichts verlässt Ihren Browser",
+      "browse": "Datei auswählen",
+      "dropHint": "Legen Sie Ihre .ifc-Datei hier ab",
+      "releaseToOpen": "Loslassen zum Öffnen",
+      "clickToBrowse": "zum Durchsuchen klicken",
+      "orDrop": "oder überall ablegen",
+      "dropAriaLabel": "IFC-Datei ablegen oder zum Durchsuchen klicken",
+      "closeAriaLabel": "Schließen",
+      "trust1": "WebAssembly — läuft im Browser",
+      "trust2": "Keine Anmeldung erforderlich",
+      "trust3": "Bis zu 2 GB"
+    },
+    "active": {
+      "drop": "Legen Sie Ihre .ifc-Datei hier ab",
+      "validating": "Datei wird validiert…",
+      "queued": "Lader wird vorbereitet…",
+      "buildingScene": "3D-Szene wird aufgebaut…",
+      "loading": "IFC-Modell wird geladen…",
+      "checkingSchema": "IFC-Schema und Dateiintegrität werden überprüft",
+      "initialising": "Initialisierung…",
+      "cancel": "Abbrechen"
+    },
+    "success": {
+      "title": "Modell bereit",
+      "viewModel": "Viewer öffnen →"
+    },
+    "error": {
+      "title": "Modell konnte nicht geladen werden",
+      "technicalDetails": "Technische Details",
+      "tryAgain": "Erneut versuchen",
+      "close": "Schließen"
+    },
+    "cancelled": {
+      "title": "Laden abgebrochen.",
+      "loadAnother": "Andere Datei laden",
+      "tryAgain": "Erneut versuchen",
+      "close": "Schließen"
+    },
+    "parsing": "Wird analysiert…",
+    "loading": "Laden…",
+    "processing": "Verarbeitung…",
+    "fromCache": "Aus Cache"
+  }
+}

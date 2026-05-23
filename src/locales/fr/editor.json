@@ -1,0 +1,20 @@
+{
+  "actions": {
+    "undo": "Annuler",
+    "undoShortcut": "Annuler (Ctrl+Z)",
+    "redo": "Rétablir",
+    "redoShortcut": "Rétablir (Ctrl+Maj+Z)",
+    "applyFix": "Appliquer la correction",
+    "revertFix": "Annuler la correction",
+    "applyAll": "Appliquer toutes les corrections"
+  },
+  "diff": {
+    "rename": "Renommé : {{from}} → {{to}}",
+    "pendingChanges": "{{count}} modification en attente",
+    "pendingChanges_other": "{{count}} modifications en attente",
+    "noChanges": "Aucune modification en attente"
+  },
+  "history": {
+    "empty": "Aucun historique"
+  }
+}

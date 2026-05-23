@@ -1,0 +1,127 @@
+{
+  "controls": {
+    "resetCamera": "Réinitialiser la caméra",
+    "fitToView": "Ajuster à la vue",
+    "perspective": "Perspective",
+    "orthographic": "Orthographique",
+    "home": "Accueil"
+  },
+  "camera": {
+    "front": "Façade",
+    "back": "Arrière",
+    "left": "Gauche",
+    "right": "Droite",
+    "top": "Dessus",
+    "bottom": "Dessous",
+    "isometric": "Isométrique"
+  },
+  "cameraControls": {
+    "title": "Vues",
+    "hide": "Masquer les commandes caméra",
+    "show": "Afficher les vues caméra"
+  },
+  "overlays": {
+    "validationHighlights": "Surbrillances de validation",
+    "measurements": "Mesures"
+  },
+  "info": {
+    "title": "Infos du modèle",
+    "elementsLoaded": "{{count}} éléments",
+    "fromCache": "depuis le cache",
+    "gpuBackend": "GPU : {{backend}}",
+    "memoryUsage": "{{mb}} Mo",
+    "fileSize": "Taille du fichier",
+    "elements": "Éléments",
+    "memory": "Mémoire",
+    "renderer": "Rendu",
+    "quality": "Qualité",
+    "categories": "{{count}} catégories",
+    "gpuMemory": "{{mb}} Mo GPU",
+    "detecting": "Détection…",
+    "sizeUnavailable": "Taille indisponible — le modèle a été chargé depuis le cache OPFS. Rechargez depuis le disque pour voir la taille du fichier.",
+    "qualityScore": "Score de qualité : {{score}}/100"
+  },
+  "health": {
+    "unknown": "Inconnu",
+    "tiny": "Minuscule",
+    "light": "Léger",
+    "normal": "Normal",
+    "large": "Grand",
+    "heavy": "Lourd",
+    "small": "Petit",
+    "typical": "Typique",
+    "complex": "Complexe",
+    "dense": "Dense",
+    "good": "Bon",
+    "fair": "Acceptable",
+    "poor": "Mauvais",
+    "acceptable": "Acceptable",
+    "improvable": "Améliorable",
+    "deficient": "Déficient",
+    "excellent": "Excellent",
+    "critical": "Critique"
+  },
+  "error": {
+    "rendererUnavailable": "Rendu indisponible",
+    "loadFailed": "Échec du chargement du modèle"
+  },
+  "section": {
+    "title": "Coupe",
+    "planes": "{{count}} plan",
+    "planes_other": "{{count}} plans",
+    "addPlane": "Ajouter un plan de coupe",
+    "clickToPlace": "Cliquez sur une face pour placer…",
+    "clearAll": "Tout effacer",
+    "clickHint": "Cliquez sur n'importe quelle surface du modèle pour placer un plan de coupe aligné sur sa normale.",
+    "escToCancel": "Échap pour annuler",
+    "planeName": "Plan {{number}}",
+    "enablePlane": "Activer le plan",
+    "disablePlane": "Désactiver le plan",
+    "deletePlane": "Supprimer le plan"
+  },
+  "floorPlan": {
+    "title": "Plans d'étage",
+    "active2D": "Vue 2D active",
+    "detectStoreys": "Détecter les niveaux",
+    "detecting": "Détection des niveaux…",
+    "noStoreys": "Aucun niveau trouvé dans ce modèle.",
+    "returnTo3D": "Retour à la vue 3D",
+    "refresh": "Actualiser",
+    "view2D": "2D"
+  },
+  "scene": {
+    "title": "Scène",
+    "models": "{{count}} modèle",
+    "models_other": "{{count}} modèles",
+    "transform": "Transformation",
+    "visibility": "Visibilité",
+    "close": "Fermer",
+    "isolated": "isolé",
+    "hideModel": "Masquer le modèle",
+    "showModel": "Afficher le modèle",
+    "isolateModel": "Isoler — masquer tous les autres modèles",
+    "showAllModels": "Tous les modèles affichés",
+    "frameCamera": "Cadrer la caméra sur ce modèle",
+    "validateModel": "Valider ce modèle",
+    "removeModel": "Supprimer le modèle de la scène",
+    "cannotRemoveOnly": "Impossible de supprimer le seul modèle",
+    "noModels": "Aucun modèle chargé",
+    "showAllModelsBtn": "↑ Afficher tous les modèles",
+    "clickHint": "Cliquer sur un modèle pour l'activer · utiliser ⊙ pour isoler",
+    "transformTitle": "Transformation · {{fileName}}"
+  },
+  "transform": {
+    "position": "Position",
+    "rotation": "Rotation (°)",
+    "scale": "Échelle",
+    "uniform": "Uniforme",
+    "snapToGrid": "Aligner sur la grille",
+    "reset": "Réinitialiser"
+  },
+  "renderQuality": {
+    "title": "Qualité de rendu",
+    "performance": "Performance",
+    "quality": "Qualité",
+    "ssaoNote": "SSAO + détection des contours actifs. Peut affecter les performances sur mobile."
+  }
+}

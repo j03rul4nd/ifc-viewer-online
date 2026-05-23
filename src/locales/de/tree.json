@@ -1,0 +1,41 @@
+{
+  "title": "Modellbaum",
+  "spatialTree": "Räumlicher Baum",
+  "search": "Elemente suchen…",
+  "noResults": "Keine Elemente entsprechen «{{query}}»",
+  "noModel": "Kein Modell geladen",
+  "noModelDesc": "Laden Sie eine IFC-Datei und führen Sie die Validierung durch, um den räumlichen Baum zu sehen.",
+  "nodes": {
+    "site": "Gelände",
+    "building": "Gebäude",
+    "storey": "Geschoss",
+    "element": "Element",
+    "unclassified": "Nicht klassifiziert"
+  },
+  "actions": {
+    "expandAll": "Alle aufklappen",
+    "collapseAll": "Alle zuklappen",
+    "focusElement": "Element in 3D fokussieren",
+    "selectElement": "Element auswählen",
+    "selectIn3D": "In 3D auswählen",
+    "frameCamera": "Kamera ausrichten",
+    "rename": "Umbenennen",
+    "fixGuid": "GUID korrigieren",
+    "copyGlobalId": "GlobalId kopieren",
+    "copyExpressId": "Express-ID kopieren"
+  },
+  "models": {
+    "count": "{{count}} Modell",
+    "count_other": "{{count}} Modelle",
+    "active": "Aktives Modell"
+  },
+  "context": {
+    "changeGuid": "GlobalId ändern?",
+    "changeGuidWarning": "Eine GlobalId-Änderung bricht externe Verweise (BCF-Probleme, Links, COBie).",
+    "current": "Aktuell: {{guid}}",
+    "generateNew": "Neue GUID generieren"
+  },
+  "editName": "Name bearbeiten",
+  "editLongName": "Langen Namen bearbeiten",
+  "editDescription": "Beschreibung bearbeiten"
+}

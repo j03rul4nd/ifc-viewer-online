@@ -1,0 +1,31 @@
+{
+  "generic": "Une erreur inattendue s'est produite",
+  "reloadPage": "Veuillez recharger la page",
+  "boundary": {
+    "title": "Quelque chose s'est mal passé",
+    "description": "Une erreur s'est produite lors du rendu de ce composant.",
+    "reload": "Réessayer",
+    "details": "Détails de l'erreur",
+    "stackTrace": "Trace de la pile"
+  },
+  "model": {
+    "noModelLoaded": "Aucun modèle chargé",
+    "bufferUnavailable": "Le tampon source IFC est indisponible. Rechargez le fichier .ifc original pour l'exporter.",
+    "objectNotFound": "L'objet modèle est introuvable dans la scène 3D — il a peut-être été supprimé.",
+    "viewerNotReady": "Le visualiseur n'est pas prêt",
+    "loadFailed": "Échec du chargement du modèle : {{message}}",
+    "removeFailed": "Impossible de supprimer le modèle : {{message}}"
+  },
+  "export": {
+    "ifcFailed": "Échec de l'export IFC : {{message}}",
+    "glbFailed": "Échec de l'export GLB : {{message}}"
+  },
+  "validation": {
+    "failed": "Validation échouée",
+    "workerError": "Erreur du worker de validation : {{message}}"
+  },
+  "bcf": {
+    "importFailed": "Échec de l'import BCF : {{message}}",
+    "exportFailed": "Échec de l'export BCF : {{message}}"
+  }
+}
