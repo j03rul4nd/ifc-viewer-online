@@ -79,6 +79,20 @@ export default defineConfig({
     // to avoid noise for those unavoidable bundles.
     chunkSizeWarningLimit: 5000,
     rollupOptions: {
+      onwarn(warning, defaultHandler) {
+        // The EN locale files are intentionally both statically imported
+        // (bundled eagerly so first render has translations) AND referenced
+        // via the lazyLoader.ts dynamic template (which Rollup resolves
+        // statically). The runtime guard `language === DEFAULT_LOCALE` means
+        // the dynamic path is never actually exercised for EN, but Rollup
+        // can't know that. Suppress this known-harmless warning.
+        if (
+          warning.code === 'MODULE_LEVEL_DIRECTIVE' ||
+          (warning.message?.includes('dynamically imported') &&
+           warning.message?.includes('/locales/en/'))
+        ) return
+        defaultHandler(warning)
+      },
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) return
