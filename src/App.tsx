@@ -36,6 +36,11 @@ import type { ViewerAPI } from './lib/viewer'
 import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo } from './types'
 import * as Icons from './components/Icons'
 import { useSeo } from './seo'
+import {
+  trackFileOpened,
+  trackValidationCompleted,
+  trackLandingCtaClicked,
+} from './lib/analytics'
 
 // ── ModelTree imperative handle ───────────────────────────────────────────────
 export interface ModelTreeHandle {
@@ -45,6 +50,7 @@ export interface ModelTreeHandle {
 export default function App() {
   const { t: tToasts } = useTranslation('toasts')
   const { t: tCommon } = useTranslation('common')
+  const { t: tViewer } = useTranslation('viewer')
   useSeo()
   const [route, setRoute] = useState<Route>('landing')
   const [accent] = useState('#5E6AD2')
@@ -83,6 +89,7 @@ export default function App() {
     activePlanViewId, setActivePlanViewId,
     setMeasurementPanelOpen, setActiveMeasurementTool,
     gpuBackend, setGpuBackend,
+    setValidationPanelOpen,
   } = useUIStore()
 
   const {
@@ -151,9 +158,18 @@ export default function App() {
       setModelInfo(info)
       setLoadingState('loaded')
       setLoadError(null)
+      setValidationPanelOpen(true)
 
       // Use the stable sceneModelId from the viewer so ScenePanel and multi-model code align
       addSceneModel(modelId, info)
+
+      // Analytics: infer source from filename (demo file has a known name)
+      trackFileOpened({
+        file_size_mb:  Math.round((info.fileSize / 1_048_576) * 10) / 10,
+        element_count: info.elementCount,
+        source:        info.fileName === 'Ifc2x3_Duplex_Architecture.ifc' ? 'demo' : 'upload',
+        from_cache:    fromCache,
+      })
 
       console.info(
         `[IFC] Loaded "${info.fileName}" (${info.elementCount} elements, id: ${modelId})` +
@@ -180,6 +196,23 @@ export default function App() {
     const issues = result?.issues ?? []
     viewerApiRef.current?.setValidationHighlights(issues, validationMode)
   }, [validationMode, result])
+
+  // ── Analytics: track each completed validation run ────────────────────────
+  const prevResultRef = useRef<typeof result>(null)
+  useEffect(() => {
+    if (!result || result === prevResultRef.current) return
+    prevResultRef.current = result
+    const topRule = Object.entries(result.stats.byRule ?? {})
+      .sort(([, a], [, b]) => b - a)[0]?.[0] ?? null
+    trackValidationCompleted({
+      error_count:   result.stats.errors,
+      warning_count: result.stats.warnings,
+      info_count:    result.stats.info,
+      quality_score: result.qualityScore ?? 0,
+      duration_ms:   result.durationMs,
+      top_rule:      topRule,
+    })
+  }, [result])
 
   // ── Sync active model in sceneStore when the user clicks an element ───────
   // commitSelection in the viewer auto-activates the hit model, but doesn't
@@ -255,11 +288,13 @@ export default function App() {
   // "Open an IFC file" CTA — go to viewer and immediately show the upload overlay
   // so the user can pick their own file instead of the demo being auto-loaded.
   const handleOpenUpload = (): void => {
+    trackLandingCtaClicked({ variant: 'open_file' })
     setRoute('viewer')
     setShowUpload(true)
   }
 
   const handleLaunch = (): void => {
+    trackLandingCtaClicked({ variant: 'load_demo' })
     setRoute('viewer')
     void (async () => {
       try {
@@ -570,7 +605,7 @@ export default function App() {
                       <button
                         onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
                         className="w-12 h-12 rounded-full bg-[var(--accent)] shadow-[0_4px_20px_rgba(94,106,210,0.35)] flex items-center justify-center text-white active:scale-95 transition-transform"
-                        aria-label="Toggle properties panel"
+                        aria-label={tViewer('cache.togglePanel')}
                       >
                         {mobileSidebarOpen ? (
                           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
@@ -629,12 +664,12 @@ export default function App() {
       {/* ── OPFS cache badge ── */}
       {opfsAvailable && cacheEntries.length > 0 && (
         <div
-          title={`${cacheEntries.length} model(s) cached in OPFS. Click to clear all.`}
+          title={tViewer('cache.tooltip', { count: cacheEntries.length })}
           onClick={() => { void Promise.all(cacheEntries.map((e) => deleteFromCache(e.key))) }}
           className="fixed left-4 z-50 px-2.5 py-1 bg-[rgba(16,16,20,0.82)] backdrop-blur border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[11px] cursor-pointer hover:text-[var(--text)] transition-colors select-none"
           style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}
         >
-          {isFromCache ? '⚡ from cache' : `${cacheEntries.length} cached`}
+          {isFromCache ? tViewer('cache.fromCache') : tViewer('cache.cached', { count: cacheEntries.length })}
         </div>
       )}
 

@@ -319,14 +319,14 @@ export type ValidationCategoryType =
   | 'clash'
 
 export const VALIDATION_CATEGORY_LABELS: Record<ValidationCategoryType, string> = {
-  schema:         'Schema IFC',
-  spatial:        'Estructura espacial',
-  quality:        'Calidad de datos',
+  schema:         'IFC Schema',
+  spatial:        'Spatial structure',
+  quality:        'Data quality',
   lod:            'LOD / LOIN',
   iso19650:       'ISO 19650',
-  classification: 'Clasificación',
+  classification: 'Classification',
   mep:            'MEP',
-  clash:          'Colisiones',
+  clash:          'Clash detection',
 }
 
 // ── Rule metadata ─────────────────────────────────────────────────────────────

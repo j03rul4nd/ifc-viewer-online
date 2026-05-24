@@ -1,44 +1,133 @@
 {
-  "controls": { "resetCamera": "重置相机", "fitToView": "适合视图", "perspective": "透视", "orthographic": "正交", "home": "主页" },
-  "camera": { "front": "正视图", "back": "后视图", "left": "左视图", "right": "右视图", "top": "俯视图", "bottom": "仰视图", "isometric": "等轴测" },
-  "cameraControls": { "title": "视图", "hide": "隐藏相机控件", "show": "显示相机视图" },
-  "overlays": { "validationHighlights": "验证高亮", "measurements": "测量" },
+  "controls": {
+    "resetCamera": "重置相机",
+    "fitToView": "适合视图",
+    "perspective": "透视",
+    "orthographic": "正交",
+    "home": "主页"
+  },
+  "camera": {
+    "front": "正视图",
+    "back": "后视图",
+    "left": "左视图",
+    "right": "右视图",
+    "top": "俯视图",
+    "bottom": "仰视图",
+    "isometric": "等轴测"
+  },
+  "cameraControls": {
+    "title": "视图",
+    "hide": "隐藏相机控件",
+    "show": "显示相机视图"
+  },
+  "overlays": {
+    "validationHighlights": "验证高亮",
+    "measurements": "测量"
+  },
   "info": {
-    "title": "模型信息", "elementsLoaded": "{{count}} 个构件", "fromCache": "来自缓存",
-    "gpuBackend": "GPU: {{backend}}", "memoryUsage": "{{mb}} MB", "fileSize": "文件大小",
-    "elements": "构件", "memory": "内存", "renderer": "渲染器", "quality": "质量",
-    "categories": "{{count}} 个类别", "gpuMemory": "{{mb}} MB GPU", "detecting": "检测中…",
+    "title": "模型信息",
+    "elementsLoaded": "{{count}} 个构件",
+    "fromCache": "来自缓存",
+    "gpuBackend": "GPU: {{backend}}",
+    "memoryUsage": "{{mb}} MB",
+    "fileSize": "文件大小",
+    "elements": "构件",
+    "memory": "内存",
+    "renderer": "渲染器",
+    "quality": "质量",
+    "categories": "{{count}} 个类别",
+    "gpuMemory": "{{mb}} MB GPU",
+    "detecting": "检测中…",
     "sizeUnavailable": "大小不可用 — 模型从 OPFS 缓存加载。从磁盘重新加载以查看文件大小。",
     "qualityScore": "质量评分：{{score}}/100"
   },
   "health": {
-    "unknown": "未知", "tiny": "极小", "light": "轻量", "normal": "正常", "large": "大型",
-    "heavy": "重量级", "small": "小型", "typical": "典型", "complex": "复杂", "dense": "密集",
-    "good": "良好", "fair": "一般", "poor": "较差", "acceptable": "可接受",
-    "improvable": "可改进", "deficient": "不足", "excellent": "优秀", "critical": "严重"
+    "unknown": "未知",
+    "tiny": "极小",
+    "light": "轻量",
+    "normal": "正常",
+    "large": "大型",
+    "heavy": "重量级",
+    "small": "小型",
+    "typical": "典型",
+    "complex": "复杂",
+    "dense": "密集",
+    "good": "良好",
+    "fair": "一般",
+    "poor": "较差",
+    "acceptable": "可接受",
+    "improvable": "可改进",
+    "deficient": "不足",
+    "excellent": "优秀",
+    "critical": "严重"
   },
-  "error": { "rendererUnavailable": "渲染器不可用", "loadFailed": "模型加载失败" },
+  "error": {
+    "rendererUnavailable": "渲染器不可用",
+    "loadFailed": "模型加载失败"
+  },
   "section": {
-    "title": "剖切", "planes": "{{count}} 个平面", "planes_other": "{{count}} 个平面",
-    "addPlane": "添加剖切平面", "clickToPlace": "点击面放置…", "clearAll": "清除所有",
-    "clickHint": "点击任意模型表面以放置与其法线对齐的剖切平面。", "escToCancel": "按 Esc 取消",
-    "planeName": "平面 {{number}}", "enablePlane": "启用平面", "disablePlane": "禁用平面", "deletePlane": "删除平面"
+    "title": "剖切",
+    "planes": "{{count}} 个平面",
+    "planes_other": "{{count}} 个平面",
+    "addPlane": "添加剖切平面",
+    "clickToPlace": "点击面放置…",
+    "clearAll": "清除所有",
+    "clickHint": "点击任意模型表面以放置与其法线对齐的剖切平面。",
+    "escToCancel": "按 Esc 取消",
+    "planeName": "平面 {{number}}",
+    "enablePlane": "启用平面",
+    "disablePlane": "禁用平面",
+    "deletePlane": "删除平面"
   },
   "floorPlan": {
-    "title": "楼层平面", "active2D": "2D 视图激活", "detectStoreys": "检测楼层",
-    "detecting": "检测楼层中…", "noStoreys": "此模型中未找到楼层。",
-    "returnTo3D": "返回 3D 视图", "refresh": "刷新", "view2D": "2D"
+    "title": "楼层平面",
+    "active2D": "2D 视图激活",
+    "detectStoreys": "检测楼层",
+    "detecting": "检测楼层中…",
+    "noStoreys": "此模型中未找到楼层。",
+    "returnTo3D": "返回 3D 视图",
+    "refresh": "刷新",
+    "view2D": "2D"
   },
   "scene": {
-    "title": "场景", "models": "{{count}} 个模型", "models_other": "{{count}} 个模型",
-    "transform": "变换", "visibility": "可见性", "close": "关闭", "isolated": "已隔离",
-    "hideModel": "隐藏模型", "showModel": "显示模型", "isolateModel": "隔离 — 隐藏其他所有模型",
-    "showAllModels": "显示所有模型", "frameCamera": "聚焦相机到此模型",
-    "validateModel": "验证此模型", "removeModel": "从场景中移除模型",
-    "cannotRemoveOnly": "无法移除唯一的模型", "noModels": "未加载模型",
-    "showAllModelsBtn": "↑ 显示所有模型", "clickHint": "点击模型激活 · 使用 ⊙ 隔离",
+    "title": "场景",
+    "models": "{{count}} 个模型",
+    "models_other": "{{count}} 个模型",
+    "transform": "变换",
+    "visibility": "可见性",
+    "close": "关闭",
+    "isolated": "已隔离",
+    "hideModel": "隐藏模型",
+    "showModel": "显示模型",
+    "isolateModel": "隔离 — 隐藏其他所有模型",
+    "showAllModels": "显示所有模型",
+    "frameCamera": "聚焦相机到此模型",
+    "validateModel": "验证此模型",
+    "removeModel": "从场景中移除模型",
+    "cannotRemoveOnly": "无法移除唯一的模型",
+    "noModels": "未加载模型",
+    "showAllModelsBtn": "↑ 显示所有模型",
+    "clickHint": "点击模型激活 · 使用 ⊙ 隔离",
     "transformTitle": "变换 · {{fileName}}"
   },
-  "transform": { "position": "位置", "rotation": "旋转 (°)", "scale": "缩放", "uniform": "等比", "snapToGrid": "对齐到网格", "reset": "重置" },
-  "renderQuality": { "title": "渲染质量", "performance": "性能", "quality": "质量", "ssaoNote": "SSAO + 边缘检测已激活。可能影响移动设备性能。" }
+  "transform": {
+    "position": "位置",
+    "rotation": "旋转 (°)",
+    "scale": "缩放",
+    "uniform": "等比",
+    "snapToGrid": "对齐到网格",
+    "reset": "重置"
+  },
+  "renderQuality": {
+    "title": "渲染质量",
+    "performance": "性能",
+    "quality": "质量",
+    "ssaoNote": "SSAO + 边缘检测已激活。可能影响移动设备性能。"
+  },
+  "cache": {
+    "fromCache": "⚡ 来自缓存",
+    "cached": "{{count}} 已缓存",
+    "tooltip": "{{count}} 个模型已缓存至 OPFS · 点击清除",
+    "togglePanel": "显示/隐藏属性面板"
+  }
 }

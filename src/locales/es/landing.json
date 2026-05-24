@@ -7,17 +7,17 @@
     "badgeMobile": "Sin registro · en tu navegador",
     "h1": "IFC Viewer",
     "h1Accent": "Online",
-    "subtitleFull": "Abre, valida, mide y edita de forma no destructiva archivos IFC directamente en tu navegador. Sin instalación, sin servidor, sin cuenta — análisis WebAssembly, renderizado WebGL, 18 reglas de validación, plantas 2D, mediciones y exportación IFC.",
+    "subtitleFull": "Detecta errores en el IFC antes que tu cliente. Abre, valida y corrige archivos IFC completamente en tu navegador — sin instalación, sin servidor, sin cuenta. Tus modelos nunca salen de tu máquina.",
     "trustLine": "Gratis · Código abierto · 100% en cliente · IFC2x3 · IFC4 · IFC4x1 · IFC4x3",
     "trustLineMobile": "Gratis · Código abierto · IFC2x3 · IFC4 · IFC4x3"
   },
   "typing": [
-    "Abre cualquier archivo .ifc al instante — sin subir",
-    "Valida con 18 reglas integradas",
-    "Mide longitudes, áreas y volúmenes en 3D",
-    "Genera plantas 2D desde cualquier planta",
-    "Edita GUIDs, nombres y conjuntos de propiedades",
-    "Exporta el IFC corregido en un clic"
+    "Detecta errores en el IFC antes que tu cliente",
+    "Valida GUIDs duplicados y jerarquía espacial en segundos",
+    "Abre cualquier IFC — sin subir, sin licencia de Revit",
+    "Corrige violaciones de naming y re-exporta en un flujo",
+    "Revisa tu modelo antes de cada reunión de coordinación",
+    "Cero datos salen de tu navegador. Cero."
   ],
   "actions": {
     "getStarted": "Comenzar",
@@ -49,23 +49,38 @@
   "featuresSection": {
     "label": "CARACTERÍSTICAS",
     "title": "Visualiza, valida, mide y edita IFC",
-    "subtitle": "Todas las herramientas que necesitas en una sola pestaña del navegador — privado, rápido y completamente gratis."
+    "subtitle": "Todas las herramientas que tu equipo necesita antes de cada entrega IFC. Privado, rápido, gratis."
   },
   "features": [
+    {
+      "title": "Validador IFC con 18 reglas",
+      "body": "Detecta GUIDs duplicados, violaciones de jerarquía espacial y elementos huérfanos antes de que lo haga tu cliente. Los resultados aparecen en tiempo real desde un worker en segundo plano.",
+      "tip": "Motor de reglas IFC / ISO 19650"
+    },
+    {
+      "title": "Soporte multi-modelo",
+      "body": "Carga múltiples archivos IFC simultáneamente. Visibilidad, transformaciones, validación, cómputo de cantidades y exportación independientes por modelo. Gestiona todo desde el panel de escena.",
+      "tip": "Estado independiente por modelo"
+    },
     {
       "title": "Arrastrar y soltar, sin subir",
       "body": "Abre cualquier archivo .ifc al instante. Analizado en el cliente mediante web-ifc WebAssembly — tus datos nunca salen del navegador. Sin cuenta, sin servidor, funciona completamente sin conexión.",
       "tip": "Análisis WebAssembly en el cliente"
     },
     {
-      "title": "Validador IFC con 18 reglas",
-      "body": "Resultados en tiempo real mientras cada regla se ejecuta en un worker en segundo plano. Cubre GUIDs duplicados, jerarquía espacial, elementos huérfanos, convenciones de nombres, asignaciones de tipo faltantes y más.",
-      "tip": "Motor de reglas IFC / ISO 19650"
+      "title": "Caché de geometría OPFS",
+      "body": "La geometría analizada se almacena en el Sistema de Archivos Privado de Origen del navegador. Las cargas repetidas son ~10× más rápidas sin re-análisis — y funciona completamente sin conexión.",
+      "tip": "Caché del Sistema de Archivos Privado de Origen"
     },
     {
       "title": "Edición no destructiva",
-      "body": "Edita GlobalIds, nombres, LongNames y valores de conjuntos de propiedades en línea. Cada cambio se mantiene como un diff con historial completo de deshacer/rehacer — el archivo fuente nunca se modifica.",
+      "body": "Corrige lo que detecta el validador — sin tocar el archivo original. Edita GlobalIds, nombres y valores de propiedades en línea con historial completo de deshacer/rehacer.",
       "tip": "Pila de diff completa con deshacer/rehacer"
+    },
+    {
+      "title": "Cómputo de cantidades",
+      "body": "Lee datos IfcElementQuantity para agregar área, volumen y longitud por clase IFC. Los resultados por modelo se actualizan en tiempo real al cargar o filtrar modelos.",
+      "tip": "Agregación de IfcElementQuantity"
     },
     {
       "title": "Herramientas de medición",
@@ -78,19 +93,9 @@
       "tip": "Plantas 2D · planos de corte"
     },
     {
-      "title": "Renderizador de postproducción",
-      "body": "Activa SSAO (oclusión ambiental), renderizado de bordes y postprocesado de bloom para imágenes de calidad de presentación — sin necesidad de granja de renderizado externa.",
-      "tip": "SSAO · renderizado de bordes · bloom"
-    },
-    {
-      "title": "Soporte multi-modelo",
-      "body": "Carga múltiples archivos IFC simultáneamente. Visibilidad, transformaciones, validación, cómputo de cantidades y exportación independientes por modelo. Gestiona todo desde el panel de escena.",
-      "tip": "Estado independiente por modelo"
-    },
-    {
-      "title": "Caché de geometría OPFS",
-      "body": "La geometría analizada se almacena en el Sistema de Archivos Privado de Origen del navegador. Las cargas repetidas son ~10× más rápidas sin re-análisis — y funciona completamente sin conexión.",
-      "tip": "Caché del Sistema de Archivos Privado de Origen"
+      "title": "Exportación IFC + GLB",
+      "body": "Exporta el binario IFC corregido (todos los diffs aplicados en un Web Worker) o exporta la geometría visible como archivo GLB estándar. Exportación por lotes multi-modelo compatible.",
+      "tip": "Exportación IFC binaria sin servidor"
     },
     {
       "title": "IFC2x3, IFC4, IFC4x1, IFC4x3",
@@ -98,14 +103,9 @@
       "tip": "Todas las versiones principales del esquema IFC"
     },
     {
-      "title": "Cómputo de cantidades",
-      "body": "Lee datos IfcElementQuantity para agregar área, volumen y longitud por clase IFC. Los resultados por modelo se actualizan en tiempo real al cargar o filtrar modelos.",
-      "tip": "Agregación de IfcElementQuantity"
-    },
-    {
-      "title": "Exportación IFC + GLB",
-      "body": "Exporta el binario IFC corregido (todos los diffs aplicados en un Web Worker) o exporta la geometría visible como archivo GLB estándar. Exportación por lotes multi-modelo compatible.",
-      "tip": "Exportación IFC binaria sin servidor"
+      "title": "Renderizador de postproducción",
+      "body": "Activa SSAO (oclusión ambiental), renderizado de bordes y postprocesado de bloom para imágenes de calidad de presentación — sin necesidad de granja de renderizado externa.",
+      "tip": "SSAO · renderizado de bordes · bloom"
     },
     {
       "title": "IfcRelationsIndexer",
@@ -156,6 +156,22 @@
     {
       "q": "¿Se sube mi archivo IFC a algún servidor?",
       "a": "No. Los archivos se analizan completamente en tu navegador mediante web-ifc, una compilación WebAssembly del analizador IFC de código abierto. Nada sale de tu máquina. La aplicación funciona completamente sin conexión una vez cargada."
+    },
+    {
+      "q": "¿Puedo usarlo con modelos confidenciales bajo NDA?",
+      "a": "Sí. Como todo el procesamiento ocurre en tu navegador y nunca se transmite ningún dato a ningún servidor, puedes usarlo con seguridad con modelos de proyectos confidenciales bajo NDA. No hay ningún acuerdo de servicio que revisar con tu cliente — no se transfieren datos."
+    },
+    {
+      "q": "¿Puedo compartir los resultados de validación con mi equipo o cliente?",
+      "a": "Sí. Después de ejecutar la validación, usa el botón Compartir reporte para generar una URL que codifica los resultados completos. Tu cliente la abre en cualquier navegador sin instalar nada ni crear una cuenta. El archivo IFC nunca se incluye en el enlace."
+    },
+    {
+      "q": "¿Funciona en Mac?",
+      "a": "Sí, completamente. IFC Viewer Online funciona en cualquier navegador moderno — Chrome, Edge, Firefox y Safari, tanto en Mac como en Windows. Sin plugin, sin instalación, sin restricción de sistema operativo."
+    },
+    {
+      "q": "¿Qué pasa si mi archivo IFC es muy grande?",
+      "a": "La aplicación maneja archivos de hasta 2 GB. El rendimiento depende de tu dispositivo — los archivos de menos de 200 MB cargan bien en hardware moderno. Una vez analizado, la geometría se almacena en caché en OPFS para que cada carga posterior sea instantánea, incluso sin conexión."
     },
     {
       "q": "¿Qué versiones de IFC son compatibles?",

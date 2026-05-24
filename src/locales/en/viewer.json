@@ -123,5 +123,11 @@
     "performance": "Performance",
     "quality": "Quality",
     "ssaoNote": "SSAO + edge detection active. May impact performance on mobile."
+  },
+  "cache": {
+    "fromCache": "⚡ from cache",
+    "cached": "{{count}} cached",
+    "tooltip": "{{count}} model(s) cached in OPFS · click to clear",
+    "togglePanel": "Toggle properties panel"
   }
 }

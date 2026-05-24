@@ -5,7 +5,7 @@
 import React, { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ValidationCategoryType, RulesConfig } from '../types'
-import { RULE_METADATA, VALIDATION_CATEGORY_LABELS, VALIDATION_PROFILES } from '../types'
+import { RULE_METADATA, VALIDATION_PROFILES } from '../types'
 
 // ── Exports used by ValidationPanel ──────────────────────────────────────────
 
@@ -40,6 +40,7 @@ const CATEGORY_COLORS: Partial<Record<ValidationCategoryType, string>> = {
 }
 
 function CategoryChip({ cat, checked }: { cat: ValidationCategoryType; checked: boolean }) {
+  const { t } = useTranslation('validation')
   const color = checked ? (CATEGORY_COLORS[cat] ?? 'var(--ok)') : undefined
   return (
     <span
@@ -55,7 +56,7 @@ function CategoryChip({ cat, checked }: { cat: ValidationCategoryType; checked: 
           <polyline points="1.5,4 3,5.5 6.5,2" />
         </svg>
       )}
-      {VALIDATION_CATEGORY_LABELS[cat]}
+      {(t as (k: string) => string)(`catFull.${cat}`)}
     </span>
   )
 }
@@ -196,7 +197,7 @@ export default function ValidationCoverageSummary({
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-[10px] font-mono text-[var(--text-dim)]">
-                {covered.length}/{ALL_CATEGORIES.length} {t('coverage.allCovered')}
+                {t('coverage.covered', { count: covered.length, total: ALL_CATEGORIES.length })}
               </span>
               <button
                 onClick={onDismiss}
@@ -220,8 +221,10 @@ export default function ValidationCoverageSummary({
           {/* Smart suggestion */}
           {suggested && uncovered.length > 0 && (
             <p className="text-[10px] text-[var(--text-faint)] leading-tight">
-              <span className="text-[var(--accent)] font-medium">{t('coverage.suggestedProfile')}:</span>
-              {' '}«{suggested}» — {uncovered.map((c) => VALIDATION_CATEGORY_LABELS[c]).join(', ')}.
+              <span className="text-[var(--accent)] font-medium">
+                {t('coverage.suggestedProfile', { name: suggested })}
+              </span>
+              {' '}— {uncovered.map((c) => (t as (k: string) => string)(`catFull.${c}`)).join(', ')}.
             </p>
           )}
         </div>

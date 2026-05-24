@@ -170,14 +170,14 @@
   "pendingFix": "1 modificato",
   "allModels": "Tutti",
   "catShort": {
-    "schema":         "IFC",
-    "spatial":        "Spaz.",
-    "quality":        "Qual.",
-    "lod":            "LOD",
-    "iso19650":       "ISO",
+    "schema": "IFC",
+    "spatial": "Spaz.",
+    "quality": "Qual.",
+    "lod": "LOD",
+    "iso19650": "ISO",
     "classification": "Class.",
-    "mep":            "MEP",
-    "clash":          "Clash"
+    "mep": "MEP",
+    "clash": "Clash"
   },
   "customProfile": {
     "title": "Nuovo profilo personalizzato",
@@ -198,5 +198,15 @@
     "cancel": "Annulla",
     "save": "Salva profilo",
     "defaultDescription": "Profilo personalizzato"
+  },
+  "catFull": {
+    "schema": "Schema IFC",
+    "spatial": "Struttura spaziale",
+    "quality": "Qualità dei dati",
+    "lod": "LOD / LOIN",
+    "iso19650": "ISO 19650",
+    "classification": "Classificazione",
+    "mep": "MEP",
+    "clash": "Rilevamento scontri"
   }
 }

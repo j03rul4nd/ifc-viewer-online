@@ -123,5 +123,11 @@
     "performance": "Rendimiento",
     "quality": "Calidad",
     "ssaoNote": "SSAO + detección de bordes activo. Puede afectar al rendimiento en móvil."
+  },
+  "cache": {
+    "fromCache": "⚡ desde caché",
+    "cached": "{{count}} en caché",
+    "tooltip": "{{count}} modelo(s) en caché OPFS · clic para limpiar",
+    "togglePanel": "Mostrar/ocultar propiedades"
   }
 }

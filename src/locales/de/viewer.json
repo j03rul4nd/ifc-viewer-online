@@ -123,5 +123,11 @@
     "performance": "Leistung",
     "quality": "Qualität",
     "ssaoNote": "SSAO + Kantenerkennung aktiv. Kann die Leistung auf Mobilgeräten beeinträchtigen."
+  },
+  "cache": {
+    "fromCache": "⚡ aus Cache",
+    "cached": "{{count}} gecacht",
+    "tooltip": "{{count}} Modell(e) im OPFS-Cache · klicken zum Leeren",
+    "togglePanel": "Eigenschaften ein-/ausblenden"
   }
 }

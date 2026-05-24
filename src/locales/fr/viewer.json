@@ -123,5 +123,11 @@
     "performance": "Performance",
     "quality": "Qualité",
     "ssaoNote": "SSAO + détection des contours actifs. Peut affecter les performances sur mobile."
+  },
+  "cache": {
+    "fromCache": "⚡ depuis le cache",
+    "cached": "{{count}} en cache",
+    "tooltip": "{{count}} modèle(s) en cache OPFS · cliquer pour effacer",
+    "togglePanel": "Afficher/masquer les propriétés"
   }
 }

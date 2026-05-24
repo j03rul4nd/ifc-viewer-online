@@ -24,11 +24,12 @@ import type {
   ValidationIssue, ValidationCertificate, BcfTopic, ViewerHandle,
   ValidationCategoryType,
 } from '../types'
-import { VALIDATION_PROFILES, RULE_METADATA, getRuleLabel, VALIDATION_CATEGORY_LABELS } from '../types'
+import { VALIDATION_PROFILES, RULE_METADATA, getRuleLabel } from '../types'
 import { getCoveredCategories, ALL_CATEGORIES } from './ValidationCoverageSummary'
 import CustomProfileModal from './CustomProfileModal'
 import { getRecentRuns, getAverageQualityScore, getMostUsedRules } from '../lib/validation-analytics'
 import type { ValidationRunRecord } from '../lib/validation-analytics'
+import { trackGuidFixed } from '../lib/analytics'
 
 // ── Resize constants ──────────────────────────────────────────────────────────
 
@@ -728,8 +729,8 @@ function CoverageStrip({ rules, qualityScore, onDismiss }: CoverageStripProps) {
         {ALL_CATEGORIES.map((cat) => {
           const isActive = covered.includes(cat as ValidationCategoryType)
           const color = CAT_COLOR[cat] ?? 'var(--accent)'
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const short = (t as (k: string) => string)(`catShort.${cat}`) || VALIDATION_CATEGORY_LABELS[cat as ValidationCategoryType]
+          const short = (t as (k: string) => string)(`catShort.${cat}`)
+          const full  = (t as (k: string) => string)(`catFull.${cat}`)
           return (
             <span
               key={cat}
@@ -739,7 +740,7 @@ function CoverageStrip({ rules, qualityScore, onDismiss }: CoverageStripProps) {
                   ? { background: `${color}14`, color, borderColor: `${color}33` }
                   : { background: 'transparent', color: 'var(--text-faint)', borderColor: 'var(--border)' }
               }
-              title={VALIDATION_CATEGORY_LABELS[cat as ValidationCategoryType]}
+              title={full}
             >
               {isActive ? '✓ ' : ''}{short}
             </span>
@@ -1392,15 +1393,19 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
 
   const handleAutoFix = useCallback((issue: ValidationIssue) => {
     if ((issue.ruleId === 'RULE_DUPLICATE_GUID' || issue.ruleId === 'RULE_INVALID_GUID_FORMAT') && issue.globalId) {
+      trackGuidFixed({ guid_count: 1 })
       addCommand(buildFixGuidCommand(issue.expressId, issue.globalId, issue.modelId))
     }
   }, [addCommand])
 
   const handleBatchFix = useCallback(() => {
-    for (const issue of filtered) {
-      if (issue.autoFixable && (issue.ruleId === 'RULE_DUPLICATE_GUID' || issue.ruleId === 'RULE_INVALID_GUID_FORMAT') && issue.globalId) {
-        addCommand(buildFixGuidCommand(issue.expressId, issue.globalId, issue.modelId))
-      }
+    const fixable = filtered.filter(
+      (i) => i.autoFixable && (i.ruleId === 'RULE_DUPLICATE_GUID' || i.ruleId === 'RULE_INVALID_GUID_FORMAT') && i.globalId,
+    )
+    if (fixable.length === 0) return
+    trackGuidFixed({ guid_count: fixable.length })
+    for (const issue of fixable) {
+      addCommand(buildFixGuidCommand(issue.expressId, issue.globalId!, issue.modelId))
     }
   }, [filtered, addCommand])
 

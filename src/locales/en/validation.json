@@ -170,14 +170,14 @@
   "pendingFix": "1 edited",
   "allModels": "All",
   "catShort": {
-    "schema":         "IFC",
-    "spatial":        "Spat.",
-    "quality":        "Qual.",
-    "lod":            "LOD",
-    "iso19650":       "ISO",
+    "schema": "IFC",
+    "spatial": "Spat.",
+    "quality": "Qual.",
+    "lod": "LOD",
+    "iso19650": "ISO",
     "classification": "Class.",
-    "mep":            "MEP",
-    "clash":          "Clash"
+    "mep": "MEP",
+    "clash": "Clash"
   },
   "customProfile": {
     "title": "New custom profile",
@@ -198,5 +198,15 @@
     "cancel": "Cancel",
     "save": "Save profile",
     "defaultDescription": "Custom profile"
+  },
+  "catFull": {
+    "schema": "IFC Schema",
+    "spatial": "Spatial structure",
+    "quality": "Data quality",
+    "lod": "LOD / LOIN",
+    "iso19650": "ISO 19650",
+    "classification": "Classification",
+    "mep": "MEP",
+    "clash": "Clash detection"
   }
 }

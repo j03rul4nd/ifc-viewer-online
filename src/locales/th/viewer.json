@@ -1,44 +1,133 @@
 {
-  "controls": { "resetCamera": "รีเซ็ตกล้อง", "fitToView": "ปรับให้พอดีมุมมอง", "perspective": "มุมมองทัศนียภาพ", "orthographic": "มุมมองออร์โธกราฟิก", "home": "หน้าหลัก" },
-  "camera": { "front": "ด้านหน้า", "back": "ด้านหลัง", "left": "ด้านซ้าย", "right": "ด้านขวา", "top": "ด้านบน", "bottom": "ด้านล่าง", "isometric": "ไอโซเมตริก" },
-  "cameraControls": { "title": "มุมมอง", "hide": "ซ่อนตัวควบคุมกล้อง", "show": "แสดงมุมมองกล้อง" },
-  "overlays": { "validationHighlights": "การไฮไลต์การตรวจสอบ", "measurements": "การวัด" },
+  "controls": {
+    "resetCamera": "รีเซ็ตกล้อง",
+    "fitToView": "ปรับให้พอดีมุมมอง",
+    "perspective": "มุมมองทัศนียภาพ",
+    "orthographic": "มุมมองออร์โธกราฟิก",
+    "home": "หน้าหลัก"
+  },
+  "camera": {
+    "front": "ด้านหน้า",
+    "back": "ด้านหลัง",
+    "left": "ด้านซ้าย",
+    "right": "ด้านขวา",
+    "top": "ด้านบน",
+    "bottom": "ด้านล่าง",
+    "isometric": "ไอโซเมตริก"
+  },
+  "cameraControls": {
+    "title": "มุมมอง",
+    "hide": "ซ่อนตัวควบคุมกล้อง",
+    "show": "แสดงมุมมองกล้อง"
+  },
+  "overlays": {
+    "validationHighlights": "การไฮไลต์การตรวจสอบ",
+    "measurements": "การวัด"
+  },
   "info": {
-    "title": "ข้อมูลโมเดล", "elementsLoaded": "{{count}} องค์ประกอบ", "fromCache": "จากแคช",
-    "gpuBackend": "GPU: {{backend}}", "memoryUsage": "{{mb}} MB", "fileSize": "ขนาดไฟล์",
-    "elements": "องค์ประกอบ", "memory": "หน่วยความจำ", "renderer": "ตัวเรนเดอร์", "quality": "คุณภาพ",
-    "categories": "{{count}} ประเภท", "gpuMemory": "{{mb}} MB GPU", "detecting": "กำลังตรวจหา…",
+    "title": "ข้อมูลโมเดล",
+    "elementsLoaded": "{{count}} องค์ประกอบ",
+    "fromCache": "จากแคช",
+    "gpuBackend": "GPU: {{backend}}",
+    "memoryUsage": "{{mb}} MB",
+    "fileSize": "ขนาดไฟล์",
+    "elements": "องค์ประกอบ",
+    "memory": "หน่วยความจำ",
+    "renderer": "ตัวเรนเดอร์",
+    "quality": "คุณภาพ",
+    "categories": "{{count}} ประเภท",
+    "gpuMemory": "{{mb}} MB GPU",
+    "detecting": "กำลังตรวจหา…",
     "sizeUnavailable": "ขนาดไม่พร้อมใช้งาน — โมเดลโหลดจากแคช OPFS โหลดใหม่จากดิสก์เพื่อดูขนาดไฟล์",
     "qualityScore": "คะแนนคุณภาพ: {{score}}/100"
   },
   "health": {
-    "unknown": "ไม่ทราบ", "tiny": "เล็กมาก", "light": "เบา", "normal": "ปกติ", "large": "ใหญ่",
-    "heavy": "หนัก", "small": "เล็ก", "typical": "ทั่วไป", "complex": "ซับซ้อน", "dense": "หนาแน่น",
-    "good": "ดี", "fair": "พอใช้", "poor": "ไม่ดี", "acceptable": "ยอมรับได้",
-    "improvable": "ปรับปรุงได้", "deficient": "บกพร่อง", "excellent": "ยอดเยี่ยม", "critical": "วิกฤต"
+    "unknown": "ไม่ทราบ",
+    "tiny": "เล็กมาก",
+    "light": "เบา",
+    "normal": "ปกติ",
+    "large": "ใหญ่",
+    "heavy": "หนัก",
+    "small": "เล็ก",
+    "typical": "ทั่วไป",
+    "complex": "ซับซ้อน",
+    "dense": "หนาแน่น",
+    "good": "ดี",
+    "fair": "พอใช้",
+    "poor": "ไม่ดี",
+    "acceptable": "ยอมรับได้",
+    "improvable": "ปรับปรุงได้",
+    "deficient": "บกพร่อง",
+    "excellent": "ยอดเยี่ยม",
+    "critical": "วิกฤต"
   },
-  "error": { "rendererUnavailable": "ตัวเรนเดอร์ไม่พร้อมใช้งาน", "loadFailed": "โหลดโมเดลล้มเหลว" },
+  "error": {
+    "rendererUnavailable": "ตัวเรนเดอร์ไม่พร้อมใช้งาน",
+    "loadFailed": "โหลดโมเดลล้มเหลว"
+  },
   "section": {
-    "title": "หน้าตัด", "planes": "{{count}} ระนาบ", "planes_other": "{{count}} ระนาบ",
-    "addPlane": "เพิ่มระนาบตัด", "clickToPlace": "คลิกพื้นผิวเพื่อวาง…", "clearAll": "ล้างทั้งหมด",
-    "clickHint": "คลิกพื้นผิวโมเดลใดก็ได้เพื่อวางระนาบตัดที่ตรงกับค่าปกติของพื้นผิวนั้น", "escToCancel": "กด Esc เพื่อยกเลิก",
-    "planeName": "ระนาบ {{number}}", "enablePlane": "เปิดใช้ระนาบ", "disablePlane": "ปิดใช้ระนาบ", "deletePlane": "ลบระนาบ"
+    "title": "หน้าตัด",
+    "planes": "{{count}} ระนาบ",
+    "planes_other": "{{count}} ระนาบ",
+    "addPlane": "เพิ่มระนาบตัด",
+    "clickToPlace": "คลิกพื้นผิวเพื่อวาง…",
+    "clearAll": "ล้างทั้งหมด",
+    "clickHint": "คลิกพื้นผิวโมเดลใดก็ได้เพื่อวางระนาบตัดที่ตรงกับค่าปกติของพื้นผิวนั้น",
+    "escToCancel": "กด Esc เพื่อยกเลิก",
+    "planeName": "ระนาบ {{number}}",
+    "enablePlane": "เปิดใช้ระนาบ",
+    "disablePlane": "ปิดใช้ระนาบ",
+    "deletePlane": "ลบระนาบ"
   },
   "floorPlan": {
-    "title": "แปลนชั้น", "active2D": "มุมมอง 2D ใช้งานอยู่", "detectStoreys": "ตรวจหาชั้น",
-    "detecting": "กำลังตรวจหาชั้น…", "noStoreys": "ไม่พบชั้นในโมเดลนี้",
-    "returnTo3D": "กลับไปมุมมอง 3D", "refresh": "รีเฟรช", "view2D": "2D"
+    "title": "แปลนชั้น",
+    "active2D": "มุมมอง 2D ใช้งานอยู่",
+    "detectStoreys": "ตรวจหาชั้น",
+    "detecting": "กำลังตรวจหาชั้น…",
+    "noStoreys": "ไม่พบชั้นในโมเดลนี้",
+    "returnTo3D": "กลับไปมุมมอง 3D",
+    "refresh": "รีเฟรช",
+    "view2D": "2D"
   },
   "scene": {
-    "title": "ฉาก", "models": "{{count}} โมเดล", "models_other": "{{count}} โมเดล",
-    "transform": "การแปลง", "visibility": "การมองเห็น", "close": "ปิด", "isolated": "แยกแล้ว",
-    "hideModel": "ซ่อนโมเดล", "showModel": "แสดงโมเดล", "isolateModel": "แยก — ซ่อนโมเดลอื่นทั้งหมด",
-    "showAllModels": "แสดงโมเดลทั้งหมด", "frameCamera": "จัดกรอบกล้องไปที่โมเดลนี้",
-    "validateModel": "ตรวจสอบโมเดลนี้", "removeModel": "นำโมเดลออกจากฉาก",
-    "cannotRemoveOnly": "ไม่สามารถนำโมเดลเดียวออกได้", "noModels": "ไม่ได้โหลดโมเดล",
-    "showAllModelsBtn": "↑ แสดงโมเดลทั้งหมด", "clickHint": "คลิกโมเดลเพื่อเปิดใช้งาน · ใช้ ⊙ เพื่อแยก",
+    "title": "ฉาก",
+    "models": "{{count}} โมเดล",
+    "models_other": "{{count}} โมเดล",
+    "transform": "การแปลง",
+    "visibility": "การมองเห็น",
+    "close": "ปิด",
+    "isolated": "แยกแล้ว",
+    "hideModel": "ซ่อนโมเดล",
+    "showModel": "แสดงโมเดล",
+    "isolateModel": "แยก — ซ่อนโมเดลอื่นทั้งหมด",
+    "showAllModels": "แสดงโมเดลทั้งหมด",
+    "frameCamera": "จัดกรอบกล้องไปที่โมเดลนี้",
+    "validateModel": "ตรวจสอบโมเดลนี้",
+    "removeModel": "นำโมเดลออกจากฉาก",
+    "cannotRemoveOnly": "ไม่สามารถนำโมเดลเดียวออกได้",
+    "noModels": "ไม่ได้โหลดโมเดล",
+    "showAllModelsBtn": "↑ แสดงโมเดลทั้งหมด",
+    "clickHint": "คลิกโมเดลเพื่อเปิดใช้งาน · ใช้ ⊙ เพื่อแยก",
     "transformTitle": "การแปลง · {{fileName}}"
   },
-  "transform": { "position": "ตำแหน่ง", "rotation": "การหมุน (°)", "scale": "ขนาด", "uniform": "สม่ำเสมอ", "snapToGrid": "จัดให้ตรงกริด", "reset": "รีเซ็ต" },
-  "renderQuality": { "title": "คุณภาพการเรนเดอร์", "performance": "ประสิทธิภาพ", "quality": "คุณภาพ", "ssaoNote": "SSAO + การตรวจจับขอบใช้งานอยู่ อาจส่งผลต่อประสิทธิภาพบนมือถือ" }
+  "transform": {
+    "position": "ตำแหน่ง",
+    "rotation": "การหมุน (°)",
+    "scale": "ขนาด",
+    "uniform": "สม่ำเสมอ",
+    "snapToGrid": "จัดให้ตรงกริด",
+    "reset": "รีเซ็ต"
+  },
+  "renderQuality": {
+    "title": "คุณภาพการเรนเดอร์",
+    "performance": "ประสิทธิภาพ",
+    "quality": "คุณภาพ",
+    "ssaoNote": "SSAO + การตรวจจับขอบใช้งานอยู่ อาจส่งผลต่อประสิทธิภาพบนมือถือ"
+  },
+  "cache": {
+    "fromCache": "⚡ จากแคช",
+    "cached": "{{count}} แคชแล้ว",
+    "tooltip": "{{count}} โมเดลแคชใน OPFS · คลิกเพื่อล้าง",
+    "togglePanel": "แสดง/ซ่อนแผงคุณสมบัติ"
+  }
 }

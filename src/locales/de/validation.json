@@ -170,14 +170,14 @@
   "pendingFix": "1 bearbeitet",
   "allModels": "Alle",
   "catShort": {
-    "schema":         "IFC",
-    "spatial":        "Räuml.",
-    "quality":        "Qual.",
-    "lod":            "LOD",
-    "iso19650":       "ISO",
+    "schema": "IFC",
+    "spatial": "Räuml.",
+    "quality": "Qual.",
+    "lod": "LOD",
+    "iso19650": "ISO",
     "classification": "Klass.",
-    "mep":            "MEP",
-    "clash":          "Koll."
+    "mep": "MEP",
+    "clash": "Koll."
   },
   "customProfile": {
     "title": "Neues benutzerdefiniertes Profil",
@@ -198,5 +198,15 @@
     "cancel": "Abbrechen",
     "save": "Profil speichern",
     "defaultDescription": "Benutzerdefiniertes Profil"
+  },
+  "catFull": {
+    "schema": "IFC-Schema",
+    "spatial": "Räumliche Struktur",
+    "quality": "Datenqualität",
+    "lod": "LOD / LOIN",
+    "iso19650": "ISO 19650",
+    "classification": "Klassifikation",
+    "mep": "MEP",
+    "clash": "Kollisionserkennung"
   }
 }

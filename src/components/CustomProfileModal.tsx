@@ -11,7 +11,6 @@ import { useTranslation } from 'react-i18next'
 import { useValidationStore } from '../stores/validationStore'
 import {
   RULE_METADATA,
-  VALIDATION_CATEGORY_LABELS,
   DEFAULT_RULES,
   getRuleLabel,
   getRuleDescription,
@@ -136,7 +135,7 @@ function CategorySection({
       {/* Category header */}
       <div className="flex items-center gap-2 py-1.5 sticky top-0 bg-[var(--surface)] z-10">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-dim)]">
-          {VALIDATION_CATEGORY_LABELS[cat]}
+          {(t as (k: string) => string)(`catFull.${cat}`)}
         </span>
         <span className="text-[9px] font-mono text-[var(--text-faint)]">
           {checkedCount}/{ruleIds.length}
