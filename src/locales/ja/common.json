@@ -1,0 +1,131 @@
+{
+  "app": {
+    "name": "IFC Validator",
+    "tagline": "プロフェッショナルな IFC 検証・編集ツール"
+  },
+  "actions": {
+    "open": "開く",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "close": "閉じる",
+    "delete": "削除",
+    "clear": "クリア",
+    "reset": "リセット",
+    "confirm": "確認",
+    "retry": "再試行",
+    "export": "エクスポート",
+    "import": "インポート",
+    "upload": "アップロード",
+    "download": "ダウンロード",
+    "apply": "適用",
+    "edit": "編集",
+    "add": "追加",
+    "remove": "削除",
+    "show": "表示",
+    "hide": "非表示",
+    "copy": "コピー",
+    "select": "選択",
+    "deselect": "選択解除",
+    "back": "戻る",
+    "home": "ホーム",
+    "refresh": "更新"
+  },
+  "status": {
+    "loading": "読み込み中…",
+    "loaded": "読み込み完了",
+    "error": "エラー",
+    "idle": "待機中",
+    "running": "実行中",
+    "done": "完了",
+    "saving": "保存中…",
+    "noFileLoaded": "ファイル未読み込み"
+  },
+  "file": {
+    "noFileLoaded": "ファイル未読み込み",
+    "elements": "{{count}} 要素",
+    "elements_other": "{{count}} 要素"
+  },
+  "pagination": {
+    "of": "/",
+    "items": "件"
+  },
+  "severity": {
+    "error": "エラー",
+    "warning": "警告",
+    "info": "情報"
+  },
+  "shortcuts": {
+    "title": "キーボードショートカット",
+    "close": "閉じる",
+    "groups": {
+      "navigation": "ナビゲーション",
+      "validation": "検証",
+      "measurement": "計測",
+      "sections": "断面",
+      "editing": "編集",
+      "camera": "カメラビュー"
+    },
+    "keys": {
+      "openFile": "ファイルを開く",
+      "validate": "検証を実行 / 再実行",
+      "cancelMeasure": "計測をキャンセル",
+      "closePoly": "面積ポリゴンを閉じる",
+      "deleteLastMeasure": "最後の計測を削除",
+      "addSection": "断面プレーンを追加（軸平行）",
+      "cancelSection": "断面追加をキャンセル",
+      "undo": "編集を元に戻す",
+      "redo": "編集をやり直す",
+      "isoView": "アイソメトリックビュー",
+      "topView": "上面図",
+      "frontView": "正面図",
+      "rightView": "右側面図",
+      "showShortcuts": "キーボードショートカットを表示"
+    }
+  },
+  "upload": {
+    "idle": {
+      "title": "IFC ファイルを開く",
+      "subtitle": "ローカル処理 — データはブラウザの外に出ません",
+      "browse": "ファイルを参照",
+      "dropHint": ".ifc ファイルをここにドロップ",
+      "releaseToOpen": "離して開く",
+      "clickToBrowse": "クリックして参照",
+      "orDrop": "またはどこでもドロップ",
+      "dropAriaLabel": "IFC ファイルをドロップするかクリックして参照",
+      "closeAriaLabel": "閉じる",
+      "trust1": "WebAssembly — ブラウザ内で実行",
+      "trust2": "ログイン不要",
+      "trust3": "最大 2 GB 対応"
+    },
+    "active": {
+      "drop": ".ifc ファイルをここにドロップ",
+      "validating": "ファイルを検証中…",
+      "queued": "ローダーを準備中…",
+      "buildingScene": "3D シーンを構築中…",
+      "loading": "IFC モデルを読み込み中…",
+      "checkingSchema": "IFC スキーマとファイルの整合性を確認中",
+      "initialising": "初期化中…",
+      "cancel": "キャンセル"
+    },
+    "success": {
+      "title": "モデル準備完了",
+      "viewModel": "ビューアを開く →"
+    },
+    "error": {
+      "title": "モデルの読み込みに失敗",
+      "technicalDetails": "技術的詳細",
+      "tryAgain": "再試行",
+      "close": "閉じる"
+    },
+    "cancelled": {
+      "title": "読み込みをキャンセルしました。",
+      "loadAnother": "別のファイルを読み込む",
+      "tryAgain": "再試行",
+      "close": "閉じる"
+    },
+    "parsing": "解析中…",
+    "loading": "読み込み中…",
+    "processing": "処理中…",
+    "fromCache": "キャッシュから"
+  }
+}

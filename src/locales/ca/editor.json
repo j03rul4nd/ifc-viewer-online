@@ -1,0 +1,20 @@
+{
+  "actions": {
+    "undo": "Desfés",
+    "undoShortcut": "Desfés (Ctrl+Z)",
+    "redo": "Refés",
+    "redoShortcut": "Refés (Ctrl+Maj+Z)",
+    "applyFix": "Aplica la correcció",
+    "revertFix": "Reverteix la correcció",
+    "applyAll": "Aplica totes les correccions"
+  },
+  "diff": {
+    "rename": "Renomenat: {{from}} → {{to}}",
+    "pendingChanges": "{{count}} canvi pendent",
+    "pendingChanges_other": "{{count}} canvis pendents",
+    "noChanges": "Cap canvi pendent"
+  },
+  "history": {
+    "empty": "Sense historial"
+  }
+}

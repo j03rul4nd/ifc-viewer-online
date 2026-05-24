@@ -1,0 +1,49 @@
+{
+  "title": "Propietats",
+  "panel": "Tauler",
+  "noSelection": "Selecciona un element per veure les seves propietats",
+  "nothingSelected": "Res seleccionat",
+  "nothingSelectedDesc": "Clica qualsevol element al visualitzador per inspeccionar les seves propietats IFC.",
+  "element": { "type": "Tipus", "name": "Nom", "expressId": "Express ID", "globalId": "ID global", "model": "Model" },
+  "categories": {
+    "title": "Categories",
+    "walls": "Parets", "slabs": "Forjats", "columns": "Pilars", "beams": "Bigues",
+    "doors": "Portes", "windows": "Finestres", "stairs": "Escales", "roofs": "Cobertes",
+    "spaces": "Espais", "furniture": "Mobiliari", "other": "Altres",
+    "types": "{{count}} tipus", "elements": "{{count}} elements",
+    "clearIsolation": "Elimina l'aïllament", "noModel": "Cap model carregat",
+    "noModelDesc": "Obre un fitxer IFC per veure les categories.", "moreElements": "+ {{count}} elements més"
+  },
+  "actions": {
+    "isolate": "Aïlla", "hide": "Amaga", "show": "Mostra", "focusElement": "Enfoca l'element",
+    "revealInTree": "Mostra a l'arbre", "jumpTo3D": "Vés al 3D", "frame": "Emmarca",
+    "clearIsolation": "Elimina l'aïllament", "hideElement": "Amaga l'element", "showElement": "Mostra l'element",
+    "hidePanel": "Amaga el tauler", "showPanel": "Mostra el tauler"
+  },
+  "properties": {
+    "title": "Propietats", "noProperties": "Sense propietats", "psets": "Conjunts de propietats",
+    "quantities": "Quantitats", "materials": "Materials", "geometry": "Geometria",
+    "location": "Ubicació", "visibility": "Visibilitat", "ifcAttributes": "Atributs IFC",
+    "notInTree": "No trobat a l'arbre espacial", "category": "Categoria",
+    "visible": "Visible", "hidden": "Amagat", "loading": "carregant…",
+    "loadError": "No s'han pogut carregar els atributs IFC",
+    "unsavedChanges": "{{count}} canvi no desat · Ctrl+Z per desfer",
+    "unsavedChanges_other": "{{count}} canvis no desats · Ctrl+Z per desfer",
+    "edited": "editat", "empty": "buit", "loadingPsets": "Carregant conjunts de propietats…"
+  },
+  "tabs": { "properties": "Propietats", "categories": "Categories", "takeoff": "Quantitats" },
+  "takeoff": {
+    "title": "Quantitats", "quantity": "Quantitat", "unit": "Unitat", "totalArea": "Àrea total",
+    "totalVolume": "Volum total", "totalLength": "Longitud total", "count": "Recompte",
+    "noModel": "Cap model carregat.", "computeQuantities": "Calcula les quantitats",
+    "description": "Llegeix les quantitats d'àrea, volum i longitud dels conjunts de quantitats IFC.",
+    "running": "Calculant quantitats…", "failed": "Ha fallat el càlcul de quantitats.", "retry": "Torna-ho a intentar",
+    "noData": "No s'han trobat dades de quantitats en aquest model.",
+    "noDataIfc": "Els conjunts de quantitats IFC (Qto_*) poden no estar presents.",
+    "classes": "{{count}} classes", "refresh": "Actualitza", "noQuantityData": "Sense dades de quantitats"
+  },
+  "validation": {
+    "issueCount": "Validació · {{count}} problema",
+    "issueCount_other": "Validació · {{count}} problemes"
+  }
+}

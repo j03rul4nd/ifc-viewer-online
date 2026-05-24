@@ -1,0 +1,25 @@
+{
+  "panel": { "title": "検証", "dragToResize": "ドラッグしてサイズ変更", "measurements": "{{count}} 件の計測", "measurements_other": "{{count}} 件の計測" },
+  "run": { "validate": "検証", "validating": "検証中…", "cancel": "キャンセル", "retry": "再試行", "runShortcut": "Ctrl+Shift+V", "noModel": "先にモデルを読み込んでください", "running": "実行中…", "progress": "{{progress}}%", "revalidate": "再検証", "validateAgain": "再度検証" },
+  "results": { "noIssues": "問題は見つかりませんでした", "allGood": "すべてのチェックが合格", "issueCount": "{{count}} 件の問題", "issueCount_other": "{{count}} 件の問題", "errors": "{{count}} 件のエラー", "errors_other": "{{count}} 件のエラー", "warnings": "{{count}} 件の警告", "warnings_other": "{{count}} 件の警告", "info": "{{count}} 件の情報", "qualityScore": "品質スコア" },
+  "tabs": { "issues": "問題", "bcf": "BCF", "history": "履歴" },
+  "history": { "noRuns": "実行履歴なし", "noRunsDesc": "検証を実行してモデル品質の追跡を開始してください", "runs": "{{count}} 回実行", "runs_other": "{{count}} 回実行", "avgScore": "平均スコア", "topIssues": "主な問題", "duration": "{{ms}} ms", "profile": "プロファイル", "noProfile": "デフォルト", "clearHistory": "履歴をクリア", "clearConfirm": "{{count}} 件の実行をすべてクリアしますか？" },
+  "filters": { "all": "すべて", "errors": "エラー", "warnings": "警告", "info": "情報", "search": "問題を検索…", "allModels": "すべてのモデル", "clearSearch": "検索をクリア", "groupBy": "グループ", "rule": "ルール", "storey": "階", "class": "クラス", "unknownStorey": "不明" },
+  "issue": { "fixable": "自動修正可能", "jumpToElement": "3D で要素に移動", "applyFix": "修正を適用", "fixApplied": "修正適用済み", "pendingFix": "修正保留中", "ruleId": "ルール", "element": "要素", "path": "パス", "cancel": "キャンセル", "rename": "名前変更", "reEdit": "再編集", "view": "表示", "edited": "編集済み", "newNamePlaceholder": "新しい {{field}} 名…", "apply": "適用", "addToBcf": "BCF に追加" },
+  "actions": { "runValidation": "検証を実行", "fixAll": "自動修正可能をすべて修正", "fixAllCount": "{{count}} 件を修正", "exportReport": "レポートをエクスポート", "exportBcf": "BCF をエクスポート", "importBcf": "BCF をインポート", "clearBcf": "BCF トピックをクリア", "export": "エクスポート", "exportJson": "完全なレポート", "exportCsv": "問題一覧", "exportCertificate": "証明書", "collapsePanel": "パネルを折りたたむ" },
+  "profile": { "label": "プロファイル", "default": "デフォルト", "custom": "カスタム", "createCustom": "カスタムプロファイルを作成", "editCustom": "プロファイルを編集", "deleteCustom": "プロファイルを削除", "selectProfile": "プロファイルを選択…", "customize": "プロファイルをカスタマイズ", "clearProfile": "プロファイルをクリア" },
+  "coverage": { "title": "検証カバレッジ", "covered": "{{count}} / {{total}} カテゴリを確認済み", "qualityTitle": "品質スコア (0–100)", "hideTitle": "サマリーを非表示", "scoreLabel": "カバレッジスコア", "excellent": "優秀", "acceptable": "許容範囲", "critical": "重大", "suggestedProfile": "推奨プロファイル: {{name}}", "allCovered": "すべてのカテゴリをカバー" },
+  "empty": { "noModel": "モデル未読み込み", "noModelDesc": "IFC ファイルを読み込んで検証を開始してください", "noIssues": "問題は見つかりませんでした", "noIssuesDesc": "{{count}} 件のルールすべてに合格", "noResults": "フィルターに一致する結果がありません", "noResultsDesc": "検索またはフィルターを調整してください", "modelReady": "モデルの検証準備完了", "modelReadyDesc": "プロファイルを選択して検証をクリックしてモデルを分析", "validationError": "検証エラー", "validationErrorDesc": "検証に失敗しました。再試行をクリックしてください。" },
+  "certificate": { "title": "品質証明書", "score": "スコア: {{score}}", "issueDate": "発行日: {{date}}", "download": "証明書をダウンロード", "passing": "合格", "failing": "不合格" },
+  "bcf": {
+    "title": "BCF トピック", "noTopics": "BCF トピックなし", "noTopicsDesc": "BCF ファイルをインポートするか、検証問題からトピックを作成",
+    "import": "BCF をインポート", "export": "BCF をエクスポート", "clear": "すべてクリア", "importing": "インポート中…",
+    "topic": { "open": "オープン", "closed": "クローズ", "inProgress": "進行中" },
+    "comments": "{{count}} 件のコメント", "comments_other": "{{count}} 件のコメント",
+    "generated": "生成済み", "navigate": "ナビゲート", "addToBcf": "BCF に追加", "addedToBcf": "トピックを BCF に追加しました",
+    "comment": { "add": "コメントを追加", "placeholder": "コメントを書く…", "author": "お名前", "submit": "投稿", "delete": "削除", "noComments": "コメントはまだありません", "local": "ローカル" }
+  },
+  "validating": "検証中… {{progress}}%", "pendingFixes": "{{count}} 件編集済み", "pendingFix": "1 件編集済み", "allModels": "すべて",
+  "catShort": { "schema": "IFC", "spatial": "空間", "quality": "品質", "lod": "LOD", "iso19650": "ISO", "classification": "分類", "mep": "MEP", "clash": "干渉" },
+  "customProfile": { "title": "新しいカスタムプロファイル", "subtitle": "この設定に適用するルールを選択", "activeRules": "{{count}} 件のルール", "close": "閉じる", "icon": "アイコン", "profileName": "プロファイル名", "profileNamePlaceholder": "例: クライアント納品 2024…", "descriptionLabel": "説明", "descriptionOptional": "（任意）", "descriptionPlaceholder": "プロファイルの簡単な説明…", "toggleAll": "すべて", "removeAll": "すべて削除", "errorNameEmpty": "名前は空にできません。", "errorMaxProfiles": "カスタムプロファイルは最大 5 つです。", "atLimit": "5 プロファイルの上限に達しました。", "cancel": "キャンセル", "save": "プロファイルを保存", "defaultDescription": "カスタムプロファイル" }
+}

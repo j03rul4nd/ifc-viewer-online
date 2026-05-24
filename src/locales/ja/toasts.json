@@ -1,0 +1,32 @@
+{
+  "model": {
+    "loaded": "\"{{fileName}}\" を読み込みました — {{count}} 要素",
+    "loadedFromCache": "\"{{fileName}}\" を読み込みました — {{count}} 要素（キャッシュから ⚡）",
+    "loadFailed": "読み込みに失敗しました: {{message}}",
+    "demoUnavailable": "デモファイルを読み込めませんでした。独自の IFC ファイルを開いてください。",
+    "removeFailed": "モデルを削除できませんでした: {{message}}"
+  },
+  "validation": {
+    "complete": "検証完了 — {{count}} 件の問題が見つかりました",
+    "passed": "検証合格 — 問題は見つかりませんでした",
+    "failed": "検証に失敗しました: {{message}}",
+    "fixApplied": "修正を適用しました",
+    "allFixesApplied": "{{count}} 件の修正を適用しました"
+  },
+  "export": {
+    "ifcSuccess": "IFC のエクスポートが完了しました",
+    "glbSuccess": "GLB のエクスポートが完了しました",
+    "ifcFailed": "IFC エクスポートに失敗しました: {{message}}",
+    "glbFailed": "GLB エクスポートに失敗しました: {{message}}"
+  },
+  "bcf": {
+    "imported": "BCF をインポートしました — {{count}} 件のトピック",
+    "exported": "BCF をエクスポートしました",
+    "importFailed": "BCF インポートに失敗しました: {{message}}"
+  },
+  "editor": {
+    "fixApplied": "修正を適用しました: {{description}}",
+    "undone": "元に戻しました: {{description}}",
+    "redone": "やり直しました: {{description}}"
+  }
+}

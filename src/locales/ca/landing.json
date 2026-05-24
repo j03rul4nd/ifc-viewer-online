@@ -1,0 +1,219 @@
+{
+  "hero": {
+    "title": "Visualitzador IFC en línia",
+    "subtitle": "Validació i edició BIM professional",
+    "description": "Valida, inspecciona i edita fitxers IFC directament al navegador. Sense instal·lació.",
+    "badge": "Sense inici de sessió — s'executa completament al navegador",
+    "badgeMobile": "Sense inici de sessió · s'executa al navegador",
+    "h1": "Visualitzador IFC",
+    "h1Accent": "en línia",
+    "subtitleFull": "Detecta els errors IFC abans que ho faci el teu client. Obre, valida i corregeix fitxers IFC completament al navegador — sense instal·lació, sense servidor, sense compte. Els teus models mai surten del teu ordinador.",
+    "trustLine": "Gratuït · Codi obert · 100% al client · IFC2x3 · IFC4 · IFC4x1 · IFC4x3",
+    "trustLineMobile": "Gratuït · Codi obert · IFC2x3 · IFC4 · IFC4x3"
+  },
+  "typing": [
+    "Detecta els errors IFC abans que ho faci el teu client",
+    "Valida GUIDs duplicats i jerarquia espacial en segons",
+    "Obre qualsevol fitxer IFC — sense pujada, sense llicència Revit",
+    "Corregeix infraccions de nomenclatura i torna a exportar en un sol flux",
+    "Comprova el model abans de cada reunió de coordinació",
+    "Zero dades surten del teu navegador. Zero."
+  ],
+  "actions": {
+    "getStarted": "Comença",
+    "loadDemo": "Carrega model de demostració",
+    "openFile": "Obre fitxer IFC",
+    "learnMore": "Més informació",
+    "openViewer": "Obre el visualitzador",
+    "launch": "Llança",
+    "openAnIfc": "Obre un fitxer IFC",
+    "viewOnGithub": "Veure a GitHub",
+    "viewSourceOnGithub": "Veure el codi a GitHub",
+    "contactForWork": "Contacte per treball personalitzat"
+  },
+  "nav": {
+    "features": "Funcionalitats",
+    "howItWorks": "Com funciona",
+    "faq": "Preguntes freqüents",
+    "github": "GitHub"
+  },
+  "compatible": {
+    "label": "Compatible amb totes les eines d'autoria BIM principals"
+  },
+  "stats": [
+    { "label": "Regles de validació" },
+    { "label": "Versions d'esquema IFC" },
+    { "label": "S'executa al navegador" },
+    { "label": "Pujades al servidor" }
+  ],
+  "featuresSection": {
+    "label": "FUNCIONALITATS",
+    "title": "Visualitza, valida, mesura i edita IFC",
+    "subtitle": "Totes les eines que el teu equip necessita abans d'un lliurament IFC. Privat, ràpid, gratuït."
+  },
+  "features": [
+    {
+      "title": "Validador IFC de 18 regles",
+      "body": "Detecta GUIDs duplicats, infraccions de jerarquia espacial i elements orfes abans que ho faci el teu client. Els resultats es transmeten en temps real des d'un worker en segon pla — la interfície es manté completament responsiva.",
+      "tip": "Motor de regles IFC / ISO 19650"
+    },
+    {
+      "title": "Suport multi-model",
+      "body": "Carrega múltiples fitxers IFC simultàniament. Visibilitat, transformacions, validació, mesura de quantitats i exportació independents per model. Gestiona-ho tot des del panell d'escena.",
+      "tip": "Estat independent per model"
+    },
+    {
+      "title": "Arrossega i deixa anar, sense pujada",
+      "body": "Obre qualsevol fitxer .ifc instantàniament. Analitzat al costat del client via web-ifc WebAssembly — les teves dades mai surten del navegador. Sense compte, sense servidor, funciona completament fora de línia.",
+      "tip": "Anàlisi WebAssembly al costat del client"
+    },
+    {
+      "title": "Caché de geometria OPFS",
+      "body": "La geometria analitzada s'emmagatzema al sistema de fitxers privat d'origen del navegador. Les càrregues repetides són ~10× més ràpides sense reanàlisi — i funciona completament fora de línia.",
+      "tip": "Caché del sistema de fitxers privat d'origen"
+    },
+    {
+      "title": "Edició no destructiva",
+      "body": "Corregeix el que troba el validador — sense tocar el fitxer original. Edita GlobalIds, noms i valors de conjunts de propietats en línia amb historial complet de desfer/refer.",
+      "tip": "Pila completa de desfer/refer"
+    },
+    {
+      "title": "Mesura de quantitats",
+      "body": "Llegeix dades IfcElementQuantity per agregar àrea, volum i longitud per classe IFC. Els resultats per model s'actualitzen en temps real a mesura que carregues o filtres models.",
+      "tip": "Agregació IfcElementQuantity"
+    },
+    {
+      "title": "Eines de mesura",
+      "body": "Mesura longitud, àrea, volum i dimensions d'arestes directament a la finestra 3D. Els resultats persisteixen com a anotacions etiquetades i s'exporten juntament amb el model.",
+      "tip": "Mesures de longitud · àrea · volum · aresta"
+    },
+    {
+      "title": "Plantes i seccions",
+      "body": "Genera vistes de planta 2D precises des de qualsevol planta. Talla plans de secció en viu a qualsevol angle o eix per inspeccionar l'estructura interna sense amagar geometria.",
+      "tip": "Plantes 2D · plans de secció"
+    },
+    {
+      "title": "Exportació IFC + GLB",
+      "body": "Exporta el binari IFC corregit (totes les diferències aplicades en un Web Worker) o exporta la geometria visible com a fitxer GLB estàndard. Exportació per lots de múltiples models compatible.",
+      "tip": "Exportació IFC binari sense servidor"
+    },
+    {
+      "title": "IFC2x3, IFC4, IFC4x1, IFC4x3",
+      "body": "Totes les versions actuals de l'esquema IFC compatibles — Revit, ArchiCAD, Tekla, Allplan, Vectorworks, BricsCAD BIM, Solibri i més. Els esquemes obsolets es marquen automàticament pel validador.",
+      "tip": "Totes les versions principals de l'esquema IFC"
+    },
+    {
+      "title": "Renderitzador de postproducció",
+      "body": "Activa SSAO (oclusió ambiental), renderitzat de vores i bloom de postprocessament per obtenir imatges de qualitat de presentació — sense necessitat de granja de renderitzat externa.",
+      "tip": "SSAO · renderitzat de vores · bloom"
+    },
+    {
+      "title": "IfcRelationsIndexer",
+      "body": "Totes les relacions del model s'indexen prèviament en carregar. Cerca gairebé instantània per a contenció espacial, arbres de classificació, assignacions de tipus i propietats d'elements.",
+      "tip": "Graf de relacions pre-indexat"
+    }
+  ],
+  "howItWorksSection": {
+    "label": "COM FUNCIONA",
+    "title": "Del fitxer al model validat i mesurat"
+  },
+  "steps": [
+    {
+      "n": "01",
+      "title": "Obre el teu IFC",
+      "body": "Arrossega i deixa anar o fes clic per obrir qualsevol fitxer IFC. web-ifc WebAssembly l'analitza completament al teu navegador — sense pujada, sense xarxa necessària. OPFS emmagatzema en caché la geometria per a càrregues repetides instantànies."
+    },
+    {
+      "n": "02",
+      "title": "Inspecciona i valida",
+      "body": "Explora l'arbre del model, filtra per categoria i executa 18 regles de validació integrades en un worker en segon pla. GUIDs duplicats, errors de jerarquia espacial, assignacions de tipus que falten — tot marcat instantàniament."
+    },
+    {
+      "n": "03",
+      "title": "Edita i mesura",
+      "body": "Corregeix GUIDs amb un clic. Edita noms i valors de propietats en línia amb desfer/refer complet. Mesura longituds, àrees i volums en 3D. Visualitza plantes 2D i talla plans de secció en viu."
+    },
+    {
+      "n": "04",
+      "title": "Visualitza i exporta",
+      "body": "Activa SSAO, renderitzat de vores i bloom per a renderitzats de presentació. Exporta el binari IFC corregit (totes les diferències aplicades sense servidor) o la geometria visible com a GLB estàndard."
+    }
+  ],
+  "openSource": {
+    "label": "CODI OBERT",
+    "title": "Construït en públic, gratuït per sempre",
+    "body": "El codi font és a GitHub. Construït amb @thatopen/components, three.js, web-ifc i React. Si necessites un visualitzador web BIM personalitzat, validador o eines IFC — l'autor està disponible per a treballs per contracte."
+  },
+  "finalCta": {
+    "title": "Obre un IFC ara.",
+    "subtitle": "Sense inici de sessió. Sense pujada. S'executa al teu navegador.",
+    "githubLine": "O explora el codi font a"
+  },
+  "faqSection": {
+    "title": "Preguntes"
+  },
+  "faq": [
+    {
+      "q": "El meu fitxer IFC es puja a algun lloc?",
+      "a": "No. Els fitxers s'analitzen completament al teu navegador via web-ifc, una compilació WebAssembly del parser IFC de codi obert. Res surt del teu ordinador. L'aplicació funciona completament fora de línia un cop carregada."
+    },
+    {
+      "q": "Puc usar-lo amb models confidencials sota NDA?",
+      "a": "Sí. Com que tot el processament es fa al teu navegador i no es transmet cap dada a cap servidor, pots usar-lo de forma segura amb models de projectes confidencials sota NDA. No hi ha cap acord de servei que revisar amb el teu client — no hi ha intercanvi de dades."
+    },
+    {
+      "q": "Puc compartir els resultats de validació amb el meu equip o client?",
+      "a": "Sí. Després d'executar la validació, usa el botó Compartir informe per generar una URL que codifica els resultats complets. El teu client l'obre a qualsevol navegador sense instal·lar res ni crear un compte. El fitxer IFC mai s'inclou a l'enllaç."
+    },
+    {
+      "q": "Funciona a Mac?",
+      "a": "Sí, completament. El Visualitzador IFC en línia funciona a qualsevol navegador modern — Chrome, Edge, Firefox i Safari tant a Mac com a Windows. Sense plugin, sense instal·lació, sense restricció de sistema operatiu."
+    },
+    {
+      "q": "Què passa si el meu fitxer IFC és molt gran?",
+      "a": "L'aplicació gestiona fitxers de fins a 2 GB. El rendiment depèn del teu dispositiu — els fitxers de menys de 200 MB es carreguen bé a la majoria de maquinari modern. Un cop analitzats, la geometria s'emmagatzema en caché a OPFS de manera que cada càrrega posterior del mateix fitxer és instantània, fins i tot fora de línia."
+    },
+    {
+      "q": "Quines versions IFC estan suportades?",
+      "a": "IFC2x3, IFC4, IFC4x1 i IFC4x3. El visualitzador usa el parser web-ifc de codi obert — el mateix motor que usen la majoria d'eines BIM modernes i @thatopen/components. Els esquemes obsolets es marquen automàticament pel validador."
+    },
+    {
+      "q": "Quines eines de mesura estan disponibles?",
+      "a": "Pots mesurar longituds entre qualsevol dos punts, àrees de superfícies, volums d'elements tancats i longituds d'arestes individuals — tot directament a la finestra 3D. Les mesures persisteixen com a anotacions etiquetades i es poden exportar juntament amb el model."
+    },
+    {
+      "q": "Puc veure plantes i tallar seccions?",
+      "a": "Sí. El mode de planta genera vistes ortogràfiques 2D precises des de qualsevol IfcBuildingStorey del model. Les seccions et permeten definir plans de tall a qualsevol posició i angle per inspeccionar l'estructura interna sense amagar geometria."
+    },
+    {
+      "q": "Com funciona la validació?",
+      "a": "El validador executa 18 regles integrades en un Web Worker en segon pla perquè la interfície es mantingui responsiva. Les regles cobreixen GUIDs duplicats, jerarquia espacial, elements orfes, convencions de nomenclatura, assignacions de tipus que falten, detecció de col·lisions i més. Els resultats es transmeten a mesura que cada regla es completa."
+    },
+    {
+      "q": "Puc corregir errors i tornar a exportar un IFC corregit?",
+      "a": "Sí. Totes les edicions (correccions de GUID, canvis de nom, canvis de valors de propietats) es guarden com a diferències no destructives amb desfer/refer complet. En fer clic a Exportar IFC s'apliquen totes les diferències al binari original en un Web Worker i es descarrega el fitxer corregit — sense servidor."
+    },
+    {
+      "q": "Puc carregar múltiples fitxers IFC alhora?",
+      "a": "Sí. Carrega tants fitxers IFC com permeti la memòria del teu dispositiu. Cada model té visibilitat, transformacions, validació, mesura de quantitats i exportació independents. Usa el panell d'escena per gestionar, reordenar o eliminar models en qualsevol moment."
+    },
+    {
+      "q": "Funciona fora de línia?",
+      "a": "Sí, un cop la pàgina s'ha carregat. El parser WebAssembly i el renderitzador WebGL s'executen completament al navegador. La geometria analitzada s'emmagatzema en caché a OPFS de manera que les càrregues repetides són instantànies fins i tot sense connexió de xarxa."
+    },
+    {
+      "q": "Quins són els límits de mida de fitxer?",
+      "a": "No hi ha cap límit imposat — el rendiment depèn del teu dispositiu. Els fitxers de fins a ~200 MB es carreguen bé normalment en maquinari modern. La caché de geometria OPFS significa que només pagues el cost d'anàlisi una vegada per fitxer."
+    },
+    {
+      "q": "És gratuït? Puc usar-lo per a projectes comercials?",
+      "a": "Sí, completament gratuït. El codi font és de llicència MIT. Pots usar l'aplicació en viu o bifurcar el repositori per als teus propis projectes, inclosos els comercials."
+    }
+  ],
+  "footer": {
+    "poweredBy": "Impulsat per IFC.js",
+    "openSource": "Codi obert",
+    "copyright": "Visualitzador IFC en línia © 2026",
+    "builtWith": "Construït amb @thatopen/components · three.js · web-ifc"
+  }
+}

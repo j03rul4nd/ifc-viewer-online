@@ -1,0 +1,131 @@
+{
+  "app": {
+    "name": "IFC Validator",
+    "tagline": "การตรวจสอบและแก้ไข IFC ระดับมืออาชีพ"
+  },
+  "actions": {
+    "open": "เปิด",
+    "save": "บันทึก",
+    "cancel": "ยกเลิก",
+    "close": "ปิด",
+    "delete": "ลบ",
+    "clear": "ล้าง",
+    "reset": "รีเซ็ต",
+    "confirm": "ยืนยัน",
+    "retry": "ลองใหม่",
+    "export": "ส่งออก",
+    "import": "นำเข้า",
+    "upload": "อัปโหลด",
+    "download": "ดาวน์โหลด",
+    "apply": "ใช้งาน",
+    "edit": "แก้ไข",
+    "add": "เพิ่ม",
+    "remove": "นำออก",
+    "show": "แสดง",
+    "hide": "ซ่อน",
+    "copy": "คัดลอก",
+    "select": "เลือก",
+    "deselect": "ยกเลิกการเลือก",
+    "back": "ย้อนกลับ",
+    "home": "หน้าหลัก",
+    "refresh": "รีเฟรช"
+  },
+  "status": {
+    "loading": "กำลังโหลด…",
+    "loaded": "โหลดแล้ว",
+    "error": "ข้อผิดพลาด",
+    "idle": "พร้อมใช้งาน",
+    "running": "กำลังทำงาน",
+    "done": "เสร็จสิ้น",
+    "saving": "กำลังบันทึก…",
+    "noFileLoaded": "ไม่ได้โหลดไฟล์"
+  },
+  "file": {
+    "noFileLoaded": "ไม่ได้โหลดไฟล์",
+    "elements": "{{count}} องค์ประกอบ",
+    "elements_other": "{{count}} องค์ประกอบ"
+  },
+  "pagination": {
+    "of": "จาก",
+    "items": "รายการ"
+  },
+  "severity": {
+    "error": "ข้อผิดพลาด",
+    "warning": "คำเตือน",
+    "info": "ข้อมูล"
+  },
+  "shortcuts": {
+    "title": "แป้นพิมพ์ลัด",
+    "close": "ปิด",
+    "groups": {
+      "navigation": "การนำทาง",
+      "validation": "การตรวจสอบ",
+      "measurement": "การวัด",
+      "sections": "การตัดหน้าตัด",
+      "editing": "การแก้ไข",
+      "camera": "มุมมองกล้อง"
+    },
+    "keys": {
+      "openFile": "เปิดไฟล์",
+      "validate": "เรียกใช้/เรียกใช้ซ้ำการตรวจสอบ",
+      "cancelMeasure": "ยกเลิกการวัดที่ใช้งานอยู่",
+      "closePoly": "ปิดรูปหลายเหลี่ยมพื้นที่",
+      "deleteLastMeasure": "ลบการวัดล่าสุด",
+      "addSection": "เพิ่มระนาบหน้าตัด (ตามแกน)",
+      "cancelSection": "ยกเลิกการเพิ่มหน้าตัด",
+      "undo": "เลิกทำการแก้ไข",
+      "redo": "ทำซ้ำการแก้ไข",
+      "isoView": "มุมมองไอโซเมตริก",
+      "topView": "มุมมองจากด้านบน",
+      "frontView": "มุมมองด้านหน้า",
+      "rightView": "มุมมองด้านขวา",
+      "showShortcuts": "แสดงแป้นพิมพ์ลัด"
+    }
+  },
+  "upload": {
+    "idle": {
+      "title": "เปิดไฟล์ IFC",
+      "subtitle": "ประมวลผลในเครื่อง — ไม่มีข้อมูลออกจากเบราว์เซอร์",
+      "browse": "เรียกดูไฟล์",
+      "dropHint": "วางไฟล์ .ifc ของคุณที่นี่",
+      "releaseToOpen": "ปล่อยเพื่อเปิด",
+      "clickToBrowse": "คลิกเพื่อเรียกดู",
+      "orDrop": "หรือวางที่ใดก็ได้",
+      "dropAriaLabel": "วางไฟล์ IFC หรือคลิกเพื่อเรียกดู",
+      "closeAriaLabel": "ปิด",
+      "trust1": "WebAssembly — ทำงานในเบราว์เซอร์",
+      "trust2": "ไม่ต้องเข้าสู่ระบบ",
+      "trust3": "รองรับสูงสุด 2 GB"
+    },
+    "active": {
+      "drop": "วางไฟล์ .ifc ของคุณที่นี่",
+      "validating": "กำลังตรวจสอบไฟล์…",
+      "queued": "กำลังเตรียมตัวโหลด…",
+      "buildingScene": "กำลังสร้างฉาก 3D…",
+      "loading": "กำลังโหลดโมเดล IFC…",
+      "checkingSchema": "กำลังตรวจสอบสคีมา IFC และความสมบูรณ์ของไฟล์",
+      "initialising": "กำลังเริ่มต้น…",
+      "cancel": "ยกเลิก"
+    },
+    "success": {
+      "title": "โมเดลพร้อมใช้งาน",
+      "viewModel": "เปิดโปรแกรมดู →"
+    },
+    "error": {
+      "title": "โหลดโมเดลล้มเหลว",
+      "technicalDetails": "รายละเอียดทางเทคนิค",
+      "tryAgain": "ลองใหม่",
+      "close": "ปิด"
+    },
+    "cancelled": {
+      "title": "ยกเลิกการโหลดแล้ว",
+      "loadAnother": "โหลดไฟล์อื่น",
+      "tryAgain": "ลองใหม่",
+      "close": "ปิด"
+    },
+    "parsing": "กำลังวิเคราะห์…",
+    "loading": "กำลังโหลด…",
+    "processing": "กำลังประมวลผล…",
+    "fromCache": "จากแคช"
+  }
+}

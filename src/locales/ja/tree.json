@@ -1,0 +1,41 @@
+{
+  "title": "モデルツリー",
+  "spatialTree": "空間ツリー",
+  "search": "要素を検索…",
+  "noResults": "「{{query}}」に一致する要素はありません",
+  "noModel": "モデル未読み込み",
+  "noModelDesc": "IFC ファイルを読み込み、検証を実行して空間ツリーを表示してください。",
+  "nodes": {
+    "site": "敷地",
+    "building": "建物",
+    "storey": "階",
+    "element": "要素",
+    "unclassified": "未分類"
+  },
+  "actions": {
+    "expandAll": "すべて展開",
+    "collapseAll": "すべて折りたたむ",
+    "focusElement": "3D で要素にフォーカス",
+    "selectElement": "要素を選択",
+    "selectIn3D": "3D で選択",
+    "frameCamera": "カメラをフレーム",
+    "rename": "名前変更",
+    "fixGuid": "GUID を修正",
+    "copyGlobalId": "GlobalId をコピー",
+    "copyExpressId": "Express ID をコピー"
+  },
+  "models": {
+    "count": "{{count}} モデル",
+    "count_other": "{{count}} モデル",
+    "active": "アクティブモデル"
+  },
+  "context": {
+    "changeGuid": "GlobalId を変更しますか？",
+    "changeGuidWarning": "GlobalId を変更すると外部参照（BCF 問題、リンク、COBie）が壊れます。",
+    "current": "現在: {{guid}}",
+    "generateNew": "新しい GUID を生成"
+  },
+  "editName": "名前を編集",
+  "editLongName": "長い名前を編集",
+  "editDescription": "説明を編集"
+}

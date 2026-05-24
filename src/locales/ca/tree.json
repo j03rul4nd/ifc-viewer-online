@@ -1,0 +1,41 @@
+{
+  "title": "Arbre del model",
+  "spatialTree": "Arbre espacial",
+  "search": "Cerca elements…",
+  "noResults": "Cap element coincideix amb «{{query}}»",
+  "noModel": "Cap model carregat",
+  "noModelDesc": "Carrega un fitxer IFC i executa la validació per veure l'arbre espacial.",
+  "nodes": {
+    "site": "Solar",
+    "building": "Edifici",
+    "storey": "Planta",
+    "element": "Element",
+    "unclassified": "Sense classificar"
+  },
+  "actions": {
+    "expandAll": "Expandeix-ho tot",
+    "collapseAll": "Comprimeix-ho tot",
+    "focusElement": "Enfoca l'element en 3D",
+    "selectElement": "Selecciona l'element",
+    "selectIn3D": "Selecciona en 3D",
+    "frameCamera": "Emmarca la càmera",
+    "rename": "Reanomena",
+    "fixGuid": "Corregeix el GUID",
+    "copyGlobalId": "Copia el GlobalId",
+    "copyExpressId": "Copia l'Express ID"
+  },
+  "models": {
+    "count": "{{count}} model",
+    "count_other": "{{count}} models",
+    "active": "Model actiu"
+  },
+  "context": {
+    "changeGuid": "Canviar el GlobalId?",
+    "changeGuidWarning": "Canviar un GlobalId trenca les referències externes (problemes BCF, enllaços, COBie).",
+    "current": "Actual: {{guid}}",
+    "generateNew": "Genera un nou GUID"
+  },
+  "editName": "Edita el nom",
+  "editLongName": "Edita el nom llarg",
+  "editDescription": "Edita la descripció"
+}

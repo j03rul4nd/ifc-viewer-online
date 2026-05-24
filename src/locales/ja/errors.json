@@ -1,0 +1,31 @@
+{
+  "generic": "予期しないエラーが発生しました",
+  "reloadPage": "ページを再読み込みしてください",
+  "boundary": {
+    "title": "問題が発生しました",
+    "description": "このコンポーネントのレンダリング中にエラーが発生しました。",
+    "reload": "再試行",
+    "details": "エラーの詳細",
+    "stackTrace": "スタックトレース"
+  },
+  "model": {
+    "noModelLoaded": "モデルが読み込まれていません",
+    "bufferUnavailable": "IFC ソースバッファが利用できません。元の .ifc ファイルを再読み込みしてエクスポートしてください。",
+    "objectNotFound": "モデルオブジェクトが 3D シーンで見つかりません — 削除された可能性があります。",
+    "viewerNotReady": "ビューアの準備ができていません",
+    "loadFailed": "モデルの読み込みに失敗しました: {{message}}",
+    "removeFailed": "モデルを削除できませんでした: {{message}}"
+  },
+  "export": {
+    "ifcFailed": "IFC エクスポートに失敗しました: {{message}}",
+    "glbFailed": "GLB エクスポートに失敗しました: {{message}}"
+  },
+  "validation": {
+    "failed": "検証に失敗しました",
+    "workerError": "検証ワーカーエラー: {{message}}"
+  },
+  "bcf": {
+    "importFailed": "BCF インポートに失敗しました: {{message}}",
+    "exportFailed": "BCF エクスポートに失敗しました: {{message}}"
+  }
+}

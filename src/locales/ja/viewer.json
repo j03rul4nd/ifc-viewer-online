@@ -1,0 +1,44 @@
+{
+  "controls": { "resetCamera": "カメラをリセット", "fitToView": "ビューに合わせる", "perspective": "透視投影", "orthographic": "平行投影", "home": "ホーム" },
+  "camera": { "front": "正面", "back": "背面", "left": "左側面", "right": "右側面", "top": "上面", "bottom": "下面", "isometric": "アイソメトリック" },
+  "cameraControls": { "title": "ビュー", "hide": "カメラコントロールを非表示", "show": "カメラビューを表示" },
+  "overlays": { "validationHighlights": "検証ハイライト", "measurements": "計測" },
+  "info": {
+    "title": "モデル情報", "elementsLoaded": "{{count}} 要素", "fromCache": "キャッシュから",
+    "gpuBackend": "GPU: {{backend}}", "memoryUsage": "{{mb}} MB", "fileSize": "ファイルサイズ",
+    "elements": "要素", "memory": "メモリ", "renderer": "レンダラー", "quality": "品質",
+    "categories": "{{count}} カテゴリ", "gpuMemory": "{{mb}} MB GPU", "detecting": "検出中…",
+    "sizeUnavailable": "サイズ不明 — OPFS キャッシュから読み込まれたモデル。ファイルサイズを確認するにはディスクから再読み込みしてください。",
+    "qualityScore": "品質スコア: {{score}}/100"
+  },
+  "health": {
+    "unknown": "不明", "tiny": "極小", "light": "軽量", "normal": "標準", "large": "大型",
+    "heavy": "重量", "small": "小型", "typical": "標準的", "complex": "複雑", "dense": "密",
+    "good": "良好", "fair": "普通", "poor": "不良", "acceptable": "許容範囲",
+    "improvable": "改善可能", "deficient": "不十分", "excellent": "優秀", "critical": "重大"
+  },
+  "error": { "rendererUnavailable": "レンダラー利用不可", "loadFailed": "モデルの読み込みに失敗" },
+  "section": {
+    "title": "断面", "planes": "{{count}} 面", "planes_other": "{{count}} 面",
+    "addPlane": "クリッピングプレーンを追加", "clickToPlace": "面をクリックして配置…", "clearAll": "すべてクリア",
+    "clickHint": "任意のモデル面をクリックして法線に沿ったクリッピングプレーンを配置します。", "escToCancel": "Esc でキャンセル",
+    "planeName": "プレーン {{number}}", "enablePlane": "プレーンを有効化", "disablePlane": "プレーンを無効化", "deletePlane": "プレーンを削除"
+  },
+  "floorPlan": {
+    "title": "平面図", "active2D": "2D ビューアクティブ", "detectStoreys": "階を検出",
+    "detecting": "階を検出中…", "noStoreys": "このモデルに階が見つかりません。",
+    "returnTo3D": "3D ビューに戻る", "refresh": "更新", "view2D": "2D"
+  },
+  "scene": {
+    "title": "シーン", "models": "{{count}} モデル", "models_other": "{{count}} モデル",
+    "transform": "変換", "visibility": "表示", "close": "閉じる", "isolated": "隔離済み",
+    "hideModel": "モデルを非表示", "showModel": "モデルを表示", "isolateModel": "隔離 — 他のすべてのモデルを非表示",
+    "showAllModels": "すべてのモデルを表示中", "frameCamera": "このモデルにカメラをフレーム",
+    "validateModel": "このモデルを検証", "removeModel": "シーンからモデルを削除",
+    "cannotRemoveOnly": "唯一のモデルは削除できません", "noModels": "モデル未読み込み",
+    "showAllModelsBtn": "↑ すべてのモデルを表示", "clickHint": "モデルをクリックしてアクティブ化 · ⊙ で隔離",
+    "transformTitle": "変換 · {{fileName}}"
+  },
+  "transform": { "position": "位置", "rotation": "回転 (°)", "scale": "スケール", "uniform": "均一", "snapToGrid": "グリッドにスナップ", "reset": "リセット" },
+  "renderQuality": { "title": "レンダリング品質", "performance": "パフォーマンス", "quality": "品質", "ssaoNote": "SSAO + エッジ検出が有効。モバイルでパフォーマンスに影響する場合があります。" }
+}

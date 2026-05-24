@@ -1,0 +1,28 @@
+{
+  "panel": {
+    "title": "計測",
+    "measurements": "{{count}} 件の計測",
+    "measurements_other": "{{count}} 件の計測"
+  },
+  "tools": {
+    "select": "選択",
+    "selectHint": "要素をクリックして選択",
+    "length": "長さ",
+    "lengthHint": "始点をクリック · 終点をクリック",
+    "area": "面積",
+    "areaHint": "頂点をクリック · Enter またはダブルクリックで閉じる"
+  },
+  "actions": {
+    "finishArea": "面積を完成",
+    "deleteLast": "最後を削除",
+    "clearAll": "すべてクリア",
+    "escToCancel": "Esc でキャンセル"
+  },
+  "units": {
+    "km": "{{value}} km",
+    "m": "{{value}} m",
+    "cm": "{{value}} cm",
+    "ha": "{{value}} ha",
+    "m2": "{{value}} m²"
+  }
+}

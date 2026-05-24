@@ -1,0 +1,28 @@
+{
+  "panel": {
+    "title": "วัด",
+    "measurements": "{{count}} การวัด",
+    "measurements_other": "{{count}} การวัด"
+  },
+  "tools": {
+    "select": "เลือก",
+    "selectHint": "คลิกองค์ประกอบเพื่อเลือก",
+    "length": "ความยาว",
+    "lengthHint": "คลิกจุดเริ่มต้น · คลิกจุดสิ้นสุด",
+    "area": "พื้นที่",
+    "areaHint": "คลิกจุดยอด · กด Enter หรือดับเบิลคลิกเพื่อปิด"
+  },
+  "actions": {
+    "finishArea": "เสร็จสิ้นพื้นที่",
+    "deleteLast": "ลบล่าสุด",
+    "clearAll": "ล้างทั้งหมด",
+    "escToCancel": "กด Esc เพื่อยกเลิก"
+  },
+  "units": {
+    "km": "{{value}} กม.",
+    "m": "{{value}} ม.",
+    "cm": "{{value}} ซม.",
+    "ha": "{{value}} เฮกตาร์",
+    "m2": "{{value}} ม²"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "model": {
+    "loaded": "โหลด \"{{fileName}}\" แล้ว — {{count}} องค์ประกอบ",
+    "loadedFromCache": "โหลด \"{{fileName}}\" แล้ว — {{count}} องค์ประกอบ (จากแคช ⚡)",
+    "loadFailed": "โหลดล้มเหลว: {{message}}",
+    "demoUnavailable": "ไม่สามารถโหลดไฟล์ตัวอย่างได้ กรุณาเปิดไฟล์ IFC ของคุณเอง",
+    "removeFailed": "ไม่สามารถนำโมเดลออกได้: {{message}}"
+  },
+  "validation": {
+    "complete": "การตรวจสอบเสร็จสิ้น — พบ {{count}} ปัญหา",
+    "passed": "การตรวจสอบผ่าน — ไม่พบปัญหา",
+    "failed": "การตรวจสอบล้มเหลว: {{message}}",
+    "fixApplied": "ใช้การแก้ไขแล้ว",
+    "allFixesApplied": "ใช้การแก้ไข {{count}} รายการแล้ว"
+  },
+  "export": {
+    "ifcSuccess": "ส่งออก IFC สำเร็จ",
+    "glbSuccess": "ส่งออก GLB สำเร็จ",
+    "ifcFailed": "ส่งออก IFC ล้มเหลว: {{message}}",
+    "glbFailed": "ส่งออก GLB ล้มเหลว: {{message}}"
+  },
+  "bcf": {
+    "imported": "นำเข้า BCF แล้ว — {{count}} หัวข้อ",
+    "exported": "ส่งออก BCF แล้ว",
+    "importFailed": "นำเข้า BCF ล้มเหลว: {{message}}"
+  },
+  "editor": {
+    "fixApplied": "ใช้การแก้ไขแล้ว: {{description}}",
+    "undone": "เลิกทำแล้ว: {{description}}",
+    "redone": "ทำซ้ำแล้ว: {{description}}"
+  }
+}

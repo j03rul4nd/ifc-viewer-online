@@ -1,0 +1,20 @@
+{
+  "actions": {
+    "undo": "เลิกทำ",
+    "undoShortcut": "เลิกทำ (Ctrl+Z)",
+    "redo": "ทำซ้ำ",
+    "redoShortcut": "ทำซ้ำ (Ctrl+Shift+Z)",
+    "applyFix": "ใช้การแก้ไข",
+    "revertFix": "ย้อนกลับการแก้ไข",
+    "applyAll": "ใช้การแก้ไขทั้งหมด"
+  },
+  "diff": {
+    "rename": "เปลี่ยนชื่อ: {{from}} → {{to}}",
+    "pendingChanges": "{{count}} การเปลี่ยนแปลงที่รอดำเนินการ",
+    "pendingChanges_other": "{{count}} การเปลี่ยนแปลงที่รอดำเนินการ",
+    "noChanges": "ไม่มีการเปลี่ยนแปลงที่รอดำเนินการ"
+  },
+  "history": {
+    "empty": "ไม่มีประวัติ"
+  }
+}

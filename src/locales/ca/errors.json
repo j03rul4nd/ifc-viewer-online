@@ -1,0 +1,31 @@
+{
+  "generic": "S'ha produït un error inesperat",
+  "reloadPage": "Torna a carregar la pàgina",
+  "boundary": {
+    "title": "Quelcom ha anat malament",
+    "description": "S'ha produït un error en renderitzar aquest component.",
+    "reload": "Torna-ho a intentar",
+    "details": "Detalls de l'error",
+    "stackTrace": "Traça de la pila"
+  },
+  "model": {
+    "noModelLoaded": "Cap model carregat",
+    "bufferUnavailable": "El buffer font IFC no està disponible. Torna a carregar el fitxer .ifc original per exportar-lo.",
+    "objectNotFound": "L'objecte del model no s'ha trobat a l'escena 3D — pot haver estat eliminat.",
+    "viewerNotReady": "El visualitzador no està llest",
+    "loadFailed": "Error en carregar el model: {{message}}",
+    "removeFailed": "No s'ha pogut eliminar el model: {{message}}"
+  },
+  "export": {
+    "ifcFailed": "Error en exportar IFC: {{message}}",
+    "glbFailed": "Error en exportar GLB: {{message}}"
+  },
+  "validation": {
+    "failed": "La validació ha fallat",
+    "workerError": "Error del worker de validació: {{message}}"
+  },
+  "bcf": {
+    "importFailed": "Error en importar BCF: {{message}}",
+    "exportFailed": "Error en exportar BCF: {{message}}"
+  }
+}

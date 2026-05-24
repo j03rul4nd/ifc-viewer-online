@@ -1,0 +1,131 @@
+{
+  "app": {
+    "name": "IFC Validator",
+    "tagline": "Validació i edició professional d'IFC"
+  },
+  "actions": {
+    "open": "Obre",
+    "save": "Desa",
+    "cancel": "Cancel·la",
+    "close": "Tanca",
+    "delete": "Elimina",
+    "clear": "Esborra",
+    "reset": "Reinicia",
+    "confirm": "Confirma",
+    "retry": "Torna-ho a intentar",
+    "export": "Exporta",
+    "import": "Importa",
+    "upload": "Puja",
+    "download": "Baixa",
+    "apply": "Aplica",
+    "edit": "Edita",
+    "add": "Afegeix",
+    "remove": "Elimina",
+    "show": "Mostra",
+    "hide": "Amaga",
+    "copy": "Copia",
+    "select": "Selecciona",
+    "deselect": "Desselecciona",
+    "back": "Enrere",
+    "home": "Inici",
+    "refresh": "Actualitza"
+  },
+  "status": {
+    "loading": "Carregant…",
+    "loaded": "Carregat",
+    "error": "Error",
+    "idle": "Inactiu",
+    "running": "En execució",
+    "done": "Completat",
+    "saving": "Desant…",
+    "noFileLoaded": "Cap fitxer carregat"
+  },
+  "file": {
+    "noFileLoaded": "Cap fitxer carregat",
+    "elements": "{{count}} element",
+    "elements_other": "{{count}} elements"
+  },
+  "pagination": {
+    "of": "de",
+    "items": "elements"
+  },
+  "severity": {
+    "error": "Error",
+    "warning": "Advertència",
+    "info": "Informació"
+  },
+  "shortcuts": {
+    "title": "Dreceres de teclat",
+    "close": "Tanca",
+    "groups": {
+      "navigation": "Navegació",
+      "validation": "Validació",
+      "measurement": "Mesura",
+      "sections": "Seccions",
+      "editing": "Edició",
+      "camera": "Vistes de càmera"
+    },
+    "keys": {
+      "openFile": "Obre fitxer",
+      "validate": "Executa / torna a executar la validació",
+      "cancelMeasure": "Cancel·la la mesura activa",
+      "closePoly": "Tanca el polígon d'àrea",
+      "deleteLastMeasure": "Elimina l'última mesura",
+      "addSection": "Afegeix pla de secció (alineat a l'eix)",
+      "cancelSection": "Cancel·la l'addició de secció",
+      "undo": "Desfés l'edició",
+      "redo": "Refés l'edició",
+      "isoView": "Vista isomètrica",
+      "topView": "Vista superior",
+      "frontView": "Vista frontal",
+      "rightView": "Vista lateral dreta",
+      "showShortcuts": "Mostra les dreceres de teclat"
+    }
+  },
+  "upload": {
+    "idle": {
+      "title": "Obre un fitxer IFC",
+      "subtitle": "Processament local — res no surt del teu navegador",
+      "browse": "Cerca fitxer",
+      "dropHint": "Deixa anar el teu fitxer .ifc aquí",
+      "releaseToOpen": "Deixa anar per obrir",
+      "clickToBrowse": "clica per cercar",
+      "orDrop": "o deixa'l caure a qualsevol lloc",
+      "dropAriaLabel": "Deixa caure un fitxer IFC o clica per cercar",
+      "closeAriaLabel": "Tanca",
+      "trust1": "WebAssembly — s'executa al navegador",
+      "trust2": "Sense inici de sessió",
+      "trust3": "Fins a 2 GB"
+    },
+    "active": {
+      "drop": "Deixa anar el teu fitxer .ifc aquí",
+      "validating": "Validant fitxer…",
+      "queued": "Preparant el carregador…",
+      "buildingScene": "Construint l'escena 3D…",
+      "loading": "Carregant el model IFC…",
+      "checkingSchema": "Comprovant l'esquema IFC i la integritat del fitxer",
+      "initialising": "Inicialitzant…",
+      "cancel": "Cancel·la"
+    },
+    "success": {
+      "title": "Model llest",
+      "viewModel": "Obre el visualitzador →"
+    },
+    "error": {
+      "title": "Error en carregar el model",
+      "technicalDetails": "Detalls tècnics",
+      "tryAgain": "Torna-ho a intentar",
+      "close": "Tanca"
+    },
+    "cancelled": {
+      "title": "Càrrega cancel·lada.",
+      "loadAnother": "Carrega un altre fitxer",
+      "tryAgain": "Torna-ho a intentar",
+      "close": "Tanca"
+    },
+    "parsing": "Analitzant…",
+    "loading": "Carregant…",
+    "processing": "Processant…",
+    "fromCache": "Des de la memòria cau"
+  }
+}

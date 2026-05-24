@@ -1,0 +1,20 @@
+{
+  "actions": {
+    "undo": "元に戻す",
+    "undoShortcut": "元に戻す (Ctrl+Z)",
+    "redo": "やり直す",
+    "redoShortcut": "やり直す (Ctrl+Shift+Z)",
+    "applyFix": "修正を適用",
+    "revertFix": "修正を元に戻す",
+    "applyAll": "すべての修正を適用"
+  },
+  "diff": {
+    "rename": "名前変更: {{from}} → {{to}}",
+    "pendingChanges": "{{count}} 件の保留中の変更",
+    "pendingChanges_other": "{{count}} 件の保留中の変更",
+    "noChanges": "保留中の変更なし"
+  },
+  "history": {
+    "empty": "履歴なし"
+  }
+}

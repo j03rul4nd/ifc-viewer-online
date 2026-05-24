@@ -1,0 +1,41 @@
+{
+  "title": "ต้นไม้โมเดล",
+  "spatialTree": "ต้นไม้เชิงพื้นที่",
+  "search": "ค้นหาองค์ประกอบ…",
+  "noResults": "ไม่มีองค์ประกอบที่ตรงกับ «{{query}}»",
+  "noModel": "ไม่ได้โหลดโมเดล",
+  "noModelDesc": "โหลดไฟล์ IFC และเรียกใช้การตรวจสอบเพื่อดูต้นไม้เชิงพื้นที่",
+  "nodes": {
+    "site": "พื้นที่",
+    "building": "อาคาร",
+    "storey": "ชั้น",
+    "element": "องค์ประกอบ",
+    "unclassified": "ไม่ได้จัดประเภท"
+  },
+  "actions": {
+    "expandAll": "ขยายทั้งหมด",
+    "collapseAll": "ยุบทั้งหมด",
+    "focusElement": "โฟกัสองค์ประกอบใน 3D",
+    "selectElement": "เลือกองค์ประกอบ",
+    "selectIn3D": "เลือกใน 3D",
+    "frameCamera": "จัดกรอบกล้อง",
+    "rename": "เปลี่ยนชื่อ",
+    "fixGuid": "แก้ไข GUID",
+    "copyGlobalId": "คัดลอก GlobalId",
+    "copyExpressId": "คัดลอก Express ID"
+  },
+  "models": {
+    "count": "{{count}} โมเดล",
+    "count_other": "{{count}} โมเดล",
+    "active": "โมเดลที่ใช้งาน"
+  },
+  "context": {
+    "changeGuid": "เปลี่ยน GlobalId?",
+    "changeGuidWarning": "การเปลี่ยน GlobalId จะทำลายการอ้างอิงภายนอก (ปัญหา BCF, ลิงก์, COBie)",
+    "current": "ปัจจุบัน: {{guid}}",
+    "generateNew": "สร้าง GUID ใหม่"
+  },
+  "editName": "แก้ไขชื่อ",
+  "editLongName": "แก้ไขชื่อยาว",
+  "editDescription": "แก้ไขคำอธิบาย"
+}

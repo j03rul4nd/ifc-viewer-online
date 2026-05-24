@@ -1,0 +1,41 @@
+{
+  "title": "模型树",
+  "spatialTree": "空间树",
+  "search": "搜索构件…",
+  "noResults": "无构件匹配「{{query}}」",
+  "noModel": "未加载模型",
+  "noModelDesc": "加载 IFC 文件并运行验证以查看空间树。",
+  "nodes": {
+    "site": "场地",
+    "building": "建筑",
+    "storey": "楼层",
+    "element": "构件",
+    "unclassified": "未分类"
+  },
+  "actions": {
+    "expandAll": "全部展开",
+    "collapseAll": "全部折叠",
+    "focusElement": "在 3D 中聚焦构件",
+    "selectElement": "选择构件",
+    "selectIn3D": "在 3D 中选择",
+    "frameCamera": "聚焦相机",
+    "rename": "重命名",
+    "fixGuid": "修复 GUID",
+    "copyGlobalId": "复制 GlobalId",
+    "copyExpressId": "复制 Express ID"
+  },
+  "models": {
+    "count": "{{count}} 个模型",
+    "count_other": "{{count}} 个模型",
+    "active": "活动模型"
+  },
+  "context": {
+    "changeGuid": "更改 GlobalId？",
+    "changeGuidWarning": "更改 GlobalId 将破坏外部引用（BCF 问题、链接、COBie）。",
+    "current": "当前：{{guid}}",
+    "generateNew": "生成新 GUID"
+  },
+  "editName": "编辑名称",
+  "editLongName": "编辑长名称",
+  "editDescription": "编辑描述"
+}

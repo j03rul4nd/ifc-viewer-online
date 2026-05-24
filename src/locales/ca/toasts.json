@@ -1,0 +1,32 @@
+{
+  "model": {
+    "loaded": "\"{{fileName}}\" carregat — {{count}} elements",
+    "loadedFromCache": "\"{{fileName}}\" carregat — {{count}} elements (des de la memòria cau ⚡)",
+    "loadFailed": "Error en carregar: {{message}}",
+    "demoUnavailable": "No s'ha pogut carregar el fitxer de demostració. Obre el teu propi fitxer IFC.",
+    "removeFailed": "No s'ha pogut eliminar el model: {{message}}"
+  },
+  "validation": {
+    "complete": "Validació completada — {{count}} problema(es) trobat(s)",
+    "passed": "Validació superada — cap problema trobat",
+    "failed": "La validació ha fallat: {{message}}",
+    "fixApplied": "Correcció aplicada",
+    "allFixesApplied": "{{count}} correccions aplicades"
+  },
+  "export": {
+    "ifcSuccess": "IFC exportat correctament",
+    "glbSuccess": "GLB exportat correctament",
+    "ifcFailed": "Error en exportar IFC: {{message}}",
+    "glbFailed": "Error en exportar GLB: {{message}}"
+  },
+  "bcf": {
+    "imported": "BCF importat — {{count}} tema(es)",
+    "exported": "BCF exportat",
+    "importFailed": "Error en importar BCF: {{message}}"
+  },
+  "editor": {
+    "fixApplied": "Correcció aplicada: {{description}}",
+    "undone": "Desfet: {{description}}",
+    "redone": "Refet: {{description}}"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "actions": {
+    "undo": "撤销",
+    "undoShortcut": "撤销 (Ctrl+Z)",
+    "redo": "重做",
+    "redoShortcut": "重做 (Ctrl+Shift+Z)",
+    "applyFix": "应用修复",
+    "revertFix": "还原修复",
+    "applyAll": "应用所有修复"
+  },
+  "diff": {
+    "rename": "已重命名：{{from}} → {{to}}",
+    "pendingChanges": "{{count}} 项待处理更改",
+    "pendingChanges_other": "{{count}} 项待处理更改",
+    "noChanges": "无待处理更改"
+  },
+  "history": {
+    "empty": "无历史记录"
+  }
+}

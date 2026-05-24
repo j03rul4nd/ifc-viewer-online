@@ -1,0 +1,28 @@
+{
+  "panel": {
+    "title": "测量",
+    "measurements": "{{count}} 条测量",
+    "measurements_other": "{{count}} 条测量"
+  },
+  "tools": {
+    "select": "选择",
+    "selectHint": "点击元素进行选择",
+    "length": "长度",
+    "lengthHint": "点击起点 · 点击终点",
+    "area": "面积",
+    "areaHint": "点击顶点 · 按 Enter 或双击关闭"
+  },
+  "actions": {
+    "finishArea": "完成面积",
+    "deleteLast": "删除最后一条",
+    "clearAll": "清除所有",
+    "escToCancel": "按 Esc 取消"
+  },
+  "units": {
+    "km": "{{value}} km",
+    "m": "{{value}} m",
+    "cm": "{{value}} cm",
+    "ha": "{{value}} ha",
+    "m2": "{{value}} m²"
+  }
+}

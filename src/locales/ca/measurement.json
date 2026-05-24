@@ -1,0 +1,28 @@
+{
+  "panel": {
+    "title": "Mesura",
+    "measurements": "{{count}} mesura",
+    "measurements_other": "{{count}} mesures"
+  },
+  "tools": {
+    "select": "Selecciona",
+    "selectHint": "Clica els elements per seleccionar-los",
+    "length": "Longitud",
+    "lengthHint": "Clica l'inici · clica el final",
+    "area": "Àrea",
+    "areaHint": "Clica els vèrtexs · Retorn o doble clic per tancar"
+  },
+  "actions": {
+    "finishArea": "Acaba l'àrea",
+    "deleteLast": "Elimina l'última",
+    "clearAll": "Esborra-ho tot",
+    "escToCancel": "Esc per cancel·lar"
+  },
+  "units": {
+    "km": "{{value}} km",
+    "m": "{{value}} m",
+    "cm": "{{value}} cm",
+    "ha": "{{value}} ha",
+    "m2": "{{value}} m²"
+  }
+}

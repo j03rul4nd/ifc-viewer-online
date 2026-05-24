@@ -1,0 +1,31 @@
+{
+  "generic": "发生意外错误",
+  "reloadPage": "请重新加载页面",
+  "boundary": {
+    "title": "出现问题",
+    "description": "渲染此组件时发生错误。",
+    "reload": "重试",
+    "details": "错误详情",
+    "stackTrace": "堆栈跟踪"
+  },
+  "model": {
+    "noModelLoaded": "未加载模型",
+    "bufferUnavailable": "IFC 源缓冲区不可用。请重新加载原始 .ifc 文件以导出。",
+    "objectNotFound": "模型对象在 3D 场景中未找到 — 可能已被移除。",
+    "viewerNotReady": "查看器未准备好",
+    "loadFailed": "模型加载失败：{{message}}",
+    "removeFailed": "无法移除模型：{{message}}"
+  },
+  "export": {
+    "ifcFailed": "IFC 导出失败：{{message}}",
+    "glbFailed": "GLB 导出失败：{{message}}"
+  },
+  "validation": {
+    "failed": "验证失败",
+    "workerError": "验证 Worker 错误：{{message}}"
+  },
+  "bcf": {
+    "importFailed": "BCF 导入失败：{{message}}",
+    "exportFailed": "BCF 导出失败：{{message}}"
+  }
+}

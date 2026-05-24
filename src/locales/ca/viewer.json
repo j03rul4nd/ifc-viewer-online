@@ -1,0 +1,44 @@
+{
+  "controls": { "resetCamera": "Reinicia la càmera", "fitToView": "Ajusta a la vista", "perspective": "Perspectiva", "orthographic": "Ortogràfic", "home": "Inici" },
+  "camera": { "front": "Frontal", "back": "Posterior", "left": "Esquerra", "right": "Dreta", "top": "Superior", "bottom": "Inferior", "isometric": "Isomètric" },
+  "cameraControls": { "title": "Vistes", "hide": "Amaga els controls de càmera", "show": "Mostra les vistes de càmera" },
+  "overlays": { "validationHighlights": "Ressaltades de validació", "measurements": "Mesures" },
+  "info": {
+    "title": "Informació del model", "elementsLoaded": "{{count}} elements", "fromCache": "des de la memòria cau",
+    "gpuBackend": "GPU: {{backend}}", "memoryUsage": "{{mb}} MB", "fileSize": "Mida del fitxer",
+    "elements": "Elements", "memory": "Memòria", "renderer": "Renderitzador", "quality": "Qualitat",
+    "categories": "{{count}} categories", "gpuMemory": "{{mb}} MB GPU", "detecting": "Detectant…",
+    "sizeUnavailable": "Mida no disponible — el model s'ha carregat des de la memòria cau OPFS. Torna a carregar des del disc per veure la mida del fitxer.",
+    "qualityScore": "Puntuació de qualitat: {{score}}/100"
+  },
+  "health": {
+    "unknown": "Desconegut", "tiny": "Minúscul", "light": "Lleuger", "normal": "Normal", "large": "Gran",
+    "heavy": "Pesat", "small": "Petit", "typical": "Típic", "complex": "Complex", "dense": "Dens",
+    "good": "Bo", "fair": "Acceptable", "poor": "Dolent", "acceptable": "Acceptable",
+    "improvable": "Millorable", "deficient": "Deficient", "excellent": "Excel·lent", "critical": "Crític"
+  },
+  "error": { "rendererUnavailable": "Renderitzador no disponible", "loadFailed": "Error en carregar el model" },
+  "section": {
+    "title": "Secció", "planes": "{{count}} pla", "planes_other": "{{count}} plans",
+    "addPlane": "Afegeix pla de tall", "clickToPlace": "Clica una cara per col·locar…", "clearAll": "Esborra-ho tot",
+    "clickHint": "Clica qualsevol superfície del model per col·locar un pla de tall alineat a la seva normal.", "escToCancel": "Esc per cancel·lar",
+    "planeName": "Pla {{number}}", "enablePlane": "Activa el pla", "disablePlane": "Desactiva el pla", "deletePlane": "Elimina el pla"
+  },
+  "floorPlan": {
+    "title": "Plantes", "active2D": "Vista 2D activa", "detectStoreys": "Detecta plantes",
+    "detecting": "Detectant plantes…", "noStoreys": "No s'han trobat plantes en aquest model.",
+    "returnTo3D": "Torna a la vista 3D", "refresh": "Actualitza", "view2D": "2D"
+  },
+  "scene": {
+    "title": "Escena", "models": "{{count}} model", "models_other": "{{count}} models",
+    "transform": "Transformació", "visibility": "Visibilitat", "close": "Tanca", "isolated": "aïllat",
+    "hideModel": "Amaga el model", "showModel": "Mostra el model", "isolateModel": "Aïlla — amaga tots els altres models",
+    "showAllModels": "Es mostren tots els models", "frameCamera": "Emmarca la càmera en aquest model",
+    "validateModel": "Valida aquest model", "removeModel": "Elimina el model de l'escena",
+    "cannotRemoveOnly": "No es pot eliminar l'únic model", "noModels": "Cap model carregat",
+    "showAllModelsBtn": "↑ Mostra tots els models", "clickHint": "Clica un model per activar-lo · usa ⊙ per aïllar",
+    "transformTitle": "Transformació · {{fileName}}"
+  },
+  "transform": { "position": "Posició", "rotation": "Rotació (°)", "scale": "Escala", "uniform": "Uniforme", "snapToGrid": "Ajusta a la quadrícula", "reset": "Reinicia" },
+  "renderQuality": { "title": "Qualitat de renderització", "performance": "Rendiment", "quality": "Qualitat", "ssaoNote": "SSAO + detecció de vores actius. Pot afectar el rendiment en mòbil." }
+}

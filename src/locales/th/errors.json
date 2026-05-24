@@ -1,0 +1,31 @@
+{
+  "generic": "เกิดข้อผิดพลาดที่ไม่คาดคิด",
+  "reloadPage": "กรุณาโหลดหน้าใหม่",
+  "boundary": {
+    "title": "เกิดข้อผิดพลาด",
+    "description": "เกิดข้อผิดพลาดขณะแสดงผลคอมโพเนนต์นี้",
+    "reload": "ลองใหม่",
+    "details": "รายละเอียดข้อผิดพลาด",
+    "stackTrace": "Stack trace"
+  },
+  "model": {
+    "noModelLoaded": "ไม่ได้โหลดโมเดล",
+    "bufferUnavailable": "บัฟเฟอร์ต้นทาง IFC ไม่พร้อมใช้งาน กรุณาโหลดไฟล์ .ifc ต้นฉบับใหม่เพื่อส่งออก",
+    "objectNotFound": "ไม่พบออบเจกต์โมเดลในฉาก 3D — อาจถูกลบออกแล้ว",
+    "viewerNotReady": "โปรแกรมดูยังไม่พร้อม",
+    "loadFailed": "โหลดโมเดลล้มเหลว: {{message}}",
+    "removeFailed": "ไม่สามารถนำโมเดลออกได้: {{message}}"
+  },
+  "export": {
+    "ifcFailed": "ส่งออก IFC ล้มเหลว: {{message}}",
+    "glbFailed": "ส่งออก GLB ล้มเหลว: {{message}}"
+  },
+  "validation": {
+    "failed": "การตรวจสอบล้มเหลว",
+    "workerError": "ข้อผิดพลาด Worker การตรวจสอบ: {{message}}"
+  },
+  "bcf": {
+    "importFailed": "นำเข้า BCF ล้มเหลว: {{message}}",
+    "exportFailed": "ส่งออก BCF ล้มเหลว: {{message}}"
+  }
+}

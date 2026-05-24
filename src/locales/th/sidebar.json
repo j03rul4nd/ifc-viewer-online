@@ -1,0 +1,49 @@
+{
+  "title": "คุณสมบัติ",
+  "panel": "แผง",
+  "noSelection": "เลือกองค์ประกอบเพื่อดูคุณสมบัติ",
+  "nothingSelected": "ไม่ได้เลือกอะไร",
+  "nothingSelectedDesc": "คลิกองค์ประกอบใดก็ได้ในโปรแกรมดูเพื่อตรวจสอบคุณสมบัติ IFC",
+  "element": { "type": "ประเภท", "name": "ชื่อ", "expressId": "Express ID", "globalId": "Global ID", "model": "โมเดล" },
+  "categories": {
+    "title": "ประเภท",
+    "walls": "ผนัง", "slabs": "แผ่นพื้น", "columns": "เสา", "beams": "คาน",
+    "doors": "ประตู", "windows": "หน้าต่าง", "stairs": "บันได", "roofs": "หลังคา",
+    "spaces": "พื้นที่", "furniture": "เฟอร์นิเจอร์", "other": "อื่นๆ",
+    "types": "{{count}} ประเภท", "elements": "{{count}} องค์ประกอบ",
+    "clearIsolation": "ล้างการแยก", "noModel": "ไม่ได้โหลดโมเดล",
+    "noModelDesc": "เปิดไฟล์ IFC เพื่อดูประเภท", "moreElements": "+ {{count}} องค์ประกอบเพิ่มเติม"
+  },
+  "actions": {
+    "isolate": "แยก", "hide": "ซ่อน", "show": "แสดง", "focusElement": "โฟกัสองค์ประกอบ",
+    "revealInTree": "แสดงในต้นไม้", "jumpTo3D": "ไปที่ 3D", "frame": "กรอบ",
+    "clearIsolation": "ล้างการแยก", "hideElement": "ซ่อนองค์ประกอบ", "showElement": "แสดงองค์ประกอบ",
+    "hidePanel": "ซ่อนแผง", "showPanel": "แสดงแผง"
+  },
+  "properties": {
+    "title": "คุณสมบัติ", "noProperties": "ไม่มีคุณสมบัติ", "psets": "ชุดคุณสมบัติ",
+    "quantities": "ปริมาณ", "materials": "วัสดุ", "geometry": "เรขาคณิต",
+    "location": "ตำแหน่ง", "visibility": "การมองเห็น", "ifcAttributes": "คุณลักษณะ IFC",
+    "notInTree": "ไม่พบในต้นไม้เชิงพื้นที่", "category": "ประเภท",
+    "visible": "มองเห็นได้", "hidden": "ซ่อน", "loading": "กำลังโหลด…",
+    "loadError": "ไม่สามารถโหลดคุณลักษณะ IFC ได้",
+    "unsavedChanges": "{{count}} การเปลี่ยนแปลงที่ยังไม่บันทึก · Ctrl+Z เพื่อเลิกทำ",
+    "unsavedChanges_other": "{{count}} การเปลี่ยนแปลงที่ยังไม่บันทึก · Ctrl+Z เพื่อเลิกทำ",
+    "edited": "แก้ไขแล้ว", "empty": "ว่าง", "loadingPsets": "กำลังโหลดชุดคุณสมบัติ…"
+  },
+  "tabs": { "properties": "คุณสมบัติ", "categories": "ประเภท", "takeoff": "ปริมาณ" },
+  "takeoff": {
+    "title": "ปริมาณ", "quantity": "ปริมาณ", "unit": "หน่วย", "totalArea": "พื้นที่รวม",
+    "totalVolume": "ปริมาตรรวม", "totalLength": "ความยาวรวม", "count": "จำนวน",
+    "noModel": "ไม่ได้โหลดโมเดล", "computeQuantities": "คำนวณปริมาณ",
+    "description": "อ่านข้อมูลปริมาณพื้นที่ ปริมาตร และความยาวจากชุดปริมาณ IFC",
+    "running": "กำลังคำนวณปริมาณ…", "failed": "การคำนวณปริมาณล้มเหลว", "retry": "ลองใหม่",
+    "noData": "ไม่พบข้อมูลปริมาณในโมเดลนี้",
+    "noDataIfc": "ชุดปริมาณ IFC (Qto_*) อาจไม่มีอยู่",
+    "classes": "{{count}} คลาส", "refresh": "รีเฟรช", "noQuantityData": "ไม่มีข้อมูลปริมาณ"
+  },
+  "validation": {
+    "issueCount": "การตรวจสอบ · {{count}} ปัญหา",
+    "issueCount_other": "การตรวจสอบ · {{count}} ปัญหา"
+  }
+}

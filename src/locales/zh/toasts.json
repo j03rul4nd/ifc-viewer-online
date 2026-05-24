@@ -1,0 +1,32 @@
+{
+  "model": {
+    "loaded": "\"{{fileName}}\" 已加载 — {{count}} 个构件",
+    "loadedFromCache": "\"{{fileName}}\" 已加载 — {{count}} 个构件（来自缓存 ⚡）",
+    "loadFailed": "加载失败：{{message}}",
+    "demoUnavailable": "演示文件无法加载，请打开您自己的 IFC 文件。",
+    "removeFailed": "无法移除模型：{{message}}"
+  },
+  "validation": {
+    "complete": "验证完成 — 发现 {{count}} 个问题",
+    "passed": "验证通过 — 未发现问题",
+    "failed": "验证失败：{{message}}",
+    "fixApplied": "已应用修复",
+    "allFixesApplied": "已应用 {{count}} 个修复"
+  },
+  "export": {
+    "ifcSuccess": "IFC 导出成功",
+    "glbSuccess": "GLB 导出成功",
+    "ifcFailed": "IFC 导出失败：{{message}}",
+    "glbFailed": "GLB 导出失败：{{message}}"
+  },
+  "bcf": {
+    "imported": "BCF 已导入 — {{count}} 个主题",
+    "exported": "BCF 已导出",
+    "importFailed": "BCF 导入失败：{{message}}"
+  },
+  "editor": {
+    "fixApplied": "已应用修复：{{description}}",
+    "undone": "已撤销：{{description}}",
+    "redone": "已重做：{{description}}"
+  }
+}
