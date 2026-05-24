@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visor IFC Online — Gratis, Sin Instalación, Directamente en tu Navegador</title>
+  <meta name="description" content="Visor IFC online gratuito. Abre, valida y edita archivos IFC directamente en tu navegador — sin instalación, sin subir archivos, sin cuenta. Valida GUIDs, jerarquía espacial y 16 reglas más. Compatible con IFC2x3, IFC4, IFC4x3." />
+  <meta name="keywords" content="visor IFC online, abrir IFC gratis, validador IFC online, editor IFC navegador, IFC sin instalar, IFC gratis español, ver IFC online, abrir archivo IFC, IFC BIM online, comprobador IFC" />
+  <meta name="author" content="Joel Benitez" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://j03rul4nd.github.io/ifc-viewer-online/es/" />
+  <link rel="alternate" hreflang="es"        href="https://j03rul4nd.github.io/ifc-viewer-online/es/" />
+  <link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/" />
+  <link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/" />
+
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://j03rul4nd.github.io/ifc-viewer-online/es/" />
+  <meta property="og:title"       content="Visor IFC Online — Gratis, Sin Instalación" />
+  <meta property="og:description" content="Abre, valida y edita archivos IFC en tu navegador. Sin subir archivos. Sin cuenta. Compatible con IFC2x3, IFC4, IFC4x3." />
+  <meta property="og:site_name"   content="IFC Viewer Online" />
+  <meta property="og:locale"      content="es_ES" />
+  <meta property="og:locale:alternate" content="en_US" />
+  <meta name="twitter:card"        content="summary" />
+  <meta name="twitter:title"       content="Visor IFC Online — Gratis, Sin Instalación" />
+  <meta name="twitter:description" content="Abre, valida y edita archivos IFC en tu navegador. Sin subir archivos, sin cuenta." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": "https://j03rul4nd.github.io/ifc-viewer-online/es/",
+        "url": "https://j03rul4nd.github.io/ifc-viewer-online/es/",
+        "name": "Visor IFC Online — Gratis, Sin Instalación, Directamente en tu Navegador",
+        "description": "Visor IFC online gratuito. Abre, valida y edita archivos IFC en tu navegador sin instalación ni subida de archivos.",
+        "isPartOf": { "@id": "https://j03rul4nd.github.io/ifc-viewer-online/" },
+        "inLanguage": "es"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "IFC Viewer Online",
+        "url": "https://j03rul4nd.github.io/ifc-viewer-online/",
+        "applicationCategory": "Software AEC / BIM",
+        "operatingSystem": "Cualquier navegador moderno (Chrome, Firefox, Safari, Edge)",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+        "featureList": [
+          "Visor 3D de archivos IFC en el navegador",
+          "18 reglas de validación IFC",
+          "Corrección automática de GUIDs",
+          "Edición no destructiva de propiedades",
+          "Exportación IFC y GLB sin servidor",
+          "Soporte IFC2x3, IFC4, IFC4x1, IFC4x3",
+          "Caché OPFS para cargas instantáneas",
+          "Sin subida, sin cuenta, funciona sin conexión"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "¿Se sube mi archivo IFC a algún servidor?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Los archivos se analizan completamente en tu navegador mediante web-ifc, una compilación WebAssembly del analizador IFC de código abierto. Nada sale de tu máquina. La aplicación funciona completamente sin conexión una vez cargada."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Puedo usarlo con modelos confidenciales bajo NDA?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sí. Como todo el procesamiento ocurre en tu navegador y nunca se transmite ningún dato a ningún servidor, puedes usarlo con seguridad con modelos de proyectos confidenciales bajo NDA. No hay ningún acuerdo de servicio que revisar — no se transfieren datos."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Qué versiones de IFC son compatibles?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "IFC2x3, IFC4, IFC4x1 e IFC4x3. El visor usa el analizador web-ifc de código abierto, compatible con todos los formatos exportados por Revit, ArchiCAD, Tekla, Allplan, Vectorworks, BricsCAD BIM y Solibri."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Puedo compartir los resultados de validación con mi equipo o cliente?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sí. Después de ejecutar la validación, usa el botón Compartir reporte para generar una URL que codifica los resultados completos. Tu cliente la abre en cualquier navegador sin instalar nada ni crear una cuenta."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Funciona sin conexión?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sí, una vez cargada la página. El analizador WebAssembly y el renderizador WebGL funcionan completamente en el navegador. La geometría analizada se almacena en caché en OPFS para cargas instantáneas incluso sin conexión."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-size: 14px; font-weight: 600; color: #5E6AD2; }
+    .nav-links { display: flex; align-items: center; gap: 12px; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+    .lang-switch { font-size: 12px; color: rgba(255,255,255,0.3); }
+    .lang-switch:hover { color: rgba(255,255,255,0.6); }
+
+    .hero { padding: 72px 0 56px; text-align: center; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 28px; font-weight: 500; }
+    .hero h1 { font-size: clamp(1.9rem, 5vw, 3.1rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
+    .accent { color: #5E6AD2; }
+    .hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 640px; margin: 0 auto 36px; }
+    .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
+    .cta-primary:hover { background: #4F5ABF; }
+    .cta-note { font-size: 12px; color: rgba(255,255,255,0.28); margin-top: 12px; }
+
+    .trust-line { margin-top: 32px; font-size: 12px; color: rgba(255,255,255,0.25); letter-spacing: 0.01em; }
+
+    .section { padding: 64px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #5E6AD2; text-transform: uppercase; margin-bottom: 12px; }
+    .section-title { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .section-sub { font-size: 15px; color: rgba(255,255,255,0.45); margin-bottom: 36px; max-width: 600px; }
+
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+    .feature-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 20px; }
+    .feature-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .feature-desc { font-size: 12px; color: rgba(255,255,255,0.38); line-height: 1.6; }
+    .feature-tag { display: inline-block; margin-top: 8px; background: rgba(94,106,210,0.1); color: #8B96E9; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; }
+
+    .faq-list { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
+    .faq-item { padding: 22px 26px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .faq-a { font-size: 13px; color: rgba(255,255,255,0.48); line-height: 1.65; }
+
+    .cta-bottom { text-align: center; padding: 60px 0 80px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .cta-bottom h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.025em; margin-bottom: 12px; }
+    .cta-bottom p { font-size: 15px; color: rgba(255,255,255,0.42); margin-bottom: 30px; }
+
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 26px 0; text-align: center; }
+    .footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .footer-link { font-size: 12px; color: rgba(255,255,255,0.32); transition: color 0.15s; }
+    .footer-link:hover { color: rgba(255,255,255,0.65); }
+    .footer-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <div class="header-inner">
+        <a href="../" class="logo">IFC Viewer Online</a>
+        <div class="nav-links">
+          <a href="../" class="lang-switch">EN</a>
+          <a href="../" class="nav-cta">Abrir visor →</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <div class="container">
+        <div class="hero-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Sin registro · Sin subida · 100% en tu navegador
+        </div>
+        <h1>Visor IFC <span class="accent">Online</span></h1>
+        <p class="hero-desc">Detecta errores en el IFC antes que tu cliente. Abre, valida y corrige archivos IFC completamente en tu navegador — sin instalación, sin servidor, sin cuenta. Tus modelos nunca salen de tu máquina.</p>
+        <a href="../" class="cta-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Abrir un archivo IFC
+        </a>
+        <p class="cta-note">Sin cuenta · Funciona en tu navegador · IFC2x3 · IFC4 · IFC4x1 · IFC4x3</p>
+        <p class="trust-line">Gratis · Código abierto · 100% en cliente · Sin servidor · Sin subida</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="section-label">Características</p>
+        <h2 class="section-title">Visualiza, valida, mide y edita IFC</h2>
+        <p class="section-sub">Todas las herramientas que tu equipo necesita antes de cada entrega IFC. Privado, rápido, gratis.</p>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-title">Validador IFC con 18 reglas</div>
+            <div class="feature-desc">Detecta GUIDs duplicados, violaciones de jerarquía espacial y elementos huérfanos antes de que lo haga tu cliente. Resultados en tiempo real desde un worker en segundo plano.</div>
+            <span class="feature-tag">Motor IFC / ISO 19650</span>
+          </div>
+          <div class="feature-card">
+            <div class="feature-title">Arrastrar y soltar, sin subir</div>
+            <div class="feature-desc">Abre cualquier archivo .ifc al instante. Analizado en el cliente mediante web-ifc WebAssembly — tus datos nunca salen del navegador. Sin cuenta, sin servidor, funciona completamente sin conexión.</div>
+            <span class="feature-tag">WebAssembly en el cliente</span>
+          </div>
+          <div class="feature-card">
+            <div class="feature-title">Edición no destructiva</div>
+            <div class="feature-desc">Corrige lo que detecta el validador — sin tocar el archivo original. Edita GlobalIds, nombres y valores de propiedades en línea con historial completo de deshacer/rehacer.</div>
+            <span class="feature-tag">Pila de diff con deshacer/rehacer</span>
+          </div>
+          <div class="feature-card">
+            <div class="feature-title">Soporte multi-modelo</div>
+            <div class="feature-desc">Carga múltiples archivos IFC simultáneamente. Visibilidad, transformaciones, validación y exportación independientes por modelo.</div>
+            <span class="feature-tag">Estado independiente por modelo</span>
+          </div>
+          <div class="feature-card">
+            <div class="feature-title">Caché de geometría OPFS</div>
+            <div class="feature-desc">La geometría analizada se almacena en el Sistema de Archivos Privado de Origen del navegador. Las cargas repetidas son ~10× más rápidas — y funciona completamente sin conexión.</div>
+            <span class="feature-tag">Caché OPFS</span>
+          </div>
+          <div class="feature-card">
+            <div class="feature-title">Exportación IFC + GLB</div>
+            <div class="feature-desc">Exporta el binario IFC corregido (todos los diffs aplicados en un Web Worker) o la geometría visible como archivo GLB estándar. Exportación por lotes multi-modelo compatible.</div>
+            <span class="feature-tag">Exportación IFC binaria sin servidor</span>
+          </div>
+          <div class="feature-card">
+            <div class="feature-title">Cómputo de cantidades</div>
+            <div class="feature-desc">Lee datos IfcElementQuantity para agregar área, volumen y longitud por clase IFC. Los resultados se actualizan en tiempo real.</div>
+            <span class="feature-tag">IfcElementQuantity</span>
+          </div>
+          <div class="feature-card">
+            <div class="feature-title">Plantas y cortes de sección</div>
+            <div class="feature-desc">Genera vistas de planta 2D precisas desde cualquier planta. Corta planos de sección en vivo en cualquier ángulo para inspeccionar la estructura interna.</div>
+            <span class="feature-tag">Plantas 2D · planos de corte</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="section-label">Preguntas</p>
+        <h2 class="section-title">Preguntas frecuentes</h2>
+        <br />
+        <div class="faq-list">
+          <div class="faq-item">
+            <p class="faq-q">¿Se sube mi archivo IFC a algún servidor?</p>
+            <p class="faq-a">No. Los archivos se analizan completamente en tu navegador mediante web-ifc, una compilación WebAssembly del analizador IFC de código abierto. Nada sale de tu máquina. La aplicación funciona completamente sin conexión una vez cargada.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">¿Puedo usarlo con modelos confidenciales bajo NDA?</p>
+            <p class="faq-a">Sí. Como todo el procesamiento ocurre en tu navegador y nunca se transmite ningún dato a ningún servidor, puedes usarlo con seguridad con modelos de proyectos confidenciales bajo NDA. No hay ningún acuerdo de servicio que revisar con tu cliente — no se transfieren datos.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">¿Puedo compartir los resultados de validación con mi equipo o cliente?</p>
+            <p class="faq-a">Sí. Después de ejecutar la validación, usa el botón Compartir reporte para generar una URL que codifica los resultados completos. Tu cliente la abre en cualquier navegador sin instalar nada ni crear una cuenta. El archivo IFC nunca se incluye en el enlace.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">¿Funciona en Mac?</p>
+            <p class="faq-a">Sí, completamente. IFC Viewer Online funciona en cualquier navegador moderno — Chrome, Edge, Firefox y Safari, tanto en Mac como en Windows. Sin plugin, sin instalación, sin restricción de sistema operativo.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">¿Qué versiones de IFC son compatibles?</p>
+            <p class="faq-a">IFC2x3, IFC4, IFC4x1 e IFC4x3. El visor usa el analizador web-ifc de código abierto — el mismo motor utilizado por la mayoría de las herramientas BIM modernas. Los esquemas obsoletos son marcados automáticamente por el validador.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">¿Puedo corregir errores y re-exportar un IFC corregido?</p>
+            <p class="faq-a">Sí. Todas las ediciones se mantienen como diffs no destructivos con deshacer/rehacer completo. Al hacer clic en Exportar IFC se aplican todos los diffs al binario original en un Web Worker y se descarga el archivo corregido — sin servidor involucrado.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">¿Funciona sin conexión?</p>
+            <p class="faq-a">Sí, una vez cargada la página. El analizador WebAssembly y el renderizador WebGL funcionan completamente en el navegador. La geometría analizada se almacena en caché en OPFS para que las cargas repetidas sean instantáneas incluso sin conexión a la red.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">¿Es gratis? ¿Puedo usarlo para proyectos comerciales?</p>
+            <p class="faq-a">Sí, completamente gratis. El código fuente tiene licencia MIT. Puedes usar la aplicación en vivo o bifurcar el repositorio para tus propios proyectos, incluyendo los comerciales.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-bottom">
+      <div class="container">
+        <h2>Abre un IFC ahora.</h2>
+        <p>Sin registro. Sin subida. Funciona en tu navegador.</p>
+        <a href="../" class="cta-primary">Abrir visor IFC →</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="../" class="footer-link">IFC Viewer Online (EN)</a>
+        <a href="ifc-validador/" class="footer-link">Validador IFC</a>
+        <a href="../ifc-validator/" class="footer-link">IFC Validator (EN)</a>
+        <a href="../ifc-viewer-mac/" class="footer-link">IFC Viewer Mac</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <p class="footer-copy">IFC Viewer Online © 2026 · Gratis · Código abierto · Licencia MIT · Construido con web-ifc &amp; three.js</p>
+    </div>
+  </footer>
+
+</body>
+</html>

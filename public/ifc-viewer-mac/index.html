@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IFC Viewer for Mac — Free, No Install, Runs in Safari & Chrome</title>
+  <meta name="description" content="Free IFC viewer for Mac. Open any IFC file in Safari, Chrome, or Firefox on macOS — no download, no plugin, no Revit license needed. View, validate, and edit IFC files directly in your browser. IFC2x3, IFC4, IFC4x3 supported." />
+  <meta name="keywords" content="IFC viewer Mac, open IFC on Mac, IFC viewer macOS, free IFC viewer Mac, BIM viewer Mac browser, IFC file opener Mac, IFC viewer Safari, IFC viewer Chrome Mac, no install IFC viewer Mac, open IFC without Revit Mac" />
+  <meta name="author" content="Joel Benitez" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://j03rul4nd.github.io/ifc-viewer-online/ifc-viewer-mac/" />
+  <link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/ifc-viewer-mac/" />
+  <link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/ifc-viewer-mac/" />
+
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://j03rul4nd.github.io/ifc-viewer-online/ifc-viewer-mac/" />
+  <meta property="og:title"       content="IFC Viewer for Mac — Free, No Install" />
+  <meta property="og:description" content="Open any IFC file on Mac in Safari or Chrome — no download, no plugin. View, validate, and edit IFC files in your browser." />
+  <meta property="og:site_name"   content="IFC Viewer Online" />
+  <meta property="og:locale"      content="en_US" />
+  <meta name="twitter:card"        content="summary" />
+  <meta name="twitter:title"       content="IFC Viewer for Mac — Free, No Install" />
+  <meta name="twitter:description" content="Open any IFC file on Mac in Safari or Chrome — no download, no plugin." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": "https://j03rul4nd.github.io/ifc-viewer-online/ifc-viewer-mac/",
+        "url": "https://j03rul4nd.github.io/ifc-viewer-online/ifc-viewer-mac/",
+        "name": "IFC Viewer for Mac — Free, No Install, Runs in Safari & Chrome",
+        "description": "Free IFC viewer for Mac. Open IFC files in Safari, Chrome, or Firefox on macOS — no download, no plugin, no Revit license.",
+        "isPartOf": { "@id": "https://j03rul4nd.github.io/ifc-viewer-online/" },
+        "inLanguage": "en"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "IFC Viewer Online",
+        "url": "https://j03rul4nd.github.io/ifc-viewer-online/",
+        "applicationCategory": "AEC / BIM software",
+        "operatingSystem": "macOS, Windows, Linux (any modern browser)",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "featureList": [
+          "Works on Mac in Safari, Chrome, Firefox, and Edge",
+          "No download or installation required",
+          "3D WebGL rendering of IFC geometry",
+          "18-rule IFC validation",
+          "GUID auto-fix and non-destructive property editing",
+          "IFC and GLB export",
+          "OPFS geometry cache for offline use"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Does the IFC viewer work on Mac?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, fully. IFC Viewer Online works on any modern browser on macOS — Safari, Chrome, Firefox, and Edge. No plugin, no installation, no operating system restriction."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do I need to download anything to view IFC files on Mac?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Just open the URL in Safari or Chrome on your Mac and drag your IFC file in. The viewer runs entirely in the browser via WebAssembly — no app to install, no plugin, no Revit license needed."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is the IFC viewer free for Mac users?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, completely free. No account required, no subscription, no hidden cost. The source code is MIT-licensed and available on GitHub."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does it work offline on Mac?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, once the page is loaded. The WebAssembly parser and WebGL renderer run entirely in the browser. Parsed geometry is cached in OPFS so repeat loads are instant even without an internet connection."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-size: 14px; font-weight: 600; color: #5E6AD2; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+
+    .hero { padding: 72px 0 56px; text-align: center; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 28px; font-weight: 500; }
+    .hero h1 { font-size: clamp(1.9rem, 5vw, 3.1rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
+    .accent { color: #5E6AD2; }
+    .hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 620px; margin: 0 auto 36px; }
+    .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
+    .cta-primary:hover { background: #4F5ABF; }
+    .cta-note { font-size: 12px; color: rgba(255,255,255,0.28); margin-top: 12px; }
+
+    .section { padding: 64px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #5E6AD2; text-transform: uppercase; margin-bottom: 12px; }
+    .section-title { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .section-sub { font-size: 15px; color: rgba(255,255,255,0.45); margin-bottom: 36px; max-width: 600px; }
+
+    .browsers { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+    .browser-pill { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 500; }
+    .browser-check { color: #4CAF82; font-size: 11px; }
+
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; margin-top: 8px; }
+    .feature-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 18px 20px; }
+    .feature-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .feature-desc { font-size: 12px; color: rgba(255,255,255,0.38); line-height: 1.6; }
+
+    .faq-list { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
+    .faq-item { padding: 22px 26px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .faq-a { font-size: 13px; color: rgba(255,255,255,0.48); line-height: 1.65; }
+
+    .cta-bottom { text-align: center; padding: 60px 0 80px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .cta-bottom h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.025em; margin-bottom: 12px; }
+    .cta-bottom p { font-size: 15px; color: rgba(255,255,255,0.42); margin-bottom: 30px; }
+
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 26px 0; text-align: center; }
+    .footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .footer-link { font-size: 12px; color: rgba(255,255,255,0.32); transition: color 0.15s; }
+    .footer-link:hover { color: rgba(255,255,255,0.65); }
+    .footer-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <div class="header-inner">
+        <a href="../" class="logo">IFC Viewer Online</a>
+        <a href="../" class="nav-cta">Open Viewer →</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <div class="container">
+        <div class="hero-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          Works on Mac · Safari · Chrome · Firefox · Free
+        </div>
+        <h1>IFC Viewer <span class="accent">for Mac</span></h1>
+        <p class="hero-desc">Open any IFC file on macOS — no download, no plugin, no Revit license. Drag your file into Safari or Chrome and get a full 3D viewer, validator, and editor instantly. Your files never leave your Mac.</p>
+        <a href="../" class="cta-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Open an IFC file on Mac — free
+        </a>
+        <p class="cta-note">No account required · Runs in your browser · Works offline · IFC2x3 · IFC4 · IFC4x3</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="section-label">Browser Compatibility on Mac</p>
+        <h2 class="section-title">Works on every Mac browser</h2>
+        <p class="section-sub">No plugin required. The viewer uses WebAssembly and WebGL — both supported by every modern browser on macOS.</p>
+        <div class="browsers">
+          <div class="browser-pill"><span class="browser-check">✓</span> Safari (macOS)</div>
+          <div class="browser-pill"><span class="browser-check">✓</span> Chrome for Mac</div>
+          <div class="browser-pill"><span class="browser-check">✓</span> Firefox for Mac</div>
+          <div class="browser-pill"><span class="browser-check">✓</span> Edge for Mac</div>
+          <div class="browser-pill"><span class="browser-check">✓</span> Arc for Mac</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="section-label">Features</p>
+        <h2 class="section-title">Full BIM toolset in your Mac browser</h2>
+        <p class="section-sub">Everything a BIM Coordinator needs before an IFC delivery — without installing a single app.</p>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-title">3D IFC Viewer</div>
+            <div class="feature-desc">Full WebGL 3D rendering of IFC geometry. Camera presets, ISO view, SSAO, edge rendering, and bloom for presentation-quality stills.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-title">18-Rule IFC Validator</div>
+            <div class="feature-desc">GUID duplicates, spatial hierarchy violations, orphan elements, naming conventions — all checked in a background worker. Results stream in real time.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-title">GUID Auto-Fix</div>
+            <div class="feature-desc">One click to regenerate all invalid GlobalIds. The most common IFC export error from Revit — fixed without touching the original file.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-title">Non-Destructive Editing</div>
+            <div class="feature-desc">Edit element names, descriptions, and property values inline with full undo/redo. No risk of corrupting your original IFC file.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-title">IFC &amp; GLB Export</div>
+            <div class="feature-desc">Export corrected IFC binary (all diffs applied in a Web Worker) or visible geometry as a standard GLB. No server, no cost.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-title">Floor Plans &amp; Section Cuts</div>
+            <div class="feature-desc">Generate accurate 2D floor plan views from any storey. Cut live section planes at any angle to inspect internal structure.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-title">Quantity Takeoff</div>
+            <div class="feature-desc">Reads IfcElementQuantity data and aggregates area, volume, and length per IFC class. Results update in real time.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-title">Offline Support via OPFS</div>
+            <div class="feature-desc">Parsed geometry is cached in the browser's Origin Private File System — ~10× faster repeat loads. Works completely offline on Mac.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="section-label">FAQ</p>
+        <h2 class="section-title">IFC Viewer on Mac — Questions</h2>
+        <br />
+        <div class="faq-list">
+          <div class="faq-item">
+            <p class="faq-q">Does the IFC viewer work on Mac?</p>
+            <p class="faq-a">Yes, fully. IFC Viewer Online works on any modern browser on macOS — Safari, Chrome, Firefox, and Edge. No plugin, no installation, no operating system restriction. If your browser supports WebGL and WebAssembly (all modern browsers do), it works.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">Do I need to download anything to view IFC files on Mac?</p>
+            <p class="faq-a">No. Just open the URL in Safari or Chrome on your Mac and drag your IFC file into the browser window. The viewer runs entirely via WebAssembly — no app to install, no plugin, no Revit license needed.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">Is the IFC viewer free for Mac users?</p>
+            <p class="faq-a">Yes, completely free. No account required, no subscription, no hidden cost. The source code is MIT-licensed and available on GitHub. You can fork it and deploy your own instance.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">Are IFC files uploaded to a server when I open them on Mac?</p>
+            <p class="faq-a">No. Files are parsed entirely in your browser via web-ifc WebAssembly. Nothing leaves your Mac. You can safely use it with confidential project models under NDA — no data changes hands.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">Does it work offline on Mac?</p>
+            <p class="faq-a">Yes, once the page is loaded. The WebAssembly parser and WebGL renderer run entirely in the browser. Geometry is cached in OPFS so repeat file loads are instant even without an internet connection.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">What IFC file formats and versions are supported on Mac?</p>
+            <p class="faq-a">IFC2x3, IFC4, IFC4x1, and IFC4x3 — the same as on Windows. The viewer uses the open-source web-ifc parser, which supports all current IFC schema versions exported by Revit, ArchiCAD, Tekla, Allplan, Vectorworks, BricsCAD BIM, and Solibri.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-bottom">
+      <div class="container">
+        <h2>Open an IFC file on your Mac now.</h2>
+        <p>No login. No download. Works in Safari, Chrome, Firefox.</p>
+        <a href="../" class="cta-primary">Open IFC Viewer →</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="../" class="footer-link">IFC Viewer Online</a>
+        <a href="../ifc-validator/" class="footer-link">IFC Validator</a>
+        <a href="../es/" class="footer-link">Visor IFC Online (ES)</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <p class="footer-copy">IFC Viewer Online © 2026 · Free · Open source · MIT license · Built with web-ifc &amp; three.js</p>
+    </div>
+  </footer>
+
+</body>
+</html>

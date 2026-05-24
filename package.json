@@ -32,6 +32,7 @@
         "i18next-resources-to-backend": "^1.2.1",
         "lucide-react": "^0.469.0",
         "ogl": "^1.0.11",
+        "posthog-js": "^1.376.0",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
         "react-i18next": "^17.0.8",

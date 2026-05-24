@@ -15,6 +15,7 @@ import {
 } from '../lib/diffStore'
 import { toast } from '../stores/toastStore'
 import { createLogger } from '../lib/logger'
+import { trackExportClicked } from '../lib/analytics'
 import type { ViewerAPI } from '../lib/viewer'
 
 const log = createLogger('ExportModal')
@@ -63,6 +64,7 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
   }
 
   const handleExportIfc = async (modelId: string, fileName: string): Promise<boolean> => {
+    trackExportClicked({ format: 'ifc', model_count: models.length })
     setStatus(modelId, 'ifc', 'exporting')
     try {
       const entry = modelRegistry.get(modelId)
@@ -91,6 +93,7 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
   }
 
   const handleExportGlb = async (modelId: string, fileName: string): Promise<boolean> => {
+    trackExportClicked({ format: 'glb', model_count: models.length })
     setStatus(modelId, 'glb', 'exporting')
     try {
       if (!viewerApiRef.current) throw new Error('Viewer is not ready')

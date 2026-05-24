@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Validador IFC Online Gratis — 18 Reglas, Sin Subir Archivos</title>
+  <meta name="description" content="Validador IFC online gratuito. Comprueba archivos IFC en busca de GUIDs duplicados, errores de jerarquía espacial, elementos huérfanos y 15 reglas más — directamente en tu navegador. Sin subida, sin cuenta. Compatible con IFC2x3, IFC4, IFC4x3." />
+  <meta name="keywords" content="validador IFC online, validar archivo IFC, comprobar IFC, verificar IFC, errores IFC, IFC GUID duplicado, jerarquía espacial IFC, validación IFC gratis, comprobador IFC, IFC calidad" />
+  <meta name="author" content="Joel Benitez" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://j03rul4nd.github.io/ifc-viewer-online/es/ifc-validador/" />
+  <link rel="alternate" hreflang="es"        href="https://j03rul4nd.github.io/ifc-viewer-online/es/ifc-validador/" />
+  <link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/ifc-validator/" />
+  <link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/ifc-validator/" />
+
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://j03rul4nd.github.io/ifc-viewer-online/es/ifc-validador/" />
+  <meta property="og:title"       content="Validador IFC Online Gratis — 18 Reglas, Sin Subir Archivos" />
+  <meta property="og:description" content="Valida archivos IFC contra 18 reglas de calidad directamente en tu navegador. GUIDs duplicados, jerarquía espacial, elementos huérfanos y más. Sin subida, sin cuenta." />
+  <meta property="og:site_name"   content="IFC Viewer Online" />
+  <meta property="og:locale"      content="es_ES" />
+  <meta property="og:locale:alternate" content="en_US" />
+  <meta name="twitter:card"        content="summary" />
+  <meta name="twitter:title"       content="Validador IFC Online Gratis — 18 Reglas, Sin Subir Archivos" />
+  <meta name="twitter:description" content="Valida archivos IFC en tu navegador. Sin subida, sin cuenta. 18 reglas de calidad." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": "https://j03rul4nd.github.io/ifc-viewer-online/es/ifc-validador/",
+        "url": "https://j03rul4nd.github.io/ifc-viewer-online/es/ifc-validador/",
+        "name": "Validador IFC Online Gratis — 18 Reglas, Sin Subir Archivos",
+        "description": "Validador IFC online gratuito. Comprueba archivos IFC en busca de GUIDs duplicados, errores de jerarquía espacial, elementos huérfanos y 15 reglas más.",
+        "isPartOf": { "@id": "https://j03rul4nd.github.io/ifc-viewer-online/" },
+        "inLanguage": "es"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "¿Se sube mi archivo IFC a algún servidor durante la validación?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. La validación se ejecuta completamente en tu navegador mediante web-ifc WebAssembly. Tu archivo IFC nunca sale de tu máquina. El validador funciona completamente sin conexión una vez cargada la página."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Puedo usar este validador IFC con modelos confidenciales bajo NDA?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sí. Como todo el procesamiento ocurre localmente en tu navegador y nunca se transmite ningún dato a ningún servidor, puedes validar con seguridad modelos confidenciales bajo NDA. No se transfieren datos."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Qué versiones de IFC admite el validador?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "IFC2x3, IFC4, IFC4x1 e IFC4x3. Los esquemas obsoletos son marcados automáticamente por una regla de validación dedicada."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Puedo corregir los errores encontrados durante la validación y re-exportar el IFC?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sí. Los errores de GUID se pueden corregir automáticamente con un clic. Otras violaciones se pueden editar en línea con deshacer/rehacer completo. Al exportar IFC se aplican todas las correcciones en un Web Worker — sin servidor."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Funciona en Mac?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sí. Funciona en cualquier navegador moderno — Chrome, Edge, Firefox y Safari, tanto en Mac como en Windows. Sin plugin, sin instalación."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-size: 14px; font-weight: 600; color: #5E6AD2; }
+    .nav-links { display: flex; align-items: center; gap: 12px; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+    .lang-switch { font-size: 12px; color: rgba(255,255,255,0.3); }
+    .lang-switch:hover { color: rgba(255,255,255,0.6); }
+
+    .hero { padding: 72px 0 56px; text-align: center; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 28px; font-weight: 500; }
+    .hero h1 { font-size: clamp(1.9rem, 5vw, 3.1rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
+    .accent { color: #5E6AD2; }
+    .hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 640px; margin: 0 auto 36px; }
+    .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
+    .cta-primary:hover { background: #4F5ABF; }
+    .cta-note { font-size: 12px; color: rgba(255,255,255,0.28); margin-top: 12px; }
+
+    .section { padding: 64px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #5E6AD2; text-transform: uppercase; margin-bottom: 12px; }
+    .section-title { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .section-sub { font-size: 15px; color: rgba(255,255,255,0.45); margin-bottom: 36px; max-width: 600px; }
+
+    .rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; gap: 1px; }
+    .rule { background: #0A0A0C; padding: 18px 20px; }
+    .rule-name { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+    .rule-desc { font-size: 12px; color: rgba(255,255,255,0.38); line-height: 1.55; }
+    .rule-tag { display: inline-block; margin-top: 8px; background: rgba(94,106,210,0.12); color: #8B96E9; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; }
+
+    .steps { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 8px; }
+    .step { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 20px; }
+    .step-n { font-size: 11px; font-weight: 700; color: #5E6AD2; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .step-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .step-desc { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.6; }
+
+    .faq-list { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
+    .faq-item { padding: 22px 26px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .faq-a { font-size: 13px; color: rgba(255,255,255,0.48); line-height: 1.65; }
+
+    .cta-bottom { text-align: center; padding: 60px 0 80px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .cta-bottom h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.025em; margin-bottom: 12px; }
+    .cta-bottom p { font-size: 15px; color: rgba(255,255,255,0.42); margin-bottom: 30px; }
+
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 26px 0; text-align: center; }
+    .footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .footer-link { font-size: 12px; color: rgba(255,255,255,0.32); transition: color 0.15s; }
+    .footer-link:hover { color: rgba(255,255,255,0.65); }
+    .footer-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <div class="header-inner">
+        <a href="../../" class="logo">IFC Viewer Online</a>
+        <div class="nav-links">
+          <a href="../../ifc-validator/" class="lang-switch">EN</a>
+          <a href="../../" class="nav-cta">Abrir validador →</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <div class="container">
+        <div class="hero-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          18 reglas de validación · Sin subida · Gratis
+        </div>
+        <h1>Validador IFC <span class="accent">Online</span></h1>
+        <p class="hero-desc">Detecta GUIDs duplicados, errores de jerarquía espacial, elementos huérfanos y 15 problemas más de calidad IFC — directamente en tu navegador. Sin subida, sin cuenta, funciona con IFC2x3, IFC4, IFC4x3.</p>
+        <a href="../../" class="cta-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Validar un archivo IFC — gratis
+        </a>
+        <p class="cta-note">Sin cuenta · Se ejecuta completamente en tu navegador mediante WebAssembly · Funciona sin conexión</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="section-label">Reglas de validación</p>
+        <h2 class="section-title">18 comprobaciones de calidad IFC integradas</h2>
+        <p class="section-sub">Cada regla se ejecuta en un Web Worker en segundo plano — la interfaz permanece responsive mientras los resultados llegan en tiempo real.</p>
+        <div class="rules-grid">
+          <div class="rule">
+            <div class="rule-name">Formato de GUID</div>
+            <div class="rule-desc">Valida cada GlobalId contra el formato base64 IFC de 22 caracteres. Detecta identificadores malformados que rompen las herramientas posteriores.</div>
+            <span class="rule-tag">ISO 16739</span>
+          </div>
+          <div class="rule">
+            <div class="rule-name">Unicidad de GUID</div>
+            <div class="rule-desc">Detecta GlobalIds duplicados en todas las entidades — el error de exportación más común de Revit, ArchiCAD y Tekla.</div>
+            <span class="rule-tag">ISO 16739</span>
+          </div>
+          <div class="rule">
+            <div class="rule-name">Jerarquía espacial</div>
+            <div class="rule-desc">Verifica la cadena de contención IfcSite → IfcBuilding → IfcBuildingStorey y que todos los elementos están asignados a una planta.</div>
+            <span class="rule-tag">Esquema IFC</span>
+          </div>
+          <div class="rule">
+            <div class="rule-name">Elementos huérfanos</div>
+            <div class="rule-desc">Identifica instancias de IfcElement sin relación de contención espacial (IfcRelContainedInSpatialStructure) — invisibles en la mayoría de los visores.</div>
+            <span class="rule-tag">Contención</span>
+          </div>
+          <div class="rule">
+            <div class="rule-name">Asignaciones de tipo</div>
+            <div class="rule-desc">Comprueba que cada IfcElement tiene un IfcTypeObject asociado via IfcRelDefinesByType donde lo requiere el esquema.</div>
+            <span class="rule-tag">Esquema</span>
+          </div>
+          <div class="rule">
+            <div class="rule-name">Convenciones de nombres</div>
+            <div class="rule-desc">Detecta atributos Name vacíos y nombres genéricos de marcador de posición que violan los requisitos de nomenclatura ISO 19650.</div>
+            <span class="rule-tag">ISO 19650</span>
+          </div>
+          <div class="rule">
+            <div class="rule-name">Versión de esquema</div>
+            <div class="rule-desc">Marca archivos que usan versiones de esquema IFC obsoletas o identificadores de esquema no estándar que causan problemas de interoperabilidad.</div>
+            <span class="rule-tag">Compatibilidad</span>
+          </div>
+          <div class="rule">
+            <div class="rule-name">Detección de colisiones</div>
+            <div class="rule-desc">Comprobación de colisiones por caja delimitadora entre elementos estructurales — primera pasada rápida antes de ejecutar detección completa en Solibri o Navisworks.</div>
+            <span class="rule-tag">Coordinación</span>
+          </div>
+          <div class="rule">
+            <div class="rule-name">Completitud de Psets</div>
+            <div class="rule-desc">Verifica que los Psets requeridos están presentes y no vacíos para las principales clases de elementos IFC (muros, forjados, pilares, vigas).</div>
+            <span class="rule-tag">Calidad de datos</span>
+          </div>
+          <div class="rule">
+            <div class="rule-name">Unidades definidas</div>
+            <div class="rule-desc">Comprueba que IfcProject contiene un IfcUnitAssignment con al menos unidades de longitud, área y volumen — necesario para el cómputo de cantidades.</div>
+            <span class="rule-tag">Esquema IFC</span>
+          </div>
+          <div class="rule">
+            <div class="rule-name">Validez de geometría</div>
+            <div class="rule-desc">Identifica elementos con representaciones geométricas nulas, degeneradas o ausentes que se renderizan en blanco en los visores BIM.</div>
+            <span class="rule-tag">Geometría</span>
+          </div>
+          <div class="rule">
+            <div class="rule-name">Asignaciones de material</div>
+            <div class="rule-desc">Detecta elementos sin asociaciones IfcMaterial donde se esperan datos de material para cómputo de cantidades y planificación.</div>
+            <span class="rule-tag">Calidad de datos</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="section-label">Cómo funciona</p>
+        <h2 class="section-title">De archivo IFC a informe de validación en segundos</h2>
+        <div class="steps">
+          <div class="step">
+            <div class="step-n">01</div>
+            <div class="step-title">Abre tu IFC</div>
+            <div class="step-desc">Arrastra y suelta cualquier archivo IFC. web-ifc WebAssembly lo analiza completamente en tu navegador — sin subida, sin red requerida.</div>
+          </div>
+          <div class="step">
+            <div class="step-n">02</div>
+            <div class="step-title">Ejecuta la validación</div>
+            <div class="step-desc">18 reglas se ejecutan en un Web Worker en segundo plano. Los resultados llegan en tiempo real — GUIDs, jerarquía, elementos huérfanos, todo marcado al instante.</div>
+          </div>
+          <div class="step">
+            <div class="step-n">03</div>
+            <div class="step-title">Corrige errores</div>
+            <div class="step-desc">Los errores de GUID se corrigen automáticamente con un clic. Edita nombres y valores de propiedades en línea. Deshacer/rehacer completo. Comparte el informe con tu cliente.</div>
+          </div>
+          <div class="step">
+            <div class="step-n">04</div>
+            <div class="step-title">Exporta el IFC corregido</div>
+            <div class="step-desc">Todos los diffs aplicados al binario original en un Web Worker. Descarga el IFC corregido — sin servidor, sin cuenta, sin coste.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <p class="section-label">Preguntas</p>
+        <h2 class="section-title">Validador IFC — Preguntas frecuentes</h2>
+        <br />
+        <div class="faq-list">
+          <div class="faq-item">
+            <p class="faq-q">¿Se sube mi archivo IFC a algún servidor durante la validación?</p>
+            <p class="faq-a">No. La validación se ejecuta completamente en tu navegador mediante web-ifc WebAssembly. Tu archivo IFC nunca sale de tu máquina. El validador funciona completamente sin conexión una vez cargada la página — sin servidor, sin cuenta, sin transferencia de datos.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">¿Puedo usar este validador IFC con modelos confidenciales bajo NDA?</p>
+            <p class="faq-a">Sí. Como todo el procesamiento ocurre localmente en tu navegador y nunca se transmite ningún dato a ningún servidor, puedes validar con seguridad modelos de proyectos confidenciales bajo NDA. No hay ningún acuerdo de servicio que revisar con tu cliente — no se transfieren datos.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">¿Qué versiones de IFC admite el validador?</p>
+            <p class="faq-a">IFC2x3, IFC4, IFC4x1 e IFC4x3. El validador usa el analizador web-ifc de código abierto — el mismo motor utilizado por la mayoría de las herramientas BIM modernas. Los esquemas obsoletos son marcados automáticamente por una regla de validación dedicada.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">¿Puedo corregir los errores encontrados durante la validación y re-exportar el IFC?</p>
+            <p class="faq-a">Sí. Los errores de GUID se pueden corregir automáticamente con un clic. Otras violaciones (nombres, valores de propiedades) se pueden editar en línea con deshacer/rehacer completo. Al exportar IFC se aplican todas las correcciones al binario original en un Web Worker — sin servidor.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">¿Puedo compartir los resultados de validación con mi equipo o cliente?</p>
+            <p class="faq-a">Sí. Después de ejecutar la validación, usa el botón Compartir reporte para generar una URL que codifica los resultados completos. Tu cliente la abre en cualquier navegador sin instalar nada ni crear una cuenta. El archivo IFC nunca se incluye en el enlace.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">¿Funciona en Mac?</p>
+            <p class="faq-a">Sí, completamente. Funciona en cualquier navegador moderno — Chrome, Edge, Firefox y Safari, tanto en Mac como en Windows. Sin plugin, sin instalación, sin restricción de sistema operativo.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-bottom">
+      <div class="container">
+        <h2>Valida tu archivo IFC ahora.</h2>
+        <p>Sin registro. Sin subida. Funciona en tu navegador.</p>
+        <a href="../../" class="cta-primary">Abrir validador IFC →</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="../../" class="footer-link">IFC Viewer Online (EN)</a>
+        <a href="../" class="footer-link">Visor IFC Online (ES)</a>
+        <a href="../../ifc-validator/" class="footer-link">IFC Validator (EN)</a>
+        <a href="../../ifc-viewer-mac/" class="footer-link">IFC Viewer Mac</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <p class="footer-copy">IFC Viewer Online © 2026 · Gratis · Código abierto · Licencia MIT · Construido con web-ifc &amp; three.js</p>
+    </div>
+  </footer>
+
+</body>
+</html>

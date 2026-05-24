@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Niche landing pages (static, bot-readable)
+Allow: /ifc-viewer-online/ifc-validator/
+Allow: /ifc-viewer-online/ifc-viewer-mac/
+Allow: /ifc-viewer-online/es/
+Allow: /ifc-viewer-online/es/ifc-validador/
+
+Sitemap: https://j03rul4nd.github.io/ifc-viewer-online/sitemap.xml
