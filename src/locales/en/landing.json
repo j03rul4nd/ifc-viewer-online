@@ -13,6 +13,7 @@
   },
   "typing": [
     "Catch IFC errors before your client does",
+    "Get a Health Score for every IFC model — 0 to 100",
     "Validate GUID duplicates and spatial hierarchy in seconds",
     "Open any IFC file — no upload, no Revit license needed",
     "Fix naming violations and re-export in one flow",
@@ -54,7 +55,7 @@
   "features": [
     {
       "title": "18-rule IFC validator",
-      "body": "Catch GUID duplicates, spatial hierarchy violations, and orphan elements before your client does. Results stream in real time from a background worker — UI stays fully responsive.",
+      "body": "Catch GUID duplicates, spatial hierarchy violations, and orphan elements before your client does. Every model receives a Health Score from 0 to 100. Results stream in real time from a background worker — UI stays fully responsive.",
       "tip": "IFC / ISO 19650 rule engine"
     },
     {
@@ -99,7 +100,7 @@
     },
     {
       "title": "IFC2x3, IFC4, IFC4x1, IFC4x3",
-      "body": "All current IFC schema versions supported — Revit, ArchiCAD, Tekla, Allplan, Vectorworks, BricsCAD BIM, Solibri and more. Outdated schemas are flagged by the validator.",
+      "body": "All current IFC schema versions supported — Revit, ArchiCAD, Tekla, Allplan, Vectorworks, BricsCAD BIM and more. Outdated schemas are flagged by the validator.",
       "tip": "All major IFC schema versions"
     },
     {
@@ -163,7 +164,7 @@
     },
     {
       "q": "Can I share the validation results with my team or client?",
-      "a": "Yes. After running validation, use the Share Report button to generate a URL that encodes the full results. Your client opens it in any browser without installing anything or creating an account. The IFC file itself is never included in the link."
+      "a": "Yes. After running validation, export your results as JSON, CSV, or a signed Validation Certificate — then share with your team or client. A shareable URL that encodes the full Health Score and issue list directly in a link (no file needed) is on the roadmap. The IFC file itself never leaves your browser."
     },
     {
       "q": "Does it work on Mac?",
@@ -174,36 +175,12 @@
       "a": "The app handles files up to 2 GB. Performance depends on your device — files under 200 MB load well on most modern hardware. Once parsed, geometry is cached in OPFS so every subsequent load of the same file is instant, even offline."
     },
     {
-      "q": "What IFC versions are supported?",
-      "a": "IFC2x3, IFC4, IFC4x1, and IFC4x3. The viewer uses the open-source web-ifc parser — the same engine used by most modern BIM tools and @thatopen/components. Outdated schemas are automatically flagged by the validator."
-    },
-    {
-      "q": "What measurement tools are available?",
-      "a": "You can measure lengths between any two points, areas of surfaces, volumes of enclosed elements, and individual edge lengths — all directly in the 3D viewport. Measurements persist as labelled annotations and can be exported alongside your model."
-    },
-    {
-      "q": "Can I view floor plans and cut sections?",
-      "a": "Yes. Floor plan mode generates accurate 2D orthographic views from any IfcBuildingStorey in the model. Section cuts let you define clipping planes at any position and angle to inspect internal structure without hiding geometry."
-    },
-    {
       "q": "How does the validation work?",
-      "a": "The validator runs 18 built-in rules in a background Web Worker so the UI stays responsive. Rules cover GUID duplicates, spatial hierarchy, orphan elements, naming conventions, missing type assignments, clash detection, and more. Results stream in as each rule completes."
+      "a": "The validator runs 18 built-in rules in a background Web Worker so the UI stays responsive. Rules cover GUID duplicates, spatial hierarchy, orphan elements, naming conventions, missing type assignments, clash detection, and more. Every model receives a Health Score from 0 to 100. Results stream in as each rule completes."
     },
     {
       "q": "Can I fix errors and re-export a corrected IFC?",
       "a": "Yes. All edits (GUID fixes, renames, property value changes) are held as non-destructive diffs with full undo/redo. Clicking Export IFC applies all diffs to the original binary in a Web Worker and downloads the corrected file — no server involved."
-    },
-    {
-      "q": "Can I load multiple IFC files at once?",
-      "a": "Yes. Load as many IFC files as your device memory allows. Each model has independent visibility, transforms, validation, quantity takeoff, and export. Use the Scene panel to manage, reorder, or remove models at any time."
-    },
-    {
-      "q": "Does it work offline?",
-      "a": "Yes, once the page is loaded. The WebAssembly parser and WebGL renderer run entirely in the browser. Parsed geometry is cached in OPFS so repeat loads are instant even without a network connection."
-    },
-    {
-      "q": "What are the file size limits?",
-      "a": "There is no enforced limit — performance depends on your device. Files up to ~200 MB typically load well on modern hardware. The OPFS geometry cache means you only pay the parse cost once per file."
     },
     {
       "q": "Is it free? Can I use it for commercial projects?",

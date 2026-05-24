@@ -442,7 +442,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
             {t('compatible.label')}
           </div>
           <div className="flex gap-4 sm:gap-10 justify-center flex-wrap text-[13px] sm:text-[15px] font-medium text-[var(--text-dim)] tracking-tight">
-            {['Revit', 'ArchiCAD', 'Tekla', 'Allplan', 'Vectorworks', 'BricsCAD BIM', 'Solibri'].map((name) => (
+            {['Revit', 'ArchiCAD', 'Tekla', 'Allplan', 'Vectorworks', 'BricsCAD BIM'].map((name) => (
               <span key={name}>{name}</span>
             ))}
           </div>
@@ -742,6 +742,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
             <motion.div
               variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}
               transition={{ delay: 0.16 }}
+              className="flex flex-col items-center gap-3"
             >
               <StarBorder
                 as="button"
@@ -756,6 +757,12 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
                   {t('actions.openAnIfc')}
                 </span>
               </StarBorder>
+              <button
+                onClick={onLaunch}
+                className="text-[12px] text-[var(--text-faint)] hover:text-[var(--accent-2)] transition-colors cursor-pointer underline-offset-2 hover:underline"
+              >
+                {t('actions.loadDemo')} →
+              </button>
             </motion.div>
           </div>
         </section>
