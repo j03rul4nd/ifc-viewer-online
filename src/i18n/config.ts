@@ -84,6 +84,11 @@ void i18n
     },
     react: {
       useSuspense: false,
+      // react-i18next v17 changed the default bindI18n to only 'languageChanged',
+      // dropping 'loaded'. This means components never re-render when a lazily-loaded
+      // namespace finishes fetching — the UI stays in the fallback (English) forever.
+      // Restoring 'loaded' fixes language switching for non-EN locales.
+      bindI18n: 'languageChanged loaded',
     },
     saveMissing: import.meta.env.DEV,
     missingKeyHandler: import.meta.env.DEV

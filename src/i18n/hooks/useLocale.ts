@@ -27,11 +27,16 @@ export function useLocale(): UseLocaleReturn {
 
   const setLocale = useCallback(
     (next: SupportedLocale) => {
-      void i18n.changeLanguage(next)
+      // Persist + update direction/lang synchronously so the selector responds immediately.
       localStorage.setItem('ifc-locale', next)
-      // Update html[dir] for RTL languages
       const def = LOCALE_MAP.get(next)
-      document.documentElement.dir = def?.dir ?? 'ltr'
+      document.documentElement.dir  = def?.dir ?? 'ltr'
+      document.documentElement.lang = next
+
+      // changeLanguage is async: it fetches all lazy namespaces for `next` then emits
+      // 'languageChanged'. With bindI18n:'languageChanged loaded' in config.ts, every
+      // useTranslation consumer re-renders once namespace loading completes.
+      void i18n.changeLanguage(next)
     },
     [i18n],
   )

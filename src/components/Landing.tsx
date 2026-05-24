@@ -141,24 +141,45 @@ function HeroPreview() {
 const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }
 
 // ── Feature icon map (static — icons don't need i18n) ─────────────────────────
+// Order mirrors the features array in locales: validator, multi-model, drag&drop,
+// OPFS cache, editing, QTO, measurements, floor plans, export, schemas, renderer, indexer.
 const FEATURE_ICONS = [
-  Icons.Upload, Icons.Sparkles, Icons.Layers, Icons.Ruler, Icons.Building,
-  Icons.Zap, Icons.Ruler, Icons.Zap, Icons.Building, Icons.Sparkles,
-  Icons.Layers, Icons.Upload,
+  Icons.Sparkles, Icons.Layers,   Icons.Upload,   Icons.Zap,
+  Icons.Ruler,    Icons.Building, Icons.Ruler,    Icons.Building,
+  Icons.Upload,   Icons.Zap,      Icons.Sparkles, Icons.Layers,
 ] as const
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
-  const { t } = useTranslation('landing')
+  const { t, i18n } = useTranslation('landing')
 
-  // Build arrays inside component so t() is in scope
-  const FEATURES = (t('features', { returnObjects: true }) as Array<{ title: string; body: string; tip: string }>)
+  // During a language switch the 'landing' namespace is fetched asynchronously.
+  // While loading, t(key, { returnObjects:true }) may return the key string instead
+  // of an array (react-i18next v17 changed the default bindI18n to omit 'loaded').
+  // Guard every returnObjects call with Array.isArray so we never call .map() on
+  // a string — the EN fallback will be shown until the new namespace arrives and
+  // bindI18n:'languageChanged loaded' (set in config.ts) triggers the re-render.
+  const raw = {
+    features: t('features', { returnObjects: true }),
+    typing:   t('typing',   { returnObjects: true }),
+    stats:    t('stats',    { returnObjects: true }),
+    steps:    t('steps',    { returnObjects: true }),
+    faq:      t('faq',      { returnObjects: true }),
+  }
+
+  const FEATURES = (Array.isArray(raw.features) ? raw.features as Array<{ title: string; body: string; tip: string }> : [])
     .map((f, i) => ({ ...f, icon: FEATURE_ICONS[i] ?? Icons.Upload }))
 
-  const TYPING_TEXTS = t('typing', { returnObjects: true }) as string[]
-  const STATS        = t('stats',  { returnObjects: true }) as Array<{ label: string }>
-  const STEPS        = t('steps',  { returnObjects: true }) as Array<{ n: string; title: string; body: string }>
-  const FAQ          = t('faq',    { returnObjects: true }) as Array<{ q: string; a: string }>
+  const TYPING_TEXTS = Array.isArray(raw.typing) ? raw.typing as string[] : []
+  const STATS        = Array.isArray(raw.stats)   ? raw.stats  as Array<{ label: string }> : []
+  const STEPS        = Array.isArray(raw.steps)   ? raw.steps  as Array<{ n: string; title: string; body: string }> : []
+  const FAQ          = Array.isArray(raw.faq)     ? raw.faq    as Array<{ q: string; a: string }> : []
+
+  // Keep <html lang> in sync — i18n.language updates synchronously on changeLanguage
+  // even before the namespace finishes loading, so the attribute is always current.
+  React.useEffect(() => {
+    document.documentElement.lang = i18n.language
+  }, [i18n.language])
 
   return (
     <Tooltip.Provider delayDuration={300}>
@@ -362,6 +383,19 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
           >
             <span className="hidden sm:inline">{t('hero.trustLine')}</span>
             <span className="sm:hidden">{t('hero.trustLineMobile')}</span>
+          </motion.div>
+
+          {/* Demo model link — captures users who don't have an IFC at hand */}
+          <motion.div
+            variants={fadeUp} initial="hidden" animate="show" transition={{ duration: 0.5, delay: 0.4 }}
+            className="mt-3"
+          >
+            <button
+              onClick={onLaunch}
+              className="text-[11px] sm:text-[12px] text-[var(--text-faint)] hover:text-[var(--accent-2)] transition-colors cursor-pointer underline-offset-2 hover:underline"
+            >
+              {t('actions.loadDemo')} →
+            </button>
           </motion.div>
 
           {/* Hero card */}
