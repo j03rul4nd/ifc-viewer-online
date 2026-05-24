@@ -87,8 +87,14 @@ void i18n
       // react-i18next v17 changed the default bindI18n to only 'languageChanged',
       // dropping 'loaded'. This means components never re-render when a lazily-loaded
       // namespace finishes fetching — the UI stays in the fallback (English) forever.
-      // Restoring 'loaded' fixes language switching for non-EN locales.
+      // Restoring 'loaded' ensures re-renders after changeLanguage resolves all namespaces.
       bindI18n: 'languageChanged loaded',
+      // bindI18nStore subscribes to i18n.store events. 'added' fires whenever a
+      // resource bundle is added to the store — the most direct signal that a
+      // dynamically-loaded namespace is now available. This is the belt-and-suspenders
+      // companion to bindI18n:'loaded', covering timing edge-cases where the i18n-level
+      // event propagation is delayed (e.g. backendConnector → i18n wildcard relay).
+      bindI18nStore: 'added',
     },
     saveMissing: import.meta.env.DEV,
     missingKeyHandler: import.meta.env.DEV

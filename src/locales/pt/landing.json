@@ -13,6 +13,7 @@
   },
   "typing": [
     "Encontre erros IFC antes do seu cliente",
+    "Obtenha um Health Score para cada modelo IFC — de 0 a 100",
     "Valide GUIDs duplicados e hierarquia espacial em segundos",
     "Abra qualquer arquivo IFC — sem upload, sem licença Revit",
     "Corrija violações de nomenclatura e reexporte em um fluxo",
@@ -41,10 +42,18 @@
     "label": "Compatível com todas as principais ferramentas de autoria BIM"
   },
   "stats": [
-    { "label": "Regras de validação" },
-    { "label": "Versões de esquema IFC" },
-    { "label": "Funciona no navegador" },
-    { "label": "Uploads para servidor" }
+    {
+      "label": "Regras de validação"
+    },
+    {
+      "label": "Versões de esquema IFC"
+    },
+    {
+      "label": "Funciona no navegador"
+    },
+    {
+      "label": "Uploads para servidor"
+    }
   ],
   "featuresSection": {
     "label": "FUNCIONALIDADES",

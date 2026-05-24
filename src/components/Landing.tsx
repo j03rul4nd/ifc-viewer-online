@@ -153,12 +153,30 @@ const FEATURE_ICONS = [
 export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
   const { t, i18n } = useTranslation('landing')
 
+  // ── Safety-net re-render subscription ────────────────────────────────────────
+  // react-i18next v17 uses useSyncExternalStore internally. In some timing
+  // scenarios (lazy namespace load races, React concurrent-mode batching) the
+  // store subscription may miss the 'added' event that fires when a non-EN
+  // namespace finishes loading. As a belt-and-suspenders fallback we subscribe
+  // directly to i18n.store events here and force a re-render via useReducer.
+  // This is safe — the extra render is cheap and the new `t` snapshot already
+  // has the correct language because useSyncExternalStore re-reads getSnapshot
+  // on the same React flush that applies the state update.
+  const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0)
+  React.useEffect(() => {
+    const cb = () => forceUpdate()
+    i18n.on('languageChanged', cb)
+    i18n.store.on('added', cb)
+    return () => {
+      i18n.off('languageChanged', cb)
+      i18n.store.off('added', cb)
+    }
+  }, [i18n])
+
   // During a language switch the 'landing' namespace is fetched asynchronously.
   // While loading, t(key, { returnObjects:true }) may return the key string instead
-  // of an array (react-i18next v17 changed the default bindI18n to omit 'loaded').
-  // Guard every returnObjects call with Array.isArray so we never call .map() on
-  // a string — the EN fallback will be shown until the new namespace arrives and
-  // bindI18n:'languageChanged loaded' (set in config.ts) triggers the re-render.
+  // of an array. Guard every returnObjects call with Array.isArray so we never
+  // call .map() on a string — EN fallback shows until the new namespace arrives.
   const raw = {
     features: t('features', { returnObjects: true }),
     typing:   t('typing',   { returnObjects: true }),
@@ -326,6 +344,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
             aria-hidden="true"
           >
             <TextType
+              key={i18n.language}
               text={TYPING_TEXTS}
               typingSpeed={52}
               deletingSpeed={26}

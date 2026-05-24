@@ -13,6 +13,7 @@
   },
   "typing": [
     "Detecta els errors IFC abans que ho faci el teu client",
+    "Obteniu un Health Score per a cada model IFC — de 0 a 100",
     "Valida GUIDs duplicats i jerarquia espacial en segons",
     "Obre qualsevol fitxer IFC — sense pujada, sense llicència Revit",
     "Corregeix infraccions de nomenclatura i torna a exportar en un sol flux",
@@ -41,10 +42,18 @@
     "label": "Compatible amb totes les eines d'autoria BIM principals"
   },
   "stats": [
-    { "label": "Regles de validació" },
-    { "label": "Versions d'esquema IFC" },
-    { "label": "S'executa al navegador" },
-    { "label": "Pujades al servidor" }
+    {
+      "label": "Regles de validació"
+    },
+    {
+      "label": "Versions d'esquema IFC"
+    },
+    {
+      "label": "S'executa al navegador"
+    },
+    {
+      "label": "Pujades al servidor"
+    }
   ],
   "featuresSection": {
     "label": "FUNCIONALITATS",

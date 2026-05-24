@@ -183,6 +183,30 @@
       "a": "Sí. Todas las ediciones (correcciones de GUID, renombramientos, cambios de valores de propiedades) se mantienen como diffs no destructivos con deshacer/rehacer completo. Al hacer clic en Exportar IFC se aplican todos los diffs al binario original en un Web Worker y se descarga el archivo corregido — sin servidor involucrado."
     },
     {
+      "q": "¿Qué versiones IFC son compatibles?",
+      "a": "IFC2x3, IFC4, IFC4x1 e IFC4x3. El visor usa el parser web-ifc de código abierto — el mismo motor que usan la mayoría de herramientas BIM modernas y @thatopen/components. Los esquemas obsoletos se marcan automáticamente con el validador."
+    },
+    {
+      "q": "¿Qué herramientas de medición están disponibles?",
+      "a": "Puedes medir longitudes entre dos puntos, áreas de superficies, volúmenes de elementos cerrados y longitudes individuales de aristas — todo directamente en el visor 3D. Las mediciones persisten como anotaciones etiquetadas y se pueden exportar junto al modelo."
+    },
+    {
+      "q": "¿Puedo ver planos de planta y cortar secciones?",
+      "a": "Sí. El modo de planta genera vistas ortográficas 2D precisas desde cualquier IfcBuildingStorey del modelo. Los cortes de sección permiten definir planos de corte en cualquier posición y ángulo para inspeccionar la estructura interna sin ocultar geometría."
+    },
+    {
+      "q": "¿Puedo cargar varios archivos IFC a la vez?",
+      "a": "Sí. Carga tantos archivos IFC como permita la memoria de tu dispositivo. Cada modelo tiene visibilidad, transformaciones, validación, cómputo de cantidades y exportación independientes. Usa el panel Escena para gestionar, reordenar o eliminar modelos en cualquier momento."
+    },
+    {
+      "q": "¿Funciona sin conexión?",
+      "a": "Sí, una vez cargada la página. El parser WebAssembly y el renderizador WebGL funcionan completamente en el navegador. La geometría analizada se almacena en caché en OPFS para que las cargas repetidas sean instantáneas incluso sin conexión."
+    },
+    {
+      "q": "¿Cuáles son los límites de tamaño de archivo?",
+      "a": "No hay límite forzado — el rendimiento depende de tu dispositivo. Los archivos de hasta ~200 MB generalmente cargan bien en hardware moderno. La caché de geometría OPFS significa que el coste de análisis se paga solo una vez por archivo."
+    },
+    {
       "q": "¿Es gratis? ¿Puedo usarlo para proyectos comerciales?",
       "a": "Sí, completamente gratis. El código fuente tiene licencia MIT. Puedes usar la aplicación en vivo o bifurcar el repositorio para tus propios proyectos, incluyendo los comerciales."
     }

@@ -183,6 +183,30 @@
       "a": "Yes. All edits (GUID fixes, renames, property value changes) are held as non-destructive diffs with full undo/redo. Clicking Export IFC applies all diffs to the original binary in a Web Worker and downloads the corrected file — no server involved."
     },
     {
+      "q": "What IFC versions are supported?",
+      "a": "IFC2x3, IFC4, IFC4x1, and IFC4x3. The viewer uses the open-source web-ifc parser — the same engine used by most modern BIM tools and @thatopen/components. Outdated schemas are automatically flagged by the validator."
+    },
+    {
+      "q": "What measurement tools are available?",
+      "a": "You can measure lengths between any two points, areas of surfaces, volumes of enclosed elements, and individual edge lengths — all directly in the 3D viewport. Measurements persist as labelled annotations and can be exported alongside your model."
+    },
+    {
+      "q": "Can I view floor plans and cut sections?",
+      "a": "Yes. Floor plan mode generates accurate 2D orthographic views from any IfcBuildingStorey in the model. Section cuts let you define clipping planes at any position and angle to inspect internal structure without hiding geometry."
+    },
+    {
+      "q": "Can I load multiple IFC files at once?",
+      "a": "Yes. Load as many IFC files as your device memory allows. Each model has independent visibility, transforms, validation, quantity takeoff, and export. Use the Scene panel to manage, reorder, or remove models at any time."
+    },
+    {
+      "q": "Does it work offline?",
+      "a": "Yes, once the page is loaded. The WebAssembly parser and WebGL renderer run entirely in the browser. Parsed geometry is cached in OPFS so repeat loads are instant even without a network connection."
+    },
+    {
+      "q": "What are the file size limits?",
+      "a": "There is no enforced limit — performance depends on your device. Files up to ~200 MB typically load well on modern hardware. The OPFS geometry cache means you only pay the parse cost once per file."
+    },
+    {
       "q": "Is it free? Can I use it for commercial projects?",
       "a": "Yes, completely free. The source code is MIT-licensed. You can use the live app or fork the repository for your own projects, including commercial ones."
     }

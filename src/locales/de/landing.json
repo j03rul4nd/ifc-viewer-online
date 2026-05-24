@@ -13,6 +13,7 @@
   },
   "typing": [
     "IFC-Fehler entdecken, bevor Ihr Kunde es tut",
+    "Health Score für jedes IFC-Modell — von 0 bis 100",
     "GUID-Duplikate und Raumhierarchie in Sekunden validieren",
     "Jede IFC-Datei öffnen — kein Upload, keine Revit-Lizenz nötig",
     "Namenskonventionsverletzungen korrigieren und in einem Schritt exportieren",
@@ -41,10 +42,18 @@
     "label": "Kompatibel mit allen gängigen BIM-Autorenwerkzeugen"
   },
   "stats": [
-    { "label": "Validierungsregeln" },
-    { "label": "IFC-Schemaversionen" },
-    { "label": "Läuft im Browser" },
-    { "label": "Server-Uploads" }
+    {
+      "label": "Validierungsregeln"
+    },
+    {
+      "label": "IFC-Schemaversionen"
+    },
+    {
+      "label": "Läuft im Browser"
+    },
+    {
+      "label": "Server-Uploads"
+    }
   ],
   "featuresSection": {
     "label": "FUNKTIONEN",
