@@ -9,7 +9,8 @@
         "lint": "eslint .",
         "preview": "vite preview",
         "test": "vitest run",
-        "test:watch": "vitest"
+        "test:watch": "vitest",
+        "og": "node scripts/og/build-og.mjs"
     },
     "dependencies": {
         "@radix-ui/react-context-menu": "^2.2.16",
