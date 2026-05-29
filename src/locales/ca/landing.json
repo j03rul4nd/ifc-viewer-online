@@ -62,7 +62,7 @@
   },
   "features": [
     {
-      "title": "Validador IFC de 18 regles",
+      "title": "Validador IFC de 38 regles",
       "body": "Detecta GUIDs duplicats, infraccions de jerarquia espacial i elements orfes abans que ho faci el teu client. Els resultats es transmeten en temps real des d'un worker en segon pla — la interfície es manté completament responsiva.",
       "tip": "Motor de regles IFC / ISO 19650"
     },
@@ -135,7 +135,7 @@
     {
       "n": "02",
       "title": "Inspecciona i valida",
-      "body": "Explora l'arbre del model, filtra per categoria i executa 18 regles de validació integrades en un worker en segon pla. GUIDs duplicats, errors de jerarquia espacial, assignacions de tipus que falten — tot marcat instantàniament."
+      "body": "Explora l'arbre del model, filtra per categoria i executa 38 regles de validació integrades en un worker en segon pla. GUIDs duplicats, errors de jerarquia espacial, assignacions de tipus que falten — tot marcat instantàniament."
     },
     {
       "n": "03",
@@ -196,7 +196,7 @@
     },
     {
       "q": "Com funciona la validació?",
-      "a": "El validador executa 18 regles integrades en un Web Worker en segon pla perquè la interfície es mantingui responsiva. Les regles cobreixen GUIDs duplicats, jerarquia espacial, elements orfes, convencions de nomenclatura, assignacions de tipus que falten, detecció de col·lisions i més. Els resultats es transmeten a mesura que cada regla es completa."
+      "a": "El validador executa 38 regles integrades en un Web Worker en segon pla perquè la interfície es mantingui responsiva. Les regles cobreixen GUIDs duplicats, jerarquia espacial, elements orfes, convencions de nomenclatura, assignacions de tipus que falten, detecció de col·lisions i més. Els resultats es transmeten a mesura que cada regla es completa."
     },
     {
       "q": "Puc corregir errors i tornar a exportar un IFC corregit?",

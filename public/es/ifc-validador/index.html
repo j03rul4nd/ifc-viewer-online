@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Validador IFC Online Gratis — 18 Reglas, Sin Subir Archivos</title>
-  <meta name="description" content="Validador IFC online gratuito. Comprueba archivos IFC en busca de GUIDs duplicados, errores de jerarquía espacial, elementos huérfanos y 15 reglas más — directamente en tu navegador. Sin subida, sin cuenta. Compatible con IFC2x3, IFC4, IFC4x3." />
+  <title>Validador IFC Online Gratis — 38 Reglas, Sin Subir Archivos</title>
+  <meta name="description" content="Validador IFC online gratuito. Comprueba archivos IFC en busca de GUIDs duplicados, errores de jerarquía espacial, elementos huérfanos y 35 reglas más — directamente en tu navegador. Health Score 0–100 en 30 segundos. Sin subida, sin cuenta." />
   <meta name="keywords" content="validador IFC online, validar archivo IFC, comprobar IFC, verificar IFC, errores IFC, IFC GUID duplicado, jerarquía espacial IFC, validación IFC gratis, comprobador IFC, IFC calidad" />
   <meta name="author" content="Joel Benitez" />
   <meta name="robots" content="index, follow" />
@@ -15,14 +15,14 @@
 
   <meta property="og:type"        content="website" />
   <meta property="og:url"         content="https://j03rul4nd.github.io/ifc-viewer-online/es/ifc-validador/" />
-  <meta property="og:title"       content="Validador IFC Online Gratis — 18 Reglas, Sin Subir Archivos" />
-  <meta property="og:description" content="Valida archivos IFC contra 18 reglas de calidad directamente en tu navegador. GUIDs duplicados, jerarquía espacial, elementos huérfanos y más. Sin subida, sin cuenta." />
+  <meta property="og:title"       content="Validador IFC Online Gratis — 38 Reglas, Sin Subir Archivos" />
+  <meta property="og:description" content="Valida archivos IFC contra 38 reglas de calidad directamente en tu navegador. GUIDs duplicados, jerarquía espacial, elementos huérfanos y más. Sin subida, sin cuenta." />
   <meta property="og:site_name"   content="IFC Viewer Online" />
   <meta property="og:locale"      content="es_ES" />
   <meta property="og:locale:alternate" content="en_US" />
   <meta name="twitter:card"        content="summary" />
-  <meta name="twitter:title"       content="Validador IFC Online Gratis — 18 Reglas, Sin Subir Archivos" />
-  <meta name="twitter:description" content="Valida archivos IFC en tu navegador. Sin subida, sin cuenta. 18 reglas de calidad." />
+  <meta name="twitter:title"       content="Validador IFC Online Gratis — 38 Reglas, Sin Subir Archivos" />
+  <meta name="twitter:description" content="Valida archivos IFC en tu navegador. Sin subida, sin cuenta. 38 reglas de calidad." />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -36,8 +36,8 @@
         "@type": "WebPage",
         "@id": "https://j03rul4nd.github.io/ifc-viewer-online/es/ifc-validador/",
         "url": "https://j03rul4nd.github.io/ifc-viewer-online/es/ifc-validador/",
-        "name": "Validador IFC Online Gratis — 18 Reglas, Sin Subir Archivos",
-        "description": "Validador IFC online gratuito. Comprueba archivos IFC en busca de GUIDs duplicados, errores de jerarquía espacial, elementos huérfanos y 15 reglas más.",
+        "name": "Validador IFC Online Gratis — 38 Reglas, Sin Subir Archivos",
+        "description": "Validador IFC online gratuito. Comprueba archivos IFC en busca de GUIDs duplicados, errores de jerarquía espacial, elementos huérfanos y 35 reglas más. Health Score 0–100.",
         "isPartOf": { "@id": "https://j03rul4nd.github.io/ifc-viewer-online/" },
         "inLanguage": "es"
       },
@@ -169,7 +169,7 @@
       <div class="container">
         <div class="hero-badge">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          18 reglas de validación · Sin subida · Gratis
+          38 reglas de validación · Sin subida · Gratis
         </div>
         <h1>Validador IFC <span class="accent">Online</span></h1>
         <p class="hero-desc">Detecta GUIDs duplicados, errores de jerarquía espacial, elementos huérfanos y 15 problemas más de calidad IFC — directamente en tu navegador. Sin subida, sin cuenta, funciona con IFC2x3, IFC4, IFC4x3.</p>
@@ -184,7 +184,7 @@
     <section class="section">
       <div class="container">
         <p class="section-label">Reglas de validación</p>
-        <h2 class="section-title">18 comprobaciones de calidad IFC integradas</h2>
+        <h2 class="section-title">38 comprobaciones de calidad IFC integradas</h2>
         <p class="section-sub">Cada regla se ejecuta en un Web Worker en segundo plano — la interfaz permanece responsive mientras los resultados llegan en tiempo real.</p>
         <div class="rules-grid">
           <div class="rule">
@@ -247,6 +247,21 @@
             <div class="rule-desc">Detecta elementos sin asociaciones IfcMaterial donde se esperan datos de material para cómputo de cantidades y planificación.</div>
             <span class="rule-tag">Calidad de datos</span>
           </div>
+          <div class="rule">
+            <div class="rule-name">Desfase de coordenadas</div>
+            <div class="rule-desc">Detecta modelos posicionados a más de 10 km del origen IFC — error habitual al federar modelos de distintas disciplinas con puntos de levantamiento inconsistentes.</div>
+            <span class="rule-tag">Georeferenciación</span>
+          </div>
+          <div class="rule">
+            <div class="rule-name">Exceso de proxies</div>
+            <div class="rule-desc">Más del 5% de los elementos físicos son IfcBuildingElementProxy — típicamente familias Revit sin convertir. Indica una configuración de exportación IFC incompleta.</div>
+            <span class="rule-tag">Calidad de exportación</span>
+          </div>
+          <div class="rule">
+            <div class="rule-name">Anomalía de tamaño de archivo</div>
+            <div class="rule-desc">El tamaño medio por elemento supera 500 KB — sugiere geometría inflada, texturas embebidas o detalle excesivo inadecuado para coordinación.</div>
+            <span class="rule-tag">Rendimiento</span>
+          </div>
         </div>
       </div>
     </section>
@@ -264,7 +279,7 @@
           <div class="step">
             <div class="step-n">02</div>
             <div class="step-title">Ejecuta la validación</div>
-            <div class="step-desc">18 reglas se ejecutan en un Web Worker en segundo plano. Los resultados llegan en tiempo real — GUIDs, jerarquía, elementos huérfanos, todo marcado al instante.</div>
+            <div class="step-desc">38 reglas se ejecutan en un Web Worker en segundo plano. Los resultados llegan en tiempo real — GUIDs, jerarquía, elementos huérfanos, proxies, desfase de coordenadas, todo marcado al instante.</div>
           </div>
           <div class="step">
             <div class="step-n">03</div>

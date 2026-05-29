@@ -102,7 +102,27 @@
     "deleteCustom": "Excluir perfil",
     "selectProfile": "Selecionar perfil…",
     "customize": "Personalizar perfil",
-    "clearProfile": "Limpar perfil"
+    "clearProfile": "Limpar perfil",
+    "basic": {
+      "name": "Entrega básica",
+      "description": "Verifica se o modelo é um IFC válido e bem estruturado antes de enviá-lo."
+    },
+    "quality": {
+      "name": "Revisão de qualidade",
+      "description": "Revisão completa de nomenclatura, propriedades e estrutura antes de publicar no CDE."
+    },
+    "coordination": {
+      "name": "Coordenação BIM",
+      "description": "Qualidade de dados essencial + detecção de conflitos para sessões de coordenação."
+    },
+    "iso19650": {
+      "name": "Conformidade ISO 19650",
+      "description": "Verifica os requisitos de informação de uma entrega formal conforme a ISO 19650-2."
+    },
+    "lod300": {
+      "name": "Design LOD 300",
+      "description": "Verifica se todos os elementos têm o nível de informação exigido para o LOD 300."
+    }
   },
   "coverage": {
     "title": "Cobertura de validação",
@@ -208,5 +228,15 @@
     "classification": "Classificação",
     "mep": "MEP",
     "clash": "Detecção de colisões"
+  },
+  "remediation": {
+    "howToFix": "Como corrigir",
+    "noToolSteps": "Sem passos específicos para {{tool}} — consulte o resumo acima.",
+    "tools": {
+      "revit": "Revit",
+      "archicad": "ArchiCAD",
+      "tekla": "Tekla",
+      "allplan": "Allplan"
+    }
   }
 }

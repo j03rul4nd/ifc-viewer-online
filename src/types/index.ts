@@ -1,4 +1,4 @@
-export type Route = 'landing' | 'viewer'
+export type Route = 'landing' | 'viewer' | 'report'
 export type ViewerStyle = 'shaded' | 'blueprint' | 'xray'
 export type LoadPhase = 'reading' | 'parsing' | 'uploading' | 'done'
 
@@ -122,6 +122,10 @@ export interface ValidationResult {
   durationMs: number
   /** 0–100 quality score, calculated client-side after worker returns. Higher = fewer issues. */
   qualityScore?: number
+  metadata?: {
+    /** Set when clash detection was capped at CLASH_ELEMENT_LIMIT elements. */
+    clashCapped?: { checkedCount: number; totalCount: number }
+  }
 }
 
 export interface RulesConfig {
@@ -213,6 +217,14 @@ export interface RulesConfig {
   RULE_ISO19650_FILENAME?: boolean
   /** Regex for ISO 19650 filename convention, e.g. '^[A-Z]{3}-[A-Z]{2}-' */
   iso19650FilenamePattern?: string
+
+  // ── Sprint V5 — Model quality signals ────────────────────────────────────────
+  /** More than 5% of physical elements are IfcBuildingElementProxy (typically unconverted Revit families) */
+  RULE_PROXY_OVERUSE?: boolean
+  /** Model geometry positioned more than 10 km from the WCS origin — causes floating-point precision errors in viewers */
+  RULE_COORDINATE_OFFSET?: boolean
+  /** File size per physical element exceeds 500 KB — typically over-detailed geometry or embedded textures */
+  RULE_FILE_SIZE_ANOMALY?: boolean
 }
 
 export const DEFAULT_RULES: RulesConfig = {
@@ -253,6 +265,10 @@ export const DEFAULT_RULES: RulesConfig = {
   RULE_MEP_SYSTEM_MISSING:        false,
   RULE_CLASH_MEP_STRUCTURAL:      false,
   RULE_ISO19650_FILENAME:         false,
+  // Sprint V5
+  RULE_PROXY_OVERUSE:             true,
+  RULE_COORDINATE_OFFSET:         true,
+  RULE_FILE_SIZE_ANOMALY:         true,
   lodLevel:                       300,
   namingConventionPatterns: {},
   requiredPsets: {},
@@ -527,6 +543,22 @@ export const RULE_METADATA: Record<string, RuleMetadata> = {
     description: 'El nombre del archivo no sigue la convención ISO 19650',
     category: 'iso19650', standard: 'ISO 19650-2:2021 §6.3', defaultSeverity: 'warning', autoFixable: false,
   },
+  // ── Sprint V5 — Model quality signals ─────────────────────────────
+  RULE_PROXY_OVERUSE: {
+    id: 'RULE_PROXY_OVERUSE', label: 'Proxy overuse',
+    description: 'More than 5% of physical elements are IfcBuildingElementProxy — typically unconverted Revit families',
+    category: 'quality', standard: 'IFC best practice', defaultSeverity: 'warning', autoFixable: false,
+  },
+  RULE_COORDINATE_OFFSET: {
+    id: 'RULE_COORDINATE_OFFSET', label: 'Large coordinate offset',
+    description: 'Model geometry is positioned more than 10 km from the WCS origin — causes floating-point precision errors in viewers',
+    category: 'quality', standard: 'IFC best practice', defaultSeverity: 'warning', autoFixable: false,
+  },
+  RULE_FILE_SIZE_ANOMALY: {
+    id: 'RULE_FILE_SIZE_ANOMALY', label: 'File size anomaly',
+    description: 'File size per physical element exceeds 500 KB — typically over-detailed geometry or embedded textures',
+    category: 'quality', standard: 'IFC best practice', defaultSeverity: 'info', autoFixable: false,
+  },
 }
 
 // ── Validation profiles ───────────────────────────────────────────────────────
@@ -571,24 +603,24 @@ const _QUALITY_RULES: RulesConfig = {
 export const VALIDATION_PROFILES: readonly ValidationProfile[] = [
   {
     id: 'basic',
-    name: 'Entrega básica',
-    description: 'Comprueba que el modelo es un IFC válido y bien estructurado antes de enviarlo.',
+    name: 'Basic delivery',
+    description: 'Checks that the model is a valid, well-structured IFC before sending it.',
     icon: '📦',
     rules: _BASIC_RULES,
     coverageTypes: ['schema', 'spatial'],
   },
   {
     id: 'quality',
-    name: 'Revisión de calidad',
-    description: 'Revisión exhaustiva de naming, propiedades y estructura antes de publicar en el CDE.',
+    name: 'Quality review',
+    description: 'Thorough review of naming, properties and structure before publishing to the CDE.',
     icon: '🔍',
     rules: _QUALITY_RULES,
     coverageTypes: ['schema', 'spatial', 'quality'],
   },
   {
     id: 'coordination',
-    name: 'Coordinación BIM',
-    description: 'Calidad de datos esencial + detección de colisiones para sesiones de coordinación.',
+    name: 'BIM coordination',
+    description: 'Essential data quality + clash detection for coordination sessions.',
     icon: '⚡',
     rules: {
       ..._BASIC_RULES,
@@ -604,8 +636,8 @@ export const VALIDATION_PROFILES: readonly ValidationProfile[] = [
   },
   {
     id: 'iso19650',
-    name: 'Cumplimiento ISO 19650',
-    description: 'Verifica los requisitos de información de una entrega formal según ISO 19650-2.',
+    name: 'ISO 19650 compliance',
+    description: 'Verifies the information requirements of a formal delivery per ISO 19650-2.',
     icon: '📋',
     rules: {
       ..._QUALITY_RULES,
@@ -620,7 +652,7 @@ export const VALIDATION_PROFILES: readonly ValidationProfile[] = [
   {
     id: 'lod300',
     name: 'LOD 300 Design',
-    description: 'Comprueba que todos los elementos tienen el nivel de información requerido para LOD 300.',
+    description: 'Checks that all elements have the level of information required for LOD 300.',
     icon: '🏗️',
     rules: {
       ..._QUALITY_RULES,
@@ -709,6 +741,9 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MISSING_CLASSIFICATION:     { label: 'Missing classification', description: 'Physical element has no IfcRelAssociatesClassification' },
     RULE_MEP_SYSTEM_MISSING:         { label: 'MEP system missing',     description: 'MEP flow element not assigned to any IfcSystem' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'MEP/structural clash',   description: 'MEP element bounding box overlaps a structural element' },
+    RULE_PROXY_OVERUSE:              { label: 'Proxy overuse',          description: 'More than 5% of elements are IfcBuildingElementProxy — typically unconverted Revit families' },
+    RULE_COORDINATE_OFFSET:          { label: 'Large coordinate offset', description: 'Model geometry is more than 10 km from the WCS origin — causes floating-point precision errors' },
+    RULE_FILE_SIZE_ANOMALY:          { label: 'File size anomaly',       description: 'File is unusually large per element — over-detailed geometry or embedded textures likely' },
   },
   es: {
     RULE_EMPTY_NAME:                 { label: 'Nombre vacío',              description: 'Elemento sin nombre asignado (Name = "" o nulo)' },
@@ -746,6 +781,9 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MISSING_CLASSIFICATION:     { label: 'Clasificación faltante',    description: 'Elemento físico sin IfcRelAssociatesClassification' },
     RULE_MEP_SYSTEM_MISSING:         { label: 'Sistema MEP faltante',      description: 'Elemento de flujo MEP no asignado a ningún IfcSystem' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'Colisión MEP/estructura',   description: 'Caja de colisión de elemento MEP solapa con elemento estructural' },
+    RULE_PROXY_OVERUSE:              { label: 'Exceso de elementos proxy',  description: 'Más del 5% de los elementos son IfcBuildingElementProxy — familias Revit sin convertir' },
+    RULE_COORDINATE_OFFSET:          { label: 'Desfase de coordenadas',     description: 'La geometría del modelo está a más de 10 km del origen WCS — provoca errores de precisión de coma flotante' },
+    RULE_FILE_SIZE_ANOMALY:          { label: 'Anomalía de tamaño de archivo', description: 'El archivo es inusualmente grande por elemento — probablemente geometría sobredetallada o texturas embebidas' },
   },
   fr: {
     RULE_EMPTY_NAME:                 { label: 'Nom vide',                  description: 'Élément sans nom (Name = "" ou nul)' },
@@ -783,6 +821,9 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MISSING_CLASSIFICATION:     { label: 'Classification manquante',  description: 'Élément physique sans IfcRelAssociatesClassification' },
     RULE_MEP_SYSTEM_MISSING:         { label: 'Système MEP manquant',      description: 'Élément de flux MEP non affecté à un IfcSystem' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'Conflit MEP/structure',     description: 'La boîte englobante d\'un élément MEP chevauche un élément structurel' },
+    RULE_PROXY_OVERUSE:              { label: 'Suremploi de proxies',       description: 'Plus de 5% des éléments sont IfcBuildingElementProxy — typiquement des familles Revit non converties' },
+    RULE_COORDINATE_OFFSET:          { label: 'Décalage de coordonnées',   description: 'La géométrie est à plus de 10 km de l\'origine SCM — provoque des erreurs de précision virgule flottante' },
+    RULE_FILE_SIZE_ANOMALY:          { label: 'Anomalie de taille de fichier', description: 'Le fichier est anormalement volumineux par élément — géométrie trop détaillée ou textures incorporées' },
   },
   de: {
     RULE_EMPTY_NAME:                 { label: 'Leerer Name',               description: 'Element ohne Name (Name = "" oder null)' },
@@ -820,6 +861,9 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MISSING_CLASSIFICATION:     { label: 'Klassifikation fehlt',      description: 'Physisches Element ohne IfcRelAssociatesClassification' },
     RULE_MEP_SYSTEM_MISSING:         { label: 'MEP-System fehlt',          description: 'MEP-Strömungselement keinem IfcSystem zugewiesen' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'MEP/Struktur-Kollision',    description: 'Begrenzungsrahmen eines MEP-Elements überlappt ein Strukturelement' },
+    RULE_PROXY_OVERUSE:              { label: 'Proxy-Überbenutzung',        description: 'Mehr als 5% der Elemente sind IfcBuildingElementProxy — typischerweise nicht konvertierte Revit-Familien' },
+    RULE_COORDINATE_OFFSET:          { label: 'Großer Koordinatenversatz', description: 'Geometrie ist mehr als 10 km vom WCS-Ursprung entfernt — verursacht Gleitkomma-Präzisionsfehler' },
+    RULE_FILE_SIZE_ANOMALY:          { label: 'Dateigrößen-Anomalie',      description: 'Datei ist pro Element ungewöhnlich groß — wahrscheinlich übermäßig detaillierte Geometrie oder eingebettete Texturen' },
   },
   pt: {
     RULE_EMPTY_NAME:                 { label: 'Nome vazio',                description: 'Elemento sem nome (Name = "" ou nulo)' },
@@ -857,6 +901,9 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MISSING_CLASSIFICATION:     { label: 'Classificação em falta',    description: 'Elemento físico sem IfcRelAssociatesClassification' },
     RULE_MEP_SYSTEM_MISSING:         { label: 'Sistema MEP em falta',      description: 'Elemento de fluxo MEP não atribuído a nenhum IfcSystem' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'Colisão MEP/estrutura',     description: 'Caixa delimitadora de elemento MEP sobrepõe elemento estrutural' },
+    RULE_PROXY_OVERUSE:              { label: 'Uso excessivo de proxy',     description: 'Mais de 5% dos elementos são IfcBuildingElementProxy — tipicamente famílias Revit não convertidas' },
+    RULE_COORDINATE_OFFSET:          { label: 'Grande desvio de coordenadas', description: 'A geometria está a mais de 10 km da origem WCS — provoca erros de precisão de vírgula flutuante' },
+    RULE_FILE_SIZE_ANOMALY:          { label: 'Anomalia de tamanho de ficheiro', description: 'O ficheiro é anormalmente grande por elemento — geometria excessivamente detalhada ou texturas incorporadas' },
   },
   it: {
     RULE_EMPTY_NAME:                 { label: 'Nome vuoto',                description: 'Elemento senza nome (Name = "" o nullo)' },
@@ -894,6 +941,9 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MISSING_CLASSIFICATION:     { label: 'Classificazione mancante',  description: 'Elemento fisico senza IfcRelAssociatesClassification' },
     RULE_MEP_SYSTEM_MISSING:         { label: 'Sistema MEP mancante',      description: 'Elemento di flusso MEP non assegnato ad alcun IfcSystem' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'Scontro MEP/struttura',     description: 'Il bounding box di un elemento MEP si sovrappone a un elemento strutturale' },
+    RULE_PROXY_OVERUSE:              { label: 'Uso eccessivo di proxy',     description: 'Più del 5% degli elementi sono IfcBuildingElementProxy — tipicamente famiglie Revit non convertite' },
+    RULE_COORDINATE_OFFSET:          { label: 'Grande offset di coordinate', description: 'La geometria è a più di 10 km dall\'origine WCS — causa errori di precisione in virgola mobile' },
+    RULE_FILE_SIZE_ANOMALY:          { label: 'Anomalia dimensione file',   description: 'Il file è insolitamente grande per elemento — probabile geometria troppo dettagliata o texture incorporate' },
   },
   zh: {
     RULE_EMPTY_NAME:                 { label: '空名称',                    description: '元素没有名称（Name = "" 或空）' },
@@ -931,6 +981,9 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MISSING_CLASSIFICATION:     { label: '缺少分类',                  description: '物理元素没有 IfcRelAssociatesClassification' },
     RULE_MEP_SYSTEM_MISSING:         { label: '缺少 MEP 系统',             description: 'MEP 流量元素未分配到任何 IfcSystem' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'MEP/结构碰撞',              description: 'MEP 元素边界框与结构元素重叠' },
+    RULE_PROXY_OVERUSE:              { label: '代理元素过多',               description: '超过5%的元素是 IfcBuildingElementProxy — 通常是未转换的 Revit 族' },
+    RULE_COORDINATE_OFFSET:          { label: '大坐标偏移',                description: '模型几何距离 WCS 原点超过 10 公里 — 导致浮点精度错误' },
+    RULE_FILE_SIZE_ANOMALY:          { label: '文件大小异常',               description: '每个元素的文件大小异常偏大 — 可能是过于精细的几何体或嵌入纹理' },
   },
   ja: {
     RULE_EMPTY_NAME:                 { label: '空の名前',                  description: '名前のない要素（Name = "" または null）' },
@@ -968,6 +1021,9 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MISSING_CLASSIFICATION:     { label: '欠落した分類',              description: 'IfcRelAssociatesClassification のない物理要素' },
     RULE_MEP_SYSTEM_MISSING:         { label: 'MEP システム欠落',          description: 'いずれの IfcSystem にも割り当てられていない MEP フロー要素' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'MEP/構造干渉',              description: 'MEP 要素のバウンディングボックスが構造要素と重なっている' },
+    RULE_PROXY_OVERUSE:              { label: 'プロキシの過剰使用',         description: '5%以上の要素が IfcBuildingElementProxy — 通常は変換されていない Revit ファミリ' },
+    RULE_COORDINATE_OFFSET:          { label: '大きな座標オフセット',       description: 'モデルジオメトリが WCS 原点から 10 km 以上離れている — 浮動小数点精度エラーを引き起こす' },
+    RULE_FILE_SIZE_ANOMALY:          { label: 'ファイルサイズの異常',        description: '要素あたりのファイルサイズが異常に大きい — 過度に詳細なジオメトリまたは埋め込みテクスチャの可能性' },
   },
   th: {
     RULE_EMPTY_NAME:                 { label: 'ชื่อว่างเปล่า',            description: 'องค์ประกอบไม่มีชื่อ (Name = "" หรือ null)' },
@@ -1005,6 +1061,9 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MISSING_CLASSIFICATION:     { label: 'การจำแนกประเภทหายไป',      description: 'องค์ประกอบทางกายภาพไม่มี IfcRelAssociatesClassification' },
     RULE_MEP_SYSTEM_MISSING:         { label: 'ระบบ MEP หายไป',           description: 'องค์ประกอบการไหล MEP ไม่ได้กำหนดให้กับ IfcSystem ใด ๆ' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'การชน MEP/โครงสร้าง',      description: 'Bounding box ขององค์ประกอบ MEP ทับซ้อนกับองค์ประกอบโครงสร้าง' },
+    RULE_PROXY_OVERUSE:              { label: 'การใช้ proxy มากเกินไป',     description: 'มากกว่า 5% ขององค์ประกอบเป็น IfcBuildingElementProxy — มักเป็นกลุ่ม Revit ที่ยังไม่ได้แปลง' },
+    RULE_COORDINATE_OFFSET:          { label: 'ค่าชดเชยพิกัดขนาดใหญ่',    description: 'เรขาคณิตของโมเดลอยู่ห่างจากจุดกำเนิด WCS มากกว่า 10 กม. — ทำให้เกิดข้อผิดพลาดความแม่นยำทศนิยม' },
+    RULE_FILE_SIZE_ANOMALY:          { label: 'ความผิดปกติขนาดไฟล์',       description: 'ไฟล์มีขนาดใหญ่ผิดปกติต่อองค์ประกอบ — น่าจะเป็นเรขาคณิตละเอียดเกินไปหรือพื้นผิวที่ฝังอยู่' },
   },
   ca: {
     RULE_EMPTY_NAME:                 { label: 'Nom buit',                  description: 'Element sense nom (Name = "" o nul)' },
@@ -1042,6 +1101,9 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_MISSING_CLASSIFICATION:     { label: 'Classificació que falta',   description: 'Element físic sense IfcRelAssociatesClassification' },
     RULE_MEP_SYSTEM_MISSING:         { label: 'Sistema MEP que falta',     description: 'Element de flux MEP no assignat a cap IfcSystem' },
     RULE_CLASH_MEP_STRUCTURAL:       { label: 'Col·lisió MEP/estructura',  description: 'La caixa delimitadora d\'un element MEP se superposa a un element estructural' },
+    RULE_PROXY_OVERUSE:              { label: 'Ús excessiu de proxies',     description: 'Més del 5% dels elements són IfcBuildingElementProxy — típicament famílies de Revit no convertides' },
+    RULE_COORDINATE_OFFSET:          { label: 'Gran desplaçament de coordenades', description: 'La geometria està a més de 10 km de l\'origen WCS — provoca errors de precisió en coma flotant' },
+    RULE_FILE_SIZE_ANOMALY:          { label: 'Anomalia de mida de fitxer',  description: 'El fitxer és inusualment gran per element — probablement geometria massa detallada o textures incrustades' },
   },
 }
 
@@ -1072,6 +1134,15 @@ export function getRuleDescription(ruleId: string, locale = 'en'): string {
     ruleId
   )
 }
+
+// Per-rule remediation guidance (how to fix in Revit/ArchiCAD/Tekla/Allplan).
+// Authored as a deterministic content table in the i18n layer — see D-22.
+export {
+  AUTHORING_TOOLS,
+  RULE_REMEDIATION,
+  getRuleRemediation,
+} from '../i18n/rule-remediation'
+export type { AuthoringTool, RuleRemediation } from '../i18n/rule-remediation'
 
 // ── Editor diffs ──────────────────────────────────────────────────────────────
 

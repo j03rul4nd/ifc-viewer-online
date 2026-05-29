@@ -18,9 +18,11 @@
 //   DecryptedText  – scramble-reveal text (section labels)
 //   CountUp        – spring-animated number counter (stats strip)
 
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { subscribeEmail } from '../lib/subscribe'
+import { trackEmailCaptured } from '../lib/analytics'
 import { LanguageSelectorNav } from './LanguageSelector'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import * as Icons from './Icons'
@@ -108,29 +110,44 @@ function HeroPreview() {
         </div>
       </div>
 
-      {/* Categories sidebar — hidden on narrow screens */}
-      <div className="hidden sm:flex w-[220px] md:w-[260px] border-l border-[var(--border)] bg-[var(--surface)] p-3 md:p-4 flex-col gap-3 md:gap-3.5 shrink-0">
-        <div className="font-mono text-[10px] text-[var(--text-faint)] tracking-[0.1em] mb-0.5">CATEGORIES</div>
-        {[
-          { c: '#C7C9D4', l: 'Walls',   n: 142 },
-          { c: '#8B93E8', l: 'Doors',   n: 27  },
-          { c: '#6FB8D9', l: 'Windows', n: 41  },
-          { c: '#B9A77A', l: 'Beams',   n: 34  },
-          { c: '#9B8CC4', l: 'Stairs',  n: 3   },
-          { c: '#F5A623', l: 'MEP',     n: 187 },
-        ].map((c, i) => (
-          <div key={i} className="flex items-center gap-2 py-0.5 text-[11px]">
-            <div className="w-2 h-2 rounded-[2px] shrink-0" style={{ background: c.c }} />
-            <span className="flex-1 truncate">{c.l}</span>
-            <span className="font-mono text-[var(--text-faint)] text-[10px]">{c.n}</span>
+      {/* Validation panel mock — hidden on narrow screens */}
+      <div className="hidden sm:flex w-[220px] md:w-[260px] border-l border-[var(--border)] bg-[var(--surface)] flex-col shrink-0 overflow-hidden" aria-label="Validation panel preview">
+        {/* Panel header */}
+        <div className="px-3 py-2.5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--surface-2)]">
+          <span className="font-mono text-[10px] text-[var(--text-faint)] tracking-[0.1em]">VALIDATION</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-[var(--ok)]" aria-hidden="true" />
+            <span className="text-[12px] font-semibold" style={{ color: 'var(--ok)' }}>87 / 100</span>
           </div>
-        ))}
-        <div className="border-t border-[var(--border)] pt-2.5 mt-auto text-[11px] text-[var(--text-dim)]">
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className="font-mono text-[var(--ok)]">●</span>
-            Model loaded
+        </div>
+
+        {/* Issue rows */}
+        <div className="flex-1 overflow-hidden p-2 flex flex-col gap-1" aria-hidden="true">
+          {[
+            { dot: 'var(--danger)', label: '3 duplicate GUIDs' },
+            { dot: 'var(--warn)',   label: '2 orphan elements' },
+            { dot: 'var(--warn)',   label: 'Coordinate offset > 10 km' },
+            { dot: 'var(--accent-2)', label: '18 empty property values' },
+            { dot: 'var(--ok)',     label: 'Spatial hierarchy OK' },
+            { dot: 'var(--ok)',     label: 'No MEP / structural clashes' },
+          ].map((row, i) => (
+            <div key={i} className="flex items-start gap-2 px-2 py-1.5 rounded-[6px] bg-[var(--surface-2)] text-[10.5px]">
+              <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-[3px]" style={{ background: row.dot }} />
+              <span className="text-[var(--text-dim)] leading-tight truncate">{row.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Score bar */}
+        <div className="px-3 py-2.5 border-t border-[var(--border)]" aria-hidden="true">
+          <div className="flex justify-between text-[9.5px] text-[var(--text-faint)] mb-1.5">
+            <span>Health Score</span>
+            <span className="font-semibold" style={{ color: 'var(--ok)' }}>87</span>
           </div>
-          <div className="text-[var(--text-faint)] text-[10px]">Processed in-browser via WebAssembly</div>
+          <div className="h-[3px] bg-[var(--border)] rounded-full overflow-hidden">
+            <div className="h-full rounded-full" style={{ width: '87%', background: 'var(--ok)' }} />
+          </div>
+          <div className="text-[9px] text-[var(--text-faint)] mt-1.5">Processed in-browser · 0 uploads</div>
         </div>
       </div>
     </div>
@@ -163,6 +180,32 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
   // has the correct language because useSyncExternalStore re-reads getSnapshot
   // on the same React flush that applies the state update.
   const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0)
+
+  // ── Email capture form state ──────────────────────────────────────────────
+  const [emailValue,   setEmailValue]   = useState('')
+  const [emailStatus,  setEmailStatus]  = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [emailError,   setEmailError]   = useState('')
+
+  const handleEmailSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault()
+    const email = emailValue.trim()
+    if (!email) return
+    setEmailStatus('loading')
+    setEmailError('')
+    const result = await subscribeEmail(email, 'landing_footer', i18n.language)
+    if (result.ok || result.already) {
+      setEmailStatus('success')
+      trackEmailCaptured({ source: 'landing_footer', already_subscribed: !!result.already, locale: i18n.language })
+    } else if (result.disabled) {
+      // Worker not yet deployed — silently succeed in dev, show message in prod
+      if (import.meta.env.DEV) setEmailStatus('success')
+      else { setEmailStatus('error'); setEmailError('Not available yet — try again soon.') }
+    } else {
+      setEmailStatus('error')
+      setEmailError(result.error ?? 'Something went wrong. Try again.')
+    }
+  }, [emailValue, i18n.language])
+
   React.useEffect(() => {
     const cb = () => forceUpdate()
     i18n.on('languageChanged', cb)
@@ -475,10 +518,10 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
         >
           <div className="max-w-[900px] mx-auto grid grid-cols-2 gap-y-8 sm:gap-y-10 gap-x-4 sm:gap-x-6 sm:grid-cols-4">
             {[
-              { to: 18,  suffix: '+', stiffness: 70 },
-              { to: 4,   suffix: '',  stiffness: 90 },
-              { to: 100, suffix: '%', stiffness: 60 },
-              { to: 0,   suffix: '',  stiffness: 90 },
+              { to: 38,  suffix: '+', stiffness: 70,  numCls: '' },
+              { to: 4,   suffix: '',  stiffness: 90,  numCls: '' },
+              { to: 100, suffix: '%', stiffness: 60,  numCls: '' },
+              { to: 0,   suffix: '',  stiffness: 90,  numCls: 'text-[var(--ok)]' },
             ].map((s, i) => (
               <CountUp
                 key={i}
@@ -487,7 +530,7 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
                 label={STATS[i]?.label ?? ''}
                 stiffness={s.stiffness}
                 damping={22}
-                numberClassName="text-[38px] sm:text-[52px] font-semibold tracking-[-0.04em] text-[var(--text)]"
+                numberClassName={`text-[38px] sm:text-[52px] font-semibold tracking-[-0.04em] ${s.numCls || 'text-[var(--text)]'}`}
                 labelClassName="text-[11.5px] sm:text-[13px] text-[var(--text-faint)] mt-1 tracking-[0.02em]"
               />
             ))}
@@ -782,6 +825,63 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
               >
                 {t('actions.loadDemo')} →
               </button>
+            </motion.div>
+
+            {/* ── Email capture ── */}
+            <motion.div
+              variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}
+              transition={{ delay: 0.24 }}
+              className="mt-10 sm:mt-12 pt-8 sm:pt-10 border-t border-[var(--border)]"
+            >
+              {emailStatus === 'success' ? (
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <circle cx="14" cy="14" r="12" stroke="var(--ok)" strokeWidth="1.5" opacity="0.5" />
+                    <path d="M8 14l4 4 8-8" stroke="var(--ok)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <p className="text-[13px] font-medium" style={{ color: 'var(--ok)' }}>
+                    You&apos;re on the list
+                  </p>
+                  <p className="text-[11px] text-[var(--text-faint)]">
+                    We&apos;ll let you know when new features ship — no spam, unsubscribe anytime.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-[12px] sm:text-[13px] text-[var(--text-dim)] text-center mb-3">
+                    Get notified when new features ship
+                    <span className="hidden sm:inline"> — no spam, unsubscribe anytime</span>
+                  </p>
+                  <form
+                    onSubmit={(e) => { void handleEmailSubmit(e) }}
+                    className="flex gap-2 justify-center"
+                  >
+                    <input
+                      type="email"
+                      value={emailValue}
+                      onChange={(e) => setEmailValue(e.target.value)}
+                      placeholder="your@email.com"
+                      required
+                      disabled={emailStatus === 'loading'}
+                      className="h-9 px-3 rounded-lg text-[13px] border bg-[var(--surface-2)] text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] transition-colors w-52 disabled:opacity-60"
+                      style={{ borderColor: 'var(--border)' }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={emailStatus === 'loading' || !emailValue.trim()}
+                      className="h-9 px-4 rounded-lg text-[12px] font-semibold transition-all disabled:opacity-50"
+                      style={{ background: 'var(--accent)', color: '#fff' }}
+                    >
+                      {emailStatus === 'loading' ? '...' : 'Notify me'}
+                    </button>
+                  </form>
+                  {emailStatus === 'error' && emailError && (
+                    <p className="text-[11px] text-center mt-2" style={{ color: 'var(--danger)' }}>
+                      {emailError}
+                    </p>
+                  )}
+                </>
+              )}
             </motion.div>
           </div>
         </section>

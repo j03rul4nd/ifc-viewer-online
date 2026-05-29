@@ -59,7 +59,10 @@
     "rule": "Regla",
     "storey": "Planta",
     "class": "Clase",
-    "unknownStorey": "Desconocida"
+    "unknownStorey": "Desconocida",
+    "showMore": "Ver {{count}} más",
+    "expandAll": "Expandir todo",
+    "collapseAll": "Colapsar todo"
   },
   "issue": {
     "fixable": "Corregible automáticamente",
@@ -91,6 +94,10 @@
     "exportJson": "Informe completo",
     "exportCsv": "Tabla de incidencias",
     "exportCertificate": "Certificado",
+    "shareReport": "Compartir",
+    "shareReportTitle": "Copiar enlace compartible del informe",
+    "reportLinkCopied": "Enlace copiado — pégalo para compartir tu Health Score",
+    "reportLinkError": "No se pudo copiar el enlace — inténtalo de nuevo",
     "collapsePanel": "Contraer panel"
   },
   "profile": {
@@ -102,7 +109,34 @@
     "deleteCustom": "Eliminar perfil",
     "selectProfile": "Seleccionar perfil…",
     "customize": "Personalizar perfil",
-    "clearProfile": "Limpiar perfil"
+    "clearProfile": "Limpiar perfil",
+    "basic": {
+      "name": "Entrega básica",
+      "description": "Comprueba que el modelo es un IFC válido y bien estructurado antes de enviarlo."
+    },
+    "quality": {
+      "name": "Revisión de calidad",
+      "description": "Revisión exhaustiva de naming, propiedades y estructura antes de publicar en el CDE."
+    },
+    "coordination": {
+      "name": "Coordinación BIM",
+      "description": "Calidad de datos esencial + detección de colisiones para sesiones de coordinación."
+    },
+    "iso19650": {
+      "name": "Cumplimiento ISO 19650",
+      "description": "Verifica los requisitos de información de una entrega formal según ISO 19650-2."
+    },
+    "lod300": {
+      "name": "LOD 300 Design",
+      "description": "Comprueba que todos los elementos tienen el nivel de información requerido para LOD 300."
+    }
+  },
+  "phantom": {
+    "notice": "Reglas sin configurar",
+    "ruleTooltip": "Esta regla necesita configuración para detectar incidencias — devuelve 0 hasta que esté configurada"
+  },
+  "clashCap": {
+    "notice": "La detección de colisiones analizó {{checked}} de {{total}} elementos — modelo grande muestreado"
   },
   "coverage": {
     "title": "Cobertura de validación",
@@ -208,5 +242,15 @@
     "classification": "Clasificación",
     "mep": "MEP",
     "clash": "Detección de colisiones"
+  },
+  "remediation": {
+    "howToFix": "Cómo solucionarlo",
+    "noToolSteps": "No hay pasos específicos para {{tool}}; consulta el resumen anterior.",
+    "tools": {
+      "revit": "Revit",
+      "archicad": "ArchiCAD",
+      "tekla": "Tekla",
+      "allplan": "Allplan"
+    }
   }
 }

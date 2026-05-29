@@ -59,7 +59,10 @@
     "rule": "Rule",
     "storey": "Storey",
     "class": "Class",
-    "unknownStorey": "Unknown"
+    "unknownStorey": "Unknown",
+    "showMore": "Show {{count}} more",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all"
   },
   "issue": {
     "fixable": "Auto-fixable",
@@ -91,6 +94,10 @@
     "exportJson": "Full report",
     "exportCsv": "Issue table",
     "exportCertificate": "Certificate",
+    "shareReport": "Share",
+    "shareReportTitle": "Copy shareable report link",
+    "reportLinkCopied": "Report link copied — paste it to share your Health Score",
+    "reportLinkError": "Could not copy link — try again",
     "collapsePanel": "Collapse panel"
   },
   "profile": {
@@ -102,7 +109,34 @@
     "deleteCustom": "Delete profile",
     "selectProfile": "Select profile…",
     "customize": "Customize profile",
-    "clearProfile": "Clear profile"
+    "clearProfile": "Clear profile",
+    "basic": {
+      "name": "Basic delivery",
+      "description": "Checks that the model is a valid, well-structured IFC before sending it."
+    },
+    "quality": {
+      "name": "Quality review",
+      "description": "Thorough review of naming, properties and structure before publishing to the CDE."
+    },
+    "coordination": {
+      "name": "BIM coordination",
+      "description": "Essential data quality + clash detection for coordination sessions."
+    },
+    "iso19650": {
+      "name": "ISO 19650 compliance",
+      "description": "Verifies the information requirements of a formal delivery per ISO 19650-2."
+    },
+    "lod300": {
+      "name": "LOD 300 Design",
+      "description": "Checks that all elements have the level of information required for LOD 300."
+    }
+  },
+  "phantom": {
+    "notice": "Rules needing setup",
+    "ruleTooltip": "This rule needs configuration to detect issues — it always returns 0 until configured"
+  },
+  "clashCap": {
+    "notice": "Clash detection checked {{checked}} of {{total}} elements — large model was sampled"
   },
   "coverage": {
     "title": "Validation coverage",
@@ -208,5 +242,15 @@
     "classification": "Classification",
     "mep": "MEP",
     "clash": "Clash detection"
+  },
+  "remediation": {
+    "howToFix": "How to fix",
+    "noToolSteps": "No {{tool}}-specific steps — see the summary above.",
+    "tools": {
+      "revit": "Revit",
+      "archicad": "ArchiCAD",
+      "tekla": "Tekla",
+      "allplan": "Allplan"
+    }
   }
 }

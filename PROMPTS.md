@@ -309,6 +309,27 @@ Ordered log of prompts used to build this project. Future sessions must not undo
 
 ---
 
+### Prompt RA2 — Strategic re-audit v2 + distribution-led roadmap resolution
+
+**Date:** 2026-05-29
+
+**Summary:** A full strategic + technical re-audit (product strategist / staff engineer / competitive analyst), followed by a resolution to update the docs with the chosen decisions — reasoning before deciding. The audit re-grounded the docs against the actual code and corrected several stale claims.
+
+**Key findings and corrections made to the docs:**
+- **Stale state corrected.** Docs claimed "Sprint 6 complete / 18 rules / BCF planned." Reality: Sprints 1–9 done, **38 rules**, BCF shipped. Fixed in `CONTEXT.md` and `ROADMAP.md`.
+- **Persona split made explicit.** Buyer = BIM coordinator (owns conformance, pays); mandated free user = exporter; the coordinator→exporter handoff is the growth loop. Health Score = acquisition hook; conformance = retention engine. Added to `CONTEXT.md`.
+- **Roadmap v2 (distribution-led)** added to top of `ROADMAP.md` as the authoritative forward plan. P0 distribution/signal, P1 remediation content table, P2 crawlable reports, P3 revision diff, P4 IDS-lite.
+- **Old Sprints 10–12 deferred/killed.** WebGPU deferred (no perf pain); point clouds/scan/AR killed (wrong product/buyer); AI chat killed as slop.
+- **D-21** added: crawlable shared reports via a *stateless* CF edge Worker (query param + fflate + OG meta), not hash fragments — with the honest tradeoff that the report *summary* transits the edge while the IFC model never does.
+- **D-22** added: per-rule remediation guidance as a deterministic i18n content table (~38 rules × authoring tools), not AI.
+- **Invariant 1** in `CONTEXT.md` refined: stateless edge compute that never touches the model is permitted.
+
+**Code follow-up flagged (not yet changed):** `SharedReportView.tsx` CTA says "31 validation rules" — should be 38.
+
+**Outcome:** `ROADMAP.md`, `CONTEXT.md`, `DECISIONS.md`, `PROMPTS.md`, and the strategic memory master updated. Forward planning is now distribution-led and no longer sprint-numbered.
+
+---
+
 ## Notes for future sessions
 
 - If you are implementing Sprint 7, start with `OBCF.PostproductionRenderer` (renderer swap) before measurements — the renderer change may affect highlights and selection overlay rendering.
@@ -321,7 +342,8 @@ Ordered log of prompts used to build this project. Future sessions must not undo
 - Before adding anything to `worker.rollupOptions.external`, verify it is resolvable in a browser worker context. See `DECISIONS.md` D-11.
 - `modelRegistry` is the authority for IFC buffers. Do not store large ArrayBuffers in Zustand.
 - `clearHistory()` only in `handleNavigateToLanding` — never in `loadFile`. See D-19.
+- Forward planning is **distribution-led**, not sprint-numbered. See `ROADMAP.md` Roadmap v2 and `DECISIONS.md` D-21/D-22 before proposing new feature work.
 
 ---
 
-*Last updated: 2026-05-17 · Sprints 1–6 complete · Sprint 7 next*
+*Last updated: 2026-05-29 · Sprints 1–9 complete · Forward plan: ROADMAP.md Roadmap v2*

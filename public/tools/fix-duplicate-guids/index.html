@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fix Duplicate GUIDs in IFC Files — Free Online Tool, No Upload</title>
+  <meta name="description" content="Fix duplicate GlobalId (GUID) errors in IFC files directly in your browser — no upload, no install, no account. Detects all GUID duplicates and invalid formats, applies auto-fix with one click, and exports a corrected IFC. Free tool for Revit, ArchiCAD, and Tekla exports." />
+  <meta name="keywords" content="fix duplicate GUIDs IFC, IFC duplicate GlobalId, fix IFC GUID error, duplicate IfcGloballyUniqueId, IFC GUID fixer, Revit IFC duplicate GUID, ArchiCAD IFC GUID fix, IFC GUID checker, fix IFC GlobalId, IFC GUID duplicate remover" />
+  <meta name="author" content="Joel Benitez" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://j03rul4nd.github.io/ifc-viewer-online/tools/fix-duplicate-guids/" />
+  <link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/tools/fix-duplicate-guids/" />
+  <link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/tools/fix-duplicate-guids/" />
+
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://j03rul4nd.github.io/ifc-viewer-online/tools/fix-duplicate-guids/" />
+  <meta property="og:title"       content="Fix Duplicate GUIDs in IFC Files — Free, No Upload" />
+  <meta property="og:description" content="Detect and auto-fix duplicate GlobalId (GUID) errors in IFC files. Runs in your browser — no upload, no account. Works with Revit, ArchiCAD, and Tekla IFC exports." />
+  <meta property="og:site_name"   content="IFC Viewer Online" />
+  <meta name="twitter:card"        content="summary" />
+  <meta name="twitter:title"       content="Fix Duplicate GUIDs in IFC Files — Free, No Upload" />
+  <meta name="twitter:description" content="Auto-detect and fix duplicate GlobalId errors in IFC files. Browser-based, no upload, free." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": "https://j03rul4nd.github.io/ifc-viewer-online/tools/fix-duplicate-guids/",
+        "url": "https://j03rul4nd.github.io/ifc-viewer-online/tools/fix-duplicate-guids/",
+        "name": "Fix Duplicate GUIDs in IFC Files — Free Online Tool",
+        "description": "Free browser-based tool to detect and auto-fix duplicate GlobalId (GUID) errors in IFC files. No upload, no account, works with Revit, ArchiCAD, and Tekla.",
+        "isPartOf": { "@id": "https://j03rul4nd.github.io/ifc-viewer-online/" },
+        "inLanguage": "en"
+      },
+      {
+        "@type": "HowTo",
+        "name": "How to fix duplicate GUIDs in an IFC file",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Open the IFC file",
+            "text": "Go to IFC Viewer Online and drag & drop or click to open your IFC file. The file is processed entirely in your browser via WebAssembly — no upload."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Run validation",
+            "text": "Click Run Validation. The validator will detect all GUID_DUPLICATE and GUID_INVALID_FORMAT issues and report exactly which GlobalIds are affected."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Apply auto-fix",
+            "text": "Click Fix All in the validation panel. New RFC 4122 GUIDs are generated for every duplicate element — without touching any other data."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Export corrected IFC",
+            "text": "Click Export IFC. The corrected file is generated in a Web Worker and downloaded — no server required."
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Why does my IFC file have duplicate GUIDs?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Duplicate GlobalIds (GUIDs) are one of the most common IFC export errors. They occur when BIM authoring tools copy elements without generating new unique identifiers, when models are merged without GUID deduplication, or when export plugins incorrectly assign sequential or static GUIDs. Revit, ArchiCAD, and Tekla are all known to produce duplicate GUIDs under specific workflows."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What problems do duplicate GUIDs cause?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Duplicate GUIDs break element identity across federated models — clash detection tools, BCF issue trackers, and COBie exports all rely on GlobalId uniqueness. Some IFC viewers fail silently on duplicates, others crash. Duplicates will cause failures in model validation against IDS (Information Delivery Specifications) and any automated data exchange workflow."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is the IFC file uploaded to fix the GUIDs?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Everything happens in your browser via web-ifc WebAssembly. The IFC file never leaves your machine — suitable for confidential project models under NDA."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which authoring tools produce duplicate IFC GUIDs?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Revit — when copying elements between models or using Copy/Monitor. ArchiCAD — when combining modules or using Hotlinks. Tekla — when copying parts between projects. Vectorworks — when using certain symbol libraries. Any tool that allows model merging without GUID regeneration can produce duplicates."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-size: 14px; font-weight: 600; color: #5E6AD2; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+
+    .hero { padding: 64px 0 52px; text-align: center; }
+    .tool-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 28px; font-weight: 500; }
+    .hero h1 { font-size: clamp(1.8rem, 5vw, 2.9rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
+    .accent { color: #5E6AD2; }
+    .hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 640px; margin: 0 auto 36px; }
+    .cta-row { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
+    .cta-primary:hover { background: #4F5ABF; }
+    .cta-note { font-size: 12px; color: rgba(255,255,255,0.28); }
+
+    .section { padding: 60px 0; }
+    .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #5E6AD2; text-transform: uppercase; margin-bottom: 12px; }
+    .section-title { font-size: clamp(1.4rem, 3vw, 1.85rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .section-sub { font-size: 15px; color: rgba(255,255,255,0.45); margin-bottom: 36px; max-width: 580px; }
+    .divider { border-top: 1px solid rgba(255,255,255,0.06); }
+
+    /* Steps */
+    .steps { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 20px; }
+    .step { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 20px; }
+    .step-n { font-size: 11px; font-weight: 700; color: #5E6AD2; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .step-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .step-desc { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.6; }
+
+    /* Code block */
+    .code-block { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 18px 20px; font-family: 'Geist Mono', 'Cascadia Code', 'Fira Code', monospace; font-size: 13px; color: rgba(255,255,255,0.6); overflow-x: auto; margin: 20px 0; line-height: 1.7; }
+    .code-block .kw { color: #8B96E9; }
+    .code-block .str { color: #7EC8A4; }
+    .code-block .cm { color: rgba(255,255,255,0.25); }
+
+    /* Root cause table */
+    .causes-table { width: 100%; border-collapse: collapse; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; font-size: 13px; margin-top: 24px; }
+    .causes-table th { background: rgba(255,255,255,0.03); padding: 11px 16px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: rgba(255,255,255,0.38); text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .causes-table td { padding: 13px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; color: rgba(255,255,255,0.6); }
+    .causes-table tr:last-child td { border-bottom: none; }
+    .causes-table tr:hover td { background: rgba(255,255,255,0.015); }
+    .tool-name { font-weight: 600; color: #E8E8F0; }
+
+    /* FAQ */
+    .faq-list { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
+    .faq-item { padding: 22px 26px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .faq-a { font-size: 13px; color: rgba(255,255,255,0.48); line-height: 1.65; }
+
+    .cta-bottom { text-align: center; padding: 60px 0 80px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .cta-bottom h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.025em; margin-bottom: 12px; }
+    .cta-bottom p { font-size: 15px; color: rgba(255,255,255,0.42); margin-bottom: 30px; }
+
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 26px 0; text-align: center; }
+    .footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .footer-link { font-size: 12px; color: rgba(255,255,255,0.32); transition: color 0.15s; }
+    .footer-link:hover { color: rgba(255,255,255,0.65); }
+    .footer-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <div class="header-inner">
+        <a href="../../" class="logo">IFC Viewer Online</a>
+        <a href="../../" class="nav-cta">Open tool →</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <div class="container">
+        <div class="tool-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Free tool · No upload · Auto-fix in one click
+        </div>
+        <h1>Fix <span class="accent">Duplicate GUIDs</span><br>in IFC Files</h1>
+        <p class="hero-desc">Detect every duplicate and malformed GlobalId in your IFC file and fix them all with a single click — entirely in your browser. No upload, no install, no account. Works with exports from Revit, ArchiCAD, Tekla, and more.</p>
+        <div class="cta-row">
+          <a href="../../" class="cta-primary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Fix duplicate GUIDs now — free
+          </a>
+          <span class="cta-note">No account · No upload · Works offline · Exports corrected IFC</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- How to -->
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">How it works</p>
+        <h2 class="section-title">4 steps to a clean IFC file</h2>
+        <p class="section-sub">The entire process runs in your browser — the IFC file never leaves your machine.</p>
+        <div class="steps">
+          <div class="step">
+            <div class="step-n">01</div>
+            <div class="step-title">Open your IFC</div>
+            <div class="step-desc">Drag & drop or click to open any IFC file. web-ifc WebAssembly parses it locally — no upload.</div>
+          </div>
+          <div class="step">
+            <div class="step-n">02</div>
+            <div class="step-title">Run validation</div>
+            <div class="step-desc">The validator checks every IfcGloballyUniqueId — duplicates and invalid formats are flagged immediately.</div>
+          </div>
+          <div class="step">
+            <div class="step-n">03</div>
+            <div class="step-title">Click Fix All</div>
+            <div class="step-desc">New RFC 4122-compliant GUIDs are generated for every duplicate. The original file is not modified.</div>
+          </div>
+          <div class="step">
+            <div class="step-n">04</div>
+            <div class="step-title">Export corrected IFC</div>
+            <div class="step-desc">All fixes applied to the original binary in a Web Worker. Download the corrected IFC — server-free.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why duplicates happen -->
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">Root causes</p>
+        <h2 class="section-title">Why duplicate GUIDs occur</h2>
+        <p class="section-sub">Duplicate GlobalIds are one of the most common IFC quality issues — and most BIM Coordinators only discover them during coordination review or model delivery.</p>
+
+        <div class="code-block">
+<span class="cm">/* Example: two elements with the same GlobalId in an IFC STEP file */</span>
+<span class="kw">#1234</span> = IFCWALL(<span class="str">'2O2Fr$t4X7Zf8NOew3FLOH'</span>, ..., 'Exterior Wall', ...);
+<span class="kw">#5678</span> = IFCCOLUMN(<span class="str">'2O2Fr$t4X7Zf8NOew3FLOH'</span>, ..., 'Column C1', ...); <span class="cm">← DUPLICATE</span>
+        </div>
+
+        <table class="causes-table">
+          <thead>
+            <tr>
+              <th>Authoring Tool</th>
+              <th>Common cause</th>
+              <th>When it occurs</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="tool-name">Revit</span></td>
+              <td>Copy/Monitor across linked models</td>
+              <td>When elements are monitored across host and linked files and re-exported separately</td>
+            </tr>
+            <tr>
+              <td><span class="tool-name">Revit</span></td>
+              <td>Duplicate Types command</td>
+              <td>Duplicated families re-use the source element's GlobalId</td>
+            </tr>
+            <tr>
+              <td><span class="tool-name">ArchiCAD</span></td>
+              <td>Hotlink modules</td>
+              <td>All instances of a hotlinked module share the source element GUIDs</td>
+            </tr>
+            <tr>
+              <td><span class="tool-name">ArchiCAD</span></td>
+              <td>Copy-paste between projects</td>
+              <td>Elements copied between ArchiCAD files retain their original GUIDs</td>
+            </tr>
+            <tr>
+              <td><span class="tool-name">Tekla</span></td>
+              <td>Model splitting / merging</td>
+              <td>Sub-models merged after being split from a common model retain matching GUIDs</td>
+            </tr>
+            <tr>
+              <td><span class="tool-name">Any tool</span></td>
+              <td>Model merge without GUID regen</td>
+              <td>Federating multiple discipline models without checking GUID uniqueness across all files</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- What the fix does -->
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">The fix</p>
+        <h2 class="section-title">What the auto-fix does (and doesn't do)</h2>
+        <p class="section-sub">Understanding exactly what changes when you fix duplicate GUIDs.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;">
+          <div style="background:rgba(82,196,26,0.04);border:1px solid rgba(82,196,26,0.15);border-radius:10px;padding:20px;">
+            <p style="font-size:12px;font-weight:700;color:#52C41A;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:12px;">What changes</p>
+            <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;">
+              <li style="font-size:13px;color:rgba(255,255,255,0.6);display:flex;gap:8px;"><span style="color:#52C41A;flex-shrink:0">✓</span>Each duplicate element gets a new, unique RFC 4122 GUID</li>
+              <li style="font-size:13px;color:rgba(255,255,255,0.6);display:flex;gap:8px;"><span style="color:#52C41A;flex-shrink:0">✓</span>Invalid base64 GlobalIds are regenerated to spec</li>
+              <li style="font-size:13px;color:rgba(255,255,255,0.6);display:flex;gap:8px;"><span style="color:#52C41A;flex-shrink:0">✓</span>Exported IFC passes GUID uniqueness checks in downstream tools</li>
+            </ul>
+          </div>
+          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:20px;">
+            <p style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:12px;">What stays the same</p>
+            <ul style="list-style:none;display:flex;flex-direction:column;gap:8px;">
+              <li style="font-size:13px;color:rgba(255,255,255,0.4);display:flex;gap:8px;"><span style="flex-shrink:0">—</span>All element names, properties, geometry unchanged</li>
+              <li style="font-size:13px;color:rgba(255,255,255,0.4);display:flex;gap:8px;"><span style="flex-shrink:0">—</span>Relationships and containment structure unchanged</li>
+              <li style="font-size:13px;color:rgba(255,255,255,0.4);display:flex;gap:8px;"><span style="flex-shrink:0">—</span>Non-duplicate GUIDs unchanged</li>
+            </ul>
+          </div>
+        </div>
+
+        <p style="margin-top:20px;font-size:13px;color:rgba(255,255,255,0.35);line-height:1.65;">
+          <strong style="color:rgba(255,255,255,0.5)">Note:</strong> If your coordination workflow relies on persistent element identifiers (e.g., BCF issue tracking by GlobalId), fixing duplicates will change some element identities. This is unavoidable — duplicate GUIDs cannot be left as-is in a correctly formed IFC file.
+        </p>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">FAQ</p>
+        <h2 class="section-title">Questions about IFC duplicate GUIDs</h2>
+        <br/>
+        <div class="faq-list">
+          <div class="faq-item">
+            <p class="faq-q">Why does my IFC file have duplicate GUIDs?</p>
+            <p class="faq-a">Duplicate GlobalIds are one of the most common IFC export errors. They occur when BIM authoring tools copy elements without generating new unique identifiers, when models are merged without GUID deduplication, or when export plugins incorrectly reuse existing GUIDs. Revit (Copy/Monitor), ArchiCAD (Hotlink modules), and Tekla (model merging) are the most common sources.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">What problems do duplicate GUIDs cause?</p>
+            <p class="faq-a">Duplicate GUIDs break element identity across federated models. Clash detection tools, BCF issue trackers, COBie exports, and IDS validation all rely on GlobalId uniqueness. Some viewers fail silently on duplicates; others show incorrect property data for affected elements. Any automated data exchange workflow that uses GlobalId as a stable key will produce incorrect results when duplicates are present.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">Is the IFC file uploaded to fix the GUIDs?</p>
+            <p class="faq-a">No. The entire process runs in your browser via web-ifc WebAssembly — parsing, validation, fix generation, and export. The IFC file never leaves your machine. This makes it suitable for confidential project models under NDA.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">Can I fix just some GUIDs instead of all duplicates?</p>
+            <p class="faq-a">Yes. The validation panel shows each duplicate individually. You can apply the fix per-element from the issue row, or use Fix All to resolve all detected duplicates at once. All fixes are non-destructive (diff-based) with full undo/redo until you export.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">How does the validator detect duplicate GUIDs?</p>
+            <p class="faq-a">The RULE_DUPLICATE_GUID check indexes all IfcGloballyUniqueId values across all entities in the STEP file and flags any GlobalId that appears more than once. RULE_INVALID_GUID_FORMAT additionally checks that each GlobalId conforms to the IFC base64-encoded 22-character format defined in ISO 16739.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">Does this work with all IFC versions?</p>
+            <p class="faq-a">Yes. The tool supports IFC2x3, IFC4, IFC4x1, and IFC4x3. The GlobalId validation and fix mechanism is identical across all IFC schema versions.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-bottom">
+      <div class="container">
+        <h2>Fix your duplicate GUIDs now.</h2>
+        <p>GUID errors are 1 of 38 checks. Run the full Health Score to see the complete picture — free, no account, no upload.</p>
+        <a href="../../" class="cta-primary">Open the GUID fixer — free →</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="../../" class="footer-link">IFC Viewer Online</a>
+        <a href="../../ifc-validator/" class="footer-link">IFC Validator</a>
+        <a href="../../ifc-viewer-mac/" class="footer-link">IFC Viewer for Mac</a>
+        <a href="../../solibri-alternative/" class="footer-link">Solibri Alternative</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <p class="footer-copy">IFC Viewer Online © 2026 · Free · Open source · MIT license</p>
+    </div>
+  </footer>
+
+</body>
+</html>

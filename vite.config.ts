@@ -1,7 +1,67 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import path from 'path'
-import { copyFileSync, mkdirSync, existsSync } from 'fs'
+import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync } from 'fs'
+
+// ── Static landing content injection ─────────────────────────────────────────
+// Reads src/locales/en/landing.json after the build and injects the FAQ and
+// feature descriptions as a <noscript> block in dist/index.html.
+// Purpose: makes the landing page content (FAQ, features, steps) indexable by
+// web crawlers that do not execute JavaScript.
+// The block is inside <noscript>, so it is invisible to real users — it only
+// surfaces for bots running in no-JS mode (Bing, various SEO tools, etc.).
+// Google's crawler executes JS and will see the React-rendered content.
+interface LandingLocale {
+  hero:              { h1: string; h1Accent: string; subtitleFull: string }
+  featuresSection:   { title: string; subtitle: string }
+  howItWorksSection: { title: string }
+  faqSection:        { title: string }
+  features:          Array<{ title: string; body: string }>
+  steps:             Array<{ n: string; title: string; body: string }>
+  faq:               Array<{ q: string; a: string }>
+}
+function esc(s: string) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+function injectLandingContent(): import('vite').Plugin {
+  return {
+    name: 'inject-landing-content',
+    apply: 'build',
+    closeBundle() {
+      const distIndex = path.resolve(__dirname, 'dist', 'index.html')
+      const localeFile = path.resolve(__dirname, 'src', 'locales', 'en', 'landing.json')
+      if (!existsSync(distIndex) || !existsSync(localeFile)) return
+
+      const t: LandingLocale = JSON.parse(readFileSync(localeFile, 'utf-8'))
+
+      const featuresHtml = t.features.map(f =>
+        `<article><h3>${esc(f.title)}</h3><p>${esc(f.body)}</p></article>`
+      ).join('\n')
+
+      const stepsHtml = t.steps.map(s =>
+        `<section><h3>${esc(s.n)}. ${esc(s.title)}</h3><p>${esc(s.body)}</p></section>`
+      ).join('\n')
+
+      const faqHtml = t.faq.map(item =>
+        `<div><h3>${esc(item.q)}</h3><p>${esc(item.a)}</p></div>`
+      ).join('\n')
+
+      const block = [
+        '<noscript>',
+        `<h1>${esc(t.hero.h1)} ${esc(t.hero.h1Accent)}</h1>`,
+        `<p>${esc(t.hero.subtitleFull)}</p>`,
+        `<section><h2>${esc(t.featuresSection.title)}</h2><p>${esc(t.featuresSection.subtitle)}</p>${featuresHtml}</section>`,
+        `<section><h2>${esc(t.howItWorksSection.title)}</h2>${stepsHtml}</section>`,
+        `<section><h2>${esc(t.faqSection.title)}</h2>${faqHtml}</section>`,
+        '</noscript>',
+      ].join('\n')
+
+      let html = readFileSync(distIndex, 'utf-8')
+      html = html.replace('</body>', `${block}\n</body>`)
+      writeFileSync(distIndex, html)
+    },
+  }
+}
 
 function copyWebIfcWasm() {
   return {
@@ -20,7 +80,7 @@ function copyWebIfcWasm() {
 }
 
 export default defineConfig({
-  plugins: [react(), copyWebIfcWasm()],
+  plugins: [react(), copyWebIfcWasm(), injectLandingContent()],
   base: '/ifc-viewer-online/',
   resolve: {
     alias: [

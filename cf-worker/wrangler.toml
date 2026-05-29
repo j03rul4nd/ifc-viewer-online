@@ -1,0 +1,21 @@
+# Cloudflare Worker — IFC Viewer email capture
+# https://developers.cloudflare.com/workers/configuration/
+
+name       = "ifc-viewer-email-capture"
+main       = "worker.js"
+# Workers free tier is plenty (100k req/day)
+# No compatibility_date forces the latest — pin to today if you see breakage.
+compatibility_date = "2026-05-25"
+
+[vars]
+# Non-secret vars (safe to commit). Secrets are set via `wrangler secret put`.
+# RESEND_API_KEY     → set via: wrangler secret put RESEND_API_KEY
+# RESEND_AUDIENCE_ID → set via: wrangler secret put RESEND_AUDIENCE_ID
+
+# ── Routes ────────────────────────────────────────────────────────────────────
+# Adjust the custom domain once you have one. Until then, the default workers.dev
+# subdomain (ifc-viewer-email-capture.<accountname>.workers.dev) works fine.
+#
+# [[routes]]
+# pattern = "yourdomain.com/api/*"
+# zone_name = "yourdomain.com"

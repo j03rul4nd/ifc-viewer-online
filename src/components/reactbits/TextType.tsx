@@ -7,7 +7,7 @@
 //
 // Usage:
 //   <TextType
-//     text={["Open any .ifc file instantly", "Validate with 18 built-in rules", "Export corrected IFC in one click"]}
+//     text={["Open any .ifc file instantly", "Validate with 38 built-in rules", "Export corrected IFC in one click"]}
 //     typingSpeed={60}
 //     pauseDuration={1800}
 //     showCursor

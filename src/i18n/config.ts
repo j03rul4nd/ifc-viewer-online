@@ -55,13 +55,16 @@ void i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   // Lazy-load any locale that is NOT already in `resources` below.
-  // Guard: skip the default locale — its namespaces are already pre-bundled
-  // in the `resources` option below and will never be requested from the backend.
-  // This prevents a Rollup "static + dynamic import of same file" warning.
+  // The guard for DEFAULT_LOCALE exists purely to prevent a Rollup
+  // "static + dynamic import of same file" warning — in practice, the
+  // BackendConnector never reaches this branch for EN because it checks
+  // hasResourceBundle() first and EN namespaces are already pre-loaded
+  // from `resources` above.  For all other languages the dynamic import
+  // fetches the JSON chunk on first use.
   .use(
     resourcesToBackend(
       (language: string, namespace: string) => {
-        if (language === DEFAULT_LOCALE) return Promise.resolve({}) // already bundled
+        if (language === DEFAULT_LOCALE) return Promise.resolve({}) // already bundled; guard for Rollup
         return loadLocaleNamespace(language, namespace)
       },
     ),
@@ -69,6 +72,13 @@ void i18n
   .init({
     // EN is pre-bundled — no async fetch needed for the default locale.
     resources: { [DEFAULT_LOCALE]: EN_RESOURCES },
+
+    // REQUIRED when mixing pre-bundled resources with a lazy-load backend.
+    // Without this flag, i18next's loadResources() short-circuits to a no-op
+    // whenever `options.resources` is set — meaning changeLanguage('fr') never
+    // calls the backend, FR namespaces are never loaded, and t() always falls
+    // back to English regardless of which language the user selects.
+    partialBundledLanguages: true,
 
     detection: {
       order:              ['localStorage', 'navigator'],

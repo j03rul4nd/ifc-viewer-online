@@ -62,7 +62,7 @@
   },
   "features": [
     {
-      "title": "Validateur IFC à 18 règles",
+      "title": "Validateur IFC à 38 règles",
       "body": "Détectez les GUID dupliqués, les violations de hiérarchie spatiale et les éléments orphelins avant votre client. Les résultats arrivent en temps réel depuis un worker en arrière-plan — l'interface reste fluide.",
       "tip": "Moteur de règles IFC / ISO 19650"
     },
@@ -135,7 +135,7 @@
     {
       "n": "02",
       "title": "Inspectez et validez",
-      "body": "Explorez l'arbre du modèle, filtrez par catégorie et exécutez 18 règles de validation intégrées dans un worker en arrière-plan. GUID dupliqués, erreurs de hiérarchie spatiale, affectations de types manquantes — tout est signalé instantanément."
+      "body": "Explorez l'arbre du modèle, filtrez par catégorie et exécutez 38 règles de validation intégrées dans un worker en arrière-plan. GUID dupliqués, erreurs de hiérarchie spatiale, affectations de types manquantes — tout est signalé instantanément."
     },
     {
       "n": "03",
@@ -196,7 +196,7 @@
     },
     {
       "q": "Comment fonctionne la validation ?",
-      "a": "Le validateur exécute 18 règles intégrées dans un Web Worker en arrière-plan. Les règles couvrent les GUID dupliqués, la hiérarchie spatiale, les éléments orphelins, les conventions de nommage, les affectations de types manquantes, la détection de clash et plus encore."
+      "a": "Le validateur exécute 38 règles intégrées dans un Web Worker en arrière-plan. Les règles couvrent les GUID dupliqués, la hiérarchie spatiale, les éléments orphelins, les conventions de nommage, les affectations de types manquantes, la détection de clash et plus encore."
     },
     {
       "q": "Puis-je corriger les erreurs et réexporter un IFC corrigé ?",

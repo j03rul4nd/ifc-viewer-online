@@ -63,10 +63,15 @@
       "measurement": "Measurement",
       "sections": "Sections",
       "editing": "Editing",
-      "camera": "Camera presets"
+      "camera": "Camera presets",
+      "element": "Selected element"
     },
     "keys": {
       "openFile": "Open file",
+      "frameElement": "Zoom to selected element",
+      "isolateElement": "Isolate selected element",
+      "hideElement": "Hide selected element",
+      "showAllHidden": "Show all / restore visibility",
       "validate": "Run / re-run validation",
       "cancelMeasure": "Cancel active measurement",
       "closePoly": "Close area polygon",

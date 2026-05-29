@@ -102,7 +102,27 @@
     "deleteCustom": "Profil löschen",
     "selectProfile": "Profil auswählen…",
     "customize": "Profil anpassen",
-    "clearProfile": "Profil zurücksetzen"
+    "clearProfile": "Profil zurücksetzen",
+    "basic": {
+      "name": "Basis-Lieferung",
+      "description": "Prüft, ob das Modell vor dem Versand eine gültige, gut strukturierte IFC-Datei ist."
+    },
+    "quality": {
+      "name": "Qualitätsprüfung",
+      "description": "Gründliche Prüfung von Benennung, Eigenschaften und Struktur vor der Veröffentlichung im CDE."
+    },
+    "coordination": {
+      "name": "BIM-Koordination",
+      "description": "Grundlegende Datenqualität + Kollisionsprüfung für Koordinationssitzungen."
+    },
+    "iso19650": {
+      "name": "ISO 19650-Konformität",
+      "description": "Prüft die Informationsanforderungen einer formellen Lieferung gemäß ISO 19650-2."
+    },
+    "lod300": {
+      "name": "LOD 300 Design",
+      "description": "Prüft, ob alle Elemente den für LOD 300 erforderlichen Informationsgrad aufweisen."
+    }
   },
   "coverage": {
     "title": "Validierungsabdeckung",
@@ -208,5 +228,15 @@
     "classification": "Klassifikation",
     "mep": "MEP",
     "clash": "Kollisionserkennung"
+  },
+  "remediation": {
+    "howToFix": "So beheben Sie das Problem",
+    "noToolSteps": "Keine {{tool}}-spezifischen Schritte – siehe Zusammenfassung oben.",
+    "tools": {
+      "revit": "Revit",
+      "archicad": "ArchiCAD",
+      "tekla": "Tekla",
+      "allplan": "Allplan"
+    }
   }
 }

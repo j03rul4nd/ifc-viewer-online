@@ -18,6 +18,9 @@ import SectionPanel from './components/SectionPanel'
 import FloorPlanPanel from './components/FloorPlanPanel'
 import ExportModal from './components/ExportModal'
 import KeyboardHelpModal from './components/KeyboardHelpModal'
+import SceneContextMenu, { type SceneContextMenuPayload } from './components/SceneContextMenu'
+import SharedReportView, { decodeReportHash } from './components/SharedReportView'
+import type { SharedReportPayload } from './components/SharedReportView'
 import { lighten } from './lib/utils'
 import { modelRegistry } from './lib/model-registry'
 import { useIfcLoader } from './lib/loader'
@@ -40,6 +43,7 @@ import {
   trackFileOpened,
   trackValidationCompleted,
   trackLandingCtaClicked,
+  trackValidationPanelOpened,
 } from './lib/analytics'
 
 // ── ModelTree imperative handle ───────────────────────────────────────────────
@@ -52,7 +56,10 @@ export default function App() {
   const { t: tCommon } = useTranslation('common')
   const { t: tViewer } = useTranslation('viewer')
   useSeo()
-  const [route, setRoute] = useState<Route>('landing')
+  const [route, setRoute] = useState<Route>(() => {
+    if (typeof window !== 'undefined' && decodeReportHash(window.location.hash)) return 'report'
+    return 'landing'
+  })
   const [accent] = useState('#5E6AD2')
 
   useEffect(() => {
@@ -64,6 +71,12 @@ export default function App() {
   const viewerRef    = useRef<ViewerHandle>(null)
   const modelTreeRef = useRef<ModelTreeHandle>(null)
 
+  // ── Shared-report route — decode on mount if URL hash contains #report=... ──
+  const [sharedReport, setSharedReport] = useState<SharedReportPayload | null>(() => {
+    if (typeof window === 'undefined') return null
+    return decodeReportHash(window.location.hash)
+  })
+
   // Model & loading state
   const [modelInfo,    setModelInfo]    = useState<ModelInfo | null>(null)
   const [loadingState, setLoadingState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
@@ -74,14 +87,17 @@ export default function App() {
   const [selected,   setSelected]   = useState<SelectedInfo | null>(null)
   const [hidden,     setHidden]     = useState<Set<string>>(new Set())
   const [isolated,   setIsolated]   = useState<string | null>(null)
+  // Single-element isolation (localId). Overrides category filters in the viewer.
+  const [isolatedElement, setIsolatedElement] = useState<number | null>(null)
   const [showUpload, setShowUpload]           = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
   const [showHelp,   setShowHelp]             = useState(false)
+  const [ctxMenu,    setCtxMenu]              = useState<SceneContextMenuPayload | null>(null)
 
   // Stores
   const { validationMode, result } = useValidationStore()
   const {
-    treeVisible, treeWidth, hiddenElements, clearHiddenElements,
+    treeVisible, treeWidth, hiddenElements, clearHiddenElements, setElementsVisible,
     mobileSidebarOpen, setMobileSidebarOpen,
     cameraControlsVisible, toggleCameraControls,
     scenePanelOpen, toggleScenePanel, setScenePanelOpen,
@@ -133,11 +149,47 @@ export default function App() {
         e.preventDefault()
         setShowHelp((v) => !v)
       }
+
+      // ── Element control shortcuts (no modifier, not while typing) ──────────
+      // Use viewerApiRef / store setters directly (both declared above) so this
+      // effect needn't depend on handlers defined later in the component.
+      if (!inInput && !mod) {
+        const key = e.key.toLowerCase()
+
+        // F — frame/zoom to the selected element
+        if (key === 'f' && selected) {
+          e.preventDefault()
+          viewerApiRef.current?.focusElement(parseInt(selected.id, 10), selected.modelId)
+        }
+
+        // H — hide selected element · Shift+H — restore full visibility
+        if (key === 'h') {
+          if (e.shiftKey) {
+            if (hiddenElements.size > 0 || isolatedElement != null || isolated != null) {
+              e.preventDefault()
+              clearHiddenElements()
+              setIsolatedElement(null)
+              setIsolated(null)
+            }
+          } else if (selected) {
+            e.preventDefault()
+            setElementsVisible([parseInt(selected.id, 10)], false)
+          }
+        }
+
+        // I — isolate selected element (toggle): show only it, hide everything else
+        if (key === 'i' && selected) {
+          e.preventDefault()
+          const id = parseInt(selected.id, 10)
+          setIsolatedElement((cur) => (cur === id ? null : id))
+          setIsolated(null)
+        }
+      }
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [route, validation.isRunning, validation.canRun])
+  }, [route, validation.isRunning, validation.canRun, selected, hiddenElements, isolatedElement, isolated, clearHiddenElements, setElementsVisible])
 
   // Element focus/select/reveal handlers
   const elementFocus = useElementFocus(viewerApiRef, modelTreeRef)
@@ -159,6 +211,7 @@ export default function App() {
       setLoadingState('loaded')
       setLoadError(null)
       setValidationPanelOpen(true)
+      trackValidationPanelOpened({ trigger: 'auto' })
 
       // Use the stable sceneModelId from the viewer so ScenePanel and multi-model code align
       addSceneModel(modelId, info)
@@ -324,10 +377,46 @@ export default function App() {
     if (isolated === selected.type) {
       setIsolated(null)
     } else {
+      setIsolatedElement(null)
       setIsolated(selected.type)
       viewerRef.current?.frameCategory(selected.type)
     }
   }
+
+  // Isolate a specific category by type (used by the 3D context menu).
+  const handleIsolateCategory = useCallback((type: string): void => {
+    if (isolated === type) {
+      setIsolated(null)
+    } else {
+      setIsolatedElement(null)
+      setIsolated(type)
+      viewerRef.current?.frameCategory(type)
+    }
+  }, [isolated])
+
+  // Category isolation from the tree / category panel — clears any element isolation.
+  const handleSetIsolatedCategory = useCallback((type: string | null): void => {
+    if (type) setIsolatedElement(null)
+    setIsolated(type)
+  }, [])
+
+  // Hide a single element in the 3D scene (context menu + keyboard).
+  const handleHideElement = useCallback((expressId: number): void => {
+    setElementsVisible([expressId], false)
+  }, [setElementsVisible])
+
+  // Isolate a single element (toggle): show only it. Used by context menu + keyboard.
+  const handleIsolateElement = useCallback((expressId: number): void => {
+    setIsolatedElement((cur) => (cur === expressId ? null : expressId))
+    setIsolated(null)
+  }, [])
+
+  // Restore full visibility: clear hidden elements + element/category isolation.
+  const handleRestoreVisibility = useCallback((): void => {
+    clearHiddenElements()
+    setIsolatedElement(null)
+    setIsolated(null)
+  }, [clearHiddenElements])
 
   const handleJumpToElement      = elementFocus.jumpToElement
   const handleSelectTreeElement  = useCallback(
@@ -398,6 +487,27 @@ export default function App() {
   return (
     <>
       <AnimatePresence>
+        {/* ── Shared report view (URL hash route) ── */}
+        {route === 'report' && sharedReport && (
+          <motion.div
+            key="report"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <SharedReportView
+              payload={sharedReport}
+              onOpenViewer={() => {
+                // Strip the report hash and navigate to landing
+                history.replaceState(null, '', window.location.pathname + window.location.search)
+                setSharedReport(null)
+                setRoute('landing')
+              }}
+            />
+          </motion.div>
+        )}
+
         {route === 'landing' && (
           <motion.div
             key="landing"
@@ -487,9 +597,11 @@ export default function App() {
                     ref={viewerRef}
                     viewerApiRef={viewerApiRef}
                     onSelect={setSelected}
+                    onContextMenu={setCtxMenu}
                     hiddenCategories={hidden}
                     isolatedCategory={isolated}
                     hiddenElementIds={hiddenElements}
+                    isolatedElementId={isolatedElement}
                     selectedId={selected?.id ?? null}
                     viewerStyle={viewerStyle}
                   />
@@ -577,7 +689,7 @@ export default function App() {
                     hidden={hidden}
                     onToggleHidden={handleToggleHidden}
                     isolated={isolated}
-                    onSetIsolated={setIsolated}
+                    onSetIsolated={handleSetIsolatedCategory}
                     onFrame={(id) => viewerRef.current?.frameCategory(id)}
                     onSelectElement={(id) => viewerApiRef.current?.selectElement(id)}
                     onFrameElement={handleFrameElement}
@@ -646,6 +758,20 @@ export default function App() {
 
       {/* ── Keyboard help modal ── */}
       <KeyboardHelpModal open={showHelp} onClose={() => setShowHelp(false)} />
+
+      {/* ── 3D scene context menu (right-click on an element) ── */}
+      <SceneContextMenu
+        payload={ctxMenu}
+        onClose={() => setCtxMenu(null)}
+        onFrame={handleFrameElement}
+        onHide={handleHideElement}
+        onIsolateElement={handleIsolateElement}
+        onIsolateCategory={handleIsolateCategory}
+        onReveal={handleRevealInTree}
+        hiddenCount={hiddenElements.size}
+        isolationActive={isolatedElement != null}
+        onShowAllHidden={handleRestoreVisibility}
+      />
 
       {/* ── Upload modal ── */}
       <AnimatePresence>

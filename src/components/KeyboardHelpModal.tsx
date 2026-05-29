@@ -127,6 +127,13 @@ export default function KeyboardHelpModal({ open, onClose }: KeyboardHelpModalPr
             <Row label={k('validate')}  keys={[Mod, 'Shift', 'V']} />
           </Section>
 
+          <Section title={g('element')}>
+            <Row label={k('frameElement')}    keys={['F']} />
+            <Row label={k('isolateElement')}  keys={['I']} />
+            <Row label={k('hideElement')}     keys={['H']} />
+            <Row label={k('showAllHidden')}   keys={['Shift', 'H']} />
+          </Section>
+
           <Section title={g('editing')}>
             <Row label={k('undo')}  keys={[Mod, 'Z']} />
             <Row label={k('redo')}  keys={[Mod, 'Shift', 'Z']} />

@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Free Solibri Alternative — IFC Validation in Your Browser, No Install</title>
+  <meta name="description" content="Looking for a Solibri Anywhere alternative? IFC Viewer Online is a free, browser-based IFC validator with a Health Score 0–100, 38 validation rules, and zero upload. No install, no account, no file size limit. Works on Mac and Windows." />
+  <meta name="keywords" content="solibri alternative, solibri anywhere alternative, free solibri replacement, ifc validator alternative to solibri, online ifc checker, solibri free alternative, ifc quality check free, bim validator free, ifc model checker browser" />
+  <meta name="author" content="Joel Benitez" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://j03rul4nd.github.io/ifc-viewer-online/solibri-alternative/" />
+  <link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/solibri-alternative/" />
+  <link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/solibri-alternative/" />
+
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://j03rul4nd.github.io/ifc-viewer-online/solibri-alternative/" />
+  <meta property="og:title"       content="Free Solibri Alternative — Browser-Based IFC Validation" />
+  <meta property="og:description" content="Solibri Anywhere was discontinued April 2026. IFC Viewer Online is a free, browser-based alternative with 38 validation rules, Health Score 0–100, and zero upload. No install, no account." />
+  <meta property="og:site_name"   content="IFC Viewer Online" />
+  <meta name="twitter:card"        content="summary" />
+  <meta name="twitter:title"       content="Free Solibri Alternative — IFC Validation in Your Browser" />
+  <meta name="twitter:description" content="38 validation rules, Health Score 0–100, no upload, no install. Free Solibri Anywhere alternative." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": "https://j03rul4nd.github.io/ifc-viewer-online/solibri-alternative/",
+        "url": "https://j03rul4nd.github.io/ifc-viewer-online/solibri-alternative/",
+        "name": "Free Solibri Alternative — Browser-Based IFC Validation",
+        "description": "Free, browser-based IFC validator as a Solibri Anywhere alternative. 38 validation rules, Health Score 0–100, no upload, no install, works on Mac and Windows.",
+        "isPartOf": { "@id": "https://j03rul4nd.github.io/ifc-viewer-online/" },
+        "inLanguage": "en"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "IFC Viewer Online",
+        "url": "https://j03rul4nd.github.io/ifc-viewer-online/",
+        "applicationCategory": "AEC / BIM software",
+        "operatingSystem": "Any (browser-based — Mac, Windows, Linux)",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "featureList": [
+          "38 IFC validation rules",
+          "Health Score 0–100",
+          "GUID duplicate detection and auto-fix",
+          "Spatial hierarchy validation",
+          "ISO 19650 naming checks",
+          "BCF 2.1 issue export",
+          "Clash detection (bounding box)",
+          "Non-destructive editing with undo/redo",
+          "IFC export — no server",
+          "Works offline — no upload, no account"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is IFC Viewer Online a good replacement for Solibri Anywhere?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "For basic IFC validation — GUID checks, spatial hierarchy, orphan elements, naming conventions — yes. It runs 38 validation rules entirely in your browser with no install, no account, and no file size limit. It does not yet support full IDS-based validation or multi-user cloud workflows, but for individual BIM Coordinators checking models before delivery it is a practical, free replacement."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What happened to Solibri Anywhere?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Solibri Anywhere, the free tier of the Solibri Model Checker, was discontinued on April 13, 2026. Users who relied on the free tier for basic IFC viewing and quality checking need to find an alternative."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does IFC Viewer Online work on Mac?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Unlike Solibri Anywhere (Windows-only), IFC Viewer Online works on any modern browser — Chrome, Edge, Firefox, and Safari on both Mac and Windows. No plugin, no installation required."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Are IFC files uploaded to a server?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. All processing happens in your browser via WebAssembly. Your IFC files never leave your machine — suitable for confidential project models under NDA."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-size: 14px; font-weight: 600; color: #5E6AD2; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+
+    .hero { padding: 64px 0 52px; text-align: center; }
+    .notice-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.25); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #F5A623; margin-bottom: 28px; font-weight: 500; }
+    .hero h1 { font-size: clamp(1.8rem, 5vw, 2.9rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
+    .accent { color: #5E6AD2; }
+    .hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 640px; margin: 0 auto 36px; }
+    .cta-row { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
+    .cta-primary:hover { background: #4F5ABF; }
+    .cta-note { font-size: 12px; color: rgba(255,255,255,0.28); }
+
+    .section { padding: 60px 0; }
+    .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #5E6AD2; text-transform: uppercase; margin-bottom: 12px; }
+    .section-title { font-size: clamp(1.4rem, 3vw, 1.85rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .section-sub { font-size: 15px; color: rgba(255,255,255,0.45); margin-bottom: 36px; max-width: 580px; }
+    .divider { border-top: 1px solid rgba(255,255,255,0.06); }
+
+    /* Comparison table */
+    .compare-table { width: 100%; border-collapse: collapse; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; font-size: 13px; }
+    .compare-table th { background: rgba(255,255,255,0.03); padding: 12px 18px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: rgba(255,255,255,0.38); text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .compare-table td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table tr:hover td { background: rgba(255,255,255,0.015); }
+    .col-feature { color: rgba(255,255,255,0.7); font-weight: 500; }
+    .col-solibri { color: rgba(255,255,255,0.35); }
+    .col-ours { color: #E8E8F0; }
+    .badge-ok   { display: inline-block; background: rgba(82,196,26,0.12); color: #52C41A; border: 1px solid rgba(82,196,26,0.22); border-radius: 4px; font-size: 11px; padding: 2px 7px; font-weight: 600; }
+    .badge-no   { display: inline-block; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; font-size: 11px; padding: 2px 7px; }
+    .badge-warn { display: inline-block; background: rgba(245,166,35,0.1); color: #F5A623; border: 1px solid rgba(245,166,35,0.2); border-radius: 4px; font-size: 11px; padding: 2px 7px; }
+
+    /* Feature grid */
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+    .feature-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 18px 20px; }
+    .feature-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .feature-card p { font-size: 12px; color: rgba(255,255,255,0.38); line-height: 1.55; }
+
+    /* Health score visual */
+    .score-demo { display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; margin: 32px 0; }
+    .score-ring { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .score-ring-num { font-size: 28px; font-weight: 700; font-family: monospace; }
+    .score-ring-label { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+    /* FAQ */
+    .faq-list { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
+    .faq-item { padding: 22px 26px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .faq-a { font-size: 13px; color: rgba(255,255,255,0.48); line-height: 1.65; }
+
+    /* Bottom CTA */
+    .cta-bottom { text-align: center; padding: 60px 0 80px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .cta-bottom h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.025em; margin-bottom: 12px; }
+    .cta-bottom p { font-size: 15px; color: rgba(255,255,255,0.42); margin-bottom: 30px; }
+
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 26px 0; text-align: center; }
+    .footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .footer-link { font-size: 12px; color: rgba(255,255,255,0.32); transition: color 0.15s; }
+    .footer-link:hover { color: rgba(255,255,255,0.65); }
+    .footer-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
+
+    @media (max-width: 600px) {
+      .compare-table { font-size: 12px; }
+      .compare-table td, .compare-table th { padding: 10px 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <div class="header-inner">
+        <a href="../" class="logo">IFC Viewer Online</a>
+        <a href="../" class="nav-cta">Try it free →</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <div class="container">
+        <div class="notice-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Solibri Anywhere was discontinued — April 13, 2026
+        </div>
+        <h1>Free <span class="accent">Solibri Alternative</span><br>for IFC Validation</h1>
+        <p class="hero-desc">IFC Viewer Online is a free, browser-based IFC validator with 31 quality checks, a Health Score from 0 to 100, and full privacy — your files never leave your browser. No install. No account. Works on Mac and Windows.</p>
+        <div class="cta-row">
+          <a href="../" class="cta-primary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Validate your IFC file — free
+          </a>
+          <span class="cta-note">No account · No upload · Works offline · No file size limit</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Comparison -->
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">Comparison</p>
+        <h2 class="section-title">IFC Viewer Online vs Solibri</h2>
+        <p class="section-sub">A practical comparison for BIM Coordinators who used Solibri Anywhere for pre-delivery IFC checks.</p>
+
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Solibri Anywhere<br><span style="font-weight:400;color:rgba(255,166,35,0.7)">Discontinued Apr 2026</span></th>
+              <th>IFC Viewer Online<br><span style="font-weight:400;color:rgba(94,106,210,0.8)">Free · Open source</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="col-feature">Price</td>
+              <td class="col-solibri"><span class="badge-no">Discontinued</span></td>
+              <td class="col-ours"><span class="badge-ok">Free forever</span></td>
+            </tr>
+            <tr>
+              <td class="col-feature">Installation required</td>
+              <td class="col-solibri">Windows desktop app</td>
+              <td class="col-ours"><span class="badge-ok">No install — browser only</span></td>
+            </tr>
+            <tr>
+              <td class="col-feature">Mac support</td>
+              <td class="col-solibri"><span class="badge-no">Windows only</span></td>
+              <td class="col-ours"><span class="badge-ok">Mac · Windows · Linux</span></td>
+            </tr>
+            <tr>
+              <td class="col-feature">File upload to server</td>
+              <td class="col-solibri">Processes locally</td>
+              <td class="col-ours"><span class="badge-ok">Zero upload — WebAssembly in browser</span></td>
+            </tr>
+            <tr>
+              <td class="col-feature">File size limit</td>
+              <td class="col-solibri">~500 MB</td>
+              <td class="col-ours"><span class="badge-ok">Up to ~2 GB</span></td>
+            </tr>
+            <tr>
+              <td class="col-feature">Validation rules</td>
+              <td class="col-solibri">Rule-based (requires setup)</td>
+              <td class="col-ours"><span class="badge-ok">38 rules — zero configuration needed</span></td>
+            </tr>
+            <tr>
+              <td class="col-feature">Health Score</td>
+              <td class="col-solibri"><span class="badge-no">Not available</span></td>
+              <td class="col-ours"><span class="badge-ok">0–100 score · instant</span></td>
+            </tr>
+            <tr>
+              <td class="col-feature">GUID auto-fix</td>
+              <td class="col-solibri"><span class="badge-no">View only</span></td>
+              <td class="col-ours"><span class="badge-ok">One-click fix + export corrected IFC</span></td>
+            </tr>
+            <tr>
+              <td class="col-feature">3D viewer</td>
+              <td class="col-solibri">Yes</td>
+              <td class="col-ours"><span class="badge-ok">Yes — WebGL, SSAO, section planes</span></td>
+            </tr>
+            <tr>
+              <td class="col-feature">BCF export</td>
+              <td class="col-solibri">BCF 2.1</td>
+              <td class="col-ours"><span class="badge-ok">BCF 2.1 export from issues</span></td>
+            </tr>
+            <tr>
+              <td class="col-feature">Shareable report</td>
+              <td class="col-solibri"><span class="badge-no">Not available</span></td>
+              <td class="col-ours"><span class="badge-ok">Share Health Score via URL — zero server</span></td>
+            </tr>
+            <tr>
+              <td class="col-feature">Full geometry clash detection</td>
+              <td class="col-solibri">Yes (polygon-level)</td>
+              <td class="col-ours"><span class="badge-warn">Bounding-box only</span></td>
+            </tr>
+            <tr>
+              <td class="col-feature">IDS validation</td>
+              <td class="col-solibri">Yes (paid tier)</td>
+              <td class="col-ours"><span class="badge-warn">Planned</span></td>
+            </tr>
+            <tr>
+              <td class="col-feature">Multi-user collaboration</td>
+              <td class="col-solibri">Yes (paid tier)</td>
+              <td class="col-ours"><span class="badge-warn">On roadmap</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Health Score -->
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">Health Score</p>
+        <h2 class="section-title">One number. Zero configuration.</h2>
+        <p class="section-sub">Unlike Solibri's rule-based approach that requires hours of setup per project, IFC Viewer Online runs 38 checks automatically and gives every model a Health Score from 0 to 100 — in under 30 seconds.</p>
+
+        <div class="score-demo">
+          <div class="score-ring">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(82,196,26,0.15)" stroke-width="7"/>
+              <circle cx="36" cy="36" r="30" fill="none" stroke="#52C41A" stroke-width="7" stroke-linecap="round"
+                stroke-dasharray="188.5" stroke-dashoffset="18.85" transform="rotate(-90 36 36)"/>
+              <text x="36" y="40" text-anchor="middle" font-size="18" font-weight="700" font-family="monospace" fill="#52C41A">92</text>
+            </svg>
+            <span class="score-ring-label" style="color:#52C41A">Excellent</span>
+          </div>
+          <div class="score-ring">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(245,166,35,0.15)" stroke-width="7"/>
+              <circle cx="36" cy="36" r="30" fill="none" stroke="#F5A623" stroke-width="7" stroke-linecap="round"
+                stroke-dasharray="188.5" stroke-dashoffset="94.25" transform="rotate(-90 36 36)"/>
+              <text x="36" y="40" text-anchor="middle" font-size="18" font-weight="700" font-family="monospace" fill="#F5A623">50</text>
+            </svg>
+            <span class="score-ring-label" style="color:#F5A623">Fair</span>
+          </div>
+          <div class="score-ring">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(220,53,69,0.15)" stroke-width="7"/>
+              <circle cx="36" cy="36" r="30" fill="none" stroke="#DC3545" stroke-width="7" stroke-linecap="round"
+                stroke-dasharray="188.5" stroke-dashoffset="150.8" transform="rotate(-90 36 36)"/>
+              <text x="36" y="40" text-anchor="middle" font-size="18" font-weight="700" font-family="monospace" fill="#DC3545">20</text>
+            </svg>
+            <span class="score-ring-label" style="color:#DC3545">Critical</span>
+          </div>
+        </div>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h3>No ruleset to configure</h3>
+            <p>38 rules run automatically. No XML, no .smc files, no per-project setup. Open a file and get a score.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Results in under 30 seconds</h3>
+            <p>A background Web Worker processes rules concurrently. Issues stream in as each check completes — the UI stays responsive throughout.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Share the report</h3>
+            <p>Click Share Report to copy a URL that encodes the full Health Score and issue list. Open it in any browser — no account required.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Fix, not just read</h3>
+            <p>GUID duplicates auto-fix with one click. Edit names and property values inline. Export the corrected IFC — all in the browser.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- What's covered -->
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">38 validation rules</p>
+        <h2 class="section-title">What gets checked</h2>
+        <p class="section-sub">Rules span schema quality, spatial hierarchy, ISO 19650 compliance, LOD completeness, and coordination checks.</p>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h3>GUID checks</h3>
+            <p>Duplicate GlobalIds, invalid base64 format. Most common export error from Revit, ArchiCAD, Tekla. Auto-fixable with one click.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Spatial hierarchy</h3>
+            <p>IfcSite → IfcBuilding → IfcBuildingStorey chain. Orphan elements with no spatial containment. Missing project context.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Naming &amp; ISO 19650</h3>
+            <p>Empty Name / LongName attributes. Generic placeholders. Naming convention patterns configurable per project.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Property sets</h3>
+            <p>Missing required Psets for walls, slabs, columns, beams. Empty or null property values that break downstream QTO.</p>
+          </div>
+          <div class="feature-card">
+            <h3>LOD completeness</h3>
+            <p>Verifies expected property sets are present at LOD 200 / 300 / 400 for common structural element classes.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Schema &amp; geometry</h3>
+            <p>IFC schema version compatibility, unit assignments, type assignments, material associations, degenerate geometry.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">FAQ</p>
+        <h2 class="section-title">Questions</h2>
+        <br/>
+        <div class="faq-list">
+          <div class="faq-item">
+            <p class="faq-q">Is IFC Viewer Online a good replacement for Solibri Anywhere?</p>
+            <p class="faq-a">For individual BIM Coordinators who need to check IFC models before delivery — yes. It runs 38 validation rules in your browser with zero setup, gives a Health Score from 0 to 100, and lets you fix GUID errors and export a corrected IFC without a server. It does not yet support IDS-based validation or multi-user cloud workflows, but for the core pre-delivery check workflow it is a practical, free, and private replacement.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">What happened to Solibri Anywhere?</p>
+            <p class="faq-a">Solibri Anywhere, the free tier of Solibri Model Checker, was discontinued on April 13, 2026. Users who relied on it for basic IFC viewing and quality checking now need an alternative. The paid tiers of Solibri Model Checker remain available at €495–€2,772/year.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">Does IFC Viewer Online work on Mac?</p>
+            <p class="faq-a">Yes. Unlike Solibri Anywhere (Windows-only desktop app), IFC Viewer Online works in any modern browser on Mac, Windows, and Linux. Chrome, Edge, Firefox, and Safari are all supported. No plugin, no installation required.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">Can I use it with confidential models under NDA?</p>
+            <p class="faq-a">Yes. All processing happens in your browser via WebAssembly — no data is ever transmitted to any server. You can safely use it with confidential project models under NDA. There is no service agreement to review with your client.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">Is there a file size limit?</p>
+            <p class="faq-a">There is no hard limit — the validator handles files up to ~2 GB. Performance depends on your device. Files under 200 MB load well on most modern hardware. Parsed geometry is cached in the browser's Origin Private File System (OPFS) so subsequent loads of the same file are instant.</p>
+          </div>
+          <div class="faq-item">
+            <p class="faq-q">Does it have BCF export like Solibri?</p>
+            <p class="faq-a">Yes. After running validation, you can export all issues as a BCF 2.1 file for coordination with Navisworks, BIMcollab, and other BCF-compatible tools. Individual issues can also be added to a BCF topic directly from the issue panel.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-bottom">
+      <div class="container">
+        <h2>Try the free Solibri alternative now.</h2>
+        <p>38 rules · Health Score 0–100 · No install · No upload · Works on Mac</p>
+        <a href="../" class="cta-primary">Open IFC Viewer Online →</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="../" class="footer-link">IFC Viewer Online</a>
+        <a href="../ifc-validator/" class="footer-link">IFC Validator</a>
+        <a href="../ifc-viewer-mac/" class="footer-link">IFC Viewer for Mac</a>
+        <a href="../tools/fix-duplicate-guids/" class="footer-link">Fix Duplicate GUIDs</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <p class="footer-copy">IFC Viewer Online © 2026 · Free · Open source · MIT license</p>
+    </div>
+  </footer>
+
+</body>
+</html>
+

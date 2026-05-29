@@ -162,12 +162,28 @@ export interface ViewerAPI {
    * Pass modelId to target an element in a specific model (important with multiple models loaded).
    */
   selectElement(expressId: number, modelId?: string): void
-  applyFilters(hidden: Set<string>, isolated: string | null, hiddenElements?: Set<number>): void
+  /**
+   * Apply category/element visibility.
+   * `isolatedElement` (a localId) takes precedence over every other filter: when set,
+   * only that element is shown and all category/hidden-element rules are ignored.
+   */
+  applyFilters(
+    hidden: Set<string>,
+    isolated: string | null,
+    hiddenElements?: Set<number>,
+    isolatedElement?: number | null,
+  ): void
   applyStyle(style: ViewerStyle): void
   /** Frame camera on a set of elements. Targets the active model unless modelId is given. */
   frameElements(ids: number[], modelId?: string): void
   setValidationHighlights(issues: ValidationIssue[], enabled: boolean): void
   setSelectCallback(cb: (info: SelectedInfo | null) => void): void
+  /**
+   * Register a callback fired on right-click over a model element. The payload
+   * carries the screen coordinates and the (now selected) element's info, or
+   * null when the right-click missed all geometry. Pass null to unregister.
+   */
+  setContextMenuCallback(cb: ((payload: { x: number; y: number; info: SelectedInfo } | null) => void) | null): void
   getGpuEstimateBytes(): number
   /** Fly to a named camera preset (iso, top, front, right, left, back, bottom). */
   setCameraPreset(preset: CameraPreset): void
@@ -476,12 +492,56 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   void world.camera.controls.setLookAt(30, 24, 36, 0, 2, 0, false)
 
+  // ─── Adaptive scale tuning ─────────────────────────────────────────────────
+  // IFC models range from a single chair (~1 m) to a campus (hundreds of m).
+  // A fixed near/far + fog hides small elements when zoomed in (near-plane
+  // clipping) and fogs out whole buildings when zoomed out. Re-tune both to the
+  // actual scene scale so geometry of every size renders crisply.
+  function tuneSceneToBounds(box: THREE.Box3): void {
+    if (box.isEmpty()) return
+    const size = box.getSize(new THREE.Vector3()).length()
+    if (!Number.isFinite(size) || size <= 0) return
+
+    const near = Math.max(0.01, Math.min(0.5, size / 1000))
+    const far  = Math.max(1000, size * 50)
+    for (const cam of [world.camera.threePersp, world.camera.threeOrtho]) {
+      cam.near = near
+      cam.far  = far
+      cam.updateProjectionMatrix()
+    }
+
+    // Keep all real geometry unfogged; only fade the distant background for depth.
+    const fog = world.scene.three.fog
+    if (fog instanceof THREE.Fog) {
+      fog.near = size * 2
+      fog.far  = size * 6
+    }
+
+    // Widen the directional shadow frustum so shadows cover the whole model.
+    const half = Math.max(50, size * 0.6)
+    dsc.left = -half; dsc.right = half; dsc.top = half; dsc.bottom = -half
+    dsc.far  = Math.max(200, size * 4)
+    dsc.updateProjectionMatrix()
+  }
+
   const fragmentsManager = components.get(OBC.FragmentsManager)
   const ifcLoader        = components.get(OBC.IfcLoader)
 
   const triggerUpdate = (): void => { void fragmentsManager.core.update() }
   world.camera.controls.addEventListener('control', triggerUpdate)
   world.camera.controls.addEventListener('rest',    triggerUpdate)
+
+  // ─── Navigation feel ───────────────────────────────────────────────────────
+  // Zoom toward the cursor (instead of the screen centre) so users can dive into
+  // a specific area naturally — the single biggest win for intuitive orbiting.
+  try {
+    const ctrls = world.camera.controls
+    ctrls.dollyToCursor = true
+    ctrls.dollySpeed    = 0.8   // slightly gentler than the default 1.0
+    ctrls.truckSpeed    = 1.5   // a touch faster panning for large models
+  } catch (err) {
+    console.debug('[Viewer] camera-controls tuning skipped:', err instanceof Error ? err.message : err)
+  }
 
   // ─── Postproduction — start disabled; enable on demand ───────────────────────
   let postproductionReady = false
@@ -548,13 +608,34 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let expressIDToType: Map<number, string> = new Map()
 
   let selectCallback: ((info: SelectedInfo | null) => void) | null = null
+  let contextMenuCallback: ((payload: { x: number; y: number; info: SelectedInfo } | null) => void) | null = null
   let hoveredLocalId:  number | null = null
   let hoveredModelId:  string | null = null
   let selectedLocalId: number | null = null
   let selectedModelId: string | null = null
 
-  // Per-model validation highlights: modelId → set of highlighted expressIds
-  const validationHighlightedByModel = new Map<string, Set<number>>()
+  // Per-model validation highlights: modelId → (expressId → material applied).
+  // Storing the material (not just the id) lets us re-apply the validation
+  // overlay after a hover/selection reset clears it.
+  const validationHighlightedByModel = new Map<string, Map<number, FRAGS.MaterialDefinition>>()
+
+  /** The validation material applied to an element, or null if none. */
+  function validationMatFor(modelId: string, localId: number): FRAGS.MaterialDefinition | null {
+    return validationHighlightedByModel.get(modelId)?.get(localId) ?? null
+  }
+
+  /** Reset an element's highlight, then restore its validation overlay if it had one. */
+  async function resetHighlightPreservingValidation(
+    model: FRAGS.FragmentsModel, modelId: string, localId: number,
+  ): Promise<void> {
+    await model.resetHighlight([localId])
+    const mat = validationMatFor(modelId, localId)
+    if (mat) {
+      try { await model.highlight([localId], mat) } catch (e) {
+        console.debug('[Viewer] restore validation highlight failed:', e instanceof Error ? e.message : e)
+      }
+    }
+  }
 
   let selectionBox: THREE.Box3Helper | null = null
 
@@ -650,15 +731,15 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let lastRaycastTime = 0
   const RAYCAST_THROTTLE_MS = 32
 
-  const commitSelection = async (): Promise<void> => {
-    if (modelObjects.size === 0) return
+  const commitSelection = async (): Promise<SelectedInfo | null> => {
+    if (modelObjects.size === 0) return null
 
     const hit = await getBestHit()
 
     // Reset old selection highlight on whichever model it was on
     if (selectedLocalId !== null && selectedModelId !== null) {
       const oldModel = modelObjects.get(selectedModelId)
-      try { if (oldModel) await oldModel.resetHighlight([selectedLocalId]) } catch (e) {
+      try { if (oldModel) await resetHighlightPreservingValidation(oldModel, selectedModelId, selectedLocalId) } catch (e) {
         console.debug('[Viewer] resetHighlight on deselect failed:', e instanceof Error ? e.message : e)
       }
     }
@@ -690,12 +771,15 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const rawType = typeMap.get(hit.localId) ?? 'IFCELEMENT'
       const canon   = canonicalType(rawType)
       const name    = `${IFC_DISPLAY_NAMES[canon] ?? prettyType(canon)} #${hit.localId}`
-      selectCallback?.({ id: String(hit.localId), name, type: rawType, storey: '', modelId: hit.modelId })
+      const info: SelectedInfo = { id: String(hit.localId), name, type: rawType, storey: '', modelId: hit.modelId }
+      selectCallback?.(info)
+      return info
     } else {
       selectedLocalId = null
       selectedModelId = null
       removeSelectionBox()
       selectCallback?.(null)
+      return null
     }
   }
 
@@ -718,7 +802,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         const isSameAsSelect = hoveredLocalId === selectedLocalId && hoveredModelId === selectedModelId
         if (!isSameAsSelect) {
           const prevModel = modelObjects.get(hoveredModelId)
-          if (prevModel) await prevModel.resetHighlight([hoveredLocalId])
+          if (prevModel) await resetHighlightPreservingValidation(prevModel, hoveredModelId, hoveredLocalId)
         }
       }
 
@@ -792,10 +876,31 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     }
   }
 
-  canvas.addEventListener('pointermove', onPointerMove)
-  canvas.addEventListener('pointerdown', onPointerDown)
-  canvas.addEventListener('pointerup',   onPointerUp)
-  canvas.addEventListener('dblclick',    onDoubleClick)
+  // Right-click: select the element under the cursor and surface a context menu.
+  // Suppressed while a measurement tool or the clipper is active so their own
+  // interactions aren't hijacked.
+  const onContextMenu = (e: MouseEvent): void => {
+    if (modelObjects.size === 0) return
+    if (activeMeasurementTool !== 'none' || clipper.enabled) return
+    e.preventDefault()
+    mouse.set(e.clientX, e.clientY)
+    void (async () => {
+      try {
+        const info = await commitSelection()
+        if (info) contextMenuCallback?.({ x: e.clientX, y: e.clientY, info })
+        else      contextMenuCallback?.(null)
+      } catch (err) {
+        console.debug('[Viewer] context menu select error:', err instanceof Error ? err.message : err)
+        contextMenuCallback?.(null)
+      }
+    })()
+  }
+
+  canvas.addEventListener('pointermove',  onPointerMove)
+  canvas.addEventListener('pointerdown',  onPointerDown)
+  canvas.addEventListener('pointerup',    onPointerUp)
+  canvas.addEventListener('dblclick',     onDoubleClick)
+  canvas.addEventListener('contextmenu',  onContextMenu)
 
   // ─── Setup post-carga ─────────────────────────────────────────────────────
 
@@ -856,6 +961,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     const box = model.box
     if (!box.isEmpty()) {
+      tuneSceneToBounds(box)
       void world.camera.controls.fitToBox(box, true)
     }
 
@@ -1103,10 +1209,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       if (!targetModel) return
 
       void (async () => {
-        // Reset old selection on its model
+        // Reset old selection on its model (restoring any validation overlay)
         if (selectedLocalId !== null && selectedModelId !== null) {
           const oldModel = modelObjects.get(selectedModelId)
-          try { if (oldModel) await oldModel.resetHighlight([selectedLocalId]) } catch (e) {
+          try { if (oldModel) await resetHighlightPreservingValidation(oldModel, selectedModelId, selectedLocalId) } catch (e) {
             console.debug('[Viewer] selectElement resetHighlight failed:', e instanceof Error ? e.message : e)
           }
         }
@@ -1130,13 +1236,16 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       // Clear per-model tracked highlights precisely (no over-resetting other models)
       for (const [mid, ids] of validationHighlightedByModel) {
         const model = modelObjects.get(mid)
-        if (model && ids.size > 0) void model.resetHighlight([...ids])
+        if (model && ids.size > 0) void model.resetHighlight([...ids.keys()])
       }
       validationHighlightedByModel.clear()
 
       if (!enabled) return
 
-      const byModel = new Map<string, { errIds: number[]; warnIds: number[]; infoIds: number[] }>()
+      // Collapse each element to its highest severity (error > warning > info) so
+      // an element with mixed issues gets a single, deterministic overlay colour.
+      const rank: Record<string, number> = { error: 3, warning: 2, info: 1 }
+      const sevByModel = new Map<string, Map<number, 'error' | 'warning' | 'info'>>()
 
       for (const issue of issues) {
         const mid = issue.modelId ?? currentModelId ?? ''
@@ -1144,26 +1253,47 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         const typeMap = typeMapByModel.get(mid) ?? expressIDToType
         if (!typeMap.has(issue.expressId)) continue
 
-        if (!byModel.has(mid)) byModel.set(mid, { errIds: [], warnIds: [], infoIds: [] })
-        const bucket = byModel.get(mid)!
-        if (issue.severity === 'error')        bucket.errIds.push(issue.expressId)
-        else if (issue.severity === 'warning') bucket.warnIds.push(issue.expressId)
-        else                                   bucket.infoIds.push(issue.expressId)
+        const sev: 'error' | 'warning' | 'info' =
+          issue.severity === 'error' ? 'error' : issue.severity === 'warning' ? 'warning' : 'info'
 
-        if (!validationHighlightedByModel.has(mid)) validationHighlightedByModel.set(mid, new Set())
-        validationHighlightedByModel.get(mid)!.add(issue.expressId)
+        if (!sevByModel.has(mid)) sevByModel.set(mid, new Map())
+        const m = sevByModel.get(mid)!
+        const prev = m.get(issue.expressId)
+        if (!prev || rank[sev] > rank[prev]) m.set(issue.expressId, sev)
       }
 
-      for (const [mid, bucket] of byModel) {
+      const matFor = (sev: 'error' | 'warning' | 'info'): FRAGS.MaterialDefinition =>
+        sev === 'error' ? VALIDATION_ERROR_MAT : sev === 'warning' ? VALIDATION_WARN_MAT : VALIDATION_INFO_MAT
+
+      for (const [mid, sevMap] of sevByModel) {
         const model = modelObjects.get(mid)
         if (!model) continue
-        if (bucket.errIds.length)  void model.highlight(bucket.errIds,  VALIDATION_ERROR_MAT)
-        if (bucket.warnIds.length) void model.highlight(bucket.warnIds, VALIDATION_WARN_MAT)
-        if (bucket.infoIds.length) void model.highlight(bucket.infoIds, VALIDATION_INFO_MAT)
+
+        const errIds: number[] = [], warnIds: number[] = [], infoIds: number[] = []
+        const tracked = new Map<number, FRAGS.MaterialDefinition>()
+        for (const [eid, sev] of sevMap) {
+          tracked.set(eid, matFor(sev))
+          if (sev === 'error')        errIds.push(eid)
+          else if (sev === 'warning') warnIds.push(eid)
+          else                        infoIds.push(eid)
+        }
+        validationHighlightedByModel.set(mid, tracked)
+
+        if (errIds.length)  void model.highlight(errIds,  VALIDATION_ERROR_MAT)
+        if (warnIds.length) void model.highlight(warnIds, VALIDATION_WARN_MAT)
+        if (infoIds.length) void model.highlight(infoIds, VALIDATION_INFO_MAT)
+      }
+
+      // Keep the currently selected element's selection overlay on top.
+      if (selectedLocalId !== null && selectedModelId !== null) {
+        const selModel = modelObjects.get(selectedModelId)
+        if (selModel && validationMatFor(selectedModelId, selectedLocalId)) {
+          void selModel.highlight([selectedLocalId], SELECT_MAT)
+        }
       }
     },
 
-    applyFilters(hidden, isolated, hiddenElements) {
+    applyFilters(hidden, isolated, hiddenElements, isolatedElement) {
       if (modelObjects.size === 0) return
       // Apply category/element visibility to every loaded model
       for (const [modelId, model] of modelObjects) {
@@ -1171,9 +1301,15 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         const toHide: number[] = []
         const toShow: number[] = []
         for (const [localId, rawType] of typeMap.entries()) {
-          const canon   = canonicalType(rawType)
-          const catShow = isolated ? (canon === isolated) : !hidden.has(canon)
-          const show    = catShow && !(hiddenElements?.has(localId))
+          let show: boolean
+          if (isolatedElement != null) {
+            // Element isolation overrides all category / hidden-element rules.
+            show = localId === isolatedElement
+          } else {
+            const canon   = canonicalType(rawType)
+            const catShow = isolated ? (canon === isolated) : !hidden.has(canon)
+            show          = catShow && !(hiddenElements?.has(localId))
+          }
           if (show) toShow.push(localId)
           else      toHide.push(localId)
         }
@@ -1201,6 +1337,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     setSelectCallback(cb) { selectCallback = cb },
+
+    setContextMenuCallback(cb) { contextMenuCallback = cb },
 
     getGpuEstimateBytes() {
       const info      = wr.info
@@ -1344,8 +1482,17 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         if (pivot) {
           pivot.updateMatrixWorld(true)
           const m = pivot.matrixWorld
+          // Transform all 8 corners: a rotated/scaled pivot turns the box into an
+          // oriented box, and the AABB of just min+max would be wrong. (Same pattern
+          // as getModelBounds.)
           const corners: THREE.Vector3[] = [
             new THREE.Vector3(box.min.x, box.min.y, box.min.z),
+            new THREE.Vector3(box.max.x, box.min.y, box.min.z),
+            new THREE.Vector3(box.min.x, box.max.y, box.min.z),
+            new THREE.Vector3(box.max.x, box.max.y, box.min.z),
+            new THREE.Vector3(box.min.x, box.min.y, box.max.z),
+            new THREE.Vector3(box.max.x, box.min.y, box.max.z),
+            new THREE.Vector3(box.min.x, box.max.y, box.max.z),
             new THREE.Vector3(box.max.x, box.max.y, box.max.z),
           ]
           for (const v of corners) combined.expandByPoint(v.applyMatrix4(m))
@@ -1354,7 +1501,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           combined.expandByPoint(box.max)
         }
       }
-      if (!combined.isEmpty()) void world.camera.controls.fitToBox(combined, true)
+      if (!combined.isEmpty()) {
+        tuneSceneToBounds(combined)
+        void world.camera.controls.fitToBox(combined, true)
+      }
     },
 
     isolateModel(modelId: string) {
@@ -1755,10 +1905,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     dispose() {
-      canvas.removeEventListener('pointermove', onPointerMove)
-      canvas.removeEventListener('pointerdown', onPointerDown)
-      canvas.removeEventListener('pointerup',   onPointerUp)
-      canvas.removeEventListener('dblclick',    onDoubleClick)
+      canvas.removeEventListener('pointermove',  onPointerMove)
+      canvas.removeEventListener('pointerdown',  onPointerDown)
+      canvas.removeEventListener('pointerup',    onPointerUp)
+      canvas.removeEventListener('dblclick',     onDoubleClick)
+      canvas.removeEventListener('contextmenu',  onContextMenu)
       try { lengthMeasurement.dispose() } catch { /* ok */ }
       try { areaMeasurement.dispose() } catch { /* ok */ }
       try { clipper.dispose() } catch { /* ok */ }

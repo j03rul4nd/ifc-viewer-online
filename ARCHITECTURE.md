@@ -101,7 +101,7 @@ ifc/
 ├── ARCHITECTURE.md                   # This file
 ├── IFC_DOMAIN.md                     # IFC domain knowledge reference
 ├── DECISIONS.md                      # Architectural decision log
-├── ROADMAP.md                        # Sprint plan (Sprints 1–6 done; 7–12 planned)
+├── ROADMAP.md                        # Sprints 1–9 done; forward plan = Roadmap v2 (distribution-led)
 ├── PROMPTS.md                        # Claude prompt log
 ├── vite.config.ts                    # Vite + Vitest config; chunk splitting; worker format; WASM plugin
 ├── tsconfig.json                     # TypeScript strict, ESNext modules, bundler resolution
@@ -158,7 +158,7 @@ flowchart TD
     E -- yes --> F[validationStore.setResult\ninstant replay]
     E -- no --> G[modelRegistry.getBuffer modelId .slice\npostMessage validate]
 
-    G --> H[validator.worker\nIfcAPI WASM\nbuild SpatialTree\nrun 18 rules]
+    G --> H[validator.worker\nIfcAPI WASM\nbuild SpatialTree\nrun 38 rules]
     H -- tree --> I
     H -- partial issues --> J[validationStore.addPartialIssues]
     H -- done → result --> K[validationStore.setResult modelId\ncacheResult\nappBus validation:complete]
@@ -283,7 +283,13 @@ Runs in a second dedicated ES module worker. Protocol:
 - **IN (tree-only):** `{ type: 'build-tree', id, buffer: ArrayBuffer (transferred copy) }`
 - **OUT:** `{ type: 'tree', id, tree: SpatialNode[] }` → `{ type: 'tree-done', id }` (tree-only path) OR `{ type: 'partial', id, issues, progress }` → `{ type: 'done', id, result: ValidationResult }` (full validation) OR `{ type: 'error', id, message }`
 
-**18 validation rules:** RULE_EMPTY_NAME, RULE_EMPTY_LONGNAME, RULE_DUPLICATE_NAME, RULE_NAMING_CONVENTION, RULE_MISSING_TYPE, RULE_DUPLICATE_GUID, RULE_MISSING_PROPERTY_SET, RULE_ORPHAN_ELEMENT, RULE_WRONG_CONTAINER, RULE_BROKEN_AGGREGATE, RULE_INVALID_GUID_FORMAT, RULE_SPATIAL_HIERARCHY, RULE_CIRCULAR_REFERENCE, RULE_EMPTY_PROPERTY_VALUE, RULE_MISSING_MATERIAL, RULE_ELEMENT_IN_BUILDING, RULE_INVALID_IFC_VERSION, RULE_ELEMENT_CLASH (off by default).
+**38 validation rules** (dispatched in `validator.worker.ts`; each gated by `RulesConfig`). Grouped by generation:
+
+- **Core (V1/V2) — 18:** RULE_EMPTY_NAME, RULE_EMPTY_LONGNAME, RULE_DUPLICATE_NAME, RULE_NAMING_CONVENTION, RULE_MISSING_TYPE, RULE_DUPLICATE_GUID, RULE_MISSING_PROPERTY_SET, RULE_ORPHAN_ELEMENT, RULE_WRONG_CONTAINER, RULE_BROKEN_AGGREGATE, RULE_INVALID_GUID_FORMAT, RULE_SPATIAL_HIERARCHY, RULE_CIRCULAR_REFERENCE, RULE_EMPTY_PROPERTY_VALUE, RULE_MISSING_MATERIAL, RULE_ELEMENT_IN_BUILDING, RULE_INVALID_IFC_VERSION, RULE_ELEMENT_CLASH (off by default).
+- **Spatial / file-header (V3) — 11:** RULE_MISSING_PROJECT, RULE_MISSING_BUILDING, RULE_MISSING_STOREY, RULE_EMPTY_STOREY, RULE_FILE_DESCRIPTION_MISSING, RULE_FILE_AUTHOR_MISSING, RULE_PROJECT_LONGNAME_MISSING, RULE_STOREY_ELEVATION_MISSING, RULE_ISO19650_PROJECT_INFO, RULE_ISO19650_AUTHOR_INFO, RULE_ISO19650_FILENAME.
+- **LOD / classification / MEP (V4) — 9:** RULE_MISSING_CLASSIFICATION, RULE_LOD_PSET_MISSING, RULE_LOD_QUANTITY_MISSING, RULE_LOD_MATERIAL_LAYER_MISSING, RULE_MEP_SYSTEM_MISSING, RULE_CLASH_MEP_STRUCTURAL, RULE_PROXY_OVERUSE, RULE_COORDINATE_OFFSET, RULE_FILE_SIZE_ANOMALY.
+
+When adding a rule, update this count and the marketing copy (`index.html`, `README.md`, `src/seo/config.ts`, `SharedReportView.tsx`, the `public/*` landing pages) — all reference "38 validation rules" and must move together.
 
 ### Export worker (`src/workers/export.worker.ts`)
 
@@ -329,7 +335,7 @@ Command builder helpers for all diff types. Each builder accepts `modelId?`:
 
 | Package | Why |
 |---|---|
-| `@thatopen/components` | Provides `OBC.Components`, `OBC.IfcLoader`, `OBC.FragmentsManager`, `OBC.SimpleRenderer/Camera/Scene`, `OBC.Grids` — batteries-included IFC toolkit. Sprint 7+ will also use `OBCF.PostproductionRenderer`, `OBCF.LengthMeasurement`, `OBCF.Plans`. |
+| `@thatopen/components` | Provides `OBC.Components`, `OBC.IfcLoader`, `OBC.FragmentsManager`, `OBC.SimpleRenderer/Camera/Scene`, `OBC.Grids` — batteries-included IFC toolkit. Also uses `OBCF.PostproductionRenderer`, `OBCF.LengthMeasurement`, `OBCF.Plans`, `OBCF.ClipEdges` (shipped in Sprints 7–8). **Note:** this library is open-source and maintained by a competitor (That Open Company) — it is the commodity layer, not a moat. See `DECISIONS.md` D-01 and `memory/project_moats_vs_commodities.md`. |
 | `@thatopen/fragments` | The geometry serialisation format and `IfcImporter` class. |
 | `@thatopen/components-front` | Peer dependency; provides frontend-specific OBC components (postpro, measurements, plans). |
 | `three` | Underlying 3D library for OBC. Also used directly for `THREE.Group` (modelPivots), lights, shadow config, and GLB export. |
@@ -350,9 +356,9 @@ Command builder helpers for all diff types. Each builder accepts `modelId?`:
 
 ### What is intentionally NOT in the codebase
 
-- **No server / API.** No backend, no fetch to any external endpoint.
+- **No server-side processing of the model.** The IFC file never leaves the browser — no upload, no server parse/validate. *The app does make a few external fetches that never touch the model:* PostHog analytics (`src/lib/analytics.ts`) and email capture (`src/lib/subscribe.ts` → the stateless `cf-worker/` email proxy). Stateless edge compute that never receives the model is permitted; see `CONTEXT.md` invariant 1 and `DECISIONS.md` D-21.
 - **No authentication.** No login, no user accounts.
-- **No WebGPU renderer.** Planned for Sprint 10. Requires a custom renderer satisfying OBC's `BaseRenderer`.
+- **No WebGPU renderer.** ❌ Deferred indefinitely (was old Sprint 10). No documented perf pain; would require a custom renderer satisfying OBC's `BaseRenderer`. See `ROADMAP.md` Roadmap v2.
 - **No `web-ifc` direct imports in `src/` outside workers.**
 
 ---
@@ -381,10 +387,10 @@ ScenePanel transform callbacks pass explicit `model.id` so the correct pivot is 
 | `vendor-ui-*.js` | React, Radix UI, Framer Motion, Zustand, Zod, ts-pattern, all other npm packages | ~518 KB |
 | `vendor-three-*.js` | three.js (changes infrequently — long browser cache TTL) | ~1.3 MB |
 | `vendor-ifc-*.js` | @thatopen/* + web-ifc JS side | ~4.5 MB |
-| `*.worker-*.js` (×3) | Workers bundle three.js inline (required — see D-11) | ~3–4.3 MB each |
+| `*.worker-*.js` (one per worker: ifc-parser, validator, export, bcf-parser) | Geometry workers bundle three.js inline (required — see D-11) | ~3–4.3 MB each |
 
 **Windows build:** `node --max-old-space-size=4096 node_modules/vite/bin/vite.js build` — required because the default Node.js 2 GB heap is exhausted by the 514+ module graph.
 
 ---
 
-*Last updated: 2026-05-17 · Sprints 1–6 complete · Sprint 7 next*
+*Last updated: 2026-05-29 · Sprints 1–9 complete · Forward plan: ROADMAP.md Roadmap v2*

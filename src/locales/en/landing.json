@@ -7,7 +7,7 @@
     "badgeMobile": "No login · runs in your browser",
     "h1": "IFC Viewer",
     "h1Accent": "Online",
-    "subtitleFull": "Catch IFC errors before your client does. Open, validate, and fix IFC files entirely in your browser — no installation, no server, no account. Your models never leave your machine.",
+    "subtitleFull": "Catch IFC errors before your client does. Open an IFC and get a Health Score — 0 to 100 — in under 30 seconds. No account. No ruleset to configure. No 250 MB limit. Works in any browser.",
     "trustLine": "Free · Open source · 100% client-side · IFC2x3 · IFC4 · IFC4x1 · IFC4x3",
     "trustLineMobile": "Free · Open source · IFC2x3 · IFC4 · IFC4x3"
   },
@@ -54,7 +54,7 @@
   },
   "features": [
     {
-      "title": "18-rule IFC validator",
+      "title": "38-rule IFC validator",
       "body": "Catch GUID duplicates, spatial hierarchy violations, and orphan elements before your client does. Every model receives a Health Score from 0 to 100. Results stream in real time from a background worker — UI stays fully responsive.",
       "tip": "IFC / ISO 19650 rule engine"
     },
@@ -127,7 +127,7 @@
     {
       "n": "02",
       "title": "Inspect & validate",
-      "body": "Explore the model tree, filter by category, and run 18 built-in validation rules in a background worker. Duplicate GUIDs, spatial hierarchy errors, missing type assignments — all flagged instantly."
+      "body": "Explore the model tree, filter by category, and run 38 built-in validation rules in a background worker. Duplicate GUIDs, spatial hierarchy errors, missing type assignments — all flagged instantly."
     },
     {
       "n": "03",
@@ -164,7 +164,7 @@
     },
     {
       "q": "Can I share the validation results with my team or client?",
-      "a": "Yes. After running validation, export your results as JSON, CSV, or a signed Validation Certificate — then share with your team or client. A shareable URL that encodes the full Health Score and issue list directly in a link (no file needed) is on the roadmap. The IFC file itself never leaves your browser."
+      "a": "Yes. After running validation, click Share Report to copy a link that encodes the full Health Score and issue list directly in the URL — no file upload, no server, no account required. You can also export results as JSON, CSV, or a Validation Certificate. The IFC file itself never leaves your browser."
     },
     {
       "q": "Does it work on Mac?",
@@ -176,7 +176,7 @@
     },
     {
       "q": "How does the validation work?",
-      "a": "The validator runs 18 built-in rules in a background Web Worker so the UI stays responsive. Rules cover GUID duplicates, spatial hierarchy, orphan elements, naming conventions, missing type assignments, clash detection, and more. Every model receives a Health Score from 0 to 100. Results stream in as each rule completes."
+      "a": "The validator runs 38 built-in rules in a background Web Worker so the UI stays responsive. Rules cover GUID duplicates, spatial hierarchy, orphan elements, naming conventions, missing type assignments, ISO 19650 property sets, LOD completeness, clash detection, proxy overuse, coordinate offset, and more. Every model receives a Health Score from 0 to 100. Results stream in as each rule completes."
     },
     {
       "q": "Can I fix errors and re-export a corrected IFC?",

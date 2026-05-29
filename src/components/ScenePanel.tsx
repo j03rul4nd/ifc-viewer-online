@@ -301,14 +301,14 @@ function TransformSection({ model, viewerApiRef, onSetTransform }: TransformSect
       <div className="flex gap-1.5 pt-1">
         <button
           onClick={centerOnGrid}
-          title="Move model so its bottom sits on the Y=0 grid plane and is centred on X/Z"
+          title={tViewer('transform.snapToGridHint')}
           className="flex-1 h-7 rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors"
         >
           {tViewer('transform.snapToGrid')}
         </button>
         <button
           onClick={resetAll}
-          title="Reset all transform values to identity"
+          title={tViewer('transform.resetHint')}
           className="flex-1 h-7 rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[rgba(229,72,77,0.6)] transition-colors"
         >
           {tViewer('transform.reset')}
@@ -393,7 +393,7 @@ export default function ScenePanel({
           {models.length > 1 && (
             <button
               onClick={handleFrameAll}
-              title="Fit camera to all models"
+              title={t('scene.frameAll')}
               className="w-6 h-6 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
             >
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
@@ -481,7 +481,7 @@ export default function ScenePanel({
                   ? 'bg-[var(--surface-2)] text-[var(--text)] border-[var(--border-strong)]'
                   : 'text-[var(--text-dim)] border-[var(--border)] hover:border-[var(--border-strong)] hover:text-[var(--text)]',
               ].join(' ')}
-              title="Standard — WebGL rasterisation, best performance"
+              title={t('renderQuality.performanceHint')}
             >
               {t('renderQuality.performance')}
             </button>
@@ -493,7 +493,7 @@ export default function ScenePanel({
                   ? 'bg-[var(--surface-2)] text-[var(--accent)] border-[rgba(94,106,210,0.5)]'
                   : 'text-[var(--text-dim)] border-[var(--border)] hover:border-[var(--border-strong)] hover:text-[var(--text)]',
               ].join(' ')}
-              title="Quality — SSAO ambient occlusion + edge detection post-processing"
+              title={t('renderQuality.qualityHint')}
             >
               {t('renderQuality.quality')}
             </button>

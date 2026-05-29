@@ -62,7 +62,7 @@
   },
   "features": [
     {
-      "title": "IFC-Validator mit 18 Regeln",
+      "title": "IFC-Validator mit 38 Regeln",
       "body": "Erkennen Sie GUID-Duplikate, Raumhierarchieverletzungen und verwaiste Elemente, bevor Ihr Kunde es tut. Ergebnisse werden in Echtzeit aus einem Hintergrund-Worker gestreamt.",
       "tip": "IFC / ISO 19650 Regelmaschine"
     },
@@ -135,7 +135,7 @@
     {
       "n": "02",
       "title": "Inspizieren & validieren",
-      "body": "Modellbaum erkunden, nach Kategorie filtern und 18 integrierte Validierungsregeln in einem Hintergrund-Worker ausführen. GUID-Duplikate, Raumhierarchiefehler, fehlende Typzuweisungen — alles sofort markiert."
+      "body": "Modellbaum erkunden, nach Kategorie filtern und 38 integrierte Validierungsregeln in einem Hintergrund-Worker ausführen. GUID-Duplikate, Raumhierarchiefehler, fehlende Typzuweisungen — alles sofort markiert."
     },
     {
       "n": "03",
@@ -196,7 +196,7 @@
     },
     {
       "q": "Wie funktioniert die Validierung?",
-      "a": "Der Validator führt 18 integrierte Regeln in einem Hintergrund-Web-Worker aus. Regeln decken GUID-Duplikate, Raumhierarchie, verwaiste Elemente, Namenskonventionen, fehlende Typzuweisungen, Kollisionserkennung und mehr ab."
+      "a": "Der Validator führt 38 integrierte Regeln in einem Hintergrund-Web-Worker aus. Regeln decken GUID-Duplikate, Raumhierarchie, verwaiste Elemente, Namenskonventionen, fehlende Typzuweisungen, Kollisionserkennung und mehr ab."
     },
     {
       "q": "Kann ich Fehler korrigieren und ein korrigiertes IFC exportieren?",

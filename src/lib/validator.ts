@@ -23,15 +23,24 @@ import { appBus }             from './event-bus'
 import { parseSpatialNodeArray } from './type-guards'
 import { parseValidationResultMsg, parseValidatorMsg } from './worker-schemas'
 import { WorkerError, ValidationError, toAppError, formatDevError } from './errors'
-import type { RulesConfig, ValidationResult, ValidationIssue } from '../types'
+import type { RulesConfig, ValidationResult, ValidationIssue, ValidationCategoryType } from '../types'
 import { RULE_METADATA }                      from '../types'
 import { recordValidationRun }                from './validation-analytics'
 import type { ValidatorOutMessage }            from '../workers/validator.worker'
 
 // ── Quality score ─────────────────────────────────────────────────────────────
 
-/** Penalty weights per category per severity */
-const CATEGORY_WEIGHTS: Record<string, Record<string, number>> = {
+/**
+ * Penalty weights per category per severity.
+ *
+ * Keyed by `ValidationCategoryType` (not `string`) on purpose: this makes the map
+ * **exhaustive** at compile time. If a new category is added to the union — or a
+ * new rule introduces one — `tsc` fails here until a weight is supplied, instead
+ * of the score silently falling back to DEFAULT_WEIGHTS and mis-weighting the
+ * headline metric. (The inner value stays `Record<string, number>` so indexing by
+ * the runtime severity string in `calculateQualityScore` doesn't trip TS7053.)
+ */
+const CATEGORY_WEIGHTS: Record<ValidationCategoryType, Record<string, number>> = {
   schema:         { error: 5, warning: 1.5, info: 0.3 },
   spatial:        { error: 4, warning: 1.2, info: 0.2 },
   quality:        { error: 3, warning: 1.0, info: 0.2 },
@@ -41,14 +50,40 @@ const CATEGORY_WEIGHTS: Record<string, Record<string, number>> = {
   mep:            { error: 2, warning: 0.8, info: 0.1 },
   clash:          { error: 4, warning: 1.5, info: 0.2 },
 }
-const DEFAULT_WEIGHTS = { error: 3, warning: 1, info: 0.2 }
+const DEFAULT_WEIGHTS: Record<string, number> = { error: 3, warning: 1, info: 0.2 }
 
-function calculateQualityScore(result: ValidationResult): number {
-  let penalty = 0
+// Exported for the score↔metadata contract test (quality-score.test.ts).
+export const __scoreWeights = { CATEGORY_WEIGHTS, DEFAULT_WEIGHTS } as const
+
+/**
+ * Compute a 0–100 quality score from a validation result.
+ *
+ * Penalties are aggregated per (rule, severity) bucket with **logarithmically
+ * diminishing returns**: the first occurrence of a failing rule costs its full
+ * category/severity weight, and each further occurrence adds progressively less
+ * (`weight × (1 + ln(count))`). This is deliberate — a single systematic defect
+ * (e.g. 5 000 elements missing a material) indicates *one* problem to fix, not
+ * 5 000 independent ones. A naive `weight × count` sum saturates the score to 0
+ * for any real-world model, which destroys its ability to discriminate between a
+ * mostly-healthy model and a broken one.
+ */
+export function calculateQualityScore(result: ValidationResult): number {
+  // Count issues per rule, split by severity.
+  const counts = new Map<string, Record<string, number>>()
   for (const issue of result.issues) {
-    const meta     = RULE_METADATA[issue.ruleId]
-    const weights  = (meta ? CATEGORY_WEIGHTS[meta.category] : null) ?? DEFAULT_WEIGHTS
-    penalty += weights[issue.severity] ?? 0
+    let bySeverity = counts.get(issue.ruleId)
+    if (!bySeverity) counts.set(issue.ruleId, (bySeverity = {}))
+    bySeverity[issue.severity] = (bySeverity[issue.severity] ?? 0) + 1
+  }
+
+  let penalty = 0
+  for (const [ruleId, bySeverity] of counts) {
+    const meta    = RULE_METADATA[ruleId]
+    const weights = (meta ? CATEGORY_WEIGHTS[meta.category] : null) ?? DEFAULT_WEIGHTS
+    for (const [severity, count] of Object.entries(bySeverity)) {
+      const weight = weights[severity] ?? 0
+      penalty += weight * (1 + Math.log(count))
+    }
   }
   return Math.max(0, Math.round(100 - penalty))
 }

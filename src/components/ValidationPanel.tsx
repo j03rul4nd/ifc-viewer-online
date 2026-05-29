@@ -7,7 +7,9 @@ import React, {
   useState, useRef, useEffect, useMemo, useCallback, useLayoutEffect,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { useShallow } from 'zustand/react/shallow'
 import { useValidationStore } from '../stores/validationStore'
 import { useEditorStore } from '../stores/editorStore'
@@ -24,17 +26,35 @@ import type {
   ValidationIssue, ValidationCertificate, BcfTopic, ViewerHandle,
   ValidationCategoryType,
 } from '../types'
-import { VALIDATION_PROFILES, RULE_METADATA, getRuleLabel } from '../types'
+import { VALIDATION_PROFILES, RULE_METADATA, getRuleLabel, getRuleRemediation, AUTHORING_TOOLS } from '../types'
+import type { AuthoringTool } from '../types'
 import { getCoveredCategories, ALL_CATEGORIES } from './ValidationCoverageSummary'
 import CustomProfileModal from './CustomProfileModal'
 import { getRecentRuns, getAverageQualityScore, getMostUsedRules } from '../lib/validation-analytics'
 import type { ValidationRunRecord } from '../lib/validation-analytics'
-import { trackGuidFixed } from '../lib/analytics'
+import { trackGuidFixed, trackShareReportClicked, trackValidationPanelOpened } from '../lib/analytics'
+
+// ── Profile i18n ────────────────────────────────────────────────────────────
+// Built-in profiles (basic/quality/coordination/iso19650/lod300) resolve their
+// name + description from the `profile.<id>` keys in the active locale.
+// User-created custom profiles have no translation key, so their stored name
+// falls through via defaultValue.
+
+function localizedProfileName(p: { id: string; name: string }, t: TFunction<'validation'>): string {
+  return t(`profile.${p.id}.name`, { defaultValue: p.name })
+}
+
+function localizedProfileDescription(p: { id: string; description: string }, t: TFunction<'validation'>): string {
+  return t(`profile.${p.id}.description`, { defaultValue: p.description })
+}
 
 // ── Resize constants ──────────────────────────────────────────────────────────
 
 const MIN_PANEL_H = 180
 const DEFAULT_PANEL_H = 360
+
+// Total number of validation rules in the catalogue (derived, never hardcoded).
+const TOTAL_RULE_COUNT = Object.keys(RULE_METADATA).length
 
 // ── Severity helpers ──────────────────────────────────────────────────────────
 
@@ -276,6 +296,165 @@ function GroupHeader({ label, count, ruleId }: { label: string; count: number; r
         )}
       </div>
       <span className="text-[10px] font-mono text-[var(--text-faint)] shrink-0">{count}</span>
+    </div>
+  )
+}
+
+// ── Issue group rows ──────────────────────────────────────────────────────────
+// Each rule/storey/class group has a click-to-expand header, shows PREVIEW_ROWS
+// issue rows by default, and a "Show N more" button to load the rest. Rows are
+// flattened into a single virtualized list (see ValidationPanel) so a group with
+// thousands of issues never mounts all its DOM nodes at once.
+
+const PREVIEW_ROWS = 5
+
+// Flattened row model for the virtualized issue list.
+type FlatRow =
+  | { kind: 'header';      groupKey: string; groupIssues: ValidationIssue[] }
+  | { kind: 'remediation'; groupKey: string }
+  | { kind: 'issue';       groupKey: string; issue: ValidationIssue }
+  | { kind: 'expander';    groupKey: string; hiddenCount: number }
+
+interface GroupHeaderRowProps {
+  groupKey: string
+  groupIssues: ValidationIssue[]
+  isOpen: boolean
+  onToggle: () => void
+  groupBy: 'rule' | 'storey' | 'class'
+  language: string
+}
+
+function GroupHeaderRow({
+  groupKey, groupIssues, isOpen, onToggle, groupBy, language,
+}: GroupHeaderRowProps) {
+  const label  = groupBy === 'rule' ? getRuleLabel(groupKey, language) : groupKey
+  const meta   = groupBy === 'rule' ? RULE_METADATA[groupKey] : undefined
+  const sev    = meta?.defaultSeverity
+  const color  = sev === 'error' ? 'var(--danger)' : sev === 'warning' ? '#F5A623' : undefined
+  const std    = meta?.standard
+
+  // Severity distribution within this group
+  let eCount = 0, wCount = 0, iCount = 0
+  for (const i of groupIssues) {
+    if (i.severity === 'error') eCount++
+    else if (i.severity === 'warning') wCount++
+    else iCount++
+  }
+
+  return (
+    <button
+      onClick={onToggle}
+      className="w-full flex items-center gap-2 px-3 py-1.5 bg-[var(--surface)] border-b border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors text-left"
+    >
+      {/* Chevron */}
+      <svg
+        width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
+        className="shrink-0 text-[var(--text-faint)] transition-transform duration-150"
+        style={{ transform: isOpen ? 'rotate(90deg)' : 'none' }}
+      >
+        <path d="M2 1.5L6 4L2 6.5" />
+      </svg>
+
+      {/* Label + standard */}
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <span
+          className="text-[10px] font-semibold uppercase tracking-wider truncate"
+          style={{ color: color ?? 'var(--text-dim)' }}
+        >
+          {label}
+        </span>
+        {std && (
+          <span className="text-[9px] font-mono text-[var(--text-faint)] hidden sm:block shrink-0">{std}</span>
+        )}
+      </div>
+
+      {/* Per-severity counts inside the group */}
+      <div className="flex items-center gap-1 shrink-0">
+        {eCount > 0 && <span className="text-[9px] font-mono text-[var(--danger)]">{eCount}E</span>}
+        {wCount > 0 && <span className="text-[9px] font-mono" style={{ color: '#F5A623' }}>{wCount}W</span>}
+        {iCount > 0 && <span className="text-[9px] font-mono" style={{ color: '#5E9ED6' }}>{iCount}I</span>}
+      </div>
+
+      {/* Total count */}
+      <span className="w-6 text-right text-[10px] font-mono text-[var(--text-faint)] shrink-0">
+        {groupIssues.length}
+      </span>
+    </button>
+  )
+}
+
+function ExpanderRow({ hiddenCount, onExpandAll }: { hiddenCount: number; onExpandAll: () => void }) {
+  const { t } = useTranslation('validation')
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onExpandAll() }}
+      className="w-full flex items-center justify-center gap-1.5 py-2 border-b border-[var(--border)] text-[10px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+    >
+      <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+        <path d="M1 2.5L4 5.5L7 2.5" />
+      </svg>
+      {t('filters.showMore', { count: hiddenCount })}
+    </button>
+  )
+}
+
+// ── Remediation block ─────────────────────────────────────────────────────────
+// Per-rule "how to fix in your authoring tool" guidance (D-22). Shown inside an
+// expanded rule group. The selected tool is lifted to the panel so it persists
+// across rules and across virtualizer remounts.
+
+interface RemediationBlockProps {
+  ruleId: string
+  language: string
+  selectedTool: AuthoringTool
+  onSelectTool: (tool: AuthoringTool) => void
+}
+
+function RemediationBlock({ ruleId, language, selectedTool, onSelectTool }: RemediationBlockProps) {
+  const { t } = useTranslation('validation')
+  const remediation = getRuleRemediation(ruleId, language)
+  if (!remediation) return null
+
+  const toolSteps = remediation.tools[selectedTool]
+
+  return (
+    <div className="px-3 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)]">
+      <div className="flex items-center gap-1.5 mb-2">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-faint)] shrink-0">
+          <path d="M6 2.5a4 4 0 014 5.5c-.4.8-1 1.3-1 2.2V11H5v-.8c0-.9-.6-1.4-1-2.2a4 4 0 012-5.5z" />
+          <path d="M5.5 13h3M6 14.5h2" />
+        </svg>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-dim)]">
+          {t('remediation.howToFix')}
+        </span>
+      </div>
+
+      <p className="text-[11px] text-[var(--text-dim)] leading-relaxed mb-2">{remediation.summary}</p>
+
+      {/* Authoring-tool tabs */}
+      <div className="flex flex-wrap gap-1 mb-2">
+        {AUTHORING_TOOLS.map((tool) => {
+          const active = tool === selectedTool
+          return (
+            <button
+              key={tool}
+              onClick={() => onSelectTool(tool)}
+              className="text-[10px] font-medium px-2 py-0.5 rounded border transition-colors"
+              style={{
+                background: active ? 'var(--accent)18' : 'transparent',
+                color:      active ? 'var(--accent)' : 'var(--text-faint)',
+                borderColor: active ? 'var(--accent)40' : 'var(--border)',
+              }}
+            >
+              {t(`remediation.tools.${tool}`)}
+            </button>
+          )
+        })}
+      </div>
+
+      <p className="text-[11px] leading-relaxed" style={{ color: toolSteps ? 'var(--text)' : 'var(--text-faint)' }}>
+        {toolSteps ?? t('remediation.noToolSteps', { tool: t(`remediation.tools.${selectedTool}`) })}
+      </p>
     </div>
   )
 }
@@ -587,11 +766,11 @@ function ProfileDropdown({ activeProfileId, customProfiles, onSelect, onPersonal
                 <div className="flex items-center gap-1.5 w-full min-w-0" style={{ paddingRight: isActive ? '1.25rem' : 0 }}>
                   <span className="text-[14px] leading-none shrink-0">{profile.icon}</span>
                   <span className="text-[11px] font-semibold truncate" style={{ color: isActive ? 'var(--accent)' : 'var(--text)' }}>
-                    {profile.name}
+                    {localizedProfileName(profile, t)}
                   </span>
                 </div>
                 <p className="text-[9px] text-[var(--text-faint)] leading-tight line-clamp-2 w-full">
-                  {profile.description}
+                  {localizedProfileDescription(profile, t)}
                 </p>
                 <div className="flex flex-wrap gap-0.5 mt-0.5 w-full">
                   {profile.coverageTypes.slice(0, 4).map((cat) => (
@@ -646,7 +825,7 @@ function ProfileDropdown({ activeProfileId, customProfiles, onSelect, onPersonal
         }
       >
         <span className="truncate flex-1">
-          {activeProfile ? `${activeProfile.icon} ${activeProfile.name}` : t('profile.selectProfile')}
+          {activeProfile ? `${activeProfile.icon} ${localizedProfileName(activeProfile, t)}` : t('profile.selectProfile')}
         </span>
         <svg
           width="10" height="10" viewBox="0 0 10 10" fill="currentColor" className="shrink-0 opacity-60"
@@ -1270,6 +1449,40 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   const [activePanel, setActivePanel]   = useState<'issues' | 'bcf' | 'history'>('issues')
   const bcfFileRef = useRef<HTMLInputElement>(null)
 
+  // ── Group expand / collapse state ────────────────────────────────────────────
+  // openGroups: which group keys are expanded (showing rows)
+  // expandedGroups: which groups are showing ALL rows (vs just PREVIEW_ROWS)
+  const [openGroups,     setOpenGroups]     = useState<Set<string>>(new Set())
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  // Selected authoring tool for the per-rule remediation guidance (D-22).
+  // Lifted here so the choice persists across rules and virtualizer remounts.
+  const [remediationTool, setRemediationTool] = useState<AuthoringTool>('revit')
+
+  // ── Phantom rules (enabled but always 0 without config) ──────────────────────
+  // Bug 2 fix: detect rules that are active but need configuration to produce results.
+  // Prevents false confidence — user thinks model passed when rule just wasn't configured.
+  const unconfiguredRules = useMemo(() => {
+    if (!result) return []
+    const phantom: string[] = []
+    if (rules.RULE_NAMING_CONVENTION &&
+        (!rules.namingConventionPatterns || Object.keys(rules.namingConventionPatterns).length === 0)) {
+      phantom.push('RULE_NAMING_CONVENTION')
+    }
+    if (rules.RULE_MISSING_PROPERTY_SET &&
+        (!rules.requiredPsets || Object.keys(rules.requiredPsets).length === 0)) {
+      phantom.push('RULE_MISSING_PROPERTY_SET')
+    }
+    if (rules.RULE_MISSING_CLASSIFICATION &&
+        (!rules.classificationSystems || rules.classificationSystems.length === 0)) {
+      phantom.push('RULE_MISSING_CLASSIFICATION')
+    }
+    return phantom
+  }, [rules, result])
+
+  // Phantom notice auto-reappears after each new validation run
+  const [showPhantomNotice, setShowPhantomNotice] = useState(true)
+  useEffect(() => { setShowPhantomNotice(true) }, [result])
+
   // ── Resize state ──────────────────────────────────────────────────────
 
   // Lazy initializer: on mobile start at MIN_PANEL_H so the 3D canvas keeps
@@ -1445,7 +1658,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
       modelId:      activeValidationModelId,
       profileUsed:  {
         id:          activeProfile?.id ?? 'custom',
-        name:        activeProfile?.name ?? 'Manual',
+        name:        activeProfile ? localizedProfileName(activeProfile, t) : 'Manual',
         rulesActive: Object.entries(rules).filter(([, v]) => typeof v === 'boolean' && v).map(([k]) => k),
       },
       coverageSummary: {
@@ -1482,6 +1695,50 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     void downloadBcfBlob(issuesToBcfTopics(result.issues, snapshot), 'validation-issues.bcfzip')
   }, [result, viewer])
 
+  // ── Share Report (URL hash — zero server, zero storage) ───────────────────
+  // Encodes the Health Score + condensed issue list into a base64 URL fragment.
+  // Anyone with the link sees the report without uploading anything.
+  const handleShareReport = useCallback(() => {
+    if (!result) return
+
+    // Build a compact payload — strip verbose path arrays to keep URL short
+    const payload = {
+      v: 1,
+      score: result.qualityScore ?? 0,
+      file: (sceneModels[0]?.fileName ?? 'model.ifc').slice(0, 80),
+      e: result.stats.errors,
+      w: result.stats.warnings,
+      i: result.stats.info,
+      ms: result.durationMs,
+      ts: new Date().toISOString(),
+      // Top 50 issues sorted by severity (errors first), condensed fields only
+      issues: [...result.issues]
+        .sort((a, b) => {
+          const order = { error: 0, warning: 1, info: 2 }
+          return (order[a.severity] ?? 2) - (order[b.severity] ?? 2)
+        })
+        .slice(0, 50)
+        .map((iss) => ({
+          r: iss.ruleId,
+          s: iss.severity[0],          // 'e' | 'w' | 'i'
+          n: iss.elementName.slice(0, 60),
+          c: iss.ifcClass,
+          m: iss.message.slice(0, 120),
+        })),
+    }
+
+    try {
+      const json    = JSON.stringify(payload)
+      const encoded = btoa(unescape(encodeURIComponent(json)))
+      const url     = `${window.location.origin}${window.location.pathname}#report=${encoded}`
+      void navigator.clipboard.writeText(url)
+      trackShareReportClicked()
+      toast(t('actions.reportLinkCopied'), 'success')
+    } catch {
+      toast(t('actions.reportLinkError'), 'error')
+    }
+  }, [result, sceneModels, t])
+
   const handleAddIssueToBcf = useCallback((issue: ValidationIssue) => {
     const snapshot = viewer?.takeSnapshot?.() ?? undefined
     const [topic]  = issuesToBcfTopics([issue], snapshot)
@@ -1497,14 +1754,87 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     viewer?.setCameraViewpoint(vp.cameraPosition, vp.cameraDirection)
   }, [viewer])
 
+  // ── Group open/close logic ───────────────────────────────────────────────────
+  // Reset state when grouping strategy / severity tab / model filter changes.
+  // Auto-open all groups when there are ≤ 3 groups or ≤ 15 total issues so
+  // small / clean files don't require an extra click.
+  // Intentionally NOT triggered by `search` changes — the user is mid-type.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const keys         = [...grouped.keys()]
+    const shouldAutoOpen = keys.length <= 3 || filtered.length <= 15
+    setOpenGroups(shouldAutoOpen ? new Set(keys) : new Set())
+    setExpandedGroups(new Set())
+  // deps: groupBy + tab + modelFilter + result — NOT search
+  }, [filters.groupBy, filters.activeTab, modelFilter, result])
+
+  const toggleAllGroups = useCallback(() => {
+    if (openGroups.size === grouped.size && grouped.size > 0) {
+      setOpenGroups(new Set())               // all open → collapse all
+    } else {
+      setOpenGroups(new Set(grouped.keys())) // some/none → expand all
+    }
+  }, [openGroups.size, grouped])
+
   const autoFixableCount = filtered.filter((i) => i.autoFixable).length
+
+  // ── Flattened virtual list ────────────────────────────────────────────
+  // Headers + visible issue rows + "show more" expanders collapse into a single
+  // flat array. Virtualization keeps DOM node count bounded regardless of how
+  // many issues a group holds, so expanding a 10k-issue group never freezes.
+
+  const flatRows = useMemo<FlatRow[]>(() => {
+    const rows: FlatRow[] = []
+    for (const [groupKey, groupIssues] of grouped) {
+      rows.push({ kind: 'header', groupKey, groupIssues })
+      if (!openGroups.has(groupKey)) continue
+      // Per-rule fix guidance, only when grouping by rule and guidance exists.
+      if (filters.groupBy === 'rule' && getRuleRemediation(groupKey, i18n.language)) {
+        rows.push({ kind: 'remediation', groupKey })
+      }
+      const fullyExpanded = expandedGroups.has(groupKey)
+      const visible = fullyExpanded ? groupIssues : groupIssues.slice(0, PREVIEW_ROWS)
+      for (const issue of visible) rows.push({ kind: 'issue', groupKey, issue })
+      const hiddenCount = groupIssues.length - PREVIEW_ROWS
+      if (!fullyExpanded && hiddenCount > 0) {
+        rows.push({ kind: 'expander', groupKey, hiddenCount })
+      }
+    }
+    return rows
+  }, [grouped, openGroups, expandedGroups, filters.groupBy, i18n.language])
+
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const listRef   = useRef<HTMLDivElement>(null)
+  const [listOffset, setListOffset] = useState(0)
+
+  // The virtualized list does not start at the top of the scroll element
+  // (a progress bar may precede it). scrollMargin tells the virtualizer that
+  // offset so item positions and scroll math stay correct.
+  useLayoutEffect(() => {
+    setListOffset(listRef.current?.offsetTop ?? 0)
+  }, [isRunning, activePanel, flatRows.length])
+
+  const virtualizer = useVirtualizer({
+    count:           flatRows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize:    (i) => {
+      const r = flatRows[i]
+      return r.kind === 'header' ? 30 : r.kind === 'expander' ? 37 : r.kind === 'remediation' ? 150 : 92
+    },
+    overscan:     8,
+    scrollMargin: listOffset,
+    getItemKey:   (i) => {
+      const r = flatRows[i]
+      return r.kind === 'issue' ? r.issue.id : `${r.kind}:${r.groupKey}`
+    },
+  })
 
   // ── Collapsed state ───────────────────────────────────────────────────
 
   if (!validationPanelOpen) {
     return (
       <button
-        onClick={toggleValidationPanel}
+        onClick={() => { toggleValidationPanel(); trackValidationPanelOpened({ trigger: 'manual' }) }}
         className="flex items-center gap-2 px-3 h-10 xs:h-9 border-t border-[var(--border)] bg-[var(--surface)] w-full text-left hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] transition-colors shrink-0"
       >
         <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider shrink-0">
@@ -1619,9 +1949,16 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                   const c = result.qualityScore >= 80 ? 'var(--ok)' : result.qualityScore >= 50 ? '#F5A623' : 'var(--danger)'
                   return { color: c, borderColor: `${c}44`, background: `${c}14` }
                 })()}
-                title={t('coverage.qualityTitle')}
+                title={
+                  unconfiguredRules.length > 0
+                    ? `${t('coverage.qualityTitle')} · ${TOTAL_RULE_COUNT - unconfiguredRules.length}/${TOTAL_RULE_COUNT} active rules (${unconfiguredRules.length} unconfigured)`
+                    : t('coverage.qualityTitle')
+                }
               >
                 {result.qualityScore}
+                {unconfiguredRules.length > 0 && (
+                  <span className="ml-0.5 opacity-60">⚙</span>
+                )}
               </span>
             )}
             {result && (
@@ -1643,6 +1980,24 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
             style={{ background: 'var(--ok)14', color: 'var(--ok)', borderColor: 'var(--ok)33' }}
           >
             Fix {autoFixableCount}
+          </button>
+        )}
+
+        {/* Share Report — zero-server flywheel: encodes full report into URL hash */}
+        {result && (
+          <button
+            onClick={handleShareReport}
+            title={t('actions.shareReportTitle')}
+            className="flex items-center gap-1 px-2 h-6 rounded text-[10px] font-medium border transition-colors shrink-0"
+            style={{ background: 'var(--accent)14', color: 'var(--accent)', borderColor: 'var(--accent)33' }}
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <circle cx="7.5" cy="2" r="1.5" />
+              <circle cx="7.5" cy="8" r="1.5" />
+              <circle cx="2"   cy="5" r="1.5" />
+              <path d="M3.4 4.3l2.7-1.6M3.4 5.7l2.7 1.6" />
+            </svg>
+            {t('actions.shareReport')}
           </button>
         )}
 
@@ -1734,6 +2089,56 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
           qualityScore={result.qualityScore ?? 0}
           onDismiss={dismissCoverageSummary}
         />
+      )}
+
+      {/* ── Phantom rules notice (Bug 2 fix) ── */}
+      {/* Shows when configurable rules are active but won't produce issues with current (empty) config. */}
+      {/* Prevents false confidence: user sees "Naming Convention: 0 issues" and thinks model is fine. */}
+      {result && showPhantomNotice && unconfiguredRules.length > 0 && (
+        <div className="flex items-center gap-2 px-3 py-1 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#F5A623" strokeWidth="1.3" strokeLinecap="round" className="shrink-0">
+            <circle cx="5" cy="5" r="4.5" />
+            <path d="M5 3v2.5M5 7h.01" />
+          </svg>
+          <span className="text-[9px] text-[var(--text-faint)] shrink-0">{t('phantom.notice')}:</span>
+          <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto scrollbar-none">
+            {unconfiguredRules.map((ruleId) => (
+              <span
+                key={ruleId}
+                className="shrink-0 text-[9px] font-mono px-1.5 py-0.5 rounded border whitespace-nowrap"
+                style={{ color: '#F5A623', borderColor: '#F5A62333', background: '#F5A62314' }}
+                title={t('phantom.ruleTooltip')}
+              >
+                ⚙ {getRuleLabel(ruleId, i18n.language)}
+              </span>
+            ))}
+          </div>
+          <button
+            onClick={() => setShowPhantomNotice(false)}
+            className="shrink-0 w-5 h-5 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface)] transition-colors"
+            title={t('coverage.hideTitle')}
+          >
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M1.5 1.5l5 5M6.5 1.5l-5 5" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* ── Clash cap notice (Bug 1 fix) ── */}
+      {result?.metadata?.clashCapped && (
+        <div className="flex items-center gap-2 px-3 py-1 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#F5A623" strokeWidth="1.3" strokeLinecap="round" className="shrink-0">
+            <circle cx="5" cy="5" r="4.5" />
+            <path d="M5 3v2.5M5 7h.01" />
+          </svg>
+          <span className="text-[9px] text-[var(--text-faint)] leading-tight">
+            {t('clashCap.notice', {
+              checked: result.metadata.clashCapped.checkedCount.toLocaleString(),
+              total:   result.metadata.clashCapped.totalCount.toLocaleString(),
+            })}
+          </span>
+        </div>
       )}
 
       {/* ── Toolbar row A: tab toggle + severity filter ── */}
@@ -1863,6 +2268,26 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
             ))}
           </div>
 
+          {/* Expand / collapse all toggle */}
+          {grouped.size > 0 && (
+            <>
+              <div className="w-px h-4 bg-[var(--border)] shrink-0" />
+              <button
+                onClick={toggleAllGroups}
+                className="px-1.5 h-5 rounded text-[9px] font-medium transition-colors shrink-0"
+                style={
+                  openGroups.size === grouped.size
+                    ? { background: 'var(--surface-2)', color: 'var(--text-dim)', border: '1px solid var(--border)' }
+                    : { color: 'var(--text-faint)', border: '1px solid transparent' }
+                }
+              >
+                {openGroups.size === grouped.size
+                  ? t('filters.collapseAll')
+                  : t('filters.expandAll')}
+              </button>
+            </>
+          )}
+
           <div className="flex-1" />
 
           {/* Search */}
@@ -1871,7 +2296,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
       )}
 
       {/* ── Content ── */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {activePanel === 'history' ? (
           <ValidationHistoryPanel onClose={() => setActivePanel('issues')} />
         ) : activePanel === 'bcf' ? (
@@ -1917,31 +2342,64 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                     : <EmptyStateClean />
             )}
 
-            {/* Issue groups */}
-            {[...grouped.entries()].map(([groupKey, groupIssues]) => (
-              <div key={groupKey}>
-                <GroupHeader
-                  label={
-                    filters.groupBy === 'rule'
-                      ? (getRuleLabel(groupKey, i18n.language))
-                      : groupKey
-                  }
-                  count={groupIssues.length}
-                  ruleId={filters.groupBy === 'rule' ? groupKey : undefined}
-                />
-                {groupIssues.map((issue) => (
-                  <IssueRow
-                    key={issue.id}
-                    issue={issue}
-                    hasPendingFix={pendingFixIds.has(issue.expressId)}
-                    onJumpTo={handleJumpTo}
-                    onAutoFix={handleAutoFix}
-                    onNameFix={handleNameFix}
-                    onAddToBcf={handleAddIssueToBcf}
-                  />
-                ))}
+            {/* Virtualized issue groups (headers + rows + expanders) */}
+            {flatRows.length > 0 && (
+              <div ref={listRef} style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+                {virtualizer.getVirtualItems().map((vItem) => {
+                  const row = flatRows[vItem.index]
+                  return (
+                    <div
+                      key={vItem.key}
+                      data-index={vItem.index}
+                      ref={virtualizer.measureElement}
+                      style={{
+                        position:  'absolute',
+                        top:       0,
+                        left:      0,
+                        width:     '100%',
+                        transform: `translateY(${vItem.start - virtualizer.options.scrollMargin}px)`,
+                      }}
+                    >
+                      {row.kind === 'header' ? (
+                        <GroupHeaderRow
+                          groupKey={row.groupKey}
+                          groupIssues={row.groupIssues}
+                          isOpen={openGroups.has(row.groupKey)}
+                          onToggle={() => setOpenGroups((prev) => {
+                            const next = new Set(prev)
+                            next.has(row.groupKey) ? next.delete(row.groupKey) : next.add(row.groupKey)
+                            return next
+                          })}
+                          groupBy={filters.groupBy}
+                          language={i18n.language}
+                        />
+                      ) : row.kind === 'remediation' ? (
+                        <RemediationBlock
+                          ruleId={row.groupKey}
+                          language={i18n.language}
+                          selectedTool={remediationTool}
+                          onSelectTool={setRemediationTool}
+                        />
+                      ) : row.kind === 'expander' ? (
+                        <ExpanderRow
+                          hiddenCount={row.hiddenCount}
+                          onExpandAll={() => setExpandedGroups((prev) => new Set([...prev, row.groupKey]))}
+                        />
+                      ) : (
+                        <IssueRow
+                          issue={row.issue}
+                          hasPendingFix={pendingFixIds.has(row.issue.expressId)}
+                          onJumpTo={handleJumpTo}
+                          onAutoFix={handleAutoFix}
+                          onNameFix={handleNameFix}
+                          onAddToBcf={handleAddIssueToBcf}
+                        />
+                      )}
+                    </div>
+                  )
+                })}
               </div>
-            ))}
+            )}
           </>
         )}
       </div>

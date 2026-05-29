@@ -5,12 +5,14 @@
  *   Call `initAnalytics()` once in main.tsx before rendering.
  *   Requires VITE_POSTHOG_KEY env var.  Without it every function is a no-op.
  *
- * Event catalogue (6 critical conversion events):
+ * Event catalogue (8 critical conversion events):
  *   file_opened            → user opened an IFC file (demo or own file)
+ *   validation_panel_opened → ValidationPanel became visible after model load
  *   validation_completed   → validation run finished and results are visible
  *   guid_fixed             → user clicked "fix all GUIDs"
  *   export_clicked         → user triggered an IFC or GLB export
  *   share_report_clicked   → user generated a shareable validation report URL
+ *   email_captured         → user subscribed via the landing page email form
  *   landing_cta_clicked    → user clicked a CTA on the landing page
  *
  * Usage:
@@ -109,6 +111,34 @@ export function trackExportClicked(props: {
   model_count: number
 }): void {
   track('export_clicked', props)
+}
+
+/**
+ * ValidationPanel became visible immediately after a model finished loading.
+ * Funnel step: file_opened → validation_panel_opened → validation_completed.
+ * Because the panel auto-opens on every model load, a session-level drop in
+ * this event (vs file_opened) signals an edge-case where the panel isn't shown.
+ */
+export function trackValidationPanelOpened(props: {
+  /** 'auto' = opened automatically by onModelLoaded; 'manual' = user toggled */
+  trigger: 'auto' | 'manual'
+}): void {
+  track('validation_panel_opened', props)
+}
+
+/**
+ * User submitted the email subscription form on the landing page.
+ *
+ * @param props.source         Which form placement fired (e.g. 'landing_footer')
+ * @param props.already_subscribed  true if the address was already in the list
+ * @param props.locale         Browser language at submission time
+ */
+export function trackEmailCaptured(props: {
+  source:              string
+  already_subscribed:  boolean
+  locale:              string
+}): void {
+  track('email_captured', props)
 }
 
 /**

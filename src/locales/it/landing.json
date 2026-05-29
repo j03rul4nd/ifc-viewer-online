@@ -62,7 +62,7 @@
   },
   "features": [
     {
-      "title": "Validatore IFC a 18 regole",
+      "title": "Validatore IFC a 38 regole",
       "body": "Trova GUID duplicati, violazioni della gerarchia spaziale ed elementi orfani prima del tuo cliente. I risultati arrivano in tempo reale da un worker in background.",
       "tip": "Motore di regole IFC / ISO 19650"
     },
@@ -135,7 +135,7 @@
     {
       "n": "02",
       "title": "Ispeziona e valida",
-      "body": "Esplora l'albero del modello, filtra per categoria ed esegui 18 regole di validazione integrate in un worker in background. GUID duplicati, errori di gerarchia spaziale — tutto segnalato istantaneamente."
+      "body": "Esplora l'albero del modello, filtra per categoria ed esegui 38 regole di validazione integrate in un worker in background. GUID duplicati, errori di gerarchia spaziale — tutto segnalato istantaneamente."
     },
     {
       "n": "03",
@@ -196,7 +196,7 @@
     },
     {
       "q": "Come funziona la validazione?",
-      "a": "Il validatore esegue 18 regole integrate in un Web Worker in background. Le regole coprono GUID duplicati, gerarchia spaziale, elementi orfani, convenzioni di nomenclatura e altro ancora."
+      "a": "Il validatore esegue 38 regole integrate in un Web Worker in background. Le regole coprono GUID duplicati, gerarchia spaziale, elementi orfani, convenzioni di nomenclatura e altro ancora."
     },
     {
       "q": "Posso correggere gli errori ed esportare un IFC corretto?",

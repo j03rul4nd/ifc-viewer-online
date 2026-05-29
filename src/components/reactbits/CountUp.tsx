@@ -5,7 +5,7 @@
 // Dependencies: framer-motion (already in package.json)
 //
 // Usage:
-//   <CountUp to={18} suffix="+" label="Validation rules" numberClassName="text-[48px]" />
+//   <CountUp to={38} suffix="+" label="Validation rules" numberClassName="text-[48px]" />
 //   <CountUp to={100} suffix="%" label="Client-side" />
 
 import React, { useRef, useEffect, useState } from 'react'

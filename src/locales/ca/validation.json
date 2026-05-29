@@ -102,7 +102,27 @@
     "deleteCustom": "Elimina el perfil",
     "selectProfile": "Selecciona un perfil…",
     "customize": "Personalitza el perfil",
-    "clearProfile": "Esborra el perfil"
+    "clearProfile": "Esborra el perfil",
+    "basic": {
+      "name": "Lliurament bàsic",
+      "description": "Comprova que el model és un IFC vàlid i ben estructurat abans d'enviar-lo."
+    },
+    "quality": {
+      "name": "Revisió de qualitat",
+      "description": "Revisió exhaustiva de noms, propietats i estructura abans de publicar al CDE."
+    },
+    "coordination": {
+      "name": "Coordinació BIM",
+      "description": "Qualitat de dades essencial + detecció de col·lisions per a sessions de coordinació."
+    },
+    "iso19650": {
+      "name": "Compliment ISO 19650",
+      "description": "Verifica els requisits d'informació d'un lliurament formal segons la ISO 19650-2."
+    },
+    "lod300": {
+      "name": "Disseny LOD 300",
+      "description": "Comprova que tots els elements tenen el nivell d'informació requerit per al LOD 300."
+    }
   },
   "coverage": {
     "title": "Cobertura de validació",
@@ -208,5 +228,15 @@
     "classification": "Classificació",
     "mep": "MEP",
     "clash": "Detecció de col·lisions"
+  },
+  "remediation": {
+    "howToFix": "Com corregir-ho",
+    "noToolSteps": "No hi ha passos específics per a {{tool}}; consulta el resum anterior.",
+    "tools": {
+      "revit": "Revit",
+      "archicad": "ArchiCAD",
+      "tekla": "Tekla",
+      "allplan": "Allplan"
+    }
   }
 }

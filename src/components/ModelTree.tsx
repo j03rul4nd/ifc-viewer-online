@@ -101,6 +101,93 @@ function flattenAllTrees(
   return result
 }
 
+// ── Search / filter ─────────────────────────────────────────────────────────
+
+function nodeMatches(node: SpatialNode, q: string): boolean {
+  return (
+    node.name.toLowerCase().includes(q) ||
+    node.ifcClass.toLowerCase().includes(q) ||
+    (node.longName?.toLowerCase().includes(q) ?? false) ||
+    (node.globalId?.toLowerCase().includes(q) ?? false) ||
+    String(node.expressId).includes(q)
+  )
+}
+
+function elementMatches(el: SpatialElement, q: string): boolean {
+  return (
+    el.name.toLowerCase().includes(q) ||
+    el.ifcClass.toLowerCase().includes(q) ||
+    (el.globalId?.toLowerCase().includes(q) ?? false) ||
+    String(el.expressId).includes(q)
+  )
+}
+
+/** Recursively keep a node when it (or any descendant) matches the query.
+ *  Matched nodes are force-expanded so the path to every hit stays visible. */
+function flattenFiltered(
+  nodes: SpatialNode[],
+  modelId: string,
+  q: string,
+  depth: number,
+  result: FlatNode[],
+): boolean {
+  let anyKept = false
+  for (const node of nodes) {
+    const selfMatch = nodeMatches(node, q)
+    const matchedElems = node.containedElements.filter((e) => elementMatches(e, q))
+    const childBuffer: FlatNode[] = []
+    const childKept = flattenFiltered(node.children, modelId, q, depth + 1, childBuffer)
+
+    if (selfMatch || matchedElems.length > 0 || childKept) {
+      anyKept = true
+      result.push({
+        kind: 'spatial',
+        depth,
+        node,
+        isExpanded: true,
+        hasChildren: node.children.length > 0 || node.containedElements.length > 0,
+        modelId,
+      })
+      // When the node itself matches show all its direct elements; otherwise only the matches.
+      const elemsToShow = selfMatch ? node.containedElements : matchedElems
+      for (const elem of elemsToShow) {
+        result.push({ kind: 'element', depth: depth + 1, element: elem, parentExpressId: node.expressId, modelId })
+      }
+      result.push(...childBuffer)
+    }
+  }
+  return anyKept
+}
+
+function flattenAllTreesFiltered(
+  trees: Array<{ modelId: string; tree: SpatialNode[] }>,
+  q: string,
+  showHeaders: boolean,
+): FlatNode[] {
+  const result: FlatNode[] = []
+  for (const { modelId, tree } of trees) {
+    if (tree.length === 0) continue
+    const buffer: FlatNode[] = []
+    const kept = flattenFiltered(tree, modelId, q, 0, buffer)
+    if (!kept) continue
+    if (showHeaders) {
+      const regEntry = modelRegistry.get(modelId)
+      const fileName = regEntry?.fileName ?? fileNameFromModelId(modelId)
+      result.push({ kind: 'model-header', modelId, fileName, nodeCount: tree.length, isCollapsed: false })
+    }
+    result.push(...buffer)
+  }
+  return result
+}
+
+/** Collect every spatial-node expressId across all trees (for expand-all / pruning). */
+function collectAllSpatialIds(nodes: SpatialNode[], out: Set<number>): void {
+  for (const n of nodes) {
+    out.add(n.expressId)
+    collectAllSpatialIds(n.children, out)
+  }
+}
+
 // ── Issue rollup ──────────────────────────────────────────────────────────────
 
 function buildIssueRollup(
@@ -310,6 +397,7 @@ function ClassBadge({ cls }: { cls: string }) {
 function IssueBadge({
   errors, warnings, onClick,
 }: { errors: number; warnings: number; onClick?: (e: React.MouseEvent) => void }) {
+  const { t } = useTranslation('tree')
   if (errors === 0 && warnings === 0) return null
   return (
     <button
@@ -321,7 +409,7 @@ function IssueBadge({
         border: `1px solid ${errors > 0 ? '#E5484D44' : '#F5A62344'}`,
         height: 16,
       }}
-      title={`${errors} error(s), ${warnings} warning(s)`}
+      title={t('issueBadge', { errors, warnings })}
     >
       {errors > 0 && <span className="text-[var(--danger)]">{errors}</span>}
       {errors > 0 && warnings > 0 && <span className="opacity-40">·</span>}
@@ -370,28 +458,35 @@ function GuidEditWarning({
   onGenerate: (newGuid: string) => void
   onCancel: () => void
 }) {
+  const { t } = useTranslation(['tree', 'common'])
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="bg-[var(--surface)] border border-[var(--border-strong)] rounded-xl p-5 max-w-sm w-full mx-4 shadow-2xl">
-        <div className="text-[13px] font-semibold text-[var(--text)] mb-2">Change GlobalId?</div>
+    <div
+      className="absolute inset-0 z-50 flex items-center justify-center bg-black/60"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-[var(--surface)] border border-[var(--border-strong)] rounded-xl p-5 max-w-sm w-full mx-4 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-[13px] font-semibold text-[var(--text)] mb-2">{t('context.changeGuid')}</div>
         <p className="text-[12px] text-[var(--text-dim)] mb-1">
-          Changing a GlobalId breaks external references (BCF issues, links, COBie).
+          {t('context.changeGuidWarning')}
         </p>
         <p className="text-[10px] font-mono text-[var(--text-faint)] mb-4 truncate">
-          Current: {currentGuid}
+          {t('context.current', { guid: currentGuid })}
         </p>
         <div className="flex gap-2 justify-end">
           <button
             onClick={onCancel}
             className="px-3 h-8 rounded-lg text-[12px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)]"
           >
-            Cancel
+            {t('common:actions.cancel')}
           </button>
           <button
             onClick={() => onGenerate(generateIfcGuid())}
             className="px-3 h-8 rounded-lg text-[12px] bg-[var(--accent)] text-white hover:brightness-110"
           >
-            Generate new GUID
+            {t('context.generateNew')}
           </button>
         </div>
       </div>
@@ -424,9 +519,11 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
     )
     const { selection, setSelection }            = useEditorStore()
     const { addCommand }                         = useEditorHistory()
+    const { t } = useTranslation('tree')
 
     const [expanded,        setExpanded]        = useState<Set<number>>(new Set())
     const [collapsedModels, setCollapsedModels] = useState<Set<string>>(new Set())
+    const [query,           setQuery]           = useState('')
     const [editingId, setEditingId]       = useState<number | null>(null)
     const [editingField, setEditingField] = useState<'Name' | 'LongName' | 'Description' | 'GlobalId'>('Name')
     const [guidWarning, setGuidWarning]   = useState<{ expressId: number; currentGuid: string; modelId?: string } | null>(null)
@@ -441,11 +538,30 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
 
     const showModelHeaders = allTrees.length > 1
 
-    // Auto-expand first two levels when a new tree arrives
+    // Set of every valid spatial-node id and model id (recomputed when trees change)
+    const { allNodeIds, allModelIds } = useMemo(() => {
+      const ids = new Set<number>()
+      const models = new Set<string>()
+      for (const { modelId, tree } of allTrees) {
+        models.add(modelId)
+        collectAllSpatialIds(tree, ids)
+      }
+      return { allNodeIds: ids, allModelIds: models }
+    }, [allTrees])
+
+    // Auto-expand first two levels when a new tree arrives, and prune stale ids
+    // (nodes/models that no longer exist after a model is removed/replaced).
     useEffect(() => {
-      if (allTrees.length === 0) return
+      if (allTrees.length === 0) {
+        setExpanded((prev) => (prev.size ? new Set() : prev))
+        setCollapsedModels((prev) => (prev.size ? new Set() : prev))
+        return
+      }
       setExpanded((prev) => {
-        const next = new Set(prev)
+        const next = new Set<number>()
+        // keep only still-valid expanded ids
+        for (const id of prev) if (allNodeIds.has(id)) next.add(id)
+        // auto-expand first two levels
         for (const { tree } of allTrees) {
           for (const root of tree) {
             next.add(root.expressId)
@@ -454,7 +570,30 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
         }
         return next
       })
+      setCollapsedModels((prev) => {
+        let changed = false
+        const next = new Set<string>()
+        for (const id of prev) {
+          if (allModelIds.has(id)) next.add(id)
+          else changed = true
+        }
+        return changed ? next : prev
+      })
+    }, [allTrees, allNodeIds, allModelIds])
+
+    const trimmedQuery = query.trim().toLowerCase()
+    const isFiltering = trimmedQuery.length > 0
+
+    const expandAll = useCallback(() => {
+      const ids = new Set<number>()
+      for (const { tree } of allTrees) collectAllSpatialIds(tree, ids)
+      setExpanded(ids)
+      setCollapsedModels(new Set())
     }, [allTrees])
+
+    const collapseAll = useCallback(() => {
+      setExpanded(new Set())
+    }, [])
 
     // Build per-model issue rollup (keyed by modelId)
     const issueRollupByModel = useMemo(() => {
@@ -469,10 +608,12 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
       return byModel
     }, [result, partialIssues, allTrees])
 
-    // Flatten visible tree(s)
+    // Flatten visible tree(s) — filtered view when a query is active
     const flatNodes = useMemo(
-      () => flattenAllTrees(allTrees, expanded, collapsedModels, showModelHeaders),
-      [allTrees, expanded, collapsedModels, showModelHeaders],
+      () => isFiltering
+        ? flattenAllTreesFiltered(allTrees, trimmedQuery, showModelHeaders)
+        : flattenAllTrees(allTrees, expanded, collapsedModels, showModelHeaders),
+      [allTrees, expanded, collapsedModels, showModelHeaders, isFiltering, trimmedQuery],
     )
 
     const virtualizer = useVirtualizer({
@@ -541,6 +682,8 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
     // ── Imperative handle: revealElement ────────────────────────────────────
     useImperativeHandle(ref, () => ({
       revealElement(expressId: number) {
+        // Step 0 — clear any active filter so the target row is in the rendered list
+        setQuery('')
         // Step 1 — expand ancestors across all loaded models
         setExpanded(prev => {
           const next = new Set(prev)
@@ -604,7 +747,7 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
         <div className="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
           <div className="w-10 h-10 rounded-full bg-[var(--surface-2)] flex items-center justify-center text-lg">🌲</div>
           <p className="text-[12px] text-[var(--text-dim)]">
-            Load an IFC file and run validation to see the spatial tree.
+            {t('noModelDesc')}
           </p>
         </div>
       )
@@ -613,17 +756,84 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
     return (
       <div className="relative flex flex-col h-full">
         {/* Header */}
-        <div className="flex-none px-3 py-2.5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--surface)]">
-          <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider">
-            {showModelHeaders ? `${allTrees.length} Models` : 'Spatial Tree'}
+        <div className="flex-none px-3 py-2.5 border-b border-[var(--border)] flex items-center justify-between gap-2 bg-[var(--surface)]">
+          <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider truncate">
+            {showModelHeaders ? t('models.count', { count: allTrees.length }) : t('spatialTree')}
           </span>
-          <span className="text-[10px] text-[var(--text-faint)] font-mono bg-[var(--surface-2)] px-1.5 py-0.5 rounded-md">
-            {flatNodes.length}
-          </span>
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Expand all */}
+            <button
+              onClick={expandAll}
+              disabled={isFiltering}
+              title={t('actions.expandAll')}
+              aria-label={t('actions.expandAll')}
+              className="w-6 h-6 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            >
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 5.5L7 8.5L10 5.5" /><path d="M2 2.5h10M2 11.5h10" />
+              </svg>
+            </button>
+            {/* Collapse all */}
+            <button
+              onClick={collapseAll}
+              disabled={isFiltering}
+              title={t('actions.collapseAll')}
+              aria-label={t('actions.collapseAll')}
+              className="w-6 h-6 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            >
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 8.5L7 5.5L10 8.5" /><path d="M2 2.5h10M2 11.5h10" />
+              </svg>
+            </button>
+            <span className="text-[10px] text-[var(--text-faint)] font-mono bg-[var(--surface-2)] px-1.5 py-0.5 rounded-md ml-0.5">
+              {flatNodes.length}
+            </span>
+          </div>
         </div>
 
+        {/* Search / filter */}
+        <div className="flex-none px-2 py-2 border-b border-[var(--border)] bg-[var(--surface)]">
+          <div className="relative">
+            <svg
+              width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none"
+            >
+              <circle cx="6" cy="6" r="4.5" /><path d="M9.5 9.5L13 13" />
+            </svg>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setQuery('') } }}
+              placeholder={t('search')}
+              className="w-full h-7 pl-7 pr-7 bg-[var(--surface-2)] border border-[var(--border)] rounded-md text-[12px] text-[var(--text)] outline-none focus:border-[var(--accent)] placeholder:text-[var(--text-faint)]"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                aria-label={t('clear', { defaultValue: 'Clear' })}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--border)]"
+              >
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* No-results state for active filter */}
+        {isFiltering && flatNodes.length === 0 && (
+          <div className="flex-1 flex items-center justify-center px-4 text-center">
+            <p className="text-[12px] text-[var(--text-dim)]">{t('noResults', { query: query.trim() })}</p>
+          </div>
+        )}
+
         {/* Virtual list */}
-        <div ref={parentRef} className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div
+          ref={parentRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden"
+          style={{ display: isFiltering && flatNodes.length === 0 ? 'none' : undefined }}
+        >
           <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
             {virtualizer.getVirtualItems().map((vRow) => {
               const flat = flatNodes[vRow.index]
@@ -722,12 +932,13 @@ function collectElementIds(node: SpatialNode): number[] {
 function EyeBtn({
   hidden, partial = false, onClick,
 }: { hidden: boolean; partial?: boolean; onClick: (e: React.MouseEvent) => void }) {
+  const { t } = useTranslation('tree')
   return (
     <button
       onClick={(e) => { e.stopPropagation(); onClick(e) }}
       className="w-5 h-5 flex items-center justify-center rounded shrink-0 transition-colors hover:bg-[var(--border)]"
       style={{ opacity: hidden || partial ? 1 : undefined }}
-      title={hidden ? 'Show' : partial ? 'Show all' : 'Hide'}
+      title={hidden ? t('actions.show') : partial ? t('actions.showAll') : t('actions.hide')}
     >
       {hidden ? (
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
@@ -752,11 +963,12 @@ function ModelHeaderRow({
   flat: FlatNode & { kind: 'model-header' }
   onToggleCollapse: () => void
 }) {
+  const { t } = useTranslation('tree')
   return (
     <div
       className="flex items-center gap-2 px-2 h-[30px] cursor-pointer select-none border-b border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-2)] transition-colors"
       onClick={onToggleCollapse}
-      title={`${flat.isCollapsed ? 'Expand' : 'Collapse'} ${flat.fileName}`}
+      title={`${flat.isCollapsed ? t('actions.expand') : t('actions.collapse')} · ${flat.fileName}`}
     >
       <svg
         width="8" height="8" viewBox="0 0 8 8" fill="currentColor"
@@ -798,6 +1010,7 @@ function SpatialRow({
   onBadgeClick: (id: number) => void
   getNodeCurrentName: (id: number, def: string) => string
 }) {
+  const { t } = useTranslation('tree')
   const { node, depth, isExpanded, hasChildren } = flat
   const modelId = flat.modelId
   const rollup    = issueRollup.get(node.expressId)
@@ -911,7 +1124,7 @@ function SpatialRow({
           {/* Rename name */}
           <button
             className="shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--border)]"
-            title="Edit Name"
+            title={t('editName')}
             onClick={(e) => { e.stopPropagation(); onStartEdit(node.expressId, 'Name') }}
           >
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
@@ -921,7 +1134,7 @@ function SpatialRow({
           {/* Edit LongName */}
           <button
             className="shrink-0 opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--border)] text-[9px] font-mono leading-none"
-            title={`Edit LongName${node.longName ? `: ${node.longName}` : ' (empty)'}`}
+            title={`${t('editLongName')}${node.longName ? `: ${node.longName}` : ''}`}
             onClick={(e) => { e.stopPropagation(); onStartEdit(node.expressId, 'LongName') }}
           >
             LN
@@ -929,7 +1142,7 @@ function SpatialRow({
           {/* Edit Description */}
           <button
             className="shrink-0 opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--border)] text-[9px] font-mono leading-none"
-            title={`Edit Description${node.description ? `: ${node.description}` : ' (empty)'}`}
+            title={`${t('editDescription')}${node.description ? `: ${node.description}` : ''}`}
             onClick={(e) => { e.stopPropagation(); onStartEdit(node.expressId, 'Description') }}
           >
             D
@@ -983,6 +1196,7 @@ function ElementRow({
   onFocusElements?: (ids: number[]) => void
   onCommitRename: (expressId: number, oldName: string, newName: string) => void
 }) {
+  const { t } = useTranslation('tree')
   const { element, depth } = flat
   const modelId = flat.modelId
   const issues = directIssues.get(element.expressId)
@@ -1068,7 +1282,7 @@ function ElementRow({
           </span>
           <button
             className="shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--border)]"
-            title="Rename"
+            title={t('actions.rename')}
             onClick={startEdit}
           >
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">

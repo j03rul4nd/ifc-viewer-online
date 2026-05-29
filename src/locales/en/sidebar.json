@@ -29,7 +29,12 @@
     "clearIsolation": "Clear isolation",
     "noModel": "No model loaded",
     "noModelDesc": "Open an IFC file to see categories.",
-    "moreElements": "+ {{count}} more elements"
+    "moreElements": "+ {{count}} more elements",
+    "filterPlaceholder": "Filter categories…",
+    "noMatches": "No categories match",
+    "showAll": "Show all",
+    "hideAll": "Hide all",
+    "hiddenCount": "{{count}} hidden"
   },
   "actions": {
     "isolate": "Isolate",
@@ -65,7 +70,9 @@
     "unsavedChanges_other": "{{count}} unsaved changes · Ctrl+Z to undo",
     "edited": "edited",
     "empty": "empty",
-    "loadingPsets": "Loading property sets…"
+    "loadingPsets": "Loading property sets…",
+    "filterProps": "Filter properties…",
+    "noPropsMatch": "No properties match"
   },
   "tabs": {
     "properties": "Properties",

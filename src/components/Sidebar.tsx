@@ -157,8 +157,13 @@ function EditableField({ label, value, isDirty, onCommit }: EditableFieldProps) 
   const [draft, setDraft] = useState(value)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { setDraft(value) }, [value])
-  useEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
+  // Only resync the draft from the incoming value while NOT editing.
+  // Otherwise an async IFC-data load (or any external update) would wipe
+  // what the user is currently typing.
+  useEffect(() => { if (!editing) setDraft(value) }, [value, editing])
+  useEffect(() => {
+    if (editing) { inputRef.current?.focus(); inputRef.current?.select() }
+  }, [editing])
 
   const commit = () => {
     setEditing(false)
@@ -299,12 +304,17 @@ function PsetRow({
   pset,
   elementExpressId,
   onEditProperty,
+  forceOpen = false,
 }: {
   pset: IFCPropertySet
   elementExpressId: number
   onEditProperty: (psetName: string, propName: string, propExpressId: number, oldValue: string, newValue: string) => void
+  /** When true (active filter), the set is forced open so matches are visible. */
+  forceOpen?: boolean
 }) {
-  const [open, setOpen] = useState(false)
+  const [userOpen, setUserOpen] = useState(false)
+  const open = forceOpen || userOpen
+  const setOpen = setUserOpen
   const [editingPropId, setEditingPropId] = useState<number | null>(null)
   const [editValue, setEditValue] = useState('')
 
@@ -364,8 +374,8 @@ function PsetRow({
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter')  { e.preventDefault(); commitEdit(prop) }
-                              if (e.key === 'Escape') setEditingPropId(null)
+                              if (e.key === 'Enter')  { e.preventDefault(); e.stopPropagation(); commitEdit(prop) }
+                              if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setEditingPropId(null) }
                             }}
                             onBlur={() => commitEdit(prop)}
                             className="flex-1 h-5 px-1 text-[11px] bg-[var(--surface)] border border-[var(--accent)] rounded text-[var(--text)] outline-none"
@@ -495,7 +505,12 @@ function PropertiesPanel({
   const toggle = (key: keyof typeof sections) =>
     setSections(s => ({ ...s, [key]: !s[key] }))
 
+  // Property-set filter (resets whenever the selected element changes)
+  const [psetQuery, setPsetQuery] = useState('')
+
   const expressId = selected ? parseInt(selected.id, 10) : null
+
+  useEffect(() => { setPsetQuery('') }, [expressId])
 
   // Resolve the spatial tree for the selected element's model.
   // If modelId is known, use that model's tree directly.
@@ -596,6 +611,23 @@ function PropertiesPanel({
 
   const psets = ifcData?.propertySets ?? []
   const totalProps = psets.reduce((acc, ps) => acc + ps.properties.length, 0)
+
+  // Filter psets/properties by the search query. A pset whose NAME matches keeps
+  // all its props; otherwise only props matching by name or value are kept, and
+  // empty psets are dropped. Cheap enough to run inline per render.
+  const psetFilter = psetQuery.trim().toLowerCase()
+  const filteredPsets = psetFilter
+    ? psets
+        .map(ps => {
+          if (ps.name.toLowerCase().includes(psetFilter)) return ps
+          const properties = ps.properties.filter(p =>
+            p.name.toLowerCase().includes(psetFilter) ||
+            String(p.value ?? '').toLowerCase().includes(psetFilter),
+          )
+          return { ...ps, properties }
+        })
+        .filter(ps => ps.properties.length > 0)
+    : psets
 
   return (
     <motion.div
@@ -905,14 +937,55 @@ function PropertiesPanel({
                   </div>
                 ) : (
                   <div className="pt-1 pb-2">
-                    {psets.map((pset, i) => (
-                      <PsetRow
-                        key={i}
-                        pset={pset}
-                        elementExpressId={expressId ?? 0}
-                        onEditProperty={handleEditProperty}
-                      />
-                    ))}
+                    {totalProps > 6 && (
+                      <div className="px-4 pb-2 pt-0.5">
+                        <div className="relative">
+                          <svg
+                            width="11" height="11" viewBox="0 0 12 12" fill="none"
+                            stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none"
+                          >
+                            <circle cx="5" cy="5" r="3.5" />
+                            <path d="M8 8l2.5 2.5" />
+                          </svg>
+                          <input
+                            value={psetQuery}
+                            onChange={e => setPsetQuery(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPsetQuery('') } }}
+                            placeholder={t('properties.filterProps')}
+                            className="w-full h-7 pl-7 pr-7 text-[11.5px] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors placeholder:text-[var(--text-faint)]"
+                          />
+                          {psetQuery && (
+                            <button
+                              onClick={() => setPsetQuery('')}
+                              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--border)]"
+                              title="Clear"
+                            >
+                              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                                <path d="M3 3l6 6M9 3l-6 6" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {filteredPsets.length === 0 ? (
+                      <div className="px-4 py-2 text-[11.5px] text-[var(--text-faint)] italic">
+                        {t('properties.noPropsMatch')}
+                      </div>
+                    ) : (
+                      filteredPsets.map((pset) => (
+                        <PsetRow
+                          // Key by element + pset name so edit/expand state never
+                          // leaks across element selections (each element remounts).
+                          key={`${expressId}:${pset.name}`}
+                          pset={pset}
+                          elementExpressId={expressId ?? 0}
+                          onEditProperty={handleEditProperty}
+                          forceOpen={psetQuery.trim().length > 0}
+                        />
+                      ))
+                    )}
                   </div>
                 )}
               </motion.div>
@@ -1086,6 +1159,7 @@ function CategoryPanel({
   )
   const nameMap = useMemo(() => buildNameMap(allNodes), [allNodes])
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [query, setQuery] = useState('')
   const toggleExpand = useCallback((id: string) => {
     setExpanded(prev => {
       const next = new Set(prev)
@@ -1093,6 +1167,43 @@ function CategoryPanel({
       return next
     })
   }, [])
+
+  // Prune expanded ids that no longer exist (e.g. after switching active model
+  // or removing one), so stale state can't keep phantom rows open.
+  const catIds = useMemo(() => new Set(categories.map(c => c.id)), [categories])
+  useEffect(() => {
+    setExpanded(prev => {
+      const next = new Set([...prev].filter(id => catIds.has(id)))
+      return next.size === prev.size ? prev : next
+    })
+  }, [catIds])
+
+  const q = query.trim().toLowerCase()
+  const filtered = useMemo(
+    () => (q ? categories.filter(c => c.label.toLowerCase().includes(q) || c.id.toLowerCase().includes(q)) : categories),
+    [categories, q],
+  )
+  const hiddenCount = useMemo(() => categories.reduce((n, c) => n + (hidden.has(c.id) ? 1 : 0), 0), [categories, hidden])
+
+  // Bulk visibility. handleToggleHidden in the parent uses a functional update,
+  // so these looped calls batch into a single render.
+  const showAll = useCallback(() => {
+    categories.forEach(c => { if (hidden.has(c.id)) onToggleHidden(c.id) })
+  }, [categories, hidden, onToggleHidden])
+  const hideAll = useCallback(() => {
+    categories.forEach(c => { if (!hidden.has(c.id)) onToggleHidden(c.id) })
+  }, [categories, hidden, onToggleHidden])
+
+  // Isolating or framing a hidden category would otherwise show nothing —
+  // un-hide it first so the action is never a dead no-op.
+  const handleIsolate = useCallback((id: string | null) => {
+    if (id && hidden.has(id)) onToggleHidden(id)
+    onSetIsolated(id)
+  }, [hidden, onToggleHidden, onSetIsolated])
+  const handleFrame = useCallback((id: string) => {
+    if (hidden.has(id)) onToggleHidden(id)
+    onFrame(id)
+  }, [hidden, onToggleHidden, onFrame])
 
   if (categories.length === 0) {
     return (
@@ -1105,34 +1216,94 @@ function CategoryPanel({
 
   return (
     <div className="py-2">
-      <div className="px-3.5 pt-1 pb-2.5 flex items-center justify-between">
-        <div>
+      <div className="px-3.5 pt-1 pb-2 flex items-start justify-between gap-2">
+        <div className="min-w-0">
           <div className="text-[11.5px] font-semibold text-[var(--text-dim)] uppercase tracking-[0.06em]">{t('categories.title')}</div>
-          <div className="text-[11px] text-[var(--text-faint)] mt-0.5">{t('categories.types', { count: categories.length })} · {t('categories.elements', { count: elementCount })}</div>
+          <div className="text-[11px] text-[var(--text-faint)] mt-0.5">
+            {t('categories.types', { count: categories.length })} · {t('categories.elements', { count: elementCount })}
+            {hiddenCount > 0 && <span className="text-[var(--text-dim)]"> · {t('categories.hiddenCount', { count: hiddenCount })}</span>}
+          </div>
         </div>
         {isolated && (
-          <button onClick={() => onSetIsolated(null)} className="text-[11px] text-[var(--accent-2)]">
+          <button onClick={() => onSetIsolated(null)} className="text-[11px] text-[var(--accent-2)] shrink-0 hover:underline">
             {t('categories.clearIsolation')}
           </button>
         )}
       </div>
+
+      {/* Controls: filter + bulk visibility */}
+      <div className="px-3.5 pb-2 space-y-2">
+        {categories.length > 4 && (
+          <div className="relative">
+            <svg
+              width="11" height="11" viewBox="0 0 12 12" fill="none"
+              stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none"
+            >
+              <circle cx="5" cy="5" r="3.5" />
+              <path d="M8 8l2.5 2.5" />
+            </svg>
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setQuery('') } }}
+              placeholder={t('categories.filterPlaceholder')}
+              className="w-full h-7 pl-7 pr-7 text-[11.5px] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors placeholder:text-[var(--text-faint)]"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--border)]"
+                title="Clear"
+              >
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                  <path d="M3 3l6 6M9 3l-6 6" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={showAll}
+            disabled={hiddenCount === 0}
+            className="flex-1 h-6 rounded-md text-[10.5px] font-medium border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--border-strong)] disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          >
+            {t('categories.showAll')}
+          </button>
+          <button
+            onClick={hideAll}
+            disabled={hiddenCount === categories.length}
+            className="flex-1 h-6 rounded-md text-[10.5px] font-medium border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--border-strong)] disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          >
+            {t('categories.hideAll')}
+          </button>
+        </div>
+      </div>
+
       <div>
-        {categories.map(cat => (
-          <CategoryRow
-            key={cat.id}
-            cat={cat}
-            isHidden={hidden.has(cat.id)}
-            isIsolated={isolated === cat.id}
-            isExpanded={expanded.has(cat.id)}
-            nameMap={nameMap}
-            onToggleHidden={onToggleHidden}
-            onSetIsolated={onSetIsolated}
-            onFrame={onFrame}
-            onToggleExpand={toggleExpand}
-            onSelectElement={onSelectElement}
-            onFrameElement={onFrameElement}
-          />
-        ))}
+        {filtered.length === 0 ? (
+          <div className="px-4 py-6 text-center text-[11.5px] text-[var(--text-faint)] italic">
+            {t('categories.noMatches')}
+          </div>
+        ) : (
+          filtered.map(cat => (
+            <CategoryRow
+              key={cat.id}
+              cat={cat}
+              isHidden={hidden.has(cat.id)}
+              isIsolated={isolated === cat.id}
+              isExpanded={expanded.has(cat.id)}
+              nameMap={nameMap}
+              onToggleHidden={onToggleHidden}
+              onSetIsolated={handleIsolate}
+              onFrame={handleFrame}
+              onToggleExpand={toggleExpand}
+              onSelectElement={onSelectElement}
+              onFrameElement={onFrameElement}
+            />
+          ))
+        )}
       </div>
     </div>
   )

@@ -7,9 +7,13 @@ interface ViewerProps {
    *  Used by useIfcLoader to call loadFragments() without coupling to ViewerHandle. */
   viewerApiRef?: React.MutableRefObject<ViewerAPI | null>
   onSelect: (info: SelectedInfo | null) => void
+  /** Fired on right-click over an element (payload) or empty space (null). */
+  onContextMenu?: (payload: { x: number; y: number; info: SelectedInfo } | null) => void
   hiddenCategories: Set<string>
   isolatedCategory: string | null
   hiddenElementIds?: Set<number>
+  /** When set (a localId), only this element is shown — overrides all other filters. */
+  isolatedElementId?: number | null
   selectedId: string | null
   viewerStyle: ViewerStyle
 }
@@ -32,6 +36,7 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(props, ref)
     if (props.viewerApiRef) props.viewerApiRef.current = api
 
     api.setSelectCallback((info) => propsRef.current.onSelect(info))
+    api.setContextMenuCallback((payload) => propsRef.current.onContextMenu?.(payload))
 
     return () => {
       api.dispose()
@@ -45,8 +50,8 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(props, ref)
 
   // ── Reactive filter / style effects ─────────────────────────────────────
   useEffect(() => {
-    apiRef.current?.applyFilters(props.hiddenCategories, props.isolatedCategory, props.hiddenElementIds)
-  }, [props.hiddenCategories, props.isolatedCategory, props.hiddenElementIds])
+    apiRef.current?.applyFilters(props.hiddenCategories, props.isolatedCategory, props.hiddenElementIds, props.isolatedElementId)
+  }, [props.hiddenCategories, props.isolatedCategory, props.hiddenElementIds, props.isolatedElementId])
 
   useEffect(() => {
     apiRef.current?.applyStyle(props.viewerStyle)

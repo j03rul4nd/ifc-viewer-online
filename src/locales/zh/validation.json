@@ -102,7 +102,27 @@
     "deleteCustom": "删除配置",
     "selectProfile": "选择配置…",
     "customize": "自定义配置",
-    "clearProfile": "清除配置"
+    "clearProfile": "清除配置",
+    "basic": {
+      "name": "基础交付",
+      "description": "在发送前检查模型是否为有效且结构良好的 IFC 文件。"
+    },
+    "quality": {
+      "name": "质量审查",
+      "description": "在发布到 CDE 之前，全面审查命名、属性和结构。"
+    },
+    "coordination": {
+      "name": "BIM 协调",
+      "description": "为协调会议提供基本数据质量 + 碰撞检测。"
+    },
+    "iso19650": {
+      "name": "ISO 19650 合规",
+      "description": "根据 ISO 19650-2 验证正式交付的信息要求。"
+    },
+    "lod300": {
+      "name": "LOD 300 设计",
+      "description": "检查所有构件是否具备 LOD 300 所需的信息水平。"
+    }
   },
   "coverage": {
     "title": "验证覆盖率",
@@ -208,5 +228,15 @@
     "classification": "分类",
     "mep": "MEP",
     "clash": "碰撞检测"
+  },
+  "remediation": {
+    "howToFix": "如何修复",
+    "noToolSteps": "没有针对 {{tool}} 的具体步骤——请参阅上方摘要。",
+    "tools": {
+      "revit": "Revit",
+      "archicad": "ArchiCAD",
+      "tekla": "Tekla",
+      "allplan": "Allplan"
+    }
   }
 }

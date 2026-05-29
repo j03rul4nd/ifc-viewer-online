@@ -49,6 +49,12 @@ const ValidationResultSchema = z.object({
   stats:        ValidationStatsSchema,
   durationMs:   z.number().nonnegative(),
   qualityScore: z.number().min(0).max(100).optional(),
+  metadata:     z.object({
+    clashCapped: z.object({
+      checkedCount: z.number().int().nonnegative(),
+      totalCount:   z.number().int().nonnegative(),
+    }).optional(),
+  }).optional(),
 })
 
 const SpatialElementSchema = z.object({

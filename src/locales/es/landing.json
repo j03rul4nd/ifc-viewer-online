@@ -7,7 +7,7 @@
     "badgeMobile": "Sin registro · en tu navegador",
     "h1": "IFC Viewer",
     "h1Accent": "Online",
-    "subtitleFull": "Detecta errores en el IFC antes que tu cliente. Abre, valida y corrige archivos IFC completamente en tu navegador — sin instalación, sin servidor, sin cuenta. Tus modelos nunca salen de tu máquina.",
+    "subtitleFull": "Detecta errores en el IFC antes que tu cliente. Abre un IFC y obtén un Health Score — de 0 a 100 — en menos de 30 segundos. Sin cuenta. Sin reglas que configurar. Sin límite de 250 MB. Funciona en cualquier navegador.",
     "trustLine": "Gratis · Código abierto · 100% en cliente · IFC2x3 · IFC4 · IFC4x1 · IFC4x3",
     "trustLineMobile": "Gratis · Código abierto · IFC2x3 · IFC4 · IFC4x3"
   },
@@ -54,7 +54,7 @@
   },
   "features": [
     {
-      "title": "Validador IFC con 18 reglas",
+      "title": "Validador IFC con 38 reglas",
       "body": "Detecta GUIDs duplicados, violaciones de jerarquía espacial y elementos huérfanos antes de que lo haga tu cliente. Cada modelo recibe un Health Score de 0 a 100. Los resultados aparecen en tiempo real desde un worker en segundo plano.",
       "tip": "Motor de reglas IFC / ISO 19650"
     },
@@ -127,7 +127,7 @@
     {
       "n": "02",
       "title": "Inspecciona y valida",
-      "body": "Explora el árbol del modelo, filtra por categoría y ejecuta 18 reglas de validación integradas en un worker en segundo plano. GUIDs duplicados, errores de jerarquía espacial, asignaciones de tipo faltantes — todo marcado al instante."
+      "body": "Explora el árbol del modelo, filtra por categoría y ejecuta 38 reglas de validación integradas en un worker en segundo plano. GUIDs duplicados, errores de jerarquía espacial, asignaciones de tipo faltantes — todo marcado al instante."
     },
     {
       "n": "03",
@@ -164,7 +164,7 @@
     },
     {
       "q": "¿Puedo compartir los resultados de validación con mi equipo o cliente?",
-      "a": "Sí. Después de ejecutar la validación, exporta los resultados como JSON, CSV o un Certificado de Validación firmado — y compártelos con tu equipo o cliente. Una URL compartible que codifique el Health Score y la lista de issues directamente en un enlace (sin necesidad de archivo) está en el roadmap. El archivo IFC nunca sale de tu navegador."
+      "a": "Sí. Después de ejecutar la validación, haz clic en Compartir informe para copiar un enlace que codifica el Health Score y la lista completa de issues directamente en la URL — sin subida, sin servidor, sin cuenta. También puedes exportar los resultados como JSON, CSV o Certificado de Validación. El archivo IFC nunca sale de tu navegador."
     },
     {
       "q": "¿Funciona en Mac?",
@@ -176,7 +176,7 @@
     },
     {
       "q": "¿Cómo funciona la validación?",
-      "a": "El validador ejecuta 18 reglas integradas en un Web Worker en segundo plano para que la interfaz permanezca responsive. Las reglas cubren GUIDs duplicados, jerarquía espacial, elementos huérfanos, convenciones de nombres, asignaciones de tipo faltantes, detección de colisiones y más. Cada modelo recibe un Health Score de 0 a 100. Los resultados aparecen a medida que cada regla se completa."
+      "a": "El validador ejecuta 38 reglas integradas en un Web Worker en segundo plano para que la interfaz permanezca responsive. Las reglas cubren GUIDs duplicados, jerarquía espacial, elementos huérfanos, convenciones de nombres, asignaciones de tipo faltantes, property sets ISO 19650, completitud de LOD, detección de colisiones, exceso de proxies, desfase de coordenadas y más. Cada modelo recibe un Health Score de 0 a 100. Los resultados aparecen a medida que cada regla se completa."
     },
     {
       "q": "¿Puedo corregir errores y re-exportar un IFC corregido?",

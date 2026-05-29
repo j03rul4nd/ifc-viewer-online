@@ -102,7 +102,27 @@
     "deleteCustom": "プロファイルを削除",
     "selectProfile": "プロファイルを選択…",
     "customize": "プロファイルをカスタマイズ",
-    "clearProfile": "プロファイルをクリア"
+    "clearProfile": "プロファイルをクリア",
+    "basic": {
+      "name": "基本納品",
+      "description": "送信前にモデルが有効で適切に構造化された IFC であることを確認します。"
+    },
+    "quality": {
+      "name": "品質レビュー",
+      "description": "CDE に公開する前に、命名・プロパティ・構造を徹底的にレビューします。"
+    },
+    "coordination": {
+      "name": "BIM 調整",
+      "description": "調整会議のための基本的なデータ品質＋干渉チェック。"
+    },
+    "iso19650": {
+      "name": "ISO 19650 準拠",
+      "description": "ISO 19650-2 に従い、正式な納品の情報要件を検証します。"
+    },
+    "lod300": {
+      "name": "LOD 300 設計",
+      "description": "すべての要素が LOD 300 に必要な情報レベルを備えているか確認します。"
+    }
   },
   "coverage": {
     "title": "検証カバレッジ",
@@ -208,5 +228,15 @@
     "classification": "分類",
     "mep": "MEP",
     "clash": "干渉検出"
+  },
+  "remediation": {
+    "howToFix": "修正方法",
+    "noToolSteps": "{{tool}} 固有の手順はありません — 上記の概要を参照してください。",
+    "tools": {
+      "revit": "Revit",
+      "archicad": "ArchiCAD",
+      "tekla": "Tekla",
+      "allplan": "Allplan"
+    }
   }
 }

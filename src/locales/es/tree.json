@@ -12,9 +12,16 @@
     "element": "Elemento",
     "unclassified": "Sin clasificar"
   },
+  "clear": "Limpiar",
+  "issueBadge": "{{errors}} error(es) · {{warnings}} aviso(s)",
   "actions": {
     "expandAll": "Expandir todo",
     "collapseAll": "Contraer todo",
+    "expand": "Expandir",
+    "collapse": "Contraer",
+    "show": "Mostrar",
+    "hide": "Ocultar",
+    "showAll": "Mostrar todo",
     "focusElement": "Enfocar elemento en 3D",
     "selectElement": "Seleccionar elemento",
     "selectIn3D": "Seleccionar en 3D",

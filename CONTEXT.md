@@ -13,12 +13,16 @@ A browser-only IFC model viewer, validator, and non-destructive editor targeting
 
 Architects and BIM coordinators who need to quickly inspect and validate IFC exports from authoring tools (Revit, ArchiCAD, Tekla, Allplan). The primary pain point is that competing web viewers are slow on large files (100–200 MB) and require upload. This product is faster because it caches parsed geometry in the browser's Origin Private File System and skips re-parsing on subsequent loads.
 
+**Persona split (resolution 2026-05-29).** The **buyer** is the BIM coordinator — they own conformance and will pay to enforce it. The **mandated free user** is the exporter (architect/engineer) who is told to run a check before handing off a model. The handoff between them is the growth loop: a coordinator shares a report, the exporter opens it, fixes issues, re-shares. The Health Score is the acquisition *hook*; project/issue conformance is the retention *engine*. Roadmap priorities follow from this — see `ROADMAP.md` Roadmap v2.
+
 **Live app:** `https://j03rul4nd.github.io/ifc-viewer-online/`  
 **GitHub:** `https://github.com/j03rul4nd/ifc-viewer-online`
 
 ---
 
-## Current state (Sprint 6 complete — 2026-05-17)
+## Current state (Sprints 1–9 complete — 2026-05-29)
+
+> **Note (2026-05-29):** This document previously claimed "Sprint 6 complete" and listed postprocessing, measurements, floor plans, section cuts, and BCF as "not yet implemented." That was stale — all of those shipped (Sprints 7–9). The validator now has **38 rules** (not 18). The "Not yet implemented" list below has been corrected. Forward priorities are no longer sprint-numbered; see `ROADMAP.md` Roadmap v2 (distribution-led).
 
 ### Works
 
@@ -37,7 +41,7 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 - **OPFS cache management** — list, delete, quota display. Badge when models are cached. Repository pattern wraps all OPFS I/O with `Result<T,E>` returns. Cache key prefix `v2`.
 - **Memory tracking** — polls `performance.measureUserAgentSpecificMemory()` (crossOriginIsolated) or `performance.memory` fallback every 4 s.
 - **Zustand stores** — `modelStore`, `validationStore`, `editorStore`, `uiStore`, `sceneStore`, `toastStore`, `takeoffStore` — all with Zustand devtools, named actions, and typed selectors. `editorStore` emits `appBus` events on every mutation.
-- **IFC validation — 18 rules** — `validator.worker.ts` runs rule-based checks off the main thread. Streams partial results into `validationStore`. Emits `appBus` events for full lifecycle. All messages validated via zod schemas before routing.
+- **IFC validation — 38 rules** — `validator.worker.ts` runs rule-based checks off the main thread (18 core + 11 spatial/file-header incl. ISO 19650 + 9 LOD/classification/MEP). Streams partial results into `validationStore`. Emits `appBus` events for full lifecycle. All messages validated via zod schemas before routing. Full list in `ARCHITECTURE.md`.
 - **Validation highlights per model** — `validationHighlightedByModel: Map<string, Set<number>>`; each model's errors are tracked independently.
 - **Spatial tree — auto-built on load** — `buildSpatialTree()` triggers automatically after every model load via `build-tree` worker message. `ModelTree.tsx` renders immediately. Virtualised with `@tanstack/react-virtual`.
 - **Inline editing in tree** — Name, LongName, Description fields editable inline. GlobalId regenerable via double-click + confirmation modal. All edits carry `modelId`.
@@ -64,16 +68,19 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 - GPU memory estimate in `getGpuEstimateBytes()` — uses a rough heuristic based on `WebGLRenderer.info.memory`.
 - `IFCPropertySet.expressId` per property — populated by `formatPsets()` in `viewer.ts` from the `@thatopen` data layer; available when `prop.expressId > 0`.
 
-### Not yet implemented (Sprint 7+)
+### Shipped since this doc was last accurate (Sprints 7–9)
 
-- Postproduction renderer (SSAO, edge rendering, bloom) — Sprint 7
-- Measurement tools (length, area, edge, volume) — Sprint 7
-- Floor plan 2D views from IfcBuildingStorey — Sprint 8
-- Clipping planes / section cuts — Sprint 8
-- BCF 2.1 / 3.0 import and export — Sprint 9
-- WebGPU renderer — Sprint 10
-- Point cloud overlays (LAS/LAZ/E57) — Sprint 11
-- AI-assisted validation / natural language query — Sprint 12
+- ✅ Postproduction renderer (SSAO, edge rendering) — Sprint 7
+- ✅ Measurement tools (length, area, edge, volume) — Sprint 7
+- ✅ Floor plan 2D views from IfcBuildingStorey — Sprint 8
+- ✅ Clipping planes / section cuts — Sprint 8
+- ✅ BCF 2.1 / 3.0 import and export — Sprint 9
+
+### Deferred or killed (resolution 2026-05-29 — see `ROADMAP.md` Roadmap v2)
+
+- ❌ WebGPU renderer (old Sprint 10) — deferred indefinitely; no documented perf pain.
+- ❌ Point cloud overlays (LAS/LAZ/E57) / scan-to-BIM / AR (old Sprint 11) — killed; different product and buyer, violates large-file constraint.
+- ❌ AI-assisted validation / natural language query (old Sprint 12) — killed as AI slop; the useful slice (per-rule fix guidance) is reclassified as a deterministic content table in i18n.
 
 ---
 
@@ -93,7 +100,7 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 
 ## Key invariants every future session must respect
 
-1. **No server-side processing.** Files stay in the browser. No upload endpoints.
+1. **No server-side processing of the model.** The IFC file never leaves the browser — no upload endpoints, no server parse/validate. *Clarification (2026-05-29):* **stateless edge Workers are permitted** as long as they never receive the model. The existing Cloudflare Worker (`cf-worker/`) is a pure email proxy; a future shared-report SSR route may receive only the already-computed report summary (score + condensed issue list) for crawlability. Edge compute that touches the IFC bytes remains forbidden. See `DECISIONS.md` D-21.
 2. **@thatopen/components is the 3D/IFC layer.** Do not add raw `web-ifc` imports to `src/` outside the workers.
 3. **All IFC parsing runs in `src/workers/ifc-parser.worker.ts`.** Main thread must not block during parse.
 4. **All IFC validation runs in `src/workers/validator.worker.ts`.** Main thread only receives results via the Zustand store.
@@ -113,4 +120,4 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 
 ---
 
-*Last updated: 2026-05-17 · Sprints 1–6 complete · Current sprint: 7 (planned)*
+*Last updated: 2026-05-29 · Sprints 1–9 complete · Forward plan: ROADMAP.md Roadmap v2 (distribution-led, not sprint-numbered)*

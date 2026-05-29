@@ -206,20 +206,36 @@ export function downloadBlob(blob: Blob, fileName: string): void {
 
 const GUID_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$'
 
+/**
+ * Generate a spec-compliant IFC GlobalId (IfcGloballyUniqueId).
+ *
+ * An IFC GUID is a 128-bit UUID encoded in 22 characters of a base64 *variant*
+ * (charset `0-9A-Za-z_$`). It is NOT plain base64: 22 chars hold 132 bits, so to
+ * round-trip back to 128 bits the **first character encodes only 2 bits** — its
+ * value must be 0–3. The remaining 21 chars encode the 15 trailing bytes as five
+ * groups of 3 bytes → 4 chars each (2 + 20 = 22).
+ *
+ * The previous implementation byte-aligned standard base64 from byte 0 and sliced
+ * to 22 chars, which let the first char take any of the 64 symbols. Such GUIDs
+ * pass this app's lax 22-char regex but decode to an out-of-range (>128-bit) value
+ * in strict toolkits (ifcOpenShell, Solibri) — i.e. the auto-fix could emit GUIDs
+ * those tools consider malformed. This encoder matches ifcOpenShell's `compress`.
+ */
 export function generateIfcGuid(): string {
-  const bytes  = crypto.getRandomValues(new Uint8Array(16))
-  let result   = ''
-  let i        = 0
+  const b = crypto.getRandomValues(new Uint8Array(16))
 
-  while (i < 16) {
-    const b0 = bytes[i++]
-    const b1 = bytes[i++] ?? 0
-    const b2 = bytes[i++] ?? 0
-    result += GUID_CHARS[b0 >> 2]
-    result += GUID_CHARS[((b0 & 0x03) << 4) | (b1 >> 4)]
-    result += GUID_CHARS[((b1 & 0x0F) << 2) | (b2 >> 6)]
-    result += GUID_CHARS[b2 & 0x3F]
+  // First byte → 2 chars; the leading char holds only the top 2 bits (0–3).
+  let result = GUID_CHARS[b[0] >> 6] + GUID_CHARS[b[0] & 0x3F]
+
+  // Remaining 15 bytes → 5 groups of 3 bytes → 4 chars each.
+  for (let i = 1; i < 16; i += 3) {
+    const n = (b[i] << 16) | (b[i + 1] << 8) | b[i + 2]
+    result +=
+      GUID_CHARS[(n >> 18) & 0x3F] +
+      GUID_CHARS[(n >> 12) & 0x3F] +
+      GUID_CHARS[(n >> 6)  & 0x3F] +
+      GUID_CHARS[ n        & 0x3F]
   }
 
-  return result.slice(0, 22)
+  return result
 }

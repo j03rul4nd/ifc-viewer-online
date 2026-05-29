@@ -1,0 +1,13 @@
+Proprietary — All Rights Reserved
+
+Copyright (c) 2026 Joel Benitez
+
+This directory (`cf-worker/`) and its contents are NOT covered by the MIT
+license that governs the rest of this repository (see the root `LICENSE`).
+
+This is the stateless edge backend (email-capture proxy) for IFC Viewer Online.
+No license is granted to use, copy, modify, merge, publish, distribute,
+sublicense, or sell any part of this directory. All rights are reserved.
+
+The code is included in this repository for transparency only. It does not
+receive or process any IFC model: the model never leaves the user's browser.

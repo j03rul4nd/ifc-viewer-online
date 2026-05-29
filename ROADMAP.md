@@ -4,6 +4,53 @@ Sprint-by-sprint plan. Each sprint builds on the previous and introduces archite
 
 ---
 
+## ⭐ Roadmap v2 — Distribution-led (resolution 2026-05-29)
+
+> **This section is the authoritative forward plan. It supersedes the original Sprint 10–12 plan below.**
+> Sprints 1–9 are **complete and shipped** (see status fields). The product is technically mature; the bottleneck is distribution and retention, not features. Every item below is chosen to close the growth loop (free flywheel → paid retention), not to add viewer capability.
+
+### Strategic frame
+
+- **Buyer = BIM Coordinator.** Free user = the exporter (architect/engineer) they mandate it onto. The handoff between them ("run it through the health check before you send me the IFC, and send me the report link") is the growth loop.
+- **Health Score = acquisition hook** (memorable, viral, owns the "ifc health check" keyword). **Retention engine = project-specific conformance** (IDS-lite / checklist), built only when a paying-adjacent coordinator asks.
+- **The only compounding asset is the shared report/link.** Make it crawlable + social-shareable (see P2).
+
+### Moat vs commodity (the lens that orders everything below)
+
+Our **technical features are commodities** — anyone can ship them, and they don't compound:
+- The 3D viewer runs on `@thatopen/components`, which is open-source and controlled by a *competitor*. Every web IFC viewer uses it.
+- IFC parsing, BCF export, basic geometry/GUID validation, OPFS speed — all replicable.
+- "Privacy / no upload" is now table stakes (competitors are client-side too), not a differentiator.
+
+The **only three moats are distribution/content/brand, not tech**:
+1. **Health Score as a *cited standard*** — being the number the industry quotes ("scored 82") is defensible like a credit score. Activated by distribution + a consistent algorithm.
+2. **The i18n + remediation content corpus** — ~38 rules × 4 authoring tools × 10 languages. A competitor copies the feature in a day but not the corpus. Compounds; it's content, not code.
+3. **The crawlable shared-report loop** — each report is a backlink + a viral invite. Currently worth zero (hash fragments aren't crawlable).
+
+**Who builds the moats:** the *buyer* (coordinator) monetizes, but the *free user* (exporter) builds moats #1 and #3 every time they share a report — so the free tier stays generous on purpose.
+
+> **Prioritization rule:** every item is tagged with the moat it builds. **If an item only improves the commodity (more viewer features, perf with no documented pain), defer it by default.** This is *why* WebGPU and point clouds were killed. Full analysis: `memory/project_moats_vs_commodities.md`.
+
+### Priorities (P0 highest)
+
+| P | Item | Builds moat | Status | Why / realism |
+|---|---|---|---|---|
+| **P0** | Distribution & signal capture (forums, niche pages, bimcorner outreach, Capterra/G2, deploy CF Worker, ProductHunt prep) | #1 + #3 (activates them) | 🔁 Ongoing | Already the documented bottleneck. Non-engineering. See `memory/project_strategic_direction_2026.md`. |
+| **P1** | **Remediation content table** — per-rule "how to fix in Revit/ArchiCAD/Tekla" in the free tier | **#2 (corpus)** | 📋 Planned | Content, not AI/infra. Lives in i18n (`RULE_TRANSLATIONS` / `validation.json`). Closes validate→resolve loop; answers documented Pain 3; neutralizes Data Octopus's only edge. See D-22. |
+| **P2** | **Crawlable / shareable reports** — migrate `#report=` hash to a stateless CF Worker route with server-rendered HTML + OG meta | **#3 (network/SEO)** | 📋 Planned | The only *compounding* asset. Worker already exists (email); cheap. Stateless = no stored model data. Add `fflate` + move hash→query param. **Do as soon as report volume appears — don't leave it last.** See D-21. |
+| **P3** | **Model-vs-model revision diff** — "what changed between rev C and rev D" via GlobalId matching | retention (not a moat) | 📋 Planned (signal-gated) | Real coordinator pain; reuses the existing multi-model engine. Build when a coordinator asks. Replaces the killed WebGPU slot. |
+| **P4** | **IDS-lite / project checklist** — coordinator defines plain-English requirements once; supply chain checks against them | retention (Pro engine) | 📋 Planned (signal-gated) | The retention/Pro engine. Build when leading indicators are met OR ≥5 IDS mentions appear (per existing gate). Plain-English UX, never raw XML. |
+
+### Explicitly killed / deferred
+
+- **WebGPU renderer (old Sprint 10)** — ❌ deferred indefinitely. No documented perf pain; custom `BaseRenderer` over OBC is weeks of solo work.
+- **Point clouds / scan-to-BIM / AR (old Sprint 11)** — ❌ killed. Different product, different buyer (surveyors), multi-GB files that violate the no-cache-large-files constraint.
+- **"Chat with your BIM" / NL query (old Sprint 12)** — ❌ killed as AI slop. The only useful slice (fix guidance) is reclassified as the P1 content table — it is not AI.
+
+> Rationale for the kills is recorded so future sessions don't resurrect them: see this section + `DECISIONS.md` (forward-plan note).
+
+---
+
 ## Sprint 1 — @thatopen/components Migration
 
 **Status:** ✅ DONE
@@ -282,7 +329,7 @@ Postproduction (AO, edges, bloom) and measurements are the two most-requested fe
 
 ## Sprint 9 — BCF Issue Tracking + Collaboration Export
 
-**Status:** 📋 PLANNED  
+**Status:** ✅ DONE — BCF 2.1/3.0 import + export shipped (`bcf-parser.worker`, `bcf-export.worker`, BCF tab in `ValidationPanel`).  
 **Goal:** Add BCF 2.1 / 3.0 issue import/export so the tool can be part of a professional BIM coordination workflow alongside Solibri, BIMCollab, and Navisworks.
 
 ### Why BCF matters
@@ -318,7 +365,7 @@ BCF (BIM Collaboration Format) is the open standard for IFC issue communication.
 
 ## Sprint 10 — WebGPU Renderer + Performance Tier
 
-**Status:** 📋 PLANNED  
+**Status:** ❌ DEFERRED INDEFINITELY (resolution 2026-05-29). No documented perf pain at current model sizes; a custom `BaseRenderer` over OBC is weeks of solo work with no distribution payoff. Revisit only if real users report frame-rate complaints on large models. See Roadmap v2 above.  
 **Goal:** Unlock WebGPU for users on supported browsers (Chrome 113+, Edge 113+), dramatically improving rendering performance for models with 200k+ elements.
 
 ### Planned deliveries
@@ -353,7 +400,7 @@ BCF (BIM Collaboration Format) is the open standard for IFC issue communication.
 
 ## Sprint 11 — Point Clouds + Scan-to-BIM + AR
 
-**Status:** 📋 PLANNED  
+**Status:** ❌ KILLED (resolution 2026-05-29). Different product, different buyer (surveyors, not BIM coordinators), and multi-GB scan files violate the "don't cache large files" constraint and the no-backend invariant. Not a fit. See Roadmap v2 above.  
 **Goal:** Support point cloud overlays (LAS/LAZ, E57) for scan-to-BIM workflows, and add basic AR mode for on-site IFC viewing.
 
 ### Planned deliveries
@@ -383,7 +430,7 @@ BCF (BIM Collaboration Format) is the open standard for IFC issue communication.
 
 ## Sprint 12 — AI-Assisted Validation + Natural Language Query
 
-**Status:** 📋 PLANNED (stretch)  
+**Status:** ❌ KILLED as AI slop (resolution 2026-05-29). "Chat with your BIM" adds a server dependency (LLM API), recurring cost, and no defensible moat. The one genuinely useful slice — per-rule fix guidance — is reclassified as the P1 deterministic content table (~38 rules × authoring tool), authored in i18n, no AI. See Roadmap v2 above.  
 **Goal:** Integrate a local LLM (WebLLM / Transformers.js) or Claude API calls to provide natural language BIM queries and AI-assisted rule generation.
 
 ### Planned deliveries
@@ -410,4 +457,4 @@ BCF (BIM Collaboration Format) is the open standard for IFC issue communication.
 
 ---
 
-*Last updated: 2026-05-18 · Sprints 1–8 complete · Sprint 9 next*
+*Last updated: 2026-05-29 · Sprints 1–9 complete (incl. BCF) · Roadmap v2 (distribution-led) is the authoritative forward plan — see top of file · Old Sprints 10–12 deferred/killed*

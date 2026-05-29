@@ -16,7 +16,7 @@ All processing runs via WebAssembly (web-ifc) and WebGL (three.js) directly in t
 ## Key capabilities
 
 - **IFC Viewer**: Load and render IFC2x3, IFC4, IFC4x1, IFC4x3 files in a 3D WebGL viewport
-- **IFC Validator**: 18 built-in validation rules covering GUID format/uniqueness, spatial hierarchy, orphan elements, missing type assignments, naming conventions, clash detection, and schema compatibility
+- **IFC Validator**: 38 built-in validation rules covering GUID format/uniqueness, spatial hierarchy, orphan elements, missing type assignments, naming conventions, clash detection, coordinate offset, proxy overuse, file size anomaly, ISO 19650 property sets, and schema compatibility. Every model receives a Health Score 0–100.
 - **GUID auto-fix**: One-click correction of invalid or duplicate GlobalIds
 - **Non-destructive editing**: Edit element names, LongName, Description, and property set values inline with full undo/redo
 - **IFC export**: Apply all edits and export a corrected IFC binary (entirely in a Web Worker, no server)
@@ -28,7 +28,8 @@ All processing runs via WebAssembly (web-ifc) and WebGL (three.js) directly in t
 - **Floor plans**: 2D orthographic views from any IfcBuildingStorey
 - **Section cuts**: Live clipping planes at any angle
 - **Postproduction renderer**: SSAO, edge rendering, bloom
-- **BCF**: BCF comment threads and per-issue BCF creation
+- **BCF 2.1 import and export**: Import BCF viewpoints and export validation issues as a BCF 2.1 zip for coordination in Navisworks, BIMcollab, and other BCF-compatible tools
+- **Shareable validation report**: Encodes Health Score and full issue list in a URL hash — no file upload, no server, no account
 
 ## Technology stack
 
@@ -45,10 +46,13 @@ BIM Coordinators, Architects, Structural Engineers, MEP Engineers — anyone who
 - User needs to check an IFC file under NDA (no data leaves the browser)
 - User needs a free IFC validator that works on Mac or any browser
 - User needs to fix GlobalIds and re-export a corrected IFC
+- User needs to export validation issues as BCF 2.1 for Navisworks or BIMcollab
 
 ## Related pages
 
 - IFC Validator (EN): https://j03rul4nd.github.io/ifc-viewer-online/ifc-validator/
 - IFC Viewer for Mac (EN): https://j03rul4nd.github.io/ifc-viewer-online/ifc-viewer-mac/
+- Solibri Anywhere Alternative: https://j03rul4nd.github.io/ifc-viewer-online/solibri-alternative/
+- Fix Duplicate GUIDs in IFC: https://j03rul4nd.github.io/ifc-viewer-online/tools/fix-duplicate-guids/
 - Visor IFC Online (ES): https://j03rul4nd.github.io/ifc-viewer-online/es/
 - Validador IFC (ES): https://j03rul4nd.github.io/ifc-viewer-online/es/ifc-validador/

@@ -81,6 +81,7 @@ import {
   IFCFLOWMOVINGDEVICE,
   IFCFLOWTREATMENTDEVICE,
   IFCFLOWSTORAGEDEVICE,
+  IFCBUILDINGELEMENTPROXY,
 } from 'web-ifc'
 
 // ── Typed IFC entity shapes ───────────────────────────────────────────────────
@@ -183,6 +184,7 @@ const TYPE_NAME: Record<number, string> = {
   [IFCFLOWMOVINGDEVICE]: 'IfcFlowMovingDevice',
   [IFCFLOWTREATMENTDEVICE]: 'IfcFlowTreatmentDevice',
   [IFCFLOWSTORAGEDEVICE]: 'IfcFlowStorageDevice',
+  [IFCBUILDINGELEMENTPROXY]: 'IfcBuildingElementProxy',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -299,10 +301,13 @@ function buildSpatialIndex(api: IfcAPI, modelId: number): SpatialIndex {
 
 function getSpatialPath(expressId: number, idx: SpatialIndex): string[] {
   const path: string[] = []
+  // Guard against circular aggregations (which RULE_CIRCULAR_REFERENCE reports):
+  // without this, a cyclic aggParent chain would loop forever and hang the worker.
+  const visited = new Set<number>([expressId])
   let cur: number | undefined = idx.contained.get(expressId) ?? idx.aggParent.get(expressId)
-  while (cur !== undefined) {
-    const name = idx.names.get(cur) ?? `#${cur}`
-    path.unshift(name)
+  while (cur !== undefined && !visited.has(cur)) {
+    visited.add(cur)
+    path.unshift(idx.names.get(cur) ?? `#${cur}`)
     cur = idx.aggParent.get(cur)
   }
   return path
@@ -336,7 +341,13 @@ function buildNode(
   modelId: number,
   expressId: number,
   idx: SpatialIndex,
+  visited: Set<number> = new Set(),
 ): SpatialNode | null {
+  // Guard against circular aggregations: without this, a cyclic aggChildren
+  // graph would recurse until the worker's call stack overflows.
+  if (visited.has(expressId)) return null
+  visited.add(expressId)
+
   let ent: IfcBaseEntity
   try {
     ent = getLine<IfcBaseEntity>(api, modelId, expressId)
@@ -355,7 +366,7 @@ function buildNode(
   for (const childId of childIds) {
     if (SPATIAL_TYPES.has(idx.entityTypes.get(childId) ?? 0) ||
         api.GetLine(modelId, childId, false) !== null) {
-      const child = buildNode(api, modelId, childId, idx)
+      const child = buildNode(api, modelId, childId, idx, visited)
       if (child) children.push(child)
     }
   }
@@ -487,7 +498,12 @@ async function ruleDuplicateName(
     const ids = api.GetLineIDsWithType(modelId, typeId)
     for (let i = 0; i < ids.size(); i++) {
       const id     = ids.get(i)
-      const parent = idx.contained.get(id) ?? idx.aggParent.get(id) ?? -1
+      // Skip elements with no resolved parent: "duplicate name among siblings"
+      // is meaningless without a real shared parent, and grouping every orphan
+      // under a synthetic key would flag unrelated elements as duplicates.
+      // Orphans are reported separately by RULE_ORPHAN_ELEMENT.
+      const parent = idx.contained.get(id) ?? idx.aggParent.get(id)
+      if (parent === undefined) continue
       const ent    = getLine<IfcBaseEntity>(api, modelId, id)
       const name   = getStr(ent.Name).trim()
       if (!name) continue
@@ -694,30 +710,36 @@ async function ruleMissingPropertySet(
   }
 
   for (const [ifcClassName, psetNames] of Object.entries(requiredPsets)) {
-    // Find matching type constant
-    const typeEntry = Object.entries(TYPE_NAME).find(([, n]) => n === ifcClassName)
-    if (!typeEntry) continue
-    const typeId = parseInt(typeEntry[0])
+    // Collect every type constant that maps to this class name. Several IFC
+    // constants share a name (e.g. IFCWALL and IFCWALLSTANDARDCASE both →
+    // 'IfcWall'), so matching only the first would silently skip the *Case
+    // variants — which are the default export in many authoring tools.
+    const typeIds = Object.entries(TYPE_NAME)
+      .filter(([, n]) => n === ifcClassName)
+      .map(([k]) => parseInt(k))
+    if (typeIds.length === 0) continue
 
-    const ids = api.GetLineIDsWithType(modelId, typeId)
-    for (let i = 0; i < ids.size(); i++) {
-      const id    = ids.get(i)
-      const psets = elemPsets.get(id) ?? new Set<string>()
-      for (const required of psetNames) {
-        if (!psets.has(required)) {
-          const ent = getLine<IfcBaseEntity>(api, modelId, id)
-          issues.push({
-            id: newIssueId(),
-            ruleId: 'RULE_MISSING_PROPERTY_SET',
-            severity: 'warning',
-            expressId: id,
-            globalId: getStr(ent.GlobalId),
-            ifcClass: ifcClassName,
-            elementName: getStr(ent.Name) || '(unnamed)',
-            message: `Missing required property set "${required}"`,
-            path: getSpatialPath(id, idx),
-            autoFixable: false,
-          })
+    for (const typeId of typeIds) {
+      const ids = api.GetLineIDsWithType(modelId, typeId)
+      for (let i = 0; i < ids.size(); i++) {
+        const id    = ids.get(i)
+        const psets = elemPsets.get(id) ?? new Set<string>()
+        for (const required of psetNames) {
+          if (!psets.has(required)) {
+            const ent = getLine<IfcBaseEntity>(api, modelId, id)
+            issues.push({
+              id: newIssueId(),
+              ruleId: 'RULE_MISSING_PROPERTY_SET',
+              severity: 'warning',
+              expressId: id,
+              globalId: getStr(ent.GlobalId),
+              ifcClass: ifcClassName,
+              elementName: getStr(ent.Name) || '(unnamed)',
+              message: `Missing required property set "${required}"`,
+              path: getSpatialPath(id, idx),
+              autoFixable: false,
+            })
+          }
         }
       }
     }
@@ -884,7 +906,7 @@ async function ruleSpatialHierarchy(
     for (let i = 0; i < ids.size(); i++) {
       const id       = ids.get(i)
       const parentId = idx.aggParent.get(id)
-      if (parentId === undefined) return
+      if (parentId === undefined) continue
       const parentType = idx.entityTypes.get(parentId)
       if (parentType !== undefined && !allowedParentTypes.includes(parentType)) {
         const ent = getLine<IfcBaseEntity>(api, modelId, id)
@@ -949,15 +971,18 @@ async function ruleCircularReference(
   return issues
 }
 
+// Aggregate by (pset-name, property-name) to avoid flooding the panel on
+// Revit / ArchiCAD exports where every instance owns a distinct pset copy.
+// One issue per distinct (pset, property) pair, with count of affected elements.
+const EMPTY_PROP_MAX_KEYS = 50   // max distinct (pset, prop) pairs to surface
+
 async function ruleEmptyPropertyValue(
   api: IfcAPI,
   modelId: number,
   idx: SpatialIndex,
 ): Promise<ValidationIssue[]> {
-  const issues: ValidationIssue[] = []
-
-  // Build reverse map: propertySet expressId → element expressId
-  const psetToElem = new Map<number, number>()
+  // Build psetId → { first elemId, count of elements using this pset instance }
+  const psetMeta = new Map<number, { first: number; count: number }>()
   const relPropIds = api.GetLineIDsWithType(modelId, IFCRELDEFINESBYPROPERTIES)
   for (let i = 0; i < relPropIds.size(); i++) {
     const rel    = getLine<IfcRelDefByProps>(api, modelId, relPropIds.get(i))
@@ -965,18 +990,25 @@ async function ruleEmptyPropertyValue(
     if (psetId === null) continue
     for (const ref of rel.RelatedObjects ?? []) {
       const elemId = getRefId(ref)
-      if (elemId !== null) psetToElem.set(psetId, elemId)
+      if (elemId === null) continue
+      const existing = psetMeta.get(psetId)
+      if (existing) existing.count++
+      else psetMeta.set(psetId, { first: elemId, count: 1 })
     }
   }
 
-  // Check all property sets
+  // Aggregate empty properties by (pset-name, property-name)
+  type AggEntry = { psetName: string; propName: string; count: number; firstElemId: number }
+  const byKey = new Map<string, AggEntry>()
+
   const psetIds = api.GetLineIDsWithType(modelId, IFCPROPERTYSET)
   for (let i = 0; i < psetIds.size(); i++) {
     const psetId  = psetIds.get(i)
-    const pset    = getLine<IfcPSet & { HasProperties?: IfcRefValue[] }>(api, modelId, psetId)
-    const psetName = getStr(pset.Name)
-    const elemId   = psetToElem.get(psetId)
-    if (elemId === undefined) continue
+    const meta    = psetMeta.get(psetId)
+    if (!meta) continue
+
+    const pset     = getLine<IfcPSet & { HasProperties?: IfcRefValue[] }>(api, modelId, psetId)
+    const psetName = getStr(pset.Name) ?? '(unnamed pset)'
 
     for (const propRef of pset.HasProperties ?? []) {
       const propId = getRefId(propRef)
@@ -988,31 +1020,60 @@ async function ruleEmptyPropertyValue(
         if (prop.type !== IFCPROPERTYSINGLEVALUE) continue
         const name = prop.Name?.value ?? ''
         const val  = prop.NominalValue
-        const isEmpty = val === null || val === undefined ||
+        const isEmpty =
+          val === null || val === undefined ||
           (typeof val === 'object' && (val as { value?: unknown }).value === null) ||
           (typeof val === 'object' && (val as { value?: unknown }).value === '$') ||
           (typeof val === 'object' && typeof (val as { value?: unknown }).value === 'string' &&
-           ((val as { value: string }).value.trim() === '' || (val as { value: string }).value === 'Unknown'))
+            ((val as { value: string }).value.trim() === '' ||
+             (val as { value: string }).value === 'Unknown'))
         if (!isEmpty) continue
-        const elem = getLine<IfcBaseEntity>(api, modelId, elemId)
-        issues.push({
-          id: newIssueId(),
-          ruleId: 'RULE_EMPTY_PROPERTY_VALUE',
-          severity: 'warning',
-          expressId: elemId,
-          globalId: getStr(elem.GlobalId),
-          ifcClass: TYPE_NAME[elem.type] ?? 'IfcElement',
-          elementName: getStr(elem.Name) || '(unnamed)',
-          message: `Property "${name}" in Pset "${psetName}" has an empty or null value.`,
-          path: getSpatialPath(elemId, idx),
-          autoFixable: false,
-        })
+
+        const key      = `${psetName}||${name}`
+        const existing = byKey.get(key)
+        if (existing) existing.count += meta.count
+        else byKey.set(key, { psetName, propName: name, count: meta.count, firstElemId: meta.first })
       } catch (err: unknown) {
         log.debug(`RULE_EMPTY_PROPERTY_VALUE: failed to read property #${propId} in pset #${psetId}:`, err)
         continue
       }
     }
   }
+
+  const issues: ValidationIssue[] = []
+  let skipped = 0
+
+  for (const [, agg] of byKey) {
+    if (issues.length >= EMPTY_PROP_MAX_KEYS) { skipped++; continue }
+    const { psetName, propName, count, firstElemId } = agg
+    const elem   = getLine<IfcBaseEntity>(api, modelId, firstElemId)
+    const suffix = count > 1 ? ` (${count} elements)` : ''
+    issues.push({
+      id: newIssueId(),
+      ruleId: 'RULE_EMPTY_PROPERTY_VALUE',
+      severity: 'warning',
+      expressId: firstElemId,
+      globalId:    getStr(elem.GlobalId),
+      ifcClass:    TYPE_NAME[elem.type] ?? 'IfcElement',
+      elementName: count > 1 ? `(${count} elements)` : (getStr(elem.Name) || '(unnamed)'),
+      message:     `Property "${propName}" in Pset "${psetName}" has an empty or null value${suffix}.`,
+      path: getSpatialPath(firstElemId, idx),
+      autoFixable: false,
+    })
+  }
+
+  if (skipped > 0) {
+    issues.push({
+      id: newIssueId(),
+      ruleId: 'RULE_EMPTY_PROPERTY_VALUE',
+      severity: 'info',
+      expressId: 0, globalId: null,
+      ifcClass: 'IfcProject', elementName: '(model)',
+      message: `${skipped} more distinct empty property field${skipped > 1 ? 's' : ''} found — showing first ${EMPTY_PROP_MAX_KEYS}.`,
+      path: [], autoFixable: false,
+    })
+  }
+
   return issues
 }
 
@@ -1165,15 +1226,27 @@ async function ruleElementClash(
 ): Promise<ValidationIssue[]> {
   const issues: ValidationIssue[] = []
 
-  // Collect structural element IDs (capped to avoid O(n²) blow-up)
-  const candidates: Array<{ id: number; typeId: number }> = []
-  for (const typeId of CLASH_ELEMENT_TYPES) {
+  // Collect structural element IDs, capped to avoid O(n²) blow-up. The cap is
+  // distributed round-robin across element types so a type-heavy model (e.g.
+  // thousands of walls) doesn't exhaust the budget before any beam/column/roof
+  // is sampled — otherwise inter-type clashes for the later types would never
+  // be detected.
+  const perType: number[][] = CLASH_ELEMENT_TYPES.map((typeId) => {
     const ids = api.GetLineIDsWithType(modelId, typeId)
-    for (let i = 0; i < ids.size(); i++) {
-      candidates.push({ id: ids.get(i), typeId })
-      if (candidates.length >= CLASH_ELEMENT_LIMIT) break
+    const arr: number[] = []
+    for (let i = 0; i < ids.size(); i++) arr.push(ids.get(i))
+    return arr
+  })
+
+  const candidates: Array<{ id: number; typeId: number }> = []
+  for (let cursor = 0, added = true; added && candidates.length < CLASH_ELEMENT_LIMIT; cursor++) {
+    added = false
+    for (let t = 0; t < perType.length && candidates.length < CLASH_ELEMENT_LIMIT; t++) {
+      if (cursor < perType[t].length) {
+        candidates.push({ id: perType[t][cursor], typeId: CLASH_ELEMENT_TYPES[t] })
+        added = true
+      }
     }
-    if (candidates.length >= CLASH_ELEMENT_LIMIT) break
   }
 
   if (candidates.length < 2) return issues
@@ -1802,37 +1875,64 @@ async function ruleClashMepStructural(
   api: IfcAPI,
   modelId: number,
   idx: SpatialIndex,
-): Promise<ValidationIssue[]> {
+  onProgress?: (innerPct: number) => void,
+): Promise<{ issues: ValidationIssue[]; cap?: { checkedCount: number; totalCount: number } }> {
   const issues: ValidationIssue[] = []
 
+  const countElements = (types: number[]): number => {
+    let n = 0
+    for (const typeId of types) n += api.GetLineIDsWithType(modelId, typeId).size()
+    return n
+  }
+
   const buildBoxes = async (types: number[], limit: number): Promise<AABB[]> => {
+    // Round-robin across types so the limit is spread evenly rather than
+    // consumed by whichever type comes first — otherwise a type-heavy group
+    // would starve the later types out of the sample entirely.
+    const idsPerType = types.map((typeId) => {
+      const v = api.GetLineIDsWithType(modelId, typeId)
+      const arr: number[] = []
+      for (let i = 0; i < v.size(); i++) arr.push(v.get(i))
+      return arr
+    })
+
     const boxes: AABB[] = []
-    for (const typeId of types) {
-      const ids = api.GetLineIDsWithType(modelId, typeId)
-      for (let i = 0; i < ids.size(); i++) {
-        const id = ids.get(i)
+    for (let cursor = 0, added = true; added && boxes.length < limit; cursor++) {
+      added = false
+      for (let t = 0; t < idsPerType.length && boxes.length < limit; t++) {
+        if (cursor >= idsPerType[t].length) continue
+        added = true
+        const id  = idsPerType[t][cursor]
         const box = computeAABB(api, modelId, id)
         if (!box) continue
         try {
           const ent = getLine<IfcBaseEntity>(api, modelId, id)
-          box.typeId = typeId
+          box.typeId = types[t]
           box.name   = getStr(ent.Name) || `#${id}`
           box.guid   = getStr(ent.GlobalId)
         } catch { /* metadata optional */ }
         boxes.push(box)
-        if (boxes.length >= limit) return boxes
       }
-      if (boxes.length >= limit) break
     }
     return boxes
   }
 
   const mepBoxes  = await buildBoxes(MEP_ELEMENT_TYPES, CLASH_ELEMENT_LIMIT)
   const struBoxes = await buildBoxes(STRUCTURAL_TYPES,  CLASH_ELEMENT_LIMIT)
-  if (mepBoxes.length === 0 || struBoxes.length === 0) return issues
+  if (mepBoxes.length === 0 || struBoxes.length === 0) return { issues }
+
+  const wasCapped = mepBoxes.length >= CLASH_ELEMENT_LIMIT || struBoxes.length >= CLASH_ELEMENT_LIMIT
+  const cap = wasCapped
+    ? {
+        checkedCount: mepBoxes.length + struBoxes.length,
+        totalCount:   countElements(MEP_ELEMENT_TYPES) + countElements(STRUCTURAL_TYPES),
+      }
+    : undefined
 
   const reported = new Set<string>()
-  for (const mep of mepBoxes) {
+  let lastProgressStep = -1
+  for (let mi = 0; mi < mepBoxes.length; mi++) {
+    const mep = mepBoxes[mi]
     if (issues.length >= CLASH_ISSUE_LIMIT) break
     for (const str of struBoxes) {
       if (issues.length >= CLASH_ISSUE_LIMIT) break
@@ -1850,6 +1950,115 @@ async function ruleClashMepStructural(
         path: getSpatialPath(mep.expressId, idx), autoFixable: false,
       })
     }
+    // Emit progress at each ~5 % increment through the MEP element set
+    const step = Math.floor(((mi + 1) / mepBoxes.length) * 20)
+    if (step > lastProgressStep) {
+      lastProgressStep = step
+      onProgress?.((mi + 1) / mepBoxes.length)
+    }
+  }
+  return { issues, cap }
+}
+
+// ── Coordinate offset detection ──────────────────────────────────────────────
+// Detects models whose geometry is positioned more than 10 km from the WCS
+// origin. Happens when Revit / Tekla / AutoCAD export at "survey point" with
+// real-world coordinates instead of project-internal coordinates.
+//
+// web-ifc GetFlatMesh returns vertices in METRES regardless of the IFC file's
+// declared unit, so the 10,000 m threshold applies universally.
+
+const COORD_OFFSET_THRESHOLD_M = 10_000  // 10 km — beyond this, float precision degrades
+const COORD_SAMPLE_SIZE        = 20      // max elements sampled for bounding box check
+
+async function ruleCoordinateOffset(
+  api: IfcAPI,
+  modelId: number,
+): Promise<ValidationIssue[]> {
+  let sampled = 0
+  let offsetX = 0
+  let offsetY = 0
+  let found = false
+
+  outer: for (const typeId of ELEMENT_TYPES) {
+    const ids = api.GetLineIDsWithType(modelId, typeId)
+    for (let i = 0; i < ids.size(); i++) {
+      if (sampled >= COORD_SAMPLE_SIZE) break outer
+      const id = ids.get(i)
+      const box = computeAABB(api, modelId, id)
+      if (!box) continue
+      sampled++
+      const cx = (box.minX + box.maxX) / 2
+      const cy = (box.minY + box.maxY) / 2
+      if (Math.abs(cx) > COORD_OFFSET_THRESHOLD_M || Math.abs(cy) > COORD_OFFSET_THRESHOLD_M) {
+        offsetX = cx
+        offsetY = cy
+        found = true
+        break outer
+      }
+    }
+  }
+
+  if (!found) return []
+
+  const fmt = (v: number): string => `${(v / 1000).toFixed(1)} km`
+  return [{
+    id: newIssueId(), ruleId: 'RULE_COORDINATE_OFFSET', severity: 'warning',
+    expressId: 0, globalId: null, ifcClass: 'IfcProject',
+    elementName: '(model)',
+    message: `Model geometry is positioned approximately ${fmt(offsetX)} E, ${fmt(offsetY)} N from the WCS origin — large coordinates cause floating-point precision errors. Re-export with a project base point offset, or use IfcMapConversion to retain the real-world reference while centring the model near the origin.`,
+    path: [], autoFixable: false,
+  }]
+}
+
+// ── Proxy element overuse ─────────────────────────────────────────────────────
+// Detects models where IfcBuildingElementProxy makes up more than 5% of all
+// physical elements. This typically means Revit/ArchiCAD families were not
+// converted to proper IFC types — a common export quality failure.
+//
+// Threshold: proxy% > PROXY_OVERUSE_THRESHOLD OR proxyCount > PROXY_ABSOLUTE_MIN
+// The absolute minimum avoids noise on tiny models (< 20 elements).
+
+const PROXY_OVERUSE_THRESHOLD = 0.05  // 5% of total physical elements
+const PROXY_ABSOLUTE_MIN      = 5     // ignore files with only 1-4 proxies
+
+async function ruleProxyOveruse(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const proxyIds   = api.GetLineIDsWithType(modelId, IFCBUILDINGELEMENTPROXY)
+  const proxyCount = proxyIds.size()
+
+  if (proxyCount < PROXY_ABSOLUTE_MIN) return []
+
+  // Count total physical elements to compute percentage.
+  // Iterate ELEMENT_TYPES which excludes proxies, then add proxyCount.
+  let totalPhysical = proxyCount
+  for (const typeId of ELEMENT_TYPES) {
+    totalPhysical += api.GetLineIDsWithType(modelId, typeId).size()
+  }
+
+  if (totalPhysical === 0 || proxyCount / totalPhysical < PROXY_OVERUSE_THRESHOLD) return []
+
+  const pct    = Math.round((proxyCount / totalPhysical) * 100)
+  const issues: ValidationIssue[] = []
+
+  for (let i = 0; i < proxyCount; i++) {
+    const id  = proxyIds.get(i)
+    const ent = getLine<IfcBaseEntity>(api, modelId, id)
+    issues.push({
+      id:          newIssueId(),
+      ruleId:      'RULE_PROXY_OVERUSE',
+      severity:    'warning',
+      expressId:   id,
+      globalId:    getStr(ent.GlobalId),
+      ifcClass:    'IfcBuildingElementProxy',
+      elementName: getStr(ent.Name) || '(unnamed)',
+      message:     `Proxy element not converted to a proper IFC type (${pct}% of model elements are proxies). Re-export from the source application or convert families to typed IFC elements.`,
+      path:        getSpatialPath(id, idx),
+      autoFixable: false,
+    })
   }
   return issues
 }
@@ -1926,6 +2135,48 @@ async function ruleInvalidIfcVersion(
   }
 
   return []
+}
+
+// ── File size anomaly detection ───────────────────────────────────────────────
+// Detects IFC files where the byte-per-physical-element ratio is abnormally
+// high — a signal of over-detailed geometry, embedded textures, or duplicate
+// geometry instances exported by Revit/ArchiCAD without "simplify geometry".
+//
+// Threshold: >500 KB per physical element is the heuristic upper bound.
+// A typical architectural IFC4 file is 20-80 KB/element. Files at >500 KB/el
+// are almost always candidates for re-export with simplified geometry.
+//
+// We only count typed physical elements (from ELEMENT_TYPES) to avoid flagging
+// small models that are predominantly spatial structure (sites, buildings, storeys).
+// Minimum: ANOMALY_MIN_ELEMENTS prevents false positives on tiny test files.
+
+const FILE_SIZE_BYTES_PER_ELEMENT_THRESHOLD = 500_000  // 500 KB/element
+const ANOMALY_MIN_ELEMENTS                   = 10        // ignore files with < 10 physical elements
+
+async function ruleFileSizeAnomaly(
+  api: IfcAPI,
+  modelId: number,
+  buffer: ArrayBuffer,
+): Promise<ValidationIssue[]> {
+  let elementCount = 0
+  for (const typeId of ELEMENT_TYPES) {
+    elementCount += api.GetLineIDsWithType(modelId, typeId).size()
+  }
+
+  if (elementCount < ANOMALY_MIN_ELEMENTS) return []
+
+  const bytesPerElement = buffer.byteLength / elementCount
+  if (bytesPerElement <= FILE_SIZE_BYTES_PER_ELEMENT_THRESHOLD) return []
+
+  const mbSize   = (buffer.byteLength / 1_048_576).toFixed(1)
+  const kbPerEl  = Math.round(bytesPerElement / 1024)
+  return [{
+    id: newIssueId(), ruleId: 'RULE_FILE_SIZE_ANOMALY', severity: 'info',
+    expressId: 0, globalId: null, ifcClass: 'IfcProject',
+    elementName: '(model)',
+    message: `File is ${mbSize} MB with ${elementCount} elements — ${kbPerEl} KB per element. Typical IFC files are 20–80 KB/element. Re-export with simplified geometry, disable texture export, and remove duplicate geometry instances to reduce file size.`,
+    path: [], autoFixable: false,
+  }]
 }
 
 // ── Main validation handler ───────────────────────────────────────────────────
@@ -2011,6 +2262,7 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
     // ── Define enabled rules ─────────────────────────────────────────
     const totalRules = enabledRules.length
     let completedRules = 0
+    let clashCap: { checkedCount: number; totalCount: number } | undefined
 
     const runRule = async (
       ruleId: string,
@@ -2129,8 +2381,24 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
       await runRule('RULE_LOD_MATERIAL_LAYER_MISSING', () => ruleLodMaterialLayerMissing(api!, modelId, idx, lodLvl))
     if (rules.RULE_MEP_SYSTEM_MISSING)
       await runRule('RULE_MEP_SYSTEM_MISSING', () => ruleMepSystemMissing(api!, modelId, idx))
-    if (rules.RULE_CLASH_MEP_STRUCTURAL)
-      await runRule('RULE_CLASH_MEP_STRUCTURAL', () => ruleClashMepStructural(api!, modelId, idx))
+    if (rules.RULE_CLASH_MEP_STRUCTURAL) {
+      const rulesBeforeClash = completedRules
+      const clashResult = await ruleClashMepStructural(api!, modelId, idx, (innerPct) => {
+        // Emit granular progress during the O(M×N) loop so the UI bar moves smoothly
+        const p = Math.round(((rulesBeforeClash + innerPct) / totalRules) * 100)
+        post({ type: 'partial', id, ruleId: 'RULE_CLASH_MEP_STRUCTURAL', issues: [], progress: p })
+      })
+      allIssues.push(...clashResult.issues)
+      if (clashResult.cap) clashCap = clashResult.cap
+      completedRules++
+      post({ type: 'partial', id, ruleId: 'RULE_CLASH_MEP_STRUCTURAL', issues: clashResult.issues, progress: Math.round(completedRules / totalRules * 100) })
+    }
+    if (rules.RULE_PROXY_OVERUSE)
+      await runRule('RULE_PROXY_OVERUSE', () => ruleProxyOveruse(api!, modelId, idx))
+    if (rules.RULE_COORDINATE_OFFSET)
+      await runRule('RULE_COORDINATE_OFFSET', () => ruleCoordinateOffset(api!, modelId))
+    if (rules.RULE_FILE_SIZE_ANOMALY)
+      await runRule('RULE_FILE_SIZE_ANOMALY', () => ruleFileSizeAnomaly(api!, modelId, buffer))
 
     // ── Compile final result ─────────────────────────────────────────
     const byRule: Record<string, number> = {}
@@ -2146,6 +2414,7 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
       issues: allIssues,
       stats: { total: allIssues.length, errors, warnings, info, byRule },
       durationMs: Date.now() - startTime,
+      ...(clashCap ? { metadata: { clashCapped: clashCap } } : {}),
     }
 
     post({ type: 'done', id, result })

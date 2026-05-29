@@ -11,7 +11,7 @@
     <title>IFC Viewer Online — Free Browser-Based BIM Viewer, Validator & Editor</title>
 
     <!-- Primary SEO -->
-    <meta name="description" content="Free online IFC viewer, validator and non-destructive editor. Open any IFC file directly in your browser — no login, no upload, no plugin. Multi-model support, 18 validation rules, GUID auto-fix, IFC export, GLB export, spatial tree, quantity takeoff. Powered by WebAssembly + WebGL." />
+    <meta name="description" content="Free online IFC viewer, validator and non-destructive editor. Open any IFC file directly in your browser — no login, no upload, no plugin. Get a Health Score 0–100 in under 30 seconds. 38 validation rules, GUID auto-fix, IFC + GLB export, quantity takeoff. Powered by WebAssembly + WebGL." />
     <meta name="keywords" content="IFC viewer online, BIM viewer browser, open IFC file online, free IFC viewer, IFC validator, IFC editor, web-ifc, three.js IFC, IFC2x3, IFC4, IFC4x3, BIM coordination, BuildingSMART, multi-model IFC, IFC quality check, GUID fix, IFC export, GLB export, quantity takeoff, spatial hierarchy, no upload IFC viewer, offline BIM viewer, WebAssembly IFC" />
     <meta name="author" content="Joel Benitez" />
     <meta name="robots" content="index, follow" />
@@ -26,7 +26,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://j03rul4nd.github.io/ifc-viewer-online/" />
     <meta property="og:title" content="IFC Viewer Online — Free BIM Viewer, Validator & Editor" />
-    <meta property="og:description" content="Open any IFC file in your browser. Validate 18 rules, fix GUIDs, edit properties, export corrected IFC — all client-side with no login required." />
+    <meta property="og:description" content="Open any IFC file in your browser. Get a Health Score 0–100 in 30 seconds. 38 validation rules, fix GUIDs, edit properties, export corrected IFC — all client-side with no login required." />
     <meta property="og:site_name" content="IFC Viewer Online" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:image" content="https://j03rul4nd.github.io/ifc-viewer-online/og-image.png" />
@@ -36,7 +36,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="IFC Viewer Online — Free BIM Viewer, Validator & Editor" />
-    <meta name="twitter:description" content="Browser-only IFC viewer with validation, GUID auto-fix, property editing and IFC/GLB export. No login, no upload. Runs via WebAssembly." />
+    <meta name="twitter:description" content="IFC Health Score 0–100 in 30 seconds. 38 validation rules, GUID auto-fix, IFC/GLB export. No login, no upload. Runs via WebAssembly." />
     <meta name="twitter:image" content="https://j03rul4nd.github.io/ifc-viewer-online/og-image.png" />
 
     <!-- JSON-LD Structured Data: WebApplication -->
@@ -46,7 +46,7 @@
       "@type": "WebApplication",
       "name": "IFC Viewer Online",
       "url": "https://j03rul4nd.github.io/ifc-viewer-online/",
-      "description": "A free, browser-only IFC model viewer, validator, and non-destructive editor. Supports IFC2x3, IFC4, and IFC4x3. Runs via WebAssembly — files never leave your machine.",
+      "description": "A free, browser-only IFC model viewer, validator, and non-destructive editor. Get an IFC Health Score 0–100 in under 30 seconds. Supports IFC2x3, IFC4, IFC4x1, IFC4x3. Runs via WebAssembly — files never leave your machine.",
       "applicationCategory": "AEC / BIM software",
       "operatingSystem": "Any (browser-based: Chrome, Edge, Firefox, Safari)",
       "browserRequirements": "Requires a modern browser with WebGL and WebAssembly support.",
@@ -56,20 +56,19 @@
         "priceCurrency": "USD"
       },
       "featureList": [
-        "Multi-model IFC loading",
-        "OPFS geometry cache — 10x faster repeat loads",
-        "18 IFC validation rules including GUID format, spatial hierarchy, clash detection",
+        "IFC Health Score 0–100 in under 30 seconds",
+        "38 IFC validation rules — GUID duplicates, spatial hierarchy, clash detection, coordinate offset, proxy overuse and more",
+        "Multi-model IFC loading with independent state per model",
+        "OPFS geometry cache — ~10x faster repeat loads, works offline",
         "Batch GUID auto-fix",
-        "Non-destructive property editing (Name, LongName, Description, Pset values)",
-        "Undo/redo command history",
-        "IFC export with applied diffs",
+        "Non-destructive property editing with full undo/redo",
+        "IFC binary export with all edits applied server-free",
         "GLB export",
-        "Quantity takeoff (IfcElementQuantity)",
-        "Spatial hierarchy tree with virtualised rendering",
-        "Camera presets (ISO, Top, Front, Left, Right)",
-        "Model transform controls",
-        "Validation error 3D highlights",
-        "No server, no login, no upload"
+        "Shareable validation report via URL (no upload, no account)",
+        "Quantity takeoff (IfcElementQuantity aggregation)",
+        "2D floor plans and live section cuts",
+        "SSAO, edge rendering and bloom postprocessing",
+        "No server, no login, no upload — 100% client-side"
       ],
       "author": {
         "@type": "Person",
@@ -102,7 +101,7 @@
         "name": "Joel Benitez",
         "url": "https://github.com/j03rul4nd"
       },
-      "description": "Open-source browser-only IFC viewer built with @thatopen/components, three.js, and web-ifc. Features multi-model loading, 18 validation rules, OPFS caching, non-destructive editing and IFC export."
+      "description": "Open-source browser-only IFC viewer built with @thatopen/components, three.js, and web-ifc. Features multi-model loading, 38 validation rules, Health Score 0–100, OPFS caching, non-destructive editing and IFC export."
     }
     </script>
 
@@ -135,7 +134,7 @@
           "name": "Can I share the validation results with my team or client?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes. After running validation, use the Share Report button to generate a URL that encodes the full results. Your client opens it in any browser without installing anything or creating an account. The IFC file itself is never included in the link."
+            "text": "Yes. After running validation, click Share Report to copy a link that encodes the full Health Score and issue list directly in the URL — no file upload, no server, no account required. You can also export results as JSON, CSV, or a Validation Certificate. The IFC file itself never leaves your browser."
           }
         },
         {
@@ -148,10 +147,10 @@
         },
         {
           "@type": "Question",
-          "name": "What IFC versions are supported?",
+          "name": "What happens if my IFC file is very large?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "IFC2x3, IFC4, IFC4x1, and IFC4x3. The viewer uses the open-source web-ifc parser — the same engine used by most modern BIM tools and @thatopen/components. Outdated schemas are automatically flagged by the validator."
+            "text": "The app handles files up to 2 GB. Performance depends on your device — files under 200 MB load well on most modern hardware. Once parsed, geometry is cached in OPFS so every subsequent load of the same file is instant, even offline."
           }
         },
         {
@@ -159,7 +158,7 @@
           "name": "How does the validation work?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "The validator runs 18 built-in rules in a background Web Worker so the UI stays responsive. Rules cover GUID duplicates, spatial hierarchy, orphan elements, naming conventions, missing type assignments, clash detection, and more. Results stream in as each rule completes."
+            "text": "The validator runs 38 built-in rules in a background Web Worker so the UI stays responsive. Rules cover GUID duplicates, spatial hierarchy, orphan elements, naming conventions, missing type assignments, ISO 19650 property sets, LOD completeness, clash detection, proxy overuse, coordinate offset, and more. Every model receives a Health Score from 0 to 100. Results stream in as each rule completes."
           }
         },
         {
@@ -172,10 +171,50 @@
         },
         {
           "@type": "Question",
+          "name": "What IFC versions are supported?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "IFC2x3, IFC4, IFC4x1, and IFC4x3. The viewer uses the open-source web-ifc parser — the same engine used by most modern BIM tools and @thatopen/components. Outdated schemas are automatically flagged by the validator."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What measurement tools are available?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can measure lengths between any two points, areas of surfaces, volumes of enclosed elements, and individual edge lengths — all directly in the 3D viewport. Measurements persist as labelled annotations and can be exported alongside your model."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I load multiple IFC files at once?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Load as many IFC files as your device memory allows. Each model has independent visibility, transforms, validation, quantity takeoff, and export. Use the Scene panel to manage, reorder, or remove models at any time."
+          }
+        },
+        {
+          "@type": "Question",
           "name": "Does it work offline?",
           "acceptedAnswer": {
             "@type": "Answer",
             "text": "Yes, once the page is loaded. The WebAssembly parser and WebGL renderer run entirely in the browser. Parsed geometry is cached in OPFS so repeat loads are instant even without a network connection."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What are the file size limits?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "There is no enforced limit — performance depends on your device. Files up to ~200 MB typically load well on modern hardware. The OPFS geometry cache means you only pay the parse cost once per file."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is it free? Can I use it for commercial projects?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, completely free. The source code is MIT-licensed. You can use the live app or fork the repository for your own projects, including commercial ones."
           }
         }
       ]

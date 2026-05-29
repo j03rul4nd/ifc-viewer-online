@@ -29,7 +29,12 @@
     "clearIsolation": "Quitar aislamiento",
     "noModel": "Sin modelo cargado",
     "noModelDesc": "Abre un archivo IFC para ver las categorías.",
-    "moreElements": "+ {{count}} elementos más"
+    "moreElements": "+ {{count}} elementos más",
+    "filterPlaceholder": "Filtrar categorías…",
+    "noMatches": "Ninguna categoría coincide",
+    "showAll": "Mostrar todo",
+    "hideAll": "Ocultar todo",
+    "hiddenCount": "{{count}} ocultas"
   },
   "actions": {
     "isolate": "Aislar",
@@ -65,7 +70,9 @@
     "unsavedChanges_other": "{{count}} cambios sin guardar · Ctrl+Z para deshacer",
     "edited": "editado",
     "empty": "vacío",
-    "loadingPsets": "Cargando conjuntos de propiedades…"
+    "loadingPsets": "Cargando conjuntos de propiedades…",
+    "filterProps": "Filtrar propiedades…",
+    "noPropsMatch": "Ninguna propiedad coincide"
   },
   "tabs": {
     "properties": "Propiedades",

@@ -30,13 +30,13 @@ export interface LocaleMeta {
 export const LOCALE_META: Record<string, LocaleMeta> = {
   en: {
     title:       'IFC Viewer Online — Free Browser-Based BIM Viewer, Validator & Editor',
-    description: 'Free online IFC viewer, validator and non-destructive editor. Open any IFC file directly in your browser — no login, no upload, no plugin. Multi-model, 18 rules, GUID auto-fix, IFC export.',
+    description: 'Free online IFC viewer, validator and non-destructive editor. Open any IFC file directly in your browser — no login, no upload, no plugin. Health Score 0–100 in 30 seconds. 38 rules, GUID auto-fix, IFC export.',
     ogLocale:    'en_US',
     twitterDescription: 'Browser-only IFC viewer with validation, GUID auto-fix, property editing and IFC/GLB export. No login, no upload. Runs via WebAssembly.',
   },
   es: {
     title:       'IFC Viewer Online — Visor BIM Gratuito, Validador y Editor en el Navegador',
-    description: 'Visor, validador y editor IFC gratuito. Abre cualquier archivo IFC en tu navegador — sin login, sin subida, sin plugins. Multi-modelo, 18 reglas, corrección GUID, exportar IFC.',
+    description: 'Visor, validador y editor IFC gratuito. Abre cualquier archivo IFC en tu navegador — sin login, sin subida, sin plugins. Health Score 0–100 en 30 segundos. 38 reglas, corrección GUID, exportar IFC.',
     ogLocale:    'es_ES',
     twitterDescription: 'Visor IFC en el navegador con validación, corrección GUID, edición de propiedades y exportación IFC/GLB. Sin login, sin subida. Funciona con WebAssembly.',
   },
@@ -55,7 +55,7 @@ export function buildWebAppJsonLd() {
     name: SITE_NAME,
     url: SITE_URL,
     description:
-      'A free, browser-only IFC model viewer, validator, and non-destructive editor. Supports IFC2x3, IFC4, and IFC4x3. Runs via WebAssembly — files never leave your machine.',
+      'A free, browser-only IFC model viewer, validator, and non-destructive editor. Get a Health Score 0–100 in 30 seconds. 38 validation rules. Supports IFC2x3, IFC4, IFC4x1, IFC4x3. Runs via WebAssembly — files never leave your machine.',
     applicationCategory: 'AEC / BIM software',
     operatingSystem: 'Any (browser-based: Chrome, Edge, Firefox, Safari)',
     browserRequirements: 'Requires a modern browser with WebGL and WebAssembly support.',
@@ -63,7 +63,7 @@ export function buildWebAppJsonLd() {
     featureList: [
       'Multi-model IFC loading',
       'OPFS geometry cache — 10× faster repeat loads',
-      '18 IFC validation rules including GUID format, spatial hierarchy, clash detection',
+      '38 IFC validation rules — GUID format, spatial hierarchy, clash detection, coordinate offset, proxy overuse, and more',
       'Batch GUID auto-fix',
       'Non-destructive property editing (Name, LongName, Description, Pset values)',
       'Undo/redo command history',

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>IFC Validator Online — Free IFC Quality Check, 18 Rules, No Upload</title>
-  <meta name="description" content="Free online IFC validator. Check IFC files for GUID duplicates, spatial hierarchy violations, orphan elements, missing type assignments, and 14 more quality rules — directly in your browser. No upload, no login. Works with IFC2x3, IFC4, IFC4x3." />
+  <title>IFC Validator Online — Free IFC Quality Check, 38 Rules, No Upload</title>
+  <meta name="description" content="Free online IFC validator. Check IFC files for GUID duplicates, spatial hierarchy violations, orphan elements, missing type assignments, and 34 more quality rules — directly in your browser. No upload, no login. Works with IFC2x3, IFC4, IFC4x3." />
   <meta name="keywords" content="IFC validator online, validate IFC file, IFC quality check, check IFC file, IFC GUID validation, spatial hierarchy IFC, orphan elements IFC, IFC checker, BuildingSMART IFC validation, IFC error check, free IFC validator, IFC file quality" />
   <meta name="author" content="Joel Benitez" />
   <meta name="robots" content="index, follow" />
@@ -15,13 +15,13 @@
 
   <meta property="og:type"        content="website" />
   <meta property="og:url"         content="https://j03rul4nd.github.io/ifc-viewer-online/ifc-validator/" />
-  <meta property="og:title"       content="IFC Validator Online — Free IFC Quality Check | 18 Rules" />
-  <meta property="og:description" content="Validate IFC files against 18 quality rules directly in your browser. GUID duplicates, spatial hierarchy, orphan elements and more. No upload, no login, works offline." />
+  <meta property="og:title"       content="IFC Validator Online — Free IFC Quality Check | 38 Rules" />
+  <meta property="og:description" content="Validate IFC files against 38 quality rules directly in your browser. GUID duplicates, spatial hierarchy, orphan elements and more. No upload, no login, works offline." />
   <meta property="og:site_name"   content="IFC Viewer Online" />
   <meta property="og:locale"      content="en_US" />
   <meta name="twitter:card"        content="summary" />
-  <meta name="twitter:title"       content="IFC Validator Online — Free IFC Quality Check | 18 Rules" />
-  <meta name="twitter:description" content="Validate IFC files against 18 quality rules in your browser. No upload, no login." />
+  <meta name="twitter:title"       content="IFC Validator Online — Free IFC Quality Check | 38 Rules" />
+  <meta name="twitter:description" content="Validate IFC files against 38 quality rules in your browser. No upload, no login." />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -35,7 +35,7 @@
         "@type": "WebPage",
         "@id": "https://j03rul4nd.github.io/ifc-viewer-online/ifc-validator/",
         "url": "https://j03rul4nd.github.io/ifc-viewer-online/ifc-validator/",
-        "name": "IFC Validator Online — Free IFC Quality Check, 18 Rules",
+        "name": "IFC Validator Online — Free IFC Quality Check, 38 Rules",
         "description": "Free online IFC validator. Check IFC files for GUID duplicates, spatial hierarchy violations, orphan elements and more — directly in your browser.",
         "isPartOf": { "@id": "https://j03rul4nd.github.io/ifc-viewer-online/" },
         "inLanguage": "en"
@@ -187,10 +187,10 @@
       <div class="container">
         <div class="hero-badge">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          18 validation rules · No upload · Free
+          38 validation rules · No upload · Free
         </div>
         <h1>IFC Validator <span class="accent">Online</span></h1>
-        <p class="hero-desc">Catch GUID duplicates, spatial hierarchy violations, orphan elements, and 15 more quality issues — all directly in your browser. No upload. No login. Works with IFC2x3, IFC4, IFC4x3.</p>
+        <p class="hero-desc">Catch GUID duplicates, spatial hierarchy violations, orphan elements, proxy overuse, coordinate offsets, and 32 more quality checks — all directly in your browser. No upload. No login. Works with IFC2x3, IFC4, IFC4x3.</p>
         <a href="../" class="cta-primary">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Validate an IFC file — free
@@ -202,7 +202,7 @@
     <section class="section">
       <div class="container">
         <p class="section-label">Validation Rules</p>
-        <h2 class="section-title">18 built-in IFC quality checks</h2>
+        <h2 class="section-title">38 built-in IFC quality checks</h2>
         <p class="section-sub">Each rule runs in a background Web Worker — the interface stays responsive while results stream in.</p>
         <div class="rules-grid">
           <div class="rule">
@@ -265,6 +265,21 @@
             <div class="rule-desc">Detects elements missing IfcMaterial associations where material data is expected for quantity takeoff and scheduling.</div>
             <span class="rule-tag">Data quality</span>
           </div>
+          <div class="rule">
+            <div class="rule-name">Coordinate Offset</div>
+            <div class="rule-desc">Flags models positioned more than 10 km from the IFC origin — a common federation error when discipline models use inconsistent survey points.</div>
+            <span class="rule-tag">Georeferencing</span>
+          </div>
+          <div class="rule">
+            <div class="rule-name">Proxy Overuse</div>
+            <div class="rule-desc">More than 5% of physical elements are IfcBuildingElementProxy — typically unconverted Revit families. Signals incomplete IFC export configuration.</div>
+            <span class="rule-tag">Export quality</span>
+          </div>
+          <div class="rule">
+            <div class="rule-name">File Size Anomaly</div>
+            <div class="rule-desc">Average file size per element exceeds 500 KB — suggests geometry bloat, embedded textures, or excessive detail inappropriate for coordination use.</div>
+            <span class="rule-tag">Performance</span>
+          </div>
         </div>
       </div>
     </section>
@@ -282,7 +297,7 @@
           <div class="step">
             <div class="step-n">02</div>
             <div class="step-title">Run validation</div>
-            <div class="step-desc">18 rules run in a background Web Worker. Results stream in as each check completes — GUID issues, hierarchy errors, orphans, all flagged instantly.</div>
+            <div class="step-desc">38 rules run in a background Web Worker. Results stream in as each check completes — GUID issues, hierarchy errors, orphans, proxy overuse, coordinate offsets, all flagged instantly.</div>
           </div>
           <div class="step">
             <div class="step-n">03</div>

@@ -108,7 +108,8 @@
     "noModels": "No models loaded",
     "showAllModelsBtn": "↑ Show all models",
     "clickHint": "Click a model to activate · use ⊙ to isolate",
-    "transformTitle": "Transform · {{fileName}}"
+    "transformTitle": "Transform · {{fileName}}",
+    "frameAll": "Fit camera to all models"
   },
   "transform": {
     "position": "Position",
@@ -116,18 +117,34 @@
     "scale": "Scale",
     "uniform": "Uniform",
     "snapToGrid": "Snap to grid",
-    "reset": "Reset"
+    "reset": "Reset",
+    "snapToGridHint": "Move model so its bottom sits on the Y=0 grid plane and is centred on X/Z",
+    "resetHint": "Reset all transform values to identity"
   },
   "renderQuality": {
     "title": "Render Quality",
     "performance": "Performance",
     "quality": "Quality",
-    "ssaoNote": "SSAO + edge detection active. May impact performance on mobile."
+    "ssaoNote": "SSAO + edge detection active. May impact performance on mobile.",
+    "performanceHint": "Standard — WebGL rasterisation, best performance",
+    "qualityHint": "Quality — SSAO ambient occlusion + edge detection post-processing"
   },
   "cache": {
     "fromCache": "⚡ from cache",
     "cached": "{{count}} cached",
     "tooltip": "{{count}} model(s) cached in OPFS · click to clear",
     "togglePanel": "Toggle properties panel"
+  },
+  "contextMenu": {
+    "frame": "Zoom to element",
+    "hide": "Hide element",
+    "isolateElement": "Isolate element",
+    "isolateCategory": "Isolate category",
+    "revealInTree": "Reveal in tree",
+    "copyId": "Copy ID",
+    "copied": "Copied",
+    "showFullModel": "Show full model",
+    "showAllHidden": "Show {{count}} hidden element",
+    "showAllHidden_other": "Show {{count}} hidden elements"
   }
 }

@@ -12,9 +12,16 @@
     "element": "Element",
     "unclassified": "Unclassified"
   },
+  "clear": "Clear",
+  "issueBadge": "{{errors}} error(s) · {{warnings}} warning(s)",
   "actions": {
     "expandAll": "Expand all",
     "collapseAll": "Collapse all",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "show": "Show",
+    "hide": "Hide",
+    "showAll": "Show all",
     "focusElement": "Focus element in 3D",
     "selectElement": "Select element",
     "selectIn3D": "Select in 3D",

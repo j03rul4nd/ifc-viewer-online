@@ -378,4 +378,43 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 
 ---
 
-*Last updated: 2026-05-17 · Sprints 1–6 complete*
+## D-21 · Crawlable shared reports via a stateless edge Worker (not hash fragments)
+
+**Date:** 2026-05-29 (strategic re-audit v2)
+
+**Decision:** Shared reports today are encoded in the URL **hash fragment** (`#report=<base64>`, decoded client-side by `SharedReportView`). Hash fragments are never sent to a server, so these URLs are invisible to crawlers and link unfurlers — the shared report is the only compounding distribution asset, but in its current form it generates zero SEO/social value. The forward plan is to add a **stateless Cloudflare Worker SSR route** (e.g. `/r?d=<compressed>`) that receives the already-computed report summary as a **query parameter**, decompresses it (fflate), and renders server-side HTML with OpenGraph/Twitter meta so the link is crawlable and unfurls in chat apps.
+
+**Alternatives considered:**
+- **Keep hash fragments** — zero infra, perfectly private, but zero distribution value. The report never compounds.
+- **Store reports in a database / KV** — would make rich permalinks trivial, but introduces stateful storage, a privacy liability (we'd be holding report data), and violates the spirit of "no backend." Rejected.
+- **Pre-render at build time** — impossible; reports are generated per-user at runtime.
+
+**Reason:** The summary (score + condensed issue list) is *not* the model. Passing it through the edge in a URL keeps the hard invariant intact — **the IFC file still never leaves the sender's browser**. Only the derived, already-public-to-the-recipient summary transits the edge, and only to render HTML; nothing is stored.
+
+**Consequences / honest tradeoff:**
+- The report summary now passes through the Cloudflare edge in the URL (in transit, not at rest). This is a real, if small, change from "100% client-side" — it must be disclosed accurately in copy. The privacy proof point becomes "your IFC model never leaves your browser" (still true), not "nothing ever touches a server."
+- Reuses the existing `cf-worker/` deployment pattern (already a stateless proxy) — low marginal infra cost, stays on the free tier.
+- `SharedReportView` decode path stays as a client-side fallback for legacy `#report=` links.
+- Refines invariant 1 in `CONTEXT.md`: stateless edge compute that never touches the model is permitted.
+
+---
+
+## D-22 · Per-rule remediation guidance as a deterministic content table (not AI)
+
+**Date:** 2026-05-29 (strategic re-audit v2)
+
+**Decision:** The genuinely useful slice of the killed "AI-assisted validation" idea (old Sprint 12) is **how to fix this issue in your authoring tool**. This is delivered as a **finite, hand-authored content table** — roughly 38 rules × the major authoring tools (Revit, ArchiCAD, Tekla, Allplan) — authored in the i18n locale files alongside the existing `RULE_TRANSLATIONS`. No LLM, no server, no per-request cost.
+
+**Alternatives considered:**
+- **LLM-generated fix guidance** — non-deterministic, requires a server + API key (breaks the no-backend invariant), recurring cost, and no moat. Rejected (this is the "AI slop" the re-audit killed).
+- **Generic per-rule text only** (no tool-specific steps) — cheaper to author but far less valuable; the coordinator→exporter handoff is where tool-specific steps matter most.
+
+**Reason:** The content is finite and changes slowly, so it can be authored once and translated. It directly serves the retention engine (exporter fixes the issue and re-shares) and is fully compatible with every invariant. It also deepens the i18n moat (10 languages × tool-specific guidance is hard for a competitor to replicate quickly).
+
+**Consequences:**
+- Authoring + translation is real ongoing content work, not engineering — budget it as such.
+- Lives in i18n; no new runtime dependency. `ValidationPanel` renders the guidance for the selected rule.
+
+---
+
+*Last updated: 2026-05-29 · Sprints 1–9 complete · D-21/D-22 added in strategic re-audit v2*
