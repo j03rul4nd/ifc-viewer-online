@@ -903,6 +903,12 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
           </div>
           <div className="flex gap-4 sm:gap-5 items-center flex-wrap">
             <a
+              href={`${import.meta.env.BASE_URL}${['es', 'de', 'fr', 'pt', 'it'].includes(i18n.language.slice(0, 2)) ? i18n.language.slice(0, 2) + '/' : ''}fix/`}
+              className="hover:text-[var(--text)] transition-colors no-underline"
+            >
+              {t('footer.fixGuide')}
+            </a>
+            <a
               href={GITHUB_URL}
               target="_blank" rel="noopener noreferrer"
               className="hover:text-[var(--text)] transition-colors no-underline"

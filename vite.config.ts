@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync } from 'fs'
+import { generateFixPages } from './scripts/seo/generate-fix-pages'
 
 // ── Static landing content injection ─────────────────────────────────────────
 // Reads src/locales/en/landing.json after the build and injects the FAQ and
@@ -63,6 +64,29 @@ function injectLandingContent(): import('vite').Plugin {
   }
 }
 
+// ── Programmatic SEO: per-rule "How to fix" pages ─────────────────────────────
+// Generates dist/fix/<rule>/index.html for every validation rule from the
+// remediation corpus, plus a dist/fix/ hub, and injects the URLs into
+// dist/sitemap.xml. One hand-authored page → ~34 auto-maintained pages, all
+// driven by data already in the repo. See scripts/seo/generate-fix-pages.ts.
+function generateRuleFixPages(): import('vite').Plugin {
+  return {
+    name: 'generate-rule-fix-pages',
+    apply: 'build',
+    closeBundle() {
+      const distDir = path.resolve(__dirname, 'dist')
+      if (!existsSync(distDir)) return
+      const r = generateFixPages(distDir)
+      const status = r.errors > 0 ? `⚠ ${r.errors} errors` : 'ok'
+      // eslint-disable-next-line no-console
+      console.log(
+        `\n  ✓ SEO fix pages: ${r.pages} rule pages + ${r.hubs} hubs across ${r.langs} languages` +
+        ` · sitemap ${r.sitemap ? 'updated' : 'unchanged'} · llms.txt ${r.llms ? 'updated' : 'unchanged'} · ${status}\n`,
+      )
+    },
+  }
+}
+
 function copyWebIfcWasm() {
   return {
     name: 'copy-web-ifc-wasm',
@@ -80,7 +104,7 @@ function copyWebIfcWasm() {
 }
 
 export default defineConfig({
-  plugins: [react(), copyWebIfcWasm(), injectLandingContent()],
+  plugins: [react(), copyWebIfcWasm(), injectLandingContent(), generateRuleFixPages()],
   base: '/ifc-viewer-online/',
   resolve: {
     alias: [
@@ -171,6 +195,6 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
   },
 })

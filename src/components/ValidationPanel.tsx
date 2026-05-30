@@ -33,6 +33,7 @@ import CustomProfileModal from './CustomProfileModal'
 import { getRecentRuns, getAverageQualityScore, getMostUsedRules } from '../lib/validation-analytics'
 import type { ValidationRunRecord } from '../lib/validation-analytics'
 import { trackGuidFixed, trackShareReportClicked, trackValidationPanelOpened } from '../lib/analytics'
+import { buildShareUrl } from '../lib/share-report'
 
 // ── Profile i18n ────────────────────────────────────────────────────────────
 // Built-in profiles (basic/quality/coordination/iso19650/lod300) resolve their
@@ -55,6 +56,36 @@ const DEFAULT_PANEL_H = 360
 
 // Total number of validation rules in the catalogue (derived, never hardcoded).
 const TOTAL_RULE_COUNT = Object.keys(RULE_METADATA).length
+
+/**
+ * Copy text to the clipboard. Uses the async Clipboard API when available and
+ * falls back to a hidden-textarea + execCommand for non-secure contexts / older
+ * browsers, so the Share action degrades gracefully instead of throwing.
+ */
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
+  } catch {
+    // fall through to the legacy path
+  }
+  try {
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.setAttribute('readonly', '')
+    ta.style.position = 'fixed'
+    ta.style.opacity = '0'
+    document.body.appendChild(ta)
+    ta.select()
+    const ok = document.execCommand('copy')
+    document.body.removeChild(ta)
+    return ok
+  } catch {
+    return false
+  }
+}
 
 // ── Severity helpers ──────────────────────────────────────────────────────────
 
@@ -410,12 +441,28 @@ interface RemediationBlockProps {
   onSelectTool: (tool: AuthoringTool) => void
 }
 
+// Map a ruleId to its static, crawlable "how to fix" guide page (generated at
+// build time — see scripts/seo/generate-fix-pages.ts). The two GUID rules are
+// covered by the richer hand-authored /tools/fix-duplicate-guids/ page instead.
+// Localised pages exist for es/de/fr; every other UI language falls back to EN.
+function fixGuideUrl(ruleId: string, language: string): string {
+  const base = import.meta.env.BASE_URL
+  if (ruleId === 'RULE_DUPLICATE_GUID' || ruleId === 'RULE_INVALID_GUID_FORMAT') {
+    return `${base}tools/fix-duplicate-guids/`
+  }
+  const lang = language.slice(0, 2)
+  const prefix = ['es', 'de', 'fr', 'pt', 'it'].includes(lang) ? `${lang}/` : ''
+  const slug = ruleId.replace(/^RULE_/, '').toLowerCase().replace(/_/g, '-')
+  return `${base}${prefix}fix/${slug}/`
+}
+
 function RemediationBlock({ ruleId, language, selectedTool, onSelectTool }: RemediationBlockProps) {
   const { t } = useTranslation('validation')
   const remediation = getRuleRemediation(ruleId, language)
   if (!remediation) return null
 
   const toolSteps = remediation.tools[selectedTool]
+  const guideUrl = fixGuideUrl(ruleId, language)
 
   return (
     <div className="px-3 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)]">
@@ -455,6 +502,18 @@ function RemediationBlock({ ruleId, language, selectedTool, onSelectTool }: Reme
       <p className="text-[11px] leading-relaxed" style={{ color: toolSteps ? 'var(--text)' : 'var(--text-faint)' }}>
         {toolSteps ?? t('remediation.noToolSteps', { tool: t(`remediation.tools.${selectedTool}`) })}
       </p>
+
+      <a
+        href={guideUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 mt-2.5 text-[10px] font-medium text-[var(--accent)] hover:underline"
+      >
+        {t('remediation.fullGuide')}
+        <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2.5 6h7M6.5 3l3 3-3 3" />
+        </svg>
+      </a>
     </div>
   )
 }
@@ -1698,7 +1757,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   // ── Share Report (URL hash — zero server, zero storage) ───────────────────
   // Encodes the Health Score + condensed issue list into a base64 URL fragment.
   // Anyone with the link sees the report without uploading anything.
-  const handleShareReport = useCallback(() => {
+  const handleShareReport = useCallback(async () => {
     if (!result) return
 
     // Build a compact payload — strip verbose path arrays to keep URL short
@@ -1728,12 +1787,20 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     }
 
     try {
-      const json    = JSON.stringify(payload)
-      const encoded = btoa(unescape(encodeURIComponent(json)))
-      const url     = `${window.location.origin}${window.location.pathname}#report=${encoded}`
-      void navigator.clipboard.writeText(url)
+      // Prefer the crawlable Cloudflare Worker route (server-rendered HTML + OG
+      // meta = a shareable, indexable backlink — D-21 / moat #3). Falls back to
+      // the in-app hash link when no worker URL is configured, so behaviour is
+      // unchanged until VITE_REPORT_URL is set. Encoding contract lives in
+      // src/lib/share-report.ts (mirrored by the Worker's decodeReport).
+      const reportBase = import.meta.env.VITE_REPORT_URL as string | undefined
+      const appBase    = `${window.location.origin}${window.location.pathname}`
+      const { url }    = buildShareUrl(payload, reportBase, appBase)
+      const copied     = await copyToClipboard(url)
       trackShareReportClicked()
-      toast(t('actions.reportLinkCopied'), 'success')
+      toast(
+        copied ? t('actions.reportLinkCopied') : t('actions.reportLinkError'),
+        copied ? 'success' : 'error',
+      )
     } catch {
       toast(t('actions.reportLinkError'), 'error')
     }

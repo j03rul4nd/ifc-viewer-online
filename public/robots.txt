@@ -7,4 +7,12 @@ Allow: /ifc-viewer-online/ifc-viewer-mac/
 Allow: /ifc-viewer-online/es/
 Allow: /ifc-viewer-online/es/ifc-validador/
 
+# Programmatic "how to fix" guides — per-rule, multi-language (static, crawlable)
+Allow: /ifc-viewer-online/fix/
+Allow: /ifc-viewer-online/es/fix/
+Allow: /ifc-viewer-online/de/fix/
+Allow: /ifc-viewer-online/fr/fix/
+Allow: /ifc-viewer-online/pt/fix/
+Allow: /ifc-viewer-online/it/fix/
+
 Sitemap: https://j03rul4nd.github.io/ifc-viewer-online/sitemap.xml

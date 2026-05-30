@@ -223,6 +223,7 @@
     "poweredBy": "Propulsé par IFC.js",
     "openSource": "Open source",
     "copyright": "IFC Viewer Online © 2026",
-    "builtWith": "Construit avec @thatopen/components · three.js · web-ifc"
+    "builtWith": "Construit avec @thatopen/components · three.js · web-ifc",
+    "fixGuide": "Corriger les erreurs IFC"
   }
 }

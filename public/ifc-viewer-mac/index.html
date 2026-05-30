@@ -128,10 +128,10 @@
     .nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; }
     .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
 
-    .hero { padding: 72px 0 56px; text-align: center; }
+    .hero { position: relative; overflow: hidden; padding: 72px 0 56px; text-align: center; } .hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; } .hero::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); } .hero .container { position: relative; z-index: 1; }
     .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 28px; font-weight: 500; }
     .hero h1 { font-size: clamp(1.9rem, 5vw, 3.1rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
-    .accent { color: #5E6AD2; }
+    .accent { background: linear-gradient(100deg, #8B96E9 0%, #5E6AD2 55%, #7C8AF0 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #5E6AD2; }
     .hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 620px; margin: 0 auto 36px; }
     .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
     .cta-primary:hover { background: #4F5ABF; }
@@ -182,6 +182,7 @@
   <main>
 
     <section class="hero">
+      <canvas class="hero-bg" data-dot-grid data-color="94,106,210" aria-hidden="true"></canvas>
       <div class="container">
         <div class="hero-badge">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
@@ -309,6 +310,8 @@
       <p class="footer-copy">IFC Viewer Online Â© 2026 Â· Free Â· Open source Â· MIT license Â· Built with web-ifc &amp; three.js</p>
     </div>
   </footer>
+
+  <script defer src="../seo/dot-grid.js"></script>
 
 </body>
 </html>

@@ -13,6 +13,7 @@ dist/
 # Si quieres ignorarlo completamente, descomenta la siguiente línea:
 # mcp-state.json
 dist-tmp/
+.seo-test-out/
 # Environment
 .env
 .env.local

@@ -134,10 +134,15 @@
     .nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; }
     .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
 
-    .hero { padding: 64px 0 52px; text-align: center; }
-    .tool-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 28px; font-weight: 500; }
+    .hero { position: relative; overflow: hidden; padding: 64px 0 52px; text-align: center; }
+    /* Interactive dot-field backdrop (progressive enhancement via /seo/dot-grid.js) */
+    .hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
+    /* Soft radial glow behind the hero copy for depth */
+    .hero::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+    .hero .container { position: relative; z-index: 1; }
+    .tool-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 28px; font-weight: 500; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
     .hero h1 { font-size: clamp(1.8rem, 5vw, 2.9rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
-    .accent { color: #5E6AD2; }
+    .accent { background: linear-gradient(100deg, #8B96E9 0%, #5E6AD2 55%, #7C8AF0 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #5E6AD2; }
     .hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 640px; margin: 0 auto 36px; }
     .cta-row { display: flex; flex-direction: column; align-items: center; gap: 10px; }
     .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
@@ -152,8 +157,15 @@
 
     /* Steps */
     .steps { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 20px; }
-    .step { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 20px; }
+    .step { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 20px; transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease; }
+    .step:hover { transform: translateY(-3px); border-color: rgba(94,106,210,0.35); background: rgba(94,106,210,0.05); box-shadow: 0 8px 30px rgba(94,106,210,0.12); }
     .step-n { font-size: 11px; font-weight: 700; color: #5E6AD2; letter-spacing: 0.08em; margin-bottom: 10px; }
+
+    /* Respect users who prefer reduced motion: no hover lift, dot-field renders static (handled in JS). */
+    @media (prefers-reduced-motion: reduce) {
+      .step, .cta-primary, .nav-cta, .footer-link { transition: none; }
+      .step:hover { transform: none; }
+    }
     .step-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
     .step-desc { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.6; }
 
@@ -203,6 +215,7 @@
   <main>
 
     <section class="hero">
+      <canvas class="hero-bg" data-dot-grid data-color="94,106,210" aria-hidden="true"></canvas>
       <div class="container">
         <div class="tool-badge">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -340,6 +353,32 @@
       </div>
     </section>
 
+    <!-- Free in-browser GUID toolkit -->
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">Free tool · in your browser</p>
+        <h2 class="section-title">IFC GlobalId toolkit</h2>
+        <p class="section-sub">Validate GlobalIds, spot duplicates across a list, and generate fresh spec-compliant ones — all client-side, nothing uploaded. These are the same checks (<code style="font-family:'Geist Mono','Cascadia Code',monospace;color:#8B96E9">RULE_INVALID_GUID_FORMAT</code>, <code style="font-family:'Geist Mono','Cascadia Code',monospace;color:#8B96E9">RULE_DUPLICATE_GUID</code>) the validator runs on a whole model.</p>
+        <div class="guid-tool">
+          <div>
+            <label class="guid-label" for="guidBatchInput">Validate &amp; find duplicates</label>
+            <textarea id="guidBatchInput" rows="5" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste GlobalIds, one per line…&#10;2O2Fr$t4X7Zf8NOew3FLOH" aria-label="GlobalIds to validate, one per line"></textarea>
+            <p id="guidBatchSummary" class="guid-summary" role="status" aria-live="polite"></p>
+            <div id="guidBatchDetail" class="guid-detail"></div>
+          </div>
+          <div>
+            <label class="guid-label" for="guidGenOutput">Generate a valid GlobalId</label>
+            <div class="guid-gen">
+              <input id="guidGenOutput" type="text" readonly aria-label="Generated GlobalId" placeholder="Click Generate to mint a spec-compliant GUID" />
+              <button id="guidGenBtn" type="button">Generate</button>
+              <button id="guidCopyBtn" type="button">Copy</button>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:16px;font-size:12px;color:rgba(255,255,255,0.32);line-height:1.6;">This works on GlobalIds you paste here. To scan an <strong style="color:rgba(255,255,255,0.5)">entire model</strong> for duplicates and auto-fix them in one click, open your IFC in the viewer and run validation — the file never leaves your machine either.</p>
+      </div>
+    </section>
+
     <!-- FAQ -->
     <section class="section divider">
       <div class="container">
@@ -397,6 +436,9 @@
       <p class="footer-copy">IFC Viewer Online © 2026 · Free · Open source · MIT license</p>
     </div>
   </footer>
+
+  <!-- Hero dot-field backdrop — progressive enhancement, no effect on crawled content -->
+  <script defer src="../../seo/dot-grid.js"></script>
 
 </body>
 </html>

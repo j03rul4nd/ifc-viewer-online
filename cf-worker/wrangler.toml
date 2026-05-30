@@ -11,6 +11,33 @@ compatibility_date = "2026-05-25"
 # Non-secret vars (safe to commit). Secrets are set via `wrangler secret put`.
 # RESEND_API_KEY     → set via: wrangler secret put RESEND_API_KEY
 # RESEND_AUDIENCE_ID → set via: wrangler secret put RESEND_AUDIENCE_ID
+#
+# Crawlable report route (GET /r?d=…) — override these if the SPA moves.
+# Defaults baked into worker.js point at the current GitHub Pages deploy.
+APP_URL      = "https://j03rul4nd.github.io/ifc-viewer-online/"
+OG_IMAGE_URL = "https://j03rul4nd.github.io/ifc-viewer-online/og-image.png"
+# Shared links expire after this many days (advisory, see worker.js). Default 90.
+REPORT_MAX_AGE_DAYS = "90"
+
+# ── Rate limiting (Workers Rate Limiting API) ───────────────────────────────────
+# Per-IP token buckets. `period` must be 10 or 60 (seconds). `namespace_id` is any
+# integer unique to this Worker. Requires a recent Wrangler. If these bindings are
+# absent the Worker fails open (no limiting) — safe for local dev.
+#
+# /subscribe is strict (it spends the Resend quota); /r is lenient (read-only,
+# edge-cached, so only cache misses are counted).
+
+[[unsafe.bindings]]
+name         = "SUBSCRIBE_LIMITER"
+type         = "ratelimit"
+namespace_id = "1001"
+simple       = { limit = 5, period = 60 }
+
+[[unsafe.bindings]]
+name         = "REPORT_LIMITER"
+type         = "ratelimit"
+namespace_id = "1002"
+simple       = { limit = 60, period = 60 }
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 # Adjust the custom domain once you have one. Until then, the default workers.dev

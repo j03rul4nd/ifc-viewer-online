@@ -231,6 +231,7 @@
   },
   "remediation": {
     "howToFix": "Comment corriger",
+    "fullGuide": "Guide complet",
     "noToolSteps": "Aucune étape spécifique à {{tool}} — voir le résumé ci-dessus.",
     "tools": {
       "revit": "Revit",

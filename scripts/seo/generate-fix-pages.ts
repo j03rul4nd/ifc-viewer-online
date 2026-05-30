@@ -1,0 +1,1097 @@
+// ── Programmatic SEO: per-rule "How to fix" landing pages (multi-language) ──────
+//
+// Generates one static, crawlable HTML page per validation rule per language
+// from the remediation corpus (src/i18n/rule-remediation.ts) — the same content
+// already shown inside the app's ValidationPanel and shared report. One
+// hand-authored page becomes ~34 auto-maintained pages per language, each
+// targeting a long-tail keyword ("how to fix <rule> in IFC"), all in the same
+// design language and fed entirely from data already in the repo.
+//
+// Languages ship at:   EN → /fix/<slug>/        ES → /es/fix/<slug>/
+// (matching the existing /es/ localized shell). Every page cross-links the other
+// language via hreflang. Adding a language = adding one UI block below + the
+// corpus already covers 10 locales.
+//
+// Zero backend, zero privacy tension: pure static HTML on the same GitHub Pages
+// host. Invoked from vite.config.ts (closeBundle) — see generateFixPages().
+
+import path from 'path'
+import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
+import { RULE_REMEDIATION, AUTHORING_TOOLS, type AuthoringTool } from '../../src/i18n/rule-remediation'
+import { RULE_TRANSLATIONS, RULE_METADATA, VALIDATION_CATEGORY_LABELS } from '../../src/types'
+
+const SITE = 'https://j03rul4nd.github.io/ifc-viewer-online'
+
+/** Languages to emit. EN is canonical at root; others get a /<lang>/ prefix. */
+const LANGS = ['en', 'es', 'de', 'fr', 'pt', 'it'] as const
+type Lang = (typeof LANGS)[number]
+
+/** Where the fix pages live per language (relative to site root). EN = root. */
+const LANG_PATH: Record<Lang, string> = { en: '', es: 'es/', de: 'de/', fr: 'fr/', pt: 'pt/', it: 'it/' }
+
+/**
+ * Where the SPA app shell lives per language. Only EN (root) and ES (/es/) have
+ * a static shell; de/fr users get the locale-detecting SPA at the root. So their
+ * "open app" links target the root, while their fix pages still live at /de/,
+ * /fr/. Keeps app links from 404-ing on a non-existent /de/ shell.
+ */
+const APP_HOME: Record<Lang, string> = { en: '', es: 'es/', de: '', fr: '', pt: '', it: '' }
+
+/**
+ * Languages with a localised OG image present in the build output. Populated by
+ * generateFixPages() (checks the file actually exists in dist) so a missing
+ * og-image-<lang>.png degrades gracefully to the generic image instead of
+ * emitting a broken social-share URL.
+ */
+const OG_AVAILABLE = new Set<Lang>()
+
+/** Localised OG/Twitter share image with a safe fallback to the generic one. */
+function ogImage(lang: Lang): string {
+  return OG_AVAILABLE.has(lang) ? `${SITE}/og-image-${lang}.png` : `${SITE}/og-image.png`
+}
+
+/** Browser theme color (matches the app shell) + inline SVG favicon. */
+const THEME_COLOR = '#0A0A0C'
+const FAVICON =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%235E6AD2'/%3E%3Cpath d='M8 22 L16 8 L24 22 Z M12 22 L16 15 L20 22' stroke='white' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"
+
+// Rules already covered by the richer, hand-authored /tools/fix-duplicate-guids/
+// page — skip them here so we don't publish a thinner competing page.
+const SKIP = new Set(['RULE_DUPLICATE_GUID', 'RULE_INVALID_GUID_FORMAT'])
+
+const TOOL_LABEL: Record<AuthoringTool, string> = {
+  revit: 'Revit', archicad: 'ArchiCAD', tekla: 'Tekla', allplan: 'Allplan',
+}
+
+// ── Hand-authored UI chrome (everything that isn't corpus content) ─────────────
+
+interface UI {
+  htmlLang: string
+  ogLocale: string
+  navOpen: string
+  home: string
+  checks: string
+  autoFixBadge: string
+  // hero
+  h1Pre: string; h1Post: string
+  heroCta: string; heroNote: string
+  // section: what it means
+  whatLabel: string; whatTitle: (l: string) => string
+  // section: the fix
+  fixLabel: string; fixTitle: (l: string) => string; fixSub: string
+  thTool: string; thFix: string
+  // meta cards
+  mCategory: string; mStandard: string; mSeverity: string; mAutofix: string
+  autofixOne: string; autofixManual: string
+  // section: how it works
+  howLabel: string; howTitle: string; howSub: string
+  // related
+  relatedLabel: string; relatedTitle: (cat: string) => string
+  // bottom cta
+  ctaTitle: string; ctaBody: (l: string) => string; ctaBtn: string
+  // head
+  pageTitle: (l: string) => string
+  ogTitle: (l: string) => string
+  keywords: (l: string, cat: string) => string
+  // footer
+  fAllChecks: string; fValidator: string; fGuids: string; fSolibri: string
+  footerCopy: string
+  // generic how-to steps
+  sOpenName: string; sOpenText: string
+  sValidateName: string; sValidateText: (l: string, rid: string) => string
+  sFixIn: (tool: string) => string
+  sAutoName: string; sAutoText: string
+  sRevalName: string; sRevalText: string
+  // hub
+  hubTitle: string; hubMeta: string; hubBadge: (n: number) => string
+  hubH1Pre: string; hubH1Accent: string; hubHeroDesc: string
+  hubCta: string; hubNote: string
+  hubRefLabel: string; hubRefTitle: string; hubRefSubPre: string; hubRefLink: string; hubRefSubPost: string
+  hubCtaTitle: string; hubCtaBody: string; hubCtaBtn: string
+}
+
+const UIS: Record<Lang, UI> = {
+  en: {
+    htmlLang: 'en', ogLocale: 'en_US',
+    navOpen: 'Open tool →', home: 'Home', checks: 'IFC checks', autoFixBadge: 'Auto-fixable',
+    h1Pre: 'How to fix', h1Post: 'in IFC files',
+    heroCta: 'Check your IFC file — free',
+    heroNote: 'No account · No upload · Runs in your browser · 38 validation checks',
+    whatLabel: 'What it means', whatTitle: (l) => `The ${l} check`,
+    fixLabel: 'The fix', fixTitle: (l) => `How to fix ${l} in your authoring tool`,
+    fixSub: 'Concrete, tool-specific steps. The check itself is schema-agnostic and works for IFC2x3, IFC4, IFC4x1 and IFC4x3.',
+    thTool: 'Authoring tool', thFix: 'How to fix',
+    mCategory: 'Category', mStandard: 'Standard', mSeverity: 'Severity', mAutofix: 'Auto-fix',
+    autofixOne: 'One-click', autofixManual: 'In authoring tool',
+    howLabel: 'How it works', howTitle: 'Find and fix it in the browser',
+    howSub: 'The whole flow runs client-side — your IFC file never leaves your machine.',
+    relatedLabel: 'Related checks', relatedTitle: (c) => `Other ${c} checks`,
+    ctaTitle: 'Check your whole model, not just one rule.',
+    ctaBody: (l) => `${l} is 1 of 38 checks. Run the full IFC Health Score to see every issue and a single 0–100 number — free, no account, no upload.`,
+    ctaBtn: 'Run the free Health Score →',
+    pageTitle: (l) => `How to Fix ${l} in IFC Files — Free Online Validator`,
+    ogTitle: (l) => `How to Fix ${l} in IFC Files`,
+    keywords: (l, c) => `fix ${l} IFC, IFC ${l} error, IFC validation ${c}, how to fix IFC ${l}, Revit IFC ${l}, ArchiCAD IFC ${l}`,
+    fAllChecks: 'All IFC checks', fValidator: 'IFC Validator', fGuids: 'Fix duplicate GUIDs', fSolibri: 'Solibri Alternative',
+    footerCopy: 'IFC Viewer Online © 2026 · Free · Open source · MIT license',
+    sOpenName: 'Open your IFC file',
+    sOpenText: 'Open IFC Viewer Online and drag & drop your IFC file. It is parsed locally in your browser via WebAssembly — nothing is uploaded.',
+    sValidateName: 'Run the Health Score validation',
+    sValidateText: (l, rid) => `Run validation. The "${l}" check (${rid}) flags every affected element and pinpoints it in the model tree.`,
+    sFixIn: (t) => `Fix in ${t}`,
+    sAutoName: 'Apply auto-fix and re-export',
+    sAutoText: 'Apply the one-click fix in the validation panel, then export a corrected IFC — generated in a Web Worker, server-free.',
+    sRevalName: 'Re-validate',
+    sRevalText: 'Re-export from your authoring tool and re-run validation to confirm the issue is resolved and your Health Score improved.',
+    hubTitle: 'How to Fix IFC Validation Errors — 38 Checks Explained',
+    hubMeta: 'Browse every IFC validation check with concrete, tool-specific fixes for Revit, ArchiCAD, Tekla and Allplan. Free, browser-based, no upload — fix your IFC and improve your Health Score.',
+    hubBadge: (n) => `Free · No upload · ${n} checks documented`,
+    hubH1Pre: 'How to fix', hubH1Accent: 'IFC validation errors',
+    hubHeroDesc: 'Every check the IFC Health Score runs, with concrete fixes for Revit, ArchiCAD, Tekla and Allplan. Pick an issue below, or open the validator and check your own model in seconds.',
+    hubCta: 'Check your IFC file — free', hubNote: 'No account · No upload · Runs in your browser',
+    hubRefLabel: 'Reference', hubRefTitle: 'IFC checks by category',
+    hubRefSubPre: 'Also see the dedicated tool for ', hubRefLink: 'fixing duplicate GUIDs', hubRefSubPost: '.',
+    hubCtaTitle: 'Get your IFC Health Score.',
+    hubCtaBody: 'One 0–100 number across all 38 checks — free, no account, no upload. See exactly what to fix and how.',
+    hubCtaBtn: 'Run the free Health Score →',
+  },
+  es: {
+    htmlLang: 'es', ogLocale: 'es_ES',
+    navOpen: 'Abrir herramienta →', home: 'Inicio', checks: 'Comprobaciones IFC', autoFixBadge: 'Corrección automática',
+    h1Pre: 'Cómo corregir', h1Post: 'en archivos IFC',
+    heroCta: 'Analiza tu archivo IFC — gratis',
+    heroNote: 'Sin cuenta · Sin subida · Se ejecuta en tu navegador · 38 comprobaciones',
+    whatLabel: 'Qué significa', whatTitle: (l) => `La comprobación «${l}»`,
+    fixLabel: 'La solución', fixTitle: (l) => `Cómo corregir «${l}» en tu herramienta de autoría`,
+    fixSub: 'Pasos concretos por herramienta. La comprobación es independiente del esquema y funciona con IFC2x3, IFC4, IFC4x1 e IFC4x3.',
+    thTool: 'Herramienta de autoría', thFix: 'Cómo solucionarlo',
+    mCategory: 'Categoría', mStandard: 'Estándar', mSeverity: 'Severidad', mAutofix: 'Corrección',
+    autofixOne: 'Un clic', autofixManual: 'En la herramienta',
+    howLabel: 'Cómo funciona', howTitle: 'Localízalo y corrígelo en el navegador',
+    howSub: 'Todo el proceso se ejecuta en tu navegador — tu archivo IFC nunca sale de tu equipo.',
+    relatedLabel: 'Comprobaciones relacionadas', relatedTitle: (c) => `Otras comprobaciones de ${c}`,
+    ctaTitle: 'Analiza todo tu modelo, no solo una regla.',
+    ctaBody: (l) => `«${l}» es 1 de 38 comprobaciones. Ejecuta el IFC Health Score completo para ver cada problema y un único número 0–100 — gratis, sin cuenta, sin subida.`,
+    ctaBtn: 'Ejecuta el Health Score gratis →',
+    pageTitle: (l) => `Cómo corregir ${l} en archivos IFC — Validador IFC online gratis`,
+    ogTitle: (l) => `Cómo corregir ${l} en archivos IFC`,
+    keywords: (l, c) => `corregir ${l} IFC, error IFC ${l}, validación IFC ${c}, cómo arreglar IFC ${l}, Revit IFC ${l}, ArchiCAD IFC ${l}`,
+    fAllChecks: 'Todas las comprobaciones', fValidator: 'Validador IFC', fGuids: 'Corregir GUID duplicados', fSolibri: 'Alternativa a Solibri',
+    footerCopy: 'IFC Viewer Online © 2026 · Gratis · Open source · Licencia MIT',
+    sOpenName: 'Abre tu archivo IFC',
+    sOpenText: 'Abre IFC Viewer Online y arrastra tu archivo IFC. Se procesa localmente en tu navegador con WebAssembly — no se sube nada.',
+    sValidateName: 'Ejecuta la validación Health Score',
+    sValidateText: (l, rid) => `Ejecuta la validación. La comprobación «${l}» (${rid}) marca cada elemento afectado y lo localiza en el árbol del modelo.`,
+    sFixIn: (t) => `Corrige en ${t}`,
+    sAutoName: 'Aplica la corrección automática y reexporta',
+    sAutoText: 'Aplica la corrección de un clic en el panel de validación y exporta un IFC corregido — generado en un Web Worker, sin servidor.',
+    sRevalName: 'Vuelve a validar',
+    sRevalText: 'Reexporta desde tu herramienta de autoría y vuelve a validar para confirmar que el problema está resuelto y que tu Health Score ha mejorado.',
+    hubTitle: 'Cómo corregir errores de validación IFC — 38 comprobaciones explicadas',
+    hubMeta: 'Explora cada comprobación de validación IFC con soluciones concretas por herramienta para Revit, ArchiCAD, Tekla y Allplan. Gratis, en el navegador, sin subida — corrige tu IFC y mejora tu Health Score.',
+    hubBadge: (n) => `Gratis · Sin subida · ${n} comprobaciones documentadas`,
+    hubH1Pre: 'Cómo corregir', hubH1Accent: 'errores de validación IFC',
+    hubHeroDesc: 'Cada comprobación que ejecuta el IFC Health Score, con soluciones concretas para Revit, ArchiCAD, Tekla y Allplan. Elige un problema abajo o abre el validador y analiza tu propio modelo en segundos.',
+    hubCta: 'Analiza tu archivo IFC — gratis', hubNote: 'Sin cuenta · Sin subida · Se ejecuta en tu navegador',
+    hubRefLabel: 'Referencia', hubRefTitle: 'Comprobaciones IFC por categoría',
+    hubRefSubPre: 'Consulta también la herramienta dedicada para ', hubRefLink: 'corregir GUID duplicados', hubRefSubPost: '.',
+    hubCtaTitle: 'Obtén tu IFC Health Score.',
+    hubCtaBody: 'Un único número 0–100 en las 38 comprobaciones — gratis, sin cuenta, sin subida. Verás exactamente qué corregir y cómo.',
+    hubCtaBtn: 'Ejecuta el Health Score gratis →',
+  },
+  de: {
+    htmlLang: 'de', ogLocale: 'de_DE',
+    navOpen: 'Tool öffnen →', home: 'Start', checks: 'IFC-Prüfungen', autoFixBadge: 'Automatisch behebbar',
+    h1Pre: 'So beheben Sie', h1Post: 'in IFC-Dateien',
+    heroCta: 'IFC-Datei prüfen — kostenlos',
+    heroNote: 'Kein Konto · Kein Upload · Läuft im Browser · 38 Prüfungen',
+    whatLabel: 'Was es bedeutet', whatTitle: (l) => `Die Prüfung „${l}“`,
+    fixLabel: 'Die Lösung', fixTitle: (l) => `So beheben Sie „${l}“ in Ihrer Autorensoftware`,
+    fixSub: 'Konkrete, werkzeugspezifische Schritte. Die Prüfung ist schemaunabhängig und funktioniert mit IFC2x3, IFC4, IFC4x1 und IFC4x3.',
+    thTool: 'Autorensoftware', thFix: 'So beheben Sie es',
+    mCategory: 'Kategorie', mStandard: 'Standard', mSeverity: 'Schweregrad', mAutofix: 'Behebung',
+    autofixOne: 'Ein Klick', autofixManual: 'In der Software',
+    howLabel: 'So funktioniert es', howTitle: 'Im Browser finden und beheben',
+    howSub: 'Der gesamte Ablauf läuft im Browser — Ihre IFC-Datei verlässt nie Ihr Gerät.',
+    relatedLabel: 'Verwandte Prüfungen', relatedTitle: (c) => `Weitere Prüfungen: ${c}`,
+    ctaTitle: 'Prüfen Sie Ihr gesamtes Modell, nicht nur eine Regel.',
+    ctaBody: (l) => `„${l}“ ist 1 von 38 Prüfungen. Führen Sie den vollständigen IFC Health Score aus, um jedes Problem und eine einzige Zahl von 0–100 zu sehen — kostenlos, ohne Konto, ohne Upload.`,
+    ctaBtn: 'Kostenlosen Health Score starten →',
+    pageTitle: (l) => `${l} in IFC-Dateien beheben — kostenloser Online-Validator`,
+    ogTitle: (l) => `So beheben Sie ${l} in IFC-Dateien`,
+    keywords: (l, c) => `${l} IFC beheben, IFC ${l} Fehler, IFC-Validierung ${c}, IFC ${l} Revit, IFC ${l} ArchiCAD`,
+    fAllChecks: 'Alle IFC-Prüfungen', fValidator: 'IFC-Validator', fGuids: 'Doppelte GUIDs beheben', fSolibri: 'Solibri-Alternative',
+    footerCopy: 'IFC Viewer Online © 2026 · Kostenlos · Open Source · MIT-Lizenz',
+    sOpenName: 'IFC-Datei öffnen',
+    sOpenText: 'Öffnen Sie IFC Viewer Online und ziehen Sie Ihre IFC-Datei hinein. Sie wird lokal im Browser per WebAssembly verarbeitet — nichts wird hochgeladen.',
+    sValidateName: 'Health-Score-Validierung ausführen',
+    sValidateText: (l, rid) => `Führen Sie die Validierung aus. Die Prüfung „${l}“ (${rid}) markiert jedes betroffene Element und zeigt es im Modellbaum.`,
+    sFixIn: (t) => `In ${t} beheben`,
+    sAutoName: 'Automatische Behebung anwenden und neu exportieren',
+    sAutoText: 'Wenden Sie die Ein-Klick-Behebung im Validierungspanel an und exportieren Sie eine korrigierte IFC — erzeugt in einem Web Worker, ohne Server.',
+    sRevalName: 'Erneut validieren',
+    sRevalText: 'Exportieren Sie erneut aus Ihrer Autorensoftware und validieren Sie erneut, um zu bestätigen, dass das Problem behoben ist und Ihr Health Score gestiegen ist.',
+    hubTitle: 'IFC-Validierungsfehler beheben — 38 Prüfungen erklärt',
+    hubMeta: 'Durchsuchen Sie jede IFC-Validierungsprüfung mit konkreten, werkzeugspezifischen Lösungen für Revit, ArchiCAD, Tekla und Allplan. Kostenlos, im Browser, ohne Upload — beheben Sie Ihre IFC und verbessern Sie Ihren Health Score.',
+    hubBadge: (n) => `Kostenlos · Kein Upload · ${n} Prüfungen dokumentiert`,
+    hubH1Pre: 'So beheben Sie', hubH1Accent: 'IFC-Validierungsfehler',
+    hubHeroDesc: 'Jede Prüfung des IFC Health Score, mit konkreten Lösungen für Revit, ArchiCAD, Tekla und Allplan. Wählen Sie unten ein Problem oder öffnen Sie den Validator und prüfen Sie Ihr eigenes Modell in Sekunden.',
+    hubCta: 'IFC-Datei prüfen — kostenlos', hubNote: 'Kein Konto · Kein Upload · Läuft im Browser',
+    hubRefLabel: 'Referenz', hubRefTitle: 'IFC-Prüfungen nach Kategorie',
+    hubRefSubPre: 'Siehe auch das spezielle Tool zum ', hubRefLink: 'Beheben doppelter GUIDs', hubRefSubPost: '.',
+    hubCtaTitle: 'Holen Sie sich Ihren IFC Health Score.',
+    hubCtaBody: 'Eine Zahl von 0–100 über alle 38 Prüfungen — kostenlos, ohne Konto, ohne Upload. Sehen Sie genau, was und wie zu beheben ist.',
+    hubCtaBtn: 'Kostenlosen Health Score starten →',
+  },
+  fr: {
+    htmlLang: 'fr', ogLocale: 'fr_FR',
+    navOpen: 'Ouvrir l’outil →', home: 'Accueil', checks: 'Vérifications IFC', autoFixBadge: 'Correction automatique',
+    h1Pre: 'Comment corriger', h1Post: 'dans les fichiers IFC',
+    heroCta: 'Vérifiez votre fichier IFC — gratuit',
+    heroNote: 'Sans compte · Sans téléversement · Dans le navigateur · 38 vérifications',
+    whatLabel: 'Ce que cela signifie', whatTitle: (l) => `La vérification « ${l} »`,
+    fixLabel: 'La solution', fixTitle: (l) => `Comment corriger « ${l} » dans votre logiciel de conception`,
+    fixSub: 'Étapes concrètes par logiciel. La vérification est indépendante du schéma et fonctionne avec IFC2x3, IFC4, IFC4x1 et IFC4x3.',
+    thTool: 'Logiciel de conception', thFix: 'Comment corriger',
+    mCategory: 'Catégorie', mStandard: 'Norme', mSeverity: 'Gravité', mAutofix: 'Correction',
+    autofixOne: 'En un clic', autofixManual: 'Dans le logiciel',
+    howLabel: 'Comment ça marche', howTitle: 'Localisez et corrigez dans le navigateur',
+    howSub: 'Tout le processus s’exécute dans votre navigateur — votre fichier IFC ne quitte jamais votre machine.',
+    relatedLabel: 'Vérifications liées', relatedTitle: (c) => `Autres vérifications : ${c}`,
+    ctaTitle: 'Vérifiez tout votre modèle, pas seulement une règle.',
+    ctaBody: (l) => `« ${l} » est 1 des 38 vérifications. Lancez le IFC Health Score complet pour voir chaque problème et un seul score de 0 à 100 — gratuit, sans compte, sans téléversement.`,
+    ctaBtn: 'Lancer le Health Score gratuit →',
+    pageTitle: (l) => `Comment corriger ${l} dans les fichiers IFC — validateur IFC en ligne gratuit`,
+    ogTitle: (l) => `Comment corriger ${l} dans les fichiers IFC`,
+    keywords: (l, c) => `corriger ${l} IFC, erreur IFC ${l}, validation IFC ${c}, comment corriger IFC ${l}, Revit IFC ${l}, ArchiCAD IFC ${l}`,
+    fAllChecks: 'Toutes les vérifications', fValidator: 'Validateur IFC', fGuids: 'Corriger les GUID en double', fSolibri: 'Alternative à Solibri',
+    footerCopy: 'IFC Viewer Online © 2026 · Gratuit · Open source · Licence MIT',
+    sOpenName: 'Ouvrez votre fichier IFC',
+    sOpenText: 'Ouvrez IFC Viewer Online et glissez-déposez votre fichier IFC. Il est analysé localement dans votre navigateur via WebAssembly — rien n’est téléversé.',
+    sValidateName: 'Lancez la validation Health Score',
+    sValidateText: (l, rid) => `Lancez la validation. La vérification « ${l} » (${rid}) signale chaque élément concerné et le localise dans l’arborescence du modèle.`,
+    sFixIn: (t) => `Corriger dans ${t}`,
+    sAutoName: 'Appliquez la correction automatique et réexportez',
+    sAutoText: 'Appliquez la correction en un clic dans le panneau de validation, puis exportez un IFC corrigé — généré dans un Web Worker, sans serveur.',
+    sRevalName: 'Revalidez',
+    sRevalText: 'Réexportez depuis votre logiciel de conception et relancez la validation pour confirmer que le problème est résolu et que votre Health Score a progressé.',
+    hubTitle: 'Comment corriger les erreurs de validation IFC — 38 vérifications expliquées',
+    hubMeta: 'Parcourez chaque vérification de validation IFC avec des corrections concrètes par logiciel pour Revit, ArchiCAD, Tekla et Allplan. Gratuit, dans le navigateur, sans téléversement — corrigez votre IFC et améliorez votre Health Score.',
+    hubBadge: (n) => `Gratuit · Sans téléversement · ${n} vérifications documentées`,
+    hubH1Pre: 'Comment corriger', hubH1Accent: 'les erreurs de validation IFC',
+    hubHeroDesc: 'Chaque vérification du IFC Health Score, avec des corrections concrètes pour Revit, ArchiCAD, Tekla et Allplan. Choisissez un problème ci-dessous ou ouvrez le validateur et vérifiez votre propre modèle en quelques secondes.',
+    hubCta: 'Vérifiez votre fichier IFC — gratuit', hubNote: 'Sans compte · Sans téléversement · Dans le navigateur',
+    hubRefLabel: 'Référence', hubRefTitle: 'Vérifications IFC par catégorie',
+    hubRefSubPre: 'Voir aussi l’outil dédié pour ', hubRefLink: 'corriger les GUID en double', hubRefSubPost: '.',
+    hubCtaTitle: 'Obtenez votre IFC Health Score.',
+    hubCtaBody: 'Un seul score de 0 à 100 sur les 38 vérifications — gratuit, sans compte, sans téléversement. Voyez exactement quoi corriger et comment.',
+    hubCtaBtn: 'Lancer le Health Score gratuit →',
+  },
+  pt: {
+    htmlLang: 'pt', ogLocale: 'pt_PT',
+    navOpen: 'Abrir ferramenta →', home: 'Início', checks: 'Verificações IFC', autoFixBadge: 'Correção automática',
+    h1Pre: 'Como corrigir', h1Post: 'em ficheiros IFC',
+    heroCta: 'Verifique o seu ficheiro IFC — grátis',
+    heroNote: 'Sem conta · Sem upload · Funciona no navegador · 38 verificações',
+    whatLabel: 'O que significa', whatTitle: (l) => `A verificação «${l}»`,
+    fixLabel: 'A solução', fixTitle: (l) => `Como corrigir «${l}» na sua ferramenta de autoria`,
+    fixSub: 'Passos concretos por ferramenta. A verificação é independente do esquema e funciona com IFC2x3, IFC4, IFC4x1 e IFC4x3.',
+    thTool: 'Ferramenta de autoria', thFix: 'Como corrigir',
+    mCategory: 'Categoria', mStandard: 'Norma', mSeverity: 'Gravidade', mAutofix: 'Correção',
+    autofixOne: 'Um clique', autofixManual: 'Na ferramenta',
+    howLabel: 'Como funciona', howTitle: 'Localize e corrija no navegador',
+    howSub: 'Todo o processo é executado no seu navegador — o seu ficheiro IFC nunca sai do seu dispositivo.',
+    relatedLabel: 'Verificações relacionadas', relatedTitle: (c) => `Outras verificações: ${c}`,
+    ctaTitle: 'Verifique todo o seu modelo, não apenas uma regra.',
+    ctaBody: (l) => `«${l}» é 1 de 38 verificações. Execute o IFC Health Score completo para ver cada problema e um único número de 0 a 100 — grátis, sem conta, sem upload.`,
+    ctaBtn: 'Executar o Health Score grátis →',
+    pageTitle: (l) => `Como corrigir ${l} em ficheiros IFC — validador IFC online grátis`,
+    ogTitle: (l) => `Como corrigir ${l} em ficheiros IFC`,
+    keywords: (l, c) => `corrigir ${l} IFC, erro IFC ${l}, validação IFC ${c}, como corrigir IFC ${l}, Revit IFC ${l}, ArchiCAD IFC ${l}`,
+    fAllChecks: 'Todas as verificações', fValidator: 'Validador IFC', fGuids: 'Corrigir GUIDs duplicados', fSolibri: 'Alternativa ao Solibri',
+    footerCopy: 'IFC Viewer Online © 2026 · Grátis · Open source · Licença MIT',
+    sOpenName: 'Abra o seu ficheiro IFC',
+    sOpenText: 'Abra o IFC Viewer Online e arraste o seu ficheiro IFC. É processado localmente no seu navegador via WebAssembly — nada é enviado.',
+    sValidateName: 'Execute a validação Health Score',
+    sValidateText: (l, rid) => `Execute a validação. A verificação «${l}» (${rid}) assinala cada elemento afetado e localiza-o na árvore do modelo.`,
+    sFixIn: (t) => `Corrigir no ${t}`,
+    sAutoName: 'Aplique a correção automática e reexporte',
+    sAutoText: 'Aplique a correção de um clique no painel de validação e exporte um IFC corrigido — gerado num Web Worker, sem servidor.',
+    sRevalName: 'Revalide',
+    sRevalText: 'Reexporte da sua ferramenta de autoria e execute novamente a validação para confirmar que o problema está resolvido e que o seu Health Score melhorou.',
+    hubTitle: 'Como corrigir erros de validação IFC — 38 verificações explicadas',
+    hubMeta: 'Explore cada verificação de validação IFC com soluções concretas por ferramenta para Revit, ArchiCAD, Tekla e Allplan. Grátis, no navegador, sem upload — corrija o seu IFC e melhore o seu Health Score.',
+    hubBadge: (n) => `Grátis · Sem upload · ${n} verificações documentadas`,
+    hubH1Pre: 'Como corrigir', hubH1Accent: 'erros de validação IFC',
+    hubHeroDesc: 'Cada verificação que o IFC Health Score executa, com soluções concretas para Revit, ArchiCAD, Tekla e Allplan. Escolha um problema abaixo ou abra o validador e verifique o seu próprio modelo em segundos.',
+    hubCta: 'Verifique o seu ficheiro IFC — grátis', hubNote: 'Sem conta · Sem upload · Funciona no navegador',
+    hubRefLabel: 'Referência', hubRefTitle: 'Verificações IFC por categoria',
+    hubRefSubPre: 'Veja também a ferramenta dedicada para ', hubRefLink: 'corrigir GUIDs duplicados', hubRefSubPost: '.',
+    hubCtaTitle: 'Obtenha o seu IFC Health Score.',
+    hubCtaBody: 'Um único número de 0 a 100 nas 38 verificações — grátis, sem conta, sem upload. Veja exatamente o que corrigir e como.',
+    hubCtaBtn: 'Executar o Health Score grátis →',
+  },
+  it: {
+    htmlLang: 'it', ogLocale: 'it_IT',
+    navOpen: 'Apri lo strumento →', home: 'Home', checks: 'Controlli IFC', autoFixBadge: 'Correzione automatica',
+    h1Pre: 'Come correggere', h1Post: 'nei file IFC',
+    heroCta: 'Controlla il tuo file IFC — gratis',
+    heroNote: 'Senza account · Senza caricamento · Funziona nel browser · 38 controlli',
+    whatLabel: 'Cosa significa', whatTitle: (l) => `Il controllo «${l}»`,
+    fixLabel: 'La soluzione', fixTitle: (l) => `Come correggere «${l}» nel tuo software di authoring`,
+    fixSub: 'Passaggi concreti per software. Il controllo è indipendente dallo schema e funziona con IFC2x3, IFC4, IFC4x1 e IFC4x3.',
+    thTool: 'Software di authoring', thFix: 'Come correggere',
+    mCategory: 'Categoria', mStandard: 'Standard', mSeverity: 'Gravità', mAutofix: 'Correzione',
+    autofixOne: 'Un clic', autofixManual: 'Nel software',
+    howLabel: 'Come funziona', howTitle: 'Trova e correggi nel browser',
+    howSub: 'L’intero processo viene eseguito nel browser — il tuo file IFC non lascia mai il tuo dispositivo.',
+    relatedLabel: 'Controlli correlati', relatedTitle: (c) => `Altri controlli: ${c}`,
+    ctaTitle: 'Controlla l’intero modello, non solo una regola.',
+    ctaBody: (l) => `«${l}» è 1 di 38 controlli. Esegui l’IFC Health Score completo per vedere ogni problema e un unico punteggio da 0 a 100 — gratis, senza account, senza caricamento.`,
+    ctaBtn: 'Esegui l’Health Score gratis →',
+    pageTitle: (l) => `Come correggere ${l} nei file IFC — validatore IFC online gratuito`,
+    ogTitle: (l) => `Come correggere ${l} nei file IFC`,
+    keywords: (l, c) => `correggere ${l} IFC, errore IFC ${l}, validazione IFC ${c}, come correggere IFC ${l}, Revit IFC ${l}, ArchiCAD IFC ${l}`,
+    fAllChecks: 'Tutti i controlli', fValidator: 'Validatore IFC', fGuids: 'Correggi GUID duplicati', fSolibri: 'Alternativa a Solibri',
+    footerCopy: 'IFC Viewer Online © 2026 · Gratis · Open source · Licenza MIT',
+    sOpenName: 'Apri il tuo file IFC',
+    sOpenText: 'Apri IFC Viewer Online e trascina il tuo file IFC. Viene elaborato localmente nel browser tramite WebAssembly — nulla viene caricato.',
+    sValidateName: 'Esegui la validazione Health Score',
+    sValidateText: (l, rid) => `Esegui la validazione. Il controllo «${l}» (${rid}) segnala ogni elemento interessato e lo individua nell’albero del modello.`,
+    sFixIn: (t) => `Correggi in ${t}`,
+    sAutoName: 'Applica la correzione automatica e riesporta',
+    sAutoText: 'Applica la correzione con un clic nel pannello di validazione, poi esporta un IFC corretto — generato in un Web Worker, senza server.',
+    sRevalName: 'Rivalida',
+    sRevalText: 'Riesporta dal tuo software di authoring ed esegui nuovamente la validazione per confermare che il problema è risolto e che il tuo Health Score è migliorato.',
+    hubTitle: 'Come correggere gli errori di validazione IFC — 38 controlli spiegati',
+    hubMeta: 'Esplora ogni controllo di validazione IFC con correzioni concrete per Revit, ArchiCAD, Tekla e Allplan. Gratis, nel browser, senza caricamento — correggi il tuo IFC e migliora il tuo Health Score.',
+    hubBadge: (n) => `Gratis · Senza caricamento · ${n} controlli documentati`,
+    hubH1Pre: 'Come correggere', hubH1Accent: 'gli errori di validazione IFC',
+    hubHeroDesc: 'Ogni controllo eseguito dall’IFC Health Score, con correzioni concrete per Revit, ArchiCAD, Tekla e Allplan. Scegli un problema qui sotto o apri il validatore e controlla il tuo modello in pochi secondi.',
+    hubCta: 'Controlla il tuo file IFC — gratis', hubNote: 'Senza account · Senza caricamento · Funziona nel browser',
+    hubRefLabel: 'Riferimento', hubRefTitle: 'Controlli IFC per categoria',
+    hubRefSubPre: 'Vedi anche lo strumento dedicato per ', hubRefLink: 'correggere i GUID duplicati', hubRefSubPost: '.',
+    hubCtaTitle: 'Ottieni il tuo IFC Health Score.',
+    hubCtaBody: 'Un unico punteggio da 0 a 100 su tutti i 38 controlli — gratis, senza account, senza caricamento. Vedi esattamente cosa correggere e come.',
+    hubCtaBtn: 'Esegui l’Health Score gratis →',
+  },
+}
+
+// ── Translated labels harvested from the locale JSON (with EN fallback) ─────────
+
+interface LocaleData {
+  catFull: Record<string, string>
+  severity: Record<string, string>
+}
+
+function loadLocaleData(localesDir: string): Record<Lang, LocaleData> {
+  const out = {} as Record<Lang, LocaleData>
+  for (const lang of LANGS) {
+    let catFull: Record<string, string> = {}
+    let severity: Record<string, string> = {}
+    try {
+      const v = JSON.parse(readFileSync(path.join(localesDir, lang, 'validation.json'), 'utf-8'))
+      catFull = v.catFull ?? {}
+    } catch { /* fall back below */ }
+    try {
+      const c = JSON.parse(readFileSync(path.join(localesDir, lang, 'common.json'), 'utf-8'))
+      severity = c.severity ?? {}
+    } catch { /* fall back below */ }
+    out[lang] = { catFull, severity }
+  }
+  return out
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+function esc(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+/** RULE_MISSING_PROPERTY_SET → missing-property-set */
+function slugOf(ruleId: string): string {
+  return ruleId.replace(/^RULE_/, '').toLowerCase().replace(/_/g, '-')
+}
+
+function clip(s: string, n: number): string {
+  if (s.length <= n) return s
+  return s.slice(0, n - 1).replace(/\s+\S*$/, '') + '…'
+}
+
+function labelOf(ruleId: string, lang: Lang): string {
+  return RULE_TRANSLATIONS[lang]?.[ruleId]?.label
+    ?? RULE_TRANSLATIONS['en']?.[ruleId]?.label
+    ?? RULE_METADATA[ruleId]?.label ?? ruleId
+}
+function descOf(ruleId: string, lang: Lang): string {
+  return RULE_TRANSLATIONS[lang]?.[ruleId]?.description
+    ?? RULE_TRANSLATIONS['en']?.[ruleId]?.description
+    ?? RULE_METADATA[ruleId]?.description ?? ''
+}
+
+interface RuleBase {
+  ruleId: string
+  slug: string
+  category: string
+  standard: string
+  severity: string
+  autoFixable: boolean
+}
+
+function buildBases(): RuleBase[] {
+  const en = RULE_REMEDIATION['en'] ?? {}
+  const bases: RuleBase[] = []
+  for (const ruleId of Object.keys(en)) {
+    if (SKIP.has(ruleId)) continue
+    if (!en[ruleId]) continue
+    const meta = RULE_METADATA[ruleId]
+    bases.push({
+      ruleId,
+      slug: slugOf(ruleId),
+      category: meta?.category ?? 'quality',
+      standard: meta?.standard ?? 'IFC schema',
+      severity: meta?.defaultSeverity ?? 'warning',
+      autoFixable: meta?.autoFixable ?? false,
+    })
+  }
+  return bases
+}
+
+/** Localised summary + tool steps for a rule (EN fallback). */
+function remOf(ruleId: string, lang: Lang) {
+  const rem = RULE_REMEDIATION[lang]?.[ruleId] ?? RULE_REMEDIATION['en']?.[ruleId]
+  const summary = rem?.summary ?? RULE_REMEDIATION['en']?.[ruleId]?.summary ?? ''
+  const tools = AUTHORING_TOOLS
+    .map((t) => ({ tool: t, label: TOOL_LABEL[t], steps: rem?.tools?.[t] }))
+    .filter((x): x is { tool: AuthoringTool; label: string; steps: string } => Boolean(x.steps))
+  return { summary, tools }
+}
+
+// ── hreflang + sitemap helpers (EN ↔ ES alternates on every page) ──────────────
+
+function fixUrl(langPath: string, slug: string | null): string {
+  return slug ? `${SITE}/${langPath}fix/${slug}/` : `${SITE}/${langPath}fix/`
+}
+
+function altLinks(slug: string | null): string {
+  const lines = LANGS.map((l) => `  <link rel="alternate" hreflang="${l}" href="${fixUrl(LANG_PATH[l], slug)}" />`)
+  lines.push(`  <link rel="alternate" hreflang="x-default" href="${fixUrl('', slug)}" />`)
+  return lines.join('\n')
+}
+
+// ── Shared CSS ─────────────────────────────────────────────────────────────────
+
+const STYLE = `
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-size: 14px; font-weight: 600; color: #5E6AD2; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; white-space: nowrap; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .lang-switch { display: flex; align-items: center; gap: 1px; }
+    .lang-link { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.34); padding: 3px 6px; border-radius: 5px; transition: color 0.15s, background 0.15s; }
+    .lang-link:hover { color: rgba(255,255,255,0.72); background: rgba(255,255,255,0.04); }
+    .lang-active { color: #8B96E9; background: rgba(94,106,210,0.12); }
+    @media (max-width: 560px) { .lang-switch { display: none; } }
+    .breadcrumb { font-size: 12px; color: rgba(255,255,255,0.3); padding: 16px 0 0; }
+    .breadcrumb a:hover { color: rgba(255,255,255,0.6); }
+    .hero { padding: 48px 0 44px; text-align: center; }
+    .tool-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 24px; font-weight: 500; }
+    .sev-error { background: rgba(255,77,79,0.1); border-color: rgba(255,77,79,0.25); color: #ff7875; }
+    .sev-warning { background: rgba(250,173,20,0.1); border-color: rgba(250,173,20,0.25); color: #ffc53d; }
+    .sev-info { background: rgba(94,106,210,0.1); border-color: rgba(94,106,210,0.22); color: #8B96E9; }
+    .hero h1 { font-size: clamp(1.7rem, 5vw, 2.7rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 18px; }
+    .accent { color: #5E6AD2; }
+    .hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.55); max-width: 640px; margin: 0 auto 32px; }
+    .cta-row { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
+    .cta-primary:hover { background: #4F5ABF; }
+    .cta-note { font-size: 12px; color: rgba(255,255,255,0.28); }
+    .section { padding: 52px 0; }
+    .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #5E6AD2; text-transform: uppercase; margin-bottom: 12px; }
+    .section-title { font-size: clamp(1.35rem, 3vw, 1.75rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .section-sub { font-size: 15px; color: rgba(255,255,255,0.45); margin-bottom: 32px; max-width: 580px; }
+    .divider { border-top: 1px solid rgba(255,255,255,0.06); }
+    .meta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-top: 8px; }
+    .meta-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px 16px; }
+    .meta-k { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; color: rgba(255,255,255,0.32); text-transform: uppercase; margin-bottom: 6px; }
+    .meta-v { font-size: 13px; font-weight: 500; color: #E8E8F0; }
+    .causes-table { width: 100%; border-collapse: collapse; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; font-size: 13px; margin-top: 8px; }
+    .causes-table th { background: rgba(255,255,255,0.03); padding: 11px 16px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: rgba(255,255,255,0.38); text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .causes-table td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; color: rgba(255,255,255,0.6); line-height: 1.6; }
+    .causes-table tr:last-child td { border-bottom: none; }
+    .causes-table tr:hover td { background: rgba(255,255,255,0.015); }
+    .tool-name { font-weight: 600; color: #E8E8F0; white-space: nowrap; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 20px; }
+    .step { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 20px; }
+    .step-n { font-size: 11px; font-weight: 700; color: #5E6AD2; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .step-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .step-desc { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.6; }
+    .related { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+    .related a { font-size: 13px; color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 9px 14px; transition: color 0.15s, border-color 0.15s; }
+    .related a:hover { color: #fff; border-color: rgba(94,106,210,0.4); }
+    .cta-bottom { text-align: center; padding: 56px 0 76px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .cta-bottom h2 { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700; letter-spacing: -0.025em; margin-bottom: 12px; }
+    .cta-bottom p { font-size: 15px; color: rgba(255,255,255,0.42); margin-bottom: 28px; max-width: 560px; margin-left: auto; margin-right: auto; }
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 26px 0; text-align: center; }
+    .footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .footer-link { font-size: 12px; color: rgba(255,255,255,0.32); transition: color 0.15s; }
+    .footer-link:hover { color: rgba(255,255,255,0.65); }
+    .footer-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
+    .cat-group { margin-bottom: 36px; }
+    .cat-h { font-size: 13px; font-weight: 600; color: #8B96E9; margin-bottom: 14px; letter-spacing: -0.01em; }
+    .rule-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+    .rule-card { display: block; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px 18px; transition: border-color 0.15s, transform 0.15s; }
+    .rule-card:hover { border-color: rgba(94,106,210,0.4); transform: translateY(-1px); }
+    .rule-card .rc-t { font-size: 14px; font-weight: 600; color: #E8E8F0; margin-bottom: 5px; }
+    .rule-card .rc-d { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.55; }
+`
+
+const FONT_LINKS = `
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />`
+
+// ── Shared <head> ──────────────────────────────────────────────────────────────
+// Single source of truth for the document head so every page type (rule page,
+// hub, and any future page) stays consistent and gets the full SEO + browser
+// integration treatment (theme-color, favicon, canonical, OG/Twitter, hreflang,
+// JSON-LD). Returns `<!doctype html><html><head>…</head>` — callers append <body>.
+
+interface HeadParams {
+  htmlLang: string
+  url: string
+  title: string
+  desc: string
+  ogTitle: string
+  ogLocale: string
+  ogImg: string
+  ogImgAlt: string
+  slug: string | null
+  jsonLd: unknown
+  keywords?: string
+}
+
+function pageHead(p: HeadParams): string {
+  return `<!doctype html>
+<html lang="${p.htmlLang}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="${THEME_COLOR}" />
+  <title>${esc(p.title)}</title>
+  <meta name="description" content="${esc(p.desc)}" />
+${p.keywords ? `  <meta name="keywords" content="${esc(p.keywords)}" />\n` : ''}  <meta name="author" content="Joel Benitez" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="${p.url}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="${p.url}" />
+  <meta property="og:title" content="${esc(p.ogTitle)}" />
+  <meta property="og:description" content="${esc(p.desc)}" />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="${p.ogLocale}" />
+  <meta property="og:image" content="${p.ogImg}" />
+  <meta property="og:image:alt" content="${esc(p.ogImgAlt)}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${esc(p.ogTitle)}" />
+  <meta name="twitter:description" content="${esc(p.desc)}" />
+  <meta name="twitter:image" content="${p.ogImg}" />
+${altLinks(p.slug)}
+  <link rel="icon" href="${FAVICON}" />
+${FONT_LINKS}
+  <script type="application/ld+json">
+${JSON.stringify(p.jsonLd, null, 2)}
+  </script>
+  <style>${STYLE}</style>
+</head>`
+}
+
+// ── Shared header + visible language switcher ──────────────────────────────────
+// The hreflang tags help crawlers; this gives *humans* a visible way to jump to
+// the same page in another language. `sub` is the path after `fix/` ("" for the
+// hub, "<slug>/" for a rule page).
+
+function langSwitcher(current: Lang, root: string, sub: string): string {
+  const items = LANGS.map((l) => {
+    const href = `${root}${LANG_PATH[l]}fix/${sub}`
+    const active = l === current
+    return `<a href="${href}" class="lang-link${active ? ' lang-active' : ''}"${active ? ' aria-current="true"' : ''}>${l.toUpperCase()}</a>`
+  }).join('')
+  return `<nav class="lang-switch" aria-label="Language">${items}</nav>`
+}
+
+function renderHeader(ui: UI, root: string, appHome: string, switcher: string): string {
+  return `
+  <header>
+    <div class="container">
+      <div class="header-inner">
+        <a href="${root}${appHome}" class="logo">IFC Viewer Online</a>
+        <div class="header-right">
+          ${switcher}
+          <a href="${root}${appHome}" class="nav-cta">${esc(ui.navOpen)}</a>
+        </div>
+      </div>
+    </div>
+  </header>`
+}
+
+function footer(ui: UI, root: string, appHome: string, langPath: string): string {
+  // Localized landing pages exist for /es/ and /es/ifc-validador/; the GUID tool
+  // and Solibri page are EN-only — link to them regardless (better than nothing).
+  return `
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="${root}${appHome}" class="footer-link">IFC Viewer Online</a>
+        <a href="${root}${langPath}fix/" class="footer-link">${esc(ui.fAllChecks)}</a>
+        <a href="${root}${langPath === 'es/' ? 'es/ifc-validador/' : 'ifc-validator/'}" class="footer-link">${esc(ui.fValidator)}</a>
+        <a href="${root}tools/fix-duplicate-guids/" class="footer-link">${esc(ui.fGuids)}</a>
+        <a href="${root}solibri-alternative/" class="footer-link">${esc(ui.fSolibri)}</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <p class="footer-copy">${esc(ui.footerCopy)}</p>
+    </div>
+  </footer>`
+}
+
+// ── Per-rule page ──────────────────────────────────────────────────────────────
+
+function renderRulePage(base: RuleBase, lang: Lang, loc: LocaleData, related: { slug: string; label: string }[]): string {
+  const ui = UIS[lang]
+  const langPath = LANG_PATH[lang]
+  const appHome = APP_HOME[lang]
+  const root = langPath === '' ? '../../' : '../../../' // page is /[lang/]fix/<slug>/
+  const url = `${SITE}/${langPath}fix/${base.slug}/`
+  const label = labelOf(base.ruleId, lang)
+  const description = descOf(base.ruleId, lang)
+  const { summary, tools } = remOf(base.ruleId, lang)
+  const catLabel = loc.catFull[base.category] ?? VALIDATION_CATEGORY_LABELS[base.category as keyof typeof VALIDATION_CATEGORY_LABELS] ?? base.category
+  const sevLabel = loc.severity[base.severity] ?? base.severity
+  const title = ui.pageTitle(label)
+  const metaDesc = clip(summary, 158)
+  const ogImg = ogImage(lang)
+
+  const howToSteps: { name: string; text: string }[] = [
+    { name: ui.sOpenName, text: ui.sOpenText },
+    { name: ui.sValidateName, text: ui.sValidateText(label, base.ruleId) },
+    ...tools.map((t) => ({ name: ui.sFixIn(t.label), text: t.steps })),
+    base.autoFixable
+      ? { name: ui.sAutoName, text: ui.sAutoText }
+      : { name: ui.sRevalName, text: ui.sRevalText },
+  ]
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      { '@type': 'WebPage', '@id': url, url, name: title, description: metaDesc, isPartOf: { '@id': `${SITE}/` }, inLanguage: lang },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'IFC Viewer Online', item: `${SITE}/${appHome}` },
+          { '@type': 'ListItem', position: 2, name: ui.checks, item: `${SITE}/${langPath}fix/` },
+          { '@type': 'ListItem', position: 3, name: label, item: url },
+        ],
+      },
+      {
+        '@type': 'HowTo',
+        name: ui.fixTitle(label),
+        description: summary,
+        inLanguage: lang,
+        step: howToSteps.map((s) => ({ '@type': 'HowToStep', name: s.name, text: s.text })),
+      },
+    ],
+  }
+
+  const toolRows = tools.length > 0
+    ? tools.map((t) => `
+            <tr>
+              <td><span class="tool-name">${esc(t.label)}</span></td>
+              <td>${esc(t.steps)}</td>
+            </tr>`).join('')
+    : `
+            <tr><td colspan="2">${esc(summary)}</td></tr>`
+
+  const stepCards = howToSteps.map((s, i) => `
+          <div class="step">
+            <div class="step-n">${String(i + 1).padStart(2, '0')}</div>
+            <div class="step-title">${esc(s.name)}</div>
+            <div class="step-desc">${esc(clip(s.text, 150))}</div>
+          </div>`).join('')
+
+  const relatedLinks = related.map((r) => `<a href="../${r.slug}/">${esc(r.label)}</a>`).join('\n          ')
+
+  return `${pageHead({
+    htmlLang: ui.htmlLang,
+    url,
+    title,
+    desc: metaDesc,
+    keywords: ui.keywords(label, catLabel),
+    ogTitle: ui.ogTitle(label),
+    ogLocale: ui.ogLocale,
+    ogImg,
+    ogImgAlt: ui.ogTitle(label),
+    slug: base.slug,
+    jsonLd,
+  })}
+<body>
+${renderHeader(ui, root, appHome, langSwitcher(lang, root, `${base.slug}/`))}
+
+  <div class="container">
+    <nav class="breadcrumb"><a href="${root}${appHome}">${esc(ui.home)}</a> · <a href="../">${esc(ui.checks)}</a> · <span>${esc(label)}</span></nav>
+  </div>
+
+  <main>
+
+    <section class="hero">
+      <div class="container">
+        <div class="tool-badge sev-${base.severity}">${esc(sevLabel)} · ${esc(catLabel)}${base.autoFixable ? ` · ${esc(ui.autoFixBadge)}` : ''}</div>
+        <h1>${esc(ui.h1Pre)} <span class="accent">${esc(label)}</span><br>${esc(ui.h1Post)}</h1>
+        <p class="hero-desc">${esc(summary)}</p>
+        <div class="cta-row">
+          <a href="${root}${appHome}" class="cta-primary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            ${esc(ui.heroCta)}
+          </a>
+          <span class="cta-note">${esc(ui.heroNote)}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">${esc(ui.whatLabel)}</p>
+        <h2 class="section-title">${esc(ui.whatTitle(label))}</h2>
+        <p class="section-sub">${esc(description)}</p>
+        <div class="meta-grid">
+          <div class="meta-card"><div class="meta-k">${esc(ui.mCategory)}</div><div class="meta-v">${esc(catLabel)}</div></div>
+          <div class="meta-card"><div class="meta-k">${esc(ui.mStandard)}</div><div class="meta-v">${esc(base.standard)}</div></div>
+          <div class="meta-card"><div class="meta-k">${esc(ui.mSeverity)}</div><div class="meta-v">${esc(sevLabel)}</div></div>
+          <div class="meta-card"><div class="meta-k">${esc(ui.mAutofix)}</div><div class="meta-v">${esc(base.autoFixable ? ui.autofixOne : ui.autofixManual)}</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">${esc(ui.fixLabel)}</p>
+        <h2 class="section-title">${esc(ui.fixTitle(label))}</h2>
+        <p class="section-sub">${esc(ui.fixSub)}</p>
+        <table class="causes-table">
+          <thead><tr><th>${esc(ui.thTool)}</th><th>${esc(ui.thFix)}</th></tr></thead>
+          <tbody>${toolRows}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">${esc(ui.howLabel)}</p>
+        <h2 class="section-title">${esc(ui.howTitle)}</h2>
+        <p class="section-sub">${esc(ui.howSub)}</p>
+        <div class="steps">${stepCards}
+        </div>
+      </div>
+    </section>
+${related.length > 0 ? `
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">${esc(ui.relatedLabel)}</p>
+        <h2 class="section-title">${esc(ui.relatedTitle(catLabel))}</h2>
+        <div class="related">
+          ${relatedLinks}
+        </div>
+      </div>
+    </section>
+` : ''}
+    <section class="cta-bottom">
+      <div class="container">
+        <h2>${esc(ui.ctaTitle)}</h2>
+        <p>${esc(ui.ctaBody(label))}</p>
+        <a href="${root}${appHome}" class="cta-primary">${esc(ui.ctaBtn)}</a>
+      </div>
+    </section>
+
+  </main>
+${footer(ui, root, appHome, langPath)}
+</body>
+</html>
+`
+}
+
+// ── Hub page ───────────────────────────────────────────────────────────────────
+
+function renderHub(bases: RuleBase[], lang: Lang, loc: LocaleData): string {
+  const ui = UIS[lang]
+  const langPath = LANG_PATH[lang]
+  const appHome = APP_HOME[lang]
+  const root = langPath === '' ? '../' : '../../' // page is /[lang/]fix/
+  const url = `${SITE}/${langPath}fix/`
+  const ogImg = ogImage(lang)
+
+  const order = ['schema', 'spatial', 'quality', 'classification', 'lod', 'iso19650', 'mep', 'clash']
+  const byCat = new Map<string, RuleBase[]>()
+  for (const b of bases) {
+    const arr = byCat.get(b.category) ?? []
+    arr.push(b)
+    byCat.set(b.category, arr)
+  }
+  const cats = [...byCat.keys()].sort((a, b) => {
+    const ia = order.indexOf(a), ib = order.indexOf(b)
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
+  })
+
+  const groupsHtml = cats.map((cat) => {
+    const rules = byCat.get(cat) ?? []
+    const catLabel = loc.catFull[cat] ?? VALIDATION_CATEGORY_LABELS[cat as keyof typeof VALIDATION_CATEGORY_LABELS] ?? cat
+    const cards = rules.map((r) => {
+      const label = labelOf(r.ruleId, lang)
+      const { summary } = remOf(r.ruleId, lang)
+      return `
+          <a class="rule-card" href="./${r.slug}/">
+            <div class="rc-t">${esc(label)}</div>
+            <div class="rc-d">${esc(clip(summary, 96))}</div>
+          </a>`
+    }).join('')
+    return `
+      <div class="cat-group">
+        <h3 class="cat-h">${esc(catLabel)}</h3>
+        <div class="rule-list">${cards}
+        </div>
+      </div>`
+  }).join('')
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      { '@type': 'CollectionPage', '@id': url, url, name: ui.hubTitle, description: ui.hubMeta, isPartOf: { '@id': `${SITE}/` }, inLanguage: lang },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'IFC Viewer Online', item: `${SITE}/${appHome}` },
+          { '@type': 'ListItem', position: 2, name: ui.checks, item: url },
+        ],
+      },
+      {
+        '@type': 'ItemList',
+        itemListElement: bases.map((b, i) => ({ '@type': 'ListItem', position: i + 1, name: labelOf(b.ruleId, lang), url: `${SITE}/${langPath}fix/${b.slug}/` })),
+      },
+    ],
+  }
+
+  return `${pageHead({
+    htmlLang: ui.htmlLang,
+    url,
+    title: ui.hubTitle,
+    desc: ui.hubMeta,
+    ogTitle: ui.hubTitle,
+    ogLocale: ui.ogLocale,
+    ogImg,
+    ogImgAlt: ui.hubTitle,
+    slug: null,
+    jsonLd,
+  })}
+<body>
+${renderHeader(ui, root, appHome, langSwitcher(lang, root, ''))}
+
+  <main>
+
+    <section class="hero">
+      <div class="container">
+        <div class="tool-badge">${esc(ui.hubBadge(bases.length + 2))}</div>
+        <h1>${esc(ui.hubH1Pre)} <span class="accent">${esc(ui.hubH1Accent)}</span></h1>
+        <p class="hero-desc">${esc(ui.hubHeroDesc)}</p>
+        <div class="cta-row">
+          <a href="${root}${appHome}" class="cta-primary">${esc(ui.hubCta)}</a>
+          <span class="cta-note">${esc(ui.hubNote)}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">${esc(ui.hubRefLabel)}</p>
+        <h2 class="section-title">${esc(ui.hubRefTitle)}</h2>
+        <p class="section-sub">${esc(ui.hubRefSubPre)}<a class="accent" href="${root}tools/fix-duplicate-guids/">${esc(ui.hubRefLink)}</a>${esc(ui.hubRefSubPost)}</p>
+${groupsHtml}
+      </div>
+    </section>
+
+    <section class="cta-bottom">
+      <div class="container">
+        <h2>${esc(ui.hubCtaTitle)}</h2>
+        <p>${esc(ui.hubCtaBody)}</p>
+        <a href="${root}${appHome}" class="cta-primary">${esc(ui.hubCtaBtn)}</a>
+      </div>
+    </section>
+
+  </main>
+${footer(ui, root, appHome, langPath)}
+</body>
+</html>
+`
+}
+
+// ── Sitemap injection (EN + ES, each with both alternates) ─────────────────────
+
+function sitemapEntries(bases: RuleBase[], lastmod: string): string {
+  const alternates = (slug: string | null): string => {
+    const lines = LANGS.map((l) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${fixUrl(LANG_PATH[l], slug)}" />`)
+    lines.push(`    <xhtml:link rel="alternate" hreflang="x-default" href="${fixUrl('', slug)}" />`)
+    return lines.join('\n')
+  }
+  const entry = (langPath: string, slug: string | null, prio: string) => `
+  <url>
+    <loc>${fixUrl(langPath, slug)}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>${prio}</priority>
+${alternates(slug)}
+  </url>`
+  let xml = `\n  <!-- Programmatic: IFC checks hub + per-rule fix pages (${LANGS.map((l) => l.toUpperCase()).join(' + ')}) -->`
+  for (const lang of LANGS) {
+    const lp = LANG_PATH[lang]
+    xml += entry(lp, null, '0.7')
+    for (const b of bases) xml += entry(lp, b.slug, '0.6')
+  }
+  return xml
+}
+
+// ── Public entry point ─────────────────────────────────────────────────────────
+
+export interface FixPagesResult {
+  /** Number of per-rule pages written (excludes hubs). */
+  pages: number
+  /** Number of hub pages written. */
+  hubs: number
+  /** Languages emitted. */
+  langs: number
+  /** Pages that failed to render/write (0 = clean). */
+  errors: number
+  /** Whether the sitemap was updated this run. */
+  sitemap: boolean
+  /** Whether llms.txt got the "how to fix" section this run. */
+  llms: boolean
+}
+
+/**
+ * A markdown section for llms.txt mapping "how to fix <X>" intents to the static
+ * guide URLs — so LLM-based search (ChatGPT, Perplexity, etc.) can surface the
+ * right remediation page. EN URLs only (the canonical entry points).
+ */
+function llmsFixSection(bases: RuleBase[]): string {
+  const lines = [
+    '',
+    '## How to fix IFC validation errors',
+    '',
+    'Per-rule "how to fix" guides with concrete steps for Revit, ArchiCAD, Tekla and Allplan. Available in 6 languages (EN, ES, DE, FR, PT, IT).',
+    '',
+    `- All checks (hub): ${SITE}/fix/`,
+  ]
+  for (const b of bases) {
+    lines.push(`- Fix ${labelOf(b.ruleId, 'en')} in IFC: ${SITE}/fix/${b.slug}/`)
+  }
+  lines.push(`- Fix duplicate GUIDs in IFC: ${SITE}/tools/fix-duplicate-guids/`)
+  lines.push('')
+  return lines.join('\n')
+}
+
+/**
+ * Fail-fast validation that every declared language is fully configured. Catches
+ * the most common mistake when adding a language (forgetting a UI block) at the
+ * start of the build with a clear message, instead of emitting `undefined` HTML.
+ */
+function assertConfig(): void {
+  for (const lang of LANGS) {
+    if (!UIS[lang]) throw new Error(`[fix-pages] Missing UI block (UIS) for language "${lang}". Add it before building.`)
+    if (LANG_PATH[lang] === undefined) throw new Error(`[fix-pages] Missing LANG_PATH for language "${lang}".`)
+    if (APP_HOME[lang] === undefined) throw new Error(`[fix-pages] Missing APP_HOME for language "${lang}".`)
+  }
+}
+
+/**
+ * Generate, for every language in LANGS: a /<lang>/fix/ hub + one
+ * /<lang>/fix/<slug>/ page per rule into `distDir`, and inject all URLs into
+ * distDir/sitemap.xml. Returns a summary of what was written.
+ */
+export function generateFixPages(distDir: string): FixPagesResult {
+  assertConfig()
+
+  const bases = buildBases()
+  const result: FixPagesResult = { pages: 0, hubs: 0, langs: LANGS.length, errors: 0, sitemap: false, llms: false }
+  if (bases.length === 0) return result
+
+  // Detect which localised OG images actually shipped to dist (graceful fallback).
+  OG_AVAILABLE.clear()
+  for (const lang of LANGS) {
+    if (existsSync(path.join(distDir, `og-image-${lang}.png`))) OG_AVAILABLE.add(lang)
+  }
+
+  const localesDir = path.resolve(distDir, '..', 'src', 'locales')
+  const localeData = loadLocaleData(localesDir)
+
+  for (const lang of LANGS) {
+    const langPath = LANG_PATH[lang]
+    const loc = localeData[lang]
+
+    for (const b of bases) {
+      try {
+        const related = bases
+          .filter((r) => r.category === b.category && r.ruleId !== b.ruleId)
+          .slice(0, 5)
+          .map((r) => ({ slug: r.slug, label: labelOf(r.ruleId, lang) }))
+        const dir = path.join(distDir, langPath, 'fix', b.slug)
+        mkdirSync(dir, { recursive: true })
+        writeFileSync(path.join(dir, 'index.html'), renderRulePage(b, lang, loc, related))
+        result.pages++
+      } catch (err) {
+        result.errors++
+        // eslint-disable-next-line no-console
+        console.warn(`[fix-pages] failed to write ${lang}/fix/${b.slug}/: ${(err as Error).message}`)
+      }
+    }
+
+    try {
+      const hubDir = path.join(distDir, langPath, 'fix')
+      mkdirSync(hubDir, { recursive: true })
+      writeFileSync(path.join(hubDir, 'index.html'), renderHub(bases, lang, loc))
+      result.hubs++
+    } catch (err) {
+      result.errors++
+      // eslint-disable-next-line no-console
+      console.warn(`[fix-pages] failed to write ${lang}/fix/ hub: ${(err as Error).message}`)
+    }
+  }
+
+  // Sitemap injection (idempotent — skips if already injected this build).
+  const sitemapPath = path.join(distDir, 'sitemap.xml')
+  if (existsSync(sitemapPath)) {
+    const xml = readFileSync(sitemapPath, 'utf-8')
+    if (!xml.includes(`${SITE}/fix/`)) {
+      const lastmod = new Date().toISOString().slice(0, 10)
+      writeFileSync(sitemapPath, xml.replace('</urlset>', `${sitemapEntries(bases, lastmod)}\n\n</urlset>`))
+      result.sitemap = true
+    }
+  } else {
+    // eslint-disable-next-line no-console
+    console.warn('[fix-pages] dist/sitemap.xml not found — fix pages were not added to the sitemap.')
+  }
+
+  // llms.txt injection — AI/LLM discoverability (idempotent).
+  const llmsPath = path.join(distDir, 'llms.txt')
+  if (existsSync(llmsPath)) {
+    const txt = readFileSync(llmsPath, 'utf-8')
+    if (!txt.includes('## How to fix IFC validation errors')) {
+      writeFileSync(llmsPath, `${txt.trimEnd()}\n${llmsFixSection(bases)}`)
+      result.llms = true
+    }
+  }
+
+  return result
+}

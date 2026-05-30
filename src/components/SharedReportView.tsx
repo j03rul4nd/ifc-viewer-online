@@ -8,6 +8,18 @@
 import React, { useMemo } from 'react'
 import { getRuleRemediation } from '../types'
 
+// Link a ruleId to its static "how to fix" guide page (generated at build time —
+// see scripts/seo/generate-fix-pages.ts). The shared report is English-first, so
+// it always links the EN guide. The two GUID rules are covered by the richer
+// hand-authored /tools/fix-duplicate-guids/ page instead.
+const GUID_RULES = new Set(['RULE_DUPLICATE_GUID', 'RULE_INVALID_GUID_FORMAT'])
+function fixGuideHref(ruleId: string): string {
+  const base = import.meta.env.BASE_URL
+  if (GUID_RULES.has(ruleId)) return `${base}tools/fix-duplicate-guids/`
+  const slug = ruleId.replace(/^RULE_/, '').toLowerCase().replace(/_/g, '-')
+  return `${base}fix/${slug}/`
+}
+
 // ── Payload types (must mirror ValidationPanel handleShareReport) ─────────────
 
 interface SharedIssue {
@@ -289,7 +301,16 @@ export default function SharedReportView({ payload, onOpenViewer }: Props) {
                         <span className="font-semibold text-[var(--text-faint)] uppercase tracking-wide text-[9px] mr-1.5">
                           How to fix
                         </span>
-                        {fix}
+                        {fix}{' '}
+                        <a
+                          href={fixGuideHref(ruleId)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium whitespace-nowrap hover:underline"
+                          style={{ color: 'var(--accent)' }}
+                        >
+                          Full guide →
+                        </a>
                       </p>
                     </div>
                   )}

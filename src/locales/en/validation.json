@@ -245,6 +245,7 @@
   },
   "remediation": {
     "howToFix": "How to fix",
+    "fullGuide": "Full fix guide",
     "noToolSteps": "No {{tool}}-specific steps — see the summary above.",
     "tools": {
       "revit": "Revit",

@@ -17,7 +17,7 @@
   <meta property="og:description" content="Comprueba archivos IFC: GUIDs duplicados, jerarquía espacial, elementos huérfanos y 35 reglas más. Health Score 0–100 en 30 segundos, en tu navegador. Sin subida, sin cuenta." />
   <meta property="og:site_name" content="IFC Viewer Online" />
   <meta property="og:locale" content="es_ES" />
-  <meta property="og:image" content="https://j03rul4nd.github.io/ifc-viewer-online/og-image.png" />
+  <meta property="og:image" content="https://j03rul4nd.github.io/ifc-viewer-online/og-image-es.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="Validador IFC Online — Health Score y 38 reglas en el navegador" />
@@ -26,7 +26,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Validador IFC Online Gratis — 38 Reglas" />
   <meta name="twitter:description" content="GUIDs duplicados, jerarquía espacial, elementos huérfanos y más. Health Score 0–100 en 30 s, sin subir archivos." />
-  <meta name="twitter:image" content="https://j03rul4nd.github.io/ifc-viewer-online/og-image.png" />
+  <meta name="twitter:image" content="https://j03rul4nd.github.io/ifc-viewer-online/og-image-es.png" />
   <link rel="alternate" hreflang="es"        href="https://j03rul4nd.github.io/ifc-viewer-online/es/ifc-validador/" />
   <link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/ifc-validator/" />
   <link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/ifc-validator/" />
@@ -124,10 +124,10 @@
     .lang-switch { font-size: 12px; color: rgba(255,255,255,0.3); }
     .lang-switch:hover { color: rgba(255,255,255,0.6); }
 
-    .hero { padding: 72px 0 56px; text-align: center; }
+    .hero { position: relative; overflow: hidden; padding: 72px 0 56px; text-align: center; } .hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; } .hero::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); } .hero .container { position: relative; z-index: 1; }
     .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 28px; font-weight: 500; }
     .hero h1 { font-size: clamp(1.9rem, 5vw, 3.1rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
-    .accent { color: #5E6AD2; }
+    .accent { background: linear-gradient(100deg, #8B96E9 0%, #5E6AD2 55%, #7C8AF0 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #5E6AD2; }
     .hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 640px; margin: 0 auto 36px; }
     .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
     .cta-primary:hover { background: #4F5ABF; }
@@ -184,6 +184,7 @@
   <main>
 
     <section class="hero">
+      <canvas class="hero-bg" data-dot-grid data-color="94,106,210" aria-hidden="true"></canvas>
       <div class="container">
         <div class="hero-badge">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -196,6 +197,24 @@
           Validar un archivo IFC — gratis
         </a>
         <p class="cta-note">Sin cuenta · Se ejecuta completamente en tu navegador mediante WebAssembly · Funciona sin conexión</p>
+      </div>
+    </section>
+
+    <!-- Inspector IFC gratis en el navegador -->
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">Herramienta gratis · en tu navegador</p>
+        <h2 class="section-title">Inspecciona un archivo IFC — al instante y en privado</h2>
+        <p class="section-sub">Suelta un archivo <code style="font-family:'Geist Mono','Cascadia Code',monospace;color:#8B96E9">.ifc</code> para leer su versión de esquema, exportador y cabecera. Se procesa localmente con JavaScript — no se sube nada, el archivo nunca sale de tu equipo.</p>
+        <div class="ifc-inspect" id="ifcInspect" data-app="../../">
+          <label class="ifc-drop" id="ifcDrop" for="ifcFileInput">
+            <input id="ifcFileInput" type="file" accept=".ifc" hidden />
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span class="ifc-drop-text">Suelta un archivo IFC aquí, o <span class="ifc-drop-link">elige uno</span></span>
+            <span class="ifc-drop-note">La cabecera se lee localmente · no se sube nada</span>
+          </label>
+          <div class="ifc-report" id="ifcReport" hidden></div>
+        </div>
       </div>
     </section>
 
@@ -369,6 +388,8 @@
       <p class="footer-copy">IFC Viewer Online © 2026 · Gratis · Código abierto · Licencia MIT · Construido con web-ifc &amp; three.js</p>
     </div>
   </footer>
+
+  <script defer src="../../seo/dot-grid.js"></script>
 
 </body>
 </html>
