@@ -33,6 +33,7 @@
     "contactForWork": "Contacte per treball personalitzat"
   },
   "nav": {
+    "fixGuides": "Guies",
     "features": "Funcionalitats",
     "howItWorks": "Com funciona",
     "faq": "Preguntes freqüents",
@@ -219,6 +220,12 @@
       "a": "Sí, completament gratuït. El codi font és de llicència MIT. Pots usar l'aplicació en viu o bifurcar el repositori per als teus propis projectes, inclosos els comercials."
     }
   ],
+  "fixGuides": {
+    "label": "GUIES",
+    "title": "Corregeix qualsevol error de validació IFC",
+    "subtitle": "Solucions pas a pas per a cada comprovació, amb instruccions concretes per a Revit, ArchiCAD, Tekla i Allplan. Gratis, sense pujada.",
+    "cta": "Veure totes les guies"
+  },
   "footer": {
     "fixGuide": "Com corregir errors IFC →",
     "poweredBy": "Impulsat per IFC.js",

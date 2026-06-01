@@ -33,6 +33,7 @@
     "contactForWork": "联系定制开发"
   },
   "nav": {
+    "fixGuides": "修复指南",
     "features": "功能",
     "howItWorks": "工作原理",
     "faq": "常见问题",
@@ -219,6 +220,12 @@
       "a": "是的，完全免费。源代码采用 MIT 许可证。您可以使用在线应用程序或 fork 仓库用于自己的项目，包括商业项目。"
     }
   ],
+  "fixGuides": {
+    "label": "修复指南",
+    "title": "修复任何 IFC 验证错误",
+    "subtitle": "针对每一项检查的分步修复方法，附带 Revit、ArchiCAD、Tekla 和 Allplan 的具体操作说明。免费，无需上传。",
+    "cta": "浏览所有修复指南"
+  },
   "footer": {
     "fixGuide": "如何修复 IFC 错误 →",
     "poweredBy": "由 IFC.js 驱动",

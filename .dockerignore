@@ -1,0 +1,32 @@
+# Build artifacts & deps (rebuilt inside the image)
+node_modules
+dist
+dist-tmp
+.vite
+.seo-test-out
+
+# VCS & CI
+.git
+.github
+
+# Local env / secrets
+.env
+.env.local
+.env.*.local
+
+# Editor / OS cruft
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Docker files themselves
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Docs / agent state
+.claude
+docs

@@ -1,0 +1,18 @@
+services:
+  ifc-viewer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Public Vite vars are inlined at build time. Set them in a local .env
+        # file (compose reads it automatically) or leave blank for a clean build.
+        VITE_POSTHOG_KEY: ${VITE_POSTHOG_KEY:-}
+        VITE_POSTHOG_HOST: ${VITE_POSTHOG_HOST:-}
+        VITE_SUBSCRIBE_URL: ${VITE_SUBSCRIBE_URL:-}
+        VITE_REPORT_URL: ${VITE_REPORT_URL:-}
+    # Pull the prebuilt image from GHCR instead of building locally with:
+    #   docker compose pull && docker compose up -d
+    image: ghcr.io/${GITHUB_REPOSITORY:-joel/ifc-viewer-online}:latest
+    ports:
+      - "8080:80"
+    restart: unless-stopped

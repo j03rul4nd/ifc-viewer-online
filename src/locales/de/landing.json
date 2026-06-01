@@ -33,6 +33,7 @@
     "contactForWork": "Kontakt für individuelle Arbeit"
   },
   "nav": {
+    "fixGuides": "Lösungen",
     "features": "Funktionen",
     "howItWorks": "Wie es funktioniert",
     "faq": "FAQ",
@@ -219,6 +220,12 @@
       "a": "Ja, völlig kostenlos. Der Quellcode ist MIT-lizenziert. Sie können die Live-App oder das Repository für Ihre eigenen Projekte nutzen, einschließlich kommerzieller."
     }
   ],
+  "fixGuides": {
+    "label": "LÖSUNGEN",
+    "title": "Beheben Sie jeden IFC-Validierungsfehler",
+    "subtitle": "Schritt-für-Schritt-Lösungen für jede Prüfung, mit konkreten Anleitungen für Revit, ArchiCAD, Tekla und Allplan. Kostenlos, ohne Upload.",
+    "cta": "Alle Lösungen ansehen"
+  },
   "footer": {
     "poweredBy": "Powered by IFC.js",
     "openSource": "Open Source",

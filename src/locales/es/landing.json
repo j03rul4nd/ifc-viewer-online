@@ -33,6 +33,7 @@
     "contactForWork": "Contactar para trabajo personalizado"
   },
   "nav": {
+    "fixGuides": "Guías",
     "features": "Características",
     "howItWorks": "Cómo funciona",
     "faq": "FAQ",
@@ -211,6 +212,12 @@
       "a": "Sí, completamente gratis. El código fuente tiene licencia MIT. Puedes usar la aplicación en vivo o bifurcar el repositorio para tus propios proyectos, incluyendo los comerciales."
     }
   ],
+  "fixGuides": {
+    "label": "GUÍAS",
+    "title": "Corrige cualquier error de validación IFC",
+    "subtitle": "Soluciones paso a paso para cada comprobación, con instrucciones concretas para Revit, ArchiCAD, Tekla y Allplan. Gratis, sin subida.",
+    "cta": "Ver todas las guías"
+  },
   "footer": {
     "poweredBy": "Impulsado por IFC.js",
     "openSource": "Código abierto",
