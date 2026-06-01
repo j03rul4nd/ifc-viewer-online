@@ -220,6 +220,7 @@
     }
   ],
   "footer": {
+    "fixGuide": "IFC エラーの修正方法 →",
     "poweredBy": "IFC.js が動力",
     "openSource": "オープンソース",
     "copyright": "IFC ビューアー オンライン © 2026",

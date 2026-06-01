@@ -230,6 +230,7 @@
     "clash": "碰撞检测"
   },
   "remediation": {
+    "fullGuide": "完整修复指南",
     "howToFix": "如何修复",
     "noToolSteps": "没有针对 {{tool}} 的具体步骤——请参阅上方摘要。",
     "tools": {

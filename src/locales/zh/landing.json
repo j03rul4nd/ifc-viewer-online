@@ -220,6 +220,7 @@
     }
   ],
   "footer": {
+    "fixGuide": "如何修复 IFC 错误 →",
     "poweredBy": "由 IFC.js 驱动",
     "openSource": "开源",
     "copyright": "IFC 在线查看器 © 2026",

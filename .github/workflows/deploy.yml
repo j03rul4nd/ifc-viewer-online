@@ -36,6 +36,7 @@ jobs:
           VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
           VITE_POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
           VITE_SUBSCRIBE_URL: ${{ secrets.VITE_SUBSCRIBE_URL }}
+          VITE_REPORT_URL: ${{ secrets.VITE_REPORT_URL }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

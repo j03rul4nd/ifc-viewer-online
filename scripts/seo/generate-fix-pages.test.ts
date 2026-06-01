@@ -12,7 +12,7 @@ import { generateFixPages, type FixPagesResult } from './generate-fix-pages'
 
 const SITE = 'https://j03rul4nd.github.io/ifc-viewer-online'
 const OUT = path.join(process.cwd(), '.seo-test-out')
-const LANGS = ['', 'es/', 'de/', 'fr/', 'pt/', 'it/'] as const
+const LANGS = ['', 'es/', 'de/', 'fr/', 'pt/', 'it/', 'ca/', 'zh/', 'ja/', 'th/'] as const
 
 let result: FixPagesResult
 
@@ -37,14 +37,14 @@ afterAll(() => {
 describe('generateFixPages — summary', () => {
   it('completes with no errors across all languages', () => {
     expect(result.errors).toBe(0)
-    expect(result.langs).toBe(6)
-    expect(result.hubs).toBe(6)
+    expect(result.langs).toBe(10)
+    expect(result.hubs).toBe(10)
     expect(result.sitemap).toBe(true)
     expect(result.llms).toBe(true)
   })
 
   it('writes the same number of rule pages per language', () => {
-    expect(result.pages).toBeGreaterThan(180) // 6 langs × ~34 rules
+    expect(result.pages).toBeGreaterThan(300) // 10 langs × ~36 rules
     expect(result.pages % result.langs).toBe(0)
   })
 })
@@ -68,7 +68,7 @@ describe('generateFixPages — EN rule page', () => {
 
   it('emits reciprocal hreflang for every language + x-default', () => {
     const html = readFileSync(file, 'utf8')
-    for (const l of ['en', 'es', 'de', 'fr', 'pt', 'it']) {
+    for (const l of ['en', 'es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th']) {
       expect(html).toContain(`hreflang="${l}"`)
     }
     expect(html).toContain('hreflang="x-default"')
@@ -83,7 +83,7 @@ describe('generateFixPages — EN rule page', () => {
   it('includes a visible language switcher with the current language active', () => {
     const html = readFileSync(file, 'utf8')
     expect(html).toContain('class="lang-switch"')
-    expect((html.match(/class="lang-link/g) ?? []).length).toBe(6)
+    expect((html.match(/class="lang-link/g) ?? []).length).toBe(10)
     expect(html).toMatch(/lang-active"[^>]*aria-current="true">EN/)
     // relative links to the same rule in other languages
     expect(html).toContain('href="../../es/fix/missing-type/"')

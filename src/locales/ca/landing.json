@@ -220,6 +220,7 @@
     }
   ],
   "footer": {
+    "fixGuide": "Com corregir errors IFC →",
     "poweredBy": "Impulsat per IFC.js",
     "openSource": "Codi obert",
     "copyright": "Visualitzador IFC en línia © 2026",

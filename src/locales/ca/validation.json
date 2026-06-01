@@ -230,6 +230,7 @@
     "clash": "Detecció de col·lisions"
   },
   "remediation": {
+    "fullGuide": "Guia completa de correcció",
     "howToFix": "Com corregir-ho",
     "noToolSteps": "No hi ha passos específics per a {{tool}}; consulta el resum anterior.",
     "tools": {

@@ -230,6 +230,7 @@
     "clash": "干渉検出"
   },
   "remediation": {
+    "fullGuide": "詳細な修正ガイド",
     "howToFix": "修正方法",
     "noToolSteps": "{{tool}} 固有の手順はありません — 上記の概要を参照してください。",
     "tools": {

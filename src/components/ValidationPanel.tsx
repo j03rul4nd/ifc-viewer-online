@@ -451,7 +451,7 @@ function fixGuideUrl(ruleId: string, language: string): string {
     return `${base}tools/fix-duplicate-guids/`
   }
   const lang = language.slice(0, 2)
-  const prefix = ['es', 'de', 'fr', 'pt', 'it'].includes(lang) ? `${lang}/` : ''
+  const prefix = ['es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th'].includes(lang) ? `${lang}/` : ''
   const slug = ruleId.replace(/^RULE_/, '').toLowerCase().replace(/_/g, '-')
   return `${base}${prefix}fix/${slug}/`
 }
