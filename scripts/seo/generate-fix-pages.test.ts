@@ -47,6 +47,13 @@ describe('generateFixPages — summary', () => {
     expect(result.pages).toBeGreaterThan(300) // 10 langs × ~36 rules
     expect(result.pages % result.langs).toBe(0)
   })
+
+  it('writes category silo pages, evenly across languages', () => {
+    expect(result.categories).toBeGreaterThan(0)
+    expect(result.categories % result.langs).toBe(0)
+    // 8 categories × 10 languages
+    expect(result.categories).toBe(80)
+  })
 })
 
 describe('generateFixPages — EN rule page', () => {
@@ -114,12 +121,52 @@ describe('generateFixPages — localization', () => {
   })
 })
 
+describe('generateFixPages — category pages', () => {
+  const file = path.join(OUT, 'fix', 'category', 'spatial', 'index.html')
+
+  it('exists with the right canonical + lang + category-scoped hreflang', () => {
+    const html = readFileSync(file, 'utf8')
+    expect(html).toContain('<html lang="en">')
+    expect(html).toContain(`rel="canonical" href="${SITE}/fix/category/spatial/"`)
+    // hreflang alternates point at the category path, not the rule path
+    expect(html).toContain(`hreflang="es" href="${SITE}/es/fix/category/spatial/"`)
+    expect(html).toContain('hreflang="x-default"')
+  })
+
+  it('links back to the hub and across to its rule pages', () => {
+    const html = readFileSync(file, 'utf8')
+    expect(html).toContain('href="../../"') // up to the hub
+    expect(html).toContain('href="../../spatial-hierarchy/') // a spatial rule
+  })
+
+  it('carries CollectionPage + BreadcrumbList + ItemList JSON-LD', () => {
+    const html = readFileSync(file, 'utf8')
+    const m = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)
+    expect(m).toBeTruthy()
+    const json = JSON.parse(m![1]) as { '@graph': { '@type': string }[] }
+    const types = json['@graph'].map((g) => g['@type'])
+    expect(types).toEqual(['CollectionPage', 'BreadcrumbList', 'ItemList'])
+  })
+
+  it('writes a localized category page under the /es/ prefix', () => {
+    const html = readFileSync(path.join(OUT, 'es', 'fix', 'category', 'spatial', 'index.html'), 'utf8')
+    expect(html).toContain('<html lang="es">')
+    expect(html).toContain(`rel="canonical" href="${SITE}/es/fix/category/spatial/"`)
+  })
+
+  it('is reachable from the hub (heading links to the category)', () => {
+    const hub = readFileSync(path.join(OUT, 'fix', 'index.html'), 'utf8')
+    expect(hub).toContain('href="./category/spatial/"')
+  })
+})
+
 describe('generateFixPages — sitemap + skips', () => {
   it('injects every per-language URL into the sitemap and keeps it well-formed', () => {
     const xml = readFileSync(path.join(OUT, 'sitemap.xml'), 'utf8')
     for (const lp of LANGS) {
       expect(xml).toContain(`<loc>${SITE}/${lp}fix/missing-type/</loc>`)
       expect(xml).toContain(`<loc>${SITE}/${lp}fix/</loc>`) // hub
+      expect(xml).toContain(`<loc>${SITE}/${lp}fix/category/spatial/</loc>`) // category
     }
     expect(xml.trim().endsWith('</urlset>')).toBe(true)
   })

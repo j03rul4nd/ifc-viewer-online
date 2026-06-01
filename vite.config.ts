@@ -80,7 +80,7 @@ function generateRuleFixPages(): import('vite').Plugin {
       const status = r.errors > 0 ? `⚠ ${r.errors} errors` : 'ok'
       // eslint-disable-next-line no-console
       console.log(
-        `\n  ✓ SEO fix pages: ${r.pages} rule pages + ${r.hubs} hubs across ${r.langs} languages` +
+        `\n  ✓ SEO fix pages: ${r.pages} rule pages + ${r.categories} category pages + ${r.hubs} hubs across ${r.langs} languages` +
         ` · sitemap ${r.sitemap ? 'updated' : 'unchanged'} · llms.txt ${r.llms ? 'updated' : 'unchanged'} · ${status}\n`,
       )
     },

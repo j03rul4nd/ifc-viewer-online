@@ -108,6 +108,9 @@ interface UI {
   hubCta: string; hubNote: string
   hubRefLabel: string; hubRefTitle: string; hubRefSubPre: string; hubRefLink: string; hubRefSubPost: string
   hubCtaTitle: string; hubCtaBody: string; hubCtaBtn: string
+  // category page (everything else is reused from the hub strings above)
+  catTitle: (cat: string, n: number) => string
+  catMeta: (cat: string, n: number) => string
 }
 
 const UIS: Record<Lang, UI> = {
@@ -154,6 +157,8 @@ const UIS: Record<Lang, UI> = {
     hubCtaTitle: 'Get your IFC Health Score.',
     hubCtaBody: 'One 0–100 number across all 38 checks — free, no account, no upload. See exactly what to fix and how.',
     hubCtaBtn: 'Run the free Health Score →',
+    catTitle: (cat, n) => `How to Fix ${cat} Issues in IFC — ${n} Checks`,
+    catMeta: (cat, n) => `${n} IFC ${cat} validation checks with concrete fixes for Revit, ArchiCAD, Tekla and Allplan. Free, browser-based, no upload.`,
   },
   es: {
     htmlLang: 'es', ogLocale: 'es_ES',
@@ -198,6 +203,8 @@ const UIS: Record<Lang, UI> = {
     hubCtaTitle: 'Obtén tu IFC Health Score.',
     hubCtaBody: 'Un único número 0–100 en las 38 comprobaciones — gratis, sin cuenta, sin subida. Verás exactamente qué corregir y cómo.',
     hubCtaBtn: 'Ejecuta el Health Score gratis →',
+    catTitle: (cat, n) => `Cómo corregir problemas de ${cat} en IFC — ${n} comprobaciones`,
+    catMeta: (cat, n) => `${n} comprobaciones de validación IFC de ${cat} con soluciones concretas para Revit, ArchiCAD, Tekla y Allplan. Gratis, en el navegador, sin subida.`,
   },
   de: {
     htmlLang: 'de', ogLocale: 'de_DE',
@@ -242,6 +249,8 @@ const UIS: Record<Lang, UI> = {
     hubCtaTitle: 'Holen Sie sich Ihren IFC Health Score.',
     hubCtaBody: 'Eine Zahl von 0–100 über alle 38 Prüfungen — kostenlos, ohne Konto, ohne Upload. Sehen Sie genau, was und wie zu beheben ist.',
     hubCtaBtn: 'Kostenlosen Health Score starten →',
+    catTitle: (cat, n) => `${cat}-Probleme in IFC beheben — ${n} Prüfungen`,
+    catMeta: (cat, n) => `${n} IFC-Validierungsprüfungen der Kategorie ${cat} mit konkreten Lösungen für Revit, ArchiCAD, Tekla und Allplan. Kostenlos, im Browser, ohne Upload.`,
   },
   fr: {
     htmlLang: 'fr', ogLocale: 'fr_FR',
@@ -286,6 +295,8 @@ const UIS: Record<Lang, UI> = {
     hubCtaTitle: 'Obtenez votre IFC Health Score.',
     hubCtaBody: 'Un seul score de 0 à 100 sur les 38 vérifications — gratuit, sans compte, sans téléversement. Voyez exactement quoi corriger et comment.',
     hubCtaBtn: 'Lancer le Health Score gratuit →',
+    catTitle: (cat, n) => `Corriger les problèmes de ${cat} dans IFC — ${n} vérifications`,
+    catMeta: (cat, n) => `${n} vérifications de validation IFC de ${cat} avec des corrections concrètes pour Revit, ArchiCAD, Tekla et Allplan. Gratuit, dans le navigateur, sans téléversement.`,
   },
   pt: {
     htmlLang: 'pt', ogLocale: 'pt_PT',
@@ -330,6 +341,8 @@ const UIS: Record<Lang, UI> = {
     hubCtaTitle: 'Obtenha o seu IFC Health Score.',
     hubCtaBody: 'Um único número de 0 a 100 nas 38 verificações — grátis, sem conta, sem upload. Veja exatamente o que corrigir e como.',
     hubCtaBtn: 'Executar o Health Score grátis →',
+    catTitle: (cat, n) => `Como corrigir problemas de ${cat} em IFC — ${n} verificações`,
+    catMeta: (cat, n) => `${n} verificações de validação IFC de ${cat} com soluções concretas para Revit, ArchiCAD, Tekla e Allplan. Grátis, no navegador, sem upload.`,
   },
   it: {
     htmlLang: 'it', ogLocale: 'it_IT',
@@ -374,6 +387,8 @@ const UIS: Record<Lang, UI> = {
     hubCtaTitle: 'Ottieni il tuo IFC Health Score.',
     hubCtaBody: 'Un unico punteggio da 0 a 100 su tutti i 38 controlli — gratis, senza account, senza caricamento. Vedi esattamente cosa correggere e come.',
     hubCtaBtn: 'Esegui l’Health Score gratis →',
+    catTitle: (cat, n) => `Come correggere i problemi di ${cat} in IFC — ${n} controlli`,
+    catMeta: (cat, n) => `${n} controlli di validazione IFC di ${cat} con correzioni concrete per Revit, ArchiCAD, Tekla e Allplan. Gratis, nel browser, senza caricamento.`,
   },
   ca: {
     htmlLang: 'ca', ogLocale: 'ca_ES',
@@ -418,6 +433,8 @@ const UIS: Record<Lang, UI> = {
     hubCtaTitle: 'Obtén el teu IFC Health Score.',
     hubCtaBody: 'Un únic número 0–100 a les 38 comprovacions — gratis, sense compte, sense pujada. Veuràs exactament què corregir i com.',
     hubCtaBtn: 'Executa el Health Score gratis →',
+    catTitle: (cat, n) => `Com corregir problemes de ${cat} en IFC — ${n} comprovacions`,
+    catMeta: (cat, n) => `${n} comprovacions de validació IFC de ${cat} amb solucions concretes per a Revit, ArchiCAD, Tekla i Allplan. Gratis, al navegador, sense pujada.`,
   },
   zh: {
     htmlLang: 'zh', ogLocale: 'zh_CN',
@@ -462,6 +479,8 @@ const UIS: Record<Lang, UI> = {
     hubCtaTitle: '获取你的 IFC Health Score。',
     hubCtaBody: '所有 38 项检查汇成一个 0–100 的分数 — 免费、无需账户、无需上传。准确了解需要修复什么以及如何修复。',
     hubCtaBtn: '免费运行 Health Score →',
+    catTitle: (cat, n) => `如何修复 IFC 中的${cat}问题 — ${n} 项检查`,
+    catMeta: (cat, n) => `${n} 项 IFC ${cat}校验检查，附带针对 Revit、ArchiCAD、Tekla 和 Allplan 的具体修复方法。免费、基于浏览器、无需上传。`,
   },
   ja: {
     htmlLang: 'ja', ogLocale: 'ja_JP',
@@ -506,6 +525,8 @@ const UIS: Record<Lang, UI> = {
     hubCtaTitle: 'IFC Health Score を取得。',
     hubCtaBody: '38 項目すべてのチェックを 0–100 の単一スコアに — 無料、アカウント不要、アップロード不要。何をどう修正すべきかが正確にわかります。',
     hubCtaBtn: '無料で Health Score を実行 →',
+    catTitle: (cat, n) => `IFC の${cat}の問題を修正する方法 — ${n} 項目のチェック`,
+    catMeta: (cat, n) => `${cat}の IFC 検証チェック ${n} 項目を、Revit、ArchiCAD、Tekla、Allplan 向けの具体的な修正方法とともに紹介。無料、ブラウザベース、アップロード不要。`,
   },
   th: {
     htmlLang: 'th', ogLocale: 'th_TH',
@@ -550,6 +571,8 @@ const UIS: Record<Lang, UI> = {
     hubCtaTitle: 'รับ IFC Health Score ของคุณ',
     hubCtaBody: 'คะแนนเดียว 0–100 จากการตรวจสอบทั้ง 38 รายการ — ฟรี ไม่ต้องมีบัญชี ไม่ต้องอัปโหลด ดูได้ชัดเจนว่าต้องแก้ไขอะไรและอย่างไร',
     hubCtaBtn: 'เรียกใช้ Health Score ฟรี →',
+    catTitle: (cat, n) => `วิธีแก้ไขปัญหา${cat}ใน IFC — ${n} การตรวจสอบ`,
+    catMeta: (cat, n) => `การตรวจสอบการตรวจสอบ IFC ${cat} จำนวน ${n} รายการ พร้อมวิธีแก้ไขที่เฉพาะเจาะจงสำหรับ Revit, ArchiCAD, Tekla และ Allplan ฟรี ทำงานบนเบราว์เซอร์ ไม่ต้องอัปโหลด`,
   },
 }
 
@@ -655,6 +678,17 @@ function altLinks(slug: string | null): string {
   return lines.join('\n')
 }
 
+/** Category page lives at /[lang/]fix/category/<cat>/ — its own URL + hreflang space. */
+function catUrl(langPath: string, cat: string): string {
+  return `${SITE}/${langPath}fix/category/${cat}/`
+}
+
+function catAltLinks(cat: string): string {
+  const lines = LANGS.map((l) => `  <link rel="alternate" hreflang="${l}" href="${catUrl(LANG_PATH[l], cat)}" />`)
+  lines.push(`  <link rel="alternate" hreflang="x-default" href="${catUrl('', cat)}" />`)
+  return lines.join('\n')
+}
+
 // ── Shared CSS ─────────────────────────────────────────────────────────────────
 
 const STYLE = `
@@ -720,6 +754,10 @@ const STYLE = `
     .footer-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
     .cat-group { margin-bottom: 36px; }
     .cat-h { font-size: 13px; font-weight: 600; color: #8B96E9; margin-bottom: 14px; letter-spacing: -0.01em; }
+    .cat-h a { transition: color 0.15s; }
+    .cat-h a:hover { color: #b3bbf2; }
+    .cat-link { color: inherit; transition: color 0.15s; }
+    .cat-link:hover { color: #8B96E9; }
     .rule-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
     .rule-card { display: block; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px 18px; transition: border-color 0.15s, transform 0.15s; }
     .rule-card:hover { border-color: rgba(94,106,210,0.4); transform: translateY(-1px); }
@@ -750,6 +788,9 @@ interface HeadParams {
   slug: string | null
   jsonLd: unknown
   keywords?: string
+  /** Pre-rendered hreflang block. Overrides the default `altLinks(slug)` when set
+   *  (e.g. category pages, whose alternates live under a different path). */
+  altLinksHtml?: string
 }
 
 function pageHead(p: HeadParams): string {
@@ -778,7 +819,7 @@ ${p.keywords ? `  <meta name="keywords" content="${esc(p.keywords)}" />\n` : ''}
   <meta name="twitter:title" content="${esc(p.ogTitle)}" />
   <meta name="twitter:description" content="${esc(p.desc)}" />
   <meta name="twitter:image" content="${p.ogImg}" />
-${altLinks(p.slug)}
+${p.altLinksHtml ?? altLinks(p.slug)}
   <link rel="icon" href="${FAVICON}" />
 ${FONT_LINKS}
   <script type="application/ld+json">
@@ -919,7 +960,7 @@ function renderRulePage(base: RuleBase, lang: Lang, loc: LocaleData, related: { 
 ${renderHeader(ui, root, appHome, langSwitcher(lang, root, `${base.slug}/`))}
 
   <div class="container">
-    <nav class="breadcrumb"><a href="${root}${appHome}">${esc(ui.home)}</a> · <a href="../">${esc(ui.checks)}</a> · <span>${esc(label)}</span></nav>
+    <nav class="breadcrumb"><a href="${root}${appHome}">${esc(ui.home)}</a> · <a href="../">${esc(ui.checks)}</a> · <a href="../category/${base.category}/">${esc(catLabel)}</a> · <span>${esc(label)}</span></nav>
   </div>
 
   <main>
@@ -979,7 +1020,7 @@ ${related.length > 0 ? `
     <section class="section divider">
       <div class="container">
         <p class="section-label">${esc(ui.relatedLabel)}</p>
-        <h2 class="section-title">${esc(ui.relatedTitle(catLabel))}</h2>
+        <h2 class="section-title"><a class="cat-link" href="../category/${base.category}/">${esc(ui.relatedTitle(catLabel))} →</a></h2>
         <div class="related">
           ${relatedLinks}
         </div>
@@ -1003,6 +1044,29 @@ ${footer(ui, root, appHome, langPath)}
 
 // ── Hub page ───────────────────────────────────────────────────────────────────
 
+/** Fixed display order for categories; unknown categories sort last. Shared by
+ *  the hub, the category pages and the sitemap so the silo stays consistent. */
+const CATEGORY_ORDER = ['schema', 'spatial', 'quality', 'classification', 'lod', 'iso19650', 'mep', 'clash']
+
+/** Group rule bases by category, returning the categories in CATEGORY_ORDER. */
+function categoriesOf(bases: RuleBase[]): { cats: string[]; byCat: Map<string, RuleBase[]> } {
+  const byCat = new Map<string, RuleBase[]>()
+  for (const b of bases) {
+    const arr = byCat.get(b.category) ?? []
+    arr.push(b)
+    byCat.set(b.category, arr)
+  }
+  const cats = [...byCat.keys()].sort((a, b) => {
+    const ia = CATEGORY_ORDER.indexOf(a), ib = CATEGORY_ORDER.indexOf(b)
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
+  })
+  return { cats, byCat }
+}
+
+function catLabelOf(cat: string, loc: LocaleData): string {
+  return loc.catFull[cat] ?? VALIDATION_CATEGORY_LABELS[cat as keyof typeof VALIDATION_CATEGORY_LABELS] ?? cat
+}
+
 function renderHub(bases: RuleBase[], lang: Lang, loc: LocaleData): string {
   const ui = UIS[lang]
   const langPath = LANG_PATH[lang]
@@ -1011,21 +1075,11 @@ function renderHub(bases: RuleBase[], lang: Lang, loc: LocaleData): string {
   const url = `${SITE}/${langPath}fix/`
   const ogImg = ogImage(lang)
 
-  const order = ['schema', 'spatial', 'quality', 'classification', 'lod', 'iso19650', 'mep', 'clash']
-  const byCat = new Map<string, RuleBase[]>()
-  for (const b of bases) {
-    const arr = byCat.get(b.category) ?? []
-    arr.push(b)
-    byCat.set(b.category, arr)
-  }
-  const cats = [...byCat.keys()].sort((a, b) => {
-    const ia = order.indexOf(a), ib = order.indexOf(b)
-    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
-  })
+  const { cats, byCat } = categoriesOf(bases)
 
   const groupsHtml = cats.map((cat) => {
     const rules = byCat.get(cat) ?? []
-    const catLabel = loc.catFull[cat] ?? VALIDATION_CATEGORY_LABELS[cat as keyof typeof VALIDATION_CATEGORY_LABELS] ?? cat
+    const catLabel = catLabelOf(cat, loc)
     const cards = rules.map((r) => {
       const label = labelOf(r.ruleId, lang)
       const { summary } = remOf(r.ruleId, lang)
@@ -1035,9 +1089,10 @@ function renderHub(bases: RuleBase[], lang: Lang, loc: LocaleData): string {
             <div class="rc-d">${esc(clip(summary, 96))}</div>
           </a>`
     }).join('')
+    // Heading links to the dedicated category silo page.
     return `
       <div class="cat-group">
-        <h3 class="cat-h">${esc(catLabel)}</h3>
+        <h3 class="cat-h"><a href="./category/${cat}/">${esc(catLabel)} →</a></h3>
         <div class="rule-list">${cards}
         </div>
       </div>`
@@ -1114,6 +1169,114 @@ ${footer(ui, root, appHome, langPath)}
 `
 }
 
+// ── Category page ────────────────────────────────────────────────────────────
+// /[lang/]fix/category/<cat>/ — a focused silo for one validation category. Lists
+// every rule in that category, links back up to the hub and across to its rule
+// pages, and carries CollectionPage + BreadcrumbList + ItemList JSON-LD. Adds a
+// middle tier to the internal-link graph (hub → category → rule) for topical
+// authority, all from data already in the repo.
+
+function renderCategoryPage(cat: string, rules: RuleBase[], lang: Lang, loc: LocaleData): string {
+  const ui = UIS[lang]
+  const langPath = LANG_PATH[lang]
+  const appHome = APP_HOME[lang]
+  const root = langPath === '' ? '../../../' : '../../../../' // page is /[lang/]fix/category/<cat>/
+  const fixRoot = langPath === '' ? '../../' : '../../../'    // up to /[lang/]fix/
+  const url = catUrl(langPath, cat)
+  const ogImg = ogImage(lang)
+  const catLabel = catLabelOf(cat, loc)
+  const n = rules.length
+  const title = ui.catTitle(catLabel, n)
+  const metaDesc = clip(ui.catMeta(catLabel, n), 158)
+
+  const cards = rules.map((r) => {
+    const label = labelOf(r.ruleId, lang)
+    const { summary } = remOf(r.ruleId, lang)
+    return `
+          <a class="rule-card" href="${fixRoot}${r.slug}/">
+            <div class="rc-t">${esc(label)}</div>
+            <div class="rc-d">${esc(clip(summary, 96))}</div>
+          </a>`
+  }).join('')
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      { '@type': 'CollectionPage', '@id': url, url, name: title, description: metaDesc, isPartOf: { '@id': `${SITE}/${langPath}fix/` }, inLanguage: lang },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'IFC Viewer Online', item: `${SITE}/${appHome}` },
+          { '@type': 'ListItem', position: 2, name: ui.checks, item: `${SITE}/${langPath}fix/` },
+          { '@type': 'ListItem', position: 3, name: catLabel, item: url },
+        ],
+      },
+      {
+        '@type': 'ItemList',
+        itemListElement: rules.map((r, i) => ({ '@type': 'ListItem', position: i + 1, name: labelOf(r.ruleId, lang), url: `${SITE}/${langPath}fix/${r.slug}/` })),
+      },
+    ],
+  }
+
+  return `${pageHead({
+    htmlLang: ui.htmlLang,
+    url,
+    title,
+    desc: metaDesc,
+    keywords: ui.keywords(catLabel, catLabel),
+    ogTitle: title,
+    ogLocale: ui.ogLocale,
+    ogImg,
+    ogImgAlt: title,
+    slug: null,
+    altLinksHtml: catAltLinks(cat),
+    jsonLd,
+  })}
+<body>
+${renderHeader(ui, root, appHome, langSwitcher(lang, root, `category/${cat}/`))}
+
+  <div class="container">
+    <nav class="breadcrumb"><a href="${root}${appHome}">${esc(ui.home)}</a> · <a href="${fixRoot}">${esc(ui.checks)}</a> · <span>${esc(catLabel)}</span></nav>
+  </div>
+
+  <main>
+
+    <section class="hero">
+      <div class="container">
+        <div class="tool-badge">${esc(catLabel)} · ${esc(ui.hubBadge(n))}</div>
+        <h1>${esc(ui.hubH1Pre)} <span class="accent">${esc(catLabel)}</span></h1>
+        <p class="hero-desc">${esc(ui.catMeta(catLabel, n))}</p>
+        <div class="cta-row">
+          <a href="${root}${appHome}" class="cta-primary">${esc(ui.hubCta)}</a>
+          <span class="cta-note">${esc(ui.hubNote)}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">${esc(ui.hubRefLabel)}</p>
+        <h2 class="section-title">${esc(ui.relatedTitle(catLabel))}</h2>
+        <div class="rule-list">${cards}
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-bottom">
+      <div class="container">
+        <h2>${esc(ui.hubCtaTitle)}</h2>
+        <p>${esc(ui.hubCtaBody)}</p>
+        <a href="${root}${appHome}" class="cta-primary">${esc(ui.hubCtaBtn)}</a>
+      </div>
+    </section>
+
+  </main>
+${footer(ui, root, appHome, langPath)}
+</body>
+</html>
+`
+}
+
 // ── Sitemap injection (EN + ES, each with both alternates) ─────────────────────
 
 function sitemapEntries(bases: RuleBase[], lastmod: string): string {
@@ -1130,10 +1293,27 @@ function sitemapEntries(bases: RuleBase[], lastmod: string): string {
     <priority>${prio}</priority>
 ${alternates(slug)}
   </url>`
-  let xml = `\n  <!-- Programmatic: IFC checks hub + per-rule fix pages (${LANGS.map((l) => l.toUpperCase()).join(' + ')}) -->`
+  // Category pages have their own URL space (/fix/category/<cat>/) + alternates.
+  const catAlternates = (cat: string): string => {
+    const lines = LANGS.map((l) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${catUrl(LANG_PATH[l], cat)}" />`)
+    lines.push(`    <xhtml:link rel="alternate" hreflang="x-default" href="${catUrl('', cat)}" />`)
+    return lines.join('\n')
+  }
+  const catEntry = (langPath: string, cat: string) => `
+  <url>
+    <loc>${catUrl(langPath, cat)}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.65</priority>
+${catAlternates(cat)}
+  </url>`
+
+  const { cats } = categoriesOf(bases)
+  let xml = `\n  <!-- Programmatic: IFC checks hub + category pages + per-rule fix pages (${LANGS.map((l) => l.toUpperCase()).join(' + ')}) -->`
   for (const lang of LANGS) {
     const lp = LANG_PATH[lang]
     xml += entry(lp, null, '0.7')
+    for (const cat of cats) xml += catEntry(lp, cat)
     for (const b of bases) xml += entry(lp, b.slug, '0.6')
   }
   return xml
@@ -1146,6 +1326,8 @@ export interface FixPagesResult {
   pages: number
   /** Number of hub pages written. */
   hubs: number
+  /** Number of per-category silo pages written (across all languages). */
+  categories: number
   /** Languages emitted. */
   langs: number
   /** Pages that failed to render/write (0 = clean). */
@@ -1170,6 +1352,11 @@ function llmsFixSection(bases: RuleBase[]): string {
     '',
     `- All checks (hub): ${SITE}/fix/`,
   ]
+  const { cats } = categoriesOf(bases)
+  for (const cat of cats) {
+    const catLabel = VALIDATION_CATEGORY_LABELS[cat as keyof typeof VALIDATION_CATEGORY_LABELS] ?? cat
+    lines.push(`- Fix ${catLabel} issues in IFC (category): ${catUrl('', cat)}`)
+  }
   for (const b of bases) {
     lines.push(`- Fix ${labelOf(b.ruleId, 'en')} in IFC: ${SITE}/fix/${b.slug}/`)
   }
@@ -1200,7 +1387,7 @@ export function generateFixPages(distDir: string): FixPagesResult {
   assertConfig()
 
   const bases = buildBases()
-  const result: FixPagesResult = { pages: 0, hubs: 0, langs: LANGS.length, errors: 0, sitemap: false, llms: false }
+  const result: FixPagesResult = { pages: 0, hubs: 0, categories: 0, langs: LANGS.length, errors: 0, sitemap: false, llms: false }
   if (bases.length === 0) return result
 
   // Detect which localised OG images actually shipped to dist (graceful fallback).
@@ -1230,6 +1417,22 @@ export function generateFixPages(distDir: string): FixPagesResult {
         result.errors++
         // eslint-disable-next-line no-console
         console.warn(`[fix-pages] failed to write ${lang}/fix/${b.slug}/: ${(err as Error).message}`)
+      }
+    }
+
+    // Per-category silo pages: /[lang/]fix/category/<cat>/
+    const { cats, byCat } = categoriesOf(bases)
+    for (const cat of cats) {
+      try {
+        const rules = byCat.get(cat) ?? []
+        const dir = path.join(distDir, langPath, 'fix', 'category', cat)
+        mkdirSync(dir, { recursive: true })
+        writeFileSync(path.join(dir, 'index.html'), renderCategoryPage(cat, rules, lang, loc))
+        result.categories++
+      } catch (err) {
+        result.errors++
+        // eslint-disable-next-line no-console
+        console.warn(`[fix-pages] failed to write ${lang}/fix/category/${cat}/: ${(err as Error).message}`)
       }
     }
 
