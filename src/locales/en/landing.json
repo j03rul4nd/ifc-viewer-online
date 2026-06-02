@@ -218,6 +218,26 @@
     "subtitle": "Step-by-step fixes for every check, with concrete instructions for Revit, ArchiCAD, Tekla and Allplan. Free, no upload.",
     "cta": "Browse all fix guides"
   },
+  "demoGallery": {
+    "title": "Explore demo models",
+    "subtitle": "Pick a curated public IFC model to see the viewer and validator in action. Loaded straight from public repositories — nothing leaves your browser.",
+    "openCta": "Browse demo models",
+    "examples": "Examples",
+    "all": "All",
+    "load": "Load",
+    "loading": "Loading…",
+    "retry": "Retry",
+    "loadFailed": "Couldn’t load this model. Try again or pick another.",
+    "close": "Close",
+    "categories": {
+      "residential": "Residential",
+      "commercial": "Commercial",
+      "industrial": "Industrial",
+      "mep": "MEP",
+      "structural": "Structural",
+      "infrastructure": "Infrastructure"
+    }
+  },
   "footer": {
     "poweredBy": "Powered by IFC.js",
     "openSource": "Open source",

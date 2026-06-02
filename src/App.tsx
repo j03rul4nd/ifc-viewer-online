@@ -21,6 +21,9 @@ import KeyboardHelpModal from './components/KeyboardHelpModal'
 import SceneContextMenu, { type SceneContextMenuPayload } from './components/SceneContextMenu'
 import SharedReportView, { decodeReportHash } from './components/SharedReportView'
 import type { SharedReportPayload } from './components/SharedReportView'
+import DemoGallery from './components/DemoGallery'
+import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, type DemoModel } from './demo-models/models'
+import { fetchDemoModel } from './demo-models/fetchDemoModel'
 import { lighten } from './lib/utils'
 import { modelRegistry } from './lib/model-registry'
 import { useIfcLoader } from './lib/loader'
@@ -70,6 +73,10 @@ export default function App() {
   const viewerApiRef = useRef<ViewerAPI | null>(null)
   const viewerRef    = useRef<ViewerHandle>(null)
   const modelTreeRef = useRef<ModelTreeHandle>(null)
+
+  // Demo gallery overlay + a flag so analytics tags demo loads as `source: 'demo'`.
+  const [showDemoGallery, setShowDemoGallery] = useState(false)
+  const demoLoadRef = useRef(false)
 
   // ── Shared-report route — decode on mount if URL hash contains #report=... ──
   const [sharedReport, setSharedReport] = useState<SharedReportPayload | null>(() => {
@@ -216,11 +223,14 @@ export default function App() {
       // Use the stable sceneModelId from the viewer so ScenePanel and multi-model code align
       addSceneModel(modelId, info)
 
-      // Analytics: infer source from filename (demo file has a known name)
+      // Analytics: a demo load sets demoLoadRef; otherwise treat known demo
+      // filenames as demo too (covers cached repeat loads), else it's an upload.
+      const isDemo = demoLoadRef.current || DEMO_FILENAMES.has(info.fileName)
+      demoLoadRef.current = false
       trackFileOpened({
         file_size_mb:  Math.round((info.fileSize / 1_048_576) * 10) / 10,
         element_count: info.elementCount,
-        source:        info.fileName === 'Ifc2x3_Duplex_Architecture.ifc' ? 'demo' : 'upload',
+        source:        isDemo ? 'demo' : 'upload',
         from_cache:    fromCache,
       })
 
@@ -346,15 +356,15 @@ export default function App() {
     setShowUpload(true)
   }
 
+  // Quick "Load demo model" path — loads the default curated model (bundled,
+  // offline-safe, with a raw-host fallback) without opening the gallery.
   const handleLaunch = (): void => {
     trackLandingCtaClicked({ variant: 'load_demo' })
     setRoute('viewer')
     void (async () => {
       try {
-        const res  = await fetch(`${import.meta.env.BASE_URL}Ifc2x3_Duplex_Architecture.ifc`)
-        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
-        const buf  = await res.arrayBuffer()
-        const file = new File([buf], 'Ifc2x3_Duplex_Architecture.ifc', { type: '' })
+        const file = await fetchDemoModel(DEFAULT_DEMO_MODEL)
+        demoLoadRef.current = true
         handleFileLoad(file)
       } catch (err: unknown) {
         console.warn('[App] Demo file unavailable:', err)
@@ -362,6 +372,28 @@ export default function App() {
         setShowUpload(true)
       }
     })()
+  }
+
+  // Opens the demo gallery from anywhere (toolbar, upload overlay, …). Closes the
+  // upload overlay first so the gallery isn't hidden behind it.
+  const openDemoGallery = useCallback((): void => {
+    setShowUpload(false)
+    setShowDemoGallery(true)
+  }, [])
+
+  // Landing CTA opener — same as above plus the landing analytics event.
+  const handleOpenDemoGallery = (): void => {
+    trackLandingCtaClicked({ variant: 'load_demo' })
+    openDemoGallery()
+  }
+
+  // The gallery already downloaded the chosen model into a File — switch to the
+  // viewer and run the normal load pipeline (which handles OPFS caching/parse).
+  const handleDemoModelReady = (_model: DemoModel, file: File): void => {
+    setShowDemoGallery(false)
+    demoLoadRef.current = true
+    setRoute('viewer')
+    handleFileLoad(file)
   }
 
   const handleToggleHidden = (id: string): void => {
@@ -516,7 +548,11 @@ export default function App() {
             transition={{ duration: 0.35 }}
             className="absolute inset-0"
           >
-            <Landing onLaunch={handleLaunch} onOpenUpload={handleOpenUpload} />
+            <Landing
+              onLaunch={handleLaunch}
+              onOpenUpload={handleOpenUpload}
+              onOpenDemoGallery={handleOpenDemoGallery}
+            />
           </motion.div>
         )}
 
@@ -543,6 +579,7 @@ export default function App() {
                     onReset={() => viewerRef.current?.resetCamera()}
                     onIsolate={handleIsolate}
                     onUpload={openUploadModal}
+                    onOpenDemoGallery={openDemoGallery}
                     onOpenExportModal={() => setShowExportModal(true)}
                     onOpenHelp={() => setShowHelp(true)}
                   />
@@ -759,6 +796,13 @@ export default function App() {
       {/* ── Keyboard help modal ── */}
       <KeyboardHelpModal open={showHelp} onClose={() => setShowHelp(false)} />
 
+      {/* ── Demo model gallery ── */}
+      <DemoGallery
+        open={showDemoGallery}
+        onClose={() => setShowDemoGallery(false)}
+        onModelReady={handleDemoModelReady}
+      />
+
       {/* ── 3D scene context menu (right-click on an element) ── */}
       <SceneContextMenu
         payload={ctxMenu}
@@ -779,6 +823,7 @@ export default function App() {
           <UploadOverlay
             onClose={() => setShowUpload(false)}
             onLoad={handleFileLoad}
+            onOpenDemoGallery={openDemoGallery}
             isLoading={loadingState === 'loading'}
             loadProgress={progress.percent}
             loadError={loadError}

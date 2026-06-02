@@ -29,13 +29,16 @@ function IdleView({
   onClose,
   openFilePicker,
   dragHandlers,
+  onOpenDemoGallery,
 }: {
   isDragging:     boolean
   onClose:        () => void
   openFilePicker: () => void
   dragHandlers:   ReturnType<typeof useIfcUploadFlow>['dragHandlers']
+  onOpenDemoGallery?: () => void
 }) {
   const { t } = useTranslation('common')
+  const { t: tLanding } = useTranslation('landing')
   return (
     <motion.div
       key="idle"
@@ -96,6 +99,19 @@ function IdleView({
           {' · '}IFC2x3 / IFC4 / IFC4x3
         </p>
       </div>
+
+      {/* Demo gallery shortcut — for users who don't have an IFC at hand */}
+      {onOpenDemoGallery && (
+        <div className="mt-3.5 text-center">
+          <button
+            onClick={onOpenDemoGallery}
+            className="inline-flex items-center gap-1.5 text-[12.5px] text-[var(--text-dim)] hover:text-[var(--accent-2)] transition-colors cursor-pointer underline-offset-2 hover:underline"
+          >
+            <Icons.Layers size={13} />
+            {tLanding('demoGallery.openCta')}
+          </button>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="mt-4 flex gap-2.5 text-[11px] text-[var(--text-faint)] justify-center flex-wrap">
@@ -410,6 +426,7 @@ export default function UploadOverlay(props: UploadOverlayProps) {
               onClose={handleClose}
               openFilePicker={openFilePicker}
               dragHandlers={dragHandlers}
+              onOpenDemoGallery={props.onOpenDemoGallery}
             />
           )}
 

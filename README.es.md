@@ -329,10 +329,15 @@ Las contribuciones son bienvenidas — en especial nuevas reglas de validación,
 
 ## Roadmap
 
-El producto es técnicamente maduro (visor multi-modelo, validador de 38 reglas, editor no destructivo, BCF, 10 idiomas). El plan de avance está **liderado por la distribución**, no por las features:
+El producto es técnicamente maduro (visor multi-modelo, validador de 38 reglas, editor no destructivo, BCF, 10 idiomas). El plan de avance está **liderado por la distribución**, no por las features.
 
-- **Tabla de remediación** — contenido determinista "cómo arreglar esto en Revit / ArchiCAD / Tekla" por regla, escrito en i18n (sin AI, sin servidor).
-- **Reportes rastreables** — mover el enlace compartido de un hash de URL a una ruta edge stateless para que los reportes se desplieguen en redes/buscadores (el modelo sigue sin salir del navegador).
+**Ya disponible:**
+
+- **Guías de remediación** — contenido determinista "cómo arreglar esto en Revit / ArchiCAD / Tekla / Allplan" por regla, escrito en i18n (sin AI, sin servidor). También publicado como páginas estáticas rastreables [`/fix/`](https://j03rul4nd.github.io/ifc-viewer-online/fix/) en 10 idiomas.
+- **Reportes rastreables** — el enlace compartido se renderiza en el servidor mediante un edge worker stateless para que los reportes se desplieguen en redes y se indexen (el modelo sigue sin salir del navegador).
+
+**Planificado:**
+
 - **Diff de revisiones** — comparar dos versiones de un modelo por GlobalId.
 - **IDS-lite** — checklists de proyecto en lenguaje claro.
 

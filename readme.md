@@ -329,10 +329,15 @@ Contributions are welcome — new validation rules, translations, and bug fixes 
 
 ## Roadmap
 
-The product is technically mature (multi-model viewer, 38-rule validator, non-destructive editor, BCF, 10 languages). The forward plan is **distribution-led**, not feature-led:
+The product is technically mature (multi-model viewer, 38-rule validator, non-destructive editor, BCF, 10 languages). The forward plan is **distribution-led**, not feature-led.
 
-- **Remediation table** — deterministic "how to fix this in Revit / ArchiCAD / Tekla" content per rule, authored in i18n (no AI, no server).
-- **Crawlable reports** — move the share link from a URL hash to a stateless edge route so reports unfurl on social/search (the model still never leaves the browser).
+**Shipped:**
+
+- **Remediation guides** — deterministic "how to fix this in Revit / ArchiCAD / Tekla / Allplan" content per rule, authored in i18n (no AI, no server). Also published as static, crawlable [`/fix/`](https://j03rul4nd.github.io/ifc-viewer-online/fix/) pages in 10 languages.
+- **Crawlable reports** — the share link is server-rendered by a stateless edge worker so reports unfurl on social and get indexed (the model still never leaves the browser).
+
+**Planned:**
+
 - **Revision diff** — compare two versions of a model by GlobalId.
 - **IDS-lite** — project checklists in plain language.
 

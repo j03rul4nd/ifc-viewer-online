@@ -226,6 +226,26 @@
     "subtitle": "各チェックのステップバイステップの修正方法。Revit、ArchiCAD、Tekla、Allplan 向けの具体的な手順付き。無料、アップロード不要。",
     "cta": "すべての修正ガイドを見る"
   },
+  "demoGallery": {
+    "title": "デモモデルを見る",
+    "subtitle": "公開されている IFC モデルを選んで、ビューアと検証ツールを試せます。公開リポジトリから直接読み込まれ、データがブラウザの外に出ることはありません。",
+    "openCta": "デモモデルを見る",
+    "examples": "サンプル",
+    "all": "すべて",
+    "load": "読み込む",
+    "loading": "読み込み中…",
+    "retry": "再試行",
+    "loadFailed": "このモデルを読み込めませんでした。もう一度試すか、別のモデルを選んでください。",
+    "close": "閉じる",
+    "categories": {
+      "residential": "住宅",
+      "commercial": "商業",
+      "industrial": "産業",
+      "mep": "設備（MEP）",
+      "structural": "構造",
+      "infrastructure": "インフラ"
+    }
+  },
   "footer": {
     "fixGuide": "IFC エラーの修正方法 →",
     "poweredBy": "IFC.js が動力",

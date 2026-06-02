@@ -43,6 +43,8 @@ interface LandingProps {
   // Used by "Open an IFC file" CTAs. onLaunch is kept for nav-bar buttons
   // that demo the app by loading the bundled sample file.
   onOpenUpload: () => void
+  // Opens the demo gallery so the user can pick one of several curated models.
+  onOpenDemoGallery: () => void
 }
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
@@ -180,7 +182,7 @@ const FIX_CATEGORIES = ['schema', 'spatial', 'quality', 'lod', 'iso19650', 'clas
 const FIX_LANG_PREFIXES = ['es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th']
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
+export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery }: LandingProps) {
   // 'validation' is loaded alongside 'landing' so the fix-guide section can reuse
   // the already-translated category labels (catFull.*). 'landing' stays the default
   // namespace, so every other t() call in this component is unchanged.
@@ -469,16 +471,16 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
             <span className="sm:hidden">{t('hero.trustLineMobile')}</span>
           </motion.div>
 
-          {/* Demo model link — captures users who don't have an IFC at hand */}
+          {/* Demo gallery link — captures users who don't have an IFC at hand */}
           <motion.div
             variants={fadeUp} initial="hidden" animate="show" transition={{ duration: 0.5, delay: 0.4 }}
             className="mt-3"
           >
             <button
-              onClick={onLaunch}
+              onClick={onOpenDemoGallery}
               className="text-[11px] sm:text-[12px] text-[var(--text-faint)] hover:text-[var(--accent-2)] transition-colors cursor-pointer underline-offset-2 hover:underline"
             >
-              {t('actions.loadDemo')} →
+              {t('demoGallery.openCta')} →
             </button>
           </motion.div>
 
@@ -905,10 +907,10 @@ export default function Landing({ onLaunch, onOpenUpload }: LandingProps) {
                 </span>
               </StarBorder>
               <button
-                onClick={onLaunch}
+                onClick={onOpenDemoGallery}
                 className="text-[12px] text-[var(--text-faint)] hover:text-[var(--accent-2)] transition-colors cursor-pointer underline-offset-2 hover:underline"
               >
-                {t('actions.loadDemo')} →
+                {t('demoGallery.openCta')} →
               </button>
             </motion.div>
 

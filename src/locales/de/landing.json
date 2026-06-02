@@ -226,6 +226,26 @@
     "subtitle": "Schritt-für-Schritt-Lösungen für jede Prüfung, mit konkreten Anleitungen für Revit, ArchiCAD, Tekla und Allplan. Kostenlos, ohne Upload.",
     "cta": "Alle Lösungen ansehen"
   },
+  "demoGallery": {
+    "title": "Demomodelle entdecken",
+    "subtitle": "Wähle ein kuratiertes öffentliches IFC-Modell, um Viewer und Validator in Aktion zu sehen. Direkt aus öffentlichen Repositorys geladen – nichts verlässt deinen Browser.",
+    "openCta": "Demomodelle ansehen",
+    "examples": "Beispiele",
+    "all": "Alle",
+    "load": "Laden",
+    "loading": "Wird geladen…",
+    "retry": "Erneut versuchen",
+    "loadFailed": "Dieses Modell konnte nicht geladen werden. Versuche es erneut oder wähle ein anderes.",
+    "close": "Schließen",
+    "categories": {
+      "residential": "Wohnbau",
+      "commercial": "Gewerbe",
+      "industrial": "Industrie",
+      "mep": "TGA",
+      "structural": "Tragwerk",
+      "infrastructure": "Infrastruktur"
+    }
+  },
   "footer": {
     "poweredBy": "Powered by IFC.js",
     "openSource": "Open Source",

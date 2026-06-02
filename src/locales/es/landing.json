@@ -218,6 +218,26 @@
     "subtitle": "Soluciones paso a paso para cada comprobación, con instrucciones concretas para Revit, ArchiCAD, Tekla y Allplan. Gratis, sin subida.",
     "cta": "Ver todas las guías"
   },
+  "demoGallery": {
+    "title": "Explora modelos de demostración",
+    "subtitle": "Elige un modelo IFC público para ver el visor y el validador en acción. Se cargan directamente desde repositorios públicos: nada sale de tu navegador.",
+    "openCta": "Ver modelos de demostración",
+    "examples": "Ejemplos",
+    "all": "Todos",
+    "load": "Cargar",
+    "loading": "Cargando…",
+    "retry": "Reintentar",
+    "loadFailed": "No se pudo cargar este modelo. Inténtalo de nuevo o elige otro.",
+    "close": "Cerrar",
+    "categories": {
+      "residential": "Residencial",
+      "commercial": "Comercial",
+      "industrial": "Industrial",
+      "mep": "MEP",
+      "structural": "Estructural",
+      "infrastructure": "Infraestructura"
+    }
+  },
   "footer": {
     "poweredBy": "Impulsado por IFC.js",
     "openSource": "Código abierto",

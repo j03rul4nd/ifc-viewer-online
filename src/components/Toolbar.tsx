@@ -30,6 +30,7 @@ interface ToolbarProps {
   onReset: () => void
   onIsolate: () => void
   onUpload: () => void
+  onOpenDemoGallery: () => void
   onOpenExportModal: () => void
   onOpenHelp: () => void
 }
@@ -123,10 +124,11 @@ function ExportDropdown({
 
 export default function Toolbar({
   fileName, elementCount, loadingState, canIsolate,
-  viewerApiRef, onReset, onIsolate, onUpload, onOpenExportModal, onOpenHelp,
+  viewerApiRef, onReset, onIsolate, onUpload, onOpenDemoGallery, onOpenExportModal, onOpenHelp,
 }: ToolbarProps) {
   const { t } = useTranslation('toolbar')
   const { t: tCommon } = useTranslation('common')
+  const { t: tLanding } = useTranslation('landing')
 
   const statusColor = loadingState === 'loaded' ? 'var(--ok)'     :
                       loadingState === 'error'  ? 'var(--danger)' : 'var(--warn)'
@@ -328,6 +330,7 @@ export default function Toolbar({
           {/* Main actions */}
           <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto shrink-0">
             <Btn icon={Icons.Upload} onClick={onUpload} title={t('openFile')}>{t('open')}</Btn>
+            <Btn icon={Icons.Layers} onClick={onOpenDemoGallery} title={tLanding('demoGallery.openCta')} />
             <div className="w-px h-[18px] bg-[var(--border)]" />
             <Btn icon={Icons.Reset} onClick={onReset} title={t('resetCamera')}>{t('reset')}</Btn>
             <Btn icon={Icons.Isolate} onClick={onIsolate} disabled={!canIsolate} title={t('isolateCategory')}>{t('isolate')}</Btn>
@@ -555,6 +558,9 @@ export default function Toolbar({
         <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 shrink-0">
           <IBtn onClick={onUpload} title={t('openFile')}>
             <Icons.Upload size={15} />
+          </IBtn>
+          <IBtn onClick={onOpenDemoGallery} title={tLanding('demoGallery.openCta')}>
+            <Icons.Layers size={15} />
           </IBtn>
           <div className="w-px h-[18px] bg-[var(--border)]" />
           <IBtn onClick={onReset} title={t('resetCamera')}>

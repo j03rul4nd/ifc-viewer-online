@@ -72,6 +72,8 @@ export type UploadEvent =
 export interface UploadOverlayProps {
   onClose:      () => void
   onLoad:       (file: File) => void
+  /** Opens the demo model gallery (closes this overlay first). Optional. */
+  onOpenDemoGallery?: () => void
   isLoading:    boolean
   loadProgress: number
   loadError?:   string | null
