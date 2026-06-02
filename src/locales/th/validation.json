@@ -239,5 +239,32 @@
       "tekla": "Tekla",
       "allplan": "Allplan"
     }
+  },
+  "export": {
+    "title": "ส่งออกผลการตรวจสอบ",
+    "close": "ปิด",
+    "format": "รูปแบบ",
+    "models": "โมเดล",
+    "severity": "ความรุนแรง",
+    "packaging": "การแพ็ก",
+    "selectAll": "ทั้งหมด",
+    "selectNone": "ไม่มี",
+    "combined": "รวม",
+    "combinedDesc": "ไฟล์เดียวที่มีทุกโมเดลที่เลือก",
+    "split": "แยก (.zip)",
+    "splitDesc": "หนึ่งไฟล์ต่อโมเดล บีบอัดเป็น zip",
+    "download": "ดาวน์โหลด",
+    "summaryIssues": "{{count}} ปัญหาใน {{models}} โมเดล",
+    "summaryIssues_other": "{{count}} ปัญหาใน {{models}} โมเดล",
+    "summaryModels": "{{count}} โมเดล",
+    "summaryModels_other": "{{count}} โมเดล",
+    "fmtJsonLabel": "รายงานฉบับเต็ม",
+    "fmtJsonDesc": "JSON ฉบับเต็มพร้อมทุกฟิลด์",
+    "fmtCsvLabel": "ตารางปัญหา",
+    "fmtCsvDesc": "CSV สำหรับ Excel / สเปรดชีต",
+    "fmtCertLabel": "ใบรับรอง",
+    "fmtCertDesc": "รายงานความครอบคลุม",
+    "fmtBcfLabel": "BCF",
+    "fmtBcfDesc": "รูปแบบการประสานงานแบบเปิด"
   }
 }

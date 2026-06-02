@@ -239,5 +239,32 @@
       "tekla": "Tekla",
       "allplan": "Allplan"
     }
+  },
+  "export": {
+    "title": "导出校验结果",
+    "close": "关闭",
+    "format": "格式",
+    "models": "模型",
+    "severity": "严重程度",
+    "packaging": "打包方式",
+    "selectAll": "全部",
+    "selectNone": "无",
+    "combined": "合并",
+    "combinedDesc": "所有所选模型合并为一个文件",
+    "split": "分开（.zip）",
+    "splitDesc": "每个模型一个文件，打包为 zip",
+    "download": "下载",
+    "summaryIssues": "{{models}} 个模型中的 {{count}} 个问题",
+    "summaryIssues_other": "{{models}} 个模型中的 {{count}} 个问题",
+    "summaryModels": "{{count}} 个模型",
+    "summaryModels_other": "{{count}} 个模型",
+    "fmtJsonLabel": "完整报告",
+    "fmtJsonDesc": "包含所有字段的完整 JSON",
+    "fmtCsvLabel": "问题表格",
+    "fmtCsvDesc": "用于 Excel / 表格的 CSV",
+    "fmtCertLabel": "证书",
+    "fmtCertDesc": "覆盖范围报告",
+    "fmtBcfLabel": "BCF",
+    "fmtBcfDesc": "开放协调格式"
   }
 }

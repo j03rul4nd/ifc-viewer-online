@@ -18,21 +18,25 @@ import { useModelStore } from '../stores/modelStore'
 import { useSceneStore } from '../stores/sceneStore'
 import { useBcfStore } from '../stores/bcfStore'
 import { toast } from '../stores/toastStore'
-import { buildFixGuidCommand, buildRenameCommand, downloadBlob } from '../lib/diffStore'
+import { buildFixGuidCommand, buildRenameCommand } from '../lib/diffStore'
 import { useEditorHistory } from '../hooks/useEditorHistory'
-import { runValidation } from '../lib/validator'
+import { runValidation, runValidationAll } from '../lib/validator'
 import { importBcf, issuesToBcfTopics, downloadBcfBlob } from '../lib/bcf'
 import type {
-  ValidationIssue, ValidationCertificate, BcfTopic, ViewerHandle,
+  ValidationIssue, BcfTopic, ViewerHandle,
   ValidationCategoryType,
 } from '../types'
 import { VALIDATION_PROFILES, RULE_METADATA, getRuleLabel, getRuleRemediation, AUTHORING_TOOLS } from '../types'
 import type { AuthoringTool } from '../types'
 import { getCoveredCategories, ALL_CATEGORIES } from './ValidationCoverageSummary'
 import CustomProfileModal from './CustomProfileModal'
+import ValidationExportModal, { type ExportModelEntry } from './ValidationExportModal'
 import { getRecentRuns, getAverageQualityScore, getMostUsedRules } from '../lib/validation-analytics'
 import type { ValidationRunRecord } from '../lib/validation-analytics'
-import { trackGuidFixed, trackShareReportClicked, trackValidationPanelOpened } from '../lib/analytics'
+import {
+  trackGuidFixed, trackShareReportClicked, trackValidationPanelOpened,
+  trackIssueViewed, trackIssueFixApplied, trackValidationProfileChanged, trackFeatureUsed,
+} from '../lib/analytics'
 import { buildShareUrl } from '../lib/share-report'
 
 // ── Profile i18n ────────────────────────────────────────────────────────────
@@ -1394,68 +1398,6 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
   )
 }
 
-// ── Export dropdown (click-based, works on touch) ─────────────────────────────
-
-function ExportDropdown({
-  onExportJson, onExportCsv, onExportCertificate, onExportBcf,
-}: {
-  onExportJson: () => void
-  onExportCsv:  () => void
-  onExportCertificate: () => void
-  onExportBcf:  () => void
-}) {
-  const { t } = useTranslation('validation')
-  const [open, setOpen]       = useState(false)
-  const wrapRef               = useRef<HTMLDivElement>(null)
-
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
-
-  const act = (fn: () => void) => { fn(); setOpen(false) }
-
-  return (
-    <div ref={wrapRef} className="relative shrink-0">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 px-2 h-6 rounded text-[10px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] font-medium transition-colors"
-      >
-        {t('actions.export')}
-        <svg
-          width="9" height="9" viewBox="0 0 9 9" fill="currentColor" className="opacity-50"
-          style={{ transform: open ? 'rotate(180deg)' : undefined, transition: 'transform 150ms' }}
-        >
-          <path d="M1 3L4.5 6.5L8 3" />
-        </svg>
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-xl z-50 py-1 min-w-[148px]">
-          <button onClick={() => act(onExportJson)}        className="w-full text-left px-3 py-2 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:bg-[var(--surface-2)] transition-colors">
-            <span className="font-mono text-[var(--accent)] text-[9px] mr-1.5">JSON</span>{t('actions.exportJson')}
-          </button>
-          <button onClick={() => act(onExportCsv)}         className="w-full text-left px-3 py-2 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:bg-[var(--surface-2)] transition-colors">
-            <span className="font-mono text-[var(--ok)] text-[9px] mr-1.5">CSV</span>{t('actions.exportCsv')}
-          </button>
-          <div className="h-px bg-[var(--border)] mx-2 my-0.5" />
-          <button onClick={() => act(onExportCertificate)} className="w-full text-left px-3 py-2 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:bg-[var(--surface-2)] transition-colors">
-            <span className="font-mono text-[#F5A623] text-[9px] mr-1.5">CERT</span>{t('actions.exportCertificate')}
-          </button>
-          <div className="h-px bg-[var(--border)] mx-2 my-0.5" />
-          <button onClick={() => act(onExportBcf)}         className="w-full text-left px-3 py-2 text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:bg-[var(--surface-2)] transition-colors">
-            <span className="font-mono text-[var(--accent)] text-[9px] mr-1.5">BCF</span>{t('actions.exportBcf')}
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface ValidationPanelProps {
@@ -1497,6 +1439,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     useShallow((s) => ({ setSelection: s.setSelection, diffs: s.diffs })),
   )
   const sceneModels  = useSceneStore((s) => s.models)
+  const cachedResultsByModel = useValidationStore((s) => s.cachedResultsByModel)
   const { topics: bcfTopics, isParsing: bcfParsing } = useBcfStore(
     useShallow((s) => ({ topics: s.topics, isParsing: s.isParsing })),
   )
@@ -1505,6 +1448,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   const [search, setSearch]             = useState('')
   const [modelFilter, setModelFilter]   = useState<string | null>(null)
   const [profileModalOpen, setProfileModalOpen] = useState(false)
+  const [exportModalOpen, setExportModalOpen]   = useState(false)
   const [activePanel, setActivePanel]   = useState<'issues' | 'bcf' | 'history'>('issues')
   const bcfFileRef = useRef<HTMLInputElement>(null)
 
@@ -1661,11 +1605,13 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   const handleJumpTo = useCallback((issue: ValidationIssue) => {
     setSelection([issue.expressId])
     onJumpToElement?.(issue.expressId)
+    trackIssueViewed({ rule_id: issue.ruleId, severity: issue.severity })
   }, [setSelection, onJumpToElement])
 
   const handleAutoFix = useCallback((issue: ValidationIssue) => {
     if ((issue.ruleId === 'RULE_DUPLICATE_GUID' || issue.ruleId === 'RULE_INVALID_GUID_FORMAT') && issue.globalId) {
       trackGuidFixed({ guid_count: 1 })
+      trackIssueFixApplied({ rule_id: issue.ruleId, fix_type: 'auto_fix' })
       addCommand(buildFixGuidCommand(issue.expressId, issue.globalId, issue.modelId))
     }
   }, [addCommand])
@@ -1676,6 +1622,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     )
     if (fixable.length === 0) return
     trackGuidFixed({ guid_count: fixable.length })
+    trackIssueFixApplied({ rule_id: 'RULE_DUPLICATE_GUID', fix_type: 'batch_guid' })
     for (const issue of fixable) {
       addCommand(buildFixGuidCommand(issue.expressId, issue.globalId!, issue.modelId))
     }
@@ -1684,67 +1631,45 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   const handleNameFix = useCallback((issue: ValidationIssue, field: 'Name' | 'LongName', newValue: string) => {
     const oldValue = issue.elementName === '(empty)' ? '' : issue.elementName
     addCommand(buildRenameCommand(issue.expressId, field, oldValue, newValue, issue.modelId))
+    trackIssueFixApplied({ rule_id: issue.ruleId, fix_type: 'name_edit' })
   }, [addCommand])
 
-  const handleExportJson = useCallback(() => {
-    if (!result) return
-    downloadBlob(new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' }), 'validation-report.json')
-  }, [result])
-
-  const handleExportCsv = useCallback(() => {
-    if (!result) return
-    const header = 'id,ruleId,severity,expressId,globalId,ifcClass,elementName,message,path,autoFixable'
-    const rows = result.issues.map((i) =>
-      [i.id, i.ruleId, i.severity, i.expressId, i.globalId, i.ifcClass,
-       `"${i.elementName.replace(/"/g, '""')}"`,
-       `"${i.message.replace(/"/g, '""')}"`,
-       `"${i.path.join(' > ').replace(/"/g, '""')}"`,
-       i.autoFixable,
-      ].join(','),
-    )
-    downloadBlob(new Blob([[header, ...rows].join('\n')], { type: 'text/csv' }), 'validation-report.csv')
-  }, [result])
-
-  const handleExportCertificate = useCallback(() => {
-    if (!result) return
-    const allProfiles = [...VALIDATION_PROFILES, ...customProfiles]
-    const activeProfile = activeProfileId ? allProfiles.find((p) => p.id === activeProfileId) : null
-    const covered   = getCoveredCategories(rules)
-    const uncovered = ALL_CATEGORIES.filter((c) => !covered.includes(c))
-    const certificate: ValidationCertificate = {
-      timestamp:    new Date().toISOString(),
-      modelFileName: sceneModels[0]?.fileName ?? 'unknown.ifc',
-      modelId:      activeValidationModelId,
-      profileUsed:  {
-        id:          activeProfile?.id ?? 'custom',
-        name:        activeProfile ? localizedProfileName(activeProfile, t) : 'Manual',
-        rulesActive: Object.entries(rules).filter(([, v]) => typeof v === 'boolean' && v).map(([k]) => k),
-      },
-      coverageSummary: {
-        categoriesChecked:   covered,
-        categoriesUnchecked: uncovered,
-        rulesRun: [...new Set(result.issues.map((i) => i.ruleId))],
-      },
-      stats:       result.stats,
-      qualityScore: result.qualityScore ?? 0,
-      issues:      result.issues,
-      generatedBy: 'IFC Viewer — Validator V2',
-      appVersion:  '2.0.0',
-      durationMs:  result.durationMs,
+  // Per-model results offered to the export modal. Prefer each model's cached
+  // result; the scene order is preserved. Falls back to the displayed aggregate
+  // result keyed by the active model when no per-model cache exists yet (single
+  // model that was validated before multi-model caching kicked in).
+  const exportModels = useMemo<ExportModelEntry[]>(() => {
+    const entries: ExportModelEntry[] = []
+    for (const m of sceneModels) {
+      const r = cachedResultsByModel[m.id]
+      if (r) entries.push({ modelId: m.id, fileName: m.fileName, result: r })
     }
-    downloadBlob(new Blob([JSON.stringify(certificate, null, 2)], { type: 'application/json' }), 'validation-certificate.json')
-  }, [result, activeProfileId, customProfiles, rules, sceneModels, activeValidationModelId])
+    if (entries.length === 0 && result) {
+      // Fallback: no per-model cache, use the single displayed result.
+      const fallbackModel = sceneModels.find((m) => m.id === activeValidationModelId) ?? sceneModels[0]
+      entries.push({
+        modelId:  fallbackModel?.id ?? 'active',
+        fileName: fallbackModel?.fileName ?? 'model.ifc',
+        result,
+      })
+    }
+    return entries
+  }, [sceneModels, cachedResultsByModel, result, activeValidationModelId])
 
   const handleRunValidation = useCallback(() => {
     // force=true bypasses the OPFS result cache so that changed profiles /
     // rule configs always produce a fresh run instead of returning stale data.
-    void runValidation(activeValidationModelId ?? undefined, undefined, true)
-  }, [activeValidationModelId])
+    // With several models in the scene, validate ALL of them and show the
+    // aggregate (runValidationAll falls back to the single active model when
+    // only one is loaded).
+    void runValidationAll(undefined, true)
+  }, [])
 
   const handleBcfImport = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     void importBcf(file)
+    trackFeatureUsed({ feature: 'bcf_import' })
     e.target.value = ''
   }, [])
 
@@ -1752,6 +1677,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     if (!result) return
     const snapshot = viewer?.takeSnapshot?.() ?? undefined
     void downloadBcfBlob(issuesToBcfTopics(result.issues, snapshot), 'validation-issues.bcfzip')
+    trackFeatureUsed({ feature: 'bcf_export' })
   }, [result, viewer])
 
   // ── Share Report (URL hash — zero server, zero storage) ───────────────────
@@ -2068,14 +1994,17 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
           </button>
         )}
 
-        {/* Export dropdown — click-based so it works on mobile/touch */}
-        {result && (
-          <ExportDropdown
-            onExportJson={handleExportJson}
-            onExportCsv={handleExportCsv}
-            onExportCertificate={handleExportCertificate}
-            onExportBcf={handleBcfExport}
-          />
+        {/* Export — opens the configurable export modal (multi-model aware) */}
+        {result && exportModels.length > 0 && (
+          <button
+            onClick={() => setExportModalOpen(true)}
+            className="flex items-center gap-1 px-2 h-6 rounded text-[10px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] font-medium transition-colors shrink-0"
+          >
+            <svg width="10" height="10" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" className="opacity-70">
+              <path d="M6.5 1v7M3.5 5.5l3 3.5 3-3.5M1 10v2h11v-2" />
+            </svg>
+            {t('actions.export')}
+          </button>
         )}
 
         {/* Pending fixes count */}
@@ -2102,7 +2031,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
         <ProfileDropdown
           activeProfileId={activeProfileId}
           customProfiles={customProfiles}
-          onSelect={setActiveProfile}
+          onSelect={(id) => { setActiveProfile(id); trackValidationProfileChanged({ profile_id: id }) }}
           onPersonalize={() => setProfileModalOpen(true)}
         />
         <div className="flex-1" />
@@ -2472,6 +2401,18 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
       </div>
 
       <CustomProfileModal open={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
+
+      {exportModalOpen && exportModels.length > 0 && (
+        <ValidationExportModal
+          models={exportModels}
+          rules={rules}
+          activeProfileId={activeProfileId}
+          customProfiles={customProfiles}
+          resolveProfileName={(p) => localizedProfileName(p, t)}
+          takeSnapshot={viewer?.takeSnapshot}
+          onClose={() => setExportModalOpen(false)}
+        />
+      )}
     </div>
   )
 }

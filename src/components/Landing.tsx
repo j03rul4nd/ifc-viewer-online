@@ -39,12 +39,9 @@ import GradualBlur   from './reactbits/GradualBlur'
 
 interface LandingProps {
   onLaunch: () => void
-  // Opens the upload overlay so the user can pick their own IFC file.
-  // Used by "Open an IFC file" CTAs. onLaunch is kept for nav-bar buttons
-  // that demo the app by loading the bundled sample file.
   onOpenUpload: () => void
-  // Opens the demo gallery so the user can pick one of several curated models.
   onOpenDemoGallery: () => void
+  onNavigateToBlog: () => void
 }
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
@@ -182,7 +179,7 @@ const FIX_CATEGORIES = ['schema', 'spatial', 'quality', 'lod', 'iso19650', 'clas
 const FIX_LANG_PREFIXES = ['es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th']
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery }: LandingProps) {
+export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onNavigateToBlog }: LandingProps) {
   // 'validation' is loaded alongside 'landing' so the fix-guide section can reuse
   // the already-translated category labels (catFull.*). 'landing' stays the default
   // namespace, so every other t() call in this component is unchanged.
@@ -324,6 +321,12 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery }: L
             <a href="#how"      className="text-inherit no-underline hover:text-[var(--text)] transition-colors">{t('nav.howItWorks')}</a>
             <a href="#fix-guides" className="text-inherit no-underline hover:text-[var(--text)] transition-colors">{t('nav.fixGuides')}</a>
             <a href="#faq"      className="text-inherit no-underline hover:text-[var(--text)] transition-colors">{t('nav.faq')}</a>
+            <button
+              onClick={onNavigateToBlog}
+              className="text-inherit bg-transparent border-0 p-0 cursor-pointer hover:text-[var(--text)] transition-colors"
+            >
+              Blog
+            </button>
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"
               className="text-inherit no-underline hover:text-[var(--text)] transition-colors"
               aria-label="View source code on GitHub"
@@ -995,6 +998,12 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery }: L
             >
               {t('footer.fixGuide')}
             </a>
+            <button
+              onClick={onNavigateToBlog}
+              className="bg-transparent border-0 p-0 text-[var(--text-faint)] text-[11px] sm:text-[12px] cursor-pointer hover:text-[var(--text)] transition-colors"
+            >
+              Blog
+            </button>
             <a
               href={GITHUB_URL}
               target="_blank" rel="noopener noreferrer"

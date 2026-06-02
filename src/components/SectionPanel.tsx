@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useUIStore } from '../stores/uiStore'
 import { createLogger } from '../lib/logger'
 import type { ViewerAPI } from '../lib/viewer'
+import { trackFeatureUsed } from '../lib/analytics'
 
 const log = createLogger('SectionPanel')
 
@@ -78,8 +79,13 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
     return () => window.removeEventListener('keydown', onKey)
   }, [clipPanelOpen, cancelAddMode])
 
+  const hasTrackedSection = useRef(false)
   const handleStartAdd = (): void => {
     setOpError(null)
+    if (!hasTrackedSection.current) {
+      hasTrackedSection.current = true
+      trackFeatureUsed({ feature: 'section_plane' })
+    }
     try {
       // Register callback first so it's in place before the plane is created
       viewerApiRef.current?.setClipCreationCallback(() => setAdding(false))

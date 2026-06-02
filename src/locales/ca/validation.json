@@ -239,5 +239,32 @@
       "tekla": "Tekla",
       "allplan": "Allplan"
     }
+  },
+  "export": {
+    "title": "Exporta els resultats de validació",
+    "close": "Tanca",
+    "format": "Format",
+    "models": "Models",
+    "severity": "Gravetat",
+    "packaging": "Empaquetatge",
+    "selectAll": "Tots",
+    "selectNone": "Cap",
+    "combined": "Combinat",
+    "combinedDesc": "Un fitxer amb tots els models seleccionats",
+    "split": "Separat (.zip)",
+    "splitDesc": "Un fitxer per model, comprimits",
+    "download": "Descarrega",
+    "summaryIssues": "{{count}} incidència en {{models}} model",
+    "summaryIssues_other": "{{count}} incidències en {{models}} models",
+    "summaryModels": "{{count}} model",
+    "summaryModels_other": "{{count}} models",
+    "fmtJsonLabel": "Informe complet",
+    "fmtJsonDesc": "JSON complet amb tots els camps",
+    "fmtCsvLabel": "Taula d’incidències",
+    "fmtCsvDesc": "CSV per a Excel / fulls",
+    "fmtCertLabel": "Certificat",
+    "fmtCertDesc": "Informe de cobertura",
+    "fmtBcfLabel": "BCF",
+    "fmtBcfDesc": "Format obert de coordinació"
   }
 }

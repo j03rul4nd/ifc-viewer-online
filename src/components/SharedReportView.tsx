@@ -5,8 +5,9 @@
 // Zero server. Zero upload. The IFC never leaves the sender's browser —
 // only the Health Score and condensed issue list are shared via the URL.
 
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { getRuleRemediation } from '../types'
+import { trackReportViewed } from '../lib/analytics'
 
 // Link a ruleId to its static "how to fix" guide page (generated at build time —
 // see scripts/seo/generate-fix-pages.ts). The shared report is English-first, so
@@ -135,6 +136,11 @@ interface Props {
 export default function SharedReportView({ payload, onOpenViewer }: Props) {
   const color = scoreColor(payload.score)
   const label = scoreLabel(payload.score)
+
+  useEffect(() => {
+    trackReportViewed({ issue_count: payload.issues.length, score: payload.score })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const date = useMemo(() => {
     const d = new Date(payload.ts)

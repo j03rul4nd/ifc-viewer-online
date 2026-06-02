@@ -9,6 +9,7 @@ import { useTakeoffStore } from '../stores/takeoffStore'
 import { createLogger }    from './logger'
 import { parseValidatorMsg } from './worker-schemas'
 import { TakeoffError, WorkerError, toAppError, formatDevError } from './errors'
+import { trackFeatureUsed } from './analytics'
 
 const log = createLogger('Takeoff')
 
@@ -44,6 +45,7 @@ export async function computeTakeoff(modelId: string): Promise<void> {
   const current = useTakeoffStore.getState().byModel[modelId]?.status
   if (current === 'running') return
 
+  trackFeatureUsed({ feature: 'takeoff' })
   setModelStatus(modelId, 'running')
 
   let worker: Worker

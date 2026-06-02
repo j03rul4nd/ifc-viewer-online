@@ -22,6 +22,21 @@ import { RULE_TRANSLATIONS, RULE_METADATA, VALIDATION_CATEGORY_LABELS } from '..
 
 const SITE = 'https://j03rul4nd.github.io/ifc-viewer-online'
 
+// ── PostHog analytics snippet for static pages ────────────────────────────────
+// Read at build time from the same env vars used by the SPA. If no key is set
+// (local dev, CI without secrets) the snippet is omitted — pages still work.
+// Uses persistence:'memory' so no cookies are written on content-only pages,
+// keeping this GDPR-safe without a consent banner.
+const _PH_KEY  = process.env.VITE_POSTHOG_KEY  ?? ''
+const _PH_HOST = process.env.VITE_POSTHOG_HOST ?? 'https://eu.i.posthog.com'
+
+const POSTHOG_SNIPPET = _PH_KEY
+  ? `<script>
+!function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.",".")+ "/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+" (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId setPersonProperties".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+posthog.init('${_PH_KEY}',{api_host:'${_PH_HOST}',capture_pageview:true,autocapture:false,persistence:'memory'})
+</script>`
+  : ''
+
 /** Languages to emit. EN is canonical at root; others get a /<lang>/ prefix. */
 const LANGS = ['en', 'es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th'] as const
 type Lang = (typeof LANGS)[number]
@@ -826,7 +841,7 @@ ${FONT_LINKS}
 ${JSON.stringify(p.jsonLd, null, 2)}
   </script>
   <style>${STYLE}</style>
-</head>`
+${POSTHOG_SNIPPET}</head>`
 }
 
 // ── Shared header + visible language switcher ──────────────────────────────────

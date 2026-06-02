@@ -2,11 +2,13 @@ import { useCallback } from 'react'
 import { useValidationStore } from '../stores/validationStore'
 import { useModelStore } from '../stores/modelStore'
 import { modelRegistry } from '../lib/model-registry'
-import { runValidation, cancelValidation } from '../lib/validator'
+import { runValidation, runValidationAll, cancelValidation } from '../lib/validator'
 import type { ValidationStatus, ValidationResult, RulesConfig } from '../types'
 
 export interface ValidationRunnerResult {
   run:          (rules?: RulesConfig, modelId?: string, force?: boolean) => Promise<void>
+  /** Validate every model in the scene and show the aggregate result. */
+  runAll:       (rules?: RulesConfig, force?: boolean) => Promise<void>
   cancel:       () => void
   canRun:       boolean
   status:       ValidationStatus
@@ -37,8 +39,18 @@ export function useValidationRunner(): ValidationRunnerResult {
     }
   }, [canRun])
 
+  const runAll = useCallback(async (rules?: RulesConfig, force = false) => {
+    if (!canRun) return
+    try {
+      await runValidationAll(rules, force)
+    } catch {
+      // validator.ts already sets status + fires toasts — nothing to do here
+    }
+  }, [canRun])
+
   return {
     run,
+    runAll,
     cancel: cancelValidation,
     canRun,
     status:       validationStatus,

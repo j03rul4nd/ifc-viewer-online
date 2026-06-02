@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useUIStore } from '../stores/uiStore'
 import type { ViewerAPI } from '../lib/viewer'
 import type { MeasurementTool } from '../stores/uiStore'
+import { trackFeatureUsed } from '../lib/analytics'
 
 interface MeasurementPanelProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -77,7 +78,12 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // ── Tool change (stable reference needed for ESC handler dep array) ────────
+  const hasTrackedMeasurement = useRef(false)
   const handleToolChange = useCallback((tool: MeasurementTool): void => {
+    if (tool !== 'none' && !hasTrackedMeasurement.current) {
+      hasTrackedMeasurement.current = true
+      trackFeatureUsed({ feature: 'measurement' })
+    }
     setActiveMeasurementTool(tool)
     viewerApiRef.current?.setMeasurementTool(tool)
   }, [setActiveMeasurementTool, viewerApiRef])

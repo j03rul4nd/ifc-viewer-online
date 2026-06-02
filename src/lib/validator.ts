@@ -90,6 +90,80 @@ export function calculateQualityScore(result: ValidationResult): number {
 
 const log = createLogger('Validator')
 
+// ── Multi-model result composition ──────────────────────────────────────────────
+
+/**
+ * Build the aggregate ValidationResult shown in the panel from per-model results.
+ *
+ * The store holds one displayed `result`, but the scene can contain several
+ * models. Rather than letting each run overwrite the previous model's result,
+ * we recompose the displayed result from every model's cached result so the
+ * panel always shows issues from ALL validated models. Issues already carry
+ * their `modelId` stamp (added in runValidation), so the per-model filter in the
+ * panel keeps working.
+ *
+ * @param perModel  modelId → that model's ValidationResult (from cachedResultsByModel)
+ * @param order     modelIds in scene order, so issues stay grouped predictably
+ */
+export function composeMultiModelResult(
+  perModel: Record<string, ValidationResult>,
+  order: string[],
+): ValidationResult | null {
+  const ids = order.filter((id) => perModel[id])
+  // Include any cached models not in the provided order (defensive)
+  for (const id of Object.keys(perModel)) if (!ids.includes(id)) ids.push(id)
+  if (ids.length === 0) return null
+
+  // Single model: return it as-is (no need to recompute identical aggregates).
+  if (ids.length === 1) return perModel[ids[0]]
+
+  const allIssues: ValidationIssue[] = []
+  const byRule: Record<string, number> = {}
+  let errors = 0, warnings = 0, info = 0
+  let durationMs = 0
+
+  for (const id of ids) {
+    const r = perModel[id]
+    for (const issue of r.issues) {
+      // Ensure the modelId stamp is present even for legacy cached results.
+      allIssues.push(issue.modelId ? issue : { ...issue, modelId: id })
+    }
+    for (const [rule, n] of Object.entries(r.stats.byRule ?? {})) {
+      byRule[rule] = (byRule[rule] ?? 0) + n
+    }
+    errors   += r.stats.errors
+    warnings += r.stats.warnings
+    info     += r.stats.info
+    durationMs += r.durationMs
+  }
+
+  const merged: ValidationResult = {
+    issues: allIssues,
+    stats:  { total: allIssues.length, errors, warnings, info, byRule },
+    durationMs,
+  }
+  return { ...merged, qualityScore: calculateQualityScore(merged) }
+}
+
+/**
+ * Recompose and publish the aggregate result from all per-model cached results.
+ * Called after each per-model run finishes so the panel reflects every model,
+ * and after a model is removed so its issues drop out of the displayed result.
+ *
+ * Exported so App.tsx can call it after removing a model from the scene.
+ */
+export function publishAggregateResult(): void {
+  const vs = useValidationStore.getState()
+  const order = useSceneStore.getState().models.map((m) => m.id)
+  const aggregate = composeMultiModelResult(vs.cachedResultsByModel, order)
+  if (aggregate) {
+    vs.setResult(aggregate)
+  } else {
+    // No validated models remain — clear the displayed result.
+    vs.setValidationStatus('idle')
+  }
+}
+
 // ── Worker pool ───────────────────────────────────────────────────────────────
 // Two long-lived workers are kept warm to allow rule-parallel execution.
 // Pool slot 0 (primary): runs ~half the rules + spatial tree building.
@@ -508,7 +582,6 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
         `Validation complete for "${resolvedId ?? 'active'}" in ${durationMs}ms —`,
         result.stats.total, 'issues',
       )
-      setResult(result)
 
       const storeSnap = useValidationStore.getState()
       recordValidationRun({
@@ -523,6 +596,17 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
 
       if (cacheKey)   cacheResult(cacheKey, result)
       if (resolvedId) cacheResultForModel(resolvedId, result)
+
+      // Publish the displayed result. With several models in the scene we show
+      // the AGGREGATE of every model's cached result (so the panel lists issues
+      // from all models, not just the one just validated). With a single model
+      // (or none) we show this run's result directly.
+      const sceneModelCount = useSceneStore.getState().models.length
+      if (resolvedId && sceneModelCount > 1) {
+        publishAggregateResult()
+      } else {
+        setResult(result)
+      }
 
       appBus.emit('validation:complete', { runId: id, result, durationMs })
       cleanup()
@@ -646,4 +730,53 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
       )
     }
   })
+}
+
+// ── Multi-model validation ──────────────────────────────────────────────────────
+
+/**
+ * Validate EVERY model currently in the scene, in sequence, then show the
+ * aggregate result (issues from all models) in the panel.
+ *
+ * This is what the main "Validate" / "Re-validate" button should call when more
+ * than one model is loaded, so the user sees the full picture instead of only
+ * the active model. Each model is validated by the existing single-model
+ * `runValidation`, which caches its result per model; after each one finishes we
+ * recompose the displayed aggregate from `cachedResultsByModel`.
+ *
+ * Runs sequentially (not in parallel) on purpose: the two-worker pool is already
+ * saturated by a single model's rule split, so parallel models would contend for
+ * the same workers and serialise anyway — sequencing keeps progress readable and
+ * memory bounded.
+ *
+ * @param rules  Override the stored rules config for this run.
+ * @param force  Bypass the per-model result cache (use for explicit user re-runs).
+ */
+export async function runValidationAll(rules?: RulesConfig, force = false): Promise<void> {
+  const models = useSceneStore.getState().models
+  const ids = models.map((m) => m.id)
+
+  // Zero or one model → defer to the normal single-model path (active model).
+  if (ids.length <= 1) {
+    return runValidation(ids[0], rules, force)
+  }
+
+  log.info(`Validating all ${ids.length} scene models sequentially`)
+
+  let firstError: unknown = null
+  for (const id of ids) {
+    try {
+      await runValidation(id, rules, force)
+    } catch (err) {
+      // Keep going so one bad model doesn't hide the others' results.
+      firstError = firstError ?? err
+      log.warn(`runValidationAll: model "${id}" failed — continuing`, err)
+    }
+  }
+
+  // Final recompose so the panel shows every model's issues, regardless of which
+  // model's run happened to finish last (or errored).
+  publishAggregateResult()
+
+  if (firstError) throw firstError
 }

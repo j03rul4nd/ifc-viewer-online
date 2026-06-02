@@ -3,7 +3,7 @@
 // chosen model (with a live progress bar) and hands the resulting File to the
 // parent, which switches to the viewer and runs the normal load pipeline.
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
@@ -12,6 +12,7 @@ import { sortedDemoModels, activeCategories, type DemoModel } from '../demo-mode
 import { fetchDemoModel, type FetchProgress } from '../demo-models/fetchDemoModel'
 import { ModelIllustration } from '../demo-models/illustrations'
 import { createLogger } from '../lib/logger'
+import { trackDemoGalleryOpened, trackDemoModelSelected } from '../lib/analytics'
 
 const log = createLogger('DemoGallery')
 
@@ -44,8 +45,17 @@ export default function DemoGallery({ open, onClose, onModelReady }: DemoGallery
   const models     = useMemo(() => sortedDemoModels(), [])
   const visible    = filter === 'all' ? models : models.filter((m) => m.category === filter)
 
+  useEffect(() => {
+    if (open) trackDemoGalleryOpened()
+  }, [open])
+
   const handleLoad = async (model: DemoModel): Promise<void> => {
     if (loadingId) return
+    trackDemoModelSelected({
+      model_id: model.id,
+      category: model.category,
+      size_mb:  Math.round((model.sizeBytes / 1_048_576) * 10) / 10,
+    })
     abortRef.current?.abort()
     const ac = new AbortController()
     abortRef.current = ac

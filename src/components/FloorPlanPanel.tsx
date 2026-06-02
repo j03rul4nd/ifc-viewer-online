@@ -5,6 +5,7 @@ import { useUIStore } from '../stores/uiStore'
 import { useSceneStore } from '../stores/sceneStore'
 import { createLogger } from '../lib/logger'
 import type { ViewerAPI } from '../lib/viewer'
+import { trackFeatureUsed } from '../lib/analytics'
 
 const log = createLogger('FloorPlanPanel')
 
@@ -62,6 +63,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
     if (!viewer || loading) return
     setLoading(true)
     setError(null)
+    trackFeatureUsed({ feature: 'floor_plan' })
     try {
       const result = await viewer.createStoreyViews()
       if (!Array.isArray(result)) {

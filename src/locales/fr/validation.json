@@ -239,5 +239,32 @@
       "tekla": "Tekla",
       "allplan": "Allplan"
     }
+  },
+  "export": {
+    "title": "Exporter les résultats de validation",
+    "close": "Fermer",
+    "format": "Format",
+    "models": "Modèles",
+    "severity": "Gravité",
+    "packaging": "Conditionnement",
+    "selectAll": "Tous",
+    "selectNone": "Aucun",
+    "combined": "Combiné",
+    "combinedDesc": "Un fichier avec tous les modèles sélectionnés",
+    "split": "Séparé (.zip)",
+    "splitDesc": "Un fichier par modèle, compressés",
+    "download": "Télécharger",
+    "summaryIssues": "{{count}} problème sur {{models}} modèle",
+    "summaryIssues_other": "{{count}} problèmes sur {{models}} modèles",
+    "summaryModels": "{{count}} modèle",
+    "summaryModels_other": "{{count}} modèles",
+    "fmtJsonLabel": "Rapport complet",
+    "fmtJsonDesc": "JSON complet avec tous les champs",
+    "fmtCsvLabel": "Tableau des problèmes",
+    "fmtCsvDesc": "CSV pour Excel / tableurs",
+    "fmtCertLabel": "Certificat",
+    "fmtCertDesc": "Rapport de couverture",
+    "fmtBcfLabel": "BCF",
+    "fmtBcfDesc": "Format ouvert de coordination"
   }
 }

@@ -239,5 +239,32 @@
       "tekla": "Tekla",
       "allplan": "Allplan"
     }
+  },
+  "export": {
+    "title": "Validierungsergebnisse exportieren",
+    "close": "Schließen",
+    "format": "Format",
+    "models": "Modelle",
+    "severity": "Schweregrad",
+    "packaging": "Verpackung",
+    "selectAll": "Alle",
+    "selectNone": "Keine",
+    "combined": "Kombiniert",
+    "combinedDesc": "Eine Datei mit allen ausgewählten Modellen",
+    "split": "Getrennt (.zip)",
+    "splitDesc": "Eine Datei pro Modell, gezippt",
+    "download": "Herunterladen",
+    "summaryIssues": "{{count}} Problem in {{models}} Modell",
+    "summaryIssues_other": "{{count}} Probleme in {{models}} Modellen",
+    "summaryModels": "{{count}} Modell",
+    "summaryModels_other": "{{count}} Modelle",
+    "fmtJsonLabel": "Vollständiger Bericht",
+    "fmtJsonDesc": "Vollständiges JSON mit allen Feldern",
+    "fmtCsvLabel": "Problemtabelle",
+    "fmtCsvDesc": "CSV für Excel / Tabellen",
+    "fmtCertLabel": "Zertifikat",
+    "fmtCertDesc": "Abdeckungsbericht",
+    "fmtBcfLabel": "BCF",
+    "fmtBcfDesc": "Offenes Koordinationsformat"
   }
 }

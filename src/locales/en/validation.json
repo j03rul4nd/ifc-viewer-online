@@ -253,5 +253,32 @@
       "tekla": "Tekla",
       "allplan": "Allplan"
     }
+  },
+  "export": {
+    "title": "Export validation results",
+    "close": "Close",
+    "format": "Format",
+    "models": "Models",
+    "severity": "Severity",
+    "packaging": "Packaging",
+    "selectAll": "All",
+    "selectNone": "None",
+    "combined": "Combined",
+    "combinedDesc": "One file with all selected models",
+    "split": "Separate (.zip)",
+    "splitDesc": "One file per model, zipped",
+    "download": "Download",
+    "summaryIssues": "{{count}} issue across {{models}} model",
+    "summaryIssues_other": "{{count}} issues across {{models}} models",
+    "summaryModels": "{{count}} model",
+    "summaryModels_other": "{{count}} models",
+    "fmtJsonLabel": "Full report",
+    "fmtJsonDesc": "Complete JSON with every field",
+    "fmtCsvLabel": "Issue table",
+    "fmtCsvDesc": "CSV for Excel / sheets",
+    "fmtCertLabel": "Certificate",
+    "fmtCertDesc": "Signed-style coverage report",
+    "fmtBcfLabel": "BCF",
+    "fmtBcfDesc": "Open coordination format"
   }
 }

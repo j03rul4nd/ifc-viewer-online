@@ -239,5 +239,32 @@
       "tekla": "Tekla",
       "allplan": "Allplan"
     }
+  },
+  "export": {
+    "title": "検証結果をエクスポート",
+    "close": "閉じる",
+    "format": "形式",
+    "models": "モデル",
+    "severity": "重大度",
+    "packaging": "パッケージ",
+    "selectAll": "すべて",
+    "selectNone": "なし",
+    "combined": "結合",
+    "combinedDesc": "選択したすべてのモデルを1つのファイルに",
+    "split": "分割（.zip）",
+    "splitDesc": "モデルごとに1ファイル、zip でまとめる",
+    "download": "ダウンロード",
+    "summaryIssues": "{{models}} モデルの {{count}} 件の問題",
+    "summaryIssues_other": "{{models}} モデルの {{count}} 件の問題",
+    "summaryModels": "{{count}} モデル",
+    "summaryModels_other": "{{count}} モデル",
+    "fmtJsonLabel": "完全レポート",
+    "fmtJsonDesc": "すべてのフィールドを含む完全な JSON",
+    "fmtCsvLabel": "問題テーブル",
+    "fmtCsvDesc": "Excel / シート用の CSV",
+    "fmtCertLabel": "証明書",
+    "fmtCertDesc": "カバレッジレポート",
+    "fmtBcfLabel": "BCF",
+    "fmtBcfDesc": "オープンな調整フォーマット"
   }
 }

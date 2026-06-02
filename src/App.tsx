@@ -22,11 +22,13 @@ import SceneContextMenu, { type SceneContextMenuPayload } from './components/Sce
 import SharedReportView, { decodeReportHash } from './components/SharedReportView'
 import type { SharedReportPayload } from './components/SharedReportView'
 import DemoGallery from './components/DemoGallery'
+import Blog from './components/Blog'
 import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, type DemoModel } from './demo-models/models'
 import { fetchDemoModel } from './demo-models/fetchDemoModel'
 import { lighten } from './lib/utils'
 import { modelRegistry } from './lib/model-registry'
 import { useIfcLoader } from './lib/loader'
+import { publishAggregateResult } from './lib/validator'
 import { useEditorHistory } from './hooks/useEditorHistory'
 import { useValidationRunner } from './hooks/useValidationRunner'
 import { useElementFocus } from './hooks/useElementFocus'
@@ -47,6 +49,10 @@ import {
   trackValidationCompleted,
   trackLandingCtaClicked,
   trackValidationPanelOpened,
+  trackRouteChanged,
+  trackViewerFirstInteraction,
+  trackFeatureUsed,
+  trackFileOpenFailed,
 } from './lib/analytics'
 
 // ── ModelTree imperative handle ───────────────────────────────────────────────
@@ -60,10 +66,66 @@ export default function App() {
   const { t: tViewer } = useTranslation('viewer')
   useSeo()
   const [route, setRoute] = useState<Route>(() => {
-    if (typeof window !== 'undefined' && decodeReportHash(window.location.hash)) return 'report'
+    if (typeof window !== 'undefined') {
+      if (decodeReportHash(window.location.hash)) return 'report'
+      const base = import.meta.env.BASE_URL ?? '/'
+      const rel = window.location.pathname.replace(base.replace(/\/$/, ''), '') || '/'
+      if (rel.startsWith('/blog')) return 'blog'
+    }
     return 'landing'
   })
+
+  // Blog sub-route: null = list, string = post slug
+  const [blogSlug, setBlogSlug] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    const base = import.meta.env.BASE_URL ?? '/'
+    const rel = window.location.pathname.replace(base.replace(/\/$/, ''), '') || '/'
+    const m = rel.match(/^\/blog\/([^/]+)\/?$/)
+    return m ? m[1] : null
+  })
   const [accent] = useState('#5E6AD2')
+
+  // ── URL helpers for blog navigation ──────────────────────────────────────
+  const blogBase = (): string => {
+    const base = import.meta.env.BASE_URL ?? '/'
+    return base.endsWith('/') ? `${base}blog/` : `${base}/blog/`
+  }
+
+  const handleNavigateToBlog = useCallback((): void => {
+    history.pushState(null, '', blogBase())
+    setRoute('blog')
+    setBlogSlug(null)
+  }, [])
+
+  const handleNavigateToBlogPost = useCallback((slug: string): void => {
+    history.pushState(null, '', `${blogBase()}${slug}/`)
+    setBlogSlug(slug)
+  }, [])
+
+  const handleNavigateFromBlogToList = useCallback((): void => {
+    history.pushState(null, '', blogBase())
+    setBlogSlug(null)
+  }, [])
+
+  // ── Browser back/forward support ──────────────────────────────────────────
+  useEffect(() => {
+    const onPopState = (): void => {
+      const base = import.meta.env.BASE_URL ?? '/'
+      const rel = window.location.pathname.replace(base.replace(/\/$/, ''), '') || '/'
+      if (window.location.hash && decodeReportHash(window.location.hash)) {
+        setRoute('report')
+      } else if (rel.startsWith('/blog')) {
+        setRoute('blog')
+        const m = rel.match(/^\/blog\/([^/]+)\/?$/)
+        setBlogSlug(m ? m[1] : null)
+      } else {
+        setRoute('landing')
+        setBlogSlug(null)
+      }
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
 
   useEffect(() => {
     document.documentElement.style.setProperty('--accent', accent)
@@ -73,6 +135,9 @@ export default function App() {
   const viewerApiRef = useRef<ViewerAPI | null>(null)
   const viewerRef    = useRef<ViewerHandle>(null)
   const modelTreeRef = useRef<ModelTreeHandle>(null)
+
+  const prevRouteRef               = useRef<Route>(route)
+  const hasTrackedFirstInteraction = useRef(false)
 
   // Demo gallery overlay + a flag so analytics tags demo loads as `source: 'demo'`.
   const [showDemoGallery, setShowDemoGallery] = useState(false)
@@ -148,7 +213,7 @@ export default function App() {
       if (mod && e.shiftKey && e.key === 'V') {
         e.preventDefault()
         if (!validation.isRunning && validation.canRun) {
-          void validation.run(undefined, undefined, true)
+          void validation.runAll(undefined, true)
         }
       }
 
@@ -220,6 +285,11 @@ export default function App() {
       setValidationPanelOpen(true)
       trackValidationPanelOpened({ trigger: 'auto' })
 
+      // Track when a second (or later) model is loaded into the scene
+      if (useSceneStore.getState().models.length > 0) {
+        trackFeatureUsed({ feature: 'multi_model' })
+      }
+
       // Use the stable sceneModelId from the viewer so ScenePanel and multi-model code align
       addSceneModel(modelId, info)
 
@@ -250,6 +320,7 @@ export default function App() {
       console.error('[IFC] Load error:', msg)
       setLoadingState('error')
       setLoadError(msg)
+      trackFileOpenFailed({ error_msg: msg.slice(0, 200) })
     },
   })
 
@@ -276,6 +347,25 @@ export default function App() {
       top_rule:      topRule,
     })
   }, [result])
+
+  // ── Analytics: SPA route transitions (virtual pageviews) ─────────────────
+  useEffect(() => {
+    const from = prevRouteRef.current
+    prevRouteRef.current = route
+    if (route === from) return
+    // Only track transitions TO viewer/report — initial landing is captured by PostHog's pageview
+    if (route === 'viewer' || route === 'report') {
+      trackRouteChanged({ to: route, from })
+    }
+  }, [route])
+
+  // ── Analytics: first element selected in 3D (session-once) ───────────────
+  useEffect(() => {
+    if (selected && !hasTrackedFirstInteraction.current) {
+      hasTrackedFirstInteraction.current = true
+      trackViewerFirstInteraction()
+    }
+  }, [selected])
 
   // ── Sync active model in sceneStore when the user clicks an element ───────
   // commitSelection in the viewer auto-activates the hit model, but doesn't
@@ -479,6 +569,9 @@ export default function App() {
       useValidationStore.getState().clearValidationForModel(id)
       useTakeoffStore.getState().clearModelResult(id)
       modelRegistry.unregister(id)
+      // Recompose the displayed validation result so the removed model's issues
+      // drop out (and the panel clears if no validated models remain).
+      publishAggregateResult()
       // Clear selection if the removed model owned the currently selected element
       setSelected((prev) => (prev?.modelId === id ? null : prev))
     } catch (err: unknown) {
@@ -490,7 +583,12 @@ export default function App() {
 
   // ── Navigate back to landing — reset all model/editor/validation state ────
   const handleNavigateToLanding = useCallback((): void => {
+    const base = import.meta.env.BASE_URL ?? '/'
+    if (window.location.pathname !== base && window.location.pathname !== base.replace(/\/$/, '')) {
+      history.pushState(null, '', base)
+    }
     setRoute('landing')
+    setBlogSlug(null)
     setModelInfo(null)
     setLoadingState('idle')
     setLoadError(null)
@@ -552,6 +650,24 @@ export default function App() {
               onLaunch={handleLaunch}
               onOpenUpload={handleOpenUpload}
               onOpenDemoGallery={handleOpenDemoGallery}
+              onNavigateToBlog={handleNavigateToBlog}
+            />
+          </motion.div>
+        )}
+
+        {route === 'blog' && (
+          <motion.div
+            key="blog"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <Blog
+              slug={blogSlug}
+              onNavigateToPost={handleNavigateToBlogPost}
+              onNavigateToBlog={handleNavigateFromBlogToList}
+              onNavigateToLanding={handleNavigateToLanding}
             />
           </motion.div>
         )}
