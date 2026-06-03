@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { getBlogPost, getBlogPostsByLang, getFeaturedPost, type BlogPost, type ContentBlock } from '../lib/blog-posts'
+import { getBlogPost, getBlogPostsByLang, getFeaturedPost, type BlogPost, type ContentBlock, type RichText } from '../lib/blog-posts'
 import * as Icons from './Icons'
 import SpotlightCard  from './reactbits/SpotlightCard'
 import CountUp        from './reactbits/CountUp'
@@ -45,6 +45,56 @@ function catColor(slug: string): string {
   return CATEGORY_COLORS[slug] ?? 'bg-[rgba(100,116,139,0.12)] text-[var(--text-dim)]'
 }
 
+// ─── Inline rich text (internal/external links inside paragraphs) ──────────────
+
+/** Build a crawlable href for an internal blog post, respecting base path + language prefix. */
+function postHref(slug: string, lang: string): string {
+  const prefix = lang === 'en' ? '' : `${lang}/`
+  return `${BASE}${prefix}blog/${slug}/`
+}
+
+const INLINE_LINK_CLASS =
+  'text-[var(--accent-2)] underline decoration-[rgba(129,140,248,0.4)] underline-offset-2 ' +
+  'hover:decoration-[var(--accent-2)] transition-colors'
+
+function RenderInline({ text, lang, onNavigateToPost }: {
+  text: RichText
+  lang: string
+  onNavigateToPost: (slug: string) => void
+}) {
+  if (typeof text === 'string') return <>{text}</>
+  return (
+    <>
+      {text.map((seg, i) => {
+        if (typeof seg === 'string') return <React.Fragment key={i}>{seg}</React.Fragment>
+        if ('to' in seg) {
+          // Internal post link — real href for crawlers/middle-click, SPA nav on click.
+          return (
+            <a
+              key={i}
+              href={postHref(seg.to, lang)}
+              onClick={(e) => {
+                // Let modifier-clicks (new tab) and middle-clicks behave natively.
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+                e.preventDefault()
+                onNavigateToPost(seg.to)
+              }}
+              className={INLINE_LINK_CLASS}
+            >
+              {seg.text}
+            </a>
+          )
+        }
+        return (
+          <a key={i} href={seg.href} target="_blank" rel="noopener noreferrer" className={INLINE_LINK_CLASS}>
+            {seg.text}
+          </a>
+        )
+      })}
+    </>
+  )
+}
+
 // ─── Block renderer ───────────────────────────────────────────────────────────
 
 const CALLOUT_STYLES = {
@@ -53,11 +103,20 @@ const CALLOUT_STYLES = {
   info:    { border: 'border-[rgba(99,102,241,0.22)]', bg: 'bg-[rgba(94,106,210,0.06)]',  icon: 'ℹ️', label: 'NOTE' },
 }
 
-function RenderBlock({ block, onNavigateToLanding }: { block: ContentBlock; onNavigateToLanding: () => void }) {
+function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
+  block: ContentBlock
+  lang: string
+  onNavigateToPost: (slug: string) => void
+  onNavigateToLanding: () => void
+}) {
   switch (block.type) {
 
     case 'p':
-      return <p className="text-[15.5px] leading-[1.82] text-[var(--text-dim)] mb-5">{block.text}</p>
+      return (
+        <p className="text-[15.5px] leading-[1.82] text-[var(--text-dim)] mb-5">
+          <RenderInline text={block.text} lang={lang} onNavigateToPost={onNavigateToPost} />
+        </p>
+      )
 
     case 'h2':
       return (
@@ -675,7 +734,13 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
             {/* Article body */}
             <div>
               {post.content.map((block, i) => (
-                <RenderBlock key={i} block={block} onNavigateToLanding={onNavigateToLanding} />
+                <RenderBlock
+                  key={i}
+                  block={block}
+                  lang={post.lang ?? 'en'}
+                  onNavigateToPost={onNavigateToPost}
+                  onNavigateToLanding={onNavigateToLanding}
+                />
               ))}
             </div>
 

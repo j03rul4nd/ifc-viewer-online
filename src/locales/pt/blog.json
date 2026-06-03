@@ -1,0 +1,42 @@
+{
+  "copyForAI": {
+    "trigger": "Explicar com IA",
+    "header": "EXPLICAR COM IA",
+    "description": "Copie este artigo como um prompt estruturado. Cole-o no <claude>Claude</claude>, <chatgpt>ChatGPT</chatgpt>, ou em qualquer assistente de IA para uma explicação personalizada.",
+    "button": {
+      "idle": "Copiar prompt de IA",
+      "copying": "A copiar…",
+      "copied": "Prompt copiado!",
+      "errorPermission": "Permissão negada",
+      "errorUnavailable": "Não disponível neste navegador",
+      "errorUnknown": "Erro — tente novamente"
+    },
+    "hint": {
+      "permission": "O navegador bloqueou o acesso à área de transferência. Clique no ícone de cadeado na barra de endereço e permita «Área de transferência».",
+      "unavailable": "O seu navegador não suporta a API da área de transferência. Experimente uma versão recente do Chrome, Edge ou Firefox.",
+      "unknown": "Algo correu mal ao copiar. Tente novamente ou selecione o texto manualmente."
+    },
+    "platformAria": "Copiar prompt e abrir {{platform}}",
+    "platformGroupAria": "Abrir numa plataforma de IA",
+    "dialogAria": "Explicar artigo com IA",
+    "confirm": "✓ Prompt na área de transferência — cole-o em qualquer janela de chat de IA",
+    "prompt": {
+      "intro": "Estou a ler um artigo sobre BIM e ficheiros IFC. Por favor, ajuda-me a compreender melhor este conteúdo.",
+      "task": "Com base neste artigo, por favor:",
+      "step1": "Resume as 3 conclusões práticas mais importantes em linguagem clara",
+      "step2": "Explica os termos técnicos (entidades IFC, normas, acrónimos) que eu possa não conhecer",
+      "step3": "Dá-me uma ação concreta que eu deveria realizar com base neste artigo",
+      "step4": "Responde às perguntas de seguimento que eu possa ter sobre este tema",
+      "tail": "Se eu te fornecer o caminho para um ficheiro IFC ou descrever o meu projeto, relaciona as tuas respostas com a minha situação específica."
+    },
+    "doc": {
+      "category": "Categoria",
+      "readTime": "min de leitura",
+      "source": "Fonte",
+      "demo": "Demonstração interativa disponível",
+      "demoTry": "Experimente gratuitamente em",
+      "imageLabel": "Imagem",
+      "footer": "Este artigo é do IFC Viewer Online — um visualizador IFC gratuito no navegador. Os ficheiros nunca saem da sua máquina. Experimente em {{site}}"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "copyForAI": {
+    "trigger": "Expliquer avec l'IA",
+    "header": "EXPLIQUER AVEC L'IA",
+    "description": "Copiez cet article sous forme de prompt structuré. Collez-le dans <claude>Claude</claude>, <chatgpt>ChatGPT</chatgpt>, ou tout autre assistant IA pour une explication personnalisée.",
+    "button": {
+      "idle": "Copier le prompt IA",
+      "copying": "Copie en cours…",
+      "copied": "Prompt copié !",
+      "errorPermission": "Autorisation refusée",
+      "errorUnavailable": "Non disponible dans ce navigateur",
+      "errorUnknown": "Erreur — réessayez"
+    },
+    "hint": {
+      "permission": "Le navigateur a bloqué l'accès au presse-papiers. Cliquez sur l'icône de cadenas dans la barre d'adresse et autorisez « Presse-papiers ».",
+      "unavailable": "Votre navigateur ne prend pas en charge l'API Presse-papiers. Essayez une version récente de Chrome, Edge ou Firefox.",
+      "unknown": "Une erreur s'est produite lors de la copie. Réessayez ou sélectionnez le texte manuellement."
+    },
+    "platformAria": "Copier le prompt et ouvrir {{platform}}",
+    "platformGroupAria": "Ouvrir dans une plateforme IA",
+    "dialogAria": "Expliquer l'article avec l'IA",
+    "confirm": "✓ Prompt dans le presse-papiers — collez-le dans n'importe quelle fenêtre de chat IA",
+    "prompt": {
+      "intro": "Je lis un article sur le BIM et les fichiers IFC. Aide-moi à mieux comprendre ce contenu.",
+      "task": "À partir de cet article, peux-tu :",
+      "step1": "Résumer les 3 conclusions pratiques les plus importantes en langage clair",
+      "step2": "Expliquer les termes techniques (entités IFC, normes, acronymes) que je pourrais ignorer",
+      "step3": "Me donner une action concrète à réaliser sur la base de cet article",
+      "step4": "Répondre aux questions de suivi que je pourrais avoir sur ce sujet",
+      "tail": "Si je te fournis le chemin d'un fichier IFC ou décris mon projet, relie tes réponses à ma situation spécifique."
+    },
+    "doc": {
+      "category": "Catégorie",
+      "readTime": "min de lecture",
+      "source": "Source",
+      "demo": "Démo interactive disponible",
+      "demoTry": "Essayez-la gratuitement sur",
+      "imageLabel": "Image",
+      "footer": "Cet article provient d'IFC Viewer Online — un visionneur IFC gratuit dans le navigateur. Les fichiers ne quittent jamais votre machine. Essayez-le sur {{site}}"
+    }
+  }
+}

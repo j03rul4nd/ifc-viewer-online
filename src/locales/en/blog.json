@@ -1,0 +1,42 @@
+{
+  "copyForAI": {
+    "trigger": "Explain with AI",
+    "header": "EXPLAIN WITH AI",
+    "description": "Copy this article as a structured prompt. Paste it into <claude>Claude</claude>, <chatgpt>ChatGPT</chatgpt>, or any AI assistant for a personalized explanation.",
+    "button": {
+      "idle": "Copy AI prompt",
+      "copying": "Copying…",
+      "copied": "Prompt copied!",
+      "errorPermission": "Permission denied",
+      "errorUnavailable": "Not supported in this browser",
+      "errorUnknown": "Error — try again"
+    },
+    "hint": {
+      "permission": "The browser blocked clipboard access. Click the lock icon in the address bar and allow “Clipboard”.",
+      "unavailable": "Your browser doesn’t support the Clipboard API. Try a modern version of Chrome, Edge or Firefox.",
+      "unknown": "Something went wrong while copying. Try again or select the text manually."
+    },
+    "platformAria": "Copy prompt and open {{platform}}",
+    "platformGroupAria": "Open in AI platform",
+    "dialogAria": "Explain article with AI",
+    "confirm": "✓ Prompt in clipboard — paste it into any AI chat window",
+    "prompt": {
+      "intro": "I'm reading an article about BIM and IFC files. Please help me understand this content better.",
+      "task": "Based on this article, please:",
+      "step1": "Summarize the 3 most important practical takeaways in plain language",
+      "step2": "Explain the technical terms (IFC entities, standards, acronyms) I might not know",
+      "step3": "Give me one concrete action I should take based on this article",
+      "step4": "Answer any follow-up questions I have on this topic",
+      "tail": "If I give you a path to an IFC file or describe my project, relate your answers to my specific situation."
+    },
+    "doc": {
+      "category": "Category",
+      "readTime": "min read",
+      "source": "Source",
+      "demo": "Interactive demo available",
+      "demoTry": "Try it free at",
+      "imageLabel": "Image",
+      "footer": "This article is from IFC Viewer Online — a free in-browser IFC viewer. Files never leave your machine. Try it at {{site}}"
+    }
+  }
+}

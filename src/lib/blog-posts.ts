@@ -1,8 +1,22 @@
 // ─── Blog posts ───────────────────────────────────────────────────────────────
 // Content data — no JSX, no imports. All visual rendering lives in Blog.tsx.
 
+/**
+ * Inline rich-text segment, used inside `p` blocks.
+ * - a plain string renders as text
+ * - `{ text, to }`   renders an internal link to another blog post (by slug), navigated in-SPA
+ * - `{ text, href }` renders an external link (opens in a new tab)
+ */
+export type InlineSegment =
+  | string
+  | { text: string; to: string }
+  | { text: string; href: string }
+
+/** A paragraph's text: either a plain string (most common) or rich-text segments for inline links. */
+export type RichText = string | InlineSegment[]
+
 export type ContentBlock =
-  | { type: 'p'; text: string }
+  | { type: 'p'; text: RichText }
   | { type: 'h2'; text: string }
   | { type: 'h3'; text: string }
   | { type: 'ul'; items: string[] }
@@ -493,6 +507,822 @@ export const BLOG_POSTS: BlogPost[] = [
         'Classification system matches the one agreed in the PIR.',
         'Health Score ≥ 80 (structural quality prerequisite for formal delivery).',
       ]},
+    ],
+  },
+
+  // ── Post 10 — Quick win: GUIDs change on every export ────────────────────────
+
+  {
+    slug: 'ifc-guids-changing-every-export',
+    title: 'Why IFC GUIDs Change on Every Export (and How to Keep Them Stable)',
+    excerpt: "You re-export the same model, send it to your coordinator, and every BCF comment, clash issue, and FM tag is suddenly pointing at the wrong element — or nothing at all. The cause: your IFC GlobalIds were regenerated. Here's why it happens and how to lock them down.",
+    date: '2026-06-03',
+    readTimeMin: 8,
+    category: 'Validation',
+    categorySlug: 'validation',
+    author: 'IFC Viewer Team',
+    content: [
+      { type: 'p', text: "There are two completely different GUID problems in IFC, and they get confused constantly. The first is duplicate GUIDs — two elements sharing one GlobalId in a single file. The second, covered here, is GUID instability: the same element getting a different GlobalId every time you re-export the model. Both break coordination, but the second is sneakier, because each individual file looks perfectly valid." },
+      { type: 'p', text: "If you coordinate clashes, run BCF workflows, or hand a model to facilities management, stable GlobalIds are not optional. They are the only thing that lets a tool say 'this wall in revision 4 is the same wall as in revision 2'. When they drift, every reference that pointed at the old ID silently dangles." },
+      {
+        type: 'stat-row',
+        stats: [
+          { value: 22, suffix: '', label: 'chars in an IFC GUID' },
+          { value: 3,  suffix: '', label: 'max value of first char' },
+          { value: 0,  suffix: ' bytes', label: 'uploaded to validate' },
+          { value: 100, suffix: '%', label: 'runs in browser' },
+        ],
+      },
+      { type: 'h2', text: 'What a Stable GlobalId Is Supposed to Be' },
+      { type: 'p', text: "Every IFC entity that inherits from IfcRoot carries a GlobalId: a 22-character string using IFC's custom base-64 alphabet (0–9, A–Z, a–z, _, $). The spec is explicit that it should be globally unique and persistent — the same logical element keeps the same GlobalId across revisions and across software round-trips. That persistence is what makes change tracking, BCF, and asset registers possible." },
+      {
+        type: 'code',
+        lang: 'ifc',
+        text: `// Revision 2
+#1402 = IFCWALL('3LYa_FRDj3zhLfyYoQv6Jr', $, 'Exterior Wall - 300mm', ...);
+
+// Revision 3 — same wall, regenerated GlobalId. Every reference to the old ID now dangles.
+#1402 = IFCWALL('2hQ8pZ_a1ABxKm9dELc0Ru', $, 'Exterior Wall - 300mm', ...);`,
+      },
+      { type: 'callout', variant: 'warning', text: "A regenerated GlobalId is not a schema error. The file validates against the schema, opens cleanly in any viewer, and looks correct. The damage only shows up downstream, days later, when a BCF issue resolves to the wrong element — which is exactly why it's so expensive to debug after the fact." },
+      { type: 'h2', text: 'Why Revit Regenerates GUIDs' },
+      { type: 'p', text: "The root cause is that there is not always a clean one-to-one mapping between a Revit element and the IFC entity it exports to. A single Revit element can split into several IFC entities (a railing becomes a rail plus balusters plus a handrail), and when there is no stable 1:1 relationship, the exporter has no reliable anchor to derive a consistent GlobalId from. So it generates a fresh one." },
+      { type: 'p', text: "Historically the IFC GUID parameter in Revit was read-only, which meant teams couldn't pin it even when they wanted to. Newer exporter versions made it read-write so the value can be stored and reused — but you still have to turn the right setting on, because the default behaviour on some configurations is to regenerate." },
+      { type: 'ul', items: [
+        "Sub-element splitting: one host element exporting to multiple IFC entities (railings, stairs, curtain walls, roofs with fascias) is the classic source of drift.",
+        "Re-export with 'generate new' behaviour: some export setups recreate GUIDs every time rather than reusing the stored value.",
+        "Copy/paste and group edits in the authoring tool can reset the internal ID the GUID is derived from.",
+        "Round-tripping through a tool that doesn't preserve GlobalIds (open-and-resave in a viewer or converter) rewrites them.",
+      ]},
+      { type: 'h2', text: 'The Other Half: Invalid GUID Range' },
+      { type: 'p', text: "There's a related failure that hand-rolled export scripts hit constantly. The first character of a valid IFC GlobalId can only encode the values 0–3 in the 6-bit alphabet, because a 128-bit UUID packed into 22 base-64 characters leaves the leading sextet with only two significant bits. Scripts that take a plain 32-hex-character UUID and naively truncate or re-encode it produce a first character outside that range." },
+      {
+        type: 'pull-quote',
+        text: "The GUID values are out of the valid range — if the first digit is anything other than 0, 1, 2 or 3, it is not a conformant IFC GlobalId.",
+        cite: 'buildingSMART Forums — common IFC export mistakes',
+      },
+      { type: 'p', text: "An out-of-range GlobalId will be silently tolerated by lenient parsers and rejected by strict ones — so the same file 'works' in one tool and fails validation in another, which is maddening to diagnose without a checker that flags the range explicitly." },
+      { type: 'h2', text: 'How to Detect Unstable or Invalid GUIDs' },
+      { type: 'p', text: "You can't see GUID drift by looking at a single file — you need to compare two exports, or check for invalid format and duplicates within one. Open both revisions in the validator: it flags GlobalIds that are out of the valid range, duplicated within a file, or malformed, in under 30 seconds, entirely in your browser. Nothing is uploaded." },
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Check GlobalIds in a real model',
+        description: "Open the buildingSMART duplex to see a clean GlobalId report, then drop in two consecutive exports of your own model to spot which elements had their IDs regenerated.",
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+      },
+      { type: 'h2', text: 'How to Keep GUIDs Stable' },
+      { type: 'h3', text: 'Revit' },
+      { type: 'p', text: "Use the open-source IFC exporter, and in File → Export → IFC → Modify Setup → Advanced, set \"Export IFC GUIDs\" to \"Keep Existing\" (never \"Generate New\"). This reuses the stable GlobalId Revit stores per element instead of minting a new one each export. For elements that split into multiple IFC entities, accept that the sub-entities may not be perfectly stable — anchor your coordination on the host element's ID." },
+      { type: 'h3', text: 'ArchiCAD' },
+      { type: 'p', text: "In the IFC Translator settings, enable \"Write stable GlobalIDs (from AC internal IDs)\". Without it, ArchiCAD derives GlobalIds in a way that can shift between exports." },
+      { type: 'h3', text: 'Fixing what already drifted' },
+      { type: 'p', text: "If a file already contains invalid or duplicate GlobalIds, the validator can auto-fix them: it generates a fresh, spec-compliant 22-character GlobalId using the correct base-64 alphabet with a leading character in 0–3. Use this to repair a delivered file's format — but fix the export setting upstream too, or the next re-export reintroduces the drift." },
+      { type: 'callout', variant: 'tip', text: "Put it in the BEP: 'IFC deliveries must use stable GlobalIds across revisions (Keep Existing). Files with out-of-range or duplicate GlobalIds will be rejected at the CDE.' One sentence prevents an entire class of coordination failures." },
+      { type: 'p', text: ["Related reading on the duplicate-GUID case (two elements, one ID) and the full set of structural checks: see ", { text: 'Duplicate GUIDs in IFC', to: 'duplicate-guids-ifc' }, ' and ', { text: 'The 7 Most Common IFC Validation Errors', to: 'common-ifc-validation-errors' }, ' in this blog.'] },
+    ],
+  },
+
+  // ── Post 11 — Quick win: properties missing after Revit export ───────────────
+
+  {
+    slug: 'ifc-properties-missing-after-export',
+    title: 'IFC Properties Missing After Export From Revit? The Fix Checklist',
+    excerpt: "You exported the model, opened the IFC, and half your parameters are gone — or worse, they exported fine for you but vanished when a colleague ran the same export. Here's the checklist that explains why IFC properties go missing from Revit and how to get every one of them across.",
+    date: '2026-06-03',
+    readTimeMin: 8,
+    category: 'Tool Guides',
+    categorySlug: 'tool-guides',
+    author: 'IFC Viewer Team',
+    content: [
+      { type: 'p', text: "Missing properties is one of the most reported IFC export problems, and it's rarely a single bug — it's four or five distinct causes that all look identical from the outside: you open the exported IFC and the data you expected just isn't there. The frustrating part is that the geometry is perfect, so nothing looks broken until someone downstream goes looking for a parameter that should be on every element." },
+      { type: 'p', text: "Before you change a single export setting, confirm the properties are actually missing rather than just hiding under a different property set name. Open the IFC and click any element — the full property set list shows you exactly which Psets and values survived the export." },
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Inspect property sets on a real model',
+        description: "Open the buildingSMART duplex, click any wall, and browse its complete property sets. Then open your own export and check whether your parameters made it across — and under which Pset.",
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+      },
+      { type: 'h2', text: "Cause 1: The Parameter Has No Value" },
+      { type: 'p', text: "The single most common reason. If a Revit parameter is empty for an element, the IFC exporter drops it for that element rather than writing an empty property. In the export mapping UI those parameters often appear greyed out. The fix is upstream: populate the parameter in Revit. An empty parameter is not exported, full stop." },
+      { type: 'h2', text: "Cause 2: Unit Mismatch With the IFC Schema" },
+      { type: 'p', text: "When a Revit parameter shares its name with a standard IFC property but uses a different unit type (a length parameter mapping to a property the schema expects as a count, for example), the exporter can refuse to write it. The value exists, but it silently fails to map." },
+      { type: 'callout', variant: 'tip', text: "Workaround for a unit mismatch: create a new Revit parameter with a different name and the correct data type, then map that parameter to the target IFC property in your Pset mapping file. This sidesteps the name collision that's blocking the export." },
+      { type: 'h2', text: "Cause 3: Custom Pset Mapping File Problems" },
+      { type: 'p', text: "Custom property sets are driven by a text mapping file (the IFC export user-defined Pset configuration). If a property name in that file doesn't exactly match a Revit parameter — wrong spelling, wrong case, wrong data type token, or a parameter that doesn't exist in the model — that line produces nothing. No error, just a missing property." },
+      { type: 'ul', items: [
+        "Confirm the mapping file is actually selected in the export setup (it resets between sessions and machines).",
+        "Match parameter names exactly, including case and spacing.",
+        "Make sure the declared data type (Text, Real, Integer, Boolean) matches the Revit parameter's type.",
+        "Verify the parameter exists on the categories you're exporting — a wall Pset line won't populate doors.",
+      ]},
+      { type: 'h2', text: "Cause 4: It Works for One Person but Not Another" },
+      { type: 'p', text: "A genuinely confusing case reported repeatedly: the same model exports all parameters when one team member runs it, but loses shared parameters when a colleague exports it. The usual culprit is that shared parameters and the custom Pset mapping file are stored locally per machine. If the shared parameter file or the mapping file isn't identical on both workstations, the export silently differs." },
+      { type: 'callout', variant: 'warning', text: "Store the shared parameter file and the IFC Pset mapping file on a shared network location or in your project template, and point everyone's Revit at the same copy. Per-machine local files are the reason 'the same export' produces different IFC data for different people." },
+      { type: 'h2', text: "Cause 5: Standard Psets Were Never Enabled" },
+      { type: 'p', text: "Common Property Sets (Pset_WallCommon, Pset_DoorCommon, and so on) are the schema-standardised data that any receiving tool knows how to read — the passport data of your model. They are not always exported by default. In the IFC export setup, enable \"Export IFC Common Property Sets\" so the standard Psets are written alongside any custom ones." },
+      { type: 'h2', text: "The Pre-Delivery Property Checklist" },
+      { type: 'ol', items: [
+        "Populate empty parameters in Revit — empty values are never exported.",
+        "Enable 'Export IFC Common Property Sets' so standard Psets are included.",
+        "Select your custom Pset mapping file in the export setup (check it didn't reset).",
+        "Confirm the shared parameter file and mapping file are identical across the team.",
+        "Resolve unit mismatches by remapping to a correctly-typed parameter.",
+        "Export to a local folder, open the IFC, and verify the properties survived — before the file reaches the CDE.",
+      ]},
+      { type: 'p', text: ["For the export settings that prevent GUID, coordinate, and proxy problems at the same time, see ", { text: 'How to Export Clean IFC Files from Revit', to: 'clean-ifc-export-revit' }, ". To confirm nothing else is wrong before delivery, ", { text: 'run a full validation', to: 'how-to-validate-ifc-file' }, " and target a Health Score of 80 or above."] },
+    ],
+  },
+
+  // ── Post 12 — High leverage: validate IFC before sending (BOFU) ──────────────
+
+  {
+    slug: 'how-to-validate-ifc-file',
+    title: 'How to Validate an IFC File Before You Send It (Free, No Upload)',
+    excerpt: "Your BEP says 'deliver a quality IFC' but never defines how to check it. Here are the three real ways to validate an IFC file — the buildingSMART service, IfcOpenShell, and an in-browser health check — what each one actually catches, and which to use before you hit send.",
+    date: '2026-06-03',
+    readTimeMin: 9,
+    category: 'Validation',
+    categorySlug: 'validation',
+    author: 'IFC Viewer Team',
+    content: [
+      { type: 'p', text: "Almost everyone exports an IFC and sends it. Almost no one checks it first — not because they don't care, but because 'validate the IFC' is genuinely ambiguous. Validate against what? The schema? The project requirements? Whether it'll open in the coordinator's tool? Those are three different questions with three different tools, and conflating them is why so many models get rejected at the Common Data Environment." },
+      { type: 'p', text: "This is the practical map: what 'valid' means, the three ways to check it, and what each one will and won't catch." },
+      { type: 'h2', text: "What 'Valid' Actually Means" },
+      { type: 'p', text: "There are two layers, and they're independent. A file can pass one and fail the other." },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '📐', title: 'Schema validity', body: "Does the file conform to the IFC standard (ISO 10303-21 syntax, IFC schema, MVD rules)? A file can be schema-valid and still be useless for coordination." },
+          { icon: '🩺', title: 'Practical health', body: "Will it actually work downstream? Stable GUIDs, correct spatial hierarchy, named elements, sensible coordinates, present property sets. This is what gets models rejected — and it's not what schema checkers measure." },
+        ],
+      },
+      { type: 'callout', variant: 'info', text: "A file with zero schema errors can still score 40 on a practical health check — broken spatial hierarchy, thousands of unnamed elements, geometry 10 km from the origin. Schema-valid does not mean delivery-ready." },
+      { type: 'h2', text: 'Option 1: The buildingSMART Validation Service' },
+      { type: 'p', text: "The official, free, web-based service from buildingSMART International. It judges conformity against the IFC standard: STEP syntax, schema compliance, normative rules, and buildingSMART Data Dictionary alignment. It produces an authoritative pass/fail report — this is the reference for schema correctness." },
+      { type: 'ul', items: [
+        "Best for: certifying that a file conforms to the IFC standard, especially for formal or contractual schema-conformance claims.",
+        "What it doesn't do: it isn't a practical 'is this good enough to coordinate' score, and you upload the file to a service — a non-starter for confidential project data you can't send to a third party.",
+      ]},
+      { type: 'h2', text: 'Option 2: IfcOpenShell (for developers)' },
+      { type: 'p', text: "If you write Python, IfcOpenShell validates from the command line: python -m ifcopenshell.validate model.ifc. It's scriptable, free, runs locally, and integrates into CI pipelines for teams that automate QA." },
+      {
+        type: 'code',
+        lang: 'bash',
+        text: `# Validate an IFC file locally with IfcOpenShell
+python -m ifcopenshell.validate path/to/model.ifc
+
+# Pipe the results into your own pre-delivery checks
+python validate_and_score.py model.ifc`,
+      },
+      { type: 'ul', items: [
+        "Best for: developers and BIM-automation teams who want validation inside a script or build pipeline.",
+        "What it doesn't do: there's no 3D view and no one-click report — a coordinator who just wants to know if the model is OK won't install Python for it.",
+      ]},
+      { type: 'h2', text: 'Option 3: An In-Browser Health Check (30 Seconds)' },
+      { type: 'p', text: "Drag the IFC into the viewer. It parses client-side via WebAssembly — nothing is uploaded — runs 38 practical validation rules in a background thread, and returns a single Health Score from 0 to 100 plus a per-issue breakdown you can see against the 3D model. This is the layer the other two don't cover: a fast, private, practical judgment of whether the model is fit to send." },
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Validate a model live',
+        description: "Open the buildingSMART duplex to see a clean Health Score and report, then drop in your own export to check it before delivery. Your file never leaves your machine.",
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+      },
+      { type: 'h2', text: 'Which One to Use, When' },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Use the in-browser health check when…',
+          color: 'accent',
+          items: [
+            'You want to know if a model is fit to send, right now',
+            "The file is confidential and can't be uploaded anywhere",
+            'You need a number to put in a transmittal or BEP',
+            'You want to see issues against the 3D model, not just a log',
+            'You are a coordinator, not a developer',
+          ],
+        },
+        right: {
+          label: 'Use buildingSMART / IfcOpenShell when…',
+          color: 'muted',
+          items: [
+            'You need authoritative schema-conformance certification',
+            'You are automating QA inside a CI pipeline (IfcOpenShell)',
+            'You write Python and want scriptable checks',
+            'A contract requires a formal standard-conformance statement',
+            'You need MVD / bSDD compliance specifically',
+          ],
+        },
+      },
+      { type: 'h2', text: 'The Practical Pre-Send Checklist' },
+      { type: 'p', text: "Whatever tool you use, these are the things that actually get models rejected. Each maps to a validation rule with a step-by-step fix guide:" },
+      { type: 'ol', items: [
+        'No duplicate or out-of-range GlobalIds.',
+        'Every physical element sits inside a storey, not directly under Site or Building.',
+        'Exactly one IfcProject at the root, with a complete spatial hierarchy.',
+        'No orphan elements and no broken aggregates.',
+        'Coordinates are sensible — the model is near the world origin, not kilometres away.',
+        'Standard property sets are present; elements are named.',
+        'Health Score ≥ 80 before any CDE upload.',
+      ]},
+      { type: 'callout', variant: 'tip', text: "Make it contractual: 'IFC deliveries must achieve a Health Score ≥ 80, validated before upload, with the score attached to the transmittal.' A schema-only check won't enforce delivery quality — a practical score will." },
+    ],
+  },
+
+  // ── Post 13 — High leverage: large IFC crashes the browser ───────────────────
+
+  {
+    slug: 'large-ifc-file-browser-crash',
+    title: 'Why Large IFC Files Crash Your Browser (and How to View a 1 GB Model)',
+    excerpt: "A 600 MB federated IFC, 1.7 GB of RAM, 3 frames per second, then the tab dies. Large IFC files break most web viewers for concrete technical reasons. Here's what's actually happening — and how to open a model that size without a server or a high-end workstation.",
+    date: '2026-06-03',
+    readTimeMin: 9,
+    category: 'Tool Guides',
+    categorySlug: 'tool-guides',
+    author: 'IFC Viewer Team',
+    content: [
+      { type: 'p', text: "Everyone who works with federated models hits the same wall: the combined architectural + structural + MEP IFC is 600 MB to over 1 GB, and the moment you try to open it in a browser the fan spins up, memory climbs past 1.7 GB, the frame rate drops to single digits, and eventually the tab crashes. It's not that you're doing anything wrong. Large IFC files break most web viewers for very specific reasons." },
+      {
+        type: 'stat-row',
+        stats: [
+          { value: 1,   suffix: ' GB+', label: 'typical federated model' },
+          { value: 1.7, suffix: ' GB', label: 'RAM even when optimized' },
+          { value: 3,   suffix: ' FPS', label: 'unoptimized models' },
+          { value: 12,  suffix: '×', label: 'slower: open-source vs commercial' },
+        ],
+      },
+      { type: 'h2', text: 'Why Large IFC Files Crash the Browser' },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '🧵', title: 'Single-threaded parsing', body: "Converting IFC text into 3D geometry is CPU-intensive and traditionally runs on one thread. The whole file has to be parsed before anything renders, so the UI freezes while it works." },
+          { icon: '🧠', title: 'Memory ceiling', body: "Even an optimized model can consume ~1.7 GB of RAM. On an 8 GB laptop the browser hits its per-tab memory limit and the renderer is killed — that's the 'tab crashed' page." },
+          { icon: '🔺', title: 'Tessellation cost', body: "IFC geometry is often defined as parametric solids (extrusions, sweeps). Tessellating them into triangle meshes for WebGL multiplies the data and the work — millions of triangles to push every frame." },
+          { icon: '📥', title: 'Load-everything-first', body: "Most viewers download and convert the entire file up front, even though you only ever look at a fraction of it at once. Nothing is rendered until everything is processed." },
+        ],
+      },
+      { type: 'h2', text: 'Why Open-Source Viewers Feel Slower Than Commercial Ones' },
+      { type: 'p', text: "A widely-shared community benchmark put it starkly: a 288 MB electrical model took around 830 seconds to load in one open-source tool versus about 67 seconds in a commercial viewer — over 12× slower. The gap isn't magic. Commercial viewers often avoid full tessellation by representing parametric forms more directly, and they pre-process models on a server into a streaming-optimized format before you ever open them." },
+      {
+        type: 'pull-quote',
+        text: "830 seconds in an open-source viewer versus 67 in a commercial one. What's the secret sauce here?",
+        cite: 'IfcOpenShell GitHub — viewing large federated models',
+      },
+      { type: 'p', text: "The 'secret sauce' is preprocessing and streaming — and that's also the catch. The fastest open-source pipelines (converting IFC to xeokit's XKT, or to glTF) require technical knowledge and a server to do the conversion. That's fine for a product team, but it's not something a coordinator can do with a file a client just emailed them." },
+      { type: 'h2', text: 'The Strategies That Actually Help' },
+      { type: 'ul', items: [
+        "Convert once, load many: parse the IFC into a fast geometry format (Fragments, XKT, or glTF/GLB) one time, then load that on every subsequent open. Runtime IFC parsing is too slow for repeated use.",
+        "Tiling: split the model into spatial chunks so only what's near the camera is loaded and drawn.",
+        "Culling: skip geometry that's off-screen or occluded instead of pushing it to the GPU every frame.",
+        "Geometry compression: deduplicate repeated elements (every identical bolt or baluster references one mesh) and quantize coordinates to shrink the payload.",
+        "Reduce the file before you open it: export only the disciplines you need, and zip it (ifcZIP) for transfer.",
+      ]},
+      { type: 'h2', text: 'How to Open a Large Model Without a Server or Upload' },
+      { type: 'p', text: "This viewer parses IFC client-side with WebAssembly and caches the converted geometry in the browser's Origin Private File System, so the expensive parse happens once and repeat loads are roughly 10× faster. There's no upload step and no server to set up — you get the convert-once benefit of a commercial pipeline without sending your model anywhere. Federating several discipline models in one view works the same way: load them one after another." },
+      {
+        type: 'ifc-demo',
+        modelId: 'ifc4-revit-arc',
+        title: 'Open a real-size model',
+        description: "A full Revit-exported IFC4 architecture model at production size. Open it to see how a larger file loads and caches in the browser — then try your own heavy federated model.",
+        schema: 'IFC4',
+        size: '14 MB',
+      },
+      { type: 'callout', variant: 'tip', text: "If a model still struggles, trim it before loading: export per discipline rather than one monolithic file, drop detail you don't need for the task at hand, and prefer IFC4 — its tessellated geometry is typically far smaller than the equivalent IFC2x3 B-rep notation. See 'IFC2x3 vs IFC4' in this blog." },
+      { type: 'p', text: "The takeaway: you don't need a 64 GB workstation or a paid platform to inspect a 1 GB model. You need a pipeline that parses once, caches the result, and only draws what you're looking at — and you can get that in a browser tab." },
+    ],
+  },
+
+  // ── Post 14 — Why your Revit IFC export breaks (geometry) ────────────────────
+
+  {
+    slug: 'revit-ifc-export-breaks',
+    title: 'Why Your Revit IFC Export Breaks (and How to Fix Each Cause)',
+    excerpt: "The geometry exported fine last week. This week elements are on the wrong floor, walls are missing, and the whole model is sitting in the wrong place. Revit IFC exports break for a handful of predictable reasons — here's how to identify which one bit you, and fix it.",
+    date: '2026-06-03',
+    readTimeMin: 9,
+    category: 'Tool Guides',
+    categorySlug: 'tool-guides',
+    author: 'IFC Viewer Team',
+    content: [
+      { type: 'p', text: "\"My Revit IFC export breaks\" is the single most common complaint in BIM forums, and it's frustrating precisely because it's vague — 'breaks' can mean geometry on the wrong level, missing elements, distorted shapes, or a model sitting kilometres from where it should be. Each of those has a different, identifiable cause. This is how to tell them apart and fix the right one instead of guessing." },
+      { type: 'p', text: "Start by confirming what actually broke. Open the exported IFC and look: is the geometry distorted, or just in the wrong place? Are elements missing, or just on an unexpected storey? The answer points straight at the cause." },
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'See what a clean export looks like',
+        description: "Open the buildingSMART duplex to see correct geometry and spatial hierarchy, then open your own broken export and compare — the difference usually makes the cause obvious.",
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+      },
+      { type: 'h2', text: 'Cause 1: Geometry Lands on the Wrong Level' },
+      { type: 'p', text: "If an element sits on a Revit level that isn't marked as a Building Story, the exporter pushes it down to the next story below — which is why things appear on unexpected floors. Revit only treats levels flagged as Building Story as real storeys in the IFC spatial hierarchy." },
+      { type: 'callout', variant: 'tip', text: "Create a level schedule in Revit and set 'Building Story = Yes' only for real occupied storeys. Leave working/reference levels (top-of-steel, datums) unchecked. This single fix resolves most 'elements on the wrong floor' exports." },
+      { type: 'h2', text: 'Cause 2: You Opened the IFC Instead of Linking It' },
+      { type: 'p', text: "When you open an IFC in Revit, it tries to recreate native Revit elements from the IFC geometry. That works for simple walls and quickly falls apart on complex geometry — curved surfaces, intricate families, anything non-trivial gets mangled. When you link an IFC instead, Revit uses the translation framework to create a clean reference model, and you can update the link when new files arrive." },
+      { type: 'ul', items: [
+        "Open (Import): use only when you genuinely need editable native Revit elements and the geometry is simple.",
+        "Link: use for coordination and review. The geometry stays clean and updates non-destructively.",
+      ]},
+      { type: 'h2', text: 'Cause 3: The Whole Model Is in the Wrong Place' },
+      { type: 'p', text: "If the exported model sits far from the origin — or the geometry looks subtly distorted — it's a coordinate problem. IFC is imported according to Revit's Internal Origin regardless of the Project Base Point and Survey Point, and geometry placed far from the world origin can distort due to floating-point precision. This is its own deep topic; the short version is to export with Shared Coordinates and keep the model near the origin." },
+      { type: 'p', text: ["For the full survey-point / base-point / georeferencing breakdown, see ", { text: 'IFC Coordinates Are Wrong', to: 'ifc-coordinates-georeferencing' }, " in this blog."] },
+      { type: 'h2', text: 'Cause 4: Elements Are Missing or Became Proxies' },
+      { type: 'p', text: "Two related failures. Elements can vanish if they lost their host storey on export (they become orphans most viewers skip). And Revit families without an IFC class mapping export as IfcBuildingElementProxy — they're technically present but typeless, so downstream tools treat them as generic blobs. If more than a few percent of your model is IfcBuildingElementProxy, your export mapping table needs attention." },
+      { type: 'h2', text: 'Cause 5: Properties or GUIDs Came Across Wrong' },
+      { type: 'p', text: ["If the geometry is fine but the data is wrong, you're looking at the two other classic export failures: missing property sets and regenerated GlobalIds. Both are common enough to have their own guides — see ", { text: 'IFC Properties Missing After Export', to: 'ifc-properties-missing-after-export' }, ' and ', { text: 'Why IFC GUIDs Change on Every Export', to: 'ifc-guids-changing-every-export' }, ' in this blog.'] },
+      { type: 'h2', text: 'The Diagnostic Workflow' },
+      { type: 'ol', items: [
+        'Export to a local folder — never straight to the CDE.',
+        'Open the IFC in a validator and look at the 3D result before anyone else does.',
+        'Wrong floor? Fix Building Story flags (Cause 1).',
+        'Mangled geometry on import? Link instead of open (Cause 2).',
+        'Model far away or distorted? Shared Coordinates + near origin (Cause 3).',
+        'Missing elements / too many proxies? Fix the IFC mapping table (Cause 4).',
+        'Run validation, target Health Score ≥ 80, then deliver.',
+      ]},
+      { type: 'callout', variant: 'warning', text: "Never debug a broken export by editing the IFC text file. Fix the cause in Revit and re-export — a hand-edited IFC almost always introduces new problems (invalid GUIDs, broken references) that are harder to find than the original." },
+    ],
+  },
+
+  // ── Post 15 — PILLAR: The Complete Guide to IFC Quality ──────────────────────
+
+  {
+    slug: 'ifc-quality-guide',
+    title: 'The Complete Guide to IFC Quality: From Export to Delivery',
+    excerpt: "Every BEP demands a 'quality IFC' and almost none define it. This is the complete, practical guide to what IFC quality actually means — the failure categories that get models rejected, how to check each one, and a repeatable workflow that gets you to a deliverable file.",
+    date: '2026-06-03',
+    readTimeMin: 12,
+    category: 'BIM Best Practices',
+    categorySlug: 'best-practices',
+    author: 'IFC Viewer Team',
+    content: [
+      { type: 'p', text: "If you only read one article on IFC quality, make it this one. It ties together every failure mode that gets a model rejected at the Common Data Environment — and links out to the detailed fix for each. The goal is simple: a file you can deliver with confidence, every time, without surprises three weeks into coordination." },
+      { type: 'p', text: "'IFC quality' isn't one thing. It's six categories of failure, each with its own causes, detection, and fix. Understand the map and the rest is mechanical." },
+      {
+        type: 'stat-row',
+        stats: [
+          { value: 6,  suffix: '', label: 'failure categories' },
+          { value: 38, suffix: '', label: 'validation rules' },
+          { value: 80, suffix: '+', label: 'Health Score to deliver' },
+          { value: 30, suffix: 's', label: 'to validate any model' },
+        ],
+      },
+      { type: 'h2', text: 'Two Layers: Schema Validity vs Practical Health' },
+      { type: 'p', text: ["First, the distinction that confuses everyone. Schema validity means the file conforms to the IFC standard's syntax and structure. Practical health means it'll actually work downstream — stable identities, sound hierarchy, sensible coordinates, present data. A file can be schema-valid and practically broken. Most rejected deliveries are schema-valid. For how to check each layer, see ", { text: 'How to Validate an IFC File Before You Send It', to: 'how-to-validate-ifc-file' }, "."] },
+      { type: 'h2', text: 'The Six Failure Categories' },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '🪪', title: '1. Identity (GUIDs)', body: "Duplicate, regenerated, or out-of-range GlobalIds break BCF, clash tracking, and FM handover. Identity must be stable across revisions." },
+          { icon: '🌳', title: '2. Spatial hierarchy', body: "Project → Site → Building → Storey → elements. Orphans, wrong containers, broken aggregates, or a missing IfcProject corrupt the tree." },
+          { icon: '📍', title: '3. Coordinates', body: "Models kilometres from the origin, or with the wrong base/survey point, place geometry wrong and can distort it via floating-point error." },
+          { icon: '🏷️', title: '4. Data & properties', body: "Missing property sets, empty names, and unmapped proxies make the model unusable for takeoff, BCF, and asset registers." },
+          { icon: '📦', title: '5. Geometry & export', body: "Wrong-floor placement, import-vs-link mangling, and proxy overuse — usually traceable to Revit/ArchiCAD export settings." },
+          { icon: '⚡', title: '6. Performance & size', body: "1 GB monolithic files that crash viewers. Trim by discipline, prefer IFC4, and use a convert-once pipeline." },
+        ],
+      },
+      { type: 'h2', text: 'Category 1: Identity' },
+      { type: 'p', text: ["GlobalIds are the permanent identity of every element. They must be unique within a file, valid in format (22 chars, leading character 0–3), and stable across re-exports. See ", { text: 'Duplicate GUIDs in IFC', to: 'duplicate-guids-ifc' }, ' and ', { text: 'Why IFC GUIDs Change on Every Export', to: 'ifc-guids-changing-every-export' }, ' for detection and fixes.'] },
+      { type: 'h2', text: 'Category 2: Spatial Hierarchy' },
+      { type: 'p', text: ["IFC mandates a strict containment order. Elements must sit inside a storey, there must be exactly one IfcProject, and aggregate relationships must point at entities that exist. The detailed checklist is in ", { text: 'The 7 Most Common IFC Validation Errors', to: 'common-ifc-validation-errors' }, "."] },
+      { type: 'h2', text: 'Category 3: Coordinates' },
+      { type: 'p', text: ["Export with Shared Coordinates, keep the model near the world origin, and for georeferenced projects make sure IfcSite, IfcProjectedCRS, and IfcMapConversion are present and consistent. Full breakdown in ", { text: 'IFC Coordinates Are Wrong', to: 'ifc-coordinates-georeferencing' }, "."] },
+      { type: 'h2', text: 'Category 4: Data & Properties' },
+      { type: 'p', text: ["Enable standard property sets, name every element, and map families to proper IFC classes so they don't export as proxies. See ", { text: 'IFC Properties Missing After Export From Revit', to: 'ifc-properties-missing-after-export' }, "."] },
+      { type: 'h2', text: 'Category 5: Geometry & Export' },
+      { type: 'p', text: ["Most geometry failures originate in the authoring tool's export settings. See ", { text: 'How to Export Clean IFC Files from Revit', to: 'clean-ifc-export-revit' }, ', ', { text: 'Why Your Revit IFC Export Breaks', to: 'revit-ifc-export-breaks' }, ', and — for cross-tool exchange — ', { text: 'Revit ↔ Archicad via IFC', to: 'revit-archicad-ifc-roundtrip' }, '.'] },
+      { type: 'h2', text: 'Category 6: Performance & Size' },
+      { type: 'p', text: ["Large files aren't a quality failure per se, but they block everyone downstream. Trim, prefer IFC4 tessellation, and use a convert-once viewer. See ", { text: 'Why Large IFC Files Crash Your Browser', to: 'large-ifc-file-browser-crash' }, "."] },
+      { type: 'h2', text: 'The Health Score: One Number Across All Six' },
+      { type: 'p', text: "A Health Score collapses all six categories into a single 0–100 number, severity-weighted and logarithmic, so it reflects real fitness rather than raw issue count. It's the number to put in your BEP and attach to every transmittal." },
+      {
+        type: 'health-score',
+        items: [
+          { score: 43, label: 'Critical — do not deliver' },
+          { score: 73, label: 'Needs work' },
+          { score: 87, label: 'CDE ready' },
+          { score: 96, label: 'Excellence' },
+        ],
+      },
+      { type: 'h2', text: 'The Repeatable Pre-Delivery Workflow' },
+      { type: 'ol', items: [
+        'Configure export settings once (Keep Existing GUIDs, Shared Coordinates, standard Psets, Building Story flags).',
+        'Export to a local folder, never straight to the CDE.',
+        'Open the file in a validator and read the report across all six categories.',
+        'Fix at the source in the authoring tool, then re-export — not by editing the IFC text.',
+        'Re-validate until Health Score ≥ 80.',
+        'Attach the score to the transmittal and deliver.',
+      ]},
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Run the full quality check',
+        description: "Open a real model and see all six categories scored in one report. Then drop in your own file and walk the pre-delivery workflow end to end.",
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+      },
+      { type: 'callout', variant: 'info', text: "Bookmark this guide as your team's IFC quality reference. Each category links to a step-by-step fix — together they cover the vast majority of CDE rejections." },
+    ],
+  },
+
+  // ── Post 16 — IFC coordinates / georeferencing ───────────────────────────────
+
+  {
+    slug: 'ifc-coordinates-georeferencing',
+    title: 'IFC Coordinates Are Wrong: Survey Point, Base Point & Georeferencing Explained',
+    excerpt: "You import the IFC and the building is two kilometres away — or sitting at the origin when it should be georeferenced to a national grid. Revit's three coordinate systems and IFC's georeferencing entities don't line up by default. Here's how to get the model where it belongs.",
+    date: '2026-06-03',
+    readTimeMin: 9,
+    category: 'IFC Tips',
+    categorySlug: 'ifc-tips',
+    author: 'IFC Viewer Team',
+    content: [
+      { type: 'p', text: "Coordinate problems are some of the most disorienting IFC failures: the geometry is perfect, but the model is in the wrong place — far from the origin, offset from the other disciplines, or missing its real-world position entirely. The root cause is that Revit has three different origins and IFC has its own georeferencing entities, and nothing maps them together unless you make it." },
+      { type: 'h2', text: "Revit's Three Origins" },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '⚙️', title: 'Internal Origin', body: "Revit's fixed internal (0,0,0). IFC import positions geometry relative to this — regardless of the other two points. This is why imported IFCs often land in the 'wrong' place." },
+          { icon: '📌', title: 'Project Base Point', body: "The project's local reference (e.g. a grid intersection). Used for setting-out dimensions within the design." },
+          { icon: '🌍', title: 'Survey Point', body: "The real-world / geodetic reference that ties the model to a site or national grid. The basis for true georeferencing." },
+        ],
+      },
+      { type: 'callout', variant: 'warning', text: "IFC files are imported according to Revit's Internal Origin, not the Project Base Point or Survey Point. If the survey point carries no relation to the internal origin, coordinates can come out wrong when the model moves between Revit, IFC, and GIS." },
+      { type: 'h2', text: 'IFC4 Georeferencing Entities' },
+      { type: 'p', text: "Georeferencing is embedded in IFC4 via three entities working together. Get them right and any compliant tool can place your model on the planet." },
+      { type: 'ul', items: [
+        "IfcSite — carries the site's reference latitude, longitude, and elevation.",
+        "IfcProjectedCRS — declares the coordinate reference system (e.g. an EPSG code for a national grid).",
+        "IfcMapConversion — the transform (offset, scale, rotation) from the model's local engineering coordinates to the projected CRS.",
+      ]},
+      { type: 'callout', variant: 'info', text: "If there's a discrepancy between IfcMapConversion and the data in IfcSite, IfcMapConversion takes priority. Don't rely on IfcSite latitude/longitude alone for precise positioning — the map conversion is the authoritative transform." },
+      { type: 'h2', text: 'Why Geometry Distorts Far From the Origin' },
+      { type: 'p', text: "When a model's local coordinates are huge — because someone modelled at true national-grid easting/northing values — 3D engines lose precision. Floating-point numbers have finite resolution; at coordinates in the millions, that resolution is coarse enough to make geometry wobble or jitter. The fix is to model near a local origin and carry the real-world position in IfcMapConversion, not in the geometry itself." },
+      { type: 'h2', text: 'Getting It Right on Export' },
+      { type: 'ol', items: [
+        'Set the Survey Point to the agreed real-world reference for the project.',
+        'Model near the Project Base Point / internal origin — not at true grid coordinates.',
+        'Export with Shared Coordinates / Site Placement set to shared.',
+        'For IFC4 / IFC4.3 deliveries, confirm IfcSite, IfcProjectedCRS, and IfcMapConversion are written and consistent.',
+        'Open the result and check the model sits where expected before delivery.',
+      ]},
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Check where your model actually sits',
+        description: "Open a model in the viewer and inspect its placement and spatial structure. Then load your own export to confirm it lands at the origin, not kilometres away.",
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+      },
+      { type: 'p', text: ["Coordinates are part of the broader quality picture — for the full pre-delivery framework see ", { text: 'The Complete Guide to IFC Quality', to: 'ifc-quality-guide' }, ". And note that IFC 4.3 extends georeferencing significantly for infrastructure (roads, rail, bridges), where alignment and linear positioning add another layer on top of the entities above."] },
+    ],
+  },
+
+  // ── Post 17 — Revit ↔ Archicad round-trip ────────────────────────────────────
+
+  {
+    slug: 'revit-archicad-ifc-roundtrip',
+    title: 'Revit ↔ Archicad via IFC: The Round-Trip Problems Nobody Warns You About',
+    excerpt: "You link an Archicad IFC into Revit and find duplicate geometry floating hundreds of feet in the air — even though the same file looks perfect in the cloud viewer. Cross-tool IFC exchange has failure modes that only show up between vendors. Here's what breaks and how to work around it.",
+    date: '2026-06-03',
+    readTimeMin: 8,
+    category: 'IFC Tips',
+    categorySlug: 'ifc-tips',
+    author: 'IFC Viewer Team',
+    content: [
+      { type: 'p', text: "IFC is supposed to make tool choice irrelevant — the architect uses Archicad, the engineer uses Revit, and the open format bridges them. In practice, the Revit ↔ Archicad exchange has failure modes that only appear when you cross vendors, and they cause real coordination headaches because the file looks fine right up until it doesn't." },
+      { type: 'pull-quote', text: "Random duplicates of geometry, suspended hundreds of feet in the air — even though the IFC displays correctly in the online viewer.", cite: 'Autodesk Community — Revit & Archicad interoperability' },
+      { type: 'h2', text: 'The Symptom: It Looks Fine in One Tool, Broken in Another' },
+      { type: 'p', text: "The most reported failure: an Archicad IFC links into Revit with phantom duplicate geometry, sometimes displaced far from the model — yet the exact same file renders perfectly in a cloud viewer. This is the key diagnostic clue. When a file is correct in one tool and broken in another, the file is usually fine; the importer is interpreting it differently." },
+      { type: 'callout', variant: 'tip', text: "Always sanity-check a cross-tool IFC in a neutral viewer first. If it's correct there but broken in Revit's link, the problem is Revit's IFC import interpretation, not the Archicad export — which changes how you fix it." },
+      { type: 'h2', text: 'What Actually Goes Wrong' },
+      { type: 'ul', items: [
+        "Import interpretation differences: each vendor's importer rebuilds geometry from the IFC representation its own way. Representations that are valid but unusual (certain swept solids, mapped items) can be doubled or misplaced by a different tool's importer.",
+        "Open vs Link: opening an Archicad IFC in Revit forces a conversion to native elements that mangles complex geometry. Linking uses the reference framework and stays clean — link, don't open.",
+        "Source matters: the same IFC linked from a desktop folder versus from a cloud/CDE folder can produce different results, because the resolver path differs.",
+        "GlobalId and mapping mismatches: Archicad and Revit don't always agree on how source elements map to IFC classes, which surfaces as type or identity drift across the round trip.",
+      ]},
+      { type: 'h2', text: 'How to Make the Exchange Reliable' },
+      { type: 'ol', items: [
+        'Agree the IFC schema and MVD up front (IFC4 Reference View is a good cross-tool default).',
+        'On the Archicad side, enable stable GlobalIDs and a clean translator preset matched to the receiving tool.',
+        'On the Revit side, link the IFC — never open/import it for coordination.',
+        'Validate the IFC in a neutral viewer before linking, so you know whether a fault is in the file or the importer.',
+        'If duplicates appear only in Revit, try linking from a local copy and check the import settings rather than blaming the export.',
+      ]},
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Use a neutral viewer as the referee',
+        description: "Open the cross-tool IFC here first. If it's clean in this viewer but broken after linking into Revit, you've isolated the problem to the importer — not the file.",
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+      },
+      { type: 'p', text: ["Cross-tool exchange is one slice of overall model quality — for the complete pre-delivery framework see ", { text: 'The Complete Guide to IFC Quality', to: 'ifc-quality-guide' }, ', and for stable identities across the round trip see ', { text: 'Why IFC GUIDs Change on Every Export', to: 'ifc-guids-changing-every-export' }, '.'] },
+    ],
+  },
+
+  // ── Post 18 — Comparison: free online IFC viewers ────────────────────────────
+
+  {
+    slug: 'free-online-ifc-viewers-compared',
+    title: 'Free Online IFC Viewers Compared (2026): Privacy, Size Limits & Features',
+    excerpt: "There are a dozen free browser-based IFC viewers now, and they make very different trade-offs — some upload your file to a server, some cap out at 10 MB, some have no validation at all. Here's an honest comparison to help you pick the right one for the job.",
+    date: '2026-06-03',
+    readTimeMin: 8,
+    category: 'Tool Guides',
+    categorySlug: 'tool-guides',
+    author: 'IFC Viewer Team',
+    content: [
+      { type: 'p', text: "Free online IFC viewers have multiplied — you no longer need a £5,000 workstation to open an IFC. But 'free browser viewer' covers tools that work in fundamentally different ways, and the differences matter when the file is confidential, large, or needs checking rather than just looking at. This is a practical comparison of what to weigh up, not a leaderboard." },
+      { type: 'h2', text: 'The Four Things That Actually Differ' },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '🔒', title: 'Upload vs local', body: "The biggest divide. Some viewers send your file to a server to process it; others parse it entirely in your browser. For confidential project data, server upload is often a hard no." },
+          { icon: '📏', title: 'File size limit', body: "Free tiers range from ~10 MB to ~500 MB or more. Many viewers that feel snappy on a demo choke on a real federated model." },
+          { icon: '🩺', title: 'Validation', body: "Most viewers only display geometry. A few also check the model — duplicate GUIDs, spatial hierarchy, a quality score. This is the difference between looking and knowing." },
+          { icon: '🔑', title: 'Account & storage', body: "Some require sign-up and store your models in the cloud (with quotas); others need no account and keep nothing." },
+        ],
+      },
+      { type: 'h2', text: 'The Landscape in 2026' },
+      { type: 'ul', items: [
+        "Privacy-first, local viewers: parse the IFC client-side via WebAssembly, no upload, no account. Best for confidential files. (This viewer is in this category.)",
+        "Upload-based cloud viewers: process server-side, often with collaboration features and cloud storage, usually behind a sign-up and a free-tier quota.",
+        "Lightweight 'quick look' tools: open a small IFC fast with pan/zoom, but cap file size low and offer no property inspection or validation.",
+        "LCA / platform viewers: an IFC viewer bolted onto a larger product (e.g. carbon or estimating tools), generous on size but tied to that platform's workflow.",
+      ]},
+      { type: 'h2', text: 'How to Choose for the Job in Front of You' },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Pick a private, local viewer when…',
+          color: 'accent',
+          items: [
+            "The file is confidential and can't be uploaded",
+            'You need to validate, not just look',
+            'You want a Health Score / quality report',
+            'The model is large and you want convert-once caching',
+            "You don't want to create an account",
+          ],
+        },
+        right: {
+          label: 'A cloud / platform viewer may fit when…',
+          color: 'muted',
+          items: [
+            'You need persistent cloud storage of models',
+            'You want built-in multi-user collaboration',
+            'The viewer is part of a platform you already use',
+            'Sharing a hosted link with non-technical reviewers matters',
+            'File confidentiality is not a constraint',
+          ],
+        },
+      },
+      { type: 'h2', text: "Where This Viewer Fits" },
+      { type: 'p', text: "This one is deliberately in the private/local camp: it parses IFC in your browser via WebAssembly (zero bytes uploaded, no account), handles files up to ~500 MB with convert-once caching, and — the part most free viewers skip — runs 38 validation rules and returns a Health Score. So it's not just 'can I see it', it's 'is it any good'." },
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Try the local + validation approach',
+        description: "Open the buildingSMART duplex with no upload and no account, and see the Health Score appear automatically. Then drop in a file of your own to compare.",
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+      },
+      { type: 'callout', variant: 'tip', text: "Quick decision rule: if the file is confidential or you need to check its quality, choose a local viewer with validation. If you need cloud storage and collaboration and confidentiality isn't a concern, a platform viewer makes sense. Match the tool to the constraint, not the brand." },
+      { type: 'p', text: ["Once you've picked a viewer, the next question is usually whether the model is actually deliverable — for that, see ", { text: 'How to Validate an IFC File Before You Send It', to: 'how-to-validate-ifc-file' }, ' and ', { text: 'The Complete Guide to IFC Quality', to: 'ifc-quality-guide' }, '.'] },
+    ],
+  },
+
+  // ── Post 19 — Reduce IFC file size ───────────────────────────────────────────
+
+  {
+    slug: 'reduce-ifc-file-size',
+    title: 'How to Reduce IFC File Size (Without Breaking the Model)',
+    excerpt: "A 900 MB IFC won't email, takes forever to open, and crashes the coordinator's viewer. You can usually cut it by 70–90% — but only some methods are safe. Here's how to shrink an IFC without destroying the data people need downstream.",
+    date: '2026-06-03',
+    readTimeMin: 7,
+    category: 'Tool Guides',
+    categorySlug: 'tool-guides',
+    author: 'IFC Viewer Team',
+    content: [
+      { type: 'p', text: "Oversized IFC files are a daily friction: too big to email, slow to open, and prone to crashing browser viewers. The good news is that IFC files are full of redundancy, so large reductions are achievable. The catch is that some methods are lossless and safe while others throw away data the receiver needs — so the order you try them in matters." },
+      {
+        type: 'stat-row',
+        stats: [
+          { value: 90, suffix: '%', label: 'achievable reduction' },
+          { value: 6,  suffix: '×', label: 'IFC4 vs IFC2x3 geometry' },
+          { value: 0,  suffix: ' loss', label: 'from ifcZIP' },
+          { value: 500, suffix: ' MB', label: 'typical viewer ceiling' },
+        ],
+      },
+      { type: 'h2', text: 'Start Safe: Lossless Methods' },
+      { type: 'h3', text: '1. ifcZIP (zero data loss)' },
+      { type: 'p', text: "An ifcZIP is simply a standard ZIP containing one IFC file. It changes nothing about the model — every entity, property, and GUID is preserved — and IFC-aware tools open it directly. Because IFC is verbose text, compression ratios are often dramatic. This should always be your first move for transfer." },
+      { type: 'h3', text: '2. Export to IFC4 instead of IFC2x3' },
+      { type: 'p', text: ["IFC4 expresses complex geometry as tessellated meshes (IfcPolygonalFaceSet) rather than the heavier B-rep notation of IFC2x3. For detailed architecture the same model can be several times smaller in IFC4 — a free reduction if your receiving tools support IFC4. See ", { text: 'IFC2x3 vs IFC4', to: 'ifc2x3-vs-ifc4' }, " in this blog."] },
+      { type: 'callout', variant: 'tip', text: "ifcZIP + IFC4 together are lossless and often get you most of the way. Try these before touching anything that removes data." },
+      { type: 'h2', text: 'Then Trim: Reduce What You Export' },
+      { type: 'p', text: "The biggest safe reductions come from not exporting what the recipient doesn't need. This is lossy by intent — you're deliberately scoping the model — so do it according to the BIM Execution Plan or the discipline's model requirements, not arbitrarily." },
+      { type: 'ul', items: [
+        "Export per discipline, not one monolithic federated file. The MEP coordinator rarely needs your furniture.",
+        "Drop detail below the required LOD — fixtures, fasteners, and fine joinery you modelled for your own drawings.",
+        "Limit the property sets to what's specified; gigantic custom Psets on every element add up.",
+        "Exclude 2D annotation, generic models, and import-only reference geometry.",
+      ]},
+      { type: 'h2', text: 'Geometry Optimisation' },
+      { type: 'p', text: "If the file is still heavy, the geometry itself can be optimised: deduplicate repeated elements so thousands of identical bolts or balusters reference a single mesh, and simplify over-tessellated curved surfaces. Some tools do this automatically; the key is that it changes geometry representation, not the model's data, so validate afterward." },
+      { type: 'callout', variant: 'warning', text: "Avoid 'optimisers' that strip GlobalIds, property sets, or the spatial hierarchy to hit a size target. A 50 MB file that's lost its GUIDs and Psets is worthless for coordination and FM — you've made it small and useless. Always re-validate after any lossy step." },
+      { type: 'h2', text: 'Verify After Shrinking' },
+      { type: 'p', text: "Whatever you remove, confirm the slimmed file is still sound: open it, check the spatial hierarchy survived, the required properties are present, and the Health Score is still where it needs to be. Reducing size should never reduce deliverability." },
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Check a slimmed model is still healthy',
+        description: "Open your reduced IFC and confirm the hierarchy, properties, and Health Score survived the trim — before you send it on.",
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+      },
+      { type: 'p', text: ["If the goal is simply to view a huge model rather than deliver a smaller one, the file size may not be the real problem — see ", { text: 'Why Large IFC Files Crash Your Browser', to: 'large-ifc-file-browser-crash' }, " for the viewer-side fixes."] },
+    ],
+  },
+
+  // ── Post 20 — Dev: read property sets in Python ──────────────────────────────
+
+  {
+    slug: 'read-ifc-property-sets-python',
+    title: 'Read IFC Property Sets in Python with IfcOpenShell',
+    excerpt: "You need to pull property data out of an IFC — quantities, classifications, custom Psets — and into a spreadsheet, a database, or a QA check. IfcOpenShell makes it a few lines of Python. Here's the practical cookbook, including the get_psets shortcut everyone wishes they'd found first.",
+    date: '2026-06-03',
+    readTimeMin: 8,
+    category: 'IFC Tips',
+    categorySlug: 'ifc-tips',
+    author: 'IFC Viewer Team',
+    content: [
+      { type: 'p', text: "Sooner or later every BIM-adjacent developer needs to get data out of an IFC: element quantities for a takeoff, classifications for a register, custom property sets for a QA rule. IfcOpenShell is the open-source library that makes this tractable in Python. This is the practical path — the manual way to understand it, and the one-line shortcut for when you just need the data." },
+      { type: 'h2', text: 'Open the File and Find Elements' },
+      {
+        type: 'code',
+        lang: 'python',
+        text: `import ifcopenshell
+
+model = ifcopenshell.open("model.ifc")
+
+# All walls in the file
+walls = model.by_type("IfcWall")
+print(f"{len(walls)} walls")
+
+# A single element by its GlobalId
+el = model.by_guid("3LYa_FRDj3zhLfyYoQv6Jr")`,
+      },
+      { type: 'h2', text: 'The Manual Way (Understand the Structure)' },
+      { type: 'p', text: "Property sets aren't stored on the element directly — they hang off it through a relationship. An element's IsDefinedBy holds IfcRelDefinesByProperties relations, each pointing to a property set (the RelatingPropertyDefinition). Inside the set, HasProperties lists the individual properties, most of which are IfcPropertySingleValue with a Name and a NominalValue." },
+      {
+        type: 'code',
+        lang: 'python',
+        text: `wall = walls[0]
+
+for rel in wall.IsDefinedBy:
+    if rel.is_a("IfcRelDefinesByProperties"):
+        pset = rel.RelatingPropertyDefinition
+        if pset.is_a("IfcPropertySet"):
+            print(pset.Name)  # e.g. "Pset_WallCommon"
+            for prop in pset.HasProperties:
+                if prop.is_a("IfcPropertySingleValue") and prop.NominalValue:
+                    print(f"  {prop.Name} = {prop.NominalValue.wrappedValue}")`,
+      },
+      { type: 'callout', variant: 'info', text: "NominalValue is itself a typed wrapper (IfcText, IfcReal, IfcBoolean…). The actual value is in .wrappedValue. Forgetting this is the single most common stumbling block when people first traverse Psets by hand." },
+      { type: 'h2', text: 'The Shortcut: get_psets()' },
+      { type: 'p', text: "The manual traversal is worth understanding once, but for real work use the utility: ifcopenshell.util.element.get_psets() returns every property set on an element as a plain dictionary — Pset names as keys, property dicts as values. It's far less error-prone than walking the relationships yourself." },
+      {
+        type: 'code',
+        lang: 'python',
+        text: `import ifcopenshell.util.element as ue
+
+psets = ue.get_psets(wall)
+# {'Pset_WallCommon': {'IsExternal': True, 'FireRating': 'REI 60', 'id': 1234}, ...}
+
+fire_rating = psets.get("Pset_WallCommon", {}).get("FireRating")
+
+# Quantities only (areas, volumes, lengths)
+qtos = ue.get_psets(wall, qtos_only=True)`,
+      },
+      { type: 'callout', variant: 'warning', text: "get_psets() expects a single element, not a list. Pass one element at a time — iterate your elements and call it per element. Passing a list is the most common error people hit with it." },
+      { type: 'h2', text: 'Export Every Element to a Table' },
+      {
+        type: 'code',
+        lang: 'python',
+        text: `import csv
+import ifcopenshell.util.element as ue
+
+with open("elements.csv", "w", newline="") as f:
+    writer = csv.writer(f)
+    writer.writerow(["GlobalId", "Class", "Name", "Pset", "Property", "Value"])
+    for el in model.by_type("IfcBuildingElement"):
+        for pset_name, props in ue.get_psets(el).items():
+            for key, value in props.items():
+                if key == "id":
+                    continue
+                writer.writerow([el.GlobalId, el.is_a(), el.Name, pset_name, key, value])`,
+      },
+      { type: 'h2', text: 'Where Reading Stops and Viewing Begins' },
+      { type: 'p', text: "Python is ideal for batch extraction and automated QA in a pipeline. But when you want to eyeball the property sets on a specific element — or hand the file to someone who doesn't write code — a viewer that shows Psets per element on click is the faster path. The two complement each other: script the bulk checks, inspect the edge cases visually." },
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Inspect Psets visually',
+        description: "Open the duplex and click any element to see its full property sets — the same data get_psets() returns, without writing any code.",
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+      },
+    ],
+  },
+
+  // ── Post 21 — Dev: view IFC in the browser (web-ifc / Fragments) ─────────────
+
+  {
+    slug: 'view-ifc-web-threejs-fragments',
+    title: 'How to View IFC in the Browser with three.js, web-ifc & Fragments',
+    excerpt: "Loading an IFC into a three.js scene sounds simple until the first 200 MB model freezes the tab for two minutes. The trick the libraries teach is: don't parse IFC at runtime. Here's how web-ifc, Fragments, and a convert-once pipeline actually fit together.",
+    date: '2026-06-03',
+    readTimeMin: 9,
+    category: 'Tool Guides',
+    categorySlug: 'tool-guides',
+    author: 'IFC Viewer Team',
+    content: [
+      { type: 'p', text: "Rendering IFC on the web is a solved problem — but only if you follow the pattern the libraries are built around. Developers who try the naive approach (load the .ifc, parse it, build meshes, every time) hit a wall on the first real model: the tab freezes for a minute or more while WebAssembly chews through the file. The fix isn't a faster parser; it's parsing once and never again." },
+      { type: 'h2', text: 'The Stack' },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '🧩', title: 'web-ifc', body: "The WebAssembly core (from That Open) that reads and writes IFC at near-native speed in the browser or Node. The foundation everything else sits on." },
+          { icon: '🔷', title: 'Fragments', body: "That Open's optimized geometry format. You convert IFC → Fragments once; loading the .frag afterward is dramatically faster than re-parsing the IFC." },
+          { icon: '🎬', title: 'three.js', body: "The WebGL renderer that draws the scene. Fragments produce three.js-compatible geometry you add to a scene, camera, and controls like any other meshes." },
+        ],
+      },
+      { type: 'h2', text: 'The Naive Approach (and Why It Hurts)' },
+      {
+        type: 'code',
+        lang: 'javascript',
+        text: `import * as WebIFC from "web-ifc";
+
+const api = new WebIFC.IfcAPI();
+await api.Init();
+
+// Parsing the raw IFC at runtime — fine for tiny files, painful for real ones
+const data = new Uint8Array(await file.arrayBuffer());
+const modelID = api.OpenModel(data);
+// ...extract geometry, build meshes... (slow, blocks the main thread)`,
+      },
+      { type: 'callout', variant: 'warning', text: "Runtime IFC parsing is too slow for production. As the That Open docs put it: parse and convert to Fragments once, save the result, and load that on every subsequent session. Don't re-parse the IFC on every page load." },
+      { type: 'h2', text: 'The Production Pattern: Convert Once, Load Many' },
+      { type: 'ol', items: [
+        'Convert the IFC to Fragments a single time (on upload, in a worker, or in a build step).',
+        'Persist the .frag output — in cache, OPFS, or object storage.',
+        'On every load after that, fetch the Fragments and render — no IFC parsing involved.',
+        'Run the heavy work in a Web Worker so the main thread stays responsive.',
+      ]},
+      {
+        type: 'code',
+        lang: 'javascript',
+        text: `import * as OBC from "@thatopen/components";
+
+const components = new OBC.Components();
+const fragments = components.get(OBC.FragmentsManager);
+const ifcLoader = components.get(OBC.IfcLoader);
+await ifcLoader.setup();
+
+// First time only: IFC → Fragments
+const model = await ifcLoader.load(ifcBytes);
+
+// Serialize once, reuse forever
+const frag = fragments.export(model.group);
+await saveToCache(frag);          // OPFS / IndexedDB / server
+
+// Subsequent loads: skip IFC entirely
+const cached = await loadFromCache();
+fragments.load(cached);            // fast`,
+      },
+      { type: 'h2', text: 'Common Pitfalls' },
+      { type: 'ul', items: [
+        "\"memory access out of bounds\": the web-ifc WASM ran out of memory on a big file — convert in a worker, increase available memory, or process in chunks.",
+        "Geometry far from the origin jitters: models authored at true geographic coordinates lose floating-point precision; rebase to a local origin. (See 'IFC Coordinates Are Wrong'.)",
+        "No server-side rendering: web-ifc runs in the browser/Node, not as a no-JS SSR step — plan for client-side or a build-time conversion, not request-time SSR.",
+        "Loading optimization: tile and cull large models so you only draw what's near the camera. (See 'Why Large IFC Files Crash Your Browser'.)",
+      ]},
+      { type: 'h2', text: "Or Don't Build It" },
+      { type: 'p', text: "This is exactly the pipeline this viewer runs: web-ifc for parsing, a Fragments-style convert-once step, OPFS caching so repeat loads are ~10× faster, and validation on top. If your goal is to view and check IFCs rather than to build a viewer, you can skip the engineering and just open the file." },
+      {
+        type: 'ifc-demo',
+        modelId: 'ifc4-revit-arc',
+        title: 'See the pipeline in action',
+        description: "A production-size IFC4 model loaded with exactly this convert-once, cached pipeline. Open it, then reload — the second load is near-instant.",
+        schema: 'IFC4',
+        size: '14 MB',
+      },
     ],
   },
 

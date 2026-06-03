@@ -35,6 +35,7 @@ import enEditor      from '../locales/en/editor.json'
 import enErrors      from '../locales/en/errors.json'
 import enToasts      from '../locales/en/toasts.json'
 import enTree        from '../locales/en/tree.json'
+import enBlog        from '../locales/en/blog.json'
 
 const EN_RESOURCES = {
   common:      enCommon,
@@ -48,6 +49,7 @@ const EN_RESOURCES = {
   errors:      enErrors,
   toasts:      enToasts,
   tree:        enTree,
+  blog:        enBlog,
 } as const
 
 // ── Init ──────────────────────────────────────────────────────────────────────

@@ -22,6 +22,8 @@ import React, {
   memo,
 } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation, Trans } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import type { BlogPost, ContentBlock } from '../../lib/blog-posts'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -39,7 +41,6 @@ interface AIPlatform {
   id: string
   label: string
   url: string
-  ariaLabel: string
 }
 
 type CopyResult = {
@@ -58,19 +59,16 @@ const AI_PLATFORMS: AIPlatform[] = [
     id: 'claude',
     label: 'Claude',
     url: 'https://claude.ai/new',
-    ariaLabel: 'Copiar prompt y abrir Claude',
   },
   {
     id: 'chatgpt',
     label: 'ChatGPT',
     url: 'https://chatgpt.com',
-    ariaLabel: 'Copiar prompt y abrir ChatGPT',
   },
   {
     id: 'perplexity',
     label: 'Perplexity',
     url: 'https://www.perplexity.ai',
-    ariaLabel: 'Copiar prompt y abrir Perplexity',
   },
 ]
 
@@ -78,7 +76,7 @@ const AI_PLATFORMS: AIPlatform[] = [
 
 const logger = {
   info: (event: string, meta?: Record<string, unknown>) => {
-    if (typeof window !== 'undefined' && !window.__COPYFAI_PRODUCTION__) {
+    if (import.meta.env.DEV) {
       console.info(`[CopyForAI] ${event}`, meta ?? '')
     }
   },
@@ -92,15 +90,29 @@ const logger = {
 }
 
 // ── Serialización Markdown ────────────────────────────────────────────────────
+//
+// Las funciones de serialización reciben un traductor con keyPrefix 'copyForAI'
+// (ver `useTranslation('blog', { keyPrefix: 'copyForAI' })` en el componente)
+// para que la prosa del prompt siga el idioma activo de la app.
 
-function blockToMarkdown(block: ContentBlock): string {
+type CopyT = TFunction<'blog', 'copyForAI'>
+
+function blockToMarkdown(block: ContentBlock, t: CopyT): string {
   switch (block.type) {
     case 'h2':
       return `\n## ${block.text}\n`
     case 'h3':
       return `\n### ${block.text}\n`
-    case 'p':
-      return `${block.text}\n`
+    case 'p': {
+      const text = typeof block.text === 'string'
+        ? block.text
+        : block.text
+            .map((s) => typeof s === 'string'
+              ? s
+              : 'to' in s ? `[${s.text}](${SITE}/blog/${s.to}/)` : `[${s.text}](${s.href})`)
+            .join('')
+      return `${text}\n`
+    }
     case 'ul':
       return block.items.map((i) => `- ${i}`).join('\n') + '\n'
     case 'ol':
@@ -127,9 +139,9 @@ function blockToMarkdown(block: ContentBlock): string {
         '',
       ].join('\n')
     case 'ifc-demo':
-      return `> 💡 *Demo interactiva disponible: ${block.title} — ${block.description} Pruébala gratis en ${SITE}*\n`
+      return `> 💡 *${t('doc.demo')}: ${block.title} — ${block.description} ${t('doc.demoTry')} ${SITE}*\n`
     case 'image':
-      return block.caption ? `*[Imagen: ${block.caption}]*\n` : ''
+      return block.caption ? `*[${t('doc.imageLabel')}: ${block.caption}]*\n` : ''
     default:
       // Registro de tipos inesperados sin crashear
       logger.warn('blockToMarkdown: tipo de bloque desconocido', { block })
@@ -137,9 +149,9 @@ function blockToMarkdown(block: ContentBlock): string {
   }
 }
 
-export function postToMarkdown(post: BlogPost): string {
+export function postToMarkdown(post: BlogPost, t: CopyT): string {
   const content = post.content
-    .map(blockToMarkdown)
+    .map((block) => blockToMarkdown(block, t))
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
 
@@ -147,8 +159,8 @@ export function postToMarkdown(post: BlogPost): string {
 
 > ${post.excerpt}
 
-*Categoría: ${post.category} · ${post.readTimeMin} min de lectura*
-*Fuente: ${SITE}/blog/${post.slug}/*
+*${t('doc.category')}: ${post.category} · ${post.readTimeMin} ${t('doc.readTime')}*
+*${t('doc.source')}: ${SITE}/blog/${post.slug}/*
 
 ---
 
@@ -156,25 +168,25 @@ ${content.trim()}
 
 ---
 
-*Este artículo es de IFC Viewer Online — visor IFC gratuito en el navegador. Los archivos nunca salen de tu máquina. Pruébalo en ${SITE}*`
+*${t('doc.footer', { site: SITE })}*`
 }
 
-export function buildAiPrompt(post: BlogPost): string {
-  const md = postToMarkdown(post)
+export function buildAiPrompt(post: BlogPost, t: CopyT): string {
+  const md = postToMarkdown(post, t)
 
-  return `Estoy leyendo un artículo sobre BIM y archivos IFC. Por favor, ayúdame a entender este contenido mejor.
+  return `${t('prompt.intro')}
 
 ${md}
 
 ---
 
-Basándote en este artículo, por favor:
-1. Resume las 3 conclusiones prácticas más importantes en lenguaje claro
-2. Explica los términos técnicos (entidades IFC, estándares, acrónimos) que pueda no conocer
-3. Dame una acción concreta que debería realizar basándome en este artículo
-4. Responde las preguntas de seguimiento que tenga sobre este tema
+${t('prompt.task')}
+1. ${t('prompt.step1')}
+2. ${t('prompt.step2')}
+3. ${t('prompt.step3')}
+4. ${t('prompt.step4')}
 
-Si te proporciono una ruta a un archivo IFC o describo mi proyecto, relaciona tus respuestas con mi situación específica.`
+${t('prompt.tail')}`
 }
 
 // ── Capa de clipboard — aislada y testeable ───────────────────────────────────
@@ -255,14 +267,21 @@ function useClipboard() {
 }
 
 // ── Mensajes UI según estado ───────────────────────────────────────────────────
+//
+// El texto vive en el namespace i18n `blog` (clave `copyForAI.button.*` /
+// `copyForAI.hint.*`); aquí solo mapeamos cada estado a su clave + icono/clase.
 
-const COPY_BUTTON_CONTENT: Record<CopyState, { label: string; icon?: string }> = {
-  idle:               { label: 'Copiar prompt de IA' },
-  copying:            { label: 'Copiando…' },
-  copied:             { label: '¡Prompt copiado!', icon: '✓' },
-  'error:permission': { label: 'Permiso denegado' },
-  'error:unavailable':{ label: 'No disponible en este navegador' },
-  'error:unknown':    { label: 'Error — inténtalo de nuevo' },
+const COPY_BUTTON_KEY = {
+  idle:                'button.idle',
+  copying:             'button.copying',
+  copied:              'button.copied',
+  'error:permission':  'button.errorPermission',
+  'error:unavailable': 'button.errorUnavailable',
+  'error:unknown':     'button.errorUnknown',
+} as const satisfies Record<CopyState, string>
+
+const COPY_BUTTON_ICON: Partial<Record<CopyState, string>> = {
+  copied: '✓',
 }
 
 const COPY_BUTTON_CLASS: Record<CopyState, string> = {
@@ -274,30 +293,28 @@ const COPY_BUTTON_CLASS: Record<CopyState, string> = {
   'error:unknown': 'bg-[rgba(239,68,68,0.15)] border border-[rgba(239,68,68,0.3)] text-[#f87171]',
 }
 
-const ERROR_HINTS: Partial<Record<CopyState, string>> = {
-  'error:permission':
-    'El navegador bloqueó el acceso al portapapeles. Haz clic en el icono de candado de la barra de direcciones y permite "Portapapeles".',
-  'error:unavailable':
-    'Tu navegador no soporta la API de portapapeles. Prueba con Chrome, Edge o Firefox modernos.',
-  'error:unknown':
-    'Algo salió mal al copiar. Inténtalo de nuevo o selecciona manualmente el texto.',
-}
+const ERROR_HINT_KEY = {
+  'error:permission':  'hint.permission',
+  'error:unavailable': 'hint.unavailable',
+  'error:unknown':     'hint.unknown',
+} as const satisfies Partial<Record<CopyState, string>>
 
 // ── Sub-componente: botón de plataforma individual ────────────────────────────
 
 interface PlatformLinkProps {
   platform: AIPlatform
+  ariaLabel: string
   onCopy: () => Promise<CopyResult>
 }
 
-const PlatformLink = memo(function PlatformLink({ platform, onCopy }: PlatformLinkProps) {
+const PlatformLink = memo(function PlatformLink({ platform, ariaLabel, onCopy }: PlatformLinkProps) {
   return (
     <a
       href={platform.url}
       target="_blank"
       rel="noopener noreferrer"
       onClick={onCopy}
-      aria-label={platform.ariaLabel}
+      aria-label={ariaLabel}
       className="flex-1 h-8 rounded-lg border border-[var(--border)] text-[11.5px] font-medium
                  text-[var(--text-faint)] hover:text-[var(--text)] hover:border-[var(--border-strong)]
                  transition-colors flex items-center justify-center gap-1.5
@@ -313,7 +330,7 @@ const PlatformLink = memo(function PlatformLink({ platform, onCopy }: PlatformLi
 interface CopyForAIProps {
   post: BlogPost
   /** Sobrescribir el builder de prompt (útil para tests o variantes A/B) */
-  promptBuilder?: (post: BlogPost) => string
+  promptBuilder?: (post: BlogPost, t: CopyT) => string
   /** Callback cuando la copia es exitosa */
   onCopied?: (method: 'clipboard-api' | 'execCommand') => void
   /** Callback de error */
@@ -326,20 +343,22 @@ export default function CopyForAI({
   onCopied,
   onError,
 }: CopyForAIProps) {
+  const { t } = useTranslation('blog', { keyPrefix: 'copyForAI' })
   const [open, setOpen] = useState(false)
   const { state, copy } = useClipboard()
   const dropdownRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
 
-  // Memoizar el prompt — no recalcular en cada render
+  // Memoizar el prompt — no recalcular en cada render. Depende de `t` para
+  // que el prompt se regenere al cambiar de idioma.
   const prompt = useMemo(() => {
     try {
-      return promptBuilder(post)
+      return promptBuilder(post, t)
     } catch (cause) {
       logger.error('promptBuilder:failed', cause)
-      return `Error generando el prompt para: ${post?.title ?? 'artículo desconocido'}`
+      return `Error generating the prompt for: ${post?.title ?? 'unknown article'}`
     }
-  }, [post, promptBuilder])
+  }, [post, promptBuilder, t])
 
   // Cerrar con Escape + gestión de focus
   useEffect(() => {
@@ -371,8 +390,10 @@ export default function CopyForAI({
   const toggleOpen = useCallback(() => setOpen((v) => !v), [])
   const close = useCallback(() => setOpen(false), [])
 
-  const errorHint = ERROR_HINTS[state]
-  const btnContent = COPY_BUTTON_CONTENT[state]
+  const errorHintKey = ERROR_HINT_KEY[state as keyof typeof ERROR_HINT_KEY]
+  const errorHint = errorHintKey ? t(errorHintKey) : undefined
+  const btnLabel = t(COPY_BUTTON_KEY[state])
+  const btnIcon = COPY_BUTTON_ICON[state]
   const btnClass = COPY_BUTTON_CLASS[state]
 
   return (
@@ -392,7 +413,7 @@ export default function CopyForAI({
                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
       >
         <span className="text-[14px]" aria-hidden="true">✨</span>
-        Explicar con IA
+        {t('trigger')}
         <svg
           width="10"
           height="10"
@@ -414,7 +435,7 @@ export default function CopyForAI({
           <motion.div
             id="copy-for-ai-dropdown"
             role="dialog"
-            aria-label="Explicar artículo con IA"
+            aria-label={t('dialogAria')}
             aria-modal="false"
             initial={{ opacity: 0, y: -8, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -425,28 +446,31 @@ export default function CopyForAI({
                        backdrop-blur-xl shadow-2xl"
           >
             <p className="text-[11.5px] font-mono font-bold tracking-[0.1em] text-[var(--text-faint)] mb-2">
-              EXPLICAR CON IA
+              {t('header')}
             </p>
             <p className="text-[13px] leading-[1.6] text-[var(--text-dim)] mb-4">
-              Copia este artículo como prompt estructurado. Pégalo en{' '}
-              <a
-                href="https://claude.ai"
-                target="_blank"
-                rel="noopener"
-                className="text-[var(--accent-2)] hover:underline focus-visible:outline-none focus-visible:underline"
-              >
-                Claude
-              </a>
-              ,{' '}
-              <a
-                href="https://chatgpt.com"
-                target="_blank"
-                rel="noopener"
-                className="text-[var(--accent-2)] hover:underline focus-visible:outline-none focus-visible:underline"
-              >
-                ChatGPT
-              </a>
-              , o cualquier asistente de IA para una explicación personalizada.
+              <Trans
+                t={t}
+                i18nKey="description"
+                components={{
+                  claude: (
+                    <a
+                      href="https://claude.ai"
+                      target="_blank"
+                      rel="noopener"
+                      className="text-[var(--accent-2)] hover:underline focus-visible:outline-none focus-visible:underline"
+                    />
+                  ),
+                  chatgpt: (
+                    <a
+                      href="https://chatgpt.com"
+                      target="_blank"
+                      rel="noopener"
+                      className="text-[var(--accent-2)] hover:underline focus-visible:outline-none focus-visible:underline"
+                    />
+                  ),
+                }}
+              />
             </p>
 
             <div className="flex flex-col gap-2">
@@ -462,8 +486,8 @@ export default function CopyForAI({
                   btnClass,
                 ].join(' ')}
               >
-                {btnContent.icon && (
-                  <span aria-hidden="true">{btnContent.icon}</span>
+                {btnIcon && (
+                  <span aria-hidden="true">{btnIcon}</span>
                 )}
                 {state === 'copying' && (
                   <span
@@ -471,7 +495,7 @@ export default function CopyForAI({
                     aria-hidden="true"
                   />
                 )}
-                {btnContent.label}
+                {btnLabel}
               </button>
 
               {/* Hint de error contextual */}
@@ -490,11 +514,12 @@ export default function CopyForAI({
               </AnimatePresence>
 
               {/* Links a plataformas */}
-              <div className="flex gap-2" role="group" aria-label="Abrir en plataforma de IA">
+              <div className="flex gap-2" role="group" aria-label={t('platformGroupAria')}>
                 {AI_PLATFORMS.map((platform) => (
                   <PlatformLink
                     key={platform.id}
                     platform={platform}
+                    ariaLabel={t('platformAria', { platform: platform.label })}
                     onCopy={handleCopy}
                   />
                 ))}
@@ -511,7 +536,7 @@ export default function CopyForAI({
                   className="mt-3 text-[11.5px] text-[var(--text-faint)]"
                   role="status"
                 >
-                  ✓ Prompt en el portapapeles — pégalo en cualquier ventana de chat IA
+                  {t('confirm')}
                 </motion.p>
               )}
             </AnimatePresence>

@@ -1,0 +1,42 @@
+{
+  "copyForAI": {
+    "trigger": "Mit KI erklären",
+    "header": "MIT KI ERKLÄREN",
+    "description": "Kopiere diesen Artikel als strukturierten Prompt. Füge ihn in <claude>Claude</claude>, <chatgpt>ChatGPT</chatgpt> oder einen beliebigen KI-Assistenten ein, um eine personalisierte Erklärung zu erhalten.",
+    "button": {
+      "idle": "KI-Prompt kopieren",
+      "copying": "Wird kopiert…",
+      "copied": "Prompt kopiert!",
+      "errorPermission": "Zugriff verweigert",
+      "errorUnavailable": "In diesem Browser nicht verfügbar",
+      "errorUnknown": "Fehler — bitte erneut versuchen"
+    },
+    "hint": {
+      "permission": "Der Browser hat den Zugriff auf die Zwischenablage blockiert. Klicke auf das Schloss-Symbol in der Adressleiste und erlaube „Zwischenablage“.",
+      "unavailable": "Dein Browser unterstützt die Clipboard-API nicht. Versuche es mit einer aktuellen Version von Chrome, Edge oder Firefox.",
+      "unknown": "Beim Kopieren ist etwas schiefgelaufen. Versuche es erneut oder markiere den Text manuell."
+    },
+    "platformAria": "Prompt kopieren und {{platform}} öffnen",
+    "platformGroupAria": "In KI-Plattform öffnen",
+    "dialogAria": "Artikel mit KI erklären",
+    "confirm": "✓ Prompt in der Zwischenablage — füge ihn in ein beliebiges KI-Chatfenster ein",
+    "prompt": {
+      "intro": "Ich lese einen Artikel über BIM und IFC-Dateien. Bitte hilf mir, diesen Inhalt besser zu verstehen.",
+      "task": "Bitte tue auf Basis dieses Artikels Folgendes:",
+      "step1": "Fasse die 3 wichtigsten praktischen Erkenntnisse in klarer Sprache zusammen",
+      "step2": "Erkläre die Fachbegriffe (IFC-Entitäten, Standards, Abkürzungen), die ich möglicherweise nicht kenne",
+      "step3": "Nenne mir eine konkrete Maßnahme, die ich auf Basis dieses Artikels ergreifen sollte",
+      "step4": "Beantworte etwaige Anschlussfragen, die ich zu diesem Thema habe",
+      "tail": "Wenn ich dir den Pfad zu einer IFC-Datei gebe oder mein Projekt beschreibe, beziehe deine Antworten auf meine konkrete Situation."
+    },
+    "doc": {
+      "category": "Kategorie",
+      "readTime": "Min. Lesezeit",
+      "source": "Quelle",
+      "demo": "Interaktive Demo verfügbar",
+      "demoTry": "Kostenlos ausprobieren auf",
+      "imageLabel": "Bild",
+      "footer": "Dieser Artikel stammt von IFC Viewer Online — einem kostenlosen IFC-Viewer im Browser. Dateien verlassen niemals deinen Rechner. Probiere ihn aus auf {{site}}"
+    }
+  }
+}

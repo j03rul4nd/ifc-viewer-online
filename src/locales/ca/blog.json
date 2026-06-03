@@ -1,0 +1,42 @@
+{
+  "copyForAI": {
+    "trigger": "Explica-ho amb IA",
+    "header": "EXPLICA-HO AMB IA",
+    "description": "Copia aquest article com a prompt estructurat. Enganxa'l a <claude>Claude</claude>, <chatgpt>ChatGPT</chatgpt>, o a qualsevol assistent d'IA per obtenir una explicació personalitzada.",
+    "button": {
+      "idle": "Copia el prompt d'IA",
+      "copying": "S'està copiant…",
+      "copied": "Prompt copiat!",
+      "errorPermission": "Permís denegat",
+      "errorUnavailable": "No disponible en aquest navegador",
+      "errorUnknown": "Error — torna-ho a provar"
+    },
+    "hint": {
+      "permission": "El navegador ha bloquejat l'accés al porta-retalls. Fes clic a la icona del cadenat a la barra d'adreces i permet «Porta-retalls».",
+      "unavailable": "El teu navegador no admet l'API del porta-retalls. Prova amb una versió recent de Chrome, Edge o Firefox.",
+      "unknown": "Alguna cosa ha anat malament en copiar. Torna-ho a provar o selecciona el text manualment."
+    },
+    "platformAria": "Copia el prompt i obre {{platform}}",
+    "platformGroupAria": "Obre en una plataforma d'IA",
+    "dialogAria": "Explica l'article amb IA",
+    "confirm": "✓ Prompt al porta-retalls — enganxa'l a qualsevol finestra de xat d'IA",
+    "prompt": {
+      "intro": "Estic llegint un article sobre BIM i fitxers IFC. Si us plau, ajuda'm a entendre millor aquest contingut.",
+      "task": "Basant-te en aquest article, si us plau:",
+      "step1": "Resumeix les 3 conclusions pràctiques més importants en llenguatge clar",
+      "step2": "Explica els termes tècnics (entitats IFC, estàndards, acrònims) que potser no conec",
+      "step3": "Dona'm una acció concreta que hauria de fer basant-me en aquest article",
+      "step4": "Respon les preguntes de seguiment que tingui sobre aquest tema",
+      "tail": "Si et proporciono la ruta d'un fitxer IFC o descric el meu projecte, relaciona les teves respostes amb la meva situació específica."
+    },
+    "doc": {
+      "category": "Categoria",
+      "readTime": "min de lectura",
+      "source": "Font",
+      "demo": "Demo interactiva disponible",
+      "demoTry": "Prova-la gratis a",
+      "imageLabel": "Imatge",
+      "footer": "Aquest article és d'IFC Viewer Online — un visor IFC gratuït al navegador. Els fitxers mai no surten del teu ordinador. Prova'l a {{site}}"
+    }
+  }
+}

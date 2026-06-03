@@ -1,0 +1,42 @@
+{
+  "copyForAI": {
+    "trigger": "用 AI 解释",
+    "header": "用 AI 解释",
+    "description": "将本文复制为结构化提示词。粘贴到 <claude>Claude</claude>、<chatgpt>ChatGPT</chatgpt> 或任意 AI 助手中，即可获得个性化解释。",
+    "button": {
+      "idle": "复制 AI 提示词",
+      "copying": "正在复制…",
+      "copied": "提示词已复制！",
+      "errorPermission": "权限被拒绝",
+      "errorUnavailable": "此浏览器不支持",
+      "errorUnknown": "出错了 — 请重试"
+    },
+    "hint": {
+      "permission": "浏览器阻止了对剪贴板的访问。请点击地址栏中的锁形图标并允许「剪贴板」。",
+      "unavailable": "你的浏览器不支持剪贴板 API。请尝试较新版本的 Chrome、Edge 或 Firefox。",
+      "unknown": "复制时出现问题。请重试，或手动选择文本。"
+    },
+    "platformAria": "复制提示词并打开 {{platform}}",
+    "platformGroupAria": "在 AI 平台中打开",
+    "dialogAria": "用 AI 解释文章",
+    "confirm": "✓ 提示词已在剪贴板中 — 粘贴到任意 AI 聊天窗口即可",
+    "prompt": {
+      "intro": "我正在阅读一篇关于 BIM 和 IFC 文件的文章。请帮我更好地理解这些内容。",
+      "task": "请根据本文：",
+      "step1": "用通俗的语言总结 3 个最重要的实用要点",
+      "step2": "解释我可能不了解的技术术语（IFC 实体、标准、缩写）",
+      "step3": "给我一个基于本文应当采取的具体行动",
+      "step4": "回答我关于这个主题的任何后续问题",
+      "tail": "如果我提供 IFC 文件的路径或描述我的项目，请将你的回答与我的具体情况联系起来。"
+    },
+    "doc": {
+      "category": "分类",
+      "readTime": "分钟阅读",
+      "source": "来源",
+      "demo": "提供交互式演示",
+      "demoTry": "免费试用：",
+      "imageLabel": "图片",
+      "footer": "本文来自 IFC Viewer Online — 一款免费的浏览器内 IFC 查看器。文件绝不会离开你的设备。立即试用：{{site}}"
+    }
+  }
+}
