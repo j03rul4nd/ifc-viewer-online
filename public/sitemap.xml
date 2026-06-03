@@ -76,4 +76,132 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/tools/fix-duplicate-guids/" />
   </url>
 
+  <!-- Blog index — EN -->
+  <url>
+    <loc>https://j03rul4nd.github.io/ifc-viewer-online/blog/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/blog/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://j03rul4nd.github.io/ifc-viewer-online/es/blog/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://j03rul4nd.github.io/ifc-viewer-online/de/blog/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://j03rul4nd.github.io/ifc-viewer-online/fr/blog/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/blog/" />
+  </url>
+
+  <!-- Blog index — ES -->
+  <url>
+    <loc>https://j03rul4nd.github.io/ifc-viewer-online/es/blog/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.82</priority>
+    <xhtml:link rel="alternate" hreflang="es"        href="https://j03rul4nd.github.io/ifc-viewer-online/es/blog/" />
+    <xhtml:link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/blog/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/blog/" />
+  </url>
+
+  <!-- Blog index — DE -->
+  <url>
+    <loc>https://j03rul4nd.github.io/ifc-viewer-online/de/blog/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+    <xhtml:link rel="alternate" hreflang="de"        href="https://j03rul4nd.github.io/ifc-viewer-online/de/blog/" />
+    <xhtml:link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/blog/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/blog/" />
+  </url>
+
+  <!-- Blog index — FR -->
+  <url>
+    <loc>https://j03rul4nd.github.io/ifc-viewer-online/fr/blog/</loc>
+    <lastmod>2026-06-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://j03rul4nd.github.io/ifc-viewer-online/fr/blog/" />
+    <xhtml:link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/blog/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/blog/" />
+  </url>
+
+  <!-- Blog posts — individual articles (also injected dynamically by generateBlogPages at build time) -->
+  <url>
+    <loc>https://j03rul4nd.github.io/ifc-viewer-online/blog/view-ifc-online-free/</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.78</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/blog/view-ifc-online-free/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/blog/view-ifc-online-free/" />
+  </url>
+
+  <url>
+    <loc>https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-health-score-guide/</loc>
+    <lastmod>2026-05-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-health-score-guide/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-health-score-guide/" />
+  </url>
+
+  <url>
+    <loc>https://j03rul4nd.github.io/ifc-viewer-online/blog/duplicate-guids-ifc/</loc>
+    <lastmod>2026-05-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/blog/duplicate-guids-ifc/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/blog/duplicate-guids-ifc/" />
+  </url>
+
+  <url>
+    <loc>https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-vs-rvt-vs-nwd/</loc>
+    <lastmod>2026-05-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-vs-rvt-vs-nwd/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-vs-rvt-vs-nwd/" />
+  </url>
+
+  <url>
+    <loc>https://j03rul4nd.github.io/ifc-viewer-online/blog/common-ifc-validation-errors/</loc>
+    <lastmod>2026-05-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/blog/common-ifc-validation-errors/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/blog/common-ifc-validation-errors/" />
+  </url>
+
+  <url>
+    <loc>https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-health-score-explained/</loc>
+    <lastmod>2026-04-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.72</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-health-score-explained/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-health-score-explained/" />
+  </url>
+
+  <url>
+    <loc>https://j03rul4nd.github.io/ifc-viewer-online/blog/clean-ifc-export-revit/</loc>
+    <lastmod>2026-04-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.72</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/blog/clean-ifc-export-revit/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/blog/clean-ifc-export-revit/" />
+  </url>
+
+  <url>
+    <loc>https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc2x3-vs-ifc4/</loc>
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.72</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc2x3-vs-ifc4/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc2x3-vs-ifc4/" />
+  </url>
+
+  <url>
+    <loc>https://j03rul4nd.github.io/ifc-viewer-online/blog/iso19650-ifc-checklist/</loc>
+    <lastmod>2026-03-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.72</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/blog/iso19650-ifc-checklist/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/blog/iso19650-ifc-checklist/" />
+  </url>
+
 </urlset>

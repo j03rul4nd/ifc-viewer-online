@@ -47,6 +47,8 @@ BIM Coordinators, Architects, Structural Engineers, MEP Engineers — anyone who
 - User needs a free IFC validator that works on Mac or any browser
 - User needs to fix GlobalIds and re-export a corrected IFC
 - User needs to export validation issues as BCF 2.1 for Navisworks or BIMcollab
+- User wants to understand IFC Health Score or BIM model quality scoring
+- User is asking how to fix a specific IFC validation error
 
 ## Related pages
 
@@ -56,3 +58,25 @@ BIM Coordinators, Architects, Structural Engineers, MEP Engineers — anyone who
 - Fix Duplicate GUIDs in IFC: https://j03rul4nd.github.io/ifc-viewer-online/tools/fix-duplicate-guids/
 - Visor IFC Online (ES): https://j03rul4nd.github.io/ifc-viewer-online/es/
 - Validador IFC (ES): https://j03rul4nd.github.io/ifc-viewer-online/es/ifc-validador/
+
+## Blog — BIM & IFC guides (EN, ES, DE, FR)
+
+Practical articles for BIM coordinators on IFC validation, model quality, Health Scores, and CDE delivery best practices.
+Available in English, Spanish (Español), German (Deutsch), and French (Français).
+
+- Blog EN: https://j03rul4nd.github.io/ifc-viewer-online/blog/
+- Blog ES: https://j03rul4nd.github.io/ifc-viewer-online/es/blog/
+- Blog DE: https://j03rul4nd.github.io/ifc-viewer-online/de/blog/
+- Blog FR: https://j03rul4nd.github.io/ifc-viewer-online/fr/blog/
+
+### English articles
+
+- [View IFC Files in Your Browser — Free, No Installation](https://j03rul4nd.github.io/ifc-viewer-online/blog/view-ifc-online-free/) — How to open, inspect and validate any IFC file in a browser without installing software. Tool Guides, 6 min.
+- [What Is a BIM Health Check? The IFC Health Score Explained](https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-health-score-guide/) — How the 0–100 IFC Health Score is calculated, what each threshold means, and how to add it to a project BEP. Best Practices, 7 min.
+- [Duplicate GUIDs in IFC: The Silent Error That Breaks Everything](https://j03rul4nd.github.io/ifc-viewer-online/blog/duplicate-guids-ifc/) — Why duplicate GlobalIds break BCF workflows, CDE asset registers and Revit link tracking, and how to fix them. Validation, 8 min.
+- [IFC, RVT, NWD, DWG: Which BIM File Format Should You Deliver?](https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-vs-rvt-vs-nwd/) — Comparison of open vs proprietary BIM file formats and when to use each for project deliveries. IFC Tips, 9 min.
+- [The 7 Most Common IFC Validation Errors (and How to Fix Them)](https://j03rul4nd.github.io/ifc-viewer-online/blog/common-ifc-validation-errors/) — Duplicate GUIDs, orphan elements, broken aggregates, spatial hierarchy violations — the errors behind 80% of CDE rejections. Validation, 8 min.
+- [IFC Health Score: The Single Number Your BIM Team Needs](https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-health-score-explained/) — Why a single model quality score matters more than a detailed issue list for project governance. Best Practices, 5 min.
+- [How to Export Clean IFC Files from Revit](https://j03rul4nd.github.io/ifc-viewer-online/blog/clean-ifc-export-revit/) — Exact Revit IFC export settings that eliminate the most common validation failures before CDE upload. Tool Guides, 7 min.
+- [IFC2x3 vs IFC4: Should You Upgrade Your Export Schema?](https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc2x3-vs-ifc4/) — What changed in IFC4, which projects should upgrade, and how to avoid breaking existing downstream tools. IFC Tips, 6 min.
+- [ISO 19650 Compliance for IFC Deliveries: A Practical Checklist](https://j03rul4nd.github.io/ifc-viewer-online/blog/iso19650-ifc-checklist/) — File naming, IfcProject metadata, file header traceability, and classification requirements for ISO 19650 IFC deliveries. Standards, 9 min.

@@ -60,17 +60,29 @@ export interface ModelTreeHandle {
   revealElement: (expressId: number) => void
 }
 
+// All non-English blog language prefixes supported in URLs
+const BLOG_LANGS = 'es|de|fr|pt|it|ca|zh|ja|th'
+const BLOG_LANG_RE = new RegExp(`^\\/(${BLOG_LANGS})\\/blog`)
+const BLOG_SLUG_RE = new RegExp(`^(?:\\/(${BLOG_LANGS}))\\/blog\\/([^/]+)\\/?$`)
+
+function blogUrlBase(lang: string): string {
+  const base = import.meta.env.BASE_URL ?? '/'
+  const prefix = lang !== 'en' ? `${lang}/` : ''
+  return base.endsWith('/') ? `${base}${prefix}blog/` : `${base}/${prefix}blog/`
+}
+
 export default function App() {
   const { t: tToasts } = useTranslation('toasts')
   const { t: tCommon } = useTranslation('common')
   const { t: tViewer } = useTranslation('viewer')
   useSeo()
+
   const [route, setRoute] = useState<Route>(() => {
     if (typeof window !== 'undefined') {
       if (decodeReportHash(window.location.hash)) return 'report'
       const base = import.meta.env.BASE_URL ?? '/'
       const rel = window.location.pathname.replace(base.replace(/\/$/, ''), '') || '/'
-      if (rel.startsWith('/blog')) return 'blog'
+      if (BLOG_LANG_RE.test(rel) || rel.startsWith('/blog')) return 'blog'
     }
     return 'landing'
   })
@@ -80,32 +92,40 @@ export default function App() {
     if (typeof window === 'undefined') return null
     const base = import.meta.env.BASE_URL ?? '/'
     const rel = window.location.pathname.replace(base.replace(/\/$/, ''), '') || '/'
-    const m = rel.match(/^\/blog\/([^/]+)\/?$/)
-    return m ? m[1] : null
+    const m = BLOG_SLUG_RE.exec(rel) ?? /^\/blog\/([^/]+)\/?$/.exec(rel)
+    // BLOG_SLUG_RE has 2 capture groups (lang, slug); plain blog RE has 1 (slug)
+    return m ? (m[2] ?? m[1]) : null
+  })
+
+  // Blog language: 'en' | 'es' | 'de' | 'fr' | 'pt' | 'it' | 'ca' | 'zh' | 'ja' | 'th'
+  const [blogLang, setBlogLang] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'en'
+    const base = import.meta.env.BASE_URL ?? '/'
+    const rel = window.location.pathname.replace(base.replace(/\/$/, ''), '') || '/'
+    const m = BLOG_LANG_RE.exec(rel)
+    return m ? m[1] : 'en'
   })
   const [accent] = useState('#5E6AD2')
 
   // ── URL helpers for blog navigation ──────────────────────────────────────
-  const blogBase = (): string => {
-    const base = import.meta.env.BASE_URL ?? '/'
-    return base.endsWith('/') ? `${base}blog/` : `${base}/blog/`
-  }
-
-  const handleNavigateToBlog = useCallback((): void => {
-    history.pushState(null, '', blogBase())
+  const handleNavigateToBlog = useCallback((lang?: string): void => {
+    const resolvedLang = lang ?? 'en'
+    const path = blogUrlBase(resolvedLang)
+    history.pushState(null, '', path)
+    setBlogLang(resolvedLang)
     setRoute('blog')
     setBlogSlug(null)
   }, [])
 
   const handleNavigateToBlogPost = useCallback((slug: string): void => {
-    history.pushState(null, '', `${blogBase()}${slug}/`)
+    history.pushState(null, '', `${blogUrlBase(blogLang)}${slug}/`)
     setBlogSlug(slug)
-  }, [])
+  }, [blogLang])
 
   const handleNavigateFromBlogToList = useCallback((): void => {
-    history.pushState(null, '', blogBase())
+    history.pushState(null, '', blogUrlBase(blogLang))
     setBlogSlug(null)
-  }, [])
+  }, [blogLang])
 
   // ── Browser back/forward support ──────────────────────────────────────────
   useEffect(() => {
@@ -114,10 +134,12 @@ export default function App() {
       const rel = window.location.pathname.replace(base.replace(/\/$/, ''), '') || '/'
       if (window.location.hash && decodeReportHash(window.location.hash)) {
         setRoute('report')
-      } else if (rel.startsWith('/blog')) {
+      } else if (BLOG_LANG_RE.test(rel) || rel.startsWith('/blog')) {
         setRoute('blog')
-        const m = rel.match(/^\/blog\/([^/]+)\/?$/)
-        setBlogSlug(m ? m[1] : null)
+        const langM = BLOG_LANG_RE.exec(rel)
+        setBlogLang(langM ? langM[1] : 'en')
+        const slugM = BLOG_SLUG_RE.exec(rel) ?? /^\/blog\/([^/]+)\/?$/.exec(rel)
+        setBlogSlug(slugM ? (slugM[2] ?? slugM[1]) : null)
       } else {
         setRoute('landing')
         setBlogSlug(null)
@@ -665,6 +687,7 @@ export default function App() {
           >
             <Blog
               slug={blogSlug}
+              lang={blogLang}
               onNavigateToPost={handleNavigateToBlogPost}
               onNavigateToBlog={handleNavigateFromBlogToList}
               onNavigateToLanding={handleNavigateToLanding}

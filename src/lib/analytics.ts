@@ -118,7 +118,7 @@ export function trackEmailCaptured(props: {
  */
 export function trackRouteChanged(props: {
   to:   'viewer' | 'report'
-  from: 'landing' | 'viewer' | 'report'
+  from: 'landing' | 'viewer' | 'report' | 'blog'
 }): void {
   track('route_changed', props)
 }

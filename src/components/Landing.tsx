@@ -41,7 +41,7 @@ interface LandingProps {
   onLaunch: () => void
   onOpenUpload: () => void
   onOpenDemoGallery: () => void
-  onNavigateToBlog: () => void
+  onNavigateToBlog: (lang?: string) => void
 }
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
@@ -322,7 +322,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             <a href="#fix-guides" className="text-inherit no-underline hover:text-[var(--text)] transition-colors">{t('nav.fixGuides')}</a>
             <a href="#faq"      className="text-inherit no-underline hover:text-[var(--text)] transition-colors">{t('nav.faq')}</a>
             <button
-              onClick={onNavigateToBlog}
+              onClick={() => onNavigateToBlog(langShort)}
               className="text-inherit bg-transparent border-0 p-0 cursor-pointer hover:text-[var(--text)] transition-colors"
             >
               Blog
@@ -999,7 +999,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
               {t('footer.fixGuide')}
             </a>
             <button
-              onClick={onNavigateToBlog}
+              onClick={() => onNavigateToBlog(langShort)}
               className="bg-transparent border-0 p-0 text-[var(--text-faint)] text-[11px] sm:text-[12px] cursor-pointer hover:text-[var(--text)] transition-colors"
             >
               Blog

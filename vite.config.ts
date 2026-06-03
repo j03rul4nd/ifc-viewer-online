@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync } from 'fs'
 import { generateFixPages } from './scripts/seo/generate-fix-pages'
+import { generateBlogPages } from './scripts/seo/generate-blog-pages'
 
 // ── Static landing content injection ─────────────────────────────────────────
 // Reads src/locales/en/landing.json after the build and injects the FAQ and
@@ -87,6 +88,28 @@ function generateRuleFixPages(): import('vite').Plugin {
   }
 }
 
+// ── Blog static page shells ───────────────────────────────────────────────────
+// Generates dist/blog/index.html + dist/blog/<slug>/index.html for GitHub Pages
+// SPA routing and per-page SEO meta. Runs after generateRuleFixPages so it can
+// append to the sitemap + llms.txt that were just written/updated.
+function generateBlogPageShells(): import('vite').Plugin {
+  return {
+    name: 'generate-blog-page-shells',
+    apply: 'build',
+    closeBundle() {
+      const distDir = path.resolve(__dirname, 'dist')
+      if (!existsSync(distDir)) return
+      const r = generateBlogPages(distDir)
+      const status = r.errors > 0 ? `⚠ ${r.errors} errors` : 'ok'
+      // eslint-disable-next-line no-console
+      console.log(
+        `\n  ✓ Blog pages: ${r.pages} shells (index + ${r.pages - 1} posts)` +
+        ` · sitemap ${r.sitemap ? 'updated' : 'unchanged'} · llms.txt ${r.llms ? 'updated' : 'unchanged'} · ${status}\n`,
+      )
+    },
+  }
+}
+
 function copyWebIfcWasm() {
   return {
     name: 'copy-web-ifc-wasm',
@@ -104,7 +127,7 @@ function copyWebIfcWasm() {
 }
 
 export default defineConfig({
-  plugins: [react(), copyWebIfcWasm(), injectLandingContent(), generateRuleFixPages()],
+  plugins: [react(), copyWebIfcWasm(), injectLandingContent(), generateRuleFixPages(), generateBlogPageShells()],
   base: '/ifc-viewer-online/',
   resolve: {
     alias: [
