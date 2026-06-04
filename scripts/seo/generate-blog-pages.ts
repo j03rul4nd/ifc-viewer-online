@@ -123,15 +123,19 @@ function tweakHtml(template: string, meta: PageMeta): string {
   //    Blog pages are English-only; we replace with self-referencing hreflang.
   html = html.replace(/<link\s+rel="alternate"\s+hreflang="[^"]*"\s+href="[^"]*"\s*\/>\s*/g, '')
 
-  // 7. Inject blog-specific hreflang + JSON-LD before </head>
+  // 7. Inject blog-specific hreflang + og:image:alt + twitter:image:alt + JSON-LD
   const hreflang = [
     `<link rel="alternate" hreflang="en"        href="${esc(meta.canonical)}" />`,
     `<link rel="alternate" hreflang="x-default" href="${esc(meta.canonical)}" />`,
   ].join('\n  ')
 
+  // og:image:alt derived from title — improves accessibility and social-share clarity
+  const ogAlt      = `<meta property="og:image:alt"  content="${esc(meta.title)}" />`
+  const twitterAlt = `<meta name="twitter:image:alt" content="${esc(meta.title)}" />`
+
   const jsonLd = `<script type="application/ld+json">${jsonEsc(JSON.stringify(meta.jsonLd))}</script>`
 
-  html = html.replace('</head>', `  ${hreflang}\n  ${jsonLd}\n</head>`)
+  html = html.replace('</head>', `  ${hreflang}\n  ${ogAlt}\n  ${twitterAlt}\n  ${jsonLd}\n</head>`)
 
   return html
 }

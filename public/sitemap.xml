@@ -204,4 +204,19 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/blog/iso19650-ifc-checklist/" />
   </url>
 
+
+  <!-- Legal pages -->
+  <url>
+    <loc>https://j03rul4nd.github.io/ifc-viewer-online/privacy</loc>
+    <lastmod>2026-06-04</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://j03rul4nd.github.io/ifc-viewer-online/terms</loc>
+    <lastmod>2026-06-04</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
 </urlset>

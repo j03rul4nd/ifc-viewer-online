@@ -164,14 +164,15 @@ export interface ViewerAPI {
   selectElement(expressId: number, modelId?: string): void
   /**
    * Apply category/element visibility.
-   * `isolatedElement` (a localId) takes precedence over every other filter: when set,
-   * only that element is shown and all category/hidden-element rules are ignored.
+   * `isolatedElement` (a localId) takes precedence over category/hidden-element rules
+   * within its owning model. Other models show normally when `isolatedModelId` is given.
    */
   applyFilters(
     hidden: Set<string>,
     isolated: string | null,
-    hiddenElements?: Set<number>,
+    hiddenElements?: Set<string>,
     isolatedElement?: number | null,
+    isolatedModelId?: string | null,
   ): void
   applyStyle(style: ViewerStyle): void
   /** Frame camera on a set of elements. Targets the active model unless modelId is given. */
@@ -1293,9 +1294,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
-    applyFilters(hidden, isolated, hiddenElements, isolatedElement) {
+    applyFilters(hidden, isolated, hiddenElements, isolatedElement, isolatedModelId) {
       if (modelObjects.size === 0) return
-      // Apply category/element visibility to every loaded model
       for (const [modelId, model] of modelObjects) {
         const typeMap = typeMapByModel.get(modelId) ?? new Map<number, string>()
         const toHide: number[] = []
@@ -1303,12 +1303,17 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         for (const [localId, rawType] of typeMap.entries()) {
           let show: boolean
           if (isolatedElement != null) {
-            // Element isolation overrides all category / hidden-element rules.
-            show = localId === isolatedElement
+            if (isolatedModelId != null && modelId !== isolatedModelId) {
+              // Isolation is scoped: other models render normally under category filters
+              const canon = canonicalType(rawType)
+              show = isolated ? (canon === isolated) : !hidden.has(canon)
+            } else {
+              show = localId === isolatedElement
+            }
           } else {
             const canon   = canonicalType(rawType)
             const catShow = isolated ? (canon === isolated) : !hidden.has(canon)
-            show          = catShow && !(hiddenElements?.has(localId))
+            show          = catShow && !(hiddenElements?.has(`${modelId}:${localId}`))
           }
           if (show) toShow.push(localId)
           else      toHide.push(localId)

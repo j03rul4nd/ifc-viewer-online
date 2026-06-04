@@ -313,6 +313,19 @@ function getSpatialPath(expressId: number, idx: SpatialIndex): string[] {
   return path
 }
 
+// ── Decomposition map builder ─────────────────────────────────────────────────
+// Returns physical-element parent→children pairs from IfcRelAggregates.
+// Spatial structure elements (project/site/building/storey/space) are excluded
+// because they're already represented in the tree hierarchy.
+function buildDecompMap(idx: SpatialIndex): [number, number[]][] {
+  const result: [number, number[]][] = []
+  for (const [parentId, childIds] of idx.aggChildren) {
+    if (SPATIAL_TYPES.has(idx.entityTypes.get(parentId) ?? 0)) continue
+    if (childIds.length > 0) result.push([parentId, childIds])
+  }
+  return result
+}
+
 // ── Tree builder ──────────────────────────────────────────────────────────────
 
 function buildTree(api: IfcAPI, modelId: number, idx: SpatialIndex): SpatialNode[] {
@@ -2255,8 +2268,9 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
 
     // ── Build and stream tree (skipped for secondary pool workers) ──
     if (!skipTree) {
-      const tree = buildTree(api, modelId, idx)
-      post({ type: 'tree', id, tree })
+      const tree  = buildTree(api, modelId, idx)
+      const decomp = buildDecompMap(idx)
+      post({ type: 'tree', id, tree, decomp })
     }
 
     // ── Define enabled rules ─────────────────────────────────────────
@@ -2453,9 +2467,10 @@ async function handleBuildTree(msg: BuildTreeMessage): Promise<void> {
     await api.Init()
     modelId = api.OpenModel(new Uint8Array(buffer))
 
-    const idx  = buildSpatialIndex(api, modelId)
-    const tree = buildTree(api, modelId, idx)
-    post({ type: 'tree',      id, tree })
+    const idx   = buildSpatialIndex(api, modelId)
+    const tree  = buildTree(api, modelId, idx)
+    const decomp = buildDecompMap(idx)
+    post({ type: 'tree',      id, tree, decomp })
     post({ type: 'tree-done', id })
 
   } catch (err: unknown) {
@@ -2665,7 +2680,7 @@ interface ComputeTakeoffMessage {
 }
 
 export type ValidatorOutMessage =
-  | { type: 'tree';         id: string; tree: SpatialNode[] }
+  | { type: 'tree';         id: string; tree: SpatialNode[]; decomp?: [number, number[]][] }
   | { type: 'tree-done';    id: string }
   | { type: 'partial';      id: string; ruleId: string; issues: ValidationIssue[]; progress: number }
   | { type: 'done';         id: string; result: ValidationResult }

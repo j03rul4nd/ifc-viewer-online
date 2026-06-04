@@ -42,6 +42,8 @@ interface LandingProps {
   onOpenUpload: () => void
   onOpenDemoGallery: () => void
   onNavigateToBlog: (lang?: string) => void
+  onNavigateToPrivacy: () => void
+  onNavigateToTerms: () => void
 }
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
@@ -179,7 +181,7 @@ const FIX_CATEGORIES = ['schema', 'spatial', 'quality', 'lod', 'iso19650', 'clas
 const FIX_LANG_PREFIXES = ['es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th']
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onNavigateToBlog }: LandingProps) {
+export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onNavigateToBlog, onNavigateToPrivacy, onNavigateToTerms }: LandingProps) {
   // 'validation' is loaded alongside 'landing' so the fix-guide section can reuse
   // the already-translated category labels (catFull.*). 'landing' stays the default
   // namespace, so every other t() call in this component is unchanged.
@@ -1012,6 +1014,18 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             >
               {t('nav.github')}
             </a>
+            <button
+              onClick={onNavigateToPrivacy}
+              className="bg-transparent border-0 p-0 text-[var(--text-faint)] text-[11px] sm:text-[12px] cursor-pointer hover:text-[var(--text)] transition-colors"
+            >
+              Privacy
+            </button>
+            <button
+              onClick={onNavigateToTerms}
+              className="bg-transparent border-0 p-0 text-[var(--text-faint)] text-[11px] sm:text-[12px] cursor-pointer hover:text-[var(--text)] transition-colors"
+            >
+              Terms
+            </button>
             <span className="text-[var(--text-faint)]">{t('footer.builtWith')}</span>
           </div>
         </footer>

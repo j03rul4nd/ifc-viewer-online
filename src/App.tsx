@@ -23,10 +23,13 @@ import SharedReportView, { decodeReportHash } from './components/SharedReportVie
 import type { SharedReportPayload } from './components/SharedReportView'
 import DemoGallery from './components/DemoGallery'
 import Blog from './components/Blog'
+import PrivacyPolicy from './components/legal/PrivacyPolicy'
+import TermsOfUse from './components/legal/TermsOfUse'
 import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, type DemoModel } from './demo-models/models'
 import { fetchDemoModel } from './demo-models/fetchDemoModel'
 import { lighten } from './lib/utils'
 import { modelRegistry } from './lib/model-registry'
+import { expandWithDecomp } from './lib/visibility'
 import { useIfcLoader } from './lib/loader'
 import { publishAggregateResult } from './lib/validator'
 import { useEditorHistory } from './hooks/useEditorHistory'
@@ -83,6 +86,8 @@ export default function App() {
       const base = import.meta.env.BASE_URL ?? '/'
       const rel = window.location.pathname.replace(base.replace(/\/$/, ''), '') || '/'
       if (BLOG_LANG_RE.test(rel) || rel.startsWith('/blog')) return 'blog'
+      if (rel === '/privacy' || rel.startsWith('/privacy/')) return 'privacy'
+      if (rel === '/terms'   || rel.startsWith('/terms/'))   return 'terms'
     }
     return 'landing'
   })
@@ -106,6 +111,22 @@ export default function App() {
     return m ? m[1] : 'en'
   })
   const [accent] = useState('#5E6AD2')
+
+  // ── URL helpers for legal pages ──────────────────────────────────────────
+  const legalUrl = (page: 'privacy' | 'terms'): string => {
+    const base = import.meta.env.BASE_URL ?? '/'
+    return base.endsWith('/') ? `${base}${page}` : `${base}/${page}`
+  }
+
+  const handleNavigateToPrivacy = useCallback((): void => {
+    history.pushState(null, '', legalUrl('privacy'))
+    setRoute('privacy')
+  }, [])
+
+  const handleNavigateToTerms = useCallback((): void => {
+    history.pushState(null, '', legalUrl('terms'))
+    setRoute('terms')
+  }, [])
 
   // ── URL helpers for blog navigation ──────────────────────────────────────
   const handleNavigateToBlog = useCallback((lang?: string): void => {
@@ -140,6 +161,10 @@ export default function App() {
         setBlogLang(langM ? langM[1] : 'en')
         const slugM = BLOG_SLUG_RE.exec(rel) ?? /^\/blog\/([^/]+)\/?$/.exec(rel)
         setBlogSlug(slugM ? (slugM[2] ?? slugM[1]) : null)
+      } else if (rel === '/privacy' || rel.startsWith('/privacy/')) {
+        setRoute('privacy')
+      } else if (rel === '/terms' || rel.startsWith('/terms/')) {
+        setRoute('terms')
       } else {
         setRoute('landing')
         setBlogSlug(null)
@@ -182,7 +207,8 @@ export default function App() {
   const [hidden,     setHidden]     = useState<Set<string>>(new Set())
   const [isolated,   setIsolated]   = useState<string | null>(null)
   // Single-element isolation (localId). Overrides category filters in the viewer.
-  const [isolatedElement, setIsolatedElement] = useState<number | null>(null)
+  const [isolatedElement,      setIsolatedElement]      = useState<number | null>(null)
+  const [isolatedElementModel, setIsolatedElementModel] = useState<string | null>(null)
   const [showUpload, setShowUpload]           = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
   const [showHelp,   setShowHelp]             = useState(false)
@@ -263,11 +289,15 @@ export default function App() {
               e.preventDefault()
               clearHiddenElements()
               setIsolatedElement(null)
+              setIsolatedElementModel(null)
               setIsolated(null)
             }
           } else if (selected) {
             e.preventDefault()
-            setElementsVisible([parseInt(selected.id, 10)], false)
+            const eid = parseInt(selected.id, 10)
+            const mid = selected.modelId ?? ''
+            const decompMap = useValidationStore.getState().decompMaps[mid]
+            setElementsVisible(expandWithDecomp(eid, decompMap), false, mid)
           }
         }
 
@@ -275,7 +305,9 @@ export default function App() {
         if (key === 'i' && selected) {
           e.preventDefault()
           const id = parseInt(selected.id, 10)
-          setIsolatedElement((cur) => (cur === id ? null : id))
+          const toggled = isolatedElement === id ? null : id
+          setIsolatedElement(toggled)
+          setIsolatedElementModel(toggled != null ? (selected.modelId ?? null) : null)
           setIsolated(null)
         }
       }
@@ -450,6 +482,8 @@ export default function App() {
       setSelected(null)
       setHidden(new Set())
       setIsolated(null)
+      setIsolatedElement(null)
+      setIsolatedElementModel(null)
       clearHiddenElements()
     }
     void loadFile(file)
@@ -522,6 +556,7 @@ export default function App() {
       setIsolated(null)
     } else {
       setIsolatedElement(null)
+      setIsolatedElementModel(null)
       setIsolated(selected.type)
       viewerRef.current?.frameCategory(selected.type)
     }
@@ -540,18 +575,27 @@ export default function App() {
 
   // Category isolation from the tree / category panel — clears any element isolation.
   const handleSetIsolatedCategory = useCallback((type: string | null): void => {
-    if (type) setIsolatedElement(null)
+    if (type) {
+      setIsolatedElement(null)
+      setIsolatedElementModel(null)
+    }
     setIsolated(type)
   }, [])
 
   // Hide a single element in the 3D scene (context menu + keyboard).
-  const handleHideElement = useCallback((expressId: number): void => {
-    setElementsVisible([expressId], false)
+  // Expands to sub-components so hiding an IfcStair also hides its flights/slabs.
+  const handleHideElement = useCallback((expressId: number, modelId: string): void => {
+    const decompMap = useValidationStore.getState().decompMaps[modelId]
+    setElementsVisible(expandWithDecomp(expressId, decompMap), false, modelId)
   }, [setElementsVisible])
 
-  // Isolate a single element (toggle): show only it. Used by context menu + keyboard.
-  const handleIsolateElement = useCallback((expressId: number): void => {
-    setIsolatedElement((cur) => (cur === expressId ? null : expressId))
+  // Isolate a single element (toggle): show only it within its model. Used by context menu + keyboard.
+  const handleIsolateElement = useCallback((expressId: number, modelId?: string): void => {
+    setIsolatedElement((cur) => {
+      const next = cur === expressId ? null : expressId
+      setIsolatedElementModel(next != null ? (modelId ?? null) : null)
+      return next
+    })
     setIsolated(null)
   }, [])
 
@@ -559,6 +603,7 @@ export default function App() {
   const handleRestoreVisibility = useCallback((): void => {
     clearHiddenElements()
     setIsolatedElement(null)
+    setIsolatedElementModel(null)
     setIsolated(null)
   }, [clearHiddenElements])
 
@@ -617,6 +662,8 @@ export default function App() {
     setSelected(null)
     setHidden(new Set())
     setIsolated(null)
+    setIsolatedElement(null)
+    setIsolatedElementModel(null)
     useModelStore.getState().clearModel()
     useEditorStore.getState().clearHistory()
     useValidationStore.getState().reset()
@@ -673,6 +720,8 @@ export default function App() {
               onOpenUpload={handleOpenUpload}
               onOpenDemoGallery={handleOpenDemoGallery}
               onNavigateToBlog={handleNavigateToBlog}
+              onNavigateToPrivacy={handleNavigateToPrivacy}
+              onNavigateToTerms={handleNavigateToTerms}
             />
           </motion.div>
         )}
@@ -692,6 +741,30 @@ export default function App() {
               onNavigateToBlog={handleNavigateFromBlogToList}
               onNavigateToLanding={handleNavigateToLanding}
             />
+          </motion.div>
+        )}
+
+        {route === 'privacy' && (
+          <motion.div
+            key="privacy"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <PrivacyPolicy onNavigateToLanding={handleNavigateToLanding} />
+          </motion.div>
+        )}
+
+        {route === 'terms' && (
+          <motion.div
+            key="terms"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <TermsOfUse onNavigateToLanding={handleNavigateToLanding} />
           </motion.div>
         )}
 
@@ -778,6 +851,7 @@ export default function App() {
                     isolatedCategory={isolated}
                     hiddenElementIds={hiddenElements}
                     isolatedElementId={isolatedElement}
+                    isolatedElementModelId={isolatedElementModel}
                     selectedId={selected?.id ?? null}
                     viewerStyle={viewerStyle}
                   />

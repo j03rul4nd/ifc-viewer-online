@@ -4,6 +4,7 @@ import path from 'path'
 import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync } from 'fs'
 import { generateFixPages } from './scripts/seo/generate-fix-pages'
 import { generateBlogPages } from './scripts/seo/generate-blog-pages'
+import { generateLegalPages } from './scripts/seo/generate-legal-pages'
 
 // ── Static landing content injection ─────────────────────────────────────────
 // Reads src/locales/en/landing.json after the build and injects the FAQ and
@@ -88,6 +89,24 @@ function generateRuleFixPages(): import('vite').Plugin {
   }
 }
 
+// ── Legal static page shells ─────────────────────────────────────────────────
+// Generates dist/privacy/index.html + dist/terms/index.html for GH Pages SPA
+// routing and crawlable <head> metadata without SSR.
+function generateLegalPageShells(): import('vite').Plugin {
+  return {
+    name: 'generate-legal-page-shells',
+    apply: 'build',
+    closeBundle() {
+      const distDir = path.resolve(__dirname, 'dist')
+      if (!existsSync(distDir)) return
+      const r = generateLegalPages(distDir)
+      const status = r.errors > 0 ? `⚠ ${r.errors} errors` : 'ok'
+      // eslint-disable-next-line no-console
+      console.log(`\n  ✓ Legal pages: ${r.pages} shells (privacy + terms) · ${status}\n`)
+    },
+  }
+}
+
 // ── Blog static page shells ───────────────────────────────────────────────────
 // Generates dist/blog/index.html + dist/blog/<slug>/index.html for GitHub Pages
 // SPA routing and per-page SEO meta. Runs after generateRuleFixPages so it can
@@ -127,7 +146,7 @@ function copyWebIfcWasm() {
 }
 
 export default defineConfig({
-  plugins: [react(), copyWebIfcWasm(), injectLandingContent(), generateRuleFixPages(), generateBlogPageShells()],
+  plugins: [react(), copyWebIfcWasm(), injectLandingContent(), generateRuleFixPages(), generateBlogPageShells(), generateLegalPageShells()],
   base: '/ifc-viewer-online/',
   resolve: {
     alias: [

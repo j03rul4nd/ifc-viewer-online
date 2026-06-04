@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import { useValidationStore } from '../stores/validationStore'
 import { useUIStore } from '../stores/uiStore'
+import { makeHiddenKey, expandWithDecomp } from '../lib/visibility'
 import { useEditorHistory } from '../hooks/useEditorHistory'
 import { useEditorStore } from '../stores/editorStore'
 import { useTakeoffStore, selectTakeoffGroups, selectTakeoffStatus } from '../stores/takeoffStore'
@@ -591,7 +592,8 @@ function PropertiesPanel({
 
   const cat = categories.find(c => c.id === selected.type || c.id === selected.type.replace('STANDARDCASE', ''))
   const catColor = cat ? `#${cat.color.toString(16).padStart(6, '0')}` : 'var(--text-dim)'
-  const isHidden = hiddenElements.has(expressId)
+  const decompMap = useValidationStore((s) => selected?.modelId ? s.decompMaps[selected.modelId] : undefined)
+  const isHidden = expressId != null && hiddenElements.has(makeHiddenKey(selected?.modelId ?? '', expressId))
   const hasDirty = pendingDiffs.size > 0
   const errorCount   = elementIssues.filter(i => i.severity === 'error').length
   const warningCount = elementIssues.filter(i => i.severity === 'warning').length
@@ -725,7 +727,7 @@ function PropertiesPanel({
             {t('actions.revealInTree')}
           </button>
           <button
-            onClick={() => setElementsVisible([expressId], isHidden)}
+            onClick={() => setElementsVisible(expandWithDecomp(expressId!, decompMap), isHidden, selected?.modelId ?? '')}
             className={`flex items-center gap-1.5 h-7 px-2.5 rounded-lg border text-[11px] transition-colors ${
               isHidden
                 ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
@@ -808,7 +810,7 @@ function PropertiesPanel({
                   <span className="text-[12px] text-[var(--text)]">{isHidden ? t('properties.hidden') : t('properties.visible')}</span>
                 </div>
                 <button
-                  onClick={() => setElementsVisible([expressId], isHidden)}
+                  onClick={() => setElementsVisible(expandWithDecomp(expressId!, decompMap), isHidden, selected?.modelId ?? '')}
                   className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition-colors border ${
                     isHidden
                       ? 'bg-[#30A46C22] border-[#30A46C44] text-[#30A46C] hover:bg-[#30A46C33]'

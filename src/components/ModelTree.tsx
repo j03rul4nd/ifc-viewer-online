@@ -9,6 +9,7 @@ import { useValidationStore, selectAllSpatialTrees } from '../stores/validationS
 import { useEditorStore } from '../stores/editorStore'
 import { useUIStore } from '../stores/uiStore'
 import { modelRegistry } from '../lib/model-registry'
+import { makeHiddenKey, expandWithDecomp } from '../lib/visibility'
 import { useEditorHistory } from '../hooks/useEditorHistory'
 import { buildRenameCommand, buildFixGuidCommand } from '../lib/diffStore'
 import { generateIfcGuid } from '../lib/diffStore'
@@ -921,9 +922,10 @@ export default ModelTree
 
 // ── Collect element IDs in subtree ────────────────────────────────────────────
 
-function collectElementIds(node: SpatialNode): number[] {
-  const ids: number[] = node.containedElements.map((e) => e.expressId)
-  for (const child of node.children) ids.push(...collectElementIds(child))
+function collectElementIds(node: SpatialNode, decompMap?: Map<number, number[]>): number[] {
+  const ids: number[] = []
+  for (const e of node.containedElements) ids.push(...expandWithDecomp(e.expressId, decompMap))
+  for (const child of node.children) ids.push(...collectElementIds(child, decompMap))
   return ids
 }
 
@@ -1022,13 +1024,14 @@ function SpatialRow({
   const childCount  = node.containedElements.length + node.children.length
 
   const { hiddenElements, setElementsVisible } = useUIStore()
-  const elemIds   = useMemo(() => collectElementIds(node), [node])
-  const anyHidden = elemIds.length > 0 && elemIds.some((id) => hiddenElements.has(id))
-  const allHidden = elemIds.length > 0 && elemIds.every((id) => hiddenElements.has(id))
+  const decompMap = useValidationStore((s) => modelId ? s.decompMaps[modelId] : undefined)
+  const elemIds   = useMemo(() => collectElementIds(node, decompMap), [node, decompMap])
+  const anyHidden = elemIds.length > 0 && elemIds.some((id) => hiddenElements.has(makeHiddenKey(modelId, id)))
+  const allHidden = elemIds.length > 0 && elemIds.every((id) => hiddenElements.has(makeHiddenKey(modelId, id)))
 
   const handleVisibilityToggle = (e: React.MouseEvent): void => {
     e.stopPropagation()
-    setElementsVisible(elemIds, allHidden)
+    setElementsVisible(elemIds, allHidden, modelId)
   }
 
   const { addCommand } = useEditorStore()
@@ -1050,7 +1053,7 @@ function SpatialRow({
       displayName={displayName}
       onSelect={() => onSelect(node.expressId, modelId)}
       onFocus={() => {
-        const ids = collectElementIds(node)
+        const ids = collectElementIds(node, decompMap)
         if (ids.length > 0) onFocusElements?.(ids)
       }}
       onRename={() => onStartEdit(node.expressId, 'Name')}
@@ -1072,7 +1075,7 @@ function SpatialRow({
       onClick={() => onSelect(node.expressId, modelId)}
       onDoubleClick={(e) => {
         e.stopPropagation()
-        const ids = collectElementIds(node)
+        const ids = collectElementIds(node, decompMap)
         if (ids.length > 0) onFocusElements?.(ids)
       }}
     >
@@ -1206,7 +1209,8 @@ function ElementRow({
   const inputRef = useRef<HTMLInputElement>(null)
 
   const { hiddenElements, setElementsVisible } = useUIStore()
-  const isHidden = hiddenElements.has(element.expressId)
+  const decompMap = useValidationStore((s) => modelId ? s.decompMaps[modelId] : undefined)
+  const isHidden = hiddenElements.has(makeHiddenKey(modelId, element.expressId))
 
   useLayoutEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
 
@@ -1309,7 +1313,10 @@ function ElementRow({
         <span className={isHidden ? 'shrink-0' : 'shrink-0 opacity-0 group-hover:opacity-100'}>
           <EyeBtn
             hidden={isHidden}
-            onClick={(e) => { e.stopPropagation(); setElementsVisible([element.expressId], isHidden) }}
+            onClick={(e) => {
+              e.stopPropagation()
+              setElementsVisible(expandWithDecomp(element.expressId, decompMap), isHidden, modelId)
+            }}
           />
         </span>
       )}

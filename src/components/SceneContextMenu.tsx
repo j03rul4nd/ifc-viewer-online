@@ -20,8 +20,8 @@ interface SceneContextMenuProps {
   payload: SceneContextMenuPayload | null
   onClose: () => void
   onFrame: (expressId: number, modelId?: string) => void
-  onHide: (expressId: number) => void
-  onIsolateElement: (expressId: number) => void
+  onHide: (expressId: number, modelId: string) => void
+  onIsolateElement: (expressId: number, modelId?: string) => void
   onIsolateCategory: (type: string) => void
   onReveal: (expressId: number) => void
   /** Number of currently hidden elements — drives the "show all" footer. */
@@ -160,8 +160,8 @@ export default function SceneContextMenu({
 
         <div className="px-1">
           <Item icon={<FrameIcon />}        label={t('contextMenu.frame')}          hint="F" onClick={run(() => onFrame(expressId, info.modelId))} />
-          <Item icon={<IsolateElementIcon />} label={t('contextMenu.isolateElement')} hint="I" onClick={run(() => onIsolateElement(expressId))} />
-          <Item icon={<Icons.EyeOff size={13} />} label={t('contextMenu.hide')}      hint="H" onClick={run(() => onHide(expressId))} />
+          <Item icon={<IsolateElementIcon />} label={t('contextMenu.isolateElement')} hint="I" onClick={run(() => onIsolateElement(expressId, info.modelId))} />
+          <Item icon={<Icons.EyeOff size={13} />} label={t('contextMenu.hide')}      hint="H" onClick={run(() => onHide(expressId, info.modelId ?? ''))} />
           <Item icon={<Icons.Isolate size={13} />} label={t('contextMenu.isolateCategory')} onClick={run(() => onIsolateCategory(info.type))} />
           <Item icon={<TreeIcon />}         label={t('contextMenu.revealInTree')}    onClick={run(() => onReveal(expressId))} />
           <Item

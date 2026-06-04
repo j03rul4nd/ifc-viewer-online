@@ -112,9 +112,10 @@ const TakeoffResultSchema = z.object({
 // ── Validator worker OUT messages ──────────────────────────────────────────────
 
 export const ValidatorTreeMsgSchema = z.object({
-  type: z.literal('tree'),
-  id:   z.string(),
-  tree: z.array(SpatialNodeSchema),
+  type:  z.literal('tree'),
+  id:    z.string(),
+  tree:  z.array(SpatialNodeSchema),
+  decomp: z.array(z.tuple([z.number(), z.array(z.number())])).optional(),
 })
 
 export const ValidatorPartialMsgSchema = z.object({

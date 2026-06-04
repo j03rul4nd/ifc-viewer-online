@@ -61,7 +61,7 @@ export function initAnalytics(): void {
     capture_pageview: true,
     // No autocapture — we emit explicit, typed events only
     autocapture: false,
-    persistence: 'localStorage+cookie',
+    persistence: 'memory',
     loaded: (ph) => {
       if (import.meta.env.DEV) ph.debug(false)
     },
@@ -118,7 +118,7 @@ export function trackEmailCaptured(props: {
  */
 export function trackRouteChanged(props: {
   to:   'viewer' | 'report'
-  from: 'landing' | 'viewer' | 'report' | 'blog'
+  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms'
 }): void {
   track('route_changed', props)
 }

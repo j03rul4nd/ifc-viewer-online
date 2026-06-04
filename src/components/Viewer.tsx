@@ -11,9 +11,11 @@ interface ViewerProps {
   onContextMenu?: (payload: { x: number; y: number; info: SelectedInfo } | null) => void
   hiddenCategories: Set<string>
   isolatedCategory: string | null
-  hiddenElementIds?: Set<number>
-  /** When set (a localId), only this element is shown — overrides all other filters. */
+  hiddenElementIds?: Set<string>
+  /** When set (a localId), only this element is shown within its owning model. */
   isolatedElementId?: number | null
+  /** Which model the isolated element belongs to. Other models render normally. */
+  isolatedElementModelId?: string | null
   selectedId: string | null
   viewerStyle: ViewerStyle
 }
@@ -50,8 +52,8 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(props, ref)
 
   // ── Reactive filter / style effects ─────────────────────────────────────
   useEffect(() => {
-    apiRef.current?.applyFilters(props.hiddenCategories, props.isolatedCategory, props.hiddenElementIds, props.isolatedElementId)
-  }, [props.hiddenCategories, props.isolatedCategory, props.hiddenElementIds, props.isolatedElementId])
+    apiRef.current?.applyFilters(props.hiddenCategories, props.isolatedCategory, props.hiddenElementIds, props.isolatedElementId, props.isolatedElementModelId)
+  }, [props.hiddenCategories, props.isolatedCategory, props.hiddenElementIds, props.isolatedElementId, props.isolatedElementModelId])
 
   useEffect(() => {
     apiRef.current?.applyStyle(props.viewerStyle)

@@ -120,6 +120,13 @@ function IdleView({
         <span>{t('upload.idle.trust2')}</span>
         <span>·</span>
         <span>{t('upload.idle.trust3')}</span>
+        <span>·</span>
+        <a
+          href={`${import.meta.env.BASE_URL}privacy`}
+          className="hover:text-[var(--text)] transition-colors underline underline-offset-2"
+        >
+          Privacy
+        </a>
       </div>
     </motion.div>
   )

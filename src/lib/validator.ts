@@ -391,6 +391,9 @@ export async function buildSpatialTree(modelId?: string): Promise<void> {
         log.debug(`Spatial tree ready for "${resolvedId ?? 'active'}", nodes:`, tree.length)
         if (resolvedId) {
           setSpatialTreeForModel(resolvedId, tree)
+          if (msg.decomp) {
+            useValidationStore.getState().setDecompMapForModel(resolvedId, new Map(msg.decomp))
+          }
         } else {
           // Backward-compat: no modelId provided — update the backward-compat alias
           useValidationStore.getState().setSpatialTree(tree)
@@ -626,8 +629,14 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
         .with({ type: 'tree' }, (msg) => {
           const tree = parseSpatialNodeArray(msg.tree, 'validator.worker/tree')
           log.debug(`Spatial tree received for "${resolvedId ?? 'active'}", nodes:`, tree.length)
-          if (resolvedId) setSpatialTreeForModel(resolvedId, tree)
-          else            setSpatialTree(tree)
+          if (resolvedId) {
+            setSpatialTreeForModel(resolvedId, tree)
+            if (msg.decomp) {
+              useValidationStore.getState().setDecompMapForModel(resolvedId, new Map(msg.decomp))
+            }
+          } else {
+            setSpatialTree(tree)
+          }
         })
         .with({ type: 'partial' }, (msg) => {
           const stamped = resolvedId ? msg.issues.map((i) => ({ ...i, modelId: resolvedId })) : msg.issues

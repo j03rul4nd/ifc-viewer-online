@@ -23,8 +23,9 @@ interface UIStore {
   treeVisible:             boolean
   /** Whether the sidebar is open as a mobile drawer (< md breakpoint). */
   mobileSidebarOpen:       boolean
-  /** Per-element visibility overrides keyed by expressId. */
-  hiddenElements:          Set<number>
+  /** Per-element visibility overrides. Keys are `"${modelId}:${expressId}"` so that
+   *  elements from different models with the same expressId stay independent. */
+  hiddenElements:          Set<string>
   /** Whether the camera preset overlay is visible in the 3D viewport. */
   cameraControlsVisible:   boolean
   /** Active transform mode for the model pivot panel. */
@@ -57,7 +58,7 @@ interface UIStore {
   setTreeVisible:           (visible: boolean) => void
   setMobileSidebarOpen:     (open: boolean) => void
   toggleMobileSidebar:      () => void
-  setElementsVisible:       (ids: number[], visible: boolean) => void
+  setElementsVisible:       (ids: number[], visible: boolean, modelId: string) => void
   clearHiddenElements:      () => void
   setCameraControlsVisible: (visible: boolean) => void
   toggleCameraControls:     () => void
@@ -91,7 +92,7 @@ export const useUIStore = create<UIStore>()(
       treeWidth:               300,
       treeVisible:             true,
       mobileSidebarOpen:       false,
-      hiddenElements:          new Set<number>(),
+      hiddenElements:          new Set<string>(),
       cameraControlsVisible:   true,
       transformMode:           'none' as TransformMode,
       scenePanelOpen:          false,
@@ -126,11 +127,14 @@ export const useUIStore = create<UIStore>()(
       toggleMobileSidebar: () =>
         set((s) => ({ mobileSidebarOpen: !s.mobileSidebarOpen }), false, 'toggleMobileSidebar'),
 
-      setElementsVisible: (ids, visible) =>
+      setElementsVisible: (ids, visible, modelId) =>
         set(
           (s) => {
             const next = new Set(s.hiddenElements)
-            for (const id of ids) visible ? next.delete(id) : next.add(id)
+            for (const id of ids) {
+              const key = `${modelId}:${id}`
+              visible ? next.delete(key) : next.add(key)
+            }
             return { hiddenElements: next }
           },
           false,
@@ -138,7 +142,7 @@ export const useUIStore = create<UIStore>()(
         ),
 
       clearHiddenElements: () =>
-        set({ hiddenElements: new Set<number>() }, false, 'clearHiddenElements'),
+        set({ hiddenElements: new Set<string>() }, false, 'clearHiddenElements'),
 
       setCameraControlsVisible: (visible) =>
         set({ cameraControlsVisible: visible }, false, 'setCameraControlsVisible'),
@@ -200,7 +204,7 @@ export const useUIStore = create<UIStore>()(
 export const selectTreeVisible          = (s: UIStore) => s.treeVisible
 export const selectTreeWidth            = (s: UIStore) => s.treeWidth
 export const selectMobileSidebarOpen    = (s: UIStore) => s.mobileSidebarOpen
-export const selectHiddenElements       = (s: UIStore) => s.hiddenElements
+export const selectHiddenElements        = (s: UIStore) => s.hiddenElements
 export const selectCameraControlsVisible = (s: UIStore) => s.cameraControlsVisible
 export const selectTransformMode         = (s: UIStore) => s.transformMode
 export const selectScenePanelOpen        = (s: UIStore) => s.scenePanelOpen

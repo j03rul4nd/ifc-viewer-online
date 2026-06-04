@@ -59,6 +59,12 @@ interface ValidationStore {
    */
   spatialTrees:             Record<string, SpatialNode[]>
   /**
+   * Physical-element decomposition maps keyed by modelId.
+   * Maps parent expressId → child expressIds (from IfcRelAggregates, non-spatial only).
+   * Used by collectElementIds to expand assembled elements (e.g. IfcStair → IfcStairFlight).
+   */
+  decompMaps:               Record<string, Map<number, number[]>>
+  /**
    * Which model's tree is currently active (shown in ModelTree panel).
    * null when no model is loaded or no tree has been built yet.
    */
@@ -87,6 +93,8 @@ interface ValidationStore {
 
   /** Store a spatial tree for a specific model. Also sets it as the active model. */
   setSpatialTreeForModel: (modelId: string, tree: SpatialNode[]) => void
+  /** Store the physical-element decomposition map for a specific model. */
+  setDecompMapForModel:   (modelId: string, map: Map<number, number[]>) => void
   /** @deprecated Use setSpatialTreeForModel(modelId, tree). */
   setSpatialTree:         (tree: SpatialNode[]) => void
   /** Set which model's tree is displayed in the tree panel. */
@@ -145,6 +153,7 @@ export const useValidationStore = create<ValidationStore>()(
       isRunning:               false,
       progress:                0,
       spatialTrees:            {},
+      decompMaps:              {},
       activeValidationModelId: null,
       spatialTree:             [],   // backward-compat alias
       rules:                   DEFAULT_RULES_VALUE,
@@ -198,6 +207,13 @@ export const useValidationStore = create<ValidationStore>()(
           `setSpatialTreeForModel:${modelId}`,
         ),
 
+      setDecompMapForModel: (modelId, map) =>
+        set(
+          (s) => ({ decompMaps: { ...s.decompMaps, [modelId]: map } }),
+          false,
+          `setDecompMapForModel:${modelId}`,
+        ),
+
       setSpatialTree: (tree) =>
         set((s) => {
           // Update the backward-compat alias and the active model's tree (if known)
@@ -224,8 +240,9 @@ export const useValidationStore = create<ValidationStore>()(
       clearValidationForModel: (modelId) =>
         set(
           (s) => {
-            const { [modelId]: _removed, ...remainingTrees }   = s.spatialTrees
+            const { [modelId]: _removed,  ...remainingTrees }   = s.spatialTrees
             const { [modelId]: _removedR, ...remainingResults } = s.cachedResultsByModel
+            const { [modelId]: _removedD, ...remainingDecomp }  = s.decompMaps
             const isActive = s.activeValidationModelId === modelId
             const nextActiveId = isActive
               ? (Object.keys(remainingTrees)[0] ?? null)
@@ -233,6 +250,7 @@ export const useValidationStore = create<ValidationStore>()(
             return {
               spatialTrees:            remainingTrees,
               cachedResultsByModel:    remainingResults,
+              decompMaps:              remainingDecomp,
               activeValidationModelId: nextActiveId,
               spatialTree:             nextActiveId ? (remainingTrees[nextActiveId] ?? []) : [],
             }
@@ -337,6 +355,7 @@ export const useValidationStore = create<ValidationStore>()(
             isRunning:               false,
             progress:                0,
             spatialTrees:            {},
+            decompMaps:              {},
             activeValidationModelId: null,
             spatialTree:             [],
             cachedResultsByModel:    {},

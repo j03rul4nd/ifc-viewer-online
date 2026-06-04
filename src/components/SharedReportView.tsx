@@ -400,7 +400,13 @@ export default function SharedReportView({ payload, onOpenViewer }: Props) {
 
         {/* Privacy proof point */}
         <p className="text-center text-[10px] text-[var(--text-faint)] mt-4">
-          The IFC file never left the sender&apos;s browser. Only this Health Score was shared.
+          The IFC file never left the sender&apos;s browser. Only this Health Score was shared.{' '}
+          <a
+            href={`${import.meta.env.BASE_URL}privacy`}
+            className="underline underline-offset-2 hover:text-[var(--text-dim)] transition-colors"
+          >
+            Privacy Policy
+          </a>
         </p>
       </div>
     </div>
