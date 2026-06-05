@@ -124,6 +124,7 @@ interface ValidationStore {
   /** User-defined profiles persisted in localStorage (max 5) */
   customProfiles: ValidationProfile[]
   addCustomProfile:    (profile: Omit<ValidationProfile, 'id'>) => void
+  updateCustomProfile: (profileId: string, updates: Partial<Omit<ValidationProfile, 'id'>>) => void
   removeCustomProfile: (profileId: string) => void
 
   /** Whether to show the post-run coverage summary banner */
@@ -302,6 +303,24 @@ export const useValidationStore = create<ValidationStore>()(
           },
           false,
           'addCustomProfile',
+        ),
+
+      updateCustomProfile: (profileId, updates) =>
+        set(
+          (s) => {
+            const idx = s.customProfiles.findIndex((p) => p.id === profileId)
+            if (idx === -1) return s
+            const next = [...s.customProfiles]
+            next[idx] = { ...next[idx], ...updates }
+            saveCustomProfiles(next)
+            const wasActive = s.activeProfileId === profileId
+            return {
+              customProfiles: next,
+              ...(wasActive ? { rules: next[idx].rules } : {}),
+            }
+          },
+          false,
+          `updateCustomProfile:${profileId}`,
         ),
 
       removeCustomProfile: (profileId) =>

@@ -12,7 +12,8 @@
     "spaces": "空间", "furniture": "家具", "other": "其他",
     "types": "{{count}} 种类型", "elements": "{{count}} 个构件",
     "clearIsolation": "清除隔离", "noModel": "未加载模型",
-    "noModelDesc": "打开 IFC 文件以查看类别。", "moreElements": "+ {{count}} 个更多构件"
+    "noModelDesc": "打开 IFC 文件以查看类别。", "moreElements": "+ {{count}} 个更多构件",
+    "legendBadge": "颜色图例", "typesShort": "种类型", "withIssues": "有问题", "hint": "点击色块隔离 · 点击名称在3D中聚焦", "section3D": "3D构件", "sectionOther": "其他IFC对象"
   },
   "actions": {
     "isolate": "隔离", "hide": "隐藏", "show": "显示", "focusElement": "聚焦构件",
@@ -30,7 +31,7 @@
     "unsavedChanges_other": "{{count}} 个未保存更改 · Ctrl+Z 撤销",
     "edited": "已编辑", "empty": "空", "loadingPsets": "加载属性集中…"
   },
-  "tabs": { "properties": "属性", "categories": "类别", "takeoff": "工程量" },
+  "tabs": { "properties": "属性", "categories": "图例", "takeoff": "工程量" },
   "takeoff": {
     "title": "工程量", "quantity": "数量", "unit": "单位", "totalArea": "总面积",
     "totalVolume": "总体积", "totalLength": "总长度", "count": "数量",

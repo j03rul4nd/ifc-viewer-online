@@ -140,7 +140,7 @@ export default function Toolbar({
   const { undo, redo }              = useEditorHistory()
   const { validationMode, toggleValidationMode } = useValidationStore()
   const {
-    treeVisible, setTreeVisible, scenePanelOpen, toggleScenePanel,
+    treeVisible, setTreeVisible, openSidebarLegend, scenePanelOpen, toggleScenePanel,
     measurementPanelOpen, toggleMeasurementPanel, activeMeasurementTool,
     clipPanelOpen, toggleClipPanel, clipPlaneCount,
     plansPanelOpen, togglePlansPanel, activePlanViewId,
@@ -185,7 +185,7 @@ export default function Toolbar({
       const modelDiffs = getDiffsForModel(model.id)
       const bytes = await exportAsIfc(buffer, modelDiffs)
       const stem  = model.fileName.replace(/\.ifc$/i, '')
-      downloadBlob(new Blob([bytes.buffer as ArrayBuffer], { type: 'application/x-step' }), `${stem}-exported.ifc`)
+      await downloadBlob(new Blob([bytes.buffer as ArrayBuffer], { type: 'application/x-step' }), `${stem}-exported.ifc`)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       log.error('IFC export failed:', msg)
@@ -204,7 +204,7 @@ export default function Toolbar({
       if (!obj) throw new Error('Model object not found in the 3D scene — it may have been removed.')
       const blob = await exportAsGlb(obj)
       const stem = model.fileName.replace(/\.ifc$/i, '')
-      downloadBlob(blob, `${stem}.glb`)
+      await downloadBlob(blob, `${stem}.glb`)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       log.error('GLB export failed:', msg)
@@ -241,6 +241,16 @@ export default function Toolbar({
       <rect x="7" y="1" width="6" height="3" rx="1" />
       <rect x="7" y="5.5" width="6" height="3" rx="1" />
       <rect x="7" y="10" width="6" height="3" rx="1" />
+    </svg>
+  )
+  const LegendSVG = (size = 14) => (
+    <svg width={size} height={size} viewBox="0 0 14 14" fill="currentColor" className="opacity-80">
+      <rect x="1" y="2" width="4" height="3" rx="0.8" />
+      <rect x="1" y="6" width="4" height="3" rx="0.8" opacity="0.65" />
+      <rect x="1" y="10" width="4" height="2.5" rx="0.8" opacity="0.4" />
+      <rect x="7" y="2.5" width="6" height="1.5" rx="0.75" opacity="0.5" />
+      <rect x="7" y="6.5" width="5" height="1.5" rx="0.75" opacity="0.5" />
+      <rect x="7" y="10.5" width="4" height="1.5" rx="0.75" opacity="0.5" />
     </svg>
   )
   const UndoSVG = (size = 14) => (
@@ -282,34 +292,8 @@ export default function Toolbar({
           </div>
         </div>
 
-        {/* ── Mobile-only: spacer + export icon + status dot ── */}
+        {/* ── Mobile-only: spacer + status dot ── */}
         <div className="flex-1 md:hidden" />
-
-        {/* Mobile export button (in Row 1 so dropdown isn't clipped by Row 2 overflow) */}
-        {canRun && (
-          <div ref={mobileExportRef} className="md:hidden relative pointer-events-auto shrink-0">
-            <IBtn
-              onClick={handleExportClick}
-              active={exportOpen}
-              title={sceneModels.length > 1 ? t('exportModels', { count: sceneModels.length }) : t('exportModel')}
-              disabled={exporting}
-            >
-              {DownloadSVG}
-              {diffs.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-[14px] h-[14px] rounded-full bg-[var(--accent)] text-white text-[8px] font-mono leading-none flex items-center justify-center">
-                  {diffs.length}
-                </span>
-              )}
-            </IBtn>
-            {exportOpen && sceneModels.length <= 1 && (
-              <ExportDropdown
-                diffs={diffs.length}
-                onExportIfc={() => void handleExportIfc()}
-                onExportGlb={() => void handleExportGlb()}
-              />
-            )}
-          </div>
-        )}
 
         {/* Mobile status dot */}
         {loadingState !== 'idle' && (
@@ -342,6 +326,12 @@ export default function Toolbar({
             >
               {TreeSVG}
               {t('tree')}
+            </Btn>
+            <Btn
+              onClick={openSidebarLegend}
+              title={t('legendTooltip')}
+            >
+              {LegendSVG()}
             </Btn>
             <Btn
               onClick={toggleScenePanel}
@@ -549,121 +539,7 @@ export default function Toolbar({
         </div>
       </div>
 
-      {/* ── Row 2: Mobile action bar — icon-only, no overflow clipping of dropdowns ── */}
-      <div
-        className="flex md:hidden items-center gap-1 pointer-events-auto"
-        style={{ overflowX: 'auto', overflowY: 'visible', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' } as React.CSSProperties}
-      >
-        {/* Main actions */}
-        <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 shrink-0">
-          <IBtn onClick={onUpload} title={t('openFile')}>
-            <Icons.Upload size={15} />
-          </IBtn>
-          <IBtn onClick={onOpenDemoGallery} title={tLanding('demoGallery.openCta')}>
-            <Icons.Layers size={15} />
-          </IBtn>
-          <div className="w-px h-[18px] bg-[var(--border)]" />
-          <IBtn onClick={onReset} title={t('resetCamera')}>
-            <Icons.Reset size={15} />
-          </IBtn>
-          <IBtn onClick={onIsolate} disabled={!canIsolate} title={t('isolateCategory')}>
-            <Icons.Isolate size={15} />
-          </IBtn>
-        </div>
-
-        {/* Validation */}
-        <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 shrink-0">
-          <IBtn
-            onClick={() => void runValidation(undefined, undefined, true)}
-            disabled={!canRun}
-            title={isRunning ? t('validating') : validationStatus === 'error' ? t('validationFailed') : t('validate')}
-          >
-            {isRunning ? SpinSVG : ValidateSVG}
-            {/* Small error badge on the Validate button */}
-            {hasIssues && !isRunning && errorCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-[14px] h-[14px] rounded-full bg-[var(--danger)] text-white text-[8px] font-mono leading-none flex items-center justify-center">
-                {errorCount > 9 ? '!' : errorCount}
-              </span>
-            )}
-          </IBtn>
-          <IBtn
-            onClick={toggleValidationMode}
-            disabled={!hasIssues}
-            active={validationMode}
-            title={validationMode ? t('overlayOn') : t('overlayOff')}
-          >
-            <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M1 7c1.5-3 3.5-4.5 6-4.5S11.5 4 13 7c-1.5 3-3.5 4.5-6 4.5S2.5 10 1 7z"/>
-              <circle cx="7" cy="7" r="1.8" fill="currentColor" stroke="none" opacity="0.7"
-                style={{ color: validationMode ? (errorCount > 0 ? 'var(--danger)' : '#F5A623') : 'currentColor' }}
-              />
-            </svg>
-          </IBtn>
-        </div>
-
-        {/* Undo / Redo (only when there's history) */}
-        {(canUndo || canRedo) && (
-          <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 shrink-0">
-            <IBtn onClick={undo} disabled={!canUndo} title={t('undoShortcut')}>{UndoSVG(15)}</IBtn>
-            <IBtn onClick={redo} disabled={!canRedo} title={t('redoShortcut')}>{RedoSVG(15)}</IBtn>
-          </div>
-        )}
-
-        {/* Measure / Section / Plans */}
-        {canRun && (
-          <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 shrink-0">
-            <IBtn
-              onClick={toggleMeasurementPanel}
-              active={measurementPanelOpen}
-              title={activeMeasurementTool !== 'none' ? t('measureActive', { tool: activeMeasurementTool }) : t('measurementTools')}
-            >
-              <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="1" y="5" width="12" height="4" rx="1" />
-                <line x1="3" y1="5" x2="3" y2="3" />
-                <line x1="6" y1="5" x2="6" y2="4" />
-                <line x1="9" y1="5" x2="9" y2="4" />
-                <line x1="12" y1="5" x2="12" y2="3" />
-              </svg>
-              {activeMeasurementTool !== 'none' && (
-                <span className="absolute -top-1 -right-1 w-[8px] h-[8px] rounded-full bg-[var(--accent)]" />
-              )}
-            </IBtn>
-            <IBtn
-              onClick={toggleClipPanel}
-              active={clipPanelOpen}
-              title={t('clippingPlanes')}
-            >
-              <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-                <line x1="1" y1="7" x2="13" y2="7"/>
-                <path d="M4 4l6 6M10 4l-6 6" opacity="0.4"/>
-              </svg>
-              {clipPlaneCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-[14px] h-[14px] rounded-full bg-[var(--accent)] text-white text-[8px] font-mono leading-none flex items-center justify-center">
-                  {clipPlaneCount}
-                </span>
-              )}
-            </IBtn>
-            <IBtn
-              onClick={togglePlansPanel}
-              active={plansPanelOpen}
-              title={t('floorPlanViews')}
-            >
-              <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-                <rect x="1" y="1" width="12" height="12" rx="1"/>
-                <line x1="1" y1="5" x2="13" y2="5"/>
-                <line x1="1" y1="9" x2="13" y2="9"/>
-                <line x1="5" y1="5" x2="5" y2="13"/>
-              </svg>
-              {activePlanViewId && (
-                <span className="absolute -top-1 -right-1 w-[8px] h-[8px] rounded-full bg-[var(--accent)]" />
-              )}
-            </IBtn>
-          </div>
-        )}
-
-        {/* Trailing spacer for scroll breathing room */}
-        <div className="w-1 shrink-0" />
-      </div>
+      {/* ── Row 2: hidden on mobile (MobileBottomNav handles actions) ── */}
 
     </motion.div>
   )

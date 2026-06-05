@@ -12,7 +12,8 @@
     "spaces": "พื้นที่", "furniture": "เฟอร์นิเจอร์", "other": "อื่นๆ",
     "types": "{{count}} ประเภท", "elements": "{{count}} องค์ประกอบ",
     "clearIsolation": "ล้างการแยก", "noModel": "ไม่ได้โหลดโมเดล",
-    "noModelDesc": "เปิดไฟล์ IFC เพื่อดูประเภท", "moreElements": "+ {{count}} องค์ประกอบเพิ่มเติม"
+    "noModelDesc": "เปิดไฟล์ IFC เพื่อดูประเภท", "moreElements": "+ {{count}} องค์ประกอบเพิ่มเติม",
+    "legendBadge": "คำอธิบายสี", "typesShort": "ประเภท", "withIssues": "มีปัญหา", "hint": "คลิกสีเพื่อแยก · คลิกชื่อเพื่อกรอบใน 3D", "section3D": "องค์ประกอบ 3D", "sectionOther": "วัตถุ IFC อื่นๆ"
   },
   "actions": {
     "isolate": "แยก", "hide": "ซ่อน", "show": "แสดง", "focusElement": "โฟกัสองค์ประกอบ",
@@ -31,7 +32,7 @@
     "unsavedChanges_other": "{{count}} การเปลี่ยนแปลงที่ยังไม่บันทึก · Ctrl+Z เพื่อเลิกทำ",
     "edited": "แก้ไขแล้ว", "empty": "ว่าง", "loadingPsets": "กำลังโหลดชุดคุณสมบัติ…"
   },
-  "tabs": { "properties": "คุณสมบัติ", "categories": "ประเภท", "takeoff": "ปริมาณ" },
+  "tabs": { "properties": "คุณสมบัติ", "categories": "คำอธิบาย", "takeoff": "ปริมาณ" },
   "takeoff": {
     "title": "ปริมาณ", "quantity": "ปริมาณ", "unit": "หน่วย", "totalArea": "พื้นที่รวม",
     "totalVolume": "ปริมาตรรวม", "totalLength": "ความยาวรวม", "count": "จำนวน",

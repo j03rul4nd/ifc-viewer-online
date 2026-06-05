@@ -40,6 +40,8 @@
   "exportGlbFailed": "Error en exportar GLB: {{message}}",
   "open": "Obre",
   "reset": "Reinicia",
+  "legend": "Llegenda",
+  "legendTooltip": "Llegenda de colors — tipus d'entitats del model",
   "status": {
     "loaded": "Carregat",
     "loading": "Carregant…",

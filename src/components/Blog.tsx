@@ -14,6 +14,7 @@ import CodeBlock                   from './blog/CodeBlock'
 import CopyForAI                   from './blog/CopyForAI'
 import BimGlossary                 from './blog/BimGlossary'
 import HealthScoreWidget, { HealthScoreRow } from './blog/HealthScoreWidget'
+import EmbedViewer from './blog/EmbedViewer'
 
 // ─── Theme toggle button (shared by BlogList + PostView navs) ─────────────────
 
@@ -49,7 +50,7 @@ function asset(name: string): string {
     'og-image':      `${BASE}og-image.png`,
     'og-image-en':   `${BASE}og-image-en.png`,
   }
-  return MAP[name] ?? name
+  return MAP[name] ?? `${BASE}blog/covers/${name}.png`
 }
 
 // ─── Design helpers ───────────────────────────────────────────────────────────
@@ -324,59 +325,34 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
     case 'ifc-demo':
       return (
         <div className="my-7 sm:my-10">
-          <div className="rounded-2xl border border-[rgba(94,106,210,0.35)] bg-[var(--surface)] overflow-hidden">
-            {/* Model preview image */}
-            <div className="relative h-[130px] sm:h-[190px] bg-black overflow-hidden">
-              <img
-                src={asset('hero-building')}
-                alt="IFC model open in browser viewer"
-                className="w-full h-full object-cover opacity-60"
-                loading="lazy"
-              />
-              <div
-                className="absolute inset-0"
-                style={{ background: 'linear-gradient(to top, var(--surface) 0%, transparent 60%)' }}
-              />
-              <div className="absolute top-3 left-3 flex gap-1.5">
-                <span className="px-2 py-0.5 rounded-full bg-[rgba(0,0,0,0.65)] backdrop-blur-sm text-[10px] font-mono text-white">
-                  {block.schema}
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-[rgba(0,0,0,0.65)] backdrop-blur-sm text-[10px] font-mono text-[var(--text-dim)]">
-                  {block.size}
-                </span>
-              </div>
-              {/* Live indicator */}
-              <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] border border-[rgba(52,211,153,0.3)]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#34d399] animate-pulse" />
-                <span className="text-[9.5px] font-mono text-[#34d399] tracking-wide">INTERACTIVE</span>
-              </div>
-            </div>
-
-            {/* Card content */}
-            <div className="p-5 sm:p-6">
-              <div className="text-[10.5px] font-mono font-bold tracking-[0.12em] text-[var(--accent-2)] mb-2">
-                DEMO MODEL
-              </div>
-              <h3 className="text-[16px] sm:text-[17px] font-semibold tracking-tight text-[var(--text)] mb-2">
-                {block.title}
-              </h3>
-              <p className="text-[13.5px] leading-[1.65] text-[var(--text-dim)] mb-5">
-                {block.description}
-              </p>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <p className="text-[11.5px] text-[var(--text-faint)] hidden sm:block">
-                  Opens in your browser — no account, no upload
-                </p>
-                <button
-                  onClick={onNavigateToLanding}
-                  className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-1.5 h-11 sm:h-9 px-4 text-[13.5px] sm:text-[12.5px] font-semibold rounded-xl sm:rounded-lg bg-[var(--accent)] text-white hover:brightness-110 active:brightness-90 transition-all"
-                >
-                  Try in viewer
-                  <Icons.ArrowRight size={13} />
-                </button>
-              </div>
-            </div>
+          {/* Schema + size badges above the viewer */}
+          <div className="flex items-center gap-2 mb-2.5">
+            <span className="text-[9.5px] font-mono font-bold tracking-[0.12em] text-[var(--accent-2)]">
+              DEMO MODEL
+            </span>
+            <span className="px-1.5 py-0.5 rounded bg-[var(--surface)] border border-[var(--border)] text-[9.5px] font-mono text-[var(--text-dim)]">
+              {block.schema}
+            </span>
+            <span className="px-1.5 py-0.5 rounded bg-[var(--surface)] border border-[var(--border)] text-[9.5px] font-mono text-[var(--text-dim)]">
+              {block.size}
+            </span>
           </div>
+
+          {/* Live interactive 3D viewer */}
+          <EmbedViewer
+            modelId={block.modelId}
+            title={block.title}
+            description={block.description}
+            showProperties={block.showProperties ?? true}
+            allowFullscreen={block.allowFullscreen ?? true}
+            height={block.height}
+            variant={block.variant ?? 'inline'}
+          />
+
+          {/* Footer note */}
+          <p className="mt-2 text-[10.5px] text-[var(--text-faint)] text-center">
+            Rendered in your browser · zero bytes sent to any server
+          </p>
         </div>
       )
 
@@ -388,40 +364,61 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
 // ─── Post card (grid) ─────────────────────────────────────────────────────────
 
 function PostCard({ post, onClick, theme = 'dark' }: { post: BlogPost; onClick: () => void; theme?: 'dark' | 'light' }) {
+  const [showCover, setShowCover] = React.useState(true)
   return (
     <SpotlightCard
       className="group rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[rgba(94,106,210,0.4)] active:scale-[0.99] hover:-translate-y-[2px] transition-all duration-200 cursor-pointer overflow-hidden"
       spotlightColor={theme === 'dark' ? 'rgba(94,106,210,0.10)' : 'rgba(94,106,210,0.08)'}
     >
-      <article onClick={onClick} className="flex flex-col h-full p-4 sm:p-5">
-        {/* Category badge */}
-        <div className="mb-3">
-          <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider ${catColor(post.categorySlug)}`}>
-            {post.category.toUpperCase()}
-          </span>
-        </div>
-
-        {/* Title */}
-        <h2 className={`flex-1 text-[15px] font-semibold tracking-[-0.01em] leading-[1.35] text-[var(--text)] mb-2 transition-colors line-clamp-2 ${theme === 'dark' ? 'group-hover:text-white' : 'group-hover:text-[var(--accent)]'}`}>
-          {post.title}
-        </h2>
-
-        {/* Excerpt — 2 lines */}
-        <p className="text-[13px] leading-[1.6] text-[var(--text-dim)] line-clamp-2 mb-3">
-          {post.excerpt}
-        </p>
-
-        {/* Meta */}
-        <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]">
-          <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-faint)]">
-            <span>{formatDate(post.date)}</span>
-            <span>·</span>
-            <span>{post.readTimeMin} min</span>
+      <article onClick={onClick} className="flex flex-col h-full">
+        {/* Cover image strip */}
+        {showCover && (
+          <div className="relative h-[138px] overflow-hidden bg-[var(--surface-2,#0e0e12)] flex-shrink-0">
+            <img
+              src={asset(post.slug)}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              className="w-full h-full object-cover object-center opacity-75 group-hover:opacity-90 transition-opacity duration-300"
+              onError={() => setShowCover(false)}
+            />
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: 'linear-gradient(to bottom, transparent 45%, var(--surface) 100%)' }}
+            />
           </div>
-          <Icons.ArrowRight
-            size={12}
-            className="text-[var(--text-faint)] group-hover:text-[var(--accent-2)] group-hover:translate-x-0.5 transition-all"
-          />
+        )}
+
+        <div className="flex flex-col flex-1 p-4 sm:p-5">
+          {/* Category badge */}
+          <div className="mb-3">
+            <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider ${catColor(post.categorySlug)}`}>
+              {post.category.toUpperCase()}
+            </span>
+          </div>
+
+          {/* Title */}
+          <h2 className={`flex-1 text-[15px] font-semibold tracking-[-0.01em] leading-[1.35] text-[var(--text)] mb-2 transition-colors line-clamp-2 ${theme === 'dark' ? 'group-hover:text-white' : 'group-hover:text-[var(--accent)]'}`}>
+            {post.title}
+          </h2>
+
+          {/* Excerpt — 2 lines */}
+          <p className="text-[13px] leading-[1.6] text-[var(--text-dim)] line-clamp-2 mb-3">
+            {post.excerpt}
+          </p>
+
+          {/* Meta */}
+          <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]">
+            <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-faint)]">
+              <span>{formatDate(post.date)}</span>
+              <span>·</span>
+              <span>{post.readTimeMin} min</span>
+            </div>
+            <Icons.ArrowRight
+              size={12}
+              className="text-[var(--text-faint)] group-hover:text-[var(--accent-2)] group-hover:translate-x-0.5 transition-all"
+            />
+          </div>
         </div>
       </article>
     </SpotlightCard>
@@ -693,6 +690,29 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
 
 // ─── Post view ────────────────────────────────────────────────────────────────
 
+// Hero strip shown at the top of every PostView. Tries the generated blog cover
+// first (always present after `npm run blog-covers`). Falls back silently.
+function HeroCoverStrip({ slug, heroImage }: { slug: string; heroImage?: string }) {
+  const [visible, setVisible] = React.useState(true)
+  if (!visible) return null
+  const src = heroImage ? asset(heroImage) : asset(slug)
+  return (
+    <div className="relative h-[180px] sm:h-[240px] overflow-hidden bg-black border-b border-[var(--border)]">
+      <img
+        src={src}
+        alt=""
+        aria-hidden="true"
+        className="w-full h-full object-cover object-center opacity-50"
+        onError={() => setVisible(false)}
+      />
+      <div
+        className="absolute inset-0"
+        style={{ background: 'linear-gradient(to bottom, transparent 10%, var(--bg) 100%)' }}
+      />
+    </div>
+  )
+}
+
 function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLanding, landingTheme, onToggleLandingTheme }: {
   post: BlogPost
   onNavigateToBlog: () => void
@@ -703,6 +723,38 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
 }) {
   const related  = getBlogPostsByLang(post.lang ?? 'en').filter(p => p.slug !== post.slug).slice(0, 3)
   const headings = extractHeadings(post.content)
+
+  // Update document title + OG/Twitter meta while viewing a specific post.
+  React.useEffect(() => {
+    const prevTitle = document.title
+    document.title = `${post.title} | IFC Viewer Online`
+
+    const coverUrl = `${window.location.origin}${BASE}blog/covers/${post.slug}.png`
+
+    const update = (sel: string, attr: string, val: string) => {
+      const el = document.querySelector(sel)
+      const prev = el?.getAttribute(attr) ?? ''
+      el?.setAttribute(attr, val)
+      return prev
+    }
+
+    const prevOgImg  = update('meta[property="og:image"]',       'content', coverUrl)
+    const prevTwImg  = update('meta[name="twitter:image"]',      'content', coverUrl)
+    const prevOgT    = update('meta[property="og:title"]',       'content', post.title)
+    const prevTwT    = update('meta[name="twitter:title"]',      'content', post.title)
+    const prevOgD    = update('meta[property="og:description"]', 'content', post.excerpt)
+    const prevTwD    = update('meta[name="twitter:description"]','content', post.excerpt)
+
+    return () => {
+      document.title = prevTitle
+      update('meta[property="og:image"]',       'content', prevOgImg)
+      update('meta[name="twitter:image"]',      'content', prevTwImg)
+      update('meta[property="og:title"]',       'content', prevOgT)
+      update('meta[name="twitter:title"]',      'content', prevTwT)
+      update('meta[property="og:description"]', 'content', prevOgD)
+      update('meta[name="twitter:description"]','content', prevTwD)
+    }
+  }, [post.slug])
 
   const navBg = landingTheme === 'dark'
     ? 'bg-[rgba(10,10,14,0.88)]'
@@ -747,21 +799,8 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
         </div>
       </nav>
 
-      {/* ── Hero image strip (if post has one) ── */}
-      {post.heroImage && (
-        <div className="relative h-[180px] sm:h-[240px] overflow-hidden bg-black border-b border-[var(--border)]">
-          <img
-            src={asset(post.heroImage)}
-            alt=""
-            aria-hidden="true"
-            className="w-full h-full object-cover opacity-45"
-          />
-          <div
-            className="absolute inset-0"
-            style={{ background: 'linear-gradient(to bottom, transparent 0%, var(--bg) 100%)' }}
-          />
-        </div>
-      )}
+      {/* ── Hero cover strip — always attempt; hidden via state if image 404s ── */}
+      <HeroCoverStrip slug={post.slug} heroImage={post.heroImage} />
 
       {/* ── Article — single col on mobile / 2-col on xl+ ── */}
       <div className="max-w-[1200px] mx-auto px-4 sm:px-8 pt-7 sm:pt-10 pb-16">

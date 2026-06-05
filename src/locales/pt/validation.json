@@ -224,7 +224,12 @@
     "atLimit": "Limite de 5 perfis atingido.",
     "cancel": "Cancelar",
     "save": "Salvar perfil",
-    "defaultDescription": "Perfil personalizado"
+    "defaultDescription": "Perfil personalizado",
+    "editTitle": "Editar perfil",
+    "editSubtitle": "Modifique as regras e configurações deste perfil",
+    "saveChanges": "Guardar alterações",
+    "deleteConfirm": "Excluir este perfil?",
+    "deleteYes": "Excluir"
   },
   "catFull": {
     "schema": "Esquema IFC",

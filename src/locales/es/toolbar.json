@@ -40,6 +40,8 @@
   "exportGlbFailed": "Error al exportar GLB: {{message}}",
   "open": "Abrir",
   "reset": "Restablecer",
+  "legend": "Leyenda",
+  "legendTooltip": "Leyenda de colores — tipos de entidades del modelo",
   "status": {
     "loaded": "Cargado",
     "loading": "Cargando…",

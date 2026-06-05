@@ -29,7 +29,13 @@
     "clearIsolation": "Isolierung aufheben",
     "noModel": "Kein Modell geladen",
     "noModelDesc": "Öffnen Sie eine IFC-Datei, um Kategorien zu sehen.",
-    "moreElements": "+ {{count}} weitere Elemente"
+    "moreElements": "+ {{count}} weitere Elemente",
+    "legendBadge": "Farblegende",
+    "typesShort": "Typen",
+    "withIssues": "mit Problemen",
+    "hint": "Farbe klicken zum Isolieren · Name klicken zum Einrahmen",
+    "section3D": "3D-Elemente",
+    "sectionOther": "Weitere IFC-Objekte"
   },
   "actions": {
     "isolate": "Isolieren",
@@ -69,7 +75,7 @@
   },
   "tabs": {
     "properties": "Eigenschaften",
-    "categories": "Kategorien",
+    "categories": "Legende",
     "takeoff": "Mengen"
   },
   "takeoff": {

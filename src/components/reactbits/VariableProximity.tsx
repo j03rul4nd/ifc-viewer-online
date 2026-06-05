@@ -1,5 +1,5 @@
 import { forwardRef, useMemo, useRef, useEffect, MutableRefObject, CSSProperties, HTMLAttributes } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 function useAnimationFrame(callback: () => void) {
   useEffect(() => {
@@ -93,7 +93,7 @@ const VariableProximity = forwardRef<HTMLSpanElement, VariableProximityProps>((p
           {word.split('').map(letter => {
             const currentLetterIndex = letterIndex++;
             return (
-              <motion.span key={currentLetterIndex} ref={el => { letterRefs.current[currentLetterIndex] = el; }} style={{ display: 'inline-block', fontVariationSettings: interpolatedSettingsRef.current[currentLetterIndex] }} aria-hidden="true">
+              <motion.span key={currentLetterIndex} ref={(el: HTMLSpanElement | null) => { letterRefs.current[currentLetterIndex] = el; }} style={{ display: 'inline-block', fontVariationSettings: interpolatedSettingsRef.current[currentLetterIndex] }} aria-hidden="true">
                 {letter}
               </motion.span>
             );

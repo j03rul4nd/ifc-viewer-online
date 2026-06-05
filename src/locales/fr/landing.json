@@ -149,6 +149,30 @@
       "body": "Activez SSAO, le rendu de contours et le bloom pour des rendus de présentation. Exportez le binaire IFC corrigé (tous les diffs appliqués sans serveur) ou la géométrie visible en GLB standard."
     }
   ],
+  "privacySection": {
+    "label": "CONFIDENTIALITÉ & SÉCURITÉ",
+    "title": "Vos fichiers ne quittent jamais votre navigateur.",
+    "subtitle": "Nous ne vous demandons pas de nous faire confiance — nous le rendons vérifiable.",
+    "ctaText": "Lire la Politique de confidentialité →",
+    "cards": [
+      {
+        "title": "Zéro transfert",
+        "body": "Votre IFC est analysé par web-ifc, un parser C++ compilé en WebAssembly. Il s'exécute entièrement dans votre onglet de navigateur. Aucun octet ne voyage vers un serveur — pas même le nôtre."
+      },
+      {
+        "title": "Vérifiez par vous-même",
+        "body": "Ouvrez DevTools → onglet Réseau, puis déposez votre fichier. Vous verrez zéro requête vers un serveur externe traitant des données du modèle. Nous le disons parce que c'est prouvable."
+      },
+      {
+        "title": "Code source auditable",
+        "body": "Chaque ligne de code est publique sur GitHub. Aucun appel serveur caché, aucune logique obfusquée. Votre équipe sécurité ou juridique peut examiner le dépôt avant d'utiliser l'outil."
+      },
+      {
+        "title": "Politique de confidentialité publiée",
+        "body": "Conforme au RGPD, sans cookies, sans compte requis. La politique détaille exactement ce qui est collecté (analyses agrégées anonymisées) et ce qui ne l'est pas (vos fichiers, vos modèles)."
+      }
+    ]
+  },
   "openSource": {
     "label": "OPEN SOURCE",
     "title": "Construit en public, gratuit pour toujours",

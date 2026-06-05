@@ -29,7 +29,13 @@
     "clearIsolation": "Rimuovi isolamento",
     "noModel": "Nessun modello caricato",
     "noModelDesc": "Apri un file IFC per vedere le categorie.",
-    "moreElements": "+ {{count}} altri elementi"
+    "moreElements": "+ {{count}} altri elementi",
+    "legendBadge": "Legenda colori",
+    "typesShort": "tipi",
+    "withIssues": "con problemi",
+    "hint": "Clic sul colore per isolare · sul nome per inquadrare in 3D",
+    "section3D": "Elementi 3D",
+    "sectionOther": "Altri oggetti IFC"
   },
   "actions": {
     "isolate": "Isola",
@@ -69,7 +75,7 @@
   },
   "tabs": {
     "properties": "Proprietà",
-    "categories": "Categorie",
+    "categories": "Legenda",
     "takeoff": "Quantità"
   },
   "takeoff": {

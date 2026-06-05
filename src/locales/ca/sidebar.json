@@ -12,7 +12,8 @@
     "spaces": "Espais", "furniture": "Mobiliari", "other": "Altres",
     "types": "{{count}} tipus", "elements": "{{count}} elements",
     "clearIsolation": "Elimina l'aïllament", "noModel": "Cap model carregat",
-    "noModelDesc": "Obre un fitxer IFC per veure les categories.", "moreElements": "+ {{count}} elements més"
+    "noModelDesc": "Obre un fitxer IFC per veure les categories.", "moreElements": "+ {{count}} elements més",
+    "legendBadge": "Llegenda de colors", "typesShort": "tipus", "withIssues": "amb problemes", "hint": "Feu clic al color per aïllar · al nom per emmarcar en 3D", "section3D": "Elements 3D", "sectionOther": "Altres objectes IFC"
   },
   "actions": {
     "isolate": "Aïlla", "hide": "Amaga", "show": "Mostra", "focusElement": "Enfoca l'element",
@@ -31,7 +32,7 @@
     "unsavedChanges_other": "{{count}} canvis no desats · Ctrl+Z per desfer",
     "edited": "editat", "empty": "buit", "loadingPsets": "Carregant conjunts de propietats…"
   },
-  "tabs": { "properties": "Propietats", "categories": "Categories", "takeoff": "Quantitats" },
+  "tabs": { "properties": "Propietats", "categories": "Llegenda", "takeoff": "Quantitats" },
   "takeoff": {
     "title": "Quantitats", "quantity": "Quantitat", "unit": "Unitat", "totalArea": "Àrea total",
     "totalVolume": "Volum total", "totalLength": "Longitud total", "count": "Recompte",

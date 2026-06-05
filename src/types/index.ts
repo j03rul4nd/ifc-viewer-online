@@ -218,6 +218,20 @@ export interface RulesConfig {
   /** Regex for ISO 19650 filename convention, e.g. '^[A-Z]{3}-[A-Z]{2}-' */
   iso19650FilenamePattern?: string
 
+  // ── Sprint V6 — Geometry & storey integrity ──────────────────────────────────
+  /** IfcOpeningElement not connected to any host via IfcRelVoidsElement */
+  RULE_OPENING_WITHOUT_HOST?: boolean
+  /** Two or more IfcBuildingStorey in the same building share the same Elevation value */
+  RULE_STOREY_ELEVATION_DUPLICATE?: boolean
+  /** Model LENGTHUNIT is imperial (foot/inch) instead of SI metric */
+  RULE_UNIT_CONSISTENCY?: boolean
+  /** IfcSpace has no NetFloorArea quantity in its IfcElementQuantity */
+  RULE_SPACE_AREA_MISSING?: boolean
+  /** IfcPipeSegment / IfcDuctSegment / IfcFlowSegment has no IfcDistributionPort connection */
+  RULE_CONNECTED_MEP?: boolean
+  /** IfcBuildingStorey elevation values are not in ascending order within the building */
+  RULE_STOREY_ELEVATION_ORDER?: boolean
+
   // ── Sprint V5 — Model quality signals ────────────────────────────────────────
   /** More than 5% of physical elements are IfcBuildingElementProxy (typically unconverted Revit families) */
   RULE_PROXY_OVERUSE?: boolean
@@ -269,6 +283,13 @@ export const DEFAULT_RULES: RulesConfig = {
   RULE_PROXY_OVERUSE:             true,
   RULE_COORDINATE_OFFSET:         true,
   RULE_FILE_SIZE_ANOMALY:         true,
+  // Sprint V6
+  RULE_OPENING_WITHOUT_HOST:      true,
+  RULE_STOREY_ELEVATION_DUPLICATE: true,
+  RULE_UNIT_CONSISTENCY:           true,
+  RULE_SPACE_AREA_MISSING:         true,
+  RULE_CONNECTED_MEP:              true,
+  RULE_STOREY_ELEVATION_ORDER:     true,
   lodLevel:                       300,
   namingConventionPatterns: {},
   requiredPsets: {},
@@ -559,6 +580,37 @@ export const RULE_METADATA: Record<string, RuleMetadata> = {
     description: 'File size per physical element exceeds 500 KB — typically over-detailed geometry or embedded textures',
     category: 'quality', standard: 'IFC best practice', defaultSeverity: 'info', autoFixable: false,
   },
+  // ── Sprint V6 — Geometry & storey integrity ─────────────────────────
+  RULE_OPENING_WITHOUT_HOST: {
+    id: 'RULE_OPENING_WITHOUT_HOST', label: 'Opening without host',
+    description: 'IfcOpeningElement not connected to any host element via IfcRelVoidsElement',
+    category: 'spatial', standard: 'IFC schema', defaultSeverity: 'warning', autoFixable: false,
+  },
+  RULE_STOREY_ELEVATION_DUPLICATE: {
+    id: 'RULE_STOREY_ELEVATION_DUPLICATE', label: 'Duplicate storey elevation',
+    description: 'Two or more storeys in the same building share the same Elevation value',
+    category: 'spatial', standard: 'IFC best practice', defaultSeverity: 'warning', autoFixable: false,
+  },
+  RULE_UNIT_CONSISTENCY: {
+    id: 'RULE_UNIT_CONSISTENCY', label: 'Imperial length unit',
+    description: 'Model LENGTHUNIT is imperial (foot/inch) — IFC interchange requires SI metric',
+    category: 'schema', standard: 'ISO 16739', defaultSeverity: 'warning', autoFixable: false,
+  },
+  RULE_SPACE_AREA_MISSING: {
+    id: 'RULE_SPACE_AREA_MISSING', label: 'Space missing floor area',
+    description: 'IfcSpace has no NetFloorArea quantity — required for energy analysis and QS workflows',
+    category: 'quality', standard: 'IFC best practice', defaultSeverity: 'warning', autoFixable: false,
+  },
+  RULE_CONNECTED_MEP: {
+    id: 'RULE_CONNECTED_MEP', label: 'Disconnected MEP segment',
+    description: 'IfcPipeSegment / IfcDuctSegment / IfcFlowSegment has no IfcDistributionPort connection',
+    category: 'mep', standard: 'IFC best practice', defaultSeverity: 'warning', autoFixable: false,
+  },
+  RULE_STOREY_ELEVATION_ORDER: {
+    id: 'RULE_STOREY_ELEVATION_ORDER', label: 'Storey elevation out of order',
+    description: 'IfcBuildingStorey elevation values are not in ascending order within the building',
+    category: 'spatial', standard: 'IFC best practice', defaultSeverity: 'warning', autoFixable: false,
+  },
 }
 
 // ── Validation profiles ───────────────────────────────────────────────────────
@@ -744,6 +796,12 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_PROXY_OVERUSE:              { label: 'Proxy overuse',          description: 'More than 5% of elements are IfcBuildingElementProxy — typically unconverted Revit families' },
     RULE_COORDINATE_OFFSET:          { label: 'Large coordinate offset', description: 'Model geometry is more than 10 km from the WCS origin — causes floating-point precision errors' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'File size anomaly',       description: 'File is unusually large per element — over-detailed geometry or embedded textures likely' },
+    RULE_OPENING_WITHOUT_HOST:       { label: 'Opening without host',    description: 'IfcOpeningElement not connected to any host element via IfcRelVoidsElement' },
+    RULE_STOREY_ELEVATION_DUPLICATE: { label: 'Duplicate storey elevation', description: 'Two or more storeys in the same building share the same elevation value' },
+    RULE_UNIT_CONSISTENCY:           { label: 'Imperial length unit',        description: 'Model LENGTHUNIT is imperial (foot/inch) — IFC interchange requires SI metric units' },
+    RULE_SPACE_AREA_MISSING:         { label: 'Space missing floor area',    description: 'IfcSpace has no NetFloorArea quantity — required for energy analysis and QS workflows' },
+    RULE_CONNECTED_MEP:              { label: 'Disconnected MEP segment',    description: 'IfcPipeSegment / IfcDuctSegment has no IfcDistributionPort connection' },
+    RULE_STOREY_ELEVATION_ORDER:     { label: 'Storey elevation out of order', description: 'IfcBuildingStorey elevations are not in ascending order within the building' },
   },
   es: {
     RULE_EMPTY_NAME:                 { label: 'Nombre vacío',              description: 'Elemento sin nombre asignado (Name = "" o nulo)' },
@@ -784,6 +842,12 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_PROXY_OVERUSE:              { label: 'Exceso de elementos proxy',  description: 'Más del 5% de los elementos son IfcBuildingElementProxy — familias Revit sin convertir' },
     RULE_COORDINATE_OFFSET:          { label: 'Desfase de coordenadas',     description: 'La geometría del modelo está a más de 10 km del origen WCS — provoca errores de precisión de coma flotante' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'Anomalía de tamaño de archivo', description: 'El archivo es inusualmente grande por elemento — probablemente geometría sobredetallada o texturas embebidas' },
+    RULE_OPENING_WITHOUT_HOST:       { label: 'Abertura sin host',           description: 'IfcOpeningElement no conectado a ningún elemento anfitrión vía IfcRelVoidsElement' },
+    RULE_STOREY_ELEVATION_DUPLICATE: { label: 'Elevación de planta duplicada', description: 'Dos o más plantas del mismo edificio comparten el mismo valor de elevación' },
+    RULE_UNIT_CONSISTENCY:           { label: 'Unidad de longitud imperial',    description: 'La LENGTHUNIT del modelo es imperial (pie/pulgada) — el intercambio IFC requiere unidades métricas SI' },
+    RULE_SPACE_AREA_MISSING:         { label: 'Espacio sin área de suelo',      description: 'IfcSpace sin cantidad NetFloorArea — requerida para análisis energético y mediciones' },
+    RULE_CONNECTED_MEP:              { label: 'Segmento MEP desconectado',      description: 'IfcPipeSegment / IfcDuctSegment sin conexión IfcDistributionPort' },
+    RULE_STOREY_ELEVATION_ORDER:     { label: 'Plantas fuera de orden',         description: 'Las elevaciones de IfcBuildingStorey no están en orden ascendente en el edificio' },
   },
   fr: {
     RULE_EMPTY_NAME:                 { label: 'Nom vide',                  description: 'Élément sans nom (Name = "" ou nul)' },
@@ -824,6 +888,12 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_PROXY_OVERUSE:              { label: 'Suremploi de proxies',       description: 'Plus de 5% des éléments sont IfcBuildingElementProxy — typiquement des familles Revit non converties' },
     RULE_COORDINATE_OFFSET:          { label: 'Décalage de coordonnées',   description: 'La géométrie est à plus de 10 km de l\'origine SCM — provoque des erreurs de précision virgule flottante' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'Anomalie de taille de fichier', description: 'Le fichier est anormalement volumineux par élément — géométrie trop détaillée ou textures incorporées' },
+    RULE_OPENING_WITHOUT_HOST:       { label: 'Ouverture sans hôte',         description: 'IfcOpeningElement non connecté à un élément hôte via IfcRelVoidsElement' },
+    RULE_STOREY_ELEVATION_DUPLICATE: { label: 'Élévation de niveau dupliquée', description: 'Deux niveaux ou plus dans le même bâtiment ont la même valeur d\'élévation' },
+    RULE_UNIT_CONSISTENCY:           { label: 'Unité de longueur impériale',    description: 'La LENGTHUNIT du modèle est impériale (pied/pouce) — l\'échange IFC requiert des unités métriques SI' },
+    RULE_SPACE_AREA_MISSING:         { label: 'Espace sans surface de plancher', description: 'IfcSpace sans quantité NetFloorArea — requise pour l\'analyse énergétique et les métrés' },
+    RULE_CONNECTED_MEP:              { label: 'Segment MEP déconnecté',         description: 'IfcPipeSegment / IfcDuctSegment sans connexion IfcDistributionPort' },
+    RULE_STOREY_ELEVATION_ORDER:     { label: 'Niveaux hors ordre',             description: 'Les élévations des IfcBuildingStorey ne sont pas dans l\'ordre croissant dans le bâtiment' },
   },
   de: {
     RULE_EMPTY_NAME:                 { label: 'Leerer Name',               description: 'Element ohne Name (Name = "" oder null)' },
@@ -864,6 +934,12 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_PROXY_OVERUSE:              { label: 'Proxy-Überbenutzung',        description: 'Mehr als 5% der Elemente sind IfcBuildingElementProxy — typischerweise nicht konvertierte Revit-Familien' },
     RULE_COORDINATE_OFFSET:          { label: 'Großer Koordinatenversatz', description: 'Geometrie ist mehr als 10 km vom WCS-Ursprung entfernt — verursacht Gleitkomma-Präzisionsfehler' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'Dateigrößen-Anomalie',      description: 'Datei ist pro Element ungewöhnlich groß — wahrscheinlich übermäßig detaillierte Geometrie oder eingebettete Texturen' },
+    RULE_OPENING_WITHOUT_HOST:       { label: 'Öffnung ohne Host',          description: 'IfcOpeningElement nicht mit einem Host-Element über IfcRelVoidsElement verbunden' },
+    RULE_STOREY_ELEVATION_DUPLICATE: { label: 'Duplizierte Geschosshöhe',   description: 'Zwei oder mehr Geschosse im selben Gebäude haben denselben Höhenwert' },
+    RULE_UNIT_CONSISTENCY:           { label: 'Imperiale Längeneinheit',    description: 'LENGTHUNIT des Modells ist imperial (Fuß/Zoll) — IFC-Austausch erfordert SI-metrische Einheiten' },
+    RULE_SPACE_AREA_MISSING:         { label: 'Raum ohne Bodenfläche',      description: 'IfcSpace ohne NetFloorArea-Menge — erforderlich für Energieanalyse und Mengenermittlung' },
+    RULE_CONNECTED_MEP:              { label: 'Getrenntes MEP-Segment',     description: 'IfcPipeSegment / IfcDuctSegment ohne IfcDistributionPort-Verbindung' },
+    RULE_STOREY_ELEVATION_ORDER:     { label: 'Geschosse in falscher Reihenfolge', description: 'IfcBuildingStorey-Höhen nicht in aufsteigender Reihenfolge im Gebäude' },
   },
   pt: {
     RULE_EMPTY_NAME:                 { label: 'Nome vazio',                description: 'Elemento sem nome (Name = "" ou nulo)' },
@@ -904,6 +980,12 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_PROXY_OVERUSE:              { label: 'Uso excessivo de proxy',     description: 'Mais de 5% dos elementos são IfcBuildingElementProxy — tipicamente famílias Revit não convertidas' },
     RULE_COORDINATE_OFFSET:          { label: 'Grande desvio de coordenadas', description: 'A geometria está a mais de 10 km da origem WCS — provoca erros de precisão de vírgula flutuante' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'Anomalia de tamanho de ficheiro', description: 'O ficheiro é anormalmente grande por elemento — geometria excessivamente detalhada ou texturas incorporadas' },
+    RULE_OPENING_WITHOUT_HOST:       { label: 'Abertura sem hospedeiro',    description: 'IfcOpeningElement não conectado a nenhum elemento hospedeiro via IfcRelVoidsElement' },
+    RULE_STOREY_ELEVATION_DUPLICATE: { label: 'Elevação de piso duplicada', description: 'Dois ou mais pisos no mesmo edifício partilham o mesmo valor de elevação' },
+    RULE_UNIT_CONSISTENCY:           { label: 'Unidade de comprimento imperial', description: 'A LENGTHUNIT do modelo é imperial (pé/polegada) — a troca IFC requer unidades métricas SI' },
+    RULE_SPACE_AREA_MISSING:         { label: 'Espaço sem área de piso',    description: 'IfcSpace sem quantidade NetFloorArea — necessária para análise energética e medições' },
+    RULE_CONNECTED_MEP:              { label: 'Segmento MEP desconectado',  description: 'IfcPipeSegment / IfcDuctSegment sem ligação IfcDistributionPort' },
+    RULE_STOREY_ELEVATION_ORDER:     { label: 'Pisos fora de ordem',        description: 'Elevações de IfcBuildingStorey não estão em ordem ascendente no edifício' },
   },
   it: {
     RULE_EMPTY_NAME:                 { label: 'Nome vuoto',                description: 'Elemento senza nome (Name = "" o nullo)' },
@@ -944,6 +1026,12 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_PROXY_OVERUSE:              { label: 'Uso eccessivo di proxy',     description: 'Più del 5% degli elementi sono IfcBuildingElementProxy — tipicamente famiglie Revit non convertite' },
     RULE_COORDINATE_OFFSET:          { label: 'Grande offset di coordinate', description: 'La geometria è a più di 10 km dall\'origine WCS — causa errori di precisione in virgola mobile' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'Anomalia dimensione file',   description: 'Il file è insolitamente grande per elemento — probabile geometria troppo dettagliata o texture incorporate' },
+    RULE_OPENING_WITHOUT_HOST:       { label: 'Apertura senza host',        description: 'IfcOpeningElement non collegato ad alcun elemento host tramite IfcRelVoidsElement' },
+    RULE_STOREY_ELEVATION_DUPLICATE: { label: 'Elevazione piano duplicata', description: 'Due o più piani nello stesso edificio condividono lo stesso valore di elevazione' },
+    RULE_UNIT_CONSISTENCY:           { label: 'Unità di lunghezza imperiale', description: 'La LENGTHUNIT del modello è imperiale (piede/pollice) — l\'interscambio IFC richiede unità metriche SI' },
+    RULE_SPACE_AREA_MISSING:         { label: 'Spazio senza area del pavimento', description: 'IfcSpace senza quantità NetFloorArea — richiesta per analisi energetica e computi metrici' },
+    RULE_CONNECTED_MEP:              { label: 'Segmento MEP scollegato',    description: 'IfcPipeSegment / IfcDuctSegment senza connessione IfcDistributionPort' },
+    RULE_STOREY_ELEVATION_ORDER:     { label: 'Piani fuori ordine',         description: 'Le elevazioni di IfcBuildingStorey non sono in ordine ascendente nell\'edificio' },
   },
   zh: {
     RULE_EMPTY_NAME:                 { label: '空名称',                    description: '元素没有名称（Name = "" 或空）' },
@@ -984,6 +1072,12 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_PROXY_OVERUSE:              { label: '代理元素过多',               description: '超过5%的元素是 IfcBuildingElementProxy — 通常是未转换的 Revit 族' },
     RULE_COORDINATE_OFFSET:          { label: '大坐标偏移',                description: '模型几何距离 WCS 原点超过 10 公里 — 导致浮点精度错误' },
     RULE_FILE_SIZE_ANOMALY:          { label: '文件大小异常',               description: '每个元素的文件大小异常偏大 — 可能是过于精细的几何体或嵌入纹理' },
+    RULE_OPENING_WITHOUT_HOST:       { label: '开洞无宿主',                 description: 'IfcOpeningElement 未通过 IfcRelVoidsElement 连接到任何宿主元素' },
+    RULE_STOREY_ELEVATION_DUPLICATE: { label: '楼层高程重复',               description: '同一建筑中两个或多个楼层共享相同的高程值' },
+    RULE_UNIT_CONSISTENCY:           { label: '英制长度单位',               description: '模型 LENGTHUNIT 为英制（英尺/英寸）— IFC 交换要求 SI 公制单位' },
+    RULE_SPACE_AREA_MISSING:         { label: '空间缺少楼板面积',           description: 'IfcSpace 无 NetFloorArea 数量 — 能耗分析和工程量清单需要此数据' },
+    RULE_CONNECTED_MEP:              { label: 'MEP 管段未连接',             description: 'IfcPipeSegment / IfcDuctSegment 无 IfcDistributionPort 连接' },
+    RULE_STOREY_ELEVATION_ORDER:     { label: '楼层高程顺序错误',           description: '同一建筑内 IfcBuildingStorey 的高程未按升序排列' },
   },
   ja: {
     RULE_EMPTY_NAME:                 { label: '空の名前',                  description: '名前のない要素（Name = "" または null）' },
@@ -1024,6 +1118,12 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_PROXY_OVERUSE:              { label: 'プロキシの過剰使用',         description: '5%以上の要素が IfcBuildingElementProxy — 通常は変換されていない Revit ファミリ' },
     RULE_COORDINATE_OFFSET:          { label: '大きな座標オフセット',       description: 'モデルジオメトリが WCS 原点から 10 km 以上離れている — 浮動小数点精度エラーを引き起こす' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'ファイルサイズの異常',        description: '要素あたりのファイルサイズが異常に大きい — 過度に詳細なジオメトリまたは埋め込みテクスチャの可能性' },
+    RULE_OPENING_WITHOUT_HOST:       { label: 'ホストのない開口',            description: 'IfcOpeningElement が IfcRelVoidsElement を介してホスト要素に接続されていない' },
+    RULE_STOREY_ELEVATION_DUPLICATE: { label: '階高さの重複',               description: '同じ建物内の2つ以上の階が同じ高さの値を共有している' },
+    RULE_UNIT_CONSISTENCY:           { label: 'ヤード・ポンド法の長さ単位', description: 'モデルの LENGTHUNIT がヤード・ポンド法（フィート/インチ）— IFC 交換では SI 単位が必要' },
+    RULE_SPACE_AREA_MISSING:         { label: 'スペースの床面積が不足',     description: 'IfcSpace に NetFloorArea 数量がない — エネルギー解析および積算に必要' },
+    RULE_CONNECTED_MEP:              { label: '未接続の MEP セグメント',    description: 'IfcPipeSegment / IfcDuctSegment に IfcDistributionPort 接続がない' },
+    RULE_STOREY_ELEVATION_ORDER:     { label: '階の高さが順不同',           description: '建物内の IfcBuildingStorey の高さが昇順になっていない' },
   },
   th: {
     RULE_EMPTY_NAME:                 { label: 'ชื่อว่างเปล่า',            description: 'องค์ประกอบไม่มีชื่อ (Name = "" หรือ null)' },
@@ -1064,6 +1164,12 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_PROXY_OVERUSE:              { label: 'การใช้ proxy มากเกินไป',     description: 'มากกว่า 5% ขององค์ประกอบเป็น IfcBuildingElementProxy — มักเป็นกลุ่ม Revit ที่ยังไม่ได้แปลง' },
     RULE_COORDINATE_OFFSET:          { label: 'ค่าชดเชยพิกัดขนาดใหญ่',    description: 'เรขาคณิตของโมเดลอยู่ห่างจากจุดกำเนิด WCS มากกว่า 10 กม. — ทำให้เกิดข้อผิดพลาดความแม่นยำทศนิยม' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'ความผิดปกติขนาดไฟล์',       description: 'ไฟล์มีขนาดใหญ่ผิดปกติต่อองค์ประกอบ — น่าจะเป็นเรขาคณิตละเอียดเกินไปหรือพื้นผิวที่ฝังอยู่' },
+    RULE_OPENING_WITHOUT_HOST:       { label: 'ช่องเปิดไม่มีโฮสต์',        description: 'IfcOpeningElement ไม่ได้เชื่อมต่อกับองค์ประกอบโฮสต์ใด ๆ ผ่าน IfcRelVoidsElement' },
+    RULE_STOREY_ELEVATION_DUPLICATE: { label: 'ระดับชั้นซ้ำกัน',           description: 'ชั้นสองชั้นขึ้นไปในอาคารเดียวกันมีค่าระดับชั้นเดียวกัน' },
+    RULE_UNIT_CONSISTENCY:           { label: 'หน่วยความยาวแบบอิมพีเรียล', description: 'LENGTHUNIT ของโมเดลเป็นอิมพีเรียล (ฟุต/นิ้ว) — การแลกเปลี่ยน IFC ต้องใช้หน่วย SI เมตริก' },
+    RULE_SPACE_AREA_MISSING:         { label: 'พื้นที่ไม่มีพื้นที่ใช้สอย', description: 'IfcSpace ไม่มีปริมาณ NetFloorArea — จำเป็นสำหรับการวิเคราะห์พลังงานและ QS' },
+    RULE_CONNECTED_MEP:              { label: 'ส่วนท่อ MEP ไม่ได้เชื่อมต่อ', description: 'IfcPipeSegment / IfcDuctSegment ไม่มีการเชื่อมต่อ IfcDistributionPort' },
+    RULE_STOREY_ELEVATION_ORDER:     { label: 'ลำดับชั้นผิด',               description: 'ระดับชั้น IfcBuildingStorey ในอาคารไม่เรียงจากน้อยไปมาก' },
   },
   ca: {
     RULE_EMPTY_NAME:                 { label: 'Nom buit',                  description: 'Element sense nom (Name = "" o nul)' },
@@ -1104,6 +1210,12 @@ export const RULE_TRANSLATIONS: Partial<Record<string, Record<string, { label: s
     RULE_PROXY_OVERUSE:              { label: 'Ús excessiu de proxies',     description: 'Més del 5% dels elements són IfcBuildingElementProxy — típicament famílies de Revit no convertides' },
     RULE_COORDINATE_OFFSET:          { label: 'Gran desplaçament de coordenades', description: 'La geometria està a més de 10 km de l\'origen WCS — provoca errors de precisió en coma flotant' },
     RULE_FILE_SIZE_ANOMALY:          { label: 'Anomalia de mida de fitxer',  description: 'El fitxer és inusualment gran per element — probablement geometria massa detallada o textures incrustades' },
+    RULE_OPENING_WITHOUT_HOST:       { label: 'Obertura sense amfitrió',     description: 'IfcOpeningElement no connectat a cap element amfitrió via IfcRelVoidsElement' },
+    RULE_STOREY_ELEVATION_DUPLICATE: { label: 'Elevació de planta duplicada', description: 'Dues o més plantes del mateix edifici comparteixen el mateix valor d\'elevació' },
+    RULE_UNIT_CONSISTENCY:           { label: 'Unitat de longitud imperial',  description: 'La LENGTHUNIT del model és imperial (peu/polzada) — l\'intercanvi IFC requereix unitats mètriques SI' },
+    RULE_SPACE_AREA_MISSING:         { label: 'Espai sense àrea de paviment', description: 'IfcSpace sense quantitat NetFloorArea — necessària per a l\'anàlisi energètica i les medicions' },
+    RULE_CONNECTED_MEP:              { label: 'Segment MEP desconnectat',     description: 'IfcPipeSegment / IfcDuctSegment sense connexió IfcDistributionPort' },
+    RULE_STOREY_ELEVATION_ORDER:     { label: 'Plantes fora d\'ordre',        description: 'Les elevacions d\'IfcBuildingStorey no estan en ordre ascendent a l\'edifici' },
   },
 }
 

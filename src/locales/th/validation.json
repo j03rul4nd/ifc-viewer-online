@@ -224,7 +224,12 @@
     "atLimit": "ถึงขีดจำกัด 5 โปรไฟล์แล้ว",
     "cancel": "ยกเลิก",
     "save": "บันทึกโปรไฟล์",
-    "defaultDescription": "โปรไฟล์กำหนดเอง"
+    "defaultDescription": "โปรไฟล์กำหนดเอง",
+    "editTitle": "แก้ไขโปรไฟล์",
+    "editSubtitle": "แก้ไขกฎและการตั้งค่าของโปรไฟล์นี้",
+    "saveChanges": "บันทึกการเปลี่ยนแปลง",
+    "deleteConfirm": "ลบโปรไฟล์นี้?",
+    "deleteYes": "ลบ"
   },
   "catFull": {
     "schema": "IFC Schema",

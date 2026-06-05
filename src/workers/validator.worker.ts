@@ -82,6 +82,13 @@ import {
   IFCFLOWTREATMENTDEVICE,
   IFCFLOWSTORAGEDEVICE,
   IFCBUILDINGELEMENTPROXY,
+  IFCOPENINGELEMENT,
+  IFCRELVOIDSELEMENT,
+  IFCPROPERTYENUMERATEDVALUE,
+  IFCSIUNIT,
+  IFCCONVERSIONBASEDUNIT,
+  IFCUNITASSIGNMENT,
+  IFCRELCONNECTSPORTTOELEMENT,
 } from 'web-ifc'
 
 // ── Typed IFC entity shapes ───────────────────────────────────────────────────
@@ -241,39 +248,43 @@ function buildSpatialIndex(api: IfcAPI, modelId: number): SpatialIndex {
   // ── IfcRelAggregates ─────────────────────────────────────────────────
   const aggIds = api.GetLineIDsWithType(modelId, IFCRELAGGREGATES)
   for (let i = 0; i < aggIds.size(); i++) {
-    const rel = getLine<IfcRelAgg>(api, modelId, aggIds.get(i))
-    const parentId = getRefId(rel.RelatingObject)
-    if (parentId === null) continue
+    try {
+      const rel = getLine<IfcRelAgg>(api, modelId, aggIds.get(i))
+      const parentId = getRefId(rel.RelatingObject)
+      if (parentId === null) continue
 
-    const children = (rel.RelatedObjects ?? [])
-      .map((r) => getRefId(r))
-      .filter((id): id is number => id !== null)
+      const children = (rel.RelatedObjects ?? [])
+        .map((r) => getRefId(r))
+        .filter((id): id is number => id !== null)
 
-    for (const child of children) {
-      idx.aggParent.set(child, parentId)
-    }
+      for (const child of children) {
+        idx.aggParent.set(child, parentId)
+      }
 
-    const existing = idx.aggChildren.get(parentId) ?? []
-    idx.aggChildren.set(parentId, [...existing, ...children])
+      const existing = idx.aggChildren.get(parentId) ?? []
+      idx.aggChildren.set(parentId, [...existing, ...children])
+    } catch { /* corrupt IfcRelAggregates — skip this relation */ }
   }
 
   // ── IfcRelContainedInSpatialStructure ────────────────────────────────
   const contIds = api.GetLineIDsWithType(modelId, IFCRELCONTAINEDINSPATIALSTRUCTURE)
   for (let i = 0; i < contIds.size(); i++) {
-    const rel = getLine<IfcRelContained>(api, modelId, contIds.get(i))
-    const structId = getRefId(rel.RelatingStructure)
-    if (structId === null) continue
+    try {
+      const rel = getLine<IfcRelContained>(api, modelId, contIds.get(i))
+      const structId = getRefId(rel.RelatingStructure)
+      if (structId === null) continue
 
-    const elems = (rel.RelatedElements ?? [])
-      .map((r) => getRefId(r))
-      .filter((id): id is number => id !== null)
+      const elems = (rel.RelatedElements ?? [])
+        .map((r) => getRefId(r))
+        .filter((id): id is number => id !== null)
 
-    for (const elem of elems) {
-      idx.contained.set(elem, structId)
-    }
+      for (const elem of elems) {
+        idx.contained.set(elem, structId)
+      }
 
-    const existing = idx.containerElements.get(structId) ?? []
-    idx.containerElements.set(structId, [...existing, ...elems])
+      const existing = idx.containerElements.get(structId) ?? []
+      idx.containerElements.set(structId, [...existing, ...elems])
+    } catch { /* corrupt IfcRelContainedInSpatialStructure — skip */ }
   }
 
   // ── Pre-load names and GUIDs for spatial structure elements ──────────
@@ -282,15 +293,15 @@ function buildSpatialIndex(api: IfcAPI, modelId: number): SpatialIndex {
     const ids = api.GetLineIDsWithType(modelId, typeId)
     for (let i = 0; i < ids.size(); i++) {
       const id = ids.get(i)
-      const ent = getLine<IfcBaseEntity>(api, modelId, id)
-      idx.entityTypes.set(id, typeId)
-      const guid = getStr(ent.GlobalId)
-      const name = getStr(ent.Name)
-      idx.globalIds.set(id, guid)
-      idx.names.set(id, name)
-      if (guid) {
-        idx.guidToId.set(guid, id)
-      }
+      try {
+        const ent = getLine<IfcBaseEntity>(api, modelId, id)
+        idx.entityTypes.set(id, typeId)
+        const guid = getStr(ent.GlobalId)
+        const name = getStr(ent.Name)
+        idx.globalIds.set(id, guid)
+        idx.names.set(id, name)
+        if (guid) idx.guidToId.set(guid, id)
+      } catch { /* corrupt spatial entity — register type only */ }
     }
   }
 
@@ -428,23 +439,25 @@ async function ruleEmptyName(
   for (const typeId of allTypes) {
     const ids = api.GetLineIDsWithType(modelId, typeId)
     for (let i = 0; i < ids.size(); i++) {
-      const id  = ids.get(i)
-      const ent = getLine<IfcBaseEntity>(api, modelId, id)
-      const name = getStr(ent.Name).trim()
-      if (name === '') {
-        issues.push({
-          id: newIssueId(),
-          ruleId: 'RULE_EMPTY_NAME',
-          severity: 'error',
-          expressId: id,
-          globalId: getStr(ent.GlobalId),
-          ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
-          elementName: '(empty)',
-          message: 'Element has no Name',
-          path: getSpatialPath(id, idx),
-          autoFixable: false,
-        })
-      }
+      const id = ids.get(i)
+      try {
+        const ent = getLine<IfcBaseEntity>(api, modelId, id)
+        const name = getStr(ent.Name).trim()
+        if (name === '') {
+          issues.push({
+            id: newIssueId(),
+            ruleId: 'RULE_EMPTY_NAME',
+            severity: 'error',
+            expressId: id,
+            globalId: getStr(ent.GlobalId),
+            ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+            elementName: '(empty)',
+            message: 'Element has no Name',
+            path: getSpatialPath(id, idx),
+            autoFixable: false,
+          })
+        }
+      } catch { /* corrupt entity — skip */ }
     }
   }
   return issues
@@ -460,17 +473,19 @@ async function ruleEmptyLongName(
   // IfcSpace — warning (LongName carries room usage)
   const spaceIds = api.GetLineIDsWithType(modelId, IFCSPACE)
   for (let i = 0; i < spaceIds.size(); i++) {
-    const id  = spaceIds.get(i)
-    const ent = getLine<IfcBaseEntity>(api, modelId, id)
-    if (getStr(ent.LongName).trim() === '') {
-      issues.push({
-        id: newIssueId(), ruleId: 'RULE_EMPTY_LONGNAME', severity: 'warning',
-        expressId: id, globalId: getStr(ent.GlobalId), ifcClass: 'IfcSpace',
-        elementName: getStr(ent.Name) || '(unnamed)',
-        message: 'IfcSpace has no LongName',
-        path: getSpatialPath(id, idx), autoFixable: false,
-      })
-    }
+    const id = spaceIds.get(i)
+    try {
+      const ent = getLine<IfcBaseEntity>(api, modelId, id)
+      if (getStr(ent.LongName).trim() === '') {
+        issues.push({
+          id: newIssueId(), ruleId: 'RULE_EMPTY_LONGNAME', severity: 'warning',
+          expressId: id, globalId: getStr(ent.GlobalId), ifcClass: 'IfcSpace',
+          elementName: getStr(ent.Name) || '(unnamed)',
+          message: 'IfcSpace has no LongName',
+          path: getSpatialPath(id, idx), autoFixable: false,
+        })
+      }
+    } catch { /* corrupt entity — skip */ }
   }
 
   // IfcBuildingStorey + IfcBuilding — info (floor/building label useful for documentation)
@@ -480,17 +495,19 @@ async function ruleEmptyLongName(
   ] as const) {
     const ids = api.GetLineIDsWithType(modelId, typeId)
     for (let i = 0; i < ids.size(); i++) {
-      const id  = ids.get(i)
-      const ent = getLine<IfcBaseEntity>(api, modelId, id)
-      if (getStr(ent.LongName).trim() === '') {
-        issues.push({
-          id: newIssueId(), ruleId: 'RULE_EMPTY_LONGNAME', severity: 'info',
-          expressId: id, globalId: getStr(ent.GlobalId), ifcClass: className,
-          elementName: getStr(ent.Name) || '(unnamed)',
-          message: `${className} has no LongName`,
-          path: getSpatialPath(id, idx), autoFixable: false,
-        })
-      }
+      const id = ids.get(i)
+      try {
+        const ent = getLine<IfcBaseEntity>(api, modelId, id)
+        if (getStr(ent.LongName).trim() === '') {
+          issues.push({
+            id: newIssueId(), ruleId: 'RULE_EMPTY_LONGNAME', severity: 'info',
+            expressId: id, globalId: getStr(ent.GlobalId), ifcClass: className,
+            elementName: getStr(ent.Name) || '(unnamed)',
+            message: `${className} has no LongName`,
+            path: getSpatialPath(id, idx), autoFixable: false,
+          })
+        }
+      } catch { /* corrupt entity — skip */ }
     }
   }
 
@@ -510,22 +527,24 @@ async function ruleDuplicateName(
   for (const typeId of allTypes) {
     const ids = api.GetLineIDsWithType(modelId, typeId)
     for (let i = 0; i < ids.size(); i++) {
-      const id     = ids.get(i)
-      // Skip elements with no resolved parent: "duplicate name among siblings"
-      // is meaningless without a real shared parent, and grouping every orphan
-      // under a synthetic key would flag unrelated elements as duplicates.
-      // Orphans are reported separately by RULE_ORPHAN_ELEMENT.
-      const parent = idx.contained.get(id) ?? idx.aggParent.get(id)
-      if (parent === undefined) continue
-      const ent    = getLine<IfcBaseEntity>(api, modelId, id)
-      const name   = getStr(ent.Name).trim()
-      if (!name) continue
+      const id = ids.get(i)
+      try {
+        // Skip elements with no resolved parent: "duplicate name among siblings"
+        // is meaningless without a real shared parent, and grouping every orphan
+        // under a synthetic key would flag unrelated elements as duplicates.
+        // Orphans are reported separately by RULE_ORPHAN_ELEMENT.
+        const parent = idx.contained.get(id) ?? idx.aggParent.get(id)
+        if (parent === undefined) continue
+        const ent  = getLine<IfcBaseEntity>(api, modelId, id)
+        const name = getStr(ent.Name).trim()
+        if (!name) continue
 
-      if (!siblingGroups.has(parent)) siblingGroups.set(parent, new Map())
-      const nameMap = siblingGroups.get(parent)!
-      const existing = nameMap.get(name) ?? []
-      existing.push(id)
-      nameMap.set(name, existing)
+        if (!siblingGroups.has(parent)) siblingGroups.set(parent, new Map())
+        const nameMap = siblingGroups.get(parent)!
+        const existing = nameMap.get(name) ?? []
+        existing.push(id)
+        nameMap.set(name, existing)
+      } catch { /* corrupt entity — skip */ }
     }
   }
 
@@ -533,20 +552,22 @@ async function ruleDuplicateName(
     for (const [name, ids] of nameMap) {
       if (ids.length < 2) continue
       for (const id of ids) {
-        const ent = getLine<IfcBaseEntity>(api, modelId, id)
-        const typeId = ent.type
-        issues.push({
-          id: newIssueId(),
-          ruleId: 'RULE_DUPLICATE_NAME',
-          severity: 'warning',
-          expressId: id,
-          globalId: getStr(ent.GlobalId),
-          ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
-          elementName: name,
-          message: `Duplicate Name "${name}" among siblings`,
-          path: getSpatialPath(id, idx),
-          autoFixable: false,
-        })
+        try {
+          const ent = getLine<IfcBaseEntity>(api, modelId, id)
+          const typeId = ent.type
+          issues.push({
+            id: newIssueId(),
+            ruleId: 'RULE_DUPLICATE_NAME',
+            severity: 'warning',
+            expressId: id,
+            globalId: getStr(ent.GlobalId),
+            ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+            elementName: name,
+            message: `Duplicate Name "${name}" among siblings`,
+            path: getSpatialPath(id, idx),
+            autoFixable: false,
+          })
+        } catch { /* corrupt entity — skip */ }
       }
     }
   }
@@ -581,26 +602,28 @@ async function ruleNamingConvention(
 
     const ids = api.GetLineIDsWithType(modelId, typeId)
     for (let i = 0; i < ids.size(); i++) {
-      const id  = ids.get(i)
-      const ent = getLine<IfcBaseEntity>(api, modelId, id)
-      const name = getStr(ent.Name).trim()
-      for (const rule of matchingRules) {
-        if (!rule.regex.test(name)) {
-          issues.push({
-            id: newIssueId(),
-            ruleId: 'RULE_NAMING_CONVENTION',
-            severity: 'warning',
-            expressId: id,
-            globalId: getStr(ent.GlobalId),
-            ifcClass: className,
-            elementName: name || '(empty)',
-            message: `Name "${name}" does not match pattern ${rule.regex.toString()}`,
-            path: getSpatialPath(id, idx),
-            autoFixable: false,
-          })
-          break
+      const id = ids.get(i)
+      try {
+        const ent  = getLine<IfcBaseEntity>(api, modelId, id)
+        const name = getStr(ent.Name).trim()
+        for (const rule of matchingRules) {
+          if (!rule.regex.test(name)) {
+            issues.push({
+              id: newIssueId(),
+              ruleId: 'RULE_NAMING_CONVENTION',
+              severity: 'warning',
+              expressId: id,
+              globalId: getStr(ent.GlobalId),
+              ifcClass: className,
+              elementName: name || '(empty)',
+              message: `Name "${name}" does not match pattern ${rule.regex.toString()}`,
+              path: getSpatialPath(id, idx),
+              autoFixable: false,
+            })
+            break
+          }
         }
-      }
+      } catch { /* corrupt entity — skip */ }
     }
   }
   return issues
@@ -616,11 +639,13 @@ async function ruleMissingType(
 
   const relTypeIds = api.GetLineIDsWithType(modelId, IFCRELDEFINESBYTYPE)
   for (let i = 0; i < relTypeIds.size(); i++) {
-    const rel = getLine<IfcRelDefByType>(api, modelId, relTypeIds.get(i))
-    for (const ref of rel.RelatedObjects ?? []) {
-      const id = getRefId(ref)
-      if (id !== null) hasType.add(id)
-    }
+    try {
+      const rel = getLine<IfcRelDefByType>(api, modelId, relTypeIds.get(i))
+      for (const ref of rel.RelatedObjects ?? []) {
+        const id = getRefId(ref)
+        if (id !== null) hasType.add(id)
+      }
+    } catch { /* corrupt relation — skip */ }
   }
 
   for (const typeId of ELEMENT_TYPES) {
@@ -628,19 +653,21 @@ async function ruleMissingType(
     for (let i = 0; i < ids.size(); i++) {
       const id = ids.get(i)
       if (!hasType.has(id)) {
-        const ent = getLine<IfcBaseEntity>(api, modelId, id)
-        issues.push({
-          id: newIssueId(),
-          ruleId: 'RULE_MISSING_TYPE',
-          severity: 'warning',
-          expressId: id,
-          globalId: getStr(ent.GlobalId),
-          ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
-          elementName: getStr(ent.Name) || '(unnamed)',
-          message: 'Element has no associated IfcTypeObject',
-          path: getSpatialPath(id, idx),
-          autoFixable: false,
-        })
+        try {
+          const ent = getLine<IfcBaseEntity>(api, modelId, id)
+          issues.push({
+            id: newIssueId(),
+            ruleId: 'RULE_MISSING_TYPE',
+            severity: 'warning',
+            expressId: id,
+            globalId: getStr(ent.GlobalId),
+            ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+            elementName: getStr(ent.Name) || '(unnamed)',
+            message: 'Element has no associated IfcTypeObject',
+            path: getSpatialPath(id, idx),
+            autoFixable: false,
+          })
+        } catch { /* corrupt entity — skip */ }
       }
     }
   }
@@ -658,27 +685,29 @@ async function ruleDuplicateGuid(
   for (const typeId of allTypes) {
     const ids = api.GetLineIDsWithType(modelId, typeId)
     for (let i = 0; i < ids.size(); i++) {
-      const id  = ids.get(i)
-      const ent = getLine<IfcBaseEntity>(api, modelId, id)
-      const guid = getStr(ent.GlobalId)
-      if (!guid) continue
+      const id = ids.get(i)
+      try {
+        const ent  = getLine<IfcBaseEntity>(api, modelId, id)
+        const guid = getStr(ent.GlobalId)
+        if (!guid) continue
 
-      if (seen.has(guid)) {
-        issues.push({
-          id: newIssueId(),
-          ruleId: 'RULE_DUPLICATE_GUID',
-          severity: 'error',
-          expressId: id,
-          globalId: guid,
-          ifcClass: TYPE_NAME[ent.type] ?? 'IfcElement',
-          elementName: getStr(ent.Name) || '(unnamed)',
-          message: `Duplicate GlobalId "${guid}" (first seen at #${seen.get(guid)})`,
-          path: [],
-          autoFixable: true,
-        })
-      } else {
-        seen.set(guid, id)
-      }
+        if (seen.has(guid)) {
+          issues.push({
+            id: newIssueId(),
+            ruleId: 'RULE_DUPLICATE_GUID',
+            severity: 'error',
+            expressId: id,
+            globalId: guid,
+            ifcClass: TYPE_NAME[ent.type] ?? 'IfcElement',
+            elementName: getStr(ent.Name) || '(unnamed)',
+            message: `Duplicate GlobalId "${guid}" (first seen at #${seen.get(guid)})`,
+            path: [],
+            autoFixable: true,
+          })
+        } else {
+          seen.set(guid, id)
+        }
+      } catch { /* corrupt entity — skip */ }
     }
   }
   return issues
@@ -771,19 +800,21 @@ async function ruleOrphanElement(
     for (let i = 0; i < ids.size(); i++) {
       const id = ids.get(i)
       if (!idx.contained.has(id) && !idx.aggParent.has(id)) {
-        const ent = getLine<IfcBaseEntity>(api, modelId, id)
-        issues.push({
-          id: newIssueId(),
-          ruleId: 'RULE_ORPHAN_ELEMENT',
-          severity: 'error',
-          expressId: id,
-          globalId: getStr(ent.GlobalId),
-          ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
-          elementName: getStr(ent.Name) || '(unnamed)',
-          message: 'Element is not contained in any spatial structure element',
-          path: [],
-          autoFixable: false,
-        })
+        try {
+          const ent = getLine<IfcBaseEntity>(api, modelId, id)
+          issues.push({
+            id: newIssueId(),
+            ruleId: 'RULE_ORPHAN_ELEMENT',
+            severity: 'error',
+            expressId: id,
+            globalId: getStr(ent.GlobalId),
+            ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+            elementName: getStr(ent.Name) || '(unnamed)',
+            message: 'Element is not contained in any spatial structure element',
+            path: [],
+            autoFixable: false,
+          })
+        } catch { /* corrupt entity — skip */ }
       }
     }
   }
@@ -807,19 +838,21 @@ async function ruleWrongContainer(
       const containerType = idx.entityTypes.get(containerId)
       // Flag if element is directly inside IfcSite (no Building/Storey in between)
       if (containerType === IFCSITE) {
-        const ent = getLine<IfcBaseEntity>(api, modelId, id)
-        issues.push({
-          id: newIssueId(),
-          ruleId: 'RULE_WRONG_CONTAINER',
-          severity: 'error',
-          expressId: id,
-          globalId: getStr(ent.GlobalId),
-          ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
-          elementName: getStr(ent.Name) || '(unnamed)',
-          message: 'Element is directly contained in IfcSite — should be inside a Building or Storey',
-          path: getSpatialPath(id, idx),
-          autoFixable: false,
-        })
+        try {
+          const ent = getLine<IfcBaseEntity>(api, modelId, id)
+          issues.push({
+            id: newIssueId(),
+            ruleId: 'RULE_WRONG_CONTAINER',
+            severity: 'error',
+            expressId: id,
+            globalId: getStr(ent.GlobalId),
+            ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+            elementName: getStr(ent.Name) || '(unnamed)',
+            message: 'Element is directly contained in IfcSite — should be inside a Building or Storey',
+            path: getSpatialPath(id, idx),
+            autoFixable: false,
+          })
+        } catch { /* corrupt entity — skip */ }
       }
     }
   }
@@ -882,22 +915,24 @@ async function ruleInvalidGuidFormat(
   for (const typeId of allTypes) {
     const ids = api.GetLineIDsWithType(modelId, typeId)
     for (let i = 0; i < ids.size(); i++) {
-      const id  = ids.get(i)
-      const ent = getLine<IfcBaseEntity>(api, modelId, id)
-      const guid = getStr(ent.GlobalId)
-      if (!guid || IFC_GUID_RE.test(guid)) continue
-      issues.push({
-        id: newIssueId(),
-        ruleId: 'RULE_INVALID_GUID_FORMAT',
-        severity: 'error',
-        expressId: id,
-        globalId: guid,
-        ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
-        elementName: getStr(ent.Name) || '(unnamed)',
-        message: `GlobalId "${guid}" is not a valid IFC GUID — must be exactly 22 characters from the set [0-9A-Za-z_$].`,
-        path: getSpatialPath(id, idx),
-        autoFixable: true,
-      })
+      const id = ids.get(i)
+      try {
+        const ent  = getLine<IfcBaseEntity>(api, modelId, id)
+        const guid = getStr(ent.GlobalId)
+        if (!guid || IFC_GUID_RE.test(guid)) continue
+        issues.push({
+          id: newIssueId(),
+          ruleId: 'RULE_INVALID_GUID_FORMAT',
+          severity: 'error',
+          expressId: id,
+          globalId: guid,
+          ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+          elementName: getStr(ent.Name) || '(unnamed)',
+          message: `GlobalId "${guid}" is not a valid IFC GUID — must be exactly 22 characters from the set [0-9A-Za-z_$].`,
+          path: getSpatialPath(id, idx),
+          autoFixable: true,
+        })
+      } catch { /* corrupt entity — skip */ }
     }
   }
   return issues
@@ -922,19 +957,21 @@ async function ruleSpatialHierarchy(
       if (parentId === undefined) continue
       const parentType = idx.entityTypes.get(parentId)
       if (parentType !== undefined && !allowedParentTypes.includes(parentType)) {
-        const ent = getLine<IfcBaseEntity>(api, modelId, id)
-        issues.push({
-          id: newIssueId(),
-          ruleId: 'RULE_SPATIAL_HIERARCHY',
-          severity: 'error',
-          expressId: id,
-          globalId: getStr(ent.GlobalId),
-          ifcClass: TYPE_NAME[typeId] ?? '',
-          elementName: getStr(ent.Name) || '(unnamed)',
-          message,
-          path: getSpatialPath(id, idx),
-          autoFixable: false,
-        })
+        try {
+          const ent = getLine<IfcBaseEntity>(api, modelId, id)
+          issues.push({
+            id: newIssueId(),
+            ruleId: 'RULE_SPATIAL_HIERARCHY',
+            severity: 'error',
+            expressId: id,
+            globalId: getStr(ent.GlobalId),
+            ifcClass: TYPE_NAME[typeId] ?? '',
+            elementName: getStr(ent.Name) || '(unnamed)',
+            message,
+            path: getSpatialPath(id, idx),
+            autoFixable: false,
+          })
+        } catch { /* corrupt entity — skip */ }
       }
     }
   }
@@ -1028,18 +1065,33 @@ async function ruleEmptyPropertyValue(
       if (propId === null) continue
       try {
         const prop = api.GetLine(modelId, propId, false) as unknown as {
-          type: number; Name?: { type: 1; value: string }; NominalValue: unknown
+          type: number
+          Name?: { type: 1; value: string }
+          NominalValue: unknown
+          EnumerationValues?: unknown[] | null
         }
-        if (prop.type !== IFCPROPERTYSINGLEVALUE) continue
-        const name = prop.Name?.value ?? ''
-        const val  = prop.NominalValue
-        const isEmpty =
-          val === null || val === undefined ||
-          (typeof val === 'object' && (val as { value?: unknown }).value === null) ||
-          (typeof val === 'object' && (val as { value?: unknown }).value === '$') ||
-          (typeof val === 'object' && typeof (val as { value?: unknown }).value === 'string' &&
-            ((val as { value: string }).value.trim() === '' ||
-             (val as { value: string }).value === 'Unknown'))
+
+        let name = ''
+        let isEmpty = false
+
+        if (prop.type === IFCPROPERTYSINGLEVALUE) {
+          name = prop.Name?.value ?? ''
+          const val = prop.NominalValue
+          isEmpty =
+            val === null || val === undefined ||
+            (typeof val === 'object' && (val as { value?: unknown }).value === null) ||
+            (typeof val === 'object' && (val as { value?: unknown }).value === '$') ||
+            (typeof val === 'object' && typeof (val as { value?: unknown }).value === 'string' &&
+              ((val as { value: string }).value.trim() === '' ||
+               (val as { value: string }).value === 'Unknown'))
+        } else if (prop.type === IFCPROPERTYENUMERATEDVALUE) {
+          name = prop.Name?.value ?? ''
+          const ev = prop.EnumerationValues
+          isEmpty = ev === null || ev === undefined || (Array.isArray(ev) && ev.length === 0)
+        } else {
+          continue
+        }
+
         if (!isEmpty) continue
 
         const key      = `${psetName}||${name}`
@@ -1119,19 +1171,21 @@ async function ruleMissingMaterial(
     for (let i = 0; i < ids.size(); i++) {
       const id = ids.get(i)
       if (hasMaterial.has(id)) continue
-      const ent = getLine<IfcBaseEntity>(api, modelId, id)
-      issues.push({
-        id: newIssueId(),
-        ruleId: 'RULE_MISSING_MATERIAL',
-        severity: 'warning',
-        expressId: id,
-        globalId: getStr(ent.GlobalId),
-        ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
-        elementName: getStr(ent.Name) || '(unnamed)',
-        message: `${TYPE_NAME[typeId] ?? 'Element'} has no associated material (IfcRelAssociatesMaterial).`,
-        path: getSpatialPath(id, idx),
-        autoFixable: false,
-      })
+      try {
+        const ent = getLine<IfcBaseEntity>(api, modelId, id)
+        issues.push({
+          id: newIssueId(),
+          ruleId: 'RULE_MISSING_MATERIAL',
+          severity: 'warning',
+          expressId: id,
+          globalId: getStr(ent.GlobalId),
+          ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+          elementName: getStr(ent.Name) || '(unnamed)',
+          message: `${TYPE_NAME[typeId] ?? 'Element'} has no associated material (IfcRelAssociatesMaterial).`,
+          path: getSpatialPath(id, idx),
+          autoFixable: false,
+        })
+      } catch { /* corrupt entity — skip */ }
     }
   }
   return issues
@@ -1150,19 +1204,21 @@ async function ruleElementInBuilding(
       const containerId = idx.contained.get(id)
       if (containerId === undefined) continue
       if (idx.entityTypes.get(containerId) === IFCBUILDING) {
-        const ent = getLine<IfcBaseEntity>(api, modelId, id)
-        issues.push({
-          id: newIssueId(),
-          ruleId: 'RULE_ELEMENT_IN_BUILDING',
-          severity: 'error',
-          expressId: id,
-          globalId: getStr(ent.GlobalId),
-          ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
-          elementName: getStr(ent.Name) || '(unnamed)',
-          message: 'Element is directly contained in IfcBuilding — it should be placed inside an IfcBuildingStorey.',
-          path: getSpatialPath(id, idx),
-          autoFixable: false,
-        })
+        try {
+          const ent = getLine<IfcBaseEntity>(api, modelId, id)
+          issues.push({
+            id: newIssueId(),
+            ruleId: 'RULE_ELEMENT_IN_BUILDING',
+            severity: 'error',
+            expressId: id,
+            globalId: getStr(ent.GlobalId),
+            ifcClass: TYPE_NAME[typeId] ?? 'IfcElement',
+            elementName: getStr(ent.Name) || '(unnamed)',
+            message: 'Element is directly contained in IfcBuilding — it should be placed inside an IfcBuildingStorey.',
+            path: getSpatialPath(id, idx),
+            autoFixable: false,
+          })
+        } catch { /* corrupt entity — skip */ }
       }
     }
   }
@@ -1384,14 +1440,16 @@ async function ruleMissingStorey(
     const children = idx.aggChildren.get(bid) ?? []
     const hasStorey = children.some((cid) => idx.entityTypes.get(cid) === IFCBUILDINGSTOREY)
     if (!hasStorey) {
-      const ent = getLine<IfcBaseEntity>(api, modelId, bid)
-      issues.push({
-        id: newIssueId(), ruleId: 'RULE_MISSING_STOREY', severity: 'warning',
-        expressId: bid, globalId: getStr(ent.GlobalId),
-        ifcClass: 'IfcBuilding', elementName: getStr(ent.Name) || '(unnamed)',
-        message: 'IfcBuilding has no IfcBuildingStorey — elements cannot be organized by floor.',
-        path: getSpatialPath(bid, idx), autoFixable: false,
-      })
+      try {
+        const ent = getLine<IfcBaseEntity>(api, modelId, bid)
+        issues.push({
+          id: newIssueId(), ruleId: 'RULE_MISSING_STOREY', severity: 'warning',
+          expressId: bid, globalId: getStr(ent.GlobalId),
+          ifcClass: 'IfcBuilding', elementName: getStr(ent.Name) || '(unnamed)',
+          message: 'IfcBuilding has no IfcBuildingStorey — elements cannot be organized by floor.',
+          path: getSpatialPath(bid, idx), autoFixable: false,
+        })
+      } catch { /* corrupt entity — skip */ }
     }
   }
   return issues
@@ -1411,14 +1469,16 @@ async function ruleEmptyStorey(
       (cid) => idx.entityTypes.get(cid) === IFCSPACE,
     ).length
     if (elemCount === 0 && spaceCount === 0) {
-      const ent = getLine<IfcBaseEntity>(api, modelId, sid)
-      issues.push({
-        id: newIssueId(), ruleId: 'RULE_EMPTY_STOREY', severity: 'info',
-        expressId: sid, globalId: getStr(ent.GlobalId),
-        ifcClass: 'IfcBuildingStorey', elementName: getStr(ent.Name) || '(unnamed)',
-        message: 'IfcBuildingStorey has no contained elements or spaces.',
-        path: getSpatialPath(sid, idx), autoFixable: false,
-      })
+      try {
+        const ent = getLine<IfcBaseEntity>(api, modelId, sid)
+        issues.push({
+          id: newIssueId(), ruleId: 'RULE_EMPTY_STOREY', severity: 'info',
+          expressId: sid, globalId: getStr(ent.GlobalId),
+          ifcClass: 'IfcBuildingStorey', elementName: getStr(ent.Name) || '(unnamed)',
+          message: 'IfcBuildingStorey has no contained elements or spaces.',
+          path: getSpatialPath(sid, idx), autoFixable: false,
+        })
+      } catch { /* corrupt entity — skip */ }
     }
   }
   return issues
@@ -1460,16 +1520,18 @@ async function ruleProjectLongNameMissing(
   const projectIds = api.GetLineIDsWithType(modelId, IFCPROJECT)
   for (let i = 0; i < projectIds.size(); i++) {
     const id = projectIds.get(i)
-    const ent = getLine<IfcBaseEntity>(api, modelId, id)
-    if (!getStr(ent.LongName).trim()) {
-      issues.push({
-        id: newIssueId(), ruleId: 'RULE_PROJECT_LONGNAME_MISSING', severity: 'warning',
-        expressId: id, globalId: getStr(ent.GlobalId),
-        ifcClass: 'IfcProject', elementName: getStr(ent.Name) || '(unnamed project)',
-        message: 'IfcProject has no LongName (official project name) — required for formal deliveries.',
-        path: [], autoFixable: false,
-      })
-    }
+    try {
+      const ent = getLine<IfcBaseEntity>(api, modelId, id)
+      if (!getStr(ent.LongName).trim()) {
+        issues.push({
+          id: newIssueId(), ruleId: 'RULE_PROJECT_LONGNAME_MISSING', severity: 'warning',
+          expressId: id, globalId: getStr(ent.GlobalId),
+          ifcClass: 'IfcProject', elementName: getStr(ent.Name) || '(unnamed project)',
+          message: 'IfcProject has no LongName (official project name) — required for formal deliveries.',
+          path: [], autoFixable: false,
+        })
+      }
+    } catch { /* corrupt entity — skip */ }
   }
   return issues
 }
@@ -1509,20 +1571,22 @@ async function ruleIso19650ProjectInfo(
   const projectIds = api.GetLineIDsWithType(modelId, IFCPROJECT)
   for (let i = 0; i < projectIds.size(); i++) {
     const id = projectIds.get(i)
-    const ent = getLine<IfcBaseEntity>(api, modelId, id)
-    const missing: string[] = []
-    if (!getStr(ent.LongName).trim())    missing.push('LongName (project name)')
-    if (!getStr(ent.Description).trim()) missing.push('Description (delivery phase)')
-    if (!getStr(ent.ObjectType).trim())  missing.push('ObjectType (delivery type)')
-    if (missing.length > 0) {
-      issues.push({
-        id: newIssueId(), ruleId: 'RULE_ISO19650_PROJECT_INFO', severity: 'warning',
-        expressId: id, globalId: getStr(ent.GlobalId),
-        ifcClass: 'IfcProject', elementName: getStr(ent.Name) || '(unnamed project)',
-        message: `IfcProject missing ISO 19650 required fields: ${missing.join(', ')}.`,
-        path: [], autoFixable: false,
-      })
-    }
+    try {
+      const ent = getLine<IfcBaseEntity>(api, modelId, id)
+      const missing: string[] = []
+      if (!getStr(ent.LongName).trim())    missing.push('LongName (project name)')
+      if (!getStr(ent.Description).trim()) missing.push('Description (delivery phase)')
+      if (!getStr(ent.ObjectType).trim())  missing.push('ObjectType (delivery type)')
+      if (missing.length > 0) {
+        issues.push({
+          id: newIssueId(), ruleId: 'RULE_ISO19650_PROJECT_INFO', severity: 'warning',
+          expressId: id, globalId: getStr(ent.GlobalId),
+          ifcClass: 'IfcProject', elementName: getStr(ent.Name) || '(unnamed project)',
+          message: `IfcProject missing ISO 19650 required fields: ${missing.join(', ')}.`,
+          path: [], autoFixable: false,
+        })
+      }
+    } catch { /* corrupt entity — skip */ }
   }
   return issues
 }
@@ -2058,20 +2122,22 @@ async function ruleProxyOveruse(
   const issues: ValidationIssue[] = []
 
   for (let i = 0; i < proxyCount; i++) {
-    const id  = proxyIds.get(i)
-    const ent = getLine<IfcBaseEntity>(api, modelId, id)
-    issues.push({
-      id:          newIssueId(),
-      ruleId:      'RULE_PROXY_OVERUSE',
-      severity:    'warning',
-      expressId:   id,
-      globalId:    getStr(ent.GlobalId),
-      ifcClass:    'IfcBuildingElementProxy',
-      elementName: getStr(ent.Name) || '(unnamed)',
-      message:     `Proxy element not converted to a proper IFC type (${pct}% of model elements are proxies). Re-export from the source application or convert families to typed IFC elements.`,
-      path:        getSpatialPath(id, idx),
-      autoFixable: false,
-    })
+    const id = proxyIds.get(i)
+    try {
+      const ent = getLine<IfcBaseEntity>(api, modelId, id)
+      issues.push({
+        id:          newIssueId(),
+        ruleId:      'RULE_PROXY_OVERUSE',
+        severity:    'warning',
+        expressId:   id,
+        globalId:    getStr(ent.GlobalId),
+        ifcClass:    'IfcBuildingElementProxy',
+        elementName: getStr(ent.Name) || '(unnamed)',
+        message:     `Proxy element not converted to a proper IFC type (${pct}% of model elements are proxies). Re-export from the source application or convert families to typed IFC elements.`,
+        path:        getSpatialPath(id, idx),
+        autoFixable: false,
+      })
+    } catch { /* corrupt entity — skip */ }
   }
   return issues
 }
@@ -2192,6 +2258,324 @@ async function ruleFileSizeAnomaly(
   }]
 }
 
+// ── Sprint V6 rules ───────────────────────────────────────────────────────────
+
+async function ruleOpeningWithoutHost(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  // Collect openings that are properly hosted via IfcRelVoidsElement
+  const hostedIds = new Set<number>()
+  const voidRelIds = api.GetLineIDsWithType(modelId, IFCRELVOIDSELEMENT)
+  for (let i = 0; i < voidRelIds.size(); i++) {
+    try {
+      const rel = getLine<{ RelatedOpeningElement?: MaybeRef }>(api, modelId, voidRelIds.get(i))
+      const openId = getRefId(rel.RelatedOpeningElement as MaybeRef)
+      if (openId !== null) hostedIds.add(openId)
+    } catch { /* corrupt rel */ }
+  }
+
+  const issues: ValidationIssue[] = []
+  const openingIds = api.GetLineIDsWithType(modelId, IFCOPENINGELEMENT)
+  for (let i = 0; i < openingIds.size(); i++) {
+    const id = openingIds.get(i)
+    if (hostedIds.has(id)) continue
+    try {
+      const ent = getLine<IfcBaseEntity>(api, modelId, id)
+      issues.push({
+        id: newIssueId(),
+        ruleId: 'RULE_OPENING_WITHOUT_HOST',
+        severity: 'warning',
+        expressId: id,
+        globalId: getStr(ent.GlobalId),
+        ifcClass: 'IfcOpeningElement',
+        elementName: getStr(ent.Name) || '(unnamed)',
+        message: 'IfcOpeningElement is not connected to any host element via IfcRelVoidsElement — orphan openings cause geometry errors in viewers and exporters.',
+        path: getSpatialPath(id, idx),
+        autoFixable: false,
+      })
+    } catch { /* corrupt entity */ }
+  }
+  return issues
+}
+
+async function ruleStoreyElevationDuplicate(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+  const buildingIds = api.GetLineIDsWithType(modelId, IFCBUILDING)
+
+  for (let bi = 0; bi < buildingIds.size(); bi++) {
+    const bid = buildingIds.get(bi)
+    const children = idx.aggChildren.get(bid) ?? []
+    const storeyIds = children.filter((cid) => idx.entityTypes.get(cid) === IFCBUILDINGSTOREY)
+    if (storeyIds.length < 2) continue
+
+    // Map elevation (rounded to nearest mm) → list of storey expressIds
+    const elevBuckets = new Map<number, number[]>()
+    for (const sid of storeyIds) {
+      try {
+        const storey = getLine<IfcBaseEntity & { Elevation?: { type: 4; value: number } | null }>(
+          api, modelId, sid,
+        )
+        if (storey.Elevation == null) continue
+        // Round to nearest mm to tolerate floating-point noise between authoring tools
+        const elevMm = Math.round(storey.Elevation.value * 1000)
+        const bucket = elevBuckets.get(elevMm) ?? []
+        bucket.push(sid)
+        elevBuckets.set(elevMm, bucket)
+      } catch { continue }
+    }
+
+    for (const [, ids] of elevBuckets) {
+      if (ids.length < 2) continue
+      for (const sid of ids) {
+        try {
+          const storey = getLine<IfcBaseEntity & { Elevation?: { type: 4; value: number } | null }>(
+            api, modelId, sid,
+          )
+          const elevM = (storey.Elevation?.value ?? 0).toFixed(3)
+          issues.push({
+            id: newIssueId(),
+            ruleId: 'RULE_STOREY_ELEVATION_DUPLICATE',
+            severity: 'warning',
+            expressId: sid,
+            globalId: getStr(storey.GlobalId),
+            ifcClass: 'IfcBuildingStorey',
+            elementName: getStr(storey.Name) || '(unnamed)',
+            message: `IfcBuildingStorey shares elevation ${elevM} m with another storey in the same building — duplicate elevations indicate a misconfigured level.`,
+            path: getSpatialPath(sid, idx),
+            autoFixable: false,
+          })
+        } catch { continue }
+      }
+    }
+  }
+  return issues
+}
+
+async function ruleUnitConsistency(
+  api: IfcAPI,
+  modelId: number,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+
+  const unitAssignmentIds = api.GetLineIDsWithType(modelId, IFCUNITASSIGNMENT)
+  for (let i = 0; i < unitAssignmentIds.size(); i++) {
+    const uaId = unitAssignmentIds.get(i)
+    try {
+      const ua = getLine<{ expressID: number; type: number; Units: (IfcRefValue | null)[] }>(
+        api, modelId, uaId,
+      )
+      if (!Array.isArray(ua.Units)) continue
+
+      for (const unitRef of ua.Units) {
+        const uid = getRefId(unitRef as MaybeRef)
+        if (!uid) continue
+        try {
+          const unit = getLine<{
+            expressID: number; type: number
+            UnitType?: IfcEnumValue | null
+            Prefix?: IfcEnumValue | null
+            Name?: MaybeString
+          }>(api, modelId, uid)
+
+          // Only flag imperial length units
+          if (unit.UnitType?.value !== 'LENGTHUNIT') continue
+          if (unit.type !== IFCCONVERSIONBASEDUNIT) continue
+
+          const name = (unit.Name?.value ?? '').toUpperCase()
+          const IMPERIAL = ['FOOT', 'FEET', 'INCH', 'YARD', 'MILE']
+          if (!IMPERIAL.some(imp => name.includes(imp))) continue
+
+          issues.push({
+            id: newIssueId(),
+            ruleId: 'RULE_UNIT_CONSISTENCY',
+            severity: 'warning',
+            expressId: uaId,
+            globalId: null,
+            ifcClass: 'IfcUnitAssignment',
+            elementName: `LENGTHUNIT = "${unit.Name?.value ?? '?'}"`,
+            message: `Model length unit is "${unit.Name?.value ?? '?'}" (imperial). IFC interchange expects SI metric units; imperial values cause incorrect area/volume calculations in downstream tools.`,
+            path: [],
+            autoFixable: false,
+          })
+        } catch { continue }
+      }
+    } catch { continue }
+  }
+  return issues
+}
+
+async function ruleSpaceAreaMissing(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+
+  // Spaces that own at least one IfcElementQuantity containing NetFloorArea
+  const spacesWithArea = new Set<number>()
+
+  const relIds = api.GetLineIDsWithType(modelId, IFCRELDEFINESBYPROPERTIES)
+  for (let i = 0; i < relIds.size(); i++) {
+    try {
+      const rel = getLine<IfcRelDefByProps>(api, modelId, relIds.get(i))
+      if (!rel.RelatingPropertyDefinition || !rel.RelatedObjects) continue
+
+      const defId = rel.RelatingPropertyDefinition.value
+      const defLine = getLine<{ type: number; Quantities?: (IfcRefValue | null)[] }>(
+        api, modelId, defId,
+      )
+      if (defLine.type !== IFCELEMENTQUANTITY) continue
+      if (!Array.isArray(defLine.Quantities)) continue
+
+      let hasNetFloorArea = false
+      for (const qRef of defLine.Quantities) {
+        const qId = getRefId(qRef as MaybeRef)
+        if (!qId) continue
+        try {
+          const qty = getLine<{ type: number; Name?: MaybeString }>(api, modelId, qId)
+          if (qty.type === IFCQUANTITYAREA && getStr(qty.Name) === 'NetFloorArea') {
+            hasNetFloorArea = true
+            break
+          }
+        } catch { continue }
+      }
+      if (!hasNetFloorArea) continue
+
+      for (const ref of rel.RelatedObjects) {
+        if (ref?.value != null) spacesWithArea.add(ref.value)
+      }
+    } catch { /* corrupt line */ }
+  }
+
+  const spaceIds = api.GetLineIDsWithType(modelId, IFCSPACE)
+  if (spaceIds.size() === 0) return issues
+
+  for (let i = 0; i < spaceIds.size(); i++) {
+    const sid = spaceIds.get(i)
+    if (spacesWithArea.has(sid)) continue
+    try {
+      const space = getLine<IfcBaseEntity>(api, modelId, sid)
+      issues.push({
+        id: newIssueId(),
+        ruleId: 'RULE_SPACE_AREA_MISSING',
+        severity: 'warning',
+        expressId: sid,
+        globalId: getStr(space.GlobalId) || null,
+        ifcClass: 'IfcSpace',
+        elementName: getStr(space.Name) || getStr(space.LongName) || `#${sid}`,
+        message: 'IfcSpace has no NetFloorArea quantity — required for energy analysis, room schedules, and QS workflows.',
+        path: getSpatialPath(sid, idx),
+        autoFixable: false,
+      })
+    } catch { /* corrupt */ }
+  }
+  return issues
+}
+
+async function ruleConnectedMep(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+
+  // Build the set of MEP elements that have at least one IfcDistributionPort connected
+  const connectedIds = new Set<number>()
+  const relIds = api.GetLineIDsWithType(modelId, IFCRELCONNECTSPORTTOELEMENT)
+  for (let i = 0; i < relIds.size(); i++) {
+    try {
+      const rel = getLine<{ RelatedElement?: IfcRefValue | null }>(api, modelId, relIds.get(i))
+      const eid = getRefId(rel.RelatedElement)
+      if (eid != null) connectedIds.add(eid)
+    } catch { continue }
+  }
+
+  const MEP_SEGMENT_TYPES = [IFCPIPESEGMENT, IFCDUCTSEGMENT, IFCFLOWSEGMENT]
+  for (const typeId of MEP_SEGMENT_TYPES) {
+    const ids = api.GetLineIDsWithType(modelId, typeId)
+    for (let i = 0; i < ids.size(); i++) {
+      const id = ids.get(i)
+      if (connectedIds.has(id)) continue
+      try {
+        const ent = getLine<IfcBaseEntity>(api, modelId, id)
+        const className = TYPE_NAME[typeId] ?? 'IfcFlowSegment'
+        issues.push({
+          id: newIssueId(),
+          ruleId: 'RULE_CONNECTED_MEP',
+          severity: 'warning',
+          expressId: id,
+          globalId: getStr(ent.GlobalId) || null,
+          ifcClass: className,
+          elementName: getStr(ent.Name) || `#${id}`,
+          message: `${className} has no IfcDistributionPort connection — isolated MEP segments are excluded from system flow and energy calculations.`,
+          path: getSpatialPath(id, idx),
+          autoFixable: false,
+        })
+      } catch { continue }
+    }
+  }
+  return issues
+}
+
+async function ruleStoreyElevationOrder(
+  api: IfcAPI,
+  modelId: number,
+  idx: SpatialIndex,
+): Promise<ValidationIssue[]> {
+  const issues: ValidationIssue[] = []
+  const buildingIds = api.GetLineIDsWithType(modelId, IFCBUILDING)
+
+  for (let bi = 0; bi < buildingIds.size(); bi++) {
+    const bid = buildingIds.get(bi)
+    const children = idx.aggChildren.get(bid) ?? []
+    const storeyIds = children.filter((cid) => idx.entityTypes.get(cid) === IFCBUILDINGSTOREY)
+    if (storeyIds.length < 2) continue
+
+    type StoreyEntry = { id: number; elevM: number; name: string }
+    const storeys: StoreyEntry[] = []
+    for (const sid of storeyIds) {
+      try {
+        const storey = getLine<IfcBaseEntity & { Elevation?: { type: 4; value: number } | null }>(
+          api, modelId, sid,
+        )
+        if (storey.Elevation == null) continue
+        storeys.push({ id: sid, elevM: storey.Elevation.value, name: getStr(storey.Name) || `#${sid}` })
+      } catch { continue }
+    }
+    if (storeys.length < 2) continue
+
+    // Detect any storey whose elevation is lower than the highest elevation seen so far.
+    // Comparing against max(predecessors) instead of just the immediate predecessor catches
+    // all out-of-order storeys regardless of where the inversion first appears.
+    let maxPrevElev = storeys[0].elevM
+    for (let i = 1; i < storeys.length; i++) {
+      if (storeys[i].elevM < maxPrevElev) {
+        issues.push({
+          id: newIssueId(),
+          ruleId: 'RULE_STOREY_ELEVATION_ORDER',
+          severity: 'warning',
+          expressId: storeys[i].id,
+          globalId: null,
+          ifcClass: 'IfcBuildingStorey',
+          elementName: storeys[i].name,
+          message: `IfcBuildingStorey "${storeys[i].name}" (${storeys[i].elevM.toFixed(3)} m) has a lower elevation than an earlier storey in the same building — storeys should be listed in ascending elevation order.`,
+          path: getSpatialPath(storeys[i].id, idx),
+          autoFixable: false,
+        })
+      } else {
+        maxPrevElev = storeys[i].elevM
+      }
+    }
+  }
+  return issues
+}
+
 // ── Main validation handler ───────────────────────────────────────────────────
 
 type PostFn = (msg: unknown, transfer?: Transferable[]) => void
@@ -2282,7 +2666,13 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
       ruleId: string,
       fn: () => Promise<ValidationIssue[]>,
     ): Promise<void> => {
-      const issues = await fn()
+      let issues: ValidationIssue[] = []
+      try {
+        issues = await fn()
+      } catch (err: unknown) {
+        // Isolate rule failures: one rule throwing must never abort the rest.
+        log.warn(`${ruleId} threw unexpectedly — skipping:`, err)
+      }
       allIssues.push(...issues)
       completedRules++
       const progress = Math.round((completedRules / totalRules) * 100)
@@ -2413,6 +2803,19 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
       await runRule('RULE_COORDINATE_OFFSET', () => ruleCoordinateOffset(api!, modelId))
     if (rules.RULE_FILE_SIZE_ANOMALY)
       await runRule('RULE_FILE_SIZE_ANOMALY', () => ruleFileSizeAnomaly(api!, modelId, buffer))
+    // ── Sprint V6 rules ──────────────────────────────────────────────
+    if (rules.RULE_OPENING_WITHOUT_HOST)
+      await runRule('RULE_OPENING_WITHOUT_HOST', () => ruleOpeningWithoutHost(api!, modelId, idx))
+    if (rules.RULE_STOREY_ELEVATION_DUPLICATE)
+      await runRule('RULE_STOREY_ELEVATION_DUPLICATE', () => ruleStoreyElevationDuplicate(api!, modelId, idx))
+    if (rules.RULE_UNIT_CONSISTENCY)
+      await runRule('RULE_UNIT_CONSISTENCY', () => ruleUnitConsistency(api!, modelId))
+    if (rules.RULE_SPACE_AREA_MISSING)
+      await runRule('RULE_SPACE_AREA_MISSING', () => ruleSpaceAreaMissing(api!, modelId, idx))
+    if (rules.RULE_CONNECTED_MEP)
+      await runRule('RULE_CONNECTED_MEP', () => ruleConnectedMep(api!, modelId, idx))
+    if (rules.RULE_STOREY_ELEVATION_ORDER)
+      await runRule('RULE_STOREY_ELEVATION_ORDER', () => ruleStoreyElevationOrder(api!, modelId, idx))
 
     // ── Compile final result ─────────────────────────────────────────
     const byRule: Record<string, number> = {}

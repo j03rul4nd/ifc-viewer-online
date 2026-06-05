@@ -1,5 +1,5 @@
 // ─── CustomProfileModal ───────────────────────────────────────────────────────
-// Modal for creating a custom validation profile.
+// Modal for creating or editing a custom validation profile.
 // Rules are grouped by ValidationCategoryType with Radix Switch toggles.
 // Persists up to 5 custom profiles in localStorage via validationStore.
 
@@ -15,10 +15,8 @@ import {
   getRuleLabel,
   getRuleDescription,
 } from '../types'
-import type { RulesConfig, ValidationCategoryType } from '../types'
+import type { RulesConfig, ValidationCategoryType, ValidationProfile } from '../types'
 import { getCoveredCategories } from './ValidationCoverageSummary'
-
-// ── Severity color ────────────────────────────────────────────────────────────
 
 function severityColor(sev: 'error' | 'warning' | 'info'): string {
   if (sev === 'error')   return 'var(--danger)'
@@ -26,11 +24,7 @@ function severityColor(sev: 'error' | 'warning' | 'info'): string {
   return '#5E9ED6'
 }
 
-// ── Icon options ──────────────────────────────────────────────────────────────
-
 const ICON_OPTIONS = ['⚙️', '🏗️', '🏢', '📐', '🔧', '🔍', '📋', '✅', '🌍', '🏛️']
-
-// ── Category order ────────────────────────────────────────────────────────────
 
 const CATEGORY_ORDER: ValidationCategoryType[] = [
   'schema', 'spatial', 'quality', 'lod', 'classification', 'mep', 'clash', 'iso19650',
@@ -53,7 +47,7 @@ function RuleRow({
   if (!meta) return null
 
   return (
-    <div className="flex items-start gap-3 py-2 group">
+    <div className="flex items-start gap-3 py-2.5 group">
       <Switch.Root
         checked={checked}
         onCheckedChange={onChange}
@@ -62,7 +56,7 @@ function RuleRow({
         style={{ background: checked ? 'var(--accent)' : 'var(--border)' }}
       >
         <Switch.Thumb
-          className="block w-3 h-3 bg-white rounded-full"
+          className="block w-3 h-3 bg-white rounded-full shadow-sm"
           style={{
             transform: checked ? 'translateX(17px)' : 'translateX(2px)',
             transition: 'transform 150ms ease',
@@ -70,7 +64,7 @@ function RuleRow({
         />
       </Switch.Root>
 
-      <label htmlFor={`rule-${ruleId}`} className="flex-1 min-w-0 cursor-pointer">
+      <label htmlFor={`rule-${ruleId}`} className="flex-1 min-w-0 cursor-pointer select-none">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[11px] text-[var(--text)] font-medium leading-tight">
             {getRuleLabel(ruleId, locale)}
@@ -124,33 +118,43 @@ function CategorySection({
   const { t } = useTranslation('validation')
   const rulesRecord = localRules as Record<string, unknown>
   const checkedCount = ruleIds.filter((id) => rulesRecord[id] === true).length
+  const allOn = checkedCount === ruleIds.length
 
   const toggleAll = (): void => {
-    const allOn = checkedCount === ruleIds.length
     ruleIds.forEach((id) => onToggle(id, !allOn))
   }
 
   return (
-    <div className="mb-1">
-      {/* Category header */}
-      <div className="flex items-center gap-2 py-1.5 sticky top-0 bg-[var(--surface)] z-10">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-dim)]">
+    <div className="mb-0.5">
+      <div
+        className="flex items-center gap-2 py-2 sticky top-0 z-10"
+        style={{ background: 'var(--surface)' }}
+      >
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-faint)]">
           {(t as (k: string) => string)(`catFull.${cat}`)}
         </span>
-        <span className="text-[9px] font-mono text-[var(--text-faint)]">
+        <span
+          className="text-[9px] font-mono px-1.5 py-0.5 rounded-full leading-none"
+          style={{
+            background: checkedCount > 0 ? 'var(--accent)15' : 'var(--surface-2)',
+            color: checkedCount > 0 ? 'var(--accent)' : 'var(--text-faint)',
+          }}
+        >
           {checkedCount}/{ruleIds.length}
         </span>
-        <div className="flex-1 h-px bg-[var(--border)]" />
+        <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
         <button
           onClick={toggleAll}
-          className="text-[9px] text-[var(--text-faint)] hover:text-[var(--accent)] transition-colors font-medium"
+          className="text-[9px] font-medium transition-colors"
+          style={{ color: allOn ? 'var(--accent)' : 'var(--text-faint)' }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)' }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = allOn ? 'var(--accent)' : 'var(--text-faint)' }}
         >
-          {checkedCount === ruleIds.length ? t('customProfile.removeAll') : t('customProfile.toggleAll')}
+          {allOn ? t('customProfile.removeAll') : t('customProfile.toggleAll')}
         </button>
       </div>
 
-      {/* Rule rows */}
-      <div className="divide-y divide-[var(--border)]">
+      <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
         {ruleIds.map((ruleId) => (
           <RuleRow
             key={ruleId}
@@ -169,30 +173,41 @@ function CategorySection({
 interface CustomProfileModalProps {
   open: boolean
   onClose: () => void
+  editProfile?: ValidationProfile
 }
 
-export default function CustomProfileModal({ open, onClose }: CustomProfileModalProps) {
+export default function CustomProfileModal({ open, onClose, editProfile }: CustomProfileModalProps) {
   const { t } = useTranslation('validation')
-  const { rules: storeRules, customProfiles, addCustomProfile } = useValidationStore(
+  const isEditMode = !!editProfile
+
+  const { rules: storeRules, customProfiles, addCustomProfile, updateCustomProfile } = useValidationStore(
     useShallow((s) => ({
-      rules:            s.rules,
-      customProfiles:   s.customProfiles,
-      addCustomProfile: s.addCustomProfile,
+      rules:               s.rules,
+      customProfiles:      s.customProfiles,
+      addCustomProfile:    s.addCustomProfile,
+      updateCustomProfile: s.updateCustomProfile,
     })),
   )
 
-  const [name, setName]             = useState('')
+  const [name, setName]               = useState('')
   const [description, setDescription] = useState('')
-  const [icon, setIcon]             = useState(ICON_OPTIONS[0])
-  const [localRules, setLocalRules] = useState<RulesConfig>(() => ({ ...DEFAULT_RULES, ...storeRules }))
-  const [error, setError]           = useState<string | null>(null)
+  const [icon, setIcon]               = useState(ICON_OPTIONS[0])
+  const [localRules, setLocalRules]   = useState<RulesConfig>(() => ({ ...DEFAULT_RULES, ...storeRules }))
+  const [error, setError]             = useState<string | null>(null)
 
   const handleOpenChange = (isOpen: boolean): void => {
     if (isOpen) {
-      setName('')
-      setDescription('')
-      setIcon(ICON_OPTIONS[0])
-      setLocalRules({ ...DEFAULT_RULES, ...storeRules })
+      if (editProfile) {
+        setName(editProfile.name)
+        setDescription(editProfile.description)
+        setIcon(editProfile.icon)
+        setLocalRules({ ...DEFAULT_RULES, ...editProfile.rules })
+      } else {
+        setName('')
+        setDescription('')
+        setIcon(ICON_OPTIONS[0])
+        setLocalRules({ ...DEFAULT_RULES, ...storeRules })
+      }
       setError(null)
     } else {
       onClose()
@@ -206,20 +221,25 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
   const handleSave = (): void => {
     const trimmed = name.trim()
     if (!trimmed) { setError(t('customProfile.errorNameEmpty')); return }
-    if (customProfiles.length >= 5) { setError(t('customProfile.errorMaxProfiles')); return }
-    // Derive coverage categories automatically from the active rule set
+    if (!isEditMode && customProfiles.length >= 5) { setError(t('customProfile.errorMaxProfiles')); return }
+
     const coverageTypes = getCoveredCategories(localRules)
-    addCustomProfile({
-      name:        trimmed,
-      description: description.trim() || t('customProfile.defaultDescription'),
+    const profileData = {
+      name:          trimmed,
+      description:   description.trim() || t('customProfile.defaultDescription'),
       icon,
-      rules:       localRules,
+      rules:         localRules,
       coverageTypes,
-    })
+    }
+
+    if (isEditMode && editProfile) {
+      updateCustomProfile(editProfile.id, profileData)
+    } else {
+      addCustomProfile(profileData)
+    }
     onClose()
   }
 
-  // Group rules by category
   const grouped = useMemo(() => {
     const map = new Map<ValidationCategoryType, string[]>()
     for (const [ruleId, meta] of Object.entries(RULE_METADATA)) {
@@ -236,7 +256,7 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
     [localRules],
   )
 
-  const atLimit = customProfiles.length >= 5
+  const atLimit = !isEditMode && customProfiles.length >= 5
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
@@ -246,50 +266,79 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
           style={{ animation: 'fadeIn 150ms ease' }}
         />
         <Dialog.Content
-          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-[520px] max-w-[calc(100vw-1.5rem)] max-h-[90dvh] flex flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] outline-none"
-          style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}
+          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-[540px] max-w-[calc(100vw-1.5rem)] max-h-[90dvh] flex flex-col rounded-2xl outline-none"
+          style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            boxShadow: '0 24px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)',
+          }}
         >
           {/* ── Header ── */}
-          <div className="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-4 border-b border-[var(--border)] shrink-0">
+          <div
+            className="flex items-center gap-3 px-5 py-4 shrink-0"
+            style={{ borderBottom: '1px solid var(--border)' }}
+          >
             <div className="flex-1 min-w-0">
-              <Dialog.Title className="text-[14px] font-semibold text-[var(--text)] leading-none">
-                {t('customProfile.title')}
+              <Dialog.Title className="text-[13px] font-semibold leading-none" style={{ color: 'var(--text)' }}>
+                {isEditMode ? t('customProfile.editTitle', { defaultValue: 'Edit profile' }) : t('customProfile.title')}
               </Dialog.Title>
-              <p className="text-[11px] text-[var(--text-faint)] mt-0.5">
-                {t('customProfile.subtitle')}
+              <p className="text-[11px] mt-1 leading-tight" style={{ color: 'var(--text-faint)' }}>
+                {isEditMode
+                  ? t('customProfile.editSubtitle', { defaultValue: 'Modify the rules and settings of this profile' })
+                  : t('customProfile.subtitle')}
               </p>
             </div>
-            <span className="shrink-0 text-[10px] font-mono text-[var(--text-dim)] border border-[var(--border)] px-2 py-0.5 rounded-full">
+            <span
+              className="shrink-0 text-[10px] font-mono px-2 py-0.5 rounded-full"
+              style={{ color: 'var(--text-dim)', border: '1px solid var(--border)' }}
+            >
               {t('customProfile.activeRules', { count: activeCount })}
             </span>
             <Dialog.Close
-              className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+              className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg transition-colors"
+              style={{ color: 'var(--text-faint)' }}
               aria-label={t('customProfile.close')}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)' }}
             >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M2 2l8 8M10 2L2 10" />
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M1.5 1.5l8 8M9.5 1.5l-8 8" />
               </svg>
             </Dialog.Close>
           </div>
 
-          {/* ── Name + icon + description ── */}
-          <div className="px-4 sm:px-5 pt-3 sm:pt-4 pb-3 shrink-0 border-b border-[var(--border)] flex flex-col gap-3">
-            {/* Name row: icon picker + name input together */}
-            <div className="flex items-end gap-2">
-              {/* Icon picker */}
-              <div className="shrink-0">
-                <label className="block text-[11px] font-medium text-[var(--text-dim)] mb-1.5">{t('customProfile.icon')}</label>
-                <div className="flex flex-wrap gap-1">
+          {/* ── Identity: icon + name + description ── */}
+          <div
+            className="px-5 py-4 shrink-0"
+            style={{ borderBottom: '1px solid var(--border)' }}
+          >
+            <div className="flex gap-4">
+              {/* Icon column */}
+              <div className="shrink-0 w-[108px]">
+                <label
+                  className="block text-[10px] font-semibold uppercase tracking-wider mb-2"
+                  style={{ color: 'var(--text-faint)' }}
+                >
+                  {t('customProfile.icon')}
+                </label>
+                <div className="grid grid-cols-5 gap-1">
                   {ICON_OPTIONS.map((em) => (
                     <button
                       key={em}
                       type="button"
                       onClick={() => setIcon(em)}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-[15px] border transition-all"
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-[14px] transition-all"
                       style={
                         icon === em
-                          ? { borderColor: 'var(--accent)', background: 'var(--accent)18' }
-                          : { borderColor: 'var(--border)', background: 'var(--surface-2)' }
+                          ? {
+                              background: 'var(--accent)20',
+                              border: '1.5px solid var(--accent)',
+                              outline: 'none',
+                            }
+                          : {
+                              background: 'var(--surface-2)',
+                              border: '1px solid var(--border)',
+                            }
                       }
                     >
                       {em}
@@ -297,47 +346,78 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
                   ))}
                 </div>
               </div>
-            </div>
 
-            {/* Name input */}
-            <div>
-              <label className="block text-[11px] font-medium text-[var(--text-dim)] mb-1.5">
-                {t('customProfile.profileName')} <span className="text-[var(--danger)]">*</span>
-              </label>
-              <input
-                value={name}
-                onChange={(e) => { setName(e.target.value); setError(null) }}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }}
-                placeholder={t('customProfile.profileNamePlaceholder')}
-                className="w-full h-9 px-3 text-[12px] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] transition-colors"
-              />
-              {error && (
-                <p className="text-[10px] text-[var(--danger)] mt-1.5 flex items-center gap-1">
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <circle cx="5" cy="5" r="4" />
-                    <path d="M5 3v2.5M5 7h.01" />
-                  </svg>
-                  {error}
-                </p>
-              )}
-            </div>
+              {/* Name + description column */}
+              <div className="flex-1 min-w-0 flex flex-col gap-2.5">
+                <div>
+                  <label
+                    className="block text-[10px] font-semibold uppercase tracking-wider mb-1.5"
+                    style={{ color: 'var(--text-faint)' }}
+                  >
+                    {t('customProfile.profileName')}
+                    {' '}
+                    <span style={{ color: 'var(--danger)' }}>*</span>
+                  </label>
+                  <input
+                    value={name}
+                    onChange={(e) => { setName(e.target.value); setError(null) }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }}
+                    placeholder={t('customProfile.profileNamePlaceholder')}
+                    className="w-full h-8 px-3 text-[12px] rounded-lg outline-none transition-all"
+                    style={{
+                      background: 'var(--surface-2)',
+                      border: error ? '1px solid var(--danger)' : '1px solid var(--border)',
+                      color: 'var(--text)',
+                    }}
+                    onFocus={(e) => {
+                      if (!error) (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--accent)'
+                    }}
+                    onBlur={(e) => {
+                      if (!error) (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--border)'
+                    }}
+                  />
+                  {error && (
+                    <p className="text-[10px] mt-1.5 flex items-center gap-1" style={{ color: 'var(--danger)' }}>
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <circle cx="5" cy="5" r="4" />
+                        <path d="M5 3v2.5M5 7h.01" />
+                      </svg>
+                      {error}
+                    </p>
+                  )}
+                </div>
 
-            {/* Description (optional) */}
-            <div>
-              <label className="block text-[11px] font-medium text-[var(--text-dim)] mb-1.5">
-                {t('customProfile.descriptionLabel')} <span className="text-[var(--text-faint)]">{t('customProfile.descriptionOptional')}</span>
-              </label>
-              <input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder={t('customProfile.descriptionPlaceholder')}
-                className="w-full h-8 px-3 text-[12px] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] transition-colors"
-              />
+                <div>
+                  <label
+                    className="block text-[10px] font-semibold uppercase tracking-wider mb-1.5"
+                    style={{ color: 'var(--text-faint)' }}
+                  >
+                    {t('customProfile.descriptionLabel')}
+                    {' '}
+                    <span style={{ color: 'var(--text-faint)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
+                      {t('customProfile.descriptionOptional')}
+                    </span>
+                  </label>
+                  <input
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder={t('customProfile.descriptionPlaceholder')}
+                    className="w-full h-8 px-3 text-[12px] rounded-lg outline-none transition-all"
+                    style={{
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text)',
+                    }}
+                    onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--accent)' }}
+                    onBlur={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--border)' }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
           {/* ── Rule groups ── */}
-          <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-3">
+          <div className="flex-1 overflow-y-auto px-5 py-3">
             {CATEGORY_ORDER.map((cat) => {
               const ruleIds = grouped.get(cat)
               if (!ruleIds || ruleIds.length === 0) return null
@@ -354,22 +434,35 @@ export default function CustomProfileModal({ open, onClose }: CustomProfileModal
           </div>
 
           {/* ── Footer ── */}
-          <div className="flex items-center gap-3 px-4 sm:px-5 py-3 border-t border-[var(--border)] shrink-0">
+          <div
+            className="flex items-center gap-3 px-5 py-3.5 shrink-0"
+            style={{ borderTop: '1px solid var(--border)' }}
+          >
             {atLimit && (
-              <span className="text-[10px] text-[var(--danger)] flex-1">
+              <span className="text-[10px] flex-1" style={{ color: 'var(--danger)' }}>
                 {t('customProfile.atLimit')}
               </span>
             )}
             <div className="flex gap-2 ml-auto">
-              <Dialog.Close className="px-4 h-8 rounded-lg text-[11px] font-medium text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] hover:border-[var(--text-dim)] transition-colors">
+              <Dialog.Close
+                className="px-4 h-8 rounded-lg text-[11px] font-medium transition-colors"
+                style={{ color: 'var(--text-dim)', border: '1px solid var(--border)' }}
+                onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.color = 'var(--text)'; el.style.borderColor = 'var(--text-dim)' }}
+                onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.color = 'var(--text-dim)'; el.style.borderColor = 'var(--border)' }}
+              >
                 {t('customProfile.cancel')}
               </Dialog.Close>
               <button
                 onClick={handleSave}
                 disabled={!name.trim() || atLimit}
-                className="px-5 h-8 rounded-lg text-[11px] font-semibold bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-40 transition-all"
+                className="px-5 h-8 rounded-lg text-[11px] font-semibold text-white transition-all disabled:opacity-40"
+                style={{ background: 'var(--accent)' }}
+                onMouseEnter={(e) => { if (!e.currentTarget.disabled) (e.currentTarget as HTMLButtonElement).style.filter = 'brightness(1.12)' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.filter = 'none' }}
               >
-                {t('customProfile.save')}
+                {isEditMode
+                  ? t('customProfile.saveChanges', { defaultValue: 'Save changes' })
+                  : t('customProfile.save')}
               </button>
             </div>
           </div>

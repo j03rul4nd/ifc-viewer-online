@@ -40,6 +40,8 @@
   "exportGlbFailed": "GLB 导出失败：{{message}}",
   "open": "打开",
   "reset": "重置",
+  "legend": "图例",
+  "legendTooltip": "颜色图例 — 模型中的实体类型",
   "status": {
     "loaded": "已加载",
     "loading": "加载中…",

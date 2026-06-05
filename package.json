@@ -10,7 +10,10 @@
         "preview": "vite preview",
         "test": "vitest run",
         "test:watch": "vitest",
-        "og": "node scripts/og/build-og.mjs"
+        "og": "node scripts/og/build-og.mjs",
+        "blog-covers": "node scripts/og/build-blog-covers.mjs",
+        "fix-covers": "node scripts/og/build-fix-covers.mjs",
+        "covers": "node scripts/og/build-blog-covers.mjs && node scripts/og/build-fix-covers.mjs"
     },
     "dependencies": {
         "@radix-ui/react-context-menu": "^2.2.16",

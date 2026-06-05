@@ -4,6 +4,8 @@
 // to the correct model's buffer (avoiding expressId collisions across models).
 
 import type { EditDiff, EditorCommand } from '../types'
+import type { IFCItemData } from './viewer'
+import type { SelectedInfo } from '../types'
 import { useEditorStore } from '../stores/editorStore'
 import { createLogger }  from './logger'
 import { toast }         from '../stores/toastStore'
@@ -192,14 +194,168 @@ export async function exportAsGlb(obj: import('three').Object3D): Promise<Blob> 
 
 /**
  * Trigger a browser file download for a Blob.
+ *
+ * For .ifc and .glb files, prefers the File System Access API
+ * (showSaveFilePicker) so the user gets a native "Save As…" dialog with a
+ * suggested filename and a file-type filter — same UX as a native app.
+ * Falls back to the classic <a download> approach when the API is unavailable
+ * (Safari for IFC, Firefox, or any non-secure context).
+ *
+ * If the user dismisses the picker dialog, the cancellation is respected
+ * and no fallback download is triggered.
  */
-export function downloadBlob(blob: Blob, fileName: string): void {
+export async function downloadBlob(blob: Blob, fileName: string): Promise<void> {
+  const ext          = fileName.split('.').pop()?.toLowerCase() ?? ''
+  const canUsePicker = (ext === 'ifc' || ext === 'glb') && 'showSaveFilePicker' in window
+
+  if (canUsePicker) {
+    try {
+      // Minimal inline types — FilePickerAcceptType / showSaveFilePicker are not
+      // yet part of TypeScript's lib.dom.d.ts, so we declare what we need locally.
+      type FsaAccept   = { description: string; accept: Record<string, string[]> }
+      type FsaWritable = { write(data: Blob): Promise<void>; close(): Promise<void> }
+      type FsaHandle   = { createWritable(): Promise<FsaWritable> }
+      type FsaPicker   = (opts: { suggestedName: string; types: FsaAccept[] }) => Promise<FsaHandle>
+      const pick = (window as unknown as { showSaveFilePicker: FsaPicker }).showSaveFilePicker
+      const types: FsaAccept[] = ext === 'ifc'
+        ? [{ description: 'IFC File',     accept: { 'application/x-step': ['.ifc'] } }]
+        : [{ description: 'GLB 3D Model', accept: { 'model/gltf-binary':  ['.glb'] } }]
+      const handle   = await pick({ suggestedName: fileName, types })
+      const writable = await handle.createWritable()
+      await writable.write(blob)
+      await writable.close()
+      return
+    } catch (err) {
+      // User dismissed the dialog — respect the cancellation, no fallback
+      if (err instanceof DOMException && err.name === 'AbortError') return
+      // SecurityError / NotAllowedError / etc → fall through to classic download
+    }
+  }
+
+  // Classic <a download> — Safari, Firefox, non-IFC/GLB formats
   const url = URL.createObjectURL(blob)
   const a   = Object.assign(document.createElement('a'), { href: url, download: fileName })
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
   setTimeout(() => URL.revokeObjectURL(url), 1_000)
+}
+
+// ── Element property export (JSON / CSV) ──────────────────────────────────────
+
+function escCsv(v: unknown): string {
+  const s = String(v ?? '')
+  return s.includes(',') || s.includes('"') || s.includes('\n')
+    ? `"${s.replace(/"/g, '""')}"`
+    : s
+}
+
+/**
+ * Serialize all properties of the selected element to JSON.
+ * Pending edits (diffs) are merged over the original IFC values.
+ */
+export function exportElementToJson(
+  selected: SelectedInfo,
+  data: IFCItemData,
+  pendingRenames: Map<string, string> = new Map(),
+  pendingPropEdits: Map<string, string> = new Map(),
+): string {
+  const attrs: Record<string, unknown> = {
+    expressId: selected.id,
+    ifcType:   selected.type,
+    name:      pendingRenames.get('Name')      ?? data.name,
+    longName:  pendingRenames.get('LongName')  ?? data.longName,
+    description: pendingRenames.get('Description') ?? data.description,
+    globalId:  data.globalId,
+    objectType: data.objectType,
+    tag:       data.tag,
+    storey:    data.storey,
+  }
+
+  const psets = data.propertySets.map(ps => ({
+    name: ps.name,
+    properties: ps.properties.map(p => ({
+      name:  p.name,
+      value: pendingPropEdits.has(String(p.expressId))
+        ? pendingPropEdits.get(String(p.expressId))
+        : p.value,
+      type: p.type,
+    })),
+  }))
+
+  const quantitySets = data.quantitySets.map(qs => ({
+    name: qs.name,
+    quantities: qs.quantities.map(q => ({ name: q.name, value: q.value, type: q.quantityType })),
+  }))
+
+  const typeProperties = data.typeProperties.map(ps => ({
+    name: ps.name,
+    properties: ps.properties.map(p => ({ name: p.name, value: p.value, type: p.type })),
+  }))
+
+  const materials = data.materials.map(m => ({
+    name: m.name,
+    ...(m.layerThickness !== undefined ? { layerThickness: m.layerThickness } : {}),
+  }))
+
+  return JSON.stringify(
+    { attributes: attrs, propertySets: psets, quantitySets, typeProperties, materials },
+    null,
+    2,
+  )
+}
+
+/**
+ * Serialize all properties of the selected element to CSV.
+ * Columns: Section, Set Name, Property Name, Value, Type
+ */
+export function exportElementToCsv(
+  selected: SelectedInfo,
+  data: IFCItemData,
+  pendingRenames: Map<string, string> = new Map(),
+  pendingPropEdits: Map<string, string> = new Map(),
+): string {
+  const rows: string[] = ['Section,Set Name,Property Name,Value,Type']
+
+  const attr = (key: string, label: string, value: unknown): void => {
+    rows.push([escCsv('Attributes'), escCsv('IFC Attributes'), escCsv(label), escCsv(value), ''].join(','))
+  }
+
+  attr('expressId',   'Express ID',   selected.id)
+  attr('ifcType',     'IFC Type',     selected.type)
+  attr('name',        'Name',         pendingRenames.get('Name')      ?? data.name)
+  attr('longName',    'Long Name',    pendingRenames.get('LongName')  ?? data.longName)
+  attr('description', 'Description',  pendingRenames.get('Description') ?? data.description)
+  attr('globalId',    'Global ID',    data.globalId)
+  attr('objectType',  'Object Type',  data.objectType)
+  attr('tag',         'Tag',          data.tag)
+  attr('storey',      'Storey',       data.storey)
+
+  for (const ps of data.propertySets) {
+    for (const p of ps.properties) {
+      const v = pendingPropEdits.has(String(p.expressId)) ? pendingPropEdits.get(String(p.expressId)) : p.value
+      rows.push([escCsv('Property Sets'), escCsv(ps.name), escCsv(p.name), escCsv(v), escCsv(p.type ?? '')].join(','))
+    }
+  }
+
+  for (const qs of data.quantitySets) {
+    for (const q of qs.quantities) {
+      rows.push([escCsv('Quantities'), escCsv(qs.name), escCsv(q.name), escCsv(q.value), escCsv(q.quantityType)].join(','))
+    }
+  }
+
+  for (const ps of data.typeProperties) {
+    for (const p of ps.properties) {
+      rows.push([escCsv('Type Properties'), escCsv(ps.name), escCsv(p.name), escCsv(p.value), escCsv(p.type ?? '')].join(','))
+    }
+  }
+
+  for (const m of data.materials) {
+    rows.push([escCsv('Materials'), escCsv('Materials'), escCsv(m.name),
+      escCsv(m.layerThickness !== undefined ? m.layerThickness : ''), escCsv('Material')].join(','))
+  }
+
+  return rows.join('\n')
 }
 
 // ── IFC GUID generation ────────────────────────────────────────────────────────

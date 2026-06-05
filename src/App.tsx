@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels'
@@ -22,6 +22,7 @@ import SceneContextMenu, { type SceneContextMenuPayload } from './components/Sce
 import SharedReportView, { decodeReportHash } from './components/SharedReportView'
 import type { SharedReportPayload } from './components/SharedReportView'
 import DemoGallery from './components/DemoGallery'
+import MobileBottomNav from './components/MobileBottomNav'
 import Blog from './components/Blog'
 import PrivacyPolicy from './components/legal/PrivacyPolicy'
 import TermsOfUse from './components/legal/TermsOfUse'
@@ -44,7 +45,7 @@ import { useSceneStore } from './stores/sceneStore'
 import { useTakeoffStore } from './stores/takeoffStore'
 import { toast } from './stores/toastStore'
 import type { ViewerAPI } from './lib/viewer'
-import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo } from './types'
+import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo, Category } from './types'
 import * as Icons from './components/Icons'
 import { useSeo } from './seo'
 import {
@@ -229,7 +230,7 @@ export default function App() {
   const { validationMode, result } = useValidationStore()
   const {
     treeVisible, treeWidth, hiddenElements, clearHiddenElements, setElementsVisible, clearHiddenElementsForModel,
-    mobileSidebarOpen, setMobileSidebarOpen,
+    mobileSidebarOpen, setMobileSidebarOpen, setPendingSidebarTab,
     cameraControlsVisible, toggleCameraControls,
     scenePanelOpen, toggleScenePanel, setScenePanelOpen,
     setClipPanelOpen, setClipPlaneCount, setPlansPanelOpen,
@@ -700,6 +701,39 @@ export default function App() {
     try { viewerApiRef.current?.cleanupSectionAndPlans() } catch { }
   }, [clearScene, setMeasurementPanelOpen, setActiveMeasurementTool, setClipPanelOpen, setClipPlaneCount, setPlansPanelOpen, setActivePlanViewId])
 
+  // ── Legend data — merged across all loaded models ────────────────────────
+  // Single model: active model's categories (elementIds intact for drill-down).
+  // Multi-model: deduplicate by IFC type, sum counts; per-model breakdown in
+  // CategoryRow uses sceneModels directly so elementIds are not needed here.
+  const legendCategories = useMemo((): Category[] => {
+    if (sceneModels.length <= 1) {
+      return (
+        sceneModels.find((m) => m.id === activeModelId)?.categories ??
+        modelInfo?.categories ?? []
+      )
+    }
+    const map = new Map<string, Category>()
+    for (const m of sceneModels) {
+      for (const cat of m.categories) {
+        const ex = map.get(cat.id)
+        if (!ex) {
+          map.set(cat.id, { ...cat, elementIds: [] })
+        } else {
+          ex.count += cat.count
+        }
+      }
+    }
+    return [...map.values()].sort((a, b) => b.count - a.count)
+  }, [sceneModels, activeModelId, modelInfo])
+
+  const legendElementCount = useMemo(
+    () =>
+      sceneModels.length > 0
+        ? sceneModels.reduce((sum, m) => sum + m.elementCount, 0)
+        : (modelInfo?.elementCount ?? 0),
+    [sceneModels, modelInfo],
+  )
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -956,15 +990,9 @@ export default function App() {
                   )}
 
                   <Sidebar
-                    categories={
-                      // Use the active model's categories; fall back to last-loaded modelInfo
-                      sceneModels.find((m) => m.id === activeModelId)?.categories ??
-                      modelInfo?.categories ?? []
-                    }
-                    elementCount={
-                      sceneModels.find((m) => m.id === activeModelId)?.elementCount ??
-                      modelInfo?.elementCount ?? 0
-                    }
+                    categories={legendCategories}
+                    elementCount={legendElementCount}
+                    sceneModels={sceneModels}
                     selected={selected}
                     hidden={hidden}
                     onToggleHidden={handleToggleHidden}
@@ -987,37 +1015,23 @@ export default function App() {
                     <span className="hidden xs:inline">{tCommon('actions.home')}</span>
                   </button>
 
-                  {/* ── Mobile FAB cluster (only on < md) ── */}
-                  {sceneModels.length > 0 && (
-                    <div
-                      className="md:hidden absolute right-4 z-[10] flex flex-col items-center gap-2.5"
-                      style={{ bottom: `max(16px, env(safe-area-inset-bottom))` }}
-                    >
-                      {/* Properties panel toggle */}
-                      <button
-                        onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-                        className="w-12 h-12 rounded-full bg-[var(--accent)] shadow-[0_4px_20px_rgba(94,106,210,0.35)] flex items-center justify-center text-white active:scale-95 transition-transform"
-                        aria-label={tViewer('cache.togglePanel')}
-                      >
-                        {mobileSidebarOpen ? (
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                            <path d="M3 3l10 10M13 3L3 13" />
-                          </svg>
-                        ) : (
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                            <path d="M2 5h12M2 8h9M2 11h6" />
-                          </svg>
-                        )}
-                        {/* Badge: element selected but panel is closed */}
-                        {selected && !mobileSidebarOpen && (
-                          <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-white border-2 border-[var(--accent)]">
-                            <span className="absolute inset-0.5 rounded-full bg-[var(--accent)] animate-ping opacity-75" />
-                            <span className="absolute inset-0.5 rounded-full bg-[var(--accent)]" />
-                          </span>
-                        )}
-                      </button>
-                    </div>
-                  )}
+                  {/* ── Mobile bottom nav (only on < md) ── */}
+                  <MobileBottomNav
+                    visible={sceneModels.length > 0}
+                    selected={selected}
+                    canIsolate={!!selected}
+                    onOpenSidebarTab={(tab) => {
+                      setPendingSidebarTab(tab)
+                      setMobileSidebarOpen(true)
+                    }}
+                    onReset={() => viewerRef.current?.resetCamera()}
+                    onUpload={openUploadModal}
+                    onIsolate={handleIsolate}
+                    onOpenDemoGallery={openDemoGallery}
+                    onOpenExportModal={() => setShowExportModal(true)}
+                    onOpenHelp={() => setShowHelp(true)}
+                    viewerApiRef={viewerApiRef}
+                  />
                 </div>
 
                 <ValidationPanel onJumpToElement={handleJumpToElement} viewer={viewerRef.current} />
@@ -1081,7 +1095,7 @@ export default function App() {
           title={tViewer('cache.tooltip', { count: cacheEntries.length })}
           onClick={() => { void Promise.all(cacheEntries.map((e) => deleteFromCache(e.key))) }}
           className="fixed left-4 z-50 px-2.5 py-1 bg-[rgba(16,16,20,0.82)] backdrop-blur border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[11px] cursor-pointer hover:text-[var(--text)] transition-colors select-none"
-          style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}
+          style={{ bottom: `max(calc(var(--mobile-nav-h) + var(--mobile-nav-margin) + env(safe-area-inset-bottom, 0px) + 8px), 16px)` }}
         >
           {isFromCache ? tViewer('cache.fromCache') : tViewer('cache.cached', { count: cacheEntries.length })}
         </div>

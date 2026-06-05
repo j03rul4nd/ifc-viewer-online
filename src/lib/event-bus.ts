@@ -35,6 +35,7 @@ export type AppEventMap = {
   'cache:deleted':          { key: string }
   'bcf:imported':           { topicCount: number }
   'bcf:exported':           { topicCount: number }
+  'ui:open-legend':         void
 }
 
 // ── Core bus class ─────────────────────────────────────────────────────────────

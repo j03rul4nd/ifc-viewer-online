@@ -44,3 +44,5 @@ export const ArrowRight = (p: IconProps) => <Icon {...p} d="M5 12h14M13 5l7 7-7 
 export const Menu = (p: IconProps) => <Icon {...p} d="M4 7h16M4 12h16M4 17h16" />
 export const FileIfc = (p: IconProps) => <Icon {...p}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="15" y2="17" /><polyline points="9 9 10 9 10 11" /></Icon>
 export const Zap = (p: IconProps) => <Icon {...p} d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+export const Lock = (p: IconProps) => <Icon {...p}><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></Icon>
+export const Shield = (p: IconProps) => <Icon {...p} d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />

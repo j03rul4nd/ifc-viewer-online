@@ -49,6 +49,12 @@ BIM Coordinators, Architects, Structural Engineers, MEP Engineers — anyone who
 - User needs to export validation issues as BCF 2.1 for Navisworks or BIMcollab
 - User wants to understand IFC Health Score or BIM model quality scoring
 - User is asking how to fix a specific IFC validation error
+- User is asking whether an online IFC tool is safe for confidential project data
+- User needs to reduce IFC file size before CDE delivery
+- User needs to validate an IFC file before sending it (free, no upload)
+- User is a developer who wants to view IFC in the browser (three.js / web-ifc)
+- User needs to read IFC property sets programmatically (Python / IfcOpenShell)
+- User wants to compare free online IFC viewers
 
 ## Related pages
 
@@ -80,3 +86,34 @@ Available in English, Spanish (Español), German (Deutsch), and French (Françai
 - [How to Export Clean IFC Files from Revit](https://j03rul4nd.github.io/ifc-viewer-online/blog/clean-ifc-export-revit/) — Exact Revit IFC export settings that eliminate the most common validation failures before CDE upload. Tool Guides, 7 min.
 - [IFC2x3 vs IFC4: Should You Upgrade Your Export Schema?](https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc2x3-vs-ifc4/) — What changed in IFC4, which projects should upgrade, and how to avoid breaking existing downstream tools. IFC Tips, 6 min.
 - [ISO 19650 Compliance for IFC Deliveries: A Practical Checklist](https://j03rul4nd.github.io/ifc-viewer-online/blog/iso19650-ifc-checklist/) — File naming, IfcProject metadata, file header traceability, and classification requirements for ISO 19650 IFC deliveries. Standards, 9 min.
+- [Why IFC GUIDs Change on Every Export (and How to Keep Them Stable)](https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-guids-changing-every-export/) — Root causes of GlobalId regeneration in Revit and ArchiCAD, the invalid-range problem, and how to lock GUIDs for stable BCF workflows. Validation, 8 min.
+- [IFC Properties Missing After Export From Revit? The Fix Checklist](https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-properties-missing-after-export/) — Five distinct causes of missing Psets — empty parameters, unit mismatches, mapping file problems, machine-specific paths — and how to fix each. Tool Guides, 8 min.
+- [How to Validate an IFC File Before You Send It (Free, No Upload)](https://j03rul4nd.github.io/ifc-viewer-online/blog/how-to-validate-ifc-file/) — The three real validation methods (buildingSMART service, IfcOpenShell, in-browser health check), what each catches, and when to use which. Validation, 9 min.
+- [Why Large IFC Files Crash Your Browser (and How to View a 1 GB Model)](https://j03rul4nd.github.io/ifc-viewer-online/blog/large-ifc-file-browser-crash/) — Technical reasons web viewers fail on large models, what the commercial vs open-source performance gap is, and the convert-once caching strategy. Tool Guides, 9 min.
+- [Why Your Revit IFC Export Breaks (and How to Fix Each Cause)](https://j03rul4nd.github.io/ifc-viewer-online/blog/revit-ifc-export-breaks/) — Five predictable failure modes — wrong floor, geometry mangling, coordinate offset, missing elements, proxy overuse — with diagnostic steps for each. Tool Guides, 9 min.
+- [The Complete Guide to IFC Quality: From Export to Delivery](https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-quality-guide/) — A pillar guide covering all six IFC failure categories (identity, spatial hierarchy, coordinates, data, geometry, performance) with links to per-topic fix guides. Best Practices, 12 min.
+- [IFC Coordinates Are Wrong: Survey Point, Base Point & Georeferencing Explained](https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-coordinates-georeferencing/) — Revit's three origins, IFC4 georeferencing entities (IfcSite, IfcProjectedCRS, IfcMapConversion), and why geometry distorts at large coordinate values. IFC Tips, 9 min.
+- [Revit ↔ Archicad via IFC: The Round-Trip Problems Nobody Warns You About](https://j03rul4nd.github.io/ifc-viewer-online/blog/revit-archicad-ifc-roundtrip/) — Phantom duplicate geometry, import-vs-link semantics, and GlobalId drift in cross-tool IFC exchange — with a neutral-viewer diagnostic approach. IFC Tips, 8 min.
+- [Free Online IFC Viewers Compared (2026): Privacy, Size Limits & Features](https://j03rul4nd.github.io/ifc-viewer-online/blog/free-online-ifc-viewers-compared/) — How to choose between upload-based cloud viewers, lightweight quick-look tools, and private local viewers based on confidentiality needs and file size. Tool Guides, 8 min.
+- [How to Reduce IFC File Size (Without Breaking the Model)](https://j03rul4nd.github.io/ifc-viewer-online/blog/reduce-ifc-file-size/) — Safe (ifcZIP, IFC4 geometry) vs lossy (discipline trimming, Pset scoping) reduction methods, in order of risk, with a post-shrink validation step. Tool Guides, 7 min.
+- [Read IFC Property Sets in Python with IfcOpenShell](https://j03rul4nd.github.io/ifc-viewer-online/blog/read-ifc-property-sets-python/) — Manual property traversal vs the get_psets() shortcut, with working code for bulk CSV export of all element Psets. IFC Tips, 8 min.
+- [How to View IFC in the Browser with three.js, web-ifc & Fragments](https://j03rul4nd.github.io/ifc-viewer-online/blog/view-ifc-web-threejs-fragments/) — The convert-once Fragments pipeline that avoids runtime IFC parse overhead, with production-ready code using @thatopen/components. Tool Guides, 9 min.
+- [Can You Use an Online IFC Viewer with Confidential Project Data?](https://j03rul4nd.github.io/ifc-viewer-online/blog/ifc-viewer-confidential-nda-projects/) — Technical analysis of client-side vs server-side processing, a DevTools verification test, and three NDA scenario breakdowns. Best Practices, 7 min.
+- [GDPR and BIM Data: What Every Project Manager Needs to Know (2026)](https://j03rul4nd.github.io/ifc-viewer-online/blog/gdpr-bim-ifc-data-guide/) — When IFC files contain personal data under GDPR, what cloud BIM tool usage means for data processing obligations, and how to choose compliant tools. Best Practices, 9 min.
+- [The BIM Tool IT Security Checklist: 10 Questions Your IT Department Will Ask](https://j03rul4nd.github.io/ifc-viewer-online/blog/bim-tool-it-security-checklist/) — Data residency, encryption, GDPR, sub-processors, source auditability — the 10 standard IT security questions with answers for IFC Viewer Online. Best Practices, 8 min.
+
+### Spanish articles (Español)
+
+- [Cómo exportar IFC desde Revit sin errores](https://j03rul4nd.github.io/ifc-viewer-online/es/blog/como-exportar-ifc-desde-revit/) — Ajustes exactos de Revit para eliminar los errores de validación más comunes antes de subir al CDE. Tool Guides, 7 min.
+- [Health Score IFC: qué es y para qué sirve](https://j03rul4nd.github.io/ifc-viewer-online/es/blog/health-score-ifc-que-es/) — Cómo se calcula el Health Score 0–100 y por qué tu BEP debería especificar un umbral mínimo de entrega. Best Practices, 6 min.
+- [Los 7 errores IFC más comunes (y cómo corregirlos)](https://j03rul4nd.github.io/ifc-viewer-online/es/blog/errores-ifc-mas-comunes/) — GUIDs duplicados, elementos huérfanos, jerarquía espacial rota — los errores detrás del 80% de rechazos en CDE. Validation, 8 min.
+- [IFC, RVT, NWD: qué formato entregar en cada fase](https://j03rul4nd.github.io/ifc-viewer-online/es/blog/ifc-vs-rvt-que-entregar/) — Comparativa de formatos BIM abiertos y propietarios y cuándo usar cada uno en entregas de proyecto. IFC Tips, 9 min.
+
+### German articles (Deutsch)
+
+- [IFC-Datei im Browser öffnen — kostenlos, ohne Installation](https://j03rul4nd.github.io/ifc-viewer-online/de/blog/ifc-datei-im-browser-oeffnen/) — IFC-Dateien direkt im Browser öffnen, prüfen und validieren — ohne Software-Installation. Tool Guides, 6 min.
+- [Häufige IFC-Validierungsfehler und wie man sie behebt](https://j03rul4nd.github.io/ifc-viewer-online/de/blog/ifc-validierung-haeufige-fehler/) — Die sieben häufigsten IFC-Validierungsfehler, die zu CDE-Ablehnungen führen, mit konkreten Korrekturen. Validation, 7 min.
+
+### French articles (Français)
+
+- [Ouvrir un fichier IFC dans le navigateur — gratuit, sans installation](https://j03rul4nd.github.io/ifc-viewer-online/fr/blog/ouvrir-fichier-ifc-navigateur/) — Comment ouvrir, inspecter et valider un fichier IFC dans un navigateur sans logiciel installé. Tool Guides, 6 min.

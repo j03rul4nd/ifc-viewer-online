@@ -224,7 +224,12 @@
     "atLimit": "Limite de 5 profils atteinte.",
     "cancel": "Annuler",
     "save": "Enregistrer le profil",
-    "defaultDescription": "Profil personnalisé"
+    "defaultDescription": "Profil personnalisé",
+    "editTitle": "Modifier le profil",
+    "editSubtitle": "Modifiez les règles et paramètres de ce profil",
+    "saveChanges": "Enregistrer les modifications",
+    "deleteConfirm": "Supprimer ce profil ?",
+    "deleteYes": "Supprimer"
   },
   "catFull": {
     "schema": "Schéma IFC",

@@ -40,6 +40,8 @@
   "exportGlbFailed": "Échec de l'export GLB : {{message}}",
   "open": "Ouvrir",
   "reset": "Réinitialiser",
+  "legend": "Légende",
+  "legendTooltip": "Légende couleurs — types d'entités du modèle",
   "status": {
     "loaded": "Chargé",
     "loading": "Chargement…",

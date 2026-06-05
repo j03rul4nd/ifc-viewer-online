@@ -7,7 +7,7 @@ import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, C
 
 // ─── Palette & label tables ──────────────────────────────────────────────────
 
-const IFC_PALETTE: Record<string, { color: number; opacity?: number }> = {
+export const IFC_PALETTE: Record<string, { color: number; opacity?: number }> = {
   IFCWALL:               { color: 0xCDD0DC },
   IFCWALLSTANDARDCASE:   { color: 0xCDD0DC },
   IFCSLAB:               { color: 0xA2A6B8 },
@@ -35,7 +35,7 @@ const IFC_PALETTE: Record<string, { color: number; opacity?: number }> = {
   IFCPILE:               { color: 0x888888 },
 }
 
-const IFC_DISPLAY_NAMES: Record<string, string> = {
+export const IFC_DISPLAY_NAMES: Record<string, string> = {
   IFCWALL:               'Walls',
   IFCWALLSTANDARDCASE:   'Walls',
   IFCSLAB:               'Slabs',
@@ -101,6 +101,24 @@ export interface IFCPropertySet {
   }>
 }
 
+/** An Element Quantity Set (IfcElementQuantity) */
+export interface IFCQuantitySet {
+  expressId: number
+  name: string
+  quantities: Array<{
+    expressId: number
+    name: string
+    value: number | null
+    quantityType: 'Length' | 'Area' | 'Volume' | 'Count' | 'Weight' | 'Time' | 'Unknown'
+  }>
+}
+
+/** A material associated to an element */
+export interface IFCMaterial {
+  name: string
+  layerThickness?: number
+}
+
 /** Structured data returned by getItemData() */
 export interface IFCItemData {
   /** IFC Name attribute */
@@ -117,8 +135,16 @@ export interface IFCItemData {
   tag: string | null
   /** Storey name from ContainedInStructure relation */
   storey: string | null
-  /** All property sets from IsDefinedBy relation */
+  /** IfcPropertySet entries from IsDefinedBy (excludes quantities) */
   propertySets: IFCPropertySet[]
+  /** IfcElementQuantity entries from IsDefinedBy */
+  quantitySets: IFCQuantitySet[]
+  /** Property sets from the element's type (via IsTypedBy / DefinesByType) */
+  typeProperties: IFCPropertySet[]
+  /** Name of the IFC type entity (e.g. "IfcWallType") */
+  typeName: string | null
+  /** Materials from HasAssociations */
+  materials: IFCMaterial[]
   /** Raw data for debugging / future use */
   raw: Record<string, unknown>
 }
@@ -448,6 +474,127 @@ function extractStorey(containedInStructure: unknown): string | null {
   }
 
   return null
+}
+
+// ─── Helper: parse IfcElementQuantity from IsDefinedBy ───────────────────────
+
+function formatQuantities(isDefinedBy: unknown): IFCQuantitySet[] {
+  if (!Array.isArray(isDefinedBy)) return []
+  const result: IFCQuantitySet[] = []
+
+  for (const entry of isDefinedBy) {
+    if (!entry || typeof entry !== 'object') continue
+    const e = entry as Record<string, unknown>
+    if (!Array.isArray(e['Quantities'])) continue  // only IfcElementQuantity
+
+    const name = attrStr(e['Name'])
+    if (!name) continue
+    const expressId = typeof e['expressID'] === 'number' ? e['expressID'] : 0
+
+    const quantities: IFCQuantitySet['quantities'] = []
+    for (const q of e['Quantities'] as unknown[]) {
+      if (!q || typeof q !== 'object') continue
+      const qo = q as Record<string, unknown>
+      const qName = attrStr(qo['Name'])
+      if (!qName) continue
+      const qId = typeof qo['expressID'] === 'number' ? qo['expressID'] : 0
+
+      let value: number | null = null
+      let quantityType: IFCQuantitySet['quantities'][number]['quantityType'] = 'Unknown'
+
+      const tryNum = (key: string): number | null => {
+        const attr = qo[key]
+        if (!attr || typeof attr !== 'object') return null
+        const a = attr as Record<string, unknown>
+        return typeof a.value === 'number' ? a.value : null
+      }
+
+      if ((value = tryNum('LengthValue')) !== null)       quantityType = 'Length'
+      else if ((value = tryNum('AreaValue')) !== null)    quantityType = 'Area'
+      else if ((value = tryNum('VolumeValue')) !== null)  quantityType = 'Volume'
+      else if ((value = tryNum('CountValue')) !== null)   quantityType = 'Count'
+      else if ((value = tryNum('WeightValue')) !== null)  quantityType = 'Weight'
+      else if ((value = tryNum('TimeValue')) !== null)    quantityType = 'Time'
+
+      quantities.push({ expressId: qId, name: qName, value, quantityType })
+    }
+
+    result.push({ expressId, name, quantities })
+  }
+
+  return result
+}
+
+// ─── Helper: parse materials from HasAssociations ────────────────────────────
+
+function parseAssociations(hasAssociations: unknown): IFCMaterial[] {
+  if (!Array.isArray(hasAssociations)) return []
+  const result: IFCMaterial[] = []
+
+  const addMaterial = (obj: unknown, layerThickness?: number): void => {
+    if (!obj || typeof obj !== 'object') return
+    const o = obj as Record<string, unknown>
+    const name = attrStr(o['Name'])
+    if (name) result.push({ name, ...(layerThickness !== undefined ? { layerThickness } : {}) })
+  }
+
+  for (const entry of hasAssociations) {
+    if (!entry || typeof entry !== 'object') continue
+    const e = entry as Record<string, unknown>
+
+    // IfcMaterial directly
+    if (attrStr(e['Name'])) { addMaterial(e); continue }
+
+    // IfcMaterialLayerSetUsage → ForLayerSet → MaterialLayers[]
+    const forLayerSet = e['ForLayerSet']
+    if (forLayerSet && typeof forLayerSet === 'object') {
+      const ls = forLayerSet as Record<string, unknown>
+      if (Array.isArray(ls['MaterialLayers'])) {
+        for (const layer of ls['MaterialLayers'] as unknown[]) {
+          if (!layer || typeof layer !== 'object') continue
+          const l = layer as Record<string, unknown>
+          const thickness = l['LayerThickness']
+          const t = thickness && typeof thickness === 'object'
+            ? (thickness as Record<string, unknown>).value
+            : undefined
+          addMaterial(l['Material'], typeof t === 'number' ? t : undefined)
+        }
+      }
+    }
+
+    // IfcMaterialList → Materials[]
+    if (Array.isArray(e['Materials'])) {
+      for (const m of e['Materials'] as unknown[]) addMaterial(m)
+    }
+
+    // IfcMaterialConstituentSet → MaterialConstituents[]
+    if (Array.isArray(e['MaterialConstituents'])) {
+      for (const mc of e['MaterialConstituents'] as unknown[]) {
+        if (!mc || typeof mc !== 'object') continue
+        addMaterial((mc as Record<string, unknown>)['Material'])
+      }
+    }
+  }
+
+  return result
+}
+
+// ─── Helper: parse type-object property sets from IsTypedBy ──────────────────
+
+function parseTypeProps(isTypedBy: unknown): { typeName: string | null; psets: IFCPropertySet[] } {
+  if (!Array.isArray(isTypedBy) || isTypedBy.length === 0) return { typeName: null, psets: [] }
+
+  const typeObj = isTypedBy[0]  // take the first (should only be one)
+  if (!typeObj || typeof typeObj !== 'object') return { typeName: null, psets: [] }
+
+  const t = typeObj as Record<string, unknown>
+  const typeName = attrStr(t['Name'])
+
+  // Type objects use HasPropertySets (not IsDefinedBy)
+  const hasPsets = t['HasPropertySets']
+  const psets = Array.isArray(hasPsets) ? formatPsets(hasPsets) : []
+
+  return { typeName, psets }
 }
 
 // ─── Factory ─────────────────────────────────────────────────────────────────
@@ -1124,7 +1271,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           attributesDefault: false,
           attributes: ['Name', 'LongName', 'Description', 'GlobalId', 'ObjectType', 'Tag'],
           relations: {
-            // Property sets
+            // Property sets + quantity sets (IfcPropertySet + IfcElementQuantity)
             IsDefinedBy: {
               attributes: true,
               relations: true,
@@ -1139,22 +1286,37 @@ export function createViewer(container: HTMLElement): ViewerAPI {
               attributes: false,
               relations: false,
             },
+            // IFC4: type object and its property sets
+            IsTypedBy: {
+              attributes: true,
+              relations: true,
+            },
+            // Materials via IfcRelAssociatesMaterial
+            HasAssociations: {
+              attributes: true,
+              relations: true,
+            },
           },
         })
 
         if (!data) return null
 
         const raw = data as Record<string, unknown>
+        const { typeName, psets: typeProperties } = parseTypeProps(raw['IsTypedBy'])
 
         return {
-          name:         attrStr(raw['Name']),
-          longName:     attrStr(raw['LongName']),
-          description:  attrStr(raw['Description']),
-          globalId:     attrStr(raw['GlobalId']),
-          objectType:   attrStr(raw['ObjectType']),
-          tag:          attrStr(raw['Tag']),
-          storey:       extractStorey(raw['ContainedInStructure']),
-          propertySets: formatPsets(raw['IsDefinedBy']),
+          name:           attrStr(raw['Name']),
+          longName:       attrStr(raw['LongName']),
+          description:    attrStr(raw['Description']),
+          globalId:       attrStr(raw['GlobalId']),
+          objectType:     attrStr(raw['ObjectType']),
+          tag:            attrStr(raw['Tag']),
+          storey:         extractStorey(raw['ContainedInStructure']),
+          propertySets:   formatPsets(raw['IsDefinedBy']),
+          quantitySets:   formatQuantities(raw['IsDefinedBy']),
+          materials:      parseAssociations(raw['HasAssociations']),
+          typeProperties,
+          typeName,
           raw,
         }
       } catch (err) {
@@ -1168,17 +1330,29 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     frameCategory(id, modelId) {
-      const targetId = modelId ?? currentModelId
-      const typeMap  = (targetId ? typeMapByModel.get(targetId) : null) ?? expressIDToType
-      const model    = (targetId ? modelObjects.get(targetId) : null) ?? currentModel
-      if (!model) return
-      const ids = [...typeMap.entries()]
-        .filter(([, raw]) => canonicalType(raw) === id)
-        .map(([localId]) => localId)
-      if (ids.length === 0) return
+      if (modelId) {
+        // Specific model requested — single-model path (unchanged)
+        const typeMap = typeMapByModel.get(modelId) ?? expressIDToType
+        const model   = modelObjects.get(modelId) ?? currentModel
+        if (!model) return
+        const ids = [...typeMap.entries()].filter(([, raw]) => canonicalType(raw) === id).map(([lid]) => lid)
+        if (ids.length === 0) return
+        safeVoid(model.getMergedBox(ids).then(box => { if (!box.isEmpty()) void world.camera.controls.fitToBox(box, true) }), 'frameCategory')
+        return
+      }
+      // No modelId — collect boxes from every loaded model that has this type and union them
+      const boxPromises: Promise<THREE.Box3>[] = []
+      for (const [mid, model] of modelObjects) {
+        const typeMap = typeMapByModel.get(mid) ?? expressIDToType
+        const ids = [...typeMap.entries()].filter(([, raw]) => canonicalType(raw) === id).map(([lid]) => lid)
+        if (ids.length > 0) boxPromises.push(model.getMergedBox(ids))
+      }
+      if (boxPromises.length === 0) return
       safeVoid(
-        model.getMergedBox(ids).then((box) => {
-          if (!box.isEmpty()) void world.camera.controls.fitToBox(box, true)
+        Promise.all(boxPromises).then(boxes => {
+          const merged = new THREE.Box3()
+          for (const b of boxes) if (!b.isEmpty()) merged.union(b)
+          if (!merged.isEmpty()) void world.camera.controls.fitToBox(merged, true)
         }),
         'frameCategory',
       )

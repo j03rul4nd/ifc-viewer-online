@@ -24,7 +24,22 @@ export type ContentBlock =
   | { type: 'code'; text: string; lang?: string }
   | { type: 'callout'; variant: 'tip' | 'warning' | 'info'; text: string }
   | { type: 'image'; src: string; alt: string; caption?: string }
-  | { type: 'ifc-demo'; modelId: string; title: string; description: string; schema: string; size: string }
+  | {
+      type: 'ifc-demo'
+      modelId: string
+      title: string
+      description: string
+      schema: string
+      size: string
+      /** Show click-to-inspect panel. Default true. */
+      showProperties?: boolean
+      /** Show fullscreen button. Default true. */
+      allowFullscreen?: boolean
+      /** Viewer height in pixels. Default 440. */
+      height?: number
+      /** 'inline' (default) or 'hero' (taller, 580 px). */
+      variant?: 'inline' | 'hero'
+    }
   | { type: 'stat-row'; stats: Array<{ value: number; suffix?: string; prefix?: string; label: string }> }
   | { type: 'feature-grid'; items: Array<{ icon: string; title: string; body: string }> }
   | { type: 'comparison'; left: { label: string; color: string; items: string[] }; right: { label: string; color: string; items: string[] } }
@@ -63,7 +78,7 @@ export const BLOG_POSTS: BlogPost[] = [
     categorySlug: 'tool-guides',
     author: 'IFC Viewer Team',
     featured: true,
-    heroImage: 'hero-building',
+    heroImage: 'view-ifc-online-free',
     content: [
       {
         type: 'stat-row',
@@ -246,7 +261,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: 'IFC Tips',
     categorySlug: 'ifc-tips',
     author: 'IFC Viewer Team',
-    heroImage: 'og-image',
+    heroImage: 'ifc-vs-rvt-vs-nwd',
     content: [
       { type: 'p', text: "BIM projects produce models in a dozen formats. Most of them are proprietary. Most of them require the same £5,000 software license to open. When the client needs to inspect the model, run a quantity takeoff, or hand it to a facilities manager for the next 30 years, none of those licenses will be there." },
       { type: 'p', text: "That's the practical argument for IFC. Not ideology — logistics." },
@@ -1604,7 +1619,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
     author: 'IFC Viewer Team',
     lang: 'es',
     featured: true,
-    heroImage: 'hero-building',
+    heroImage: 'como-exportar-ifc-desde-revit',
     content: [
       { type: 'p', text: 'Revit lleva exportando IFC desde 2012. El problema no es el soporte — es que la configuración predeterminada está optimizada para la compatibilidad máxima con el mayor número de herramientas receptoras, no para la calidad del modelo. El resultado: archivos que generan decenas de avisos de validación que se podrían haber evitado con cuatro ajustes.' },
       {
@@ -1830,7 +1845,7 @@ export const BLOG_POSTS_DE: BlogPost[] = [
     author: 'IFC Viewer Team',
     lang: 'de',
     featured: true,
-    heroImage: 'hero-building',
+    heroImage: 'ifc-datei-im-browser-oeffnen',
     content: [
       { type: 'p', text: 'IFC-Dateien sind der offene Standard für den BIM-Datenaustausch — aber sie lassen sich nur schwer öffnen, ohne eine teure Workstation und proprietäre Software. Die meisten Online-Viewer laden die Datei auf einen Server hoch (bei vertraulichen Projektdaten keine Option) oder versagen bei Dateien über 10 MB.' },
       { type: 'p', text: 'Dieser Viewer analysiert IFC-Dateien vollständig im Browser via WebAssembly. Die Geometrie verlässt Ihr Gerät zu keinem Zeitpunkt. Eine 200-MB-Datei kann im Flugzeug ohne WLAN geöffnet werden.' },
@@ -1923,7 +1938,7 @@ export const BLOG_POSTS_FR: BlogPost[] = [
     author: 'IFC Viewer Team',
     lang: 'fr',
     featured: true,
-    heroImage: 'hero-building',
+    heroImage: 'ouvrir-fichier-ifc-navigateur',
     content: [
       { type: 'p', text: "Les fichiers IFC sont la langue commune de l'open BIM — mais ils sont notoirement difficiles à ouvrir sans logiciel spécialisé et des licences coûteuses. La plupart des visionneuses en ligne téléchargent votre fichier sur un serveur (impossible pour les données de projet confidentielles) ou échouent sur les fichiers de plus de 10 Mo." },
       { type: 'p', text: "Ce visualiseur analyse les fichiers IFC entièrement dans le navigateur via WebAssembly. La géométrie ne quitte jamais votre appareil. Vous pouvez ouvrir un fichier de 200 Mo dans un avion, en mode hors ligne." },

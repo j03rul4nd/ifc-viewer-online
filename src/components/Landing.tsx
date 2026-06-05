@@ -133,7 +133,10 @@ function HeroPreview({ lightBg }: { lightBg?: boolean }) {
           src={`${import.meta.env.BASE_URL}Renderizado_3D_detallado_de_edificio_modular.png`}
           alt="IFC building model rendered in browser — multi-storey modular structure with walls, windows, and structural elements highlighted by category"
           className="w-full h-auto block"
+          width="1536"
+          height="1024"
           loading="lazy"
+          decoding="async"
         />
         {/* Element tooltip — smaller on mobile */}
         <div className={`absolute top-[46%] right-[4%] border border-[var(--border-strong)] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-[11.5px] backdrop-blur-md ${tooltipBg}`}>
@@ -198,6 +201,10 @@ const FEATURE_ICONS = [
   Icons.Ruler,    Icons.Building, Icons.Ruler,    Icons.Building,
   Icons.Upload,   Icons.Zap,      Icons.Sparkles, Icons.Layers,
 ] as const
+
+// ── Privacy section icon map ───────────────────────────────────────────────────
+// Order: zero-uploads, verify-devtools, open-source, privacy-policy
+const PRIVACY_ICONS = [Icons.Lock, Icons.Eye, Icons.Zap, Icons.FileIfc] as const
 
 // ── Fix-guide categories ────────────────────────────────────────────────────
 // The 8 validation categories, each backed by a static, crawlable silo page at
@@ -275,15 +282,19 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
   // of an array. Guard every returnObjects call with Array.isArray so we never
   // call .map() on a string — EN fallback shows until the new namespace arrives.
   const raw = {
-    features: t('features', { returnObjects: true }),
-    typing:   t('typing',   { returnObjects: true }),
-    stats:    t('stats',    { returnObjects: true }),
-    steps:    t('steps',    { returnObjects: true }),
-    faq:      t('faq',      { returnObjects: true }),
+    features:     t('features',              { returnObjects: true }),
+    typing:       t('typing',                { returnObjects: true }),
+    stats:        t('stats',                 { returnObjects: true }),
+    steps:        t('steps',                 { returnObjects: true }),
+    faq:          t('faq',                   { returnObjects: true }),
+    privacyCards: t('privacySection.cards',  { returnObjects: true }),
   }
 
   const FEATURES = (Array.isArray(raw.features) ? raw.features as Array<{ title: string; body: string; tip: string }> : [])
     .map((f, i) => ({ ...f, icon: FEATURE_ICONS[i] ?? Icons.Upload }))
+
+  const PRIVACY_CARDS = (Array.isArray(raw.privacyCards) ? raw.privacyCards as Array<{ title: string; body: string }> : [])
+    .map((c, i) => ({ ...c, icon: PRIVACY_ICONS[i] ?? Icons.Check }))
 
   const TYPING_TEXTS = Array.isArray(raw.typing) ? raw.typing as string[] : []
   const STATS        = Array.isArray(raw.stats)   ? raw.stats  as Array<{ label: string }> : []
@@ -570,10 +581,19 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           {/* Trust line */}
           <motion.div
             variants={fadeUp} initial="hidden" animate="show" transition={{ duration: 0.5, delay: 0.35 }}
-            className="mt-4 text-[10.5px] sm:text-[11.5px] text-[var(--text-faint)]"
+            className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[10.5px] sm:text-[11.5px] text-[var(--text-faint)]"
           >
             <span className="hidden sm:inline">{t('hero.trustLine')}</span>
             <span className="sm:hidden">{t('hero.trustLineMobile')}</span>
+            <span aria-hidden="true">·</span>
+            <button
+              onClick={onNavigateToPrivacy}
+              className="inline-flex items-center gap-1 font-medium cursor-pointer bg-transparent border-0 p-0 hover:underline underline-offset-2 transition-colors"
+              style={{ color: 'var(--ok)' }}
+            >
+              <Icons.Lock size={9} />
+              Privacy Policy
+            </button>
           </motion.div>
 
           {/* Demo gallery link — captures users who don't have an IFC at hand */}
@@ -669,6 +689,79 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                 labelClassName="text-[11.5px] sm:text-[13px] text-[var(--text-faint)] mt-1 tracking-[0.02em]"
               />
             ))}
+          </div>
+        </section>
+
+        {/* ── Privacy & Security ── */}
+        <section
+          id="privacy-security"
+          className="border-t border-[var(--border)] py-14 sm:py-[90px] px-4 sm:px-7"
+          aria-labelledby="privacy-heading"
+        >
+          <div className="max-w-[1200px] mx-auto">
+            <div className="text-center mb-10 sm:mb-[60px]">
+              <div className="text-[11px] sm:text-[12px] tracking-[0.1em] font-mono mb-2 sm:mb-2.5" style={{ color: 'var(--ok)' }}>
+                <DecryptedText
+                  text={t('privacySection.label')}
+                  animateOn="view"
+                  sequential
+                  revealDirection="start"
+                  speed={60}
+                  className=""
+                  encryptedClassName="text-[var(--text-faint)]"
+                />
+              </div>
+              <h2
+                id="privacy-heading"
+                className="font-semibold tracking-[-0.03em] m-0"
+                style={{ fontSize: 'clamp(24px, 6.5vw, 42px)' }}
+              >
+                {t('privacySection.title')}
+              </h2>
+              <p className="text-[14px] sm:text-[16px] text-[var(--text-dim)] mt-3 max-w-[540px] mx-auto">
+                {t('privacySection.subtitle')}
+              </p>
+            </div>
+
+            <div
+              className="grid gap-px bg-[var(--border)] border border-[var(--border)] rounded-xl sm:rounded-2xl overflow-hidden"
+              style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}
+            >
+              {PRIVACY_CARDS.map((card, i) => (
+                <motion.div
+                  key={i}
+                  variants={fadeUp}
+                  initial="hidden"
+                  whileInView="show"
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.07 }}
+                  className="p-5 sm:p-7 bg-[var(--surface)] hover:bg-[var(--surface-2)] transition-colors"
+                >
+                  <div
+                    className="w-[30px] sm:w-[34px] h-[30px] sm:h-[34px] rounded-lg flex items-center justify-center mb-3 sm:mb-4"
+                    style={{ background: 'rgba(34,197,94,0.10)', color: 'var(--ok)' }}
+                    aria-hidden="true"
+                  >
+                    <card.icon size={15} />
+                  </div>
+                  <div className="text-[14px] sm:text-[15px] font-semibold tracking-tight mb-1.5">
+                    {card.title}
+                  </div>
+                  <div className="text-[12.5px] sm:text-[13px] text-[var(--text-dim)] leading-[1.55]">{card.body}</div>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="text-center mt-8 sm:mt-10">
+              <button
+                onClick={onNavigateToPrivacy}
+                className="inline-flex items-center gap-1.5 text-[12.5px] sm:text-[13px] font-medium hover:underline underline-offset-2 cursor-pointer bg-transparent border-0 p-0 transition-colors"
+                style={{ color: 'var(--ok)' }}
+              >
+                <Icons.Lock size={11} />
+                {t('privacySection.ctaText')}
+              </button>
+            </div>
           </div>
         </section>
 

@@ -231,7 +231,12 @@
     "atLimit": "Limit of 5 profiles reached.",
     "cancel": "Cancel",
     "save": "Save profile",
-    "defaultDescription": "Custom profile"
+    "defaultDescription": "Custom profile",
+    "editTitle": "Edit profile",
+    "editSubtitle": "Modify the rules and settings of this profile",
+    "saveChanges": "Save changes",
+    "deleteConfirm": "Delete this profile?",
+    "deleteYes": "Delete"
   },
   "catFull": {
     "schema": "IFC Schema",

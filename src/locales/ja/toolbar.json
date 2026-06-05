@@ -40,6 +40,8 @@
   "exportGlbFailed": "GLB エクスポートに失敗: {{message}}",
   "open": "開く",
   "reset": "リセット",
+  "legend": "凡例",
+  "legendTooltip": "カラー凡例 — モデルのエンティティタイプ",
   "status": {
     "loaded": "読み込み完了",
     "loading": "読み込み中…",

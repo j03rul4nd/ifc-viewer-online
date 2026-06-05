@@ -149,6 +149,30 @@
       "body": "Ative SSAO, renderização de bordas e bloom para renders de apresentação. Exporte o binário IFC corrigido ou a geometria visível como GLB padrão."
     }
   ],
+  "privacySection": {
+    "label": "PRIVACIDADE & SEGURANÇA",
+    "title": "Seus arquivos nunca saem do seu navegador.",
+    "subtitle": "Não pedimos que confie em nós — tornamos isso verificável.",
+    "ctaText": "Ler a Política de Privacidade →",
+    "cards": [
+      {
+        "title": "Zero uploads",
+        "body": "Seu IFC é analisado pelo web-ifc, um parser C++ compilado para WebAssembly. Ele roda inteiramente na sua aba do navegador. Nenhum byte viaja para qualquer servidor — nem o nosso."
+      },
+      {
+        "title": "Verifique você mesmo",
+        "body": "Abra o DevTools → aba Rede, depois solte seu arquivo. Você verá zero requisições para qualquer servidor externo tratando dados do modelo. Dizemos isso porque é comprovável."
+      },
+      {
+        "title": "Código auditável",
+        "body": "Cada linha de código é pública no GitHub. Sem chamadas ocultas ao servidor, sem lógica ofuscada. Sua equipe de segurança ou jurídica pode revisar o repositório antes de usar a ferramenta."
+      },
+      {
+        "title": "Política de Privacidade publicada",
+        "body": "Compatível com LGPD/GDPR, sem cookies, sem conta necessária. A política detalha exatamente o que é coletado (análises agregadas anônimas) e o que não é (seus arquivos, seus modelos)."
+      }
+    ]
+  },
   "openSource": {
     "label": "OPEN SOURCE",
     "title": "Construído em público, gratuito para sempre",

@@ -224,7 +224,12 @@
     "atLimit": "5 プロファイルの上限に達しました。",
     "cancel": "キャンセル",
     "save": "プロファイルを保存",
-    "defaultDescription": "カスタムプロファイル"
+    "defaultDescription": "カスタムプロファイル",
+    "editTitle": "プロファイルを編集",
+    "editSubtitle": "このプロファイルのルールと設定を変更します",
+    "saveChanges": "変更を保存",
+    "deleteConfirm": "このプロファイルを削除しますか？",
+    "deleteYes": "削除"
   },
   "catFull": {
     "schema": "IFC スキーマ",

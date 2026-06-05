@@ -1,12 +1,16 @@
 User-agent: *
 Allow: /
 
+# Main app & localized landing pages
+Allow: /ifc-viewer-online/
+Allow: /ifc-viewer-online/es/
+
 # Niche landing pages (static, bot-readable)
 Allow: /ifc-viewer-online/ifc-validator/
 Allow: /ifc-viewer-online/ifc-viewer-mac/
-Allow: /ifc-viewer-online/es/
 Allow: /ifc-viewer-online/es/ifc-validador/
 Allow: /ifc-viewer-online/solibri-alternative/
+Allow: /ifc-viewer-online/tools/fix-duplicate-guids/
 
 # Programmatic "how to fix" guides — per-rule, multi-language (static, crawlable)
 Allow: /ifc-viewer-online/fix/
@@ -20,10 +24,17 @@ Allow: /ifc-viewer-online/zh/fix/
 Allow: /ifc-viewer-online/ja/fix/
 Allow: /ifc-viewer-online/th/fix/
 
-# Blog — BIM & IFC guides (static shells generated at build time, EN + ES + DE + FR)
+# Blog — BIM & IFC guides (static shells, EN + ES + DE + FR)
 Allow: /ifc-viewer-online/blog/
 Allow: /ifc-viewer-online/es/blog/
 Allow: /ifc-viewer-online/de/blog/
 Allow: /ifc-viewer-online/fr/blog/
+
+# Legal pages
+Allow: /ifc-viewer-online/privacy/
+Allow: /ifc-viewer-online/terms/
+
+# LLMs.txt — AI discoverability
+Allow: /ifc-viewer-online/llms.txt
 
 Sitemap: https://j03rul4nd.github.io/ifc-viewer-online/sitemap.xml

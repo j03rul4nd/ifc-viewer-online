@@ -34,7 +34,13 @@
     "noMatches": "No categories match",
     "showAll": "Show all",
     "hideAll": "Hide all",
-    "hiddenCount": "{{count}} hidden"
+    "hiddenCount": "{{count}} hidden",
+    "legendBadge": "Color legend",
+    "typesShort": "types",
+    "withIssues": "with issues",
+    "hint": "Click swatch to isolate · click name to frame in 3D",
+    "section3D": "3D elements",
+    "sectionOther": "Other IFC objects"
   },
   "actions": {
     "isolate": "Isolate",
@@ -76,7 +82,7 @@
   },
   "tabs": {
     "properties": "Properties",
-    "categories": "Categories",
+    "categories": "Legend",
     "takeoff": "Quantities"
   },
   "takeoff": {

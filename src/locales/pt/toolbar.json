@@ -40,6 +40,8 @@
   "exportGlbFailed": "Falha na exportação GLB: {{message}}",
   "open": "Abrir",
   "reset": "Redefinir",
+  "legend": "Legenda",
+  "legendTooltip": "Legenda de cores — tipos de entidades do modelo",
   "status": {
     "loaded": "Carregado",
     "loading": "Carregando…",

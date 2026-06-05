@@ -149,6 +149,30 @@
       "body": "SSAO, Kantenrendering und Bloom für Präsentationsrenderings aktivieren. Das korrigierte IFC-Binär exportieren oder sichtbare Geometrie als Standard-GLB."
     }
   ],
+  "privacySection": {
+    "label": "DATENSCHUTZ & SICHERHEIT",
+    "title": "Ihre Dateien verlassen niemals Ihren Browser.",
+    "subtitle": "Wir bitten Sie nicht, uns zu vertrauen — wir machen es überprüfbar.",
+    "ctaText": "Datenschutzrichtlinie lesen →",
+    "cards": [
+      {
+        "title": "Keine Uploads",
+        "body": "Ihre IFC wird von web-ifc geparst, einem zu WebAssembly kompilierten C++-Parser. Er läuft vollständig in Ihrem Browser-Tab. Kein Byte reist zu einem Server — auch nicht zu unserem."
+      },
+      {
+        "title": "Selbst überprüfen",
+        "body": "Öffnen Sie DevTools → Netzwerk-Tab, dann legen Sie Ihre Datei ab. Sie sehen null Anfragen an externe Server, die Modelldaten verarbeiten. Wir sagen dies, weil es nachweislich wahr ist."
+      },
+      {
+        "title": "Prüfbarer Quellcode",
+        "body": "Jede Zeile Code ist öffentlich auf GitHub. Keine versteckten Serveraufrufe, keine verschleierte Logik. Ihr Sicherheits- oder Rechtsteam kann das Repository vor der Nutzung prüfen."
+      },
+      {
+        "title": "Veröffentlichte Datenschutzrichtlinie",
+        "body": "DSGVO-konform, cookiefrei, kein Konto erforderlich. Die Richtlinie beschreibt genau, was gesammelt wird (aggregierte anonymisierte Analysen) und was nicht (Ihre Dateien, Ihre Modelle)."
+      }
+    ]
+  },
   "openSource": {
     "label": "OPEN SOURCE",
     "title": "Öffentlich entwickelt, für immer kostenlos",

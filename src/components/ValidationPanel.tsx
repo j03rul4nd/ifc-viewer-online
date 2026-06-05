@@ -24,7 +24,7 @@ import { runValidation, runValidationAll } from '../lib/validator'
 import { importBcf, issuesToBcfTopics, downloadBcfBlob } from '../lib/bcf'
 import type {
   ValidationIssue, BcfTopic, ViewerHandle,
-  ValidationCategoryType,
+  ValidationCategoryType, ValidationProfile,
 } from '../types'
 import { VALIDATION_PROFILES, RULE_METADATA, getRuleLabel, getRuleRemediation, AUTHORING_TOOLS } from '../types'
 import type { AuthoringTool } from '../types'
@@ -732,143 +732,280 @@ function RunButton({
 
 interface ProfileDropdownProps {
   activeProfileId: string | null
-  customProfiles: { id: string; name: string; description: string; icon: string; coverageTypes: string[] }[]
+  customProfiles: ValidationProfile[]
   onSelect: (id: string | null) => void
-  onPersonalize: () => void
+  onNewProfile: () => void
+  onEditProfile: (profile: ValidationProfile) => void
+  onDeleteProfile: (profileId: string) => void
 }
 
-function ProfileDropdown({ activeProfileId, customProfiles, onSelect, onPersonalize }: ProfileDropdownProps) {
+function ProfileDropdown({
+  activeProfileId, customProfiles, onSelect,
+  onNewProfile, onEditProfile, onDeleteProfile,
+}: ProfileDropdownProps) {
   const { t } = useTranslation('validation')
-  const [open, setOpen]       = useState(false)
-  const triggerRef            = useRef<HTMLButtonElement>(null)
-  const dropdownRef           = useRef<HTMLDivElement>(null)
-  // Bounding rect of the row-level container used to size + position the portal
-  const [dropRect, setDropRect] = useState<{ bottom: number; left: number; width: number } | null>(null)
+  const [open, setOpen]             = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const triggerRef                  = useRef<HTMLButtonElement>(null)
+  const dropdownRef                 = useRef<HTMLDivElement>(null)
+  const [dropRect, setDropRect]     = useState<{ bottom: number; left: number; width: number } | null>(null)
 
-  // Compute position from the trigger's nearest [data-profile-row] ancestor
   const computeRect = useCallback(() => {
     const row = triggerRef.current?.closest<HTMLElement>('[data-profile-row]')
     if (!row) return
     const r = row.getBoundingClientRect()
     setDropRect({
-      bottom: window.innerHeight - r.top + 4,  // gap above the row
-      left:   r.left + 12,                     // row's px-3 (12px) left padding
-      width:  r.width - 24,                    // subtract both sides of px-3
+      bottom: window.innerHeight - r.top + 4,
+      left:   r.left + 12,
+      width:  r.width - 24,
     })
   }, [])
 
   const handleToggle = () => {
-    if (!open) computeRect()
+    if (!open) { computeRect(); setDeletingId(null) }
     setOpen((v) => !v)
   }
 
-  // Re-compute on resize while open
   useEffect(() => {
     if (!open) return
     window.addEventListener('resize', computeRect, { passive: true })
     return () => window.removeEventListener('resize', computeRect)
   }, [open, computeRect])
 
-  // Close on outside click (check both trigger area and the portal panel)
   useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
-      const t = e.target as Node
-      const inTrigger   = triggerRef.current?.contains(t)
-      const inDropdown  = dropdownRef.current?.contains(t)
-      if (!inTrigger && !inDropdown) setOpen(false)
+      const target = e.target as Node
+      if (!triggerRef.current?.contains(target) && !dropdownRef.current?.contains(target)) {
+        setOpen(false)
+        setDeletingId(null)
+      }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  const allProfiles  = [...VALIDATION_PROFILES, ...customProfiles]
+  const allProfiles   = [...VALIDATION_PROFILES, ...customProfiles]
   const activeProfile = activeProfileId ? allProfiles.find((p) => p.id === activeProfileId) : null
+  const canAddMore    = customProfiles.length < 5
 
-  // ── Portal dropdown ── rendered at document.body level to escape
-  // any overflow:hidden ancestor (Panel, flex containers, etc.)
+  // ── Profile card ──────────────────────────────────────────────────────────────
+  const ProfileCard = ({ profile, isCustom }: { profile: ValidationProfile | typeof VALIDATION_PROFILES[number]; isCustom: boolean }) => {
+    const isActive   = activeProfileId === profile.id
+    const isDeleting = deletingId === profile.id
+    const customProfile = isCustom ? profile as ValidationProfile : null
+
+    if (isDeleting && customProfile) {
+      return (
+        <div
+          key={profile.id}
+          className="flex flex-col justify-center gap-2 p-2.5 rounded-lg"
+          style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)' }}
+        >
+          <p className="text-[10px] font-medium" style={{ color: '#ef4444' }}>
+            {t('customProfile.deleteConfirm', { defaultValue: 'Delete this profile?' })}
+          </p>
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => setDeletingId(null)}
+              className="flex-1 h-6 rounded text-[10px] font-medium transition-colors"
+              style={{ background: 'var(--surface-2)', color: 'var(--text-dim)', border: '1px solid var(--border)' }}
+            >
+              {t('customProfile.cancel')}
+            </button>
+            <button
+              onClick={() => {
+                onDeleteProfile(customProfile.id)
+                setDeletingId(null)
+                if (activeProfileId === customProfile.id) onSelect(null)
+              }}
+              className="flex-1 h-6 rounded text-[10px] font-semibold transition-colors"
+              style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
+            >
+              {t('customProfile.deleteYes', { defaultValue: 'Delete' })}
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div
+        className="group relative flex flex-col items-start gap-1 p-2.5 rounded-lg cursor-pointer transition-all"
+        style={
+          isActive
+            ? { background: 'var(--accent)18', border: '1px solid var(--accent)55' }
+            : { background: 'var(--surface-2)', border: '1px solid var(--border)' }
+        }
+        onClick={() => { onSelect(isActive ? null : profile.id); setOpen(false); setDeletingId(null) }}
+      >
+        {/* Active checkmark */}
+        {isActive && (
+          <span
+            className="absolute top-2 right-2 w-3.5 h-3.5 rounded-full flex items-center justify-center"
+            style={{ background: 'var(--accent)' }}
+          >
+            <svg width="7" height="7" viewBox="0 0 7 7" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 3.5l1.5 1.5 3.5-3" />
+            </svg>
+          </span>
+        )}
+
+        {/* Edit / delete actions (custom profiles only, shown on hover) */}
+        {isCustom && !isActive && customProfile && (
+          <div
+            className="absolute top-1.5 right-1.5 hidden group-hover:flex gap-0.5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={(e) => { e.stopPropagation(); setOpen(false); onEditProfile(customProfile) }}
+              className="w-5 h-5 flex items-center justify-center rounded transition-colors"
+              style={{ color: 'var(--text-faint)' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)' }}
+              title={t('profile.editCustom')}
+            >
+              <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1.5 7.5h1.5l4-4-1.5-1.5-4 4v1.5z" />
+                <path d="M5.5 2.5l1.5 1.5" />
+              </svg>
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setDeletingId(customProfile.id) }}
+              className="w-5 h-5 flex items-center justify-center rounded transition-colors"
+              style={{ color: 'var(--text-faint)' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.12)'; (e.currentTarget as HTMLButtonElement).style.color = '#ef4444' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)' }}
+              title={t('profile.deleteCustom')}
+            >
+              <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1.5 2.5h6M3.5 2.5V1.5h2V2.5M3 2.5l.5 5h2l.5-5" />
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* Icon + name */}
+        <div className="flex items-center gap-1.5 w-full min-w-0 pr-5">
+          <span className="text-[13px] leading-none shrink-0">{profile.icon}</span>
+          <span
+            className="text-[11px] font-semibold truncate"
+            style={{ color: isActive ? 'var(--accent)' : 'var(--text)' }}
+          >
+            {localizedProfileName(profile, t)}
+          </span>
+        </div>
+
+        {/* Description */}
+        <p className="text-[9px] leading-tight line-clamp-2 w-full" style={{ color: 'var(--text-faint)' }}>
+          {localizedProfileDescription(profile, t)}
+        </p>
+
+        {/* Coverage chips */}
+        <div className="flex flex-wrap gap-0.5 mt-0.5 w-full">
+          {profile.coverageTypes.slice(0, 4).map((cat) => (
+            <span
+              key={cat}
+              className="text-[8px] px-1 rounded font-mono leading-tight whitespace-nowrap"
+              style={{ background: 'var(--accent)12', color: 'var(--accent)' }}
+            >
+              {cat}
+            </span>
+          ))}
+          {profile.coverageTypes.length > 4 && (
+            <span className="text-[8px] font-mono" style={{ color: 'var(--text-faint)' }}>
+              +{profile.coverageTypes.length - 4}
+            </span>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   const dropdownPortal = open && dropRect ? createPortal(
     <div
       ref={dropdownRef}
-      className="fixed rounded-xl border border-[var(--border)] bg-[rgba(18,18,24,0.97)] backdrop-blur-[16px] flex flex-col"
+      className="fixed rounded-xl flex flex-col overflow-hidden"
       style={{
         zIndex:    9999,
         bottom:    dropRect.bottom,
         left:      dropRect.left,
         width:     dropRect.width,
-        maxHeight: 'min(60dvh, 480px)',
-        boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
+        maxHeight: 'min(64dvh, 520px)',
+        background: 'rgba(16,16,22,0.98)',
+        border: '1px solid var(--border)',
+        boxShadow: '0 -8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.03)',
+        backdropFilter: 'blur(16px)',
       }}
     >
-      {/* Scrollable profile grid */}
-      <div className="overflow-y-auto flex-1 p-2">
-        <div className="grid grid-cols-2 gap-1.5">
-          {allProfiles.map((profile) => {
-            const isActive = activeProfileId === profile.id
-            return (
-              <button
-                key={profile.id}
-                onClick={() => { onSelect(isActive ? null : profile.id); setOpen(false) }}
-                className="relative flex flex-col items-start gap-1 p-2.5 rounded-lg text-left transition-all cursor-pointer min-w-0"
-                style={
-                  isActive
-                    ? { background: 'var(--accent)22', border: `1px solid var(--accent)` }
-                    : { background: 'var(--surface-2)', border: '1px solid var(--border)' }
-                }
-              >
-                {isActive && (
-                  <span
-                    className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: 'var(--accent)' }}
-                  >
-                    <svg width="7" height="7" viewBox="0 0 7 7" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M1 3.5l1.5 1.5 3.5-3" />
-                    </svg>
-                  </span>
-                )}
-                <div className="flex items-center gap-1.5 w-full min-w-0" style={{ paddingRight: isActive ? '1.25rem' : 0 }}>
-                  <span className="text-[14px] leading-none shrink-0">{profile.icon}</span>
-                  <span className="text-[11px] font-semibold truncate" style={{ color: isActive ? 'var(--accent)' : 'var(--text)' }}>
-                    {localizedProfileName(profile, t)}
-                  </span>
-                </div>
-                <p className="text-[9px] text-[var(--text-faint)] leading-tight line-clamp-2 w-full">
-                  {localizedProfileDescription(profile, t)}
-                </p>
-                <div className="flex flex-wrap gap-0.5 mt-0.5 w-full">
-                  {profile.coverageTypes.slice(0, 4).map((cat) => (
-                    <span
-                      key={cat}
-                      className="text-[8px] px-1 rounded font-mono leading-tight whitespace-nowrap"
-                      style={{ background: 'var(--accent)14', color: 'var(--accent)' }}
-                    >
-                      {cat}
-                    </span>
-                  ))}
-                  {profile.coverageTypes.length > 4 && (
-                    <span className="text-[8px] text-[var(--text-faint)] font-mono">
-                      +{profile.coverageTypes.length - 4}
-                    </span>
-                  )}
-                </div>
-              </button>
-            )
-          })}
+      <div className="overflow-y-auto flex-1 p-2.5 flex flex-col gap-3">
+        {/* Built-in profiles */}
+        <div>
+          <p
+            className="text-[9px] font-semibold uppercase tracking-widest mb-2 px-0.5"
+            style={{ color: 'var(--text-faint)' }}
+          >
+            {t('profile.label')}
+          </p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {VALIDATION_PROFILES.map((profile) => (
+              <ProfileCard key={profile.id} profile={profile} isCustom={false} />
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Footer: "Personalizar" lives here to free the header row */}
-      <div className="border-t border-[var(--border)] p-2 shrink-0">
-        <button
-          onClick={() => { setOpen(false); onPersonalize() }}
-          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-[11px] font-medium border border-dashed border-[var(--border)] text-[var(--text-faint)] hover:text-[var(--text-dim)] hover:border-[var(--text-dim)] transition-colors cursor-pointer"
-        >
-          <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-            <path d="M4.5 1.5v6M1.5 4.5h6" />
-          </svg>
-          {t('profile.customize')}
-          <span className="ml-auto text-[9px] font-mono opacity-60">{customProfiles.length}/5</span>
-        </button>
+        {/* Custom profiles */}
+        <div>
+          <div className="flex items-center gap-2 mb-2 px-0.5">
+            <p
+              className="text-[9px] font-semibold uppercase tracking-widest"
+              style={{ color: 'var(--text-faint)' }}
+            >
+              {t('profile.custom')}
+            </p>
+            <span
+              className="text-[8px] font-mono px-1.5 py-0.5 rounded-full"
+              style={{ background: 'var(--surface-2)', color: 'var(--text-faint)' }}
+            >
+              {customProfiles.length}/5
+            </span>
+          </div>
+
+          {customProfiles.length > 0 && (
+            <div className="grid grid-cols-2 gap-1.5 mb-1.5">
+              {customProfiles.map((profile) => (
+                <ProfileCard key={profile.id} profile={profile} isCustom={true} />
+              ))}
+            </div>
+          )}
+
+          {/* New profile button */}
+          <button
+            onClick={() => { setOpen(false); setDeletingId(null); onNewProfile() }}
+            disabled={!canAddMore}
+            className="flex items-center gap-2 w-full px-3 h-8 rounded-lg text-[11px] font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              color: canAddMore ? 'var(--text-dim)' : 'var(--text-faint)',
+              border: '1px dashed var(--border)',
+              background: 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              if (!e.currentTarget.disabled) {
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)'
+                ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--text-dim)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = canAddMore ? 'var(--text-dim)' : 'var(--text-faint)'
+              ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'
+            }}
+          >
+            <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+              <path d="M4.5 1.5v6M1.5 4.5h6" />
+            </svg>
+            {t('profile.createCustom')}
+          </button>
+        </div>
       </div>
     </div>,
     document.body,
@@ -876,7 +1013,6 @@ function ProfileDropdown({ activeProfileId, customProfiles, onSelect, onPersonal
 
   return (
     <div className="flex items-center gap-1 min-w-0 flex-1">
-      {/* Trigger */}
       <button
         ref={triggerRef}
         onClick={handleToggle}
@@ -898,11 +1034,13 @@ function ProfileDropdown({ activeProfileId, customProfiles, onSelect, onPersonal
         </svg>
       </button>
 
-      {/* Clear */}
       {activeProfileId && (
         <button
           onClick={() => onSelect(null)}
-          className="w-7 h-7 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors shrink-0 cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded transition-colors shrink-0 cursor-pointer"
+          style={{ color: 'var(--text-faint)' }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)'; (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-2)' }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-faint)'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
           title={t('profile.clearProfile')}
         >
           <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -1410,7 +1548,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     result, partialIssues, isRunning, progress, validationStatus, validationError,
     filters, setFilters,
     rules, activeProfileId, customProfiles, showCoverageSummary, dismissCoverageSummary,
-    setActiveProfile,
+    setActiveProfile, removeCustomProfile,
   } = useValidationStore(
     useShallow((s) => ({
       result:                 s.result,
@@ -1427,6 +1565,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
       showCoverageSummary:    s.showCoverageSummary,
       dismissCoverageSummary: s.dismissCoverageSummary,
       setActiveProfile:       s.setActiveProfile,
+      removeCustomProfile:    s.removeCustomProfile,
     })),
   )
   const { validationPanelOpen, toggleValidationPanel } = useUIStore(
@@ -1448,6 +1587,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   const [search, setSearch]             = useState('')
   const [modelFilter, setModelFilter]   = useState<string | null>(null)
   const [profileModalOpen, setProfileModalOpen] = useState(false)
+  const [editingProfile, setEditingProfile]     = useState<ValidationProfile | undefined>(undefined)
   const [exportModalOpen, setExportModalOpen]   = useState(false)
   const [activePanel, setActivePanel]   = useState<'issues' | 'bcf' | 'history'>('issues')
   const bcfFileRef = useRef<HTMLInputElement>(null)
@@ -1721,7 +1861,28 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
       const reportBase = import.meta.env.VITE_REPORT_URL as string | undefined
       const appBase    = `${window.location.origin}${window.location.pathname}`
       const { url }    = buildShareUrl(payload, reportBase, appBase)
-      const copied     = await copyToClipboard(url)
+
+      // Prefer the native OS share sheet (Web Share API) — especially powerful
+      // on iOS Safari and Android Chrome where it opens WhatsApp, Slack, Mail, etc.
+      // On unsupported browsers, or on errors other than user-cancel, falls back
+      // to clipboard copy.
+      if (typeof navigator.share === 'function' && navigator.canShare?.({ url })) {
+        try {
+          await navigator.share({
+            title: `IFC Health Score: ${result.qualityScore ?? 0}/100`,
+            url,
+          })
+          trackShareReportClicked()
+          return // native share sheet handled the UX — no toast needed
+        } catch (shareErr) {
+          // User dismissed the share sheet — respect that, do nothing
+          if (shareErr instanceof DOMException && shareErr.name === 'AbortError') return
+          // Other errors (NotAllowedError, etc) → fall through to clipboard
+        }
+      }
+
+      // Fallback: copy link to clipboard
+      const copied = await copyToClipboard(url)
       trackShareReportClicked()
       toast(
         copied ? t('actions.reportLinkCopied') : t('actions.reportLinkError'),
@@ -1828,7 +1989,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     return (
       <button
         onClick={() => { toggleValidationPanel(); trackValidationPanelOpened({ trigger: 'manual' }) }}
-        className="flex items-center gap-2 px-3 h-10 xs:h-9 border-t border-[var(--border)] bg-[var(--surface)] w-full text-left hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] transition-colors shrink-0"
+        className="flex items-center gap-2 px-3 h-10 xs:h-9 border-t border-[var(--border)] bg-[var(--surface)] w-full text-left hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] transition-colors shrink-0 max-md:hidden"
       >
         <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider shrink-0">
           {t('panel.title')}
@@ -2032,7 +2193,9 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
           activeProfileId={activeProfileId}
           customProfiles={customProfiles}
           onSelect={(id) => { setActiveProfile(id); trackValidationProfileChanged({ profile_id: id }) }}
-          onPersonalize={() => setProfileModalOpen(true)}
+          onNewProfile={() => { setEditingProfile(undefined); setProfileModalOpen(true) }}
+          onEditProfile={(profile) => { setEditingProfile(profile); setProfileModalOpen(true) }}
+          onDeleteProfile={removeCustomProfile}
         />
         <div className="flex-1" />
         <RunButton
@@ -2292,7 +2455,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
       )}
 
       {/* ── Content ── */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto max-md:pb-[calc(var(--mobile-nav-h)+var(--mobile-nav-margin)+env(safe-area-inset-bottom,0px)+8px)]">
         {activePanel === 'history' ? (
           <ValidationHistoryPanel onClose={() => setActivePanel('issues')} />
         ) : activePanel === 'bcf' ? (
@@ -2400,7 +2563,11 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
         )}
       </div>
 
-      <CustomProfileModal open={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
+      <CustomProfileModal
+        open={profileModalOpen}
+        onClose={() => { setProfileModalOpen(false); setEditingProfile(undefined) }}
+        editProfile={editingProfile}
+      />
 
       {exportModalOpen && exportModels.length > 0 && (
         <ValidationExportModal

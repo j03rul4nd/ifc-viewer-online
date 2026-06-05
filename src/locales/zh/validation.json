@@ -224,7 +224,12 @@
     "atLimit": "已达 5 个配置上限。",
     "cancel": "取消",
     "save": "保存配置",
-    "defaultDescription": "自定义配置"
+    "defaultDescription": "自定义配置",
+    "editTitle": "编辑配置文件",
+    "editSubtitle": "修改此配置文件的规则和设置",
+    "saveChanges": "保存更改",
+    "deleteConfirm": "删除此配置文件？",
+    "deleteYes": "删除"
   },
   "catFull": {
     "schema": "IFC 架构",

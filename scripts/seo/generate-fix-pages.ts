@@ -65,6 +65,23 @@ function ogImage(lang: Lang): string {
   return OG_AVAILABLE.has(lang) ? `${SITE}/og-image-${lang}.png` : `${SITE}/og-image.png`
 }
 
+/**
+ * Languages × categories for which a localised fix-cover image was generated
+ * and is present in dist (checked at build time). Keys are "lang/cat".
+ */
+const FIX_COVER_AVAILABLE = new Set<string>()
+
+/**
+ * Category-specific OG image for fix pages. Prefers the localised cover
+ * (`fix/covers/<lang>/<cat>.png`), then the EN cover, then the generic image.
+ */
+function fixCoverUrl(lang: Lang, cat: string): string {
+  const key = `${lang}/${cat}`
+  if (FIX_COVER_AVAILABLE.has(key))     return `${SITE}/fix/covers/${lang}/${cat}.png`
+  if (FIX_COVER_AVAILABLE.has(`en/${cat}`)) return `${SITE}/fix/covers/en/${cat}.png`
+  return ogImage(lang)
+}
+
 /** Browser theme color (matches the app shell) + inline SVG favicon. */
 const THEME_COLOR = '#0A0A0C'
 const FAVICON =
@@ -907,7 +924,7 @@ function renderRulePage(base: RuleBase, lang: Lang, loc: LocaleData, related: { 
   const sevLabel = loc.severity[base.severity] ?? base.severity
   const title = ui.pageTitle(label)
   const metaDesc = clip(summary, 158)
-  const ogImg = ogImage(lang)
+  const ogImg = fixCoverUrl(lang, base.category)
 
   const howToSteps: { name: string; text: string }[] = [
     { name: ui.sOpenName, text: ui.sOpenText },
@@ -1198,7 +1215,7 @@ function renderCategoryPage(cat: string, rules: RuleBase[], lang: Lang, loc: Loc
   const root = langPath === '' ? '../../../' : '../../../../' // page is /[lang/]fix/category/<cat>/
   const fixRoot = langPath === '' ? '../../' : '../../../'    // up to /[lang/]fix/
   const url = catUrl(langPath, cat)
-  const ogImg = ogImage(lang)
+  const ogImg = fixCoverUrl(lang, cat)
   const catLabel = catLabelOf(cat, loc)
   const n = rules.length
   const title = ui.catTitle(catLabel, n)
@@ -1409,6 +1426,17 @@ export function generateFixPages(distDir: string): FixPagesResult {
   OG_AVAILABLE.clear()
   for (const lang of LANGS) {
     if (existsSync(path.join(distDir, `og-image-${lang}.png`))) OG_AVAILABLE.add(lang)
+  }
+
+  // Detect which fix-cover images were generated (public/fix/covers/<lang>/<cat>.png
+  // are copied to dist by Vite's public-dir handling).
+  FIX_COVER_AVAILABLE.clear()
+  const COVER_CATS = ['schema', 'spatial', 'quality', 'classification', 'lod', 'iso19650', 'mep', 'clash']
+  for (const lang of LANGS) {
+    for (const cat of COVER_CATS) {
+      if (existsSync(path.join(distDir, 'fix', 'covers', lang, `${cat}.png`)))
+        FIX_COVER_AVAILABLE.add(`${lang}/${cat}`)
+    }
   }
 
   const localesDir = path.resolve(distDir, '..', 'src', 'locales')

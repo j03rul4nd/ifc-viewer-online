@@ -149,6 +149,30 @@
       "body": "Activa SSAO, renderitzat de vores i bloom per a renderitzats de presentació. Exporta el binari IFC corregit (totes les diferències aplicades sense servidor) o la geometria visible com a GLB estàndard."
     }
   ],
+  "privacySection": {
+    "label": "PRIVADESA I SEGURETAT",
+    "title": "Els teus fitxers mai surten del teu navegador.",
+    "subtitle": "No et demanem que confiïs en nosaltres — ho fem verificable.",
+    "ctaText": "Llegir la Política de privadesa →",
+    "cards": [
+      {
+        "title": "Zero pujades",
+        "body": "El teu IFC és analitzat per web-ifc, un parser C++ compilat a WebAssembly. S'executa completament dins de la teva pestanya del navegador. Cap byte viatja a cap servidor — ni tan sols al nostre."
+      },
+      {
+        "title": "Verifica-ho tu mateix",
+        "body": "Obre DevTools → pestanya Xarxa, i després deixa anar el teu fitxer. Veuràs zero sol·licituds a qualsevol servidor extern que gestioni dades del model. Ho diem perquè és demostrablement cert."
+      },
+      {
+        "title": "Codi auditable",
+        "body": "Cada línia de codi és pública a GitHub. Sense crides ocultes al servidor, sense lògica ofuscada. El teu equip de seguretat o legal pot revisar el repositori abans d'usar l'eina."
+      },
+      {
+        "title": "Política de privadesa publicada",
+        "body": "Compatible amb el RGPD, sense galetes, sense compte requerit. La política detalla exactament el que es recull (analítiques agregades anònimes) i el que no (els teus fitxers, els teus models)."
+      }
+    ]
+  },
   "openSource": {
     "label": "CODI OBERT",
     "title": "Construït en públic, gratuït per sempre",

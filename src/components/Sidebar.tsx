@@ -4,15 +4,18 @@ import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import { useValidationStore } from '../stores/validationStore'
 import { useUIStore } from '../stores/uiStore'
+
+type SidebarTab = 'props' | 'cats' | 'qty'
 import { makeHiddenKey, expandWithDecomp } from '../lib/visibility'
 import { useEditorHistory } from '../hooks/useEditorHistory'
 import { useEditorStore } from '../stores/editorStore'
 import { useTakeoffStore, selectTakeoffGroups, selectTakeoffStatus } from '../stores/takeoffStore'
 import { useSceneStore } from '../stores/sceneStore'
 import { computeTakeoff } from '../lib/takeoff'
-import { buildRenameCommand, buildSetPropertyCommand } from '../lib/diffStore'
-import type { Category, SelectedInfo, SpatialNode, SpatialElement, ValidationIssue, TakeoffGroup } from '../types'
-import type { IFCItemData, IFCPropertySet, ViewerAPI } from '../lib/viewer'
+import { buildRenameCommand, buildSetPropertyCommand, exportElementToJson, exportElementToCsv, downloadBlob } from '../lib/diffStore'
+import type { Category, SceneModel, SelectedInfo, SpatialNode, SpatialElement, ValidationIssue, TakeoffGroup, EditDiff } from '../types'
+import { IFC_DISPLAY_NAMES, IFC_PALETTE } from '../lib/viewer'
+import type { IFCItemData, IFCPropertySet, IFCQuantitySet, ViewerAPI } from '../lib/viewer'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -47,19 +50,6 @@ function findSpatialPath(
   return null
 }
 
-const IFC_DISPLAY_NAMES: Record<string, string> = {
-  IFCWALL: 'Walls', IFCWALLSTANDARDCASE: 'Walls',
-  IFCSLAB: 'Slabs', IFCSLABSTANDARDCASE: 'Slabs',
-  IFCBEAM: 'Beams', IFCBEAMSTANDARDCASE: 'Beams',
-  IFCCOLUMN: 'Columns', IFCCOLUMNSTANDARDCASE: 'Columns',
-  IFCDOOR: 'Doors', IFCWINDOW: 'Windows',
-  IFCROOF: 'Roofs', IFCSTAIR: 'Stairs', IFCSTAIRFLIGHT: 'Stairs',
-  IFCRAILING: 'Railings', IFCSPACE: 'Spaces',
-  IFCFURNISHINGELEMENT: 'Furniture', IFCFLOWSEGMENT: 'MEP',
-  IFCPIPESEGMENT: 'Pipes', IFCDUCTSEGMENT: 'Ducts',
-  IFCMEMBER: 'Members', IFCPLATE: 'Plates',
-  IFCCOVERING: 'Coverings', IFCFOOTING: 'Footings', IFCPILE: 'Piles',
-}
 
 const CLASS_COLOR: Record<string, string> = {
   IfcProject: '#5E6AD2', IfcSite: '#30A46C',
@@ -306,12 +296,14 @@ function PsetRow({
   elementExpressId,
   onEditProperty,
   forceOpen = false,
+  dirtyProps = new Map(),
 }: {
   pset: IFCPropertySet
   elementExpressId: number
   onEditProperty: (psetName: string, propName: string, propExpressId: number, oldValue: string, newValue: string) => void
-  /** When true (active filter), the set is forced open so matches are visible. */
   forceOpen?: boolean
+  /** propExpressId (as string) → pending new value */
+  dirtyProps?: Map<string, string>
 }) {
   const [userOpen, setUserOpen] = useState(false)
   const open = forceOpen || userOpen
@@ -359,14 +351,22 @@ function PsetRow({
             <div className="border-t border-[var(--border)]">
               {pset.properties.map((prop, i) => {
                 const isEditingThis = editingPropId === prop.expressId
+                const pendingVal = dirtyProps.get(String(prop.expressId))
+                const isDirtyProp = pendingVal !== undefined
+                const displayVal = isDirtyProp ? pendingVal : prop.value
                 return (
                   <div
                     key={i}
                     className="flex items-center px-2.5 py-1 gap-2 hover:bg-[var(--surface-2)] transition-colors group/prop"
                   >
-                    <span className="w-[42%] flex-shrink-0 text-[11px] text-[var(--text-dim)] truncate" title={prop.name}>
-                      {prop.name}
-                    </span>
+                    <div className="w-[42%] flex-shrink-0 flex items-center gap-1 min-w-0">
+                      <span className="text-[11px] text-[var(--text-dim)] truncate" title={prop.name}>
+                        {prop.name}
+                      </span>
+                      {isDirtyProp && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0" title="Unsaved change" />
+                      )}
+                    </div>
                     <div className="flex-1 flex items-center gap-1 min-w-0">
                       {isEditingThis ? (
                         <>
@@ -389,30 +389,36 @@ function PsetRow({
                         </>
                       ) : (
                         <>
+                          {prop.type && (
+                            <span className="shrink-0 text-[9px] font-mono px-1 py-0.5 rounded bg-[var(--surface-2)] text-[var(--text-faint)] border border-[var(--border)] leading-none">
+                              {prop.type.replace(/^IFC/i, '').replace(/MEASURE$/i, '').slice(0, 8)}
+                            </span>
+                          )}
                           <span
                             className={`flex-1 text-[11.5px] truncate ${
-                              prop.value === null || prop.value === ''
-                                ? 'text-[var(--text-faint)] italic'
-                                : 'text-[var(--text)]'
+                              isDirtyProp
+                                ? 'text-[var(--accent-2)]'
+                                : displayVal === null || displayVal === ''
+                                  ? 'text-[var(--text-faint)] italic'
+                                  : 'text-[var(--text)]'
                             }`}
-                            title={String(prop.value ?? '—')}
+                            title={String(displayVal ?? '—')}
                           >
-                            {formatPropValue(prop.value)}
+                            {formatPropValue(displayVal)}
                           </span>
-                          {/* Only show edit button when prop has an expressId from the viewer */}
                           {prop.expressId > 0 && (
                             <button
                               className="shrink-0 opacity-0 group-hover/prop:opacity-60 hover:!opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--border)]"
                               title="Edit value"
-                              onClick={() => startEdit(prop.expressId, String(prop.value ?? ''))}
+                              onClick={() => startEdit(prop.expressId, String(isDirtyProp ? pendingVal : (prop.value ?? '')))}
                             >
                               <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M8 2l2 2-6 6H2V8l6-6z" />
                               </svg>
                             </button>
                           )}
-                          {prop.value !== null && prop.value !== '' && (
-                            <CopyButton value={String(prop.value)} label="" />
+                          {displayVal !== null && displayVal !== '' && (
+                            <CopyButton value={String(displayVal)} label="" />
                           )}
                         </>
                       )}
@@ -420,6 +426,74 @@ function PsetRow({
                   </div>
                 )
               })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ─── QuantitySetRow ────────────────────────────────────────────────────────────
+
+const QUANTITY_UNITS: Record<string, string> = {
+  Length: 'm', Area: 'm²', Volume: 'm³', Weight: 'kg', Time: 's', Count: '', Unknown: '',
+}
+
+function QuantitySetRow({ qset, forceOpen = false }: {
+  qset: IFCQuantitySet
+  forceOpen?: boolean
+}) {
+  const [userOpen, setUserOpen] = useState(false)
+  const open = forceOpen || userOpen
+
+  return (
+    <div className="mx-4 mb-1.5 rounded-lg overflow-hidden border border-[var(--border)]">
+      <button
+        onClick={() => setUserOpen(v => !v)}
+        className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-[var(--surface-2)] transition-colors text-left"
+      >
+        <svg
+          width="7" height="7" viewBox="0 0 8 8" fill="currentColor"
+          className="transition-transform shrink-0 text-[var(--text-faint)]"
+          style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}
+        >
+          <path d="M2.5 0L6.5 4L2.5 8L1.5 7L4.5 4L1.5 1Z" />
+        </svg>
+        <span className="flex-1 text-[12px] font-medium text-[var(--text)] truncate">{qset.name}</span>
+        <span className="text-[10px] font-mono text-[var(--text-faint)] shrink-0">{qset.quantities.length}</span>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
+            transition={{ duration: 0.15 }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div className="border-t border-[var(--border)]">
+              {qset.quantities.map((q, i) => (
+                <div key={i} className="flex items-center px-2.5 py-1 gap-2 hover:bg-[var(--surface-2)] transition-colors group/qty">
+                  <div className="w-[42%] flex-shrink-0 flex items-center gap-1 min-w-0">
+                    <span className="text-[11px] text-[var(--text-dim)] truncate" title={q.name}>{q.name}</span>
+                  </div>
+                  <div className="flex-1 flex items-center gap-1 min-w-0">
+                    <span className="shrink-0 text-[9px] font-mono px-1 py-0.5 rounded bg-[var(--surface-2)] text-[var(--text-faint)] border border-[var(--border)] leading-none">
+                      {q.quantityType}
+                    </span>
+                    <span className="flex-1 font-mono text-[11.5px] text-[var(--text)] truncate">
+                      {q.value !== null
+                        ? q.value.toLocaleString(undefined, { maximumFractionDigits: 4 })
+                        : <span className="text-[var(--text-faint)] italic">—</span>}
+                      {q.value !== null && QUANTITY_UNITS[q.quantityType] && (
+                        <span className="text-[var(--text-faint)] ml-0.5 text-[10px]">{QUANTITY_UNITS[q.quantityType]}</span>
+                      )}
+                    </span>
+                    {q.value !== null && (
+                      <CopyButton value={String(q.value)} label="" />
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </motion.div>
         )}
@@ -498,20 +572,36 @@ function PropertiesPanel({
 
   const [sections, setSections] = useState({
     location: true,
-    visibility: true,
+    visibility: false,
     attributes: true,
+    typeProps: true,
     psets: true,
+    quantities: true,
+    materials: true,
     validation: true,
   })
   const toggle = (key: keyof typeof sections) =>
     setSections(s => ({ ...s, [key]: !s[key] }))
+
+  const [exportOpen, setExportOpen] = useState(false)
+  const exportRef = useRef<HTMLDivElement>(null)
+
+  // Close export dropdown on outside click
+  useEffect(() => {
+    if (!exportOpen) return
+    const handler = (e: MouseEvent): void => {
+      if (!exportRef.current?.contains(e.target as Node)) setExportOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [exportOpen])
 
   // Property-set filter (resets whenever the selected element changes)
   const [psetQuery, setPsetQuery] = useState('')
 
   const expressId = selected ? parseInt(selected.id, 10) : null
 
-  useEffect(() => { setPsetQuery('') }, [expressId])
+  useEffect(() => { setPsetQuery(''); setExportOpen(false) }, [expressId])
 
   // Resolve the spatial tree for the selected element's model.
   // If modelId is known, use that model's tree directly.
@@ -539,16 +629,16 @@ function PropertiesPanel({
   }, [selected, result])
 
   // ── Pending diffs for this element ───────────────────────────────────────
-  const pendingDiffs = useMemo(() => {
-    if (!selected) return new Map<string, string>()
+  const { pendingDiffs, pendingPropDiffs } = useMemo(() => {
+    if (!selected) return { pendingDiffs: new Map<string, string>(), pendingPropDiffs: new Map<string, string>() }
     const id = parseInt(selected.id, 10)
-    const map = new Map<string, string>()
+    const renames = new Map<string, string>()
+    const propEdits = new Map<string, string>()  // propExpressId string → newValue
     for (const d of diffs) {
-      if (d.type === 'RENAME' && d.expressId === id) {
-        map.set(d.field, d.newValue)
-      }
+      if (d.type === 'RENAME' && d.expressId === id) renames.set(d.field, d.newValue)
+      if (d.type === 'SET_PROPERTY' && d.expressId === id) propEdits.set(String(d.propExpressId), d.newValue)
     }
-    return map
+    return { pendingDiffs: renames, pendingPropDiffs: propEdits }
   }, [selected, diffs])
 
   // Resolve display value: pending diff → real IFC data → synthetic fallback
@@ -576,6 +666,27 @@ function PropertiesPanel({
     addCommand(buildSetPropertyCommand(expressId, psetName, propName, propExpressId, oldValue, newValue, selected?.modelId))
   }, [expressId, selected, addCommand])
 
+  const handleExportJson = useCallback(() => {
+    if (!selected) return
+    const data = ifcState.status === 'loaded' ? ifcState.data : null
+    if (!data) return
+    const json = exportElementToJson(selected, data, pendingDiffs, pendingPropDiffs)
+    downloadBlob(new Blob([json], { type: 'application/json' }), `element-${selected.id}.json`)
+    setExportOpen(false)
+  }, [selected, ifcState, pendingDiffs, pendingPropDiffs])
+
+  const handleExportCsv = useCallback(() => {
+    if (!selected) return
+    const data = ifcState.status === 'loaded' ? ifcState.data : null
+    if (!data) return
+    const csv = exportElementToCsv(selected, data, pendingDiffs, pendingPropDiffs)
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `element-${selected.id}.csv`)
+    setExportOpen(false)
+  }, [selected, ifcState, pendingDiffs, pendingPropDiffs])
+
+  // Must be called unconditionally (Rules of Hooks) — uses optional chaining internally
+  const decompMap = useValidationStore((s) => selected?.modelId ? s.decompMaps[selected.modelId] : undefined)
+
   if (!selected || expressId === null) {
     return (
       <div className="px-6 py-10 text-center">
@@ -592,9 +703,9 @@ function PropertiesPanel({
 
   const cat = categories.find(c => c.id === selected.type || c.id === selected.type.replace('STANDARDCASE', ''))
   const catColor = cat ? `#${cat.color.toString(16).padStart(6, '0')}` : 'var(--text-dim)'
-  const decompMap = useValidationStore((s) => selected?.modelId ? s.decompMaps[selected.modelId] : undefined)
   const isHidden = expressId != null && hiddenElements.has(makeHiddenKey(selected?.modelId ?? '', expressId))
-  const hasDirty = pendingDiffs.size > 0
+  const hasDirty = pendingDiffs.size > 0 || pendingPropDiffs.size > 0
+  const dirtyCount = pendingDiffs.size + pendingPropDiffs.size
   const errorCount   = elementIssues.filter(i => i.severity === 'error').length
   const warningCount = elementIssues.filter(i => i.severity === 'warning').length
 
@@ -612,7 +723,12 @@ function PropertiesPanel({
     ?? null
 
   const psets = ifcData?.propertySets ?? []
+  const qsets = ifcData?.quantitySets ?? []
+  const materials = ifcData?.materials ?? []
+  const typeProperties = ifcData?.typeProperties ?? []
+  const typeName = ifcData?.typeName ?? null
   const totalProps = psets.reduce((acc, ps) => acc + ps.properties.length, 0)
+  const totalTypeProps = typeProperties.reduce((acc, ps) => acc + ps.properties.length, 0)
 
   // Filter psets/properties by the search query. A pset whose NAME matches keeps
   // all its props; otherwise only props matching by name or value are kept, and
@@ -648,7 +764,7 @@ function PropertiesPanel({
           </span>
           {hasDirty && (
             <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--accent)] text-white font-medium leading-none">
-              {t('properties.edited')}
+              {dirtyCount} edit{dirtyCount !== 1 ? 's' : ''}
             </span>
           )}
           {errorCount > 0 && (
@@ -665,6 +781,39 @@ function PropertiesPanel({
           {ifcState.status === 'loading' && (
             <span className="ml-auto text-[10px] text-[var(--text-faint)] italic">{t('properties.loading')}</span>
           )}
+          {/* Export dropdown */}
+          {ifcState.status === 'loaded' && (
+            <div ref={exportRef} className="relative ml-auto">
+              <button
+                onClick={() => setExportOpen(v => !v)}
+                className="flex items-center gap-1 h-5 px-1.5 rounded-md bg-[var(--surface-2)] border border-[var(--border)] text-[10px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors"
+                title="Export element data"
+              >
+                <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <path d="M6 1v7M3 5l3 3 3-3M1 10h10" />
+                </svg>
+                Export
+              </button>
+              {exportOpen && (
+                <div className="absolute right-0 top-6 z-50 min-w-[110px] bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-xl overflow-hidden">
+                  <button
+                    onClick={handleExportJson}
+                    className="w-full text-left px-3 py-2 text-[11.5px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
+                  >
+                    <span className="font-mono text-[9px] text-[#30A46C]">JSON</span>
+                    Export JSON
+                  </button>
+                  <button
+                    onClick={handleExportCsv}
+                    className="w-full text-left px-3 py-2 text-[11.5px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
+                  >
+                    <span className="font-mono text-[9px] text-[#F5A623]">CSV</span>
+                    Export CSV
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Name */}
@@ -676,6 +825,11 @@ function PropertiesPanel({
         <div className="flex items-center gap-2">
           <span className="font-mono text-[10.5px] text-[var(--text-faint)]">#{selected.id}</span>
           <CopyButton value={selected.id} label="ID" />
+          {typeName && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-faint)] font-mono truncate max-w-[100px]" title={typeName}>
+              {typeName}
+            </span>
+          )}
           {storeyName && (
             <span className="ml-auto text-[10.5px] text-[var(--text-faint)] truncate max-w-[120px]" title={storeyName}>
               📍 {storeyName}
@@ -888,16 +1042,23 @@ function PropertiesPanel({
                 <ReadOnlyField label="ObjectType" value={ifcData?.objectType ?? null} />
                 <ReadOnlyField label="Tag" value={ifcData?.tag ?? null} />
 
-                {/* Dirty indicator + undo tip */}
+                {/* Dirty indicator + discard */}
                 {hasDirty && (
                   <div className="mx-4 mt-2 px-2.5 py-1.5 rounded-lg bg-[var(--accent)] bg-opacity-10 border border-[var(--accent)] border-opacity-30 flex items-center gap-2">
                     <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="var(--accent-2)" strokeWidth="1.5" strokeLinecap="round">
                       <circle cx="6" cy="6" r="5" />
                       <path d="M6 4v3M6 8.5v.5" />
                     </svg>
-                    <span className="text-[10.5px] text-[var(--accent-2)]">
-                      {t('properties.unsavedChanges', { count: pendingDiffs.size })}
+                    <span className="flex-1 text-[10.5px] text-[var(--accent-2)]">
+                      {dirtyCount} unsaved edit{dirtyCount !== 1 ? 's' : ''}
                     </span>
+                    <button
+                      onClick={() => expressId !== null && useEditorStore.getState().discardForElement(expressId, selected?.modelId)}
+                      className="text-[10px] text-[var(--accent-2)] hover:text-[var(--text)] underline transition-colors"
+                      title="Discard all unsaved edits to this element"
+                    >
+                      Discard
+                    </button>
                   </div>
                 )}
 
@@ -912,6 +1073,36 @@ function PropertiesPanel({
           )}
         </AnimatePresence>
       </div>
+
+      {/* ── Property Sets ── */}
+      {/* ── Type Properties ── */}
+      {typeProperties.length > 0 && (
+        <div className="border-b border-[var(--border)]">
+          <SectionHeader
+            label="Type Properties"
+            open={sections.typeProps}
+            onToggle={() => toggle('typeProps')}
+            badge={totalTypeProps > 0 ? totalTypeProps : undefined}
+          />
+          <AnimatePresence initial={false}>
+            {sections.typeProps && (
+              <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
+                <div className="pt-1 pb-2">
+                  {typeProperties.map(ps => (
+                    <PsetRow
+                      key={`${expressId}:type:${ps.name}`}
+                      pset={ps}
+                      elementExpressId={expressId ?? 0}
+                      onEditProperty={handleEditProperty}
+                      dirtyProps={pendingPropDiffs}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
 
       {/* ── Property Sets ── */}
       {(psets.length > 0 || ifcState.status === 'loading') && (
@@ -978,18 +1169,75 @@ function PropertiesPanel({
                     ) : (
                       filteredPsets.map((pset) => (
                         <PsetRow
-                          // Key by element + pset name so edit/expand state never
-                          // leaks across element selections (each element remounts).
                           key={`${expressId}:${pset.name}`}
                           pset={pset}
                           elementExpressId={expressId ?? 0}
                           onEditProperty={handleEditProperty}
                           forceOpen={psetQuery.trim().length > 0}
+                          dirtyProps={pendingPropDiffs}
                         />
                       ))
                     )}
                   </div>
                 )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* ── Quantities ── */}
+      {qsets.length > 0 && (
+        <div className="border-b border-[var(--border)]">
+          <SectionHeader
+            label="Quantities"
+            open={sections.quantities}
+            onToggle={() => toggle('quantities')}
+            badge={qsets.reduce((acc, qs) => acc + qs.quantities.length, 0)}
+          />
+          <AnimatePresence initial={false}>
+            {sections.quantities && (
+              <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
+                <div className="pt-1 pb-2">
+                  {qsets.map(qs => (
+                    <QuantitySetRow key={`${expressId}:qty:${qs.name}`} qset={qs} />
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* ── Materials ── */}
+      {materials.length > 0 && (
+        <div className="border-b border-[var(--border)]">
+          <SectionHeader
+            label="Materials"
+            open={sections.materials}
+            onToggle={() => toggle('materials')}
+            badge={materials.length}
+          />
+          <AnimatePresence initial={false}>
+            {sections.materials && (
+              <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
+                <div className="py-1.5 space-y-0.5">
+                  {materials.map((m, i) => (
+                    <div key={i} className="flex items-center gap-2 px-4 py-1 hover:bg-[var(--surface-2)] transition-colors group/mat">
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" className="text-[var(--text-faint)] shrink-0">
+                        <rect x="1" y="4" width="10" height="4" rx="1" />
+                        <path d="M3 4V3M6 4V2M9 4V3" />
+                      </svg>
+                      <span className="flex-1 text-[12px] text-[var(--text)] truncate" title={m.name}>{m.name}</span>
+                      {m.layerThickness !== undefined && (
+                        <span className="font-mono text-[10.5px] text-[var(--text-faint)] shrink-0">
+                          {m.layerThickness.toFixed(4)} m
+                        </span>
+                      )}
+                      <CopyButton value={m.name} label="" />
+                    </div>
+                  ))}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1036,69 +1284,104 @@ function MoreElementsText({ count }: { count: number }) {
 
 function CategoryRow({
   cat, isHidden, isIsolated, isExpanded,
-  nameMap, onToggleHidden, onSetIsolated, onFrame, onToggleExpand, onSelectElement, onFrameElement,
+  nameMap, sceneModels = [], onToggleHidden, onSetIsolated, onFrame, onToggleExpand,
+  onSelectElement, onFrameElement, issueCount = 0,
 }: {
   cat: Category
   isHidden: boolean
   isIsolated: boolean
   isExpanded: boolean
   nameMap: Map<number, string>
+  sceneModels?: SceneModel[]
   onToggleHidden: (id: string) => void
   onSetIsolated: (id: string | null) => void
   onFrame: (id: string) => void
   onToggleExpand: (id: string) => void
   onSelectElement?: (expressId: number) => void
   onFrameElement?: (expressId: number) => void
+  issueCount?: number
 }) {
-  const hexColor = `#${cat.color.toString(16).padStart(6, '0')}`
-  const hasElem  = cat.elementIds.length > 0
-  const visible  = cat.elementIds.slice(0, MAX_VISIBLE)
-  const overflow = cat.elementIds.length - MAX_VISIBLE
+  const hexColor    = `#${cat.color.toString(16).padStart(6, '0')}`
+  const isMultiModel = sceneModels.length > 1
+  // Per-model breakdown: models that have this IFC type
+  const modelEntries = isMultiModel
+    ? sceneModels.map(m => ({ model: m, cat: m.categories.find(c => c.id === cat.id) }))
+        .filter((e): e is { model: SceneModel; cat: Category } => !!e.cat && e.cat.count > 0)
+    : []
+  const hasElem   = isMultiModel ? modelEntries.length > 0 : cat.elementIds.length > 0
+  const visible   = cat.elementIds.slice(0, MAX_VISIBLE)
+  const overflow  = cat.elementIds.length - MAX_VISIBLE
+  const hasIssues = issueCount > 0
 
   return (
     <>
       <div
-        className="flex items-center gap-2 px-2 py-1.5 text-[12.5px] group transition-colors"
+        className="flex items-center gap-2 px-2 py-1.5 text-[12.5px] group/row hover:bg-[var(--surface-2)] transition-colors rounded-[6px] mx-1"
         style={{
-          background:  isIsolated ? 'rgba(94,106,210,0.08)' : undefined,
-          borderLeft:  isIsolated ? '2px solid var(--accent)' : '2px solid transparent',
-          opacity:     isHidden   ? 0.45 : 1,
+          background:  isIsolated ? 'rgba(94,106,210,0.1)' : undefined,
+          outline:     isIsolated ? '1px solid rgba(94,106,210,0.3)' : undefined,
+          opacity:     isHidden   ? 0.4 : 1,
         }}
       >
+        {/* Expand chevron */}
         <button
           onClick={() => hasElem && onToggleExpand(cat.id)}
-          className={`w-4 h-4 flex items-center justify-center transition-transform shrink-0
+          className={`w-3.5 h-3.5 flex items-center justify-center transition-transform shrink-0
             ${hasElem ? 'text-[var(--text-faint)] hover:text-[var(--text)] cursor-pointer' : 'opacity-0 pointer-events-none'}`}
           style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
         >
-          <svg width="7" height="7" viewBox="0 0 8 8" fill="currentColor">
+          <svg width="6" height="6" viewBox="0 0 8 8" fill="currentColor">
             <path d="M2.5 0L6.5 4L2.5 8L1.5 7L4.5 4L1.5 1Z" />
           </svg>
         </button>
 
+        {/* Color swatch — click to isolate */}
         <button
           onClick={() => onSetIsolated(isIsolated ? null : cat.id)}
-          className="w-2.5 h-2.5 rounded-[3px] shrink-0 hover:scale-125 transition-transform cursor-pointer"
-          style={{ background: hexColor, boxShadow: '0 0 0 1px rgba(0,0,0,0.4) inset' }}
-          title={isIsolated ? 'Clear isolation' : 'Isolate category'}
+          className="shrink-0 rounded-[4px] hover:scale-110 active:scale-95 transition-transform cursor-pointer relative group/swatch"
+          style={{
+            width: 22, height: 14,
+            background: hexColor,
+            boxShadow: isIsolated
+              ? '0 0 0 2px var(--accent), 0 0 0 1px rgba(0,0,0,0.3) inset'
+              : '0 0 0 1px rgba(0,0,0,0.25) inset',
+          }}
+          title={isIsolated ? 'Clear isolation' : 'Isolate in 3D · click to show only this type'}
         />
 
-        <span
-          className="flex-1 text-[var(--text)] cursor-pointer truncate hover:text-[var(--accent-2)] transition-colors"
+        {/* Label — click to frame */}
+        <button
+          className="flex-1 text-left text-[12.5px] text-[var(--text)] truncate hover:text-[var(--accent-2)] transition-colors cursor-pointer"
           onClick={() => onFrame(cat.id)}
           title="Frame in 3D view"
         >
           {cat.label}
-        </span>
+        </button>
 
-        <span className="font-mono text-[11px] text-[var(--text-faint)] shrink-0">{cat.count}</span>
+        {/* Issue badge */}
+        {hasIssues && (
+          <span
+            className="inline-flex items-center gap-0.5 text-[10px] font-mono px-1 py-0.5 rounded leading-none shrink-0"
+            style={{ color: '#F5A623', background: 'rgba(245,166,35,0.15)', border: '1px solid rgba(245,166,35,0.25)' }}
+            title={`${issueCount} validation issue${issueCount !== 1 ? 's' : ''}`}
+          >
+            <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor" style={{ opacity: 0.9 }}>
+              <path d="M6 1L11 10H1L6 1zm0 2.5v3m0 1.5v.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none"/>
+            </svg>
+            {issueCount}
+          </span>
+        )}
 
+        {/* Element count */}
+        <span className="font-mono text-[11px] text-[var(--text-faint)] shrink-0 tabular-nums">{cat.count}</span>
+
+        {/* Visibility toggle */}
         <button
           onClick={e => { e.stopPropagation(); onToggleHidden(cat.id) }}
-          className="p-0.5 rounded text-[var(--text-dim)] hover:bg-[var(--border)] shrink-0"
+          className="p-0.5 rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--border)] shrink-0 opacity-0 group-hover/row:opacity-100 transition-opacity"
           title={isHidden ? 'Show' : 'Hide'}
         >
-          {isHidden ? <Icons.EyeOff size={14} /> : <Icons.Eye size={14} />}
+          {isHidden ? <Icons.EyeOff size={13} /> : <Icons.Eye size={13} />}
         </button>
       </div>
 
@@ -1111,23 +1394,56 @@ function CategoryRow({
             transition={{ duration: 0.18, ease: 'easeInOut' }}
             style={{ overflow: 'hidden' }}
           >
-            <div className="ml-8 mr-2 mb-1 rounded-lg border border-[var(--border)] overflow-y-auto" style={{ maxHeight: 180 }}>
-              {visible.map(eid => {
-                const name = nameMap.get(eid) ?? `#${eid}`
-                return (
-                  <button
-                    key={eid}
-                    onClick={() => { onSelectElement?.(eid); onFrameElement?.(eid) }}
-                    className="w-full flex items-center gap-2 px-2.5 py-1 text-left hover:bg-[var(--surface-2)] transition-colors group/elem"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: hexColor, opacity: 0.7 }} />
-                    <span className="flex-1 truncate text-[11.5px] text-[var(--text-dim)] group-hover/elem:text-[var(--text)]">{name}</span>
-                    <span className="font-mono text-[9.5px] text-[var(--text-faint)] shrink-0 opacity-0 group-hover/elem:opacity-100">{eid}</span>
-                  </button>
-                )
-              })}
-              {overflow > 0 && (
-                <MoreElementsText count={overflow} />
+            <div className="ml-6 mr-2 mb-1 rounded-lg border border-[var(--border)] overflow-y-auto" style={{ maxHeight: 220 }}>
+              {isMultiModel ? (
+                /* Multi-model: per-model sections */
+                modelEntries.map(({ model, cat: mCat }) => {
+                  const mVisible  = mCat.elementIds.slice(0, MAX_VISIBLE)
+                  const mOverflow = mCat.elementIds.length - MAX_VISIBLE
+                  return (
+                    <div key={model.id}>
+                      {/* Model header */}
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[var(--surface)] sticky top-0 border-b border-[var(--border)]">
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: hexColor }} />
+                        <span className="flex-1 truncate text-[10px] font-medium text-[var(--text-dim)]">{model.fileName}</span>
+                        <span className="font-mono text-[9.5px] text-[var(--text-faint)]">{mCat.count}</span>
+                      </div>
+                      {mVisible.map(eid => {
+                        const name = nameMap.get(eid) ?? `#${eid}`
+                        return (
+                          <button
+                            key={`${model.id}:${eid}`}
+                            onClick={() => { onSelectElement?.(eid); onFrameElement?.(eid) }}
+                            className="w-full flex items-center gap-2 px-2.5 py-1 text-left hover:bg-[var(--surface-2)] transition-colors group/elem"
+                          >
+                            <span className="flex-1 truncate text-[11.5px] text-[var(--text-dim)] group-hover/elem:text-[var(--text)]">{name}</span>
+                            <span className="font-mono text-[9.5px] text-[var(--text-faint)] shrink-0 opacity-0 group-hover/elem:opacity-100">{eid}</span>
+                          </button>
+                        )
+                      })}
+                      {mOverflow > 0 && <MoreElementsText count={mOverflow} />}
+                    </div>
+                  )
+                })
+              ) : (
+                /* Single model: flat list */
+                <>
+                  {visible.map(eid => {
+                    const name = nameMap.get(eid) ?? `#${eid}`
+                    return (
+                      <button
+                        key={eid}
+                        onClick={() => { onSelectElement?.(eid); onFrameElement?.(eid) }}
+                        className="w-full flex items-center gap-2 px-2.5 py-1 text-left hover:bg-[var(--surface-2)] transition-colors group/elem"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: hexColor, opacity: 0.7 }} />
+                        <span className="flex-1 truncate text-[11.5px] text-[var(--text-dim)] group-hover/elem:text-[var(--text)]">{name}</span>
+                        <span className="font-mono text-[9.5px] text-[var(--text-faint)] shrink-0 opacity-0 group-hover/elem:opacity-100">{eid}</span>
+                      </button>
+                    )
+                  })}
+                  {overflow > 0 && <MoreElementsText count={overflow} />}
+                </>
               )}
             </div>
           </motion.div>
@@ -1138,11 +1454,13 @@ function CategoryRow({
 }
 
 function CategoryPanel({
-  categories, elementCount, hidden, onToggleHidden,
+  categories, elementCount, sceneModels = [], hidden, onToggleHidden,
   isolated, onSetIsolated, onFrame, onSelectElement, onFrameElement,
+  issuesByType,
 }: {
   categories: Category[]
   elementCount: number
+  sceneModels?: SceneModel[]
   hidden: Set<string>
   onToggleHidden: (id: string) => void
   isolated: string | null
@@ -1150,18 +1468,17 @@ function CategoryPanel({
   onFrame: (id: string) => void
   onSelectElement?: (expressId: number) => void
   onFrameElement?: (expressId: number) => void
+  issuesByType: Map<string, number>
 }) {
   const { t } = useTranslation('sidebar')
-  // Combine all loaded models' trees so element names resolve correctly
-  // regardless of which model they belong to.
   const spatialTreesRecord = useValidationStore((s) => s.spatialTrees)
-  const allNodes = useMemo(
-    () => Object.values(spatialTreesRecord).flat(),
-    [spatialTreesRecord],
-  )
-  const nameMap = useMemo(() => buildNameMap(allNodes), [allNodes])
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
-  const [query, setQuery] = useState('')
+  const allNodes = useMemo(() => Object.values(spatialTreesRecord).flat(), [spatialTreesRecord])
+  const nameMap  = useMemo(() => buildNameMap(allNodes), [allNodes])
+
+  const [expanded,     setExpanded]     = useState<Set<string>>(new Set())
+  const [query,        setQuery]        = useState('')
+  const [othersOpen,   setOthersOpen]   = useState(false)
+
   const toggleExpand = useCallback((id: string) => {
     setExpanded(prev => {
       const next = new Set(prev)
@@ -1170,8 +1487,6 @@ function CategoryPanel({
     })
   }, [])
 
-  // Prune expanded ids that no longer exist (e.g. after switching active model
-  // or removing one), so stale state can't keep phantom rows open.
   const catIds = useMemo(() => new Set(categories.map(c => c.id)), [categories])
   useEffect(() => {
     setExpanded(prev => {
@@ -1180,24 +1495,36 @@ function CategoryPanel({
     })
   }, [catIds])
 
+  // Split into 3D geometry types (in IFC_PALETTE) and other IFC objects
+  const { palette3D, otherIFC } = useMemo(() => {
+    const palette3D: Category[] = []
+    const otherIFC:  Category[] = []
+    for (const c of categories) {
+      if (c.id in IFC_PALETTE || c.id.replace('STANDARDCASE','').replace('ELEMENTEDCASE','') in IFC_PALETTE) {
+        palette3D.push(c)
+      } else {
+        otherIFC.push(c)
+      }
+    }
+    return { palette3D, otherIFC }
+  }, [categories])
+
   const q = query.trim().toLowerCase()
-  const filtered = useMemo(
-    () => (q ? categories.filter(c => c.label.toLowerCase().includes(q) || c.id.toLowerCase().includes(q)) : categories),
-    [categories, q],
+  const filteredPalette = useMemo(
+    () => (q ? palette3D.filter(c => c.label.toLowerCase().includes(q) || c.id.toLowerCase().includes(q)) : palette3D),
+    [palette3D, q],
   )
-  const hiddenCount = useMemo(() => categories.reduce((n, c) => n + (hidden.has(c.id) ? 1 : 0), 0), [categories, hidden])
+  const filteredOther = useMemo(
+    () => (q ? otherIFC.filter(c => c.label.toLowerCase().includes(q) || c.id.toLowerCase().includes(q)) : otherIFC),
+    [otherIFC, q],
+  )
 
-  // Bulk visibility. handleToggleHidden in the parent uses a functional update,
-  // so these looped calls batch into a single render.
-  const showAll = useCallback(() => {
-    categories.forEach(c => { if (hidden.has(c.id)) onToggleHidden(c.id) })
-  }, [categories, hidden, onToggleHidden])
-  const hideAll = useCallback(() => {
-    categories.forEach(c => { if (!hidden.has(c.id)) onToggleHidden(c.id) })
-  }, [categories, hidden, onToggleHidden])
+  const hiddenCount   = useMemo(() => categories.reduce((n, c) => n + (hidden.has(c.id) ? 1 : 0), 0), [categories, hidden])
+  const typesWithIssues = useMemo(() => [...issuesByType.keys()].filter(k => (issuesByType.get(k) ?? 0) > 0).length, [issuesByType])
 
-  // Isolating or framing a hidden category would otherwise show nothing —
-  // un-hide it first so the action is never a dead no-op.
+  const showAll = useCallback(() => { categories.forEach(c => { if (hidden.has(c.id)) onToggleHidden(c.id) }) }, [categories, hidden, onToggleHidden])
+  const hideAll = useCallback(() => { categories.forEach(c => { if (!hidden.has(c.id)) onToggleHidden(c.id) }) }, [categories, hidden, onToggleHidden])
+
   const handleIsolate = useCallback((id: string | null) => {
     if (id && hidden.has(id)) onToggleHidden(id)
     onSetIsolated(id)
@@ -1207,106 +1534,168 @@ function CategoryPanel({
     onFrame(id)
   }, [hidden, onToggleHidden, onFrame])
 
+  const rowProps = (cat: Category) => ({
+    cat,
+    isHidden:    hidden.has(cat.id),
+    isIsolated:  isolated === cat.id,
+    isExpanded:  expanded.has(cat.id),
+    nameMap,
+    sceneModels,
+    onToggleHidden, onSetIsolated: handleIsolate, onFrame: handleFrame,
+    onToggleExpand: toggleExpand, onSelectElement, onFrameElement,
+    issueCount: issuesByType.get(cat.id) ?? 0,
+  })
+
   if (categories.length === 0) {
     return (
-      <div className="px-6 py-10 text-center text-[var(--text-faint)]">
+      <div className="px-6 py-10 text-center">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" className="mx-auto mb-3 text-[var(--text-faint)] opacity-40">
+          <rect x="3" y="3" width="7" height="5" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1" opacity=".5"/>
+          <rect x="3" y="11" width="7" height="5" rx="1" opacity=".5"/><rect x="14" y="11" width="7" height="5" rx="1" opacity=".3"/>
+          <rect x="3" y="19" width="7" height="3" rx="1" opacity=".2"/>
+        </svg>
         <div className="text-[13px] text-[var(--text-dim)] mb-1">{t('categories.noModel')}</div>
-        <div className="text-[11.5px]">{t('categories.noModelDesc')}</div>
+        <div className="text-[11.5px] text-[var(--text-faint)]">{t('categories.noModelDesc')}</div>
       </div>
     )
   }
 
   return (
-    <div className="py-2">
-      <div className="px-3.5 pt-1 pb-2 flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="text-[11.5px] font-semibold text-[var(--text-dim)] uppercase tracking-[0.06em]">{t('categories.title')}</div>
-          <div className="text-[11px] text-[var(--text-faint)] mt-0.5">
-            {t('categories.types', { count: categories.length })} · {t('categories.elements', { count: elementCount })}
-            {hiddenCount > 0 && <span className="text-[var(--text-dim)]"> · {t('categories.hiddenCount', { count: hiddenCount })}</span>}
+    <div className="pb-2">
+
+      {/* ── Header ── */}
+      <div className="px-3.5 pt-3 pb-2.5">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-[11.5px] font-semibold text-[var(--text-dim)] uppercase tracking-[0.07em]">
+              {t('categories.title')}
+            </span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full border border-[var(--border)] text-[var(--text-faint)] uppercase tracking-wider font-medium leading-none shrink-0">
+              {t('categories.legendBadge')}
+            </span>
           </div>
+          {isolated && (
+            <button onClick={() => onSetIsolated(null)} className="text-[10.5px] text-[var(--accent-2)] shrink-0 hover:underline">
+              {t('categories.clearIsolation')}
+            </button>
+          )}
         </div>
-        {isolated && (
-          <button onClick={() => onSetIsolated(null)} className="text-[11px] text-[var(--accent-2)] shrink-0 hover:underline">
-            {t('categories.clearIsolation')}
-          </button>
-        )}
+
+        {/* Stats row */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] text-[var(--text-faint)]">
+            {t('categories.elements', { count: elementCount })} · {palette3D.length} {t('categories.typesShort')}
+          </span>
+          {typesWithIssues > 0 && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full leading-none"
+              style={{ color: '#F5A623', background: 'rgba(245,166,35,0.12)', border: '1px solid rgba(245,166,35,0.2)' }}>
+              <svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M6 2L10.5 10H1.5L6 2zm0 2.5v2.5m0 1.5v.01"/>
+              </svg>
+              {typesWithIssues} {t('categories.withIssues')}
+            </span>
+          )}
+          {hiddenCount > 0 && (
+            <span className="text-[10.5px] text-[var(--text-dim)]">{t('categories.hiddenCount', { count: hiddenCount })}</span>
+          )}
+        </div>
+
+        {/* Context hint */}
+        <div className="mt-1.5 text-[10.5px] text-[var(--text-faint)] italic">
+          {t('categories.hint')}
+        </div>
       </div>
 
-      {/* Controls: filter + bulk visibility */}
-      <div className="px-3.5 pb-2 space-y-2">
-        {categories.length > 4 && (
-          <div className="relative">
-            <svg
-              width="11" height="11" viewBox="0 0 12 12" fill="none"
-              stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
-              className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none"
-            >
-              <circle cx="5" cy="5" r="3.5" />
-              <path d="M8 8l2.5 2.5" />
-            </svg>
-            <input
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setQuery('') } }}
-              placeholder={t('categories.filterPlaceholder')}
-              className="w-full h-7 pl-7 pr-7 text-[11.5px] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors placeholder:text-[var(--text-faint)]"
-            />
-            {query && (
-              <button
-                onClick={() => setQuery('')}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--border)]"
-                title="Clear"
-              >
-                <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                  <path d="M3 3l6 6M9 3l-6 6" />
-                </svg>
-              </button>
-            )}
-          </div>
-        )}
+      {/* ── Filter + bulk visibility ── */}
+      <div className="px-3 pb-2 space-y-1.5">
+        <div className="relative">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none">
+            <circle cx="5" cy="5" r="3.5" /><path d="M8 8l2.5 2.5" />
+          </svg>
+          <input
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setQuery('') } }}
+            placeholder={t('categories.filterPlaceholder')}
+            className="w-full h-7 pl-7 pr-7 text-[11.5px] bg-[var(--surface-2)] border border-[var(--border)] rounded-lg text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors placeholder:text-[var(--text-faint)]"
+          />
+          {query && (
+            <button onClick={() => setQuery('')}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--border)]">
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                <path d="M3 3l6 6M9 3l-6 6" />
+              </svg>
+            </button>
+          )}
+        </div>
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={showAll}
-            disabled={hiddenCount === 0}
-            className="flex-1 h-6 rounded-md text-[10.5px] font-medium border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--border-strong)] disabled:opacity-40 disabled:pointer-events-none transition-colors"
-          >
+          <button onClick={showAll} disabled={hiddenCount === 0}
+            className="flex-1 h-6 rounded-md text-[10.5px] font-medium border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--border-strong)] disabled:opacity-40 disabled:pointer-events-none transition-colors">
             {t('categories.showAll')}
           </button>
-          <button
-            onClick={hideAll}
-            disabled={hiddenCount === categories.length}
-            className="flex-1 h-6 rounded-md text-[10.5px] font-medium border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--border-strong)] disabled:opacity-40 disabled:pointer-events-none transition-colors"
-          >
+          <button onClick={hideAll} disabled={hiddenCount === categories.length}
+            className="flex-1 h-6 rounded-md text-[10.5px] font-medium border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--border-strong)] disabled:opacity-40 disabled:pointer-events-none transition-colors">
             {t('categories.hideAll')}
           </button>
         </div>
       </div>
 
-      <div>
-        {filtered.length === 0 ? (
-          <div className="px-4 py-6 text-center text-[11.5px] text-[var(--text-faint)] italic">
-            {t('categories.noMatches')}
+      {/* ── 3D Elements section ── */}
+      {filteredPalette.length > 0 && (
+        <div className="mb-1">
+          <div className="px-3.5 py-1 flex items-center gap-1.5">
+            <span className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-[var(--text-faint)]">
+              {t('categories.section3D')}
+            </span>
+            <span className="text-[9.5px] text-[var(--text-faint)] font-mono">{filteredPalette.length}</span>
+            <div className="flex-1 h-px bg-[var(--border)]" />
           </div>
-        ) : (
-          filtered.map(cat => (
-            <CategoryRow
-              key={cat.id}
-              cat={cat}
-              isHidden={hidden.has(cat.id)}
-              isIsolated={isolated === cat.id}
-              isExpanded={expanded.has(cat.id)}
-              nameMap={nameMap}
-              onToggleHidden={onToggleHidden}
-              onSetIsolated={handleIsolate}
-              onFrame={handleFrame}
-              onToggleExpand={toggleExpand}
-              onSelectElement={onSelectElement}
-              onFrameElement={onFrameElement}
-            />
-          ))
-        )}
-      </div>
+          <div className="space-y-px">
+            {filteredPalette.map(cat => <CategoryRow key={cat.id} {...rowProps(cat)} />)}
+          </div>
+        </div>
+      )}
+
+      {/* ── Other IFC types (collapsed by default) ── */}
+      {filteredOther.length > 0 && (
+        <div className="mt-1">
+          <button
+            onClick={() => setOthersOpen(o => !o)}
+            className="w-full px-3.5 py-1 flex items-center gap-1.5 hover:text-[var(--text)] transition-colors group"
+          >
+            <svg width="7" height="7" viewBox="0 0 8 8" fill="currentColor"
+              className="text-[var(--text-faint)] transition-transform shrink-0"
+              style={{ transform: othersOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+              <path d="M2.5 0L6.5 4L2.5 8L1.5 7L4.5 4L1.5 1Z" />
+            </svg>
+            <span className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-[var(--text-faint)]">
+              {t('categories.sectionOther')}
+            </span>
+            <span className="text-[9.5px] text-[var(--text-faint)] font-mono">{filteredOther.length}</span>
+            <div className="flex-1 h-px bg-[var(--border)]" />
+          </button>
+          <AnimatePresence initial={false}>
+            {othersOpen && (
+              <motion.div key="others"
+                initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2, ease: 'easeInOut' }}
+                style={{ overflow: 'hidden' }}>
+                <div className="space-y-px pb-1">
+                  {filteredOther.map(cat => <CategoryRow key={cat.id} {...rowProps(cat)} />)}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* No results */}
+      {filteredPalette.length === 0 && filteredOther.length === 0 && (
+        <div className="px-4 py-6 text-center text-[11.5px] text-[var(--text-faint)] italic">
+          {t('categories.noMatches')}
+        </div>
+      )}
     </div>
   )
 }
@@ -1482,6 +1871,8 @@ function TakeoffPanel() {
 interface SidebarProps {
   categories: Category[]
   elementCount: number
+  /** All loaded scene models — used by the Legend panel for per-model breakdown */
+  sceneModels?: SceneModel[]
   selected: SelectedInfo | null
   hidden: Set<string>
   onToggleHidden: (id: string) => void
@@ -1501,15 +1892,40 @@ interface SidebarProps {
 }
 
 export default function Sidebar({
-  categories, elementCount, selected, hidden, onToggleHidden,
+  categories, elementCount, sceneModels = [], selected, hidden, onToggleHidden,
   isolated, onSetIsolated, onFrame, onSelectElement, onFrameElement,
   onRevealInTree, viewerApiRef, mobileOpen = false, onMobileClose,
 }: SidebarProps) {
   const { t } = useTranslation('sidebar')
-  const [tab, setTab] = useState<'props' | 'cats' | 'qty'>('props')
+  const [tab, setTab] = useState<SidebarTab>('props')
   const [desktopCollapsed, setDesktopCollapsed] = useState(false)
 
-  useEffect(() => { if (selected) setTab('props') }, [selected])
+  // Consume pendingSidebarTab from store — works even when Sidebar was unmounted at click time
+  const pendingTab = useUIStore(s => s.pendingSidebarTab)
+  const clearPendingTab = useUIStore(s => s.clearPendingSidebarTab)
+  useEffect(() => {
+    if (pendingTab) { setTab(pendingTab); clearPendingTab() }
+  }, [pendingTab, clearPendingTab])
+
+  // Switch to Properties when a new element is selected
+  useEffect(() => { if (selected) setTab('props') }, [selected]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Issue counts per IFC type — aggregate across ALL validated models.
+  // Subscribed at the Sidebar level (stable parent) to avoid StrictMode+Zustand loops in CategoryPanel.
+  const cachedResultsByModel = useValidationStore(s => s.cachedResultsByModel)
+  const partialIssues        = useValidationStore(s => s.partialIssues)
+  const issuesByType = useMemo(() => {
+    const allIssues = [
+      ...Object.values(cachedResultsByModel).flatMap(r => r.issues),
+      ...partialIssues,
+    ]
+    const m = new Map<string, number>()
+    for (const i of allIssues) {
+      const key = i.ifcClass.toUpperCase()
+      m.set(key, (m.get(key) ?? 0) + 1)
+    }
+    return m
+  }, [cachedResultsByModel, partialIssues])
 
   // Close mobile drawer when user navigates to tree
   const handleRevealInTree = useCallback((id: number) => {
@@ -1558,35 +1974,43 @@ export default function Sidebar({
         // Desktop (md+): absolute floating panel anchored top-right of viewer
         // Mobile (<md): fixed full-height drawer from right edge
         className={[
-          // Shared
+          // Base: glass + border (desktop always, mobile overridden by mobile-sidebar-sheet media query)
           'glass border border-[var(--border)] flex flex-col overflow-hidden',
           // Desktop
           'md:absolute md:top-[68px] md:right-3 md:bottom-3 md:w-[340px] md:rounded-xl md:z-[9]',
-          // Mobile: full-height drawer from the right edge
-          'max-md:fixed max-md:right-0 max-md:top-0 max-md:bottom-0 max-md:w-full max-md:max-w-[360px] max-md:z-[19] max-md:rounded-l-2xl',
-          // Mobile slide animation (CSS transition, not FM transform)
-          'max-md:transition-transform max-md:duration-300 max-md:ease-[cubic-bezier(0.32,0.72,0,1)]',
-          mobileOpen ? 'max-md:translate-x-0' : 'max-md:translate-x-full',
-          // Desktop collapse: slide off to the right (CSS transition, not FM)
+          // Mobile: full-width bottom sheet — mobile-sidebar-sheet overrides glass via @media query
+          'max-md:fixed max-md:left-0 max-md:right-0 max-md:bottom-0 max-md:z-[22] max-md:rounded-t-[28px] max-md:mobile-sidebar-sheet',
+          // Mobile: leave room for the floating nav pill
+          'max-md:max-h-[80dvh]',
+          // Mobile slide animation — translate Y (CSS transition)
+          'max-md:transition-transform max-md:duration-[320ms] max-md:ease-[cubic-bezier(0.25,0.72,0,1)]',
+          mobileOpen ? 'max-md:translate-y-0' : 'max-md:translate-y-full',
+          // Desktop collapse: slide off to the right
           'md:transition-transform md:duration-[220ms] md:ease-[cubic-bezier(0.32,0.72,0,1)]',
           desktopCollapsed ? 'md:translate-x-[calc(100%+12px)] md:pointer-events-none' : 'md:translate-x-0',
         ].join(' ')}
         style={{ WebkitBackfaceVisibility: 'hidden' }}
       >
-      {/* Mobile close bar */}
-      <div className="md:hidden flex items-center justify-between px-4 pt-safe h-12 border-b border-[var(--border)] shrink-0"
-        style={{ paddingTop: `max(16px, env(safe-area-inset-top))` }}
-      >
-        <span className="text-[13px] font-semibold text-[var(--text)]">{t('panel')}</span>
-        <button
-          onClick={onMobileClose}
-          className="w-9 h-9 flex items-center justify-center rounded-lg text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] transition-colors"
-          aria-label={t('actions.hidePanel')}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-            <path d="M2 2l10 10M12 2L2 12" />
-          </svg>
-        </button>
+      {/* Mobile: drag handle + header row */}
+      <div className="md:hidden flex flex-col items-center shrink-0">
+        <div className="pt-[14px] pb-[6px] w-full flex justify-center">
+          <div className="sheet-handle" />
+        </div>
+        <div className="flex items-center justify-between w-full px-5 pb-3">
+          <span className="text-[13px] font-semibold tracking-tight" style={{ color: 'rgba(255,255,255,0.72)' }}>
+            {t('panel')}
+          </span>
+          <button
+            onClick={onMobileClose}
+            className="flex items-center justify-center rounded-full active:scale-90 transition-transform"
+            style={{ width: 28, height: 28, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' }}
+            aria-label={t('actions.hidePanel')}
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <path d="M2 2l6 6M8 2l-6 6" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -1636,6 +2060,7 @@ export default function Sidebar({
               <CategoryPanel
                 categories={categories}
                 elementCount={elementCount}
+                sceneModels={sceneModels}
                 hidden={hidden}
                 onToggleHidden={onToggleHidden}
                 isolated={isolated}
@@ -1643,6 +2068,7 @@ export default function Sidebar({
                 onFrame={onFrame}
                 onSelectElement={onSelectElement}
                 onFrameElement={onFrameElement}
+                issuesByType={issuesByType}
               />
             </motion.div>
           )}

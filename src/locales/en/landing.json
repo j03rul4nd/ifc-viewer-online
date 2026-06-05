@@ -141,6 +141,30 @@
       "body": "Toggle SSAO, edge rendering, and bloom for presentation renders. Export the corrected IFC binary (all diffs applied server-free) or visible geometry as a standard GLB."
     }
   ],
+  "privacySection": {
+    "label": "PRIVACY & SECURITY",
+    "title": "Your files never leave your browser.",
+    "subtitle": "We don't ask you to trust us — we make it verifiable.",
+    "ctaText": "Read the Privacy Policy →",
+    "cards": [
+      {
+        "title": "Zero uploads",
+        "body": "Your IFC is parsed by web-ifc, a C++ parser compiled to WebAssembly. It runs entirely inside your browser tab. No bytes travel to any server — not even ours."
+      },
+      {
+        "title": "Verify it yourself",
+        "body": "Open DevTools → Network tab, then drop your file. You will see zero requests to any external server handling model data. We say this because it is provably true."
+      },
+      {
+        "title": "Auditable source",
+        "body": "Every line of code is public on GitHub. No hidden server calls, no obfuscated logic. Your security or legal team can review the repository before using the tool."
+      },
+      {
+        "title": "Published Privacy Policy",
+        "body": "GDPR-compliant, cookieless, no account required. The policy details exactly what is collected (aggregate anonymised analytics) and what is not (your files, your models)."
+      }
+    ]
+  },
   "openSource": {
     "label": "OPEN SOURCE",
     "title": "Built in public, free forever",
@@ -162,6 +186,14 @@
     {
       "q": "Can I use it with confidential models under NDA?",
       "a": "Yes. Because all processing happens in your browser and no data is ever transmitted to any server, you can safely use it with confidential project models under NDA. There is no service agreement to review with your client — no data changes hands."
+    },
+    {
+      "q": "How can my IT or legal team verify that no data leaves our network?",
+      "a": "Open Chrome DevTools (F12) → Network tab, then drop your IFC. The app makes no requests to any external server after the initial page load. All IFC parsing, validation, and rendering happen locally via WebAssembly and WebGL. The source code on GitHub can be audited line by line to confirm this — there is no backend, no API key, no telemetry on the model content."
+    },
+    {
+      "q": "Does the app use cookies or collect personal data?",
+      "a": "No cookies. The app uses cookieless, in-memory analytics (PostHog with no persistent identifiers) to count aggregate usage — for example, how many files were validated today. No personal data, no session IDs, no file names or content are ever transmitted. The published Privacy Policy details every data point collected."
     },
     {
       "q": "Can I share the validation results with my team or client?",

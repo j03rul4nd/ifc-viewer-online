@@ -34,7 +34,13 @@
     "noMatches": "Ninguna categoría coincide",
     "showAll": "Mostrar todo",
     "hideAll": "Ocultar todo",
-    "hiddenCount": "{{count}} ocultas"
+    "hiddenCount": "{{count}} ocultas",
+    "legendBadge": "Leyenda de colores",
+    "typesShort": "tipos",
+    "withIssues": "con incidencias",
+    "hint": "Clic en el color para aislar · clic en el nombre para enfocar en 3D",
+    "section3D": "Elementos 3D",
+    "sectionOther": "Otros objetos IFC"
   },
   "actions": {
     "isolate": "Aislar",
@@ -76,7 +82,7 @@
   },
   "tabs": {
     "properties": "Propiedades",
-    "categories": "Categorías",
+    "categories": "Leyenda",
     "takeoff": "Cantidades"
   },
   "takeoff": {

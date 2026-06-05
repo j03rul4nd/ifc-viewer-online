@@ -40,6 +40,8 @@
   "exportGlbFailed": "GLB export failed: {{message}}",
   "open": "Open",
   "reset": "Reset",
+  "legend": "Legend",
+  "legendTooltip": "Color legend — entity types in this model",
   "status": {
     "loaded": "Loaded",
     "loading": "Loading…",

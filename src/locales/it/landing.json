@@ -149,6 +149,30 @@
       "body": "Attiva SSAO, rendering dei bordi e bloom per render di presentazione. Esporta il binario IFC corretto o la geometria visibile come GLB standard."
     }
   ],
+  "privacySection": {
+    "label": "PRIVACY & SICUREZZA",
+    "title": "I tuoi file non lasciano mai il tuo browser.",
+    "subtitle": "Non ti chiediamo di fidarti di noi — lo rendiamo verificabile.",
+    "ctaText": "Leggi l'Informativa sulla Privacy →",
+    "cards": [
+      {
+        "title": "Zero caricamenti",
+        "body": "Il tuo IFC viene analizzato da web-ifc, un parser C++ compilato in WebAssembly. Gira interamente all'interno della tua scheda del browser. Nessun byte viaggia verso alcun server — nemmeno il nostro."
+      },
+      {
+        "title": "Verifica tu stesso",
+        "body": "Apri DevTools → scheda Rete, poi rilascia il tuo file. Vedrai zero richieste a qualsiasi server esterno che gestisce dati del modello. Lo diciamo perché è dimostrabilmente vero."
+      },
+      {
+        "title": "Sorgente verificabile",
+        "body": "Ogni riga di codice è pubblica su GitHub. Nessuna chiamata server nascosta, nessuna logica offuscata. Il tuo team di sicurezza o legale può esaminare il repository prima di usare lo strumento."
+      },
+      {
+        "title": "Informativa sulla Privacy pubblicata",
+        "body": "Conforme al GDPR, senza cookie, senza account richiesto. L'informativa descrive esattamente cosa viene raccolto (analisi aggregate anonimizzate) e cosa no (i tuoi file, i tuoi modelli)."
+      }
+    ]
+  },
   "openSource": {
     "label": "OPEN SOURCE",
     "title": "Costruito in pubblico, gratuito per sempre",

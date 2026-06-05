@@ -40,6 +40,8 @@
   "exportGlbFailed": "GLB-Export fehlgeschlagen: {{message}}",
   "open": "Öffnen",
   "reset": "Zurücksetzen",
+  "legend": "Legende",
+  "legendTooltip": "Farblegende — Entitätstypen im Modell",
   "status": {
     "loaded": "Geladen",
     "loading": "Laden…",

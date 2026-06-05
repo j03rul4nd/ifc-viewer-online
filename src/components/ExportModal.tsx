@@ -80,7 +80,7 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
       const diffs = getDiffsForModel(modelId)
       const bytes = await exportAsIfc(buffer, diffs)
       const stem  = fileName.replace(/\.ifc$/i, '')
-      downloadBlob(new Blob([bytes], { type: 'application/x-step' }), `${stem}-exported.ifc`)
+      await downloadBlob(new Blob([bytes], { type: 'application/x-step' }), `${stem}-exported.ifc`)
       setStatus(modelId, 'ifc', 'done')
       return true
     } catch (err) {
@@ -101,7 +101,7 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
       if (!obj) throw new Error(`Model "${fileName}" is not found in the 3D scene — it may have been removed.`)
       const blob = await exportAsGlb(obj)
       const stem = fileName.replace(/\.ifc$/i, '')
-      downloadBlob(blob, `${stem}.glb`)
+      await downloadBlob(blob, `${stem}.glb`)
       setStatus(modelId, 'glb', 'done')
       return true
     } catch (err) {

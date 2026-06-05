@@ -16,6 +16,59 @@
   --danger: #E5484D;
   --warn: #F5A623;
   --ok: #30A46C;
+  /* Mobile floating nav */
+  --mobile-nav-h: 60px;
+  --mobile-nav-margin: 12px;
+  /* Total clearance content needs below: nav-h + margin + safe-area (approx for padding calcs) */
+  --mobile-nav-clearance: calc(var(--mobile-nav-h) + var(--mobile-nav-margin) + 8px);
+}
+
+/* ── Mobile floating pill nav glass ────────────────────────────────────────── */
+.mobile-pill-glass {
+  background: rgba(8, 8, 12, 0.88);
+  -webkit-backdrop-filter: blur(36px) saturate(1.9) brightness(0.95);
+  backdrop-filter: blur(36px) saturate(1.9) brightness(0.95);
+  border: 0.5px solid rgba(255,255,255,0.07);
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.6),
+    0 4px 12px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    inset 0 -0.5px 0 rgba(0,0,0,0.4);
+}
+
+/* ── Mini sheet glass (floating cards above the nav) ───────────────────────── */
+.mobile-sheet-glass {
+  background: rgba(10, 10, 16, 0.94);
+  -webkit-backdrop-filter: blur(44px) saturate(1.7);
+  backdrop-filter: blur(44px) saturate(1.7);
+  border: 0.5px solid rgba(255,255,255,0.08);
+  box-shadow:
+    0 -2px 40px rgba(0,0,0,0.55),
+    0 20px 60px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* ── Sidebar bottom sheet (on mobile only — overrides .glass and Tailwind border) */
+@media (max-width: 767px) {
+  .mobile-sidebar-sheet {
+    background: rgba(10, 10, 15, 0.95) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(1.7) !important;
+    backdrop-filter: blur(40px) saturate(1.7) !important;
+    border: none !important;
+    border-top: 0.5px solid rgba(255,255,255,0.08) !important;
+    box-shadow: 0 -8px 48px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.07);
+  }
+}
+
+/* Drag handle */
+.sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 2px;
+}
+.sheet-safe-bottom {
+  height: env(safe-area-inset-bottom, 0px);
 }
 
 * {
@@ -174,16 +227,39 @@ kbd {
   100% { background-position: -200% 0; }
 }
 
-/* ── Mobile drawer overlay ──────────────────────────────────────────────────── */
+/* ── Mobile overlay / drawer ────────────────────────────────────────────────── */
 
-/* Full-screen dark scrim behind mobile drawers */
+/* Scrim behind the sidebar bottom sheet */
 .drawer-backdrop {
   position: fixed;
   inset: 0;
   z-index: 18;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
+}
+
+/* ── Mobile bottom nav ──────────────────────────────────────────────────────── */
+
+:root {
+  /* Height of the mobile bottom navigation bar (without safe area). */
+  --mobile-nav-h: 56px;
+}
+
+/* Drag handle pill used at the top of bottom sheets */
+.sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-strong);
+  flex-shrink: 0;
+}
+
+/* Adds bottom padding inside a sheet equal to the safe-area home indicator */
+.sheet-safe-bottom {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
 
 /* ── B2B Light mode (landing + blog only) ───────────────────────────────────── */

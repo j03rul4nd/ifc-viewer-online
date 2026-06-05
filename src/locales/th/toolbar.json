@@ -40,6 +40,8 @@
   "exportGlbFailed": "ส่งออก GLB ล้มเหลว: {{message}}",
   "open": "เปิด",
   "reset": "รีเซ็ต",
+  "legend": "คำอธิบาย",
+  "legendTooltip": "คำอธิบายสี — ประเภทเอนทิตีในโมเดล",
   "status": {
     "loaded": "โหลดแล้ว",
     "loading": "กำลังโหลด…",

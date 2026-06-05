@@ -21,6 +21,8 @@ interface UIStore {
   validationPanelFloating: boolean
   treeWidth:               number
   treeVisible:             boolean
+  /** Pending tab to activate in the sidebar — consumed by Sidebar on mount or change. null = no pending request. */
+  pendingSidebarTab:       'props' | 'cats' | 'qty' | null
   /** Whether the sidebar is open as a mobile drawer (< md breakpoint). */
   mobileSidebarOpen:       boolean
   /** Per-element visibility overrides. Keys are `"${modelId}:${expressId}"` so that
@@ -56,6 +58,9 @@ interface UIStore {
   setValidationPanelFloating: (floating: boolean) => void
   setTreeWidth:             (width: number) => void
   setTreeVisible:           (visible: boolean) => void
+  openSidebarLegend:        () => void
+  setPendingSidebarTab:     (tab: 'props' | 'cats' | 'qty') => void
+  clearPendingSidebarTab:   () => void
   setMobileSidebarOpen:     (open: boolean) => void
   toggleMobileSidebar:      () => void
   setElementsVisible:          (ids: number[], visible: boolean, modelId: string) => void
@@ -107,6 +112,7 @@ export const useUIStore = create<UIStore>()(
       plansPanelOpen:          false,
       activePlanViewId:        null,
       gpuBackend:              'detecting' as GpuBackend,
+      pendingSidebarTab:       null,
 
       toggleValidationPanel: () =>
         set((s) => ({ validationPanelOpen: !s.validationPanelOpen }), false, 'toggleValidationPanel'),
@@ -122,6 +128,15 @@ export const useUIStore = create<UIStore>()(
 
       setTreeVisible: (visible) =>
         set({ treeVisible: visible }, false, 'setTreeVisible'),
+
+      openSidebarLegend: () =>
+        set({ treeVisible: true, pendingSidebarTab: 'cats' }, false, 'openSidebarLegend'),
+
+      setPendingSidebarTab: (tab) =>
+        set({ pendingSidebarTab: tab }, false, 'setPendingSidebarTab'),
+
+      clearPendingSidebarTab: () =>
+        set({ pendingSidebarTab: null }, false, 'clearPendingSidebarTab'),
 
       setMobileSidebarOpen: (open) =>
         set({ mobileSidebarOpen: open }, false, 'setMobileSidebarOpen'),

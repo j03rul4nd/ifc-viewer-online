@@ -15,11 +15,13 @@ interface EditorStore {
   canUndo: boolean
   canRedo: boolean
 
-  addCommand:   (cmd: EditorCommand) => void
-  undo:         () => void
-  redo:         () => void
-  clearHistory: () => void
-  setSelection: (expressIds: number[]) => void
+  addCommand:          (cmd: EditorCommand) => void
+  undo:                () => void
+  redo:                () => void
+  clearHistory:        () => void
+  setSelection:        (expressIds: number[]) => void
+  /** Remove all commands (and their diffs) that touch a specific expressId. */
+  discardForElement:   (expressId: number, modelId?: string) => void
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -111,6 +113,25 @@ export const useEditorStore = create<EditorStore>()(
 
       setSelection: (expressIds) =>
         set({ selection: expressIds }, false, 'setSelection'),
+
+      discardForElement: (expressId, modelId) => {
+        set((s) => {
+          // Keep commands that don't affect this expressId at all
+          const kept = s.history.filter((cmd) => {
+            if (modelId && cmd.modelId && cmd.modelId !== modelId) return true
+            return !cmd.diffs.some((d) => d.expressId === expressId)
+          })
+          const historyIndex = kept.length - 1
+          return {
+            history:      kept,
+            historyIndex,
+            diffs:        historyIndex < 0 ? [] : flattenDiffs(kept, historyIndex),
+            canUndo:      historyIndex >= 0,
+            canRedo:      false,
+          }
+        }, false, 'discardForElement')
+        appBus.emit('editor:history-cleared', undefined)
+      },
     }),
     { name: 'EditorStore', enabled: import.meta.env.DEV },
   ),
