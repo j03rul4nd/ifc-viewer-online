@@ -36,6 +36,10 @@ import StarBorder    from './reactbits/StarBorder'
 import BorderGlow    from './reactbits/BorderGlow'
 import ShapeGrid     from './reactbits/ShapeGrid'
 import GradualBlur   from './reactbits/GradualBlur'
+import SideRays      from './reactbits/SideRays'
+import SoftAurora    from './reactbits/SoftAurora'
+import Grainient     from './reactbits/Grainient'
+import PixelCard     from './reactbits/PixelCard'
 
 interface LandingProps {
   onLaunch: () => void
@@ -44,6 +48,31 @@ interface LandingProps {
   onNavigateToBlog: (lang?: string) => void
   onNavigateToPrivacy: () => void
   onNavigateToTerms: () => void
+  landingTheme: 'dark' | 'light'
+  onToggleLandingTheme: () => void
+}
+
+// ── Theme toggle button ───────────────────────────────────────────────────────
+function ThemeToggleBtn({ theme, onToggle }: { theme: 'dark' | 'light'; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className="w-[30px] h-[30px] flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--border-strong)] transition-all flex-shrink-0"
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={theme === 'dark' ? 'Switch to professional light mode' : 'Switch to dark mode'}
+    >
+      {theme === 'dark' ? (
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+        </svg>
+      ) : (
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      )}
+    </button>
+  )
 }
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
@@ -92,7 +121,10 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 }
 
 // ── Hero preview card ─────────────────────────────────────────────────────────
-function HeroPreview() {
+function HeroPreview({ lightBg }: { lightBg?: boolean }) {
+  const tooltipBg = lightBg
+    ? 'bg-[rgba(255,255,255,0.95)] shadow-[0_4px_16px_rgba(0,0,0,0.10)]'
+    : 'bg-[rgba(16,16,20,0.92)]'
   return (
     <div className="relative bg-[var(--bg)] flex overflow-hidden">
       {/* 3D render — always shown */}
@@ -104,7 +136,7 @@ function HeroPreview() {
           loading="lazy"
         />
         {/* Element tooltip — smaller on mobile */}
-        <div className="absolute top-[46%] right-[4%] bg-[rgba(16,16,20,0.92)] border border-[var(--border-strong)] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-[11.5px] backdrop-blur-md">
+        <div className={`absolute top-[46%] right-[4%] border border-[var(--border-strong)] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-[11.5px] backdrop-blur-md ${tooltipBg}`}>
           <div className="font-mono text-[9px] sm:text-[10px] text-[var(--accent-2)] mb-0.5">IfcWall</div>
           <div className="font-medium">Exterior — 300mm</div>
           <div className="text-[var(--text-dim)] text-[9px] sm:text-[10.5px] mt-0.5">REI 60 · Load bearing</div>
@@ -181,7 +213,7 @@ const FIX_CATEGORIES = ['schema', 'spatial', 'quality', 'lod', 'iso19650', 'clas
 const FIX_LANG_PREFIXES = ['es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th']
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onNavigateToBlog, onNavigateToPrivacy, onNavigateToTerms }: LandingProps) {
+export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onNavigateToBlog, onNavigateToPrivacy, onNavigateToTerms, landingTheme, onToggleLandingTheme }: LandingProps) {
   // 'validation' is loaded alongside 'landing' so the fix-guide section can reuse
   // the already-translated category labels (catFull.*). 'landing' stays the default
   // namespace, so every other t() call in this component is unchanged.
@@ -271,30 +303,88 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
         div owns the vertical scroll so momentum / rubber-band works correctly.
         -webkit-overflow-scrolling is set here for older Safari compat.
       */}
-      <div className="landing-scroll absolute inset-0 overflow-auto bg-[var(--bg)] text-[var(--text)]">
+      <div className={`landing-scroll absolute inset-0 overflow-auto bg-[var(--bg)] text-[var(--text)]${landingTheme === 'light' ? ' lp-light' : ''}`}>
 
-        {/* ── LineWaves hero background (z-0) — disabled on small screens for perf ── */}
-        <div
-          className="hidden sm:block absolute left-0 right-0 top-0 overflow-hidden pointer-events-none"
-          style={{ height: '100vh', zIndex: 0 }}
-          aria-hidden="true"
-        >
-          <LineWaves
-            speed={0.15}
-            innerLineCount={14}
-            outerLineCount={18}
-            warpIntensity={0.6}
-            rotation={-30}
-            edgeFadeWidth={0.15}
-            colorCycleSpeed={0.0}
-            brightness={0.07}
-            color1="#5E6AD2"
-            color2="#8B93E8"
-            color3="#4a5280"
-            enableMouseInteraction={false}
-            mouseInfluence={0.8}
-          />
-        </div>
+        {/* ── Dark: LineWaves WebGL background ── */}
+        {landingTheme === 'dark' && (
+          <div
+            className="hidden sm:block absolute left-0 right-0 top-0 overflow-hidden pointer-events-none"
+            style={{ height: '100vh', zIndex: 0 }}
+            aria-hidden="true"
+          >
+            <LineWaves
+              speed={0.15}
+              innerLineCount={14}
+              outerLineCount={18}
+              warpIntensity={0.6}
+              rotation={-30}
+              edgeFadeWidth={0.15}
+              colorCycleSpeed={0.0}
+              brightness={0.07}
+              color1="#5E6AD2"
+              color2="#8B93E8"
+              color3="#4a5280"
+              enableMouseInteraction={false}
+              mouseInfluence={0.8}
+            />
+          </div>
+        )}
+
+        {/* ── Light: SideRays accent over clean CSS gradient ── */}
+        {landingTheme === 'light' && (
+          <div
+            className="hidden sm:block absolute left-0 right-0 top-0 pointer-events-none overflow-hidden"
+            style={{ height: '100vh', zIndex: 0 }}
+            aria-hidden="true"
+          >
+            {/* CSS gradient base — fast, zero GPU cost */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: [
+                'radial-gradient(ellipse 90% 60% at 10% 40%, rgba(54,69,196,0.07) 0%, transparent 55%)',
+                'radial-gradient(ellipse 70% 50% at 90% 15%, rgba(94,106,210,0.05) 0%, transparent 50%)',
+                'radial-gradient(ellipse 50% 40% at 50% 90%, rgba(54,69,196,0.04) 0%, transparent 55%)',
+              ].join(', '),
+            }} />
+            {/* WebGL directional rays — single context, proven lightweight */}
+            <SideRays
+              speed={0.55}
+              rayColor1="#3645C4"
+              rayColor2="#6B7FE8"
+              intensity={0.5}
+              spread={1.3}
+              origin="top-right"
+              tilt={-10}
+              saturation={0.65}
+              blend={0.52}
+              falloff={2.6}
+              opacity={0.32}
+            />
+          </div>
+        )}
+
+        {/* ── Dark: SideRays corner accent (layered above LineWaves) ── */}
+        {landingTheme === 'dark' && (
+          <div
+            className="hidden sm:block absolute left-0 right-0 top-0 pointer-events-none"
+            style={{ height: '100vh', zIndex: 1 }}
+            aria-hidden="true"
+          >
+            <SideRays
+              speed={1.2}
+              rayColor1="#5E6AD2"
+              rayColor2="#A78BFA"
+              intensity={0.9}
+              spread={1.4}
+              origin="top-right"
+              tilt={-8}
+              saturation={1.2}
+              blend={0.58}
+              falloff={2.3}
+              opacity={0.5}
+            />
+          </div>
+        )}
 
         {/* Grid bg */}
         <div
@@ -317,35 +407,44 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             <span className="text-[14px] sm:text-[15px] font-semibold tracking-tight">IFC Viewer</span>
           </div>
 
-          {/* Desktop nav links */}
-          <div className="hidden md:flex items-center gap-5 text-[13px] text-[var(--text-dim)]">
-            <a href="#features" className="text-inherit no-underline hover:text-[var(--text)] transition-colors">{t('nav.features')}</a>
-            <a href="#how"      className="text-inherit no-underline hover:text-[var(--text)] transition-colors">{t('nav.howItWorks')}</a>
-            <a href="#fix-guides" className="text-inherit no-underline hover:text-[var(--text)] transition-colors">{t('nav.fixGuides')}</a>
-            <a href="#faq"      className="text-inherit no-underline hover:text-[var(--text)] transition-colors">{t('nav.faq')}</a>
+          {/* Desktop nav — md (768px+) tablet-friendly, lg (1024px+) full */}
+          <div className="hidden md:flex items-center gap-3 lg:gap-5">
+            {/* Nav links — small subset at md, full set at lg */}
+            <a href="#features"
+              className="text-[12px] lg:text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
+            >{t('nav.features')}</a>
+            <a href="#how"
+              className="text-[12px] lg:text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
+            >{t('nav.howItWorks')}</a>
+            <a href="#fix-guides"
+              className="hidden lg:inline text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
+            >{t('nav.fixGuides')}</a>
+            <a href="#faq"
+              className="text-[12px] lg:text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
+            >{t('nav.faq')}</a>
             <button
               onClick={() => onNavigateToBlog(langShort)}
-              className="text-inherit bg-transparent border-0 p-0 cursor-pointer hover:text-[var(--text)] transition-colors"
-            >
-              Blog
-            </button>
+              className="text-[12px] lg:text-[13px] text-[var(--text-dim)] bg-transparent border-0 p-0 cursor-pointer hover:text-[var(--text)] transition-colors whitespace-nowrap"
+            >Blog</button>
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"
-              className="text-inherit no-underline hover:text-[var(--text)] transition-colors"
+              className="hidden lg:inline text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
               aria-label="View source code on GitHub"
-            >
-              {t('nav.github')}
-            </a>
-            <LanguageSelectorNav />
+            >{t('nav.github')}</a>
+
+            {/* Controls — always visible */}
+            <ThemeToggleBtn theme={landingTheme} onToggle={onToggleLandingTheme} />
+            <LanguageSelectorNav landingTheme={landingTheme} />
             <button
               onClick={onLaunch}
-              className="inline-flex items-center gap-2 h-[30px] px-3 text-[13px] font-medium rounded-[9px] bg-[var(--accent)] text-white hover:brightness-110 active:brightness-90 transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 lg:gap-2 h-[30px] px-2.5 lg:px-3 text-[12px] lg:text-[13px] font-medium rounded-[9px] bg-[var(--accent)] text-white hover:brightness-110 active:brightness-90 transition-all cursor-pointer whitespace-nowrap"
             >
-              <Icons.ArrowRight size={14} />
-              {t('actions.openViewer')}
+              <Icons.ArrowRight size={13} />
+              <span className="hidden lg:inline">{t('actions.openViewer')}</span>
+              <span className="lg:hidden">{t('actions.launch')}</span>
             </button>
           </div>
 
-          {/* Mobile: GitHub icon + language selector + primary CTA */}
+          {/* Mobile: GitHub icon + theme toggle + language selector + primary CTA */}
           <div className="flex md:hidden items-center gap-2">
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"
               className="w-9 h-9 flex items-center justify-center rounded-lg text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
@@ -353,7 +452,8 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             >
               {GITHUB_SVG}
             </a>
-            <LanguageSelectorNav />
+            <ThemeToggleBtn theme={landingTheme} onToggle={onToggleLandingTheme} />
+            <LanguageSelectorNav landingTheme={landingTheme} />
             <button
               onClick={onLaunch}
               className="inline-flex items-center gap-1.5 h-9 px-3.5 text-[13px] font-semibold rounded-[9px] bg-[var(--accent)] text-white active:brightness-90 cursor-pointer"
@@ -508,7 +608,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                 IFC Viewer Online
               </div>
             </div>
-            <HeroPreview />
+            <HeroPreview lightBg={landingTheme === 'light'} />
           </motion.div>
 
           {/* Gradual blur at the hero bottom edge */}
@@ -542,7 +642,13 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
         {/* ── Stats strip ── */}
         <section
           className="border-b border-[var(--border)] py-10 sm:py-[52px] px-4 sm:px-7"
-          style={{ zIndex: 2, position: 'relative' }}
+          style={{
+            zIndex: 2,
+            position: 'relative',
+            ...(landingTheme === 'light' && {
+              background: 'linear-gradient(180deg, rgba(94,106,210,0.04) 0%, transparent 100%)',
+            }),
+          }}
           aria-label="Key statistics"
         >
           <div className="max-w-[900px] mx-auto grid grid-cols-2 gap-y-8 sm:gap-y-10 gap-x-4 sm:gap-x-6 sm:grid-cols-4">
@@ -600,11 +706,11 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             {FEATURES.map((f, i) => (
               <BorderGlow
                 key={i}
-                backgroundColor="#18181f"
+                backgroundColor={landingTheme === 'light' ? '#FFFFFF' : '#18181f'}
                 borderRadius={0}
-                glowColor="94 106 210"
+                glowColor={landingTheme === 'light' ? '54 69 196' : '94 106 210'}
                 glowRadius={30}
-                glowIntensity={0.6}
+                glowIntensity={landingTheme === 'light' ? 0.18 : 0.6}
                 coneSpread={20}
                 colors={['#5E6AD2', '#8B93E8', '#3B82F6']}
                 className="w-full"
@@ -681,16 +787,18 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
 
             <div className="grid gap-4 sm:gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
               {STEPS.map((s, i) => (
-                <BorderGlow
+                <PixelCard
                   key={i}
-                  backgroundColor="#18181f"
-                  borderRadius={12}
-                  glowColor="94 106 210"
-                  glowRadius={25}
-                  glowIntensity={0.5}
-                  coneSpread={18}
-                  colors={['#5E6AD2', '#A78BFA', '#6FB8D9']}
-                  className="w-full"
+                  variant="purple"
+                  colors="#5E6AD2,#8B93E8,#A78BFA"
+                  gap={9}
+                  speed={28}
+                  className="rounded-xl w-full"
+                  style={{
+                    background: 'var(--surface)',
+                    borderRadius: '12px',
+                    borderColor: 'var(--border)',
+                  }}
                 >
                   <motion.div
                     variants={fadeUp}
@@ -698,7 +806,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                     whileInView="show"
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.08 }}
-                    className="p-5 sm:p-[26px]"
+                    className="p-5 sm:p-[26px] h-full"
                   >
                     <div
                       className="font-serif text-[24px] sm:text-[28px] font-normal mb-3 tracking-tight"
@@ -710,7 +818,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                     <div className="text-[15px] sm:text-[16px] font-semibold tracking-tight mb-2">{s.title}</div>
                     <div className="text-[12.5px] sm:text-[13px] text-[var(--text-dim)] leading-[1.55]">{s.body}</div>
                   </motion.div>
-                </BorderGlow>
+                </PixelCard>
               ))}
             </div>
           </div>
@@ -721,8 +829,27 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           id="fix-guides"
           className="border-t border-[var(--border)] py-14 sm:py-[90px] px-4 sm:px-7"
           aria-labelledby="fix-guides-heading"
+          style={{ position: 'relative', overflow: 'hidden' }}
         >
-          <div className="max-w-[1200px] mx-auto">
+          {/* SoftAurora ambient glow — dark mode only */}
+          {landingTheme === 'dark' && (
+            <div className="absolute inset-0 pointer-events-none hidden sm:block" aria-hidden="true" style={{ opacity: 0.6 }}>
+              <SoftAurora
+                speed={0.22}
+                scale={1.4}
+                brightness={0.45}
+                color1="#5E6AD2"
+                color2="#7C3AED"
+                noiseFrequency={1.8}
+                noiseAmplitude={0.9}
+                bandHeight={0.48}
+                bandSpread={0.85}
+                enableMouseInteraction={false}
+                colorSpeed={0.35}
+              />
+            </div>
+          )}
+          <div className="max-w-[1200px] mx-auto" style={{ position: 'relative', zIndex: 1 }}>
             <div className="text-center mb-10 sm:mb-[60px]">
               <div className="text-[11px] sm:text-[12px] text-[var(--accent-2)] tracking-[0.1em] font-mono mb-2 sm:mb-2.5">
                 <DecryptedText
@@ -780,47 +907,122 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
         </section>
 
         {/* ── Open source callout ── */}
-        <section className="border-t border-[var(--border)] py-10 sm:py-[60px] px-4 sm:px-7" aria-labelledby="opensource-heading">
+        <section
+          className="border-t border-[var(--border)] py-10 sm:py-[60px] px-4 sm:px-7"
+          style={landingTheme === 'light' ? {
+            background: 'linear-gradient(145deg, #f3f5ff 0%, #eaedfc 40%, #f7f8ff 100%)',
+          } : undefined}
+          aria-labelledby="opensource-heading"
+        >
           <div className="max-w-[760px] mx-auto text-center">
-            <div className="text-[11px] sm:text-[12px] text-[var(--accent-2)] tracking-[0.1em] font-mono mb-2 sm:mb-2.5">
-              <DecryptedText
-                text={t('openSource.label')}
-                animateOn="view"
-                sequential
-                revealDirection="center"
-                speed={55}
-                className="text-[var(--accent-2)]"
-                encryptedClassName="text-[var(--text-faint)]"
-              />
-            </div>
-            <h2
-              id="opensource-heading"
-              className="font-semibold tracking-[-0.03em] mb-3 sm:mb-4"
-              style={{ fontSize: 'clamp(20px, 5.5vw, 32px)' }}
-            >
-              {t('openSource.title')}
-            </h2>
-            <p className="text-[13.5px] sm:text-[15px] text-[var(--text-dim)] leading-[1.55] mb-6 sm:mb-7 max-w-[540px] mx-auto">
-              {t('openSource.body')}
-            </p>
-            <div className="flex gap-3 justify-center flex-wrap">
-              <a
-                href={GITHUB_URL}
-                target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 h-[38px] px-4 sm:px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] border border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors no-underline"
-                aria-label="View source code on GitHub"
+            {/* Light mode: inner card with border + shadow */}
+            {landingTheme === 'light' && (
+              <div
+                className="relative mx-auto mb-8 sm:mb-10 rounded-2xl border border-[rgba(94,106,210,0.18)] overflow-hidden"
+                style={{
+                  background: 'rgba(255,255,255,0.75)',
+                  boxShadow: '0 1px 4px rgba(94,106,210,0.08), 0 8px 32px rgba(94,106,210,0.07)',
+                  backdropFilter: 'blur(8px)',
+                  padding: 'clamp(28px, 5vw, 52px)',
+                }}
               >
-                {GITHUB_SVG}
-                {t('actions.viewSourceOnGithub')}
-              </a>
-              <a
-                href="mailto:joelbenitezdonari@gmail.com"
-                className="inline-flex items-center gap-2 h-[38px] px-4 sm:px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] bg-[var(--accent)] text-white hover:brightness-110 transition-all no-underline"
-                aria-label="Contact for custom BIM development"
-              >
-                {t('actions.contactForWork')}
-              </a>
-            </div>
+                {/* Subtle indigo accent corner */}
+                <div
+                  className="absolute top-0 right-0 pointer-events-none"
+                  style={{
+                    width: '280px', height: '200px',
+                    background: 'radial-gradient(ellipse at 100% 0%, rgba(94,106,210,0.12) 0%, transparent 65%)',
+                  }}
+                  aria-hidden="true"
+                />
+                <div className="relative">
+                  <div className="text-[11px] sm:text-[12px] text-[var(--accent-2)] tracking-[0.1em] font-mono mb-2 sm:mb-2.5">
+                    <DecryptedText
+                      text={t('openSource.label')}
+                      animateOn="view"
+                      sequential
+                      revealDirection="center"
+                      speed={55}
+                      className="text-[var(--accent-2)]"
+                      encryptedClassName="text-[var(--text-faint)]"
+                    />
+                  </div>
+                  <h2
+                    id="opensource-heading"
+                    className="font-semibold tracking-[-0.03em] mb-3 sm:mb-4"
+                    style={{ fontSize: 'clamp(20px, 5.5vw, 32px)' }}
+                  >
+                    {t('openSource.title')}
+                  </h2>
+                  <p className="text-[13.5px] sm:text-[15px] text-[var(--text-dim)] leading-[1.55] mb-6 sm:mb-7 max-w-[540px] mx-auto">
+                    {t('openSource.body')}
+                  </p>
+                  <div className="flex gap-3 justify-center flex-wrap">
+                    <a
+                      href={GITHUB_URL}
+                      target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 h-[38px] px-4 sm:px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] border border-[var(--border-strong)] text-[var(--text)] hover:bg-[rgba(94,106,210,0.06)] transition-colors no-underline"
+                      aria-label="View source code on GitHub"
+                    >
+                      {GITHUB_SVG}
+                      {t('actions.viewSourceOnGithub')}
+                    </a>
+                    <a
+                      href="mailto:joelbenitezdonari@gmail.com"
+                      className="inline-flex items-center gap-2 h-[38px] px-4 sm:px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] bg-[var(--accent)] text-white hover:brightness-110 transition-all no-underline"
+                      aria-label="Contact for custom BIM development"
+                    >
+                      {t('actions.contactForWork')}
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Dark mode: original layout */}
+            {landingTheme === 'dark' && (
+              <>
+                <div className="text-[11px] sm:text-[12px] text-[var(--accent-2)] tracking-[0.1em] font-mono mb-2 sm:mb-2.5">
+                  <DecryptedText
+                    text={t('openSource.label')}
+                    animateOn="view"
+                    sequential
+                    revealDirection="center"
+                    speed={55}
+                    className="text-[var(--accent-2)]"
+                    encryptedClassName="text-[var(--text-faint)]"
+                  />
+                </div>
+                <h2
+                  id="opensource-heading"
+                  className="font-semibold tracking-[-0.03em] mb-3 sm:mb-4"
+                  style={{ fontSize: 'clamp(20px, 5.5vw, 32px)' }}
+                >
+                  {t('openSource.title')}
+                </h2>
+                <p className="text-[13.5px] sm:text-[15px] text-[var(--text-dim)] leading-[1.55] mb-6 sm:mb-7 max-w-[540px] mx-auto">
+                  {t('openSource.body')}
+                </p>
+                <div className="flex gap-3 justify-center flex-wrap">
+                  <a
+                    href={GITHUB_URL}
+                    target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 h-[38px] px-4 sm:px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] border border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors no-underline"
+                    aria-label="View source code on GitHub"
+                  >
+                    {GITHUB_SVG}
+                    {t('actions.viewSourceOnGithub')}
+                  </a>
+                  <a
+                    href="mailto:joelbenitezdonari@gmail.com"
+                    className="inline-flex items-center gap-2 h-[38px] px-4 sm:px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] bg-[var(--accent)] text-white hover:brightness-110 transition-all no-underline"
+                    aria-label="Contact for custom BIM development"
+                  >
+                    {t('actions.contactForWork')}
+                  </a>
+                </div>
+              </>
+            )}
           </div>
         </section>
 
@@ -844,22 +1046,62 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
           </div>
         </section>
 
-        {/* ── Final CTA — ShapeGrid background ── */}
+        {/* ── Final CTA — ShapeGrid background (dark) / solid gradient (light) ── */}
         <section
           className="border-t border-[var(--border)] py-14 sm:py-20 px-4 sm:px-7 text-center"
           style={{ position: 'relative', overflow: 'hidden', minHeight: '300px' }}
         >
-          <div className="absolute inset-0 hidden sm:block" aria-hidden="true">
-            <ShapeGrid
-              direction="diagonal"
-              speed={0.3}
-              borderColor="rgba(94,106,210,0.08)"
-              squareSize={48}
-              hoverFillColor="rgba(94,106,210,0.06)"
-              shape="square"
-              hoverTrailAmount={3}
-            />
-          </div>
+          {landingTheme === 'dark' && (
+            <>
+              <div className="absolute inset-0 hidden sm:block" aria-hidden="true">
+                <Grainient
+                  color1="#16182e"
+                  color2="#5E6AD2"
+                  color3="#080810"
+                  timeSpeed={0.10}
+                  warpStrength={0.5}
+                  warpFrequency={4.0}
+                  warpAmplitude={60.0}
+                  grainAmount={0.055}
+                  grainScale={2.5}
+                  contrast={1.22}
+                  saturation={0.6}
+                  zoom={0.95}
+                  rotationAmount={280.0}
+                />
+              </div>
+              <div className="absolute inset-0 hidden sm:block" style={{ opacity: 0.22 }} aria-hidden="true">
+                <ShapeGrid
+                  direction="diagonal"
+                  speed={0.3}
+                  borderColor="rgba(94,106,210,0.15)"
+                  squareSize={48}
+                  hoverFillColor="rgba(94,106,210,0.08)"
+                  shape="square"
+                  hoverTrailAmount={3}
+                />
+              </div>
+            </>
+          )}
+          {landingTheme === 'light' && (
+            <div className="absolute inset-0" aria-hidden="true">
+              <Grainient
+                color1="#c7d0ff"
+                color2="#5E6AD2"
+                color3="#e8ecff"
+                timeSpeed={0.09}
+                warpStrength={0.45}
+                warpFrequency={4.0}
+                warpAmplitude={55.0}
+                grainAmount={0.055}
+                grainScale={2.2}
+                contrast={1.22}
+                saturation={0.85}
+                zoom={0.95}
+                rotationAmount={260.0}
+              />
+            </div>
+          )}
 
           <div style={{ position: 'relative', zIndex: 1 }}>
             <motion.h2

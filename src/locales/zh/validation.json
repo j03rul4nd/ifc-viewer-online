@@ -124,6 +124,13 @@
       "description": "检查所有构件是否具备 LOD 300 所需的信息水平。"
     }
   },
+  "phantom": {
+    "notice": "需要配置的规则",
+    "ruleTooltip": "此规则需要配置才能检测问题——在配置之前始终返回 0"
+  },
+  "clashCap": {
+    "notice": "碰撞检测已检查 {{total}} 个元素中的 {{checked}} 个——大型模型已进行采样"
+  },
   "coverage": {
     "title": "验证覆盖率",
     "covered": "已检查 {{count}} / {{total}} 个类别",

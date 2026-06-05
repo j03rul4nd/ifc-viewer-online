@@ -185,3 +185,43 @@ kbd {
   -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
 }
+
+/* ── B2B Light mode (landing + blog only) ───────────────────────────────────── */
+/* Applied via .lp-light wrapper — never touches the IFC viewer.                */
+
+.lp-light {
+  --bg:           #F5F6FA;
+  --surface:      #FFFFFF;
+  --surface-2:    #ECEDF3;
+  --border:       #DDE0EC;
+  --border-strong:#C2C6D8;
+  --text:         #0B0D1A;
+  --text-dim:     #414560;
+  --text-faint:   #7D82A0;
+  --accent:       #3645C4;
+  --accent-2:     #5E6AD2;
+  --ok:           #16A34A;
+  --danger:       #DC2626;
+  --warn:         #D97706;
+}
+
+/* Frosted-glass utilities adapted for light backgrounds */
+.lp-light .glass,
+.lp-light .glass-md {
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  background: rgba(255, 255, 255, 0.90);
+  border-color: var(--border);
+}
+
+/* Grid lines adapted for light (dark lines at very low opacity) */
+.lp-light .grid-bg {
+  background-image:
+    linear-gradient(to right,  rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+}
+
+/* Sticky blog navs: swap hardcoded dark rgba for a light frosted glass */
+.lp-light nav.lp-sticky-nav {
+  background: rgba(245, 246, 250, 0.92) !important;
+}

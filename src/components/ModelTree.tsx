@@ -922,10 +922,25 @@ export default ModelTree
 
 // ── Collect element IDs in subtree ────────────────────────────────────────────
 
+// Spatial structure types that carry no renderable geometry in the 3D model.
+// IfcSpace IS renderable (semi-transparent room volume) so it is NOT in this set.
+const GEOMETRY_FREE_SPATIAL = new Set([
+  'IFCPROJECT', 'IFCSITE', 'IFCBUILDING', 'IFCBUILDINGSTOREY', 'IFCZONE',
+])
+
 function collectElementIds(node: SpatialNode, decompMap?: Map<number, number[]>): number[] {
   const ids: number[] = []
   for (const e of node.containedElements) ids.push(...expandWithDecomp(e.expressId, decompMap))
-  for (const child of node.children) ids.push(...collectElementIds(child, decompMap))
+  for (const child of node.children) {
+    // Spatial child nodes that carry renderable geometry (e.g. IfcSpace room volumes)
+    // must be included so that hiding a storey also hides those 3D volumes.
+    // Pure containers (IfcBuilding, IfcBuildingStorey, etc.) have no geometry and
+    // are excluded to avoid corrupting the allHidden EyeBtn state.
+    if (!GEOMETRY_FREE_SPATIAL.has(child.ifcClass.toUpperCase())) {
+      ids.push(...expandWithDecomp(child.expressId, decompMap))
+    }
+    ids.push(...collectElementIds(child, decompMap))
+  }
   return ids
 }
 

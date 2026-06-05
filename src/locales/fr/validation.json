@@ -124,6 +124,13 @@
       "description": "Vérifie que tous les éléments disposent du niveau d'information requis pour le LOD 300."
     }
   },
+  "phantom": {
+    "notice": "Règles nécessitant une configuration",
+    "ruleTooltip": "Cette règle nécessite une configuration pour détecter des problèmes — elle retourne toujours 0 jusqu'à ce qu'elle soit configurée"
+  },
+  "clashCap": {
+    "notice": "La détection de collision a vérifié {{checked}} des {{total}} éléments — grand modèle échantillonné"
+  },
   "coverage": {
     "title": "Couverture de validation",
     "covered": "{{count}} / {{total}} catégories vérifiées",

@@ -124,6 +124,13 @@
       "description": "Verifica se todos os elementos têm o nível de informação exigido para o LOD 300."
     }
   },
+  "phantom": {
+    "notice": "Regras que precisam de configuração",
+    "ruleTooltip": "Esta regra precisa de configuração para detectar problemas — retorna sempre 0 até ser configurada"
+  },
+  "clashCap": {
+    "notice": "A detecção de colisões verificou {{checked}} de {{total}} elementos — modelo grande foi amostrado"
+  },
   "coverage": {
     "title": "Cobertura de validação",
     "covered": "{{count}} / {{total}} categorias verificadas",

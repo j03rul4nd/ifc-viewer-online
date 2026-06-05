@@ -58,8 +58,10 @@ interface UIStore {
   setTreeVisible:           (visible: boolean) => void
   setMobileSidebarOpen:     (open: boolean) => void
   toggleMobileSidebar:      () => void
-  setElementsVisible:       (ids: number[], visible: boolean, modelId: string) => void
-  clearHiddenElements:      () => void
+  setElementsVisible:          (ids: number[], visible: boolean, modelId: string) => void
+  clearHiddenElements:         () => void
+  /** Remove all hidden-element entries for a specific model (call when a model is removed). */
+  clearHiddenElementsForModel: (modelId: string) => void
   setCameraControlsVisible: (visible: boolean) => void
   toggleCameraControls:     () => void
   setTransformMode:         (mode: TransformMode) => void
@@ -143,6 +145,18 @@ export const useUIStore = create<UIStore>()(
 
       clearHiddenElements: () =>
         set({ hiddenElements: new Set<string>() }, false, 'clearHiddenElements'),
+
+      clearHiddenElementsForModel: (modelId) =>
+        set(
+          (s) => {
+            const prefix = `${modelId}:`
+            const next = new Set([...s.hiddenElements].filter((k) => !k.startsWith(prefix)))
+            // Bail out early (no re-render) when nothing changed
+            return next.size === s.hiddenElements.size ? s : { hiddenElements: next }
+          },
+          false,
+          `clearHiddenElementsForModel:${modelId}`,
+        ),
 
       setCameraControlsVisible: (visible) =>
         set({ cameraControlsVisible: visible }, false, 'setCameraControlsVisible'),

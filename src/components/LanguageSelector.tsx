@@ -58,10 +58,13 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
 
 // ── Landing nav variant ───────────────────────────────────────────────────────
 
-export function LanguageSelectorNav({ className = '' }: { className?: string }) {
+export function LanguageSelectorNav({ className = '', landingTheme = 'dark' }: { className?: string; landingTheme?: 'dark' | 'light' }) {
   const { locale, setLocale, localeDefinition } = useLocale()
   const locales = LOCALE_REGISTRY
   const useDropdown = locales.length >= DROPDOWN_THRESHOLD
+  // When landing is in light mode, CSS variables are overridden by .lp-light —
+  // the "dark" surface style (which uses var(--text-dim) etc.) is the correct choice.
+  const surface = landingTheme === 'light' ? 'dark' : 'light'
 
   return useDropdown
     ? (
@@ -70,7 +73,7 @@ export function LanguageSelectorNav({ className = '' }: { className?: string }) 
         active={locale}
         activeDef={localeDefinition}
         onSelect={setLocale}
-        surface="light"
+        surface={surface}
         className={className}
       />
     )
@@ -79,7 +82,7 @@ export function LanguageSelectorNav({ className = '' }: { className?: string }) 
         locales={locales}
         active={locale}
         onSelect={setLocale}
-        surface="light"
+        surface={surface}
         className={className}
       />
     )

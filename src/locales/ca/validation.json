@@ -124,6 +124,13 @@
       "description": "Comprova que tots els elements tenen el nivell d'informació requerit per al LOD 300."
     }
   },
+  "phantom": {
+    "notice": "Regles que necessiten configuració",
+    "ruleTooltip": "Aquesta regla necessita configuració per detectar problemes — sempre retorna 0 fins que es configuri"
+  },
+  "clashCap": {
+    "notice": "La detecció de col·lisions ha comprovat {{checked}} de {{total}} elements — model gran mostrejat"
+  },
   "coverage": {
     "title": "Cobertura de validació",
     "covered": "{{count}} / {{total}} categories comprovades",

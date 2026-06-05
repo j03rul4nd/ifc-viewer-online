@@ -124,6 +124,13 @@
       "description": "Prüft, ob alle Elemente den für LOD 300 erforderlichen Informationsgrad aufweisen."
     }
   },
+  "phantom": {
+    "notice": "Regeln mit Konfigurationsbedarf",
+    "ruleTooltip": "Diese Regel benötigt eine Konfiguration, um Probleme zu erkennen — sie gibt immer 0 zurück, bis sie konfiguriert ist"
+  },
+  "clashCap": {
+    "notice": "Kollisionserkennung prüfte {{checked}} von {{total}} Elementen — großes Modell wurde gesampelt"
+  },
   "coverage": {
     "title": "Validierungsabdeckung",
     "covered": "{{count}} / {{total}} Kategorien geprüft",

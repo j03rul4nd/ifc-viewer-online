@@ -6,12 +6,38 @@ import SpotlightCard  from './reactbits/SpotlightCard'
 import CountUp        from './reactbits/CountUp'
 import FaultyTerminal from './reactbits/FaultyTerminal'
 import BlurText       from './reactbits/BlurText'
+import SoftAurora     from './reactbits/SoftAurora'
+import Grainient      from './reactbits/Grainient'
 import ReadingProgress             from './blog/ReadingProgress'
 import TableOfContents, { extractHeadings, slugify } from './blog/TableOfContents'
 import CodeBlock                   from './blog/CodeBlock'
 import CopyForAI                   from './blog/CopyForAI'
 import BimGlossary                 from './blog/BimGlossary'
 import HealthScoreWidget, { HealthScoreRow } from './blog/HealthScoreWidget'
+
+// ─── Theme toggle button (shared by BlogList + PostView navs) ─────────────────
+
+function ThemeToggleBtn({ theme, onToggle }: { theme: 'dark' | 'light'; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className="w-[30px] h-[30px] flex items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--border-strong)] transition-all flex-shrink-0"
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={theme === 'dark' ? 'Switch to professional light mode' : 'Switch to dark mode'}
+    >
+      {theme === 'dark' ? (
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+        </svg>
+      ) : (
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      )}
+    </button>
+  )
+}
 
 // ─── Asset resolution ─────────────────────────────────────────────────────────
 
@@ -361,11 +387,11 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
 
 // ─── Post card (grid) ─────────────────────────────────────────────────────────
 
-function PostCard({ post, onClick }: { post: BlogPost; onClick: () => void }) {
+function PostCard({ post, onClick, theme = 'dark' }: { post: BlogPost; onClick: () => void; theme?: 'dark' | 'light' }) {
   return (
     <SpotlightCard
       className="group rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[rgba(94,106,210,0.4)] active:scale-[0.99] hover:-translate-y-[2px] transition-all duration-200 cursor-pointer overflow-hidden"
-      spotlightColor="rgba(94,106,210,0.10)"
+      spotlightColor={theme === 'dark' ? 'rgba(94,106,210,0.10)' : 'rgba(94,106,210,0.08)'}
     >
       <article onClick={onClick} className="flex flex-col h-full p-4 sm:p-5">
         {/* Category badge */}
@@ -376,7 +402,7 @@ function PostCard({ post, onClick }: { post: BlogPost; onClick: () => void }) {
         </div>
 
         {/* Title */}
-        <h2 className="flex-1 text-[15px] font-semibold tracking-[-0.01em] leading-[1.35] text-[var(--text)] mb-2 group-hover:text-white transition-colors line-clamp-2">
+        <h2 className={`flex-1 text-[15px] font-semibold tracking-[-0.01em] leading-[1.35] text-[var(--text)] mb-2 transition-colors line-clamp-2 ${theme === 'dark' ? 'group-hover:text-white' : 'group-hover:text-[var(--accent)]'}`}>
           {post.title}
         </h2>
 
@@ -404,7 +430,7 @@ function PostCard({ post, onClick }: { post: BlogPost; onClick: () => void }) {
 
 // ─── Featured card ────────────────────────────────────────────────────────────
 
-function FeaturedCard({ post, onClick }: { post: BlogPost; onClick: () => void }) {
+function FeaturedCard({ post, onClick, theme = 'dark' }: { post: BlogPost; onClick: () => void; theme?: 'dark' | 'light' }) {
   return (
     <article
       onClick={onClick}
@@ -446,7 +472,7 @@ function FeaturedCard({ post, onClick }: { post: BlogPost; onClick: () => void }
           </div>
 
           <h2
-            className="font-semibold tracking-[-0.03em] leading-[1.2] text-[var(--text)] group-hover:text-white transition-colors"
+            className={`font-semibold tracking-[-0.03em] leading-[1.2] text-[var(--text)] transition-colors ${theme === 'dark' ? 'group-hover:text-white' : 'group-hover:text-[var(--accent)]'}`}
             style={{ fontSize: 'clamp(18px, 4vw, 28px)' }}
           >
             {post.title}
@@ -496,14 +522,20 @@ function FeaturedCard({ post, onClick }: { post: BlogPost; onClick: () => void }
 
 // ─── Blog list ────────────────────────────────────────────────────────────────
 
-function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding }: {
+function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingTheme, onToggleLandingTheme }: {
   lang?: string
   onNavigateToPost: (slug: string) => void
   onNavigateToLanding: () => void
+  landingTheme: 'dark' | 'light'
+  onToggleLandingTheme: () => void
 }) {
   const posts    = getBlogPostsByLang(lang)
   const featured = getFeaturedPost(lang)
   const rest     = posts.filter(p => p !== featured)
+
+  const navBg = landingTheme === 'dark'
+    ? 'bg-[rgba(10,10,14,0.88)]'
+    : 'bg-[rgba(245,246,250,0.92)]'
 
   return (
     <motion.div
@@ -513,7 +545,7 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding }: {
       className="min-h-screen bg-[var(--bg)]"
     >
       {/* ── Sticky nav ── */}
-      <nav className="sticky top-0 z-20 border-b border-[var(--border)] bg-[rgba(10,10,14,0.88)] backdrop-blur-[14px]">
+      <nav className={`lp-sticky-nav sticky top-0 z-20 border-b border-[var(--border)] backdrop-blur-[14px] ${navBg}`}>
         <div className="max-w-[1120px] mx-auto px-4 sm:px-7 h-[54px] flex items-center justify-between">
           <button
             onClick={onNavigateToLanding}
@@ -526,44 +558,85 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding }: {
             <Icons.Logo size={15} className="text-[var(--text-faint)]" aria-hidden="true" />
             <span className="text-[13.5px] font-semibold tracking-tight">Blog</span>
           </div>
-          <button
-            onClick={onNavigateToLanding}
-            className="inline-flex items-center gap-1.5 h-[30px] px-3 text-[12.5px] font-semibold rounded-[8px] bg-[var(--accent)] text-white hover:brightness-110 transition-all"
-          >
-            <Icons.ArrowRight size={12} />
-            Open viewer
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggleBtn theme={landingTheme} onToggle={onToggleLandingTheme} />
+            <button
+              onClick={onNavigateToLanding}
+              className="inline-flex items-center gap-1.5 h-[30px] px-3 text-[12.5px] font-semibold rounded-[8px] bg-[var(--accent)] text-white hover:brightness-110 transition-all"
+            >
+              <Icons.ArrowRight size={12} />
+              Open viewer
+            </button>
+          </div>
         </div>
       </nav>
 
-      {/* ── Header with FaultyTerminal ── */}
+      {/* ── Header: FaultyTerminal (dark) / clean gradient (light) ── */}
       <header className="relative overflow-hidden border-b border-[var(--border)]">
-        {/* WebGL terminal background */}
-        <div className="absolute inset-0 pointer-events-none">
-          <FaultyTerminal
-            scale={2.2}
-            gridMul={[3, 1]}
-            digitSize={1.0}
-            timeScale={0.15}
-            tint="#5E6AD2"
-            scanlineIntensity={0.7}
-            glitchAmount={0.9}
-            flickerAmount={0.6}
-            noiseAmp={0.9}
-            brightness={0.55}
-            mouseReact={true}
-            mouseStrength={0.35}
-            curvature={0}
-            chromaticAberration={0}
-            pageLoadAnimation={false}
-            className="w-full h-full"
-          />
-        </div>
-        {/* Fade bottom edge into page background */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'linear-gradient(to bottom, rgba(10,10,14,0.35) 0%, var(--bg) 100%)' }}
-        />
+        {landingTheme === 'dark' ? (
+          <>
+            {/* WebGL terminal background */}
+            <div className="absolute inset-0 pointer-events-none">
+              <FaultyTerminal
+                scale={2.2}
+                gridMul={[3, 1]}
+                digitSize={1.0}
+                timeScale={0.15}
+                tint="#5E6AD2"
+                scanlineIntensity={0.7}
+                glitchAmount={0.9}
+                flickerAmount={0.6}
+                noiseAmp={0.9}
+                brightness={0.55}
+                mouseReact={true}
+                mouseStrength={0.35}
+                curvature={0}
+                chromaticAberration={0}
+                pageLoadAnimation={false}
+                className="w-full h-full"
+              />
+            </div>
+            {/* Fade bottom edge into page background */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: 'linear-gradient(to bottom, rgba(10,10,14,0.35) 0%, var(--bg) 100%)' }}
+            />
+          </>
+        ) : (
+          /* Light mode: premium B2B header — Grainient base + SoftAurora accent */
+          <>
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <Grainient
+                color1="#ECEEFF"
+                color2="#D4D9FF"
+                color3="#F4F5FC"
+                timeSpeed={0.035}
+                warpStrength={0.18}
+                warpFrequency={2.5}
+                warpAmplitude={14.0}
+                grainAmount={0.028}
+                grainScale={2.0}
+                contrast={0.97}
+                saturation={0.35}
+                zoom={0.92}
+                rotationAmount={160.0}
+              />
+            </div>
+            <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ opacity: 0.7 }}>
+              <SoftAurora
+                color1="#3645C4"
+                color2="#6B7FE8"
+                brightness={0.45}
+                speed={0.25}
+                scale={1.2}
+                bandHeight={0.52}
+                bandSpread={0.9}
+                noiseAmplitude={0.8}
+                layerOffset={0.8}
+              />
+            </div>
+          </>
+        )}
 
         <div className="relative max-w-[1120px] mx-auto px-4 sm:px-7 pt-8 sm:pt-[60px] pb-8 sm:pb-14 z-10">
           <div className="inline-flex items-center gap-2 mb-3 sm:mb-4 px-2.5 py-1 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[11px] font-mono text-[var(--text-faint)]">
@@ -589,12 +662,12 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding }: {
       {/* ── Posts ── */}
       <main className="max-w-[1120px] mx-auto px-4 sm:px-7 py-6 sm:py-12">
         {/* Featured */}
-        <FeaturedCard post={featured} onClick={() => onNavigateToPost(featured.slug)} />
+        <FeaturedCard post={featured} onClick={() => onNavigateToPost(featured.slug)} theme={landingTheme} />
 
         {/* Grid — 1 col on mobile, 2 on sm, 3 on lg */}
         <div className="mt-4 sm:mt-5 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {rest.map(post => (
-            <PostCard key={post.slug} post={post} onClick={() => onNavigateToPost(post.slug)} />
+            <PostCard key={post.slug} post={post} onClick={() => onNavigateToPost(post.slug)} theme={landingTheme} />
           ))}
         </div>
       </main>
@@ -620,14 +693,20 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding }: {
 
 // ─── Post view ────────────────────────────────────────────────────────────────
 
-function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLanding }: {
+function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLanding, landingTheme, onToggleLandingTheme }: {
   post: BlogPost
   onNavigateToBlog: () => void
   onNavigateToPost: (slug: string) => void
   onNavigateToLanding: () => void
+  landingTheme: 'dark' | 'light'
+  onToggleLandingTheme: () => void
 }) {
   const related  = getBlogPostsByLang(post.lang ?? 'en').filter(p => p.slug !== post.slug).slice(0, 3)
   const headings = extractHeadings(post.content)
+
+  const navBg = landingTheme === 'dark'
+    ? 'bg-[rgba(10,10,14,0.88)]'
+    : 'bg-[rgba(245,246,250,0.92)]'
 
   return (
     <motion.div
@@ -639,7 +718,7 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
     >
       <ReadingProgress />
       {/* ── Sticky nav ── */}
-      <nav className="sticky top-0 z-20 border-b border-[var(--border)] bg-[rgba(10,10,14,0.88)] backdrop-blur-[14px]">
+      <nav className={`lp-sticky-nav sticky top-0 z-20 border-b border-[var(--border)] backdrop-blur-[14px] ${navBg}`}>
         <div className="max-w-[1120px] mx-auto px-4 sm:px-7 h-[54px] flex items-center justify-between">
           <button
             onClick={onNavigateToBlog}
@@ -655,13 +734,16 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
             <span className="text-[13.5px] font-semibold tracking-tight">Blog</span>
           </div>
 
-          <button
-            onClick={onNavigateToLanding}
-            className="inline-flex items-center gap-1.5 h-[30px] px-3 text-[12.5px] font-semibold rounded-[8px] bg-[var(--accent)] text-white hover:brightness-110 transition-all"
-          >
-            <Icons.ArrowRight size={12} />
-            Open viewer
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggleBtn theme={landingTheme} onToggle={onToggleLandingTheme} />
+            <button
+              onClick={onNavigateToLanding}
+              className="inline-flex items-center gap-1.5 h-[30px] px-3 text-[12.5px] font-semibold rounded-[8px] bg-[var(--accent)] text-white hover:brightness-110 transition-all"
+            >
+              <Icons.ArrowRight size={12} />
+              Open viewer
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -799,14 +881,16 @@ interface BlogProps {
   onNavigateToPost: (slug: string) => void
   onNavigateToBlog: () => void
   onNavigateToLanding: () => void
+  landingTheme: 'dark' | 'light'
+  onToggleLandingTheme: () => void
 }
 
-export default function Blog({ slug, lang = 'en', onNavigateToPost, onNavigateToBlog, onNavigateToLanding }: BlogProps) {
+export default function Blog({ slug, lang = 'en', onNavigateToPost, onNavigateToBlog, onNavigateToLanding, landingTheme, onToggleLandingTheme }: BlogProps) {
   if (slug) {
     const post = getBlogPost(slug, lang)
     if (!post) {
       return (
-        <div className="min-h-screen bg-[var(--bg)] flex flex-col items-center justify-center gap-4 px-4 text-center">
+        <div className={`min-h-screen bg-[var(--bg)] flex flex-col items-center justify-center gap-4 px-4 text-center${landingTheme === 'light' ? ' lp-light' : ''}`}>
           <p className="text-[14px] text-[var(--text-dim)]">Article not found.</p>
           <button onClick={onNavigateToBlog} className="text-[13px] text-[var(--accent-2)] hover:underline">
             ← Back to all articles
@@ -815,14 +899,28 @@ export default function Blog({ slug, lang = 'en', onNavigateToPost, onNavigateTo
       )
     }
     return (
-      <PostView
-        post={post}
-        onNavigateToBlog={onNavigateToBlog}
-        onNavigateToPost={onNavigateToPost}
-        onNavigateToLanding={onNavigateToLanding}
-      />
+      <div className={landingTheme === 'light' ? 'lp-light' : ''}>
+        <PostView
+          post={post}
+          onNavigateToBlog={onNavigateToBlog}
+          onNavigateToPost={onNavigateToPost}
+          onNavigateToLanding={onNavigateToLanding}
+          landingTheme={landingTheme}
+          onToggleLandingTheme={onToggleLandingTheme}
+        />
+      </div>
     )
   }
 
-  return <BlogList lang={lang} onNavigateToPost={onNavigateToPost} onNavigateToLanding={onNavigateToLanding} />
+  return (
+    <div className={landingTheme === 'light' ? 'lp-light' : ''}>
+      <BlogList
+        lang={lang}
+        onNavigateToPost={onNavigateToPost}
+        onNavigateToLanding={onNavigateToLanding}
+        landingTheme={landingTheme}
+        onToggleLandingTheme={onToggleLandingTheme}
+      />
+    </div>
+  )
 }

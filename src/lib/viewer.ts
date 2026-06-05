@@ -604,6 +604,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // Per-model maps — survive a model swap so past data stays addressable
   const modelObjects:    Map<string, FRAGS.FragmentsModel> = new Map()
   const typeMapByModel:  Map<string, Map<number, string>>  = new Map()
+  // Models explicitly hidden at the model level (via setModelVisible / isolateModel).
+  // applyFilters skips these so element-level calls never re-show a model-hidden model.
+  const modelHidden: Set<string> = new Set()
 
   // Backward-compat reference: always points to the current model's type map
   let expressIDToType: Map<number, string> = new Map()
@@ -1016,6 +1019,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     }
     modelObjects.clear()
     typeMapByModel.clear()
+    modelHidden.clear()
 
     currentModel   = null
     currentModelId = null
@@ -1297,6 +1301,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     applyFilters(hidden, isolated, hiddenElements, isolatedElement, isolatedModelId) {
       if (modelObjects.size === 0) return
       for (const [modelId, model] of modelObjects) {
+        // Skip models hidden at the model level — element-level calls must not
+        // re-show a model that the user explicitly hid via ScenePanel.
+        if (modelHidden.has(modelId) || !model.object.visible) continue
         const typeMap = typeMapByModel.get(modelId) ?? new Map<number, string>()
         const toHide: number[] = []
         const toShow: number[] = []
@@ -1514,14 +1521,27 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     isolateModel(modelId: string) {
       for (const [mid, model] of modelObjects) {
-        model.object.visible = mid === modelId
+        const visible = mid === modelId
+        const allIds  = [...(typeMapByModel.get(mid) ?? new Map()).keys()]
+        if (!visible) {
+          modelHidden.add(mid)
+          model.object.visible = false
+          if (allIds.length) void model.setVisible(allIds, false)
+        } else {
+          modelHidden.delete(mid)
+          model.object.visible = true
+          if (allIds.length) void model.setVisible(allIds, true)
+        }
       }
       void fragmentsManager.core.update()
     },
 
     showAllModels() {
-      for (const model of modelObjects.values()) {
+      for (const [mid, model] of modelObjects) {
+        modelHidden.delete(mid)
         model.object.visible = true
+        const allIds = [...(typeMapByModel.get(mid) ?? new Map()).keys()]
+        if (allIds.length) void model.setVisible(allIds, true)
       }
       void fragmentsManager.core.update()
     },
@@ -1548,7 +1568,23 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         console.warn(`[Viewer] setModelVisible: "${modelId}" is not loaded`)
         return
       }
-      model.object.visible = visible
+
+      const typeMap = typeMapByModel.get(modelId) ?? new Map<number, string>()
+      const allIds  = [...typeMap.keys()]
+
+      if (!visible) {
+        modelHidden.add(modelId)
+        model.object.visible = false
+        // Also hide via Fragments API so transparent meshes (IfcSpace, etc.) that
+        // live in a separate render pass are also properly hidden.
+        if (allIds.length) void model.setVisible(allIds, false)
+      } else {
+        modelHidden.delete(modelId)
+        model.object.visible = true
+        // Show all elements first; the caller (App.tsx) immediately re-calls
+        // applyFilters to restore the correct per-element/category visibility.
+        if (allIds.length) void model.setVisible(allIds, true)
+      }
       void fragmentsManager.core.update()
     },
 
@@ -1570,6 +1606,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       await model.dispose()
       modelObjects.delete(modelId)
       typeMapByModel.delete(modelId)
+      modelHidden.delete(modelId)
 
       // Clear hover/select state that referenced this model
       if (hoveredModelId  === modelId) { hoveredLocalId  = null; hoveredModelId  = null }

@@ -112,6 +112,17 @@ export default function App() {
   })
   const [accent] = useState('#5E6AD2')
 
+  const [landingTheme, setLandingTheme] = useState<'dark' | 'light'>(() => {
+    try { return (localStorage.getItem('lp-theme') as 'dark' | 'light') ?? 'dark' } catch { return 'dark' }
+  })
+  const handleToggleLandingTheme = useCallback((): void => {
+    setLandingTheme((cur) => {
+      const next = cur === 'dark' ? 'light' : 'dark'
+      try { localStorage.setItem('lp-theme', next) } catch { /* ignore */ }
+      return next
+    })
+  }, [])
+
   // ── URL helpers for legal pages ──────────────────────────────────────────
   const legalUrl = (page: 'privacy' | 'terms'): string => {
     const base = import.meta.env.BASE_URL ?? '/'
@@ -217,7 +228,7 @@ export default function App() {
   // Stores
   const { validationMode, result } = useValidationStore()
   const {
-    treeVisible, treeWidth, hiddenElements, clearHiddenElements, setElementsVisible,
+    treeVisible, treeWidth, hiddenElements, clearHiddenElements, setElementsVisible, clearHiddenElementsForModel,
     mobileSidebarOpen, setMobileSidebarOpen,
     cameraControlsVisible, toggleCameraControls,
     scenePanelOpen, toggleScenePanel, setScenePanelOpen,
@@ -636,6 +647,14 @@ export default function App() {
       useValidationStore.getState().clearValidationForModel(id)
       useTakeoffStore.getState().clearModelResult(id)
       modelRegistry.unregister(id)
+      // Remove all hidden-element keys that belonged to this model so the Set
+      // doesn't accumulate stale composite keys ("${id}:${expressId}").
+      clearHiddenElementsForModel(id)
+      // If this model was the isolation target, clear that state too.
+      setIsolatedElement((cur) => {
+        if (cur != null) setIsolatedElementModel((m) => (m === id ? null : m))
+        return cur
+      })
       // Recompose the displayed validation result so the removed model's issues
       // drop out (and the panel clears if no validated models remain).
       publishAggregateResult()
@@ -646,7 +665,7 @@ export default function App() {
       console.error('[App] Failed to remove model:', msg)
       toast(tToasts('model.removeFailed', { message: msg }), 'error')
     }
-  }, [removeSceneModel, activePlanViewId, setActivePlanViewId])
+  }, [removeSceneModel, activePlanViewId, setActivePlanViewId, clearHiddenElementsForModel])
 
   // ── Navigate back to landing — reset all model/editor/validation state ────
   const handleNavigateToLanding = useCallback((): void => {
@@ -722,6 +741,8 @@ export default function App() {
               onNavigateToBlog={handleNavigateToBlog}
               onNavigateToPrivacy={handleNavigateToPrivacy}
               onNavigateToTerms={handleNavigateToTerms}
+              landingTheme={landingTheme}
+              onToggleLandingTheme={handleToggleLandingTheme}
             />
           </motion.div>
         )}
@@ -740,6 +761,8 @@ export default function App() {
               onNavigateToPost={handleNavigateToBlogPost}
               onNavigateToBlog={handleNavigateFromBlogToList}
               onNavigateToLanding={handleNavigateToLanding}
+              landingTheme={landingTheme}
+              onToggleLandingTheme={handleToggleLandingTheme}
             />
           </motion.div>
         )}
@@ -913,6 +936,13 @@ export default function App() {
                       onSetVisible={(id, v) => {
                         setSceneModelVisible(id, v)
                         viewerApiRef.current?.setModelVisible(id, v)
+                        if (v) {
+                          // Re-apply per-element/category filters immediately after
+                          // un-hiding a model so hidden elements stay hidden.
+                          viewerApiRef.current?.applyFilters(
+                            hidden, isolated, hiddenElements, isolatedElement, isolatedElementModel,
+                          )
+                        }
                       }}
                       onSetTransform={setSceneModelTransform}
                       onTransformMode={() => {}}
