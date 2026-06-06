@@ -125,7 +125,40 @@ export interface ValidationResult {
   metadata?: {
     /** Set when clash detection was capped at CLASH_ELEMENT_LIMIT elements. */
     clashCapped?: { checkedCount: number; totalCount: number }
+    /** Per-rule execution coverage — which enabled rules ran, failed, or never ran. */
+    coverage?: ValidationCoverage
   }
+}
+
+/**
+ * Per-rule execution status for a validation run.
+ *   ok       — the rule ran to completion (it may or may not have found issues)
+ *   failed   — the rule threw; the model was inspected but this rule is unreliable
+ *   not-run  — the rule never executed (worker crashed / timed out / was terminated)
+ */
+export type RuleCoverageStatus = 'ok' | 'failed' | 'not-run'
+
+export interface RuleCoverageEntry {
+  ruleId: string
+  status: RuleCoverageStatus
+  /** Present only when status === 'failed'. Truncated to ~300 chars. */
+  error?: string
+}
+
+/**
+ * Honest coverage report for a validation run. The launcher owns `attempted`
+ * (the full enabled-rule set) and reconstructs this, so a silent worker failure
+ * can't masquerade as a clean model: any enabled rule that reported no status is
+ * recorded as `not-run`. `complete` is the machine-readable "the score is
+ * trustworthy" flag consumed by the coverage banner and the certificate.
+ */
+export interface ValidationCoverage {
+  attempted: string[]
+  entries: RuleCoverageEntry[]
+  okCount: number
+  failedCount: number
+  notRunCount: number
+  complete: boolean
 }
 
 export interface RulesConfig {
@@ -239,6 +272,11 @@ export interface RulesConfig {
   RULE_COORDINATE_OFFSET?: boolean
   /** File size per physical element exceeds 500 KB — typically over-detailed geometry or embedded textures */
   RULE_FILE_SIZE_ANOMALY?: boolean
+
+  // ── Pro controls (Phase 3) ───────────────────────────────────────────────────
+  /** Per-rule severity override, e.g. { RULE_MISSING_MATERIAL: 'error' }. Applied
+   *  client-side after the worker returns, so it changes the E/W/I counts and the score. */
+  severityOverrides?: Partial<Record<string, 'error' | 'warning' | 'info'>>
 }
 
 export const DEFAULT_RULES: RulesConfig = {
@@ -1304,6 +1342,7 @@ export interface BcfTopic {
   status?:         string
   topicType?:      string
   priority?:       string
+  dueDate?:        string
   creationDate?:   string
   creationAuthor?: string
   assignedTo?:     string

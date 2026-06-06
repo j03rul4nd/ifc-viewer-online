@@ -2667,16 +2667,22 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
       fn: () => Promise<ValidationIssue[]>,
     ): Promise<void> => {
       let issues: ValidationIssue[] = []
+      let status: 'ok' | 'failed' = 'ok'
+      let error: string | undefined
       try {
         issues = await fn()
       } catch (err: unknown) {
         // Isolate rule failures: one rule throwing must never abort the rest.
-        log.warn(`${ruleId} threw unexpectedly — skipping:`, err)
+        // Report it as 'failed' so the launcher records honest coverage instead
+        // of silently treating the rule as a clean pass (which inflates the score).
+        status = 'failed'
+        error  = (err instanceof Error ? err.message : String(err)).slice(0, 300)
+        log.warn(`${ruleId} threw unexpectedly — marking failed:`, err)
       }
       allIssues.push(...issues)
       completedRules++
       const progress = Math.round((completedRules / totalRules) * 100)
-      post({ type: 'partial', id, ruleId, issues, progress })
+      post({ type: 'partial', id, ruleId, issues, progress, status, ...(error !== undefined ? { error } : {}) })
     }
 
     if (rules.RULE_EMPTY_NAME)
@@ -2787,15 +2793,25 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
       await runRule('RULE_MEP_SYSTEM_MISSING', () => ruleMepSystemMissing(api!, modelId, idx))
     if (rules.RULE_CLASH_MEP_STRUCTURAL) {
       const rulesBeforeClash = completedRules
-      const clashResult = await ruleClashMepStructural(api!, modelId, idx, (innerPct) => {
-        // Emit granular progress during the O(M×N) loop so the UI bar moves smoothly
-        const p = Math.round(((rulesBeforeClash + innerPct) / totalRules) * 100)
-        post({ type: 'partial', id, ruleId: 'RULE_CLASH_MEP_STRUCTURAL', issues: [], progress: p })
-      })
-      allIssues.push(...clashResult.issues)
-      if (clashResult.cap) clashCap = clashResult.cap
-      completedRules++
-      post({ type: 'partial', id, ruleId: 'RULE_CLASH_MEP_STRUCTURAL', issues: clashResult.issues, progress: Math.round(completedRules / totalRules * 100) })
+      try {
+        const clashResult = await ruleClashMepStructural(api!, modelId, idx, (innerPct) => {
+          // Emit granular progress during the O(M×N) loop so the UI bar moves smoothly
+          const p = Math.round(((rulesBeforeClash + innerPct) / totalRules) * 100)
+          post({ type: 'partial', id, ruleId: 'RULE_CLASH_MEP_STRUCTURAL', issues: [], progress: p })
+        })
+        allIssues.push(...clashResult.issues)
+        if (clashResult.cap) clashCap = clashResult.cap
+        completedRules++
+        post({ type: 'partial', id, ruleId: 'RULE_CLASH_MEP_STRUCTURAL', issues: clashResult.issues, progress: Math.round(completedRules / totalRules * 100), status: 'ok' })
+      } catch (err: unknown) {
+        // Previously unwrapped: a throw here escaped to the outer catch and turned
+        // the ENTIRE run into one error message, discarding every rule that had
+        // already passed. Mark just this rule failed and let the rest stand.
+        completedRules++
+        const error = (err instanceof Error ? err.message : String(err)).slice(0, 300)
+        log.warn('RULE_CLASH_MEP_STRUCTURAL threw unexpectedly — marking failed:', err)
+        post({ type: 'partial', id, ruleId: 'RULE_CLASH_MEP_STRUCTURAL', issues: [], progress: Math.round(completedRules / totalRules * 100), status: 'failed', error })
+      }
     }
     if (rules.RULE_PROXY_OVERUSE)
       await runRule('RULE_PROXY_OVERUSE', () => ruleProxyOveruse(api!, modelId, idx))
@@ -3085,7 +3101,7 @@ interface ComputeTakeoffMessage {
 export type ValidatorOutMessage =
   | { type: 'tree';         id: string; tree: SpatialNode[]; decomp?: [number, number[]][] }
   | { type: 'tree-done';    id: string }
-  | { type: 'partial';      id: string; ruleId: string; issues: ValidationIssue[]; progress: number }
+  | { type: 'partial';      id: string; ruleId: string; issues: ValidationIssue[]; progress: number; status?: 'ok' | 'failed'; error?: string }
   | { type: 'done';         id: string; result: ValidationResult }
   | { type: 'takeoff-done'; id: string; result: TakeoffResult }
   | { type: 'error';        id: string; message: string }

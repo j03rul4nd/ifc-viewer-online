@@ -23,7 +23,7 @@ import { appBus }             from './event-bus'
 import { parseSpatialNodeArray } from './type-guards'
 import { parseValidationResultMsg, parseValidatorMsg } from './worker-schemas'
 import { WorkerError, ValidationError, toAppError, formatDevError } from './errors'
-import type { RulesConfig, ValidationResult, ValidationIssue, ValidationCategoryType } from '../types'
+import type { RulesConfig, ValidationResult, ValidationIssue, ValidationCategoryType, RuleCoverageEntry, RuleCoverageStatus, ValidationCoverage } from '../types'
 import { RULE_METADATA }                      from '../types'
 import { recordValidationRun }                from './validation-analytics'
 import type { ValidatorOutMessage }            from '../workers/validator.worker'
@@ -56,18 +56,29 @@ const DEFAULT_WEIGHTS: Record<string, number> = { error: 3, warning: 1, info: 0.
 export const __scoreWeights = { CATEGORY_WEIGHTS, DEFAULT_WEIGHTS } as const
 
 /**
- * Compute a 0–100 quality score from a validation result.
- *
- * Penalties are aggregated per (rule, severity) bucket with **logarithmically
- * diminishing returns**: the first occurrence of a failing rule costs its full
- * category/severity weight, and each further occurrence adds progressively less
- * (`weight × (1 + ln(count))`). This is deliberate — a single systematic defect
- * (e.g. 5 000 elements missing a material) indicates *one* problem to fix, not
- * 5 000 independent ones. A naive `weight × count` sum saturates the score to 0
- * for any real-world model, which destroys its ability to discriminate between a
- * mostly-healthy model and a broken one.
+ * One rule's contribution to the quality-score penalty.
+ * `penalty` ≈ the points recovered by clearing that rule (exact away from the
+ * 0/100 clamp), so the UI can rank "what to fix first" by real score impact.
  */
-export function calculateQualityScore(result: ValidationResult): number {
+export interface ScoreContribution {
+  ruleId: string
+  category: ValidationCategoryType | 'unknown'
+  count: number
+  penalty: number
+}
+
+/**
+ * Break the quality score down into per-rule penalty contributions, sorted by
+ * impact (highest first). The rule at the top is the single biggest drag on the
+ * score — the most valuable thing to fix.
+ *
+ * Penalties use **logarithmically diminishing returns**: the first occurrence of
+ * a failing rule costs its full category/severity weight, each further one adds
+ * less (`weight × (1 + ln(count))`). A single systematic defect (e.g. 5 000
+ * elements missing a material) is *one* problem to fix, not 5 000 independent
+ * ones; a naive `weight × count` sum would saturate any real model's score to 0.
+ */
+export function explainQualityScore(result: Pick<ValidationResult, 'issues'>): ScoreContribution[] {
   // Count issues per rule, split by severity.
   const counts = new Map<string, Record<string, number>>()
   for (const issue of result.issues) {
@@ -76,19 +87,70 @@ export function calculateQualityScore(result: ValidationResult): number {
     bySeverity[issue.severity] = (bySeverity[issue.severity] ?? 0) + 1
   }
 
-  let penalty = 0
+  const contributions: ScoreContribution[] = []
   for (const [ruleId, bySeverity] of counts) {
     const meta    = RULE_METADATA[ruleId]
     const weights = (meta ? CATEGORY_WEIGHTS[meta.category] : null) ?? DEFAULT_WEIGHTS
-    for (const [severity, count] of Object.entries(bySeverity)) {
-      const weight = weights[severity] ?? 0
-      penalty += weight * (1 + Math.log(count))
+    let penalty = 0, count = 0
+    for (const [severity, n] of Object.entries(bySeverity)) {
+      penalty += (weights[severity] ?? 0) * (1 + Math.log(n))
+      count   += n
     }
+    contributions.push({ ruleId, category: meta?.category ?? 'unknown', count, penalty })
   }
+  return contributions.sort((a, b) => b.penalty - a.penalty)
+}
+
+/**
+ * Compute the 0–100 quality score — every rule's penalty subtracted from 100 and
+ * clamped to [0, 100]. See explainQualityScore for the penalty model.
+ */
+export function calculateQualityScore(result: Pick<ValidationResult, 'issues'>): number {
+  let penalty = 0
+  for (const c of explainQualityScore(result)) penalty += c.penalty
   return Math.max(0, Math.round(100 - penalty))
 }
 
 const log = createLogger('Validator')
+
+// ── Coverage helpers ──────────────────────────────────────────────────────────
+
+const COVERAGE_RANK: Record<RuleCoverageStatus, number> = { ok: 0, 'not-run': 1, failed: 2 }
+
+/** Worst (most severe) of two coverage statuses. failed > not-run > ok. */
+function worstStatus(a: RuleCoverageStatus | undefined, b: RuleCoverageStatus): RuleCoverageStatus {
+  if (a === undefined) return b
+  return COVERAGE_RANK[a] >= COVERAGE_RANK[b] ? a : b
+}
+
+/**
+ * Build a ValidationCoverage from the full attempted-rule set plus whatever
+ * per-rule outcomes were reported. Any attempted rule with no reported status is
+ * 'not-run' — that's what makes a silent worker failure visible instead of
+ * masquerading as a clean pass.
+ */
+export function buildCoverage(
+  attempted: string[],
+  known: Map<string, RuleCoverageEntry>,
+): ValidationCoverage {
+  const entries: RuleCoverageEntry[] = attempted.map(
+    (ruleId) => known.get(ruleId) ?? { ruleId, status: 'not-run' },
+  )
+  let okCount = 0, failedCount = 0, notRunCount = 0
+  for (const e of entries) {
+    if (e.status === 'ok') okCount++
+    else if (e.status === 'failed') failedCount++
+    else notRunCount++
+  }
+  return {
+    attempted,
+    entries,
+    okCount,
+    failedCount,
+    notRunCount,
+    complete: failedCount === 0 && notRunCount === 0,
+  }
+}
 
 // ── Multi-model result composition ──────────────────────────────────────────────
 
@@ -122,6 +184,14 @@ export function composeMultiModelResult(
   let errors = 0, warnings = 0, info = 0
   let durationMs = 0
 
+  // Combine coverage defensively: union the attempted sets and keep the worst
+  // status seen per rule, so the aggregate can never look "complete" when any
+  // single model's run was partial. Skipped entirely when no model carries
+  // coverage (legacy cached results) → metadata.coverage stays undefined = "unknown".
+  const attemptedSet = new Set<string>()
+  const covByRule = new Map<string, RuleCoverageEntry>()
+  let anyCoverage = false
+
   for (const id of ids) {
     const r = perModel[id]
     for (const issue of r.issues) {
@@ -135,12 +205,29 @@ export function composeMultiModelResult(
     warnings += r.stats.warnings
     info     += r.stats.info
     durationMs += r.durationMs
+
+    const cov = r.metadata?.coverage
+    if (cov) {
+      anyCoverage = true
+      for (const ruleId of cov.attempted) attemptedSet.add(ruleId)
+      for (const e of cov.entries) {
+        const prev = covByRule.get(e.ruleId)
+        covByRule.set(e.ruleId, {
+          ruleId: e.ruleId,
+          status: worstStatus(prev?.status, e.status),
+          error:  e.error ?? prev?.error,
+        })
+      }
+    }
   }
+
+  const coverage = anyCoverage ? buildCoverage([...attemptedSet], covByRule) : undefined
 
   const merged: ValidationResult = {
     issues: allIssues,
     stats:  { total: allIssues.length, errors, warnings, info, byRule },
     durationMs,
+    ...(coverage ? { metadata: { coverage } } : {}),
   }
   return { ...merged, qualityScore: calculateQualityScore(merged) }
 }
@@ -213,6 +300,12 @@ function getWorker(): Worker { return getPoolWorker(0) }
 
 // Reject fn for the currently active runValidation() promise (null when idle)
 let activeReject: ((err: Error) => void) | null = null
+// Clears the active run's watchdog timer (null when idle). Lets cancelValidation
+// tear the timer down so it can't fire onto an already-cancelled run.
+let activeWatchdogClear: (() => void) | null = null
+
+/** Silence timeout (ms) before the watchdog declares a run hung and terminates it. */
+const WATCHDOG_SILENCE_MS = 60_000
 
 /**
  * Cancel a running validation.
@@ -223,6 +316,8 @@ export function cancelValidation(): void {
   const { validationStatus, setValidationStatus } = useValidationStore.getState()
   if (validationStatus !== 'running') return
   log.info('Cancelling validation')
+  activeWatchdogClear?.()
+  activeWatchdogClear = null
   setValidationStatus('cancelled')
   disposeValidatorWorker()
   activeReject?.(new ValidationError('VALIDATION_CANCELLED', 'cancelled'))
@@ -456,6 +551,15 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
 
   const activeRules = rules ?? storedRules
 
+  // Apply per-rule severity overrides + the model stamp to each streamed issue,
+  // so the displayed severity, the E/W/I counts and the score all reflect the
+  // user's chosen severity (Phase 3). Returns the same object when nothing changes.
+  const applyOverride = (i: ValidationIssue, modelId: string | null): ValidationIssue => {
+    const sev = activeRules.severityOverrides?.[i.ruleId]
+    const next = sev && sev !== i.severity ? { ...i, severity: sev } : i
+    return modelId ? { ...next, modelId } : next
+  }
+
   // ── Cache check — skip worker if we have a fresh result ──────────────────
   // Bypassed when `force` is true (explicit user re-run) so that changed
   // profiles / rule configs are always reflected in the new result.
@@ -527,20 +631,62 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
     let w0Progress = 0
     let w1Progress = 0
     let w0Error: WorkerError | null = null
+    let clashCapped: { checkedCount: number; totalCount: number } | undefined
+
+    // Per-rule coverage reported by the workers (key: ruleId). The launcher owns
+    // the full attempted set (enabledRuleKeys) and gap-fills the rest as not-run.
+    const cov = new Map<string, RuleCoverageEntry>()
+
+    // Watchdog. A wedged synchronous rule loop blocks the worker event loop, so
+    // an in-worker timeout can't fire — only terminate() from the main thread can
+    // stop it. We reset a silence timer on every worker message; if it elapses we
+    // declare the run hung. `settled` guarantees the first terminal event wins, so
+    // a `done` arriving 1 ms after the watchdog can't flip error → complete.
+    let settled = false
+    let lastRuleId: string | null = null
+    let watchdogTimer: ReturnType<typeof setTimeout> | null = null
+    const clearWatchdog = (): void => {
+      if (watchdogTimer !== null) { clearTimeout(watchdogTimer); watchdogTimer = null }
+    }
 
     const cleanup = (): void => {
       activeReject = null
+      activeWatchdogClear = null
+      clearWatchdog()
       worker0.removeEventListener('message', handler0)
       worker0.removeEventListener('error',   errorHandler0)
       worker1?.removeEventListener('message', handler1)
       worker1?.removeEventListener('error',   errorHandler1)
     }
 
+    const onWatchdogFire = (): void => {
+      if (settled) return
+      settled = true
+      const where = lastRuleId ? ` after ${lastRuleId}` : ''
+      const message =
+        `Validation stalled${where} — no progress for ${WATCHDOG_SILENCE_MS / 1000}s. ` +
+        `The model may be too large or malformed for this check. Try disabling clash detection or splitting the model.`
+      log.error(message)
+      disposeValidatorWorker()
+      setValidationStatus('error', message)
+      appBus.emit('validation:failed', { runId: id, error: message })
+      cleanup()
+      reject(new WorkerError('WORKER_TIMEOUT', message))
+    }
+    const resetWatchdog = (): void => {
+      if (settled) return
+      clearWatchdog()
+      watchdogTimer = setTimeout(onWatchdogFire, WATCHDOG_SILENCE_MS)
+    }
+    activeWatchdogClear = clearWatchdog
+
     const tryFinalize = (): void => {
+      if (settled) return
       if (!w0Done || !w1Done) return
 
       if (w0Error) {
         // error already toasted by errorHandler0
+        settled = true
         cleanup()
         reject(w0Error)
         return
@@ -558,10 +704,14 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
         else                                   info++
       }
 
+      // Honest coverage: gap-fill every enabled rule the workers didn't report
+      // (silent secondary-worker failure, terminate, etc.) as 'not-run'.
+      const coverage = buildCoverage(enabledRuleKeys, cov)
       const mergedResult = {
         issues:    allIssues,
         stats:     { total: allIssues.length, errors, warnings, info, byRule },
         durationMs,
+        metadata:  { coverage, ...(clashCapped ? { clashCapped } : {}) },
       }
 
       const resultParsed = parseValidationResultMsg(mergedResult)
@@ -569,6 +719,7 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
         const errMsg = resultParsed.error.message
         log.error('Invalid merged ValidationResult shape:', formatDevError(resultParsed.error))
         toast(errMsg, 'error')
+        settled = true
         setValidationStatus('error', errMsg)
         appBus.emit('validation:failed', { runId: id, error: errMsg })
         cleanup()
@@ -590,7 +741,9 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
       recordValidationRun({
         timestamp:     Date.now(),
         profileId:     storeSnap.activeProfileId,
-        rulesRun:      [...new Set(result.issues.map((i) => i.ruleId))],
+        // Rules that actually ran clean — NOT derived from issues. A clean rule
+        // produces no issues yet did run; a crashed rule produces none either.
+        rulesRun:      coverage.entries.filter((e) => e.status === 'ok').map((e) => e.ruleId),
         durationMs:    result.durationMs,
         issuesByRule:  result.stats.byRule,
         qualityScore:  result.qualityScore ?? 100,
@@ -611,6 +764,7 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
         setResult(result)
       }
 
+      settled = true
       appBus.emit('validation:complete', { runId: id, result, durationMs })
       cleanup()
       resolve()
@@ -621,6 +775,7 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
     const handler0 = (e: MessageEvent<ValidatorOutMessage>): void => {
       const raw = e.data
       if (!raw || raw.id !== id) return
+      resetWatchdog()
 
       const parsed = parseValidatorMsg(raw)
       if (!parsed.ok) { log.warn('Dropping unrecognised w0 message:', formatDevError(parsed.error)); return }
@@ -639,7 +794,9 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
           }
         })
         .with({ type: 'partial' }, (msg) => {
-          const stamped = resolvedId ? msg.issues.map((i) => ({ ...i, modelId: resolvedId })) : msg.issues
+          lastRuleId = msg.ruleId
+          if (msg.status) cov.set(msg.ruleId, { ruleId: msg.ruleId, status: msg.status, ...(msg.error ? { error: msg.error } : {}) })
+          const stamped = msg.issues.map((i) => applyOverride(i, resolvedId))
           w0Issues.push(...stamped)
           addPartialIssues(stamped)
           w0Progress = msg.progress
@@ -647,7 +804,10 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
           setProgress(Math.min(combined, 99))
           appBus.emit('validation:progress', { runId: id, progress: combined })
         })
-        .with({ type: 'done' }, () => { w0Done = true; tryFinalize() })
+        .with({ type: 'done' }, (msg) => {
+          if (msg.result?.metadata?.clashCapped) clashCapped = msg.result.metadata.clashCapped
+          w0Done = true; tryFinalize()
+        })
         .with({ type: 'error' }, (msg) => {
           w0Error = new WorkerError('WORKER_CRASHED', msg.message)
           log.error('Worker 0 reported error:', formatDevError(w0Error))
@@ -667,6 +827,7 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
     const handler1 = (e: MessageEvent<ValidatorOutMessage>): void => {
       const raw = e.data
       if (!raw || raw.id !== id) return
+      resetWatchdog()
 
       const parsed = parseValidatorMsg(raw)
       if (!parsed.ok) { log.warn('Dropping unrecognised w1 message:', formatDevError(parsed.error)); return }
@@ -674,7 +835,9 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
       match(parsed.data)
         .with({ type: 'tree' },         () => { /* worker 1 skips tree, but guard here anyway */ })
         .with({ type: 'partial' }, (msg) => {
-          const stamped = resolvedId ? msg.issues.map((i) => ({ ...i, modelId: resolvedId })) : msg.issues
+          lastRuleId = msg.ruleId
+          if (msg.status) cov.set(msg.ruleId, { ruleId: msg.ruleId, status: msg.status, ...(msg.error ? { error: msg.error } : {}) })
+          const stamped = msg.issues.map((i) => applyOverride(i, resolvedId))
           w1Issues.push(...stamped)
           addPartialIssues(stamped)
           w1Progress = msg.progress
@@ -682,7 +845,10 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
           setProgress(Math.min(combined, 99))
           appBus.emit('validation:progress', { runId: id, progress: combined })
         })
-        .with({ type: 'done' }, () => { w1Done = true; tryFinalize() })
+        .with({ type: 'done' }, (msg) => {
+          if (msg.result?.metadata?.clashCapped) clashCapped = msg.result.metadata.clashCapped
+          w1Done = true; tryFinalize()
+        })
         .with({ type: 'error' }, (msg) => {
           // Secondary worker error: log it but don't fail the whole run (primary results still valid)
           log.warn('Worker 1 reported error (non-fatal):', msg.message)
@@ -697,6 +863,8 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
     // ── Error handlers ────────────────────────────────────────────────────────
 
     const errorHandler0 = (e: ErrorEvent): void => {
+      if (settled) return
+      settled = true
       _pool[0] = null
       const workerErr = new WorkerError(
         'WORKER_CRASHED',
@@ -738,6 +906,9 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
         [buf1],
       )
     }
+
+    // Start the silence watchdog now that work has been dispatched.
+    resetWatchdog()
   })
 }
 

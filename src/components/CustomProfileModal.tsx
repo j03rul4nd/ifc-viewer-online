@@ -30,16 +30,54 @@ const CATEGORY_ORDER: ValidationCategoryType[] = [
   'schema', 'spatial', 'quality', 'lod', 'classification', 'mep', 'clash', 'iso19650',
 ]
 
+// ── Severity picker ───────────────────────────────────────────────────────────
+
+type Sev = 'error' | 'warning' | 'info'
+
+function SeverityPicker({ value, defaultSeverity, onChange }: {
+  value: Sev
+  defaultSeverity: Sev
+  onChange: (s: Sev) => void
+}) {
+  const opts: Sev[] = ['error', 'warning', 'info']
+  return (
+    <div className="flex items-center gap-0.5 shrink-0 mt-0.5">
+      {opts.map((s) => {
+        const active = s === value
+        const c = severityColor(s)
+        return (
+          <button
+            key={s}
+            type="button"
+            onClick={(e) => { e.preventDefault(); onChange(s) }}
+            title={s === defaultSeverity ? `${s} (default)` : s}
+            className="w-5 h-5 rounded text-[9px] font-mono font-bold leading-none transition-colors border"
+            style={active
+              ? { color: c, borderColor: `${c}66`, background: `${c}1a` }
+              : { color: 'var(--text-faint)', borderColor: 'transparent', background: 'transparent' }}
+          >
+            {s[0].toUpperCase()}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Rule row ──────────────────────────────────────────────────────────────────
 
 function RuleRow({
   ruleId,
   checked,
+  severity,
   onChange,
+  onSeverityChange,
 }: {
   ruleId: string
   checked: boolean
+  severity: Sev
   onChange: (val: boolean) => void
+  onSeverityChange: (s: Sev) => void
 }) {
   const { i18n } = useTranslation()
   const locale = i18n.language?.split('-')[0] ?? 'en'
@@ -92,12 +130,11 @@ function RuleRow({
         </p>
       </label>
 
-      <span
-        className="shrink-0 text-[9px] font-mono font-semibold leading-none mt-1"
-        style={{ color: severityColor(meta.defaultSeverity) }}
-      >
-        {meta.defaultSeverity}
-      </span>
+      <SeverityPicker
+        value={severity}
+        defaultSeverity={meta.defaultSeverity}
+        onChange={onSeverityChange}
+      />
     </div>
   )
 }
@@ -109,11 +146,13 @@ function CategorySection({
   ruleIds,
   localRules,
   onToggle,
+  onSeverityChange,
 }: {
   cat: ValidationCategoryType
   ruleIds: string[]
   localRules: RulesConfig
   onToggle: (ruleId: string, val: boolean) => void
+  onSeverityChange: (ruleId: string, s: 'error' | 'warning' | 'info') => void
 }) {
   const { t } = useTranslation('validation')
   const rulesRecord = localRules as Record<string, unknown>
@@ -155,14 +194,20 @@ function CategorySection({
       </div>
 
       <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
-        {ruleIds.map((ruleId) => (
-          <RuleRow
-            key={ruleId}
-            ruleId={ruleId}
-            checked={(rulesRecord[ruleId] as boolean | undefined) ?? false}
-            onChange={(val) => onToggle(ruleId, val)}
-          />
-        ))}
+        {ruleIds.map((ruleId) => {
+          const meta = RULE_METADATA[ruleId]
+          const sev = (localRules.severityOverrides?.[ruleId] ?? meta?.defaultSeverity ?? 'warning') as 'error' | 'warning' | 'info'
+          return (
+            <RuleRow
+              key={ruleId}
+              ruleId={ruleId}
+              checked={(rulesRecord[ruleId] as boolean | undefined) ?? false}
+              severity={sev}
+              onChange={(val) => onToggle(ruleId, val)}
+              onSeverityChange={(s) => onSeverityChange(ruleId, s)}
+            />
+          )
+        })}
       </div>
     </div>
   )
@@ -216,6 +261,17 @@ export default function CustomProfileModal({ open, onClose, editProfile }: Custo
 
   const toggleRule = (ruleId: string, value: boolean): void => {
     setLocalRules((prev) => ({ ...prev, [ruleId]: value }))
+  }
+
+  const setSeverity = (ruleId: string, sev: 'error' | 'warning' | 'info'): void => {
+    setLocalRules((prev) => {
+      const meta = RULE_METADATA[ruleId]
+      const next = { ...(prev.severityOverrides ?? {}) }
+      // Storing the rule's own default is a no-op → drop it to keep profiles clean.
+      if (meta && sev === meta.defaultSeverity) delete next[ruleId]
+      else next[ruleId] = sev
+      return { ...prev, severityOverrides: next }
+    })
   }
 
   const handleSave = (): void => {
@@ -428,6 +484,7 @@ export default function CustomProfileModal({ open, onClose, editProfile }: Custo
                   ruleIds={ruleIds}
                   localRules={localRules}
                   onToggle={toggleRule}
+                  onSeverityChange={setSeverity}
                 />
               )
             })}

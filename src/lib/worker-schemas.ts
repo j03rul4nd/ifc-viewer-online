@@ -54,6 +54,20 @@ const ValidationResultSchema = z.object({
       checkedCount: z.number().int().nonnegative(),
       totalCount:   z.number().int().nonnegative(),
     }).optional(),
+    // Per-rule coverage. MUST be declared here or Zod strips it on parse —
+    // parseValidationResultMsg would silently drop it and the feature no-ops.
+    coverage: z.object({
+      attempted:   z.array(z.string()),
+      entries:     z.array(z.object({
+        ruleId: z.string(),
+        status: z.enum(['ok', 'failed', 'not-run']),
+        error:  z.string().optional(),
+      })),
+      okCount:     z.number().int().nonnegative(),
+      failedCount: z.number().int().nonnegative(),
+      notRunCount: z.number().int().nonnegative(),
+      complete:    z.boolean(),
+    }).optional(),
   }).optional(),
 })
 
@@ -124,6 +138,12 @@ export const ValidatorPartialMsgSchema = z.object({
   ruleId:   z.string(),
   issues:   z.array(ValidationIssueSchema),
   progress: z.number().min(0).max(100),
+  // Terminal per-rule outcome. Optional so intermediate clash progress pings
+  // (which carry no status) still validate; the launcher treats a status-less
+  // partial as a non-terminal progress tick.
+  status:   z.enum(['ok', 'failed']).optional(),
+  // Truncated error message; present only when status === 'failed'.
+  error:    z.string().optional(),
 })
 
 export const ValidatorDoneMsgSchema = z.object({

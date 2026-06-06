@@ -148,7 +148,23 @@
     "acceptable": "Acceptable",
     "critical": "Critical",
     "suggestedProfile": "Suggested profile: {{name}}",
-    "allCovered": "All categories covered"
+    "allCovered": "All categories covered",
+    "partialTitle": "Partial score — {{ran}} of {{total}} checks completed",
+    "partialDesc": "Some checks didn't finish, so the real score may be higher than reality. Re-run, or turn off the affected checks.",
+    "statusFailed": "Failed to run",
+    "statusNotRun": "Did not run",
+    "ranAll": "All {{total}} checks ran"
+  },
+  "summary": {
+    "fixFirst": "Fix first to recover the most",
+    "points": "≈ +{{points}}",
+    "grade": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "fair": "Fair",
+      "poor": "Poor",
+      "critical": "Critical"
+    }
   },
   "empty": {
     "noModel": "No model loaded",
@@ -173,15 +189,47 @@
   "bcf": {
     "title": "BCF Topics",
     "noTopics": "No BCF topics",
-    "noTopicsDesc": "Import a BCF file or create topics from validation issues",
+    "noTopicsDesc": "Import a .bcf file or create a new topic",
     "import": "Import BCF",
     "export": "Export BCF",
+    "exportSingle": "Export topic",
+    "exportTopics": "Export topics",
     "clear": "Clear all",
     "importing": "Importing…",
+    "newTopic": "New topic",
+    "createTopic": "Create topic",
+    "topicCreated": "Topic created",
+    "topicDeleted": "Topic deleted",
+    "topicUpdated": "Saved",
+    "captureView": "Capture current view",
+    "captureAdded": "Viewpoint captured",
+    "noViewpoints": "No viewpoints",
     "topic": {
       "open": "Open",
       "closed": "Closed",
-      "inProgress": "In progress"
+      "inProgress": "In Progress",
+      "wontFix": "Won't Fix"
+    },
+    "priority": {
+      "high": "High",
+      "normal": "Normal",
+      "low": "Low"
+    },
+    "type": {
+      "issue": "Issue",
+      "error": "Error",
+      "warning": "Warning",
+      "info": "Info",
+      "comment": "Comment",
+      "request": "Request",
+      "clash": "Clash"
+    },
+    "sort": {
+      "newest": "Newest first",
+      "oldest": "Oldest first",
+      "priority": "By priority",
+      "status": "By status",
+      "title": "By title"
     },
     "comments": "{{count}} comment",
     "comments_other": "{{count}} comments",
@@ -189,12 +237,32 @@
     "navigate": "Navigate",
     "addToBcf": "Add to BCF",
     "addedToBcf": "Topic added to BCF",
+    "detail": {
+      "back": "Topics",
+      "title": "Title",
+      "status": "Status",
+      "type": "Type",
+      "priority": "Priority",
+      "assignedTo": "Assigned to",
+      "assignedPlaceholder": "Name or email…",
+      "dueDate": "Due date",
+      "description": "Description",
+      "descPlaceholder": "Describe the issue…",
+      "viewpoints": "Viewpoints",
+      "comments": "Comments"
+    },
+    "create": {
+      "heading": "New BCF Topic",
+      "titleLabel": "Title",
+      "titlePlaceholder": "Describe the issue…",
+      "captureView": "Capture current view as viewpoint"
+    },
     "comment": {
       "add": "Add comment",
       "placeholder": "Write a comment…",
       "author": "Your name",
       "submit": "Post",
-      "delete": "Delete",
+      "delete": "Delete comment",
       "noComments": "No comments yet",
       "local": "local"
     }

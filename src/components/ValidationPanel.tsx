@@ -17,18 +17,21 @@ import { useUIStore } from '../stores/uiStore'
 import { useModelStore } from '../stores/modelStore'
 import { useSceneStore } from '../stores/sceneStore'
 import { useBcfStore } from '../stores/bcfStore'
+import { useWaiverStore, issueKey } from '../stores/waiverStore'
 import { toast } from '../stores/toastStore'
 import { buildFixGuidCommand, buildRenameCommand } from '../lib/diffStore'
 import { useEditorHistory } from '../hooks/useEditorHistory'
-import { runValidation, runValidationAll } from '../lib/validator'
-import { importBcf, issuesToBcfTopics, downloadBcfBlob } from '../lib/bcf'
+import { runValidation, runValidationAll, explainQualityScore, calculateQualityScore } from '../lib/validator'
+import type { ScoreContribution } from '../lib/validator'
+import { issuesToBcfTopics } from '../lib/bcf'
 import type {
-  ValidationIssue, BcfTopic, ViewerHandle,
-  ValidationCategoryType, ValidationProfile,
+  ValidationIssue, ValidationResult, ViewerHandle,
+  ValidationCategoryType, ValidationProfile, ValidationCoverage,
 } from '../types'
 import { VALIDATION_PROFILES, RULE_METADATA, getRuleLabel, getRuleRemediation, AUTHORING_TOOLS } from '../types'
 import type { AuthoringTool } from '../types'
 import { getCoveredCategories, ALL_CATEGORIES } from './ValidationCoverageSummary'
+import BcfPanel from './BcfPanel'
 import CustomProfileModal from './CustomProfileModal'
 import ValidationExportModal, { type ExportModelEntry } from './ValidationExportModal'
 import { getRecentRuns, getAverageQualityScore, getMostUsedRules } from '../lib/validation-analytics'
@@ -89,6 +92,63 @@ async function copyToClipboard(text: string): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+// ── Copy for AI — plain-text report optimised for pasting into Claude / ChatGPT ──
+// Pure function, no side-effects. Formats Health Score + issues into structured
+// text that any LLM can consume without needing to parse JSON or HTML.
+function buildCopyForAIText(result: ValidationResult, fileName: string): string {
+  const score = result.qualityScore ?? 0
+  const grade =
+    score >= 85 ? 'Excellent' :
+    score >= 70 ? 'Good'      :
+    score >= 50 ? 'Fair'      :
+    score >= 30 ? 'Poor'      : 'Critical'
+  const { errors, warnings, info, total } = result.stats
+
+  const lines: string[] = [
+    `IFC Health Score: ${score}/100 (${grade})`,
+    `File: ${fileName}`,
+    `Issues: ${total === 0 ? 'none — model is clean' : `${total} found — ${errors} error${errors !== 1 ? 's' : ''}, ${warnings} warning${warnings !== 1 ? 's' : ''}, ${info} info`}`,
+    `Validation time: ${result.durationMs} ms`,
+    '',
+  ]
+
+  if (total === 0) {
+    lines.push('No issues detected. Model passed all validation rules.')
+    return lines.join('\n')
+  }
+
+  const groups: [ValidationIssue['severity'], string][] = [
+    ['error',   'ERRORS'],
+    ['warning', 'WARNINGS'],
+    ['info',    'INFO'],
+  ]
+
+  const MAX_PER_GROUP = 15
+
+  for (const [sev, heading] of groups) {
+    const bucket = result.issues.filter(i => i.severity === sev)
+    if (bucket.length === 0) continue
+
+    lines.push(`${heading} (${bucket.length})`)
+    lines.push('─'.repeat(36))
+
+    bucket.slice(0, MAX_PER_GROUP).forEach(iss => {
+      const name = iss.elementName ? ` "${iss.elementName}"` : ''
+      lines.push(`• [${iss.ruleId}] ${iss.ifcClass}${name}`)
+      lines.push(`  ${iss.message}`)
+    })
+    if (bucket.length > MAX_PER_GROUP) {
+      lines.push(`  … and ${bucket.length - MAX_PER_GROUP} more`)
+    }
+    lines.push('')
+  }
+
+  lines.push('─'.repeat(36))
+  lines.push('Source: IFC Viewer Online')
+
+  return lines.join('\n')
 }
 
 // ── Severity helpers ──────────────────────────────────────────────────────────
@@ -1142,181 +1202,102 @@ function CoverageStrip({ rules, qualityScore, onDismiss }: CoverageStripProps) {
   )
 }
 
-// ── BCF topic row ─────────────────────────────────────────────────────────────
 
-function BcfStatusBadge({ status }: { status?: string }) {
-  if (!status) return null
-  const color =
-    status === 'Closed'      ? 'var(--ok)'    :
-    status === 'In Progress' ? '#F5A623'       :
-    status === 'Open'        ? 'var(--accent)' : 'var(--text-dim)'
-  return (
-    <span
-      className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase leading-none shrink-0 border"
-      style={{ background: `${color}18`, color, borderColor: `${color}33` }}
-    >
-      {status}
-    </span>
-  )
-}
-
-function BcfTopicRow({ topic, onNavigate }: { topic: BcfTopic; onNavigate: (t: BcfTopic) => void }) {
+// ── Coverage integrity strip (honest score) ──────────────────────────────────
+// Shown only when a run is incomplete (a rule failed or never ran). Surfaces the
+// affected rules so the Health Score is never silently trusted as authoritative.
+function CoverageIntegrityStrip({ coverage, language }: { coverage: ValidationCoverage; language: string }) {
   const { t } = useTranslation('validation')
-  const { addLocalComment, removeLocalComment } = useBcfStore(
-    useShallow((s) => ({ addLocalComment: s.addLocalComment, removeLocalComment: s.removeLocalComment })),
-  )
-
-  const vp          = topic.viewpoints[0]
-  const hasCamera   = vp && vp.cameraPosition && vp.cameraDirection
-  const hasSnapshot = vp?.snapshotBase64
-
-  // Comment thread state
-  const [expanded, setExpanded]     = useState(false)
-  const [commentText, setCommentText] = useState('')
-  const [authorName, setAuthorName]   = useState(() => localStorage.getItem('bcf-author') ?? '')
-
-  const submitComment = () => {
-    const text = commentText.trim()
-    if (!text) return
-    const author = authorName.trim() || 'Anonymous'
-    localStorage.setItem('bcf-author', author)
-    addLocalComment(topic.guid, {
-      date:   new Date().toISOString(),
-      author,
-      text,
-    })
-    setCommentText('')
-  }
+  const problems = coverage.entries.filter((e) => e.status !== 'ok')
+  if (problems.length === 0) return null
 
   return (
-    <div className="border-b border-[var(--border)]">
-      {/* ── Main row ── */}
-      <div className="flex items-start gap-2.5 px-3 py-2 hover:bg-[var(--surface-2)] group transition-colors">
-        {hasSnapshot && (
-          <img
-            src={hasSnapshot}
-            alt="snapshot"
-            className="w-12 h-9 object-cover rounded-md border border-[var(--border)] shrink-0"
-          />
-        )}
-        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <BcfStatusBadge status={topic.status} />
-            {topic.topicType && (
-              <span className="text-[9px] text-[var(--text-faint)] font-mono uppercase">{topic.topicType}</span>
-            )}
-            <span className="text-[12px] text-[var(--text)] font-medium truncate max-w-[200px]">{topic.title}</span>
-          </div>
-          {topic.description && (
-            <p className="text-[11px] text-[var(--text-dim)] line-clamp-2">{topic.description}</p>
-          )}
-          <div className="flex items-center gap-2 mt-0.5">
-            {/* Comment count / expand toggle */}
-            <button
-              onClick={() => setExpanded((v) => !v)}
-              className="text-[10px] text-[var(--text-faint)] hover:text-[var(--accent)] font-mono transition-colors flex items-center gap-1"
+    <div
+      className="flex items-start gap-2 px-3 py-1.5 border-b border-[var(--border)] shrink-0"
+      style={{ background: 'color-mix(in srgb, var(--danger) 8%, transparent)' }}
+    >
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="var(--danger)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+        <path d="M6 1.5L11 10.5H1L6 1.5z" />
+        <path d="M6 5v2.5M6 9h.01" />
+      </svg>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-semibold leading-tight" style={{ color: 'var(--danger)' }}>
+          {t('coverage.partialTitle', { ran: coverage.okCount, total: coverage.attempted.length })}
+        </p>
+        <p className="text-[9px] text-[var(--text-faint)] leading-tight mt-0.5">
+          {t('coverage.partialDesc')}
+        </p>
+        <div className="flex flex-wrap gap-1 mt-1">
+          {problems.map((e) => (
+            <span
+              key={e.ruleId}
+              title={e.error ?? (e.status === 'failed' ? t('coverage.statusFailed') : t('coverage.statusNotRun'))}
+              className="text-[9px] font-mono px-1.5 py-0.5 rounded border whitespace-nowrap"
+              style={{ color: 'var(--danger)', borderColor: 'color-mix(in srgb, var(--danger) 33%, transparent)', background: 'color-mix(in srgb, var(--danger) 10%, transparent)' }}
             >
-              <svg
-                width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.3"
-                className={`transition-transform ${expanded ? 'rotate-90' : ''}`}
-              >
-                <path d="M2 1.5L6 4L2 6.5" />
-              </svg>
-              {topic.comments.length > 0
-                ? t('bcf.comments', { count: topic.comments.length })
-                : t('bcf.comment.add')}
-            </button>
-            {topic.source === 'generated' && (
-              <span className="text-[9px] text-[var(--text-faint)] border border-[var(--border)] px-1 rounded font-mono">
-                {t('bcf.generated')}
-              </span>
-            )}
-          </div>
+              {e.status === 'failed' ? '✕' : '○'} {getRuleLabel(e.ruleId, language)}
+            </span>
+          ))}
         </div>
-        {hasCamera && (
-          <button
-            onClick={() => onNavigate(topic)}
-            className="shrink-0 px-2 h-7 rounded text-[10px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] font-medium opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            {t('bcf.navigate')}
-          </button>
-        )}
       </div>
-
-      {/* ── Comment thread (expanded) ── */}
-      {expanded && (
-        <div className="bg-[var(--surface-2)] border-t border-[var(--border)] px-3 py-2 flex flex-col gap-2">
-          {/* Existing comments */}
-          {topic.comments.length === 0 ? (
-            <p className="text-[10px] text-[var(--text-faint)] italic">{t('bcf.comment.noComments')}</p>
-          ) : (
-            <ul className="flex flex-col gap-1.5">
-              {topic.comments.map((c) => (
-                <li key={c.guid} className="flex items-start gap-2 group/comment">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] font-semibold text-[var(--text)]">{c.author || 'Anonymous'}</span>
-                      {c.date && (
-                        <span className="text-[9px] text-[var(--text-faint)] font-mono">
-                          {new Date(c.date).toLocaleDateString()}
-                        </span>
-                      )}
-                      {c.local && (
-                        <span className="text-[8px] text-[var(--text-faint)] border border-[var(--border)] px-1 rounded font-mono">
-                          {t('bcf.comment.local')}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-[var(--text-dim)] leading-snug">{c.text}</p>
-                  </div>
-                  {c.local && (
-                    <button
-                      onClick={() => removeLocalComment(topic.guid, c.guid)}
-                      title={t('bcf.comment.delete')}
-                      className="opacity-0 group-hover/comment:opacity-100 w-5 h-5 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--danger)] transition-all"
-                    >
-                      <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                        <path d="M1.5 1.5l5 5M6.5 1.5l-5 5" />
-                      </svg>
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {/* Add comment form */}
-          <div className="flex flex-col gap-1 pt-1 border-t border-[var(--border)]">
-            <input
-              type="text"
-              value={authorName}
-              onChange={(e) => setAuthorName(e.target.value)}
-              placeholder={t('bcf.comment.author')}
-              className="h-6 px-2 text-[10px] bg-[var(--surface)] border border-[var(--border)] rounded text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] transition-colors"
-            />
-            <div className="flex gap-1">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitComment() } }}
-                placeholder={t('bcf.comment.placeholder')}
-                className="flex-1 h-6 px-2 text-[11px] bg-[var(--surface)] border border-[var(--border)] rounded text-[var(--text)] placeholder:text-[var(--text-faint)] outline-none focus:border-[var(--accent)] transition-colors"
-              />
-              <button
-                onClick={submitComment}
-                disabled={!commentText.trim()}
-                className="px-2.5 h-6 rounded text-[10px] font-medium bg-[var(--accent)] text-white disabled:opacity-40 hover:brightness-110 transition-all"
-              >
-                {t('bcf.comment.submit')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
+
+
+// ── Executive summary (actionable score) ─────────────────────────────────────
+// "Fix this first": the rules dragging the Health Score down the most, each with
+// the points roughly recoverable by clearing it. Clicking one jumps to its group.
+function ExecutiveSummary({ score, contributions, language, onJumpToRule }: {
+  score: number
+  contributions: ScoreContribution[]
+  language: string
+  onJumpToRule: (ruleId: string) => void
+}) {
+  const { t } = useTranslation('validation')
+  const top = contributions.filter((c) => c.penalty > 0).slice(0, 3)
+  if (top.length === 0) return null
+
+  const grade =
+    score >= 85 ? 'excellent' : score >= 70 ? 'good' : score >= 50 ? 'fair' : score >= 30 ? 'poor' : 'critical'
+  const gradeColor = score >= 70 ? 'var(--ok)' : score >= 50 ? '#F5A623' : 'var(--danger)'
+
+  return (
+    <div className="px-3 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
+      <div className="flex items-baseline gap-1.5 mb-2">
+        <span className="text-[11px] font-semibold" style={{ color: gradeColor }}>
+          {t(`summary.grade.${grade}`)}
+        </span>
+        <span className="text-[10px] text-[var(--text-faint)]">·</span>
+        <span className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-faint)]">
+          {t('summary.fixFirst')}
+        </span>
+      </div>
+      <div className="flex flex-col gap-0.5">
+        {top.map((c, i) => (
+          <button
+            key={c.ruleId}
+            onClick={() => onJumpToRule(c.ruleId)}
+            className="flex items-center gap-2 w-full text-left py-1 px-1.5 -mx-1.5 rounded hover:bg-[var(--surface)] transition-colors group"
+          >
+            <span className="text-[10px] font-mono text-[var(--text-faint)] w-3 shrink-0 text-center">{i + 1}</span>
+            <span className="text-[11px] text-[var(--text)] font-medium truncate flex-1 min-w-0 group-hover:text-[var(--accent)] transition-colors">
+              {getRuleLabel(c.ruleId, language)}
+              <span className="text-[var(--text-faint)] font-mono ml-1.5">{c.count}</span>
+            </span>
+            <span className="text-[10px] font-mono font-semibold shrink-0" style={{ color: 'var(--ok)' }}>
+              {t('summary.points', { points: Math.max(1, Math.round(c.penalty)) })}
+            </span>
+            <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-faint)] group-hover:text-[var(--accent)] shrink-0 transition-colors">
+              <path d="M4.5 2.5l4 3.5-4 3.5" />
+            </svg>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 
 // ── Validation history panel ──────────────────────────────────────────────────
 
@@ -1579,9 +1560,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   )
   const sceneModels  = useSceneStore((s) => s.models)
   const cachedResultsByModel = useValidationStore((s) => s.cachedResultsByModel)
-  const { topics: bcfTopics, isParsing: bcfParsing } = useBcfStore(
-    useShallow((s) => ({ topics: s.topics, isParsing: s.isParsing })),
-  )
+  const bcfTopicCount = useBcfStore((s) => s.topics.length)
 
   const { t, i18n } = useTranslation('validation')
   const [search, setSearch]             = useState('')
@@ -1589,8 +1568,8 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   const [profileModalOpen, setProfileModalOpen] = useState(false)
   const [editingProfile, setEditingProfile]     = useState<ValidationProfile | undefined>(undefined)
   const [exportModalOpen, setExportModalOpen]   = useState(false)
+  const [copying,         setCopying]           = useState(false)
   const [activePanel, setActivePanel]   = useState<'issues' | 'bcf' | 'history'>('issues')
-  const bcfFileRef = useRef<HTMLInputElement>(null)
 
   // ── Group expand / collapse state ────────────────────────────────────────────
   // openGroups: which group keys are expanded (showing rows)
@@ -1696,9 +1675,43 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
 
   // ── Data ──────────────────────────────────────────────────────────────
 
-  const issues = result?.issues ?? partialIssues
-  const stats  = result?.stats
+  const rawIssues = result?.issues ?? partialIssues
   const hasModel = sceneModels.length > 0 || !!ifcBuffer
+
+  // ── Waivers (Phase 3) ─────────────────────────────────────────────────────
+  // Muted issues are hidden from the list AND excluded from the shown score/counts.
+  // Redefining `issues` as the visible set means filtered/grouped/contributions
+  // all inherit the waivers automatically.
+  const muted      = useWaiverStore((s) => s.muted)
+  const toggleMute = useWaiverStore((s) => s.toggleMute)
+  const unmuteAll  = useWaiverStore((s) => s.unmuteAll)
+  const mutedSet   = useMemo(() => new Set(muted), [muted])
+  const issues     = useMemo(() => rawIssues.filter((i) => !mutedSet.has(issueKey(i))), [rawIssues, mutedSet])
+  const mutedCount = rawIssues.length - issues.length
+  const handleMute = useCallback((i: ValidationIssue) => toggleMute(issueKey(i)), [toggleMute])
+
+  // Displayed stats/score reflect waivers: reuse the run's own values when nothing
+  // is muted, else recompute over the visible issues so the headline matches the list.
+  const stats = useMemo(() => {
+    if (!result) return undefined
+    if (mutedCount === 0) return result.stats
+    let errors = 0, warnings = 0, info = 0
+    for (const i of issues) {
+      if (i.severity === 'error') errors++
+      else if (i.severity === 'warning') warnings++
+      else info++
+    }
+    return { ...result.stats, total: issues.length, errors, warnings, info }
+  }, [result, issues, mutedCount])
+
+  const displayScore = useMemo(() => {
+    if (!result) return null
+    return mutedCount > 0 ? calculateQualityScore({ issues }) : (result.qualityScore ?? null)
+  }, [result, issues, mutedCount])
+
+  // Honest-score signals: a run is only trustworthy when every enabled rule ran.
+  const coverage = result?.metadata?.coverage
+  const coverageIncomplete = !!coverage && !coverage.complete
 
   const pendingFixIds = useMemo(
     () => new Set(diffs.filter((d) => d.type === 'RENAME').map((d) => d.expressId)),
@@ -1739,6 +1752,24 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     }
     return map
   }, [filtered, filters.groupBy])
+
+  // ── Actionable score (Phase 2) ────────────────────────────────────────────
+  // Per-rule impact on the Health Score: drives the executive summary and the
+  // by-impact group ordering. Based on ALL issues (the score is global), not the
+  // current view filter.
+  const contributions = useMemo(() => explainQualityScore({ issues }), [issues])
+  const penaltyByRule = useMemo(
+    () => new Map(contributions.map((c) => [c.ruleId, c.penalty])),
+    [contributions],
+  )
+
+  // When the user clicks a "fix this first" action, focus that rule's group.
+  const [focusRule, setFocusRule] = useState<string | null>(null)
+  const handleJumpToRule = useCallback((ruleId: string) => {
+    setFilters({ groupBy: 'rule', activeTab: 'all' })
+    setSearch('')
+    setFocusRule(ruleId)
+  }, [setFilters])
 
   // ── Handlers ──────────────────────────────────────────────────────────
 
@@ -1805,20 +1836,6 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     void runValidationAll(undefined, true)
   }, [])
 
-  const handleBcfImport = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    void importBcf(file)
-    trackFeatureUsed({ feature: 'bcf_import' })
-    e.target.value = ''
-  }, [])
-
-  const handleBcfExport = useCallback(() => {
-    if (!result) return
-    const snapshot = viewer?.takeSnapshot?.() ?? undefined
-    void downloadBcfBlob(issuesToBcfTopics(result.issues, snapshot), 'validation-issues.bcfzip')
-    trackFeatureUsed({ feature: 'bcf_export' })
-  }, [result, viewer])
 
   // ── Share Report (URL hash — zero server, zero storage) ───────────────────
   // Encodes the Health Score + condensed issue list into a base64 URL fragment.
@@ -1893,6 +1910,34 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     }
   }, [result, sceneModels, t])
 
+  // ── Copy for AI ──────────────────────────────────────────────────────────────
+  // Formats the validation result as structured plain text and copies it to the
+  // clipboard. Zero server, zero URL — pure clipboard. Debounced via `copying`
+  // state so rapid double-taps don't enqueue duplicate toasts.
+  const handleCopyForAI = useCallback(async () => {
+    if (!result) return
+    if (copying) return
+
+    const fileName = sceneModels[0]?.fileName ?? 'model.ifc'
+    const text = buildCopyForAIText(result, fileName)
+
+    setCopying(true)
+    try {
+      const ok = await copyToClipboard(text)
+      trackFeatureUsed({ feature: 'copy_for_ai' })
+      toast(
+        ok
+          ? 'Report copied — paste into Claude or ChatGPT'
+          : 'Clipboard unavailable — try again',
+        ok ? 'success' : 'error',
+      )
+    } catch {
+      toast('Could not copy to clipboard', 'error')
+    } finally {
+      setTimeout(() => setCopying(false), 2000)
+    }
+  }, [result, sceneModels, copying])
+
   const handleAddIssueToBcf = useCallback((issue: ValidationIssue) => {
     const snapshot = viewer?.takeSnapshot?.() ?? undefined
     const [topic]  = issuesToBcfTopics([issue], snapshot)
@@ -1902,11 +1947,6 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     toast(t('bcf.addedToBcf'), 'success')
   }, [viewer, t])
 
-  const handleNavigateToBcfTopic = useCallback((topic: BcfTopic) => {
-    const vp = topic.viewpoints[0]
-    if (!vp?.cameraPosition || !vp?.cameraDirection) return
-    viewer?.setCameraViewpoint(vp.cameraPosition, vp.cameraDirection)
-  }, [viewer])
 
   // ── Group open/close logic ───────────────────────────────────────────────────
   // Reset state when grouping strategy / severity tab / model filter changes.
@@ -1921,6 +1961,17 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     setExpandedGroups(new Set())
   // deps: groupBy + tab + modelFilter + result — NOT search
   }, [filters.groupBy, filters.activeTab, modelFilter, result])
+
+  // Focus a specific rule's group when the user clicks a "fix this first" action.
+  // Additive (runs after the reset effect above), so it opens the target group
+  // without fighting the auto-open logic.
+  useEffect(() => {
+    if (!focusRule) return
+    if (![...grouped.keys()].includes(focusRule)) return
+    setOpenGroups((prev) => new Set(prev).add(focusRule))
+    setExpandedGroups((prev) => new Set(prev).add(focusRule))
+    setFocusRule(null)
+  }, [focusRule, grouped])
 
   const toggleAllGroups = useCallback(() => {
     if (openGroups.size === grouped.size && grouped.size > 0) {
@@ -1937,9 +1988,21 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   // flat array. Virtualization keeps DOM node count bounded regardless of how
   // many issues a group holds, so expanding a 10k-issue group never freezes.
 
+  // Order groups by score impact when grouping by rule (biggest drag first);
+  // by issue count otherwise — keeps "what matters most" at the top of the list.
+  const orderedGroups = useMemo<Array<[string, ValidationIssue[]]>>(() => {
+    const entries = [...grouped.entries()]
+    if (filters.groupBy === 'rule') {
+      entries.sort((a, b) => (penaltyByRule.get(b[0]) ?? 0) - (penaltyByRule.get(a[0]) ?? 0))
+    } else {
+      entries.sort((a, b) => b[1].length - a[1].length)
+    }
+    return entries
+  }, [grouped, filters.groupBy, penaltyByRule])
+
   const flatRows = useMemo<FlatRow[]>(() => {
     const rows: FlatRow[] = []
-    for (const [groupKey, groupIssues] of grouped) {
+    for (const [groupKey, groupIssues] of orderedGroups) {
       rows.push({ kind: 'header', groupKey, groupIssues })
       if (!openGroups.has(groupKey)) continue
       // Per-rule fix guidance, only when grouping by rule and guidance exists.
@@ -1955,7 +2018,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
       }
     }
     return rows
-  }, [grouped, openGroups, expandedGroups, filters.groupBy, i18n.language])
+  }, [orderedGroups, openGroups, expandedGroups, filters.groupBy, i18n.language])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const listRef   = useRef<HTMLDivElement>(null)
@@ -2103,13 +2166,20 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                   const c = result.qualityScore >= 80 ? 'var(--ok)' : result.qualityScore >= 50 ? '#F5A623' : 'var(--danger)'
                   return { color: c, borderColor: `${c}44`, background: `${c}14` }
                 })()}
-                title={
+                title={[
+                  t('coverage.qualityTitle'),
+                  coverageIncomplete
+                    ? t('coverage.partialTitle', { ran: coverage?.okCount ?? 0, total: coverage?.attempted.length ?? 0 })
+                    : null,
                   unconfiguredRules.length > 0
-                    ? `${t('coverage.qualityTitle')} · ${TOTAL_RULE_COUNT - unconfiguredRules.length}/${TOTAL_RULE_COUNT} active rules (${unconfiguredRules.length} unconfigured)`
-                    : t('coverage.qualityTitle')
-                }
+                    ? `${TOTAL_RULE_COUNT - unconfiguredRules.length}/${TOTAL_RULE_COUNT} active rules (${unconfiguredRules.length} unconfigured)`
+                    : null,
+                ].filter(Boolean).join(' · ')}
               >
                 {result.qualityScore}
+                {coverageIncomplete && (
+                  <span className="ml-0.5" style={{ color: 'var(--danger)' }}>⚠</span>
+                )}
                 {unconfiguredRules.length > 0 && (
                   <span className="ml-0.5 opacity-60">⚙</span>
                 )}
@@ -2152,6 +2222,40 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
               <path d="M3.4 4.3l2.7-1.6M3.4 5.7l2.7 1.6" />
             </svg>
             {t('actions.shareReport')}
+          </button>
+        )}
+
+        {/* Copy for AI — formats the full report as plain text for Claude / ChatGPT */}
+        {result && (
+          <button
+            onClick={handleCopyForAI}
+            disabled={copying}
+            title="Copy validation report as plain text for Claude or ChatGPT"
+            aria-label={copying ? 'Copied to clipboard' : 'Copy for AI'}
+            className="flex items-center gap-1 px-2 h-6 rounded text-[10px] font-medium border transition-all duration-200 shrink-0 select-none"
+            style={
+              copying
+                ? { background: 'var(--ok)14', color: 'var(--ok)', borderColor: 'var(--ok)33' }
+                : { background: 'var(--surface-2)', color: 'var(--text-dim)', borderColor: 'var(--border-strong)' }
+            }
+          >
+            {copying ? (
+              <>
+                {/* Checkmark */}
+                <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                  <path d="M2 6.5l3 3 5-6" />
+                </svg>
+                <span className="hidden sm:inline">Copied</span>
+              </>
+            ) : (
+              <>
+                {/* 4-point sparkle — signals AI context */}
+                <svg width="9" height="9" viewBox="0 0 12 12" fill="currentColor" className="shrink-0 opacity-80">
+                  <path d="M6 1l1.1 3.9L11 6l-3.9 1.1L6 11l-1.1-3.9L1 6l3.9-1.1Z" />
+                </svg>
+                <span className="hidden sm:inline">Copy for AI</span>
+              </>
+            )}
           </button>
         )}
 
@@ -2300,6 +2404,11 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
         </div>
       )}
 
+      {/* ── Coverage integrity (honest score) — only when a run is incomplete ── */}
+      {coverageIncomplete && coverage && (
+        <CoverageIntegrityStrip coverage={coverage} language={i18n.language} />
+      )}
+
       {/* ── Toolbar row A: tab toggle + severity filter ── */}
       <div className="flex items-center gap-1.5 px-3 h-8 border-b border-[var(--border)] shrink-0 overflow-x-auto">
         {/* Issues / BCF / History toggle */}
@@ -2316,8 +2425,8 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
               }
             >
               {panel === 'issues' ? t('tabs.issues') : panel === 'bcf' ? t('tabs.bcf') : t('tabs.history')}
-              {panel === 'bcf' && bcfTopics.length > 0 && (
-                <span className="ml-1 text-[9px] font-mono">{bcfTopics.length}</span>
+              {panel === 'bcf' && bcfTopicCount > 0 && (
+                <span className="ml-1 text-[9px] font-mono">{bcfTopicCount}</span>
               )}
             </button>
           ))}
@@ -2368,39 +2477,6 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
           </>
         )}
 
-        {activePanel === 'bcf' && (
-          <>
-            <div className="flex-1" />
-            <input ref={bcfFileRef} type="file" accept=".bcfzip,.bcf" className="hidden" onChange={handleBcfImport} />
-            <button
-              onClick={() => bcfFileRef.current?.click()}
-              disabled={bcfParsing}
-              className="px-2 h-6 rounded text-[10px] bg-[var(--surface-2)] text-[var(--text-dim)] border border-[var(--border)] hover:text-[var(--text)] disabled:opacity-40 font-medium transition-colors shrink-0"
-            >
-              {bcfParsing ? t('bcf.importing') : t('bcf.import')}
-            </button>
-            {result && result.issues.length > 0 && (
-              <button
-                onClick={handleBcfExport}
-                className="px-2 h-6 rounded text-[10px] font-medium border transition-colors shrink-0"
-                style={{ background: 'var(--accent)14', color: 'var(--accent)', borderColor: 'var(--accent)33' }}
-              >
-                {t('bcf.export')}
-              </button>
-            )}
-            {bcfTopics.length > 0 && (
-              <button
-                onClick={() => useBcfStore.getState().clearTopics()}
-                title={t('actions.clearBcf')}
-                className="w-6 h-6 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--danger)] border border-transparent hover:border-[var(--danger)]33 transition-colors"
-              >
-                <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-                  <path d="M1.5 1.5l6 6M7.5 1.5l-6 6" />
-                </svg>
-              </button>
-            )}
-          </>
-        )}
       </div>
 
       {/* ── Toolbar row B: group by + search (issues only) ── */}
@@ -2459,23 +2535,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
         {activePanel === 'history' ? (
           <ValidationHistoryPanel onClose={() => setActivePanel('issues')} />
         ) : activePanel === 'bcf' ? (
-          <>
-            {bcfParsing && (
-              <div className="px-3 py-2 text-[11px] text-[var(--accent)] animate-pulse border-b border-[var(--border)]">
-                {t('bcf.importing')}
-              </div>
-            )}
-            {!bcfParsing && bcfTopics.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full gap-2 text-center px-4">
-                <p className="text-[11px] text-[var(--text-dim)]">
-                  {t('bcf.noTopicsDesc')}
-                </p>
-              </div>
-            )}
-            {bcfTopics.map((topic) => (
-              <BcfTopicRow key={topic.guid} topic={topic} onNavigate={handleNavigateToBcfTopic} />
-            ))}
-          </>
+          <BcfPanel viewer={viewer} />
         ) : (
           <>
             {/* Progress bar while running */}
@@ -2488,6 +2548,16 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                   />
                 </div>
               </div>
+            )}
+
+            {/* Actionable summary — what to fix first (Phase 2) */}
+            {!isRunning && result && result.stats.total > 0 && (
+              <ExecutiveSummary
+                score={result.qualityScore ?? 0}
+                contributions={contributions}
+                language={i18n.language}
+                onJumpToRule={handleJumpToRule}
+              />
             )}
 
             {/* Empty states */}

@@ -455,8 +455,12 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             </button>
           </div>
 
-          {/* Mobile: GitHub icon + theme toggle + language selector + primary CTA */}
+          {/* Mobile: Blog + GitHub icon + theme toggle + language selector + primary CTA */}
           <div className="flex md:hidden items-center gap-2">
+            <button
+              onClick={() => onNavigateToBlog(langShort)}
+              className="text-[12px] font-medium text-[var(--text-dim)] bg-transparent border-0 px-1 py-1 cursor-pointer hover:text-[var(--text)] transition-colors whitespace-nowrap"
+            >Blog</button>
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"
               className="w-9 h-9 flex items-center justify-center rounded-lg text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
               aria-label="GitHub repository"

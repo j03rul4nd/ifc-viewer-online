@@ -298,6 +298,8 @@ export function trackFeatureUsed(props: {
     | 'section_plane'
     | 'floor_plan'
     | 'takeoff'
+    | 'copy_for_ai'
+    | 'bcf_create_topic'
 }): void {
   track('feature_used', props)
 }

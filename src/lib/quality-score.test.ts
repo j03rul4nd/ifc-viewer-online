@@ -9,7 +9,7 @@
 //   §5  Score↔metadata contract — every rule category has an explicit weight
 
 import { describe, it, expect } from 'vitest'
-import { calculateQualityScore, __scoreWeights } from './validator'
+import { calculateQualityScore, explainQualityScore, __scoreWeights } from './validator'
 import { RULE_METADATA, VALIDATION_CATEGORY_LABELS } from '../types'
 import type { ValidationResult, ValidationIssue } from '../types'
 
@@ -160,5 +160,46 @@ describe('calculateQualityScore — score↔metadata contract', () => {
       .filter((meta) => !weighted.has(meta.category))
       .map((meta) => `${meta.id} → ${meta.category}`)
     expect(orphaned, `rules with no category weight: ${orphaned.join(', ')}`).toEqual([])
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// §6  explainQualityScore — per-rule impact breakdown (drives "fix this first")
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('explainQualityScore', () => {
+  it('returns nothing for a clean model', () => {
+    expect(explainQualityScore(resultOf([]))).toEqual([])
+  })
+
+  it('sorts contributions by penalty, highest impact first', () => {
+    const contributions = explainQualityScore(resultOf([
+      ...many('RULE_MISSING_MATERIAL', 'warning', 3),   // quality warning, weight 1.0
+      ...many('RULE_DUPLICATE_GUID', 'error', 1),        // schema error, weight 5
+    ]))
+    expect(contributions[0].ruleId).toBe('RULE_DUPLICATE_GUID') // 5 > 1*(1+ln3)
+    const penalties = contributions.map((c) => c.penalty)
+    expect(penalties).toEqual([...penalties].sort((a, b) => b - a))
+  })
+
+  it('reports the issue count and a positive penalty per rule', () => {
+    const [top] = explainQualityScore(resultOf(many('RULE_EMPTY_NAME', 'error', 7)))
+    expect(top.ruleId).toBe('RULE_EMPTY_NAME')
+    expect(top.count).toBe(7)
+    expect(top.penalty).toBeGreaterThan(0)
+  })
+
+  it('penalties sum to the score deficit (away from the 0/100 clamp)', () => {
+    const result = resultOf([
+      ...many('RULE_MISSING_MATERIAL', 'warning', 10),
+      ...many('RULE_EMPTY_NAME', 'error', 2),
+    ])
+    const totalPenalty = explainQualityScore(result).reduce((s, c) => s + c.penalty, 0)
+    expect(Math.max(0, Math.round(100 - totalPenalty))).toBe(calculateQualityScore(result))
+  })
+
+  it('tags each contribution with the rule category', () => {
+    const [c] = explainQualityScore(resultOf([issue('RULE_DUPLICATE_GUID', 'error')]))
+    expect(c.category).toBe('schema')
   })
 })
