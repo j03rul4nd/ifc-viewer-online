@@ -98,8 +98,6 @@ describe('composeMultiModelResult', () => {
     // The aggregate score must equal scoring the merged issue list directly.
     const expected = calculateQualityScore({
       issues: [...m1.issues, ...m2.issues],
-      stats: out!.stats,
-      durationMs: 0,
     })
     expect(out!.qualityScore).toBe(expected)
   })
