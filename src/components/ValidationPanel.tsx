@@ -40,7 +40,8 @@ import {
   trackGuidFixed, trackShareReportClicked, trackValidationPanelOpened,
   trackIssueViewed, trackIssueFixApplied, trackValidationProfileChanged, trackFeatureUsed,
 } from '../lib/analytics'
-import { buildShareUrl } from '../lib/share-report'
+import { buildShareUrl, buildBadgeMarkdown, type ShareReportPayload } from '../lib/share-report'
+import { postBenchmark, fetchBenchmark, benchmarkReady, type BenchStats } from '../lib/benchmark'
 
 // ── Profile i18n ────────────────────────────────────────────────────────────
 // Built-in profiles (basic/quality/coordination/iso19650/lod300) resolve their
@@ -97,6 +98,39 @@ async function copyToClipboard(text: string): Promise<boolean> {
 // ── Copy for AI — plain-text report optimised for pasting into Claude / ChatGPT ──
 // Pure function, no side-effects. Formats Health Score + issues into structured
 // text that any LLM can consume without needing to parse JSON or HTML.
+// Result objects already posted to the benchmark — dedupe across remounts so the
+// same validation is counted once (the store keeps the result identity stable).
+const benchPosted = new WeakSet<object>()
+
+/**
+ * Build the compact shared-report payload (score + condensed top-50 issues, no
+ * geometry). Shared by the Share button and the embeddable Badge so both encode
+ * the identical report. Errors first so length-trimming keeps the worst issues.
+ */
+function buildReportPayload(result: ValidationResult, fileName: string): ShareReportPayload {
+  const order = { error: 0, warning: 1, info: 2 }
+  return {
+    v: 1,
+    score: result.qualityScore ?? 0,
+    file: fileName.slice(0, 80),
+    e: result.stats.errors,
+    w: result.stats.warnings,
+    i: result.stats.info,
+    ms: result.durationMs,
+    ts: new Date().toISOString(),
+    issues: [...result.issues]
+      .sort((a, b) => (order[a.severity] ?? 2) - (order[b.severity] ?? 2))
+      .slice(0, 50)
+      .map((iss) => ({
+        r: iss.ruleId,
+        s: iss.severity[0],          // 'e' | 'w' | 'i'
+        n: iss.elementName.slice(0, 60),
+        c: iss.ifcClass,
+        m: iss.message.slice(0, 120),
+      })),
+  }
+}
+
 function buildCopyForAIText(result: ValidationResult, fileName: string): string {
   const score = result.qualityScore ?? 0
   const grade =
@@ -1763,6 +1797,11 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     [contributions],
   )
 
+  // Public Health Score benchmark ("your 82 vs industry avg 71"). Fetched once;
+  // null until the Worker/KV is configured and the sample reaches BENCH_MIN_N.
+  const [bench, setBench] = useState<BenchStats | null>(null)
+  useEffect(() => { void fetchBenchmark().then(setBench) }, [])
+
   // When the user clicks a "fix this first" action, focus that rule's group.
   const [focusRule, setFocusRule] = useState<string | null>(null)
   const handleJumpToRule = useCallback((ruleId: string) => {
@@ -1837,37 +1876,23 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   }, [])
 
 
+  // ── Benchmark (anonymous, aggregate-only) ─────────────────────────────────
+  // Fold this run's Health Score into the public benchmark — once per result
+  // object. Sends ONLY the integer score (no model data); the IFC never moves.
+  useEffect(() => {
+    if (result && typeof result.qualityScore === 'number' && !benchPosted.has(result)) {
+      benchPosted.add(result)
+      postBenchmark(result.qualityScore)
+    }
+  }, [result])
+
   // ── Share Report (URL hash — zero server, zero storage) ───────────────────
   // Encodes the Health Score + condensed issue list into a base64 URL fragment.
   // Anyone with the link sees the report without uploading anything.
   const handleShareReport = useCallback(async () => {
     if (!result) return
 
-    // Build a compact payload — strip verbose path arrays to keep URL short
-    const payload = {
-      v: 1,
-      score: result.qualityScore ?? 0,
-      file: (sceneModels[0]?.fileName ?? 'model.ifc').slice(0, 80),
-      e: result.stats.errors,
-      w: result.stats.warnings,
-      i: result.stats.info,
-      ms: result.durationMs,
-      ts: new Date().toISOString(),
-      // Top 50 issues sorted by severity (errors first), condensed fields only
-      issues: [...result.issues]
-        .sort((a, b) => {
-          const order = { error: 0, warning: 1, info: 2 }
-          return (order[a.severity] ?? 2) - (order[b.severity] ?? 2)
-        })
-        .slice(0, 50)
-        .map((iss) => ({
-          r: iss.ruleId,
-          s: iss.severity[0],          // 'e' | 'w' | 'i'
-          n: iss.elementName.slice(0, 60),
-          c: iss.ifcClass,
-          m: iss.message.slice(0, 120),
-        })),
-    }
+    const payload = buildReportPayload(result, sceneModels[0]?.fileName ?? 'model.ifc')
 
     try {
       // Prefer the crawlable Cloudflare Worker route (server-rendered HTML + OG
@@ -1908,6 +1933,31 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
     } catch {
       toast(t('actions.reportLinkError'), 'error')
     }
+  }, [result, sceneModels, t])
+
+  // ── Copy Badge (embeddable Health Score) ──────────────────────────────────
+  // Copies a markdown snippet — an SVG badge that links to the crawlable report
+  // — for the sender to paste into a deliverable README / PR / handoff. This is
+  // the distribution primitive: the number travels off-site, verifiably. Only
+  // available when the Worker base (VITE_REPORT_URL) is configured.
+  const handleCopyBadge = useCallback(async () => {
+    if (!result) return
+    const fileName   = sceneModels[0]?.fileName ?? 'model.ifc'
+    const payload    = buildReportPayload(result, fileName)
+    const reportBase = import.meta.env.VITE_REPORT_URL as string | undefined
+    const appBase    = `${window.location.origin}${window.location.pathname}`
+    const { url }    = buildShareUrl(payload, reportBase, appBase)
+    const markdown   = buildBadgeMarkdown(result.qualityScore ?? 0, url, reportBase)
+    if (!markdown) {
+      toast(t('actions.reportLinkError'), 'error')
+      return
+    }
+    const copied = await copyToClipboard(markdown)
+    trackShareReportClicked()
+    toast(
+      copied ? 'Badge markdown copied — paste it into your deliverable README' : t('actions.reportLinkError'),
+      copied ? 'success' : 'error',
+    )
   }, [result, sceneModels, t])
 
   // ── Copy for AI ──────────────────────────────────────────────────────────────
@@ -2185,6 +2235,15 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                 )}
               </span>
             )}
+            {result?.qualityScore != null && benchmarkReady(bench) && (
+              <span
+                className="text-[9px] font-mono shrink-0 hidden sm:inline"
+                style={{ color: result.qualityScore >= bench.avg ? 'var(--ok)' : 'var(--text-dim)' }}
+                title={`Industry average is ${bench.avg}/100 across ${bench.n.toLocaleString()} validated models (median ${bench.p50 ?? '—'}, top 10% ≥ ${bench.p90 ?? '—'}).`}
+              >
+                {result.qualityScore >= bench.avg ? '↑' : '↓'} avg {bench.avg}
+              </span>
+            )}
             {result && (
               <span className="text-[var(--text-faint)] text-[10px] hidden sm:inline shrink-0">
                 · {result.durationMs}ms
@@ -2222,6 +2281,22 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
               <path d="M3.4 4.3l2.7-1.6M3.4 5.7l2.7 1.6" />
             </svg>
             {t('actions.shareReport')}
+          </button>
+        )}
+
+        {/* Copy Badge — embeddable Health Score badge (markdown) for deliverables.
+            Only shown when the Worker base is configured (badge needs the server). */}
+        {result && import.meta.env.VITE_REPORT_URL && (
+          <button
+            onClick={handleCopyBadge}
+            title="Copy an embeddable Health Score badge (markdown) for your deliverable README or handoff"
+            className="flex items-center gap-1 px-2 h-6 rounded text-[10px] font-medium border transition-colors shrink-0"
+            style={{ background: 'var(--surface-2)', color: 'var(--text-dim)', borderColor: 'var(--border)' }}
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <path d="M12 2l2.5 7.5H22l-6 4.5 2.3 7.5L12 17l-6.3 4.5L8 14 2 9.5h7.5z" />
+            </svg>
+            Badge
           </button>
         )}
 

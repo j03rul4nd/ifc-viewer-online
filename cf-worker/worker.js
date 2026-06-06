@@ -65,7 +65,7 @@ function corsHeaders(origin) {
   if (!ALLOWED_ORIGINS.includes(origin)) return null
   return {
     'Access-Control-Allow-Origin':  origin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Max-Age':       '86400',
   }
@@ -600,6 +600,186 @@ async function handleReport(request, url, env) {
   })
 }
 
+// ── Embeddable Health Score badge (SVG) ────────────────────────────────────────
+//
+// GET /badge?score=82            → shields.io-style SVG "IFC Health Score | 82/100"
+// GET /badge?d=<report payload>  → same, score read from the shared-report payload
+//
+// This is the *distribution* primitive (the "Moz DA mechanism"): a tiny image the
+// sender drops into a deliverable README / email / project handoff. Wrapped in a
+// link to the crawlable report (/r?d=…) it is verifiable, not a blind self-claim.
+// Static text + an integer score → no XSS surface, no escaping needed. Cached hard.
+
+function badgeSvg(label, value, color) {
+  // Approx Verdana 11px advance ≈ 6.4px/char; pad each side by 8px.
+  const lw = Math.round(label.length * 6.4) + 16
+  const vw = Math.round(value.length * 7.2) + 16
+  const w  = lw + vw
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="20" role="img" aria-label="${label}: ${value}">
+  <linearGradient id="g" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient>
+  <mask id="m"><rect width="${w}" height="20" rx="3" fill="#fff"/></mask>
+  <g mask="url(#m)">
+    <rect width="${lw}" height="20" fill="#444"/>
+    <rect x="${lw}" width="${vw}" height="20" fill="${color}"/>
+    <rect width="${w}" height="20" fill="url(#g)"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="Verdana,DejaVu Sans,Geneva,sans-serif" font-size="11">
+    <text x="${lw / 2}" y="14.5" fill="#010101" fill-opacity=".3">${label}</text>
+    <text x="${lw / 2}" y="13.5">${label}</text>
+    <text x="${lw + vw / 2}" y="14.5" fill="#010101" fill-opacity=".3">${value}</text>
+    <text x="${lw + vw / 2}" y="13.5">${value}</text>
+  </g>
+</svg>`
+}
+
+function svgResponse(svg, cache) {
+  return new Response(svg, {
+    status: 200,
+    headers: {
+      'Content-Type':  'image/svg+xml; charset=utf-8',
+      'Cache-Control': cache,
+      // Badges are embedded cross-origin in READMEs/markdown renderers.
+      'Access-Control-Allow-Origin': '*',
+    },
+  })
+}
+
+function handleBadge(url) {
+  // Prefer a full report payload (ties the badge to a verifiable report); fall
+  // back to a bare ?score= for lightweight embeds.
+  const report = decodeReport(url.searchParams.get('d'))
+  let score = report ? report.score : null
+  if (score === null) {
+    // Guard against Number(null)===0 / Number('')===0 — only parse a real value.
+    const raw = url.searchParams.get('score')
+    if (raw !== null && raw.trim() !== '') {
+      const n = Number(raw)
+      if (Number.isFinite(n)) score = Math.max(0, Math.min(100, Math.round(n)))
+    }
+  }
+  if (score === null) {
+    // No usable score → neutral badge, don't cache aggressively.
+    return svgResponse(badgeSvg('IFC Health Score', 'n/a', '#9f9f9f'), 'no-store')
+  }
+  return svgResponse(
+    badgeSvg('IFC Health Score', `${score}/100`, scoreColor(score)),
+    'public, max-age=3600, s-maxage=86400',
+  )
+}
+
+// ── Anonymous Health Score benchmark (KV) ───────────────────────────────────────
+//
+// POST /bench {score}  → fold one score into the aggregate (n, sum, sumSq, hist).
+// GET  /bench          → { n, avg, p50, p90, hist } so the app can show
+//                        "your 82 vs industry avg 71 (n=…)".
+//
+// Privacy: ONLY the integer score is stored. No model data, no file name, no IP,
+// no identifier — this is aggregate statistics, not tracking, and stays within
+// the "nothing leaves the browser" invariant (the score is a derived number the
+// user already chose to compute). Until the BENCH KV namespace is bound in
+// wrangler.toml, every call is a safe no-op (POST stores nothing, GET → n:0), so
+// the deployed worker keeps working unchanged.
+//
+// Caveat: KV read-modify-write can lose updates under high concurrency (the count
+// may slightly undercount during bursts) — acceptable for an approximate public
+// benchmark. Upgrade path: D1 with `UPDATE … SET n = n + 1` for atomicity.
+
+const BENCH_KEY = 'bench:v1:global'
+
+function emptyBench() {
+  return { n: 0, sum: 0, sumSq: 0, hist: new Array(10).fill(0) }
+}
+
+async function readBench(env) {
+  if (!env.BENCH) return null
+  try {
+    const raw = await env.BENCH.get(BENCH_KEY)
+    if (!raw) return emptyBench()
+    const o = JSON.parse(raw)
+    const hist = Array.isArray(o.hist) && o.hist.length === 10
+      ? o.hist.map(toCount)
+      : new Array(10).fill(0)
+    return {
+      n:     toCount(o.n),
+      sum:   Number.isFinite(o.sum) ? o.sum : 0,
+      sumSq: Number.isFinite(o.sumSq) ? o.sumSq : 0,
+      hist,
+    }
+  } catch {
+    return emptyBench()
+  }
+}
+
+/** Approximate percentile from the 10-bin histogram (bin midpoints). */
+function benchPercentile(hist, n, p) {
+  const target = n * p
+  let cum = 0
+  for (let i = 0; i < 10; i++) {
+    cum += hist[i]
+    if (cum >= target) return i * 10 + 5
+  }
+  return 95
+}
+
+function benchStats(b) {
+  if (!b || b.n <= 0) return { n: 0 }
+  return {
+    n:   b.n,
+    avg: Math.round(b.sum / b.n),
+    p50: benchPercentile(b.hist, b.n, 0.5),
+    p90: benchPercentile(b.hist, b.n, 0.9),
+    hist: b.hist,
+  }
+}
+
+async function handleBenchPost(request, env, cors) {
+  // Light per-IP guard (fail-open) so a script can't trivially skew the average.
+  if (!(await underLimit(env.REPORT_LIMITER, clientIp(request)))) {
+    return jsonResponse({ ok: false, error: 'Too many requests' }, 429, {
+      ...(cors ?? {}), 'Retry-After': '60',
+    })
+  }
+  // No KV bound → accept and no-op (keeps the app's fire-and-forget call happy).
+  if (!env.BENCH) return jsonResponse({ ok: true, stored: false }, 200, cors ?? {})
+
+  let body
+  try {
+    body = await request.json()
+  } catch {
+    return jsonResponse({ ok: false, error: 'Invalid JSON body' }, 400, cors ?? {})
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return jsonResponse({ ok: false, error: 'Invalid JSON body' }, 400, cors ?? {})
+  }
+  const score = Number(body.score)
+  if (!Number.isFinite(score) || score < 0 || score > 100) {
+    return jsonResponse({ ok: false, error: 'Invalid score' }, 422, cors ?? {})
+  }
+
+  const s = Math.round(score)
+  const cur = (await readBench(env)) ?? emptyBench()
+  cur.n     += 1
+  cur.sum   += s
+  cur.sumSq += s * s
+  cur.hist[Math.min(9, Math.floor(s / 10))] += 1
+
+  try {
+    await env.BENCH.put(BENCH_KEY, JSON.stringify(cur))
+  } catch (err) {
+    console.warn('[worker] bench put failed:', err)
+    return jsonResponse({ ok: true, stored: false }, 200, cors ?? {})
+  }
+  return jsonResponse({ ok: true, stored: true }, 200, cors ?? {})
+}
+
+async function handleBenchGet(env, cors) {
+  const stats = benchStats(await readBench(env))
+  return jsonResponse(stats, 200, {
+    ...(cors ?? {}),
+    'Cache-Control': 'public, max-age=300, s-maxage=300',
+  })
+}
+
 // ── Router ──────────────────────────────────────────────────────────────────
 
 export default {
@@ -620,6 +800,19 @@ export default {
       // Crawlable shared report — GET only, no CORS needed (top-level navigation).
       if ((url.pathname === '/r' || url.pathname === '/report') && request.method === 'GET') {
         return await handleReport(request, url, env)
+      }
+
+      // Embeddable Health Score badge (SVG) — top-level <img>, no CORS needed.
+      if (url.pathname === '/badge' && request.method === 'GET') {
+        return handleBadge(url)
+      }
+
+      // Anonymous Health Score benchmark — fetched cross-origin from the SPA (CORS).
+      if (url.pathname === '/bench' && request.method === 'GET') {
+        return await handleBenchGet(env, corsHeaders(origin))
+      }
+      if (url.pathname === '/bench' && request.method === 'POST') {
+        return await handleBenchPost(request, env, corsHeaders(origin))
       }
 
       // Email capture

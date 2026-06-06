@@ -116,3 +116,32 @@ export function buildShareUrl(
   }
   return { url, droppedIssues: dropped }
 }
+
+/**
+ * URL of the embeddable SVG Health Score badge (served by the same Worker at
+ * `/badge`, derived from the report base `VITE_REPORT_URL` e.g. `…/r`).
+ * Returns null when no Worker base is configured — the badge needs the Worker
+ * (the in-app hash fallback can't serve an image).
+ */
+export function buildBadgeUrl(score: number, reportBase: string | undefined): string | null {
+  if (!reportBase) return null
+  const base = reportBase.replace(/\/(r|report)\/?$/, '/badge')
+  const s = Math.max(0, Math.min(100, Math.round(score)))
+  return `${base}?score=${s}`
+}
+
+/**
+ * Compose the markdown snippet a sender pastes into a deliverable README / PR /
+ * handoff: the badge image links to the crawlable, verifiable report. Returns
+ * null when the Worker base isn't configured. `reportUrl` is the already-built
+ * `/r?d=…` link (from buildShareUrl).
+ */
+export function buildBadgeMarkdown(
+  score: number,
+  reportUrl: string,
+  reportBase: string | undefined,
+): string | null {
+  const img = buildBadgeUrl(score, reportBase)
+  if (!img) return null
+  return `[![IFC Health Score: ${Math.round(score)}/100](${img})](${reportUrl})`
+}

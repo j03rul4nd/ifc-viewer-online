@@ -12,6 +12,8 @@ import {
   toBase64Url,
   decodeReportPayload,
   buildShareUrl,
+  buildBadgeUrl,
+  buildBadgeMarkdown,
   MAX_SHARE_URL_LEN,
   SHARE_REPORT_VERSION,
   type ShareReportPayload,
@@ -131,5 +133,30 @@ describe('buildShareUrl', () => {
     const decoded = decodeReportPayload(url.split('?d=')[1]) as ShareReportPayload
     expect(decoded.score).toBe(huge.score)
     expect(decoded.issues.length).toBe(500 - droppedIssues)
+  })
+})
+
+describe('buildBadgeUrl', () => {
+  it('derives the /badge endpoint from the report base and clamps the score', () => {
+    expect(buildBadgeUrl(82, 'https://w.workers.dev/r')).toBe('https://w.workers.dev/badge?score=82')
+    expect(buildBadgeUrl(82, 'https://w.workers.dev/report')).toBe('https://w.workers.dev/badge?score=82')
+    expect(buildBadgeUrl(140, 'https://w.workers.dev/r')).toBe('https://w.workers.dev/badge?score=100')
+    expect(buildBadgeUrl(-5, 'https://w.workers.dev/r')).toBe('https://w.workers.dev/badge?score=0')
+    expect(buildBadgeUrl(82.6, 'https://w.workers.dev/r')).toBe('https://w.workers.dev/badge?score=83')
+  })
+
+  it('returns null without a worker base (the hash fallback cannot serve an image)', () => {
+    expect(buildBadgeUrl(82, undefined)).toBeNull()
+  })
+})
+
+describe('buildBadgeMarkdown', () => {
+  it('wraps the badge image in a link to the verifiable report', () => {
+    const md = buildBadgeMarkdown(82, 'https://w.workers.dev/r?d=ABC', 'https://w.workers.dev/r')
+    expect(md).toBe('[![IFC Health Score: 82/100](https://w.workers.dev/badge?score=82)](https://w.workers.dev/r?d=ABC)')
+  })
+
+  it('returns null without a worker base', () => {
+    expect(buildBadgeMarkdown(82, 'whatever', undefined)).toBeNull()
   })
 })

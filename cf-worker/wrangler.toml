@@ -39,6 +39,20 @@ type         = "ratelimit"
 namespace_id = "1002"
 simple       = { limit = 60, period = 60 }
 
+# ── Benchmark store (KV) ────────────────────────────────────────────────────────
+# Powers the "your 82 vs industry avg 71 (n=…)" line and the benchmark blog data.
+# Stores ONLY the aggregate of anonymous numeric scores — NO model data, NO PII,
+# NO IP. This is statistics, not tracking (stays within "nothing leaves the
+# browser": the score is a number the user already computed locally).
+#
+# Until you create the namespace and bind it below, /bench is a SAFE NO-OP
+# (POST stores nothing, GET returns n:0) — the deployed worker is unaffected.
+#
+# Created with: wrangler kv namespace create BENCH  (2026-06-06)
+[[kv_namespaces]]
+binding = "BENCH"
+id      = "644a598afbf34e2daad9d261d40c476e"
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 # Adjust the custom domain once you have one. Until then, the default workers.dev
 # subdomain (ifc-viewer-email-capture.<accountname>.workers.dev) works fine.
