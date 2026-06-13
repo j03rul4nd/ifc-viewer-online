@@ -14,10 +14,11 @@
   "typing": [
     "Detecta errores en el IFC antes que tu cliente",
     "Obtén un Health Score para cada modelo IFC — de 0 a 100",
+    "Comprueba tu modelo frente a un IDS de buildingSMART — en el navegador",
+    "Coloca tu IFC sobre un mapa 3D real, georreferenciado automáticamente",
     "Valida GUIDs duplicados y jerarquía espacial en segundos",
     "Abre cualquier IFC — sin subir, sin licencia de Revit",
-    "Corrige violaciones de naming y re-exporta en un flujo",
-    "Revisa tu modelo antes de cada reunión de coordinación",
+    "Coordina incidencias con importación y exportación BCF 2.1 / 3.0",
     "Cero datos salen de tu navegador. Cero."
   ],
   "actions": {
@@ -37,7 +38,8 @@
     "features": "Características",
     "howItWorks": "Cómo funciona",
     "faq": "FAQ",
-    "github": "GitHub"
+    "github": "GitHub",
+    "sdk": "SDK"
   },
   "compatible": {
     "label": "Compatible con todas las principales herramientas BIM"
@@ -58,6 +60,21 @@
       "title": "Validador IFC con 38 reglas",
       "body": "Detecta GUIDs duplicados, violaciones de jerarquía espacial y elementos huérfanos antes de que lo haga tu cliente. Cada modelo recibe un Health Score de 0 a 100. Los resultados aparecen en tiempo real desde un worker en segundo plano.",
       "tip": "Motor de reglas IFC / ISO 19650"
+    },
+    {
+      "title": "Comprobación IDS de buildingSMART",
+      "body": "Suelta un archivo .ids de buildingSMART y comprueba tu modelo frente a los requisitos contractuales de entrega. Las seis facetas de IDS 1.0 —entidad, atributo, propiedad, clasificación, material y parteDe— se evalúan en el cliente y están validadas contra los testcases oficiales de buildingSMART. ¿Sin .ids? Las muestras integradas te dejan probarlo al instante.",
+      "tip": "IDS 1.0 completo · validado con los testcases oficiales"
+    },
+    {
+      "title": "Modo mapa 3D georreferenciado",
+      "body": "Coloca tu IFC sobre un mapa real con mapas base de calles, satélite y terreno 3D. Lee la georreferenciación IfcMapConversion / IfcSite automáticamente, o posiciona el modelo a mano, todo dentro de la misma escena 3D, sin clave de API y sin que los datos salgan del navegador.",
+      "tip": "Mapas base reales · terreno 3D · IfcMapConversion"
+    },
+    {
+      "title": "Coordinación de incidencias BCF",
+      "body": "Crea, edita y haz seguimiento de temas BCF con puntos de vista y comentarios guardados. Importa y exporta BCF 2.1 / 3.0 para intercambiar incidencias con BIMcollab, Solibri y cualquier herramienta OpenBIM. Los fallos de validación e IDS se exportan directamente a BCF.",
+      "tip": "Importación y exportación BCF 2.1 / 3.0"
     },
     {
       "title": "Soporte multi-modelo",
@@ -170,6 +187,16 @@
     "title": "Construido en público, gratis para siempre",
     "body": "El código fuente está en GitHub. Construido con @thatopen/components, three.js, web-ifc y React. Si necesitas un visor web BIM personalizado, validador o herramientas IFC — el autor está disponible para trabajo por contrato."
   },
+  "sdk": {
+    "label": "SDK · INTEGRACIONES",
+    "title": "Integra el visor en tu CDE o herramientas internas",
+    "body": "Inserta el mismo visor del navegador en tu CDE, gemelo digital o herramientas internas de proyecto. Carga datos IFC desde tu propia aplicación mientras el procesamiento del modelo permanece en el cliente.",
+    "b1": "Sin backend de subida",
+    "b2": "Se ejecuta directamente en el navegador",
+    "b3": "Preparado para IFC, BCF e IDS",
+    "explore": "Explorar integración",
+    "docs": "Documentación del SDK"
+  },
   "finalCta": {
     "title": "Abre un IFC ahora.",
     "subtitle": "Sin registro. Sin subida. Funciona en tu navegador.",
@@ -202,6 +229,14 @@
     {
       "q": "¿Cómo funciona la validación?",
       "a": "El validador ejecuta 38 reglas integradas en un Web Worker en segundo plano para que la interfaz permanezca responsive. Las reglas cubren GUIDs duplicados, jerarquía espacial, elementos huérfanos, convenciones de nombres, asignaciones de tipo faltantes, property sets ISO 19650, completitud de LOD, detección de colisiones, exceso de proxies, desfase de coordenadas y más. Cada modelo recibe un Health Score de 0 a 100. Los resultados aparecen a medida que cada regla se completa."
+    },
+    {
+      "q": "¿Puedo comprobar mi modelo frente a un IDS de buildingSMART?",
+      "a": "Sí. Suelta un archivo .ids de buildingSMART —o elige una de las muestras integradas si no tienes uno— y tu modelo se comprueba frente a las seis facetas de IDS 1.0: entidad, atributo, propiedad, clasificación, material y parteDe. Toda la comprobación se ejecuta en tu navegador y está validada contra los testcases oficiales de buildingSMART. Los elementos que fallan se resaltan en 3D y puedes exportar los resultados como JSON, CSV, un informe HTML independiente o BCF para BIMcollab y Solibri."
+    },
+    {
+      "q": "¿Puedo ver mi IFC sobre un mapa real?",
+      "a": "Sí. El modo mapa coloca tu modelo sobre mapas base de calles, satélite o terreno 3D. Lee la georreferenciación IfcMapConversion / IfcSite automáticamente para posicionar el modelo, o puedes colocarlo a mano. No hace falta clave de API y, como todo lo demás, el modelo nunca sale de tu navegador."
     },
     {
       "q": "¿Puedo corregir errores y re-exportar un IFC corregido?",

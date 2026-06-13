@@ -194,12 +194,14 @@ function HeroPreview({ lightBg }: { lightBg?: boolean }) {
 const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } }
 
 // ── Feature icon map (static — icons don't need i18n) ─────────────────────────
-// Order mirrors the features array in locales: validator, multi-model, drag&drop,
-// OPFS cache, editing, QTO, measurements, floor plans, export, schemas, renderer, indexer.
+// Order mirrors the features array in locales: validator, IDS, 3D map, BCF,
+// multi-model, drag&drop, OPFS cache, editing, QTO, measurements, floor plans,
+// export, schemas, renderer, indexer.
 const FEATURE_ICONS = [
-  Icons.Sparkles, Icons.Layers,   Icons.Upload,   Icons.Zap,
-  Icons.Ruler,    Icons.Building, Icons.Ruler,    Icons.Building,
-  Icons.Upload,   Icons.Zap,      Icons.Sparkles, Icons.Layers,
+  Icons.Sparkles, Icons.Shield,   Icons.Globe,    Icons.Comment,
+  Icons.Layers,   Icons.Upload,   Icons.Zap,      Icons.Ruler,
+  Icons.Building, Icons.Ruler,    Icons.Building, Icons.Upload,
+  Icons.Zap,      Icons.Sparkles, Icons.Layers,
 ] as const
 
 // ── Privacy section icon map ───────────────────────────────────────────────────
@@ -430,6 +432,9 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             <a href="#fix-guides"
               className="hidden lg:inline text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >{t('nav.fixGuides')}</a>
+            <a href="#integrations"
+              className="hidden lg:inline text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
+            >{t('nav.sdk')}</a>
             <a href="#faq"
               className="text-[12px] lg:text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >{t('nav.faq')}</a>
@@ -1002,6 +1007,88 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             </div>
           </div>
         </section>
+
+        {/* ── Integrations / SDK ── */}
+        {(() => {
+          const base = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '')
+          const sdkDocsHref = `${base}/sdk/`
+          const embedBuilderHref = `${base}/embed/`
+          const snippet =
+`<div id="viewer" style="height:520px"></div>
+<script type="module">
+  import { IfcViewer } from "${base}/sdk/ifc-viewer.es.js";
+
+  // Mount the viewer in your page
+  const viewer = new IfcViewer("#viewer");
+
+  // Load IFC bytes from your app or CDE — nothing is uploaded
+  await viewer.add("project.ifc", ifcBytes);
+</script>`
+          return (
+        <section
+          id="integrations"
+          className="border-t border-[var(--border)] py-14 sm:py-[90px] px-4 sm:px-7"
+          aria-labelledby="integrations-heading"
+        >
+          <div className="max-w-[1100px] mx-auto grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Left — pitch */}
+            <div>
+              <div className="text-[11px] sm:text-[12px] text-[var(--accent-2)] tracking-[0.1em] font-mono mb-2.5">
+                {t('sdk.label')}
+              </div>
+              <h2
+                id="integrations-heading"
+                className="font-semibold tracking-[-0.03em] mb-3 sm:mb-4"
+                style={{ fontSize: 'clamp(20px, 5vw, 30px)' }}
+              >
+                {t('sdk.title')}
+              </h2>
+              <p className="text-[13.5px] sm:text-[15px] text-[var(--text-dim)] leading-[1.55] mb-5 max-w-[520px]">
+                {t('sdk.body')}
+              </p>
+              <ul className="flex flex-col gap-2 mb-7 list-none p-0">
+                {[t('sdk.b1'), t('sdk.b2'), t('sdk.b3')].map((b, i) => (
+                  <li key={i} className="flex items-center gap-2.5 text-[13.5px] text-[var(--text-dim)]">
+                    <span className="text-[var(--ok)] shrink-0"><Icons.Check size={15} /></span>
+                    {b}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex gap-3 flex-wrap">
+                <a
+                  href={embedBuilderHref}
+                  target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 h-[38px] px-4 sm:px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] bg-[var(--accent)] text-white hover:brightness-110 transition-all no-underline"
+                >
+                  {t('sdk.explore')}
+                  <Icons.ArrowRight size={14} />
+                </a>
+                <a
+                  href={sdkDocsHref}
+                  target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 h-[38px] px-4 sm:px-5 text-[13.5px] sm:text-[14px] font-medium rounded-[9px] border border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors no-underline"
+                >
+                  {t('sdk.docs')}
+                </a>
+              </div>
+            </div>
+
+            {/* Right — code snippet */}
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+              <div className="flex items-center gap-1.5 px-4 h-9 border-b border-[var(--border)]">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
+                <span className="ml-2 text-[11px] font-mono text-[var(--text-faint)]">index.html</span>
+              </div>
+              <pre className="m-0 p-4 overflow-x-auto text-[12px] sm:text-[12.5px] leading-[1.6] font-mono text-[var(--text-dim)]">
+{snippet}
+              </pre>
+            </div>
+          </div>
+        </section>
+          )
+        })()}
 
         {/* ── Open source callout ── */}
         <section

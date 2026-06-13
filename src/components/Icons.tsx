@@ -27,6 +27,7 @@ export const EyeOff = (p: IconProps) => <Icon {...p}><path d="M3 3l18 18" /><pat
 export const Share = (p: IconProps) => <Icon {...p}><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7" /><path d="M16 6l-4-4-4 4" /><path d="M12 2v14" /></Icon>
 export const Link = (p: IconProps) => <Icon {...p}><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1" /><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1" /></Icon>
 export const Copy = (p: IconProps) => <Icon {...p}><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15V5a2 2 0 012-2h10" /></Icon>
+export const Code = (p: IconProps) => <Icon {...p}><path d="M8 6l-6 6 6 6M16 6l6 6-6 6" /></Icon>
 export const Check = (p: IconProps) => <Icon {...p} d="M5 13l4 4L19 7" />
 export const X = (p: IconProps) => <Icon {...p} d="M6 6l12 12M6 18L18 6" />
 export const Search = (p: IconProps) => <Icon {...p}><circle cx="11" cy="11" r="7" /><path d="M21 21l-5-5" /></Icon>
@@ -46,3 +47,5 @@ export const FileIfc = (p: IconProps) => <Icon {...p}><path d="M14 2H6a2 2 0 00-
 export const Zap = (p: IconProps) => <Icon {...p} d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
 export const Lock = (p: IconProps) => <Icon {...p}><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></Icon>
 export const Shield = (p: IconProps) => <Icon {...p} d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+export const Globe = (p: IconProps) => <Icon {...p}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18" /></Icon>
+export const Comment = (p: IconProps) => <Icon {...p}><path d="M21 11.5a8.38 8.38 0 01-9 8.5 8.5 8.5 0 01-3.8-.9L3 21l1.9-5.2A8.5 8.5 0 0112 3a8.38 8.38 0 019 8.5z" /></Icon>

@@ -40,6 +40,15 @@ export type ContentBlock =
       /** 'inline' (default) or 'hero' (taller, 580 px). */
       variant?: 'inline' | 'hero'
     }
+  | {
+      type: 'embed-configurator'
+      title?: string
+      description?: string
+      /** Pre-filled IFC URL for the preview + snippet. Defaults to a public sample. */
+      defaultModelUrl?: string
+      defaultFileName?: string
+      defaultHeight?: number
+    }
   | { type: 'stat-row'; stats: Array<{ value: number; suffix?: string; prefix?: string; label: string }> }
   | { type: 'feature-grid'; items: Array<{ icon: string; title: string; body: string }> }
   | { type: 'comparison'; left: { label: string; color: string; items: string[] }; right: { label: string; color: string; items: string[] } }
@@ -985,6 +994,7 @@ python validate_and_score.py model.ifc`,
         'For IFC4 / IFC4.3 deliveries, confirm IfcSite, IfcProjectedCRS, and IfcMapConversion are written and consistent.',
         'Open the result and check the model sits where expected before delivery.',
       ]},
+      { type: 'callout', variant: 'info', text: "Want to confirm the georeferencing visually? The viewer's 3D map mode reads IfcMapConversion / IfcSite automatically and drops your model onto a real-world basemap — street, satellite, or 3D terrain — so you can see at a glance whether it lands on the right plot. It runs entirely in the browser: no API key, nothing uploaded." },
       {
         type: 'ifc-demo',
         modelId: 'duplex-architecture',
@@ -1081,6 +1091,7 @@ python validate_and_score.py model.ifc`,
             "The file is confidential and can't be uploaded",
             'You need to validate, not just look',
             'You want a Health Score / quality report',
+            'You need to check the model against an IDS / BEP requirement',
             'The model is large and you want convert-once caching',
             "You don't want to create an account",
           ],
@@ -1098,7 +1109,7 @@ python validate_and_score.py model.ifc`,
         },
       },
       { type: 'h2', text: "Where This Viewer Fits" },
-      { type: 'p', text: "This one is deliberately in the private/local camp: it parses IFC in your browser via WebAssembly (zero bytes uploaded, no account), handles files up to ~500 MB with convert-once caching, and — the part most free viewers skip — runs 38 validation rules and returns a Health Score. So it's not just 'can I see it', it's 'is it any good'." },
+      { type: 'p', text: "This one is deliberately in the private/local camp: it parses IFC in your browser via WebAssembly (zero bytes uploaded, no account), handles files up to ~500 MB with convert-once caching, and — the part most free viewers skip — runs 38 validation rules and returns a Health Score. It goes further than most: drop a buildingSMART .ids file to check the model against contractual delivery requirements (all six IDS 1.0 facets, validated against the official test cases), coordinate issues with full BCF 2.1 / 3.0 import and export, and place a georeferenced model on a real-world 3D map (street, satellite or terrain) — all client-side, no API key, nothing uploaded. So it's not just 'can I see it', it's 'is it any good, does it meet the spec, and where does it sit'." },
       {
         type: 'ifc-demo',
         modelId: 'duplex-architecture',
@@ -1337,6 +1348,13 @@ fragments.load(cached);            // fast`,
         description: "A production-size IFC4 model loaded with exactly this convert-once, cached pipeline. Open it, then reload — the second load is near-instant.",
         schema: 'IFC4',
         size: '14 MB',
+      },
+      { type: 'h2', text: 'Embed It in Your Own Page' },
+      { type: 'p', text: "If you host your IFC somewhere public (a CORS-enabled bucket, a raw repo link, or your CDE), you can drop this exact viewer into a blog post, docs page, or CDE panel with a single iframe — no build step. Paste a URL below, tweak the layout, and copy the snippet. The model is fetched in the visitor's browser, so nothing is uploaded to us." },
+      {
+        type: 'embed-configurator',
+        title: 'Build your IFC embed',
+        description: 'Paste a public IFC URL, choose a layout, and copy the iframe. Live preview updates as you go.',
       },
     ],
   },

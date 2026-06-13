@@ -37,7 +37,8 @@
     "features": "Funcionalidades",
     "howItWorks": "Como funciona",
     "faq": "FAQ",
-    "github": "GitHub"
+    "github": "GitHub",
+    "sdk": "SDK"
   },
   "compatible": {
     "label": "Compatível com todas as principais ferramentas de autoria BIM"
@@ -66,6 +67,21 @@
       "title": "Validador IFC com 38 regras",
       "body": "Encontre GUIDs duplicados, violações de hierarquia espacial e elementos órfãos antes do seu cliente. Resultados chegam em tempo real de um worker em segundo plano.",
       "tip": "Motor de regras IFC / ISO 19650"
+    },
+    {
+      "title": "Verificação IDS da buildingSMART",
+      "body": "Solte um arquivo .ids da buildingSMART e verifique o seu modelo face aos requisitos contratuais de entrega. As seis facetas do IDS 1.0 — entidade, atributo, propriedade, classificação, material e partOf — são avaliadas no cliente e validadas contra os casos de teste oficiais da buildingSMART. Sem .ids? Amostras integradas permitem testar na hora.",
+      "tip": "IDS 1.0 completo · validado com os casos de teste oficiais"
+    },
+    {
+      "title": "Modo de mapa 3D georreferenciado",
+      "body": "Coloque o seu IFC sobre um mapa real com mapas base de ruas, satélite e terreno 3D. Lê a georreferência IfcMapConversion / IfcSite automaticamente, ou posicione o modelo à mão — tudo na mesma cena 3D, sem chave de API e sem que os dados saiam do navegador.",
+      "tip": "Mapas base reais · terreno 3D · IfcMapConversion"
+    },
+    {
+      "title": "Coordenação de problemas BCF",
+      "body": "Crie, edite e acompanhe tópicos BCF com pontos de vista e comentários guardados. Importe e exporte BCF 2.1 / 3.0 para trocar problemas com BIMcollab, Solibri e qualquer ferramenta OpenBIM. As falhas de validação e de IDS exportam diretamente para BCF.",
+      "tip": "Importação e exportação BCF 2.1 / 3.0"
     },
     {
       "title": "Suporte a múltiplos modelos",
@@ -276,5 +292,15 @@
     "copyright": "IFC Viewer Online © 2026",
     "builtWith": "Construído com @thatopen/components · three.js · web-ifc",
     "fixGuide": "Corrigir erros IFC"
+  },
+  "sdk": {
+    "label": "SDK · INTEGRAÇÕES",
+    "title": "Incorpore o visualizador no seu CDE ou ferramentas internas",
+    "body": "Insira o mesmo visualizador do navegador no seu CDE, gémeo digital ou ferramentas internas de projeto. Carregue dados IFC a partir da sua própria aplicação enquanto o processamento do modelo permanece no cliente.",
+    "b1": "Sem backend de upload",
+    "b2": "Executa diretamente no navegador",
+    "b3": "Preparado para IFC, BCF e IDS",
+    "explore": "Explorar integração",
+    "docs": "Documentação do SDK"
   }
 }

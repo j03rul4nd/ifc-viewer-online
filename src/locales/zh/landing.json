@@ -37,7 +37,8 @@
     "features": "功能",
     "howItWorks": "工作原理",
     "faq": "常见问题",
-    "github": "GitHub"
+    "github": "GitHub",
+    "sdk": "SDK"
   },
   "compatible": {
     "label": "兼容所有主流 BIM 创作工具"
@@ -66,6 +67,21 @@
       "title": "38 条规则 IFC 验证器",
       "body": "在客户发现之前捕获 GUID 重复、空间层次结构违规和孤立元素。结果从后台工作进程实时流式传输 — UI 保持完全响应。",
       "tip": "IFC / ISO 19650 规则引擎"
+    },
+    {
+      "title": "buildingSMART IDS 检查",
+      "body": "拖入 buildingSMART .ids 文件，即可根据合同交付要求检查模型。IDS 1.0 的全部六个 facet — 实体、属性、特性、分类、材料和 partOf — 均在客户端评估，并通过官方 buildingSMART 测试用例验证。没有 .ids？内置示例让你立即试用。",
+      "tip": "完整 IDS 1.0 · 通过官方测试用例验证"
+    },
+    {
+      "title": "地理参照 3D 地图模式",
+      "body": "将你的 IFC 放置在真实世界地图上，提供街道、卫星和 3D 地形底图。自动读取 IfcMapConversion / IfcSite 地理参照，或手动定位模型 — 全部在同一 3D 场景中渲染，无需 API 密钥，数据不离开浏览器。",
+      "tip": "真实底图 · 3D 地形 · IfcMapConversion"
+    },
+    {
+      "title": "BCF 问题协调",
+      "body": "创建、编辑和跟踪带有已保存视点和评论的 BCF 主题。导入和导出 BCF 2.1 / 3.0，与 BIMcollab、Solibri 及任何 OpenBIM 工具往返交换问题。验证和 IDS 失败可直接导出为 BCF。",
+      "tip": "BCF 2.1 / 3.0 导入与导出"
     },
     {
       "title": "多模型支持",
@@ -276,5 +292,15 @@
     "openSource": "开源",
     "copyright": "IFC 在线查看器 © 2026",
     "builtWith": "使用 @thatopen/components · three.js · web-ifc 构建"
+  },
+  "sdk": {
+    "label": "SDK · 集成",
+    "title": "将查看器嵌入您的 CDE 或内部工具",
+    "body": "将同样的浏览器查看器嵌入您的 CDE、数字孪生或内部项目工具。直接从您自己的应用加载 IFC 数据，模型处理始终在客户端进行。",
+    "b1": "无需上传后端",
+    "b2": "直接在浏览器中运行",
+    "b3": "支持 IFC、BCF 和 IDS",
+    "explore": "探索集成",
+    "docs": "SDK 文档"
   }
 }
