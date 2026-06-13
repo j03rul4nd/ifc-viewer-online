@@ -29,15 +29,13 @@ dist-tmp/
 .DS_Store
 Thumbs.db
 
-# ── Estrategia / outreach privado — NUNCA publicar (repo público) ──
-# Assets de distribución que nombran personas reales o revelan el GTM.
-# Se mantienen solo en local; un 'git add .' no debe volver a incluirlos.
-content/launch/linkedin-outreach-kit.md
-content/launch/16-reddit-rbim-launch.md
-content/launch/17-linkedin-warmup-post.md
-content/launch/posthog-funnel-setup.md
-# Docs de estrategia retirados del repo (siguen en local):
-content/README.md
+# ── Contenido y estrategia — NUNCA publicar (repo público) ──
+# Todos los artículos (Medium/SEO/dev/launch), sus assets visuales (GIF/SVG/HTML)
+# y la estrategia de crecimiento/GTM. Se mantienen SOLO en local.
+# Lo ya trackeado se des-trackea con `git rm --cached`; esto evita re-añadirlo.
+/MEDIUM_GROWTH_STRATEGY.md
+/content/
+# Docs de estrategia (el resto de docs/ técnicos siguen versionados):
 docs/DESIGN_PARTNER_INTERVIEWS.md
 docs/BLOG_CONTENT_BACKLOG.md
 
