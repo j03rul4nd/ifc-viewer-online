@@ -244,6 +244,15 @@
           }
         })
     }
+    // Stale-chunk resilience: after a new deploy, an already-open client may
+    // request a lazy chunk hash that no longer exists (→ 404). Reload once to
+    // pick up the fresh index.html + chunk graph instead of crashing.
+    window.addEventListener('vite:preloadError', () => {
+      if (!sessionStorage.getItem('chunkReloaded')) {
+        sessionStorage.setItem('chunkReloaded', '1')
+        location.reload()
+      }
+    })
   </script>
   <body>
     <div id="root"></div>

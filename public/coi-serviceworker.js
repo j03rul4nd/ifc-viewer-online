@@ -11,7 +11,12 @@ function addCoiHeaders(r) {
   if (!r || r.status === 0 || !r.headers) return r
   const h = new Headers(r.headers)
   h.set("Cross-Origin-Opener-Policy",   "same-origin")
-  h.set("Cross-Origin-Embedder-Policy", "require-corp")
+  // credentialless (not require-corp): keeps the page cross-origin isolated so
+  // SharedArrayBuffer / multithreaded web-ifc still work, but lets cross-origin
+  // subresources WITHOUT a CORP header load (fetched without credentials) —
+  // e.g. Google Fonts, PostHog, remote demo models. require-corp blocked those
+  // (ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep).
+  h.set("Cross-Origin-Embedder-Policy", "credentialless")
   return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h })
 }
 
