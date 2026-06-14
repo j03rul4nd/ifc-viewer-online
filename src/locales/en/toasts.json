@@ -4,7 +4,8 @@
     "loadedFromCache": "\"{{fileName}}\" loaded — {{count}} elements (from cache ⚡)",
     "loadFailed": "Failed to load: {{message}}",
     "demoUnavailable": "Demo file could not be loaded. Please open your own IFC file.",
-    "removeFailed": "Could not remove model: {{message}}"
+    "removeFailed": "Could not remove model: {{message}}",
+    "urlLoadFailed": "Could not load the linked model: {{message}}"
   },
   "validation": {
     "complete": "Validation complete — {{count}} issues found",

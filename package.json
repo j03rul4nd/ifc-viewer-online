@@ -5,7 +5,9 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "tsc -b && node --max-old-space-size=4096 node_modules/vite/bin/vite.js build",
+        "build": "npm run build:sdk && npm run build:embed && tsc -b && node --max-old-space-size=4096 node_modules/vite/bin/vite.js build",
+        "build:sdk": "vite build --config vite.config.sdk.ts && node scripts/sdk/build-sdk-docs.mjs",
+        "build:embed": "node scripts/embed/build-embed-pages.mjs",
         "lint": "eslint .",
         "preview": "vite preview",
         "test": "vitest run",
@@ -27,6 +29,7 @@
         "@thatopen/components-front": "^3.4.2",
         "@thatopen/fragments": "^3.4.3",
         "@types/three": "^0.184.0",
+        "3d-tiles-renderer": "^0.4.28",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "framer-motion": "^11.15.0",
@@ -37,6 +40,7 @@
         "lucide-react": "^0.469.0",
         "ogl": "^1.0.11",
         "posthog-js": "^1.376.0",
+        "proj4": "^2.20.9",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
         "react-i18next": "^17.0.8",
@@ -49,6 +53,7 @@
         "zustand": "^5.0.12"
     },
     "devDependencies": {
+        "@types/proj4": "^2.5.6",
         "@types/react": "^18.3.18",
         "@types/react-dom": "^18.3.5",
         "@vitejs/plugin-react": "^4.3.4",

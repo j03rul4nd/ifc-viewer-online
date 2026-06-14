@@ -166,6 +166,17 @@
       "critical": "Critical"
     }
   },
+  "waivers": {
+    "mute": "Mute this issue",
+    "mutedCount": "{{count}} issue muted",
+    "mutedCount_other": "{{count}} issues muted",
+    "restoreAll": "Restore all",
+    "scoreNote": "{{count}} muted (excluded)"
+  },
+  "runDiff": {
+    "summary": "Since last run: {{resolved}} resolved · {{added}} new",
+    "scoreDelta": "{{delta}} pts"
+  },
   "empty": {
     "noModel": "No model loaded",
     "noModelDesc": "Load an IFC file to start validation",
@@ -194,6 +205,7 @@
     "export": "Export BCF",
     "exportSingle": "Export topic",
     "exportTopics": "Export topics",
+    "exportVersion": "BCF version used for export",
     "clear": "Clear all",
     "importing": "Importing…",
     "newTopic": "New topic",
@@ -294,6 +306,12 @@
     "descriptionPlaceholder": "Brief profile description…",
     "toggleAll": "All",
     "removeAll": "Remove all",
+    "thresholds": {
+      "title": "Advanced thresholds",
+      "proxyOverusePct": "Proxy overuse trigger",
+      "coordinateOffsetKm": "Coordinate offset trigger",
+      "fileSizePerElementKB": "File size per element"
+    },
     "errorNameEmpty": "Name cannot be empty.",
     "errorMaxProfiles": "Maximum 5 custom profiles.",
     "atLimit": "Limit of 5 profiles reached.",

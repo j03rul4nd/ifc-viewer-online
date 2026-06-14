@@ -1,14 +1,17 @@
 import { create } from 'zustand'
 import { devtools, persist, createJSONStorage } from 'zustand/middleware'
-import type { BcfTopic, BcfComment } from '../types'
+import type { BcfTopic, BcfComment, BcfExportVersion } from '../types'
 
 interface BcfStore {
   topics:          BcfTopic[]
   isParsing:       boolean
   parseError:      string | null
   importedVersion: string | null
+  /** Schema version used when EXPORTING a .bcfzip. */
+  exportVersion:   BcfExportVersion
 
   setTopics:          (topics: BcfTopic[]) => void
+  setExportVersion:   (v: BcfExportVersion) => void
   addTopics:          (topics: BcfTopic[]) => void
   addTopic:           (topic: BcfTopic) => void
   updateTopic:        (guid: string, patch: Partial<BcfTopic>) => void
@@ -28,9 +31,13 @@ export const useBcfStore = create<BcfStore>()(
         isParsing:       false,
         parseError:      null,
         importedVersion: null,
+        exportVersion:   '2.1',
 
         setTopics: (topics) =>
           set({ topics, parseError: null }, false, 'setTopics'),
+
+        setExportVersion: (v) =>
+          set({ exportVersion: v }, false, `setExportVersion:${v}`),
 
         addTopics: (topics) =>
           set((s) => ({ topics: [...s.topics, ...topics] }), false, 'addTopics'),
@@ -94,6 +101,7 @@ export const useBcfStore = create<BcfStore>()(
         // Camera data is preserved so "Navigate" still works after page reload.
         partialize: (state) => ({
           importedVersion: state.importedVersion,
+          exportVersion:   state.exportVersion,
           topics: state.topics.map((t) => ({
             ...t,
             viewpoints: t.viewpoints.map(({ snapshotBase64: _, ...vp }) => vp),

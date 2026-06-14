@@ -10,6 +10,8 @@ import type enErrors from '../locales/en/errors.json';
 import type enToasts from '../locales/en/toasts.json';
 import type enTree from '../locales/en/tree.json';
 import type enBlog from '../locales/en/blog.json';
+import type enGeo from '../locales/en/geo.json';
+import type enIds from '../locales/en/ids.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -27,6 +29,8 @@ declare module 'i18next' {
       toasts: typeof enToasts;
       tree: typeof enTree;
       blog: typeof enBlog;
+      geo: typeof enGeo;
+      ids: typeof enIds;
     };
   }
 }

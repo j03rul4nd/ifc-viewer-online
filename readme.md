@@ -48,6 +48,7 @@ English · [简体中文](README.zh-CN.md) · [Español](README.es.md) · [Fran�
 - [Why this exists](#why-this-exists)
 - [What it does](#what-it-does)
 - [See it in action](#see-it-in-action)
+- [Embed it / SDK](#embed-it--sdk)
 - [The Health Score](#the-health-score)
 - [How it works (architecture)](#how-it-works-architecture)
 - [What a validation issue looks like](#what-a-validation-issue-looks-like)
@@ -115,6 +116,44 @@ Run a validation profile, then toggle the **Overlay** to paint flagged elements 
 Re-export the model as **IFC** or **GLB**, or push the validation issues out as a **BCF 2.1** package and a shareable report — all generated in a Web Worker, nothing uploaded.
 
 ![Export to IFC, GLB and BCF](assets/feature-export.gif)
+
+---
+
+## Embed it / SDK
+
+Drop the viewer into a blog, a CDE panel, a digital twin, or any internal tool — the model is parsed in the visitor's browser, **nothing is uploaded**.
+
+**1. Iframe / URL params** — deep-link a public model and tune the chrome:
+
+```html
+<iframe src="https://<host>/?model=https://your-cde.com/model.ifc&embed=1"
+        width="100%" height="600" style="border:0" allow="fullscreen"></iframe>
+```
+
+Params: `model` (comma-separated for federated), `embed`, `ui` (`minimal`·`full`·`kiosk`), `validate`, `select`, `isolate`, `lang`, plus granular `tree`/`sidebar`/`panel`/`home` toggles. Full reference: [`docs/EMBED_URL_PARAMS.md`](docs/EMBED_URL_PARAMS.md).
+
+**2. JS SDK** — mount the viewer and stream IFC bytes from your own app (no public URL, no CORS):
+
+```html
+<div id="viewer" style="height:520px"></div>
+<script type="module">
+  import { IfcViewer } from "https://<host>/sdk/ifc-viewer.es.js";
+  const viewer = new IfcViewer("#viewer");
+  const bytes = await fetch("/models/project.ifc").then(r => r.arrayBuffer());
+  await viewer.add("project.ifc", bytes);   // parsed client-side
+  viewer.on("element-selected", (e) => console.log(e.ifcType, e.expressId));
+</script>
+```
+
+The SDK is a ~6 KB dependency-free ES module (iframe + `postMessage` bridge). Build it with `npm run build:sdk`; live demo + docs at `/<base>/sdk/`. Full reference: [`docs/IFC_VIEWER_SDK.md`](docs/IFC_VIEWER_SDK.md).
+
+The SDK can also pull data for dashboards (`getStats`, `getIssues`, `getValidation`,
+`screenshot`) and run a buildingSMART **IDS** check client-side (`checkIds(idsXml)` →
+pass/fail per specification) — covering all six IDS 1.0 facets (entity, attribute,
+property, classification, material, partOf), validated against the official
+buildingSMART test cases. A CDE can drive the viewer two-way over `postMessage`
+(`ifcviewer:load` / `select` / `isolate` / `fit`) and listen for `ready`, `model-loaded`,
+`validation-completed`, `element-selected`.
 
 ---
 

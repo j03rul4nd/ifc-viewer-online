@@ -11,7 +11,7 @@
 import path from 'path'
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
 
-const SITE    = 'https://j03rul4nd.github.io/ifc-viewer-online'
+const SITE    = (process.env.VITE_SITE_URL || 'https://j03rul4nd.github.io/ifc-viewer-online').replace(/\/$/, '')
 const OG_IMG  = `${SITE}/og-image.png`
 const CONTACT = 'joelbenitezdonari@gmail.com'
 

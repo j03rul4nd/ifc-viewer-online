@@ -1,0 +1,163 @@
+# Embedding & URL parameters
+
+The viewer can load a model from a URL and render inside an `<iframe>` so it can be
+dropped into a blog post, an article, or a **CDE panel / third-party screen**.
+Everything is client-side — the visitor's browser fetches the IFC directly, so
+**nothing touches our servers** (the same privacy story as the main app).
+
+The in-app **Embed** button (toolbar, when a model is loaded) opens a generator that
+builds the link and the `<iframe>` snippet for you, and there's a full no-code
+**embed builder** served at **`/<base>/embed/`** (localized in 10 languages, with a
+live preview). This doc is the reference for the underlying parameters.
+
+## Quick start
+
+```html
+<iframe
+  src="https://<app>/?model=https://your-cde.com/model.ifc&embed=1"
+  width="100%"
+  height="600"
+  style="border:0;border-radius:12px;max-width:100%"
+  loading="lazy"
+  allow="fullscreen"
+  title="IFC model viewer">
+</iframe>
+```
+
+> Use the **full app URL including its base path** (e.g. `https://host/ifc-viewer-online/`).
+> The Embed generator does this automatically.
+
+## Parameters
+
+| Param      | Values                          | Default   | Description |
+|------------|----------------------------------|-----------|-------------|
+| `model`    | URL(s)                           | —         | Public IFC URL to load. Comma-separated or repeated for multiple (federated) models. Aliases: `src`, `url`. |
+| `name`     | string(s)                        | from URL  | Display file name(s), parallel to `model`. Aliases: `file`. |
+| `embed`    | `1`/`0`                          | `0`       | Embed mode — slims the chrome for iframe hosting. |
+| `ui`       | `minimal` \| `full` \| `kiosk`   | `minimal` | Chrome preset (implies `embed=1`). |
+| `validate` | `1`/`0`                          | `1`       | Run validation automatically after load (drives the Health Score). |
+| `select`   | expressId (number)               | —         | Select + frame an element once loaded. |
+| `isolate`  | IFC class, e.g. `IfcWall`        | —         | Isolate a category after load (best-effort, by canonical IFC class). |
+| `lang`     | locale code (`en`, `es`, …)      | auto      | Force the UI language (only if supported). |
+| `accent`   | hex `rrggbb` / `#rrggbb`         | brand     | Tint the viewer's accent to match your dashboard. |
+
+### Granular chrome overrides (embed mode)
+
+Each overrides its preset default. Accept `1`/`0` (also `true`/`false`, `yes`/`no`).
+
+| Param      | Controls |
+|------------|----------|
+| `toolbar`  | Top toolbar |
+| `tree`     | Spatial tree panel |
+| `sidebar`  | Category / properties sidebar |
+| `panel`    | Auto-open the validation panel |
+| `home`     | "Back to home" button |
+| `controls` | Camera preset overlay |
+
+### Presets
+
+| Preset    | Toolbar | Tree | Sidebar | Panel auto-open | Camera | Home |
+|-----------|:------:|:----:|:-------:|:---------------:|:------:|:----:|
+| `minimal` | ✓ | — | ✓ | — | ✓ | — |
+| `full`    | ✓ | ✓ | ✓ | ✓ | ✓ | — |
+| `kiosk`   | — | — | — | — | — | — |
+
+The collapsed validation bar (with the **Health Score** badge) shows in `minimal`/`full`
+even when the panel isn't auto-opened, so the citable number is always visible.
+
+## Examples
+
+```
+# Minimal embed (default preset)
+?model=https://host/a.ifc&embed=1
+
+# Kiosk card (canvas only), no validation
+?model=https://host/a.ifc&embed=1&ui=kiosk&validate=0
+
+# Full embed, force Spanish, deep-link to an element
+?model=https://host/a.ifc&embed=1&ui=full&lang=es&select=1234
+
+# Federated: two models side-by-side in one scene
+?model=https://host/arch.ifc,https://host/struct.ifc&embed=1
+
+# Minimal but also show the spatial tree
+?model=https://host/a.ifc&embed=1&tree=1
+
+# Themed to a dashboard's brand colour
+?model=https://host/a.ifc&embed=1&accent=22c55e
+```
+
+## Present in dashboards & BI tools
+
+The embed is just a URL or an `<iframe>`, so it drops into most tools:
+
+- **Power BI** — add a *Web content* visual (or the *HTML Content* / *HTML Viewer*
+  visual) and paste the `<iframe>` snippet. Use `accent` to match your report theme.
+- **Notion / Confluence / SharePoint** — paste the URL as an embed block.
+- **Dashboards / internal apps** — an `<iframe>`, or the [SDK](./IFC_VIEWER_SDK.md) /
+  `<ifc-viewer>` web component for two-way control and data (`getStats`, `getIssues`).
+- **Slides / presentations** — many tools accept a web embed; otherwise link the URL.
+
+The fastest way to produce the snippet is the no-code builder at **`/<base>/embed/`**
+(live preview, copy button, 10 languages) or the in-app **Embed** button.
+
+## CDE / host integration (postMessage)
+
+When running inside an iframe, the viewer posts lifecycle events to the parent window
+so a CDE can react. All messages are `{ source: 'ifc-validator', type, ... }`:
+
+| `type`             | Payload |
+|--------------------|---------|
+| `ready`            | — (viewer mounted) |
+| `model-loaded`     | `modelId`, `fileName`, `elementCount`, `fromCache` |
+| `model-error`      | `url`, `message` |
+| `element-selected` | `expressId`, `modelId`, `ifcType`, `name` |
+
+```js
+window.addEventListener('message', (e) => {
+  if (e.data?.source !== 'ifc-validator') return
+  if (e.data.type === 'element-selected') {
+    console.log('User picked element', e.data.expressId)
+  }
+})
+```
+
+### Inbound commands (host → viewer)
+
+The host can also drive the embedded viewer two-way by posting messages **to** the
+iframe (only honored when the app runs inside an iframe). Commands use the
+`ifcviewer:` namespace; unknown/malformed messages are ignored.
+
+| `type`              | Fields | Effect |
+|---------------------|--------|--------|
+| `ifcviewer:load`    | `url` (string or string[]), `name?` | Load model(s) into the scene |
+| `ifcviewer:select`  | `expressId`, `modelId?` | Select + frame an element |
+| `ifcviewer:isolate` | `ifcType` (e.g. `IfcWall`, or omit to clear) | Isolate a category |
+| `ifcviewer:fit`     | — | Frame the active model |
+| `ifcviewer:reset`   | — | Reset the camera |
+
+```js
+const frame = document.querySelector('iframe').contentWindow
+// React to the viewer being ready, then drive it:
+window.addEventListener('message', (e) => {
+  if (e.data?.source === 'ifc-validator' && e.data.type === 'ready') {
+    frame.postMessage({ type: 'ifcviewer:load', url: 'https://cde/model.ifc' }, '*')
+  }
+})
+// Later, from a CDE issue list:
+frame.postMessage({ type: 'ifcviewer:select', expressId: 1234 }, '*')
+```
+
+Alternatively, to swap the model you can simply point the iframe `src` at a new
+`?model=…` URL — the simplest, stateless way to drive the viewer from a host.
+
+## Requirements & gotchas
+
+- **CORS** — the IFC host must send `Access-Control-Allow-Origin` so the visitor's
+  browser can fetch the file. Without it the load fails with a CORS error.
+- **HTTPS** — only `http(s)` model URLs are accepted.
+- **Iframe embedding** — the app must not be served with a restrictive
+  `X-Frame-Options` / CSP `frame-ancestors`. GitHub Pages sets neither by default,
+  so it is embeddable as-is.
+- **Base path** — always include the app's base path in the URL (the Embed generator
+  does this). A root URL without it can drop the query string on the SPA base redirect.

@@ -7,6 +7,10 @@
 import { z } from 'zod'
 import { AppError, WorkerError } from './errors'
 import { createLogger } from './logger'
+import {
+  IDS_PHASES, IDS_REASON_CODES, IDS_ERROR_CODES,
+  type IdsDocument, type IdsResult,
+} from './ids/ids-types'
 
 const log = createLogger('WorkerSchemas')
 
@@ -253,6 +257,186 @@ export const BcfParserOutMsgSchema = z.discriminatedUnion('type', [
   BcfParseDoneMsgSchema,
   BcfParseErrorMsgSchema,
 ])
+
+// ── IDS worker messages (protocol v2: progress + cancellation) ───────────────
+// Both directions are validated: the runner validates worker→main, the worker
+// validates main→worker. Document/result schemas mirror src/lib/ids/ids-types.ts;
+// the z.ZodType annotations make TypeScript flag divergence at compile time.
+
+const IdsRestrictionSchema = z.object({
+  base:         z.string().optional(),
+  enumeration:  z.array(z.string()).optional(),
+  pattern:      z.string().optional(),
+  minInclusive: z.number().optional(),
+  maxInclusive: z.number().optional(),
+  minExclusive: z.number().optional(),
+  maxExclusive: z.number().optional(),
+  minLength:    z.number().optional(),
+  maxLength:    z.number().optional(),
+  length:       z.number().optional(),
+})
+
+const IdsValueSchema = z.union([
+  z.object({ simpleValue: z.string() }),
+  z.object({ restriction: IdsRestrictionSchema }),
+])
+
+const EntityFacetSchema = z.object({
+  kind:           z.literal('entity'),
+  name:           IdsValueSchema,
+  predefinedType: IdsValueSchema.optional(),
+})
+
+const IdsFacetSchema = z.discriminatedUnion('kind', [
+  EntityFacetSchema,
+  z.object({ kind: z.literal('attribute'), name: IdsValueSchema, value: IdsValueSchema.optional() }),
+  z.object({
+    kind:        z.literal('property'),
+    propertySet: IdsValueSchema,
+    baseName:    IdsValueSchema,
+    value:       IdsValueSchema.optional(),
+    dataType:    z.string().optional(),
+  }),
+  z.object({ kind: z.literal('classification'), system: IdsValueSchema.optional(), value: IdsValueSchema.optional() }),
+  z.object({ kind: z.literal('material'), value: IdsValueSchema.optional() }),
+  z.object({ kind: z.literal('partOf'), entity: EntityFacetSchema.optional(), relation: z.string().optional() }),
+])
+
+export const IdsDocumentSchema: z.ZodType<IdsDocument> = z.object({
+  title: z.string().optional(),
+  warnings: z.array(z.string()).optional(),
+  specifications: z.array(z.object({
+    name:          z.string(),
+    description:   z.string().optional(),
+    ifcVersions:   z.array(z.string()).optional(),
+    identifier:    z.string().optional(),
+    instructions:  z.string().optional(),
+    // MUST be declared or Zod strips it on the worker's inbound parse and
+    // every prohibited/optional spec silently degrades to 'required'.
+    cardinality:   z.enum(['required', 'optional', 'prohibited']).optional(),
+    applicability: z.array(IdsFacetSchema),
+    requirements:  z.array(z.object({
+      facet:       IdsFacetSchema,
+      cardinality: z.enum(['required', 'optional', 'prohibited']),
+    })),
+  })).min(1),
+})
+
+const IdsReasonSchema = z.object({
+  code:   z.enum(IDS_REASON_CODES),
+  params: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
+})
+
+const IdsSpecResultSchema = z.object({
+  name:            z.string(),
+  description:     z.string().optional(),
+  status:          z.enum(['pass', 'fail', 'na']),
+  // MUST be declared or the worker's result parse strips the skip honesty flag.
+  skippedReason:   z.literal('ifcVersion').optional(),
+  applicableCount: z.number().int().nonnegative(),
+  passedCount:     z.number().int().nonnegative(),
+  failedCount:     z.number().int().nonnegative(),
+  failures:        z.array(z.object({
+    expressId: z.number().int(),
+    ifcClass:  z.string(),
+    name:      z.string(),
+    reasons:   z.array(IdsReasonSchema),
+  })),
+  unsupported:     z.array(z.string()),
+})
+
+export const IdsResultSchema: z.ZodType<IdsResult> = z.object({
+  title:       z.string().optional(),
+  modelSchema: z.string().optional(),
+  totalSpecs:  z.number().int().nonnegative(),
+  passedSpecs: z.number().int().nonnegative(),
+  failedSpecs: z.number().int().nonnegative(),
+  naSpecs:     z.number().int().nonnegative(),
+  score:       z.number().min(0).max(100),
+  specs:       z.array(IdsSpecResultSchema),
+})
+
+// main → worker
+export const IdsCheckMsgSchema = z.object({
+  type:    z.literal('check-ids'),
+  id:      z.string(),
+  buffer:  z.instanceof(ArrayBuffer),
+  doc:     IdsDocumentSchema,
+  options: z.object({ modelSchemaHint: z.string().optional() }).optional(),
+})
+
+export const IdsCancelMsgSchema = z.object({
+  type: z.literal('cancel'),
+  id:   z.string(),
+})
+
+export const IdsInMsgSchema = z.discriminatedUnion('type', [IdsCheckMsgSchema, IdsCancelMsgSchema])
+
+// worker → main
+export const IdsProgressMsgSchema = z.object({
+  type:  z.literal('progress'),
+  id:    z.string(),
+  phase: z.enum(IDS_PHASES),
+  pct:   z.number().min(0).max(100),
+})
+
+export const IdsResultMsgSchema = z.object({
+  type:   z.literal('result'),
+  id:     z.string(),
+  result: IdsResultSchema,
+})
+
+export const IdsErrorMsgSchema = z.object({
+  type:    z.literal('error'),
+  id:      z.string(),
+  code:    z.enum(IDS_ERROR_CODES),
+  message: z.string(),
+})
+
+export const IdsOutMsgSchema = z.discriminatedUnion('type', [
+  IdsProgressMsgSchema,
+  IdsResultMsgSchema,
+  IdsErrorMsgSchema,
+])
+
+export type IdsInMsg       = z.infer<typeof IdsInMsgSchema>
+export type IdsCheckMsg    = z.infer<typeof IdsCheckMsgSchema>
+export type IdsOutMsg      = z.infer<typeof IdsOutMsgSchema>
+export type IdsProgressMsg = z.infer<typeof IdsProgressMsgSchema>
+
+export function parseIdsWorkerMsg(raw: unknown): ParseResult<IdsOutMsg> {
+  const result = IdsOutMsgSchema.safeParse(raw)
+  if (!result.success) {
+    const formatted = result.error.format()
+    log.warn('[worker-schemas] Invalid IDS worker message:', formatted)
+    return {
+      ok: false,
+      error: new WorkerError(
+        'WORKER_INVALID_MSG',
+        `IDS worker sent an unrecognised message: ${result.error.issues[0]?.message ?? 'unknown'}`,
+        { raw, zodErrors: formatted },
+      ),
+    }
+  }
+  return { ok: true, data: result.data }
+}
+
+export function parseIdsInMsg(raw: unknown): ParseResult<IdsInMsg> {
+  const result = IdsInMsgSchema.safeParse(raw)
+  if (!result.success) {
+    const formatted = result.error.format()
+    log.warn('[worker-schemas] Invalid IDS inbound message:', formatted)
+    return {
+      ok: false,
+      error: new WorkerError(
+        'WORKER_INVALID_MSG',
+        `IDS worker received an unrecognised message: ${result.error.issues[0]?.message ?? 'unknown'}`,
+        { raw, zodErrors: formatted },
+      ),
+    }
+  }
+  return { ok: true, data: result.data }
+}
 
 export type BcfParserOutMsg  = z.infer<typeof BcfParserOutMsgSchema>
 export type BcfParseDoneMsg  = z.infer<typeof BcfParseDoneMsgSchema>

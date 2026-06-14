@@ -83,6 +83,8 @@ interface ValidationStore {
   cachedResults:    Record<string, ValidationResult>
   /** Per-model validation results, keyed by modelId. */
   cachedResultsByModel: Record<string, ValidationResult>
+  /** The PREVIOUS per-model result (snapshot taken before the latest run), for run-to-run comparison. */
+  previousResultByModel: Record<string, ValidationResult>
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -162,6 +164,7 @@ export const useValidationStore = create<ValidationStore>()(
       validationMode:          false,
       cachedResults:           {},
       cachedResultsByModel:    {},
+      previousResultByModel:   {},
       activeProfileId:         loadPersistedProfileId(),
       customProfiles:          loadCustomProfiles(),
       showCoverageSummary:     false,
@@ -243,6 +246,7 @@ export const useValidationStore = create<ValidationStore>()(
           (s) => {
             const { [modelId]: _removed,  ...remainingTrees }   = s.spatialTrees
             const { [modelId]: _removedR, ...remainingResults } = s.cachedResultsByModel
+            const { [modelId]: _removedP, ...remainingPrev }    = s.previousResultByModel
             const { [modelId]: _removedD, ...remainingDecomp }  = s.decompMaps
             const isActive = s.activeValidationModelId === modelId
             const nextActiveId = isActive
@@ -251,6 +255,7 @@ export const useValidationStore = create<ValidationStore>()(
             return {
               spatialTrees:            remainingTrees,
               cachedResultsByModel:    remainingResults,
+              previousResultByModel:   remainingPrev,
               decompMaps:              remainingDecomp,
               activeValidationModelId: nextActiveId,
               spatialTree:             nextActiveId ? (remainingTrees[nextActiveId] ?? []) : [],
@@ -359,7 +364,17 @@ export const useValidationStore = create<ValidationStore>()(
 
       cacheResultForModel: (modelId, result) =>
         set(
-          (s) => ({ cachedResultsByModel: { ...s.cachedResultsByModel, [modelId]: result } }),
+          (s) => {
+            // Snapshot the model's prior result before overwriting, so the panel
+            // can diff this run against the previous one ("since your last run").
+            const prior = s.cachedResultsByModel[modelId]
+            return {
+              cachedResultsByModel:  { ...s.cachedResultsByModel, [modelId]: result },
+              previousResultByModel: prior
+                ? { ...s.previousResultByModel, [modelId]: prior }
+                : s.previousResultByModel,
+            }
+          },
           false,
           `cacheResultForModel:${modelId}`,
         ),
@@ -378,6 +393,7 @@ export const useValidationStore = create<ValidationStore>()(
             activeValidationModelId: null,
             spatialTree:             [],
             cachedResultsByModel:    {},
+            previousResultByModel:   {},
             showCoverageSummary:     false,
           },
           false,

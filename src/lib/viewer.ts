@@ -204,6 +204,18 @@ export interface ViewerAPI {
   /** Frame camera on a set of elements. Targets the active model unless modelId is given. */
   frameElements(ids: number[], modelId?: string): void
   setValidationHighlights(issues: ValidationIssue[], enabled: boolean): void
+  /**
+   * Highlight IDS check failures in red. Shares the overlay channel with
+   * validation highlights (the two modes are mutually exclusive — enabling one
+   * must disable the other at the store level; see IDS_IMPLEMENTATION_PLAN §3.6).
+   */
+  setIdsHighlights(failures: Array<{ expressId: number; modelId?: string | null }>, enabled: boolean): void
+  /**
+   * Show only the given elements across all visible models (transient view
+   * filter; any applyFilters/restore call supersedes it). enabled=false
+   * re-shows everything.
+   */
+  isolateElements(targets: Array<{ expressId: number; modelId?: string | null }>, enabled: boolean): void
   setSelectCallback(cb: (info: SelectedInfo | null) => void): void
   /**
    * Register a callback fired on right-click over a model element. The payload
@@ -277,6 +289,11 @@ export interface ViewerAPI {
   ): void
   /** Capture a PNG snapshot of the current renderer canvas. Returns a data URL. */
   takeSnapshot(): string
+  /**
+   * Lazily load and return the GIS map subsystem (separate chunk, created once
+   * per viewer, disposed with it). Nothing GIS-related loads until first call.
+   */
+  getGeo(): Promise<import('./geo/geo-system').GeoSystemAPI>
   /**
    * Switch between standard WebGL rendering and quality mode (SSAO + edge detection).
    * Falls back silently to standard if postproduction failed to initialise on this GPU.
@@ -386,6 +403,17 @@ const VALIDATION_INFO_MAT: FRAGS.MaterialDefinition = {
   color: new THREE.Color(0x5E9ED6),
   renderedFaces: FRAGS.RenderedFaces.TWO,
   opacity: 0.5,
+  transparent: true,
+  preserveOriginalMaterial: true,
+}
+
+// IDS failure overlay — danger hue at higher opacity than the validation tri-color.
+// IDS and validation highlights are mutually exclusive (shared overlay channel),
+// so the two never appear together.
+const IDS_FAIL_MAT: FRAGS.MaterialDefinition = {
+  color: new THREE.Color(0xE5484D),
+  renderedFaces: FRAGS.RenderedFaces.TWO,
+  opacity: 0.85,
   transparent: true,
   preserveOriginalMaterial: true,
 }
@@ -636,7 +664,13 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   world.scene.three.add(fill)
 
   const grids = components.get(OBC.Grids)
-  grids.create(world)
+  const grid  = grids.create(world)
+
+  // GIS map mode (lazy chunk) — set by getGeo(); guards below stay inert otherwise.
+  let sceneTuneLocked      = false
+  let geoPointerSuppressed = false
+  let geoSystemInstance: import('./geo/geo-system').GeoSystemAPI | null = null
+  let geoLoadPromise: Promise<import('./geo/geo-system').GeoSystemAPI> | null = null
 
   void world.camera.controls.setLookAt(30, 24, 36, 0, 2, 0, false)
 
@@ -646,6 +680,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // clipping) and fogs out whole buildings when zoomed out. Re-tune both to the
   // actual scene scale so geometry of every size renders crisply.
   function tuneSceneToBounds(box: THREE.Box3): void {
+    // Map mode owns near/far/fog while active (INV-3) — a model load mid-map
+    // must not clobber the 60 km horizon. Re-tuning resumes after exit.
+    if (sceneTuneLocked) return
     if (box.isEmpty()) return
     const size = box.getSize(new THREE.Vector3()).length()
     if (!Number.isFinite(size) || size <= 0) return
@@ -765,9 +802,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let selectedLocalId: number | null = null
   let selectedModelId: string | null = null
 
-  // Per-model validation highlights: modelId → (expressId → material applied).
-  // Storing the material (not just the id) lets us re-apply the validation
-  // overlay after a hover/selection reset clears it.
+  // Per-model overlay highlights: modelId → (expressId → material applied).
+  // SHARED by the validation overlay and the IDS-failure overlay — the two modes
+  // are mutually exclusive (store-level rule), so at any moment the map holds
+  // one channel only. Storing the material (not just the id) lets us re-apply
+  // the overlay after a hover/selection reset clears it.
   const validationHighlightedByModel = new Map<string, Map<number, FRAGS.MaterialDefinition>>()
 
   /** The validation material applied to an element, or null if none. */
@@ -939,6 +978,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     // Measurement tools handle their own pointer feedback — skip hover highlight
     if (activeMeasurementTool !== 'none') return
+    if (geoPointerSuppressed) return // map placement editor owns the pointer
     if (modelObjects.size === 0) return
 
     const now = performance.now()
@@ -991,6 +1031,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   }
 
   const onPointerUp = (e: PointerEvent): void => {
+    if (geoPointerSuppressed) return   // map placement editor owns the pointer
     const dt   = Date.now() - pdTime
     const dist = Math.hypot(e.clientX - pdX, e.clientY - pdY)
     if (dt > 300 || dist > 5) return   // ignore drags / long-press
@@ -1470,6 +1511,86 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           void selModel.highlight([selectedLocalId], SELECT_MAT)
         }
       }
+    },
+
+    setIdsHighlights(failures, enabled) {
+      if (modelObjects.size === 0) return
+
+      // Clear whatever overlay channel is active (validation or IDS — exclusive).
+      for (const [mid, ids] of validationHighlightedByModel) {
+        const model = modelObjects.get(mid)
+        if (model && ids.size > 0) void model.resetHighlight([...ids.keys()])
+      }
+      validationHighlightedByModel.clear()
+
+      if (!enabled) return
+
+      const byModel = new Map<string, Set<number>>()
+      for (const f of failures) {
+        if (f.expressId < 0) continue // synthetic spec-level rows (expressId -1)
+        const mid = f.modelId ?? currentModelId ?? ''
+        if (!mid || !modelObjects.has(mid)) continue
+        const typeMap = typeMapByModel.get(mid) ?? expressIDToType
+        if (!typeMap.has(f.expressId)) continue
+        if (!byModel.has(mid)) byModel.set(mid, new Set())
+        byModel.get(mid)!.add(f.expressId)
+      }
+
+      for (const [mid, ids] of byModel) {
+        const model = modelObjects.get(mid)
+        if (!model || ids.size === 0) continue
+        const tracked = new Map<number, FRAGS.MaterialDefinition>()
+        for (const eid of ids) tracked.set(eid, IDS_FAIL_MAT)
+        validationHighlightedByModel.set(mid, tracked)
+        void model.highlight([...ids], IDS_FAIL_MAT)
+      }
+
+      // Keep the currently selected element's selection overlay on top.
+      if (selectedLocalId !== null && selectedModelId !== null) {
+        const selModel = modelObjects.get(selectedModelId)
+        if (selModel && validationMatFor(selectedModelId, selectedLocalId)) {
+          void selModel.highlight([selectedLocalId], SELECT_MAT)
+        }
+      }
+    },
+
+    isolateElements(targets, enabled) {
+      if (modelObjects.size === 0) return
+      if (!enabled) {
+        // Re-show everything (model-level hidden state is respected by the guard below).
+        for (const [modelId, model] of modelObjects) {
+          if (modelHidden.has(modelId) || !model.object.visible) continue
+          const typeMap = typeMapByModel.get(modelId)
+          const allIds = typeMap ? [...typeMap.keys()] : []
+          if (allIds.length) void model.setVisible(allIds, true)
+        }
+        void fragmentsManager.core.update()
+        return
+      }
+
+      const wantedByModel = new Map<string, Set<number>>()
+      for (const t of targets) {
+        if (t.expressId < 0) continue
+        const mid = t.modelId ?? currentModelId ?? ''
+        if (!mid || !modelObjects.has(mid)) continue
+        if (!wantedByModel.has(mid)) wantedByModel.set(mid, new Set())
+        wantedByModel.get(mid)!.add(t.expressId)
+      }
+
+      for (const [modelId, model] of modelObjects) {
+        if (modelHidden.has(modelId) || !model.object.visible) continue
+        const typeMap = typeMapByModel.get(modelId) ?? new Map<number, string>()
+        const wanted = wantedByModel.get(modelId)
+        const toShow: number[] = []
+        const toHide: number[] = []
+        for (const localId of typeMap.keys()) {
+          if (wanted?.has(localId)) toShow.push(localId)
+          else toHide.push(localId)
+        }
+        if (toHide.length) void model.setVisible(toHide, false)
+        if (toShow.length) void model.setVisible(toShow, true)
+      }
+      void fragmentsManager.core.update()
     },
 
     applyFilters(hidden, isolated, hiddenElements, isolatedElement, isolatedModelId) {
@@ -2120,7 +2241,37 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return result
     },
 
+    getGeo() {
+      // Dynamic import keeps three-tiles/geo code in its own chunk; nothing
+      // GIS-related loads until the user opens map mode.
+      const self = this
+      geoLoadPromise ??= import('./geo/geo-system').then((m) => {
+        geoSystemInstance = m.createGeoSystem({
+          scene: world.scene.three,
+          perspCamera: world.camera.threePersp,
+          orthoCamera: world.camera.threeOrtho,
+          getActiveCamera: () => world.camera.three,
+          renderer: world.renderer!.three,
+          controls: world.camera.controls,
+          onProjectionChanged: (cb) => {
+            world.camera.projection.onChanged.add(cb)
+            return () => { world.camera.projection.onChanged.remove(cb) }
+          },
+          getGridVisible: () => grid.visible,
+          setGridVisible: (v) => { grid.visible = v },
+          setSceneTuneLock: (locked) => { sceneTuneLocked = locked },
+          setPointerSuppressed: (s) => { geoPointerSuppressed = s },
+          getActiveModelBounds: () => self.getModelBounds(),
+        })
+        return geoSystemInstance
+      })
+      return geoLoadPromise
+    },
+
     dispose() {
+      try { geoSystemInstance?.dispose() } catch { /* ok */ }
+      geoSystemInstance = null
+      geoLoadPromise    = null
       canvas.removeEventListener('pointermove',  onPointerMove)
       canvas.removeEventListener('pointerdown',  onPointerDown)
       canvas.removeEventListener('pointerup',    onPointerUp)

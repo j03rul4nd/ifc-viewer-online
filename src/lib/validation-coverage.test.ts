@@ -11,6 +11,7 @@ import { describe, it, expect } from 'vitest'
 import { buildCoverage, composeMultiModelResult } from './validator'
 import { parseValidationResultMsg } from './worker-schemas'
 import type { RuleCoverageEntry, ValidationCoverage, ValidationResult } from '../types'
+import { issueKey } from '../stores/waiverStore'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -132,5 +133,18 @@ describe('composeMultiModelResult — coverage merge', () => {
   it('legacy results with no coverage → undefined (unknown, never complete:true)', () => {
     const merged = composeMultiModelResult({ a: emptyResult(), b: emptyResult() }, ['a', 'b'])
     expect(merged?.metadata?.coverage).toBeUndefined()
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// §4  issueKey — stable identity for waivers (Phase 3)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('issueKey (waivers)', () => {
+  it('uses the GlobalId when present (stable across reloads)', () => {
+    expect(issueKey({ ruleId: 'RULE_X', globalId: 'ABC123', expressId: 5 })).toBe('RULE_X::ABC123')
+  })
+  it('falls back to the express id for file-level issues with no GlobalId', () => {
+    expect(issueKey({ ruleId: 'RULE_X', globalId: null, expressId: 42 })).toBe('RULE_X::e42')
   })
 })

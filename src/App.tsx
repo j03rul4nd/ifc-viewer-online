@@ -26,6 +26,14 @@ import MobileBottomNav from './components/MobileBottomNav'
 import Blog from './components/Blog'
 import PrivacyPolicy from './components/legal/PrivacyPolicy'
 import TermsOfUse from './components/legal/TermsOfUse'
+import EmbedModal from './components/EmbedModal'
+import IdsModal from './components/IdsModal'
+import IdsPanel from './components/IdsPanel'
+import { isGisEnabled } from './lib/geo/gis-flag'
+
+// Lazy: GeoPanel statically imports proj4/placement/geo runners, which must
+// stay out of the entry chunk. Only ever mounted when VITE_FEATURE_GIS is on.
+const GeoPanel = React.lazy(() => import('./components/GeoPanel'))
 import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, type DemoModel } from './demo-models/models'
 import { fetchDemoModel } from './demo-models/fetchDemoModel'
 import { lighten } from './lib/utils'
@@ -43,11 +51,24 @@ import { useModelStore } from './stores/modelStore'
 import { useEditorStore } from './stores/editorStore'
 import { useSceneStore } from './stores/sceneStore'
 import { useTakeoffStore } from './stores/takeoffStore'
+import { useGeoStore } from './stores/geoStore'
 import { toast } from './stores/toastStore'
 import type { ViewerAPI } from './lib/viewer'
-import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo, Category } from './types'
+import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo, Category, CameraPreset } from './types'
 import * as Icons from './components/Icons'
 import { useSeo } from './seo'
+import i18n from './i18n/config'
+import {
+  parseAppUrlParams,
+  resolveEmbedChrome,
+  emitEmbedEvent,
+  isEmbedded,
+} from './lib/url-params'
+import { fetchIfcFromUrl } from './lib/fetch-ifc-url'
+import { runIds, cancelActiveIdsRuns, IdsCheckError } from './lib/ids/ids-runner'
+import { parseIds, IdsParseError } from './lib/ids/ids-parser'
+import { renderReasons } from './lib/ids/ids-engine-facets'
+import { useIdsStore } from './stores/idsStore'
 import {
   trackFileOpened,
   trackValidationCompleted,
@@ -57,12 +78,16 @@ import {
   trackViewerFirstInteraction,
   trackFeatureUsed,
   trackFileOpenFailed,
+  trackIdsFileLoaded,
 } from './lib/analytics'
 
 // ── ModelTree imperative handle ───────────────────────────────────────────────
 export interface ModelTreeHandle {
   revealElement: (expressId: number) => void
 }
+
+// Camera presets accepted by the `ifcviewer:view` embed command.
+const CAMERA_PRESETS: CameraPreset[] = ['iso', 'top', 'bottom', 'front', 'back', 'left', 'right']
 
 // All non-English blog language prefixes supported in URLs
 const BLOG_LANGS = 'es|de|fr|pt|it|ca|zh|ja|th'
@@ -81,9 +106,17 @@ export default function App() {
   const { t: tViewer } = useTranslation('viewer')
   useSeo()
 
+  // ── Embed / deep-link URL params (?model=…&embed=1&…) ─────────────────────
+  // Parsed once at mount; drives auto-loading remote models and the chrome a
+  // host iframe (blog, CDE panel, third-party screen) should show.
+  const urlParams   = useMemo(() => parseAppUrlParams(), [])
+  const embedChrome = useMemo(() => resolveEmbedChrome(urlParams), [urlParams])
+
   const [route, setRoute] = useState<Route>(() => {
     if (typeof window !== 'undefined') {
       if (decodeReportHash(window.location.hash)) return 'report'
+      // A deep-linked model (or explicit embed) opens straight into the viewer.
+      if (urlParams.modelUrls.length > 0 || urlParams.embed) return 'viewer'
       const base = import.meta.env.BASE_URL ?? '/'
       const rel = window.location.pathname.replace(base.replace(/\/$/, ''), '') || '/'
       if (BLOG_LANG_RE.test(rel) || rel.startsWith('/blog')) return 'blog'
@@ -111,7 +144,7 @@ export default function App() {
     const m = BLOG_LANG_RE.exec(rel)
     return m ? m[1] : 'en'
   })
-  const [accent] = useState('#5E6AD2')
+  const [accent] = useState(() => urlParams.accent ?? '#5E6AD2')
 
   const [landingTheme, setLandingTheme] = useState<'dark' | 'light'>(() => {
     try { return (localStorage.getItem('lp-theme') as 'dark' | 'light') ?? 'dark' } catch { return 'dark' }
@@ -195,6 +228,10 @@ export default function App() {
   const viewerRef    = useRef<ViewerHandle>(null)
   const modelTreeRef = useRef<ModelTreeHandle>(null)
 
+  // requestId of the in-flight SDK-initiated load, echoed back so the SDK can
+  // correlate its add()/addFromUrl() promise. null for app-initiated loads.
+  const pendingRequestIdRef = useRef<string | null>(null)
+
   const prevRouteRef               = useRef<Route>(route)
   const hasTrackedFirstInteraction = useRef(false)
 
@@ -223,6 +260,8 @@ export default function App() {
   const [isolatedElementModel, setIsolatedElementModel] = useState<string | null>(null)
   const [showUpload, setShowUpload]           = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
+  const [showEmbedModal, setShowEmbedModal]   = useState(false)
+  const [showIdsModal, setShowIdsModal]       = useState(false)
   const [showHelp,   setShowHelp]             = useState(false)
   const [ctxMenu,    setCtxMenu]              = useState<SceneContextMenuPayload | null>(null)
 
@@ -348,8 +387,24 @@ export default function App() {
       setModelInfo(info)
       setLoadingState('loaded')
       setLoadError(null)
-      setValidationPanelOpen(true)
-      trackValidationPanelOpened({ trigger: 'auto' })
+      // In embed mode the host decides whether the validation panel auto-opens
+      // (the 'minimal' preset keeps it collapsed so only the 3D + score show).
+      if (embedChrome.openPanel) {
+        useIdsStore.getState().setPanelOpen(false) // bottom slot is exclusive with the IDS panel
+        setValidationPanelOpen(true)
+        trackValidationPanelOpened({ trigger: 'auto' })
+      }
+      // Notify an embedding parent (CDE / blog) that a model is ready. Echo the
+      // SDK requestId (if this load was SDK-initiated) so it resolves the right
+      // add()/addFromUrl() promise, then clear it.
+      emitEmbedEvent('model-loaded', {
+        modelId,
+        fileName: info.fileName,
+        elementCount: info.elementCount,
+        fromCache,
+        requestId: pendingRequestIdRef.current ?? undefined,
+      })
+      pendingRequestIdRef.current = null
 
       // Track when a second (or later) model is loaded into the scene
       if (useSceneStore.getState().models.length > 0) {
@@ -380,7 +435,7 @@ export default function App() {
           : tToasts('model.loaded', { fileName: info.fileName, count: info.elementCount }),
         'success',
       )
-      void validation.run(undefined, modelId)
+      if (urlParams.autoValidate) void validation.run(undefined, modelId)
     },
     onError: (msg) => {
       console.error('[IFC] Load error:', msg)
@@ -390,12 +445,31 @@ export default function App() {
     },
   })
 
-  // ── Sync validation overlay with viewer ───────────────────────────────────
+  // ── Sync the 3D overlay channel (validation OR IDS — mutually exclusive) ──
+  // One combined effect: with two separate effects the disable-side of one
+  // channel could clear the freshly applied highlights of the other (shared
+  // bookkeeping in the viewer). IDS wins deterministically if both flags are
+  // ever true (the toggle handlers prevent that state).
+
+  const idsHighlightMode = useIdsStore((s) => s.highlightMode)
+  const idsResultsByModel = useIdsStore((s) => s.resultsByModel)
 
   useEffect(() => {
-    const issues = result?.issues ?? []
-    viewerApiRef.current?.setValidationHighlights(issues, validationMode)
-  }, [validationMode, result])
+    const viewer = viewerApiRef.current
+    if (!viewer) return
+    if (idsHighlightMode) {
+      const failures = Object.entries(idsResultsByModel).flatMap(([mid, r]) =>
+        r.specs.flatMap((s) => s.failures
+          .filter((f) => f.expressId >= 0)
+          .map((f) => ({ expressId: f.expressId, modelId: mid }))),
+      )
+      viewer.setIdsHighlights(failures, true)
+    } else if (validationMode) {
+      viewer.setValidationHighlights(result?.issues ?? [], true)
+    } else {
+      viewer.setValidationHighlights([], false) // clears the shared overlay channel
+    }
+  }, [validationMode, result, idsHighlightMode, idsResultsByModel])
 
   // ── Analytics: track each completed validation run ────────────────────────
   const prevResultRef = useRef<typeof result>(null)
@@ -411,6 +485,13 @@ export default function App() {
       quality_score: result.qualityScore ?? 0,
       duration_ms:   result.durationMs,
       top_rule:      topRule,
+    })
+    // Surface the Health Score + counts to an embedding host (CDE dashboard, SDK).
+    emitEmbedEvent('validation-completed', {
+      qualityScore: result.qualityScore ?? null,
+      errors:       result.stats.errors,
+      warnings:     result.stats.warnings,
+      info:         result.stats.info,
     })
   }, [result])
 
@@ -436,11 +517,15 @@ export default function App() {
   // ── Sync active model in sceneStore when the user clicks an element ───────
   // commitSelection in the viewer auto-activates the hit model, but doesn't
   // update the sceneStore. We derive it from the selected element's modelId.
+  // Deliberately NOT depending on activeModelId: this must only re-anchor when
+  // the SELECTION changes. With activeModelId in the deps, activating another
+  // model in the Scene panel while an element stays selected would be reverted
+  // here a tick later (the click appeared to do nothing).
   useEffect(() => {
-    if (selected?.modelId && selected.modelId !== activeModelId) {
+    if (selected?.modelId && selected.modelId !== useSceneStore.getState().activeModelId) {
       setSceneActiveModel(selected.modelId)
     }
-  }, [selected, activeModelId, setSceneActiveModel])
+  }, [selected, setSceneActiveModel])
 
   // ── Auto-open mobile sidebar when an element is selected ──────────────────
   // On desktop (md+) the sidebar is always visible, so no action needed there.
@@ -505,6 +590,54 @@ export default function App() {
     if (loadingState === 'loading') return
     setShowUpload(true)
   }, [loadingState])
+
+  // ── Route a dropped/picked .ids file to the IDS flow (P5-2) ───────────────
+  // Parse on the main thread, load into the store and open the IDS modal. Auto-
+  // run is intentionally OFF (a long check shouldn't start from a drop) — the
+  // user clicks Run. Returns true if the file was an .ids (handled here).
+  const handleIdsFile = useCallback(async (file: File): Promise<boolean> => {
+    if (!file.name.toLowerCase().endsWith('.ids')) return false
+    try {
+      const doc = parseIds(await file.text())
+      useIdsStore.getState().setLoaded(file.name, doc)
+      const facetKinds = new Set<string>()
+      for (const s of doc.specifications) {
+        for (const f of s.applicability) facetKinds.add(f.kind)
+        for (const r of s.requirements) facetKinds.add(r.facet.kind)
+      }
+      trackIdsFileLoaded({ spec_count: doc.specifications.length, facet_count: facetKinds.size })
+      setShowIdsModal(true)
+    } catch (err) {
+      const msg = err instanceof IdsParseError ? err.message : (err instanceof Error ? err.message : String(err))
+      useIdsStore.getState().setError('parse', i18n.t('ids:loader.parseError', { message: msg }))
+      toast(i18n.t('ids:loader.invalidFile', { message: msg }), 'error')
+      setShowIdsModal(true)
+    }
+    return true
+  }, [])
+
+  // Global drop handler: route .ids files anywhere over the viewer to the IDS
+  // flow. IFC drops still go through the explicit UploadOverlay; we only act on
+  // (and preventDefault) .ids so we never interfere with that path.
+  useEffect(() => {
+    if (route !== 'viewer') return
+    const onDragOver = (e: DragEvent): void => {
+      if (Array.from(e.dataTransfer?.items ?? []).some((i) => i.kind === 'file')) e.preventDefault()
+    }
+    const onDrop = (e: DragEvent): void => {
+      const file = e.dataTransfer?.files?.[0]
+      if (file && file.name.toLowerCase().endsWith('.ids')) {
+        e.preventDefault()
+        void handleIdsFile(file)
+      }
+    }
+    window.addEventListener('dragover', onDragOver)
+    window.addEventListener('drop', onDrop)
+    return () => {
+      window.removeEventListener('dragover', onDragOver)
+      window.removeEventListener('drop', onDrop)
+    }
+  }, [route, handleIdsFile])
 
   // "Open an IFC file" CTA — go to viewer and immediately show the upload overlay
   // so the user can pick their own file instead of the demo being auto-loaded.
@@ -647,6 +780,10 @@ export default function App() {
       useModelStore.getState().removeModelEntry(id)
       useValidationStore.getState().clearValidationForModel(id)
       useTakeoffStore.getState().clearModelResult(id)
+      useGeoStore.getState().removeGeoref(id)
+      // IDS: abort an in-flight check for this model, then drop its results.
+      if (useIdsStore.getState().runningModelId === id) cancelActiveIdsRuns()
+      useIdsStore.getState().clearForModel(id)
       modelRegistry.unregister(id)
       // Remove all hidden-element keys that belonged to this model so the Set
       // doesn't accumulate stale composite keys ("${id}:${expressId}").
@@ -688,6 +825,9 @@ export default function App() {
     useEditorStore.getState().clearHistory()
     useValidationStore.getState().reset()
     useTakeoffStore.getState().reset()
+    cancelActiveIdsRuns()
+    useIdsStore.getState().reset()
+    useGeoStore.getState().resetForScene()
     modelRegistry.clear()
     clearScene()
     // Clean up Sprint 7+8 panel state and viewer tools
@@ -700,6 +840,355 @@ export default function App() {
     try { viewerApiRef.current?.clearMeasurements() } catch { }
     try { viewerApiRef.current?.cleanupSectionAndPlans() } catch { }
   }, [clearScene, setMeasurementPanelOpen, setActiveMeasurementTool, setClipPanelOpen, setClipPlaneCount, setPlansPanelOpen, setActivePlanViewId])
+
+  // ── Load a single IFC File (shared by URL params, postMessage & SDK) ───────
+  const loadIfcFile = useCallback(async (file: File): Promise<void> => {
+    setRoute('viewer')
+    setLoadingState('loading')
+    setLoadError(null)
+    // Reset viewer interaction state only when this is the first model.
+    if (useSceneStore.getState().models.length === 0) {
+      setModelInfo(null)
+      setSelected(null)
+      setHidden(new Set())
+      setIsolated(null)
+      setIsolatedElement(null)
+      setIsolatedElementModel(null)
+      clearHiddenElements()
+    }
+    // Await so the loader's concurrency guard doesn't reject a following load.
+    await loadFile(file)
+  }, [loadFile, clearHiddenElements])
+
+  // ── Load model(s) from remote URLs (shared by ?model= and postMessage) ────
+  // `requestId` is set by SDK-initiated loads so model-loaded/model-error echo it.
+  const loadModelsFromUrls = useCallback(async (urls: string[], names: string[] = [], requestId?: string): Promise<void> => {
+    for (let i = 0; i < urls.length; i++) {
+      const url  = urls[i]
+      try {
+        const file = await fetchIfcFromUrl(url, names[i])
+        pendingRequestIdRef.current = requestId ?? null
+        await loadIfcFile(file)
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error('[App] Failed to load model from URL:', url, msg)
+        setLoadingState('error')
+        setLoadError(msg)
+        toast(tToasts('model.urlLoadFailed', { message: msg }), 'error')
+        emitEmbedEvent('model-error', { url, message: msg, requestId })
+        pendingRequestIdRef.current = null
+      }
+    }
+  }, [loadIfcFile, tToasts])
+
+  // ── Load model from raw IFC bytes handed in by a host app (SDK path) ───────
+  const loadModelFromBytes = useCallback(async (name: string, bytes: Uint8Array, requestId?: string): Promise<void> => {
+    const fname = name.toLowerCase().endsWith('.ifc') ? name : `${name}.ifc`
+    try {
+      pendingRequestIdRef.current = requestId ?? null
+      await loadIfcFile(new File([bytes], fname, { type: 'application/x-step' }))
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('[App] Failed to load model from bytes:', fname, msg)
+      setLoadingState('error')
+      setLoadError(msg)
+      toast(tToasts('model.urlLoadFailed', { message: msg }), 'error')
+      emitEmbedEvent('model-error', { name: fname, message: msg, requestId })
+      pendingRequestIdRef.current = null
+    }
+  }, [loadIfcFile, tToasts])
+
+  // ── Auto-load model(s) from URL params on mount (?model=…&embed=1) ────────
+  const urlLoadStartedRef   = useRef(false)
+  const urlActionsAppliedRef = useRef(false)
+
+  useEffect(() => {
+    if (urlLoadStartedRef.current) return
+    urlLoadStartedRef.current = true
+
+    // Apply a host-requested UI language if it's one we support.
+    const supported = (i18n.options.supportedLngs || []) as string[]
+    if (urlParams.lang && supported.includes(urlParams.lang) && i18n.language !== urlParams.lang) {
+      void i18n.changeLanguage(urlParams.lang)
+    }
+
+    // Announce readiness to an embedding parent (CDE / blog), advertising the
+    // languages the host can pass to setLanguage / the `lang` param.
+    emitEmbedEvent('ready', {
+      languages: ((i18n.options.supportedLngs || []) as string[]).filter((l) => l && l !== 'cimode'),
+    })
+
+    if (urlParams.modelUrls.length === 0) {
+      // Embed with no model → drop straight onto an upload prompt so the host
+      // user can pick a file.
+      if (urlParams.embed) setShowUpload(true)
+      return
+    }
+
+    void loadModelsFromUrls(urlParams.modelUrls, urlParams.fileNames)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── Inbound postMessage commands (host CDE → iframe) ──────────────────────
+  // Lets a CDE drive the embedded viewer two-way (load / select / isolate / fit).
+  // Only active when running inside an iframe. Commands use the `ifcviewer:` ns.
+  useEffect(() => {
+    if (!isEmbedded()) return
+    const onMessage = (e: MessageEvent): void => {
+      const data = e.data as { type?: unknown } | null
+      if (!data || typeof data.type !== 'string' || !data.type.startsWith('ifcviewer:')) return
+      const msg = data as { type: string; [k: string]: unknown }
+      const requestId = typeof msg.requestId === 'string' ? msg.requestId : undefined
+      // Reply to a query command with a `result` envelope the SDK correlates by id.
+      const respond = async (fn: () => unknown): Promise<void> => {
+        if (!requestId) return
+        try {
+          emitEmbedEvent('result', { requestId, ok: true, data: await fn() })
+        } catch (err) {
+          emitEmbedEvent('result', { requestId, ok: false, error: err instanceof Error ? err.message : String(err) })
+        }
+      }
+      switch (msg.type) {
+        case 'ifcviewer:load': {
+          const urls = Array.isArray(msg.url) ? msg.url
+            : typeof msg.url === 'string' ? [msg.url] : []
+          const names = Array.isArray(msg.name) ? msg.name as string[]
+            : typeof msg.name === 'string' ? [msg.name] : []
+          const valid = urls.filter((u): u is string => typeof u === 'string')
+          if (valid.length) void loadModelsFromUrls(valid, names, requestId)
+          else if (requestId) emitEmbedEvent('model-error', { message: 'No valid URL provided', requestId })
+          break
+        }
+        case 'ifcviewer:load-bytes': {
+          // Host hands us raw IFC bytes from its own app — nothing is uploaded.
+          const raw = msg.bytes
+          let bytes: Uint8Array | null = null
+          if (raw instanceof ArrayBuffer) bytes = new Uint8Array(raw)
+          else if (raw instanceof Uint8Array) bytes = raw
+          else if (ArrayBuffer.isView(raw)) bytes = new Uint8Array((raw as ArrayBufferView).buffer)
+          const name = typeof msg.name === 'string' ? msg.name : 'model.ifc'
+          if (bytes && bytes.byteLength > 0) void loadModelFromBytes(name, bytes, requestId)
+          else if (requestId) emitEmbedEvent('model-error', { message: 'Empty or invalid bytes', requestId })
+          break
+        }
+        case 'ifcviewer:select': {
+          const id = Number(msg.expressId)
+          if (Number.isFinite(id) && id > 0) {
+            const modelId = typeof msg.modelId === 'string' ? msg.modelId : undefined
+            viewerApiRef.current?.selectElement(id, modelId)
+            viewerApiRef.current?.focusElement(id, modelId)
+          }
+          break
+        }
+        case 'ifcviewer:isolate': {
+          const type = typeof msg.ifcType === 'string' ? msg.ifcType.toUpperCase() : null
+          handleSetIsolatedCategory(type)
+          if (type) viewerRef.current?.frameCategory(type)
+          break
+        }
+        case 'ifcviewer:fit':
+          viewerApiRef.current?.frameActiveModel()
+          break
+        case 'ifcviewer:reset':
+          viewerRef.current?.resetCamera()
+          break
+        case 'ifcviewer:show-all':
+          handleRestoreVisibility()
+          break
+        case 'ifcviewer:view': {
+          const preset = typeof msg.preset === 'string' ? msg.preset : ''
+          if (CAMERA_PRESETS.includes(preset as CameraPreset)) {
+            viewerApiRef.current?.setCameraPreset(preset as CameraPreset)
+          }
+          break
+        }
+        case 'ifcviewer:set-language': {
+          const lng = typeof msg.lang === 'string' ? msg.lang : null
+          const supported = (i18n.options.supportedLngs || []) as string[]
+          if (lng && supported.includes(lng) && i18n.language !== lng) void i18n.changeLanguage(lng)
+          break
+        }
+        case 'ifcviewer:clear': {
+          const ids = useSceneStore.getState().models.map((m) => m.id)
+          void (async () => { for (const id of ids) await handleRemoveModel(id) })()
+          setModelInfo(null)
+          setLoadingState('idle')
+          break
+        }
+
+        // ── Query commands (reply with a `result` envelope) ──────────────────
+        case 'ifcviewer:get-models':
+          void respond(() => useSceneStore.getState().models.map((m) => ({
+            id: m.id, fileName: m.fileName, elementCount: m.elementCount,
+          })))
+          break
+        case 'ifcviewer:get-element': {
+          const id = Number(msg.expressId)
+          const modelId = typeof msg.modelId === 'string' ? msg.modelId : undefined
+          void respond(() => (Number.isFinite(id) && id > 0
+            ? (viewerApiRef.current?.getItemData(id, modelId) ?? null)
+            : null))
+          break
+        }
+        case 'ifcviewer:get-validation':
+          void respond(() => {
+            const r = useValidationStore.getState().result
+            return r ? {
+              qualityScore: r.qualityScore ?? null,
+              errors: r.stats.errors, warnings: r.stats.warnings, info: r.stats.info,
+            } : null
+          })
+          break
+        case 'ifcviewer:screenshot':
+          void respond(() => viewerApiRef.current?.takeSnapshot() ?? '')
+          break
+        case 'ifcviewer:get-stats':
+          void respond(() => {
+            const models = useSceneStore.getState().models
+            return {
+              elementCount: models.reduce((s, m) => s + m.elementCount, 0),
+              models: models.map((m) => ({
+                id: m.id,
+                fileName: m.fileName,
+                elementCount: m.elementCount,
+                fileSize: m.fileSize,
+                categories: m.categories.map((c) => ({ type: c.id, label: c.label, count: c.count })),
+              })),
+            }
+          })
+          break
+        case 'ifcviewer:get-issues':
+          void respond(() => {
+            const r = useValidationStore.getState().result
+            let issues = (r?.issues ?? []).map((i) => ({
+              ruleId: i.ruleId,
+              severity: i.severity,
+              expressId: i.expressId,
+              modelId: i.modelId ?? null,
+              ifcClass: i.ifcClass,
+              elementName: i.elementName,
+              message: i.message,
+              globalId: i.globalId,
+              autoFixable: i.autoFixable,
+            }))
+            const sev = typeof msg.severity === 'string' ? msg.severity : null
+            if (sev) issues = issues.filter((i) => i.severity === sev)
+            const limit = Number(msg.limit)
+            if (Number.isFinite(limit) && limit > 0) issues = issues.slice(0, limit)
+            return { qualityScore: r?.qualityScore ?? null, total: r?.issues.length ?? 0, issues }
+          })
+          break
+        case 'ifcviewer:check-ids':
+          void respond(async () => {
+            const xml = typeof msg.idsXml === 'string' ? msg.idsXml : ''
+            if (!xml) throw new Error('No IDS XML provided')
+            const mid = useSceneStore.getState().activeModelId ?? useSceneStore.getState().models[0]?.id ?? null
+            const buffer = mid ? modelRegistry.getBuffer(mid) : null
+            if (!mid || !buffer) throw new Error('No model buffer available — load an IFC first')
+            const doc = parseIds(xml) // throws IdsParseError → message goes back to the SDK
+            useIdsStore.getState().setLoaded('SDK', doc)
+            useIdsStore.getState().startRun(mid)
+            const t0 = performance.now()
+            let result
+            try {
+              ({ result } = await runIds(doc, buffer))
+            } catch (err) {
+              // Keep the store consistent — v1 left it stuck in 'running'.
+              useIdsStore.getState().setError(
+                err instanceof IdsCheckError ? err.code : 'unknown',
+                err instanceof Error ? err.message : String(err),
+              )
+              throw err
+            }
+            useIdsStore.getState().setResultForModel(mid, result, {
+              at: Date.now(), idsFileName: 'SDK', durationMs: Math.round(performance.now() - t0), modelSchema: result.modelSchema,
+            })
+            // Frozen SDK wire shape: failures[].reasons stays string[] (EN prose).
+            // The structured codes ride along additively as reasonCodes.
+            return {
+              ...result,
+              specs: result.specs.map((s) => ({
+                ...s,
+                failures: s.failures.map((f) => ({ ...f, reasons: renderReasons(f.reasons), reasonCodes: f.reasons })),
+              })),
+            }
+          })
+          break
+
+        // ── Mutating commands (fire-and-forget) ──────────────────────────────
+        case 'ifcviewer:remove-model': {
+          const modelId = typeof msg.modelId === 'string' ? msg.modelId : null
+          if (modelId) void handleRemoveModel(modelId)
+          break
+        }
+        case 'ifcviewer:hide-elements':
+        case 'ifcviewer:show-elements': {
+          const raw = Array.isArray(msg.expressIds) ? msg.expressIds : []
+          const ids = raw.map(Number).filter((n) => Number.isFinite(n) && n > 0)
+          const modelId = typeof msg.modelId === 'string' ? msg.modelId : useSceneStore.getState().activeModelId
+          if (ids.length && modelId) {
+            const decompMap = useValidationStore.getState().decompMaps[modelId]
+            const expanded = ids.flatMap((id) => expandWithDecomp(id, decompMap))
+            useUIStore.getState().setElementsVisible(expanded, msg.type === 'ifcviewer:show-elements', modelId)
+          }
+          break
+        }
+        case 'ifcviewer:camera': {
+          const p = msg.position as { x: number; y: number; z: number } | undefined
+          const d = msg.direction as { x: number; y: number; z: number } | undefined
+          if (p && d && typeof p === 'object' && typeof d === 'object') {
+            viewerApiRef.current?.setCameraViewpoint(p, d)
+          }
+          break
+        }
+      }
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadModelsFromUrls, loadModelFromBytes, handleRemoveModel, handleRestoreVisibility])
+
+  // ── Relay load progress to an embedding parent (SDK model-progress event) ──
+  useEffect(() => {
+    if (loadingState !== 'loading') return
+    emitEmbedEvent('model-progress', {
+      percent: progress.percent,
+      phase:   progress.phase,
+      requestId: pendingRequestIdRef.current ?? undefined,
+    })
+  }, [progress, loadingState])
+
+  // ── Apply select / isolate deep-link actions once the first model is loaded ─
+  useEffect(() => {
+    if (urlActionsAppliedRef.current) return
+    if (loadingState !== 'loaded' || sceneModels.length === 0) return
+    urlActionsAppliedRef.current = true
+    if (urlParams.select == null && !urlParams.isolate) return
+    // Defer a tick so the freshly-loaded model is fully wired into the viewer.
+    const timer = setTimeout(() => {
+      if (urlParams.isolate) {
+        handleSetIsolatedCategory(urlParams.isolate)
+        viewerRef.current?.frameCategory(urlParams.isolate)
+      }
+      if (urlParams.select != null) {
+        viewerApiRef.current?.selectElement(urlParams.select)
+        viewerApiRef.current?.focusElement(urlParams.select)
+      }
+    }, 350)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingState, sceneModels.length])
+
+  // ── Relay element selection to an embedding parent (CDE integration) ───────
+  useEffect(() => {
+    if (!selected) return
+    emitEmbedEvent('element-selected', {
+      expressId: Number(selected.id),
+      modelId:   selected.modelId ?? null,
+      ifcType:   selected.type,
+      name:      selected.name,
+    })
+  }, [selected])
 
   // ── Legend data — merged across all loaded models ────────────────────────
   // Single model: active model's categories (elementIds intact for drill-down).
@@ -832,29 +1321,33 @@ export default function App() {
             transition={{ duration: 0.3 }}
             className="fixed inset-0 bg-[var(--bg)] flex flex-col"
           >
-            <div className="flex-none z-20">
-              {/* Show the active model's name; fall back to last-loaded when only one model exists */}
-              {(() => {
-                const activeEntry = sceneModels.find((m) => m.id === activeModelId)
-                const displayName  = activeEntry?.fileName  ?? modelInfo?.fileName   ?? null
-                const displayCount = activeEntry?.elementCount ?? modelInfo?.elementCount ?? 0
-                return (
-                  <Toolbar
-                    fileName={displayName}
-                    elementCount={displayCount}
-                    loadingState={loadingState}
-                    canIsolate={!!selected}
-                    viewerApiRef={viewerApiRef}
-                    onReset={() => viewerRef.current?.resetCamera()}
-                    onIsolate={handleIsolate}
-                    onUpload={openUploadModal}
-                    onOpenDemoGallery={openDemoGallery}
-                    onOpenExportModal={() => setShowExportModal(true)}
-                    onOpenHelp={() => setShowHelp(true)}
-                  />
-                )
-              })()}
-            </div>
+            {embedChrome.showToolbar && (
+              <div className="flex-none z-20">
+                {/* Show the active model's name; fall back to last-loaded when only one model exists */}
+                {(() => {
+                  const activeEntry = sceneModels.find((m) => m.id === activeModelId)
+                  const displayName  = activeEntry?.fileName  ?? modelInfo?.fileName   ?? null
+                  const displayCount = activeEntry?.elementCount ?? modelInfo?.elementCount ?? 0
+                  return (
+                    <Toolbar
+                      fileName={displayName}
+                      elementCount={displayCount}
+                      loadingState={loadingState}
+                      canIsolate={!!selected}
+                      viewerApiRef={viewerApiRef}
+                      onReset={() => viewerRef.current?.resetCamera()}
+                      onIsolate={handleIsolate}
+                      onUpload={openUploadModal}
+                      onOpenDemoGallery={openDemoGallery}
+                      onOpenExportModal={() => setShowExportModal(true)}
+                      onOpenEmbed={() => setShowEmbedModal(true)}
+                      onOpenIds={() => setShowIdsModal(true)}
+                      onOpenHelp={() => setShowHelp(true)}
+                    />
+                  )
+                })()}
+              </div>
+            )}
 
             <PanelGroup
               orientation="horizontal"
@@ -865,7 +1358,7 @@ export default function App() {
               {/* Tree panel: only mounted on desktop — react-resizable-panels
                   allocates the Panel's flex share even when content is hidden,
                   so mounting it on mobile would shrink the canvas by 22%. */}
-              {treeVisible && sceneModels.length > 0 && isDesktop && (
+              {treeVisible && sceneModels.length > 0 && isDesktop && embedChrome.showTree && (
                 <>
                   <Panel
                     id="tree"
@@ -921,7 +1414,7 @@ export default function App() {
                   )}
 
                   {/* Camera preset overlay */}
-                  {sceneModels.length > 0 && (
+                  {sceneModels.length > 0 && embedChrome.showCameraControls && (
                     <CameraControls
                       viewerApiRef={viewerApiRef}
                       visible={cameraControlsVisible}
@@ -959,6 +1452,13 @@ export default function App() {
                     <FloorPlanPanel viewerApiRef={viewerApiRef} />
                   )}
 
+                  {/* GIS map panel (flag-gated, lazy — pulls proj4 + geo code) */}
+                  {isGisEnabled() && sceneModels.length > 0 && (
+                    <React.Suspense fallback={null}>
+                      <GeoPanel viewerApiRef={viewerApiRef} />
+                    </React.Suspense>
+                  )}
+
                   {/* Scene panel (model list + transform) */}
                   {scenePanelOpen && (
                     <ScenePanel
@@ -989,33 +1489,38 @@ export default function App() {
                     />
                   )}
 
-                  <Sidebar
-                    categories={legendCategories}
-                    elementCount={legendElementCount}
-                    sceneModels={sceneModels}
-                    selected={selected}
-                    hidden={hidden}
-                    onToggleHidden={handleToggleHidden}
-                    isolated={isolated}
-                    onSetIsolated={handleSetIsolatedCategory}
-                    onFrame={(id) => viewerRef.current?.frameCategory(id)}
-                    onSelectElement={(id) => viewerApiRef.current?.selectElement(id)}
-                    onFrameElement={handleFrameElement}
-                    onRevealInTree={handleRevealInTree}
-                    viewerApiRef={viewerApiRef}
-                    mobileOpen={mobileSidebarOpen}
-                    onMobileClose={() => setMobileSidebarOpen(false)}
-                  />
+                  {embedChrome.showSidebar && (
+                    <Sidebar
+                      categories={legendCategories}
+                      elementCount={legendElementCount}
+                      sceneModels={sceneModels}
+                      selected={selected}
+                      hidden={hidden}
+                      onToggleHidden={handleToggleHidden}
+                      isolated={isolated}
+                      onSetIsolated={handleSetIsolatedCategory}
+                      onFrame={(id) => viewerRef.current?.frameCategory(id)}
+                      onSelectElement={(id) => viewerApiRef.current?.selectElement(id)}
+                      onFrameElement={handleFrameElement}
+                      onRevealInTree={handleRevealInTree}
+                      viewerApiRef={viewerApiRef}
+                      mobileOpen={mobileSidebarOpen}
+                      onMobileClose={() => setMobileSidebarOpen(false)}
+                    />
+                  )}
 
-                  <button
-                    onClick={handleNavigateToLanding}
-                    className="absolute top-3 left-3 z-[9] h-[30px] min-w-[30px] px-3 bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
-                  >
-                    <Icons.Chevron size={12} className="rotate-180" />
-                    <span className="hidden xs:inline">{tCommon('actions.home')}</span>
-                  </button>
+                  {embedChrome.showHome && (
+                    <button
+                      onClick={handleNavigateToLanding}
+                      className="absolute top-3 left-3 z-[9] h-[30px] min-w-[30px] px-3 bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
+                    >
+                      <Icons.Chevron size={12} className="rotate-180" />
+                      <span className="hidden xs:inline">{tCommon('actions.home')}</span>
+                    </button>
+                  )}
 
-                  {/* ── Mobile bottom nav (only on < md) ── */}
+                  {/* ── Mobile bottom nav (only on < md; hidden in embed) ── */}
+                  {!embedChrome.embed && (
                   <MobileBottomNav
                     visible={sceneModels.length > 0}
                     selected={selected}
@@ -1032,8 +1537,10 @@ export default function App() {
                     onOpenHelp={() => setShowHelp(true)}
                     viewerApiRef={viewerApiRef}
                   />
+                  )}
                 </div>
 
+                <IdsPanel viewerApiRef={viewerApiRef} onOpenLoader={() => setShowIdsModal(true)} />
                 <ValidationPanel onJumpToElement={handleJumpToElement} viewer={viewerRef.current} />
               </div>
               </Panel>
@@ -1048,6 +1555,20 @@ export default function App() {
           viewerApiRef={viewerApiRef}
           onClose={() => setShowExportModal(false)}
         />
+      )}
+
+      {/* ── Embed snippet generator ── */}
+      {showEmbedModal && (
+        <EmbedModal
+          defaultModelUrl={urlParams.modelUrls[0]}
+          defaultLang={i18n.language}
+          onClose={() => setShowEmbedModal(false)}
+        />
+      )}
+
+      {/* ── IDS check ── */}
+      {showIdsModal && (
+        <IdsModal onClose={() => setShowIdsModal(false)} />
       )}
 
       {/* ── Keyboard help modal ── */}

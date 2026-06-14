@@ -234,7 +234,8 @@ interface DetailProps {
 
 function BcfDetailView({ topicGuid, viewer, onBack, onDeleted }: DetailProps) {
   const { t } = useTranslation('validation')
-  const topic      = useBcfStore((s) => s.topics.find((t) => t.guid === topicGuid))
+  const topic         = useBcfStore((s) => s.topics.find((t) => t.guid === topicGuid))
+  const exportVersion = useBcfStore((s) => s.exportVersion)
   const { updateTopic, deleteTopic, addLocalComment, removeLocalComment } = useBcfStore(
     useShallow((s) => ({
       updateTopic:        s.updateTopic,
@@ -308,8 +309,8 @@ function BcfDetailView({ topicGuid, viewer, onBack, onDeleted }: DetailProps) {
         </button>
         <div className="flex-1" />
         <button
-          onClick={() => downloadBcfBlob([topic], `topic-${topic.guid.slice(0, 8)}.bcfzip`)}
-          title={t('bcf.exportSingle')}
+          onClick={() => downloadBcfBlob([topic], `topic-${topic.guid.slice(0, 8)}.bcfzip`, exportVersion)}
+          title={`${t('bcf.exportSingle')} (BCF ${exportVersion})`}
           className="w-6 h-6 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--text)] border border-transparent hover:border-[var(--border)] transition-colors"
         >
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -723,13 +724,15 @@ interface ListViewProps {
 
 function BcfListView({ viewer, onSelectTopic, onCreateNew }: ListViewProps) {
   const { t } = useTranslation('validation')
-  const { topics, isParsing, updateTopic, deleteTopic, clearTopics } = useBcfStore(
+  const { topics, isParsing, updateTopic, deleteTopic, clearTopics, exportVersion, setExportVersion } = useBcfStore(
     useShallow((s) => ({
-      topics:      s.topics,
-      isParsing:   s.isParsing,
-      updateTopic: s.updateTopic,
-      deleteTopic: s.deleteTopic,
-      clearTopics: s.clearTopics,
+      topics:           s.topics,
+      isParsing:        s.isParsing,
+      updateTopic:      s.updateTopic,
+      deleteTopic:      s.deleteTopic,
+      clearTopics:      s.clearTopics,
+      exportVersion:    s.exportVersion,
+      setExportVersion: s.setExportVersion,
     })),
   )
 
@@ -781,9 +784,9 @@ function BcfListView({ viewer, onSelectTopic, onCreateNew }: ListViewProps) {
   }, [])
 
   const handleExportAll = useCallback(() => {
-    downloadBcfBlob(topics, 'bcf-topics.bcfzip')
+    downloadBcfBlob(topics, 'bcf-topics.bcfzip', exportVersion)
     trackFeatureUsed({ feature: 'bcf_export' })
-  }, [topics])
+  }, [topics, exportVersion])
 
   const handleStatusCycle = useCallback((guid: string) => {
     const topic = topics.find((t) => t.guid === guid)
@@ -826,6 +829,25 @@ function BcfListView({ viewer, onSelectTopic, onCreateNew }: ListViewProps) {
             <path d="M5 7V1M2 5l3-4 3 4" /><path d="M1 9h8" />
           </svg>
         </button>
+        {topics.length > 0 && (
+          <div
+            className="flex items-center rounded border border-[var(--border)] overflow-hidden h-6 shrink-0"
+            title={t('bcf.exportVersion')}
+          >
+            {(['2.1', '3.0'] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setExportVersion(v)}
+                className="px-1.5 h-full text-[9px] font-mono font-semibold transition-colors"
+                style={exportVersion === v
+                  ? { background: 'var(--accent)', color: '#fff' }
+                  : { color: 'var(--text-faint)', background: 'transparent' }}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        )}
         {topics.length > 0 && (
           <button
             onClick={handleExportAll}

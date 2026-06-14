@@ -277,6 +277,16 @@ export interface RulesConfig {
   /** Per-rule severity override, e.g. { RULE_MISSING_MATERIAL: 'error' }. Applied
    *  client-side after the worker returns, so it changes the E/W/I counts and the score. */
   severityOverrides?: Partial<Record<string, 'error' | 'warning' | 'info'>>
+
+  /** Configurable detection thresholds, in friendly units. Undefined → rule default. */
+  thresholds?: {
+    /** Proxy-overuse trigger as a percent of physical elements (default 5). */
+    proxyOverusePct?: number
+    /** Coordinate-offset trigger in km from the WCS origin (default 10). */
+    coordinateOffsetKm?: number
+    /** File-size anomaly trigger in KB per element (default 500). */
+    fileSizePerElementKB?: number
+  }
 }
 
 export const DEFAULT_RULES: RulesConfig = {
@@ -1356,3 +1366,6 @@ export interface BcfTopic {
 }
 
 export type BcfVersion = '2.1' | '3.0' | 'unknown'
+
+/** Versions we can WRITE (export). Import additionally tolerates 'unknown'. */
+export type BcfExportVersion = Exclude<BcfVersion, 'unknown'>

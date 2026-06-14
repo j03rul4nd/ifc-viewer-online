@@ -2051,6 +2051,7 @@ const COORD_SAMPLE_SIZE        = 20      // max elements sampled for bounding bo
 async function ruleCoordinateOffset(
   api: IfcAPI,
   modelId: number,
+  thresholdM: number = COORD_OFFSET_THRESHOLD_M,
 ): Promise<ValidationIssue[]> {
   let sampled = 0
   let offsetX = 0
@@ -2067,7 +2068,7 @@ async function ruleCoordinateOffset(
       sampled++
       const cx = (box.minX + box.maxX) / 2
       const cy = (box.minY + box.maxY) / 2
-      if (Math.abs(cx) > COORD_OFFSET_THRESHOLD_M || Math.abs(cy) > COORD_OFFSET_THRESHOLD_M) {
+      if (Math.abs(cx) > thresholdM || Math.abs(cy) > thresholdM) {
         offsetX = cx
         offsetY = cy
         found = true
@@ -2103,6 +2104,7 @@ async function ruleProxyOveruse(
   api: IfcAPI,
   modelId: number,
   idx: SpatialIndex,
+  thresholdFrac: number = PROXY_OVERUSE_THRESHOLD,
 ): Promise<ValidationIssue[]> {
   const proxyIds   = api.GetLineIDsWithType(modelId, IFCBUILDINGELEMENTPROXY)
   const proxyCount = proxyIds.size()
@@ -2116,7 +2118,7 @@ async function ruleProxyOveruse(
     totalPhysical += api.GetLineIDsWithType(modelId, typeId).size()
   }
 
-  if (totalPhysical === 0 || proxyCount / totalPhysical < PROXY_OVERUSE_THRESHOLD) return []
+  if (totalPhysical === 0 || proxyCount / totalPhysical < thresholdFrac) return []
 
   const pct    = Math.round((proxyCount / totalPhysical) * 100)
   const issues: ValidationIssue[] = []
@@ -2236,6 +2238,7 @@ async function ruleFileSizeAnomaly(
   api: IfcAPI,
   modelId: number,
   buffer: ArrayBuffer,
+  thresholdBytes: number = FILE_SIZE_BYTES_PER_ELEMENT_THRESHOLD,
 ): Promise<ValidationIssue[]> {
   let elementCount = 0
   for (const typeId of ELEMENT_TYPES) {
@@ -2245,7 +2248,7 @@ async function ruleFileSizeAnomaly(
   if (elementCount < ANOMALY_MIN_ELEMENTS) return []
 
   const bytesPerElement = buffer.byteLength / elementCount
-  if (bytesPerElement <= FILE_SIZE_BYTES_PER_ELEMENT_THRESHOLD) return []
+  if (bytesPerElement <= thresholdBytes) return []
 
   const mbSize   = (buffer.byteLength / 1_048_576).toFixed(1)
   const kbPerEl  = Math.round(bytesPerElement / 1024)
@@ -2813,12 +2816,16 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
         post({ type: 'partial', id, ruleId: 'RULE_CLASH_MEP_STRUCTURAL', issues: [], progress: Math.round(completedRules / totalRules * 100), status: 'failed', error })
       }
     }
+    const th = rules.thresholds
     if (rules.RULE_PROXY_OVERUSE)
-      await runRule('RULE_PROXY_OVERUSE', () => ruleProxyOveruse(api!, modelId, idx))
+      await runRule('RULE_PROXY_OVERUSE', () => ruleProxyOveruse(api!, modelId, idx,
+        th?.proxyOverusePct != null ? th.proxyOverusePct / 100 : undefined))
     if (rules.RULE_COORDINATE_OFFSET)
-      await runRule('RULE_COORDINATE_OFFSET', () => ruleCoordinateOffset(api!, modelId))
+      await runRule('RULE_COORDINATE_OFFSET', () => ruleCoordinateOffset(api!, modelId,
+        th?.coordinateOffsetKm != null ? th.coordinateOffsetKm * 1000 : undefined))
     if (rules.RULE_FILE_SIZE_ANOMALY)
-      await runRule('RULE_FILE_SIZE_ANOMALY', () => ruleFileSizeAnomaly(api!, modelId, buffer))
+      await runRule('RULE_FILE_SIZE_ANOMALY', () => ruleFileSizeAnomaly(api!, modelId, buffer,
+        th?.fileSizePerElementKB != null ? th.fileSizePerElementKB * 1000 : undefined))
     // ── Sprint V6 rules ──────────────────────────────────────────────
     if (rules.RULE_OPENING_WITHOUT_HOST)
       await runRule('RULE_OPENING_WITHOUT_HOST', () => ruleOpeningWithoutHost(api!, modelId, idx))

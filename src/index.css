@@ -173,6 +173,27 @@ body {
   .glass-xl         { background: rgba(0, 0, 0, 0.92) !important; }
 }
 
+/* ── GeoPanel inputs (GIS map mode) ─────────────────────────────────────────── */
+
+.geo-input {
+  width: 100%;
+  padding: 5px 8px;
+  border-radius: 7px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.geo-input:focus {
+  border-color: var(--accent);
+}
+.geo-input::placeholder {
+  color: var(--text-faint);
+}
+
 /* ── Keyboard key ───────────────────────────────────────────────────────────── */
 
 kbd {

@@ -42,6 +42,12 @@
   "reset": "Restablecer",
   "legend": "Leyenda",
   "legendTooltip": "Leyenda de colores — tipos de entidades del modelo",
+  "view": "Vista",
+  "viewMenu": "Vista — árbol, escena, aislar, restablecer",
+  "tools": "Herramientas",
+  "toolsMenu": "Herramientas — medir, sección, planos",
+  "more": "Más",
+  "demo": "Modelos demo",
   "status": {
     "loaded": "Cargado",
     "loading": "Cargando…",

@@ -25,10 +25,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation, Trans } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import type { BlogPost, ContentBlock } from '../../lib/blog-posts'
+import { SITE_URL } from '../../seo/config'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const SITE = 'https://j03rul4nd.github.io/ifc-viewer-online'
+const SITE = SITE_URL.replace(/\/$/, '')
 const COPY_RESET_DELAY_MS = 3_000
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────

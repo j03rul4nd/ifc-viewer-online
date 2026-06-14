@@ -274,6 +274,20 @@ export default function CustomProfileModal({ open, onClose, editProfile }: Custo
     })
   }
 
+  const setThreshold = (
+    key: 'proxyOverusePct' | 'coordinateOffsetKm' | 'fileSizePerElementKB',
+    raw: string,
+  ): void => {
+    setLocalRules((prev) => {
+      const next = { ...(prev.thresholds ?? {}) }
+      const n = parseFloat(raw)
+      // Empty / invalid / non-positive clears the override → rule uses its default.
+      if (raw.trim() === '' || Number.isNaN(n) || n <= 0) delete next[key]
+      else next[key] = n
+      return { ...prev, thresholds: Object.keys(next).length > 0 ? next : undefined }
+    })
+  }
+
   const handleSave = (): void => {
     const trimmed = name.trim()
     if (!trimmed) { setError(t('customProfile.errorNameEmpty')); return }
@@ -488,6 +502,36 @@ export default function CustomProfileModal({ open, onClose, editProfile }: Custo
                 />
               )
             })}
+
+            {/* ── Advanced thresholds (Phase 3c) ── */}
+            <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-faint)]">
+                {t('customProfile.thresholds.title')}
+              </span>
+              <div className="flex flex-col gap-2 mt-2">
+                {([
+                  { key: 'proxyOverusePct',     def: 5,   unit: '%' },
+                  { key: 'coordinateOffsetKm',  def: 10,  unit: 'km' },
+                  { key: 'fileSizePerElementKB', def: 500, unit: 'KB/el' },
+                ] as const).map(({ key, def, unit }) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <label className="text-[11px] text-[var(--text-dim)] flex-1 min-w-0">
+                      {t(`customProfile.thresholds.${key}`)}
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={localRules.thresholds?.[key] ?? ''}
+                      onChange={(e) => setThreshold(key, e.target.value)}
+                      placeholder={String(def)}
+                      className="w-16 h-7 px-2 text-[11px] rounded-md text-right outline-none"
+                      style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                    />
+                    <span className="text-[10px] text-[var(--text-faint)] w-12">{unit}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* ── Footer ── */}

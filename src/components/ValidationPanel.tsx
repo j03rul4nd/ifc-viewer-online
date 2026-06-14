@@ -18,6 +18,8 @@ import { useModelStore } from '../stores/modelStore'
 import { useSceneStore } from '../stores/sceneStore'
 import { useBcfStore } from '../stores/bcfStore'
 import { useWaiverStore, issueKey } from '../stores/waiverStore'
+import { diffResults } from '../lib/validation-diff'
+import type { ValidationDiff } from '../lib/validation-diff'
 import { toast } from '../stores/toastStore'
 import { buildFixGuidCommand, buildRenameCommand } from '../lib/diffStore'
 import { useEditorHistory } from '../hooks/useEditorHistory'
@@ -32,6 +34,7 @@ import { VALIDATION_PROFILES, RULE_METADATA, getRuleLabel, getRuleRemediation, A
 import type { AuthoringTool } from '../types'
 import { getCoveredCategories, ALL_CATEGORIES } from './ValidationCoverageSummary'
 import BcfPanel from './BcfPanel'
+import { useIdsStore } from '../stores/idsStore'
 import CustomProfileModal from './CustomProfileModal'
 import ValidationExportModal, { type ExportModelEntry } from './ValidationExportModal'
 import { getRecentRuns, getAverageQualityScore, getMostUsedRules } from '../lib/validation-analytics'
@@ -257,7 +260,7 @@ function getEditField(ruleId: string): 'Name' | 'LongName' {
 // ── Issue row ─────────────────────────────────────────────────────────────────
 
 function IssueRow({
-  issue, hasPendingFix, onJumpTo, onAutoFix, onNameFix, onAddToBcf,
+  issue, hasPendingFix, onJumpTo, onAutoFix, onNameFix, onAddToBcf, onMute,
 }: {
   issue: ValidationIssue
   hasPendingFix: boolean
@@ -265,6 +268,7 @@ function IssueRow({
   onAutoFix: (issue: ValidationIssue) => void
   onNameFix: (issue: ValidationIssue, field: 'Name' | 'LongName', newValue: string) => void
   onAddToBcf?: (issue: ValidationIssue) => void
+  onMute?: (issue: ValidationIssue) => void
 }) {
   const { t } = useTranslation('validation')
   const [editing, setEditing]     = useState(false)
@@ -360,6 +364,18 @@ function IssueRow({
             >
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                 <path d="M5 1v8M1 5h8" />
+              </svg>
+            </button>
+          )}
+          {onMute && (
+            <button
+              onClick={() => onMute(issue)}
+              title={t('waivers.mute')}
+              className="w-6 h-6 flex items-center justify-center rounded bg-[var(--surface-2)] text-[var(--text-faint)] border border-[var(--border)] hover:text-[var(--text)] active:bg-[var(--border)] transition-colors"
+            >
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 4.5h2L6.5 2.5v7L4 7.5H2z" />
+                <path d="M8 4.5l2.5 3M10.5 4.5l-2.5 3" />
               </svg>
             </button>
           )}
@@ -1279,6 +1295,39 @@ function CoverageIntegrityStrip({ coverage, language }: { coverage: ValidationCo
 }
 
 
+// ── Run-to-run comparison bar (Phase 4) ──────────────────────────────────────
+// "Since your last run": what got resolved, what newly appeared, score movement.
+function RunDiffBar({ diff, onDismiss }: { diff: ValidationDiff; onDismiss: () => void }) {
+  const { t } = useTranslation('validation')
+  const improved = diff.scoreDelta > 0 || (diff.scoreDelta === 0 && diff.resolved > diff.added)
+  const worse    = diff.scoreDelta < 0 || (diff.scoreDelta === 0 && diff.added > diff.resolved)
+  const c = improved ? 'var(--ok)' : worse ? 'var(--danger)' : 'var(--text-faint)'
+  const deltaStr = `${diff.scoreDelta > 0 ? '+' : ''}${diff.scoreDelta}`
+  return (
+    <div
+      className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border)] shrink-0"
+      style={{ background: `color-mix(in srgb, ${c} 8%, transparent)` }}
+    >
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+        {improved ? <path d="M2 8l3-3 2 2 3-4" /> : worse ? <path d="M2 4l3 3 2-2 3 4" /> : <path d="M2 6h8" />}
+      </svg>
+      <span className="text-[10px] text-[var(--text-dim)]">
+        {t('runDiff.summary', { resolved: diff.resolved, added: diff.added })}
+      </span>
+      <span className="text-[10px] font-mono font-semibold" style={{ color: c }}>
+        {t('runDiff.scoreDelta', { delta: deltaStr })}
+      </span>
+      <button
+        onClick={onDismiss}
+        className="ml-auto shrink-0 w-5 h-5 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+        title={t('coverage.hideTitle')}
+      >
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M1.5 1.5l5 5M6.5 1.5l-5 5" /></svg>
+      </button>
+    </div>
+  )
+}
+
 // ── Executive summary (actionable score) ─────────────────────────────────────
 // "Fix this first": the rules dragging the Health Score down the most, each with
 // the points roughly recoverable by clearing it. Clicking one jumps to its group.
@@ -1594,6 +1643,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   )
   const sceneModels  = useSceneStore((s) => s.models)
   const cachedResultsByModel = useValidationStore((s) => s.cachedResultsByModel)
+  const previousResultByModel = useValidationStore((s) => s.previousResultByModel)
   const bcfTopicCount = useBcfStore((s) => s.topics.length)
 
   const { t, i18n } = useTranslation('validation')
@@ -1637,7 +1687,8 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
 
   // Phantom notice auto-reappears after each new validation run
   const [showPhantomNotice, setShowPhantomNotice] = useState(true)
-  useEffect(() => { setShowPhantomNotice(true) }, [result])
+  const [showRunDiff, setShowRunDiff] = useState(true)
+  useEffect(() => { setShowPhantomNotice(true); setShowRunDiff(true) }, [result])
 
   // ── Resize state ──────────────────────────────────────────────────────
 
@@ -1746,6 +1797,17 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   // Honest-score signals: a run is only trustworthy when every enabled rule ran.
   const coverage = result?.metadata?.coverage
   const coverageIncomplete = !!coverage && !coverage.complete
+
+  // Run-to-run comparison for the active model (Phase 4): the panel diffs the
+  // current cached result against the snapshot taken before the latest run.
+  const runDiff = useMemo<ValidationDiff | null>(() => {
+    if (!activeValidationModelId) return null
+    const prev = previousResultByModel[activeValidationModelId]
+    const curr = cachedResultsByModel[activeValidationModelId]
+    if (!prev || !curr) return null
+    const d = diffResults(prev, curr)
+    return d.unchanged ? null : d
+  }, [previousResultByModel, cachedResultsByModel, activeValidationModelId])
 
   const pendingFixIds = useMemo(
     () => new Set(diffs.filter((d) => d.type === 'RENAME').map((d) => d.expressId)),
@@ -2101,7 +2163,12 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   if (!validationPanelOpen) {
     return (
       <button
-        onClick={() => { toggleValidationPanel(); trackValidationPanelOpened({ trigger: 'manual' }) }}
+        onClick={() => {
+          // The bottom slot is shared with the IdsPanel — the two are exclusive.
+          useIdsStore.getState().setPanelOpen(false)
+          toggleValidationPanel()
+          trackValidationPanelOpened({ trigger: 'manual' })
+        }}
         className="flex items-center gap-2 px-3 h-10 xs:h-9 border-t border-[var(--border)] bg-[var(--surface)] w-full text-left hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] transition-colors shrink-0 max-md:hidden"
       >
         <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider shrink-0">
@@ -2123,15 +2190,15 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
             {stats.errors === 0 && stats.warnings === 0 && stats.info === 0 && (
               <span className="text-[11px] text-[var(--ok)] font-mono">✓ {t('results.noIssues')}</span>
             )}
-            {result?.qualityScore != null && (
+            {displayScore != null && (
               <span
                 className="px-1.5 py-0.5 rounded-full font-mono font-bold text-[10px] border leading-none"
                 style={(() => {
-                  const c = result.qualityScore >= 80 ? 'var(--ok)' : result.qualityScore >= 50 ? '#F5A623' : 'var(--danger)'
+                  const c = displayScore >= 80 ? 'var(--ok)' : displayScore >= 50 ? '#F5A623' : 'var(--danger)'
                   return { color: c, borderColor: `${c}44`, background: `${c}14` }
                 })()}
               >
-                {result.qualityScore}
+                {displayScore}
               </span>
             )}
           </div>
@@ -2209,11 +2276,11 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
             {stats.total === 0 && (
               <span className="text-[var(--ok)] shrink-0">✓</span>
             )}
-            {result?.qualityScore != null && (
+            {displayScore != null && (
               <span
                 className="ml-0.5 px-1.5 py-0.5 rounded-full font-bold text-[9px] border leading-none shrink-0"
                 style={(() => {
-                  const c = result.qualityScore >= 80 ? 'var(--ok)' : result.qualityScore >= 50 ? '#F5A623' : 'var(--danger)'
+                  const c = displayScore >= 80 ? 'var(--ok)' : displayScore >= 50 ? '#F5A623' : 'var(--danger)'
                   return { color: c, borderColor: `${c}44`, background: `${c}14` }
                 })()}
                 title={[
@@ -2221,14 +2288,18 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                   coverageIncomplete
                     ? t('coverage.partialTitle', { ran: coverage?.okCount ?? 0, total: coverage?.attempted.length ?? 0 })
                     : null,
+                  mutedCount > 0 ? t('waivers.scoreNote', { count: mutedCount }) : null,
                   unconfiguredRules.length > 0
                     ? `${TOTAL_RULE_COUNT - unconfiguredRules.length}/${TOTAL_RULE_COUNT} active rules (${unconfiguredRules.length} unconfigured)`
                     : null,
                 ].filter(Boolean).join(' · ')}
               >
-                {result.qualityScore}
+                {displayScore}
                 {coverageIncomplete && (
                   <span className="ml-0.5" style={{ color: 'var(--danger)' }}>⚠</span>
+                )}
+                {mutedCount > 0 && (
+                  <span className="ml-0.5 opacity-60">⊘</span>
                 )}
                 {unconfiguredRules.length > 0 && (
                   <span className="ml-0.5 opacity-60">⚙</span>
@@ -2625,6 +2696,25 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
               </div>
             )}
 
+            {/* Since-last-run comparison (Phase 4) */}
+            {!isRunning && runDiff && showRunDiff && (
+              <RunDiffBar diff={runDiff} onDismiss={() => setShowRunDiff(false)} />
+            )}
+
+            {/* Waiver bar — muted issues are excluded from the score/counts above */}
+            {!isRunning && mutedCount > 0 && (
+              <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border)] bg-[var(--surface-2)] shrink-0">
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="var(--text-faint)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                  <path d="M2 4.5h2L6.5 2.5v7L4 7.5H2z" />
+                  <path d="M8 4.5l2.5 3M10.5 4.5l-2.5 3" />
+                </svg>
+                <span className="text-[10px] text-[var(--text-faint)]">{t('waivers.mutedCount', { count: mutedCount })}</span>
+                <button onClick={unmuteAll} className="ml-auto text-[10px] font-medium text-[var(--accent)] hover:underline">
+                  {t('waivers.restoreAll')}
+                </button>
+              </div>
+            )}
+
             {/* Actionable summary — what to fix first (Phase 2) */}
             {!isRunning && result && result.stats.total > 0 && (
               <ExecutiveSummary
@@ -2697,6 +2787,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
                           onAutoFix={handleAutoFix}
                           onNameFix={handleNameFix}
                           onAddToBcf={handleAddIssueToBcf}
+                          onMute={handleMute}
                         />
                       )}
                     </div>

@@ -304,6 +304,97 @@ export function trackFeatureUsed(props: {
   track('feature_used', props)
 }
 
+// ── GIS / Map mode ────────────────────────────────────────────────────────────
+// INV-5 (privacy): these events NEVER carry coordinates, addresses, EPSG values
+// tied to a location, or file names — only categorical flags.
+
+/** Map mode successfully enabled. */
+export function trackMapModeEnabled(props: {
+  georef_status: 'unknown' | 'extracting' | 'found' | 'partial' | 'none' | 'invalid'
+  source:        'ifc' | 'manual'
+}): void {
+  track('map_mode_enabled', props)
+}
+
+/** Map mode disabled (duration in whole seconds). */
+export function trackMapModeDisabled(props: { duration_s: number }): void {
+  track('map_mode_disabled', props)
+}
+
+/** Base layer switched. */
+export function trackMapLayerChanged(props: {
+  layer: 'osm' | 'opentopomap' | 'esri-imagery' | 'eox-s2' | 'gibs' | 'custom'
+}): void {
+  track('map_layer_changed', props)
+}
+
+/** A manual placement was saved for the current file. */
+export function trackMapPlacementSaved(props: { source: 'ifc' | 'manual' }): void {
+  track('map_placement_saved', props)
+}
+
+/** 3D terrain patch toggled. */
+export function trackMapTerrainToggled(props: { enabled: boolean }): void {
+  track('map_terrain_toggled', props)
+}
+
+/** Georeferencing extraction finished (quality telemetry for the ladder). */
+export function trackMapGeorefExtracted(props: {
+  status:   'found' | 'partial' | 'none' | 'invalid' | 'unknown'
+  rung:     1 | 2 | 3 | 4 | null
+  has_epsg: boolean
+}): void {
+  track('map_georef_extracted', props)
+}
+
+/** Something in map mode failed (stage-level only, no details). */
+export function trackMapError(props: { stage: 'enable' | 'extract' | 'terrain' | 'tiles' }): void {
+  track('map_error', props)
+}
+
+// ── IDS (Information Delivery Specification) ───────────────────────────────────
+// Funnel: ids_file_loaded → ids_check_started → ids_check_completed → ids_export.
+// Privacy: categorical counts only — never file names, element names, or values.
+
+/** A buildingSMART .ids file was parsed and loaded (before any run). */
+export function trackIdsFileLoaded(props: {
+  spec_count:  number
+  facet_count: number
+}): void {
+  track('ids_file_loaded', props)
+}
+
+/** An IDS check run started against the active model. */
+export function trackIdsCheckStarted(props: {
+  spec_count: number
+}): void {
+  track('ids_check_started', props)
+}
+
+/** An IDS check finished and results are available. Fires on every run. */
+export function trackIdsCheckCompleted(props: {
+  score:         number
+  spec_count:    number
+  failed_specs:  number
+  duration_ms:   number
+  model_mb:      number
+  model_schema:  string | null
+}): void {
+  track('ids_check_completed', props)
+}
+
+/** An IDS check was cancelled mid-run. */
+export function trackIdsCheckCancelled(): void {
+  track('ids_check_cancelled')
+}
+
+/** IDS results were exported (P6). */
+export function trackIdsExport(props: {
+  format: 'json' | 'csv' | 'html' | 'bcf'
+}): void {
+  track('ids_export', props)
+}
+
 // ── Virality ──────────────────────────────────────────────────────────────────
 
 /**

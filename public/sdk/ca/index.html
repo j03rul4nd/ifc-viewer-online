@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="index,follow" />
+  <title>IFC Viewer SDK — integra el visor al teu CDE o app</title>
+  <meta name="description" content="Integra el visor IFC al teu CDE, bessó digital o eines internes. Carrega bytes IFC des de la teva app — l'anàlisi es manté al navegador. Sense backend de pujada." />
+  <style>
+    :root { --accent:#5E6AD2; --accent2:#818cf8; --bg:#0b0b0f; --surface:#15151b; --border:#26262f; --text:#e8e8ec; --dim:#a0a0ad; --faint:#6b6b78; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+    a { color:var(--accent2); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 80px; }
+    .nav { display:flex;flex-wrap:wrap;gap:6px;font-size:12.5px;margin-bottom:22px;align-items:center }
+    .nav b { color:var(--faint);font-weight:600;margin-right:4px }
+    h1 { font-size: 30px; letter-spacing:-0.02em; margin:0 0 8px; }
+    h2 { font-size: 19px; margin: 40px 0 10px; letter-spacing:-0.01em; }
+    .lede { color:var(--dim); font-size:16px; max-width:640px; }
+    .badge { display:inline-block; font:600 11px/1 ui-monospace,monospace; color:var(--accent2); background:rgba(94,106,210,0.12); border:1px solid rgba(94,106,210,0.3); padding:5px 9px; border-radius:999px; margin-bottom:14px; }
+    .bullets { display:flex; flex-wrap:wrap; gap:10px; margin:18px 0 6px; padding:0; list-style:none; }
+    .bullets li { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:9px 13px; font-size:13px; color:var(--dim); }
+    .bullets b { color:var(--text); font-weight:600; }
+    pre { background:#08080b; border:1px solid var(--border); border-radius:12px; padding:16px; overflow:auto; font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; color:#cdd0e0; }
+    .viewer-shell { position:relative; height:520px; border-radius:14px; overflow:hidden; border:1px solid rgba(94,106,210,0.35); background:#0d0d10; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; margin:14px 0; }
+    button.demo { cursor:pointer; font:600 13px/1 inherit; color:var(--text); background:var(--surface); border:1px solid var(--border); padding:9px 13px; border-radius:9px; }
+    button.demo:hover { border-color:var(--accent); }
+    button.demo.primary { background:var(--accent); border-color:var(--accent); }
+    .status { font:12px/1 ui-monospace,monospace; color:var(--faint); align-self:center; }
+    table { border-collapse:collapse; width:100%; font-size:13px; margin-top:8px; }
+    th,td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
+    th { color:var(--faint); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+    code { background:#08080b; border:1px solid var(--border); border-radius:5px; padding:1px 5px; font:12.5px ui-monospace,monospace; color:#cdd0e0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav"><b>Idioma:</b><a href="../" hreflang="en" style="color:var(--faint);text-decoration:none">English</a><span style="color:var(--border)"> · </span><a href="../es/" hreflang="es" style="color:var(--faint);text-decoration:none">Español</a><span style="color:var(--border)"> · </span><a href="../de/" hreflang="de" style="color:var(--faint);text-decoration:none">Deutsch</a><span style="color:var(--border)"> · </span><a href="../fr/" hreflang="fr" style="color:var(--faint);text-decoration:none">Français</a><span style="color:var(--border)"> · </span><a href="../pt/" hreflang="pt" style="color:var(--faint);text-decoration:none">Português</a><span style="color:var(--border)"> · </span><a href="../it/" hreflang="it" style="color:var(--faint);text-decoration:none">Italiano</a><span style="color:var(--border)"> · </span><a href="./" hreflang="ca" style="color:var(--text);font-weight:600;text-decoration:none">Català</a><span style="color:var(--border)"> · </span><a href="../zh/" hreflang="zh" style="color:var(--faint);text-decoration:none">中文</a><span style="color:var(--border)"> · </span><a href="../ja/" hreflang="ja" style="color:var(--faint);text-decoration:none">日本語</a><span style="color:var(--border)"> · </span><a href="../th/" hreflang="th" style="color:var(--faint);text-decoration:none">ไทย</a></nav>
+    <span class="badge">IFC VIEWER SDK · v1.6.0</span>
+    <h1>Integra el visor al teu propi producte</h1>
+    <p class="lede">Insereix el mateix visor del navegador al teu CDE, bessó digital o eines internes de projecte. Carrega dades IFC des de la teva app mentre el processament del model es manté al client.</p>
+
+    <ul class="bullets">
+      <li>✓ <b>Sense backend de pujada</b></li>
+      <li>✓ <b>S'executa directament al navegador</b></li>
+      <li>✓ <b>Preparat per a IFC, BCF i IDS</b></li>
+    </ul>
+
+    <h2>Inici ràpid</h2>
+    <pre><code>&lt;div id="viewer" style="height:520px"&gt;&lt;/div&gt;
+&lt;script type="module"&gt;
+  import { IfcViewer } from "../ifc-viewer.es.js";
+
+  const viewer = new IfcViewer("#viewer");
+
+  const bytes = await fetch("/models/project.ifc").then(r =&gt; r.arrayBuffer());
+  await viewer.add("project.ifc", bytes);
+&lt;/script&gt;</code></pre>
+    <p class="lede" style="font-size:13px;margin-bottom:6px">O, sense JS — l’etiqueta:</p>
+    <pre><code>&lt;script type="module" src="../ifc-viewer.es.js"&gt;&lt;/script&gt;
+&lt;ifc-viewer model="https://host/project.ifc" ui="minimal"
+            style="display:block;height:520px"&gt;&lt;/ifc-viewer&gt;</code></pre>
+    <p class="lede" style="font-size:13px">El SDK descobreix l'URL de l'app de manera relativa a aquest script, així que l'auto-allotjament funciona sol.</p>
+
+    <h2>Demo en directe</h2>
+    <p class="lede">Aquesta pàgina usa el propi SDK. Fes clic per baixar un IFC d’exemple i passar-ne els bytes al visor.</p>
+    <div class="row">
+      <button class="demo primary" id="load">Carrega IFC d’exemple</button>
+      <button class="demo" id="isolate">Aïlla murs</button>
+      <button class="demo" id="top">Vista superior</button>
+      <button class="demo" id="fit">Enquadra</button>
+      <button class="demo" id="reset">Reinicia càmera</button>
+      <button class="demo" id="shot" title="screenshot">📷</button>
+      <button class="demo" id="clear">Neteja</button>
+      <span class="status" id="status">inactiu</span>
+    </div>
+    <div style="height:3px;border-radius:999px;background:var(--border);overflow:hidden;margin:0 0 8px">
+      <div id="bar" style="height:100%;width:0;background:var(--accent);transition:width .2s ease"></div>
+    </div>
+    <div class="viewer-shell"><div id="viewer" style="height:100%"></div></div>
+
+    <h2>API</h2>
+    <table>
+      <tr><th>Mètode</th><th>Descripció</th></tr>
+      <tr><td><code>new IfcViewer(target, options?)</code></td><td>Munta en un selector CSS o element. Opcions: ui, validate, panel, lang, height, model, loadTimeout, baseUrl.</td></tr>
+      <tr><td><code>add(name, bytes)</code></td><td>Carrega bytes IFC (ArrayBuffer/Uint8Array) des de la teva app. Retorna una promesa amb la info del model.</td></tr>
+      <tr><td><code>addFromUrl(url, name?)</code></td><td>Carrega un URL IFC públic amb CORS.</td></tr>
+      <tr><td><code>select(expressId)</code></td><td>Selecciona i enquadra un element pel seu expressID IFC.</td></tr>
+      <tr><td><code>isolate(ifcType?)</code></td><td>Aïlla una categoria (p. ex. "IfcWall"); omet-ho per netejar.</td></tr>
+      <tr><td><code>setView(view)</code></td><td>Vola a una vista de càmera: iso, top, front, right, left, back, bottom.</td></tr>
+      <tr><td><code>fit() · reset()</code></td><td>Enquadra el model actiu / reinicia la càmera.</td></tr>
+      <tr><td><code>showAll()</code></td><td>Restaura tota la visibilitat (treu ocults + aïllament).</td></tr>
+      <tr><td><code>setLanguage(lang)</code></td><td>Canvia l'idioma de la interfície en temps d'execució.</td></tr>
+      <tr><td><code>clear()</code></td><td>Elimina tots els models carregats.</td></tr>
+      <tr><td><code>getLanguages()</code></td><td>Llista els codis d'idioma admesos (etiquetes a IfcViewer.LANGUAGES).</td></tr>
+      <tr><td><code>getModels()</code></td><td>Llista els models carregats ({ id, fileName, elementCount }). Retorna una promesa.</td></tr>
+      <tr><td><code>getElement(id, modelId?)</code></td><td>Obté les dades IFC d'un element (atributs + property/quantity sets). Retorna una promesa.</td></tr>
+      <tr><td><code>getValidation()</code></td><td>Obté el resum de validació (Health Score + recomptes). Retorna una promesa.</td></tr>
+      <tr><td><code>getStats()</code></td><td>Recompte d’elements per categoria i model — per a gràfics. Retorna una promesa.</td></tr>
+      <tr><td><code>getIssues(opts?)</code></td><td>Incidències de validació per a una taula (filtra per severitat / límit). Retorna una promesa.</td></tr>
+      <tr><td><code>checkIds(idsXml)</code></td><td>Check the model against a buildingSMART IDS (.ids XML). Returns pass/fail per spec.</td></tr>
+      <tr><td><code>screenshot()</code></td><td>Captura la vista 3D actual com a data URL PNG. Retorna una promesa.</td></tr>
+      <tr><td><code>removeModel(modelId)</code></td><td>Descarrega un model per id.</td></tr>
+      <tr><td><code>hideElements(ids) · showElements(ids)</code></td><td>Amaga / mostra un conjunt d'elements per expressID.</td></tr>
+      <tr><td><code>setCamera(pos, dir)</code></td><td>Col·loca la càmera en una posició mirant en una direcció.</td></tr>
+      <tr><td><code>on(event, cb)</code></td><td>Subscriu-te / cancel·la esdeveniments; retorna una funció per cancel·lar.</td></tr>
+      <tr><td><code>dispose()</code></td><td>Desmunta i elimina l'iframe.</td></tr>
+    </table>
+
+    <h2>Esdeveniments</h2>
+    <table>
+      <tr><th>Mètode</th><th>Descripció</th></tr>
+      <tr><td><code>ready</code></td><td>Visor muntat i a punt ({ languages }).</td></tr>
+      <tr><td><code>model-progress</code></td><td>Progrés de càrrega ({ percent, phase }).</td></tr>
+      <tr><td><code>model-loaded</code></td><td>Un model ha acabat de carregar ({ modelId, fileName, elementCount }).</td></tr>
+      <tr><td><code>validation-completed</code></td><td>Validació acabada — Health Score ({ qualityScore, errors, warnings, info }).</td></tr>
+      <tr><td><code>model-error</code></td><td>Una càrrega ha fallat ({ message }).</td></tr>
+      <tr><td><code>element-selected</code></td><td>L'usuari ha triat un element ({ expressId, ifcType, name }).</td></tr>
+    </table>
+
+    <p style="margin-top:28px;color:var(--faint);font-size:13px">El model es baixa al navegador del visitant i s'analitza al client amb WebAssembly — no es puja res als nostres servidors.</p>
+  </div>
+
+  <script type="module">
+    import { IfcViewer } from "../ifc-viewer.es.js";
+    const SAMPLE = "https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc";
+    const I18N = {"ready":"a punt — fes clic «Carrega IFC d’exemple»","fetching":"baixant IFC d’exemple…","handing":"passant bytes al visor…","cleared":"netejat"};
+    const statusEl = document.getElementById("status");
+    const barEl = document.getElementById("bar");
+    const setStatus = (s) => { statusEl.textContent = s; };
+    const setBar = (p) => { barEl.style.width = (p || 0) + "%"; };
+
+    const viewer = new IfcViewer("#viewer", { ui: "minimal" });
+    viewer.on("ready", () => setStatus(I18N.ready));
+    viewer.on("model-progress", (p) => { setBar(p.percent); setStatus(p.phase + "… " + Math.round(p.percent) + "%"); });
+    viewer.on("model-loaded", (m) => { setBar(100); setStatus("✓ " + m.fileName + " · " + m.elementCount); });
+    viewer.on("validation-completed", (v) => { if (v.qualityScore != null) setStatus("Health Score: " + v.qualityScore + " / 100"); });
+    viewer.on("model-error", (e) => setStatus("⚠ " + e.message));
+    viewer.on("element-selected", (e) => setStatus(e.ifcType + " #" + e.expressId));
+
+    document.getElementById("load").addEventListener("click", async () => {
+      setStatus(I18N.fetching); setBar(0);
+      try {
+        const bytes = await fetch(SAMPLE).then((r) => r.arrayBuffer());
+        setStatus(I18N.handing);
+        await viewer.add("Ifc4_SampleHouse.ifc", bytes);
+      } catch (err) { setStatus("⚠ " + (err?.message || err)); }
+    });
+    document.getElementById("isolate").addEventListener("click", () => viewer.isolate("IfcWall"));
+    document.getElementById("top").addEventListener("click", () => viewer.setView("top"));
+    document.getElementById("fit").addEventListener("click", () => viewer.fit());
+    document.getElementById("reset").addEventListener("click", () => viewer.reset());
+    document.getElementById("clear").addEventListener("click", () => { viewer.clear(); setBar(0); setStatus(I18N.cleared); });
+    document.getElementById("shot").addEventListener("click", async () => {
+      try { const url = await viewer.screenshot(); if (url) window.open(url, "_blank"); } catch (e) { setStatus("⚠ " + (e?.message || e)); }
+    });
+  </script>
+</body>
+</html>

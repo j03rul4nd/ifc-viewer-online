@@ -1,0 +1,119 @@
+{
+  "panel": {
+    "title": "Mapa",
+    "close": "Cerrar panel"
+  },
+  "consent": {
+    "title": "¿Cargar teselas de mapa?",
+    "body": "El modo mapa carga teselas de proveedores públicos (OpenStreetMap y otros). Las peticiones de teselas revelan al proveedor la ubicación aproximada del emplazamiento. Tu archivo de modelo nunca sale de tu navegador.",
+    "accept": "Activar mapa",
+    "cancel": "Cancelar"
+  },
+  "enable": {
+    "show": "Ver en el mapa",
+    "hide": "Ocultar mapa",
+    "starting": "Iniciando…",
+    "retry": "Reintentar",
+    "noModel": "Carga primero un modelo"
+  },
+  "status": {
+    "title": "Georreferenciación",
+    "found": "Georreferenciado",
+    "partial": "Parcialmente georreferenciado",
+    "none": "Sin georreferenciar",
+    "invalid": "Georreferenciación inválida",
+    "unknown": "Aún sin analizar",
+    "extracting": "Analizando…",
+    "rung1": "IfcMapConversion + CRS proyectado (LoGeoRef 50)",
+    "rung2": "Property sets ePSet_MapConversion (LoGeoRef 50)",
+    "rung3": "Latitud/longitud del emplazamiento (LoGeoRef 20–40)",
+    "rung4": "No se encontraron entidades de georreferenciación",
+    "confidenceHigh": "confianza alta",
+    "confidenceApproximate": "aproximada — verifica la posición",
+    "crs": "CRS",
+    "debug": "Valores en bruto",
+    "largeOffset": "La geometría está a más de 10 km del origen del archivo"
+  },
+  "reasons": {
+    "invalid": {
+      "nullIsland": "Las coordenadas son el valor por defecto de la herramienta de autoría (0, 0 — \"Null Island\").",
+      "outOfRange": "Un valor de coordenada está fuera del rango plausible.",
+      "badScale": "El factor de escala del MapConversion es implausible.",
+      "zeroRotationAxis": "El eje de rotación es un vector cero — la rotación se trata como desconocida.",
+      "unknownCrs": "No se pudo identificar el sistema de referencia de coordenadas."
+    },
+    "extract": {
+      "noSourceBuffer": "Los bytes IFC originales no están disponibles (cargado desde caché). Vuelve a cargar el archivo para analizar la georreferenciación.",
+      "failed": "La extracción de georreferenciación falló."
+    }
+  },
+  "errors": {
+    "enableFailed": "El mapa no pudo iniciarse. Comprueba tu conexión y reintenta.",
+    "unknownCrs": "Sistema de referencia de coordenadas desconocido",
+    "chunkLoad": "El módulo de mapa no pudo cargarse.",
+    "terrainFailed": "El terreno no pudo cargarse."
+  },
+  "crs": {
+    "title": "Se necesita el sistema de coordenadas",
+    "body": "El archivo declara coordenadas de cuadrícula pero su CRS \"{{name}}\" no se reconoce. Introduce el código EPSG (y opcionalmente una definición proj4):",
+    "epsgLabel": "Código EPSG",
+    "epsgPlaceholder": "p. ej. EPSG:25830",
+    "proj4Label": "Definición proj4 (opcional)",
+    "proj4Placeholder": "+proj=utm +zone=30 …",
+    "apply": "Aplicar y ver en el mapa",
+    "invalid": "Ese código/definición no se pudo usar."
+  },
+  "layers": {
+    "title": "Capas",
+    "streets": "Callejero",
+    "topo": "Topográfico",
+    "satellite": "Satélite",
+    "custom": "Personalizada",
+    "terrain": "Terreno 3D",
+    "terrainLoading": "Cargando terreno…",
+    "style": "Estilo del terreno",
+    "styleImagery": "Mapa",
+    "styleShaded": "Relieve",
+    "styleHypso": "Altitud",
+    "exaggeration": "Altura ×",
+    "termsTitle": "Términos de las imágenes satélite",
+    "termsBody": "No existe una capa satélite gratuita de alta resolución con licencia limpia. Elige una fuente y acepta sus términos:",
+    "esriNote": "Esri World Imagery — gratis solo para uso no comercial / sin ingresos según los términos de ArcGIS.",
+    "eoxNote": "Sentinel-2 cloudless de EOX (10 m) — CC-BY-NC, solo uso no comercial.",
+    "gibsNote": "NASA GIBS Blue Marble — imágenes abiertas, resolución muy baja (~250 m).",
+    "accept": "Aceptar y usar",
+    "cancel": "Cancelar",
+    "customTitle": "Fuente de teselas personalizada",
+    "customUrl": "Plantilla de URL XYZ / WMTS",
+    "customUrlPlaceholder": "https://…/{z}/{x}/{y}.png",
+    "customAttribution": "Texto de atribución",
+    "customSave": "Guardar fuente",
+    "customInvalid": "Plantilla inválida — debe ser https y contener {z}, {x} e {y}."
+  },
+  "placement": {
+    "title": "Ubicación",
+    "edit": "Ajustar ubicación",
+    "apply": "Aplicar",
+    "cancel": "Cancelar",
+    "lat": "Latitud",
+    "lon": "Longitud",
+    "rotation": "Rotación (°)",
+    "height": "Desfase de altura (m)",
+    "pick": "Elegir ubicación en el mapa",
+    "picking": "Haz clic en el mapa para situar el modelo…",
+    "nudge": "Ajuste fino",
+    "saved": "Ubicación guardada para este archivo",
+    "sourceIfc": "Desde la georreferenciación del IFC",
+    "sourceManual": "Ubicación manual",
+    "manualIntro": "Este modelo no tiene georreferenciación utilizable. Introduce coordenadas WGS84 para situarlo en el mapa:",
+    "manualShow": "Situar manualmente",
+    "resetHeight": "Restablecer altura"
+  },
+  "degraded": {
+    "banner": "Las teselas del mapa no están disponibles — el proveedor puede estar caído o limitando peticiones.",
+    "switch": "Cambiar proveedor"
+  },
+  "attribution": {
+    "vertical": "Las alturas son aproximadas — los datums verticales del IFC y del terreno pueden diferir en metros."
+  }
+}

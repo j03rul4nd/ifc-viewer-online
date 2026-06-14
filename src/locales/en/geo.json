@@ -1,0 +1,119 @@
+{
+  "panel": {
+    "title": "Map",
+    "close": "Close panel"
+  },
+  "consent": {
+    "title": "Load map tiles?",
+    "body": "Map mode loads tiles from public providers (OpenStreetMap and others). Tile requests reveal the approximate site location to the provider. Your model file never leaves your browser.",
+    "accept": "Enable map",
+    "cancel": "Cancel"
+  },
+  "enable": {
+    "show": "Show on map",
+    "hide": "Hide map",
+    "starting": "Starting…",
+    "retry": "Retry",
+    "noModel": "Load a model first"
+  },
+  "status": {
+    "title": "Georeferencing",
+    "found": "Georeferenced",
+    "partial": "Partially georeferenced",
+    "none": "Not georeferenced",
+    "invalid": "Invalid georeferencing",
+    "unknown": "Not analyzed yet",
+    "extracting": "Analyzing…",
+    "rung1": "IfcMapConversion + projected CRS (LoGeoRef 50)",
+    "rung2": "ePSet_MapConversion property sets (LoGeoRef 50)",
+    "rung3": "Site latitude/longitude (LoGeoRef 20–40)",
+    "rung4": "No georeferencing entities found",
+    "confidenceHigh": "high confidence",
+    "confidenceApproximate": "approximate — verify the position",
+    "crs": "CRS",
+    "debug": "Raw values",
+    "largeOffset": "Geometry sits more than 10 km from the file origin"
+  },
+  "reasons": {
+    "invalid": {
+      "nullIsland": "Coordinates are the authoring-tool default (0, 0 — \"Null Island\").",
+      "outOfRange": "A coordinate value is outside the plausible range.",
+      "badScale": "The MapConversion scale factor is implausible.",
+      "zeroRotationAxis": "The rotation axis is a zero vector — rotation treated as unknown.",
+      "unknownCrs": "The coordinate reference system could not be identified."
+    },
+    "extract": {
+      "noSourceBuffer": "The original IFC bytes are not available (loaded from cache). Reload the file to analyze georeferencing.",
+      "failed": "Georeferencing extraction failed."
+    }
+  },
+  "errors": {
+    "enableFailed": "The map could not start. Check your connection and retry.",
+    "unknownCrs": "Unknown coordinate reference system",
+    "chunkLoad": "The map module failed to load.",
+    "terrainFailed": "Terrain could not be loaded."
+  },
+  "crs": {
+    "title": "Coordinate system needed",
+    "body": "The file declares grid coordinates but its CRS \"{{name}}\" is not recognized. Enter the EPSG code (and optionally a proj4 definition):",
+    "epsgLabel": "EPSG code",
+    "epsgPlaceholder": "e.g. EPSG:25832",
+    "proj4Label": "proj4 definition (optional)",
+    "proj4Placeholder": "+proj=utm +zone=32 …",
+    "apply": "Apply & show on map",
+    "invalid": "That code/definition could not be used."
+  },
+  "layers": {
+    "title": "Layers",
+    "streets": "Streets",
+    "topo": "Topo",
+    "satellite": "Satellite",
+    "custom": "Custom",
+    "terrain": "3D terrain",
+    "terrainLoading": "Loading terrain…",
+    "style": "Terrain style",
+    "styleImagery": "Map",
+    "styleShaded": "Relief",
+    "styleHypso": "Elevation",
+    "exaggeration": "Height ×",
+    "termsTitle": "Satellite imagery terms",
+    "termsBody": "There is no free, license-clean high-resolution satellite layer. Pick a source and accept its terms:",
+    "esriNote": "Esri World Imagery — free only for non-commercial / non-revenue use under the ArcGIS terms.",
+    "eoxNote": "Sentinel-2 cloudless by EOX (10 m) — CC-BY-NC, non-commercial use only.",
+    "gibsNote": "NASA GIBS Blue Marble — open imagery, very low resolution (~250 m).",
+    "accept": "Accept & use",
+    "cancel": "Cancel",
+    "customTitle": "Custom tile source",
+    "customUrl": "XYZ / WMTS URL template",
+    "customUrlPlaceholder": "https://…/{z}/{x}/{y}.png",
+    "customAttribution": "Attribution text",
+    "customSave": "Save source",
+    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}."
+  },
+  "placement": {
+    "title": "Placement",
+    "edit": "Adjust placement",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "lat": "Latitude",
+    "lon": "Longitude",
+    "rotation": "Rotation (°)",
+    "height": "Height offset (m)",
+    "pick": "Pick location on map",
+    "picking": "Click the map to place the model…",
+    "nudge": "Nudge",
+    "saved": "Placement saved for this file",
+    "sourceIfc": "From IFC georeferencing",
+    "sourceManual": "Manual placement",
+    "manualIntro": "This model has no usable georeferencing. Enter WGS84 coordinates to place it on the map:",
+    "manualShow": "Place manually",
+    "resetHeight": "Reset height"
+  },
+  "degraded": {
+    "banner": "Map tiles are unavailable — the provider may be down or rate-limiting.",
+    "switch": "Switch provider"
+  },
+  "attribution": {
+    "vertical": "Heights are approximate — vertical datums between IFC and terrain may differ by metres."
+  }
+}

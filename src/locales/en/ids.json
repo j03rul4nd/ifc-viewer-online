@@ -1,0 +1,145 @@
+{
+  "title": "IDS check",
+  "subtitle": "Information Delivery Specification",
+  "loader": {
+    "choose": "Choose .ids file",
+    "specCount": "{{count}} spec",
+    "specCount_other": "{{count}} specs",
+    "clear": "Clear",
+    "viewResults": "View results",
+    "intro": "Load a buildingSMART .ids file to check this model against your delivery requirements.",
+    "introClient": "All IDS 1.0 facets are evaluated client-side — nothing leaves your browser.",
+    "parseError": "Could not read IDS: {{message}}",
+    "invalidFile": "Invalid IDS file: {{message}}"
+  },
+  "examples": {
+    "label": "No .ids file? Try a sample:",
+    "hasWallsName": "Model has walls",
+    "hasWallsDesc": "The deliverable must contain at least one named wall",
+    "namedElementsName": "Elements are named",
+    "namedElementsDesc": "Common building elements must have a Name",
+    "wallFireRatingName": "Walls fire rating",
+    "wallFireRatingDesc": "Walls declare FireRating in Pset_WallCommon",
+    "doorsNamedRatedName": "Doors named & rated",
+    "doorsNamedRatedDesc": "Doors have a Name and a FireRating"
+  },
+  "run": {
+    "run": "Run check",
+    "rerun": "Re-run check",
+    "checking": "Checking…",
+    "cancel": "Cancel",
+    "cancelling": "Cancelling…",
+    "retry": "Retry"
+  },
+  "actions": {
+    "rerunShort": "Re-run",
+    "runShort": "Run",
+    "checkAll": "Check all ({{count}})",
+    "checkAllTitle": "Check this IDS against every loaded model",
+    "highlight": "Highlight",
+    "isolate": "Isolate",
+    "showAll": "Show all",
+    "collapse": "Collapse panel",
+    "highlightTitle": "Highlight failing elements in 3D",
+    "isolateTitle": "Show only the failing elements",
+    "reloadToRun": "Reload the .ifc to run IDS"
+  },
+  "multiRun": {
+    "progress": "Checking all models — {{done}} / {{total}}",
+    "modelsTitle": "Per-model scores — click to view"
+  },
+  "summary": {
+    "score": "{{score}}",
+    "outOf": "/ 100",
+    "pass": "{{count}} pass",
+    "fail": "{{count}} fail",
+    "na": "{{count}} n/a",
+    "passShort": "{{count}}✓",
+    "failShort": "{{count}}✗",
+    "naShort": "{{count}} n/a",
+    "checkedModel": "Checked model"
+  },
+  "progress": {
+    "open": "Opening model…",
+    "gather": "Reading elements…",
+    "check": "Checking specifications…"
+  },
+  "status": {
+    "skipped": "skipped",
+    "na": "n/a",
+    "fraction": "{{passed}}/{{applicable}}"
+  },
+  "filters": {
+    "groupSpec": "spec",
+    "groupElement": "element",
+    "groupClass": "class",
+    "search": "Search specs / elements…",
+    "clear": "Clear filters",
+    "specsCounted": "{{count}} spec",
+    "specsCounted_other": "{{count}} specs",
+    "failuresCounted": "{{count}} failure",
+    "failuresCounted_other": "{{count}} failures"
+  },
+  "facets": {
+    "entity": "entity",
+    "attribute": "attribute",
+    "property": "property",
+    "classification": "classification",
+    "material": "material",
+    "partOf": "partOf"
+  },
+  "collapsed": {
+    "noFile": "no file",
+    "notRun": "{{file}} — not run yet",
+    "checking": "checking… {{pct}}%"
+  },
+  "states": {
+    "noModel": "Load an IFC model to check it against delivery requirements.",
+    "noIds": "Load a buildingSMART .ids file to check this model.",
+    "noResult": "No results for this model yet — run the check against {{file}}.",
+    "noResultGeneric": "the loaded IDS",
+    "noMatch": "No specifications match the current filters.",
+    "bufferUnavailable": "The IFC source buffer is unavailable for this model — reload the .ifc to run IDS.",
+    "staleIds": "These results were produced with {{file}} — re-run with the current file."
+  },
+  "truncation": "Showing first 200 — {{count}} more failing element; export for the full list.",
+  "truncation_other": "Showing first 200 — {{count}} more failing elements; export for the full list.",
+  "diff": {
+    "scoreUp": "Score {{prev}} → {{curr}} (+{{delta}})",
+    "scoreDown": "Score {{prev}} → {{curr}} ({{delta}})",
+    "scoreSame": "Score unchanged at {{curr}}",
+    "resolved": "{{count}} fixed",
+    "added": "{{count}} new",
+    "dismiss": "Dismiss"
+  },
+  "export": {
+    "label": "Export",
+    "json": "JSON",
+    "csv": "CSV",
+    "html": "HTML",
+    "bcf": "BCF",
+    "jsonDesc": "Structured report (codes + text)",
+    "csvDesc": "One row per failure (Excel)",
+    "htmlDesc": "Printable standalone report",
+    "bcfDesc": "Issues for BIMcollab / Solibri",
+    "bcfEmpty": "No failures to export",
+    "done": "Report downloaded",
+    "soon": "Coming soon"
+  },
+  "errors": {
+    "checkFailed": "IDS check failed",
+    "bufferUnavailable": "The IFC source buffer is unavailable. Reload the .ifc file.",
+    "untitled": "untitled.ids",
+    "orphaned": "The previous check was interrupted — run it again.",
+    "largeModel": "This model is {{mb}} MB. Checking it may use a lot of memory and could be slow. Continue?"
+  },
+  "reasons": {
+    "missingRequired": "missing required {{what}}",
+    "wrongValue": "{{what}} = (wrong value), expected {{expected}}",
+    "prohibitedPresent": "{{what}} is present but prohibited",
+    "specRequiredButAbsent": "the model contains no elements matching this required specification",
+    "specProhibitedButPresent": "prohibited elements are present in the model",
+    "wrongDataType": "{{what}} has the wrong data type — expected {{expected}}, found {{actual}}",
+    "unsupportedPattern": "pattern not supported by this checker: {{pattern}}"
+  }
+}

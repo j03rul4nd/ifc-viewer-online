@@ -1,0 +1,107 @@
+# GIS Map Mode — user & maintainer guide
+
+Optional feature that places a loaded IFC model on a real-world 2D basemap
+(OpenStreetMap and friends) inside the existing 3D scene. Implemented per
+[`GIS_MAP_INTEGRATION_PLAN.md`](GIS_MAP_INTEGRATION_PLAN.md) — that document
+remains the architectural reference; this one is the operational summary.
+
+## Enabling the feature
+
+Build-time flag: `VITE_FEATURE_GIS=true` (see `.env.example`). When unset, the
+Map button never renders, no GIS chunk loads, and viewer behavior is
+byte-identical to a build without the feature. This is the kill switch.
+
+## What the user sees
+
+1. **Map** button in the toolbar (globe icon, needs a loaded model).
+2. First use shows a **privacy consent** dialog: tile requests reveal the
+   approximate site location to the tile provider; the model never leaves the
+   browser. Persisted in `localStorage` (`ifc-geo-consent:v1`).
+3. On *Show on map*, georeferencing is extracted from the IFC in a web worker
+   (ladder: `IfcMapConversion`+`IfcProjectedCRS` → `ePSet_MapConversion` →
+   `IfcSite` lat/lon → none, with sanity gates for Null Island, bad scale,
+   out-of-range and out-of-CRS-domain values):
+   - **Georeferenced** → auto-placed, badge shows the rung + EPSG code.
+   - **Grid coords with unknown CRS** → inline EPSG/proj4 picker.
+   - **None/invalid** → manual placement form (WGS84 lat/lon), then
+     fine-tuning with nudge buttons, rotation, height offset and
+     "pick location on map" (single click, no drag conflicts).
+4. Layers: **Streets** (OSM, default) · **Topo** (OpenTopoMap) · **Satellite**
+   (explicit terms sheet — Esri non-revenue / EOX CC-BY-NC / NASA GIBS low-res;
+   there is *no* license-clean free high-res satellite source) · **Custom**
+   (any https XYZ/WMTS template, the vendor-lock-in escape hatch).
+5. **3D terrain** toggle: fixed 3×3 patch of AWS terrarium elevation tiles
+   (no LOD by design). Since the 2026-06 fidelity pass
+   (`TERRAIN_3D_IMPROVEMENT_PLAN.md`): ONE seamless mesh from a unified 768²
+   height grid (bilinear, 257² vertices), adaptive DEM zoom (z15 default, z14
+   for big models / |lat|>60°), imagery draped at a HIGHER zoom than the DEM
+   (+1 for OSM-policy providers, +2 otherwise, anisotropy 8), baked hillshade
+   in vertex colours, and the drape **follows provider switches live**
+   (`TerrainPatch.redrape()` — heights are never refetched). Moving the
+   placement out of the centre tile triggers a debounced (800 ms) rebuild.
+   While terrain is on, the FLAT basemap is clipped away under the patch
+   (4 local clipping planes, intersection mode) so valleys below the ground
+   plane are visible — rivers sink instead of hiding under the flat tiles.
+   Three visualization styles (map imagery / shaded relief / hypsometric
+   tint) and a live ×1–×3 vertical exaggeration slider sit under the terrain
+   toggle (persisted). Vertical datums IFC↔terrain can differ by metres; the
+   height-offset slider absorbs it.
+6. Attribution pill (bottom-right) is a **license obligation**, not decor.
+7. Manual placements persist per file (`ifc-geo-placement:v1:<cacheKey>`) and
+   win over extracted georeferencing on the next load. Note: demo-gallery
+   models get a fresh `lastModified` per download, so their cache key — and
+   therefore the saved placement — does not survive a re-download. User files
+   opened from disk persist correctly.
+
+## Architecture (file map)
+
+| Piece | File |
+|---|---|
+| Feature flag | `src/lib/geo/gis-flag.ts` |
+| Pure math (mercator, slippy, IFC angles, geoRoot compose) | `src/lib/geo/geo-math.ts` |
+| CRS resolution (proj4 + bundled EPSG defs + custom) | `src/lib/geo/crs.ts` |
+| Extraction ladder (pure) | `src/lib/geo/georef-ladder.ts` |
+| Extraction worker (web-ifc, single-thread) | `src/workers/geo-extract.worker.ts` |
+| Worker client + load-time quick scan | `src/lib/geo/geo-extract-runner.ts` |
+| Extraction→placement glue + persistence | `src/lib/geo/placement.ts` |
+| Provider registry + custom slot | `src/lib/geo/providers.ts` |
+| Tile engine seam (3d-tiles-renderer impl + T0 decision block) | `src/lib/geo/basemap-engine.ts` |
+| Lifecycle owner (geoRoot, env snapshot/restore, camera flight, picking) | `src/lib/geo/geo-system.ts` |
+| Point elevation (terrarium) | `src/lib/geo/elevation.ts` |
+| Terrain sampling math (pure: bilinear, normals, zoom selection) | `src/lib/geo/terrain-sampling.ts` |
+| Terrain worker + mesh assembly | `src/workers/geo-terrain.worker.ts`, `src/lib/geo/geo-terrain.ts` |
+| Product state (epoch-guarded) | `src/stores/geoStore.ts` |
+| UI (panel, consent, layers, editor, pill) | `src/components/GeoPanel.tsx` |
+| Viewer hook (lazy `getGeo()`, ~15 additive lines) | `src/lib/viewer.ts` |
+
+Key invariants:
+
+- **INV-2** — the map aligns to the model, never the reverse. 1 scene unit =
+  1 true metre at the anchor latitude (`cos φ₀` scales the *basemap*).
+  Measurements, BCF viewpoints and exports are identical in and out of map mode.
+- **INV-3** — every environment value touched on enable (camera planes, fog,
+  controls clamps, grid, camera pose) is snapshotted and restored exactly on
+  disable. Covered by unit tests (`geo-system.test.ts`).
+- **INV-5** — only `z/x/y` ever appear in tile URLs; analytics events carry no
+  coordinates or file names.
+- Chunking: entry growth ≈ a few kB (eager EN strings only); the engine lives
+  in the lazy `geo-system` chunk (~114 kB), panel+proj4 in the lazy `GeoPanel`
+  chunk (~157 kB). `vite.config.ts` `manualChunks` explicitly keeps
+  `3d-tiles-renderer`/`proj4` out of the eager vendor chunks.
+
+## Maintainer notes
+
+- `3d-tiles-renderer` is pinned at 0.4.28 semantics: `GeneratedSurfacePlugin`
+  (planar, centred, `applyOverlayTexture`) + `XYZTilesOverlay`. The deprecated
+  `XYZTilesPlugin` must not be used. Full decision block at the top of
+  `basemap-engine.ts`. The package ships no types for `GeneratedSurfacePlugin`
+  — see `src/types/3d-tiles-renderer-plugins.d.ts` (delete when upstream adds
+  them).
+- Tile streaming is driven by a geo-owned `requestAnimationFrame`; browsers
+  freeze rAF in hidden tabs, so streaming pauses while the tab is hidden and
+  resumes on focus (also true for the rest of the viewer). In dev,
+  `globalThis.__basemapTiles` exposes the live `TilesRenderer` for diagnosis.
+- Provider licensing was reviewed 2026-06 (`lastReviewed` in `providers.ts`).
+  Re-verify before GA, especially Esri terms and the EOX layer year.
+- i18n namespace `geo`: EN + ES are hand-written; the other 8 locales are
+  EN copies flagged `_status: machine-copy-of-en` pending translation.

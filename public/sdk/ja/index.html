@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="index,follow" />
+  <title>IFC Viewer SDK — ビューアを CDE やアプリに組み込む</title>
+  <meta name="description" content="IFC ビューアを CDE、デジタルツイン、社内ツールに組み込みます。IFC バイトを自社アプリから読み込み、解析はブラウザ内で行います。アップロード用バックエンド不要。" />
+  <style>
+    :root { --accent:#5E6AD2; --accent2:#818cf8; --bg:#0b0b0f; --surface:#15151b; --border:#26262f; --text:#e8e8ec; --dim:#a0a0ad; --faint:#6b6b78; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+    a { color:var(--accent2); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 80px; }
+    .nav { display:flex;flex-wrap:wrap;gap:6px;font-size:12.5px;margin-bottom:22px;align-items:center }
+    .nav b { color:var(--faint);font-weight:600;margin-right:4px }
+    h1 { font-size: 30px; letter-spacing:-0.02em; margin:0 0 8px; }
+    h2 { font-size: 19px; margin: 40px 0 10px; letter-spacing:-0.01em; }
+    .lede { color:var(--dim); font-size:16px; max-width:640px; }
+    .badge { display:inline-block; font:600 11px/1 ui-monospace,monospace; color:var(--accent2); background:rgba(94,106,210,0.12); border:1px solid rgba(94,106,210,0.3); padding:5px 9px; border-radius:999px; margin-bottom:14px; }
+    .bullets { display:flex; flex-wrap:wrap; gap:10px; margin:18px 0 6px; padding:0; list-style:none; }
+    .bullets li { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:9px 13px; font-size:13px; color:var(--dim); }
+    .bullets b { color:var(--text); font-weight:600; }
+    pre { background:#08080b; border:1px solid var(--border); border-radius:12px; padding:16px; overflow:auto; font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; color:#cdd0e0; }
+    .viewer-shell { position:relative; height:520px; border-radius:14px; overflow:hidden; border:1px solid rgba(94,106,210,0.35); background:#0d0d10; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; margin:14px 0; }
+    button.demo { cursor:pointer; font:600 13px/1 inherit; color:var(--text); background:var(--surface); border:1px solid var(--border); padding:9px 13px; border-radius:9px; }
+    button.demo:hover { border-color:var(--accent); }
+    button.demo.primary { background:var(--accent); border-color:var(--accent); }
+    .status { font:12px/1 ui-monospace,monospace; color:var(--faint); align-self:center; }
+    table { border-collapse:collapse; width:100%; font-size:13px; margin-top:8px; }
+    th,td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
+    th { color:var(--faint); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+    code { background:#08080b; border:1px solid var(--border); border-radius:5px; padding:1px 5px; font:12.5px ui-monospace,monospace; color:#cdd0e0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav"><b>言語:</b><a href="../" hreflang="en" style="color:var(--faint);text-decoration:none">English</a><span style="color:var(--border)"> · </span><a href="../es/" hreflang="es" style="color:var(--faint);text-decoration:none">Español</a><span style="color:var(--border)"> · </span><a href="../de/" hreflang="de" style="color:var(--faint);text-decoration:none">Deutsch</a><span style="color:var(--border)"> · </span><a href="../fr/" hreflang="fr" style="color:var(--faint);text-decoration:none">Français</a><span style="color:var(--border)"> · </span><a href="../pt/" hreflang="pt" style="color:var(--faint);text-decoration:none">Português</a><span style="color:var(--border)"> · </span><a href="../it/" hreflang="it" style="color:var(--faint);text-decoration:none">Italiano</a><span style="color:var(--border)"> · </span><a href="../ca/" hreflang="ca" style="color:var(--faint);text-decoration:none">Català</a><span style="color:var(--border)"> · </span><a href="../zh/" hreflang="zh" style="color:var(--faint);text-decoration:none">中文</a><span style="color:var(--border)"> · </span><a href="./" hreflang="ja" style="color:var(--text);font-weight:600;text-decoration:none">日本語</a><span style="color:var(--border)"> · </span><a href="../th/" hreflang="th" style="color:var(--faint);text-decoration:none">ไทย</a></nav>
+    <span class="badge">IFC VIEWER SDK · v1.6.0</span>
+    <h1>ビューアを自社プロダクトに組み込む</h1>
+    <p class="lede">同じブラウザビューアを CDE、デジタルツイン、社内のプロジェクトツールに組み込みます。モデル処理はクライアント側のまま、自社アプリから IFC データを直接読み込みます。</p>
+
+    <ul class="bullets">
+      <li>✓ <b>アップロード用バックエンド不要</b></li>
+      <li>✓ <b>ブラウザ上で直接動作</b></li>
+      <li>✓ <b>IFC・BCF・IDS に対応</b></li>
+    </ul>
+
+    <h2>クイックスタート</h2>
+    <pre><code>&lt;div id="viewer" style="height:520px"&gt;&lt;/div&gt;
+&lt;script type="module"&gt;
+  import { IfcViewer } from "../ifc-viewer.es.js";
+
+  const viewer = new IfcViewer("#viewer");
+
+  const bytes = await fetch("/models/project.ifc").then(r =&gt; r.arrayBuffer());
+  await viewer.add("project.ifc", bytes);
+&lt;/script&gt;</code></pre>
+    <p class="lede" style="font-size:13px;margin-bottom:6px">または、JS なしでタグを：</p>
+    <pre><code>&lt;script type="module" src="../ifc-viewer.es.js"&gt;&lt;/script&gt;
+&lt;ifc-viewer model="https://host/project.ifc" ui="minimal"
+            style="display:block;height:520px"&gt;&lt;/ifc-viewer&gt;</code></pre>
+    <p class="lede" style="font-size:13px">SDK はこのスクリプトからの相対でアプリ URL を自動検出するため、セルフホストはそのまま動作します。</p>
+
+    <h2>ライブデモ</h2>
+    <p class="lede">このページ自体が SDK を使用しています。クリックするとサンプル IFC を取得し、そのバイトをビューアに渡します。</p>
+    <div class="row">
+      <button class="demo primary" id="load">サンプル IFC を読み込む</button>
+      <button class="demo" id="isolate">壁を分離</button>
+      <button class="demo" id="top">上面ビュー</button>
+      <button class="demo" id="fit">フィット</button>
+      <button class="demo" id="reset">カメラをリセット</button>
+      <button class="demo" id="shot" title="screenshot">📷</button>
+      <button class="demo" id="clear">クリア</button>
+      <span class="status" id="status">待機中</span>
+    </div>
+    <div style="height:3px;border-radius:999px;background:var(--border);overflow:hidden;margin:0 0 8px">
+      <div id="bar" style="height:100%;width:0;background:var(--accent);transition:width .2s ease"></div>
+    </div>
+    <div class="viewer-shell"><div id="viewer" style="height:100%"></div></div>
+
+    <h2>API</h2>
+    <table>
+      <tr><th>メソッド</th><th>説明</th></tr>
+      <tr><td><code>new IfcViewer(target, options?)</code></td><td>CSS セレクタまたは要素にマウント。オプション: ui, validate, panel, lang, height, model, loadTimeout, baseUrl。</td></tr>
+      <tr><td><code>add(name, bytes)</code></td><td>自社アプリから IFC バイト（ArrayBuffer/Uint8Array）を読み込みます。モデル情報を含む Promise を返します。</td></tr>
+      <tr><td><code>addFromUrl(url, name?)</code></td><td>CORS 対応の公開 IFC URL を読み込みます。</td></tr>
+      <tr><td><code>select(expressId)</code></td><td>IFC expressID で要素を選択してフレーミングします。</td></tr>
+      <tr><td><code>isolate(ifcType?)</code></td><td>カテゴリを分離（例: "IfcWall"）。省略でクリア。</td></tr>
+      <tr><td><code>setView(view)</code></td><td>カメラビューへ移動: iso, top, front, right, left, back, bottom。</td></tr>
+      <tr><td><code>fit() · reset()</code></td><td>アクティブなモデルにフィット / カメラをリセット。</td></tr>
+      <tr><td><code>showAll()</code></td><td>表示を全復元（非表示・分離を解除）。</td></tr>
+      <tr><td><code>setLanguage(lang)</code></td><td>実行時に UI 言語を変更します。</td></tr>
+      <tr><td><code>clear()</code></td><td>読み込み済みのモデルをすべて削除します。</td></tr>
+      <tr><td><code>getLanguages()</code></td><td>対応言語コードを列挙（ラベルは IfcViewer.LANGUAGES）。</td></tr>
+      <tr><td><code>getModels()</code></td><td>読み込み済みモデルを列挙（{ id, fileName, elementCount }）。Promise を返します。</td></tr>
+      <tr><td><code>getElement(id, modelId?)</code></td><td>要素の IFC データ（属性＋プロパティ/数量セット）を取得。Promise を返します。</td></tr>
+      <tr><td><code>getValidation()</code></td><td>現在の検証サマリ（ヘルススコア＋件数）を取得。Promise を返します。</td></tr>
+      <tr><td><code>getStats()</code></td><td>モデルごとのカテゴリ別要素数 — ダッシュボードのグラフ用。Promise を返します。</td></tr>
+      <tr><td><code>getIssues(opts?)</code></td><td>テーブル用の検証問題（重大度 / 件数でフィルタ）。Promise を返します。</td></tr>
+      <tr><td><code>checkIds(idsXml)</code></td><td>Check the model against a buildingSMART IDS (.ids XML). Returns pass/fail per spec.</td></tr>
+      <tr><td><code>screenshot()</code></td><td>現在の 3D ビューを PNG data URL として取得。Promise を返します。</td></tr>
+      <tr><td><code>removeModel(modelId)</code></td><td>id でモデルをアンロードします。</td></tr>
+      <tr><td><code>hideElements(ids) · showElements(ids)</code></td><td>expressID で要素の集合を非表示 / 表示します。</td></tr>
+      <tr><td><code>setCamera(pos, dir)</code></td><td>カメラを指定位置に置き、指定方向を向かせます。</td></tr>
+      <tr><td><code>on(event, cb)</code></td><td>イベントを購読 / 解除。解除用の関数を返します。</td></tr>
+      <tr><td><code>dispose()</code></td><td>破棄して iframe を削除します。</td></tr>
+    </table>
+
+    <h2>イベント</h2>
+    <table>
+      <tr><th>メソッド</th><th>説明</th></tr>
+      <tr><td><code>ready</code></td><td>ビューアがマウントされ準備完了（{ languages }）。</td></tr>
+      <tr><td><code>model-progress</code></td><td>読み込みの進捗（{ percent, phase }）。</td></tr>
+      <tr><td><code>model-loaded</code></td><td>モデルの読み込みが完了（{ modelId, fileName, elementCount }）。</td></tr>
+      <tr><td><code>validation-completed</code></td><td>検証完了 — ヘルススコア（{ qualityScore, errors, warnings, info }）。</td></tr>
+      <tr><td><code>model-error</code></td><td>読み込みに失敗（{ message }）。</td></tr>
+      <tr><td><code>element-selected</code></td><td>ユーザーが要素を選択（{ expressId, ifcType, name }）。</td></tr>
+    </table>
+
+    <p style="margin-top:28px;color:var(--faint);font-size:13px">モデルは訪問者のブラウザで取得され、WebAssembly によりクライアント側で解析されます — 当社サーバーには何もアップロードされません。</p>
+  </div>
+
+  <script type="module">
+    import { IfcViewer } from "../ifc-viewer.es.js";
+    const SAMPLE = "https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc";
+    const I18N = {"ready":"準備完了 — 「サンプル IFC を読み込む」をクリック","fetching":"サンプル IFC を取得中…","handing":"バイトをビューアに渡しています…","cleared":"クリアしました"};
+    const statusEl = document.getElementById("status");
+    const barEl = document.getElementById("bar");
+    const setStatus = (s) => { statusEl.textContent = s; };
+    const setBar = (p) => { barEl.style.width = (p || 0) + "%"; };
+
+    const viewer = new IfcViewer("#viewer", { ui: "minimal" });
+    viewer.on("ready", () => setStatus(I18N.ready));
+    viewer.on("model-progress", (p) => { setBar(p.percent); setStatus(p.phase + "… " + Math.round(p.percent) + "%"); });
+    viewer.on("model-loaded", (m) => { setBar(100); setStatus("✓ " + m.fileName + " · " + m.elementCount); });
+    viewer.on("validation-completed", (v) => { if (v.qualityScore != null) setStatus("Health Score: " + v.qualityScore + " / 100"); });
+    viewer.on("model-error", (e) => setStatus("⚠ " + e.message));
+    viewer.on("element-selected", (e) => setStatus(e.ifcType + " #" + e.expressId));
+
+    document.getElementById("load").addEventListener("click", async () => {
+      setStatus(I18N.fetching); setBar(0);
+      try {
+        const bytes = await fetch(SAMPLE).then((r) => r.arrayBuffer());
+        setStatus(I18N.handing);
+        await viewer.add("Ifc4_SampleHouse.ifc", bytes);
+      } catch (err) { setStatus("⚠ " + (err?.message || err)); }
+    });
+    document.getElementById("isolate").addEventListener("click", () => viewer.isolate("IfcWall"));
+    document.getElementById("top").addEventListener("click", () => viewer.setView("top"));
+    document.getElementById("fit").addEventListener("click", () => viewer.fit());
+    document.getElementById("reset").addEventListener("click", () => viewer.reset());
+    document.getElementById("clear").addEventListener("click", () => { viewer.clear(); setBar(0); setStatus(I18N.cleared); });
+    document.getElementById("shot").addEventListener("click", async () => {
+      try { const url = await viewer.screenshot(); if (url) window.open(url, "_blank"); } catch (e) { setStatus("⚠ " + (e?.message || e)); }
+    });
+  </script>
+</body>
+</html>

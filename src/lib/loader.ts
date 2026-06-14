@@ -39,6 +39,7 @@ import { createLogger } from './logger'
 import { appBus }             from './event-bus'
 import { buildSpatialTree }   from './validator'
 import { modelRegistry }      from './model-registry'
+import { isGisEnabled }       from './geo/gis-flag'
 import { useModelStore } from '../stores/modelStore'
 import { toast, toastFromError } from '../stores/toastStore'
 import type { ViewerAPI } from './viewer'
@@ -404,6 +405,16 @@ export function useIfcLoader(opts: UseIfcLoaderOptions): UseIfcLoaderResult {
 
       // Build the spatial tree for this specific model in the background
       void buildSpatialTree(sceneModelId)
+
+      // GIS badge pre-scan (cheap token scan, no WASM). Dynamic import keeps
+      // all geo code out of the entry chunk when the flag is off — and out of
+      // the critical load path even when it's on.
+      if (isGisEnabled() && ifcBuffer && ifcBuffer.byteLength > 0) {
+        const geoBuffer = ifcBuffer
+        void import('./geo/geo-extract-runner')
+          .then((m) => m.quickScanAndStore(sceneModelId, geoBuffer))
+          .catch((err: unknown) => log.debug('geo quick-scan skipped:', err))
+      }
 
     } catch (err: unknown) {
       log.error('Load failed:', err)

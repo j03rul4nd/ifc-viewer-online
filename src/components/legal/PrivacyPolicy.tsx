@@ -1,8 +1,9 @@
 import React from 'react'
 import LegalLayout from './LegalLayout'
+import { SITE_URL } from '../../seo/config'
 
 const CONTACT = 'joelbenitezdonari@gmail.com'
-const DOMAIN  = 'https://j03rul4nd.github.io/ifc-viewer-online/'
+const DOMAIN  = SITE_URL
 const LAST_UPDATED = '2026-06-04'
 
 // ── Prose helpers ─────────────────────────────────────────────────────────────

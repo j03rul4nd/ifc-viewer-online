@@ -7,7 +7,10 @@
  */
 
 // ── Site-wide constants ───────────────────────────────────────────────────────
-export const SITE_URL  = 'https://j03rul4nd.github.io/ifc-viewer-online/'
+// Origin (with trailing slash) where the app is served. Environment-driven so the
+// same build serves both hosts: GitHub Pages falls back to the project URL, while
+// Vercel / a custom domain sets VITE_SITE_URL (see vercel.json).
+export const SITE_URL  = (import.meta.env.VITE_SITE_URL as string | undefined) || 'https://j03rul4nd.github.io/ifc-viewer-online/'
 export const SITE_NAME = 'IFC Viewer Online'
 
 // ── Per-locale meta ───────────────────────────────────────────────────────────

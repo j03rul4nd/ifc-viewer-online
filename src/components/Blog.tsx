@@ -15,6 +15,7 @@ import CopyForAI                   from './blog/CopyForAI'
 import BimGlossary                 from './blog/BimGlossary'
 import HealthScoreWidget, { HealthScoreRow } from './blog/HealthScoreWidget'
 import EmbedViewer from './blog/EmbedViewer'
+import EmbedConfigurator from './blog/EmbedConfigurator'
 
 // ─── Theme toggle button (shared by BlogList + PostView navs) ─────────────────
 
@@ -354,6 +355,17 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
             Rendered in your browser · zero bytes sent to any server
           </p>
         </div>
+      )
+
+    case 'embed-configurator':
+      return (
+        <EmbedConfigurator
+          title={block.title}
+          description={block.description}
+          defaultModelUrl={block.defaultModelUrl}
+          defaultFileName={block.defaultFileName}
+          defaultHeight={block.defaultHeight}
+        />
       )
 
     default:

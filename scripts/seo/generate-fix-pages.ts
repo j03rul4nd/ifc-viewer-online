@@ -20,7 +20,7 @@ import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
 import { RULE_REMEDIATION, AUTHORING_TOOLS, type AuthoringTool } from '../../src/i18n/rule-remediation'
 import { RULE_TRANSLATIONS, RULE_METADATA, VALIDATION_CATEGORY_LABELS } from '../../src/types'
 
-const SITE = 'https://j03rul4nd.github.io/ifc-viewer-online'
+const SITE = (process.env.VITE_SITE_URL || 'https://j03rul4nd.github.io/ifc-viewer-online').replace(/\/$/, '')
 
 // ── PostHog analytics snippet for static pages ────────────────────────────────
 // Read at build time from the same env vars used by the SPA. If no key is set

@@ -23,6 +23,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { createViewer, type ViewerAPI } from '../../lib/viewer'
 import { loadIfcForEmbed } from '../../lib/embed-loader'
 import { DEMO_MODELS } from '../../demo-models/models'
+import EmbedModal from '../EmbedModal'
 import type { Category, SelectedInfo } from '../../types'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -141,6 +142,7 @@ export default function EmbedViewer({
   const [selected,     setSelected]     = useState<SelectedInfo | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [errorMsg,     setErrorMsg]     = useState('')
+  const [showEmbed,    setShowEmbed]    = useState(false)
 
   // ── Resolve model info from registry or props ─────────────────────────────
   const demo          = modelId ? DEMO_MODELS.find(m => m.id === modelId) : undefined
@@ -350,6 +352,15 @@ export default function EmbedViewer({
                 </svg>
               </IconBtn>
 
+              {/* Embed — get iframe/link for this model */}
+              {resolvedUrl && (
+                <IconBtn title="Embed this model" onClick={() => setShowEmbed(true)}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/>
+                  </svg>
+                </IconBtn>
+              )}
+
               {/* Fullscreen */}
               {allowFullscreen && (
                 <IconBtn
@@ -404,6 +415,14 @@ export default function EmbedViewer({
           {/* One-time "how to interact" hint */}
           <OrbitHint />
         </>
+      )}
+
+      {/* Embed snippet generator (reuses the app modal) */}
+      {showEmbed && resolvedUrl && (
+        <EmbedModal
+          defaultModelUrl={resolvedUrl}
+          onClose={() => setShowEmbed(false)}
+        />
       )}
     </div>
   )

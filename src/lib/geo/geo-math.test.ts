@@ -1,0 +1,273 @@
+import { describe, it, expect } from 'vitest'
+import {
+  WGS84_RADIUS,
+  WEB_MERCATOR_WORLD_M,
+  MERCATOR_MAX_LAT,
+  latLonToMercator,
+  mercatorToLatLon,
+  latLonToNormalized,
+  normalizedToLatLon,
+  groundResolution,
+  cosLatScale,
+  latLonToTile,
+  latLonToTilePixel,
+  compoundAngleToDegrees,
+  rotationFromXAxis,
+  rotationFromTrueNorth,
+  normalizeDeg,
+  formatCoord,
+  composeGeoRootTransform,
+  eastDirection,
+  northDirection,
+  panPlacement,
+  wrapLon,
+} from './geo-math'
+
+const BCN = { lat: 41.3851, lon: 2.1734 } // Barcelona — golden fixture anchor
+
+describe('geo-math · projections', () => {
+  it('projects the equator/prime-meridian origin to mercator (0,0)', () => {
+    const { mx, my } = latLonToMercator(0, 0)
+    expect(mx).toBeCloseTo(0, 6)
+    expect(my).toBeCloseTo(0, 6)
+  })
+
+  it('projects lon 180 to half the world width', () => {
+    const { mx } = latLonToMercator(0, 180)
+    expect(mx).toBeCloseTo(WEB_MERCATOR_WORLD_M / 2, 3)
+  })
+
+  it('round-trips 1000 random points (merc ↔ latlon)', () => {
+    for (let i = 0; i < 1000; i++) {
+      const lat = (Math.random() * 2 - 1) * 84
+      const lon = (Math.random() * 2 - 1) * 179.9
+      const { mx, my } = latLonToMercator(lat, lon)
+      const back = mercatorToLatLon(mx, my)
+      expect(back.lat).toBeCloseTo(lat, 8)
+      expect(back.lon).toBeCloseTo(lon, 8)
+    }
+  })
+
+  it('handles southern/western hemispheres with correct signs', () => {
+    const { mx, my } = latLonToMercator(-33.4489, -70.6693) // Santiago de Chile
+    expect(mx).toBeLessThan(0)
+    expect(my).toBeLessThan(0)
+  })
+
+  it('clamps latitude beyond the mercator limit instead of producing Infinity', () => {
+    const { my } = latLonToMercator(90, 0)
+    const { my: myMax } = latLonToMercator(MERCATOR_MAX_LAT, 0)
+    expect(my).toBeCloseTo(myMax, 3)
+    expect(Number.isFinite(my)).toBe(true)
+  })
+
+  it('normalized coords span ±0.5 and round-trip', () => {
+    const edge = latLonToNormalized(0, 180)
+    expect(edge.nx).toBeCloseTo(0.5, 9)
+    const top = latLonToNormalized(MERCATOR_MAX_LAT, 0)
+    expect(top.ny).toBeCloseTo(0.5, 6)
+    const back = normalizedToLatLon(...(Object.values(latLonToNormalized(BCN.lat, BCN.lon)) as [number, number]))
+    expect(back.lat).toBeCloseTo(BCN.lat, 8)
+    expect(back.lon).toBeCloseTo(BCN.lon, 8)
+  })
+
+  it('normalized Y grows northward (matches GeneratedSurfacePlugin)', () => {
+    expect(latLonToNormalized(45, 0).ny).toBeGreaterThan(0)
+    expect(latLonToNormalized(-45, 0).ny).toBeLessThan(0)
+  })
+
+  it('ground resolution matches the published value at equator z0', () => {
+    // 2πR / 256 ≈ 156 543 m/px
+    expect(groundResolution(0, 0)).toBeCloseTo(156543.03, 1)
+    expect(groundResolution(60, 0)).toBeCloseTo(156543.03 * 0.5, 0)
+  })
+
+  it('cosLatScale is cos(lat)', () => {
+    expect(cosLatScale(0)).toBeCloseTo(1, 9)
+    expect(cosLatScale(60)).toBeCloseTo(0.5, 9)
+  })
+})
+
+describe('geo-math · slippy tiles', () => {
+  it('locates Barcelona in the correct z10 tile (verified against tile calculators)', () => {
+    // lon 2.1734 → x = (2.1734+180)/360·1024 = 518.17 → 518
+    // lat 41.3851 → y = (1 − ln(tan φ + sec φ)/π)/2 · 1024 = 382.5 → 382
+    expect(latLonToTile(BCN.lat, BCN.lon, 10)).toEqual({ x: 518, y: 382 })
+  })
+
+  it('tile (0,0) at z0 covers the whole world', () => {
+    expect(latLonToTile(80, -170, 0)).toEqual({ x: 0, y: 0 })
+    expect(latLonToTile(-80, 170, 0)).toEqual({ x: 0, y: 0 })
+  })
+
+  it('y grows southward', () => {
+    const north = latLonToTile(60, 0, 5)
+    const south = latLonToTile(-60, 0, 5)
+    expect(south.y).toBeGreaterThan(north.y)
+  })
+
+  it('tile pixel stays within the tile dimension', () => {
+    const p = latLonToTilePixel(BCN.lat, BCN.lon, 13, 256)
+    expect(p.px).toBeGreaterThanOrEqual(0)
+    expect(p.px).toBeLessThan(256)
+    expect(p.py).toBeGreaterThanOrEqual(0)
+    expect(p.py).toBeLessThan(256)
+    // tile indices must match latLonToTile
+    expect({ x: p.x, y: p.y }).toEqual(latLonToTile(BCN.lat, BCN.lon, 13))
+  })
+})
+
+describe('geo-math · IFC angles', () => {
+  it('converts positive compound angles', () => {
+    // 41° 23' 6.36" ≈ 41.38510
+    expect(compoundAngleToDegrees([41, 23, 6, 360000])).toBeCloseTo(41.3851, 4)
+  })
+
+  it('applies the sign of the first non-zero component to all parts', () => {
+    expect(compoundAngleToDegrees([-41, -23, -6])).toBeCloseTo(-(41 + 23 / 60 + 6 / 3600), 9)
+    // Sloppy file: only the first component carries the sign
+    expect(compoundAngleToDegrees([-41, 23, 6])).toBeCloseTo(-(41 + 23 / 60 + 6 / 3600), 9)
+  })
+
+  it('handles a sign carried by minutes when degrees are zero', () => {
+    expect(compoundAngleToDegrees([0, -30, 0])).toBeCloseTo(-0.5, 9)
+  })
+
+  it('rejects empty and non-finite input', () => {
+    expect(compoundAngleToDegrees([])).toBeNull()
+    expect(compoundAngleToDegrees(null)).toBeNull()
+    expect(compoundAngleToDegrees([NaN, 0])).toBeNull()
+  })
+
+  it('derives rotation from the MapConversion X axis (normalizing non-unit vectors)', () => {
+    expect(rotationFromXAxis(1, 0)).toBeCloseTo(0, 9)
+    expect(rotationFromXAxis(0, 1)).toBeCloseTo(Math.PI / 2, 9)
+    // non-unit vector — atan2 is scale-invariant
+    expect(rotationFromXAxis(86.6, 50)).toBeCloseTo(Math.PI / 6, 3)
+    expect(rotationFromXAxis(0, 0)).toBeNull()
+  })
+
+  it('derives rotation from TrueNorth ratios (0 when TrueNorth = +Y)', () => {
+    expect(rotationFromTrueNorth(0, 1)).toBeCloseTo(0, 9)
+    expect(rotationFromTrueNorth(1, 0)).toBeCloseTo(Math.PI / 2, 9)
+    expect(rotationFromTrueNorth(0, 0)).toBeNull()
+  })
+
+  it('normalizes degrees into [0, 360)', () => {
+    expect(normalizeDeg(370)).toBeCloseTo(10)
+    expect(normalizeDeg(-10)).toBeCloseTo(350)
+    expect(normalizeDeg(0)).toBe(0)
+  })
+
+  it('formats coordinates with a fixed dot separator', () => {
+    expect(formatCoord(41.38512345)).toBe('41.38512')
+    expect(formatCoord(-3.5, 2)).toBe('-3.50')
+  })
+
+  it('wraps longitude into [−180, 180)', () => {
+    expect(wrapLon(190)).toBeCloseTo(-170)
+    expect(wrapLon(-190)).toBeCloseTo(170)
+    expect(wrapLon(2.17)).toBeCloseTo(2.17)
+  })
+})
+
+describe('geo-math · composeGeoRootTransform (golden fixture)', () => {
+  const placement = { lat: BCN.lat, lon: BCN.lon, rotationDeg: 0, heightOffsetM: 0 }
+
+  it('scale = world width × cos(lat)', () => {
+    const t = composeGeoRootTransform({ placement, anchorScene: { x: 0, z: 0 }, modelMinY: 0 })
+    expect(t.scale).toBeCloseTo(WEB_MERCATOR_WORLD_M * Math.cos(BCN.lat * Math.PI / 180), 3)
+    expect(t.tiltRad).toBeCloseTo(-Math.PI / 2, 9)
+  })
+
+  it('anchors the geographic point at the requested scene position (yaw 0)', () => {
+    const t = composeGeoRootTransform({ placement, anchorScene: { x: 10, z: -5 }, modelMinY: 2 })
+    // Apply the TRS to the anchor's normalized coords and expect (10, 2, −5).
+    const { nx, ny } = latLonToNormalized(BCN.lat, BCN.lon)
+    // Rx(−π/2): (nx, ny, 0) → (nx, 0, −ny); scale; yaw 0; + position
+    const wx = t.position.x + t.scale * nx
+    const wy = t.position.y + 0
+    const wz = t.position.z - t.scale * ny
+    expect(wx).toBeCloseTo(10, 6)
+    expect(wy).toBeCloseTo(2, 6)
+    expect(wz).toBeCloseTo(-5, 6)
+  })
+
+  it('keeps the anchor fixed under yaw (rotation about the anchor, not the origin)', () => {
+    const yawed = composeGeoRootTransform({
+      placement: { ...placement, rotationDeg: 30 },
+      anchorScene: { x: 10, z: -5 },
+      modelMinY: 0,
+    })
+    const { nx, ny } = latLonToNormalized(BCN.lat, BCN.lon)
+    // Full transform: position + Ry(ψ)·S·Rx(−π/2)·(nx,ny,0)
+    const ax = yawed.scale * nx
+    const az = -yawed.scale * ny
+    const cos = Math.cos(yawed.yawRad)
+    const sin = Math.sin(yawed.yawRad)
+    const wx = yawed.position.x + (ax * cos + az * sin)
+    const wz = yawed.position.z + (-ax * sin + az * cos)
+    expect(wx).toBeCloseTo(10, 5)
+    expect(wz).toBeCloseTo(-5, 5)
+  })
+
+  it('height offset lowers the map plane (model appears higher)', () => {
+    const t = composeGeoRootTransform({
+      placement: { ...placement, heightOffsetM: 3 },
+      anchorScene: { x: 0, z: 0 },
+      modelMinY: 1,
+    })
+    expect(t.position.y).toBeCloseTo(-2, 9)
+  })
+
+  it('a point 1000 m east of the anchor lands 1000 scene-units along +X (true metres)', () => {
+    const t = composeGeoRootTransform({ placement, anchorScene: { x: 0, z: 0 }, modelMinY: 0 })
+    // Move east by Δlon such that true ground distance = 1000 m at this latitude.
+    const dLonDeg = (1000 / (WGS84_RADIUS * Math.cos(BCN.lat * Math.PI / 180))) * 180 / Math.PI
+    const p = latLonToNormalized(BCN.lat, BCN.lon + dLonDeg)
+    const wx = t.position.x + t.scale * p.nx
+    expect(wx).toBeCloseTo(1000, 0) // ±0.5 m — spherical vs ellipsoid tolerance
+  })
+})
+
+describe('geo-math · directions & panning', () => {
+  it('east/north directions at yaw 0 are +X and −Z', () => {
+    expect(eastDirection(0)).toEqual({ x: 1, z: -0 })
+    expect(northDirection(0).z).toBeCloseTo(-1, 9)
+  })
+
+  it('directions rotate with yaw and stay orthonormal', () => {
+    const yaw = Math.PI / 6
+    const e = eastDirection(yaw)
+    const n = northDirection(yaw)
+    expect(e.x * n.x + e.z * n.z).toBeCloseTo(0, 9)
+    expect(Math.hypot(e.x, e.z)).toBeCloseTo(1, 9)
+  })
+
+  it('map-grab pan moves the geographic position opposite to the drag (yaw 0)', () => {
+    const p = { lat: BCN.lat, lon: BCN.lon, rotationDeg: 0 }
+    // Drag the ground 1000 m toward +X (east): grabbed point follows pointer,
+    // so the model now sits 1000 m further WEST geographically.
+    const out = panPlacement(p, 1000, 0)
+    expect(out.lon).toBeLessThan(p.lon)
+    // And dragging north (−Z) moves the model geographically south.
+    const out2 = panPlacement(p, 0, -1000)
+    expect(out2.lat).toBeLessThan(p.lat)
+  })
+
+  it('pan distance is metric-accurate at the anchor', () => {
+    const p = { lat: 0, lon: 0, rotationDeg: 0 }
+    const out = panPlacement(p, -1000, 0) // drag west → model moves east
+    const merc = latLonToMercator(out.lat, out.lon)
+    expect(merc.mx).toBeCloseTo(1000, 0)
+  })
+
+  it('pan respects yaw (drag along yawed east axis changes only longitude)', () => {
+    const yawDeg = 90
+    const p = { lat: 0, lon: 0, rotationDeg: yawDeg }
+    // At yaw 90°, scene east axis is (cos90, −sin90) = (0, −1) → dragging −Z is "east drag"
+    const out = panPlacement(p, 0, -1000)
+    expect(Math.abs(out.lat)).toBeLessThan(1e-9)
+    expect(out.lon).toBeLessThan(0)
+  })
+})
