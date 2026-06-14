@@ -389,7 +389,11 @@ export default function UploadOverlay(props: UploadOverlayProps) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }}
       className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-xl flex items-center justify-center p-5"
-      onClick={canClose ? handleClose : undefined}
+      // Close only on a click that lands directly on the backdrop. Without this
+      // guard, the programmatic click from openFilePicker() on the hidden <input>
+      // (a child of this backdrop) bubbles up here and closes the modal the
+      // instant the OS file dialog opens — so the picked file never loads.
+      onClick={canClose ? (e) => { if (e.target === e.currentTarget) handleClose() } : undefined}
       aria-modal="true"
       role="dialog"
       aria-label="Open IFC file"
