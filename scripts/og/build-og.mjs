@@ -24,7 +24,7 @@
 //   APP_URL     running dev/preview URL (default: http://localhost:3002/ifc-viewer-online/)
 
 import { chromium } from 'playwright-core'
-import { mkdirSync, readFileSync, copyFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, copyFileSync, existsSync } from 'node:fs'
 
 // Read the localized button labels straight from the app's i18n JSON so the
 // captures work in every UI language without hardcoding fragile regexes.
@@ -125,6 +125,13 @@ const browser = await chromium.launch({
 // ── 1+2. Capture a real screenshot of the app running in `code` ───────────────
 async function captureApp(code) {
   const shot = `${DIR}/app-shot-${code}.png`
+  // Re-render only the branded card (e.g. to update the URL / branding) by
+  // reusing the previously captured app screenshot — no running app needed.
+  //   REUSE_APP_SHOT=1 npm run og
+  if (process.env.REUSE_APP_SHOT && existsSync(shot)) {
+    log(code, 'reusing existing app shot (REUSE_APP_SHOT)')
+    return shot
+  }
   const { loadDemo, validate } = localeStrings(code)
   const ctx = await browser.newContext({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 1.5 })
   const page = await ctx.newPage()
