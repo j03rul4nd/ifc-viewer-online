@@ -15,7 +15,7 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 
 **Persona split (resolution 2026-05-29).** The **buyer** is the BIM coordinator — they own conformance and will pay to enforce it. The **mandated free user** is the exporter (architect/engineer) who is told to run a check before handing off a model. The handoff between them is the growth loop: a coordinator shares a report, the exporter opens it, fixes issues, re-shares. The Health Score is the acquisition *hook*; project/issue conformance is the retention *engine*. Roadmap priorities follow from this — see `ROADMAP.md` Roadmap v2.
 
-**Live app:** `https://j03rul4nd.github.io/ifc-viewer-online/`  
+**Live app:** `https://www.ifcvieweronline.eu/`  
 **GitHub:** `https://github.com/j03rul4nd/ifc-viewer-online`
 
 ---

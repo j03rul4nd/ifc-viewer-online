@@ -7,11 +7,11 @@
 Visualizzatore + validatore IFC gratuito che gira interamente nel tuo browser.
 Nessun account. Nessun ruleset da configurare. Nessun limite di dimensione. I tuoi modelli non lasciano mai la tua macchina.
 
-[**→ Provalo dal vivo**](https://j03rul4nd.github.io/ifc-viewer-online/)
+[**→ Provalo dal vivo**](https://www.ifcvieweronline.eu/)
 
 <br/>
 
-[![Live demo](https://img.shields.io/badge/demo-dal_vivo-22c55e?style=for-the-badge)](https://j03rul4nd.github.io/ifc-viewer-online/)
+[![Live demo](https://img.shields.io/badge/demo-dal_vivo-22c55e?style=for-the-badge)](https://www.ifcvieweronline.eu/)
 [![License: MIT](https://img.shields.io/badge/licenza_core-MIT-3b82f6?style=for-the-badge)](#licenza--open-core)
 [![PRs welcome](https://img.shields.io/badge/PR-benvenute-8b5cf6?style=for-the-badge)](#come-contribuire)
 [![Stars](https://img.shields.io/github/stars/j03rul4nd/ifc-viewer-online?style=for-the-badge&color=f59e0b)](https://github.com/j03rul4nd/ifc-viewer-online/stargazers)
@@ -35,9 +35,9 @@ Nessun account. Nessun ruleset da configurare. Nessun limite di dimensione. I tu
 
 <div align="center">
 
-[![IFC Viewer Online — carica un modello, validalo e ottieni un Health Score, tutto nel browser](assets/demo.gif)](https://j03rul4nd.github.io/ifc-viewer-online/)
+[![IFC Viewer Online — carica un modello, validalo e ottieni un Health Score, tutto nel browser](assets/demo.gif)](https://www.ifcvieweronline.eu/)
 
-<sub><i>Carica un modello demo → esegui un profilo di validazione → Health Score con problemi in ordine di priorità, 100% nel browser. <a href="https://j03rul4nd.github.io/ifc-viewer-online/">Provalo dal vivo →</a></i></sub>
+<sub><i>Carica un modello demo → esegui un profilo di validazione → Health Score con problemi in ordine di priorità, 100% nel browser. <a href="https://www.ifcvieweronline.eu/">Provalo dal vivo →</a></i></sub>
 
 </div>
 

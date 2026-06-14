@@ -302,7 +302,7 @@ Ordered log of prompts used to build this project. Future sessions must not undo
 - `readme.md`: Full rewrite — new features list, 7-store table, project structure tree, roadmap table to Sprint 12
 
 **Key constraints introduced:**
-- GitHub Pages URL: `https://j03rul4nd.github.io/ifc-viewer-online/`
+- GitHub Pages URL: `https://www.ifcvieweronline.eu/`
 - llms.txt convention embedded in index.html comment block for AI engine discovery
 
 **Outcome:** All documentation and SEO updated. Sprint 7 (postproduction + measurements) is next.

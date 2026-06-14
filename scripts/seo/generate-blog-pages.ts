@@ -26,7 +26,7 @@ import path    from 'path'
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
 import { BLOG_POSTS, BLOG_POSTS_ES, BLOG_POSTS_DE, BLOG_POSTS_FR, type BlogPost } from '../../src/lib/blog-posts'
 
-const SITE = (process.env.VITE_SITE_URL || 'https://j03rul4nd.github.io/ifc-viewer-online').replace(/\/$/, '')
+const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 const OG_IMAGE = `${SITE}/og-image.png`
 
 // Map lang → { prefix in URL, posts array, blog title, blog description }

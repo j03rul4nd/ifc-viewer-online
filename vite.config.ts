@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import path from 'path'
-import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync, readdirSync, statSync } from 'fs'
+import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync } from 'fs'
 import { generateFixPages } from './scripts/seo/generate-fix-pages'
 import { generateBlogPages } from './scripts/seo/generate-blog-pages'
 import { generateLegalPages } from './scripts/seo/generate-legal-pages'
@@ -129,56 +129,6 @@ function generateBlogPageShells(): import('vite').Plugin {
   }
 }
 
-// ── SEO domain rewrite (Vercel / custom domain) ───────────────────────────────
-// index.html ships with absolute SEO URLs hardcoded to the GitHub Pages origin
-// (canonical, og:url, hreflang, llms.txt…). When building for another origin —
-// e.g. Vercel with a custom domain — set VITE_SITE_URL and these are rewritten
-// at build time. With no env set, the file is left untouched (GitHub Pages).
-//   VITE_SITE_URL=https://ifcvieweronline.com/  → strips the old origin+base
-//   prefix and substitutes the new origin.
-const OLD_SEO_PREFIX = 'https://j03rul4nd.github.io/ifc-viewer-online'
-function rewriteSeoDomain(): import('vite').Plugin {
-  return {
-    name: 'rewrite-seo-domain',
-    apply: 'build',
-    transformIndexHtml(html) {
-      const target = process.env.VITE_SITE_URL?.replace(/\/$/, '')
-      if (!target) return html
-      return html.split(OLD_SEO_PREFIX).join(target)
-    },
-  }
-}
-
-// Recursively rewrites the old GitHub Pages origin in every static text asset
-// copied into dist (sitemap.xml, llms.txt, robots.txt, the public/*/index.html
-// SEO shells). The runtime app and the page generators already honour
-// VITE_SITE_URL; this catches the committed static files that don't. No-op when
-// VITE_SITE_URL is unset (GitHub Pages build).
-function rewriteSeoDomainStatic(): import('vite').Plugin {
-  return {
-    name: 'rewrite-seo-domain-static',
-    apply: 'build',
-    closeBundle() {
-      const target = process.env.VITE_SITE_URL?.replace(/\/$/, '')
-      if (!target) return
-      const distDir = path.resolve(__dirname, 'dist')
-      if (!existsSync(distDir)) return
-      const exts = new Set(['.html', '.xml', '.txt'])
-      const walk = (dir: string) => {
-        for (const entry of readdirSync(dir)) {
-          const full = path.join(dir, entry)
-          if (statSync(full).isDirectory()) { walk(full); continue }
-          if (!exts.has(path.extname(full))) continue
-          const text = readFileSync(full, 'utf-8')
-          if (!text.includes(OLD_SEO_PREFIX)) continue
-          writeFileSync(full, text.split(OLD_SEO_PREFIX).join(target))
-        }
-      }
-      walk(distDir)
-    },
-  }
-}
-
 function copyWebIfcWasm() {
   return {
     name: 'copy-web-ifc-wasm',
@@ -196,11 +146,10 @@ function copyWebIfcWasm() {
 }
 
 export default defineConfig({
-  plugins: [react(), copyWebIfcWasm(), rewriteSeoDomain(), injectLandingContent(), generateRuleFixPages(), generateBlogPageShells(), generateLegalPageShells(), rewriteSeoDomainStatic()],
-  // Base path is environment-driven so the same code serves both hosts:
-  //   GitHub Pages (project site) → defaults to '/ifc-viewer-online/'
-  //   Vercel / custom domain root → set BASE_PATH=/ (see vercel.json)
-  base: process.env.BASE_PATH || '/ifc-viewer-online/',
+  plugins: [react(), copyWebIfcWasm(), injectLandingContent(), generateRuleFixPages(), generateBlogPageShells(), generateLegalPageShells()],
+  // Served from the domain root on Vercel (https://www.ifcvieweronline.eu/).
+  // BASE_PATH is honoured if set, but defaults to '/' — the single deploy target.
+  base: process.env.BASE_PATH || '/',
   resolve: {
     alias: [
       { find: '@', replacement: path.resolve(__dirname, './src') },

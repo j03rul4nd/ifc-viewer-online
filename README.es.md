@@ -7,11 +7,11 @@
 Visor + validador IFC gratuito que se ejecuta enteramente en tu navegador.
 Sin cuenta. Sin configurar ningún ruleset. Sin límite de tamaño. Tus modelos nunca salen de tu equipo.
 
-[**→ Pruébalo en vivo**](https://j03rul4nd.github.io/ifc-viewer-online/)
+[**→ Pruébalo en vivo**](https://www.ifcvieweronline.eu/)
 
 <br/>
 
-[![Live demo](https://img.shields.io/badge/demo-en_vivo-22c55e?style=for-the-badge)](https://j03rul4nd.github.io/ifc-viewer-online/)
+[![Live demo](https://img.shields.io/badge/demo-en_vivo-22c55e?style=for-the-badge)](https://www.ifcvieweronline.eu/)
 [![License: MIT](https://img.shields.io/badge/licencia_núcleo-MIT-3b82f6?style=for-the-badge)](#licencia--open-core)
 [![PRs welcome](https://img.shields.io/badge/PRs-bienvenidos-8b5cf6?style=for-the-badge)](#cómo-contribuir)
 [![Stars](https://img.shields.io/github/stars/j03rul4nd/ifc-viewer-online?style=for-the-badge&color=f59e0b)](https://github.com/j03rul4nd/ifc-viewer-online/stargazers)
@@ -35,9 +35,9 @@ Sin cuenta. Sin configurar ningún ruleset. Sin límite de tamaño. Tus modelos 
 
 <div align="center">
 
-[![IFC Viewer Online — carga un modelo, valídalo y obtén un Health Score, todo en el navegador](assets/demo.gif)](https://j03rul4nd.github.io/ifc-viewer-online/)
+[![IFC Viewer Online — carga un modelo, valídalo y obtén un Health Score, todo en el navegador](assets/demo.gif)](https://www.ifcvieweronline.eu/)
 
-<sub><i>Carga un modelo de demo → ejecuta un perfil de validación → Health Score con problemas priorizados, 100% en tu navegador. <a href="https://j03rul4nd.github.io/ifc-viewer-online/">Pruébalo en vivo →</a></i></sub>
+<sub><i>Carga un modelo de demo → ejecuta un perfil de validación → Health Score con problemas priorizados, 100% en tu navegador. <a href="https://www.ifcvieweronline.eu/">Pruébalo en vivo →</a></i></sub>
 
 </div>
 
@@ -333,7 +333,7 @@ El producto es técnicamente maduro (visor multi-modelo, validador de 38 reglas,
 
 **Ya disponible:**
 
-- **Guías de remediación** — contenido determinista "cómo arreglar esto en Revit / ArchiCAD / Tekla / Allplan" por regla, escrito en i18n (sin AI, sin servidor). También publicado como páginas estáticas rastreables [`/fix/`](https://j03rul4nd.github.io/ifc-viewer-online/fix/) en 10 idiomas.
+- **Guías de remediación** — contenido determinista "cómo arreglar esto en Revit / ArchiCAD / Tekla / Allplan" por regla, escrito en i18n (sin AI, sin servidor). También publicado como páginas estáticas rastreables [`/fix/`](https://www.ifcvieweronline.eu/fix/) en 10 idiomas.
 - **Reportes rastreables** — el enlace compartido se renderiza en el servidor mediante un edge worker stateless para que los reportes se desplieguen en redes y se indexen (el modelo sigue sin salir del navegador).
 
 **Planificado:**

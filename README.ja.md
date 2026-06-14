@@ -7,11 +7,11 @@
 ブラウザだけで完結する無料の IFC ビューア + バリデーター。
 アカウント不要。ルールセットの設定不要。ファイルサイズ制限なし。モデルが端末から外に出ることはありません。
 
-[**→ ライブで試す**](https://j03rul4nd.github.io/ifc-viewer-online/)
+[**→ ライブで試す**](https://www.ifcvieweronline.eu/)
 
 <br/>
 
-[![Live demo](https://img.shields.io/badge/demo-live-22c55e?style=for-the-badge)](https://j03rul4nd.github.io/ifc-viewer-online/)
+[![Live demo](https://img.shields.io/badge/demo-live-22c55e?style=for-the-badge)](https://www.ifcvieweronline.eu/)
 [![License: MIT](https://img.shields.io/badge/コア_ライセンス-MIT-3b82f6?style=for-the-badge)](#ライセンス--オープンコア)
 [![PRs welcome](https://img.shields.io/badge/PR-歓迎-8b5cf6?style=for-the-badge)](#コントリビュート)
 [![Stars](https://img.shields.io/github/stars/j03rul4nd/ifc-viewer-online?style=for-the-badge&color=f59e0b)](https://github.com/j03rul4nd/ifc-viewer-online/stargazers)
@@ -35,9 +35,9 @@
 
 <div align="center">
 
-[![IFC Viewer Online — モデルを読み込み、検証し、Health Score を取得。すべてブラウザだけで](assets/demo.gif)](https://j03rul4nd.github.io/ifc-viewer-online/)
+[![IFC Viewer Online — モデルを読み込み、検証し、Health Score を取得。すべてブラウザだけで](assets/demo.gif)](https://www.ifcvieweronline.eu/)
 
-<sub><i>デモモデルを読み込み → 検証プロファイルを実行 → Health Score と問題一覧をブラウザだけで取得。<a href="https://j03rul4nd.github.io/ifc-viewer-online/">ライブで試す →</a></i></sub>
+<sub><i>デモモデルを読み込み → 検証プロファイルを実行 → Health Score と問題一覧をブラウザだけで取得。<a href="https://www.ifcvieweronline.eu/">ライブで試す →</a></i></sub>
 
 </div>
 

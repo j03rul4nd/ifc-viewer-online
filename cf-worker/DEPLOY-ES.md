@@ -257,7 +257,7 @@ Para que la web publicada (GitHub Pages) también use el Worker:
 En cualquier terminal (cambia `TU-CUENTA`):
 
 ```bash
-curl -X POST https://ifc-viewer-email-capture.TU-CUENTA.workers.dev/subscribe -H "Content-Type: application/json" -H "Origin: https://j03rul4nd.github.io" -d "{\"email\":\"test@example.com\",\"source\":\"landing\"}"
+curl -X POST https://ifc-viewer-email-capture.TU-CUENTA.workers.dev/subscribe -H "Content-Type: application/json" -H "Origin: https://www.ifcvieweronline.eu" -d "{\"email\":\"test@example.com\",\"source\":\"landing\"}"
 ```
 
 - **Respuesta esperada:** `{"ok":true}`
@@ -265,7 +265,7 @@ curl -X POST https://ifc-viewer-email-capture.TU-CUENTA.workers.dev/subscribe -H
   `test@example.com`. (Bórralo después si quieres.)
 
 > 🔧 **Si responde `403`:** el "Origin" no está permitido. El Worker solo acepta
-> `j03rul4nd.github.io` y `localhost`. Asegúrate de copiar el `-H "Origin: ..."` tal cual.
+> `www.ifcvieweronline.eu` y `localhost`. Asegúrate de copiar el `-H "Origin: ..."` tal cual.
 > 🔧 **Si responde `{"ok":false,...}`:** revisa los secrets (`npx wrangler secret list`)
 > y que la API key de Resend sea válida.
 
@@ -382,7 +382,7 @@ Estoy desplegando un Cloudflare Worker para mi web estática (IFC Viewer Online,
 alojada en GitHub Pages). El Worker es stateless y tiene dos endpoints:
 - POST /subscribe : reenvía un email a la API de Resend (Audiences) para capturar
   suscriptores. Usa dos secrets de Worker: RESEND_API_KEY y RESEND_AUDIENCE_ID.
-  Solo acepta peticiones con Origin = https://j03rul4nd.github.io o localhost (CORS).
+  Solo acepta peticiones con Origin = https://www.ifcvieweronline.eu o localhost (CORS).
 - GET /r?d=<base64url> : renderiza en el servidor un reporte de validación como HTML
   crawleable (title + Open Graph + JSON-LD). El payload va codificado en la URL; el
   Worker no guarda nada (no hay base de datos).
@@ -416,7 +416,7 @@ Mi duda / el error que me sale es el siguiente:
 | `npx wrangler` → "command not found" | Falta instalar deps | `npm install` en `C:\repo\ifc` |
 | `wrangler login` no abre el navegador | Terminal sin entorno gráfico | Copia la URL impresa y ábrela a mano |
 | Deploy se queja de `unsafe.bindings` | Rate-limit no disponible en tu cuenta | No bloquea: el Worker hace fail-open. Despliega igual |
-| `/subscribe` devuelve `403` | El `Origin` no está permitido | Usa el `-H "Origin: https://j03rul4nd.github.io"` exacto |
+| `/subscribe` devuelve `403` | El `Origin` no está permitido | Usa el `-H "Origin: https://www.ifcvieweronline.eu"` exacto |
 | `/subscribe` devuelve `{"ok":false}` | Secret mal o key Resend inválida | `npx wrangler secret list` y revisa la API key |
 | El email no aparece en Resend | Audience ID incorrecto | Revisa el `RESEND_AUDIENCE_ID` (Resend → Audiences) |
 | Botón Compartir da enlace con `#report=` | Falta `VITE_REPORT_URL` o no reiniciaste dev | Revisa `.env.local` y reinicia `npm run dev` |

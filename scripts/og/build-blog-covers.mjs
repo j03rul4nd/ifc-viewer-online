@@ -175,7 +175,7 @@ h1{font-size:${fs}px;line-height:1.09;font-weight:800;letter-spacing:-.025em;col
     </div>
     <div class="cat">${esc(label)}</div>
     <h1>${esc(title)}</h1>
-    <div class="url"><span class="dot"></span>j03rul4nd.github.io/ifc-viewer-online</div>
+    <div class="url"><span class="dot"></span>www.ifcvieweronline.eu</div>
   </div>
   <div class="right">
     <div class="icon-ring">${catIcon(cat, c.color)}</div>

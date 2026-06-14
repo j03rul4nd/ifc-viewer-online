@@ -17,7 +17,7 @@
 7. `npm run build` + navegación manual (incluido botón atrás).
 
 **Datos del proyecto que vas a necesitar:**
-- Base URL pública: `https://j03rul4nd.github.io/ifc-viewer-online/`
+- Base URL pública: `https://www.ifcvieweronline.eu/`
 - `import.meta.env.BASE_URL` = `/ifc-viewer-online/` (todas las rutas se normalizan contra esto).
 - Email de contacto: `joelbenitezdonari@gmail.com` (confirmar si se prefiere un alias `privacy@`).
 
@@ -314,13 +314,13 @@ El sitemap base es **estático**: [`public/sitemap.xml`](../public/sitemap.xml).
 Añadir a mano dos `<url>` en `public/sitemap.xml` (prioridad baja, p.ej. `0.3`):
 ```xml
   <url>
-    <loc>https://j03rul4nd.github.io/ifc-viewer-online/privacy</loc>
+    <loc>https://www.ifcvieweronline.eu/privacy</loc>
     <lastmod>2026-06-XX</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://j03rul4nd.github.io/ifc-viewer-online/terms</loc>
+    <loc>https://www.ifcvieweronline.eu/terms</loc>
     <lastmod>2026-06-XX</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
@@ -404,4 +404,4 @@ No hay `public/404.html`, pero **no hace falta**: el patrón del proyecto es **g
 - GitHub Pages entonces sirve `dist/privacy/index.html` para una visita directa a `/privacy`, y el SPA lee `location.pathname` al montar y muestra la ruta correcta. **Sin SSR** (los assets de Vite son URLs absolutas `/assets/*` y funcionan desde cualquier profundidad).
 - Se invoca desde `vite.config.ts` (`closeBundle`), después de `generateRuleFixPages()`.
 
-**Acción para las legales:** añadir un generador análogo (o extender `generate-blog-pages.ts`) que emita `dist/privacy/index.html` y `dist/terms/index.html` parcheando el `<head>` (title/description/canonical/OG). Engancharlo en `vite.config.ts` junto a los otros. Con eso, los deep links directos a `/privacy` y `/terms` **no dan 404** y además quedan crawlables sin JS (el `<head>` lo leen los bots). `SITE = 'https://j03rul4nd.github.io/ifc-viewer-online'` (`generate-blog-pages.ts:29`).
+**Acción para las legales:** añadir un generador análogo (o extender `generate-blog-pages.ts`) que emita `dist/privacy/index.html` y `dist/terms/index.html` parcheando el `<head>` (title/description/canonical/OG). Engancharlo en `vite.config.ts` junto a los otros. Con eso, los deep links directos a `/privacy` y `/terms` **no dan 404** y además quedan crawlables sin JS (el `<head>` lo leen los bots). `SITE = 'https://www.ifcvieweronline.eu'` (`generate-blog-pages.ts:29`).

@@ -185,7 +185,7 @@ Ordenado por probabilidad de morder:
    El `Suspense`/`useSuspense:false` ya está desactivado — bien.
 4. **`import.meta.env.BASE_URL`** — en build vale `/ifc-viewer-online/`. Las URLs
    absolutas en meta/OG/canonical deben usar el dominio completo
-   (`https://j03rul4nd.github.io/ifc-viewer-online`), igual que `SITE` en el generador.
+   (`https://www.ifcvieweronline.eu`), igual que `SITE` en el generador.
 5. **COOP/COEP / `coi-serviceworker.js`** — el `<head>` registra el SW para
    SharedArrayBuffer. El prerender **no debe** romper ese `<script>` ni el orden de
    carga. El SW solo afecta al visor; el landing no lo necesita, pero la plantilla

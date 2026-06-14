@@ -6,7 +6,7 @@
 import worker from './worker.js'
 
 function req(url, init) { return new Request(url, init) }
-const ORIGIN = 'https://j03rul4nd.github.io'
+const ORIGIN = 'https://www.ifcvieweronline.eu'
 
 // In-memory KV mock matching the subset the worker uses.
 const kv = {

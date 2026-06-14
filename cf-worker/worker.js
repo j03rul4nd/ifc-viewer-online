@@ -25,14 +25,15 @@
  */
 
 const ALLOWED_ORIGINS = [
-  'https://j03rul4nd.github.io',
+  'https://www.ifcvieweronline.eu',
+  'https://ifcvieweronline.eu',
   'http://localhost:5173',
   'http://localhost:4173',
 ]
 
 // Where the SPA lives. Override with the APP_URL var in wrangler.toml.
-const DEFAULT_APP_URL   = 'https://j03rul4nd.github.io/ifc-viewer-online/'
-const DEFAULT_OG_IMAGE  = 'https://j03rul4nd.github.io/ifc-viewer-online/og-image.png'
+const DEFAULT_APP_URL   = 'https://www.ifcvieweronline.eu/'
+const DEFAULT_OG_IMAGE  = 'https://www.ifcvieweronline.eu/og-image.png'
 
 // Shared reports are point-in-time snapshots — expire links after this many days.
 // Advisory only: the payload is stateless, so a forged `ts` can bypass it; real

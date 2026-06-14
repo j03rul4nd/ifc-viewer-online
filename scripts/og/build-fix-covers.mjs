@@ -318,7 +318,7 @@ h1{font-size:${nfs}px;line-height:1.06;font-weight:800;letter-spacing:-.03em;col
       <span class="tool">Allplan</span>
       <span class="tool">${esc(rulesLbl)}</span>
     </div>
-    <div class="url"><span class="dot"></span>j03rul4nd.github.io/ifc-viewer-online</div>
+    <div class="url"><span class="dot"></span>www.ifcvieweronline.eu</div>
   </div>
   <div class="right">
     <div class="icon-ring">${catIcon(cat, c.color)}</div>

@@ -7,11 +7,11 @@
 Visualizador + validador IFC gratuito que roda inteiramente no seu navegador.
 Sem conta. Sem ruleset para configurar. Sem limite de tamanho. Seus modelos nunca saem da sua máquina.
 
-[**→ Experimente ao vivo**](https://j03rul4nd.github.io/ifc-viewer-online/)
+[**→ Experimente ao vivo**](https://www.ifcvieweronline.eu/)
 
 <br/>
 
-[![Live demo](https://img.shields.io/badge/demo-ao_vivo-22c55e?style=for-the-badge)](https://j03rul4nd.github.io/ifc-viewer-online/)
+[![Live demo](https://img.shields.io/badge/demo-ao_vivo-22c55e?style=for-the-badge)](https://www.ifcvieweronline.eu/)
 [![License: MIT](https://img.shields.io/badge/licença_núcleo-MIT-3b82f6?style=for-the-badge)](#licença--open-core)
 [![PRs welcome](https://img.shields.io/badge/PRs-bem--vindos-8b5cf6?style=for-the-badge)](#como-contribuir)
 [![Stars](https://img.shields.io/github/stars/j03rul4nd/ifc-viewer-online?style=for-the-badge&color=f59e0b)](https://github.com/j03rul4nd/ifc-viewer-online/stargazers)
@@ -35,9 +35,9 @@ Sem conta. Sem ruleset para configurar. Sem limite de tamanho. Seus modelos nunc
 
 <div align="center">
 
-[![IFC Viewer Online — carregue um modelo, valide-o e obtenha um Health Score, tudo no navegador](assets/demo.gif)](https://j03rul4nd.github.io/ifc-viewer-online/)
+[![IFC Viewer Online — carregue um modelo, valide-o e obtenha um Health Score, tudo no navegador](assets/demo.gif)](https://www.ifcvieweronline.eu/)
 
-<sub><i>Carregue um modelo de demonstração → execute um perfil de validação → Health Score com problemas priorizados, 100% no navegador. <a href="https://j03rul4nd.github.io/ifc-viewer-online/">Experimente online →</a></i></sub>
+<sub><i>Carregue um modelo de demonstração → execute um perfil de validação → Health Score com problemas priorizados, 100% no navegador. <a href="https://www.ifcvieweronline.eu/">Experimente online →</a></i></sub>
 
 </div>
 

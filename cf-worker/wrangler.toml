@@ -14,8 +14,8 @@ compatibility_date = "2026-05-25"
 #
 # Crawlable report route (GET /r?d=…) — override these if the SPA moves.
 # Defaults baked into worker.js point at the current GitHub Pages deploy.
-APP_URL      = "https://j03rul4nd.github.io/ifc-viewer-online/"
-OG_IMAGE_URL = "https://j03rul4nd.github.io/ifc-viewer-online/og-image.png"
+APP_URL      = "https://www.ifcvieweronline.eu/"
+OG_IMAGE_URL = "https://www.ifcvieweronline.eu/og-image.png"
 # Shared links expire after this many days (advisory, see worker.js). Default 90.
 REPORT_MAX_AGE_DAYS = "90"
 

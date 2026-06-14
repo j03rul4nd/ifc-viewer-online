@@ -98,7 +98,7 @@ describe('cross-boundary contract with the Cloudflare Worker', () => {
 
 describe('buildShareUrl', () => {
   const payload = makePayload()
-  const appBase = 'https://j03rul4nd.github.io/ifc-viewer-online/'
+  const appBase = 'https://www.ifcvieweronline.eu/'
 
   it('builds a crawlable Worker URL when a report base is configured', () => {
     const { url, droppedIssues } = buildShareUrl(payload, 'https://w.workers.dev/r', appBase)

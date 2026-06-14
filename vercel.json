@@ -2,12 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "build": {
-    "env": {
-      "BASE_PATH": "/",
-      "VITE_SITE_URL": "https://www.ifcvieweronline.eu/"
-    }
-  },
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

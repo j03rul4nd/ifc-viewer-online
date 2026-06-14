@@ -10,7 +10,7 @@ import path from 'path'
 import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'fs'
 import { generateFixPages, type FixPagesResult } from './generate-fix-pages'
 
-const SITE = 'https://j03rul4nd.github.io/ifc-viewer-online'
+const SITE = 'https://www.ifcvieweronline.eu'
 const OUT = path.join(process.cwd(), '.seo-test-out')
 const LANGS = ['', 'es/', 'de/', 'fr/', 'pt/', 'it/', 'ca/', 'zh/', 'ja/', 'th/'] as const
 

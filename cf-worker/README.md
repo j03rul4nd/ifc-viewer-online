@@ -103,7 +103,7 @@ but not crawlable). The Worker reads `APP_URL` / `OG_IMAGE_URL` from `wrangler.t
 ```bash
 curl -X POST https://ifc-viewer-email-capture.<accountname>.workers.dev/subscribe \
   -H "Content-Type: application/json" \
-  -H "Origin: https://j03rul4nd.github.io" \
+  -H "Origin: https://www.ifcvieweronline.eu" \
   -d '{"email":"test@example.com","source":"landing"}'
 # → {"ok":true}
 ```

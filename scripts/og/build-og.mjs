@@ -233,7 +233,7 @@ function cardHtml(code, shotB64) {
       <h1>${esc(L.title)} <span class="hl">${esc(L.accent)}</span></h1>
       <div class="sub">${esc(L.sub)}</div>
       <div class="chips">${chips}</div>
-      <div class="url"><span class="dot"></span>j03rul4nd.github.io/ifc-viewer-online</div>
+      <div class="url"><span class="dot"></span>www.ifcvieweronline.eu</div>
     </div>
     <div class="right"><img class="shot" src="${shotB64}" alt="app"/></div>
   </div>

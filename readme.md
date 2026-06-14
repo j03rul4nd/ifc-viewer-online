@@ -7,11 +7,11 @@
 Free IFC viewer + validator that runs entirely in your browser.
 No account. No ruleset to configure. No file size limit. Your models never leave your machine.
 
-[**→ Try it live**](https://j03rul4nd.github.io/ifc-viewer-online/)
+[**→ Try it live**](https://www.ifcvieweronline.eu/)
 
 <br/>
 
-[![Live demo](https://img.shields.io/badge/demo-live-22c55e?style=for-the-badge)](https://j03rul4nd.github.io/ifc-viewer-online/)
+[![Live demo](https://img.shields.io/badge/demo-live-22c55e?style=for-the-badge)](https://www.ifcvieweronline.eu/)
 [![License: MIT](https://img.shields.io/badge/core_license-MIT-3b82f6?style=for-the-badge)](#license--open-core)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-8b5cf6?style=for-the-badge)](#contributing)
 [![Stars](https://img.shields.io/github/stars/j03rul4nd/ifc-viewer-online?style=for-the-badge&color=f59e0b)](https://github.com/j03rul4nd/ifc-viewer-online/stargazers)
@@ -35,9 +35,9 @@ English · [简体中文](README.zh-CN.md) · [Español](README.es.md) · [Fran�
 
 <div align="center">
 
-[![IFC Viewer Online — load a model, validate it, and get a Health Score, all in the browser](assets/demo.gif)](https://j03rul4nd.github.io/ifc-viewer-online/)
+[![IFC Viewer Online — load a model, validate it, and get a Health Score, all in the browser](assets/demo.gif)](https://www.ifcvieweronline.eu/)
 
-<sub><i>Load a demo model → run a validation profile → Health Score + ranked issues, 100% in your browser. <a href="https://j03rul4nd.github.io/ifc-viewer-online/">Try it live →</a></i></sub>
+<sub><i>Load a demo model → run a validation profile → Health Score + ranked issues, 100% in your browser. <a href="https://www.ifcvieweronline.eu/">Try it live →</a></i></sub>
 
 </div>
 
@@ -372,7 +372,7 @@ The product is technically mature (multi-model viewer, 38-rule validator, non-de
 
 **Shipped:**
 
-- **Remediation guides** — deterministic "how to fix this in Revit / ArchiCAD / Tekla / Allplan" content per rule, authored in i18n (no AI, no server). Also published as static, crawlable [`/fix/`](https://j03rul4nd.github.io/ifc-viewer-online/fix/) pages in 10 languages.
+- **Remediation guides** — deterministic "how to fix this in Revit / ArchiCAD / Tekla / Allplan" content per rule, authored in i18n (no AI, no server). Also published as static, crawlable [`/fix/`](https://www.ifcvieweronline.eu/fix/) pages in 10 languages.
 - **Crawlable reports** — the share link is server-rendered by a stateless edge worker so reports unfurl on social and get indexed (the model still never leaves the browser).
 
 **Planned:**

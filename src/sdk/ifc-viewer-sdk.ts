@@ -4,7 +4,7 @@
 // bytes from the host app over postMessage — so the model is parsed entirely in
 // the visitor's browser and never uploaded to any server.
 //
-//   import { IfcViewer } from "https://<host>/ifc-viewer-online/sdk/ifc-viewer.es.js"
+//   import { IfcViewer } from "https://www.ifcvieweronline.eu/sdk/ifc-viewer.es.js"
 //   const viewer = new IfcViewer("#viewer")
 //   await viewer.add("project.ifc", ifcBytes)   // ifcBytes: ArrayBuffer | Uint8Array
 //

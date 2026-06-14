@@ -7,11 +7,11 @@
 完全在浏览器中运行的免费 IFC 查看器 + 校验器。
 无需账号。无需配置规则集。无文件大小限制。你的模型永远不会离开你的设备。
 
-[**→ 在线体验**](https://j03rul4nd.github.io/ifc-viewer-online/)
+[**→ 在线体验**](https://www.ifcvieweronline.eu/)
 
 <br/>
 
-[![Live demo](https://img.shields.io/badge/demo-live-22c55e?style=for-the-badge)](https://j03rul4nd.github.io/ifc-viewer-online/)
+[![Live demo](https://img.shields.io/badge/demo-live-22c55e?style=for-the-badge)](https://www.ifcvieweronline.eu/)
 [![License: MIT](https://img.shields.io/badge/core_license-MIT-3b82f6?style=for-the-badge)](#许可证--开放核心)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-8b5cf6?style=for-the-badge)](#参与贡献)
 [![Stars](https://img.shields.io/github/stars/j03rul4nd/ifc-viewer-online?style=for-the-badge&color=f59e0b)](https://github.com/j03rul4nd/ifc-viewer-online/stargazers)
@@ -35,9 +35,9 @@
 
 <div align="center">
 
-[![IFC Viewer Online — 在浏览器中加载模型、验证并获得健康评分](assets/demo.gif)](https://j03rul4nd.github.io/ifc-viewer-online/)
+[![IFC Viewer Online — 在浏览器中加载模型、验证并获得健康评分](assets/demo.gif)](https://www.ifcvieweronline.eu/)
 
-<sub><i>加载演示模型 → 运行验证配置 → 获得健康评分与问题清单，全程在浏览器中完成。<a href="https://j03rul4nd.github.io/ifc-viewer-online/">在线体验 →</a></i></sub>
+<sub><i>加载演示模型 → 运行验证配置 → 获得健康评分与问题清单，全程在浏览器中完成。<a href="https://www.ifcvieweronline.eu/">在线体验 →</a></i></sub>
 
 </div>
 

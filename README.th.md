@@ -7,11 +7,11 @@
 โปรแกรมดู + ตรวจสอบ IFC ฟรี ที่ทำงานในเบราว์เซอร์ทั้งหมด
 ไม่ต้องมีบัญชี ไม่ต้องตั้งค่า ruleset ไม่มีขีดจำกัดขนาดไฟล์ โมเดลของคุณไม่เคยออกจากเครื่องของคุณ
 
-[**→ ลองใช้งานจริง**](https://j03rul4nd.github.io/ifc-viewer-online/)
+[**→ ลองใช้งานจริง**](https://www.ifcvieweronline.eu/)
 
 <br/>
 
-[![Live demo](https://img.shields.io/badge/demo-live-22c55e?style=for-the-badge)](https://j03rul4nd.github.io/ifc-viewer-online/)
+[![Live demo](https://img.shields.io/badge/demo-live-22c55e?style=for-the-badge)](https://www.ifcvieweronline.eu/)
 [![License: MIT](https://img.shields.io/badge/core_license-MIT-3b82f6?style=for-the-badge)](#สัญญาอนุญาต--open-core)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-8b5cf6?style=for-the-badge)](#การร่วมพัฒนา)
 [![Stars](https://img.shields.io/github/stars/j03rul4nd/ifc-viewer-online?style=for-the-badge&color=f59e0b)](https://github.com/j03rul4nd/ifc-viewer-online/stargazers)
@@ -35,9 +35,9 @@
 
 <div align="center">
 
-[![IFC Viewer Online — โหลดโมเดล ตรวจสอบ และรับ Health Score ทั้งหมดในเบราว์เซอร์](assets/demo.gif)](https://j03rul4nd.github.io/ifc-viewer-online/)
+[![IFC Viewer Online — โหลดโมเดล ตรวจสอบ และรับ Health Score ทั้งหมดในเบราว์เซอร์](assets/demo.gif)](https://www.ifcvieweronline.eu/)
 
-<sub><i>โหลดโมเดลตัวอย่าง → รันโปรไฟล์ตรวจสอบ → Health Score พร้อมรายการปัญหาที่จัดลำดับความสำคัญ ทำงานในเบราว์เซอร์ทั้งหมด <a href="https://j03rul4nd.github.io/ifc-viewer-online/">ลองใช้งานจริง →</a></i></sub>
+<sub><i>โหลดโมเดลตัวอย่าง → รันโปรไฟล์ตรวจสอบ → Health Score พร้อมรายการปัญหาที่จัดลำดับความสำคัญ ทำงานในเบราว์เซอร์ทั้งหมด <a href="https://www.ifcvieweronline.eu/">ลองใช้งานจริง →</a></i></sub>
 
 </div>
 

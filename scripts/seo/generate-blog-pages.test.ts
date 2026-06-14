@@ -15,7 +15,7 @@ import { BLOG_POSTS, BLOG_POSTS_ES, BLOG_POSTS_DE, BLOG_POSTS_FR } from '../../s
 const LANG_POST_COUNTS = [BLOG_POSTS, BLOG_POSTS_ES, BLOG_POSTS_DE, BLOG_POSTS_FR].filter(a => a.length > 0)
 const EXPECTED_PAGES   = LANG_POST_COUNTS.reduce((sum, arr) => sum + 1 + arr.length, 0)
 
-const SITE  = 'https://j03rul4nd.github.io/ifc-viewer-online'
+const SITE  = 'https://www.ifcvieweronline.eu'
 const OUT   = path.join(process.cwd(), '.blog-test-out')
 
 // Minimal SPA shell that exercises every regex the generator touches.
@@ -26,16 +26,16 @@ const TEMPLATE_HTML = `<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>IFC Viewer Online — Free Browser-Based BIM Viewer</title>
   <meta name="description" content="Free online IFC viewer, validator and editor." />
-  <link rel="canonical" href="https://j03rul4nd.github.io/ifc-viewer-online/" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/" />
   <meta property="og:title" content="IFC Viewer Online" />
   <meta property="og:description" content="Free online IFC viewer." />
-  <meta property="og:url" content="https://j03rul4nd.github.io/ifc-viewer-online/" />
-  <meta property="og:image" content="https://j03rul4nd.github.io/ifc-viewer-online/og-image.png" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image.png" />
   <meta name="twitter:title" content="IFC Viewer Online" />
   <meta name="twitter:description" content="Free online IFC viewer." />
-  <link rel="alternate" hreflang="en"        href="https://j03rul4nd.github.io/ifc-viewer-online/" />
-  <link rel="alternate" hreflang="es"        href="https://j03rul4nd.github.io/ifc-viewer-online/es/" />
-  <link rel="alternate" hreflang="x-default" href="https://j03rul4nd.github.io/ifc-viewer-online/" />
+  <link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/" />
+  <link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/" />
   <script type="application/ld+json">{"@type":"WebApplication"}</script>
 </head>
 <body><div id="root"></div></body>

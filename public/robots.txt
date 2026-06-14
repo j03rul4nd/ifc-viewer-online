@@ -4,4 +4,4 @@ Allow: /
 # Nothing is disallowed — the whole site is crawlable.
 # The Sitemap URL below is rewritten to the deployment's origin at build time
 # (Vercel → custom domain · GitHub Pages → project subpath). See vite.config.ts.
-Sitemap: https://j03rul4nd.github.io/ifc-viewer-online/sitemap.xml
+Sitemap: https://www.ifcvieweronline.eu/sitemap.xml
