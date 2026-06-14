@@ -5,7 +5,7 @@
   "build": {
     "env": {
       "BASE_PATH": "/",
-      "VITE_SITE_URL": "https://ifcvieweronline.com/"
+      "VITE_SITE_URL": "https://www.ifcvieweronline.eu/"
     }
   },
   "rewrites": [
