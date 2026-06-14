@@ -63,10 +63,15 @@
       "measurement": "Mesura",
       "sections": "Seccions",
       "editing": "Edició",
-      "camera": "Vistes de càmera"
+      "camera": "Vistes de càmera",
+      "element": "Element seleccionat"
     },
     "keys": {
       "openFile": "Obre fitxer",
+      "frameElement": "Enfoca l'element seleccionat",
+      "isolateElement": "Aïlla l'element seleccionat",
+      "hideElement": "Amaga l'element seleccionat",
+      "showAllHidden": "Mostra-ho tot / restaura la visibilitat",
       "validate": "Executa / torna a executar la validació",
       "cancelMeasure": "Cancel·la la mesura activa",
       "closePoly": "Tanca el polígon d'àrea",

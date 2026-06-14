@@ -108,7 +108,8 @@
     "noModels": "Keine Modelle geladen",
     "showAllModelsBtn": "↑ Alle Modelle anzeigen",
     "clickHint": "Modell anklicken zum Aktivieren · ⊙ zum Isolieren",
-    "transformTitle": "Transformation · {{fileName}}"
+    "transformTitle": "Transformation · {{fileName}}",
+    "frameAll": "Kamera auf alle Modelle ausrichten"
   },
   "transform": {
     "position": "Position",
@@ -116,18 +117,34 @@
     "scale": "Skalierung",
     "uniform": "Gleichmäßig",
     "snapToGrid": "Am Raster ausrichten",
-    "reset": "Zurücksetzen"
+    "reset": "Zurücksetzen",
+    "snapToGridHint": "Modell so verschieben, dass die Unterseite auf der Y=0-Rasterebene liegt und auf X/Z zentriert ist",
+    "resetHint": "Alle Transformationswerte auf die Ausgangswerte zurücksetzen"
   },
   "renderQuality": {
     "title": "Renderqualität",
     "performance": "Leistung",
     "quality": "Qualität",
-    "ssaoNote": "SSAO + Kantenerkennung aktiv. Kann die Leistung auf Mobilgeräten beeinträchtigen."
+    "ssaoNote": "SSAO + Kantenerkennung aktiv. Kann die Leistung auf Mobilgeräten beeinträchtigen.",
+    "performanceHint": "Standard — WebGL-Rasterung, beste Leistung",
+    "qualityHint": "Qualität — SSAO Ambient Occlusion + Kantenerkennung als Nachbearbeitung"
   },
   "cache": {
     "fromCache": "⚡ aus Cache",
     "cached": "{{count}} gecacht",
     "tooltip": "{{count}} Modell(e) im OPFS-Cache · klicken zum Leeren",
     "togglePanel": "Eigenschaften ein-/ausblenden"
+  },
+  "contextMenu": {
+    "frame": "Auf Element zoomen",
+    "hide": "Element ausblenden",
+    "isolateElement": "Element isolieren",
+    "isolateCategory": "Kategorie isolieren",
+    "revealInTree": "Im Baum anzeigen",
+    "copyId": "ID kopieren",
+    "copied": "Kopiert",
+    "showFullModel": "Gesamtes Modell anzeigen",
+    "showAllHidden": "{{count}} ausgeblendetes Element einblenden",
+    "showAllHidden_other": "{{count}} ausgeblendete Elemente einblenden"
   }
 }

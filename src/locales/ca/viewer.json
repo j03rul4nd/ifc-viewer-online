@@ -108,7 +108,8 @@
     "noModels": "Cap model carregat",
     "showAllModelsBtn": "↑ Mostra tots els models",
     "clickHint": "Clica un model per activar-lo · usa ⊙ per aïllar",
-    "transformTitle": "Transformació · {{fileName}}"
+    "transformTitle": "Transformació · {{fileName}}",
+    "frameAll": "Ajusta la càmera a tots els models"
   },
   "transform": {
     "position": "Posició",
@@ -116,18 +117,34 @@
     "scale": "Escala",
     "uniform": "Uniforme",
     "snapToGrid": "Ajusta a la quadrícula",
-    "reset": "Reinicia"
+    "reset": "Reinicia",
+    "snapToGridHint": "Mou el model perquè la seva base quedi sobre el pla Y=0 i centrat a X/Z",
+    "resetHint": "Restableix tots els valors de transformació a la identitat"
   },
   "renderQuality": {
     "title": "Qualitat de renderització",
     "performance": "Rendiment",
     "quality": "Qualitat",
-    "ssaoNote": "SSAO + detecció de vores actius. Pot afectar el rendiment en mòbil."
+    "ssaoNote": "SSAO + detecció de vores actius. Pot afectar el rendiment en mòbil.",
+    "performanceHint": "Estàndard — rasterització WebGL, millor rendiment",
+    "qualityHint": "Qualitat — oclusió ambiental SSAO + postprocés de detecció de vores"
   },
   "cache": {
     "fromCache": "⚡ des de la memòria cau",
     "cached": "{{count}} en memòria cau",
     "tooltip": "{{count}} model(s) a la memòria cau OPFS · fes clic per netejar",
     "togglePanel": "Mostra/amaga les propietats"
+  },
+  "contextMenu": {
+    "frame": "Enfoca l'element",
+    "hide": "Amaga l'element",
+    "isolateElement": "Aïlla l'element",
+    "isolateCategory": "Aïlla la categoria",
+    "revealInTree": "Mostra a l'arbre",
+    "copyId": "Copia l'ID",
+    "copied": "Copiat",
+    "showFullModel": "Mostra tot el model",
+    "showAllHidden": "Mostra {{count}} element amagat",
+    "showAllHidden_other": "Mostra {{count}} elements amagats"
   }
 }

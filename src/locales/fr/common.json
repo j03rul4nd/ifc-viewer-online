@@ -63,10 +63,15 @@
       "measurement": "Mesure",
       "sections": "Coupes",
       "editing": "Édition",
-      "camera": "Vues caméra"
+      "camera": "Vues caméra",
+      "element": "Élément sélectionné"
     },
     "keys": {
       "openFile": "Ouvrir un fichier",
+      "frameElement": "Zoomer sur l'élément sélectionné",
+      "isolateElement": "Isoler l'élément sélectionné",
+      "hideElement": "Masquer l'élément sélectionné",
+      "showAllHidden": "Afficher tout / restaurer la visibilité",
       "validate": "Lancer / relancer la validation",
       "cancelMeasure": "Annuler la mesure active",
       "closePoly": "Fermer le polygone de surface",

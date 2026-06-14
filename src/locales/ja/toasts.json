@@ -4,7 +4,8 @@
     "loadedFromCache": "\"{{fileName}}\" を読み込みました — {{count}} 要素（キャッシュから ⚡）",
     "loadFailed": "読み込みに失敗しました: {{message}}",
     "demoUnavailable": "デモファイルを読み込めませんでした。独自の IFC ファイルを開いてください。",
-    "removeFailed": "モデルを削除できませんでした: {{message}}"
+    "removeFailed": "モデルを削除できませんでした: {{message}}",
+    "urlLoadFailed": "リンクされたモデルを読み込めませんでした: {{message}}"
   },
   "validation": {
     "complete": "検証完了 — {{count}} 件の問題が見つかりました",

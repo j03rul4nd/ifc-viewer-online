@@ -4,7 +4,8 @@
     "loadedFromCache": "\"{{fileName}}\" 已加载 — {{count}} 个构件（来自缓存 ⚡）",
     "loadFailed": "加载失败：{{message}}",
     "demoUnavailable": "演示文件无法加载，请打开您自己的 IFC 文件。",
-    "removeFailed": "无法移除模型：{{message}}"
+    "removeFailed": "无法移除模型：{{message}}",
+    "urlLoadFailed": "无法加载链接的模型：{{message}}"
   },
   "validation": {
     "complete": "验证完成 — 发现 {{count}} 个问题",

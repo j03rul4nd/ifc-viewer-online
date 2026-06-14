@@ -12,9 +12,16 @@
     "element": "Element",
     "unclassified": "Sense classificar"
   },
+  "clear": "Esborra",
+  "issueBadge": "{{errors}} error(s) · {{warnings}} avís(os)",
   "actions": {
     "expandAll": "Expandeix-ho tot",
     "collapseAll": "Comprimeix-ho tot",
+    "expand": "Expandeix",
+    "collapse": "Comprimeix",
+    "show": "Mostra",
+    "hide": "Amaga",
+    "showAll": "Mostra-ho tot",
     "focusElement": "Enfoca l'element en 3D",
     "selectElement": "Selecciona l'element",
     "selectIn3D": "Selecciona en 3D",

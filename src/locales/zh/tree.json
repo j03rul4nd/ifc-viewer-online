@@ -12,9 +12,16 @@
     "element": "构件",
     "unclassified": "未分类"
   },
+  "clear": "清除",
+  "issueBadge": "{{errors}} 个错误 · {{warnings}} 个警告",
   "actions": {
     "expandAll": "全部展开",
     "collapseAll": "全部折叠",
+    "expand": "展开",
+    "collapse": "折叠",
+    "show": "显示",
+    "hide": "隐藏",
+    "showAll": "全部显示",
     "focusElement": "在 3D 中聚焦构件",
     "selectElement": "选择构件",
     "selectIn3D": "在 3D 中选择",

@@ -12,9 +12,16 @@
     "element": "Élément",
     "unclassified": "Non classifié"
   },
+  "clear": "Effacer",
+  "issueBadge": "{{errors}} erreur(s) · {{warnings}} avertissement(s)",
   "actions": {
     "expandAll": "Tout développer",
     "collapseAll": "Tout réduire",
+    "expand": "Développer",
+    "collapse": "Réduire",
+    "show": "Afficher",
+    "hide": "Masquer",
+    "showAll": "Tout afficher",
     "focusElement": "Centrer l'élément en 3D",
     "selectElement": "Sélectionner l'élément",
     "selectIn3D": "Sélectionner en 3D",

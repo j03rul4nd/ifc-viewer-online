@@ -63,10 +63,15 @@
       "measurement": "Medição",
       "sections": "Cortes",
       "editing": "Edição",
-      "camera": "Vistas de câmera"
+      "camera": "Vistas de câmera",
+      "element": "Elemento selecionado"
     },
     "keys": {
       "openFile": "Abrir arquivo",
+      "frameElement": "Ampliar para o elemento selecionado",
+      "isolateElement": "Isolar elemento selecionado",
+      "hideElement": "Ocultar elemento selecionado",
+      "showAllHidden": "Exibir tudo / restaurar visibilidade",
       "validate": "Executar / re-executar validação",
       "cancelMeasure": "Cancelar medição ativa",
       "closePoly": "Fechar polígono de área",

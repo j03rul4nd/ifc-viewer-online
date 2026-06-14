@@ -30,6 +30,11 @@
     "noModel": "Nenhum modelo carregado",
     "noModelDesc": "Abra um arquivo IFC para ver as categorias.",
     "moreElements": "+ {{count}} elemento(s) a mais",
+    "filterPlaceholder": "Filtrar categorias…",
+    "noMatches": "Nenhuma categoria corresponde",
+    "showAll": "Exibir todas",
+    "hideAll": "Ocultar todas",
+    "hiddenCount": "{{count}} ocultas",
     "legendBadge": "Legenda de cores",
     "typesShort": "tipos",
     "withIssues": "com problemas",
@@ -71,7 +76,9 @@
     "unsavedChanges_other": "{{count}} alterações não salvas · Ctrl+Z para desfazer",
     "edited": "editado",
     "empty": "vazio",
-    "loadingPsets": "Carregando conjuntos de propriedades…"
+    "loadingPsets": "Carregando conjuntos de propriedades…",
+    "filterProps": "Filtrar propriedades…",
+    "noPropsMatch": "Nenhuma propriedade corresponde"
   },
   "tabs": {
     "properties": "Propriedades",

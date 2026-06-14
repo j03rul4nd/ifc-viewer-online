@@ -108,7 +108,8 @@
     "noModels": "ไม่ได้โหลดโมเดล",
     "showAllModelsBtn": "↑ แสดงโมเดลทั้งหมด",
     "clickHint": "คลิกโมเดลเพื่อเปิดใช้งาน · ใช้ ⊙ เพื่อแยก",
-    "transformTitle": "การแปลง · {{fileName}}"
+    "transformTitle": "การแปลง · {{fileName}}",
+    "frameAll": "จัดกล้องให้พอดีกับทุกโมเดล"
   },
   "transform": {
     "position": "ตำแหน่ง",
@@ -116,18 +117,34 @@
     "scale": "ขนาด",
     "uniform": "สม่ำเสมอ",
     "snapToGrid": "จัดให้ตรงกริด",
-    "reset": "รีเซ็ต"
+    "reset": "รีเซ็ต",
+    "snapToGridHint": "ย้ายโมเดลให้ฐานอยู่บนระดับกริด Y=0 และอยู่กึ่งกลางแกน X/Z",
+    "resetHint": "รีเซ็ตค่าการแปลงทั้งหมดเป็นค่าเริ่มต้น"
   },
   "renderQuality": {
     "title": "คุณภาพการเรนเดอร์",
     "performance": "ประสิทธิภาพ",
     "quality": "คุณภาพ",
-    "ssaoNote": "SSAO + การตรวจจับขอบใช้งานอยู่ อาจส่งผลต่อประสิทธิภาพบนมือถือ"
+    "ssaoNote": "SSAO + การตรวจจับขอบใช้งานอยู่ อาจส่งผลต่อประสิทธิภาพบนมือถือ",
+    "performanceHint": "มาตรฐาน — การแรสเตอร์ไรซ์ WebGL ประสิทธิภาพดีที่สุด",
+    "qualityHint": "คุณภาพ — SSAO ambient occlusion + การประมวลผลภายหลังตรวจจับขอบ"
   },
   "cache": {
     "fromCache": "⚡ จากแคช",
     "cached": "{{count}} แคชแล้ว",
     "tooltip": "{{count}} โมเดลแคชใน OPFS · คลิกเพื่อล้าง",
     "togglePanel": "แสดง/ซ่อนแผงคุณสมบัติ"
+  },
+  "contextMenu": {
+    "frame": "ซูมไปยังองค์ประกอบ",
+    "hide": "ซ่อนองค์ประกอบ",
+    "isolateElement": "แยกองค์ประกอบ",
+    "isolateCategory": "แยกประเภท",
+    "revealInTree": "แสดงในต้นไม้",
+    "copyId": "คัดลอก ID",
+    "copied": "คัดลอกแล้ว",
+    "showFullModel": "แสดงโมเดลทั้งหมด",
+    "showAllHidden": "แสดงองค์ประกอบที่ซ่อน {{count}} รายการ",
+    "showAllHidden_other": "แสดงองค์ประกอบที่ซ่อน {{count}} รายการ"
   }
 }

@@ -108,7 +108,8 @@
     "noModels": "未加载模型",
     "showAllModelsBtn": "↑ 显示所有模型",
     "clickHint": "点击模型激活 · 使用 ⊙ 隔离",
-    "transformTitle": "变换 · {{fileName}}"
+    "transformTitle": "变换 · {{fileName}}",
+    "frameAll": "将相机调整到适合所有模型"
   },
   "transform": {
     "position": "位置",
@@ -116,18 +117,34 @@
     "scale": "缩放",
     "uniform": "等比",
     "snapToGrid": "对齐到网格",
-    "reset": "重置"
+    "reset": "重置",
+    "snapToGridHint": "移动模型使其底部位于 Y=0 网格平面并在 X/Z 上居中",
+    "resetHint": "将所有变换值重置为初始状态"
   },
   "renderQuality": {
     "title": "渲染质量",
     "performance": "性能",
     "quality": "质量",
-    "ssaoNote": "SSAO + 边缘检测已激活。可能影响移动设备性能。"
+    "ssaoNote": "SSAO + 边缘检测已激活。可能影响移动设备性能。",
+    "performanceHint": "标准 — WebGL 光栅化，性能最佳",
+    "qualityHint": "高质量 — SSAO 环境光遮蔽 + 边缘检测后处理"
   },
   "cache": {
     "fromCache": "⚡ 来自缓存",
     "cached": "{{count}} 已缓存",
     "tooltip": "{{count}} 个模型已缓存至 OPFS · 点击清除",
     "togglePanel": "显示/隐藏属性面板"
+  },
+  "contextMenu": {
+    "frame": "缩放至构件",
+    "hide": "隐藏构件",
+    "isolateElement": "隔离构件",
+    "isolateCategory": "隔离类别",
+    "revealInTree": "在树中显示",
+    "copyId": "复制 ID",
+    "copied": "已复制",
+    "showFullModel": "显示完整模型",
+    "showAllHidden": "显示 {{count}} 个隐藏构件",
+    "showAllHidden_other": "显示 {{count}} 个隐藏构件"
   }
 }

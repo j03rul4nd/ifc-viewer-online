@@ -108,7 +108,8 @@
     "noModels": "モデル未読み込み",
     "showAllModelsBtn": "↑ すべてのモデルを表示",
     "clickHint": "モデルをクリックしてアクティブ化 · ⊙ で隔離",
-    "transformTitle": "変換 · {{fileName}}"
+    "transformTitle": "変換 · {{fileName}}",
+    "frameAll": "すべてのモデルにカメラをフレーム"
   },
   "transform": {
     "position": "位置",
@@ -116,18 +117,34 @@
     "scale": "スケール",
     "uniform": "均一",
     "snapToGrid": "グリッドにスナップ",
-    "reset": "リセット"
+    "reset": "リセット",
+    "snapToGridHint": "モデルの底面が Y=0 のグリッド平面に接し、X/Z で中央になるように移動します",
+    "resetHint": "すべての変換値を初期状態にリセット"
   },
   "renderQuality": {
     "title": "レンダリング品質",
     "performance": "パフォーマンス",
     "quality": "品質",
-    "ssaoNote": "SSAO + エッジ検出が有効。モバイルでパフォーマンスに影響する場合があります。"
+    "ssaoNote": "SSAO + エッジ検出が有効。モバイルでパフォーマンスに影響する場合があります。",
+    "performanceHint": "標準 — WebGL ラスタライズ、最高のパフォーマンス",
+    "qualityHint": "高品質 — SSAO アンビエントオクルージョン + エッジ検出のポストプロセス"
   },
   "cache": {
     "fromCache": "⚡ キャッシュから",
     "cached": "{{count}} キャッシュ済み",
     "tooltip": "{{count}} 件のモデルが OPFS にキャッシュ済み · クリックして削除",
     "togglePanel": "プロパティパネルを切り替え"
+  },
+  "contextMenu": {
+    "frame": "要素にズーム",
+    "hide": "要素を非表示",
+    "isolateElement": "要素を隔離",
+    "isolateCategory": "カテゴリを隔離",
+    "revealInTree": "ツリーで表示",
+    "copyId": "IDをコピー",
+    "copied": "コピーしました",
+    "showFullModel": "モデル全体を表示",
+    "showAllHidden": "非表示の要素を{{count}}件表示",
+    "showAllHidden_other": "非表示の要素を{{count}}件表示"
   }
 }

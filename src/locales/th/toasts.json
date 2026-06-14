@@ -4,7 +4,8 @@
     "loadedFromCache": "โหลด \"{{fileName}}\" แล้ว — {{count}} องค์ประกอบ (จากแคช ⚡)",
     "loadFailed": "โหลดล้มเหลว: {{message}}",
     "demoUnavailable": "ไม่สามารถโหลดไฟล์ตัวอย่างได้ กรุณาเปิดไฟล์ IFC ของคุณเอง",
-    "removeFailed": "ไม่สามารถนำโมเดลออกได้: {{message}}"
+    "removeFailed": "ไม่สามารถนำโมเดลออกได้: {{message}}",
+    "urlLoadFailed": "ไม่สามารถโหลดโมเดลที่เชื่อมโยงได้: {{message}}"
   },
   "validation": {
     "complete": "การตรวจสอบเสร็จสิ้น — พบ {{count}} ปัญหา",

@@ -63,10 +63,15 @@
       "measurement": "测量",
       "sections": "剖切",
       "editing": "编辑",
-      "camera": "相机视图"
+      "camera": "相机视图",
+      "element": "选中的构件"
     },
     "keys": {
       "openFile": "打开文件",
+      "frameElement": "缩放至选中的构件",
+      "isolateElement": "隔离选中的构件",
+      "hideElement": "隐藏选中的构件",
+      "showAllHidden": "显示全部 / 恢复可见性",
       "validate": "运行/重新运行验证",
       "cancelMeasure": "取消当前测量",
       "closePoly": "闭合面积多边形",

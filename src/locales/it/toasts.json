@@ -4,7 +4,8 @@
     "loadedFromCache": "\"{{fileName}}\" caricato — {{count}} elementi (dalla cache ⚡)",
     "loadFailed": "Caricamento fallito: {{message}}",
     "demoUnavailable": "Il file demo non ha potuto essere caricato. Apri il tuo file IFC.",
-    "removeFailed": "Impossibile rimuovere il modello: {{message}}"
+    "removeFailed": "Impossibile rimuovere il modello: {{message}}",
+    "urlLoadFailed": "Impossibile caricare il modello collegato: {{message}}"
   },
   "validation": {
     "complete": "Validazione completata — {{count}} problema/i trovato/i",

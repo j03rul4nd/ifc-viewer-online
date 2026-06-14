@@ -108,7 +108,8 @@
     "noModels": "Aucun modèle chargé",
     "showAllModelsBtn": "↑ Afficher tous les modèles",
     "clickHint": "Cliquer sur un modèle pour l'activer · utiliser ⊙ pour isoler",
-    "transformTitle": "Transformation · {{fileName}}"
+    "transformTitle": "Transformation · {{fileName}}",
+    "frameAll": "Cadrer la caméra sur tous les modèles"
   },
   "transform": {
     "position": "Position",
@@ -116,18 +117,34 @@
     "scale": "Échelle",
     "uniform": "Uniforme",
     "snapToGrid": "Aligner sur la grille",
-    "reset": "Réinitialiser"
+    "reset": "Réinitialiser",
+    "snapToGridHint": "Déplacer le modèle pour que sa base repose sur le plan de grille Y=0 et soit centrée sur X/Z",
+    "resetHint": "Réinitialiser toutes les valeurs de transformation"
   },
   "renderQuality": {
     "title": "Qualité de rendu",
     "performance": "Performance",
     "quality": "Qualité",
-    "ssaoNote": "SSAO + détection des contours actifs. Peut affecter les performances sur mobile."
+    "ssaoNote": "SSAO + détection des contours actifs. Peut affecter les performances sur mobile.",
+    "performanceHint": "Standard — rastérisation WebGL, meilleures performances",
+    "qualityHint": "Qualité — occlusion ambiante SSAO + post-traitement de détection des contours"
   },
   "cache": {
     "fromCache": "⚡ depuis le cache",
     "cached": "{{count}} en cache",
     "tooltip": "{{count}} modèle(s) en cache OPFS · cliquer pour effacer",
     "togglePanel": "Afficher/masquer les propriétés"
+  },
+  "contextMenu": {
+    "frame": "Zoomer sur l'élément",
+    "hide": "Masquer l'élément",
+    "isolateElement": "Isoler l'élément",
+    "isolateCategory": "Isoler la catégorie",
+    "revealInTree": "Afficher dans l'arborescence",
+    "copyId": "Copier l'ID",
+    "copied": "Copié",
+    "showFullModel": "Afficher le modèle complet",
+    "showAllHidden": "Afficher {{count}} élément masqué",
+    "showAllHidden_other": "Afficher {{count}} éléments masqués"
   }
 }

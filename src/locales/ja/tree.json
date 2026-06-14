@@ -12,9 +12,16 @@
     "element": "要素",
     "unclassified": "未分類"
   },
+  "clear": "クリア",
+  "issueBadge": "エラー {{errors}} 件 · 警告 {{warnings}} 件",
   "actions": {
     "expandAll": "すべて展開",
     "collapseAll": "すべて折りたたむ",
+    "expand": "展開",
+    "collapse": "折りたたむ",
+    "show": "表示",
+    "hide": "非表示",
+    "showAll": "すべて表示",
     "focusElement": "3D で要素にフォーカス",
     "selectElement": "要素を選択",
     "selectIn3D": "3D で選択",

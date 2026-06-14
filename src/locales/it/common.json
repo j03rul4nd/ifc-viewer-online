@@ -63,10 +63,15 @@
       "measurement": "Misurazione",
       "sections": "Sezioni",
       "editing": "Modifica",
-      "camera": "Viste fotocamera"
+      "camera": "Viste fotocamera",
+      "element": "Elemento selezionato"
     },
     "keys": {
       "openFile": "Apri file",
+      "frameElement": "Zoom sull'elemento selezionato",
+      "isolateElement": "Isola elemento selezionato",
+      "hideElement": "Nascondi elemento selezionato",
+      "showAllHidden": "Mostra tutto / ripristina visibilità",
       "validate": "Esegui / ripeti validazione",
       "cancelMeasure": "Annulla misurazione attiva",
       "closePoly": "Chiudi poligono area",

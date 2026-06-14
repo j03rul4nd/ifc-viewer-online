@@ -12,9 +12,16 @@
     "element": "องค์ประกอบ",
     "unclassified": "ไม่ได้จัดประเภท"
   },
+  "clear": "ล้าง",
+  "issueBadge": "ข้อผิดพลาด {{errors}} รายการ · คำเตือน {{warnings}} รายการ",
   "actions": {
     "expandAll": "ขยายทั้งหมด",
     "collapseAll": "ยุบทั้งหมด",
+    "expand": "ขยาย",
+    "collapse": "ยุบ",
+    "show": "แสดง",
+    "hide": "ซ่อน",
+    "showAll": "แสดงทั้งหมด",
     "focusElement": "โฟกัสองค์ประกอบใน 3D",
     "selectElement": "เลือกองค์ประกอบ",
     "selectIn3D": "เลือกใน 3D",

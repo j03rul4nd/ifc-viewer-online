@@ -63,10 +63,15 @@
       "measurement": "Messung",
       "sections": "Schnitte",
       "editing": "Bearbeitung",
-      "camera": "Kameraansichten"
+      "camera": "Kameraansichten",
+      "element": "Ausgewähltes Element"
     },
     "keys": {
       "openFile": "Datei öffnen",
+      "frameElement": "Auf ausgewähltes Element zoomen",
+      "isolateElement": "Ausgewähltes Element isolieren",
+      "hideElement": "Ausgewähltes Element ausblenden",
+      "showAllHidden": "Alles einblenden / Sichtbarkeit wiederherstellen",
       "validate": "Validierung starten / wiederholen",
       "cancelMeasure": "Aktive Messung abbrechen",
       "closePoly": "Flächenpolygon schließen",

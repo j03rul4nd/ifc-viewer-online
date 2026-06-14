@@ -4,7 +4,8 @@
     "loadedFromCache": "\"{{fileName}}\" geladen — {{count}} Elemente (aus Cache ⚡)",
     "loadFailed": "Laden fehlgeschlagen: {{message}}",
     "demoUnavailable": "Demo-Datei konnte nicht geladen werden. Bitte öffnen Sie Ihre eigene IFC-Datei.",
-    "removeFailed": "Modell konnte nicht entfernt werden: {{message}}"
+    "removeFailed": "Modell konnte nicht entfernt werden: {{message}}",
+    "urlLoadFailed": "Das verlinkte Modell konnte nicht geladen werden: {{message}}"
   },
   "validation": {
     "complete": "Validierung abgeschlossen — {{count}} Problem(e) gefunden",

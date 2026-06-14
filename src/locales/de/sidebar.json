@@ -30,6 +30,11 @@
     "noModel": "Kein Modell geladen",
     "noModelDesc": "Öffnen Sie eine IFC-Datei, um Kategorien zu sehen.",
     "moreElements": "+ {{count}} weitere Elemente",
+    "filterPlaceholder": "Kategorien filtern…",
+    "noMatches": "Keine passenden Kategorien",
+    "showAll": "Alle einblenden",
+    "hideAll": "Alle ausblenden",
+    "hiddenCount": "{{count}} ausgeblendet",
     "legendBadge": "Farblegende",
     "typesShort": "Typen",
     "withIssues": "mit Problemen",
@@ -71,7 +76,9 @@
     "unsavedChanges_other": "{{count}} nicht gespeicherte Änderungen · Strg+Z zum Rückgängigmachen",
     "edited": "bearbeitet",
     "empty": "leer",
-    "loadingPsets": "Eigenschafts-Sets werden geladen…"
+    "loadingPsets": "Eigenschafts-Sets werden geladen…",
+    "filterProps": "Eigenschaften filtern…",
+    "noPropsMatch": "Keine passenden Eigenschaften"
   },
   "tabs": {
     "properties": "Eigenschaften",

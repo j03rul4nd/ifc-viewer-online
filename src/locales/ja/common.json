@@ -63,10 +63,15 @@
       "measurement": "計測",
       "sections": "断面",
       "editing": "編集",
-      "camera": "カメラビュー"
+      "camera": "カメラビュー",
+      "element": "選択した要素"
     },
     "keys": {
       "openFile": "ファイルを開く",
+      "frameElement": "選択した要素にズーム",
+      "isolateElement": "選択した要素を隔離",
+      "hideElement": "選択した要素を非表示",
+      "showAllHidden": "すべて表示 / 表示状態を復元",
       "validate": "検証を実行 / 再実行",
       "cancelMeasure": "計測をキャンセル",
       "closePoly": "面積ポリゴンを閉じる",

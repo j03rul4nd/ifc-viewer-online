@@ -4,7 +4,8 @@
     "loadedFromCache": "\"{{fileName}}\" carregat — {{count}} elements (des de la memòria cau ⚡)",
     "loadFailed": "Error en carregar: {{message}}",
     "demoUnavailable": "No s'ha pogut carregar el fitxer de demostració. Obre el teu propi fitxer IFC.",
-    "removeFailed": "No s'ha pogut eliminar el model: {{message}}"
+    "removeFailed": "No s'ha pogut eliminar el model: {{message}}",
+    "urlLoadFailed": "No s'ha pogut carregar el model enllaçat: {{message}}"
   },
   "validation": {
     "complete": "Validació completada — {{count}} problema(es) trobat(s)",
