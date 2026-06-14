@@ -28,12 +28,14 @@ import { mkdirSync, readFileSync, copyFileSync, existsSync } from 'node:fs'
 
 // Read the localized button labels straight from the app's i18n JSON so the
 // captures work in every UI language without hardcoding fragile regexes.
+// The "Launch" / "Open viewer" CTAs both call onLaunch, which loads the default
+// demo model into the viewer — that's the one-click path the OG capture needs.
 function localeStrings(code) {
   const read = (ns) => JSON.parse(readFileSync(`src/locales/${code}/${ns}.json`, 'utf8'))
-  let loadDemo = '', validate = ''
-  try { loadDemo = read('landing').actions.loadDemo } catch {}
+  let launch = '', openViewer = '', validate = ''
+  try { const a = read('landing').actions; launch = a.launch || ''; openViewer = a.openViewer || '' } catch {}
   try { validate = read('toolbar').validate } catch {}
-  return { loadDemo, validate }
+  return { launch, openViewer, validate }
 }
 
 const EXE = process.env.CHROME_EXE || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
@@ -132,7 +134,7 @@ async function captureApp(code) {
     log(code, 'reusing existing app shot (REUSE_APP_SHOT)')
     return shot
   }
-  const { loadDemo, validate } = localeStrings(code)
+  const { launch, openViewer, validate } = localeStrings(code)
   const ctx = await browser.newContext({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 1.5 })
   const page = await ctx.newPage()
   page.on('pageerror', (e) => log(code, 'pageerror', e.message.slice(0, 120)))
@@ -141,11 +143,20 @@ async function captureApp(code) {
   await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 })
   await page.waitForTimeout(1500)
 
-  // Click the localized "load demo" button (fall back to any /demo/i match).
-  const demoBtn = loadDemo
-    ? page.getByRole('button', { name: loadDemo, exact: false })
-    : page.getByRole('button', { name: /demo/i })
-  await demoBtn.first().click({ timeout: 12000 })
+  // Click the CTA that loads the default demo model (onLaunch). Try the
+  // localized "Launch" then "Open viewer" labels; fall back to a broad regex.
+  const candidates = [launch, openViewer].filter(Boolean)
+  let clicked = false
+  for (const name of candidates) {
+    try {
+      await page.getByRole('button', { name, exact: true }).first().click({ timeout: 8000 })
+      clicked = true
+      break
+    } catch { /* try next label */ }
+  }
+  if (!clicked) {
+    await page.getByRole('button', { name: /launch|viewer|demo/i }).first().click({ timeout: 10000 })
+  }
   for (let i = 0; i < 45; i++) {
     await page.waitForTimeout(700)
     const ok = await page.evaluate(() => !!document.querySelector('canvas') &&
