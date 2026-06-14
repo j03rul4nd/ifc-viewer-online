@@ -1,8 +1,13 @@
 name: Deploy to GitHub Pages
 
+# This workflow deploys to GitHub Pages and runs ONLY on the `github-pages`
+# branch. `main` is the Vercel deployment target (custom domain, root base) and
+# must not trigger a Pages build. Push to `github-pages` to publish to
+# https://j03rul4nd.github.io/ifc-viewer-online/ ; the env-driven base path
+# defaults to the project subpath here (no BASE_PATH set).
 on:
   push:
-    branches: ["main"]
+    branches: ["github-pages"]
   workflow_dispatch:
 
 permissions:
