@@ -4,6 +4,7 @@
 // browser fetches the IFC from the public URL the user provides (CORS required).
 
 import React, { useState, useMemo, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
@@ -85,28 +86,34 @@ export default function EmbedModal({ defaultModelUrl, defaultLang, onClose }: Em
 
   const codeText = tab === 'url' ? embedUrl : snippet
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      {/* Backdrop */}
-      <motion.div
-        key="embed-backdrop"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        transition={{ duration: 0.15 }}
-        className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      {/* Full-viewport flex container centers the modal. Centering is done here
+          (flex) — not via translate on the panel — because framer-motion writes
+          an inline transform for the scale/y animation that would clobber a
+          `-translate-x/y-1/2`. Portaled to <body> so `fixed` resolves to the
+          viewport even when an ancestor has a transform (e.g. the blog embed). */}
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+        {/* Backdrop */}
+        <motion.div
+          key="embed-backdrop"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={onClose}
+        />
 
-      {/* Panel */}
-      <motion.div
-        key="embed-panel"
-        initial={{ opacity: 0, scale: 0.96, y: -8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: -8 }}
-        transition={{ duration: 0.18 }}
-        className="fixed z-[71] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] max-w-[calc(100vw-2rem)] rounded-2xl bg-[rgba(12,12,16,0.97)] backdrop-blur-[20px] border border-[var(--border-strong)] shadow-[0_24px_64px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col"
-        style={{ maxHeight: 'calc(100dvh - 4rem)' }}
-        onClick={(e) => e.stopPropagation()}
-      >
+        {/* Panel */}
+        <motion.div
+          key="embed-panel"
+          initial={{ opacity: 0, scale: 0.96, y: -8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: -8 }}
+          transition={{ duration: 0.18 }}
+          className="relative z-[71] w-[520px] max-w-[calc(100vw-2rem)] rounded-2xl bg-[rgba(12,12,16,0.97)] backdrop-blur-[20px] border border-[var(--border-strong)] shadow-[0_24px_64px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col"
+          style={{ maxHeight: 'calc(100dvh - 4rem)' }}
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
           <div className="flex items-center gap-2">
@@ -270,8 +277,10 @@ export default function EmbedModal({ defaultModelUrl, defaultLang, onClose }: Em
             </p>
           </div>
         </div>
-      </motion.div>
-    </AnimatePresence>
+        </motion.div>
+      </div>
+    </AnimatePresence>,
+    document.body,
   )
 }
 
