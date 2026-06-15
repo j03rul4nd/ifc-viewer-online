@@ -6,7 +6,7 @@
 
 import React, { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useDragControls, type PanInfo } from 'framer-motion'
 
 const TAP = { WebkitTapHighlightColor: 'transparent' } as const
 
@@ -29,6 +29,8 @@ export function MobileActionSheet({
   onClose: () => void
   closeLabel?: string
 }) {
+  const controls = useDragControls()
+
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') onClose() }
@@ -38,42 +40,57 @@ export function MobileActionSheet({
 
   if (typeof document === 'undefined') return null
 
+  const handleDragEnd = (_: unknown, info: PanInfo): void => {
+    if (info.offset.y > 90 || info.velocity.y > 600) onClose()
+  }
+
   return createPortal(
     <AnimatePresence>
       {open && (
-        <>
-          <motion.div
-            key="action-scrim"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.16 }}
-            onClick={onClose}
-            className="fixed inset-0 z-[68]"
-            style={{ background: 'rgba(0,0,0,0.4)' }}
-          />
-          <motion.div
-            key="action-sheet"
-            role="menu"
-            initial={{ y: '110%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '110%' }}
-            transition={{ type: 'spring', damping: 32, stiffness: 360, mass: 0.7 }}
-            className="fixed left-2 right-2 z-[69] mobile-sheet-glass overflow-hidden"
-            style={{
-              bottom: `calc(env(safe-area-inset-bottom, 0px) + 8px)`,
-              borderRadius: 26,
-            }}
+        <motion.div
+          key="action-scrim"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          onClick={onClose}
+          className="fixed inset-0 z-[68]"
+          style={{ background: 'rgba(0,0,0,0.45)' }}
+        />
+      )}
+      {open && (
+        <motion.div
+          key="action-sheet"
+          role="menu"
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          transition={{ type: 'spring', damping: 34, stiffness: 360, mass: 0.8 }}
+          drag="y"
+          dragListener={false}
+          dragControls={controls}
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={{ top: 0, bottom: 0.5 }}
+          onDragEnd={handleDragEnd}
+          className="fixed left-2 right-2 z-[69] mobile-sheet-glass overflow-hidden flex flex-col"
+          style={{
+            bottom: `calc(env(safe-area-inset-bottom, 0px) + 8px)`,
+            maxHeight: 'calc(100dvh - 24px)',
+            borderRadius: 26,
+          }}
+        >
+          <div
+            onPointerDown={(e) => controls.start(e)}
+            className="shrink-0 flex items-center justify-center pt-2.5 pb-1 cursor-grab active:cursor-grabbing touch-none"
           >
-            <div className="flex items-center justify-center pt-2.5 pb-1">
-              <div className="sheet-handle" />
-            </div>
+            <div className="sheet-handle" />
+          </div>
             {title && (
-              <div className="px-5 pt-1 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.09em]" style={{ color: 'rgba(255,255,255,0.32)' }}>
+              <div className="shrink-0 px-5 pt-1 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.09em]" style={{ color: 'rgba(255,255,255,0.32)' }}>
                 {title}
               </div>
             )}
-            <div className="px-2.5 pb-2.5 flex flex-col gap-1">
+            <div className="px-2.5 pb-2.5 flex flex-col gap-1 overflow-y-auto scroll-contain overscroll-contain">
               {actions.map((a) => {
                 const color = a.tone === 'accent' ? 'var(--accent-2)' : a.tone === 'ok' ? 'var(--ok)' : 'var(--text)'
                 return (
@@ -99,15 +116,14 @@ export function MobileActionSheet({
               })}
             </div>
             <div
-              className="mx-2.5 mb-2.5 h-12 rounded-2xl flex items-center justify-center text-[14px] font-semibold text-[var(--text-dim)]"
+              className="shrink-0 mx-2.5 mb-2.5 h-12 rounded-2xl flex items-center justify-center text-[14px] font-semibold text-[var(--text-dim)]"
               style={{ background: 'rgba(255,255,255,0.05)' }}
               role="button"
               onClick={onClose}
             >
               {closeLabel}
             </div>
-          </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>,
     document.body,

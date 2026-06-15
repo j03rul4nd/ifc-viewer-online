@@ -17,6 +17,8 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useLocale } from '../i18n/hooks/useLocale'
 import { LOCALE_REGISTRY } from '../i18n/registry'
 import type { LocaleDefinition, SupportedLocale } from '../i18n/registry'
+import { useIsMobile } from '../hooks/useIsMobile'
+import { MobileActionSheet, type SheetAction } from './mobile/MobileActionSheet'
 
 // ── Shared logic ──────────────────────────────────────────────────────────────
 
@@ -147,16 +149,18 @@ function LangDropdown({
 }) {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
+  const isMobile = useIsMobile()
 
-  // Close on outside click
+  // Close on outside click (desktop dropdown only — the mobile sheet owns its
+  // own scrim/dismissal, and this handler would race the action tap).
   useEffect(() => {
-    if (!open) return
+    if (!open || isMobile) return
     const handler = (e: MouseEvent) => {
       if (!wrapRef.current?.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [open])
+  }, [open, isMobile])
 
   // Close on Escape
   useEffect(() => {
@@ -213,8 +217,27 @@ function LangDropdown({
         </svg>
       </button>
 
-      {/* Panel */}
-      {open && (
+      {/* Mobile: dedicated bottom-sheet (portals to <body>, so it can never be
+          clipped by an `overflow-hidden` ancestor like the MobileBottomNav "More"
+          sheet, nor open off-screen below the trigger). */}
+      {isMobile && (
+        <MobileActionSheet
+          open={open}
+          title="Language"
+          onClose={() => setOpen(false)}
+          actions={locales.map<SheetAction>((lang) => ({
+            key: lang.code,
+            icon: lang.flag ? <span style={{ fontSize: 18, lineHeight: 1 }}>{lang.flag}</span> : undefined,
+            label: lang.labelNative,
+            desc: lang.short,
+            tone: active === lang.code ? 'accent' : 'default',
+            onClick: () => handleSelect(lang.code as SupportedLocale),
+          }))}
+        />
+      )}
+
+      {/* Desktop: absolute dropdown panel */}
+      {!isMobile && open && (
         <div
           className={[panelBase, surface === 'dark' ? darkPanel : lightPanel].join(' ')}
           role="listbox"
