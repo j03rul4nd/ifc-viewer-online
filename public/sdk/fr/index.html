@@ -4,157 +4,430 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="index,follow" />
+  <meta name="color-scheme" content="dark light" />
   <title>IFC Viewer SDK — intégrez le visualiseur dans votre CDE ou app</title>
   <meta name="description" content="Intégrez le visualiseur IFC dans votre CDE, jumeau numérique ou outils internes. Chargez des octets IFC depuis votre app — l'analyse reste dans le navigateur. Aucun backend de téléversement." />
+  <script>try{var th=localStorage.getItem('ifcsdk-theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',th);}catch(e){document.documentElement.setAttribute('data-theme','dark');}</script>
   <style>
-    :root { --accent:#5E6AD2; --accent2:#818cf8; --bg:#0b0b0f; --surface:#15151b; --border:#26262f; --text:#e8e8ec; --dim:#a0a0ad; --faint:#6b6b78; }
-    * { box-sizing: border-box; }
-    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
-    a { color:var(--accent2); }
-    .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 80px; }
-    .nav { display:flex;flex-wrap:wrap;gap:6px;font-size:12.5px;margin-bottom:22px;align-items:center }
-    .nav b { color:var(--faint);font-weight:600;margin-right:4px }
-    h1 { font-size: 30px; letter-spacing:-0.02em; margin:0 0 8px; }
-    h2 { font-size: 19px; margin: 40px 0 10px; letter-spacing:-0.01em; }
-    .lede { color:var(--dim); font-size:16px; max-width:640px; }
-    .badge { display:inline-block; font:600 11px/1 ui-monospace,monospace; color:var(--accent2); background:rgba(94,106,210,0.12); border:1px solid rgba(94,106,210,0.3); padding:5px 9px; border-radius:999px; margin-bottom:14px; }
-    .bullets { display:flex; flex-wrap:wrap; gap:10px; margin:18px 0 6px; padding:0; list-style:none; }
-    .bullets li { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:9px 13px; font-size:13px; color:var(--dim); }
-    .bullets b { color:var(--text); font-weight:600; }
-    pre { background:#08080b; border:1px solid var(--border); border-radius:12px; padding:16px; overflow:auto; font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; color:#cdd0e0; }
-    .viewer-shell { position:relative; height:520px; border-radius:14px; overflow:hidden; border:1px solid rgba(94,106,210,0.35); background:#0d0d10; }
-    .row { display:flex; gap:8px; flex-wrap:wrap; margin:14px 0; }
-    button.demo { cursor:pointer; font:600 13px/1 inherit; color:var(--text); background:var(--surface); border:1px solid var(--border); padding:9px 13px; border-radius:9px; }
-    button.demo:hover { border-color:var(--accent); }
-    button.demo.primary { background:var(--accent); border-color:var(--accent); }
-    .status { font:12px/1 ui-monospace,monospace; color:var(--faint); align-self:center; }
-    table { border-collapse:collapse; width:100%; font-size:13px; margin-top:8px; }
-    th,td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
-    th { color:var(--faint); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
-    code { background:#08080b; border:1px solid var(--border); border-radius:5px; padding:1px 5px; font:12.5px ui-monospace,monospace; color:#cdd0e0; }
-  </style>
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+:root{
+  --maxw:1180px; --rail:212px; --bar-h:54px;
+  --bg:#0b0b0f; --bg2:#0e0e13; --surface:#15151b; --raised:#1b1b23;
+  --border:#262630; --border2:#33333f; --chip:#1a1a21;
+  --text:#ECECF1; --dim:#B7B7C4; --faint:#8E8E9E;
+  --accent:#828CF2; --accent-strong:#9aa3ff; --accent-ink:#0b0b13;
+  --accent-tint:rgba(130,140,242,.14); --accent-line:rgba(130,140,242,.40);
+  --code-bg:#0a0a10; --code-bd:#1d1d27; --shadow:0 1px 0 rgba(255,255,255,.02);
+}
+:root[data-theme="light"]{
+  --bg:#FbFbFd; --bg2:#fff; --surface:#fff; --raised:#fff;
+  --border:#E7E7EE; --border2:#DADAE3; --chip:#F1F1F5;
+  --text:#16161D; --dim:#54545F; --faint:#74747F;
+  --accent:#4F46E5; --accent-strong:#4338CA; --accent-ink:#fff;
+  --accent-tint:rgba(79,70,229,.08); --accent-line:rgba(79,70,229,.30);
+  --code-bg:#0d0d14; --code-bd:#21212c; --shadow:0 1px 2px rgba(20,20,40,.05);
+}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.shell{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+.grow{flex:1}
+.muted{color:var(--dim)}
+.small{font-size:13px}
+.skip{position:absolute;left:-9999px;top:0;z-index:100;background:var(--accent);color:var(--accent-ink);padding:10px 14px;border-radius:8px}
+.skip:focus{left:14px;top:10px}
+/* topbar */
+.topbar{position:sticky;top:0;z-index:40;height:var(--bar-h);border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(180%) blur(12px)}
+.topbar-in{display:flex;align-items:center;gap:12px;height:var(--bar-h)}
+.brand{display:inline-flex;align-items:center;gap:9px;color:var(--text);font-weight:650;font-size:14px;letter-spacing:-.01em}
+.brand:hover{text-decoration:none}
+.brand-dot{width:11px;height:11px;border-radius:3px;background:linear-gradient(135deg,var(--accent),var(--accent-strong));box-shadow:0 0 0 3px var(--accent-tint)}
+.ver{font:600 11px/1 ui-monospace,monospace;color:var(--faint);border:1px solid var(--border);border-radius:999px;padding:4px 7px}
+.tb-link{color:var(--dim);font-size:13px;font-weight:500}
+.icon-btn{cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--dim);font-size:16px}
+.icon-btn:hover{color:var(--text);border-color:var(--border2)}
+.lang{position:relative}
+.lang>summary{cursor:pointer;list-style:none;font-size:13px;color:var(--dim);border:1px solid var(--border);background:var(--surface);border-radius:9px;padding:7px 11px}
+.lang>summary::-webkit-details-marker{display:none}
+.lang>summary::after{content:"▾";margin-left:6px;color:var(--faint)}
+.lang[open]>summary{color:var(--text);border-color:var(--border2)}
+.lang-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:148px;background:var(--raised);border:1px solid var(--border);border-radius:12px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:1px;z-index:50}
+.lang-menu a{display:block;padding:8px 11px;border-radius:8px;color:var(--dim);font-size:13.5px}
+.lang-menu a:hover{background:var(--accent-tint);color:var(--text);text-decoration:none}
+.lang-menu a[aria-current]{color:var(--text);font-weight:600;background:var(--accent-tint)}
+/* layout */
+.layout{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);gap:48px;align-items:start;padding-top:8px}
+.rail{position:sticky;top:calc(var(--bar-h) + 18px);align-self:start;max-height:calc(100vh - var(--bar-h) - 36px);overflow:auto}
+.rail-h{font:600 11px/1 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:0 0 10px}
+.rail ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--border)}
+.rail a{display:block;padding:6px 0 6px 14px;margin-left:-1px;border-left:2px solid transparent;color:var(--faint);font-size:13.5px}
+.rail a:hover{color:var(--dim);text-decoration:none}
+.rail a.on{color:var(--text);border-left-color:var(--accent);font-weight:550}
+main{min-width:0;padding-bottom:80px}
+main>section,.hero{scroll-margin-top:calc(var(--bar-h) + 20px)}
+/* typography */
+.eyebrow{font:650 12px/1 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin:0 0 12px}
+h1{font-size:clamp(30px,4.4vw,42px);line-height:1.08;letter-spacing:-.025em;margin:0 0 14px;font-weight:700}
+h2{font-size:25px;letter-spacing:-.02em;margin:0 0 8px;font-weight:680;position:relative}
+h3{font-size:16px;letter-spacing:-.01em;margin:30px 0 12px;font-weight:650;color:var(--text)}
+.anchor{position:absolute;left:-20px;color:var(--faint);opacity:0;text-decoration:none;font-weight:400}
+h2:hover .anchor{opacity:1}
+.lede{color:var(--dim);font-size:16.5px;line-height:1.6;max-width:66ch;margin:0 0 4px}
+.sec{padding:44px 0;border-top:1px solid var(--border)}
+.sec p{max-width:68ch}
+/* hero */
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:36px;align-items:center;padding:40px 0 30px}
+.hero .lede{margin-bottom:22px}
+.cta{display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 18px;border-radius:10px;font-size:14px;font-weight:600;border:1px solid var(--border2);color:var(--text);background:var(--surface)}
+.btn:hover{border-color:var(--accent);text-decoration:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{background:var(--accent-strong);border-color:var(--accent-strong)}
+.peek-l{font:600 11px/1 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:0 0 10px}
+/* trust */
+.trust{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:8px 0 0;padding:18px 0 0;border-top:1px solid var(--border)}
+.trust li{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px 12px;font-size:13px;color:var(--dim);box-shadow:var(--shadow)}
+.t-ic{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:var(--accent-tint);color:var(--accent-strong);font:600 10px/1 ui-monospace,monospace}
+/* code */
+.code{margin:16px 0;border:1px solid var(--code-bd);border-radius:12px;overflow:hidden;background:var(--code-bg)}
+.code-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--code-bd);background:rgba(255,255,255,.02)}
+.code-lang{font:600 11px/1 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.07em;color:#8b8ba0}
+.copy{cursor:pointer;font:600 11.5px/1 ui-monospace,monospace;color:#a9b0d6;background:transparent;border:1px solid var(--code-bd);border-radius:7px;padding:5px 9px}
+.copy:hover{color:#fff;border-color:#3a3a4a}
+.copy.ok{color:#9ece6a;border-color:#3a4a32}
+.code pre{margin:0;padding:15px 16px;overflow:auto;font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:#cdd2e6}
+.code code{font:inherit}
+.t-com{color:#6b7394;font-style:italic}
+.t-str{color:#9ece6a}
+.t-kw{color:#bb9af7}
+.t-const{color:#ff9e64}
+.t-num{color:#ff9e64}
+.t-tag{color:#7aa2f7}
+.t-attr{color:#7dcfff}
+:where(p,li,.lede,td,summary,.api-desc) code{font:12.5px/1 ui-monospace,monospace;background:var(--chip);border:1px solid var(--border);border-radius:5px;padding:2px 5px;color:var(--text)}
+.muted-code{color:var(--dim)!important;background:transparent!important;border:0!important;padding:0!important}
+/* tabs */
+.tabs{margin:18px 0}
+.tablist{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-bottom:2px}
+.tab{cursor:pointer;font:600 13px/1 inherit;color:var(--faint);background:transparent;border:0;border-bottom:2px solid transparent;padding:10px 13px;margin-bottom:-1px;border-radius:7px 7px 0 0}
+.tab:hover{color:var(--dim)}
+.tab[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent)}
+.callout{display:flex;flex-direction:column;gap:3px;border:1px solid var(--border);border-left:3px solid var(--accent);background:var(--surface);border-radius:10px;padding:13px 16px;margin:18px 0}
+.callout-t{font-weight:650;margin:0;font-size:14px}
+.callout p{margin:0;color:var(--dim);font-size:14px;max-width:none}
+/* demo */
+.demo-wrap{margin-top:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+button.demo{cursor:pointer;font:600 13px/1 inherit;color:var(--text);background:var(--surface);border:1px solid var(--border2);padding:10px 13px;border-radius:9px;min-height:38px}
+button.demo:hover:not(:disabled){border-color:var(--accent)}
+button.demo:disabled{opacity:.45;cursor:not-allowed}
+button.demo.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.status{font:12px/1 ui-monospace,monospace;color:var(--faint);align-self:center;margin-left:auto}
+.demo-meta{display:flex;align-items:center;gap:8px;font-size:12px;margin:0 0 8px;color:var(--faint)}
+.demo-call-l{font:600 10px/1 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.07em}
+.demo-call{font:12.5px/1 ui-monospace,monospace;color:var(--accent-strong)}
+.bar-track{height:3px;border-radius:999px;background:var(--border);overflow:hidden;margin:0 0 10px}
+.bar-fill{height:100%;width:0;background:var(--accent);transition:width .2s ease}
+.viewer-shell{position:relative;height:520px;border-radius:14px;overflow:hidden;border:1px solid var(--accent-line);background:var(--bg2)}
+.demo-hint{margin:10px 0 0;font-size:13px;color:#e0a85a}
+/* cards / how */
+.diagram-wrap{margin:18px 0 24px;border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:18px}
+.diagram{width:100%;height:auto}
+.dg-box{fill:var(--raised);stroke:var(--border2)}
+.dg-frame{fill:var(--accent-tint);stroke:var(--accent-line);stroke-dasharray:4 4}
+.dg-t{fill:var(--text);font:600 13px ui-monospace,monospace;text-anchor:middle}
+.dg-s{fill:var(--faint);font:10px ui-monospace,monospace;text-anchor:middle}
+.dg-l{fill:var(--dim);font:600 10px ui-monospace,monospace;text-anchor:middle}
+.dg-frame-l{fill:var(--accent-strong);font:600 10px ui-monospace,monospace;text-anchor:middle}
+.dg-arrow line{stroke:var(--accent);stroke-width:1.5}
+.dg-arrow polygon{fill:var(--accent)}
+.cards-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:8px 0}
+.cards-2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:12px 0 0}
+.card{border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:15px 16px;box-shadow:var(--shadow)}
+.card-t{font-weight:650;margin:0 0 6px;font-size:14.5px}
+.card p{margin:0;color:var(--dim);font-size:13.5px;max-width:none}
+/* concepts */
+.concept{display:grid;grid-template-columns:.85fr 1.15fr;gap:24px;align-items:center;padding:22px 0;border-top:1px solid var(--border)}
+.concept:first-of-type{border-top:0}
+.concept-txt .card-t{font-size:16px}
+.concept-txt p{color:var(--dim);margin:0;max-width:46ch}
+.concept-code{min-width:0}
+.concept-code .code{margin:0}
+/* api */
+.api-groups{margin-top:12px}
+.api-group{margin:0 0 8px;padding:18px 0 6px;border-top:1px solid var(--border)}
+.api-group:first-child{border-top:0;padding-top:6px}
+.api-group h3{margin:0 0 10px}
+.api-m{padding:11px 0;border-bottom:1px solid var(--border)}
+.api-m:last-child{border-bottom:0}
+.api-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.api-sig{font:13px/1.5 ui-monospace,monospace;color:var(--text);background:transparent;border:0;padding:0}
+.api-ret{font:12px/1.5 ui-monospace,monospace;color:var(--accent-strong)}
+.api-desc{margin:5px 0 0;color:var(--dim);font-size:14px}
+.table-wrap{overflow-x:auto;margin:10px 0 6px;border:1px solid var(--border);border-radius:12px}
+table.dt{border-collapse:collapse;width:100%;font-size:13.5px;min-width:520px}
+table.dt th{text-align:left;padding:10px 14px;color:var(--faint);font:600 11px/1 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);background:var(--surface)}
+table.dt td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--dim)}
+table.dt tr:last-child td{border-bottom:0}
+table.dt td code{white-space:nowrap}
+.chip{display:inline-block;font:12px/1 ui-monospace,monospace;background:var(--chip);border:1px solid var(--border);border-radius:6px;padding:3px 7px;margin:0 4px 4px 0;color:var(--text)}
+/* recipes */
+.recipe{padding:20px 0;border-top:1px solid var(--border)}
+.recipe:first-of-type{border-top:0}
+.recipe .card-t{font-size:15.5px;margin-bottom:3px}
+.recipe>p.muted{margin:0;max-width:60ch}
+/* faq */
+.faq{border:1px solid var(--border);border-radius:11px;margin:8px 0;background:var(--surface);overflow:hidden}
+.faq>summary{cursor:pointer;list-style:none;padding:14px 16px;font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:10px}
+.faq>summary::-webkit-details-marker{display:none}
+.faq>summary::before{content:"+";color:var(--accent);font:700 16px/1 ui-monospace,monospace;width:14px}
+.faq[open]>summary::before{content:"–"}
+.faq-body{padding:0 16px 15px 40px}
+.faq-body p{margin:0;color:var(--dim);font-size:14px}
+/* footer */
+.footer{border-top:1px solid var(--border);background:var(--bg2);margin-top:20px}
+.footer-in{padding:30px 24px 44px}
+.foot-tag{font-weight:600;margin:0 0 6px}
+.foot-links{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0 0;font-size:13.5px}
+.foot-links span{color:var(--faint)}
+/* responsive */
+@media (max-width:1024px){
+  .layout{grid-template-columns:1fr;gap:0}
+  .rail{display:none}
+  .hero{grid-template-columns:1fr;gap:24px}
+  .cards-3{grid-template-columns:1fr}
+  .cards-2{grid-template-columns:1fr}
+  .concept{grid-template-columns:1fr;gap:14px}
+}
+@media (max-width:560px){
+  .shell{padding:0 16px}
+  .tb-link{display:none}
+  .viewer-shell{height:62vh;min-height:360px}
+  .status{margin-left:0;width:100%}
+  h2{font-size:22px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{transition:none!important;animation:none!important}
+}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <nav class="nav"><b>Langue:</b><a href="../" hreflang="en" style="color:var(--faint);text-decoration:none">English</a><span style="color:var(--border)"> · </span><a href="../es/" hreflang="es" style="color:var(--faint);text-decoration:none">Español</a><span style="color:var(--border)"> · </span><a href="../de/" hreflang="de" style="color:var(--faint);text-decoration:none">Deutsch</a><span style="color:var(--border)"> · </span><a href="./" hreflang="fr" style="color:var(--text);font-weight:600;text-decoration:none">Français</a><span style="color:var(--border)"> · </span><a href="../pt/" hreflang="pt" style="color:var(--faint);text-decoration:none">Português</a><span style="color:var(--border)"> · </span><a href="../it/" hreflang="it" style="color:var(--faint);text-decoration:none">Italiano</a><span style="color:var(--border)"> · </span><a href="../ca/" hreflang="ca" style="color:var(--faint);text-decoration:none">Català</a><span style="color:var(--border)"> · </span><a href="../zh/" hreflang="zh" style="color:var(--faint);text-decoration:none">中文</a><span style="color:var(--border)"> · </span><a href="../ja/" hreflang="ja" style="color:var(--faint);text-decoration:none">日本語</a><span style="color:var(--border)"> · </span><a href="../th/" hreflang="th" style="color:var(--faint);text-decoration:none">ไทย</a></nav>
-    <span class="badge">IFC VIEWER SDK · v1.6.0</span>
-    <h1>Intégrez le visualiseur dans votre propre produit</h1>
-    <p class="lede">Insérez le même visualiseur navigateur dans votre CDE, jumeau numérique ou outils internes de projet. Chargez des données IFC depuis votre app, le traitement du modèle restant côté client.</p>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar"><div class="shell topbar-in">
+    <a class="brand" href="#main"><span class="brand-dot" aria-hidden="true"></span>IFC&nbsp;Viewer&nbsp;SDK</a>
+    <span class="ver">v1.6.0</span>
+    <span class="grow"></span>
+    <a class="tb-link" href="../../">Open viewer</a>
+    <details class="lang"><summary aria-label="Langue">Français</summary><div class="lang-menu" role="menu"><a href="../" hreflang="en">English</a><a href="../es/" hreflang="es">Español</a><a href="../de/" hreflang="de">Deutsch</a><a href="./" hreflang="fr" aria-current="true">Français</a><a href="../pt/" hreflang="pt">Português</a><a href="../it/" hreflang="it">Italiano</a><a href="../ca/" hreflang="ca">Català</a><a href="../zh/" hreflang="zh">中文</a><a href="../ja/" hreflang="ja">日本語</a><a href="../th/" hreflang="th">ไทย</a></div></details>
+    <button id="theme" class="icon-btn" type="button" aria-label="Toggle light / dark theme"><span aria-hidden="true">◐</span></button>
+  </div></header>
 
-    <ul class="bullets">
-      <li>✓ <b>Aucun backend de téléversement requis</b></li>
-      <li>✓ <b>S'exécute directement dans le navigateur</b></li>
-      <li>✓ <b>Prêt pour IFC, BCF et IDS</b></li>
-    </ul>
+  <div class="shell layout">
+    <aside class="rail"><nav aria-label="On this page"><p class="rail-h">On this page</p><ul><li><a href="#quickstart" data-spy="quickstart">Démarrage rapide</a></li><li><a href="#demo" data-spy="demo">Démo en direct</a></li><li><a href="#how" data-spy="how">How it works</a></li><li><a href="#concepts" data-spy="concepts">Core concepts</a></li><li><a href="#api" data-spy="api">API reference</a></li><li><a href="#recipes" data-spy="recipes">Recipes</a></li><li><a href="#faq" data-spy="faq">Troubleshooting</a></li></ul></nav></aside>
+    <main id="main" tabindex="-1">
+      <section class="hero"><div class="hero-main"><p class="eyebrow">IFC Viewer SDK · v1.6.0</p><h1>Intégrez le visualiseur IFC dans votre propre produit</h1><p class="lede">Insérez le même visualiseur navigateur dans votre CDE, jumeau numérique ou outils internes de projet. Chargez des données IFC depuis votre app, chaque modèle étant analysé côté client.</p><div class="cta"><a class="btn primary" href="#quickstart">Get started</a><a class="btn" href="#demo">See the live demo</a></div></div><div class="hero-peek"><p class="peek-l">Three lines to first render</p><figure class="code"><figcaption class="code-bar"><span class="code-lang">JavaScript</span><button class="copy" type="button" data-copy data-copied="Copied!" aria-label="Copy">Copy</button></figcaption><pre><code><span class="t-kw">const</span> viewer = <span class="t-kw">new</span> IfcViewer(<span class="t-str">"#viewer"</span>);
 
-    <h2>Démarrage rapide</h2>
-    <pre><code>&lt;div id="viewer" style="height:520px"&gt;&lt;/div&gt;
-&lt;script type="module"&gt;
-  import { IfcViewer } from "../ifc-viewer.es.js";
+<span class="t-kw">await</span> viewer.add(<span class="t-str">"project.ifc"</span>, ifcBytes);
+<span class="t-com">// → rendered, validated, all on the client</span></code></pre></figure></div></section><ul class="trust" aria-label="IFC Viewer SDK"><li><span class="t-ic" aria-hidden="true">◆</span>100% client-side</li><li><span class="t-ic" aria-hidden="true">↑</span>No upload backend</li><li><span class="t-ic" aria-hidden="true">∅</span>Zero runtime deps</li><li><span class="t-ic" aria-hidden="true">⌀</span>~6 KB wrapper</li><li><span class="t-ic" aria-hidden="true">TS</span>TypeScript types</li><li><span class="t-ic" aria-hidden="true">文</span>10 languages</li><li><span class="t-ic" aria-hidden="true">✓</span>IDS-validated engine</li></ul>
+      <section id="quickstart" class="sec"><p class="eyebrow">Setup</p><h2><a class="anchor" href="#quickstart" tabindex="-1" aria-hidden="true">#</a>Démarrage rapide</h2><p class="lede">Pick your stack. Copy, paste, render — no build step, no API key.</p><div class="tabs" data-persist="fw"><div class="tablist" role="tablist" aria-label="Démarrage rapide"><button class="tab" role="tab" id="qs-t0" aria-controls="qs-p0" aria-selected="true" tabindex="0">JavaScript</button><button class="tab" role="tab" id="qs-t1" aria-controls="qs-p1" aria-selected="false" tabindex="-1">Web component</button><button class="tab" role="tab" id="qs-t2" aria-controls="qs-p2" aria-selected="false" tabindex="-1">React</button><button class="tab" role="tab" id="qs-t3" aria-controls="qs-p3" aria-selected="false" tabindex="-1">Vue</button></div><div class="tabpanel" role="tabpanel" id="qs-p0" aria-labelledby="qs-t0"><figure class="code"><figcaption class="code-bar"><span class="code-lang">HTML</span><button class="copy" type="button" data-copy data-copied="Copied!" aria-label="Copy">Copy</button></figcaption><pre><code><span class="t-tag">&lt;div</span> <span class="t-attr">id</span>=<span class="t-str">"viewer"</span> <span class="t-attr">style</span>=<span class="t-str">"height:520px"</span>&gt;<span class="t-tag">&lt;/div</span>&gt;
+<span class="t-tag">&lt;script</span> <span class="t-attr">type</span>=<span class="t-str">"module"</span>&gt;
+  <span class="t-kw">import</span> { IfcViewer } <span class="t-kw">from</span> <span class="t-str">"https://www.ifcvieweronline.eu/sdk/ifc-viewer.es.js"</span>;
 
-  const viewer = new IfcViewer("#viewer");
+  <span class="t-kw">const</span> viewer = <span class="t-kw">new</span> IfcViewer(<span class="t-str">"#viewer"</span>);
 
-  const bytes = await fetch("/models/project.ifc").then(r =&gt; r.arrayBuffer());
-  await viewer.add("project.ifc", bytes);
-&lt;/script&gt;</code></pre>
-    <p class="lede" style="font-size:13px;margin-bottom:6px">Ou, sans JS — la balise :</p>
-    <pre><code>&lt;script type="module" src="../ifc-viewer.es.js"&gt;&lt;/script&gt;
-&lt;ifc-viewer model="https://host/project.ifc" ui="minimal"
-            style="display:block;height:520px"&gt;&lt;/ifc-viewer&gt;</code></pre>
-    <p class="lede" style="font-size:13px">Le SDK découvre l'URL de l'app relativement à ce script ; l'auto-hébergement fonctionne tel quel.</p>
+  <span class="t-com">// Load IFC bytes from your app — nothing is uploaded</span>
+  <span class="t-kw">const</span> bytes = <span class="t-kw">await</span> fetch(<span class="t-str">"/models/project.ifc"</span>).then(r =&gt; r.arrayBuffer());
+  <span class="t-kw">await</span> viewer.add(<span class="t-str">"project.ifc"</span>, bytes);
+<span class="t-tag">&lt;/script</span>&gt;</code></pre></figure></div><div class="tabpanel" role="tabpanel" id="qs-p1" aria-labelledby="qs-t1" hidden><p class="muted">Zero JavaScript — drop the tag into any page or dashboard and set attributes.</p><figure class="code"><figcaption class="code-bar"><span class="code-lang">HTML</span><button class="copy" type="button" data-copy data-copied="Copied!" aria-label="Copy">Copy</button></figcaption><pre><code><span class="t-tag">&lt;script</span> <span class="t-attr">type</span>=<span class="t-str">"module"</span> <span class="t-attr">src</span>=<span class="t-str">"https://www.ifcvieweronline.eu/sdk/ifc-viewer.es.js"</span>&gt;<span class="t-tag">&lt;/script</span>&gt;
 
-    <h2>Démo en direct</h2>
-    <p class="lede">Cette page utilise le SDK lui-même. Cliquez pour récupérer un IFC d’exemple et passer ses octets au visualiseur.</p>
-    <div class="row">
-      <button class="demo primary" id="load">Charger un IFC d’exemple</button>
-      <button class="demo" id="isolate">Isoler les murs</button>
-      <button class="demo" id="top">Vue de dessus</button>
-      <button class="demo" id="fit">Cadrer</button>
-      <button class="demo" id="reset">Réinitialiser la caméra</button>
-      <button class="demo" id="shot" title="screenshot">📷</button>
-      <button class="demo" id="clear">Effacer</button>
-      <span class="status" id="status">inactif</span>
-    </div>
-    <div style="height:3px;border-radius:999px;background:var(--border);overflow:hidden;margin:0 0 8px">
-      <div id="bar" style="height:100%;width:0;background:var(--accent);transition:width .2s ease"></div>
-    </div>
-    <div class="viewer-shell"><div id="viewer" style="height:100%"></div></div>
+<span class="t-tag">&lt;ifc-viewer</span> <span class="t-attr">model</span>=<span class="t-str">"https://your-cde.com/model.ifc"</span> <span class="t-attr">ui</span>=<span class="t-str">"minimal"</span> <span class="t-attr">accent</span>=<span class="t-str">"#22c55e"</span>
+            <span class="t-attr">style</span>=<span class="t-str">"display:block;height:520px"</span>&gt;<span class="t-tag">&lt;/ifc-viewer</span>&gt;</code></pre></figure></div><div class="tabpanel" role="tabpanel" id="qs-p2" aria-labelledby="qs-t2" hidden><p class="muted">Mount in an effect, tear down on unmount. Safe under React 18 StrictMode double-invocation.</p><figure class="code"><figcaption class="code-bar"><span class="code-lang">React</span><button class="copy" type="button" data-copy data-copied="Copied!" aria-label="Copy">Copy</button></figcaption><pre><code><span class="t-kw">import</span> { useEffect, useRef } <span class="t-kw">from</span> <span class="t-str">"react"</span>;
+<span class="t-kw">import</span> { IfcViewer } <span class="t-kw">from</span> <span class="t-str">"https://www.ifcvieweronline.eu/sdk/ifc-viewer.es.js"</span>;
 
-    <h2>API</h2>
-    <table>
-      <tr><th>Méthode</th><th>Description</th></tr>
-      <tr><td><code>new IfcViewer(target, options?)</code></td><td>Monter dans un sélecteur CSS ou un élément. Options : ui, validate, panel, lang, height, model, loadTimeout, baseUrl.</td></tr>
-      <tr><td><code>add(name, bytes)</code></td><td>Charger des octets IFC (ArrayBuffer/Uint8Array) depuis votre app. Renvoie une promesse avec les infos du modèle.</td></tr>
-      <tr><td><code>addFromUrl(url, name?)</code></td><td>Charger une URL IFC publique compatible CORS.</td></tr>
-      <tr><td><code>select(expressId)</code></td><td>Sélectionner et cadrer un élément par son expressID IFC.</td></tr>
-      <tr><td><code>isolate(ifcType?)</code></td><td>Isoler une catégorie (p. ex. "IfcWall") ; omettre pour réinitialiser.</td></tr>
-      <tr><td><code>setView(view)</code></td><td>Voler vers une vue caméra : iso, top, front, right, left, back, bottom.</td></tr>
-      <tr><td><code>fit() · reset()</code></td><td>Cadrer le modèle actif / réinitialiser la caméra.</td></tr>
-      <tr><td><code>showAll()</code></td><td>Restaurer toute la visibilité (annuler masquage + isolation).</td></tr>
-      <tr><td><code>setLanguage(lang)</code></td><td>Changer la langue de l'interface à l'exécution.</td></tr>
-      <tr><td><code>clear()</code></td><td>Supprimer tous les modèles chargés.</td></tr>
-      <tr><td><code>getLanguages()</code></td><td>Lister les codes de langue pris en charge (libellés via IfcViewer.LANGUAGES).</td></tr>
-      <tr><td><code>getModels()</code></td><td>Liste les modèles chargés ({ id, fileName, elementCount }). Renvoie une promesse.</td></tr>
-      <tr><td><code>getElement(id, modelId?)</code></td><td>Récupère les données IFC d'un élément (attributs + property/quantity sets). Renvoie une promesse.</td></tr>
-      <tr><td><code>getValidation()</code></td><td>Récupère le résumé de validation (Health Score + compteurs). Renvoie une promesse.</td></tr>
-      <tr><td><code>getStats()</code></td><td>Nombre d’éléments par catégorie et par modèle — pour les graphiques. Renvoie une promesse.</td></tr>
-      <tr><td><code>getIssues(opts?)</code></td><td>Anomalies de validation pour un tableau (filtre par sévérité / limite). Renvoie une promesse.</td></tr>
-      <tr><td><code>checkIds(idsXml)</code></td><td>Check the model against a buildingSMART IDS (.ids XML). Returns pass/fail per spec.</td></tr>
-      <tr><td><code>screenshot()</code></td><td>Capture la vue 3D actuelle en data URL PNG. Renvoie une promesse.</td></tr>
-      <tr><td><code>removeModel(modelId)</code></td><td>Décharge un modèle par id.</td></tr>
-      <tr><td><code>hideElements(ids) · showElements(ids)</code></td><td>Masque / affiche un ensemble d’éléments par expressID.</td></tr>
-      <tr><td><code>setCamera(pos, dir)</code></td><td>Place la caméra à une position regardant dans une direction.</td></tr>
-      <tr><td><code>on(event, cb)</code></td><td>S’abonner / se désabonner aux événements ; renvoie une fonction de désabonnement.</td></tr>
-      <tr><td><code>dispose()</code></td><td>Démonter et retirer l’iframe.</td></tr>
-    </table>
+<span class="t-kw">export</span> <span class="t-kw">function</span> ModelViewer({ url }) {
+  <span class="t-kw">const</span> host = useRef(<span class="t-const">null</span>);
 
-    <h2>Événements</h2>
-    <table>
-      <tr><th>Méthode</th><th>Description</th></tr>
-      <tr><td><code>ready</code></td><td>Visualiseur monté et prêt ({ languages }).</td></tr>
-      <tr><td><code>model-progress</code></td><td>Progression du chargement ({ percent, phase }).</td></tr>
-      <tr><td><code>model-loaded</code></td><td>Un modèle a fini de charger ({ modelId, fileName, elementCount }).</td></tr>
-      <tr><td><code>validation-completed</code></td><td>Validation terminée — Health Score ({ qualityScore, errors, warnings, info }).</td></tr>
-      <tr><td><code>model-error</code></td><td>Un chargement a échoué ({ message }).</td></tr>
-      <tr><td><code>element-selected</code></td><td>L'utilisateur a choisi un élément ({ expressId, ifcType, name }).</td></tr>
-    </table>
+  useEffect(() =&gt; {
+    <span class="t-kw">const</span> viewer = <span class="t-kw">new</span> IfcViewer(host.current, { model: url });
+    <span class="t-kw">return</span> () =&gt; viewer.dispose();   <span class="t-com">// StrictMode-safe teardown</span>
+  }, [url]);
 
-    <p style="margin-top:28px;color:var(--faint);font-size:13px">Le modèle est récupéré dans le navigateur du visiteur et analysé côté client avec WebAssembly — rien n'est téléversé sur nos serveurs.</p>
+  <span class="t-kw">return</span> &lt;div ref={host} style={{ height: <span class="t-num">520</span> }} /&gt;;
+}</code></pre></figure></div><div class="tabpanel" role="tabpanel" id="qs-p3" aria-labelledby="qs-t3" hidden><p class="muted">Mount on onMounted, dispose on onUnmounted.</p><figure class="code"><figcaption class="code-bar"><span class="code-lang">Vue</span><button class="copy" type="button" data-copy data-copied="Copied!" aria-label="Copy">Copy</button></figcaption><pre><code><span class="t-tag">&lt;script</span> setup&gt;
+<span class="t-kw">import</span> { onMounted, onUnmounted, ref } <span class="t-kw">from</span> <span class="t-str">"vue"</span>;
+<span class="t-kw">import</span> { IfcViewer } <span class="t-kw">from</span> <span class="t-str">"https://www.ifcvieweronline.eu/sdk/ifc-viewer.es.js"</span>;
+
+<span class="t-kw">const</span> host = ref(<span class="t-const">null</span>);
+<span class="t-kw">let</span> viewer;
+onMounted(() =&gt; { viewer = <span class="t-kw">new</span> IfcViewer(host.value, { model: <span class="t-str">"https://host/m.ifc"</span> }); });
+onUnmounted(() =&gt; viewer &amp;&amp; viewer.dispose());
+<span class="t-tag">&lt;/script</span>&gt;
+
+<span class="t-tag">&lt;template</span>&gt;
+  <span class="t-tag">&lt;div</span> <span class="t-attr">ref</span>=<span class="t-str">"host"</span> <span class="t-attr">style</span>=<span class="t-str">"height: 520px"</span> /&gt;
+<span class="t-tag">&lt;/template</span>&gt;</code></pre></figure></div></div><div class="callout" role="note"><p class="callout-t">Hosted vs. self-hosted</p><p>The snippets import from our CDN, which works on any origin. To self-host, serve ifc-viewer.es.js from your own domain — the SDK auto-discovers the app URL relative to the script. Serving the app elsewhere? Set the baseUrl option.</p></div><p class="muted small">No npm package yet: import the module by URL (above) or vendor ifc-viewer.es.js into your app.</p></section>
+      <section id="demo" class="sec"><p class="eyebrow">Proof</p><h2><a class="anchor" href="#demo" tabindex="-1" aria-hidden="true">#</a>Démo en direct</h2><p class="lede">Cette page exécute le SDK. Cliquez un contrôle pour charger un IFC d’exemple et piloter le visualiseur — chaque bouton affiche l’appel qu’il effectue.</p><div class="demo-wrap"><div class="row"><button class="demo primary" id="load">Charger un IFC d’exemple</button><button class="demo" id="isolate" disabled>Isoler les murs</button><button class="demo" id="top" disabled>Vue de dessus</button><button class="demo" id="fit" disabled>Cadrer</button><button class="demo" id="reset" disabled>Réinitialiser la caméra</button><button class="demo" id="shot" aria-label="Screenshot" disabled>📷</button><button class="demo" id="clear" disabled>Effacer</button><span class="status" id="status" role="status" aria-live="polite">inactif</span></div><div class="demo-meta"><span class="demo-call-l">Last call</span> <code class="demo-call" id="democall">—</code></div><div class="bar-track"><div id="bar" class="bar-fill"></div></div><div class="viewer-shell"><div id="viewer" style="height:100%"></div></div><p class="demo-hint" id="demohint" role="alert" hidden>⚠ The sample host may be rate-limiting. Try again in a moment.</p></div></section>
+      <section id="how" class="sec"><p class="eyebrow">Architecture</p><h2><a class="anchor" href="#how" tabindex="-1" aria-hidden="true">#</a>How it works</h2><p class="lede">A tiny wrapper in your page, the full viewer in a sandboxed iframe, your bytes streamed across — and parsed where they already live.</p><div class="diagram-wrap"><svg class="diagram" viewBox="0 0 720 180" role="img" aria-label="Your app hands IFC bytes to the SDK, which streams them over postMessage to a sandboxed iframe where three.js and web-ifc (WebAssembly) parse and render the model in the visitor’s browser. Nothing is uploaded." xmlns="http://www.w3.org/2000/svg"><rect class="dg-frame" x="300" y="28" width="408" height="124" rx="16"/><text class="dg-frame-l" x="504" y="146">Visitor's browser — nothing uploaded</text><rect class="dg-box" x="12" y="46" width="150" height="78" rx="12"/><text class="dg-t" x="87" y="80">Your app</text><rect class="dg-box" x="318" y="46" width="150" height="78" rx="12"/><text class="dg-t" x="393" y="80">SDK · ~6 KB</text><rect class="dg-box" x="540" y="46" width="156" height="78" rx="12"/><text class="dg-t" x="618" y="80">Sandboxed iframe</text><text class="dg-s" x="618" y="100">three.js · web-ifc · WASM</text><g class="dg-arrow"><line x1="164" y1="85" x2="316" y2="85"/><polygon points="316,85 306,80 306,90"/><text class="dg-l" x="240" y="76">IFC bytes</text></g><g class="dg-arrow"><line x1="470" y1="85" x2="538" y2="85"/><polygon points="538,85 528,80 528,90"/><text class="dg-l" x="504" y="76">postMessage</text></g></svg></div><div class="cards-3"><div class="card"><p class="card-t">Your app</p><p>A ~6 KB ES module that creates an iframe and a typed JS API. None of the heavy 3D / parsing weight touches your bundle.</p></div><div class="card"><p class="card-t">postMessage bridge</p><p>IFC bytes are transferred to the iframe as an ArrayBuffer (zero-copy). Commands and queries are correlated request/response messages.</p></div><div class="card"><p class="card-t">The viewer</p><p>three.js + web-ifc compiled to WebAssembly parse and render the model inside the iframe — on the visitor’s machine.</p></div></div><div class="cards-2"><div class="card"><p class="card-t">Why it’s private</p><p>Models never reach a server. No upload pipeline to secure, no data-residency question, no file-size queue.</p></div><div class="card"><p class="card-t">Why it scales</p><p>Compute runs on each visitor’s device. Serving a 200 MB model costs the same as a 2 MB one — it’s a static file.</p></div></div></section>
+      <section id="concepts" class="sec"><p class="eyebrow">Concepts</p><h2><a class="anchor" href="#concepts" tabindex="-1" aria-hidden="true">#</a>Core concepts</h2><p class="lede">Four things to know before you build.</p><div class="concept"><div class="concept-txt"><p class="card-t">Mount &amp; ready</p><p>new IfcViewer(target) mounts immediately and queues commands until the viewer is ready. await IfcViewer.create(target) (or whenReady()) gives you an instance you can use straight away.</p></div><div class="concept-code"><figure class="code"><figcaption class="code-bar"><span class="code-lang">JavaScript</span><button class="copy" type="button" data-copy data-copied="Copied!" aria-label="Copy">Copy</button></figcaption><pre><code><span class="t-com">// queues commands until ready</span>
+<span class="t-kw">const</span> viewer = <span class="t-kw">new</span> IfcViewer(<span class="t-str">"#viewer"</span>);
+
+<span class="t-com">// …or await an instance that is ready to use</span>
+<span class="t-kw">const</span> viewer = <span class="t-kw">await</span> IfcViewer.create(<span class="t-str">"#viewer"</span>);</code></pre></figure></div></div><div class="concept"><div class="concept-txt"><p class="card-t">Bytes vs. URL</p><p>add(name, bytes) streams bytes you already have — no CORS, nothing uploaded; the buffer is transferred (detached), so pass a copy if you still need it. addFromUrl(url) fetches a public, CORS-enabled URL instead.</p></div><div class="concept-code"><figure class="code"><figcaption class="code-bar"><span class="code-lang">JavaScript</span><button class="copy" type="button" data-copy data-copied="Copied!" aria-label="Copy">Copy</button></figcaption><pre><code><span class="t-com">// you already have the bytes — no CORS, nothing uploaded</span>
+<span class="t-kw">await</span> viewer.add(<span class="t-str">"a.ifc"</span>, bytes);
+
+<span class="t-com">// …or load a public, CORS-enabled URL</span>
+<span class="t-kw">await</span> viewer.addFromUrl(<span class="t-str">"https://host/b.ifc"</span>);</code></pre></figure></div></div><div class="concept"><div class="concept-txt"><p class="card-t">Events</p><p>Subscribe with on(event, cb), which returns an unsubscribe function. You get ready, model-progress, model-loaded, validation-completed, model-error and element-selected.</p></div><div class="concept-code"><figure class="code"><figcaption class="code-bar"><span class="code-lang">JavaScript</span><button class="copy" type="button" data-copy data-copied="Copied!" aria-label="Copy">Copy</button></figcaption><pre><code><span class="t-kw">const</span> off = viewer.on(<span class="t-str">"model-loaded"</span>, (m) =&gt; {
+  console.log(m.fileName, m.elementCount);
+});
+<span class="t-com">// later: off();</span></code></pre></figure></div></div><div class="concept"><div class="concept-txt"><p class="card-t">Queries</p><p>Pull data on demand: getModels, getElement, getValidation, getStats, getIssues, checkIds, screenshot. Each is request/response and rejects after a timeout (30 s; IDS up to 120 s).</p></div><div class="concept-code"><figure class="code"><figcaption class="code-bar"><span class="code-lang">JavaScript</span><button class="copy" type="button" data-copy data-copied="Copied!" aria-label="Copy">Copy</button></figcaption><pre><code><span class="t-kw">const</span> models = <span class="t-kw">await</span> viewer.getModels();
+<span class="t-kw">const</span> { qualityScore } = <span class="t-kw">await</span> viewer.getValidation();
+<span class="t-kw">const</span> png = <span class="t-kw">await</span> viewer.screenshot();</code></pre></figure></div></div></section>
+      <section id="api" class="sec"><p class="eyebrow">Reference</p><h2><a class="anchor" href="#api" tabindex="-1" aria-hidden="true">#</a>API reference</h2><p class="lede">Every method, grouped — with signatures and return types. Constructor options, events and the &lt;ifc-viewer&gt; web component follow.</p><div class="api-groups"><div class="api-group" id="grp-construct"><h3>Constructor</h3><div class="api-m" id="m-new"><div class="api-head"><code class="api-sig">new IfcViewer(target, options?)</code><span class="api-ret">IfcViewer</span></div><p class="api-desc">Monter dans un sélecteur CSS ou un élément. Voir les options ci-dessous.</p></div><div class="api-m" id="m-ifcviewer-create"><div class="api-head"><code class="api-sig">IfcViewer.create(target, options?)</code><span class="api-ret">Promise&lt;IfcViewer&gt;</span></div><p class="api-desc">Create a viewer and resolve once it is ready to accept commands.</p></div></div><div class="api-group" id="grp-loading"><h3>Loading models</h3><div class="api-m" id="m-add"><div class="api-head"><code class="api-sig">add(name, bytes)</code><span class="api-ret">Promise&lt;ModelLoadedEvent&gt;</span></div><p class="api-desc">Charger des octets IFC (ArrayBuffer/Uint8Array) depuis votre app. Le buffer est transféré pour un passage sans copie.</p></div><div class="api-m" id="m-addfromurl"><div class="api-head"><code class="api-sig">addFromUrl(url, name?)</code><span class="api-ret">Promise&lt;ModelLoadedEvent&gt;</span></div><p class="api-desc">Charger une URL IFC publique compatible CORS.</p></div><div class="api-m" id="m-removemodel"><div class="api-head"><code class="api-sig">removeModel(modelId)</code><span class="api-ret">void</span></div><p class="api-desc">Décharge un modèle par id.</p></div><div class="api-m" id="m-clear"><div class="api-head"><code class="api-sig">clear()</code><span class="api-ret">void</span></div><p class="api-desc">Supprimer tous les modèles chargés.</p></div></div><div class="api-group" id="grp-camera"><h3>Camera &amp; selection</h3><div class="api-m" id="m-select"><div class="api-head"><code class="api-sig">select(expressId, modelId?)</code><span class="api-ret">void</span></div><p class="api-desc">Sélectionner et cadrer un élément par son expressID IFC.</p></div><div class="api-m" id="m-setview"><div class="api-head"><code class="api-sig">setView(view)</code><span class="api-ret">void</span></div><p class="api-desc">Voler vers une vue caméra : iso, top, front, right, left, back, bottom.</p></div><div class="api-m" id="m-fit"><div class="api-head"><code class="api-sig">fit() · reset()</code><span class="api-ret">void</span></div><p class="api-desc">Cadrer le modèle actif / réinitialiser la caméra.</p></div><div class="api-m" id="m-setcamera"><div class="api-head"><code class="api-sig">setCamera(position, direction)</code><span class="api-ret">void</span></div><p class="api-desc">Place la caméra à une position regardant dans une direction.</p></div></div><div class="api-group" id="grp-visibility"><h3>Visibility</h3><div class="api-m" id="m-isolate"><div class="api-head"><code class="api-sig">isolate(ifcType?)</code><span class="api-ret">void</span></div><p class="api-desc">Isoler une catégorie (p. ex. "IfcWall") ; omettre pour réinitialiser.</p></div><div class="api-m" id="m-showall"><div class="api-head"><code class="api-sig">showAll()</code><span class="api-ret">void</span></div><p class="api-desc">Restaurer toute la visibilité (annuler masquage + isolation).</p></div><div class="api-m" id="m-hideelements"><div class="api-head"><code class="api-sig">hideElements(ids, modelId?) · showElements(ids, modelId?)</code><span class="api-ret">void</span></div><p class="api-desc">Masque / affiche un ensemble d’éléments par expressID.</p></div></div><div class="api-group" id="grp-queries"><h3>Queries</h3><div class="api-m" id="m-getmodels"><div class="api-head"><code class="api-sig">getModels()</code><span class="api-ret">Promise&lt;ModelSummary[]&gt;</span></div><p class="api-desc">Liste les modèles chargés. Renvoie une promesse.</p></div><div class="api-m" id="m-getelement"><div class="api-head"><code class="api-sig">getElement(id, modelId?)</code><span class="api-ret">Promise&lt;IfcElementData | null&gt;</span></div><p class="api-desc">Récupère les données IFC d'un élément (attributs + property/quantity sets). Renvoie une promesse.</p></div><div class="api-m" id="m-getvalidation"><div class="api-head"><code class="api-sig">getValidation()</code><span class="api-ret">Promise&lt;ValidationSummary | null&gt;</span></div><p class="api-desc">Récupère le résumé de validation (Health Score + compteurs). Renvoie une promesse.</p></div><div class="api-m" id="m-getstats"><div class="api-head"><code class="api-sig">getStats()</code><span class="api-ret">Promise&lt;StatsResult&gt;</span></div><p class="api-desc">Nombre d’éléments par catégorie et par modèle — pour les graphiques. Renvoie une promesse.</p></div><div class="api-m" id="m-getissues"><div class="api-head"><code class="api-sig">getIssues(opts?)</code><span class="api-ret">Promise&lt;IssuesResult&gt;</span></div><p class="api-desc">Anomalies de validation pour un tableau (filtre par sévérité / limite). Renvoie une promesse.</p></div><div class="api-m" id="m-screenshot"><div class="api-head"><code class="api-sig">screenshot()</code><span class="api-ret">Promise&lt;string&gt;</span></div><p class="api-desc">Capture la vue 3D actuelle en data URL PNG. Renvoie une promesse.</p></div></div><div class="api-group" id="grp-ids"><h3>IDS compliance</h3><div class="api-m" id="m-checkids"><div class="api-head"><code class="api-sig">checkIds(idsXml)</code><span class="api-ret">Promise&lt;IdsResult&gt;</span></div><p class="api-desc">Check the model against a buildingSMART IDS (.ids XML). Runs in a worker. Returns pass/fail per spec.</p></div></div><div class="api-group" id="grp-lang"><h3>Languages</h3><div class="api-m" id="m-setlanguage"><div class="api-head"><code class="api-sig">setLanguage(lang)</code><span class="api-ret">void</span></div><p class="api-desc">Changer la langue de l'interface à l'exécution.</p></div><div class="api-m" id="m-getlanguages"><div class="api-head"><code class="api-sig">getLanguages()</code><span class="api-ret">string[]</span></div><p class="api-desc">Lister les codes de langue pris en charge (libellés via IfcViewer.LANGUAGES).</p></div></div><div class="api-group" id="grp-lifecycle"><h3>Lifecycle &amp; events</h3><div class="api-m" id="m-whenready"><div class="api-head"><code class="api-sig">whenReady()</code><span class="api-ret">Promise&lt;void&gt;</span></div><p class="api-desc">Resolves when the viewer is ready to accept commands.</p></div><div class="api-m" id="m-isready"><div class="api-head"><code class="api-sig">isReady</code><span class="api-ret">boolean</span></div><p class="api-desc">Getter — true once the viewer has signalled readiness.</p></div><div class="api-m" id="m-on"><div class="api-head"><code class="api-sig">on(event, cb)</code><span class="api-ret">() =&gt; void</span></div><p class="api-desc">S’abonner à un événement ; renvoie une fonction de désabonnement.</p></div><div class="api-m" id="m-off"><div class="api-head"><code class="api-sig">off(event, cb)</code><span class="api-ret">void</span></div><p class="api-desc">Remove a previously added event listener.</p></div><div class="api-m" id="m-dispose"><div class="api-head"><code class="api-sig">dispose()</code><span class="api-ret">void</span></div><p class="api-desc">Démonter le visualiseur et retirer l’iframe.</p></div></div></div><p class="muted small">Concurrent add() / addFromUrl() calls are serialized internally and each promise is correlated to its own load — an app-initiated load (URL param, in-iframe upload) never resolves your add() promise.</p><h3 id="grp-options">Constructor options</h3><div class="table-wrap"><table class="dt"><thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>ui</code></td><td><code class="muted-code">'minimal' | 'full' | 'kiosk'</code></td><td><code class="muted-code">'minimal'</code></td><td>Chrome preset for the embedded UI.</td></tr><tr><td><code>validate</code></td><td><code class="muted-code">boolean</code></td><td><code class="muted-code">true</code></td><td>Run validation on load (drives the Health Score).</td></tr><tr><td><code>panel</code></td><td><code class="muted-code">boolean</code></td><td><code class="muted-code">false</code></td><td>Auto-open the validation panel.</td></tr><tr><td><code>lang</code></td><td><code class="muted-code">string</code></td><td><code class="muted-code">auto</code></td><td>Force the UI language (e.g. en, es, ja).</td></tr><tr><td><code>accent</code></td><td><code class="muted-code">#rrggbb</code></td><td><code class="muted-code">brand</code></td><td>Tint the viewer to match your dashboard.</td></tr><tr><td><code>model</code></td><td><code class="muted-code">string</code></td><td><code class="muted-code">—</code></td><td>Auto-load this public IFC URL once ready.</td></tr><tr><td><code>height · width</code></td><td><code class="muted-code">number | string</code></td><td><code class="muted-code">'100%'</code></td><td>iframe size (number → px).</td></tr><tr><td><code>baseUrl</code></td><td><code class="muted-code">string</code></td><td><code class="muted-code">auto</code></td><td>App base URL. Auto-derived from the script URL.</td></tr><tr><td><code>loadTimeout</code></td><td><code class="muted-code">number</code></td><td><code class="muted-code">120000</code></td><td>Reject add()/addFromUrl() after N ms (0 disables).</td></tr><tr><td><code>className · title</code></td><td><code class="muted-code">string</code></td><td><code class="muted-code">—</code></td><td>Extra class / iframe title.</td></tr><tr><td><code>on* callbacks</code></td><td><code class="muted-code">function</code></td><td><code class="muted-code">—</code></td><td>Convenience callbacks — same as .on(...).</td></tr></tbody></table></div><h3 id="grp-events">Événements</h3><div class="table-wrap"><table class="dt"><thead><tr><th>Event</th><th>Payload</th><th>Description</th></tr></thead><tbody><tr><td><code>ready</code></td><td><code class="muted-code">{ languages }</code></td><td>Visualiseur monté et prêt.</td></tr><tr><td><code>model-progress</code></td><td><code class="muted-code">{ percent, phase }</code></td><td>Progression du chargement (téléchargement → analyse → rendu).</td></tr><tr><td><code>model-loaded</code></td><td><code class="muted-code">{ modelId, fileName, elementCount, fromCache }</code></td><td>Un modèle a fini de charger.</td></tr><tr><td><code>validation-completed</code></td><td><code class="muted-code">{ qualityScore, errors, warnings, info }</code></td><td>Validation terminée — le Health Score.</td></tr><tr><td><code>model-error</code></td><td><code class="muted-code">{ message, url?, name? }</code></td><td>Un chargement a échoué.</td></tr><tr><td><code>element-selected</code></td><td><code class="muted-code">{ expressId, modelId, ifcType, name }</code></td><td>L'utilisateur a choisi un élément.</td></tr></tbody></table></div><div class="callout" role="note"><p class="callout-t">Statics</p><p>IfcViewer.LANGUAGES ({ code, label }[], native names) and IfcViewer.SUPPORTED_LANGUAGES (codes) — build a language picker before the viewer is ready.</p></div><h3 id="grp-wc">Web component</h3><p>Zero JavaScript — drop the tag into any page or dashboard and set attributes.</p><p class="muted small"><b>Attributes:</b> <code class="chip">model</code><code class="chip">ui</code><code class="chip">lang</code><code class="chip">accent</code><code class="chip">validate</code><code class="chip">panel</code><code class="chip">base-url</code></p><p>Events re-dispatch as DOM CustomEvents named ifcviewer:&lt;type&gt; (detail = payload). The underlying IfcViewer is on the element’s .viewer; getStats / getIssues / screenshot proxy through.</p><figure class="code"><figcaption class="code-bar"><span class="code-lang">JavaScript</span><button class="copy" type="button" data-copy data-copied="Copied!" aria-label="Copy">Copy</button></figcaption><pre><code><span class="t-kw">const</span> el = document.querySelector(<span class="t-str">"ifc-viewer"</span>);
+el.addEventListener(<span class="t-str">"ifcviewer:validation-completed"</span>, (e) =&gt; {
+  updateScore(e.detail.qualityScore);
+});
+<span class="t-kw">const</span> stats = <span class="t-kw">await</span> el.getStats();</code></pre></figure></section>
+      <section id="recipes" class="sec"><p class="eyebrow">Guides</p><h2><a class="anchor" href="#recipes" tabindex="-1" aria-hidden="true">#</a>Recipes</h2><p class="lede">Copy-paste patterns for the things teams actually build.</p><div class="recipe"><p class="card-t">Element inspector</p><p class="muted">Click in 3D, read the IFC property sets into your own panel.</p><figure class="code"><figcaption class="code-bar"><span class="code-lang">JavaScript</span><button class="copy" type="button" data-copy data-copied="Copied!" aria-label="Copy">Copy</button></figcaption><pre><code>viewer.on(<span class="t-str">"element-selected"</span>, <span class="t-kw">async</span> (e) =&gt; {
+  <span class="t-kw">const</span> data = <span class="t-kw">await</span> viewer.getElement(e.expressId, e.modelId);
+  renderPanel(data.name, data.globalId, data.propertySets);
+});</code></pre></figure></div><div class="recipe"><p class="card-t">Health Score widget</p><p class="muted">Surface the model’s quality score and issue counts in your dashboard.</p><figure class="code"><figcaption class="code-bar"><span class="code-lang">JavaScript</span><button class="copy" type="button" data-copy data-copied="Copied!" aria-label="Copy">Copy</button></figcaption><pre><code>viewer.on(<span class="t-str">"validation-completed"</span>, (v) =&gt; {
+  setScore(v.qualityScore);                 <span class="t-com">// 0–100, or null</span>
+  setCounts(v.errors, v.warnings, v.info);
+});</code></pre></figure></div><div class="recipe"><p class="card-t">IDS compliance check</p><p class="muted">Validate against a buildingSMART IDS and list pass / fail per spec.</p><figure class="code"><figcaption class="code-bar"><span class="code-lang">JavaScript</span><button class="copy" type="button" data-copy data-copied="Copied!" aria-label="Copy">Copy</button></figcaption><pre><code><span class="t-kw">const</span> ids = <span class="t-kw">await</span> fetch(<span class="t-str">"/specs/project.ids"</span>).then(r =&gt; r.text());
+<span class="t-kw">const</span> res = <span class="t-kw">await</span> viewer.checkIds(ids);     <span class="t-com">// runs in a worker</span>
+
+res.specs.forEach((spec) =&gt; {
+  row(spec.name, spec.status, spec.passedCount + <span class="t-str">"/"</span> + spec.applicableCount);
+  spec.failures.forEach((f) =&gt; onClick(() =&gt; viewer.select(f.expressId, f.modelId)));
+});</code></pre></figure></div><div class="recipe"><p class="card-t">Theme to your brand</p><p class="muted">Match the viewer to your product with one accent colour.</p><figure class="code"><figcaption class="code-bar"><span class="code-lang">JavaScript</span><button class="copy" type="button" data-copy data-copied="Copied!" aria-label="Copy">Copy</button></figcaption><pre><code><span class="t-kw">new</span> IfcViewer(<span class="t-str">"#viewer"</span>, { accent: <span class="t-str">"#22c55e"</span> });
+
+<span class="t-com">// …or on the web component:</span>
+<span class="t-com">// &lt;ifc-viewer accent="#22c55e" model="…"&gt;&lt;/ifc-viewer&gt;</span></code></pre></figure></div><div class="recipe"><p class="card-t">Language picker</p><p class="muted">Build a selector from the languages the viewer ships with.</p><figure class="code"><figcaption class="code-bar"><span class="code-lang">JavaScript</span><button class="copy" type="button" data-copy data-copied="Copied!" aria-label="Copy">Copy</button></figcaption><pre><code><span class="t-com">// build a &lt;select&gt; from the bundled languages</span>
+IfcViewer.LANGUAGES.forEach(({ code, label }) =&gt; addOption(code, label));
+
+<span class="t-com">// switch at runtime</span>
+viewer.setLanguage(<span class="t-str">"ja"</span>);</code></pre></figure></div></section>
+      <section id="faq" class="sec"><p class="eyebrow">Help</p><h2><a class="anchor" href="#faq" tabindex="-1" aria-hidden="true">#</a>Troubleshooting</h2><p class="lede">The handful of things that trip people up.</p><details class="faq"><summary>Nothing renders</summary><div class="faq-body"><p>Check, in order: the viewer reached ready, the model loaded (model-loaded vs model-error), the container has a non-zero height, and the byte source is valid IFC. The model-error message names the cause.</p></div></details><details class="faq"><summary>I get a CORS error loading a model</summary><div class="faq-body"><p>CORS only affects addFromUrl(url). If you control the bytes, fetch them yourself and call add(name, bytes) — no CORS applies because you hand the data over directly.</p></div></details><details class="faq"><summary>The iframe is blank or refuses to load</summary><div class="faq-body"><p>The app must be embeddable — no X-Frame-Options: DENY and no restrictive frame-ancestors CSP on the host. Our hosted app allows embedding.</p></div></details><details class="faq"><summary>My ArrayBuffer is empty after add()</summary><div class="faq-body"><p>add() transfers the buffer for a zero-copy hand-off, which detaches it in your code. Pass a copy (bytes.slice(0)) if you still need the bytes afterwards.</p></div></details><details class="faq"><summary>Loads or queries time out</summary><div class="faq-body"><p>add()/addFromUrl() reject after loadTimeout (default 120 s; 0 disables). Queries reject after 30 s, checkIds after 120 s. Large models on slow devices may need a higher loadTimeout.</p></div></details><details class="faq"><summary>Which browsers are supported?</summary><div class="faq-body"><p>Any modern evergreen browser with WebAssembly and ES module support — Chrome, Edge, Firefox, Safari. No Internet Explorer.</p></div></details><details class="faq"><summary>It 404s on my local dev server</summary><div class="faq-body"><p>A SPA dev server may intercept /sdk/ with its HTML fallback. Test against a real build / static host, or import the /sdk/ifc-viewer.es.js module directly.</p></div></details></section>
+    </main>
   </div>
+  <footer class="footer"><div class="shell footer-in"><p class="foot-tag">Embed the IFC viewer anywhere. Parsed in the browser, never uploaded.</p><p class="muted small">Le modèle est récupéré dans le navigateur du visiteur et analysé côté client avec WebAssembly — rien n'est téléversé sur nos serveurs.</p><p class="foot-links"><a href="../../">Open viewer</a><span>·</span><a href="mailto:joelbenitezdonari@gmail.com">Contact</a><span>·</span><span class="muted">Stable API · v1.6.0</span></p></div></footer>
 
+  <script>
+(function () {
+  var d = document, root = d.documentElement;
+  var tbtn = d.getElementById('theme');
+  if (tbtn) tbtn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('ifcsdk-theme', next); } catch (e) {}
+  });
+
+  d.addEventListener('click', function (ev) {
+    var b = ev.target.closest ? ev.target.closest('[data-copy]') : null;
+    if (!b) return;
+    var fig = b.closest('.code'); if (!fig) return;
+    var c = fig.querySelector('code'); if (!c) return;
+    var txt = c.textContent, orig = b.textContent;
+    var done = function () {
+      b.textContent = b.getAttribute('data-copied') || 'Copied';
+      b.classList.add('ok');
+      setTimeout(function () { b.textContent = orig; b.classList.remove('ok'); }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, done);
+    else { try { var ta = d.createElement('textarea'); ta.value = txt; d.body.appendChild(ta); ta.select(); d.execCommand('copy'); d.body.removeChild(ta); done(); } catch (e) {} }
+  });
+
+  // close the language menu on outside click
+  d.addEventListener('click', function (ev) {
+    d.querySelectorAll('details.lang[open]').forEach(function (el) {
+      if (!el.contains(ev.target)) el.removeAttribute('open');
+    });
+  });
+
+  Array.prototype.forEach.call(d.querySelectorAll('[role=tablist]'), function (tl) {
+    var tabs = Array.prototype.slice.call(tl.querySelectorAll('[role=tab]'));
+    var wrap = tl.closest('.tabs');
+    var persist = wrap ? wrap.getAttribute('data-persist') : null;
+    function activate(i, focus) {
+      tabs.forEach(function (t, j) {
+        var sel = j === i;
+        t.setAttribute('aria-selected', sel ? 'true' : 'false');
+        t.tabIndex = sel ? 0 : -1;
+        var p = d.getElementById(t.getAttribute('aria-controls'));
+        if (p) { if (sel) p.removeAttribute('hidden'); else p.setAttribute('hidden', ''); }
+        if (sel && focus) t.focus();
+      });
+      if (persist) { try { localStorage.setItem('ifcsdk-tab-' + persist, String(i)); } catch (e) {} }
+    }
+    tabs.forEach(function (t, i) {
+      t.addEventListener('click', function () { activate(i); });
+      t.addEventListener('keydown', function (e) {
+        var n;
+        if (e.key === 'ArrowRight') n = (i + 1) % tabs.length;
+        else if (e.key === 'ArrowLeft') n = (i - 1 + tabs.length) % tabs.length;
+        else if (e.key === 'Home') n = 0;
+        else if (e.key === 'End') n = tabs.length - 1;
+        else return;
+        e.preventDefault(); activate(n, true);
+      });
+    });
+    if (persist) { try { var s = localStorage.getItem('ifcsdk-tab-' + persist); if (s != null) { var idx = parseInt(s, 10); if (idx >= 0 && idx < tabs.length) activate(idx); } } catch (e) {} }
+  });
+
+  var spies = d.querySelectorAll('[data-spy]');
+  if (spies.length && 'IntersectionObserver' in window) {
+    var map = {};
+    Array.prototype.forEach.call(spies, function (a) { map[a.getAttribute('data-spy')] = a; });
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        Array.prototype.forEach.call(spies, function (a) { a.removeAttribute('aria-current'); a.classList.remove('on'); });
+        var a = map[en.target.id];
+        if (a) { a.setAttribute('aria-current', 'true'); a.classList.add('on'); }
+      });
+    }, { rootMargin: '-42% 0px -50% 0px' });
+    Array.prototype.forEach.call(d.querySelectorAll('main section[id]'), function (s) { obs.observe(s); });
+  }
+})();
+</script>
   <script type="module">
     import { IfcViewer } from "../ifc-viewer.es.js";
     const SAMPLE = "https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc";
     const I18N = {"ready":"prêt — cliquez « Charger un IFC d’exemple »","fetching":"téléchargement de l’IFC d’exemple…","handing":"transfert des octets au visualiseur…","cleared":"effacé"};
-    const statusEl = document.getElementById("status");
-    const barEl = document.getElementById("bar");
-    const setStatus = (s) => { statusEl.textContent = s; };
-    const setBar = (p) => { barEl.style.width = (p || 0) + "%"; };
+    const $ = function (id) { return document.getElementById(id); };
+    const statusEl = $("status"), barEl = $("bar"), callEl = $("democall");
+    const setStatus = function (s) { statusEl.textContent = s; };
+    const setBar = function (p) { barEl.style.width = (p || 0) + "%"; };
+    const setCall = function (c) { if (callEl) callEl.textContent = c; };
+    const hint = function (on) { var h = $("demohint"); if (h) h.hidden = !on; };
+    const controls = ["isolate", "top", "fit", "reset", "shot", "clear"];
+    const setEnabled = function (on) { controls.forEach(function (id) { var b = $(id); if (b) b.disabled = !on; }); };
 
     const viewer = new IfcViewer("#viewer", { ui: "minimal" });
-    viewer.on("ready", () => setStatus(I18N.ready));
-    viewer.on("model-progress", (p) => { setBar(p.percent); setStatus(p.phase + "… " + Math.round(p.percent) + "%"); });
-    viewer.on("model-loaded", (m) => { setBar(100); setStatus("✓ " + m.fileName + " · " + m.elementCount); });
-    viewer.on("validation-completed", (v) => { if (v.qualityScore != null) setStatus("Health Score: " + v.qualityScore + " / 100"); });
-    viewer.on("model-error", (e) => setStatus("⚠ " + e.message));
-    viewer.on("element-selected", (e) => setStatus(e.ifcType + " #" + e.expressId));
+    viewer.on("ready", function () { setStatus(I18N.ready); $("load").disabled = false; });
+    viewer.on("model-progress", function (p) { setBar(p.percent); setStatus(p.phase + "… " + Math.round(p.percent) + "%"); });
+    viewer.on("model-loaded", function (m) { setBar(100); setEnabled(true); setStatus("✓ " + m.fileName + " · " + m.elementCount); });
+    viewer.on("validation-completed", function (v) { if (v.qualityScore != null) setStatus("Health Score: " + v.qualityScore + " / 100"); });
+    viewer.on("model-error", function (e) { setStatus("⚠ " + e.message); hint(true); });
+    viewer.on("element-selected", function (e) { setStatus(e.ifcType + " #" + e.expressId); });
 
-    document.getElementById("load").addEventListener("click", async () => {
-      setStatus(I18N.fetching); setBar(0);
+    $("load").addEventListener("click", async function () {
+      setStatus(I18N.fetching); setBar(0); hint(false); setCall('await viewer.add("Ifc4_SampleHouse.ifc", bytes)');
       try {
-        const bytes = await fetch(SAMPLE).then((r) => r.arrayBuffer());
+        const bytes = await fetch(SAMPLE).then(function (r) { return r.arrayBuffer(); });
         setStatus(I18N.handing);
         await viewer.add("Ifc4_SampleHouse.ifc", bytes);
-      } catch (err) { setStatus("⚠ " + (err?.message || err)); }
+      } catch (err) { setStatus("⚠ " + (err && err.message || err)); hint(true); }
     });
-    document.getElementById("isolate").addEventListener("click", () => viewer.isolate("IfcWall"));
-    document.getElementById("top").addEventListener("click", () => viewer.setView("top"));
-    document.getElementById("fit").addEventListener("click", () => viewer.fit());
-    document.getElementById("reset").addEventListener("click", () => viewer.reset());
-    document.getElementById("clear").addEventListener("click", () => { viewer.clear(); setBar(0); setStatus(I18N.cleared); });
-    document.getElementById("shot").addEventListener("click", async () => {
-      try { const url = await viewer.screenshot(); if (url) window.open(url, "_blank"); } catch (e) { setStatus("⚠ " + (e?.message || e)); }
-    });
+    $("isolate").addEventListener("click", function () { setCall('viewer.isolate("IfcWall")'); viewer.isolate("IfcWall"); });
+    $("top").addEventListener("click", function () { setCall('viewer.setView("top")'); viewer.setView("top"); });
+    $("fit").addEventListener("click", function () { setCall('viewer.fit()'); viewer.fit(); });
+    $("reset").addEventListener("click", function () { setCall('viewer.reset()'); viewer.reset(); });
+    $("clear").addEventListener("click", function () { setCall('viewer.clear()'); viewer.clear(); setBar(0); setEnabled(false); setStatus(I18N.cleared); });
+    $("shot").addEventListener("click", async function () { setCall('await viewer.screenshot()'); try { const url = await viewer.screenshot(); if (url) window.open(url, "_blank"); } catch (e) { setStatus("⚠ " + (e && e.message || e)); } });
   </script>
 </body>
 </html>
