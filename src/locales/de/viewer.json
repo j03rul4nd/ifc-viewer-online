@@ -39,7 +39,24 @@
     "gpuMemory": "{{mb}} MB GPU",
     "detecting": "Ermittle…",
     "sizeUnavailable": "Größe nicht verfügbar — Modell wurde aus dem OPFS-Cache geladen. Von Festplatte neu laden, um die Dateigröße zu sehen.",
-    "qualityScore": "Qualitätsbewertung: {{score}}/100"
+    "qualityScore": "Qualitätsbewertung: {{score}}/100",
+    "sizeTip": {
+      "tiny": "Sehr kleine Datei — lädt sofort auf jedem Gerät.",
+      "light": "Kleine Datei — überall schnelle Leistung.",
+      "normal": "Typische IFC-Datei. Gute Leistung auf moderner Hardware.",
+      "large": "Große Datei. Das Laden kann länger dauern. Der OPFS-Cache hilft beim erneuten Öffnen.",
+      "heavy": "Sehr große Datei. Erwägen Sie, das Modell aufzuteilen oder LOD-Techniken für bessere Leistung zu nutzen."
+    },
+    "elementTip": {
+      "small": "Weniger als 1.000 Elemente — sofortige Leistung.",
+      "typical": "Typisches Gebäudemodell. Flüssige Interaktion am Desktop.",
+      "complex": "Komplexes Modell. Die Interaktion kann auf schwächeren GPUs langsamer wirken.",
+      "dense": "Extrem dichtes Modell. Erwägen Sie LOD oder eine Aufteilung nach Gewerk."
+    },
+    "rendererTip": {
+      "webgpu": "WebGPU-Renderer aktiv — maximale Leistung auf diesem Gerät verfügbar.",
+      "webgl": "WebGL-Renderer. WebGPU ist in diesem Browser nicht verfügbar."
+    }
   },
   "health": {
     "unknown": "Unbekannt",
@@ -77,7 +94,10 @@
     "planeName": "Ebene {{number}}",
     "enablePlane": "Ebene aktivieren",
     "disablePlane": "Ebene deaktivieren",
-    "deletePlane": "Ebene löschen"
+    "deletePlane": "Ebene löschen",
+    "errStart": "Schnittebenen-Modus konnte nicht gestartet werden",
+    "errDelete": "Ebene konnte nicht gelöscht werden",
+    "errClear": "Ebenen konnten nicht gelöscht werden"
   },
   "floorPlan": {
     "title": "Grundrisse",
@@ -87,7 +107,10 @@
     "noStoreys": "Keine Geschosse in diesem Modell gefunden.",
     "returnTo3D": "Zurück zur 3D-Ansicht",
     "refresh": "Aktualisieren",
-    "view2D": "2D"
+    "view2D": "2D",
+    "errUnexpected": "Unerwartete Antwort bei der Geschosserkennung",
+    "errDetect": "Geschosse konnten nicht erkannt werden: {{msg}}",
+    "errOpen": "Ansicht konnte nicht geöffnet werden: {{msg}}"
   },
   "scene": {
     "title": "Szene",

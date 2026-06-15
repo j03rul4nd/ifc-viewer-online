@@ -39,7 +39,24 @@
     "gpuMemory": "{{mb}} MB GPU",
     "detecting": "Rilevamento…",
     "sizeUnavailable": "Dimensione non disponibile — modello caricato dalla cache OPFS. Ricarica dal disco per vedere la dimensione del file.",
-    "qualityScore": "Punteggio qualità: {{score}}/100"
+    "qualityScore": "Punteggio qualità: {{score}}/100",
+    "sizeTip": {
+      "tiny": "File molto piccolo — si carica istantaneamente su qualsiasi dispositivo.",
+      "light": "File piccolo — prestazioni rapide ovunque.",
+      "normal": "File IFC tipico. Buone prestazioni su hardware moderno.",
+      "large": "File grande. Il caricamento potrebbe richiedere più tempo. La cache OPFS aiuterà alle riaperture.",
+      "heavy": "File molto grande. Valuta di suddividere il modello o di usare tecniche LOD per prestazioni migliori."
+    },
+    "elementTip": {
+      "small": "Meno di 1.000 elementi — prestazioni istantanee.",
+      "typical": "Modello di edificio tipico. Interazione fluida su desktop.",
+      "complex": "Modello complesso. L'interazione può risultare più lenta su GPU di fascia bassa.",
+      "dense": "Modello estremamente denso. Valuta il LOD o la suddivisione per disciplina."
+    },
+    "rendererTip": {
+      "webgpu": "Renderer WebGPU attivo — massime prestazioni disponibili su questo dispositivo.",
+      "webgl": "Renderer WebGL. WebGPU non è disponibile in questo browser."
+    }
   },
   "health": {
     "unknown": "Sconosciuto",
@@ -77,7 +94,10 @@
     "planeName": "Piano {{number}}",
     "enablePlane": "Attiva piano",
     "disablePlane": "Disattiva piano",
-    "deletePlane": "Elimina piano"
+    "deletePlane": "Elimina piano",
+    "errStart": "Impossibile avviare la modalità piano di taglio",
+    "errDelete": "Impossibile eliminare il piano",
+    "errClear": "Impossibile eliminare i piani"
   },
   "floorPlan": {
     "title": "Planimetrie",
@@ -87,7 +107,10 @@
     "noStoreys": "Nessun piano trovato in questo modello.",
     "returnTo3D": "Torna alla vista 3D",
     "refresh": "Aggiorna",
-    "view2D": "2D"
+    "view2D": "2D",
+    "errUnexpected": "Risposta imprevista dal rilevamento dei piani",
+    "errDetect": "Impossibile rilevare i piani: {{msg}}",
+    "errOpen": "Impossibile aprire la vista: {{msg}}"
   },
   "scene": {
     "title": "Scena",

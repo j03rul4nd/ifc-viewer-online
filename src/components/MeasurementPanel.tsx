@@ -260,7 +260,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                   onClick={() => viewerApiRef.current?.finishCurrentMeasurement()}
                   className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-[7px] text-[11px] font-semibold transition-colors"
                   style={{ background: 'var(--accent)18', color: 'var(--accent)', border: '1px solid var(--accent)33' }}
-                  title="Close polygon and create area measurement (Enter)"
+                  title={t('actions.finishAreaHint')}
                 >
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="2,5 4,7.5 8,2.5" />
@@ -277,7 +277,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                 <button
                   onClick={handleDeleteLast}
                   className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[7px] text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors text-left"
-                  title="Delete last measurement (Delete)"
+                  title={t('actions.deleteLastHint')}
                 >
                   <svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor" opacity="0.7">
                     <path d="M5 2h4l1 2H4L5 2zM2 5h10l-1 7H3L2 5zm4 2v4m2-4v4" stroke="currentColor" strokeWidth="1" fill="none"/>
@@ -287,7 +287,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                 <button
                   onClick={handleClear}
                   className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[7px] text-[11px] text-[var(--danger)] hover:bg-[rgba(229,72,77,0.1)] transition-colors text-left"
-                  title="Clear all measurements"
+                  title={t('actions.clearAllHint')}
                 >
                   <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                     <path d="M2 2l10 10M12 2L2 12"/>

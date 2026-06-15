@@ -39,7 +39,24 @@
     "gpuMemory": "{{mb}} MB GPU",
     "detecting": "検出中…",
     "sizeUnavailable": "サイズ不明 — OPFS キャッシュから読み込まれたモデル。ファイルサイズを確認するにはディスクから再読み込みしてください。",
-    "qualityScore": "品質スコア: {{score}}/100"
+    "qualityScore": "品質スコア: {{score}}/100",
+    "sizeTip": {
+      "tiny": "非常に小さいファイル — どのデバイスでも瞬時に読み込まれます。",
+      "light": "小さいファイル — どこでも高速に動作します。",
+      "normal": "標準的な IFC ファイル。最新のハードウェアで良好な性能です。",
+      "large": "大きなファイル。読み込みに時間がかかる場合があります。OPFS キャッシュが再読み込み時に役立ちます。",
+      "heavy": "非常に大きなファイル。モデルの分割や LOD 技術の利用で性能を改善できます。"
+    },
+    "elementTip": {
+      "small": "1,000 要素未満 — 瞬時に動作します。",
+      "typical": "標準的な建物モデル。デスクトップでスムーズに操作できます。",
+      "complex": "複雑なモデル。低性能の GPU では操作が遅く感じる場合があります。",
+      "dense": "非常に密なモデル。LOD や分野ごとの分割を検討してください。"
+    },
+    "rendererTip": {
+      "webgpu": "WebGPU レンダラー有効 — このデバイスで最大の性能が得られます。",
+      "webgl": "WebGL レンダラー。このブラウザでは WebGPU を利用できません。"
+    }
   },
   "health": {
     "unknown": "不明",
@@ -77,7 +94,10 @@
     "planeName": "プレーン {{number}}",
     "enablePlane": "プレーンを有効化",
     "disablePlane": "プレーンを無効化",
-    "deletePlane": "プレーンを削除"
+    "deletePlane": "プレーンを削除",
+    "errStart": "クリッピングプレーンモードを開始できませんでした",
+    "errDelete": "プレーンを削除できませんでした",
+    "errClear": "プレーンをクリアできませんでした"
   },
   "floorPlan": {
     "title": "平面図",
@@ -87,7 +107,10 @@
     "noStoreys": "このモデルに階が見つかりません。",
     "returnTo3D": "3D ビューに戻る",
     "refresh": "更新",
-    "view2D": "2D"
+    "view2D": "2D",
+    "errUnexpected": "階の検出で予期しない応答がありました",
+    "errDetect": "階を検出できませんでした: {{msg}}",
+    "errOpen": "ビューを開けませんでした: {{msg}}"
   },
   "scene": {
     "title": "シーン",

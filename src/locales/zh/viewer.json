@@ -39,7 +39,24 @@
     "gpuMemory": "{{mb}} MB GPU",
     "detecting": "检测中…",
     "sizeUnavailable": "大小不可用 — 模型从 OPFS 缓存加载。从磁盘重新加载以查看文件大小。",
-    "qualityScore": "质量评分：{{score}}/100"
+    "qualityScore": "质量评分：{{score}}/100",
+    "sizeTip": {
+      "tiny": "文件非常小 — 在任何设备上都能即时加载。",
+      "light": "文件较小 — 各处性能都很快。",
+      "normal": "典型的 IFC 文件。在现代硬件上性能良好。",
+      "large": "文件较大。加载可能需要更长时间。OPFS 缓存有助于再次打开。",
+      "heavy": "文件非常大。可考虑拆分模型或使用 LOD 技术以获得更好的性能。"
+    },
+    "elementTip": {
+      "small": "少于 1,000 个构件 — 即时性能。",
+      "typical": "典型的建筑模型。在桌面端交互流畅。",
+      "complex": "复杂模型。在低端 GPU 上交互可能较慢。",
+      "dense": "极其密集的模型。可考虑 LOD 或按专业拆分。"
+    },
+    "rendererTip": {
+      "webgpu": "WebGPU 渲染器已启用 — 在此设备上可获得最高性能。",
+      "webgl": "WebGL 渲染器。此浏览器不支持 WebGPU。"
+    }
   },
   "health": {
     "unknown": "未知",
@@ -77,7 +94,10 @@
     "planeName": "平面 {{number}}",
     "enablePlane": "启用平面",
     "disablePlane": "禁用平面",
-    "deletePlane": "删除平面"
+    "deletePlane": "删除平面",
+    "errStart": "无法启动剖切平面模式",
+    "errDelete": "删除平面失败",
+    "errClear": "清除平面失败"
   },
   "floorPlan": {
     "title": "楼层平面",
@@ -87,7 +107,10 @@
     "noStoreys": "此模型中未找到楼层。",
     "returnTo3D": "返回 3D 视图",
     "refresh": "刷新",
-    "view2D": "2D"
+    "view2D": "2D",
+    "errUnexpected": "楼层检测返回了意外的响应",
+    "errDetect": "检测楼层失败：{{msg}}",
+    "errOpen": "无法打开视图：{{msg}}"
   },
   "scene": {
     "title": "场景",

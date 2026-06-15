@@ -16,7 +16,10 @@
     "finishArea": "เสร็จสิ้นพื้นที่",
     "deleteLast": "ลบล่าสุด",
     "clearAll": "ล้างทั้งหมด",
-    "escToCancel": "กด Esc เพื่อยกเลิก"
+    "escToCancel": "กด Esc เพื่อยกเลิก",
+    "finishAreaHint": "ปิดรูปหลายเหลี่ยมและสร้างการวัดพื้นที่ (Enter)",
+    "deleteLastHint": "ลบการวัดล่าสุด (Delete)",
+    "clearAllHint": "ล้างการวัดทั้งหมด"
   },
   "units": {
     "km": "{{value}} กม.",

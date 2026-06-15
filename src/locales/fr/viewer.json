@@ -39,7 +39,24 @@
     "gpuMemory": "{{mb}} Mo GPU",
     "detecting": "Détection…",
     "sizeUnavailable": "Taille indisponible — le modèle a été chargé depuis le cache OPFS. Rechargez depuis le disque pour voir la taille du fichier.",
-    "qualityScore": "Score de qualité : {{score}}/100"
+    "qualityScore": "Score de qualité : {{score}}/100",
+    "sizeTip": {
+      "tiny": "Fichier très petit — se charge instantanément sur tout appareil.",
+      "light": "Petit fichier — performances rapides partout.",
+      "normal": "Fichier IFC typique. Bonnes performances sur du matériel moderne.",
+      "large": "Fichier volumineux. Le chargement peut être plus long. Le cache OPFS aidera lors des réouvertures.",
+      "heavy": "Fichier très volumineux. Envisagez de diviser le modèle ou d'utiliser des techniques LOD pour de meilleures performances."
+    },
+    "elementTip": {
+      "small": "Moins de 1 000 éléments — performances instantanées.",
+      "typical": "Modèle de bâtiment typique. Interaction fluide sur ordinateur.",
+      "complex": "Modèle complexe. L'interaction peut sembler plus lente sur les GPU d'entrée de gamme.",
+      "dense": "Modèle extrêmement dense. Envisagez le LOD ou une division par discipline."
+    },
+    "rendererTip": {
+      "webgpu": "Rendu WebGPU actif — performances maximales disponibles sur cet appareil.",
+      "webgl": "Rendu WebGL. WebGPU n'est pas disponible dans ce navigateur."
+    }
   },
   "health": {
     "unknown": "Inconnu",
@@ -77,7 +94,10 @@
     "planeName": "Plan {{number}}",
     "enablePlane": "Activer le plan",
     "disablePlane": "Désactiver le plan",
-    "deletePlane": "Supprimer le plan"
+    "deletePlane": "Supprimer le plan",
+    "errStart": "Impossible de démarrer le mode plan de coupe",
+    "errDelete": "Échec de la suppression du plan",
+    "errClear": "Échec de la suppression des plans"
   },
   "floorPlan": {
     "title": "Plans d'étage",
@@ -87,7 +107,10 @@
     "noStoreys": "Aucun niveau trouvé dans ce modèle.",
     "returnTo3D": "Retour à la vue 3D",
     "refresh": "Actualiser",
-    "view2D": "2D"
+    "view2D": "2D",
+    "errUnexpected": "Réponse inattendue de la détection des niveaux",
+    "errDetect": "Échec de la détection des niveaux : {{msg}}",
+    "errOpen": "Impossible d'ouvrir la vue : {{msg}}"
   },
   "scene": {
     "title": "Scène",

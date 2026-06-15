@@ -16,7 +16,10 @@
     "finishArea": "Termina area",
     "deleteLast": "Elimina ultima",
     "clearAll": "Cancella tutto",
-    "escToCancel": "Esc per annullare"
+    "escToCancel": "Esc per annullare",
+    "finishAreaHint": "Chiudi il poligono e crea la misura dell'area (Invio)",
+    "deleteLastHint": "Elimina l'ultima misura (Canc)",
+    "clearAllHint": "Cancella tutte le misure"
   },
   "units": {
     "km": "{{value}} km",

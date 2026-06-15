@@ -39,7 +39,24 @@
     "gpuMemory": "{{mb}} MB GPU",
     "detecting": "Detectando…",
     "sizeUnavailable": "Tamaño no disponible — el modelo se cargó desde la caché OPFS. Recarga desde disco para ver el tamaño del archivo.",
-    "qualityScore": "Puntuación de calidad: {{score}}/100"
+    "qualityScore": "Puntuación de calidad: {{score}}/100",
+    "sizeTip": {
+      "tiny": "Archivo muy pequeño — se carga al instante en cualquier dispositivo.",
+      "light": "Archivo pequeño — rendimiento rápido en todas partes.",
+      "normal": "Archivo IFC típico. Buen rendimiento en hardware moderno.",
+      "large": "Archivo grande. La carga puede tardar más. La caché OPFS ayudará al reabrirlo.",
+      "heavy": "Archivo muy grande. Considera dividir el modelo o usar técnicas LOD para mejorar el rendimiento."
+    },
+    "elementTip": {
+      "small": "Menos de 1.000 elementos — rendimiento instantáneo.",
+      "typical": "Modelo de edificio típico. Interacción fluida en escritorio.",
+      "complex": "Modelo complejo. La interacción puede ir más lenta en GPU de gama baja.",
+      "dense": "Modelo extremadamente denso. Considera LOD o dividir por disciplina."
+    },
+    "rendererTip": {
+      "webgpu": "Renderizador WebGPU activo — máximo rendimiento disponible en este dispositivo.",
+      "webgl": "Renderizador WebGL. WebGPU no está disponible en este navegador."
+    }
   },
   "health": {
     "unknown": "Desconocido",
@@ -77,7 +94,10 @@
     "planeName": "Plano {{number}}",
     "enablePlane": "Activar plano",
     "disablePlane": "Desactivar plano",
-    "deletePlane": "Eliminar plano"
+    "deletePlane": "Eliminar plano",
+    "errStart": "No se pudo iniciar el modo de plano de corte",
+    "errDelete": "No se pudo eliminar el plano",
+    "errClear": "No se pudieron eliminar los planos"
   },
   "floorPlan": {
     "title": "Plantas",
@@ -87,7 +107,10 @@
     "noStoreys": "No se encontraron plantas en este modelo.",
     "returnTo3D": "Volver a la vista 3D",
     "refresh": "Actualizar",
-    "view2D": "2D"
+    "view2D": "2D",
+    "errUnexpected": "Respuesta inesperada en la detección de plantas",
+    "errDetect": "No se pudieron detectar las plantas: {{msg}}",
+    "errOpen": "No se pudo abrir la vista: {{msg}}"
   },
   "scene": {
     "title": "Escena",

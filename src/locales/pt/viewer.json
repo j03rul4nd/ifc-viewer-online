@@ -39,7 +39,24 @@
     "gpuMemory": "{{mb}} MB GPU",
     "detecting": "Detectando…",
     "sizeUnavailable": "Tamanho indisponível — modelo carregado do cache OPFS. Recarregue do disco para ver o tamanho do arquivo.",
-    "qualityScore": "Pontuação de qualidade: {{score}}/100"
+    "qualityScore": "Pontuação de qualidade: {{score}}/100",
+    "sizeTip": {
+      "tiny": "Arquivo muito pequeno — carrega instantaneamente em qualquer dispositivo.",
+      "light": "Arquivo pequeno — desempenho rápido em qualquer lugar.",
+      "normal": "Arquivo IFC típico. Bom desempenho em hardware moderno.",
+      "large": "Arquivo grande. O carregamento pode demorar mais. O cache OPFS ajudará nas próximas aberturas.",
+      "heavy": "Arquivo muito grande. Considere dividir o modelo ou usar técnicas LOD para melhor desempenho."
+    },
+    "elementTip": {
+      "small": "Menos de 1.000 elementos — desempenho instantâneo.",
+      "typical": "Modelo de edifício típico. Interação fluida no desktop.",
+      "complex": "Modelo complexo. A interação pode ficar mais lenta em GPUs de entrada.",
+      "dense": "Modelo extremamente denso. Considere LOD ou dividir por disciplina."
+    },
+    "rendererTip": {
+      "webgpu": "Renderizador WebGPU ativo — desempenho máximo disponível neste dispositivo.",
+      "webgl": "Renderizador WebGL. WebGPU não está disponível neste navegador."
+    }
   },
   "health": {
     "unknown": "Desconhecido",
@@ -77,7 +94,10 @@
     "planeName": "Plano {{number}}",
     "enablePlane": "Ativar plano",
     "disablePlane": "Desativar plano",
-    "deletePlane": "Excluir plano"
+    "deletePlane": "Excluir plano",
+    "errStart": "Não foi possível iniciar o modo de plano de corte",
+    "errDelete": "Falha ao excluir o plano",
+    "errClear": "Falha ao limpar os planos"
   },
   "floorPlan": {
     "title": "Plantas baixas",
@@ -87,7 +107,10 @@
     "noStoreys": "Nenhum pavimento encontrado neste modelo.",
     "returnTo3D": "Voltar à vista 3D",
     "refresh": "Atualizar",
-    "view2D": "2D"
+    "view2D": "2D",
+    "errUnexpected": "Resposta inesperada na detecção de pavimentos",
+    "errDetect": "Falha ao detectar pavimentos: {{msg}}",
+    "errOpen": "Não foi possível abrir a vista: {{msg}}"
   },
   "scene": {
     "title": "Cena",

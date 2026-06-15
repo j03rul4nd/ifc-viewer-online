@@ -16,7 +16,10 @@
     "finishArea": "完成面积",
     "deleteLast": "删除最后一条",
     "clearAll": "清除所有",
-    "escToCancel": "按 Esc 取消"
+    "escToCancel": "按 Esc 取消",
+    "finishAreaHint": "闭合多边形并创建面积测量（Enter）",
+    "deleteLastHint": "删除最后一次测量（Delete）",
+    "clearAllHint": "清除所有测量"
   },
   "units": {
     "km": "{{value}} km",

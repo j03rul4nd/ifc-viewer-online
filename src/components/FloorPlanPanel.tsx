@@ -67,7 +67,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
     try {
       const result = await viewer.createStoreyViews()
       if (!Array.isArray(result)) {
-        setError('Unexpected response from storey detection')
+        setError(t('floorPlan.errUnexpected'))
         setViews([])
       } else {
         setViews(result.filter((v) => v && typeof v.id === 'string'))
@@ -75,7 +75,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      setError(`Failed to detect storeys: ${msg}`)
+      setError(t('floorPlan.errDetect', { msg }))
       log.warn('createStoreyViews:', err)
     } finally {
       setLoading(false)
@@ -96,7 +96,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      setError(`Could not open view: ${msg}`)
+      setError(t('floorPlan.errOpen', { msg }))
       log.warn('openStoreyView:', err)
     }
   }, [viewerApiRef, activePlanViewId, setActivePlanViewId])

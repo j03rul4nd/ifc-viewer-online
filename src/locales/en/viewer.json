@@ -39,7 +39,24 @@
     "gpuMemory": "{{mb}} MB GPU",
     "detecting": "Detecting…",
     "sizeUnavailable": "Size unavailable — model was loaded from the OPFS cache. Reload from disk to see file size.",
-    "qualityScore": "Quality score: {{score}}/100"
+    "qualityScore": "Quality score: {{score}}/100",
+    "sizeTip": {
+      "tiny": "Very small file — loads instantly on any device.",
+      "light": "Small file — fast performance everywhere.",
+      "normal": "Typical IFC file. Good performance on modern hardware.",
+      "large": "Large file. Loading may take longer. OPFS cache will help on repeat opens.",
+      "heavy": "Very large file. Consider splitting the model or using LOD techniques for better performance."
+    },
+    "elementTip": {
+      "small": "Fewer than 1,000 elements — instant performance.",
+      "typical": "Typical building model. Smooth interaction on desktop.",
+      "complex": "Complex model. Interaction may feel slower on lower-end GPUs.",
+      "dense": "Extremely dense model. Consider LOD or splitting by discipline."
+    },
+    "rendererTip": {
+      "webgpu": "WebGPU renderer active — maximum performance available on this device.",
+      "webgl": "WebGL renderer. WebGPU is not available in this browser."
+    }
   },
   "health": {
     "unknown": "Unknown",
@@ -77,7 +94,10 @@
     "planeName": "Plane {{number}}",
     "enablePlane": "Enable plane",
     "disablePlane": "Disable plane",
-    "deletePlane": "Delete plane"
+    "deletePlane": "Delete plane",
+    "errStart": "Could not start clip-plane mode",
+    "errDelete": "Failed to delete plane",
+    "errClear": "Failed to clear planes"
   },
   "floorPlan": {
     "title": "Floor Plans",
@@ -87,7 +107,10 @@
     "noStoreys": "No storeys found in this model.",
     "returnTo3D": "Return to 3D view",
     "refresh": "Refresh",
-    "view2D": "2D"
+    "view2D": "2D",
+    "errUnexpected": "Unexpected response from storey detection",
+    "errDetect": "Failed to detect storeys: {{msg}}",
+    "errOpen": "Could not open view: {{msg}}"
   },
   "scene": {
     "title": "Scene",

@@ -37,18 +37,18 @@ interface SizeHealth {
 function getSizeHealth(bytes: number, t: (key: string, opts?: Record<string, unknown>) => string): SizeHealth {
   const mb = bytes / 1024 / 1024
   if (bytes === 0) return { label: t('health.unknown'), color: '#888', bg: 'rgba(136,136,136,0.12)', tip: t('info.sizeUnavailable') }
-  if (mb < 1)     return { label: t('health.tiny'),    color: '#30A46C', bg: 'rgba(48,164,108,0.12)', tip: 'Very small file — loads instantly on any device.' }
-  if (mb < 10)    return { label: t('health.light'),   color: '#30A46C', bg: 'rgba(48,164,108,0.12)', tip: 'Small file — fast performance everywhere.' }
-  if (mb < 50)    return { label: t('health.normal'),  color: '#5E9ED6', bg: 'rgba(94,158,214,0.12)', tip: 'Typical IFC file. Good performance on modern hardware.' }
-  if (mb < 150)   return { label: t('health.large'),   color: '#F5A623', bg: 'rgba(245,166,35,0.12)', tip: 'Large file. Loading may take longer. OPFS cache will help on repeat opens.' }
-  return            { label: t('health.heavy'),   color: '#E5484D', bg: 'rgba(229,72,77,0.12)', tip: 'Very large file. Consider splitting the model or using LOD techniques for better performance.' }
+  if (mb < 1)     return { label: t('health.tiny'),    color: '#30A46C', bg: 'rgba(48,164,108,0.12)', tip: t('info.sizeTip.tiny') }
+  if (mb < 10)    return { label: t('health.light'),   color: '#30A46C', bg: 'rgba(48,164,108,0.12)', tip: t('info.sizeTip.light') }
+  if (mb < 50)    return { label: t('health.normal'),  color: '#5E9ED6', bg: 'rgba(94,158,214,0.12)', tip: t('info.sizeTip.normal') }
+  if (mb < 150)   return { label: t('health.large'),   color: '#F5A623', bg: 'rgba(245,166,35,0.12)', tip: t('info.sizeTip.large') }
+  return            { label: t('health.heavy'),   color: '#E5484D', bg: 'rgba(229,72,77,0.12)', tip: t('info.sizeTip.heavy') }
 }
 
 function getElementHealth(count: number, t: (key: string, opts?: Record<string, unknown>) => string): SizeHealth {
-  if (count < 1_000)  return { label: t('health.small'),   color: '#30A46C', bg: 'rgba(48,164,108,0.12)', tip: 'Fewer than 1 000 elements — instant performance.' }
-  if (count < 10_000) return { label: t('health.typical'), color: '#5E9ED6', bg: 'rgba(94,158,214,0.12)', tip: 'Typical building model. Smooth interaction on desktop.' }
-  if (count < 50_000) return { label: t('health.complex'), color: '#F5A623', bg: 'rgba(245,166,35,0.12)', tip: 'Complex model. Interaction may feel slower on lower-end GPUs.' }
-  return                { label: t('health.dense'),   color: '#E5484D', bg: 'rgba(229,72,77,0.12)', tip: 'Extremely dense model. Consider LOD or splitting by discipline.' }
+  if (count < 1_000)  return { label: t('health.small'),   color: '#30A46C', bg: 'rgba(48,164,108,0.12)', tip: t('info.elementTip.small') }
+  if (count < 10_000) return { label: t('health.typical'), color: '#5E9ED6', bg: 'rgba(94,158,214,0.12)', tip: t('info.elementTip.typical') }
+  if (count < 50_000) return { label: t('health.complex'), color: '#F5A623', bg: 'rgba(245,166,35,0.12)', tip: t('info.elementTip.complex') }
+  return                { label: t('health.dense'),   color: '#E5484D', bg: 'rgba(229,72,77,0.12)', tip: t('info.elementTip.dense') }
 }
 
 function HealthBadge({ h }: { h: SizeHealth }) {
@@ -137,7 +137,7 @@ export default function ModelInfoPanel({ modelInfo, memoryStats, isFromCache, qu
                 ? { color: '#5E6AD2', borderColor: '#5E6AD244', background: '#5E6AD214' }
                 : { color: '#888', borderColor: '#88888844', background: '#88888814' }
             }
-            title={gpuBackend === 'webgpu' ? 'WebGPU renderer active — maximum performance' : 'WebGL renderer'}
+            title={gpuBackend === 'webgpu' ? t('info.rendererTip.webgpu') : t('info.rendererTip.webgl')}
           >
             {gpuBackend === 'webgpu' ? 'WebGPU' : 'WebGL'}
           </span>
@@ -188,9 +188,9 @@ export default function ModelInfoPanel({ modelInfo, memoryStats, isFromCache, qu
               value={gpuBackend === 'detecting' ? t('info.detecting') : gpuBackend === 'webgpu' ? 'WebGPU' : 'WebGL'}
               badge={
                 gpuBackend === 'webgpu'
-                  ? { label: 'GPU', color: '#5E6AD2', bg: 'rgba(94,106,210,0.12)', tip: 'WebGPU renderer active — maximum performance available on this device.' }
+                  ? { label: 'GPU', color: '#5E6AD2', bg: 'rgba(94,106,210,0.12)', tip: t('info.rendererTip.webgpu') }
                   : gpuBackend === 'webgl'
-                  ? { label: 'GL', color: '#888', bg: 'rgba(136,136,136,0.12)', tip: 'WebGL renderer. WebGPU is not available in this browser.' }
+                  ? { label: 'GL', color: '#888', bg: 'rgba(136,136,136,0.12)', tip: t('info.rendererTip.webgl') }
                   : undefined
               }
             />

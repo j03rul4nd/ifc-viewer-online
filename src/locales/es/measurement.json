@@ -16,7 +16,10 @@
     "finishArea": "Finalizar área",
     "deleteLast": "Eliminar última",
     "clearAll": "Limpiar todo",
-    "escToCancel": "Esc para cancelar"
+    "escToCancel": "Esc para cancelar",
+    "finishAreaHint": "Cerrar el polígono y crear la medición de área (Enter)",
+    "deleteLastHint": "Eliminar la última medición (Supr)",
+    "clearAllHint": "Borrar todas las mediciones"
   },
   "units": {
     "km": "{{value}} km",

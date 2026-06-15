@@ -16,7 +16,10 @@
     "finishArea": "面積を完成",
     "deleteLast": "最後を削除",
     "clearAll": "すべてクリア",
-    "escToCancel": "Esc でキャンセル"
+    "escToCancel": "Esc でキャンセル",
+    "finishAreaHint": "ポリゴンを閉じて面積測定を作成（Enter）",
+    "deleteLastHint": "最後の測定を削除（Delete）",
+    "clearAllHint": "すべての測定をクリア"
   },
   "units": {
     "km": "{{value}} km",

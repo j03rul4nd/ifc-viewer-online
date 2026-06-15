@@ -39,7 +39,24 @@
     "gpuMemory": "{{mb}} MB GPU",
     "detecting": "Detectant…",
     "sizeUnavailable": "Mida no disponible — el model s'ha carregat des de la memòria cau OPFS. Torna a carregar des del disc per veure la mida del fitxer.",
-    "qualityScore": "Puntuació de qualitat: {{score}}/100"
+    "qualityScore": "Puntuació de qualitat: {{score}}/100",
+    "sizeTip": {
+      "tiny": "Fitxer molt petit — es carrega a l'instant en qualsevol dispositiu.",
+      "light": "Fitxer petit — rendiment ràpid a tot arreu.",
+      "normal": "Fitxer IFC típic. Bon rendiment en maquinari modern.",
+      "large": "Fitxer gran. La càrrega pot trigar més. La memòria cau OPFS ajudarà en reobrir-lo.",
+      "heavy": "Fitxer molt gran. Considera dividir el model o usar tècniques LOD per millorar el rendiment."
+    },
+    "elementTip": {
+      "small": "Menys de 1.000 elements — rendiment instantani.",
+      "typical": "Model d'edifici típic. Interacció fluida a l'escriptori.",
+      "complex": "Model complex. La interacció pot anar més lenta en GPU de gamma baixa.",
+      "dense": "Model extremadament dens. Considera el LOD o dividir per disciplina."
+    },
+    "rendererTip": {
+      "webgpu": "Renderitzador WebGPU actiu — màxim rendiment disponible en aquest dispositiu.",
+      "webgl": "Renderitzador WebGL. WebGPU no està disponible en aquest navegador."
+    }
   },
   "health": {
     "unknown": "Desconegut",
@@ -77,7 +94,10 @@
     "planeName": "Pla {{number}}",
     "enablePlane": "Activa el pla",
     "disablePlane": "Desactiva el pla",
-    "deletePlane": "Elimina el pla"
+    "deletePlane": "Elimina el pla",
+    "errStart": "No s'ha pogut iniciar el mode de pla de tall",
+    "errDelete": "No s'ha pogut eliminar el pla",
+    "errClear": "No s'han pogut eliminar els plans"
   },
   "floorPlan": {
     "title": "Plantes",
@@ -87,7 +107,10 @@
     "noStoreys": "No s'han trobat plantes en aquest model.",
     "returnTo3D": "Torna a la vista 3D",
     "refresh": "Actualitza",
-    "view2D": "2D"
+    "view2D": "2D",
+    "errUnexpected": "Resposta inesperada en la detecció de plantes",
+    "errDetect": "No s'han pogut detectar les plantes: {{msg}}",
+    "errOpen": "No s'ha pogut obrir la vista: {{msg}}"
   },
   "scene": {
     "title": "Escena",

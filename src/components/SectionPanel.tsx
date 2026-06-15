@@ -92,7 +92,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
       viewerApiRef.current?.startAddClipPlane()
       setAdding(true)
     } catch (err) {
-      setOpError('Could not start clip-plane mode')
+      setOpError(t('section.errStart'))
       log.warn('startAddClipPlane:', err)
       try { viewerApiRef.current?.setClipCreationCallback(null) } catch { }
     }
@@ -109,7 +109,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
       void viewerApiRef.current?.deleteClipPlane(id)
       setTimeout(syncPlanes, 50)
     } catch (err) {
-      setOpError('Failed to delete plane')
+      setOpError(t('section.errDelete'))
       log.warn('deleteClipPlane:', err)
     }
   }
@@ -120,7 +120,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
       viewerApiRef.current?.clearClipPlanes()
       setTimeout(syncPlanes, 50)
     } catch (err) {
-      setOpError('Failed to clear planes')
+      setOpError(t('section.errClear'))
       log.warn('clearClipPlanes:', err)
     }
   }

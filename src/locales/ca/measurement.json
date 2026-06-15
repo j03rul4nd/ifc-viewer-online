@@ -16,7 +16,10 @@
     "finishArea": "Acaba l'àrea",
     "deleteLast": "Elimina l'última",
     "clearAll": "Esborra-ho tot",
-    "escToCancel": "Esc per cancel·lar"
+    "escToCancel": "Esc per cancel·lar",
+    "finishAreaHint": "Tanca el polígon i crea la mesura d'àrea (Retorn)",
+    "deleteLastHint": "Elimina l'última mesura (Supr)",
+    "clearAllHint": "Esborra totes les mesures"
   },
   "units": {
     "km": "{{value}} km",

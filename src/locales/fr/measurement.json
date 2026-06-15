@@ -16,7 +16,10 @@
     "finishArea": "Terminer la surface",
     "deleteLast": "Supprimer la dernière",
     "clearAll": "Tout effacer",
-    "escToCancel": "Échap pour annuler"
+    "escToCancel": "Échap pour annuler",
+    "finishAreaHint": "Fermer le polygone et créer la mesure de surface (Entrée)",
+    "deleteLastHint": "Supprimer la dernière mesure (Suppr)",
+    "clearAllHint": "Effacer toutes les mesures"
   },
   "units": {
     "km": "{{value}} km",

@@ -16,7 +16,10 @@
     "finishArea": "Fläche abschließen",
     "deleteLast": "Letzte löschen",
     "clearAll": "Alle löschen",
-    "escToCancel": "Esc zum Abbrechen"
+    "escToCancel": "Esc zum Abbrechen",
+    "finishAreaHint": "Polygon schließen und Flächenmessung erstellen (Enter)",
+    "deleteLastHint": "Letzte Messung löschen (Entf)",
+    "clearAllHint": "Alle Messungen löschen"
   },
   "units": {
     "km": "{{value}} km",

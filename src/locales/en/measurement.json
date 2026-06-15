@@ -16,7 +16,10 @@
     "finishArea": "Finish area",
     "deleteLast": "Delete last",
     "clearAll": "Clear all",
-    "escToCancel": "Esc to cancel"
+    "escToCancel": "Esc to cancel",
+    "finishAreaHint": "Close polygon and create area measurement (Enter)",
+    "deleteLastHint": "Delete last measurement (Delete)",
+    "clearAllHint": "Clear all measurements"
   },
   "units": {
     "km": "{{value}} km",
