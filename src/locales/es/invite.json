@@ -1,0 +1,37 @@
+{
+  "ribbon": {
+    "coordinator": "Hice esto para triar exports de IFC rotos. Arrastra uno y mira qué detecta: nada se sube, no hay nada que comprar.",
+    "dev": "Un pequeño health-check de IFC sobre web-ifc, 100% en tu navegador. Arrastra un archivo o mira la pestaña de red.",
+    "standards": "Una rampa de entrada a comprobaciones tipo IDS, no un sustituto de bSI. Arrastra un IFC para ver la puntuación.",
+    "referral": "Alguien pensó que esto te sería útil. Arrastra un IFC: nunca sale de tu navegador y no hay nada que comprar.",
+    "medium": "Gracias por venir desde el artículo. Arrastra un IFC para ver qué detecta: nada se sube."
+  },
+  "signature": "{{name}} · lo hice en mi tiempo libre",
+  "dismiss": "Cerrar",
+  "aria": "Una nota del autor",
+  "view": {
+    "referral": {
+      "title": "Alguien te ha enviado aquí por algo",
+      "body": "Es un health-check de IFC gratuito que corre 100% en tu navegador: arrastra un modelo y obtienes una puntuación 0–100 con los elementos que fallan resaltados en 3D. Nada se sube y no hay nada que comprar. De verdad valoraría tu opinión honesta."
+    },
+    "standards": {
+      "title": "Una rampa de entrada, no un sustituto de bSI",
+      "body": "Arrastra un IFC y obtienes un único Health Score 0–100 con los elementos que fallan en 3D. Está pensado como una señal de triaje rápida que convive con IDS y el servicio oficial de validación, no como una afirmación de conformidad. Valoraría tu opinión sobre dónde debería estar esa línea."
+    },
+    "open": "Abrir un archivo",
+    "demo": "Probar un modelo de ejemplo",
+    "skip": "Ahora no",
+    "aria": "Una bienvenida del autor"
+  },
+  "feedback": {
+    "title": "Una pregunta honesta, si tienes un momento",
+    "q": {
+      "coordinator": "Un informe como este, ¿lo enviarías de verdad a quien exportó el modelo, o no?",
+      "dev": "Condensar toda la validación en un solo número 0–100, ¿te parece útil o esconde demasiado para fiarte?",
+      "standards": "¿Funciona un único número 0–100 como rampa de entrada, o tergiversa lo que significa la conformidad real con IDS/bSI?"
+    },
+    "aside": "Sin formularios: solo responde a mi mensaje. La crítica brutal es justo lo que busco.",
+    "dismiss": "Cerrar",
+    "aria": "Una pregunta del autor"
+  }
+}

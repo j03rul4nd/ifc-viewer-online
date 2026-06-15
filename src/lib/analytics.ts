@@ -10,6 +10,9 @@
  * Acquisition
  *   landing_cta_clicked    → user clicked a CTA on the landing page
  *   email_captured         → user subscribed via the landing page email form
+ *   invite_link_opened     → app opened from a personalized ?ref=/?invite= link
+ *   invite_feedback_prompted  → post-aha Mom-Test nudge shown to an invited visitor
+ *   invite_feedback_dismissed → that nudge was dismissed
  *
  * Activation funnel
  *   route_changed          → SPA route transition (virtual pageview)
@@ -107,6 +110,67 @@ export function trackEmailCaptured(props: {
   locale:              string
 }): void {
   track('email_captured', props)
+}
+
+// ── Attribution / personalized invites ────────────────────────────────────────
+
+/**
+ * Register the entry-source super-properties so EVERY subsequent event
+ * (file_opened → validation_completed → share_report_clicked, …) is
+ * automatically attributed to the outreach that brought the visitor in — no
+ * per-event changes needed.
+ *
+ * Cookieless: PostHog persistence is 'memory', so these live only for the page
+ * session, consistent with the product's no-tracking-cookie posture. Called
+ * once, on first load, by attribution.ts. Undefined/empty values are dropped so
+ * we never register a blank super-property.
+ */
+export function registerEntrySource(props: {
+  entry_source:       string
+  entry_segment?:     string
+  entry_source_kind?: string
+}): void {
+  if (!_initialized) return
+  const clean = Object.fromEntries(
+    Object.entries(props).filter(([, v]) => v != null && v !== ''),
+  )
+  posthog.register(clean)
+}
+
+/**
+ * The app was opened from a personalized invite link (?ref=/?invite=/ /i/<code>).
+ * Top of the outreach funnel: invite_link_opened → file_opened →
+ * validation_completed → share_report_clicked, broken down by entry_source.
+ *
+ * @param props.code     The opaque invite/campaign tag (never PII).
+ * @param props.segment  Audience segment, if resolved (Phase 1 registry).
+ * @param props.source   Source kind, if resolved ('linkedin' | 'medium' | …).
+ */
+export function trackInviteLinkOpened(props: {
+  code:     string
+  segment?: string
+  source?:  string
+}): void {
+  track('invite_link_opened', props)
+}
+
+/**
+ * The post-aha Mom-Test nudge was shown to an invited visitor (once per session,
+ * after their first validation run). Measures whether the prompt is reaching the
+ * people we hand-invited, the segment we reached, and — paired with
+ * share_report_clicked — whether posing the question moves the loop.
+ */
+export function trackInviteFeedbackPrompted(props: {
+  segment?: string
+}): void {
+  track('invite_feedback_prompted', props)
+}
+
+/** The visitor dismissed the Mom-Test nudge (vs. leaving it / acting on it). */
+export function trackInviteFeedbackDismissed(props: {
+  segment?: string
+}): void {
+  track('invite_feedback_dismissed', props)
 }
 
 // ── Activation funnel ─────────────────────────────────────────────────────────

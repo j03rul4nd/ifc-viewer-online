@@ -1,0 +1,37 @@
+{
+  "ribbon": {
+    "coordinator": "J'ai créé ça pour trier les exports IFC cassés. Glissez-en un et voyez ce qu'il repère — rien n'est envoyé, rien à acheter.",
+    "dev": "Un petit health-check IFC basé sur web-ifc — entièrement dans le navigateur. Glissez un fichier ou regardez l'onglet réseau.",
+    "standards": "Une porte d'entrée vers des contrôles type IDS, pas un remplacement de bSI. Glissez un IFC pour voir le score.",
+    "referral": "Quelqu'un a pensé que ça vous serait utile. Glissez un IFC — il ne quitte jamais votre navigateur, et il n'y a rien à acheter.",
+    "medium": "Merci d'être venu via l'article. Glissez un IFC pour voir ce qu'il repère — rien n'est envoyé."
+  },
+  "signature": "{{name}} · créé sur mon temps libre",
+  "dismiss": "Fermer",
+  "aria": "Un mot du créateur",
+  "view": {
+    "referral": {
+      "title": "On vous a orienté ici pour une raison",
+      "body": "C'est un health-check IFC gratuit qui tourne entièrement dans le navigateur — glissez un modèle et vous obtenez un score 0–100 avec les éléments défaillants mis en évidence en 3D. Rien n'est envoyé, et il n'y a rien à acheter. J'apprécierais vraiment votre avis honnête."
+    },
+    "standards": {
+      "title": "Une porte d'entrée, pas un remplacement de bSI",
+      "body": "Glissez un IFC et vous obtenez un Health Score unique 0–100 avec les éléments défaillants en 3D. C'est pensé comme un signal de tri rapide qui accompagne l'IDS et le service de validation officiel — pas une affirmation de conformité. J'aimerais votre avis sur l'endroit où placer cette limite."
+    },
+    "open": "Ouvrir un fichier",
+    "demo": "Essayer un modèle de démo",
+    "skip": "Plus tard",
+    "aria": "Un accueil du créateur"
+  },
+  "feedback": {
+    "title": "Une question honnête, si vous avez un instant",
+    "q": {
+      "coordinator": "Un rapport comme celui-ci, le renverriez-vous vraiment à la personne qui a exporté le modèle — ou pas ?",
+      "dev": "Réduire toute la validation à un seul nombre 0–100, est-ce utile, ou est-ce que ça cache trop pour être fiable ?",
+      "standards": "Un seul nombre 0–100 fonctionne-t-il comme porte d'entrée, ou déforme-t-il ce que signifie une vraie conformité IDS/bSI ?"
+    },
+    "aside": "Pas de formulaire — répondez simplement à mon message. Une honnêteté brutale est précisément ce que je cherche.",
+    "dismiss": "Fermer",
+    "aria": "Une question du créateur"
+  }
+}

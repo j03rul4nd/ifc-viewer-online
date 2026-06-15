@@ -1,0 +1,37 @@
+{
+  "ribbon": {
+    "coordinator": "Ich habe das gebaut, um kaputte IFC-Exporte zu sichten. Zieh eine Datei rein und sieh, was auffällt – nichts wird hochgeladen, nichts zu kaufen.",
+    "dev": "Ein kleiner IFC-Health-Check auf Basis von web-ifc – komplett im Browser. Zieh eine Datei rein oder schau in den Network-Tab.",
+    "standards": "Ein Einstieg in IDS-artige Prüfungen, kein Ersatz für bSI. Zieh eine IFC rein, um den Score zu sehen.",
+    "referral": "Jemand dachte, das wäre nützlich für dich. Zieh eine IFC rein – sie verlässt nie deinen Browser, und es gibt nichts zu kaufen.",
+    "medium": "Danke, dass du über den Artikel hergekommen bist. Zieh eine IFC rein und sieh, was auffällt – nichts wird hochgeladen."
+  },
+  "signature": "{{name}} · nebenbei gebaut",
+  "dismiss": "Schließen",
+  "aria": "Eine Notiz vom Entwickler",
+  "view": {
+    "referral": {
+      "title": "Du wurdest aus gutem Grund hierher geschickt",
+      "body": "Es ist ein kostenloser IFC-Health-Check, der komplett im Browser läuft – zieh ein Modell rein und du bekommst einen 0–100-Score mit den fehlerhaften Elementen in 3D hervorgehoben. Nichts wird hochgeladen, und es gibt nichts zu kaufen. Ich würde mich über deine ehrliche Einschätzung freuen."
+    },
+    "standards": {
+      "title": "Ein Einstieg, kein Ersatz für bSI",
+      "body": "Zieh eine IFC rein und du bekommst einen einzelnen Health Score 0–100 mit den fehlerhaften Elementen in 3D. Gedacht als schnelles Triage-Signal neben IDS und dem offiziellen Validierungsdienst – keine Konformitätsaussage. Ich würde gern hören, wo du diese Grenze ziehen würdest."
+    },
+    "open": "Datei öffnen",
+    "demo": "Beispielmodell testen",
+    "skip": "Später",
+    "aria": "Eine Begrüßung vom Entwickler"
+  },
+  "feedback": {
+    "title": "Eine ehrliche Frage, falls du kurz Zeit hast",
+    "q": {
+      "coordinator": "Würdest du einen Bericht wie diesen tatsächlich an die Person zurückschicken, die das Modell exportiert hat – oder nicht?",
+      "dev": "Fühlt sich das Eindampfen der gesamten Validierung auf eine einzige 0–100-Zahl nützlich an, oder verbirgt es zu viel, um vertrauenswürdig zu sein?",
+      "standards": "Funktioniert eine einzelne 0–100-Zahl als Einstieg, oder verzerrt sie, was echte IDS/bSI-Konformität bedeutet?"
+    },
+    "aside": "Kein Formular – antworte einfach auf meine Nachricht. Schonungslose Ehrlichkeit ist genau der Punkt.",
+    "dismiss": "Schließen",
+    "aria": "Eine Frage vom Entwickler"
+  }
+}

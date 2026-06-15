@@ -12,6 +12,7 @@ import type enTree from '../locales/en/tree.json';
 import type enBlog from '../locales/en/blog.json';
 import type enGeo from '../locales/en/geo.json';
 import type enIds from '../locales/en/ids.json';
+import type enInvite from '../locales/en/invite.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -31,6 +32,7 @@ declare module 'i18next' {
       blog: typeof enBlog;
       geo: typeof enGeo;
       ids: typeof enIds;
+      invite: typeof enInvite;
     };
   }
 }

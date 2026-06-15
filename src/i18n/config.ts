@@ -38,6 +38,7 @@ import enTree        from '../locales/en/tree.json'
 import enBlog        from '../locales/en/blog.json'
 import enGeo         from '../locales/en/geo.json'
 import enIds         from '../locales/en/ids.json'
+import enInvite      from '../locales/en/invite.json'
 
 const EN_RESOURCES = {
   common:      enCommon,
@@ -54,6 +55,7 @@ const EN_RESOURCES = {
   blog:        enBlog,
   geo:         enGeo,
   ids:         enIds,
+  invite:      enInvite,
 } as const
 
 // ── Init ──────────────────────────────────────────────────────────────────────

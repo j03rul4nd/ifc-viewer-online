@@ -1,0 +1,37 @@
+{
+  "ribbon": {
+    "coordinator": "Criei isto para triar exports de IFC com problemas. Arraste um e veja o que ele aponta — nada é enviado, nada para comprar.",
+    "dev": "Um pequeno health-check de IFC sobre web-ifc — 100% no navegador. Arraste um arquivo ou veja a aba de rede.",
+    "standards": "Uma porta de entrada para checagens no estilo IDS, não um substituto do bSI. Arraste um IFC para ver a pontuação.",
+    "referral": "Alguém achou que isto seria útil para você. Arraste um IFC — ele nunca sai do seu navegador, e não há nada para comprar.",
+    "medium": "Obrigado por vir pelo artigo. Arraste um IFC para ver o que ele aponta — nada é enviado."
+  },
+  "signature": "{{name}} · feito nas horas vagas",
+  "dismiss": "Fechar",
+  "aria": "Um recado do autor",
+  "view": {
+    "referral": {
+      "title": "Você foi indicado para cá por um motivo",
+      "body": "É um health-check de IFC gratuito que roda inteiramente no navegador — arraste um modelo e você recebe uma pontuação 0–100 com os elementos com falha destacados em 3D. Nada é enviado, e não há nada para comprar. Eu valorizaria muito a sua opinião honesta."
+    },
+    "standards": {
+      "title": "Uma porta de entrada, não um substituto do bSI",
+      "body": "Arraste um IFC e você recebe um único Health Score 0–100 com os elementos com falha em 3D. A ideia é ser um sinal de triagem rápido que acompanha o IDS e o serviço oficial de validação — não uma afirmação de conformidade. Eu valorizaria a sua opinião sobre onde essa linha deve ficar."
+    },
+    "open": "Abrir um arquivo",
+    "demo": "Testar um modelo de exemplo",
+    "skip": "Agora não",
+    "aria": "Uma boas-vindas do autor"
+  },
+  "feedback": {
+    "title": "Uma pergunta honesta, se você tiver um instante",
+    "q": {
+      "coordinator": "Um relatório como este é algo que você realmente enviaria de volta para quem exportou o modelo — ou não?",
+      "dev": "Resumir toda a validação em um único número 0–100 parece útil, ou esconde demais para ser confiável?",
+      "standards": "Um único número 0–100 funciona como porta de entrada, ou distorce o que significa a conformidade real com IDS/bSI?"
+    },
+    "aside": "Sem formulário — é só responder à minha mensagem. Crítica brutal é exatamente o que eu quero.",
+    "dismiss": "Fechar",
+    "aria": "Uma pergunta do autor"
+  }
+}

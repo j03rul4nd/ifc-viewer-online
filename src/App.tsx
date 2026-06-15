@@ -29,6 +29,9 @@ import TermsOfUse from './components/legal/TermsOfUse'
 import EmbedModal from './components/EmbedModal'
 import IdsModal from './components/IdsModal'
 import IdsPanel from './components/IdsPanel'
+import InviteRibbon from './components/InviteRibbon'
+import InviteView from './components/InviteView'
+import InviteFeedbackNudge from './components/InviteFeedbackNudge'
 import { isGisEnabled } from './lib/geo/gis-flag'
 
 // Lazy: GeoPanel statically imports proj4/placement/geo runners, which must
@@ -65,6 +68,8 @@ import {
   isEmbedded,
 } from './lib/url-params'
 import { fetchIfcFromUrl } from './lib/fetch-ifc-url'
+import { resolveInvite, shouldShowInviteRibbon, shouldShowInviteView } from './lib/invite-registry'
+import { getStoredEntrySource } from './lib/attribution'
 import { runIds, cancelActiveIdsRuns, IdsCheckError } from './lib/ids/ids-runner'
 import { parseIds, IdsParseError } from './lib/ids/ids-parser'
 import { renderReasons } from './lib/ids/ids-engine-facets'
@@ -111,6 +116,41 @@ export default function App() {
   // host iframe (blog, CDE panel, third-party screen) should show.
   const urlParams   = useMemo(() => parseAppUrlParams(), [])
   const embedChrome = useMemo(() => resolveEmbedChrome(urlParams), [urlParams])
+
+  // ── Personalized invite context (Phase 1) ────────────────────────────────
+  // Resolved from the session attribution captured in main.tsx (NOT the live
+  // URL, which has already been stripped of ?ref=/ /i/<code>). Drives the
+  // subtractive, segment-aware ribbon. null for organic / unknown visits.
+  const invite = useMemo(() => resolveInvite(getStoredEntrySource()?.source), [])
+  const [inviteDismissed, setInviteDismissed] = useState<boolean>(() => {
+    try { return sessionStorage.getItem('ifc.invite.ribbonDismissed') === '1' } catch { return false }
+  })
+  const dismissInvite = useCallback((): void => {
+    try { sessionStorage.setItem('ifc.invite.ribbonDismissed', '1') } catch { /* ignore */ }
+    setInviteDismissed(true)
+  }, [])
+
+  // Dedicated welcome view (Phase 1.5 — referral/standards only). One-time +
+  // skippable; the normal landing renders underneath it.
+  const [inviteViewDismissed, setInviteViewDismissed] = useState<boolean>(() => {
+    try { return sessionStorage.getItem('ifc.invite.viewDismissed') === '1' } catch { return false }
+  })
+  const dismissInviteView = useCallback((): void => {
+    try { sessionStorage.setItem('ifc.invite.viewDismissed', '1') } catch { /* ignore */ }
+    setInviteViewDismissed(true)
+  }, [])
+
+  // Post-aha Mom-Test nudge (Phase 2 — once per session, after first validation,
+  // invited non-public visitors only).
+  const [feedbackNudgeOpen, setFeedbackNudgeOpen] = useState(false)
+  const [feedbackNudgeSpent, setFeedbackNudgeSpent] = useState<boolean>(() => {
+    try { return sessionStorage.getItem('ifc.invite.feedbackSpent') === '1' } catch { return false }
+  })
+  const dismissFeedbackNudge = useCallback((): void => {
+    try { sessionStorage.setItem('ifc.invite.feedbackSpent', '1') } catch { /* ignore */ }
+    setFeedbackNudgeOpen(false)
+    setFeedbackNudgeSpent(true)
+  }, [])
 
   const [route, setRoute] = useState<Route>(() => {
     if (typeof window !== 'undefined') {
@@ -494,6 +534,15 @@ export default function App() {
       info:         result.stats.info,
     })
   }, [result])
+
+  // ── Post-aha invite nudge: surface the Mom-Test question once, after the ──
+  // first validation completes, to an invited (non-public) visitor.
+  useEffect(() => {
+    if (!result) return
+    if (!invite || invite.sourceKind === 'public') return
+    if (feedbackNudgeSpent || feedbackNudgeOpen) return
+    setFeedbackNudgeOpen(true)
+  }, [result, invite, feedbackNudgeSpent, feedbackNudgeOpen])
 
   // ── Analytics: SPA route transitions (virtual pageviews) ─────────────────
   useEffect(() => {
@@ -911,6 +960,18 @@ export default function App() {
     if (urlParams.lang && supported.includes(urlParams.lang) && i18n.language !== urlParams.lang) {
       void i18n.changeLanguage(urlParams.lang)
     }
+
+    // Personalized invite locale (e.g. a Portuguese outreach link → pt). Applied
+    // once per session and only when the host didn't request a language, so it
+    // lands in the intended language without fighting a later manual switch.
+    try {
+      if (!urlParams.lang && invite?.locale && supported.includes(invite.locale) &&
+          i18n.language !== invite.locale &&
+          sessionStorage.getItem('ifc.invite.localeApplied') == null) {
+        void i18n.changeLanguage(invite.locale)
+        sessionStorage.setItem('ifc.invite.localeApplied', '1')
+      }
+    } catch { /* sessionStorage / i18n unavailable — keep detected language */ }
 
     // Announce readiness to an embedding parent (CDE / blog), advertising the
     // languages the host can pass to setLanguage / the `lang` param.
@@ -1620,6 +1681,28 @@ export default function App() {
         >
           {isFromCache ? tViewer('cache.fromCache') : tViewer('cache.cached', { count: cacheEntries.length })}
         </div>
+      )}
+
+      {/* ── Personalized invite — dedicated welcome (referral / standards) ── */}
+      {route === 'landing' && invite && shouldShowInviteView(invite, { dismissed: inviteViewDismissed }) && (
+        <InviteView
+          context={invite}
+          onOpenFile={() => { dismissInviteView(); handleOpenUpload() }}
+          onOpenDemo={() => { dismissInviteView(); handleOpenDemoGallery() }}
+          onDismiss={dismissInviteView}
+        />
+      )}
+
+      {/* ── Personalized invite — slim ribbon (everyone else, desktop) ── */}
+      {route === 'landing' && invite &&
+        !shouldShowInviteView(invite, { dismissed: inviteViewDismissed }) &&
+        shouldShowInviteRibbon(invite, { isMobile: !isDesktop, dismissed: inviteDismissed }) && (
+        <InviteRibbon context={invite} onDismiss={dismissInvite} />
+      )}
+
+      {/* ── Personalized invite — post-aha Mom-Test nudge (viewer) ── */}
+      {route === 'viewer' && invite && feedbackNudgeOpen && (
+        <InviteFeedbackNudge context={invite} onDismiss={dismissFeedbackNudge} />
       )}
 
       {/* ── Global toast notifications ── */}

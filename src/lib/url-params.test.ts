@@ -5,6 +5,7 @@ import {
   buildEmbedUrl,
   buildIframeSnippet,
   isLoadableUrl,
+  parseInvitePath,
 } from './url-params'
 
 const MODEL = 'https://host.example/model.ifc'
@@ -72,6 +73,37 @@ describe('parseAppUrlParams', () => {
     expect(p.overrides.tree).toBe(true)
     expect(p.overrides.sidebar).toBe(false)
     expect(p.overrides.toolbar).toBeUndefined()
+  })
+
+  it('parses the invite/campaign tag from ?ref and the ?invite alias', () => {
+    expect(parseAppUrlParams('?ref=li_ignacy').ref).toBe('li_ignacy')
+    expect(parseAppUrlParams('?invite=hn').ref).toBe('hn')
+    expect(parseAppUrlParams('?ref=md_duplicate-guids').ref).toBe('md_duplicate-guids')
+  })
+
+  it('rejects malformed invite tags (non-PII safety)', () => {
+    expect(parseAppUrlParams('').ref).toBeUndefined()
+    expect(parseAppUrlParams(`?ref=${encodeURIComponent('<script>')}`).ref).toBeUndefined()
+    expect(parseAppUrlParams(`?ref=${encodeURIComponent('a b')}`).ref).toBeUndefined()
+    expect(parseAppUrlParams(`?ref=${'a'.repeat(65)}`).ref).toBeUndefined()
+  })
+})
+
+describe('parseInvitePath', () => {
+  it('extracts the code from /i/<code> and /invite/<code>', () => {
+    expect(parseInvitePath('/i/li_ignacy')).toBe('li_ignacy')
+    expect(parseInvitePath('/invite/li_ignacy')).toBe('li_ignacy')
+    expect(parseInvitePath('/i/hn/')).toBe('hn')        // trailing slash tolerated
+    expect(parseInvitePath('/i/md_duplicate-guids')).toBe('md_duplicate-guids')
+  })
+
+  it('returns undefined for non-invite paths and malformed codes', () => {
+    expect(parseInvitePath('/')).toBeUndefined()
+    expect(parseInvitePath('/viewer')).toBeUndefined()
+    expect(parseInvitePath('/i/')).toBeUndefined()
+    expect(parseInvitePath('/i/bad code')).toBeUndefined()
+    expect(parseInvitePath(`/i/${'a'.repeat(65)}`)).toBeUndefined()
+    expect(parseInvitePath('/i/li_ignacy/extra')).toBeUndefined()
   })
 })
 

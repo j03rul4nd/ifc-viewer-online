@@ -1,0 +1,37 @@
+{
+  "ribbon": {
+    "coordinator": "Ho creato questo per smistare gli export IFC rotti. Trascinane uno e guarda cosa segnala — niente viene caricato, niente da comprare.",
+    "dev": "Un piccolo health-check IFC basato su web-ifc — tutto nel browser. Trascina un file o guarda la scheda di rete.",
+    "standards": "Una rampa d'accesso ai controlli in stile IDS, non un sostituto di bSI. Trascina un IFC per vedere il punteggio.",
+    "referral": "Qualcuno ha pensato che ti sarebbe stato utile. Trascina un IFC — non lascia mai il tuo browser, e non c'è niente da comprare.",
+    "medium": "Grazie per essere arrivato dall'articolo. Trascina un IFC per vedere cosa segnala — niente viene caricato."
+  },
+  "signature": "{{name}} · creato nel tempo libero",
+  "dismiss": "Chiudi",
+  "aria": "Una nota dall'autore",
+  "view": {
+    "referral": {
+      "title": "Ti hanno indirizzato qui per un motivo",
+      "body": "È un health-check IFC gratuito che gira interamente nel browser — trascina un modello e ottieni un punteggio 0–100 con gli elementi che falliscono evidenziati in 3D. Niente viene caricato, e non c'è niente da comprare. Apprezzerei davvero il tuo parere onesto."
+    },
+    "standards": {
+      "title": "Una rampa d'accesso, non un sostituto di bSI",
+      "body": "Trascina un IFC e ottieni un singolo Health Score 0–100 con gli elementi che falliscono in 3D. È pensato come un segnale di triage rapido che affianca l'IDS e il servizio di validazione ufficiale — non un'affermazione di conformità. Apprezzerei il tuo parere su dove tracciare quella linea."
+    },
+    "open": "Apri un file",
+    "demo": "Prova un modello di esempio",
+    "skip": "Più tardi",
+    "aria": "Un benvenuto dall'autore"
+  },
+  "feedback": {
+    "title": "Una domanda onesta, se hai un momento",
+    "q": {
+      "coordinator": "Un report come questo lo rimanderesti davvero a chi ha esportato il modello — oppure no?",
+      "dev": "Ridurre tutta la validazione a un singolo numero 0–100 ti sembra utile, o nasconde troppo per fidarsene?",
+      "standards": "Un singolo numero 0–100 funziona come rampa d'accesso, o travisa cosa significhi la vera conformità IDS/bSI?"
+    },
+    "aside": "Nessun modulo — rispondi semplicemente al mio messaggio. Una critica brutale è proprio quello che cerco.",
+    "dismiss": "Chiudi",
+    "aria": "Una domanda dall'autore"
+  }
+}

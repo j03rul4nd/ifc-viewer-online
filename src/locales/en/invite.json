@@ -1,0 +1,37 @@
+{
+  "ribbon": {
+    "coordinator": "I built this to triage broken IFC exports. Drag one in and see what it flags — nothing uploads, nothing to buy.",
+    "dev": "A tiny IFC health-check built on web-ifc — runs entirely in your browser. Drag a file in, or watch the network tab.",
+    "standards": "An on-ramp to IDS-style checks, not a replacement for bSI. Drag an IFC in to see the score.",
+    "referral": "Someone thought you'd find this useful. Drag an IFC in — it never leaves your browser, and there's nothing to buy.",
+    "medium": "Thanks for coming from the article. Drag an IFC in to see what it flags — nothing uploads."
+  },
+  "signature": "{{name}} · built this on the side",
+  "dismiss": "Dismiss",
+  "aria": "A note from the maker",
+  "view": {
+    "referral": {
+      "title": "You were pointed here for a reason",
+      "body": "It's a free IFC health-check that runs entirely in your browser — drag a model in and you get one 0–100 score with the failing elements lit up in 3D. Nothing uploads, and there's nothing to buy. I'd genuinely value your honest read."
+    },
+    "standards": {
+      "title": "An on-ramp, not a replacement for bSI",
+      "body": "Drag an IFC in and you get a single 0–100 Health Score with the failing elements in 3D. It's meant as a fast triage signal that sits alongside IDS and the official validation service — not a conformance claim. I'd value your take on where that line should sit."
+    },
+    "open": "Open a file",
+    "demo": "Try a demo model",
+    "skip": "Skip for now",
+    "aria": "A welcome from the maker"
+  },
+  "feedback": {
+    "title": "One honest question, if you have a sec",
+    "q": {
+      "coordinator": "Is a report like this something you'd actually send back to whoever exported the model — or not?",
+      "dev": "Does collapsing all the validation into a single 0–100 number feel useful, or does it hide too much to trust?",
+      "standards": "Does one 0–100 number work as an on-ramp, or does it misrepresent what real IDS/bSI conformance means?"
+    },
+    "aside": "No form — just reply to my message. Brutally honest is the point.",
+    "dismiss": "Dismiss",
+    "aria": "A question from the maker"
+  }
+}

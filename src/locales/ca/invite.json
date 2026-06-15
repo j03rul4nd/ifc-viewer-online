@@ -1,0 +1,37 @@
+{
+  "ribbon": {
+    "coordinator": "Vaig fer això per triar exports d'IFC trencats. Arrossega'n un i mira què detecta — no es puja res, no hi ha res a comprar.",
+    "dev": "Un petit health-check d'IFC sobre web-ifc — 100% al navegador. Arrossega un fitxer o mira la pestanya de xarxa.",
+    "standards": "Una porta d'entrada a comprovacions tipus IDS, no un substitut de bSI. Arrossega un IFC per veure la puntuació.",
+    "referral": "Algú ha pensat que això et seria útil. Arrossega un IFC — mai surt del teu navegador, i no hi ha res a comprar.",
+    "medium": "Gràcies per venir des de l'article. Arrossega un IFC per veure què detecta — no es puja res."
+  },
+  "signature": "{{name}} · fet a estones lliures",
+  "dismiss": "Tanca",
+  "aria": "Una nota de l'autor",
+  "view": {
+    "referral": {
+      "title": "Algú t'ha adreçat aquí per algun motiu",
+      "body": "És un health-check d'IFC gratuït que s'executa íntegrament al navegador — arrossega un model i obtens una puntuació 0–100 amb els elements que fallen ressaltats en 3D. No es puja res, i no hi ha res a comprar. De debò valoraria la teva opinió sincera."
+    },
+    "standards": {
+      "title": "Una porta d'entrada, no un substitut de bSI",
+      "body": "Arrossega un IFC i obtens un únic Health Score 0–100 amb els elements que fallen en 3D. Està pensat com un senyal de triatge ràpid que conviu amb l'IDS i el servei oficial de validació — no com una afirmació de conformitat. Valoraria la teva opinió sobre on hauria d'estar aquesta línia."
+    },
+    "open": "Obre un fitxer",
+    "demo": "Prova un model d'exemple",
+    "skip": "Ara no",
+    "aria": "Una benvinguda de l'autor"
+  },
+  "feedback": {
+    "title": "Una pregunta sincera, si tens un moment",
+    "q": {
+      "coordinator": "Un informe com aquest, l'enviaries de debò a qui va exportar el model — o no?",
+      "dev": "Reduir tota la validació a un sol número 0–100, et sembla útil o amaga massa per fiar-te'n?",
+      "standards": "Un sol número 0–100 funciona com a porta d'entrada, o tergiversa què significa la conformitat real amb IDS/bSI?"
+    },
+    "aside": "Sense formularis — només respon al meu missatge. La crítica brutal és justament el que busco.",
+    "dismiss": "Tanca",
+    "aria": "Una pregunta de l'autor"
+  }
+}

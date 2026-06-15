@@ -36,6 +36,13 @@ export interface AppUrlParams {
   select?: number
   /** Canonical IFC class to isolate after load, e.g. "IFCWALL" (best-effort). */
   isolate?: string
+  /**
+   * Invite / campaign tag from `?ref=` (alias `?invite=`). Opaque, non-PII —
+   * an outreach identifier like `li_ignacy`, `hn`, `md_<slug>`. Consumed by
+   * attribution.ts; never rendered as a person's name. See
+   * personalized-invite-system-research.md §11.
+   */
+  ref?: string
   /** Granular chrome overrides. `undefined` = fall back to the preset default. */
   overrides: {
     toolbar?: boolean
@@ -71,6 +78,25 @@ function parseBool(v: string | null): boolean | undefined {
   if (TRUTHY.has(s)) return true
   if (FALSY.has(s)) return false
   return undefined
+}
+
+// ── Pretty invite path: /i/<code> or /invite/<code> ───────────────────────────
+// The Vercel SPA rewrite already serves index.html for any non-/assets/ path, so
+// a pretty invite link needs only this parser (no infra change). The code charset
+// matches sanitizeInviteCode so the value is always PostHog-safe / non-PII.
+const INVITE_PATH_RE = /^\/(?:i|invite)\/([A-Za-z0-9_-]{1,64})\/?$/
+
+/**
+ * Extract an invite code from a pretty path (`/i/<code>` or `/invite/<code>`),
+ * accounting for the app's BASE_URL. Returns undefined when the path isn't an
+ * invite path. SSR-safe (defaults to the live pathname in the browser).
+ */
+export function parseInvitePath(pathname?: string): string | undefined {
+  const path = pathname ?? (typeof window !== 'undefined' ? window.location.pathname : '')
+  const base = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
+  const rel = base && path.startsWith(base) ? path.slice(base.length) : path
+  const m = INVITE_PATH_RE.exec(rel || '/')
+  return m ? m[1] : undefined
 }
 
 /** Accept absolute http(s) URLs and same-origin relative paths; reject the rest. */
@@ -113,6 +139,7 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
 
   const selectRaw = Number.parseInt(p.get('select') ?? '', 10)
   const isolateRaw = (p.get('isolate') ?? '').trim().toUpperCase()
+  const refRaw = sanitizeInviteCode(p.get('ref') ?? p.get('invite'))
   const lang = (p.get('lang') ?? '').trim() || undefined
   const accentRaw = (p.get('accent') ?? '').trim()
   // Accept "#rgb"/"#rrggbb" or the same without the leading '#'. Reject anything
@@ -131,6 +158,7 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     accent: accentHex,
     select: Number.isFinite(selectRaw) && selectRaw > 0 ? selectRaw : undefined,
     isolate: isolateRaw ? canonicalIfcType(isolateRaw) : undefined,
+    ref: refRaw,
     overrides: {
       toolbar:        parseBool(p.get('toolbar')),
       tree:           parseBool(p.get('tree')),
@@ -145,6 +173,17 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
 /** Mirror of the viewer's canonicalType() so isolate=IfcWallStandardCase matches. */
 function canonicalIfcType(raw: string): string {
   return raw.replace('STANDARDCASE', '').replace('ELEMENTEDCASE', '')
+}
+
+/**
+ * Invite/campaign tag sanitizer. Accepts an opaque outreach identifier
+ * (`[A-Za-z0-9_-]`, 1–64 chars) and rejects anything else, so the value is
+ * always safe to use as a PostHog property and never carries free-text/PII.
+ */
+function sanitizeInviteCode(v: string | null): string | undefined {
+  if (!v) return undefined
+  const s = v.trim()
+  return /^[A-Za-z0-9_-]{1,64}$/.test(s) ? s : undefined
 }
 
 const PRESET_CHROME: Record<EmbedUiPreset, Omit<EmbedChrome, 'embed'>> = {
