@@ -4,7 +4,7 @@ import { SITE_URL } from '../../seo/config'
 
 const CONTACT = 'joelbenitezdonari@gmail.com'
 const DOMAIN  = SITE_URL
-const LAST_UPDATED = '2026-06-04'
+const LAST_UPDATED = '2026-06-15'
 
 // ── Prose helpers ─────────────────────────────────────────────────────────────
 
@@ -119,6 +119,11 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
               purpose="Remember your settings across sessions"
               basis="Strictly necessary / legitimate interest"
             />
+            <TableRow
+              data="Invitation / referral tag from a link (e.g. ?ref=… or /i/…)"
+              purpose="See which outreach or article a visit came from, to improve it"
+              basis="Legitimate interest (Art. 6(1)(f)) — a non-personal campaign label, session-only, no cookie"
+            />
           </tbody>
         </table>
       </div>
@@ -128,6 +133,18 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
         session replay, and we do <strong>not</strong> use advertising or cross-site tracking.
         PostHog analytics runs in <em>memory-only mode</em>: no cookies and no persistent identifier
         is written to your device.
+      </P>
+
+      {/* Invitation / referral links */}
+      <H2>Invitation and referral links</H2>
+      <P>
+        Some links we share personally (for example in a message or an article) include a short
+        campaign tag, such as <code>?ref=…</code> or a <code>/i/…</code> path. This tag is a
+        non-personal label that tells us which outreach or article a visit came from — it does{' '}
+        <strong>not</strong> identify you and contains no personal data. When the page loads we store
+        it only for the current browser session (in <em>sessionStorage</em>, not a cookie), remove it
+        from the address bar, and attach it to the same anonymous analytics described above so we can
+        tell which channels are useful. It is cleared when you close the tab.
       </P>
 
       {/* Shared reports */}
@@ -166,7 +183,13 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
           </a>.
         </li>
         <li>
-          <strong>GitHub Pages</strong> — hosting the static site.
+          <strong>Vercel</strong> — hosting the static site and serving its pages. Vercel
+          processes basic request metadata (such as IP addresses) as part of its content-delivery
+          infrastructure; it never receives your IFC model data. See{' '}
+          <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer"
+             className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>
+            Vercel's Privacy Policy
+          </a>.
         </li>
       </UL>
       <P>We never sell your data or share it with advertisers.</P>
@@ -174,9 +197,9 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
       {/* International transfers */}
       <H2>International data transfers</H2>
       <P>
-        Some processors (PostHog, Cloudflare) process data in the United States, outside the EEA.
-        Where that applies, transfers rely on appropriate safeguards such as Standard Contractual
-        Clauses (SCCs) under GDPR Chapter V.
+        Some processors (PostHog, Cloudflare, Vercel) process data in the United States, outside the
+        EEA. Where that applies, transfers rely on appropriate safeguards such as Standard
+        Contractual Clauses (SCCs) under GDPR Chapter V.
       </P>
 
       {/* Retention */}

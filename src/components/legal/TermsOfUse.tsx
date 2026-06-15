@@ -4,7 +4,7 @@ import { SITE_URL } from '../../seo/config'
 
 const CONTACT     = 'joelbenitezdonari@gmail.com'
 const DOMAIN      = SITE_URL
-const LAST_UPDATED = '2026-06-04'
+const LAST_UPDATED = '2026-06-15'
 
 // ── Prose helpers ─────────────────────────────────────────────────────────────
 
@@ -113,7 +113,9 @@ export default function TermsOfUse({ onNavigateToLanding }: Props) {
       <H2 n={8}>Changes and availability</H2>
       <P>
         We may modify, suspend, or discontinue the Service or these Terms at any time. The "Last
-        updated" date at the top reflects the latest version.
+        updated" date at the top reflects the latest version. The Service is a static site hosted on
+        third-party infrastructure (Vercel); its availability depends on that provider, and we do not
+        guarantee uninterrupted access.
       </P>
 
       <H2 n={9}>Governing law</H2>

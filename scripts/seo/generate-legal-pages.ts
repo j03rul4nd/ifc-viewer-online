@@ -116,7 +116,7 @@ const PRIVACY_FAQ = [
   },
   {
     q: 'Where are IFC Viewer Online\'s servers located?',
-    a: 'The application is a static site hosted on GitHub Pages (no model processing server). Analytics run on PostHog (US-hosted). Shared reports run on Cloudflare Workers (global edge). None of these receive IFC model data.',
+    a: 'The application is a static site hosted on Vercel (no model processing server). Analytics run on PostHog (US-hosted). Shared reports run on Cloudflare Workers (global edge). None of these receive IFC model data.',
   },
   {
     q: 'Can we use IFC Viewer Online in a public sector or defence project?',
