@@ -11,6 +11,8 @@ import { useIdsStore, type IdsFilters } from '../stores/idsStore'
 import { useSceneStore } from '../stores/sceneStore'
 import { useUIStore } from '../stores/uiStore'
 import { useIdsRun } from '../hooks/useIdsRun'
+import { useIsMobile } from '../hooks/useIsMobile'
+import IdsPanelMobile from './mobile/IdsPanelMobile'
 import { hasActiveIdsRun } from '../lib/ids/ids-runner'
 import i18n from '../i18n/config'
 import { modelRegistry } from '../lib/model-registry'
@@ -54,6 +56,7 @@ interface IdsPanelProps {
 
 export default function IdsPanel({ viewerApiRef, onOpenLoader }: IdsPanelProps) {
   const { t } = useTranslation('ids')
+  const isMobile = useIsMobile()
   const activeModelId = useSceneStore((s) => s.activeModelId)
   const models = useSceneStore((s) => s.models)
   const fileName = useIdsStore((s) => s.fileName)
@@ -196,6 +199,11 @@ export default function IdsPanel({ viewerApiRef, onOpenLoader }: IdsPanelProps) 
   }, [rows.length, focusIdx])
 
   const hasAnything = !!doc || !!result || busy
+
+  // ── Mobile: dedicated bottom-sheet variant (desktop render path untouched) ──
+  if (isMobile) {
+    return <IdsPanelMobile viewerApiRef={viewerApiRef} onOpenLoader={onOpenLoader} />
+  }
 
   // ── Collapsed bar ──────────────────────────────────────────────────────────
   if (!panelOpen) {

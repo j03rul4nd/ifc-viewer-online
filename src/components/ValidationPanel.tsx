@@ -45,6 +45,8 @@ import {
 } from '../lib/analytics'
 import { buildShareUrl, buildBadgeMarkdown, type ShareReportPayload } from '../lib/share-report'
 import { postBenchmark, fetchBenchmark, benchmarkReady, type BenchStats } from '../lib/benchmark'
+import { useIsMobile } from '../hooks/useIsMobile'
+import ValidationPanelMobile from './mobile/ValidationPanelMobile'
 
 // ── Profile i18n ────────────────────────────────────────────────────────────
 // Built-in profiles (basic/quality/coordination/iso19650/lod300) resolve their
@@ -1647,6 +1649,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   const bcfTopicCount = useBcfStore((s) => s.topics.length)
 
   const { t, i18n } = useTranslation('validation')
+  const isMobile = useIsMobile()
   const [search, setSearch]             = useState('')
   const [modelFilter, setModelFilter]   = useState<string | null>(null)
   const [profileModalOpen, setProfileModalOpen] = useState(false)
@@ -2157,6 +2160,39 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
       return r.kind === 'issue' ? r.issue.id : `${r.kind}:${r.groupKey}`
     },
   })
+
+  // ── Mobile: dedicated bottom-sheet variant (desktop render path untouched) ──
+  // All hooks above have run; we forward the already-computed view-model + the
+  // handlers so the mobile presentation duplicates none of this component's logic.
+  if (isMobile) {
+    return (
+      <ValidationPanelMobile
+        open={validationPanelOpen}
+        vm={{
+          language: i18n.language,
+          result, stats, displayScore, coverage, coverageIncomplete, contributions, bench,
+          issues, orderedGroups, filtered, filters, setFilters, search, setSearch,
+          modelFilter, setModelFilter, sceneModels, isRunning, progress, validationStatus, validationError,
+          hasModel, autoFixableCount, pendingFixIds, mutedCount, unmuteAll, runDiff,
+          activePanel, setActivePanel, bcfTopicCount, viewer,
+          activeProfileId, customProfiles, setActiveProfile,
+          exportModels, rules,
+          resolveProfileName: (p) => localizedProfileName(p, t),
+          onRun: handleRunValidation,
+          onJumpTo: handleJumpTo,
+          onAutoFix: handleAutoFix,
+          onNameFix: handleNameFix,
+          onMute: handleMute,
+          onAddToBcf: handleAddIssueToBcf,
+          onShareReport: handleShareReport,
+          onCopyForAI: handleCopyForAI,
+          onCopyBadge: handleCopyBadge,
+          onBatchFix: handleBatchFix,
+          onClose: toggleValidationPanel,
+        }}
+      />
+    )
+  }
 
   // ── Collapsed state ───────────────────────────────────────────────────
 

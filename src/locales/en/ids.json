@@ -57,7 +57,10 @@
     "passShort": "{{count}}✓",
     "failShort": "{{count}}✗",
     "naShort": "{{count}} n/a",
-    "checkedModel": "Checked model"
+    "checkedModel": "Checked model",
+    "passLabel": "passed",
+    "failLabel": "failed",
+    "naLabel": "n/a"
   },
   "progress": {
     "open": "Opening model…",
@@ -73,6 +76,7 @@
     "groupSpec": "spec",
     "groupElement": "element",
     "groupClass": "class",
+    "all": "All",
     "search": "Search specs / elements…",
     "clear": "Clear filters",
     "specsCounted": "{{count}} spec",

@@ -158,6 +158,7 @@
   "summary": {
     "fixFirst": "Fix first to recover the most",
     "points": "≈ +{{points}}",
+    "vsAvg": "vs avg {{avg}}",
     "grade": {
       "excellent": "Excellent",
       "good": "Good",

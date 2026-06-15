@@ -146,6 +146,15 @@ body {
   overscroll-behavior: contain;
 }
 
+/* Hide scrollbar (horizontal chip rows in the mobile sheets) — keeps scroll */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* ── Backdrop-filter compatibility ──────────────────────────────────────────── */
 /* Safari needs -webkit- prefix for backdrop-filter */
 

@@ -57,7 +57,10 @@
     "passShort": "{{count}}✓",
     "failShort": "{{count}}✗",
     "naShort": "{{count}} n/a",
-    "checkedModel": "Modelo comprobado"
+    "checkedModel": "Modelo comprobado",
+    "passLabel": "pasan",
+    "failLabel": "fallan",
+    "naLabel": "n/a"
   },
   "progress": {
     "open": "Abriendo modelo…",
@@ -73,6 +76,7 @@
     "groupSpec": "especificación",
     "groupElement": "elemento",
     "groupClass": "clase",
+    "all": "Todas",
     "search": "Buscar especificaciones / elementos…",
     "clear": "Limpiar filtros",
     "specsCounted": "{{count}} especificación",
