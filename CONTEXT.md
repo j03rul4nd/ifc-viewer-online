@@ -20,9 +20,10 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 
 ---
 
-## Current state (Sprints 1–9 complete — 2026-05-29)
+## Current state (Sprints 1–9 complete + IDS / GIS / embed shipped — updated 2026-06-21)
 
-> **Note (2026-05-29):** This document previously claimed "Sprint 6 complete" and listed postprocessing, measurements, floor plans, section cuts, and BCF as "not yet implemented." That was stale — all of those shipped (Sprints 7–9). The validator now has **38 rules** (not 18). The "Not yet implemented" list below has been corrected. Forward priorities are no longer sprint-numbered; see `ROADMAP.md` Roadmap v2 (distribution-led).
+> **Note (2026-05-29):** This document previously claimed "Sprint 6 complete" and listed postprocessing, measurements, floor plans, section cuts, and BCF as "not yet implemented." That was stale — all of those shipped (Sprints 7–9).
+> **Note (2026-06-21, doc-sync against code):** Several more things shipped since the v2 reset and are now reflected below: **buildingSMART IDS 1.0** (full six-facet checking, golden-tested), **3D Map / GIS mode** (flag-gated), the **BCF panel**, **embed + JS SDK**, the **mobile UI**, the **personalized-invite/attribution** system, and the four-phase **validation hardening**. The built-in validator now has **44 rules** (not 38). Zustand store count is now **11** (added `bcfStore`, `idsStore`, `geoStore`, `waiverStore`). Deploy target is **Vercel** (GitHub Pages was dropped). Forward priorities are not sprint-numbered; see `ROADMAP.md` Roadmap v2 + the Solibri-parity backlog.
 
 ### Works
 
@@ -40,8 +41,15 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 - **Three viewer styles** — `shaded` (default palette), `blueprint` (flat grey), `xray` (global 20% opacity).
 - **OPFS cache management** — list, delete, quota display. Badge when models are cached. Repository pattern wraps all OPFS I/O with `Result<T,E>` returns. Cache key prefix `v2`.
 - **Memory tracking** — polls `performance.measureUserAgentSpecificMemory()` (crossOriginIsolated) or `performance.memory` fallback every 4 s.
-- **Zustand stores** — `modelStore`, `validationStore`, `editorStore`, `uiStore`, `sceneStore`, `toastStore`, `takeoffStore` — all with Zustand devtools, named actions, and typed selectors. `editorStore` emits `appBus` events on every mutation.
-- **IFC validation — 38 rules** — `validator.worker.ts` runs rule-based checks off the main thread (18 core + 11 spatial/file-header incl. ISO 19650 + 9 LOD/classification/MEP). Streams partial results into `validationStore`. Emits `appBus` events for full lifecycle. All messages validated via zod schemas before routing. Full list in `ARCHITECTURE.md`.
+- **Zustand stores (11)** — `modelStore`, `validationStore`, `editorStore`, `uiStore`, `sceneStore`, `toastStore`, `takeoffStore`, `bcfStore`, `idsStore`, `geoStore`, `waiverStore` — all with Zustand devtools, named actions, and typed selectors. `editorStore` emits `appBus` events on every mutation.
+- **IFC validation — 44 rules** — `validator.worker.ts` runs rule-based checks off the main thread (18 core + 11 spatial/file-header incl. ISO 19650 + 9 LOD/classification/MEP + 6 geometry/storey integrity). Streams partial results into `validationStore`. Emits `appBus` events for full lifecycle. All messages validated via zod schemas before routing. Full list in `ARCHITECTURE.md`. `DEFAULT_RULES` in `src/types/index.ts` is the canonical count.
+- **buildingSMART IDS 1.0** — `ids.worker.ts` + pure-TS engine (`src/lib/ids/`) check a user-supplied `.ids` spec against the model. All six facets, golden-tested against 100 official bSI testcases. `IdsPanel` docks beside `ValidationPanel`; export to JSON/CSV/HTML/BCF; check-all-models; run-diff; SDK `checkIds()`. See `docs/IDS_IMPLEMENTATION_PLAN.md`.
+- **3D Map / GIS mode** (flag-gated `VITE_FEATURE_GIS`) — places a georeferenced model on a real-world basemap + optional 3D terrain inside the existing scene. `geoStore`, `GeoPanel`, `geo-extract.worker.ts`, `geo-terrain.worker.ts`, `src/lib/geo/`. See `docs/GIS_MAP_MODE.md`.
+- **BCF 2.1 / 3.0** — `bcf-parser.worker.ts` import + `bcf.ts` export; `BcfPanel` with topic CRUD, comments, viewpoint capture, filters; `bcfStore` (persisted).
+- **Measurements / floor plans / sections** — length/area/edge/volume measurement tools, 2D floor plans per storey, clipping/section planes (Sprints 7–8).
+- **Embed + JS SDK** — iframe/URL-param embedding (`?model=&embed=&ui=`), two-way `postMessage`, ~6 KB dependency-free `IfcViewer` SDK (`src/sdk/` → `public/sdk/`). See `docs/EMBED_URL_PARAMS.md`, `docs/IFC_VIEWER_SDK.md`.
+- **Mobile UI** — `useIsMobile` + `MobileBottomNav` + bottom-sheet IDS/Validation panels (`src/components/mobile/`).
+- **Validation hardening** — honest coverage (`validation-coverage.ts`), actionable score (`explainQualityScore`, "fix first"), Pro controls (`severityOverrides`, `waiverStore`, thresholds), run-diff (`validation-diff.ts` + `RunDiffBar`).
 - **Validation highlights per model** — `validationHighlightedByModel: Map<string, Set<number>>`; each model's errors are tracked independently.
 - **Spatial tree — auto-built on load** — `buildSpatialTree()` triggers automatically after every model load via `build-tree` worker message. `ModelTree.tsx` renders immediately. Virtualised with `@tanstack/react-virtual`.
 - **Inline editing in tree** — Name, LongName, Description fields editable inline. GlobalId regenerable via double-click + confirmation modal. All edits carry `modelId`.
@@ -56,7 +64,7 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 - **Camera preset system** — `CameraControls.tsx` floating overlay (ISO/Top/Front/Back/Left/Right/Bottom), collapses to icon; numpad shortcuts.
 - **Model info panel** — `ModelInfoPanel.tsx` collapsible pill showing active model's file size, element count, health badges.
 - **Quantity takeoff** — `TakeoffPanel` in Sidebar "Quantities" tab; reads `IfcElementQuantity`; per-model results in `takeoffStore`.
-- **Clash detection** — `RULE_ELEMENT_CLASH` (18th rule, off by default); AABB O(n²) with 5 cm threshold.
+- **Clash detection** — `RULE_ELEMENT_CLASH` (off by default); AABB O(n²) with 5 cm threshold.
 - **Infrastructure layer** — `Result<T,E>` monad, `TypedEventBus`, `createLogger`, `Brand<T,B>` nominal types, runtime type guards, `invariant/assertNever`, `safeVoid`, `ErrorBoundary`.
 - **Facade hooks** — `useModelSession()`, `useAppEvent()`, `useValidationRunner()`, `useElementFocus()`, `usePersistedPreferences()`, `useKeyboardShortcuts()`.
 - **Build optimisation** — Vite chunk splitting: `vendor-three`, `vendor-ifc`, `vendor-ui`, app entry; `--max-old-space-size=4096` for Windows OOM fix.
@@ -68,13 +76,17 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 - GPU memory estimate in `getGpuEstimateBytes()` — uses a rough heuristic based on `WebGLRenderer.info.memory`.
 - `IFCPropertySet.expressId` per property — populated by `formatPsets()` in `viewer.ts` from the `@thatopen` data layer; available when `prop.expressId > 0`.
 
-### Shipped since this doc was last accurate (Sprints 7–9)
+### Shipped since this doc was last accurate (Sprints 7–9 + post-v2)
 
 - ✅ Postproduction renderer (SSAO, edge rendering) — Sprint 7
 - ✅ Measurement tools (length, area, edge, volume) — Sprint 7
 - ✅ Floor plan 2D views from IfcBuildingStorey — Sprint 8
 - ✅ Clipping planes / section cuts — Sprint 8
-- ✅ BCF 2.1 / 3.0 import and export — Sprint 9
+- ✅ BCF 2.1 / 3.0 import and export + dedicated BCF panel — Sprint 9 / post-v2
+- ✅ buildingSMART IDS 1.0 (six-facet, golden-tested) — post-v2 (`docs/IDS_IMPLEMENTATION_PLAN.md`)
+- ✅ 3D Map / GIS mode (flag-gated) — post-v2 (`docs/GIS_MAP_MODE.md`)
+- ✅ Embed + JS SDK — post-v2 (`docs/EMBED_URL_PARAMS.md`, `docs/IFC_VIEWER_SDK.md`)
+- ✅ Mobile UI + personalized invite/attribution + validation hardening — post-v2
 
 ### Deferred or killed (resolution 2026-05-29 — see `ROADMAP.md` Roadmap v2)
 
@@ -94,7 +106,11 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 | `DECISIONS.md` | Architectural decision log with alternatives, reasons, and consequences |
 | `ROADMAP.md` | Sprint-by-sprint plan (status, goals, deliverables, constraints) |
 | `PROMPTS.md` | Log of Claude Code prompts used to build the project |
-| `docs/DEPLOYMENT.md` | GitHub Pages deployment, WASM paths, COEP/COOP strategy, production bug history |
+| `docs/DEPLOYMENT.md` | Vercel deployment, WASM paths, COEP/COOP strategy, production bug history |
+| `docs/IDS_IMPLEMENTATION_PLAN.md` | buildingSMART IDS 1.0 — engine, facets, worker, golden tests (SHIPPED banner up top) |
+| `docs/GIS_MAP_MODE.md` · `docs/GIS_MAP_INTEGRATION_PLAN.md` | 3D Map / GIS mode — user guide + architecture |
+| `docs/IFC_VIEWER_SDK.md` · `docs/EMBED_URL_PARAMS.md` | Embed + JS SDK reference |
+| `docs/INVITE_SYSTEM.md` | Personalized invite + cookieless attribution system |
 
 ---
 
@@ -106,7 +122,7 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 4. **All IFC validation runs in `src/workers/validator.worker.ts`.** Main thread only receives results via the Zustand store.
 5. **TypeScript strict mode.** No `any` escapes. `tsconfig.json` has `strict: true`.
 6. **Do not modify** `tailwind.config.js`, `postcss.config.js`, or Radix UI component internals unless the task explicitly targets them.
-7. **COOP/COEP headers are required.** Set in `vite.config.ts` (dev) and via `coi-serviceworker.js` (production/GitHub Pages).
+7. **COOP/COEP headers are required.** Set in `vite.config.ts` (dev) and via `coi-serviceworker.js` (production on Vercel — `vercel.json` does not set these headers, so the service worker is what enables cross-origin isolation).
 8. **`loadIfc()` on ViewerAPI is a legacy entry point.** New code must call `loadFragments()` after producing a binary via the worker or cache.
 9. **Edits are keyed by GlobalId, not Express ID.** Express IDs are reassigned on every IFC re-export; GlobalId is the stable identifier.
 10. **Worker bundles must not externalize bare module specifiers** (`three`, etc.). Externalizing causes unresolvable imports in browser worker context (production-only crash). See `DECISIONS.md` D-11.
@@ -120,4 +136,4 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 
 ---
 
-*Last updated: 2026-05-29 · Sprints 1–9 complete · Forward plan: ROADMAP.md Roadmap v2 (distribution-led, not sprint-numbered)*
+*Last updated: 2026-06-21 (doc-sync against code) · Sprints 1–9 complete + IDS 1.0 / 3D Map (GIS) / BCF panel / embed+SDK / mobile UI shipped · 44 validation rules · 11 Zustand stores · 7 workers · Deploy: Vercel · Forward plan: ROADMAP.md Roadmap v2 + Solibri-parity backlog*

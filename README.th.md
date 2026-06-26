@@ -54,7 +54,7 @@
 - [เทคโนโลยีที่ใช้](#เทคโนโลยีที่ใช้)
 - [เริ่มต้นใช้งาน](#เริ่มต้นใช้งาน)
 - [โครงสร้างโปรเจกต์](#โครงสร้างโปรเจกต์)
-- [กฎการตรวจสอบ 38 ข้อ](#กฎการตรวจสอบ-38-ข้อ)
+- [กฎการตรวจสอบ 44 ข้อ](#กฎการตรวจสอบ-44-ข้อ)
 - [การร่วมพัฒนา](#การร่วมพัฒนา)
 - [โรดแมป](#โรดแมป)
 - [สัญญาอนุญาต — open core](#สัญญาอนุญาต--open-core)
@@ -82,7 +82,9 @@
 
 | ความสามารถ | สิ่งที่คุณได้รับ |
 |---|---|
-| **IFC Health Check** | กฎการตรวจสอบ 38 ข้อ สตรีมแบบเรียลไทม์จาก Web Worker สรุปเป็น **Health Score (0–100)** ค่าเดียว |
+| **IFC Health Check** | กฎการตรวจสอบ 44 ข้อ สตรีมแบบเรียลไทม์จาก Web Worker สรุปเป็น **Health Score (0–100)** ค่าเดียว |
+| **buildingSMART IDS** | โหลดไฟล์ `.ids` แล้วตรวจสอบโมเดลกับ Information Delivery Specification — ครอบคลุมทุก facet ของ IDS 1.0 และผ่านการตรวจกับชุดทดสอบทางการของ buildingSMART ระบุผ่าน/ไม่ผ่านรายข้อกำหนด ส่งออกเป็น JSON/CSV/HTML/BCF ได้ |
+| **โหมดแผนที่ 3D (GIS)** | วางโมเดลที่อ้างอิงพิกัดภูมิศาสตร์บนแผนที่ฐานจริง (OpenStreetMap / ภูมิประเทศ / ดาวเทียม) และภูมิประเทศ 3D (ตัวเลือก) ภายในฉาก 3D เดียวกัน ข้อมูลพิกัดถูกดึงจากไฟล์ IFC อัตโนมัติ และโมเดลไม่เคยออกจากเบราว์เซอร์ เปิด/ปิดด้วย build flag (`VITE_FEATURE_GIS`) |
 | **ตัวดู 3 มิติ** | เรนเดอร์ WebGL ผ่าน Three.js + `@thatopen/components` รองรับหลายโมเดลพร้อมการแปลงแยกอิสระ, SSAO, การเรนเดอร์ขอบ, bloom, แปลนพื้น 2 มิติ และการตัดหน้าตัดแบบเรียลไทม์ |
 | **ตัวแก้ไขแบบไม่ทำลายข้อมูล** | แก้ค่าพร็อพเพอร์ตี ซ่อม GUID เปลี่ยนชื่อองค์ประกอบ ทุกการเปลี่ยนแปลงเป็น diff พร้อม undo/redo เต็มรูปแบบ ส่งออกไฟล์ IFC ที่แก้แล้ว — diff ถูกใช้ใน worker ไม่ต้องมีเซิร์ฟเวอร์ |
 | **นำเข้า/ส่งออก BCF 2.1** | ไปยัง viewpoint ของ BCF ที่นำเข้ามา ส่งออกปัญหาการตรวจสอบเป็นไฟล์ zip BCF 2.1 สำหรับ Navisworks, BIMcollab และ CDE ใดก็ตามที่รองรับ BCF |
@@ -124,7 +126,7 @@
 
 ```mermaid
 flowchart LR
-    A[ไฟล์ IFC] --> B[รันกฎ 38 ข้อ<br/>ใน Web Worker]
+    A[ไฟล์ IFC] --> B[รันกฎ 44 ข้อ<br/>ใน Web Worker]
     B --> C{พบปัญหา}
     C -->|ถ่วงน้ำหนักตามความรุนแรง| D[Health Score<br/>0 – 100]
     D --> E[ลิงก์แชร์<br/>ไม่ต้องอัปโหลด]
@@ -153,8 +155,11 @@ flowchart TD
 
         subgraph WORKERS["Web Workers (WebAssembly)"]
             PARSE["ifc-parser.worker<br/>IFC → fragments"]
-            VALID["validator.worker<br/>38 กฎ + ต้นไม้เชิงพื้นที่"]
+            VALID["validator.worker<br/>44 กฎ + ต้นไม้เชิงพื้นที่"]
             EXPORT["export.worker<br/>ใช้ diff → IFC"]
+            IDS["ids.worker<br/>ตรวจ IDS 1.0"]
+            BCF["bcf-parser.worker<br/>นำเข้า BCF"]
+            GEO["geo-extract / geo-terrain<br/>จีโอเรฟ + ภูมิประเทศ (โหมดแผนที่)"]
         end
     end
 
@@ -169,7 +174,7 @@ flowchart TD
     EXPORT -->|.ifc ที่แก้แล้ว| DL["ดาวน์โหลด"]
 ```
 
-worker อิสระสามตัวช่วยให้ UI ตอบสนองลื่นไหล: การแยกวิเคราะห์ การตรวจสอบ และการส่งออก ล้วนทำงานนอก main thread สถานะถูกเก็บใน [Zustand](https://github.com/pmndrs/zustand) store ขนาดเล็กเจ็ดตัว เรขาคณิตไม่เคยเข้าไปใน store (เก็บเฉพาะ ID ที่เสถียร) ดูไดอะแกรมการไหลของข้อมูลฉบับเต็มได้ที่ [`ARCHITECTURE.md`](ARCHITECTURE.md)
+worker อิสระหลายตัวช่วยให้ UI ตอบสนองลื่นไหล: การแยกวิเคราะห์ การตรวจสอบ และการส่งออก ล้วนทำงานนอก main thread สถานะถูกเก็บใน [Zustand](https://github.com/pmndrs/zustand) store ขนาดเล็กสิบเอ็ดตัว เรขาคณิตไม่เคยเข้าไปใน store (เก็บเฉพาะ ID ที่เสถียร) ดูไดอะแกรมการไหลของข้อมูลฉบับเต็มได้ที่ [`ARCHITECTURE.md`](ARCHITECTURE.md)
 
 ---
 
@@ -218,15 +223,17 @@ worker อิสระสามตัวช่วยให้ UI ตอบสน
 | การเรนเดอร์ 3 มิติ | [Three.js](https://threejs.org/) + [@thatopen/components](https://github.com/ThatOpenCompany/engine_components) |
 | UI | React 18 + Tailwind CSS + Radix UI |
 | แอนิเมชัน | Framer Motion + GSAP |
-| สถานะ | Zustand 5 (7 store: model, scene, validation, editor, ui, takeoff, toast) |
-| การตรวจสอบ | Web Worker — 38 กฎ สตรีมผ่าน `postMessage` |
+| สถานะ | Zustand 5 (11 store: model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver) |
+| IDS | เอนจิน IDS 1.0 แบบ TS ล้วน + worker web-ifc เฉพาะ (`src/lib/ids/`, `ids.worker.ts`) |
+| GIS / แผนที่ฐาน | [3d-tiles-renderer](https://github.com/NASA-AMMOS/3DTilesRendererJS) (ไทล์ภายในฉาก three.js) — เฉพาะโหมดแผนที่ |
+| การตรวจสอบ | Web Worker — 44 กฎ สตรีมผ่าน `postMessage` |
 | ความปลอดภัยขณะรัน | สคีมา Zod ที่ทุกขอบเขตของ worker |
 | ลิสต์แบบ virtualized | @tanstack/react-virtual |
 | i18n | i18next (10 ภาษา) |
 | Analytics | PostHog (ฝั่งไคลเอนต์ ไม่มี PII) |
 | Build | Vite 6 + TypeScript (strict) |
 | เทสต์ | Vitest (jsdom) |
-| Deploy | GitHub Pages (สแตติก ไม่มี backend) |
+| Deploy | Vercel (สแตติก ไม่มี backend) |
 
 ---
 
@@ -263,7 +270,7 @@ npm test        # vitest (jsdom)
 src/
   components/      # Landing, Viewer, ValidationPanel, Sidebar, ModelTree, ScenePanel, …
   workers/         # ifc-parser.worker.ts · validator.worker.ts · export.worker.ts
-  stores/          # 7 Zustand store (model, scene, validation, editor, ui, takeoff, toast)
+  stores/          # 11 Zustand store (model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver)
   hooks/           # useModelSession, useValidationRunner, useElementFocus, …
   lib/             # viewer.ts · loader.ts · validator.ts · diffStore.ts · worker-schemas.ts
   locales/         # i18n — en/ es/ fr/ de/ pt/ ja/ ca/ zh/ it/ th/
@@ -281,7 +288,7 @@ cf-worker/         # Cloudflare Worker — พร็อกซีเก็บอ�
 
 ---
 
-## กฎการตรวจสอบ 38 ข้อ
+## กฎการตรวจสอบ 44 ข้อ
 
 กฎทำงานใน `src/workers/validator.worker.ts` ควบคุมโดย `RulesConfig` จัดกลุ่มตามรุ่น:
 
@@ -306,6 +313,13 @@ cf-worker/         # Cloudflare Worker — พร็อกซีเก็บอ�
 
 </details>
 
+<details>
+<summary><b>เรขาคณิตและความถูกต้องของชั้น — 6 กฎ</b></summary>
+
+`RULE_OPENING_WITHOUT_HOST` · `RULE_STOREY_ELEVATION_DUPLICATE` · `RULE_STOREY_ELEVATION_ORDER` · `RULE_UNIT_CONSISTENCY` · `RULE_SPACE_AREA_MISSING` · `RULE_CONNECTED_MEP`
+
+</details>
+
 ---
 
 ## การร่วมพัฒนา
@@ -319,7 +333,7 @@ cf-worker/         # Cloudflare Worker — พร็อกซีเก็บอ�
 3. เชื่อมต่อเข้ากับบล็อก dispatch `runAllRules`
 4. เพิ่มสตริง i18n ไปยัง `RULE_TRANSLATIONS` ใน `src/types/index.ts`
 5. ตั้งค่า `DEFAULT_RULES[RULE_ID] = true` (หรือ `false` หากเป็นแบบ opt-in)
-6. อัปเดตจำนวนกฎในข้อความที่กล่าวถึง "38 กฎ" (`index.html`, `README*.md`, `src/seo/config.ts`, หน้า landing ใน `public/*`)
+6. อัปเดตจำนวนกฎในข้อความที่กล่าวถึง "44 กฎ" (`index.html`, `README*.md`, `src/seo/config.ts`, หน้า landing ใน `public/*`)
 
 **การเพิ่มการแปล:** คัดลอก `src/locales/en/` ไปยังโฟลเดอร์ภาษาใหม่ แปลค่าใน JSON แล้วลงทะเบียนภาษาใน `src/i18n/config.ts` การแปล README นี้ก็ยินดีรับเช่นกัน — ใช้รูปแบบชื่อไฟล์ (`README.<lang>.md`) และเพิ่มลิงก์ในแถวภาษาด้านบน
 
@@ -329,12 +343,14 @@ cf-worker/         # Cloudflare Worker — พร็อกซีเก็บอ�
 
 ## โรดแมป
 
-ผลิตภัณฑ์นี้สมบูรณ์ในเชิงเทคนิคแล้ว (ตัวดูหลายโมเดล, ตัวตรวจสอบ 38 กฎ, ตัวแก้ไขแบบไม่ทำลายข้อมูล, BCF, 10 ภาษา) แผนต่อไป **ขับเคลื่อนด้วยการกระจาย (distribution-led)** ไม่ใช่ด้วยฟีเจอร์:
+ผลิตภัณฑ์นี้สมบูรณ์ในเชิงเทคนิคแล้ว (ตัวดูหลายโมเดล, ตัวตรวจสอบ 44 กฎ, ตัวแก้ไขแบบไม่ทำลายข้อมูล, BCF, 10 ภาษา) แผนต่อไป **ขับเคลื่อนด้วยการกระจาย (distribution-led)** ไม่ใช่ด้วยฟีเจอร์:
 
 - **ตารางวิธีแก้ไข** — เนื้อหาแบบกำหนดแน่นอน "แก้สิ่งนี้ใน Revit / ArchiCAD / Tekla อย่างไร" ต่อกฎ เขียนใน i18n (ไม่มี AI ไม่มีเซิร์ฟเวอร์)
 - **รายงานที่ crawl ได้** — ย้ายลิงก์แชร์จาก URL hash ไปเป็น edge route แบบ stateless เพื่อให้รายงานแสดงตัวอย่างได้บนโซเชียล/เสิร์ช (โมเดลยังคงไม่ออกจากเบราว์เซอร์)
 - **diff การแก้ไข (revision)** — เปรียบเทียบสองเวอร์ชันของโมเดลด้วย GlobalId
-- **IDS-lite** — เช็กลิสต์โปรเจกต์ด้วยภาษาที่เข้าใจง่าย
+- **buildingSMART IDS** — รองรับ IDS 1.0 ครบถ้วน ผ่านการตรวจกับชุดทดสอบทางการของ bSI โหลด `.ids` ใดก็ได้ รับผลผ่าน/ไม่ผ่านรายข้อกำหนด ส่งออกเป็น JSON/CSV/HTML/BCF
+- **โหมดแผนที่ 3D / GIS** — โมเดลอ้างอิงพิกัดบนแผนที่ฐานจริง + ภูมิประเทศ 3D ภายในฉากเดิม (เปิด/ปิดด้วย flag)
+- **แบ็กล็อกความเทียบเท่า Solibri** — เทมเพลตกฎ, information takeoff, การจัดกลุ่ม clash/พรีเซนเทชัน ดู [`ROADMAP.md`](ROADMAP.md)
 
 ดูแผนฉบับเต็มและรายการที่เลื่อนออกไปอย่างชัดเจนได้ที่ [`ROADMAP.md`](ROADMAP.md)
 
@@ -345,7 +361,9 @@ cf-worker/         # Cloudflare Worker — พร็อกซีเก็บอ�
 | ส่วนประกอบ | สัญญาอนุญาต |
 |---|---|
 | ตัวดู IFC (การเรนเดอร์ Three.js, การผสาน WASM) | **MIT** |
-| ตัวตรวจสอบ (38 กฎ, Web Worker) | **MIT** |
+| ตัวตรวจสอบ (44 กฎ, Web Worker) | **MIT** |
+| เอนจิน IDS 1.0 + worker | **MIT** |
+| GIS / โหมดแผนที่ 3D | **MIT** |
 | ตัวแก้ไขแบบไม่ทำลายข้อมูล (diff, undo/redo, ส่งออก IFC) | **MIT** |
 | store, hook, utility, i18n | **MIT** |
 | Cloudflare Worker (backend เก็บอีเมล) | กรรมสิทธิ์ |

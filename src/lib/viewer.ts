@@ -3,6 +3,7 @@ import * as OBC from '@thatopen/components'
 import * as OBCF from '@thatopen/components-front'
 import * as FRAGS from '@thatopen/fragments'
 import { safeVoid } from './errors'
+import { planValidationOverlay, planIdsOverlay, planOverlayGhost } from './overlay-plan'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform } from '../types'
 
 // ─── Palette & label tables ──────────────────────────────────────────────────
@@ -386,7 +387,7 @@ const SELECT_MAT: FRAGS.MaterialDefinition = {
 const VALIDATION_ERROR_MAT: FRAGS.MaterialDefinition = {
   color: new THREE.Color(0xE5484D),
   renderedFaces: FRAGS.RenderedFaces.TWO,
-  opacity: 0.65,
+  opacity: 0.85,
   transparent: true,
   preserveOriginalMaterial: true,
 }
@@ -394,7 +395,7 @@ const VALIDATION_ERROR_MAT: FRAGS.MaterialDefinition = {
 const VALIDATION_WARN_MAT: FRAGS.MaterialDefinition = {
   color: new THREE.Color(0xF5A623),
   renderedFaces: FRAGS.RenderedFaces.TWO,
-  opacity: 0.65,
+  opacity: 0.85,
   transparent: true,
   preserveOriginalMaterial: true,
 }
@@ -402,7 +403,7 @@ const VALIDATION_WARN_MAT: FRAGS.MaterialDefinition = {
 const VALIDATION_INFO_MAT: FRAGS.MaterialDefinition = {
   color: new THREE.Color(0x5E9ED6),
   renderedFaces: FRAGS.RenderedFaces.TWO,
-  opacity: 0.5,
+  opacity: 0.7,
   transparent: true,
   preserveOriginalMaterial: true,
 }
@@ -413,9 +414,22 @@ const VALIDATION_INFO_MAT: FRAGS.MaterialDefinition = {
 const IDS_FAIL_MAT: FRAGS.MaterialDefinition = {
   color: new THREE.Color(0xE5484D),
   renderedFaces: FRAGS.RenderedFaces.TWO,
-  opacity: 0.85,
+  opacity: 0.9,
   transparent: true,
   preserveOriginalMaterial: true,
+}
+
+// Isolate-issues mode: while an overlay is on, every element that ISN'T flagged is
+// repainted with this faint neutral so the coloured problems read clearly in
+// context (and stay visible through ghosted geometry, since it's transparent and
+// writes no depth). Flat (preserveOriginalMaterial:false) so the model reads as a
+// uniform ghost; resetHighlight() reverts cleanly to the per-category palette.
+const OVERLAY_GHOST_MAT: FRAGS.MaterialDefinition = {
+  color: new THREE.Color(0x9AA0AE),
+  renderedFaces: FRAGS.RenderedFaces.TWO,
+  opacity: 0.1,
+  transparent: true,
+  preserveOriginalMaterial: false,
 }
 
 // ─── Helper: extract string value from IFC attribute ─────────────────────────
@@ -809,9 +823,18 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // the overlay after a hover/selection reset clears it.
   const validationHighlightedByModel = new Map<string, Map<number, FRAGS.MaterialDefinition>>()
 
-  /** The validation material applied to an element, or null if none. */
+  // Models currently in isolate-issues mode: every non-flagged element of these is
+  // painted with OVERLAY_GHOST_MAT. Tracked as a flag (not per-id) so a 10k-element
+  // ghost costs one Set entry instead of 10k map entries — validationMatFor still
+  // resolves the right restore material for any element.
+  const ghostedModels = new Set<string>()
+
+  /** The overlay material applied to an element (issue colour, or ghost), or null. */
   function validationMatFor(modelId: string, localId: number): FRAGS.MaterialDefinition | null {
-    return validationHighlightedByModel.get(modelId)?.get(localId) ?? null
+    const issueMat = validationHighlightedByModel.get(modelId)?.get(localId)
+    if (issueMat) return issueMat
+    if (ghostedModels.has(modelId)) return OVERLAY_GHOST_MAT
+    return null
   }
 
   /** Reset an element's highlight, then restore its validation overlay if it had one. */
@@ -825,6 +848,29 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         console.debug('[Viewer] restore validation highlight failed:', e instanceof Error ? e.message : e)
       }
     }
+  }
+
+  /** Re-apply the selection highlight that an overlay reset may have cleared. */
+  function reassertSelection(): void {
+    if (selectedLocalId === null || selectedModelId === null) return
+    const selModel = modelObjects.get(selectedModelId)
+    if (selModel) void selModel.highlight([selectedLocalId], SELECT_MAT)
+  }
+
+  /** Clear the shared overlay channel (validation OR IDS) across every model, then
+   *  restore the active selection highlight the reset may have removed. */
+  function clearOverlayChannel(): void {
+    for (const [mid, ids] of validationHighlightedByModel) {
+      const model = modelObjects.get(mid)
+      if (!model) continue
+      // A ghosted model recoloured ~every element, so reset all of its highlights;
+      // otherwise reset just the tracked issue ids (don't disturb other models).
+      if (ghostedModels.has(mid)) void model.resetHighlight()
+      else if (ids.size > 0)      void model.resetHighlight([...ids.keys()])
+    }
+    validationHighlightedByModel.clear()
+    ghostedModels.clear()
+    reassertSelection()
   }
 
   let selectionBox: THREE.Box3Helper | null = null
@@ -1192,6 +1238,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   async function teardownCurrentModel(): Promise<void> {
     if (modelObjects.size === 0 && !currentModel) return
     validationHighlightedByModel.clear()
+    ghostedModels.clear()
     removeSelectionBox()
 
     // Remove all per-model pivot groups from scene
@@ -1453,105 +1500,65 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     setValidationHighlights(issues, enabled) {
       if (modelObjects.size === 0) return
 
-      // Clear per-model tracked highlights precisely (no over-resetting other models)
-      for (const [mid, ids] of validationHighlightedByModel) {
-        const model = modelObjects.get(mid)
-        if (model && ids.size > 0) void model.resetHighlight([...ids.keys()])
-      }
-      validationHighlightedByModel.clear()
-
+      clearOverlayChannel()
       if (!enabled) return
 
-      // Collapse each element to its highest severity (error > warning > info) so
-      // an element with mixed issues gets a single, deterministic overlay colour.
-      const rank: Record<string, number> = { error: 3, warning: 2, info: 1 }
-      const sevByModel = new Map<string, Map<number, 'error' | 'warning' | 'info'>>()
+      // Which element of which model gets which severity colour (pure + tested in
+      // overlay-plan.test.ts). Highest severity wins per element; unknown / file-
+      // level ids are dropped so we only ever recolour real geometry.
+      const plan = planValidationOverlay(issues, typeMapByModel, currentModelId)
 
-      for (const issue of issues) {
-        const mid = issue.modelId ?? currentModelId ?? ''
-        if (!mid || !modelObjects.has(mid)) continue
-        const typeMap = typeMapByModel.get(mid) ?? expressIDToType
-        if (!typeMap.has(issue.expressId)) continue
-
-        const sev: 'error' | 'warning' | 'info' =
-          issue.severity === 'error' ? 'error' : issue.severity === 'warning' ? 'warning' : 'info'
-
-        if (!sevByModel.has(mid)) sevByModel.set(mid, new Map())
-        const m = sevByModel.get(mid)!
-        const prev = m.get(issue.expressId)
-        if (!prev || rank[sev] > rank[prev]) m.set(issue.expressId, sev)
-      }
-
-      const matFor = (sev: 'error' | 'warning' | 'info'): FRAGS.MaterialDefinition =>
-        sev === 'error' ? VALIDATION_ERROR_MAT : sev === 'warning' ? VALIDATION_WARN_MAT : VALIDATION_INFO_MAT
-
-      for (const [mid, sevMap] of sevByModel) {
+      for (const [mid, buckets] of plan) {
         const model = modelObjects.get(mid)
         if (!model) continue
 
-        const errIds: number[] = [], warnIds: number[] = [], infoIds: number[] = []
         const tracked = new Map<number, FRAGS.MaterialDefinition>()
-        for (const [eid, sev] of sevMap) {
-          tracked.set(eid, matFor(sev))
-          if (sev === 'error')        errIds.push(eid)
-          else if (sev === 'warning') warnIds.push(eid)
-          else                        infoIds.push(eid)
-        }
+        const flagged = new Set<number>()
+        for (const eid of buckets.error)   { tracked.set(eid, VALIDATION_ERROR_MAT); flagged.add(eid) }
+        for (const eid of buckets.warning) { tracked.set(eid, VALIDATION_WARN_MAT);  flagged.add(eid) }
+        for (const eid of buckets.info)    { tracked.set(eid, VALIDATION_INFO_MAT);  flagged.add(eid) }
         validationHighlightedByModel.set(mid, tracked)
 
-        if (errIds.length)  void model.highlight(errIds,  VALIDATION_ERROR_MAT)
-        if (warnIds.length) void model.highlight(warnIds, VALIDATION_WARN_MAT)
-        if (infoIds.length) void model.highlight(infoIds, VALIDATION_INFO_MAT)
+        // Isolate-issues: ghost every other element of this model so the flagged
+        // ones stand out in context (this model has ≥1 issue, so it won't blank out).
+        const typeMap = typeMapByModel.get(mid)
+        const ghostIds = typeMap ? planOverlayGhost(typeMap, flagged) : []
+        if (ghostIds.length) { ghostedModels.add(mid); void model.highlight(ghostIds, OVERLAY_GHOST_MAT) }
+
+        if (buckets.error.length)   void model.highlight(buckets.error,   VALIDATION_ERROR_MAT)
+        if (buckets.warning.length) void model.highlight(buckets.warning, VALIDATION_WARN_MAT)
+        if (buckets.info.length)    void model.highlight(buckets.info,    VALIDATION_INFO_MAT)
       }
 
-      // Keep the currently selected element's selection overlay on top.
-      if (selectedLocalId !== null && selectedModelId !== null) {
-        const selModel = modelObjects.get(selectedModelId)
-        if (selModel && validationMatFor(selectedModelId, selectedLocalId)) {
-          void selModel.highlight([selectedLocalId], SELECT_MAT)
-        }
-      }
+      reassertSelection()
     },
 
     setIdsHighlights(failures, enabled) {
       if (modelObjects.size === 0) return
 
-      // Clear whatever overlay channel is active (validation or IDS — exclusive).
-      for (const [mid, ids] of validationHighlightedByModel) {
-        const model = modelObjects.get(mid)
-        if (model && ids.size > 0) void model.resetHighlight([...ids.keys()])
-      }
-      validationHighlightedByModel.clear()
-
+      clearOverlayChannel()  // validation/IDS share the channel — exclusive
       if (!enabled) return
 
-      const byModel = new Map<string, Set<number>>()
-      for (const f of failures) {
-        if (f.expressId < 0) continue // synthetic spec-level rows (expressId -1)
-        const mid = f.modelId ?? currentModelId ?? ''
-        if (!mid || !modelObjects.has(mid)) continue
-        const typeMap = typeMapByModel.get(mid) ?? expressIDToType
-        if (!typeMap.has(f.expressId)) continue
-        if (!byModel.has(mid)) byModel.set(mid, new Set())
-        byModel.get(mid)!.add(f.expressId)
-      }
+      // Per-model failing element ids (pure + tested in overlay-plan.test.ts):
+      // synthetic spec-level rows and unknown ids are dropped, duplicates collapsed.
+      const plan = planIdsOverlay(failures, typeMapByModel, currentModelId)
 
-      for (const [mid, ids] of byModel) {
+      for (const [mid, ids] of plan) {
         const model = modelObjects.get(mid)
-        if (!model || ids.size === 0) continue
+        if (!model || ids.length === 0) continue
         const tracked = new Map<number, FRAGS.MaterialDefinition>()
         for (const eid of ids) tracked.set(eid, IDS_FAIL_MAT)
         validationHighlightedByModel.set(mid, tracked)
-        void model.highlight([...ids], IDS_FAIL_MAT)
+
+        // Isolate-failures: ghost everything that passed so the failures stand out.
+        const typeMap = typeMapByModel.get(mid)
+        const ghostIds = typeMap ? planOverlayGhost(typeMap, ids) : []
+        if (ghostIds.length) { ghostedModels.add(mid); void model.highlight(ghostIds, OVERLAY_GHOST_MAT) }
+
+        void model.highlight(ids, IDS_FAIL_MAT)
       }
 
-      // Keep the currently selected element's selection overlay on top.
-      if (selectedLocalId !== null && selectedModelId !== null) {
-        const selModel = modelObjects.get(selectedModelId)
-        if (selModel && validationMatFor(selectedModelId, selectedLocalId)) {
-          void selModel.highlight([selectedLocalId], SELECT_MAT)
-        }
-      }
+      reassertSelection()
     },
 
     isolateElements(targets, enabled) {
@@ -1917,6 +1924,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
 
       validationHighlightedByModel.delete(modelId)
+      ghostedModels.delete(modelId)
       void fragmentsManager.core.update()
     },
 

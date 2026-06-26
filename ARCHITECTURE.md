@@ -16,9 +16,21 @@ ifc/
 │   │   ├── Sidebar.tsx               # Right panel: Properties, Categories, Quantities tabs; takeoff panel
 │   │   ├── ModelTree.tsx             # Spatial hierarchy tree (virtualised); full modelId threading
 │   │   ├── ValidationPanel.tsx       # Validation report: severity/rule filters + model filter chips
-│   │   ├── ScenePanel.tsx            # Multi-model manager: visibility, isolate, frame, delete, transforms
+│   │   ├── ValidationExportModal.tsx # Configurable JSON/CSV/Certificate/BCF export with scope + severity
+│   │   ├── IdsPanel.tsx              # buildingSMART IDS results (docked sibling of ValidationPanel)
+│   │   ├── IdsModal.tsx             # .ids loader + built-in samples; ids/ subfolder = FacetChip, IdsExportMenu, score
+│   │   ├── BcfPanel.tsx             # BCF topic CRUD, comments, viewpoint capture, filters
+│   │   ├── GeoPanel.tsx             # GIS / Map mode: consent, layers, georef ladder, placement editor
+│   │   ├── MeasurementPanel.tsx     # Length/area/edge/volume measurements list
+│   │   ├── FloorPlanPanel.tsx       # 2D floor plan views per IfcBuildingStorey
+│   │   ├── SectionPanel.tsx         # Clipping planes / section cuts
+│   │   ├── EmbedModal.tsx           # Embed snippet generator (iframe + SDK)
+│   │   ├── DemoGallery.tsx          # Curated public demo-model picker
+│   │   ├── ScenePanel.tsx           # Multi-model manager: visibility, isolate, frame, delete, transforms
 │   │   ├── CameraControls.tsx        # Floating camera preset panel (ISO/Top/Front/Right + numpad)
 │   │   ├── ModelInfoPanel.tsx        # Floating pill: active model file size, element count, health badges
+│   │   ├── mobile/                  # MobileBottomNav + bottom-sheet IDS/Validation panels (useIsMobile)
+│   │   ├── InviteRibbon/View/...    # Personalized invite + attribution UI
 │   │   ├── ErrorBoundary.tsx         # React error boundary; DefaultFallback; withErrorBoundary HOC
 │   │   ├── UploadOverlay.tsx         # Modal: drag-and-drop zone + progress bar
 │   │   ├── ToastContainer.tsx        # Non-blocking toast notification renderer
@@ -66,9 +78,21 @@ ifc/
 │   │   ├── brand.ts                  # Brand<T,B> nominal types: ExpressId, GlobalId, CacheKey, IfcModelId
 │   │   ├── type-guards.ts            # Runtime type guards for worker messages and stored data
 │   │   ├── takeoff.ts                # computeTakeoff(modelId) — reads IfcElementQuantity via worker
+│   │   ├── ids/                      # buildingSMART IDS 1.0 engine — parser, facet evaluators,
+│   │   │                             #   runner, value/hierarchy helpers, report (JSON/CSV/HTML/BCF),
+│   │   │                             #   run-diff, embedded examples, golden bSI testcase fixtures
+│   │   ├── geo/                      # GIS / Map mode — basemap-engine, CRS/proj4, georef ladder,
+│   │   │                             #   terrain sampling, tile providers, gis-flag (VITE_FEATURE_GIS)
+│   │   ├── validation-diff.ts        # Diff two validation runs (powers RunDiffBar)
+│   │   ├── validation-coverage.ts    # Honest per-rule coverage / status (no silent score inflation)
+│   │   ├── share-report.ts           # buildShareUrl() — crawlable /r?d= worker URL or legacy hash
+│   │   ├── benchmark.ts              # Anonymous Health Score percentile benchmark
+│   │   ├── analytics.ts             # PostHog wrapper (no PII); attribution.ts = ?ref / /i/:code
 │   │   ├── utils.ts                  # clamp, lerp, formatBytes, formatDuration, debounce, throttle, …
 │   │   └── loader.test.ts            # Vitest unit tests: cache key, OPFS hit/miss, progress events
 │   │
+│   ├── sdk/                          # IfcViewer embeddable JS SDK (iframe + postMessage bridge)
+│   │                                 #   built to public/sdk/ via `npm run build:sdk`
 │   ├── stores/
 │   │   ├── modelStore.ts             # Legacy single-model: ModelInfo, IFC buffer, OPFS key, model object
 │   │   │                             #   Deprecated for multi-model: use modelRegistry for buffers
@@ -82,21 +106,31 @@ ifc/
 │   │   ├── sceneStore.ts             # Multi-model scene: SceneModel[], activeModelId
 │   │   │                             #   addModel, removeModel (promotes next on delete), setActiveModel
 │   │   ├── takeoffStore.ts           # Quantity takeoff: byModel record, setModelResult, clearModelResult
+│   │   ├── bcfStore.ts               # BCF topics CRUD + comments + viewpoints (persisted)
+│   │   ├── idsStore.ts               # IDS results per model (resultsByModel, multiRun, run-diff, highlight)
+│   │   ├── geoStore.ts               # GIS / Map mode state (epoch pattern, consent, layers, placement)
+│   │   ├── waiverStore.ts            # Muted/waived validation issues (Pro control)
 │   │   └── toastStore.ts             # Toast queue + toast() / toastFromError() imperative helpers
-│   │                                 # All stores use Zustand 5 devtools middleware + named actions
+│   │                                 # All 11 stores use Zustand 5 devtools middleware + named actions
 │   │
 │   ├── workers/
 │   │   ├── ifc-parser.worker.ts      # IFC bytes → fragments binary (IfcImporter, WASM, no DOM)
 │   │   ├── validator.worker.ts       # IFC bytes → SpatialTree + ValidationResult (IfcAPI, WASM)
 │   │   │                             #   Handles: 'validate' + 'build-tree' message types
-│   │   └── export.worker.ts          # Apply diffs → corrected IFC binary (IfcAPI, WASM)
-│   │                                 #   Returns skippedDiffs count for partial-failure toasts
+│   │   ├── export.worker.ts          # Apply diffs → corrected IFC binary (IfcAPI, WASM)
+│   │   │                             #   Returns skippedDiffs count for partial-failure toasts
+│   │   ├── ids.worker.ts             # Run an IDS spec against the model (web-ifc, progress + cancel)
+│   │   ├── bcf-parser.worker.ts      # Parse .bcfzip (BCF 2.1 / 3.0) off the main thread
+│   │   ├── geo-extract.worker.ts     # Extract georeferencing from IFC (Map mode)
+│   │   └── geo-terrain.worker.ts     # Build 3D terrain mesh from elevation tiles (Map mode)
 │   │
 │   └── types/
 │       └── index.ts                  # All shared TypeScript interfaces and type aliases
 │
-├── docs/
-│   └── DEPLOYMENT.md                 # GitHub Pages deployment guide + production bug history
+├── docs/                             # DEPLOYMENT (Vercel), IDS_IMPLEMENTATION_PLAN, GIS_MAP_MODE,
+│   │                                 #   GIS_MAP_INTEGRATION_PLAN, IFC_VIEWER_SDK, EMBED_URL_PARAMS,
+│   │                                 #   INVITE_SYSTEM, SEO_PRERENDER_PLAN, TERRAIN_3D_IMPROVEMENT_PLAN, …
+├── cf-worker/                        # Stateless edge worker: email proxy + crawlable /r?d= report route
 ├── CONTEXT.md                        # ← Read first in every Claude session
 ├── ARCHITECTURE.md                   # This file
 ├── IFC_DOMAIN.md                     # IFC domain knowledge reference
@@ -158,7 +192,7 @@ flowchart TD
     E -- yes --> F[validationStore.setResult\ninstant replay]
     E -- no --> G[modelRegistry.getBuffer modelId .slice\npostMessage validate]
 
-    G --> H[validator.worker\nIfcAPI WASM\nbuild SpatialTree\nrun 38 rules]
+    G --> H[validator.worker\nIfcAPI WASM\nbuild SpatialTree\nrun 44 rules]
     H -- tree --> I
     H -- partial issues --> J[validationStore.addPartialIssues]
     H -- done → result --> K[validationStore.setResult modelId\ncacheResult\nappBus validation:complete]
@@ -201,6 +235,10 @@ All stores use **Zustand 5 + devtools middleware** with named actions and typed 
 | `useEditorStore` | `diffs` (EditDiff[]), `history` (EditorCommand[] — each carries `modelId`), `historyIndex`, `selection`, `canUndo`, `canRedo` — all mutations emit `appBus` events |
 | `uiStore` | Global UI flags: open panels, active tabs, sidebar width, mobileSidebarOpen, `cameraControlsVisible`, `scenePanelOpen`, `transformMode` |
 | `useTakeoffStore` | `byModel: Record<string, { status, result, error }>` — per-model quantity takeoff results |
+| `useBcfStore` | BCF topics (CRUD), comments, captured viewpoints; persisted across reloads |
+| `useIdsStore` | IDS results per model (`resultsByModel`, `previousResultByModel`, `runMetaByModel`, `multiRun`, `highlightMode`); `clearForModel` |
+| `useGeoStore` | GIS / Map mode state — consent, active layers, georef result, manual placement; epoch pattern guards stale async |
+| `useWaiverStore` | Muted / waived validation issues (Pro control) — keyed by rule + element |
 | `toastStore` | Toast queue; exposes `toast(message, level)` and `toastFromError(err, level, prefix?)` as imperative singletons |
 
 **Cross-store facade:** `useModelSession()` hook combines stores into one stable surface for components that need cross-store derived state.
@@ -283,13 +321,16 @@ Runs in a second dedicated ES module worker. Protocol:
 - **IN (tree-only):** `{ type: 'build-tree', id, buffer: ArrayBuffer (transferred copy) }`
 - **OUT:** `{ type: 'tree', id, tree: SpatialNode[] }` → `{ type: 'tree-done', id }` (tree-only path) OR `{ type: 'partial', id, issues, progress }` → `{ type: 'done', id, result: ValidationResult }` (full validation) OR `{ type: 'error', id, message }`
 
-**38 validation rules** (dispatched in `validator.worker.ts`; each gated by `RulesConfig`). Grouped by generation:
+**44 validation rules** (dispatched in `validator.worker.ts`; each gated by `RulesConfig` — see `DEFAULT_RULES` in `src/types/index.ts`, the canonical source of truth for the count). Grouped by generation:
 
 - **Core (V1/V2) — 18:** RULE_EMPTY_NAME, RULE_EMPTY_LONGNAME, RULE_DUPLICATE_NAME, RULE_NAMING_CONVENTION, RULE_MISSING_TYPE, RULE_DUPLICATE_GUID, RULE_MISSING_PROPERTY_SET, RULE_ORPHAN_ELEMENT, RULE_WRONG_CONTAINER, RULE_BROKEN_AGGREGATE, RULE_INVALID_GUID_FORMAT, RULE_SPATIAL_HIERARCHY, RULE_CIRCULAR_REFERENCE, RULE_EMPTY_PROPERTY_VALUE, RULE_MISSING_MATERIAL, RULE_ELEMENT_IN_BUILDING, RULE_INVALID_IFC_VERSION, RULE_ELEMENT_CLASH (off by default).
 - **Spatial / file-header (V3) — 11:** RULE_MISSING_PROJECT, RULE_MISSING_BUILDING, RULE_MISSING_STOREY, RULE_EMPTY_STOREY, RULE_FILE_DESCRIPTION_MISSING, RULE_FILE_AUTHOR_MISSING, RULE_PROJECT_LONGNAME_MISSING, RULE_STOREY_ELEVATION_MISSING, RULE_ISO19650_PROJECT_INFO, RULE_ISO19650_AUTHOR_INFO, RULE_ISO19650_FILENAME.
 - **LOD / classification / MEP (V4) — 9:** RULE_MISSING_CLASSIFICATION, RULE_LOD_PSET_MISSING, RULE_LOD_QUANTITY_MISSING, RULE_LOD_MATERIAL_LAYER_MISSING, RULE_MEP_SYSTEM_MISSING, RULE_CLASH_MEP_STRUCTURAL, RULE_PROXY_OVERUSE, RULE_COORDINATE_OFFSET, RULE_FILE_SIZE_ANOMALY.
+- **Geometry / storey integrity (V6) — 6:** RULE_OPENING_WITHOUT_HOST, RULE_STOREY_ELEVATION_DUPLICATE, RULE_STOREY_ELEVATION_ORDER, RULE_UNIT_CONSISTENCY, RULE_SPACE_AREA_MISSING, RULE_CONNECTED_MEP.
 
-When adding a rule, update this count and the marketing copy (`index.html`, `README.md`, `src/seo/config.ts`, `SharedReportView.tsx`, the `public/*` landing pages) — all reference "38 validation rules" and must move together.
+This built-in rule set is **separate from the buildingSMART IDS check** (`ids.worker.ts` + `src/lib/ids/`), which runs a user-supplied `.ids` Information Delivery Specification instead.
+
+When adding a rule, update this count and the marketing copy (`index.html`, `README*.md`, `src/seo/config.ts`, the `public/*` landing pages) — all reference "44 validation rules" and must move together. The remediation corpus in `src/i18n/rule-remediation.ts` now covers all 44 rules in 10 languages (440 entries = 44 × 10).
 
 ### Export worker (`src/workers/export.worker.ts`)
 
@@ -299,6 +340,34 @@ Runs in a third dedicated ES module worker. Protocol:
 - **OUT:** `{ type: 'progress', id, percent }` → `{ type: 'done', id, buffer: ArrayBuffer (transferred), skippedDiffs: number }` OR `{ type: 'error', id, message }`
 
 `skippedDiffs > 0` triggers a toast warning (partial success — some diffs failed to apply but the export still completes with the rest).
+
+### IDS engine + worker (`src/lib/ids/`, `src/workers/ids.worker.ts`)
+
+A pure-TypeScript implementation of the buildingSMART **IDS 1.0** specification, independent of the built-in validator.
+
+- `ids-parser.ts` — namespace-agnostic `.ids` XML → typed `IdsDocument` (specs + facets), with `doc.warnings` for unsupported constructs.
+- `ids-engine.ts` / `ids-engine-facets.ts` — evaluate all **six facets** (entity, attribute, property, classification, material, partOf) plus value restrictions (enumeration, pattern via XSD-regex translation, bounds, length, multi-value any-match) and spec cardinality. Emits structured `IdsReason{code, params}` (SDK-frozen, rendered to text via `renderReasons`).
+- `ids-gather.ts` — pulls the model data each facet needs from web-ifc (runs in the worker, not the runner).
+- `ids-runner.ts` — orchestrates parse → gather → check with a 120 s watchdog and a 400 MB memory guard; cooperative cancel via `AbortSignal`.
+- `ids-report.ts` — export to JSON / CSV / standalone XSS-safe HTML / BCF (reuses `bcf.ts`).
+- `ids-diff.ts` — diff two IDS runs (powers the run-diff strip).
+- `ifc-hierarchy.ts` — generated from web-ifc (`scripts/ids/generate-ifc-hierarchy.mjs`) for entity-subtype matching.
+- `ids-examples.ts` — four valid embedded IDS 1.0 samples (used by IdsModal's "Samples" row).
+- **Golden testing:** `ids-testcases.test.ts` runs 100 official bSI testcases (`ids-fixtures/`, CC BY-ND, pinned commit) through the **real** pipeline in Vitest with the web-ifc Node build.
+
+Worker protocol (v2): `runIds(xml|doc, buffer, { signal, onProgress })` → progress events + a result validated by Zod in both directions (`worker-schemas.ts`). Results stream into `idsStore` (per model). `IdsPanel` is the docked sibling of `ValidationPanel` (exclusive in the bottom slot); `setIdsHighlights` shares the validation overlay channel (the two are mutually exclusive at store level).
+
+### GIS / Map mode (`src/lib/geo/`, `geo-extract.worker.ts`, `geo-terrain.worker.ts`)
+
+Optional, build-flag-gated feature (`VITE_FEATURE_GIS` via `gis-flag.ts`; when off, the Map button never renders and no GIS chunk loads). Places a georeferenced IFC model on a real-world 2D basemap (and optional 3D terrain) **inside the existing three.js scene** — the map aligns to the model, never the reverse.
+
+- `basemap-engine.ts` — seam over NASA's `3d-tiles-renderer` (`GeneratedSurfacePlugin` planar + XYZ overlay). MapLibre/Cesium were rejected (see `docs/GIS_MAP_INTEGRATION_PLAN.md`).
+- `crs.ts` / `geo-math.ts` / `georef-ladder.ts` — CRS/proj4 handling and the georef extraction ladder: `IfcMapConversion`+`IfcProjectedCRS` → `ePSet_MapConversion` → `IfcSite` lat-lon → none, with sanity gates (Null Island, bad scale, out-of-range, out-of-CRS-domain).
+- `placement.ts` — local anchor + `cos(lat)` scale (1 unit = 1 m real).
+- `elevation.ts` / `terrain-sampling.ts` / `geo-terrain.ts` — AWS terrarium elevation → a single seamless terrain mesh (see `docs/TERRAIN_3D_IMPROVEMENT_PLAN.md`).
+- `providers.ts` — free, no-API-key tile providers (OSM default; topo; satellite behind an explicit terms sheet; custom XYZ/WMTS).
+
+State lives in `geoStore` (epoch pattern to discard stale async). Privacy: tile requests reveal only the approximate site location; the model never leaves the browser. User-facing guide: `docs/GIS_MAP_MODE.md`.
 
 ### `runValidation` + `buildSpatialTree` (`src/lib/validator.ts`)
 
@@ -340,7 +409,9 @@ Command builder helpers for all diff types. Each builder accepts `modelId?`:
 | `@thatopen/components-front` | Peer dependency; provides frontend-specific OBC components (postpro, measurements, plans). |
 | `three` | Underlying 3D library for OBC. Also used directly for `THREE.Group` (modelPivots), lights, shadow config, and GLB export. |
 | `web-ifc` | The WebAssembly IFC parser. Used by `IfcImporter` (parser worker), `IfcAPI` (validator worker + export worker). Not imported in `src/` outside the workers. |
-| `zustand` | Lightweight state management. 7 stores active. |
+| `zustand` | Lightweight state management. 11 stores active. |
+| `3d-tiles-renderer` | NASA-AMMOS tile renderer for GIS / Map mode (basemap + 3D terrain inside the three.js scene). Lazy-loaded; only when `VITE_FEATURE_GIS` is on. |
+| `proj4` | Coordinate-system transforms for GIS georeferencing (Map mode). |
 | `@tanstack/react-virtual` | Row virtualisation for the spatial tree. Required for models with 10k+ nodes. |
 | `react` / `react-dom` | UI framework. |
 | `framer-motion` | Page transitions and entrance animations. |
@@ -387,10 +458,10 @@ ScenePanel transform callbacks pass explicit `model.id` so the correct pivot is 
 | `vendor-ui-*.js` | React, Radix UI, Framer Motion, Zustand, Zod, ts-pattern, all other npm packages | ~518 KB |
 | `vendor-three-*.js` | three.js (changes infrequently — long browser cache TTL) | ~1.3 MB |
 | `vendor-ifc-*.js` | @thatopen/* + web-ifc JS side | ~4.5 MB |
-| `*.worker-*.js` (one per worker: ifc-parser, validator, export, bcf-parser) | Geometry workers bundle three.js inline (required — see D-11) | ~3–4.3 MB each |
+| `*.worker-*.js` (one per worker: ifc-parser, validator, export, ids, bcf-parser, geo-extract, geo-terrain) | web-ifc / three.js workers bundle their deps inline (required — see D-11) | ~3–4.3 MB each |
 
 **Windows build:** `node --max-old-space-size=4096 node_modules/vite/bin/vite.js build` — required because the default Node.js 2 GB heap is exhausted by the 514+ module graph.
 
 ---
 
-*Last updated: 2026-05-29 · Sprints 1–9 complete · Forward plan: ROADMAP.md Roadmap v2*
+*Last updated: 2026-06-21 (doc-sync against code) · Sprints 1–9 complete + IDS 1.0 / 3D Map (GIS) / BCF panel / embed+SDK / mobile UI shipped · 44 validation rules · 11 Zustand stores · 7 workers · Deploy: Vercel · Forward plan: ROADMAP.md Roadmap v2 + Solibri-parity backlog*

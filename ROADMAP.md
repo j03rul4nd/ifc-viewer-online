@@ -8,6 +8,7 @@ Sprint-by-sprint plan. Each sprint builds on the previous and introduces archite
 
 > **This section is the authoritative forward plan. It supersedes the original Sprint 10–12 plan below.**
 > **★ UPDATE 2026-06-06:** A market re-audit (fresh research) found the thesis commoditized — buildingSMART's official validator went GA (free, 100+ rules), free OSS 100%-client-side clones exist (ifcchecker.com, opensource.construction), and Data Octopus ships shareable links + tool-specific remediation. The refocus — **own the Health Score as a citable, benchmarked number (Lighthouse-style percentile, filling a vacuum like Moz DA); prerender the landing for crawlers/LLMs; absorb IDS; monetize via a certificate artifact + B2B embed/API, not a $9 individual sub** — supersedes the priorities below where they conflict. The CF Worker is now **DEPLOYED**. Full decision doc: `memory/project_refocus_save_2026-06.md`.
+> **★ UPDATE 2026-06-21 (doc-sync against code):** Two big items that were "Planned (signal-gated)" below have **shipped** and are reclassified: **buildingSMART IDS** (full IDS 1.0, all six facets, golden-tested against bSI testcases — P4 was "IDS-lite", reality went further; see `docs/IDS_IMPLEMENTATION_PLAN.md` SHIPPED banner) and **3D Map / GIS mode** (never on this roadmap — added below as shipped; see `docs/GIS_MAP_MODE.md`). The built-in validator is now **44 rules** (not 38). Embed + JS SDK, the mobile UI, the personalized-invite/attribution system, and validation/IDS run-diffs also shipped. A new **Solibri-parity backlog** is added at the end of this v2 section.
 > Sprints 1–9 are **complete and shipped** (see status fields). The product is technically mature; the bottleneck is distribution and retention, not features. Every item below is chosen to close the growth loop (free flywheel → paid retention), not to add viewer capability.
 
 ### Strategic frame
@@ -25,7 +26,7 @@ Our **technical features are commodities** — anyone can ship them, and they do
 
 The **only three moats are distribution/content/brand, not tech**:
 1. **Health Score as a *cited standard*** — being the number the industry quotes ("scored 82") is defensible like a credit score. Activated by distribution + a consistent algorithm.
-2. **The i18n + remediation content corpus** — ~38 rules × 4 authoring tools × 10 languages. A competitor copies the feature in a day but not the corpus. Compounds; it's content, not code.
+2. **The i18n + remediation content corpus** — 44 rules × 4 authoring tools × 10 languages (440 entries). A competitor copies the feature in a day but not the corpus. Compounds; it's content, not code.
 3. **The crawlable shared-report loop** — each report is a backlink + a viral invite. Currently worth zero (hash fragments aren't crawlable).
 
 **Who builds the moats:** the *buyer* (coordinator) monetizes, but the *free user* (exporter) builds moats #1 and #3 every time they share a report — so the free tier stays generous on purpose.
@@ -37,10 +38,10 @@ The **only three moats are distribution/content/brand, not tech**:
 | P | Item | Builds moat | Status | Why / realism |
 |---|---|---|---|---|
 | **P0** | Distribution & signal capture (forums, niche pages, bimcorner outreach, Capterra/G2, deploy CF Worker, ProductHunt prep) | #1 + #3 (activates them) | 🔁 Ongoing | Already the documented bottleneck. Non-engineering. See `memory/project_strategic_direction_2026.md`. |
-| **P1** | **Remediation content table** — per-rule "how to fix in Revit/ArchiCAD/Tekla" in the free tier | **#2 (corpus)** | ✅ DONE (2026-05-29) | Content, not AI/infra. 380 entries (10 langs × 38 rules) in `src/i18n/rule-remediation.ts` + `remediation` keys in every `validation.json`. Renders in-app (`RemediationBlock`) and in shared reports. See D-22 + `memory/project_remediation_corpus.md`. |
+| **P1** | **Remediation content table** — per-rule "how to fix in Revit/ArchiCAD/Tekla/Allplan" in the free tier | **#2 (corpus)** | ✅ DONE (2026-05-29; extended to 44 rules 2026-06-21) | Content, not AI/infra. **440 entries (10 langs × 44 rules)** in `src/i18n/rule-remediation.ts` + `remediation` keys in every `validation.json`. Renders in-app (`RemediationBlock`) and in shared reports. See D-22 + `memory/project_remediation_corpus.md`. |
 | **P2** | **Crawlable / shareable reports** — migrate `#report=` hash to a stateless CF Worker route with server-rendered HTML + OG meta | **#3 (network/SEO)** | ✅ Worker DEPLOYED (2026-06-06) | Server route **done**: `GET /r?d=…` in `cf-worker/worker.js` renders crawlable HTML (title + OG/Twitter meta + JSON-LD + issue list + EN "how to fix" prose), stateless + XSS-hardened. Share button emits the Worker URL when `VITE_REPORT_URL` is set (else falls back to hash). **Worker DEPLOYED (2026-06-06).** Share codec refactored to `src/lib/share-report.ts` (`buildShareUrl`). **Verify:** the `VITE_REPORT_URL` GitHub Actions secret is populated so prod builds emit the crawlable `/r?d=` route (not `#report=`) — without it the moat is worth zero despite the deploy. Optional `fflate` for very large reports. See D-21 + `memory/project_refocus_save_2026-06.md`. |
-| **P3** | **Model-vs-model revision diff** — "what changed between rev C and rev D" via GlobalId matching | retention (not a moat) | 📋 Planned (signal-gated) | Real coordinator pain; reuses the existing multi-model engine. Build when a coordinator asks. Replaces the killed WebGPU slot. |
-| **P4** | **IDS-lite / project checklist** — coordinator defines plain-English requirements once; supply chain checks against them | retention (Pro engine) | 📋 Planned (signal-gated) | The retention/Pro engine. Build when leading indicators are met OR ≥5 IDS mentions appear (per existing gate). Plain-English UX, never raw XML. |
+| **P3** | **Model-vs-model revision diff** — "what changed between rev C and rev D" via GlobalId matching | retention (not a moat) | 📋 Planned (signal-gated) | Real coordinator pain; reuses the existing multi-model engine. Build when a coordinator asks. Replaces the killed WebGPU slot. **Note:** run-to-run diffs already ship for validation (`validation-diff.ts` + `RunDiffBar`) and for IDS (`ids-diff.ts`); the missing piece is geometry/element-level *model-vs-model* diff. |
+| **P4** | **buildingSMART IDS** — load an `.ids`, check the model against an Information Delivery Specification | retention (Pro engine) | ✅ DONE (2026-06-13) | Shipped **well past** the "IDS-lite plain-English checklist" originally scoped here. Full **IDS 1.0** facet coverage (entity, attribute, property, classification, material, partOf), pure-TS engine (`src/lib/ids/`) + dedicated `ids.worker.ts`, golden suite of 100 official bSI testcases, `IdsPanel` docked beside `ValidationPanel`, `.ids` drag-drop + built-in samples, export JSON/CSV/HTML/BCF, check-all-models, run-diff, SDK `checkIds()`. See `docs/IDS_IMPLEMENTATION_PLAN.md` (SHIPPED banner) + `memory/project_ids_full_implementation.md`. Remaining (low priority): P6-3 IDS writer, P6-4 visual IdsBuilder (release-2), P7-1 gather cache. The original "plain-English authoring UX" is the only unbuilt slice — folded into the Solibri-parity backlog (rule/spec templates). |
 
 ### Explicitly killed / deferred
 
@@ -49,6 +50,35 @@ The **only three moats are distribution/content/brand, not tech**:
 - **"Chat with your BIM" / NL query (old Sprint 12)** — ❌ killed as AI slop. The only useful slice (fix guidance) is reclassified as the P1 content table — it is not AI.
 
 > Rationale for the kills is recorded so future sessions don't resurrect them: see this section + `DECISIONS.md` (forward-plan note).
+
+### Shipped beyond the v2 priorities (built since the last roadmap pass)
+
+These were not on the priority table but are now in `main` and verified against the code:
+
+- ✅ **buildingSMART IDS 1.0** — see P4 above (`docs/IDS_IMPLEMENTATION_PLAN.md`).
+- ✅ **3D Map / GIS mode** — places a georeferenced model on a real-world basemap (OSM/topo/satellite/custom XYZ) + optional 3D terrain, tiles rendered inside the existing three.js scene via `3d-tiles-renderer`. Georef ladder (`IfcMapConversion`/`IfcProjectedCRS` → `ePSet_MapConversion` → `IfcSite` lat-lon → manual), privacy consent, worker-based extraction (`geo-extract.worker.ts`, `geo-terrain.worker.ts`), `geoStore`, `GeoPanel`. Build-flag gated (`VITE_FEATURE_GIS`, default on). Docs: `docs/GIS_MAP_MODE.md`, `docs/GIS_MAP_INTEGRATION_PLAN.md`, `docs/TERRAIN_3D_IMPROVEMENT_PLAN.md`.
+- ✅ **Measurement tools** (length/area/edge/volume), **floor plans**, **section/clipping planes** — Sprints 7–8 (also listed below).
+- ✅ **BCF panel** — full topic CRUD, comments, viewpoint capture, filters (`BcfPanel.tsx`, `bcfStore`), beyond the original "export issues as BCF" scope.
+- ✅ **Embed + JS SDK** — iframe/URL-param embedding (`?model=&embed=&ui=`), two-way `postMessage`, ~6 KB dependency-free `IfcViewer` SDK (`src/sdk/`, built to `public/sdk/`), `getStats`/`getIssues`/`checkIds`. Docs: `docs/EMBED_URL_PARAMS.md`, `docs/IFC_VIEWER_SDK.md`.
+- ✅ **Validation hardening (4 phases)** — honest coverage (`ValidationCoverage`, watchdog), actionable score (`explainQualityScore`, "fix first"), Pro controls (`severityOverrides`, `waiverStore`, thresholds), run-diff (`validation-diff.ts` + `RunDiffBar`).
+- ✅ **Mobile UI** — `useIsMobile`, `MobileBottomNav`, dedicated bottom-sheet variants of the IDS and Validation panels (`src/components/mobile/`).
+- ✅ **Personalized invite & attribution** — cookieless `?ref`/`/i/:code` attribution, `invite-registry.ts`, `InviteRibbon`/`InviteView`/`InviteFeedbackNudge`. Docs: `docs/INVITE_SYSTEM.md`.
+- ✅ **Static SEO** — programmatic `/fix/<rule>/` pages ×10 languages, blog generator, crawlable `/r?d=` report route on the CF Worker.
+
+---
+
+## Solibri-parity backlog (2026-06-21)
+
+> Concrete, prioritized tasks derived from comparing the current product against Solibri's coordination workflow. **Not** a competitive study — just the gaps worth converting to work items. Tagged with the moat each builds (or "parity" when it's table-stakes catch-up). All are **signal-gated**: build when a coordinator/design-partner asks. None resurrect a killed item.
+
+| ID | Task | Maps to Solibri | Builds | Priority | Notes / realism |
+|---|---|---|---|---|---|
+| **SB-1** | **Rule/spec templates ("Rulesets")** — save a `RulesConfig` (+ severity overrides + thresholds) as a named, shareable profile; ship a few presets (ISO 19650, LOD 300, MEP). | Solibri Rulesets | #2 (corpus) + retention | **P1** | Highest leverage: the engine + `CustomProfileModal` already exist; this is persistence + share/import (URL or `.json`). The unbuilt "plain-English IDS authoring" slice folds in here as a no-XML spec builder (the deferred IDS P6-4 `IdsBuilder`). |
+| **SB-2** | **Information Takeoff (ITO)** — pivot any pset/quantity into a groupable, exportable table (group by class/storey/type, sum quantities), beyond the current fixed `IfcElementQuantity` takeoff. | Solibri Information Takeoff | parity + retention | **P2** | Reuses the takeoff pipeline + virtualized tables; export already exists (`exportElementToJson/Csv`). |
+| **SB-3** | **Clash grouping & presentations** — group clash/validation results into named "issue sets", reorder, annotate, and play back as a guided walkthrough; export the set as BCF. | Solibri Coordination + Presentations | parity | **P2** | BCF write + viewpoint capture already ship; this is grouping + ordering UX over existing issues/topics. |
+| **SB-4** | **Model-vs-model revision diff** — element/geometry-level diff by GlobalId (added / removed / moved / changed psets). | Solibri Model Comparison | retention | **P2** | = roadmap P3. Run-to-run diffs already exist; this is the geometry/element layer. |
+| **SB-5** | **Component classification & coloring by property** — color the 3D scene by any pset value / classification code (heatmap of a chosen attribute). | Solibri Classification + coloring | parity | **P3** | Palette + per-category coloring infra exists; generalize the color source to an arbitrary property. |
+| **SB-6** | **Quantitative report templates** — branded PDF/HTML report (Health Score + IDS + ITO + issue sets) as a citable artifact. | Solibri reports | **#1 (cited number)** + monetizable | **P3** | On-strategy with the "certificate artifact" monetization; HTML report scaffolding exists for IDS/validation/`/r`. |
 
 ---
 
@@ -458,4 +488,4 @@ BCF (BIM Collaboration Format) is the open standard for IFC issue communication.
 
 ---
 
-*Last updated: 2026-05-29 · Sprints 1–9 complete (incl. BCF) · Roadmap v2 (distribution-led) is the authoritative forward plan — see top of file · Old Sprints 10–12 deferred/killed*
+*Last updated: 2026-06-21 (doc-sync against code) · Sprints 1–9 complete (incl. BCF) · Shipped since: IDS 1.0, 3D Map/GIS, embed+SDK, mobile UI, invite/attribution, validation hardening · Validator = 44 rules · Roadmap v2 (distribution-led) + Solibri-parity backlog are the authoritative forward plan — see top of file · Old Sprints 10–12 deferred/killed*

@@ -5,7 +5,7 @@
   <!-- Main app — English (canonical) -->
   <url>
     <loc>https://www.ifcvieweronline.eu/</loc>
-    <lastmod>2026-06-05</lastmod>
+    <lastmod>2026-06-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/" />
@@ -16,7 +16,7 @@
   <!-- Spanish landing — Visor IFC Online -->
   <url>
     <loc>https://www.ifcvieweronline.eu/es/</loc>
-    <lastmod>2026-05-27</lastmod>
+    <lastmod>2026-06-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/" />
@@ -27,7 +27,7 @@
   <!-- Niche: IFC Validator (EN) -->
   <url>
     <loc>https://www.ifcvieweronline.eu/ifc-validator/</loc>
-    <lastmod>2026-05-28</lastmod>
+    <lastmod>2026-06-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ifc-validator/" />
@@ -38,7 +38,7 @@
   <!-- Niche: IFC Viewer for Mac (EN) -->
   <url>
     <loc>https://www.ifcvieweronline.eu/ifc-viewer-mac/</loc>
-    <lastmod>2026-05-27</lastmod>
+    <lastmod>2026-06-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ifc-viewer-mac/" />
@@ -48,7 +48,7 @@
   <!-- Niche: Validador IFC (ES) -->
   <url>
     <loc>https://www.ifcvieweronline.eu/es/ifc-validador/</loc>
-    <lastmod>2026-05-28</lastmod>
+    <lastmod>2026-06-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ifc-validator/" />
@@ -56,10 +56,10 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-validator/" />
   </url>
 
-  <!-- Niche: Solibri alternative (EN) — time-sensitive, Solibri Anywhere discontinued Apr 2026 -->
+  <!-- Niche: Solibri alternative (EN) — Solibri Anywhere discontinued Apr 2026 -->
   <url>
     <loc>https://www.ifcvieweronline.eu/solibri-alternative/</loc>
-    <lastmod>2026-05-28</lastmod>
+    <lastmod>2026-06-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/solibri-alternative/" />
@@ -69,7 +69,7 @@
   <!-- Tool: Fix duplicate GUIDs in IFC -->
   <url>
     <loc>https://www.ifcvieweronline.eu/tools/fix-duplicate-guids/</loc>
-    <lastmod>2026-05-28</lastmod>
+    <lastmod>2026-06-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/tools/fix-duplicate-guids/" />
@@ -79,7 +79,7 @@
   <!-- Blog index — EN -->
   <url>
     <loc>https://www.ifcvieweronline.eu/blog/</loc>
-    <lastmod>2026-06-03</lastmod>
+    <lastmod>2026-06-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/blog/" />
@@ -92,7 +92,7 @@
   <!-- Blog index — ES -->
   <url>
     <loc>https://www.ifcvieweronline.eu/es/blog/</loc>
-    <lastmod>2026-06-03</lastmod>
+    <lastmod>2026-06-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.82</priority>
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/blog/" />
@@ -103,7 +103,7 @@
   <!-- Blog index — DE -->
   <url>
     <loc>https://www.ifcvieweronline.eu/de/blog/</loc>
-    <lastmod>2026-06-03</lastmod>
+    <lastmod>2026-06-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.80</priority>
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/blog/" />
@@ -114,7 +114,7 @@
   <!-- Blog index — FR -->
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/blog/</loc>
-    <lastmod>2026-06-03</lastmod>
+    <lastmod>2026-06-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.80</priority>
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/blog/" />
@@ -122,22 +122,28 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/" />
   </url>
 
-  <!-- Blog posts — individual articles (also injected dynamically by generateBlogPages at build time) -->
+  <!-- Blog posts — EN ──────────────────────────────────────────────────────── -->
+
+  <!-- has DE + FR translations → reciprocal hreflang -->
   <url>
     <loc>https://www.ifcvieweronline.eu/blog/view-ifc-online-free/</loc>
     <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.78</priority>
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/blog/view-ifc-online-free/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/blog/ifc-datei-im-browser-oeffnen/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/blog/ouvrir-fichier-ifc-navigateur/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/view-ifc-online-free/" />
   </url>
 
+  <!-- has ES translation → reciprocal hreflang -->
   <url>
     <loc>https://www.ifcvieweronline.eu/blog/ifc-health-score-guide/</loc>
     <lastmod>2026-05-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/blog/ifc-health-score-guide/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/blog/health-score-ifc-que-es/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/ifc-health-score-guide/" />
   </url>
 
@@ -150,21 +156,26 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/duplicate-guids-ifc/" />
   </url>
 
+  <!-- has ES translation → reciprocal hreflang -->
   <url>
     <loc>https://www.ifcvieweronline.eu/blog/ifc-vs-rvt-vs-nwd/</loc>
     <lastmod>2026-05-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/blog/ifc-vs-rvt-vs-nwd/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/blog/ifc-vs-rvt-que-entregar/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/ifc-vs-rvt-vs-nwd/" />
   </url>
 
+  <!-- has ES + DE translations → reciprocal hreflang -->
   <url>
     <loc>https://www.ifcvieweronline.eu/blog/common-ifc-validation-errors/</loc>
     <lastmod>2026-05-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/blog/common-ifc-validation-errors/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/blog/errores-ifc-mas-comunes/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/blog/ifc-validierung-haeufige-fehler/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/common-ifc-validation-errors/" />
   </url>
 
@@ -177,12 +188,14 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/ifc-health-score-explained/" />
   </url>
 
+  <!-- has ES translation → reciprocal hreflang -->
   <url>
     <loc>https://www.ifcvieweronline.eu/blog/clean-ifc-export-revit/</loc>
     <lastmod>2026-04-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.72</priority>
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/blog/clean-ifc-export-revit/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/blog/como-exportar-ifc-desde-revit/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/clean-ifc-export-revit/" />
   </url>
 
@@ -339,7 +352,8 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/bim-tool-it-security-checklist/" />
   </url>
 
-  <!-- Blog posts — ES -->
+  <!-- Blog posts — ES ──────────────────────────────────────────────────────── -->
+
   <url>
     <loc>https://www.ifcvieweronline.eu/es/blog/como-exportar-ifc-desde-revit/</loc>
     <lastmod>2026-06-01</lastmod>
@@ -367,6 +381,7 @@
     <priority>0.72</priority>
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/blog/errores-ifc-mas-comunes/" />
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/blog/common-ifc-validation-errors/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/blog/ifc-validierung-haeufige-fehler/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/common-ifc-validation-errors/" />
   </url>
 
@@ -380,7 +395,8 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/ifc-vs-rvt-vs-nwd/" />
   </url>
 
-  <!-- Blog posts — DE -->
+  <!-- Blog posts — DE ──────────────────────────────────────────────────────── -->
+
   <url>
     <loc>https://www.ifcvieweronline.eu/de/blog/ifc-datei-im-browser-oeffnen/</loc>
     <lastmod>2026-06-01</lastmod>
@@ -388,6 +404,7 @@
     <priority>0.72</priority>
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/blog/ifc-datei-im-browser-oeffnen/" />
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/blog/view-ifc-online-free/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/blog/ouvrir-fichier-ifc-navigateur/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/view-ifc-online-free/" />
   </url>
 
@@ -398,10 +415,12 @@
     <priority>0.72</priority>
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/blog/ifc-validierung-haeufige-fehler/" />
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/blog/common-ifc-validation-errors/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/blog/errores-ifc-mas-comunes/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/common-ifc-validation-errors/" />
   </url>
 
-  <!-- Blog posts — FR -->
+  <!-- Blog posts — FR ──────────────────────────────────────────────────────── -->
+
   <url>
     <loc>https://www.ifcvieweronline.eu/fr/blog/ouvrir-fichier-ifc-navigateur/</loc>
     <lastmod>2026-06-01</lastmod>
@@ -409,9 +428,9 @@
     <priority>0.72</priority>
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/blog/ouvrir-fichier-ifc-navigateur/" />
     <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/blog/view-ifc-online-free/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/blog/ifc-datei-im-browser-oeffnen/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/view-ifc-online-free/" />
   </url>
-
 
   <!-- Legal pages -->
   <url>

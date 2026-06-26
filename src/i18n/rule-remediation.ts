@@ -572,6 +572,90 @@ export const RULE_REMEDIATION: Partial<
           'Lower the geometry resolution and avoid embedding textures in the IFC export.',
       },
     },
+    RULE_OPENING_WITHOUT_HOST: {
+      summary:
+        'Re-host or delete orphan IfcOpeningElement voids — every opening must cut a host element through IfcRelVoidsElement.',
+      tools: {
+        revit:
+          'Orphan openings come from deleted/edited hosts or loosely exported shaft openings. Delete stray openings and recreate the void on its host (wall/floor/roof) so the relationship exports, and re-host doors/windows if the cut was lost.',
+        archicad:
+          'Openings must belong to a wall or slab. Remove free-standing opening objects and use the Opening tool (or door/window) anchored to the host so ArchiCAD exports IfcRelVoidsElement.',
+        tekla:
+          'Recreate the cut/opening as a feature of its host part instead of a loose object, so the void references a host on export.',
+        allplan:
+          'Place openings with the wall/slab opening tools so they belong to a host; delete detached opening solids.',
+      },
+    },
+    RULE_STOREY_ELEVATION_DUPLICATE: {
+      summary:
+        'Give each IfcBuildingStorey a distinct Elevation — levels at the same height break plan generation and storey filtering.',
+      tools: {
+        revit:
+          'Two levels share the same elevation. In the Levels view give each Level a unique elevation (or delete the duplicate), and export only true building storeys as levels (turn off “Building Story”/export on the others).',
+        archicad:
+          'Open Story Settings and set a unique elevation per story; merge or delete duplicated stories at the same height.',
+        tekla:
+          'In the level/phase list assign a unique elevation to each level used for the IFC storey structure and remove duplicates.',
+        allplan:
+          'In the building structure set distinct heights per storey and remove duplicate storeys that resolve to the same elevation.',
+      },
+    },
+    RULE_STOREY_ELEVATION_ORDER: {
+      summary:
+        'Order storeys so their Elevation rises from bottom to top — out-of-order levels confuse section/plan tools and reviewers.',
+      tools: {
+        revit:
+          'A lower level has a higher elevation (or vice versa). Fix the level elevations or the export order so storeys read bottom-to-top, and check basement/roof levels with negative elevations.',
+        archicad:
+          'In Story Settings fix the height of any out-of-sequence story so elevations rise with the story index.',
+        tekla:
+          'Reorder/renumber the levels so their elevations ascend; correct any level whose height contradicts its position.',
+        allplan:
+          'In the building structure reorder storeys or fix their heights so elevations increase upward.',
+      },
+    },
+    RULE_UNIT_CONSISTENCY: {
+      summary:
+        'Export in SI metric (millimetres/metres) — imperial length units break interoperability with most IFC/BIM tools.',
+      tools: {
+        revit:
+          'Revit’s internal units are imperial but IFC should be metric. Set Project Units to metric (or confirm the IFC export uses SI/metric) so the file’s IFCSIUNIT is metre-based.',
+        archicad:
+          'Set the project Working Units (and Calculation Units) to metric so the IFC schema exports SI length units.',
+        tekla:
+          'Switch the environment/role or export settings to metric so the IFC LENGTHUNIT is SI (mm/m).',
+        allplan:
+          'Set the length units to metric in the project options so the IFC export uses SI units.',
+      },
+    },
+    RULE_SPACE_AREA_MISSING: {
+      summary:
+        'Add area quantities to IfcSpace — export BaseQuantities so each space carries NetFloorArea/GrossFloorArea.',
+      tools: {
+        revit:
+          'Rooms export as IfcSpace but quantities are missing. Enable “Export base quantities” (Pset/QTO) in the IFC export options and make sure Rooms are properly bounded/placed so areas compute.',
+        archicad:
+          'Use Zones for spaces and enable Base Quantities in the IFC Translator so IfcSpace exports NetFloorArea/GrossFloorArea.',
+        tekla:
+          'Spaces are limited in Tekla; if required, define them and enable quantity export, or generate them in the architectural model.',
+        allplan:
+          'Create Rooms (spaces) and enable IFC quantity export so IfcSpace carries area quantities.',
+      },
+    },
+    RULE_CONNECTED_MEP: {
+      summary:
+        'Connect MEP segments through ports — disconnected pipes/ducts export without IfcDistributionPort relationships and break system tracing.',
+      tools: {
+        revit:
+          'Disconnected ducts/pipes export without ports. Fix open connectors in the MEP model (no gaps/loose ends), keep segments joined into connected systems, and enable system/port export so IfcDistributionPort relationships are written.',
+        archicad:
+          'Use the MEP Modeler so routes stay connected end-to-end; export MEP systems to include ports/connections.',
+        tekla:
+          'MEP is not Tekla’s domain; model connected MEP in the dedicated MEP tool so segments carry ports, then federate.',
+        allplan:
+          'Model MEP runs connected end-to-end (no open ends) so the IFC export writes distribution ports between segments.',
+      },
+    },
   },
   es: {
     // ── Nomenclatura e identidad ─────────────────────────────────────
@@ -1112,6 +1196,90 @@ export const RULE_REMEDIATION: Partial<
           'Reduce el detalle/representación de geometría de la exportación y evita exportar modelos de referencia innecesariamente.',
         allplan:
           'Baja la resolución de geometría y evita incrustar texturas en la exportación IFC.',
+      },
+    },
+    RULE_OPENING_WITHOUT_HOST: {
+      summary:
+        'Revincula o elimina los IfcOpeningElement huérfanos — todo hueco debe cortar un elemento anfitrión mediante IfcRelVoidsElement.',
+      tools: {
+        revit:
+          'Los huecos huérfanos vienen de anfitriones borrados/editados o de huecos de shaft sueltos. Borra los huecos sueltos y recrea el vaciado sobre su anfitrión (muro/suelo/cubierta) para que se exporte la relación, y vuelve a alojar puertas/ventanas si se perdió el corte.',
+        archicad:
+          'Los huecos deben pertenecer a un muro o forjado. Elimina los objetos de hueco sueltos y usa la Herramienta de Hueco (o puerta/ventana) anclada al anfitrión para que ArchiCAD exporte IfcRelVoidsElement.',
+        tekla:
+          'Recrea el corte/hueco como una operación (feature) de su parte anfitriona en lugar de un objeto suelto, para que el vaciado referencie un anfitrión al exportar.',
+        allplan:
+          'Coloca los huecos con las herramientas de hueco de muro/forjado para que pertenezcan a un anfitrión; elimina los sólidos de hueco desvinculados.',
+      },
+    },
+    RULE_STOREY_ELEVATION_DUPLICATE: {
+      summary:
+        'Asigna una Elevation distinta a cada IfcBuildingStorey — las plantas con la misma cota rompen la generación de planos y el filtrado por planta.',
+      tools: {
+        revit:
+          'Dos niveles comparten la misma cota. En la vista de Niveles da una cota única a cada Nivel (o borra el duplicado), y exporta como planta solo los niveles reales (desactiva “Planta de edificio”/exportación en los demás).',
+        archicad:
+          'Abre Configuración de Planta y fija una elevación única por planta; fusiona o elimina las plantas duplicadas a la misma altura.',
+        tekla:
+          'En la lista de niveles/fases asigna una cota única a cada nivel usado para la estructura de plantas IFC y elimina los duplicados.',
+        allplan:
+          'En la estructura del edificio define alturas distintas por planta y elimina las plantas duplicadas que resuelven a la misma cota.',
+      },
+    },
+    RULE_STOREY_ELEVATION_ORDER: {
+      summary:
+        'Ordena las plantas para que su Elevation crezca de abajo arriba — las cotas desordenadas confunden a las herramientas de sección/plano y a los revisores.',
+      tools: {
+        revit:
+          'Un nivel inferior tiene una cota mayor (o al revés). Corrige las cotas de los niveles o el orden de exportación para que las plantas vayan de abajo arriba, y revisa los niveles de sótano/cubierta con cotas negativas.',
+        archicad:
+          'En Configuración de Planta corrige la altura de cualquier planta fuera de secuencia para que las cotas asciendan con el índice de planta.',
+        tekla:
+          'Reordena/renumera los niveles para que sus cotas asciendan; corrige cualquier nivel cuya altura contradiga su posición.',
+        allplan:
+          'En la estructura del edificio reordena las plantas o corrige sus alturas para que las cotas aumenten hacia arriba.',
+      },
+    },
+    RULE_UNIT_CONSISTENCY: {
+      summary:
+        'Exporta en métrico SI (milímetros/metros) — las unidades imperiales rompen la interoperabilidad con la mayoría de herramientas IFC/BIM.',
+      tools: {
+        revit:
+          'Las unidades internas de Revit son imperiales, pero el IFC debe ser métrico. Pon las Unidades de proyecto en métrico (o confirma que la exportación IFC usa SI/métrico) para que el IFCSIUNIT sea en metros.',
+        archicad:
+          'Configura las Unidades de Trabajo (y de Cálculo) del proyecto en métrico para que el esquema IFC exporte unidades de longitud SI.',
+        tekla:
+          'Cambia el entorno/rol o los ajustes de exportación a métrico para que el LENGTHUNIT del IFC sea SI (mm/m).',
+        allplan:
+          'Configura las unidades de longitud en métrico en las opciones del proyecto para que la exportación IFC use unidades SI.',
+      },
+    },
+    RULE_SPACE_AREA_MISSING: {
+      summary:
+        'Añade cantidades de área a los IfcSpace — exporta BaseQuantities para que cada espacio lleve NetFloorArea/GrossFloorArea.',
+      tools: {
+        revit:
+          'Las habitaciones se exportan como IfcSpace pero sin cantidades. Activa “Exportar cantidades base” (Pset/QTO) en las opciones de exportación IFC y asegúrate de que las Habitaciones estén bien delimitadas/colocadas para que se calculen las áreas.',
+        archicad:
+          'Usa Zonas para los espacios y activa las Cantidades Base en el Traductor IFC para que IfcSpace exporte NetFloorArea/GrossFloorArea.',
+        tekla:
+          'Los espacios son limitados en Tekla; si se requieren, defínelos y activa la exportación de cantidades, o genéralos en el modelo de arquitectura.',
+        allplan:
+          'Crea Habitaciones (espacios) y activa la exportación de cantidades IFC para que IfcSpace lleve cantidades de área.',
+      },
+    },
+    RULE_CONNECTED_MEP: {
+      summary:
+        'Conecta los segmentos MEP mediante puertos — las tuberías/conductos desconectados se exportan sin relaciones IfcDistributionPort y rompen el trazado de sistemas.',
+      tools: {
+        revit:
+          'Los conductos/tuberías desconectados se exportan sin puertos. Corrige los conectores abiertos en el modelo MEP (sin huecos ni extremos sueltos), mantén los segmentos unidos en sistemas conectados y activa la exportación de sistemas/puertos para que se escriban las relaciones IfcDistributionPort.',
+        archicad:
+          'Usa el MEP Modeler para que las rutas queden conectadas de extremo a extremo; exporta los sistemas MEP para incluir puertos/conexiones.',
+        tekla:
+          'El MEP no es el dominio de Tekla; modela el MEP conectado en la herramienta MEP correspondiente para que los segmentos lleven puertos, y luego fedéralo.',
+        allplan:
+          'Modela los trazados MEP conectados de extremo a extremo (sin extremos abiertos) para que la exportación IFC escriba los puertos de distribución entre segmentos.',
       },
     },
   },
@@ -1656,6 +1824,90 @@ export const RULE_REMEDIATION: Partial<
           'Baissez la résolution de la géométrie et évitez d’incorporer des textures dans l’export IFC.',
       },
     },
+    RULE_OPENING_WITHOUT_HOST: {
+      summary:
+        'Re-rattachez ou supprimez les IfcOpeningElement orphelins — chaque ouverture doit percer un élément hôte via IfcRelVoidsElement.',
+      tools: {
+        revit:
+          'Les ouvertures orphelines viennent d’hôtes supprimés/modifiés ou de trémies exportées isolément. Supprimez les ouvertures isolées et recréez le percement sur son hôte (mur/sol/toit) pour exporter la relation, et re-percez portes/fenêtres si le percement a été perdu.',
+        archicad:
+          'Les ouvertures doivent appartenir à un mur ou une dalle. Supprimez les objets d’ouverture isolés et utilisez l’outil Ouverture (ou porte/fenêtre) ancré à l’hôte pour qu’ArchiCAD exporte IfcRelVoidsElement.',
+        tekla:
+          'Recréez le percement/l’ouverture comme une fonction (feature) de sa pièce hôte plutôt qu’un objet isolé, pour que le vide référence un hôte à l’export.',
+        allplan:
+          'Placez les ouvertures avec les outils d’ouverture de mur/dalle pour qu’elles appartiennent à un hôte ; supprimez les solides d’ouverture détachés.',
+      },
+    },
+    RULE_STOREY_ELEVATION_DUPLICATE: {
+      summary:
+        'Donnez une Elevation distincte à chaque IfcBuildingStorey — des niveaux à la même cote cassent la génération de plans et le filtrage par étage.',
+      tools: {
+        revit:
+          'Deux niveaux partagent la même cote. Dans la vue Niveaux donnez une cote unique à chaque niveau (ou supprimez le doublon) et n’exportez comme étage que les vrais niveaux de bâtiment (désactivez « Étage »/export sur les autres).',
+        archicad:
+          'Ouvrez les Réglages d’étage et fixez une altitude unique par étage ; fusionnez ou supprimez les étages dupliqués à la même hauteur.',
+        tekla:
+          'Dans la liste des niveaux/phases attribuez une cote unique à chaque niveau utilisé pour la structure d’étages IFC et supprimez les doublons.',
+        allplan:
+          'Dans la structure du bâtiment définissez des hauteurs distinctes par étage et supprimez les étages dupliqués qui aboutissent à la même cote.',
+      },
+    },
+    RULE_STOREY_ELEVATION_ORDER: {
+      summary:
+        'Ordonnez les étages pour que leur Elevation croisse du bas vers le haut — des cotes désordonnées perturbent les outils de coupe/plan et les relecteurs.',
+      tools: {
+        revit:
+          'Un niveau inférieur a une cote plus haute (ou l’inverse). Corrigez les cotes des niveaux ou l’ordre d’export pour que les étages se lisent de bas en haut, et vérifiez les niveaux de sous-sol/toit à cotes négatives.',
+        archicad:
+          'Dans les Réglages d’étage corrigez la hauteur de tout étage hors séquence pour que les cotes montent avec l’indice d’étage.',
+        tekla:
+          'Réordonnez/renumérotez les niveaux pour que leurs cotes montent ; corrigez tout niveau dont la hauteur contredit sa position.',
+        allplan:
+          'Dans la structure du bâtiment réordonnez les étages ou corrigez leurs hauteurs pour que les cotes augmentent vers le haut.',
+      },
+    },
+    RULE_UNIT_CONSISTENCY: {
+      summary:
+        'Exportez en métrique SI (millimètres/mètres) — les unités impériales cassent l’interopérabilité avec la plupart des outils IFC/BIM.',
+      tools: {
+        revit:
+          'Les unités internes de Revit sont impériales, mais l’IFC doit être métrique. Mettez les Unités du projet en métrique (ou vérifiez que l’export IFC utilise SI/métrique) pour que l’IFCSIUNIT soit en mètres.',
+        archicad:
+          'Réglez les Unités de travail (et de calcul) du projet en métrique pour que le schéma IFC exporte des unités de longueur SI.',
+        tekla:
+          'Passez l’environnement/rôle ou les réglages d’export en métrique pour que le LENGTHUNIT de l’IFC soit SI (mm/m).',
+        allplan:
+          'Réglez les unités de longueur en métrique dans les options du projet pour que l’export IFC utilise des unités SI.',
+      },
+    },
+    RULE_SPACE_AREA_MISSING: {
+      summary:
+        'Ajoutez des quantités de surface aux IfcSpace — exportez les BaseQuantities pour que chaque espace porte NetFloorArea/GrossFloorArea.',
+      tools: {
+        revit:
+          'Les pièces s’exportent en IfcSpace mais sans quantités. Activez « Exporter les quantités de base » (Pset/QTO) dans les options d’export IFC et assurez-vous que les Pièces sont bien délimitées/placées pour calculer les surfaces.',
+        archicad:
+          'Utilisez les Zones pour les espaces et activez les Quantités de base dans le Traducteur IFC pour qu’IfcSpace exporte NetFloorArea/GrossFloorArea.',
+        tekla:
+          'Les espaces sont limités dans Tekla ; s’ils sont requis, définissez-les et activez l’export des quantités, ou générez-les dans le modèle d’architecture.',
+        allplan:
+          'Créez des Pièces (espaces) et activez l’export des quantités IFC pour qu’IfcSpace porte des quantités de surface.',
+      },
+    },
+    RULE_CONNECTED_MEP: {
+      summary:
+        'Connectez les segments MEP via des ports — tuyaux/gaines déconnectés s’exportent sans relations IfcDistributionPort et cassent le traçage des systèmes.',
+      tools: {
+        revit:
+          'Les gaines/tuyaux déconnectés s’exportent sans ports. Corrigez les connecteurs ouverts dans le modèle MEP (pas de coupures ni d’extrémités libres), gardez les segments reliés en systèmes connectés et activez l’export systèmes/ports pour écrire les relations IfcDistributionPort.',
+        archicad:
+          'Utilisez le MEP Modeler pour que les tracés restent connectés bout à bout ; exportez les systèmes MEP pour inclure ports/connexions.',
+        tekla:
+          'Le MEP n’est pas le domaine de Tekla ; modélisez un MEP connecté dans l’outil MEP dédié pour que les segments portent des ports, puis fédérez.',
+        allplan:
+          'Modélisez les réseaux MEP connectés bout à bout (sans extrémités ouvertes) pour que l’export IFC écrive les ports de distribution entre segments.',
+      },
+    },
   },
   de: {
     // ── Benennung & Identität ────────────────────────────────────────
@@ -2196,6 +2448,90 @@ export const RULE_REMEDIATION: Partial<
           'Reduzieren Sie das Detail/die Darstellung der Exportgeometrie und vermeiden Sie den unnötigen Export von Referenzmodellen.',
         allplan:
           'Senken Sie die Geometrieauflösung und vermeiden Sie das Einbetten von Texturen im IFC-Export.',
+      },
+    },
+    RULE_OPENING_WITHOUT_HOST: {
+      summary:
+        'Verwaiste IfcOpeningElement-Aussparungen neu zuordnen oder löschen — jede Öffnung muss über IfcRelVoidsElement ein Wirtselement durchdringen.',
+      tools: {
+        revit:
+          'Verwaiste Öffnungen stammen von gelöschten/geänderten Wirten oder lose exportierten Schacht-Öffnungen. Löschen Sie lose Öffnungen und erzeugen Sie die Aussparung erneut am Wirt (Wand/Decke/Dach), damit die Beziehung exportiert wird; setzen Sie Türen/Fenster bei verlorenem Schnitt neu ein.',
+        archicad:
+          'Öffnungen müssen zu einer Wand/Decke gehören. Entfernen Sie freistehende Öffnungsobjekte und nutzen Sie das Öffnungswerkzeug (oder Tür/Fenster) am Wirt verankert, damit ArchiCAD IfcRelVoidsElement exportiert.',
+        tekla:
+          'Erzeugen Sie den Schnitt/die Öffnung als Feature des Wirt-Teils statt als loses Objekt, damit die Aussparung beim Export auf einen Wirt verweist.',
+        allplan:
+          'Setzen Sie Öffnungen mit den Wand-/Decken-Öffnungswerkzeugen, damit sie zu einem Wirt gehören; löschen Sie losgelöste Öffnungskörper.',
+      },
+    },
+    RULE_STOREY_ELEVATION_DUPLICATE: {
+      summary:
+        'Geben Sie jedem IfcBuildingStorey eine eindeutige Elevation — Geschosse mit gleicher Höhe stören Plangenerierung und Geschossfilter.',
+      tools: {
+        revit:
+          'Zwei Ebenen teilen dieselbe Höhe. Vergeben Sie in der Ebenen-Ansicht je Ebene eine eindeutige Höhe (oder löschen Sie das Duplikat) und exportieren Sie nur echte Geschosse als Ebene (bei anderen „Geschossebene“/Export deaktivieren).',
+        archicad:
+          'Öffnen Sie die Geschoss-Einstellungen und setzen Sie je Geschoss eine eindeutige Höhe; führen Sie doppelte Geschosse gleicher Höhe zusammen oder löschen Sie sie.',
+        tekla:
+          'Weisen Sie in der Ebenen-/Phasenliste jeder für die IFC-Geschossstruktur genutzten Ebene eine eindeutige Höhe zu und entfernen Sie Duplikate.',
+        allplan:
+          'Setzen Sie in der Bauwerksstruktur unterschiedliche Höhen je Geschoss und entfernen Sie doppelte Geschosse mit gleicher Höhe.',
+      },
+    },
+    RULE_STOREY_ELEVATION_ORDER: {
+      summary:
+        'Ordnen Sie Geschosse so, dass ihre Elevation von unten nach oben steigt — vertauschte Höhen verwirren Schnitt-/Plan-Werkzeuge und Prüfer.',
+      tools: {
+        revit:
+          'Eine untere Ebene hat eine höhere Höhe (oder umgekehrt). Korrigieren Sie die Ebenenhöhen oder die Exportreihenfolge, damit Geschosse von unten nach oben gelesen werden, und prüfen Sie Keller-/Dachebenen mit negativen Höhen.',
+        archicad:
+          'Korrigieren Sie in den Geschoss-Einstellungen die Höhe jedes Geschosses außer der Reihe, damit die Höhen mit dem Geschossindex steigen.',
+        tekla:
+          'Ordnen/nummerieren Sie die Ebenen so um, dass ihre Höhen aufsteigen; korrigieren Sie jede Ebene, deren Höhe der Position widerspricht.',
+        allplan:
+          'Ordnen Sie in der Bauwerksstruktur die Geschosse um oder korrigieren Sie ihre Höhen, damit die Höhen nach oben zunehmen.',
+      },
+    },
+    RULE_UNIT_CONSISTENCY: {
+      summary:
+        'Exportieren Sie in metrischem SI (Millimeter/Meter) — imperiale Längeneinheiten brechen die Interoperabilität mit den meisten IFC/BIM-Tools.',
+      tools: {
+        revit:
+          'Revits interne Einheiten sind imperial, das IFC soll aber metrisch sein. Stellen Sie die Projekteinheiten auf metrisch (oder prüfen Sie, dass der IFC-Export SI/metrisch nutzt), damit die IFCSIUNIT in Metern ist.',
+        archicad:
+          'Stellen Sie die Arbeitseinheiten (und Berechnungseinheiten) des Projekts auf metrisch, damit das IFC-Schema SI-Längeneinheiten exportiert.',
+        tekla:
+          'Stellen Sie Umgebung/Rolle oder die Exporteinstellungen auf metrisch, damit der IFC-LENGTHUNIT SI ist (mm/m).',
+        allplan:
+          'Stellen Sie die Längeneinheiten in den Projektoptionen auf metrisch, damit der IFC-Export SI-Einheiten nutzt.',
+      },
+    },
+    RULE_SPACE_AREA_MISSING: {
+      summary:
+        'Ergänzen Sie Flächenmengen an IfcSpace — exportieren Sie BaseQuantities, damit jeder Raum NetFloorArea/GrossFloorArea trägt.',
+      tools: {
+        revit:
+          'Räume exportieren als IfcSpace, aber ohne Mengen. Aktivieren Sie „Basismengen exportieren“ (Pset/QTO) in den IFC-Exportoptionen und stellen Sie sicher, dass Räume korrekt begrenzt/platziert sind, damit Flächen berechnet werden.',
+        archicad:
+          'Nutzen Sie Zonen für Räume und aktivieren Sie die Basismengen im IFC-Übersetzer, damit IfcSpace NetFloorArea/GrossFloorArea exportiert.',
+        tekla:
+          'Räume sind in Tekla begrenzt; falls erforderlich, definieren Sie sie und aktivieren den Mengenexport, oder erzeugen Sie sie im Architekturmodell.',
+        allplan:
+          'Erstellen Sie Räume und aktivieren Sie den IFC-Mengenexport, damit IfcSpace Flächenmengen trägt.',
+      },
+    },
+    RULE_CONNECTED_MEP: {
+      summary:
+        'Verbinden Sie MEP-Segmente über Ports — getrennte Rohre/Kanäle exportieren ohne IfcDistributionPort-Beziehungen und brechen die Systemverfolgung.',
+      tools: {
+        revit:
+          'Getrennte Kanäle/Rohre exportieren ohne Ports. Beheben Sie offene Anschlüsse im MEP-Modell (keine Lücken/losen Enden), halten Sie Segmente in verbundenen Systemen und aktivieren Sie den System-/Port-Export, damit IfcDistributionPort-Beziehungen geschrieben werden.',
+        archicad:
+          'Nutzen Sie den MEP Modeler, damit Trassen durchgehend verbunden bleiben; exportieren Sie MEP-Systeme, um Ports/Verbindungen einzuschließen.',
+        tekla:
+          'MEP ist nicht Teklas Domäne; modellieren Sie verbundenes MEP im dedizierten MEP-Werkzeug, damit Segmente Ports tragen, und föderieren Sie dann.',
+        allplan:
+          'Modellieren Sie MEP-Stränge durchgehend verbunden (keine offenen Enden), damit der IFC-Export Verteil-Ports zwischen Segmenten schreibt.',
       },
     },
   },
@@ -2740,6 +3076,90 @@ export const RULE_REMEDIATION: Partial<
           'Baixe a resolução da geometria e evite incorporar texturas na exportação IFC.',
       },
     },
+    RULE_OPENING_WITHOUT_HOST: {
+      summary:
+        'Revincule ou exclua IfcOpeningElement órfãos — toda abertura deve cortar um elemento anfitrião via IfcRelVoidsElement.',
+      tools: {
+        revit:
+          'Aberturas órfãs vêm de anfitriões excluídos/editados ou de shafts exportados soltos. Exclua aberturas soltas e recrie o vazio sobre o anfitrião (parede/piso/telhado) para exportar a relação, e re-hospede portas/janelas se o corte se perdeu.',
+        archicad:
+          'As aberturas devem pertencer a uma parede/laje. Remova objetos de abertura soltos e use a Ferramenta de Abertura (ou porta/janela) ancorada ao anfitrião para o ArchiCAD exportar IfcRelVoidsElement.',
+        tekla:
+          'Recrie o corte/abertura como uma feature da peça anfitriã, em vez de um objeto solto, para que o vazio referencie um anfitrião na exportação.',
+        allplan:
+          'Coloque aberturas com as ferramentas de abertura de parede/laje para que pertençam a um anfitrião; exclua sólidos de abertura desvinculados.',
+      },
+    },
+    RULE_STOREY_ELEVATION_DUPLICATE: {
+      summary:
+        'Dê uma Elevation distinta a cada IfcBuildingStorey — pavimentos com a mesma cota quebram a geração de plantas e o filtro por pavimento.',
+      tools: {
+        revit:
+          'Dois níveis compartilham a mesma cota. Na vista de Níveis dê uma cota única a cada Nível (ou exclua o duplicado) e exporte como pavimento apenas os níveis reais (desative “Pavimento”/exportação nos demais).',
+        archicad:
+          'Abra Configurações de Pavimento e defina uma elevação única por pavimento; mescle ou exclua pavimentos duplicados na mesma altura.',
+        tekla:
+          'Na lista de níveis/fases atribua uma cota única a cada nível usado na estrutura de pavimentos IFC e remova duplicados.',
+        allplan:
+          'Na estrutura do edifício defina alturas distintas por pavimento e remova pavimentos duplicados que resultem na mesma cota.',
+      },
+    },
+    RULE_STOREY_ELEVATION_ORDER: {
+      summary:
+        'Ordene os pavimentos para que sua Elevation cresça de baixo para cima — cotas fora de ordem confundem ferramentas de corte/planta e revisores.',
+      tools: {
+        revit:
+          'Um nível inferior tem cota maior (ou vice-versa). Corrija as cotas dos níveis ou a ordem de exportação para os pavimentos lerem de baixo para cima, e revise níveis de subsolo/telhado com cotas negativas.',
+        archicad:
+          'Em Configurações de Pavimento corrija a altura de qualquer pavimento fora de sequência para as cotas subirem com o índice do pavimento.',
+        tekla:
+          'Reordene/renumere os níveis para suas cotas subirem; corrija qualquer nível cuja altura contradiga sua posição.',
+        allplan:
+          'Na estrutura do edifício reordene os pavimentos ou corrija suas alturas para as cotas aumentarem para cima.',
+      },
+    },
+    RULE_UNIT_CONSISTENCY: {
+      summary:
+        'Exporte em métrico SI (milímetros/metros) — unidades imperiais quebram a interoperabilidade com a maioria das ferramentas IFC/BIM.',
+      tools: {
+        revit:
+          'As unidades internas do Revit são imperiais, mas o IFC deve ser métrico. Defina as Unidades do projeto como métricas (ou confirme que a exportação IFC usa SI/métrico) para o IFCSIUNIT ficar em metros.',
+        archicad:
+          'Defina as Unidades de Trabalho (e de Cálculo) do projeto como métricas para o esquema IFC exportar unidades de comprimento SI.',
+        tekla:
+          'Mude o ambiente/papel ou as configurações de exportação para métrico para o LENGTHUNIT do IFC ser SI (mm/m).',
+        allplan:
+          'Defina as unidades de comprimento como métricas nas opções do projeto para a exportação IFC usar unidades SI.',
+      },
+    },
+    RULE_SPACE_AREA_MISSING: {
+      summary:
+        'Adicione quantidades de área aos IfcSpace — exporte BaseQuantities para cada espaço levar NetFloorArea/GrossFloorArea.',
+      tools: {
+        revit:
+          'Ambientes exportam como IfcSpace mas sem quantidades. Ative “Exportar quantidades base” (Pset/QTO) nas opções de exportação IFC e garanta que os Ambientes estejam bem delimitados/posicionados para as áreas serem calculadas.',
+        archicad:
+          'Use Zonas para espaços e ative as Quantidades Base no Tradutor IFC para IfcSpace exportar NetFloorArea/GrossFloorArea.',
+        tekla:
+          'Espaços são limitados no Tekla; se forem necessários, defina-os e ative a exportação de quantidades, ou gere-os no modelo de arquitetura.',
+        allplan:
+          'Crie Ambientes (espaços) e ative a exportação de quantidades IFC para IfcSpace levar quantidades de área.',
+      },
+    },
+    RULE_CONNECTED_MEP: {
+      summary:
+        'Conecte os segmentos MEP por portas — tubos/dutos desconectados exportam sem relações IfcDistributionPort e quebram o rastreio de sistemas.',
+      tools: {
+        revit:
+          'Dutos/tubos desconectados exportam sem portas. Corrija conectores abertos no modelo MEP (sem vãos/pontas soltas), mantenha os segmentos unidos em sistemas conectados e ative a exportação de sistemas/portas para escrever as relações IfcDistributionPort.',
+        archicad:
+          'Use o MEP Modeler para as rotas ficarem conectadas de ponta a ponta; exporte os sistemas MEP para incluir portas/conexões.',
+        tekla:
+          'MEP não é o domínio do Tekla; modele o MEP conectado na ferramenta MEP dedicada para os segmentos levarem portas, e depois federe.',
+        allplan:
+          'Modele os trajetos MEP conectados de ponta a ponta (sem pontas abertas) para a exportação IFC escrever as portas de distribuição entre segmentos.',
+      },
+    },
   },
   it: {
     // ── Denominazione e identità ─────────────────────────────────────
@@ -3280,6 +3700,90 @@ export const RULE_REMEDIATION: Partial<
           'Riduci il dettaglio/la rappresentazione della geometria di esportazione ed evita di esportare modelli di riferimento inutilmente.',
         allplan:
           'Abbassa la risoluzione della geometria ed evita di incorporare texture nell’esportazione IFC.',
+      },
+    },
+    RULE_OPENING_WITHOUT_HOST: {
+      summary:
+        'Ricollega o elimina gli IfcOpeningElement orfani — ogni apertura deve forare un elemento ospite tramite IfcRelVoidsElement.',
+      tools: {
+        revit:
+          'Le aperture orfane derivano da ospiti eliminati/modificati o da vani esportati isolati. Elimina le aperture isolate e ricrea il vuoto sull’ospite (muro/solaio/tetto) per esportare la relazione, e ri-ospita porte/finestre se il taglio è andato perso.',
+        archicad:
+          'Le aperture devono appartenere a un muro/solaio. Rimuovi gli oggetti apertura isolati e usa lo strumento Apertura (o porta/finestra) ancorato all’ospite affinché ArchiCAD esporti IfcRelVoidsElement.',
+        tekla:
+          'Ricrea il taglio/apertura come feature della parte ospite invece di un oggetto isolato, così il vuoto fa riferimento a un ospite all’esportazione.',
+        allplan:
+          'Inserisci le aperture con gli strumenti di apertura muro/solaio così appartengono a un ospite; elimina i solidi di apertura scollegati.',
+      },
+    },
+    RULE_STOREY_ELEVATION_DUPLICATE: {
+      summary:
+        'Assegna una Elevation distinta a ogni IfcBuildingStorey — piani alla stessa quota rompono la generazione delle piante e il filtro per piano.',
+      tools: {
+        revit:
+          'Due livelli condividono la stessa quota. Nella vista Livelli dai una quota univoca a ogni Livello (o elimina il duplicato) ed esporta come piano solo i livelli reali (disattiva “Piano edificio”/esportazione sugli altri).',
+        archicad:
+          'Apri Impostazioni Piano e imposta una quota univoca per piano; unisci o elimina i piani duplicati alla stessa altezza.',
+        tekla:
+          'Nella lista livelli/fasi assegna una quota univoca a ogni livello usato per la struttura dei piani IFC ed elimina i duplicati.',
+        allplan:
+          'Nella struttura dell’edificio imposta altezze distinte per piano ed elimina i piani duplicati che risultano alla stessa quota.',
+      },
+    },
+    RULE_STOREY_ELEVATION_ORDER: {
+      summary:
+        'Ordina i piani in modo che la loro Elevation cresca dal basso verso l’alto — quote fuori ordine confondono strumenti di sezione/pianta e revisori.',
+      tools: {
+        revit:
+          'Un livello inferiore ha una quota maggiore (o viceversa). Correggi le quote dei livelli o l’ordine di esportazione così i piani si leggono dal basso verso l’alto, e verifica i livelli interrati/copertura con quote negative.',
+        archicad:
+          'In Impostazioni Piano correggi l’altezza di ogni piano fuori sequenza così le quote salgono con l’indice di piano.',
+        tekla:
+          'Riordina/rinumera i livelli così le loro quote salgono; correggi ogni livello la cui altezza contraddice la posizione.',
+        allplan:
+          'Nella struttura dell’edificio riordina i piani o correggi le altezze così le quote aumentano verso l’alto.',
+      },
+    },
+    RULE_UNIT_CONSISTENCY: {
+      summary:
+        'Esporta in metrico SI (millimetri/metri) — le unità imperiali rompono l’interoperabilità con la maggior parte degli strumenti IFC/BIM.',
+      tools: {
+        revit:
+          'Le unità interne di Revit sono imperiali, ma l’IFC deve essere metrico. Imposta le Unità di progetto su metrico (o verifica che l’esportazione IFC usi SI/metrico) così l’IFCSIUNIT è in metri.',
+        archicad:
+          'Imposta le Unità di lavoro (e di calcolo) del progetto su metrico così lo schema IFC esporta unità di lunghezza SI.',
+        tekla:
+          'Cambia ambiente/ruolo o le impostazioni di esportazione su metrico così il LENGTHUNIT dell’IFC è SI (mm/m).',
+        allplan:
+          'Imposta le unità di lunghezza su metrico nelle opzioni di progetto così l’esportazione IFC usa unità SI.',
+      },
+    },
+    RULE_SPACE_AREA_MISSING: {
+      summary:
+        'Aggiungi quantità di area agli IfcSpace — esporta le BaseQuantities così ogni spazio porta NetFloorArea/GrossFloorArea.',
+      tools: {
+        revit:
+          'I locali esportano come IfcSpace ma senza quantità. Attiva “Esporta quantità di base” (Pset/QTO) nelle opzioni di esportazione IFC e assicurati che i Locali siano ben delimitati/posizionati così le aree vengono calcolate.',
+        archicad:
+          'Usa le Zone per gli spazi e attiva le Quantità di base nel Traduttore IFC così IfcSpace esporta NetFloorArea/GrossFloorArea.',
+        tekla:
+          'Gli spazi sono limitati in Tekla; se servono, definiscili e attiva l’esportazione delle quantità, oppure generali nel modello di architettura.',
+        allplan:
+          'Crea Locali (spazi) e attiva l’esportazione delle quantità IFC così IfcSpace porta quantità di area.',
+      },
+    },
+    RULE_CONNECTED_MEP: {
+      summary:
+        'Collega i segmenti MEP tramite porte — tubi/canali scollegati esportano senza relazioni IfcDistributionPort e rompono il tracciamento dei sistemi.',
+      tools: {
+        revit:
+          'Canali/tubi scollegati esportano senza porte. Correggi i connettori aperti nel modello MEP (niente interruzioni/estremità libere), tieni i segmenti uniti in sistemi connessi e attiva l’esportazione di sistemi/porte così vengono scritte le relazioni IfcDistributionPort.',
+        archicad:
+          'Usa il MEP Modeler così i tracciati restano collegati da estremità a estremità; esporta i sistemi MEP per includere porte/connessioni.',
+        tekla:
+          'Il MEP non è il dominio di Tekla; modella il MEP connesso nello strumento MEP dedicato così i segmenti portano porte, poi federa.',
+        allplan:
+          'Modella i percorsi MEP collegati da estremità a estremità (niente estremità aperte) così l’esportazione IFC scrive le porte di distribuzione tra i segmenti.',
       },
     },
   },
@@ -3824,6 +4328,90 @@ export const RULE_REMEDIATION: Partial<
           '在 IFC 导出中降低几何分辨率并避免内嵌纹理。',
       },
     },
+    RULE_OPENING_WITHOUT_HOST: {
+      summary:
+        '重新关联或删除孤立的 IfcOpeningElement —— 每个洞口都必须通过 IfcRelVoidsElement 在宿主构件上开洞。',
+      tools: {
+        revit:
+          '孤立洞口通常源于被删除/修改的宿主或松散导出的竖井洞口。删除游离的洞口，并在其宿主（墙/楼板/屋顶）上重新开洞以导出该关系；若剪切丢失，请重新放置门/窗。',
+        archicad:
+          '洞口必须从属于墙或板。删除游离的洞口对象，使用锚定在宿主上的洞口工具（或门/窗），以便 ArchiCAD 导出 IfcRelVoidsElement。',
+        tekla:
+          '将剪切/洞口重建为其宿主零件的特征（feature），而非游离对象，使导出时空洞引用某个宿主。',
+        allplan:
+          '用墙/板的开洞工具放置洞口，使其从属于宿主；删除已脱离的洞口实体。',
+      },
+    },
+    RULE_STOREY_ELEVATION_DUPLICATE: {
+      summary:
+        '为每个 IfcBuildingStorey 设置唯一的 Elevation —— 楼层标高重复会破坏平面生成与按楼层筛选。',
+      tools: {
+        revit:
+          '两个标高共用同一高程。在标高视图中为每个标高设置唯一高程（或删除多余的重复项），并仅将真正的楼层导出为标高（在其他标高上关闭“建筑楼层”/导出）。',
+        archicad:
+          '打开楼层设置，为每个楼层设置唯一高程；合并或删除指向同一高度的重复楼层。',
+        tekla:
+          '在标高/阶段列表中，为用于 IFC 楼层结构的每个标高分配唯一高程，并删除重复项。',
+        allplan:
+          '在建筑结构中为每个楼层设置不同高度，并删除解析到同一高程的重复楼层。',
+      },
+    },
+    RULE_STOREY_ELEVATION_ORDER: {
+      summary:
+        '使楼层的 Elevation 自下而上递增排序 —— 标高乱序会让剖面/平面工具和审阅者困惑。',
+      tools: {
+        revit:
+          '较低的标高反而高程更大（或相反）。修正标高高程或导出顺序，使楼层自下而上排列，并检查带负高程的地下室/屋顶标高。',
+        archicad:
+          '在楼层设置中，修正任何顺序错乱楼层的高度，使高程随楼层序号递增。',
+        tekla:
+          '重新排序/编号标高使其高程递增；修正任何高度与其位置矛盾的标高。',
+        allplan:
+          '在建筑结构中重新排序楼层或修正其高度，使高程向上递增。',
+      },
+    },
+    RULE_UNIT_CONSISTENCY: {
+      summary:
+        '以公制 SI（毫米/米）导出 —— 英制长度单位会破坏与大多数 IFC/BIM 工具的互操作性。',
+      tools: {
+        revit:
+          'Revit 内部单位为英制，但 IFC 应为公制。导出前将项目单位设为公制（或确认 IFC 导出使用 SI/公制），使文件的 IFCSIUNIT 以米为基准。',
+        archicad:
+          '将项目的工作单位（及计算单位）设为公制，使 IFC 模式导出 SI 长度单位。',
+        tekla:
+          '将环境/角色或导出设置切换为公制，使 IFC 的 LENGTHUNIT 为 SI（mm/m）。',
+        allplan:
+          '在项目选项中将长度单位设为公制，使 IFC 导出使用 SI 单位。',
+      },
+    },
+    RULE_SPACE_AREA_MISSING: {
+      summary:
+        '为 IfcSpace 添加面积量 —— 导出 BaseQuantities，使每个空间携带 NetFloorArea/GrossFloorArea。',
+      tools: {
+        revit:
+          '房间导出为 IfcSpace 但缺少量值。在 IFC 导出选项中启用“导出基础量”（Pset/QTO），并确保房间边界/放置正确以便计算面积。',
+        archicad:
+          '用区域（Zone）表示空间，并在 IFC 转换器中启用基础量，使 IfcSpace 导出 NetFloorArea/GrossFloorArea。',
+        tekla:
+          'Tekla 中空间功能有限；如确需，请定义空间并启用量值导出，或在建筑模型中生成。',
+        allplan:
+          '创建房间（空间）并启用 IFC 量值导出，使 IfcSpace 携带面积量。',
+      },
+    },
+    RULE_CONNECTED_MEP: {
+      summary:
+        '通过端口连接 MEP 段 —— 断开的管道/风管导出时缺少 IfcDistributionPort 关系，会破坏系统追踪。',
+      tools: {
+        revit:
+          '断开的风管/管道导出时没有端口。修复 MEP 模型中的开放连接件（无间隙/松端），使各段连入相连的系统，并启用系统/端口导出，以写出 IfcDistributionPort 关系。',
+        archicad:
+          '使用 MEP Modeler 使路由端到端保持连接；导出 MEP 系统以包含端口/连接。',
+        tekla:
+          'MEP 不是 Tekla 的领域；请在专用 MEP 工具中建模连通的 MEP 使各段带端口，然后再联合（federate）。',
+        allplan:
+          '将 MEP 走线端到端连通建模（无开放端），使 IFC 导出在各段之间写出分配端口。',
+      },
+    },
   },
   ja: {
     // ── 名称と識別 ───────────────────────────────────────────────────
@@ -4364,6 +4952,90 @@ export const RULE_REMEDIATION: Partial<
           'エクスポート ジオメトリの詳細度／表現を下げ、参照モデルを不必要にエクスポートしないようにします。',
         allplan:
           'IFC エクスポートでジオメトリ解像度を下げ、テクスチャの埋め込みを避けます。',
+      },
+    },
+    RULE_OPENING_WITHOUT_HOST: {
+      summary:
+        '孤立した IfcOpeningElement を再リンクまたは削除 —— すべての開口は IfcRelVoidsElement でホスト要素を貫通する必要があります。',
+      tools: {
+        revit:
+          '孤立開口は削除/編集されたホストや、単独でエクスポートされたシャフト開口から生じます。浮いた開口を削除し、ホスト（壁/床/屋根）上に開口を作り直して関係をエクスポートし、カットが失われた場合はドア/窓を再ホストします。',
+        archicad:
+          '開口は壁/スラブに属している必要があります。独立した開口オブジェクトを削除し、ホストに固定した開口ツール（またはドア/窓）を使って ArchiCAD が IfcRelVoidsElement をエクスポートするようにします。',
+        tekla:
+          'カット/開口を独立オブジェクトではなくホストパーツのフィーチャーとして作り直し、エクスポート時にボイドがホストを参照するようにします。',
+        allplan:
+          '壁/スラブの開口ツールで開口を配置してホストに属させ、切り離された開口ソリッドを削除します。',
+      },
+    },
+    RULE_STOREY_ELEVATION_DUPLICATE: {
+      summary:
+        '各 IfcBuildingStorey に一意の Elevation を設定 —— 同じ高さの階は平面生成と階フィルタを壊します。',
+      tools: {
+        revit:
+          '2 つのレベルが同じ高さを共有しています。レベルビューで各レベルに一意の高さを設定（または重複を削除）し、本当の階だけをレベルとしてエクスポートします（他は「建物階」/エクスポートを無効化）。',
+        archicad:
+          '階設定を開き、階ごとに一意の高さを設定します。同じ高さに重なる階は統合または削除します。',
+        tekla:
+          'レベル/フェーズ一覧で、IFC 階構造に使う各レベルに一意の高さを割り当て、重複を削除します。',
+        allplan:
+          '建物構造で階ごとに異なる高さを設定し、同じ高さになる重複階を削除します。',
+      },
+    },
+    RULE_STOREY_ELEVATION_ORDER: {
+      summary:
+        '階を Elevation が下から上へ増えるように並べます —— 高さの順序が乱れると断面/平面ツールやレビュアーが混乱します。',
+      tools: {
+        revit:
+          '下位レベルの方が高い（または逆）です。レベルの高さまたはエクスポート順を修正して階が下から上に読めるようにし、負の高さの地下/屋根レベルを確認します。',
+        archicad:
+          '階設定で、順序が乱れた階の高さを修正し、高さが階インデックスとともに上がるようにします。',
+        tekla:
+          'レベルを並べ替え/番号付けし直して高さが昇順になるようにし、位置と矛盾する高さのレベルを修正します。',
+        allplan:
+          '建物構造で階を並べ替えるか高さを修正し、高さが上方向に増えるようにします。',
+      },
+    },
+    RULE_UNIT_CONSISTENCY: {
+      summary:
+        'メートル法 SI（ミリメートル/メートル）でエクスポート —— ヤード・ポンド長さ単位は多くの IFC/BIM ツールとの相互運用性を壊します。',
+      tools: {
+        revit:
+          'Revit の内部単位はヤード・ポンドですが、IFC はメートル法であるべきです。エクスポート前にプロジェクト単位をメートル法に設定（または IFC エクスポートが SI/メートル法を使うことを確認）し、IFCSIUNIT がメートル基準になるようにします。',
+        archicad:
+          'プロジェクトの作業単位（および計算単位）をメートル法に設定し、IFC スキーマが SI 長さ単位をエクスポートするようにします。',
+        tekla:
+          '環境/ロールまたはエクスポート設定をメートル法に切り替え、IFC の LENGTHUNIT を SI（mm/m）にします。',
+        allplan:
+          'プロジェクトオプションで長さ単位をメートル法に設定し、IFC エクスポートが SI 単位を使うようにします。',
+      },
+    },
+    RULE_SPACE_AREA_MISSING: {
+      summary:
+        'IfcSpace に面積数量を追加 —— BaseQuantities をエクスポートして各空間に NetFloorArea/GrossFloorArea を持たせます。',
+      tools: {
+        revit:
+          '部屋は IfcSpace としてエクスポートされますが数量が欠落します。IFC エクスポートオプションで「基本数量をエクスポート」（Pset/QTO）を有効化し、面積が計算されるよう部屋が正しく境界設定/配置されていることを確認します。',
+        archicad:
+          '空間にはゾーンを使い、IFC トランスレータで基本数量を有効化して IfcSpace が NetFloorArea/GrossFloorArea をエクスポートするようにします。',
+        tekla:
+          'Tekla では空間は限定的です。必要なら定義して数量エクスポートを有効化するか、意匠モデルで生成します。',
+        allplan:
+          '部屋（空間）を作成し、IFC 数量エクスポートを有効化して IfcSpace に面積数量を持たせます。',
+      },
+    },
+    RULE_CONNECTED_MEP: {
+      summary:
+        'MEP セグメントをポートで接続 —— 切断された配管/ダクトは IfcDistributionPort 関係なしにエクスポートされ、系統追跡を壊します。',
+      tools: {
+        revit:
+          '切断されたダクト/配管はポートなしでエクスポートされます。MEP モデルの開いたコネクタ（隙間/遊端なし）を修正し、セグメントを接続された系統に保ち、系統/ポートのエクスポートを有効化して IfcDistributionPort 関係が書き出されるようにします。',
+        archicad:
+          'MEP Modeler を使ってルートが端から端まで接続された状態を保ち、ポート/接続を含めるよう MEP 系統をエクスポートします。',
+        tekla:
+          'MEP は Tekla の領域ではありません。専用の MEP ツールで接続された MEP をモデリングしてセグメントにポートを持たせ、その後フェデレートします。',
+        allplan:
+          'MEP の経路を端から端まで接続してモデリングし（開いた端なし）、IFC エクスポートがセグメント間に分配ポートを書き出すようにします。',
       },
     },
   },
@@ -4908,6 +5580,90 @@ export const RULE_REMEDIATION: Partial<
           'ลดความละเอียดจีโอเมตรีและหลีกเลี่ยงการฝังเท็กซ์เจอร์ในการส่งออก IFC',
       },
     },
+    RULE_OPENING_WITHOUT_HOST: {
+      summary:
+        'เชื่อมโยงใหม่หรือลบ IfcOpeningElement ที่กำพร้า —— ทุกช่องเปิดต้องเจาะผ่านองค์ประกอบโฮสต์ผ่าน IfcRelVoidsElement',
+      tools: {
+        revit:
+          'ช่องเปิดกำพร้ามักเกิดจากโฮสต์ที่ถูกลบ/แก้ไข หรือช่องชาฟท์ที่ส่งออกลอย ๆ ลบช่องเปิดที่ลอยอยู่และสร้างช่องว่างบนโฮสต์ (ผนัง/พื้น/หลังคา) ใหม่เพื่อให้ส่งออกความสัมพันธ์ และวางประตู/หน้าต่างใหม่หากการตัดหายไป',
+        archicad:
+          'ช่องเปิดต้องสังกัดผนังหรือพื้น ลบออบเจกต์ช่องเปิดที่ลอยอยู่ และใช้เครื่องมือช่องเปิด (หรือประตู/หน้าต่าง) ที่ยึดกับโฮสต์ เพื่อให้ ArchiCAD ส่งออก IfcRelVoidsElement',
+        tekla:
+          'สร้างการตัด/ช่องเปิดใหม่เป็นฟีเจอร์ของชิ้นส่วนโฮสต์ แทนที่จะเป็นออบเจกต์ลอย เพื่อให้ช่องว่างอ้างอิงโฮสต์เมื่อส่งออก',
+        allplan:
+          'วางช่องเปิดด้วยเครื่องมือเจาะผนัง/พื้น เพื่อให้สังกัดโฮสต์ และลบโซลิดช่องเปิดที่หลุดออก',
+      },
+    },
+    RULE_STOREY_ELEVATION_DUPLICATE: {
+      summary:
+        'กำหนด Elevation ที่ไม่ซ้ำให้แต่ละ IfcBuildingStorey —— ชั้นที่ระดับเดียวกันทำให้การสร้างผังและการกรองตามชั้นเสีย',
+      tools: {
+        revit:
+          'สองระดับใช้ค่าระดับเดียวกัน ในมุมมอง Levels กำหนดระดับที่ไม่ซ้ำให้แต่ละ Level (หรือลบรายการซ้ำ) และส่งออกเป็นชั้นเฉพาะระดับที่เป็นชั้นจริง (ปิด “Building Story”/การส่งออกในระดับอื่น)',
+        archicad:
+          'เปิด Story Settings และตั้งระดับที่ไม่ซ้ำต่อชั้น รวมหรือลบชั้นซ้ำที่อยู่ระดับเดียวกัน',
+        tekla:
+          'ในรายการ level/phase กำหนดระดับที่ไม่ซ้ำให้แต่ละ level ที่ใช้กับโครงสร้างชั้น IFC และลบรายการซ้ำ',
+        allplan:
+          'ในโครงสร้างอาคาร ตั้งความสูงที่ต่างกันต่อชั้น และลบชั้นซ้ำที่ลงเอยที่ระดับเดียวกัน',
+      },
+    },
+    RULE_STOREY_ELEVATION_ORDER: {
+      summary:
+        'จัดลำดับชั้นให้ Elevation เพิ่มจากล่างขึ้นบน —— ระดับที่สลับลำดับทำให้เครื่องมือตัด/ผังและผู้ตรวจสับสน',
+      tools: {
+        revit:
+          'ระดับล่างกลับมีค่าระดับสูงกว่า (หรือกลับกัน) แก้ไขค่าระดับหรือกำหนดลำดับการส่งออกให้ชั้นอ่านจากล่างขึ้นบน และตรวจระดับชั้นใต้ดิน/หลังคาที่มีค่าระดับติดลบ',
+        archicad:
+          'ใน Story Settings แก้ความสูงของชั้นที่ผิดลำดับ เพื่อให้ค่าระดับเพิ่มตามดัชนีชั้น',
+        tekla:
+          'จัดลำดับ/หมายเลข level ใหม่ให้ค่าระดับเพิ่มขึ้น และแก้ไข level ที่ความสูงขัดกับตำแหน่ง',
+        allplan:
+          'ในโครงสร้างอาคาร จัดลำดับชั้นใหม่หรือแก้ความสูง เพื่อให้ค่าระดับเพิ่มขึ้นด้านบน',
+      },
+    },
+    RULE_UNIT_CONSISTENCY: {
+      summary:
+        'ส่งออกเป็นเมตริก SI (มิลลิเมตร/เมตร) —— หน่วยความยาวอิมพีเรียลทำให้ทำงานร่วมกับเครื่องมือ IFC/BIM ส่วนใหญ่ไม่ได้',
+      tools: {
+        revit:
+          'หน่วยภายในของ Revit เป็นอิมพีเรียล แต่ IFC ควรเป็นเมตริก ตั้ง Project Units เป็นเมตริก (หรือยืนยันว่าการส่งออก IFC ใช้ SI/เมตริก) ก่อนส่งออก เพื่อให้ IFCSIUNIT อิงเมตร',
+        archicad:
+          'ตั้ง Working Units (และหน่วยคำนวณ) ของโปรเจกต์เป็นเมตริก เพื่อให้สคีมา IFC ส่งออกหน่วยความยาว SI',
+        tekla:
+          'สลับ environment/role หรือการตั้งค่าส่งออกเป็นเมตริก เพื่อให้ LENGTHUNIT ของ IFC เป็น SI (mm/m)',
+        allplan:
+          'ตั้งหน่วยความยาวเป็นเมตริกในตัวเลือกโปรเจกต์ เพื่อให้การส่งออก IFC ใช้หน่วย SI',
+      },
+    },
+    RULE_SPACE_AREA_MISSING: {
+      summary:
+        'เพิ่มปริมาณพื้นที่ให้ IfcSpace —— ส่งออก BaseQuantities เพื่อให้แต่ละสเปซมี NetFloorArea/GrossFloorArea',
+      tools: {
+        revit:
+          'ห้องส่งออกเป็น IfcSpace แต่ขาดปริมาณ เปิด “Export base quantities” (Pset/QTO) ในตัวเลือกส่งออก IFC และตรวจให้ห้องมีขอบเขต/ตำแหน่งถูกต้องเพื่อให้คำนวณพื้นที่ได้',
+        archicad:
+          'ใช้ Zone แทนสเปซ และเปิด Base Quantities ใน IFC Translator เพื่อให้ IfcSpace ส่งออก NetFloorArea/GrossFloorArea',
+        tekla:
+          'สเปซใน Tekla มีจำกัด หากจำเป็นให้กำหนดและเปิดการส่งออกปริมาณ หรือสร้างในโมเดลสถาปัตยกรรม',
+        allplan:
+          'สร้างห้อง (สเปซ) และเปิดการส่งออกปริมาณ IFC เพื่อให้ IfcSpace มีปริมาณพื้นที่',
+      },
+    },
+    RULE_CONNECTED_MEP: {
+      summary:
+        'เชื่อมเซกเมนต์ MEP ผ่านพอร์ต —— ท่อ/ดักต์ที่ขาดการเชื่อมจะส่งออกโดยไม่มีความสัมพันธ์ IfcDistributionPort และทำให้การไล่ระบบเสีย',
+      tools: {
+        revit:
+          'ดักต์/ท่อที่ขาดการเชื่อมจะส่งออกโดยไม่มีพอร์ต แก้ตัวเชื่อมที่เปิดอยู่ในโมเดล MEP (ไม่มีช่องว่าง/ปลายลอย) ให้เซกเมนต์ต่อกันเป็นระบบที่เชื่อมถึงกัน และเปิดการส่งออกระบบ/พอร์ต เพื่อเขียนความสัมพันธ์ IfcDistributionPort',
+        archicad:
+          'ใช้ MEP Modeler เพื่อให้เส้นทางเชื่อมต่อกันตลอดปลายถึงปลาย และส่งออกระบบ MEP เพื่อรวมพอร์ต/การเชื่อม',
+        tekla:
+          'MEP ไม่ใช่ขอบเขตของ Tekla ให้สร้างโมเดล MEP ที่เชื่อมต่อในเครื่องมือ MEP เฉพาะ เพื่อให้เซกเมนต์มีพอร์ต แล้วจึงรวมโมเดล',
+        allplan:
+          'สร้างเส้นทาง MEP ที่เชื่อมต่อกันตลอดปลายถึงปลาย (ไม่มีปลายเปิด) เพื่อให้การส่งออก IFC เขียนพอร์ตการกระจายระหว่างเซกเมนต์',
+      },
+    },
   },
   ca: {
     // ── Nomenclatura i identitat ─────────────────────────────────────
@@ -5448,6 +6204,90 @@ export const RULE_REMEDIATION: Partial<
           'Redueix el detall/representació de la geometria d’exportació i evita exportar models de referència innecessàriament.',
         allplan:
           'Baixa la resolució de la geometria i evita incrustar textures a l’exportació IFC.',
+      },
+    },
+    RULE_OPENING_WITHOUT_HOST: {
+      summary:
+        'Revincula o elimina els IfcOpeningElement orfes — tot buit ha de tallar un element amfitrió mitjançant IfcRelVoidsElement.',
+      tools: {
+        revit:
+          'Els buits orfes solen venir d’amfitrions esborrats/editats o de buits de shaft solts. Esborra els buits solts i recrea el buidat sobre el seu amfitrió (mur/sostre/coberta) perquè s’exporti la relació, i torna a allotjar portes/finestres si s’ha perdut el tall.',
+        archicad:
+          'Els buits han de pertànyer a un mur o sostre. Elimina els objectes de buit solts i fes servir l’eina de Buit (o porta/finestra) ancorada a l’amfitrió perquè ArchiCAD exporti IfcRelVoidsElement.',
+        tekla:
+          'Recrea el tall/buit com una operació (feature) de la seva part amfitriona en lloc d’un objecte solt, perquè el buidat referenciï un amfitrió en exportar.',
+        allplan:
+          'Col·loca els buits amb les eines de buit de mur/sostre perquè pertanyin a un amfitrió; elimina els sòlids de buit desvinculats.',
+      },
+    },
+    RULE_STOREY_ELEVATION_DUPLICATE: {
+      summary:
+        'Assigna una Elevation distinta a cada IfcBuildingStorey — les plantes amb la mateixa cota trenquen la generació de plànols i el filtratge per planta.',
+      tools: {
+        revit:
+          'Dos nivells comparteixen la mateixa cota. A la vista de Nivells dona una cota única a cada Nivell (o esborra el duplicat) i exporta com a planta només els nivells reals (desactiva “Planta d’edifici”/exportació als altres).',
+        archicad:
+          'Obre Configuració de Planta i fixa una elevació única per planta; fusiona o elimina les plantes duplicades a la mateixa alçada.',
+        tekla:
+          'A la llista de nivells/fases assigna una cota única a cada nivell usat per a l’estructura de plantes IFC i elimina els duplicats.',
+        allplan:
+          'A l’estructura de l’edifici defineix alçades distintes per planta i elimina les plantes duplicades que resolen a la mateixa cota.',
+      },
+    },
+    RULE_STOREY_ELEVATION_ORDER: {
+      summary:
+        'Ordena les plantes perquè la seva Elevation creixi de baix a dalt — les cotes desordenades confonen les eines de secció/plànol i els revisors.',
+      tools: {
+        revit:
+          'Un nivell inferior té una cota més alta (o a l’inrevés). Corregeix les cotes dels nivells o l’ordre d’exportació perquè les plantes vagin de baix a dalt, i revisa els nivells de soterrani/coberta amb cotes negatives.',
+        archicad:
+          'A Configuració de Planta corregeix l’alçada de qualsevol planta fora de seqüència perquè les cotes pugin amb l’índex de planta.',
+        tekla:
+          'Reordena/renumera els nivells perquè les seves cotes pugin; corregeix qualsevol nivell l’alçada del qual contradigui la seva posició.',
+        allplan:
+          'A l’estructura de l’edifici reordena les plantes o corregeix-ne les alçades perquè les cotes augmentin cap amunt.',
+      },
+    },
+    RULE_UNIT_CONSISTENCY: {
+      summary:
+        'Exporta en mètric SI (mil·límetres/metres) — les unitats imperials trenquen la interoperabilitat amb la majoria d’eines IFC/BIM.',
+      tools: {
+        revit:
+          'Les unitats internes de Revit són imperials, però l’IFC ha de ser mètric. Posa les Unitats de projecte en mètric (o confirma que l’exportació IFC usa SI/mètric) perquè l’IFCSIUNIT sigui en metres.',
+        archicad:
+          'Configura les Unitats de Treball (i de Càlcul) del projecte en mètric perquè l’esquema IFC exporti unitats de longitud SI.',
+        tekla:
+          'Canvia l’entorn/rol o els ajustos d’exportació a mètric perquè el LENGTHUNIT de l’IFC sigui SI (mm/m).',
+        allplan:
+          'Configura les unitats de longitud en mètric a les opcions del projecte perquè l’exportació IFC usi unitats SI.',
+      },
+    },
+    RULE_SPACE_AREA_MISSING: {
+      summary:
+        'Afegeix quantitats d’àrea als IfcSpace — exporta BaseQuantities perquè cada espai porti NetFloorArea/GrossFloorArea.',
+      tools: {
+        revit:
+          'Les habitacions s’exporten com a IfcSpace però sense quantitats. Activa “Exporta quantitats base” (Pset/QTO) a les opcions d’exportació IFC i assegura’t que les Habitacions estiguin ben delimitades/col·locades perquè es calculin les àrees.',
+        archicad:
+          'Fes servir Zones per als espais i activa les Quantitats Base al Traductor IFC perquè IfcSpace exporti NetFloorArea/GrossFloorArea.',
+        tekla:
+          'Els espais són limitats a Tekla; si calen, defineix-los i activa l’exportació de quantitats, o genera’ls al model d’arquitectura.',
+        allplan:
+          'Crea Habitacions (espais) i activa l’exportació de quantitats IFC perquè IfcSpace porti quantitats d’àrea.',
+      },
+    },
+    RULE_CONNECTED_MEP: {
+      summary:
+        'Connecta els segments MEP mitjançant ports — canonades/conductes desconnectats s’exporten sense relacions IfcDistributionPort i trenquen el traçat de sistemes.',
+      tools: {
+        revit:
+          'Els conductes/canonades desconnectats s’exporten sense ports. Corregeix els connectors oberts al model MEP (sense buits ni extrems solts), mantén els segments units en sistemes connectats i activa l’exportació de sistemes/ports perquè s’escriguin les relacions IfcDistributionPort.',
+        archicad:
+          'Fes servir el MEP Modeler perquè les rutes quedin connectades d’extrem a extrem; exporta els sistemes MEP per incloure ports/connexions.',
+        tekla:
+          'El MEP no és el domini de Tekla; modela el MEP connectat a l’eina MEP corresponent perquè els segments portin ports, i després fedèra-ho.',
+        allplan:
+          'Modela els traçats MEP connectats d’extrem a extrem (sense extrems oberts) perquè l’exportació IFC escrigui els ports de distribució entre segments.',
       },
     },
   },

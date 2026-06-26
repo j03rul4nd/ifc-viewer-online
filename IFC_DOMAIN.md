@@ -163,4 +163,4 @@ Understanding what the WASM parser **cannot** do is as important as what it can.
 
 ---
 
-*Last updated: 2026-05-29 · Sprints 1–9 complete. The forward-looking "Sprint 3/4 will…" notes below are historical — spatial tree, GlobalId-keyed diff store, classification checks, and inline editing all shipped. The domain knowledge itself is current. The validator now runs 38 rules (see `ARCHITECTURE.md`).*
+*Last updated: 2026-06-21 · Sprints 1–9 complete + IDS 1.0 / 3D Map (GIS) shipped. The forward-looking "Sprint 3/4 will…" notes below are historical — spatial tree, GlobalId-keyed diff store, classification checks, and inline editing all shipped. The domain knowledge itself is current. The validator now runs 44 rules, plus a separate buildingSMART IDS 1.0 checker (see `ARCHITECTURE.md`).*

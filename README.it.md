@@ -54,7 +54,7 @@ Nessun account. Nessun ruleset da configurare. Nessun limite di dimensione. I tu
 - [Stack tecnologico](#stack-tecnologico)
 - [Per iniziare](#per-iniziare)
 - [Struttura del progetto](#struttura-del-progetto)
-- [Le 38 regole di validazione](#le-38-regole-di-validazione)
+- [Le 44 regole di validazione](#le-44-regole-di-validazione)
 - [Come contribuire](#come-contribuire)
 - [Roadmap](#roadmap)
 - [Licenza — open core](#licenza--open-core)
@@ -82,7 +82,9 @@ La maggior parte degli strumenti di validazione IFC ha almeno uno di questi punt
 
 | Funzionalità | Cosa ottieni |
 |---|---|
-| **IFC Health Check** | 38 regole di validazione, trasmesse dal vivo da un Web Worker, riassunte in un unico **Health Score (0–100)**. |
+| **IFC Health Check** | 44 regole di validazione, trasmesse dal vivo da un Web Worker, riassunte in un unico **Health Score (0–100)**. |
+| **buildingSMART IDS** | Carica un file `.ids` e verifica il modello rispetto a una Information Delivery Specification — copertura completa delle faccette IDS 1.0, validata sui casi di test ufficiali di buildingSMART. Esito per specifica, esportazione in JSON/CSV/HTML/BCF. |
+| **Modalità Mappa 3D (GIS)** | Posiziona un modello georeferenziato su una mappa base reale (OpenStreetMap / topografica / satellitare) e terreno 3D opzionale, nella stessa scena 3D. La georeferenziazione viene estratta automaticamente dall'IFC; il modello non lascia mai il browser. Attivabile tramite flag di build (`VITE_FEATURE_GIS`). |
 | **Visualizzatore 3D** | Rendering WebGL tramite Three.js + `@thatopen/components`. Caricamento multi-modello con trasformazioni indipendenti, SSAO, edge rendering, bloom, piante 2D e sezioni in tempo reale. |
 | **Editor non distruttivo** | Modifica i valori di proprietà, correggi i GUID, rinomina elementi. Ogni modifica è un diff con undo/redo completo. Esporta un IFC corretto — i diff vengono applicati in un worker, senza server. |
 | **Import/export BCF 2.1** | Naviga ai viewpoint BCF importati. Esporta i problemi di validazione come zip BCF 2.1 per Navisworks, BIMcollab e qualsiasi CDE compatibile con BCF. |
@@ -124,7 +126,7 @@ Ogni modello riceve un singolo numero da **0 a 100** — un punteggio logaritmic
 
 ```mermaid
 flowchart LR
-    A[File IFC] --> B[38 regole in<br/>un Web Worker]
+    A[File IFC] --> B[44 regole in<br/>un Web Worker]
     B --> C{Problemi rilevati}
     C -->|ponderati per gravità| D[Health Score<br/>0 – 100]
     D --> E[Link di condivisione<br/>senza upload]
@@ -153,8 +155,11 @@ flowchart TD
 
         subgraph WORKERS["Web Workers (WebAssembly)"]
             PARSE["ifc-parser.worker<br/>IFC → fragments"]
-            VALID["validator.worker<br/>38 regole + albero spaziale"]
+            VALID["validator.worker<br/>44 regole + albero spaziale"]
             EXPORT["export.worker<br/>applica i diff → IFC"]
+            IDS["ids.worker<br/>controllo IDS 1.0"]
+            BCF["bcf-parser.worker<br/>import BCF"]
+            GEO["geo-extract / geo-terrain<br/>georef + terreno (modalità Mappa)"]
         end
     end
 
@@ -169,7 +174,7 @@ flowchart TD
     EXPORT -->|.ifc corretto| DL["download"]
 ```
 
-Tre worker indipendenti mantengono la UI reattiva: parsing, validazione ed export girano fuori dal thread principale. Lo stato vive in sette piccoli store [Zustand](https://github.com/pmndrs/zustand); la geometria non entra mai nello store (solo ID stabili). I diagrammi completi del flusso dati sono in [`ARCHITECTURE.md`](ARCHITECTURE.md).
+Diversi worker indipendenti mantengono la UI reattiva: parsing, validazione ed export girano fuori dal thread principale. Lo stato vive in undici piccoli store [Zustand](https://github.com/pmndrs/zustand); la geometria non entra mai nello store (solo ID stabili). I diagrammi completi del flusso dati sono in [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ---
 
@@ -218,15 +223,17 @@ Ogni messaggio del worker viene validato a runtime con schemi [Zod](https://zod.
 | Rendering 3D | [Three.js](https://threejs.org/) + [@thatopen/components](https://github.com/ThatOpenCompany/engine_components) |
 | UI | React 18 + Tailwind CSS + Radix UI |
 | Animazioni | Framer Motion + GSAP |
-| Stato | Zustand 5 (7 store: model, scene, validation, editor, ui, takeoff, toast) |
-| Validazione | Web Worker — 38 regole, trasmesse via `postMessage` |
+| Stato | Zustand 5 (11 store: model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver) |
+| IDS | Motore IDS 1.0 in puro TS + worker web-ifc dedicato (`src/lib/ids/`, `ids.worker.ts`) |
+| GIS / mappa base | [3d-tiles-renderer](https://github.com/NASA-AMMOS/3DTilesRendererJS) (tiles dentro della scena three.js) — solo modalità Mappa |
+| Validazione | Web Worker — 44 regole, trasmesse via `postMessage` |
 | Sicurezza a runtime | Schemi Zod a ogni confine di worker |
 | Liste virtualizzate | @tanstack/react-virtual |
 | i18n | i18next (10 lingue) |
 | Analytics | PostHog (lato client, senza PII) |
 | Build | Vite 6 + TypeScript (strict) |
 | Test | Vitest (jsdom) |
-| Deploy | GitHub Pages (statico, zero backend) |
+| Deploy | Vercel (statico, zero backend) |
 
 ---
 
@@ -263,7 +270,7 @@ npm test        # vitest (jsdom)
 src/
   components/      # Landing, Viewer, ValidationPanel, Sidebar, ModelTree, ScenePanel, …
   workers/         # ifc-parser.worker.ts · validator.worker.ts · export.worker.ts
-  stores/          # 7 store Zustand (model, scene, validation, editor, ui, takeoff, toast)
+  stores/          # 11 store Zustand (model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver)
   hooks/           # useModelSession, useValidationRunner, useElementFocus, …
   lib/             # viewer.ts · loader.ts · validator.ts · diffStore.ts · worker-schemas.ts
   locales/         # i18n — en/ es/ fr/ de/ pt/ ja/ ca/ zh/ it/ th/
@@ -281,7 +288,7 @@ Documenti di riferimento più approfonditi: [`ARCHITECTURE.md`](ARCHITECTURE.md)
 
 ---
 
-## Le 38 regole di validazione
+## Le 44 regole di validazione
 
 Le regole girano in `src/workers/validator.worker.ts`, controllate da un `RulesConfig`, raggruppate per generazione:
 
@@ -306,6 +313,13 @@ Le regole girano in `src/workers/validator.worker.ts`, controllate da un `RulesC
 
 </details>
 
+<details>
+<summary><b>Geometria e integrità dei piani — 6 regole</b></summary>
+
+`RULE_OPENING_WITHOUT_HOST` · `RULE_STOREY_ELEVATION_DUPLICATE` · `RULE_STOREY_ELEVATION_ORDER` · `RULE_UNIT_CONSISTENCY` · `RULE_SPACE_AREA_MISSING` · `RULE_CONNECTED_MEP`
+
+</details>
+
 ---
 
 ## Come contribuire
@@ -319,7 +333,7 @@ I contributi sono benvenuti — specialmente nuove regole di validazione, traduz
 3. Collegala al blocco di dispatch `runAllRules`
 4. Aggiungi le stringhe i18n a `RULE_TRANSLATIONS` in `src/types/index.ts`
 5. Imposta `DEFAULT_RULES[RULE_ID] = true` (o `false` se opt-in)
-6. Aggiorna il conteggio delle regole nel copy che menziona "38 regole" (`index.html`, `README*.md`, `src/seo/config.ts`, le landing in `public/*`)
+6. Aggiorna il conteggio delle regole nel copy che menziona "44 regole" (`index.html`, `README*.md`, `src/seo/config.ts`, le landing in `public/*`)
 
 **Aggiungere una traduzione:** copia `src/locales/en/` in una nuova cartella di lingua, traduci i valori JSON e registra la lingua in `src/i18n/config.ts`. Anche le traduzioni di questo README sono benvenute — rispetta la denominazione (`README.<lang>.md`) e aggiungi un link nella riga delle lingue in alto.
 
@@ -329,12 +343,14 @@ I contributi sono benvenuti — specialmente nuove regole di validazione, traduz
 
 ## Roadmap
 
-Il prodotto è tecnicamente maturo (visualizzatore multi-modello, validatore a 38 regole, editor non distruttivo, BCF, 10 lingue). Il piano futuro è **guidato dalla distribuzione**, non dalle feature:
+Il prodotto è tecnicamente maturo (visualizzatore multi-modello, validatore a 44 regole, editor non distruttivo, BCF, 10 lingue). Il piano futuro è **guidato dalla distribuzione**, non dalle feature:
 
 - **Tabella di rimedio** — contenuto deterministico "come correggerlo in Revit / ArchiCAD / Tekla" per regola, scritto in i18n (niente IA, niente server).
 - **Report indicizzabili** — spostare il link di condivisione da un hash URL a una rotta edge stateless, così i report si espandono su social/motori di ricerca (il modello continua a non lasciare il browser).
 - **Diff di revisioni** — confrontare due versioni di un modello per GlobalId.
-- **IDS-lite** — checklist di progetto in linguaggio chiaro.
+- **buildingSMART IDS** — copertura completa di IDS 1.0, validata sui casi di test ufficiali bSI. Carica qualsiasi `.ids`, ottieni esito per specifica, esporta in JSON/CSV/HTML/BCF.
+- **Modalità Mappa 3D / GIS** — modello georeferenziato su una mappa base reale + terreno 3D, nella scena esistente (attivabile tramite flag).
+- **Backlog di parità con Solibri** — template di regole, information takeoff, raggruppamento di clash/presentazioni. Vedi [`ROADMAP.md`](ROADMAP.md).
 
 Vedi [`ROADMAP.md`](ROADMAP.md) per il piano completo e gli elementi esplicitamente rimandati.
 
@@ -345,7 +361,9 @@ Vedi [`ROADMAP.md`](ROADMAP.md) per il piano completo e gli elementi esplicitame
 | Componente | Licenza |
 |---|---|
 | Visualizzatore IFC (rendering Three.js, integrazione WASM) | **MIT** |
-| Validatore (38 regole, Web Worker) | **MIT** |
+| Validatore (44 regole, Web Worker) | **MIT** |
+| Motore IDS 1.0 + worker | **MIT** |
+| GIS / modalità Mappa 3D | **MIT** |
 | Editor non distruttivo (diff, undo/redo, export IFC) | **MIT** |
 | Store, hook, utility, i18n | **MIT** |
 | Cloudflare Worker (backend di cattura email) | Proprietario |

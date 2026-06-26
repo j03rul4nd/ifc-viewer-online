@@ -11,7 +11,7 @@
     <title>IFC Viewer Online — Free Browser-Based BIM Viewer, Validator & Editor</title>
 
     <!-- Primary SEO -->
-    <meta name="description" content="Free online IFC viewer, validator and non-destructive editor. Open any IFC file directly in your browser — no login, no upload, no plugin. Get a Health Score 0–100 in under 30 seconds. 38 validation rules, GUID auto-fix, IFC + GLB export, quantity takeoff. Powered by WebAssembly + WebGL." />
+    <meta name="description" content="Free online IFC viewer, validator and non-destructive editor. Open any IFC file directly in your browser — no login, no upload, no plugin. Get a Health Score 0–100 in under 30 seconds. 44 validation rules, GUID auto-fix, IFC + GLB export, quantity takeoff. Powered by WebAssembly + WebGL." />
     <meta name="keywords" content="IFC viewer online, BIM viewer browser, open IFC file online, free IFC viewer, IFC validator, IFC editor, web-ifc, three.js IFC, IFC2x3, IFC4, IFC4x3, BIM coordination, BuildingSMART, multi-model IFC, IFC quality check, GUID fix, IFC export, GLB export, quantity takeoff, spatial hierarchy, no upload IFC viewer, offline BIM viewer, WebAssembly IFC" />
     <meta name="author" content="Joel Benitez" />
     <meta name="robots" content="index, follow" />
@@ -26,18 +26,18 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.ifcvieweronline.eu/" />
     <meta property="og:title" content="IFC Viewer Online — Free BIM Viewer, Validator & Editor" />
-    <meta property="og:description" content="Open any IFC file in your browser. Get a Health Score 0–100 in 30 seconds. 38 validation rules, fix GUIDs, edit properties, export corrected IFC — all client-side with no login required." />
+    <meta property="og:description" content="Open any IFC file in your browser. Get a Health Score 0–100 in 30 seconds. 44 validation rules, fix GUIDs, edit properties, export corrected IFC — all client-side with no login required." />
     <meta property="og:site_name" content="IFC Viewer Online" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="IFC Viewer Online — 3D building model with Health Score 87/100, validation panel showing 38 rule checks, and element property inspector" />
+    <meta property="og:image:alt" content="IFC Viewer Online — 3D building model with Health Score 87/100, validation panel showing 44 rule checks, and element property inspector" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="IFC Viewer Online — Free BIM Viewer, Validator & Editor" />
-    <meta name="twitter:description" content="IFC Health Score 0–100 in 30 seconds. 38 validation rules, GUID auto-fix, IFC/GLB export. No login, no upload. Runs via WebAssembly." />
+    <meta name="twitter:description" content="IFC Health Score 0–100 in 30 seconds. 44 validation rules, GUID auto-fix, IFC/GLB export. No login, no upload. Runs via WebAssembly." />
     <meta name="twitter:image" content="https://www.ifcvieweronline.eu/og-image.png" />
     <meta name="twitter:image:alt" content="IFC Viewer Online — free browser-based BIM viewer showing a 3D IFC model with quality Health Score and validation panel" />
     <meta name="twitter:site" content="@ifcviewer" />
@@ -60,7 +60,7 @@
       },
       "featureList": [
         "IFC Health Score 0–100 in under 30 seconds",
-        "38 IFC validation rules — GUID duplicates, spatial hierarchy, clash detection, coordinate offset, proxy overuse and more",
+        "44 IFC validation rules — GUID duplicates, spatial hierarchy, clash detection, coordinate offset, proxy overuse and more",
         "Multi-model IFC loading with independent state per model",
         "OPFS geometry cache — ~10x faster repeat loads, works offline",
         "Batch GUID auto-fix",
@@ -84,7 +84,7 @@
         "url": "https://github.com/j03rul4nd"
       },
       "softwareVersion": "1.0.0",
-      "dateModified": "2026-06-05",
+      "dateModified": "2026-06-21",
       "license": "https://opensource.org/licenses/MIT",
       "codeRepository": "https://github.com/j03rul4nd/ifc-viewer-online",
       "keywords": "IFC, BIM, viewer, validator, WebAssembly, three.js, web-ifc, @thatopen/components, BuildingSMART, IFC4, IFC2x3"
@@ -105,7 +105,7 @@
         "name": "Joel Benitez",
         "url": "https://github.com/j03rul4nd"
       },
-      "description": "Open-source browser-only IFC viewer built with @thatopen/components, three.js, and web-ifc. Features multi-model loading, 38 validation rules, Health Score 0–100, OPFS caching, non-destructive editing and IFC export."
+      "description": "Open-source browser-only IFC viewer built with @thatopen/components, three.js, and web-ifc. Features multi-model loading, 44 validation rules, Health Score 0–100, OPFS caching, non-destructive editing and IFC export."
     }
     </script>
 
@@ -162,7 +162,7 @@
           "name": "How does the validation work?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "The validator runs 38 built-in rules in a background Web Worker so the UI stays responsive. Rules cover GUID duplicates, spatial hierarchy, orphan elements, naming conventions, missing type assignments, ISO 19650 property sets, LOD completeness, clash detection, proxy overuse, coordinate offset, and more. Every model receives a Health Score from 0 to 100. Results stream in as each rule completes."
+            "text": "The validator runs 44 built-in rules in a background Web Worker so the UI stays responsive. Rules cover GUID duplicates, spatial hierarchy, orphan elements, naming conventions, missing type assignments, ISO 19650 property sets, LOD completeness, clash detection, proxy overuse, coordinate offset, storey-elevation integrity, unit consistency, and more. You can also run a buildingSMART IDS specification against the model. Every model receives a Health Score from 0 to 100. Results stream in as each rule completes."
           }
         },
         {
@@ -255,6 +255,19 @@
     })
   </script>
   <body>
+    <noscript>
+      <div style="padding:2rem;font-family:sans-serif;max-width:800px;margin:2rem auto;line-height:1.6">
+        <h1>IFC Viewer Online — Free Browser-Based BIM Viewer, Validator &amp; Editor</h1>
+        <p>Free online IFC viewer, validator and non-destructive editor. Open any IFC file directly in your browser — no login, no upload, no plugin required.</p>
+        <p>Get an IFC Health Score 0–100 in under 30 seconds. Includes 44 validation rules, GUID auto-fix, IFC + GLB export, and quantity takeoff. All processing runs in WebAssembly — your files never leave your machine.</p>
+        <p><strong>JavaScript is required to run IFC Viewer Online.</strong> Please enable JavaScript in your browser to continue.</p>
+        <ul>
+          <li><a href="https://www.ifcvieweronline.eu/ifc-validator/">IFC Validator</a></li>
+          <li><a href="https://www.ifcvieweronline.eu/blog/">BIM &amp; IFC Blog</a></li>
+          <li><a href="https://www.ifcvieweronline.eu/solibri-alternative/">Solibri Alternative</a></li>
+        </ul>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

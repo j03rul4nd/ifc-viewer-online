@@ -1,10 +1,19 @@
-# Deployment — GitHub Pages
+# Deployment — Vercel
+
+> **Updated 2026-06-21.** The project deploys **only to Vercel** now. GitHub Pages
+> has been removed (the `deploy.yml` workflow and the `production` / `github-pages`
+> branches were deleted, the base path is `/`, not `/ifc-viewer-online/`). The
+> GitHub-Pages-specific notes further down are kept as **historical context** for the
+> bundling/COEP bug they document — the root causes still apply on any static host.
 
 ## Stack
 
 - Vite 6 + React 18 + TypeScript
-- `base: '/ifc-viewer-online/'` in `vite.config.ts`
-- Deployed to `https://<user>.github.io/ifc-viewer-online/` via GitHub Actions (`.github/workflows/deploy.yml`)
+- `base: '/'` in `vite.config.ts` (custom domain, root base)
+- Deployed to `https://www.ifcvieweronline.eu/` via **Vercel** (config: `vercel.json` —
+  `buildCommand: npm run build`, `outputDirectory: dist`, SPA rewrites). Push to `main` → deploy.
+- `vercel.json` does **not** set COOP/COEP headers, so cross-origin isolation still relies on
+  `coi-serviceworker.js` (see below) — the same mechanism used on the old GitHub Pages host.
 
 ---
 
@@ -31,18 +40,21 @@ Vite plugin (see `vite.config.ts`). At runtime the worker loads them via:
 
 ```ts
 importer.wasm = { path: import.meta.env.BASE_URL, absolute: true }
-// → /ifc-viewer-online/web-ifc.wasm  (correct on GitHub Pages)
+// → /web-ifc.wasm  (BASE_URL is '/' on Vercel; was /ifc-viewer-online/ on the old GitHub Pages host)
 ```
 
 `forceSingleThread: true` is passed to `IfcAPI.Init` so only the ST WASM is used,
 avoiding Emscripten pthread sub-workers (which would fail inside a nested ES module worker).
 
-### COEP/COOP on GitHub Pages
+### COEP/COOP (Vercel — and previously GitHub Pages)
 
-GitHub Pages does not support custom HTTP headers. `coi-serviceworker.js` (in `dist/`) is
-registered in `index.html` and injects `Cross-Origin-Opener-Policy: same-origin` and
-`Cross-Origin-Embedder-Policy: require-corp` headers on the fly, satisfying SharedArrayBuffer
-requirements without a custom server.
+The current `vercel.json` does not declare COOP/COEP response headers, so `coi-serviceworker.js`
+(in `public/` → `dist/`) is registered in `index.html` and injects
+`Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`
+on the fly, satisfying SharedArrayBuffer requirements without server-side headers. (This is the
+same mechanism the project used on GitHub Pages, which could not set custom headers at all.) If
+you ever move cross-origin isolation to real headers, add them in `vercel.json` and the service
+worker becomes redundant.
 
 ---
 

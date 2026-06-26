@@ -54,7 +54,7 @@
 - [技术栈](#技术栈)
 - [快速开始](#快速开始)
 - [项目结构](#项目结构)
-- [38 条校验规则](#38-条校验规则)
+- [44 条校验规则](#44-条校验规则)
 - [参与贡献](#参与贡献)
 - [路线图](#路线图)
 - [许可证 — 开放核心](#许可证--开放核心)
@@ -82,7 +82,9 @@
 
 | 能力 | 你能获得什么 |
 |---|---|
-| **IFC 健康检查** | 38 条校验规则，由 Web Worker 实时流式返回，汇总为一个**健康评分（0–100）**。 |
+| **IFC 健康检查** | 44 条校验规则，由 Web Worker 实时流式返回，汇总为一个**健康评分（0–100）**。 |
+| **buildingSMART IDS** | 加载 `.ids` 文件，根据 Information Delivery Specification 检查模型 —— 完整覆盖 IDS 1.0 的全部分面，已通过 buildingSMART 官方测试用例验证。按规范给出通过/未通过，可导出为 JSON/CSV/HTML/BCF。 |
+| **3D 地图模式（GIS）** | 在同一个 3D 场景中，将带地理参考的模型放置到真实底图（OpenStreetMap／地形图／卫星）和可选的 3D 地形之上。地理参考信息从 IFC 自动提取；模型始终不离开浏览器。通过构建标志启用（`VITE_FEATURE_GIS`）。 |
 | **3D 查看器** | 基于 Three.js + `@thatopen/components` 的 WebGL 渲染。支持多模型加载与独立变换、SSAO、边缘渲染、辉光、2D 楼层平面图和实时剖切。 |
 | **非破坏性编辑器** | 编辑属性值、修复 GUID、重命名构件。每次更改都是一个 diff，支持完整的撤销/重做。导出修正后的 IFC 二进制 —— diff 在 Worker 中应用，无需服务器。 |
 | **BCF 2.1 导入/导出** | 跳转到导入的 BCF 视点。将校验问题导出为 BCF 2.1 zip，供 Navisworks、BIMcollab 及任何兼容 BCF 的 CDE 使用。 |
@@ -124,7 +126,7 @@
 
 ```mermaid
 flowchart LR
-    A[IFC 文件] --> B[38 条规则<br/>在 Web Worker 中运行]
+    A[IFC 文件] --> B[44 条规则<br/>在 Web Worker 中运行]
     B --> C{发现问题}
     C -->|按严重程度加权| D[健康评分<br/>0 – 100]
     D --> E[分享链接<br/>无需上传]
@@ -153,8 +155,11 @@ flowchart TD
 
         subgraph WORKERS["Web Workers (WebAssembly)"]
             PARSE["ifc-parser.worker<br/>IFC → fragments"]
-            VALID["validator.worker<br/>38 条规则 + 空间树"]
+            VALID["validator.worker<br/>44 条规则 + 空间树"]
             EXPORT["export.worker<br/>应用 diff → IFC"]
+            IDS["ids.worker<br/>IDS 1.0 检查"]
+            BCF["bcf-parser.worker<br/>BCF 导入"]
+            GEO["geo-extract / geo-terrain<br/>地理参考 + 地形（地图模式）"]
         end
     end
 
@@ -169,7 +174,7 @@ flowchart TD
     EXPORT -->|修正后的 .ifc| DL["下载"]
 ```
 
-三个独立的 Worker 保证界面流畅：解析、校验和导出都在主线程之外运行。状态保存在七个小型 [Zustand](https://github.com/pmndrs/zustand) store 中；几何数据从不进入 store（只存稳定的 ID）。完整的数据流图见 [`ARCHITECTURE.md`](ARCHITECTURE.md)。
+多个独立的 Worker 保证界面流畅：解析、校验和导出都在主线程之外运行。状态保存在十一个小型 [Zustand](https://github.com/pmndrs/zustand) store 中；几何数据从不进入 store（只存稳定的 ID）。完整的数据流图见 [`ARCHITECTURE.md`](ARCHITECTURE.md)。
 
 ---
 
@@ -218,15 +223,17 @@ BCF 2.1 导出会把相同的问题封装到 Navisworks 和 BIMcollab 能识别�
 | 3D 渲染 | [Three.js](https://threejs.org/) + [@thatopen/components](https://github.com/ThatOpenCompany/engine_components) |
 | 界面 | React 18 + Tailwind CSS + Radix UI |
 | 动画 | Framer Motion + GSAP |
-| 状态管理 | Zustand 5（7 个 store：model、scene、validation、editor、ui、takeoff、toast） |
-| 校验 | Web Worker —— 38 条规则，通过 `postMessage` 流式返回 |
+| 状态管理 | Zustand 5（11 个 store：model、scene、validation、editor、ui、takeoff、toast、bcf、ids、geo、waiver） |
+| IDS | 纯 TS 的 IDS 1.0 引擎 + 专用 web-ifc worker（`src/lib/ids/`、`ids.worker.ts`） |
+| GIS / 底图 | [3d-tiles-renderer](https://github.com/NASA-AMMOS/3DTilesRendererJS)（瓦片置于 three.js 场景内）—— 仅地图模式 |
+| 校验 | Web Worker —— 44 条规则，通过 `postMessage` 流式返回 |
 | 运行时安全 | 每个 Worker 边界都有 Zod schema |
 | 虚拟列表 | @tanstack/react-virtual |
 | 国际化 | i18next（10 种语言） |
 | 分析 | PostHog（客户端，无 PII） |
 | 构建 | Vite 6 + TypeScript（strict） |
 | 测试 | Vitest（jsdom） |
-| 部署 | GitHub Pages（静态，零后端） |
+| 部署 | Vercel（静态，零后端） |
 
 ---
 
@@ -263,7 +270,7 @@ npm test        # vitest (jsdom)
 src/
   components/      # Landing、Viewer、ValidationPanel、Sidebar、ModelTree、ScenePanel…
   workers/         # ifc-parser.worker.ts · validator.worker.ts · export.worker.ts
-  stores/          # 7 个 Zustand store（model、scene、validation、editor、ui、takeoff、toast）
+  stores/          # 11 个 Zustand store（model、scene、validation、editor、ui、takeoff、toast、bcf、ids、geo、waiver）
   hooks/           # useModelSession、useValidationRunner、useElementFocus…
   lib/             # viewer.ts · loader.ts · validator.ts · diffStore.ts · worker-schemas.ts
   locales/         # i18n —— en/ es/ fr/ de/ pt/ ja/ ca/ zh/ it/ th/
@@ -281,7 +288,7 @@ cf-worker/         # Cloudflare Worker —— 无状态邮件采集代理（绝�
 
 ---
 
-## 38 条校验规则
+## 44 条校验规则
 
 规则在 `src/workers/validator.worker.ts` 中运行，由 `RulesConfig` 控制开关，按代次分组：
 
@@ -306,6 +313,13 @@ cf-worker/         # Cloudflare Worker —— 无状态邮件采集代理（绝�
 
 </details>
 
+<details>
+<summary><b>几何与楼层完整性 — 6 条规则</b></summary>
+
+`RULE_OPENING_WITHOUT_HOST` · `RULE_STOREY_ELEVATION_DUPLICATE` · `RULE_STOREY_ELEVATION_ORDER` · `RULE_UNIT_CONSISTENCY` · `RULE_SPACE_AREA_MISSING` · `RULE_CONNECTED_MEP`
+
+</details>
+
 ---
 
 ## 参与贡献
@@ -319,7 +333,7 @@ cf-worker/         # Cloudflare Worker —— 无状态邮件采集代理（绝�
 3. 将其接入 `runAllRules` 分发块
 4. 在 `src/types/index.ts` 的 `RULE_TRANSLATIONS` 中添加 i18n 字符串
 5. 设置 `DEFAULT_RULES[RULE_ID] = true`（若为可选则设为 `false`）
-6. 更新所有引用 “38 条规则” 的文案数量（`index.html`、`README*.md`、`src/seo/config.ts`、`public/*` 落地页）
+6. 更新所有引用 “44 条规则” 的文案数量（`index.html`、`README*.md`、`src/seo/config.ts`、`public/*` 落地页）
 
 **添加翻译：** 将 `src/locales/en/` 复制到新的语言文件夹，翻译 JSON 值，并在 `src/i18n/config.ts` 中注册该语言。同样欢迎翻译本 README —— 遵循文件命名（`README.<lang>.md`）并在顶部语言行添加链接。
 
@@ -329,12 +343,14 @@ cf-worker/         # Cloudflare Worker —— 无状态邮件采集代理（绝�
 
 ## 路线图
 
-产品在技术上已经成熟（多模型查看器、38 条规则校验器、非破坏性编辑器、BCF、10 种语言）。后续计划以**分发为主导**，而非以功能为主导：
+产品在技术上已经成熟（多模型查看器、44 条规则校验器、非破坏性编辑器、BCF、10 种语言）。后续计划以**分发为主导**，而非以功能为主导：
 
 - **修复指引表** —— 每条规则的确定性“如何在 Revit / ArchiCAD / Tekla 中修复”内容，写入 i18n（无 AI、无服务器）。
 - **可抓取的报告** —— 把分享链接从 URL 哈希改为无状态边缘路由，使报告能在社交/搜索中正常展开（模型仍绝不离开浏览器）。
 - **版本对比（Revision diff）** —— 按 GlobalId 对比模型的两个版本。
-- **IDS-lite** —— 用通俗语言表达的项目检查清单。
+- **buildingSMART IDS** —— 完整覆盖 IDS 1.0，已通过 bSI 官方测试用例验证。加载任意 `.ids`，按规范获得通过/未通过，导出为 JSON/CSV/HTML/BCF。
+- **3D 地图模式 / GIS** —— 在现有场景中，将带地理参考的模型置于真实底图 + 3D 地形之上（可通过标志启用）。
+- **Solibri 对标待办** —— 规则模板、信息算量、碰撞分组/演示。参见 [`ROADMAP.md`](ROADMAP.md)。
 
 完整计划及明确推迟的项目见 [`ROADMAP.md`](ROADMAP.md)。
 
@@ -345,7 +361,9 @@ cf-worker/         # Cloudflare Worker —— 无状态邮件采集代理（绝�
 | 组件 | 许可证 |
 |---|---|
 | IFC 查看器（Three.js 渲染、WASM 集成） | **MIT** |
-| 校验器（38 条规则，Web Worker） | **MIT** |
+| 校验器（44 条规则，Web Worker） | **MIT** |
+| IDS 1.0 引擎 + worker | **MIT** |
+| GIS / 3D 地图模式 | **MIT** |
 | 非破坏性编辑器（diff、撤销/重做、IFC 导出） | **MIT** |
 | Store、hooks、工具函数、i18n | **MIT** |
 | Cloudflare Worker（邮件采集后端） | 专有 |

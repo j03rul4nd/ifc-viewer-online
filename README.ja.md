@@ -54,7 +54,7 @@
 - [技術スタック](#技術スタック)
 - [はじめに](#はじめに)
 - [プロジェクト構成](#プロジェクト構成)
-- [38 の検証ルール](#38-の検証ルール)
+- [44 の検証ルール](#44-の検証ルール)
 - [コントリビュート](#コントリビュート)
 - [ロードマップ](#ロードマップ)
 - [ライセンス — オープンコア](#ライセンス--オープンコア)
@@ -82,7 +82,9 @@
 
 | 機能 | 得られるもの |
 |---|---|
-| **IFC ヘルスチェック** | 38 の検証ルールを Web Worker からライブにストリーミングし、単一の **Health Score（0〜100）** にまとめます。 |
+| **IFC ヘルスチェック** | 44 の検証ルールを Web Worker からライブにストリーミングし、単一の **Health Score（0〜100）** にまとめます。 |
+| **buildingSMART IDS** | `.ids` ファイルを読み込み、Information Delivery Specification に対してモデルをチェック — IDS 1.0 の全ファセットに対応し、buildingSMART 公式テストケースで検証済み。仕様ごとに合否判定、JSON/CSV/HTML/BCF にエクスポート。 |
+| **3D マップモード (GIS)** | ジオリファレンス済みモデルを実世界のベースマップ（OpenStreetMap／地形図／衛星）と任意の 3D 地形の上に、同じ 3D シーン内で配置。ジオリファレンス情報は IFC から自動抽出され、モデルはブラウザから外に出ません。ビルドフラグで切り替え（`VITE_FEATURE_GIS`）。 |
 | **3D ビューア** | Three.js + `@thatopen/components` による WebGL レンダリング。独立トランスフォーム付きのマルチモデル読み込み、SSAO、エッジ描画、ブルーム、2D 平面図、リアルタイム断面。 |
 | **非破壊エディタ** | プロパティ値の編集、GUID の修正、要素のリネーム。すべての変更は完全な Undo/Redo 付きの差分（diff）です。修正済み IFC バイナリをエクスポート——差分は Worker で適用、サーバー不要。 |
 | **BCF 2.1 インポート/エクスポート** | インポートした BCF ビューポイントへ移動。検証問題を BCF 2.1 zip としてエクスポートし、Navisworks、BIMcollab、BCF 対応の任意の CDE で利用。 |
@@ -124,7 +126,7 @@
 
 ```mermaid
 flowchart LR
-    A[IFC ファイル] --> B[38 ルールを<br/>Web Worker で実行]
+    A[IFC ファイル] --> B[44 ルールを<br/>Web Worker で実行]
     B --> C{問題を検出}
     C -->|重大度で重み付け| D[Health Score<br/>0 – 100]
     D --> E[共有リンク<br/>アップロード不要]
@@ -153,8 +155,11 @@ flowchart TD
 
         subgraph WORKERS["Web Workers (WebAssembly)"]
             PARSE["ifc-parser.worker<br/>IFC → fragments"]
-            VALID["validator.worker<br/>38 ルール + 空間ツリー"]
+            VALID["validator.worker<br/>44 ルール + 空間ツリー"]
             EXPORT["export.worker<br/>差分を適用 → IFC"]
+            IDS["ids.worker<br/>IDS 1.0 チェック"]
+            BCF["bcf-parser.worker<br/>BCF インポート"]
+            GEO["geo-extract / geo-terrain<br/>ジオリファレンス + 地形（マップモード）"]
         end
     end
 
@@ -169,7 +174,7 @@ flowchart TD
     EXPORT -->|修正済み .ifc| DL["ダウンロード"]
 ```
 
-3つの独立した Worker が UI の応答性を保ちます：解析・検証・エクスポートはすべてメインスレッドの外で実行されます。状態は7つの小さな [Zustand](https://github.com/pmndrs/zustand) ストアに保持され、ジオメトリはストアに入りません（安定 ID のみ）。完全なデータフロー図は [`ARCHITECTURE.md`](ARCHITECTURE.md) を参照してください。
+複数の独立した Worker が UI の応答性を保ちます：解析・検証・エクスポートはすべてメインスレッドの外で実行されます。状態は11個の小さな [Zustand](https://github.com/pmndrs/zustand) ストアに保持され、ジオメトリはストアに入りません（安定 ID のみ）。完全なデータフロー図は [`ARCHITECTURE.md`](ARCHITECTURE.md) を参照してください。
 
 ---
 
@@ -218,15 +223,17 @@ BCF 2.1 エクスポートは、同じ問題を Navisworks や BIMcollab が理�
 | 3D 描画 | [Three.js](https://threejs.org/) + [@thatopen/components](https://github.com/ThatOpenCompany/engine_components) |
 | UI | React 18 + Tailwind CSS + Radix UI |
 | アニメーション | Framer Motion + GSAP |
-| 状態管理 | Zustand 5（7 ストア：model, scene, validation, editor, ui, takeoff, toast） |
-| 検証 | Web Worker — 38 ルール、`postMessage` でストリーミング |
+| 状態管理 | Zustand 5（11 ストア：model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver） |
+| IDS | 純粋 TS の IDS 1.0 エンジン + 専用 web-ifc ワーカー（`src/lib/ids/`、`ids.worker.ts`） |
+| GIS / ベースマップ | [3d-tiles-renderer](https://github.com/NASA-AMMOS/3DTilesRendererJS)（three.js シーン内にタイル）— マップモードのみ |
+| 検証 | Web Worker — 44 ルール、`postMessage` でストリーミング |
 | 実行時安全性 | すべての Worker 境界で Zod スキーマ |
 | 仮想化リスト | @tanstack/react-virtual |
 | i18n | i18next（10 言語） |
 | 分析 | PostHog（クライアント側、PII なし） |
 | ビルド | Vite 6 + TypeScript（strict） |
 | テスト | Vitest（jsdom） |
-| デプロイ | GitHub Pages（静的、バックエンドなし） |
+| デプロイ | Vercel（静的、バックエンドなし） |
 
 ---
 
@@ -263,7 +270,7 @@ npm test        # vitest (jsdom)
 src/
   components/      # Landing, Viewer, ValidationPanel, Sidebar, ModelTree, ScenePanel, …
   workers/         # ifc-parser.worker.ts · validator.worker.ts · export.worker.ts
-  stores/          # 7 つの Zustand ストア (model, scene, validation, editor, ui, takeoff, toast)
+  stores/          # 11 つの Zustand ストア (model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver)
   hooks/           # useModelSession, useValidationRunner, useElementFocus, …
   lib/             # viewer.ts · loader.ts · validator.ts · diffStore.ts · worker-schemas.ts
   locales/         # i18n — en/ es/ fr/ de/ pt/ ja/ ca/ zh/ it/ th/
@@ -281,7 +288,7 @@ cf-worker/         # Cloudflare Worker — ステートレスなメール収集�
 
 ---
 
-## 38 の検証ルール
+## 44 の検証ルール
 
 ルールは `src/workers/validator.worker.ts` で実行され、`RulesConfig` で制御され、世代ごとにグループ化されています：
 
@@ -306,6 +313,13 @@ cf-worker/         # Cloudflare Worker — ステートレスなメール収集�
 
 </details>
 
+<details>
+<summary><b>ジオメトリ・階の整合性 — 6 ルール</b></summary>
+
+`RULE_OPENING_WITHOUT_HOST` · `RULE_STOREY_ELEVATION_DUPLICATE` · `RULE_STOREY_ELEVATION_ORDER` · `RULE_UNIT_CONSISTENCY` · `RULE_SPACE_AREA_MISSING` · `RULE_CONNECTED_MEP`
+
+</details>
+
 ---
 
 ## コントリビュート
@@ -319,7 +333,7 @@ cf-worker/         # Cloudflare Worker — ステートレスなメール収集�
 3. `runAllRules` のディスパッチブロックに組み込む
 4. `src/types/index.ts` の `RULE_TRANSLATIONS` に i18n 文字列を追加
 5. `DEFAULT_RULES[RULE_ID] = true` を設定（オプトインなら `false`）
-6. 「38 ルール」と記載しているコピー（`index.html`、`README*.md`、`src/seo/config.ts`、`public/*` のランディング）のルール数を更新
+6. 「44 ルール」と記載しているコピー（`index.html`、`README*.md`、`src/seo/config.ts`、`public/*` のランディング）のルール数を更新
 
 **翻訳を追加する：** `src/locales/en/` を新しいロケールフォルダにコピーし、JSON の値を翻訳して、`src/i18n/config.ts` にロケールを登録します。この README の翻訳も同様に歓迎します——命名（`README.<lang>.md`）に従い、先頭の言語行にリンクを追加してください。
 
@@ -329,12 +343,14 @@ cf-worker/         # Cloudflare Worker — ステートレスなメール収集�
 
 ## ロードマップ
 
-本プロダクトは技術的に成熟しています（マルチモデルビューア、38 ルールのバリデーター、非破壊エディタ、BCF、10 言語）。今後の計画は機能主導ではなく **流通（ディストリビューション）主導** です：
+本プロダクトは技術的に成熟しています（マルチモデルビューア、44 ルールのバリデーター、非破壊エディタ、BCF、10 言語）。今後の計画は機能主導ではなく **流通（ディストリビューション）主導** です：
 
 - **修正手順テーブル** — ルールごとに「Revit / ArchiCAD / Tekla での直し方」を決定論的に i18n で記述（AI なし、サーバーなし）。
 - **クロール可能なレポート** — 共有リンクを URL ハッシュからステートレスなエッジルートへ移し、SNS・検索でレポートが展開されるように（モデルは引き続きブラウザから出ません）。
 - **リビジョン差分** — GlobalId でモデルの2バージョンを比較。
-- **IDS-lite** — 平易な言葉によるプロジェクトチェックリスト。
+- **buildingSMART IDS** — IDS 1.0 を完全にカバーし、bSI 公式テストケースで検証済み。任意の `.ids` を読み込み、仕様ごとに合否を取得し、JSON/CSV/HTML/BCF にエクスポート。
+- **3D マップモード / GIS** — ジオリファレンス済みモデルを実世界のベースマップ + 3D 地形の上に、既存のシーン内で配置（フラグで切り替え）。
+- **Solibri パリティ バックログ** — ルールテンプレート、情報テイクオフ、クラッシュのグルーピング/プレゼンテーション。[`ROADMAP.md`](ROADMAP.md) を参照。
 
 完全な計画と明示的に保留した項目は [`ROADMAP.md`](ROADMAP.md) を参照してください。
 
@@ -345,7 +361,9 @@ cf-worker/         # Cloudflare Worker — ステートレスなメール収集�
 | コンポーネント | ライセンス |
 |---|---|
 | IFC ビューア（Three.js 描画、WASM 統合） | **MIT** |
-| バリデーター（38 ルール、Web Worker） | **MIT** |
+| バリデーター（44 ルール、Web Worker） | **MIT** |
+| IDS 1.0 エンジン + ワーカー | **MIT** |
+| GIS / 3D マップモード | **MIT** |
 | 非破壊エディタ（差分、Undo/Redo、IFC エクスポート） | **MIT** |
 | ストア、フック、ユーティリティ、i18n | **MIT** |
 | Cloudflare Worker（メール収集バックエンド） | プロプライエタリ |
