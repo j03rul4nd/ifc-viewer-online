@@ -2,9 +2,9 @@ import React from 'react'
 import LegalLayout from './LegalLayout'
 import { SITE_URL } from '../../seo/config'
 
-const CONTACT     = 'joelbenitezdonari@gmail.com'
+const CONTACT     = 'privacy@ifcvieweronline.eu'
 const DOMAIN      = SITE_URL
-const LAST_UPDATED = '2026-06-15'
+const LAST_UPDATED = '2026-06-27'
 
 // ── Prose helpers ─────────────────────────────────────────────────────────────
 

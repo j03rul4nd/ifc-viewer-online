@@ -175,8 +175,9 @@ async function handleSubscribe(request, env, cors) {
     if (resendRes.status === 409) {
       return jsonResponse({ ok: true, already: true }, 200, cors ?? {})
     }
-    const errBody = await resendRes.text()
-    console.error('[worker] Resend error:', resendRes.status, errBody)
+    // Log the status only — the Resend error body can echo the submitted email
+    // address, and personal data must not leak into logs (GDPR data minimisation).
+    console.error('[worker] Resend error status:', resendRes.status)
     return jsonResponse({ ok: false, error: 'Subscription failed' }, 500, cors ?? {})
   }
 
