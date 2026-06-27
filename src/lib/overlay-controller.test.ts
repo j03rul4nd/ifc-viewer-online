@@ -249,3 +249,77 @@ describe('createOverlayController — robustness', () => {
     expect(warn).toHaveBeenCalled()
   })
 })
+
+// ── Advanced UX: severity filter, navigation list, dynamic look ──────────────────
+
+describe('createOverlayController — severity filter', () => {
+  it('paints only the enabled severities; filtered-out ones fall back to ghost', () => {
+    const { ctrl, targets } = setup({ m1: typeMap(1, 2, 3, 4) })
+    ctrl.applyValidation(
+      [issue(1, 'error', 'm1'), issue(2, 'warning', 'm1'), issue(3, 'info', 'm1')],
+      'm1',
+      { error: true, warning: false, info: false }, // errors only
+    )
+    const t = targets.get('m1')!
+    expect(t.idsFor('E')).toEqual([1])
+    expect(t.idsFor('W')).toEqual([]) // filtered out
+    expect(t.idsFor('I')).toEqual([])
+    // 2 and 3 (filtered) join 4 (never flagged) in the ghost.
+    expect(t.idsFor('G').sort()).toEqual([2, 3, 4])
+  })
+
+  it('changing the filter repaints (different content key)', () => {
+    const { ctrl, targets } = setup({ m1: typeMap(1, 2, 3) })
+    ctrl.applyValidation([issue(1, 'error', 'm1'), issue(2, 'warning', 'm1')], 'm1')
+    const t = targets.get('m1')!
+    t.calls = []
+    ctrl.applyValidation([issue(1, 'error', 'm1'), issue(2, 'warning', 'm1')], 'm1', {
+      error: true, warning: false, info: true,
+    })
+    expect(t.calls.length).toBeGreaterThan(0) // not a no-op
+    expect(t.idsFor('W')).toEqual([])
+  })
+})
+
+describe('createOverlayController — flaggedList (navigation order)', () => {
+  it('orders errors first, then warnings, then info, across models', () => {
+    const { ctrl } = setup({ m1: typeMap(1, 2), m2: typeMap(3, 4) })
+    ctrl.applyValidation(
+      [
+        issue(2, 'info', 'm1'),
+        issue(1, 'error', 'm1'),
+        issue(4, 'warning', 'm2'),
+        issue(3, 'error', 'm2'),
+      ],
+      'm1',
+    )
+    expect(ctrl.flaggedList()).toEqual([
+      { modelId: 'm1', localId: 1 }, // error
+      { modelId: 'm2', localId: 3 }, // error
+      { modelId: 'm2', localId: 4 }, // warning
+      { modelId: 'm1', localId: 2 }, // info
+    ])
+  })
+
+  it('is empty when nothing is painted', () => {
+    const { ctrl } = setup({ m1: typeMap(1) })
+    expect(ctrl.flaggedList()).toEqual([])
+  })
+})
+
+describe('createOverlayController — setMaterials (ghost opacity / x-ray)', () => {
+  it('swaps a material and repaints with it on the next apply', () => {
+    const { ctrl, targets } = setup({ m1: typeMap(1, 2, 3) })
+    ctrl.applyValidation([issue(1, 'error', 'm1')], 'm1')
+    expect(targets.get('m1')!.idsFor('G').sort()).toEqual([2, 3])
+
+    // Swap the ghost colour, then re-apply the SAME overlay — must repaint (not a no-op).
+    ctrl.setMaterials({ ghost: 'G2' })
+    const t = targets.get('m1')!
+    t.calls = []
+    ctrl.applyValidation([issue(1, 'error', 'm1')], 'm1')
+    expect(t.idsFor('G2').sort()).toEqual([2, 3]) // ghost now uses the new material
+    expect(t.idsFor('G')).toEqual([])
+    expect(ctrl.materialFor('m1', 2)).toBe('G2')  // restore colour updated too
+  })
+})

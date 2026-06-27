@@ -20,6 +20,18 @@
     "hide": "Hide camera controls",
     "show": "Show camera views"
   },
+  "overlayHud": {
+    "error": "Errors",
+    "warning": "Warnings",
+    "info": "Info",
+    "idsFails": "IDS fails",
+    "toggleSeverity": "Show / hide this severity",
+    "prev": "Previous issue",
+    "next": "Next issue",
+    "settings": "Overlay appearance",
+    "dim": "Context dimming",
+    "xray": "X-ray (see through walls)"
+  },
   "overlays": {
     "validationHighlights": "Validation highlights",
     "measurements": "Measurements"

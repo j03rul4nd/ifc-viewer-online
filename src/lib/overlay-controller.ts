@@ -37,6 +37,21 @@ import { createLogger } from './logger'
 
 export type OverlayChannel = 'validation' | 'ids'
 
+/** Which severities to paint. Filtered-out severities fall back to the ghost. */
+export interface SeverityFilter {
+  error: boolean
+  warning: boolean
+  info: boolean
+}
+
+const ALL_SEVERITIES: SeverityFilter = { error: true, warning: true, info: true }
+
+/** A flagged element, in display order (errors → warnings → info, then model/id). */
+export interface OverlayFlag {
+  modelId: string
+  localId: number
+}
+
 /** The minimal slice of a fragments model the overlay touches. Both methods may be
  *  sync or async; the controller tolerates either and swallows rejections safely. */
 export interface OverlayTarget<M> {
@@ -79,12 +94,20 @@ export interface OverlaySnapshot {
 
 export interface OverlayController<M> {
   /** Paint the validation overlay (error/warning/info + isolate ghosting). No-op
-   *  when the requested overlay equals what's already on screen. */
-  applyValidation(issues: readonly ValidationIssue[], activeModelId: string | null): void
+   *  when the requested overlay equals what's already on screen.
+   *  @param severities  optional per-severity filter; omitted ⇒ show all. */
+  applyValidation(
+    issues: readonly ValidationIssue[],
+    activeModelId: string | null,
+    severities?: SeverityFilter,
+  ): void
   /** Paint the IDS-failure overlay (+ isolate ghosting). No-op when unchanged. */
   applyIds(failures: readonly IdsFailureRef[], activeModelId: string | null): void
   /** Remove the overlay from every model (issues resetHighlight) and drop state. */
   clear(): void
+  /** Swap one or more overlay materials (e.g. ghost opacity, x-ray depthTest) and
+   *  invalidate the cache so the next apply repaints with them. */
+  setMaterials(next: Partial<OverlayMaterials<M>>): void
   /** The overlay material an element should display (issue/fail colour, or ghost),
    *  or null. The viewer uses this to restore the overlay under a hover/selection. */
   materialFor(modelId: string, localId: number): M | null
@@ -96,6 +119,9 @@ export interface OverlayController<M> {
   /** The flagged (coloured) elements per model — e.g. so the viewer can frame the
    *  camera on the problems across the whole federation when the overlay turns on. */
   flaggedTargets(): Array<{ modelId: string; localIds: number[] }>
+  /** Every flagged element in display order (errors → warnings → info, then model,
+   *  then id) — drives "step through the issues" navigation. */
+  flaggedList(): OverlayFlag[]
   /** Snapshot of current overlay state for debugging/tests. */
   inspect(): OverlaySnapshot
 }
@@ -113,7 +139,8 @@ const isThenable = (v: unknown): v is Promise<unknown> =>
 
 export function createOverlayController<M>(deps: OverlayControllerDeps<M>): OverlayController<M> {
   const log = deps.logger ?? createLogger('Overlay')
-  const { materials } = deps
+  // Mutable copy so setMaterials() can swap ghost opacity / x-ray at runtime.
+  let materials: OverlayMaterials<M> = { ...deps.materials }
 
   // What is currently painted: modelId → (flagged localId → its material).
   // Ghosting is a per-model FLAG (not 10k map entries) — materialFor() resolves
@@ -267,13 +294,15 @@ export function createOverlayController<M>(deps: OverlayControllerDeps<M>): Over
 
   function validationToPerModel(
     plan: ReturnType<typeof planValidationOverlay>,
+    severities: SeverityFilter,
   ): Map<string, Map<number, M>> {
     const out = new Map<string, Map<number, M>>()
     for (const [modelId, buckets] of plan) {
       const flagged = new Map<number, M>()
-      for (const id of buckets.error) flagged.set(id, materials.error)
-      for (const id of buckets.warning) flagged.set(id, materials.warning)
-      for (const id of buckets.info) flagged.set(id, materials.info)
+      // A filtered-out severity isn't flagged → it falls back to the ghost.
+      if (severities.error)   for (const id of buckets.error)   flagged.set(id, materials.error)
+      if (severities.warning) for (const id of buckets.warning) flagged.set(id, materials.warning)
+      if (severities.info)    for (const id of buckets.info)    flagged.set(id, materials.info)
       out.set(modelId, flagged)
     }
     return out
@@ -290,10 +319,10 @@ export function createOverlayController<M>(deps: OverlayControllerDeps<M>): Over
   }
 
   return {
-    applyValidation(issues, activeModelId) {
+    applyValidation(issues, activeModelId, severities) {
       try {
         const plan = planValidationOverlay(issues, deps.typeMaps, activeModelId)
-        reconcile('validation', validationToPerModel(plan))
+        reconcile('validation', validationToPerModel(plan, severities ?? ALL_SEVERITIES))
       } catch (e) {
         log.warn('applyValidation failed — overlay left unchanged:', errMsg(e))
       }
@@ -310,6 +339,11 @@ export function createOverlayController<M>(deps: OverlayControllerDeps<M>): Over
 
     clear() {
       clearInternal()
+    },
+
+    setMaterials(next) {
+      materials = { ...materials, ...next }
+      appliedSignature = null // force the next apply to repaint with the new look
     },
 
     materialFor(modelId, localId) {
@@ -338,6 +372,19 @@ export function createOverlayController<M>(deps: OverlayControllerDeps<M>): Over
         if (flagged.size > 0) out.push({ modelId, localIds: [...flagged.keys()] })
       }
       return out
+    },
+
+    flaggedList() {
+      // errors (and IDS fails) first, then warnings, then info; stable within.
+      const rank: Record<string, number> = { e: 0, f: 0, w: 1, i: 2 }
+      const rows: Array<{ modelId: string; localId: number; r: number }> = []
+      for (const [modelId, flagged] of applied) {
+        for (const [localId, mat] of flagged) {
+          rows.push({ modelId, localId, r: rank[materialKey(mat)] ?? 3 })
+        }
+      }
+      rows.sort((a, b) => a.r - b.r || a.modelId.localeCompare(b.modelId) || a.localId - b.localId)
+      return rows.map(({ modelId, localId }) => ({ modelId, localId }))
     },
 
     inspect() {

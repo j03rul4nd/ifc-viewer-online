@@ -23,6 +23,7 @@ import SharedReportView, { decodeReportHash } from './components/SharedReportVie
 import type { SharedReportPayload } from './components/SharedReportView'
 import DemoGallery from './components/DemoGallery'
 import MobileBottomNav from './components/MobileBottomNav'
+import OverlayHud from './components/OverlayHud'
 import Blog from './components/Blog'
 import PrivacyPolicy from './components/legal/PrivacyPolicy'
 import TermsOfUse from './components/legal/TermsOfUse'
@@ -74,6 +75,7 @@ import { runIds, cancelActiveIdsRuns, IdsCheckError } from './lib/ids/ids-runner
 import { parseIds, IdsParseError } from './lib/ids/ids-parser'
 import { renderReasons } from './lib/ids/ids-engine-facets'
 import { useIdsStore } from './stores/idsStore'
+import { useOverlayStore } from './stores/overlayStore'
 import {
   trackFileOpened,
   trackValidationCompleted,
@@ -494,22 +496,29 @@ export default function App() {
   const idsHighlightMode = useIdsStore((s) => s.highlightMode)
   const idsResultsByModel = useIdsStore((s) => s.resultsByModel)
 
+  // Advanced overlay UX knobs (OverlayHud) — folded into the apply call so changing
+  // a filter / slider re-runs this effect and repaints with the new look.
+  const ovSeverities   = useOverlayStore((s) => s.severities)
+  const ovGhostOpacity = useOverlayStore((s) => s.ghostOpacity)
+  const ovXray         = useOverlayStore((s) => s.xray)
+
   useEffect(() => {
     const viewer = viewerApiRef.current
     if (!viewer) return
+    const opts = { severities: ovSeverities, ghostOpacity: ovGhostOpacity, xray: ovXray }
     if (idsHighlightMode) {
       const failures = Object.entries(idsResultsByModel).flatMap(([mid, r]) =>
         r.specs.flatMap((s) => s.failures
           .filter((f) => f.expressId >= 0)
           .map((f) => ({ expressId: f.expressId, modelId: mid }))),
       )
-      viewer.setIdsHighlights(failures, true)
+      viewer.setIdsHighlights(failures, true, opts)
     } else if (validationMode) {
-      viewer.setValidationHighlights(result?.issues ?? [], true)
+      viewer.setValidationHighlights(result?.issues ?? [], true, opts)
     } else {
       viewer.setValidationHighlights([], false) // clears the shared overlay channel
     }
-  }, [validationMode, result, idsHighlightMode, idsResultsByModel])
+  }, [validationMode, result, idsHighlightMode, idsResultsByModel, ovSeverities, ovGhostOpacity, ovXray])
 
   // ── Analytics: track each completed validation run ────────────────────────
   const prevResultRef = useRef<typeof result>(null)
@@ -1482,6 +1491,25 @@ export default function App() {
                       onToggle={toggleCameraControls}
                     />
                   )}
+
+                  {/* Advanced overlay HUD — shown while the issue overlay is on */}
+                  {sceneModels.length > 0 && (validationMode || idsHighlightMode) && (() => {
+                    const counts = { error: 0, warning: 0, info: 0 }
+                    if (idsHighlightMode) {
+                      counts.error = Object.values(idsResultsByModel).reduce(
+                        (acc, r) => acc + r.specs.reduce(
+                          (a, s) => a + s.failures.filter((f) => f.expressId >= 0).length, 0), 0)
+                    } else {
+                      for (const i of (result?.issues ?? [])) counts[i.severity]++
+                    }
+                    return (
+                      <OverlayHud
+                        viewerApiRef={viewerApiRef}
+                        channel={idsHighlightMode ? 'ids' : 'validation'}
+                        counts={counts}
+                      />
+                    )
+                  })()}
 
                   {/* Model info / weight panel — always shows the active model's data */}
                   {sceneModels.length > 0 && (() => {

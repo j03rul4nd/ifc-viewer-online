@@ -3,7 +3,7 @@ import * as OBC from '@thatopen/components'
 import * as OBCF from '@thatopen/components-front'
 import * as FRAGS from '@thatopen/fragments'
 import { safeVoid } from './errors'
-import { createOverlayController } from './overlay-controller'
+import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform } from '../types'
 
 // ─── Palette & label tables ──────────────────────────────────────────────────
@@ -152,6 +152,16 @@ export interface IFCItemData {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
+/** Appearance/filter knobs for the overlay, forwarded to the OverlayController. */
+export interface OverlayApplyOptions {
+  /** Which severities to paint in colour; the rest fall back to the ghost. */
+  severities?: SeverityFilter
+  /** Opacity of the dimmed (ghosted) context (0.02–0.4). */
+  ghostOpacity?: number
+  /** Render flagged elements through occluding geometry (no depth test). */
+  xray?: boolean
+}
+
 export interface ViewerAPI {
   loadIfc(
     file: File,
@@ -204,13 +214,25 @@ export interface ViewerAPI {
   applyStyle(style: ViewerStyle): void
   /** Frame camera on a set of elements. Targets the active model unless modelId is given. */
   frameElements(ids: number[], modelId?: string): void
-  setValidationHighlights(issues: ValidationIssue[], enabled: boolean): void
+  setValidationHighlights(issues: ValidationIssue[], enabled: boolean, options?: OverlayApplyOptions): void
   /**
    * Highlight IDS check failures in red. Shares the overlay channel with
    * validation highlights (the two modes are mutually exclusive — enabling one
    * must disable the other at the store level; see IDS_IMPLEMENTATION_PLAN §3.6).
    */
-  setIdsHighlights(failures: Array<{ expressId: number; modelId?: string | null }>, enabled: boolean): void
+  setIdsHighlights(
+    failures: Array<{ expressId: number; modelId?: string | null }>,
+    enabled: boolean,
+    options?: OverlayApplyOptions,
+  ): void
+  /**
+   * Advanced overlay UX (consumed by the OverlayHud):
+   *  - Fly to + select the Nth flagged element (errors first, then warnings, info),
+   *    wrapping around. Returns the resolved {index,total}, or null if there are none.
+   */
+  focusOverlayIssue(index: number): { index: number; total: number } | null
+  /** How many elements the overlay currently has flagged (for the HUD counter). */
+  getOverlayIssueCount(): number
   /**
    * Show only the given elements across all visible models (transient view
    * filter; any applyFilters/restore call supersedes it). enabled=false
@@ -901,6 +923,62 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     }
   }
 
+  // ─── Overlay appearance (ghost opacity / x-ray) ──────────────────────────────
+  // Built by cloning the base material constants so colours/opacities live in one
+  // place. Only re-pushed to the controller when the look actually changes (so a
+  // plain re-validation doesn't needlessly repaint).
+  let currentGhostOpacity = OVERLAY_GHOST_MAT.opacity
+  let currentXray = false
+
+  function buildOverlayMaterials(ghostOpacity: number, xray: boolean): OverlayMaterials<FRAGS.MaterialDefinition> {
+    // x-ray = flagged elements ignore depth so they show through walls.
+    const seeThrough = (m: FRAGS.MaterialDefinition): FRAGS.MaterialDefinition => ({ ...m, depthTest: !xray })
+    return {
+      error:   seeThrough(VALIDATION_ERROR_MAT),
+      warning: seeThrough(VALIDATION_WARN_MAT),
+      info:    seeThrough(VALIDATION_INFO_MAT),
+      idsFail: seeThrough(IDS_FAIL_MAT),
+      ghost:   { ...OVERLAY_GHOST_MAT, opacity: ghostOpacity },
+    }
+  }
+
+  /** Push appearance options to the controller only when they actually changed. */
+  function syncOverlayAppearance(options?: { ghostOpacity?: number; xray?: boolean }): void {
+    const ghostOpacity = options?.ghostOpacity ?? currentGhostOpacity
+    const xray = options?.xray ?? currentXray
+    if (ghostOpacity === currentGhostOpacity && xray === currentXray) return
+    currentGhostOpacity = ghostOpacity
+    currentXray = xray
+    overlay.setMaterials(buildOverlayMaterials(ghostOpacity, xray))
+  }
+
+  /** Core element selection (highlight + selection box + callback), shared by the
+   *  public selectElement API and overlay-issue navigation. */
+  function runSelectElement(expressId: number, modelId?: string): void {
+    const targetModel = (modelId && modelObjects.get(modelId)) ?? currentModel
+    const targetId    = (modelId && modelObjects.has(modelId)) ? modelId : currentModelId
+    if (!targetModel) return
+    void (async () => {
+      if (selectedLocalId !== null && selectedModelId !== null) {
+        const oldModel = modelObjects.get(selectedModelId)
+        try { if (oldModel) await resetHighlightPreservingOverlay(oldModel, selectedModelId, selectedLocalId) } catch (e) {
+          console.debug('[Viewer] selectElement resetHighlight failed:', e instanceof Error ? e.message : e)
+        }
+      }
+      selectedLocalId = expressId
+      selectedModelId = targetId ?? null
+      try { await targetModel.highlight([expressId], SELECT_MAT) } catch (e) {
+        console.debug('[Viewer] selectElement highlight failed:', e instanceof Error ? e.message : e)
+      }
+      addSelectionBox([expressId], targetModel)
+      const typeMap = (targetId ? typeMapByModel.get(targetId) : undefined) ?? expressIDToType
+      const rawType = typeMap.get(expressId) ?? 'IFCELEMENT'
+      const canon   = canonicalType(rawType)
+      const name    = `${IFC_DISPLAY_NAMES[canon] ?? prettyType(canon)} #${expressId}`
+      selectCallback?.({ id: String(expressId), name, type: rawType, storey: '', modelId: targetId ?? undefined })
+    })()
+  }
+
   let selectionBox: THREE.Box3Helper | null = null
 
   const canvas = wr.domElement
@@ -1499,43 +1577,45 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     selectElement(expressId, modelId) {
-      const targetModel = (modelId && modelObjects.get(modelId)) ?? currentModel
-      const targetId    = (modelId && modelObjects.has(modelId)) ? modelId : currentModelId
-      if (!targetModel) return
-
-      void (async () => {
-        // Reset old selection on its model (restoring any validation overlay)
-        if (selectedLocalId !== null && selectedModelId !== null) {
-          const oldModel = modelObjects.get(selectedModelId)
-          try { if (oldModel) await resetHighlightPreservingOverlay(oldModel, selectedModelId, selectedLocalId) } catch (e) {
-            console.debug('[Viewer] selectElement resetHighlight failed:', e instanceof Error ? e.message : e)
-          }
-        }
-        selectedLocalId = expressId
-        selectedModelId = targetId ?? null
-        try { await targetModel.highlight([expressId], SELECT_MAT) } catch (e) {
-          console.debug('[Viewer] selectElement highlight failed:', e instanceof Error ? e.message : e)
-        }
-        addSelectionBox([expressId], targetModel)
-        const typeMap = (targetId ? typeMapByModel.get(targetId) : undefined) ?? expressIDToType
-        const rawType = typeMap.get(expressId) ?? 'IFCELEMENT'
-        const canon   = canonicalType(rawType)
-        const name    = `${IFC_DISPLAY_NAMES[canon] ?? prettyType(canon)} #${expressId}`
-        selectCallback?.({ id: String(expressId), name, type: rawType, storey: '', modelId: targetId ?? undefined })
-      })()
+      runSelectElement(expressId, modelId)
     },
 
-    setValidationHighlights(issues, enabled) {
+    setValidationHighlights(issues, enabled, options) {
       if (modelObjects.size === 0) return
+      if (enabled) syncOverlayAppearance(options)
       // The controller owns the overlay layer; applyOverlay re-asserts the selection
       // on top and frames the camera on the issues when the overlay first turns on.
-      applyOverlay(() => overlay.applyValidation(issues, currentModelId), enabled)
+      applyOverlay(() => overlay.applyValidation(issues, currentModelId, options?.severities), enabled)
     },
 
-    setIdsHighlights(failures, enabled) {
+    setIdsHighlights(failures, enabled, options) {
       if (modelObjects.size === 0) return
+      if (enabled) syncOverlayAppearance(options)
       // Validation/IDS share the overlay channel — the controller swaps cleanly.
       applyOverlay(() => overlay.applyIds(failures, currentModelId), enabled)
+    },
+
+    getOverlayIssueCount() {
+      return overlay.flaggedList().length
+    },
+
+    focusOverlayIssue(index) {
+      const list = overlay.flaggedList()
+      if (list.length === 0) return null
+      const i = ((index % list.length) + list.length) % list.length // wrap both ways
+      const { modelId, localId } = list[i]
+      runSelectElement(localId, modelId)
+      // Frame the single element so the user lands right on it.
+      const model = modelObjects.get(modelId)
+      if (model) {
+        safeVoid(
+          model.getMergedBox([localId]).then((box) => {
+            if (!box.isEmpty()) { box.expandByScalar(1.5); void world.camera.controls.fitToBox(box, true) }
+          }),
+          'focusOverlayIssue',
+        )
+      }
+      return { index: i, total: list.length }
     },
 
     isolateElements(targets, enabled) {
