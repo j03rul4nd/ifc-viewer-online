@@ -49,12 +49,16 @@ import posthog from 'posthog-js'
 // ── Init ─────────────────────────────────────────────────────────────────────
 
 let _initialized = false
+// GDPR Art. 21: when the user objects (or the browser signals GPC/DNT), every
+// capture call short-circuits. The decision is owned by consentStore; this flag
+// is the fast in-module gate the hot `track()` path checks.
+let _optedOut = false
 
 export function initAnalytics(): void {
   const key  = import.meta.env.VITE_POSTHOG_KEY  as string | undefined
   const host = import.meta.env.VITE_POSTHOG_HOST as string | undefined
 
-  if (!key || _initialized) return
+  if (!key || _initialized || _optedOut) return
 
   posthog.init(key, {
     api_host:        host ?? 'https://us.i.posthog.com',
@@ -76,8 +80,46 @@ export function initAnalytics(): void {
 // ── Internal ──────────────────────────────────────────────────────────────────
 
 function track(event: string, properties?: Record<string, unknown>): void {
-  if (!_initialized) return
+  if (!_initialized || _optedOut) return
   posthog.capture(event, properties)
+}
+
+// ── Consent / right to object (GDPR Art. 21) ───────────────────────────────────
+
+/**
+ * Stop capturing analytics. Called by consentStore when the user opts out (or a
+ * GPC/DNT signal is honoured). Idempotent and safe before init. We never write
+ * any storage here — the decision is persisted by consentStore as a single,
+ * strictly-necessary flag, keeping the cookieless posture intact.
+ */
+export function disableAnalytics(): void {
+  _optedOut = true
+  try {
+    if (_initialized && typeof posthog.opt_out_capturing === 'function') {
+      posthog.opt_out_capturing()
+    }
+  } catch {
+    /* SDK not ready — the _optedOut gate is enough */
+  }
+}
+
+/** Re-enable analytics after an opt-in. Initialises the SDK if needed. */
+export function enableAnalytics(): void {
+  _optedOut = false
+  if (!_initialized) {
+    initAnalytics()
+    return
+  }
+  try {
+    if (typeof posthog.opt_in_capturing === 'function') posthog.opt_in_capturing()
+  } catch {
+    /* no-op */
+  }
+}
+
+/** Current effective state — true when no events are being captured. */
+export function isAnalyticsOptedOut(): boolean {
+  return _optedOut
 }
 
 // ── Acquisition ───────────────────────────────────────────────────────────────
@@ -130,7 +172,7 @@ export function registerEntrySource(props: {
   entry_segment?:     string
   entry_source_kind?: string
 }): void {
-  if (!_initialized) return
+  if (!_initialized || _optedOut) return
   const clean = Object.fromEntries(
     Object.entries(props).filter(([, v]) => v != null && v !== ''),
   )

@@ -1398,6 +1398,18 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                       {emailError}
                     </p>
                   )}
+                  <p className="text-[10.5px] text-center mt-3 text-[var(--text-faint)] max-w-sm mx-auto leading-relaxed">
+                    By subscribing you consent to receive occasional product update emails (sent via
+                    Resend). No spam, unsubscribe anytime. See our{' '}
+                    <button
+                      type="button"
+                      onClick={onNavigateToPrivacy}
+                      className="underline underline-offset-2 hover:text-[var(--accent-2)] transition-colors"
+                    >
+                      Privacy Policy
+                    </button>
+                    .
+                  </p>
                 </>
               )}
             </motion.div>

@@ -1,10 +1,11 @@
 import React from 'react'
 import LegalLayout from './LegalLayout'
 import { SITE_URL } from '../../seo/config'
+import { useConsentStore } from '../../stores/consentStore'
 
-const CONTACT = 'joelbenitezdonari@gmail.com'
+const CONTACT = 'privacy@ifcvieweronline.eu'
 const DOMAIN  = SITE_URL
-const LAST_UPDATED = '2026-06-15'
+const LAST_UPDATED = '2026-06-27'
 
 // ── Prose helpers ─────────────────────────────────────────────────────────────
 
@@ -42,6 +43,46 @@ function TableRow({ data, purpose, basis }: { data: string; purpose: string; bas
       <td className="py-2.5 pr-4 align-top text-[12.5px]" style={{ color: 'var(--text-dim)' }}>{purpose}</td>
       <td className="py-2.5 align-top text-[12.5px]" style={{ color: 'var(--text-dim)' }}>{basis}</td>
     </tr>
+  )
+}
+
+// ── Analytics opt-out control (GDPR Art. 21 — right to object) ─────────────────
+
+function AnalyticsChoice() {
+  const optedOut = useConsentStore((s) => s.analyticsOptedOut)
+  const setOptOut = useConsentStore((s) => s.setAnalyticsOptOut)
+  const enabled = !optedOut
+
+  return (
+    <div
+      className="rounded-xl border px-5 py-4 mb-4 flex items-center justify-between gap-4"
+      style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
+    >
+      <div>
+        <p className="text-[13px] font-medium" style={{ color: 'var(--text)' }}>
+          Anonymous analytics
+        </p>
+        <p className="text-[12.5px] leading-relaxed" style={{ color: 'var(--text-dim)' }}>
+          {enabled
+            ? 'Currently ON. We measure aggregate, cookieless usage to improve the tool. Turn it off to object at any time — the app works exactly the same.'
+            : 'Currently OFF. No usage events are collected from this browser. We also honour your browser’s Global Privacy Control / Do Not Track signal.'}
+        </p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={enabled}
+        aria-label="Toggle anonymous analytics"
+        onClick={() => setOptOut(enabled)}
+        className="relative inline-flex h-6 w-11 flex-none items-center rounded-full transition-colors"
+        style={{ background: enabled ? 'var(--accent)' : 'var(--border-strong)' }}
+      >
+        <span
+          className="inline-block h-5 w-5 transform rounded-full bg-white transition-transform"
+          style={{ transform: enabled ? 'translateX(22px)' : 'translateX(2px)' }}
+        />
+      </button>
+    </div>
   )
 }
 
@@ -135,6 +176,16 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
         is written to your device.
       </P>
 
+      {/* Analytics choice / opt-out */}
+      <H2>Your analytics choice (opt out anytime)</H2>
+      <P>
+        Because analytics relies on legitimate interest, you can object at any time with the switch
+        below. Your choice is stored locally on your device (a single setting, not tracking) and
+        takes effect immediately. We also automatically respect your browser&apos;s Global Privacy
+        Control or Do Not Track signal as an objection.
+      </P>
+      <AnalyticsChoice />
+
       {/* Invitation / referral links */}
       <H2>Invitation and referral links</H2>
       <P>
@@ -145,6 +196,36 @@ export default function PrivacyPolicy({ onNavigateToLanding }: Props) {
         it only for the current browser session (in <em>sessionStorage</em>, not a cookie), remove it
         from the address bar, and attach it to the same anonymous analytics described above so we can
         tell which channels are useful. It is cleared when you close the tab.
+      </P>
+
+      {/* Cookies & local storage */}
+      <H2>Cookies and local storage</H2>
+      <P>
+        We do <strong>not</strong> use tracking or advertising cookies. The Service stores a few
+        small values in your browser&apos;s local storage <em>purely to make the app work and
+        remember your settings</em> (these are strictly necessary / functional, not tracking):
+      </P>
+      <UL>
+        <li><code>ifc-locale</code> — your selected interface language.</li>
+        <li><code>ifc-viewer:prefs</code> — UI layout preferences (panel sizes, visibility).</li>
+        <li><code>ifc-geo-*</code> — your choices for the optional map view (consent to load map tiles, selected layer).</li>
+        <li><code>ifc-analytics-optout</code> — your analytics opt-out choice, so we can honour it.</li>
+        <li>A short, non-personal campaign tag (in <em>sessionStorage</em>) if you arrived from an invitation link — cleared when you close the tab.</li>
+      </UL>
+      <P>
+        These never leave your device and we cannot read them. You can clear them at any time from
+        your browser settings.
+      </P>
+
+      {/* Third-party content sources */}
+      <H2>Loading demo models and map tiles</H2>
+      <P>
+        If you open a <strong>demo model</strong>, it is fetched from a public source (e.g. GitHub);
+        that provider necessarily sees the request (including your IP address) as part of delivering
+        the file. If you enable the optional <strong>map view</strong>, map tiles are requested from
+        third-party tile providers only <em>after you explicitly consent</em> in the app, and those
+        providers likewise receive the request metadata. Your own IFC files are never involved in
+        either case.
       </P>
 
       {/* Shared reports */}
