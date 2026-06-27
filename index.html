@@ -228,10 +228,10 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%235E6AD2'/%3E%3Cpath d='M8 22 L16 8 L24 22 Z M12 22 L16 15 L20 22' stroke='white' stroke-width='1.5' fill='none'/%3E%3C/svg%3E" />
     <!-- AI / LLM discoverability -->
     <link rel="alternate" type="text/plain" href="https://www.ifcvieweronline.eu/llms.txt" title="LLMs.txt" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" as="style" />
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <!-- Self-hosted fonts (GDPR: no IP sent to Google's CDN). See /public/fonts.css -->
+    <link rel="preload" href="/fonts/geist-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/geist-500.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/fonts.css" />
   </head>
   <script>
     if ('serviceWorker' in navigator) {

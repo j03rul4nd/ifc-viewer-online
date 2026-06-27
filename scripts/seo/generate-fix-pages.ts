@@ -797,10 +797,11 @@ const STYLE = `
     .rule-card .rc-d { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.55; }
 `
 
+// Self-hosted fonts (GDPR: never hit Google's CDN, so no visitor IP leaves to
+// Google US). Served from our own origin via /fonts.css (see /public/fonts.css).
 const FONT_LINKS = `
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />`
+  <link rel="preload" href="/fonts/geist-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/fonts.css" />`
 
 // ── Shared <head> ──────────────────────────────────────────────────────────────
 // Single source of truth for the document head so every page type (rule page,
