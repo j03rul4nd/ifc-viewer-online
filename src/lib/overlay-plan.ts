@@ -33,6 +33,14 @@ const SEVERITY_RANK: Record<OverlaySeverity, number> = { error: 3, warning: 2, i
 /** A model's type map: localId → upper-cased IFC class. Presence ⇒ real element. */
 export type TypeMap = ReadonlyMap<number, string>
 
+/** A single IDS spec failure pointing at an element (or a synthetic spec-level row). */
+export interface IdsFailureRef {
+  /** Element local id, or < 0 for a synthetic spec-level row (no element). */
+  expressId: number
+  /** Owning model; falls back to the active model when omitted. */
+  modelId?: string | null
+}
+
 /**
  * Plan the validation overlay: per model, which local id gets which severity
  * colour. Mirrors the viewer's `setValidationHighlights` element selection.
@@ -80,7 +88,7 @@ export function planValidationOverlay(
  * several specs is highlighted once.
  */
 export function planIdsOverlay(
-  failures: ReadonlyArray<{ expressId: number; modelId?: string | null }>,
+  failures: readonly IdsFailureRef[],
   typeMaps: ReadonlyMap<string, TypeMap>,
   activeModelId: string | null,
 ): Map<string, number[]> {

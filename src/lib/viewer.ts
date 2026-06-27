@@ -3,7 +3,7 @@ import * as OBC from '@thatopen/components'
 import * as OBCF from '@thatopen/components-front'
 import * as FRAGS from '@thatopen/fragments'
 import { safeVoid } from './errors'
-import { planValidationOverlay, planIdsOverlay, planOverlayGhost } from './overlay-plan'
+import { createOverlayController } from './overlay-controller'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform } from '../types'
 
 // ─── Palette & label tables ──────────────────────────────────────────────────
@@ -649,6 +649,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   world.scene    = new OBC.SimpleScene(components)
   world.renderer = new OBCF.PostproductionRenderer(components, container)
+  world.renderer.showLogo = false
   world.camera   = new OBC.OrthoPerspectiveCamera(components)
 
   const wr = world.renderer.three
@@ -816,36 +817,33 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let selectedLocalId: number | null = null
   let selectedModelId: string | null = null
 
-  // Per-model overlay highlights: modelId → (expressId → material applied).
-  // SHARED by the validation overlay and the IDS-failure overlay — the two modes
-  // are mutually exclusive (store-level rule), so at any moment the map holds
-  // one channel only. Storing the material (not just the id) lets us re-apply
-  // the overlay after a hover/selection reset clears it.
-  const validationHighlightedByModel = new Map<string, Map<number, FRAGS.MaterialDefinition>>()
+  // The overlay layer (validation issues / IDS failures + isolate-ghosting) is
+  // owned by a dedicated, unit-tested controller (overlay-controller.ts). It is
+  // robust on its own (per-model error isolation, idempotent re-paints), so the
+  // viewer just feeds it intent and asks it what colour an element should restore
+  // to under a transient hover/selection highlight.
+  const overlay = createOverlayController<FRAGS.MaterialDefinition>({
+    getTarget: (modelId) => modelObjects.get(modelId),
+    typeMaps: typeMapByModel,
+    materials: {
+      error:   VALIDATION_ERROR_MAT,
+      warning: VALIDATION_WARN_MAT,
+      info:    VALIDATION_INFO_MAT,
+      idsFail: IDS_FAIL_MAT,
+      ghost:   OVERLAY_GHOST_MAT,
+    },
+  })
 
-  // Models currently in isolate-issues mode: every non-flagged element of these is
-  // painted with OVERLAY_GHOST_MAT. Tracked as a flag (not per-id) so a 10k-element
-  // ghost costs one Set entry instead of 10k map entries — validationMatFor still
-  // resolves the right restore material for any element.
-  const ghostedModels = new Set<string>()
-
-  /** The overlay material applied to an element (issue colour, or ghost), or null. */
-  function validationMatFor(modelId: string, localId: number): FRAGS.MaterialDefinition | null {
-    const issueMat = validationHighlightedByModel.get(modelId)?.get(localId)
-    if (issueMat) return issueMat
-    if (ghostedModels.has(modelId)) return OVERLAY_GHOST_MAT
-    return null
-  }
-
-  /** Reset an element's highlight, then restore its validation overlay if it had one. */
-  async function resetHighlightPreservingValidation(
+  /** Reset an element's highlight, then restore the overlay colour it should keep
+   *  (issue / IDS-fail / ghost) so hover & selection never erase the overlay. */
+  async function resetHighlightPreservingOverlay(
     model: FRAGS.FragmentsModel, modelId: string, localId: number,
   ): Promise<void> {
     await model.resetHighlight([localId])
-    const mat = validationMatFor(modelId, localId)
+    const mat = overlay.materialFor(modelId, localId)
     if (mat) {
       try { await model.highlight([localId], mat) } catch (e) {
-        console.debug('[Viewer] restore validation highlight failed:', e instanceof Error ? e.message : e)
+        console.debug('[Viewer] restore overlay highlight failed:', e instanceof Error ? e.message : e)
       }
     }
   }
@@ -857,20 +855,50 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     if (selModel) void selModel.highlight([selectedLocalId], SELECT_MAT)
   }
 
-  /** Clear the shared overlay channel (validation OR IDS) across every model, then
-   *  restore the active selection highlight the reset may have removed. */
-  function clearOverlayChannel(): void {
-    for (const [mid, ids] of validationHighlightedByModel) {
-      const model = modelObjects.get(mid)
-      if (!model) continue
-      // A ghosted model recoloured ~every element, so reset all of its highlights;
-      // otherwise reset just the tracked issue ids (don't disturb other models).
-      if (ghostedModels.has(mid)) void model.resetHighlight()
-      else if (ids.size > 0)      void model.resetHighlight([...ids.keys()])
+  // Tracks the overlay on/off edge so we only frame the camera on a fresh enable
+  // (not on every re-validation / re-paint while it's already on).
+  let overlayActive = false
+
+  /** UX: when the overlay turns on, fly the camera to the flagged elements across
+   *  the WHOLE scene (federation-aware) so the user sees their problems at once. */
+  function frameOverlayFlags(): void {
+    const targets = overlay.flaggedTargets()
+    if (targets.length === 0) return
+    void (async () => {
+      const union = new THREE.Box3()
+      let found = false
+      for (const { modelId, localIds } of targets) {
+        const model = modelObjects.get(modelId)
+        if (!model || localIds.length === 0) continue
+        try {
+          const box = await model.getMergedBox(localIds)
+          if (!box.isEmpty()) { union.union(box); found = true }
+        } catch (e) {
+          console.debug('[Viewer] frameOverlayFlags box failed:', e instanceof Error ? e.message : e)
+        }
+      }
+      if (found && !union.isEmpty()) {
+        union.expandByScalar(2) // a little breathing room around the issues
+        try { void world.camera.controls.fitToBox(union, true) } catch (e) {
+          console.debug('[Viewer] frameOverlayFlags fit failed:', e instanceof Error ? e.message : e)
+        }
+      }
+    })()
+  }
+
+  /** Drive the overlay controller for a channel and frame on the off→on edge. */
+  function applyOverlay(apply: () => void, enabled: boolean): void {
+    if (enabled) {
+      const wasActive = overlayActive
+      apply()
+      reassertSelection()
+      overlayActive = true
+      if (!wasActive) frameOverlayFlags()
+    } else {
+      overlay.clear()
+      reassertSelection()
+      overlayActive = false
     }
-    validationHighlightedByModel.clear()
-    ghostedModels.clear()
-    reassertSelection()
   }
 
   let selectionBox: THREE.Box3Helper | null = null
@@ -975,7 +1003,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     // Reset old selection highlight on whichever model it was on
     if (selectedLocalId !== null && selectedModelId !== null) {
       const oldModel = modelObjects.get(selectedModelId)
-      try { if (oldModel) await resetHighlightPreservingValidation(oldModel, selectedModelId, selectedLocalId) } catch (e) {
+      try { if (oldModel) await resetHighlightPreservingOverlay(oldModel, selectedModelId, selectedLocalId) } catch (e) {
         console.debug('[Viewer] resetHighlight on deselect failed:', e instanceof Error ? e.message : e)
       }
     }
@@ -1039,7 +1067,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         const isSameAsSelect = hoveredLocalId === selectedLocalId && hoveredModelId === selectedModelId
         if (!isSameAsSelect) {
           const prevModel = modelObjects.get(hoveredModelId)
-          if (prevModel) await resetHighlightPreservingValidation(prevModel, hoveredModelId, hoveredLocalId)
+          if (prevModel) await resetHighlightPreservingOverlay(prevModel, hoveredModelId, hoveredLocalId)
         }
       }
 
@@ -1237,8 +1265,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   async function teardownCurrentModel(): Promise<void> {
     if (modelObjects.size === 0 && !currentModel) return
-    validationHighlightedByModel.clear()
-    ghostedModels.clear()
+    overlay.forgetAll() // geometry is about to be disposed — just drop tracking
+    overlayActive = false
     removeSelectionBox()
 
     // Remove all per-model pivot groups from scene
@@ -1479,7 +1507,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         // Reset old selection on its model (restoring any validation overlay)
         if (selectedLocalId !== null && selectedModelId !== null) {
           const oldModel = modelObjects.get(selectedModelId)
-          try { if (oldModel) await resetHighlightPreservingValidation(oldModel, selectedModelId, selectedLocalId) } catch (e) {
+          try { if (oldModel) await resetHighlightPreservingOverlay(oldModel, selectedModelId, selectedLocalId) } catch (e) {
             console.debug('[Viewer] selectElement resetHighlight failed:', e instanceof Error ? e.message : e)
           }
         }
@@ -1499,66 +1527,15 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     setValidationHighlights(issues, enabled) {
       if (modelObjects.size === 0) return
-
-      clearOverlayChannel()
-      if (!enabled) return
-
-      // Which element of which model gets which severity colour (pure + tested in
-      // overlay-plan.test.ts). Highest severity wins per element; unknown / file-
-      // level ids are dropped so we only ever recolour real geometry.
-      const plan = planValidationOverlay(issues, typeMapByModel, currentModelId)
-
-      for (const [mid, buckets] of plan) {
-        const model = modelObjects.get(mid)
-        if (!model) continue
-
-        const tracked = new Map<number, FRAGS.MaterialDefinition>()
-        const flagged = new Set<number>()
-        for (const eid of buckets.error)   { tracked.set(eid, VALIDATION_ERROR_MAT); flagged.add(eid) }
-        for (const eid of buckets.warning) { tracked.set(eid, VALIDATION_WARN_MAT);  flagged.add(eid) }
-        for (const eid of buckets.info)    { tracked.set(eid, VALIDATION_INFO_MAT);  flagged.add(eid) }
-        validationHighlightedByModel.set(mid, tracked)
-
-        // Isolate-issues: ghost every other element of this model so the flagged
-        // ones stand out in context (this model has ≥1 issue, so it won't blank out).
-        const typeMap = typeMapByModel.get(mid)
-        const ghostIds = typeMap ? planOverlayGhost(typeMap, flagged) : []
-        if (ghostIds.length) { ghostedModels.add(mid); void model.highlight(ghostIds, OVERLAY_GHOST_MAT) }
-
-        if (buckets.error.length)   void model.highlight(buckets.error,   VALIDATION_ERROR_MAT)
-        if (buckets.warning.length) void model.highlight(buckets.warning, VALIDATION_WARN_MAT)
-        if (buckets.info.length)    void model.highlight(buckets.info,    VALIDATION_INFO_MAT)
-      }
-
-      reassertSelection()
+      // The controller owns the overlay layer; applyOverlay re-asserts the selection
+      // on top and frames the camera on the issues when the overlay first turns on.
+      applyOverlay(() => overlay.applyValidation(issues, currentModelId), enabled)
     },
 
     setIdsHighlights(failures, enabled) {
       if (modelObjects.size === 0) return
-
-      clearOverlayChannel()  // validation/IDS share the channel — exclusive
-      if (!enabled) return
-
-      // Per-model failing element ids (pure + tested in overlay-plan.test.ts):
-      // synthetic spec-level rows and unknown ids are dropped, duplicates collapsed.
-      const plan = planIdsOverlay(failures, typeMapByModel, currentModelId)
-
-      for (const [mid, ids] of plan) {
-        const model = modelObjects.get(mid)
-        if (!model || ids.length === 0) continue
-        const tracked = new Map<number, FRAGS.MaterialDefinition>()
-        for (const eid of ids) tracked.set(eid, IDS_FAIL_MAT)
-        validationHighlightedByModel.set(mid, tracked)
-
-        // Isolate-failures: ghost everything that passed so the failures stand out.
-        const typeMap = typeMapByModel.get(mid)
-        const ghostIds = typeMap ? planOverlayGhost(typeMap, ids) : []
-        if (ghostIds.length) { ghostedModels.add(mid); void model.highlight(ghostIds, OVERLAY_GHOST_MAT) }
-
-        void model.highlight(ids, IDS_FAIL_MAT)
-      }
-
-      reassertSelection()
+      // Validation/IDS share the overlay channel — the controller swaps cleanly.
+      applyOverlay(() => overlay.applyIds(failures, currentModelId), enabled)
     },
 
     isolateElements(targets, enabled) {
@@ -1923,8 +1900,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         currentPivot    = nextId ? (modelPivots.get(nextId) ?? null) : null
       }
 
-      validationHighlightedByModel.delete(modelId)
-      ghostedModels.delete(modelId)
+      overlay.forget(modelId)
       void fragmentsManager.core.update()
     },
 
