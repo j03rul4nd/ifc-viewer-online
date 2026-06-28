@@ -323,6 +323,67 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
         </blockquote>
       )
 
+    case 'table': {
+      const rowHeaders = block.rowHeaders ?? true
+      return (
+        <div className="my-8">
+          {/* -mx-4 lets the table touch viewport edges on mobile; sm:mx-0 restores inset */}
+          <div className="-mx-4 sm:mx-0 overflow-x-auto">
+            <div className="min-w-full sm:rounded-xl border border-[var(--border)] overflow-hidden">
+              <table className="w-full text-[13px] border-collapse">
+                <thead>
+                  <tr className="bg-[var(--surface)]">
+                    {block.headers.map((h, hi) => (
+                      <th
+                        key={hi}
+                        scope="col"
+                        className="px-3.5 py-2.5 text-left text-[10px] font-mono font-bold tracking-[0.09em] uppercase text-[var(--text-dim)] border-b border-[var(--border)] whitespace-nowrap"
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {block.rows.map((row, ri) => (
+                    <tr
+                      key={ri}
+                      className={`border-b border-[var(--border)] last:border-0 transition-colors hover:bg-[rgba(94,106,210,0.04)] ${
+                        ri % 2 === 1 ? 'bg-[rgba(94,106,210,0.015)]' : ''
+                      }`}
+                    >
+                      {row.map((cell, ci) => {
+                        const isRH = rowHeaders && ci === 0
+                        return isRH ? (
+                          <th
+                            key={ci}
+                            scope="row"
+                            className="px-3.5 py-2.5 text-left align-top text-[12.5px] font-medium text-[var(--text)] whitespace-nowrap leading-[1.5]"
+                          >
+                            {cell}
+                          </th>
+                        ) : (
+                          <td
+                            key={ci}
+                            className="px-3.5 py-2.5 align-top text-[12.5px] leading-[1.6] text-[var(--text-dim)]"
+                          >
+                            {cell}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {block.caption && (
+            <p className="mt-2 px-1 text-[11px] text-[var(--text-faint)]">{block.caption}</p>
+          )}
+        </div>
+      )
+    }
+
     case 'ifc-demo':
       return (
         <div className="my-7 sm:my-10">

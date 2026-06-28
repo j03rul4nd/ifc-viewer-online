@@ -54,6 +54,15 @@ export type ContentBlock =
   | { type: 'comparison'; left: { label: string; color: string; items: string[] }; right: { label: string; color: string; items: string[] } }
   | { type: 'health-score'; items: Array<{ score: number; label: string }> }
   | { type: 'pull-quote'; text: string; cite?: string }
+  | {
+      type: 'table'
+      headers: string[]
+      rows: string[][]
+      /** Optional note displayed below the table (e.g. data source, caveat). */
+      caption?: string
+      /** Style the first column as row headers. Default true. */
+      rowHeaders?: boolean
+    }
 
 export interface BlogPost {
   slug: string
@@ -2811,32 +2820,18 @@ export const BLOG_POSTS_FR: BlogPost[] = [
       },
       { type: 'h2', text: 'The Comparison Table: Level 1 vs Level 2 vs Level 3' },
       {
-        type: 'code',
-        lang: 'text',
-        text: `DIMENSION             │ L1: IFC INTEGRITY      │ L2: MODEL QUALITY       │ L3: IDS VALIDATION
-──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
-Question answered     │ Is the file a valid    │ Is the data useful for  │ Does it meet project
-                      │ IFC schema?            │ coordination?           │ information req.?
-──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
-Standard              │ ISO 10303-21 (STEP)    │ BIM best practice       │ buildingSMART IDS 1.0
-                      │ ISO 16739-1 (IFC)      │ ISO 19650 norms         │ (XML schema)
-──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
-Defined by            │ buildingSMART          │ BIM team / EIR          │ Client / employer
-                      │ (fixed schema)         │ (project-agreed rules)  │ (per-project)
-──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
-Output                │ Pass / Fail            │ Health Score 0–100      │ Pass / Fail
-                      │ Schema error list      │ Prioritised issue list  │ per specification
-──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
-Can replace others?   │ No                     │ No                      │ No — all three needed
-──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
-Cadence               │ Every IFC export       │ Before CDE upload       │ Before delivery
-                      │                        │                         │ milestone
-──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
-Passes but fails L?   │ Zero Psets, no names   │ Fire rating missing      │ Duplicate GUIDs,
-                      │ → L1 pass, L2 fail     │ (IDS spec) → L3 fail    │ broken hierarchy
-──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
-Example tools         │ bSmart Validator,      │ IFC Viewer Online,      │ IFC Viewer Online
-                      │ IFC Viewer Online      │ Solibri, IfcOpenShell   │ (IDS engine), Solibri`,
+        type: 'table',
+        headers: ['Dimension', 'L1: IFC Integrity', 'L2: Model Quality', 'L3: IDS Validation'],
+        rows: [
+          ['Question answered', 'Is the file a valid IFC schema?', 'Is the data useful for coordination?', 'Does it meet project information requirements?'],
+          ['Standard', 'ISO 10303-21 (STEP), ISO 16739-1 (IFC)', 'BIM best practice, ISO 19650 norms', 'buildingSMART IDS 1.0 (XML schema)'],
+          ['Defined by', 'buildingSMART (fixed schema)', 'BIM team / EIR (project-agreed rules)', 'Client / employer (per-project)'],
+          ['Output', 'Pass / Fail + schema error list', 'Health Score 0–100 + prioritised issue list', 'Pass / Fail per specification'],
+          ['Can replace others?', 'No', 'No', 'No — all three needed'],
+          ['Cadence', 'Every IFC export', 'Before CDE upload', 'Before delivery milestone'],
+          ['Passes but fails another?', 'Zero Psets, no names → L1 pass, L2 fail', 'Fire rating missing (IDS spec) → L3 fail', 'Duplicate GUIDs, broken hierarchy'],
+          ['Example tools', 'bSmart Validator, IFC Viewer Online', 'IFC Viewer Online, Solibri, IfcOpenShell', 'IFC Viewer Online (IDS engine), Solibri'],
+        ],
       },
       { type: 'h2', text: 'When to Use the buildingSMART Validation Service — An Honest Assessment' },
       {
@@ -3256,30 +3251,16 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
         ],
       },
       {
-        type: 'code',
-        lang: 'text',
-        text: `┌─────────────┬───────────────┬─────────────────────────────────────────────────────────┐
-│ Score Range │ Band          │ Interpretation and action                               │
-├─────────────┼───────────────┼─────────────────────────────────────────────────────────┤
-│  95 – 100   │ Excellent     │ Suitable for all formal deliveries including ISO 19650  │
-│             │               │ submissions. Minor or no rule failures. No action needed.│
-├─────────────┼───────────────┼─────────────────────────────────────────────────────────┤
-│  85 – 94    │ Very Good     │ Minor data completeness issues. CDE-ready for standard  │
-│             │               │ coordination. Resolve remaining failures before LOD 300+.│
-├─────────────┼───────────────┼─────────────────────────────────────────────────────────┤
-│  70 – 84    │ Acceptable    │ Meaningful data quality gaps. Acceptable for internal   │
-│             │               │ review and concept design. Must be reviewed and improved │
-│             │               │ before any cross-discipline coordination or CDE upload.  │
-├─────────────┼───────────────┼─────────────────────────────────────────────────────────┤
-│  50 – 69    │ Poor          │ Significant structural or data problems. Not suitable   │
-│             │               │ for coordination. Fix all schema errors first, then      │
-│             │               │ address the highest-impact data quality rules.           │
-├─────────────┼───────────────┼─────────────────────────────────────────────────────────┤
-│  Below 50   │ Critical      │ Fundamental structural failures. Orphan elements,        │
-│             │               │ broken hierarchy, missing IfcProject, circular refs.     │
-│             │               │ Return to authoring tool. Do not deliver under any       │
-│             │               │ circumstance. Downstream tools will fail silently.       │
-└─────────────┴───────────────┴─────────────────────────────────────────────────────────┘`,
+        type: 'table',
+        headers: ['Score Range', 'Band', 'Interpretation and action'],
+        rowHeaders: true,
+        rows: [
+          ['95 – 100', 'Excellent ✅', 'Suitable for all formal deliveries including ISO 19650 submissions. Minor or no rule failures. No action needed.'],
+          ['85 – 94', 'Very Good 🟢', 'Minor data completeness issues. CDE-ready for standard coordination. Resolve remaining failures before LOD 300+.'],
+          ['70 – 84', 'Acceptable 🟡', 'Meaningful data quality gaps. Acceptable for internal review and concept design. Must be reviewed and improved before any cross-discipline coordination or CDE upload.'],
+          ['50 – 69', 'Poor 🟠', 'Significant structural or data problems. Not suitable for coordination. Fix all schema errors first, then address the highest-impact data quality rules.'],
+          ['Below 50', 'Critical 🔴', 'Fundamental structural failures: orphan elements, broken hierarchy, missing IfcProject, circular refs. Return to authoring tool. Do not deliver under any circumstance.'],
+        ],
       },
       {
         type: 'p',
@@ -3898,23 +3879,20 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
         text: "The single most underestimated cost of cloud IFC validation is upload time. It is invisible in product comparisons but dominant in the actual workflow. Here is what uploading common IFC file sizes looks like across realistic connection types — and how browser local processing compares:",
       },
       {
-        type: 'code',
-        lang: 'text',
-        text: `FILE SIZE │ Office (10 Mbps up) │ 4G Mobile (3 Mbps) │ On-Site (1 Mbps)
-──────────┼────────────────────┼────────────────────┼─────────────────
-   50 MB  │    ~40 seconds     │    ~2 min 15 s     │   ~7 minutes
-  250 MB  │   ~3 min 20 s      │    ~11 minutes     │   ~33 minutes
-    1 GB  │   ~13 minutes      │    ~45 minutes     │   ~2 h 15 min
-    2 GB  │   ~27 minutes      │   ~1 h 30 min      │   ~4 h 30 min
-
-Plus server processing (shared cloud hardware, variable):
-   50 MB: +5–15 s    250 MB: +30–90 s    1 GB: +2–6 min    2 GB: +5–15 min
-
-Browser local processing — WASM, modern workstation (first parse):
-   50 MB: ~5–10 s    250 MB: ~20–40 s    1 GB: ~90–180 s   2 GB: ~3–6 min
-
-Browser repeat load — OPFS cache, no re-parsing:
-   All sizes: ~2–5 seconds (independent of original file size)`,
+        type: 'table',
+        headers: ['IFC file size', 'Office (10 Mbps upload)', '4G Mobile (3 Mbps)', 'On-Site (1 Mbps)'],
+        caption: 'Upload time only — add server processing on top: 50 MB +5–15 s · 250 MB +30–90 s · 1 GB +2–6 min · 2 GB +5–15 min. Browser validation: 0 s upload in all cases.',
+        rows: [
+          ['50 MB',  '~40 seconds',   '~2 min 15 s',  '~7 minutes'],
+          ['250 MB', '~3 min 20 s',   '~11 minutes',  '~33 minutes'],
+          ['1 GB',   '~13 minutes',   '~45 minutes',  '~2 h 15 min'],
+          ['2 GB',   '~27 minutes',   '~1 h 30 min',  '~4 h 30 min'],
+        ],
+      },
+      {
+        type: 'callout',
+        variant: 'info',
+        text: "Browser local processing (WebAssembly, modern workstation, first parse): 50 MB ~5–10 s · 250 MB ~20–40 s · 1 GB ~90–180 s · 2 GB ~3–6 min. OPFS repeat load (no re-parsing): ~2–5 seconds at any file size.",
       },
       {
         type: 'p',
@@ -3931,37 +3909,31 @@ Browser repeat load — OPFS cache, no re-parsing:
       },
       { type: 'h2', text: 'The Full Comparison: Browser vs Cloud IFC Validation' },
       {
-        type: 'code',
-        lang: 'text',
-        text: `DIMENSION              │ BROWSER VALIDATION          │ CLOUD VALIDATION
-───────────────────────┼─────────────────────────────┼──────────────────────────
-Privacy                │ ✅ File never leaves device  │ ⚠️  File uploaded to server
-Data sovereignty       │ ✅ No third-party custody    │ ⚠️  Third-party data custody
-GDPR compliance        │ ✅ Compliant by design        │ ⚠️  Requires DPA + legal basis
-Sensitive projects     │ ✅ Only option in many cases  │ ❌  Often prohibited
-───────────────────────┼─────────────────────────────┼──────────────────────────
-Speed (small <50 MB)   │ ✅ Near-instant              │ ⚠️  Upload + processing delay
-Speed (large >250 MB)  │ ✅ No upload penalty         │ ❌  Upload bottleneck
-Repeat loads           │ ✅ OPFS cache (~10× faster)  │ ❌  Full re-upload each time
-Upload time            │ ✅ Zero                      │ ❌  Proportional to file size
-───────────────────────┼─────────────────────────────┼──────────────────────────
-Offline availability   │ ✅ Full offline support      │ ❌  Requires internet
-On-site field use      │ ✅ Works on 4G or offline    │ ❌  Slow / unreliable on site
-Internet dependency    │ ✅ None (after initial load)  │ ❌  Required every run
-───────────────────────┼─────────────────────────────┼──────────────────────────
-Batch processing       │ ❌  Manual, one at a time    │ ✅  API / batch automation
-CI/CD integration      │ ❌  Not suited               │ ✅  Native webhook/API
-Team audit trail       │ ⚠️  Local only              │ ✅  Centralised history
-Org-wide reporting     │ ⚠️  Not aggregated          │ ✅  Dashboard across projects
-───────────────────────┼─────────────────────────────┼──────────────────────────
-Security (data)        │ ✅ No transit / server risk  │ ⚠️  Transit + server exposure
-Security (breach)      │ ✅ No server to compromise   │ ⚠️  Depends on cloud provider
-───────────────────────┼─────────────────────────────┼──────────────────────────
-Very large files >2 GB │ ⚠️  Limited by device RAM   │ ✅  Server has more RAM
-───────────────────────┼─────────────────────────────┼──────────────────────────
-Cost                   │ ✅ Free to low-cost          │ ⚠️  Per-use or subscription
-Infrastructure burden  │ ✅ Zero — runs in browser    │ ✅  Managed by provider
-Setup complexity       │ ✅ Open URL, drag file       │ ⚠️  Account / API key required`,
+        type: 'table',
+        headers: ['Dimension', 'Browser validation', 'Cloud validation'],
+        rows: [
+          ['Privacy',               '✅ File never leaves device',     '⚠️ File uploaded to server'],
+          ['Data sovereignty',      '✅ No third-party custody',        '⚠️ Third-party data custody'],
+          ['GDPR compliance',       '✅ Compliant by design',           '⚠️ Requires DPA + legal basis'],
+          ['Sensitive projects',    '✅ Only option in many cases',     '❌ Often prohibited'],
+          ['Speed (small <50 MB)',  '✅ Near-instant',                  '⚠️ Upload + processing delay'],
+          ['Speed (large >250 MB)', '✅ No upload penalty',             '❌ Upload bottleneck'],
+          ['Repeat loads',          '✅ OPFS cache (~10× faster)',      '❌ Full re-upload each time'],
+          ['Upload time',           '✅ Zero',                          '❌ Proportional to file size'],
+          ['Offline availability',  '✅ Full offline support',          '❌ Requires internet'],
+          ['On-site field use',     '✅ Works on 4G or offline',        '❌ Slow / unreliable on site'],
+          ['Internet dependency',   '✅ None (after initial load)',     '❌ Required every run'],
+          ['Batch processing',      '❌ Manual, one at a time',         '✅ API / batch automation'],
+          ['CI/CD integration',     '❌ Not suited',                    '✅ Native webhook/API'],
+          ['Team audit trail',      '⚠️ Local only',                   '✅ Centralised history'],
+          ['Org-wide reporting',    '⚠️ Not aggregated',               '✅ Dashboard across projects'],
+          ['Security (data)',       '✅ No transit / server risk',      '⚠️ Transit + server exposure'],
+          ['Security (breach)',     '✅ No server to compromise',       '⚠️ Depends on cloud provider'],
+          ['Very large files >2 GB','⚠️ Limited by device RAM',        '✅ Server has more RAM'],
+          ['Cost',                  '✅ Free to low-cost',              '⚠️ Per-use or subscription'],
+          ['Infrastructure burden', '✅ Zero — runs in browser',        '✅ Managed by provider'],
+          ['Setup complexity',      '✅ Open URL, drag file',           '⚠️ Account / API key required'],
+        ],
       },
       { type: 'h2', text: 'Where Cloud Validation Is Genuinely Better' },
       {
