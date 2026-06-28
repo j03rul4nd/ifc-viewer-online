@@ -3066,6 +3066,596 @@ Example tools         │ bSmart Validator,      │ IFC Viewer Online,      │
     ],
   },
 
+  // ── Article #4 — "IFC Health Score" / "IFC model quality" (definitive reference)
+
+  {
+    slug: 'ifc-health-score',
+    title: 'IFC Health Score: The Definitive Guide for BIM Coordinators and Managers',
+    excerpt: "An IFC Health Score is not a percentage — it is a decision-making tool. How it is calculated, what each band means, how to set thresholds in the BEP, and how to use it as a quality gate at every project stage.",
+    date: '2026-06-28',
+    readTimeMin: 22,
+    category: 'BIM Best Practices',
+    categorySlug: 'best-practices',
+    author: 'IFC Viewer Team',
+    featured: true,
+    keywords: [
+      'IFC Health Score', 'IFC model quality', 'IFC validation score', 'BIM model quality',
+      'IFC quality check', 'IFC validation', 'IFC model checker', 'BIM QA',
+      'OpenBIM validation', 'IFC quality assessment', 'model health score',
+    ],
+    faqs: [
+      {
+        q: 'What is an IFC Health Score?',
+        a: "An IFC Health Score is a 0–100 number that summarises the structural and data quality of an IFC model against a set of validation rules. It is not a percentage of rules passed — it is a weighted, logarithmic penalty model where structural errors carry more weight than data warnings. A score of 80+ is generally considered suitable for CDE delivery; below 60 indicates structural problems that will cause failures in downstream tools.",
+      },
+      {
+        q: 'How is an IFC Health Score calculated?',
+        a: "The score starts at 100. Each validation rule failure subtracts points using a logarithmic decay function — the first few instances subtract more than later instances of the same rule. Schema errors (structural failures like missing IfcProject or broken hierarchy) carry three times the penalty weight of data warnings (such as naming inconsistencies). Logarithmic scaling prevents a large model from scoring worse than a small model for the same underlying problem density.",
+      },
+      {
+        q: 'What IFC Health Score should I specify in the BEP?',
+        a: "≥ 80 is the standard threshold for CDE delivery and cross-discipline coordination. ≥ 90 for ISO 19650 formal milestone submissions and LOD 300+ design development deliveries. ≥ 70 is acceptable for concept-stage internal reviews only. Specify the threshold in the EIR (contractual) as well as the BEP — only the EIR creates a legally enforceable quality gate.",
+      },
+      {
+        q: 'Can a model score 100 and still have quality problems?',
+        a: "Yes. A Health Score measures 44 structural and data quality rules. It does not measure IDS compliance (project-specific information requirements), semantic accuracy (whether property values are factually correct), or design intent. A model with syntactically correct but factually wrong property values will score 100. The score confirms structural and data completeness, not project correctness.",
+      },
+      {
+        q: 'Does a high Health Score mean I can skip IDS validation?',
+        a: "No. The Health Score and IDS validation answer different questions. The Health Score asks: is this model well-formed and data-complete? IDS asks: does this model meet the specific information requirements of this project? A model can score 95 and fail IDS validation because it is missing the Pset_WallCommon values required by the EIR. Both checks are always necessary.",
+      },
+      {
+        q: 'Is a Health Score of 100 always the goal?',
+        a: "Not always. The appropriate threshold depends on delivery stage and project type. A concept design review might accept 70. A CDE delivery requires 80. An ISO 19650 formal submission targets 90+. Pursuing 100 at the concept stage wastes effort that should go into design development. Define the threshold for each delivery milestone in the BEP and EIR — then validate against that threshold, not the maximum.",
+      },
+    ],
+    content: [
+      {
+        type: 'callout',
+        variant: 'info',
+        text: "TL;DR — A Health Score is a 0–100 decision signal, not a percentage. 80+ means deliver. Below 60 means structural problems exist. The score tells you whether to deliver now; the rule breakdown tells you what to fix. Set the threshold in your EIR, not just the BEP.",
+      },
+      {
+        type: 'stat-row',
+        stats: [
+          { value: 44, suffix: '', label: 'quality rules checked' },
+          { value: 100, suffix: '', label: 'max score (not always the goal)' },
+          { value: 80, suffix: '+', label: 'target for CDE delivery' },
+          { value: 0, suffix: ' bytes', label: 'uploaded to validate' },
+        ],
+      },
+      { type: 'h2', text: 'What an IFC Health Score Actually Is — and Is Not' },
+      {
+        type: 'p',
+        text: "Every BIM project has a vague quality requirement in the BEP. 'Deliver a quality IFC.' Nobody defines what that means until a model gets rejected at the CDE, a clash session is wasted on orphan elements, or a handover package is missing half its asset data. The IFC Health Score exists to make that vague requirement concrete — a single number, calculated the same way every time, on every machine, by every tool that implements it.",
+      },
+      {
+        type: 'p',
+        text: "But the most common mistake is treating it as a percentage. It is not. A score of 73 does not mean 73% of something is correct. It is a weighted, severity-adjusted, logarithmically-scaled quality signal. Understanding that distinction changes how you set thresholds, how you interpret results, and how you communicate quality to project stakeholders who do not work inside IFC files.",
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'A Health Score IS',
+          color: 'accent',
+          items: [
+            'A 0–100 weighted summary of structural and data quality',
+            'A contractable deliverable criterion — it belongs in the EIR',
+            'A decision signal: can I deliver this model today?',
+            'A progress indicator that updates on every validation run',
+            'Comparable across model versions, disciplines, and team members',
+            'Affected by severity (errors penalise more than warnings)',
+            'Logarithmically scaled (10,000 name warnings ≠ 10,000 × 1 name warning)',
+          ],
+        },
+        right: {
+          label: 'A Health Score IS NOT',
+          color: 'muted',
+          items: [
+            'A percentage of validation rules passed',
+            'A measure of design correctness or project accuracy',
+            'A replacement for IDS / EIR compliance checking',
+            'A guarantee that property values are semantically correct',
+            'A substitute for BIM Coordinator professional review',
+            'An absolute measure — thresholds are project- and stage-specific',
+            'A tool score — the same model gives the same score in any tool implementing the same rules',
+          ],
+        },
+      },
+      { type: 'h2', text: 'Why Traditional Validation Reports Create Decision Paralysis' },
+      {
+        type: 'p',
+        text: "A standard validation report on a mid-complexity Revit export typically contains between 200 and 1,200 individual issues across 8 to 12 rule categories. It tells you everything and nothing at the same time. The Information Manager sees 847 issues and rejects the model. The BIM Coordinator opens the report, scrolls past 620 naming convention warnings (all the same rule), and finds three actually critical errors buried on page 12.",
+      },
+      {
+        type: 'p',
+        text: "The problem is that raw issue counts are uninformative without severity weighting. A model with 800 naming warnings and zero structural errors is categorically different from a model with 12 broken spatial hierarchies and a missing IfcProject. A Health Score collapses that distinction into a single, actionable number — and the rule breakdown beneath it gives the prioritised action list.",
+      },
+      {
+        type: 'pull-quote',
+        text: "A report with 847 issues tells you there are problems. A Health Score of 74 tells you whether you can deliver today — and a score of 34 tells you to stop coordination until it is fixed.",
+        cite: 'IFC Viewer Blog',
+      },
+      { type: 'h2', text: 'How a Health Score Is Calculated' },
+      {
+        type: 'p',
+        text: "The calculation starts at 100 and subtracts points for every rule failure. Two mechanisms prevent the score from becoming a simple issue count:",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '⚖️',
+            title: 'Severity weighting',
+            body: "Schema errors (structural failures: missing IfcProject, broken aggregates, circular references) carry 3× the penalty of quality warnings (empty names, missing classifications). This reflects the actual impact hierarchy — a structural failure breaks downstream tools; a naming warning does not.",
+          },
+          {
+            icon: '📉',
+            title: 'Logarithmic decay',
+            body: "The first occurrence of a rule failure subtracts more points than the thousandth. A model with 10 duplicate GUIDs and a model with 10,000 duplicate GUIDs are different in severity — but not 1,000× different. Logarithmic scaling prevents file size from contaminating the quality signal.",
+          },
+        ],
+      },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `Conceptual scoring model:
+
+  score = 100
+
+  for each failing rule:
+    base_penalty = rule.severity_weight × log(1 + issue_count)
+    score -= base_penalty
+
+  Severity weights:
+    schema_error  → 3.0×   (missing IfcProject, broken hierarchy, duplicate GUIDs)
+    quality_error → 1.5×   (missing property sets, wrong container placement)
+    warning       → 1.0×   (naming conventions, missing classifications)
+    info          → 0.3×   (optional metadata gaps, non-critical omissions)
+
+  score = max(0, score)
+
+Note: The actual formula is proprietary to each tool implementation.
+This is the conceptual model — the penalty shape, not the exact coefficients.`,
+      },
+      {
+        type: 'callout',
+        variant: 'info',
+        text: "The logarithmic scale is the reason a model with 10,000 naming warnings can still score 81 — while a model with 6 broken spatial hierarchies scores 52. Both are real outcomes. The score is not counting issues; it is measuring the quality impact those issues represent.",
+      },
+      { type: 'h2', text: 'The 11 Quality Dimensions That Drive Your Score' },
+      {
+        type: 'p',
+        text: "The 44 validation rules group into eleven quality dimensions. Understanding which category is driving your score down tells you where to focus remediation effort before the next validation run:",
+      },
+      {
+        type: 'ul',
+        items: [
+          "Schema integrity — Does the file contain exactly one IfcProject? Are all aggregate relationships pointing to existing entities? Are there circular spatial references?",
+          "GlobalId uniqueness and format — Are all GlobalIds unique within the file? Does the first character fall in the valid 0–3 range of the IFC base-64 alphabet?",
+          "Spatial hierarchy — Is the containment chain Project → Site → Building → Storey → physical element intact for all elements?",
+          "Element containment — Are any physical elements orphaned (no spatial container), or placed directly inside IfcBuilding or IfcSite instead of a storey?",
+          "Element naming — Are Name and Description fields populated on all IfcRoot entities that represent physical elements or spaces?",
+          "Property set completeness — Are the expected standard property sets (Pset_WallCommon, Pset_SpaceCommon, etc.) present and populated on the element types that require them?",
+          "ISO 19650 metadata — Are IfcProject.LongName, Description, and ObjectType populated? Are the FILE_NAME header author and organization fields non-empty?",
+          "Classification — Do physical elements carry an IfcRelAssociatesClassification relationship? Is the classification system consistent across the file?",
+          "Material assignments — Do structural, architectural, and finishing elements have material layer set or material profile set definitions?",
+          "Geometry integrity — Are there degenerate faces, self-intersecting surfaces, or non-manifold geometry that will cause failures in clash detection and quantity takeoff?",
+          "LOD consistency — Does the property set density match the declared Level of Development? An LOD 300 delivery missing area and volume quantities fails this check.",
+        ],
+      },
+      { type: 'h2', text: 'Score Ranges: What Each Band Means and What to Do' },
+      {
+        type: 'health-score',
+        items: [
+          { score: 97, label: 'Excellent — ISO 19650 ready' },
+          { score: 89, label: 'Very Good — CDE delivery ready' },
+          { score: 77, label: 'Acceptable — review before formal delivery' },
+          { score: 61, label: 'Poor — significant corrections needed' },
+          { score: 38, label: 'Critical — do not deliver' },
+        ],
+      },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `┌─────────────┬───────────────┬─────────────────────────────────────────────────────────┐
+│ Score Range │ Band          │ Interpretation and action                               │
+├─────────────┼───────────────┼─────────────────────────────────────────────────────────┤
+│  95 – 100   │ Excellent     │ Suitable for all formal deliveries including ISO 19650  │
+│             │               │ submissions. Minor or no rule failures. No action needed.│
+├─────────────┼───────────────┼─────────────────────────────────────────────────────────┤
+│  85 – 94    │ Very Good     │ Minor data completeness issues. CDE-ready for standard  │
+│             │               │ coordination. Resolve remaining failures before LOD 300+.│
+├─────────────┼───────────────┼─────────────────────────────────────────────────────────┤
+│  70 – 84    │ Acceptable    │ Meaningful data quality gaps. Acceptable for internal   │
+│             │               │ review and concept design. Must be reviewed and improved │
+│             │               │ before any cross-discipline coordination or CDE upload.  │
+├─────────────┼───────────────┼─────────────────────────────────────────────────────────┤
+│  50 – 69    │ Poor          │ Significant structural or data problems. Not suitable   │
+│             │               │ for coordination. Fix all schema errors first, then      │
+│             │               │ address the highest-impact data quality rules.           │
+├─────────────┼───────────────┼─────────────────────────────────────────────────────────┤
+│  Below 50   │ Critical      │ Fundamental structural failures. Orphan elements,        │
+│             │               │ broken hierarchy, missing IfcProject, circular refs.     │
+│             │               │ Return to authoring tool. Do not deliver under any       │
+│             │               │ circumstance. Downstream tools will fail silently.       │
+└─────────────┴───────────────┴─────────────────────────────────────────────────────────┘`,
+      },
+      {
+        type: 'p',
+        text: "These ranges are a starting framework. The appropriate threshold for your project depends on the delivery stage, contractual requirements, and what the receiving party's tools can tolerate. A highway authority accepting infrastructure IFC files for a GIS system may require ≥ 90 at every exchange; a small residential practice doing internal coordination may work comfortably at ≥ 70 during design development. The bands above reflect industry consensus, not a single fixed rule.",
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: "If you are setting a threshold for the first time and have no project history to calibrate from: start at ≥ 80 for CDE delivery. Run validation on your last three IFC exports to see where your team currently lands. If you are routinely scoring 65, an 80 target with a remediation plan is more useful than a 90 target your team cannot reach.",
+      },
+      { type: 'h2', text: 'Three Real Project Scenarios: Health Scores in Context' },
+      {
+        type: 'p',
+        text: "Abstract thresholds are easier to apply when you have seen them against real models. The following scenarios are composites drawn from common patterns seen across architectural, MEP, and infrastructure IFC deliveries.",
+      },
+      { type: 'h3', text: 'Scenario 1: Architectural IFC — Score 95' },
+      {
+        type: 'p',
+        text: "A mid-sized commercial office building, LOD 300, exported from ArchiCAD 27. The validation report shows 43 issues: 38 naming convention warnings across generic annotation elements ('Annotation-001' instead of a descriptive name), and 5 instances of missing material assignments on curtain wall panels. No schema errors. No duplicate GUIDs. Spatial hierarchy is intact. IfcProject metadata is fully populated. ISO 19650 file header is complete. The score is 95. The BEP requires ≥ 85 for CDE delivery. Decision: deliver as-is, note the naming issues as a non-blocking comment in the transmittal, schedule material assignment correction in the next revision.",
+      },
+      { type: 'h3', text: 'Scenario 2: MEP Services IFC — Score 68' },
+      {
+        type: 'p',
+        text: "A full mechanical and electrical services model, LOD 250, exported from Revit 2025 MEP. Score: 68. The rule breakdown shows the causes in priority order: 214 duplicate GlobalIds (high severity — the Revit export configuration regenerated GUIDs, colliding with elements copied from an older linked model), 89 elements placed directly inside IfcBuilding instead of a storey (spatial containment failure — HVAC risers that cross multiple floors were placed at the building level rather than anchored to the basement storey), 44 IfcFlowTerminal elements with no classification (Uniclass was required by the EIR), and 312 naming warnings on distribution boards. The spatial containment failures and duplicate GUIDs are schema-level: they will corrupt BCF references and break FM export. This model should not be delivered. Fix GUIDs (auto-fixable), correct the storey placement for the risers, add classification — then revalidate. Expected score after remediation: ≥ 83.",
+      },
+      { type: 'h3', text: 'Scenario 3: Infrastructure IFC — Score 82' },
+      {
+        type: 'p',
+        text: "An IFC4.3 highway alignment model exported from Civil 3D via a custom exporter, covering a 4 km road section with drainage and kerb elements. Score: 82. The main penalty sources: 67 elements without classification (Uniclass Table J was required), missing quantity sets on 104 kerb elements (the contract requires explicit lengths in BaseQuantities), and inconsistent IfcProject.LongName (the header shows the filename rather than the official project title). No structural errors. No duplicate GUIDs. The client's specification requires a minimum score of 80 for model exchanges during construction. The model passes. The coordinator notes the three areas for correction before the formal design freeze submission, where the threshold increases to 90.",
+      },
+      {
+        type: 'callout',
+        variant: 'info',
+        text: "The key insight across all three scenarios: the score tells you whether to deliver, and the rule breakdown tells you exactly where to spend the next hour of remediation effort. Both pieces of information are needed — the score without the breakdown is a traffic light without a dashboard.",
+      },
+      { type: 'h2', text: 'How BIM Teams Should Use Health Scores Across the Project Lifecycle' },
+      {
+        type: 'p',
+        text: "A Health Score is most useful when it is embedded into the project rhythm, not applied only at delivery. The validation run should take less than 30 seconds for any model that can open in a browser — the friction of running it is negligible. The friction of not running it — and discovering structural failures at a CDE gate or a coordination session — is measured in days.",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '📅',
+            title: 'Weekly QA during design development',
+            body: "Run validation every week during active model authoring. Track the score trend in the project log. A score that drops 15 points between Friday and the following Friday tells you something changed — and is far easier to diagnose now than in six weeks when the model is twice as complex.",
+          },
+          {
+            icon: '🔗',
+            title: 'Before every coordination session',
+            body: "Every discipline should pass their threshold (≥ 70 for internal, ≥ 80 for cross-discipline) before the session. A federated Navisworks or IFC coordination model built from files scoring below 60 produces nonsense clashes — elements in wrong locations, orphaned MEP runs that cannot be referenced, BCF issues that point at nothing.",
+          },
+          {
+            icon: '📋',
+            title: 'Before IDS / EIR validation',
+            body: "IDS validation assumes a well-formed, data-complete base model. Running an IDS check against a model with broken spatial hierarchy or duplicate GUIDs produces unreliable results — the IDS engine may misidentify elements, miss containment-based applicability rules, or produce false passes. Require ≥ 75 before any IDS run to get a trustworthy result.",
+          },
+          {
+            icon: '🔄',
+            title: 'Before every model exchange',
+            body: "Attach the Health Score as a header field on every transmittal. This gives the receiving discipline immediate context before they open the file, and creates an audit trail of model quality progression throughout the project. Some CDEs support custom metadata fields — this is one worth using.",
+          },
+          {
+            icon: '🚪',
+            title: 'The CDE delivery gate',
+            body: "The non-negotiable checkpoint. The model must meet the BEP-specified threshold before upload. Information Managers should not manually review models that have not been validated — the score report (with timestamp, tool version, and score) should be a mandatory transmittal attachment. Models below threshold are returned to the originator; the score is the objective reason.",
+          },
+        ],
+      },
+      {
+        type: 'ol',
+        items: [
+          "Export the IFC from the authoring tool with stable GUID settings enabled.",
+          "Open in the browser validator — validation completes in under 30 seconds for most project models.",
+          "Read the score. If below your stage threshold, open the rule breakdown.",
+          "Sort the issue list by severity (errors first). Address schema errors before data warnings.",
+          "Apply auto-fixes where available (GUID duplicates, format errors). Manual fixes for hierarchy and naming issues.",
+          "Re-export from the authoring tool with the corrected settings (stable GUIDs, correct storey placement). Re-validate.",
+          "When the threshold is met, attach the score report to the transmittal and upload to the CDE.",
+        ],
+      },
+      { type: 'h2', text: 'The Complete Quality Stack: Score → Rules → IDS → BCF → Delivery' },
+      {
+        type: 'p',
+        text: "The Health Score is one layer in a four-layer quality stack. Each layer answers a different question, and they are not substitutes for each other. Understanding the stack is the conceptual foundation for a robust BIM QA workflow:",
+      },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `┌──────────────────────────────────────────────────────────────────┐
+│                      IFC Model File                              │
+│               (exported from authoring tool)                     │
+└──────────────────────────┬───────────────────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────────────────┐
+│         44 Quality Rules  →  Health Score (L1 + L2)              │
+│   Schema · GUIDs · Hierarchy · Names · Psets · ISO 19650         │
+│   Question: Is this model well-formed and data-complete?         │
+│   Output:   0–100 score + prioritised rule-level issue list      │
+└──────────────────────────┬───────────────────────────────────────┘
+                           │  if score ≥ stage threshold
+                           ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                IDS Validation (L3 — Level 3)                     │
+│          Project-specific EIR/AIR information requirements       │
+│   Question: Does this model satisfy our contractual spec?        │
+│   Output:   Pass / Fail per IDS spec + element-level evidence    │
+└──────────────────────────┬───────────────────────────────────────┘
+                           │  on failures found
+                           ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                    BCF Issue Report                              │
+│         Structured coordination issues linked to elements        │
+│   Question: What specifically needs to change, and who owns it?  │
+│   Output:   BCF 2.1 file shared across authoring tools           │
+└──────────────────────────┬───────────────────────────────────────┘
+                           │  when all layers pass
+                           ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                   Formal CDE Delivery                            │
+│        Model + score evidence + IDS report on transmittal        │
+└──────────────────────────────────────────────────────────────────┘`,
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '📊',
+            title: 'Layer 1–2: Health Score',
+            body: "44 rules across schema integrity, GUID uniqueness, spatial hierarchy, property completeness, naming, ISO 19650, classification, geometry, and materials. This is the universal quality floor — it applies to every IFC file regardless of project type. A model below 80 fails the floor check and should not proceed to the next layer.",
+          },
+          {
+            icon: '📋',
+            title: 'Layer 3: IDS Validation',
+            body: "Project-specific requirements encoded in machine-readable XML by the EIR author. Six facets: Entity (which element types), Attribute (which attributes), Property (which Pset values), Classification, Material, and PartOf. Where the Health Score is universal, IDS is bespoke — a different spec for each project and each discipline package.",
+          },
+          {
+            icon: '💬',
+            title: 'BCF Issue Tracking',
+            body: "When Health Score rules or IDS checks fail, the issues become BCF topics — structured coordination items with element references, viewpoints, and responsible parties. BCF carries the quality issues from the validation stack into the coordination workflow where they can be assigned, tracked, and resolved.",
+          },
+          {
+            icon: '🚀',
+            title: 'CDE Delivery',
+            body: "The endpoint of the stack. A model that passes the Health Score gate and the IDS gate has documentary evidence of quality. The score report and IDS validation result are the formal quality evidence attached to the transmittal — giving the Information Manager something to verify rather than something to guess at.",
+          },
+        ],
+      },
+      { type: 'h2', text: 'Setting Thresholds in Your BEP and EIR' },
+      {
+        type: 'p',
+        text: "A Health Score threshold without a contractual home is a wish. The EIR (Employer Information Requirements) is the contractual document; the BEP (BIM Execution Plan) is the delivery plan that implements the EIR. The threshold belongs in both — with the EIR version being the enforceable one.",
+      },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `── EIR clause (contractual, enforceable) ─────────────────────────────────────
+
+  5.4 Model Quality — IFC Health Score
+
+  All IFC information deliveries shall achieve a minimum Health Score
+  as specified below, validated prior to upload to the Common Data
+  Environment. The Health Score shall be calculated using [agreed tool]
+  with [agreed rule set version]. The validation report (including score,
+  timestamp, and tool version) shall be attached to the transmittal as
+  evidence of compliance.
+
+  Models that do not meet the applicable threshold shall be returned to
+  the Originator for remediation. Re-upload shall reset the revision
+  counter and generate a new transmittal record.
+
+  Minimum thresholds by LOD and delivery type:
+
+    Internal model review (LOD 100–150):    ≥ 70
+    Cross-discipline coordination (LOD 200): ≥ 75
+    Detailed design CDE delivery (LOD 300):  ≥ 80
+    Construction issue (LOD 350+):           ≥ 85
+    As-built / FM handover (LOD 400+):       ≥ 90
+
+── BEP clause (operational, implementation plan) ─────────────────────────────
+
+  3.2 Validation Procedure
+
+  Prior to each CDE upload, the Information Originator shall:
+  1. Export IFC with stable GlobalId settings (see Section 4.1).
+  2. Run the agreed validation tool against the exported file.
+  3. Confirm the Health Score meets or exceeds the applicable threshold.
+  4. Attach the score report (PDF or JSON) to the transmittal record.`,
+      },
+      {
+        type: 'callout',
+        variant: 'warning',
+        text: "Put the threshold in the EIR, not only the BEP. The BEP is the team's own delivery plan — it is not a contract between client and supplier. The EIR is part of the appointment documents. A threshold specified only in the BEP is unenforceable if a supplier disputes a rejected delivery. A threshold in the EIR has the same standing as any other information requirement.",
+      },
+      { type: 'h2', text: 'Six Common Misconceptions About IFC Health Scores' },
+      { type: 'h3', text: 'Misconception 1: "Higher is always better — target 100"' },
+      {
+        type: 'p',
+        text: "The appropriate score depends entirely on the delivery stage. A concept design should target ≥ 70, not ≥ 95. Spending hours bringing an early-stage massing model to 95 is misallocated effort — the naming conventions you fixed will be replaced in three weeks when the scheme changes. Define stage-appropriate thresholds and target those. Reserve the energy for the score increases that happen after LOD 300, where changes are expensive.",
+      },
+      { type: 'h3', text: 'Misconception 2: "100 means zero problems with the model"' },
+      {
+        type: 'p',
+        text: "A score of 100 means the model passed all 44 structural and data quality rules. It says nothing about whether the property values are factually correct, whether the model meets the project EIR, whether the design intent is accurately represented, or whether there are geometric clashes. A model with every Pset populated with placeholder text scores 100. The score confirms structural health; it does not certify content.",
+      },
+      { type: 'h3', text: 'Misconception 3: "A Health Score replaces IDS validation"' },
+      {
+        type: 'p',
+        text: "They answer different questions. The Health Score asks: is this file well-formed and data-complete according to universal quality standards? IDS asks: does this model satisfy the specific information requirements of this project and this discipline package? A model can score 95 and fail IDS validation because it is missing the Uniclass 2015 classification required by the EIR, or because the IfcBuildingStorey names do not match the agreed storey naming convention in the project BEP. Both checks are always necessary — they are complementary, not overlapping.",
+      },
+      { type: 'h3', text: 'Misconception 4: "The score tells me what to fix"' },
+      {
+        type: 'p',
+        text: "The score tells you whether to deliver. The rule-level breakdown beneath it tells you what to fix. A score of 68 without the issue breakdown is a failed fuel gauge without a map. Open the rule detail: sort by severity, read the element counts and descriptions, and fix the highest-severity failures first. The score will update immediately on the next validation run. The two pieces of information — score and breakdown — are always used together.",
+      },
+      { type: 'h3', text: 'Misconception 5: "A Health Score replaces the BIM Coordinator review"' },
+      {
+        type: 'p',
+        text: "Automated validation catches structural failures, data completeness gaps, and format violations. It cannot review design compliance, spatial feasibility, programme alignment, or buildability. A model that scores 92 and contains a structurally impossible transfer structure will score 92. Professional review by a BIM Coordinator or Information Manager is never replaced by a score — it is supported by one. The score eliminates the checklist noise and focuses the reviewer on what matters.",
+      },
+      { type: 'h3', text: 'Misconception 6: "My model is fine — it opened in Revit without errors"' },
+      {
+        type: 'p',
+        text: "Opening in a tool without errors is the minimum possible bar. IFC parsers are deliberately tolerant — they load what they can and silently discard or correct what they cannot. A file that opens cleanly in Revit, ArchiCAD, and Navisworks can simultaneously have 300 duplicate GUIDs (breaking BCF across every discipline), 80 orphan elements (missing from every clash report), no IfcProject.LongName (failing ISO 19650 traceability), and a Health Score of 41. 'It opened' is not a quality check.",
+      },
+      { type: 'h2', text: 'How IFC Viewer Online Implements the Health Score' },
+      {
+        type: 'p',
+        text: "The IFC Viewer Online Health Score runs all 44 quality rules in the browser, in under 30 seconds, on any IFC file — nothing uploaded. Here is what the implementation covers:",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '🔬',
+            title: '44 validation rules',
+            body: "Full L1 schema integrity and L2 data quality coverage: GlobalId uniqueness and format, spatial hierarchy, orphan detection, naming completeness, ISO 19650 metadata, property set presence, classification, material assignments, and geometry integrity checks.",
+          },
+          {
+            icon: '📊',
+            title: 'Health Score with severity weighting',
+            body: "Schema errors carry 3× the penalty of warnings. Logarithmic scaling prevents large models from scoring artificially low. The same model produces the same score on every run — it is reproducible and auditable.",
+          },
+          {
+            icon: '🔍',
+            title: 'Rule-level breakdown with element counts',
+            body: "Every failing rule shows the issue count, severity, affected element types, and a remediation explanation. Sort by severity to prioritise work. The breakdown is the action list; the score is the decision signal.",
+          },
+          {
+            icon: '🔧',
+            title: 'Auto-fix for GUIDs',
+            body: "Duplicate and out-of-range GlobalIds are auto-fixable in one click. A new spec-compliant 22-character GUID is generated using the correct IFC base-64 alphabet, with a leading character in the valid 0–3 range.",
+          },
+          {
+            icon: '✏️',
+            title: 'Non-destructive property editing',
+            body: "Fix names, property values, and classification on received files without returning to the authoring tool. Full undo/redo. Changes are stored as an EditDiff[] keyed by GlobalId and applied on export — the original file is never mutated in place.",
+          },
+          {
+            icon: '📋',
+            title: 'IDS validation + BCF export',
+            body: "After the Health Score gate, run project-specific IDS validation across all six facets (Entity, Attribute, Property, Classification, Material, PartOf). Export failures as BCF 2.1 for distribution to Revit, ArchiCAD, Solibri, and any BCF-capable coordination tool.",
+          },
+        ],
+      },
+      {
+        type: 'ifc-demo',
+        modelId: 'office-architecture',
+        title: 'Run a Health Score on a real Revit export',
+        description: "This 14 MB office model was exported from Revit — a typical mid-size architectural delivery. Open it to see the Health Score, the rule breakdown by category, and what a real pre-delivery validation report looks like for a commercial project.",
+        schema: 'IFC4',
+        size: '14 MB',
+        variant: 'inline',
+      },
+      { type: 'h2', text: 'Troubleshooting: When Your Score Does Not Improve' },
+      { type: 'h3', text: 'Fixed the issues in Revit but the score did not change' },
+      {
+        type: 'p',
+        text: "The most common cause: the fix was applied to the Revit model but the IFC was not re-exported. Validation runs against the IFC file, not the authoring model. Always re-export after fixing the authoring model, and validate the new IFC export — not the same file you fixed last time.",
+      },
+      { type: 'h3', text: 'Score jumped from 81 to 47 between two exports' },
+      {
+        type: 'p',
+        text: "A score drop of more than 20 points between revisions almost always indicates a change in the export configuration — specifically, the GUID generation setting changed from 'Keep Existing' to 'Generate New'. This produces thousands of new GlobalIds that the validator sees as out-of-range or duplicated with an earlier linked file. Check the IFC exporter settings and revert to stable GUID output.",
+      },
+      { type: 'h3', text: 'Score is 76 but Information Manager requires 80' },
+      {
+        type: 'p',
+        text: "Open the rule breakdown and sort by penalty contribution, not by issue count. The four points separating you from 80 are almost certainly concentrated in 1–2 rules. Fix the highest-penalty rule failures first — often spatial containment errors or missing property sets on a specific element type. Address those two rules, re-export, and revalidate. The score typically moves more than expected because the penalty structure is non-linear.",
+      },
+      { type: 'h3', text: 'Score is 95 but IDS validation is failing' },
+      {
+        type: 'p',
+        text: "This is expected and correct. The Health Score and IDS address different layers. A score of 95 means the model is structurally excellent. IDS failure means it does not meet a specific project requirement — a Pset value, a classification code, a material layer thickness. Check the IDS failure report: it will identify the exact elements, the expected values, and the actual values. Fix in the authoring tool or use non-destructive property editing for received files.",
+      },
+      { type: 'h2', text: 'Frequently Asked Questions' },
+      { type: 'h3', text: 'What is an IFC Health Score?' },
+      {
+        type: 'p',
+        text: "A 0–100 weighted quality signal summarising a model's structural integrity and data completeness against 44 validation rules. It is not a percentage — it is a severity-weighted, logarithmically-scaled score where schema errors count more than data warnings, and the first failure of a rule penalises more than the thousandth.",
+      },
+      { type: 'h3', text: 'How is it calculated?' },
+      {
+        type: 'p',
+        text: "The score starts at 100. Each rule failure subtracts points based on the failure's severity weight and the logarithm of the issue count. Schema errors (structural failures) carry 3× the penalty of quality warnings. Logarithmic scaling prevents large models from looking artificially worse than small models for the same underlying problem density.",
+      },
+      { type: 'h3', text: 'What Health Score should I specify in the BEP?' },
+      {
+        type: 'p',
+        text: "≥ 80 for standard CDE delivery and cross-discipline coordination. ≥ 90 for ISO 19650 formal milestone submissions and LOD 300+ deliveries. ≥ 70 for concept-stage internal reviews. Specify it in the EIR (contractual) as well as the BEP. Only the EIR creates a legally enforceable quality gate.",
+      },
+      { type: 'h3', text: 'Can a model score 100 and still have quality problems?' },
+      {
+        type: 'p',
+        text: "Yes. The score covers 44 structural and data quality rules. It does not cover IDS compliance (project-specific requirements), semantic correctness (whether property values are factually accurate), or design intent. A model with placeholder values in every property set scores 100. The score confirms structural health; it does not certify content.",
+      },
+      { type: 'h3', text: 'Does a high Health Score mean I can skip IDS validation?' },
+      {
+        type: 'p',
+        text: "No. They answer different questions. Health Score: is this model well-formed and data-complete? IDS: does this model meet the specific information requirements of this project? A score of 95 and a failing IDS check is a common and expected outcome — fix the IDS failures, then revalidate both.",
+      },
+      { type: 'h3', text: 'Should every model aim for 100?' },
+      {
+        type: 'p',
+        text: "No. Set stage-appropriate thresholds. Pursuing 100 at concept design wastes effort that belongs in design development. The goal is 'does the model meet the threshold for this delivery stage?' Define those thresholds in the BEP and EIR at project start — then validate against them, not against the theoretical maximum.",
+      },
+      { type: 'h2', text: 'Summary' },
+      {
+        type: 'pull-quote',
+        text: "A model that opened without errors in Revit is not a quality-checked model. It is an unchecked model that happened to parse. The Health Score is the difference between those two things — and it takes 30 seconds to find out which you have.",
+        cite: 'IFC Viewer Blog',
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '📐',
+            title: 'Understand the number',
+            body: "The Health Score is a severity-weighted, logarithmically-scaled decision signal. 80+ means CDE-ready. Below 60 means structural problems. Not a percentage — a quality verdict.",
+          },
+          {
+            icon: '📝',
+            title: 'Set it contractually',
+            body: "Stage-appropriate thresholds belong in the EIR (contractual) and the BEP (operational). Without an EIR clause, the threshold is unenforceable. Add it at project start, before the first delivery.",
+          },
+          {
+            icon: '🔁',
+            title: 'Embed it in the rhythm',
+            body: "Weekly validation during design development. Pre-session check before coordination. Gate check before CDE upload. Attach the score report to every transmittal. Make the score a project routine, not a delivery-day panic.",
+          },
+          {
+            icon: '🔗',
+            title: 'Use the full stack',
+            body: "Health Score → IDS → BCF → Delivery. Each layer answers a different question. The score is the floor; IDS is the ceiling. Use both, and export failures to BCF so they can be tracked and resolved in the coordination workflow.",
+          },
+        ],
+      },
+      {
+        type: 'p',
+        text: [
+          "For the technical explanation of how the 44 rules are organised into three validation levels, see ",
+          { text: 'the complete IFC model checker guide', to: 'ifc-model-checker-guide' },
+          ". For the browser vs cloud architecture question — when local processing is the right choice for sensitive project data — see ",
+          { text: 'browser-based vs cloud IFC validation', to: 'browser-vs-cloud-ifc-validation' },
+          ". If you have a received IFC file with property values, GUIDs, or naming that needs to be corrected before validation, ",
+          { text: 'the free online IFC editor guide', to: 'ifc-editor-online' },
+          " covers non-destructive editing without a round-trip through the authoring tool. And for the most common structural failures that push scores below 70, see ",
+          { text: 'the 7 most common IFC validation errors', to: 'common-ifc-validation-errors' },
+          ".",
+        ],
+      },
+    ],
+  },
+
   // ── Article #3 — "offline bim validation" / "browser vs cloud ifc validation"
 
   {
