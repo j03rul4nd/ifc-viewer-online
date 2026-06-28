@@ -55,6 +55,15 @@
     "none": "0 en el modelo",
     "upper": "≤ {{count}} en el modelo"
   },
+  "lint": {
+    "title": "Revisa esta regla:",
+    "entityNotIfc": "La entidad no parece una clase IFC (p. ej. IfcWall)",
+    "whitespace": "El nombre del conjunto/propiedad tiene espacios al inicio o final",
+    "badRegex": "La expresión regular no es válida",
+    "numericNaN": "El valor numérico debe ser un número",
+    "emptyEquals": "El valor esperado está vacío",
+    "emptyAllowed": "Los valores permitidos contienen una opción vacía"
+  },
   "stats": {
     "validated": "Validados",
     "passed": "Correctos",

@@ -19,6 +19,7 @@ import { toast } from '../../stores/toastStore'
 import {
   compileEirToIds, parseEirProfile, serializeEirProfile, eirProfileSchema,
   emptyEirProfile, isBuiltinProfile, slug, idsToEir, modelClassCounts, applicabilityCount,
+  lintProfile, lintByRule, type LintCode,
 } from '../../lib/eir'
 import { parseIds } from '../../lib/ids/ids-parser'
 import type { EirProfile, EirRule, EirRuleType, EirSeverity, NumericOperator } from '../../lib/eir'
@@ -207,6 +208,7 @@ export default function EirProfileEditor({ onClose }: Props) {
 
   const ruleCount = draft?.rules.length ?? 0
   const compiledCount = useMemo(() => (draft ? compileEirToIds(draft).specifications.length : 0), [draft])
+  const lintMap = useMemo(() => (draft ? lintByRule(lintProfile(draft)) : new Map<string, LintCode[]>()), [draft])
 
   return createPortal(
     <AnimatePresence>
@@ -294,7 +296,7 @@ export default function EirProfileEditor({ onClose }: Props) {
                   {/* Rules */}
                   <div className="overflow-y-auto flex-1 p-3 flex flex-col gap-2">
                     {draft.rules.map((rule) => (
-                      <RuleCard key={rule.id} rule={rule} classCounts={classCounts} onChange={updateRule} onType={changeRuleType} onDelete={deleteRule} />
+                      <RuleCard key={rule.id} rule={rule} classCounts={classCounts} lint={lintMap.get(rule.id)} onChange={updateRule} onType={changeRuleType} onDelete={deleteRule} />
                     ))}
                     <button onClick={addRule} className="h-8 rounded-md border border-dashed border-[var(--border)] text-[11.5px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)]">
                       + {t('addRule')}
@@ -330,12 +332,13 @@ export default function EirProfileEditor({ onClose }: Props) {
 interface RuleCardProps {
   rule: EirRule
   classCounts: Map<string, number>
+  lint?: LintCode[]
   onChange: (id: string, patch: Partial<EirRule>) => void
   onType: (id: string, type: EirRuleType) => void
   onDelete: (id: string) => void
 }
 
-function RuleCard({ rule, classCounts, onChange, onType, onDelete }: RuleCardProps) {
+function RuleCard({ rule, classCounts, lint, onChange, onType, onDelete }: RuleCardProps) {
   const { t } = useTranslation('eir')
   const set = (patch: Partial<EirRule>): void => onChange(rule.id, patch)
   // Applicability hint (only when a model is loaded). predefinedType narrows
@@ -347,7 +350,7 @@ function RuleCard({ rule, classCounts, onChange, onType, onDelete }: RuleCardPro
     : t('applies.none')
   const appliesColor = applies && applies > 0 ? 'var(--text-faint)' : '#F5A623'
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-2 flex flex-col gap-1.5">
+    <div className={`rounded-lg border bg-[var(--surface)] p-2 flex flex-col gap-1.5 ${lint?.length ? 'border-[#F5A623]/50' : 'border-[var(--border)]'}`}>
       <div className="flex items-center gap-1.5 flex-wrap">
         <select value={rule.type} onChange={(e) => onType(rule.id, e.target.value as EirRuleType)} className={`${inputCls} w-[150px]`}>
           {RULE_TYPES.map((rt) => <option key={rt} value={rt}>{t(`ruleTypes.${rt}`)}</option>)}
@@ -367,6 +370,13 @@ function RuleCard({ rule, classCounts, onChange, onType, onDelete }: RuleCardPro
         <button onClick={() => onDelete(rule.id)} className={`${appliesLabel ? '' : 'ml-auto '}w-7 h-7 grid place-items-center rounded-md text-[var(--text-faint)] hover:text-[var(--danger)]`}><Icons.X size={12} /></button>
       </div>
       <RuleFields rule={rule} set={set} />
+      {lint?.length ? (
+        <div className="flex flex-col gap-0.5 pt-0.5">
+          {lint.map((c) => (
+            <span key={c} className="text-[10px] leading-snug" style={{ color: '#F5A623' }}>⚠ {t(`lint.${c}`)}</span>
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 }

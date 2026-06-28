@@ -55,6 +55,15 @@
     "none": "0 in model",
     "upper": "≤ {{count}} in model"
   },
+  "lint": {
+    "title": "Check this rule:",
+    "entityNotIfc": "Entity doesn't look like an IFC class (e.g. IfcWall)",
+    "whitespace": "Property set / property name has leading or trailing spaces",
+    "badRegex": "The regular expression is invalid",
+    "numericNaN": "The numeric value must be a number",
+    "emptyEquals": "The expected value is empty",
+    "emptyAllowed": "Allowed values contains an empty option"
+  },
   "stats": {
     "validated": "Validated",
     "passed": "Passed",
