@@ -68,6 +68,10 @@ export interface BlogPost {
   heroImage?: string
   /** BCP-47 language code. Default 'en'. */
   lang?: string
+  /** SEO keywords for JSON-LD structured data. */
+  keywords?: string[]
+  /** FAQ entries — rendered as FAQPage schema in the static HTML shell. */
+  faqs?: { q: string; a: string }[]
   content: ContentBlock[]
 }
 
@@ -1995,6 +1999,1603 @@ export const BLOG_POSTS_FR: BlogPost[] = [
       { type: 'h2', text: "Qu'est-ce que le Health Score ?" },
       { type: 'p', text: "Chaque fichier IFC reçoit un Health Score de 0 à 100. Il résume la qualité structurelle et des données du modèle en un seul chiffre. Un score de 87 signifie 'problèmes mineurs, prêt pour la coordination'. Un score de 43 signifie 'problèmes graves, ne pas livrer à la GED'." },
       { type: 'callout', variant: 'info', text: "Ajoutez un seuil minimum de Health Score dans votre PEB (Plan d'Exécution BIM). Une clause comme 'Les livraisons IFC doivent atteindre un Health Score ≥ 80 avant upload vers la GED' ne coûte rien à écrire et évite des semaines de retard en coordination." },
+    ],
+  },
+
+  // ── Article #1 — "ifc editor online" primary keyword ────────────────────────
+
+  {
+    slug: 'ifc-editor-online',
+    title: 'Free Online IFC Editor: Edit IFC Properties Without Revit or Archicad',
+    excerpt: "Edit IFC properties free in your browser — nothing uploaded, no Revit needed. Honest guide to every tool: Revit, ArchiCAD, Solibri, BIMVision, and when each one wins.",
+    date: '2026-06-28',
+    readTimeMin: 11,
+    category: 'Tool Guides',
+    categorySlug: 'tool-guides',
+    author: 'IFC Viewer Team',
+    featured: false,
+    heroImage: 'ifc-editor-online',
+    keywords: ['ifc editor online', 'free ifc editor', 'edit ifc properties', 'ifc property editor', 'edit ifc without revit', 'ifc viewer online', 'ifc file editor'],
+    content: [
+      {
+        type: 'stat-row',
+        stats: [
+          { value: 0,   suffix: ' € / month', label: 'to edit properties online' },
+          { value: 0,   suffix: ' bytes',      label: 'uploaded to any server' },
+          { value: 44,  suffix: '',            label: 'validation rules checked' },
+          { value: 100, suffix: '%',           label: 'runs in your browser' },
+        ],
+      },
+      {
+        type: 'p',
+        text: "Editing an IFC file sounds like it should be simple. You open the file, change a property, save it. But between the software costs, the vendor lock-in, and the loss of data on round-trips, the reality for most teams is far messier.",
+      },
+      {
+        type: 'p',
+        text: "This article is an honest guide to what 'editing IFC' actually means, which tools do it well, which are the wrong tool for the job, and where a free browser-based IFC property editor fills the gap — without a £5,000 software subscription.",
+      },
+      {
+        type: 'h2',
+        text: 'What Does "Editing an IFC File" Actually Mean?',
+      },
+      {
+        type: 'p',
+        text: "Not all IFC editing is the same. The kind of edit you need determines which tool is right. There are three distinct types:",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '📐',
+            title: 'Geometry editing',
+            body: "Changing shapes, positions, dimensions. Requires a parametric authoring tool — Revit, ArchiCAD, Tekla. You must re-export IFC from the source model. No viewer can do this.",
+          },
+          {
+            icon: '🏷️',
+            title: 'Property & metadata editing',
+            body: "Changing element names, descriptions, property set values, classifications. Can be done directly on the IFC file without touching geometry. This is what most people actually need.",
+          },
+          {
+            icon: '🔧',
+            title: 'Structural fixes',
+            body: "Repairing duplicate GUIDs, fixing broken spatial hierarchy, correcting missing IfcProject metadata. Targeted corrections to make a file schema-compliant and coordination-ready.",
+          },
+        ],
+      },
+      {
+        type: 'callout',
+        variant: 'info',
+        text: "If you need to change geometry — wall thickness, door dimensions, slab height — you need the source model in the original authoring tool. No IFC editor can do this non-destructively. If you need to change property values, names, or fix data quality issues, you don't.",
+      },
+      {
+        type: 'h2',
+        text: 'The Honest Tool Comparison',
+      },
+      {
+        type: 'p',
+        text: "There is no single best IFC editor — there is a best tool for each editing scenario. Here is the real picture for every major option.",
+      },
+      {
+        type: 'h3',
+        text: 'Revit — The Complete Authoring Environment',
+      },
+      {
+        type: 'p',
+        text: "Revit is the dominant BIM authoring tool for architecture and MEP in most markets. It produces some of the richest IFC exports available, and with the open-source IFC exporter it handles property set mapping, GUID stability, and spatial hierarchy correctly.",
+      },
+      {
+        type: 'ul',
+        items: [
+          "Cost: Autodesk AEC Collection ~£4,800 / year. Revit standalone ~£2,800 / year.",
+          "IFC editing method: Import the IFC file, edit as a Revit model, re-export to IFC.",
+          "The round-trip problem: Importing IFC into Revit is lossy by design. Custom property sets not in Revit's mapping get dropped. Classification data is often lost. Geometry may be re-tessellated. What you export is not necessarily what was in the original file.",
+          "Ideal when: You own the original RVT model and are the originator. You need parametric edits — geometry, families, levels, phases.",
+          "Not ideal when: You received a raw IFC from another party and need to fix a handful of property values without destroying the file's original structure.",
+        ],
+      },
+      {
+        type: 'h3',
+        text: 'ArchiCAD — The Open BIM Champion',
+      },
+      {
+        type: 'p',
+        text: "ArchiCAD has the strongest native IFC support of any authoring tool. Its IFC translator lets you map Graphisoft attributes to IFC property sets with granular control, and it supports stable GlobalIds across re-exports — something Revit required years of community advocacy to achieve.",
+      },
+      {
+        type: 'ul',
+        items: [
+          "Cost: Graphisoft ArchiCAD ~£3,600 / year (varies by region and bundle).",
+          "IFC editing method: Same as Revit — import, edit, re-export.",
+          "Round-trip quality: Better than Revit for most cases. ArchiCAD's IFC import preserves more property sets and is less aggressive about re-mapping element types. Still not lossless for files originally authored in Revit.",
+          "Ideal when: You're the originator using ArchiCAD, or you received an IFC from another ArchiCAD user and need to make compatible edits.",
+          "Not ideal when: You received a Revit-exported IFC and need to patch a few values — the import will still alter the file's internal structure.",
+        ],
+      },
+      {
+        type: 'h3',
+        text: 'Solibri — The Best Pure Validation Tool',
+      },
+      {
+        type: 'p',
+        text: "Solibri (now Solibri Office) is the industry reference for IFC model checking. Its rule engine is more sophisticated than any other commercial tool — if you need to verify compliance with project-specific information requirements (IRs), Solibri is the standard. But it is not an editor.",
+      },
+      {
+        type: 'ul',
+        items: [
+          "Cost: Solibri Office ~€2,700 / year. Solibri Site (viewer) is free.",
+          "What it does: View, validate, clash-check, BCF annotation, IDS checking (partial), COBie inspection. Does not modify IFC data.",
+          "What it cannot do: Change element names, fix property values, repair GUIDs, or export a corrected IFC file. You annotate issues in BCF, then fix them in the authoring tool.",
+          "Ideal when: You're a BIM coordinator doing formal model checking against EIR or project-specific rules, running clash detection, or producing a BCF issue report for the design team.",
+          "Not ideal when: You need to fix the data yourself, right now, without a round-trip through the authoring tool.",
+        ],
+      },
+      {
+        type: 'h3',
+        text: 'BIMVision — Free IFC Viewer, Not an Editor',
+      },
+      {
+        type: 'p',
+        text: "BIMVision is a popular free Windows desktop app for viewing IFC files. It has good geometry support, a clean spatial tree, and handles large files reasonably well. It is not an IFC editor in any meaningful sense.",
+      },
+      {
+        type: 'ul',
+        items: [
+          "Cost: Free (Windows only).",
+          "What it does: 3D viewing, element inspection, property browsing, basic measurements.",
+          "What it cannot do: Modify property values, fix GUIDs, rename elements, or export an altered IFC. Read-only.",
+          "Ideal when: You're on Windows, need a free viewer for large files, and don't need to make changes.",
+          "Not ideal when: You need to edit anything — properties, names, or data quality issues.",
+        ],
+      },
+      {
+        type: 'h3',
+        text: 'IFC Viewer Online — Free Browser-Based IFC Property Editor',
+      },
+      {
+        type: 'p',
+        text: "IFC Viewer Online fills the gap between full authoring tools and read-only viewers. It's a browser-based tool that lets you view, validate, and non-destructively edit IFC property data — without installing anything, without uploading your file to a server, and without a software licence.",
+      },
+      {
+        type: 'ul',
+        items: [
+          "Cost: Free.",
+          "Platform: Any browser — Chrome, Firefox, Safari, Edge. Windows, Mac, Linux, iPad.",
+          "Privacy: The IFC file never leaves your device. Parsing and editing run entirely in browser via WebAssembly.",
+          "What you can edit: Element Name, LongName, Description (inline in the model tree). Property set values (inline in the sidebar). GlobalIds (regenerate spec-compliant GUIDs). Batch auto-fix for all validation-detected issues.",
+          "What you cannot edit: Geometry, element shapes, positions, family types, structural relationships. If you need these, you need the source model.",
+          "Ideal when: You received an IFC file from another party and need to fix metadata, names, or data quality issues without a full authoring tool round-trip.",
+        ],
+      },
+      {
+        type: 'h2',
+        text: 'Side-by-Side: Which Tool for Which Task',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'IFC Viewer Online (free)',
+          color: 'accent',
+          items: [
+            'Edit element names and descriptions inline',
+            'Edit any property set value',
+            'Fix duplicate GUIDs (auto or manual)',
+            'Repair IfcProject metadata',
+            'Run 44-rule validation + Health Score',
+            'Export corrected IFC with full diff',
+            'Works in-browser, nothing uploaded',
+            'Free, no installation, no account',
+          ],
+        },
+        right: {
+          label: 'Revit / ArchiCAD (paid)',
+          color: 'muted',
+          items: [
+            'Edit geometry, shapes, dimensions',
+            'Add and delete elements',
+            'Change element IFC class / type',
+            'Parametric family editing',
+            'Full project authoring workflow',
+            'Richer property mapping control',
+            'Required for geometry-level changes',
+            '£2,800–£5,000 / year',
+          ],
+        },
+      },
+      {
+        type: 'h2',
+        text: 'Try It: Edit a Real IFC Model Right Now',
+      },
+      {
+        type: 'p',
+        text: "The viewer below loads a real IFC2x3 model — the buildingSMART duplex apartment. Click any element to see its properties in the sidebar. Click the edit icon next to any property value to modify it. Click an element name in the tree to rename it inline. No upload, no account, no installation.",
+      },
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Duplex Apartment — Live Edit Demo',
+        description: "Click any element to inspect it, then use the edit icon next to any property value to change it. Changes are tracked as a non-destructive diff — nothing is written until you export. Try clicking the validation tab to see the Health Score for this model.",
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+        showProperties: true,
+        allowFullscreen: true,
+        variant: 'hero',
+      },
+      {
+        type: 'h2',
+        text: 'How the Non-Destructive Editing Model Works',
+      },
+      {
+        type: 'p',
+        text: "Every change you make is recorded as a diff — a structured record of what changed (which GlobalId, which property, which value). The original IFC data is never mutated in memory. When you export, the engine replays all diffs against the original file to produce the corrected output.",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '↩️',
+            title: 'Full undo / redo',
+            body: "Every edit is a reversible command. Ctrl+Z undoes changes in order. There's no risk of accidentally destroying data — the original is always intact.",
+          },
+          {
+            icon: '🔍',
+            title: 'Diff before export',
+            body: "Before downloading the corrected IFC, you can review the complete list of changes. Each diff shows the GlobalId of the affected element, the property changed, and the old and new values.",
+          },
+          {
+            icon: '🏷️',
+            title: 'Keyed by GlobalId',
+            body: "Edits are indexed by element GlobalId, not express ID. GlobalIds are stable across exports; express IDs are not. This means a diff written against one export of a model applies cleanly to the next re-export of the same model.",
+          },
+          {
+            icon: '📤',
+            title: 'Clean export',
+            body: "The exported IFC is your original file with only the diff applied. No structural changes, no re-tessellation, no dropped property sets. The elements you didn't touch are byte-identical to the original.",
+          },
+        ],
+      },
+      {
+        type: 'h2',
+        text: 'Practical Editing Walkthrough',
+      },
+      {
+        type: 'h3',
+        text: 'Fixing Element Names',
+      },
+      {
+        type: 'ol',
+        items: [
+          "Open your IFC file — drag it onto the viewer or click Open a file.",
+          "Open the spatial tree on the left panel. Elements with empty names show as their IFC class (e.g. 'IfcWall').",
+          "Click the element you want to rename. Its row in the tree becomes editable — click the name field directly.",
+          "Type the new name and press Enter. The diff is recorded.",
+          "Repeat for as many elements as needed, then export the corrected IFC.",
+        ],
+      },
+      {
+        type: 'h3',
+        text: 'Editing Property Set Values',
+      },
+      {
+        type: 'ol',
+        items: [
+          "Click any element in the 3D view or the tree to select it.",
+          "In the sidebar, scroll to the Properties tab. All property sets for that element are listed.",
+          "Click the edit icon (pencil) next to any property value.",
+          "Type the new value and confirm. The diff records the Pset name, property name, and new value.",
+          "Changes apply to that specific element (keyed by GlobalId) — other elements with the same Pset are not affected unless you edit them too.",
+        ],
+      },
+      {
+        type: 'h3',
+        text: 'Fixing Duplicate GUIDs',
+      },
+      {
+        type: 'p',
+        text: "Duplicate GUIDs are the most common structural IFC error and the one most likely to cause rejection at the CDE. They're also fully auto-fixable:",
+      },
+      {
+        type: 'ol',
+        items: [
+          "Run validation (Ctrl+Shift+V or the Validate button).",
+          "Look for RULE_DUPLICATE_GUID issues in the validation panel.",
+          "Click the batch auto-fix button to generate new spec-compliant GlobalIds for all duplicates at once.",
+          "Export the corrected IFC — the new GUIDs are 22-character strings using the IFC base-64 alphabet with a valid leading character (0–3).",
+        ],
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: "Always run validation before and after editing. The post-edit Health Score tells you whether your changes resolved the issues or revealed new ones. Target ≥ 80 for CDE delivery.",
+      },
+      {
+        type: 'h2',
+        text: 'When to Use Each Tool: Decision Guide',
+      },
+      {
+        type: 'p',
+        text: "Here's a quick reference for the common scenarios BIM coordinators and architects face:",
+      },
+      {
+        type: 'ul',
+        items: [
+          "Received IFC, need to fix property values → IFC Viewer Online. No round-trip, no authoring tool needed.",
+          "Received IFC, need to fix GUIDs → IFC Viewer Online. Auto-fix applies to all duplicates at once.",
+          "Received IFC, need to change geometry → You need the original source model. Contact the originator.",
+          "Your own Revit model needs property fixes → Fix in Revit, re-export with correct settings. Do not round-trip through IFC unless you have to.",
+          "Need to validate against project-specific rules → Solibri, or IFC Viewer Online with IDS profiles.",
+          "Need to view a large IFC on a machine without authoring tools → IFC Viewer Online or BIMVision.",
+          "Need to produce a BCF issue report → Solibri (most powerful) or IFC Viewer Online's BCF panel (free).",
+        ],
+      },
+      {
+        type: 'h2',
+        text: 'Embed the IFC Editor in Your Own Tools',
+      },
+      {
+        type: 'p',
+        text: "If you're building a BIM platform, a CDE, or a project extranet, you can embed the IFC viewer and editor as an iframe — no backend required, no API key. Your users get a full-featured IFC viewer with validation and property inspection, without leaving your application.",
+      },
+      {
+        type: 'embed-configurator',
+        title: 'Configure your embed',
+        description: 'Paste a public IFC URL to generate an iframe snippet you can add to any webpage.',
+        defaultModelUrl: 'https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc2x3_Duplex_Architecture.ifc',
+        defaultFileName: 'Ifc2x3_Duplex_Architecture.ifc',
+        defaultHeight: 560,
+      },
+      {
+        type: 'h3',
+        text: 'Using the JavaScript SDK',
+      },
+      {
+        type: 'p',
+        text: "For deeper integration — loading files from your database, responding to element selection, or triggering validation programmatically — use the IFC Viewer SDK:",
+      },
+      {
+        type: 'code',
+        lang: 'html',
+        text: `<!-- Add the SDK once -->
+<script src="https://www.ifcvieweronline.eu/sdk/ifc-viewer-sdk.js"></script>
+
+<div id="viewer" style="width:100%;height:600px"></div>
+
+<script>
+  const viewer = new IfcViewer('#viewer', {
+    ui: 'minimal',   // 'minimal' | 'full' | 'kiosk'
+    validate: true,  // run 44-rule validation automatically
+    lang: 'en',      // 'en' | 'es' | 'de' | 'fr' | …
+  });
+
+  // Load an IFC from a URL
+  viewer.loadUrl('https://your-cdn.com/project-model.ifc');
+
+  // Or load from bytes (your own upload flow — nothing leaves the browser)
+  viewer.loadBytes(arrayBuffer, 'project-model.ifc');
+
+  // Listen for element selection
+  viewer.on('element:selected', (el) => {
+    console.log('Selected:', el.globalId, el.name, el.properties);
+  });
+
+  // Listen for validation completion
+  viewer.on('validation:complete', (report) => {
+    console.log('Health Score:', report.healthScore);
+    console.log('Issues:', report.issues.length);
+  });
+</script>`,
+      },
+      {
+        type: 'callout',
+        variant: 'info',
+        text: "The SDK loads files entirely in the browser using WebAssembly — IFC bytes never reach the IFC Viewer servers. You can pass ArrayBuffer from your own upload handler: the model goes from your user's filesystem directly into the viewer, without any intermediate server hop.",
+      },
+      {
+        type: 'h2',
+        text: 'What the Free Online IFC Editor Cannot Do',
+      },
+      {
+        type: 'p',
+        text: "Being honest about limitations matters — picking the wrong tool wastes time. Here is what the browser-based editor cannot do, and what to use instead:",
+      },
+      {
+        type: 'ul',
+        items: [
+          "Edit geometry: No. You need the source model in Revit, ArchiCAD, or Tekla. Geometry is computed from the IFC's STEP-encoded shape representations — it cannot be modified non-destructively in a viewer.",
+          "Change an element's IFC class (e.g. IfcWall → IfcCurtainWall): No. Class reassignment requires authoring tool knowledge about what properties and relationships are valid for the new class.",
+          "Add or delete elements: No. Adding a new element requires generating valid geometry, relationships, and a spatial placement — only authoring tools can do this correctly.",
+          "Edit complex relationships (IfcRelAssociatesClassification, IfcRelDefinesByType): Not yet. These are on the roadmap, but as of today only property values, names, and GUIDs are editable.",
+          "Handle 1 GB+ files: Performance degrades above 300–400 MB on most machines. For very large models, open them in sections or use desktop tools like Solibri or Autodesk Forma.",
+        ],
+      },
+      {
+        type: 'pull-quote',
+        text: "The right IFC editor is the one that solves your specific problem — not the most powerful one, not the cheapest one.",
+        cite: 'IFC Viewer Blog',
+      },
+      {
+        type: 'h2',
+        text: 'Summary: Free IFC Editor Online vs Desktop Tools',
+      },
+      {
+        type: 'p',
+        text: "A free online IFC editor is not a replacement for Revit or ArchiCAD — and it's not trying to be. It fills a real gap that authoring tools don't address: what do you do when you receive an IFC file and need to fix its data without a round-trip through the tool that created it?",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '✅',
+            title: 'Use IFC Viewer Online when…',
+            body: "You received a file from another party and need to fix names, properties, or GUIDs. You need a fast Health Score before a CDE delivery. You're on a machine without BIM authoring software.",
+          },
+          {
+            icon: '🔧',
+            title: 'Use Revit / ArchiCAD when…',
+            body: "You own the original source model and need to make geometry changes. You're authoring a new BIM deliverable from scratch. You need full parametric control and family management.",
+          },
+          {
+            icon: '🔍',
+            title: 'Use Solibri when…',
+            body: "You're a BIM coordinator doing formal model checking against project information requirements. You need sophisticated clash detection and BCF reporting for a whole project team.",
+          },
+          {
+            icon: '👁️',
+            title: 'Use BIMVision when…',
+            body: "You're on Windows and need a free desktop viewer for occasional file inspection with no editing requirement.",
+          },
+        ],
+      },
+      {
+        type: 'p',
+        text: ["Start by running a validation check on your model — it takes under 30 seconds and tells you exactly what needs fixing. Then ", { text: 'see the 7 most common IFC validation errors', to: 'common-ifc-validation-errors' }, ' to understand what each issue means and how to fix it. For Revit-specific property export problems, the ', { text: 'IFC properties missing after export checklist', to: 'ifc-properties-missing-after-export' }, ' covers every cause.'],
+      },
+    ],
+  },
+
+  // ── Article #2 — "ifc model checker" primary keyword ────────────────────────
+
+  {
+    slug: 'ifc-model-checker-guide',
+    title: 'IFC Model Checker: The Complete Guide to IFC Validation, Model Quality, and IDS',
+    excerpt: "IFC model checker guide: schema, model quality (44 rules + Health Score), and IDS are three independent layers. Confusing them causes delivery failures. Complete breakdown for BIM coordinators.",
+    date: '2026-06-28',
+    readTimeMin: 20,
+    category: 'Validation',
+    categorySlug: 'validation',
+    author: 'IFC Viewer Team',
+    featured: false,
+    keywords: ['ifc model checker', 'ifc model validation', 'ifc checker online', 'ids validation', 'ifc validation tool', 'buildingSMART IDS', 'ifc quality check', 'bim model validation'],
+    faqs: [
+      {
+        q: 'Does passing Level 1 schema validation mean I can skip Level 2 quality checking?',
+        a: "No. Level 1 and Level 2 measure completely different properties. A schema-valid file can have zero property sets, empty element names, no classification, and no ISO 19650 metadata — and score 20 on a quality check. You always need both. Level 1 means 'the file is correctly packaged'; Level 2 means 'the contents are what was requested'.",
+      },
+      {
+        q: 'Is IDS a replacement for the buildingSMART Validation Service?',
+        a: "No. IDS checks project-specific information requirements (Level 3). The buildingSMART Validation Service checks schema compliance (Level 1). They operate at completely different levels. An IDS-passing model that fails schema validation would be a logical contradiction — Level 1 integrity is a prerequisite for meaningful Level 3 checking.",
+      },
+      {
+        q: 'Which IDS facets should I prioritise for a standard BIM delivery?',
+        a: "The Property facet covers 70–80% of real-world EIR requirements — most clients want specific Pset values on specific element types. Classification covers most of the remainder for Uniclass- or OmniClass-governed projects. The Entity facet appears in almost every specification as an applicability filter. Start with Entity + Property, add Classification if your EIR requires it.",
+      },
+      {
+        q: 'Can I validate an IFC model without uploading it anywhere?',
+        a: "Yes. Browser-based validators process the file entirely in your browser using WebAssembly. The IFC bytes never leave your device — all 44 quality rules, the Health Score calculation, and the full IDS engine run client-side. For models with data handling restrictions, this is often the only compliant option.",
+      },
+      {
+        q: 'What Health Score threshold should I specify in the BEP?',
+        a: "≥ 80 is the standard threshold for CDE delivery and design coordination. ≥ 90 for LOD 300+ deliveries and ISO 19650 formal milestone submissions. ≥ 70 is acceptable for concept-stage internal reviews. Below 60, the model has structural quality problems and should not be delivered to any external party.",
+      },
+      {
+        q: 'Can a single IFC model checker tool cover all three validation levels?',
+        a: "Some tools do. IFC Viewer Online covers Level 1 (integrity rules), Level 2 (44-rule quality check with Health Score), and Level 3 (IDS 1.0 engine validated against all 100 official bSI testcases). Solibri covers Level 2 and Level 3 but not browser-based processing. The buildingSMART Validation Service covers Level 1 only.",
+      },
+    ],
+    content: [
+      {
+        type: 'callout',
+        variant: 'info',
+        text: "TL;DR — There are three independent validation layers. Level 1 (IFC integrity) asks: is the file a valid IFC schema? Level 2 (model quality) asks: is the data complete and useful for coordination? Level 3 (IDS) asks: does the file meet this project's contractual information requirements? All three are needed before a formal delivery. Passing one says nothing about the others.",
+      },
+      {
+        type: 'stat-row',
+        stats: [
+          { value: 3,  suffix: '',  label: 'independent validation layers' },
+          { value: 44, suffix: '',  label: 'model quality rules' },
+          { value: 6,  suffix: '',  label: 'IDS facets (buildingSMART 1.0)' },
+          { value: 0,  suffix: '',  label: 'bytes uploaded — browser only' },
+        ],
+      },
+      {
+        type: 'p',
+        text: "Every IFC delivery conversation eventually hits the same wall. The structural engineer says the file passed the validator. The BIM coordinator sees half the property sets missing and asks which validator. The client's EIR specifies IDS requirements nobody has checked. The CDE rejects the upload. Three weeks later, everyone is confused about what 'valid' even means.",
+      },
+      {
+        type: 'p',
+        text: "The confusion is understandable — the word 'validation' covers three completely different operations that share a name. Getting them untangled is one of the most consequential things a BIM coordinator can do for a project.",
+      },
+      { type: 'h2', text: 'Three Completely Different Validation Problems' },
+      {
+        type: 'p',
+        text: "Think of a building permit application. The building control officer independently verifies three things: whether the drawings are legible and complete (file integrity), whether the design meets building regulations (quality and compliance), and whether it meets the client's specific brief (project requirements). A legible drawing can completely ignore fire regulations. A fire-compliant scheme can miss the client's acoustic specification entirely. These are separate questions with separate answers.",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '🔩',
+            title: 'Level 1 — IFC Integrity',
+            body: "Is the file a valid IFC according to ISO 10303-21 and ISO 16739-1? Are GlobalIds unique and format-compliant? Is the spatial hierarchy coherent? Schema-level binary checking.",
+          },
+          {
+            icon: '📊',
+            title: 'Level 2 — Model Quality',
+            body: "Is the data actually useful for coordination? Are property sets populated? Do elements follow naming conventions? Are classifications present? This governs real deliveries — not schema compliance.",
+          },
+          {
+            icon: '📋',
+            title: 'Level 3 — IDS Validation',
+            body: "Does the model satisfy this project's contractual information requirements? EIR and AIR requirements encoded as machine-readable IDS specifications, checked facet by facet against every element.",
+          },
+        ],
+      },
+      {
+        type: 'p',
+        text: "These three layers are completely independent. A file can be Level 1 schema-valid while being useless for coordination because no property sets were exported. An IDS check can pass for all declared requirements while the model has 400 duplicate GUIDs. A Health Score of 91 says nothing about whether the client's fire-rating requirements are encoded and met. Each layer answers a different question — all three are needed before a formal delivery.",
+      },
+      { type: 'h2', text: 'Level 1: IFC File Integrity — Is This a Valid IFC?' },
+      {
+        type: 'p',
+        text: "Level 1 is schema checking. It answers a binary question: does this file conform to the IFC schema (ISO 16739-1) and the physical file format (ISO 10303-21 STEP)? Most IFC parsers silently accept files that fail Level 1 checks — they are permissive by design, because strict rejection would break too many workflows. That permissiveness hides the damage until it surfaces downstream.",
+      },
+      { type: 'h3', text: 'What Level 1 Integrity Checking Covers' },
+      {
+        type: 'ul',
+        items: [
+          "GlobalId uniqueness: every IfcRoot entity must have a unique 22-character GlobalId using IFC's base-64 alphabet. Duplicate GlobalIds are a schema violation that parsers accept but that silently corrupt BCF workflows, CDE versioning, and FM asset registers.",
+          "GlobalId format compliance: the first character of a valid IFC GlobalId encodes values 0–3 only (two significant bits from a 128-bit UUID). Scripts that naively truncate UUIDs produce out-of-range leading characters — invalid by spec, tolerated by most parsers, rejected by strict validators.",
+          "Spatial hierarchy completeness: the IFC schema mandates IfcProject → IfcSite → IfcBuilding → IfcBuildingStorey. Missing nodes (a Building directly under Project, physical elements sitting in IfcSite) are schema violations with real downstream consequences.",
+          "IfcRelAggregates chain integrity: the relationship entities that build the spatial tree must reference existing entities. Dangling references — where a relationship points to a deleted or missing entity — break tree navigation in every downstream tool.",
+          "IfcRelContainedInSpatialStructure: physical elements must be contained in a spatial element (typically IfcBuildingStorey). Elements with no containment relationship are orphans — invisible in most tools' spatial navigation.",
+          "Exactly one IfcProject: every valid IFC file must contain exactly one IfcProject as the hierarchy root. Sub-models that omit it parse without error but have no spatial anchor.",
+          "FILE_NAME and FILE_DESCRIPTION header fields: the STEP file header carries traceability metadata. ISO 19650-2 requires these to be populated — most tools leave them as empty strings.",
+          "Geometry validity: non-manifold meshes, faces with zero area, bodies with reversed normal winding, self-intersecting boundary representations that fail to produce valid solids in receiving tools.",
+        ],
+      },
+      { type: 'h3', text: 'What Level 1 Does NOT Check' },
+      {
+        type: 'ul',
+        items: [
+          "Whether property sets are populated or correct — a schema-valid model with zero Psets passes Level 1.",
+          "Whether element names follow any project naming convention.",
+          "Whether classification codes are present, correct, or consistent.",
+          "Whether LOD quantity requirements (IfcElementQuantity at LOD 300+) are satisfied.",
+          "Whether the model meets any project-specific or contractual information requirement.",
+        ],
+      },
+      {
+        type: 'callout',
+        variant: 'warning',
+        text: "The most dangerous validation mistake in BIM: a team runs the buildingSMART Validation Service, sees 'schema compliant', and considers the model validated. Schema compliance says nothing about data quality. A file where every element has Name='' and zero property sets is perfectly schema-valid and completely useless for coordination.",
+      },
+      { type: 'h3', text: 'The buildingSMART Validation Service for Level 1' },
+      {
+        type: 'p',
+        text: "The buildingSMART IFC Validation Service (validate.buildingsmart.org) is the authoritative reference for Level 1 schema compliance — it uses the same engine deployed for IFC software certification. Run it when: you need to certify IFC output from a custom exporter, you're troubleshooting a file that parsers handle inconsistently, or a contract clause explicitly requires a buildingSMART schema certificate.",
+      },
+      {
+        type: 'p',
+        text: "What it does not do: check data quality, validate naming conventions, inspect property set completeness, check ISO 19650 metadata fields, or assess whether the model meets any project requirement. It is a schema tool, not a project delivery gate.",
+      },
+      {
+        type: 'ifc-demo',
+        modelId: 'office-architecture',
+        title: 'Inspect a complex real-world IFC — all three validation layers',
+        description: "A multi-storey office building exported from Revit. Open the Validation tab to see the full 44-rule quality report and Health Score. Then try loading an IDS specification to see Level 3 checking on the same model.",
+        schema: 'IFC4',
+        size: '14 MB',
+        showProperties: true,
+        allowFullscreen: true,
+      },
+      { type: 'h2', text: 'Level 2: Model Quality Checking — The Layer That Actually Governs Deliveries' },
+      {
+        type: 'p',
+        text: "Model quality checking is the layer most BIM coordinators mean when they say 'IFC validation', even though they rarely call it by that name. It answers practical questions: Is the data here? Is it correct? Is it consistent? Can someone downstream actually use this model for coordination, cost planning, or FM?",
+      },
+      {
+        type: 'p',
+        text: "Unlike Level 1, quality checking is not binary. A model doesn't simply pass or fail — it has a quality profile across dozens of dimensions. The Health Score (0–100) aggregates these dimensions into a single number that can be written into a BEP, tracked across revisions, and attached to transmittals as evidence of delivery quality.",
+      },
+      { type: 'h3', text: 'What the 44-Rule Quality Check Covers' },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '🔑',
+            title: 'Core structural rules (18)',
+            body: "Duplicate GUIDs, orphan elements, wrong containment, broken aggregates, missing IfcProject, empty element names, invalid storey placement. The rules that cause the most CDE rejections in practice.",
+          },
+          {
+            icon: '📍',
+            title: 'Spatial + file header (11)',
+            body: "ISO 19650 metadata fields on IfcProject, FILE_NAME author and organisation population, site placement vs. shared coordinates, element-to-storey association, building storey completeness.",
+          },
+          {
+            icon: '📋',
+            title: 'LOD, classification, MEP (9)',
+            body: "IfcElementQuantity presence at LOD 300+, IfcRelAssociatesClassification on structural and architectural elements, MEP system connectivity, proxy overuse (IfcBuildingElementProxy as a % of the model).",
+          },
+          {
+            icon: '📐',
+            title: 'Geometry + storey integrity (6)',
+            body: "Element bounding box validity, storey elevation ordering, elements below the ground plane, floor slab absence from storey, coordinate origin offset from WCS, clash detection (optional rule, off by default).",
+          },
+        ],
+      },
+      { type: 'h3', text: 'The Health Score: Model Quality as a Single Number' },
+      {
+        type: 'p',
+        text: "The Health Score uses logarithmic penalty weighting. Schema errors carry 3× the weight of warnings; warnings carry 3× the weight of info checks. The 1,000th instance of the same issue subtracts far fewer points than the 10th — this prevents large, dense models from appearing arbitrarily worse than small sparse models for the same underlying problem density. A model with 800 naming warnings can score 83; a model with 12 broken spatial references scores 41. Severity is what drives the score, not volume.",
+      },
+      {
+        type: 'health-score',
+        items: [
+          { score: 31, label: 'Critical — structural failures, do not deliver' },
+          { score: 58, label: 'Poor — significant remediation required' },
+          { score: 74, label: 'Fair — acceptable for internal review only' },
+          { score: 87, label: 'Good — CDE delivery ready' },
+          { score: 96, label: 'Excellent — ISO 19650 milestone quality' },
+        ],
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: "Put the threshold and the tool in the BEP — not just 'validate the IFC' but 'validate using [named tool], achieve Health Score ≥ 80 as measured before upload, attach the report to the transmittal'. Vague quality requirements produce vague quality. Specific, measurable requirements with named tools produce deliverable evidence.",
+      },
+      { type: 'h3', text: 'What Model Quality Checking Does NOT Do' },
+      {
+        type: 'ul',
+        items: [
+          "Verify project-specific information requirements — that is Level 3 (IDS). Quality rules are generic best-practice checks, not your EIR.",
+          "Fix the model — quality checking produces a report. Remediation happens in the authoring tool or, for property and GUID fixes, in an IFC property editor.",
+          "Provide the schema compliance certificate required by buildingSMART certification programs — that is Level 1 via the buildingSMART Validation Service.",
+          "Tell you whether the model is geometrically correct — some geometry integrity checks are included, but a quality checker is not a clash detection or BIM authoring tool.",
+        ],
+      },
+      { type: 'h2', text: 'Level 3: IDS Validation — Exchange Requirements as Machine-Readable Code' },
+      {
+        type: 'p',
+        text: "IDS (Information Delivery Specification) is a buildingSMART standard for encoding project-specific information requirements in a machine-readable XML format. It is the missing link between an EIR — which is a Word document — and a validation engine that can systematically check a model against it. IDS 1.0 became an official buildingSMART standard in 2023.",
+      },
+      { type: 'h3', text: 'What buildingSMART IDS Actually Is' },
+      {
+        type: 'p',
+        text: "An IDS file is an XML document containing one or more specifications. Each specification has an applicability section (which elements does this apply to?) and a requirements section (what must those elements have?). The engine checks every element in the model that matches the applicability, verifies it satisfies all requirements, and reports pass or fail per element, per specification. The result is a machine-generated audit trail of contractual compliance.",
+      },
+      {
+        type: 'p',
+        text: "The buildingSMART reference test suite contains 100 official testcases that define the expected behaviour of any conforming IDS engine — they are the specification in runnable form. An IDS engine that passes all 100 testcases has demonstrated it will interpret .ids specifications consistently with the standard.",
+      },
+      { type: 'h3', text: 'The Six IDS Facets' },
+      {
+        type: 'ul',
+        items: [
+          "Entity: restricts applicability or requirements by IFC entity type (IFCWALL, IFCDOOR, IFCBEAM) and optionally predefined type. This is the filter most specifications start with.",
+          "Attribute: checks IFC attribute values that sit directly on the entity — Name, Description, ObjectType, Tag, PredefinedType. Attributes are distinct from property sets and are checked differently.",
+          "Property: checks a named property within a named property set (Pset_WallCommon.FireRating, Pset_DoorCommon.IsExternal). The most commonly used facet. Supports data type constraints and pattern matching on values.",
+          "Classification: checks that elements carry a classification reference via IfcRelAssociatesClassification — Uniclass 2015, OmniClass, NBS, or a custom scheme. Can constrain the classification system name and code pattern.",
+          "Material: checks that elements have an assigned material via IfcMaterial, IfcMaterialLayerSet, or IfcMaterialConstituentSet. Optionally constrains the material name — useful for fire-rating or sustainability requirements.",
+          "PartOf: checks that elements participate in a required spatial or logical relationship — contained in a storey, aggregated into a building system, hosted in a specific building. The facet that enforces spatial hierarchy compliance for specific element types.",
+        ],
+      },
+      {
+        type: 'code',
+        lang: 'xml',
+        text: `<?xml version="1.0" encoding="UTF-8"?>
+<ids:ids xmlns:ids="http://standards.buildingsmart.org/IDS"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://standards.buildingsmart.org/IDS ids_09.xsd">
+  <ids:info>
+    <ids:title>Stage 3 Architecture — EIR Data Requirements</ids:title>
+    <ids:description>Fire safety and classification requirements.</ids:description>
+    <ids:ifcVersion>IFC4</ids:ifcVersion>
+  </ids:info>
+  <ids:specifications>
+
+    <!-- All walls must carry a fire rating property -->
+    <ids:specification name="Wall FireRating required" minOccurs="1">
+      <ids:applicability>
+        <ids:entity>
+          <ids:name><ids:simpleValue>IFCWALL</ids:simpleValue></ids:name>
+        </ids:entity>
+      </ids:applicability>
+      <ids:requirements>
+        <ids:property dataType="IFCLABEL">
+          <ids:propertySet><ids:simpleValue>Pset_WallCommon</ids:simpleValue></ids:propertySet>
+          <ids:baseName><ids:simpleValue>FireRating</ids:simpleValue></ids:baseName>
+        </ids:property>
+      </ids:requirements>
+    </ids:specification>
+
+    <!-- Structural walls must carry a Uniclass 2015 classification -->
+    <ids:specification name="Structural wall classification" minOccurs="0">
+      <ids:applicability>
+        <ids:entity>
+          <ids:name><ids:simpleValue>IFCWALL</ids:simpleValue></ids:name>
+          <ids:predefinedType><ids:simpleValue>SOLIDWALL</ids:simpleValue></ids:predefinedType>
+        </ids:entity>
+      </ids:applicability>
+      <ids:requirements>
+        <ids:classification>
+          <ids:system><ids:simpleValue>Uniclass 2015</ids:simpleValue></ids:system>
+        </ids:classification>
+      </ids:requirements>
+    </ids:specification>
+
+  </ids:specifications>
+</ids:ids>`,
+      },
+      { type: 'h3', text: 'EIR → IDS: The Translation Step Most Teams Skip' },
+      {
+        type: 'p',
+        text: "An EIR specifies what information the client needs. An IDS encodes those requirements so a machine can check them. The translation between the two is the step almost nobody does — because it requires someone who understands both the information requirements and the IDS XML schema well enough to write a specification that tests exactly what the EIR asks for, no more and no less.",
+      },
+      {
+        type: 'p',
+        text: "The consequence: teams either skip IDS entirely and rely on informal manual review at delivery, or use a generic IDS file that does not reflect their actual EIR. Both produce false confidence. An IDS check that passes against a generic specification tells you nothing about whether your specific client requirements are met.",
+      },
+      {
+        type: 'callout',
+        variant: 'warning',
+        text: "IDS validates only what you specified. If your .ids file requires FireRating on walls but your EIR also requires IsExternal on doors, Uniclass codes on all structural elements, and IfcElementQuantity on slabs — and you didn't write those specifications — the IDS engine reports all requirements met while half your EIR is unchecked. The quality of an IDS check is only as good as the .ids file driving it.",
+      },
+      { type: 'h3', text: 'Profile-Based IDS: A Practical Starting Point' },
+      {
+        type: 'p',
+        text: "Not every team writes IDS from scratch. A practical approach is to maintain a library of reusable IDS profiles: one for Stage 3 architecture, one for MEP Stage 4, one for structural handover. Each profile covers the most common requirements for that phase and discipline, and is extended per-project with client-specific additions. IDS profiles can be loaded directly into the validation engine and composed — you can run multiple .ids files against the same model and aggregate the results.",
+      },
+      { type: 'h2', text: 'How the Three Levels Work Together — The Validation Pipeline' },
+      {
+        type: 'p',
+        text: "The three layers form a quality gate that a model passes through in sequence. Each level has a different cadence: Level 1 runs on every export (a sanity check), Level 2 runs before any CDE upload (the quality gate), Level 3 runs before formal delivery milestones (the contract check). Running them out of order wastes time — there is no value in running IDS against a file with a broken spatial hierarchy.",
+      },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `
+  ┌──────────────────────────────────────────────────────┐
+  │  EXPORT IFC from authoring tool                      │
+  │  (Revit, ArchiCAD, Tekla, Allplan, Vectorworks…)     │
+  └───────────────────────┬──────────────────────────────┘
+                          │
+                          ▼
+  ┌──────────────────────────────────────────────────────┐
+  │  LEVEL 1 — IFC Integrity                             │
+  │  • GlobalId uniqueness & format (leading char 0–3)   │
+  │  • Spatial hierarchy: Project→Site→Building→Storey   │
+  │  • IfcRelAggregates chain integrity                  │
+  │  • IfcRelContainedInSpatialStructure (no orphans)    │
+  │  • Exactly one IfcProject                            │
+  │  • FILE_NAME header traceability fields              │
+  └─────────┬────────────────────────────────────────────┘
+  Fail ◄────┤  Fix in authoring tool (or IFC property editor)
+            │  Pass
+            ▼
+  ┌──────────────────────────────────────────────────────┐
+  │  LEVEL 2 — Model Quality (44 rules)                  │
+  │  • Naming conventions / empty element names          │
+  │  • Property set completeness (Pset_WallCommon etc.)  │
+  │  • ISO 19650 metadata (IfcProject.LongName etc.)     │
+  │  • Classification presence and consistency           │
+  │  • LOD quantity sets, proxy audit, MEP connectivity  │
+  │  → Health Score 0–100                                │
+  └─────────┬────────────────────────────────────────────┘
+  Score<80 ◄┤  Fix properties / names in IFC editor or authoring tool
+            │  Score ≥ 80
+            ▼
+  ┌──────────────────────────────────────────────────────┐
+  │  LEVEL 3 — IDS Validation                            │
+  │  • Project-specific EIR / AIR requirements           │
+  │  • .ids specification(s) for this milestone          │
+  │  • Six facets: entity, attribute, property,          │
+  │    classification, material, partOf                  │
+  └─────────┬────────────────────────────────────────────┘
+  Fail ◄────┤  Fix per IDS issue report → export BCF → remediate
+            │  All requirements met
+            ▼
+  ┌──────────────────────────────────────────────────────┐
+  │  DELIVER TO CDE                                      │
+  │  Attach: Health Score report + IDS pass certificate  │
+  └──────────────────────────────────────────────────────┘
+`,
+      },
+      { type: 'h2', text: 'The Comparison Table: Level 1 vs Level 2 vs Level 3' },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `DIMENSION             │ L1: IFC INTEGRITY      │ L2: MODEL QUALITY       │ L3: IDS VALIDATION
+──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
+Question answered     │ Is the file a valid    │ Is the data useful for  │ Does it meet project
+                      │ IFC schema?            │ coordination?           │ information req.?
+──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
+Standard              │ ISO 10303-21 (STEP)    │ BIM best practice       │ buildingSMART IDS 1.0
+                      │ ISO 16739-1 (IFC)      │ ISO 19650 norms         │ (XML schema)
+──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
+Defined by            │ buildingSMART          │ BIM team / EIR          │ Client / employer
+                      │ (fixed schema)         │ (project-agreed rules)  │ (per-project)
+──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
+Output                │ Pass / Fail            │ Health Score 0–100      │ Pass / Fail
+                      │ Schema error list      │ Prioritised issue list  │ per specification
+──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
+Can replace others?   │ No                     │ No                      │ No — all three needed
+──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
+Cadence               │ Every IFC export       │ Before CDE upload       │ Before delivery
+                      │                        │                         │ milestone
+──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
+Passes but fails L?   │ Zero Psets, no names   │ Fire rating missing      │ Duplicate GUIDs,
+                      │ → L1 pass, L2 fail     │ (IDS spec) → L3 fail    │ broken hierarchy
+──────────────────────┼────────────────────────┼─────────────────────────┼───────────────────────
+Example tools         │ bSmart Validator,      │ IFC Viewer Online,      │ IFC Viewer Online
+                      │ IFC Viewer Online      │ Solibri, IfcOpenShell   │ (IDS engine), Solibri`,
+      },
+      { type: 'h2', text: 'When to Use the buildingSMART Validation Service — An Honest Assessment' },
+      {
+        type: 'p',
+        text: "The buildingSMART IFC Validation Service checks files against the official schema using a multi-part engine: STEP physical file syntax, IFC schema EXPRESS rules, informal proposition rules derived from the spec, and normative IFC constraint rules. It is the reference tool for Level 1 schema compliance.",
+      },
+      { type: 'h3', text: 'Use it when' },
+      {
+        type: 'ul',
+        items: [
+          "Certifying IFC export from a custom exporter: the buildingSMART checker produces the reference result used for software certification. No other tool's output substitutes for it in certification contexts.",
+          "Diagnosing parser inconsistency: when a file opens cleanly in one tool and errors in another, the buildingSMART checker establishes which behaviour is schema-correct. This is diagnostically valuable even if the file is otherwise usable.",
+          "A contract clause requires it: some procurement specifications reference buildingSMART schema compliance as a delivery requirement. In that case, the certificate from the official service is what satisfies the clause.",
+          "Validating an IDS file itself: the buildingSMART IDS schema validator checks whether your .ids file is a valid IDS document — distinct from running it against a model.",
+        ],
+      },
+      { type: 'h3', text: 'Do not use it as a substitute for' },
+      {
+        type: 'ul',
+        items: [
+          "Model quality checking — the service does not check property set completeness, naming conventions, classification, or any data quality rule.",
+          "Project-specific validation — schema compliance says nothing about whether the model meets the client's EIR.",
+          "Pre-CDE delivery confirmation — a schema-valid model with empty Psets and blank names will pass the buildingSMART checker and fail any meaningful quality gate.",
+        ],
+      },
+      {
+        type: 'callout',
+        variant: 'info',
+        text: "The buildingSMART Validation Service requires file upload. For models containing sensitive asset data, residential occupant information, or metadata that qualifies as personal data under GDPR, check whether upload to a third-party service is compliant with your project's data handling requirements before using it.",
+      },
+      { type: 'h2', text: 'Cloud IFC Validator vs Browser-Based IFC Validator' },
+      {
+        type: 'p',
+        text: "The distinction between cloud validation (file uploaded to a remote server) and browser-based validation (file processed locally via WebAssembly) matters more than most teams realise — especially for government, defence, and sensitive commercial projects.",
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Browser-Based Validation',
+          color: 'accent',
+          items: [
+            'IFC file never leaves the device',
+            'GDPR compliant by design — no data transfer',
+            'Works offline: site visits, restricted networks',
+            'No upload quota or file size restriction',
+            'Instant feedback — no network round-trip latency',
+            'Consistent performance independent of server load',
+            'No account, API key, or subscription required',
+            'Works on government-restricted network environments',
+          ],
+        },
+        right: {
+          label: 'Cloud Validation',
+          color: 'muted',
+          items: [
+            'File uploaded to remote server for processing',
+            'Data processing agreement (DPA) required for GDPR',
+            'Suited for automated CI/CD validation pipelines',
+            'Central audit log across projects and teams',
+            'API and webhook integration for delivery automation',
+            'Scales horizontally for batch model processing',
+            'Can run headless without a browser session',
+            'Results queryable across historical runs',
+          ],
+        },
+      },
+      { type: 'h3', text: 'When Cloud Validation Makes Sense' },
+      {
+        type: 'ul',
+        items: [
+          "Automated CI/CD pipelines: when validation should trigger automatically every time a model is committed or uploaded — similar to how software teams run automated tests on every code push. Cloud APIs with webhooks are the right architecture here.",
+          "Organisation-wide audit: when a BIM manager needs a central record of validation runs across multiple projects and teams. Cloud services can aggregate and trend data across runs in ways per-machine tools cannot.",
+          "Batch processing: auditing a library of existing models — all IFC files delivered to a CDE over the past two years — is practical in cloud batch mode and impractical to do manually in a browser.",
+          "Non-sensitive models: for projects where data handling requirements do not prohibit cloud upload, cloud validators offer CI/CD integration that browser tools do not match.",
+        ],
+      },
+      { type: 'h3', text: 'When Browser-Based Is the Better Choice' },
+      {
+        type: 'ul',
+        items: [
+          "Government and defence projects: models for public infrastructure, defence facilities, and secure assets routinely carry data handling restrictions that prohibit upload to third-party services. Browser-based validation is the only compliant option.",
+          "Sensitive residential and commercial schemes: BIM models often contain occupant information, owner addresses, and asset metadata that qualifies as personal data under GDPR Article 4. Processing these on a third-party server without a valid DPA and legal basis is non-compliant.",
+          "Site and field use: a 200 MB IFC file over a 4G connection uploads slowly and unreliably. Browser validation processes it locally in seconds with no dependency on uplink bandwidth.",
+          "Pre-validation before cloud upload: even when a team uses a cloud validator as the formal gate, running a browser-based check first catches obvious issues without the upload — reducing cloud usage costs and upload frequency.",
+        ],
+      },
+      {
+        type: 'callout',
+        variant: 'warning',
+        text: "GDPR Article 4 defines personal data broadly — it includes building occupant names, owner addresses, and sometimes asset reference codes if they link back to identifiable individuals. Before uploading an IFC file to any cloud service, verify whether the model contains personal data and whether your organisation has a valid legal basis, a signed DPA, and appropriate data transfer safeguards in place.",
+      },
+      { type: 'h2', text: 'Six Validation Mistakes BIM Teams Make — and What They Actually Mean' },
+      { type: 'h3', text: 'Mistake 1: "IDS passed — the model is good"' },
+      {
+        type: 'p',
+        text: "IDS validates only what the .ids specification declares. If your file requires FireRating on walls but your EIR also requires IsExternal on doors, Uniclass codes on structural elements, and quantity sets on slabs — and those were not written into the specification — the engine reports all requirements met while half your EIR is unchecked. An IDS pass is a contractual confirmation against a specific specification. It is not a general quality certificate.",
+      },
+      { type: 'h3', text: 'Mistake 2: "The buildingSMART checker said it\'s valid"' },
+      {
+        type: 'p',
+        text: "Schema validity is the floor, not the ceiling. A file where every element has Name='' and zero property sets is perfectly schema-valid. A model with no IfcElementQuantity, no classification, and every physical element placed directly in IfcSite rather than a storey is perfectly schema-valid. Passing the buildingSMART checker means the STEP file is correctly formatted — it says nothing about whether the data is useful.",
+      },
+      { type: 'h3', text: 'Mistake 3: "I can open it in a viewer, so it\'s fine"' },
+      {
+        type: 'p',
+        text: "IFC viewers are permissive by design — they are built to display geometry regardless of data quality. A viewer that refused to open schema-invalid or data-poor files would be unusable. Geometry rendering correctly tells you nothing about property set completeness, naming conventions, GUID stability, classification, or any of the 44 quality dimensions. Viewing a file is categorically different from validating it.",
+      },
+      { type: 'h3', text: 'Mistake 4: Checking geometry only, ignoring property data' },
+      {
+        type: 'p',
+        text: "A common reflex is to open the IFC, inspect the 3D model, and if the building looks right, declare the file done. Geometry accounts for roughly 30% of what makes an IFC file useful. Property sets, classifications, element names, type assignments, and quantity sets are what FM systems, cost managers, and CDE asset registers actually consume. A geometrically correct file with blank property sets fails handover.",
+      },
+      { type: 'h3', text: 'Mistake 5: Validating once, at the delivery deadline' },
+      {
+        type: 'p',
+        text: "Treating validation as the final step before a CDE submission means remediating issues under pressure with no buffer. A model with 800 validation issues discovered the day before the deadline will either be delivered with known problems or miss the deadline. The correct cadence: Level 1 after every export, Level 2 before every internal review (weekly minimum), Level 3 two weeks before each formal milestone.",
+      },
+      { type: 'h3', text: 'Mistake 6: Ignoring GUID stability across re-exports' },
+      {
+        type: 'p',
+        text: "Duplicate GUIDs within a file are a Level 1 issue and are detectable by any validator. But GUID instability across re-exports — where the same element gets a different GlobalId each time the model is exported — is invisible to single-file validation. When GlobalIds drift between revisions, every BCF comment, CDE element reference, and FM asset tag silently becomes a dangling reference. This requires a two-revision comparison and a check of export settings, not just single-file validation.",
+      },
+      { type: 'h2', text: 'A Practical Validation Workflow for BIM Coordinators' },
+      {
+        type: 'ol',
+        items: [
+          "After every IFC export: run a Level 1 check. Takes under 30 seconds in any browser-based validator. Fix GlobalId duplicates, orphan elements, and spatial hierarchy breaks before they compound across revisions.",
+          "Before every internal review (weekly or per-sprint): run a full Level 2 quality check. Review the Health Score trend. A score declining across revisions means new issues are being introduced — find the source before it becomes a pattern.",
+          "On receipt of any discipline model from a third party: run Level 1 and Level 2 before federating. A model you receive may carry issues you inherit into the coordination model — detect them immediately, not three weeks into coordination on a broken federation.",
+          "Two weeks before any formal milestone delivery: run all three levels. Health Score ≥ 80 target before IDS. Two weeks gives time to remediate without pressure. Flag early — do not absorb the buffer.",
+          "Before uploading to the CDE: run Level 2 and Level 3. Attach the Health Score certificate and IDS pass report to the transmittal. This creates a documented audit trail and gives the information manager everything needed to accept the delivery.",
+          "After any authoring tool version upgrade or change to export settings: re-establish the GUID stability baseline by comparing two consecutive exports. A Revit upgrade or a changed export configuration can silently change GlobalId generation behaviour.",
+        ],
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: "Automate the cadence: set a recurring calendar reminder for Level 2 validation before every coordination meeting. Treat a declining Health Score as a sprint issue, not a pre-delivery emergency. The teams that arrive at delivery milestones with high scores are the ones that ran weekly checks — not the ones that ran it once the night before.",
+      },
+      { type: 'h2', text: 'Expert Tips' },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '⚡',
+            title: 'Triage by penalty, not count',
+            body: "Don't fix issues in order of volume — fix them in order of Health Score impact. Three missing IfcProject metadata fields can cost 15 points. Eight hundred naming warnings might cost 8 points total. Use the severity breakdown to triage by impact.",
+          },
+          {
+            icon: '🔒',
+            title: 'Lock export settings in a template',
+            body: "Every time export settings are manually reconfigured, there is risk of drifting to a different configuration. Create a named IFC export setup in your authoring tool, commit it to the project template, and document the required settings in the BEP. Configuration drift is the root cause of most 'it worked last time' export problems.",
+          },
+          {
+            icon: '📁',
+            title: 'Translate EIR to IDS at project start',
+            body: "Translate the most critical EIR clauses into an IDS specification in the first two weeks of the project. Even a partial .ids file — five or six specifications — is better than full manual EIR review at delivery time, and catches systematic data gaps early when they are cheap to fix.",
+          },
+          {
+            icon: '🌐',
+            title: 'Validate each discipline model before federating',
+            body: "Issues from one discipline model can mask or interact with issues from another in a federation. Validate clean inputs, federate clean. Running validation only on the coordination model after federation makes it harder to assign issues to the correct originator.",
+          },
+        ],
+      },
+      { type: 'h2', text: 'Frequently Asked Questions' },
+      { type: 'h3', text: 'Does passing Level 1 mean I can skip Level 2?' },
+      {
+        type: 'p',
+        text: "No. Level 1 and Level 2 measure completely different properties of a file. A schema-valid file (Level 1) can have zero property sets, empty element names, no classification, and no ISO 19650 metadata — and score 20 on a quality check (Level 2). You always need both. Think of Level 1 as 'the file is correctly packaged' and Level 2 as 'the contents of the package are what was requested'.",
+      },
+      { type: 'h3', text: 'Is IDS a replacement for the buildingSMART Validation Service?' },
+      {
+        type: 'p',
+        text: "No. IDS checks project-specific information requirements (Level 3). The buildingSMART Validation Service checks schema compliance (Level 1). They operate at completely different levels and address different questions. An IDS-passing model that fails schema validation would be a logical contradiction — Level 1 integrity is a prerequisite for meaningful Level 3 checking.",
+      },
+      { type: 'h3', text: 'Which IDS facets should I prioritise for a standard BIM delivery?' },
+      {
+        type: 'p',
+        text: "The Property facet covers 70–80% of real-world EIR requirements — most clients want specific property set values populated on specific element types. Classification covers most of the remainder for Uniclass- or OmniClass-governed projects. The Entity facet appears in almost every specification as an applicability filter. Material and PartOf address specific contractual requirements. Start with Entity + Property, add Classification if your EIR requires it, and expand from there.",
+      },
+      { type: 'h3', text: 'Can I validate an IFC without uploading it anywhere?' },
+      {
+        type: 'p',
+        text: "Yes. Browser-based validators process the file entirely in your browser using WebAssembly. The IFC bytes never leave your device — all 44 quality rules, the Health Score calculation, and the full IDS engine run client-side. For models with data handling restrictions — government assets, sensitive residential data, defence infrastructure — this is often the only compliant option.",
+      },
+      { type: 'h3', text: 'What Health Score threshold should I specify in the BEP?' },
+      {
+        type: 'p',
+        text: "≥ 80 is the standard threshold for CDE delivery and design coordination. ≥ 90 for LOD 300+ design development deliveries and ISO 19650 formal milestone submissions. ≥ 70 is acceptable for concept-stage internal reviews. Below 60, the model has structural quality problems and should not be delivered to any external party under any circumstance.",
+      },
+      { type: 'h3', text: 'Can a single tool cover all three validation levels?' },
+      {
+        type: 'p',
+        text: "Some tools do. IFC Viewer Online covers Level 1 (integrity rules including GUID, hierarchy, and file header checks), Level 2 (44-rule quality check with Health Score), and Level 3 (IDS 1.0 engine validated against all 100 official bSI testcases). Solibri covers Level 2 and Level 3 with a more sophisticated rule engine but no browser-based processing. The buildingSMART Validation Service covers Level 1 only. IfcOpenShell can be scripted for Level 1 and Level 2.",
+      },
+      { type: 'h2', text: 'Summary' },
+      {
+        type: 'pull-quote',
+        text: "Schema-valid is not project-valid. Project-valid is not EIR-compliant. All three validation layers are needed — and conflating them is the root cause of most formal delivery failures.",
+        cite: 'IFC Viewer Blog',
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '🔩',
+            title: 'Level 1: Run on every export',
+            body: "Schema integrity, GlobalId uniqueness and format, spatial hierarchy. Takes 30 seconds. Catches the structural failures that silently corrupt BCF, CDE versioning, and FM asset registers downstream.",
+          },
+          {
+            icon: '📊',
+            title: 'Level 2: Gate every CDE delivery',
+            body: "44 quality rules, Health Score, naming conventions, property set completeness, ISO 19650 metadata. Require ≥ 80 in your BEP and EIR. This is the layer that makes a model useful — not just parseable.",
+          },
+          {
+            icon: '📋',
+            title: 'Level 3: Verify before every milestone',
+            body: "IDS specifications that encode your EIR and AIR in machine-readable form. Translate the critical clauses at project start, not the week before delivery. An IDS pass is a documented contractual audit trail.",
+          },
+        ],
+      },
+      {
+        type: 'p',
+        text: ["Run a full quality check on your current model — under 30 seconds in any browser, nothing uploaded. Then read the ", { text: 'IFC Health Score guide', to: 'ifc-health-score-guide' }, " to understand how the score is calculated and what threshold to set in your BEP. If property values or GUIDs need fixing on a received file, the ", { text: 'free online IFC editor guide', to: 'ifc-editor-online' }, " covers non-destructive property editing without a round-trip through the authoring tool. And for the most common structural failures that cause Level 1 rejections, see ", { text: 'the 7 most common IFC validation errors', to: 'common-ifc-validation-errors' }, "."],
+      },
+    ],
+  },
+
+  // ── Article #3 — "offline bim validation" / "browser vs cloud ifc validation"
+
+  {
+    slug: 'browser-vs-cloud-ifc-validation',
+    title: 'Browser-Based IFC Validation vs Cloud: The Architecture Decision BIM Teams Get Wrong',
+    excerpt: "Offline IFC validation via WebAssembly — nothing uploaded, works on site. Browser vs cloud IFC validator: privacy, GDPR, upload speed, offline use, and when each architecture wins.",
+    date: '2026-06-28',
+    readTimeMin: 19,
+    category: 'Validation',
+    categorySlug: 'validation',
+    author: 'IFC Viewer Team',
+    featured: false,
+    keywords: ['offline bim validation', 'browser ifc validator', 'cloud ifc validator', 'ifc validation without upload', 'ifc privacy gdpr', 'WebAssembly IFC', 'validate ifc offline', 'online ifc validation'],
+    faqs: [
+      {
+        q: 'Is browser-based IFC validation truly private?',
+        a: "Yes, when implemented correctly. WebAssembly runs in a sandboxed browser context and the IFC file is created in local browser memory. A correctly implemented browser validator makes no network calls for the IFC file. Verify by opening the browser's network inspector (F12 → Network tab) and confirming no upload occurs when you validate a model.",
+      },
+      {
+        q: 'Can browser IFC validation run offline?',
+        a: "Yes, with one caveat. The application must be loaded at least once while online — the WASM binary and JavaScript bundles download on first visit. After that, models cached in OPFS load without any network access. For site visits where connectivity is unreliable, pre-loading the application and model the evening before ensures full offline availability.",
+      },
+      {
+        q: 'What is the practical file size limit for browser-based IFC validation?',
+        a: "On hardware with 16 GB RAM, files up to 400–500 MB parse reliably. On 8 GB machines, the practical limit is around 200–250 MB. OPFS caching eliminates the repeat-parse cost — the first parse is the only time you pay the full processing overhead. For files consistently above 500 MB, cloud validation may offer better headroom.",
+      },
+      {
+        q: 'Does WebAssembly introduce security risks in the browser?',
+        a: "WASM runs in the same sandboxed environment as JavaScript — it cannot access the filesystem, OS, or network without going through browser APIs subject to the same security policies as any web content. The relevant question is what network calls the application makes. A correctly implemented browser validator makes no network calls for the IFC file.",
+      },
+      {
+        q: 'Can I use both browser and cloud IFC validation in the same project workflow?',
+        a: "Yes — this is the most practical arrangement. Coordinators run browser validation locally as a fast, private pre-check. The CDE gateway uses cloud validation with an API for the audit trail and automated acceptance. Browser validation is fast and private; cloud validation provides the official record and organisation-wide reporting. They address different needs and complement each other.",
+      },
+    ],
+    content: [
+      {
+        type: 'callout',
+        variant: 'info',
+        text: "TL;DR — Browser validation and cloud validation are fundamentally different architectures. Browser validation processes IFC files locally using WebAssembly — the file never leaves the device. Cloud validation uploads the file to a remote server. Which is right depends on your project type, data handling requirements, and workflow. Neither is universally superior. For sensitive projects, browser validation is often the only compliant option.",
+      },
+      {
+        type: 'stat-row',
+        stats: [
+          { value: 0,   suffix: ' bytes',  label: 'uploaded in browser validation' },
+          { value: 40,  suffix: ' sec',    label: 'to upload 50 MB at 10 Mbps' },
+          { value: 44,  suffix: '',        label: 'rules checked client-side' },
+          { value: 10,  suffix: '×',       label: 'faster repeat loads via OPFS cache' },
+        ],
+      },
+      {
+        type: 'p',
+        text: "When a BIM coordinator asks 'where can I validate my IFC file?', the answer they usually get is a URL. A cloud service. Upload the model, wait, get the report. This is the default mental model for IFC validation — and it is the wrong choice for a significant proportion of the projects where it gets applied.",
+      },
+      {
+        type: 'p',
+        text: "There are two fundamentally different architectures for IFC validation. Understanding the difference — and knowing which is right for which project — is increasingly a professional competency for BIM managers and digital construction teams. The architecture you choose determines privacy, speed, regulatory compliance, and offline availability in a single decision.",
+      },
+      { type: 'h2', text: 'Two Completely Different Architectures' },
+      {
+        type: 'p',
+        text: "The distinction is not a product detail. It is a question of where computation happens — and that determines everything that follows.",
+      },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `ARCHITECTURE A — Cloud Validation
+══════════════════════════════════
+
+  Your Machine              Internet              Cloud Server
+  ────────────              ────────              ────────────
+  ① Open IFC file
+       │
+       │ ② UPLOAD ──────────────────────────────► Server receives file
+       │   50 MB   → ~40 s at 10 Mbps                   │
+       │   250 MB  → ~3 min at 10 Mbps            ③ Server parses IFC
+       │   1 GB    → ~13 min at 10 Mbps                  │
+       │                                           ④ Validation runs
+       │                                                  │
+       │ ⑤ RESULTS ◄───────────────────────────────────────┘
+       │
+  ⑥ View report
+
+  Data custody: Your machine → Transit (TLS) → Third-party server`,
+      },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `ARCHITECTURE B — Browser-Based Validation
+══════════════════════════════════════════
+
+  Your Machine                        Internet
+  ────────────                        ────────
+  ① Open IFC file
+       │
+  ② WASM binary loads                  (Nothing uploaded.
+       │                                Nothing leaves the device.
+  ③ Web Worker: IFC parsing             Ever.)
+       │
+  ④ 44 validation rules run
+       │
+  ⑤ Health Score calculated
+       │
+  ⑥ WebGL renders 3D model
+       │
+  ⑦ Results: instant, local
+
+  OPFS cache: parsed geometry persists → repeat load ~10× faster
+  Data custody: Your machine only`,
+      },
+      {
+        type: 'p',
+        text: "In Architecture A, the IFC file is processed by infrastructure you do not control. It crosses a network, sits on a third-party server, and is handled by software you did not deploy. In Architecture B, the same validation logic runs inside your browser using WebAssembly compiled from the same C++ code that powers native desktop BIM tools — nothing leaves the device, and there is no third party involved in processing.",
+      },
+      { type: 'h2', text: 'Why IFC Models Contain Sensitive Information' },
+      {
+        type: 'p',
+        text: "The instinct to treat IFC files like PDFs — shareable, uploadable, archivable anywhere — underestimates what is embedded in a complex building model. An IFC file is a structured database of asset information. For many project types, that information is genuinely sensitive, restricted, or classified.",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '🏛️',
+            title: 'Government and civic infrastructure',
+            body: "Courts, government offices, data centres, critical utilities. Structural vulnerability data, emergency system layouts, and security infrastructure schematics embedded as IFC geometry and properties.",
+          },
+          {
+            icon: '✈️',
+            title: 'Airports and transport hubs',
+            body: "Security checkpoint geometry, airside boundary layouts, CCTV and sensor placement, emergency system routing. Subject to aviation security and national security classification in most jurisdictions.",
+          },
+          {
+            icon: '🏥',
+            title: 'Hospitals and healthcare',
+            body: "Patient flow infrastructure, medical gas supply redundancy, critical care unit layouts. Subject to NHS IG requirements (UK) and HIPAA (US). Life-safety system structural data.",
+          },
+          {
+            icon: '🚂',
+            title: 'Rail and critical transit',
+            body: "Tunnel geometry, signalling infrastructure, emergency egress, power supply topology. Frequently classified as critical national infrastructure with explicit prohibitions on third-party upload.",
+          },
+          {
+            icon: '🏭',
+            title: 'Industrial and process plants',
+            body: "Process equipment layout, hazardous material containment geometry, safety system placement. Subject to COMAH / SEVESO III regulations in the EU. Commercially sensitive process data.",
+          },
+          {
+            icon: '🔒',
+            title: 'Defence and military',
+            body: "Explicitly restricted in most countries by defence procurement regulations. IFC files for military infrastructure cannot legally be uploaded to commercial cloud services without specific security clearance and contractual approval.",
+          },
+        ],
+      },
+      {
+        type: 'p',
+        text: "Beyond project type, IFC files embed metadata that qualifies as sensitive under multiple legal frameworks. The STEP file header FILE_NAME field contains author and organisation names. IfcProject properties carry client and project identifiers. Space planning models may include occupant counts and staff distribution. Property sets can reveal system capacities, structural specifications, and operational characteristics of a facility — the kind of information that makes industrial espionage viable.",
+      },
+      { type: 'h3', text: 'The GDPR and Data Handling Angle' },
+      {
+        type: 'p',
+        text: "GDPR Article 4 defines personal data broadly — it includes any information relating to an identified or identifiable natural person. In BIM, this captures: occupant names in space assignments, owner contact details in IfcProject metadata, personnel counts in fire evacuation calculations, and sometimes asset reference codes if they link back to identifiable individuals through other datasets.",
+      },
+      {
+        type: 'callout',
+        variant: 'warning',
+        text: "Uploading an IFC file that contains personal data to a commercial cloud service without a signed Data Processing Agreement (DPA) and a valid legal basis under GDPR Article 6 is a compliance violation — regardless of whether the service encrypts data in transit. Under GDPR Article 28, every processor of personal data on behalf of a controller requires a formal DPA. 'The service uses HTTPS' does not constitute a DPA.",
+      },
+      {
+        type: 'p',
+        text: "In practice, most large AEC firms and public sector bodies have data handling policies that technically prohibit uploading project models to unapproved third-party services. These policies are frequently ignored at coordinator level because the policy sits in a document management system and the validator URL was shared in a community forum. Browser-based validation makes compliance the path of least resistance — it removes the upload decision entirely.",
+      },
+      { type: 'h2', text: 'How WebAssembly Changed Browser-Based BIM Tools' },
+      {
+        type: 'p',
+        text: "Understanding why browser validation is now technically credible requires understanding what changed. Before 2017, running a genuine IFC parser in a browser was not seriously considered by any BIM software vendor. The browser could only execute JavaScript, and JavaScript is the wrong language for parsing the ISO 10303-21 STEP format at production speed.",
+      },
+      { type: 'h3', text: 'Before WebAssembly — The Pre-2017 Situation' },
+      {
+        type: 'ul',
+        items: [
+          "IFC parsing required server-side processing — cloud validators existed not as a convenience but as the only viable architecture. There was no performance-competitive alternative.",
+          "Browser-based IFC viewers used pre-processed intermediate formats (JSON geometry extracts, simplified meshes) rather than real-time IFC parsing. What you saw was not the IFC — it was a server-generated approximation.",
+          "A 50 MB IFC file parsed in pure JavaScript took minutes and would trigger tab crashes on memory-constrained machines. A 200 MB file was effectively impossible in a browser context.",
+          "3D rendering was early-stage WebGL — GPU-accelerated but limited to scene complexities manageable in JavaScript. Large structural models with hundreds of thousands of elements were impractical.",
+          "Web Workers provided thread isolation but no way to run compiled native code. Performance was bounded by JavaScript's garbage collection pauses and single-threaded execution model.",
+        ],
+      },
+      { type: 'h3', text: 'After WebAssembly — What Is Now Possible' },
+      {
+        type: 'p',
+        text: "WebAssembly (WASM) is a binary instruction format for a stack-based virtual machine that runs in the browser at near-native speed. Code written in C, C++, or Rust is compiled to WASM and executes at roughly 60–90% of native speed inside any modern browser — no plugins, no installation, full memory isolation, guaranteed sandbox. WASM became a W3C standard in 2019 and is available in all major browsers.",
+      },
+      {
+        type: 'p',
+        text: "For IFC specifically: web-ifc — the parser used by the @thatopen/components library — is compiled from C++ to WebAssembly. It parses IFC STEP format at the same speed class as native desktop libraries. A 50 MB IFC file parses in under 10 seconds on a modern laptop, inside a browser tab, with no server involved. The same performance class as Solibri or Navisworks loading a local file — but in a browser.",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '⚙️',
+            title: 'WASM: C++ speed in the browser',
+            body: "web-ifc is compiled from C++ to WebAssembly. IFC STEP parsing runs at 60–90% of native speed — the same performance class as desktop BIM tools. A 50 MB model parses in under 10 seconds on a modern laptop.",
+          },
+          {
+            icon: '🧵',
+            title: 'Web Workers: true parallelism',
+            body: "WASM parsing runs in a dedicated Web Worker — a separate OS thread. The browser UI stays responsive during heavy model loading. Validation runs in a parallel worker, providing results while geometry loads.",
+          },
+          {
+            icon: '💾',
+            title: 'OPFS: persistent local cache',
+            body: "The Origin Private File System is a browser-native storage API, sandboxed per origin, inaccessible to servers. Parsed geometry is written to OPFS after first load. Repeat loads are ~10× faster — no re-parsing, no re-upload.",
+          },
+          {
+            icon: '🎮',
+            title: 'WebGL / WebGPU: GPU rendering',
+            body: "Three.js abstracts WebGL for high-performance 3D rendering. Fragment-based scene management handles models with hundreds of thousands of elements at interactive frame rates. WebGPU support coming for next-generation rendering.",
+          },
+        ],
+      },
+      { type: 'h3', text: 'The OPFS Cache: Why Repeat Loads Change the Workflow' },
+      {
+        type: 'p',
+        text: "The Origin Private File System is a browser-native storage layer sandboxed to the current web origin. Other origins, other browser tabs, and — critically — remote servers cannot access its contents. It persists between browser sessions. For IFC workflows, OPFS solves the most painful friction in heavy model tooling: the repeat-parse cost.",
+      },
+      {
+        type: 'p',
+        text: "A 250 MB IFC file parsed from scratch takes 20–40 seconds on a modern machine. The same file loaded from OPFS cache loads in 2–3 seconds. For a BIM coordinator who opens the same project model several times a day, OPFS is the difference between a tool that feels fast and one that feels like waiting. And because OPFS storage is sandboxed per origin and lives on the local filesystem, the cached model data never reaches a server — it inherits the same privacy guarantee as the browser validation itself.",
+      },
+      {
+        type: 'callout',
+        variant: 'info',
+        text: "OPFS is not localStorage or IndexedDB. It provides a real filesystem-like API with synchronous access from Worker threads, large file support, and higher storage quotas than web storage APIs. On a machine with 100 GB of free disk space, OPFS can cache hundreds of gigabytes of parsed IFC geometry. Quota management is exposed to the user via the browser's storage settings.",
+      },
+      { type: 'h2', text: 'The Upload Bottleneck — Real Numbers' },
+      {
+        type: 'p',
+        text: "The single most underestimated cost of cloud IFC validation is upload time. It is invisible in product comparisons but dominant in the actual workflow. Here is what uploading common IFC file sizes looks like across realistic connection types — and how browser local processing compares:",
+      },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `FILE SIZE │ Office (10 Mbps up) │ 4G Mobile (3 Mbps) │ On-Site (1 Mbps)
+──────────┼────────────────────┼────────────────────┼─────────────────
+   50 MB  │    ~40 seconds     │    ~2 min 15 s     │   ~7 minutes
+  250 MB  │   ~3 min 20 s      │    ~11 minutes     │   ~33 minutes
+    1 GB  │   ~13 minutes      │    ~45 minutes     │   ~2 h 15 min
+    2 GB  │   ~27 minutes      │   ~1 h 30 min      │   ~4 h 30 min
+
+Plus server processing (shared cloud hardware, variable):
+   50 MB: +5–15 s    250 MB: +30–90 s    1 GB: +2–6 min    2 GB: +5–15 min
+
+Browser local processing — WASM, modern workstation (first parse):
+   50 MB: ~5–10 s    250 MB: ~20–40 s    1 GB: ~90–180 s   2 GB: ~3–6 min
+
+Browser repeat load — OPFS cache, no re-parsing:
+   All sizes: ~2–5 seconds (independent of original file size)`,
+      },
+      {
+        type: 'p',
+        text: "A 250 MB IFC file — a typical coordination model for a medium commercial project — takes over 3 minutes to upload on a fast office connection. On 4G, it takes 11 minutes. For a BIM coordinator running pre-delivery checks several times a day, upload time alone adds hours of dead wait per week. The validation itself takes a fraction of the upload time.",
+      },
+      {
+        type: 'p',
+        text: "On construction sites, where 4G connectivity is the norm and bandwidth is shared between site offices and BIM tablets, uploading a 1 GB IFC file is a 45-minute commitment before a single validation rule runs. Browser-based validation processes the same file locally in 90–180 seconds with no network dependency — and in 2–5 seconds on subsequent sessions thanks to OPFS caching.",
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: "Upload speed is asymmetric. Most broadband connections in Europe have upload speeds significantly lower than download. A 100 Mbps download connection often has only 10–20 Mbps upload. Always check the upload rate — not the headline broadband speed — when estimating cloud validation wait times.",
+      },
+      { type: 'h2', text: 'The Full Comparison: Browser vs Cloud IFC Validation' },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `DIMENSION              │ BROWSER VALIDATION          │ CLOUD VALIDATION
+───────────────────────┼─────────────────────────────┼──────────────────────────
+Privacy                │ ✅ File never leaves device  │ ⚠️  File uploaded to server
+Data sovereignty       │ ✅ No third-party custody    │ ⚠️  Third-party data custody
+GDPR compliance        │ ✅ Compliant by design        │ ⚠️  Requires DPA + legal basis
+Sensitive projects     │ ✅ Only option in many cases  │ ❌  Often prohibited
+───────────────────────┼─────────────────────────────┼──────────────────────────
+Speed (small <50 MB)   │ ✅ Near-instant              │ ⚠️  Upload + processing delay
+Speed (large >250 MB)  │ ✅ No upload penalty         │ ❌  Upload bottleneck
+Repeat loads           │ ✅ OPFS cache (~10× faster)  │ ❌  Full re-upload each time
+Upload time            │ ✅ Zero                      │ ❌  Proportional to file size
+───────────────────────┼─────────────────────────────┼──────────────────────────
+Offline availability   │ ✅ Full offline support      │ ❌  Requires internet
+On-site field use      │ ✅ Works on 4G or offline    │ ❌  Slow / unreliable on site
+Internet dependency    │ ✅ None (after initial load)  │ ❌  Required every run
+───────────────────────┼─────────────────────────────┼──────────────────────────
+Batch processing       │ ❌  Manual, one at a time    │ ✅  API / batch automation
+CI/CD integration      │ ❌  Not suited               │ ✅  Native webhook/API
+Team audit trail       │ ⚠️  Local only              │ ✅  Centralised history
+Org-wide reporting     │ ⚠️  Not aggregated          │ ✅  Dashboard across projects
+───────────────────────┼─────────────────────────────┼──────────────────────────
+Security (data)        │ ✅ No transit / server risk  │ ⚠️  Transit + server exposure
+Security (breach)      │ ✅ No server to compromise   │ ⚠️  Depends on cloud provider
+───────────────────────┼─────────────────────────────┼──────────────────────────
+Very large files >2 GB │ ⚠️  Limited by device RAM   │ ✅  Server has more RAM
+───────────────────────┼─────────────────────────────┼──────────────────────────
+Cost                   │ ✅ Free to low-cost          │ ⚠️  Per-use or subscription
+Infrastructure burden  │ ✅ Zero — runs in browser    │ ✅  Managed by provider
+Setup complexity       │ ✅ Open URL, drag file       │ ⚠️  Account / API key required`,
+      },
+      { type: 'h2', text: 'Where Cloud Validation Is Genuinely Better' },
+      {
+        type: 'p',
+        text: "A comparison that only highlights one side is advocacy. Cloud IFC validation has real advantages in specific contexts — and applying browser validation to those contexts is the wrong call.",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '🔄',
+            title: 'Automated CI/CD pipelines',
+            body: "Validation triggered automatically on every model commit — analogous to software unit tests. Cloud APIs with webhook responses are the only architecture for headless automation. There is no browser session to run WASM in a server-side pipeline.",
+          },
+          {
+            icon: '📦',
+            title: 'Batch processing at portfolio scale',
+            body: "Auditing hundreds of existing IFC files across a project portfolio — a legacy data migration, a CDE archive audit — is practical via cloud batch APIs and impractical to run manually in a browser one file at a time.",
+          },
+          {
+            icon: '📊',
+            title: 'Centralised team reporting',
+            body: "A BIM manager needs a single view of validation history across multiple projects and originators — score trends, issue frequency, compliance over time. Cloud services aggregate this. Browser tools produce local results only.",
+          },
+          {
+            icon: '💻',
+            title: 'CDE gateway integration',
+            body: "Some CDEs validate incoming IFC uploads automatically before accepting them. This is inherently a server-side operation — the CDE server processes the file, not a user's browser. Cloud validation APIs are the integration point.",
+          },
+        ],
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Browser Validation — Best Fit',
+          color: 'accent',
+          items: [
+            'Government and public sector projects',
+            'Defence, infrastructure, and airport BIM',
+            'Hospital and healthcare facility models',
+            'Industrial plant and process engineering',
+            'Models with GDPR or data restriction policies',
+            'On-site and offline validation',
+            'Pre-check before formal cloud submission',
+            'Individual coordinators and small teams',
+          ],
+        },
+        right: {
+          label: 'Cloud Validation — Best Fit',
+          color: 'muted',
+          items: [
+            'Automated CI/CD validation pipelines',
+            'Portfolio-wide batch quality audits',
+            'Centralised BIM quality dashboards',
+            'CDE gateway and automated delivery gates',
+            'Non-sensitive commercial projects at scale',
+            'Enterprise multi-team workflow automation',
+            'API-driven integration with other systems',
+            'Very large files beyond local device RAM',
+          ],
+        },
+      },
+      { type: 'h2', text: 'Five Misconceptions About Browser-Based IFC Validation' },
+      { type: 'h3', text: 'Misconception 1: "Browser apps are slower than cloud"' },
+      {
+        type: 'p',
+        text: "This was true in 2015. It is not true now. WebAssembly code runs at 60–90% of native C++ speed inside a modern browser. The IFC parsing engine (web-ifc) is compiled from C++ — the same performance category as the libraries that power Solibri, Autodesk's IFC importers, and IfcOpenShell. Combined with zero upload latency, browser validation is frequently faster than cloud for typical model sizes, particularly on connections slower than 50 Mbps upload.",
+      },
+      {
+        type: 'p',
+        text: "The misconception persists because people compare browser JavaScript (slow and garbage-collected) to native compiled applications (fast). Modern browser BIM tools do not run in JavaScript for the heavy processing — they run compiled WASM at near-native speed, with JavaScript only orchestrating the workflow. The JS versus WASM distinction is as significant as the difference between Python and C++.",
+      },
+      { type: 'h3', text: 'Misconception 2: "You must upload an IFC file to validate it"' },
+      {
+        type: 'p',
+        text: "This is false. When you open an IFC file in a browser-based validator, the browser creates a File object in local memory — accessible to WASM and JavaScript running in that browser context, but not transmitted to any network endpoint unless code explicitly calls a fetch or XHR API. You can verify this yourself: open the browser's network inspector (F12 → Network tab) and confirm that no upload occurs when a model is opened and validated.",
+      },
+      { type: 'h3', text: 'Misconception 3: "Large IFC files cannot run in a browser"' },
+      {
+        type: 'p',
+        text: "Modern browsers can allocate several gigabytes of RAM on typical workstation hardware. A 250 MB IFC file in memory occupies 250 MB — well within what a browser process can allocate on a machine with 16 GB. Web Workers extend this with off-main-thread memory access. For files above 500 MB, chunked spatial loading makes browser processing viable even under tighter memory constraints. OPFS ensures that a large model parsed once never needs to be re-parsed in subsequent sessions.",
+      },
+      { type: 'h3', text: 'Misconception 4: "Cloud is always more secure"' },
+      {
+        type: 'p',
+        text: "Security is multi-dimensional, not a single attribute. Cloud services typically encrypt data in transit (TLS 1.3) and at rest (AES-256), which addresses passive interception. But they introduce attack surfaces that browser processing eliminates entirely: server-side compromise, misconfigured storage buckets, insider access by cloud provider employees, supply chain attacks on the cloud provider's infrastructure, and data residency violations if the server is located outside contractually required jurisdictions.",
+      },
+      {
+        type: 'p',
+        text: "A file that never leaves the device has zero exposure to any network-based threat. The security question is not 'which architecture is more secure in absolute terms?' but 'which threat models are most relevant for this project?' For a Ministry of Defence facility model, browser processing eliminates the upload threat vector completely. For a non-sensitive commercial project where centralised logging matters, cloud controls may be the right trade-off.",
+      },
+      { type: 'h3', text: 'Misconception 5: "Browser validation is not enterprise-grade"' },
+      {
+        type: 'p',
+        text: "Enterprise-grade software is defined by reliability, feature depth, and institutional supportability — not by deployment architecture. Figma, AutoCAD Web, Google Earth, and Microsoft Office for the Web are enterprise-grade applications running in the browser using WebAssembly and modern web APIs. The same WASM runtime, Web Workers, and WebGL infrastructure that power these applications also powers browser-based IFC validation. 'Browser-based' is an architectural decision about where computation happens — it is not a quality ceiling.",
+      },
+      { type: 'h2', text: 'Troubleshooting Browser Validation Issues' },
+      { type: 'h3', text: 'Model loads but validation seems slow' },
+      {
+        type: 'p',
+        text: "Validation runs in a separate Web Worker and does not block the UI — the 3D model should be interactive while validation runs in the background. If the overall loading process feels slow, check whether the model is loading from OPFS cache (fast) or being parsed from scratch (slower for large files). On first load, a 200 MB file will take 20–40 seconds to parse even locally. Subsequent loads from cache take 2–5 seconds.",
+      },
+      { type: 'h3', text: 'Out of memory on very large files' },
+      {
+        type: 'p',
+        text: "Files above 400–500 MB can exhaust browser memory on machines with 8–16 GB RAM. Symptoms: the browser tab crashes or becomes unresponsive. Solutions: close other browser tabs to free memory, use a machine with 16+ GB RAM, or split a federated model into discipline-specific files before loading. For files consistently above 500 MB, cloud validation may be the more appropriate architecture — server hardware typically has more RAM headroom.",
+      },
+      { type: 'h3', text: 'OPFS cache grows large over time' },
+      {
+        type: 'p',
+        text: "OPFS stores parsed geometry fragments for each model loaded. For a project team loading many models over weeks, cache can grow to several gigabytes. The validator's Cache Manager shows all cached files with sizes and allows selective deletion. Browser storage settings also allow clearing all origin storage. The cache is stored on the local device and is not accessible to any remote server.",
+      },
+      { type: 'h3', text: 'Validation results differ between browser and cloud' },
+      {
+        type: 'p',
+        text: "If results differ, the most common cause is that different rule sets are being applied. Browser validation (44 quality rules) and cloud schema validation (ISO 10303-21 compliance) are checking different things — not the same rules in different places. See the validation layer guide for the distinction between Level 1 schema checking, Level 2 quality checking, and Level 3 IDS. An IDS result should be identical between any two specification-conformant engines running the same .ids file against the same model.",
+      },
+      { type: 'h2', text: 'Where IFC Viewer Online Fits This Architecture' },
+      {
+        type: 'p',
+        text: "IFC Viewer Online is a browser-based implementation of Architecture B. The IFC parser (web-ifc compiled to WASM), the 44-rule validation engine, the Health Score calculation, the IDS 1.0 checking engine, the BCF panel, and the 3D renderer (Three.js via WebGL) all run in the browser. Nothing is uploaded. The architecture enforces this at the implementation level — there is no server-side endpoint to send model data to.",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '⚡',
+            title: 'WASM parsing in a Web Worker',
+            body: "web-ifc (C++ → WASM) runs in a dedicated worker thread. The UI stays responsive during large model loads. A 50 MB file parses in under 10 seconds. A 200 MB file in 20–40 seconds. First result: local. Always.",
+          },
+          {
+            icon: '💾',
+            title: 'OPFS caching for repeat loads',
+            body: "Parsed geometry fragments persist in OPFS after the first session. Repeat loads are ~10× faster — no re-parsing, no network dependency. The cache is private to the browser origin and inaccessible to remote servers.",
+          },
+          {
+            icon: '📋',
+            title: '44 quality rules + IDS 1.0',
+            body: "44 model quality rules (structural integrity, ISO 19650, Psets, classification, LOD, MEP) plus a buildingSMART IDS 1.0 engine tested against all 100 official bSI testcases — all client-side.",
+          },
+          {
+            icon: '🔧',
+            title: 'Non-destructive property editing',
+            body: "Element names, property set values, and GlobalIds can be edited on received IFC files without a round-trip through the authoring tool — and without uploading to any server.",
+          },
+        ],
+      },
+      { type: 'h2', text: 'Expert Recommendations: Choosing the Right Architecture' },
+      {
+        type: 'p',
+        text: "The choice between browser and cloud validation is a project-level governance decision, not a tool preference. Here is the decision logic for the most common scenarios:",
+      },
+      {
+        type: 'ul',
+        items: [
+          "Government, defence, airport, rail, hospital, and industrial plant projects: browser-based validation should be the default assumption. Verify whether your organisation's data handling policy permits model upload before considering cloud. If the policy does not address it, assume upload is prohibited and seek clarification from your data protection officer.",
+          "Commercial projects with no data classification: either architecture is viable. Use cloud for centralised audit trails and CI/CD integration. Use browser for speed, privacy preference, and offline capability.",
+          "Daily pre-delivery quality checks by individual coordinators: browser validation is faster, simpler, requires no account, and eliminates the upload wait. Run it locally before any formal CDE submission.",
+          "Portfolio audits or CDE compliance assessments across many models: cloud batch processing is the right tool. Running 200 models through a cloud API and getting a consolidated quality report is impractical in a browser.",
+          "Automated delivery gate within a CDE: cloud validation with API integration is the only practical architecture. There is no browser context available in an automated server-side workflow.",
+          "Hybrid workflow: use browser-based validation as the daily quality gate (fast, private, no account required), and reserve cloud for the formal CDE submission where an audit trail, API integration, or batch automation adds genuine value. These architectures are complementary.",
+        ],
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: "Document your architecture decision in the BIM Execution Plan. 'Validation tool: [name], architecture: browser-based / cloud, reason: [data handling policy / automation requirement]'. When a new team member joins or a project is audited, the decision trail explains why a specific tool was used — not just which tool.",
+      },
+      { type: 'h2', text: 'Frequently Asked Questions' },
+      { type: 'h3', text: 'Is browser-based IFC validation truly private?' },
+      {
+        type: 'p',
+        text: "Yes, when implemented correctly. WebAssembly runs in a sandboxed browser context. The File object containing IFC data is created in local browser memory. For that data to reach a server, code must explicitly call a network API. A correctly implemented browser validator makes no such calls for the IFC file. Verify this by opening the browser's network inspector (F12 → Network tab) and confirming no upload occurs when you open and validate a model.",
+      },
+      { type: 'h3', text: 'Can browser validation run offline?' },
+      {
+        type: 'p',
+        text: "Yes, with one caveat. The application itself must be loaded at least once while online — the WASM binary and JavaScript bundles download on first visit. After that, a progressive web application can run fully offline. Models cached in OPFS load without any network access. For site visits where connectivity is unreliable, loading the application and pre-caching the project model the evening before ensures offline availability the following day.",
+      },
+      { type: 'h3', text: 'What is the practical file size limit for browser validation?' },
+      {
+        type: 'p',
+        text: "On hardware with 16 GB RAM (a typical modern workstation or high-end laptop), files up to 400–500 MB parse reliably. On 8 GB machines, the practical limit is around 200–250 MB before memory pressure causes instability. OPFS caching eliminates the repeat-parse cost — so the first parse is the only time you pay the full processing overhead. For files consistently above 500 MB, cloud validation may offer better headroom.",
+      },
+      { type: 'h3', text: 'Does WebAssembly introduce security risks?' },
+      {
+        type: 'p',
+        text: "WASM runs in the same sandboxed environment as JavaScript — it cannot access the filesystem, operating system, or network without going through browser APIs subject to the same security policies as any web content. The relevant security question is not the WASM runtime itself but what network calls the application makes — and a correctly implemented browser validator makes none for the IFC file.",
+      },
+      { type: 'h3', text: 'Can I use both architectures in the same project workflow?' },
+      {
+        type: 'p',
+        text: "Yes — this is often the most practical arrangement. Coordinators run browser validation locally as a pre-check before any formal submission. The CDE gateway uses cloud validation with an API for the audit trail and automated acceptance. The browser check is fast and private; the cloud check provides the official record and the organisation-wide reporting. The two architectures address different needs and complement each other.",
+      },
+      { type: 'h2', text: 'Summary' },
+      {
+        type: 'pull-quote',
+        text: "Where an IFC file goes during validation is not a technical detail. It is a data governance decision that determines regulatory compliance for a large proportion of AEC projects.",
+        cite: 'IFC Viewer Blog',
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '🔒',
+            title: 'Sensitive projects: browser-first',
+            body: "Government, defence, healthcare, and infrastructure projects should default to browser-based validation. It is often the only compliant option — not just the convenient one. Data never leaves the device.",
+          },
+          {
+            icon: '🔄',
+            title: 'Automation and batch: cloud',
+            body: "CI/CD pipelines, portfolio audits, and centralised reporting require cloud architecture. A browser session cannot participate in headless automated workflows or aggregate results across teams.",
+          },
+          {
+            icon: '⚡',
+            title: 'Daily validation: browser wins on speed',
+            body: "Zero upload time, OPFS-accelerated repeat loads, and no account required. For the pre-delivery checks that define a coordinator's daily workflow, browser processing is faster than cloud at all common model sizes.",
+          },
+        ],
+      },
+      {
+        type: 'p',
+        text: ["To understand what the 44 quality rules actually check — and how they relate to schema validation and IDS — see ", { text: 'the complete IFC model checker guide', to: 'ifc-model-checker-guide' }, ". For the Health Score that summarises quality as a single number, see ", { text: 'the IFC Health Score guide', to: 'ifc-health-score-guide' }, ". If you need to fix property values or GUIDs on a received IFC file without uploading it anywhere, the ", { text: 'free online IFC editor', to: 'ifc-editor-online' }, " applies the same browser-first architecture to non-destructive property editing."],
+      },
     ],
   },
 

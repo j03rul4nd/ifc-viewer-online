@@ -265,12 +265,33 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
               url: canonical,
               mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
               image: OG_IMAGE,
-              keywords: [post.category, 'IFC', 'BIM'].join(', '),
+              keywords: [
+                ...(post.keywords ?? []),
+                post.category,
+                'IFC',
+                'BIM',
+              ].join(', '),
               timeRequired: `PT${post.readTimeMin}M`,
               articleSection: post.category,
             },
           }),
         )
+        // Inject FAQPage schema as a second JSON-LD block when the post has FAQs
+        if (post.faqs && post.faqs.length > 0) {
+          const faqLd = {
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: post.faqs.map(f => ({
+              '@type': 'Question',
+              name: f.q,
+              acceptedAnswer: { '@type': 'Answer', text: f.a },
+            })),
+          }
+          const faqScript = `<script type="application/ld+json">${jsonEsc(JSON.stringify(faqLd))}</script>`
+          const outFilePath = path.join(outDir, 'index.html')
+          const existing = readFileSync(outFilePath, 'utf-8')
+          writeFileSync(outFilePath, existing.replace('</head>', `  ${faqScript}\n</head>`))
+        }
         result.pages++
       } catch (err) {
         console.error(`[blog-pages][${lang}] Error generating post "${post.slug}":`, err)
