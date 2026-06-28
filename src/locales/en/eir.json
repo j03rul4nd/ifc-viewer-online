@@ -1,0 +1,74 @@
+{
+  "title": "EIR / BIM Validation profiles",
+  "openButton": "EIR / BIM Validation profiles…",
+  "sidebar": {
+    "new": "New",
+    "import": "Import .json or .ids",
+    "empty": "No profiles yet"
+  },
+  "selectOrCreate": "Select or create a profile",
+  "builtinBadge": "built-in (saves a copy)",
+  "namePlaceholder": "Profile name",
+  "descPlaceholder": "Description (optional)",
+  "addRule": "Add rule",
+  "footer": "{{rules}} rule(s) · {{active}} active",
+  "actions": {
+    "duplicate": "Duplicate",
+    "export": "Export .json",
+    "delete": "Delete",
+    "save": "Save",
+    "useAndRun": "Use & run"
+  },
+  "ruleTypes": {
+    "entityExists": "Entity exists",
+    "requiredProperty": "Required property",
+    "requiredPropertySet": "Required property set",
+    "propertyNotEmpty": "Property not empty",
+    "propertyEquals": "Property equals",
+    "numeric": "Numeric",
+    "allowedValues": "Allowed values",
+    "regex": "Regex",
+    "classification": "Classification"
+  },
+  "severity": {
+    "error": "error",
+    "warning": "warning",
+    "info": "info",
+    "ignored": "ignored"
+  },
+  "fields": {
+    "predefinedType": "PredefinedType",
+    "property": "Property",
+    "propertySet": "Property set",
+    "equals": "Equals",
+    "op": "Op",
+    "value": "Value",
+    "allowed": "Allowed (comma-separated)",
+    "target": "Target",
+    "pattern": "Pattern",
+    "system": "System",
+    "classValue": "Value",
+    "attribute": "Attribute"
+  },
+  "applies": {
+    "match": "{{count}} in model",
+    "none": "0 in model",
+    "upper": "≤ {{count}} in model"
+  },
+  "stats": {
+    "validated": "Validated",
+    "passed": "Passed",
+    "failed": "Failed",
+    "failingElements": "Elements with issues"
+  },
+  "toasts": {
+    "invalidProfile": "Invalid profile: {{detail}}",
+    "saved": "Profile saved",
+    "imported": "Profile imported",
+    "importedWithWarnings": "Imported with {{count}} unsupported rule(s) skipped",
+    "importFailed": "Import failed: {{detail}}",
+    "addRuleFirst": "Add at least one rule first",
+    "loadModelFirst": "Load an IFC model first",
+    "allIgnored": "All rules are ignored — nothing to run"
+  }
+}

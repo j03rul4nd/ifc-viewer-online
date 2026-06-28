@@ -68,6 +68,7 @@ export function checkSpec(spec: IdsSpecification, elements: IdsElement[], option
     return {
       name: spec.name,
       description: spec.description,
+      ...(spec.identifier ? { identifier: spec.identifier } : {}),
       status: 'na',
       skippedReason: 'ifcVersion',
       applicableCount: 0,
@@ -88,11 +89,13 @@ export function checkSpec(spec: IdsSpecification, elements: IdsElement[], option
       expressId: el.expressId,
       ifcClass: el.ifcClass,
       name: el.name ?? `#${el.expressId}`,
+      ...(el.globalId != null ? { globalId: el.globalId } : {}),
       reasons: [{ code: 'specProhibitedButPresent' as const }],
     }))
     return {
       name: spec.name,
       description: spec.description,
+      ...(spec.identifier ? { identifier: spec.identifier } : {}),
       status: applicable.length === 0 ? 'pass' : 'fail',
       applicableCount: applicable.length,
       passedCount: 0,
@@ -113,7 +116,10 @@ export function checkSpec(spec: IdsSpecification, elements: IdsElement[], option
     }
     if (reasons.length === 0) passed++
     else if (failures.length < MAX_FAILURES_PER_SPEC) {
-      failures.push({ expressId: el.expressId, ifcClass: el.ifcClass, name: el.name ?? `#${el.expressId}`, reasons })
+      failures.push({
+        expressId: el.expressId, ifcClass: el.ifcClass, name: el.name ?? `#${el.expressId}`,
+        ...(el.globalId != null ? { globalId: el.globalId } : {}), reasons,
+      })
     } else {
       // keep counting but stop storing
     }
@@ -126,6 +132,7 @@ export function checkSpec(spec: IdsSpecification, elements: IdsElement[], option
     return {
       name: spec.name,
       description: spec.description,
+      ...(spec.identifier ? { identifier: spec.identifier } : {}),
       status: 'fail',
       applicableCount: 0,
       passedCount: 0,

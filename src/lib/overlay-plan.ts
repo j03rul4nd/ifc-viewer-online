@@ -39,6 +39,11 @@ export interface IdsFailureRef {
   expressId: number
   /** Owning model; falls back to the active model when omitted. */
   modelId?: string | null
+  /**
+   * EIR severity for colouring (error/warning/info). Absent for plain IDS
+   * failures — the controller paints those with the single idsFail colour.
+   */
+  severity?: OverlaySeverity
 }
 
 /**
@@ -80,19 +85,23 @@ export function planValidationOverlay(
 }
 
 /**
- * Plan the IDS-failure overlay: per model, the deduplicated set of element local
- * ids that failed at least one IDS spec. Mirrors the viewer's `setIdsHighlights`.
+ * Plan the IDS-failure overlay: per model, each failing element local id mapped
+ * to its EIR severity (or `null` for a plain IDS failure with no severity — the
+ * controller paints those with the single idsFail colour). Mirrors the viewer's
+ * `setIdsHighlights`.
  *
  * Synthetic spec-level rows (negative `expressId`) carry no element and are
  * skipped, as are ids absent from the model's type map. An element that fails
- * several specs is highlighted once.
+ * several specs collapses to its **highest** severity (error > warning > info >
+ * none), so it gets a single deterministic colour.
  */
 export function planIdsOverlay(
   failures: readonly IdsFailureRef[],
   typeMaps: ReadonlyMap<string, TypeMap>,
   activeModelId: string | null,
-): Map<string, number[]> {
-  const byModel = new Map<string, Set<number>>()
+): Map<string, Map<number, OverlaySeverity | null>> {
+  const byModel = new Map<string, Map<number, OverlaySeverity | null>>()
+  const rank = (s: OverlaySeverity | null): number => (s ? SEVERITY_RANK[s] : 0)
 
   for (const f of failures) {
     if (f.expressId < 0) continue
@@ -100,14 +109,16 @@ export function planIdsOverlay(
     const typeMap = mid ? typeMaps.get(mid) : undefined
     if (!typeMap || !typeMap.has(f.expressId)) continue
 
-    let set = byModel.get(mid)
-    if (!set) { set = new Set(); byModel.set(mid, set) }
-    set.add(f.expressId)
+    let perModel = byModel.get(mid)
+    if (!perModel) { perModel = new Map(); byModel.set(mid, perModel) }
+
+    const incoming = f.severity ?? null
+    if (!perModel.has(f.expressId) || rank(incoming) > rank(perModel.get(f.expressId) ?? null)) {
+      perModel.set(f.expressId, incoming)
+    }
   }
 
-  const plan = new Map<string, number[]>()
-  for (const [mid, set] of byModel) plan.set(mid, [...set])
-  return plan
+  return byModel
 }
 
 /**

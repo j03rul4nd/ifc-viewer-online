@@ -12,7 +12,7 @@ const f = [
   { code: "zh", label: "中文" },
   { code: "ja", label: "日本語" },
   { code: "th", label: "ไทย" }
-], g = "1.6.0", p = 12e4, v = 3e4, h = f.map((i) => i.code);
+], g = "1.7.0", p = 12e4, v = 3e4, h = f.map((i) => i.code);
 function y() {
   try {
     return new URL("../", import.meta.url).href;
@@ -198,6 +198,15 @@ const l = class l {
   /** Check the loaded model against a buildingSMART IDS (.ids XML string). */
   checkIds(t) {
     return this.request("ifcviewer:check-ids", { idsXml: t }, 12e4);
+  }
+  /**
+   * Check the loaded model against an EIR / BIM Validation profile (ISO 19650-style).
+   * Accepts a profile object or its JSON string; the compact shorthand
+   * (`{ entity, requiredProperties: [...] }`) is also accepted. Returns the same
+   * IdsResult shape as checkIds (the profile compiles to IDS internally). Since v1.7.0.
+   */
+  checkEir(t) {
+    return this.request("ifcviewer:check-eir", { profile: t }, 12e4);
   }
   // ── Mutating commands ──────────────────────────────────────────────────────
   /** Unload a specific model by id (see getModels()). */

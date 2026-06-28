@@ -330,6 +330,7 @@ const IdsReasonSchema = z.object({
 const IdsSpecResultSchema = z.object({
   name:            z.string(),
   description:     z.string().optional(),
+  identifier:      z.string().optional(),
   status:          z.enum(['pass', 'fail', 'na']),
   // MUST be declared or the worker's result parse strips the skip honesty flag.
   skippedReason:   z.literal('ifcVersion').optional(),
@@ -340,6 +341,7 @@ const IdsSpecResultSchema = z.object({
     expressId: z.number().int(),
     ifcClass:  z.string(),
     name:      z.string(),
+    globalId:  z.string().nullable().optional(),
     reasons:   z.array(IdsReasonSchema),
   })),
   unsupported:     z.array(z.string()),

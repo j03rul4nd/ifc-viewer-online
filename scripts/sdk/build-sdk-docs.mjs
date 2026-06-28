@@ -387,8 +387,8 @@ const T = {
 
 // Data/query method descriptions, merged into T (localized where provided).
 const EXTRA = {
-  en: { getModels: 'List the loaded models. Returns a promise.', getElement: 'Fetch an element’s IFC data (attributes + property/quantity sets). Returns a promise.', getValidation: 'Fetch the current validation summary (Health Score + counts). Returns a promise.', getStats: 'Per-category element counts per model — for dashboard charts. Returns a promise.', getIssues: 'Validation issues for a table (filter by severity / limit). Returns a promise.', checkIds: 'Check the model against a buildingSMART IDS (.ids XML). Runs in a worker. Returns pass/fail per spec.', screenshot: 'Capture the current 3D view as a PNG data URL. Returns a promise.', removeModel: 'Unload a model by id.', hideShow: 'Hide / show a set of elements by expressID.', setCamera: 'Place the camera at a position looking along a direction.', wc: 'Or, zero-JS — drop the tag:' },
-  es: { getModels: 'Lista los modelos cargados. Devuelve una promesa.', getElement: 'Obtiene los datos IFC de un elemento (atributos + property/quantity sets). Devuelve una promesa.', getValidation: 'Obtiene el resumen de validación (Health Score + conteos). Devuelve una promesa.', getStats: 'Conteo de elementos por categoría y modelo — para gráficos de dashboard. Devuelve una promesa.', getIssues: 'Incidencias de validación para una tabla (filtra por severidad / límite). Devuelve una promesa.', checkIds: 'Comprueba el modelo contra un IDS de buildingSMART (.ids XML). Se ejecuta en un worker. Devuelve pass/fail por spec.', screenshot: 'Captura la vista 3D actual como data URL PNG. Devuelve una promesa.', removeModel: 'Descarga un modelo por id.', hideShow: 'Oculta / muestra un conjunto de elementos por expressID.', setCamera: 'Coloca la cámara en una posición mirando en una dirección.', wc: 'O, sin JS — usa la etiqueta:' },
+  en: { getModels: 'List the loaded models. Returns a promise.', getElement: 'Fetch an element’s IFC data (attributes + property/quantity sets). Returns a promise.', getValidation: 'Fetch the current validation summary (Health Score + counts). Returns a promise.', getStats: 'Per-category element counts per model — for dashboard charts. Returns a promise.', getIssues: 'Validation issues for a table (filter by severity / limit). Returns a promise.', checkIds: 'Check the model against a buildingSMART IDS (.ids XML). Runs in a worker. Returns pass/fail per spec.', checkEir: 'Check the model against an EIR / BIM Validation profile (object or JSON, incl. the compact shorthand). Compiles to IDS and runs on the same engine — same IdsResult shape as checkIds.', screenshot: 'Capture the current 3D view as a PNG data URL. Returns a promise.', removeModel: 'Unload a model by id.', hideShow: 'Hide / show a set of elements by expressID.', setCamera: 'Place the camera at a position looking along a direction.', wc: 'Or, zero-JS — drop the tag:' },
+  es: { getModels: 'Lista los modelos cargados. Devuelve una promesa.', getElement: 'Obtiene los datos IFC de un elemento (atributos + property/quantity sets). Devuelve una promesa.', getValidation: 'Obtiene el resumen de validación (Health Score + conteos). Devuelve una promesa.', getStats: 'Conteo de elementos por categoría y modelo — para gráficos de dashboard. Devuelve una promesa.', getIssues: 'Incidencias de validación para una tabla (filtra por severidad / límite). Devuelve una promesa.', checkIds: 'Comprueba el modelo contra un IDS de buildingSMART (.ids XML). Se ejecuta en un worker. Devuelve pass/fail por spec.', checkEir: 'Comprueba el modelo contra un perfil de validación EIR / BIM (objeto o JSON, incl. el formato compacto). Compila a IDS y usa el mismo motor — mismo IdsResult que checkIds.', screenshot: 'Captura la vista 3D actual como data URL PNG. Devuelve una promesa.', removeModel: 'Descarga un modelo por id.', hideShow: 'Oculta / muestra un conjunto de elementos por expressID.', setCamera: 'Coloca la cámara en una posición mirando en una dirección.', wc: 'O, sin JS — usa la etiqueta:' },
   de: { getModels: 'Listet die geladenen Modelle. Gibt ein Promise zurück.', getElement: 'Liefert die IFC-Daten eines Elements (Attribute + Property-/Quantity-Sets). Gibt ein Promise zurück.', getValidation: 'Liefert die aktuelle Validierungs-Zusammenfassung (Health Score + Zähler). Gibt ein Promise zurück.', getStats: 'Elementanzahl je Kategorie und Modell — für Dashboard-Diagramme. Gibt ein Promise zurück.', getIssues: 'Validierungsmeldungen für eine Tabelle (Filter nach Schweregrad / Limit). Gibt ein Promise zurück.', screenshot: 'Erfasst die aktuelle 3D-Ansicht als PNG-Data-URL. Gibt ein Promise zurück.', removeModel: 'Entlädt ein Modell per id.', hideShow: 'Blendet eine Menge von Elementen per expressID aus / ein.', setCamera: 'Positioniert die Kamera an einer Position mit Blickrichtung.', wc: 'Oder ganz ohne JS — das Tag:' },
   fr: { getModels: 'Liste les modèles chargés. Renvoie une promesse.', getElement: "Récupère les données IFC d'un élément (attributs + property/quantity sets). Renvoie une promesse.", getValidation: 'Récupère le résumé de validation (Health Score + compteurs). Renvoie une promesse.', getStats: 'Nombre d’éléments par catégorie et par modèle — pour les graphiques. Renvoie une promesse.', getIssues: 'Anomalies de validation pour un tableau (filtre par sévérité / limite). Renvoie une promesse.', screenshot: 'Capture la vue 3D actuelle en data URL PNG. Renvoie une promesse.', removeModel: 'Décharge un modèle par id.', hideShow: 'Masque / affiche un ensemble d’éléments par expressID.', setCamera: 'Place la caméra à une position regardant dans une direction.', wc: 'Ou, sans JS — la balise :' },
   pt: { getModels: 'Lista os modelos carregados. Devolve uma promessa.', getElement: 'Obtém os dados IFC de um elemento (atributos + property/quantity sets). Devolve uma promessa.', getValidation: 'Obtém o resumo de validação (Health Score + contagens). Devolve uma promessa.', getStats: 'Contagem de elementos por categoria e modelo — para gráficos. Devolve uma promessa.', getIssues: 'Problemas de validação para uma tabela (filtra por severidade / limite). Devolve uma promessa.', screenshot: 'Captura a vista 3D atual como data URL PNG. Devolve uma promessa.', removeModel: 'Descarrega um modelo por id.', hideShow: 'Oculta / mostra um conjunto de elementos por expressID.', setCamera: 'Coloca a câmara numa posição a olhar numa direção.', wc: 'Ou, sem JS — use a etiqueta:' },
@@ -441,13 +441,13 @@ Object.assign(T.en, {
   con1T: 'Mount & ready', con1B: 'new IfcViewer(target) mounts immediately and queues commands until the viewer is ready. await IfcViewer.create(target) (or whenReady()) gives you an instance you can use straight away.',
   con2T: 'Bytes vs. URL', con2B: 'add(name, bytes) streams bytes you already have — no CORS, nothing uploaded; the buffer is transferred (detached), so pass a copy if you still need it. addFromUrl(url) fetches a public, CORS-enabled URL instead.',
   con3T: 'Events', con3B: 'Subscribe with on(event, cb), which returns an unsubscribe function. You get ready, model-progress, model-loaded, validation-completed, model-error and element-selected.',
-  con4T: 'Queries', con4B: 'Pull data on demand: getModels, getElement, getValidation, getStats, getIssues, checkIds, screenshot. Each is request/response and rejects after a timeout (30 s; IDS up to 120 s).',
+  con4T: 'Queries', con4B: 'Pull data on demand: getModels, getElement, getValidation, getStats, getIssues, checkIds, checkEir, screenshot. Each is request/response and rejects after a timeout (30 s; IDS / EIR up to 120 s).',
   // api
   apiKicker: 'Reference', apiTitle: 'API reference',
   apiLede: 'Every method, grouped — with signatures and return types. Constructor options, events and the <ifc-viewer> web component follow.',
   colReturns: 'Returns',
   grpConstruct: 'Constructor', grpLoading: 'Loading models', grpCamera: 'Camera & selection',
-  grpVisibility: 'Visibility', grpQueries: 'Queries', grpIds: 'IDS compliance', grpLang: 'Languages',
+  grpVisibility: 'Visibility', grpQueries: 'Queries', grpIds: 'IDS & EIR compliance', grpLang: 'Languages',
   grpLifecycle: 'Lifecycle & events', grpOptions: 'Constructor options', grpEvents: 'Events', grpWc: 'Web component',
   colOption: 'Option', colType: 'Type', colDefault: 'Default', colEvent: 'Event', colPayload: 'Payload',
   mCreate: 'Create a viewer and resolve once it is ready to accept commands.',
@@ -481,6 +481,7 @@ Object.assign(T.en, {
   rec3T: 'IDS compliance check', rec3B: 'Validate against a buildingSMART IDS and list pass / fail per spec.',
   rec4T: 'Theme to your brand', rec4B: 'Match the viewer to your product with one accent colour.',
   rec5T: 'Language picker', rec5B: 'Build a selector from the languages the viewer ships with.',
+  rec6T: 'EIR / BIM Validation', rec6B: 'Run an editable EIR profile (ISO 19650-style) — no .ids file needed. Failures carry the element GlobalId.',
   // troubleshooting
   faqKicker: 'Help', faqTitle: 'Troubleshooting', faqLede: 'The handful of things that trip people up.',
   faqCorsQ: 'I get a CORS error loading a model',
@@ -602,6 +603,7 @@ const API_GROUPS = [
   ]],
   ['ids', 'grpIds', [
     ['checkIds(idsXml)', 'Promise<IdsResult>', 'checkIds'],
+    ['checkEir(profile)', 'Promise<IdsResult>', 'checkEir'],
   ]],
   ['lang', 'grpLang', [
     ['setLanguage(lang)', 'void', 'setLanguage'],
@@ -747,6 +749,21 @@ const res = await viewer.checkIds(ids);     // runs in a worker
 res.specs.forEach((spec) => {
   row(spec.name, spec.status, spec.passedCount + "/" + spec.applicableCount);
   spec.failures.forEach((f) => onClick(() => viewer.select(f.expressId, f.modelId)));
+});`
+
+const REC_EIR =
+`// An editable EIR profile — object, JSON, or the compact shorthand below.
+const profile = {
+  name: "Door QA",
+  rules: [
+    { type: "requiredProperty", entity: "IfcDoor", property: "FireRating", severity: "error" },
+    { type: "allowedValues", entity: "IfcDoor", property: "FireRating",
+      values: ["EI30", "EI60", "EI90"], severity: "warning" },
+  ],
+};
+const res = await viewer.checkEir(profile);   // same IdsResult as checkIds
+res.specs.forEach((spec) => {
+  spec.failures.forEach((f) => row(spec.name, f.globalId, f.reasons.join(" · ")));
 });`
 
 const REC_THEME =
@@ -931,6 +948,7 @@ function page(lang) {
     recipe('rec1T', 'rec1B', REC_INSPECTOR) +
     recipe('rec2T', 'rec2B', REC_HEALTH) +
     recipe('rec3T', 'rec3B', REC_IDS) +
+    recipe('rec6T', 'rec6B', REC_EIR) +
     recipe('rec4T', 'rec4B', REC_THEME) +
     recipe('rec5T', 'rec5B', REC_LANG) +
     '</section>'

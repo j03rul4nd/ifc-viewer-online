@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import { LanguageSelector } from './LanguageSelector'
@@ -40,7 +39,8 @@ interface ToolbarProps {
   onOpenHelp: () => void
 }
 
-// ── Desktop button (text + icon) ──────────────────────────────────────────────
+// ── Button component ──────────────────────────────────────────────────────────
+// h-[28px] to fit within the 44px structural bar (8px top+bottom breathing room)
 const Btn = ({
   icon: Icon, children, onClick, disabled, variant = 'ghost', title,
 }: {
@@ -51,44 +51,19 @@ const Btn = ({
   variant?: 'ghost' | 'secondary' | 'primary'
   title?: string
 }) => {
-  const base = 'inline-flex items-center gap-1.5 px-2.5 h-[30px] rounded-[7px] text-[13px] font-medium transition-all duration-100 whitespace-nowrap select-none min-w-[30px] justify-center'
+  const base = 'inline-flex items-center gap-1.5 px-2.5 h-[28px] rounded-[5px] text-[12px] font-medium transition-colors duration-100 whitespace-nowrap select-none min-w-[28px] justify-center'
   const variants = {
-    ghost:     'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:bg-[var(--surface-2)] disabled:opacity-40',
-    secondary: 'bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)] hover:brightness-110 active:brightness-90 disabled:opacity-40',
-    primary:   'bg-[var(--accent)] text-white hover:brightness-110 active:brightness-95 disabled:opacity-40',
+    ghost:     'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:opacity-80 disabled:opacity-35 disabled:cursor-not-allowed',
+    secondary: 'bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)] hover:brightness-110 active:brightness-90 disabled:opacity-35 disabled:cursor-not-allowed',
+    primary:   'bg-[var(--accent)] text-white hover:brightness-110 active:brightness-95 disabled:opacity-35 disabled:cursor-not-allowed',
   }
   return (
     <button onClick={onClick} disabled={disabled} title={title} className={`${base} ${variants[variant]}`}>
-      {Icon && <Icon size={14} />}
+      {Icon && <Icon size={13} />}
       {children}
     </button>
   )
 }
-
-// ── Mobile icon-only button ───────────────────────────────────────────────────
-const IBtn = ({
-  children, onClick, disabled, active = false, title,
-}: {
-  children: React.ReactNode
-  onClick?: () => void
-  disabled?: boolean
-  active?: boolean
-  title?: string
-}) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    title={title}
-    className={[
-      'relative inline-flex items-center justify-center w-[36px] h-[36px] rounded-[8px] transition-all duration-100 select-none shrink-0 active:scale-95',
-      active
-        ? 'bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)]'
-        : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] disabled:opacity-40',
-    ].join(' ')}
-  >
-    {children}
-  </button>
-)
 
 // ── Shared export dropdown ────────────────────────────────────────────────────
 function ExportDropdown({
@@ -126,21 +101,21 @@ function ExportDropdown({
   )
 }
 
-// ── Grouped dropdown menu (trigger + popover) ─────────────────────────────────
-// Used for the "View" and "Tools" clusters and the "⋯ More" overflow so the bar
-// collapses cleanly instead of overflowing on laptops. `data-toolbar-menu` lets a
-// single document-level handler (in <Toolbar>) close whichever menu is open.
+// ── Grouped dropdown menu ─────────────────────────────────────────────────────
+// `data-toolbar-menu` lets a single document-level handler close whichever menu
+// is open. The `disabled` prop prevents opening the popover (trigger stays visible
+// so the toolbar layout never shifts — items are just not reachable).
 
 type MenuId = 'view' | 'tools' | 'more' | 'export'
 
 const CaretSVG = (
-  <svg width="9" height="9" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-60 shrink-0">
+  <svg width="8" height="8" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 shrink-0">
     <path d="M3 5l4 4 4-4" />
   </svg>
 )
 
 function ToolMenu({
-  id, openMenu, setOpenMenu, icon, label, title, dot = false, align = 'left', children,
+  id, openMenu, setOpenMenu, icon, label, title, dot = false, align = 'left', disabled = false, children,
 }: {
   id: MenuId
   openMenu: MenuId | null
@@ -150,28 +125,32 @@ function ToolMenu({
   title?: string
   dot?: boolean
   align?: 'left' | 'right'
+  disabled?: boolean
   children: React.ReactNode
 }) {
-  const open = openMenu === id
+  const open = openMenu === id && !disabled
   return (
-    <div data-toolbar-menu className="relative pointer-events-auto shrink-0">
+    <div data-toolbar-menu className="relative shrink-0">
       <button
-        onClick={() => setOpenMenu(open ? null : id)}
+        onClick={() => { if (!disabled) setOpenMenu(open ? null : id) }}
+        disabled={disabled}
         title={title}
         aria-haspopup="menu"
         aria-expanded={open}
         className={[
-          'relative inline-flex items-center gap-1.5 h-[30px] px-2.5 rounded-[7px] text-[13px] font-medium transition-all duration-100 whitespace-nowrap select-none',
+          'relative inline-flex items-center gap-1.5 h-[28px] px-2.5 rounded-[5px] text-[12px] font-medium transition-colors duration-100 whitespace-nowrap select-none',
           open
             ? 'bg-[var(--surface-2)] text-[var(--text)] border border-[var(--border-strong)]'
-            : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] border border-transparent',
+            : disabled
+              ? 'text-[var(--text-faint)] cursor-not-allowed border border-transparent'
+              : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] border border-transparent',
         ].join(' ')}
       >
         {icon}
-        {label && <span className="hidden lg:inline">{label}</span>}
+        {label && <span>{label}</span>}
         {CaretSVG}
-        {dot && !open && (
-          <span className="absolute top-1 right-1 w-[6px] h-[6px] rounded-full bg-[var(--accent)]" />
+        {dot && !open && !disabled && (
+          <span className="absolute top-[5px] right-[5px] w-[4px] h-[4px] rounded-full bg-[var(--accent)]" />
         )}
       </button>
       {open && (
@@ -225,6 +204,23 @@ function MenuDivider() {
   return <div className="my-1 mx-2 h-px bg-[var(--border)]" />
 }
 
+// ── Toolbar zone divider ──────────────────────────────────────────────────────
+function ZoneDivider({ className = '' }: { className?: string }) {
+  return <div className={`w-px h-5 bg-[var(--border)] shrink-0 mx-3 ${className}`} />
+}
+
+// ── Inline divider (within a zone, between siblings) ─────────────────────────
+function InlineDivider() {
+  return <div className="w-px h-4 bg-[var(--border)] shrink-0 mx-1" />
+}
+
+// ── Health score color ────────────────────────────────────────────────────────
+function scoreColor(score: number): string {
+  if (score >= 90) return 'var(--ok)'
+  if (score >= 70) return 'var(--warn)'
+  return 'var(--danger)'
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Toolbar({
@@ -242,7 +238,9 @@ export default function Toolbar({
 
   const { diffs, canUndo, canRedo } = useEditorStore()
   const { undo, redo }              = useEditorHistory()
-  const { validationMode, toggleValidationMode } = useValidationStore()
+  const { validationMode, toggleValidationMode, result } = useValidationStore()
+  const qualityScore = result?.qualityScore ?? null
+
   const {
     treeVisible, setTreeVisible, openSidebarLegend, scenePanelOpen, toggleScenePanel,
     measurementPanelOpen, toggleMeasurementPanel, activeMeasurementTool,
@@ -264,9 +262,7 @@ export default function Toolbar({
   const [openMenu, setOpenMenu]   = useState<MenuId | null>(null)
   const [exporting, setExporting] = useState(false)
 
-  // Close whichever menu is open on outside click or Escape. Every menu wrapper
-  // (View / Tools / More / Export) carries `data-toolbar-menu`, so a click that
-  // isn't inside one of them dismisses the popover.
+  // Close menu on outside click or Escape
   useEffect(() => {
     if (!openMenu) return
     const onDown = (e: MouseEvent): void => {
@@ -281,7 +277,7 @@ export default function Toolbar({
     }
   }, [openMenu])
 
-  // Single-model export (used when only 1 model loaded)
+  // Single-model IFC export
   const handleExportIfc = async (): Promise<void> => {
     setExporting(true); setOpenMenu(null)
     try {
@@ -334,15 +330,15 @@ export default function Toolbar({
     }
   }
 
-  // SVGs reused in both rows
+  // ── SVG assets (unchanged) ────────────────────────────────────────────────
   const ValidateSVG = (
-    <svg width="15" height="15" viewBox="0 0 14 14" fill="currentColor">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
       <path d="M2 2h10v2H2zM2 6h7v2H2zM2 10h4v2H2z" opacity="0.6"/>
       <path d="M10 8l3 2-3 2V8z" />
     </svg>
   )
   const SpinSVG = (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
       strokeLinecap="round" className="animate-spin opacity-70">
       <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
       <path d="M12 2a10 10 0 0 1 7.07 2.93" />
@@ -377,7 +373,7 @@ export default function Toolbar({
     </svg>
   )
   const DownloadSVG = (
-    <svg width="15" height="15" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
       <path d="M6.5 1v7M3.5 5.5l3 3.5 3-3.5M1 10v2h11v-2" />
     </svg>
   )
@@ -416,270 +412,330 @@ export default function Toolbar({
     </svg>
   )
   const ViewMenuSVG = (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
       <rect x="1" y="1.5" width="12" height="11" rx="1.5"/>
       <line x1="5" y1="1.5" x2="5" y2="12.5"/>
     </svg>
   )
   const ToolsMenuSVG = (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9.2 2.3a2.6 2.6 0 0 0-3 3.4L2 9.9l1.6 1.6 4.2-4.2a2.6 2.6 0 0 0 3.4-3l-1.7 1.7-1.3-1.3 1.7-1.7z"/>
     </svg>
   )
   const MoreSVG = (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
       <circle cx="3" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="13" cy="8" r="1.4"/>
     </svg>
   )
+  const OverlaySVG = (
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 7c1.5-3 3.5-4.5 6-4.5S11.5 4 13 7c-1.5 3-3.5 4.5-6 4.5S2.5 10 1 7z"/>
+      <circle cx="7" cy="7" r="1.8" fill="currentColor" stroke="none" opacity="0.7"/>
+    </svg>
+  )
 
-  // Active-state dots on the collapsed menu triggers
+  // Active-state dots on collapsed menu triggers
   const viewActive  = scenePanelOpen
   const toolsActive =
     measurementPanelOpen || clipPanelOpen || plansPanelOpen || geoPanelOpen ||
     activeMeasurementTool !== 'none' || clipPlaneCount > 0 || !!activePlanViewId || mapModeOn
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="relative z-10 flex flex-col md:flex-row md:items-center gap-1 md:gap-1.5 px-2 xs:px-3 pt-2 pb-1.5 md:py-3 pointer-events-none"
+  // Issue count chip (reused in two places)
+  const IssueChip = hasIssues && !isRunning ? (
+    <span
+      className="px-1.5 py-0.5 text-[9px] font-mono rounded leading-none tabular-nums shrink-0"
+      style={{
+        background: errorCount > 0 ? 'var(--danger)22' : '#F5A62322',
+        color:      errorCount > 0 ? 'var(--danger)'   : '#F5A623',
+        border:     `1px solid ${errorCount > 0 ? 'var(--danger)33' : '#F5A62333'}`,
+      }}
     >
+      {errorCount > 0 ? `${errorCount}E` : issueCount}
+    </span>
+  ) : null
 
-      {/* ── Row 1: Branding (always) + Desktop actions (md+) ── */}
-      <div className="flex items-center gap-1.5 min-w-0">
+  return (
+    // Structural bar — not floating. Takes space in the flex column.
+    // bg-[var(--surface)] + border-b gives the same treatment as VS Code / Linear.
+    // No glass, no rounded pill containers, no pointer-events trick.
+    <div className="relative flex items-center h-[44px] bg-[var(--surface)] border-b border-[var(--border)] pl-3 pr-2 select-none shrink-0">
 
-        {/* Logo pill */}
-        <div className="flex items-center gap-2 glass-md border border-[var(--border)] rounded-[10px] px-2 xs:px-2.5 py-1.5 pointer-events-auto shrink-0 min-w-0"
-          style={{ maxWidth: 'clamp(140px, 38vw, 260px)' }}>
-          <Icons.Logo size={18} className="shrink-0" />
-          <div className="flex flex-col leading-none gap-0.5 min-w-0">
-            <div className="text-[12px] font-semibold tracking-tight whitespace-nowrap">IFC Validator</div>
-            <div className="flex items-center gap-1 min-w-0 text-[10px] text-[var(--text-faint)] font-mono">
-              {/* Desktop folds the load status into the logo (no separate status chip) */}
-              {loadingState !== 'idle' && (
-                <span className="hidden md:inline shrink-0" style={{ color: statusColor }}>●</span>
-              )}
-              <span className="truncate">{fileName ?? tCommon('file.noFileLoaded')}</span>
-              {loadingState === 'loaded' && elementCount > 0 && (
-                <span className="hidden md:inline shrink-0"> · {elementCount.toLocaleString()}</span>
-              )}
+      {/* ── Full-width validation progress track ──────────────────────────────
+          Sits at the absolute bottom edge of the 44px bar. During `isRunning`
+          the user always knows validation is in progress, regardless of where
+          they're looking. Indeterminate (sweep) when progress === 0, determinate
+          otherwise. */}
+      {isRunning && (
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden pointer-events-none">
+          {validationProgress > 0 ? (
+            <div
+              className="h-full bg-[var(--accent)] transition-[width] duration-300 ease-out"
+              style={{ width: `${validationProgress}%` }}
+            />
+          ) : (
+            <div className="relative h-full w-full bg-[var(--accent)]/15">
+              <div className="absolute h-full w-[35%] bg-[var(--accent)]/75 animate-toolbar-sweep" />
             </div>
-          </div>
+          )}
         </div>
+      )}
 
-        {/* ── Mobile-only: spacer + status dot ── */}
-        <div className="flex-1 md:hidden" />
-
-        {/* Mobile status dot */}
-        {loadingState !== 'idle' && (
-          <div className="md:hidden flex items-center gap-1.5 h-[36px] px-2.5 glass-md border border-[var(--border)] rounded-[10px] pointer-events-auto shrink-0">
-            <span className="font-mono text-[13px]" style={{ color: statusColor }}>●</span>
-            <span className="hidden xs:inline text-[11px] text-[var(--text-dim)] whitespace-nowrap">
-              {statusLabel}
-              {loadingState === 'loaded' && elementCount > 0 && (
-                <span className="font-mono text-[var(--text-faint)]"> · {elementCount.toLocaleString()}</span>
-              )}
+      {/* ══ ZONE A — Identity + model context ════════════════════════════════
+          Logo · app name (always visible)
+          Desktop: + status dot · filename · element count
+          Mobile:  status dot moves to the right side                        */}
+      <div className="flex items-center gap-2 shrink-0 min-w-0">
+        <Icons.Logo size={18} className="shrink-0" />
+        {/* App name: always visible */}
+        <span className="text-[12px] font-semibold tracking-tight text-[var(--text)] whitespace-nowrap hidden xs:inline">
+          IFC Validator
+        </span>
+        {/* Model context: desktop only */}
+        <div className="hidden md:flex items-center gap-1.5 min-w-0">
+          {loadingState !== 'idle' && (
+            <span
+              className="w-[5px] h-[5px] rounded-full shrink-0"
+              style={{ background: statusColor }}
+            />
+          )}
+          <span className="text-[11px] font-mono text-[var(--text-faint)] truncate max-w-[180px]">
+            {fileName ?? tCommon('file.noFileLoaded')}
+          </span>
+          {loadingState === 'loaded' && elementCount > 0 && (
+            <span className="text-[11px] font-mono text-[var(--text-faint)] shrink-0">
+              · {elementCount.toLocaleString()}
             </span>
-          </div>
-        )}
-
-        {/* ── Desktop-only: grouped, prioritized actions (md+) ──
-            4 zones that never overflow: identity (logo) · primary spine ·
-            grouped View/Tools menus · output + meta. Labels collapse below lg. */}
-        <div className="hidden md:flex items-center gap-1.5 flex-1 min-w-0">
-
-          {/* Zone B — Primary spine: the product promise (open → validate → IDS) */}
-          <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto shrink-0">
-            <Btn icon={Icons.Upload} onClick={onUpload} title={t('openFile')}>
-              <span className="hidden lg:inline">{t('open')}</span>
-            </Btn>
-            <div className="w-px h-[18px] bg-[var(--border)]" />
-
-            {/* Validate — the hero action, accent-filled when actionable */}
-            <div className="relative">
-              <Btn
-                onClick={isRunning ? cancelValidation : () => void runValidation(undefined, undefined, true)}
-                disabled={!isRunning && !canRun}
-                variant={canRun || isRunning ? 'primary' : 'ghost'}
-                title={isRunning ? t('cancelValidation') : validationStatus === 'error' ? t('validationFailed') : t('runValidation')}
-              >
-                {isRunning ? SpinSVG : ValidateSVG}
-                {isRunning
-                  ? (validationProgress > 0 ? t('validationProgress', { progress: validationProgress }) : t('validating'))
-                  : validationStatus === 'error' ? t('retry') : t('validate')}
-                {/* Issue count badge — lives on the Validate button so it's obviously the result */}
-                {hasIssues && !isRunning && (
-                  <span
-                    className="px-1 py-0.5 text-[9px] font-mono rounded leading-none tabular-nums"
-                    style={{
-                      background: errorCount > 0 ? 'var(--danger)22' : '#F5A62322',
-                      color:      errorCount > 0 ? 'var(--danger)'   : '#F5A623',
-                      border:     `1px solid ${errorCount > 0 ? 'var(--danger)33' : '#F5A62333'}`,
-                    }}
-                  >
-                    {errorCount > 0 ? `${errorCount}E` : issueCount}
-                  </span>
-                )}
-              </Btn>
-              {isRunning && validationProgress > 0 && (
-                <div
-                  className="absolute bottom-0 left-0 h-[2px] bg-white/70 rounded-full transition-all duration-300 pointer-events-none"
-                  style={{ width: `${validationProgress}%` }}
-                />
-              )}
-            </div>
-
-            {/* Overlay toggle — eye icon + count (no label) keeps it tight next to Validate */}
-            <Btn
-              onClick={() => {
-                // Mutual exclusion with the IDS overlay (shared viewer channel):
-                // turning validation ON turns IDS highlights OFF.
-                if (!validationMode && useIdsStore.getState().highlightMode) {
-                  useIdsStore.getState().setHighlightMode(false)
-                }
-                toggleValidationMode()
-              }}
-              disabled={!hasIssues}
-              title={validationMode ? t('overlayOn') : t('overlayOff')}
-              variant={validationMode ? 'secondary' : 'ghost'}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M1 7c1.5-3 3.5-4.5 6-4.5S11.5 4 13 7c-1.5 3-3.5 4.5-6 4.5S2.5 10 1 7z"/>
-                <circle cx="7" cy="7" r="1.8" fill="currentColor" stroke="none" opacity="0.7"/>
-              </svg>
-              {hasIssues && (
-                <span
-                  className="text-[10px] font-mono tabular-nums leading-none"
-                  style={{ color: validationMode ? (errorCount > 0 ? 'var(--danger)' : '#F5A623') : 'var(--text-faint)' }}
-                >
-                  {issueCount}
-                </span>
-              )}
-            </Btn>
-
-            <div className="w-px h-[18px] bg-[var(--border)]" />
-            <Btn onClick={onOpenIds} title={t('idsTooltip')} disabled={!canRun}>
-              <Icons.Shield size={14} />
-              <span className="hidden lg:inline">{t('ids')}</span>
-            </Btn>
-          </div>
-
-          {/* Zone C — grouped View / Tools menus (only once a model is loaded) */}
-          {canRun && (
-            <div className="flex items-center gap-0.5 glass-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto shrink-0">
-              <ToolMenu
-                id="view" openMenu={openMenu} setOpenMenu={setOpenMenu}
-                icon={ViewMenuSVG} label={t('view')} title={t('viewMenu')} dot={viewActive}
-              >
-                <MenuItem icon={TreeSVG} label={t('tree')} active={treeVisible}
-                  onClick={() => { setTreeVisible(!treeVisible); setOpenMenu(null) }} />
-                <MenuItem icon={SceneSVG} label={t('scene')} active={scenePanelOpen}
-                  badge={sceneModels.length > 0 ? sceneModels.length : undefined}
-                  onClick={() => { toggleScenePanel(); setOpenMenu(null) }} />
-                <MenuItem icon={<Icons.Isolate size={15} />} label={t('isolate')} disabled={!canIsolate}
-                  onClick={() => { onIsolate(); setOpenMenu(null) }} />
-                <MenuItem icon={<Icons.Reset size={15} />} label={t('reset')}
-                  onClick={() => { onReset(); setOpenMenu(null) }} />
-                <MenuItem icon={LegendSVG(15)} label={t('legend')}
-                  onClick={() => { openSidebarLegend(); setOpenMenu(null) }} />
-                <MenuDivider />
-                <MenuItem icon={UndoSVG(15)} label={t('undo')} disabled={!canUndo}
-                  onClick={() => { undo(); setOpenMenu(null) }} />
-                <MenuItem icon={RedoSVG(15)} label={t('redo')} disabled={!canRedo}
-                  onClick={() => { redo(); setOpenMenu(null) }} />
-              </ToolMenu>
-              <ToolMenu
-                id="tools" openMenu={openMenu} setOpenMenu={setOpenMenu}
-                icon={ToolsMenuSVG} label={t('tools')} title={t('toolsMenu')} dot={toolsActive}
-              >
-                <MenuItem icon={MeasureSVG} label={t('measure')} active={measurementPanelOpen}
-                  badge={activeMeasurementTool !== 'none' ? '●' : undefined}
-                  onClick={() => { toggleMeasurementPanel(); setOpenMenu(null) }} />
-                <MenuItem icon={SectionSVG} label={t('section')} active={clipPanelOpen}
-                  badge={clipPlaneCount > 0 ? clipPlaneCount : undefined}
-                  onClick={() => { toggleClipPanel(); setOpenMenu(null) }} />
-                <MenuItem icon={PlansSVG} label={t('plans')} active={plansPanelOpen}
-                  badge={activePlanViewId ? '●' : undefined}
-                  onClick={() => { togglePlansPanel(); setOpenMenu(null) }} />
-                {isGisEnabled() && (
-                  <MenuItem icon={MapSVG} label={t('map')} active={geoPanelOpen || mapModeOn}
-                    badge={mapModeOn ? '●' : undefined}
-                    onClick={() => { toggleGeoPanel(); setOpenMenu(null) }} />
-                )}
-              </ToolMenu>
-            </div>
           )}
-
-          <div className="flex-1" />
-
-          {/* Zone D — output + meta */}
-          {/* Export */}
-          {canRun && (
-            <div data-toolbar-menu className="relative pointer-events-auto shrink-0">
-              <button
-                onClick={handleExportClick}
-                disabled={exporting}
-                title={t('export')}
-                className="flex items-center gap-1.5 h-[30px] px-2.5 glass-md border rounded-[10px] text-[13px] font-medium transition-colors hover:text-[var(--text)] active:brightness-110 whitespace-nowrap"
-                style={{
-                  borderColor: diffs.length > 0 ? 'var(--accent)' : 'var(--border)',
-                  color:       diffs.length > 0 ? 'var(--accent)' : 'var(--text-dim)',
-                }}
-              >
-                {DownloadSVG}
-                <span className="hidden lg:inline">{t('export')}</span>
-                {diffs.length > 0 && (
-                  <span className="px-1.5 py-0.5 text-[9px] font-mono rounded-full bg-[var(--accent)] text-white leading-none">
-                    {diffs.length}
-                  </span>
-                )}
-                {sceneModels.length > 1
-                  ? (
-                    <span className="text-[10px] font-mono text-[var(--text-faint)]">
-                      {sceneModels.length}
-                    </span>
-                  )
-                  : CaretSVG}
-              </button>
-              {openMenu === 'export' && sceneModels.length <= 1 && (
-                <ExportDropdown
-                  diffs={diffs.length}
-                  onExportIfc={() => void handleExportIfc()}
-                  onExportGlb={() => void handleExportGlb()}
-                />
-              )}
-            </div>
-          )}
-
-          {/* More — overflow menu: embed, demo, help */}
-          <div className="glass-md border border-[var(--border)] rounded-[10px] p-1 pointer-events-auto shrink-0">
-            <ToolMenu
-              id="more" openMenu={openMenu} setOpenMenu={setOpenMenu}
-              icon={MoreSVG} title={t('more')} align="right"
-            >
-              {canRun && (
-                <MenuItem icon={<Icons.Code size={15} />} label={t('embed')}
-                  onClick={() => { onOpenEmbed(); setOpenMenu(null) }} />
-              )}
-              <MenuItem icon={<Icons.Layers size={15} />} label={t('demo')}
-                onClick={() => { onOpenDemoGallery(); setOpenMenu(null) }} />
-              <MenuItem
-                icon={<span className="text-[13px] font-bold font-mono leading-none">?</span>}
-                label={tCommon('shortcuts.title')}
-                onClick={() => { onOpenHelp(); setOpenMenu(null) }} />
-            </ToolMenu>
-          </div>
-
-          {/* Language selector */}
-          <div className="glass-md border border-[var(--border)] rounded-[10px] px-1 py-1 pointer-events-auto shrink-0">
-            <LanguageSelector />
-          </div>
         </div>
       </div>
 
-      {/* ── Row 2: hidden on mobile (MobileBottomNav handles actions) ── */}
+      <ZoneDivider className="hidden md:block" />
 
-    </motion.div>
+      {/* ══ ZONE B — Primary actions ══════════════════════════════════════════
+          Open and Validate are the two actions that define every session.
+          Validate is the only accent-filled element in the bar when actionable —
+          it should be immediately identifiable in under one second.            */}
+      <div className="hidden md:flex items-center gap-0.5 shrink-0">
+        <Btn icon={Icons.Upload} onClick={onUpload} title={t('openFile')}>
+          {t('open')}
+        </Btn>
+
+        <InlineDivider />
+
+        {/* Validate — hero action. Primary fill only when canRun or running.
+            Issue count chip sits OUTSIDE the button to avoid crowding the label. */}
+        <Btn
+          onClick={isRunning ? cancelValidation : () => void runValidation(undefined, undefined, true)}
+          disabled={!isRunning && !canRun}
+          variant={canRun || isRunning ? 'primary' : 'ghost'}
+          title={isRunning ? t('cancelValidation') : validationStatus === 'error' ? t('validationFailed') : t('runValidation')}
+        >
+          {isRunning ? SpinSVG : ValidateSVG}
+          {isRunning
+            ? (validationProgress > 0 ? t('validationProgress', { progress: validationProgress }) : t('validating'))
+            : validationStatus === 'error' ? t('retry') : t('validate')}
+        </Btn>
+
+        {/* Issue chip — adjacent to Validate, not inside it */}
+        {IssueChip && <div className="ml-1">{IssueChip}</div>}
+      </div>
+
+      {/* ── Health Score chip — appears after validation completes ────────────
+          This is the product's primary metric. It belongs in the persistent
+          toolbar so the user can orient themselves at a glance after returning
+          from another tab or opening a second model.                          */}
+      {qualityScore !== null && !isRunning && (
+        <>
+          <ZoneDivider className="hidden md:block" />
+          <div className="hidden md:flex items-center gap-2 shrink-0" title={`Health Score: ${qualityScore}/100`}>
+            <span className="text-[10px] font-medium text-[var(--text-faint)] uppercase tracking-wider leading-none">
+              Score
+            </span>
+            <span
+              className="text-[15px] font-bold font-mono tabular-nums leading-none"
+              style={{ color: scoreColor(qualityScore) }}
+            >
+              {qualityScore}
+            </span>
+          </div>
+        </>
+      )}
+
+      <ZoneDivider className="hidden md:block" />
+
+      {/* ══ ZONE C — Analysis layer (viewport state controls) ════════════════
+          These buttons control what the 3D canvas shows — they modify the view,
+          not the model. Conceptually distinct from Zone B (running analyses).  */}
+      <div className="hidden md:flex items-center gap-0.5 shrink-0">
+        <Btn
+          onClick={() => {
+            if (!validationMode && useIdsStore.getState().highlightMode) {
+              useIdsStore.getState().setHighlightMode(false)
+            }
+            toggleValidationMode()
+          }}
+          disabled={!hasIssues}
+          title={validationMode ? t('overlayOn') : t('overlayOff')}
+          variant={validationMode ? 'secondary' : 'ghost'}
+        >
+          {OverlaySVG}
+          {t('overlay')}
+          {hasIssues && !isRunning && (
+            <span
+              className="text-[9px] font-mono tabular-nums leading-none ml-0.5"
+              style={{ color: validationMode ? (errorCount > 0 ? 'var(--danger)' : '#F5A623') : 'var(--text-faint)' }}
+            >
+              {issueCount}
+            </span>
+          )}
+        </Btn>
+
+        <InlineDivider />
+
+        <Btn onClick={onOpenIds} title={t('idsTooltip')} disabled={!canRun}>
+          <Icons.Shield size={13} />
+          {t('ids')}
+        </Btn>
+      </div>
+
+      {/* Flex spacer — pushes right zones to the far end */}
+      <div className="flex-1 hidden md:block" />
+
+      {/* ══ ZONE E — View & Tools menus ═══════════════════════════════════════
+          Always rendered (no layout shift when a model loads). Disabled before
+          a model is loaded — the structure is stable, items are just not usable. */}
+      <div className="hidden md:flex items-center gap-0.5 shrink-0">
+        <ToolMenu
+          id="view" openMenu={openMenu} setOpenMenu={setOpenMenu}
+          icon={ViewMenuSVG} label={t('view')} title={t('viewMenu')}
+          dot={viewActive} disabled={!canRun}
+        >
+          <MenuItem icon={TreeSVG} label={t('tree')} active={treeVisible}
+            onClick={() => { setTreeVisible(!treeVisible); setOpenMenu(null) }} />
+          <MenuItem icon={SceneSVG} label={t('scene')} active={scenePanelOpen}
+            badge={sceneModels.length > 0 ? sceneModels.length : undefined}
+            onClick={() => { toggleScenePanel(); setOpenMenu(null) }} />
+          <MenuItem icon={<Icons.Isolate size={15} />} label={t('isolate')} disabled={!canIsolate}
+            onClick={() => { onIsolate(); setOpenMenu(null) }} />
+          <MenuItem icon={<Icons.Reset size={15} />} label={t('reset')}
+            onClick={() => { onReset(); setOpenMenu(null) }} />
+          <MenuItem icon={LegendSVG(15)} label={t('legend')}
+            onClick={() => { openSidebarLegend(); setOpenMenu(null) }} />
+          <MenuDivider />
+          <MenuItem icon={UndoSVG(15)} label={t('undo')} disabled={!canUndo}
+            onClick={() => { undo(); setOpenMenu(null) }} />
+          <MenuItem icon={RedoSVG(15)} label={t('redo')} disabled={!canRedo}
+            onClick={() => { redo(); setOpenMenu(null) }} />
+        </ToolMenu>
+        <ToolMenu
+          id="tools" openMenu={openMenu} setOpenMenu={setOpenMenu}
+          icon={ToolsMenuSVG} label={t('tools')} title={t('toolsMenu')}
+          dot={toolsActive} disabled={!canRun}
+        >
+          <MenuItem icon={MeasureSVG} label={t('measure')} active={measurementPanelOpen}
+            badge={activeMeasurementTool !== 'none' ? '●' : undefined}
+            onClick={() => { toggleMeasurementPanel(); setOpenMenu(null) }} />
+          <MenuItem icon={SectionSVG} label={t('section')} active={clipPanelOpen}
+            badge={clipPlaneCount > 0 ? clipPlaneCount : undefined}
+            onClick={() => { toggleClipPanel(); setOpenMenu(null) }} />
+          <MenuItem icon={PlansSVG} label={t('plans')} active={plansPanelOpen}
+            badge={activePlanViewId ? '●' : undefined}
+            onClick={() => { togglePlansPanel(); setOpenMenu(null) }} />
+          {isGisEnabled() && (
+            <MenuItem icon={MapSVG} label={t('map')} active={geoPanelOpen || mapModeOn}
+              badge={mapModeOn ? '●' : undefined}
+              onClick={() => { toggleGeoPanel(); setOpenMenu(null) }} />
+          )}
+        </ToolMenu>
+      </div>
+
+      <ZoneDivider className="hidden md:block" />
+
+      {/* ══ ZONE F — Export ═══════════════════════════════════════════════════
+          Accent-tinted border when the model has unsaved edits (diffs > 0) so
+          the user is aware of pending changes without an explicit notification. */}
+      <div data-toolbar-menu className="relative hidden md:flex shrink-0">
+        <button
+          onClick={handleExportClick}
+          disabled={!canRun || exporting}
+          title={t('export')}
+          className={[
+            'flex items-center gap-1.5 h-[28px] px-2.5 rounded-[5px] text-[12px] font-medium transition-colors duration-100 whitespace-nowrap disabled:opacity-35 disabled:cursor-not-allowed',
+            diffs.length > 0
+              ? 'text-[var(--accent)] border border-[var(--accent)]'
+              : 'text-[var(--text-dim)] border border-transparent hover:bg-[var(--surface-2)] hover:text-[var(--text)]',
+          ].join(' ')}
+        >
+          {DownloadSVG}
+          {t('export')}
+          {diffs.length > 0 && (
+            <span className="px-1 py-0.5 text-[9px] font-mono rounded-full bg-[var(--accent)] text-white leading-none tabular-nums">
+              {diffs.length}
+            </span>
+          )}
+          {sceneModels.length > 1
+            ? <span className="text-[10px] font-mono text-[var(--text-faint)]">{sceneModels.length}</span>
+            : CaretSVG}
+        </button>
+        {openMenu === 'export' && sceneModels.length <= 1 && (
+          <ExportDropdown
+            diffs={diffs.length}
+            onExportIfc={() => void handleExportIfc()}
+            onExportGlb={() => void handleExportGlb()}
+          />
+        )}
+      </div>
+
+      {/* ══ ZONE G — Utilities ════════════════════════════════════════════════
+          ··· overflow menu (Embed, Demo, Help) + Language selector.
+          These are the lowest-priority controls — separated from Zone F so they
+          don't compete visually with the output actions.                      */}
+      <div className="hidden md:flex items-center gap-0.5 shrink-0 ml-1">
+        <ToolMenu
+          id="more" openMenu={openMenu} setOpenMenu={setOpenMenu}
+          icon={MoreSVG} title={t('more')} align="right"
+        >
+          {canRun && (
+            <MenuItem icon={<Icons.Code size={15} />} label={t('embed')}
+              onClick={() => { onOpenEmbed(); setOpenMenu(null) }} />
+          )}
+          <MenuItem icon={<Icons.Layers size={15} />} label={t('demo')}
+            onClick={() => { onOpenDemoGallery(); setOpenMenu(null) }} />
+          <MenuItem
+            icon={<span className="text-[13px] font-bold font-mono leading-none">?</span>}
+            label={tCommon('shortcuts.title')}
+            onClick={() => { onOpenHelp(); setOpenMenu(null) }} />
+        </ToolMenu>
+        <InlineDivider />
+        <LanguageSelector />
+      </div>
+
+      {/* ══ MOBILE — spacer + status indicator ═══════════════════════════════
+          Mobile actions are handled by MobileBottomNav. The toolbar on mobile
+          only shows identity + current state so the user can orient themselves. */}
+      <div className="flex-1 md:hidden" />
+      {loadingState !== 'idle' && (
+        <div className="md:hidden flex items-center gap-1.5 px-2">
+          <span className="font-mono text-[12px]" style={{ color: statusColor }}>●</span>
+          <span className="hidden xs:inline text-[11px] text-[var(--text-dim)] whitespace-nowrap">
+            {statusLabel}
+            {loadingState === 'loaded' && elementCount > 0 && (
+              <span className="font-mono text-[var(--text-faint)]"> · {elementCount.toLocaleString()}</span>
+            )}
+          </span>
+        </div>
+      )}
+      {/* Health Score on mobile (compact — just the number) */}
+      {qualityScore !== null && !isRunning && loadingState === 'loaded' && (
+        <div className="md:hidden flex items-center ml-1">
+          <span
+            className="text-[13px] font-bold font-mono tabular-nums"
+            style={{ color: scoreColor(qualityScore) }}
+          >
+            {qualityScore}
+          </span>
+        </div>
+      )}
+    </div>
   )
 }

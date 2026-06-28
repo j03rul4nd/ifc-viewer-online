@@ -127,6 +127,15 @@ body {
   * { scrollbar-width: none; }
 }
 
+/* ── Toolbar progress sweep (indeterminate animation) ───────────────────────── */
+@keyframes toolbar-sweep {
+  0%   { transform: translateX(-150%); }
+  100% { transform: translateX(400%); }
+}
+.animate-toolbar-sweep {
+  animation: toolbar-sweep 1.5s ease-in-out infinite;
+}
+
 /* ── Safe area utilities ────────────────────────────────────────────────────── */
 /* Applied where content must not overlap device notches / home indicators     */
 

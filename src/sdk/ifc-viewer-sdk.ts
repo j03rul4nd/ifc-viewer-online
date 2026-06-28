@@ -117,6 +117,8 @@ export interface IdsSpecResult {
     expressId: number
     ifcClass: string
     name: string
+    /** IFC GlobalId (22-char GUID) of the failing element, when available (since v1.7.0). */
+    globalId?: string | null
     /** Human-readable (English) failure reasons. Stable since v1.5.0. */
     reasons: string[]
     /** Structured machine-readable reasons (additive since v1.5.x). */
@@ -132,6 +134,39 @@ export interface IdsResult {
   failedSpecs: number
   naSpecs: number
   specs: IdsSpecResult[]
+}
+
+// ── EIR / BIM Validation (since v1.7.0) ───────────────────────────────────────
+// Editable, data-driven validation profiles (ISO 19650-style). Compiled to IDS
+// and run on the same engine, so checkEir returns the same IdsResult shape.
+
+/** Per-rule severity. `ignored` rules are skipped (don't affect the score). */
+export type EirSeverity = 'error' | 'warning' | 'info' | 'ignored'
+/** Numeric comparison operator for a `numeric` rule. */
+export type EirOperator = '>' | '>=' | '<' | '<=' | '='
+
+/** A single EIR validation rule. `entity` is the IFC class it applies to. */
+export type EirRule =
+  & { id?: string; entity: string; predefinedType?: string; severity: EirSeverity; message?: string }
+  & (
+    | { type: 'entityExists' }
+    | { type: 'requiredProperty'; pset?: string; property: string }
+    | { type: 'requiredPropertySet'; pset: string }
+    | { type: 'propertyNotEmpty'; pset?: string; property: string }
+    | { type: 'propertyEquals'; pset?: string; property: string; value: string }
+    | { type: 'numeric'; pset?: string; property: string; operator: EirOperator; value: number }
+    | { type: 'allowedValues'; pset?: string; property: string; values: string[] }
+    | { type: 'regex'; target?: 'property' | 'attribute'; pset?: string; property: string; pattern: string }
+    | { type: 'classification'; system?: string; value?: string }
+  )
+
+/** A complete EIR validation profile. */
+export interface EirProfile {
+  id?: string
+  name: string
+  version?: number
+  description?: string
+  rules: EirRule[]
 }
 
 /** Structured IFC data returned by getElement() (name, GlobalId, property sets…). */
@@ -177,7 +212,9 @@ type Listener<T> = (payload: T) => void
 // 1.6.0: IDS checking now covers all six IDS 1.0 facets (validated against the
 // official buildingSMART test cases) and `checkIds` failures carry an additive
 // `reasonCodes` field alongside the stable EN `reasons` strings.
-const SDK_VERSION = '1.6.0'
+// 1.7.0: `checkEir(profile)` runs editable EIR / BIM Validation profiles (compiled
+// to IDS, same engine + result shape); failures now also carry `globalId`.
+const SDK_VERSION = '1.7.0'
 const DEFAULT_LOAD_TIMEOUT = 120_000
 const REQUEST_TIMEOUT = 30_000
 const FALLBACK_LANGUAGES = LANGUAGES.map((l) => l.code)
@@ -384,6 +421,16 @@ export class IfcViewer {
   /** Check the loaded model against a buildingSMART IDS (.ids XML string). */
   checkIds(idsXml: string): Promise<IdsResult> {
     return this.request<IdsResult>('ifcviewer:check-ids', { idsXml }, 120_000)
+  }
+
+  /**
+   * Check the loaded model against an EIR / BIM Validation profile (ISO 19650-style).
+   * Accepts a profile object or its JSON string; the compact shorthand
+   * (`{ entity, requiredProperties: [...] }`) is also accepted. Returns the same
+   * IdsResult shape as checkIds (the profile compiles to IDS internally). Since v1.7.0.
+   */
+  checkEir(profile: EirProfile | string): Promise<IdsResult> {
+    return this.request<IdsResult>('ifcviewer:check-eir', { profile }, 120_000)
   }
 
   // ── Mutating commands ──────────────────────────────────────────────────────

@@ -308,11 +308,12 @@ export function createOverlayController<M>(deps: OverlayControllerDeps<M>): Over
     return out
   }
 
-  function idsToPerModel(plan: Map<string, number[]>): Map<string, Map<number, M>> {
+  function idsToPerModel(plan: ReturnType<typeof planIdsOverlay>): Map<string, Map<number, M>> {
     const out = new Map<string, Map<number, M>>()
     for (const [modelId, ids] of plan) {
       const flagged = new Map<number, M>()
-      for (const id of ids) flagged.set(id, materials.idsFail)
+      // Severity (EIR) → matching colour; plain IDS failures (null) → idsFail.
+      for (const [id, sev] of ids) flagged.set(id, sev ? materials[sev] : materials.idsFail)
       out.set(modelId, flagged)
     }
     return out

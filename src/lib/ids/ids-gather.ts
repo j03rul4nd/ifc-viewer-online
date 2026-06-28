@@ -638,6 +638,7 @@ export async function gatherIdsElements(
         predefinedType,
         predefinedTypeRaw,
         name: attributes.Name != null ? String(attributes.Name) : null,
+        ...(attributes.GlobalId != null ? { globalId: String(attributes.GlobalId) } : {}),
         attributes,
         psets: mergeNested(fromType?.values, own?.values),
         psetTypes: mergeNested(fromType?.types, own?.types),

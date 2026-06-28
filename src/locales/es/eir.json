@@ -1,0 +1,74 @@
+{
+  "title": "Perfiles de validación EIR / BIM",
+  "openButton": "Perfiles de validación EIR / BIM…",
+  "sidebar": {
+    "new": "Nuevo",
+    "import": "Importar .json o .ids",
+    "empty": "Aún no hay perfiles"
+  },
+  "selectOrCreate": "Selecciona o crea un perfil",
+  "builtinBadge": "predefinido (guarda una copia)",
+  "namePlaceholder": "Nombre del perfil",
+  "descPlaceholder": "Descripción (opcional)",
+  "addRule": "Añadir regla",
+  "footer": "{{rules}} regla(s) · {{active}} activas",
+  "actions": {
+    "duplicate": "Duplicar",
+    "export": "Exportar .json",
+    "delete": "Eliminar",
+    "save": "Guardar",
+    "useAndRun": "Usar y ejecutar"
+  },
+  "ruleTypes": {
+    "entityExists": "La entidad existe",
+    "requiredProperty": "Propiedad requerida",
+    "requiredPropertySet": "Conjunto de propiedades requerido",
+    "propertyNotEmpty": "Propiedad no vacía",
+    "propertyEquals": "Propiedad igual a",
+    "numeric": "Numérica",
+    "allowedValues": "Valores permitidos",
+    "regex": "Expresión regular",
+    "classification": "Clasificación"
+  },
+  "severity": {
+    "error": "error",
+    "warning": "advertencia",
+    "info": "info",
+    "ignored": "ignorada"
+  },
+  "fields": {
+    "predefinedType": "PredefinedType",
+    "property": "Propiedad",
+    "propertySet": "Conjunto de propiedades",
+    "equals": "Igual a",
+    "op": "Op",
+    "value": "Valor",
+    "allowed": "Permitidos (separados por comas)",
+    "target": "Objetivo",
+    "pattern": "Patrón",
+    "system": "Sistema",
+    "classValue": "Valor",
+    "attribute": "Atributo"
+  },
+  "applies": {
+    "match": "{{count}} en el modelo",
+    "none": "0 en el modelo",
+    "upper": "≤ {{count}} en el modelo"
+  },
+  "stats": {
+    "validated": "Validados",
+    "passed": "Correctos",
+    "failed": "Fallidos",
+    "failingElements": "Elementos con incidencias"
+  },
+  "toasts": {
+    "invalidProfile": "Perfil no válido: {{detail}}",
+    "saved": "Perfil guardado",
+    "imported": "Perfil importado",
+    "importedWithWarnings": "Importado; se omitieron {{count}} regla(s) no soportada(s)",
+    "importFailed": "Fallo al importar: {{detail}}",
+    "addRuleFirst": "Añade al menos una regla primero",
+    "loadModelFirst": "Carga un modelo IFC primero",
+    "allIgnored": "Todas las reglas están ignoradas — nada que ejecutar"
+  }
+}

@@ -16,7 +16,7 @@ const RESULT: IdsResult = {
     {
       name: 'Walls need FireRating', status: 'fail',
       applicableCount: 2, passedCount: 1, failedCount: 1, unsupported: [],
-      failures: [{ expressId: 7, ifcClass: 'IFCWALL', name: 'W "quote"', reasons: [{ code: 'missingRequired', params: { what: 'property Pset_WallCommon.FireRating' } }] }],
+      failures: [{ expressId: 7, ifcClass: 'IFCWALL', name: 'W "quote"', globalId: '3vB2eR$Gn0kQz1AbCdEf01', reasons: [{ code: 'missingRequired', params: { what: 'property Pset_WallCommon.FireRating' } }] }],
     },
     { name: 'Doors have a Name', status: 'pass', applicableCount: 3, passedCount: 3, failedCount: 0, unsupported: [], failures: [] },
     { name: 'IFC4-only spec', status: 'na', skippedReason: 'ifcVersion', applicableCount: 0, passedCount: 0, failedCount: 0, unsupported: [], failures: [] },
@@ -43,7 +43,7 @@ describe('toIdsCsv', () => {
 
   it('starts with a UTF-8 BOM and the header', () => {
     expect(csv.charCodeAt(0)).toBe(0xFEFF)
-    expect(csv.slice(1).split('\r\n')[0]).toBe('spec,specStatus,skippedReason,expressId,ifcClass,elementName,reasons')
+    expect(csv.slice(1).split('\r\n')[0]).toBe('spec,specStatus,skippedReason,expressId,globalId,ifcClass,elementName,reasons')
   })
 
   it('emits one row per failure and a summary row for failure-free specs', () => {
@@ -51,6 +51,7 @@ describe('toIdsCsv', () => {
     // header + fail row + pass summary + na summary
     expect(rows).toHaveLength(4)
     expect(rows[1]).toContain('IFCWALL')
+    expect(rows[1]).toContain('3vB2eR$Gn0kQz1AbCdEf01') // GUID column populated
     expect(rows[1]).toContain('missing required property Pset_WallCommon.FireRating')
     expect(rows[3]).toContain('ifcVersion') // skipped spec still represented
   })

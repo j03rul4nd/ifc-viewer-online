@@ -37,13 +37,15 @@ type PanelRow =
       kind: 'group'
       key: string
       status: 'pass' | 'fail' | 'na'
+      /** EIR severity (from spec identifier `eir:<sev>`) — tints failing rows amber/blue. */
+      severity?: 'error' | 'warning' | 'info'
       title: string
       fraction: GroupFraction
       facets: string[]
       detail?: string
       expandable: boolean
     }
-  | { kind: 'failure'; key: string; expressId: number; name: string; ifcClass: string; reasons: IdsReason[]; context?: string }
+  | { kind: 'failure'; key: string; expressId: number; name: string; ifcClass: string; globalId?: string | null; reasons: IdsReason[]; context?: string }
   | { kind: 'truncation'; key: string; hiddenCount: number }
 
 const ROW_H = { group: 34, failure: 44, truncation: 26 } as const
@@ -473,6 +475,13 @@ export default function IdsPanel({ viewerApiRef, onOpenLoader }: IdsPanelProps) 
 
 // ── Row construction (pure — no i18n; labels are rendered by RowView) ────────
 
+/** Extract the EIR severity a spec carries in its `eir:<sev>` identifier, if any. */
+function eirSeverity(identifier?: string): 'error' | 'warning' | 'info' | undefined {
+  if (!identifier?.startsWith('eir:')) return undefined
+  const sev = identifier.slice(4)
+  return sev === 'warning' || sev === 'info' ? sev : sev === 'error' ? 'error' : undefined
+}
+
 function buildRows(
   result: IdsResult | null,
   filters: IdsFilters,
@@ -500,6 +509,7 @@ function buildRows(
         kind: 'group',
         key,
         status: spec.status,
+        severity: eirSeverity(spec.identifier),
         title: spec.name,
         fraction: { type: 'spec', status: spec.status, skipped: spec.skippedReason === 'ifcVersion', passed: spec.passedCount, applicable: spec.applicableCount },
         facets: specFacets?.[i] ?? [],
@@ -511,7 +521,7 @@ function buildRows(
         ? spec.failures
         : spec.failures.filter((f) => matches(f.name) || matches(f.ifcClass))
       for (const f of visFailures) {
-        rows.push({ kind: 'failure', key: `${key}:f${f.expressId}`, expressId: f.expressId, name: f.name, ifcClass: f.ifcClass, reasons: f.reasons })
+        rows.push({ kind: 'failure', key: `${key}:f${f.expressId}`, expressId: f.expressId, name: f.name, ifcClass: f.ifcClass, globalId: f.globalId, reasons: f.reasons })
       }
       if (spec.failedCount > spec.failures.length) {
         rows.push({ kind: 'truncation', key: `${key}:trunc`, hiddenCount: spec.failedCount - spec.failures.length })
@@ -525,9 +535,9 @@ function buildRows(
       .map((f) => ({ spec, f })))
 
   if (filters.groupBy === 'element') {
-    const byEl = new Map<number, { name: string; ifcClass: string; items: Array<{ spec: IdsSpecResult; reasons: IdsReason[] }> }>()
+    const byEl = new Map<number, { name: string; ifcClass: string; globalId?: string | null; items: Array<{ spec: IdsSpecResult; reasons: IdsReason[] }> }>()
     for (const { spec, f } of failing) {
-      const e = byEl.get(f.expressId) ?? { name: f.name, ifcClass: f.ifcClass, items: [] }
+      const e = byEl.get(f.expressId) ?? { name: f.name, ifcClass: f.ifcClass, globalId: f.globalId, items: [] }
       e.items.push({ spec, reasons: f.reasons })
       byEl.set(f.expressId, e)
     }
@@ -537,18 +547,18 @@ function buildRows(
         kind: 'group', key, status: 'fail',
         title: e.name || `#${expressId}`,
         fraction: { type: 'count', kind: 'specs', n: e.items.length },
-        facets: [], detail: `${e.ifcClass} #${expressId}`, expandable: true,
+        facets: [], detail: `${e.ifcClass} #${expressId}${e.globalId ? ` · ${e.globalId}` : ''}`, expandable: true,
       })
       if (!expanded.has(key)) continue
       for (const it of e.items) {
-        rows.push({ kind: 'failure', key: `${key}:${it.spec.name}`, expressId, name: it.spec.name, ifcClass: e.ifcClass, reasons: it.reasons })
+        rows.push({ kind: 'failure', key: `${key}:${it.spec.name}`, expressId, name: it.spec.name, ifcClass: e.ifcClass, globalId: e.globalId, reasons: it.reasons })
       }
     }
     return rows
   }
 
   // groupBy === 'class'
-  const byClass = new Map<string, Array<{ spec: IdsSpecResult; f: { expressId: number; name: string; ifcClass: string; reasons: IdsReason[] } }>>()
+  const byClass = new Map<string, Array<{ spec: IdsSpecResult; f: { expressId: number; name: string; ifcClass: string; globalId?: string | null; reasons: IdsReason[] } }>>()
   for (const it of failing) {
     const arr = byClass.get(it.f.ifcClass) ?? []
     arr.push(it)
@@ -563,7 +573,7 @@ function buildRows(
     })
     if (!expanded.has(key)) continue
     for (const { spec, f } of items) {
-      rows.push({ kind: 'failure', key: `${key}:${spec.name}:${f.expressId}`, expressId: f.expressId, name: f.name, ifcClass: f.ifcClass, reasons: f.reasons, context: spec.name })
+      rows.push({ kind: 'failure', key: `${key}:${spec.name}:${f.expressId}`, expressId: f.expressId, name: f.name, ifcClass: f.ifcClass, globalId: f.globalId, reasons: f.reasons, context: spec.name })
     }
   }
   return rows
@@ -596,8 +606,11 @@ function RowView({ row, focused, expanded, onClick }: {
     )
   }
   if (row.kind === 'group') {
-    const color = row.status === 'pass' ? 'var(--ok)' : row.status === 'fail' ? 'var(--danger)' : 'var(--text-faint)'
-    const icon = row.status === 'pass' ? '✓' : row.status === 'fail' ? '✗' : '–'
+    // EIR severity recolours a FAILING spec: warning→amber, info→accent.
+    const failColor = row.severity === 'warning' ? '#F5A623' : row.severity === 'info' ? 'var(--accent)' : 'var(--danger)'
+    const failIcon = row.severity === 'warning' ? '!' : row.severity === 'info' ? 'i' : '✗'
+    const color = row.status === 'pass' ? 'var(--ok)' : row.status === 'fail' ? failColor : 'var(--text-faint)'
+    const icon = row.status === 'pass' ? '✓' : row.status === 'fail' ? failIcon : '–'
     return (
       <button
         onClick={onClick}
@@ -622,6 +635,7 @@ function RowView({ row, focused, expanded, onClick }: {
       <div className="flex items-center gap-2">
         <span className="text-[11px] text-[var(--text)] truncate">{row.name || `#${row.expressId}`}</span>
         <span className="text-[9.5px] font-mono text-[var(--text-faint)] shrink-0">{row.ifcClass}{row.expressId >= 0 ? ` #${row.expressId}` : ''}</span>
+        {row.globalId && <span className="text-[9.5px] font-mono text-[var(--text-faint)] shrink-0 hidden md:inline" title={`GUID ${row.globalId}`}>{row.globalId}</span>}
         {row.context && <span className="text-[9.5px] text-[var(--text-faint)] truncate">· {row.context}</span>}
       </div>
       <div className="text-[10px] leading-snug mt-0.5 truncate" style={{ color: 'var(--danger)' }}>

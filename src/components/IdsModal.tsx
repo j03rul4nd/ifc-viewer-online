@@ -15,9 +15,11 @@ import { modelRegistry } from '../lib/model-registry'
 import { parseIds, IdsParseError } from '../lib/ids/ids-parser'
 import { IDS_EXAMPLES, type IdsExample } from '../lib/ids/ids-examples'
 import { useIdsRun } from '../hooks/useIdsRun'
+import { useEirStore } from '../stores/eirStore'
 import { trackIdsFileLoaded } from '../lib/analytics'
 import { toast } from '../stores/toastStore'
-import { SCORE_COLOR } from './ids/score'
+import { ComplianceDonut } from './ids/ComplianceDonut'
+import { idsElementStats } from '../lib/ids/ids-stats'
 
 interface IdsModalProps {
   onClose: () => void
@@ -25,6 +27,7 @@ interface IdsModalProps {
 
 export default function IdsModal({ onClose }: IdsModalProps) {
   const { t } = useTranslation('ids')
+  const { t: te } = useTranslation('eir')
   const activeModelId = useSceneStore((s) => s.activeModelId)
   const models = useSceneStore((s) => s.models)
   const {
@@ -148,6 +151,15 @@ export default function IdsModal({ onClose }: IdsModalProps) {
             )}
           </div>
 
+          {/* EIR / BIM Validation — editable rule profiles that compile to the same engine */}
+          <button
+            onClick={() => { useEirStore.getState().setEditorOpen(true); onClose() }}
+            className="flex items-center gap-2 h-9 px-3 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[12px] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors self-start"
+          >
+            <Icons.Shield size={14} />
+            {te('openButton')}
+          </button>
+
           {/* Sample IDS — for users without their own .ids file */}
           {!busy && (
             <div className="flex flex-col gap-1.5">
@@ -217,7 +229,7 @@ export default function IdsModal({ onClose }: IdsModalProps) {
           {/* Summary → results live in the docked panel */}
           {result && (
             <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
-              <span className="text-[22px] font-bold font-mono leading-none" style={{ color: SCORE_COLOR(result.score) }}>{result.score}</span>
+              <ComplianceDonut score={result.score} passed={result.passedSpecs} failed={result.failedSpecs} na={result.naSpecs} size={48} />
               <span className="text-[11px] text-[var(--text-faint)]">{t('summary.outOf')}</span>
               <div className="h-6 w-px bg-[var(--border)]" />
               <span className="text-[12px] text-[var(--ok)]">{t('summary.pass', { count: result.passedSpecs })}</span>
@@ -231,6 +243,19 @@ export default function IdsModal({ onClose }: IdsModalProps) {
               </button>
             </div>
           )}
+
+          {/* Element-level statistics (Total/Validated/Passed/Failed) */}
+          {result && (() => {
+            const st = idsElementStats(result)
+            return (
+              <div className="flex items-center flex-wrap gap-x-4 gap-y-1 px-3 py-1.5 text-[11px] text-[var(--text-dim)]">
+                <span><b className="font-mono text-[var(--text)]">{st.validated}</b> {te('stats.validated')}</span>
+                <span className="text-[var(--ok)]"><b className="font-mono">{st.passed}</b> {te('stats.passed')}</span>
+                <span className="text-[var(--danger)]"><b className="font-mono">{st.failed}</b> {te('stats.failed')}</span>
+                <span><b className="font-mono text-[var(--text)]">{st.failingElements}</b> {te('stats.failingElements')}</span>
+              </div>
+            )
+          })()}
 
           {!doc && !result && (
             <div className="px-3 py-6 rounded-lg border border-dashed border-[var(--border)] text-[11.5px] text-[var(--text-faint)] text-center leading-relaxed">

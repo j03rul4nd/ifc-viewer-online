@@ -44,6 +44,7 @@ export function toIdsJson(result: IdsResult, meta: IdsReportMeta = {}): string {
       unsupportedFacets: s.unsupported,
       failures: s.failures.map((f) => ({
         expressId: f.expressId,
+        globalId: f.globalId ?? null,
         ifcClass: f.ifcClass,
         name: f.name,
         reasons: f.reasons.map((r) => ({ code: r.code, params: r.params ?? {}, text: renderReasons([r])[0] ?? r.code })),
@@ -53,7 +54,7 @@ export function toIdsJson(result: IdsResult, meta: IdsReportMeta = {}): string {
   return JSON.stringify(report, null, 2)
 }
 
-const CSV_HEADER = 'spec,specStatus,skippedReason,expressId,ifcClass,elementName,reasons'
+const CSV_HEADER = 'spec,specStatus,skippedReason,expressId,globalId,ifcClass,elementName,reasons'
 
 function csvCell(s: string | number): string {
   return `"${String(s).replace(/"/g, '""')}"`
@@ -69,19 +70,19 @@ export function toIdsCsv(result: IdsResult): string {
   for (const s of result.specs) {
     const skipped = s.skippedReason ?? ''
     if (s.failures.length === 0) {
-      rows.push([s.name, s.status, skipped, '', '', '', ''].map(csvCell).join(','))
+      rows.push([s.name, s.status, skipped, '', '', '', '', ''].map(csvCell).join(','))
       continue
     }
     for (const f of s.failures) {
       rows.push([
         s.name, s.status, skipped,
-        f.expressId, f.ifcClass, f.name,
+        f.expressId, f.globalId ?? '', f.ifcClass, f.name,
         renderReasons(f.reasons).join(' | '),
       ].map(csvCell).join(','))
     }
     // Note any in-memory truncation (cap 200/spec) so the CSV is honest.
     if (s.failedCount > s.failures.length) {
-      rows.push([s.name, s.status, skipped, '', '', '',
+      rows.push([s.name, s.status, skipped, '', '', '', '',
         `(+${s.failedCount - s.failures.length} more failing elements not shown — cap 200/spec)`].map(csvCell).join(','))
     }
   }
@@ -181,7 +182,7 @@ export function idsResultToBcfTopics(result: IdsResult, snapshotDataUrl?: string
       topics.push({
         guid: crypto.randomUUID(),
         title: f.expressId >= 0 ? `[IDS: ${spec.name}] ${f.name || `#${f.expressId}`}` : `[IDS: ${spec.name}]`,
-        description: `${renderReasons(f.reasons).join(' · ')}${f.expressId >= 0 ? ` (${f.ifcClass} #${f.expressId})` : ''}`,
+        description: `${renderReasons(f.reasons).join(' · ')}${f.expressId >= 0 ? ` (${f.ifcClass} #${f.expressId}${f.globalId ? `, GUID ${f.globalId}` : ''})` : ''}`,
         status: 'Open',
         topicType: 'Error',
         priority: 'High',

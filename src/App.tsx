@@ -30,6 +30,9 @@ import TermsOfUse from './components/legal/TermsOfUse'
 import EmbedModal from './components/EmbedModal'
 import IdsModal from './components/IdsModal'
 import IdsPanel from './components/IdsPanel'
+import EirProfileEditor from './components/eir/EirProfileEditor'
+import { useEirStore } from './stores/eirStore'
+import { parseEirProfile, compileEirToIds } from './lib/eir'
 import InviteRibbon from './components/InviteRibbon'
 import InviteView from './components/InviteView'
 import InviteFeedbackNudge from './components/InviteFeedbackNudge'
@@ -304,6 +307,7 @@ export default function App() {
   const [showExportModal, setShowExportModal] = useState(false)
   const [showEmbedModal, setShowEmbedModal]   = useState(false)
   const [showIdsModal, setShowIdsModal]       = useState(false)
+  const eirEditorOpen = useEirStore((s) => s.editorOpen)
   const [showHelp,   setShowHelp]             = useState(false)
   const [ctxMenu,    setCtxMenu]              = useState<SceneContextMenuPayload | null>(null)
 
@@ -508,9 +512,16 @@ export default function App() {
     const opts = { severities: ovSeverities, ghostOpacity: ovGhostOpacity, xray: ovXray }
     if (idsHighlightMode) {
       const failures = Object.entries(idsResultsByModel).flatMap(([mid, r]) =>
-        r.specs.flatMap((s) => s.failures
-          .filter((f) => f.expressId >= 0)
-          .map((f) => ({ expressId: f.expressId, modelId: mid }))),
+        r.specs.flatMap((s) => {
+          // EIR specs carry their severity in the identifier ("eir:warning") so
+          // the 3D overlay can paint warnings/info distinctly; plain IDS specs
+          // have no severity → the controller uses the single idsFail colour.
+          const sev = s.identifier?.startsWith('eir:') ? s.identifier.slice(4) : undefined
+          const severity = sev === 'error' || sev === 'warning' || sev === 'info' ? sev : undefined
+          return s.failures
+            .filter((f) => f.expressId >= 0)
+            .map((f) => ({ expressId: f.expressId, modelId: mid, severity }))
+        }),
       )
       viewer.setIdsHighlights(failures, true, opts)
     } else if (validationMode) {
@@ -1185,6 +1196,42 @@ export default function App() {
           })
           break
 
+        case 'ifcviewer:check-eir':
+          void respond(async () => {
+            // Accept a profile object or its JSON string (compact shorthand ok).
+            // parseEirProfile validates with Zod → a bad profile errors back to the SDK.
+            const profile = parseEirProfile(msg.profile)
+            const mid = useSceneStore.getState().activeModelId ?? useSceneStore.getState().models[0]?.id ?? null
+            const buffer = mid ? modelRegistry.getBuffer(mid) : null
+            if (!mid || !buffer) throw new Error('No model buffer available — load an IFC first')
+            const doc = compileEirToIds(profile)
+            useIdsStore.getState().setLoaded(profile.name, doc)
+            useIdsStore.getState().startRun(mid)
+            const t0 = performance.now()
+            let result
+            try {
+              ({ result } = await runIds(doc, buffer))
+            } catch (err) {
+              useIdsStore.getState().setError(
+                err instanceof IdsCheckError ? err.code : 'unknown',
+                err instanceof Error ? err.message : String(err),
+              )
+              throw err
+            }
+            useIdsStore.getState().setResultForModel(mid, result, {
+              at: Date.now(), idsFileName: profile.name, durationMs: Math.round(performance.now() - t0), modelSchema: result.modelSchema,
+            })
+            // Same frozen SDK wire shape as check-ids.
+            return {
+              ...result,
+              specs: result.specs.map((s) => ({
+                ...s,
+                failures: s.failures.map((f) => ({ ...f, reasons: renderReasons(f.reasons), reasonCodes: f.reasons })),
+              })),
+            }
+          })
+          break
+
         // ── Mutating commands (fire-and-forget) ──────────────────────────────
         case 'ifcviewer:remove-model': {
           const modelId = typeof msg.modelId === 'string' ? msg.modelId : null
@@ -1658,6 +1705,11 @@ export default function App() {
       {/* ── IDS check ── */}
       {showIdsModal && (
         <IdsModal onClose={() => setShowIdsModal(false)} />
+      )}
+
+      {/* ── EIR / BIM Validation profile editor ── */}
+      {eirEditorOpen && (
+        <EirProfileEditor onClose={() => useEirStore.getState().setEditorOpen(false)} />
       )}
 
       {/* ── Keyboard help modal ── */}

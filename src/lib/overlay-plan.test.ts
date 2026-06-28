@@ -119,7 +119,9 @@ describe('planValidationOverlay', () => {
 // ── planIdsOverlay ──────────────────────────────────────────────────────────────
 
 describe('planIdsOverlay', () => {
-  it('collects failing element ids per model', () => {
+  const ids = (m: Map<number, unknown> | undefined): number[] => [...(m?.keys() ?? [])]
+
+  it('collects failing element ids per model (null severity for plain IDS)', () => {
     const maps = new Map<string, TypeMap>([
       ['m1', typeMap(1, 2)],
       ['m2', typeMap(3)],
@@ -133,8 +135,9 @@ describe('planIdsOverlay', () => {
       maps,
       'm1',
     )
-    expect(plan.get('m1')).toEqual([1, 2])
-    expect(plan.get('m2')).toEqual([3])
+    expect(ids(plan.get('m1'))).toEqual([1, 2])
+    expect(ids(plan.get('m2'))).toEqual([3])
+    expect(plan.get('m1')!.get(1)).toBeNull() // no EIR severity → null
   })
 
   it('deduplicates an element that fails several specs', () => {
@@ -148,7 +151,21 @@ describe('planIdsOverlay', () => {
       maps,
       'm1',
     )
-    expect(plan.get('m1')).toEqual([7])
+    expect(ids(plan.get('m1'))).toEqual([7])
+  })
+
+  it('collapses an element to its highest severity', () => {
+    const maps = new Map<string, TypeMap>([['m1', typeMap(5)]])
+    const plan = planIdsOverlay(
+      [
+        { expressId: 5, modelId: 'm1', severity: 'info' },
+        { expressId: 5, modelId: 'm1', severity: 'error' },
+        { expressId: 5, modelId: 'm1', severity: 'warning' },
+      ],
+      maps,
+      'm1',
+    )
+    expect(plan.get('m1')!.get(5)).toBe('error')
   })
 
   it('skips synthetic spec-level rows (negative expressId)', () => {
@@ -158,7 +175,7 @@ describe('planIdsOverlay', () => {
       maps,
       'm1',
     )
-    expect(plan.get('m1')).toEqual([1])
+    expect(ids(plan.get('m1'))).toEqual([1])
   })
 
   it('skips ids absent from the model type map', () => {
@@ -170,7 +187,7 @@ describe('planIdsOverlay', () => {
   it('falls back to the active model when a failure has no modelId', () => {
     const maps = new Map<string, TypeMap>([['active', typeMap(9)]])
     const plan = planIdsOverlay([{ expressId: 9 }], maps, 'active')
-    expect(plan.get('active')).toEqual([9])
+    expect(ids(plan.get('active'))).toEqual([9])
   })
 })
 

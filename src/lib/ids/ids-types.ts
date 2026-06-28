@@ -79,6 +79,8 @@ export interface IdsElement {
   /** Literal PredefinedType as written in the line (an IDS may ask for "USERDEFINED"). */
   predefinedTypeRaw?: string | null
   name?: string | null
+  /** IFC GlobalId (22-char base64 GUID), when the element carries one. */
+  globalId?: string | null
   /** IFC root attributes (Name, Description, Tag, ObjectType, …). */
   attributes: Record<string, string | number | boolean | null>
   /** propertySetName → { propertyName → value }. */
@@ -137,11 +139,13 @@ export type IdsPhase = (typeof IDS_PHASES)[number]
 export const IDS_ERROR_CODES = ['cancelled', 'worker-init', 'model-open', 'oom', 'timeout', 'unknown'] as const
 export type IdsErrorCode = (typeof IDS_ERROR_CODES)[number]
 
-export interface IdsFailure { expressId: number; ifcClass: string; name: string; reasons: IdsReason[] }
+export interface IdsFailure { expressId: number; ifcClass: string; name: string; globalId?: string | null; reasons: IdsReason[] }
 
 export interface IdsSpecResult {
   name: string
   description?: string
+  /** Passthrough of the spec's IDS identifier (EIR uses `eir:<severity>`). */
+  identifier?: string
   status: 'pass' | 'fail' | 'na'
   /** Why a spec was skipped (status na): the model schema is outside the spec's ifcVersions (P2-4). */
   skippedReason?: 'ifcVersion'
