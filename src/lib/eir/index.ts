@@ -46,6 +46,7 @@ export { parseEirProfile, serializeEirProfile, eirProfileSchema, eirRuleSchema, 
 export { idsToEir, type EirImportResult } from './eir-import'
 export { modelClassCounts, applicabilityCount } from './model-vocab'
 export { lintProfile, lintByRule, type LintIssue, type LintCode } from './eir-lint'
+export { weightedCompliance } from './eir-score'
 export { BUILTIN_EIR_PROFILES, emptyEirProfile } from './eir-profiles'
 export {
   LocalStorageProfileProvider, defaultProfileProvider, isBuiltinProfile,

@@ -70,6 +70,8 @@
     "failed": "Fallidos",
     "failingElements": "Elementos con incidencias"
   },
+  "weighted": "Ponderado {{score}}",
+  "weightedHint": "Cumplimiento ponderado por severidad (los errores cuentan más que advertencias/info)",
   "toasts": {
     "invalidProfile": "Perfil no válido: {{detail}}",
     "saved": "Perfil guardado",

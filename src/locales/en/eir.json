@@ -70,6 +70,8 @@
     "failed": "Failed",
     "failingElements": "Elements with issues"
   },
+  "weighted": "Weighted {{score}}",
+  "weightedHint": "Severity-weighted compliance (errors count more than warnings/info)",
   "toasts": {
     "invalidProfile": "Invalid profile: {{detail}}",
     "saved": "Profile saved",

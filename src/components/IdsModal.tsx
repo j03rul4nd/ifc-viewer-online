@@ -20,6 +20,8 @@ import { trackIdsFileLoaded } from '../lib/analytics'
 import { toast } from '../stores/toastStore'
 import { ComplianceDonut } from './ids/ComplianceDonut'
 import { idsElementStats } from '../lib/ids/ids-stats'
+import { weightedCompliance } from '../lib/eir'
+import { SCORE_COLOR } from './ids/score'
 
 interface IdsModalProps {
   onClose: () => void
@@ -235,6 +237,14 @@ export default function IdsModal({ onClose }: IdsModalProps) {
               <span className="text-[12px] text-[var(--ok)]">{t('summary.pass', { count: result.passedSpecs })}</span>
               <span className="text-[12px] text-[var(--danger)]">{t('summary.fail', { count: result.failedSpecs })}</span>
               {result.naSpecs > 0 && <span className="text-[12px] text-[var(--text-faint)]">{t('summary.na', { count: result.naSpecs })}</span>}
+              {(() => {
+                const w = weightedCompliance(result)
+                return w != null ? (
+                  <span className="text-[11px] font-mono px-1.5 py-0.5 rounded-full border" style={{ color: SCORE_COLOR(w), borderColor: 'var(--border)' }} title={te('weightedHint')}>
+                    {te('weighted', { score: w })}
+                  </span>
+                ) : null
+              })()}
               <button
                 onClick={viewResults}
                 className="ml-auto h-7 px-3 rounded-md bg-[var(--accent)] text-white text-[11px] font-medium hover:brightness-110 transition-all"
