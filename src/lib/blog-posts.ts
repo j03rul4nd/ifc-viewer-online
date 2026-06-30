@@ -5504,6 +5504,1291 @@ Project acceptance or rejection`,
     ],
   },
 
+  // ── Article #7: IFC Model Checker — Pillar ────────────────────────────────
+  {
+    slug: 'ifc-model-checker',
+    title: 'IFC Model Checker: The Complete Guide (2026)',
+    excerpt: 'What IFC model checking actually means, how the three validation layers work, and how to use a checker to enforce quality gates before every model delivery.',
+    date: '2026-06-30',
+    author: 'IFC Viewer Online',
+    category: 'Validation',
+    categorySlug: 'validation',
+    readTimeMin: 26,
+    keywords: ['IFC model checker', 'IFC validation', 'IFC quality check', 'BIM model checking', 'IFC Health Score', 'IDS validation', 'ISO 19650', 'BIM coordinator'],
+    faqs: [
+      { q: 'What is an IFC model checker?', a: 'An IFC model checker is a tool that automatically validates IFC files against structural rules (schema compliance), quality rules (naming, geometry, property completeness), and project-specific requirements (IDS 1.0). It produces a pass/fail report and a numerical quality score so BIM coordinators can enforce delivery standards without opening each model manually.' },
+      { q: 'What is the difference between an IFC viewer and an IFC model checker?', a: 'A viewer lets you see geometry and browse properties. A checker validates the data structure — it finds missing property sets, duplicate GUIDs, broken spatial hierarchy, geometry errors, and IDS non-conformances that are invisible to the eye. Many tools combine both, but the checking engine is a separate function from the renderer.' },
+      { q: 'What are the three levels of IFC validation?', a: 'Level 1 checks schema and EXPRESS rules — is the file structurally valid? Level 2 checks 44 quality rules — naming, GUIDs, hierarchy, property completeness, geometry integrity. Level 3 checks IDS 1.0 requirements — does the model contain the specific data the project requires? Each level builds on the previous.' },
+      { q: 'What is a good IFC Health Score?', a: 'Scores of 90–100 indicate a delivery-ready model. 75–89 is acceptable for most coordination stages with minor fixes needed. 50–74 requires remediation before delivery. Below 50 means significant data quality issues that will cause downstream problems in quantity takeoff, cost estimation, and FM handover.' },
+      { q: 'Can I check IFC models without uploading them to a server?', a: 'Yes. IFC Viewer Online processes files entirely in the browser using WebAssembly. The IFC file never leaves your machine — you can verify this by opening browser DevTools and watching the Network tab during loading. This is critical for projects with NDA or data sovereignty requirements.' },
+      { q: 'At what project stages should IFC models be checked?', a: 'At minimum: before CDE upload (prevent junk in), at coordination stage gates (before clash detection), before client submission (formal delivery), and at FM handover (LOI completeness). On large projects, automated checking at every model revision is achievable with CLI tools or API-driven workflows.' },
+    ],
+    content: [
+      {
+        type: 'callout',
+        variant: 'info',
+        text: 'TL;DR — An IFC model checker validates your file at three levels: schema (is it valid IFC?), quality (does it follow BIM standards?), and requirements (does it contain the data your project needs?). This guide covers all three levels, explains the Health Score, walks through an ISO 19650 checking workflow, and helps you choose the right tool.',
+      },
+      {
+        type: 'stat-row',
+        stats: [
+          { value: 44, label: 'quality rules checked automatically' },
+          { value: 3, label: 'validation levels: schema → quality → IDS' },
+          { value: 6, label: 'IDS 1.0 facets validated' },
+          { value: 0, label: 'file uploads needed for browser-local checking' },
+        ],
+      },
+      { type: 'h2', text: 'What Is an IFC Model Checker?' },
+      {
+        type: 'p',
+        text: 'An IFC model checker is software that automatically validates the content and structure of an IFC file against a defined set of rules. It goes beyond what the eye can see in a 3D viewer: it interrogates the data layer — GUIDs, spatial hierarchy, property sets, geometry, classifications, and project-specific requirements.',
+      },
+      {
+        type: 'p',
+        text: 'The output is a structured report: which rules passed, which failed, how many issues of each severity exist, and a numerical quality score that can be used as a project delivery gate. BIM coordinators use this to catch problems before they reach the CDE, the coordination model, or the client.',
+      },
+      {
+        type: 'p',
+        text: 'The term is sometimes used loosely to mean any tool that opens an IFC file. This guide uses the precise definition: a checker validates data against rules and produces a pass/fail verdict. A viewer shows geometry. Most professional workflows need both, but they are distinct functions.',
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: 'Expert tip: set up a checking policy document that defines the minimum Health Score and maximum tolerated errors for each delivery milestone. Share it with authoring teams at project start — not after the first failed submission.',
+      },
+      { type: 'h2', text: 'Why IFC Checking Matters Now' },
+      {
+        type: 'p',
+        text: 'Three forces are making systematic IFC checking unavoidable in 2026:',
+      },
+      {
+        type: 'ul',
+        items: [
+          'ISO 19650 adoption — information requirements now must be verified, not assumed. Many contracts include data delivery obligations with measurable acceptance criteria.',
+          'Open BIM workflows — as projects exchange IFC between authoring tools and disciplines, accumulated quality debt compounds. A wall assembled from four different authoring tools has four different naming conventions unless checked at each handoff.',
+          'FM handover pressure — building owners receiving digital twins expect property data that actually matches the installed asset. Systematic checking at design and construction stages is the only way to guarantee this.',
+        ],
+      },
+      { type: 'h2', text: 'Three Levels of IFC Model Checking' },
+      {
+        type: 'p',
+        text: 'IFC validation is not a single pass/fail test. It operates at three distinct levels, each catching a different class of problem:',
+      },
+      {
+        type: 'table',
+        headers: ['Level', 'What it checks', 'What it catches', 'Tools that support it'],
+        rows: [
+          ['L1 — Schema', 'EXPRESS schema, entity/attribute types, required fields', 'Corrupted files, wrong IFC version, invalid entity references', 'Any serious IFC tool'],
+          ['L2 — Quality', '44 quality rules: GUIDs, hierarchy, names, geometry, properties', 'Duplicate GUIDs, missing storeys, empty names, broken geometry', 'IFC Viewer Online, Solibri, BIMcollab Zoom'],
+          ['L3 — Requirements (IDS)', 'Project-specific property, classification, material rules', 'Missing fire ratings, wrong classification codes, absent EIR metadata', 'IFC Viewer Online, buildingSMART Validator'],
+        ],
+        caption: 'The three levels build on each other: a file must pass L1 before L2 makes sense, and L2 before L3.',
+      },
+      {
+        type: 'callout',
+        variant: 'warning',
+        text: 'Warning: many tools label L1 schema validation as "IFC checking." That is necessary but not sufficient. A file can be schema-valid and still have hundreds of quality problems that will derail coordination and FM handover.',
+      },
+      { type: 'h3', text: 'Level 1: Schema and EXPRESS Validation' },
+      {
+        type: 'p',
+        text: 'The IFC standard is defined in EXPRESS, a formal data modelling language. An L1 checker verifies that every entity in the file matches its EXPRESS definition: required attributes are present, values are the right type, enumeration values are valid, and referential integrity is maintained. This is the minimum bar — a file that fails L1 cannot be processed reliably by any downstream tool.',
+      },
+      { type: 'h3', text: 'Level 2: Quality Rule Validation' },
+      {
+        type: 'p',
+        text: 'L2 checking applies 44 rules derived from industry best practice, buildingSMART guidance, and common failure modes observed in real project delivery. These rules cover six domains:',
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '🔑', title: 'Identity', body: 'Every element has a unique, spec-compliant GUID. Duplicate GUIDs break CDE version tracking, clash detection, and BCF coordination.' },
+          { icon: '🏗️', title: 'Spatial Hierarchy', body: 'All building elements are assigned to a storey; all storeys are in a building; the building is in a site. Broken hierarchy causes elements to disappear in coordination tools.' },
+          { icon: '📋', title: 'Property Sets', body: 'Standard Psets (Pset_WallCommon, Pset_BeamCommon, etc.) are present and populated. Missing Psets break quantity takeoff and FM handover.' },
+          { icon: '📐', title: 'Geometry', body: 'Solid geometry closes, Boolean operations resolve, and elements have non-zero volume. Broken geometry causes errors in model review and 4D/5D simulation.' },
+          { icon: '🏷️', title: 'Classification', body: 'Elements carry classification codes (Uniclass, OmniClass, NBS) where required by the EIR. Missing classifications break procurement and FM asset registers.' },
+          { icon: '🔗', title: 'Relationships', body: 'IfcRelContainedInSpatialStructure, IfcRelAggregates, and type-instance relationships are correctly formed. Broken relationships corrupt the spatial tree.' },
+        ],
+      },
+      { type: 'h3', text: 'Level 3: IDS Validation' },
+      {
+        type: 'p',
+        text: ['IDS (Information Delivery Specification) is the buildingSMART standard for defining exactly what data a model must contain at a given project stage. An IDS file specifies required entities, attributes, property sets, property values, classifications, and materials — and the checker verifies whether each element in the model satisfies those specifications. IDS 1.0 was ratified in 2024 and is increasingly referenced in contracts and EIRs. See the ', { text: 'full IDS implementation guide', to: 'ifc-model-checker-guide' }, ' for details on the six facets.'],
+      },
+      { type: 'h2', text: 'The Health Score: A Single Number for Model Quality' },
+      {
+        type: 'p',
+        text: 'A rule-by-rule report is essential for fixing issues, but it is impractical as a delivery gate. The Health Score condenses 44 rules into a single 0–100 number using severity-weighted logarithmic penalties: errors (blocking issues) carry 3× the weight of warnings. This means a model with two severe errors scores significantly lower than one with dozens of minor warnings.',
+      },
+      {
+        type: 'table',
+        headers: ['Score Range', 'Grade', 'Meaning', 'Action'],
+        rows: [
+          ['90–100', 'Excellent', 'Delivery-ready model with minimal or no issues', 'Approve for CDE upload'],
+          ['75–89', 'Good', 'Minor issues present; acceptable for most coordination stages', 'Fix before formal delivery'],
+          ['50–74', 'Fair', 'Multiple issues requiring remediation before delivery', 'Return to authoring team'],
+          ['25–49', 'Poor', 'Significant data quality problems across multiple rule categories', 'Mandatory remediation'],
+          ['0–24', 'Critical', 'Fundamental structural or data problems; model unusable for coordination', 'Do not accept'],
+        ],
+        caption: 'Health Score bands and recommended BIM coordinator actions at each gate.',
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: 'Expert tip: use 75 as the minimum Health Score for informal coordination and 90 as the bar for formal delivery to the client. Codify these thresholds in your BEP (BIM Execution Plan) so authoring teams know the target before they start modelling.',
+      },
+      { type: 'h2', text: 'The Business Case for Systematic Checking' },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '⚡', title: 'Faster coordination', body: 'Pre-screening models for L2 errors before clash detection eliminates false clashes caused by broken geometry and hierarchy. Coordination meetings become productive rather than remedial.' },
+          { icon: '💰', title: 'Accurate quantity takeoff', body: 'QS tools depend on correct Psets and classifications. A model that passes L2 checking produces reliable material quantities; one that does not requires manual correction before every BOQ update.' },
+          { icon: '🔒', title: 'Contract compliance', body: 'ISO 19650 information requirements carry contractual weight in an increasing number of projects. A checking audit trail demonstrates compliance and protects against disputes about data quality at handover.' },
+          { icon: '🏢', title: 'FM handover confidence', body: 'Asset management systems ingest property data from IFC. A model with complete Psets, correct classifications, and valid GUIDs populates the CAFM automatically. One without requires expensive manual data entry.' },
+        ],
+      },
+      { type: 'h2', text: 'IFC Checking in an ISO 19650 Workflow' },
+      {
+        type: 'p',
+        text: 'ISO 19650 defines information delivery milestones (IDMs) and information requirements (EIRs, AIRs). IFC model checking maps onto this framework at three points:',
+      },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `Authoring tool (Revit / ArchiCAD / Tekla)
+        │
+        ▼ IFC export
+[L1 Schema check] ──fail──▶ Return to author
+        │ pass
+        ▼
+[L2 Quality check (44 rules)] ──fail──▶ Return to author with error report
+        │ pass (Health Score ≥ threshold)
+        ▼
+[L3 IDS check] ──fail──▶ Return to author with IDS non-conformances
+        │ pass
+        ▼
+CDE upload (approved for coordination)
+        │
+        ▼
+Clash detection / coordination
+        │
+        ▼
+[Pre-submission L2+L3 recheck] ──fail──▶ Fix before submission
+        │ pass
+        ▼
+Client / FM handover`,
+      },
+      {
+        type: 'callout',
+        variant: 'info',
+        text: 'ISO 19650-2 clause 5.6 requires information to be reviewed and approved before publication to the CDE. Systematic L1+L2+L3 checking satisfies this requirement with an auditable, repeatable process rather than a manual review that depends on individual attention.',
+      },
+      { type: 'h2', text: 'When to Check: Six Project Checkpoints' },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '1️⃣', title: 'Before CDE upload', body: 'Prevent non-conforming models from entering the shared environment. L1+L2 at minimum; L3 if an IDS has been issued.' },
+          { icon: '2️⃣', title: 'At each design stage gate', body: 'Check all discipline models before combining into the coordination model. Structural, architectural, and MEP each checked independently.' },
+          { icon: '3️⃣', title: 'Before clash detection', body: 'Broken geometry and hierarchy cause false clashes. A clean L2 report before the clash session saves hours of investigation.' },
+          { icon: '4️⃣', title: 'Before client submission', body: 'Formal IDS validation with a recorded Health Score. Archive the checking report with the model as evidence of conformance.' },
+          { icon: '5️⃣', title: 'After significant revisions', body: 'Any revision that touches spatial structure, naming, or property data should trigger a recheck. Automated checking on every export is achievable with CLI or API workflows.' },
+          { icon: '6️⃣', title: 'At FM handover', body: 'Final LOI check: are all required properties populated? Are classification codes correct? Is the GUID set stable?' },
+        ],
+      },
+      { type: 'h2', text: 'Technical Brief: How Checking Works Under the Hood' },
+      {
+        type: 'p',
+        text: 'Modern browser-based IFC checkers use WebAssembly to run the IFC parsing engine and rule evaluation logic directly in the browser, with no server round-trip. The IFC file is parsed into an in-memory schema graph; each rule is evaluated as a query against that graph. The process for a typical architectural model (50–200 MB) takes 15–60 seconds and produces a structured results object that drives the report UI.',
+      },
+      {
+        type: 'p',
+        text: 'For IDS validation, the checker loads the IDS XML file, compiles each specification into a set of element filter criteria and property assertions, then evaluates every applicable element in the model against those assertions. The result is a per-element, per-specification conformance record with pass/fail/not-applicable status.',
+      },
+      { type: 'h2', text: 'Choosing the Right Checker for Your Workflow' },
+      {
+        type: 'p',
+        text: ['The right tool depends on your coordination role, project scale, and budget. For a detailed head-to-head, see the ', { text: 'best IFC model checkers comparison', to: 'best-ifc-model-checkers-2026' }, '. For the conceptual distinction between checking and viewing, see ', { text: 'IFC model checker vs IFC viewer', to: 'ifc-model-checker-vs-ifc-viewer' }, '. The short version:'],
+      },
+      {
+        type: 'table',
+        headers: ['Scenario', 'Recommended approach', 'Why'],
+        rows: [
+          ['Individual BIM author checking own export', 'Browser-based checker (IFC Viewer Online)', 'Instant, free, no upload, immediate feedback'],
+          ['BIM coordinator reviewing incoming models', 'Browser-based L2 + IDS check against project IDS', 'Full three-level validation, no toolchain dependency'],
+          ['Large multi-discipline project with Solibri rule sets', 'Solibri + browser-based pre-screening', 'Pre-screening reduces Solibri queue; Solibri adds project-specific rules'],
+          ['Automated CI/CD quality gate on model revisions', 'API-driven checker or CLI wrapper', 'Triggerable without human interaction; integrates with CDE workflows'],
+          ['Client requiring certified report', 'Tool with exportable HTML/PDF report and JSON audit trail', 'Defensible evidence of conformance at handover'],
+        ],
+        caption: 'Scenario-based tool selection guide for IFC checking.',
+      },
+      { type: 'h2', text: 'Running Your First IFC Check: Step by Step' },
+      {
+        type: 'ol',
+        items: [
+          'Export IFC from your authoring tool. Use IFC4 (IFC2x3 if required by the project). Keep the export settings consistent with your project BEP.',
+          'Open the IFC file in IFC Viewer Online. No account, no upload — drag the file into the browser.',
+          'Navigate to the Validation panel. The L1 schema check runs automatically; the L2 quality check starts immediately. Review the Health Score and the issue breakdown by severity and category.',
+          'Export the report as JSON or HTML for the project record. If an IDS file has been issued for your project, upload it in the IDS panel to run the L3 check.',
+        ],
+      },
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Try IFC Checking Now',
+        description: 'This IFC2x3 architectural model demonstrates the three-level checking process. Navigate to the Validation panel to see the Health Score and full rule breakdown.',
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+        showProperties: true,
+        allowFullscreen: true,
+        height: 400,
+        variant: 'inline',
+      },
+      {
+        type: 'pull-quote',
+        text: 'Catching a duplicate GUID during design costs minutes. Catching it at FM handover costs days. Systematic checking is not overhead — it is the cheapest quality control available.',
+        cite: 'BIM coordination principle',
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '✅', title: 'Three-level validation', body: 'Schema → Quality (44 rules) → IDS requirements. Each level builds on the previous.' },
+          { icon: '📊', title: 'Health Score as a gate', body: '0–100 severity-weighted score. Set 75 for coordination, 90 for formal delivery in your BEP.' },
+          { icon: '🔒', title: 'Check before upload', body: 'Browser-local checking means no NDA risk, instant feedback, and zero toolchain dependency.' },
+          { icon: '📋', title: 'ISO 19650 alignment', body: 'Checking at each IDM satisfies the review-and-approve obligation in clause 5.6 with an auditable trail.' },
+        ],
+      },
+      {
+        type: 'p',
+        text: [
+          'Continue reading: what makes a checker different from a viewer — tool categories explained in ', { text: 'IFC model checker vs IFC viewer', to: 'ifc-model-checker-vs-ifc-viewer' }, '. How eight leading tools compare on checking depth and workflow fit — ', { text: 'best IFC model checkers in 2026', to: 'best-ifc-model-checkers-2026' }, '. A practical step-by-step checking workflow for BIM coordinators — ', { text: 'how to check an IFC model before delivery', to: 'how-to-check-ifc-model-before-delivery' }, '. The ten most common IFC errors and how to detect each one — ', { text: '10 common IFC model errors', to: 'common-ifc-model-errors' }, '. Health Score calculation and use as a quality gate — ', { text: 'IFC Health Score guide', to: 'ifc-health-score' }, '.',
+        ],
+      },
+    ],
+  },
+
+  // ── Article #8: IFC Model Checker vs IFC Viewer ───────────────────────────
+  {
+    slug: 'ifc-model-checker-vs-ifc-viewer',
+    title: "IFC Model Checker vs IFC Viewer: What's the Difference?",
+    excerpt: 'Checkers validate data against rules and produce a quality score. Viewers render geometry and let you browse properties. Here is how to know which one your workflow needs — and when you need both.',
+    date: '2026-06-30',
+    author: 'IFC Viewer Online',
+    category: 'Validation',
+    categorySlug: 'validation',
+    readTimeMin: 16,
+    keywords: ['IFC model checker', 'IFC viewer', 'IFC validator', 'IFC checking vs viewing', 'BIM software comparison', 'IDS tool', 'IFC quality check'],
+    faqs: [
+      { q: 'What is the difference between an IFC viewer and an IFC model checker?', a: 'An IFC viewer renders 3D geometry and allows property browsing. An IFC model checker validates the data structure against quality rules and project requirements, producing a pass/fail report with a numerical quality score. A viewer shows you what the model looks like; a checker tells you whether the data is correct.' },
+      { q: 'Do I need both an IFC viewer and an IFC model checker?', a: 'In most BIM workflows, yes. You need a viewer to inspect geometry, coordinate visually, and navigate the model. You need a checker to validate data quality before CDE upload, coordination, and handover. Many tools combine both functions, so the choice is often about which combined tool fits your workflow best.' },
+      { q: 'What is an IFC validator?', a: 'Validator is often used interchangeably with checker, but in a strict sense it refers to schema and EXPRESS validation (Level 1 only) — confirming the file is a valid IFC. A full checker adds quality rule validation (Level 2) and IDS requirement validation (Level 3). The buildingSMART Validation Service is a validator in the strict sense.' },
+      { q: 'Which IFC tools combine both viewing and checking?', a: 'IFC Viewer Online, Solibri, BIMcollab Zoom, and BIMVision all combine viewing with some level of checking. The depth of checking varies significantly: IFC Viewer Online includes L1+L2+L3 (IDS); Solibri has deep proprietary rule sets; BIMVision offers basic property checking; BIMcollab focuses on BCF coordination.' },
+    ],
+    content: [
+      {
+        type: 'callout',
+        variant: 'info',
+        text: 'TL;DR — A viewer renders geometry and lets you browse properties. A checker validates data against rules and produces a quality score. Your workflow likely needs both. This article explains the four tool categories (viewer, checker, validator, IDS tool) and helps you decide which combination fits your project stage.',
+      },
+      { type: 'h2', text: 'The Core Distinction' },
+      {
+        type: 'p',
+        text: 'The confusion between viewers and checkers comes from the fact that many tools do both — you can view a model and check it in the same interface. But the underlying functions are completely different:',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'IFC Viewer',
+          color: 'neutral',
+          items: [
+            'Renders 3D geometry in browser or desktop',
+            'Click elements to browse property sets',
+            'Supports section cuts, measurements, annotations',
+            'Used for visual coordination and design review',
+            'Output: visual inspection, BCF markups, comments',
+            'Cannot detect duplicate GUIDs',
+            'Cannot verify property set completeness',
+            'Cannot validate IDS requirements',
+          ],
+        },
+        right: {
+          label: 'IFC Model Checker',
+          color: 'accent',
+          items: [
+            'Parses the IFC data graph and validates against rules',
+            'Checks 44+ quality rules: GUIDs, hierarchy, Psets, geometry',
+            'Validates IDS 1.0 requirements against project specifications',
+            'Produces a Health Score (0–100) for delivery gating',
+            'Output: structured report, JSON/CSV export, audit trail',
+            'Identifies every duplicate GUID in the file',
+            'Verifies Pset completeness across all element types',
+            'Validates IDS facets: entity, attribute, property, classification',
+          ],
+        },
+      },
+      { type: 'h2', text: 'Four Tool Categories in the IFC Ecosystem' },
+      {
+        type: 'p',
+        text: 'The IFC tooling landscape uses four distinct terms, often interchangeably. Here is what each one means precisely:',
+      },
+      {
+        type: 'table',
+        headers: ['Category', 'What it does', 'What it does NOT do', 'Examples'],
+        rows: [
+          ['IFC Viewer', 'Renders 3D geometry, property browser, section cuts, measurements', 'Quality rule checking, Health Score, IDS validation', 'Autodesk Viewer, Trimble Connect, Dalux, usBIM.viewer+'],
+          ['IFC Validator (strict)', 'Schema and EXPRESS validation (Level 1 only)', 'Quality rules (L2), IDS requirements (L3)', 'buildingSMART Validation Service, IfcOpenShell ifcvalidate'],
+          ['IFC Model Checker', 'L1 + L2 quality rules (44 rules, Health Score)', 'IDS unless explicitly included', 'IFC Viewer Online (L1+L2+L3), Solibri, BIMcollab Zoom'],
+          ['IDS Tool', 'Validates model against IDS 1.0 specification files', 'General quality rules beyond IDS scope', 'IFC Viewer Online, buildingSMART Validator, IfcTester'],
+        ],
+        caption: 'Four IFC tool categories — what they check and what they do not.',
+      },
+      { type: 'h2', text: 'When You Need a Viewer' },
+      {
+        type: 'ul',
+        items: [
+          'Visual coordination and clash review meetings',
+          'Client presentations and design review',
+          'On-site model access for contractors',
+          'Creating BCF markups for RFIs and design comments',
+          'Checking geometric fit and spatial relationships visually',
+          'Property browsing during design development',
+        ],
+      },
+      { type: 'h2', text: 'When You Need a Checker' },
+      {
+        type: 'ul',
+        items: [
+          'Before uploading a model to the CDE',
+          'At each design stage gate in an ISO 19650 workflow',
+          'Before combining discipline models for clash detection',
+          'Before formal submission to the client or FM',
+          'When receiving a model from a subcontractor or consultant',
+          'When validating against a project IDS specification',
+        ],
+      },
+      { type: 'h2', text: 'Decision Tree: Which Tool Do You Need?' },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `What is your goal?
+│
+├─ See the model geometry / navigate 3D
+│   └─ You need a VIEWER
+│       ├─ Free, browser-based: IFC Viewer Online, Autodesk Viewer
+│       └─ Desktop: BIMVision, Trimble Connect desktop
+│
+├─ Confirm the file is valid IFC (schema)
+│   └─ You need a VALIDATOR (L1)
+│       ├─ buildingSMART Validation Service (online)
+│       └─ IFC Viewer Online (L1 runs automatically on open)
+│
+├─ Confirm the model is quality-ready for delivery
+│   └─ You need a CHECKER (L1 + L2)
+│       ├─ IFC Viewer Online (browser-local, free, Health Score)
+│       └─ Solibri (deeper rule sets, subscription)
+│
+├─ Validate against project-specific data requirements
+│   └─ You need an IDS TOOL (L3)
+│       ├─ IFC Viewer Online (full IDS 1.0 support)
+│       └─ buildingSMART Validation Service
+│
+└─ All of the above in one workflow
+    └─ IFC Viewer Online (viewer + L1 + L2 + L3 + Health Score)`,
+      },
+      { type: 'h2', text: 'Tools That Combine Both Functions' },
+      {
+        type: 'table',
+        headers: ['Tool', 'Viewing', 'L1 Schema', 'L2 Quality (44 rules)', 'L3 IDS 1.0', 'Health Score', 'Cost'],
+        rows: [
+          ['IFC Viewer Online', '✓ Full 3D', '✓', '✓ 44 rules', '✓ Full IDS 1.0', '✓ 0–100', 'Free'],
+          ['Solibri', '✓ Full 3D', '✓', '✓ Deep proprietary rules', 'Partial (via MVD)', '✗', '€99–€2,700/yr'],
+          ['BIMcollab Zoom', '✓ Full 3D', '✓', 'Basic', '✗', '✗', '€25–€45/user/mo'],
+          ['BIMVision', '✓ Full 3D', '✓', 'Basic Pset check', '✗', '✗', 'Free / €30/mo'],
+          ['buildingSMART Validator', '✗ No viewer', '✓', 'Limited', '✓ IDS focus', '✗', 'Free'],
+          ['Autodesk Viewer', '✓ Full 3D', '✓ via upload', '✗', '✗', '✗', 'Free (Autodesk account)'],
+          ['Trimble Connect', '✓ Full 3D', '✓ via upload', '✗', '✗', '✗', 'Free tier / subscription'],
+          ['Dalux', '✓ Full 3D', '✓', '✗', '✗', '✗', 'Custom pricing'],
+        ],
+        caption: 'Combined viewer+checker tools: checking depth at a glance.',
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: 'Expert tip: cloud-based viewers (Autodesk, Trimble, Dalux) require uploading your IFC file to a server. For confidential projects, use a browser-local tool like IFC Viewer Online where the file never leaves your machine — verifiable in DevTools Network tab.',
+      },
+      { type: 'h2', text: 'Common Misconceptions' },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '❌', title: '"My viewer validates IFC"', body: 'If a viewer can open the file without crashing, it does not mean the file is valid. Viewers are tolerant — they skip what they cannot render. A checker is strict by design.' },
+          { icon: '❌', title: '"Schema validation is enough"', body: 'L1 schema validation confirms the file structure is parseable. A schema-valid file can still have hundreds of duplicate GUIDs, missing Psets, and broken hierarchy.' },
+          { icon: '❌', title: '"IDS covers quality rules"', body: 'IDS validates project-specific requirements. It does not check general quality: whether all elements have valid GUIDs, storeys are correctly structured, or geometry is sound.' },
+          { icon: '❌', title: '"Any score makes it a checker"', body: 'Some tools show a completeness percentage based on a sample. A genuine L2 checker applies the same 44 rules to every element in the file with severity-weighted penalties.' },
+        ],
+      },
+      { type: 'h2', text: 'Workflow Integration: Viewer and Checker Together' },
+      {
+        type: 'ol',
+        items: [
+          'Author exports IFC → checker runs L1+L2+L3 → errors returned to author for fixing.',
+          'Fixed model re-exported → checker confirms Health Score ≥ threshold → model admitted to CDE.',
+          'In the CDE, coordination team opens model in viewer → visual review, BCF markups, clash detection.',
+          'Before formal submission → checker re-run → report archived as conformance evidence.',
+        ],
+      },
+      {
+        type: 'pull-quote',
+        text: 'A viewer tells you what the model looks like. A checker tells you whether the data is correct. Both questions matter — at different points in the delivery workflow.',
+        cite: 'Open BIM coordination principle',
+      },
+      {
+        type: 'p',
+        text: ['For a detailed step-by-step version of this workflow, see ', { text: 'how to check an IFC model before delivery', to: 'how-to-check-ifc-model-before-delivery' }, '. For a comparison of all major checking tools, see ', { text: 'best IFC model checkers in 2026', to: 'best-ifc-model-checkers-2026' }, '. For the complete overview of validation levels and Health Score, see the ', { text: 'IFC model checker complete guide', to: 'ifc-model-checker' }, '.'],
+      },
+    ],
+  },
+
+  // ── Article #9: Best IFC Model Checkers in 2026 ───────────────────────────
+  {
+    slug: 'best-ifc-model-checkers-2026',
+    title: 'Best IFC Model Checkers in 2026: Honest Comparison',
+    excerpt: 'An independent comparison of eight tools on actual checking depth — not just what their marketing says. Includes checking capability table, workflow fit guide, and honest assessments of what each tool does and does not do.',
+    date: '2026-06-30',
+    author: 'IFC Viewer Online',
+    category: 'Tool Guides',
+    categorySlug: 'tool-guides',
+    readTimeMin: 22,
+    keywords: ['best IFC model checker', 'IFC checker comparison', 'IFC validation tools', 'Solibri alternative', 'BIM quality check software', 'IDS validation tool', 'IFC Health Score tool'],
+    faqs: [
+      { q: 'What is the best free IFC model checker?', a: 'IFC Viewer Online is the most complete free IFC model checker available: it runs all three validation levels (L1 schema, L2 quality rules with 44 checks and Health Score, L3 IDS 1.0) entirely in the browser with no file upload. The buildingSMART Validation Service is free and strong on IDS but lacks L2 quality rules and has no viewer.' },
+      { q: 'Is Solibri worth the cost for IFC model checking?', a: 'Solibri is worth the cost on large, complex multi-discipline projects where you need deep custom rule sets, proprietary clash management, and a mature coordination workflow. For pre-screening, ad-hoc checking, and IDS validation, a free browser-based tool is more practical for most BIM coordinators.' },
+      { q: 'Which IFC checkers support IDS 1.0 validation?', a: 'As of 2026, IFC Viewer Online and the buildingSMART Validation Service are the primary tools supporting the full IDS 1.0 specification. Solibri has partial support via MVD checking but does not use the IDS 1.0 XML format directly.' },
+      { q: 'Do Autodesk Viewer and Trimble Connect check IFC models?', a: 'No. Autodesk Viewer and Trimble Connect are viewers — they render geometry and allow property browsing but do not validate quality rules, check Pset completeness, detect duplicate GUIDs, or produce a Health Score. They perform L1 schema validation implicitly (they reject files they cannot parse) but nothing beyond that.' },
+    ],
+    content: [
+      {
+        type: 'callout',
+        variant: 'info',
+        text: 'TL;DR — Only three of the eight tools reviewed here perform meaningful IFC model checking beyond schema validation: IFC Viewer Online (L1+L2+L3, free), Solibri (L1+L2 deep proprietary rules, subscription), and buildingSMART Validation Service (L1+L3 IDS, free). The others are viewers that happen to open IFC files. This matters when choosing a tool for delivery quality gates.',
+      },
+      {
+        type: 'callout',
+        variant: 'warning',
+        text: 'Honest disclosure: this comparison is published by IFC Viewer Online. We have tried to be accurate about our own limitations and fair about competitor strengths. Where a competing tool genuinely does something better, we say so. Verify claims that matter to your workflow by testing with your own IFC files.',
+      },
+      { type: 'h2', text: 'What Makes an IFC Checker a Real Checker?' },
+      {
+        type: 'p',
+        text: 'Before comparing tools, it is worth being precise about what "checking" means. The three validation levels determine whether a tool is a checker or a viewer with checking marketing:',
+      },
+      {
+        type: 'ul',
+        items: [
+          'L1 (schema) — every tool that successfully opens an IFC file implicitly performs L1 validation. This is not a differentiator.',
+          'L2 (quality rules) — 44 rules covering GUIDs, spatial hierarchy, Pset completeness, geometry, naming, and relationships. This is the real checker function.',
+          'L3 (IDS) — validates the model against a project-specific IDS 1.0 specification. This is the requirements compliance function.',
+        ],
+      },
+      {
+        type: 'p',
+        text: 'A tool that does L1 only and calls itself a checker is misleading you. The rest of this article uses L1/L2/L3 clearly for each tool.',
+      },
+      { type: 'h2', text: 'The Eight Tools: Checking Depth Overview' },
+      {
+        type: 'table',
+        headers: ['Tool', 'L1 Schema', 'L2 Quality Rules', 'L3 IDS 1.0', 'Health Score', 'Viewer', 'File stays local', 'Cost'],
+        rows: [
+          ['IFC Viewer Online', '✓', '✓ 44 rules', '✓ Full IDS 1.0', '✓ 0–100', '✓', '✓ Browser-local', 'Free'],
+          ['Solibri', '✓', '✓ Deep proprietary', 'Partial (MVD)', '✗', '✓', '✓ Desktop', '€99–€2,700/yr'],
+          ['BIMVision', '✓', '✗ Basic only', '✗', '✗', '✓', '✓ Desktop', 'Free / €30/mo'],
+          ['Trimble Connect', '✓ implicit', '✗', '✗', '✗', '✓', '✗ Cloud upload', 'Free tier / subscription'],
+          ['Dalux', '✓ implicit', '✗', '✗', '✗', '✓', '✗ Cloud upload', 'Custom pricing'],
+          ['Autodesk Viewer', '✓ implicit', '✗', '✗', '✗', '✓', '✗ Cloud upload', 'Free (Autodesk account)'],
+          ['That Open Viewer', '✓', '✗ (roadmap)', '✗', '✗', '✓', '✓ Browser-local', 'Free / OSS'],
+          ['buildingSMART Validator', '✓', 'Limited', '✓ IDS focus', '✗', '✗', '✗ Upload', 'Free'],
+        ],
+        caption: 'Checking depth comparison across eight tools. L2 quality rules and L3 IDS are the meaningful differentiators.',
+      },
+      { type: 'h2', text: '1. IFC Viewer Online' },
+      {
+        type: 'p',
+        text: 'IFC Viewer Online is a browser-based tool that combines a full 3D viewer with all three validation levels. Files are processed locally using WebAssembly — nothing is uploaded to a server. The L2 engine applies 44 quality rules and produces a Health Score (0–100) that can be used directly as a delivery gate. IDS 1.0 is fully supported across all six facets.',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Full L1 + L2 (44 rules) + L3 (IDS 1.0) in one tool',
+            'Health Score (0–100) for delivery gating',
+            'Browser-local: zero upload, GDPR-compliant, works offline',
+            'Free with no account required',
+            'Export report as JSON, CSV, or HTML',
+            'IDS 1.0 validated against 100 official bSI testcases',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'neutral',
+          items: [
+            'No proprietary rule customisation (unlike Solibri)',
+            'No native BCF coordination workflow (BCF export only)',
+            'No federated multi-model clash detection',
+            'Browser memory limits large files (>500 MB may struggle)',
+          ],
+        },
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: 'Best for: BIM coordinators who need immediate, free, privacy-safe checking without a subscription. Also ideal as a pre-screening step before Solibri on large projects — only models with Health Score ≥ 75 enter the Solibri queue.',
+      },
+      { type: 'h2', text: '2. Solibri' },
+      {
+        type: 'p',
+        text: 'Solibri is the market leader in deep IFC rule checking. Its rule engine allows BIM managers to define project-specific checks beyond the standard quality rules — covering coordination, regulatory compliance, and spatial validation at a level no free tool currently matches. The learning curve is steep and the cost significant, but for large infrastructure or commercial projects, the depth is genuine.',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Deepest proprietary rule engine available',
+            'Customisable rule sets for project-specific compliance',
+            'Mature coordination workflow with BCF and clash management',
+            'Strong BIM manager tooling for enterprise projects',
+            'Extensive rule library built over 20+ years',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'neutral',
+          items: [
+            'No IDS 1.0 XML support (uses MVD, not the IDS standard)',
+            'No Health Score — results require manual interpretation',
+            'Expensive: €99/mo Solibri Anywhere, €2,700+/yr full licence',
+            'Desktop-only; no browser-based option',
+            'Steep learning curve; effective use requires training',
+          ],
+        },
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: 'Best for: BIM managers on large multi-discipline projects where custom rule sets and coordination workflow integration justify the cost. Not the right choice for individual BIM authors or occasional checking.',
+      },
+      { type: 'h2', text: '3. BIMVision' },
+      {
+        type: 'p',
+        text: 'BIMVision is a capable free IFC viewer from Datacomp that has been widely used in the Central and Eastern European market. It includes basic property browsing and some Pset inspection capability, but it is not a model checker in the L2/L3 sense. There is no quality rule engine, no Health Score, and no IDS validation. The paid version adds features like BCF and IFC federation.',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Good free desktop IFC viewer',
+            'Property inspection and Pset browsing',
+            'Federation of multiple IFC files',
+            'BCF support in paid version',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'neutral',
+          items: [
+            'No L2 quality rules — not a model checker',
+            'No Health Score or delivery gating',
+            'No IDS 1.0 validation',
+            'Windows desktop only — no browser version',
+          ],
+        },
+      },
+      { type: 'h2', text: '4. Trimble Connect' },
+      {
+        type: 'p',
+        text: 'Trimble Connect is a CDE platform and model viewer, not a model checker. It accepts IFC uploads, renders them in 3D, and supports clash detection as part of the coordination workflow. It does not apply quality rules to the IFC data layer and produces no quality report. It is excellent for what it is: a cloud-hosted coordination and document management platform.',
+      },
+      {
+        type: 'callout',
+        variant: 'warning',
+        text: 'Trimble Connect is a CDE viewer, not a checker. If your workflow involves Trimble Connect, you still need a dedicated checker before the CDE upload step to validate model quality.',
+      },
+      { type: 'h2', text: '5. Dalux' },
+      {
+        type: 'p',
+        text: 'Dalux is a strong construction platform for on-site use with good IFC viewing capabilities on mobile and desktop. Like Trimble Connect, it is not a model checker — there is no L2 quality rule engine. Its strength is in construction phase workflows: site checklists, RFIs, and document management. The IFC viewing component is excellent for site personnel who need to access the model without a BIM specialist present.',
+      },
+      { type: 'h2', text: '6. Autodesk Viewer (Autodesk Docs)' },
+      {
+        type: 'p',
+        text: 'Autodesk Viewer (embedded in Autodesk Docs / BIM 360) renders IFC files uploaded to the Autodesk cloud. It provides good property browsing and supports most IFC4 entities. There is no quality rule checking, no Health Score, and no IDS support. Files must be uploaded to Autodesk servers — a consideration for confidential projects. As a viewer it is polished; as a checker it does not exist.',
+      },
+      { type: 'h2', text: '7. That Open Viewer (ThatOpenCompany)' },
+      {
+        type: 'p',
+        text: 'That Open Viewer is an open-source browser-based IFC viewer built on the ThatOpen engine (formerly IFC.js). It is actively developed and has growing community adoption. As of mid-2026, checking features are in the roadmap but not implemented — it is a viewer with good developer extensibility. Worth watching for teams with development resources who want to build custom checking on top of the OSS engine.',
+      },
+      { type: 'h2', text: '8. buildingSMART Validation Service' },
+      {
+        type: 'p',
+        text: 'The buildingSMART Validation Service is the official online validator maintained by the IFC standard body. It has authoritative L1 schema validation and solid IDS 1.0 support. What it lacks is L2 quality rules, a Health Score, and a 3D viewer. It is the right tool for formally certifying IDS conformance (particularly useful when submitting to public sector clients who require bSI-certified validation), but not for day-to-day quality checking.',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Authoritative L1 schema validation from the standard body',
+            'Full IDS 1.0 validation support',
+            'Free, no account required',
+            'Output accepted as formal conformance evidence in some contracts',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'neutral',
+          items: [
+            'No L2 quality rules — no Health Score',
+            'No 3D viewer — data-only output',
+            'Requires file upload — not suitable for confidential data',
+            'Processing time for large files can be slow',
+          ],
+        },
+      },
+      { type: 'h2', text: 'Workflow Fit: Which Tool for Which Scenario?' },
+      {
+        type: 'table',
+        headers: ['Scenario', 'Best tool', 'Why'],
+        rows: [
+          ['Author checking own export before CDE upload', 'IFC Viewer Online', 'Instant, free, browser-local, full L2 + Health Score'],
+          ['BIM coordinator pre-screening incoming models', 'IFC Viewer Online', 'Same reasons; plus IDS validation if project IDS exists'],
+          ['Large project with complex custom rule sets', 'Solibri', 'Proprietary rule engine depth not matched by free tools'],
+          ['Pre-screening before Solibri queue', 'IFC Viewer Online', 'Only models with Health Score ≥ 75 enter Solibri — reduces review time'],
+          ['Public sector IDS conformance certification', 'buildingSMART Validator + IFC Viewer Online', 'bSI validator for formal certificate; IFC Viewer Online for L2 quality'],
+          ['Construction site model access', 'Dalux or Trimble Connect', 'Mobile-optimised viewers for on-site teams'],
+          ['Autodesk-platform project coordination', 'Autodesk Docs + IFC Viewer Online', 'Autodesk Docs for coordination; IFC Viewer Online for checking before upload'],
+          ['OSS project with development resources', 'That Open Viewer (customised)', 'Extensible engine for custom checking integration'],
+        ],
+        caption: 'Workflow-based tool selection guide.',
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: 'Expert tip: the most efficient enterprise workflow is not a single tool — it is IFC Viewer Online for author-side pre-screening (free, instant, zero friction), plus Solibri for coordinator-side deep checking on models that have already passed the Health Score threshold. The combination reduces Solibri licence costs by limiting deep-check time to quality-ready models only.',
+      },
+      { type: 'h2', text: 'Pricing Comparison' },
+      {
+        type: 'table',
+        headers: ['Tool', 'Free tier', 'Paid tier', 'What paid adds'],
+        rows: [
+          ['IFC Viewer Online', 'Full features', '—', 'All features free'],
+          ['Solibri', 'Solibri Anywhere (limited)', '€99/mo – €2,700+/yr', 'Full rule engine, custom rules, enterprise coordination'],
+          ['BIMVision', 'Free viewer', '€30/mo', 'BCF, federation, advanced views'],
+          ['Trimble Connect', 'Free (limited storage)', 'Custom', 'CDE storage, clash detection, project management'],
+          ['Dalux', 'Contact sales', 'Custom', 'Construction platform, site checklist, RFI'],
+          ['Autodesk Viewer', 'Free (Autodesk account)', 'BIM 360 / ACC subscription', 'Full CDE, clash, document management'],
+          ['That Open Viewer', 'Free / OSS', 'Paid support', 'Community support, custom development'],
+          ['buildingSMART Validator', 'Free', '—', 'Free for all'],
+        ],
+        caption: 'Pricing overview as of 2026. Verify current pricing directly with vendors.',
+      },
+      {
+        type: 'pull-quote',
+        text: 'Three of the eight tools reviewed here perform L2 quality checking. The other five are viewers. That distinction is what matters when you are setting a delivery quality gate.',
+        cite: 'IFC Viewer Online editorial',
+      },
+      {
+        type: 'p',
+        text: ['For the conceptual framework behind checking levels, see the ', { text: 'IFC model checker complete guide', to: 'ifc-model-checker' }, '. For the distinction between checkers and viewers, see ', { text: 'IFC model checker vs IFC viewer', to: 'ifc-model-checker-vs-ifc-viewer' }, '. For a step-by-step checking workflow, see ', { text: 'how to check an IFC model before delivery', to: 'how-to-check-ifc-model-before-delivery' }, '. For the specific errors that L2 checking catches, see ', { text: '10 common IFC model errors', to: 'common-ifc-model-errors' }, '.'],
+      },
+    ],
+  },
+
+  // ── Article #10: How to Check an IFC Model Before Delivery ───────────────
+  {
+    slug: 'how-to-check-ifc-model-before-delivery',
+    title: 'How to Check an IFC Model Before Delivery (Step-by-Step)',
+    excerpt: 'A practical workflow for BIM coordinators: export, schema check, quality check, fix errors, IDS validation, archive the report. With checklists for each stage and ISO 19650 stage gate guidance.',
+    date: '2026-06-30',
+    author: 'IFC Viewer Online',
+    category: 'Validation',
+    categorySlug: 'validation',
+    readTimeMin: 18,
+    keywords: ['how to check IFC model', 'IFC model checking workflow', 'IFC delivery checklist', 'BIM coordinator workflow', 'IFC quality check before delivery', 'ISO 19650 IFC check', 'IDS validation workflow'],
+    faqs: [
+      { q: 'How do I check an IFC model before delivery?', a: 'The recommended workflow has four steps: (1) Export IFC from your authoring tool with consistent settings. (2) Run L1 schema validation to confirm the file is structurally valid. (3) Run L2 quality checking (44 rules) to get a Health Score — aim for 90+ for formal delivery. (4) Run L3 IDS validation if a project IDS file has been issued. Fix any failures, then re-run before uploading to the CDE or submitting to the client.' },
+      { q: 'What Health Score should an IFC model have before delivery?', a: 'For formal delivery to a client or FM, aim for a Health Score of 90 or above. For internal coordination uploads to the CDE, 75 is a practical minimum. Models below 50 should be returned to the authoring team before any coordination use. These thresholds should be written into the project BEP so authors know them from day one.' },
+      { q: 'What IFC export settings should I use for checking?', a: 'For Revit: use the NBS or Open BIM IFC exporter, not the built-in one. Set coordinate system to project coordinates. Enable all geometry types. Do not simplify or merge elements. Export property sets. For ArchiCAD: use the Coordination View or Design Transfer View profile. Always export with IFCGloballyUniqueId preservation enabled.' },
+      { q: 'How long does IFC checking take?', a: 'Schema validation (L1) takes seconds. Quality rule checking (L2) for a typical architectural model (50–200 MB) takes 15–60 seconds in a browser-based tool. IDS validation (L3) adds a further 10–30 seconds depending on the number of IDS specifications and model size. The full three-level check should complete in under two minutes for most project models.' },
+    ],
+    content: [
+      {
+        type: 'callout',
+        variant: 'info',
+        text: 'TL;DR — Check your IFC in four steps before every delivery: export with correct settings, run L1 schema check, run L2 quality check (Health Score ≥ 90 for formal delivery), run L3 IDS check against your project specification. Fix, re-run, then upload. This article gives you the checklists and workflow diagrams to make this repeatable.',
+      },
+      { type: 'h2', text: 'Why a Checking Workflow Matters' },
+      {
+        type: 'p',
+        text: 'Most IFC quality problems are introduced at the authoring tool level and discovered at the coordination or handover stage — often too late to fix without rework. A systematic pre-delivery checking workflow catches these problems at the cheapest point in the project lifecycle: before the model enters the CDE.',
+      },
+      {
+        type: 'p',
+        text: 'The workflow described here takes less than five minutes for a typical model and produces a checking report that serves as a conformance record. It can be run by individual BIM authors before every CDE upload, and by BIM coordinators as a gate check on incoming models.',
+      },
+      { type: 'h2', text: 'The Four-Step Checking Workflow' },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `STEP 1: Export
+Authoring tool → IFC export with correct settings
+        │
+        ▼
+STEP 2: L1 Schema Check (< 5 seconds)
+Is the file structurally valid IFC?
+        │ fail → fix export settings or authoring tool issue
+        │ pass
+        ▼
+STEP 3: L2 Quality Check (15–60 seconds)
+44 rules: GUIDs, hierarchy, Psets, geometry, names
+Health Score calculated (0–100)
+        │ fail (score < 75) → return to author with error report
+        │ pass
+        ▼
+STEP 4: L3 IDS Check (10–30 seconds, if IDS exists)
+Validate against project IDS specification
+        │ fail → return to author with IDS non-conformances
+        │ pass
+        ▼
+Archive report → Upload to CDE`,
+      },
+      { type: 'h2', text: 'Step 1: Export with Correct Settings' },
+      {
+        type: 'p',
+        text: 'Most IFC quality problems originate in the export, not the model. The authoring tool export settings determine whether the IFC file will contain correct GUIDs, complete property sets, and well-formed geometry.',
+      },
+      {
+        type: 'table',
+        headers: ['Authoring tool', 'Recommended export approach', 'Key settings to check'],
+        rows: [
+          ['Revit', 'Use NBS or Revit IFC exporter (not legacy built-in)', 'IFC version (IFC4 preferred), property sets, coordinate system, geometry types'],
+          ['ArchiCAD', 'Use Coordination View 2.0 or Design Transfer View', 'GUID stability enabled, Psets included, storey structure preserved'],
+          ['Tekla Structures', 'IFC4 Design Transfer View', 'Assembly/part handling, reinforcement export, naming conventions'],
+          ['Allplan', 'IFC4 export with project properties', 'Storey assignment, classification codes, Pset mapping'],
+          ['Vectorworks', 'IFC4 or IFC2x3 coordination view', 'Story levels mapped, Pset export enabled, classification assigned'],
+        ],
+        caption: 'Export guidance by authoring tool — verify with your project BEP.',
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: 'Expert tip: create a saved export preset in your authoring tool with all project-correct settings and share it with all authoring team members. One misconfigured export generates hours of correction downstream.',
+      },
+      {
+        type: 'ul',
+        items: [
+          'Export checklist: IFC version matches project BEP (IFC4 or IFC2x3)',
+          'Export checklist: property sets enabled (not suppressed for file size)',
+          'Export checklist: coordinate system set to project coordinates (not world origin)',
+          'Export checklist: all geometry types included (not simplified or merged)',
+          'Export checklist: naming convention matches project convention document',
+          'Export checklist: classification codes mapped in export settings',
+        ],
+      },
+      { type: 'h2', text: 'Step 2: L1 Schema Validation' },
+      {
+        type: 'p',
+        text: 'Open the IFC file in a checker. In IFC Viewer Online, L1 schema validation runs automatically when you open the file — it takes seconds. If L1 fails, the checker will report the specific entity or attribute that is invalid. L1 failures usually indicate:',
+      },
+      {
+        type: 'ul',
+        items: [
+          'Wrong IFC version for the export profile used',
+          'Authoring tool bug producing invalid entity references',
+          'File corruption during export or transfer',
+          'Incorrect file header (e.g., file created with IFC2x3 but labelled IFC4)',
+        ],
+      },
+      {
+        type: 'p',
+        text: 'Fix L1 failures by correcting the export settings, updating the authoring tool exporter, or contacting the software vendor if the issue is a known bug.',
+      },
+      { type: 'h2', text: 'Step 3: L2 Quality Check and Health Score' },
+      {
+        type: 'p',
+        text: 'The L2 quality check is the main checking step. Forty-four rules evaluate every element in the model across six categories. The result is a Health Score (0–100) and a prioritised list of issues by severity.',
+      },
+      {
+        type: 'table',
+        headers: ['Issue severity', 'Definition', 'Recommended action'],
+        rows: [
+          ['Error', 'Blocking quality problem — will cause failures in downstream tools', 'Must fix before CDE upload; blocks delivery'],
+          ['Warning', 'Quality problem that may cause issues in some downstream workflows', 'Should fix before formal delivery; acceptable for informal coordination'],
+          ['Info', 'Advisory — deviation from best practice with no immediate downstream impact', 'Fix at next model revision; does not block delivery'],
+        ],
+        caption: 'Issue severity levels and recommended BIM coordinator actions.',
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: 'Expert tip: when reviewing L2 results, fix errors first and in order of frequency — a single root cause (e.g., one floor plan with no storey assignment) can generate dozens of issues. Fix the root cause, not each individual issue.',
+      },
+      {
+        type: 'ul',
+        items: [
+          'L2 checklist: Health Score ≥ 90 for formal delivery, ≥ 75 for coordination uploads',
+          'L2 checklist: zero duplicate GUIDs',
+          'L2 checklist: all building elements assigned to a storey',
+          'L2 checklist: all storeys assigned to a building, building assigned to a site',
+          'L2 checklist: no elements with empty or generic names (e.g., "Wall" or "Beam 1")',
+          'L2 checklist: standard Psets present and populated for all major element types',
+          'L2 checklist: no geometry with zero volume or broken Boolean operations',
+        ],
+      },
+      { type: 'h2', text: 'Step 4: L3 IDS Validation' },
+      {
+        type: 'p',
+        text: 'If a project IDS file has been issued (as part of the EIR or separately), the L3 check validates whether the model contains the required data. An IDS specifies which element types must carry which properties, with which values or value ranges, and with which classification codes.',
+      },
+      {
+        type: 'p',
+        text: 'To run L3 validation in IFC Viewer Online: open the IDS panel, upload the project .ids file, and the checker evaluates every applicable element. Results are reported per specification: how many elements are required, how many pass, how many fail, and exactly which elements fail which requirement.',
+      },
+      {
+        type: 'ul',
+        items: [
+          'L3 checklist: all IDS specifications show 100% pass rate',
+          'L3 checklist: no elements show "not-applicable" when they should be in scope',
+          'L3 checklist: classification codes match the IDS-required classification system',
+          'L3 checklist: required material assignments are present',
+          'L3 checklist: required custom Psets and properties exist with correct values',
+        ],
+      },
+      { type: 'h2', text: 'Archiving the Checking Report' },
+      {
+        type: 'p',
+        text: 'A checking report is only useful as a conformance record if it is archived alongside the model. Export the report as JSON (full machine-readable audit trail) or HTML (human-readable summary) and upload it to the CDE with the model. The report should include:',
+      },
+      {
+        type: 'ul',
+        items: [
+          'Date and time of check',
+          'Model file name and version',
+          'Tool name and version used for checking',
+          'Health Score at time of submission',
+          'Error and warning counts by category',
+          'IDS specification results if L3 was run',
+        ],
+      },
+      { type: 'h2', text: 'ISO 19650 Stage Gate Integration' },
+      {
+        type: 'p',
+        text: 'ISO 19650-2 defines information delivery milestones at each project stage. The checking workflow maps directly onto these milestones:',
+      },
+      {
+        type: 'table',
+        headers: ['Project stage', 'ISO 19650 milestone', 'Minimum check required', 'Health Score threshold'],
+        rows: [
+          ['Concept / RIBA Stage 2', 'Concept information', 'L1 + L2 quality', '≥ 60'],
+          ['Developed Design / RIBA Stage 3', 'Design intent', 'L1 + L2 + L3 (if IDS issued)', '≥ 75'],
+          ['Technical Design / RIBA Stage 4', 'Technical design', 'L1 + L2 + L3', '≥ 85'],
+          ['Construction / RIBA Stage 5', 'Construction information', 'L1 + L2 + L3', '≥ 90'],
+          ['Handover / RIBA Stage 6', 'As-built / FM handover', 'L1 + L2 + L3 full LOI', '≥ 90'],
+        ],
+        caption: 'ISO 19650 stage gates and recommended checking thresholds by RIBA stage.',
+      },
+      {
+        type: 'callout',
+        variant: 'info',
+        text: 'These thresholds are recommendations based on common practice — your project BEP should define the accepted Health Score threshold for each delivery milestone. Earlier stages may have lower thresholds to avoid blocking design iteration; later stages should be strict.',
+      },
+      { type: 'h2', text: 'Fixing Common Issues Before Re-Checking' },
+      {
+        type: 'p',
+        text: ['For a detailed guide to the most common errors and how to fix them, see ', { text: '10 common IFC model errors', to: 'common-ifc-model-errors' }, '. The three most frequent L2 failures are:'],
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '🔑', title: 'Duplicate GUIDs', body: 'Caused by copy-paste of elements in Revit or ArchiCAD without GUID regeneration. Fix: use the authoring tool\'s GUID management tool, or export with a fresh GUID set. In IFC Viewer Online, the error report identifies each duplicate by element name and type.' },
+          { icon: '🏗️', title: 'Elements not assigned to storey', body: 'Caused by elements placed at levels that are not connected to the IFC spatial hierarchy. Fix: in Revit, check the element\'s "Level" parameter. In ArchiCAD, check the home storey assignment. Then re-export.' },
+          { icon: '📋', title: 'Missing property sets', body: 'Caused by Pset mapping not configured in the export settings, or elements of types that the exporter does not map by default. Fix: review the exporter Pset mapping table and add missing mappings. For custom Psets, use the IDS approach to define them formally.' },
+        ],
+      },
+      {
+        type: 'pull-quote',
+        text: 'A five-minute check before every CDE upload saves hours of rework downstream. Make it part of the export routine, not a last-minute quality audit.',
+        cite: 'BIM coordination best practice',
+      },
+      {
+        type: 'p',
+        text: ['See also: the full three-level validation framework in the ', { text: 'IFC model checker complete guide', to: 'ifc-model-checker' }, '. How checkers differ from viewers — ', { text: 'IFC model checker vs IFC viewer', to: 'ifc-model-checker-vs-ifc-viewer' }, '. Which tool to choose — ', { text: 'best IFC model checkers in 2026', to: 'best-ifc-model-checkers-2026' }, '. The 10 most common IFC errors and how to detect each one — ', { text: '10 common IFC model errors', to: 'common-ifc-model-errors' }, '.'],
+      },
+    ],
+  },
+
+  // ── Article #11: 10 Common IFC Model Errors ───────────────────────────────
+  {
+    slug: 'common-ifc-model-errors',
+    title: '10 Common IFC Model Errors and How to Detect Them',
+    excerpt: 'The ten errors that appear most often in IFC files delivered on real projects — what causes them, how a model checker detects them, and how to fix them at the source.',
+    date: '2026-06-30',
+    author: 'IFC Viewer Online',
+    category: 'Validation',
+    categorySlug: 'validation',
+    readTimeMin: 20,
+    keywords: ['IFC model errors', 'IFC validation errors', 'duplicate GUID IFC', 'IFC broken hierarchy', 'missing property sets IFC', 'IFC geometry errors', 'IFC checking', 'BIM model quality'],
+    faqs: [
+      { q: 'What are the most common IFC model errors?', a: 'The most frequent IFC errors are: duplicate GUIDs (caused by copy-paste without GUID regeneration), elements not assigned to a storey, missing required property sets, empty or generic element names, invalid geometry (zero-volume or broken Boolean operations), wrong or absent classification codes, broken element relationships, naming convention violations, missing ISO 19650 EIR metadata, and LOD/LOI inconsistencies between element types.' },
+      { q: 'How do I find duplicate GUIDs in an IFC file?', a: 'Load the IFC file into a model checker like IFC Viewer Online. The L2 quality check identifies all duplicate GUIDs and lists the affected elements by name and type. You cannot reliably detect duplicate GUIDs by viewing the model — they are invisible in 3D; only a data-level check catches them.' },
+      { q: 'Why do IFC models have missing property sets?', a: 'Missing property sets are usually caused by one of three things: the authoring tool exporter does not map that element type to the standard Pset by default; the Pset mapping was configured incorrectly in the export settings; or the element type is non-standard and has no IFC Pset equivalent. Fix by reviewing the export Pset mapping table and adding missing entries.' },
+      { q: 'What causes broken spatial hierarchy in IFC?', a: 'Broken spatial hierarchy occurs when elements are placed in the model but not assigned to a spatial container — storey, building, or site — in the IFC export. Common causes: elements placed on non-storey levels in Revit; work planes used instead of levels; copy-paste from one level to another without level assignment update. The checker detects elements with no IfcRelContainedInSpatialStructure relationship.' },
+    ],
+    content: [
+      {
+        type: 'callout',
+        variant: 'info',
+        text: 'TL;DR — The 10 errors listed here account for the majority of L2 quality failures on real projects. Each one is invisible in a 3D viewer but detectable in seconds with a model checker. This guide covers the cause, detection method, fix, and prevention for each.',
+      },
+      {
+        type: 'p',
+        text: 'A BIM coordinator who has reviewed enough incoming IFC files develops pattern recognition: the same ten errors appear project after project, authoring tool after authoring tool. They are not random — they have consistent causes, and most are preventable with the right export settings and a checking step before the CDE upload.',
+      },
+      { type: 'h2', text: 'Overview: The 10 Most Common IFC Errors' },
+      {
+        type: 'table',
+        headers: ['Error', 'Severity', 'Detection method', 'Downstream impact'],
+        rows: [
+          ['1. Duplicate GUIDs', 'Error', 'L2 rule check — data level only', 'CDE version tracking, clash detection, BCF coordination'],
+          ['2. Broken spatial hierarchy', 'Error', 'L2 rule check — spatial tree', 'Elements invisible in coordination tools; wrong storey filters'],
+          ['3. Elements not assigned to storey', 'Error', 'L2 rule check — containment', 'Quantity takeoff by floor fails; coordination filters break'],
+          ['4. Missing property sets', 'Warning/Error', 'L2 rule check — Pset presence', 'QTO inaccurate; FM handover incomplete; EIR non-conformance'],
+          ['5. Wrong / absent classification codes', 'Warning', 'L2 rule check — classification', 'Procurement broken; FM asset register incomplete'],
+          ['6. Invalid geometry', 'Error', 'L2 rule check — geometry validity', 'Clash detection false positives; 4D/5D simulation fails'],
+          ['7. Broken element relationships', 'Warning', 'L2 rule check — relationship integrity', 'Spatial tree corruption; type-instance data loss'],
+          ['8. Naming convention violations', 'Warning', 'L2 rule check — naming rules', 'Filters in coordination tools fail; manual rework'],
+          ['9. Missing ISO 19650 / EIR metadata', 'Warning/Error', 'L3 IDS validation', 'EIR non-conformance; IDS specification failure'],
+          ['10. LOD/LOI inconsistencies', 'Warning', 'L2 + L3 rule check', 'QTO unreliable; stage gate check fails'],
+        ],
+        caption: 'The 10 most common IFC errors, their severity, and downstream impact.',
+      },
+      { type: 'h2', text: '1. Duplicate GUIDs' },
+      {
+        type: 'p',
+        text: 'Every element in an IFC file must carry a globally unique identifier (GUID) — a 22-character base64-encoded value that is supposed to be unique across all IFC files ever created. Duplicate GUIDs occur when elements are copy-pasted in the authoring tool without triggering GUID regeneration. The result: two or more elements in the same file share an identifier.',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Detection and causes',
+          color: 'neutral',
+          items: [
+            'Invisible in 3D viewer — requires L2 data-level check',
+            'IFC Viewer Online reports each duplicate by element name and type',
+            'Cause: copy-paste in Revit or ArchiCAD without GUID reset',
+            'Cause: linked model import without GUID conflict resolution',
+            'Cause: authoring tool bug in specific exporter versions',
+          ],
+        },
+        right: {
+          label: 'Fix and prevention',
+          color: 'accent',
+          items: [
+            'In Revit: use the IFC exporter option to regenerate GUIDs on export',
+            'In ArchiCAD: use the GUID management tool before export',
+            'Prevention: never copy-paste between projects via copy/paste — use links',
+            'Prevention: check for duplicates after every major model merge',
+            'Prevention: run Health Score check before every CDE upload',
+          ],
+        },
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: 'Expert tip: duplicate GUIDs break BCF coordination because BCF topics reference elements by GUID. If two elements share a GUID, clicking a BCF viewpoint in the coordination model takes you to the wrong element — or both. Catch duplicates before the model enters coordination.',
+      },
+      { type: 'h2', text: '2. Broken Spatial Hierarchy' },
+      {
+        type: 'p',
+        text: 'The IFC spatial hierarchy is the backbone of the model: IfcProject → IfcSite → IfcBuilding → IfcBuildingStorey → IfcSpace/elements. When this chain is broken — a building with no site, or a storey with no building — coordination tools either reject the file or silently produce incorrect results.',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Detection and causes',
+          color: 'neutral',
+          items: [
+            'L2 rule check: missing IfcRelAggregates between hierarchy levels',
+            'Elements appear in the wrong storey filter or not at all',
+            'Cause: manually edited IFC file with incorrect hierarchy edit',
+            'Cause: authoring tool export of partial models (one discipline only)',
+            'Cause: merge of models from different tools without hierarchy reconciliation',
+          ],
+        },
+        right: {
+          label: 'Fix and prevention',
+          color: 'accent',
+          items: [
+            'Fix in authoring tool: ensure site, building, storeys are modelled, not just implied',
+            'In Revit: check that the project hierarchy in the IFC export options is complete',
+            'Prevention: validate the hierarchy after every federated model merge',
+            'Prevention: never manually edit IFC hierarchy outside the authoring tool',
+          ],
+        },
+      },
+      { type: 'h2', text: '3. Elements Not Assigned to a Storey' },
+      {
+        type: 'p',
+        text: 'An element exists in the model but has no IfcRelContainedInSpatialStructure relationship to an IfcBuildingStorey. The element is technically in the file but effectively unlocated in the building hierarchy. Coordination tools filter by storey; an unassigned element is invisible to those filters.',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Detection and causes',
+          color: 'neutral',
+          items: [
+            'L2 rule check: elements with no spatial containment relationship',
+            'Cause: elements placed on reference planes, not levels, in Revit',
+            'Cause: elements with "No Level" assignment in Revit',
+            'Cause: ArchiCAD elements with an undefined home storey',
+            'Cause: generic model families placed without a host level',
+          ],
+        },
+        right: {
+          label: 'Fix and prevention',
+          color: 'accent',
+          items: [
+            'In Revit: select each affected element and assign a Level parameter',
+            'Filter by "No Level" in Revit schedules to find all affected elements',
+            'In ArchiCAD: use Element Information to check and set home storey',
+            'Prevention: include storey assignment as a modelling standard review item',
+            'Prevention: run L2 check after every new discipline model integration',
+          ],
+        },
+      },
+      { type: 'h2', text: '4. Missing Required Property Sets' },
+      {
+        type: 'p',
+        text: 'Standard IFC property sets (Psets) like Pset_WallCommon, Pset_BeamCommon, and Pset_SpaceCommon carry the data that downstream tools — quantity takeoff, FM handover, energy analysis — depend on. When a Pset is absent or its properties are empty, those downstream processes produce incorrect or incomplete results.',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Detection and causes',
+          color: 'neutral',
+          items: [
+            'L2 rule check: required Psets absent for element types',
+            'Cause: exporter Pset mapping not configured for this element type',
+            'Cause: custom element types with no IFC Pset equivalent',
+            'Cause: export profile set to "geometry only" for file size reduction',
+            'Cause: incorrect IFC entity type mapped — wrong Pset attached',
+          ],
+        },
+        right: {
+          label: 'Fix and prevention',
+          color: 'accent',
+          items: [
+            'Review the export Pset mapping table in your authoring tool exporter',
+            'Add explicit mappings for custom element types to appropriate Psets',
+            'Never use "geometry only" export for coordination or delivery models',
+            'Prevention: use IDS to formally define required Psets per project stage',
+            'Prevention: validate Pset completeness in the L3 IDS check before delivery',
+          ],
+        },
+      },
+      { type: 'h2', text: '5. Wrong or Absent Classification Codes' },
+      {
+        type: 'p',
+        text: 'Classification codes (Uniclass 2015, OmniClass, NBS, or national equivalents) are required for procurement, FM asset registers, and increasingly for EIR compliance. Missing or incorrect classification codes mean QS teams cannot generate correct BOQs and FM teams cannot populate the CAFM without manual rework.',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Detection and causes',
+          color: 'neutral',
+          items: [
+            'L2 rule check: classification property absent or not linked to standard system',
+            'L3 IDS check: specific classification code requirements not met',
+            'Cause: classification not configured in authoring tool export',
+            'Cause: classification system in model does not match EIR requirement',
+            'Cause: custom families without classification code parameters',
+          ],
+        },
+        right: {
+          label: 'Fix and prevention',
+          color: 'accent',
+          items: [
+            'Configure classification system in authoring tool project settings',
+            'Map all element types to the required classification table',
+            'Use IDS to formally define which classification system and codes are required',
+            'Prevention: include classification in the BIM content standards from day one',
+            'Prevention: validate against IDS at each stage gate, not only at handover',
+          ],
+        },
+      },
+      { type: 'h2', text: '6. Invalid or Broken Geometry' },
+      {
+        type: 'p',
+        text: 'Geometry errors in IFC fall into three main types: zero-volume elements (an extruded profile with zero area), unclosed solid geometry (a solid that has holes in its surface), and failed Boolean operations (a void subtraction that produces a non-manifold result). These are invisible when viewing the model because renderers smooth over them; they become visible only when clash detection or simulation tools try to process the geometry mathematically.',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Detection and causes',
+          color: 'neutral',
+          items: [
+            'L2 rule check: geometry validity, volume check, manifold check',
+            'Cause: poorly formed curtain wall panels in Revit',
+            'Cause: complex Boolean operations in ArchiCAD that fail on export',
+            'Cause: imported geometry (from DXF or STEP) that never had valid solid geometry',
+            'Cause: manually drawn geometry with accidental zero-area profiles',
+          ],
+        },
+        right: {
+          label: 'Fix and prevention',
+          color: 'accent',
+          items: [
+            'Use the checker error report to identify specific elements by name/type',
+            'Re-model identified elements using correct solid modelling techniques',
+            'For curtain walls: check the panel definition, not just the overall wall',
+            'Prevention: avoid importing DXF/DWG geometry directly into BIM models',
+            'Prevention: review geometry in an IFC viewer after every complex Boolean operation',
+          ],
+        },
+      },
+      { type: 'h2', text: '7. Broken Element Relationships' },
+      {
+        type: 'p',
+        text: 'IFC encodes relationships between elements using relationship entities: IfcRelDefinesByType (type-instance), IfcRelAssociatesMaterial (material assignment), IfcRelConnectsElements (structural connections), and others. When these relationships are malformed — referencing non-existent entities, or pointing to the wrong type of object — the data model becomes inconsistent and downstream tools either error or silently ignore the affected elements.',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Detection and causes',
+          color: 'neutral',
+          items: [
+            'L2 rule check: dangling relationship references, wrong entity types',
+            'Cause: manual IFC editing that breaks referential integrity',
+            'Cause: exporter bugs in older authoring tool versions',
+            'Cause: federated model merge with relationship conflicts',
+          ],
+        },
+        right: {
+          label: 'Fix and prevention',
+          color: 'accent',
+          items: [
+            'Re-export from the authoring tool — do not edit IFC files manually',
+            'Update the authoring tool exporter to the current version',
+            'Prevention: treat IFC as a delivery format only — all edits happen in the authoring tool',
+            'Prevention: validate after every exporter update',
+          ],
+        },
+      },
+      { type: 'h2', text: '8. Naming Convention Violations' },
+      {
+        type: 'p',
+        text: 'BIM projects define naming conventions for element types, layers, views, and object names. When IFC elements carry generic names ("Wall", "Floor 1", "Beam") or inconsistent names across disciplines, coordination tools cannot apply discipline filters correctly and QS teams cannot run automated takeoff without manual rule configuration.',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Detection and causes',
+          color: 'neutral',
+          items: [
+            'L2 rule check: generic or empty names flagged',
+            'Cause: authoring tool families with default names not updated',
+            'Cause: naming convention document shared too late in the project',
+            'Cause: imported content from other projects with different conventions',
+          ],
+        },
+        right: {
+          label: 'Fix and prevention',
+          color: 'accent',
+          items: [
+            'Use the checker report to identify elements with non-compliant names',
+            'Correct names in the authoring tool — names should not be changed in the IFC file',
+            'Prevention: issue the naming convention document at project start',
+            'Prevention: use IDS to formally enforce naming patterns where critical',
+          ],
+        },
+      },
+      { type: 'h2', text: '9. Missing ISO 19650 / EIR Metadata' },
+      {
+        type: 'p',
+        text: 'An IDS file formalises the metadata required by the EIR: project number, phase, discipline code, responsible organisation, LOD/LOI level, and custom properties. When an IDS is in force, any element that fails to carry the required properties fails the L3 IDS check and the model is non-conformant for delivery.',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Detection and causes',
+          color: 'neutral',
+          items: [
+            'L3 IDS validation: required properties absent or wrong value type',
+            'Cause: IDS not shared with authoring teams early enough',
+            'Cause: custom Psets for EIR metadata not configured in authoring tool',
+            'Cause: elements added after IDS check without checking against IDS',
+          ],
+        },
+        right: {
+          label: 'Fix and prevention',
+          color: 'accent',
+          items: [
+            'Share the IDS file with all authoring teams at project kick-off',
+            'Configure custom Psets to carry EIR metadata in authoring tool templates',
+            'Run L3 IDS check at every stage gate, not only at final handover',
+            'Prevention: use IDS as the machine-readable version of the EIR data requirements',
+          ],
+        },
+      },
+      { type: 'h2', text: '10. LOD / LOI Inconsistencies' },
+      {
+        type: 'p',
+        text: 'Level of Development (LOD) and Level of Information (LOI) requirements differ by project stage and element type. At construction stage, structural elements should have LOD 400 (fabrication-ready geometry and full material properties) while architectural finishes may still be LOD 300. Inconsistencies — a wall with LOD 200 geometry and LOD 400 property data, or vice versa — cause QTO inaccuracies and stage gate failures.',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Detection and causes',
+          color: 'neutral',
+          items: [
+            'L2 Pset completeness check + L3 IDS LOI properties',
+            'Cause: LOD/LOI matrix not communicated clearly to authoring teams',
+            'Cause: elements at different LODs mixed in a single export',
+            'Cause: LOD matrix not updated when scope changes mid-project',
+          ],
+        },
+        right: {
+          label: 'Fix and prevention',
+          color: 'accent',
+          items: [
+            'Use IDS to formally define which properties are required at each stage',
+            'Check LOI compliance using the L3 IDS check at each stage gate',
+            'Prevention: issue a LOD/LOI matrix per element type at project start',
+            'Prevention: use the Health Score trend across stages to identify regression',
+          ],
+        },
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: 'Expert tip: track Health Score across model revisions, not just at delivery. A score that drops from 85 to 62 between revisions tells you exactly when and roughly where new problems were introduced — making root cause analysis much faster.',
+      },
+      {
+        type: 'pull-quote',
+        text: 'None of the ten most common IFC errors are visible in a 3D viewer. All ten are detectable in under a minute with an L2 model checker. The five-minute check before CDE upload is the highest-leverage quality control available to a BIM coordinator.',
+        cite: 'IFC quality management principle',
+      },
+      {
+        type: 'p',
+        text: ['For a step-by-step workflow to check and fix these errors before delivery, see ', { text: 'how to check an IFC model before delivery', to: 'how-to-check-ifc-model-before-delivery' }, '. For the tool to run the check, see the ', { text: 'best IFC model checkers comparison', to: 'best-ifc-model-checkers-2026' }, '. For the complete framework behind the checking levels, see the ', { text: 'IFC model checker complete guide', to: 'ifc-model-checker' }, '. For the conceptual distinction between checkers and viewers, see ', { text: 'IFC model checker vs IFC viewer', to: 'ifc-model-checker-vs-ifc-viewer' }, '.'],
+      },
+    ],
+  },
+
 ]
 
 // ─── All posts by language ────────────────────────────────────────────────────
