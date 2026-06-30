@@ -4161,6 +4161,761 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
     ],
   },
 
+  // ── Article #5 — BEST FREE IFC VIEWER COMPARISON ─────────────────────────
+
+  {
+    slug: 'best-free-ifc-viewer',
+    title: 'Best Free IFC Viewer in 2026: Honest Comparison of 10 Tools',
+    excerpt: "There is no single best IFC viewer — the right choice depends on your workflow. Independent comparison of 10 tools across browser vs desktop, validation depth, BCF, IDS, privacy, and large-file handling. Honest strengths and limitations for each.",
+    date: '2026-06-30',
+    readTimeMin: 24,
+    category: 'Tool Guides',
+    categorySlug: 'tool-guides',
+    author: 'IFC Viewer Team',
+    featured: false,
+    keywords: [
+      'best free IFC viewer', 'IFC viewer comparison', 'IFC file viewer', 'online IFC viewer',
+      'free IFC viewer', 'IFC model viewer', 'browser IFC viewer', 'desktop IFC viewer',
+      'OpenBIM viewer', 'open IFC files', 'IFC viewer 2026', 'IFC validation tool',
+    ],
+    faqs: [
+      {
+        q: 'What is the best free IFC viewer in 2026?',
+        a: "There is no single best — it depends on your workflow. For browser-based viewing with validation and zero installation, IFC Viewer Online. For enterprise model checking, Solibri (free for non-commercial use via Solibri Anywhere). For basic desktop viewing on Windows, BIMVision. For team coordination with BCF, BIMcollab Zoom or Trimble Connect. For on-site field use, Dalux.",
+      },
+      {
+        q: 'Can I open IFC files without installing software?',
+        a: "Yes. IFC Viewer Online, That Open Viewer, Autodesk Viewer, Trimble Connect, and Dalux all run in a web browser with no installation. IFC Viewer Online processes files locally via WebAssembly — nothing is uploaded to any server. The others require cloud upload.",
+      },
+      {
+        q: 'Which IFC viewer supports IDS 1.0 validation?',
+        a: "IFC Viewer Online supports full IDS 1.0 validation with all six facets (Entity, Attribute, Property, Classification, Material, PartOf), validated against 100 official bSI testcases. Solibri has added IDS support in recent versions — verify the current release. The buildingSMART Validation Service validates IDS schema files but does not run them against models.",
+      },
+      {
+        q: 'Does Solibri have a free version?',
+        a: "Yes — Solibri Anywhere is free for non-commercial use (students, academics, individual learning). For commercial project work, Solibri requires a paid licence. Pricing is not publicly listed; contact Solibri for current rates.",
+      },
+      {
+        q: 'Can I view IFC files on mobile?',
+        a: "Dalux has the strongest mobile IFC viewing experience — purpose-built iOS and Android apps for on-site field use, including BCF issue management. Trimble Connect also has a mobile app. Most desktop viewers (BIMVision, Solibri, BIMcollab Zoom) do not support mobile. IFC Viewer Online runs on mobile browsers but is optimised for desktop.",
+      },
+      {
+        q: 'What is the difference between an IFC viewer and an IFC validator?',
+        a: "An IFC viewer renders 3D geometry and lets you browse properties. An IFC validator checks the file against quality rules and reports errors. Some tools combine both: IFC Viewer Online provides 3D viewing alongside 44-rule quality validation, IDS checking, and Health Score. Solibri is primarily a validator with strong visualisation. The buildingSMART Validation Service validates only — it has no geometry renderer.",
+      },
+    ],
+    content: [
+      {
+        type: 'callout',
+        variant: 'info',
+        text: "TL;DR — IFC Viewer Online for browser-based QA with zero upload and full IDS 1.0; Solibri for enterprise rule-based model checking; BIMVision for free Windows desktop viewing; Trimble Connect or Dalux for cloud collaboration and field use; BIMcollab Zoom for BCF-led coordination. No single tool wins across all dimensions.",
+      },
+      {
+        type: 'stat-row',
+        stats: [
+          { value: 10, label: 'tools compared' },
+          { value: 6,  label: 'run in a browser' },
+          { value: 4,  label: 'desktop-first' },
+          { value: 0,  label: 'one-size-fits-all' },
+        ],
+      },
+      {
+        type: 'p',
+        text: "Every BIM forum has a thread asking what is the best free IFC viewer. The answer is always the same: it depends. Depends on whether you need to validate, edit, coordinate, or just view. Depends on whether your data can leave your device. Depends on your team's ecosystem, operating system, and project size. This guide does not pick a winner. Instead it gives you an honest assessment of each tool so you can match the right one to your actual workflow.",
+      },
+      {
+        type: 'p',
+        text: "Ten tools are evaluated across the categories that matter most: platform availability, validation depth, property editing, BCF support, IDS 1.0 compliance, large-file handling, installation requirements, and data-privacy posture. Where we have direct experience building and testing IFC tools we say so. Where we are reporting documented capabilities of third-party tools, we recommend verifying current features before committing to an organisation-wide decision.",
+      },
+      {
+        type: 'h2',
+        text: 'At a Glance: IFC Viewer Comparison Table',
+      },
+      {
+        type: 'table',
+        headers: ['Viewer', 'Platform', 'Free tier', 'Validation', 'Editing', 'BCF', 'IDS 1.0', 'Large files', 'Install', 'Best for'],
+        rows: [
+          ['IFC Viewer Online', 'Browser', '✅ Full', '✅ 44 rules + score', '✅ Non-destructive', '✅ Export', '✅ Full (6 facets)', '✅ Good (WASM)', 'None', 'QA + privacy'],
+          ['Solibri', 'Desktop (Win/Mac)', '⚠️ Non-commercial', '✅ Advanced engine', '⚠️ Limited', '✅ Full', '⚠️ Recent versions', '⚠️ Heavy on RAM', 'Required', 'Enterprise QA'],
+          ['BIMVision', 'Desktop (Win)', '✅ Commercial OK', '❌ None', '❌ None', '⚠️ Plugin', '❌ No', '✅ Good', 'Required', 'Basic viewing'],
+          ['Trimble Connect', 'Browser + App', '✅ 5 GB free', '❌ None', '❌ None', '✅ Native', '❌ No', '✅ Cloud', 'Optional', 'Team collab'],
+          ['Dalux', 'Browser + Mobile', '✅ Contractors', '❌ None', '❌ None', '✅ Native', '❌ No', '✅ Cloud', 'Optional', 'On-site field'],
+          ['Autodesk Viewer', 'Browser', '✅ Account required', '❌ None', '❌ None', '⚠️ Via ACC', '❌ No', '✅ Cloud', 'None', 'Quick sharing'],
+          ['usBIM.viewer+', 'Desktop (Win)', '✅ Full', '⚠️ Basic checks', '❌ No', '✅ BCF 2.1', '❌ Unconfirmed', '⚠️ Moderate', 'Required', 'ACCA ecosystem'],
+          ['That Open Viewer', 'Browser (OSS)', '✅ Open source', '❌ None', '❌ None', '⚠️ Varies', '❌ No', '✅ Varies', 'Optional', 'Developers / OSS'],
+          ['BIMcollab Zoom', 'Desktop (Win/Mac)', '✅ Limited (1 model)', '❌ None', '❌ None', '✅ Native (core)', '❌ No', '✅ Good', 'Required', 'BCF coordination'],
+          ['bSmart Validator', 'Browser (upload)', '✅ Full', '✅ Schema L1 only', '❌ None', '❌ None', '✅ IDS schema', '✅ Any', 'None', 'IFC certification'],
+        ],
+        caption: 'IDS 1.0 = six facets (Entity, Attribute, Property, Classification, Material, PartOf). bSmart Validator validates IDS schema files — it does not run IDS checks against model content. Features verified mid-2026; confirm current releases before adoption.',
+        rowHeaders: true,
+      },
+      {
+        type: 'h2',
+        text: 'Browser-Based IFC Viewers',
+      },
+      {
+        type: 'p',
+        text: "Browser-based tools are the fastest path to opening an IFC file — no installation, no IT ticket, no version management. The trade-off is the memory ceiling of the browser's JavaScript heap, which becomes relevant above 300–500 MB on most machines. Cloud-uploaded tools move processing server-side and remove this constraint; locally-processed tools (WebAssembly) preserve data privacy at the cost of that ceiling.",
+      },
+      {
+        type: 'h3',
+        text: '1. IFC Viewer Online',
+      },
+      {
+        type: 'p',
+        text: "IFC Viewer Online is a browser-based tool that processes IFC files entirely on-device using WebAssembly. No file is uploaded to any server. It combines 3D geometry rendering with a 44-rule quality validation engine that produces a Health Score (0–100) and a rule-level breakdown, full IDS 1.0 checking across all six facets, non-destructive property editing and GUID repair, BCF 2.1 export, and multi-model federation. An SDK allows third parties to embed the viewer in their own sites or integrate it into CI/CD pipelines.",
+      },
+      {
+        type: 'p',
+        text: "Because this is the tool we built, we can speak to its internals with more confidence than the other entries in this guide. All 44 validation rules are open for inspection. The IDS engine has been validated against the complete official bSI testcase suite. The Health Score uses a severity-weighted logarithmic penalty model so that a single critical error has more impact than dozens of minor warnings — which matches how a BIM coordinator actually interprets quality results.",
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Zero upload — WASM processes files on-device; nothing leaves your browser',
+            '44-rule quality validation with Health Score and per-rule remediation guidance',
+            'Full IDS 1.0 support: all six facets, validated against 100 official bSI testcases',
+            'Non-destructive property editing, GUID repair, and Pset correction with full undo',
+            'BCF 2.1 export for distributing issues to Solibri, BIMcollab, and other tools',
+            'Multi-model federation and side-by-side comparison',
+            'No account, no installation, no data residency risk',
+            'OPFS caching — repeat loads of large files are ~10x faster after first parse',
+            'SDK available for embedding the viewer or automating checks via CI/CD',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'muted',
+          items: [
+            'Very large files (above ~500 MB) hit browser memory limits on most devices',
+            'No persistent project workspace or CDE folder integration',
+            'No native BCF inbox — exports BCF; does not receive and track incoming issues',
+            'No clash detection between federated models',
+            'Mobile experience works but is not optimised for on-site field use',
+            'No enterprise pricing tier for volume licensing yet',
+            'Batch processing across many files requires the SDK rather than the UI',
+          ],
+        },
+      },
+      {
+        type: 'p',
+        text: "Best for: BIM coordinators who need fast, private pre-delivery QA; consultants who receive IFC files from multiple sources and cannot upload to third-party servers; teams implementing IDS-based delivery requirements. Free, no account required.",
+      },
+      {
+        type: 'h3',
+        text: '2. That Open Viewer (ThatOpen Engine / IFC.js)',
+      },
+      {
+        type: 'p',
+        text: "ThatOpen Company — formerly the IFC.js team — built and maintains the web-ifc library that underpins several browser-based IFC tools, including parts of IFC Viewer Online. Their own viewer platform, That Open Viewer, is open-source and browser-based. It is the most accessible entry point for developers who want to understand or modify the IFC rendering engine, and it is self-hostable for teams that want full control over deployment.",
+      },
+      {
+        type: 'p',
+        text: "As an end-user tool for daily BIM coordination work, That Open Viewer is less feature-complete than purpose-built viewers. There is no built-in validation engine, no BCF export, and no property editing beyond read-only inspection. Its value is as a reference implementation of the ThatOpen engine and as a foundation for custom development. If you are a developer building IFC viewing into your own application, the ThatOpen engine and components library are the most practical open-source starting point available today.",
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Open-source, MIT-licensed — fully auditable and modifiable',
+            'Built on web-ifc, one of the most actively maintained IFC parsing libraries',
+            'Self-hostable with complete control over deployment and data flow',
+            'Strong developer community and comprehensive engine documentation',
+            'Solid foundation for embedding IFC viewing in custom applications',
+            'Browser-based, zero installation',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'muted',
+          items: [
+            'No built-in validation, Health Score, or rule-based quality checking',
+            'No BCF export or import',
+            'No property editing beyond read-only inspection',
+            'UI designed for developers, not optimised for BIM coordinator daily use',
+            'Feature set depends on which version and which engine components are deployed',
+            'No enterprise support tier',
+          ],
+        },
+      },
+      {
+        type: 'p',
+        text: "Best for: Developers building custom IFC viewers or embedding IFC rendering in web applications. Not the right choice for BIM coordinators who need validation, BCF coordination, or IDS checking out of the box. Free, open source.",
+      },
+      {
+        type: 'h3',
+        text: '3. Autodesk Viewer (viewer.autodesk.com)',
+      },
+      {
+        type: 'p',
+        text: "Autodesk Viewer is a free cloud-based viewer that supports over 60 file formats including IFC, RVT, DWG, NWD, and PDF. It requires an Autodesk account and uploads files to Autodesk cloud infrastructure for conversion and rendering. The tool is primarily designed for quick model sharing and stakeholder review — not for BIM quality control or IDS compliance checking.",
+      },
+      {
+        type: 'p',
+        text: "One important technical note: when you upload an IFC file to Autodesk Viewer, it is translated from IFC into Autodesk's SVF2 internal format. This translation can lose semantic IFC data — property set structures, classification references, and some geometric relationships — in ways that are not visible in the rendered output. Autodesk Viewer should not be used to verify that IFC data is structurally correct; it should be used for visual review only.",
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Free with an Autodesk account — no paid subscription required for basic use',
+            'Supports 60+ formats including IFC, RVT, DWG, NWD, PDF, and more',
+            'Large files handled via cloud processing — no local RAM constraint',
+            'Reliable for quick model sharing with non-BIM stakeholders',
+            'Familiar brand in large AEC organisations — low friction for adoption',
+            'No local installation required',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'muted',
+          items: [
+            'Files are uploaded to Autodesk cloud — not suitable for sensitive or data-sovereign projects',
+            'IFC-to-SVF2 translation may lose semantic data; visual review only',
+            'No IFC validation, no quality rules, no Health Score',
+            'No BCF in the free viewer — requires Autodesk Construction Cloud (paid)',
+            'No property editing',
+            'IFC-specific features significantly weaker than IFC-native tools',
+          ],
+        },
+      },
+      {
+        type: 'callout',
+        variant: 'warning',
+        text: "Privacy note: uploading a file to Autodesk Viewer stores it on Autodesk servers. For government projects, healthcare facilities, defence assets, or any model subject to data-sovereignty requirements, review Autodesk's DPA and data-residency options before using the free viewer.",
+      },
+      {
+        type: 'p',
+        text: "Best for: Quick visual sharing of models with non-BIM stakeholders where format compatibility matters and data privacy is not a constraint. Free with Autodesk account.",
+      },
+      {
+        type: 'h3',
+        text: '4. Trimble Connect',
+      },
+      {
+        type: 'p',
+        text: "Trimble Connect is a cloud-based BIM collaboration platform rather than a pure IFC viewer. It includes a web viewer, a desktop client, and a mobile app. Teams upload models to Trimble's cloud infrastructure, where they can be viewed, federated with other models, and linked to BCF issues for multi-discipline coordination. The free tier includes 5 GB of project storage — sufficient for small projects or individual model review.",
+      },
+      {
+        type: 'p',
+        text: "Trimble Connect is strongest in team collaboration scenarios, particularly for teams already using other Trimble tools such as SketchUp, Tekla Structures, or Trimble Field Points. For standalone IFC quality checking, it is the wrong tool — there is no validation engine. Its value is as a coordination layer that sits on top of the IFC files produced by authoring tools.",
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Strong multi-model federation — overlay multiple IFC models from different disciplines',
+            'Native BCF 2.1 support — create, assign, and track issues with full audit trail',
+            'Cross-platform: web viewer, desktop app, and mobile app in one ecosystem',
+            'Free tier with 5 GB storage — accessible without budget approval',
+            'Good integration with Trimble authoring tools (SketchUp, Tekla, Trimble RealWorks)',
+            'Clash detection available in paid tiers',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'muted',
+          items: [
+            'Files are uploaded to Trimble cloud — data leaves your organisation',
+            'No IFC validation, no quality rules, no Health Score',
+            'No property editing',
+            'Full project capabilities require a paid subscription',
+            'GDPR data residency: verify DPA terms before use on EU public-sector projects',
+            'Performance for very large federated models depends on server load',
+          ],
+        },
+      },
+      {
+        type: 'p',
+        text: "Best for: Multi-disciplinary teams that need a shared coordination space with BCF issue management and do not require on-device data processing. Free tier available; paid plans for larger project volumes.",
+      },
+      {
+        type: 'h3',
+        text: '5. Dalux',
+      },
+      {
+        type: 'p',
+        text: "Dalux is a Danish BIM and document-management platform used widely in Scandinavia and Northern Europe. Its strongest differentiator is mobile-first IFC viewing — the iOS and Android apps are purpose-built for on-site field inspection, with BCF issue creation directly from a phone or tablet. For main contractors and subcontractors coordinating on-site, Dalux is the most capable free IFC tool available.",
+      },
+      {
+        type: 'p',
+        text: "Dalux is free for contractors, which has driven significant supply-chain adoption. The main contractor platform (Dalux Box) is an enterprise subscription, but subcontractors accessing models shared through it receive free access. This asymmetric pricing model means many field teams use Dalux without a dedicated budget line. Outside Scandinavia, Dalux is less commonly encountered — but it is expanding across Europe.",
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Best-in-class mobile IFC viewing — iOS and Android apps purpose-built for on-site work',
+            'BCF issue creation directly from mobile, linked to specific model elements',
+            'Free for contractors — broad supply-chain adoption without per-user cost',
+            'Good document management integration alongside model viewing',
+            'Web viewer also available for desktop access',
+            'Cross-platform coverage: browser, iOS, Android',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'muted',
+          items: [
+            'Not designed for power-user desktop QA workflows',
+            'No IFC validation or Health Score',
+            'No property editing',
+            'Files are uploaded to Dalux cloud',
+            'Main contractor platform requires an enterprise subscription',
+            'Less common outside Scandinavia and Northern Europe',
+          ],
+        },
+      },
+      {
+        type: 'p',
+        text: "Best for: On-site field teams, foremen, and subcontractors who need mobile IFC access with BCF issue creation. Free for contractors when a main contractor uses Dalux Box.",
+      },
+      {
+        type: 'h3',
+        text: '6. buildingSMART Validation Service — Not a Viewer',
+      },
+      {
+        type: 'p',
+        text: "The buildingSMART Validation Service is not an IFC viewer — it has no geometry renderer. It is the official reference tool for IFC schema compliance checking, developed and maintained by buildingSMART International. It validates uploaded IFC files against the EXPRESS schema rules, informal propositions, and normative implementation agreements for IFC 2x3 and IFC 4. It also validates IDS schema files — meaning the .ids XML structure itself, not running an IDS specification against a model's content.",
+      },
+      {
+        type: 'p',
+        text: "Its primary audience is IFC authoring-tool developers who need to certify that their software exports valid IFC. For BIM coordinators checking model quality, it is the wrong tool — it will tell you whether the IFC file is syntactically correct, but it will not tell you whether the data is meaningful, complete, or compliant with project requirements. Use it to certify that a tool export meets buildingSMART schema standards. Do not use it as a substitute for model quality checking.",
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Official buildingSMART reference tool — authoritative for schema compliance',
+            'Free, no account required for basic use',
+            'Validates IFC 2x3 and IFC 4 against the full EXPRESS schema',
+            'Required for buildingSMART software certification programmes',
+            'IDS schema file validation (validates the .ids XML structure)',
+            'Handles very large files via server-side processing',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'muted',
+          items: [
+            'No geometry renderer — you cannot view the model',
+            'Schema (L1) validation only — no data quality, no property completeness checking',
+            'File must be uploaded — data leaves your organisation',
+            'Results are verbose and require IFC schema expertise to interpret',
+            'Does not run IDS checks against model content — only validates the .ids file itself',
+            'Not a replacement for model quality checking or IDS run-checks',
+          ],
+        },
+      },
+      {
+        type: 'callout',
+        variant: 'warning',
+        text: "Do not confuse the buildingSMART Validation Service with a model quality checker. It validates schema structure, not whether your model is fit for purpose. A file can pass schema validation and still have duplicate GUIDs, missing property sets, and a Health Score of 12.",
+      },
+      {
+        type: 'p',
+        text: "Best for: IFC authoring-tool developers certifying export compliance with buildingSMART schema standards. Not appropriate for BIM coordinators doing project QA. Free.",
+      },
+      {
+        type: 'h2',
+        text: 'Desktop IFC Viewers',
+      },
+      {
+        type: 'p',
+        text: "Desktop tools remove the browser memory ceiling and give access to the full compute resources of the workstation. For models above 500 MB, complex rule sets, or workflows that require persistent project workspaces, desktop tools remain the practical choice. The trade-off is installation overhead, version management, and — for cloud-connected desktop tools — data upload to vendor infrastructure.",
+      },
+      {
+        type: 'h3',
+        text: '7. Solibri',
+      },
+      {
+        type: 'p',
+        text: "Solibri is the industry benchmark for serious BIM model quality control. It is a desktop application for Windows and Mac. The commercial version is used by large engineering and construction firms for rule-based model checking, compliance auditing, and coordination. Solibri Anywhere is a free, full-featured version available for non-commercial use — students, academics, and individuals learning the tool can use it at no cost.",
+      },
+      {
+        type: 'p',
+        text: "Where IFC Viewer Online's 44 rules cover the most common IFC quality issues out of the box, Solibri's rule engine is designed for authoring custom rules: checking structural clearances, COBie property completeness, organisation-specific naming conventions, and spatial hierarchy requirements that go beyond any fixed rule set. If your organisation has bespoke BIM requirements codified in a BEP or EIR, Solibri's rule-authoring capability is unmatched in the free-and-near-free tier.",
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Industry benchmark for rule-based model quality control',
+            'Advanced rule authoring — create custom checks for organisation-specific requirements',
+            'Comprehensive BCF support with full issue management and audit trail',
+            'Solibri Anywhere is free for non-commercial use with full feature access',
+            'IDS support added in recent versions — verify current release for coverage',
+            'COBie and facility management data checking workflows',
+            'Windows and Mac support',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'muted',
+          items: [
+            'Commercial licensing is expensive — pricing not publicly listed; contact sales',
+            'Desktop only — no browser version for remote or client-facing access',
+            'Steep learning curve for rule authoring; shallow use does not leverage the tool',
+            'Heavy on RAM for very large or federated models above 500 MB',
+            'Processing speed degrades with complex rule sets on large models',
+            'Non-commercial restriction applies to Solibri Anywhere — commercial work needs a paid licence',
+          ],
+        },
+      },
+      {
+        type: 'p',
+        text: "Best for: Enterprise BIM quality control, compliance auditing, COBie checking, and organisations with bespoke model requirements that require rule authoring. Free for non-commercial use via Solibri Anywhere; commercial pricing on request.",
+      },
+      {
+        type: 'h3',
+        text: '8. BIMVision',
+      },
+      {
+        type: 'p',
+        text: "BIMVision is a free Windows desktop IFC viewer developed by Datacomp. It is widely used in Central and Eastern Europe as the default free IFC viewer for teams that need basic model inspection without budget. The tool has no commercial restrictions on free use — an entire organisation can install it without a licence. It is designed for inspection and presentation, not for validation or coordination.",
+      },
+      {
+        type: 'p',
+        text: "BIMVision has a plugin architecture that extends its base capabilities. A BCF plugin adds issue creation and export. The tool handles reasonably large IFC files on desktop hardware and has a low learning curve — someone unfamiliar with BIM software can navigate properties and filter elements within minutes. For teams that simply need to open, browse, and visually inspect IFC files on Windows without any cost or cloud dependency, it remains a solid choice.",
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Genuinely free for commercial use — no licence restrictions',
+            'Clean, fast interface — low learning curve for basic IFC inspection',
+            'Plugin architecture adds BCF and other functionality',
+            'Good performance on mid-large files on desktop hardware',
+            'Handles IFC 2x3 and IFC 4',
+            'No cloud upload — model stays on your machine',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'muted',
+          items: [
+            'Windows only — no Mac, Linux, or browser version',
+            'No built-in validation or quality checking',
+            'No property editing — read-only inspection only',
+            'BCF requires a separate plugin download rather than native support',
+            'No IDS support',
+            'Less actively developed than major commercial alternatives',
+          ],
+        },
+      },
+      {
+        type: 'p',
+        text: "Best for: Windows users who need a free, reliable tool for basic IFC inspection with no validation or coordination requirements. Free with no commercial restrictions.",
+      },
+      {
+        type: 'h3',
+        text: '9. BIMcollab Zoom',
+      },
+      {
+        type: 'p',
+        text: "BIMcollab Zoom is a desktop IFC viewer from BIMcollab, the company behind the BIMcollab Cloud BCF management platform. The tool's primary purpose is BCF-led model coordination — it is designed to work alongside BIMcollab Cloud for real-time issue synchronisation across disciplines. It renders IFC geometry and allows teams to create, comment on, and resolve BCF issues directly from the model view.",
+      },
+      {
+        type: 'p',
+        text: "The free version of BIMcollab Zoom is limited to a single model and a limited number of BCF issues. Full functionality — multi-model federation, unlimited issues, real-time cloud sync — requires a BIMcollab Cloud subscription. For teams already using BIMcollab Cloud for issue management, Zoom is the natural companion. For teams outside the BIMcollab ecosystem, Trimble Connect or IFC Viewer Online (with BCF export) are likely better free alternatives.",
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Native BCF focus — strongest free BCF viewing and coordination experience on desktop',
+            'Real-time BCF Cloud sync when paired with BIMcollab Cloud subscription',
+            'Multi-model federation available in paid tier',
+            'Windows and Mac — cross-platform for desktop users',
+            'Integrates with Solibri, Navisworks, Revit, and other authoring tools',
+            'Good performance on mid-to-large models',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'muted',
+          items: [
+            'Free version limited to single model and a capped number of BCF issues',
+            'No IFC validation, no quality rules, no Health Score',
+            'No property editing',
+            'No browser version — desktop installation required',
+            'Full value only within the BIMcollab Cloud subscription ecosystem',
+            'No IDS support',
+          ],
+        },
+      },
+      {
+        type: 'p',
+        text: "Best for: Teams using BIMcollab Cloud for multi-discipline issue management who need a companion model viewer. Free version for single-model inspection; full features require BIMcollab Cloud subscription.",
+      },
+      {
+        type: 'h3',
+        text: '10. usBIM.viewer+',
+      },
+      {
+        type: 'p',
+        text: "usBIM.viewer+ is a free Windows desktop IFC viewer developed by ACCA Software, an Italian company focused on BIM for the construction sector. It supports IFC 2x3 and IFC 4, includes BCF 2.1 support, and provides some basic model checking capabilities. It is part of ACCA's wider usBIM ecosystem, which includes cloud-based BIM management tools primarily used in Italy and parts of the EU market.",
+      },
+      {
+        type: 'p',
+        text: "usBIM.viewer+ is less commonly used outside Italy and Southern Europe, and the ecosystem is primarily documented and supported in Italian. IDS 1.0 support has not been independently confirmed as of mid-2026 — verify the current release documentation before committing to it for IDS workflows. For teams already working within the ACCA or usBIM ecosystem, it is a natural companion. For teams outside that ecosystem, BIMVision or BIMcollab Zoom involve less friction.",
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Free for commercial use — no licence cost',
+            'BCF 2.1 support included natively (not a plugin)',
+            'IFC 2x3 and IFC 4 support',
+            'Some basic model checking features (verify current release capabilities)',
+            'Natural companion for teams already using ACCA tools',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'muted',
+          items: [
+            'Windows only — no Mac, Linux, or browser version',
+            'Less common outside Italy and Southern Europe',
+            'Community resources and documentation primarily in Italian',
+            'IDS 1.0 support not independently confirmed — check current release',
+            'Basic checks are limited compared to dedicated validators',
+            'UI and feature polish below leading alternatives',
+          ],
+        },
+      },
+      {
+        type: 'p',
+        text: "Best for: Teams within the ACCA/usBIM ecosystem, particularly in Italy and Southern Europe, who need a free Windows desktop viewer with BCF support. Free.",
+      },
+      {
+        type: 'h2',
+        text: 'Online vs Desktop: When to Use Each',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Choose browser-based when…',
+          color: 'accent',
+          items: [
+            'You need zero installation — remote access, shared workstations, or client-facing review',
+            'Data privacy matters — WASM tools process files on-device with no upload',
+            'You need IDS 1.0 validation without a heavyweight desktop install',
+            'You need fast pre-delivery checks as part of a daily coordination workflow',
+            'The file is below ~300–500 MB and fits within browser memory on the device',
+            'You need an SDK to embed the viewer or automate checks in a CI/CD pipeline',
+          ],
+        },
+        right: {
+          label: 'Choose desktop when…',
+          color: 'muted',
+          items: [
+            'Models regularly exceed 500 MB and require full workstation RAM',
+            'You need advanced rule authoring for organisation-specific quality checks (Solibri)',
+            'Your team runs persistent project workspaces across months of coordination',
+            'You need multi-model federation with real-time BCF cloud sync (BIMcollab Zoom)',
+            'The workflow is on-site mobile field inspection (Dalux mobile)',
+            'You need deep integration with a desktop authoring tool ecosystem',
+          ],
+        },
+      },
+      {
+        type: 'h2',
+        text: 'Decision Matrix: Matching the Tool to Your Workflow',
+      },
+      {
+        type: 'table',
+        headers: ['If you need…', 'Recommended tool', 'Why'],
+        rows: [
+          ['Instant inspection of a received IFC file (no install)', 'IFC Viewer Online or Autodesk Viewer', 'Open a URL, drag and drop — results in seconds. IFC Viewer Online preserves data privacy; Autodesk Viewer supports 60+ formats.'],
+          ['Privacy-sensitive projects (government, defence, healthcare)', 'IFC Viewer Online', 'WASM processes on-device. No file ever reaches a server. Verifiable in browser DevTools.'],
+          ['44-rule quality validation with Health Score', 'IFC Viewer Online', 'The only browser-based tool with a built-in quality engine, severity-weighted scoring, and per-rule remediation guidance.'],
+          ['Full IDS 1.0 validation (all six facets)', 'IFC Viewer Online', 'Complete IDS 1.0 engine validated against the full official bSI testcase suite.'],
+          ['Enterprise rule authoring and custom model checks', 'Solibri', 'Industry-standard rule engine. Unmatched for bespoke organisation-specific BEP/EIR requirements.'],
+          ['Non-destructive property editing on a received file', 'IFC Viewer Online', 'Edit Psets, GlobalIds, and element names without returning to the authoring tool.'],
+          ['BCF-led coordination across multiple disciplines', 'BIMcollab Zoom or Trimble Connect', 'Native BCF with cloud sync and multi-model federation.'],
+          ['Very large infrastructure files (above 500 MB)', 'Trimble Connect or Dalux', 'Cloud-side processing removes the local RAM constraint entirely.'],
+          ['On-site field inspection with BCF on mobile', 'Dalux', 'Purpose-built iOS/Android apps with offline-capable BCF creation and document management.'],
+          ['Open-source / embed IFC viewing in your own application', 'ThatOpen Engine or IFC Viewer Online SDK', 'MIT-licensed web-ifc engine. IFC Viewer Online SDK for embedding in third-party sites.'],
+          ['IFC schema certification (for tool developers)', 'buildingSMART Validation Service', 'The official reference tool for buildingSMART schema compliance certification.'],
+        ],
+        caption: 'Recommendations reflect the most common use-case alignment. Complex projects often require two or more tools in combination.',
+        rowHeaders: true,
+      },
+      {
+        type: 'h2',
+        text: 'Workflow Scenarios: Complete Recommendations',
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '🏢',
+            title: 'Small architectural studio (2–10 people)',
+            body: "Primary: IFC Viewer Online — zero cost, zero install, fast per-file QA on every deliverable. Supplement with BIMVision on Windows for client-facing visual review sessions. If BCF coordination with a structural engineer is needed, a free Trimble Connect account covers model sharing and issue tracking.",
+          },
+          {
+            icon: '🏗️',
+            title: 'Large infrastructure project (500 MB+ models)',
+            body: "Primary: Solibri for project-wide QA with rule sets authored to the BEP requirements. Supplement with Trimble Connect or Dalux for contractor field access. Use IFC Viewer Online for rapid IDS spot-checks on specific discipline models before they enter the federated set.",
+          },
+          {
+            icon: '🏛️',
+            title: 'Government BIM mandate (ISO 19650, public procurement)',
+            body: "Primary: IFC Viewer Online for pre-submission validation — WASM guarantees no data leaves the device, satisfying data-sovereignty requirements. IDS specification checks can be run against every model before submission. Supplement with Solibri Anywhere for training and rule development against EIR/OIR requirements.",
+          },
+          {
+            icon: '💼',
+            title: 'Freelance BIM consultant (multiple clients, mixed ecosystems)',
+            body: "Primary: IFC Viewer Online — works on any browser, any OS, any client machine with no installation requests. Handles property editing and GUID repair when clients send corrupted models. Use Autodesk Viewer only for sharing visual snapshots with non-BIM stakeholders. Avoid BCF tools unless a specific client requires a specific platform.",
+          },
+        ],
+      },
+      {
+        type: 'h2',
+        text: 'A Note on Privacy and Model Data',
+      },
+      {
+        type: 'p',
+        text: "Every tool in this guide that requires cloud upload — Autodesk Viewer, Trimble Connect, Dalux, buildingSMART Validation Service — stores your IFC file on a third-party server. For most commercial construction projects this is an acceptable trade-off. For government infrastructure, defence facilities, healthcare buildings, or any project under data-sovereignty or GDPR constraints, it may not be. Before selecting a cloud-based tool for sensitive projects, review the vendor's Data Processing Agreement, data-residency options, and retention policies. GDPR Article 28 requires a signed DPA for any processor handling personal data — which can include building-owner names and coordinates embedded in IFC property sets.",
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: "To verify that a tool genuinely processes locally: open browser DevTools, go to the Network tab, load an IFC file, and watch for outbound requests. In IFC Viewer Online you will see zero file-content requests — all processing happens in WASM workers. In cloud tools you will see the file bytes transmitted to the vendor's servers.",
+      },
+      {
+        type: 'h2',
+        text: 'Where IFC Viewer Online Fits in This Ecosystem',
+      },
+      {
+        type: 'p',
+        text: ["IFC Viewer Online occupies a specific and honest position: it is the most capable free browser-based tool for IFC quality validation and IDS compliance checking. It is not a Solibri replacement — it does not have Solibri's rule-authoring depth. It is not a BIMcollab replacement — it exports BCF but does not manage an issue inbox. It is not a Dalux replacement — it is not optimised for mobile field use. What it does, it does thoroughly: parse IFC on-device, score model quality against 44 rules, run full IDS 1.0 checks, let you edit and repair properties, and export to BCF — with zero upload and zero installation. Load the model below and run the validation to see how a real production IFC performs. See the ", { text: 'IFC Health Score guide', to: 'ifc-health-score' }, " for a detailed explanation of how the score is calculated and what each band means."],
+      },
+      {
+        type: 'ifc-demo',
+        modelId: 'office-architecture',
+        title: 'Office Building — IFC4 Revit Export',
+        description: 'A production IFC4 file exported from Revit. Run the full validation to see the 44-rule quality check and Health Score on a real-world model.',
+        schema: 'IFC4',
+        size: '14 MB',
+        showProperties: true,
+        allowFullscreen: true,
+        height: 460,
+      },
+      {
+        type: 'h2',
+        text: 'Frequently Asked Questions',
+      },
+      {
+        type: 'h3',
+        text: 'What is the best free IFC viewer in 2026?',
+      },
+      {
+        type: 'p',
+        text: "There is no single best — the right tool depends on what you need to do with the IFC file. IFC Viewer Online for browser-based QA with zero upload; Solibri for enterprise rule-based checking (free for non-commercial use); BIMVision for free Windows desktop viewing; Trimble Connect or Dalux for cloud collaboration and field access; BIMcollab Zoom for BCF-led coordination. Most teams end up using two or three tools that cover different parts of their workflow.",
+      },
+      {
+        type: 'h3',
+        text: 'Can I open IFC files without installing software?',
+      },
+      {
+        type: 'p',
+        text: ["Yes. IFC Viewer Online, That Open Viewer, Autodesk Viewer, Trimble Connect, and Dalux all run in a web browser without installation. IFC Viewer Online processes the file locally via WebAssembly — nothing is uploaded. The others require cloud upload. For a detailed comparison of browser vs cloud processing architectures and when each is appropriate, see the full guide on ", { text: 'browser vs cloud IFC validation', to: 'browser-vs-cloud-ifc-validation' }, "."],
+      },
+      {
+        type: 'h3',
+        text: 'Which IFC viewer supports full IDS 1.0 validation?',
+      },
+      {
+        type: 'p',
+        text: "IFC Viewer Online supports full IDS 1.0 validation with all six facets — Entity, Attribute, Property, Classification, Material, and PartOf — validated against the complete official bSI testcase suite. Solibri has added IDS support in recent versions; verify the current release for coverage details. The buildingSMART Validation Service validates IDS schema files (whether the .ids XML is well-formed) but does not run IDS specifications against model content.",
+      },
+      {
+        type: 'h3',
+        text: 'Does Solibri have a free version?',
+      },
+      {
+        type: 'p',
+        text: "Yes. Solibri Anywhere is free for non-commercial use — students, academics, and individuals learning the tool get full feature access at no cost. For commercial project work, a paid licence is required. Pricing is not publicly listed on the Solibri website; contact their sales team for current rates. Tools that are free for commercial use: IFC Viewer Online, BIMVision, usBIM.viewer+, That Open Viewer, Trimble Connect (free tier), Dalux (contractor accounts).",
+      },
+      {
+        type: 'h3',
+        text: 'Can I view IFC files on mobile?',
+      },
+      {
+        type: 'p',
+        text: "Dalux has the strongest mobile IFC viewing experience — purpose-built iOS and Android apps designed for on-site field inspection, with BCF issue creation and document management built in. Trimble Connect also has a mobile app with IFC viewing. BIMVision, Solibri, and BIMcollab Zoom do not support mobile. IFC Viewer Online works in a mobile browser but the interface is optimised for desktop.",
+      },
+      {
+        type: 'h3',
+        text: 'What is the difference between an IFC viewer and an IFC validator?',
+      },
+      {
+        type: 'p',
+        text: ["An IFC viewer renders geometry and allows property inspection — the equivalent of opening a PDF to read it. An IFC validator checks the data against quality rules and produces a report — the equivalent of a grammar checker. Some tools combine both: IFC Viewer Online provides 3D viewing alongside the 44-rule quality check, IDS validation, and Health Score. Solibri is primarily a validator with strong visualisation. The buildingSMART Validation Service validates only — no geometry rendering. For a detailed breakdown of the three validation levels (schema L1, quality L2, IDS L3), see the ", { text: 'IFC model checker guide', to: 'ifc-model-checker-guide' }, "."],
+      },
+      {
+        type: 'h2',
+        text: 'Summary',
+      },
+      {
+        type: 'pull-quote',
+        text: "No IFC viewer is best for every workflow. Match the tool to the job: IFC Viewer Online for private browser-based QA, Solibri for enterprise rule authoring, BIMVision for simple Windows viewing, Trimble Connect or Dalux for cloud coordination, BIMcollab Zoom for BCF-led teamwork.",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '🔍',
+            title: 'For pre-delivery quality checks',
+            body: "IFC Viewer Online — 44 rules, Health Score, IDS 1.0, property editing. Zero upload. Works in any browser with no account required.",
+          },
+          {
+            icon: '🏆',
+            title: 'For enterprise model QA',
+            body: "Solibri — industry-standard rule engine with advanced custom rule authoring. Free for non-commercial use via Solibri Anywhere.",
+          },
+          {
+            icon: '👁️',
+            title: 'For basic desktop viewing (Windows)',
+            body: "BIMVision — free for commercial use, low learning curve, BCF via plugin. Clean and reliable for inspection and presentation.",
+          },
+          {
+            icon: '📱',
+            title: 'For on-site and mobile use',
+            body: "Dalux — purpose-built iOS and Android apps with BCF creation. Free for contractors. Best-in-class for field workflows.",
+          },
+        ],
+      },
+      {
+        type: 'p',
+        text: ["For deeper coverage: how the 44-rule quality check works and what each rule flags — see the ", { text: 'IFC model checker guide', to: 'ifc-model-checker-guide' }, ". How the Health Score is calculated and how to use it as a project quality gate — see the ", { text: 'IFC Health Score guide', to: 'ifc-health-score' }, ". The case for browser-local validation vs cloud pipelines — see the guide on ", { text: 'browser vs cloud IFC validation', to: 'browser-vs-cloud-ifc-validation' }, ". To fix and export a corrected IFC without returning to the authoring tool — see the ", { text: 'free online IFC editor guide', to: 'ifc-editor-online' }, "."],
+      },
+    ],
+  },
+
 ]
 
 // ─── All posts by language ────────────────────────────────────────────────────
