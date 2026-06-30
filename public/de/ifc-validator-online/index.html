@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Online-IFC-Validierung — Kostenloser IFC Validator, 44 Regeln</title>
+  <meta name="description" content="Kostenlose Online-IFC-Validierung im Browser. Prüfen Sie IFC-Dateien auf doppelte GUIDs, Fehler in der räumlichen Hierarchie, verwaiste Elemente und 40 weitere Qualitätsregeln — Health Score 0–100 in 30 Sekunden. Kein Upload, kein Login. IFC2x3, IFC4, IFC4x3." />
+  <meta name="keywords" content="Online IFC Validierung, IFC Validator online, IFC Datei prüfen, IFC validieren, Cloud IFC Validator, IFC Qualitätsprüfung, IFC Checker, IFC GUID Prüfung, räumliche Hierarchie IFC, kostenloser IFC Validator, buildingSMART IFC Validierung" />
+  <meta name="author" content="Joel Benitez" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
+  <meta property="og:title" content="Online-IFC-Validierung — Kostenloser IFC Validator, 44 Regeln" />
+  <meta property="og:description" content="Online-IFC-Validierung gegen 44 Qualitätsregeln im Browser. Doppelte GUIDs, räumliche Hierarchie, verwaiste Elemente und mehr. Health Score 0–100 in 30 s. Kein Upload, kein Login." />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="de_DE" />
+  <meta property="og:locale:alternate" content="en_US" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image-de.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Online-IFC-Validierung — Health Score und 44 Regeln im Browser" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Online-IFC-Validierung — Kostenlos, 44 Regeln" />
+  <meta name="twitter:description" content="Doppelte GUIDs, räumliche Hierarchie, verwaiste Elemente und mehr. Health Score 0–100 in 30 s. Kein Upload, per WebAssembly." />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/og-image-de.png" />
+
+  <link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ifc-validator/" />
+  <link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/ifc-validador/" />
+  <link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
+  <link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-validator/" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://www.ifcvieweronline.eu/de/ifc-validator-online/",
+      "url": "https://www.ifcvieweronline.eu/de/ifc-validator-online/",
+      "name": "Online-IFC-Validierung — Kostenloser IFC Validator, 44 Regeln",
+      "description": "Kostenlose Online-IFC-Validierung. Prüfen Sie IFC-Dateien auf doppelte GUIDs, räumliche Hierarchie, verwaiste Elemente und 41 weitere Regeln — direkt im Browser, ohne Upload.",
+      "isPartOf": {
+        "@id": "https://www.ifcvieweronline.eu/"
+      },
+      "inLanguage": "de"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "IFC Viewer Online — IFC Validator",
+      "url": "https://www.ifcvieweronline.eu/",
+      "applicationCategory": "AEC / BIM software",
+      "operatingSystem": "Any (browser-based — Mac, Windows, Linux)",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      "featureList": [
+        "Online-IFC-Validierung — ohne Installation",
+        "44 IFC-Qualitätsregeln",
+        "Vollständige IDS 1.0 Validierung (buildingSMART)",
+        "Health Score 0–100",
+        "Im Browser verarbeitet — nichts wird hochgeladen",
+        "Erkennung und Auto-Fix doppelter GUIDs",
+        "BCF 2.1 Export",
+        "Teilbarer Validierungsbericht per URL"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Was ist Online-IFC-Validierung?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Online-IFC-Validierung bedeutet, ein IFC-Modell im Browser gegen Qualitätsregeln zu prüfen, ohne Desktop-Software zu installieren. IFC Viewer Online führt 44 Qualitätsregeln und die vollständige buildingSMART IDS 1.0 per WebAssembly auf Ihrem eigenen Gerät aus und liefert in etwa 30 Sekunden einen Health Score von 0 bis 100. Anders als die meisten Cloud-Validatoren wird nichts hochgeladen — die IFC wird im Browser verarbeitet und ist somit auch für vertrauliche Modelle sicher."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Wird meine IFC-Datei auf einen Server hochgeladen?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Nein. Die Validierung läuft vollständig im Browser per WebAssembly. Die IFC-Datei verlässt Ihren Rechner nie und der Validator funktioniert nach dem Laden auch offline."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Kann ich es für vertrauliche Modelle unter NDA nutzen?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Ja. Da die gesamte Verarbeitung lokal erfolgt und keine Daten übertragen werden, können Sie vertrauliche Modelle unter NDA bedenkenlos prüfen. Es gibt keine Servicevereinbarung zu prüfen."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Welche IFC-Versionen werden unterstützt?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "IFC2x3, IFC4, IFC4x1 und IFC4x3. Veraltete Schemata werden automatisch über eine eigene Regel markiert."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Kann ich Fehler beheben und die korrigierte IFC exportieren?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Ja. Doppelte GUIDs lassen sich mit einem Klick beheben. Weitere Probleme (Namen, Eigenschaftswerte) werden inline mit Undo/Redo bearbeitet. „IFC exportieren“ wendet alle Korrekturen in einem Web Worker an und lädt die korrigierte Datei herunter — ohne Server."
+          }
+        }
+      ]
+    }
+  ]
+}
+  </script>
+
+  <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+a { color: inherit; text-decoration: none; }
+.container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
+.header-inner { display: flex; align-items: center; justify-content: space-between; }
+.logo { font-size: 14px; font-weight: 600; color: #5E6AD2; }
+.nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; }
+.nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+.hero { position: relative; overflow: hidden; padding: 72px 0 52px; text-align: center; }
+.hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
+.hero::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+.hero .container { position: relative; z-index: 1; }
+.hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 28px; font-weight: 500; }
+.hero h1 { font-size: clamp(1.8rem, 5vw, 3.0rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
+.accent { background: linear-gradient(100deg, #8B96E9 0%, #5E6AD2 55%, #7C8AF0 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #5E6AD2; }
+.hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 640px; margin: 0 auto 36px; }
+.cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
+.cta-primary:hover { background: #4F5ABF; }
+.cta-note { font-size: 12px; color: rgba(255,255,255,0.28); margin-top: 12px; }
+.section { padding: 60px 0; }
+.divider { border-top: 1px solid rgba(255,255,255,0.06); }
+.section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #5E6AD2; text-transform: uppercase; margin-bottom: 12px; }
+.section-title { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+.section-sub { font-size: 15px; color: rgba(255,255,255,0.45); margin-bottom: 36px; max-width: 620px; }
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.feature-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 18px 20px; }
+.feature-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.feature-card p { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.55; }
+.rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; gap: 1px; }
+.rule { background: #0A0A0C; padding: 18px 20px; }
+.rule-name { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+.rule-desc { font-size: 12px; color: rgba(255,255,255,0.38); line-height: 1.55; }
+.rule-tag { display: inline-block; margin-top: 8px; background: rgba(94,106,210,0.12); color: #8B96E9; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; }
+.compare-table { width: 100%; border-collapse: collapse; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; font-size: 13px; }
+.compare-table th { background: rgba(255,255,255,0.03); padding: 12px 18px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: rgba(255,255,255,0.4); text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.compare-table td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; }
+.compare-table tr:last-child td { border-bottom: none; }
+.col-feature { color: rgba(255,255,255,0.7); font-weight: 500; }
+.col-a { color: rgba(255,255,255,0.4); }
+.col-b { color: #E8E8F0; }
+.badge-ok { display: inline-block; background: rgba(82,196,26,0.12); color: #52C41A; border: 1px solid rgba(82,196,26,0.22); border-radius: 4px; font-size: 11px; padding: 2px 7px; font-weight: 600; }
+.faq-list { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
+.faq-item { padding: 22px 26px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.faq-item:last-child { border-bottom: none; }
+.faq-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.faq-a { font-size: 13px; color: rgba(255,255,255,0.48); line-height: 1.65; }
+.cta-bottom { text-align: center; padding: 60px 0 80px; border-top: 1px solid rgba(255,255,255,0.06); }
+.cta-bottom h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.025em; margin-bottom: 12px; }
+.cta-bottom p { font-size: 15px; color: rgba(255,255,255,0.42); margin-bottom: 30px; }
+footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 26px 0; text-align: center; }
+.footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
+.footer-link { font-size: 12px; color: rgba(255,255,255,0.32); transition: color 0.15s; }
+.footer-link:hover { color: rgba(255,255,255,0.65); }
+.footer-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
+@media (max-width: 600px) { .compare-table { font-size: 12px; } .compare-table td, .compare-table th { padding: 10px 12px; } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <div class="header-inner">
+        <a href="../../" class="logo">IFC Viewer Online</a>
+        <a href="../../" class="nav-cta">Validator öffnen &rarr;</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <canvas class="hero-bg" data-dot-grid data-color="94,106,210" aria-hidden="true"></canvas>
+      <div class="container">
+        <div class="hero-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> 44 Regeln · IDS 1.0 · Kein Upload · Kostenlos</div>
+        <h1>Online-IFC-<span class="accent">Validierung</span></h1>
+        <p class="hero-desc">Kostenlose Online-IFC-Validierung im Browser: doppelte GUIDs, Fehler in der räumlichen Hierarchie, verwaiste Elemente, übermäßige Proxys, Koordinaten-Versätze und 38 weitere Prüfungen erkennen — und in 30 Sekunden einen Health Score 0–100 erhalten. Kein Upload. Kein Login. IFC2x3, IFC4, IFC4x3.</p>
+        <a href="../../" class="cta-primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> IFC-Datei validieren — kostenlos</a>
+        <p class="cta-note">Kein Konto · Nichts wird hochgeladen · Funktioniert offline · Mac, Windows &amp; Linux</p>
+      </div>
+    </section>
+
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">Live-Tool · in Ihrem Browser</p>
+        <h2 class="section-title">Online-IFC-Validierung ausführen — direkt hier</h2>
+        <p class="section-sub">Testen Sie den echten Validator an einem Beispielmodell und legen Sie dann Ihre eigene IFC ab. Er parst, bewertet und prüft die Datei vollständig im Browser per WebAssembly — nichts wird hochgeladen.</p>
+        <div data-live-embed
+             data-app="../../"
+             data-model="https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc"
+             data-validate data-panel data-lang="de"
+             data-title="Live-IFC-Validierung — Beispielmodell"
+             data-cta="Validierung an einem Beispielmodell ausführen"
+             data-sub="Lädt den echten Validator in Ihrem Browser — nichts wird hochgeladen"
+             style="--le-h:560px"></div>
+        <p style="text-align:center;margin-top:20px"><a href="../../" class="cta-primary">Eigene IFC-Datei validieren — kostenlos &rarr;</a></p>
+      </div>
+    </section>
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">44 Validierungsregeln</p>
+        <h2 class="section-title">44 integrierte IFC-Qualitätsprüfungen</h2>
+        <p class="section-sub">Jede Regel läuft in einem Hintergrund-Web-Worker — die Oberfläche bleibt reaktionsfähig, während die Ergebnisse eintreffen.</p>
+        <div class="rules-grid">
+          <div class="rule"><div class="rule-name">GUID-Format</div><div class="rule-desc">Prüft jede GlobalId gegen das base64-Format mit 22 Zeichen.</div><span class="rule-tag">ISO 16739</span></div>
+          <div class="rule"><div class="rule-name">GUID-Eindeutigkeit</div><div class="rule-desc">Erkennt doppelte GlobalIds — der häufigste Exportfehler aus Revit, ArchiCAD und Tekla.</div><span class="rule-tag">ISO 16739</span></div>
+          <div class="rule"><div class="rule-name">Räumliche Hierarchie</div><div class="rule-desc">Prüft die Kette IfcSite → IfcBuilding → IfcBuildingStorey.</div><span class="rule-tag">IFC-Schema</span></div>
+          <div class="rule"><div class="rule-name">Verwaiste Elemente</div><div class="rule-desc">Findet Elemente ohne räumliche Zuordnung — in den meisten Viewern unsichtbar.</div><span class="rule-tag">Zuordnung</span></div>
+          <div class="rule"><div class="rule-name">Typzuweisung</div><div class="rule-desc">Prüft, ob jedes IfcElement ein IfcTypeObject hat, wo das Schema es verlangt.</div><span class="rule-tag">Schema</span></div>
+          <div class="rule"><div class="rule-name">Namenskonventionen</div><div class="rule-desc">Erkennt leere Name-Attribute und generische Namen entgegen ISO 19650.</div><span class="rule-tag">ISO 19650</span></div>
+          <div class="rule"><div class="rule-name">Schema-Version</div><div class="rule-desc">Markiert veraltete oder nicht standardkonforme IFC-Schemata.</div><span class="rule-tag">Kompatibilität</span></div>
+          <div class="rule"><div class="rule-name">Eigenschaftssätze</div><div class="rule-desc">Prüft erforderliche Psets bei Wänden, Decken, Stützen, Trägern und leere Werte.</div><span class="rule-tag">Datenqualität</span></div>
+          <div class="rule"><div class="rule-name">Definierte Einheiten</div><div class="rule-desc">Prüft, ob IfcProject Längen-, Flächen- und Volumeneinheiten enthält.</div><span class="rule-tag">IFC-Schema</span></div>
+          <div class="rule"><div class="rule-name">Gültige Geometrie</div><div class="rule-desc">Findet Elemente ohne oder mit degenerierter Geometrie, die leer dargestellt werden.</div><span class="rule-tag">Geometrie</span></div>
+          <div class="rule"><div class="rule-name">Koordinaten-Versatz</div><div class="rule-desc">Markiert Modelle über 10 km vom Ursprung — typischer Föderationsfehler.</div><span class="rule-tag">Georeferenzierung</span></div>
+          <div class="rule"><div class="rule-name">Übermäßige Proxys</div><div class="rule-desc">Über 5 % der Elemente als IfcBuildingElementProxy: unvollständiger Export.</div><span class="rule-tag">Exportqualität</span></div>
+        </div>
+      </div>
+    </section>
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">Fragen</p>
+        <h2 class="section-title">IFC-Validierung — Fragen</h2><br/>
+        <div class="faq-list">
+          <div class="faq-item"><p class="faq-q">Was ist Online-IFC-Validierung?</p><p class="faq-a">Online-IFC-Validierung bedeutet, ein IFC-Modell im Browser gegen Qualitätsregeln zu prüfen, ohne Desktop-Software zu installieren. IFC Viewer Online führt 44 Qualitätsregeln und die vollständige buildingSMART IDS 1.0 per WebAssembly auf Ihrem eigenen Gerät aus und liefert in etwa 30 Sekunden einen Health Score von 0 bis 100. Anders als die meisten Cloud-Validatoren wird nichts hochgeladen — die IFC wird im Browser verarbeitet und ist somit auch für vertrauliche Modelle sicher.</p></div>
+          <div class="faq-item"><p class="faq-q">Wird meine IFC-Datei auf einen Server hochgeladen?</p><p class="faq-a">Nein. Die Validierung läuft vollständig im Browser per WebAssembly. Die IFC-Datei verlässt Ihren Rechner nie und der Validator funktioniert nach dem Laden auch offline.</p></div>
+          <div class="faq-item"><p class="faq-q">Kann ich es für vertrauliche Modelle unter NDA nutzen?</p><p class="faq-a">Ja. Da die gesamte Verarbeitung lokal erfolgt und keine Daten übertragen werden, können Sie vertrauliche Modelle unter NDA bedenkenlos prüfen. Es gibt keine Servicevereinbarung zu prüfen.</p></div>
+          <div class="faq-item"><p class="faq-q">Welche IFC-Versionen werden unterstützt?</p><p class="faq-a">IFC2x3, IFC4, IFC4x1 und IFC4x3. Veraltete Schemata werden automatisch über eine eigene Regel markiert.</p></div>
+          <div class="faq-item"><p class="faq-q">Kann ich Fehler beheben und die korrigierte IFC exportieren?</p><p class="faq-a">Ja. Doppelte GUIDs lassen sich mit einem Klick beheben. Weitere Probleme (Namen, Eigenschaftswerte) werden inline mit Undo/Redo bearbeitet. „IFC exportieren“ wendet alle Korrekturen in einem Web Worker an und lädt die korrigierte Datei herunter — ohne Server.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-bottom">
+      <div class="container">
+        <h2>Validieren Sie Ihre IFC-Datei jetzt.</h2>
+        <p>44 Regeln · IDS 1.0 · Health Score 0–100 · Keine Installation · Kein Upload</p>
+        <a href="../../" class="cta-primary">IFC Viewer Online öffnen &rarr;</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="../../" class="footer-link">IFC Viewer Online</a>
+        <a href="../../de/ifc-validator-online/" class="footer-link">IFC Validator</a>
+        <a href="../../de/solibri-alternative/" class="footer-link">Solibri Alternative</a>
+        <a href="../../de/cloud-ifc-validator/" class="footer-link">Cloud IFC Validator</a>
+        <a href="../../de/solibri-webchecker-alternative/" class="footer-link">Solibri WebChecker Alternative</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <p class="footer-copy">IFC Viewer Online © 2026 · Kostenlos · Open Source · MIT-Lizenz</p>
+    </div>
+  </footer>
+
+  <script defer src="../../seo/dot-grid.js"></script>
+  <script defer src="../../seo/live-embed.js"></script>
+
+</body>
+</html>

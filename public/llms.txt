@@ -65,7 +65,20 @@ BIM Coordinators, Architects, Structural Engineers, MEP Engineers — anyone who
 - IFC Viewer for Mac (EN): https://www.ifcvieweronline.eu/ifc-viewer-mac/
 - Fix Duplicate GUIDs in IFC: https://www.ifcvieweronline.eu/tools/fix-duplicate-guids/
 - Visor IFC Online (ES): https://www.ifcvieweronline.eu/es/
-- Validador IFC (ES): https://www.ifcvieweronline.eu/es/ifc-validador/
+
+### Localized landings (ES / DE / FR)
+- Validación IFC online (ES): https://www.ifcvieweronline.eu/es/ifc-validador/
+- Alternativa a Solibri (ES): https://www.ifcvieweronline.eu/es/alternativa-a-solibri/
+- Validador IFC en la nube (ES): https://www.ifcvieweronline.eu/es/validador-ifc-en-la-nube/
+- Alternativa a Solibri WebChecker (ES): https://www.ifcvieweronline.eu/es/alternativa-a-solibri-webchecker/
+- Online-IFC-Validierung (DE): https://www.ifcvieweronline.eu/de/ifc-validator-online/
+- Solibri Alternative (DE): https://www.ifcvieweronline.eu/de/solibri-alternative/
+- Cloud IFC Validator (DE): https://www.ifcvieweronline.eu/de/cloud-ifc-validator/
+- Solibri WebChecker Alternative (DE): https://www.ifcvieweronline.eu/de/solibri-webchecker-alternative/
+- Validation IFC en ligne (FR): https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/
+- Alternative à Solibri (FR): https://www.ifcvieweronline.eu/fr/alternative-solibri/
+- Validateur IFC cloud (FR): https://www.ifcvieweronline.eu/fr/validateur-ifc-cloud/
+- Alternative à Solibri WebChecker (FR): https://www.ifcvieweronline.eu/fr/alternative-solibri-webchecker/
 
 ## Blog — BIM & IFC guides (EN, ES, DE, FR)
 
