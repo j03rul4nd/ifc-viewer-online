@@ -4916,6 +4916,594 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
     ],
   },
 
+  // ── Article #6 — SOLIBRI ALTERNATIVE ─────────────────────────────────────
+
+  {
+    slug: 'solibri-alternative',
+    title: 'Solibri Alternative in 2026: When Browser-Based IFC Validation Is Enough (And When It Is Not)',
+    excerpt: "Solibri remains one of the strongest BIM quality control platforms available. Not every IFC workflow needs its full weight. An honest comparison of Solibri and browser-based IFC validation — when each is the right tool, where they complement each other, and how to decide.",
+    date: '2026-06-30',
+    readTimeMin: 22,
+    category: 'Validation',
+    categorySlug: 'validation',
+    author: 'IFC Viewer Team',
+    featured: false,
+    keywords: [
+      'Solibri alternative', 'free Solibri alternative', 'browser IFC validator',
+      'online IFC validation', 'IFC model checker', 'IFC validation software',
+      'OpenBIM validation', 'model checking software', 'BIM validation tool',
+      'IFC quality check', 'Solibri vs browser validation',
+    ],
+    faqs: [
+      {
+        q: 'Is IFC Viewer Online a replacement for Solibri?',
+        a: "Not in all workflows. IFC Viewer Online is a fast, free browser-based tool for quality checking, IDS validation, and property editing — strong for pre-delivery QA and zero-upload scenarios. Solibri excels at enterprise rule authoring, COBie checking, full BCF management, and company-wide governance. Many teams use both tools at different stages of the same workflow.",
+      },
+      {
+        q: 'Can I use IFC Viewer Online and Solibri in the same project workflow?',
+        a: "Yes — they complement each other effectively. IFC Viewer Online handles instant browser-based pre-checks and IDS validation. Solibri handles complex custom rules and full BCF lifecycle coordination. A common pattern is pre-screening in IFC Viewer Online before opening models in Solibri, saving processing time on models that would fail anyway.",
+      },
+      {
+        q: 'Does IFC Viewer Online support IDS validation like Solibri?',
+        a: "IFC Viewer Online supports full IDS 1.0 validation with all six facets — Entity, Attribute, Property, Classification, Material, and PartOf — validated against the complete official bSI testcase suite. Solibri has added IDS support in recent versions; verify the current release for coverage details.",
+      },
+      {
+        q: 'What can Solibri do that IFC Viewer Online cannot?',
+        a: "Solibri's main advantages are custom rule authoring for organisation-specific BIM requirements, full BCF lifecycle management (not just export), COBie and facility management data checking, enterprise deployment with centralised rule sets, geometric clash detection, and handling very large federated models where desktop RAM is not a constraint.",
+      },
+      {
+        q: 'Is there a free version of Solibri?',
+        a: "Yes — Solibri Anywhere is free for non-commercial use, including students, academics, and individual learning. Commercial project work requires a paid licence; pricing is not publicly listed. IFC Viewer Online is free for all use cases including commercial work, with no account required.",
+      },
+      {
+        q: 'Which tool is better for privacy-sensitive IFC models?',
+        a: "Both Solibri and IFC Viewer Online process files locally — Solibri on the desktop, IFC Viewer Online in the browser via WebAssembly. Neither uploads files to a cloud server by default. IFC Viewer Online has an accessibility advantage: it works from any browser without installation, which matters when models cannot be copied to a workstation with a Solibri licence installed.",
+      },
+    ],
+    content: [
+      {
+        type: 'callout',
+        variant: 'info',
+        text: "TL;DR — Solibri is the right tool for enterprise rule authoring, COBie checking, and multi-discipline BCF coordination. IFC Viewer Online is the right tool for fast pre-delivery QA, IDS compliance, privacy-sensitive models, and property editing — with zero install and zero upload. The most effective large-project workflows use both.",
+      },
+      {
+        type: 'stat-row',
+        stats: [
+          { value: 44,  label: 'quality rules (browser)' },
+          { value: 6,   label: 'IDS 1.0 facets (browser)' },
+          { value: 0,   suffix: ' upload needed', label: 'by either tool' },
+          { value: 0,   label: 'one-size-fits-all answer' },
+        ],
+      },
+      {
+        type: 'p',
+        text: "Solibri has been the BIM quality control reference tool for over a decade. It is expensive, requires installation, and takes time to configure — but when a large multi-disciplinary project needs enterprise-grade model checking with custom rules and a full BCF lifecycle, it is hard to beat. This article does not argue otherwise.",
+      },
+      {
+        type: 'p',
+        text: "What has changed is the landscape around it. Browser-based tools powered by WebAssembly can now parse, validate, and score IFC files in seconds without installation, without upload, and without a licence fee. For a growing share of IFC validation work — pre-delivery checks, IDS compliance, external partner review, property editing, privacy-sensitive models — these tools are genuinely sufficient. The question is not whether to replace Solibri. It is which part of your workflow actually needs Solibri, and which parts can be handled more efficiently elsewhere.",
+      },
+      {
+        type: 'p',
+        text: "This comparison is written as an independent assessment. We built IFC Viewer Online, so we have direct knowledge of its internals. For Solibri, we rely on published documentation and the experience of BIM professionals who use both tools. Where we are uncertain about a current Solibri feature, we say so explicitly rather than asserting something we cannot verify.",
+      },
+      {
+        type: 'h2',
+        text: 'Quick Comparison: Solibri vs IFC Viewer Online',
+      },
+      {
+        type: 'table',
+        headers: ['Feature', 'Solibri', 'IFC Viewer Online'],
+        rows: [
+          ['Installation', 'Required — Windows and Mac installer', 'None — runs in any browser, any OS'],
+          ['Platform', 'Desktop only', 'Browser (Chrome, Firefox, Safari, Edge)'],
+          ['Price', 'Commercial licence required (contact sales); Solibri Anywhere free for non-commercial use', 'Free for all use cases — no account, no licence'],
+          ['Validation rules', 'Custom rule engine — author rules for any requirement', '44 built-in IFC quality rules + Health Score (0–100)'],
+          ['IDS 1.0 support', '⚠️ Added in recent versions — verify current release', '✅ Full: all 6 facets, 100 official bSI testcases'],
+          ['Property editing', '⚠️ Primarily a read tool — not designed for editing exported IFC', '✅ Non-destructive: Psets, GUIDs, names, full undo'],
+          ['BCF support', '✅ Full lifecycle: create, assign, track, resolve, audit', '✅ Export BCF 2.1 — no native issue inbox'],
+          ['Health Score', '❌ No single numeric quality metric', '✅ 0–100 severity-weighted logarithmic score'],
+          ['Large models', '⚠️ Possible; RAM-intensive above 500 MB', '⚠️ Browser memory ceiling ~300–500 MB per device'],
+          ['Multi-model', '✅ Full federation with clash detection', '✅ Federation and side-by-side comparison'],
+          ['IFC export', '⚠️ Primarily an import tool; limited IFC re-export', '✅ Export corrected IFC with all applied edits'],
+          ['GLB export', '❌ Not supported', '✅ Export to GLB for web and visualisation workflows'],
+          ['No upload required', '✅ Desktop — model stays on local machine', '✅ WASM — model processed entirely on-device'],
+          ['Offline capability', '✅ Fully offline after installation', '✅ Offline after first load; OPFS caches models'],
+          ['Learning curve', 'High — rule authoring is a specialist skill', 'Low — drag-drop, instant results, no configuration'],
+          ['Collaboration', '✅ Full enterprise BCF management', '⚠️ BCF export only; no incoming issue management'],
+          ['SDK / embed', '❌ No public embedding SDK', '✅ SDK for CI/CD and site embedding'],
+          ['Privacy posture', '✅ On-premise desktop; model stays on workstation', '✅ On-device WASM; verifiable in browser DevTools'],
+        ],
+        caption: 'IDS 1.0 facets: Entity, Attribute, Property, Classification, Material, PartOf. Solibri IDS coverage: verify the current release. Solibri commercial pricing: contact sales; varies by region and volume.',
+        rowHeaders: true,
+      },
+      {
+        type: 'h2',
+        text: 'When Solibri Is the Right Tool',
+      },
+      {
+        type: 'p',
+        text: "Solibri's core value is not its viewer — it is the rule engine. The ability to author custom rules that encode your organisation's BIM requirements, run them consistently across every model on every project, and track issues through their full lifecycle is something no lightweight tool replicates. The following scenarios genuinely justify Solibri's licence cost:",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '⚙️',
+            title: 'Custom rule authoring for BEP/EIR requirements',
+            body: "Your BEP specifies that all walls must have a fire rating property, rooms must have occupancy greater than zero, or elements must follow a specific GUID naming pattern. Solibri can check this. Browser-based tools run fixed rule sets — they cannot encode bespoke project requirements without custom development.",
+          },
+          {
+            icon: '📋',
+            title: 'COBie and facility management data checking',
+            body: "Public sector handover and FM workflows require COBie property completeness as a contractual obligation. Solibri has built-in COBie templates and verifies that hundreds of required FM properties are present, correctly typed, and populated across the model — a capability not available in lightweight validators.",
+          },
+          {
+            icon: '🏢',
+            title: 'Enterprise governance across many projects',
+            body: "A firm running 20+ active projects needs consistent QA standards enforced centrally. Solibri's enterprise deployment lets one BIM manager define rule sets and push them across the organisation. Every project team runs the same checks. Every result is auditable.",
+          },
+          {
+            icon: '🔄',
+            title: 'Full BCF lifecycle management',
+            body: "Solibri's BCF support goes beyond export: issues are created, assigned to specific discipline leads, tracked through resolution, and audited with full history. For multi-discipline coordination where an issue raised in week 2 must be resolved and verified by week 6, this lifecycle management is essential.",
+          },
+          {
+            icon: '💥',
+            title: 'Geometric clash detection in federated models',
+            body: "For complex buildings or infrastructure where structural, MEP, and architectural models must be coordinated spatially, Solibri's clash detection and space analysis identifies conflicts that rule-based validation misses. No browser tool handles geometric clash at this scale.",
+          },
+          {
+            icon: '✅',
+            title: 'Compliance verification for regulated handover',
+            body: "On some government or regulated projects, the acceptance verifier requires Solibri output as the recognised QA artefact. If the procurement contract names a specific validation tool, there is no practical alternative for that specific deliverable.",
+          },
+        ],
+      },
+      {
+        type: 'h2',
+        text: 'When Browser-Based Validation Is Sufficient',
+      },
+      {
+        type: 'p',
+        text: "Most IFC files are checked for standard quality issues far more often than they are checked against bespoke organisational rules. The majority use case — a BIM coordinator running a pre-delivery check before submitting to the CDE — does not require rule authoring or a BCF issue inbox. Browser-based tools meet this need efficiently:",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '⚡',
+            title: 'Pre-delivery quality checks (daily workflow)',
+            body: "Run 44 standard IFC quality rules and get a Health Score before submitting to the CDE. Catches duplicate GUIDs, missing spatial hierarchy, invalid property types, and geometry errors — the most common delivery failure causes — in under 30 seconds, with no software to install.",
+          },
+          {
+            icon: '📄',
+            title: 'IDS compliance without a Solibri licence',
+            body: "Full IDS 1.0 validation in the browser: all six facets, validated against official bSI testcases. If the EIR specifies an IDS file, load it alongside the IFC model and run the check. No per-seat licence required — accessible to every team member regardless of Solibri availability.",
+          },
+          {
+            icon: '🤝',
+            title: 'Reviewing IFC files from external partners',
+            body: "A structural engineer or subcontractor sends a model. There is no shared Solibri environment. Open it in the browser, check quality, export BCF issues, send them back — no coordinated software installation, no shared server, no licence provisioning.",
+          },
+          {
+            icon: '🔒',
+            title: 'Privacy-sensitive models that cannot be uploaded',
+            body: "Government facilities, hospitals, defence assets, or any building where the IFC cannot leave the organisation. WebAssembly processes the file entirely on-device. No bytes reach any server. Demonstrable in browser DevTools.",
+          },
+          {
+            icon: '🔧',
+            title: 'Non-destructive property editing on received files',
+            body: "The received model has 400 elements with duplicate GlobalIds or wrong Pset values copied from a template. Fix them in the browser, export a clean IFC, re-check. No access to the authoring tool or the original BIM author required.",
+          },
+          {
+            icon: '📚',
+            title: 'Teaching OpenBIM and IFC to new team members',
+            body: "Introducing IFC validation to a junior coordinator or a student. No software to install, no licence to request, no IT ticket. Open a browser, load a model, see the validation results immediately. The direct feedback loop is pedagogically more effective than a complex configuration process.",
+          },
+        ],
+      },
+      {
+        type: 'h2',
+        text: 'Typical Workflows: Where Each Tool Belongs',
+      },
+      {
+        type: 'h3',
+        text: 'Architecture Studio (5–30 People)',
+      },
+      {
+        type: 'p',
+        text: "For a studio of this size, most IFC validation is pre-delivery: verify the export is sound before it reaches the CDE. Solibri is typically not cost-justified for this volume. The full validation cycle looks like this:",
+      },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `Authoring tool (Revit / ArchiCAD / SketchUp)
+         │
+         ▼
+   Export IFC file
+         │
+         ▼
+IFC Viewer Online ─ browser, zero install
+  ├─ Schema check (IFC 2x3 / IFC 4)
+  ├─ 44-rule quality check
+  ├─ Health Score — meet the BEP threshold?
+  └─ IDS check (if EIR specifies an IDS file)
+         │
+    Pass─┤─────────────────Fail
+    │                       │
+    ▼                       ▼
+Deliver to CDE       Fix in authoring tool
+                     — or edit properties /
+                       repair GUIDs directly
+                       in IFC Viewer Online,
+                       then re-check`,
+      },
+      {
+        type: 'h3',
+        text: 'Enterprise Contractor (Large Multi-Discipline)',
+      },
+      {
+        type: 'p',
+        text: "For a principal contractor managing structural, architectural, and MEP models across a federated set, Solibri handles the coordination stage. Browser-based tools fit at the pre-screening and IDS compliance stages, reducing wasted processing time on models that would fail anyway:",
+      },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `Discipline models (Architecture / Structure / MEP)
+         │
+         ▼
+IFC Viewer Online ─ pre-screen
+  Health Score below agreed threshold?
+  ──► Return to authoring team
+      (avoid spending Solibri time on a failing model)
+         │
+    Pass─┘
+         │
+         ▼
+      Solibri
+  ├─ Custom BEP / EIR rule sets
+  ├─ Geometric clash detection
+  ├─ COBie data completeness
+  └─ BCF issues ─► discipline leads
+         │
+         ▼
+IFC Viewer Online ─ IDS compliance check
+  Run EIR IDS specification against
+  each discipline model before delivery
+         │
+         ▼
+BCF export ─► authoring teams for resolution
+         │
+         ▼
+    Final delivery to CDE`,
+      },
+      {
+        type: 'h3',
+        text: 'Government Client / Project Owner',
+      },
+      {
+        type: 'p',
+        text: "A government authority receiving IFC deliverables from a contracted team needs to verify quality and IDS compliance without necessarily using the same software stack as the contractor. Browser-based validation with no upload requirement fits the receiving side of this workflow precisely:",
+      },
+      {
+        type: 'code',
+        lang: 'text',
+        text: `IFC file received from contractor
+         │
+         ▼
+IFC Viewer Online ─ no upload required
+  ├─ Schema validation (IFC 2x3 / IFC 4)
+  ├─ 44-rule quality check
+  ├─ Health Score vs acceptance threshold
+  └─ IDS compliance (mandatory EIR spec)
+         │
+   Accept─┤─────────────────Reject
+   │                         │
+   ▼                         ▼
+Internal review          BCF report
+                         ─► contractor
+   │
+   ▼
+Formal QA (Solibri, if required
+by procurement specification)
+   │
+   ▼
+Project acceptance or rejection`,
+      },
+      {
+        type: 'h2',
+        text: 'Pros and Cons',
+      },
+      {
+        type: 'h3',
+        text: 'Solibri',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Custom rule authoring — encode any BIM requirement; checks that no fixed rule set can run',
+            'Full BCF lifecycle: create, assign, track, resolve, and audit issues across disciplines',
+            'COBie and FM data checking — contractual property completeness requirements covered',
+            'Enterprise governance — centralised rule sets deployed and updated across all projects',
+            'Geometric clash detection and space analysis in federated models',
+            'Industry-recognised output — accepted by verifiers and clients as the QA artefact',
+            'Solibri Anywhere free for non-commercial use with full feature access',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'muted',
+          items: [
+            'Commercial licensing is expensive — pricing not publicly listed; varies by region and volume',
+            'Desktop only — no browser access for remote teams, client review, or unlicensed workstations',
+            'Steep learning curve — rule authoring is a specialist BIM skill requiring dedicated training',
+            'Installation and IT deployment required before any team member can use it',
+            'Heavy on RAM for large models; processing degrades above 500 MB with complex rule sets',
+            'No public SDK for embedding or CI/CD automation',
+            'No built-in single numeric Health Score — pass/fail per rule, not a unified quality index',
+          ],
+        },
+      },
+      {
+        type: 'h3',
+        text: 'IFC Viewer Online',
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Strengths',
+          color: 'accent',
+          items: [
+            'Zero installation — opens in any browser on any OS in seconds, from any device',
+            'Free for all use cases including commercial work — no licence, no account required',
+            'Full IDS 1.0 validation: all six facets, validated against 100 official bSI testcases',
+            'Non-destructive property editing: Psets, GUIDs, names, with full undo and IFC re-export',
+            'Health Score (0–100) — a single severity-weighted metric for fast quality communication',
+            'Zero upload — WASM on-device processing, verifiable in browser DevTools',
+            'GLB export, BCF export, multi-model federation, OPFS caching, SDK',
+          ],
+        },
+        right: {
+          label: 'Limitations',
+          color: 'muted',
+          items: [
+            'No custom rule authoring — 44 built-in rules only; cannot encode bespoke BIM requirements',
+            'No BCF inbox — exports BCF but does not manage an incoming issue lifecycle',
+            'No COBie checking or FM property completeness validation',
+            'No geometric clash detection between federated model disciplines',
+            'Browser memory ceiling (~300–500 MB) limits very large infrastructure models',
+            'No enterprise governance layer — no centralised rule deployment across an organisation',
+            'Requires initial internet load; first session cannot be fully air-gapped',
+          ],
+        },
+      },
+      {
+        type: 'h2',
+        text: 'Cost Considerations',
+      },
+      {
+        type: 'p',
+        text: "Solibri's commercial pricing is not publicly listed. Licence costs vary by region, volume, and agreement type. The total cost of enterprise adoption is consistently higher than the licence alone: factor in training (rule authoring is not intuitive), IT deployment and maintenance, and the ongoing time cost of developing and updating rule sets as project requirements evolve. For a BIM manager evaluating enterprise adoption, budget for at least one dedicated training engagement in addition to the licence.",
+      },
+      {
+        type: 'p',
+        text: "Solibri Anywhere removes the licence cost for non-commercial use, making it accessible for students, academics, and those learning the platform. The non-commercial restriction is strict — professional project work requires a paid licence.",
+      },
+      {
+        type: 'callout',
+        variant: 'warning',
+        text: "We do not publish Solibri pricing because it changes and varies by region, volume, and negotiated terms. Contact Solibri directly for a current quote. Third-party price comparisons found online are frequently outdated or based on older licensing structures.",
+      },
+      {
+        type: 'p',
+        text: "Browser-based tools have zero acquisition cost and zero deployment cost. There are no IT tickets, no installation packages to maintain, no version updates to coordinate across workstations. A new team member, external consultant, or subcontractor accesses IFC Viewer Online by opening a URL — no provisioning, no licence assignment. For organisations with infrequent users who need occasional model checking, this accessibility difference is significant. The licence cost per validated model looks very different for a BIM manager who validates 500 models per year versus a consultant who validates 10.",
+      },
+      {
+        type: 'h2',
+        text: 'Privacy: Browser-Local vs Desktop Processing',
+      },
+      {
+        type: 'p',
+        text: "Both Solibri and IFC Viewer Online share one important property that distinguishes them from cloud-based tools: neither uploads your IFC file to a remote server by default. Solibri processes models on the local workstation. IFC Viewer Online processes models in the browser via WebAssembly — also locally, with no server receiving file content. This matters for government infrastructure, hospitals, industrial facilities, defence assets, or any project where the model is commercially or legally sensitive.",
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'IFC Viewer Online — browser WASM',
+          color: 'accent',
+          items: [
+            'Model processed in WASM workers — auditable in browser DevTools Network tab',
+            'No server receives file content — zero upload, demonstrable to clients and auditors',
+            'Works from any browser anywhere — no model copy to a licensed workstation required',
+            'Accessible to external consultants and remote teams with no VPN or install needed',
+            'No residual model data on any remote server after the session ends',
+          ],
+        },
+        right: {
+          label: 'Solibri — desktop application',
+          color: 'muted',
+          items: [
+            'Model stays on local machine — fully air-gapped operation possible',
+            'No browser runtime dependency — works on locked-down IT environments',
+            'Installation controlled by IT policy and internal network restrictions',
+            'Appropriate for classified networks where internet access is prohibited or monitored',
+            'No initial internet load required after installation',
+          ],
+        },
+      },
+      {
+        type: 'callout',
+        variant: 'tip',
+        text: "To verify IFC Viewer Online processes locally: open browser DevTools (F12), go to the Network tab, load an IFC file, and watch outbound requests. You will see zero file-content requests — all processing happens in WASM workers with no server communication. This is demonstrable to clients and procurement authorities who require evidence of on-device processing.",
+      },
+      {
+        type: 'p',
+        text: "For truly air-gapped environments or classified networks where internet access is prohibited, Solibri's desktop model is the more controllable option. IFC Viewer Online requires an initial internet load (the application download), after which OPFS-cached models allow offline use — but the first session requires internet access. If the operating environment prohibits all internet connectivity, Solibri is the appropriate choice.",
+      },
+      {
+        type: 'h2',
+        text: 'Decision Matrix: Solibri or IFC Viewer Online?',
+      },
+      {
+        type: 'table',
+        headers: ['Workflow need', 'Recommended tool', 'Why'],
+        rows: [
+          ["Custom rules from your organisation's BEP or EIR", 'Solibri', 'Rule authoring engine is purpose-built for this — no equivalent in any fixed-rule-set tool'],
+          ['Quick pre-delivery check of a discipline model', 'IFC Viewer Online', 'No install, results in seconds, Health Score at a glance — fastest path to pass/fail'],
+          ['COBie data completeness for FM handover', 'Solibri', 'COBie checking is a Solibri speciality with built-in templates and property coverage verification'],
+          ['IDS 1.0 compliance check (all six facets)', 'IFC Viewer Online', 'Full IDS 1.0 engine, validated against official bSI testcases — no per-seat licence required'],
+          ['Multi-discipline BCF coordination with full issue lifecycle', 'Solibri', 'Issue creation, assignment, tracking, and resolution in one managed environment'],
+          ['Privacy-sensitive model (no upload permitted)', 'IFC Viewer Online', 'WASM on-device processing — verifiable zero upload from any browser'],
+          ['Air-gapped or classified network (no internet access)', 'Solibri', 'Desktop app operates fully offline after installation; no browser runtime needed'],
+          ['Fixing broken GUIDs or incorrect property values', 'IFC Viewer Online', 'Non-destructive editing without returning to the authoring tool — export corrected IFC'],
+          ['External consultant reviewing a client model remotely', 'IFC Viewer Online', 'No software install, no file upload — load from any browser in seconds'],
+          ['Company-wide BIM governance across 10+ simultaneous projects', 'Solibri', 'Centralised rule sets, audit trail, enterprise deployment — no lightweight tool matches this'],
+          ['Embedding IFC validation in a custom portal or CI/CD pipeline', 'IFC Viewer Online SDK', 'Public SDK with JavaScript API — no Solibri public SDK available'],
+          ['Teaching IFC validation to students or new coordinators', 'IFC Viewer Online', 'Free, zero install, immediate feedback — lowest barrier to the broadest audience'],
+        ],
+        caption: 'Many projects combine both tools. These recommendations reflect the most efficient fit for each individual task, not an either/or choice.',
+        rowHeaders: true,
+      },
+      {
+        type: 'h2',
+        text: 'How the Two Tools Complement Each Other',
+      },
+      {
+        type: 'p',
+        text: "The framing of this article as a 'Solibri alternative' reflects how people search — not how the tools actually relate. In practice, the most effective large-project workflows use both tools, each where it is efficient, with models passing between them at defined quality gates. Four complementary patterns that work in real projects:",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '🔍',
+            title: 'Pre-screen in browser, process in Solibri',
+            body: "Run IFC Viewer Online before opening a model in Solibri. If the Health Score is below an agreed threshold — say 60 — return it to the authoring team without spending Solibri processing time on an obviously failing model. Solibri time is expensive; filter out poor models cheaply first.",
+          },
+          {
+            icon: '📋',
+            title: 'IDS in browser, coordination in Solibri',
+            body: "Run IDS compliance checks in IFC Viewer Online (full IDS 1.0, no install, no licence per seat). Run coordination, clash detection, and BCF management in Solibri. This division keeps IDS validation accessible to all team members regardless of Solibri licence availability.",
+          },
+          {
+            icon: '🤝',
+            title: 'External partners self-check before submission',
+            body: "Subcontractors and external consultants who do not have Solibri licences run IFC Viewer Online on their deliverables before submitting. Internal QA then opens Solibri only on models that arrive with a Health Score above the agreed threshold — cutting turnaround cycles.",
+          },
+          {
+            icon: '🔗',
+            title: 'SDK for automated pre-qualification',
+            body: "Use the IFC Viewer Online SDK to run automated quality checks in a BIM portal or CI/CD pipeline before models enter the Solibri review queue. Reject models below a minimum Health Score automatically — no manual intervention at the gatekeeping stage.",
+          },
+        ],
+      },
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Duplex Apartment — IFC2x3',
+        description: "A standard IFC2x3 reference model. Load it, run the 44-rule quality check, and see the Health Score — the kind of pre-delivery check that fits the browser workflow before a model enters Solibri's review queue.",
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+        showProperties: true,
+        allowFullscreen: true,
+        height: 440,
+      },
+      {
+        type: 'h2',
+        text: 'Frequently Asked Questions',
+      },
+      {
+        type: 'h3',
+        text: 'Is IFC Viewer Online a replacement for Solibri?',
+      },
+      {
+        type: 'p',
+        text: "No — not for all workflows. IFC Viewer Online is a better fit for the subset of tasks it covers: fast pre-delivery QA, IDS compliance, privacy-sensitive models, property editing, and zero-install accessibility. It does not replace Solibri for custom rule authoring, full BCF management, COBie checking, or enterprise governance. Many teams will use both, each for what it does best.",
+      },
+      {
+        type: 'h3',
+        text: 'Can I use both tools on the same project?',
+      },
+      {
+        type: 'p',
+        text: "Yes — this is often the most efficient pattern for large projects. IFC Viewer Online handles pre-screening, IDS compliance, and external-partner review. Solibri handles coordination, custom rules, and full BCF lifecycle management. Models flow between the two tools at defined quality gates. The combination is more efficient than either tool alone for most large-scale, multi-stakeholder workflows.",
+      },
+      {
+        type: 'h3',
+        text: 'How does IDS support compare between the two tools?',
+      },
+      {
+        type: 'p',
+        text: ["IFC Viewer Online supports full IDS 1.0 validation: all six facets (Entity, Attribute, Property, Classification, Material, PartOf), validated against the complete official bSI testcase suite. Solibri has added IDS support in recent versions — verify the current release documentation for specific facets and testcase coverage. For teams that need IDS compliance without a Solibri licence on every seat, IFC Viewer Online covers the complete IDS 1.0 specification at zero cost. See the ", { text: 'IFC model checker guide', to: 'ifc-model-checker-guide' }, " for a breakdown of all three validation levels — schema, quality, and IDS."],
+      },
+      {
+        type: 'h3',
+        text: 'Is there a free alternative to Solibri for commercial use?',
+      },
+      {
+        type: 'p',
+        text: "For rule-based validation with custom-authored rules: no — there is no free tool that replicates Solibri's rule authoring engine for commercial project use. For standard IFC quality checking (44 rules, Health Score, IDS): yes — IFC Viewer Online is free for all use cases including commercial work, with no account or licence. If the validation need is pre-delivery quality checking rather than bespoke rule authoring, IFC Viewer Online meets it at zero cost.",
+      },
+      {
+        type: 'h3',
+        text: 'What is the Health Score and does Solibri have an equivalent?',
+      },
+      {
+        type: 'p',
+        text: ["IFC Viewer Online's Health Score is a 0–100 numeric quality metric calculated using a severity-weighted logarithmic penalty model. Errors carry a 3× weight over warnings; a single critical error has more impact than many minor issues — which reflects how a BIM coordinator actually prioritises fixes. Solibri does not produce an equivalent single numeric score: it produces per-rule pass/fail results across the issue set. Both approaches are valid. The Health Score is optimised for fast communication of overall model quality across stakeholders with varying BIM literacy. For the full calculation methodology, see the ", { text: 'IFC Health Score guide', to: 'ifc-health-score' }, "."],
+      },
+      {
+        type: 'h3',
+        text: 'Which tool should a small architecture studio use?',
+      },
+      {
+        type: 'p',
+        text: "For a studio of 5–30 people running pre-delivery IFC checks without bespoke organisational rules, IFC Viewer Online is the more practical choice: zero cost, zero installation, results in seconds, accessible from any device. Solibri becomes cost-justified when the studio grows to the point where standardised custom rules across multiple simultaneous projects save more time and rework cost than the licence — or when a specific client or project contract mandates it.",
+      },
+      {
+        type: 'h2',
+        text: 'Summary',
+      },
+      {
+        type: 'pull-quote',
+        text: "Solibri and IFC Viewer Online are not competitors — they solve different problems. Solibri is a BIM governance platform. IFC Viewer Online is a validation access layer. The most effective workflows use both.",
+      },
+      {
+        type: 'feature-grid',
+        items: [
+          {
+            icon: '🏆',
+            title: 'Choose Solibri when…',
+            body: "You need custom rule authoring, full BCF lifecycle management, COBie checking, enterprise governance, clash detection, or a verifier-accepted QA artefact on a regulated project.",
+          },
+          {
+            icon: '🌐',
+            title: 'Choose IFC Viewer Online when…',
+            body: "You need fast pre-delivery QA, IDS 1.0 compliance, property editing, zero-upload for sensitive models, or browser-accessible validation for team members without Solibri licences.",
+          },
+          {
+            icon: '🔗',
+            title: 'Use both when…',
+            body: "Your project has internal coordination (Solibri) and external partner or pre-screening workflows (browser). Pre-screen in IFC Viewer Online; move only passing models into the Solibri queue.",
+          },
+          {
+            icon: '💡',
+            title: 'Expert tip',
+            body: "Use IFC Viewer Online's Health Score as the intake bar for Solibri. A model below 60 returns to the authoring team before entering the Solibri queue. This alone can significantly reduce coordination cycle time on large projects.",
+          },
+        ],
+      },
+      {
+        type: 'p',
+        text: ["For related reading: the three levels of IFC validation and where each tool fits — see the ", { text: 'IFC model checker guide', to: 'ifc-model-checker-guide' }, ". How the Health Score is calculated and used as a project quality gate — see the ", { text: 'IFC Health Score guide', to: 'ifc-health-score' }, ". Browser-local vs cloud IFC processing — see the guide on ", { text: 'browser vs cloud IFC validation', to: 'browser-vs-cloud-ifc-validation' }, ". Editing and repairing a received IFC without the authoring tool — see the ", { text: 'free online IFC editor guide', to: 'ifc-editor-online' }, ". All major IFC viewers compared — see the ", { text: 'best free IFC viewer comparison', to: 'best-free-ifc-viewer' }, "."],
+      },
+    ],
+  },
+
 ]
 
 // ─── All posts by language ────────────────────────────────────────────────────
