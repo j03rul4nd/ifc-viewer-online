@@ -16,7 +16,7 @@ All processing runs via WebAssembly (web-ifc) and WebGL (three.js) directly in t
 ## Key capabilities
 
 - **IFC Viewer**: Load and render IFC2x3, IFC4, IFC4x1, IFC4x3 files in a 3D WebGL viewport
-- **IFC Validator**: 38 built-in validation rules covering GUID format/uniqueness, spatial hierarchy, orphan elements, missing type assignments, naming conventions, clash detection, coordinate offset, proxy overuse, file size anomaly, ISO 19650 property sets, and schema compatibility. Every model receives a Health Score 0–100.
+- **IFC Validator**: 44 built-in validation rules covering GUID format/uniqueness, spatial hierarchy, orphan elements, missing type assignments, naming conventions, clash detection, coordinate offset, proxy overuse, file size anomaly, ISO 19650 property sets, and schema compatibility. Every model receives a Health Score 0–100. Full buildingSMART IDS 1.0 validation is also supported.
 - **GUID auto-fix**: One-click correction of invalid or duplicate GlobalIds
 - **Non-destructive editing**: Edit element names, LongName, Description, and property set values inline with full undo/redo
 - **IFC export**: Apply all edits and export a corrected IFC binary (entirely in a Web Worker, no server)
@@ -58,9 +58,11 @@ BIM Coordinators, Architects, Structural Engineers, MEP Engineers — anyone who
 
 ## Related pages
 
-- IFC Validator (EN): https://www.ifcvieweronline.eu/ifc-validator/
+- Online IFC Validation / IFC Validator (EN): https://www.ifcvieweronline.eu/ifc-validator/
+- Cloud IFC Validator (no upload) (EN): https://www.ifcvieweronline.eu/cloud-ifc-validator/
+- Solibri Alternative (EN): https://www.ifcvieweronline.eu/solibri-alternative/
+- Solibri WebChecker Alternative (EN): https://www.ifcvieweronline.eu/solibri-webchecker-alternative/
 - IFC Viewer for Mac (EN): https://www.ifcvieweronline.eu/ifc-viewer-mac/
-- Solibri Anywhere Alternative: https://www.ifcvieweronline.eu/solibri-alternative/
 - Fix Duplicate GUIDs in IFC: https://www.ifcvieweronline.eu/tools/fix-duplicate-guids/
 - Visor IFC Online (ES): https://www.ifcvieweronline.eu/es/
 - Validador IFC (ES): https://www.ifcvieweronline.eu/es/ifc-validador/

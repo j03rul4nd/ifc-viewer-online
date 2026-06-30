@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cloud IFC Validator — Validate IFC Online, Nothing Uploaded (Free)</title>
+  <meta name="description" content="A cloud IFC validator without the upload. Validate IFC files online against 44 quality rules and full IDS 1.0, with a Health Score 0–100 — processed in your browser, so the model never leaves your device. Free, no account, no install." />
+  <meta name="keywords" content="cloud IFC validator, online IFC validation, IFC validator online, validate IFC in the cloud, web IFC validator, IFC quality check online, browser IFC validation, IFC checker cloud, free IFC validator, no upload IFC validation" />
+  <meta name="author" content="Joel Benitez" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+  <meta property="og:title" content="Cloud IFC Validator — Validate IFC Online, Nothing Uploaded" />
+  <meta property="og:description" content="The convenience of a cloud IFC validator, without uploading your model. 44 rules, full IDS 1.0, Health Score 0–100 — all in your browser. Free, no account." />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Cloud IFC validator — Health Score and 44 rules, nothing uploaded" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Cloud IFC Validator — No Upload, 44 Rules, Free" />
+  <meta name="twitter:description" content="Validate IFC online without uploading. 44 rules + IDS 1.0, Health Score 0–100, runs via WebAssembly in your browser." />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/og-image.png" />
+
+  <link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": "https://www.ifcvieweronline.eu/cloud-ifc-validator/",
+        "url": "https://www.ifcvieweronline.eu/cloud-ifc-validator/",
+        "name": "Cloud IFC Validator — Validate IFC Online, Nothing Uploaded",
+        "description": "Validate IFC files online against 44 quality rules and full IDS 1.0, with a Health Score 0–100, processed in your browser so the model never leaves your device.",
+        "isPartOf": { "@id": "https://www.ifcvieweronline.eu/" },
+        "inLanguage": "en"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "IFC Viewer Online — Cloud IFC Validator",
+        "url": "https://www.ifcvieweronline.eu/",
+        "applicationCategory": "AEC / BIM software",
+        "operatingSystem": "Any (browser-based — Mac, Windows, Linux)",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "featureList": [
+          "Online IFC validation — no install",
+          "44 IFC quality rules",
+          "Full IDS 1.0 validation (buildingSMART)",
+          "Health Score 0–100",
+          "Processed in-browser via WebAssembly — nothing uploaded",
+          "GUID duplicate detection and auto-fix",
+          "BCF 2.1 issue export",
+          "Shareable validation report URL"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is this a real cloud IFC validator?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "It gives you everything people want from a cloud IFC validator — a URL you open in any browser, no install, instant results, a shareable report — but it processes the file on your own device instead of a remote server. The IFC bytes are parsed in your browser via WebAssembly, so the model is never uploaded. You get cloud-style convenience without the data-handling risk of true server-side cloud validators."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why validate IFC in the browser instead of a server-side cloud?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Server-side cloud validators require you to upload the model, which is often blocked by NDAs, client agreements, or public-sector data rules. Browser-based validation removes that blocker entirely: there is no upload, no account, and nothing to review with your client's data team. It is also instant — no queue, no processing wait."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What does the cloud IFC validator check?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "44 quality rules across GUID integrity, spatial hierarchy, orphan elements, naming (ISO 19650), property-set completeness, units, geometry validity, proxy overuse, coordinate offsets and more — plus a Health Score from 0 to 100. It also runs full buildingSMART IDS 1.0 validation against any .ids requirements file you load."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is it really free?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. It is free for all use cases including commercial project work, with no account and no file-size paywall. The viewer and validator are open source under the MIT licence."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+    header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-size: 14px; font-weight: 600; color: #5E6AD2; }
+    .nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; }
+    .nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+
+    .hero { position: relative; overflow: hidden; padding: 72px 0 52px; text-align: center; }
+    .hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
+    .hero::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+    .hero .container { position: relative; z-index: 1; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 28px; font-weight: 500; }
+    .hero h1 { font-size: clamp(1.9rem, 5vw, 3.0rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
+    .accent { background: linear-gradient(100deg, #8B96E9 0%, #5E6AD2 55%, #7C8AF0 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #5E6AD2; }
+    .hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 640px; margin: 0 auto 36px; }
+    .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
+    .cta-primary:hover { background: #4F5ABF; }
+    .cta-note { font-size: 12px; color: rgba(255,255,255,0.28); margin-top: 12px; }
+
+    .section { padding: 60px 0; }
+    .divider { border-top: 1px solid rgba(255,255,255,0.06); }
+    .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #5E6AD2; text-transform: uppercase; margin-bottom: 12px; }
+    .section-title { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .section-sub { font-size: 15px; color: rgba(255,255,255,0.45); margin-bottom: 36px; max-width: 620px; }
+
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+    .feature-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 18px 20px; }
+    .feature-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .feature-card p { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.55; }
+
+    .compare-table { width: 100%; border-collapse: collapse; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; font-size: 13px; }
+    .compare-table th { background: rgba(255,255,255,0.03); padding: 12px 18px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: rgba(255,255,255,0.4); text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .compare-table td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .col-feature { color: rgba(255,255,255,0.7); font-weight: 500; }
+    .col-a { color: rgba(255,255,255,0.4); }
+    .col-b { color: #E8E8F0; }
+    .badge-ok { display: inline-block; background: rgba(82,196,26,0.12); color: #52C41A; border: 1px solid rgba(82,196,26,0.22); border-radius: 4px; font-size: 11px; padding: 2px 7px; font-weight: 600; }
+
+    .faq-list { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
+    .faq-item { padding: 22px 26px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .faq-a { font-size: 13px; color: rgba(255,255,255,0.48); line-height: 1.65; }
+
+    .cta-bottom { text-align: center; padding: 60px 0 80px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .cta-bottom h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.025em; margin-bottom: 12px; }
+    .cta-bottom p { font-size: 15px; color: rgba(255,255,255,0.42); margin-bottom: 30px; }
+
+    footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 26px 0; text-align: center; }
+    .footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
+    .footer-link { font-size: 12px; color: rgba(255,255,255,0.32); transition: color 0.15s; }
+    .footer-link:hover { color: rgba(255,255,255,0.65); }
+    .footer-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
+
+    @media (max-width: 600px) { .compare-table { font-size: 12px; } .compare-table td, .compare-table th { padding: 10px 12px; } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <div class="header-inner">
+        <a href="../" class="logo">IFC Viewer Online</a>
+        <a href="../" class="nav-cta">Open validator →</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <canvas class="hero-bg" data-dot-grid data-color="94,106,210" aria-hidden="true"></canvas>
+      <div class="container">
+        <div class="hero-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Cloud convenience · Zero upload · Free
+        </div>
+        <h1>Cloud IFC Validator<br><span class="accent">without the upload</span></h1>
+        <p class="hero-desc">Everything you want from a cloud IFC validator — open a URL, validate instantly, share a report — except the model never leaves your device. 44 quality rules, full IDS 1.0 and a Health Score 0–100 run in your browser via WebAssembly. No install, no account, no file-size paywall.</p>
+        <a href="../" class="cta-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Validate an IFC file — free
+        </a>
+        <p class="cta-note">No account · Nothing uploaded · Works offline · Mac, Windows &amp; Linux</p>
+      </div>
+    </section>
+
+    <!-- Live tool -->
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">Live tool · in your browser</p>
+        <h2 class="section-title">Try the validator on a sample model</h2>
+        <p class="section-sub">Run it live on a sample IFC, then drop your own. It parses, scores and checks the file entirely on your device — no upload, no queue, no account.</p>
+        <div data-live-embed
+             data-app="../"
+             data-model="https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc"
+             data-validate data-panel data-lang="en"
+             data-title="Live cloud IFC validation — sample model"
+             data-cta="Run live IFC validation on a sample model"
+             data-sub="Loads the real validator in your browser — nothing is uploaded"
+             style="--le-h:560px"></div>
+        <p style="text-align:center;margin-top:20px"><a href="../" class="cta-primary">Validate your own IFC file — free →</a></p>
+      </div>
+    </section>
+
+    <!-- Cloud vs browser -->
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">How it compares</p>
+        <h2 class="section-title">Server-side cloud vs in-browser validation</h2>
+        <p class="section-sub">Most "cloud IFC validators" upload your model to a remote server. Browser-based validation gives you the same convenience with none of the data exposure.</p>
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>What matters</th>
+              <th>Typical server-side cloud validator</th>
+              <th>IFC Viewer Online (in-browser)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-feature">Where the file is processed</td><td class="col-a">Uploaded to a remote server</td><td class="col-b"><span class="badge-ok">Your own browser — nothing uploaded</span></td></tr>
+            <tr><td class="col-feature">Works under NDA / data rules</td><td class="col-a">Often blocked — file leaves your control</td><td class="col-b"><span class="badge-ok">Yes — no data changes hands</span></td></tr>
+            <tr><td class="col-feature">Account / sign-up</td><td class="col-a">Usually required</td><td class="col-b"><span class="badge-ok">None</span></td></tr>
+            <tr><td class="col-feature">Speed</td><td class="col-a">Upload + queue + processing</td><td class="col-b"><span class="badge-ok">Instant — runs locally</span></td></tr>
+            <tr><td class="col-feature">Quality rules</td><td class="col-a">Varies</td><td class="col-b"><span class="badge-ok">44 rules + Health Score 0–100</span></td></tr>
+            <tr><td class="col-feature">IDS 1.0</td><td class="col-a">Varies</td><td class="col-b"><span class="badge-ok">Full — all 6 facets</span></td></tr>
+            <tr><td class="col-feature">Price</td><td class="col-a">Often metered / paid</td><td class="col-b"><span class="badge-ok">Free — all use cases</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- What gets checked -->
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">44 validation rules</p>
+        <h2 class="section-title">What the validator checks</h2>
+        <p class="section-sub">Rules span schema quality, spatial hierarchy, ISO 19650 naming, property completeness, georeferencing and coordination — plus full IDS 1.0.</p>
+        <div class="feature-grid">
+          <div class="feature-card"><h3>GUID integrity</h3><p>Duplicate GlobalIds and invalid base64 format — the most common Revit / ArchiCAD / Tekla export error. Auto-fixable.</p></div>
+          <div class="feature-card"><h3>Spatial hierarchy</h3><p>IfcSite → IfcBuilding → IfcBuildingStorey chain, plus orphan elements with no spatial containment.</p></div>
+          <div class="feature-card"><h3>Naming &amp; ISO 19650</h3><p>Empty Name / LongName attributes and generic placeholders that break downstream metadata.</p></div>
+          <div class="feature-card"><h3>Property sets</h3><p>Missing or empty required Psets for walls, slabs, columns and beams that break quantity takeoff.</p></div>
+          <div class="feature-card"><h3>Georeferencing</h3><p>Coordinate offsets &gt; 10 km from origin — a classic federation error across discipline models.</p></div>
+          <div class="feature-card"><h3>IDS 1.0 compliance</h3><p>Load a buildingSMART .ids requirements file and validate Entity, Attribute, Property, Classification, Material and PartOf facets.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">FAQ</p>
+        <h2 class="section-title">Questions</h2><br/>
+        <div class="faq-list">
+          <div class="faq-item"><p class="faq-q">Is this a real cloud IFC validator?</p><p class="faq-a">It gives you everything people want from a cloud IFC validator — a URL you open in any browser, no install, instant results, a shareable report — but it processes the file on your own device instead of a remote server. The IFC is parsed in your browser via WebAssembly, so the model is never uploaded. Cloud-style convenience, without the data-handling risk.</p></div>
+          <div class="faq-item"><p class="faq-q">Why validate IFC in the browser instead of a server-side cloud?</p><p class="faq-a">Server-side cloud validators require you to upload the model, which is often blocked by NDAs, client agreements, or public-sector data rules. Browser-based validation removes that blocker: no upload, no account, nothing to review with your client's data team — and it is instant, with no queue.</p></div>
+          <div class="faq-item"><p class="faq-q">What does it check?</p><p class="faq-a">44 quality rules across GUID integrity, spatial hierarchy, orphan elements, naming (ISO 19650), property-set completeness, units, geometry validity, proxy overuse and coordinate offsets — plus a Health Score 0–100, and full buildingSMART IDS 1.0 against any .ids file you load.</p></div>
+          <div class="faq-item"><p class="faq-q">Is it really free?</p><p class="faq-a">Yes — free for all use cases including commercial work, no account, no file-size paywall. The viewer and validator are open source under the MIT licence.</p></div>
+          <div class="faq-item"><p class="faq-q">Can I share the validation results?</p><p class="faq-a">Yes. After validating, use Share Report to generate a URL that encodes the full Health Score and issue list. Your client opens it in any browser — the IFC file itself is never included in the link.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-bottom">
+      <div class="container">
+        <h2>Validate your IFC online — without uploading it.</h2>
+        <p>44 rules · Full IDS 1.0 · Health Score 0–100 · No install · No upload · Free</p>
+        <a href="../" class="cta-primary">Open IFC Viewer Online →</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="../" class="footer-link">IFC Viewer Online</a>
+        <a href="../ifc-validator/" class="footer-link">IFC Validator</a>
+        <a href="../solibri-alternative/" class="footer-link">Solibri Alternative</a>
+        <a href="../solibri-webchecker-alternative/" class="footer-link">Solibri WebChecker Alternative</a>
+        <a href="../ifc-viewer-mac/" class="footer-link">IFC Viewer for Mac</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <p class="footer-copy">IFC Viewer Online © 2026 · Free · Open source · MIT license</p>
+    </div>
+  </footer>
+
+  <script defer src="../seo/dot-grid.js"></script>
+  <script defer src="../seo/live-embed.js"></script>
+
+</body>
+</html>

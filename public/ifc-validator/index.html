@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>IFC Validator Online — Free IFC Quality Check, 38 Rules, No Upload</title>
-  <meta name="description" content="Free online IFC validator. Check IFC files for GUID duplicates, spatial hierarchy violations, orphan elements, missing type assignments, and 34 more quality rules — directly in your browser. No upload, no login. Works with IFC2x3, IFC4, IFC4x3." />
-  <meta name="keywords" content="IFC validator online, validate IFC file, IFC quality check, check IFC file, IFC GUID validation, spatial hierarchy IFC, orphan elements IFC, IFC checker, BuildingSMART IFC validation, IFC error check, free IFC validator, IFC file quality" />
+  <title>Online IFC Validation — Free IFC Validator, 44 Rules, No Upload</title>
+  <meta name="description" content="Free online IFC validation in your browser. Check IFC files for GUID duplicates, spatial hierarchy violations, orphan elements, missing type assignments and 40 more quality rules — get a Health Score 0–100 in 30 seconds. No upload, no login. IFC2x3, IFC4, IFC4x3." />
+  <meta name="keywords" content="online IFC validation, IFC validator online, validate IFC file, cloud IFC validator, IFC quality check, check IFC file, IFC GUID validation, spatial hierarchy IFC, orphan elements IFC, IFC checker, buildingSMART IFC validation, IFC error check, free IFC validator, IFC file quality" />
   <meta name="author" content="Joel Benitez" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://www.ifcvieweronline.eu/ifc-validator/" />
@@ -13,18 +13,18 @@
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.ifcvieweronline.eu/ifc-validator/" />
-  <meta property="og:title" content="IFC Validator Online — Free IFC Quality Check, 38 Rules" />
-  <meta property="og:description" content="Check IFC files for GUID duplicates, spatial hierarchy violations, orphan elements and 35 more rules — in your browser. Health Score 0–100 in 30 seconds. No upload, no login." />
+  <meta property="og:title" content="Online IFC Validation — Free IFC Validator, 44 Rules" />
+  <meta property="og:description" content="Online IFC validation in your browser: GUID duplicates, spatial hierarchy, orphan elements and 41 more rules. Health Score 0–100 in 30 seconds. No upload, no login." />
   <meta property="og:site_name" content="IFC Viewer Online" />
   <meta property="og:locale" content="en_US" />
   <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="IFC Validator Online — Health Score and 38 rules in the browser" />
+  <meta property="og:image:alt" content="Online IFC validation — Health Score and 44 rules in the browser" />
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="IFC Validator Online — Free, 38 Rules" />
+  <meta name="twitter:title" content="Online IFC Validation — Free, 44 Rules" />
   <meta name="twitter:description" content="GUID duplicates, spatial hierarchy, orphan elements & more. IFC Health Score 0–100 in 30s. No upload, runs via WebAssembly." />
   <meta name="twitter:image" content="https://www.ifcvieweronline.eu/og-image.png" />
   <link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ifc-validator/" />
@@ -33,13 +33,13 @@
 
   <meta property="og:type"        content="website" />
   <meta property="og:url"         content="https://www.ifcvieweronline.eu/ifc-validator/" />
-  <meta property="og:title"       content="IFC Validator Online — Free IFC Quality Check | 38 Rules" />
-  <meta property="og:description" content="Validate IFC files against 38 quality rules directly in your browser. GUID duplicates, spatial hierarchy, orphan elements and more. No upload, no login, works offline." />
+  <meta property="og:title"       content="Online IFC Validation — Free IFC Validator | 44 Rules" />
+  <meta property="og:description" content="Online IFC validation against 44 quality rules directly in your browser. GUID duplicates, spatial hierarchy, orphan elements and more. No upload, no login, works offline." />
   <meta property="og:site_name"   content="IFC Viewer Online" />
   <meta property="og:locale"      content="en_US" />
   <meta name="twitter:card"        content="summary" />
-  <meta name="twitter:title"       content="IFC Validator Online — Free IFC Quality Check | 38 Rules" />
-  <meta name="twitter:description" content="Validate IFC files against 38 quality rules in your browser. No upload, no login." />
+  <meta name="twitter:title"       content="Online IFC Validation — Free IFC Validator | 44 Rules" />
+  <meta name="twitter:description" content="Online IFC validation against 44 quality rules in your browser. No upload, no login." />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -53,8 +53,8 @@
         "@type": "WebPage",
         "@id": "https://www.ifcvieweronline.eu/ifc-validator/",
         "url": "https://www.ifcvieweronline.eu/ifc-validator/",
-        "name": "IFC Validator Online — Free IFC Quality Check, 38 Rules",
-        "description": "Free online IFC validator. Check IFC files for GUID duplicates, spatial hierarchy violations, orphan elements and more — directly in your browser.",
+        "name": "Online IFC Validation — Free IFC Validator, 44 Rules",
+        "description": "Free online IFC validation. Check IFC files for GUID duplicates, spatial hierarchy violations, orphan elements and 41 more quality rules — directly in your browser, no upload.",
         "isPartOf": { "@id": "https://www.ifcvieweronline.eu/" },
         "inLanguage": "en"
       },
@@ -80,6 +80,14 @@
       {
         "@type": "FAQPage",
         "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is online IFC validation?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Online IFC validation means checking an IFC model against quality rules from a web browser, without installing desktop software. IFC Viewer Online runs 44 quality rules plus full buildingSMART IDS 1.0 entirely client-side via WebAssembly, returning a Health Score from 0 to 100 in about 30 seconds. Unlike most cloud validators, nothing is uploaded — the IFC is parsed on your own device, so it is safe for confidential models."
+            }
+          },
           {
             "@type": "Question",
             "name": "Is my IFC file uploaded to a server during validation?",
@@ -206,10 +214,10 @@
       <div class="container">
         <div class="hero-badge">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          38 validation rules · No upload · Free
+          44 validation rules · No upload · Free
         </div>
-        <h1>IFC Validator <span class="accent">Online</span></h1>
-        <p class="hero-desc">Catch GUID duplicates, spatial hierarchy violations, orphan elements, proxy overuse, coordinate offsets, and 32 more quality checks — all directly in your browser. No upload. No login. Works with IFC2x3, IFC4, IFC4x3.</p>
+        <h1>Online IFC <span class="accent">Validation</span></h1>
+        <p class="hero-desc">Free online IFC validation in your browser: catch GUID duplicates, spatial hierarchy violations, orphan elements, proxy overuse, coordinate offsets and 38 more quality checks — and get a Health Score 0–100 in 30 seconds. No upload. No login. Works with IFC2x3, IFC4, IFC4x3.</p>
         <a href="../" class="cta-primary">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Validate an IFC file — free
@@ -218,28 +226,30 @@
       </div>
     </section>
 
-    <!-- Free in-browser IFC inspector -->
+    <!-- Live in-browser validator -->
     <section class="section divider">
       <div class="container">
-        <p class="section-label">Free tool · in your browser</p>
-        <h2 class="section-title">Inspect an IFC file — instantly, privately</h2>
-        <p class="section-sub">Drop an <code style="font-family:'Geist Mono','Cascadia Code',monospace;color:#8B96E9">.ifc</code> file to read its schema version, exporter and header. Parsed locally with JavaScript — nothing is uploaded, the file never leaves your machine.</p>
-        <div class="ifc-inspect" id="ifcInspect" data-app="../">
-          <label class="ifc-drop" id="ifcDrop" for="ifcFileInput">
-            <input id="ifcFileInput" type="file" accept=".ifc" hidden />
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <span class="ifc-drop-text">Drop an IFC file here, or <span class="ifc-drop-link">choose a file</span></span>
-            <span class="ifc-drop-note">Header is read locally · nothing uploaded</span>
-          </label>
-          <div class="ifc-report" id="ifcReport" hidden></div>
-        </div>
+        <p class="section-label">Live tool · in your browser</p>
+        <h2 class="section-title">Run online IFC validation — right here</h2>
+        <p class="section-sub">Run the real validator on a sample model below, then drop your own <code style="font-family:'Geist Mono','Cascadia Code',monospace;color:#8B96E9">.ifc</code>. It parses, scores and checks the file entirely in your browser via WebAssembly — nothing is uploaded, the file never leaves your machine.</p>
+        <div data-live-embed
+             data-app="../"
+             data-model="https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc"
+             data-validate data-panel data-lang="en"
+             data-title="Live IFC validation — sample model"
+             data-cta="Run live IFC validation on a sample model"
+             data-sub="Loads the real validator in your browser — nothing is uploaded"
+             style="--le-h:560px"></div>
+        <p class="cta-note" style="text-align:center;margin-top:18px">
+          <a href="../" class="cta-primary" style="margin-top:8px">Validate your own IFC file — free →</a>
+        </p>
       </div>
     </section>
 
     <section class="section">
       <div class="container">
         <p class="section-label">Validation Rules</p>
-        <h2 class="section-title">38 built-in IFC quality checks</h2>
+        <h2 class="section-title">44 built-in IFC quality checks</h2>
         <p class="section-sub">Each rule runs in a background Web Worker — the interface stays responsive while results stream in.</p>
         <div class="rules-grid">
           <div class="rule">
@@ -334,7 +344,7 @@
           <div class="step">
             <div class="step-n">02</div>
             <div class="step-title">Run validation</div>
-            <div class="step-desc">38 rules run in a background Web Worker. Results stream in as each check completes — GUID issues, hierarchy errors, orphans, proxy overuse, coordinate offsets, all flagged instantly.</div>
+            <div class="step-desc">44 rules run in a background Web Worker. Results stream in as each check completes — GUID issues, hierarchy errors, orphans, proxy overuse, coordinate offsets, all flagged instantly.</div>
           </div>
           <div class="step">
             <div class="step-n">03</div>
@@ -356,6 +366,10 @@
         <h2 class="section-title">IFC Validator — Questions</h2>
         <br />
         <div class="faq-list">
+          <div class="faq-item">
+            <p class="faq-q">What is online IFC validation, and how is this different from a cloud validator?</p>
+            <p class="faq-a">Online IFC validation means checking an IFC model against quality rules from a web browser, with no desktop install. Most cloud IFC validators upload your file to a server to process it. IFC Viewer Online does the opposite: all 44 quality rules, the Health Score, and the full IDS 1.0 engine run client-side via WebAssembly, so the IFC is parsed on your own device and nothing is uploaded. You get the convenience of a cloud tool without handing over your model.</p>
+          </div>
           <div class="faq-item">
             <p class="faq-q">Is my IFC file uploaded to a server during validation?</p>
             <p class="faq-a">No. Validation runs entirely in your browser via web-ifc WebAssembly. Your IFC file never leaves your machine. The validator works completely offline once the page is loaded — no server, no account, no data transfer.</p>
@@ -398,9 +412,11 @@
     <div class="container">
       <div class="footer-links">
         <a href="../" class="footer-link">IFC Viewer Online</a>
+        <a href="../cloud-ifc-validator/" class="footer-link">Cloud IFC Validator</a>
+        <a href="../solibri-alternative/" class="footer-link">Solibri Alternative</a>
+        <a href="../solibri-webchecker-alternative/" class="footer-link">Solibri WebChecker Alternative</a>
         <a href="../ifc-viewer-mac/" class="footer-link">IFC Viewer for Mac</a>
         <a href="../es/ifc-validador/" class="footer-link">Validador IFC (ES)</a>
-        <a href="../es/" class="footer-link">Visor IFC Online (ES)</a>
         <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
       </div>
       <p class="footer-copy">IFC Viewer Online © 2026 · Free · Open source · MIT license · Built with web-ifc &amp; three.js</p>
@@ -408,6 +424,7 @@
   </footer>
 
   <script defer src="../seo/dot-grid.js"></script>
+  <script defer src="../seo/live-embed.js"></script>
 
 </body>
 </html>
