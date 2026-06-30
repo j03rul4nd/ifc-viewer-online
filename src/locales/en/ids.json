@@ -145,5 +145,15 @@
     "specProhibitedButPresent": "prohibited elements are present in the model",
     "wrongDataType": "{{what}} has the wrong data type — expected {{expected}}, found {{actual}}",
     "unsupportedPattern": "pattern not supported by this checker: {{pattern}}"
+  },
+  "howToFix": "How to fix",
+  "remediation": {
+    "missingRequired": "Add {{what}} to the element in your authoring tool (Revit/ArchiCAD/…), then re-export the IFC.",
+    "wrongValue": "Set {{what}} to a value that satisfies {{expected}}.",
+    "prohibitedPresent": "Remove {{what}} from the element.",
+    "specRequiredButAbsent": "Add at least one element that matches this specification to the model.",
+    "specProhibitedButPresent": "Remove the elements that match this prohibited specification.",
+    "wrongDataType": "Fix the data type of {{what}} — it must be {{expected}}.",
+    "unsupportedPattern": "Check this value manually — the pattern can't be evaluated automatically."
   }
 }

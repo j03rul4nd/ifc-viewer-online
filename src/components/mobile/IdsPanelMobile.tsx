@@ -22,7 +22,7 @@ import { trackIdsExport } from '../../lib/analytics'
 import { toast } from '../../stores/toastStore'
 import { SCORE_COLOR } from '../ids/score'
 import { FacetChip, FACET_KINDS } from '../ids/FacetChip'
-import { localizeReasons } from '../ids/reasons'
+import { localizeReasons, localizeRemediation } from '../ids/reasons'
 import * as Icons from '../Icons'
 import { MobileSheet } from './MobileSheet'
 import { MobileActionSheet, type SheetAction } from './MobileActionSheet'
@@ -409,6 +409,8 @@ function SpecCard({
                 <span className="text-[10px] font-mono text-[var(--text-faint)] shrink-0 ml-auto">{f.ifcClass}{f.expressId >= 0 ? ` #${f.expressId}` : ''}</span>
               </span>
               <span className="block text-[11px] leading-snug mt-1" style={{ color: 'var(--danger)' }}>{localizeReasons(t, f.reasons)}</span>
+              {(() => { const fix = localizeRemediation(t, f.reasons); return fix
+                ? <span className="block text-[10.5px] leading-snug mt-0.5 text-[var(--text-faint)]">{t('howToFix')}: {fix}</span> : null })()}
             </button>
           ))}
           {spec.failedCount > spec.failures.length && (

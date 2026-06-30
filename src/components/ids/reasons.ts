@@ -13,3 +13,19 @@ export function localizeReason(t: TFunction<'ids'>, r: IdsReason): string {
 export function localizeReasons(t: TFunction<'ids'>, reasons: IdsReason[]): string {
   return reasons.map((r) => localizeReason(t, r)).join(' · ')
 }
+
+/**
+ * Actionable "how to fix" guidance for a set of failure reasons (the remediation
+ * corpus). One line per distinct reason code, so repeated codes don't duplicate.
+ * Returns '' when nothing maps. Renders through the `ids:remediation.*` namespace.
+ */
+export function localizeRemediation(t: TFunction<'ids'>, reasons: IdsReason[]): string {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const r of reasons) {
+    if (seen.has(r.code)) continue
+    seen.add(r.code)
+    out.push(t(`remediation.${r.code}` as 'remediation.missingRequired', { ...r.params, defaultValue: '' }))
+  }
+  return out.filter(Boolean).join(' · ')
+}

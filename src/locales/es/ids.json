@@ -145,5 +145,15 @@
     "specProhibitedButPresent": "hay elementos prohibidos presentes en el modelo",
     "wrongDataType": "{{what}} tiene el tipo de dato incorrecto — se esperaba {{expected}}, se encontró {{actual}}",
     "unsupportedPattern": "patrón no admitido por este comprobador: {{pattern}}"
+  },
+  "howToFix": "Cómo arreglarlo",
+  "remediation": {
+    "missingRequired": "Añade {{what}} al elemento en tu herramienta de autoría (Revit/ArchiCAD/…) y vuelve a exportar el IFC.",
+    "wrongValue": "Ajusta {{what}} a un valor que cumpla {{expected}}.",
+    "prohibitedPresent": "Elimina {{what}} del elemento.",
+    "specRequiredButAbsent": "Añade al modelo al menos un elemento que cumpla esta especificación.",
+    "specProhibitedButPresent": "Elimina los elementos que cumplen esta especificación prohibida.",
+    "wrongDataType": "Corrige el tipo de dato de {{what}} — debe ser {{expected}}.",
+    "unsupportedPattern": "Revisa este valor manualmente — el patrón no se puede evaluar automáticamente."
   }
 }

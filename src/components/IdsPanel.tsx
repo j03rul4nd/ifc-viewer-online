@@ -19,7 +19,7 @@ import { modelRegistry } from '../lib/model-registry'
 import { SCORE_COLOR } from './ids/score'
 import { FacetChip, FACET_KINDS } from './ids/FacetChip'
 import { IdsExportMenu } from './ids/IdsExportMenu'
-import { localizeReasons } from './ids/reasons'
+import { localizeReasons, localizeRemediation } from './ids/reasons'
 import { diffIdsResults } from '../lib/ids/ids-diff'
 import * as Icons from './Icons'
 import type { TFunction } from 'i18next'
@@ -627,6 +627,7 @@ function RowView({ row, focused, expanded, onClick }: {
       </button>
     )
   }
+  const remediation = localizeRemediation(t, row.reasons)
   return (
     <button
       onClick={onClick}
@@ -641,6 +642,11 @@ function RowView({ row, focused, expanded, onClick }: {
       <div className="text-[10px] leading-snug mt-0.5 truncate" style={{ color: 'var(--danger)' }}>
         {localizeReasons(t, row.reasons)}
       </div>
+      {remediation && (
+        <div className="text-[9.5px] leading-snug mt-0.5 truncate text-[var(--text-faint)]" title={`${t('howToFix')}: ${remediation}`}>
+          {t('howToFix')}: {remediation}
+        </div>
+      )}
     </button>
   )
 }
