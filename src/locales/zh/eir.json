@@ -1,0 +1,102 @@
+{
+  "title": "EIR / BIM 验证配置",
+  "openButton": "EIR / BIM 验证配置…",
+  "tagline": "根据你自己的信息需求检查模型（ISO 19650）",
+  "step1": "选择或创建一个配置",
+  "step2": "对你的模型运行",
+  "step3": "查看失败项并修复",
+  "empty": {
+    "title": "从一个配置开始",
+    "body": "在左侧选择现成的配置（LOD、ISO 19650、COBie…），或创建你自己的规则集。然后对已打开的模型运行。",
+    "cta": "创建配置"
+  },
+  "noModelHint": "加载 IFC 模型以运行此配置",
+  "sidebar": {
+    "new": "新建",
+    "import": "导入 .json 或 .ids",
+    "empty": "暂无配置"
+  },
+  "selectOrCreate": "选择或创建一个配置",
+  "builtinBadge": "内置（会保存副本）",
+  "namePlaceholder": "配置名称",
+  "descPlaceholder": "描述（可选）",
+  "addRule": "添加规则",
+  "footer": "{{rules}} 条规则 · {{active}} 条生效",
+  "actions": {
+    "duplicate": "复制",
+    "export": "导出 .json",
+    "delete": "删除",
+    "save": "保存",
+    "useAndRun": "使用并运行"
+  },
+  "ruleTypes": {
+    "entityExists": "实体存在",
+    "requiredProperty": "必需属性",
+    "requiredPropertySet": "必需属性集",
+    "propertyNotEmpty": "属性非空",
+    "propertyEquals": "属性等于",
+    "numeric": "数值",
+    "allowedValues": "允许的值",
+    "regex": "正则表达式",
+    "classification": "分类"
+  },
+  "severity": {
+    "error": "错误",
+    "warning": "警告",
+    "info": "信息",
+    "ignored": "已忽略"
+  },
+  "fields": {
+    "predefinedType": "PredefinedType",
+    "property": "属性",
+    "propertySet": "属性集",
+    "equals": "等于",
+    "op": "运算",
+    "value": "值",
+    "allowed": "允许值（逗号分隔）",
+    "target": "目标",
+    "pattern": "模式",
+    "system": "系统",
+    "classValue": "值",
+    "attribute": "特性"
+  },
+  "applies": {
+    "match": "模型中 {{count}} 个",
+    "none": "模型中 0 个",
+    "upper": "模型中 ≤ {{count}} 个"
+  },
+  "lint": {
+    "title": "请检查此规则：",
+    "entityNotIfc": "实体看起来不像 IFC 类（例如 IfcWall）",
+    "whitespace": "属性集/属性名称首尾有空格",
+    "badRegex": "正则表达式无效",
+    "numericNaN": "数值必须是数字",
+    "emptyEquals": "期望值为空",
+    "emptyAllowed": "允许的值包含空选项"
+  },
+  "stats": {
+    "validated": "已验证",
+    "passed": "通过",
+    "failed": "失败",
+    "failingElements": "有问题的元素"
+  },
+  "weighted": "加权 {{score}}",
+  "weightedHint": "按严重程度加权的合规度（错误的权重高于警告/信息）",
+  "share": {
+    "button": "分享",
+    "title": "IFC 验证报告",
+    "hint": "创建指向这些结果的公开链接",
+    "copied": "报告链接已复制到剪贴板",
+    "failed": "无法创建分享链接"
+  },
+  "toasts": {
+    "invalidProfile": "配置无效：{{detail}}",
+    "saved": "配置已保存",
+    "imported": "配置已导入",
+    "importedWithWarnings": "已导入；跳过了 {{count}} 条不支持的规则",
+    "importFailed": "导入失败：{{detail}}",
+    "addRuleFirst": "请先添加至少一条规则",
+    "loadModelFirst": "请先加载 IFC 模型",
+    "allIgnored": "所有规则均被忽略 — 无可运行项"
+  }
+}

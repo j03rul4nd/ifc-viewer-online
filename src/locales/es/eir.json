@@ -1,6 +1,16 @@
 {
   "title": "Perfiles de validación EIR / BIM",
   "openButton": "Perfiles de validación EIR / BIM…",
+  "tagline": "Comprueba tu modelo frente a tus propios requisitos de información (ISO 19650)",
+  "step1": "Elige o crea un perfil",
+  "step2": "Ejecútalo contra tu modelo",
+  "step3": "Revisa los fallos y corrígelos",
+  "empty": {
+    "title": "Empieza con un perfil",
+    "body": "Elige un perfil listo a la izquierda (LOD, ISO 19650, COBie…) o crea tu propio conjunto de reglas. Luego ejecútalo contra el modelo que tengas abierto.",
+    "cta": "Crear un perfil"
+  },
+  "noModelHint": "Carga un modelo IFC para ejecutar este perfil",
   "sidebar": {
     "new": "Nuevo",
     "import": "Importar .json o .ids",
@@ -72,6 +82,13 @@
   },
   "weighted": "Ponderado {{score}}",
   "weightedHint": "Cumplimiento ponderado por severidad (los errores cuentan más que advertencias/info)",
+  "share": {
+    "button": "Compartir",
+    "title": "Informe de validación IFC",
+    "hint": "Crea un enlace público a estos resultados",
+    "copied": "Enlace del informe copiado al portapapeles",
+    "failed": "No se pudo crear el enlace para compartir"
+  },
   "toasts": {
     "invalidProfile": "Perfil no válido: {{detail}}",
     "saved": "Perfil guardado",

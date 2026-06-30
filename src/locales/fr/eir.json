@@ -1,0 +1,102 @@
+{
+  "title": "Profils de validation EIR / BIM",
+  "openButton": "Profils de validation EIR / BIM…",
+  "tagline": "Vérifiez votre modèle par rapport à vos propres exigences d'information (ISO 19650)",
+  "step1": "Choisir ou créer un profil",
+  "step2": "L'exécuter sur votre modèle",
+  "step3": "Examiner les échecs et les corriger",
+  "empty": {
+    "title": "Commencez avec un profil",
+    "body": "Choisissez un profil prêt à l'emploi à gauche (LOD, ISO 19650, COBie…) ou créez vos propres règles. Exécutez-le ensuite sur le modèle ouvert.",
+    "cta": "Créer un profil"
+  },
+  "noModelHint": "Chargez un modèle IFC pour exécuter ce profil",
+  "sidebar": {
+    "new": "Nouveau",
+    "import": "Importer .json ou .ids",
+    "empty": "Aucun profil pour l'instant"
+  },
+  "selectOrCreate": "Sélectionnez ou créez un profil",
+  "builtinBadge": "intégré (enregistre une copie)",
+  "namePlaceholder": "Nom du profil",
+  "descPlaceholder": "Description (facultatif)",
+  "addRule": "Ajouter une règle",
+  "footer": "{{rules}} règle(s) · {{active}} actives",
+  "actions": {
+    "duplicate": "Dupliquer",
+    "export": "Exporter .json",
+    "delete": "Supprimer",
+    "save": "Enregistrer",
+    "useAndRun": "Utiliser et exécuter"
+  },
+  "ruleTypes": {
+    "entityExists": "L'entité existe",
+    "requiredProperty": "Propriété requise",
+    "requiredPropertySet": "Jeu de propriétés requis",
+    "propertyNotEmpty": "Propriété non vide",
+    "propertyEquals": "Propriété égale à",
+    "numeric": "Numérique",
+    "allowedValues": "Valeurs autorisées",
+    "regex": "Expression régulière",
+    "classification": "Classification"
+  },
+  "severity": {
+    "error": "erreur",
+    "warning": "avertissement",
+    "info": "info",
+    "ignored": "ignorée"
+  },
+  "fields": {
+    "predefinedType": "PredefinedType",
+    "property": "Propriété",
+    "propertySet": "Jeu de propriétés",
+    "equals": "Égal à",
+    "op": "Op",
+    "value": "Valeur",
+    "allowed": "Autorisées (séparées par des virgules)",
+    "target": "Cible",
+    "pattern": "Motif",
+    "system": "Système",
+    "classValue": "Valeur",
+    "attribute": "Attribut"
+  },
+  "applies": {
+    "match": "{{count}} dans le modèle",
+    "none": "0 dans le modèle",
+    "upper": "≤ {{count}} dans le modèle"
+  },
+  "lint": {
+    "title": "Vérifiez cette règle :",
+    "entityNotIfc": "L'entité ne ressemble pas à une classe IFC (ex. IfcWall)",
+    "whitespace": "Le nom du jeu/de la propriété comporte des espaces au début ou à la fin",
+    "badRegex": "L'expression régulière n'est pas valide",
+    "numericNaN": "La valeur numérique doit être un nombre",
+    "emptyEquals": "La valeur attendue est vide",
+    "emptyAllowed": "Les valeurs autorisées contiennent une option vide"
+  },
+  "stats": {
+    "validated": "Validés",
+    "passed": "Réussis",
+    "failed": "Échoués",
+    "failingElements": "Éléments avec problèmes"
+  },
+  "weighted": "Pondéré {{score}}",
+  "weightedHint": "Conformité pondérée par sévérité (les erreurs comptent plus que les avertissements/infos)",
+  "share": {
+    "button": "Partager",
+    "title": "Rapport de validation IFC",
+    "hint": "Créer un lien public vers ces résultats",
+    "copied": "Lien du rapport copié dans le presse-papiers",
+    "failed": "Impossible de créer le lien de partage"
+  },
+  "toasts": {
+    "invalidProfile": "Profil non valide : {{detail}}",
+    "saved": "Profil enregistré",
+    "imported": "Profil importé",
+    "importedWithWarnings": "Importé ; {{count}} règle(s) non prise(s) en charge ignorée(s)",
+    "importFailed": "Échec de l'import : {{detail}}",
+    "addRuleFirst": "Ajoutez d'abord au moins une règle",
+    "loadModelFirst": "Chargez d'abord un modèle IFC",
+    "allIgnored": "Toutes les règles sont ignorées — rien à exécuter"
+  }
+}

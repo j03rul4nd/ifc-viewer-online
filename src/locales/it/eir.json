@@ -1,0 +1,102 @@
+{
+  "title": "Profili di validazione EIR / BIM",
+  "openButton": "Profili di validazione EIR / BIM…",
+  "tagline": "Verifica il tuo modello rispetto ai tuoi requisiti informativi (ISO 19650)",
+  "step1": "Scegli o crea un profilo",
+  "step2": "Eseguilo sul tuo modello",
+  "step3": "Esamina gli errori e correggili",
+  "empty": {
+    "title": "Inizia con un profilo",
+    "body": "Scegli un profilo pronto a sinistra (LOD, ISO 19650, COBie…) o crea le tue regole. Poi eseguilo sul modello che hai aperto.",
+    "cta": "Crea un profilo"
+  },
+  "noModelHint": "Carica un modello IFC per eseguire questo profilo",
+  "sidebar": {
+    "new": "Nuovo",
+    "import": "Importa .json o .ids",
+    "empty": "Ancora nessun profilo"
+  },
+  "selectOrCreate": "Seleziona o crea un profilo",
+  "builtinBadge": "predefinito (salva una copia)",
+  "namePlaceholder": "Nome del profilo",
+  "descPlaceholder": "Descrizione (facoltativa)",
+  "addRule": "Aggiungi regola",
+  "footer": "{{rules}} regola/e · {{active}} attive",
+  "actions": {
+    "duplicate": "Duplica",
+    "export": "Esporta .json",
+    "delete": "Elimina",
+    "save": "Salva",
+    "useAndRun": "Usa ed esegui"
+  },
+  "ruleTypes": {
+    "entityExists": "L'entità esiste",
+    "requiredProperty": "Proprietà richiesta",
+    "requiredPropertySet": "Set di proprietà richiesto",
+    "propertyNotEmpty": "Proprietà non vuota",
+    "propertyEquals": "Proprietà uguale a",
+    "numeric": "Numerica",
+    "allowedValues": "Valori consentiti",
+    "regex": "Espressione regolare",
+    "classification": "Classificazione"
+  },
+  "severity": {
+    "error": "errore",
+    "warning": "avviso",
+    "info": "info",
+    "ignored": "ignorata"
+  },
+  "fields": {
+    "predefinedType": "PredefinedType",
+    "property": "Proprietà",
+    "propertySet": "Set di proprietà",
+    "equals": "Uguale a",
+    "op": "Op",
+    "value": "Valore",
+    "allowed": "Consentiti (separati da virgole)",
+    "target": "Destinazione",
+    "pattern": "Pattern",
+    "system": "Sistema",
+    "classValue": "Valore",
+    "attribute": "Attributo"
+  },
+  "applies": {
+    "match": "{{count}} nel modello",
+    "none": "0 nel modello",
+    "upper": "≤ {{count}} nel modello"
+  },
+  "lint": {
+    "title": "Controlla questa regola:",
+    "entityNotIfc": "L'entità non sembra una classe IFC (es. IfcWall)",
+    "whitespace": "Il nome del set/proprietà ha spazi all'inizio o alla fine",
+    "badRegex": "L'espressione regolare non è valida",
+    "numericNaN": "Il valore numerico deve essere un numero",
+    "emptyEquals": "Il valore atteso è vuoto",
+    "emptyAllowed": "I valori consentiti contengono un'opzione vuota"
+  },
+  "stats": {
+    "validated": "Validati",
+    "passed": "Superati",
+    "failed": "Falliti",
+    "failingElements": "Elementi con problemi"
+  },
+  "weighted": "Ponderato {{score}}",
+  "weightedHint": "Conformità ponderata per gravità (gli errori contano più di avvisi/info)",
+  "share": {
+    "button": "Condividi",
+    "title": "Rapporto di validazione IFC",
+    "hint": "Crea un link pubblico a questi risultati",
+    "copied": "Link del rapporto copiato negli appunti",
+    "failed": "Impossibile creare il link di condivisione"
+  },
+  "toasts": {
+    "invalidProfile": "Profilo non valido: {{detail}}",
+    "saved": "Profilo salvato",
+    "imported": "Profilo importato",
+    "importedWithWarnings": "Importato; {{count}} regola/e non supportata/e ignorata/e",
+    "importFailed": "Importazione non riuscita: {{detail}}",
+    "addRuleFirst": "Aggiungi prima almeno una regola",
+    "loadModelFirst": "Carica prima un modello IFC",
+    "allIgnored": "Tutte le regole sono ignorate — niente da eseguire"
+  }
+}

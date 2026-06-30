@@ -22,6 +22,8 @@ import { ComplianceDonut } from './ids/ComplianceDonut'
 import { idsElementStats } from '../lib/ids/ids-stats'
 import { weightedCompliance } from '../lib/eir'
 import { SCORE_COLOR } from './ids/score'
+import { idsResultToSharePayload } from '../lib/ids/ids-share'
+import { buildShareUrl } from '../lib/share-report'
 
 interface IdsModalProps {
   onClose: () => void
@@ -92,6 +94,31 @@ export default function IdsModal({ onClose }: IdsModalProps) {
     useUIStore.getState().setValidationPanelOpen(false)
     setPanelOpen(true)
     onClose()
+  }
+
+  // Build a public, crawlable link to these results (same /r?d= report the
+  // validator uses) and share it — native share sheet if available, else copy.
+  const shareReport = async (): Promise<void> => {
+    if (!result) return
+    const payload = idsResultToSharePayload(result, fileName ?? 'model.ifc')
+    const reportBase = import.meta.env.VITE_REPORT_URL as string | undefined
+    const appBase = `${window.location.origin}${window.location.pathname}`
+    const { url } = buildShareUrl(payload, reportBase, appBase)
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({ title: te('share.title'), url })
+        return
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url)
+        toast(te('share.copied'), 'success')
+        return
+      }
+      throw new Error('no share method')
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return // user cancelled
+      toast(te('share.failed'), 'error')
+    }
   }
 
   return createPortal(
@@ -246,8 +273,15 @@ export default function IdsModal({ onClose }: IdsModalProps) {
                 ) : null
               })()}
               <button
+                onClick={() => void shareReport()}
+                title={te('share.hint')}
+                className="ml-auto h-7 px-3 rounded-md border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
+              >
+                {te('share.button')}
+              </button>
+              <button
                 onClick={viewResults}
-                className="ml-auto h-7 px-3 rounded-md bg-[var(--accent)] text-white text-[11px] font-medium hover:brightness-110 transition-all"
+                className="h-7 px-3 rounded-md bg-[var(--accent)] text-white text-[11px] font-medium hover:brightness-110 transition-all"
               >
                 {t('loader.viewResults')}
               </button>

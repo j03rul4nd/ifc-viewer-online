@@ -1,0 +1,102 @@
+{
+  "title": "EIR / BIM 検証プロファイル",
+  "openButton": "EIR / BIM 検証プロファイル…",
+  "tagline": "独自の情報要件（ISO 19650）でモデルをチェック",
+  "step1": "プロファイルを選択または作成",
+  "step2": "モデルに対して実行",
+  "step3": "失敗を確認して修正",
+  "empty": {
+    "title": "プロファイルから始める",
+    "body": "左側の既製プロファイル（LOD、ISO 19650、COBie…）を選ぶか、独自のルールを作成します。次に、開いているモデルに対して実行します。",
+    "cta": "プロファイルを作成"
+  },
+  "noModelHint": "このプロファイルを実行するには IFC モデルを読み込んでください",
+  "sidebar": {
+    "new": "新規",
+    "import": ".json または .ids をインポート",
+    "empty": "プロファイルはまだありません"
+  },
+  "selectOrCreate": "プロファイルを選択または作成",
+  "builtinBadge": "組み込み（コピーを保存）",
+  "namePlaceholder": "プロファイル名",
+  "descPlaceholder": "説明（任意）",
+  "addRule": "ルールを追加",
+  "footer": "{{rules}} 件のルール · {{active}} 件有効",
+  "actions": {
+    "duplicate": "複製",
+    "export": ".json をエクスポート",
+    "delete": "削除",
+    "save": "保存",
+    "useAndRun": "使用して実行"
+  },
+  "ruleTypes": {
+    "entityExists": "エンティティが存在",
+    "requiredProperty": "必須プロパティ",
+    "requiredPropertySet": "必須プロパティセット",
+    "propertyNotEmpty": "プロパティが空でない",
+    "propertyEquals": "プロパティが等しい",
+    "numeric": "数値",
+    "allowedValues": "許可された値",
+    "regex": "正規表現",
+    "classification": "分類"
+  },
+  "severity": {
+    "error": "エラー",
+    "warning": "警告",
+    "info": "情報",
+    "ignored": "無視"
+  },
+  "fields": {
+    "predefinedType": "PredefinedType",
+    "property": "プロパティ",
+    "propertySet": "プロパティセット",
+    "equals": "等しい",
+    "op": "演算",
+    "value": "値",
+    "allowed": "許可（カンマ区切り）",
+    "target": "対象",
+    "pattern": "パターン",
+    "system": "システム",
+    "classValue": "値",
+    "attribute": "属性"
+  },
+  "applies": {
+    "match": "モデル内 {{count}} 件",
+    "none": "モデル内 0 件",
+    "upper": "モデル内 ≤ {{count}} 件"
+  },
+  "lint": {
+    "title": "このルールを確認してください:",
+    "entityNotIfc": "エンティティが IFC クラスのようではありません（例: IfcWall）",
+    "whitespace": "プロパティセット/プロパティ名の先頭または末尾に空白があります",
+    "badRegex": "正規表現が無効です",
+    "numericNaN": "数値は数字である必要があります",
+    "emptyEquals": "期待値が空です",
+    "emptyAllowed": "許可された値に空の項目があります"
+  },
+  "stats": {
+    "validated": "検証済み",
+    "passed": "合格",
+    "failed": "不合格",
+    "failingElements": "問題のある要素"
+  },
+  "weighted": "加重 {{score}}",
+  "weightedHint": "重大度で加重した適合度（エラーは警告/情報より重く扱われます）",
+  "share": {
+    "button": "共有",
+    "title": "IFC 検証レポート",
+    "hint": "この結果への公開リンクを作成",
+    "copied": "レポートのリンクをクリップボードにコピーしました",
+    "failed": "共有リンクを作成できませんでした"
+  },
+  "toasts": {
+    "invalidProfile": "無効なプロファイル: {{detail}}",
+    "saved": "プロファイルを保存しました",
+    "imported": "プロファイルをインポートしました",
+    "importedWithWarnings": "インポートしました。サポート外のルール {{count}} 件をスキップしました",
+    "importFailed": "インポートに失敗しました: {{detail}}",
+    "addRuleFirst": "先にルールを少なくとも1件追加してください",
+    "loadModelFirst": "先に IFC モデルを読み込んでください",
+    "allIgnored": "すべてのルールが無視されています — 実行する対象がありません"
+  }
+}

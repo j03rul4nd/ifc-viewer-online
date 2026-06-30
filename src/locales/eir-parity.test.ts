@@ -1,11 +1,19 @@
 // ─── eir locale key-parity test ───────────────────────────────────────────────
-// EN is the source of truth (eagerly bundled, fallback for every locale). ES is
-// the second shipped locale. Guards against drift: every EN key must exist in ES
-// and vice-versa, and {{params}} must match per key. Mirrors ids-parity.test.ts.
+// EN is the source of truth. The EIR feature ships full translations for every
+// supported locale, so this guards against drift: each locale must have exactly
+// EN's key set, with matching {{params}} per key.
 
 import { describe, it, expect } from 'vitest'
-import enEir from './en/eir.json'
-import esEir from './es/eir.json'
+import en from './en/eir.json'
+import es from './es/eir.json'
+import de from './de/eir.json'
+import fr from './fr/eir.json'
+import pt from './pt/eir.json'
+import itLocale from './it/eir.json'
+import ca from './ca/eir.json'
+import zh from './zh/eir.json'
+import ja from './ja/eir.json'
+import th from './th/eir.json'
 
 type Json = Record<string, unknown>
 
@@ -23,17 +31,22 @@ function paramsOf(value: string): string[] {
   return [...value.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]).sort()
 }
 
-const en = flatten(enEir as Json)
-const es = flatten(esEir as Json)
+const enFlat = flatten(en as Json)
+const locales: Array<[string, Json]> = [
+  ['es', es], ['de', de], ['fr', fr], ['pt', pt], ['it', itLocale],
+  ['ca', ca], ['zh', zh], ['ja', ja], ['th', th],
+]
 
-describe('eir locale parity (en ↔ es)', () => {
-  it('has identical key sets', () => {
-    expect(Object.keys(es).sort()).toEqual(Object.keys(en).sort())
-  })
-
-  it('uses the same interpolation params per key', () => {
-    for (const key of Object.keys(en)) {
-      expect(paramsOf(es[key] ?? ''), `params drift on ${key}`).toEqual(paramsOf(en[key]))
-    }
-  })
+describe('eir locale parity (en ↔ every locale)', () => {
+  for (const [name, dict] of locales) {
+    const flat = flatten(dict)
+    it(`${name} has identical key set to en`, () => {
+      expect(Object.keys(flat).sort()).toEqual(Object.keys(enFlat).sort())
+    })
+    it(`${name} uses the same interpolation params per key`, () => {
+      for (const key of Object.keys(enFlat)) {
+        expect(paramsOf(flat[key] ?? ''), `params drift on ${name}:${key}`).toEqual(paramsOf(enFlat[key]))
+      }
+    })
+  }
 })

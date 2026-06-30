@@ -226,13 +226,25 @@ export default function EirProfileEditor({ onClose }: Props) {
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
-            <div className="flex items-center gap-2">
-              <Icons.Shield size={15} className="text-[var(--accent)]" />
-              <span className="text-[13px] font-semibold text-[var(--text)]">{t('title')}</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <Icons.Shield size={15} className="text-[var(--accent)] shrink-0" />
+              <span className="text-[13px] font-semibold text-[var(--text)] shrink-0">{t('title')}</span>
+              <span className="text-[10px] text-[var(--text-faint)] truncate hidden sm:inline">— {t('tagline')}</span>
             </div>
-            <button onClick={onClose} className="w-6 h-6 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)]" aria-label="Close">
+            <button onClick={onClose} className="w-6 h-6 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] shrink-0" aria-label="Close">
               <Icons.X size={11} />
             </button>
+          </div>
+
+          {/* How-it-works: the 3-step flow, always visible so the feature reads at a glance */}
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--border)] text-[10.5px] text-[var(--text-dim)] overflow-x-auto">
+            {[t('step1'), t('step2'), t('step3')].map((s, idx) => (
+              <span key={idx} className="flex items-center gap-1.5 shrink-0">
+                <span className="grid place-items-center w-4 h-4 rounded-full bg-[var(--accent)]/15 text-[var(--accent)] text-[9px] font-bold">{idx + 1}</span>
+                {s}
+                {idx < 2 && <Icons.Chevron size={10} className="text-[var(--text-faint)] ml-1" />}
+              </span>
+            ))}
           </div>
 
           {/* Autocomplete vocabularies (shared by all rule inputs) */}
@@ -272,7 +284,14 @@ export default function EirProfileEditor({ onClose }: Props) {
             {/* ── Editor ────────────────────────────────────────────────── */}
             <div className="flex-1 min-w-0 flex flex-col">
               {!draft ? (
-                <div className="flex-1 grid place-items-center text-[12px] text-[var(--text-faint)]">{t('selectOrCreate')}</div>
+                <div className="flex-1 grid place-items-center p-6">
+                  <div className="max-w-[360px] text-center flex flex-col items-center gap-2">
+                    <Icons.Shield size={26} className="text-[var(--accent)]/70" />
+                    <p className="text-[13px] font-semibold text-[var(--text)] m-0">{t('empty.title')}</p>
+                    <p className="text-[11.5px] text-[var(--text-faint)] leading-relaxed m-0">{t('empty.body')}</p>
+                    <button onClick={newProfile} className="mt-1 h-8 px-3 rounded-md bg-[var(--accent)] text-white text-[11.5px] font-medium hover:brightness-110">+ {t('empty.cta')}</button>
+                  </div>
+                </div>
               ) : (
                 <>
                   <div className="p-3 border-b border-[var(--border)] flex flex-col gap-2">
@@ -306,6 +325,7 @@ export default function EirProfileEditor({ onClose }: Props) {
                   {/* Footer actions */}
                   <div className="p-3 border-t border-[var(--border)] flex items-center gap-2">
                     <span className="text-[10.5px] text-[var(--text-faint)]">{t('footer', { rules: ruleCount, active: compiledCount })}</span>
+                    {!hasBuffer && <span className="text-[10px] text-[#F5A623] flex items-center gap-1">⚠ {t('noModelHint')}</span>}
                     <div className="ml-auto flex items-center gap-1.5">
                       <button onClick={duplicate} title={t('actions.duplicate')} className="w-8 h-8 grid place-items-center rounded-md border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)]"><Icons.Copy size={13} /></button>
                       <button onClick={onExport} title={t('actions.export')} className="w-8 h-8 grid place-items-center rounded-md border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)]"><Icons.Download size={13} /></button>

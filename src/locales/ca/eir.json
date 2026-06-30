@@ -1,0 +1,102 @@
+{
+  "title": "Perfils de validació EIR / BIM",
+  "openButton": "Perfils de validació EIR / BIM…",
+  "tagline": "Comprova el teu model segons els teus propis requisits d'informació (ISO 19650)",
+  "step1": "Tria o crea un perfil",
+  "step2": "Executa'l contra el teu model",
+  "step3": "Revisa els errors i corregeix-los",
+  "empty": {
+    "title": "Comença amb un perfil",
+    "body": "Tria un perfil a punt a l'esquerra (LOD, ISO 19650, COBie…) o crea les teves pròpies regles. Després executa'l contra el model que tinguis obert.",
+    "cta": "Crear un perfil"
+  },
+  "noModelHint": "Carrega un model IFC per executar aquest perfil",
+  "sidebar": {
+    "new": "Nou",
+    "import": "Importa .json o .ids",
+    "empty": "Encara no hi ha perfils"
+  },
+  "selectOrCreate": "Selecciona o crea un perfil",
+  "builtinBadge": "predefinit (desa una còpia)",
+  "namePlaceholder": "Nom del perfil",
+  "descPlaceholder": "Descripció (opcional)",
+  "addRule": "Afegeix regla",
+  "footer": "{{rules}} regla/es · {{active}} actives",
+  "actions": {
+    "duplicate": "Duplica",
+    "export": "Exporta .json",
+    "delete": "Elimina",
+    "save": "Desa",
+    "useAndRun": "Usa i executa"
+  },
+  "ruleTypes": {
+    "entityExists": "L'entitat existeix",
+    "requiredProperty": "Propietat requerida",
+    "requiredPropertySet": "Conjunt de propietats requerit",
+    "propertyNotEmpty": "Propietat no buida",
+    "propertyEquals": "Propietat igual a",
+    "numeric": "Numèrica",
+    "allowedValues": "Valors permesos",
+    "regex": "Expressió regular",
+    "classification": "Classificació"
+  },
+  "severity": {
+    "error": "error",
+    "warning": "advertència",
+    "info": "info",
+    "ignored": "ignorada"
+  },
+  "fields": {
+    "predefinedType": "PredefinedType",
+    "property": "Propietat",
+    "propertySet": "Conjunt de propietats",
+    "equals": "Igual a",
+    "op": "Op",
+    "value": "Valor",
+    "allowed": "Permesos (separats per comes)",
+    "target": "Objectiu",
+    "pattern": "Patró",
+    "system": "Sistema",
+    "classValue": "Valor",
+    "attribute": "Atribut"
+  },
+  "applies": {
+    "match": "{{count}} al model",
+    "none": "0 al model",
+    "upper": "≤ {{count}} al model"
+  },
+  "lint": {
+    "title": "Revisa aquesta regla:",
+    "entityNotIfc": "L'entitat no sembla una classe IFC (p. ex. IfcWall)",
+    "whitespace": "El nom del conjunt/propietat té espais al principi o al final",
+    "badRegex": "L'expressió regular no és vàlida",
+    "numericNaN": "El valor numèric ha de ser un número",
+    "emptyEquals": "El valor esperat és buit",
+    "emptyAllowed": "Els valors permesos contenen una opció buida"
+  },
+  "stats": {
+    "validated": "Validats",
+    "passed": "Correctes",
+    "failed": "Fallits",
+    "failingElements": "Elements amb incidències"
+  },
+  "weighted": "Ponderat {{score}}",
+  "weightedHint": "Compliment ponderat per severitat (els errors compten més que advertències/info)",
+  "share": {
+    "button": "Comparteix",
+    "title": "Informe de validació IFC",
+    "hint": "Crea un enllaç públic a aquests resultats",
+    "copied": "Enllaç de l'informe copiat al porta-retalls",
+    "failed": "No s'ha pogut crear l'enllaç per compartir"
+  },
+  "toasts": {
+    "invalidProfile": "Perfil no vàlid: {{detail}}",
+    "saved": "Perfil desat",
+    "imported": "Perfil importat",
+    "importedWithWarnings": "Importat; s'han omès {{count}} regla/es no compatible(s)",
+    "importFailed": "Error en importar: {{detail}}",
+    "addRuleFirst": "Afegeix almenys una regla primer",
+    "loadModelFirst": "Carrega primer un model IFC",
+    "allIgnored": "Totes les regles estan ignorades — res a executar"
+  }
+}

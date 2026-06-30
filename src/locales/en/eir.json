@@ -1,6 +1,16 @@
 {
   "title": "EIR / BIM Validation profiles",
   "openButton": "EIR / BIM Validation profiles…",
+  "tagline": "Check your model against your own information requirements (ISO 19650)",
+  "step1": "Pick or create a profile",
+  "step2": "Run it against your model",
+  "step3": "Review failures and fix them",
+  "empty": {
+    "title": "Start with a profile",
+    "body": "Choose a ready-made profile on the left (LOD, ISO 19650, COBie…) or create your own set of rules. Then run it against the model you have open.",
+    "cta": "Create a profile"
+  },
+  "noModelHint": "Load an IFC model to run this profile",
   "sidebar": {
     "new": "New",
     "import": "Import .json or .ids",
@@ -72,6 +82,13 @@
   },
   "weighted": "Weighted {{score}}",
   "weightedHint": "Severity-weighted compliance (errors count more than warnings/info)",
+  "share": {
+    "button": "Share",
+    "title": "IFC validation report",
+    "hint": "Create a public link to these results",
+    "copied": "Report link copied to clipboard",
+    "failed": "Couldn't create a share link"
+  },
   "toasts": {
     "invalidProfile": "Invalid profile: {{detail}}",
     "saved": "Profile saved",
