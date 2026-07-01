@@ -66,19 +66,18 @@ BIM Coordinators, Architects, Structural Engineers, MEP Engineers — anyone who
 - Fix Duplicate GUIDs in IFC: https://www.ifcvieweronline.eu/tools/fix-duplicate-guids/
 - Visor IFC Online (ES): https://www.ifcvieweronline.eu/es/
 
-### Localized landings (ES / DE / FR)
+### Localized landings (9 languages — ES/DE/FR/PT/IT/CA/ZH/JA/TH)
+Each language has all four concepts (validator, Solibri alternative, cloud validator, Solibri WebChecker alternative). Validator entry points per language:
 - Validación IFC online (ES): https://www.ifcvieweronline.eu/es/ifc-validador/
-- Alternativa a Solibri (ES): https://www.ifcvieweronline.eu/es/alternativa-a-solibri/
-- Validador IFC en la nube (ES): https://www.ifcvieweronline.eu/es/validador-ifc-en-la-nube/
-- Alternativa a Solibri WebChecker (ES): https://www.ifcvieweronline.eu/es/alternativa-a-solibri-webchecker/
 - Online-IFC-Validierung (DE): https://www.ifcvieweronline.eu/de/ifc-validator-online/
-- Solibri Alternative (DE): https://www.ifcvieweronline.eu/de/solibri-alternative/
-- Cloud IFC Validator (DE): https://www.ifcvieweronline.eu/de/cloud-ifc-validator/
-- Solibri WebChecker Alternative (DE): https://www.ifcvieweronline.eu/de/solibri-webchecker-alternative/
 - Validation IFC en ligne (FR): https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/
-- Alternative à Solibri (FR): https://www.ifcvieweronline.eu/fr/alternative-solibri/
-- Validateur IFC cloud (FR): https://www.ifcvieweronline.eu/fr/validateur-ifc-cloud/
-- Alternative à Solibri WebChecker (FR): https://www.ifcvieweronline.eu/fr/alternative-solibri-webchecker/
+- Validação IFC online (PT): https://www.ifcvieweronline.eu/pt/validador-ifc-online/
+- Validazione IFC online (IT): https://www.ifcvieweronline.eu/it/validatore-ifc-online/
+- Validació IFC en línia (CA): https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/
+- 在线 IFC 验证 (ZH): https://www.ifcvieweronline.eu/zh/ifc-validator-online/
+- オンライン IFC 検証 (JA): https://www.ifcvieweronline.eu/ja/ifc-validator-online/
+- ตรวจสอบ IFC ออนไลน์ (TH): https://www.ifcvieweronline.eu/th/ifc-validator-online/
+- Solibri alternatives (ES/DE/FR/PT/IT/CA/ZH/JA/TH): https://www.ifcvieweronline.eu/es/alternativa-a-solibri/ · /de/solibri-alternative/ · /fr/alternative-solibri/ · /pt/alternativa-ao-solibri/ · /it/alternativa-a-solibri/ · /ca/alternativa-a-solibri/ · /zh/solibri-alternative/ · /ja/solibri-alternative/ · /th/solibri-alternative/
 
 ## Blog — BIM & IFC guides (EN, ES, DE, FR)
 

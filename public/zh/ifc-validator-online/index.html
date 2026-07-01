@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>在线 IFC 验证 — 免费 IFC 验证器，44 条规则，无需上传</title>
+  <meta name="description" content="在浏览器中免费进行在线 IFC 验证。检查 IFC 文件：重复 GUID、空间层级、孤立元素及另外 40 条质量规则 — 30 秒内得到 0–100 Health Score。无需上传，无需账户。IFC2x3、IFC4、IFC4x3。" />
+  <meta name="keywords" content="在线 IFC 验证, IFC 验证器在线, 验证 IFC 文件, 云端 IFC 验证器, 检查 IFC, IFC 错误, IFC GUID 重复, IFC 空间层级, 免费 IFC 验证器, IFC 检查器, IFC 质量" />
+  <meta name="author" content="Joel Benitez" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://www.ifcvieweronline.eu/zh/ifc-validator-online/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ifcvieweronline.eu/zh/ifc-validator-online/" />
+  <meta property="og:title" content="在线 IFC 验证 — 免费 IFC 验证器，44 条规则" />
+  <meta property="og:description" content="在浏览器中根据 44 条质量规则进行在线 IFC 验证。重复 GUID、空间层级、孤立元素等。30 秒得到 0–100 Health Score。无需上传。" />
+  <meta property="og:site_name" content="IFC Viewer Online" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:locale:alternate" content="en_US" />
+  <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image-zh.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="在线 IFC 验证 — 浏览器中的 Health Score 与 44 条规则" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="在线 IFC 验证 — 免费，44 条规则" />
+  <meta name="twitter:description" content="重复 GUID、空间层级、孤立元素等。30 秒得到 0–100 Health Score。无需上传，基于 WebAssembly。" />
+  <meta name="twitter:image" content="https://www.ifcvieweronline.eu/og-image-zh.png" />
+
+  <link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ifc-validator/" />
+  <link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/ifc-validador/" />
+  <link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
+  <link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/" />
+  <link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-online/" />
+  <link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-online/" />
+  <link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/" />
+  <link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/ifc-validator-online/" />
+  <link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/ifc-validator-online/" />
+  <link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/ifc-validator-online/" />
+  <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-validator/" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://www.ifcvieweronline.eu/zh/ifc-validator-online/",
+      "url": "https://www.ifcvieweronline.eu/zh/ifc-validator-online/",
+      "name": "在线 IFC 验证 — 免费 IFC 验证器，44 条规则",
+      "description": "免费在线 IFC 验证。在浏览器中检查 IFC 文件的重复 GUID、空间层级、孤立元素及另外 41 条规则，无需上传。",
+      "isPartOf": {
+        "@id": "https://www.ifcvieweronline.eu/"
+      },
+      "inLanguage": "zh"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "IFC Viewer Online — IFC 验证器",
+      "url": "https://www.ifcvieweronline.eu/",
+      "applicationCategory": "AEC / BIM software",
+      "operatingSystem": "Any (browser-based — Mac, Windows, Linux)",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      "featureList": [
+        "在线 IFC 验证 — 无需安装",
+        "44 条 IFC 质量规则",
+        "完整 IDS 1.0 验证（buildingSMART）",
+        "Health Score 0–100",
+        "在浏览器中处理 — 不上传任何内容",
+        "重复 GUID 检测与自动修复",
+        "BCF 2.1 导出",
+        "可通过 URL 分享验证报告"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "什么是在线 IFC 验证？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "在线 IFC 验证是指在浏览器中根据质量规则检查 IFC 模型，无需安装桌面软件。IFC Viewer Online 通过 WebAssembly 在您自己的设备上运行 44 条质量规则和完整的 buildingSMART IDS 1.0，约 30 秒返回 0 到 100 的 Health Score。与大多数云端验证器不同，不会上传任何内容：IFC 在浏览器中处理，因此对机密模型也是安全的。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "我的 IFC 文件会上传到服务器吗？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "不会。验证完全通过 WebAssembly 在浏览器中运行。IFC 文件绝不离开您的设备，页面加载后验证器即可离线工作。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "可以用于 NDA 下的机密模型吗？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "可以。由于所有处理都在本地进行，不传输任何数据，您可以放心验证 NDA 下的机密模型，无需审阅任何服务协议。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "支持哪些 IFC 版本？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "IFC2x3、IFC4、IFC4x1 和 IFC4x3。过时的架构会由专门的规则自动标记。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "可以修复错误并导出更正后的 IFC 吗？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "可以。重复的 GUID 一键修复。其他问题（名称、属性值）可内联编辑并支持撤销/重做。“导出 IFC”会在 Web Worker 中应用所有更正并下载更正后的文件，无需服务器。"
+          }
+        }
+      ]
+    }
+  ]
+}
+  </script>
+
+  <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #0A0A0C; color: #E8E8F0; font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; line-height: 1.5; }
+a { color: inherit; text-decoration: none; }
+.container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 18px 0; }
+.header-inner { display: flex; align-items: center; justify-content: space-between; }
+.logo { font-size: 14px; font-weight: 600; color: #5E6AD2; }
+.nav-cta { font-size: 13px; color: rgba(255,255,255,0.5); padding: 6px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; transition: color 0.15s, border-color 0.15s; }
+.nav-cta:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+.hero { position: relative; overflow: hidden; padding: 72px 0 52px; text-align: center; }
+.hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; display: block; }
+.hero::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(58% 50% at 50% -8%, rgba(94,106,210,0.16), transparent 70%); }
+.hero .container { position: relative; z-index: 1; }
+.hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(94,106,210,0.1); border: 1px solid rgba(94,106,210,0.22); border-radius: 100px; padding: 5px 14px; font-size: 12px; color: #8B96E9; margin-bottom: 28px; font-weight: 500; }
+.hero h1 { font-size: clamp(1.8rem, 5vw, 3.0rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 20px; }
+.accent { background: linear-gradient(100deg, #8B96E9 0%, #5E6AD2 55%, #7C8AF0 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #5E6AD2; }
+.hero-desc { font-size: 17px; line-height: 1.65; color: rgba(255,255,255,0.52); max-width: 640px; margin: 0 auto 36px; }
+.cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #5E6AD2; color: #fff; padding: 13px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background 0.15s; }
+.cta-primary:hover { background: #4F5ABF; }
+.cta-note { font-size: 12px; color: rgba(255,255,255,0.28); margin-top: 12px; }
+.section { padding: 60px 0; }
+.divider { border-top: 1px solid rgba(255,255,255,0.06); }
+.section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: #5E6AD2; text-transform: uppercase; margin-bottom: 12px; }
+.section-title { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 10px; }
+.section-sub { font-size: 15px; color: rgba(255,255,255,0.45); margin-bottom: 36px; max-width: 620px; }
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.feature-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 18px 20px; }
+.feature-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.feature-card p { font-size: 12px; color: rgba(255,255,255,0.4); line-height: 1.55; }
+.rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; gap: 1px; }
+.rule { background: #0A0A0C; padding: 18px 20px; }
+.rule-name { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+.rule-desc { font-size: 12px; color: rgba(255,255,255,0.38); line-height: 1.55; }
+.rule-tag { display: inline-block; margin-top: 8px; background: rgba(94,106,210,0.12); color: #8B96E9; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; }
+.compare-table { width: 100%; border-collapse: collapse; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; font-size: 13px; }
+.compare-table th { background: rgba(255,255,255,0.03); padding: 12px 18px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: rgba(255,255,255,0.4); text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.compare-table td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; }
+.compare-table tr:last-child td { border-bottom: none; }
+.col-feature { color: rgba(255,255,255,0.7); font-weight: 500; }
+.col-a { color: rgba(255,255,255,0.4); }
+.col-b { color: #E8E8F0; }
+.badge-ok { display: inline-block; background: rgba(82,196,26,0.12); color: #52C41A; border: 1px solid rgba(82,196,26,0.22); border-radius: 4px; font-size: 11px; padding: 2px 7px; font-weight: 600; }
+.faq-list { border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; }
+.faq-item { padding: 22px 26px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.faq-item:last-child { border-bottom: none; }
+.faq-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.faq-a { font-size: 13px; color: rgba(255,255,255,0.48); line-height: 1.65; }
+.cta-bottom { text-align: center; padding: 60px 0 80px; border-top: 1px solid rgba(255,255,255,0.06); }
+.cta-bottom h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.025em; margin-bottom: 12px; }
+.cta-bottom p { font-size: 15px; color: rgba(255,255,255,0.42); margin-bottom: 30px; }
+footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 26px 0; text-align: center; }
+.footer-links { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; }
+.footer-link { font-size: 12px; color: rgba(255,255,255,0.32); transition: color 0.15s; }
+.footer-link:hover { color: rgba(255,255,255,0.65); }
+.footer-copy { font-size: 11px; color: rgba(255,255,255,0.18); }
+@media (max-width: 600px) { .compare-table { font-size: 12px; } .compare-table td, .compare-table th { padding: 10px 12px; } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <div class="header-inner">
+        <a href="../../" class="logo">IFC Viewer Online</a>
+        <a href="../../" class="nav-cta">打开验证器 &rarr;</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <canvas class="hero-bg" data-dot-grid data-color="94,106,210" aria-hidden="true"></canvas>
+      <div class="container">
+        <div class="hero-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> 44 条规则 · IDS 1.0 · 不上传 · 免费</div>
+        <h1>在线 IFC <span class="accent">验证</span></h1>
+        <p class="hero-desc">在浏览器中免费进行在线 IFC 验证：检测重复 GUID、空间层级错误、孤立元素、代理过多、坐标偏移等另外 38 项检查 — 并在 30 秒内得到 0–100 的 Health Score。无需上传。无需账户。IFC2x3、IFC4、IFC4x3。</p>
+        <a href="../../" class="cta-primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> 验证 IFC 文件 — 免费</a>
+        <p class="cta-note">无需账户 · 不上传 · 离线可用 · Mac、Windows 和 Linux</p>
+      </div>
+    </section>
+
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">实时工具 · 在您的浏览器中</p>
+        <h2 class="section-title">就在这里运行在线 IFC 验证</h2>
+        <p class="section-sub">先在示例模型上试用真实的验证器，然后拖入您自己的 IFC。它通过 WebAssembly 完全在浏览器中解析、评分并检查文件 — 不上传任何内容。</p>
+        <div data-live-embed
+             data-app="../../"
+             data-model="https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc"
+             data-validate data-panel data-lang="zh"
+             data-title="实时 IFC 验证 — 示例模型"
+             data-cta="在示例模型上运行验证"
+             data-sub="在您的浏览器中加载真实验证器 — 不上传任何内容"
+             style="--le-h:560px"></div>
+        <p style="text-align:center;margin-top:20px"><a href="../../" class="cta-primary">验证您自己的 IFC 文件 — 免费 &rarr;</a></p>
+      </div>
+    </section>
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">44 条验证规则</p>
+        <h2 class="section-title">44 项内置 IFC 质量检查</h2>
+        <p class="section-sub">每条规则在后台 Web Worker 中运行 — 结果到达时界面保持响应。</p>
+        <div class="rules-grid">
+          <div class="rule"><div class="rule-name">GUID 格式</div><div class="rule-desc">根据 22 个字符的 base64 格式验证每个 GlobalId。</div><span class="rule-tag">ISO 16739</span></div>
+          <div class="rule"><div class="rule-name">GUID 唯一性</div><div class="rule-desc">检测重复的 GlobalId — Revit、ArchiCAD 和 Tekla 最常见的导出错误。</div><span class="rule-tag">ISO 16739</span></div>
+          <div class="rule"><div class="rule-name">空间层级</div><div class="rule-desc">验证 IfcSite → IfcBuilding → IfcBuildingStorey 链。</div><span class="rule-tag">IFC 架构</span></div>
+          <div class="rule"><div class="rule-name">孤立元素</div><div class="rule-desc">识别没有空间归属的元素 — 在大多数查看器中不可见。</div><span class="rule-tag">归属</span></div>
+          <div class="rule"><div class="rule-name">类型分配</div><div class="rule-desc">检查每个 IfcElement 在架构要求处是否有 IfcTypeObject。</div><span class="rule-tag">架构</span></div>
+          <div class="rule"><div class="rule-name">命名规范</div><div class="rule-desc">检测空的 Name 属性和违反 ISO 19650 的通用名称。</div><span class="rule-tag">ISO 19650</span></div>
+          <div class="rule"><div class="rule-name">架构版本</div><div class="rule-desc">标记影响互操作性的过时或非标准 IFC 架构。</div><span class="rule-tag">兼容性</span></div>
+          <div class="rule"><div class="rule-name">属性集</div><div class="rule-desc">检查墙、板、柱、梁所需的 Pset 以及空值。</div><span class="rule-tag">数据质量</span></div>
+          <div class="rule"><div class="rule-name">几何有效性</div><div class="rule-desc">识别缺失或退化几何、显示为空白的元素。</div><span class="rule-tag">几何</span></div>
+          <div class="rule"><div class="rule-name">坐标偏移</div><div class="rule-desc">标记距原点超过 10 公里的模型 — 典型的联合错误。</div><span class="rule-tag">地理参照</span></div>
+        </div>
+      </div>
+    </section>
+    <section class="section divider">
+      <div class="container">
+        <p class="section-label">常见问题</p>
+        <h2 class="section-title">IFC 验证 — 常见问题</h2><br/>
+        <div class="faq-list">
+          <div class="faq-item"><p class="faq-q">什么是在线 IFC 验证？</p><p class="faq-a">在线 IFC 验证是指在浏览器中根据质量规则检查 IFC 模型，无需安装桌面软件。IFC Viewer Online 通过 WebAssembly 在您自己的设备上运行 44 条质量规则和完整的 buildingSMART IDS 1.0，约 30 秒返回 0 到 100 的 Health Score。与大多数云端验证器不同，不会上传任何内容：IFC 在浏览器中处理，因此对机密模型也是安全的。</p></div>
+          <div class="faq-item"><p class="faq-q">我的 IFC 文件会上传到服务器吗？</p><p class="faq-a">不会。验证完全通过 WebAssembly 在浏览器中运行。IFC 文件绝不离开您的设备，页面加载后验证器即可离线工作。</p></div>
+          <div class="faq-item"><p class="faq-q">可以用于 NDA 下的机密模型吗？</p><p class="faq-a">可以。由于所有处理都在本地进行，不传输任何数据，您可以放心验证 NDA 下的机密模型，无需审阅任何服务协议。</p></div>
+          <div class="faq-item"><p class="faq-q">支持哪些 IFC 版本？</p><p class="faq-a">IFC2x3、IFC4、IFC4x1 和 IFC4x3。过时的架构会由专门的规则自动标记。</p></div>
+          <div class="faq-item"><p class="faq-q">可以修复错误并导出更正后的 IFC 吗？</p><p class="faq-a">可以。重复的 GUID 一键修复。其他问题（名称、属性值）可内联编辑并支持撤销/重做。“导出 IFC”会在 Web Worker 中应用所有更正并下载更正后的文件，无需服务器。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-bottom">
+      <div class="container">
+        <h2>立即验证您的 IFC 文件。</h2>
+        <p>44 条规则 · IDS 1.0 · Health Score 0–100 · 无需安装 · 无需上传</p>
+        <a href="../../" class="cta-primary">打开 IFC Viewer Online &rarr;</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="../../" class="footer-link">IFC Viewer Online</a>
+        <a href="../../zh/ifc-validator-online/" class="footer-link">IFC 验证器</a>
+        <a href="../../zh/solibri-alternative/" class="footer-link">Solibri 替代方案</a>
+        <a href="../../zh/cloud-ifc-validator/" class="footer-link">云端 IFC 验证器</a>
+        <a href="../../zh/solibri-webchecker-alternative/" class="footer-link">Solibri WebChecker 替代方案</a>
+        <a href="https://github.com/j03rul4nd/ifc-viewer-online" class="footer-link" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <p class="footer-copy">IFC Viewer Online © 2026 · 免费 · 开源 · MIT 许可证</p>
+    </div>
+  </footer>
+
+  <script defer src="../../seo/dot-grid.js"></script>
+  <script defer src="../../seo/live-embed.js"></script>
+
+</body>
+</html>

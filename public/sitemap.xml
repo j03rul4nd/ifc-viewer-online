@@ -34,6 +34,12 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/ifc-validador/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/ifc-validator-online/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-validator/" />
   </url>
 
@@ -47,6 +53,12 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/ifc-validador/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/ifc-validator-online/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-validator/" />
   </url>
 
@@ -60,6 +72,12 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/ifc-validador/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/ifc-validator-online/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-validator/" />
   </url>
 
@@ -73,6 +91,126 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/ifc-validador/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-validator/" />
+  </url>
+
+  <!-- Niche: IFC Validator (PT) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/pt/validador-ifc-online/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/ifc-validador/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-validator/" />
+  </url>
+
+  <!-- Niche: IFC Validator (IT) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/it/validatore-ifc-online/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/ifc-validador/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-validator/" />
+  </url>
+
+  <!-- Niche: IFC Validator (CA) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/ifc-validador/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-validator/" />
+  </url>
+
+  <!-- Niche: IFC Validator (ZH) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/zh/ifc-validator-online/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/ifc-validador/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-validator/" />
+  </url>
+
+  <!-- Niche: IFC Validator (JA) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ja/ifc-validator-online/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/ifc-validador/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-validator/" />
+  </url>
+
+  <!-- Niche: IFC Validator (TH) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/th/ifc-validator-online/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/ifc-validador/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-en-ligne/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-online/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-en-linia/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/ifc-validator-online/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/ifc-validator-online/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ifc-validator/" />
   </url>
 
@@ -96,6 +234,12 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-alternative/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-alternative/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-alternative/" />
   </url>
 
@@ -109,6 +253,12 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-alternative/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-alternative/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-alternative/" />
   </url>
 
@@ -122,6 +272,12 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-alternative/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-alternative/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-alternative/" />
   </url>
 
@@ -135,6 +291,126 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-alternative/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-alternative/" />
+  </url>
+
+  <!-- Niche: Solibri alternative (PT) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-alternative/" />
+  </url>
+
+  <!-- Niche: Solibri alternative (IT) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/it/alternativa-a-solibri/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-alternative/" />
+  </url>
+
+  <!-- Niche: Solibri alternative (CA) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ca/alternativa-a-solibri/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-alternative/" />
+  </url>
+
+  <!-- Niche: Solibri alternative (ZH) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/zh/solibri-alternative/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-alternative/" />
+  </url>
+
+  <!-- Niche: Solibri alternative (JA) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ja/solibri-alternative/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-alternative/" />
+  </url>
+
+  <!-- Niche: Solibri alternative (TH) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/th/solibri-alternative/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-alternative/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-alternative/" />
   </url>
 
@@ -148,6 +424,12 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/validador-ifc-en-la-nube/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/cloud-ifc-validator/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-na-nuvem/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-al-nuvol/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/cloud-ifc-validator/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
   </url>
 
@@ -161,6 +443,12 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/validador-ifc-en-la-nube/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/cloud-ifc-validator/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-na-nuvem/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-al-nuvol/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/cloud-ifc-validator/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
   </url>
 
@@ -174,6 +462,12 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/validador-ifc-en-la-nube/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/cloud-ifc-validator/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-na-nuvem/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-al-nuvol/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/cloud-ifc-validator/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
   </url>
 
@@ -187,6 +481,126 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/validador-ifc-en-la-nube/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/cloud-ifc-validator/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-na-nuvem/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-al-nuvol/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+  </url>
+
+  <!-- Niche: Cloud IFC Validator (PT) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/pt/validador-ifc-na-nuvem/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/validador-ifc-en-la-nube/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-na-nuvem/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-al-nuvol/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+  </url>
+
+  <!-- Niche: Cloud IFC Validator (IT) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/it/validatore-ifc-cloud/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/validador-ifc-en-la-nube/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-na-nuvem/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-al-nuvol/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+  </url>
+
+  <!-- Niche: Cloud IFC Validator (CA) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ca/validador-ifc-al-nuvol/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/validador-ifc-en-la-nube/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-na-nuvem/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-al-nuvol/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+  </url>
+
+  <!-- Niche: Cloud IFC Validator (ZH) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/zh/cloud-ifc-validator/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/validador-ifc-en-la-nube/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-na-nuvem/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-al-nuvol/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+  </url>
+
+  <!-- Niche: Cloud IFC Validator (JA) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ja/cloud-ifc-validator/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/validador-ifc-en-la-nube/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-na-nuvem/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-al-nuvol/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+  </url>
+
+  <!-- Niche: Cloud IFC Validator (TH) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/th/cloud-ifc-validator/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/validador-ifc-en-la-nube/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/validateur-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/validador-ifc-na-nuvem/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/validatore-ifc-cloud/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/validador-ifc-al-nuvol/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/cloud-ifc-validator/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/cloud-ifc-validator/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/cloud-ifc-validator/" />
   </url>
 
@@ -200,6 +614,12 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri-webchecker/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-webchecker-alternative/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-webchecker-alternative/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
   </url>
 
@@ -213,6 +633,12 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri-webchecker/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-webchecker-alternative/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-webchecker-alternative/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
   </url>
 
@@ -226,6 +652,12 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri-webchecker/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-webchecker-alternative/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-webchecker-alternative/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
   </url>
 
@@ -239,6 +671,126 @@
     <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri-webchecker/" />
     <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-webchecker-alternative/" />
     <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
+  </url>
+
+  <!-- Niche: Solibri WebChecker alternative (PT) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri-webchecker/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
+  </url>
+
+  <!-- Niche: Solibri WebChecker alternative (IT) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/it/alternativa-a-solibri-webchecker/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
+  </url>
+
+  <!-- Niche: Solibri WebChecker alternative (CA) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ca/alternativa-a-solibri-webchecker/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
+  </url>
+
+  <!-- Niche: Solibri WebChecker alternative (ZH) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/zh/solibri-webchecker-alternative/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
+  </url>
+
+  <!-- Niche: Solibri WebChecker alternative (JA) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ja/solibri-webchecker-alternative/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
+  </url>
+
+  <!-- Niche: Solibri WebChecker alternative (TH) -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/th/solibri-webchecker-alternative/</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/alternative-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/alternativa-ao-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/alternativa-a-solibri-webchecker/" />
+    <xhtml:link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/solibri-webchecker-alternative/" />
+    <xhtml:link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/solibri-webchecker-alternative/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/solibri-webchecker-alternative/" />
   </url>
 
