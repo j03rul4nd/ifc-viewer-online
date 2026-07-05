@@ -501,16 +501,51 @@ export function trackIdsExport(props: {
   track('ids_export', props)
 }
 
+// ── Sun & Moon study ──────────────────────────────────────────────────────────
+// INV-5: never coordinates, never timestamps of the study, never preset names.
+
+/** Sun study enabled (data provenance only — the #1 correctness signal). */
+export function trackSolarEnabled(props: {
+  location_source: 'ifc' | 'map' | 'manual' | 'default'
+  north_source:    'ifc' | 'assumed'
+}): void {
+  track('solar_enabled', props)
+}
+
+export function trackSolarDisabled(props: { duration_s: number }): void {
+  track('solar_disabled', props)
+}
+
+export function trackSolarPresetSaved(): void {
+  track('solar_preset_saved')
+}
+
+export function trackSolarPresetApplied(): void {
+  track('solar_preset_applied')
+}
+
+export function trackSolarMoonToggled(props: { enabled: boolean }): void {
+  track('solar_moon_toggled', props)
+}
+
+export function trackSolarError(props: { stage: 'enable' | 'location' }): void {
+  track('solar_error', props)
+}
+
 // ── Virality ──────────────────────────────────────────────────────────────────
 
 /**
  * IFC file failed to load (parser error, unsupported schema, OOM, etc.).
  * Without this you are blind to your real parse failure rate.
  *
- * @param props.error_msg  Short error string (never a full stack trace or file path)
+ * @param props.error_msg     Short error string (never a full stack trace or file path)
+ * @param props.file_size_mb  Size of the file whose load failed. Correlating
+ *   failures with size is what tells us where the real in-browser ceiling is
+ *   (memory-bound parse failures) — a decision input, never PII.
  */
 export function trackFileOpenFailed(props: {
-  error_msg: string
+  error_msg:     string
+  file_size_mb?: number
 }): void {
   track('file_open_failed', props)
 }

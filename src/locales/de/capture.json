@@ -1,0 +1,32 @@
+{
+  "screenshotTooltip": "Screenshot — in Zwischenablage kopieren und als PNG herunterladen",
+  "screenshotCopied": "Screenshot in Zwischenablage kopiert und heruntergeladen",
+  "screenshotSaved": "Screenshot heruntergeladen",
+  "screenshotFailed": "Ansicht konnte nicht aufgenommen werden",
+  "replayTooltip": "Die letzten {{seconds}} s als Clip aufnehmen",
+  "durationTooltip": "Aufnahmedauer",
+  "lastSeconds": "Letzte {{seconds}} s",
+  "recording": "Replay-Puffer nimmt auf",
+  "captureFailed": "Aufnahme fehlgeschlagen",
+  "previewTitle": "Aufnahme-Vorschau",
+  "close": "Schließen",
+  "trimLabel": "Zuschnitt",
+  "trimStart": "Zuschnitt-Beginn",
+  "trimEnd": "Zuschnitt-Ende",
+  "fpsLabel": "GIF-FPS",
+  "resolutionLabel": "Auflösung",
+  "sourceRes": "Original",
+  "watermarkLabel": "Wasserzeichen hinzufügen",
+  "cancel": "Abbrechen",
+  "exporting": "Exportiere…",
+  "pngDone": "Einzelbild als PNG heruntergeladen",
+  "webmDone": "Clip als WebM heruntergeladen",
+  "gifDone": "GIF heruntergeladen",
+  "exportFailed": "Export fehlgeschlagen: {{message}}",
+  "aspect": {
+    "label": "Format",
+    "source": "Original",
+    "square": "1:1",
+    "vertical": "4:5"
+  }
+}

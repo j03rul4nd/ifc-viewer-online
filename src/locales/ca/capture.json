@@ -1,0 +1,32 @@
+{
+  "screenshotTooltip": "Captura de pantalla — copiar al porta-retalls i baixar PNG",
+  "screenshotCopied": "Captura copiada al porta-retalls i baixada",
+  "screenshotSaved": "Captura baixada",
+  "screenshotFailed": "No s'ha pogut capturar el viewport",
+  "replayTooltip": "Capturar els últims {{seconds}}s com a clip",
+  "durationTooltip": "Durada de la captura",
+  "lastSeconds": "Últims {{seconds}}s",
+  "recording": "Memòria de repetició gravant",
+  "captureFailed": "La captura ha fallat",
+  "previewTitle": "Previsualització de la captura",
+  "close": "Tanca",
+  "trimLabel": "Retall",
+  "trimStart": "Inici del retall",
+  "trimEnd": "Final del retall",
+  "fpsLabel": "FPS del GIF",
+  "resolutionLabel": "Resolució",
+  "sourceRes": "Original",
+  "watermarkLabel": "Afegir marca d'aigua",
+  "cancel": "Cancel·la",
+  "exporting": "Exportant…",
+  "pngDone": "Fotograma baixat com a PNG",
+  "webmDone": "Clip baixat com a WebM",
+  "gifDone": "GIF baixat",
+  "exportFailed": "L'exportació ha fallat: {{message}}",
+  "aspect": {
+    "label": "Format",
+    "source": "Original",
+    "square": "1:1",
+    "vertical": "4:5"
+  }
+}

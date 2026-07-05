@@ -178,7 +178,12 @@ export default function IdsPanel({ viewerApiRef, onOpenLoader }: IdsPanelProps) 
   }, [isolated, failures, viewerApiRef])
 
   const onKeyDown = (e: React.KeyboardEvent): void => {
+    // Escape always closes the panel (works from the search box too).
     if (e.key === 'Escape') { setPanelOpen(false); return }
+    // But don't hijack typing: Enter/arrows must edit the caret in the search
+    // box, not fire row actions / steal caret movement.
+    const tag = (e.target as HTMLElement | null)?.tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return
     if (rows.length === 0) return
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault()

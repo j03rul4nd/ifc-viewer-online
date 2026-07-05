@@ -1,0 +1,76 @@
+{
+  "entry": "Tour",
+  "autoTitle": "Validation tour",
+  "player": {
+    "stepOf": "Step {{current}} of {{total}}",
+    "prev": "Previous step",
+    "next": "Next step",
+    "finish": "Finish tour",
+    "exit": "Exit tour",
+    "isolate": "Isolate highlighted elements",
+    "affected_one": "{{count}} affected element",
+    "affected_other": "{{count}} affected elements",
+    "howToFix": "How to fix",
+    "goToStep": "Go to step {{n}}"
+  },
+  "recorder": {
+    "title": "Guided tour",
+    "close": "Close",
+    "generateAuto": "Generate tour from top issues",
+    "generating": "Generating…",
+    "generateAutoHint": "Run validation first to build an automatic tour",
+    "issuesAvailable_one": "{{count}} issue available",
+    "issuesAvailable_other": "{{count}} issues available",
+    "empty": "No stops yet — move the camera to an interesting view and add your first stop, or generate a tour from the validation issues.",
+    "addStop": "Add stop here",
+    "play": "Play tour",
+    "delete": "Remove stop",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "stop": "Stop {{n}}",
+    "preview": "Preview this stop"
+  },
+  "templates": {
+    "title": "What is this presentation for?",
+    "social": {
+      "name": "Social media demo",
+      "desc": "Short, eye-catching clip for LinkedIn"
+    },
+    "walkthrough": {
+      "name": "Client walkthrough",
+      "desc": "Live meeting — no technical jargon"
+    },
+    "technical": {
+      "name": "Technical review",
+      "desc": "Issues by severity with fix guidance"
+    },
+    "includeImprovements": "Include an 'areas to improve' step",
+    "needsIssues": "Run validation first"
+  },
+  "share": {
+    "copy": "Copy share link",
+    "copied": "Link copied to clipboard",
+    "copyFailed": "Could not copy the link",
+    "noModelUrl": "This model was loaded from disk and has no public URL — a link can't include it. Export a GIF instead.",
+    "tooLong": "The tour is too large for a link",
+    "linkedin": "Export for LinkedIn",
+    "exported": "GIF exported",
+    "noBuffer": "The recording buffer isn't ready yet — wait a few seconds"
+  },
+  "link": {
+    "invalid": "This shared tour link is invalid or corrupted"
+  },
+  "showcase": {
+    "title": "Model walkthrough",
+    "headline": "{{score}}/100 — verified model",
+    "captions": {
+      "overview": "Overview",
+      "perspective": "Perspective",
+      "front": "Front view",
+      "side": "Side view",
+      "aerial": "Aerial view",
+      "closing": "Closing view"
+    },
+    "improvements": "Areas to improve"
+  }
+}

@@ -215,7 +215,7 @@ flowchart TD
     EXPORT -->|corrected .ifc| DL["⬇ download"]
 ```
 
-Independent workers keep the UI responsive: parsing, validation, export, IDS checking, BCF import and (in Map mode) georeferencing/terrain each run off the main thread. State is held in eleven small [Zustand](https://github.com/pmndrs/zustand) stores; geometry never enters the store (only stable IDs do). See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full data-flow diagrams.
+Independent workers keep the UI responsive: parsing, validation, export, IDS checking, BCF import, GIF encoding (Capture Toolkit) and (in Map mode) georeferencing/terrain each run off the main thread. State is held in thirteen small [Zustand](https://github.com/pmndrs/zustand) stores; geometry never enters the store (only stable IDs do). See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full data-flow diagrams.
 
 ---
 
@@ -265,7 +265,7 @@ Every worker message is validated at runtime with [Zod](https://zod.dev) schemas
 | GIS / basemap | [3d-tiles-renderer](https://github.com/NASA-AMMOS/3DTilesRendererJS) (tiles inside the three.js scene) — Map mode only |
 | UI | React 18 + Tailwind CSS + Radix UI |
 | Animations | Framer Motion + GSAP |
-| State | Zustand 5 (11 stores: model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver) |
+| State | Zustand 5 (13 stores: model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver, capture, presentation) |
 | Validation | Web Worker — 44 rules, streamed via `postMessage` |
 | IDS | Pure-TS IDS 1.0 engine + dedicated web-ifc worker (`src/lib/ids/`, `ids.worker.ts`) |
 | Runtime safety | Zod schemas on every worker boundary |
@@ -311,8 +311,8 @@ npm test        # vitest (jsdom)
 src/
   components/      # Landing, Viewer, ValidationPanel, IdsPanel, BcfPanel, GeoPanel, Sidebar, ModelTree, ScenePanel, …
                    #   + mobile/ (bottom-sheet panels) · ids/ · blog/ · legal/ · reactbits/
-  workers/         # ifc-parser · validator · export · ids · bcf-parser · geo-extract · geo-terrain (.worker.ts)
-  stores/          # 11 Zustand stores (model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver)
+  workers/         # ifc-parser · validator · export · ids · bcf-parser · geo-extract · geo-terrain · gif-export (.worker.ts)
+  stores/          # 13 Zustand stores (model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver, capture, presentation)
   hooks/           # useModelSession, useValidationRunner, useIdsRun, useElementFocus, useIsMobile, …
   lib/             # viewer.ts · loader.ts · validator.ts · diffStore.ts · worker-schemas.ts · share-report.ts
     ids/           # IDS 1.0 engine (parser, facets, runner, report, golden testcases)

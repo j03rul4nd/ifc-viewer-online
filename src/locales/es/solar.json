@@ -1,0 +1,85 @@
+{
+  "panel": {
+    "title": "Sol y Luna",
+    "close": "Cerrar panel"
+  },
+  "enable": {
+    "start": "Iniciar estudio solar",
+    "stop": "Detener estudio solar",
+    "noModel": "Carga primero un modelo"
+  },
+  "badges": {
+    "locationIfc": "Ubicación desde el IFC",
+    "locationMap": "Situado en el mapa",
+    "locationManual": "Ubicación manual",
+    "locationDefault": "Ubicación por defecto — imprecisa",
+    "northIfc": "Norte verdadero desde el IFC",
+    "northAssumed": "Norte asumido — verifica la orientación"
+  },
+  "defaultNotice": {
+    "title": "Ubicación sin configurar",
+    "body": "Este modelo no tiene una ubicación utilizable. El estudio usaría una por defecto (Madrid) y las sombras SERÁN incorrectas para tu emplazamiento. Configura la ubicación real, o continúa sabiendo que el resultado es solo ilustrativo.",
+    "setLocation": "Configurar ubicación",
+    "continue": "Continuar igualmente"
+  },
+  "time": {
+    "date": "Fecha",
+    "realtime": "Seguir hora real",
+    "sunrise": "Amanecer",
+    "sunset": "Atardecer",
+    "goldenHour": "Hora dorada",
+    "solarNoon": "Mediodía solar",
+    "polarDay": "Día polar — el sol no se pone en esta fecha",
+    "polarNight": "Noche polar — el sol no sale en esta fecha",
+    "timezone": "Zona horaria"
+  },
+  "seasons": {
+    "summer": "Solsticio de verano",
+    "winter": "Solsticio de invierno",
+    "equinox": "Equinoccio"
+  },
+  "presets": {
+    "title": "Momentos guardados",
+    "save": "Guardar momento actual",
+    "namePlaceholder": "p. ej. Invierno 16h — patio norte",
+    "empty": "Aún no hay momentos guardados para este archivo.",
+    "apply": "Aplicar",
+    "delete": "Eliminar"
+  },
+  "sky": {
+    "toggle": "Cielo físico"
+  },
+  "moon": {
+    "toggle": "Luz lunar",
+    "fraction": "{{pct}}% iluminada",
+    "phase0": "Luna nueva",
+    "phase1": "Luna creciente",
+    "phase2": "Cuarto creciente",
+    "phase3": "Gibosa creciente",
+    "phase4": "Luna llena",
+    "phase5": "Gibosa menguante",
+    "phase6": "Cuarto menguante",
+    "phase7": "Luna menguante"
+  },
+  "quality": {
+    "label": "Calidad de sombras",
+    "standard": "Estándar",
+    "high": "Alta"
+  },
+  "location": {
+    "title": "Ubicación del emplazamiento",
+    "searchCity": "Buscar ciudad… (sin conexión)",
+    "lat": "Latitud",
+    "lon": "Longitud",
+    "apply": "Aplicar ubicación",
+    "pickOnMap": "Elegir en el mapa",
+    "citiesAttribution": "Datos de ciudades: GeoNames.org (CC BY 4.0) — incluidos, búsqueda sin conexión"
+  },
+  "chip": {
+    "sun": "Sol",
+    "belowHorizon": "bajo el horizonte"
+  },
+  "errors": {
+    "enableFailed": "El estudio solar no pudo iniciarse."
+  }
+}

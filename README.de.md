@@ -174,7 +174,7 @@ flowchart TD
     EXPORT -->|korrigierte .ifc| DL["Download"]
 ```
 
-Mehrere unabhängige Worker halten die UI reaktionsfähig: Parsing, Validierung und Export laufen außerhalb des Main-Threads. Der State liegt in elf kleinen [Zustand](https://github.com/pmndrs/zustand)-Stores; Geometrie kommt nie in den Store (nur stabile IDs). Die vollständigen Datenflussdiagramme stehen in [`ARCHITECTURE.md`](ARCHITECTURE.md).
+Mehrere unabhängige Worker halten die UI reaktionsfähig: Parsing, Validierung und Export laufen außerhalb des Main-Threads. Der State liegt in dreizehn kleinen [Zustand](https://github.com/pmndrs/zustand)-Stores; Geometrie kommt nie in den Store (nur stabile IDs). Die vollständigen Datenflussdiagramme stehen in [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ---
 
@@ -223,7 +223,7 @@ Jede Worker-Nachricht wird zur Laufzeit mit [Zod](https://zod.dev)-Schemata (`sr
 | 3D-Rendering | [Three.js](https://threejs.org/) + [@thatopen/components](https://github.com/ThatOpenCompany/engine_components) |
 | UI | React 18 + Tailwind CSS + Radix UI |
 | Animationen | Framer Motion + GSAP |
-| State | Zustand 5 (11 Stores: model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver) |
+| State | Zustand 5 (13 Stores: model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver, capture, presentation) |
 | IDS | Reiner-TS-IDS-1.0-Engine + dedizierter web-ifc-Worker (`src/lib/ids/`, `ids.worker.ts`) |
 | GIS / Basiskarte | [3d-tiles-renderer](https://github.com/NASA-AMMOS/3DTilesRendererJS) (Kacheln in der three.js-Szene) — nur Kartenmodus |
 | Validierung | Web Worker — 44 Regeln, gestreamt über `postMessage` |
@@ -270,7 +270,7 @@ npm test        # vitest (jsdom)
 src/
   components/      # Landing, Viewer, ValidationPanel, Sidebar, ModelTree, ScenePanel, …
   workers/         # ifc-parser.worker.ts · validator.worker.ts · export.worker.ts
-  stores/          # 11 Zustand-Stores (model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver)
+  stores/          # 13 Zustand-Stores (model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver, capture, presentation)
   hooks/           # useModelSession, useValidationRunner, useElementFocus, …
   lib/             # viewer.ts · loader.ts · validator.ts · diffStore.ts · worker-schemas.ts
   locales/         # i18n — en/ es/ fr/ de/ pt/ ja/ ca/ zh/ it/ th/

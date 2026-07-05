@@ -6,9 +6,12 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useUIStore } from '../stores/uiStore'
+import { useIdsStore } from '../stores/idsStore'
+import { usePresentationStore } from '../stores/presentationStore'
 import { useValidationRunner } from '../hooks/useValidationRunner'
 import { useSceneStore } from '../stores/sceneStore'
 import { useEditorStore } from '../stores/editorStore'
+import { haptic } from '../lib/haptics'
 import { LanguageSelector } from './LanguageSelector'
 import * as Icons from './Icons'
 import type { SelectedInfo } from '../types'
@@ -244,6 +247,7 @@ export default function MobileBottomNav({
 }: MobileBottomNavProps) {
   const { t }        = useTranslation('toolbar')
   const { t: tComm } = useTranslation('common')
+  const { t: tTour } = useTranslation('tour')
 
   const {
     mobileSidebarOpen, setMobileSidebarOpen,
@@ -260,38 +264,57 @@ export default function MobileBottomNav({
     isRunning, issueCount, errorCount, hasIssues, progress,
   } = useValidationRunner()
 
+  // IDS reachability on mobile: the desktop toolbar IDS button is `hidden md:flex`
+  // and drag-drop is desktop-only, so without this the whole IDS feature was
+  // unreachable on a phone. Surface it in the Tools sheet with a failure badge.
+  const idsHasFailures = useIdsStore((s) => Object.values(s.resultsByModel).some((r) => r.failedSpecs > 0))
+  const idsPanelOpen   = useIdsStore((s) => s.panelOpen)
+
   const [activeSheet, setActiveSheet]       = useState<ActiveSheet>('none')
   const [activeSidebarTab, setActiveSidebarTab] = useState<'props' | 'cats' | 'qty' | null>(null)
   const closeSheet = useCallback(() => setActiveSheet('none'), [])
+
+  const openIds = useCallback(() => {
+    haptic('tick')
+    if (mobileSidebarOpen) { setMobileSidebarOpen(false); setActiveSidebarTab(null) }
+    useUIStore.getState().setValidationPanelOpen(false) // bottom-slot exclusivity
+    useIdsStore.getState().setPanelOpen(true)
+    setActiveSheet('none')
+  }, [mobileSidebarOpen, setMobileSidebarOpen])
 
   useEffect(() => { if (mobileSidebarOpen) setActiveSheet('none') }, [mobileSidebarOpen])
   useEffect(() => { if (!mobileSidebarOpen) setActiveSidebarTab(null) }, [mobileSidebarOpen])
 
   const handleOpenSidebar = useCallback((tab: 'props' | 'cats' | 'qty') => {
+    haptic('tick')
     setActiveSheet('none')
     setActiveSidebarTab(tab)
     onOpenSidebarTab(tab)
   }, [onOpenSidebarTab])
 
   const handleValidateTab = useCallback(() => {
+    haptic('tick')
     setActiveSheet('none')
     if (mobileSidebarOpen) { setMobileSidebarOpen(false); setActiveSidebarTab(null) }
+    if (idsPanelOpen) useIdsStore.getState().setPanelOpen(false) // don't stack both bottom panels
     toggleValidationPanel()
-  }, [mobileSidebarOpen, toggleValidationPanel, setMobileSidebarOpen])
+  }, [mobileSidebarOpen, toggleValidationPanel, setMobileSidebarOpen, idsPanelOpen])
 
   const handleToolsTab = useCallback(() => {
+    haptic('tick')
     if (mobileSidebarOpen) { setMobileSidebarOpen(false); setActiveSidebarTab(null) }
     setActiveSheet(s => s === 'tools' ? 'none' : 'tools')
   }, [mobileSidebarOpen, setMobileSidebarOpen])
 
   const handleMoreTab = useCallback(() => {
+    haptic('tick')
     if (mobileSidebarOpen) { setMobileSidebarOpen(false); setActiveSidebarTab(null) }
     setActiveSheet(s => s === 'more' ? 'none' : 'more')
   }, [mobileSidebarOpen, setMobileSidebarOpen])
 
   const validateBadge = errorCount > 0 ? (errorCount > 9 ? '9+' : String(errorCount)) : undefined
   const validateDot   = hasIssues && !errorCount
-  const toolsDot      = activeMeasurementTool !== 'none' || clipPlaneCount > 0 || !!activePlanViewId || scenePanelOpen
+  const toolsDot      = activeMeasurementTool !== 'none' || clipPlaneCount > 0 || !!activePlanViewId || scenePanelOpen || idsHasFailures
 
   if (!visible) return null
 
@@ -355,6 +378,25 @@ export default function MobileBottomNav({
       {/* ── Tools sheet ──────────────────────────────────────────────────────── */}
       <MiniSheet open={activeSheet === 'tools'} onClose={closeSheet} title={t('measurementTools')}>
         <div className="px-4 pb-5">
+          {/* IDS check — the mobile entry point (unreachable otherwise on phones) */}
+          <button
+            onClick={openIds}
+            className="w-full mb-3 flex items-center gap-3 h-[52px] px-3 rounded-2xl active:scale-[0.98] transition-transform"
+            style={{
+              background: 'rgba(94,106,210,0.16)',
+              border: '0.5px solid rgba(94,106,210,0.32)',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(94,106,210,0.22)', color: '#8B93E8' }}>
+              <Icons.Shield size={18} />
+            </span>
+            <span className="flex-1 min-w-0 text-left">
+              <span className="block text-[13.5px] font-semibold text-white leading-tight">{t('ids')}</span>
+              <span className="block text-[11px] leading-snug truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>{t('idsTooltip')}</span>
+            </span>
+            {idsHasFailures && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--danger)' }} />}
+          </button>
           <div className="grid grid-cols-4 gap-2 mb-3">
             <SheetBtn icon={MeasureSVG(22)} label={t('measure')} active={measurementPanelOpen}
               badge={activeMeasurementTool !== 'none' ? '●' : undefined}
@@ -370,23 +412,25 @@ export default function MobileBottomNav({
               onClick={() => { toggleScenePanel(); closeSheet() }} />
           </div>
           <SheetDivider />
-          <div className="grid grid-cols-3 gap-2 pt-3">
+          <div className="grid grid-cols-4 gap-2 pt-3">
             <SheetBtn icon={<Icons.Reset size={22} />} label={t('reset')} onClick={() => { closeSheet(); onReset() }} />
             <SheetBtn icon={<Icons.Isolate size={22} />} label={t('isolate')}
               active={canIsolate && !!selected} disabled={!canIsolate}
               onClick={() => { closeSheet(); onIsolate() }} />
             <SheetBtn icon={TreeSVG(22)} label={t('tree')}
               onClick={() => { useUIStore.getState().setTreeVisible(!useUIStore.getState().treeVisible); closeSheet() }} />
+            <SheetBtn icon={<Icons.Replay size={22} />} label={tTour('entry')}
+              onClick={() => { usePresentationStore.getState().setRecording(true); closeSheet() }} />
           </div>
         </div>
       </MiniSheet>
 
       {/* ── More sheet ───────────────────────────────────────────────────────── */}
-      <MiniSheet open={activeSheet === 'more'} onClose={closeSheet} title="More">
+      <MiniSheet open={activeSheet === 'more'} onClose={closeSheet} title={t('more')}>
         <div className="px-4 pb-5">
           <div className="grid grid-cols-4 gap-2 mb-3">
             <SheetBtn icon={<Icons.Upload size={22} />} label={t('open')} onClick={() => { closeSheet(); onUpload() }} />
-            <SheetBtn icon={<Icons.Layers size={22} />} label="Demo" onClick={() => { closeSheet(); onOpenDemoGallery() }} />
+            <SheetBtn icon={<Icons.Layers size={22} />} label={t('navDemo')} onClick={() => { closeSheet(); onOpenDemoGallery() }} />
             <SheetBtn icon={ExportSVG(22)} label={t('export')}
               active={diffs.length > 0} badge={diffs.length > 0 ? diffs.length : undefined}
               onClick={() => { closeSheet(); onOpenExportModal() }} />
@@ -397,7 +441,7 @@ export default function MobileBottomNav({
           </div>
           <SheetDivider />
           <div className="flex items-center gap-3 px-1 pt-3 pb-1">
-            <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.35)' }}>Language</span>
+            <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('language')}</span>
             <div className="ml-auto"><LanguageSelector /></div>
           </div>
         </div>
@@ -422,7 +466,7 @@ export default function MobileBottomNav({
               <line x1="4" y1="9.5" x2="7" y2="9.5"/>
             </svg>
           }
-          label="Props"
+          label={t('navProps')}
           active={mobileSidebarOpen && activeSidebarTab === 'props'}
           dot={!!selected && !mobileSidebarOpen}
           onClick={() => {
@@ -441,7 +485,7 @@ export default function MobileBottomNav({
               <rect x="8" y="6.5" width="5" height="4" rx="0.8" opacity="0.4"/>
             </svg>
           }
-          label="Cats"
+          label={t('navCats')}
           active={mobileSidebarOpen && activeSidebarTab === 'cats'}
           onClick={() => {
             if (mobileSidebarOpen && activeSidebarTab === 'cats') { setMobileSidebarOpen(false); setActiveSidebarTab(null) }
@@ -452,7 +496,7 @@ export default function MobileBottomNav({
         {/* Validate tab — center focal point */}
         <NavTab
           icon={isRunning ? SpinSVG : ValidateSVG}
-          label={isRunning ? (progress > 0 ? `${progress}%` : '…') : 'Validate'}
+          label={isRunning ? (progress > 0 ? `${progress}%` : '…') : t('validate')}
           active={validationPanelOpen}
           badge={validateBadge}
           dot={validateDot}
@@ -467,7 +511,7 @@ export default function MobileBottomNav({
               <circle cx="10" cy="5" r="1" fill="currentColor" stroke="none"/>
             </svg>
           }
-          label="Tools"
+          label={t('tools')}
           active={activeSheet === 'tools'}
           dot={toolsDot && activeSheet !== 'tools'}
           onClick={handleToolsTab}
@@ -482,7 +526,7 @@ export default function MobileBottomNav({
               <circle cx="13" cy="8" r="1.5"/>
             </svg>
           }
-          label="More"
+          label={t('more')}
           active={activeSheet === 'more'}
           onClick={handleMoreTab}
         />

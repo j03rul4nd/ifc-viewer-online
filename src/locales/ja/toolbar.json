@@ -53,6 +53,10 @@
   "tools": "ツール",
   "toolsMenu": "ツール — 計測、断面、平面図",
   "more": "その他",
+  "navProps": "情報",
+  "navCats": "種別",
+  "navDemo": "デモ",
+  "language": "言語",
   "demo": "デモモデル",
   "status": {
     "loaded": "読み込み完了",
@@ -72,7 +76,9 @@
       "full": "フル",
       "fullDesc": "ツリー + 検証パネル",
       "kiosk": "キオスク",
-      "kioskDesc": "3Dキャンバスのみ"
+      "kioskDesc": "3Dキャンバスのみ",
+      "client": "クライアント",
+      "clientDesc": "クライアント向けプレゼン表示"
     },
     "optionsLabel": "オプション",
     "autoValidate": "読み込み時に検証を実行",

@@ -195,7 +195,9 @@ export default defineConfig({
     // three must be bundled inline into the worker chunk.
   },
   server: {
-    port: 3000,
+    // PORT env override lets tooling (preview harness, CI) assign a free port;
+    // day-to-day dev stays on 3000.
+    port: process.env.PORT ? parseInt(process.env.PORT, 10) : 3000,
     headers: {
       'Cross-Origin-Opener-Policy':   'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
@@ -231,7 +233,8 @@ export default defineConfig({
           // — the dynamically imported geo-system / placement chunks.
           if (
             id.includes('3d-tiles-renderer') ||
-            id.includes('/proj4/') || id.includes('/wkt-parser/') || id.includes('/mgrs/')
+            id.includes('/proj4/') || id.includes('/wkt-parser/') || id.includes('/mgrs/') ||
+            id.includes('/suncalc/') || id.includes('/tz-lookup/')
           ) return
           // three.js — large 3D engine, changes infrequently
           if (id.includes('/three/')) return 'vendor-three'

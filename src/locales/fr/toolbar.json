@@ -53,6 +53,10 @@
   "tools": "Outils",
   "toolsMenu": "Outils — mesurer, coupe, plans",
   "more": "Plus",
+  "navProps": "Infos",
+  "navCats": "Types",
+  "navDemo": "Démo",
+  "language": "Langue",
   "demo": "Modèles de démo",
   "status": {
     "loaded": "Chargé",
@@ -72,7 +76,9 @@
       "full": "Complet",
       "fullDesc": "Arbre + panneau de validation",
       "kiosk": "Kiosque",
-      "kioskDesc": "Vue 3D uniquement"
+      "kioskDesc": "Vue 3D uniquement",
+      "client": "Client",
+      "clientDesc": "Habillage présentation client"
     },
     "optionsLabel": "Options",
     "autoValidate": "Lancer la validation au chargement",

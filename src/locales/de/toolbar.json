@@ -53,6 +53,10 @@
   "tools": "Werkzeuge",
   "toolsMenu": "Werkzeuge — Messen, Schnitt, Pläne",
   "more": "Mehr",
+  "navProps": "Info",
+  "navCats": "Typen",
+  "navDemo": "Demo",
+  "language": "Sprache",
   "demo": "Demo-Modelle",
   "status": {
     "loaded": "Geladen",
@@ -72,7 +76,9 @@
       "full": "Vollständig",
       "fullDesc": "Baum + Validierungspanel",
       "kiosk": "Kiosk",
-      "kioskDesc": "Nur 3D-Ansicht"
+      "kioskDesc": "Nur 3D-Ansicht",
+      "client": "Kunde",
+      "clientDesc": "Kundenpräsentations-Ansicht"
     },
     "optionsLabel": "Optionen",
     "autoValidate": "Validierung beim Laden ausführen",

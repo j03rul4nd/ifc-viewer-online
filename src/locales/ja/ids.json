@@ -1,0 +1,166 @@
+{
+  "title": "IDSチェック",
+  "subtitle": "情報提供仕様",
+  "loader": {
+    "choose": ".idsファイルを選択",
+    "specCount": "{{count}}件の仕様",
+    "specCount_other": "{{count}}件の仕様",
+    "clear": "クリア",
+    "viewResults": "結果を見る",
+    "intro": "buildingSMARTの.idsファイルを読み込んで、このモデルを納品要件と照合します。",
+    "introClient": "すべてのIDS 1.0ファセットはクライアント側で評価されます。ブラウザの外にデータは送信されません。",
+    "parseError": "IDSを読み込めませんでした: {{message}}",
+    "invalidFile": "無効なIDSファイルです: {{message}}"
+  },
+  "examples": {
+    "label": ".idsファイルがない場合は、サンプルを試してください:",
+    "hasWallsName": "モデルに壁がある",
+    "hasWallsDesc": "納品物には名前付きの壁が1つ以上含まれている必要があります",
+    "namedElementsName": "要素に名前が付いている",
+    "namedElementsDesc": "一般的な建築要素にはNameが必要です",
+    "wallFireRatingName": "壁の耐火等級",
+    "wallFireRatingDesc": "壁はPset_WallCommonでFireRatingを宣言する",
+    "doorsNamedRatedName": "ドアの名前と等級",
+    "doorsNamedRatedDesc": "ドアにはNameとFireRatingが設定されている"
+  },
+  "run": {
+    "run": "チェックを実行",
+    "rerun": "再チェック",
+    "checking": "チェック中…",
+    "cancel": "キャンセル",
+    "cancelling": "キャンセル中…",
+    "retry": "再試行"
+  },
+  "actions": {
+    "rerunShort": "再実行",
+    "runShort": "実行",
+    "checkAll": "すべてチェック ({{count}})",
+    "checkAllTitle": "読み込み済みのすべてのモデルに対してこのIDSをチェック",
+    "highlight": "ハイライト",
+    "isolate": "分離表示",
+    "showAll": "すべて表示",
+    "collapse": "パネルを折りたたむ",
+    "highlightTitle": "失敗した要素を3Dでハイライト",
+    "isolateTitle": "失敗した要素のみを表示",
+    "reloadToRun": "IDSを実行するには.ifcを再読み込みしてください"
+  },
+  "multiRun": {
+    "progress": "すべてのモデルをチェック中 — {{done}} / {{total}}",
+    "modelsTitle": "モデルごとのスコア — クリックして表示"
+  },
+  "pager": {
+    "counter": "{{current}} / {{total}}",
+    "next": "次の問題",
+    "prev": "前の問題",
+    "backToList": "リストに戻る",
+    "swipeHint": "上にスワイプすると次の問題へ"
+  },
+  "summary": {
+    "score": "{{score}}",
+    "outOf": "/ 100",
+    "pass": "{{count}}件合格",
+    "fail": "{{count}}件不合格",
+    "na": "{{count}}件対象外",
+    "passShort": "{{count}}✓",
+    "failShort": "{{count}}✗",
+    "naShort": "{{count}}件対象外",
+    "checkedModel": "チェック済みモデル",
+    "passLabel": "合格",
+    "failLabel": "不合格",
+    "naLabel": "対象外"
+  },
+  "progress": {
+    "open": "モデルを開いています…",
+    "gather": "要素を読み取っています…",
+    "check": "仕様をチェックしています…"
+  },
+  "status": {
+    "skipped": "スキップ",
+    "na": "対象外",
+    "fraction": "{{passed}}/{{applicable}}"
+  },
+  "filters": {
+    "groupSpec": "仕様",
+    "groupElement": "要素",
+    "groupClass": "クラス",
+    "all": "すべて",
+    "search": "仕様・要素を検索…",
+    "clear": "フィルターをクリア",
+    "specsCounted": "{{count}}件の仕様",
+    "specsCounted_other": "{{count}}件の仕様",
+    "failuresCounted": "{{count}}件の不合格",
+    "failuresCounted_other": "{{count}}件の不合格"
+  },
+  "facets": {
+    "entity": "エンティティ",
+    "attribute": "属性",
+    "property": "プロパティ",
+    "classification": "分類",
+    "material": "材料",
+    "partOf": "partOf"
+  },
+  "collapsed": {
+    "noFile": "ファイルなし",
+    "notRun": "{{file}} — 未実行",
+    "checking": "チェック中… {{pct}}%"
+  },
+  "states": {
+    "noModel": "IFCモデルを読み込んで、納品要件と照合してください。",
+    "noIds": "buildingSMARTの.idsファイルを読み込んで、このモデルをチェックしてください。",
+    "noResult": "このモデルの結果はまだありません — {{file}}に対してチェックを実行してください。",
+    "noResultGeneric": "読み込み済みのIDS",
+    "noMatch": "現在のフィルターに一致する仕様がありません。",
+    "bufferUnavailable": "このモデルのIFCソースバッファーが利用できません — IDSを実行するには.ifcを再読み込みしてください。",
+    "staleIds": "この結果は{{file}}で生成されました — 現在のファイルで再実行してください。"
+  },
+  "truncation": "先頭200件を表示 — さらに{{count}}件の不合格要素があります。全リストはエクスポートしてください。",
+  "truncation_other": "先頭200件を表示 — さらに{{count}}件の不合格要素があります。全リストはエクスポートしてください。",
+  "diff": {
+    "scoreUp": "スコア {{prev}} → {{curr}} (+{{delta}})",
+    "scoreDown": "スコア {{prev}} → {{curr}} ({{delta}})",
+    "scoreSame": "スコアは{{curr}}のまま変化なし",
+    "resolved": "{{count}}件修正済み",
+    "added": "{{count}}件新規",
+    "dismiss": "閉じる"
+  },
+  "export": {
+    "label": "エクスポート",
+    "json": "JSON",
+    "csv": "CSV",
+    "html": "HTML",
+    "bcf": "BCF",
+    "jsonDesc": "構造化レポート（コード＋テキスト）",
+    "csvDesc": "不合格1件につき1行（Excel）",
+    "htmlDesc": "印刷可能なスタンドアロンレポート",
+    "bcfDesc": "BIMcollab / Solibri向けの課題",
+    "bcfEmpty": "エクスポートする不合格がありません",
+    "done": "レポートをダウンロードしました",
+    "soon": "近日公開"
+  },
+  "errors": {
+    "checkFailed": "IDSチェックに失敗しました",
+    "bufferUnavailable": "IFCソースバッファーが利用できません。.ifcファイルを再読み込みしてください。",
+    "untitled": "untitled.ids",
+    "orphaned": "前回のチェックは中断されました — もう一度実行してください。",
+    "largeModel": "このモデルは{{mb}} MBです。チェックには多くのメモリを使用し、時間がかかる場合があります。続行しますか？"
+  },
+  "reasons": {
+    "missingRequired": "必須の{{what}}がありません",
+    "wrongValue": "{{what}} = (不正な値)、期待値は{{expected}}",
+    "prohibitedPresent": "{{what}}が存在しますが禁止されています",
+    "specRequiredButAbsent": "この必須仕様に一致する要素がモデルに含まれていません",
+    "specProhibitedButPresent": "禁止された要素がモデルに存在します",
+    "wrongDataType": "{{what}}のデータ型が不正です — 期待値は{{expected}}ですが、{{actual}}が見つかりました",
+    "unsupportedPattern": "このチェッカーではサポートされていないパターンです: {{pattern}}"
+  },
+  "howToFix": "修正方法",
+  "remediation": {
+    "missingRequired": "作成ツール（Revit/ArchiCAD/…）で要素に{{what}}を追加し、IFCを再エクスポートしてください。",
+    "wrongValue": "{{what}}を{{expected}}を満たす値に設定してください。",
+    "prohibitedPresent": "要素から{{what}}を削除してください。",
+    "specRequiredButAbsent": "この仕様に一致する要素を少なくとも1つモデルに追加してください。",
+    "specProhibitedButPresent": "この禁止仕様に一致する要素を削除してください。",
+    "wrongDataType": "{{what}}のデータ型を修正してください — {{expected}}である必要があります。",
+    "unsupportedPattern": "この値は手動で確認してください — このパターンは自動評価できません。"
+  }
+}

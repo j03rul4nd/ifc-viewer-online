@@ -2,6 +2,8 @@
 
 Sprint-by-sprint plan. Each sprint builds on the previous and introduces architectural constraints that must not be broken in later sprints.
 
+> **★ 2026-07-04 — FORWARD PLAN IS NOW THE CONFORMANCE-CDE ROADMAP.** The product direction is the delivery-conformance platform ("DocuSign for BIM deliveries"), growing **gate → lightweight CDE** by phases. The authoritative forward build plan is **[`docs/CDE_ROADMAP.md`](docs/CDE_ROADMAP.md)** (phases **F0..F6**, ordered tasks, files-to-touch, acceptance criteria). Roadmap v2 below (distribution-led) stays valid and **complementary** — F1 ships the signed `ConformityReport` *and* we distribute it (the free issuer builds moats #1/#3). New architectural decisions **D-27** (privacy-invariant amendment, F6-gated) + **D-28** (immutable Submission / append-only AuditLog) in `DECISIONS.md`. Product vision: `docs/CDE_VISION.md` · domain: `docs/CONFORMANCE_DOMAIN.md` · private strategy suite: `docs-planning/vision/`.
+
 ---
 
 ## ⭐ Roadmap v2 — Distribution-led (resolution 2026-05-29)

@@ -227,7 +227,7 @@ function BcfTopicCard({ topic, onOpen, onStatusCycle, onNavigate, onDelete }: Ca
 
 interface DetailProps {
   topicGuid: string
-  viewer?:   Pick<ViewerHandle, 'setCameraViewpoint' | 'takeSnapshot'> | null
+  viewer?:   Pick<ViewerHandle, 'setCameraViewpoint' | 'getCameraViewpoint' | 'takeSnapshot'> | null
   onBack:    () => void
   onDeleted: () => void
 }
@@ -274,7 +274,15 @@ function BcfDetailView({ topicGuid, viewer, onBack, onDeleted }: DetailProps) {
   const handleCaptureView = () => {
     if (!viewer) return
     const snapshot = viewer.takeSnapshot?.() ?? undefined
-    const newVp: BcfViewpoint = { guid: crypto.randomUUID(), snapshotBase64: snapshot }
+    // Camera capture shares the same primitive as Tour Mode (D-24). Before,
+    // only *imported* viewpoints carried a camera — captured ones were
+    // snapshot-only and could not be navigated back to.
+    const cam = viewer.getCameraViewpoint?.() ?? null
+    const newVp: BcfViewpoint = {
+      guid: crypto.randomUUID(),
+      snapshotBase64: snapshot,
+      ...(cam ? { cameraPosition: cam.position, cameraDirection: cam.direction } : {}),
+    }
     save({ viewpoints: [...topic.viewpoints, newVp] })
     toast(t('bcf.captureAdded'), 'success')
   }
@@ -549,7 +557,7 @@ function BcfDetailView({ topicGuid, viewer, onBack, onDeleted }: DetailProps) {
 // ── BcfCreateForm ─────────────────────────────────────────────────────────────
 
 interface CreateFormProps {
-  viewer?:   Pick<ViewerHandle, 'setCameraViewpoint' | 'takeSnapshot'> | null
+  viewer?:   Pick<ViewerHandle, 'setCameraViewpoint' | 'getCameraViewpoint' | 'takeSnapshot'> | null
   onBack:    () => void
   onCreated: (guid: string) => void
 }
@@ -717,7 +725,7 @@ function BcfCreateForm({ viewer, onBack, onCreated }: CreateFormProps) {
 // ── BcfListView ───────────────────────────────────────────────────────────────
 
 interface ListViewProps {
-  viewer?:       Pick<ViewerHandle, 'setCameraViewpoint' | 'takeSnapshot'> | null
+  viewer?:       Pick<ViewerHandle, 'setCameraViewpoint' | 'getCameraViewpoint' | 'takeSnapshot'> | null
   onSelectTopic: (guid: string) => void
   onCreateNew:   () => void
 }
@@ -993,7 +1001,7 @@ function BcfListView({ viewer, onSelectTopic, onCreateNew }: ListViewProps) {
 // ── BcfPanel (main export) ────────────────────────────────────────────────────
 
 interface BcfPanelProps {
-  viewer?: Pick<ViewerHandle, 'setCameraViewpoint' | 'takeSnapshot'> | null
+  viewer?: Pick<ViewerHandle, 'setCameraViewpoint' | 'getCameraViewpoint' | 'takeSnapshot'> | null
 }
 
 type PanelView = 'list' | 'detail' | 'create'

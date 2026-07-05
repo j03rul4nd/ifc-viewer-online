@@ -37,9 +37,13 @@ import enToasts      from '../locales/en/toasts.json'
 import enTree        from '../locales/en/tree.json'
 import enBlog        from '../locales/en/blog.json'
 import enGeo         from '../locales/en/geo.json'
+import enSolar       from '../locales/en/solar.json'
+import enTour        from '../locales/en/tour.json'
+import enClient      from '../locales/en/client.json'
 import enIds         from '../locales/en/ids.json'
 import enEir         from '../locales/en/eir.json'
 import enInvite      from '../locales/en/invite.json'
+import enCapture     from '../locales/en/capture.json'
 
 const EN_RESOURCES = {
   common:      enCommon,
@@ -58,6 +62,10 @@ const EN_RESOURCES = {
   ids:         enIds,
   eir:         enEir,
   invite:      enInvite,
+  capture:     enCapture,
+  solar:       enSolar,
+  tour:        enTour,
+  client:      enClient,
 } as const
 
 // ── Init ──────────────────────────────────────────────────────────────────────

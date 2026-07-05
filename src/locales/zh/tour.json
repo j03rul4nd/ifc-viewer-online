@@ -1,0 +1,74 @@
+{
+  "entry": "导览",
+  "autoTitle": "验证导览",
+  "player": {
+    "stepOf": "第 {{current}} 步，共 {{total}} 步",
+    "prev": "上一步",
+    "next": "下一步",
+    "finish": "结束导览",
+    "exit": "退出导览",
+    "isolate": "隔离高亮构件",
+    "affected_other": "{{count}} 个受影响构件",
+    "howToFix": "修复方法",
+    "goToStep": "跳到第 {{n}} 步"
+  },
+  "recorder": {
+    "title": "引导式导览",
+    "close": "关闭",
+    "generateAuto": "根据最严重的问题生成导览",
+    "generating": "生成中…",
+    "generateAutoHint": "请先运行验证以生成自动导览",
+    "issuesAvailable_other": "有 {{count}} 个问题可用",
+    "empty": "还没有停靠点 — 将相机移到感兴趣的视角并添加第一个停靠点，或从验证问题生成导览。",
+    "addStop": "在此添加停靠点",
+    "play": "播放导览",
+    "delete": "删除停靠点",
+    "moveUp": "上移",
+    "moveDown": "下移",
+    "stop": "停靠点 {{n}}",
+    "preview": "预览此停靠点"
+  },
+  "templates": {
+    "title": "这次演示的目的是什么？",
+    "social": {
+      "name": "社交媒体演示",
+      "desc": "适合 LinkedIn 的简短亮眼短片"
+    },
+    "walkthrough": {
+      "name": "客户导览",
+      "desc": "现场会议 — 无技术术语"
+    },
+    "technical": {
+      "name": "技术审查",
+      "desc": "按严重程度列出问题并附修复指南"
+    },
+    "includeImprovements": "包含一个「待改进项」步骤",
+    "needsIssues": "请先运行验证"
+  },
+  "share": {
+    "copy": "复制分享链接",
+    "copied": "链接已复制到剪贴板",
+    "copyFailed": "无法复制链接",
+    "noModelUrl": "该模型从本地磁盘加载，没有公开 URL — 链接无法包含它。请改为导出 GIF。",
+    "tooLong": "导览过大，无法生成链接",
+    "linkedin": "导出到 LinkedIn",
+    "exported": "GIF 已导出",
+    "noBuffer": "录制缓冲尚未就绪 — 请稍候几秒"
+  },
+  "link": {
+    "invalid": "此共享导览链接无效或已损坏"
+  },
+  "showcase": {
+    "title": "模型导览",
+    "headline": "{{score}}/100 — 模型已验证",
+    "captions": {
+      "overview": "总览",
+      "perspective": "透视",
+      "front": "正视图",
+      "side": "侧视图",
+      "aerial": "鸟瞰图",
+      "closing": "结束视图"
+    },
+    "improvements": "待改进项"
+  }
+}

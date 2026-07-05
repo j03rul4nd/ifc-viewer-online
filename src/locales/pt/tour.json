@@ -1,0 +1,76 @@
+{
+  "entry": "Tour",
+  "autoTitle": "Tour de validação",
+  "player": {
+    "stepOf": "Passo {{current}} de {{total}}",
+    "prev": "Passo anterior",
+    "next": "Passo seguinte",
+    "finish": "Terminar tour",
+    "exit": "Sair do tour",
+    "isolate": "Isolar elementos destacados",
+    "affected_one": "{{count}} elemento afetado",
+    "affected_other": "{{count}} elementos afetados",
+    "howToFix": "Como corrigir",
+    "goToStep": "Ir para o passo {{n}}"
+  },
+  "recorder": {
+    "title": "Tour guiado",
+    "close": "Fechar",
+    "generateAuto": "Gerar tour dos problemas mais graves",
+    "generating": "A gerar…",
+    "generateAutoHint": "Execute primeiro a validação para gerar um tour automático",
+    "issuesAvailable_one": "{{count}} problema disponível",
+    "issuesAvailable_other": "{{count}} problemas disponíveis",
+    "empty": "Ainda sem paragens — mova a câmara para uma vista interessante e adicione a primeira paragem, ou gere um tour a partir dos problemas de validação.",
+    "addStop": "Adicionar paragem aqui",
+    "play": "Reproduzir tour",
+    "delete": "Remover paragem",
+    "moveUp": "Subir",
+    "moveDown": "Descer",
+    "stop": "Paragem {{n}}",
+    "preview": "Pré-visualizar esta paragem"
+  },
+  "templates": {
+    "title": "Para que serve esta apresentação?",
+    "social": {
+      "name": "Demo para redes",
+      "desc": "Clipe curto e apelativo para o LinkedIn"
+    },
+    "walkthrough": {
+      "name": "Percurso para cliente",
+      "desc": "Reunião ao vivo — sem jargão técnico"
+    },
+    "technical": {
+      "name": "Revisão técnica",
+      "desc": "Problemas por severidade com guias de correção"
+    },
+    "includeImprovements": "Incluir um passo de 'áreas a melhorar'",
+    "needsIssues": "Execute primeiro a validação"
+  },
+  "share": {
+    "copy": "Copiar link de partilha",
+    "copied": "Link copiado para a área de transferência",
+    "copyFailed": "Não foi possível copiar o link",
+    "noModelUrl": "Este modelo foi carregado do disco e não tem URL pública — o link não pode incluí-lo. Exporte um GIF em alternativa.",
+    "tooLong": "O percurso é demasiado grande para um link",
+    "linkedin": "Exportar para LinkedIn",
+    "exported": "GIF exportado",
+    "noBuffer": "A gravação ainda não está pronta — aguarde alguns segundos"
+  },
+  "link": {
+    "invalid": "Este link de percurso partilhado é inválido ou está corrompido"
+  },
+  "showcase": {
+    "title": "Percurso do modelo",
+    "headline": "{{score}}/100 — modelo verificado",
+    "captions": {
+      "overview": "Vista geral",
+      "perspective": "Perspetiva",
+      "front": "Alçado",
+      "side": "Vista lateral",
+      "aerial": "Vista aérea",
+      "closing": "Vista final"
+    },
+    "improvements": "Áreas a melhorar"
+  }
+}

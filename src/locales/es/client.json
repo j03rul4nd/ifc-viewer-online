@@ -1,0 +1,25 @@
+{
+  "entry": "Modo presentación a cliente",
+  "badge": {
+    "verify": "Verificar modelo",
+    "verifyHint": "Comprobación en tu navegador",
+    "verifying": "Verificando modelo…",
+    "scoreLabel": "Health Score",
+    "tier": {
+      "verified": "Modelo verificado",
+      "attention": "Buen estado, con observaciones",
+      "review": "Requiere revisión"
+    }
+  },
+  "gear": {
+    "title": "Opciones del presentador",
+    "advanced": "Herramientas avanzadas",
+    "measure": "Mediciones",
+    "section": "Cortes de sección",
+    "exit": "Salir del modo presentación"
+  },
+  "cta": {
+    "tour": "Ver recorrido",
+    "generateTour": "Generar recorrido"
+  }
+}

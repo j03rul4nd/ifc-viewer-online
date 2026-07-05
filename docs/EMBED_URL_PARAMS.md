@@ -34,7 +34,7 @@ live preview). This doc is the reference for the underlying parameters.
 | `model`    | URL(s)                           | —         | Public IFC URL to load. Comma-separated or repeated for multiple (federated) models. Aliases: `src`, `url`. |
 | `name`     | string(s)                        | from URL  | Display file name(s), parallel to `model`. Aliases: `file`. |
 | `embed`    | `1`/`0`                          | `0`       | Embed mode — slims the chrome for iframe hosting. |
-| `ui`       | `minimal` \| `full` \| `kiosk`   | `minimal` | Chrome preset (implies `embed=1`). |
+| `ui`       | `minimal` \| `full` \| `kiosk` \| `client` | `minimal` | Chrome preset (implies `embed=1`). |
 | `validate` | `1`/`0`                          | `1`       | Run validation automatically after load (drives the Health Score). |
 | `select`   | expressId (number)               | —         | Select + frame an element once loaded. |
 | `isolate`  | IFC class, e.g. `IfcWall`        | —         | Isolate a category after load (best-effort, by canonical IFC class). |
@@ -61,9 +61,31 @@ Each overrides its preset default. Accept `1`/`0` (also `true`/`false`, `yes`/`n
 | `minimal` | ✓ | — | ✓ | — | ✓ | — |
 | `full`    | ✓ | ✓ | ✓ | ✓ | ✓ | — |
 | `kiosk`   | — | — | — | — | — | — |
+| `client`  | — | — | — | — | ✓ | — |
 
 The collapsed validation bar (with the **Health Score** badge) shows in `minimal`/`full`
 even when the panel isn't auto-opened, so the citable number is always visible.
+
+### Shared tour links (`#tour=` fragment — D-26)
+
+A tour generated with the presentation templates can be shared as
+`?model=<url>[&ui=client]#tour=<base64>`. The **hash fragment** carries only
+the tour steps/template/title (never the model — that rides the normal
+`?model=` param) and is never sent to a server, following D-21. On open, the
+viewer loads the model, rebuilds the tour and starts playback automatically;
+invalid fragments show a clear error toast and fall back to the normal viewer.
+Links can only be generated for models that are themselves loadable by URL —
+disk-loaded models get an honest "no public URL" notice instead.
+
+`client` is the **client presentation skin** (D-25): a show-only layer for
+non-technical audiences. On top of the kiosk-like chrome it renders a large
+semantic Health Score badge (with a one-click "verify" CTA when validation
+hasn't run), a "View walkthrough" CTA wired to Tour Mode, a simplified capture
+pill (screenshot / replay clip), and a discreet presenter gear that can
+temporarily enable measurement/section tools or exit the skin. No IFC jargon,
+no editing affordances, no technical panels. It can also be toggled from
+inside the app (Toolbar `···` → "Client presentation mode") without reloading —
+the loaded model and camera persist.
 
 ## Examples
 

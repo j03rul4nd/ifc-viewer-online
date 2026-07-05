@@ -53,6 +53,10 @@
   "tools": "Eines",
   "toolsMenu": "Eines — mesurar, secció, plànols",
   "more": "Més",
+  "navProps": "Dades",
+  "navCats": "Tipus",
+  "navDemo": "Demo",
+  "language": "Idioma",
   "demo": "Models de demo",
   "status": {
     "loaded": "Carregat",
@@ -72,7 +76,9 @@
       "full": "Completa",
       "fullDesc": "Arbre + panell de validació",
       "kiosk": "Quiosc",
-      "kioskDesc": "Només el llenç 3D"
+      "kioskDesc": "Només el llenç 3D",
+      "client": "Client",
+      "clientDesc": "Mode presentació a client"
     },
     "optionsLabel": "Opcions",
     "autoValidate": "Executa la validació en carregar",

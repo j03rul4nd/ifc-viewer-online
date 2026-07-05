@@ -23,7 +23,7 @@ interface EmbedModalProps {
   onClose: () => void
 }
 
-const PRESETS: EmbedUiPreset[] = ['minimal', 'full', 'kiosk']
+const PRESETS: EmbedUiPreset[] = ['minimal', 'full', 'kiosk', 'client']
 
 export default function EmbedModal({ defaultModelUrl, defaultLang, onClose }: EmbedModalProps) {
   const { t } = useTranslation('toolbar')
@@ -161,7 +161,7 @@ export default function EmbedModal({ defaultModelUrl, defaultLang, onClose }: Em
             <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider">
               {t('embedModal.presetLabel')}
             </span>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-2 gap-1.5">
               {PRESETS.map((p) => (
                 <button
                   key={p}

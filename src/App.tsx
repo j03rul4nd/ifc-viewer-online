@@ -36,11 +36,19 @@ import { parseEirProfile, compileEirToIds } from './lib/eir'
 import InviteRibbon from './components/InviteRibbon'
 import InviteView from './components/InviteView'
 import InviteFeedbackNudge from './components/InviteFeedbackNudge'
+// Tour Mode (D-24) — lazy: nothing loads until the user opens the recorder/player
+const TourPlayer   = React.lazy(() => import('./components/TourPlayer'))
+const TourRecorder = React.lazy(() => import('./components/TourRecorder'))
+// Client presentation skin (D-25) — lazy: loads only when ui=client / toggled on
+const ClientPresentationLayout = React.lazy(() => import('./components/ClientPresentationLayout'))
 import { isGisEnabled } from './lib/geo/gis-flag'
+import { isSolarEnabled } from './lib/solar/solar-flag'
+import { useSolarStore } from './stores/solarStore'
 
 // Lazy: GeoPanel statically imports proj4/placement/geo runners, which must
 // stay out of the entry chunk. Only ever mounted when VITE_FEATURE_GIS is on.
 const GeoPanel = React.lazy(() => import('./components/GeoPanel'))
+const SolarPanel = React.lazy(() => import('./components/SolarPanel'))
 import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, type DemoModel } from './demo-models/models'
 import { fetchDemoModel } from './demo-models/fetchDemoModel'
 import { lighten } from './lib/utils'
@@ -59,7 +67,10 @@ import { useEditorStore } from './stores/editorStore'
 import { useSceneStore } from './stores/sceneStore'
 import { useTakeoffStore } from './stores/takeoffStore'
 import { useGeoStore } from './stores/geoStore'
+import { useCaptureStore } from './stores/captureStore'
+import { usePresentationStore } from './stores/presentationStore'
 import { toast } from './stores/toastStore'
+import { appBus } from './lib/event-bus'
 import type { ViewerAPI } from './lib/viewer'
 import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo, Category, CameraPreset } from './types'
 import * as Icons from './components/Icons'
@@ -114,6 +125,7 @@ export default function App() {
   const { t: tToasts } = useTranslation('toasts')
   const { t: tCommon } = useTranslation('common')
   const { t: tViewer } = useTranslation('viewer')
+  const { t: tTourNs } = useTranslation('tour')
   useSeo()
 
   // ── Embed / deep-link URL params (?model=…&embed=1&…) ─────────────────────
@@ -121,6 +133,47 @@ export default function App() {
   // host iframe (blog, CDE panel, third-party screen) should show.
   const urlParams   = useMemo(() => parseAppUrlParams(), [])
   const embedChrome = useMemo(() => resolveEmbedChrome(urlParams), [urlParams])
+
+  // ── Client presentation skin (D-25) ───────────────────────────────────────
+  // `?ui=client` bootstraps uiStore.clientMode; from there the flag is a pure
+  // UI layer toggleable in-app (no reload, no remount — model/camera persist).
+  useEffect(() => {
+    if (urlParams.preset === 'client') useUIStore.getState().setClientMode(true)
+  }, [urlParams])
+
+  // ── Shared tour links (D-26): `#tour=<payload>` auto-playback ─────────────
+  // The model arrives via the existing ?model= pipeline; once it loads, the
+  // decoded tour starts with zero clicks. Corrupt links degrade to a clear
+  // toast + the normal viewer — never a blank screen.
+  useEffect(() => {
+    const hash = typeof window !== 'undefined' ? window.location.hash : ''
+    if (!hash.startsWith('#tour=')) return
+    void (async () => {
+      const { parseTourHash, payloadToTour } = await import('./lib/share/tourShareLink')
+      const payload = parseTourHash(hash)
+      // Clean the fragment either way so reloads/copies don't re-trigger.
+      history.replaceState(null, '', window.location.pathname + window.location.search)
+      if (!payload) {
+        toast(tTourNs('link.invalid'), 'error', { duration: 6000 })
+        return
+      }
+      const startPlayback = (): void => {
+        const store = usePresentationStore.getState()
+        store.setTour(payloadToTour(payload))
+        if (payload.tpl) store.setTemplateId(payload.tpl)
+        store.play(0)
+      }
+      if (useSceneStore.getState().models.length > 0) startPlayback()
+      else {
+        const off = appBus.once('model:loaded', () => startPlayback())
+        // If the model never arrives (bad ?model=, network error), the loader's
+        // own error toast explains it; just stop waiting after a generous cap.
+        window.setTimeout(off, 120_000)
+      }
+    })()
+  // Run once at boot — the hash is consumed immediately.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── Personalized invite context (Phase 1) ────────────────────────────────
   // Resolved from the session attribution captured in main.tsx (NOT the live
@@ -284,6 +337,11 @@ export default function App() {
   const [showDemoGallery, setShowDemoGallery] = useState(false)
   const demoLoadRef = useRef(false)
 
+  // Size (MB) of the most recent load attempt, captured before handing the file
+  // to the loader — on failure the File is out of scope in onError, and pairing
+  // file_open_failed with a size is what reveals the real memory-bound ceiling.
+  const lastLoadSizeMbRef = useRef<number | null>(null)
+
   // ── Shared-report route — decode on mount if URL hash contains #report=... ──
   const [sharedReport, setSharedReport] = useState<SharedReportPayload | null>(() => {
     if (typeof window === 'undefined') return null
@@ -313,6 +371,27 @@ export default function App() {
 
   // Stores
   const { validationMode, result } = useValidationStore()
+  const tourMode = usePresentationStore((s) => s.mode)
+  const clientMode = useUIStore((s) => s.clientMode)
+  const clientAdvancedTools = useUIStore((s) => s.clientAdvancedTools)
+
+  // Effective chrome (D-25): the client skin layers over the URL-derived embed
+  // chrome — everything technical hidden, camera presets kept. All JSX gating
+  // below uses this, so toggling client mode is an instant UI-layer change.
+  const effectiveChrome = useMemo(
+    () => clientMode
+      ? {
+          ...embedChrome,
+          showToolbar: false,
+          showTree: false,
+          showSidebar: false,
+          openPanel: false,
+          showHome: false,
+          showCameraControls: true,
+        }
+      : embedChrome,
+    [embedChrome, clientMode],
+  )
   const {
     treeVisible, treeWidth, hiddenElements, clearHiddenElements, setElementsVisible, clearHiddenElementsForModel,
     mobileSidebarOpen, setMobileSidebarOpen, setPendingSidebarTab,
@@ -487,7 +566,10 @@ export default function App() {
       console.error('[IFC] Load error:', msg)
       setLoadingState('error')
       setLoadError(msg)
-      trackFileOpenFailed({ error_msg: msg.slice(0, 200) })
+      trackFileOpenFailed({
+        error_msg: msg.slice(0, 200),
+        ...(lastLoadSizeMbRef.current != null ? { file_size_mb: lastLoadSizeMbRef.current } : {}),
+      })
     },
   })
 
@@ -652,6 +734,7 @@ export default function App() {
       setIsolatedElementModel(null)
       clearHiddenElements()
     }
+    lastLoadSizeMbRef.current = Math.round((file.size / 1_048_576) * 10) / 10
     void loadFile(file)
   }
 
@@ -897,6 +980,9 @@ export default function App() {
     cancelActiveIdsRuns()
     useIdsStore.getState().reset()
     useGeoStore.getState().resetForScene()
+    useSolarStore.getState().resetForScene()
+    useCaptureStore.getState().resetCapture()
+    usePresentationStore.getState().resetPresentation()
     modelRegistry.clear()
     clearScene()
     // Clean up Sprint 7+8 panel state and viewer tools
@@ -926,6 +1012,7 @@ export default function App() {
       clearHiddenElements()
     }
     // Await so the loader's concurrency guard doesn't reject a following load.
+    lastLoadSizeMbRef.current = Math.round((file.size / 1_048_576) * 10) / 10
     await loadFile(file)
   }, [loadFile, clearHiddenElements])
 
@@ -1438,7 +1525,7 @@ export default function App() {
             transition={{ duration: 0.3 }}
             className="fixed inset-0 bg-[var(--bg)] flex flex-col"
           >
-            {embedChrome.showToolbar && (
+            {effectiveChrome.showToolbar && (
               <div className="flex-none z-20">
                 {/* Show the active model's name; fall back to last-loaded when only one model exists */}
                 {(() => {
@@ -1475,7 +1562,7 @@ export default function App() {
               {/* Tree panel: only mounted on desktop — react-resizable-panels
                   allocates the Panel's flex share even when content is hidden,
                   so mounting it on mobile would shrink the canvas by 22%. */}
-              {treeVisible && sceneModels.length > 0 && isDesktop && embedChrome.showTree && (
+              {treeVisible && sceneModels.length > 0 && isDesktop && effectiveChrome.showTree && (
                 <>
                   <Panel
                     id="tree"
@@ -1530,8 +1617,9 @@ export default function App() {
                     />
                   )}
 
-                  {/* Camera preset overlay */}
-                  {sceneModels.length > 0 && embedChrome.showCameraControls && (
+                  {/* Camera preset overlay (yields to the tour bar while playing —
+                      it shares the bottom edge and presets fight the tour narrative) */}
+                  {sceneModels.length > 0 && effectiveChrome.showCameraControls && tourMode !== 'playing' && (
                     <CameraControls
                       viewerApiRef={viewerApiRef}
                       visible={cameraControlsVisible}
@@ -1539,8 +1627,9 @@ export default function App() {
                     />
                   )}
 
-                  {/* Advanced overlay HUD — shown while the issue overlay is on */}
-                  {sceneModels.length > 0 && (validationMode || idsHighlightMode) && (() => {
+                  {/* Advanced overlay HUD — shown while the issue overlay is on
+                      (yields while a tour is playing: the tour bar narrates instead) */}
+                  {sceneModels.length > 0 && (validationMode || idsHighlightMode) && tourMode !== 'playing' && !clientMode && (() => {
                     const counts = { error: 0, warning: 0, info: 0 }
                     if (idsHighlightMode) {
                       counts.error = Object.values(idsResultsByModel).reduce(
@@ -1558,8 +1647,10 @@ export default function App() {
                     )
                   })()}
 
-                  {/* Model info / weight panel — always shows the active model's data */}
-                  {sceneModels.length > 0 && (() => {
+                  {/* Model info / weight panel — always shows the active model's data
+                      (hidden while a tour plays: it sits exactly where the tour bar goes,
+                      and file size / GPU stats are noise for a presentation audience) */}
+                  {sceneModels.length > 0 && tourMode !== 'playing' && !clientMode && (() => {
                     const displayInfo =
                       sceneModels.find((m) => m.id === activeModelId) ?? modelInfo
                     return displayInfo ? (
@@ -1573,30 +1664,40 @@ export default function App() {
                     ) : null
                   })()}
 
-                  {/* Measurement panel */}
-                  {sceneModels.length > 0 && (
+                  {/* Measurement panel (client mode: only via the presenter gear) */}
+                  {sceneModels.length > 0 && (!clientMode || clientAdvancedTools) && (
                     <MeasurementPanel viewerApiRef={viewerApiRef} />
                   )}
 
-                  {/* Section (clip plane) panel */}
-                  {sceneModels.length > 0 && (
+                  {/* Section (clip plane) panel (client mode: only via the presenter gear) */}
+                  {sceneModels.length > 0 && (!clientMode || clientAdvancedTools) && (
                     <SectionPanel viewerApiRef={viewerApiRef} />
                   )}
 
-                  {/* Floor plan panel */}
-                  {sceneModels.length > 0 && (
+                  {/* Floor plan panel (hidden in the client skin) */}
+                  {sceneModels.length > 0 && !clientMode && (
                     <FloorPlanPanel viewerApiRef={viewerApiRef} />
                   )}
 
                   {/* GIS map panel (flag-gated, lazy — pulls proj4 + geo code) */}
-                  {isGisEnabled() && sceneModels.length > 0 && (
+                  {isGisEnabled() && sceneModels.length > 0 && !clientMode && (
                     <React.Suspense fallback={null}>
                       <GeoPanel viewerApiRef={viewerApiRef} />
                     </React.Suspense>
                   )}
 
-                  {/* Scene panel (model list + transform) */}
-                  {scenePanelOpen && (
+                  {/* Sun & Moon study panel (flag-gated, lazy — pulls suncalc/tz-lookup).
+                      Client mode (D-25) gets the simplified variant — preset cards
+                      first, no numeric UI — instead of being hidden: sun studies
+                      are a stakeholder-presentation feature by design. */}
+                  {isSolarEnabled() && sceneModels.length > 0 && (
+                    <React.Suspense fallback={null}>
+                      <SolarPanel viewerApiRef={viewerApiRef} variant={clientMode ? 'client' : 'technical'} />
+                    </React.Suspense>
+                  )}
+
+                  {/* Scene panel (model list + transform — never in the client skin) */}
+                  {scenePanelOpen && !clientMode && (
                     <ScenePanel
                       models={sceneModels}
                       activeModelId={activeModelId}
@@ -1625,7 +1726,7 @@ export default function App() {
                     />
                   )}
 
-                  {embedChrome.showSidebar && (
+                  {effectiveChrome.showSidebar && (
                     <Sidebar
                       categories={legendCategories}
                       elementCount={legendElementCount}
@@ -1645,7 +1746,7 @@ export default function App() {
                     />
                   )}
 
-                  {embedChrome.showHome && (
+                  {effectiveChrome.showHome && (
                     <button
                       onClick={handleNavigateToLanding}
                       className="absolute top-3 left-3 z-[9] h-[30px] min-w-[30px] px-3 bg-[rgba(16,16,20,0.82)] backdrop-blur-[14px] border border-[var(--border)] rounded-lg text-[var(--text-dim)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--text)] transition-colors"
@@ -1655,8 +1756,36 @@ export default function App() {
                     </button>
                   )}
 
-                  {/* ── Mobile bottom nav (only on < md; hidden in embed) ── */}
-                  {!embedChrome.embed && (
+                  {/* ── Tour Mode (D-24): recorder panel + playback bar.
+                      Mounted INSIDE the viewer container so they position
+                      relative to the 3D viewport (never over tree/sidebar). ── */}
+                  {tourMode === 'recording' && (
+                    <React.Suspense fallback={null}>
+                      <TourRecorder viewerApiRef={viewerApiRef} />
+                    </React.Suspense>
+                  )}
+
+                  {/* ── Client presentation skin (D-25) — badge + CTA + gear.
+                      Exit is only offered when the presenter toggled the mode
+                      in-app; a ?ui=client link receiver stays in the skin. ── */}
+                  {clientMode && sceneModels.length > 0 && (
+                    <React.Suspense fallback={null}>
+                      <ClientPresentationLayout viewerApiRef={viewerApiRef} canExit={!embedChrome.embed} />
+                    </React.Suspense>
+                  )}
+                  {tourMode === 'playing' && (
+                    <React.Suspense fallback={null}>
+                      <TourPlayer
+                        viewerApiRef={viewerApiRef}
+                        ownsCaptureReplay={!effectiveChrome.showToolbar}
+                        shareModelUrls={urlParams.modelUrls}
+                      />
+                    </React.Suspense>
+                  )}
+
+                  {/* ── Mobile bottom nav (only on < md; hidden in embed and
+                      while a tour is playing — the tour bar takes the stage) ── */}
+                  {!embedChrome.embed && tourMode !== 'playing' && !clientMode && (
                   <MobileBottomNav
                     visible={sceneModels.length > 0}
                     selected={selected}
@@ -1676,8 +1805,13 @@ export default function App() {
                   )}
                 </div>
 
-                <IdsPanel viewerApiRef={viewerApiRef} onOpenLoader={() => setShowIdsModal(true)} />
-                <ValidationPanel onJumpToElement={handleJumpToElement} viewer={viewerRef.current} />
+                {/* Coordinator/exporter panels — never mount in the client skin (D-25) */}
+                {!clientMode && (
+                  <>
+                    <IdsPanel viewerApiRef={viewerApiRef} onOpenLoader={() => setShowIdsModal(true)} />
+                    <ValidationPanel onJumpToElement={handleJumpToElement} viewer={viewerRef.current} />
+                  </>
+                )}
               </div>
               </Panel>
             </PanelGroup>
@@ -1722,9 +1856,10 @@ export default function App() {
         onModelReady={handleDemoModelReady}
       />
 
-      {/* ── 3D scene context menu (right-click on an element) ── */}
+      {/* ── 3D scene context menu (right-click on an element) —
+          suppressed in the client skin (no edit affordances, D-25) ── */}
       <SceneContextMenu
-        payload={ctxMenu}
+        payload={clientMode ? null : ctxMenu}
         onClose={() => setCtxMenu(null)}
         onFrame={handleFrameElement}
         onHide={handleHideElement}

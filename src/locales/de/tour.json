@@ -1,0 +1,76 @@
+{
+  "entry": "Tour",
+  "autoTitle": "Validierungs-Tour",
+  "player": {
+    "stepOf": "Schritt {{current}} von {{total}}",
+    "prev": "Vorheriger Schritt",
+    "next": "Nächster Schritt",
+    "finish": "Tour beenden",
+    "exit": "Tour verlassen",
+    "isolate": "Hervorgehobene Elemente isolieren",
+    "affected_one": "{{count}} betroffenes Element",
+    "affected_other": "{{count}} betroffene Elemente",
+    "howToFix": "So beheben Sie es",
+    "goToStep": "Zu Schritt {{n}} springen"
+  },
+  "recorder": {
+    "title": "Geführte Tour",
+    "close": "Schließen",
+    "generateAuto": "Tour aus den schwersten Problemen erzeugen",
+    "generating": "Wird erzeugt…",
+    "generateAutoHint": "Führen Sie zuerst die Validierung aus, um eine automatische Tour zu erzeugen",
+    "issuesAvailable_one": "{{count}} Problem verfügbar",
+    "issuesAvailable_other": "{{count}} Probleme verfügbar",
+    "empty": "Noch keine Stopps — bewegen Sie die Kamera zu einer interessanten Ansicht und fügen Sie den ersten Stopp hinzu, oder erzeugen Sie eine Tour aus den Validierungsproblemen.",
+    "addStop": "Stopp hier hinzufügen",
+    "play": "Tour abspielen",
+    "delete": "Stopp entfernen",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten",
+    "stop": "Stopp {{n}}",
+    "preview": "Diesen Stopp ansehen"
+  },
+  "templates": {
+    "title": "Wofür ist diese Präsentation?",
+    "social": {
+      "name": "Social-Media-Demo",
+      "desc": "Kurzer, auffälliger Clip für LinkedIn"
+    },
+    "walkthrough": {
+      "name": "Kundenrundgang",
+      "desc": "Live-Meeting — ohne Fachjargon"
+    },
+    "technical": {
+      "name": "Technische Prüfung",
+      "desc": "Probleme nach Schweregrad mit Korrekturhinweisen"
+    },
+    "includeImprovements": "Schritt für Verbesserungsbereiche einfügen",
+    "needsIssues": "Führen Sie zuerst die Validierung aus"
+  },
+  "share": {
+    "copy": "Freigabe-Link kopieren",
+    "copied": "Link in Zwischenablage kopiert",
+    "copyFailed": "Link konnte nicht kopiert werden",
+    "noModelUrl": "Dieses Modell wurde von der Festplatte geladen und hat keine öffentliche URL — der Link kann es nicht enthalten. Exportieren Sie stattdessen ein GIF.",
+    "tooLong": "Die Tour ist zu groß für einen Link",
+    "linkedin": "Für LinkedIn exportieren",
+    "exported": "GIF exportiert",
+    "noBuffer": "Die Aufnahme ist noch nicht bereit — warten Sie einige Sekunden"
+  },
+  "link": {
+    "invalid": "Dieser geteilte Tour-Link ist ungültig oder beschädigt"
+  },
+  "showcase": {
+    "title": "Modellrundgang",
+    "headline": "{{score}}/100 — verifiziertes Modell",
+    "captions": {
+      "overview": "Übersicht",
+      "perspective": "Perspektive",
+      "front": "Vorderansicht",
+      "side": "Seitenansicht",
+      "aerial": "Luftansicht",
+      "closing": "Schlussansicht"
+    },
+    "improvements": "Verbesserungsbereiche"
+  }
+}

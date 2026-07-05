@@ -11,9 +11,13 @@ import type enToasts from '../locales/en/toasts.json';
 import type enTree from '../locales/en/tree.json';
 import type enBlog from '../locales/en/blog.json';
 import type enGeo from '../locales/en/geo.json';
+import type enSolar from '../locales/en/solar.json';
+import type enTour from '../locales/en/tour.json';
+import type enClient from '../locales/en/client.json';
 import type enIds from '../locales/en/ids.json';
 import type enEir from '../locales/en/eir.json';
 import type enInvite from '../locales/en/invite.json';
+import type enCapture from '../locales/en/capture.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -35,6 +39,10 @@ declare module 'i18next' {
       ids: typeof enIds;
       eir: typeof enEir;
       invite: typeof enInvite;
+      capture: typeof enCapture;
+      solar: typeof enSolar;
+      tour: typeof enTour;
+      client: typeof enClient;
     };
   }
 }

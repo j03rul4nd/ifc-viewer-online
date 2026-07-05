@@ -1,0 +1,74 @@
+{
+  "entry": "ツアー",
+  "autoTitle": "検証ツアー",
+  "player": {
+    "stepOf": "ステップ {{current}} / {{total}}",
+    "prev": "前のステップ",
+    "next": "次のステップ",
+    "finish": "ツアーを終了",
+    "exit": "ツアーを閉じる",
+    "isolate": "ハイライト要素を分離表示",
+    "affected_other": "対象要素 {{count}} 件",
+    "howToFix": "修正方法",
+    "goToStep": "ステップ {{n}} へ移動"
+  },
+  "recorder": {
+    "title": "ガイドツアー",
+    "close": "閉じる",
+    "generateAuto": "重大な問題からツアーを生成",
+    "generating": "生成中…",
+    "generateAutoHint": "自動ツアーを生成するには、まず検証を実行してください",
+    "issuesAvailable_other": "利用可能な問題 {{count}} 件",
+    "empty": "まだ停止ポイントがありません — カメラを見たいビューに動かして最初の停止ポイントを追加するか、検証の問題からツアーを生成してください。",
+    "addStop": "ここに停止ポイントを追加",
+    "play": "ツアーを再生",
+    "delete": "停止ポイントを削除",
+    "moveUp": "上へ移動",
+    "moveDown": "下へ移動",
+    "stop": "停止ポイント {{n}}",
+    "preview": "この停止ポイントをプレビュー"
+  },
+  "templates": {
+    "title": "このプレゼンの目的は？",
+    "social": {
+      "name": "SNS向けデモ",
+      "desc": "LinkedIn向けの短く映えるクリップ"
+    },
+    "walkthrough": {
+      "name": "クライアント向けウォークスルー",
+      "desc": "ライブ会議 — 専門用語なし"
+    },
+    "technical": {
+      "name": "技術レビュー",
+      "desc": "重大度順の問題と修正ガイド"
+    },
+    "includeImprovements": "「改善ポイント」ステップを含める",
+    "needsIssues": "まず検証を実行してください"
+  },
+  "share": {
+    "copy": "共有リンクをコピー",
+    "copied": "リンクをクリップボードにコピーしました",
+    "copyFailed": "リンクをコピーできませんでした",
+    "noModelUrl": "このモデルはディスクから読み込まれ、公開URLがありません — リンクに含められません。代わりにGIFをエクスポートしてください。",
+    "tooLong": "ツアーが大きすぎてリンクにできません",
+    "linkedin": "LinkedIn向けにエクスポート",
+    "exported": "GIFをエクスポートしました",
+    "noBuffer": "録画バッファの準備がまだです — 数秒お待ちください"
+  },
+  "link": {
+    "invalid": "この共有ツアーリンクは無効か破損しています"
+  },
+  "showcase": {
+    "title": "モデルウォークスルー",
+    "headline": "{{score}}/100 — 検証済みモデル",
+    "captions": {
+      "overview": "全体ビュー",
+      "perspective": "パース",
+      "front": "正面",
+      "side": "側面",
+      "aerial": "鳥瞰",
+      "closing": "締めのビュー"
+    },
+    "improvements": "改善ポイント"
+  }
+}

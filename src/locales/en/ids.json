@@ -48,6 +48,13 @@
     "progress": "Checking all models — {{done}} / {{total}}",
     "modelsTitle": "Per-model scores — click to view"
   },
+  "pager": {
+    "counter": "{{current}} / {{total}}",
+    "next": "Next issue",
+    "prev": "Previous issue",
+    "backToList": "Back to list",
+    "swipeHint": "Swipe up for the next issue"
+  },
   "summary": {
     "score": "{{score}}",
     "outOf": "/ 100",

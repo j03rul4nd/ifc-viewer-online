@@ -1,0 +1,85 @@
+{
+  "panel": {
+    "title": "Sun & Moon",
+    "close": "Close panel"
+  },
+  "enable": {
+    "start": "Start sun study",
+    "stop": "Stop sun study",
+    "noModel": "Load a model first"
+  },
+  "badges": {
+    "locationIfc": "Location from IFC",
+    "locationMap": "Placed on the map",
+    "locationManual": "Manual location",
+    "locationDefault": "Default location — inaccurate",
+    "northIfc": "True north from IFC",
+    "northAssumed": "North assumed — verify orientation"
+  },
+  "defaultNotice": {
+    "title": "Location not configured",
+    "body": "This model has no usable location. The study would use a default (Madrid) and the shadows WILL be wrong for your site. Set the real location, or continue knowing the result is only illustrative.",
+    "setLocation": "Set location",
+    "continue": "Continue anyway"
+  },
+  "time": {
+    "date": "Date",
+    "realtime": "Follow real time",
+    "sunrise": "Sunrise",
+    "sunset": "Sunset",
+    "goldenHour": "Golden hour",
+    "solarNoon": "Solar noon",
+    "polarDay": "Polar day — the sun never sets on this date",
+    "polarNight": "Polar night — the sun never rises on this date",
+    "timezone": "Time zone"
+  },
+  "seasons": {
+    "summer": "Summer solstice",
+    "winter": "Winter solstice",
+    "equinox": "Equinox"
+  },
+  "presets": {
+    "title": "Saved moments",
+    "save": "Save current moment",
+    "namePlaceholder": "e.g. Winter 4 PM — north patio",
+    "empty": "No saved moments for this file yet.",
+    "apply": "Apply",
+    "delete": "Delete"
+  },
+  "sky": {
+    "toggle": "Physical sky"
+  },
+  "moon": {
+    "toggle": "Moon light",
+    "fraction": "{{pct}}% illuminated",
+    "phase0": "New moon",
+    "phase1": "Waxing crescent",
+    "phase2": "First quarter",
+    "phase3": "Waxing gibbous",
+    "phase4": "Full moon",
+    "phase5": "Waning gibbous",
+    "phase6": "Last quarter",
+    "phase7": "Waning crescent"
+  },
+  "quality": {
+    "label": "Shadow quality",
+    "standard": "Standard",
+    "high": "High"
+  },
+  "location": {
+    "title": "Site location",
+    "searchCity": "Search city… (offline)",
+    "lat": "Latitude",
+    "lon": "Longitude",
+    "apply": "Apply location",
+    "pickOnMap": "Pick on the map",
+    "citiesAttribution": "City data: GeoNames.org (CC BY 4.0) — bundled, searched offline"
+  },
+  "chip": {
+    "sun": "Sun",
+    "belowHorizon": "below horizon"
+  },
+  "errors": {
+    "enableFailed": "The sun study could not start."
+  }
+}

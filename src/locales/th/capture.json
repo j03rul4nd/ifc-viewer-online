@@ -1,0 +1,32 @@
+{
+  "screenshotTooltip": "ภาพหน้าจอ — คัดลอกไปยังคลิปบอร์ดและดาวน์โหลด PNG",
+  "screenshotCopied": "คัดลอกภาพหน้าจอไปยังคลิปบอร์ดและดาวน์โหลดแล้ว",
+  "screenshotSaved": "ดาวน์โหลดภาพหน้าจอแล้ว",
+  "screenshotFailed": "ไม่สามารถจับภาพวิวพอร์ตได้",
+  "replayTooltip": "จับภาพ {{seconds}} วินาทีล่าสุดเป็นคลิป",
+  "durationTooltip": "ระยะเวลาการจับภาพ",
+  "lastSeconds": "{{seconds}} วินาทีล่าสุด",
+  "recording": "บัฟเฟอร์รีเพลย์กำลังบันทึก",
+  "captureFailed": "การจับภาพล้มเหลว",
+  "previewTitle": "ตัวอย่างการจับภาพ",
+  "close": "ปิด",
+  "trimLabel": "ตัดต่อ",
+  "trimStart": "จุดเริ่มต้น",
+  "trimEnd": "จุดสิ้นสุด",
+  "fpsLabel": "FPS ของ GIF",
+  "resolutionLabel": "ความละเอียด",
+  "sourceRes": "ต้นฉบับ",
+  "watermarkLabel": "เพิ่มลายน้ำ",
+  "cancel": "ยกเลิก",
+  "exporting": "กำลังส่งออก…",
+  "pngDone": "ดาวน์โหลดเฟรมเป็น PNG แล้ว",
+  "webmDone": "ดาวน์โหลดคลิปเป็น WebM แล้ว",
+  "gifDone": "ดาวน์โหลด GIF แล้ว",
+  "exportFailed": "การส่งออกล้มเหลว: {{message}}",
+  "aspect": {
+    "label": "สัดส่วนภาพ",
+    "source": "ต้นฉบับ",
+    "square": "1:1",
+    "vertical": "4:5"
+  }
+}

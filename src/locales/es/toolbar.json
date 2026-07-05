@@ -53,6 +53,10 @@
   "tools": "Herramientas",
   "toolsMenu": "Herramientas — medir, sección, planos",
   "more": "Más",
+  "navProps": "Datos",
+  "navCats": "Tipos",
+  "navDemo": "Demo",
+  "language": "Idioma",
   "demo": "Modelos demo",
   "status": {
     "loaded": "Cargado",
@@ -72,7 +76,9 @@
       "full": "Completo",
       "fullDesc": "Árbol + panel de validación",
       "kiosk": "Kiosco",
-      "kioskDesc": "Solo lienzo 3D"
+      "kioskDesc": "Solo lienzo 3D",
+      "client": "Cliente",
+      "clientDesc": "Skin de presentación a cliente"
     },
     "optionsLabel": "Opciones",
     "autoValidate": "Ejecutar validación al cargar",

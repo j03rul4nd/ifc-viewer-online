@@ -1,0 +1,25 @@
+{
+  "entry": "客户演示模式",
+  "badge": {
+    "verify": "验证模型",
+    "verifyHint": "在您的浏览器中完成检查",
+    "verifying": "正在验证模型…",
+    "scoreLabel": "Health Score",
+    "tier": {
+      "verified": "模型已验证",
+      "attention": "状态良好，有若干观察项",
+      "review": "需要复查"
+    }
+  },
+  "gear": {
+    "title": "演示者选项",
+    "advanced": "高级工具",
+    "measure": "测量",
+    "section": "剖切",
+    "exit": "退出演示模式"
+  },
+  "cta": {
+    "tour": "查看导览",
+    "generateTour": "生成导览"
+  }
+}

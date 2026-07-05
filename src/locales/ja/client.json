@@ -1,0 +1,25 @@
+{
+  "entry": "クライアント向けプレゼンモード",
+  "badge": {
+    "verify": "モデルを検証",
+    "verifyHint": "ブラウザ内で検証されます",
+    "verifying": "モデルを検証中…",
+    "scoreLabel": "Health Score",
+    "tier": {
+      "verified": "モデル検証済み",
+      "attention": "良好（所見あり）",
+      "review": "要確認"
+    }
+  },
+  "gear": {
+    "title": "プレゼンターオプション",
+    "advanced": "高度なツール",
+    "measure": "計測",
+    "section": "断面",
+    "exit": "プレゼンモードを終了"
+  },
+  "cta": {
+    "tour": "ウォークスルーを見る",
+    "generateTour": "ウォークスルーを生成"
+  }
+}

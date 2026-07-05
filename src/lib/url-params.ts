@@ -12,9 +12,9 @@
 //
 // See docs/EMBED_URL_PARAMS.md for the full reference.
 
-export type EmbedUiPreset = 'minimal' | 'full' | 'kiosk'
+export type EmbedUiPreset = 'minimal' | 'full' | 'kiosk' | 'client'
 
-const PRESETS: readonly EmbedUiPreset[] = ['minimal', 'full', 'kiosk']
+const PRESETS: readonly EmbedUiPreset[] = ['minimal', 'full', 'kiosk', 'client']
 
 /** Parsed, validated view of the relevant URL query params. */
 export interface AppUrlParams {
@@ -43,6 +43,15 @@ export interface AppUrlParams {
    * personalized-invite-system-research.md §11.
    */
   ref?: string
+  /**
+   * Sun-study deep link (`?solar=YYYY-MM-DDTHH:MM` or evergreen
+   * `?solar=MM-DDTHH:MM`): open the Sun & Moon study at this SITE-LOCAL wall
+   * time once the model loads. Only honoured when the model's location can be
+   * resolved — a deep link must never pop the blocking default-location notice.
+   */
+  solar?: { year?: number; month: number; day: number; minutes: number }
+  /** `?moon=1` — enable the moon light for the solar deep link. */
+  solarMoon?: boolean
   /** Granular chrome overrides. `undefined` = fall back to the preset default. */
   overrides: {
     toolbar?: boolean
@@ -159,6 +168,8 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     select: Number.isFinite(selectRaw) && selectRaw > 0 ? selectRaw : undefined,
     isolate: isolateRaw ? canonicalIfcType(isolateRaw) : undefined,
     ref: refRaw,
+    solar: parseSolarParam(p.get('solar')),
+    solarMoon: parseBool(p.get('moon')),
     overrides: {
       toolbar:        parseBool(p.get('toolbar')),
       tree:           parseBool(p.get('tree')),
@@ -173,6 +184,20 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
 /** Mirror of the viewer's canonicalType() so isolate=IfcWallStandardCase matches. */
 function canonicalIfcType(raw: string): string {
   return raw.replace('STANDARDCASE', '').replace('ELEMENTEDCASE', '')
+}
+
+/** `YYYY-MM-DDTHH:MM` (exact) or `MM-DDTHH:MM` (evergreen — current year). */
+function parseSolarParam(v: string | null): AppUrlParams['solar'] {
+  if (!v) return undefined
+  const m = /^(?:(\d{4})-)?(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(v.trim())
+  if (!m) return undefined
+  const year = m[1] ? parseInt(m[1], 10) : undefined
+  const month = parseInt(m[2], 10)
+  const day = parseInt(m[3], 10)
+  const hour = parseInt(m[4], 10)
+  const minute = parseInt(m[5], 10)
+  if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59) return undefined
+  return { year, month, day, minutes: hour * 60 + minute }
 }
 
 /**
@@ -190,6 +215,11 @@ const PRESET_CHROME: Record<EmbedUiPreset, Omit<EmbedChrome, 'embed'>> = {
   minimal: { showToolbar: true,  showTree: false, showSidebar: true,  openPanel: false, showHome: false, showCameraControls: true  },
   full:    { showToolbar: true,  showTree: true,  showSidebar: true,  openPanel: true,  showHome: false, showCameraControls: true  },
   kiosk:   { showToolbar: false, showTree: false, showSidebar: false, openPanel: false, showHome: false, showCameraControls: false },
+  // Client presentation skin (D-25): show-only for non-technical audiences.
+  // Camera presets stay ON (simplified navigation); everything technical is
+  // hidden. uiStore.clientMode is set from this preset at boot and layers the
+  // ClientPresentationLayout on top.
+  client:  { showToolbar: false, showTree: false, showSidebar: false, openPanel: false, showHome: false, showCameraControls: true  },
 }
 
 /** Resolve the final chrome flags from a parsed param set. */

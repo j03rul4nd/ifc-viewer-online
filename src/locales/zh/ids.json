@@ -1,0 +1,166 @@
+{
+  "title": "IDS 检查",
+  "subtitle": "信息交付规范",
+  "loader": {
+    "choose": "选择 .ids 文件",
+    "specCount": "{{count}} 项规范",
+    "specCount_other": "{{count}} 项规范",
+    "clear": "清除",
+    "viewResults": "查看结果",
+    "intro": "加载一个 buildingSMART .ids 文件，以对照交付要求检查此模型。",
+    "introClient": "所有 IDS 1.0 分面均在本地评估——数据不会离开您的浏览器。",
+    "parseError": "无法读取 IDS：{{message}}",
+    "invalidFile": "无效的 IDS 文件：{{message}}"
+  },
+  "examples": {
+    "label": "没有 .ids 文件？试试示例：",
+    "hasWallsName": "模型包含墙体",
+    "hasWallsDesc": "交付物必须至少包含一面已命名的墙",
+    "namedElementsName": "构件已命名",
+    "namedElementsDesc": "常见建筑构件必须具有 Name",
+    "wallFireRatingName": "墙体耐火等级",
+    "wallFireRatingDesc": "墙体在 Pset_WallCommon 中声明 FireRating",
+    "doorsNamedRatedName": "门已命名并标注耐火等级",
+    "doorsNamedRatedDesc": "门具有 Name 和 FireRating"
+  },
+  "run": {
+    "run": "运行检查",
+    "rerun": "重新运行检查",
+    "checking": "检查中…",
+    "cancel": "取消",
+    "cancelling": "取消中…",
+    "retry": "重试"
+  },
+  "actions": {
+    "rerunShort": "重新运行",
+    "runShort": "运行",
+    "checkAll": "全部检查（{{count}}）",
+    "checkAllTitle": "对所有已加载的模型运行此 IDS 检查",
+    "highlight": "高亮显示",
+    "isolate": "隔离显示",
+    "showAll": "显示全部",
+    "collapse": "收起面板",
+    "highlightTitle": "在 3D 视图中高亮显示未通过的构件",
+    "isolateTitle": "仅显示未通过的构件",
+    "reloadToRun": "重新加载 .ifc 以运行 IDS 检查"
+  },
+  "multiRun": {
+    "progress": "正在检查所有模型 — {{done}} / {{total}}",
+    "modelsTitle": "各模型评分 — 点击查看"
+  },
+  "pager": {
+    "counter": "{{current}} / {{total}}",
+    "next": "下一个问题",
+    "prev": "上一个问题",
+    "backToList": "返回列表",
+    "swipeHint": "向上滑动查看下一个问题"
+  },
+  "summary": {
+    "score": "{{score}}",
+    "outOf": "/ 100",
+    "pass": "{{count}} 项通过",
+    "fail": "{{count}} 项未通过",
+    "na": "{{count}} 项不适用",
+    "passShort": "{{count}}✓",
+    "failShort": "{{count}}✗",
+    "naShort": "{{count}} 项不适用",
+    "checkedModel": "已检查的模型",
+    "passLabel": "通过",
+    "failLabel": "未通过",
+    "naLabel": "不适用"
+  },
+  "progress": {
+    "open": "正在打开模型…",
+    "gather": "正在读取构件…",
+    "check": "正在检查规范…"
+  },
+  "status": {
+    "skipped": "已跳过",
+    "na": "不适用",
+    "fraction": "{{passed}}/{{applicable}}"
+  },
+  "filters": {
+    "groupSpec": "规范",
+    "groupElement": "构件",
+    "groupClass": "类别",
+    "all": "全部",
+    "search": "搜索规范 / 构件…",
+    "clear": "清除筛选",
+    "specsCounted": "{{count}} 项规范",
+    "specsCounted_other": "{{count}} 项规范",
+    "failuresCounted": "{{count}} 项失败",
+    "failuresCounted_other": "{{count}} 项失败"
+  },
+  "facets": {
+    "entity": "实体",
+    "attribute": "属性",
+    "property": "参数",
+    "classification": "分类",
+    "material": "材质",
+    "partOf": "partOf"
+  },
+  "collapsed": {
+    "noFile": "无文件",
+    "notRun": "{{file}} — 尚未运行",
+    "checking": "检查中… {{pct}}%"
+  },
+  "states": {
+    "noModel": "加载 IFC 模型以对照交付要求进行检查。",
+    "noIds": "加载一个 buildingSMART .ids 文件以检查此模型。",
+    "noResult": "此模型尚无结果 — 请对 {{file}} 运行检查。",
+    "noResultGeneric": "已加载的 IDS",
+    "noMatch": "没有符合当前筛选条件的规范。",
+    "bufferUnavailable": "此模型的 IFC 源缓冲区不可用 — 请重新加载 .ifc 以运行 IDS 检查。",
+    "staleIds": "这些结果是使用 {{file}} 生成的 — 请用当前文件重新运行。"
+  },
+  "truncation": "仅显示前 200 个 — 另有 {{count}} 个未通过的构件；导出以获取完整列表。",
+  "truncation_other": "仅显示前 200 个 — 另有 {{count}} 个未通过的构件；导出以获取完整列表。",
+  "diff": {
+    "scoreUp": "得分 {{prev}} → {{curr}}（+{{delta}}）",
+    "scoreDown": "得分 {{prev}} → {{curr}}（{{delta}}）",
+    "scoreSame": "得分保持不变，为 {{curr}}",
+    "resolved": "已修复 {{count}} 项",
+    "added": "新增 {{count}} 项",
+    "dismiss": "关闭"
+  },
+  "export": {
+    "label": "导出",
+    "json": "JSON",
+    "csv": "CSV",
+    "html": "HTML",
+    "bcf": "BCF",
+    "jsonDesc": "结构化报告（代码 + 文本）",
+    "csvDesc": "每条失败记录一行（Excel）",
+    "htmlDesc": "可打印的独立报告",
+    "bcfDesc": "导出问题至 BIMcollab / Solibri",
+    "bcfEmpty": "没有可导出的失败项",
+    "done": "报告已下载",
+    "soon": "即将推出"
+  },
+  "errors": {
+    "checkFailed": "IDS 检查失败",
+    "bufferUnavailable": "IFC 源缓冲区不可用。请重新加载 .ifc 文件。",
+    "untitled": "untitled.ids",
+    "orphaned": "上一次检查被中断 — 请重新运行。",
+    "largeModel": "此模型大小为 {{mb}} MB。检查它可能会占用大量内存并可能较慢。是否继续？"
+  },
+  "reasons": {
+    "missingRequired": "缺少必需的 {{what}}",
+    "wrongValue": "{{what}} =（值错误），应为 {{expected}}",
+    "prohibitedPresent": "{{what}} 存在但被禁止",
+    "specRequiredButAbsent": "模型中不存在符合此必需规范的构件",
+    "specProhibitedButPresent": "模型中存在被禁止的构件",
+    "wrongDataType": "{{what}} 的数据类型错误 — 应为 {{expected}}，实际为 {{actual}}",
+    "unsupportedPattern": "此检查器不支持该模式：{{pattern}}"
+  },
+  "howToFix": "如何修复",
+  "remediation": {
+    "missingRequired": "在您的建模工具（Revit/ArchiCAD/…）中为该构件添加 {{what}}，然后重新导出 IFC。",
+    "wrongValue": "将 {{what}} 设置为满足 {{expected}} 的值。",
+    "prohibitedPresent": "从该构件中移除 {{what}}。",
+    "specRequiredButAbsent": "向模型中添加至少一个符合此规范的构件。",
+    "specProhibitedButPresent": "移除符合此禁止规范的构件。",
+    "wrongDataType": "修正 {{what}} 的数据类型 — 必须为 {{expected}}。",
+    "unsupportedPattern": "请手动检查此值 — 该模式无法自动评估。"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "entry": "Client presentation mode",
+  "badge": {
+    "verify": "Verify model",
+    "verifyHint": "Checked in your browser",
+    "verifying": "Verifying model…",
+    "scoreLabel": "Health Score",
+    "tier": {
+      "verified": "Model verified",
+      "attention": "Good shape, with observations",
+      "review": "Needs review"
+    }
+  },
+  "gear": {
+    "title": "Presenter options",
+    "advanced": "Advanced tools",
+    "measure": "Measurements",
+    "section": "Section cuts",
+    "exit": "Exit presentation mode"
+  },
+  "cta": {
+    "tour": "View walkthrough",
+    "generateTour": "Generate walkthrough"
+  }
+}

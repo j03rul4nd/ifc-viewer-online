@@ -1,0 +1,32 @@
+{
+  "screenshotTooltip": "截图 — 复制到剪贴板并下载 PNG",
+  "screenshotCopied": "截图已复制到剪贴板并已下载",
+  "screenshotSaved": "截图已下载",
+  "screenshotFailed": "无法截取视口",
+  "replayTooltip": "捕获最近 {{seconds}} 秒为短片",
+  "durationTooltip": "捕获时长",
+  "lastSeconds": "最近 {{seconds}} 秒",
+  "recording": "回放缓冲区录制中",
+  "captureFailed": "捕获失败",
+  "previewTitle": "捕获预览",
+  "close": "关闭",
+  "trimLabel": "剪辑",
+  "trimStart": "剪辑起点",
+  "trimEnd": "剪辑终点",
+  "fpsLabel": "GIF 帧率",
+  "resolutionLabel": "分辨率",
+  "sourceRes": "原始",
+  "watermarkLabel": "添加水印",
+  "cancel": "取消",
+  "exporting": "导出中…",
+  "pngDone": "帧已下载为 PNG",
+  "webmDone": "短片已下载为 WebM",
+  "gifDone": "GIF 已下载",
+  "exportFailed": "导出失败：{{message}}",
+  "aspect": {
+    "label": "画幅",
+    "source": "原始",
+    "square": "1:1",
+    "vertical": "4:5"
+  }
+}

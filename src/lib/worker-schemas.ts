@@ -460,6 +460,109 @@ export function parseBcfParserMsg(raw: unknown): ParseResult<BcfParserOutMsg> {
   return { ok: true, data: result.data }
 }
 
+// ── GIF export worker schemas ──────────────────────────────────────────────────
+// Protocol: init → frame×N (RGBA buffers, transferred) → finish | cancel.
+// The worker acks every frame with `progress` — the orchestrator uses that ack
+// as backpressure so at most one decoded frame is in flight (memory stays flat).
+
+// main → worker
+export const GifInitMsgSchema = z.object({
+  type:        z.literal('init'),
+  id:          z.string(),
+  width:       z.number().int().positive(),
+  height:      z.number().int().positive(),
+  fps:         z.number().positive(),
+  totalFrames: z.number().int().positive(),
+})
+
+export const GifFrameMsgSchema = z.object({
+  type:   z.literal('frame'),
+  id:     z.string(),
+  index:  z.number().int().nonnegative(),
+  buffer: z.instanceof(ArrayBuffer),
+})
+
+export const GifFinishMsgSchema = z.object({
+  type: z.literal('finish'),
+  id:   z.string(),
+})
+
+export const GifCancelMsgSchema = z.object({
+  type: z.literal('cancel'),
+  id:   z.string(),
+})
+
+export const GifInMsgSchema = z.discriminatedUnion('type', [
+  GifInitMsgSchema,
+  GifFrameMsgSchema,
+  GifFinishMsgSchema,
+  GifCancelMsgSchema,
+])
+
+// worker → main
+export const GifProgressMsgSchema = z.object({
+  type:    z.literal('progress'),
+  id:      z.string(),
+  /** Index of the frame just encoded (doubles as the backpressure ack). */
+  index:   z.number().int().nonnegative(),
+  percent: z.number().min(0).max(100),
+})
+
+export const GifDoneMsgSchema = z.object({
+  type:   z.literal('done'),
+  id:     z.string(),
+  buffer: z.instanceof(ArrayBuffer),
+})
+
+export const GifErrorMsgSchema = z.object({
+  type:    z.literal('error'),
+  id:      z.string(),
+  message: z.string(),
+})
+
+export const GifOutMsgSchema = z.discriminatedUnion('type', [
+  GifProgressMsgSchema,
+  GifDoneMsgSchema,
+  GifErrorMsgSchema,
+])
+
+export type GifInMsg  = z.infer<typeof GifInMsgSchema>
+export type GifOutMsg = z.infer<typeof GifOutMsgSchema>
+
+export function parseGifWorkerMsg(raw: unknown): ParseResult<GifOutMsg> {
+  const result = GifOutMsgSchema.safeParse(raw)
+  if (!result.success) {
+    const formatted = result.error.format()
+    log.warn('[worker-schemas] Invalid GIF worker message:', formatted)
+    return {
+      ok: false,
+      error: new WorkerError(
+        'WORKER_INVALID_MSG',
+        `GIF worker sent an unrecognised message: ${result.error.issues[0]?.message ?? 'unknown'}`,
+        { raw, zodErrors: formatted },
+      ),
+    }
+  }
+  return { ok: true, data: result.data }
+}
+
+export function parseGifInMsg(raw: unknown): ParseResult<GifInMsg> {
+  const result = GifInMsgSchema.safeParse(raw)
+  if (!result.success) {
+    const formatted = result.error.format()
+    log.warn('[worker-schemas] Invalid GIF inbound message:', formatted)
+    return {
+      ok: false,
+      error: new WorkerError(
+        'WORKER_INVALID_MSG',
+        `GIF worker received an unrecognised message: ${result.error.issues[0]?.message ?? 'unknown'}`,
+        { raw, zodErrors: formatted },
+      ),
+    }
+  }
+  return { ok: true, data: result.data }
+}
+
 // ── Inferred types (always derived from schemas — no manual duplication) ───────
 
 export type ValidatorOutMsg     = z.infer<typeof ValidatorOutMsgSchema>

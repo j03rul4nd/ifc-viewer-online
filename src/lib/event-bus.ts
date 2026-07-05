@@ -36,6 +36,13 @@ export type AppEventMap = {
   'bcf:imported':           { topicCount: number }
   'bcf:exported':           { topicCount: number }
   'ui:open-legend':         void
+  'capture:started':        { mode: 'replay' }
+  'capture:ready':          { kind: 'screenshot' | 'clip'; durationSec?: number }
+  'capture:exported':       { format: 'png' | 'webm' | 'gif'; target: 'download' | 'clipboard' }
+  'tour:started':           { tourId: string; createdFrom: 'auto' | 'manual'; steps: number }
+  'tour:step-changed':      { tourId: string; index: number; total: number }
+  'tour:completed':         { tourId: string }
+  'ui:client-mode-toggled': { enabled: boolean }
 }
 
 // ── Core bus class ─────────────────────────────────────────────────────────────

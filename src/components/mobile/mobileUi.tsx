@@ -1,13 +1,31 @@
 // ─── mobileUi ────────────────────────────────────────────────────────────────
 // Touch-first presentation primitives shared by the mobile panel variants.
 // Built for very narrow widths (down to 320px — Instagram/WhatsApp/LinkedIn
-// in-app browsers): no horizontal scroll, ≥40px tap targets, generous spacing,
+// in-app browsers): no horizontal scroll, ≥44px tap targets, generous spacing,
 // brand tokens only. Visually cohesive with the desktop panels (same accent,
 // surfaces, mono numerics) but restructured for thumbs, not a mouse.
 
 import React from 'react'
+import { haptic } from '../../lib/haptics'
 
 const TAP = { WebkitTapHighlightColor: 'transparent' } as const
+
+// ── Color tinting ─────────────────────────────────────────────────────────────
+// CRITICAL: the previous code concatenated an alpha-hex suffix onto colors that
+// are often CSS custom properties, e.g. `var(--accent)1f` or `${color}14` where
+// color === 'var(--danger)'. That produces invalid CSS the browser silently
+// drops — so score hero tiles, stat pills and every "active" tint rendered
+// FULLY TRANSPARENT. `tint()` uses color-mix (Baseline 2023) which composes
+// correctly with both var() tokens AND hex literals. On engines without it
+// (Safari < 16.2) we fall back to no tint (flat surface) rather than broken CSS.
+const COLOR_MIX_OK =
+  typeof window === 'undefined' ||
+  !window.CSS?.supports ||
+  window.CSS.supports('color', 'color-mix(in srgb, red, transparent)')
+
+export function tint(color: string, pct: number): string {
+  return COLOR_MIX_OK ? `color-mix(in srgb, ${color} ${pct}%, transparent)` : 'transparent'
+}
 
 // ── Sticky header bar inside a sheet ──────────────────────────────────────────
 
@@ -30,9 +48,9 @@ export function SheetHeaderBar({
       <div className="flex-1" />
       {onOverflow && (
         <button
-          onClick={onOverflow}
+          onClick={() => { haptic('tick'); onOverflow() }}
           aria-label="More actions"
-          className="w-9 h-9 flex items-center justify-center rounded-full text-[var(--text-dim)] active:bg-[var(--surface-2)] active:scale-95 transition-transform"
+          className="w-11 h-11 -mr-1.5 flex items-center justify-center rounded-full text-[var(--text-dim)] active:bg-[var(--surface-2)] active:scale-95 transition-transform"
           style={TAP}
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
@@ -43,7 +61,7 @@ export function SheetHeaderBar({
       <button
         onClick={onClose}
         aria-label="Close"
-        className="w-9 h-9 flex items-center justify-center rounded-full text-[var(--text-dim)] active:bg-[var(--surface-2)] active:scale-95 transition-transform"
+        className="w-11 h-11 -mr-2 flex items-center justify-center rounded-full text-[var(--text-dim)] active:bg-[var(--surface-2)] active:scale-95 transition-transform"
         style={TAP}
       >
         <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
@@ -72,8 +90,8 @@ export function ScoreHero({
           className="shrink-0 rounded-2xl flex flex-col items-center justify-center"
           style={{
             width: 76, height: 76,
-            background: `${color}14`,
-            border: `1px solid ${color}33`,
+            background: tint(color, 8),
+            border: `1px solid ${tint(color, 20)}`,
           }}
         >
           <span className="font-mono font-bold leading-none tabular-nums" style={{ color, fontSize: 30 }}>
@@ -82,7 +100,7 @@ export function ScoreHero({
         </div>
         <div className="min-w-0 flex-1">
           {grade && (
-            <div className="text-[15px] font-semibold leading-tight" style={{ color }}>
+            <div className="text-[15px] font-semibold leading-tight truncate" style={{ color }}>
               {grade}
             </div>
           )}
@@ -100,10 +118,10 @@ export function StatPill({ value, label, color }: { value: React.ReactNode; labe
   return (
     <div
       className="flex items-center gap-1.5 h-8 px-3 rounded-full"
-      style={{ background: `${color}14`, border: `1px solid ${color}29` }}
+      style={{ background: tint(color, 8), border: `1px solid ${tint(color, 16)}` }}
     >
       <span className="font-mono font-bold text-[13px] tabular-nums leading-none" style={{ color }}>{value}</span>
-      <span className="text-[11px] font-medium" style={{ color: `${color}` }}>{label}</span>
+      <span className="text-[11px] font-medium" style={{ color }}>{label}</span>
     </div>
   )
 }
@@ -152,11 +170,11 @@ export function SecondaryButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="h-11 px-3.5 rounded-xl flex items-center justify-center gap-1.5 text-[12.5px] font-medium transition-all active:scale-[0.97] disabled:opacity-35"
+      className="h-12 px-3.5 rounded-xl flex items-center justify-center gap-1.5 text-[12.5px] font-medium transition-all active:scale-[0.97] disabled:opacity-35"
       style={{
-        background: active ? 'var(--accent)1f' : 'var(--surface-2)',
+        background: active ? tint('var(--accent)', 12) : 'var(--surface-2)',
         color: active ? 'var(--accent-2)' : 'var(--text-dim)',
-        border: `1px solid ${active ? 'var(--accent)55' : 'var(--border)'}`,
+        border: `1px solid ${active ? tint('var(--accent)', 34) : 'var(--border)'}`,
         ...TAP,
       }}
     >
@@ -177,12 +195,13 @@ export function Chip({
 }) {
   return (
     <button
-      onClick={onClick}
-      className="shrink-0 h-9 px-3.5 rounded-full text-[12px] font-medium whitespace-nowrap transition-all active:scale-95"
+      onClick={() => { haptic('tick'); onClick() }}
+      className="shrink-0 min-h-[38px] h-[38px] px-3.5 rounded-full text-[12.5px] font-medium whitespace-nowrap transition-all active:scale-95 flex items-center scroll-snap-align-start"
       style={{
-        background: active ? `${color}1f` : 'var(--surface-2)',
+        background: active ? tint(color, 14) : 'var(--surface-2)',
         color: active ? color : 'var(--text-dim)',
-        border: `1px solid ${active ? `${color}55` : 'var(--border)'}`,
+        border: `1px solid ${active ? tint(color, 40) : 'var(--border)'}`,
+        scrollSnapAlign: 'start',
         ...TAP,
       }}
     >
@@ -191,7 +210,7 @@ export function Chip({
   )
 }
 
-// ── Segmented control ─────────────────────────────────────────────────────────
+// ── Segmented control (animated sliding indicator) ─────────────────────────────
 
 export function Segmented<T extends string>({
   options, value, onChange,
@@ -201,22 +220,23 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void
 }) {
   return (
-    <div className="flex items-center gap-1 p-1 rounded-2xl bg-[var(--surface-2)] border border-[var(--border)]">
+    <div className="relative flex items-center gap-1 p-1 rounded-2xl bg-[var(--surface-2)] border border-[var(--border)]">
       {options.map((o) => {
         const on = o.value === value
         return (
           <button
             key={o.value}
-            onClick={() => onChange(o.value)}
-            className="flex-1 h-9 rounded-xl text-[12.5px] font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97]"
-            style={{
-              background: on ? 'var(--accent)' : 'transparent',
-              color: on ? '#fff' : 'var(--text-dim)',
-              boxShadow: on ? '0 2px 8px rgba(94,106,210,0.3)' : 'none',
-              ...TAP,
-            }}
+            onClick={() => { if (!on) { haptic('tick'); onChange(o.value) } }}
+            className="relative flex-1 h-10 rounded-xl text-[12.5px] font-semibold flex items-center justify-center gap-1.5 transition-colors active:scale-[0.97]"
+            style={{ color: on ? '#fff' : 'var(--text-dim)', ...TAP }}
           >
-            {o.label}
+            {on && (
+              <span
+                className="absolute inset-0 rounded-xl"
+                style={{ background: 'var(--accent)', boxShadow: '0 2px 8px rgba(94,106,210,0.3)' }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-1.5">{o.label}</span>
           </button>
         )
       })}
@@ -239,17 +259,17 @@ export function Strip({
   return (
     <div
       className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[11.5px] leading-snug"
-      style={{ background: `${color}12`, border: `1px solid ${color}2e`, color: 'var(--text-dim)' }}
+      style={{ background: tint(color, 7), border: `1px solid ${tint(color, 18)}`, color: 'var(--text-dim)' }}
     >
       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
       <span className="min-w-0 flex-1">{children}</span>
       {action && (
-        <button onClick={action.onClick} className="shrink-0 text-[11.5px] font-semibold" style={{ color }}>
+        <button onClick={action.onClick} className="shrink-0 text-[11.5px] font-semibold min-h-[32px] px-1 flex items-center" style={{ color }}>
           {action.label}
         </button>
       )}
       {onDismiss && (
-        <button onClick={onDismiss} aria-label="Dismiss" className="shrink-0 w-6 h-6 flex items-center justify-center text-[var(--text-faint)]" style={TAP}>
+        <button onClick={onDismiss} aria-label="Dismiss" className="shrink-0 w-8 h-8 -my-2 flex items-center justify-center text-[var(--text-faint)]" style={TAP}>
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M1 1l8 8M9 1L1 9" /></svg>
         </button>
       )}
@@ -285,12 +305,33 @@ export function MobileSearch({
         <button
           onClick={() => onChange('')}
           aria-label="Clear"
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full text-[var(--text-faint)] active:bg-[var(--border)]"
+          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full text-[var(--text-faint)] active:bg-[var(--border)]"
           style={TAP}
         >
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M1 1l8 8M9 1L1 9" /></svg>
         </button>
       )}
+    </div>
+  )
+}
+
+// ── Sticky thumb-zone footer ───────────────────────────────────────────────────
+// Actionable controls belong in the natural bottom arc of the thumb; glanceable
+// content stays up top. Sits at the sheet's bottom edge with a blurred backdrop
+// so list content scrolls behind it, and clears the home-indicator safe area.
+
+export function SheetFooterBar({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="shrink-0 px-4 pt-3 flex flex-col gap-2 border-t border-[rgba(255,255,255,0.07)]"
+      style={{
+        background: 'rgba(10,10,16,0.72)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        paddingBottom: 'max(14px, env(safe-area-inset-bottom))',
+      }}
+    >
+      {children}
     </div>
   )
 }

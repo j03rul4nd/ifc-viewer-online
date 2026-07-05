@@ -223,7 +223,7 @@ worker อิสระหลายตัวช่วยให้ UI ตอบส
 | การเรนเดอร์ 3 มิติ | [Three.js](https://threejs.org/) + [@thatopen/components](https://github.com/ThatOpenCompany/engine_components) |
 | UI | React 18 + Tailwind CSS + Radix UI |
 | แอนิเมชัน | Framer Motion + GSAP |
-| สถานะ | Zustand 5 (11 store: model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver) |
+| สถานะ | Zustand 5 (13 store: model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver, capture, presentation) |
 | IDS | เอนจิน IDS 1.0 แบบ TS ล้วน + worker web-ifc เฉพาะ (`src/lib/ids/`, `ids.worker.ts`) |
 | GIS / แผนที่ฐาน | [3d-tiles-renderer](https://github.com/NASA-AMMOS/3DTilesRendererJS) (ไทล์ภายในฉาก three.js) — เฉพาะโหมดแผนที่ |
 | การตรวจสอบ | Web Worker — 44 กฎ สตรีมผ่าน `postMessage` |
@@ -270,7 +270,7 @@ npm test        # vitest (jsdom)
 src/
   components/      # Landing, Viewer, ValidationPanel, Sidebar, ModelTree, ScenePanel, …
   workers/         # ifc-parser.worker.ts · validator.worker.ts · export.worker.ts
-  stores/          # 11 Zustand store (model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver)
+  stores/          # 13 Zustand store (model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver, capture, presentation)
   hooks/           # useModelSession, useValidationRunner, useElementFocus, …
   lib/             # viewer.ts · loader.ts · validator.ts · diffStore.ts · worker-schemas.ts
   locales/         # i18n — en/ es/ fr/ de/ pt/ ja/ ca/ zh/ it/ th/

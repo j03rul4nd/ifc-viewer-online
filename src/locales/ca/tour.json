@@ -1,0 +1,76 @@
+{
+  "entry": "Tour",
+  "autoTitle": "Tour de validació",
+  "player": {
+    "stepOf": "Pas {{current}} de {{total}}",
+    "prev": "Pas anterior",
+    "next": "Pas següent",
+    "finish": "Acabar el tour",
+    "exit": "Sortir del tour",
+    "isolate": "Aïllar elements ressaltats",
+    "affected_one": "{{count}} element afectat",
+    "affected_other": "{{count}} elements afectats",
+    "howToFix": "Com arreglar-ho",
+    "goToStep": "Anar al pas {{n}}"
+  },
+  "recorder": {
+    "title": "Tour guiat",
+    "close": "Tanca",
+    "generateAuto": "Generar tour dels problemes més greus",
+    "generating": "Generant…",
+    "generateAutoHint": "Executa primer la validació per generar un tour automàtic",
+    "issuesAvailable_one": "{{count}} problema disponible",
+    "issuesAvailable_other": "{{count}} problemes disponibles",
+    "empty": "Encara no hi ha parades — mou la càmera a una vista interessant i afegeix la primera parada, o genera un tour a partir dels problemes de validació.",
+    "addStop": "Afegir parada aquí",
+    "play": "Reproduir tour",
+    "delete": "Eliminar parada",
+    "moveUp": "Puja",
+    "moveDown": "Baixa",
+    "stop": "Parada {{n}}",
+    "preview": "Previsualitzar aquesta parada"
+  },
+  "templates": {
+    "title": "Per a què és aquesta presentació?",
+    "social": {
+      "name": "Demo per a xarxes",
+      "desc": "Clip curt i vistós per a LinkedIn"
+    },
+    "walkthrough": {
+      "name": "Recorregut per a client",
+      "desc": "Reunió en directe — sense argot tècnic"
+    },
+    "technical": {
+      "name": "Revisió tècnica",
+      "desc": "Problemes per severitat amb guies de correcció"
+    },
+    "includeImprovements": "Incloure un pas d'àrees de millora",
+    "needsIssues": "Executa primer la validació"
+  },
+  "share": {
+    "copy": "Copiar enllaç per compartir",
+    "copied": "Enllaç copiat al porta-retalls",
+    "copyFailed": "No s'ha pogut copiar l'enllaç",
+    "noModelUrl": "Aquest model es va carregar des del disc i no té URL pública — l'enllaç no pot incloure'l. Exporta un GIF en el seu lloc.",
+    "tooLong": "El recorregut és massa gran per a un enllaç",
+    "linkedin": "Exportar per a LinkedIn",
+    "exported": "GIF exportat",
+    "noBuffer": "La gravació encara no està llesta — espera uns segons"
+  },
+  "link": {
+    "invalid": "Aquest enllaç de recorregut compartit no és vàlid o està corromput"
+  },
+  "showcase": {
+    "title": "Recorregut del model",
+    "headline": "{{score}}/100 — model verificat",
+    "captions": {
+      "overview": "Vista general",
+      "perspective": "Perspectiva",
+      "front": "Alçat",
+      "side": "Lateral",
+      "aerial": "Vista aèria",
+      "closing": "Vista final"
+    },
+    "improvements": "Àrees de millora"
+  }
+}

@@ -223,7 +223,7 @@ Chaque message de worker est validé à l'exécution avec des schémas [Zod](htt
 | Rendu 3D | [Three.js](https://threejs.org/) + [@thatopen/components](https://github.com/ThatOpenCompany/engine_components) |
 | UI | React 18 + Tailwind CSS + Radix UI |
 | Animations | Framer Motion + GSAP |
-| État | Zustand 5 (11 stores : model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver) |
+| État | Zustand 5 (13 stores : model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver, capture, presentation) |
 | IDS | Moteur IDS 1.0 en TS pur + worker web-ifc dédié (`src/lib/ids/`, `ids.worker.ts`) |
 | SIG / fond de carte | [3d-tiles-renderer](https://github.com/NASA-AMMOS/3DTilesRendererJS) (tuiles dans la scène three.js) — mode Carte uniquement |
 | Validation | Web Worker — 44 règles, diffusées via `postMessage` |
@@ -270,7 +270,7 @@ npm test        # vitest (jsdom)
 src/
   components/      # Landing, Viewer, ValidationPanel, Sidebar, ModelTree, ScenePanel, …
   workers/         # ifc-parser.worker.ts · validator.worker.ts · export.worker.ts
-  stores/          # 11 stores Zustand (model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver)
+  stores/          # 13 stores Zustand (model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver, capture, presentation)
   hooks/           # useModelSession, useValidationRunner, useElementFocus, …
   lib/             # viewer.ts · loader.ts · validator.ts · diffStore.ts · worker-schemas.ts
   locales/         # i18n — en/ es/ fr/ de/ pt/ ja/ ca/ zh/ it/ th/

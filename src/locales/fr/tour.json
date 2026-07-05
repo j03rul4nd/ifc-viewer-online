@@ -1,0 +1,76 @@
+{
+  "entry": "Visite",
+  "autoTitle": "Visite de validation",
+  "player": {
+    "stepOf": "Étape {{current}} sur {{total}}",
+    "prev": "Étape précédente",
+    "next": "Étape suivante",
+    "finish": "Terminer la visite",
+    "exit": "Quitter la visite",
+    "isolate": "Isoler les éléments mis en évidence",
+    "affected_one": "{{count}} élément concerné",
+    "affected_other": "{{count}} éléments concernés",
+    "howToFix": "Comment corriger",
+    "goToStep": "Aller à l’étape {{n}}"
+  },
+  "recorder": {
+    "title": "Visite guidée",
+    "close": "Fermer",
+    "generateAuto": "Générer une visite des problèmes majeurs",
+    "generating": "Génération…",
+    "generateAutoHint": "Lancez d'abord la validation pour générer une visite automatique",
+    "issuesAvailable_one": "{{count}} problème disponible",
+    "issuesAvailable_other": "{{count}} problèmes disponibles",
+    "empty": "Aucun arrêt pour l'instant — déplacez la caméra vers une vue intéressante et ajoutez votre premier arrêt, ou générez une visite à partir des problèmes de validation.",
+    "addStop": "Ajouter un arrêt ici",
+    "play": "Lancer la visite",
+    "delete": "Supprimer l'arrêt",
+    "moveUp": "Monter",
+    "moveDown": "Descendre",
+    "stop": "Arrêt {{n}}",
+    "preview": "Prévisualiser cet arrêt"
+  },
+  "templates": {
+    "title": "À quoi sert cette présentation ?",
+    "social": {
+      "name": "Démo réseaux sociaux",
+      "desc": "Clip court et accrocheur pour LinkedIn"
+    },
+    "walkthrough": {
+      "name": "Visite client",
+      "desc": "Réunion en direct — sans jargon technique"
+    },
+    "technical": {
+      "name": "Revue technique",
+      "desc": "Problèmes par sévérité avec guides de correction"
+    },
+    "includeImprovements": "Inclure une étape « points à améliorer »",
+    "needsIssues": "Lancez d'abord la validation"
+  },
+  "share": {
+    "copy": "Copier le lien de partage",
+    "copied": "Lien copié dans le presse-papiers",
+    "copyFailed": "Impossible de copier le lien",
+    "noModelUrl": "Ce modèle a été chargé depuis le disque et n'a pas d'URL publique — le lien ne peut pas l'inclure. Exportez un GIF à la place.",
+    "tooLong": "La visite est trop volumineuse pour un lien",
+    "linkedin": "Exporter pour LinkedIn",
+    "exported": "GIF exporté",
+    "noBuffer": "L'enregistrement n'est pas encore prêt — patientez quelques secondes"
+  },
+  "link": {
+    "invalid": "Ce lien de visite partagé est invalide ou corrompu"
+  },
+  "showcase": {
+    "title": "Visite du modèle",
+    "headline": "{{score}}/100 — modèle vérifié",
+    "captions": {
+      "overview": "Vue d'ensemble",
+      "perspective": "Perspective",
+      "front": "Façade",
+      "side": "Vue latérale",
+      "aerial": "Vue aérienne",
+      "closing": "Vue finale"
+    },
+    "improvements": "Points à améliorer"
+  }
+}

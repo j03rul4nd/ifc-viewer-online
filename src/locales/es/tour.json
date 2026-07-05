@@ -1,0 +1,76 @@
+{
+  "entry": "Tour",
+  "autoTitle": "Tour de validación",
+  "player": {
+    "stepOf": "Paso {{current}} de {{total}}",
+    "prev": "Paso anterior",
+    "next": "Paso siguiente",
+    "finish": "Terminar tour",
+    "exit": "Salir del tour",
+    "isolate": "Aislar elementos resaltados",
+    "affected_one": "{{count}} elemento afectado",
+    "affected_other": "{{count}} elementos afectados",
+    "howToFix": "Cómo arreglarlo",
+    "goToStep": "Ir al paso {{n}}"
+  },
+  "recorder": {
+    "title": "Tour guiado",
+    "close": "Cerrar",
+    "generateAuto": "Generar tour de los issues más graves",
+    "generating": "Generando…",
+    "generateAutoHint": "Ejecuta primero la validación para generar un tour automático",
+    "issuesAvailable_one": "{{count}} issue disponible",
+    "issuesAvailable_other": "{{count}} issues disponibles",
+    "empty": "Aún no hay paradas — mueve la cámara a una vista interesante y añade tu primera parada, o genera un tour desde los issues de validación.",
+    "addStop": "Añadir parada aquí",
+    "play": "Reproducir tour",
+    "delete": "Eliminar parada",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "stop": "Parada {{n}}",
+    "preview": "Ver esta parada"
+  },
+  "templates": {
+    "title": "¿Para qué es esta presentación?",
+    "social": {
+      "name": "Demo para redes",
+      "desc": "Clip corto y vistoso para LinkedIn"
+    },
+    "walkthrough": {
+      "name": "Walkthrough para cliente",
+      "desc": "Reunión en vivo — sin jerga técnica"
+    },
+    "technical": {
+      "name": "Revisión técnica",
+      "desc": "Issues por severidad con guías de fix"
+    },
+    "includeImprovements": "Incluir un paso de 'áreas de mejora'",
+    "needsIssues": "Ejecuta primero la validación"
+  },
+  "share": {
+    "copy": "Copiar link para compartir",
+    "copied": "Link copiado al portapapeles",
+    "copyFailed": "No se pudo copiar el link",
+    "noModelUrl": "Este modelo se cargó desde disco y no tiene URL pública — el link no puede incluirlo. Exporta un GIF en su lugar.",
+    "tooLong": "El recorrido es demasiado grande para un link",
+    "linkedin": "Exportar para LinkedIn",
+    "exported": "GIF exportado",
+    "noBuffer": "La grabación aún no está lista — espera unos segundos"
+  },
+  "link": {
+    "invalid": "Este link de recorrido compartido no es válido o está corrupto"
+  },
+  "showcase": {
+    "title": "Recorrido del modelo",
+    "headline": "{{score}}/100 — modelo verificado",
+    "captions": {
+      "overview": "Vista general",
+      "perspective": "Perspectiva",
+      "front": "Alzado",
+      "side": "Lateral",
+      "aerial": "Vista aérea",
+      "closing": "Vista final"
+    },
+    "improvements": "Áreas de mejora"
+  }
+}

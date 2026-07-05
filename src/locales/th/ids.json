@@ -1,0 +1,166 @@
+{
+  "title": "ตรวจสอบ IDS",
+  "subtitle": "Information Delivery Specification",
+  "loader": {
+    "choose": "เลือกไฟล์ .ids",
+    "specCount": "{{count}} สเปก",
+    "specCount_other": "{{count}} สเปก",
+    "clear": "ล้าง",
+    "viewResults": "ดูผลลัพธ์",
+    "intro": "โหลดไฟล์ .ids ของ buildingSMART เพื่อตรวจสอบโมเดลนี้กับข้อกำหนดการส่งมอบของคุณ",
+    "introClient": "แง่มุม (facet) ของ IDS 1.0 ทั้งหมดถูกประเมินฝั่งไคลเอนต์ — ไม่มีข้อมูลออกจากเบราว์เซอร์ของคุณ",
+    "parseError": "ไม่สามารถอ่าน IDS ได้: {{message}}",
+    "invalidFile": "ไฟล์ IDS ไม่ถูกต้อง: {{message}}"
+  },
+  "examples": {
+    "label": "ไม่มีไฟล์ .ids? ลองตัวอย่าง:",
+    "hasWallsName": "โมเดลมีผนัง",
+    "hasWallsDesc": "ชิ้นงานส่งมอบต้องมีผนังที่ตั้งชื่อไว้อย่างน้อยหนึ่งผนัง",
+    "namedElementsName": "องค์ประกอบมีการตั้งชื่อ",
+    "namedElementsDesc": "องค์ประกอบอาคารทั่วไปต้องมี Name",
+    "wallFireRatingName": "อัตราการทนไฟของผนัง",
+    "wallFireRatingDesc": "ผนังต้องระบุ FireRating ใน Pset_WallCommon",
+    "doorsNamedRatedName": "ประตูมีชื่อและอัตราทนไฟ",
+    "doorsNamedRatedDesc": "ประตูต้องมี Name และ FireRating"
+  },
+  "run": {
+    "run": "เริ่มตรวจสอบ",
+    "rerun": "ตรวจสอบอีกครั้ง",
+    "checking": "กำลังตรวจสอบ…",
+    "cancel": "ยกเลิก",
+    "cancelling": "กำลังยกเลิก…",
+    "retry": "ลองใหม่"
+  },
+  "actions": {
+    "rerunShort": "ตรวจซ้ำ",
+    "runShort": "เริ่ม",
+    "checkAll": "ตรวจสอบทั้งหมด ({{count}})",
+    "checkAllTitle": "ตรวจสอบ IDS นี้กับทุกโมเดลที่โหลดไว้",
+    "highlight": "ไฮไลต์",
+    "isolate": "แยกแสดง",
+    "showAll": "แสดงทั้งหมด",
+    "collapse": "ย่อแผงควบคุม",
+    "highlightTitle": "ไฮไลต์องค์ประกอบที่ไม่ผ่านในมุมมอง 3 มิติ",
+    "isolateTitle": "แสดงเฉพาะองค์ประกอบที่ไม่ผ่าน",
+    "reloadToRun": "โหลดไฟล์ .ifc ใหม่เพื่อรัน IDS"
+  },
+  "multiRun": {
+    "progress": "กำลังตรวจสอบทุกโมเดล — {{done}} / {{total}}",
+    "modelsTitle": "คะแนนแยกตามโมเดล — คลิกเพื่อดู"
+  },
+  "pager": {
+    "counter": "{{current}} / {{total}}",
+    "next": "ปัญหาถัดไป",
+    "prev": "ปัญหาก่อนหน้า",
+    "backToList": "กลับไปที่รายการ",
+    "swipeHint": "ปัดขึ้นเพื่อดูปัญหาถัดไป"
+  },
+  "summary": {
+    "score": "{{score}}",
+    "outOf": "/ 100",
+    "pass": "ผ่าน {{count}}",
+    "fail": "ไม่ผ่าน {{count}}",
+    "na": "{{count}} n/a",
+    "passShort": "{{count}}✓",
+    "failShort": "{{count}}✗",
+    "naShort": "{{count}} n/a",
+    "checkedModel": "โมเดลที่ตรวจสอบแล้ว",
+    "passLabel": "ผ่าน",
+    "failLabel": "ไม่ผ่าน",
+    "naLabel": "n/a"
+  },
+  "progress": {
+    "open": "กำลังเปิดโมเดล…",
+    "gather": "กำลังอ่านองค์ประกอบ…",
+    "check": "กำลังตรวจสอบข้อกำหนด…"
+  },
+  "status": {
+    "skipped": "ข้ามไป",
+    "na": "n/a",
+    "fraction": "{{passed}}/{{applicable}}"
+  },
+  "filters": {
+    "groupSpec": "สเปก",
+    "groupElement": "องค์ประกอบ",
+    "groupClass": "คลาส",
+    "all": "ทั้งหมด",
+    "search": "ค้นหาสเปก / องค์ประกอบ…",
+    "clear": "ล้างตัวกรอง",
+    "specsCounted": "{{count}} สเปก",
+    "specsCounted_other": "{{count}} สเปก",
+    "failuresCounted": "{{count}} รายการที่ไม่ผ่าน",
+    "failuresCounted_other": "{{count}} รายการที่ไม่ผ่าน"
+  },
+  "facets": {
+    "entity": "เอนทิตี",
+    "attribute": "แอตทริบิวต์",
+    "property": "พร็อพเพอร์ตี้",
+    "classification": "การจัดหมวดหมู่",
+    "material": "วัสดุ",
+    "partOf": "partOf"
+  },
+  "collapsed": {
+    "noFile": "ไม่มีไฟล์",
+    "notRun": "{{file}} — ยังไม่ได้ตรวจสอบ",
+    "checking": "กำลังตรวจสอบ… {{pct}}%"
+  },
+  "states": {
+    "noModel": "โหลดโมเดล IFC เพื่อตรวจสอบกับข้อกำหนดการส่งมอบ",
+    "noIds": "โหลดไฟล์ .ids ของ buildingSMART เพื่อตรวจสอบโมเดลนี้",
+    "noResult": "ยังไม่มีผลลัพธ์สำหรับโมเดลนี้ — รันการตรวจสอบกับ {{file}}",
+    "noResultGeneric": "ไฟล์ IDS ที่โหลดไว้",
+    "noMatch": "ไม่มีสเปกที่ตรงกับตัวกรองปัจจุบัน",
+    "bufferUnavailable": "ไม่พบบัฟเฟอร์ต้นฉบับของ IFC สำหรับโมเดลนี้ — โหลดไฟล์ .ifc ใหม่เพื่อรัน IDS",
+    "staleIds": "ผลลัพธ์เหล่านี้สร้างจาก {{file}} — รันใหม่ด้วยไฟล์ปัจจุบัน"
+  },
+  "truncation": "แสดง 200 รายการแรก — มีองค์ประกอบที่ไม่ผ่านอีก {{count}} รายการ; ส่งออกเพื่อดูรายการทั้งหมด",
+  "truncation_other": "แสดง 200 รายการแรก — มีองค์ประกอบที่ไม่ผ่านอีก {{count}} รายการ; ส่งออกเพื่อดูรายการทั้งหมด",
+  "diff": {
+    "scoreUp": "คะแนน {{prev}} → {{curr}} (+{{delta}})",
+    "scoreDown": "คะแนน {{prev}} → {{curr}} ({{delta}})",
+    "scoreSame": "คะแนนไม่เปลี่ยนแปลงที่ {{curr}}",
+    "resolved": "แก้ไขแล้ว {{count}} รายการ",
+    "added": "ใหม่ {{count}} รายการ",
+    "dismiss": "ปิด"
+  },
+  "export": {
+    "label": "ส่งออก",
+    "json": "JSON",
+    "csv": "CSV",
+    "html": "HTML",
+    "bcf": "BCF",
+    "jsonDesc": "รายงานแบบมีโครงสร้าง (โค้ด + ข้อความ)",
+    "csvDesc": "หนึ่งแถวต่อหนึ่งรายการที่ไม่ผ่าน (Excel)",
+    "htmlDesc": "รายงานแบบสแตนด์อโลนสำหรับพิมพ์",
+    "bcfDesc": "ปัญหาสำหรับ BIMcollab / Solibri",
+    "bcfEmpty": "ไม่มีรายการที่ไม่ผ่านให้ส่งออก",
+    "done": "ดาวน์โหลดรายงานแล้ว",
+    "soon": "เร็ว ๆ นี้"
+  },
+  "errors": {
+    "checkFailed": "การตรวจสอบ IDS ล้มเหลว",
+    "bufferUnavailable": "ไม่พบบัฟเฟอร์ต้นฉบับของ IFC โหลดไฟล์ .ifc ใหม่",
+    "untitled": "untitled.ids",
+    "orphaned": "การตรวจสอบก่อนหน้าถูกขัดจังหวะ — รันอีกครั้ง",
+    "largeModel": "โมเดลนี้มีขนาด {{mb}} MB การตรวจสอบอาจใช้หน่วยความจำมากและอาจช้า ต้องการดำเนินการต่อหรือไม่?"
+  },
+  "reasons": {
+    "missingRequired": "ขาด {{what}} ที่จำเป็น",
+    "wrongValue": "{{what}} = (ค่าไม่ถูกต้อง) ควรเป็น {{expected}}",
+    "prohibitedPresent": "{{what}} มีอยู่แต่เป็นสิ่งต้องห้าม",
+    "specRequiredButAbsent": "โมเดลไม่มีองค์ประกอบที่ตรงกับสเปกที่จำเป็นนี้",
+    "specProhibitedButPresent": "มีองค์ประกอบต้องห้ามอยู่ในโมเดล",
+    "wrongDataType": "{{what}} มีชนิดข้อมูลไม่ถูกต้อง — ควรเป็น {{expected}} แต่พบ {{actual}}",
+    "unsupportedPattern": "รูปแบบนี้ไม่รองรับโดยตัวตรวจสอบนี้: {{pattern}}"
+  },
+  "howToFix": "วิธีแก้ไข",
+  "remediation": {
+    "missingRequired": "เพิ่ม {{what}} ให้กับองค์ประกอบในเครื่องมือสร้างโมเดลของคุณ (Revit/ArchiCAD/…) แล้วส่งออก IFC ใหม่",
+    "wrongValue": "ตั้งค่า {{what}} ให้เป็นค่าที่สอดคล้องกับ {{expected}}",
+    "prohibitedPresent": "ลบ {{what}} ออกจากองค์ประกอบ",
+    "specRequiredButAbsent": "เพิ่มองค์ประกอบอย่างน้อยหนึ่งรายการที่ตรงกับสเปกนี้ลงในโมเดล",
+    "specProhibitedButPresent": "ลบองค์ประกอบที่ตรงกับสเปกต้องห้ามนี้ออก",
+    "wrongDataType": "แก้ไขชนิดข้อมูลของ {{what}} — ต้องเป็น {{expected}}",
+    "unsupportedPattern": "ตรวจสอบค่านี้ด้วยตนเอง — รูปแบบนี้ไม่สามารถประเมินอัตโนมัติได้"
+  }
+}

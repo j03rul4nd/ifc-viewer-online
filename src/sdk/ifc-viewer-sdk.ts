@@ -11,7 +11,7 @@
 // The viewer auto-discovers the app URL relative to this script, so self-hosting
 // "just works". Override with the `baseUrl` option if you serve it elsewhere.
 
-export type IfcViewerPreset = 'minimal' | 'full' | 'kiosk'
+export type IfcViewerPreset = 'minimal' | 'full' | 'kiosk' | 'client'
 export type CameraView = 'iso' | 'top' | 'bottom' | 'front' | 'back' | 'left' | 'right'
 
 export interface IfcViewerOptions {

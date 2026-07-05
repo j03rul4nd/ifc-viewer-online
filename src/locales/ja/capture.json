@@ -1,0 +1,32 @@
+{
+  "screenshotTooltip": "スクリーンショット — クリップボードにコピーして PNG をダウンロード",
+  "screenshotCopied": "スクリーンショットをコピーしてダウンロードしました",
+  "screenshotSaved": "スクリーンショットをダウンロードしました",
+  "screenshotFailed": "ビューポートをキャプチャできませんでした",
+  "replayTooltip": "直近 {{seconds}} 秒をクリップとしてキャプチャ",
+  "durationTooltip": "キャプチャの長さ",
+  "lastSeconds": "直近 {{seconds}} 秒",
+  "recording": "リプレイバッファ録画中",
+  "captureFailed": "キャプチャに失敗しました",
+  "previewTitle": "キャプチャのプレビュー",
+  "close": "閉じる",
+  "trimLabel": "トリミング",
+  "trimStart": "トリミング開始",
+  "trimEnd": "トリミング終了",
+  "fpsLabel": "GIF の FPS",
+  "resolutionLabel": "解像度",
+  "sourceRes": "オリジナル",
+  "watermarkLabel": "ウォーターマークを追加",
+  "cancel": "キャンセル",
+  "exporting": "エクスポート中…",
+  "pngDone": "フレームを PNG でダウンロードしました",
+  "webmDone": "クリップを WebM でダウンロードしました",
+  "gifDone": "GIF をダウンロードしました",
+  "exportFailed": "エクスポートに失敗しました: {{message}}",
+  "aspect": {
+    "label": "比率",
+    "source": "オリジナル",
+    "square": "1:1",
+    "vertical": "4:5"
+  }
+}

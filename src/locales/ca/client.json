@@ -1,0 +1,25 @@
+{
+  "entry": "Mode presentació a client",
+  "badge": {
+    "verify": "Verificar model",
+    "verifyHint": "Comprovat al teu navegador",
+    "verifying": "Verificant el model…",
+    "scoreLabel": "Health Score",
+    "tier": {
+      "verified": "Model verificat",
+      "attention": "Bon estat, amb observacions",
+      "review": "Requereix revisió"
+    }
+  },
+  "gear": {
+    "title": "Opcions del presentador",
+    "advanced": "Eines avançades",
+    "measure": "Mesures",
+    "section": "Talls de secció",
+    "exit": "Sortir del mode presentació"
+  },
+  "cta": {
+    "tour": "Veure recorregut",
+    "generateTour": "Generar recorregut"
+  }
+}

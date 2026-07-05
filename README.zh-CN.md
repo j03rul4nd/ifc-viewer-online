@@ -223,7 +223,7 @@ BCF 2.1 导出会把相同的问题封装到 Navisworks 和 BIMcollab 能识别�
 | 3D 渲染 | [Three.js](https://threejs.org/) + [@thatopen/components](https://github.com/ThatOpenCompany/engine_components) |
 | 界面 | React 18 + Tailwind CSS + Radix UI |
 | 动画 | Framer Motion + GSAP |
-| 状态管理 | Zustand 5（11 个 store：model、scene、validation、editor、ui、takeoff、toast、bcf、ids、geo、waiver） |
+| 状态管理 | Zustand 5（13 个 store：model、scene、validation、editor、ui、takeoff、toast、bcf、ids、geo、waiver、capture、presentation） |
 | IDS | 纯 TS 的 IDS 1.0 引擎 + 专用 web-ifc worker（`src/lib/ids/`、`ids.worker.ts`） |
 | GIS / 底图 | [3d-tiles-renderer](https://github.com/NASA-AMMOS/3DTilesRendererJS)（瓦片置于 three.js 场景内）—— 仅地图模式 |
 | 校验 | Web Worker —— 44 条规则，通过 `postMessage` 流式返回 |
@@ -270,7 +270,7 @@ npm test        # vitest (jsdom)
 src/
   components/      # Landing、Viewer、ValidationPanel、Sidebar、ModelTree、ScenePanel…
   workers/         # ifc-parser.worker.ts · validator.worker.ts · export.worker.ts
-  stores/          # 11 个 Zustand store（model、scene、validation、editor、ui、takeoff、toast、bcf、ids、geo、waiver）
+  stores/          # 13 个 Zustand store（model、scene、validation、editor、ui、takeoff、toast、bcf、ids、geo、waiver、capture、presentation）
   hooks/           # useModelSession、useValidationRunner、useElementFocus…
   lib/             # viewer.ts · loader.ts · validator.ts · diffStore.ts · worker-schemas.ts
   locales/         # i18n —— en/ es/ fr/ de/ pt/ ja/ ca/ zh/ it/ th/

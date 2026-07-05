@@ -223,7 +223,7 @@ BCF 2.1 エクスポートは、同じ問題を Navisworks や BIMcollab が理�
 | 3D 描画 | [Three.js](https://threejs.org/) + [@thatopen/components](https://github.com/ThatOpenCompany/engine_components) |
 | UI | React 18 + Tailwind CSS + Radix UI |
 | アニメーション | Framer Motion + GSAP |
-| 状態管理 | Zustand 5（11 ストア：model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver） |
+| 状態管理 | Zustand 5（13 ストア：model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver, capture, presentation） |
 | IDS | 純粋 TS の IDS 1.0 エンジン + 専用 web-ifc ワーカー（`src/lib/ids/`、`ids.worker.ts`） |
 | GIS / ベースマップ | [3d-tiles-renderer](https://github.com/NASA-AMMOS/3DTilesRendererJS)（three.js シーン内にタイル）— マップモードのみ |
 | 検証 | Web Worker — 44 ルール、`postMessage` でストリーミング |
@@ -270,7 +270,7 @@ npm test        # vitest (jsdom)
 src/
   components/      # Landing, Viewer, ValidationPanel, Sidebar, ModelTree, ScenePanel, …
   workers/         # ifc-parser.worker.ts · validator.worker.ts · export.worker.ts
-  stores/          # 11 つの Zustand ストア (model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver)
+  stores/          # 13 つの Zustand ストア (model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver, capture, presentation)
   hooks/           # useModelSession, useValidationRunner, useElementFocus, …
   lib/             # viewer.ts · loader.ts · validator.ts · diffStore.ts · worker-schemas.ts
   locales/         # i18n — en/ es/ fr/ de/ pt/ ja/ ca/ zh/ it/ th/

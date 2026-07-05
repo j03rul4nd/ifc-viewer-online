@@ -53,6 +53,10 @@
   "tools": "Strumenti",
   "toolsMenu": "Strumenti — misura, sezione, planimetrie",
   "more": "Altro",
+  "navProps": "Dati",
+  "navCats": "Tipi",
+  "navDemo": "Demo",
+  "language": "Lingua",
   "demo": "Modelli demo",
   "status": {
     "loaded": "Caricato",
@@ -72,7 +76,9 @@
       "full": "Completo",
       "fullDesc": "Albero + pannello di validazione",
       "kiosk": "Kiosk",
-      "kioskDesc": "Solo canvas 3D"
+      "kioskDesc": "Solo canvas 3D",
+      "client": "Cliente",
+      "clientDesc": "Modalità presentazione cliente"
     },
     "optionsLabel": "Opzioni",
     "autoValidate": "Esegui la validazione al caricamento",

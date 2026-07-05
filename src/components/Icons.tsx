@@ -27,6 +27,8 @@ export const EyeOff = (p: IconProps) => <Icon {...p}><path d="M3 3l18 18" /><pat
 export const Share = (p: IconProps) => <Icon {...p}><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7" /><path d="M16 6l-4-4-4 4" /><path d="M12 2v14" /></Icon>
 export const Link = (p: IconProps) => <Icon {...p}><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1" /><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1" /></Icon>
 export const Copy = (p: IconProps) => <Icon {...p}><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15V5a2 2 0 012-2h10" /></Icon>
+export const Camera = (p: IconProps) => <Icon {...p}><path d="M3 8a2 2 0 012-2h2l1.5-2h7L17 6h2a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><circle cx="12" cy="13" r="3.5" /></Icon>
+export const Replay = (p: IconProps) => <Icon {...p}><path d="M3 12a9 9 0 1 0 2.6-6.3L3 8" /><path d="M3 3v5h5" /><path d="M12 8v4.5l3 2" /></Icon>
 export const Code = (p: IconProps) => <Icon {...p}><path d="M8 6l-6 6 6 6M16 6l6 6-6 6" /></Icon>
 export const Check = (p: IconProps) => <Icon {...p} d="M5 13l4 4L19 7" />
 export const X = (p: IconProps) => <Icon {...p} d="M6 6l12 12M6 18L18 6" />

@@ -3,8 +3,9 @@ import * as OBC from '@thatopen/components'
 import * as OBCF from '@thatopen/components-front'
 import * as FRAGS from '@thatopen/fragments'
 import { safeVoid } from './errors'
+import { appBus } from './event-bus'
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
-import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform } from '../types'
+import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
 
 // ─── Palette & label tables ──────────────────────────────────────────────────
 
@@ -310,13 +311,41 @@ export interface ViewerAPI {
     position:  { x: number; y: number; z: number },
     direction: { x: number; y: number; z: number },
   ): void
+  /**
+   * Read the current camera state (position/target/direction + frustum).
+   * Shared capture primitive for BCF viewpoints and Tour Mode (D-24).
+   */
+  getCameraViewpoint(): CameraViewpoint | null
+  /**
+   * Fly the camera to an explicit position + orbit target with the native
+   * camera-controls smooth transition. Unlike setCameraViewpoint (BCF pos+dir,
+   * target implied at distance 1), this preserves the stored orbit distance —
+   * used by Tour Mode playback.
+   */
+  setCameraLookAt(position: Vec3Like, target: Vec3Like): void
+  /**
+   * World-space merged AABB of a set of elements (serialisable, no THREE
+   * objects). Reuses the same getMergedBox path as frameElements. Null when
+   * the model/elements are unknown or the box is empty.
+   */
+  getElementsBox(ids: number[], modelId?: string): Promise<{ min: Vec3Like; max: Vec3Like } | null>
   /** Capture a PNG snapshot of the current renderer canvas. Returns a data URL. */
   takeSnapshot(): string
+  /**
+   * Stable reference to the WebGL canvas (Capture Toolkit replay buffer).
+   * Read-only access — callers must never mutate or re-parent the element.
+   */
+  getCanvas(): HTMLCanvasElement | null
   /**
    * Lazily load and return the GIS map subsystem (separate chunk, created once
    * per viewer, disposed with it). Nothing GIS-related loads until first call.
    */
   getGeo(): Promise<import('./geo/geo-system').GeoSystemAPI>
+  /**
+   * Lazily load and return the Sun & Moon study subsystem (separate chunk,
+   * created once per viewer, disposed with it).
+   */
+  getSolar(): Promise<import('./solar/solar-system').SolarSystemAPI>
   /**
    * Switch between standard WebGL rendering and quality mode (SSAO + edge detection).
    * Falls back silently to standard if postproduction failed to initialise on this GPU.
@@ -686,7 +715,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   world.scene.three.background = new THREE.Color(0x0A0A0C)
   world.scene.three.fog        = new THREE.Fog(0x0A0A0C, 80, 200)
 
-  world.scene.three.add(new THREE.HemisphereLight(0xB8C4E0, 0x1A1A22, 0.6))
+  const hemi = new THREE.HemisphereLight(0xB8C4E0, 0x1A1A22, 0.6)
+  world.scene.three.add(hemi)
   const dir = new THREE.DirectionalLight(0xFFF5E8, 1.1)
   dir.position.set(40, 60, 30)
   dir.castShadow = true
@@ -708,6 +738,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let geoPointerSuppressed = false
   let geoSystemInstance: import('./geo/geo-system').GeoSystemAPI | null = null
   let geoLoadPromise: Promise<import('./geo/geo-system').GeoSystemAPI> | null = null
+
+  // Sun & Moon study (lazy chunk) — set by getSolar().
+  let solarSystemInstance: import('./solar/solar-system').SolarSystemAPI | null = null
+  let solarLoadPromise: Promise<import('./solar/solar-system').SolarSystemAPI> | null = null
 
   void world.camera.controls.setLookAt(30, 24, 36, 0, 2, 0, false)
 
@@ -2023,12 +2057,82 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       void world.camera.controls.setLookAt(px, py, pz, px + dx, py + dy, pz + dz, true)
     },
 
-    takeSnapshot(): string {
+    getCameraViewpoint(): CameraViewpoint | null {
       try {
-        void fragmentsManager.core.update()
+        const controls = world.camera.controls
+        const pos = controls.getPosition(new THREE.Vector3())
+        const tgt = controls.getTarget(new THREE.Vector3())
+        const dir = tgt.clone().sub(pos)
+        if (dir.lengthSq() === 0) dir.set(0, 0, -1)
+        dir.normalize()
+        const cam = world.camera.three as THREE.PerspectiveCamera | THREE.OrthographicCamera
+        const isPersp = (cam as THREE.PerspectiveCamera).isPerspectiveCamera === true
+        const fovDeg  = isPersp ? (cam as THREE.PerspectiveCamera).fov : 45
+        const aspect  = isPersp
+          ? (cam as THREE.PerspectiveCamera).aspect
+          : container.clientWidth / Math.max(1, container.clientHeight)
+        return {
+          position:  { x: pos.x, y: pos.y, z: pos.z },
+          target:    { x: tgt.x, y: tgt.y, z: tgt.z },
+          direction: { x: dir.x, y: dir.y, z: dir.z },
+          fovDeg,
+          aspect,
+        }
+      } catch {
+        return null
+      }
+    },
+
+    setCameraLookAt(position: Vec3Like, target: Vec3Like) {
+      void world.camera.controls.setLookAt(
+        position.x, position.y, position.z,
+        target.x, target.y, target.z,
+        true,
+      )
+    },
+
+    async getElementsBox(ids: number[], modelId?: string) {
+      const model = (modelId ? modelObjects.get(modelId) : null) ?? currentModel
+      if (!model || ids.length === 0) return null
+      try {
+        const box = await model.getMergedBox(ids)
+        if (box.isEmpty()) return null
+        return {
+          min: { x: box.min.x, y: box.min.y, z: box.min.z },
+          max: { x: box.max.x, y: box.max.y, z: box.max.z },
+        }
+      } catch {
+        return null
+      }
+    },
+
+    takeSnapshot(): string {
+      // The WebGL drawing buffer is cleared after compositing
+      // (preserveDrawingBuffer is off), so reading pixels outside the render
+      // loop yields a black PNG. Force a synchronous render into the buffer
+      // and read it back in the same task.
+      try {
+        const pp = postproductionReady ? world.renderer?.postproduction : null
+        if (pp?.enabled && pp.composer) {
+          pp.composer.render()
+        } else {
+          wr.render(world.scene.three, world.camera.three)
+        }
+      } catch {
+        try { wr.render(world.scene.three, world.camera.three) } catch { /* read whatever the buffer holds */ }
+      }
+      try {
         return wr.domElement.toDataURL('image/png')
       } catch {
         return ''
+      }
+    },
+
+    getCanvas(): HTMLCanvasElement | null {
+      try {
+        return wr.domElement
+      } catch {
+        return null
       }
     },
 
@@ -2332,7 +2436,28 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return geoLoadPromise
     },
 
+    getSolar() {
+      const self = this
+      solarLoadPromise ??= import('./solar/solar-system').then((m) => {
+        solarSystemInstance = m.createSolarSystem({
+          scene: world.scene.three,
+          keyLight: dir,
+          hemiLight: hemi,
+          fillLight: fill,
+          getActiveModelBounds: () => self.getModelBounds(),
+          getLoadedModelIds: () => self.getLoadedModelIds(),
+          getModelObject: (id) => self.getModelObject(id),
+          onModelLoaded: (cb) => appBus.on('model:loaded', ({ modelId }) => cb(modelId)),
+        })
+        return solarSystemInstance
+      })
+      return solarLoadPromise
+    },
+
     dispose() {
+      try { solarSystemInstance?.dispose() } catch { /* ok */ }
+      solarSystemInstance = null
+      solarLoadPromise    = null
       try { geoSystemInstance?.dispose() } catch { /* ok */ }
       geoSystemInstance = null
       geoLoadPromise    = null

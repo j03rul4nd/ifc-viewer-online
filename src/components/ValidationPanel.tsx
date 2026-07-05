@@ -1606,7 +1606,7 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
 
 interface ValidationPanelProps {
   onJumpToElement?: (expressId: number) => void
-  viewer?: Pick<ViewerHandle, 'setCameraViewpoint' | 'takeSnapshot'> | null | undefined
+  viewer?: Pick<ViewerHandle, 'setCameraViewpoint' | 'getCameraViewpoint' | 'takeSnapshot'> | null | undefined
 }
 
 export default function ValidationPanel({ onJumpToElement, viewer }: ValidationPanelProps) {

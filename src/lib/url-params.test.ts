@@ -188,3 +188,30 @@ describe('buildEmbedUrl / buildIframeSnippet', () => {
     expect(snippet.trim().startsWith('<iframe')).toBe(true)
   })
 })
+
+// ── Sun-study deep link (?solar= / ?moon=) ──────────────────────────────────────
+
+describe('parseAppUrlParams · solar deep link', () => {
+  it('parses the full YYYY-MM-DDTHH:MM form', () => {
+    const p = parseAppUrlParams('?solar=2026-06-21T16:30')
+    expect(p.solar).toEqual({ year: 2026, month: 6, day: 21, minutes: 16 * 60 + 30 })
+  })
+
+  it('parses the evergreen MM-DDTHH:MM form (no year)', () => {
+    const p = parseAppUrlParams('?solar=12-21T09:00')
+    expect(p.solar).toEqual({ year: undefined, month: 12, day: 21, minutes: 540 })
+  })
+
+  it('rejects malformed or out-of-range values', () => {
+    for (const bad of ['?solar=junk', '?solar=13-01T10:00', '?solar=06-32T10:00', '?solar=06-21T25:00', '?solar=06-21T10:75', '?solar=6-21T10:00']) {
+      expect(parseAppUrlParams(bad).solar).toBeUndefined()
+    }
+    expect(parseAppUrlParams('').solar).toBeUndefined()
+  })
+
+  it('reads the moon flag independently', () => {
+    expect(parseAppUrlParams('?solar=06-21T22:00&moon=1').solarMoon).toBe(true)
+    expect(parseAppUrlParams('?solar=06-21T22:00&moon=0').solarMoon).toBe(false)
+    expect(parseAppUrlParams('?solar=06-21T22:00').solarMoon).toBeUndefined()
+  })
+})

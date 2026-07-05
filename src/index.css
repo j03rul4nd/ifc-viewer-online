@@ -16,8 +16,8 @@
   --danger: #E5484D;
   --warn: #F5A623;
   --ok: #30A46C;
-  /* Mobile floating nav */
-  --mobile-nav-h: 60px;
+  /* Mobile floating nav (single source of truth for the pill height) */
+  --mobile-nav-h: 56px;
   --mobile-nav-margin: 12px;
   /* Total clearance content needs below: nav-h + margin + safe-area (approx for padding calcs) */
   --mobile-nav-clearance: calc(var(--mobile-nav-h) + var(--mobile-nav-margin) + 8px);
@@ -60,15 +60,19 @@
   }
 }
 
-/* Drag handle */
+/* Drag handle pill at the top of every bottom sheet (single definition). */
 .sheet-handle {
-  width: 40px;
-  height: 4px;
-  background: rgba(255,255,255,0.18);
-  border-radius: 2px;
+  width: 36px;
+  height: 5px;
+  background: rgba(255,255,255,0.22);
+  border-radius: 3px;
+  flex-shrink: 0;
+  transition: width 0.18s ease, background 0.18s ease;
 }
-.sheet-safe-bottom {
-  height: env(safe-area-inset-bottom, 0px);
+/* Slightly grow + brighten while the sheet is being dragged (native feel). */
+.sheet-handle[data-dragging='true'] {
+  width: 52px;
+  background: rgba(255,255,255,0.4);
 }
 
 * {
@@ -274,27 +278,11 @@ kbd {
   inset: 0;
   z-index: 18;
   background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
 }
 
-/* ── Mobile bottom nav ──────────────────────────────────────────────────────── */
-
-:root {
-  /* Height of the mobile bottom navigation bar (without safe area). */
-  --mobile-nav-h: 56px;
-}
-
-/* Drag handle pill used at the top of bottom sheets */
-.sheet-handle {
-  width: 36px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--border-strong);
-  flex-shrink: 0;
-}
+/* ── Mobile bottom sheets ───────────────────────────────────────────────────── */
 
 /* Adds bottom padding inside a sheet equal to the safe-area home indicator */
 .sheet-safe-bottom {

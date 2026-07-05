@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { clamp } from '../lib/utils'
+import { appBus } from '../lib/event-bus'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -52,6 +53,16 @@ interface UIStore {
   activePlanViewId:        string | null
   /** Which GPU backend the viewer is running on. */
   gpuBackend:              GpuBackend
+  /**
+   * Client presentation skin (D-25): show-only UI layer for non-technical
+   * audiences. A pure UI-layer flag — the loaded model, camera and all other
+   * state persist across toggles (no remount of the viewer). Initialised from
+   * `?ui=client` at boot; toggleable in-app without reloading.
+   */
+  clientMode:              boolean
+  /** Presenter's hidden "advanced" toggle inside client mode — temporarily
+   *  allows measurement/section tools without leaving the skin. */
+  clientAdvancedTools:     boolean
 
   toggleValidationPanel:    () => void
   setValidationPanelOpen:   (open: boolean) => void
@@ -84,6 +95,8 @@ interface UIStore {
   togglePlansPanel:         () => void
   setActivePlanViewId:      (id: string | null) => void
   setGpuBackend:            (backend: GpuBackend) => void
+  setClientMode:            (on: boolean) => void
+  setClientAdvancedTools:   (on: boolean) => void
 }
 
 const TREE_WIDTH_MIN = 220
@@ -113,6 +126,8 @@ export const useUIStore = create<UIStore>()(
       activePlanViewId:        null,
       gpuBackend:              'detecting' as GpuBackend,
       pendingSidebarTab:       null,
+      clientMode:              false,
+      clientAdvancedTools:     false,
 
       toggleValidationPanel: () =>
         set((s) => ({ validationPanelOpen: !s.validationPanelOpen }), false, 'toggleValidationPanel'),
@@ -223,6 +238,38 @@ export const useUIStore = create<UIStore>()(
 
       setGpuBackend: (backend) =>
         set({ gpuBackend: backend }, false, 'setGpuBackend'),
+
+      setClientMode: (on) => {
+        set(
+          (s) => {
+            if (s.clientMode === on) return s
+            return {
+              ...s,
+              clientMode: on,
+              clientAdvancedTools: false,
+              // Entering the client skin closes every technical floating panel
+              // so the audience never sees a half-open coordinator tool.
+              ...(on
+                ? {
+                    scenePanelOpen: false,
+                    measurementPanelOpen: false,
+                    clipPanelOpen: false,
+                    plansPanelOpen: false,
+                    transformMode: 'none' as TransformMode,
+                    activeMeasurementTool: 'none' as MeasurementTool,
+                    mobileSidebarOpen: false,
+                  }
+                : {}),
+            }
+          },
+          false,
+          'setClientMode',
+        )
+        appBus.emit('ui:client-mode-toggled', { enabled: on })
+      },
+
+      setClientAdvancedTools: (on) =>
+        set({ clientAdvancedTools: on }, false, 'setClientAdvancedTools'),
     }),
     { name: 'UIStore', enabled: import.meta.env.DEV },
   ),
@@ -246,3 +293,5 @@ export const selectClipPanelOpen         = (s: UIStore) => s.clipPanelOpen
 export const selectClipPlaneCount        = (s: UIStore) => s.clipPlaneCount
 export const selectPlansPanelOpen        = (s: UIStore) => s.plansPanelOpen
 export const selectActivePlanViewId      = (s: UIStore) => s.activePlanViewId
+export const selectClientMode            = (s: UIStore) => s.clientMode
+export const selectClientAdvancedTools   = (s: UIStore) => s.clientAdvancedTools

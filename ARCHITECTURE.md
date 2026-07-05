@@ -27,6 +27,12 @@ ifc/
 │   │   ├── EmbedModal.tsx           # Embed snippet generator (iframe + SDK)
 │   │   ├── DemoGallery.tsx          # Curated public demo-model picker
 │   │   ├── ScenePanel.tsx           # Multi-model manager: visibility, isolate, frame, delete, transforms
+│   │   ├── CaptureToolbar.tsx       # Capture Toolkit: screenshot + replay capture buttons (Toolbar zone D)
+│   │   ├── CapturePreviewModal.tsx  # Clip preview: trim, fps, resolution, watermark, PNG/WebM/GIF export (lazy)
+│   │   ├── TourPlayer.tsx           # Tour Mode playback bar: prev/next, D-22 fix text, isolate, capture,
+│   │   │                             #   share link + one-click social GIF (lazy)
+│   │   ├── TourRecorder.tsx         # Tour Mode recorder: template selector, add/reorder stops (lazy)
+│   │   ├── TemplateSelector.tsx     # D-26: social / client-walkthrough / technical-review cards
 │   │   ├── CameraControls.tsx        # Floating camera preset panel (ISO/Top/Front/Right + numpad)
 │   │   ├── ModelInfoPanel.tsx        # Floating pill: active model file size, element count, health badges
 │   │   ├── mobile/                  # MobileBottomNav + bottom-sheet IDS/Validation panels (useIsMobile)
@@ -45,6 +51,7 @@ ifc/
 │   │   ├── usePersistedPreferences.ts# Hydrates treeWidth/treeVisible from localStorage; debounce-saves
 │   │   ├── useKeyboardShortcuts.ts   # Input-aware global keyboard shortcut handler (skips editable targets)
 │   │   ├── useIfcUploadFlow.ts       # Upload drag-and-drop flow hook
+│   │   ├── useCanvasReplayBuffer.ts  # DVR replay buffer: 2 staggered MediaRecorders on canvas.captureStream
 │   │   └── useUploadStateMachine.ts  # FSM for upload overlay states
 │   │
 │   ├── lib/
@@ -83,6 +90,16 @@ ifc/
 │   │   │                             #   run-diff, embedded examples, golden bSI testcase fixtures
 │   │   ├── geo/                      # GIS / Map mode — basemap-engine, CRS/proj4, georef ladder,
 │   │   │                             #   terrain sampling, tile providers, gis-flag (VITE_FEATURE_GIS)
+│   │   ├── capture/                  # Capture Toolkit — replay-buffer-core (pure logic + tests),
+│   │   │                             #   gif-export (frame extraction + worker orchestration + WebM
+│   │   │                             #   re-encode), watermark compositing. See DECISIONS.md D-23.
+│   │   ├── tour/                     # Tour Mode — generateAutoTour (severity + showcase strategies):
+│   │   │                             #   issue grouping/ordering, showcase view planning, framing math
+│   │   │                             #   (pure, tested); startAutoTour orchestration. See D-24/D-26.
+│   │   ├── templates/                # Presentation templates (D-26) — 3 goal presets + applyTemplate()
+│   │   │                             #   orchestrating presentation/ui/capture stores.
+│   │   ├── share/                    # tourShareLink (D-26) — #tour= codec mirroring D-21's
+│   │   │                             #   share-report contract (sanitised decode, URL guards).
 │   │   ├── validation-diff.ts        # Diff two validation runs (powers RunDiffBar)
 │   │   ├── validation-coverage.ts    # Honest per-rule coverage / status (no silent score inflation)
 │   │   ├── share-report.ts           # buildShareUrl() — crawlable /r?d= worker URL or legacy hash
@@ -110,8 +127,10 @@ ifc/
 │   │   ├── idsStore.ts               # IDS results per model (resultsByModel, multiRun, run-diff, highlight)
 │   │   ├── geoStore.ts               # GIS / Map mode state (epoch pattern, consent, layers, placement)
 │   │   ├── waiverStore.ts            # Muted/waived validation issues (Pro control)
+│   │   ├── captureStore.ts           # Capture Toolkit: replay state, capture duration, watermark, clip preview
+│   │   ├── presentationStore.ts      # Tour Mode: tour (session-only), recorder/playback mode, step index
 │   │   └── toastStore.ts             # Toast queue + toast() / toastFromError() imperative helpers
-│   │                                 # All 11 stores use Zustand 5 devtools middleware + named actions
+│   │                                 # All 13 stores use Zustand 5 devtools middleware + named actions
 │   │
 │   ├── workers/
 │   │   ├── ifc-parser.worker.ts      # IFC bytes → fragments binary (IfcImporter, WASM, no DOM)
@@ -122,7 +141,8 @@ ifc/
 │   │   ├── ids.worker.ts             # Run an IDS spec against the model (web-ifc, progress + cancel)
 │   │   ├── bcf-parser.worker.ts      # Parse .bcfzip (BCF 2.1 / 3.0) off the main thread
 │   │   ├── geo-extract.worker.ts     # Extract georeferencing from IFC (Map mode)
-│   │   └── geo-terrain.worker.ts     # Build 3D terrain mesh from elevation tiles (Map mode)
+│   │   ├── geo-terrain.worker.ts     # Build 3D terrain mesh from elevation tiles (Map mode)
+│   │   └── gif-export.worker.ts      # RGBA frames → animated GIF via gifenc (no WASM, streamed progress)
 │   │
 │   └── types/
 │       └── index.ts                  # All shared TypeScript interfaces and type aliases
@@ -239,6 +259,8 @@ All stores use **Zustand 5 + devtools middleware** with named actions and typed 
 | `useIdsStore` | IDS results per model (`resultsByModel`, `previousResultByModel`, `runMetaByModel`, `multiRun`, `highlightMode`); `clearForModel` |
 | `useGeoStore` | GIS / Map mode state — consent, active layers, georef result, manual placement; epoch pattern guards stale async |
 | `useWaiverStore` | Muted / waived validation issues (Pro control) — keyed by rule + element |
+| `useCaptureStore` | Capture Toolkit: replay recording status, capture duration (5/15/30 s), watermark toggle (persisted), previewed clip (Blob by reference), export progress |
+| `usePresentationStore` | Tour Mode: active `Tour` (session-only, never persisted), `mode` (idle/recording/playing), step index, isolate toggle |
 | `toastStore` | Toast queue; exposes `toast(message, level)` and `toastFromError(err, level, prefix?)` as imperative singletons |
 
 **Cross-store facade:** `useModelSession()` hook combines stores into one stable surface for components that need cross-store derived state.
@@ -422,6 +444,8 @@ Command builder helpers for all diff types. Each builder accepts `modelId?`:
 | `ts-pattern` | Exhaustive `match()` routing for validator and takeoff message handlers. |
 | `zod` | Runtime schema validation for all worker messages via `worker-schemas.ts`. |
 | `react-resizable-panels` | Resizable tree/viewer split panel with drag handle. |
+| `gifenc` | GIF encoding in `gif-export.worker.ts` (Capture Toolkit). Pure JS, worker-safe, incremental per-frame API. Also used by the OG-image scripts. Chosen over gif.js / gif-encoder-2 / ffmpeg.wasm — see `DECISIONS.md` D-23. |
+| `fix-webm-duration` | Patches the missing EBML duration in Chromium `MediaRecorder` WebM blobs so captured clips are seekable (~4 KB, MIT). See D-23. |
 | `vitest` + `jsdom` | Unit testing. Vite's native transform pipeline is reused. |
 | `lucide-react` | Installed but unused — all icons are custom SVGs in `Icons.tsx`. Do not mix icon sources. |
 
@@ -458,10 +482,10 @@ ScenePanel transform callbacks pass explicit `model.id` so the correct pivot is 
 | `vendor-ui-*.js` | React, Radix UI, Framer Motion, Zustand, Zod, ts-pattern, all other npm packages | ~518 KB |
 | `vendor-three-*.js` | three.js (changes infrequently — long browser cache TTL) | ~1.3 MB |
 | `vendor-ifc-*.js` | @thatopen/* + web-ifc JS side | ~4.5 MB |
-| `*.worker-*.js` (one per worker: ifc-parser, validator, export, ids, bcf-parser, geo-extract, geo-terrain) | web-ifc / three.js workers bundle their deps inline (required — see D-11) | ~3–4.3 MB each |
+| `*.worker-*.js` (one per worker: ifc-parser, validator, export, ids, bcf-parser, geo-extract, geo-terrain, gif-export) | web-ifc / three.js workers bundle their deps inline (required — see D-11); gif-export is the one lightweight non-WASM worker (~30 KB) | ~3–4.3 MB each (gif-export excepted) |
 
 **Windows build:** `node --max-old-space-size=4096 node_modules/vite/bin/vite.js build` — required because the default Node.js 2 GB heap is exhausted by the 514+ module graph.
 
 ---
 
-*Last updated: 2026-06-21 (doc-sync against code) · Sprints 1–9 complete + IDS 1.0 / 3D Map (GIS) / BCF panel / embed+SDK / mobile UI shipped · 44 validation rules · 11 Zustand stores · 7 workers · Deploy: Vercel · Forward plan: ROADMAP.md Roadmap v2 + Solibri-parity backlog*
+*Last updated: 2026-07-02 (Capture Toolkit + Tour Mode) · Sprints 1–9 complete + IDS 1.0 / 3D Map (GIS) / BCF panel / embed+SDK / mobile UI / Capture Toolkit / Tour Mode shipped · 44 validation rules · 13 Zustand stores · 8 workers · Deploy: Vercel · Forward plan: ROADMAP.md Roadmap v2 + Solibri-parity backlog*

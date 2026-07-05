@@ -68,7 +68,7 @@ export interface ValidationMobileVM {
   activePanel: 'issues' | 'bcf' | 'history'
   setActivePanel: (p: 'issues' | 'bcf' | 'history') => void
   bcfTopicCount: number
-  viewer?: Pick<ViewerHandle, 'setCameraViewpoint' | 'takeSnapshot'> | null
+  viewer?: Pick<ViewerHandle, 'setCameraViewpoint' | 'getCameraViewpoint' | 'takeSnapshot'> | null
   activeProfileId: string | null
   customProfiles: ValidationProfile[]
   setActiveProfile: (id: string) => void

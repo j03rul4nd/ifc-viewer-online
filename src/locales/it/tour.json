@@ -1,0 +1,76 @@
+{
+  "entry": "Tour",
+  "autoTitle": "Tour di validazione",
+  "player": {
+    "stepOf": "Passo {{current}} di {{total}}",
+    "prev": "Passo precedente",
+    "next": "Passo successivo",
+    "finish": "Termina tour",
+    "exit": "Esci dal tour",
+    "isolate": "Isola elementi evidenziati",
+    "affected_one": "{{count}} elemento interessato",
+    "affected_other": "{{count}} elementi interessati",
+    "howToFix": "Come risolvere",
+    "goToStep": "Vai al passo {{n}}"
+  },
+  "recorder": {
+    "title": "Tour guidato",
+    "close": "Chiudi",
+    "generateAuto": "Genera tour dai problemi più gravi",
+    "generating": "Generazione…",
+    "generateAutoHint": "Esegui prima la validazione per generare un tour automatico",
+    "issuesAvailable_one": "{{count}} problema disponibile",
+    "issuesAvailable_other": "{{count}} problemi disponibili",
+    "empty": "Nessuna tappa ancora — sposta la camera su una vista interessante e aggiungi la prima tappa, oppure genera un tour dai problemi di validazione.",
+    "addStop": "Aggiungi tappa qui",
+    "play": "Riproduci tour",
+    "delete": "Rimuovi tappa",
+    "moveUp": "Sposta su",
+    "moveDown": "Sposta giù",
+    "stop": "Tappa {{n}}",
+    "preview": "Anteprima di questa tappa"
+  },
+  "templates": {
+    "title": "A cosa serve questa presentazione?",
+    "social": {
+      "name": "Demo per i social",
+      "desc": "Clip breve e accattivante per LinkedIn"
+    },
+    "walkthrough": {
+      "name": "Percorso per il cliente",
+      "desc": "Riunione dal vivo — senza gergo tecnico"
+    },
+    "technical": {
+      "name": "Revisione tecnica",
+      "desc": "Problemi per severità con guide alla correzione"
+    },
+    "includeImprovements": "Includi un passo 'aree di miglioramento'",
+    "needsIssues": "Esegui prima la validazione"
+  },
+  "share": {
+    "copy": "Copia link di condivisione",
+    "copied": "Link copiato negli appunti",
+    "copyFailed": "Impossibile copiare il link",
+    "noModelUrl": "Questo modello è stato caricato dal disco e non ha un URL pubblico — il link non può includerlo. Esporta invece una GIF.",
+    "tooLong": "Il percorso è troppo grande per un link",
+    "linkedin": "Esporta per LinkedIn",
+    "exported": "GIF esportata",
+    "noBuffer": "La registrazione non è ancora pronta — attendi qualche secondo"
+  },
+  "link": {
+    "invalid": "Questo link di percorso condiviso non è valido o è corrotto"
+  },
+  "showcase": {
+    "title": "Percorso del modello",
+    "headline": "{{score}}/100 — modello verificato",
+    "captions": {
+      "overview": "Vista generale",
+      "perspective": "Prospettiva",
+      "front": "Prospetto",
+      "side": "Vista laterale",
+      "aerial": "Vista aerea",
+      "closing": "Vista finale"
+    },
+    "improvements": "Aree di miglioramento"
+  }
+}

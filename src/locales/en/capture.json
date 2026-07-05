@@ -1,0 +1,32 @@
+{
+  "screenshotTooltip": "Screenshot — copy to clipboard and download PNG",
+  "screenshotCopied": "Screenshot copied to clipboard and downloaded",
+  "screenshotSaved": "Screenshot downloaded",
+  "screenshotFailed": "Could not capture the viewport",
+  "replayTooltip": "Capture the last {{seconds}}s as a clip",
+  "durationTooltip": "Capture duration",
+  "lastSeconds": "Last {{seconds}}s",
+  "recording": "Replay buffer recording",
+  "captureFailed": "Capture failed",
+  "previewTitle": "Capture preview",
+  "close": "Close",
+  "trimLabel": "Trim",
+  "trimStart": "Trim start",
+  "trimEnd": "Trim end",
+  "fpsLabel": "GIF FPS",
+  "resolutionLabel": "Resolution",
+  "sourceRes": "Original",
+  "watermarkLabel": "Add watermark",
+  "cancel": "Cancel",
+  "exporting": "Exporting…",
+  "pngDone": "Frame downloaded as PNG",
+  "webmDone": "Clip downloaded as WebM",
+  "gifDone": "GIF downloaded",
+  "exportFailed": "Export failed: {{message}}",
+  "aspect": {
+    "label": "Format",
+    "source": "Original",
+    "square": "1:1",
+    "vertical": "4:5"
+  }
+}

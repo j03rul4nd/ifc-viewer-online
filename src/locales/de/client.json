@@ -1,0 +1,25 @@
+{
+  "entry": "Kundenpräsentationsmodus",
+  "badge": {
+    "verify": "Modell prüfen",
+    "verifyHint": "Geprüft in Ihrem Browser",
+    "verifying": "Modell wird geprüft…",
+    "scoreLabel": "Health Score",
+    "tier": {
+      "verified": "Modell verifiziert",
+      "attention": "Guter Zustand, mit Anmerkungen",
+      "review": "Überprüfung nötig"
+    }
+  },
+  "gear": {
+    "title": "Präsentator-Optionen",
+    "advanced": "Erweiterte Werkzeuge",
+    "measure": "Messungen",
+    "section": "Schnitte",
+    "exit": "Präsentationsmodus verlassen"
+  },
+  "cta": {
+    "tour": "Rundgang ansehen",
+    "generateTour": "Rundgang erzeugen"
+  }
+}

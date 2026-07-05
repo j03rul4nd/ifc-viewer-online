@@ -66,8 +66,68 @@ export interface ViewerHandle {
     position:  { x: number; y: number; z: number },
     direction: { x: number; y: number; z: number },
   ) => void
+  /**
+   * Read the current camera state. Shared by BCF viewpoint capture and the
+   * Tour recorder (D-24). Null before the viewer is ready.
+   */
+  getCameraViewpoint: () => CameraViewpoint | null
   /** Capture the current renderer canvas as a PNG data-URL. Returns '' on failure. */
   takeSnapshot: () => string
+}
+
+// ── Camera state (BCF viewpoints + Tour Mode — D-24) ──────────────────────────
+
+export interface Vec3Like { x: number; y: number; z: number }
+
+/**
+ * Full camera read-back: `position`+`direction` feed BCF viewpoints (BCF spec
+ * format), `position`+`target` feed tour steps, `fovDeg`/`aspect` feed the
+ * auto-tour framing math.
+ */
+export interface CameraViewpoint {
+  position:  Vec3Like
+  target:    Vec3Like
+  /** Normalised view direction (target − position). */
+  direction: Vec3Like
+  /** Vertical field of view in degrees (fallback 45 for orthographic). */
+  fovDeg:    number
+  aspect:    number
+}
+
+/** Serialisable camera pose stored in a tour step. */
+export interface CameraState {
+  position: Vec3Like
+  target:   Vec3Like
+}
+
+// ── Tour Mode (presentation walkthrough — D-24) ───────────────────────────────
+
+/** Union of built-in validation rule ids (derived from RulesConfig — stays in
+ *  sync automatically when rules are added). */
+export type ValidationRuleId = keyof RulesConfig
+
+export interface TourStep {
+  id: string
+  camera: CameraState
+  modelId?: string
+  isolatedCategories?: string[]
+  /** Elements to highlight via the existing validation overlay channel. */
+  highlightedExpressIds?: number[]
+  /** When the step comes from a validation issue, the rule it belongs to —
+   *  lets the UI render the D-22 remediation guidance without extra lookups. */
+  issueRuleId?: ValidationRuleId
+  /** How severe the underlying issue is (drives the step badge colour). */
+  issueSeverity?: 'error' | 'warning' | 'info'
+  /** How many issue instances this step groups (auto-tour). */
+  issueCount?: number
+  caption?: string
+}
+
+export interface Tour {
+  id: string
+  title: string
+  steps: TourStep[]
+  createdFrom: 'auto' | 'manual'
 }
 
 // ── Loading pipeline ──────────────────────────────────────────────────────────

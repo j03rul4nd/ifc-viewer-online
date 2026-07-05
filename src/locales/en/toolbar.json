@@ -44,6 +44,8 @@
   "idsTooltip": "Check the model against a buildingSMART IDS file",
   "map": "Map",
   "mapTooltip": "Show the model on a real-world map (georeferenced)",
+  "sun": "Sun",
+  "sunTooltip": "Sun & Moon study — real shadows by date, time and location",
   "embed": "Embed",
   "embedTooltip": "Get an embeddable iframe / link for this model",
   "legend": "Legend",
@@ -54,6 +56,10 @@
   "toolsMenu": "Tools — measure, section, plans",
   "more": "More",
   "demo": "Demo models",
+  "navProps": "Props",
+  "navCats": "Cats",
+  "navDemo": "Demo",
+  "language": "Language",
   "status": {
     "loaded": "Loaded",
     "loading": "Loading…",
@@ -72,7 +78,9 @@
       "full": "Full",
       "fullDesc": "Tree + validation panel",
       "kiosk": "Kiosk",
-      "kioskDesc": "3D canvas only"
+      "kioskDesc": "3D canvas only",
+      "client": "Client",
+      "clientDesc": "Client presentation skin"
     },
     "optionsLabel": "Options",
     "autoValidate": "Run validation on load",

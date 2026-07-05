@@ -53,6 +53,10 @@
   "tools": "工具",
   "toolsMenu": "工具 — 测量、剖切、平面图",
   "more": "更多",
+  "navProps": "属性",
+  "navCats": "类别",
+  "navDemo": "演示",
+  "language": "语言",
   "demo": "演示模型",
   "status": {
     "loaded": "已加载",
@@ -72,7 +76,9 @@
       "full": "完整",
       "fullDesc": "树 + 验证面板",
       "kiosk": "信息屏",
-      "kioskDesc": "仅 3D 画面"
+      "kioskDesc": "仅 3D 画面",
+      "client": "客户",
+      "clientDesc": "客户演示界面"
     },
     "optionsLabel": "选项",
     "autoValidate": "加载时运行验证",

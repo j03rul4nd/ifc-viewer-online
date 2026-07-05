@@ -38,6 +38,8 @@ Thumbs.db
 # Docs de estrategia (el resto de docs/ técnicos siguen versionados):
 docs/DESIGN_PARTNER_INTERVIEWS.md
 docs/BLOG_CONTENT_BACKLOG.md
+# Planificación de monetización (auth/pagos/certificados) — solo local:
+docs-planning/
 
 .claude/
 .claude/worktrees/interesting-bhabha-44e327

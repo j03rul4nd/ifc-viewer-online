@@ -48,6 +48,20 @@
     "progress": "Comprobando todos los modelos — {{done}} / {{total}}",
     "modelsTitle": "Puntuaciones por modelo — clic para ver"
   },
+
+  "pager": {
+
+    "counter": "{{current}} / {{total}}",
+
+    "next": "Siguiente",
+
+    "prev": "Anterior",
+
+    "backToList": "Volver a la lista",
+
+    "swipeHint": "Desliza hacia arriba para el siguiente problema"
+
+  },
   "summary": {
     "score": "{{score}}",
     "outOf": "/ 100",

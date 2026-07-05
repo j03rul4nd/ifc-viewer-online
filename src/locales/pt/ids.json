@@ -1,0 +1,166 @@
+{
+  "title": "Verificação IDS",
+  "subtitle": "Especificação de Entrega de Informação",
+  "loader": {
+    "choose": "Escolher ficheiro .ids",
+    "specCount": "{{count}} especificação",
+    "specCount_other": "{{count}} especificações",
+    "clear": "Limpar",
+    "viewResults": "Ver resultados",
+    "intro": "Carregue um ficheiro .ids da buildingSMART para verificar este modelo face aos seus requisitos de entrega.",
+    "introClient": "Todas as facetas IDS 1.0 são avaliadas no lado do cliente — nada sai do seu browser.",
+    "parseError": "Não foi possível ler o IDS: {{message}}",
+    "invalidFile": "Ficheiro IDS inválido: {{message}}"
+  },
+  "examples": {
+    "label": "Não tem um ficheiro .ids? Experimente um exemplo:",
+    "hasWallsName": "O modelo tem paredes",
+    "hasWallsDesc": "O entregável deve conter pelo menos uma parede com nome",
+    "namedElementsName": "Os elementos têm nome",
+    "namedElementsDesc": "Os elementos de construção comuns devem ter um Name",
+    "wallFireRatingName": "Resistência ao fogo das paredes",
+    "wallFireRatingDesc": "As paredes declaram FireRating em Pset_WallCommon",
+    "doorsNamedRatedName": "Portas com nome e classificação",
+    "doorsNamedRatedDesc": "As portas têm um Name e um FireRating"
+  },
+  "run": {
+    "run": "Executar verificação",
+    "rerun": "Executar novamente",
+    "checking": "A verificar…",
+    "cancel": "Cancelar",
+    "cancelling": "A cancelar…",
+    "retry": "Tentar novamente"
+  },
+  "actions": {
+    "rerunShort": "Repetir",
+    "runShort": "Executar",
+    "checkAll": "Verificar tudo ({{count}})",
+    "checkAllTitle": "Verificar este IDS em todos os modelos carregados",
+    "highlight": "Destacar",
+    "isolate": "Isolar",
+    "showAll": "Mostrar tudo",
+    "collapse": "Recolher painel",
+    "highlightTitle": "Destacar elementos com falhas em 3D",
+    "isolateTitle": "Mostrar apenas os elementos com falhas",
+    "reloadToRun": "Recarregue o .ifc para executar o IDS"
+  },
+  "multiRun": {
+    "progress": "A verificar todos os modelos — {{done}} / {{total}}",
+    "modelsTitle": "Pontuações por modelo — clique para ver"
+  },
+  "pager": {
+    "counter": "{{current}} / {{total}}",
+    "next": "Problema seguinte",
+    "prev": "Problema anterior",
+    "backToList": "Voltar à lista",
+    "swipeHint": "Deslize para cima para o problema seguinte"
+  },
+  "summary": {
+    "score": "{{score}}",
+    "outOf": "/ 100",
+    "pass": "{{count}} aprovado",
+    "fail": "{{count}} falhado",
+    "na": "{{count}} n/d",
+    "passShort": "{{count}}✓",
+    "failShort": "{{count}}✗",
+    "naShort": "{{count}} n/d",
+    "checkedModel": "Modelo verificado",
+    "passLabel": "aprovado",
+    "failLabel": "falhado",
+    "naLabel": "n/d"
+  },
+  "progress": {
+    "open": "A abrir modelo…",
+    "gather": "A ler elementos…",
+    "check": "A verificar especificações…"
+  },
+  "status": {
+    "skipped": "ignorado",
+    "na": "n/d",
+    "fraction": "{{passed}}/{{applicable}}"
+  },
+  "filters": {
+    "groupSpec": "especificação",
+    "groupElement": "elemento",
+    "groupClass": "classe",
+    "all": "Todos",
+    "search": "Pesquisar especificações / elementos…",
+    "clear": "Limpar filtros",
+    "specsCounted": "{{count}} especificação",
+    "specsCounted_other": "{{count}} especificações",
+    "failuresCounted": "{{count}} falha",
+    "failuresCounted_other": "{{count}} falhas"
+  },
+  "facets": {
+    "entity": "entidade",
+    "attribute": "atributo",
+    "property": "propriedade",
+    "classification": "classificação",
+    "material": "material",
+    "partOf": "parteDe"
+  },
+  "collapsed": {
+    "noFile": "sem ficheiro",
+    "notRun": "{{file}} — ainda não executado",
+    "checking": "a verificar… {{pct}}%"
+  },
+  "states": {
+    "noModel": "Carregue um modelo IFC para o verificar face aos requisitos de entrega.",
+    "noIds": "Carregue um ficheiro .ids da buildingSMART para verificar este modelo.",
+    "noResult": "Ainda sem resultados para este modelo — execute a verificação com {{file}}.",
+    "noResultGeneric": "o IDS carregado",
+    "noMatch": "Nenhuma especificação corresponde aos filtros atuais.",
+    "bufferUnavailable": "O buffer de origem do IFC não está disponível para este modelo — recarregue o .ifc para executar o IDS.",
+    "staleIds": "Estes resultados foram produzidos com {{file}} — execute novamente com o ficheiro atual."
+  },
+  "truncation": "A mostrar os primeiros 200 — mais {{count}} elemento com falha; exporte para a lista completa.",
+  "truncation_other": "A mostrar os primeiros 200 — mais {{count}} elementos com falha; exporte para a lista completa.",
+  "diff": {
+    "scoreUp": "Pontuação {{prev}} → {{curr}} (+{{delta}})",
+    "scoreDown": "Pontuação {{prev}} → {{curr}} ({{delta}})",
+    "scoreSame": "Pontuação sem alteração em {{curr}}",
+    "resolved": "{{count}} corrigidos",
+    "added": "{{count}} novos",
+    "dismiss": "Dispensar"
+  },
+  "export": {
+    "label": "Exportar",
+    "json": "JSON",
+    "csv": "CSV",
+    "html": "HTML",
+    "bcf": "BCF",
+    "jsonDesc": "Relatório estruturado (códigos + texto)",
+    "csvDesc": "Uma linha por falha (Excel)",
+    "htmlDesc": "Relatório autónomo para impressão",
+    "bcfDesc": "Problemas para BIMcollab / Solibri",
+    "bcfEmpty": "Sem falhas para exportar",
+    "done": "Relatório transferido",
+    "soon": "Brevemente"
+  },
+  "errors": {
+    "checkFailed": "A verificação IDS falhou",
+    "bufferUnavailable": "O buffer de origem do IFC não está disponível. Recarregue o ficheiro .ifc.",
+    "untitled": "sem-titulo.ids",
+    "orphaned": "A verificação anterior foi interrompida — execute-a novamente.",
+    "largeModel": "Este modelo tem {{mb}} MB. Verificá-lo pode consumir muita memória e ser lento. Continuar?"
+  },
+  "reasons": {
+    "missingRequired": "falta {{what}} obrigatório",
+    "wrongValue": "{{what}} = (valor incorreto), esperado {{expected}}",
+    "prohibitedPresent": "{{what}} está presente mas é proibido",
+    "specRequiredButAbsent": "o modelo não contém elementos que correspondam a esta especificação obrigatória",
+    "specProhibitedButPresent": "existem elementos proibidos presentes no modelo",
+    "wrongDataType": "{{what}} tem o tipo de dados incorreto — esperado {{expected}}, encontrado {{actual}}",
+    "unsupportedPattern": "padrão não suportado por este verificador: {{pattern}}"
+  },
+  "howToFix": "Como corrigir",
+  "remediation": {
+    "missingRequired": "Adicione {{what}} ao elemento na sua ferramenta de criação (Revit/ArchiCAD/…) e volte a exportar o IFC.",
+    "wrongValue": "Defina {{what}} com um valor que satisfaça {{expected}}.",
+    "prohibitedPresent": "Remova {{what}} do elemento.",
+    "specRequiredButAbsent": "Adicione ao modelo pelo menos um elemento que corresponda a esta especificação.",
+    "specProhibitedButPresent": "Remova os elementos que correspondem a esta especificação proibida.",
+    "wrongDataType": "Corrija o tipo de dados de {{what}} — deve ser {{expected}}.",
+    "unsupportedPattern": "Verifique este valor manualmente — o padrão não pode ser avaliado automaticamente."
+  }
+}

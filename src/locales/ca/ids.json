@@ -1,0 +1,166 @@
+{
+  "title": "Comprovació IDS",
+  "subtitle": "Especificació de lliurament d'informació",
+  "loader": {
+    "choose": "Tria un fitxer .ids",
+    "specCount": "{{count}} especificació",
+    "specCount_other": "{{count}} especificacions",
+    "clear": "Esborra",
+    "viewResults": "Veure resultats",
+    "intro": "Carrega un fitxer .ids de buildingSMART per comprovar aquest model segons els teus requisits de lliurament.",
+    "introClient": "Totes les facetes IDS 1.0 s'avaluen al navegador — res surt del teu navegador.",
+    "parseError": "No s'ha pogut llegir l'IDS: {{message}}",
+    "invalidFile": "Fitxer IDS no vàlid: {{message}}"
+  },
+  "examples": {
+    "label": "No tens cap fitxer .ids? Prova un exemple:",
+    "hasWallsName": "El model té murs",
+    "hasWallsDesc": "El lliurable ha de contenir com a mínim un mur amb nom",
+    "namedElementsName": "Els elements tenen nom",
+    "namedElementsDesc": "Els elements constructius habituals han de tenir un Name",
+    "wallFireRatingName": "Resistència al foc dels murs",
+    "wallFireRatingDesc": "Els murs declaren FireRating a Pset_WallCommon",
+    "doorsNamedRatedName": "Portes amb nom i resistència al foc",
+    "doorsNamedRatedDesc": "Les portes tenen un Name i un FireRating"
+  },
+  "run": {
+    "run": "Executa la comprovació",
+    "rerun": "Torna a executar",
+    "checking": "Comprovant…",
+    "cancel": "Cancel·la",
+    "cancelling": "Cancel·lant…",
+    "retry": "Reintenta"
+  },
+  "actions": {
+    "rerunShort": "Repeteix",
+    "runShort": "Executa",
+    "checkAll": "Comprova-ho tot ({{count}})",
+    "checkAllTitle": "Comprova aquest IDS en tots els models carregats",
+    "highlight": "Ressalta",
+    "isolate": "Aïlla",
+    "showAll": "Mostra-ho tot",
+    "collapse": "Replega el panell",
+    "highlightTitle": "Ressalta els elements que fallen en 3D",
+    "isolateTitle": "Mostra només els elements que fallen",
+    "reloadToRun": "Torna a carregar l'.ifc per executar l'IDS"
+  },
+  "multiRun": {
+    "progress": "Comprovant tots els models — {{done}} / {{total}}",
+    "modelsTitle": "Puntuacions per model — fes clic per veure"
+  },
+  "pager": {
+    "counter": "{{current}} / {{total}}",
+    "next": "Incidència següent",
+    "prev": "Incidència anterior",
+    "backToList": "Torna a la llista",
+    "swipeHint": "Llisca cap amunt per a la incidència següent"
+  },
+  "summary": {
+    "score": "{{score}}",
+    "outOf": "/ 100",
+    "pass": "{{count}} compleix",
+    "fail": "{{count}} falla",
+    "na": "{{count}} n/a",
+    "passShort": "{{count}}✓",
+    "failShort": "{{count}}✗",
+    "naShort": "{{count}} n/a",
+    "checkedModel": "Model comprovat",
+    "passLabel": "compleix",
+    "failLabel": "falla",
+    "naLabel": "n/a"
+  },
+  "progress": {
+    "open": "Obrint el model…",
+    "gather": "Llegint els elements…",
+    "check": "Comprovant les especificacions…"
+  },
+  "status": {
+    "skipped": "omès",
+    "na": "n/a",
+    "fraction": "{{passed}}/{{applicable}}"
+  },
+  "filters": {
+    "groupSpec": "especificació",
+    "groupElement": "element",
+    "groupClass": "classe",
+    "all": "Totes",
+    "search": "Cerca especificacions / elements…",
+    "clear": "Esborra els filtres",
+    "specsCounted": "{{count}} especificació",
+    "specsCounted_other": "{{count}} especificacions",
+    "failuresCounted": "{{count}} incompliment",
+    "failuresCounted_other": "{{count}} incompliments"
+  },
+  "facets": {
+    "entity": "entitat",
+    "attribute": "atribut",
+    "property": "propietat",
+    "classification": "classificació",
+    "material": "material",
+    "partOf": "partOf"
+  },
+  "collapsed": {
+    "noFile": "sense fitxer",
+    "notRun": "{{file}} — encara no executat",
+    "checking": "comprovant… {{pct}}%"
+  },
+  "states": {
+    "noModel": "Carrega un model IFC per comprovar-lo segons els requisits de lliurament.",
+    "noIds": "Carrega un fitxer .ids de buildingSMART per comprovar aquest model.",
+    "noResult": "Encara no hi ha resultats per a aquest model — executa la comprovació amb {{file}}.",
+    "noResultGeneric": "l'IDS carregat",
+    "noMatch": "Cap especificació coincideix amb els filtres actuals.",
+    "bufferUnavailable": "El buffer d'origen de l'IFC no està disponible per a aquest model — torna a carregar l'.ifc per executar l'IDS.",
+    "staleIds": "Aquests resultats es van generar amb {{file}} — torna a executar-ho amb el fitxer actual."
+  },
+  "truncation": "Es mostren els primers 200 — {{count}} element més que falla; exporta per obtenir la llista completa.",
+  "truncation_other": "Es mostren els primers 200 — {{count}} elements més que fallen; exporta per obtenir la llista completa.",
+  "diff": {
+    "scoreUp": "Puntuació {{prev}} → {{curr}} (+{{delta}})",
+    "scoreDown": "Puntuació {{prev}} → {{curr}} ({{delta}})",
+    "scoreSame": "Puntuació sense canvis a {{curr}}",
+    "resolved": "{{count}} resolts",
+    "added": "{{count}} nous",
+    "dismiss": "Descarta"
+  },
+  "export": {
+    "label": "Exporta",
+    "json": "JSON",
+    "csv": "CSV",
+    "html": "HTML",
+    "bcf": "BCF",
+    "jsonDesc": "Informe estructurat (codis + text)",
+    "csvDesc": "Una fila per incompliment (Excel)",
+    "htmlDesc": "Informe autònom imprimible",
+    "bcfDesc": "Incidències per a BIMcollab / Solibri",
+    "bcfEmpty": "No hi ha incompliments per exportar",
+    "done": "Informe descarregat",
+    "soon": "Properament"
+  },
+  "errors": {
+    "checkFailed": "Ha fallat la comprovació IDS",
+    "bufferUnavailable": "El buffer d'origen de l'IFC no està disponible. Torna a carregar el fitxer .ifc.",
+    "untitled": "sense-titol.ids",
+    "orphaned": "La comprovació anterior es va interrompre — torna-la a executar.",
+    "largeModel": "Aquest model és de {{mb}} MB. Comprovar-lo pot consumir molta memòria i ser lent. Vols continuar?"
+  },
+  "reasons": {
+    "missingRequired": "falta {{what}} obligatori",
+    "wrongValue": "{{what}} = (valor incorrecte), s'esperava {{expected}}",
+    "prohibitedPresent": "{{what}} és present però està prohibit",
+    "specRequiredButAbsent": "el model no conté cap element que coincideixi amb aquesta especificació obligatòria",
+    "specProhibitedButPresent": "hi ha elements prohibits presents al model",
+    "wrongDataType": "{{what}} té un tipus de dada incorrecte — s'esperava {{expected}}, s'ha trobat {{actual}}",
+    "unsupportedPattern": "patró no compatible amb aquest verificador: {{pattern}}"
+  },
+  "howToFix": "Com solucionar-ho",
+  "remediation": {
+    "missingRequired": "Afegeix {{what}} a l'element a la teva eina d'autoria (Revit/ArchiCAD/…) i torna a exportar l'IFC.",
+    "wrongValue": "Estableix {{what}} a un valor que compleixi {{expected}}.",
+    "prohibitedPresent": "Elimina {{what}} de l'element.",
+    "specRequiredButAbsent": "Afegeix al model com a mínim un element que coincideixi amb aquesta especificació.",
+    "specProhibitedButPresent": "Elimina els elements que coincideixen amb aquesta especificació prohibida.",
+    "wrongDataType": "Corregeix el tipus de dada de {{what}} — ha de ser {{expected}}.",
+    "unsupportedPattern": "Comprova aquest valor manualment — el patró no es pot avaluar automàticament."
+  }
+}

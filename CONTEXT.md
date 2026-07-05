@@ -1,5 +1,7 @@
 > **If you are a Claude session starting work on this repo, read all files listed below before writing any code.**
 > Required reading: `CONTEXT.md` (this file) → `ARCHITECTURE.md` → `IFC_DOMAIN.md` → `DECISIONS.md` → `ROADMAP.md` → `PROMPTS.md`
+>
+> **★ Product direction (2026-07-04):** the forward plan is the **delivery-conformance platform** ("DocuSign for BIM deliveries"), growing **gate → lightweight CDE** by phases. Before any conformance / backend / CDE work also read: `docs/CDE_VISION.md` → `docs/CONFORMANCE_DOMAIN.md` → `docs/CDE_ARCHITECTURE.md` → `docs/INTEGRATIONS.md` → `docs/CONFORMANCE_PATTERNS.md` → `docs/CDE_ROADMAP.md`. New decisions **D-27/D-28** in `DECISIONS.md`. Private strategy suite: `docs-planning/vision/`.
 
 ---
 
@@ -41,7 +43,7 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 - **Three viewer styles** — `shaded` (default palette), `blueprint` (flat grey), `xray` (global 20% opacity).
 - **OPFS cache management** — list, delete, quota display. Badge when models are cached. Repository pattern wraps all OPFS I/O with `Result<T,E>` returns. Cache key prefix `v2`.
 - **Memory tracking** — polls `performance.measureUserAgentSpecificMemory()` (crossOriginIsolated) or `performance.memory` fallback every 4 s.
-- **Zustand stores (11)** — `modelStore`, `validationStore`, `editorStore`, `uiStore`, `sceneStore`, `toastStore`, `takeoffStore`, `bcfStore`, `idsStore`, `geoStore`, `waiverStore` — all with Zustand devtools, named actions, and typed selectors. `editorStore` emits `appBus` events on every mutation.
+- **Zustand stores (13)** — `modelStore`, `validationStore`, `editorStore`, `uiStore`, `sceneStore`, `toastStore`, `takeoffStore`, `bcfStore`, `idsStore`, `geoStore`, `waiverStore`, `captureStore`, `presentationStore` — all with Zustand devtools, named actions, and typed selectors. `editorStore` emits `appBus` events on every mutation.
 - **IFC validation — 44 rules** — `validator.worker.ts` runs rule-based checks off the main thread (18 core + 11 spatial/file-header incl. ISO 19650 + 9 LOD/classification/MEP + 6 geometry/storey integrity). Streams partial results into `validationStore`. Emits `appBus` events for full lifecycle. All messages validated via zod schemas before routing. Full list in `ARCHITECTURE.md`. `DEFAULT_RULES` in `src/types/index.ts` is the canonical count.
 - **buildingSMART IDS 1.0** — `ids.worker.ts` + pure-TS engine (`src/lib/ids/`) check a user-supplied `.ids` spec against the model. All six facets, golden-tested against 100 official bSI testcases. `IdsPanel` docks beside `ValidationPanel`; export to JSON/CSV/HTML/BCF; check-all-models; run-diff; SDK `checkIds()`. See `docs/IDS_IMPLEMENTATION_PLAN.md`.
 - **3D Map / GIS mode** (flag-gated `VITE_FEATURE_GIS`) — places a georeferenced model on a real-world basemap + optional 3D terrain inside the existing scene. `geoStore`, `GeoPanel`, `geo-extract.worker.ts`, `geo-terrain.worker.ts`, `src/lib/geo/`. See `docs/GIS_MAP_MODE.md`.
@@ -67,6 +69,10 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 - **Clash detection** — `RULE_ELEMENT_CLASH` (off by default); AABB O(n²) with 5 cm threshold.
 - **Infrastructure layer** — `Result<T,E>` monad, `TypedEventBus`, `createLogger`, `Brand<T,B>` nominal types, runtime type guards, `invariant/assertNever`, `safeVoid`, `ErrorBoundary`.
 - **Facade hooks** — `useModelSession()`, `useAppEvent()`, `useValidationRunner()`, `useElementFocus()`, `usePersistedPreferences()`, `useKeyboardShortcuts()`.
+- **Capture Toolkit** — toolbar screenshot (composed canvas via `takeSnapshot()`, clipboard + PNG download), retroactive replay buffer (`useCanvasReplayBuffer`: two staggered MediaRecorders, last 5/15/30 s as WebM, auto-pause on hidden tab), and GIF export in a dedicated non-WASM worker (`gif-export.worker.ts` + `gifenc`, streamed frames with progress). Preview modal with trim/fps/resolution/watermark. `captureStore` (12th store), `capture:*` appBus events, desktop-only replay (mobile degrades to screenshot). See `DECISIONS.md` D-23.
+- **Tour Mode (guided walkthrough)** — linear presentation mode for coordinator→exporter handoff meetings: auto-generated tour from validation issues (one step per rule, worst first, grouped — `src/lib/tour/generateAutoTour.ts`) or manually recorded camera stops (shares the BCF viewpoint capture primitive `getCameraViewpoint()`). `TourPlayer` bottom bar (camera fly-to via native camera-controls easing, highlight overlay reuse, D-22 remediation text per step, isolate toggle, Capture Toolkit at hand), `TourRecorder` (add/reorder/caption stops), `presentationStore` (13th store, session-only), `tour:*` appBus events. Works in embed kiosk. See `DECISIONS.md` D-24.
+- **Client Presentation Mode (`ui=client`)** — show-only skin for non-technical audiences (D-25): `uiStore.clientMode` layered over the embed chrome (instant toggle, no remount; model/camera persist), all technical panels/editing hidden, `ClientHealthBadge` (semantic score ring + tier phrase via `clientScoreTier`, one-click verify CTA), "View walkthrough" CTA wired to Tour Mode, simplified capture pill, discreet presenter gear (measurement/section on demand + exit), postpro quality on while active. 4th `EmbedUiPreset` (`?ui=client`, SDK, EmbedModal) + in-app entry (Toolbar `···`). i18n `client` ×10.
+- **Presentation templates + shareable tour links** — three goal-driven presets over Tour/Client/Capture (D-26): `social` (showcase ≤5 pasos, 1:1, watermark on, one-click LinkedIn GIF), `client-walkthrough` (showcase ≤10, `ui=client`, opt-in improvements step), `technical-review` (= D-24 severity default, named). `applyTemplate()` orchestrates existing stores; `generateAutoTour` gained a `strategy` param; aspect = centre-crop at frame extraction (`computeCropRect`), never a re-render. Share links: `#tour=<base64>` hash (D-21 pattern, codec in `src/lib/share/tourShareLink.ts`, sanitised on decode) + existing `?model=` — auto-playback on open; honest `no-model-url` limit for disk-loaded models. Score headline gated by the 70-point honesty threshold (`scoreIsHeadlineWorthy`).
 - **Build optimisation** — Vite chunk splitting: `vendor-three`, `vendor-ifc`, `vendor-ui`, app entry; `--max-old-space-size=4096` for Windows OOM fix.
 - **Unit tests** — 11 tests in `loader.test.ts` (Vitest), additional tests in `ifc-guards.test.ts`.
 
@@ -111,12 +117,18 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 | `docs/GIS_MAP_MODE.md` · `docs/GIS_MAP_INTEGRATION_PLAN.md` | 3D Map / GIS mode — user guide + architecture |
 | `docs/IFC_VIEWER_SDK.md` · `docs/EMBED_URL_PARAMS.md` | Embed + JS SDK reference |
 | `docs/INVITE_SYSTEM.md` | Personalized invite + cookieless attribution system |
+| `docs/CDE_VISION.md` | **Conformance-CDE** north-star vision, personas, years-out product image |
+| `docs/CONFORMANCE_DOMAIN.md` | The 7 conformance entities, state machines, immutability/audit invariants (D-28) |
+| `docs/CDE_ARCHITECTURE.md` | Client + cloud system architecture, privacy boundary, D-27 |
+| `docs/INTEGRATIONS.md` | Integration contracts: SDK/embed, signed certificate + verify, CDE connectors, BCF, verify-batch API |
+| `docs/CONFORMANCE_PATTERNS.md` | Engineering patterns for building the platform (entitlement, lazy auth, canonical/signature contract, migrations) |
+| `docs/CDE_ROADMAP.md` | Conformance-CDE forward plan — phases F0..F6, tasks, files-to-touch, moat per phase |
 
 ---
 
 ## Key invariants every future session must respect
 
-1. **No server-side processing of the model.** The IFC file never leaves the browser — no upload endpoints, no server parse/validate. *Clarification (2026-05-29):* **stateless edge Workers are permitted** as long as they never receive the model. The existing Cloudflare Worker (`cf-worker/`) is a pure email proxy; a future shared-report SSR route may receive only the already-computed report summary (score + condensed issue list) for crawlability. Edge compute that touches the IFC bytes remains forbidden. See `DECISIONS.md` D-21.
+1. **No server-side processing of the model.** The IFC file never leaves the browser — no upload endpoints, no server parse/validate. *Clarification (2026-05-29):* **stateless edge Workers are permitted** as long as they never receive the model. The existing Cloudflare Worker (`cf-worker/`) is a pure email proxy; a future shared-report SSR route may receive only the already-computed report summary (score + condensed issue list) for crawlability. Edge compute that touches the IFC bytes remains forbidden. See `DECISIONS.md` D-21. *Amendment (2026-07-04, D-27 — proposed / founder-gated):* server-side model processing becomes permitted **only in F6** and **only** under opt-in + paid-only + 72 h-retention + honest-copy + SSRF-hardened conditions; F0–F5 keep this invariant fully intact (only derived JSON + a locally-computed `sha256` transit the edge). See `DECISIONS.md` D-27 and `docs/CDE_ROADMAP.md` (F6).
 2. **@thatopen/components is the 3D/IFC layer.** Do not add raw `web-ifc` imports to `src/` outside the workers.
 3. **All IFC parsing runs in `src/workers/ifc-parser.worker.ts`.** Main thread must not block during parse.
 4. **All IFC validation runs in `src/workers/validator.worker.ts`.** Main thread only receives results via the Zustand store.
@@ -136,4 +148,4 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 
 ---
 
-*Last updated: 2026-06-21 (doc-sync against code) · Sprints 1–9 complete + IDS 1.0 / 3D Map (GIS) / BCF panel / embed+SDK / mobile UI shipped · 44 validation rules · 11 Zustand stores · 7 workers · Deploy: Vercel · Forward plan: ROADMAP.md Roadmap v2 + Solibri-parity backlog*
+*Last updated: 2026-07-03 (Capture Toolkit + Tour Mode + Client Presentation Mode) · Sprints 1–9 complete + IDS 1.0 / 3D Map (GIS) / BCF panel / embed+SDK / mobile UI / Capture Toolkit / Tour Mode / Client Mode shipped · 44 validation rules · 13 Zustand stores · 8 workers · Deploy: Vercel · Forward plan: ROADMAP.md Roadmap v2 + Solibri-parity backlog*
