@@ -43,6 +43,7 @@
  * Worker's KV counters, never by these opt-out-gated events)
  *   certificate_issued        → a verifiable certificate was issued via /certify
  *   certificate_verified_view → a /verify visitor ran the local signature check
+ *   certificate_deep_verified → a /verify visitor checked the actual file (hash/rerun)
  *
  * Usage:
  *   import { trackFileOpened } from '@/lib/analytics'
@@ -606,4 +607,19 @@ export function trackCertificateVerifiedView(props: {
   signature_result: 'valid' | 'invalid' | 'unknown_key' | 'revoked'
 }): void {
   track('certificate_verified_view', props)
+}
+
+/**
+ * A /verify visitor deep-verified a certificate against the actual file
+ * (F1.5): re-hash of the dropped bytes, or a full local engine re-run.
+ * INV-5: level + outcome only — never the hash, never the file name.
+ *
+ * @param props.level   'hash' = bytes re-hashed; 'rerun' = engine re-executed
+ * @param props.result  Whether the check matched the certified values
+ */
+export function trackCertificateDeepVerified(props: {
+  level:  'hash' | 'rerun'
+  result: 'match' | 'mismatch'
+}): void {
+  track('certificate_deep_verified', props)
 }

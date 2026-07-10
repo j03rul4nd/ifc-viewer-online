@@ -14,8 +14,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import qrcode from 'qrcode-generator'
 import { getCertificate, type ApiError, type CertificateEntry } from '../lib/cloud/api-client'
-import { trackCertificateVerifiedView } from '../lib/analytics'
-import { payloadCanonicalBytes, type CertifyPayloadV1 } from '../lib/certify/canonical'
+import { trackCertificateDeepVerified, trackCertificateVerifiedView } from '../lib/analytics'
+import { payloadCanonicalBytes, sha256Hex, type CertifyPayloadV1 } from '../lib/certify/canonical'
+import type { RuleDiff } from '../lib/certify/deep-verify'
 import { RULE_COUNT } from '../types'
 
 // ── Signature verification (exported for tests) ───────────────────────────────
@@ -155,6 +156,18 @@ type LoadState =
 
 type VerifyState = 'idle' | 'checking' | SignatureVerdict
 
+/** Deep verification (F1.5): drop the actual file → local re-hash → optional engine re-run. */
+type DeepState =
+  | { phase: 'idle' }
+  | { phase: 'hashing' }
+  | { phase: 'read_error' }
+  | { phase: 'mismatch' }
+  | { phase: 'match'; buffer: ArrayBuffer }
+  | { phase: 'rerunning'; buffer: ArrayBuffer; progress: number }
+  | { phase: 'reproduced'; comparedCount: number; notReevaluated: number; score: number }
+  | { phase: 'differs'; diffs: RuleDiff[]; notReevaluated: number; score: number }
+  | { phase: 'rerun_error'; buffer: ArrayBuffer }
+
 const STATUS_ICON: Record<'pass' | 'fail' | 'warning', { glyph: string; color: string }> = {
   pass: { glyph: '✓', color: 'var(--ok, #4caf82)' },
   fail: { glyph: '✕', color: 'var(--danger, #e5534b)' },
@@ -165,6 +178,7 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
   const { t } = useTranslation('verify')
   const [load, setLoad] = useState<LoadState>({ phase: 'loading' })
   const [verify, setVerify] = useState<VerifyState>('idle')
+  const [deep, setDeep] = useState<DeepState>({ phase: 'idle' })
 
   const fetchCert = useCallback(async () => {
     if (!HEX64.test(hash)) {
@@ -198,6 +212,43 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
   }
 
   const verifyUrl = buildVerifyUrl(window.location.origin, hash)
+
+  // ── Deep verification handlers (F1.5 — all local, zero network) ────────────
+
+  const handleDroppedFile = async (file: File, entry: CertificateEntry) => {
+    setDeep({ phase: 'hashing' })
+    let buffer: ArrayBuffer
+    try {
+      buffer = await file.arrayBuffer()
+    } catch {
+      setDeep({ phase: 'read_error' })
+      return
+    }
+    const digest = await sha256Hex(buffer)
+    const matches = digest === entry.payload.file_hash_sha256.toLowerCase()
+    trackCertificateDeepVerified({ level: 'hash', result: matches ? 'match' : 'mismatch' })
+    setDeep(matches ? { phase: 'match', buffer } : { phase: 'mismatch' })
+  }
+
+  const handleRerun = async (buffer: ArrayBuffer, entry: CertificateEntry) => {
+    setDeep({ phase: 'rerunning', buffer, progress: 0 })
+    try {
+      // Lazy import: the worker + comparison code only loads when someone
+      // actually re-runs — /verify stays light for plain lookups.
+      const { rerunAndCompare } = await import('../lib/certify/deep-verify')
+      const out = await rerunAndCompare(buffer, entry.payload, (progress) => {
+        setDeep((d) => (d.phase === 'rerunning' ? { ...d, progress } : d))
+      })
+      trackCertificateDeepVerified({ level: 'rerun', result: out.reproduced ? 'match' : 'mismatch' })
+      setDeep(
+        out.reproduced
+          ? { phase: 'reproduced', comparedCount: out.comparedCount, notReevaluated: out.notReevaluated.length, score: out.recomputedScore }
+          : { phase: 'differs', diffs: out.diffs, notReevaluated: out.notReevaluated.length, score: out.recomputedScore },
+      )
+    } catch {
+      setDeep({ phase: 'rerun_error', buffer })
+    }
+  }
 
   return (
     <div className="min-h-full w-full flex justify-center px-4 py-10 bg-[var(--bg,#0b0b0f)] text-[var(--text,#e8e8ee)] print:bg-white print:text-black print:py-2">
@@ -332,8 +383,117 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
                   </div>
                 )}
 
-                {/* Honest copy (R-5) */}
+                {/* Deep verification (F1.5): drop the actual file → local hash → optional re-run */}
+                {isFirst && (
+                  <div className="rounded-lg border border-[var(--border,#2a2a33)] p-3 flex flex-col gap-2 print:hidden">
+                    <p className="text-[12px] font-semibold">{t('deepTitle')}</p>
+
+                    {(deep.phase === 'idle' || deep.phase === 'mismatch' || deep.phase === 'read_error' ||
+                      deep.phase === 'reproduced' || deep.phase === 'differs') && (
+                      <label
+                        className="flex flex-col items-center gap-1 rounded-lg border border-dashed border-[var(--border,#2a2a33)] hover:border-[var(--accent,#5E6AD2)] transition-colors px-3 py-4 cursor-pointer text-center"
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault()
+                          const file = e.dataTransfer.files?.[0]
+                          if (file) void handleDroppedFile(file, entry)
+                        }}
+                      >
+                        <span className="text-[12px]">{t('deepHint')}</span>
+                        <span className="text-[11px] text-[var(--text-muted,#9a9aa5)]">{t('deepPrivacy')}</span>
+                        <input
+                          type="file"
+                          accept=".ifc"
+                          className="sr-only"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) void handleDroppedFile(file, entry)
+                            e.target.value = ''
+                          }}
+                        />
+                      </label>
+                    )}
+
+                    {/* Deep-verify outcome — announced to screen readers */}
+                    <div role="status" aria-live="polite" className="flex flex-col gap-2">
+                      {deep.phase === 'hashing' && (
+                        <p className="text-[12px] text-[var(--text-muted,#9a9aa5)]">{t('deepHashing')}</p>
+                      )}
+                      {deep.phase === 'read_error' && (
+                        <p className="text-[12px] font-semibold" style={{ color: '#F5A623' }}>! {t('deepReadError')}</p>
+                      )}
+                      {deep.phase === 'mismatch' && (
+                        <div>
+                          <p className="text-[12px] font-semibold" style={{ color: 'var(--danger, #e5534b)' }}>✕ {t('deepMismatch')}</p>
+                          <p className="text-[11px] text-[var(--text-muted,#9a9aa5)] mt-1">{t('deepMismatchExplain')}</p>
+                        </div>
+                      )}
+                      {(deep.phase === 'match' || deep.phase === 'rerunning' || deep.phase === 'rerun_error') && (
+                        <div>
+                          <p className="text-[12px] font-semibold" style={{ color: 'var(--ok, #4caf82)' }}>✓ {t('deepMatch')}</p>
+                          <p className="text-[11px] text-[var(--text-muted,#9a9aa5)] mt-1">{t('deepMatchExplain')}</p>
+                        </div>
+                      )}
+                      {deep.phase === 'reproduced' && (
+                        <div>
+                          <p className="text-[12px] font-semibold" style={{ color: 'var(--ok, #4caf82)' }}>✓ {t('deepMatch')}</p>
+                          <p className="text-[12px] font-semibold mt-1" style={{ color: 'var(--ok, #4caf82)' }}>
+                            ✓ {t('rerunReproduced', { count: deep.comparedCount })}
+                          </p>
+                          <p className="text-[11px] text-[var(--text-muted,#9a9aa5)] mt-1">
+                            {t('rerunScore', { score: deep.score })}
+                            {deep.notReevaluated > 0 && ` · ${t('rerunNotReevaluated', { count: deep.notReevaluated })}`}
+                          </p>
+                        </div>
+                      )}
+                      {deep.phase === 'differs' && (
+                        <div>
+                          <p className="text-[12px] font-semibold" style={{ color: '#F5A623' }}>
+                            ! {t('rerunDiffers', { count: deep.diffs.length })}
+                          </p>
+                          <div className="rounded-lg border border-[var(--border,#2a2a33)] max-h-[160px] overflow-y-auto mt-1">
+                            {deep.diffs.map((d) => (
+                              <div key={d.rule_id} className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border,#2a2a33)] last:border-b-0 text-[11px]">
+                                <span className="flex-1 font-mono truncate">{d.rule_id}</span>
+                                <span className="text-[var(--text-muted,#9a9aa5)]">{t('rerunCertified')}: {t(`ruleStatus.${d.certified}`)}</span>
+                                <span>{t('rerunNow')}: {t(`ruleStatus.${d.recomputed}`)}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[11px] text-[var(--text-muted,#9a9aa5)] mt-1">
+                            {t('rerunScore', { score: deep.score })}
+                            {deep.notReevaluated > 0 && ` · ${t('rerunNotReevaluated', { count: deep.notReevaluated })}`}
+                          </p>
+                        </div>
+                      )}
+                      {deep.phase === 'rerunning' && (
+                        <p className="text-[12px] text-[var(--text-muted,#9a9aa5)]">{t('rerunRunning', { percent: deep.progress })}</p>
+                      )}
+                      {deep.phase === 'rerun_error' && (
+                        <p className="text-[12px] font-semibold" style={{ color: '#F5A623' }}>! {t('rerunError')}</p>
+                      )}
+                    </div>
+
+                    {(deep.phase === 'match' || deep.phase === 'rerun_error') && (
+                      <div className="flex flex-col gap-1">
+                        {coverage.partial && (
+                          <p className="text-[11px] text-[var(--text-muted,#9a9aa5)]">! {t('rerunPartialNote')}</p>
+                        )}
+                        <button
+                          onClick={() => void handleRerun(deep.buffer, entry)}
+                          className="self-start h-8 px-3 rounded-lg text-[12px] font-semibold transition-colors"
+                          style={{ background: 'var(--accent, #5E6AD2)', color: 'white' }}
+                        >
+                          {t('rerunBtn')}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Honest copy (R-5): what each verification level does and does not prove */}
                 <p className="text-[10px] text-[var(--text-muted,#9a9aa5)] leading-snug">{t('honesty')}</p>
+                <p className="text-[10px] text-[var(--text-muted,#9a9aa5)] leading-snug">{t('levels')}</p>
               </div>
             </div>
           )
