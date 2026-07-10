@@ -25,5 +25,8 @@
   "invalidSignature": "签名无效 — 内容与签名时不一致",
   "unknownKey": "未知的签名密钥 — 无法验证",
   "validButRevoked": "签名真实，但证书已被吊销",
-  "honesty": "该签名证明此结果确由 ifcvieweronline.eu 在所示时间签发。它反映的是在签发者浏览器中计算的验证结果 — 并非重新执行。"
+  "honesty": "该签名证明此结果确由 ifcvieweronline.eu 在所示时间签发。它反映的是在签发者浏览器中计算的验证结果 — 并非重新执行。",
+  "qrAlt": "指向此验证页面的二维码",
+  "qrCaption": "扫码打开此验证页面 — 任何人都可以重新校验签名。",
+  "printBtn": "打印证书"
 }

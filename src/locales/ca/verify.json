@@ -25,5 +25,8 @@
   "invalidSignature": "Signatura no vàlida — el contingut no coincideix amb el que es va signar",
   "unknownKey": "Clau de signatura desconeguda — no s'ha pogut verificar",
   "validButRevoked": "La signatura és autèntica, però el certificat va ser revocat",
-  "honesty": "La signatura acredita que aquest resultat exacte va ser emès per ifcvieweronline.eu en el moment indicat. Reflecteix una validació calculada al navegador de l'emissor — no és una reexecució."
+  "honesty": "La signatura acredita que aquest resultat exacte va ser emès per ifcvieweronline.eu en el moment indicat. Reflecteix una validació calculada al navegador de l'emissor — no és una reexecució.",
+  "qrAlt": "Codi QR amb l'enllaç a aquesta pàgina de verificació",
+  "qrCaption": "Escaneja per obrir aquesta pàgina de verificació — qualsevol pot tornar a comprovar la signatura.",
+  "printBtn": "Imprimeix el certificat"
 }

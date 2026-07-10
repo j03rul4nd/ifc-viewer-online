@@ -25,5 +25,8 @@
   "invalidSignature": "Invalid signature — the content does not match what was signed",
   "unknownKey": "Unknown signing key — could not verify",
   "validButRevoked": "Signature is genuine, but the certificate was revoked",
-  "honesty": "The signature attests that this exact result was issued by ifcvieweronline.eu at the stated time. It reflects a validation computed in the issuer's browser — it is not a re-execution."
+  "honesty": "The signature attests that this exact result was issued by ifcvieweronline.eu at the stated time. It reflects a validation computed in the issuer's browser — it is not a re-execution.",
+  "qrAlt": "QR code linking to this verification page",
+  "qrCaption": "Scan to open this verification page — anyone can re-check the signature.",
+  "printBtn": "Print certificate"
 }

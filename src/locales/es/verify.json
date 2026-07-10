@@ -25,5 +25,8 @@
   "invalidSignature": "Firma inválida — el contenido no coincide con lo firmado",
   "unknownKey": "Clave de firma desconocida — no se pudo verificar",
   "validButRevoked": "La firma es auténtica, pero el certificado fue revocado",
-  "honesty": "La firma acredita que este resultado exacto fue emitido por ifcvieweronline.eu en el momento indicado. Refleja una validación calculada en el navegador del emisor — no es una re-ejecución."
+  "honesty": "La firma acredita que este resultado exacto fue emitido por ifcvieweronline.eu en el momento indicado. Refleja una validación calculada en el navegador del emisor — no es una re-ejecución.",
+  "qrAlt": "Código QR con el enlace a esta página de verificación",
+  "qrCaption": "Escanea para abrir esta página de verificación — cualquiera puede volver a comprobar la firma.",
+  "printBtn": "Imprimir certificado"
 }

@@ -10,8 +10,9 @@
 // custom profile is visually distinct from a full default run. All states are
 // text + icon, never colour alone (WCAG 1.4.1).
 
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import qrcode from 'qrcode-generator'
 import { getCertificate, type ApiError, type CertificateEntry } from '../lib/cloud/api-client'
 import { trackCertificateVerifiedView } from '../lib/analytics'
 import { payloadCanonicalBytes, type CertifyPayloadV1 } from '../lib/certify/canonical'
@@ -98,6 +99,46 @@ export function describeCoverage(payload: CertifyPayloadV1): CoverageInfo {
   }
 }
 
+// ── Shareable verify URL + QR (exported for tests) ────────────────────────────
+
+/** Canonical public URL of this verification page — what the QR encodes. */
+export function buildVerifyUrl(origin: string, hash: string): string {
+  return `${origin}/verify/${hash}`
+}
+
+/**
+ * QR as plain JSX (one <path> from the module matrix) — same "no
+ * dangerouslySetInnerHTML" criterion as the rest of this view, even though
+ * the encoded text is our own URL. Quiet zone baked into the viewBox.
+ */
+function QrSvg({ text, label }: { text: string; label: string }) {
+  const { size, d } = useMemo(() => {
+    const qr = qrcode(0, 'M')
+    qr.addData(text)
+    qr.make()
+    const n = qr.getModuleCount()
+    let path = ''
+    for (let row = 0; row < n; row++)
+      for (let col = 0; col < n; col++)
+        if (qr.isDark(row, col)) path += `M${col} ${row}h1v1h-1z`
+    return { size: n, d: path }
+  }, [text])
+  return (
+    <svg
+      viewBox={`-3 -3 ${size + 6} ${size + 6}`}
+      width={112}
+      height={112}
+      role="img"
+      aria-label={label}
+      shapeRendering="crispEdges"
+      className="rounded-md shrink-0"
+    >
+      <rect x={-3} y={-3} width={size + 6} height={size + 6} fill="#ffffff" />
+      <path d={d} fill="#000000" />
+    </svg>
+  )
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const HEX64 = /^[0-9a-f]{64}$/
@@ -156,12 +197,14 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
     })
   }
 
+  const verifyUrl = buildVerifyUrl(window.location.origin, hash)
+
   return (
-    <div className="min-h-full w-full flex justify-center px-4 py-10 bg-[var(--bg,#0b0b0f)] text-[var(--text,#e8e8ee)]">
+    <div className="min-h-full w-full flex justify-center px-4 py-10 bg-[var(--bg,#0b0b0f)] text-[var(--text,#e8e8ee)] print:bg-white print:text-black print:py-2">
       <div className="w-full max-w-[640px] flex flex-col gap-4">
         {/* Header */}
         <div>
-          <button onClick={onNavigateToLanding} className="text-[12px] text-[var(--text-muted,#9a9aa5)] hover:text-[var(--text)] transition-colors">
+          <button onClick={onNavigateToLanding} className="print:hidden text-[12px] text-[var(--text-muted,#9a9aa5)] hover:text-[var(--text)] transition-colors">
             ← {t('backToApp')}
           </button>
           <h1 className="text-[20px] font-semibold mt-2">{t('title')}</h1>
@@ -169,7 +212,7 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
         </div>
 
         {load.phase === 'loading' && (
-          <p className="text-[13px] text-[var(--text-muted,#9a9aa5)]">{t('loading')}</p>
+          <p role="status" className="text-[13px] text-[var(--text-muted,#9a9aa5)]">{t('loading')}</p>
         )}
 
         {load.phase === 'error' && (
@@ -230,7 +273,7 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
                 </dl>
 
                 {/* Rule results */}
-                <div className="rounded-lg border border-[var(--border,#2a2a33)] max-h-[300px] overflow-y-auto">
+                <div className="rounded-lg border border-[var(--border,#2a2a33)] max-h-[300px] overflow-y-auto print:max-h-none print:overflow-visible">
                   {entry.payload.rules_result.map((r) => {
                     const icon = STATUS_ICON[r.status]
                     return (
@@ -249,23 +292,43 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
                     <button
                       onClick={() => void handleVerify(entry)}
                       disabled={verify === 'checking'}
-                      className="h-8 px-3 rounded-lg text-[12px] font-semibold transition-colors disabled:opacity-50"
+                      className="print:hidden h-8 px-3 rounded-lg text-[12px] font-semibold transition-colors disabled:opacity-50"
                       style={{ background: 'var(--accent, #5E6AD2)', color: 'white' }}
                     >
                       {verify === 'checking' ? t('verifying') : t('verifyBtn')}
                     </button>
-                    {verify === 'valid' && !revoked && (
-                      <span className="text-[12px] font-semibold" style={{ color: 'var(--ok, #4caf82)' }}>✓ {t('verified')}</span>
-                    )}
-                    {verify === 'valid' && revoked && (
-                      <span className="text-[12px] font-semibold" style={{ color: 'var(--danger, #e5534b)' }}>✕ {t('validButRevoked')}</span>
-                    )}
-                    {verify === 'invalid' && (
-                      <span className="text-[12px] font-semibold" style={{ color: 'var(--danger, #e5534b)' }}>✕ {t('invalidSignature')}</span>
-                    )}
-                    {verify === 'unknown_key' && (
-                      <span className="text-[12px] font-semibold" style={{ color: '#F5A623' }}>! {t('unknownKey')}</span>
-                    )}
+                    {/* aria-live so screen readers announce the verdict of the async check */}
+                    <span role="status" aria-live="polite">
+                      {verify === 'valid' && !revoked && (
+                        <span className="text-[12px] font-semibold" style={{ color: 'var(--ok, #4caf82)' }}>✓ {t('verified')}</span>
+                      )}
+                      {verify === 'valid' && revoked && (
+                        <span className="text-[12px] font-semibold" style={{ color: 'var(--danger, #e5534b)' }}>✕ {t('validButRevoked')}</span>
+                      )}
+                      {verify === 'invalid' && (
+                        <span className="text-[12px] font-semibold" style={{ color: 'var(--danger, #e5534b)' }}>✕ {t('invalidSignature')}</span>
+                      )}
+                      {verify === 'unknown_key' && (
+                        <span className="text-[12px] font-semibold" style={{ color: '#F5A623' }}>! {t('unknownKey')}</span>
+                      )}
+                    </span>
+                  </div>
+                )}
+
+                {/* Printable share block: QR of this page + canonical URL (F1.1) */}
+                {isFirst && (
+                  <div className="flex items-center gap-4 rounded-lg border border-[var(--border,#2a2a33)] p-3">
+                    <QrSvg text={verifyUrl} label={t('qrAlt')} />
+                    <div className="min-w-0 flex flex-col gap-1.5">
+                      <p className="text-[11px] text-[var(--text-muted,#9a9aa5)]">{t('qrCaption')}</p>
+                      <p className="font-mono text-[10px] break-all leading-snug">{verifyUrl}</p>
+                      <button
+                        onClick={() => window.print()}
+                        className="print:hidden self-start h-7 px-3 rounded-lg text-[12px] font-medium border border-[var(--border,#2a2a33)] hover:border-[var(--accent,#5E6AD2)] transition-colors"
+                      >
+                        🖨 {t('printBtn')}
+                      </button>
+                    </div>
                   </div>
                 )}
 

@@ -25,5 +25,8 @@
   "invalidSignature": "Assinatura inválida — o conteúdo não corresponde ao que foi assinado",
   "unknownKey": "Chave de assinatura desconhecida — não foi possível verificar",
   "validButRevoked": "A assinatura é genuína, mas o certificado foi revogado",
-  "honesty": "A assinatura atesta que este resultado exato foi emitido por ifcvieweronline.eu no momento indicado. Reflete uma validação calculada no navegador do emissor — não é uma nova execução."
+  "honesty": "A assinatura atesta que este resultado exato foi emitido por ifcvieweronline.eu no momento indicado. Reflete uma validação calculada no navegador do emissor — não é uma nova execução.",
+  "qrAlt": "Código QR com o link para esta página de verificação",
+  "qrCaption": "Digitalize para abrir esta página de verificação — qualquer pessoa pode verificar novamente a assinatura.",
+  "printBtn": "Imprimir certificado"
 }
