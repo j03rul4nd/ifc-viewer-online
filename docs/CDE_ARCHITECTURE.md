@@ -163,6 +163,42 @@ The conformance domain's integrity spine, enforced at the DB layer, not just in 
 - **GDPR erasure = anonymise, not delete.** On the Clerk `user.deleted` webhook, `certificates.user_id` is set NULL (`onDelete: SetNull`) — the report survives because it is a public immutable artifact; the *link to the person* is removed. `AuditLog.actor_user_id` behaves the same way. This is the deliberate tension between "append-only evidence" and "right to erasure", resolved by minimising what is stored (no email/name/filename ever — `docs-planning/02` §6).
 - **Growth is monotonic, and that is the point.** No TTL; permanence *is* the value. Append-only + dedup keeps it bounded (~5 KB/cert → 100 k certs ≈ 500 MB, within tier — R-7).
 
+**Data & retention at a glance** (the groundwork for the GDPR RAT rows — the RAT itself lives with the legal docs, not here):
+
+| Data | Where | Retention | Erasure behaviour |
+|---|---|---|---|
+| `CertifyPayloadV1` (per-rule aggregate, score, hashes) | Postgres `certificates` | **Permanent** (no TTL — permanence is the value) | Row persists; `user_id`/`org_id` links `SetNull` |
+| `file_hash_sha256` | Postgres (inside payload + column) | Permanent | Not personal data — a digest of a file the server never saw |
+| `AuditLog` entries | Postgres | Permanent, append-only | Entry persists; `actor_user_id` `SetNull` |
+| User row (`plan`, Clerk id, Stripe customer id — **never email/name**) | Postgres `users` | Life of the account | Deleted on Clerk `user.deleted` webhook (links cascade to `SetNull`) |
+| IFC bytes (F6 only, D-27) | R2 staging | **≤ 72 h working window, deleted even on failure** | N/A — never retained |
+| Logs | Workers | Platform default | No PII by rule (§9) — nothing to erase |
+
+### 4.3 Multi-tenant isolation & cost control — why the bill cannot explode before F6
+
+Tenant model: **one shared Postgres, `workspace_id` denormalized on every tenant-owned row, isolation enforced twice** (tenant-scoped repository in the Worker + RLS backstop via `SET LOCAL app.workspace_id` inside each `$transaction` — transaction-scoped on purpose, so it survives Supavisor transaction pooling where a session `SET` would leak). Full decision table, alternatives (schema-per-tenant, DB-per-tenant — both rejected) and acceptance criteria: [`CONFORMANCE_DOMAIN.md`](./CONFORMANCE_DOMAIN.md) §4.2.
+
+The cost model is deliberately boring. Where a SaaS bill actually explodes, and what structurally prevents it here:
+
+| Cost vector | Exposure in F0–F5 | Guard |
+|---|---|---|
+| Object storage / egress | **Zero** — no model bytes are ever stored before F6 (invariant 1) | Architecture, not policy |
+| DB storage | ~5 KB/certificate, integers elsewhere; 100k certs ≈ 500 MB (R-7) | Append-only + dedup; no TTL needed |
+| DB compute | Dashboard queries | Composite `(workspace_id, …)` indexes; **mandatory pagination** (max page size, no unbounded SELECT); `statement_timeout` on the `ifc_api` role so one bad query self-terminates |
+| Worker invocations | Micro-cents per request | Per-IP rate limits (fail-open) + per-plan quotas (fail-closed) |
+| Noisy neighbour | One tenant hammering the API | Per-key rate limiting (F4) + `usage_counters` quotas per workspace (`429 quota_exceeded`) — a single tenant can saturate *their* quota, never the shared pool |
+| Webhook/email fan-out | Resend calls | Same fail-open limiter pattern as `/subscribe` |
+| **F6 compute + R2** | The only phase with real marginal cost | Doubly gated (D-27 + signal); per-plan `max_ingest_bytes` / `jobs_per_day`; 72 h deletion is a cost bound as much as a privacy bound |
+
+Operational guards (all cheap, all F2 tasks, none optional):
+
+- **Quotas are checked in the Worker before the write**, against `usage_counters` incremented **in the same transaction** as the metered write — a crash between write and count can never leak free usage ([`CONFORMANCE_DOMAIN.md`](./CONFORMANCE_DOMAIN.md) §3.9).
+- **Fail-open vs fail-closed is pinned per class:** abuse rate-limiting fails open (infra hiccup never blocks a free user); paid-quota checks fail closed (unreadable counter ⇒ refuse the write). Never swap these.
+- **Budget kill-switch:** every expensive endpoint group sits behind an env flag (`FEATURE_VERIFY_BATCH`, later `FEATURE_MONITOR`) — the same unset-the-variable rollback the SPA already uses for `VITE_API_URL`. Disabling a surface is a panel action, not a deploy.
+- **Daily usage rollup + alert** at 80% of any workspace quota and at a global daily-spend threshold — observability before invoices, not after.
+
+The anonymous free path stays byte-identical and unmetered at every phase — it is rate-limited per IP (`CERTIFY_LIMITER`), never quota'd, because it is the moat-building loop, not a cost centre. The entitlement/role axes are split deliberately: plan limits gate *how much*, roles ([`CONFORMANCE_DOMAIN.md`](./CONFORMANCE_DOMAIN.md) §3.8) gate *who may*, RLS gates *whose rows* — one testable axis per layer.
+
 ---
 
 ## 5. R2 — where object storage fits (and does not)
@@ -261,7 +297,9 @@ flowchart TD
     end
 ```
 
-**Failure & retry posture (edge):** all Workers follow the `cf-worker/` conventions — CORS by allowlist, fail-open rate limiting (an infra hiccup never blocks a legitimate free user), `{ error: { code, message } }` bodies, no PII in logs. The F6 outbound webhook retries with backoff (3 attempts / 24 h) and marks a config `failing` after N failures; the result is always readable in the dashboard. SSRF hardening on pull ingest (HTTPS-only, domain allowlist, private/metadata-IP block, size + timeout caps) is a hard acceptance criterion — see [`INTEGRATIONS.md`](./INTEGRATIONS.md) §3.
+**Failure & retry posture (edge):** all Workers follow the `cf-worker/` conventions — CORS by allowlist, fail-open rate limiting (an infra hiccup never blocks a legitimate free user), `{ error: { code, message } }` bodies, no PII in logs. On the client, every cloud call returns `Result<T,E>` (D-12) and **degrades, never blocks**: if `/certify` is unreachable the user still gets the local unsigned JSON certificate (the F1 acceptance criterion in [`INTEGRATIONS.md`](./INTEGRATIONS.md) §2). The F6 outbound webhook retries with backoff (3 attempts / 24 h) and marks a config `failing` after N failures; the result is always readable in the dashboard. SSRF hardening on pull ingest (HTTPS-only, domain allowlist, private/metadata-IP block, size + timeout caps) is a hard acceptance criterion — see [`INTEGRATIONS.md`](./INTEGRATIONS.md) §3.
+
+**Rollout / rollback (per backend-touching phase):** deploy the Worker first → run its smoke test against production → only then set `VITE_API_URL` in the Vercel panel (the SPA feature-detects it). Rollback is **unsetting the variable**: the SPA reverts to today's behaviour with zero code changes — the same gate pattern `VITE_REPORT_URL` already proves.
 
 ---
 
@@ -277,4 +315,4 @@ flowchart TD
 
 ---
 
-*Last updated: 2026-07-04 · Status: architecture blueprint (design, not built) · Cloud layer F0–F6 pending; F0 spikes S-1 (Clerk/COEP) + R-2 (Prisma adapter) block everything downstream · Public SPA unchanged and byte-identical for anonymous users at every phase · Depends on D-27 (opt-in server processing, F6-only, founder-gated) + D-28 (immutable Submission / append-only AuditLog) being written into DECISIONS.md*
+*Last updated: 2026-07-06 (rev 2: new §4.3 multi-tenant isolation + cost control — shared-DB tenancy, SET LOCAL/RLS pattern, quota fail-closed posture, budget kill-switch) · Status: architecture blueprint (design, not built) · Cloud layer F0–F6 pending; F0 spikes S-1 (Clerk/COEP) + R-2 (Prisma adapter) block everything downstream · Public SPA unchanged and byte-identical for anonymous users at every phase · Governing decisions D-27 (opt-in server processing, F6-only, ⏸️ written 2026-07-04 but founder-gated — not ratified) + D-28 (immutable Submission / append-only AuditLog, active) are in DECISIONS.md*

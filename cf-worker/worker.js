@@ -799,9 +799,18 @@ export default {
         return new Response(null, { status: 204, headers: c })
       }
 
-      // Crawlable shared report — GET only, no CORS needed (top-level navigation).
-      if ((url.pathname === '/r' || url.pathname === '/report') && request.method === 'GET') {
-        return await handleReport(request, url, env)
+      // Crawlable shared report — top-level navigation, no CORS needed. HEAD is
+      // answered exactly like GET but without the body: some unfurlers
+      // (Slack/WhatsApp/…) probe with HEAD before the GET, and a 404 there
+      // kills the link preview.
+      if (
+        (url.pathname === '/r' || url.pathname === '/report') &&
+        (request.method === 'GET' || request.method === 'HEAD')
+      ) {
+        const res = await handleReport(request, url, env)
+        return request.method === 'HEAD'
+          ? new Response(null, { status: res.status, headers: res.headers })
+          : res
       }
 
       // Embeddable Health Score badge (SVG) — top-level <img>, no CORS needed.

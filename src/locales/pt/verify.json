@@ -1,0 +1,29 @@
+{
+  "title": "Verificação de certificado",
+  "subtitle": "Certificado de validação IFC — o resultado foi calculado no navegador do emissor e assinado na emissão.",
+  "backToApp": "Voltar ao IFC Viewer Online",
+  "loading": "A carregar certificado…",
+  "notFound": "Não existe nenhum certificado para esta ligação.",
+  "networkError": "Não foi possível contactar o serviço de certificados.",
+  "retry": "Tentar novamente",
+  "healthScore": "Health Score",
+  "coverage": "{{checked}} de {{total}} regras — perfil {{profile}}",
+  "partialBanner": "Perfil de regras parcial ou personalizado ({{profile}}) — não é uma execução completa por omissão.",
+  "revokedBanner": "Este certificado foi revogado.",
+  "issuedAt": "Validado em",
+  "validator": "Validador",
+  "ruleset": "Conjunto de regras",
+  "fileHash": "Hash do ficheiro (SHA-256)",
+  "ruleStatus": {
+    "pass": "passa",
+    "fail": "falha",
+    "warning": "aviso"
+  },
+  "verifyBtn": "Verificar assinatura neste navegador",
+  "verifying": "A verificar…",
+  "verified": "Assinatura verificada neste navegador",
+  "invalidSignature": "Assinatura inválida — o conteúdo não corresponde ao que foi assinado",
+  "unknownKey": "Chave de assinatura desconhecida — não foi possível verificar",
+  "validButRevoked": "A assinatura é genuína, mas o certificado foi revogado",
+  "honesty": "A assinatura atesta que este resultado exato foi emitido por ifcvieweronline.eu no momento indicado. Reflete uma validação calculada no navegador do emissor — não é uma nova execução."
+}

@@ -1,0 +1,29 @@
+{
+  "title": "Verifica del certificato",
+  "subtitle": "Certificato di validazione IFC — il risultato è stato calcolato nel browser dell'emittente e firmato all'emissione.",
+  "backToApp": "Torna a IFC Viewer Online",
+  "loading": "Caricamento del certificato…",
+  "notFound": "Non esiste alcun certificato per questo link.",
+  "networkError": "Impossibile raggiungere il servizio certificati.",
+  "retry": "Riprova",
+  "healthScore": "Health Score",
+  "coverage": "{{checked}} regole su {{total}} — profilo {{profile}}",
+  "partialBanner": "Profilo di regole parziale o personalizzato ({{profile}}) — non è un'esecuzione completa predefinita.",
+  "revokedBanner": "Questo certificato è stato revocato.",
+  "issuedAt": "Validato il",
+  "validator": "Validatore",
+  "ruleset": "Set di regole",
+  "fileHash": "Hash del file (SHA-256)",
+  "ruleStatus": {
+    "pass": "superata",
+    "fail": "fallita",
+    "warning": "avviso"
+  },
+  "verifyBtn": "Verifica la firma in questo browser",
+  "verifying": "Verifica in corso…",
+  "verified": "Firma verificata in questo browser",
+  "invalidSignature": "Firma non valida — il contenuto non corrisponde a quanto firmato",
+  "unknownKey": "Chiave di firma sconosciuta — impossibile verificare",
+  "validButRevoked": "La firma è autentica, ma il certificato è stato revocato",
+  "honesty": "La firma attesta che questo esatto risultato è stato emesso da ifcvieweronline.eu al momento indicato. Riflette una validazione calcolata nel browser dell'emittente — non è una riesecuzione."
+}

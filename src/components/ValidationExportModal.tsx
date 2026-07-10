@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { zipSync, strToU8 } from 'fflate'
 import { downloadBlob } from '../lib/diffStore'
+import { APP_VERSION } from '../lib/app-version'
 import { issuesToBcfTopics, exportBcfZip } from '../lib/bcf'
 import { getCoveredCategories, ALL_CATEGORIES } from './ValidationCoverageSummary'
 import { VALIDATION_PROFILES } from '../types'
@@ -25,7 +26,12 @@ import type {
   ValidationIssue, ValidationResult, ValidationCertificate,
   RulesConfig, ValidationProfile,
 } from '../types'
-import { trackFeatureUsed } from '../lib/analytics'
+import { trackFeatureUsed, trackCertificateIssued } from '../lib/analytics'
+import { isCloudEnabled, certify, type ApiError, type CertifyResponse } from '../lib/cloud/api-client'
+import { buildCertifyPayload } from '../lib/certify/build-payload'
+import { sha256Hex } from '../lib/certify/canonical'
+import { modelRegistry } from '../lib/model-registry'
+import { buildBadgeMarkdown } from '../lib/share-report'
 
 type ExportFormat = 'json' | 'csv' | 'certificate' | 'bcf'
 type Severity = 'error' | 'warning' | 'info'
@@ -90,8 +96,45 @@ function buildCertificate(
     qualityScore: entry.result.qualityScore ?? 0,
     issues:       entry.result.issues,
     generatedBy:  'IFC Viewer — Validator V2',
-    appVersion:   '2.0.0',
+    appVersion:   APP_VERSION,
     durationMs:   entry.result.durationMs,
+  }
+}
+
+// ── Verifiable certificate issuance (F1) ─────────────────────────────────────────
+// Hash the raw IFC bytes in-browser (only the digest travels — I-2), build the
+// frozen CertifyPayloadV1 and ask the Worker to sign it. Exported so the
+// contract test can assert the exact body without rendering the modal.
+
+export interface IssueVerifiableDeps {
+  /** Injectable for tests; defaults to the modelRegistry buffer authority. */
+  getBuffer?: (modelId: string) => ArrayBuffer | null
+  /** Injectable for tests; defaults to the real api-client certify(). */
+  certifyFn?: typeof certify
+}
+
+export type IssueVerifiableResult =
+  | { ok: true; response: CertifyResponse }
+  | { ok: false; reason: ApiError['code'] | 'no_buffer' | 'build_failed' }
+
+export async function issueVerifiableCertificate(
+  entry: ExportModelEntry,
+  rules: RulesConfig,
+  profileId: string | null,
+  deps: IssueVerifiableDeps = {},
+): Promise<IssueVerifiableResult> {
+  const getBuffer = deps.getBuffer ?? ((id: string) => modelRegistry.getBuffer(id))
+  const certifyFn = deps.certifyFn ?? certify
+  const buffer = getBuffer(entry.modelId)
+  if (!buffer) return { ok: false, reason: 'no_buffer' }
+  try {
+    const fileHashSha256 = await sha256Hex(buffer)
+    const payload = await buildCertifyPayload({ result: entry.result, rules, profileId, fileHashSha256 })
+    const r = await certifyFn(payload)
+    return r.ok ? { ok: true, response: r.value } : { ok: false, reason: r.error.code }
+  } catch {
+    // buildCertifyPayload only rejects on malformed input; degrade, never throw.
+    return { ok: false, reason: 'build_failed' }
   }
 }
 
@@ -122,6 +165,12 @@ export default function ValidationExportModal({
   const [format, setFormat]           = useState<ExportFormat>('json')
   // 'combined' = one file with all selected models; 'split' = one file per model in a .zip
   const [packaging, setPackaging]     = useState<'combined' | 'split'>('combined')
+
+  // ── Verifiable certificate (F1) — only exists when a backend is configured ────
+  type CertifyUiState = 'idle' | 'busy' | 'failed' | { response: CertifyResponse }
+  const cloudAvailable = isCloudEnabled()
+  const [certifyState, setCertifyState] = useState<CertifyUiState>('idle')
+  const [copiedKey, setCopiedKey] = useState<'link' | 'badge' | null>(null)
 
   // Close on Escape
   useEffect(() => {
@@ -281,6 +330,39 @@ export default function ValidationExportModal({
     onClose()
   }
 
+  // ── Verifiable certificate handlers ────────────────────────────────────────────
+  const handleIssueVerifiable = async () => {
+    if (selectedModels.length !== 1 || certifyState === 'busy') return
+    setCertifyState('busy')
+    const res = await issueVerifiableCertificate(selectedModels[0], rules, activeProfileId)
+    setCertifyState(res.ok ? { response: res.response } : 'failed')
+    if (res.ok) {
+      // Coarse category only — never the profile id/name (INV-5).
+      const profileKind = activeProfileId && VALIDATION_PROFILES.some((p) => p.id === activeProfileId)
+        ? 'default' as const
+        : 'custom' as const
+      trackCertificateIssued({
+        deduplicated: res.response.deduplicated,
+        rules_evaluated: res.response.payload.rules_result.length,
+        profile_kind: profileKind,
+      })
+    }
+  }
+
+  const copyText = async (text: string, key: 'link' | 'badge') => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedKey(key)
+      setTimeout(() => setCopiedKey(null), 2000)
+    } catch { /* clipboard denied — the URL stays visible and selectable */ }
+  }
+
+  const downloadSignedJson = (r: CertifyResponse) => {
+    const doc = { payload: r.payload, signature: r.signature, key_id: r.key_id }
+    const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' })
+    downloadBlob(blob, `ifc-certificate-${r.cert_hash.slice(0, 12)}.json`)
+  }
+
   // ── Render helpers ─────────────────────────────────────────────────────────────
   const FORMATS: Array<{ id: ExportFormat; label: string; desc: string; tag: string; color: string }> = [
     { id: 'json',        label: t('export.fmtJsonLabel'),  desc: t('export.fmtJsonDesc'),  tag: 'JSON', color: 'var(--accent)' },
@@ -366,6 +448,79 @@ export default function ValidationExportModal({
               })}
             </div>
           </section>
+
+          {/* Verifiable certificate (F1) — only rendered with a configured backend */}
+          {format === 'certificate' && cloudAvailable && (
+            <section className="rounded-lg border border-[#F5A62333] bg-[#F5A6230a] p-2.5 flex flex-col gap-2">
+              <div className="flex items-center gap-1.5">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#F5A623" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 1l4 1.5v3c0 2.5-1.7 4.4-4 5.5-2.3-1.1-4-3-4-5.5v-3L6 1z"/><path d="M4.2 6l1.3 1.3 2.3-2.6"/>
+                </svg>
+                <span className="text-[11px] font-semibold text-[var(--text)]">{t('export.verifiableTitle')}</span>
+              </div>
+              <p className="text-[10px] text-[var(--text-muted)] leading-snug">{t('export.verifiableDesc')}</p>
+
+              {certifyState === 'failed' && (
+                <p className="text-[10px] leading-snug" style={{ color: '#F5A623' }}>{t('export.verifiableError')}</p>
+              )}
+
+              {typeof certifyState === 'object' ? (
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-[10px] font-medium" style={{ color: 'var(--ok)' }}>
+                    {certifyState.response.deduplicated ? t('export.verifiableDedup') : t('export.verifiableReady')}
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex-1 truncate font-mono text-[10px] text-[var(--text)] px-2 py-1 rounded bg-[var(--surface-2)] border border-[var(--border)]">
+                      {certifyState.response.verify_url}
+                    </span>
+                    <button
+                      onClick={() => copyText(certifyState.response.verify_url, 'link')}
+                      className="shrink-0 h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)] transition-colors"
+                    >
+                      {copiedKey === 'link' ? t('export.copied') : t('export.copyLink')}
+                    </button>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={() => downloadSignedJson(certifyState.response)}
+                      className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)] transition-colors"
+                    >
+                      {t('export.downloadSigned')}
+                    </button>
+                    {(() => {
+                      const badge = buildBadgeMarkdown(
+                        certifyState.response.payload.health_score,
+                        certifyState.response.verify_url,
+                        import.meta.env.VITE_REPORT_URL as string | undefined,
+                      )
+                      return badge ? (
+                        <button
+                          onClick={() => copyText(badge, 'badge')}
+                          className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)] transition-colors"
+                        >
+                          {copiedKey === 'badge' ? t('export.copied') : t('export.copyBadge')}
+                        </button>
+                      ) : null
+                    })()}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={handleIssueVerifiable}
+                    disabled={certifyState === 'busy' || selectedModels.length !== 1}
+                    className="self-start h-7 px-3 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ background: '#F5A623', color: '#1a1205' }}
+                  >
+                    {certifyState === 'busy' ? t('export.verifiableBusy') : t('export.verifiableBtn')}
+                  </button>
+                  {selectedModels.length !== 1 && (
+                    <p className="text-[10px] text-[var(--text-muted)]">{t('export.verifiableSelectOne')}</p>
+                  )}
+                </>
+              )}
+            </section>
+          )}
 
           {/* Model scope (only when >1 model) */}
           {multiModel && (

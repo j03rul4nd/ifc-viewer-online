@@ -30,7 +30,7 @@ import type {
   ValidationIssue, ValidationResult, ViewerHandle,
   ValidationCategoryType, ValidationProfile, ValidationCoverage,
 } from '../types'
-import { VALIDATION_PROFILES, RULE_METADATA, getRuleLabel, getRuleRemediation, AUTHORING_TOOLS } from '../types'
+import { VALIDATION_PROFILES, RULE_METADATA, RULE_COUNT, getRuleLabel, getRuleRemediation, AUTHORING_TOOLS } from '../types'
 import type { AuthoringTool } from '../types'
 import { getCoveredCategories, ALL_CATEGORIES } from './ValidationCoverageSummary'
 import BcfPanel from './BcfPanel'
@@ -67,8 +67,10 @@ function localizedProfileDescription(p: { id: string; description: string }, t: 
 const MIN_PANEL_H = 180
 const DEFAULT_PANEL_H = 360
 
-// Total number of validation rules in the catalogue (derived, never hardcoded).
-const TOTAL_RULE_COUNT = Object.keys(RULE_METADATA).length
+// Total number of validation rules in the catalogue. Uses the canonical
+// RULE_COUNT (same derivation as the signed certificate's `+rN` suffix);
+// rule-count.test.ts asserts RULE_METADATA stays in sync with it.
+const TOTAL_RULE_COUNT = RULE_COUNT
 
 /**
  * Copy text to the clipboard. Uses the async Clipboard API when available and

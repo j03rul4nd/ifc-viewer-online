@@ -64,7 +64,7 @@
   },
   "features": [
     {
-      "title": "Validador IFC com 38 regras",
+      "title": "Validador IFC com 44 regras",
       "body": "Encontre GUIDs duplicados, violações de hierarquia espacial e elementos órfãos antes do seu cliente. Resultados chegam em tempo real de um worker em segundo plano.",
       "tip": "Motor de regras IFC / ISO 19650"
     },
@@ -152,7 +152,7 @@
     {
       "n": "02",
       "title": "Inspecione e valide",
-      "body": "Explore a árvore do modelo, filtre por categoria e execute 38 regras de validação integradas em um worker em segundo plano. GUIDs duplicados, erros de hierarquia espacial — tudo sinalizado instantaneamente."
+      "body": "Explore a árvore do modelo, filtre por categoria e execute 44 regras de validação integradas em um worker em segundo plano. GUIDs duplicados, erros de hierarquia espacial — tudo sinalizado instantaneamente."
     },
     {
       "n": "03",
@@ -221,7 +221,7 @@
     },
     {
       "q": "O que acontece se meu arquivo IFC for muito grande?",
-      "a": "O aplicativo lida com arquivos de até 2 GB. O desempenho depende do seu dispositivo — arquivos abaixo de 200 MB carregam bem em hardware moderno."
+      "a": "Não há um limite de tamanho imposto — o desempenho depende do seu dispositivo. Arquivos abaixo de 200 MB carregam bem em hardware moderno."
     },
     {
       "q": "Quais versões IFC são suportadas?",
@@ -237,7 +237,7 @@
     },
     {
       "q": "Como funciona a validação?",
-      "a": "O validador executa 38 regras integradas em um Web Worker em segundo plano. As regras cobrem GUIDs duplicados, hierarquia espacial, elementos órfãos, convenções de nomenclatura e muito mais."
+      "a": "O validador executa 44 regras integradas em um Web Worker em segundo plano. As regras cobrem GUIDs duplicados, hierarquia espacial, elementos órfãos, convenções de nomenclatura e muito mais."
     },
     {
       "q": "Posso corrigir erros e exportar um IFC corrigido?",

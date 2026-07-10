@@ -119,12 +119,23 @@ signed report + verify affordance.
 and to `IfcViewerPreset` in `ifc-viewer-sdk.ts`; `buildSrc()` already forwards any non-`minimal`
 `ui` value, so no SDK transport change is needed.
 
+**Parameter contract (`ui=receiver`)**
+
+| Param | Required | Effect |
+|---|---|---|
+| `ui=receiver` | yes | Activates the receiver skin: signed-report card + verify affordance, no editing/tour/presenter chrome. |
+| `report=<cert_hash>` (or `#report=`) | one of these | The embed fetches `GET /certificates/:hash` and renders the signed `ConformityReport` + in-browser signature verification. |
+| `model=<url>` | optional | Adds the 3D context *only* when the integrator supplies a public, CORS-enabled model URL — never required for the report card. |
+| `lang=<code>` | optional | Localises the skin via the existing ×10 i18n system; the signed payload itself is language-neutral (ids + numbers only). |
+
 **Acceptance criteria**
 
 - [ ] `?ui=receiver` renders the signed-report skin with no editing/tour chrome.
-- [ ] The report embed can be pointed at a certified Submission via `#report=` / a `verify_url`.
-- [ ] The anonymous network footprint is byte-for-byte unchanged (empty Network tab beyond app assets).
+- [ ] The report embed can be pointed at a certified Submission via `report=`/`#report=` / a `verify_url`.
+- [ ] The anonymous network footprint is byte-for-byte unchanged (empty Network tab beyond app assets + the one `GET /certificates/:hash` the embed exists to make).
 - [ ] `postMessage` stays two-way; `ready`/`element-selected` still fire.
+- [ ] Verification status is conveyed by text + icon, never colour alone (WCAG 1.4.1); the skin is keyboard-navigable.
+- [ ] All receiver-skin strings come from i18n keys (×10 locale parity test), same rule as the `client` skin.
 
 ---
 
@@ -132,11 +143,12 @@ and to `IfcViewerPreset` in `ifc-viewer-sdk.ts`; `buildSrc()` already forwards a
 
 **Status:** F1. The canonical codec is **already frozen and tested**:
 [`src/lib/certify/canonical.ts`](../src/lib/certify/canonical.ts) (`CertifyPayloadV1`,
-`canonicalJson`, `payloadCanonicalBytes`, `computeCertHash`) with 23 tests in
-`canonical.test.ts`, and the pure builder `buildCertifyPayload()` /
+`canonicalJson`, `payloadCanonicalBytes`, `computeCertHash`) with 23 tests across
+`canonical.test.ts` + `build-payload.test.ts`, and the pure builder `buildCertifyPayload()` /
 `computeRulesetVersion()` in `src/lib/certify/build-payload.ts`. What F1 wires is the
 Worker endpoints and the SPA `/verify` route. Full spec:
-[`docs-planning/03-feature-certificado-firmado.md`](../docs-planning/03-feature-certificado-firmado.md).
+[`docs-planning/03-feature-certificado-firmado.md`](../docs-planning/03-feature-certificado-firmado.md)
+*(private planning suite — gitignored, not present in a public checkout; same for every `docs-planning/*` reference below)*.
 
 The `ConformityReport` **is** the signed `CertifyPayloadV1` (see `CONFORMANCE_DOMAIN.md`).
 It deliberately excludes file name, GlobalIds, element names, messages and coordinates —
@@ -214,13 +226,51 @@ rulesets over the same file). Returns `{ match: 'cert'|'file', certificates: [{ 
 signature, key_id, status, created_at }] }`; `404` if none. Cacheable at the edge
 (`Cache-Control: public, max-age=300`) — immutable except on revocation.
 
+### Error contract (`/certify` + `/certificates/:hash`)
+
+All errors use the uniform Worker envelope `{ "error": { "code", "message" } }` (same shape as
+`cf-worker/`); the client consumes them as a typed `Err` via the `Result` convention (§6) and
+**degrades, never blocks** — an unreachable or erroring Worker still yields the local unsigned
+JSON certificate.
+
+| HTTP | `code` | When |
+|---|---|---|
+| `400` | `invalid_payload` | Schema violation: missing/extra fields, non-integer or out-of-range `health_score`, malformed hash. |
+| `400` | `unknown_schema_version` | `schema_version` the deployed Worker does not know (client newer than Worker). |
+| `400` | `unknown_rule_id` | A `rule_id` outside the Worker's embedded 44-rule allowlist (adding a rule = a Worker deploy, by design). |
+| `404` | `not_found` | `GET /certificates/:hash` with no matching row. |
+| `429` | `rate_limited` | `CERTIFY_LIMITER` tripped (per-IP); includes `Retry-After`. Fail-open on limiter infra errors. |
+| `429` | `quota_exceeded` | A **workspace-bound** write exceeded its plan limit (`usage_counters`, F2+). **Fail-closed** — unlike abuse rate-limiting, an unreadable counter refuses the write. Never applies to anonymous issuance. |
+| `500` | `internal` | Signing/DB failure. Never leaks internals; no PII in the message. |
+
+`POST /certify` is **idempotent by construction**: retrying the same payload can only hit the
+dedup path (`200` + `deduplicated: true`) — a client may retry on network failure without
+minting duplicates.
+
+> **Dedup replaces the caller's payload — render the response, not the request.** On a dedup
+> hit the Worker returns the **stored** payload and signature; the caller's `validated_at` (and
+> its would-be signature) are discarded. A client that renders the payload it *sent* instead of
+> the one it *received* will display a timestamp the signature does not cover. This is a
+> mandatory mirror/contract-test case (see `CONFORMANCE_PATTERNS.md` §8.1).
+
+### Timestamping
+
+`validated_at` inside the signed payload is asserted by **our service clock** — the signature
+proves the payload was not altered *since signing*, not that the wall-clock time is
+independently attested. For today's use (delivery gate + citable report) that is sufficient and
+is disclosed honestly. **Designed deepening, not built:** if certificates start being used in
+formal disputes, add an **RFC 3161 TSA countersignature** (or an eIDAS-qualified timestamp)
+over the canonical bytes at issuance — additive (a new optional response field, no payload/schema
+break). This is an open decision for the founder; until then, never market "qualified" or
+"legal-grade" timestamps.
+
 ### Sequence — issue anonymously, verify in another browser
 
 ```mermaid
 sequenceDiagram
     participant Browser as Issuer browser (P1)
     participant Worker as ifc-cloud-api Worker
-    participant WK as public/.well-known/keys.json
+    participant WK as public/.well-known/ifcvieweronline-keys.json
     participant Verifier as Verifier browser (P2)
 
     Note over Browser: sha256(IFC bytes) via WebCrypto<br/>bytes NEVER leave the browser
@@ -253,7 +303,7 @@ invariant; (c) rate limiting against mass issuance.
 
 `key_id` (e.g. `2026-07-k1`) rides in every response and is persisted per certificate.
 `public/.well-known/ifcvieweronline-keys.json` publishes
-`{ keys: [{ kid, alg:"ES256", spki_pem, status:"active"|"retired" }] }`; retired keys stay
+`{ keys: [{ kid, alg:"ES256", spki_pem, status:"active"|"retired"|"revoked" }] }`; retired keys stay
 so old certificates keep verifying. A compromised key is marked `revoked`; per-certificate
 `status='revoked'` handles point revocations (spam/abuse).
 
@@ -265,6 +315,12 @@ so old certificates keep verifying. A compromised key is marked `revoked`; per-c
 - [ ] Same file + ruleset twice → same `cert_hash`, `deduplicated:true`, one DB row.
 - [ ] Flow degrades to the unsigned local JSON certificate when the Worker is unreachable.
 - [ ] The client↔Worker canonicalisation mirror test passes on the same vectors.
+- [ ] **Display honesty:** `/verify` and the printable certificate always show *how many rules
+      were evaluated and under which ruleset* (e.g. "12 of 44 rules — custom profile
+      `profile:acme@sha256:ab12…`"). A certificate issued under a partial/custom profile must be
+      visually distinct from a full default run — a subset-of-passing-rules certificate must
+      never render like a clean bill of health. (Companion to the R-5 honest threat model: the
+      `ruleset_version` fingerprint discloses the profile; the UI must surface it, not bury it.)
 
 ---
 
@@ -283,15 +339,15 @@ us; we validate and return a **condensed `ConformityReport` only** — never the
 
 Auth by API key in the query (many CDEs cannot set custom headers; the `X-Api-Key` header
 is the documented preference). The key is verified by `sha256` against `key_hash` on
-**every** request — revocation is immediate, **no cache** (§8).
+**every** request — revocation is immediate, **no cache** (§6).
 
 | Mode | Body | Notes |
 |---|---|---|
 | **Pull** (preferred) | `{ file_url }` | A signed URL from the CDE. We download → validate → **delete** (72 h max, D-27). The file is never uploaded "by hand". |
 | **Push** | `multipart/form-data` (file) | For CDEs without signed URLs; per-plan size cap. |
 
-Returns `202 { job_id }`. Processing reuses the F5 cloud queue/container (`cloud_jobs`,
-same retention/deletion regime).
+Returns `202 { job_id }`. Processing uses the F6 cloud queue/container (`cloud_jobs`,
+same retention/deletion regime — built in this same phase, D-27-gated).
 
 ### Outbound — `POST <webhook_out_url>` (condensed report only)
 
@@ -313,7 +369,7 @@ Retries with backoff (3 attempts / 24 h); config marked `failing` after N failur
 sequenceDiagram
     participant CDE as Team CDE (Aconex/ACC/Dalux/SharePoint)
     participant Worker as ifc-cloud-api /monitor
-    participant Q as Cloud queue + container (F5)
+    participant Q as Cloud queue + container (F6)
     participant Hook as webhook_out_url
 
     CDE->>Worker: POST /monitor/ingest?key=…  {file_url}  (pull)
@@ -351,7 +407,7 @@ A `file_url` is attacker-influenced, so the pull fetch must:
 - [ ] A revoked key gets `401` on `/monitor/ingest` immediately (no cache window).
 - [ ] The outbound webhook payload never contains file bytes (contract test).
 - [ ] A signed outbound webhook verifies with the config secret; a tampered one does not.
-- [ ] The downloaded/uploaded file is deleted per the F5 regime **even on failure**.
+- [ ] The downloaded/uploaded file is deleted per the F6 retention regime **even on failure**.
 - [ ] A simulated CDE (`curl` script) drives the full ingest → process → webhook cycle.
 - [ ] Consent is explicit, paid-only, per D-27; anonymous/free users can never reach this path.
 
@@ -400,6 +456,12 @@ It adds essentially no new compute. Spec: `docs-planning/01` §6.4 + the api-ver
   `id`, `user_id`/`org_id`, `key_hash`, `prefix`, `created_at`, `last_used_at`,
   `revoked_at`). Usage metered in `api_usage` counters.
 - **Rate limiting:** per key; over-quota returns `429` with `Retry-After`.
+- **Limits & semantics:** max **100 hashes per call** (`400 batch_too_large` above it, so CI
+  callers chunk deterministically); unknown hashes come back as `{ "status": "not_found" }`
+  entries rather than failing the batch; the call is a **pure read** — safe to retry, no
+  side effects beyond usage counters.
+- **Errors:** uniform envelope — `401 invalid_key` (missing/revoked), `400 invalid_payload` /
+  `batch_too_large`, `429 rate_limited` + `Retry-After`.
 
 ```jsonc
 // POST /api/v1/verify-batch   Header: X-Api-Key: ifck_live_…
@@ -414,7 +476,7 @@ It adds essentially no new compute. Spec: `docs-planning/01` §6.4 + the api-ver
 
 **Acceptance criteria**
 
-- [ ] A revoked API key returns `401` immediately — **no cache window** (§8).
+- [ ] A revoked API key returns `401` immediately — **no cache window** (§6).
 - [ ] Over-quota returns `429` + `Retry-After`.
 - [ ] No endpoint accepts model bytes.
 
@@ -438,13 +500,17 @@ All I/O boundaries (Worker handlers, SDK request/response, BCF import) return
 ### Worker message validation
 
 Every worker message is validated with zod via `worker-schemas.ts` (invariant 13). The
-BCF parser already does this (`parseBcfParserMsg` in `bcf.ts`); new workers follow suit.
+BCF parser already does this (`parseBcfParserMsg`, defined in `worker-schemas.ts` and
+consumed by `bcf.ts`); new workers follow suit.
 
 ### Rate limiting is fail-open
 
 Rate limiters return "allow" when unbound or on error (`underLimit` in
 `cf-worker/worker.js`) so an infra hiccup never blocks a legitimate free user. Abuse
 throttling is best-effort; correctness (signature, key check) is never fail-open.
+The inverse holds for billing boundaries: **quota checks on workspace-bound writes are
+fail-closed** (`429 quota_exceeded`, see the §2 error table) — an unreadable counter
+refuses the write. This is the split `CONFORMANCE_DOMAIN.md` §3.9 pins.
 
 ---
 
@@ -454,10 +520,10 @@ throttling is best-effort; correctness (signature, key check) is never fail-open
 |---|---|---|
 | SDK / embed | `ifc-viewer-sdk.ts`, `url-params.ts`, `ui=client` (D-25) | `ui=receiver` preset string |
 | Certificate | `certify/canonical.ts` + `build-payload.ts` (frozen, 23 tests), `buildBadgeMarkdown` (`share-report.ts`) | Worker `/certify`, `/certificates/:hash`, SPA `/verify`, `.well-known` keys |
-| CDE monitor | F5 queue/container, Resend email pattern (`cf-worker/`), `api_keys` | `/monitor/ingest`, HMAC outbound, `monitor_configs`, SSRF guard |
+| CDE monitor | Resend email pattern (`cf-worker/`), `api_keys` | F6 queue/container (`cloud_jobs`), `/monitor/ingest`, HMAC outbound, `monitor_configs`, SSRF guard |
 | BCF | `bcf.ts`, `bcf-parser.worker.ts`, `getCameraViewpoint` (D-24) | — (mapping to `Submission`/`AuditLog` only) |
 | verify-batch | `certificates` table (from F1) | `/api/v1/verify-batch`, `api_keys`/`api_usage` |
 
 ---
 
-*Last updated: 2026-07-04 · Status: SDK/embed + BCF shipped; certificate (F1) codec frozen, endpoints pending; verify-batch (F4) and CDE monitor (F6, D-27-gated) designed, not built.*
+*Last updated: 2026-07-10 (rev 3: audit fixes — cloud queue/container correctly attributed to F6 (was mislabelled F5 in four spots), stale §8 → §6 cross-references, keys filename unified to `ifcvieweronline-keys.json`, `revoked` added to the keys.json status enum, fail-closed quota half of the §6 split stated explicitly, certify test count attributed across both test files) · Status: SDK/embed + BCF shipped; certificate (F1) codec frozen, endpoints pending; verify-batch (F4) and CDE monitor (F6, D-27-gated) designed, not built. D-27/D-28 are written in `DECISIONS.md` (D-27 ⏸️ founder-gated, not ratified).*

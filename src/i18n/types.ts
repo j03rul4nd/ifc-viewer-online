@@ -18,6 +18,7 @@ import type enIds from '../locales/en/ids.json';
 import type enEir from '../locales/en/eir.json';
 import type enInvite from '../locales/en/invite.json';
 import type enCapture from '../locales/en/capture.json';
+import type enVerify from '../locales/en/verify.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -43,6 +44,7 @@ declare module 'i18next' {
       solar: typeof enSolar;
       tour: typeof enTour;
       client: typeof enClient;
+      verify: typeof enVerify;
     };
   }
 }

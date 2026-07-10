@@ -10,6 +10,7 @@
 
 import type { RulesConfig, ValidationIssue, ValidationResult } from '../../types'
 import { DEFAULT_RULES } from '../../types'
+import { APP_VERSION } from '../app-version'
 import { calculateQualityScore } from '../validator'
 import {
   CERTIFY_SCHEMA_VERSION,
@@ -22,11 +23,11 @@ import {
 
 // ── Validator version ─────────────────────────────────────────────────────────
 
-// Keep the base version aligned with `appVersion` in ValidationExportModal.tsx.
+// The base version comes from the shared `app-version.ts` (same source the
+// local certificate in ValidationExportModal uses, so they can't diverge).
 // The `+rN` suffix tracks the canonical rule count (DEFAULT_RULES is the source
 // of truth per ARCHITECTURE.md), so adding a rule changes the version string —
 // and therefore the cert_hash — without anyone having to remember to bump it.
-const APP_VERSION = '2.0.0'
 
 const CANONICAL_RULE_IDS = Object.entries(DEFAULT_RULES)
   .filter(([key, value]) => key.startsWith('RULE_') && typeof value === 'boolean')

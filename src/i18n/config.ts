@@ -44,6 +44,7 @@ import enIds         from '../locales/en/ids.json'
 import enEir         from '../locales/en/eir.json'
 import enInvite      from '../locales/en/invite.json'
 import enCapture     from '../locales/en/capture.json'
+import enVerify      from '../locales/en/verify.json'
 
 const EN_RESOURCES = {
   common:      enCommon,
@@ -63,6 +64,7 @@ const EN_RESOURCES = {
   eir:         enEir,
   invite:      enInvite,
   capture:     enCapture,
+  verify:      enVerify,
   solar:       enSolar,
   tour:        enTour,
   client:      enClient,

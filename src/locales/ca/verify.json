@@ -1,0 +1,29 @@
+{
+  "title": "Verificació de certificat",
+  "subtitle": "Certificat de validació IFC — el resultat es va calcular al navegador de l'emissor i es va signar en l'emissió.",
+  "backToApp": "Torna a IFC Viewer Online",
+  "loading": "S'està carregant el certificat…",
+  "notFound": "No existeix cap certificat per a aquest enllaç.",
+  "networkError": "No s'ha pogut contactar amb el servei de certificats.",
+  "retry": "Torna-ho a provar",
+  "healthScore": "Health Score",
+  "coverage": "{{checked}} de {{total}} regles — perfil {{profile}}",
+  "partialBanner": "Perfil de regles parcial o personalitzat ({{profile}}) — no és una execució completa per defecte.",
+  "revokedBanner": "Aquest certificat ha estat revocat.",
+  "issuedAt": "Validat el",
+  "validator": "Validador",
+  "ruleset": "Conjunt de regles",
+  "fileHash": "Hash del fitxer (SHA-256)",
+  "ruleStatus": {
+    "pass": "passa",
+    "fail": "falla",
+    "warning": "avís"
+  },
+  "verifyBtn": "Verifica la signatura en aquest navegador",
+  "verifying": "S'està verificant…",
+  "verified": "Signatura verificada en aquest navegador",
+  "invalidSignature": "Signatura no vàlida — el contingut no coincideix amb el que es va signar",
+  "unknownKey": "Clau de signatura desconeguda — no s'ha pogut verificar",
+  "validButRevoked": "La signatura és autèntica, però el certificat va ser revocat",
+  "honesty": "La signatura acredita que aquest resultat exacte va ser emès per ifcvieweronline.eu en el moment indicat. Reflecteix una validació calculada al navegador de l'emissor — no és una reexecució."
+}

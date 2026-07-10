@@ -277,6 +277,18 @@
     "fmtCertLabel": "Zertifikat",
     "fmtCertDesc": "Abdeckungsbericht",
     "fmtBcfLabel": "BCF",
-    "fmtBcfDesc": "Offenes Koordinationsformat"
+    "fmtBcfDesc": "Offenes Koordinationsformat",
+    "verifiableTitle": "Verifizierbares Zertifikat",
+    "verifiableDesc": "Signiert das in diesem Browser berechnete Ergebnis, damit es jeder online prüfen kann. Nur die Ergebniszusammenfassung wird gesendet — nie die IFC-Datei oder ihr Name.",
+    "verifiableBtn": "Verifizierbares Zertifikat erstellen",
+    "verifiableBusy": "Wird erstellt…",
+    "verifiableSelectOne": "Wähle ein einzelnes Modell, um ein verifizierbares Zertifikat auszustellen.",
+    "verifiableError": "Der Signaturdienst ist nicht erreichbar — der lokale Zertifikat-Download unten funktioniert weiterhin.",
+    "verifiableReady": "Zertifikat ausgestellt",
+    "verifiableDedup": "Genau dieses Ergebnis war bereits zertifiziert — das vorhandene Zertifikat wurde zurückgegeben.",
+    "copyLink": "Link kopieren",
+    "copied": "Kopiert",
+    "downloadSigned": "Signierte .json herunterladen",
+    "copyBadge": "Badge-Markdown kopieren"
   }
 }

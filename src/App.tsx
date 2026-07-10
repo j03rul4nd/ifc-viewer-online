@@ -20,6 +20,7 @@ import ExportModal from './components/ExportModal'
 import KeyboardHelpModal from './components/KeyboardHelpModal'
 import SceneContextMenu, { type SceneContextMenuPayload } from './components/SceneContextMenu'
 import SharedReportView, { decodeReportHash } from './components/SharedReportView'
+import VerifyCertificateView from './components/VerifyCertificateView'
 import type { SharedReportPayload } from './components/SharedReportView'
 import DemoGallery from './components/DemoGallery'
 import MobileBottomNav from './components/MobileBottomNav'
@@ -220,8 +221,18 @@ export default function App() {
       if (BLOG_LANG_RE.test(rel) || rel.startsWith('/blog')) return 'blog'
       if (rel === '/privacy' || rel.startsWith('/privacy/')) return 'privacy'
       if (rel === '/terms'   || rel.startsWith('/terms/'))   return 'terms'
+      if (rel.startsWith('/verify/')) return 'verify'
     }
     return 'landing'
+  })
+
+  // /verify/<cert_hash> — public certificate verification (F1). NOT in the
+  // sitemap (the space of hashes is unbounded).
+  const [verifyHash] = useState<string>(() => {
+    if (typeof window === 'undefined') return ''
+    const base = import.meta.env.BASE_URL ?? '/'
+    const rel = window.location.pathname.replace(base.replace(/\/$/, ''), '') || '/'
+    return /^\/verify\/([^/]*)\/?$/.exec(rel)?.[1] ?? ''
   })
 
   // Blog sub-route: null = list, string = post slug
@@ -308,6 +319,8 @@ export default function App() {
         setRoute('privacy')
       } else if (rel === '/terms' || rel.startsWith('/terms/')) {
         setRoute('terms')
+      } else if (rel.startsWith('/verify/')) {
+        setRoute('verify')
       } else {
         setRoute('landing')
         setBlogSlug(null)
@@ -1450,6 +1463,18 @@ export default function App() {
                 setRoute('landing')
               }}
             />
+          </motion.div>
+        )}
+
+        {route === 'verify' && (
+          <motion.div
+            key="verify"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <VerifyCertificateView hash={verifyHash} onNavigateToLanding={handleNavigateToLanding} />
           </motion.div>
         )}
 

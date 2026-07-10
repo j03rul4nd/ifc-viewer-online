@@ -277,6 +277,18 @@
     "fmtCertLabel": "Certificat",
     "fmtCertDesc": "Informe de cobertura",
     "fmtBcfLabel": "BCF",
-    "fmtBcfDesc": "Format obert de coordinació"
+    "fmtBcfDesc": "Format obert de coordinació",
+    "verifiableTitle": "Certificat verificable",
+    "verifiableDesc": "Signa el resultat calculat en aquest navegador perquè qualsevol el pugui verificar en línia. Només s'envia el resum del resultat — mai el fitxer IFC ni el seu nom.",
+    "verifiableBtn": "Generar certificat verificable",
+    "verifiableBusy": "S'està generant…",
+    "verifiableSelectOne": "Selecciona un únic model per emetre un certificat verificable.",
+    "verifiableError": "No s'ha pogut contactar amb el servei de signatura — la baixada del certificat local de sota continua funcionant.",
+    "verifiableReady": "Certificat emès",
+    "verifiableDedup": "Aquest resultat exacte ja estava certificat — s'ha retornat el certificat existent.",
+    "copyLink": "Copia l'enllaç",
+    "copied": "Copiat",
+    "downloadSigned": "Baixa el .json signat",
+    "copyBadge": "Copia el badge markdown"
   }
 }

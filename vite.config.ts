@@ -236,6 +236,11 @@ export default defineConfig({
             id.includes('/proj4/') || id.includes('/wkt-parser/') || id.includes('/mgrs/') ||
             id.includes('/suncalc/') || id.includes('/tz-lookup/')
           ) return
+          // Clerk (F2 auth) must NEVER ride in the eager vendor-ui chunk
+          // (invariant I-1: zero auth bytes for the anonymous user). main.tsx
+          // imports it dynamically and only when a publishable key is set, so
+          // co-locating it with its importer keeps it a lazy, opt-in chunk.
+          if (id.includes('@clerk/')) return
           // three.js — large 3D engine, changes infrequently
           if (id.includes('/three/')) return 'vendor-three'
           // IFC engine — @thatopen/* + web-ifc JS side

@@ -35,6 +35,13 @@ Two facts anchor the whole plan and appear as a **recurring acceptance criterion
 
 Both are hard invariants, not aspirations. See [`CONTEXT.md`](../CONTEXT.md) invariant 1 and D‑27.
 
+**Reconciliation with the distribution-led plan (`ROADMAP.md` v2):** building this platform does **not**
+suspend the "distribute, don't just build" resolution. **F1 is a build-AND-distribute phase**: shipping
+the signed `ConformityReport` and putting it in circulation (the free anonymous issuer sharing
+badge + `/verify` links is what builds moats #1/#3) are the *same* milestone. Every phase after F1
+opens only on a commercial signal, not on engineering readiness — the signal gates live in the private
+planning suite.
+
 ### Certificate‑first ordering — Alternatives considered
 
 | Order | Reason rejected / chosen |
@@ -62,7 +69,7 @@ graph TD
     F2 --> F3
     F1 --> F4
     F2 -.entitlement gate only.-> F5
-    F3 --> F4
+    F3 -.org-scoped keys only.-> F4
     F4 --> F6
     F5 -.parallelizable with F2-F4.-> F2
 
@@ -74,6 +81,14 @@ graph TD
 - **F5 is parallelizable** with F2–F4 — pure client work, a different skill profile (parser/UI, not infra).
 - **F6 is dashed/red**: do **not** build until *both* gates open (see §F6). It is specified so it is
   ready when the signal appears, not because it is imminent.
+
+> **Scope honesty — `Submission`/`Milestone`/`AuditLog` are designed, not scheduled.** F1–F5 write
+> only `conformity_reports` (+ billing/org/API tables). The full delivery-record workflow — P1
+> creates a `Submission` against a `Milestone`, P2 verifies/rejects, `AuditLog` chains the
+> evidence — is **domain-designed now** (so nothing built today contradicts it) but gets a phase
+> **only when a real verifier (P2) signal exists**, the same treatment P3's receiver flow gets.
+> F0 authors the Prisma schema for all 7 entities once (cheap, and it keeps the frozen triggers
+> honest), but no earlier phase should grow Submission UI "because the tables exist."
 
 ---
 
@@ -130,8 +145,11 @@ user‑facing conformance scope**. Nothing ships to users in F0.
 
 - [ ] **Spike S‑1** (COOP/COEP‑vs‑Clerk, R‑1) resolved and recorded in `docs-planning/05`.
 - [ ] Prisma driver‑adapter CRUD smoke‑tests green from `wrangler dev` against a **local** Postgres.
-- [ ] **D‑27** and **D‑28** written into `DECISIONS.md` (current last decision = **D‑26** — verified).
-- [ ] RAT / DPA rows drafted (Clerk US, Stripe US, Supabase EU) per R‑4.
+- [x] **D‑27** and **D‑28** written into `DECISIONS.md` — ✔ done 2026‑07‑04 (after D‑26). Note the split: the D‑27 **text** exists with status *⏸️ proposed / founder‑gated*; its **ratification** is a separate, still‑open F6 gate. F0 only verifies both stay intact and unrenumbered.
+- [ ] RAT / DPA row drafted for **Supabase EU** (the only processor F1 touches — the DB stores
+      certificates). Clerk/Stripe DPAs move to the **F2 gate**: F1 is anonymous and neither
+      library loads before F2, so front-loading their paperwork only delays F1 (R‑4 still owns
+      the full list).
 - [ ] **Anonymous free user's network footprint provably unchanged** — empty Network tab (`docs-planning/01` §12).
 
 **Ordered tasks.**
@@ -152,8 +170,10 @@ user‑facing conformance scope**. Nothing ships to users in F0.
    Clerk Hosted Pages by redirect if embedded ClerkJS is blocked (`docs-planning/01` §8). Stripe is
    **always redirect‑only** in every scenario.
 6. Fix version pins for `stripe` SDK + svix under the Workers runtime and leave a smoke test (**R‑6**).
-7. **Author D‑27 and D‑28** in `DECISIONS.md` (the orchestrator commits these; do not edit
-   `DECISIONS.md` from a feature branch).
+7. ~~Author D‑27 and D‑28 in `DECISIONS.md`~~ — ✔ **done 2026‑07‑04.** Both are recorded after
+   D‑26 (D‑27 with status ⏸️ proposed / founder‑gated). Remaining F0 duty: do not renumber or
+   edit them from a feature branch; ratifying D‑27 is a founder action tied to the F6 signal,
+   not an F0 task.
 
 **The two blocking spikes (do not skip).**
 
@@ -187,6 +207,22 @@ anonymously**, reusing the already‑frozen `src/lib/certify/`.
       `deduplicated: true` (`computeCertHash` excludes `validated_at`).
 - [ ] Mirror canonicalization test (client `canonical.ts` vs Worker) **green** (guards **R‑8**).
 - [ ] Anonymous network footprint unchanged for anyone who does not click "Issue certificate."
+- [ ] **Display honesty:** `/verify` shows how many rules were evaluated and under which ruleset
+      ("N of 44 — profile X"); a partial/custom-profile certificate is visually distinct from a
+      full default run (see [`INTEGRATIONS.md`](./INTEGRATIONS.md) §2 acceptance criteria).
+- [ ] Funnel instrumented: typed `certificate_issued` + `certificate_verified_view` events exist
+      in `src/lib/analytics.ts` (no PII per its INV‑5 header; respects the opt‑out/GPC gate) —
+      **and** verify views are countable **server-side** (Worker KV counter on
+      `GET /certificates/:hash`, same pattern as `/bench`), because the phase's exit signal must
+      not depend on opt-out-able client analytics (GPC users are invisible to PostHog and
+      `persistence:'memory'` cannot dedup visitors).
+
+**Fast-follow F1.1 (ship within days of F1, but NOT launch-blocking).** The gate above is
+deliberately minimal — F1's purpose is putting the artifact in circulation and detecting signal,
+so polish that does not change the signal moves here: (a) `/verify` + printable certificate
+localized ×10 with the locale-parity test; (b) accessibility pass (status by text + icon, never
+colour alone; keyboard navigable); (c) printable certificate page + QR. The signed payload is
+language-neutral by construction (ids + numbers only), so localisation never re-signs anything.
 
 **Ordered tasks.**
 
@@ -204,9 +240,20 @@ anonymously**, reusing the already‑frozen `src/lib/certify/`.
    `public/.well-known/ifcvieweronline-keys.json` (+ `.pem`), static and committable.
 5. Ship the SPA route **`/verify/:hash`** (`VerifyCertificateView.tsx`) doing **in‑browser** WebCrypto
    verification against the public keys — verification **never trusts the server**.
-6. Printable certificate page + QR (`qrcode-generator`).
+6. *(moved to fast-follow F1.1 — not launch-blocking)* Printable certificate page + QR
+   (`qrcode-generator` — **a new dependency**, the only one this phase adds to the SPA;
+   dependency‑free itself. Flag it explicitly in the PR). Localisation ×10 + a11y of `/verify`
+   ride the same fast-follow.
 7. Reuse `buildBadgeMarkdown` from `src/lib/share-report.ts` so the badge links back to a verifiable
    report — never a blind self‑claim.
+8. Instrument the funnel: add typed `certificate_issued` / `certificate_verified_view` events to
+   `src/lib/analytics.ts` (same INV‑5 discipline as the existing 18 events: never email, Clerk id,
+   or filename; gated by the opt‑out/GPC logic already in that module). These two events are how
+   F1's exit signal is measured — shipping the artifact without them makes the phase unfalsifiable.
+9. **Rollout order:** deploy the Worker → run its smoke test against production → only then set
+   `VITE_API_URL` in the Vercel panel (the SPA feature‑detects it; absent = today's behaviour).
+   In the same panel visit, re‑verify `VITE_REPORT_URL` still points at the deployed `/r` route —
+   the June verification predates the move to Vercel‑only deploys. **Rollback = unset the variable.**
 
 **Honest threat model (R‑5 — do not overstate).** Anyone can call `/certify` with a fabricated
 result: the signature attests **integrity of issuance through the service**, not server‑side
@@ -234,6 +281,10 @@ revenue path — via a **single** entitlement pattern.
 - [ ] `invoice.payment_failed` → `past_due` + 14‑day `graceUntil` written in DB **and** Clerk metadata.
 - [ ] Tampered/expired JWT → **401**.
 - [ ] Anonymous network footprint unchanged (nobody who does not click "Go Pro" loads auth).
+- [ ] **Tenancy + quotas live (I‑10):** every tenant route goes through the tenant-scoped repo;
+      the RLS zero-rows backstop test passes; a workspace over its plan limit gets
+      `429 quota_exceeded` (fail-closed) while anonymous issuance stays unmetered.
+- [ ] Clerk (US) + Stripe (US) DPA/RAT rows done (moved here from F0 — first phase that loads them).
 
 **Ordered tasks.**
 
@@ -249,6 +300,15 @@ revenue path — via a **single** entitlement pattern.
 4. `saved_rulesets` sync — persist `RulesConfig` + `severityOverrides` + thresholds + compiled EIR
    profiles server‑side (feeds moat #2). Waiver sync deferred (DA‑6, recommend "no" for v1).
 5. Bind certificate **history** to the `Workspace`.
+6. **Quotas + metering (I‑10):** `usage_counters` table, `PLAN_LIMITS` constant in the Worker,
+   tenant-scoped repository + `SET LOCAL` RLS pattern, `429 quota_exceeded` fail-closed on paid
+   writes. See [`CONFORMANCE_PATTERNS.md`](./CONFORMANCE_PATTERNS.md) §7.2 and
+   [`CONFORMANCE_DOMAIN.md`](./CONFORMANCE_DOMAIN.md) §3.9/§4.2.
+7. **Packaged requirement profiles** (client-side, parallelizable): ship ready-to-run EIR/IDS
+   profiles for real public-client requirement sets (e.g. Statsbygg SIMBA-as-IDS, the Italian
+   public-procurement decree profile, an ISO 19650-ES starter) on top of `compileEirToIds` —
+   "pass *your client's* checks", not generic validation. Pure profile data over the existing
+   engine; no Worker changes; deepens moat #2 where conformance is already mandated.
 
 **Alternatives considered.** *Server‑side render/gate Pro features* → rejected: breaks the byte‑identical
 anon footprint and adds infra. *Embed ClerkJS inline* → contingent on S‑1; Plan B is Clerk Hosted Pages
@@ -283,6 +343,12 @@ by redirect (never blocks the gating pattern).
 2. Worker: `GET /org/:id/certificates`, `/org/invite`, `/org/accept-invite`.
 3. Workspace‑scoped dashboard view over **existing** F1/F2 data — a query + membership layer, **not
    new writes**.
+4. **Role matrix live:** `owner / admin / member / viewer` per
+   [`CONFORMANCE_DOMAIN.md`](./CONFORMANCE_DOMAIN.md) §3.8 — role checks in Worker route guards
+   (JWT + mirror), tenancy in RLS, one axis per layer. Resolve **DA‑15** first (whether `viewer`
+   is a Clerk custom role or a mirror-only override). Every membership change writes an
+   `AuditLog` entry. The read-only `viewer` seat is the natural landing spot for the verifier
+   (P2) entering through a shared report.
 
 **Files to touch.** `ifc-cloud-api` org routes + webhook mirror · new org dashboard view in `src/` ·
 schema: `organizations`, `org_members`.
@@ -420,7 +486,8 @@ runtime (DA‑7) · R2 (first appears here, D‑27) · schema `monitor_configs`.
 | DA‑7 | F6 container runtime | F6 | Do not decide now. |
 | DA‑9 | Deep‑verification V2 in F1 or later? | F1.5 | **F1.5** — right after issuance MVP, before certificate marketing. |
 | DA‑13 | Auto‑issue certificate on monitor? | F6 | Decide with F6. |
-| DA‑14 | Multi‑model / federated certificate | F1+ | Wait for user signal (v1 = one cert per model). |
+| DA‑14 | Multi‑model / federated certificate | F1+ | Wait for user signal (v1 = one cert per model). Extension path is pinned: `SubmissionModel` join + `max_models_per_submission` limit; a *federated certificate* requires a `CertifyPayloadV2` bump, never a widened V1 ([`CONFORMANCE_DOMAIN.md`](./CONFORMANCE_DOMAIN.md) §3.4). |
+| DA‑15 | `viewer` role: Clerk custom role vs mirror‑only override | F3 | Spike alongside the Clerk‑Orgs mirror; the §3.8 matrix is identical either way — only where the role is *stored* changes. |
 
 Pricing (DA‑8) and licence (DA‑11) are **out of scope for this public doc** — they live in the private
 `docs-planning/vision/*.md` suite.
@@ -439,7 +506,10 @@ Pricing (DA‑8) and licence (DA‑11) are **out of scope for this public doc** 
 
 ---
 
-*Last updated: 2026-07-04 · Status: execution blueprint · Phases F0..F6 · New decisions D‑27
-(privacy‑invariant amendment, F6‑gating) + D‑28 (immutable Submission + append‑only AuditLog) — to be
-added to `DECISIONS.md` after D‑26 · Certificate‑first (F1 before F2) · F6 double‑gated (D‑27 +
-demand signal).*
+*Last updated: 2026-07-06 (rev 2: F1 gate slimmed to signal-essentials with F1.1 fast-follow;
+server-side verify counters; DPAs resequenced F0→F2; F2 gains quotas/metering + packaged
+requirement profiles; F3 gains the role matrix; DA‑15 added) · Status: execution blueprint ·
+Phases F0..F6 · Governing decisions D‑27 (privacy‑invariant amendment, ⏸️ written 2026‑07‑04 but
+founder‑gated — F6 still needs its ratification) + D‑28 (immutable Submission + append‑only
+AuditLog, active) — both in `DECISIONS.md` after D‑26 · Certificate‑first (F1 before F2) ·
+F1 = build AND distribute · F6 double‑gated (D‑27 ratification + demand signal).*

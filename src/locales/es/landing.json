@@ -57,7 +57,7 @@
   },
   "features": [
     {
-      "title": "Validador IFC con 38 reglas",
+      "title": "Validador IFC con 44 reglas",
       "body": "Detecta GUIDs duplicados, violaciones de jerarquía espacial y elementos huérfanos antes de que lo haga tu cliente. Cada modelo recibe un Health Score de 0 a 100. Los resultados aparecen en tiempo real desde un worker en segundo plano.",
       "tip": "Motor de reglas IFC / ISO 19650"
     },
@@ -145,7 +145,7 @@
     {
       "n": "02",
       "title": "Inspecciona y valida",
-      "body": "Explora el árbol del modelo, filtra por categoría y ejecuta 38 reglas de validación integradas en un worker en segundo plano. GUIDs duplicados, errores de jerarquía espacial, asignaciones de tipo faltantes — todo marcado al instante."
+      "body": "Explora el árbol del modelo, filtra por categoría y ejecuta 44 reglas de validación integradas en un worker en segundo plano. GUIDs duplicados, errores de jerarquía espacial, asignaciones de tipo faltantes — todo marcado al instante."
     },
     {
       "n": "03",
@@ -224,11 +224,11 @@
     },
     {
       "q": "¿Qué pasa si mi archivo IFC es muy grande?",
-      "a": "La aplicación maneja archivos de hasta 2 GB. El rendimiento depende de tu dispositivo — los archivos de menos de 200 MB cargan bien en hardware moderno. Una vez analizado, la geometría se almacena en caché en OPFS para que cada carga posterior sea instantánea, incluso sin conexión."
+      "a": "No hay un límite de tamaño impuesto — el rendimiento depende de tu dispositivo. Los archivos de menos de 200 MB cargan bien en hardware moderno. Una vez analizado, la geometría se almacena en caché en OPFS para que cada carga posterior sea instantánea, incluso sin conexión."
     },
     {
       "q": "¿Cómo funciona la validación?",
-      "a": "El validador ejecuta 38 reglas integradas en un Web Worker en segundo plano para que la interfaz permanezca responsive. Las reglas cubren GUIDs duplicados, jerarquía espacial, elementos huérfanos, convenciones de nombres, asignaciones de tipo faltantes, property sets ISO 19650, completitud de LOD, detección de colisiones, exceso de proxies, desfase de coordenadas y más. Cada modelo recibe un Health Score de 0 a 100. Los resultados aparecen a medida que cada regla se completa."
+      "a": "El validador ejecuta 44 reglas integradas en un Web Worker en segundo plano para que la interfaz permanezca responsive. Las reglas cubren GUIDs duplicados, jerarquía espacial, elementos huérfanos, convenciones de nombres, asignaciones de tipo faltantes, property sets ISO 19650, completitud de LOD, detección de colisiones, exceso de proxies, desfase de coordenadas y más. Cada modelo recibe un Health Score de 0 a 100. Los resultados aparecen a medida que cada regla se completa."
     },
     {
       "q": "¿Puedo comprobar mi modelo frente a un IDS de buildingSMART?",

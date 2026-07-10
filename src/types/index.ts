@@ -1,4 +1,4 @@
-export type Route = 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms'
+export type Route = 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify'
 export type ViewerStyle = 'shaded' | 'blueprint' | 'xray'
 export type LoadPhase = 'reading' | 'parsing' | 'uploading' | 'done'
 
@@ -403,6 +403,18 @@ export const DEFAULT_RULES: RulesConfig = {
   requiredPsets: {},
   classificationSystems: [],
 }
+
+/**
+ * Single source of truth for the rule count ("44"). Derived with EXACTLY the
+ * same filter `certify/build-payload.ts` uses for the signed
+ * `CERTIFY_VALIDATOR_VERSION` (`+r<n>`), so the number shown in UI/SEO copy can
+ * never drift from the one inside signed certificates. Marketing surfaces
+ * (READMEs, index.html, static landings) are swept by `rule-count.test.ts`,
+ * which fails listing every stale mention when this number changes.
+ */
+export const RULE_COUNT = Object.entries(DEFAULT_RULES)
+  .filter(([key, value]) => key.startsWith('RULE_') && typeof value === 'boolean')
+  .length
 
 // ── Spatial tree ──────────────────────────────────────────────────────────────
 

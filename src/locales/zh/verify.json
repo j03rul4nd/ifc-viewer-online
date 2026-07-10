@@ -1,0 +1,29 @@
+{
+  "title": "证书验证",
+  "subtitle": "IFC 验证证书 — 结果在签发者的浏览器中计算，并在签发时签名。",
+  "backToApp": "返回 IFC Viewer Online",
+  "loading": "正在加载证书…",
+  "notFound": "此链接没有对应的证书。",
+  "networkError": "无法连接证书服务。",
+  "retry": "重试",
+  "healthScore": "Health Score",
+  "coverage": "已检查 {{checked}} / {{total}} 条规则 — 配置 {{profile}}",
+  "partialBanner": "部分或自定义规则配置（{{profile}}）— 不是完整的默认运行。",
+  "revokedBanner": "此证书已被吊销。",
+  "issuedAt": "验证时间",
+  "validator": "验证器",
+  "ruleset": "规则集",
+  "fileHash": "文件哈希（SHA-256）",
+  "ruleStatus": {
+    "pass": "通过",
+    "fail": "失败",
+    "warning": "警告"
+  },
+  "verifyBtn": "在此浏览器中验证签名",
+  "verifying": "正在验证…",
+  "verified": "签名已在此浏览器中验证",
+  "invalidSignature": "签名无效 — 内容与签名时不一致",
+  "unknownKey": "未知的签名密钥 — 无法验证",
+  "validButRevoked": "签名真实，但证书已被吊销",
+  "honesty": "该签名证明此结果确由 ifcvieweronline.eu 在所示时间签发。它反映的是在签发者浏览器中计算的验证结果 — 并非重新执行。"
+}

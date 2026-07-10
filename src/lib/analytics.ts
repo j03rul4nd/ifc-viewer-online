@@ -39,6 +39,11 @@
  *   share_report_clicked   → user generated a shareable validation report URL
  *   report_viewed          → a shared report link was opened
  *
+ * Conformance (F1 — product funnel; the commercial gate is measured by the
+ * Worker's KV counters, never by these opt-out-gated events)
+ *   certificate_issued        → a verifiable certificate was issued via /certify
+ *   certificate_verified_view → a /verify visitor ran the local signature check
+ *
  * Usage:
  *   import { trackFileOpened } from '@/lib/analytics'
  *   trackFileOpened({ file_size_mb: 4.2, element_count: 3100, source: 'demo', from_cache: false })
@@ -224,7 +229,7 @@ export function trackInviteFeedbackDismissed(props: {
  */
 export function trackRouteChanged(props: {
   to:   'viewer' | 'report'
-  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms'
+  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify'
 }): void {
   track('route_changed', props)
 }
@@ -570,4 +575,35 @@ export function trackReportViewed(props: {
   score:       number
 }): void {
   track('report_viewed', props)
+}
+
+// ── Conformance funnel (F1) ──────────────────────────────────────────────────
+// INV-5: categorical/numeric props only — never PII, file names, cert/file
+// hashes or profile ids. The commercial gate is measured server-side (KV);
+// these events only inform product decisions and undercount by design.
+
+/**
+ * A verifiable certificate was issued (Worker signed the payload).
+ *
+ * @param props.deduplicated     The Worker returned an already-issued certificate
+ * @param props.rules_evaluated  How many rules the certified run covered
+ * @param props.profile_kind     Coarse profile category — never the profile id/name
+ */
+export function trackCertificateIssued(props: {
+  deduplicated:    boolean
+  rules_evaluated: number
+  profile_kind:    'default' | 'custom' | 'eir'
+}): void {
+  track('certificate_issued', props)
+}
+
+/**
+ * A /verify visitor ran the local (client-side) signature check.
+ *
+ * @param props.signature_result  Outcome of the in-browser verification
+ */
+export function trackCertificateVerifiedView(props: {
+  signature_result: 'valid' | 'invalid' | 'unknown_key' | 'revoked'
+}): void {
+  track('certificate_verified_view', props)
 }

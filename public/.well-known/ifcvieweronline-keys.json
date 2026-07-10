@@ -1,0 +1,10 @@
+{
+  "keys": [
+    {
+      "kid": "2026-07-k1",
+      "alg": "ES256",
+      "spki_pem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEJPhpm4zkcvd7WN6lnyaPkRWLy261\nSJ2vF44pimrHF/s5I0SFj7xpygI5GqiheuXlrN7hg7SJ9XgDI6kB7oxmZQ==\n-----END PUBLIC KEY-----",
+      "status": "active"
+    }
+  ]
+}

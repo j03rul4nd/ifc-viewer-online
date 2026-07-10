@@ -57,7 +57,7 @@
   },
   "features": [
     {
-      "title": "38-rule IFC validator",
+      "title": "44-rule IFC validator",
       "body": "Catch GUID duplicates, spatial hierarchy violations, and orphan elements before your client does. Every model receives a Health Score from 0 to 100. Results stream in real time from a background worker — UI stays fully responsive.",
       "tip": "IFC / ISO 19650 rule engine"
     },
@@ -145,7 +145,7 @@
     {
       "n": "02",
       "title": "Inspect & validate",
-      "body": "Explore the model tree, filter by category, and run 38 built-in validation rules in a background worker. Duplicate GUIDs, spatial hierarchy errors, missing type assignments — all flagged instantly."
+      "body": "Explore the model tree, filter by category, and run 44 built-in validation rules in a background worker. Duplicate GUIDs, spatial hierarchy errors, missing type assignments — all flagged instantly."
     },
     {
       "n": "03",
@@ -232,11 +232,11 @@
     },
     {
       "q": "What happens if my IFC file is very large?",
-      "a": "The app handles files up to 2 GB. Performance depends on your device — files under 200 MB load well on most modern hardware. Once parsed, geometry is cached in OPFS so every subsequent load of the same file is instant, even offline."
+      "a": "There is no enforced size limit — performance depends on your device. Files under 200 MB load well on most modern hardware. Once parsed, geometry is cached in OPFS so every subsequent load of the same file is instant, even offline."
     },
     {
       "q": "How does the validation work?",
-      "a": "The validator runs 38 built-in rules in a background Web Worker so the UI stays responsive. Rules cover GUID duplicates, spatial hierarchy, orphan elements, naming conventions, missing type assignments, ISO 19650 property sets, LOD completeness, clash detection, proxy overuse, coordinate offset, and more. Every model receives a Health Score from 0 to 100. Results stream in as each rule completes."
+      "a": "The validator runs 44 built-in rules in a background Web Worker so the UI stays responsive. Rules cover GUID duplicates, spatial hierarchy, orphan elements, naming conventions, missing type assignments, ISO 19650 property sets, LOD completeness, clash detection, proxy overuse, coordinate offset, and more. Every model receives a Health Score from 0 to 100. Results stream in as each rule completes."
     },
     {
       "q": "Can I check my model against a buildingSMART IDS?",

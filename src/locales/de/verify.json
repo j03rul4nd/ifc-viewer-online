@@ -1,0 +1,29 @@
+{
+  "title": "Zertifikatsprüfung",
+  "subtitle": "IFC-Validierungszertifikat — das Ergebnis wurde im Browser des Ausstellers berechnet und bei der Ausstellung signiert.",
+  "backToApp": "Zurück zu IFC Viewer Online",
+  "loading": "Zertifikat wird geladen…",
+  "notFound": "Für diesen Link existiert kein Zertifikat.",
+  "networkError": "Der Zertifikatsdienst ist nicht erreichbar.",
+  "retry": "Erneut versuchen",
+  "healthScore": "Health Score",
+  "coverage": "{{checked}} von {{total}} Regeln — Profil {{profile}}",
+  "partialBanner": "Teilweises oder benutzerdefiniertes Regelprofil ({{profile}}) — kein vollständiger Standardlauf.",
+  "revokedBanner": "Dieses Zertifikat wurde widerrufen.",
+  "issuedAt": "Validiert am",
+  "validator": "Validator",
+  "ruleset": "Regelsatz",
+  "fileHash": "Datei-Hash (SHA-256)",
+  "ruleStatus": {
+    "pass": "bestanden",
+    "fail": "fehlgeschlagen",
+    "warning": "Warnung"
+  },
+  "verifyBtn": "Signatur in diesem Browser prüfen",
+  "verifying": "Wird geprüft…",
+  "verified": "Signatur in diesem Browser verifiziert",
+  "invalidSignature": "Ungültige Signatur — der Inhalt stimmt nicht mit dem Signierten überein",
+  "unknownKey": "Unbekannter Signaturschlüssel — Prüfung nicht möglich",
+  "validButRevoked": "Die Signatur ist echt, aber das Zertifikat wurde widerrufen",
+  "honesty": "Die Signatur bestätigt, dass genau dieses Ergebnis zum angegebenen Zeitpunkt von ifcvieweronline.eu ausgestellt wurde. Es spiegelt eine im Browser des Ausstellers berechnete Validierung wider — keine erneute Ausführung."
+}

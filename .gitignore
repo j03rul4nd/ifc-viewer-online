@@ -44,3 +44,10 @@ docs-planning/
 .claude/
 .claude/worktrees/interesting-bhabha-44e327
 .claude/worktrees/interesting-bhabha-44e327
+.vercel
+.env*
+!.env.example
+
+# Claude Code harness tooling (installed skills lockfile + agent defs) — local only
+.agents/
+skills-lock.json

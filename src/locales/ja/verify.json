@@ -1,0 +1,29 @@
+{
+  "title": "証明書の検証",
+  "subtitle": "IFC 検証証明書 — 結果は発行者のブラウザで計算され、発行時に署名されました。",
+  "backToApp": "IFC Viewer Online に戻る",
+  "loading": "証明書を読み込み中…",
+  "notFound": "このリンクに対応する証明書は存在しません。",
+  "networkError": "証明書サービスに接続できませんでした。",
+  "retry": "再試行",
+  "healthScore": "Health Score",
+  "coverage": "{{total}} 件中 {{checked}} 件のルールを検査 — プロファイル {{profile}}",
+  "partialBanner": "部分的またはカスタムのルールプロファイル（{{profile}}）— 完全なデフォルト実行ではありません。",
+  "revokedBanner": "この証明書は失効しています。",
+  "issuedAt": "検証日時",
+  "validator": "バリデーター",
+  "ruleset": "ルールセット",
+  "fileHash": "ファイルハッシュ（SHA-256）",
+  "ruleStatus": {
+    "pass": "合格",
+    "fail": "不合格",
+    "warning": "警告"
+  },
+  "verifyBtn": "このブラウザで署名を検証",
+  "verifying": "検証中…",
+  "verified": "このブラウザで署名を検証しました",
+  "invalidSignature": "署名が無効です — 内容が署名時と一致しません",
+  "unknownKey": "不明な署名鍵 — 検証できませんでした",
+  "validButRevoked": "署名は本物ですが、証明書は失効しています",
+  "honesty": "この署名は、まさにこの結果が記載の時刻に ifcvieweronline.eu によって発行されたことを証明します。発行者のブラウザで計算された検証結果を反映したものであり、再実行ではありません。"
+}

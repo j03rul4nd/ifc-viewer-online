@@ -20,7 +20,7 @@ That artifact is the north star. The platform grows around it, never ahead of it
 
 The enterprise CDEs (Aconex, Autodesk Construction Cloud / ACC, Dalux, Trimble Connect, Newforma, SharePoint) are document-management platforms optimized for storing and routing files at scale. Conformance is a shallow bolt-on for them: they own the *vault*, not the *IFC semantics*.
 
-Our wedge is to sit as a **conformance gate** on the delivery path — a checkpoint the issuer runs *before* the file lands in whatever CDE the project already uses. We do not compete on storage. We turn each delivery into an immutable, signed `Submission` carrying a public `ConformityReport`, and let that report embed back into the host CDE's portal page (via the SDK, see [INTEGRATIONS.md](./INTEGRATIONS.md#js-sdk--embed)).
+Our wedge is to sit as a **conformance gate** on the delivery path — a checkpoint the issuer runs *before* the file lands in whatever CDE the project already uses. We do not compete on storage. We turn each delivery into an immutable, signed `Submission` carrying a public `ConformityReport`, and let that report embed back into the host CDE's portal page (via the SDK, see [INTEGRATIONS.md](./INTEGRATIONS.md#1-js-sdk--iframe-embed)).
 
 ```
         BIM authoring tool                         Existing CDE
@@ -99,7 +99,7 @@ Workspace  (tenancy boundary; maps 1:1 to an org)
 
 The **integrity spine** (formalized as **D-28**, immutable Submission + append-only AuditLog) is what makes it "DocuSign for BIM": a delivery either conformed at submit time or it did not, *provably*. A correction is never an edit — it is a **new** `Submission` (new revision, the old one marked superseded), mirroring how a signed certificate is re-emitted rather than mutated. GDPR erasure anonymizes an actor link (`SetNull`) but never deletes an `AuditLog` entry — the artifact is public and immutable. Full entity fields, states, and invariants are in [CONFORMANCE_DOMAIN.md](./CONFORMANCE_DOMAIN.md).
 
-**On forgeability — an honest boundary.** The `ConformityReport` attests the *integrity of issuance* (this per-rule outcome was signed by our key over this file hash at this time), not re-execution of the check. It does not prove the file the issuer hashed is the file they later delivered elsewhere. The mitigation is deep-verification V2 (drop the IFC into `/verify` → re-hash locally → optionally re-run the engine in-browser), a planned deepening — never a claim that the certificate is "impossible to forge."
+**On forgeability — an honest boundary.** The `ConformityReport` attests the *integrity of issuance* (this per-rule outcome was signed by our key over this file hash at this time), not re-execution of the check. It does not prove the file the issuer hashed is the file they later delivered elsewhere. The mitigation is deep-verification V2 (drop the IFC into `/verify` → re-hash locally → optionally re-run the engine in-browser), a planned deepening — never a claim that the certificate is "impossible to forge." The same honesty applies to time: `validated_at` is asserted by our service clock, not by a trusted third party. If certificates are ever leaned on in formal disputes, the designed deepening is an **RFC 3161 timestamp countersignature** (see [INTEGRATIONS.md](./INTEGRATIONS.md#timestamping)) — an open decision, not a current claim; never market "legally qualified timestamp" today.
 
 ---
 
@@ -117,7 +117,9 @@ graph LR
     F5["F5 · COBie +<br/>client-side delivery report"]
     F6["F6 · Cloud processing<br/>+ CDE monitor<br/>⚠ D-27 + signal-gated"]
 
-    F0 --> F1 --> F2 --> F3 --> F4
+    F0 --> F1 --> F2 --> F3
+    F1 --> F4
+    F3 -.org-scoped keys only.-> F4
     F1 --> F5
     F4 -.-> F6
     F3 -.-> F6
@@ -135,7 +137,7 @@ graph LR
 
 | Phase | Goal (vision altitude) | Persona | Privacy posture |
 |---|---|---|---|
-| **F0 — Foundations** | Stand up the private `ifc-cloud-api` spine; de-risk the two blocking spikes (COOP/COEP-vs-Clerk, Prisma driver-adapter on Workers); write **D-27** and **D-28** to `DECISIONS.md`. No user-facing scope. | — | Anon footprint unchanged (nothing ships to users). |
+| **F0 — Foundations** | Stand up the private `ifc-cloud-api` spine; de-risk the two blocking spikes (COOP/COEP-vs-Clerk, Prisma driver-adapter on Workers). **D-27/D-28 are already written** in `DECISIONS.md` (2026-07-04) — F0 only verifies they stay intact and unrenumbered. No user-facing scope. | — | Anon footprint unchanged (nothing ships to users). |
 | **F1 — Signed certificate** | Ship the `ConformityReport` + public `/verify` — issuable **anonymously**, reusing the frozen `src/lib/certify/`. This is the single artifact everything else monetizes. | P1 (anon OK) | Only derived JSON + a locally-computed sha256 cross the edge (D-21 discipline). |
 | **F2 — Pro (issuer)** | Let P1 keep certificate history and brand reports via the entitlement pattern (`useEntitlement`/`RequirePlan`, Clerk lazy, Stripe redirect-only). | P1 | Auth libs never in the main bundle; anon still untouched. |
 | **F3 — Org** | Aggregate issuers' certificates into a Workspace/org dashboard. A query + membership layer, not new writes. | P1 (team) | Same. |
@@ -151,14 +153,14 @@ graph LR
 
 Invariant 1 in [CONTEXT.md](../CONTEXT.md) is explicit: **the IFC file never leaves the browser; edge Workers are permitted only as long as they never receive the model.** F0–F5 keep this fully intact — a `Submission`'s `file_hash_sha256` is computed in-browser via WebCrypto over `modelRegistry.getBuffer(modelId)`, and only derived JSON summaries + that hash ever transit the edge (the D-21 discipline the `/r` route already follows).
 
-**F6 is the sole exception, and it may not be built until [DECISIONS.md] carries the ratified D-27 amendment.**
+**F6 is the sole exception, and it may not be built until [DECISIONS.md](../DECISIONS.md) carries the ratified D-27 amendment.**
 
 > **D-27 · Privacy-invariant amendment: opt-in server-side model processing.** Amends CONTEXT.md invariant 1 to permit server-side IFC processing **only** under all of these conditions, none skippable:
 > 1. **Explicit per-action opt-in** — never a default.
 > 2. **Never for anonymous or free users** — authenticated paid plans only.
 > 3. **Short retention** — a 72 h working window with guaranteed deletion even on failure.
 > 4. **Honest copy** — the privacy proof point becomes *"your IFC model never leaves your browser **unless you opt into cloud processing**"*; marketing never claims blanket client-only once F6 ships.
-> 5. **SSRF/security hardening** on any pull ingest (HTTPS-only, domain allowlist, private/metadata-IP block, size + timeout caps — see [INTEGRATIONS.md](./INTEGRATIONS.md#cde-connectors-f6)).
+> 5. **SSRF/security hardening** on any pull ingest (HTTPS-only, domain allowlist, private/metadata-IP block, size + timeout caps — see [INTEGRATIONS.md](./INTEGRATIONS.md#3-cde-connectors-f6--d-27-gated)).
 > 6. **New RAT rows + DPAs** before any code.
 >
 > **Alternatives considered:** (a) keep invariant 1 absolute and never build F6 — rejected, it forecloses the CDE-monitor moat when demand appears; (b) process on-device only — rejected, a CDE watcher cannot run in the sender's browser.
@@ -166,7 +168,7 @@ Invariant 1 in [CONTEXT.md](../CONTEXT.md) is explicit: **the IFC file never lea
 
 F6 is additionally **signal-gated**: it does not begin until there is a real demand signal (≥1 client with a concrete CDE willing to wire the webhook) *and* D-27 is ratified. Do not present cloud processing as imminent.
 
-The companion **D-28** (immutable `Submission` + append-only `AuditLog`) is the integrity domain decision introduced with this suite; it is unrelated to privacy but is the other new decision future sessions must respect. Both must be added to `DECISIONS.md` (last existing decision is D-26).
+The companion **D-28** (immutable `Submission` + append-only `AuditLog`) is the integrity domain decision introduced with this suite; it is unrelated to privacy but is the other new decision future sessions must respect. **Both are already written in `DECISIONS.md`** (2026-07-04, after D-26): D-28 is active; D-27 is recorded with status *⏸️ proposed / founder-gated* — the decision **text exists, the ratification does not**. Do not confuse the two: writing D-27 down was a documentation step; F6 stays blocked until the founder ratifies it *and* the demand signal appears.
 
 ---
 
@@ -180,4 +182,4 @@ The companion **D-28** (immutable `Submission` + append-only `AuditLog`) is the 
 
 ---
 
-*Last updated: 2026-07-04 · Status: vision ratified, pivot decided. North star = the signed ConformityReport. Prerequisites for F6: D-27 (ratified + signal) and D-28 written to DECISIONS.md (last existing = D-26). ~60–70% of the core is already shipped and reused, not rebuilt.*
+*Last updated: 2026-07-06 · Status: vision ratified, pivot decided. North star = the signed ConformityReport. D-27 + D-28 are written in DECISIONS.md (2026-07-04); D-27 remains ⏸️ founder-gated — F6 needs its ratification plus a real demand signal. ~60–70% of the core is already shipped and reused, not rebuilt.*

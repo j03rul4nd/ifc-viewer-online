@@ -1,0 +1,29 @@
+{
+  "title": "Certificate verification",
+  "subtitle": "IFC validation certificate — the result was computed in the issuer's browser and signed at issuance.",
+  "backToApp": "Back to IFC Viewer Online",
+  "loading": "Loading certificate…",
+  "notFound": "No certificate exists for this link.",
+  "networkError": "Couldn't reach the certificate service.",
+  "retry": "Retry",
+  "healthScore": "Health Score",
+  "coverage": "{{checked}} of {{total}} rules — profile {{profile}}",
+  "partialBanner": "Partial or custom rule profile ({{profile}}) — not a full default run.",
+  "revokedBanner": "This certificate has been revoked.",
+  "issuedAt": "Validated at",
+  "validator": "Validator",
+  "ruleset": "Ruleset",
+  "fileHash": "File hash (SHA-256)",
+  "ruleStatus": {
+    "pass": "pass",
+    "fail": "fail",
+    "warning": "warning"
+  },
+  "verifyBtn": "Verify signature in this browser",
+  "verifying": "Verifying…",
+  "verified": "Signature verified in this browser",
+  "invalidSignature": "Invalid signature — the content does not match what was signed",
+  "unknownKey": "Unknown signing key — could not verify",
+  "validButRevoked": "Signature is genuine, but the certificate was revoked",
+  "honesty": "The signature attests that this exact result was issued by ifcvieweronline.eu at the stated time. It reflects a validation computed in the issuer's browser — it is not a re-execution."
+}

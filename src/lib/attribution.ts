@@ -21,6 +21,75 @@ const KEY_SOURCE  = 'ifc.entry_source'
 const KEY_SEGMENT = 'ifc.entry_segment'
 const KEY_KIND    = 'ifc.entry_source_kind'
 
+// ── Organic entry-source derivation (T-00-05) ─────────────────────────────────
+// Visitors without an invite tag are attributed to a CATEGORICAL channel so the
+// funnel can be segmented by what actually brings emitters in. Never the raw
+// referrer, never a full URL (INV-5) — only one of these fixed categories.
+
+export type EntrySourceCategory =
+  | 'direct'
+  | 'seo_landing'
+  | 'blog'
+  | 'fix_page'
+  | 'invite'
+  | 'report_link'
+  | 'verify_link'
+  | 'unknown'
+
+/** Static SEO landings served from public/<slug>/ (see sitemap.xml). */
+const SEO_LANDING_SLUGS = new Set([
+  'ifc-validator',
+  'cloud-ifc-validator',
+  'ifc-viewer-mac',
+  'solibri-alternative',
+  'solibri-webchecker-alternative',
+  'tools',
+])
+
+/** Locale clusters: /es/, /de/…  host the localized landings (public/<lang>/). */
+const LANDING_LOCALES = new Set(['ca', 'de', 'es', 'fr', 'it', 'ja', 'pt', 'th', 'zh'])
+
+function categorizePath(pathname: string): EntrySourceCategory | null {
+  const seg = pathname.replace(/^\/+/, '').split('/')[0]?.toLowerCase() ?? ''
+  if (seg === 'blog') return 'blog'
+  if (seg === 'fix') return 'fix_page'
+  if (seg === 'verify') return 'verify_link'
+  if (SEO_LANDING_SLUGS.has(seg) || LANDING_LOCALES.has(seg)) return 'seo_landing'
+  return null
+}
+
+export interface EntryContext {
+  pathname: string
+  hash: string
+  /** document.referrer — mapped to a category here, NEVER registered raw. */
+  referrer: string
+  /** window.location.origin, to recognise same-site referrers. */
+  origin: string
+}
+
+/**
+ * Pure derivation of the entry channel. Precedence: the path the visitor
+ * landed on → a shared-report hash → the (categorised) referrer. Nothing
+ * applies → 'direct'; ambiguous (external / unparseable referrer) → 'unknown'.
+ */
+export function deriveEntrySource(ctx: EntryContext): EntrySourceCategory {
+  const own = categorizePath(ctx.pathname)
+  if (own) return own
+  if (/(^|[#&])report=/.test(ctx.hash)) return 'report_link'
+  if (!ctx.referrer) return 'direct'
+  try {
+    const ref = new URL(ctx.referrer)
+    // Same-site referrer: the visitor came from one of our static surfaces
+    // (landing / blog / fix page) into the app — that surface is the channel.
+    if (ref.origin === ctx.origin) return categorizePath(ref.pathname) ?? 'direct'
+    // External referrer: category unknown by design — the raw value is never
+    // inspected further nor forwarded (INV-5).
+    return 'unknown'
+  } catch {
+    return 'unknown'
+  }
+}
+
 export interface EntrySource {
   /** The opaque invite/campaign tag, e.g. "li_ignacy" | "hn" | "md_<slug>". */
   source: string
@@ -67,7 +136,27 @@ export function captureAttribution(params: { ref?: string }): void {
   stripInviteParamsFromUrl()
 
   const code = params.ref
-  if (!code) return
+  if (!code) {
+    // Organic visitor (no invite tag): register the derived channel category
+    // as the entry_source super-property. First-touch still wins — an invite
+    // stored earlier this session keeps its attribution, so we never overwrite
+    // it with a category. Nothing is persisted for organic entries: a later
+    // in-session invite must still be capturable (first-touch checks storage).
+    try {
+      if (window.sessionStorage.getItem(KEY_SOURCE) != null) return
+    } catch {
+      /* sessionStorage blocked — a category is PII-free, register anyway */
+    }
+    registerEntrySource({
+      entry_source: deriveEntrySource({
+        pathname: window.location.pathname,
+        hash:     window.location.hash,
+        referrer: document.referrer,
+        origin:   window.location.origin,
+      }),
+    })
+    return
+  }
 
   // First-touch wins: don't clobber the source that opened the session.
   try {

@@ -277,6 +277,18 @@
     "fmtCertLabel": "証明書",
     "fmtCertDesc": "カバレッジレポート",
     "fmtBcfLabel": "BCF",
-    "fmtBcfDesc": "オープンな調整フォーマット"
+    "fmtBcfDesc": "オープンな調整フォーマット",
+    "verifiableTitle": "検証可能な証明書",
+    "verifiableDesc": "このブラウザで計算した結果に署名し、誰でもオンラインで検証できるようにします。送信されるのは結果の要約のみ — IFC ファイルやファイル名は送信されません。",
+    "verifiableBtn": "検証可能な証明書を生成",
+    "verifiableBusy": "生成中…",
+    "verifiableSelectOne": "検証可能な証明書を発行するには、モデルを 1 つだけ選択してください。",
+    "verifiableError": "署名サービスに接続できませんでした — 下のローカル証明書のダウンロードは引き続き利用できます。",
+    "verifiableReady": "証明書を発行しました",
+    "verifiableDedup": "全く同じ結果が既に認証済みです — 既存の証明書が返されました。",
+    "copyLink": "リンクをコピー",
+    "copied": "コピーしました",
+    "downloadSigned": "署名済み .json をダウンロード",
+    "copyBadge": "バッジ Markdown をコピー"
   }
 }

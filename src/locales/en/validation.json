@@ -371,6 +371,18 @@
     "fmtCertLabel": "Certificate",
     "fmtCertDesc": "Signed-style coverage report",
     "fmtBcfLabel": "BCF",
-    "fmtBcfDesc": "Open coordination format"
+    "fmtBcfDesc": "Open coordination format",
+    "verifiableTitle": "Verifiable certificate",
+    "verifiableDesc": "Signs the result computed in this browser so anyone can verify it online. Only the result summary is sent — never the IFC file or its name.",
+    "verifiableBtn": "Generate verifiable certificate",
+    "verifiableBusy": "Generating…",
+    "verifiableSelectOne": "Select a single model to issue a verifiable certificate.",
+    "verifiableError": "Couldn't reach the signing service — the local certificate download below still works.",
+    "verifiableReady": "Certificate issued",
+    "verifiableDedup": "This exact result was already certified — the existing certificate was returned.",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "downloadSigned": "Download signed .json",
+    "copyBadge": "Copy badge markdown"
   }
 }

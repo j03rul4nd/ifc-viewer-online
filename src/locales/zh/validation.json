@@ -277,6 +277,18 @@
     "fmtCertLabel": "证书",
     "fmtCertDesc": "覆盖范围报告",
     "fmtBcfLabel": "BCF",
-    "fmtBcfDesc": "开放协调格式"
+    "fmtBcfDesc": "开放协调格式",
+    "verifiableTitle": "可验证证书",
+    "verifiableDesc": "对在此浏览器中计算的结果进行签名，任何人都可以在线验证。只发送结果摘要 — 绝不发送 IFC 文件或其文件名。",
+    "verifiableBtn": "生成可验证证书",
+    "verifiableBusy": "正在生成…",
+    "verifiableSelectOne": "请选择单个模型以签发可验证证书。",
+    "verifiableError": "无法连接签名服务 — 下方的本地证书下载仍然可用。",
+    "verifiableReady": "证书已签发",
+    "verifiableDedup": "完全相同的结果已被认证 — 返回了现有证书。",
+    "copyLink": "复制链接",
+    "copied": "已复制",
+    "downloadSigned": "下载已签名的 .json",
+    "copyBadge": "复制徽章 Markdown"
   }
 }

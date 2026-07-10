@@ -8,7 +8,7 @@
 
 ---
 
-## 0. The nine invariants of platform code
+## 0. The ten invariants of platform code
 
 Before any pattern, the hard rules. A change that violates one of these is wrong even if it compiles and the tests pass.
 
@@ -23,6 +23,7 @@ Before any pattern, the hard rules. A change that violates one of these is wrong
 | I-7 | **Stores hold serialisable data only** (D-05); no Three.js objects, devtools + named actions always on. | §6 |
 | I-8 | **The canonical payload codec is byte-identical on both sides of every cross-boundary contract**; a one-byte divergence breaks all signatures (R-8). | §3, frozen vectors |
 | I-9 | **The edge is stateless and never touches IFC bytes** except behind D-27/F6. | §7 |
+| I-10 | **Every tenant-owned query is workspace-scoped, twice.** `workspaceId` comes from the verified JWT (never the request body), is injected by the tenant-scoped repository, and RLS (`SET LOCAL app.workspace_id`) is the backstop. Quota checks on paid writes are **fail-closed**; abuse rate-limiting stays fail-open. | §7.2; `CONFORMANCE_DOMAIN.md` §3.9/§4.2 |
 
 The certificate attests **the integrity of an issuance** (this payload, these per-rule results, this file hash, signed at this time) — **not** a re-execution of the validation. Never write copy or code comments that claim it is "impossible to forge." See §3.6.
 
@@ -254,6 +255,35 @@ Naming: lowerCamelCase + `Store` suffix (`validationStore`, `uiStore`, `presenta
 
 The **only** place a model is processed server-side is F6's CDE monitor, and only behind **D-27** (opt-in per action, paid-only, never anonymous/free, 72h retention with guaranteed deletion even on failure, honest copy, SSRF-hardened pull ingest). The outbound webhook carries only the condensed ConformityReport (`{job_id,file_hash,health_score,counts,verify_url}`) — **never** the model. See [`docs/INTEGRATIONS.md`](./INTEGRATIONS.md) for the ingest/SSRF contract and [`docs/CDE_ROADMAP.md`](./CDE_ROADMAP.md) for the two gates (signal + D-27) that must both open first.
 
+### 7.2 Tenant scoping + quota enforcement (I-10) — the multi-tenant pattern
+
+**Applies to:** every tenant-owned route from F2 onward (history, rulesets, org dashboard, api_keys). Domain-level rationale and acceptance criteria: [`CONFORMANCE_DOMAIN.md`](./CONFORMANCE_DOMAIN.md) §3.9/§4.2; cost model: [`CDE_ARCHITECTURE.md`](./CDE_ARCHITECTURE.md) §4.3.
+
+```
+route handler ──► requireAuth() ──► workspaceId (from verified JWT, NEVER the body)
+                        │
+                        ▼
+              tenantRepo(workspaceId)          // the ONLY way to touch tenant tables
+                        │
+                        ▼
+     prisma.$transaction([
+       SET LOCAL app.workspace_id = $1,        // RLS backstop — transaction-scoped,
+       …reads/writes…,                          //   survives Supavisor tx pooling
+       usage_counters upsert (same tx)          // metered write + count are atomic
+     ])
+```
+
+Rules (each one is a review-blocking check):
+
+1. **No handler imports `prisma` directly.** Tenant tables are reached only through `tenantRepo(workspaceId)`, which injects `workspace_id` into every `where`/`data`. Public lookup routes (`/certificates/:hash`) use a separate, explicitly-named `publicRepo` limited to hash lookups.
+2. **`SET LOCAL`, never `SET`.** Session-level `SET` leaks across pooled connections under Supavisor transaction mode — the exact bug class RLS is meant to backstop. First statement of every tenant transaction: `SET LOCAL app.workspace_id = '<uuid>'`.
+3. **Cross-tenant references return `404`, not `403`** — existence is not leaked. Integration test per entity.
+4. **Quota check → write → counter increment, one transaction.** Quota checks on paid writes are **fail-closed** (`429 quota_exceeded`, typed `Err`); abuse rate-limiting stays fail-open. Never swap the two postures.
+5. **Limits resolve as** `limit_overrides[key] ?? PLAN_LIMITS[plan][key]` — `PLAN_LIMITS` is a versioned constant in the Worker (zero DB reads on the hot path); the jsonb override exists only for negotiated exceptions.
+6. **Role checks stay in the route guard** (JWT `org_role` + `org_members` mirror, §3.8 matrix); RLS encodes tenancy only. One axis per layer, both testable in isolation.
+
+**Contract test (add to the §8.1 table when F2 lands):** with RLS enabled and a repository call deliberately stripped of its tenant filter, the query returns zero rows — the backstop must catch the bug loudly in CI, not in production.
+
 ---
 
 ## 8. Golden-vector testing + Prisma migration flow
@@ -264,9 +294,20 @@ Two frozen-vector suites already guard the moats; new conformance work extends t
 
 | Suite | What it freezes | Where |
 |---|---|---|
-| Certify (23 tests) | Canonical string, full-payload sha, `cert_hash`, dedup behaviour, tamper detection | `src/lib/certify/canonical.test.ts`, `build-payload.test.ts` |
+| Certify (23 tests) | Canonical string, full-payload sha, `cert_hash`, dedup behaviour, tamper detection | `src/lib/certify/canonical.test.ts` (12), `build-payload.test.ts` (11) |
 | Share-report | Client encode == Worker decode | `src/lib/share-report.test.ts` (mirrors the Worker's `decodeReport`) |
 | IDS engine | 100 official bSI testcases (all six facets) | `src/lib/ids/` golden fixtures |
+
+**Contract tests each phase must add (assertions about what may cross a boundary, not about behaviour):**
+
+| Phase | Contract test |
+|---|---|
+| F1 | `/certify` request body contains no key other than the nine `CertifyPayloadV1` fields — no filename, no bytes (I-2). |
+| F1 | A certificate signed under a now-`retired` key **still verifies** against `.well-known` (key rotation must never orphan old certificates). |
+| F1 | Worker mirror suite asserts the identical frozen vectors (`ce680ab9…04ee` full-payload sha, `941bd944…2832` cert_hash) as `canonical.test.ts`. |
+| F2 | `dist/assets/index-*.js` contains no `clerk`/`stripe` string (I-1, build-time grep). |
+| F4 | No verify-batch endpoint accepts a body field capable of carrying file content. |
+| F6 | The outbound webhook payload serialises to `{job_id, file_hash, health_score, counts, verify_url, result_url}` **only** — a snapshot test, so model bytes *cannot* ride along unnoticed. |
 
 Rule: when you change a frozen payload shape, **bump the schema version** (`CERTIFY_SCHEMA_VERSION`, `SHARE_REPORT_VERSION`) and update **both** sides in the same change. The Worker (private repo) has a mirror test asserting the identical vectors — R-8 is only mitigated while both stay green (docs-planning/05 R-8: ✅ 23 app tests + 13 Worker-skeleton tests over the same vectors).
 
@@ -304,10 +345,11 @@ flowchart LR
 | Worker zod protocol (§5) | all | `src/lib/worker-schemas.ts` |
 | Store conventions (§6) | all | any new `*Store.ts`, `src/lib/event-bus.ts` |
 | Edge-compute rules (§7) | F1 | private `ifc-cloud-api` Worker (clones `cf-worker/`) |
+| Tenant scoping + quotas (§7.2) | F2 | `tenantRepo` in the private Worker; `usage_counters`; `PLAN_LIMITS` constant |
 | Golden vectors + Prisma flow (§8) | F0/F1 | `*.test.ts` suites, `schema.prisma`, `docker-compose.yml` |
 
 ---
 
-**Cross-references:** [`docs/CDE_ARCHITECTURE.md`](./CDE_ARCHITECTURE.md) · [`docs/INTEGRATIONS.md`](./INTEGRATIONS.md) · [`docs/CONFORMANCE_DOMAIN.md`](./CONFORMANCE_DOMAIN.md) · [`docs/CDE_ROADMAP.md`](./CDE_ROADMAP.md). Decisions referenced: D-05, D-07, D-12, D-13, D-21, D-25, and the new **D-27** (privacy-invariant amendment) / **D-28** (immutable Submission + append-only AuditLog).
+**Cross-references:** [`docs/CDE_ARCHITECTURE.md`](./CDE_ARCHITECTURE.md) · [`docs/INTEGRATIONS.md`](./INTEGRATIONS.md) · [`docs/CONFORMANCE_DOMAIN.md`](./CONFORMANCE_DOMAIN.md) · [`docs/CDE_ROADMAP.md`](./CDE_ROADMAP.md). Decisions referenced: D-05, D-07, D-12, D-13, D-21, D-25, plus **D-27** (privacy-invariant amendment, ⏸️ written but founder-gated) / **D-28** (immutable Submission + append-only AuditLog, active) — both in `DECISIONS.md` since 2026-07-04. (`docs-planning/*` references point at the private, gitignored planning suite — they will not resolve in a public checkout.)
 
-*Last updated: 2026-07-04 · Status: patterns handbook for the conformance platform — grounded in shipped code (certify/result/worker-schemas/share-report/validator) + docs-planning/01 & 05. Public/MIT-appropriate.*
+*Last updated: 2026-07-06 (rev 2: I-10 tenant-scoping invariant + §7.2 tenant repo / SET LOCAL / quota fail-closed pattern) · Status: patterns handbook for the conformance platform — grounded in shipped code (certify/result/worker-schemas/share-report/validator) + docs-planning/01 & 05. Public/MIT-appropriate.*

@@ -1,0 +1,29 @@
+{
+  "title": "Vérification du certificat",
+  "subtitle": "Certificat de validation IFC — le résultat a été calculé dans le navigateur de l'émetteur et signé à l'émission.",
+  "backToApp": "Retour à IFC Viewer Online",
+  "loading": "Chargement du certificat…",
+  "notFound": "Aucun certificat n'existe pour ce lien.",
+  "networkError": "Impossible de joindre le service de certificats.",
+  "retry": "Réessayer",
+  "healthScore": "Health Score",
+  "coverage": "{{checked}} règles sur {{total}} — profil {{profile}}",
+  "partialBanner": "Profil de règles partiel ou personnalisé ({{profile}}) — ce n'est pas une exécution complète par défaut.",
+  "revokedBanner": "Ce certificat a été révoqué.",
+  "issuedAt": "Validé le",
+  "validator": "Validateur",
+  "ruleset": "Jeu de règles",
+  "fileHash": "Empreinte du fichier (SHA-256)",
+  "ruleStatus": {
+    "pass": "conforme",
+    "fail": "échec",
+    "warning": "alerte"
+  },
+  "verifyBtn": "Vérifier la signature dans ce navigateur",
+  "verifying": "Vérification…",
+  "verified": "Signature vérifiée dans ce navigateur",
+  "invalidSignature": "Signature invalide — le contenu ne correspond pas à ce qui a été signé",
+  "unknownKey": "Clé de signature inconnue — vérification impossible",
+  "validButRevoked": "La signature est authentique, mais le certificat a été révoqué",
+  "honesty": "La signature atteste que ce résultat exact a été émis par ifcvieweronline.eu à la date indiquée. Elle reflète une validation calculée dans le navigateur de l'émetteur — ce n'est pas une ré-exécution."
+}

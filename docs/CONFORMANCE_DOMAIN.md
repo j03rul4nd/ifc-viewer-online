@@ -22,7 +22,7 @@ Workspace ──< Project ──< Milestone ──< Submission
                                             └── AuditLog[]          (append-only event ledger)
 ```
 
-Two new decisions govern this domain — reference them **by number**, never renumber:
+Two new decisions govern this domain — reference them **by number**, never renumber. Both are **written in `DECISIONS.md`** (2026-07-04, after D-26); D-28 is active, D-27 is recorded as *⏸️ proposed / founder-gated* (text exists, ratification pending):
 
 | Decision | Title | What it fixes |
 |---|---|---|
@@ -52,7 +52,7 @@ erDiagram
     PROJECT   ||--o{ MILESTONE : contains
     MILESTONE ||--o{ SUBMISSION : accepts
     SUBMISSION ||--|| VALIDATIONRUN : "binds (1:1)"
-    SUBMISSION ||--o| CONFORMITYREPORT : "certifies (0..1)"
+    SUBMISSION }o--o| CONFORMITYREPORT : "certifies (0..1 — dedup-shared, N:1)"
     SUBMISSION ||--o{ AUDITLOG : "logs (append-only)"
     SUBMISSION ||--o| SUBMISSION : "superseded_by"
 
@@ -62,6 +62,7 @@ erDiagram
         string owner_user_id
         string org_id "nullable — Clerk org mirror"
         string plan
+        json limit_overrides "nullable — negotiated caps over PLAN_LIMITS (§3.9)"
         timestamptz created_at
     }
     PROJECT {
@@ -83,25 +84,25 @@ erDiagram
     SUBMISSION {
         uuid id PK
         uuid milestone_id FK
+        uuid workspace_id FK "denormalized — tenancy/RLS/quotas (§4.2)"
+        string status "submitted | verified | rejected | superseded — draft never persists"
         string issuer_user_id "nullable"
         string file_hash_sha256 "sha256 of IFC bytes"
-        uuid validation_run_id FK
-        string conformity_report_id "nullable — cert_hash"
-        string certificate_hash "nullable"
+        uuid validation_run_id FK "UNIQUE — the 1:1 FK lives here (run inserted first)"
+        string conformity_report_hash "nullable FK to cert_hash — single link column"
         int revision_index
         uuid superseded_by_id "nullable self-FK"
         timestamptz submitted_at
     }
     VALIDATIONRUN {
         uuid id PK
-        uuid submission_id "nullable"
         string ruleset_version
         json rules_result "DEFAULT_RULES order"
         int health_score "0-100"
         string ids_spec_hash "nullable"
         json coverage
         timestamptz validated_at
-        int durationMs
+        int duration_ms
         string validator_version
     }
     CONFORMITYREPORT {
@@ -117,7 +118,8 @@ erDiagram
     }
     AUDITLOG {
         uuid id PK
-        uuid submission_id FK
+        uuid submission_id FK "nullable — NULL for membership events"
+        uuid workspace_id FK "nullable — tenant anchor; CHECK: at least one anchor set"
         string actor_user_id "nullable — SetNull on erasure"
         string event_type
         string from_state "nullable"
@@ -139,10 +141,10 @@ Fields, states, and invariants below are **verbatim** from the domain blueprint.
 
 | | |
 |---|---|
-| **Fields** | `id, name, owner_user_id, org_id?, plan, created_at` |
+| **Fields** | `id, name, owner_user_id, org_id?, plan, limit_overrides?, created_at` |
 | **States** | `active` \| `suspended` (billing) \| `closed` |
 
-**Invariants.** Top-level tenancy boundary. Maps 1:1 to a Clerk Organization when `org_id` is set (mirrored via webhook — see `docs-planning/01` §6.3). All Projects/history filter by `Workspace`. A free/anonymous user has an **implicit ephemeral Workspace with no server row** until they authenticate (lazy upsert). This is what keeps the anonymous footprint byte-identical to today (see §6, invariant 1).
+**Invariants.** Top-level tenancy boundary. Maps 1:1 to a Clerk Organization when `org_id` is set (mirrored via webhook — see `docs-planning/01` §6.3; `docs-planning/*` paths reference the private, gitignored planning suite and will not resolve in a public checkout). All Projects/history filter by `Workspace`. A free/anonymous user has an **implicit ephemeral Workspace with no server row** until they authenticate (lazy upsert). This is what keeps the anonymous footprint byte-identical to today (see §6, invariant 1).
 
 ### 3.2 `Project`
 
@@ -166,8 +168,8 @@ Fields, states, and invariants below are **verbatim** from the domain blueprint.
 
 | | |
 |---|---|
-| **Fields** | `id, milestone_id, issuer_user_id?, file_hash_sha256, validation_run_id, conformity_report_id, certificate_hash?, revision_index, superseded_by_id?, submitted_at` |
-| **States** | `draft → submitted (IMMUTABLE) → {verified \| rejected \| superseded}` |
+| **Fields** | `id, milestone_id, workspace_id (denormalized, §4.2), status, issuer_user_id?, file_hash_sha256, validation_run_id (unique), conformity_report_hash?, revision_index, superseded_by_id?, submitted_at` |
+| **States** | `draft → submitted (IMMUTABLE) → {verified \| rejected \| superseded}` — **`draft` is client-side only and never persists**; the DB enum starts at `submitted` (resolved in `docs-planning/02` §2bis) |
 
 **Invariants.**
 - **IMMUTABLE on submit (D-28):** `file_hash_sha256`, the bound `ValidationRun` result, the `ConformityReport`, and any issued certificate **freeze**. There is no edit path.
@@ -175,11 +177,13 @@ Fields, states, and invariants below are **verbatim** from the domain blueprint.
 - `file_hash_sha256` = `sha256` of the IFC bytes computed **in-browser** via WebCrypto from `modelRegistry.getBuffer(modelId)` — the bytes themselves **never transit** (invariant 1 / D-27). See the caller contract documented in [`src/lib/certify/build-payload.ts:8`](../src/lib/certify/build-payload.ts).
 - The model file is **NOT stored server-side in F0–F5**. Server-side model storage is F6-only and gated by **D-27**.
 
+**Federated deliveries (designed, not built — DA-14).** v1 is pinned to **one model per `Submission`** (`file_hash_sha256` is a scalar column). When the federated signal appears, the extension is a join entity — `SubmissionModel { submission_id, file_hash_sha256, model_role? }` — capped by the plan limit `max_models_per_submission` (§3.9), **not** a schema rewrite. Two hard constraints the extension must respect: (a) the frozen `CertifyPayloadV1` stays per-model — a *federated certificate* (one signed artifact over N hashes) requires a `schema_version` bump to V2, new frozen vectors, and a Worker mirror update in the same change (never widen V1); (b) v1 rows migrate losslessly (a scalar hash becomes one `SubmissionModel` row). Do not create the table before the signal — it is listed here so the executor extends instead of redesigning.
+
 ### 3.5 `ValidationRun` — the client-side outcome (one engine, many rule sources)
 
 | | |
 |---|---|
-| **Fields** | `id, submission_id?, ruleset_version, rules_result[], health_score, ids_spec_hash?, coverage, validated_at, durationMs, validator_version` |
+| **Fields** | `id, ruleset_version, rules_result[], health_score, ids_spec_hash?, coverage, validated_at, duration_ms, validator_version` — the 1:1 back-link is `Submission.validation_run_id` (unique FK), not a column here (avoids a circular-FK insert) |
 | **States** | `running` \| `complete` \| `failed` \| `cancelled` |
 
 **Invariants.**
@@ -211,6 +215,7 @@ Fields, states, and invariants below are **verbatim** from the domain blueprint.
 - `cert_hash` = `sha256(canonical bytes **excluding** validated_at)` for dedup (`computeCertHash`, `canonical.ts:114`) — re-certifying the same file/ruleset/outcome on a different day yields the same `cert_hash`, so the Worker reuses the stored row (`deduplicated: true`) instead of minting a duplicate.
 - `signature` = **ECDSA-P256-SHA256** over the **full** canonical bytes (`payloadCanonicalBytes`, `canonical.ts:95`), base64url.
 - **Deliberate minimization — the payload carries NO:** filename, GlobalIds, element names, messages, coordinates, or geometry. It attests the **per-rule aggregate result**, never the model's contents (see `canonical.ts:33` header comment). This minimization is what lets the report be public and crawlable without leaking the model.
+- **Language-neutral by construction.** The signed payload contains only stable identifiers (`rule_id`, hashes, integers) — no prose in any language. All human-readable rendering (the `/verify` view, the printable certificate, remediation text) is produced at display time from the existing i18n system (×10 locales) and the D-22 remediation corpus. Localising a certificate never re-signs anything.
 - Append-only + dedup (D-28); **never TTL'd** — permanence *is* the value.
 - On GDPR `user.deleted`, the user link is `SetNull` but the report **persists** (it is a public, immutable artifact).
 
@@ -220,11 +225,12 @@ Fields, states, and invariants below are **verbatim** from the domain blueprint.
 
 | | |
 |---|---|
-| **Fields** | `id, submission_id, actor_user_id? (SetNull on deletion), event_type, from_state?, to_state?, metadata_json, created_at` |
+| **Fields** | `id, submission_id? (NULL for membership events), workspace_id? (tenant anchor), actor_user_id? (SetNull on deletion), event_type, from_state?, to_state?, metadata_json, created_at` |
 | **States** | n/a — append-only ledger of events |
 
 **Invariants.**
-- **APPEND-ONLY (D-28):** one immutable, timestamped, actor-attributed entry per state transition (`submitted` / `verified` / `rejected` / `superseded` / `certificate_issued`). Never mutated, never deleted.
+- **APPEND-ONLY (D-28):** one immutable, timestamped, actor-attributed entry per state transition (`submitted` / `verified` / `rejected` / `superseded` / `certificate_issued`) and per membership change (§3.8). Never mutated, never deleted.
+- **Every entry has at least one anchor** (DB `CHECK`): submission transitions carry `submission_id` (+ the denormalized `workspace_id`, §4.2); membership events (§3.8) carry `workspace_id` with `submission_id = NULL` — they have no submission to point at. This is why `submission_id` is nullable in the schema (v4 alignment resolution; see `docs-planning/02` §2bis).
 - GDPR erasure anonymizes `actor_user_id` via **`SetNull` only** (`docs-planning/01` §6.3) — it never removes the entry. The artifact is public/immutable; only the actor link is severed.
 - This is the evidential spine of "DocuSign for BIM": the provable history of what happened to a delivery and when.
 
@@ -235,6 +241,50 @@ Fields, states, and invariants below are **verbatim** from the domain blueprint.
 | Soft-delete of audit entries | Breaks the append-only guarantee that makes the log evidential. | GDPR handled by `SetNull` on the actor, not deletion. |
 
 > **Storage growth is bounded and cheap.** Append-only + dedup: ~5 KB/cert → 100k certs ≈ 500 MB, well within the Supabase tier (`docs-planning/05` R-7). No TTL by design.
+
+### 3.8 Membership & roles — small, boring, mapped to personas
+
+Multi-user access is a thin layer over the tenancy boundary: `OrgMember { org_id, user_id, role }` (already in the schema, mirrored from Clerk webhooks — DA-2). **Four roles, no more** — every additional role is a support burden and a permissions-matrix cell to test:
+
+| Role | Persona mapping | Can do | Cannot do |
+|---|---|---|---|
+| `owner` | P1 founder/BIM lead | Everything incl. billing, member management, workspace deletion request | — (exactly one per Workspace; transferable) |
+| `admin` | P1 senior | Manage Projects/Milestones/members, issue + revoke workspace certificates, manage rulesets | Billing, delete Workspace |
+| `member` | P1 issuer | Create Submissions, issue certificates, run validations, read everything in the Workspace | Manage members/rulesets pinned by admin, billing |
+| `viewer` | P2 verifier / P3 client seat | Read-only: dashboards, Submissions, `ConformityReport`s, deep-verify | Any write |
+
+**Enforcement split (deliberate):** *role* checks live in the Worker route guards (JWT `org_role` + the `org_members` mirror — no Clerk API call on the hot path, per [`CONFORMANCE_PATTERNS.md`](./CONFORMANCE_PATTERNS.md) §7); *tenancy* checks live in the DB (RLS by `workspace_id`, §4.2). RLS does **not** encode roles — one axis per layer keeps both testable. Whether `viewer` is a native Clerk custom role or a mirror-only override is an open decision (**DA-15**, blocks F3 — see `docs-planning/05`).
+
+**Invariants.**
+- Every role change writes an `AuditLog` entry (`member_added` / `member_role_changed` / `member_removed`) — membership history is part of the evidential spine. These entries anchor to the `Workspace` (`workspace_id` set, `submission_id = NULL` — see §3.7).
+- A `viewer` can never appear as `issuer_user_id` or as a state-transition actor other than read events.
+- Project-level membership (restricting a member to specific Projects) is **deliberately not designed** until a real org asks — the Workspace is the only access boundary in v1.
+
+### 3.9 Plan limits & usage metering — quotas are domain objects, not billing trivia
+
+The free anonymous path is sacred and unmetered (rate-limited per IP only, `CERTIFY_LIMITER`). Everything **workspace-bound** is subject to plan limits, resolved in this order:
+
+```
+effective_limit(workspace, key) = workspace.limit_overrides[key]   // negotiated, nullable
+                                ?? PLAN_LIMITS[workspace.plan][key] // versioned constant in the Worker
+```
+
+**`PLAN_LIMITS` lives in Worker code, not in a DB table** — limits change with deploys, are code-reviewed, and cost zero DB reads on the hot path. `limit_overrides` (jsonb on `Workspace`) exists only for negotiated exceptions. Concrete numbers per plan are pricing and live in the private suite; the *dimensions* are pinned here:
+
+| Limit key | Guards | Phase |
+|---|---|---|
+| `max_projects` | Workspace sprawl | F2 |
+| `max_members` | Seats | F3 |
+| `max_active_milestones_per_project` | Query cost of dashboards | F3 |
+| `max_certificates_per_month` | Workspace-bound issuance (anonymous stays unmetered) | F2 |
+| `max_models_per_submission` | Federated cap (v1 = 1 everywhere — DA-14) | F2+ |
+| `max_saved_rulesets` / `max_ruleset_bytes` | Storage abuse (256 KB CHECK already in schema) | F2 |
+| `max_api_keys` / `verify_batch_daily` / `batch_size_max` (100) | B2B surface | F4 |
+| `monitor_configs_max` / `max_ingest_bytes` / `jobs_per_day` | The only *expensive* limits — compute + R2 | F6 |
+
+**Metering:** `api_usage` (already in schema: per key, per UTC day, atomic `INSERT … ON CONFLICT` increment) is the pattern; F2 adds `usage_counters { workspace_id, metric, period_start, count }` with the same atomic-upsert rule — the increment commits **in the same transaction** as the metered write, so a quota can never be bypassed by a crash between write and count.
+
+**Enforcement posture (pinned, mirrors the fail-open/fail-closed split in [`INTEGRATIONS.md`](./INTEGRATIONS.md) §6):** abuse rate-limiting is fail-open (an infra hiccup never blocks a free user); **quota checks on paid writes are fail-closed** (if the counter is unreadable, the write is refused with `429 quota_exceeded`) — correctness of billing boundaries is never fail-open. Reads are never quota-blocked, only paginated.
 
 ---
 
@@ -264,6 +314,51 @@ stateDiagram-v2
 **Every transition writes exactly one `AuditLog` entry.** The write is part of the same transaction as the state change so the ledger can never diverge from the record. `draft` is a client-side-only phase (nothing persisted until `submit()`); the ephemeral Workspace stays row-less until then.
 
 **Why a correction is a new revision, not an edit.** A signed `ConformityReport` binds a `file_hash_sha256`. Editing a submitted `Submission` would either (a) invalidate that binding or (b) make the certificate attest a state the record no longer reflects. Both break the "provably conformed at delivery time" guarantee. So the only way to change an outcome is to submit new bytes → new hash → new `ValidationRun` → new `Submission` with `superseded_by_id` chaining the lineage.
+
+### 4.1 Persistence enforcement — DDL/RLS sketch (D-28 at the database layer)
+
+D-28 says "enforced at the DB layer, not just in application code." Concretely, the Postgres schema (Prisma-managed; the executable skeleton already materialises the F1 slice — `schema.prisma` validated with the Prisma CLI, plus an RLS migration) enforces:
+
+| Guarantee | DB mechanism |
+|---|---|
+| Deny-all by default | **RLS enabled on every table with no permissive policy for anonymous/public roles.** The Worker connects as a dedicated low-privilege role (`ifc_api`), never as the superuser/`postgres` role. |
+| `ConformityReport` append-only | Role grants: `INSERT` + `SELECT` only; `UPDATE` limited to the `status` column (revocation); **no `DELETE` grant at all**. |
+| `Submission` immutable on submit | Column-level grants: `UPDATE` allowed **only** on `status`, `superseded_by_id`, `conformity_report_hash`; frozen columns (`file_hash_sha256`, `validation_run_id`, `revision_index`, `milestone_id`, `submitted_at`) have no grant **and** a `BEFORE UPDATE` trigger as second fence. A correction is an `INSERT` of a new revision. |
+| `AuditLog` append-only | `INSERT` + `SELECT` grants only — no `UPDATE`, no `DELETE`, ever. |
+| Value sanity | `CHECK` constraints: `health_score BETWEEN 0 AND 100`; hash columns constrained to 64 lowercase hex chars. |
+| GDPR erasure = anonymise | FKs from `actor_user_id` / `user_id` to `users` declared `ON DELETE SET NULL` — erasing a user severs the link without touching the evidence row. |
+| Same-transaction ledger | Every state transition and its `AuditLog` entry commit in **one transaction** — the ledger can never diverge from the record. |
+
+**Acceptance criteria (DB layer).**
+- [ ] An `UPDATE` against a submitted `Submission`'s frozen columns fails even when issued from application code.
+- [ ] `DELETE` on `audit_log` or `conformity_reports` fails for the `ifc_api` role.
+- [ ] A connection without the `ifc_api` role reads zero rows (RLS deny-all).
+- [ ] `user.deleted` webhook leaves report/audit rows in place with nulled actor links.
+
+Full column-level schema and the RLS SQL live in the private planning suite (`docs-planning/02-esquema-supabase.md` + the `ifc-cloud-api` skeleton — gitignored, not in the public checkout).
+
+### 4.2 Multi-tenancy — one database, tenant isolation by construction
+
+The tenancy boundary is the `Workspace` (§3.1). How tenants are kept from colliding — and from colliding with the bill — is a pinned architectural decision:
+
+| | |
+|---|---|
+| **Decision** | **Single Postgres database, single schema, shared tables**, with `workspace_id` **denormalized onto every tenant-owned row** (`Project`, `Milestone`, `Submission`, `SavedRuleset`, `ApiKey`, `UsageCounter`; `ConformityReport.workspace_id` stays nullable — anonymous certificates have no tenant). |
+| **Alternatives considered** | (a) Postgres **schema-per-tenant** — rejected: `prisma migrate` fans out per tenant, Supavisor pooling (`connection_limit=1`) breaks against per-schema search paths, and a 10-tenant product would carry 10× migration risk for zero isolation gain at this row size. (b) **Database-per-tenant** — rejected: one Supabase project per client is the literal definition of an "abysmal bill" plus per-tenant backups/PITR/monitoring. (c) **Row-level `workspace_id` only on the top of the tree** (join-down for isolation) — rejected: every RLS policy becomes a 3-join subquery evaluated per row; denormalizing one UUID column buys single-column policies and cheap composite indexes. |
+| **Consequence** | Every tenant-owned table gets `workspace_id uuid NOT NULL` + composite indexes `(workspace_id, created_at)` (and `(workspace_id, status)` where dashboards filter). The column is written once at INSERT and is part of the frozen set on `Submission` (§4.1 trigger). One pinned exception: `ApiKey.workspace_id` lands **nullable** first — the GDPR cascade (`user.deleted` → `DELETE api_keys`) keeps user-XOR-org as the ownership axis until F4 ships workspace-bound keys, at which point it hardens to `NOT NULL`. |
+
+**Isolation is enforced twice, at two layers:**
+
+1. **Worker layer (first line):** no route handler touches Prisma directly. All tenant reads/writes go through a **tenant-scoped repository** that takes `workspaceId` from the verified JWT (never from the request body) and injects it into every `where`/`data`. A handler that imports `prisma` directly fails code review — see [`CONFORMANCE_PATTERNS.md`](./CONFORMANCE_PATTERNS.md) §7.2.
+2. **DB layer (backstop):** RLS policies of the shape `USING (workspace_id = current_setting('app.workspace_id', true)::uuid)` on every tenant-owned table. The Worker opens each unit of work as a Prisma **`$transaction`** whose first statement is `SET LOCAL app.workspace_id = '<uuid>'`. `SET LOCAL` is transaction-scoped, which is exactly why it survives **Supavisor transaction pooling** (a session-level `SET` would leak across pooled connections — this is the bug class the pattern exists to prevent). Public lookups (`GET /certificates/:hash`) run under a separate policy that exposes only rows by `cert_hash`/`file_hash_sha256` — never by tenant enumeration.
+
+**Acceptance criteria (tenancy).**
+- [ ] A request authenticated for Workspace A that references a Workspace B resource id gets `404` (not `403` — existence is not leaked), verified by an integration test per entity.
+- [ ] With RLS active, a repository call that "forgets" the tenant filter returns **zero rows** instead of another tenant's rows (the backstop catches the bug, loudly, in the integration suite).
+- [ ] `EXPLAIN` on the three dashboard queries shows the composite `(workspace_id, …)` index — no seq scans on tenant tables.
+- [ ] Anonymous `/certify` writes rows with `workspace_id NULL` and no tenant policy grants them to anyone.
+
+Cost posture at this altitude: rows are tiny (~5 KB certs, counters are integers), there is **no object storage before F6**, and quotas (§3.9) bound every write path — the marginal cost of a new tenant in F2–F4 is approximately zero. The full cost-control model lives in [`CDE_ARCHITECTURE.md`](./CDE_ARCHITECTURE.md) §4.3.
 
 ---
 
@@ -307,7 +402,10 @@ When you touch any conformance entity:
 - [ ] Every state transition writes exactly one `AuditLog` entry in the same transaction.
 - [ ] GDPR erasure = `SetNull` on `actor_user_id` / user links, never `DELETE` of a report or audit entry.
 - [ ] No IFC bytes cross an origin the user did not choose (F6/D-27 opt-in is the only exception).
+- [ ] Every tenant-owned row carries `workspace_id`; every query goes through the tenant-scoped repository; `workspaceId` comes from the JWT, never the request body (§4.2).
+- [ ] Every metered write increments its `usage_counters` row **in the same transaction**; quota checks on paid writes are fail-closed (§3.9).
+- [ ] Role checks in the Worker, tenancy checks in RLS — never mix the two axes (§3.8).
 
 ---
 
-*Last updated: 2026-07-04 · Status: domain reference for the conformance suite · Entities pinned (Workspace/Project/Milestone/Submission/ValidationRun/ConformityReport/AuditLog) · Governing decisions D-27 (privacy amendment, F6-only) + D-28 (immutable Submission / append-only AuditLog) · Grounded in `src/lib/certify/`, `src/lib/validator.ts`, `src/lib/ids/`, `src/lib/eir/`.*
+*Last updated: 2026-07-10 (rev 3: reconciled with the v4 schema — `AuditLog.submission_id` nullable + `workspace_id` tenant anchor so §3.8 membership events are writable (CHECK ≥1 anchor), `ApiKey.workspace_id` nullable-until-F4 exception pinned in §4.2) · (rev 2: `Submission.status` + denormalized `workspace_id` reconciled with the v3 schema; ER dedup cardinality fixed; new §3.8 roles, §3.9 plan limits/metering, §4.2 multi-tenancy; federated-delivery extension pinned as designed-not-built under DA-14) · Status: domain reference for the conformance suite · Entities pinned (Workspace/Project/Milestone/Submission/ValidationRun/ConformityReport/AuditLog) · Governing decisions D-27 (privacy amendment, F6-only, ⏸️ written but not ratified) + D-28 (immutable Submission / append-only AuditLog, active) — both in `DECISIONS.md` since 2026-07-04 · Grounded in `src/lib/certify/`, `src/lib/validator.ts`, `src/lib/ids/`, `src/lib/eir/`.*

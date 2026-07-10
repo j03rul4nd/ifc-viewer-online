@@ -277,6 +277,18 @@
     "fmtCertLabel": "Certificado",
     "fmtCertDesc": "Relatório de cobertura",
     "fmtBcfLabel": "BCF",
-    "fmtBcfDesc": "Formato aberto de coordenação"
+    "fmtBcfDesc": "Formato aberto de coordenação",
+    "verifiableTitle": "Certificado verificável",
+    "verifiableDesc": "Assina o resultado calculado neste navegador para que qualquer pessoa o possa verificar online. Apenas o resumo do resultado é enviado — nunca o ficheiro IFC nem o seu nome.",
+    "verifiableBtn": "Gerar certificado verificável",
+    "verifiableBusy": "A gerar…",
+    "verifiableSelectOne": "Selecione um único modelo para emitir um certificado verificável.",
+    "verifiableError": "Não foi possível contactar o serviço de assinatura — a transferência do certificado local abaixo continua a funcionar.",
+    "verifiableReady": "Certificado emitido",
+    "verifiableDedup": "Este resultado exato já estava certificado — foi devolvido o certificado existente.",
+    "copyLink": "Copiar ligação",
+    "copied": "Copiado",
+    "downloadSigned": "Transferir .json assinado",
+    "copyBadge": "Copiar badge markdown"
   }
 }

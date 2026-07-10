@@ -277,6 +277,18 @@
     "fmtCertLabel": "Certificato",
     "fmtCertDesc": "Report di copertura",
     "fmtBcfLabel": "BCF",
-    "fmtBcfDesc": "Formato aperto di coordinamento"
+    "fmtBcfDesc": "Formato aperto di coordinamento",
+    "verifiableTitle": "Certificato verificabile",
+    "verifiableDesc": "Firma il risultato calcolato in questo browser così chiunque può verificarlo online. Viene inviato solo il riepilogo del risultato — mai il file IFC né il suo nome.",
+    "verifiableBtn": "Genera certificato verificabile",
+    "verifiableBusy": "Generazione…",
+    "verifiableSelectOne": "Seleziona un solo modello per emettere un certificato verificabile.",
+    "verifiableError": "Impossibile raggiungere il servizio di firma — il download del certificato locale qui sotto funziona comunque.",
+    "verifiableReady": "Certificato emesso",
+    "verifiableDedup": "Questo esatto risultato era già certificato — è stato restituito il certificato esistente.",
+    "copyLink": "Copia link",
+    "copied": "Copiato",
+    "downloadSigned": "Scarica .json firmato",
+    "copyBadge": "Copia badge markdown"
   }
 }
