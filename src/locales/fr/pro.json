@@ -39,6 +39,25 @@
     "cta": "Voir les offres",
     "later": "Pas maintenant"
   },
+  "sync": {
+    "title": "Dans mon compte",
+    "signInPrompt": "Connectez-vous pour l'enregistrer et le synchroniser entre vos appareils.",
+    "signIn": "Se connecter",
+    "upsell": "Synchroniser les profils de règles entre appareils est une fonctionnalité Pro.",
+    "seePlans": "Voir les offres",
+    "readOnly": "Votre abonnement a pris fin — vos profils enregistrés sont en lecture seule. Vous pouvez encore les ouvrir et les télécharger.",
+    "readOnlyNote": "Lecture seule : votre abonnement a pris fin. Ouvrez ou téléchargez vos profils ; passez au niveau supérieur pour enregistrer.",
+    "saveCurrent": "Enregistrer dans le compte",
+    "saving": "Enregistrement…",
+    "saved": "Enregistré dans votre compte.",
+    "loaded": "Chargé dans l'éditeur.",
+    "nothingToSave": "Donnez-lui d'abord un nom, puis enregistrez.",
+    "quota": "Vous avez atteint votre limite de profils enregistrés.",
+    "loading": "Chargement…",
+    "empty": "Rien d'enregistré pour l'instant.",
+    "open": "Ouvrir",
+    "delete": "Supprimer"
+  },
   "checkoutWelcome": "Bienvenue dans Pro ! Votre compte est actif.",
   "checkoutPending": "Nous confirmons encore votre paiement — cela peut prendre une minute. Votre abonnement s'activera automatiquement.",
   "errors": {

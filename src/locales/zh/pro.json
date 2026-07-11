@@ -39,6 +39,25 @@
     "cta": "查看套餐",
     "later": "暂不"
   },
+  "sync": {
+    "title": "我的账户中",
+    "signInPrompt": "登录以保存并在您的设备间同步。",
+    "signIn": "登录",
+    "upsell": "在设备间同步规则配置是 Pro 功能。",
+    "seePlans": "查看套餐",
+    "readOnly": "您的套餐已结束 — 已保存的配置为只读。您仍可打开和下载它们。",
+    "readOnlyNote": "只读：您的套餐已结束。可打开或下载配置；升级后可保存更改。",
+    "saveCurrent": "将当前保存到账户",
+    "saving": "正在保存…",
+    "saved": "已保存到您的账户。",
+    "loaded": "已加载到编辑器。",
+    "nothingToSave": "请先命名，然后保存。",
+    "quota": "您已达到已保存配置的上限。",
+    "loading": "正在加载…",
+    "empty": "还没有保存任何内容。",
+    "open": "打开",
+    "delete": "删除"
+  },
   "checkoutWelcome": "欢迎使用 Pro！您的账户已激活。",
   "checkoutPending": "我们仍在确认您的付款 — 可能需要一分钟。您的套餐将自动激活。",
   "errors": {

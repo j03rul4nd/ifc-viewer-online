@@ -39,6 +39,25 @@
     "cta": "Tarife ansehen",
     "later": "Jetzt nicht"
   },
+  "sync": {
+    "title": "In meinem Konto",
+    "signInPrompt": "Melden Sie sich an, um dies zu speichern und geräteübergreifend zu synchronisieren.",
+    "signIn": "Anmelden",
+    "upsell": "Regelprofile geräteübergreifend zu synchronisieren ist eine Pro-Funktion.",
+    "seePlans": "Tarife ansehen",
+    "readOnly": "Ihr Tarif ist beendet — Ihre gespeicherten Profile sind schreibgeschützt. Sie können sie weiterhin öffnen und herunterladen.",
+    "readOnlyNote": "Schreibgeschützt: Ihr Tarif ist beendet. Öffnen oder laden Sie Ihre Profile herunter; upgraden Sie, um zu speichern.",
+    "saveCurrent": "Aktuelles im Konto speichern",
+    "saving": "Wird gespeichert…",
+    "saved": "In Ihrem Konto gespeichert.",
+    "loaded": "In den Editor geladen.",
+    "nothingToSave": "Vergeben Sie erst einen Namen, dann speichern.",
+    "quota": "Sie haben Ihr Limit gespeicherter Profile erreicht.",
+    "loading": "Wird geladen…",
+    "empty": "Noch nichts gespeichert.",
+    "open": "Öffnen",
+    "delete": "Löschen"
+  },
   "checkoutWelcome": "Willkommen bei Pro! Ihr Konto ist aktiv.",
   "checkoutPending": "Wir bestätigen Ihre Zahlung noch — das kann eine Minute dauern. Ihr Tarif wird automatisch aktiviert.",
   "errors": {

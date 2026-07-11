@@ -31,12 +31,20 @@ interface CloudAccountState {
   getToken: (() => Promise<string | null>) | null
   /** Injected by the bridge. */
   signOut: (() => Promise<void>) | null
+  /** Whether the account modal is open — any component can request it (I-1: no
+   *  Clerk import needed to trigger the lazy modal). */
+  accountModalOpen: boolean
 
   // ── Writers (bridge only) ────────────────────────────────────────────────
   setSession: (s: Pick<CloudAccountState, 'status' | 'userId' | 'email' | 'planCache' | 'getToken' | 'signOut'>) => void
   /** refresh() result lands here so every consumer re-renders. */
   setPlanCache: (p: PlanCache | null) => void
+  setAccountModalOpen: (open: boolean) => void
 }
+
+/** Open the account modal from anywhere (upsell CTAs, ruleset picker). */
+export const openAccountModal = (): void =>
+  useCloudAccountStore.getState().setAccountModalOpen(true)
 
 export const isAccountEnabled = (): boolean =>
   Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY)
@@ -48,7 +56,9 @@ export const useCloudAccountStore = create<CloudAccountState>()((set) => ({
   planCache: null,
   getToken: null,
   signOut: null,
+  accountModalOpen: false,
 
   setSession: (s) => set(s),
   setPlanCache: (planCache) => set({ planCache }),
+  setAccountModalOpen: (accountModalOpen) => set({ accountModalOpen }),
 }))

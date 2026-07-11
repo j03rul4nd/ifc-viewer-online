@@ -32,6 +32,7 @@ const TIMEOUT_MS = 15_000
 const KNOWN_CODES = new Set([
   'invalid_payload', 'unknown_rule_id', 'not_found', 'rate_limited',
   'internal', 'unauthorized', 'quota_exceeded', 'service_disabled',
+  'upgrade_required',
 ])
 
 async function request<T>(
@@ -87,3 +88,45 @@ export const createCheckout = (token: string, interval: 'month' | 'year' = 'mont
 
 export const createPortal = (token: string) =>
   request<{ url: string }>(token, '/billing/portal', { method: 'POST', body: '{}' })
+
+// ── Ruleset sync (F2 P6) ──────────────────────────────────────────────────────
+// One table, three kinds. `content` is opaque here — the caller serialises and
+// re-validates with the real parsers on import (a remote spec is no more
+// trusted than a dropped file).
+
+export type RulesetKind = 'validator_profile' | 'ids_spec' | 'eir_profile'
+
+export interface RulesetSummary {
+  id: string
+  name: string
+  kind: RulesetKind
+  updated_at: string
+}
+
+export interface RulesetFull extends RulesetSummary {
+  content: string
+  created_at: string
+}
+
+export const listRulesets = (token: string, kind?: RulesetKind) =>
+  request<{ rulesets: RulesetSummary[] }>(token, kind ? `/rulesets?kind=${kind}` : '/rulesets')
+
+export const getRuleset = (token: string, id: string) =>
+  request<RulesetFull>(token, `/rulesets/${encodeURIComponent(id)}`)
+
+export const createRuleset = (token: string, body: { name: string; kind: RulesetKind; content: string }) =>
+  request<{ id: string; name: string; kind: RulesetKind; created_at: string }>(token, '/rulesets', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+export const updateRuleset = (token: string, id: string, body: { name?: string; content?: string }) =>
+  request<{ updated: boolean }>(token, `/rulesets/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+export const deleteRuleset = (token: string, id: string) =>
+  request<{ deleted: boolean }>(token, `/rulesets/${encodeURIComponent(id)}`, { method: 'DELETE' })

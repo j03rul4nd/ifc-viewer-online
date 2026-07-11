@@ -17,6 +17,18 @@ import {
 } from '../types'
 import type { RulesConfig, ValidationCategoryType, ValidationProfile } from '../types'
 import { getCoveredCategories } from './ValidationCoverageSummary'
+import SavedRulesetPicker from './pro/SavedRulesetPicker'
+
+// The serialised shape of a synced validator_profile — name + the full rules
+// config (which already carries severityOverrides + thresholds). Kept minimal
+// and versioned so a future field is additive.
+interface SyncedValidatorProfile {
+  v: 1
+  name: string
+  description?: string
+  icon?: string
+  rules: RulesConfig
+}
 
 function severityColor(sev: 'error' | 'warning' | 'info'): string {
   if (sev === 'error')   return 'var(--danger)'
@@ -328,6 +340,34 @@ export default function CustomProfileModal({ open, onClose, editProfile }: Custo
 
   const atLimit = !isEditMode && customProfiles.length >= 5
 
+  // ── Cloud sync (F2 P6) ─────────────────────────────────────────────────────
+  // Serialise the current editor state (rules already include severityOverrides
+  // + thresholds) for the account; apply a fetched profile back into the editor.
+  const serializeCurrent = (): { name: string; content: string } | null => {
+    const trimmed = name.trim()
+    if (!trimmed) return null
+    const doc: SyncedValidatorProfile = {
+      v: 1, name: trimmed, description: description.trim() || undefined, icon, rules: localRules,
+    }
+    return { name: trimmed, content: JSON.stringify(doc) }
+  }
+  const loadFromCloud = (content: string): void => {
+    try {
+      const doc = JSON.parse(content) as Partial<SyncedValidatorProfile>
+      if (!doc || typeof doc !== 'object' || typeof doc.rules !== 'object' || doc.rules === null) {
+        setError(t('customProfile.errorNameEmpty')); return
+      }
+      if (typeof doc.name === 'string') setName(doc.name)
+      if (typeof doc.description === 'string') setDescription(doc.description)
+      if (typeof doc.icon === 'string') setIcon(doc.icon)
+      // Re-validate: only keep known rule keys, merged over defaults.
+      setLocalRules({ ...DEFAULT_RULES, ...(doc.rules as RulesConfig) })
+      setError(null)
+    } catch {
+      setError(t('customProfile.errorNameEmpty'))
+    }
+  }
+
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
@@ -532,6 +572,15 @@ export default function CustomProfileModal({ open, onClose, editProfile }: Custo
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* ── Cloud sync (F2 P6) — renders nothing when accounts are off ── */}
+          <div className="px-5 pb-3 shrink-0">
+            <SavedRulesetPicker
+              kind="validator_profile"
+              serializeCurrent={serializeCurrent}
+              onLoad={loadFromCloud}
+            />
           </div>
 
           {/* ── Footer ── */}

@@ -27,6 +27,7 @@ export type ApiErrorCode =
   | 'unauthorized'
   | 'quota_exceeded'
   | 'service_disabled'
+  | 'upgrade_required'
 
 export interface ApiError {
   code: ApiErrorCode

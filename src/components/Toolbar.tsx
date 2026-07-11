@@ -242,10 +242,12 @@ export default function Toolbar({
   const { t: tClient } = useTranslation('client')
   const { t: tPro } = useTranslation('pro')
 
-  // Account (F2) — button only exists when a Clerk key is configured.
+  // Account (F2) — button only exists when a Clerk key is configured. The
+  // open/close flag lives in the store so pickers/upsells can open it too.
   const accountEnabled = isAccountEnabled()
   const accountStatus = useCloudAccountStore((s) => s.status)
-  const [accountOpen, setAccountOpen] = useState(false)
+  const accountOpen = useCloudAccountStore((s) => s.accountModalOpen)
+  const setAccountOpen = useCloudAccountStore((s) => s.setAccountModalOpen)
 
   const statusColor = loadingState === 'loaded' ? 'var(--ok)'     :
                       loadingState === 'error'  ? 'var(--danger)' : 'var(--warn)'

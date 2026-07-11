@@ -39,6 +39,25 @@
     "cta": "See plans",
     "later": "Not now"
   },
+  "sync": {
+    "title": "In my account",
+    "signInPrompt": "Sign in to save this and sync it across your devices.",
+    "signIn": "Sign in",
+    "upsell": "Syncing rule profiles across devices is a Pro feature.",
+    "seePlans": "See plans",
+    "readOnly": "Your plan ended — your saved profiles are read-only. You can still open and download them.",
+    "readOnlyNote": "Read-only: your plan ended. Open or download your profiles; upgrade to save changes.",
+    "saveCurrent": "Save current to account",
+    "saving": "Saving…",
+    "saved": "Saved to your account.",
+    "loaded": "Loaded into the editor.",
+    "nothingToSave": "Give it a name first, then save.",
+    "quota": "You've reached your saved-profile limit.",
+    "loading": "Loading…",
+    "empty": "Nothing saved yet.",
+    "open": "Open",
+    "delete": "Delete"
+  },
   "checkoutWelcome": "Welcome to Pro! Your account is active.",
   "checkoutPending": "We're still confirming your payment — it can take a minute. Your plan will activate automatically.",
   "errors": {

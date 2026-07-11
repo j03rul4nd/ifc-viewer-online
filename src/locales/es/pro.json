@@ -39,6 +39,25 @@
     "cta": "Ver planes",
     "later": "Ahora no"
   },
+  "sync": {
+    "title": "En mi cuenta",
+    "signInPrompt": "Inicia sesión para guardar esto y sincronizarlo entre tus dispositivos.",
+    "signIn": "Iniciar sesión",
+    "upsell": "Sincronizar perfiles de reglas entre dispositivos es una función Pro.",
+    "seePlans": "Ver planes",
+    "readOnly": "Tu plan ha terminado — tus perfiles guardados son de solo lectura. Aún puedes abrirlos y descargarlos.",
+    "readOnlyNote": "Solo lectura: tu plan ha terminado. Abre o descarga tus perfiles; mejora el plan para guardar cambios.",
+    "saveCurrent": "Guardar actual en la cuenta",
+    "saving": "Guardando…",
+    "saved": "Guardado en tu cuenta.",
+    "loaded": "Cargado en el editor.",
+    "nothingToSave": "Ponle un nombre primero y luego guarda.",
+    "quota": "Has alcanzado el límite de perfiles guardados.",
+    "loading": "Cargando…",
+    "empty": "Aún no hay nada guardado.",
+    "open": "Abrir",
+    "delete": "Eliminar"
+  },
   "checkoutWelcome": "¡Bienvenido a Pro! Tu cuenta está activa.",
   "checkoutPending": "Seguimos confirmando tu pago — puede tardar un minuto. Tu plan se activará automáticamente.",
   "errors": {

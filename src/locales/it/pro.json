@@ -39,6 +39,25 @@
     "cta": "Vedi i piani",
     "later": "Non ora"
   },
+  "sync": {
+    "title": "Nel mio account",
+    "signInPrompt": "Accedi per salvarlo e sincronizzarlo tra i tuoi dispositivi.",
+    "signIn": "Accedi",
+    "upsell": "Sincronizzare i profili di regole tra dispositivi è una funzione Pro.",
+    "seePlans": "Vedi i piani",
+    "readOnly": "Il tuo piano è terminato — i profili salvati sono in sola lettura. Puoi comunque aprirli e scaricarli.",
+    "readOnlyNote": "Sola lettura: il tuo piano è terminato. Apri o scarica i profili; fai l'upgrade per salvare le modifiche.",
+    "saveCurrent": "Salva l'attuale nell'account",
+    "saving": "Salvataggio…",
+    "saved": "Salvato nel tuo account.",
+    "loaded": "Caricato nell'editor.",
+    "nothingToSave": "Dagli prima un nome, poi salva.",
+    "quota": "Hai raggiunto il limite di profili salvati.",
+    "loading": "Caricamento…",
+    "empty": "Ancora niente salvato.",
+    "open": "Apri",
+    "delete": "Elimina"
+  },
   "checkoutWelcome": "Benvenuto in Pro! Il tuo account è attivo.",
   "checkoutPending": "Stiamo ancora confermando il pagamento — può richiedere un minuto. Il piano si attiverà automaticamente.",
   "errors": {

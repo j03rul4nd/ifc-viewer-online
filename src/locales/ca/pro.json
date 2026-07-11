@@ -39,6 +39,25 @@
     "cta": "Veure plans",
     "later": "Ara no"
   },
+  "sync": {
+    "title": "Al meu compte",
+    "signInPrompt": "Inicia sessió per desar-ho i sincronitzar-ho entre els teus dispositius.",
+    "signIn": "Inicia sessió",
+    "upsell": "Sincronitzar perfils de regles entre dispositius és una funció Pro.",
+    "seePlans": "Veure plans",
+    "readOnly": "El teu pla ha finalitzat — els teus perfils desats són de només lectura. Encara els pots obrir i baixar.",
+    "readOnlyNote": "Només lectura: el teu pla ha finalitzat. Obre o baixa els teus perfils; millora el pla per desar canvis.",
+    "saveCurrent": "Desa l'actual al compte",
+    "saving": "S'està desant…",
+    "saved": "Desat al teu compte.",
+    "loaded": "Carregat a l'editor.",
+    "nothingToSave": "Posa-li un nom primer i després desa.",
+    "quota": "Has arribat al límit de perfils desats.",
+    "loading": "S'està carregant…",
+    "empty": "Encara no hi ha res desat.",
+    "open": "Obre",
+    "delete": "Elimina"
+  },
   "checkoutWelcome": "Benvingut a Pro! El teu compte està actiu.",
   "checkoutPending": "Encara estem confirmant el teu pagament — pot trigar un minut. El teu pla s'activarà automàticament.",
   "errors": {
