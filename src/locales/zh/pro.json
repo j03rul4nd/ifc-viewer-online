@@ -1,0 +1,47 @@
+{
+  "title": "账户",
+  "close": "关闭",
+  "signInIntro": "登录后可保存证书历史、在设备间同步规则配置并管理 API 密钥。免费验证器依然免费 — 无需账户即可使用。",
+  "signedIn": "已登录",
+  "signedInHint": "您的模型永远不会离开浏览器 — 账户只保存您选择保留的结果。",
+  "signOut": "退出登录",
+  "plan": {
+    "title": "套餐",
+    "pastDue": "上次付款失败 — 在您更新银行卡期间，Pro 将保持有效 14 天。",
+    "benefitHistory": "已签发证书的历史记录",
+    "benefitSync": "规则配置跨设备同步",
+    "benefitBranding": "可打印报告上显示您的徽标",
+    "upgrade": "升级到 Pro",
+    "manage": "管理订阅",
+    "redirecting": "正在跳转…"
+  },
+  "billing": {
+    "notYet": "支付功能尚未开通 — Pro 即将推出。"
+  },
+  "keys": {
+    "title": "API 密钥",
+    "hint": "用于即将推出的 verify-batch API。密钥仅显示一次 — 请妥善保存。",
+    "create": "新建密钥",
+    "creating": "正在创建…",
+    "createdOnce": "密钥已创建 — 请立即复制，之后不会再显示。",
+    "copy": "复制",
+    "copied": "已复制",
+    "revoke": "吊销",
+    "lastUsed": "上次使用",
+    "loading": "正在加载密钥…",
+    "empty": "还没有 API 密钥。",
+    "quota": "已达到您套餐的 API 密钥上限 — 请吊销一个或升级套餐。",
+    "disabled": "API 服务未配置。"
+  },
+  "upsell": {
+    "title": "这是 Pro 功能",
+    "freeStays": "您现在使用的一切仍然免费 — Pro 在此之上提供服务器端价值。",
+    "cta": "查看套餐",
+    "later": "暂不"
+  },
+  "checkoutWelcome": "欢迎使用 Pro！您的账户已激活。",
+  "checkoutPending": "我们仍在确认您的付款 — 可能需要一分钟。您的套餐将自动激活。",
+  "errors": {
+    "generic": "出了点问题 — 请重试。"
+  }
+}

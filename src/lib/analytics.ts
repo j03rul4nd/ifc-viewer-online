@@ -609,6 +609,31 @@ export function trackCertificateVerifiedView(props: {
   track('certificate_verified_view', props)
 }
 
+// ── Pro funnel (F2) ──────────────────────────────────────────────────────────
+// INV-5 as always: no email, no Clerk ids, no Stripe ids in any event.
+
+/** A Pro/account entry point was clicked (which one, never who). */
+export function trackProEntryClick(props: {
+  source: 'toolbar' | 'export_modal' | 'profile_modal' | 'landing'
+}): void {
+  track('pro_entry_click', props)
+}
+
+export function trackProUpsellShown(props: {
+  trigger: 'api_keys' | 'rulesets' | 'history' | 'landing' | 'manual'
+}): void {
+  track('pro_upsell_shown', props)
+}
+
+export function trackCheckoutStarted(props: { interval: 'month' | 'year' }): void {
+  track('checkout_started', props)
+}
+
+/** Fired client-side when the post-checkout entitlement poll confirms the plan. */
+export function trackCheckoutCompleted(props: { plan: 'pro' | 'org' }): void {
+  track('checkout_completed', props)
+}
+
 /**
  * A /verify visitor deep-verified a certificate against the actual file
  * (F1.5): re-hash of the dropped bytes, or a full local engine re-run.

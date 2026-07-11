@@ -238,9 +238,10 @@ export default defineConfig({
           ) return
           // Clerk (F2 auth) must NEVER ride in the eager vendor-ui chunk
           // (invariant I-1: zero auth bytes for the anonymous user). main.tsx
-          // imports it dynamically and only when a publishable key is set, so
-          // co-locating it with its importer keeps it a lazy, opt-in chunk.
-          if (id.includes('@clerk/')) return
+          // imports it dynamically and only when a publishable key is set —
+          // naming the chunk (vendor-auth, docs-planning/01 §3.3) keeps it a
+          // single lazy, opt-in file that is easy to audit in dist/.
+          if (id.includes('@clerk/')) return 'vendor-auth'
           // three.js — large 3D engine, changes infrequently
           if (id.includes('/three/')) return 'vendor-three'
           // IFC engine — @thatopen/* + web-ifc JS side

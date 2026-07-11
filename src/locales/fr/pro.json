@@ -1,0 +1,47 @@
+{
+  "title": "Compte",
+  "close": "Fermer",
+  "signInIntro": "Connectez-vous pour conserver l'historique de vos certificats, synchroniser vos profils de règles entre appareils et gérer vos clés API. Le validateur gratuit reste gratuit — aucun compte n'est requis pour l'utiliser.",
+  "signedIn": "Connecté",
+  "signedInHint": "Vos modèles ne quittent jamais le navigateur — le compte ne conserve que les résultats que vous choisissez de garder.",
+  "signOut": "Se déconnecter",
+  "plan": {
+    "title": "Abonnement",
+    "pastDue": "Votre dernier paiement a échoué — Pro reste actif 14 jours pendant que vous mettez à jour votre carte.",
+    "benefitHistory": "Historique de vos certificats émis",
+    "benefitSync": "Profils de règles synchronisés entre appareils",
+    "benefitBranding": "Votre logo sur les rapports imprimables",
+    "upgrade": "Passer à Pro",
+    "manage": "Gérer l'abonnement",
+    "redirecting": "Redirection…"
+  },
+  "billing": {
+    "notYet": "Les paiements ne sont pas encore activés — Pro arrive bientôt."
+  },
+  "keys": {
+    "title": "Clés API",
+    "hint": "Pour la future API verify-batch. La clé n'est affichée qu'une seule fois — conservez-la en lieu sûr.",
+    "create": "Nouvelle clé",
+    "creating": "Création…",
+    "createdOnce": "Clé créée — copiez-la maintenant, elle ne sera plus jamais affichée.",
+    "copy": "Copier",
+    "copied": "Copiée",
+    "revoke": "Révoquer",
+    "lastUsed": "dernière utilisation",
+    "loading": "Chargement des clés…",
+    "empty": "Aucune clé API pour l'instant.",
+    "quota": "La limite de clés API de votre abonnement est atteinte — révoquez-en une ou passez au niveau supérieur.",
+    "disabled": "Le service API n'est pas configuré."
+  },
+  "upsell": {
+    "title": "Ceci est une fonctionnalité Pro",
+    "freeStays": "Tout ce que vous utilisez aujourd'hui reste gratuit — Pro ajoute de la valeur côté serveur.",
+    "cta": "Voir les offres",
+    "later": "Pas maintenant"
+  },
+  "checkoutWelcome": "Bienvenue dans Pro ! Votre compte est actif.",
+  "checkoutPending": "Nous confirmons encore votre paiement — cela peut prendre une minute. Votre abonnement s'activera automatiquement.",
+  "errors": {
+    "generic": "Une erreur s'est produite — veuillez réessayer."
+  }
+}

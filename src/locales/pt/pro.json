@@ -1,0 +1,47 @@
+{
+  "title": "Conta",
+  "close": "Fechar",
+  "signInIntro": "Inicie sessão para guardar o histórico dos seus certificados, sincronizar perfis de regras entre dispositivos e gerir chaves de API. O validador gratuito continua gratuito — não é preciso conta para o usar.",
+  "signedIn": "Sessão iniciada",
+  "signedInHint": "Os seus modelos nunca saem do navegador — a conta só guarda os resultados que decidir manter.",
+  "signOut": "Terminar sessão",
+  "plan": {
+    "title": "Plano",
+    "pastDue": "O seu último pagamento falhou — o Pro continua ativo 14 dias enquanto atualiza o cartão.",
+    "benefitHistory": "Histórico dos seus certificados emitidos",
+    "benefitSync": "Perfis de regras sincronizados entre dispositivos",
+    "benefitBranding": "O seu logótipo nos relatórios imprimíveis",
+    "upgrade": "Mudar para Pro",
+    "manage": "Gerir subscrição",
+    "redirecting": "A redirecionar…"
+  },
+  "billing": {
+    "notYet": "Os pagamentos ainda não estão ativados — o Pro chega em breve."
+  },
+  "keys": {
+    "title": "Chaves de API",
+    "hint": "Para a futura API verify-batch. A chave é mostrada apenas uma vez — guarde-a num local seguro.",
+    "create": "Nova chave",
+    "creating": "A criar…",
+    "createdOnce": "Chave criada — copie-a agora, nunca mais será mostrada.",
+    "copy": "Copiar",
+    "copied": "Copiada",
+    "revoke": "Revogar",
+    "lastUsed": "última utilização",
+    "loading": "A carregar chaves…",
+    "empty": "Ainda não há chaves de API.",
+    "quota": "Atingiu o limite de chaves de API do seu plano — revogue uma ou faça upgrade.",
+    "disabled": "O serviço de API não está configurado."
+  },
+  "upsell": {
+    "title": "Esta é uma funcionalidade Pro",
+    "freeStays": "Tudo o que usa hoje continua gratuito — o Pro acrescenta valor server-side.",
+    "cta": "Ver planos",
+    "later": "Agora não"
+  },
+  "checkoutWelcome": "Bem-vindo ao Pro! A sua conta está ativa.",
+  "checkoutPending": "Ainda estamos a confirmar o seu pagamento — pode demorar um minuto. O seu plano ativa-se automaticamente.",
+  "errors": {
+    "generic": "Algo correu mal — tente novamente."
+  }
+}

@@ -19,6 +19,7 @@ import type enEir from '../locales/en/eir.json';
 import type enInvite from '../locales/en/invite.json';
 import type enCapture from '../locales/en/capture.json';
 import type enVerify from '../locales/en/verify.json';
+import type enPro from '../locales/en/pro.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -45,6 +46,7 @@ declare module 'i18next' {
       tour: typeof enTour;
       client: typeof enClient;
       verify: typeof enVerify;
+      pro: typeof enPro;
     };
   }
 }

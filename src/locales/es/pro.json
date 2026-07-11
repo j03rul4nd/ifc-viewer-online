@@ -1,0 +1,47 @@
+{
+  "title": "Cuenta",
+  "close": "Cerrar",
+  "signInIntro": "Inicia sesión para guardar el histórico de tus certificados, sincronizar perfiles de reglas entre dispositivos y gestionar API keys. El validador gratuito sigue siendo gratis — no hace falta cuenta para usarlo.",
+  "signedIn": "Sesión iniciada",
+  "signedInHint": "Tus modelos nunca salen del navegador — la cuenta solo guarda los resultados que tú decidas conservar.",
+  "signOut": "Cerrar sesión",
+  "plan": {
+    "title": "Plan",
+    "pastDue": "Tu último pago falló — Pro sigue activo 14 días mientras actualizas tu tarjeta.",
+    "benefitHistory": "Histórico de tus certificados emitidos",
+    "benefitSync": "Perfiles de reglas sincronizados entre dispositivos",
+    "benefitBranding": "Tu logo en los informes imprimibles",
+    "upgrade": "Pásate a Pro",
+    "manage": "Gestionar suscripción",
+    "redirecting": "Redirigiendo…"
+  },
+  "billing": {
+    "notYet": "Los pagos aún no están activados — Pro llegará muy pronto."
+  },
+  "keys": {
+    "title": "API keys",
+    "hint": "Para la futura API verify-batch. La clave se muestra solo una vez — guárdala en un lugar seguro.",
+    "create": "Nueva clave",
+    "creating": "Creando…",
+    "createdOnce": "Clave creada — cópiala ahora, no se volverá a mostrar.",
+    "copy": "Copiar",
+    "copied": "Copiada",
+    "revoke": "Revocar",
+    "lastUsed": "último uso",
+    "loading": "Cargando claves…",
+    "empty": "Aún no hay API keys.",
+    "quota": "Has alcanzado el límite de API keys de tu plan — revoca una o mejora el plan.",
+    "disabled": "El servicio de API no está configurado."
+  },
+  "upsell": {
+    "title": "Esto es una función Pro",
+    "freeStays": "Todo lo que usas hoy sigue siendo gratis — Pro añade valor server-side encima.",
+    "cta": "Ver planes",
+    "later": "Ahora no"
+  },
+  "checkoutWelcome": "¡Bienvenido a Pro! Tu cuenta está activa.",
+  "checkoutPending": "Seguimos confirmando tu pago — puede tardar un minuto. Tu plan se activará automáticamente.",
+  "errors": {
+    "generic": "Algo salió mal — inténtalo de nuevo."
+  }
+}

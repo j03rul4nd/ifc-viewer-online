@@ -1,0 +1,47 @@
+{
+  "title": "Account",
+  "close": "Chiudi",
+  "signInIntro": "Accedi per conservare lo storico dei tuoi certificati, sincronizzare i profili di regole tra dispositivi e gestire le chiavi API. Il validatore gratuito resta gratuito — non serve un account per usarlo.",
+  "signedIn": "Accesso effettuato",
+  "signedInHint": "I tuoi modelli non lasciano mai il browser — l'account conserva solo i risultati che scegli di tenere.",
+  "signOut": "Esci",
+  "plan": {
+    "title": "Piano",
+    "pastDue": "L'ultimo pagamento non è andato a buon fine — Pro resta attivo per 14 giorni mentre aggiorni la carta.",
+    "benefitHistory": "Storico dei certificati emessi",
+    "benefitSync": "Profili di regole sincronizzati tra dispositivi",
+    "benefitBranding": "Il tuo logo sui report stampabili",
+    "upgrade": "Passa a Pro",
+    "manage": "Gestisci abbonamento",
+    "redirecting": "Reindirizzamento…"
+  },
+  "billing": {
+    "notYet": "I pagamenti non sono ancora attivi — Pro arriva presto."
+  },
+  "keys": {
+    "title": "Chiavi API",
+    "hint": "Per la futura API verify-batch. La chiave viene mostrata una sola volta — conservala in un luogo sicuro.",
+    "create": "Nuova chiave",
+    "creating": "Creazione…",
+    "createdOnce": "Chiave creata — copiala ora, non verrà mai più mostrata.",
+    "copy": "Copia",
+    "copied": "Copiata",
+    "revoke": "Revoca",
+    "lastUsed": "ultimo utilizzo",
+    "loading": "Caricamento chiavi…",
+    "empty": "Nessuna chiave API per ora.",
+    "quota": "Hai raggiunto il limite di chiavi API del tuo piano — revocane una o fai l'upgrade.",
+    "disabled": "Il servizio API non è configurato."
+  },
+  "upsell": {
+    "title": "Questa è una funzione Pro",
+    "freeStays": "Tutto ciò che usi oggi resta gratuito — Pro aggiunge valore lato server.",
+    "cta": "Vedi i piani",
+    "later": "Non ora"
+  },
+  "checkoutWelcome": "Benvenuto in Pro! Il tuo account è attivo.",
+  "checkoutPending": "Stiamo ancora confermando il pagamento — può richiedere un minuto. Il piano si attiverà automaticamente.",
+  "errors": {
+    "generic": "Qualcosa è andato storto — riprova."
+  }
+}

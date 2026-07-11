@@ -1,0 +1,47 @@
+{
+  "title": "Compte",
+  "close": "Tanca",
+  "signInIntro": "Inicia sessió per guardar l'històric dels teus certificats, sincronitzar perfils de regles entre dispositius i gestionar claus d'API. El validador gratuït continua sent gratuït — no cal cap compte per fer-lo servir.",
+  "signedIn": "Sessió iniciada",
+  "signedInHint": "Els teus models mai surten del navegador — el compte només guarda els resultats que decideixis conservar.",
+  "signOut": "Tanca la sessió",
+  "plan": {
+    "title": "Pla",
+    "pastDue": "L'últim pagament ha fallat — Pro continua actiu 14 dies mentre actualitzes la targeta.",
+    "benefitHistory": "Històric dels teus certificats emesos",
+    "benefitSync": "Perfils de regles sincronitzats entre dispositius",
+    "benefitBranding": "El teu logotip als informes imprimibles",
+    "upgrade": "Passa't a Pro",
+    "manage": "Gestiona la subscripció",
+    "redirecting": "Redirigint…"
+  },
+  "billing": {
+    "notYet": "Els pagaments encara no estan activats — Pro arribarà molt aviat."
+  },
+  "keys": {
+    "title": "Claus d'API",
+    "hint": "Per a la futura API verify-batch. La clau només es mostra una vegada — desa-la en un lloc segur.",
+    "create": "Nova clau",
+    "creating": "Creant…",
+    "createdOnce": "Clau creada — copia-la ara, no es tornarà a mostrar.",
+    "copy": "Copia",
+    "copied": "Copiada",
+    "revoke": "Revoca",
+    "lastUsed": "últim ús",
+    "loading": "Carregant claus…",
+    "empty": "Encara no hi ha claus d'API.",
+    "quota": "Has arribat al límit de claus d'API del teu pla — revoca'n una o millora el pla.",
+    "disabled": "El servei d'API no està configurat."
+  },
+  "upsell": {
+    "title": "Això és una funció Pro",
+    "freeStays": "Tot el que fas servir avui continua sent gratuït — Pro hi afegeix valor server-side.",
+    "cta": "Veure plans",
+    "later": "Ara no"
+  },
+  "checkoutWelcome": "Benvingut a Pro! El teu compte està actiu.",
+  "checkoutPending": "Encara estem confirmant el teu pagament — pot trigar un minut. El teu pla s'activarà automàticament.",
+  "errors": {
+    "generic": "Alguna cosa ha fallat — torna-ho a provar."
+  }
+}

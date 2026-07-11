@@ -31,10 +31,16 @@ const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undef
 
 const LazyClerkProvider = clerkPubKey
   ? React.lazy(async () => {
-      const { ClerkProvider } = await import('@clerk/react')
+      // The bridge ships in the same lazy chunk: it mirrors the Clerk session
+      // into cloudAccountStore so the rest of the app never imports @clerk/*.
+      const [{ ClerkProvider }, { default: ClerkSessionBridge }] = await Promise.all([
+        import('@clerk/react'),
+        import('./components/account/ClerkSessionBridge'),
+      ])
       return {
         default: ({ children }: { children: React.ReactNode }) => (
           <ClerkProvider publishableKey={clerkPubKey} afterSignOutUrl="/">
+            <ClerkSessionBridge />
             {children}
           </ClerkProvider>
         ),

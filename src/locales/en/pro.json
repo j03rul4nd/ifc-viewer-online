@@ -1,0 +1,47 @@
+{
+  "title": "Account",
+  "close": "Close",
+  "signInIntro": "Sign in to keep a history of your certificates, sync rule profiles across devices and manage API keys. The free validator stays free — no account needed to use it.",
+  "signedIn": "Signed in",
+  "signedInHint": "Your models never leave the browser — the account only stores results you choose to keep.",
+  "signOut": "Sign out",
+  "plan": {
+    "title": "Plan",
+    "pastDue": "Your last payment failed — Pro stays active for 14 days while you update your card.",
+    "benefitHistory": "History of your issued certificates",
+    "benefitSync": "Rule profiles synced across devices",
+    "benefitBranding": "Your logo on printable reports",
+    "upgrade": "Upgrade to Pro",
+    "manage": "Manage subscription",
+    "redirecting": "Redirecting…"
+  },
+  "billing": {
+    "notYet": "Payments aren't enabled yet — Pro is coming soon."
+  },
+  "keys": {
+    "title": "API keys",
+    "hint": "For the upcoming verify-batch API. The key is shown only once — store it somewhere safe.",
+    "create": "New key",
+    "creating": "Creating…",
+    "createdOnce": "Key created — copy it now, it will never be shown again.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "revoke": "Revoke",
+    "lastUsed": "last used",
+    "loading": "Loading keys…",
+    "empty": "No API keys yet.",
+    "quota": "Your plan's API key limit is reached — revoke one or upgrade.",
+    "disabled": "The API service is not configured."
+  },
+  "upsell": {
+    "title": "This is a Pro feature",
+    "freeStays": "Everything you use today stays free — Pro adds server-side value on top.",
+    "cta": "See plans",
+    "later": "Not now"
+  },
+  "checkoutWelcome": "Welcome to Pro! Your account is active.",
+  "checkoutPending": "We're still confirming your payment — it can take a minute. Your plan will activate automatically.",
+  "errors": {
+    "generic": "Something went wrong — please try again."
+  }
+}

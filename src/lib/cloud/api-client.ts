@@ -23,6 +23,10 @@ export type ApiErrorCode =
   | 'not_found'
   | 'rate_limited'
   | 'internal'
+  // Authenticated surface (F2 — account-client.ts):
+  | 'unauthorized'
+  | 'quota_exceeded'
+  | 'service_disabled'
 
 export interface ApiError {
   code: ApiErrorCode

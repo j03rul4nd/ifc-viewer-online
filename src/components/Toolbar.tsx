@@ -18,6 +18,11 @@ import { isGisEnabled } from '../lib/geo/gis-flag'
 import { useSolarStore } from '../stores/solarStore'
 import { isSolarEnabled } from '../lib/solar/solar-flag'
 import { modelRegistry } from '../lib/model-registry'
+import { useCloudAccountStore, isAccountEnabled } from '../stores/cloudAccountStore'
+import { trackProEntryClick } from '../lib/analytics'
+
+// Account surface (F2) — lazy so @clerk/* stays out of the eager bundle (I-1).
+const AccountModal = React.lazy(() => import('./account/AccountModal'))
 import {
   exportAsIfc, exportAsGlb, downloadBlob,
   getDiffsForModel,
@@ -235,6 +240,12 @@ export default function Toolbar({
   const { t: tCommon } = useTranslation('common')
   const { t: tTour } = useTranslation('tour')
   const { t: tClient } = useTranslation('client')
+  const { t: tPro } = useTranslation('pro')
+
+  // Account (F2) — button only exists when a Clerk key is configured.
+  const accountEnabled = isAccountEnabled()
+  const accountStatus = useCloudAccountStore((s) => s.status)
+  const [accountOpen, setAccountOpen] = useState(false)
 
   const statusColor = loadingState === 'loaded' ? 'var(--ok)'     :
                       loadingState === 'error'  ? 'var(--danger)' : 'var(--warn)'
@@ -754,9 +765,35 @@ export default function Toolbar({
             label={tCommon('shortcuts.title')}
             onClick={() => { onOpenHelp(); setOpenMenu(null) }} />
         </ToolMenu>
+        {accountEnabled && (
+          <button
+            onClick={() => { trackProEntryClick({ source: 'toolbar' }); setAccountOpen(true) }}
+            title={tPro('title')}
+            className={[
+              'flex items-center justify-center h-[28px] w-[30px] rounded-[5px] transition-colors duration-100',
+              accountStatus === 'signed-in'
+                ? 'text-[var(--accent)] hover:bg-[var(--surface-2)]'
+                : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]',
+            ].join(' ')}
+            aria-label={tPro('title')}
+          >
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="7.5" cy="5" r="2.6" />
+              <path d="M2.5 13c.8-2.6 2.6-3.9 5-3.9s4.2 1.3 5 3.9" />
+            </svg>
+          </button>
+        )}
         <InlineDivider />
         <LanguageSelector />
       </div>
+
+      {/* Account modal — lazy (vendor-auth chunk); nothing loads until the
+          button is clicked, and the button only exists with a Clerk key. */}
+      {accountOpen && (
+        <React.Suspense fallback={null}>
+          <AccountModal onClose={() => setAccountOpen(false)} />
+        </React.Suspense>
+      )}
 
       {/* ══ MOBILE — spacer + status indicator ═══════════════════════════════
           Mobile actions are handled by MobileBottomNav. The toolbar on mobile

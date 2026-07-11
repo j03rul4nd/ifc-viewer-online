@@ -1,0 +1,47 @@
+{
+  "title": "Konto",
+  "close": "Schließen",
+  "signInIntro": "Melden Sie sich an, um den Verlauf Ihrer Zertifikate zu behalten, Regelprofile geräteübergreifend zu synchronisieren und API-Schlüssel zu verwalten. Der kostenlose Validator bleibt kostenlos — zur Nutzung ist kein Konto nötig.",
+  "signedIn": "Angemeldet",
+  "signedInHint": "Ihre Modelle verlassen nie den Browser — das Konto speichert nur die Ergebnisse, die Sie behalten möchten.",
+  "signOut": "Abmelden",
+  "plan": {
+    "title": "Tarif",
+    "pastDue": "Ihre letzte Zahlung ist fehlgeschlagen — Pro bleibt 14 Tage aktiv, während Sie Ihre Karte aktualisieren.",
+    "benefitHistory": "Verlauf Ihrer ausgestellten Zertifikate",
+    "benefitSync": "Geräteübergreifend synchronisierte Regelprofile",
+    "benefitBranding": "Ihr Logo auf druckbaren Berichten",
+    "upgrade": "Auf Pro upgraden",
+    "manage": "Abo verwalten",
+    "redirecting": "Weiterleitung…"
+  },
+  "billing": {
+    "notYet": "Zahlungen sind noch nicht aktiviert — Pro kommt bald."
+  },
+  "keys": {
+    "title": "API-Schlüssel",
+    "hint": "Für die kommende verify-batch-API. Der Schlüssel wird nur einmal angezeigt — bewahren Sie ihn sicher auf.",
+    "create": "Neuer Schlüssel",
+    "creating": "Wird erstellt…",
+    "createdOnce": "Schlüssel erstellt — jetzt kopieren, er wird nie wieder angezeigt.",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "revoke": "Widerrufen",
+    "lastUsed": "zuletzt verwendet",
+    "loading": "Schlüssel werden geladen…",
+    "empty": "Noch keine API-Schlüssel.",
+    "quota": "Das API-Schlüssel-Limit Ihres Tarifs ist erreicht — widerrufen Sie einen oder upgraden Sie.",
+    "disabled": "Der API-Dienst ist nicht konfiguriert."
+  },
+  "upsell": {
+    "title": "Dies ist eine Pro-Funktion",
+    "freeStays": "Alles, was Sie heute nutzen, bleibt kostenlos — Pro fügt serverseitigen Mehrwert hinzu.",
+    "cta": "Tarife ansehen",
+    "later": "Jetzt nicht"
+  },
+  "checkoutWelcome": "Willkommen bei Pro! Ihr Konto ist aktiv.",
+  "checkoutPending": "Wir bestätigen Ihre Zahlung noch — das kann eine Minute dauern. Ihr Tarif wird automatisch aktiviert.",
+  "errors": {
+    "generic": "Etwas ist schiefgelaufen — bitte erneut versuchen."
+  }
+}
