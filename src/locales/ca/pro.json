@@ -58,6 +58,14 @@
     "open": "Obre",
     "delete": "Elimina"
   },
+  "history": {
+    "title": "Els meus certificats",
+    "hint": "Els certificats que emetis amb la sessió iniciada es desen aquí. L'emissió anònima no s'emmagatzema mai.",
+    "loading": "S'està carregant…",
+    "empty": "Encara no hi ha certificats — emet-ne un des del diàleg d'exportació amb la sessió iniciada.",
+    "revoked": "revocat",
+    "view": "Mostra"
+  },
   "checkoutWelcome": "Benvingut a Pro! El teu compte està actiu.",
   "checkoutPending": "Encara estem confirmant el teu pagament — pot trigar un minut. El teu pla s'activarà automàticament.",
   "errors": {

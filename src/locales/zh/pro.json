@@ -58,6 +58,14 @@
     "open": "打开",
     "delete": "删除"
   },
+  "history": {
+    "title": "我的证书",
+    "hint": "登录状态下签发的证书会保存在这里。匿名签发绝不存储。",
+    "loading": "正在加载…",
+    "empty": "还没有证书 — 登录后从导出对话框签发一个。",
+    "revoked": "已吊销",
+    "view": "查看"
+  },
   "checkoutWelcome": "欢迎使用 Pro！您的账户已激活。",
   "checkoutPending": "我们仍在确认您的付款 — 可能需要一分钟。您的套餐将自动激活。",
   "errors": {

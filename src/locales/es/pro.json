@@ -58,6 +58,14 @@
     "open": "Abrir",
     "delete": "Eliminar"
   },
+  "history": {
+    "title": "Mis certificados",
+    "hint": "Los certificados que emitas con la sesión iniciada se guardan aquí. La emisión anónima nunca se almacena.",
+    "loading": "Cargando…",
+    "empty": "Aún no hay certificados — emite uno desde el diálogo de exportación con la sesión iniciada.",
+    "revoked": "revocado",
+    "view": "Ver"
+  },
   "checkoutWelcome": "¡Bienvenido a Pro! Tu cuenta está activa.",
   "checkoutPending": "Seguimos confirmando tu pago — puede tardar un minuto. Tu plan se activará automáticamente.",
   "errors": {

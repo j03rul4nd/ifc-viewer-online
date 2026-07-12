@@ -285,6 +285,7 @@
     "verifiableSelectOne": "Selecciona un únic model per emetre un certificat verificable.",
     "verifiableError": "No s'ha pogut contactar amb el servei de signatura — la baixada del certificat local de sota continua funcionant.",
     "verifiableReady": "Certificat emès",
+    "verifiableSavedHistory": "Desat a l'historial del teu compte.",
     "verifiableDedup": "Aquest resultat exacte ja estava certificat — s'ha retornat el certificat existent.",
     "copyLink": "Copia l'enllaç",
     "copied": "Copiat",

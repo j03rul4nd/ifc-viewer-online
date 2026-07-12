@@ -285,6 +285,7 @@
     "verifiableSelectOne": "検証可能な証明書を発行するには、モデルを 1 つだけ選択してください。",
     "verifiableError": "署名サービスに接続できませんでした — 下のローカル証明書のダウンロードは引き続き利用できます。",
     "verifiableReady": "証明書を発行しました",
+    "verifiableSavedHistory": "アカウント履歴に保存しました。",
     "verifiableDedup": "全く同じ結果が既に認証済みです — 既存の証明書が返されました。",
     "copyLink": "リンクをコピー",
     "copied": "コピーしました",

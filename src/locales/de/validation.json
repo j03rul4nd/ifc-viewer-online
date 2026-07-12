@@ -285,6 +285,7 @@
     "verifiableSelectOne": "Wähle ein einzelnes Modell, um ein verifizierbares Zertifikat auszustellen.",
     "verifiableError": "Der Signaturdienst ist nicht erreichbar — der lokale Zertifikat-Download unten funktioniert weiterhin.",
     "verifiableReady": "Zertifikat ausgestellt",
+    "verifiableSavedHistory": "In Ihrem Kontoverlauf gespeichert.",
     "verifiableDedup": "Genau dieses Ergebnis war bereits zertifiziert — das vorhandene Zertifikat wurde zurückgegeben.",
     "copyLink": "Link kopieren",
     "copied": "Kopiert",

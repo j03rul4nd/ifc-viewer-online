@@ -285,6 +285,7 @@
     "verifiableSelectOne": "请选择单个模型以签发可验证证书。",
     "verifiableError": "无法连接签名服务 — 下方的本地证书下载仍然可用。",
     "verifiableReady": "证书已签发",
+    "verifiableSavedHistory": "已保存到您的账户历史。",
     "verifiableDedup": "完全相同的结果已被认证 — 返回了现有证书。",
     "copyLink": "复制链接",
     "copied": "已复制",

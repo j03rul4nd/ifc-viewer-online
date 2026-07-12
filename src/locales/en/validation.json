@@ -379,6 +379,7 @@
     "verifiableSelectOne": "Select a single model to issue a verifiable certificate.",
     "verifiableError": "Couldn't reach the signing service — the local certificate download below still works.",
     "verifiableReady": "Certificate issued",
+    "verifiableSavedHistory": "Saved to your account history.",
     "verifiableDedup": "This exact result was already certified — the existing certificate was returned.",
     "copyLink": "Copy link",
     "copied": "Copied",

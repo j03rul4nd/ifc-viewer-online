@@ -126,11 +126,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<Result<T, A
 
 // ── API ───────────────────────────────────────────────────────────────────────
 
-/** Ask the Worker to sign a validation payload. Sends ONLY the JSON payload. */
-export function certify(payload: CertifyPayloadV1): Promise<Result<CertifyResponse, ApiError>> {
+/**
+ * Ask the Worker to sign a validation payload. Sends ONLY the JSON payload.
+ * When a session `token` is passed (issuer signed in), it rides as a Bearer
+ * header so the Worker links the certificate to their history — opt-in and
+ * additive; omitting it is byte-identical to anonymous issuance (I-2 intact).
+ */
+export function certify(payload: CertifyPayloadV1, token?: string): Promise<Result<CertifyResponse, ApiError>> {
   return request<CertifyResponse>('/certify', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify(payload),
   })
 }

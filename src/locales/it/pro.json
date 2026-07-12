@@ -58,6 +58,14 @@
     "open": "Apri",
     "delete": "Elimina"
   },
+  "history": {
+    "title": "I miei certificati",
+    "hint": "I certificati che emetti da autenticato vengono salvati qui. L'emissione anonima non viene mai memorizzata.",
+    "loading": "Caricamento…",
+    "empty": "Ancora nessun certificato — emettine uno dalla finestra di esportazione da autenticato.",
+    "revoked": "revocato",
+    "view": "Vedi"
+  },
   "checkoutWelcome": "Benvenuto in Pro! Il tuo account è attivo.",
   "checkoutPending": "Stiamo ancora confermando il pagamento — può richiedere un minuto. Il piano si attiverà automaticamente.",
   "errors": {

@@ -285,6 +285,7 @@
     "verifiableSelectOne": "Seleziona un solo modello per emettere un certificato verificabile.",
     "verifiableError": "Impossibile raggiungere il servizio di firma — il download del certificato locale qui sotto funziona comunque.",
     "verifiableReady": "Certificato emesso",
+    "verifiableSavedHistory": "Salvato nella cronologia del tuo account.",
     "verifiableDedup": "Questo esatto risultato era già certificato — è stato restituito il certificato esistente.",
     "copyLink": "Copia link",
     "copied": "Copiato",

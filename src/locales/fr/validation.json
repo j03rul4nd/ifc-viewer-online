@@ -285,6 +285,7 @@
     "verifiableSelectOne": "Sélectionnez un seul modèle pour émettre un certificat vérifiable.",
     "verifiableError": "Impossible de joindre le service de signature — le téléchargement du certificat local ci-dessous fonctionne toujours.",
     "verifiableReady": "Certificat émis",
+    "verifiableSavedHistory": "Enregistré dans l'historique de votre compte.",
     "verifiableDedup": "Ce résultat exact était déjà certifié — le certificat existant a été renvoyé.",
     "copyLink": "Copier le lien",
     "copied": "Copié",

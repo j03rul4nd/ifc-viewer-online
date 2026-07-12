@@ -130,3 +130,16 @@ export const updateRuleset = (token: string, id: string, body: { name?: string; 
 
 export const deleteRuleset = (token: string, id: string) =>
   request<{ deleted: boolean }>(token, `/rulesets/${encodeURIComponent(id)}`, { method: 'DELETE' })
+
+// ── Certificate history (F2 P7) ───────────────────────────────────────────────
+
+export interface HistoryCertificate {
+  cert_hash: string
+  payload: { health_score: number; validated_at: string; ruleset_version: string; rules_result: unknown[] }
+  status: string
+  created_at: string
+  verify_url: string
+}
+
+export const listCertificates = (token: string) =>
+  request<{ certificates: HistoryCertificate[] }>(token, '/account/certificates')

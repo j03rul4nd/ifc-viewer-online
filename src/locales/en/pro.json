@@ -58,6 +58,14 @@
     "open": "Open",
     "delete": "Delete"
   },
+  "history": {
+    "title": "My certificates",
+    "hint": "Certificates you issue while signed in are saved here. Anonymous issuance is never stored.",
+    "loading": "Loading…",
+    "empty": "No certificates yet — issue one from the export dialog while signed in.",
+    "revoked": "revoked",
+    "view": "View"
+  },
   "checkoutWelcome": "Welcome to Pro! Your account is active.",
   "checkoutPending": "We're still confirming your payment — it can take a minute. Your plan will activate automatically.",
   "errors": {

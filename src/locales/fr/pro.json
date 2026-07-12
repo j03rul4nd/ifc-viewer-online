@@ -58,6 +58,14 @@
     "open": "Ouvrir",
     "delete": "Supprimer"
   },
+  "history": {
+    "title": "Mes certificats",
+    "hint": "Les certificats émis en étant connecté sont enregistrés ici. L'émission anonyme n'est jamais stockée.",
+    "loading": "Chargement…",
+    "empty": "Aucun certificat pour l'instant — émettez-en un depuis la boîte d'export en étant connecté.",
+    "revoked": "révoqué",
+    "view": "Voir"
+  },
   "checkoutWelcome": "Bienvenue dans Pro ! Votre compte est actif.",
   "checkoutPending": "Nous confirmons encore votre paiement — cela peut prendre une minute. Votre abonnement s'activera automatiquement.",
   "errors": {

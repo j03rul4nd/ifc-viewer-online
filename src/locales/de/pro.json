@@ -58,6 +58,14 @@
     "open": "Öffnen",
     "delete": "Löschen"
   },
+  "history": {
+    "title": "Meine Zertifikate",
+    "hint": "Zertifikate, die Sie angemeldet ausstellen, werden hier gespeichert. Anonyme Ausstellung wird nie gespeichert.",
+    "loading": "Wird geladen…",
+    "empty": "Noch keine Zertifikate — stellen Sie eines im Export-Dialog aus, während Sie angemeldet sind.",
+    "revoked": "widerrufen",
+    "view": "Ansehen"
+  },
   "checkoutWelcome": "Willkommen bei Pro! Ihr Konto ist aktiv.",
   "checkoutPending": "Wir bestätigen Ihre Zahlung noch — das kann eine Minute dauern. Ihr Tarif wird automatisch aktiviert.",
   "errors": {

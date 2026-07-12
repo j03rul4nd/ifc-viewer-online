@@ -18,7 +18,8 @@ import { useCloudAccountStore } from '../../stores/cloudAccountStore'
 import { useEntitlement } from '../../hooks/useEntitlement'
 import {
   createApiKey, createCheckout, createPortal as createBillingPortal,
-  listApiKeys, revokeApiKey, type ApiKeySummary, type CreatedApiKey,
+  listApiKeys, revokeApiKey, listCertificates,
+  type ApiKeySummary, type CreatedApiKey, type HistoryCertificate,
 } from '../../lib/cloud/account-client'
 import { isCloudEnabled } from '../../lib/cloud/api-client'
 import { trackCheckoutStarted } from '../../lib/analytics'
@@ -33,6 +34,11 @@ type KeysState =
   | { phase: 'error'; code: string }
   | { phase: 'ready'; keys: ApiKeySummary[] }
 
+type HistoryState =
+  | { phase: 'loading' }
+  | { phase: 'error' }
+  | { phase: 'ready'; items: HistoryCertificate[] }
+
 export default function AccountModal({ onClose }: AccountModalProps) {
   const { t } = useTranslation('pro')
   const status = useCloudAccountStore((s) => s.status)
@@ -45,6 +51,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
   const [newKey, setNewKey] = useState<CreatedApiKey | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [history, setHistory] = useState<HistoryState>({ phase: 'loading' })
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -59,11 +66,19 @@ export default function AccountModal({ onClose }: AccountModalProps) {
     setKeys(r.ok ? { phase: 'ready', keys: r.value.keys } : { phase: 'error', code: r.error.code })
   }, [getToken])
 
-  // On open with a session: refresh the plan truth + load keys.
+  const loadHistory = useCallback(async () => {
+    const token = await getToken?.()
+    if (!token) return
+    const r = await listCertificates(token)
+    setHistory(r.ok ? { phase: 'ready', items: r.value.certificates } : { phase: 'error' })
+  }, [getToken])
+
+  // On open with a session: refresh the plan truth + load keys + history.
   useEffect(() => {
     if (status !== 'signed-in') return
     void entitlement.refresh()
     void loadKeys()
+    void loadHistory()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status])
 
@@ -254,6 +269,32 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                       className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger,#e5534b)] hover:border-[var(--danger,#e5534b)] transition-colors disabled:opacity-40">
                       {t('keys.revoke')}
                     </button>
+                  </div>
+                ))}
+              </section>
+
+              {/* ── Certificate history (F2 P7) ──────────────────────────────── */}
+              <section className="rounded-xl border border-[var(--border)] p-3 flex flex-col gap-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">{t('history.title')}</span>
+                <p className="text-[10px] text-[var(--text-muted)] leading-snug">{t('history.hint')}</p>
+                {history.phase === 'loading' && <p className="text-[11px] text-[var(--text-muted)]">{t('history.loading')}</p>}
+                {history.phase === 'error' && <p className="text-[11px] text-[var(--text-muted)]">{t('errors.generic')}</p>}
+                {history.phase === 'ready' && history.items.length === 0 && (
+                  <p className="text-[11px] text-[var(--text-muted)]">{t('history.empty')}</p>
+                )}
+                {history.phase === 'ready' && history.items.map((c) => (
+                  <div key={c.cert_hash} className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-[var(--border)]">
+                    <span className="text-[13px] font-bold tabular-nums" style={{ color: c.payload.health_score >= 70 ? 'var(--ok, #4caf82)' : '#F5A623' }}>
+                      {c.payload.health_score}
+                    </span>
+                    <span className="flex-1 text-[10px] text-[var(--text-muted)] truncate">
+                      {new Date(c.created_at).toLocaleDateString()} · {c.cert_hash.slice(0, 10)}…
+                      {c.status === 'revoked' ? ` · ${t('history.revoked')}` : ''}
+                    </span>
+                    <a href={c.verify_url} target="_blank" rel="noopener noreferrer"
+                      className="h-6 px-2 grid place-items-center rounded text-[10px] font-medium border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)] transition-colors">
+                      {t('history.view')}
+                    </a>
                   </div>
                 ))}
               </section>

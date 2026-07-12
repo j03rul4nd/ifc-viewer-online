@@ -28,6 +28,7 @@ import type {
 } from '../types'
 import { trackFeatureUsed, trackCertificateIssued } from '../lib/analytics'
 import { isCloudEnabled, certify, type ApiError, type CertifyResponse } from '../lib/cloud/api-client'
+import { useCloudAccountStore } from '../stores/cloudAccountStore'
 import { buildCertifyPayload } from '../lib/certify/build-payload'
 import { sha256Hex } from '../lib/certify/canonical'
 import { modelRegistry } from '../lib/model-registry'
@@ -111,6 +112,9 @@ export interface IssueVerifiableDeps {
   getBuffer?: (modelId: string) => ArrayBuffer | null
   /** Injectable for tests; defaults to the real api-client certify(). */
   certifyFn?: typeof certify
+  /** Session token — when present the Worker saves the cert to the issuer's
+   *  history. Omitted = anonymous issuance (byte-identical to F1). */
+  token?: string
 }
 
 export type IssueVerifiableResult =
@@ -130,7 +134,7 @@ export async function issueVerifiableCertificate(
   try {
     const fileHashSha256 = await sha256Hex(buffer)
     const payload = await buildCertifyPayload({ result: entry.result, rules, profileId, fileHashSha256 })
-    const r = await certifyFn(payload)
+    const r = await certifyFn(payload, deps.token)
     return r.ok ? { ok: true, response: r.value } : { ok: false, reason: r.error.code }
   } catch {
     // buildCertifyPayload only rejects on malformed input; degrade, never throw.
@@ -171,6 +175,7 @@ export default function ValidationExportModal({
   const cloudAvailable = isCloudEnabled()
   const [certifyState, setCertifyState] = useState<CertifyUiState>('idle')
   const [copiedKey, setCopiedKey] = useState<'link' | 'badge' | null>(null)
+  const [savedToHistory, setSavedToHistory] = useState(false)
 
   // Close on Escape
   useEffect(() => {
@@ -334,7 +339,11 @@ export default function ValidationExportModal({
   const handleIssueVerifiable = async () => {
     if (selectedModels.length !== 1 || certifyState === 'busy') return
     setCertifyState('busy')
-    const res = await issueVerifiableCertificate(selectedModels[0], rules, activeProfileId)
+    // Signed in → pass the session token so the Worker saves it to history.
+    const account = useCloudAccountStore.getState()
+    const token = account.status === 'signed-in' ? (await account.getToken?.()) ?? undefined : undefined
+    setSavedToHistory(Boolean(token))
+    const res = await issueVerifiableCertificate(selectedModels[0], rules, activeProfileId, { token })
     setCertifyState(res.ok ? { response: res.response } : 'failed')
     if (res.ok) {
       // Coarse category only — never the profile id/name (INV-5).
@@ -469,6 +478,9 @@ export default function ValidationExportModal({
                   <p className="text-[10px] font-medium" style={{ color: 'var(--ok)' }}>
                     {certifyState.response.deduplicated ? t('export.verifiableDedup') : t('export.verifiableReady')}
                   </p>
+                  {savedToHistory && !certifyState.response.deduplicated && (
+                    <p className="text-[10px] text-[var(--text-muted)]">{t('export.verifiableSavedHistory')}</p>
+                  )}
                   <div className="flex items-center gap-1.5">
                     <span className="flex-1 truncate font-mono text-[10px] text-[var(--text)] px-2 py-1 rounded bg-[var(--surface-2)] border border-[var(--border)]">
                       {certifyState.response.verify_url}
