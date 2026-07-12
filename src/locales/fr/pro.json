@@ -96,5 +96,6 @@
     "brandBody": "Votre logo sur le certificat imprimable que voient vos clients.",
     "cta": "Ouvrez un modèle et commencez à valider",
     "hint": "Votre compte se trouve derrière le bouton Compte de la barre du visualiseur."
-  }
+  },
+  "manageProfile": "Gérer le profil"
 }

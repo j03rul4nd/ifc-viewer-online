@@ -13,7 +13,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { SignIn } from '@clerk/react'
+import { SignIn, useClerk } from '@clerk/react'
 import { useCloudAccountStore } from '../../stores/cloudAccountStore'
 import { useEntitlement } from '../../hooks/useEntitlement'
 import {
@@ -55,6 +55,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
   const getToken = useCloudAccountStore((s) => s.getToken)
   const signOut = useCloudAccountStore((s) => s.signOut)
   const entitlement = useEntitlement()
+  const clerk = useClerk()
 
   // Where the user already is — Clerk's post-auth "redirect" goes right back
   // here (via the SPA router in main.tsx), so signing in never moves them.
@@ -265,7 +266,14 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                   <p className="text-[12px] text-[var(--text)] truncate">{email ?? t('signedIn')}</p>
                   <p className="text-[10px] text-[var(--text-muted)]">{t('signedInHint')}</p>
                 </div>
-                <button onClick={() => void signOut?.()} className={smallBtn}>{t('signOut')}</button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {/* Clerk's UserProfile opens as an in-app modal (password, email,
+                      delete account → GDPR webhook) — no portal redirect needed. */}
+                  <button onClick={() => clerk.openUserProfile()} className={smallBtn}>
+                    {t('manageProfile')}
+                  </button>
+                  <button onClick={() => void signOut?.()} className={smallBtn}>{t('signOut')}</button>
+                </div>
               </section>
 
               {/* ── Plan / billing ───────────────────────────────────────────── */}
