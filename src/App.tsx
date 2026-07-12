@@ -322,7 +322,11 @@ export default function App() {
       } else if (rel.startsWith('/verify/')) {
         setRoute('verify')
       } else {
-        setRoute('landing')
+        // "/" is ambiguous: it is the landing AND the (stateful, non-URL)
+        // viewer. Never kick a user out of the viewer on a popstate — Clerk's
+        // post-auth SPA navigations land here, and resetting to the landing
+        // was throwing freshly signed-in users out of their loaded model.
+        setRoute((current) => (current === 'viewer' ? current : 'landing'))
         setBlogSlug(null)
       }
     }

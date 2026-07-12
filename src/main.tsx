@@ -29,6 +29,25 @@ captureAttribution({ ref: parseAppUrlParams().ref ?? parseInvitePath() })
 // the dynamic import is a real separate chunk.
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined
 
+// Clerk's post-auth navigations (after sign-in/up/out) default to a FULL page
+// load, which killed the flow: the account modal unmounted, the user landed on
+// the home page, and the fresh session was only picked up on the next manual
+// reload. Handing Clerk an SPA router keeps every step in-page: the History
+// API changes the URL, the popstate event lets App re-derive its route, the
+// React tree survives, and the session bridge flips the store live.
+const spaNavigate = (replace: boolean) => (to: string): void => {
+  const target = new URL(to, window.location.origin)
+  const samePage =
+    target.pathname === window.location.pathname && target.search === window.location.search
+  if (replace) history.replaceState(null, '', to)
+  else history.pushState(null, '', to)
+  // Only a REAL page change re-derives the app route. Clerk's internal flow
+  // steps (hash-only) and its post-auth return to the URL the user is already
+  // on must not reset the current view — that's what kept kicking freshly
+  // signed-in users back to the landing.
+  if (!samePage) window.dispatchEvent(new PopStateEvent('popstate'))
+}
+
 const LazyClerkProvider = clerkPubKey
   ? React.lazy(async () => {
       // The bridge ships in the same lazy chunk: it mirrors the Clerk session
@@ -39,7 +58,12 @@ const LazyClerkProvider = clerkPubKey
       ])
       return {
         default: ({ children }: { children: React.ReactNode }) => (
-          <ClerkProvider publishableKey={clerkPubKey} afterSignOutUrl="/">
+          <ClerkProvider
+            publishableKey={clerkPubKey}
+            afterSignOutUrl="/"
+            routerPush={spaNavigate(false)}
+            routerReplace={spaNavigate(true)}
+          >
             <ClerkSessionBridge />
             {children}
           </ClerkProvider>

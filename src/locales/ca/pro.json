@@ -81,5 +81,6 @@
     "tooBig": "La imatge ha de pesar {{kb}} KB o menys.",
     "badType": "Fes servir una imatge PNG, JPEG o WebP.",
     "needsPro": "La marca requereix un pla Pro actiu."
-  }
+  },
+  "welcome": "Benvingut! Sessió iniciada — els teus certificats i perfils ja se sincronitzen amb el teu compte."
 }

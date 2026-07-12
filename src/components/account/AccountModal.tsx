@@ -10,7 +10,7 @@
 // All server calls go through account-client (Result, never throw); every
 // failure degrades to a visible, translated state — no blank panels.
 
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { SignIn } from '@clerk/react'
@@ -55,6 +55,22 @@ export default function AccountModal({ onClose }: AccountModalProps) {
   const getToken = useCloudAccountStore((s) => s.getToken)
   const signOut = useCloudAccountStore((s) => s.signOut)
   const entitlement = useEntitlement()
+
+  // Where the user already is — Clerk's post-auth "redirect" goes right back
+  // here (via the SPA router in main.tsx), so signing in never moves them.
+  // Captured once: the Clerk flow itself mutates location.hash mid-process.
+  const [returnUrl] = useState(() => window.location.pathname + window.location.search)
+
+  // Organic welcome: when the embedded flow completes while the modal is open,
+  // greet and let the same modal flip to the account view — no reload, no
+  // navigation, no "sign in again".
+  const prevStatus = useRef(status)
+  useEffect(() => {
+    if (prevStatus.current === 'anonymous' && status === 'signed-in') {
+      toast(t('welcome'), 'success', { duration: 5000 })
+    }
+    prevStatus.current = status
+  }, [status, t])
 
   const [keys, setKeys] = useState<KeysState>({ phase: 'loading' })
   const [newKey, setNewKey] = useState<CreatedApiKey | null>(null)
@@ -230,7 +246,16 @@ export default function AccountModal({ onClose }: AccountModalProps) {
             /* ── Anonymous: embedded Clerk sign-in (S-1 scenario A) ─────────── */
             <div className="flex flex-col items-center gap-3">
               <p className="text-[12px] text-[var(--text-muted)] leading-snug self-start">{t('signInIntro')}</p>
-              <SignIn routing="hash" />
+              {/* Combined sign-in-or-up, completing IN PLACE: the fallback
+                  "redirect" is the URL the user is already on (SPA-routed by
+                  main.tsx, so nothing reloads); OAuth is redirect-mode because
+                  COOP kills popups (S-1 caveat). */}
+              <SignIn
+                routing="hash"
+                withSignUp
+                oauthFlow="redirect"
+                fallbackRedirectUrl={returnUrl}
+              />
             </div>
           ) : (
             <>

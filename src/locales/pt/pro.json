@@ -81,5 +81,6 @@
     "tooBig": "A imagem deve ter {{kb}} KB ou menos.",
     "badType": "Use uma imagem PNG, JPEG ou WebP.",
     "needsPro": "A marca requer um plano Pro ativo."
-  }
+  },
+  "welcome": "Bem-vindo! Sessão iniciada — os seus certificados e perfis agora sincronizam com a sua conta."
 }

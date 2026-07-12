@@ -81,5 +81,6 @@
     "tooBig": "Das Bild darf höchstens {{kb}} KB groß sein.",
     "badType": "Bitte ein PNG-, JPEG- oder WebP-Bild verwenden.",
     "needsPro": "Branding erfordert einen aktiven Pro-Plan."
-  }
+  },
+  "welcome": "Willkommen! Sie sind angemeldet — Ihre Zertifikate und Profile werden jetzt mit Ihrem Konto synchronisiert."
 }

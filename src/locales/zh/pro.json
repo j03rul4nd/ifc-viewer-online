@@ -81,5 +81,6 @@
     "tooBig": "图片不得超过 {{kb}} KB。",
     "badType": "请使用 PNG、JPEG 或 WebP 图片。",
     "needsPro": "品牌标识需要有效的 Pro 计划。"
-  }
+  },
+  "welcome": "欢迎！已登录 — 您的证书和配置文件现在会同步到您的账户。"
 }

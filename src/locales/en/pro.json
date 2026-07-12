@@ -81,5 +81,6 @@
     "tooBig": "The image must be {{kb}} KB or less.",
     "badType": "Use a PNG, JPEG or WebP image.",
     "needsPro": "Branding needs an active Pro plan."
-  }
+  },
+  "welcome": "Welcome! You are signed in — your certificates and profiles now sync to your account."
 }
