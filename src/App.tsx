@@ -21,6 +21,8 @@ import KeyboardHelpModal from './components/KeyboardHelpModal'
 import SceneContextMenu, { type SceneContextMenuPayload } from './components/SceneContextMenu'
 import SharedReportView, { decodeReportHash } from './components/SharedReportView'
 import VerifyCertificateView from './components/VerifyCertificateView'
+import WelcomeView from './components/WelcomeView'
+import { useCloudAccountStore } from './stores/cloudAccountStore'
 import type { SharedReportPayload } from './components/SharedReportView'
 import DemoGallery from './components/DemoGallery'
 import MobileBottomNav from './components/MobileBottomNav'
@@ -222,6 +224,7 @@ export default function App() {
       if (rel === '/privacy' || rel.startsWith('/privacy/')) return 'privacy'
       if (rel === '/terms'   || rel.startsWith('/terms/'))   return 'terms'
       if (rel.startsWith('/verify/')) return 'verify'
+      if (rel === '/welcome' || rel.startsWith('/welcome/')) return 'welcome'
     }
     return 'landing'
   })
@@ -321,6 +324,8 @@ export default function App() {
         setRoute('terms')
       } else if (rel.startsWith('/verify/')) {
         setRoute('verify')
+      } else if (rel === '/welcome' || rel.startsWith('/welcome/')) {
+        setRoute('welcome')
       } else {
         // "/" is ambiguous: it is the landing AND the (stateful, non-URL)
         // viewer. Never kick a user out of the viewer on a popstate — Clerk's
@@ -333,6 +338,27 @@ export default function App() {
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
+
+  // ── First-session welcome (F2) ─────────────────────────────────────────────
+  // The FIRST time this browser sees the user signed in, route them to
+  // /welcome — but only from the landing (an OAuth redirect reloads the page
+  // and would otherwise drop them there cold). Mid-work (viewer) the in-place
+  // welcome toast already greeted them; the flag still burns so they are
+  // never bounced later.
+  const accountStatus = useCloudAccountStore((s) => s.status)
+  const accountUserId = useCloudAccountStore((s) => s.userId)
+  useEffect(() => {
+    if (accountStatus !== 'signed-in' || !accountUserId) return
+    const key = `ifcv.welcomed.${accountUserId}`
+    try {
+      if (localStorage.getItem(key)) return
+      localStorage.setItem(key, '1')
+    } catch { return }
+    if (route === 'landing') {
+      history.pushState(null, '', '/welcome')
+      setRoute('welcome')
+    }
+  }, [accountStatus, accountUserId, route])
 
   useEffect(() => {
     document.documentElement.style.setProperty('--accent', accent)
@@ -1479,6 +1505,18 @@ export default function App() {
             className="absolute inset-0 overflow-y-auto"
           >
             <VerifyCertificateView hash={verifyHash} onNavigateToLanding={handleNavigateToLanding} />
+          </motion.div>
+        )}
+
+        {route === 'welcome' && (
+          <motion.div
+            key="welcome"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <WelcomeView onStart={handleNavigateToLanding} />
           </motion.div>
         )}
 

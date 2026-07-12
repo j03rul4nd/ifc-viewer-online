@@ -82,5 +82,19 @@
     "badType": "Usa un’immagine PNG, JPEG o WebP.",
     "needsPro": "Il branding richiede un piano Pro attivo."
   },
-  "welcome": "Benvenuto! Accesso effettuato — i tuoi certificati e profili ora si sincronizzano con il tuo account."
+  "welcome": "Benvenuto! Accesso effettuato — i tuoi certificati e profili ora si sincronizzano con il tuo account.",
+  "welcomePage": {
+    "title": "Il tuo account è pronto",
+    "titleAnonymous": "Benvenuto in IFC Viewer Online",
+    "signedInAs": "Accesso effettuato come {{email}}",
+    "subtitle": "Il validatore gratuito resta gratuito — il tuo account aggiunge il livello che persiste tra sessioni e dispositivi.",
+    "historyTitle": "Cronologia certificati",
+    "historyBody": "Ogni certificato emesso da autenticato viene conservato con il suo link di verifica.",
+    "syncTitle": "Profili sincronizzati",
+    "syncBody": "Profili di regole, spec IDS e profili EIR ti seguono su qualsiasi dispositivo.",
+    "brandTitle": "Il tuo brand",
+    "brandBody": "Il tuo logo sul certificato stampabile che vedono i tuoi clienti.",
+    "cta": "Apri un modello e inizia a validare",
+    "hint": "Il tuo account vive dietro il pulsante Account nella barra del viewer."
+  }
 }

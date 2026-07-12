@@ -82,5 +82,19 @@
     "badType": "Use a PNG, JPEG or WebP image.",
     "needsPro": "Branding needs an active Pro plan."
   },
-  "welcome": "Welcome! You are signed in — your certificates and profiles now sync to your account."
+  "welcome": "Welcome! You are signed in — your certificates and profiles now sync to your account.",
+  "welcomePage": {
+    "title": "Your account is ready",
+    "titleAnonymous": "Welcome to IFC Viewer Online",
+    "signedInAs": "Signed in as {{email}}",
+    "subtitle": "The free validator stays free — your account adds the layer that lives across sessions and devices.",
+    "historyTitle": "Certificate history",
+    "historyBody": "Every certificate you issue while signed in is kept with its verification link.",
+    "syncTitle": "Profiles in sync",
+    "syncBody": "Rule profiles, IDS specs and EIR profiles follow you to any device.",
+    "brandTitle": "Your brand",
+    "brandBody": "Put your logo on the printable certificate your clients see.",
+    "cta": "Open a model and start validating",
+    "hint": "Your account lives behind the Account button in the viewer toolbar."
+  }
 }

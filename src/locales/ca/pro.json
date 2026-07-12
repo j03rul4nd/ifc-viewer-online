@@ -82,5 +82,19 @@
     "badType": "Fes servir una imatge PNG, JPEG o WebP.",
     "needsPro": "La marca requereix un pla Pro actiu."
   },
-  "welcome": "Benvingut! Sessió iniciada — els teus certificats i perfils ja se sincronitzen amb el teu compte."
+  "welcome": "Benvingut! Sessió iniciada — els teus certificats i perfils ja se sincronitzen amb el teu compte.",
+  "welcomePage": {
+    "title": "El teu compte està a punt",
+    "titleAnonymous": "Benvingut a IFC Viewer Online",
+    "signedInAs": "Sessió iniciada com a {{email}}",
+    "subtitle": "El validador gratuït continua sent gratuït — el teu compte hi afegeix la capa que persisteix entre sessions i dispositius.",
+    "historyTitle": "Històric de certificats",
+    "historyBody": "Cada certificat que emetis amb sessió iniciada es guarda amb el seu enllaç de verificació.",
+    "syncTitle": "Perfils sincronitzats",
+    "syncBody": "Perfils de regles, specs IDS i perfils EIR et segueixen a qualsevol dispositiu.",
+    "brandTitle": "La teva marca",
+    "brandBody": "Posa el teu logo al certificat imprimible que veuen els teus clients.",
+    "cta": "Obre un model i comença a validar",
+    "hint": "El teu compte viu darrere del botó Compte a la barra del visor."
+  }
 }

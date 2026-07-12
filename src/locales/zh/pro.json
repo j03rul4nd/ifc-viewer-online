@@ -82,5 +82,19 @@
     "badType": "请使用 PNG、JPEG 或 WebP 图片。",
     "needsPro": "品牌标识需要有效的 Pro 计划。"
   },
-  "welcome": "欢迎！已登录 — 您的证书和配置文件现在会同步到您的账户。"
+  "welcome": "欢迎！已登录 — 您的证书和配置文件现在会同步到您的账户。",
+  "welcomePage": {
+    "title": "您的账户已就绪",
+    "titleAnonymous": "欢迎使用 IFC Viewer Online",
+    "signedInAs": "已登录：{{email}}",
+    "subtitle": "免费验证器依然免费 — 账户为您增加跨会话、跨设备持久的一层能力。",
+    "historyTitle": "证书历史",
+    "historyBody": "登录后签发的每份证书都会连同验证链接一起保存。",
+    "syncTitle": "配置同步",
+    "syncBody": "规则配置、IDS 规范和 EIR 配置在任何设备上跟随您。",
+    "brandTitle": "您的品牌",
+    "brandBody": "在客户看到的可打印证书上展示您的徽标。",
+    "cta": "打开模型，开始验证",
+    "hint": "账户入口位于查看器工具栏的“账户”按钮。"
+  }
 }

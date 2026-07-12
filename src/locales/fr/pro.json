@@ -82,5 +82,19 @@
     "badType": "Utilisez une image PNG, JPEG ou WebP.",
     "needsPro": "Le branding nécessite un plan Pro actif."
   },
-  "welcome": "Bienvenue ! Vous êtes connecté — vos certificats et profils se synchronisent désormais avec votre compte."
+  "welcome": "Bienvenue ! Vous êtes connecté — vos certificats et profils se synchronisent désormais avec votre compte.",
+  "welcomePage": {
+    "title": "Votre compte est prêt",
+    "titleAnonymous": "Bienvenue sur IFC Viewer Online",
+    "signedInAs": "Connecté en tant que {{email}}",
+    "subtitle": "Le validateur gratuit reste gratuit — votre compte ajoute la couche qui persiste entre sessions et appareils.",
+    "historyTitle": "Historique des certificats",
+    "historyBody": "Chaque certificat émis en étant connecté est conservé avec son lien de vérification.",
+    "syncTitle": "Profils synchronisés",
+    "syncBody": "Profils de règles, specs IDS et profils EIR vous suivent sur tous vos appareils.",
+    "brandTitle": "Votre marque",
+    "brandBody": "Votre logo sur le certificat imprimable que voient vos clients.",
+    "cta": "Ouvrez un modèle et commencez à valider",
+    "hint": "Votre compte se trouve derrière le bouton Compte de la barre du visualiseur."
+  }
 }
