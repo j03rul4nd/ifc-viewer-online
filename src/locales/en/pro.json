@@ -70,5 +70,16 @@
   "checkoutPending": "We're still confirming your payment — it can take a minute. Your plan will activate automatically.",
   "errors": {
     "generic": "Something went wrong — please try again."
+  },
+  "branding": {
+    "title": "Certificate branding",
+    "hint": "Your logo appears in the header of every certificate you issue while signed in — on screen and in print.",
+    "upload": "Upload logo",
+    "uploading": "Uploading…",
+    "remove": "Remove",
+    "empty": "No logo yet — PNG, JPEG or WebP, up to {{kb}} KB.",
+    "tooBig": "The image must be {{kb}} KB or less.",
+    "badType": "Use a PNG, JPEG or WebP image.",
+    "needsPro": "Branding needs an active Pro plan."
   }
 }

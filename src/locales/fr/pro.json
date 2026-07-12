@@ -70,5 +70,16 @@
   "checkoutPending": "Nous confirmons encore votre paiement — cela peut prendre une minute. Votre abonnement s'activera automatiquement.",
   "errors": {
     "generic": "Une erreur s'est produite — veuillez réessayer."
+  },
+  "branding": {
+    "title": "Image de marque du certificat",
+    "hint": "Votre logo apparaît dans l’en-tête de chaque certificat émis en étant connecté — à l’écran et à l’impression.",
+    "upload": "Téléverser le logo",
+    "uploading": "Envoi…",
+    "remove": "Retirer",
+    "empty": "Pas encore de logo — PNG, JPEG ou WebP, jusqu’à {{kb}} Ko.",
+    "tooBig": "L’image doit peser {{kb}} Ko ou moins.",
+    "badType": "Utilisez une image PNG, JPEG ou WebP.",
+    "needsPro": "Le branding nécessite un plan Pro actif."
   }
 }

@@ -70,5 +70,16 @@
   "checkoutPending": "Ainda estamos a confirmar o seu pagamento — pode demorar um minuto. O seu plano ativa-se automaticamente.",
   "errors": {
     "generic": "Algo correu mal — tente novamente."
+  },
+  "branding": {
+    "title": "Marca no certificado",
+    "hint": "O seu logótipo aparece no cabeçalho de cada certificado emitido com sessão iniciada — no ecrã e na impressão.",
+    "upload": "Carregar logótipo",
+    "uploading": "A carregar…",
+    "remove": "Remover",
+    "empty": "Ainda sem logótipo — PNG, JPEG ou WebP, até {{kb}} KB.",
+    "tooBig": "A imagem deve ter {{kb}} KB ou menos.",
+    "badType": "Use uma imagem PNG, JPEG ou WebP.",
+    "needsPro": "A marca requer um plano Pro ativo."
   }
 }

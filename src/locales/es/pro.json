@@ -70,5 +70,16 @@
   "checkoutPending": "Seguimos confirmando tu pago — puede tardar un minuto. Tu plan se activará automáticamente.",
   "errors": {
     "generic": "Algo salió mal — inténtalo de nuevo."
+  },
+  "branding": {
+    "title": "Marca en el certificado",
+    "hint": "Tu logo aparece en la cabecera de cada certificado que emitas con sesión iniciada — en pantalla y al imprimir.",
+    "upload": "Subir logo",
+    "uploading": "Subiendo…",
+    "remove": "Quitar",
+    "empty": "Sin logo aún — PNG, JPEG o WebP, hasta {{kb}} KB.",
+    "tooBig": "La imagen debe pesar {{kb}} KB o menos.",
+    "badType": "Usa una imagen PNG, JPEG o WebP.",
+    "needsPro": "La marca requiere un plan Pro activo."
   }
 }

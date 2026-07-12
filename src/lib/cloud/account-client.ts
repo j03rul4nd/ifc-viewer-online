@@ -143,3 +143,22 @@ export interface HistoryCertificate {
 
 export const listCertificates = (token: string) =>
   request<{ certificates: HistoryCertificate[] }>(token, '/account/certificates')
+
+// ── Branding (F2 §remaining-2) ────────────────────────────────────────────────
+// Issuer logo as a validated data URL (png/jpeg/webp, ≤100 KB decoded — the
+// Worker re-validates; this constant only powers the client-side pre-check).
+
+export const MAX_LOGO_BYTES = 100 * 1024
+
+export const getBranding = (token: string) =>
+  request<{ logo: string | null }>(token, '/account/branding')
+
+export const putBranding = (token: string, logo: string) =>
+  request<{ ok: boolean }>(token, '/account/branding', {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ logo }),
+  })
+
+export const deleteBranding = (token: string) =>
+  request<{ ok: boolean }>(token, '/account/branding', { method: 'DELETE' })

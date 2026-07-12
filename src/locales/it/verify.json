@@ -48,5 +48,6 @@
   "rerunNotReevaluated": "{{count}} regola/e certificata/e non rivalutata/e",
   "rerunCertified": "certificato",
   "rerunNow": "riesecuzione",
-  "levels": "Tre livelli di verifica: firma ✓ = emesso integro tramite il servizio · hash del file ✓ = questo è il file certificato · riesecuzione ✓ = il risultato è riproducibile nel tuo browser."
+  "levels": "Tre livelli di verifica: firma ✓ = emesso integro tramite il servizio · hash del file ✓ = questo è il file certificato · riesecuzione ✓ = il risultato è riproducibile nel tuo browser.",
+  "issuerLogoAlt": "Logo dell’emittente"
 }

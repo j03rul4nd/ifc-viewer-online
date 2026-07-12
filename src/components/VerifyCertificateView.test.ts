@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CertifyPayloadV1 } from '../lib/certify/canonical'
 import { payloadCanonicalBytes } from '../lib/certify/canonical'
-import { describeCoverage, verifySignature, type PublishedKey } from './VerifyCertificateView'
+import { describeCoverage, isSafeLogoDataUrl, verifySignature, type PublishedKey } from './VerifyCertificateView'
 
 const ECDSA_P256 = { name: 'ECDSA', namedCurve: 'P-256' } as const
 
@@ -102,5 +102,23 @@ describe('describeCoverage (display honesty)', () => {
       rules_result: Array.from({ length: 44 }, (_, i) => ({ rule_id: `RULE_${i}`, status: 'pass' as const })),
     }
     expect(describeCoverage(custom).partial).toBe(true)
+  })
+})
+
+describe('isSafeLogoDataUrl (issuer branding allowlist)', () => {
+  const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+
+  it('accepts raster data URLs (png/jpeg/webp)', () => {
+    expect(isSafeLogoDataUrl(png)).toBe(true)
+    expect(isSafeLogoDataUrl(png.replace('image/png', 'image/jpeg'))).toBe(true)
+    expect(isSafeLogoDataUrl(png.replace('image/png', 'image/webp'))).toBe(true)
+  })
+
+  it('rejects svg, http(s) URLs, non-strings and oversized values', () => {
+    expect(isSafeLogoDataUrl(png.replace('image/png', 'image/svg+xml'))).toBe(false)
+    expect(isSafeLogoDataUrl('https://evil.example/logo.png')).toBe(false)
+    expect(isSafeLogoDataUrl(null)).toBe(false)
+    expect(isSafeLogoDataUrl(undefined)).toBe(false)
+    expect(isSafeLogoDataUrl('data:image/png;base64,' + 'A'.repeat(200_001))).toBe(false)
   })
 })

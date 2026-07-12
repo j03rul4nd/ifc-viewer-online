@@ -48,5 +48,6 @@
   "rerunNotReevaluated": "{{count}} certified rule(s) not re-evaluated",
   "rerunCertified": "certified",
   "rerunNow": "re-run",
-  "levels": "Three verification levels: signature ✓ = issued intact through the service · file hash ✓ = this is the certified file · re-run ✓ = the result is reproducible in your browser."
+  "levels": "Three verification levels: signature ✓ = issued intact through the service · file hash ✓ = this is the certified file · re-run ✓ = the result is reproducible in your browser.",
+  "issuerLogoAlt": "Issuer’s logo"
 }

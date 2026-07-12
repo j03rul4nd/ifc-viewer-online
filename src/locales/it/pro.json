@@ -70,5 +70,16 @@
   "checkoutPending": "Stiamo ancora confermando il pagamento — può richiedere un minuto. Il piano si attiverà automaticamente.",
   "errors": {
     "generic": "Qualcosa è andato storto — riprova."
+  },
+  "branding": {
+    "title": "Branding del certificato",
+    "hint": "Il tuo logo appare nell’intestazione di ogni certificato emesso da autenticato — a schermo e in stampa.",
+    "upload": "Carica logo",
+    "uploading": "Caricamento…",
+    "remove": "Rimuovi",
+    "empty": "Ancora nessun logo — PNG, JPEG o WebP, fino a {{kb}} KB.",
+    "tooBig": "L’immagine deve pesare {{kb}} KB o meno.",
+    "badType": "Usa un’immagine PNG, JPEG o WebP.",
+    "needsPro": "Il branding richiede un piano Pro attivo."
   }
 }

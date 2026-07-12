@@ -19,6 +19,7 @@ import { useEntitlement } from '../../hooks/useEntitlement'
 import {
   createApiKey, createCheckout, createPortal as createBillingPortal,
   listApiKeys, revokeApiKey, listCertificates,
+  getBranding, putBranding, deleteBranding, MAX_LOGO_BYTES,
   type ApiKeySummary, type CreatedApiKey, type HistoryCertificate,
 } from '../../lib/cloud/account-client'
 import { isCloudEnabled } from '../../lib/cloud/api-client'
@@ -39,6 +40,14 @@ type HistoryState =
   | { phase: 'error' }
   | { phase: 'ready'; items: HistoryCertificate[] }
 
+type BrandingState =
+  | { phase: 'loading' }
+  | { phase: 'error' }
+  | { phase: 'ready'; logo: string | null }
+
+/** Mirrors the Worker's write-side allowlist (png/jpeg/webp — never svg). */
+const LOGO_MIME = /^image\/(png|jpeg|webp)$/
+
 export default function AccountModal({ onClose }: AccountModalProps) {
   const { t } = useTranslation('pro')
   const status = useCloudAccountStore((s) => s.status)
@@ -52,6 +61,7 @@ export default function AccountModal({ onClose }: AccountModalProps) {
   const [busy, setBusy] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [history, setHistory] = useState<HistoryState>({ phase: 'loading' })
+  const [branding, setBranding] = useState<BrandingState>({ phase: 'loading' })
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -73,14 +83,65 @@ export default function AccountModal({ onClose }: AccountModalProps) {
     setHistory(r.ok ? { phase: 'ready', items: r.value.certificates } : { phase: 'error' })
   }, [getToken])
 
+  const loadBranding = useCallback(async () => {
+    const token = await getToken?.()
+    if (!token) return
+    const r = await getBranding(token)
+    setBranding(r.ok ? { phase: 'ready', logo: r.value.logo } : { phase: 'error' })
+  }, [getToken])
+
   // On open with a session: refresh the plan truth + load keys + history.
   useEffect(() => {
     if (status !== 'signed-in') return
     void entitlement.refresh()
     void loadKeys()
     void loadHistory()
+    void loadBranding()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status])
+
+  const handleLogoFile = async (file: File) => {
+    if (!LOGO_MIME.test(file.type)) {
+      toast(t('branding.badType'), 'warning')
+      return
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      toast(t('branding.tooBig', { kb: Math.round(MAX_LOGO_BYTES / 1024) }), 'warning')
+      return
+    }
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = () => reject(new Error('read failed'))
+      reader.readAsDataURL(file)
+    }).catch(() => null)
+    if (!dataUrl) {
+      toast(t('errors.generic'), 'error')
+      return
+    }
+    const token = await getToken?.()
+    if (!token) return
+    setBusy('logo')
+    const r = await putBranding(token, dataUrl)
+    setBusy(null)
+    if (r.ok) {
+      setBranding({ phase: 'ready', logo: dataUrl })
+    } else if (r.error.code === 'upgrade_required') {
+      toast(t('branding.needsPro'), 'warning', { duration: 6000 })
+    } else {
+      toast(t('errors.generic'), 'error')
+    }
+  }
+
+  const handleRemoveLogo = async () => {
+    const token = await getToken?.()
+    if (!token) return
+    setBusy('logo')
+    const r = await deleteBranding(token)
+    setBusy(null)
+    if (r.ok) setBranding({ phase: 'ready', logo: null })
+    else toast(t('errors.generic'), 'error')
+  }
 
   const handleCreateKey = async () => {
     const token = await getToken?.()
@@ -271,6 +332,42 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                     </button>
                   </div>
                 ))}
+              </section>
+
+              {/* ── Branding (F2): logo on the printable certificate ─────────── */}
+              <section className="rounded-xl border border-[var(--border)] p-3 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">{t('branding.title')}</span>
+                  <label className={`${smallBtn} ${entitlement.plan === 'free' || busy === 'logo' ? 'opacity-40 pointer-events-none' : 'cursor-pointer'} grid place-items-center`}>
+                    {busy === 'logo' ? t('branding.uploading') : t('branding.upload')}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="sr-only"
+                      disabled={entitlement.plan === 'free' || busy === 'logo'}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) void handleLogoFile(file)
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                </div>
+                <p className="text-[10px] text-[var(--text-muted)] leading-snug">
+                  {entitlement.plan === 'free' ? t('branding.needsPro') : t('branding.hint')}
+                </p>
+                {branding.phase === 'ready' && branding.logo && (
+                  <div className="flex items-center gap-3">
+                    <img src={branding.logo} alt="" className="max-h-10 max-w-[160px] object-contain rounded bg-white p-1" />
+                    <button onClick={() => void handleRemoveLogo()} disabled={busy === 'logo'}
+                      className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--danger,#e5534b)] hover:border-[var(--danger,#e5534b)] transition-colors disabled:opacity-40">
+                      {t('branding.remove')}
+                    </button>
+                  </div>
+                )}
+                {branding.phase === 'ready' && !branding.logo && entitlement.plan !== 'free' && (
+                  <p className="text-[11px] text-[var(--text-muted)]">{t('branding.empty')}</p>
+                )}
               </section>
 
               {/* ── Certificate history (F2 P7) ──────────────────────────────── */}

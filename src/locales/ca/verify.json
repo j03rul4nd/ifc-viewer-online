@@ -48,5 +48,6 @@
   "rerunNotReevaluated": "{{count}} regla/es certificada/es sense re-avaluar",
   "rerunCertified": "certificat",
   "rerunNow": "re-execució",
-  "levels": "Tres nivells de verificació: signatura ✓ = emès íntegre a través del servei · hash del fitxer ✓ = aquest és el fitxer certificat · re-execució ✓ = el resultat és reproduïble al teu navegador."
+  "levels": "Tres nivells de verificació: signatura ✓ = emès íntegre a través del servei · hash del fitxer ✓ = aquest és el fitxer certificat · re-execució ✓ = el resultat és reproduïble al teu navegador.",
+  "issuerLogoAlt": "Logo de l’emissor"
 }

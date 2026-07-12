@@ -70,5 +70,16 @@
   "checkoutPending": "Wir bestätigen Ihre Zahlung noch — das kann eine Minute dauern. Ihr Tarif wird automatisch aktiviert.",
   "errors": {
     "generic": "Etwas ist schiefgelaufen — bitte erneut versuchen."
+  },
+  "branding": {
+    "title": "Zertifikats-Branding",
+    "hint": "Ihr Logo erscheint in der Kopfzeile jedes Zertifikats, das Sie angemeldet ausstellen — am Bildschirm und im Druck.",
+    "upload": "Logo hochladen",
+    "uploading": "Wird hochgeladen…",
+    "remove": "Entfernen",
+    "empty": "Noch kein Logo — PNG, JPEG oder WebP, bis {{kb}} KB.",
+    "tooBig": "Das Bild darf höchstens {{kb}} KB groß sein.",
+    "badType": "Bitte ein PNG-, JPEG- oder WebP-Bild verwenden.",
+    "needsPro": "Branding erfordert einen aktiven Pro-Plan."
   }
 }

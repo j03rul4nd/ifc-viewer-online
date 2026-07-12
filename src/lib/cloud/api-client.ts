@@ -52,6 +52,8 @@ export interface CertificateEntry {
   key_id: string
   status: string
   created_at: string
+  /** Issuer's branding logo (validated data URL) — null/absent for anonymous certs. */
+  issuer_logo?: string | null
 }
 
 /** `GET /certificates/:hash` success body. */

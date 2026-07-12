@@ -70,5 +70,16 @@
   "checkoutPending": "我们仍在确认您的付款 — 可能需要一分钟。您的套餐将自动激活。",
   "errors": {
     "generic": "出了点问题 — 请重试。"
+  },
+  "branding": {
+    "title": "证书品牌标识",
+    "hint": "登录后签发的每份证书页眉都会显示您的徽标 — 屏幕上和打印时均可见。",
+    "upload": "上传徽标",
+    "uploading": "上传中…",
+    "remove": "移除",
+    "empty": "尚无徽标 — PNG、JPEG 或 WebP，最大 {{kb}} KB。",
+    "tooBig": "图片不得超过 {{kb}} KB。",
+    "badType": "请使用 PNG、JPEG 或 WebP 图片。",
+    "needsPro": "品牌标识需要有效的 Pro 计划。"
   }
 }

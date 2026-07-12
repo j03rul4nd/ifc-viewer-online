@@ -100,6 +100,20 @@ export function describeCoverage(payload: CertifyPayloadV1): CoverageInfo {
   }
 }
 
+// ── Issuer branding (exported for tests) ─────────────────────────────────────
+
+/**
+ * Client-side allowlist for the issuer logo delivered by the Worker: only a
+ * raster-image data URL ever reaches an <img src>. Defence in depth — the
+ * Worker already validates on write, but this view must not trust the server
+ * (same principle as the signature check).
+ */
+const SAFE_LOGO = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/
+
+export function isSafeLogoDataUrl(value: unknown): value is string {
+  return typeof value === 'string' && value.length < 200_000 && SAFE_LOGO.test(value)
+}
+
 // ── Shareable verify URL + QR (exported for tests) ────────────────────────────
 
 /** Canonical public URL of this verification page — what the QR encodes. */
@@ -300,6 +314,15 @@ export default function VerifyCertificateView({ hash, onNavigateToLanding }: Ver
               )}
 
               <div className="p-4 flex flex-col gap-3">
+                {/* Issuer branding (F2) — shown on screen and on the printed certificate */}
+                {isSafeLogoDataUrl(entry.issuer_logo) && (
+                  <img
+                    src={entry.issuer_logo}
+                    alt={t('issuerLogoAlt')}
+                    className="max-h-12 max-w-[200px] object-contain self-start"
+                  />
+                )}
+
                 {/* Score + coverage (display honesty) */}
                 <div className="flex items-baseline justify-between gap-3 flex-wrap">
                   <div>

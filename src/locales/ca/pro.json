@@ -70,5 +70,16 @@
   "checkoutPending": "Encara estem confirmant el teu pagament — pot trigar un minut. El teu pla s'activarà automàticament.",
   "errors": {
     "generic": "Alguna cosa ha fallat — torna-ho a provar."
+  },
+  "branding": {
+    "title": "Marca al certificat",
+    "hint": "El teu logo apareix a la capçalera de cada certificat que emetis amb sessió iniciada — en pantalla i en imprimir.",
+    "upload": "Puja el logo",
+    "uploading": "Pujant…",
+    "remove": "Treu",
+    "empty": "Encara sense logo — PNG, JPEG o WebP, fins a {{kb}} KB.",
+    "tooBig": "La imatge ha de pesar {{kb}} KB o menys.",
+    "badType": "Fes servir una imatge PNG, JPEG o WebP.",
+    "needsPro": "La marca requereix un pla Pro actiu."
   }
 }

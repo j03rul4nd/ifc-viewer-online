@@ -48,5 +48,6 @@
   "rerunNotReevaluated": "{{count}} zertifizierte Regel(n) nicht erneut geprüft",
   "rerunCertified": "zertifiziert",
   "rerunNow": "Wiederholung",
-  "levels": "Drei Verifizierungsstufen: Signatur ✓ = unverändert über den Dienst ausgestellt · Datei-Hash ✓ = dies ist die zertifizierte Datei · Wiederholung ✓ = das Ergebnis ist in Ihrem Browser reproduzierbar."
+  "levels": "Drei Verifizierungsstufen: Signatur ✓ = unverändert über den Dienst ausgestellt · Datei-Hash ✓ = dies ist die zertifizierte Datei · Wiederholung ✓ = das Ergebnis ist in Ihrem Browser reproduzierbar.",
+  "issuerLogoAlt": "Logo des Ausstellers"
 }
