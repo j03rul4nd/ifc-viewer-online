@@ -23,6 +23,7 @@ import {
 } from '../../lib/eir'
 import { parseIds } from '../../lib/ids/ids-parser'
 import type { EirProfile, EirRule, EirRuleType, EirSeverity, NumericOperator } from '../../lib/eir'
+import SavedRulesetPicker from '../pro/SavedRulesetPicker'
 
 interface Props { onClose: () => void }
 
@@ -320,6 +321,19 @@ export default function EirProfileEditor({ onClose }: Props) {
                     <button onClick={addRule} className="h-8 rounded-md border border-dashed border-[var(--border)] text-[11.5px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)]">
                       + {t('addRule')}
                     </button>
+                  </div>
+
+                  {/* Cloud sync (F2 P6) — renders nothing when accounts are off */}
+                  <div className="px-3 pb-2">
+                    <SavedRulesetPicker
+                      kind="eir_profile"
+                      serializeCurrent={() =>
+                        draft.name.trim() ? { name: draft.name.trim(), content: serializeEirProfile(draft) } : null}
+                      onLoad={(content) => {
+                        try { setDraft(parseEirProfile(content)) }
+                        catch { toast(t('toasts.importError', { defaultValue: 'Could not read that profile' }), 'error') }
+                      }}
+                    />
                   </div>
 
                   {/* Footer actions */}

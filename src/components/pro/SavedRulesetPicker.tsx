@@ -28,7 +28,9 @@ import { toast } from '../../stores/toastStore'
 interface SavedRulesetPickerProps {
   kind: RulesetKind
   serializeCurrent: () => { name: string; content: string } | null
-  onLoad: (content: string) => void
+  /** Apply a fetched ruleset. `name` is the saved display name (some kinds,
+   *  e.g. IDS, don't carry a name inside the content). */
+  onLoad: (content: string, name: string) => void
 }
 
 type ListState =
@@ -118,13 +120,13 @@ export default function SavedRulesetPicker({ kind, serializeCurrent, onLoad }: S
     else toast(t('errors.generic'), 'error')
   }
 
-  const handleOpen = async (id: string) => {
+  const handleOpen = async (id: string, name: string) => {
     const token = await getToken?.()
     if (!token) return
     setBusy(id)
     const r = await getRuleset(token, id)
     setBusy(null)
-    if (r.ok) { onLoad(r.value.content); toast(t('sync.loaded'), 'success') }
+    if (r.ok) { onLoad(r.value.content, name); toast(t('sync.loaded'), 'success') }
     else toast(t('errors.generic'), 'error')
   }
 
@@ -158,7 +160,7 @@ export default function SavedRulesetPicker({ kind, serializeCurrent, onLoad }: S
       {list.phase === 'ready' && list.items.map((r) => (
         <div key={r.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-[var(--border)]">
           <span className="flex-1 text-[11px] text-[var(--text)] truncate">{r.name}</span>
-          <button onClick={() => void handleOpen(r.id)} disabled={busy === r.id}
+          <button onClick={() => void handleOpen(r.id, r.name)} disabled={busy === r.id}
             className="h-6 px-2 rounded text-[10px] font-medium border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)] transition-colors disabled:opacity-40">
             {t('sync.open')}
           </button>

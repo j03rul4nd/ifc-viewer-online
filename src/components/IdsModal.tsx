@@ -3,7 +3,7 @@
 // file, run it against the active model, see the score — results live in the
 // docked IdsPanel ("View results").
 
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -24,6 +24,7 @@ import { weightedCompliance } from '../lib/eir'
 import { SCORE_COLOR } from './ids/score'
 import { idsResultToSharePayload } from '../lib/ids/ids-share'
 import { buildShareUrl } from '../lib/share-report'
+import SavedRulesetPicker from './pro/SavedRulesetPicker'
 
 interface IdsModalProps {
   onClose: () => void
@@ -47,6 +48,10 @@ export default function IdsModal({ onClose }: IdsModalProps) {
   const busy = status === 'running' || status === 'cancelling'
   const { run, cancel } = useIdsRun()
 
+  // Raw .ids XML kept locally so it can be synced to the account (the store only
+  // holds the parsed doc). Set on load, cleared on reset.
+  const [rawXml, setRawXml] = useState<string | null>(null)
+
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handler)
@@ -58,6 +63,7 @@ export default function IdsModal({ onClose }: IdsModalProps) {
       const xml = await file.text()
       const parsed = parseIds(xml)
       setLoaded(file.name, parsed)
+      setRawXml(xml)
       const facetKinds = new Set<string>()
       for (const s of parsed.specifications) {
         for (const f of s.applicability) facetKinds.add(f.kind)
@@ -77,6 +83,7 @@ export default function IdsModal({ onClose }: IdsModalProps) {
     try {
       const parsed = parseIds(ex.xml)
       setLoaded(ex.fileName, parsed)
+      setRawXml(ex.xml)
       const facetKinds = new Set<string>()
       for (const s of parsed.specifications) {
         for (const f of s.applicability) facetKinds.add(f.kind)
@@ -176,7 +183,7 @@ export default function IdsModal({ onClose }: IdsModalProps) {
             </button>
             {doc && <span className="text-[11px] text-[var(--text-faint)]">{t('loader.specCount', { count: doc.specifications.length })}</span>}
             {(fileName || result) && !busy && (
-              <button onClick={() => reset()} className="ml-auto text-[11px] text-[var(--text-faint)] hover:text-[var(--text)]">{t('loader.clear')}</button>
+              <button onClick={() => { reset(); setRawXml(null) }} className="ml-auto text-[11px] text-[var(--text-faint)] hover:text-[var(--text)]">{t('loader.clear')}</button>
             )}
           </div>
 
@@ -210,6 +217,23 @@ export default function IdsModal({ onClose }: IdsModalProps) {
               </div>
             </div>
           )}
+
+          {/* Cloud sync (F2 P6) — renders nothing when accounts are off */}
+          <SavedRulesetPicker
+            kind="ids_spec"
+            serializeCurrent={() => (rawXml && fileName ? { name: fileName, content: rawXml } : null)}
+            onLoad={(content, name) => {
+              try {
+                const parsed = parseIds(content)
+                setLoaded(name, parsed)
+                setRawXml(content)
+              } catch (err) {
+                const msg = err instanceof IdsParseError ? err.message : (err instanceof Error ? err.message : String(err))
+                setError('parse', t('loader.parseError', { message: msg }))
+                toast(t('loader.invalidFile', { message: msg }), 'error')
+              }
+            }}
+          />
 
           {/* Parse warnings (e.g. unsupported XSD patterns) */}
           {doc?.warnings?.length ? (
