@@ -1532,7 +1532,7 @@ export default function App() {
             transition={{ duration: 0.25 }}
             className="absolute inset-0 overflow-y-auto"
           >
-            <WelcomeView onStart={handleNavigateToLanding} />
+            <WelcomeView onStart={handleNavigateToLanding} theme={landingTheme} />
           </motion.div>
         )}
 
