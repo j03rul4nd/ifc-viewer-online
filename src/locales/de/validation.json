@@ -290,6 +290,8 @@
     "copyLink": "Link kopieren",
     "copied": "Kopiert",
     "downloadSigned": "Signierte .json herunterladen",
-    "copyBadge": "Badge-Markdown kopieren"
+    "copyBadge": "Badge-Markdown kopieren",
+    "verifiableSignInHint": "Zertifikat anonym ausgestellt. Melde dich an, um es in deinem Kontoverlauf zu behalten.",
+    "verifiableSignInCta": "Anmelden"
   }
 }

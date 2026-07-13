@@ -39,16 +39,25 @@
     "fixGuides": "Fix guides",
     "faq": "FAQ",
     "github": "GitHub",
-    "sdk": "SDK"
+    "sdk": "SDK",
+    "pricing": "Pricing"
   },
   "compatible": {
     "label": "Compatible with every major BIM authoring tool"
   },
   "stats": [
-    { "label": "Validation rules" },
-    { "label": "IFC schema versions" },
-    { "label": "Runs in the browser" },
-    { "label": "Server uploads" }
+    {
+      "label": "Validation rules"
+    },
+    {
+      "label": "IFC schema versions"
+    },
+    {
+      "label": "Runs in the browser"
+    },
+    {
+      "label": "Server uploads"
+    }
   ],
   "featuresSection": {
     "label": "FEATURES",

@@ -22,7 +22,8 @@ import React, { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { subscribeEmail } from '../lib/subscribe'
-import { trackEmailCaptured } from '../lib/analytics'
+import { trackEmailCaptured, trackProEntryClick } from '../lib/analytics'
+import { isAccountEnabled, openAccountModal } from '../stores/cloudAccountStore'
 import { LanguageSelectorNav } from './LanguageSelector'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import * as Icons from './Icons'
@@ -442,6 +443,16 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
               onClick={() => onNavigateToBlog(langShort)}
               className="text-[12px] lg:text-[13px] text-[var(--text-dim)] bg-transparent border-0 p-0 cursor-pointer hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >Blog</button>
+            {/* F2-TRIGGERS: pricing CTA → opens the app with the account/upsell
+                surface, nothing else changed. Invisible when accounts are off
+                (VITE_CLERK_PUBLISHABLE_KEY absent) — the anonymous nav stays
+                identical to F1. */}
+            {isAccountEnabled() && (
+              <button
+                onClick={() => { trackProEntryClick({ source: 'landing' }); openAccountModal(); onLaunch() }}
+                className="text-[12px] lg:text-[13px] text-[var(--text-dim)] bg-transparent border-0 p-0 cursor-pointer hover:text-[var(--text)] transition-colors whitespace-nowrap"
+              >{t('nav.pricing')}</button>
+            )}
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"
               className="hidden lg:inline text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
               aria-label="View source code on GitHub"

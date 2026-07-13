@@ -384,6 +384,8 @@
     "copyLink": "Copy link",
     "copied": "Copied",
     "downloadSigned": "Download signed .json",
-    "copyBadge": "Copy badge markdown"
+    "copyBadge": "Copy badge markdown",
+    "verifiableSignInHint": "Certificate issued anonymously. Sign in to keep it in your account history.",
+    "verifiableSignInCta": "Sign in"
   }
 }

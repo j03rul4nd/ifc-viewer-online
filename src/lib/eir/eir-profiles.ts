@@ -80,8 +80,53 @@ const COBIE_HANDOVER: EirProfile = {
   ],
 }
 
+/**
+ * Statsbygg SIMBA 2.1 — Generelle krav, starter subset (F2-PROFILES).
+ *
+ * SOURCE (official requirement document only — a conformance product cannot
+ * ship invented rules): "SIMBA 2.1 Generelle krav", Statsbygg, godkjent
+ * 1. juli 2022 (simba.statsbygg.no → Kravene → Generelle krav). Each rule
+ * message cites its requirement ref (G-row) in that document.
+ *
+ * Covered — the general requirements the source states in explicit IFC terms:
+ *   · G18 (Attributter): objects are identified via attributes; the doc names
+ *     "Name", "LongName", "Description", "GlobalId" → Name non-empty on the
+ *     major object classes, LongName on IfcSpace. (GlobalId is schema-
+ *     guaranteed; the validator's own GUID rules cover uniqueness.)
+ *   · G20 (Relasjoner): every object relates to the structure it sits in; the
+ *     doc names IfcProject / IfcBuildingStorey / IfcSpace as that structure →
+ *     storeys and spaces must exist.
+ *
+ * Pinned in the source but NOT expressible as generic element rules here —
+ * they stay with the source document, do not invent property names for them:
+ * G16 (schema = IFC4), G7 (EPSG compound code "som angitt egenskap" — property
+ * name unspecified), G24 (MMI process-status coding — property defined in the
+ * SIMBA veileder appendix B, not in Generelle krav), G22 (model FILE naming).
+ */
+const SIMBA21_GENERAL: EirProfile = {
+  id: 'builtin-simba21-general',
+  name: 'Statsbygg SIMBA 2.1 — Generelle krav (starter)',
+  version: 1,
+  description:
+    'Starter subset of Statsbygg SIMBA 2.1 "Generelle krav" (approved 2022-07-01, simba.statsbygg.no): '
+    + 'spatial structure present (G20) and objects identified by non-empty Name attributes (G18). '
+    + 'Rules are sourced from the official document only; schema/georeferencing/MMI requirements '
+    + '(G16/G7/G24) are not generically checkable here and remain with the source.',
+  rules: [
+    { id: 'sb1', type: 'entityExists', entity: 'IfcBuildingStorey', severity: 'error', message: 'G20 — relation structure: the model must contain building storeys' },
+    { id: 'sb2', type: 'entityExists', entity: 'IfcSpace', severity: 'warning', message: 'G20 — relation structure: spatial objects (IfcSpace) must be modelled' },
+    { id: 'sb3', type: 'regex', target: 'attribute', property: 'Name', pattern: '.*\\S.*', entity: 'IfcWall', severity: 'warning', message: 'G18 — objects are identified via attributes: Name must be set' },
+    { id: 'sb4', type: 'regex', target: 'attribute', property: 'Name', pattern: '.*\\S.*', entity: 'IfcSlab', severity: 'warning', message: 'G18 — objects are identified via attributes: Name must be set' },
+    { id: 'sb5', type: 'regex', target: 'attribute', property: 'Name', pattern: '.*\\S.*', entity: 'IfcDoor', severity: 'warning', message: 'G18 — objects are identified via attributes: Name must be set' },
+    { id: 'sb6', type: 'regex', target: 'attribute', property: 'Name', pattern: '.*\\S.*', entity: 'IfcWindow', severity: 'warning', message: 'G18 — objects are identified via attributes: Name must be set' },
+    { id: 'sb7', type: 'regex', target: 'attribute', property: 'Name', pattern: '.*\\S.*', entity: 'IfcSpace', severity: 'warning', message: 'G18 — objects are identified via attributes: Name must be set' },
+    { id: 'sb8', type: 'regex', target: 'attribute', property: 'LongName', pattern: '.*\\S.*', entity: 'IfcSpace', severity: 'info', message: 'G18 — IfcSpace should carry a LongName (room name)' },
+  ],
+}
+
 export const BUILTIN_EIR_PROFILES: readonly EirProfile[] = [
   HOSPITAL_LOD300, ISO19650_DELIVERY, LOD200_SCHEMATIC, LOD400_FABRICATION, COBIE_HANDOVER,
+  SIMBA21_GENERAL,
 ]
 
 /** A blank profile seed for the "new profile" action in the editor. */

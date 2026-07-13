@@ -38,7 +38,8 @@
     "howItWorks": "仕組み",
     "faq": "よくある質問",
     "github": "GitHub",
-    "sdk": "SDK"
+    "sdk": "SDK",
+    "pricing": "料金"
   },
   "compatible": {
     "label": "主要な BIM 作成ツールすべてに対応"

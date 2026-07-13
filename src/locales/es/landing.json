@@ -39,16 +39,25 @@
     "howItWorks": "Cómo funciona",
     "faq": "FAQ",
     "github": "GitHub",
-    "sdk": "SDK"
+    "sdk": "SDK",
+    "pricing": "Precios"
   },
   "compatible": {
     "label": "Compatible con todas las principales herramientas BIM"
   },
   "stats": [
-    { "label": "Reglas de validación" },
-    { "label": "Versiones de esquema IFC" },
-    { "label": "Funciona en el navegador" },
-    { "label": "Subidas al servidor" }
+    {
+      "label": "Reglas de validación"
+    },
+    {
+      "label": "Versiones de esquema IFC"
+    },
+    {
+      "label": "Funciona en el navegador"
+    },
+    {
+      "label": "Subidas al servidor"
+    }
   ],
   "featuresSection": {
     "label": "CARACTERÍSTICAS",

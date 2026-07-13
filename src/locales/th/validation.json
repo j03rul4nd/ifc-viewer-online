@@ -290,6 +290,8 @@
     "copyLink": "คัดลอกลิงก์",
     "copied": "คัดลอกแล้ว",
     "downloadSigned": "ดาวน์โหลด .json ที่ลงนามแล้ว",
-    "copyBadge": "คัดลอก badge markdown"
+    "copyBadge": "คัดลอก badge markdown",
+    "verifiableSignInHint": "ออกใบรับรองแบบไม่ระบุตัวตนแล้ว ลงชื่อเข้าใช้เพื่อเก็บไว้ในประวัติบัญชีของคุณ",
+    "verifiableSignInCta": "ลงชื่อเข้าใช้"
   }
 }

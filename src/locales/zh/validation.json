@@ -290,6 +290,8 @@
     "copyLink": "复制链接",
     "copied": "已复制",
     "downloadSigned": "下载已签名的 .json",
-    "copyBadge": "复制徽章 Markdown"
+    "copyBadge": "复制徽章 Markdown",
+    "verifiableSignInHint": "证书已匿名签发。登录即可将其保存到您的账户历史记录。",
+    "verifiableSignInCta": "登录"
   }
 }

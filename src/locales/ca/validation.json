@@ -290,6 +290,8 @@
     "copyLink": "Copia l'enllaç",
     "copied": "Copiat",
     "downloadSigned": "Baixa el .json signat",
-    "copyBadge": "Copia el badge markdown"
+    "copyBadge": "Copia el badge markdown",
+    "verifiableSignInHint": "Certificat emès de manera anònima. Inicia la sessió per conservar-lo al teu historial.",
+    "verifiableSignInCta": "Inicia la sessió"
   }
 }

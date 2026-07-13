@@ -290,6 +290,8 @@
     "copyLink": "リンクをコピー",
     "copied": "コピーしました",
     "downloadSigned": "署名済み .json をダウンロード",
-    "copyBadge": "バッジ Markdown をコピー"
+    "copyBadge": "バッジ Markdown をコピー",
+    "verifiableSignInHint": "証明書は匿名で発行されました。サインインするとアカウント履歴に保存できます。",
+    "verifiableSignInCta": "サインイン"
   }
 }

@@ -38,7 +38,8 @@
     "howItWorks": "วิธีการทำงาน",
     "faq": "คำถามที่พบบ่อย",
     "github": "GitHub",
-    "sdk": "SDK"
+    "sdk": "SDK",
+    "pricing": "ราคา"
   },
   "compatible": {
     "label": "รองรับเครื่องมือสร้าง BIM หลักทุกตัว"

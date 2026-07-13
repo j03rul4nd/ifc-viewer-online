@@ -38,7 +38,8 @@
     "howItWorks": "工作原理",
     "faq": "常见问题",
     "github": "GitHub",
-    "sdk": "SDK"
+    "sdk": "SDK",
+    "pricing": "价格"
   },
   "compatible": {
     "label": "兼容所有主流 BIM 创作工具"

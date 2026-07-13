@@ -12,10 +12,12 @@
 > re‑hash + optional local re‑run) are all deployed. **F2 is ~95 % built and deliberately dark**:
 > the entire account surface (entitlement, ruleset sync, certificate history, issuer branding,
 > API‑key management, Stripe‑by‑redirect billing, webhooks, in‑place sign‑in + `/welcome`
-> onboarding) exists behind configuration switches and activates without a code change. What
-> remains is §F2‑ACT (activation runbook), §F2‑PROFILES (content‑blocked) and §F2‑TRIGGERS (two
-> small entry points). The **F1 commercial exit signal** (measured by server‑side counters, see
-> the private suite) is what opens F2 — engineering readiness explicitly does not.
+> onboarding) exists behind configuration switches and activates without a code change.
+> **2026‑07‑13:** §F2‑TRIGGERS is closed (all four upsell entry points live) and §F2‑PROFILES has
+> its first shipped profile (`builtin-simba21-general`, officially sourced). What remains is
+> §F2‑ACT (the activation runbook — configuration only) plus further profiles as sources land.
+> The **F1 commercial exit signal** (measured by server‑side counters, see the private suite) is
+> what opens activation — engineering readiness explicitly does not.
 >
 > **Public doc.** Product / architecture / integration / tasks only. **No pricing, no go‑to‑market,
 > no monetization specifics** — those live in the private `docs-planning/vision/*.md` suite.
@@ -37,7 +39,7 @@ never a date — nothing in this plan is calendar-driven.
 | **Now** | Put the shipped artifact in circulation and watch the F1 exit counters (server-side `GET /stats`, not client analytics). | Founder | Nothing — F1 is live in production. |
 | **Now** | Keep the shipped surface honest on every change: canonical mirror test, locale-parity test, anon-footprint grep, rule-count guard. | Executor (continuous) | — |
 | **Next** | **F2 activation (§F2-ACT)** — configuration, not construction: secrets + flags + one env var + smoke. | Founder + executor (smoke) | F1 commercial signal **+** the pricing decision (both private-suite gates). |
-| **Next** | F2 close-out packages: packaged requirement profiles (**§F2-PROFILES** — content-blocked, not code-blocked) and the two remaining upsell trigger points (**§F2-TRIGGERS**). | Executor | PROFILES: official requirement sources in hand. TRIGGERS: with or just after activation. |
+| **Next** | F2 close-out packages: ~~§F2-TRIGGERS~~ **done 2026-07-13** (all four entry points live) · **§F2-PROFILES** first profile shipped (`builtin-simba21-general`, SIMBA 2.1); further profiles as official sources land. | Executor | PROFILES (remaining): official requirement sources in hand. |
 | **Next (parallel)** | F5 COBie + delivery report — 100 % client-side, zero backend, different skill profile (parser/UI, not infra). | Executor | Technically unblocked today; the `useEntitlement` gate it needs already ships. |
 | **Later** | F3 Org dashboard · F4 verify-batch endpoint (+ `api_usage`). | Executor | F3: F2 live + 1 real org with ≥2 issuers. F4: 1 real B2B/CI integrator (needs only F1). |
 | **Blocked** | F6 cloud processing + CDE monitor. | — | **D-27 ratified AND a real demand signal — both.** Do not start; do not present as imminent. |
@@ -442,16 +444,27 @@ Per profile (repeatable recipe — each profile is one self‑contained task):
 - [ ] ✅ Compile test green (profile → `IdsDocument` → runs on the shared engine).
 - [ ] ✅ One documented demo model that **passes** and one that **fails** the profile.
 
+**First profile shipped (2026‑07‑13): `builtin-simba21-general`** — Statsbygg SIMBA 2.1
+*Generelle krav* starter (source: official requirement PDF, approved 2022‑07‑01, cited per rule by
+G‑row). Covers the general requirements the source states in explicit IFC terms (G18 attributes,
+G20 relation structure); G16/G7/G24 are pinned in the source but not expressible as generic
+element rules and stay with the document. Recipe gates green in `eir-profiles.test.ts`: compile
+test + a compliant model shape that passes (score 100) and a geometry‑only shape that fails —
+through the real IDS engine. Remaining candidates (each its own task, same recipe): the Italian
+public‑procurement decree profile and the discipline‑specific SIMBA sets.
+
 ### F2-TRIGGERS · Remaining upsell entry points (S, with or just after activation)
 
-Two of the four planned entry points are live (toolbar account button, profile editors via
-`SavedRulesetPicker`). Remaining:
+**CLOSED (2026‑07‑13).** All four planned entry points are live (toolbar account button, profile
+editors via `SavedRulesetPicker`, plus the two below):
 
-- [ ] Export dialog offers sign‑in at issuance ("keep this in my history") — must never add a
-      click to the anonymous issue path (the click‑budget rule; anonymous issuance stays 1‑click).
-- [ ] Landing pricing CTA → opens the app with the account/upsell surface, nothing else changed.
-- [ ] ✅ Both fire the existing typed `pro_*` analytics events (INV‑5, no PII), and neither
-      appears at all when `VITE_CLERK_PUBLISHABLE_KEY` is absent.
+- [x] Export dialog offers sign‑in at issuance ("keep this in my history") — implemented as a
+      PASSIVE hint in the post‑success block of `ValidationExportModal` (the certificate is already
+      issued when it appears), so the anonymous issue path keeps its click budget untouched.
+- [x] Landing pricing CTA (nav "Pricing") → `openAccountModal()` + launch: opens the app with the
+      account/upsell surface, nothing else changed. i18n ×10.
+- [x] ✅ Both fire `trackProEntryClick` (`source: 'export_modal' | 'landing'` — INV‑5, no PII), and
+      neither renders at all when `VITE_CLERK_PUBLISHABLE_KEY` is absent (`isAccountEnabled()`).
 
 **Alternatives considered.** *Server‑side render/gate Pro features* → rejected: breaks the byte‑identical
 anon footprint and adds infra. *Embed ClerkJS inline* → **resolved by S‑1 = Scenario A** (embedded

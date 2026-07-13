@@ -297,6 +297,8 @@
     "copyLink": "Copiar enlace",
     "copied": "Copiado",
     "downloadSigned": "Descargar .json firmado",
-    "copyBadge": "Copiar badge markdown"
+    "copyBadge": "Copiar badge markdown",
+    "verifiableSignInHint": "Certificado emitido de forma anónima. Inicia sesión para guardarlo en tu historial.",
+    "verifiableSignInCta": "Iniciar sesión"
   }
 }

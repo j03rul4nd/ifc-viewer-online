@@ -26,9 +26,9 @@ import type {
   ValidationIssue, ValidationResult, ValidationCertificate,
   RulesConfig, ValidationProfile,
 } from '../types'
-import { trackFeatureUsed, trackCertificateIssued } from '../lib/analytics'
+import { trackFeatureUsed, trackCertificateIssued, trackProEntryClick } from '../lib/analytics'
 import { isCloudEnabled, certify, type ApiError, type CertifyResponse } from '../lib/cloud/api-client'
-import { useCloudAccountStore } from '../stores/cloudAccountStore'
+import { useCloudAccountStore, isAccountEnabled, openAccountModal } from '../stores/cloudAccountStore'
 import { buildCertifyPayload } from '../lib/certify/build-payload'
 import { sha256Hex } from '../lib/certify/canonical'
 import { modelRegistry } from '../lib/model-registry'
@@ -480,6 +480,20 @@ export default function ValidationExportModal({
                   </p>
                   {savedToHistory && !certifyState.response.deduplicated && (
                     <p className="text-[10px] text-[var(--text-muted)]">{t('export.verifiableSavedHistory')}</p>
+                  )}
+                  {/* F2-TRIGGERS: passive post-issuance hint for anonymous issuers.
+                      Never adds a click to the anonymous issue path (the cert is
+                      already issued); invisible when accounts are disabled. */}
+                  {!savedToHistory && isAccountEnabled() && (
+                    <p className="text-[10px] text-[var(--text-muted)]">
+                      {t('export.verifiableSignInHint')}{' '}
+                      <button
+                        onClick={() => { trackProEntryClick({ source: 'export_modal' }); openAccountModal() }}
+                        className="underline hover:text-[var(--accent)] transition-colors"
+                      >
+                        {t('export.verifiableSignInCta')}
+                      </button>
+                    </p>
                   )}
                   <div className="flex items-center gap-1.5">
                     <span className="flex-1 truncate font-mono text-[10px] text-[var(--text)] px-2 py-1 rounded bg-[var(--surface-2)] border border-[var(--border)]">

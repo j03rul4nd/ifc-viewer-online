@@ -290,6 +290,8 @@
     "copyLink": "Copiar ligação",
     "copied": "Copiado",
     "downloadSigned": "Transferir .json assinado",
-    "copyBadge": "Copiar badge markdown"
+    "copyBadge": "Copiar badge markdown",
+    "verifiableSignInHint": "Certificado emitido anonimamente. Inicie sessão para o guardar no seu histórico.",
+    "verifiableSignInCta": "Iniciar sessão"
   }
 }
