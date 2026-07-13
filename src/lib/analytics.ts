@@ -230,7 +230,7 @@ export function trackInviteFeedbackDismissed(props: {
  */
 export function trackRouteChanged(props: {
   to:   'viewer' | 'report'
-  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'signin' | 'signup' | 'account'
+  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'signin' | 'signup' | 'account' | 'dashboard' | 'admin'
 }): void {
   track('route_changed', props)
 }
@@ -392,6 +392,7 @@ export function trackExportClicked(props: {
  *   'report_export_json'  → validation report exported as JSON
  *   'report_export_csv'   → validation report exported as CSV
  *   'report_export_cert'  → validation certificate exported
+ *   'report_export_delivery' → client-side delivery report exported (F5)
  *   'multi_model'         → second model loaded into the scene
  *   'measurement'         → measurement tool activated
  *   'section_plane'       → clip/section plane created
@@ -405,6 +406,7 @@ export function trackFeatureUsed(props: {
     | 'report_export_json'
     | 'report_export_csv'
     | 'report_export_cert'
+    | 'report_export_delivery'
     | 'multi_model'
     | 'measurement'
     | 'section_plane'

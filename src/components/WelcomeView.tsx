@@ -9,13 +9,11 @@
 // prefers-reduced-motion swaps the animated canvas for a static gradient and
 // disables the entrance motion.
 
-import React, { Suspense, useMemo } from 'react'
+import { useMemo } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useCloudAccountStore } from '../stores/cloudAccountStore'
-
-// The shader is WebGL-heavy — lazy so it never weighs on other routes.
-const SoftAurora = React.lazy(() => import('./reactbits/SoftAurora'))
+import AuroraBackdrop from './AuroraBackdrop'
 
 interface WelcomeViewProps {
   onStart: () => void
@@ -85,11 +83,6 @@ export default function WelcomeView({ onStart, theme = 'dark' }: WelcomeViewProp
   const tile = light
     ? { background: 'rgba(255,255,255,0.70)', borderColor: 'rgba(15,17,35,0.08)' }
     : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }
-  // Keep the aurora legible behind the hero but let the page fade in at the
-  // edges — softer than a full wash so the shader actually reads.
-  const scrim = light
-    ? 'radial-gradient(130% 100% at 50% 22%, rgba(245,246,250,0) 0%, rgba(245,246,250,0.30) 62%, var(--bg) 100%)'
-    : 'radial-gradient(130% 100% at 50% 22%, rgba(10,10,12,0) 0%, rgba(10,10,12,0.35) 62%, var(--bg) 100%)'
 
   const fade = useMemo(
     () => ({
@@ -104,36 +97,8 @@ export default function WelcomeView({ onStart, theme = 'dark' }: WelcomeViewProp
 
   return (
     <div className={`relative min-h-full w-full overflow-hidden ${light ? 'lp-light' : ''}`} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      {/* Layer 1 — animated aurora shader (or a static gradient when reduced) */}
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        {reduce ? (
-          <div
-            className="absolute inset-0"
-            style={{ background: 'radial-gradient(80% 60% at 50% 0%, rgba(94,106,210,0.30), transparent 70%)' }}
-          />
-        ) : (
-          <Suspense fallback={null}>
-            <div className="absolute inset-0">
-              <SoftAurora
-                speed={0.45}
-                brightness={light ? 1.0 : 1.35}
-                color1="#5E6AD2"
-                color2="#8B5CF6"
-                bandHeight={0.62}
-                bandSpread={1.15}
-              />
-            </div>
-          </Suspense>
-        )}
-        {/* Static accent glow behind the hero — guarantees presence regardless
-            of the shader's current frame (Apple-style soft light source). */}
-        <div
-          className="absolute inset-0"
-          style={{ background: `radial-gradient(46% 34% at 50% 20%, rgba(94,106,210,${light ? 0.16 : 0.28}), transparent 70%)` }}
-        />
-        {/* Scrim for legibility — fades the shader into the page background */}
-        <div className="absolute inset-0" style={{ background: scrim }} />
-      </div>
+      {/* Layer 1 — shared aurora shader backdrop */}
+      <AuroraBackdrop light={light} />
 
       {/* Layer 2 — content */}
       <div className="relative z-10 min-h-full w-full flex items-center justify-center px-5 py-14 overflow-y-auto">

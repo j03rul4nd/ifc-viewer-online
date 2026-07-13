@@ -25,6 +25,7 @@ import {
 import { isCloudEnabled } from '../../lib/cloud/api-client'
 import { trackCheckoutStarted } from '../../lib/analytics'
 import { toast } from '../../stores/toastStore'
+import { authAppearance } from './authAppearance'
 
 interface AccountModalProps {
   onClose: () => void
@@ -232,17 +233,24 @@ export default function AccountModal({ onClose }: AccountModalProps) {
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div
         role="dialog" aria-modal="true" aria-label={t('title')}
-        className="relative z-[81] w-[460px] max-w-full max-h-[calc(100dvh-3rem)] rounded-2xl bg-[rgba(14,14,18,0.98)] backdrop-blur-[20px] border border-[var(--border-strong)] shadow-[0_24px_64px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col"
+        className="relative z-[81] w-[460px] max-w-full max-h-[calc(100dvh-3rem)] rounded-2xl bg-[rgba(14,15,20,0.92)] backdrop-blur-[24px] border border-[var(--border-strong)] shadow-[0_30px_80px_-24px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col"
       >
+        {/* Decorative accent glow (Apple-style soft light behind the header) */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-40"
+          aria-hidden
+          style={{ background: 'radial-gradient(90% 100% at 50% 0%, rgba(94,106,210,0.18), transparent 72%)' }}
+        />
+
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] shrink-0">
+        <div className="relative flex items-center justify-between px-4 py-3 border-b border-[var(--border)] shrink-0">
           <span className="text-[13px] font-semibold text-[var(--text)]">{t('title')}</span>
           <button onClick={onClose} className="w-6 h-6 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] transition-colors" aria-label={t('close')}>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M1 1l8 8M9 1L1 9"/></svg>
           </button>
         </div>
 
-        <div className="overflow-y-auto flex-1 px-4 py-4 flex flex-col gap-4">
+        <div className="relative overflow-y-auto flex-1 px-4 py-4 flex flex-col gap-4">
           {status !== 'signed-in' ? (
             /* ── Anonymous: embedded Clerk sign-in (S-1 scenario A) ─────────── */
             <div className="flex flex-col items-center gap-3">
@@ -250,12 +258,14 @@ export default function AccountModal({ onClose }: AccountModalProps) {
               {/* Combined sign-in-or-up, completing IN PLACE: the fallback
                   "redirect" is the URL the user is already on (SPA-routed by
                   main.tsx, so nothing reloads); OAuth is redirect-mode because
-                  COOP kills popups (S-1 caveat). */}
+                  COOP kills popups (S-1 caveat). Themed to sit on the modal
+                  glass (dark) via the shared appearance. */}
               <SignIn
                 routing="hash"
                 withSignUp
                 oauthFlow="redirect"
                 fallbackRedirectUrl={returnUrl}
+                appearance={authAppearance(false)}
               />
             </div>
           ) : (
@@ -267,6 +277,18 @@ export default function AccountModal({ onClose }: AccountModalProps) {
                   <p className="text-[10px] text-[var(--text-muted)]">{t('signedInHint')}</p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
+                  {/* Full-page dashboard — pushState + popstate so App's router
+                      picks up /dashboard without this lazy chunk importing it. */}
+                  <button
+                    onClick={() => {
+                      window.history.pushState(null, '', '/dashboard')
+                      window.dispatchEvent(new PopStateEvent('popstate'))
+                      onClose()
+                    }}
+                    className={smallBtn}
+                  >
+                    {t('dashboard.title')}
+                  </button>
                   {/* Clerk's UserProfile opens as an in-app modal (password, email,
                       delete account → GDPR webhook) — no portal redirect needed. */}
                   <button onClick={() => clerk.openUserProfile()} className={smallBtn}>

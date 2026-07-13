@@ -22,7 +22,14 @@ import SceneContextMenu, { type SceneContextMenuPayload } from './components/Sce
 import SharedReportView, { decodeReportHash } from './components/SharedReportView'
 import VerifyCertificateView from './components/VerifyCertificateView'
 import WelcomeView from './components/WelcomeView'
+import DashboardView from './components/dashboard/DashboardView'
+import AdminView from './components/dashboard/AdminView'
 import { isAccountEnabled, useCloudAccountStore } from './stores/cloudAccountStore'
+
+// Client-side admin gate for the /admin PREVIEW (sample data only). This is a
+// UX gate to shape who sees the console layout — NOT a security boundary; no
+// real platform data is exposed here.
+const ADMIN_EMAILS = new Set(['joelbenitezdonari@gmail.com'])
 
 // Dedicated auth pages ride in the lazy vendor-auth chunk (they import
 // @clerk/*) — loaded only when /sign-in, /sign-up or /account is visited.
@@ -234,6 +241,8 @@ export default function App() {
         if (rel === '/sign-in' || rel.startsWith('/sign-in/')) return 'signin'
         if (rel === '/sign-up' || rel.startsWith('/sign-up/')) return 'signup'
         if (rel === '/account' || rel.startsWith('/account/')) return 'account'
+        if (rel === '/dashboard' || rel.startsWith('/dashboard/')) return 'dashboard'
+        if (rel === '/admin' || rel.startsWith('/admin/')) return 'admin'
       }
     }
     return 'landing'
@@ -342,6 +351,10 @@ export default function App() {
         setRoute('signup')
       } else if (isAccountEnabled() && (rel === '/account' || rel.startsWith('/account/'))) {
         setRoute('account')
+      } else if (isAccountEnabled() && (rel === '/dashboard' || rel.startsWith('/dashboard/'))) {
+        setRoute('dashboard')
+      } else if (isAccountEnabled() && (rel === '/admin' || rel.startsWith('/admin/'))) {
+        setRoute('admin')
       } else {
         // "/" is ambiguous: it is the landing AND the (stateful, non-URL)
         // viewer. Never kick a user out of the viewer on a popstate — Clerk's
@@ -363,6 +376,8 @@ export default function App() {
   // never bounced later.
   const accountStatus = useCloudAccountStore((s) => s.status)
   const accountUserId = useCloudAccountStore((s) => s.userId)
+  const accountEmail = useCloudAccountStore((s) => s.email)
+  const isSupremeAdmin = accountStatus === 'signed-in' && !!accountEmail && ADMIN_EMAILS.has(accountEmail.toLowerCase())
   useEffect(() => {
     if (accountStatus !== 'signed-in' || !accountUserId) return
     const key = `ifcv.welcomed.${accountUserId}`
@@ -1055,6 +1070,18 @@ export default function App() {
     try { viewerApiRef.current?.cleanupSectionAndPlans() } catch { }
   }, [clearScene, setMeasurementPanelOpen, setActiveMeasurementTool, setClipPanelOpen, setClipPlaneCount, setPlansPanelOpen, setActivePlanViewId])
 
+  // Lightweight SPA navigation for the account surfaces (dashboard/admin/auth).
+  // Mirrors handleNavigateToPrivacy's pushState+setRoute pattern.
+  const handleSpaNavigate = useCallback((path: string): void => {
+    history.pushState(null, '', path)
+    if (path.startsWith('/dashboard')) setRoute('dashboard')
+    else if (path.startsWith('/admin')) setRoute('admin')
+    else if (path.startsWith('/sign-in')) setRoute('signin')
+    else if (path.startsWith('/sign-up')) setRoute('signup')
+    else if (path.startsWith('/account')) setRoute('account')
+    else setRoute('landing')
+  }, [])
+
   // ── Load a single IFC File (shared by URL params, postMessage & SDK) ───────
   const loadIfcFile = useCallback(async (file: File): Promise<void> => {
     setRoute('viewer')
@@ -1547,6 +1574,7 @@ export default function App() {
             <React.Suspense fallback={null}>
               <LazyAuthPage
                 kind={route}
+                theme={landingTheme}
                 onNavigateHome={handleNavigateToLanding}
                 onNavigateWelcome={() => {
                   history.replaceState(null, '', '/welcome')
@@ -1554,6 +1582,40 @@ export default function App() {
                 }}
               />
             </React.Suspense>
+          </motion.div>
+        )}
+
+        {route === 'dashboard' && (
+          <motion.div
+            key="dashboard"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <DashboardView
+              onNavigateHome={handleNavigateToLanding}
+              onOpenViewer={handleNavigateToLanding}
+              onNavigate={handleSpaNavigate}
+              isAdmin={isSupremeAdmin}
+              theme={landingTheme}
+            />
+          </motion.div>
+        )}
+
+        {route === 'admin' && (
+          <motion.div
+            key="admin"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <AdminView
+              onBack={() => handleSpaNavigate('/dashboard')}
+              authorized={isSupremeAdmin}
+              theme={landingTheme}
+            />
           </motion.div>
         )}
 

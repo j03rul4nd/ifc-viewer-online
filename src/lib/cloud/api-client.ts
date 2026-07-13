@@ -28,6 +28,8 @@ export type ApiErrorCode =
   | 'quota_exceeded'
   | 'service_disabled'
   | 'upgrade_required'
+  // v5 admin surface (admin-client.ts):
+  | 'account_disabled'
 
 export interface ApiError {
   code: ApiErrorCode
