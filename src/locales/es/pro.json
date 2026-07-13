@@ -97,5 +97,6 @@
     "cta": "Abre un modelo y empieza a validar",
     "hint": "Tu cuenta vive tras el botón Cuenta en la barra del visor."
   },
-  "manageProfile": "Gestionar perfil"
+  "manageProfile": "Gestionar perfil",
+  "backHome": "Volver a IFC Viewer Online"
 }

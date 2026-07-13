@@ -97,5 +97,6 @@
     "cta": "Modell öffnen und mit der Validierung beginnen",
     "hint": "Ihr Konto finden Sie hinter dem Konto-Button in der Viewer-Leiste."
   },
-  "manageProfile": "Profil verwalten"
+  "manageProfile": "Profil verwalten",
+  "backHome": "Zurück zu IFC Viewer Online"
 }

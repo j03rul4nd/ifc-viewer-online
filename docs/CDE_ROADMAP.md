@@ -6,14 +6,16 @@
 > AEC teams — "DocuSign for BIM deliveries." This document is the forward build plan: phases
 > **F0..F6** with goals, gates, ordered tasks, files‑to‑touch, and the moat each phase compounds.
 >
-> **Where we are (2026‑07‑11):** **F0 ✅ · F1 ✅ · F1.1 ✅ · F1.5 ✅ — live in production.**
+> **Where we are (2026‑07‑12):** **F0 ✅ · F1 ✅ · F1.1 ✅ · F1.5 ✅ — live in production.**
 > Anonymous signed `ConformityReport` issuance, public `/verify` with in‑browser signature check,
 > printable certificate + QR, ×10 localisation, and deep verification (drop the file → local
-> re‑hash + optional local re‑run) are all deployed. **F2 is ~85 % built and deliberately dark**:
-> the entire account surface (entitlement, ruleset sync, certificate history, API‑key management,
-> Stripe‑by‑redirect billing, webhooks) exists behind configuration switches and activates without
-> a code change. The **F1 commercial exit signal** (measured by server‑side counters, see the
-> private suite) is what opens F2 — engineering readiness explicitly does not.
+> re‑hash + optional local re‑run) are all deployed. **F2 is ~95 % built and deliberately dark**:
+> the entire account surface (entitlement, ruleset sync, certificate history, issuer branding,
+> API‑key management, Stripe‑by‑redirect billing, webhooks, in‑place sign‑in + `/welcome`
+> onboarding) exists behind configuration switches and activates without a code change. What
+> remains is §F2‑ACT (activation runbook), §F2‑PROFILES (content‑blocked) and §F2‑TRIGGERS (two
+> small entry points). The **F1 commercial exit signal** (measured by server‑side counters, see
+> the private suite) is what opens F2 — engineering readiness explicitly does not.
 >
 > **Public doc.** Product / architecture / integration / tasks only. **No pricing, no go‑to‑market,
 > no monetization specifics** — those live in the private `docs-planning/vision/*.md` suite.
@@ -22,6 +24,23 @@
 > (the 7 entities) · [`CDE_ARCHITECTURE.md`](./CDE_ARCHITECTURE.md) (how the system is shaped) ·
 > [`INTEGRATIONS.md`](./INTEGRATIONS.md) (the external contracts) · [`CONFORMANCE_PATTERNS.md`](./CONFORMANCE_PATTERNS.md)
 > (the engineering conventions each phase must follow).
+
+---
+
+## 0. Now / Next / Later — the execution picture at a glance
+
+Scan this first; everything below is the detail. "Opens when" is always a **gate condition**,
+never a date — nothing in this plan is calendar-driven.
+
+| Horizon | Work | Who | Opens when |
+|---|---|---|---|
+| **Now** | Put the shipped artifact in circulation and watch the F1 exit counters (server-side `GET /stats`, not client analytics). | Founder | Nothing — F1 is live in production. |
+| **Now** | Keep the shipped surface honest on every change: canonical mirror test, locale-parity test, anon-footprint grep, rule-count guard. | Executor (continuous) | — |
+| **Next** | **F2 activation (§F2-ACT)** — configuration, not construction: secrets + flags + one env var + smoke. | Founder + executor (smoke) | F1 commercial signal **+** the pricing decision (both private-suite gates). |
+| **Next** | F2 close-out packages: packaged requirement profiles (**§F2-PROFILES** — content-blocked, not code-blocked) and the two remaining upsell trigger points (**§F2-TRIGGERS**). | Executor | PROFILES: official requirement sources in hand. TRIGGERS: with or just after activation. |
+| **Next (parallel)** | F5 COBie + delivery report — 100 % client-side, zero backend, different skill profile (parser/UI, not infra). | Executor | Technically unblocked today; the `useEntitlement` gate it needs already ships. |
+| **Later** | F3 Org dashboard · F4 verify-batch endpoint (+ `api_usage`). | Executor | F3: F2 live + 1 real org with ≥2 issuers. F4: 1 real B2B/CI integrator (needs only F1). |
+| **Blocked** | F6 cloud processing + CDE monitor. | — | **D-27 ratified AND a real demand signal — both.** Do not start; do not present as imminent. |
 
 ---
 
@@ -90,10 +109,10 @@ graph TD
 
 - **F1 was the pivot** (dark green = shipped): everything monetizable descends from the artifact it
   ships — and the artifact is now live and circulating.
-- **F2 is amber**: code-complete except branding + packaged profiles; **dark by design** until the
-  F1 exit signal. Activation is configuration (secrets + feature flags + one env var on the SPA
-  host), never a rebuild — this keeps "distribute first" honest while removing engineering latency
-  from the moment the signal appears.
+- **F2 is amber**: code-complete except the packaged profiles (content-blocked) and two upsell
+  trigger points; **dark by design** until the F1 exit signal. Activation is configuration
+  (secrets + feature flags + one env var on the SPA host, §F2-ACT), never a rebuild — this keeps
+  "distribute first" honest while removing engineering latency from the moment the signal appears.
 - **F5 is parallelizable** with F2–F4 — pure client work, a different skill profile (parser/UI, not infra).
 - **F6 is dashed/red**: do **not** build until *both* gates open (see §F6). It is specified so it is
   ready when the signal appears, not because it is imminent.
@@ -152,9 +171,11 @@ these; none rebuilds them.
 > **As‑built note (supersedes the earlier plan sketch).** The plan named a `src/lib/pro/pro-entry.ts`
 > module; the shipped design is stronger: `main.tsx` mounts a **conditional lazy ClerkProvider**
 > (only when `VITE_CLERK_PUBLISHABLE_KEY` exists) with a `ClerkSessionBridge` that mirrors the
-> session into `cloudAccountStore`. Only two files import `@clerk/*`, both dynamic-only, so the
-> `vendor-auth` chunk stays out of the anonymous bundle **by import-graph construction** — the
-> invariant is auditable with a grep, not a convention.
+> session into `cloudAccountStore`. Every `@clerk/*` importer is reached only through a dynamic
+> `import()` / `React.lazy` into the `vendor-auth` chunk (the set grows with F2 — today
+> `ClerkSessionBridge`, `AccountModal`, `AuthPage` — but never a static import from an eager
+> module), so `vendor-auth` stays out of the anonymous bundle **by import-graph construction** —
+> the invariant is auditable with a grep of the eager chunks, not a convention.
 
 ---
 
@@ -324,12 +345,13 @@ new `src/components/VerifyCertificateView.tsx` · `public/.well-known/ifcviewero
 **Goal.** Let the issuer **P1** keep certificate history, sync rulesets, and brand reports — first
 revenue path — via a **single** entitlement pattern.
 
-**Status (2026‑07‑11).** ~85 % of F2 is **code‑complete, tested, and deployed dark**. Every
-account route degrades to `503 service_disabled` while its secret is absent; billing sits behind a
-feature flag that defaults off; the SPA account surface renders nothing (and fetches zero auth
-bytes) without its publishable key. **Opening F2 is configuration, not construction** — which is
-exactly what the "distribute before you build more" resolution demands: the moment the F1 signal
-appears, revenue infrastructure is hours away, not weeks.
+**Status (2026‑07‑12).** ~95 % of F2 is **code‑complete, tested, and deployed dark** — including
+issuer branding and the in‑place sign‑in + `/welcome` onboarding flow. Every account route
+degrades to `503 service_disabled` while its secret is absent; billing sits behind a feature flag
+that defaults off; the SPA account surface renders nothing (and fetches zero auth bytes) without
+its publishable key. **Opening F2 is configuration, not construction** — which is exactly what the
+"distribute before you build more" resolution demands: the moment the F1 signal appears, revenue
+infrastructure is hours away, not weeks.
 
 **The user flow this phase serves (P1, end to end).**
 
@@ -352,8 +374,9 @@ appears, revenue infrastructure is hours away, not weeks.
 - [x] `invoice.payment_failed` → `past_due` + 14‑day `graceUntil` in DB **and** Clerk metadata
       (webhook double‑write, idempotent by event id — tested).
 - [x] Tampered/expired JWT → **401** on every authenticated route (tested).
-- [x] Anonymous network footprint unchanged — held **by import‑graph construction**: only two
-      dynamic‑only files import `@clerk/*`; `vendor-auth` is a lazy chunk.
+- [x] Anonymous network footprint unchanged — held **by import‑graph construction**: every
+      `@clerk/*` importer is dynamic‑only into the lazy `vendor-auth` chunk (grep of the eager
+      chunks is empty).
 - [x] Tenancy boundary live: tenant tables go through `withWorkspace` (`SET LOCAL` + explicit
       WHERE); cross‑tenant ids read as **404**; API‑key count is fail‑closed against `PLAN_LIMITS`
       (`429 quota_exceeded`); anonymous issuance stays unmetered.
@@ -373,26 +396,62 @@ appears, revenue infrastructure is hours away, not weeks.
 | History (moat #1) | `/certify` accepts an **optional** session token → links the new cert to the issuer's workspace; a missing/invalid token issues anonymously, byte‑identical to F1 — **a bad token can never fail issuance** · `GET /account/certificates` |
 | Billing | `/billing/checkout` + `/billing/portal` (redirect‑only; customer persisted before the session; `client_reference_id` = user) — behind `FEATURE_BILLING=false` |
 | Webhooks | Stripe (signature‑verified, idempotent, the **only** writer of `plan`, DB→Clerk order) · Clerk (svix; `user.deleted` → GDPR cascade + live‑subscription cancel) |
+| Branding (moat #1) | Issuer logo upload in `AccountModal` (raster only, size‑capped, Pro‑gated with the needs‑Pro hint) → rendered on `/verify` + the printable certificate header behind a **client‑side raster‑only allowlist** (`isSafeLogoDataUrl` — the view never trusts the server; never svg/http). Free users keep the default header — **never a watermark** (nothing free regresses). The logo is display metadata: it is **not** part of the signed payload and re‑branding re‑signs nothing. |
+| Sign‑in flow + onboarding | Combined sign‑in/sign‑up completing **in place** (SPA router handed to Clerk; no reload, no kick out of the viewer; OAuth in redirect mode per S‑1) · `/welcome` first‑session page (Clerk‑free route reading `cloudAccountStore` only — I‑1 intact) |
 | Waivers | **Not synced** (DA‑6 as recommended — per‑project state) |
 
-**Remaining to close F2 (in order).**
+**Remaining to close F2 — three named work packages.** Each has its own gate; none blocks the others.
 
-1. **Activation (configuration, not code):** four Worker secrets, Stripe Products (blocked on the
-   private pricing decision), `FEATURE_BILLING=true`, the SPA publishable key, webhook endpoints
-   registered in both dashboards, DPA/RAT rows. Then run the full test‑mode checkout gate item.
-2. **Branding** (P1's third friction): issuer logo (≤100 KB, stored in DB — decided, not Clerk
-   metadata) rendered on the printable certificate/report header. Needs one additive schema
-   migration → rides the normal migrate‑deploy discipline. Free users keep the product's default
-   header — **never a watermark** (nothing free regresses).
-3. **Packaged requirement profiles** (client‑side, parallelizable, deepens moat #2): ready‑to‑run
-   EIR/IDS profiles for real public‑client requirement sets (Statsbygg SIMBA‑as‑IDS, the Italian
-   public‑procurement decree, an ISO 19650‑ES starter) over `compileEirToIds` — *"pass your
-   client's checks"*, not generic validation. **Each profile must be sourced from the official
-   requirement documents** (a conformance product cannot ship invented rules); each ships with a
-   compile test + a passing and a failing demo model documented.
-4. **Trigger‑point polish:** the export dialog offers sign‑in at issuance ("keep this in my
-   history") and the Landing pricing CTA — the two remaining upsell entry points of the four
-   planned (toolbar + profile editors are live).
+### F2-ACT · Activation runbook (configuration, not code)
+
+Opens on the F1 commercial signal + the pricing decision (both private‑suite gates). Every step is
+a panel/dashboard action — no deploy, no code — and each is independently reversible. Do them in
+order; stop at the first failure.
+
+- [ ] 1. Set the four Worker secrets: `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET`,
+      `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (via `wrangler secret put` — never in git).
+- [ ] 2. Create the Stripe Products/Prices and set the price‑id env var on the Worker
+      (the infra is price‑agnostic by design; the number is a private‑suite decision).
+- [ ] 3. Register the webhook endpoints in the Stripe and Clerk dashboards, pointed at the
+      deployed Worker; ✅ one test event round‑trips and lands in `webhook_events`.
+- [ ] 4. Flip `FEATURE_BILLING=true` on the Worker; ✅ `/billing/checkout` stops returning 503.
+- [ ] 5. Set `VITE_CLERK_PUBLISHABLE_KEY` in the Vercel panel + redeploy; ✅ the account button
+      appears; anonymous bundle still greps clean for `clerk`/`stripe`.
+- [ ] 6. Founder paperwork: Clerk + Stripe DPA/RAT rows (plus the Supabase row left open from F0).
+- [ ] 7. **Smoke — this is the open gate item:** full test‑mode checkout: anonymous → sign‑up →
+      checkout → return with `?billing=success` → Pro visible **without manual reload** (≤30 s
+      polling); then a `invoice.payment_failed` test event → `past_due` + 14‑day grace banner.
+- [ ] 8. Re‑verify the anonymous footprint end‑to‑end (empty Network tab for a user who never
+      clicks the account button) — the recurring cross‑phase criterion, §5.
+
+**Rollback:** unset `VITE_CLERK_PUBLISHABLE_KEY` (the SPA account surface disappears entirely)
+and/or `FEATURE_BILLING=false` (billing routes degrade to 503). No deploy in either direction.
+
+### F2-PROFILES · Packaged requirement profiles (client‑side, deepens moat #2)
+
+**Blocked by content, not code** — the EIR→IDS engine and the ruleset sync that carries profiles
+already ship. Ready‑to‑run profiles for real public‑client requirement sets (Statsbygg
+SIMBA‑as‑IDS, the Italian public‑procurement decree, an ISO 19650‑ES starter) over
+`compileEirToIds` — *"pass your client's checks"*, not generic validation.
+
+Per profile (repeatable recipe — each profile is one self‑contained task):
+
+- [ ] Source the rules **from the official requirement documents only** (a conformance product
+      cannot ship invented rules); record the source + version in the profile metadata.
+- [ ] Author the profile as data over `compileEirToIds` (no engine changes, ever).
+- [ ] ✅ Compile test green (profile → `IdsDocument` → runs on the shared engine).
+- [ ] ✅ One documented demo model that **passes** and one that **fails** the profile.
+
+### F2-TRIGGERS · Remaining upsell entry points (S, with or just after activation)
+
+Two of the four planned entry points are live (toolbar account button, profile editors via
+`SavedRulesetPicker`). Remaining:
+
+- [ ] Export dialog offers sign‑in at issuance ("keep this in my history") — must never add a
+      click to the anonymous issue path (the click‑budget rule; anonymous issuance stays 1‑click).
+- [ ] Landing pricing CTA → opens the app with the account/upsell surface, nothing else changed.
+- [ ] ✅ Both fire the existing typed `pro_*` analytics events (INV‑5, no PII), and neither
+      appears at all when `VITE_CLERK_PUBLISHABLE_KEY` is absent.
 
 **Alternatives considered.** *Server‑side render/gate Pro features* → rejected: breaks the byte‑identical
 anon footprint and adds infra. *Embed ClerkJS inline* → **resolved by S‑1 = Scenario A** (embedded
@@ -427,20 +486,31 @@ boundary (`withWorkspace`) is the same one org queries will ride. F3 is a member
 - [ ] A non‑member gets **403**.
 - [ ] Anonymous network footprint unchanged.
 
-**Ordered tasks.**
+**Ordered tasks** — each carries its own verifiable exit (✅); do not start the next before the
+previous one is green.
 
-1. Enable Clerk **Organizations** (DA‑2: Clerk Orgs + mirror, ratified) + mirror tables
-   `organizations`, `org_members` via `/webhooks/clerk` (`docs-planning/01` §6.3). A `Workspace`
-   maps 1:1 to a Clerk Organization when `org_id` is set.
-2. Worker: `GET /org/:id/certificates`, `/org/invite`, `/org/accept-invite`.
-3. Workspace‑scoped dashboard view over **existing** F1/F2 data — a query + membership layer, **not
-   new writes**.
-4. **Role matrix live:** `owner / admin / member / viewer` per
-   [`CONFORMANCE_DOMAIN.md`](./CONFORMANCE_DOMAIN.md) §3.8 — role checks in Worker route guards
-   (JWT + mirror), tenancy in RLS, one axis per layer. Resolve **DA‑15** first (whether `viewer`
-   is a Clerk custom role or a mirror-only override). Every membership change writes an
-   `AuditLog` entry. The read-only `viewer` seat is the natural landing spot for the verifier
-   (P2) entering through a shared report.
+1. **F3‑01 · DA‑15 spike (first, small).** Decide where `viewer` lives (Clerk custom role vs
+   mirror‑only override) by spiking against the Clerk Orgs mirror. The §3.8 matrix is identical
+   either way — only *where the role is stored* changes. ✅ DA‑15 recorded as decided in the
+   private risk register before any F3 route code.
+2. **F3‑02 · Orgs + mirror.** Enable Clerk **Organizations** (DA‑2: Clerk Orgs + mirror,
+   ratified) + mirror tables `organizations`, `org_members` via `/webhooks/clerk`
+   (`docs-planning/01` §6.3). A `Workspace` maps 1:1 to a Clerk Organization when `org_id` is
+   set. ✅ A membership change made in the Clerk dashboard is visible in `org_members` within one
+   webhook cycle, and every change writes a workspace‑anchored `AuditLog` entry (§3.7/§3.8).
+3. **F3‑03 · Org routes.** `GET /org/:id/certificates`, `/org/invite`, `/org/accept-invite` —
+   all through the tenant repo (`withWorkspace`), role‑guarded per §3.8. ✅ A non‑member gets
+   **403**; a member of org A referencing org B resource ids gets **404** (existence never
+   leaked); one integration test pins each.
+4. **F3‑04 · Dashboard view.** Workspace‑scoped dashboard over **existing** F1/F2 data — a query +
+   membership layer, **not new writes**. It answers the two questions a delivery lead actually
+   asks: *"what did we certify this milestone?"* and *"who issued what, when?"*. ✅ An org admin
+   sees only their org's reports; pagination is mandatory (no unbounded SELECT); `EXPLAIN` on
+   every dashboard query shows the composite `(workspace_id, …)` index.
+5. **F3‑05 · Viewer seat.** The read‑only `viewer` role live end to end — the natural landing
+   spot for a verifier (P2) arriving through a shared `/verify` link. ✅ A `viewer` can read
+   dashboards/reports and deep‑verify; **every** write path returns 403 (one matrix test per
+   §3.8 row).
 
 **Files to touch.** `ifc-cloud-api` org routes + webhook mirror · new org dashboard view in `src/` ·
 schema: `organizations`, `org_members`.
@@ -472,17 +542,28 @@ nothing starts opening exactly one read‑only door.
 - [ ] Over‑quota returns **429 + `Retry-After`**.
 - [ ] **No endpoint accepts model bytes.**
 
-**Ordered tasks.**
+**Ordered tasks** — each carries its own verifiable exit (✅).
 
-1. ~~Schema `api_keys` + management~~ — **done in F2** (table, CRUD, UI, quota). Remaining schema:
-   `api_usage` counters (per‑key, per‑period).
-2. Worker `POST /api/v1/verify-batch` — **pure lookup** over `certificates` / `ConformityReport`
-   (read‑only; barely any new compute; 100 hashes per call — the pinned public contract).
-3. Per‑key rate limiting (429 + `Retry-After`) + key‑hash check on every request (revocation has
-   no cache window by design).
-4. Document the contract in [`INTEGRATIONS.md`](./INTEGRATIONS.md); flip `FEATURE_VERIFY_BATCH`.
-5. *(Optional, F4+)* ship the **`ui=receiver`** embed preset (extends `ui=client`, D‑25) so a
-   `Submission`'s report embeds in any CDE/portal page — advances moat #3.
+1. **F4‑01 · `api_usage` counters.** ~~Schema `api_keys` + management~~ — **done in F2** (table,
+   CRUD, UI, quota). Remaining schema: `api_usage` (per‑key, per‑UTC‑day, atomic
+   `INSERT … ON CONFLICT` increment — the pattern §3.9 of the domain doc pins). ✅ The increment
+   commits in the **same transaction** as the metered read; the migration rides the R‑9 flow
+   (`migrate deploy` only, never hand‑edited).
+2. **F4‑02 · The endpoint.** `POST /api/v1/verify-batch` — **pure lookup** over
+   `certificates` / `ConformityReport` (read‑only; barely any new compute; **100 hashes per
+   call** is the pinned public contract, `400 batch_too_large` above it so CI callers chunk
+   deterministically). ✅ Contract test: no request field can carry file content; unknown hashes
+   come back as `{ "status": "not_found" }` entries — never a failed batch.
+3. **F4‑03 · Key discipline.** Per‑key rate limiting (429 + `Retry-After`) + key‑hash check on
+   every request. ✅ A key revoked in the account UI gets **401 on the very next request** — no
+   cache window (an acceptance criterion per [`INTEGRATIONS.md`](./INTEGRATIONS.md) §6, not an
+   optimisation to "improve away" later).
+4. **F4‑04 · Publish.** Document the contract in [`INTEGRATIONS.md`](./INTEGRATIONS.md); flip
+   `FEATURE_VERIFY_BATCH`. ✅ The flag is the kill‑switch: unsetting it degrades the surface to
+   503 without a deploy (the same rollback pattern as `VITE_API_URL`).
+5. **F4‑05 *(optional, F4+)* · `ui=receiver`.** The embed preset (extends `ui=client`, D‑25) so a
+   report embeds in any CDE/portal page — advances moat #3. Contract + acceptance criteria are
+   already pinned in [`INTEGRATIONS.md`](./INTEGRATIONS.md) §1.
 
 **Files to touch.** `ifc-cloud-api` `/api/v1/verify-batch` · `docs/INTEGRATIONS.md` · schema
 `api_keys`, `api_usage` · (`src/lib/url-params.ts` + `ui=client` for the `ui=receiver` seed).
@@ -509,11 +590,17 @@ certificate.
 - [ ] The Pro variant is gated **only** by `useEntitlement` — client‑side fork‑risk **accepted**
       (DA‑3, ratified: it is convenience, not a moat; server‑izing it would mean uploading the model).
 
-**Ordered tasks.**
+**Ordered tasks** — each carries its own verifiable exit (✅).
 
-1. COBie exporter (`exceljs`) reading `IfcElementQuantity` / psets via the existing takeoff pipeline.
-2. Delivery report composes `ValidationRun` + IDS + coverage into **remediation‑first prose**, reusing
-   the D‑22 corpus (`getRuleRemediation` in `src/i18n/rule-remediation.ts`). No Worker changes.
+1. **F5‑01 · COBie exporter.** `exceljs` reading `IfcElementQuantity` / psets via the existing
+   takeoff pipeline, run off‑thread with zod‑validated worker messages (invariant 13). ✅ Export
+   runs entirely in‑browser with **zero new network requests** (the Network‑tab check *is* the
+   gate, not a code review); `exceljs` ships in its own lazy chunk, never the main bundle.
+2. **F5‑02 · Delivery report.** Composes `ValidationRun` + IDS + coverage into
+   **remediation‑first prose**, reusing the D‑22 corpus (`getRuleRemediation` in
+   `src/i18n/rule-remediation.ts`) — deterministic, never generated. No Worker changes. ✅ Every
+   prose string traces to a corpus entry or an i18n key (×10 locale‑parity test); the Pro variant
+   is gated **only** by `useEntitlement` (DA‑3, fork‑risk accepted).
 
 **Files to touch.** new `src/lib/cobie/*` + report composer in `src/` · `src/i18n/rule-remediation.ts`
 (extend prose) · **no `ifc-cloud-api` changes.**
@@ -618,12 +705,18 @@ Pricing (DA‑8) and licence (DA‑11) are **out of scope for this public doc** 
 
 ---
 
-*Last updated: 2026-07-11 (**rev 3 — blueprint → shipped state**: F0/F1/F1.1/F1.5 marked SHIPPED
+*Last updated: 2026-07-12 (**rev 4 — sharper execution surface**: new §0 Now/Next/Later scan
+table; F2 remaining work restructured into three named packages with checkbox-level acceptance
+(§F2-ACT activation runbook with rollback, §F2-PROFILES per-profile recipe, §F2-TRIGGERS);
+issuer branding + in-place sign-in + `/welcome` onboarding folded into the F2 as-built inventory
+(shipped 2026-07-12, F2 now ~95 %); F3/F4/F5 ordered tasks upgraded to IDed tasks with a
+verifiable ✅ exit each — F3-01..05 (DA-15 spike first), F4-01..05, F5-01..02) · Previous: rev 3
+2026-07-11 (blueprint → shipped state: F0/F1/F1.1/F1.5 marked SHIPPED
 with production-verified gates; F2 marked BUILT-DARK with as-built inventory (session bridge
 supersedes `pro-entry.ts`; ruleset sync ×3 kinds; opt-in history; API-key management pulled
 forward from F4), activation checklist, and a user-flow narrative per phase (F2..F5); F0
 per-request-DB-client rule and F1 rate-limit hardening folded into the phase definitions;
-DA-9 resolved) · Previous: rev 2 2026-07-06 · Status: F0–F1.5 shipped · F2 configuration-gated
+DA-9 resolved) · rev 2 2026-07-06 · Status: F0–F1.5 shipped · F2 configuration-gated
 on the F1 commercial signal · Phases F0..F6 · Governing decisions D‑27 (privacy‑invariant
 amendment, ⏸️ written 2026‑07‑04 but founder‑gated — F6 still needs its ratification) + D‑28
 (immutable Submission + append‑only AuditLog, active) — both in `DECISIONS.md` after D‑26 ·

@@ -49,10 +49,10 @@ If step 2 fails, retry — the truth is already persisted and `GET /entitlement`
 
 > **Alternatives considered.** Supabase Realtime push to refresh the client on plan change — **rejected**: it forces `supabase-js` + an open socket into the client, violating I-1 (the client never talks to Supabase directly; the Worker is the only door). Consequence: freshness after checkout is done by short polling (§1.3), not push.
 
-### 1.2 The hook and the component (files to create, MIT repo)
+### 1.2 The hook and the component (shipped, MIT repo)
 
 ```
-src/hooks/useEntitlement.ts        // returns { plan, status, refresh() }
+src/hooks/useEntitlement.ts        // returns { plan, status, refresh() } — reads cloudAccountStore
 src/components/pro/RequirePlan.tsx  // <RequirePlan plan="pro" fallback={<ProUpsell/>}>…</RequirePlan>
 src/components/pro/ProUpsellModal.tsx
 ```
@@ -77,41 +77,72 @@ Mandatory UI states: `checking` (discreet spinner, never blocks the viewer), `pa
 
 ---
 
-## 2. Lazy auth under COOP/COEP — the `pro-entry.ts` boundary
+## 2. Lazy auth under COOP/COEP — the session boundary (as built)
 
-**Applies to:** F2. This is the single hardest constraint in the plan (R-1). Get it wrong and either I-1 breaks (auth in the main bundle) or auth silently fails under production headers.
+**Applies to:** F2 onward. This was the single hardest constraint in the plan (R-1); the shipped design resolves it. Get it wrong and either I-1 breaks (auth in the main bundle) or auth silently fails under production headers.
 
 ### 2.1 Why it is hard
 
 The app installs `coi-serviceworker.js`, which injects `COEP: require-corp` + `COOP: same-origin` on **every** page of the origin — required for `SharedArrayBuffer` used by `@thatopen` (see `docs/DEPLOYMENT.md`, D-07). Consequence: any cross-origin script/iframe without a correct `Cross-Origin-Resource-Policy` header is **blocked**. ClerkJS loads CDN assets and mounts iframes; embedded Stripe mounts iframes.
 
-### 2.2 The pattern
+### 2.2 The pattern (as built — supersedes the planned `pro-entry.ts` module)
 
 ```
-src/lib/pro/pro-entry.ts   →   import('@clerk/clerk-react') + mount <ClerkProvider> in an isolated portal.
+main.tsx                          → mounts a conditional lazy <ClerkProvider> ONLY if
+                                    VITE_CLERK_PUBLISHABLE_KEY exists
+vendor-auth (lazy chunk)          → holds @clerk/* + ClerkSessionBridge
+ClerkSessionBridge                → the ONLY writer of cloudAccountStore; also owns the
+                                    ?billing=success ≤30 s entitlement polling
+src/stores/cloudAccountStore.ts   → eager, Clerk-free; the only account state the anonymous
+                                    bundle knows about
 ```
 
-`pro-entry.ts` is imported **only** from these four trigger points (nowhere else):
+Rules (each one is a review-blocking check):
 
-| Trigger | File | Action |
+1. **Every `@clerk/*` importer is reached only through a dynamic `import()` / `React.lazy` into
+   `vendor-auth`.** The *set* of such files grows as F2 grows (today: `ClerkSessionBridge`,
+   `AccountModal`, `AuthPage`); what must never grow is a **static** import from an eager module —
+   that is a build-breaking event, not a style nit. The invariant holds **by import-graph
+   construction** and is auditable with a grep of the eager chunks — not by convention.
+2. **`cloudAccountStore` has exactly one writer** — the bridge. UI components read the store (or
+   `useEntitlement()`), never Clerk directly.
+3. **Without the publishable key the surface does not exist**: no account button, zero auth bytes
+   fetched — dark by construction. This is also the rollback: unset the env var, no deploy.
+4. **Clerk is handed an SPA router** (History-API `routerPush`/`routerReplace`); only a *real*
+   pathname/search change dispatches `popstate`. Clerk's internal hash steps must never reset the
+   view, and a post-auth return must never kick a user out of the viewer route.
+5. **Sign-in completes in place** (combined sign-in-or-up inside the modal,
+   `fallbackRedirectUrl` = the URL the user is already on); **social OAuth is redirect-mode,
+   always** — COOP kills popups by design (the S-1 caveat).
+
+Trigger points — the only places the account surface is reachable from:
+
+| Trigger | File | Status |
 |---|---|---|
-| Persistent "Account / Pro" button | `Toolbar.tsx` (right zone, after the `ZoneDivider` ~L696) | entry point |
-| Certificate row | `ValidationExportModal.tsx` | offer login for history/branding (anonymous issuance stays login-free — §3) |
-| "Save to my account" | `CustomProfileModal.tsx` / `IdsModal.tsx` (EIR editor) | ruleset sync → upsell if `plan==='free'` |
-| Pricing CTA | `Landing.tsx` | navigates into the app with the Pro modal open |
+| Persistent "Account" button | `Toolbar.tsx` (right zone; renders only when the key exists) | shipped |
+| "Save to my account" ruleset sync | `SavedRulesetPicker` shared by `CustomProfileModal` / `IdsModal` / `EirProfileEditor` | shipped |
+| Certificate row — "keep this in my history" | `ValidationExportModal.tsx` (anonymous issuance stays login-free — §3) | pending ([`CDE_ROADMAP.md`](./CDE_ROADMAP.md) §F2-TRIGGERS) |
+| Pricing CTA | `Landing.tsx` | pending ([`CDE_ROADMAP.md`](./CDE_ROADMAP.md) §F2-TRIGGERS) |
 
 Bundle rule: the Clerk chunk must split out as **`vendor-auth`** in `vite.config.ts` `manualChunks` (same mechanism as `vendor-three`). Verifiable: `dist/assets/index-*.js` contains no `clerk` string after build.
 
 **Stripe is redirect-only, always.** `location.href = <checkout url>` — a full-page navigation to `stripe.com` is not subject to our page's COEP. Never embed Stripe Elements.
 
-### 2.3 Spike S-1 + Plan B (must run in F0, before more code)
+### 2.3 Spike S-1 — resolved (Scenario A) · superseded alternative recorded
 
-> **Alternatives considered — auth mounting under real COEP.**
-> - **A: `@clerk/clerk-react` mounted in-page** (§2.2). Works iff Clerk assets serve correct CORP — improved by using Clerk's own-domain proxy `clerk.ifcvieweronline.eu` (also better privacy narrative). **Preferred if S-1 passes.**
-> - **B (Plan B, documented): redirect to Clerk Hosted Pages** (`accounts.ifcvieweronline.eu`); the app only handles the returned token; the bundle needs only headless `@clerk/clerk-js` for the session.
+> **S-1 outcome (F0, 2026-07-10): Scenario A.** Embedded ClerkJS works under the real
+> `require-corp` COEP — full sign-in verified headless against a production build, zero
+> COEP/CORP blocks. Binding caveat: **social OAuth in redirect mode** (COOP kills popups by
+> design). **Plan B** (redirect to Clerk Hosted Pages; the app only handles the returned token)
+> stays documented as the fallback — the §1 gating pattern is identical in both scenarios — but
+> it was not needed.
 >
-> **Reason to spike first:** the entire §1 gating pattern (hook / metadata / entitlement) is **identical in both scenarios** — only "how the login form is painted" changes. Deciding A vs B is cheap once measured, catastrophic if assumed.
-> **Consequence:** F0's gate includes "S-1 resolved and recorded in docs-planning/05 R-1." Do not build F2 UI before that line is green.
+> **Alternatives considered — superseded.** The original plan routed all auth through a
+> `src/lib/pro/pro-entry.ts` dynamic-import module called from four trigger points. The shipped
+> conditional-provider + session-bridge design is stronger: the boundary is enforced by the
+> import graph (grep-auditable) instead of by the discipline of "only import pro-entry from
+> approved call sites". If an older note references `pro-entry.ts`, read it as
+> `ClerkSessionBridge` + `cloudAccountStore`.
 
 ---
 
@@ -197,7 +228,35 @@ Rules:
 - `unwrap()` is allowed **only** at a boundary where throwing is acceptable (e.g. a top-level effect that toasts).
 - `collectResults([...])` short-circuits on the first `Err` — use it for batch certify/verify.
 
-> **Why (D-12).** OPFS fails silently in private browsing; worker errors arrive async. A single `Result` type forces callers to handle both paths at compile time. The new typed HTTP client (`src/lib/cloud/api-client.ts`) must follow the same shape so a 401/429/network error is a typed `Err`, never an unhandled rejection.
+> **Why (D-12).** OPFS fails silently in private browsing; worker errors arrive async. A single `Result` type forces callers to handle both paths at compile time. The typed HTTP clients (`src/lib/cloud/*`) follow the same shape so a 401/429/network error is a typed `Err`, never an unhandled rejection.
+
+### 4.1 The cloud client layer — one HTTP door per audience (feature-interaction rule)
+
+Two typed clients are the **only** sanctioned paths from the SPA to the cloud layer. Every future
+phase (F3 org, F4 batch, F5 Pro variants) **extends these; nothing ever adds a parallel fetch
+layer.**
+
+| Client | Audience | Shipped | Contract |
+|---|---|---|---|
+| `src/lib/cloud/api-client.ts` | Anonymous (certify, certificate lookup) | F1 | **Zero fetch without `VITE_API_URL`** (feature-detection *is* the rollback); 15 s `AbortController` timeout; Worker error envelope → typed `ApiError` (incl. `retryAfterSeconds` on 429). |
+| `src/lib/cloud/account-client.ts` | Authenticated (entitlement, keys, rulesets, history, billing, branding) | F2 | Token comes from the session bridge (§2), never passed around by components; every method returns `Result`; `upgrade_required` is a typed error the UI maps to the upsell — never an exception. |
+
+Rules for any new cloud-touching feature (each is a review-blocking check):
+
+1. **Add a method to the matching client.** A component calling `fetch()` toward the Worker
+   directly fails review — the client is where timeout, envelope-decoding, and `Result` typing
+   live once.
+2. **Degrade, never block.** An unreachable Worker must leave the local feature fully working
+   (the F1 criterion: if `/certify` fails, the local unsigned JSON certificate still downloads).
+3. **New server surface ⇒ new env/flag gate** on the same unset-the-variable rollback pattern
+   (`VITE_API_URL`, `VITE_CLERK_PUBLISHABLE_KEY`, `FEATURE_*`). Disabling is a panel action, not
+   a deploy.
+4. **Optional-auth endpoints treat a bad token as anonymous.** `/certify` is the model: a
+   missing/invalid session token issues anonymously, byte-identical to F1 — an auth failure can
+   never fail the anonymous path.
+5. **Display data from the server is untrusted.** Anything the Worker returns for rendering
+   passes a client-side allowlist before it touches the DOM (the issuer-logo rule: raster data
+   URLs only, never svg/http — the `/verify` view does not trust the server it queries).
 
 ---
 
@@ -220,7 +279,7 @@ Transferable buffers ride as `z.instanceof(ArrayBuffer)` / `z.instanceof(Uint8Ar
 
 ## 6. Store conventions (D-05)
 
-**Applies to:** any new Zustand store the platform adds (there are 13 today; a conformance feature that needs client state adds a 14th, not a new state library).
+**Applies to:** any new Zustand store the platform adds (there are 14 today — `cloudAccountStore` joined with F2; a conformance feature that needs client state adds a 15th, not a new state library).
 
 | Rule | Detail |
 |---|---|
@@ -228,6 +287,7 @@ Transferable buffers ride as `z.instanceof(ArrayBuffer)` / `z.instanceof(Uint8Ar
 | Devtools + named actions | Every store wraps with Zustand `devtools`; every mutation is a **named** action (shows up in the timeline). |
 | Typed selectors | Export typed selectors; consumers subscribe to the narrowest slice. |
 | Cross-module events via `appBus` | Do not read one store from another module directly; emit an `appBus` event (D-13, `src/lib/event-bus.ts`). `editorStore` emits on every mutation. |
+| Single-writer mirror stores | A store that mirrors an external system declares exactly one writer: `cloudAccountStore` is written only by `ClerkSessionBridge` (§2.2). Everything else reads. This is what keeps the account state consistent when the auth chunk loads late (or never). |
 | `modelRegistry` is buffer authority | Never read `modelStore.ifcBuffer` for multi-model ops; use `modelRegistry.getBuffer(modelId)` (CONTEXT invariant 14). |
 
 Naming: lowerCamelCase + `Store` suffix (`validationStore`, `uiStore`, `presentationStore`). The receiver skin extends the **existing** `uiStore.clientMode`/`ui=client` flag (D-25) into a `ui=receiver` preset — it is a flag layered over the embed chrome, **not** a parallel viewer.
@@ -338,18 +398,19 @@ flowchart LR
 
 | Pattern | First phase | Primary files |
 |---|---|---|
-| Entitlement gating (§1) | F2 | `src/hooks/useEntitlement.ts`, `src/components/pro/RequirePlan.tsx` |
-| Lazy auth under COOP/COEP (§2) | F2 (spike F0) | `src/lib/pro/pro-entry.ts`, `vite.config.ts` (`vendor-auth`) |
-| Canonical mirror contract (§3) | F1 | `src/lib/certify/canonical.ts` + `.test.ts`, `build-payload.ts`, `ValidationExportModal.tsx` |
-| `Result<T,E>` (§4) | all | `src/lib/result.ts`, `src/lib/cloud/api-client.ts` (new) |
+| Entitlement gating (§1) | F2 (shipped dark) | `src/hooks/useEntitlement.ts`, `src/components/pro/RequirePlan.tsx` |
+| Session boundary under COOP/COEP (§2) | F2 (shipped dark; S-1 resolved in F0) | `main.tsx` (conditional provider), `ClerkSessionBridge`, `src/stores/cloudAccountStore.ts`, `vite.config.ts` (`vendor-auth`) |
+| Canonical mirror contract (§3) | F1 (shipped) | `src/lib/certify/canonical.ts` + `.test.ts`, `build-payload.ts`, `ValidationExportModal.tsx` |
+| `Result<T,E>` (§4) | all | `src/lib/result.ts` |
+| Cloud client layer — one door per audience (§4.1) | F1/F2 (shipped) | `src/lib/cloud/api-client.ts`, `src/lib/cloud/account-client.ts` |
 | Worker zod protocol (§5) | all | `src/lib/worker-schemas.ts` |
 | Store conventions (§6) | all | any new `*Store.ts`, `src/lib/event-bus.ts` |
-| Edge-compute rules (§7) | F1 | private `ifc-cloud-api` Worker (clones `cf-worker/`) |
-| Tenant scoping + quotas (§7.2) | F2 | `tenantRepo` in the private Worker; `usage_counters`; `PLAN_LIMITS` constant |
-| Golden vectors + Prisma flow (§8) | F0/F1 | `*.test.ts` suites, `schema.prisma`, `docker-compose.yml` |
+| Edge-compute rules (§7) | F1 (shipped) | private `ifc-cloud-api` Worker (clones `cf-worker/`) |
+| Tenant scoping + quotas (§7.2) | F2 (shipped dark) | `withWorkspace` tenant repo in the private Worker; `usage_counters`; `PLAN_LIMITS` constant |
+| Golden vectors + Prisma flow (§8) | F0/F1 (shipped) | `*.test.ts` suites, `schema.prisma`, `docker-compose.yml` |
 
 ---
 
 **Cross-references:** [`docs/CDE_ARCHITECTURE.md`](./CDE_ARCHITECTURE.md) · [`docs/INTEGRATIONS.md`](./INTEGRATIONS.md) · [`docs/CONFORMANCE_DOMAIN.md`](./CONFORMANCE_DOMAIN.md) · [`docs/CDE_ROADMAP.md`](./CDE_ROADMAP.md). Decisions referenced: D-05, D-07, D-12, D-13, D-21, D-25, plus **D-27** (privacy-invariant amendment, ⏸️ written but founder-gated) / **D-28** (immutable Submission + append-only AuditLog, active) — both in `DECISIONS.md` since 2026-07-04. (`docs-planning/*` references point at the private, gitignored planning suite — they will not resolve in a public checkout.)
 
-*Last updated: 2026-07-06 (rev 2: I-10 tenant-scoping invariant + §7.2 tenant repo / SET LOCAL / quota fail-closed pattern) · Status: patterns handbook for the conformance platform — grounded in shipped code (certify/result/worker-schemas/share-report/validator) + docs-planning/01 & 05. Public/MIT-appropriate.*
+*Last updated: 2026-07-12 (rev 3 — **as-built alignment**: §2 rewritten from the planned `pro-entry.ts` boundary to the shipped session boundary (conditional lazy ClerkProvider + `ClerkSessionBridge` + single-writer `cloudAccountStore`, import-graph-enforced), S-1 recorded as resolved (Scenario A, OAuth redirect caveat); new §4.1 cloud client layer — one HTTP door per audience, degrade-never-block, bad-token-is-anonymous, server-display-data-is-untrusted; store count 13→14 + single-writer mirror-store rule; §9 quick reference updated with shipped status) · Previous: rev 2 2026-07-06 (I-10 tenant scoping + §7.2) · Status: patterns handbook for the conformance platform — grounded in shipped code (certify/result/worker-schemas/share-report/validator/cloud clients/session bridge) + docs-planning/01 & 05. Public/MIT-appropriate.*

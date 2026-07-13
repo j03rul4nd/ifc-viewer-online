@@ -141,12 +141,14 @@ and to `IfcViewerPreset` in `ifc-viewer-sdk.ts`; `buildSrc()` already forwards a
 
 ## 2. Signed certificate issuance & public verification
 
-**Status:** F1. The canonical codec is **already frozen and tested**:
-[`src/lib/certify/canonical.ts`](../src/lib/certify/canonical.ts) (`CertifyPayloadV1`,
-`canonicalJson`, `payloadCanonicalBytes`, `computeCertHash`) with 23 tests across
-`canonical.test.ts` + `build-payload.test.ts`, and the pure builder `buildCertifyPayload()` /
-`computeRulesetVersion()` in `src/lib/certify/build-payload.ts`. What F1 wires is the
-Worker endpoints and the SPA `/verify` route. Full spec:
+**Status: shipped (F1, live in production since 2026-07-11).** The canonical codec is **frozen
+and tested**: [`src/lib/certify/canonical.ts`](../src/lib/certify/canonical.ts)
+(`CertifyPayloadV1`, `canonicalJson`, `payloadCanonicalBytes`, `computeCertHash`) with 23 tests
+across `canonical.test.ts` + `build-payload.test.ts`, and the pure builder
+`buildCertifyPayload()` / `computeRulesetVersion()` in `src/lib/certify/build-payload.ts`. The
+Worker endpoints (`POST /certify`, `GET /certificates/:hash`) and the SPA `/verify` route are
+deployed and smoke-verified against production (signature verifies; a single altered byte is
+rejected; dedup returns the same `cert_hash`). Full spec:
 [`docs-planning/03-feature-certificado-firmado.md`](../docs-planning/03-feature-certificado-firmado.md)
 *(private planning suite — gitignored, not present in a public checkout; same for every `docs-planning/*` reference below)*.
 
@@ -225,6 +227,14 @@ See `CONFORMANCE_PATTERNS.md` for the general contract-mirror discipline (same p
 rulesets over the same file). Returns `{ match: 'cert'|'file', certificates: [{ payload,
 signature, key_id, status, created_at }] }`; `404` if none. Cacheable at the edge
 (`Cache-Control: public, max-age=300`) — immutable except on revocation.
+
+> **Additive display field — `issuer_logo` (F2 branding).** A certificate issued by a signed-in
+> Pro issuer may carry an optional `issuer_logo` (raster data URL) in the response entry. It is
+> **display metadata only**: it is *not* part of the signed `CertifyPayloadV1`, re-branding
+> re-signs nothing, and consumers must treat it as untrusted server data — the reference `/verify`
+> view renders it only through a strict client-side allowlist (`isSafeLogoDataUrl`: raster data
+> URLs only, never `svg`/`http(s)`). Any embed/receiver skin that renders it must apply the same
+> allowlist.
 
 ### Error contract (`/certify` + `/certificates/:hash`)
 
@@ -526,4 +536,11 @@ refuses the write. This is the split `CONFORMANCE_DOMAIN.md` §3.9 pins.
 
 ---
 
-*Last updated: 2026-07-10 (rev 3: audit fixes — cloud queue/container correctly attributed to F6 (was mislabelled F5 in four spots), stale §8 → §6 cross-references, keys filename unified to `ifcvieweronline-keys.json`, `revoked` added to the keys.json status enum, fail-closed quota half of the §6 split stated explicitly, certify test count attributed across both test files) · Status: SDK/embed + BCF shipped; certificate (F1) codec frozen, endpoints pending; verify-batch (F4) and CDE monitor (F6, D-27-gated) designed, not built. D-27/D-28 are written in `DECISIONS.md` (D-27 ⏸️ founder-gated, not ratified).*
+*Last updated: 2026-07-12 (rev 4: certificate surface marked SHIPPED with production-verified
+acceptance; additive `issuer_logo` display field documented on `GET /certificates/:hash` with the
+raster-only client-side allowlist rule) · Previous: rev 3 2026-07-10 (audit fixes — cloud
+queue/container attribution, keys filename, fail-closed quota split) · Status: SDK/embed + BCF
+shipped; certificate issuance + `/verify` + deep verification **live in production**; verify-batch
+(F4: `api_keys` management shipped dark with F2, consuming endpoint pending) and CDE monitor (F6,
+D-27-gated) designed, not built. D-27/D-28 are written in `DECISIONS.md` (D-27 ⏸️ founder-gated,
+not ratified).*

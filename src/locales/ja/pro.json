@@ -97,5 +97,6 @@
     "cta": "モデルを開いて検証を始める",
     "hint": "アカウントはビューアーツールバーの「アカウント」ボタンにあります。"
   },
-  "manageProfile": "プロフィール管理"
+  "manageProfile": "プロフィール管理",
+  "backHome": "IFC Viewer Online に戻る"
 }

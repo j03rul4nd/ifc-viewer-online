@@ -4,7 +4,17 @@
 >
 > This is a public, MIT-repo-appropriate document. It covers the **system architecture at architecture altitude** only: no secrets, no pricing, no go-to-market. The strategy/monetization counterpart lives in `docs-planning/vision/` (gitignored, private).
 
-The product is pivoting from a browser-only IFC viewer/validator into a **delivery-conformance platform — "DocuSign for BIM deliveries"**: a neutral, signed checkpoint that proves a BIM handoff met its contractual/EIR requirements *at the moment it was delivered*. Architecturally that pivot is small on the client and additive on the server: **~60–70 % of the core already ships** (the IDS 1.0 engine, the frozen `certify/` module, the stateless `cf-worker/`, the share-report codec, `ui=client`, `bcfStore`). What is genuinely new is a **private cloud layer** — a second Cloudflare Worker (`ifc-cloud-api`) with a Postgres database — that persists the signed artifact and, much later, opt-in server-side processing.
+The product has pivoted from a browser-only IFC viewer/validator into a **delivery-conformance platform — "DocuSign for BIM deliveries"**: a neutral, signed checkpoint that proves a BIM handoff met its contractual/EIR requirements *at the moment it was delivered*. Architecturally that pivot was small on the client and additive on the server: **~60–70 % of the core already shipped before the pivot** (the IDS 1.0 engine, the frozen `certify/` module, the stateless `cf-worker/`, the share-report codec, `ui=client`, `bcfStore`). What was genuinely new is a **private cloud layer** — a second Cloudflare Worker (`ifc-cloud-api`) with a Postgres database — that persists the signed artifact and, much later, opt-in server-side processing.
+
+> **As-built status (2026-07-12).** This architecture is no longer a blueprint. The private
+> `ifc-cloud-api` Worker + Postgres (Supabase EU — 15 tables / 10 enums, RLS + D-28 triggers
+> verified live) are **in production serving F1**: anonymous signed certificate issuance, public
+> `/verify`, deep verification. The **F2 account layer** (entitlement, tenant boundary, ruleset
+> sync, history, branding, billing-by-redirect, webhooks) is deployed **dark** behind
+> configuration switches. Both F0 spikes are closed: S-1 = Scenario A (embedded Clerk works under
+> real COEP; social OAuth by redirect), R-2 = driver-adapter smoke green. Sections below stand as
+> the governing design; where production taught a rule the blueprint missed, it is called out
+> inline (per-request Prisma client, §4.1; as-built session boundary, §6).
 
 This document draws the two-tier picture, the privacy boundary, the data flows, and a reused-vs-new inventory. The immutable/append-only storage guarantees are established in **D-28**; the single exception to the "model never leaves the browser" invariant is **D-27** (opt-in, paid, short-retention, F6-only).
 
@@ -136,14 +146,15 @@ The single most important architectural line is **what crosses the network edge*
 
 ### 4.1 Prisma driver-adapter on Cloudflare Workers (concept level)
 
-Prisma's default query engine is a native Node binary that does **not** run in a V8 isolate. The resolved path (decision, verify in the F0 spike — R-2):
+Prisma's default query engine is a native Node binary that does **not** run in a V8 isolate. The resolved path (decided, and verified green by the F0 spike — R-2):
 
 | Choice | Value | Rationale |
 |---|---|---|
 | **Driver** | `@prisma/adapter-pg` (the `pg` driver) with `previewFeatures = ["driverAdapters"]` and `nodejs_compat` in the Worker's `wrangler.toml` | Cloudflare officially supports outbound TCP via Node compat in Workers. No recurring third-party service. |
 | **NOT** | Prisma Accelerate | Extra recurring cost, an extra GDPR sub-processor to document, and an added latency hop — the adapter gives the same result without a third party. |
 | **Connection** | Supabase pooler (**Supavisor**) in transaction mode, **port 6543**, `?pgbouncer=true&connection_limit=1` | Mandatory in a serverless environment that opens/closes a connection per request. |
-| **Optional** | Cloudflare Hyperdrive in front of the same string | Transparent to Prisma; only if connection latency/errors are measured. |
+| **Client lifetime** | **One `PrismaClient` per request**, `$disconnect()` deferred via `ctx.waitUntil()` — **never cache the client per isolate** | **Production lesson (2026-07-10), now a hard rule:** an isolate-cached client holds a pooled connection that Supavisor drops when idle → the next request hangs ("worker canceled — code had hung", ~50 % intermittent 500s). Fixed by per-request client + deferred disconnect; any new route must follow it. |
+| **Optional** | Cloudflare Hyperdrive in front of the same string | Transparent to Prisma; noted as the latency lever (F0 measured ~223 ms p50 from a laptop; re-measure from the edge) — enable only on measured need. |
 
 **Two-URL pattern** (a class of bug this prevents at the schema level):
 
@@ -220,11 +231,24 @@ This has a direct architectural consequence for the new auth/pay layer:
 
 - Under `COEP: require-corp`, any cross-origin script or iframe that does **not** send a correct `Cross-Origin-Resource-Policy`/CORP header is **blocked**. ClerkJS loads from its CDN and mounts iframes; embedded Stripe mounts iframes.
 - **Therefore Stripe is redirect-only.** Checkout and the customer portal are always a *full-page navigation* to `stripe.com` (not subject to our page's COEP), never an embedded Stripe element. Return is via `?billing=success`, and entitlement reflects without a manual reload via short polling of `GET /entitlement` (≤30 s).
-- **Clerk under real COEP is the single biggest de-risking spike (S-1, R-1),** run first in F0 before any further code. Two outcomes:
-  - ✅ Clerk assets serve correct CORP (better still via Clerk's own-domain proxy `clerk.ifcvieweronline.eu`) → proceed with lazy `@clerk/clerk-react`.
-  - ❌ Blocked → **Plan B (documented):** redirect-based auth via Clerk Hosted Pages (`accounts.ifcvieweronline.eu`); the app only handles the returned token. The entitlement pattern (§7 below) is unchanged — only *how the login form is painted* changes.
+- **Clerk under real COEP was the single biggest de-risking spike (S-1, R-1)** — run in F0 and
+  **resolved: Scenario A.** Embedded ClerkJS works under the real `require-corp` COEP (full
+  sign-in verified headless against a production build, zero COEP/CORP blocks). One caveat is
+  binding: **social OAuth must use redirect mode** — COOP kills popups by design. Plan B
+  (redirect-based auth via Clerk Hosted Pages) stays documented as the fallback but was not needed.
 
-**Consequence for the bundle:** none of Clerk/Stripe is in the anonymous path. `@clerk/clerk-react` is a dynamic `import()` from `src/lib/pro/pro-entry.ts`, triggered only by explicit user action, split into a `vendor-auth` chunk in `vite.config.ts`. Acceptance criterion: `dist/assets/index-*.js` contains no `clerk`/`stripe` string after build. See [`CONFORMANCE_PATTERNS.md`](./CONFORMANCE_PATTERNS.md) §2.
+**Consequence for the bundle — the as-built session boundary** *(supersedes the originally
+planned `pro-entry.ts` module)*: none of Clerk/Stripe is in the anonymous path. `main.tsx` mounts
+a **conditional lazy ClerkProvider** only when `VITE_CLERK_PUBLISHABLE_KEY` exists; inside that
+lazy **`vendor-auth`** chunk a `ClerkSessionBridge` mirrors the session into
+`src/stores/cloudAccountStore.ts` — an eager, Clerk-free store that is the **only** thing the
+anonymous bundle knows about accounts (and the bridge is its only writer). **Every** file that
+imports `@clerk/*` is reached only through a dynamic `import()` / `React.lazy` into `vendor-auth`
+(today: `ClerkSessionBridge`, `AccountModal`, `AuthPage` — the set grows as F2 grows, but the
+loading discipline does not), so the invariant holds **by import-graph construction** and is
+auditable with a grep of the eager chunks, not by convention. Post-checkout freshness (`?billing=success` → ≤30 s
+entitlement polling) lives in the bridge. Acceptance criterion: `dist/assets/index-*.js` contains
+no `clerk`/`stripe` string after build. See [`CONFORMANCE_PATTERNS.md`](./CONFORMANCE_PATTERNS.md) §2.
 
 ---
 
@@ -261,12 +285,13 @@ flowchart LR
 | Embeddable receiver view | **Reuse + extend** | `ui=client` skin (D-25) is the seed of the P3 `ui=receiver` preset; `src/sdk/` + `src/lib/url-params.ts`. |
 | Local file hashing | **Reuse** | WebCrypto `sha256Hex` over `modelRegistry.getBuffer(modelId)` (invariant 14). |
 | — | | |
-| Private cloud Worker | **New** | `ifc-cloud-api` repo (`ifc-api` Worker) — clones `cf-worker/` conventions. |
-| Postgres persistence | **New** | Supabase (EU) via Prisma `adapter-pg` + Supavisor; entities per D-28. |
-| Entitlement / auth / billing | **New** | `useEntitlement`/`RequirePlan` (public UI), Clerk + Stripe (private Worker), lazy `vendor-auth` chunk. |
-| Domain entities | **New** | Workspace / Project / Milestone / Submission / ValidationRun / ConformityReport / AuditLog (see [`CONFORMANCE_DOMAIN.md`](./CONFORMANCE_DOMAIN.md)). |
-| verify-batch API | **New (F4)** | `POST /api/v1/verify-batch`, read-only over the certificates table; `api_keys` + `api_usage`. |
-| Cloud processing / CDE monitor | **New (F6, D-27)** | container runtime, R2 staging, `monitor_configs`, HMAC-signed outbound webhook. |
+| Private cloud Worker | **Shipped (F0/F1, live)** | `ifc-cloud-api` repo (`ifc-api` Worker, TS + Hono) — clones `cf-worker/` conventions; `/certify` + `/certificates/:hash` + `/stats` in production. |
+| Postgres persistence | **Shipped (F0, live)** | Supabase (EU) via Prisma `adapter-pg` + Supavisor; 15 tables / 10 enums migrated with RLS + D-28 triggers verified live; per-request client rule (§4.1). |
+| Entitlement / auth / billing | **Shipped dark (F2)** | `useEntitlement`/`RequirePlan` + `cloudAccountStore`/`ClerkSessionBridge` (public UI, lazy `vendor-auth`); Clerk + Stripe routes in the private Worker behind secrets + `FEATURE_BILLING`. |
+| Cloud client layer | **Shipped (F1/F2)** | `src/lib/cloud/api-client.ts` (anonymous) + `account-client.ts` (authenticated) — the **only** HTTP door per audience; every later phase extends these, never adds a second layer. |
+| Domain entities | **Schema shipped (F0); workflow phased** | All 7 entities authored once in F0 (Workspace / Project / Milestone / Submission / ValidationRun / ConformityReport / AuditLog); F1–F5 write only `conformity_reports` + billing/org/API tables — the Submission/Milestone workflow waits for a real P2 signal (see [`CDE_ROADMAP.md`](./CDE_ROADMAP.md) §2 scope honesty). |
+| verify-batch API | **Half-shipped (F4)** | `api_keys` mgmt (table, CRUD, show-once UI, fail-closed quota) shipped dark with F2; remaining: `POST /api/v1/verify-batch` + `api_usage` + per-key rate limit. |
+| Cloud processing / CDE monitor | **Not built (F6, D-27 + signal gated)** | container runtime, R2 staging, `monitor_configs`, HMAC-signed outbound webhook. |
 
 ---
 
@@ -315,4 +340,4 @@ flowchart TD
 
 ---
 
-*Last updated: 2026-07-06 (rev 2: new §4.3 multi-tenant isolation + cost control — shared-DB tenancy, SET LOCAL/RLS pattern, quota fail-closed posture, budget kill-switch) · Status: architecture blueprint (design, not built) · Cloud layer F0–F6 pending; F0 spikes S-1 (Clerk/COEP) + R-2 (Prisma adapter) block everything downstream · Public SPA unchanged and byte-identical for anonymous users at every phase · Governing decisions D-27 (opt-in server processing, F6-only, ⏸️ written 2026-07-04 but founder-gated — not ratified) + D-28 (immutable Submission / append-only AuditLog, active) are in DECISIONS.md*
+*Last updated: 2026-07-12 (rev 3 — **blueprint → as-built**: production status block; both F0 spikes closed (S-1 = Scenario A, R-2 green); per-request Prisma client rule added to §4.1 as a hard rule (production incident 2026-07-10); §6 rewritten to the as-built session boundary (conditional lazy ClerkProvider + `ClerkSessionBridge` + `cloudAccountStore` supersede the planned `pro-entry.ts`); §8 inventory upgraded from New/Reuse to Shipped/Shipped-dark/Half-shipped/Not-built with the one-HTTP-door cloud-client row) · Previous: rev 2 2026-07-06 (§4.3 multi-tenant isolation + cost control) · Status: cloud layer LIVE for F0–F1.5, F2 deployed dark; F3+ per [`CDE_ROADMAP.md`](./CDE_ROADMAP.md) · Public SPA unchanged and byte-identical for anonymous users at every phase · Governing decisions D-27 (opt-in server processing, F6-only, ⏸️ written 2026-07-04 but founder-gated — not ratified) + D-28 (immutable Submission / append-only AuditLog, active) are in DECISIONS.md*

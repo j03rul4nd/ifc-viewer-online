@@ -97,5 +97,6 @@
     "cta": "打开模型，开始验证",
     "hint": "账户入口位于查看器工具栏的“账户”按钮。"
   },
-  "manageProfile": "管理个人资料"
+  "manageProfile": "管理个人资料",
+  "backHome": "返回 IFC Viewer Online"
 }

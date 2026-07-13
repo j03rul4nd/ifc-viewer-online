@@ -22,7 +22,11 @@ import SceneContextMenu, { type SceneContextMenuPayload } from './components/Sce
 import SharedReportView, { decodeReportHash } from './components/SharedReportView'
 import VerifyCertificateView from './components/VerifyCertificateView'
 import WelcomeView from './components/WelcomeView'
-import { useCloudAccountStore } from './stores/cloudAccountStore'
+import { isAccountEnabled, useCloudAccountStore } from './stores/cloudAccountStore'
+
+// Dedicated auth pages ride in the lazy vendor-auth chunk (they import
+// @clerk/*) — loaded only when /sign-in, /sign-up or /account is visited.
+const LazyAuthPage = React.lazy(() => import('./components/account/AuthPage'))
 import type { SharedReportPayload } from './components/SharedReportView'
 import DemoGallery from './components/DemoGallery'
 import MobileBottomNav from './components/MobileBottomNav'
@@ -225,6 +229,12 @@ export default function App() {
       if (rel === '/terms'   || rel.startsWith('/terms/'))   return 'terms'
       if (rel.startsWith('/verify/')) return 'verify'
       if (rel === '/welcome' || rel.startsWith('/welcome/')) return 'welcome'
+      // Dedicated auth pages (F2) — only exist when accounts are enabled.
+      if (isAccountEnabled()) {
+        if (rel === '/sign-in' || rel.startsWith('/sign-in/')) return 'signin'
+        if (rel === '/sign-up' || rel.startsWith('/sign-up/')) return 'signup'
+        if (rel === '/account' || rel.startsWith('/account/')) return 'account'
+      }
     }
     return 'landing'
   })
@@ -326,6 +336,12 @@ export default function App() {
         setRoute('verify')
       } else if (rel === '/welcome' || rel.startsWith('/welcome/')) {
         setRoute('welcome')
+      } else if (isAccountEnabled() && (rel === '/sign-in' || rel.startsWith('/sign-in/'))) {
+        setRoute('signin')
+      } else if (isAccountEnabled() && (rel === '/sign-up' || rel.startsWith('/sign-up/'))) {
+        setRoute('signup')
+      } else if (isAccountEnabled() && (rel === '/account' || rel.startsWith('/account/'))) {
+        setRoute('account')
       } else {
         // "/" is ambiguous: it is the landing AND the (stateful, non-URL)
         // viewer. Never kick a user out of the viewer on a popstate — Clerk's
@@ -1517,6 +1533,27 @@ export default function App() {
             className="absolute inset-0 overflow-y-auto"
           >
             <WelcomeView onStart={handleNavigateToLanding} />
+          </motion.div>
+        )}
+
+        {(route === 'signin' || route === 'signup' || route === 'account') && (
+          <motion.div
+            key="auth-page"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <React.Suspense fallback={null}>
+              <LazyAuthPage
+                kind={route}
+                onNavigateHome={handleNavigateToLanding}
+                onNavigateWelcome={() => {
+                  history.replaceState(null, '', '/welcome')
+                  setRoute('welcome')
+                }}
+              />
+            </React.Suspense>
           </motion.div>
         )}
 
