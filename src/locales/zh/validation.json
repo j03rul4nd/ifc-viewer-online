@@ -292,6 +292,25 @@
     "downloadSigned": "下载已签名的 .json",
     "copyBadge": "复制徽章 Markdown",
     "verifiableSignInHint": "证书已匿名签发。登录即可将其保存到您的账户历史记录。",
-    "verifiableSignInCta": "登录"
+    "verifiableSignInCta": "登录",
+    "fmtReportLabel": "交付报告",
+    "fmtReportDesc": "可打印的单页报告：此次交付会被拒收吗？应先修复什么？",
+    "report": {
+      "title": "交付就绪报告",
+      "verdictReject": "将被拒收",
+      "verdictAtRisk": "有风险 — 交付前请检查",
+      "verdictReady": "可以交付",
+      "scoreLabel": "健康评分",
+      "profileLabel": "配置文件",
+      "coverageLabel": "已评估 {evaluated}/{total} 条规则",
+      "blockersHeading": "阻塞项 — 交付前必须修复",
+      "warningsHeading": "警告 — 请检查",
+      "affectsLabel": "影响 {count} 个构件",
+      "howToFix": "修复方法",
+      "noBlockers": "未发现阻塞项。",
+      "coverageNote": "部分规则未在此配置文件下评估；本报告仅针对已执行的规则。",
+      "disclaimer": "由签发方在交付前生成的自检报告，并非官方批准。",
+      "generatedBy": "由 {app} 于 {date} 生成"
+    }
   }
 }

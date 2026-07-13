@@ -292,6 +292,25 @@
     "downloadSigned": "署名済み .json をダウンロード",
     "copyBadge": "バッジ Markdown をコピー",
     "verifiableSignInHint": "証明書は匿名で発行されました。サインインするとアカウント履歴に保存できます。",
-    "verifiableSignInCta": "サインイン"
+    "verifiableSignInCta": "サインイン",
+    "fmtReportLabel": "納品レポート",
+    "fmtReportDesc": "印刷用1ページ：この納品は却下されるか、何を先に修正すべきか",
+    "report": {
+      "title": "納品準備レポート",
+      "verdictReject": "却下される見込み",
+      "verdictAtRisk": "リスクあり — 納品前に確認",
+      "verdictReady": "納品可能",
+      "scoreLabel": "ヘルススコア",
+      "profileLabel": "プロファイル",
+      "coverageLabel": "{total} 件中 {evaluated} 件のルールを評価",
+      "blockersHeading": "ブロッカー — 納品前に修正",
+      "warningsHeading": "警告 — 要確認",
+      "affectsLabel": "{count} 件の要素に影響",
+      "howToFix": "修正方法",
+      "noBlockers": "ブロッカーはありません。",
+      "coverageNote": "このプロファイルでは評価されなかったルールがあります。本レポートは実行されたルールについてのみ述べています。",
+      "disclaimer": "納品前に発行者が生成したセルフチェックです。公式な承認ではありません。",
+      "generatedBy": "{app} により {date} に生成"
+    }
   }
 }

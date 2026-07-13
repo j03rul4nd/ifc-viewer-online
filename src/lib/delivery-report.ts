@@ -224,7 +224,7 @@ export function buildDeliveryReportHtml(input: DeliveryReportInput): string {
 
   ${warnings.length ? `<h2>${esc(s.warningsHeading)}</h2>${warningsHtml}` : ''}
 
-  <div class="note">${esc(s.coverageNote)}</div>
+  ${input.isPartialProfile ? `<div class="note">${esc(s.coverageNote)}</div>` : ''}
 
   <footer>
     <p>${esc(s.disclaimer)}</p>

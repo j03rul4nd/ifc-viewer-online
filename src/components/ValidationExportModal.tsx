@@ -21,12 +21,13 @@ import { downloadBlob } from '../lib/diffStore'
 import { APP_VERSION } from '../lib/app-version'
 import { issuesToBcfTopics, exportBcfZip } from '../lib/bcf'
 import { getCoveredCategories, ALL_CATEGORIES } from './ValidationCoverageSummary'
-import { VALIDATION_PROFILES } from '../types'
+import { VALIDATION_PROFILES, RULE_COUNT } from '../types'
+import { buildDeliveryReportHtml, type DeliveryReportStrings } from '../lib/delivery-report'
 import type {
   ValidationIssue, ValidationResult, ValidationCertificate,
   RulesConfig, ValidationProfile,
 } from '../types'
-import { trackFeatureUsed, trackCertificateIssued, trackProEntryClick } from '../lib/analytics'
+import { trackFeatureUsed, trackCertificateIssued, trackProEntryClick, trackDeliveryReportGenerated } from '../lib/analytics'
 import { isCloudEnabled, certify, type ApiError, type CertifyResponse } from '../lib/cloud/api-client'
 import { useCloudAccountStore, isAccountEnabled, openAccountModal } from '../stores/cloudAccountStore'
 import { buildCertifyPayload } from '../lib/certify/build-payload'
@@ -34,7 +35,7 @@ import { sha256Hex } from '../lib/certify/canonical'
 import { modelRegistry } from '../lib/model-registry'
 import { buildBadgeMarkdown } from '../lib/share-report'
 
-type ExportFormat = 'json' | 'csv' | 'certificate' | 'bcf'
+type ExportFormat = 'json' | 'csv' | 'certificate' | 'bcf' | 'delivery'
 type Severity = 'error' | 'warning' | 'info'
 
 export interface ExportModelEntry {
@@ -159,7 +160,7 @@ function safeStem(fileName: string): string {
 export default function ValidationExportModal({
   models, rules, activeProfileId, customProfiles, resolveProfileName, takeSnapshot, onClose,
 }: ValidationExportModalProps) {
-  const { t } = useTranslation('validation')
+  const { t, i18n } = useTranslation('validation')
 
   const multiModel = models.length > 1
 
@@ -242,7 +243,49 @@ export default function ValidationExportModal({
         const bytes = exportBcfZip(issuesToBcfTopics(entry.result.issues, snapshot))
         return { ext: 'bcfzip', mime: 'application/octet-stream', data: bytes }
       }
+      case 'delivery':
+        return { ext: 'html', mime: 'text/html', data: buildDelivery(entry.fileName, entry.result.qualityScore ?? 0, entry.result.issues) }
     }
+  }
+
+  // ── Delivery report (F5-02) — printable "why would this get rejected" one-pager
+  function buildDelivery(fileName: string, score: number, issues: ValidationIssue[]): string {
+    const rulesActive = Object.entries(rules).filter(([, v]) => typeof v === 'boolean' && v).length
+    const counts = countBySeverity(issues)
+    trackDeliveryReportGenerated({
+      errors: counts.error, warnings: counts.warning, rules_evaluated: rulesActive,
+    })
+    const s: DeliveryReportStrings = {
+      title: t('export.report.title'),
+      verdictReject: t('export.report.verdictReject'),
+      verdictAtRisk: t('export.report.verdictAtRisk'),
+      verdictReady: t('export.report.verdictReady'),
+      scoreLabel: t('export.report.scoreLabel'),
+      profileLabel: t('export.report.profileLabel'),
+      coverageLabel: t('export.report.coverageLabel'),
+      blockersHeading: t('export.report.blockersHeading'),
+      warningsHeading: t('export.report.warningsHeading'),
+      affectsLabel: t('export.report.affectsLabel'),
+      howToFix: t('export.report.howToFix'),
+      noBlockers: t('export.report.noBlockers'),
+      coverageNote: t('export.report.coverageNote'),
+      disclaimer: t('export.report.disclaimer'),
+      generatedBy: t('export.report.generatedBy'),
+      // Product names — identical in every locale, so not i18n keys.
+      toolNames: { revit: 'Revit', archicad: 'Archicad', tekla: 'Tekla Structures', allplan: 'Allplan' },
+    }
+    return buildDeliveryReportHtml({
+      fileName,
+      score,
+      profileName,
+      rulesEvaluated: rulesActive,
+      rulesTotal: RULE_COUNT,
+      isPartialProfile: rulesActive < RULE_COUNT,
+      issues,
+      locale: i18n.language.slice(0, 2),
+      strings: s,
+      appLabel: `IFC Viewer Online v${APP_VERSION}`,
+    })
   }
 
   function recomputeStats(issues: ValidationIssue[]) {
@@ -292,6 +335,13 @@ export default function ValidationExportModal({
         const topics = selectedModels.flatMap((m) => issuesToBcfTopics(m.result.issues, snapshot))
         return { ext: 'bcfzip', mime: 'application/octet-stream', data: exportBcfZip(topics) }
       }
+      case 'delivery': {
+        // Combined report: all issues; the headline score is the WORST model's
+        // (a delivery is judged by its weakest file — never average upwards).
+        const worst = Math.min(...selectedModels.map((m) => m.result.qualityScore ?? 0))
+        const names = selectedModels.map((m) => m.fileName).join(' + ')
+        return { ext: 'html', mime: 'text/html', data: buildDelivery(names, worst, allIssues) }
+      }
     }
   }
 
@@ -327,11 +377,15 @@ export default function ValidationExportModal({
       downloadBlob(new Blob([zipped], { type: 'application/zip' }), `validation-${format}-${stamp}.zip`)
     }
 
-    const featureByFormat = {
-      json: 'report_export_json', csv: 'report_export_csv',
-      certificate: 'report_export_cert', bcf: 'bcf_export',
-    } as const
-    trackFeatureUsed({ feature: featureByFormat[format] })
+    // 'delivery' has its own dedicated event (trackDeliveryReportGenerated,
+    // fired at build time with severity counts) — no feature ping on top.
+    if (format !== 'delivery') {
+      const featureByFormat = {
+        json: 'report_export_json', csv: 'report_export_csv',
+        certificate: 'report_export_cert', bcf: 'bcf_export',
+      } as const
+      trackFeatureUsed({ feature: featureByFormat[format] })
+    }
     onClose()
   }
 
@@ -378,6 +432,7 @@ export default function ValidationExportModal({
     { id: 'csv',         label: t('export.fmtCsvLabel'),   desc: t('export.fmtCsvDesc'),   tag: 'CSV',  color: 'var(--ok)' },
     { id: 'certificate', label: t('export.fmtCertLabel'),  desc: t('export.fmtCertDesc'),  tag: 'CERT', color: '#F5A623' },
     { id: 'bcf',         label: t('export.fmtBcfLabel'),   desc: t('export.fmtBcfDesc'),   tag: 'BCF',  color: 'var(--accent)' },
+    { id: 'delivery',    label: t('export.fmtReportLabel'), desc: t('export.fmtReportDesc'), tag: 'HTML', color: '#5E9ED6' },
   ]
 
   const SEVERITIES: Array<{ id: Severity; label: string; color: string }> = [

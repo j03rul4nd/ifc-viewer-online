@@ -636,6 +636,15 @@ export function trackCheckoutCompleted(props: { plan: 'pro' | 'org' }): void {
   track('checkout_completed', props)
 }
 
+/** F5-02 delivery report — counts only, never file names or issue content. */
+export function trackDeliveryReportGenerated(props: {
+  errors: number
+  warnings: number
+  rules_evaluated: number
+}): void {
+  track('delivery_report_generated', props)
+}
+
 /**
  * A /verify visitor deep-verified a certificate against the actual file
  * (F1.5): re-hash of the dropped bytes, or a full local engine re-run.

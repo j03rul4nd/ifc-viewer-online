@@ -299,6 +299,25 @@
     "downloadSigned": "Descargar .json firmado",
     "copyBadge": "Copiar badge markdown",
     "verifiableSignInHint": "Certificado emitido de forma anónima. Inicia sesión para guardarlo en tu historial.",
-    "verifiableSignInCta": "Iniciar sesión"
+    "verifiableSignInCta": "Iniciar sesión",
+    "fmtReportLabel": "Informe de entrega",
+    "fmtReportDesc": "Una página imprimible: ¿rechazarían esta entrega y qué corregir primero?",
+    "report": {
+      "title": "Informe de preparación de entrega",
+      "verdictReject": "Sería rechazada",
+      "verdictAtRisk": "En riesgo — revisar antes de entregar",
+      "verdictReady": "Lista para entregar",
+      "scoreLabel": "Health Score",
+      "profileLabel": "Perfil",
+      "coverageLabel": "{evaluated} de {total} reglas evaluadas",
+      "blockersHeading": "Bloqueantes — corregir antes de entregar",
+      "warningsHeading": "Avisos — revisar",
+      "affectsLabel": "Afecta a {count} elemento(s)",
+      "howToFix": "Cómo corregirlo",
+      "noBlockers": "Sin bloqueantes.",
+      "coverageNote": "Algunas reglas no se evaluaron con este perfil; este informe solo habla de las reglas ejecutadas.",
+      "disclaimer": "Autocomprobación generada por el emisor antes de la entrega. No es una aprobación oficial.",
+      "generatedBy": "Generado por {app} el {date}"
+    }
   }
 }

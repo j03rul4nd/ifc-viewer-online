@@ -292,6 +292,25 @@
     "downloadSigned": "Baixa el .json signat",
     "copyBadge": "Copia el badge markdown",
     "verifiableSignInHint": "Certificat emès de manera anònima. Inicia la sessió per conservar-lo al teu historial.",
-    "verifiableSignInCta": "Inicia la sessió"
+    "verifiableSignInCta": "Inicia la sessió",
+    "fmtReportLabel": "Informe de lliurament",
+    "fmtReportDesc": "Una pàgina imprimible: rebutjarien aquest lliurament i què cal corregir primer?",
+    "report": {
+      "title": "Informe de preparació del lliurament",
+      "verdictReject": "Seria rebutjat",
+      "verdictAtRisk": "En risc — revisar abans de lliurar",
+      "verdictReady": "A punt per lliurar",
+      "scoreLabel": "Health Score",
+      "profileLabel": "Perfil",
+      "coverageLabel": "{evaluated} de {total} regles avaluades",
+      "blockersHeading": "Bloquejants — corregir abans de lliurar",
+      "warningsHeading": "Avisos — revisar",
+      "affectsLabel": "Afecta {count} element(s)",
+      "howToFix": "Com corregir-ho",
+      "noBlockers": "Sense bloquejants.",
+      "coverageNote": "Algunes regles no s'han avaluat amb aquest perfil; aquest informe només parla de les regles executades.",
+      "disclaimer": "Autocomprovació generada per l'emissor abans del lliurament. No és una aprovació oficial.",
+      "generatedBy": "Generat per {app} el {date}"
+    }
   }
 }

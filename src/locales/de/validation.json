@@ -292,6 +292,25 @@
     "downloadSigned": "Signierte .json herunterladen",
     "copyBadge": "Badge-Markdown kopieren",
     "verifiableSignInHint": "Zertifikat anonym ausgestellt. Melde dich an, um es in deinem Kontoverlauf zu behalten.",
-    "verifiableSignInCta": "Anmelden"
+    "verifiableSignInCta": "Anmelden",
+    "fmtReportLabel": "Lieferbericht",
+    "fmtReportDesc": "Druckbare Einseiter: Würde diese Lieferung abgelehnt, und was zuerst beheben?",
+    "report": {
+      "title": "Bericht zur Lieferbereitschaft",
+      "verdictReject": "Würde abgelehnt",
+      "verdictAtRisk": "Riskant — vor der Lieferung prüfen",
+      "verdictReady": "Lieferbereit",
+      "scoreLabel": "Health Score",
+      "profileLabel": "Profil",
+      "coverageLabel": "{evaluated} von {total} Regeln geprüft",
+      "blockersHeading": "Blocker — vor der Lieferung beheben",
+      "warningsHeading": "Warnungen — prüfen",
+      "affectsLabel": "Betrifft {count} Element(e)",
+      "howToFix": "So wird es behoben",
+      "noBlockers": "Keine Blocker gefunden.",
+      "coverageNote": "Einige Regeln wurden mit diesem Profil nicht geprüft; dieser Bericht gilt nur für die ausgeführten Regeln.",
+      "disclaimer": "Selbstprüfung des Ausstellers vor der Lieferung. Keine offizielle Freigabe.",
+      "generatedBy": "Erstellt von {app} am {date}"
+    }
   }
 }
