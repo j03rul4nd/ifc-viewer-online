@@ -26,10 +26,13 @@ import DashboardView from './components/dashboard/DashboardView'
 import AdminView from './components/dashboard/AdminView'
 import { isAccountEnabled, useCloudAccountStore } from './stores/cloudAccountStore'
 
-// Client-side admin gate for the /admin PREVIEW (sample data only). This is a
-// UX gate to shape who sees the console layout — NOT a security boundary; no
-// real platform data is exposed here.
-const ADMIN_EMAILS = new Set(['joelbenitezdonari@gmail.com'])
+// Client-side admin gate: a UX fast-path only — the REAL boundary is the
+// Worker (users.global_role = super_admin; non-admins read 404 on /admin/*).
+// Keyed by Clerk user id, NOT email: this repo and the shipped bundle are
+// public, and a personal email hardcoded here would be exposed to anyone
+// (GDPR data-minimisation + a phishing-target signal). The id is pseudonymous
+// and useless without the Worker-side role.
+const ADMIN_USER_IDS = new Set(['user_3GP6gqE5WAmVzHobM0BosBk9A58'])
 
 // Dedicated auth pages ride in the lazy vendor-auth chunk (they import
 // @clerk/*) — loaded only when /sign-in, /sign-up or /account is visited.
@@ -376,8 +379,7 @@ export default function App() {
   // never bounced later.
   const accountStatus = useCloudAccountStore((s) => s.status)
   const accountUserId = useCloudAccountStore((s) => s.userId)
-  const accountEmail = useCloudAccountStore((s) => s.email)
-  const isSupremeAdmin = accountStatus === 'signed-in' && !!accountEmail && ADMIN_EMAILS.has(accountEmail.toLowerCase())
+  const isSupremeAdmin = accountStatus === 'signed-in' && !!accountUserId && ADMIN_USER_IDS.has(accountUserId)
   useEffect(() => {
     if (accountStatus !== 'signed-in' || !accountUserId) return
     const key = `ifcv.welcomed.${accountUserId}`
