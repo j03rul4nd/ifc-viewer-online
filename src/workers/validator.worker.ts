@@ -89,7 +89,11 @@ import {
   IFCCONVERSIONBASEDUNIT,
   IFCUNITASSIGNMENT,
   IFCRELCONNECTSPORTTOELEMENT,
+  IFCPERSON,
+  IFCORGANIZATION,
 } from 'web-ifc'
+import { cobieSheetFor, type CobieSheet } from '../lib/cobie/cobie-mapping'
+import type { CobieRow, CobieExtractResult } from '../lib/worker-schemas'
 
 // ── Typed IFC entity shapes ───────────────────────────────────────────────────
 // web-ifc GetLine returns objects where each attribute is an IfcValue wrapper.
@@ -3076,10 +3080,92 @@ async function handleComputeTakeoff(msg: ComputeTakeoffMessage): Promise<void> {
 
 // ── Worker message handler ────────────────────────────────────────────────────
 
-self.onmessage = (e: MessageEvent<ValidateMessage | BuildTreeMessage | ComputeTakeoffMessage>): void => {
+// ── COBie extraction (F5 P2) ──────────────────────────────────────────────────
+// Same open→walk→close skeleton as handleComputeTakeoff: this worker already
+// owns the WASM + traversal, so COBie is a message type, NOT a 9th worker
+// (each worker costs ~3-4 MB of WASM — T-F5 pinned decision). Coverage grows
+// with TYPE_NAME: classes the validator does not map yet are simply not rows.
+async function handleExtractCobie(msg: ExtractCobieMessage): Promise<void> {
+  const { id, buffer } = msg
+  const startTime = Date.now()
+
+  const bufferCheck = validateIfcBuffer(buffer, 'the model buffer')
+  if (!bufferCheck.ok) {
+    post({ type: 'error', id, message: bufferCheck.reason! })
+    return
+  }
+
+  let api: IfcAPI | null = null
+  let modelId = -1
+
+  try {
+    api = new IfcAPI()
+    api.SetWasmPath(
+      import.meta.env.DEV
+        ? `${import.meta.env.BASE_URL}node_modules/web-ifc/`
+        : import.meta.env.BASE_URL,
+    )
+    await api.Init()
+    modelId = api.OpenModel(new Uint8Array(buffer))
+
+    const rows: CobieRow[] = []
+    const pushLines = (typeHash: number, ifcClass: string, sheet: CobieSheet): void => {
+      const ids = api!.GetLineIDsWithType(modelId, typeHash)
+      for (let i = 0; i < ids.size(); i++) {
+        const eid = ids.get(i)
+        try {
+          const line = api!.GetLine(modelId, eid, false) as {
+            GlobalId?: MaybeString
+            Name?: MaybeString
+            /** IfcPerson has no Name — identify by FamilyName/Identification. */
+            FamilyName?: MaybeString
+            Identification?: MaybeString
+          }
+          const name = getStr(line.Name) || getStr(line.FamilyName) || getStr(line.Identification) || null
+          rows.push({
+            sheet,
+            expressId: eid,
+            ifcClass,
+            globalId: getStr(line.GlobalId) || null,
+            name,
+          })
+        } catch { /* malformed line — skip, never abort the extraction */ }
+      }
+    }
+
+    for (const [hash, className] of Object.entries(TYPE_NAME)) {
+      const sheet = cobieSheetFor(className)
+      if (sheet) pushLines(Number(hash), className, sheet)
+    }
+    // Contacts come from header entities, outside TYPE_NAME's element map.
+    pushLines(IFCPERSON, 'IfcPerson', 'Contact')
+    pushLines(IFCORGANIZATION, 'IfcOrganization', 'Contact')
+
+    // Per-sheet honesty counters (the FM-readiness badge aggregates these —
+    // it is NOT a new validator rule; the canonical rule count stays put).
+    const counts: Record<string, { rows: number; named: number; withGuid: number }> = {}
+    for (const r of rows) {
+      const c = (counts[r.sheet] ??= { rows: 0, named: 0, withGuid: 0 })
+      c.rows++
+      if (r.name) c.named++
+      if (r.globalId) c.withGuid++
+    }
+
+    post({ type: 'cobie-done', id, result: { rows, counts, durationMs: Date.now() - startTime } })
+  } catch (err: unknown) {
+    post({ type: 'error', id, message: err instanceof Error ? err.message : 'COBie extraction failed' })
+  } finally {
+    if (api && modelId !== -1) {
+      try { api.CloseModel(modelId) } catch (err: unknown) { log.debug('handleExtractCobie: CloseModel failed:', err) }
+    }
+  }
+}
+
+self.onmessage = (e: MessageEvent<ValidateMessage | BuildTreeMessage | ComputeTakeoffMessage | ExtractCobieMessage>): void => {
   if (e.data.type === 'validate')        void handleValidate(e.data as ValidateMessage)
   if (e.data.type === 'build-tree')      void handleBuildTree(e.data as BuildTreeMessage)
   if (e.data.type === 'compute-takeoff') void handleComputeTakeoff(e.data as ComputeTakeoffMessage)
+  if (e.data.type === 'extract-cobie')   void handleExtractCobie(e.data as ExtractCobieMessage)
 }
 
 // ── Message types ─────────────────────────────────────────────────────────────
@@ -3099,6 +3185,12 @@ interface BuildTreeMessage {
   buffer: ArrayBuffer
 }
 
+interface ExtractCobieMessage {
+  type: 'extract-cobie'
+  id: string
+  buffer: ArrayBuffer
+}
+
 interface ComputeTakeoffMessage {
   type: 'compute-takeoff'
   id: string
@@ -3111,4 +3203,5 @@ export type ValidatorOutMessage =
   | { type: 'partial';      id: string; ruleId: string; issues: ValidationIssue[]; progress: number; status?: 'ok' | 'failed'; error?: string }
   | { type: 'done';         id: string; result: ValidationResult }
   | { type: 'takeoff-done'; id: string; result: TakeoffResult }
+  | { type: 'cobie-done';   id: string; result: CobieExtractResult }
   | { type: 'error';        id: string; message: string }

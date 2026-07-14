@@ -819,6 +819,7 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
         })
         .with({ type: 'tree-done' },    () => { /* no-op */ })
         .with({ type: 'takeoff-done' }, () => { /* no-op */ })
+        .with({ type: 'cobie-done' },   () => { /* no-op */ })
         .exhaustive()
     }
 
@@ -857,6 +858,7 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
         })
         .with({ type: 'tree-done' },    () => { /* no-op */ })
         .with({ type: 'takeoff-done' }, () => { /* no-op */ })
+        .with({ type: 'cobie-done' },   () => { /* no-op */ })
         .exhaustive()
     }
 

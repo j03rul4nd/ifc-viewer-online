@@ -91,10 +91,11 @@ export async function computeTakeoff(modelId: string): Promise<void> {
           cleanup()
           resolve()
         })
-        .with({ type: 'tree' },      () => { /* not takeoff */ })
-        .with({ type: 'tree-done' }, () => { /* not takeoff */ })
-        .with({ type: 'partial' },   () => { /* not takeoff */ })
-        .with({ type: 'done' },      () => { /* not takeoff */ })
+        .with({ type: 'tree' },       () => { /* not takeoff */ })
+        .with({ type: 'tree-done' },  () => { /* not takeoff */ })
+        .with({ type: 'partial' },    () => { /* not takeoff */ })
+        .with({ type: 'done' },       () => { /* not takeoff */ })
+        .with({ type: 'cobie-done' }, () => { /* not takeoff */ })
         .exhaustive()
     }
 

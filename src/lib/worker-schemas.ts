@@ -173,6 +173,34 @@ export const TakeoffDoneMsgSchema = z.object({
   result: TakeoffResultSchema,
 })
 
+// ── COBie extraction (F5 P2 — `extract-cobie` on the validator worker) ────────
+
+export const CobieRowSchema = z.object({
+  sheet:     z.enum(['Floor', 'Space', 'Zone', 'Type', 'Component', 'System', 'Contact']),
+  expressId: z.number(),
+  ifcClass:  z.string(),
+  globalId:  z.string().nullable(),
+  name:      z.string().nullable(),
+})
+
+export const CobieResultSchema = z.object({
+  rows: z.array(CobieRowSchema),
+  /** Per-sheet honesty counters — the completeness badge reads these. */
+  counts: z.record(z.string(), z.object({
+    rows: z.number(), named: z.number(), withGuid: z.number(),
+  })),
+  durationMs: z.number(),
+})
+
+export type CobieRow = z.infer<typeof CobieRowSchema>
+export type CobieExtractResult = z.infer<typeof CobieResultSchema>
+
+export const CobieDoneMsgSchema = z.object({
+  type:   z.literal('cobie-done'),
+  id:     z.string(),
+  result: CobieResultSchema,
+})
+
 export const ValidatorOutMsgSchema = z.discriminatedUnion('type', [
   ValidatorTreeMsgSchema,
   ValidatorPartialMsgSchema,
@@ -180,6 +208,7 @@ export const ValidatorOutMsgSchema = z.discriminatedUnion('type', [
   ValidatorErrorMsgSchema,
   ValidatorTreeDoneMsgSchema,
   TakeoffDoneMsgSchema,
+  CobieDoneMsgSchema,
 ])
 
 // ── Export worker OUT messages ─────────────────────────────────────────────────
