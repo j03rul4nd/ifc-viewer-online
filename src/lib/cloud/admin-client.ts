@@ -54,6 +54,7 @@ const jsonInit = (method: string, body: unknown): RequestInit => ({
 // ── Types (snake_case: the Worker's wire format) ──────────────────────────────
 
 export type PlanId = 'free' | 'pro' | 'org'
+export type OrgRole = 'owner' | 'admin' | 'manager' | 'member' | 'viewer'
 
 export interface AdminOverview {
   users: number
@@ -121,6 +122,46 @@ export interface AdminWorkspaceUsage {
   api_keys: { id: string; prefix: string; revoked: boolean; usage: { date: string; calls: number }[] }[]
 }
 
+/** Clerk-resolved identity — the Worker audits every read (identity_viewed). */
+export interface AdminIdentity {
+  email: string | null
+  name: string | null
+  last_sign_in_at: string | null
+}
+
+export interface AdminOrgMember {
+  user_id: string
+  role: OrgRole
+  created_at: string
+  removed_at: string | null
+}
+
+export interface AdminOrgDetail {
+  id: string
+  name: string
+  status: 'active' | 'suspended' | 'closed'
+  plan: PlanId
+  plan_status: string
+  seats: number
+  limit_overrides: Record<string, number> | null
+  custom_plan: { id: string; name: string } | null
+  stripe_customer_id: string | null
+  members: AdminOrgMember[]
+  departments: { id: string; name: string; parent_id: string | null; archived: boolean; members: number; projects: number }[]
+  workspaces: { id: string; name: string; plan: PlanId; status: string }[]
+  created_at: string
+}
+
+export interface AdminAuditEntry {
+  id: string
+  actor_user_id: string | null
+  action: string
+  target_type: 'user' | 'organization' | 'workspace' | 'custom_plan'
+  target_id: string
+  metadata: Record<string, unknown>
+  created_at: string
+}
+
 export interface AdminCustomPlan {
   id: string
   name: string
@@ -153,8 +194,27 @@ export const patchAdminUser = (
 export const deleteAdminUser = (token: string, id: string) =>
   request<{ deleted: boolean }>(token, `/admin/users/${encodeURIComponent(id)}`, { method: 'DELETE' })
 
+export const getAdminUserIdentity = (token: string, id: string) =>
+  request<AdminIdentity>(token, `/admin/users/${encodeURIComponent(id)}/identity`)
+
+/** GDPR Art. 15/20 bundle — the caller downloads it as JSON. */
+export const getAdminUserExport = (token: string, id: string) =>
+  request<Record<string, unknown>>(token, `/admin/users/${encodeURIComponent(id)}/export`)
+
 export const listAdminOrgs = (token: string) =>
   request<{ organizations: AdminOrg[] }>(token, '/admin/organizations')
+
+export const getAdminOrg = (token: string, id: string) =>
+  request<AdminOrgDetail>(token, `/admin/organizations/${encodeURIComponent(id)}`)
+
+export const addAdminOrgMember = (token: string, orgId: string, body: { userId: string; role: OrgRole }) =>
+  request<{ ok: boolean }>(token, `/admin/organizations/${encodeURIComponent(orgId)}/members`, jsonInit('POST', body))
+
+export const patchAdminOrgMember = (token: string, orgId: string, userId: string, role: OrgRole) =>
+  request<{ ok: boolean }>(token, `/admin/organizations/${encodeURIComponent(orgId)}/members/${encodeURIComponent(userId)}`, jsonInit('PATCH', { role }))
+
+export const removeAdminOrgMember = (token: string, orgId: string, userId: string) =>
+  request<{ ok: boolean }>(token, `/admin/organizations/${encodeURIComponent(orgId)}/members/${encodeURIComponent(userId)}`, { method: 'DELETE' })
 
 export const patchAdminOrg = (
   token: string, id: string,
@@ -193,3 +253,16 @@ export const patchAdminPlan = (
   token: string, id: string,
   body: Partial<{ name: string; description: string | null; limits: Record<string, number>; priceCentsMonth: number | null; active: boolean }>,
 ) => request<{ ok: boolean }>(token, `/admin/plans/${encodeURIComponent(id)}`, jsonInit('PATCH', body))
+
+export const listAdminAudit = (
+  token: string,
+  filter: { targetType?: string; targetId?: string; action?: string; cursor?: string } = {},
+) => {
+  const qs = new URLSearchParams()
+  if (filter.targetType) qs.set('targetType', filter.targetType)
+  if (filter.targetId) qs.set('targetId', filter.targetId)
+  if (filter.action) qs.set('action', filter.action)
+  if (filter.cursor) qs.set('cursor', filter.cursor)
+  const q = qs.toString()
+  return request<{ entries: AdminAuditEntry[]; next_cursor: string | null }>(token, `/admin/audit${q ? `?${q}` : ''}`)
+}
