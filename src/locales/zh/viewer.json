@@ -169,5 +169,11 @@
     "showFullModel": "显示完整模型",
     "showAllHidden": "显示 {{count}} 个隐藏构件",
     "showAllHidden_other": "显示 {{count}} 个隐藏构件"
+  },
+  "fm": {
+    "ready": "可进行FM交付",
+    "partial": "部分完成 — 交付前存在缺口",
+    "insufficient": "不足以进行FM交付",
+    "tip": "FM交付就绪度：{{score}}/100（COBie完整性 — 非官方认证）"
   }
 }

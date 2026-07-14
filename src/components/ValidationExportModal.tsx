@@ -27,7 +27,10 @@ import type {
   ValidationIssue, ValidationResult, ValidationCertificate,
   RulesConfig, ValidationProfile,
 } from '../types'
-import { trackFeatureUsed, trackCertificateIssued, trackProEntryClick, trackDeliveryReportGenerated } from '../lib/analytics'
+import { trackFeatureUsed, trackCertificateIssued, trackProEntryClick, trackDeliveryReportGenerated, trackCobieExported } from '../lib/analytics'
+import { extractCobie } from '../lib/cobie/extract'
+import { buildCobieXlsx } from '../lib/cobie/xlsx'
+import { useCobieStore } from '../stores/cobieStore'
 import { isCloudEnabled, certify, type ApiError, type CertifyResponse } from '../lib/cloud/api-client'
 import { useCloudAccountStore, isAccountEnabled, openAccountModal } from '../stores/cloudAccountStore'
 import { buildCertifyPayload } from '../lib/certify/build-payload'
@@ -35,7 +38,7 @@ import { sha256Hex } from '../lib/certify/canonical'
 import { modelRegistry } from '../lib/model-registry'
 import { buildBadgeMarkdown } from '../lib/share-report'
 
-type ExportFormat = 'json' | 'csv' | 'certificate' | 'bcf' | 'delivery'
+type ExportFormat = 'json' | 'csv' | 'certificate' | 'bcf' | 'delivery' | 'cobie'
 type Severity = 'error' | 'warning' | 'info'
 
 export interface ExportModelEntry {
@@ -245,6 +248,9 @@ export default function ValidationExportModal({
       }
       case 'delivery':
         return { ext: 'html', mime: 'text/html', data: buildDelivery(entry.fileName, entry.result.qualityScore ?? 0, entry.result.issues) }
+      case 'cobie':
+        // Unreachable: handleDownload routes 'cobie' to the async path first.
+        throw new Error('cobie is handled by handleCobieDownload')
     }
   }
 
@@ -342,15 +348,65 @@ export default function ValidationExportModal({
         const names = selectedModels.map((m) => m.fileName).join(' + ')
         return { ext: 'html', mime: 'text/html', data: buildDelivery(names, worst, allIssues) }
       }
+      case 'cobie':
+        // Unreachable: handleDownload routes 'cobie' to the async path first.
+        throw new Error('cobie is handled by handleCobieDownload')
     }
   }
 
   // ── Download orchestration ─────────────────────────────────────────────────────
   const canExport = selectedModels.length > 0 && (severityApplies ? severities.size > 0 : true) && summary.total >= 0
 
+  // COBie is the one ASYNC format: re-opens the IFC in the validator worker
+  // (extract-cobie), then builds the XLSX (exceljs lazy chunk).
+  const [cobieState, setCobieState] = useState<'idle' | 'busy' | 'failed'>('idle')
+
+  const handleCobieDownload = async (stamp: string): Promise<void> => {
+    if (cobieState === 'busy') return
+    setCobieState('busy')
+    try {
+      const entries: Record<string, Uint8Array> = {}
+      const seen = new Map<string, number>()
+      for (const m of selectedModels) {
+        const out = await extractCobie(m.modelId)
+        if (!out.ok) throw new Error(out.message)
+        // Cache the extraction so the FM-readiness badge shows real numbers
+        // without a second worker pass (the badge appears once this runs).
+        useCobieStore.getState().setResult(m.modelId, out.result)
+        const bytes = await buildCobieXlsx(out.result)
+        trackCobieExported({
+          rows: out.result.rows.length,
+          components: out.result.counts['Component']?.rows ?? 0,
+          spaces: out.result.counts['Space']?.rows ?? 0,
+        })
+        let stem = safeStem(m.fileName)
+        const dup = seen.get(stem) ?? 0
+        seen.set(stem, dup + 1)
+        if (dup > 0) stem = `${stem}-${dup + 1}`
+        entries[`${stem}-cobie-${stamp}.xlsx`] = bytes
+      }
+      const names = Object.keys(entries)
+      if (names.length === 1) {
+        downloadBlob(
+          new Blob([entries[names[0]]], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+          names[0],
+        )
+      } else {
+        const zipped = zipSync(entries, { level: 6 })
+        downloadBlob(new Blob([zipped], { type: 'application/zip' }), `cobie-${stamp}.zip`)
+      }
+      setCobieState('idle')
+      onClose()
+    } catch {
+      setCobieState('failed')
+    }
+  }
+
   const handleDownload = () => {
     if (selectedModels.length === 0) return
     const stamp = new Date().toISOString().slice(0, 10)
+
+    if (format === 'cobie') { void handleCobieDownload(stamp); return }
 
     // Single model, or combined packaging → one file.
     if (selectedModels.length === 1 || packaging === 'combined') {
@@ -433,6 +489,7 @@ export default function ValidationExportModal({
     { id: 'certificate', label: t('export.fmtCertLabel'),  desc: t('export.fmtCertDesc'),  tag: 'CERT', color: '#F5A623' },
     { id: 'bcf',         label: t('export.fmtBcfLabel'),   desc: t('export.fmtBcfDesc'),   tag: 'BCF',  color: 'var(--accent)' },
     { id: 'delivery',    label: t('export.fmtReportLabel'), desc: t('export.fmtReportDesc'), tag: 'HTML', color: '#5E9ED6' },
+    { id: 'cobie',       label: t('export.fmtCobieLabel'),  desc: t('export.fmtCobieDesc'),  tag: 'XLSX', color: 'var(--ok)' },
   ]
 
   const SEVERITIES: Array<{ id: Severity; label: string; color: string }> = [
@@ -691,18 +748,20 @@ export default function ValidationExportModal({
 
         {/* Footer — live summary + download */}
         <div className="px-4 py-3 border-t border-[var(--border)] bg-[rgba(255,255,255,0.02)] shrink-0 flex items-center justify-between gap-3">
-          <p className="text-[11px] text-[var(--text-muted)] leading-tight">
-            {severityApplies
-              ? t('export.summaryIssues', { count: summary.total, models: summary.modelCount })
-              : t('export.summaryModels', { count: summary.modelCount })}
+          <p className="text-[11px] leading-tight" style={format === 'cobie' && cobieState === 'failed' ? { color: 'var(--danger, #e5534b)' } : { color: 'var(--text-muted)' }}>
+            {format === 'cobie' && cobieState === 'failed'
+              ? t('export.cobieFailed')
+              : severityApplies
+                ? t('export.summaryIssues', { count: summary.total, models: summary.modelCount })
+                : t('export.summaryModels', { count: summary.modelCount })}
           </p>
           <button
             onClick={handleDownload}
-            disabled={!canExport}
+            disabled={!canExport || (format === 'cobie' && cobieState === 'busy')}
             className="shrink-0 h-8 px-4 rounded-lg text-[12px] font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ background: 'var(--accent)', color: 'white' }}
           >
-            {t('export.download')}
+            {format === 'cobie' && cobieState === 'busy' ? t('export.cobieBusy') : t('export.download')}
           </button>
         </div>
         </motion.div>

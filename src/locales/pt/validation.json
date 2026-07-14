@@ -311,6 +311,10 @@
       "coverageNote": "Algumas regras não foram avaliadas com este perfil; este relatório fala apenas das regras executadas.",
       "disclaimer": "Autoverificação gerada pelo emissor antes da entrega. Não é uma aprovação oficial.",
       "generatedBy": "Gerado por {app} em {date}"
-    }
+    },
+    "fmtCobieLabel": "COBie 2.4 (Excel)",
+    "fmtCobieDesc": "Livro COBie estrutural para a entrega FM — espaços, tipos, componentes, contactos",
+    "cobieBusy": "A extrair…",
+    "cobieFailed": "A extração COBie falhou — recarregue o modelo e tente novamente."
   }
 }

@@ -169,5 +169,11 @@
     "showFullModel": "Mostra tot el model",
     "showAllHidden": "Mostra {{count}} element amagat",
     "showAllHidden_other": "Mostra {{count}} elements amagats"
+  },
+  "fm": {
+    "ready": "A punt per al lliurament FM",
+    "partial": "Parcial — mancances abans del lliurament",
+    "insufficient": "Insuficient per al lliurament FM",
+    "tip": "Preparació per al lliurament FM: {{score}}/100 (completesa COBie — no és una certificació oficial)"
   }
 }

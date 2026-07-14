@@ -1824,6 +1824,7 @@ export default function App() {
                     return displayInfo ? (
                       <ModelInfoPanel
                         modelInfo={displayInfo}
+                        modelId={activeModelId ?? undefined}
                         memoryStats={memoryStats}
                         isFromCache={isFromCache}
                         qualityScore={result?.qualityScore}

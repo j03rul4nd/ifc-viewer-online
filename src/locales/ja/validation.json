@@ -311,6 +311,10 @@
       "coverageNote": "このプロファイルでは評価されなかったルールがあります。本レポートは実行されたルールについてのみ述べています。",
       "disclaimer": "納品前に発行者が生成したセルフチェックです。公式な承認ではありません。",
       "generatedBy": "{app} により {date} に生成"
-    }
+    },
+    "fmtCobieLabel": "COBie 2.4（Excel）",
+    "fmtCobieDesc": "FM引き渡し用の構造的COBieワークブック — 空間・タイプ・部材・連絡先",
+    "cobieBusy": "抽出中…",
+    "cobieFailed": "COBieの抽出に失敗しました。モデルを再読み込みして再試行してください。"
   }
 }

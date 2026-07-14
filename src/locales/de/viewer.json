@@ -169,5 +169,11 @@
     "showFullModel": "Gesamtes Modell anzeigen",
     "showAllHidden": "{{count}} ausgeblendetes Element einblenden",
     "showAllHidden_other": "{{count}} ausgeblendete Elemente einblenden"
+  },
+  "fm": {
+    "ready": "Bereit für FM-Übergabe",
+    "partial": "Teilweise — Lücken vor der Übergabe",
+    "insufficient": "Unzureichend für FM-Übergabe",
+    "tip": "FM-Übergabebereitschaft: {{score}}/100 (COBie-Vollständigkeit — keine offizielle Zertifizierung)"
   }
 }

@@ -636,6 +636,15 @@ export function trackCheckoutCompleted(props: { plan: 'pro' | 'org' }): void {
   track('checkout_completed', props)
 }
 
+/** F5 COBie export — counts only, never file names or row content. */
+export function trackCobieExported(props: {
+  rows: number
+  components: number
+  spaces: number
+}): void {
+  track('cobie_exported', props)
+}
+
 /** F5-02 delivery report — counts only, never file names or issue content. */
 export function trackDeliveryReportGenerated(props: {
   errors: number

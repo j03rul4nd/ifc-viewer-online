@@ -169,5 +169,11 @@
     "showFullModel": "Mostra modello completo",
     "showAllHidden": "Mostra {{count}} elemento nascosto",
     "showAllHidden_other": "Mostra {{count}} elementi nascosti"
+  },
+  "fm": {
+    "ready": "Pronto per la consegna FM",
+    "partial": "Parziale — lacune prima della consegna",
+    "insufficient": "Insufficiente per la consegna FM",
+    "tip": "Preparazione alla consegna FM: {{score}}/100 (completezza COBie — non è una certificazione ufficiale)"
   }
 }

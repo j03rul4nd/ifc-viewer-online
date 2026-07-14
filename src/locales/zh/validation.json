@@ -311,6 +311,10 @@
       "coverageNote": "部分规则未在此配置文件下评估；本报告仅针对已执行的规则。",
       "disclaimer": "由签发方在交付前生成的自检报告，并非官方批准。",
       "generatedBy": "由 {app} 于 {date} 生成"
-    }
+    },
+    "fmtCobieLabel": "COBie 2.4（Excel）",
+    "fmtCobieDesc": "用于FM交付的结构化COBie工作簿 — 空间、类型、构件、联系人",
+    "cobieBusy": "正在提取…",
+    "cobieFailed": "COBie提取失败 — 请重新加载模型后重试。"
   }
 }

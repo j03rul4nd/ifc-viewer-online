@@ -311,6 +311,10 @@
       "coverageNote": "Einige Regeln wurden mit diesem Profil nicht geprüft; dieser Bericht gilt nur für die ausgeführten Regeln.",
       "disclaimer": "Selbstprüfung des Ausstellers vor der Lieferung. Keine offizielle Freigabe.",
       "generatedBy": "Erstellt von {app} am {date}"
-    }
+    },
+    "fmtCobieLabel": "COBie 2.4 (Excel)",
+    "fmtCobieDesc": "Strukturelle COBie-Arbeitsmappe für die FM-Übergabe — Räume, Typen, Komponenten, Kontakte",
+    "cobieBusy": "Wird extrahiert…",
+    "cobieFailed": "COBie-Extraktion fehlgeschlagen — Modell neu laden und erneut versuchen."
   }
 }

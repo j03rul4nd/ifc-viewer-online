@@ -181,5 +181,11 @@
     "showFullModel": "Show full model",
     "showAllHidden": "Show {{count}} hidden element",
     "showAllHidden_other": "Show {{count}} hidden elements"
+  },
+  "fm": {
+    "ready": "Ready for FM handover",
+    "partial": "Partial — gaps before handover",
+    "insufficient": "Insufficient for FM handover",
+    "tip": "FM handover readiness: {{score}}/100 (COBie completeness — not an official certification)"
   }
 }

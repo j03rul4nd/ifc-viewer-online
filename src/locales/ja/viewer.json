@@ -169,5 +169,11 @@
     "showFullModel": "モデル全体を表示",
     "showAllHidden": "非表示の要素を{{count}}件表示",
     "showAllHidden_other": "非表示の要素を{{count}}件表示"
+  },
+  "fm": {
+    "ready": "FM引き渡し準備完了",
+    "partial": "部分的 — 引き渡し前に不足あり",
+    "insufficient": "FM引き渡しには不十分",
+    "tip": "FM引き渡し準備度: {{score}}/100（COBie完全性 — 公式認証ではありません）"
   }
 }

@@ -6,14 +6,20 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ModelInfo, MemoryStats } from '../types'
 import type { GpuBackend } from '../stores/uiStore'
+import { useCobieStore } from '../stores/cobieStore'
+import type { FmTier } from '../lib/cobie/fm-readiness'
 
 interface ModelInfoPanelProps {
   modelInfo:    ModelInfo
+  /** Active model id — lets the panel read the cached COBie/FM-readiness result. */
+  modelId?:     string
   memoryStats:  MemoryStats
   isFromCache:  boolean
   qualityScore?: number
   gpuBackend?:  GpuBackend
 }
+
+const FM_COLOR: Record<FmTier, string> = { ready: '#30A46C', partial: '#F5A623', insufficient: '#E5484D' }
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '—'
@@ -78,9 +84,16 @@ function Row({ label, value, sub, badge }: {
   )
 }
 
-export default function ModelInfoPanel({ modelInfo, memoryStats, isFromCache, qualityScore, gpuBackend }: ModelInfoPanelProps) {
+export default function ModelInfoPanel({ modelInfo, modelId, memoryStats, isFromCache, qualityScore, gpuBackend }: ModelInfoPanelProps) {
   const { t } = useTranslation('viewer')
   const [expanded, setExpanded] = useState(false)
+
+  // FM-readiness: present only once a COBie export has been run for this model
+  // (the extraction is cached in cobieStore — no eager worker pass).
+  const fm = useCobieStore((s) => (modelId ? s.byModel[modelId]?.readiness : undefined))
+  const fmTierLabel = fm
+    ? fm.tier === 'ready' ? t('fm.ready') : fm.tier === 'partial' ? t('fm.partial') : t('fm.insufficient')
+    : ''
 
   const tAny = t as (key: string, opts?: Record<string, unknown>) => string
   const sizeHealth    = getSizeHealth(modelInfo.fileSize, tAny)
@@ -127,6 +140,15 @@ export default function ModelInfoPanel({ modelInfo, memoryStats, isFromCache, qu
             title={t('info.qualityScore', { score: qualityScore })}
           >
             {qualityScore}
+          </span>
+        )}
+        {fm && (
+          <span
+            className="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold border leading-none"
+            style={{ color: FM_COLOR[fm.tier], borderColor: `${FM_COLOR[fm.tier]}44`, background: `${FM_COLOR[fm.tier]}14` }}
+            title={t('fm.tip', { score: fm.score })}
+          >
+            FM {fm.score}
           </span>
         )}
         {gpuBackend && gpuBackend !== 'detecting' && (

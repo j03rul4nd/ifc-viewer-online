@@ -169,5 +169,11 @@
     "showFullModel": "Afficher le modèle complet",
     "showAllHidden": "Afficher {{count}} élément masqué",
     "showAllHidden_other": "Afficher {{count}} éléments masqués"
+  },
+  "fm": {
+    "ready": "Prêt pour la remise FM",
+    "partial": "Partiel — lacunes avant la remise",
+    "insufficient": "Insuffisant pour la remise FM",
+    "tip": "Préparation à la remise FM : {{score}}/100 (complétude COBie — pas une certification officielle)"
   }
 }

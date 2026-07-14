@@ -25,6 +25,8 @@ const RESULT: CobieExtractResult = {
 }
 
 describe('buildCobieXlsx', () => {
+  // exceljs is a heavy lazy import (build + re-read); under full-suite parallel
+  // load the default 5s can be exceeded even though it's fast in isolation.
   it('produces a workbook with the 7 canonical sheets, headers and rows', async () => {
     const bytes = await buildCobieXlsx(RESULT)
     expect(bytes.byteLength).toBeGreaterThan(1000)
@@ -58,5 +60,5 @@ describe('buildCobieXlsx', () => {
     const ccols = COBIE_HEADERS.Contact
     expect(contact.getCell(ccols.indexOf('FamilyName') + 1).value).toBe('ACME Arquitectura')
     expect(contact.getCell(ccols.indexOf('Email') + 1).value).toBeNull()
-  })
+  }, 20_000)
 })

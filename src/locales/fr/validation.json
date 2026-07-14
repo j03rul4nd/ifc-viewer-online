@@ -311,6 +311,10 @@
       "coverageNote": "Certaines règles n'ont pas été évaluées avec ce profil ; ce rapport ne parle que des règles exécutées.",
       "disclaimer": "Auto-contrôle généré par l'émetteur avant livraison. Pas une approbation officielle.",
       "generatedBy": "Généré par {app} le {date}"
-    }
+    },
+    "fmtCobieLabel": "COBie 2.4 (Excel)",
+    "fmtCobieDesc": "Classeur COBie structurel pour la remise FM — espaces, types, composants, contacts",
+    "cobieBusy": "Extraction…",
+    "cobieFailed": "L'extraction COBie a échoué — rechargez le modèle et réessayez."
   }
 }
