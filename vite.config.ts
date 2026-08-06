@@ -242,6 +242,11 @@ export default defineConfig({
           // naming the chunk (vendor-auth, docs-planning/01 §3.3) keeps it a
           // single lazy, opt-in file that is easy to audit in dist/.
           if (id.includes('@clerk/')) return 'vendor-auth'
+          // exceljs (F5 COBie writer) must NOT land in the eager vendor-ui
+          // chunk — the F5-01 gate pins it to "its own lazy chunk, never the
+          // main bundle". src/lib/cobie/xlsx.ts imports it dynamically, so
+          // returning undefined lets Rollup co-locate it with that importer.
+          if (id.includes('/exceljs/')) return
           // three.js — large 3D engine, changes infrequently
           if (id.includes('/three/')) return 'vendor-three'
           // IFC engine — @thatopen/* + web-ifc JS side
