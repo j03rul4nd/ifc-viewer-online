@@ -28,5 +28,32 @@
     "source": "Original",
     "square": "1:1",
     "vertical": "4:5"
+  },
+  "durationTitle": "Duración del clip",
+  "bufferReady": "Listo — los últimos {{seconds}}s están en el búfer",
+  "bufferWarming": "Llenando el búfer… {{available}}s de {{seconds}}s disponibles",
+  "wholeClip": "Clip completo",
+  "estimate": "≈{{size}} · {{frames}} fotogramas · {{width}}×{{height}}",
+  "frameCapNotice": "Limitado a {{max}} fotogramas — los FPS reales son menores",
+  "background": {
+    "tooltip": "Fondo de la escena",
+    "title": "Fondo",
+    "reset": "Restablecer",
+    "custom": "Personalizado",
+    "color": "Color",
+    "topColor": "Arriba",
+    "bottomColor": "Abajo",
+    "hint": "Se aplica a capturas y clips. Se guarda en este dispositivo.",
+    "mode": {
+      "solid": "Sólido",
+      "gradient": "Degradado"
+    },
+    "presets": {
+      "studio": "Estudio",
+      "white": "Blanco",
+      "paper": "Papel",
+      "blueprint": "Plano",
+      "sky": "Cielo"
+    }
   }
 }

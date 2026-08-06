@@ -28,5 +28,32 @@
     "source": "ต้นฉบับ",
     "square": "1:1",
     "vertical": "4:5"
+  },
+  "durationTitle": "ความยาวคลิป",
+  "bufferReady": "พร้อมแล้ว — บัฟเฟอร์ {{seconds}} วินาทีล่าสุดไว้แล้ว",
+  "bufferWarming": "กำลังบัฟเฟอร์… มี {{available}} วินาที จาก {{seconds}} วินาที",
+  "wholeClip": "ทั้งคลิป",
+  "estimate": "≈{{size}} · {{frames}} เฟรม · {{width}}×{{height}}",
+  "frameCapNotice": "จำกัดที่ {{max}} เฟรม — FPS จริงจะต่ำกว่า",
+  "background": {
+    "tooltip": "พื้นหลังฉาก",
+    "title": "พื้นหลัง",
+    "reset": "รีเซ็ต",
+    "custom": "กำหนดเอง",
+    "color": "สี",
+    "topColor": "ด้านบน",
+    "bottomColor": "ด้านล่าง",
+    "hint": "ใช้กับภาพหน้าจอและคลิป บันทึกไว้ในอุปกรณ์นี้",
+    "mode": {
+      "solid": "สีทึบ",
+      "gradient": "ไล่ระดับสี"
+    },
+    "presets": {
+      "studio": "สตูดิโอ",
+      "white": "ขาว",
+      "paper": "กระดาษ",
+      "blueprint": "พิมพ์เขียว",
+      "sky": "ท้องฟ้า"
+    }
   }
 }

@@ -28,5 +28,32 @@
     "source": "オリジナル",
     "square": "1:1",
     "vertical": "4:5"
+  },
+  "durationTitle": "クリップの長さ",
+  "bufferReady": "準備完了 — 直近 {{seconds}} 秒をバッファ済み",
+  "bufferWarming": "バッファ中… {{seconds}} 秒中 {{available}} 秒が利用可能",
+  "wholeClip": "クリップ全体",
+  "estimate": "≈{{size}} · {{frames}} フレーム · {{width}}×{{height}}",
+  "frameCapNotice": "{{max}} フレームで打ち切り — 実効 FPS は低くなります",
+  "background": {
+    "tooltip": "シーンの背景",
+    "title": "背景",
+    "reset": "リセット",
+    "custom": "カスタム",
+    "color": "色",
+    "topColor": "上",
+    "bottomColor": "下",
+    "hint": "スクリーンショットとクリップに適用されます。この端末に保存されます。",
+    "mode": {
+      "solid": "単色",
+      "gradient": "グラデーション"
+    },
+    "presets": {
+      "studio": "スタジオ",
+      "white": "ホワイト",
+      "paper": "ペーパー",
+      "blueprint": "ブループリント",
+      "sky": "スカイ"
+    }
   }
 }

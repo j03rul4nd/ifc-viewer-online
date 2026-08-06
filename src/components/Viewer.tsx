@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 import { createViewer, type ViewerAPI } from '../lib/viewer'
+import { useSceneStore } from '../stores/sceneStore'
 import type { SelectedInfo, ViewerHandle, ViewerStyle } from '../types'
 
 interface ViewerProps {
@@ -23,6 +24,7 @@ interface ViewerProps {
 const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(props, ref) {
   const mountRef = useRef<HTMLDivElement>(null)
   const apiRef   = useRef<ViewerAPI | null>(null)
+  const background = useSceneStore((s) => s.background)
 
   // Keep latest props accessible inside stable callbacks without re-running effects
   const propsRef = useRef(props)
@@ -58,6 +60,12 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(props, ref)
   useEffect(() => {
     apiRef.current?.applyStyle(props.viewerStyle)
   }, [props.viewerStyle])
+
+  // Scene backdrop — runs on mount too, so a persisted preference is applied
+  // before the first model rather than flashing the default studio black.
+  useEffect(() => {
+    apiRef.current?.setBackground(background)
+  }, [background])
 
   // ── Imperative handle for parent controls ────────────────────────────────
   useImperativeHandle(ref, () => ({

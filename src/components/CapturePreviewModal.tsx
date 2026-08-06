@@ -16,8 +16,9 @@ import { downloadBlob } from '../lib/diffStore'
 import { exportGif, reencodeWebm } from '../lib/capture/gif-export'
 import { drawWatermark } from '../lib/capture/watermark'
 import {
-  computeTrimToLastSeconds, clampTrimWindow,
-  GIF_FPS_OPTIONS, GIF_HEIGHT_OPTIONS, CAPTURE_ASPECTS,
+  computeTrimToLastSeconds, clampTrimWindow, planFrameTimestamps,
+  computeCropRect, computeScaledSize, estimateGifBytes, formatBytes,
+  GIF_FPS_OPTIONS, GIF_HEIGHT_OPTIONS, CAPTURE_ASPECTS, MAX_GIF_FRAMES,
 } from '../lib/capture/replay-buffer-core'
 
 const log = createLogger('CapturePreview')
@@ -51,17 +52,24 @@ export default function CapturePreviewModal() {
   )
   const [trimStart, setTrimStart] = useState(initialTrim.start)
   const [trimEnd, setTrimEnd] = useState(initialTrim.end)
-  const [fps, setFps] = useState<number>(10)
-  const [targetHeight, setTargetHeight] = useState<number | null>(480)
+  // fps / resolution are remembered across captures (people export the same
+  // format every time) — the store owns them, this modal just drives them.
+  const fps = useCaptureStore((s) => s.gifFps)
+  const setFps = useCaptureStore((s) => s.setGifFps)
+  const targetHeight = useCaptureStore((s) => s.exportHeight)
+  const setTargetHeight = useCaptureStore((s) => s.setExportHeight)
+  const [playhead, setPlayhead] = useState(initialTrim.start)
+  const [videoSize, setVideoSize] = useState<{ width: number; height: number } | null>(null)
 
   const videoUrl = useMemo(() => (clip ? URL.createObjectURL(clip.blob) : null), [clip])
   useEffect(() => () => { if (videoUrl) URL.revokeObjectURL(videoUrl) }, [videoUrl])
 
-  // Loop preview playback inside the trim window.
+  // Loop preview playback inside the trim window, and drive the timeline head.
   const onTimeUpdate = useCallback(() => {
     const v = videoRef.current
     if (!v) return
     if (v.currentTime >= trimEnd || v.currentTime < trimStart - 0.5) v.currentTime = trimStart
+    setPlayhead(v.currentTime)
   }, [trimStart, trimEnd])
 
   useEffect(() => {
@@ -161,6 +169,26 @@ export default function CapturePreviewModal() {
     }
   }, [clip, exporting, fps, targetHeight, trimStart, trimEnd, watermark, aspectPreset, startExport, setExportProgress, finishExport, t])
 
+  // ── Output estimate ────────────────────────────────────────────────────────
+  // A GIF encode is a 10–30 s commitment; showing frame count, output pixels and
+  // an approximate weight up front stops the "encode, look, redo it smaller" loop.
+  const estimate = useMemo(() => {
+    const frames = planFrameTimestamps({ start: trimStart, end: trimEnd }, fps).length
+    if (!videoSize || frames === 0) return null
+    const crop = computeCropRect(videoSize.width, videoSize.height, aspectPreset)
+    const size = computeScaledSize(crop.sw, crop.sh, targetHeight)
+    return {
+      frames,
+      width: size.width,
+      height: size.height,
+      bytes: estimateGifBytes(frames, size.width, size.height),
+      // planFrameTimestamps caps the count, which silently lowers the real fps.
+      capped: frames >= MAX_GIF_FRAMES,
+    }
+  }, [trimStart, trimEnd, fps, targetHeight, aspectPreset, videoSize])
+
+  const selectedDuration = trimEnd - trimStart
+
   if (!clip || !videoUrl) return null
 
   const selectCls = 'bg-[var(--surface-2)] border border-[var(--border-strong)] rounded-[5px] px-2 h-[26px] text-[12px] text-[var(--text)] outline-none'
@@ -197,10 +225,15 @@ export default function CapturePreviewModal() {
           autoPlay
           playsInline
           onTimeUpdate={onTimeUpdate}
+          onLoadedMetadata={(e) => {
+            const v = e.currentTarget
+            if (v.videoWidth > 0) setVideoSize({ width: v.videoWidth, height: v.videoHeight })
+          }}
           className="w-full rounded-[8px] bg-black max-h-[46vh] object-contain"
         />
 
-        {/* Trim */}
+        {/* Trim — a real timeline: the kept region is shaded, the discarded
+            head/tail are dimmed, and the playhead shows where the loop is. */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <span className={labelCls}>{t('trimLabel')}</span>
@@ -208,7 +241,28 @@ export default function CapturePreviewModal() {
               {trimStart.toFixed(1)}s – {trimEnd.toFixed(1)}s / {duration.toFixed(1)}s
             </span>
           </div>
+
+          <div className="relative h-[26px] rounded-[6px] bg-[var(--surface-2)] border border-[var(--border)] overflow-hidden">
+            <div
+              className="absolute inset-y-0 bg-[var(--accent)]/25 border-x-2 border-[var(--accent)]"
+              style={{
+                left: `${(trimStart / Math.max(0.1, duration)) * 100}%`,
+                width: `${(selectedDuration / Math.max(0.1, duration)) * 100}%`,
+              }}
+            />
+            <div
+              className="absolute inset-y-0 w-px bg-[var(--text)] opacity-70"
+              style={{ left: `${(playhead / Math.max(0.1, duration)) * 100}%` }}
+            />
+            <span className="absolute inset-0 flex items-center justify-center text-[11px] font-mono tabular-nums text-[var(--text)] pointer-events-none">
+              {selectedDuration.toFixed(1)}s
+            </span>
+          </div>
+
+          {/* Numeric markers rather than word labels: they stay the same width
+              in every locale and say more than "Trim start" does. */}
           <div className="flex items-center gap-2">
+            <span className={`${labelCls} w-[38px] font-mono tabular-nums text-right`}>{trimStart.toFixed(1)}s</span>
             <input
               type="range" min={0} max={duration} step={0.1} value={trimStart}
               disabled={exporting}
@@ -216,6 +270,9 @@ export default function CapturePreviewModal() {
               className="flex-1 accent-[var(--accent)]"
               aria-label={t('trimStart')}
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`${labelCls} w-[38px] font-mono tabular-nums text-right`}>{trimEnd.toFixed(1)}s</span>
             <input
               type="range" min={0} max={duration} step={0.1} value={trimEnd}
               disabled={exporting}
@@ -223,6 +280,27 @@ export default function CapturePreviewModal() {
               className="flex-1 accent-[var(--accent)]"
               aria-label={t('trimEnd')}
             />
+          </div>
+
+          {/* One-click windows — the common asks, without dragging anything */}
+          <div className="flex items-center gap-1">
+            {[3, 5, 10].map((s) => (
+              <button
+                key={s}
+                onClick={() => setTrim(Math.max(0, duration - s), duration)}
+                disabled={exporting || duration <= s}
+                className="px-2 h-[22px] rounded-[5px] text-[10px] font-medium bg-[var(--surface-2)] text-[var(--text-dim)] hover:text-[var(--text)] disabled:opacity-35 disabled:cursor-not-allowed"
+              >
+                {t('lastSeconds', { seconds: s })}
+              </button>
+            ))}
+            <button
+              onClick={() => setTrim(0, duration)}
+              disabled={exporting}
+              className="px-2 h-[22px] rounded-[5px] text-[10px] font-medium bg-[var(--surface-2)] text-[var(--text-dim)] hover:text-[var(--text)] disabled:opacity-35"
+            >
+              {t('wholeClip')}
+            </button>
           </div>
         </div>
 
@@ -277,6 +355,21 @@ export default function CapturePreviewModal() {
             <span className={labelCls}>{t('watermarkLabel')}</span>
           </label>
         </div>
+
+        {/* Output estimate — approximate by construction, labelled as such */}
+        {estimate && (
+          <div className="flex items-center gap-2 text-[10px] text-[var(--text-faint)] tabular-nums">
+            <span>{t('estimate', {
+              frames: estimate.frames,
+              width: estimate.width,
+              height: estimate.height,
+              size: formatBytes(estimate.bytes),
+            })}</span>
+            {estimate.capped && (
+              <span className="text-[var(--warn,#F5A623)]">{t('frameCapNotice', { max: MAX_GIF_FRAMES })}</span>
+            )}
+          </div>
+        )}
 
         {/* Progress */}
         {exporting && (

@@ -18,7 +18,11 @@ import { replayController } from '../lib/capture/replay-controller'
 import { appBus } from '../lib/event-bus'
 import { createLogger } from '../lib/logger'
 import { watermarkPngDataUrl } from '../lib/capture/watermark'
-import { CAPTURE_DURATIONS, MAX_WINDOW_SECONDS, type CaptureDuration } from '../lib/capture/replay-buffer-core'
+import { SceneBackgroundMenu } from './SceneBackgroundMenu'
+import {
+  CAPTURE_DURATIONS, MAX_WINDOW_SECONDS, MIN_WINDOW_SECONDS, clampCaptureSeconds,
+  type CaptureDuration,
+} from '../lib/capture/replay-buffer-core'
 import type { ViewerAPI } from '../lib/viewer'
 
 const log = createLogger('CaptureToolbar')
@@ -75,10 +79,16 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
   }, [hasModel, canvasReady, syncCanvas])
 
   // ── Replay buffer (window = max selectable duration) ─────────────────────────
-  const { isRecording, supported, captureLastSeconds } = useCanvasReplayBuffer(canvasRef, {
+  const { isRecording, supported, availableSeconds, captureLastSeconds } = useCanvasReplayBuffer(canvasRef, {
     seconds: MAX_WINDOW_SECONDS,
     enabled: replay && hasModel && canvasReady && !isMobile,
   })
+
+  // How much history the button would actually deliver. Below the requested
+  // duration the buffer is still warming up (or was just drained by a capture),
+  // and saying so beats handing back a 4 s clip labelled "last 30 s".
+  const bufferReady = availableSeconds >= captureSeconds - 0.5
+  const bufferPercent = Math.min(100, Math.round((availableSeconds / captureSeconds) * 100))
 
   const replayAvailable = replay && supported && !isMobile
 
@@ -167,15 +177,21 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
             <button
               onClick={() => void handleCapture()}
               disabled={!hasModel || !isRecording || capturing}
-              title={t('replayTooltip', { seconds: captureSeconds })}
+              title={
+                isRecording && !bufferReady
+                  ? t('bufferWarming', { available: availableSeconds.toFixed(0), seconds: captureSeconds })
+                  : t('replayTooltip', { seconds: captureSeconds })
+              }
               className={btnBase}
             >
               <Icons.Replay size={13} />
               <span className="tabular-nums">{capturing ? '…' : `${captureSeconds}s`}</span>
               {isRecording && (
                 <span
-                  className="w-[5px] h-[5px] rounded-full bg-[var(--danger)] animate-pulse"
-                  title={t('recording')}
+                  className={`w-[5px] h-[5px] rounded-full ${
+                    bufferReady ? 'bg-[var(--danger)] animate-pulse' : 'bg-[var(--warn,#F5A623)]'
+                  }`}
+                  title={bufferReady ? t('recording') : t('bufferWarming', { available: availableSeconds.toFixed(0), seconds: captureSeconds })}
                 />
               )}
             </button>
@@ -183,6 +199,8 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
               onClick={() => setMenuOpen((v) => !v)}
               disabled={!hasModel}
               title={t('durationTooltip')}
+              aria-haspopup="dialog"
+              aria-expanded={menuOpen}
               className={`${btnBase} !px-1 !min-w-0`}
             >
               <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><path d="M1 2.5l3 3 3-3z" /></svg>
@@ -190,24 +208,74 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-[59]" onClick={() => setMenuOpen(false)} />
-                <div className="absolute right-0 top-full mt-1.5 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[10px] shadow-2xl z-[60] py-1.5 min-w-[120px]">
-                  {CAPTURE_DURATIONS.map((d) => (
-                    <button
-                      key={d}
-                      onClick={() => { setCaptureSeconds(d as CaptureDuration); setMenuOpen(false) }}
-                      className={`w-full text-left px-3 py-1.5 text-[12px] transition-colors hover:bg-[var(--surface-2)] ${d === captureSeconds ? 'text-[var(--accent)] font-semibold' : 'text-[var(--text-dim)]'}`}
-                    >
-                      {t('lastSeconds', { seconds: d })}
-                    </button>
-                  ))}
+                <div
+                  role="dialog"
+                  aria-label={t('durationTooltip')}
+                  className="absolute right-0 top-full mt-1.5 bg-[var(--surface)] border border-[var(--border-strong)] rounded-[10px] shadow-2xl z-[60] p-2.5 w-[228px] flex flex-col gap-2.5"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-[var(--text)]">{t('durationTitle')}</span>
+                    <span className="text-[11px] font-mono tabular-nums text-[var(--accent)]">{captureSeconds}s</span>
+                  </div>
+
+                  {/* One-click presets */}
+                  <div className="grid grid-cols-3 gap-1">
+                    {CAPTURE_DURATIONS.map((d) => (
+                      <button
+                        key={d}
+                        onClick={() => setCaptureSeconds(d as CaptureDuration)}
+                        className={`h-[24px] rounded-[5px] text-[11px] font-medium transition-colors ${
+                          d === captureSeconds
+                            ? 'bg-[var(--accent)] text-white'
+                            : 'bg-[var(--surface-2)] text-[var(--text-dim)] hover:text-[var(--text)]'
+                        }`}
+                      >
+                        {d}s
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Anything in between — 12 s is a perfectly reasonable clip */}
+                  <input
+                    type="range"
+                    min={MIN_WINDOW_SECONDS}
+                    max={MAX_WINDOW_SECONDS}
+                    step={1}
+                    value={captureSeconds}
+                    onChange={(e) => setCaptureSeconds(clampCaptureSeconds(parseInt(e.target.value, 10)))}
+                    className="w-full accent-[var(--accent)]"
+                    aria-label={t('durationTooltip')}
+                  />
+
+                  {/* Buffer fill — the honest answer to "can I grab 30 s yet?" */}
+                  <div className="flex flex-col gap-1">
+                    <div className="h-[3px] rounded bg-[var(--surface-2)] overflow-hidden">
+                      <div
+                        className={`h-full transition-[width] duration-300 ${bufferReady ? 'bg-[var(--ok,#2E9E5B)]' : 'bg-[var(--warn,#F5A623)]'}`}
+                        style={{ width: `${bufferPercent}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] leading-snug text-[var(--text-faint)]">
+                      {bufferReady
+                        ? t('bufferReady', { seconds: captureSeconds })
+                        : t('bufferWarming', { available: availableSeconds.toFixed(0), seconds: captureSeconds })}
+                    </span>
+                  </div>
                 </div>
               </>
             )}
           </div>
         )}
+
+        {/* Scene backdrop — lives with capture because that is when it matters:
+            white / brand-coloured stills for a client deck. Gated on `replay`
+            for the same reason the preview modal is: exactly one instance owns
+            it, so Toolbar + TourPlayer never render two pickers. */}
+        {replay && <SceneBackgroundMenu disabled={!hasModel} />}
       </div>
 
-      {/* Mobile: screenshot only (replay unsupported / hidden — graceful degrade) */}
+      {/* Mobile: screenshot + backdrop (replay unsupported / hidden — graceful
+          degrade, but the backdrop matters just as much on a phone screenshot) */}
       <div className="flex md:hidden items-center shrink-0">
         <button
           onClick={() => void handleScreenshot()}
@@ -217,6 +285,7 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
         >
           <Icons.Camera size={14} />
         </button>
+        {replay && <SceneBackgroundMenu disabled={!hasModel} />}
       </div>
 
       {/* Preview modal is owned by the replay-owning instance only (avoids a

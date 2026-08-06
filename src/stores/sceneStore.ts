@@ -10,12 +10,32 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import type { SceneModel, ModelTransform, ModelInfo } from '../types'
+import {
+  DEFAULT_BACKGROUND, BACKGROUND_STORAGE_KEY,
+  parseStoredBackground, serializeBackground,
+  type BackgroundSettings,
+} from '../lib/scene/background'
+
+// ── Background persistence ─────────────────────────────────────────────────────
+// A presentation preference, not model state: it survives model loads, model
+// removal and navigate-to-landing, and lives in localStorage (device-local,
+// zero network — the anonymous footprint is untouched).
+
+function readBackground(): BackgroundSettings {
+  try {
+    return parseStoredBackground(localStorage.getItem(BACKGROUND_STORAGE_KEY))
+  } catch {
+    return DEFAULT_BACKGROUND
+  }
+}
 
 // ── Store types ────────────────────────────────────────────────────────────────
 
 interface SceneStore {
   models:        SceneModel[]
   activeModelId: string | null
+  /** Scene backdrop (presentation preference, persisted per device). */
+  background:    BackgroundSettings
 
   // ── Actions ─────────────────────────────────────────────────────────────────
 
@@ -29,6 +49,8 @@ interface SceneStore {
   setModelTransform:(id: string, transform: ModelTransform) => void
   /** Select which model the scene controls operate on. */
   setActiveModel:   (id: string | null) => void
+  /** Change the scene backdrop (persisted; applied by Viewer.tsx → setBackground). */
+  setBackground:    (background: BackgroundSettings) => void
   /** Clear all models — called on navigate-to-landing. */
   clearScene:       () => void
 }
@@ -40,6 +62,7 @@ export const useSceneStore = create<SceneStore>()(
     (set) => ({
       models:        [],
       activeModelId: null,
+      background:    readBackground(),
 
       addModel: (id, info) =>
         set(
@@ -103,6 +126,13 @@ export const useSceneStore = create<SceneStore>()(
       setActiveModel: (id) =>
         set({ activeModelId: id }, false, 'setActiveModel'),
 
+      setBackground: (background) => {
+        try { localStorage.setItem(BACKGROUND_STORAGE_KEY, serializeBackground(background)) } catch { /* quota / private mode */ }
+        set({ background }, false, 'setBackground')
+      },
+
+      // Background is a device preference, not scene content — it deliberately
+      // survives a clear so the next model opens in the look the user chose.
       clearScene: () =>
         set({ models: [], activeModelId: null }, false, 'clearScene'),
     }),
@@ -113,6 +143,7 @@ export const useSceneStore = create<SceneStore>()(
 // ── Selectors ──────────────────────────────────────────────────────────────────
 
 export const selectSceneModels    = (s: SceneStore) => s.models
+export const selectBackground     = (s: SceneStore) => s.background
 export const selectActiveModelId  = (s: SceneStore) => s.activeModelId
 export const selectActiveModel    = (s: SceneStore) =>
   s.models.find((m) => m.id === s.activeModelId) ?? null

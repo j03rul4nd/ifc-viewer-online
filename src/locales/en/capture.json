@@ -28,5 +28,32 @@
     "source": "Original",
     "square": "1:1",
     "vertical": "4:5"
+  },
+  "durationTitle": "Clip length",
+  "bufferReady": "Ready — the last {{seconds}}s are buffered",
+  "bufferWarming": "Buffering… {{available}}s of {{seconds}}s available",
+  "wholeClip": "Whole clip",
+  "estimate": "≈{{size}} · {{frames}} frames · {{width}}×{{height}}",
+  "frameCapNotice": "Capped at {{max}} frames — effective FPS is lower",
+  "background": {
+    "tooltip": "Scene background",
+    "title": "Background",
+    "reset": "Reset",
+    "custom": "Custom",
+    "color": "Colour",
+    "topColor": "Top",
+    "bottomColor": "Bottom",
+    "hint": "Applies to screenshots and clips. Saved on this device.",
+    "mode": {
+      "solid": "Solid",
+      "gradient": "Gradient"
+    },
+    "presets": {
+      "studio": "Studio",
+      "white": "White",
+      "paper": "Paper",
+      "blueprint": "Blueprint",
+      "sky": "Sky"
+    }
   }
 }

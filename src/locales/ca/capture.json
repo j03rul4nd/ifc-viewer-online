@@ -28,5 +28,32 @@
     "source": "Original",
     "square": "1:1",
     "vertical": "4:5"
+  },
+  "durationTitle": "Durada del clip",
+  "bufferReady": "A punt — els darrers {{seconds}}s són a la memòria",
+  "bufferWarming": "Omplint la memòria… {{available}}s de {{seconds}}s disponibles",
+  "wholeClip": "Clip sencer",
+  "estimate": "≈{{size}} · {{frames}} fotogrames · {{width}}×{{height}}",
+  "frameCapNotice": "Limitat a {{max}} fotogrames — els FPS reals són menors",
+  "background": {
+    "tooltip": "Fons de l'escena",
+    "title": "Fons",
+    "reset": "Restableix",
+    "custom": "Personalitzat",
+    "color": "Color",
+    "topColor": "A dalt",
+    "bottomColor": "A baix",
+    "hint": "S’aplica a captures i clips. Es desa en aquest dispositiu.",
+    "mode": {
+      "solid": "Sòlid",
+      "gradient": "Degradat"
+    },
+    "presets": {
+      "studio": "Estudi",
+      "white": "Blanc",
+      "paper": "Paper",
+      "blueprint": "Plànol",
+      "sky": "Cel"
+    }
   }
 }

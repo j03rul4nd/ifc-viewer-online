@@ -7,9 +7,13 @@
 
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import type { CaptureAspect, CaptureDuration } from '../lib/capture/replay-buffer-core'
+import {
+  clampCaptureSeconds, CAPTURE_ASPECTS, GIF_FPS_OPTIONS, GIF_HEIGHT_OPTIONS,
+  type CaptureAspect, type CaptureDuration,
+} from '../lib/capture/replay-buffer-core'
 
 const LS_WATERMARK = 'ifc-capture-watermark:v1'
+const LS_PREFS = 'ifc-capture-prefs:v1'
 
 /** Default for the watermark toggle — flip here when it becomes a Pro setting. */
 export const WATERMARK_DEFAULT = false
@@ -21,6 +25,48 @@ function readWatermark(): boolean {
   } catch {
     return WATERMARK_DEFAULT
   }
+}
+
+/**
+ * Export settings the user last chose. Persisted because a person exporting
+ * clips for a client deck picks the same format every time — re-selecting fps /
+ * resolution / aspect on every capture was pure friction.
+ */
+export interface CapturePrefs {
+  seconds: CaptureDuration
+  fps: number
+  /** GIF/WebM target height in px; null = keep the source resolution. */
+  height: number | null
+  aspect: CaptureAspect
+}
+
+export const DEFAULT_PREFS: CapturePrefs = { seconds: 15, fps: 10, height: 480, aspect: 'source' }
+
+/** Read persisted prefs, discarding anything outside the offered options. */
+export function parseStoredPrefs(raw: string | null): CapturePrefs {
+  if (!raw) return DEFAULT_PREFS
+  let parsed: unknown
+  try { parsed = JSON.parse(raw) } catch { return DEFAULT_PREFS }
+  if (typeof parsed !== 'object' || parsed === null) return DEFAULT_PREFS
+  const o = parsed as Record<string, unknown>
+  return {
+    seconds: typeof o.seconds === 'number' ? clampCaptureSeconds(o.seconds) : DEFAULT_PREFS.seconds,
+    fps: typeof o.fps === 'number' && (GIF_FPS_OPTIONS as readonly number[]).includes(o.fps)
+      ? o.fps : DEFAULT_PREFS.fps,
+    height: o.height === null ? null
+      : typeof o.height === 'number' && (GIF_HEIGHT_OPTIONS as readonly number[]).includes(o.height)
+        ? o.height : DEFAULT_PREFS.height,
+    aspect: typeof o.aspect === 'string' && CAPTURE_ASPECTS.includes(o.aspect as CaptureAspect)
+      ? (o.aspect as CaptureAspect) : DEFAULT_PREFS.aspect,
+  }
+}
+
+function readPrefs(): CapturePrefs {
+  try { return parseStoredPrefs(localStorage.getItem(LS_PREFS)) } catch { return DEFAULT_PREFS }
+}
+
+function writePrefs(prefs: CapturePrefs): void {
+  try { localStorage.setItem(LS_PREFS, JSON.stringify(prefs)) } catch { /* quota / private mode */ }
 }
 
 export interface CapturedClip {
@@ -37,12 +83,16 @@ interface CaptureStore {
   replaySupported: boolean | null
   /** Replay buffer currently recording (paused-on-hidden counts as false). */
   isRecording: boolean
-  /** Toolbar selector: how many trailing seconds a capture grabs. */
+  /** Toolbar selector: how many trailing seconds a capture grabs (persisted). */
   captureSeconds: CaptureDuration
   /** Watermark toggle — applies to PNG, GIF and re-encoded WebM (persisted). */
   watermark: boolean
   /** Export aspect preset (D-26) — set by presentation templates, adjustable in the modal. */
   aspectPreset: CaptureAspect
+  /** GIF frame rate last used (persisted). */
+  gifFps: number
+  /** Export target height in px, null = source resolution (persisted). */
+  exportHeight: number | null
   /** Clip being previewed; null = preview modal closed. */
   clip: CapturedClip | null
   /** A GIF/WebM export is running. */
@@ -55,6 +105,8 @@ interface CaptureStore {
   setCaptureSeconds: (v: CaptureDuration) => void
   setWatermark: (v: boolean) => void
   setAspectPreset: (v: CaptureAspect) => void
+  setGifFps: (v: number) => void
+  setExportHeight: (v: number | null) => void
   openPreview: (clip: CapturedClip) => void
   closePreview: () => void
   startExport: () => void
@@ -64,14 +116,28 @@ interface CaptureStore {
   resetCapture: () => void
 }
 
+const initialPrefs = readPrefs()
+
+/** Persist the current export prefs from whatever the store now holds. */
+function persistFrom(s: CaptureStore): void {
+  writePrefs({
+    seconds: s.captureSeconds,
+    fps: s.gifFps,
+    height: s.exportHeight,
+    aspect: s.aspectPreset,
+  })
+}
+
 export const useCaptureStore = create<CaptureStore>()(
   devtools(
-    (set) => ({
+    (set, get) => ({
       replaySupported: null,
       isRecording:     false,
-      captureSeconds:  15 as CaptureDuration,
+      captureSeconds:  initialPrefs.seconds,
       watermark:       readWatermark(),
-      aspectPreset:    'source' as CaptureAspect,
+      aspectPreset:    initialPrefs.aspect,
+      gifFps:          initialPrefs.fps,
+      exportHeight:    initialPrefs.height,
       clip:            null,
       exporting:       false,
       exportProgress:  0,
@@ -80,14 +146,30 @@ export const useCaptureStore = create<CaptureStore>()(
 
       setRecording: (v) => set({ isRecording: v }, false, 'setRecording'),
 
-      setCaptureSeconds: (v) => set({ captureSeconds: v }, false, 'setCaptureSeconds'),
+      setCaptureSeconds: (v) => {
+        set({ captureSeconds: clampCaptureSeconds(v) }, false, 'setCaptureSeconds')
+        persistFrom(get())
+      },
 
       setWatermark: (v) => {
         try { localStorage.setItem(LS_WATERMARK, v ? '1' : '0') } catch { /* quota */ }
         set({ watermark: v }, false, 'setWatermark')
       },
 
-      setAspectPreset: (v) => set({ aspectPreset: v }, false, 'setAspectPreset'),
+      setAspectPreset: (v) => {
+        set({ aspectPreset: v }, false, 'setAspectPreset')
+        persistFrom(get())
+      },
+
+      setGifFps: (v) => {
+        set({ gifFps: v }, false, 'setGifFps')
+        persistFrom(get())
+      },
+
+      setExportHeight: (v) => {
+        set({ exportHeight: v }, false, 'setExportHeight')
+        persistFrom(get())
+      },
 
       openPreview: (clip) =>
         set({ clip, exporting: false, exportProgress: 0 }, false, 'openPreview'),
@@ -123,4 +205,6 @@ export const selectWatermark       = (s: CaptureStore) => s.watermark
 export const selectClip            = (s: CaptureStore) => s.clip
 export const selectExporting       = (s: CaptureStore) => s.exporting
 export const selectExportProgress  = (s: CaptureStore) => s.exportProgress
+export const selectGifFps          = (s: CaptureStore) => s.gifFps
+export const selectExportHeight    = (s: CaptureStore) => s.exportHeight
 export const selectReplaySupported = (s: CaptureStore) => s.replaySupported

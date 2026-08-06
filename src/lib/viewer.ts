@@ -5,6 +5,7 @@ import * as FRAGS from '@thatopen/fragments'
 import { safeVoid } from './errors'
 import { appBus } from './event-bus'
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
+import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
 
 // ─── Palette & label tables ──────────────────────────────────────────────────
@@ -329,6 +330,13 @@ export interface ViewerAPI {
    * the model/elements are unknown or the box is empty.
    */
   getElementsBox(ids: number[], modelId?: string): Promise<{ min: Vec3Like; max: Vec3Like } | null>
+  /**
+   * Swap the scene backdrop (solid colour or vertical gradient) and the derived
+   * fog / grid colours. Purely visual: no geometry, camera or material state is
+   * touched, and the change lands in screenshots and replay clips because it is
+   * part of the rendered frame.
+   */
+  setBackground(settings: BackgroundSettings): void
   /** Capture a PNG snapshot of the current renderer canvas. Returns a data URL. */
   takeSnapshot(): string
   /**
@@ -732,6 +740,60 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   const grids = components.get(OBC.Grids)
   const grid  = grids.create(world)
+
+  // ─── Scene backdrop ────────────────────────────────────────────────────────
+  // Presentation feature: users shooting client-facing stills and clips want a
+  // white or brand-coloured backdrop, not the default near-black studio. Solid
+  // fills go straight on scene.background; gradients are baked into a 1-px-wide
+  // CanvasTexture (three draws a non-env-mapped background texture as a
+  // screen-space quad, so the sweep is camera-independent and free).
+  let bgTexture: THREE.CanvasTexture | null = null
+
+  function makeGradientTexture(top: string, bottom: string): THREE.CanvasTexture | null {
+    const canvas = document.createElement('canvas')
+    canvas.width = 1
+    canvas.height = 256
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
+    gradient.addColorStop(0, top)
+    gradient.addColorStop(1, bottom)
+    ctx.fillStyle = gradient
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.colorSpace = THREE.SRGBColorSpace
+    return texture
+  }
+
+  function applyBackground(settings: BackgroundSettings): void {
+    const bg = resolveBackground(settings)
+    const previous = bgTexture
+    bgTexture = null
+
+    if (bg.mode === 'gradient') {
+      const texture = makeGradientTexture(bg.top, bg.bottom)
+      if (texture) {
+        bgTexture = texture
+        world.scene.three.background = texture
+      } else {
+        // Canvas 2D unavailable (headless / blocked) — the top stop is a fine
+        // stand-in; never leave the scene without a background.
+        world.scene.three.background = new THREE.Color(bg.top)
+      }
+    } else {
+      world.scene.three.background = new THREE.Color(bg.top)
+    }
+    previous?.dispose()
+
+    // Distant geometry must fade into the horizon, not into the old studio black.
+    const fog = world.scene.three.fog
+    if (fog instanceof THREE.Fog) fog.color.set(bg.fog)
+
+    // Light backdrops need dark grid ink or the floor plane disappears.
+    try { grid.config.color = new THREE.Color(bg.grid) } catch { /* grid config not ready */ }
+  }
+
+  applyBackground(DEFAULT_BACKGROUND)
 
   // GIS map mode (lazy chunk) — set by getGeo(); guards below stay inert otherwise.
   let sceneTuneLocked      = false
@@ -2106,6 +2168,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
+    setBackground(settings) {
+      applyBackground(settings)
+    },
+
     takeSnapshot(): string {
       // The WebGL drawing buffer is cleared after compositing
       // (preserveDrawingBuffer is off), so reading pixels outside the render
@@ -2469,6 +2535,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       try { lengthMeasurement.dispose() } catch { /* ok */ }
       try { areaMeasurement.dispose() } catch { /* ok */ }
       try { clipper.dispose() } catch { /* ok */ }
+      bgTexture?.dispose()
+      bgTexture = null
       components.dispose()
     },
   }

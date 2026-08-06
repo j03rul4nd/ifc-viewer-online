@@ -47,6 +47,12 @@ export interface ReplayBufferApi {
   /** Feature support on this browser (stable after first render). */
   supported: boolean
   /**
+   * Seconds of history actually available for capture right now, capped at the
+   * configured window. Ramps up from 0 during warm-up and after every capture —
+   * the UI surfaces it so "capture the last 30 s" cannot silently return 4 s.
+   */
+  availableSeconds: number
+  /**
    * Grab the last `n` seconds as a self-contained, duration-patched WebM blob.
    * The clip may be LONGER than `n` (up to 2× window) — trim downstream — and
    * shorter right after recording starts (warm-up).
@@ -70,6 +76,7 @@ export function useCanvasReplayBuffer(
 
   const [supported] = useState(detectReplaySupport)
   const [isRecording, setIsRecording] = useState(false)
+  const [availableSeconds, setAvailableSeconds] = useState(0)
 
   const streamRef = useRef<MediaStream | null>(null)
   const slotsRef = useRef<[SlotRuntime, SlotRuntime]>([
@@ -152,6 +159,10 @@ export function useCanvasReplayBuffer(
           startSlot(i)
         }
       }
+      // Publish the coverage the capture button would actually get.
+      const best = pickCaptureSlot([slotsRef.current[0].meta, slotsRef.current[1].meta])
+      const coveredMs = best === null ? 0 : slotsRef.current[best as 0 | 1].meta.activeMs
+      setAvailableSeconds(Math.min(windowMs, coveredMs) / 1000)
     }, TICK_MS)
 
     // Page Visibility: pause both recorders in background (battery/CPU).
@@ -181,6 +192,7 @@ export function useCanvasReplayBuffer(
       for (const track of stream.getTracks()) track.stop()
       streamRef.current = null
       setIsRecording(false)
+      setAvailableSeconds(0)
     }
   }, [canvasRef, enabled, supported, fps, windowMs, startSlot, discardSlot])
 
@@ -218,6 +230,12 @@ export function useCanvasReplayBuffer(
       slot.chunks = []
       slot.meta = emptySlot()
       startSlot(index as 0 | 1)
+      // The drained slot restarts empty — reflect the coverage drop immediately
+      // instead of waiting for the next tick to correct an optimistic readout.
+      const remaining = pickCaptureSlot([slotsRef.current[0].meta, slotsRef.current[1].meta])
+      setAvailableSeconds(
+        remaining === null ? 0 : Math.min(windowMs, slotsRef.current[remaining as 0 | 1].meta.activeMs) / 1000,
+      )
 
       if (raw.size === 0) throw new ExportError('EXPORT_FAILED', 'Replay buffer is empty')
 
@@ -233,7 +251,7 @@ export function useCanvasReplayBuffer(
     } finally {
       capturingRef.current = false
     }
-  }, [startSlot])
+  }, [startSlot, windowMs])
 
-  return { isRecording, supported, captureLastSeconds }
+  return { isRecording, supported, availableSeconds, captureLastSeconds }
 }

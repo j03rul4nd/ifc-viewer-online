@@ -13,9 +13,24 @@
 /** Hard ceiling for the replay window the UI may request. */
 export const MAX_WINDOW_SECONDS = 30
 
-/** Capture durations offered in the toolbar selector. */
+/** Shortest capture the UI may request — below this a clip reads as a glitch. */
+export const MIN_WINDOW_SECONDS = 3
+
+/** One-click durations offered in the toolbar selector. */
 export const CAPTURE_DURATIONS = [5, 15, 30] as const
-export type CaptureDuration = (typeof CAPTURE_DURATIONS)[number]
+
+/**
+ * How many trailing seconds a capture grabs. Any whole second in
+ * [MIN_WINDOW_SECONDS, MAX_WINDOW_SECONDS] is valid — CAPTURE_DURATIONS are
+ * just the presets, not the allowed set.
+ */
+export type CaptureDuration = number
+
+/** Clamp a user-provided duration into the recordable range (whole seconds). */
+export function clampCaptureSeconds(seconds: number): CaptureDuration {
+  if (!Number.isFinite(seconds)) return CAPTURE_DURATIONS[1]
+  return Math.min(MAX_WINDOW_SECONDS, Math.max(MIN_WINDOW_SECONDS, Math.round(seconds)))
+}
 
 /** Video bitrate for the replay recorders. 5 Mbps ≈ 0.625 MB/s — see D-23. */
 export const REPLAY_BITS_PER_SECOND = 5_000_000
@@ -157,6 +172,29 @@ export function planFrameTimestamps(trim: TrimWindow, fps: number, maxFrames: nu
   const out: number[] = []
   for (let i = 0; i < count; i++) out.push(trim.start + i * step)
   return out
+}
+
+// ── Export estimation (shown before the user commits to an encode) ─────────────
+
+/**
+ * Rough encoded size of a GIF, in bytes. gifenc writes palettised, LZW-packed
+ * frames; across our own exports the packed cost lands around 0.22 bytes per
+ * pixel per frame for typical viewer footage (large flat backdrop, moving
+ * geometry). This is a UI estimate to set expectations before a 10-second
+ * encode — never a guarantee, and callers must present it as approximate.
+ */
+export const GIF_BYTES_PER_PIXEL_PER_FRAME = 0.22
+
+export function estimateGifBytes(frameCount: number, width: number, height: number): number {
+  if (frameCount <= 0 || width <= 0 || height <= 0) return 0
+  return Math.round(frameCount * width * height * GIF_BYTES_PER_PIXEL_PER_FRAME)
+}
+
+/** Compact human size ("2.4 MB") for the estimate readout. */
+export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 KB'
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 // ── Output sizing ──────────────────────────────────────────────────────────────

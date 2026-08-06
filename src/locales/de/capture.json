@@ -28,5 +28,32 @@
     "source": "Original",
     "square": "1:1",
     "vertical": "4:5"
+  },
+  "durationTitle": "Cliplänge",
+  "bufferReady": "Bereit — die letzten {{seconds}}s sind gepuffert",
+  "bufferWarming": "Puffer füllt sich… {{available}}s von {{seconds}}s verfügbar",
+  "wholeClip": "Ganzer Clip",
+  "estimate": "≈{{size}} · {{frames}} Bilder · {{width}}×{{height}}",
+  "frameCapNotice": "Auf {{max}} Bilder begrenzt — effektive FPS sind niedriger",
+  "background": {
+    "tooltip": "Szenenhintergrund",
+    "title": "Hintergrund",
+    "reset": "Zurücksetzen",
+    "custom": "Eigene",
+    "color": "Farbe",
+    "topColor": "Oben",
+    "bottomColor": "Unten",
+    "hint": "Gilt für Screenshots und Clips. Auf diesem Gerät gespeichert.",
+    "mode": {
+      "solid": "Einfarbig",
+      "gradient": "Verlauf"
+    },
+    "presets": {
+      "studio": "Studio",
+      "white": "Weiß",
+      "paper": "Papier",
+      "blueprint": "Blaupause",
+      "sky": "Himmel"
+    }
   }
 }

@@ -7,7 +7,9 @@ import {
   pickMimeType, emptySlot, slotNeedsRotation, pickCaptureSlot, staggerDelayMs,
   estimateReplayMemoryBytes, computeTrimToLastSeconds, clampTrimWindow,
   planFrameTimestamps, computeScaledSize, computeCropRect,
+  clampCaptureSeconds, estimateGifBytes, formatBytes,
   MAX_BYTES_PER_SLOT, MAX_GIF_FRAMES, REPLAY_BITS_PER_SECOND,
+  MIN_WINDOW_SECONDS, MAX_WINDOW_SECONDS, CAPTURE_DURATIONS,
   type ReplaySlot,
 } from './replay-buffer-core'
 import { watermarkLayout } from './watermark'
@@ -186,5 +188,71 @@ describe('watermarkLayout', () => {
     const large = watermarkLayout(3840, 2160)
     expect(large.fontSize).toBeGreaterThan(small.fontSize)
     expect(small.fontSize).toBeGreaterThanOrEqual(9)
+  })
+})
+
+describe('clampCaptureSeconds', () => {
+  it('keeps any whole second inside the recordable range', () => {
+    expect(clampCaptureSeconds(12)).toBe(12)
+    expect(clampCaptureSeconds(MIN_WINDOW_SECONDS)).toBe(MIN_WINDOW_SECONDS)
+    expect(clampCaptureSeconds(MAX_WINDOW_SECONDS)).toBe(MAX_WINDOW_SECONDS)
+  })
+
+  it('clamps out-of-range requests instead of rejecting them', () => {
+    expect(clampCaptureSeconds(0)).toBe(MIN_WINDOW_SECONDS)
+    expect(clampCaptureSeconds(-5)).toBe(MIN_WINDOW_SECONDS)
+    expect(clampCaptureSeconds(999)).toBe(MAX_WINDOW_SECONDS)
+  })
+
+  it('rounds fractional input to whole seconds', () => {
+    expect(clampCaptureSeconds(7.4)).toBe(7)
+    expect(clampCaptureSeconds(7.6)).toBe(8)
+  })
+
+  it('falls back to the middle preset for non-finite input', () => {
+    expect(clampCaptureSeconds(NaN)).toBe(CAPTURE_DURATIONS[1])
+    expect(clampCaptureSeconds(Infinity)).toBe(CAPTURE_DURATIONS[1])
+  })
+
+  it('accepts every shipped preset unchanged', () => {
+    for (const d of CAPTURE_DURATIONS) expect(clampCaptureSeconds(d)).toBe(d)
+  })
+})
+
+describe('estimateGifBytes', () => {
+  it('scales linearly with frames and pixels', () => {
+    const base = estimateGifBytes(10, 640, 480)
+    expect(estimateGifBytes(20, 640, 480)).toBe(base * 2)
+    expect(estimateGifBytes(10, 1280, 480)).toBe(base * 2)
+  })
+
+  it('returns 0 for a degenerate export rather than a bogus number', () => {
+    expect(estimateGifBytes(0, 640, 480)).toBe(0)
+    expect(estimateGifBytes(10, 0, 480)).toBe(0)
+    expect(estimateGifBytes(10, 640, -1)).toBe(0)
+  })
+
+  it('lands in a plausible range for a typical 10 fps 480p export', () => {
+    // 5 s at 10 fps, 852×480 — a few MB, not a few KB and not hundreds of MB.
+    const bytes = estimateGifBytes(50, 852, 480)
+    expect(bytes).toBeGreaterThan(1_000_000)
+    expect(bytes).toBeLessThan(20_000_000)
+  })
+})
+
+describe('formatBytes', () => {
+  it('uses KB below a megabyte and MB above', () => {
+    expect(formatBytes(2048)).toBe('2 KB')
+    expect(formatBytes(5 * 1024 * 1024)).toBe('5.0 MB')
+  })
+
+  it('never renders a zero-KB size for a non-empty payload', () => {
+    expect(formatBytes(10)).toBe('1 KB')
+  })
+
+  it('handles empty and invalid input', () => {
+    expect(formatBytes(0)).toBe('0 KB')
+    expect(formatBytes(-1)).toBe('0 KB')
+    expect(formatBytes(NaN)).toBe('0 KB')
   })
 })

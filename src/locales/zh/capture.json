@@ -28,5 +28,32 @@
     "source": "原始",
     "square": "1:1",
     "vertical": "4:5"
+  },
+  "durationTitle": "片段时长",
+  "bufferReady": "就绪 — 最近 {{seconds}} 秒已缓存",
+  "bufferWarming": "缓存中… 已有 {{available}} 秒 / 共需 {{seconds}} 秒",
+  "wholeClip": "整个片段",
+  "estimate": "≈{{size}} · {{frames}} 帧 · {{width}}×{{height}}",
+  "frameCapNotice": "上限 {{max}} 帧 — 实际帧率会降低",
+  "background": {
+    "tooltip": "场景背景",
+    "title": "背景",
+    "reset": "重置",
+    "custom": "自定义",
+    "color": "颜色",
+    "topColor": "顶部",
+    "bottomColor": "底部",
+    "hint": "适用于截图和片段。保存在本设备。",
+    "mode": {
+      "solid": "纯色",
+      "gradient": "渐变"
+    },
+    "presets": {
+      "studio": "影棚",
+      "white": "白色",
+      "paper": "纸张",
+      "blueprint": "蓝图",
+      "sky": "天空"
+    }
   }
 }

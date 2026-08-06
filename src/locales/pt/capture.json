@@ -28,5 +28,32 @@
     "source": "Original",
     "square": "1:1",
     "vertical": "4:5"
+  },
+  "durationTitle": "Duração do clipe",
+  "bufferReady": "Pronto — os últimos {{seconds}}s estão em memória",
+  "bufferWarming": "A preencher a memória… {{available}}s de {{seconds}}s disponíveis",
+  "wholeClip": "Clipe inteiro",
+  "estimate": "≈{{size}} · {{frames}} fotogramas · {{width}}×{{height}}",
+  "frameCapNotice": "Limitado a {{max}} fotogramas — os FPS reais são menores",
+  "background": {
+    "tooltip": "Fundo da cena",
+    "title": "Fundo",
+    "reset": "Repor",
+    "custom": "Personalizado",
+    "color": "Cor",
+    "topColor": "Topo",
+    "bottomColor": "Base",
+    "hint": "Aplica-se a capturas e clipes. Guardado neste dispositivo.",
+    "mode": {
+      "solid": "Sólido",
+      "gradient": "Gradiente"
+    },
+    "presets": {
+      "studio": "Estúdio",
+      "white": "Branco",
+      "paper": "Papel",
+      "blueprint": "Planta",
+      "sky": "Céu"
+    }
   }
 }
