@@ -387,12 +387,15 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
             exit={{ opacity: 0, x: 12 }}
             transition={{ duration: 0.2 }}
             className="absolute right-3 top-14 z-20 pointer-events-auto select-none"
-            style={{ width: 'min(260px, calc(100vw - 24px))' }}
+            // 304px, not the original 260: the panel now carries layer, terrain,
+            // relief and placement controls, and 260 could not fit four
+            // segments of translated text without clipping them.
+            style={{ width: 'min(304px, calc(100vw - 24px))' }}
           >
             <div className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl max-h-[calc(100vh-140px)] overflow-y-auto">
               {/* Header */}
-              <div className="px-3 pt-2.5 pb-1.5 border-b border-[var(--border)] flex items-center justify-between">
-                <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase">
+              <div className={`${SECTION_X} pt-3 pb-2.5 border-b border-[var(--border)] flex items-center justify-between gap-2`}>
+                <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase truncate">
                   {t('panel.title')}
                 </div>
                 <button
@@ -407,7 +410,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
               </div>
 
               {/* Enable / status row */}
-              <div className="p-2 flex flex-col gap-1.5">
+              <PanelSection divided={false}>
                 {mapMode !== 'on' && (
                   <button
                     onClick={() => { void handleShowOnMap() }}
@@ -438,53 +441,56 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                     {t('degraded.banner')}
                   </div>
                 )}
-              </div>
+              </PanelSection>
 
               {/* Georeferencing status */}
               {extraction && (
-                <div className="border-t border-[var(--border)] px-3 py-2">
-                  <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.08em] uppercase mb-1">
-                    {t('status.title')}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[11.5px] font-medium">
-                    <StatusDot status={extraction.status} />
-                    <span>{t(`status.${extraction.status}`)}</span>
-                  </div>
-                  {extraction.rung !== null && (
-                    <div className="text-[10px] text-[var(--text-faint)] mt-0.5">{t(`status.rung${extraction.rung}`)}</div>
-                  )}
-                  {extraction.epsgCode && (
-                    <div className="text-[10.5px] font-mono text-[var(--text-dim)] mt-0.5">
-                      {t('status.crs')}: {extraction.epsgCode}
+                <PanelSection title={t('status.title')}>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 text-[11.5px] font-medium min-w-0">
+                      <StatusDot status={extraction.status} />
+                      <span className="truncate">{t(`status.${extraction.status}`)}</span>
                     </div>
-                  )}
-                  {extraction.largeWcsOffset && (
-                    <div className="text-[10px] text-[#F5A623] mt-1 leading-snug">{t('status.largeOffset')}</div>
-                  )}
+                    {extraction.rung !== null && (
+                      <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t(`status.rung${extraction.rung}`)}</div>
+                    )}
+                    {extraction.epsgCode && (
+                      // CRS codes and proj4 strings are arbitrary length — they
+                      // must wrap, never push the panel wider.
+                      <div className="text-[10.5px] font-mono text-[var(--text-dim)] break-words">
+                        {t('status.crs')}: {extraction.epsgCode}
+                      </div>
+                    )}
+                    {extraction.largeWcsOffset && (
+                      <div className="text-[10px] text-[#F5A623] leading-snug">{t('status.largeOffset')}</div>
+                    )}
+                  </div>
                   {extraction.reasons.length > 0 && (
-                    <ul className="mt-1 flex flex-col gap-0.5">
+                    <ul className="flex flex-col gap-1">
                       {extraction.reasons.map((r) => (
-                        <li key={r} className="text-[10px] text-[var(--text-faint)] leading-snug">• {tDynamic(`reasons.${r}`)}</li>
+                        <li key={r} className="text-[10px] text-[var(--text-faint)] leading-snug break-words">• {tDynamic(`reasons.${r}`)}</li>
                       ))}
                     </ul>
                   )}
-                  <button
-                    onClick={() => setDebugOpen((v) => !v)}
-                    className="mt-1 text-[9.5px] font-mono text-[var(--text-faint)] hover:text-[var(--text-dim)] transition-colors"
-                  >
-                    {debugOpen ? '▾' : '▸'} {t('status.debug')}
-                  </button>
-                  {debugOpen && (
-                    <pre className="mt-1 text-[9px] font-mono text-[var(--text-faint)] whitespace-pre-wrap break-all leading-snug max-h-[120px] overflow-y-auto">
-                      {Object.entries(extraction.raw).map(([k, v]) => `${k}: ${String(v)}`).join('\n') || '—'}
-                    </pre>
-                  )}
-                </div>
+                  <div>
+                    <button
+                      onClick={() => setDebugOpen((v) => !v)}
+                      className="text-[9.5px] font-mono text-[var(--text-faint)] hover:text-[var(--text-dim)] transition-colors"
+                    >
+                      {debugOpen ? '▾' : '▸'} {t('status.debug')}
+                    </button>
+                    {debugOpen && (
+                      <pre className="mt-1.5 text-[9px] font-mono text-[var(--text-faint)] whitespace-pre-wrap break-all leading-snug max-h-[120px] overflow-y-auto">
+                        {Object.entries(extraction.raw).map(([k, v]) => `${k}: ${String(v)}`).join('\n') || '—'}
+                      </pre>
+                    )}
+                  </div>
+                </PanelSection>
               )}
 
               {/* CRS picker */}
               {crsFormOpen && (
-                <div className="border-t border-[var(--border)] px-3 py-2 flex flex-col gap-1.5">
+                <div className="border-t border-[var(--border)] px-3.5 py-3 flex flex-col gap-2">
                   <div className="text-[11px] font-semibold">{t('crs.title')}</div>
                   <div className="text-[10.5px] text-[var(--text-dim)] leading-snug">
                     {t('crs.body', { name: extraction?.epsgCode ?? '?' })}
@@ -515,7 +521,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
 
               {/* Manual placement form */}
               {manualFormOpen && (
-                <div className="border-t border-[var(--border)] px-3 py-2 flex flex-col gap-1.5">
+                <div className="border-t border-[var(--border)] px-3.5 py-3 flex flex-col gap-2">
                   <div className="text-[10.5px] text-[var(--text-dim)] leading-snug">{t('placement.manualIntro')}</div>
                   <div className="flex gap-1.5">
                     <div className="flex-1">
@@ -539,7 +545,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
 
               {/* Manual entry shortcut for non-georeferenced models */}
               {!manualFormOpen && mapMode === 'off' && extraction && (extraction.status === 'none' || extraction.status === 'invalid') && (
-                <div className="border-t border-[var(--border)] px-3 py-2">
+                <div className="border-t border-[var(--border)] px-3.5 py-3">
                   <button
                     onClick={() => setManualFormOpen(true)}
                     className="text-[11px] text-[var(--accent)] hover:underline"
@@ -550,81 +556,53 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
               )}
 
               {/* Layers */}
-              <div className="border-t border-[var(--border)] px-3 py-2">
-                <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.08em] uppercase mb-1.5">
-                  {t('layers.title')}
-                </div>
-                <div className="grid grid-cols-4 gap-1">
-                  {[
+              <PanelSection title={t('layers.title')}>
+                <Segmented
+                  options={[
                     { id: 'osm', label: t('layers.streets'), active: layerKindActive('osm') },
                     { id: 'opentopomap', label: t('layers.topo'), active: layerKindActive('opentopomap') },
                     { id: 'satellite', label: t('layers.satellite'), active: satelliteActive },
                     { id: 'custom', label: t('layers.custom'), active: layerKindActive('custom') },
-                  ].map((l) => (
-                    <button
-                      key={l.id}
-                      onClick={() => handleLayerClick(l.id)}
-                      className={[
-                        'px-1 py-1.5 rounded-[7px] text-[10.5px] font-medium transition-colors',
-                        l.active ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)]',
-                      ].join(' ')}
-                    >
-                      {l.label}
-                    </button>
-                  ))}
-                </div>
+                  ]}
+                  onSelect={handleLayerClick}
+                />
 
                 {/* Terrain toggle */}
-                <label className="mt-2 flex items-center gap-2 text-[11.5px] text-[var(--text-dim)] cursor-pointer">
+                <label className="flex items-start gap-2 text-[11.5px] text-[var(--text-dim)] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={store.terrainEnabled}
                     onChange={(e) => handleTerrainToggle(e.target.checked)}
-                    className="accent-[var(--accent)]"
+                    className="accent-[var(--accent)] mt-[2px] shrink-0"
                   />
-                  {store.terrainStatus === 'loading' ? t('layers.terrainLoading') : t('layers.terrain')}
-                  {store.terrainStatus === 'error' && (
-                    <span className="text-[10px] text-[var(--danger)]">{t('errors.terrainFailed')}</span>
-                  )}
+                  <span className="min-w-0 leading-snug">
+                    {store.terrainStatus === 'loading' ? t('layers.terrainLoading') : t('layers.terrain')}
+                    {store.terrainStatus === 'error' && (
+                      <span className="block text-[10px] text-[var(--danger)] leading-snug">{t('errors.terrainFailed')}</span>
+                    )}
+                  </span>
                 </label>
 
                 {/* Terrain visualization controls */}
                 {store.terrainEnabled && (
-                  <div className="mt-2 flex flex-col gap-1.5">
+                  <div className="flex flex-col gap-2 pt-0.5">
                     <div className="text-[10px] text-[var(--text-faint)]">{t('layers.style')}</div>
-                    <div className="grid grid-cols-4 gap-1">
-                      {([
+                    <Segmented
+                      options={([
                         ['imagery', t('layers.styleImagery')],
                         ['shaded', t('layers.styleShaded')],
                         ['hypsometric', t('layers.styleHypso')],
                         ['slope', t('layers.styleSlope')],
-                      ] as const).map(([id, label]) => (
-                        <button
-                          key={id}
-                          onClick={() => handleTerrainStyle(id)}
-                          className={[
-                            'px-1 py-1.5 rounded-[7px] text-[10.5px] font-medium transition-colors',
-                            store.terrainStyle === id
-                              ? 'bg-[var(--accent)] text-white'
-                              : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)]',
-                          ].join(' ')}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-[var(--text-faint)] whitespace-nowrap">{t('layers.exaggeration')}</span>
-                      <input
-                        type="range" min={1} max={3} step={0.25}
-                        value={store.terrainExaggeration}
-                        onChange={(e) => handleTerrainExaggeration(parseFloat(e.target.value))}
-                        className="flex-1 accent-[var(--accent)]"
-                      />
-                      <span className="text-[10.5px] font-mono w-9 text-right tabular-nums">
-                        ×{String(store.terrainExaggeration)}
-                      </span>
-                    </div>
+                      ] as const).map(([id, label]) => ({ id, label, active: store.terrainStyle === id }))}
+                      onSelect={handleTerrainStyle}
+                    />
+                    <LookSlider
+                      label={t('layers.exaggeration')}
+                      value={store.terrainExaggeration}
+                      min={1} max={3} step={0.25}
+                      format={(v) => `×${v}`}
+                      onChange={handleTerrainExaggeration}
+                    />
 
                     {/* ── Advanced relief controls ────────────────────────────
                         Everything here re-bakes live from data already in
@@ -701,11 +679,11 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                     </details>
                   </div>
                 )}
-              </div>
+              </PanelSection>
 
               {/* Satellite terms sheet */}
               {termsSheetOpen && (
-                <div className="border-t border-[var(--border)] px-3 py-2 flex flex-col gap-1.5">
+                <div className="border-t border-[var(--border)] px-3.5 py-3 flex flex-col gap-2">
                   <div className="text-[11px] font-semibold">{t('layers.termsTitle')}</div>
                   <div className="text-[10px] text-[var(--text-dim)] leading-snug">{t('layers.termsBody')}</div>
                   {[
@@ -730,7 +708,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
 
               {/* Custom provider form */}
               {customFormOpen && (
-                <div className="border-t border-[var(--border)] px-3 py-2 flex flex-col gap-1.5">
+                <div className="border-t border-[var(--border)] px-3.5 py-3 flex flex-col gap-2">
                   <div className="text-[11px] font-semibold">{t('layers.customTitle')}</div>
                   <label className="text-[10px] text-[var(--text-faint)]">{t('layers.customUrl')}</label>
                   <input value={customUrl} onChange={(e) => setCustomUrl(e.target.value)} placeholder={t('layers.customUrlPlaceholder')} className="geo-input" />
@@ -745,7 +723,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
 
               {/* Placement section (map on) */}
               {mapMode === 'on' && store.placement && (
-                <div className="border-t border-[var(--border)] px-3 py-2 flex flex-col gap-1.5">
+                <div className="border-t border-[var(--border)] px-3.5 py-3 flex flex-col gap-2">
                   <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.08em] uppercase">
                     {t('placement.title')}
                   </div>
@@ -876,7 +854,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
 
               {/* Vertical datum disclaimer when terrain is on */}
               {store.terrainEnabled && store.terrainStatus === 'ready' && (
-                <div className="border-t border-[var(--border)] px-3 py-2 text-[9.5px] text-[var(--text-faint)] leading-snug">
+                <div className="border-t border-[var(--border)] px-3.5 py-3 text-[9.5px] text-[var(--text-faint)] leading-snug">
                   {t('attribution.vertical')}
                 </div>
               )}
@@ -940,6 +918,83 @@ function NudgeBtn({ label, onClick }: { label: string; onClick: () => void }) {
     >
       {label}
     </button>
+  )
+}
+
+// ── Panel layout primitives ────────────────────────────────────────────────────
+// The panel grew section by section and each one invented its own padding, which
+// is how labels ended up overflowing their buttons. These three primitives are
+// the whole layout system: one spacing scale, one section rhythm, and controls
+// that are physically incapable of clipping their own text.
+
+/** Horizontal padding shared by every section — the panel's optical margin. */
+const SECTION_X = 'px-3.5'
+
+interface PanelSectionProps {
+  title?: string
+  /** First section omits the divider; every other one carries it. */
+  divided?: boolean
+  children: React.ReactNode
+}
+
+function PanelSection({ title, divided = true, children }: PanelSectionProps) {
+  return (
+    <div className={`${SECTION_X} py-3 ${divided ? 'border-t border-[var(--border)]' : ''}`}>
+      {title && (
+        <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.08em] uppercase mb-2">
+          {title}
+        </div>
+      )}
+      <div className="flex flex-col gap-2">{children}</div>
+    </div>
+  )
+}
+
+interface SegmentedOption<T extends string> {
+  id: T
+  label: string
+  active?: boolean
+}
+
+interface SegmentedProps<T extends string> {
+  options: ReadonlyArray<SegmentedOption<T>>
+  onSelect: (id: T) => void
+  /**
+   * Minimum width per segment; segments wrap onto a new row below it. The
+   * default lays four options out as a tidy 2×2 inside the panel, which gives
+   * every translated label room to be read in full rather than ellipsised.
+   */
+  minWidth?: number
+}
+
+/**
+ * Wrapping segmented control. `flex-wrap` + a min-width per segment is what
+ * fixes the clipping: a long label ("Personalizada", "Hypsometric") pushes its
+ * segment onto the next row instead of being cut off, in EVERY locale — which a
+ * fixed `grid-cols-4` can never guarantee, since translations vary in length.
+ */
+function Segmented<T extends string>({ options, onSelect, minWidth = 118 }: SegmentedProps<T>) {
+  return (
+    <div className="flex flex-wrap gap-1">
+      {options.map((o) => (
+        <button
+          key={o.id}
+          onClick={() => onSelect(o.id)}
+          title={o.label}
+          aria-pressed={o.active ?? false}
+          style={{ minWidth }}
+          className={[
+            'flex-1 px-2 py-1.5 rounded-[7px] text-[10.5px] font-medium leading-tight',
+            'truncate transition-colors',
+            o.active
+              ? 'bg-[var(--accent)] text-white'
+              : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)]',
+          ].join(' ')}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
   )
 }
 
