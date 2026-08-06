@@ -119,7 +119,19 @@
     "sourceManual": "Manual placement",
     "manualIntro": "This model has no usable georeferencing. Enter WGS84 coordinates to place it on the map:",
     "manualShow": "Place manually",
-    "resetHeight": "Reset height"
+    "resetHeight": "Reset height",
+    "mapLabel": "模型位置地图",
+    "mapHint": "拖动标记或点击地图。",
+    "useMyLocation": "使用我的位置",
+    "locating": "定位中…",
+    "locateDenied": "位置权限被拒绝 — 请改为在地图上选点。",
+    "locateFailed": "无法获取你的位置 — 请改为在地图上选点。",
+    "locateUnsupported": "此浏览器无法提供位置信息。",
+    "otherModels": "其他模型",
+    "modelsFarApart": "{{count}} 个模型相距超过 {{km}} 公里。只有锚点模型定位正确；信任地图前请先检查其他模型。",
+    "anchorModel": "锚点",
+    "anchorHint": "地图以此模型对齐。切换活动模型可重新锚定。",
+    "noGeoref": "无地理参考"
   },
   "degraded": {
     "banner": "Map tiles are unavailable — the provider may be down or rate-limiting.",

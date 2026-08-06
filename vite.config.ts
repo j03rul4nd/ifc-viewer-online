@@ -234,7 +234,9 @@ export default defineConfig({
           if (
             id.includes('3d-tiles-renderer') ||
             id.includes('/proj4/') || id.includes('/wkt-parser/') || id.includes('/mgrs/') ||
-            id.includes('/suncalc/') || id.includes('/tz-lookup/')
+            id.includes('/suncalc/') || id.includes('/tz-lookup/') ||
+            // leaflet powers the placement minimap inside the (lazy) GeoPanel
+            id.includes('/leaflet/')
           ) return
           // Clerk (F2 auth) must NEVER ride in the eager vendor-ui chunk
           // (invariant I-1: zero auth bytes for the anonymous user). main.tsx

@@ -216,6 +216,54 @@ body {
   color: var(--text-faint);
 }
 
+/* ── Placement minimap (Leaflet inside the GeoPanel) ─────────────────────────
+   Leaflet ships a light-theme stylesheet. These overrides keep it inside the
+   app's surface tokens instead of punching a white rectangle into a dark
+   panel, and shrink its chrome to panel scale. Scoped to .geo-minimap so
+   nothing here can leak into a future full-size map. */
+
+/* Leaflet adds .leaflet-container to the element we hand it, so this is a
+   compound selector on ONE node — a descendant selector would never match. */
+.geo-minimap.leaflet-container {
+  background: var(--surface-2);
+  font-family: inherit;
+  /* Leaflet's own outline on focus is a thick blue ring — ours is subtler. */
+  outline: none;
+}
+.geo-minimap .leaflet-control-attribution {
+  background: rgba(10, 10, 14, 0.72);
+  color: var(--text-faint);
+  font-size: 8.5px;
+  padding: 1px 4px;
+}
+.geo-minimap .leaflet-control-attribution a {
+  color: var(--text-dim);
+}
+.geo-minimap .leaflet-control-zoom a {
+  background: var(--surface);
+  color: var(--text-dim);
+  border-color: var(--border-strong);
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  font-size: 14px;
+}
+.geo-minimap .leaflet-control-zoom a:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.geo-minimap .leaflet-tooltip {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  font-size: 10px;
+  padding: 2px 6px;
+  box-shadow: none;
+}
+.geo-minimap .leaflet-tooltip-top::before {
+  border-top-color: var(--border-strong);
+}
+
 /* ── Keyboard key ───────────────────────────────────────────────────────────── */
 
 kbd {

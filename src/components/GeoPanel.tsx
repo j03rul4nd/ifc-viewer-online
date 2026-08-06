@@ -8,7 +8,7 @@
 // crs (proj4) and the geo runners, which must all stay out of the entry chunk.
 // Product state lives in geoStore; GPU state lives in the viewer's GeoSystem.
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useGeoStore } from '../stores/geoStore'
@@ -20,6 +20,7 @@ import { registerCustomProj4, resolveCrs } from '../lib/geo/crs'
 import { DEFAULT_PROVIDER_ID, resolveProvider, saveCustomProvider } from '../lib/geo/providers'
 import { TERRARIUM_ATTRIBUTION } from '../lib/geo/elevation'
 import { CONTOUR_INTERVALS } from '../lib/geo/terrain-look'
+import { collectModelSites, type ModelInput } from '../lib/geo/model-sites'
 import { WGS84_RADIUS, normalizeDeg } from '../lib/geo/geo-math'
 import {
   trackMapModeEnabled, trackMapModeDisabled, trackMapLayerChanged,
@@ -35,6 +36,18 @@ interface GeoPanelProps {
 
 const DEG = Math.PI / 180
 const RAD = 180 / Math.PI
+
+// Leaflet (~150 kB) loads only when a map surface is actually shown — opening
+// the panel to read a georeferencing status must not pay for it.
+const PlacementMiniMap = React.lazy(() => import('./PlacementMiniMap'))
+
+/**
+ * Where the manual-placement map opens before the user has chosen anything.
+ * Deliberately NOT 0,0 (null island reads as a real answer) and deliberately
+ * not the device's location, which would need a permission prompt nobody asked
+ * for. Barcelona matches the placeholder coordinates already in the inputs.
+ */
+const MANUAL_FALLBACK = { lat: 41.3851, lon: 2.1734 }
 
 export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
   const { t } = useTranslation('geo')
@@ -73,6 +86,39 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
   // Keep the local extraction mirror in sync with the store entry.
   const storeExtraction = activeModelId ? store.georefByModel[activeModelId] : undefined
   useEffect(() => { setExtraction(storeExtraction ?? null) }, [storeExtraction])
+
+  // ── Multi-model site picture ─────────────────────────────────────────────────
+  // Map mode has one placement (the basemap aligns to one scene origin), but a
+  // federated project is several files. This resolves where each loaded model
+  // claims to be so the panel can show agreement — or disagreement — honestly.
+  const sceneModels = useSceneStore((s) => s.models)
+  const georefByModel = store.georefByModel
+  const modelSites = useMemo(() => {
+    const inputs: ModelInput[] = sceneModels.map((m) => {
+      const g = georefByModel[m.id] ?? null
+      // Bounds are only needed for grid-coordinate rungs; a failure here simply
+      // leaves the model "unlocated", which is exactly what we want to show.
+      const bounds = viewerApiRef.current?.getModelBounds(m.id) ?? null
+      const resolved = g ? placementFromExtraction(g, bounds) : null
+      return {
+        modelId: m.id,
+        label: m.fileName,
+        extraction: g,
+        placement: resolved?.ok ? resolved.value : null,
+      }
+    })
+    return collectModelSites(inputs, activeModelId)
+    // `store.placement` participates because applying a manual placement should
+    // refresh the pins without waiting for another extraction.
+  }, [sceneModels, georefByModel, activeModelId, viewerApiRef, store.placement])
+
+  /** Sibling pins (everything located that is not the anchor). */
+  const otherPins = useMemo(
+    () => modelSites.located
+      .filter((s) => !s.anchor)
+      .map((s) => ({ id: s.modelId, lat: s.lat!, lon: s.lon!, label: s.label, secondary: true })),
+    [modelSites],
+  )
 
   // ── Attributions (provider + terrain) ────────────────────────────────────────
   const refreshAttributions = useCallback(async (): Promise<void> => {
@@ -523,12 +569,29 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
               {manualFormOpen && (
                 <div className="border-t border-[var(--border)] px-3.5 py-3 flex flex-col gap-2">
                   <div className="text-[10.5px] text-[var(--text-dim)] leading-snug">{t('placement.manualIntro')}</div>
+
+                  {/* Pick on a real map instead of guessing two numbers. Gated
+                      on the same consent as 3D map mode — it fetches tiles. */}
+                  {store.consentGiven && (
+                    <Suspense fallback={<div className="h-[150px] rounded-[8px] bg-[var(--surface-2)]" />}>
+                      <PlacementMiniMap
+                        lat={Number.isFinite(parseFloat(manualLat)) ? parseFloat(manualLat) : MANUAL_FALLBACK.lat}
+                        lon={Number.isFinite(parseFloat(manualLon)) ? parseFloat(manualLon) : MANUAL_FALLBACK.lon}
+                        onChange={(la, lo) => {
+                          setManualLat(la.toFixed(6))
+                          setManualLon(lo.toFixed(6))
+                        }}
+                        otherPins={otherPins}
+                      />
+                    </Suspense>
+                  )}
+
                   <div className="flex gap-1.5">
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <label className="text-[10px] text-[var(--text-faint)]">{t('placement.lat')}</label>
                       <input value={manualLat} onChange={(e) => setManualLat(e.target.value)} placeholder="41.3851" className="geo-input" inputMode="decimal" />
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <label className="text-[10px] text-[var(--text-faint)]">{t('placement.lon')}</label>
                       <input value={manualLon} onChange={(e) => setManualLon(e.target.value)} placeholder="2.1734" className="geo-input" inputMode="decimal" />
                     </div>
@@ -732,9 +795,58 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                     {' · '}
                     {store.placement.confidence === 'high' ? t('status.confidenceHigh') : t('status.confidenceApproximate')}
                   </div>
-                  <div className="text-[10.5px] font-mono text-[var(--text-dim)] tabular-nums">
+                  <div className="text-[10.5px] font-mono text-[var(--text-dim)] tabular-nums break-words">
                     {store.placement.lat.toFixed(5)}, {store.placement.lon.toFixed(5)} · {normalizeDeg(store.placement.rotationDeg).toFixed(1)}°
                   </div>
+
+                  {/* Where it actually landed. Editable while the placement
+                      editor is open, read-only review otherwise. */}
+                  {store.consentGiven && (
+                    <Suspense fallback={<div className="h-[150px] rounded-[8px] bg-[var(--surface-2)]" />}>
+                      <PlacementMiniMap
+                        lat={(editing && draftPlacement ? draftPlacement : store.placement).lat}
+                        lon={(editing && draftPlacement ? draftPlacement : store.placement).lon}
+                        onChange={editing ? (la, lo) => store.updateDraft({ lat: la, lon: lo }) : undefined}
+                        otherPins={otherPins}
+                        fitAll={modelSites.farApart}
+                      />
+                    </Suspense>
+                  )}
+
+                  {/* Multi-model context — which model the map is anchored to,
+                      and whether the loaded files agree with each other. */}
+                  {modelSites.located.length > 1 && (
+                    <div className="text-[10px] text-[var(--text-faint)] leading-snug">
+                      {t('placement.anchorHint')}
+                    </div>
+                  )}
+                  {modelSites.farApart && (
+                    <div className="text-[10px] leading-snug px-2 py-1.5 rounded-[7px] border border-[rgba(245,166,35,0.4)] bg-[rgba(245,166,35,0.08)] text-[var(--text-dim)]">
+                      {t('placement.modelsFarApart', {
+                        count: modelSites.located.length,
+                        km: Math.round(modelSites.spreadM / 1000),
+                      })}
+                    </div>
+                  )}
+                  {modelSites.sites.length > 1 && (
+                    <ul className="flex flex-col gap-0.5">
+                      {modelSites.sites.map((s) => (
+                        <li key={s.modelId} className="flex items-center gap-1.5 text-[10px] min-w-0">
+                          <span
+                            className="w-[6px] h-[6px] rounded-full shrink-0"
+                            style={{ background: s.lat === null ? 'var(--text-faint)' : s.anchor ? 'var(--accent)' : 'var(--text-dim)' }}
+                          />
+                          <span className="truncate text-[var(--text-dim)]" title={s.label}>{s.label}</span>
+                          {s.anchor && (
+                            <span className="shrink-0 text-[9px] text-[var(--accent)]">{t('placement.anchorModel')}</span>
+                          )}
+                          {s.lat === null && (
+                            <span className="shrink-0 text-[9px] text-[var(--text-faint)]">{t('placement.noGeoref')}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
 
                   {!editing && (
                     <button

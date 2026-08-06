@@ -118,7 +118,19 @@
     "sourceManual": "Manual placement",
     "manualIntro": "This model has no usable georeferencing. Enter WGS84 coordinates to place it on the map:",
     "manualShow": "Place manually",
-    "resetHeight": "Reset height"
+    "resetHeight": "Reset height",
+    "mapLabel": "Model location map",
+    "mapHint": "Drag the pin or click the map.",
+    "useMyLocation": "Use my location",
+    "locating": "Locating…",
+    "locateDenied": "Location permission denied — pick the spot on the map instead.",
+    "locateFailed": "Could not get your location — pick the spot on the map instead.",
+    "locateUnsupported": "This browser cannot report your location.",
+    "otherModels": "Other models",
+    "modelsFarApart": "{{count}} models sit more than {{km}} km apart. Only the anchor model is placed correctly; check the others before trusting the map.",
+    "anchorModel": "Anchor",
+    "anchorHint": "The map is aligned to this model. Switch the active model to re-anchor.",
+    "noGeoref": "no georeferencing"
   },
   "degraded": {
     "banner": "Map tiles are unavailable — the provider may be down or rate-limiting.",

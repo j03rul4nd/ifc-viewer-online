@@ -118,7 +118,19 @@
     "sourceManual": "Ubicación manual",
     "manualIntro": "Este modelo no tiene georreferenciación utilizable. Introduce coordenadas WGS84 para situarlo en el mapa:",
     "manualShow": "Situar manualmente",
-    "resetHeight": "Restablecer altura"
+    "resetHeight": "Restablecer altura",
+    "mapLabel": "Mapa de ubicación del modelo",
+    "mapHint": "Arrastra el pin o haz clic en el mapa.",
+    "useMyLocation": "Usar mi ubicación",
+    "locating": "Localizando…",
+    "locateDenied": "Permiso de ubicación denegado — marca el punto en el mapa.",
+    "locateFailed": "No se pudo obtener tu ubicación — marca el punto en el mapa.",
+    "locateUnsupported": "Este navegador no puede informar tu ubicación.",
+    "otherModels": "Otros modelos",
+    "modelsFarApart": "{{count}} modelos están a más de {{km}} km de distancia. Solo el modelo ancla está bien situado; revisa los demás antes de fiarte del mapa.",
+    "anchorModel": "Ancla",
+    "anchorHint": "El mapa se alinea con este modelo. Cambia el modelo activo para reanclar.",
+    "noGeoref": "sin georreferenciar"
   },
   "degraded": {
     "banner": "Las teselas del mapa no están disponibles — el proveedor puede estar caído o limitando peticiones.",

@@ -119,7 +119,19 @@
     "sourceManual": "Manual placement",
     "manualIntro": "This model has no usable georeferencing. Enter WGS84 coordinates to place it on the map:",
     "manualShow": "Place manually",
-    "resetHeight": "Reset height"
+    "resetHeight": "Reset height",
+    "mapLabel": "モデル位置マップ",
+    "mapHint": "ピンをドラッグするか地図をクリックしてください。",
+    "useMyLocation": "現在地を使う",
+    "locating": "位置を取得中…",
+    "locateDenied": "位置情報の許可が拒否されました — 地図上で地点を指定してください。",
+    "locateFailed": "位置情報を取得できませんでした — 地図上で地点を指定してください。",
+    "locateUnsupported": "このブラウザは位置情報を取得できません。",
+    "otherModels": "他のモデル",
+    "modelsFarApart": "{{count}} 個のモデルが {{km}} km 以上離れています。正しく配置されているのはアンカーモデルだけです。地図を信頼する前に他を確認してください。",
+    "anchorModel": "アンカー",
+    "anchorHint": "地図はこのモデルに合わせています。アクティブなモデルを切り替えると再アンカーします。",
+    "noGeoref": "ジオリファレンスなし"
   },
   "degraded": {
     "banner": "Map tiles are unavailable — the provider may be down or rate-limiting.",

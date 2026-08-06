@@ -119,7 +119,19 @@
     "sourceManual": "Manual placement",
     "manualIntro": "This model has no usable georeferencing. Enter WGS84 coordinates to place it on the map:",
     "manualShow": "Place manually",
-    "resetHeight": "Reset height"
+    "resetHeight": "Reset height",
+    "mapLabel": "แผนที่ตำแหน่งโมเดล",
+    "mapHint": "ลากหมุดหรือคลิกบนแผนที่",
+    "useMyLocation": "ใช้ตำแหน่งของฉัน",
+    "locating": "กำลังระบุตำแหน่ง…",
+    "locateDenied": "ปฏิเสธสิทธิ์การเข้าถึงตำแหน่ง — เลือกจุดบนแผนที่แทน",
+    "locateFailed": "ไม่สามารถรับตำแหน่งของคุณได้ — เลือกจุดบนแผนที่แทน",
+    "locateUnsupported": "เบราว์เซอร์นี้ไม่สามารถระบุตำแหน่งของคุณได้",
+    "otherModels": "โมเดลอื่น",
+    "modelsFarApart": "มี {{count}} โมเดลอยู่ห่างกันเกิน {{km}} กม. มีเพียงโมเดลหลักที่วางถูกต้อง ตรวจสอบโมเดลอื่นก่อนเชื่อถือแผนที่",
+    "anchorModel": "จุดยึด",
+    "anchorHint": "แผนที่จัดแนวตามโมเดลนี้ เปลี่ยนโมเดลที่ใช้งานเพื่อยึดใหม่",
+    "noGeoref": "ไม่มีการอ้างอิงพิกัด"
   },
   "degraded": {
     "banner": "Map tiles are unavailable — the provider may be down or rate-limiting.",

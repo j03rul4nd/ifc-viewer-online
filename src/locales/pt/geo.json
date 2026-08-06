@@ -119,7 +119,19 @@
     "sourceManual": "Manual placement",
     "manualIntro": "This model has no usable georeferencing. Enter WGS84 coordinates to place it on the map:",
     "manualShow": "Place manually",
-    "resetHeight": "Reset height"
+    "resetHeight": "Reset height",
+    "mapLabel": "Mapa de localização do modelo",
+    "mapHint": "Arraste o pino ou clique no mapa.",
+    "useMyLocation": "Usar a minha localização",
+    "locating": "A localizar…",
+    "locateDenied": "Permissão de localização negada — marque o ponto no mapa.",
+    "locateFailed": "Não foi possível obter a sua localização — marque o ponto no mapa.",
+    "locateUnsupported": "Este navegador não consegue indicar a sua localização.",
+    "otherModels": "Outros modelos",
+    "modelsFarApart": "{{count}} modelos estão a mais de {{km}} km de distância. Só o modelo âncora está bem colocado; verifique os restantes antes de confiar no mapa.",
+    "anchorModel": "Âncora",
+    "anchorHint": "O mapa está alinhado com este modelo. Mude o modelo ativo para reancorar.",
+    "noGeoref": "sem georreferenciação"
   },
   "degraded": {
     "banner": "Map tiles are unavailable — the provider may be down or rate-limiting.",
