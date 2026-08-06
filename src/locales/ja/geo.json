@@ -131,7 +131,12 @@
     "modelsFarApart": "{{count}} 個のモデルが {{km}} km 以上離れています。正しく配置されているのはアンカーモデルだけです。地図を信頼する前に他を確認してください。",
     "anchorModel": "アンカー",
     "anchorHint": "地図はこのモデルに合わせています。アクティブなモデルを切り替えると再アンカーします。",
-    "noGeoref": "ジオリファレンスなし"
+    "noGeoref": "ジオリファレンスなし",
+    "saveToIfc": "位置を IFC に保存",
+    "saveToIfcHint": "IfcSite の座標を編集として書き込みます — 取り消し可能で、エクスポート時に適用されます。",
+    "saveToIfcDescription": "IFC 敷地のジオリファレンスを設定",
+    "saveToIfcDone": "位置を保留中の編集に追加しました — ファイルに書き込むにはエクスポートしてください。",
+    "saveToIfcNoSite": "このモデルには IfcSite がないため、位置を書き込めません。"
   },
   "degraded": {
     "banner": "Map tiles are unavailable — the provider may be down or rate-limiting.",

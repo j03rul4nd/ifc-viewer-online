@@ -143,6 +143,43 @@ export function compoundAngleToDegrees(components: ReadonlyArray<number> | null 
 }
 
 /**
+ * Decimal degrees → IfcCompoundPlaneAngleMeasure `[deg, min, sec, millionths]`.
+ * The inverse of `compoundAngleToDegrees`, needed to write georeferencing back
+ * into an IFC (`IfcSite.RefLatitude` / `RefLongitude`).
+ *
+ * Two spec details that are easy to get wrong:
+ *  • Per IFC, EVERY non-zero component carries the sign — not just the first.
+ *    A southern latitude is `[-41, -22, -46, ...]`, and a file that signs only
+ *    the degrees is a file other tools may misread.
+ *  • The four components must recompose to the input. Rounding each one
+ *    independently lets error accumulate, so seconds are derived from the
+ *    remainder and the millionths absorb what is left; a carry (60.0000 s after
+ *    rounding) is propagated rather than written out as an invalid 60.
+ *
+ * Always returns all four components: the 4th is optional in the schema but
+ * writing it costs nothing and preserves ~0.3 mm of precision.
+ */
+export function degreesToCompoundAngle(degrees: number): [number, number, number, number] | null {
+  if (typeof degrees !== 'number' || !Number.isFinite(degrees)) return null
+  const sign = degrees < 0 ? -1 : 1
+  const abs = Math.abs(degrees)
+
+  let d = Math.floor(abs)
+  let remainingMin = (abs - d) * 60
+  let m = Math.floor(remainingMin)
+  let remainingSec = (remainingMin - m) * 60
+  let s = Math.floor(remainingSec)
+  let u = Math.round((remainingSec - s) * 1e6)
+
+  // Carry propagation — rounding the millionths can spill into seconds.
+  if (u >= 1e6) { u -= 1e6; s += 1 }
+  if (s >= 60)  { s -= 60;  m += 1 }
+  if (m >= 60)  { m -= 60;  d += 1 }
+
+  return [sign * d, sign * m, sign * s, sign * u]
+}
+
+/**
  * Rotation from IfcMapConversion XAxisAbscissa/XAxisOrdinate (radians, CCW
  * from grid east). Normalizes non-unit vectors. Returns null for a zero vector.
  */

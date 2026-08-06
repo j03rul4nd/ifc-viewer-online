@@ -131,7 +131,12 @@
     "modelsFarApart": "{{count}} 个模型相距超过 {{km}} 公里。只有锚点模型定位正确；信任地图前请先检查其他模型。",
     "anchorModel": "锚点",
     "anchorHint": "地图以此模型对齐。切换活动模型可重新锚定。",
-    "noGeoref": "无地理参考"
+    "noGeoref": "无地理参考",
+    "saveToIfc": "将位置写入 IFC",
+    "saveToIfcHint": "以编辑的形式写入 IfcSite 坐标 — 可撤销，导出时生效。",
+    "saveToIfcDescription": "设置 IFC 场地地理参考",
+    "saveToIfcDone": "位置已加入待处理编辑 — 导出以写入文件。",
+    "saveToIfcNoSite": "此模型没有 IfcSite，因此无法将位置写入其中。"
   },
   "degraded": {
     "banner": "Map tiles are unavailable — the provider may be down or rate-limiting.",

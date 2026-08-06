@@ -35,6 +35,12 @@ export interface SiteSource {
   refLatitude: number[] | null
   refLongitude: number[] | null
   refElevation: number | null
+  /**
+   * Express id of the IfcSite these values came from. Carried so a placement
+   * chosen in the app can be written BACK into that exact line on export
+   * (EditDiff 'SET_GEOREF'); null when no site was found.
+   */
+  expressId?: number | null
 }
 
 export interface GeorefSource {
@@ -61,6 +67,10 @@ export function runGeorefLadder(src: GeorefSource): GeorefExtraction {
     lat: null, lon: null, heightM: null, rotationDeg: 0,
     eastings: null, northings: null, scale: null,
     raw: {}, reasons: [], largeWcsOffset: false,
+    // Recorded on EVERY rung, not just rung 3: a file georeferenced through
+    // IfcMapConversion still has an IfcSite, and that is where a user-chosen
+    // placement gets written back to.
+    siteExpressId: src.site?.expressId ?? null,
   }
 
   const conversion = src.mapConversion ?? src.epsetConversion

@@ -11,7 +11,7 @@ const EXTRACTION: GeorefExtraction = {
   status: 'found', rung: 1, epsgCode: 'EPSG:25832',
   lat: null, lon: null, heightM: 0, rotationDeg: 0,
   eastings: 500000, northings: 5000000, scale: 1,
-  raw: {}, reasons: [], largeWcsOffset: false,
+  raw: {}, reasons: [], largeWcsOffset: false, siteExpressId: null,
 }
 
 beforeEach(() => {

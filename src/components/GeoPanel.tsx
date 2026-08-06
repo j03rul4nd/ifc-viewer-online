@@ -13,6 +13,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useGeoStore } from '../stores/geoStore'
 import { useSceneStore } from '../stores/sceneStore'
+import { useEditorStore } from '../stores/editorStore'
+import { toast } from '../stores/toastStore'
 import { modelRegistry } from '../lib/model-registry'
 import { ensureGeorefExtracted } from '../lib/geo/geo-extract-runner'
 import { resolvePlacement, placementFromExtraction, savePlacement } from '../lib/geo/placement'
@@ -314,6 +316,38 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
     useGeoStore.getState().setTerrainExaggeration(k)
     void getGeo()?.then((geo) => geo.setTerrainExaggeration(k))
   }, [getGeo])
+
+  /**
+   * Write the current placement into the model's IfcSite as a normal, undoable
+   * edit — so it exports with the file instead of living only in this browser.
+   * Nothing is written to disk here: it joins the diff stack like a rename, and
+   * the user still has to export.
+   */
+  const handleSaveGeorefToIfc = useCallback((): void => {
+    const placement = useGeoStore.getState().placement
+    const g = activeModelId ? useGeoStore.getState().georefByModel[activeModelId] : null
+    if (!placement || !activeModelId || !g?.siteExpressId) return
+
+    useEditorStore.getState().addCommand({
+      id: crypto.randomUUID(),
+      timestamp: Date.now(),
+      modelId: activeModelId,
+      description: t('placement.saveToIfcDescription'),
+      diffs: [{
+        type: 'SET_GEOREF',
+        expressId: g.siteExpressId,
+        lat: placement.lat,
+        lon: placement.lon,
+        // Only write an elevation we actually know; inventing 0 would claim
+        // the site sits at sea level.
+        elevationM: g.heightM,
+        oldLat: g.lat,
+        oldLon: g.lon,
+        oldElevationM: g.heightM,
+      }],
+    })
+    toast(t('placement.saveToIfcDone'), 'success')
+  }, [activeModelId, t])
 
   const handleTerrainLook = useCallback((patch: Partial<TerrainLook>): void => {
     useGeoStore.getState().setTerrainLook(patch)
@@ -855,6 +889,28 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                     >
                       {t('placement.edit')}
                     </button>
+                  )}
+
+                  {/* Write the placement into the file itself. Until this is
+                      used, a location chosen here lives only in this browser. */}
+                  {!editing && (
+                    extraction?.siteExpressId ? (
+                      <div className="flex flex-col gap-1">
+                        <button
+                          onClick={handleSaveGeorefToIfc}
+                          className="px-2.5 py-1.5 rounded-[7px] text-[11px] font-medium border border-[var(--accent)] text-[var(--accent)] hover:bg-[rgba(94,106,210,0.12)] transition-colors"
+                        >
+                          {t('placement.saveToIfc')}
+                        </button>
+                        <span className="text-[9.5px] text-[var(--text-faint)] leading-snug">
+                          {t('placement.saveToIfcHint')}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-[9.5px] text-[var(--text-faint)] leading-snug">
+                        {t('placement.saveToIfcNoSite')}
+                      </span>
+                    )
                   )}
 
                   {editing && draftPlacement && (

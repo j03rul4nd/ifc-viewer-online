@@ -131,7 +131,12 @@
     "modelsFarApart": "{{count}} Modelle liegen mehr als {{km}} km auseinander. Nur das Ankermodell ist korrekt platziert; prüfe die anderen, bevor du der Karte vertraust.",
     "anchorModel": "Anker",
     "anchorHint": "Die Karte ist an diesem Modell ausgerichtet. Aktives Modell wechseln, um neu zu verankern.",
-    "noGeoref": "ohne Georeferenzierung"
+    "noGeoref": "ohne Georeferenzierung",
+    "saveToIfc": "Standort in die IFC schreiben",
+    "saveToIfcHint": "Schreibt IfcSite-Koordinaten als Änderung — widerrufbar und wird beim Export angewendet.",
+    "saveToIfcDescription": "IfcSite-Georeferenzierung setzen",
+    "saveToIfcDone": "Standort zu den offenen Änderungen hinzugefügt — zum Schreiben exportieren.",
+    "saveToIfcNoSite": "Dieses Modell hat keine IfcSite, der Standort kann nicht hineingeschrieben werden."
   },
   "degraded": {
     "banner": "Map tiles are unavailable — the provider may be down or rate-limiting.",

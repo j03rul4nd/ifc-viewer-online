@@ -130,7 +130,12 @@
     "modelsFarApart": "{{count}} models sit more than {{km}} km apart. Only the anchor model is placed correctly; check the others before trusting the map.",
     "anchorModel": "Anchor",
     "anchorHint": "The map is aligned to this model. Switch the active model to re-anchor.",
-    "noGeoref": "no georeferencing"
+    "noGeoref": "no georeferencing",
+    "saveToIfc": "Save location to the IFC",
+    "saveToIfcHint": "Writes IfcSite coordinates as an edit — undoable, and applied when you export.",
+    "saveToIfcDescription": "Set IFC site georeferencing",
+    "saveToIfcDone": "Location added to the pending edits — export to write the file.",
+    "saveToIfcNoSite": "This model has no IfcSite, so the location cannot be written into it."
   },
   "degraded": {
     "banner": "Map tiles are unavailable — the provider may be down or rate-limiting.",

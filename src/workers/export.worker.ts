@@ -9,6 +9,7 @@
 //     { type: 'error', id: string, message: string }
 
 import { IfcAPI, IFCRELAGGREGATES, IFCRELCONTAINEDINSPATIALSTRUCTURE } from 'web-ifc'
+import { degreesToCompoundAngle } from '../lib/geo/geo-math'
 import type { EditDiff } from '../types'
 
 // Force single-threaded WASM — nested workers (pthreads) fail inside a worker context
@@ -55,6 +56,37 @@ function applyDiff(api: IfcAPI, modelId: number, diff: EditDiff): void {
   } else if (diff.type === 'SET_PROPERTY') {
     const line: AnyLine = api.GetLine(modelId, diff.propExpressId, false)
     line.NominalValue = { type: 1, value: diff.newValue }
+    api.WriteLine(modelId, line)
+
+  } else if (diff.type === 'SET_GEOREF') {
+    // Value shapes here are NOT interchangeable — web-ifc's serializer reads
+    // `type` (and, for NumberHandle-derived measures, `name`) off each value,
+    // so a plausible-looking wrapper silently throws during SaveModel:
+    //   RefLatitude/RefLongitude — IfcCompoundPlaneAngleMeasure: ONE object
+    //     wrapping the whole integer list, `{ type: 10, value: number[] }`.
+    //     (An array of per-element tagged values is the intuitive guess and is
+    //     wrong — verified against web-ifc's own class definitions.)
+    //   RefElevation — IfcLengthMeasure: `{ type: 4, value, name }`.
+    // Existing objects are mutated in place where present, so anything the
+    // schema carries that we do not model survives the round-trip.
+    const line: AnyLine = api.GetLine(modelId, diff.expressId, false)
+    const lat = degreesToCompoundAngle(diff.lat)
+    const lon = degreesToCompoundAngle(diff.lon)
+    if (!lat || !lon) throw new Error('invalid georeference coordinates')
+
+    const setCompound = (field: 'RefLatitude' | 'RefLongitude', parts: number[]): void => {
+      const existing = line[field]
+      if (existing && typeof existing === 'object' && !Array.isArray(existing)) existing.value = parts
+      else line[field] = { type: 10, value: parts }
+    }
+    setCompound('RefLatitude', lat)
+    setCompound('RefLongitude', lon)
+
+    if (diff.elevationM !== null) {
+      const existing = line.RefElevation
+      if (existing && typeof existing === 'object') existing.value = diff.elevationM
+      else line.RefElevation = { type: 4, value: diff.elevationM, name: 'IFCLENGTHMEASURE' }
+    }
     api.WriteLine(modelId, line)
 
   } else if (diff.type === 'REPARENT') {

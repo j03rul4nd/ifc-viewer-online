@@ -131,7 +131,12 @@
     "modelsFarApart": "{{count}} models estan a més de {{km}} km de distància. Només el model àncora està ben situat; revisa els altres abans de fiar-te del mapa.",
     "anchorModel": "Àncora",
     "anchorHint": "El mapa s’alinea amb aquest model. Canvia el model actiu per reancorar.",
-    "noGeoref": "sense georeferenciació"
+    "noGeoref": "sense georeferenciació",
+    "saveToIfc": "Desa la ubicació a l'IFC",
+    "saveToIfcHint": "Escriu les coordenades d'IfcSite com una edició — reversible i s'aplica en exportar.",
+    "saveToIfcDescription": "Defineix la georeferenciació de l'emplaçament IFC",
+    "saveToIfcDone": "Ubicació afegida a les edicions pendents — exporta per escriure el fitxer.",
+    "saveToIfcNoSite": "Aquest model no té IfcSite, així que la ubicació no s'hi pot escriure."
   },
   "degraded": {
     "banner": "Map tiles are unavailable — the provider may be down or rate-limiting.",

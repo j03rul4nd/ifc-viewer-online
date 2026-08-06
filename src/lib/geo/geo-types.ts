@@ -87,6 +87,12 @@ export interface GeorefExtraction {
   reasons: string[]
   /** True when model geometry sits > 10 km from the file origin (plan §4.4 gate 6). */
   largeWcsOffset: boolean
+  /**
+   * Express id of the IfcSite the extraction read (or would write to). Needed
+   * to write a placement back into the file as an edit; null when the model has
+   * no IfcSite at all, in which case georeferencing cannot be saved to it.
+   */
+  siteExpressId: number | null
 }
 
 // ── Placement ──────────────────────────────────────────────────────────────────

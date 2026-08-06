@@ -1384,6 +1384,30 @@ export type EditDiff =
   | { type: 'REPARENT';     expressId: number; oldParentExpressId: number; newParentExpressId: number }
   /** Edit an IfcPropertySingleValue inside a Pset. propExpressId is the express ID of the property line itself. */
   | { type: 'SET_PROPERTY'; expressId: number; psetName: string; propName: string; propExpressId: number; oldValue: string; newValue: string }
+  /**
+   * Write georeferencing into `IfcSite` (RefLatitude / RefLongitude /
+   * RefElevation), so a placement chosen in the app travels with the exported
+   * file instead of living only in this browser.
+   *
+   * Scope note — this is the LoGeoRef 20/40 rung on purpose. It edits
+   * attributes that every IFC2x3 and IFC4 site already has, which the exporter
+   * can do today. Full LoGeoRef 50 (`IfcMapConversion` + `IfcProjectedCRS`)
+   * would mean creating new entities, which the export worker cannot yet do.
+   * `expressId` is the IfcSite line; `oldValue`/`newValue` are decimal degrees
+   * so undo restores exactly what was there.
+   */
+  | {
+      type: 'SET_GEOREF'
+      expressId: number
+      lat: number
+      lon: number
+      /** Site elevation in metres; null leaves RefElevation untouched. */
+      elevationM: number | null
+      /** Previous values, for undo. Null when the site had none. */
+      oldLat: number | null
+      oldLon: number | null
+      oldElevationM: number | null
+    }
 
 export interface EditorCommand {
   id: string

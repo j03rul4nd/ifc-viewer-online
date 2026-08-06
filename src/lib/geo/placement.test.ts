@@ -19,7 +19,7 @@ function extraction(partial: Partial<GeorefExtraction>): GeorefExtraction {
     status: 'found', rung: 1, epsgCode: 'EPSG:25832',
     lat: null, lon: null, heightM: null, rotationDeg: 0,
     eastings: null, northings: null, scale: 1,
-    raw: {}, reasons: [], largeWcsOffset: false,
+    raw: {}, reasons: [], largeWcsOffset: false, siteExpressId: null,
     ...partial,
   }
 }

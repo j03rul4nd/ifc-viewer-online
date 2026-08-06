@@ -42,7 +42,7 @@ function stubExtraction(
     lat: null, lon: null, heightM: null,
     rotationDeg: 0,
     eastings: null, northings: null, scale: null,
-    raw, reasons, largeWcsOffset: false,
+    raw, reasons, largeWcsOffset: false, siteExpressId: null,
   }
 }
 

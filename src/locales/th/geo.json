@@ -131,7 +131,12 @@
     "modelsFarApart": "มี {{count}} โมเดลอยู่ห่างกันเกิน {{km}} กม. มีเพียงโมเดลหลักที่วางถูกต้อง ตรวจสอบโมเดลอื่นก่อนเชื่อถือแผนที่",
     "anchorModel": "จุดยึด",
     "anchorHint": "แผนที่จัดแนวตามโมเดลนี้ เปลี่ยนโมเดลที่ใช้งานเพื่อยึดใหม่",
-    "noGeoref": "ไม่มีการอ้างอิงพิกัด"
+    "noGeoref": "ไม่มีการอ้างอิงพิกัด",
+    "saveToIfc": "บันทึกตำแหน่งลงใน IFC",
+    "saveToIfcHint": "เขียนพิกัด IfcSite เป็นการแก้ไข — ย้อนกลับได้ และมีผลเมื่อส่งออก",
+    "saveToIfcDescription": "กำหนดการอ้างอิงพิกัดของไซต์ IFC",
+    "saveToIfcDone": "เพิ่มตำแหน่งลงในรายการแก้ไขที่รอดำเนินการแล้ว — ส่งออกเพื่อเขียนไฟล์",
+    "saveToIfcNoSite": "โมเดลนี้ไม่มี IfcSite จึงไม่สามารถเขียนตำแหน่งลงไปได้"
   },
   "degraded": {
     "banner": "Map tiles are unavailable — the provider may be down or rate-limiting.",

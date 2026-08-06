@@ -24,7 +24,7 @@ function foundExtraction(): GeorefExtraction {
     status: 'found', rung: 1, epsgCode: 'EPSG:25832',
     lat: null, lon: null, heightM: 100, rotationDeg: 0,
     eastings: 500_000, northings: 5_400_000, scale: 1,
-    raw: {}, reasons: [], largeWcsOffset: false,
+    raw: {}, reasons: [], largeWcsOffset: false, siteExpressId: null,
   }
 }
 

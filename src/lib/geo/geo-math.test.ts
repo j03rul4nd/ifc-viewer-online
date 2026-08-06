@@ -12,6 +12,7 @@ import {
   latLonToTile,
   latLonToTilePixel,
   compoundAngleToDegrees,
+  degreesToCompoundAngle,
   rotationFromXAxis,
   rotationFromTrueNorth,
   normalizeDeg,
@@ -269,5 +270,64 @@ describe('geo-math · directions & panning', () => {
     const out = panPlacement(p, 0, -1000)
     expect(Math.abs(out.lat)).toBeLessThan(1e-9)
     expect(out.lon).toBeLessThan(0)
+  })
+})
+
+describe('geo-math · degreesToCompoundAngle (writing georeferencing back)', () => {
+  it('round-trips through compoundAngleToDegrees at sub-millimetre precision', () => {
+    for (const deg of [0, 41.3851, -41.3851, 46.0207, 7.749, -3.7038, 89.999999, -0.000001]) {
+      const parts = degreesToCompoundAngle(deg)
+      expect(parts).not.toBeNull()
+      expect(compoundAngleToDegrees(parts!)).toBeCloseTo(deg, 9)
+    }
+  })
+
+  it('produces the classic worked example', () => {
+    // 41.3851° = 41° 23' 6.36"
+    const [d, m, s, u] = degreesToCompoundAngle(41.3851)!
+    expect(d).toBe(41)
+    expect(m).toBe(23)
+    expect(s).toBe(6)
+    expect(u).toBeCloseTo(360000, -1)
+  })
+
+  it('signs EVERY non-zero component, as the spec requires', () => {
+    const parts = degreesToCompoundAngle(-41.3851)!
+    for (const v of parts) expect(v).toBeLessThanOrEqual(0)
+    expect(parts[0]).toBe(-41)
+    expect(parts[1]).toBe(-23)
+  })
+
+  it('keeps zero components at zero rather than negative zero noise', () => {
+    const parts = degreesToCompoundAngle(-41)!
+    expect(parts[0]).toBe(-41)
+    expect(Math.abs(parts[1])).toBe(0)
+    expect(Math.abs(parts[2])).toBe(0)
+  })
+
+  it('never emits an out-of-range component (carry is propagated)', () => {
+    // Values engineered to round up through every boundary.
+    for (const deg of [1 - 1e-12, 0.9999999999, 12.999999999999, 59.99999999999 / 60]) {
+      const [, m, s, u] = degreesToCompoundAngle(deg)!
+      expect(Math.abs(m)).toBeLessThan(60)
+      expect(Math.abs(s)).toBeLessThan(60)
+      expect(Math.abs(u)).toBeLessThan(1e6)
+    }
+  })
+
+  it('returns integers — IFC compound angles are integer-valued', () => {
+    for (const deg of [41.3851, -7.749, 46.0207]) {
+      for (const v of degreesToCompoundAngle(deg)!) expect(Number.isInteger(v)).toBe(true)
+    }
+  })
+
+  it('handles exact zero', () => {
+    expect(degreesToCompoundAngle(0)).toEqual([0, 0, 0, 0])
+  })
+
+  it('rejects non-finite input instead of writing garbage into the file', () => {
+    expect(degreesToCompoundAngle(NaN)).toBeNull()
+    expect(degreesToCompoundAngle(Infinity)).toBeNull()
+    expect(degreesToCompoundAngle('41' as unknown as number)).toBeNull()
   })
 })

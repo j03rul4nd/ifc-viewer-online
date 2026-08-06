@@ -18,6 +18,7 @@ import {
   IFCPROPERTYSET,
   IFCSIUNIT,
 } from 'web-ifc'
+import { num, str, ref, numArray } from '../lib/geo/ifc-value'
 import { runGeorefLadder, type GeorefSource, type MapConversionSource } from '../lib/geo/georef-ladder'
 import type { GeorefExtraction } from '../lib/geo/geo-types'
 import { createLogger } from '../lib/logger'
@@ -51,49 +52,6 @@ function post(msg: GeoExtractOutMessage): void {
 // ── IfcValue unwrapping helpers ─────────────────────────────────────────────────
 // web-ifc GetLine wraps attributes as { type, value } — but real files and
 // schema versions are inconsistent, so accept bare numbers/strings too.
-
-function num(v: unknown): number | null {
-  if (typeof v === 'number') return Number.isFinite(v) ? v : null
-  if (v && typeof v === 'object' && 'value' in v) {
-    const inner = (v as { value: unknown }).value
-    if (typeof inner === 'number') return Number.isFinite(inner) ? inner : null
-    if (typeof inner === 'string') {
-      const parsed = parseFloat(inner)
-      return Number.isFinite(parsed) ? parsed : null
-    }
-  }
-  return null
-}
-
-function str(v: unknown): string | null {
-  if (typeof v === 'string') return v
-  if (v && typeof v === 'object' && 'value' in v) {
-    const inner = (v as { value: unknown }).value
-    return typeof inner === 'string' ? inner : null
-  }
-  return null
-}
-
-function ref(v: unknown): number | null {
-  // Entity references arrive as { type: 5, value: expressID }
-  if (v && typeof v === 'object' && 'value' in v) {
-    const inner = (v as { value: unknown }).value
-    return typeof inner === 'number' ? inner : null
-  }
-  return null
-}
-
-/** Compound plane angle: array of numbers or {value} wrappers. */
-function numArray(v: unknown): number[] | null {
-  if (!Array.isArray(v) || v.length === 0) return null
-  const out: number[] = []
-  for (const item of v) {
-    const n = num(item)
-    if (n === null) return null
-    out.push(n)
-  }
-  return out
-}
 
 function getLine(api: IfcAPI, modelId: number, expressId: number): Record<string, unknown> | null {
   try {
@@ -221,12 +179,14 @@ function readSite(api: IfcAPI, modelId: number): GeorefSource['site'] {
   // Prefer the first site that actually carries coordinates.
   let fallback: GeorefSource['site'] = null
   for (let i = 0; i < ids.size(); i++) {
-    const site = getLine(api, modelId, ids.get(i))
+    const expressId = ids.get(i)
+    const site = getLine(api, modelId, expressId)
     if (!site) continue
     const entry = {
       refLatitude: numArray(site['RefLatitude']),
       refLongitude: numArray(site['RefLongitude']),
       refElevation: num(site['RefElevation']),
+      expressId,
     }
     if (entry.refLatitude && entry.refLongitude) return entry
     fallback ??= entry

@@ -130,7 +130,12 @@
     "modelsFarApart": "{{count}} modelos están a más de {{km}} km de distancia. Solo el modelo ancla está bien situado; revisa los demás antes de fiarte del mapa.",
     "anchorModel": "Ancla",
     "anchorHint": "El mapa se alinea con este modelo. Cambia el modelo activo para reanclar.",
-    "noGeoref": "sin georreferenciar"
+    "noGeoref": "sin georreferenciar",
+    "saveToIfc": "Guardar la ubicación en el IFC",
+    "saveToIfcHint": "Escribe las coordenadas de IfcSite como una edición — reversible y se aplica al exportar.",
+    "saveToIfcDescription": "Definir la georreferenciación del emplazamiento IFC",
+    "saveToIfcDone": "Ubicación añadida a las ediciones pendientes — exporta para escribir el archivo.",
+    "saveToIfcNoSite": "Este modelo no tiene IfcSite, así que la ubicación no puede escribirse en él."
   },
   "degraded": {
     "banner": "Las teselas del mapa no están disponibles — el proveedor puede estar caído o limitando peticiones.",
