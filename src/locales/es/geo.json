@@ -88,7 +88,18 @@
     "customUrlPlaceholder": "https://…/{z}/{x}/{y}.png",
     "customAttribution": "Texto de atribución",
     "customSave": "Guardar fuente",
-    "customInvalid": "Plantilla inválida — debe ser https y contener {z}, {x} e {y}."
+    "customInvalid": "Plantilla inválida — debe ser https y contener {z}, {x} e {y}.",
+    "styleSlope": "Pendiente",
+    "advancedRelief": "Relieve avanzado",
+    "sunAzimuth": "Dir. sol",
+    "sunAltitude": "Altura sol",
+    "softness": "Suavidad",
+    "occlusion": "Profundidad",
+    "detail": "Microrrelieve",
+    "detailWarning": "El microrrelieve es detalle sintético generado para rellenar los huecos entre muestras de elevación: es verosímil, no medido. Desactívalo para analizar.",
+    "contours": "Curvas de nivel",
+    "contoursOff": "Ninguna",
+    "resetRelief": "Restablecer relieve"
   },
   "placement": {
     "title": "Ubicación",

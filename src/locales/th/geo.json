@@ -89,7 +89,18 @@
     "customUrlPlaceholder": "https://…/{z}/{x}/{y}.png",
     "customAttribution": "Attribution text",
     "customSave": "Save source",
-    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}."
+    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}.",
+    "styleSlope": "ความชัน",
+    "advancedRelief": "การแสดงภูมิประเทศขั้นสูง",
+    "sunAzimuth": "ทิศแสง",
+    "sunAltitude": "มุมสูงของแสง",
+    "softness": "ความนุ่มนวล",
+    "occlusion": "ความลึก",
+    "detail": "รายละเอียดย่อย",
+    "detailWarning": "รายละเอียดย่อยเป็นรายละเอียดสังเคราะห์ที่สร้างขึ้นเพื่อเติมช่องว่างระหว่างจุดวัดความสูง ดูสมจริงแต่ไม่ใช่ค่าที่วัดจริง ควรปิดเมื่อวิเคราะห์",
+    "contours": "เส้นชั้นความสูง",
+    "contoursOff": "ปิด",
+    "resetRelief": "รีเซ็ตภูมิประเทศ"
   },
   "placement": {
     "title": "Placement",

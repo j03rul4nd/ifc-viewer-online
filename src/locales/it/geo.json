@@ -89,7 +89,18 @@
     "customUrlPlaceholder": "https://…/{z}/{x}/{y}.png",
     "customAttribution": "Attribution text",
     "customSave": "Save source",
-    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}."
+    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}.",
+    "styleSlope": "Pendenza",
+    "advancedRelief": "Rilievo avanzato",
+    "sunAzimuth": "Dir. sole",
+    "sunAltitude": "Altezza sole",
+    "softness": "Morbidezza",
+    "occlusion": "Profondità",
+    "detail": "Microrilievo",
+    "detailWarning": "Il microrilievo è dettaglio sintetico generato per colmare i vuoti tra i campioni di quota: plausibile, non misurato. Disattivalo per l'analisi.",
+    "contours": "Curve di livello",
+    "contoursOff": "Nessuna",
+    "resetRelief": "Reimposta rilievo"
   },
   "placement": {
     "title": "Placement",

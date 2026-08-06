@@ -89,7 +89,18 @@
     "customUrlPlaceholder": "https://…/{z}/{x}/{y}.png",
     "customAttribution": "Attribution text",
     "customSave": "Save source",
-    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}."
+    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}.",
+    "styleSlope": "Declive",
+    "advancedRelief": "Relevo avançado",
+    "sunAzimuth": "Dir. sol",
+    "sunAltitude": "Altura do sol",
+    "softness": "Suavidade",
+    "occlusion": "Profundidade",
+    "detail": "Microrrelevo",
+    "detailWarning": "O microrrelevo é detalhe sintético gerado para preencher lacunas entre amostras de elevação — plausível, não medido. Desligue-o para análise.",
+    "contours": "Curvas de nível",
+    "contoursOff": "Nenhuma",
+    "resetRelief": "Repor relevo"
   },
   "placement": {
     "title": "Placement",

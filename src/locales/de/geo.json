@@ -89,7 +89,18 @@
     "customUrlPlaceholder": "https://…/{z}/{x}/{y}.png",
     "customAttribution": "Attribution text",
     "customSave": "Save source",
-    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}."
+    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}.",
+    "styleSlope": "Neigung",
+    "advancedRelief": "Erweitertes Relief",
+    "sunAzimuth": "Sonnenricht.",
+    "sunAltitude": "Sonnenhöhe",
+    "softness": "Weichheit",
+    "occlusion": "Tiefe",
+    "detail": "Mikrorelief",
+    "detailWarning": "Das Mikrorelief ist synthetisch erzeugtes Detail, das Lücken zwischen Höhenstützpunkten füllt — plausibel, nicht gemessen. Für Analysen ausschalten.",
+    "contours": "Höhenlinien",
+    "contoursOff": "Aus",
+    "resetRelief": "Relief zurücksetzen"
   },
   "placement": {
     "title": "Placement",

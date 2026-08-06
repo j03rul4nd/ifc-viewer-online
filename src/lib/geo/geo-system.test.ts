@@ -39,6 +39,7 @@ interface FakePatch {
   redrape: ReturnType<typeof vi.fn>
   setStyle: ReturnType<typeof vi.fn>
   setExaggeration: ReturnType<typeof vi.fn>
+  setLook: ReturnType<typeof vi.fn>
   dispose: ReturnType<typeof vi.fn>
 }
 
@@ -156,6 +157,7 @@ beforeEach(() => {
       redrape: vi.fn(async () => { /* drape swapped */ }),
       setStyle: vi.fn(),
       setExaggeration: vi.fn(),
+      setLook: vi.fn(),
       dispose: vi.fn(),
     }
     terrainMock.patches.push(patch)
@@ -465,6 +467,34 @@ describe('geo-system · terrain sync', () => {
     const second = fakePatches()[1]
     expect(second.setStyle).toHaveBeenCalledWith('hypsometric')
     expect(second.setExaggeration).toHaveBeenCalledWith(3)
+    geo.dispose()
+  })
+
+  it('re-applies the sticky advanced look, clamped, to rebuilt patches', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const f = makeFixture()
+    const geo = createGeoSystem(f.ctx)
+    await geo.enable(PLACEMENT, PROVIDER)
+    // Out-of-range values must never reach the patch — the system clamps.
+    geo.setTerrainLook({
+      sunAzimuth: 400, sunAltitude: 200, softness: 0.25,
+      occlusion: 5, detail: 0.4, contourInterval: 10,
+    })
+    await geo.setTerrain(true)
+
+    const first = fakePatches()[0]
+    expect(first.setLook).toHaveBeenCalledWith(
+      expect.objectContaining({ sunAzimuth: 40, sunAltitude: 90, occlusion: 1, detail: 0.4 }),
+    )
+
+    // Live changes forward to the active patch…
+    geo.setTerrainLook({ sunAzimuth: 120, sunAltitude: 30, softness: 1, occlusion: 0, detail: 0, contourInterval: 0 })
+    expect(first.setLook).toHaveBeenCalledWith(expect.objectContaining({ sunAzimuth: 120 }))
+
+    // …and survive a placement-driven rebuild.
+    geo.setPlacement({ ...PLACEMENT, lat: PLACEMENT.lat + 1 })
+    await vi.advanceTimersByTimeAsync(800)
+    expect(fakePatches()[1].setLook).toHaveBeenCalledWith(expect.objectContaining({ sunAzimuth: 120 }))
     geo.dispose()
   })
 })

@@ -10,7 +10,8 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { createLogger } from '../lib/logger'
-import type { GeoPlacement, GeorefExtraction, MapMode, TerrainStatus, TerrainStyle } from '../lib/geo/geo-types'
+import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from '../lib/geo/terrain-look'
+import type { GeoPlacement, GeorefExtraction, MapMode, TerrainStatus, TerrainStyle, TerrainLook } from '../lib/geo/geo-types'
 
 const log = createLogger('GeoStore')
 
@@ -21,10 +22,24 @@ const LS_LAYER   = 'ifc-geo-layer:v1'
 const LS_TERMS   = 'ifc-geo-terms:v1'
 const LS_TERRAIN_STYLE = 'ifc-geo-terrain-style:v1'
 const LS_TERRAIN_EXAGG = 'ifc-geo-terrain-exagg:v1'
+const LS_TERRAIN_LOOK  = 'ifc-geo-terrain-look:v1'
 
 function readTerrainStyle(): TerrainStyle {
   const raw = lsGet(LS_TERRAIN_STYLE)
-  return raw === 'shaded' || raw === 'hypsometric' ? raw : 'imagery'
+  return raw === 'shaded' || raw === 'hypsometric' || raw === 'slope' ? raw : 'imagery'
+}
+
+/** Persisted advanced look; anything malformed falls back to the defaults. */
+function readTerrainLook(): TerrainLook {
+  const raw = lsGet(LS_TERRAIN_LOOK)
+  if (!raw) return { ...DEFAULT_TERRAIN_LOOK }
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return clampTerrainLook(parsed as Partial<TerrainLook>)
+    }
+  } catch { /* corrupt — fall through */ }
+  return { ...DEFAULT_TERRAIN_LOOK }
 }
 
 function readTerrainExaggeration(): number {
@@ -77,6 +92,8 @@ interface GeoStore {
   terrainStyle: TerrainStyle
   /** Vertical exaggeration ×k, 1–3 (persisted). */
   terrainExaggeration: number
+  /** Advanced terrain look (sun, softness, occlusion, detail, contours). */
+  terrainLook: TerrainLook
   georefByModel: Record<string, GeorefExtraction>
   /** EFFECTIVE placement driving the geoRoot transform. */
   placement: GeoPlacement | null
@@ -101,6 +118,10 @@ interface GeoStore {
   setTerrainEnabled: (v: boolean) => void
   setTerrainStatus: (epoch: number, s: TerrainStatus) => void
   setTerrainStyle: (s: TerrainStyle) => void
+  /** Patch-merge the advanced look (clamped + persisted). */
+  setTerrainLook: (patch: Partial<TerrainLook>) => void
+  /** Restore the shipped look (measured-only: no synthetic detail, no contours). */
+  resetTerrainLook: () => void
   setTerrainExaggeration: (k: number) => void
   setGeoref: (modelId: string, g: GeorefExtraction) => void
   removeGeoref: (modelId: string) => void
@@ -131,6 +152,7 @@ export const useGeoStore = create<GeoStore>()(
       terrainStatus:  'idle' as TerrainStatus,
       terrainStyle:   readTerrainStyle(),
       terrainExaggeration: readTerrainExaggeration(),
+      terrainLook:    readTerrainLook(),
       georefByModel:  {},
       placement:      null,
       editing:        false,
@@ -217,6 +239,22 @@ export const useGeoStore = create<GeoStore>()(
       setTerrainStyle: (style) => {
         lsSet(LS_TERRAIN_STYLE, style)
         set({ terrainStyle: style }, false, 'setTerrainStyle')
+      },
+
+      setTerrainLook: (patch) =>
+        set(
+          (s) => {
+            const next = clampTerrainLook({ ...s.terrainLook, ...patch })
+            lsSet(LS_TERRAIN_LOOK, JSON.stringify(next))
+            return { terrainLook: next }
+          },
+          false,
+          'setTerrainLook',
+        ),
+
+      resetTerrainLook: () => {
+        lsSet(LS_TERRAIN_LOOK, JSON.stringify(DEFAULT_TERRAIN_LOOK))
+        set({ terrainLook: { ...DEFAULT_TERRAIN_LOOK } }, false, 'resetTerrainLook')
       },
 
       setTerrainExaggeration: (k) => {

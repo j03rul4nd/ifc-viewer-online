@@ -30,6 +30,38 @@
 > • New pure helpers: `hypsometricColor`, exaggeration-aware
 >   `shadeFromNormal(…, ambient, exaggeration)`.
 
+> **ROUND 3 (2026-08-06, user feedback "get closer to real 3D terrain, no
+> Mapbox"):** fidelity + advanced control, still inside the fixed 3×3 no-LOD
+> patch and still with zero new dependencies.
+> • **Bicubic (Catmull-Rom) resampling** replaces bilinear
+>   (`sampleHeightGridBicubic`). The DEM is coarser than the vertex grid, and a
+>   C0 kernel rounds every ridge into a hump — this is the single biggest
+>   "melted wax" cause.
+> • **Synthetic micro-relief** (`synthesizeDetail`): deterministic hash-lattice
+>   value noise, 4 octaves, **slope-modulated** (flat ground untouched) and
+>   **amplitude-capped at ¼ of the DEM sample spacing**. Returned as a SEPARATE
+>   array so measured heights are never overwritten and the blend is live.
+>   Off by default; the UI must label it as synthetic (`layers.detailWarning`).
+> • **Configurable sun + multi-directional hillshade** (`hillshade`,
+>   `sunVector`, `DEFAULT_SUN` = NW/45° to avoid the crater illusion). A
+>   `softness` control crossfades single-light drama → Imhof-style legibility.
+> • **Sky-view factor** (`skyViewFactor`, 8-azimuth horizon scan) baked in the
+>   worker and applied via `occlusionFactor`. This is what a hillshade
+>   structurally cannot express: it separates a valley floor from a plateau of
+>   the same slope, and is what makes the terrain read as solid rather than
+>   embossed.
+> • **`slope` style** + **analytic contour lines** (`contourFactor`,
+>   gradient-widened so they survive both plateaus and cliffs).
+> • All of it rides the existing vertex-colour attribute → material stays
+>   unlit, imagery is never double-shaded. `TerrainLook` in geoStore
+>   (`ifc-geo-terrain-look:v1`), `patch.setLook()` re-bakes colours always and
+>   re-displaces geometry only when `detail` changes.
+> • **Chunk-graph note:** `terrain-look.ts` exists ONLY because geoStore is
+>   eager — putting the look defaults in `terrain-sampling.ts` pulled the whole
+>   sampling maths into the entry chunk (+5 kB, measured). Keep that split.
+> • Verified against live Terrarium tiles at the Matterhorn (45.9763, 7.6586):
+>   heights 2760-4354 m, detail within the 4.98 m cap, SVF 0.43-1.0.
+
 Step-by-step implementation guide for the next session. Scope: fix the
 provider-switch staleness bug and substantially raise terrain fidelity, without
 touching the map-mode invariants. Read `GIS_MAP_INTEGRATION_PLAN.md` §4 and

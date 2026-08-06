@@ -5,13 +5,25 @@ import {
   bilinearSample,
   sampleHeightGrid,
   computeNormals,
-  shadeFromNormal,
+  hillshade,
   hypsometricColor,
   terrainZoomFor,
   imageryZoomFor,
   imageryTileRange,
   vertexSpacingM,
   SHADE_AMBIENT_RELIEF,
+  DEFAULT_SUN,
+  bicubicSample,
+  sampleHeightGridBicubic,
+  synthesizeDetail,
+  sunVector,
+  skyViewFactor,
+  occlusionFactor,
+  slopeColor,
+  slopeFraction,
+  contourFactor,
+  clampTerrainLook,
+  DEFAULT_TERRAIN_LOOK,
 } from './terrain-sampling'
 import { latLonToTileFloat, latLonToTile } from './geo-math'
 
@@ -63,7 +75,7 @@ describe('sampleHeightGrid', () => {
   })
 })
 
-describe('computeNormals + shadeFromNormal', () => {
+describe('computeNormals + hillshade', () => {
   it('flat terrain → straight-up normals', () => {
     const verts = 5
     const flat = new Float32Array(verts * verts).fill(50)
@@ -101,20 +113,20 @@ describe('computeNormals + shadeFromNormal', () => {
   })
 
   it('shade stays in [0.55, 1] and flat ground is mid-bright', () => {
-    const flat = shadeFromNormal(0, 0, 1)
+    const flat = hillshade(0, 0, 1)
     expect(flat).toBeGreaterThan(0.8)
     expect(flat).toBeLessThanOrEqual(1)
     // A steep face turned fully away from the light bottoms out at ambient.
-    expect(shadeFromNormal(0.9, -0.43, 0.07)).toBeGreaterThanOrEqual(0.55)
+    expect(hillshade(0.9, -0.43, 0.07)).toBeGreaterThanOrEqual(0.55)
   })
 
   it('exaggeration steepens shading contrast; flat ground is unaffected', () => {
     // Flat: gradient 0 → exaggeration changes nothing.
-    expect(shadeFromNormal(0, 0, 1, 0.55, 3)).toBeCloseTo(shadeFromNormal(0, 0, 1), 9)
-    // East-facing slope (away from the western light) darkens further at ×3.
+    expect(hillshade(0, 0, 1, DEFAULT_SUN, 0.55, 3)).toBeCloseTo(hillshade(0, 0, 1), 9)
+    // East-facing slope (away from the north-western light) darkens at ×3.
     const len = Math.hypot(-0.5, 0, 1)
-    const base = shadeFromNormal(0.5 / len, 0, 1 / len, SHADE_AMBIENT_RELIEF, 1)
-    const steep = shadeFromNormal(0.5 / len, 0, 1 / len, SHADE_AMBIENT_RELIEF, 3)
+    const base = hillshade(0.5 / len, 0, 1 / len, DEFAULT_SUN, SHADE_AMBIENT_RELIEF, 1, 0)
+    const steep = hillshade(0.5 / len, 0, 1 / len, DEFAULT_SUN, SHADE_AMBIENT_RELIEF, 3, 0)
     expect(steep).toBeLessThan(base)
     expect(steep).toBeGreaterThanOrEqual(SHADE_AMBIENT_RELIEF)
   })
@@ -192,5 +204,276 @@ describe('vertexSpacingM / latLonToTileFloat', () => {
     const t = latLonToTile(41.3851, 2.1734, 15)
     expect(Math.floor(f.fx)).toBe(t.x)
     expect(Math.floor(f.fy)).toBe(t.y)
+  })
+})
+
+// ── New fidelity techniques ────────────────────────────────────────────────────
+
+describe('bicubicSample', () => {
+  it('reproduces exact values at integer coordinates', () => {
+    const g = Float32Array.from([
+      1, 2, 3, 4,
+      5, 6, 7, 8,
+      9, 10, 11, 12,
+      13, 14, 15, 16,
+    ])
+    for (let j = 0; j < 4; j++) {
+      for (let i = 0; i < 4; i++) {
+        expect(bicubicSample(g, 4, 4, i, j)).toBeCloseTo(g[j * 4 + i], 5)
+      }
+    }
+  })
+
+  it('is exact on a linear ramp (no bias where the truth is a plane)', () => {
+    const w = 6
+    const g = new Float32Array(w * w)
+    for (let j = 0; j < w; j++) for (let i = 0; i < w; i++) g[j * w + i] = 3 * i + 2 * j
+    // Interior only — the edge clamp intentionally flattens beyond the border.
+    expect(bicubicSample(g, w, w, 2.5, 2.5)).toBeCloseTo(3 * 2.5 + 2 * 2.5, 4)
+    expect(bicubicSample(g, w, w, 3.25, 1.75)).toBeCloseTo(3 * 3.25 + 2 * 1.75, 4)
+  })
+
+  it('preserves a ridge better than bilinear (the whole point)', () => {
+    // Ridge along the middle column, sampled a quarter-step off the crest.
+    const w = 7
+    const g = new Float32Array(w * w)
+    for (let j = 0; j < w; j++) {
+      for (let i = 0; i < w; i++) g[j * w + i] = i === 3 ? 100 : 0
+    }
+    const bic = bicubicSample(g, w, w, 3.25, 3)
+    const bil = bilinearSample(g, w, w, 3.25, 3)
+    expect(bic).toBeGreaterThan(bil)
+  })
+
+  it('clamps outside the grid', () => {
+    const g = Float32Array.from([1, 2, 3, 4])
+    expect(bicubicSample(g, 2, 2, -10, -10)).toBeCloseTo(1, 5)
+    expect(bicubicSample(g, 2, 2, 99, 99)).toBeCloseTo(4, 5)
+  })
+})
+
+describe('sampleHeightGridBicubic', () => {
+  it('produces the requested vertex-grid dimensions', () => {
+    const src = new Float32Array(16 * 16).fill(7)
+    expect(sampleHeightGridBicubic(src, 16, 16, 8)).toHaveLength(9 * 9)
+  })
+
+  it('leaves a constant surface exactly constant (no ringing on flat ground)', () => {
+    const src = new Float32Array(16 * 16).fill(42)
+    for (const v of sampleHeightGridBicubic(src, 16, 16, 8)) expect(v).toBeCloseTo(42, 5)
+  })
+})
+
+describe('synthesizeDetail', () => {
+  const verts = 24
+  const spacing = 10
+
+  function slopedGrid(gradient: number): Float32Array {
+    const g = new Float32Array(verts * verts)
+    for (let j = 0; j < verts; j++) for (let i = 0; i < verts; i++) g[j * verts + i] = gradient * i * spacing
+    return g
+  }
+
+  it('adds nothing on dead-flat ground (invention must not touch plains or water)', () => {
+    const flat = new Float32Array(verts * verts).fill(100)
+    // Math.abs normalises −0, which the slope weight legitimately produces.
+    for (const v of synthesizeDetail(flat, verts, spacing)) expect(Math.abs(v)).toBe(0)
+  })
+
+  it('is deterministic — the same site always renders identically', () => {
+    const g = slopedGrid(0.5)
+    expect(Array.from(synthesizeDetail(g, verts, spacing)))
+      .toEqual(Array.from(synthesizeDetail(g, verts, spacing)))
+  })
+
+  it('changes with the seed', () => {
+    const g = slopedGrid(0.5)
+    expect(Array.from(synthesizeDetail(g, verts, spacing, 1)))
+      .not.toEqual(Array.from(synthesizeDetail(g, verts, spacing, 9)))
+  })
+
+  it('caps amplitude at a quarter of the sample spacing', () => {
+    const g = slopedGrid(5) // steep enough to saturate the slope weight
+    for (const v of synthesizeDetail(g, verts, spacing)) {
+      expect(Math.abs(v)).toBeLessThanOrEqual(spacing * 0.25 + 1e-6)
+    }
+  })
+
+  it('scales with steepness — gentle ground gets less than steep ground', () => {
+    const energy = (a: Float32Array): number => a.reduce((s, v) => s + Math.abs(v), 0)
+    expect(energy(synthesizeDetail(slopedGrid(1.0), verts, spacing)))
+      .toBeGreaterThan(energy(synthesizeDetail(slopedGrid(0.05), verts, spacing)))
+  })
+})
+
+describe('sunVector', () => {
+  it('maps azimuth 0 deg to north and 90 deg to east', () => {
+    const north = sunVector({ azimuthDeg: 0, altitudeDeg: 0 })
+    expect(north.x).toBeCloseTo(0, 6)
+    expect(north.y).toBeCloseTo(1, 6)
+    const east = sunVector({ azimuthDeg: 90, altitudeDeg: 0 })
+    expect(east.x).toBeCloseTo(1, 6)
+    expect(east.y).toBeCloseTo(0, 6)
+  })
+
+  it('points straight up at 90 deg altitude and is always unit length', () => {
+    expect(sunVector({ azimuthDeg: 123, altitudeDeg: 90 }).z).toBeCloseTo(1, 6)
+    for (const az of [0, 45, 200, 350]) {
+      for (const alt of [5, 30, 60, 90]) {
+        const v = sunVector({ azimuthDeg: az, altitudeDeg: alt })
+        expect(Math.hypot(v.x, v.y, v.z)).toBeCloseTo(1, 6)
+      }
+    }
+  })
+
+  it('defaults to the cartographic north-west light (avoids the crater illusion)', () => {
+    expect(DEFAULT_SUN.azimuthDeg).toBe(315)
+    expect(DEFAULT_SUN.altitudeDeg).toBe(45)
+  })
+})
+
+describe('hillshade with a configurable sun', () => {
+  const len = Math.hypot(0.5, 0, 1)
+  const eastFacing = { nx: 0.5 / len, ny: 0, nz: 1 / len }
+
+  it('brightens a slope when the sun moves to face it', () => {
+    const lit = hillshade(eastFacing.nx, eastFacing.ny, eastFacing.nz,
+      { azimuthDeg: 90, altitudeDeg: 45 }, SHADE_AMBIENT_RELIEF, 1, 0)
+    const away = hillshade(eastFacing.nx, eastFacing.ny, eastFacing.nz,
+      { azimuthDeg: 270, altitudeDeg: 45 }, SHADE_AMBIENT_RELIEF, 1, 0)
+    expect(lit).toBeGreaterThan(away)
+  })
+
+  it('never leaves [ambient, 1] for any sun or normal', () => {
+    for (const az of [0, 90, 180, 270]) {
+      for (const alt of [5, 45, 90]) {
+        for (const n of [[0, 0, 1], [0.7, 0.7, 0.14], [-0.9, 0.2, 0.39]]) {
+          const s = hillshade(n[0], n[1], n[2], { azimuthDeg: az, altitudeDeg: alt }, 0.3, 1, 0.5)
+          expect(s).toBeGreaterThanOrEqual(0.3 - 1e-9)
+          expect(s).toBeLessThanOrEqual(1 + 1e-9)
+        }
+      }
+    }
+  })
+
+  it('softness lifts the shadow side, which a single light flattens to one dark mass', () => {
+    // NW light points at (−0.707, +0.707); the shadow side faces south-east.
+    const shadow = { nx: 0.7, ny: -0.7, nz: 0.14 }
+    const hard = hillshade(shadow.nx, shadow.ny, shadow.nz, DEFAULT_SUN, SHADE_AMBIENT_RELIEF, 1, 0)
+    const soft = hillshade(shadow.nx, shadow.ny, shadow.nz, DEFAULT_SUN, SHADE_AMBIENT_RELIEF, 1, 1)
+    expect(soft).toBeGreaterThan(hard)
+  })
+})
+
+describe('skyViewFactor', () => {
+  const verts = 21
+  const spacing = 10
+
+  it('is 1 everywhere on a flat plain (nothing blocks the sky)', () => {
+    const flat = new Float32Array(verts * verts).fill(0)
+    for (const v of skyViewFactor(flat, verts, spacing)) expect(v).toBeCloseTo(1, 6)
+  })
+
+  it('darkens a valley floor relative to the surrounding ridges', () => {
+    // V-shaped valley running north-south, floor at the middle column.
+    const g = new Float32Array(verts * verts)
+    const mid = (verts - 1) / 2
+    for (let j = 0; j < verts; j++) {
+      for (let i = 0; i < verts; i++) g[j * verts + i] = Math.abs(i - mid) * 20
+    }
+    const svf = skyViewFactor(g, verts, spacing)
+    const floor = svf[Math.floor(mid) * verts + mid]
+    const ridge = svf[Math.floor(mid) * verts + 0]
+    expect(floor).toBeLessThan(ridge)
+    expect(floor).toBeGreaterThanOrEqual(0)
+  })
+
+  it('stays within [0,1]', () => {
+    const g = new Float32Array(verts * verts)
+    for (let k = 0; k < g.length; k++) g[k] = (k % 7) * 50
+    for (const v of skyViewFactor(g, verts, spacing)) {
+      expect(v).toBeGreaterThanOrEqual(0)
+      expect(v).toBeLessThanOrEqual(1)
+    }
+  })
+})
+
+describe('occlusionFactor', () => {
+  it('is a no-op at strength 0', () => {
+    expect(occlusionFactor(0.2, 0)).toBe(1)
+    expect(occlusionFactor(1, 0)).toBe(1)
+  })
+
+  it('darkens more as sky visibility drops', () => {
+    expect(occlusionFactor(0.4, 1)).toBeLessThan(occlusionFactor(0.9, 1))
+  })
+
+  it('never goes fully black', () => {
+    expect(occlusionFactor(0, 1)).toBeGreaterThanOrEqual(0.35)
+  })
+})
+
+describe('slopeFraction + slopeColor', () => {
+  it('is 0 on flat ground and 1 past the cliff threshold', () => {
+    expect(slopeFraction(1)).toBeCloseTo(0, 6)
+    expect(slopeFraction(Math.cos((45 * Math.PI) / 180))).toBeCloseTo(1, 4)
+    expect(slopeFraction(0)).toBe(1) // vertical face, clamped
+  })
+
+  it('ramps green to red', () => {
+    const flat = slopeColor(0)
+    const cliff = slopeColor(1)
+    expect(flat.g).toBeGreaterThan(flat.r)
+    expect(cliff.r).toBeGreaterThan(cliff.g)
+  })
+})
+
+describe('contourFactor', () => {
+  it('is a no-op when contours are off', () => {
+    expect(contourFactor(123.4, 0, 5)).toBe(1)
+  })
+
+  it('darkens exactly on a contour multiple and not between them', () => {
+    expect(contourFactor(100, 10, 1)).toBeLessThan(1)
+    expect(contourFactor(105, 10, 1)).toBe(1)
+  })
+
+  it('never darkens past the requested depth', () => {
+    expect(contourFactor(50, 10, 1, 0.55)).toBeGreaterThanOrEqual(0.55)
+  })
+
+  it('widens the line as the surface flattens, keeping it visible', () => {
+    // Same distance from the line; the gentler gradient must still draw it.
+    expect(contourFactor(100.2, 10, 3)).toBeLessThan(1)
+  })
+})
+
+describe('clampTerrainLook', () => {
+  it('returns the defaults for null/undefined', () => {
+    expect(clampTerrainLook(null)).toEqual(DEFAULT_TERRAIN_LOOK)
+    expect(clampTerrainLook(undefined)).toEqual(DEFAULT_TERRAIN_LOOK)
+  })
+
+  it('ships measured-only by default (no synthetic detail, no contours)', () => {
+    expect(DEFAULT_TERRAIN_LOOK.detail).toBe(0)
+    expect(DEFAULT_TERRAIN_LOOK.contourInterval).toBe(0)
+  })
+
+  it('wraps azimuth instead of clamping it', () => {
+    expect(clampTerrainLook({ sunAzimuth: 370 }).sunAzimuth).toBe(10)
+    expect(clampTerrainLook({ sunAzimuth: -10 }).sunAzimuth).toBe(350)
+  })
+
+  it('clamps altitude, unit ranges and the contour interval', () => {
+    expect(clampTerrainLook({ sunAltitude: 200 }).sunAltitude).toBe(90)
+    expect(clampTerrainLook({ sunAltitude: -5 }).sunAltitude).toBe(5)
+    expect(clampTerrainLook({ occlusion: 5 }).occlusion).toBe(1)
+    expect(clampTerrainLook({ detail: -2 }).detail).toBe(0)
+    expect(clampTerrainLook({ contourInterval: 9999 }).contourInterval).toBe(500)
+  })
+
+  it('ignores wrong-typed and NaN fields', () => {
+    expect(clampTerrainLook({ softness: NaN })).toEqual(DEFAULT_TERRAIN_LOOK)
+    expect(clampTerrainLook({ detail: 'lots' as unknown as number })).toEqual(DEFAULT_TERRAIN_LOOK)
   })
 })

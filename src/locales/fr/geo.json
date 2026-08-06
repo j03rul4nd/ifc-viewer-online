@@ -89,7 +89,18 @@
     "customUrlPlaceholder": "https://…/{z}/{x}/{y}.png",
     "customAttribution": "Attribution text",
     "customSave": "Save source",
-    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}."
+    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}.",
+    "styleSlope": "Pente",
+    "advancedRelief": "Relief avancé",
+    "sunAzimuth": "Dir. soleil",
+    "sunAltitude": "Hauteur soleil",
+    "softness": "Douceur",
+    "occlusion": "Profondeur",
+    "detail": "Micro-relief",
+    "detailWarning": "Le micro-relief est un détail synthétique généré pour combler les écarts entre les échantillons d'altitude : plausible, non mesuré. Désactivez-le pour l'analyse.",
+    "contours": "Courbes de niveau",
+    "contoursOff": "Aucune",
+    "resetRelief": "Réinitialiser le relief"
   },
   "placement": {
     "title": "Placement",

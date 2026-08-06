@@ -14,7 +14,29 @@ export type TerrainStatus = 'idle' | 'loading' | 'ready' | 'error'
  *   shaded      — no imagery: neutral high-contrast hillshade (landforms pop)
  *   hypsometric — atlas-style elevation tint × hillshade
  */
-export type TerrainStyle = 'imagery' | 'shaded' | 'hypsometric'
+export type TerrainStyle = 'imagery' | 'shaded' | 'hypsometric' | 'slope'
+
+/**
+ * Advanced terrain look — every field re-bakes vertex colours (or, for
+ * `detail`, re-displaces the mesh) LIVE, with no refetch. Persisted in geoStore.
+ */
+export interface TerrainLook {
+  /** Bearing the relief light comes FROM, degrees clockwise from north. */
+  sunAzimuth: number
+  /** Light height above the horizon, degrees. */
+  sunAltitude: number
+  /** 0 = one hard light (dramatic), 1 = multi-directional blend (legible). */
+  softness: number
+  /** Sky-view-factor darkening, 0-1. Gives valleys real depth. */
+  occlusion: number
+  /**
+   * Synthetic micro-relief blend, 0-1. Invented geometry that fills the gap
+   * between DEM samples — must always be surfaced to the user as synthetic.
+   */
+  detail: number
+  /** Contour line interval in metres; 0 = no contours. */
+  contourInterval: number
+}
 
 // ── Georeferencing extraction ──────────────────────────────────────────────────
 

@@ -27,8 +27,10 @@ import { latLonToTileFloat } from '../lib/geo/geo-math'
 import { decodeTerrarium, terrariumTileUrl } from '../lib/geo/elevation'
 import {
   TERRAIN_TILE_DIM,
-  sampleHeightGrid,
+  sampleHeightGridBicubic,
   computeNormals,
+  synthesizeDetail,
+  skyViewFactor,
   bilinearSample,
   vertexSpacingM,
   imageryTileRange,
@@ -84,6 +86,14 @@ export type TerrainWorkerOut =
       heights: Float32Array
       /** (grid+1)²×3 normals (X east, Y north, Z up). */
       normals: Float32Array
+      /**
+       * (grid+1)² SYNTHETIC micro-relief in metres, at slider value 1. Kept
+       * separate from `heights` so the measured DEM is never overwritten and
+       * the main thread can blend it live.
+       */
+      detail: Float32Array
+      /** (grid+1)² sky-view factor 0-1 (geometry-only → computed once here). */
+      sky: Float32Array
       imagery: ImageBitmap | null
     }
   | { type: 'drape-done'; id: string; imagery: ImageBitmap | null }
@@ -116,8 +126,16 @@ async function handleBuild(req: TerrainBuildRequest): Promise<void> {
       }),
     )
 
-    const heights = sampleHeightGrid(unified, PATCH_PX, PATCH_PX, req.grid)
-    const normals = computeNormals(heights, req.grid + 1, vertexSpacingM(req.lat, req.zoom, req.grid))
+    const verts = req.grid + 1
+    const spacingM = vertexSpacingM(req.lat, req.zoom, req.grid)
+    // Bicubic, not bilinear: the DEM is coarser than the vertex grid, and a C0
+    // kernel rounds every ridge into a hump (see terrain-sampling).
+    const heights = sampleHeightGridBicubic(unified, PATCH_PX, PATCH_PX, req.grid)
+    const normals = computeNormals(heights, verts, spacingM)
+    // Both derive from geometry alone, so they are computed once here and
+    // reused for every live look change on the main thread.
+    const detail = synthesizeDetail(heights, verts, spacingM)
+    const sky = skyViewFactor(heights, verts, spacingM)
     const anchorElevation = bilinearSample(
       unified, PATCH_PX, PATCH_PX,
       (fx - (cx - 1)) * TERRAIN_TILE_DIM - 0.5,
@@ -126,12 +144,12 @@ async function handleBuild(req: TerrainBuildRequest): Promise<void> {
 
     const imagery = await compositeImagery(cx, cy, req.zoom, req.imageryTemplate, req.imageryZoom)
 
-    const transfers: Transferable[] = [heights.buffer, normals.buffer]
+    const transfers: Transferable[] = [heights.buffer, normals.buffer, detail.buffer, sky.buffer]
     if (imagery) transfers.push(imagery)
     ;(self.postMessage as (msg: TerrainWorkerOut, transfer: Transferable[]) => void)(
       {
         type: 'done', id: req.id, zoom: req.zoom, grid: req.grid,
-        centerTx: cx, centerTy: cy, anchorElevation, heights, normals, imagery,
+        centerTx: cx, centerTy: cy, anchorElevation, heights, normals, detail, sky, imagery,
       },
       transfers,
     )

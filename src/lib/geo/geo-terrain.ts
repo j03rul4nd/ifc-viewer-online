@@ -21,11 +21,13 @@
 import * as THREE from 'three'
 import { WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import {
-  terrainZoomFor, imageryZoomFor, shadeFromNormal, hypsometricColor,
+  terrainZoomFor, imageryZoomFor, hillshade, hypsometricColor,
+  slopeColor, slopeFraction, occlusionFactor, contourFactor,
+  computeNormals, vertexSpacingM, clampTerrainLook, DEFAULT_TERRAIN_LOOK,
   SHADE_AMBIENT_IMAGERY, SHADE_AMBIENT_RELIEF,
 } from './terrain-sampling'
 import { createLogger } from '../logger'
-import type { GeoPlacement, MapProvider, TerrainStyle } from './geo-types'
+import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
 import type { TerrainWorkerIn, TerrainWorkerOut } from '../../workers/geo-terrain.worker'
 
 const log = createLogger('GeoTerrain')
@@ -66,10 +68,16 @@ export interface TerrainPatch {
    * Token-guarded: overlapping calls keep only the latest; safe after dispose.
    */
   redrape(provider: MapProvider | null): Promise<void>
-  /** Switch visualization style (imagery / shaded relief / hypsometric). */
+  /** Switch visualization style (imagery / shaded relief / hypsometric / slope). */
   setStyle(style: TerrainStyle): void
   /** Vertical exaggeration ×k — live (scales displacement + re-bakes shading). */
   setExaggeration(k: number): void
+  /**
+   * Advanced look (sun, softness, occlusion, synthetic detail, contours).
+   * Live: colours re-bake always; geometry re-displaces only when the synthetic
+   * detail blend changes. No refetch in either case.
+   */
+  setLook(look: TerrainLook): void
   dispose(): void
 }
 
@@ -111,6 +119,9 @@ export async function buildTerrainPatch(
   return assemblePatch(result, placement.lat, Math.min(MAX_ANISOTROPY, opts.maxAnisotropy ?? 1))
 }
 
+/** Steepness ramp needs a fixed reference; 45° reads as "cliff" on any site. */
+const SLOPE_MAX_DEG = 45
+
 // ── Assembly (single seamless mesh) ─────────────────────────────────────────────
 
 function assemblePatch(
@@ -118,9 +129,10 @@ function assemblePatch(
   anchorLat: number,
   anisotropy: number,
 ): TerrainPatch {
-  const { zoom, grid, centerTx, centerTy, anchorElevation, heights, normals } = data
+  const { zoom, grid, centerTx, centerTy, anchorElevation, heights, normals, detail, sky } = data
   const verts = grid + 1
   const metresToNormalized = 1 / (WEB_MERCATOR_WORLD_M * cosLatScale(anchorLat))
+  const spacingM = vertexSpacingM(anchorLat, zoom, grid)
 
   const centre = tileNormalizedCenter(centerTx, centerTy, zoom)
   const patchSize = centre.size * 3
@@ -132,21 +144,13 @@ function assemblePatch(
   const nrm = geometry.attributes.normal
   const colors = new Float32Array(pos.count * 4)
 
-  let minH = Infinity
-  let maxH = -Infinity
-  for (let j = 0; j < verts; j++) {
-    for (let i = 0; i < verts; i++) {
-      const idx = j * verts + i
-      const h = heights[idx]
-      if (h < minH) minH = h
-      if (h > maxH) maxH = h
-      pos.setZ(idx, (h - anchorElevation) * metresToNormalized)
-      const o = idx * 3
-      // Tile-local axes (X east, Y north, Z up) ARE the plane's local axes.
-      nrm.setXYZ(idx, normals[o], normals[o + 1], normals[o + 2])
-    }
-  }
-  const heightRange = Math.max(1, maxH - minH) // guard: dead-flat patches
+  // Working buffers: `heights` stays the untouched MEASURED surface; `effective`
+  // is what the mesh actually shows (measured + synthetic detail × blend).
+  const effective = Float32Array.from(heights)
+  let effectiveNormals = normals
+  let minH = 0
+  let maxH = 0
+  let heightRange = 1
 
   const colorAttr = new THREE.BufferAttribute(colors, 4)
   geometry.setAttribute('color', colorAttr)
@@ -168,20 +172,76 @@ function assemblePatch(
   let bitmap: ImageBitmap | null = null
   let style: TerrainStyle = 'imagery'
   let exaggeration = 1
+  let look: TerrainLook = { ...DEFAULT_TERRAIN_LOOK }
 
-  /** Re-bake vertex colours (hillshade × style tint × edge fade). */
+  /**
+   * Re-displace the mesh from measured heights + the synthetic detail blend,
+   * then recompute normals. Called on build and whenever `look.detail` moves —
+   * normals must follow the geometry or the shading would describe a surface
+   * the user is not looking at.
+   */
+  function applyHeights(): void {
+    minH = Infinity
+    maxH = -Infinity
+    for (let idx = 0; idx < verts * verts; idx++) {
+      const h = heights[idx] + detail[idx] * look.detail
+      effective[idx] = h
+      if (h < minH) minH = h
+      if (h > maxH) maxH = h
+      pos.setZ(idx, (h - anchorElevation) * metresToNormalized)
+    }
+    pos.needsUpdate = true
+    heightRange = Math.max(1, maxH - minH) // guard: dead-flat patches
+
+    // Skip the recompute when nothing synthetic is blended in — the worker's
+    // normals already describe the measured surface exactly.
+    effectiveNormals = look.detail > 0 ? computeNormals(effective, verts, spacingM) : normals
+    for (let idx = 0; idx < verts * verts; idx++) {
+      const o = idx * 3
+      // Tile-local axes (X east, Y north, Z up) ARE the plane's local axes.
+      nrm.setXYZ(idx, effectiveNormals[o], effectiveNormals[o + 1], effectiveNormals[o + 2])
+    }
+    nrm.needsUpdate = true
+    geometry.computeBoundingSphere()
+  }
+
+  /**
+   * Re-bake vertex colours: hillshade × sky-view occlusion × style tint ×
+   * contour lines × edge fade. All of it rides the existing vertex-colour
+   * attribute, so the material stays unlit and the map imagery is never
+   * double-shaded by the scene lights (plan D5).
+   */
   function recolor(): void {
     const ambient = style === 'imagery' ? SHADE_AMBIENT_IMAGERY : SHADE_AMBIENT_RELIEF
+    const sun = { azimuthDeg: look.sunAzimuth, altitudeDeg: look.sunAltitude }
     for (let j = 0; j < verts; j++) {
       for (let i = 0; i < verts; i++) {
         const idx = j * verts + i
         const o = idx * 3
-        const shade = shadeFromNormal(normals[o], normals[o + 1], normals[o + 2], ambient, exaggeration)
+        const nx = effectiveNormals[o]
+        const ny = effectiveNormals[o + 1]
+        const nz = effectiveNormals[o + 2]
+
+        let shade = hillshade(nx, ny, nz, sun, ambient, exaggeration, look.softness)
+        shade *= occlusionFactor(sky[idx], look.occlusion)
+
         let r = shade, g = shade, b = shade
         if (style === 'hypsometric') {
-          const tint = hypsometricColor((heights[idx] - minH) / heightRange)
+          const tint = hypsometricColor((effective[idx] - minH) / heightRange)
+          r = tint.r * shade; g = tint.g * shade; b = tint.b * shade
+        } else if (style === 'slope') {
+          const tint = slopeColor(slopeFraction(nz, SLOPE_MAX_DEG))
           r = tint.r * shade; g = tint.g * shade; b = tint.b * shade
         }
+
+        if (look.contourInterval > 0) {
+          // Height change per vertex sets the line width so contours stay
+          // readable on both plateaus and cliffs.
+          const gradient = Math.hypot(nx, ny) / Math.max(1e-6, nz) * spacingM
+          const c = contourFactor(effective[idx], look.contourInterval, gradient)
+          r *= c; g *= c; b *= c
+        }
+
         const ex = 1 - Math.abs((2 * i) / grid - 1) // 1 centre → 0 patch edge
         const ey = 1 - Math.abs((2 * j) / grid - 1)
         const alpha = Math.max(0, Math.min(1, Math.min(ex, ey) / TERRAIN_EDGE_FADE))
@@ -224,6 +284,7 @@ function assemblePatch(
   }
 
   applyDrape(data.imagery)
+  applyHeights()
   recolor()
   log.debug(`patch: z${zoom}, ${verts}×${verts} verts, anchor elev ${anchorElevation.toFixed(1)} m`)
 
@@ -266,6 +327,17 @@ function assemblePatch(
       exaggeration = k
       mesh.scale.z = k // displacement is around z=0 = the anchor plane — live
       recolor()        // re-bake shading for the steeper apparent gradients
+    },
+
+    setLook(next) {
+      if (disposed) return
+      const clamped = clampTerrainLook(next)
+      const detailChanged = clamped.detail !== look.detail
+      look = clamped
+      // Geometry only moves when the synthetic blend changes; everything else
+      // is a colour re-bake, which is why the sun slider feels instant.
+      if (detailChanged) applyHeights()
+      recolor()
     },
 
     dispose() {

@@ -88,7 +88,18 @@
     "customUrlPlaceholder": "https://…/{z}/{x}/{y}.png",
     "customAttribution": "Attribution text",
     "customSave": "Save source",
-    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}."
+    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}.",
+    "styleSlope": "Slope",
+    "advancedRelief": "Advanced relief",
+    "sunAzimuth": "Sun dir.",
+    "sunAltitude": "Sun height",
+    "softness": "Softness",
+    "occlusion": "Depth",
+    "detail": "Micro-relief",
+    "detailWarning": "Micro-relief is synthetic detail generated to fill gaps between elevation samples — plausible, not measured. Turn it off for analysis.",
+    "contours": "Contours",
+    "contoursOff": "Off",
+    "resetRelief": "Reset relief"
   },
   "placement": {
     "title": "Placement",

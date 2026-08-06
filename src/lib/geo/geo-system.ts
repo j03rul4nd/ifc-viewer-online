@@ -15,9 +15,10 @@
 import * as THREE from 'three'
 import { createBasemapEngine, type BasemapEngine } from './basemap-engine'
 import { buildTerrainPatch, tileNormalizedCenter, TERRAIN_EDGE_FADE, type TerrainPatch } from './geo-terrain'
+import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from './terrain-look'
 import { composeGeoRootTransform, normalizedToLatLon, northDirection, latLonToTile, type LatLon } from './geo-math'
 import { createLogger } from '../logger'
-import type { GeoPlacement, MapProvider, TerrainStyle } from './geo-types'
+import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
 
 const log = createLogger('GeoSystem')
 
@@ -83,6 +84,11 @@ export interface GeoSystemAPI {
   setTerrainStyle(style: TerrainStyle): void
   /** Vertical exaggeration ×k (1–3 typical) — live, sticky across rebuilds. */
   setTerrainExaggeration(k: number): void
+  /**
+   * Advanced terrain look (sun direction, shading softness, sky occlusion,
+   * synthetic detail, contours) — live, sticky across rebuilds.
+   */
+  setTerrainLook(look: TerrainLook): void
   /** Raycast the map ground plane at client pixel coords → WGS84. */
   pickGround(clientX: number, clientY: number): LatLon | null
   /**
@@ -133,6 +139,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   /** Sticky terrain visuals — survive patch rebuilds and toggles. */
   let terrainStyle: TerrainStyle = 'imagery'
   let terrainExaggeration = 1
+  let terrainLook: TerrainLook = { ...DEFAULT_TERRAIN_LOOK }
   let degradedCallback: ((degraded: boolean) => void) | null = null
 
   const raycaster = new THREE.Raycaster()
@@ -261,6 +268,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // Re-apply sticky visuals (style/exaggeration survive rebuilds).
       if (terrainStyle !== 'imagery') patch.setStyle(terrainStyle)
       if (terrainExaggeration !== 1) patch.setExaggeration(terrainExaggeration)
+      patch.setLook(terrainLook)
       // Clip the flat basemap under the patch so valleys BELOW the ground
       // plane are visible (they'd otherwise be hidden by the opaque tiles).
       engine.setHole(computeHolePlanes())
@@ -275,6 +283,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       if (!Number.isFinite(k) || k <= 0) return
       terrainExaggeration = k
       terrain?.setExaggeration(k)
+    },
+
+    setTerrainLook(look) {
+      terrainLook = clampTerrainLook(look)
+      terrain?.setLook(terrainLook)
     },
 
     pickGround(clientX, clientY) {

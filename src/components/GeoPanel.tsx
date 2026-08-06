@@ -19,6 +19,7 @@ import { resolvePlacement, placementFromExtraction, savePlacement } from '../lib
 import { registerCustomProj4, resolveCrs } from '../lib/geo/crs'
 import { DEFAULT_PROVIDER_ID, resolveProvider, saveCustomProvider } from '../lib/geo/providers'
 import { TERRARIUM_ATTRIBUTION } from '../lib/geo/elevation'
+import { CONTOUR_INTERVALS } from '../lib/geo/terrain-look'
 import { WGS84_RADIUS, normalizeDeg } from '../lib/geo/geo-math'
 import {
   trackMapModeEnabled, trackMapModeDisabled, trackMapLayerChanged,
@@ -26,7 +27,7 @@ import {
 } from '../lib/analytics'
 import type { ViewerAPI } from '../lib/viewer'
 import type { GeoSystemAPI } from '../lib/geo/geo-system'
-import type { GeoPlacement, GeorefExtraction, MapProvider, TerrainStyle } from '../lib/geo/geo-types'
+import type { GeoPlacement, GeorefExtraction, MapProvider, TerrainStyle, TerrainLook } from '../lib/geo/geo-types'
 
 interface GeoPanelProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
@@ -242,6 +243,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
       // the patch comes up already styled/exaggerated.
       geo.setTerrainStyle(s.terrainStyle)
       geo.setTerrainExaggeration(s.terrainExaggeration)
+      geo.setTerrainLook(s.terrainLook)
       await geo.setTerrain(enabled)
       useGeoStore.getState().setTerrainStatus(epoch, enabled ? 'ready' : 'idle')
       void refreshAttributions()
@@ -265,6 +267,18 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
   const handleTerrainExaggeration = useCallback((k: number): void => {
     useGeoStore.getState().setTerrainExaggeration(k)
     void getGeo()?.then((geo) => geo.setTerrainExaggeration(k))
+  }, [getGeo])
+
+  const handleTerrainLook = useCallback((patch: Partial<TerrainLook>): void => {
+    useGeoStore.getState().setTerrainLook(patch)
+    const look = useGeoStore.getState().terrainLook
+    void getGeo()?.then((geo) => geo.setTerrainLook(look))
+  }, [getGeo])
+
+  const handleResetLook = useCallback((): void => {
+    useGeoStore.getState().resetTerrainLook()
+    const look = useGeoStore.getState().terrainLook
+    void getGeo()?.then((geo) => geo.setTerrainLook(look))
   }, [getGeo])
 
   // ── Placement editor ─────────────────────────────────────────────────────────
@@ -578,11 +592,12 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                 {store.terrainEnabled && (
                   <div className="mt-2 flex flex-col gap-1.5">
                     <div className="text-[10px] text-[var(--text-faint)]">{t('layers.style')}</div>
-                    <div className="grid grid-cols-3 gap-1">
+                    <div className="grid grid-cols-4 gap-1">
                       {([
                         ['imagery', t('layers.styleImagery')],
                         ['shaded', t('layers.styleShaded')],
                         ['hypsometric', t('layers.styleHypso')],
+                        ['slope', t('layers.styleSlope')],
                       ] as const).map(([id, label]) => (
                         <button
                           key={id}
@@ -610,6 +625,80 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                         ×{String(store.terrainExaggeration)}
                       </span>
                     </div>
+
+                    {/* ── Advanced relief controls ────────────────────────────
+                        Everything here re-bakes live from data already in
+                        memory — no refetch, so dragging a slider is instant. */}
+                    <details className="mt-1 group">
+                      <summary className="cursor-pointer list-none text-[10px] text-[var(--text-faint)] hover:text-[var(--text-dim)] select-none">
+                        ▸ {t('layers.advancedRelief')}
+                      </summary>
+                      <div className="mt-1.5 flex flex-col gap-1.5 pl-1 border-l border-[var(--border)]">
+                        <LookSlider
+                          label={t('layers.sunAzimuth')}
+                          value={store.terrainLook.sunAzimuth}
+                          min={0} max={359} step={5}
+                          format={(v) => `${v}°`}
+                          onChange={(v) => handleTerrainLook({ sunAzimuth: v })}
+                        />
+                        <LookSlider
+                          label={t('layers.sunAltitude')}
+                          value={store.terrainLook.sunAltitude}
+                          min={5} max={90} step={5}
+                          format={(v) => `${v}°`}
+                          onChange={(v) => handleTerrainLook({ sunAltitude: v })}
+                        />
+                        <LookSlider
+                          label={t('layers.softness')}
+                          value={store.terrainLook.softness}
+                          min={0} max={1} step={0.1}
+                          format={(v) => `${Math.round(v * 100)}%`}
+                          onChange={(v) => handleTerrainLook({ softness: v })}
+                        />
+                        <LookSlider
+                          label={t('layers.occlusion')}
+                          value={store.terrainLook.occlusion}
+                          min={0} max={1} step={0.1}
+                          format={(v) => `${Math.round(v * 100)}%`}
+                          onChange={(v) => handleTerrainLook({ occlusion: v })}
+                        />
+                        <LookSlider
+                          label={t('layers.detail')}
+                          value={store.terrainLook.detail}
+                          min={0} max={1} step={0.1}
+                          format={(v) => `${Math.round(v * 100)}%`}
+                          onChange={(v) => handleTerrainLook({ detail: v })}
+                        />
+                        {/* Non-negotiable: invented geometry must say so. */}
+                        {store.terrainLook.detail > 0 && (
+                          <div className="text-[9.5px] leading-snug text-[var(--warn,#F5A623)]">
+                            {t('layers.detailWarning')}
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-[var(--text-faint)] whitespace-nowrap">
+                            {t('layers.contours')}
+                          </span>
+                          <select
+                            value={store.terrainLook.contourInterval}
+                            onChange={(e) => handleTerrainLook({ contourInterval: parseFloat(e.target.value) })}
+                            className="flex-1 bg-[var(--surface-2)] border border-[var(--border-strong)] rounded-[5px] px-1 h-[22px] text-[10.5px] outline-none"
+                          >
+                            {CONTOUR_INTERVALS.map((m) => (
+                              <option key={m} value={m}>{m === 0 ? t('layers.contoursOff') : `${m} m`}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <button
+                          onClick={handleResetLook}
+                          className="self-start text-[10px] text-[var(--text-dim)] hover:text-[var(--text)] underline"
+                        >
+                          {t('layers.resetRelief')}
+                        </button>
+                      </div>
+                    </details>
                   </div>
                 )}
               </div>
@@ -851,5 +940,35 @@ function NudgeBtn({ label, onClick }: { label: string; onClick: () => void }) {
     >
       {label}
     </button>
+  )
+}
+
+// ── Compact labelled slider for the advanced relief controls ───────────────────
+
+interface LookSliderProps {
+  label: string
+  value: number
+  min: number
+  max: number
+  step: number
+  format: (v: number) => string
+  onChange: (v: number) => void
+}
+
+function LookSlider({ label, value, min, max, step, format, onChange }: LookSliderProps) {
+  return (
+    <label className="flex items-center gap-1.5">
+      <span className="text-[10px] text-[var(--text-faint)] w-[54px] shrink-0">{label}</span>
+      <input
+        type="range"
+        min={min} max={max} step={step} value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="flex-1 accent-[var(--accent)]"
+        aria-label={label}
+      />
+      <span className="text-[10px] font-mono w-[30px] text-right tabular-nums text-[var(--text-dim)]">
+        {format(value)}
+      </span>
+    </label>
   )
 }

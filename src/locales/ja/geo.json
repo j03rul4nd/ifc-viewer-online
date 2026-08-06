@@ -89,7 +89,18 @@
     "customUrlPlaceholder": "https://…/{z}/{x}/{y}.png",
     "customAttribution": "Attribution text",
     "customSave": "Save source",
-    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}."
+    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}.",
+    "styleSlope": "傾斜",
+    "advancedRelief": "詳細レリーフ",
+    "sunAzimuth": "光の方位",
+    "sunAltitude": "光の高度",
+    "softness": "柔らかさ",
+    "occlusion": "奥行き",
+    "detail": "マイクロレリーフ",
+    "detailWarning": "マイクロレリーフは標高サンプル間の隙間を埋めるために生成された合成ディテールです。もっともらしい形状ですが実測ではありません。解析時はオフにしてください。",
+    "contours": "等高線",
+    "contoursOff": "なし",
+    "resetRelief": "レリーフをリセット"
   },
   "placement": {
     "title": "Placement",

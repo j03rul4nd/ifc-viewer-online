@@ -89,7 +89,18 @@
     "customUrlPlaceholder": "https://…/{z}/{x}/{y}.png",
     "customAttribution": "Attribution text",
     "customSave": "Save source",
-    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}."
+    "customInvalid": "Invalid template — must be https and contain {z}, {x} and {y}.",
+    "styleSlope": "坡度",
+    "advancedRelief": "高级地形渲染",
+    "sunAzimuth": "光照方位",
+    "sunAltitude": "光照高度",
+    "softness": "柔和度",
+    "occlusion": "深度",
+    "detail": "微地形",
+    "detailWarning": "微地形是为填补高程采样间隙而生成的合成细节 — 看似合理，但并非实测。分析时请关闭。",
+    "contours": "等高线",
+    "contoursOff": "关闭",
+    "resetRelief": "重置地形渲染"
   },
   "placement": {
     "title": "Placement",
