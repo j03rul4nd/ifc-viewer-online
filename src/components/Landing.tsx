@@ -1455,6 +1455,15 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             >
               Blog
             </button>
+            {/* The handbook is English-only, so it is only offered on the EN landing. */}
+            {langShort === 'en' && (
+              <a
+                href="/ebook/"
+                className="hover:text-[var(--text)] transition-colors no-underline"
+              >
+                Free handbook
+              </a>
+            )}
             <a
               href={GITHUB_URL}
               target="_blank" rel="noopener noreferrer"

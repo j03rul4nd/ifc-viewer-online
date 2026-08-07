@@ -12,6 +12,7 @@
         "preview": "vite preview",
         "test": "vitest run",
         "test:watch": "vitest",
+        "ebook": "node --experimental-strip-types --import ./scripts/ebook/ts-hook.mjs scripts/ebook/build-ebook.mjs",
         "og": "node scripts/og/build-og.mjs",
         "blog-covers": "node scripts/og/build-blog-covers.mjs",
         "fix-covers": "node scripts/og/build-fix-covers.mjs",

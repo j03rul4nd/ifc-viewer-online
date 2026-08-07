@@ -230,7 +230,7 @@ export function trackInviteFeedbackDismissed(props: {
  */
 export function trackRouteChanged(props: {
   to:   'viewer' | 'report'
-  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'signin' | 'signup' | 'account' | 'dashboard' | 'admin'
+  from: 'landing' | 'viewer' | 'report' | 'blog' | 'privacy' | 'terms' | 'verify' | 'welcome' | 'ebook' | 'signin' | 'signup' | 'account' | 'dashboard' | 'admin'
 }): void {
   track('route_changed', props)
 }
@@ -398,6 +398,7 @@ export function trackExportClicked(props: {
  *   'section_plane'       → clip/section plane created
  *   'floor_plan'          → 2D floor plan view opened
  *   'takeoff'             → quantity takeoff computed
+ *   'ebook_download'      → the /ebook lead magnet PDF was downloaded
  */
 export function trackFeatureUsed(props: {
   feature:
@@ -414,6 +415,7 @@ export function trackFeatureUsed(props: {
     | 'takeoff'
     | 'copy_for_ai'
     | 'bcf_create_topic'
+    | 'ebook_download'
 }): void {
   track('feature_used', props)
 }

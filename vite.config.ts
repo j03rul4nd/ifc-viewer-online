@@ -5,6 +5,7 @@ import { copyFileSync, mkdirSync, existsSync, readFileSync, writeFileSync } from
 import { generateFixPages } from './scripts/seo/generate-fix-pages'
 import { generateBlogPages } from './scripts/seo/generate-blog-pages'
 import { generateLegalPages } from './scripts/seo/generate-legal-pages'
+import { generateEbookPage } from './scripts/seo/generate-ebook-page'
 
 // ── Static landing content injection ─────────────────────────────────────────
 // Reads src/locales/en/landing.json after the build and injects the FAQ and
@@ -129,6 +130,24 @@ function generateBlogPageShells(): import('vite').Plugin {
   }
 }
 
+// ── Ebook landing shells ──────────────────────────────────────────────────────
+// Generates one dist/ebook[/<route>]/index.html per handbook (SPA routing +
+// Book/FAQ structured data), next to the PDFs `npm run ebook` wrote to public/.
+function generateEbookPageShell(): import('vite').Plugin {
+  return {
+    name: 'generate-ebook-page-shell',
+    apply: 'build',
+    closeBundle() {
+      const distDir = path.resolve(__dirname, 'dist')
+      if (!existsSync(distDir)) return
+      const r = generateEbookPage(distDir)
+      const status = r.errors > 0 ? `⚠ ${r.errors} errors` : 'ok'
+      // eslint-disable-next-line no-console
+      console.log(`\n  ✓ Ebook landings: ${r.pages} shells · ${status}\n`)
+    },
+  }
+}
+
 function copyWebIfcWasm() {
   return {
     name: 'copy-web-ifc-wasm',
@@ -146,7 +165,7 @@ function copyWebIfcWasm() {
 }
 
 export default defineConfig({
-  plugins: [react(), copyWebIfcWasm(), injectLandingContent(), generateRuleFixPages(), generateBlogPageShells(), generateLegalPageShells()],
+  plugins: [react(), copyWebIfcWasm(), injectLandingContent(), generateRuleFixPages(), generateBlogPageShells(), generateLegalPageShells(), generateEbookPageShell()],
   // Served from the domain root on Vercel (https://www.ifcvieweronline.eu/).
   // BASE_PATH is honoured if set, but defaults to '/' — the single deploy target.
   base: process.env.BASE_PATH || '/',

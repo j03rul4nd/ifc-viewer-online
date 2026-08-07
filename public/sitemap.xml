@@ -1160,6 +1160,25 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/blog/view-ifc-online-free/" />
   </url>
 
+  <!-- Free ebook: The IFC Delivery Handbook -->
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ebook/</loc>
+    <lastmod>2026-08-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ebook/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ebook/" />
+  </url>
+
+  <url>
+    <loc>https://www.ifcvieweronline.eu/ebook/bim-information-management/</loc>
+    <lastmod>2026-08-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/ebook/bim-information-management/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/ebook/bim-information-management/" />
+  </url>
+
   <!-- Legal pages -->
   <url>
     <loc>https://www.ifcvieweronline.eu/privacy</loc>

@@ -131,3 +131,21 @@ Available in English, Spanish (Español), German (Deutsch), and French (Françai
 ### French articles (Français)
 
 - [Ouvrir un fichier IFC dans le navigateur — gratuit, sans installation](https://www.ifcvieweronline.eu/fr/blog/ouvrir-fichier-ifc-navigateur/) — Comment ouvrir, inspecter et valider un fichier IFC dans un navigateur sans logiciel installé. Tool Guides, 6 min.
+
+## Free ebooks — two handbooks, no account required
+
+Both are free PDFs in English, given in exchange for an email address. Together they split the same
+argument at the file boundary: one covers the information process around a project, the other the
+model that has to survive it.
+
+- [The IFC Delivery Handbook](https://www.ifcvieweronline.eu/ebook/) — 64 pages. How to check, prove
+  and hand over IFC models that get accepted: all 44 validation checks with the fix in Revit,
+  ArchiCAD, Tekla and Allplan, the Health Score formula in full, the delivery workflow, the evidence
+  pack, and BEP clauses and acceptance criteria written to be copied.
+  Direct PDF: https://www.ifcvieweronline.eu/ebook/ifc-delivery-handbook.pdf
+- [The BIM Information Handbook](https://www.ifcvieweronline.eu/ebook/bim-information-management/) —
+  48 pages. BIM information management as a process: how a common data environment actually works and
+  its four states, the OIR → AIR → PIR → EIR → BEP requirement chain, level of information need
+  (EN 17412-1) instead of LOD numbers, TIDP/MIDP delivery planning, roles, federation and
+  coordination, quality gates, and handover from project information model to asset information model.
+  Direct PDF: https://www.ifcvieweronline.eu/ebook/bim-information-handbook.pdf

@@ -37,12 +37,16 @@ const ADMIN_USER_IDS = new Set(['user_3GP6gqE5WAmVzHobM0BosBk9A58'])
 // Dedicated auth pages ride in the lazy vendor-auth chunk (they import
 // @clerk/*) — loaded only when /sign-in, /sign-up or /account is visited.
 const LazyAuthPage = React.lazy(() => import('./components/account/AuthPage'))
+// /ebook — the lead-magnet landing. Lazy so the handbook page (and its cover
+// image markup) never costs the landing or the viewer a byte.
+const LazyEbookView = React.lazy(() => import('./components/EbookView'))
 import type { SharedReportPayload } from './components/SharedReportView'
 import DemoGallery from './components/DemoGallery'
 import MobileBottomNav from './components/MobileBottomNav'
 import OverlayHud from './components/OverlayHud'
 import Blog from './components/Blog'
 import PrivacyPolicy from './components/legal/PrivacyPolicy'
+import { ebookByRoute } from './lib/ebook'
 import TermsOfUse from './components/legal/TermsOfUse'
 import EmbedModal from './components/EmbedModal'
 import IdsModal from './components/IdsModal'
@@ -143,7 +147,6 @@ export default function App() {
   const { t: tCommon } = useTranslation('common')
   const { t: tViewer } = useTranslation('viewer')
   const { t: tTourNs } = useTranslation('tour')
-  useSeo()
 
   // ── Embed / deep-link URL params (?model=…&embed=1&…) ─────────────────────
   // Parsed once at mount; drives auto-loading remote models and the chrome a
@@ -239,6 +242,7 @@ export default function App() {
       if (rel === '/terms'   || rel.startsWith('/terms/'))   return 'terms'
       if (rel.startsWith('/verify/')) return 'verify'
       if (rel === '/welcome' || rel.startsWith('/welcome/')) return 'welcome'
+      if (rel === '/ebook'   || rel.startsWith('/ebook/'))   return 'ebook'
       // Dedicated auth pages (F2) — only exist when accounts are enabled.
       if (isAccountEnabled()) {
         if (rel === '/sign-in' || rel.startsWith('/sign-in/')) return 'signin'
@@ -251,6 +255,11 @@ export default function App() {
     return 'landing'
   })
 
+  // Locale-driven document meta. Disabled on /ebook: that view owns its own
+  // title, and this hook (living in the parent) would otherwise overwrite it —
+  // effects run child-first, so the parent always gets the last word.
+  useSeo({ enabled: route !== 'ebook' })
+
   // /verify/<cert_hash> — public certificate verification (F1). NOT in the
   // sitemap (the space of hashes is unbounded).
   const [verifyHash] = useState<string>(() => {
@@ -258,6 +267,14 @@ export default function App() {
     const base = import.meta.env.BASE_URL ?? '/'
     const rel = window.location.pathname.replace(base.replace(/\/$/, ''), '') || '/'
     return /^\/verify\/([^/]*)\/?$/.exec(rel)?.[1] ?? ''
+  })
+
+  // /ebook sub-route: '' = the primary handbook, otherwise a book's route segment.
+  const [ebookRoute, setEbookRoute] = useState<string>(() => {
+    if (typeof window === 'undefined') return ''
+    const base = import.meta.env.BASE_URL ?? '/'
+    const rel = window.location.pathname.replace(base.replace(/\/$/, ''), '') || '/'
+    return /^\/ebook\/([^/]*)\/?$/.exec(rel)?.[1] ?? ''
   })
 
   // Blog sub-route: null = list, string = post slug
@@ -348,6 +365,9 @@ export default function App() {
         setRoute('verify')
       } else if (rel === '/welcome' || rel.startsWith('/welcome/')) {
         setRoute('welcome')
+      } else if (rel === '/ebook' || rel.startsWith('/ebook/')) {
+        setRoute('ebook')
+        setEbookRoute(/^\/ebook\/([^/]*)\/?$/.exec(rel)?.[1] ?? '')
       } else if (isAccountEnabled() && (rel === '/sign-in' || rel.startsWith('/sign-in/'))) {
         setRoute('signin')
       } else if (isAccountEnabled() && (rel === '/sign-up' || rel.startsWith('/sign-up/'))) {
@@ -1562,6 +1582,20 @@ export default function App() {
             className="absolute inset-0 overflow-y-auto"
           >
             <WelcomeView onStart={handleNavigateToLanding} theme={landingTheme} />
+          </motion.div>
+        )}
+
+        {route === 'ebook' && (
+          <motion.div
+            key="ebook"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 overflow-y-auto"
+          >
+            <React.Suspense fallback={null}>
+              <LazyEbookView onNavigateToLanding={handleNavigateToLanding} book={ebookByRoute(ebookRoute)} />
+            </React.Suspense>
           </motion.div>
         )}
 

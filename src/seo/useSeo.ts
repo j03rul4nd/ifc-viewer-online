@@ -41,12 +41,24 @@ function normaliseLang(raw: string): string {
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
-export function useSeo(): void {
+export interface SeoOptions {
+  /**
+   * false = leave document meta alone this render. For routes that own their
+   * own title and description (the /ebook handbooks), because this hook lives
+   * in App and its effect therefore runs *after* the route component's — so
+   * without an opt-out the locale meta always wins the race.
+   */
+  enabled?: boolean
+}
+
+export function useSeo({ enabled = true }: SeoOptions = {}): void {
   const { i18n } = useTranslation()
   const locale   = normaliseLang(i18n.language ?? 'en')
   const meta     = LOCALE_META[locale] ?? LOCALE_META.en
 
   useEffect(() => {
+    if (!enabled) return
+
     // 1. Page title
     document.title = meta.title
 
@@ -76,5 +88,5 @@ export function useSeo(): void {
     // 7. Update canonical to strip query/hash (keep it clean)
     const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
     if (canonical) canonical.href = window.location.origin + window.location.pathname
-  }, [locale, meta])
+  }, [locale, meta, enabled])
 }

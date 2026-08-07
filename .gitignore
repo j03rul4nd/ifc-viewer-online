@@ -51,3 +51,6 @@ docs-planning/
 # Claude Code harness tooling (installed skills lockfile + agent defs) — local only
 .agents/
 skills-lock.json
+
+# Ebook build intermediates (the shipped PDF in public/ebook/ IS committed)
+scripts/ebook/.out/
