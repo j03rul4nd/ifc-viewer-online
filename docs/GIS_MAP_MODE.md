@@ -42,12 +42,30 @@ byte-identical to a build without the feature. This is the kill switch.
    While terrain is on, the FLAT basemap is clipped away under the patch
    (4 local clipping planes, intersection mode) so valleys below the ground
    plane are visible — rivers sink instead of hiding under the flat tiles.
-   Three visualization styles (map imagery / shaded relief / hypsometric
-   tint) and a live ×1–×3 vertical exaggeration slider sit under the terrain
-   toggle (persisted). Vertical datums IFC↔terrain can differ by metres; the
-   height-offset slider absorbs it.
-6. Attribution pill (bottom-right) is a **license obligation**, not decor.
-7. Manual placements persist per file (`ifc-geo-placement:v1:<cacheKey>`) and
+   **Five** visualization styles (map imagery / shaded relief / hypsometric
+   tint / slope / ecosystems) and a live ×1–×3 vertical exaggeration slider sit
+   under the terrain toggle (persisted). Vertical datums IFC↔terrain can differ
+   by metres; the height-offset slider absorbs it.
+6. **Advanced relief** (collapsed under the terrain styles, round 3 —
+   2026-08): configurable sun azimuth/altitude, shading softness (single hard
+   light ↔ multi-directional Imhof blend), sky-view-factor occlusion, synthetic
+   micro-relief blend, and contour lines. All re-bake vertex colours live with
+   no refetch; only the micro-relief slider re-displaces geometry.
+7. **Surrounding buildings** toggle: OpenStreetMap footprints around the site,
+   extruded and stood on the terrain (see Maintainer notes for the source
+   decision and its usage discipline). The panel reports how many were drawn
+   and how many heights were *estimated* rather than surveyed.
+8. **Placement minimap** (Leaflet): drag the pin or click to place a
+   non-georeferenced model, review where an IFC's own georeferencing landed,
+   and "use my location" (opt-in per click; coordinates never leave the
+   browser and never reach analytics). With several models loaded it also
+   shows sibling pins and warns when the files disagree by more than 10 km.
+9. **Save location to the IFC**: writes `IfcSite.RefLatitude/RefLongitude/
+   RefElevation` as a normal, undoable edit that is applied on export.
+10. Attribution pill (bottom-right) is a **license obligation**, not decor.
+    OSM building data is ODbL — attributed whenever buildings are shown, even
+    when the basemap comes from another provider.
+11. Manual placements persist per file (`ifc-geo-placement:v1:<cacheKey>`) and
    win over extracted georeferencing on the next load. Note: demo-gallery
    models get a fresh `lastModified` per download, so their cache key — and
    therefore the saved placement — does not survive a re-download. User files
@@ -68,8 +86,13 @@ byte-identical to a build without the feature. This is the kill switch.
 | Tile engine seam (3d-tiles-renderer impl + T0 decision block) | `src/lib/geo/basemap-engine.ts` |
 | Lifecycle owner (geoRoot, env snapshot/restore, camera flight, picking) | `src/lib/geo/geo-system.ts` |
 | Point elevation (terrarium) | `src/lib/geo/elevation.ts` |
-| Terrain sampling math (pure: bilinear, normals, zoom selection) | `src/lib/geo/terrain-sampling.ts` |
+| Terrain sampling math (pure: bicubic, normals, detail synthesis, sky-view factor, hillshade, ecosystems, zoom selection) | `src/lib/geo/terrain-sampling.ts` |
+| Terrain look defaults + clamping (split out: geoStore is EAGER) | `src/lib/geo/terrain-look.ts` |
 | Terrain worker + mesh assembly | `src/workers/geo-terrain.worker.ts`, `src/lib/geo/geo-terrain.ts` |
+| web-ifc attribute unwrapping (pure, shared with the extractor) | `src/lib/geo/ifc-value.ts` |
+| Multi-model siting (pure: haversine, anchor, disagreement) | `src/lib/geo/model-sites.ts` |
+| OSM buildings: parsing/heights (pure) · fetch worker · extrusion | `src/lib/geo/buildings.ts`, `src/workers/geo-buildings.worker.ts`, `src/lib/geo/building-mesh.ts` |
+| Placement minimap (Leaflet, lazy) | `src/components/PlacementMiniMap.tsx` |
 | Product state (epoch-guarded) | `src/stores/geoStore.ts` |
 | UI (panel, consent, layers, editor, pill) | `src/components/GeoPanel.tsx` |
 | Viewer hook (lazy `getGeo()`, ~15 additive lines) | `src/lib/viewer.ts` |
@@ -85,9 +108,11 @@ Key invariants:
 - **INV-5** — only `z/x/y` ever appear in tile URLs; analytics events carry no
   coordinates or file names.
 - Chunking: entry growth ≈ a few kB (eager EN strings only); the engine lives
-  in the lazy `geo-system` chunk (~114 kB), panel+proj4 in the lazy `GeoPanel`
-  chunk (~157 kB). `vite.config.ts` `manualChunks` explicitly keeps
-  `3d-tiles-renderer`/`proj4` out of the eager vendor chunks.
+  in the lazy `geo-system` chunk (~126 kB), panel+proj4 in the lazy `GeoPanel`
+  chunk, and Leaflet in its own lazy `PlacementMiniMap` chunk. `vite.config.ts`
+  `manualChunks` explicitly keeps `3d-tiles-renderer`/`proj4`/`leaflet` out of
+  the eager vendor chunks — verify with `grep -c leaflet dist/assets/index-*.js`
+  (must be 0) after touching the geo import graph.
 
 ## Maintainer notes
 
@@ -104,4 +129,49 @@ Key invariants:
 - Provider licensing was reviewed 2026-06 (`lastReviewed` in `providers.ts`).
   Re-verify before GA, especially Esri terms and the EOX layer year.
 - i18n namespace `geo`: EN + ES are hand-written; the other 8 locales are
-  EN copies flagged `_status: machine-copy-of-en` pending translation.
+  EN copies flagged `_status: machine-copy-of-en` pending translation — though
+  keys added since 2026-08 ARE translated in all ten. `geo-parity.test.ts`
+  enforces identical key sets and interpolation params (it ignores `_status`,
+  which is a maintenance marker, not a UI string) and pins the honesty
+  disclaimers so none can go missing in a locale.
+
+### Buildings: why Overpass, and the usage rules
+
+Footprints come from the **Overpass API**, not from a free 3D-buildings tile
+proxy. Overpass serves canonical OSM under ODbL with attribution we already
+display; a tile proxy would be a second undocumented dependency that can change
+terms or vanish, for data available at the source. That choice only stays
+acceptable if the query pattern stays small and interactive:
+
+- ONE query per user toggle. Never per tile, never on camera movement.
+- bbox no wider than the terrain patch (±700 m), 4000-element cap, timeouts on
+  both the server (`[timeout:25]`) and the client.
+- Results are cached per site, so toggling terrain re-extrudes locally instead
+  of re-querying.
+- Every failure degrades to "no buildings" with an honest message. Overpass
+  rate-limits aggressively per IP: a handful of queries in quick succession
+  earns a multi-minute cooldown, which the UI reports as "the service was
+  busy". **Space out queries when testing.**
+
+### Traps that cost real debugging time
+
+- **Triangulate in METRES, not normalized units.** A 20 m wall is ~3e-8 in the
+  normalized planar frame — close enough to earcut's degeneracy epsilon that
+  most footprints collapse to zero triangles and vanish silently. Measured:
+  437 of 3944 buildings survived before this was fixed. The triangulation is
+  topological, so its indices apply unchanged to the normalized ring.
+- **web-ifc attribute shapes are not interchangeable, and guessing wrong fails
+  late.** `IfcSite.RefLatitude` is ONE wrapper around the whole integer list
+  (`{ type: 10, value: number[] }`), not an array of tagged values;
+  `RefElevation` is a NumberHandle measure that also needs `name`. A wrong
+  shape throws only at `SaveModel`. Conversely, reading requires unwrapping —
+  a missing unwrap silently disabled rung 3 of the ladder for every IFC2x3
+  file. Both directions live in `ifc-value.ts` / the export worker, tested.
+- **Compound plane angles carry the sign on EVERY non-zero component.** A
+  southern latitude is `-33,-52,-7,-680000`, not `-33,52,7,680000`.
+- **Leaflet adds `.leaflet-container` to the element you hand it**, so theming
+  needs a compound selector (`.geo-minimap.leaflet-container`); a descendant
+  selector never matches.
+- Synthetic terrain detail and the ecosystem style are **models, not
+  measurements**. Both are off/opt-in by default and both carry a UI
+  disclaimer. Keep it that way.
