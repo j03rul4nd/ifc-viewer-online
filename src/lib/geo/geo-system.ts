@@ -37,6 +37,15 @@ const MAP_MAX_POLAR_RAD = (88 * Math.PI) / 180
 /** Client-side ceiling on a building query, longer than the worker's own. */
 const BUILDINGS_TIMEOUT_MS = 45_000
 
+/**
+ * Cache key for one Overpass query. Four decimals is ~11 m — far finer than the
+ * 1.4 km box the query covers, so nudging a placement by a few metres reuses the
+ * reply while genuinely relocating the model fetches a new one.
+ */
+function osmCacheKey(lat: number, lon: number): string {
+  return `${lat.toFixed(4)},${lon.toFixed(4)}`
+}
+
 /** What `setBuildings` reports back, so the UI can be specific about failures. */
 export type BuildingsOutcome =
   | { status: 'off' }
@@ -185,6 +194,21 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * instead of issuing another Overpass query for data we already have.
    */
   let osmFeatures: OsmFeature[] | null = null
+  /**
+   * The last Overpass reply, kept across teardown and even across map-mode
+   * disable so that turning the surroundings back on at the same site is
+   * instant instead of another round trip to a shared public service.
+   *
+   * Exactly ONE entry: a neighbourhood is a few MB of plain data, and moving
+   * the model past the key's resolution (~11 m, well inside the 1.4 km box)
+   * replaces it. Nothing here holds a Three.js resource.
+   */
+  let osmCache: {
+    key: string
+    features: OsmFeature[]
+    counts: Record<FeatureKind, number>
+    truncated: boolean
+  } | null = null
   /** Built meshes per layer, so each can be added or dropped independently. */
   const layerObjects = new Map<FeatureKind, THREE.Object3D>()
   let layerVisibility: FeatureLayerVisibility = {
@@ -356,6 +380,23 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       teardownBuildings()
       const token = ++buildingsToken
 
+      // Already have this neighbourhood — rebuild from memory. Overpass is a
+      // shared public service: re-asking it for bytes we are still holding is
+      // both slow and rude, and it is the difference between a toggle that
+      // responds in a frame and one that spins for several seconds (or fails).
+      const key = osmCacheKey(placement.lat, placement.lon)
+      if (osmCache?.key === key) {
+        osmFeatures = osmCache.features
+        if (osmFeatures.length === 0) return { status: 'empty' }
+        const estimatedCount = rebuildLayers()
+        return {
+          status: 'ready',
+          counts: osmCache.counts,
+          estimatedCount,
+          truncated: osmCache.truncated,
+        }
+      }
+
       let reply: BuildingsResponse
       try {
         reply = await runBuildingsWorker({
@@ -371,6 +412,15 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // Disabled or re-triggered while the query ran — drop the result.
       if (token !== buildingsToken || !geoRoot || !buildingsEnabled) return { status: 'off' }
       if (reply.type === 'error') return { status: 'error', message: reply.message }
+
+      // Cache before the empty check: "this area has nothing mapped" is an
+      // answer worth keeping too, or every toggle re-asks for the same nothing.
+      osmCache = {
+        key,
+        features: reply.features,
+        counts: reply.counts,
+        truncated: reply.truncated,
+      }
       if (reply.features.length === 0) return { status: 'empty' }
 
       osmFeatures = reply.features

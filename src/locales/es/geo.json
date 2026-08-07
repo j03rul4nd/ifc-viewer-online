@@ -1,7 +1,22 @@
 {
   "panel": {
     "title": "Mapa",
-    "close": "Cerrar panel"
+    "close": "Cerrar panel",
+    "tabs": {
+      "base": "Mapa base",
+      "terrain": "Terreno",
+      "context": "Entorno",
+      "place": "Ubicación"
+    },
+    "mode": {
+      "off": "Apagado",
+      "starting": "Iniciando",
+      "on": "Activo",
+      "error": "Error"
+    },
+    "back": "Volver",
+    "mapOff": "El mapa está apagado. Actívalo para cargar lo que rodea al modelo.",
+    "terrainHint": "Elevación real bajo el modelo, con el mapa base drapeado encima. Carga algunas teselas más."
   },
   "consent": {
     "title": "¿Cargar teselas de mapa?",

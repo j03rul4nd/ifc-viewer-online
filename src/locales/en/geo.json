@@ -1,7 +1,22 @@
 {
   "panel": {
     "title": "Map",
-    "close": "Close panel"
+    "close": "Close panel",
+    "tabs": {
+      "base": "Basemap",
+      "terrain": "Terrain",
+      "context": "Surroundings",
+      "place": "Placement"
+    },
+    "mode": {
+      "off": "Off",
+      "starting": "Starting",
+      "on": "On",
+      "error": "Error"
+    },
+    "back": "Back",
+    "mapOff": "The map is off. Turn it on to load what is around the model.",
+    "terrainHint": "Real elevation under the model, draped with the basemap. Adds a few tiles to load."
   },
   "consent": {
     "title": "Load map tiles?",

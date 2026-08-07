@@ -79,6 +79,15 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
   const [picking, setPicking] = useState(false)
   const [extraction, setExtraction] = useState<GeorefExtraction | null>(null)
   const [debugOpen, setDebugOpen] = useState(false)
+  /**
+   * Which group of controls the body is showing. The panel used to stack every
+   * group in one column, which meant ~1500px of scroll in a 304px-wide well and
+   * no way to know an option existed unless you scrolled onto it. Four tabs make
+   * the whole option space visible at a glance and keep each body short.
+   */
+  const [tab, setTab] = useState<TabId>('base')
+  /** Relief sliders are secondary to the style choice — collapsed by default. */
+  const [reliefOpen, setReliefOpen] = useState(false)
 
   const enabledAtRef = useRef(0)
 
@@ -493,8 +502,47 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
   // ── Render ───────────────────────────────────────────────────────────────────
 
   const { mapMode, panelOpen } = store
+  const mapOn = mapMode === 'on'
   const layerKindActive = (id: string): boolean => store.baseLayerId === id
   const satelliteActive = ['esri-imagery', 'eox-s2', 'gibs'].includes(store.baseLayerId)
+
+  /**
+   * A blocking step the user has to answer before the map can come on. It takes
+   * over the whole body: burying "we need a coordinate system" inside a tab is
+   * how the old panel left people staring at a button that appeared to do
+   * nothing.
+   */
+  const blockingStep: 'crs' | 'manual' | null =
+    crsFormOpen ? 'crs' : manualFormOpen ? 'manual' : null
+
+  /** A sheet owned by the Basemap tab (provider terms / custom tile URL). */
+  const baseSheet: 'terms' | 'custom' | null =
+    termsSheetOpen ? 'terms' : customFormOpen ? 'custom' : null
+
+  const visibleLayerCount = (['building', 'water', 'green', 'tree', 'bridge'] as const)
+    .filter((k) => store.featureLayers[k]).length
+
+  // Badges tell each tab to speak for itself, so nothing has to be opened just
+  // to find out whether anything in it is on.
+  const TABS: { id: TabId; label: string; badge?: string; dot?: boolean }[] = [
+    { id: 'base',    label: t('panel.tabs.base') },
+    { id: 'terrain', label: t('panel.tabs.terrain'), dot: store.terrainEnabled },
+    {
+      id: 'context',
+      label: t('panel.tabs.context'),
+      dot: store.buildingsEnabled,
+      // Only when something is hidden: "5/5" is noise that also squeezes the
+      // label, while "3/5" is the one fact you cannot see from the outside.
+      badge: store.buildingsEnabled && store.buildingsStatus === 'ready' && visibleLayerCount < 5
+        ? `${visibleLayerCount}/5` : undefined,
+    },
+    { id: 'place',   label: t('panel.tabs.place'), dot: mapOn && !!store.placement },
+  ]
+
+  /** One-line answer to "where am I and is this thing on?". */
+  const summary = mapOn && store.placement
+    ? `${store.placement.lat.toFixed(4)}, ${store.placement.lon.toFixed(4)} · ${normalizeDeg(store.placement.rotationDeg).toFixed(0)}°`
+    : null
 
   return (
     <>
@@ -516,21 +564,23 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
             exit={{ opacity: 0, x: 12 }}
             transition={{ duration: 0.2 }}
             className="absolute right-3 top-14 z-20 pointer-events-auto select-none"
-            // 304px, not the original 260: the panel now carries layer, terrain,
-            // relief and placement controls, and 260 could not fit four
-            // segments of translated text without clipping them.
-            style={{ width: 'min(304px, calc(100vw - 24px))' }}
+            style={{ width: 'min(332px, calc(100vw - 24px))' }}
           >
-            <div className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl max-h-[calc(100vh-140px)] overflow-y-auto">
-              {/* Header */}
-              <div className={`${SECTION_X} pt-3 pb-2.5 border-b border-[var(--border)] flex items-center justify-between gap-2`}>
-                <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase truncate">
+            {/* Column layout, not one long scroller: header, action and tabs are
+                pinned, and ONLY the active tab body scrolls. */}
+            <div className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl flex flex-col max-h-[calc(100vh-140px)]">
+
+              {/* ── Header ────────────────────────────────────────────────── */}
+              <div className={`${SECTION_X} pt-2.5 pb-2 flex items-center gap-2 shrink-0`}>
+                <span className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase">
                   {t('panel.title')}
-                </div>
+                </span>
+                <ModeChip mode={mapMode} label={t(`panel.mode.${mapOn ? 'on' : mapMode === 'starting' ? 'starting' : mapMode === 'error' ? 'error' : 'off'}`)} />
                 <button
                   onClick={() => store.setPanelOpen(false)}
-                  className="text-[var(--text-faint)] hover:text-[var(--text)] transition-colors"
+                  className="ml-auto -mr-1 p-1 rounded-[6px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
                   title={t('panel.close')}
+                  aria-label={t('panel.close')}
                 >
                   <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                     <path d="M2 2l10 10M12 2L2 12"/>
@@ -538,602 +588,583 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                 </button>
               </div>
 
-              {/* Enable / status row */}
-              <PanelSection divided={false}>
-                {mapMode !== 'on' && (
+              {/* ── Primary action — pinned, so it never scrolls out of reach ── */}
+              <div className={`${SECTION_X} pb-2.5 flex flex-col gap-1.5 shrink-0`}>
+                {!mapOn ? (
                   <button
                     onClick={() => { void handleShowOnMap() }}
                     disabled={!activeModelId || mapMode === 'starting'}
-                    className="w-full px-2.5 py-2 rounded-[8px] text-[12px] font-semibold bg-[var(--accent)] text-white disabled:opacity-40 transition-opacity"
+                    className="w-full h-[34px] rounded-[9px] text-[12.5px] font-semibold bg-[var(--accent)] text-white disabled:opacity-40 hover:brightness-110 active:scale-[0.99] transition-all"
                   >
                     {mapMode === 'starting' ? t('enable.starting') : t('enable.show')}
                   </button>
-                )}
-                {mapMode === 'on' && (
+                ) : (
                   <button
                     onClick={() => { void handleDisable() }}
-                    className="w-full px-2.5 py-2 rounded-[8px] text-[12px] font-medium border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+                    className="w-full h-[34px] rounded-[9px] text-[12px] font-medium border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] active:scale-[0.99] transition-all"
                   >
                     {t('enable.hide')}
                   </button>
                 )}
+
+                {summary && (
+                  <div className="text-[10px] font-mono tabular-nums text-[var(--text-faint)] truncate" title={summary}>
+                    {summary}
+                  </div>
+                )}
                 {!activeModelId && (
-                  <div className="text-[10.5px] text-[var(--text-faint)]">{t('enable.noModel')}</div>
+                  <div className="text-[10.5px] text-[var(--text-faint)] leading-snug">{t('enable.noModel')}</div>
                 )}
                 {mapMode === 'error' && (
-                  <div className="text-[11px] text-[var(--danger)] leading-snug">
-                    {tDynamic(store.mapErrorKey ?? 'errors.enableFailed')}
-                  </div>
+                  <Notice tone="danger">{tDynamic(store.mapErrorKey ?? 'errors.enableFailed')}</Notice>
                 )}
-                {store.degraded && (
-                  <div className="text-[10.5px] leading-snug px-2 py-1.5 rounded-[7px] border border-[rgba(229,72,77,0.4)] bg-[rgba(229,72,77,0.08)] text-[var(--text-dim)]">
-                    {t('degraded.banner')}
-                  </div>
-                )}
-              </PanelSection>
+                {store.degraded && <Notice tone="danger">{t('degraded.banner')}</Notice>}
+              </div>
 
-              {/* Georeferencing status */}
-              {extraction && (
-                <PanelSection title={t('status.title')}>
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1.5 text-[11.5px] font-medium min-w-0">
-                      <StatusDot status={extraction.status} />
-                      <span className="truncate">{t(`status.${extraction.status}`)}</span>
-                    </div>
-                    {extraction.rung !== null && (
-                      <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t(`status.rung${extraction.rung}`)}</div>
-                    )}
-                    {extraction.epsgCode && (
-                      // CRS codes and proj4 strings are arbitrary length — they
-                      // must wrap, never push the panel wider.
-                      <div className="text-[10.5px] font-mono text-[var(--text-dim)] break-words">
-                        {t('status.crs')}: {extraction.epsgCode}
-                      </div>
-                    )}
-                    {extraction.largeWcsOffset && (
-                      <div className="text-[10px] text-[#F5A623] leading-snug">{t('status.largeOffset')}</div>
-                    )}
-                  </div>
-                  {extraction.reasons.length > 0 && (
-                    <ul className="flex flex-col gap-1">
-                      {extraction.reasons.map((r) => (
-                        <li key={r} className="text-[10px] text-[var(--text-faint)] leading-snug break-words">• {tDynamic(`reasons.${r}`)}</li>
-                      ))}
-                    </ul>
-                  )}
-                  <div>
-                    <button
-                      onClick={() => setDebugOpen((v) => !v)}
-                      className="text-[9.5px] font-mono text-[var(--text-faint)] hover:text-[var(--text-dim)] transition-colors"
+              {/* ── Body ──────────────────────────────────────────────────── */}
+              {blockingStep ? (
+                /* One question at a time, full width, with a way back out. */
+                <div className="border-t border-[var(--border)] flex-1 overflow-y-auto">
+                  {blockingStep === 'crs' && (
+                    <Sheet
+                      title={t('crs.title')}
+                      onBack={() => setCrsFormOpen(false)}
+                      backLabel={t('panel.back')}
                     >
-                      {debugOpen ? '▾' : '▸'} {t('status.debug')}
-                    </button>
-                    {debugOpen && (
-                      <pre className="mt-1.5 text-[9px] font-mono text-[var(--text-faint)] whitespace-pre-wrap break-all leading-snug max-h-[120px] overflow-y-auto">
-                        {Object.entries(extraction.raw).map(([k, v]) => `${k}: ${String(v)}`).join('\n') || '—'}
-                      </pre>
-                    )}
-                  </div>
-                </PanelSection>
-              )}
-
-              {/* CRS picker */}
-              {crsFormOpen && (
-                <div className="border-t border-[var(--border)] px-3.5 py-3 flex flex-col gap-2">
-                  <div className="text-[11px] font-semibold">{t('crs.title')}</div>
-                  <div className="text-[10.5px] text-[var(--text-dim)] leading-snug">
-                    {t('crs.body', { name: extraction?.epsgCode ?? '?' })}
-                  </div>
-                  <label className="text-[10px] text-[var(--text-faint)]">{t('crs.epsgLabel')}</label>
-                  <input
-                    value={crsCode}
-                    onChange={(e) => setCrsCode(e.target.value)}
-                    placeholder={t('crs.epsgPlaceholder')}
-                    className="geo-input"
-                  />
-                  <label className="text-[10px] text-[var(--text-faint)]">{t('crs.proj4Label')}</label>
-                  <input
-                    value={crsProj4}
-                    onChange={(e) => setCrsProj4(e.target.value)}
-                    placeholder={t('crs.proj4Placeholder')}
-                    className="geo-input"
-                  />
-                  {crsError && <div className="text-[10px] text-[var(--danger)]">{t('crs.invalid')}</div>}
-                  <button
-                    onClick={() => { void handleCrsApply() }}
-                    className="px-2.5 py-1.5 rounded-[7px] text-[11px] font-semibold bg-[var(--accent)] text-white"
-                  >
-                    {t('crs.apply')}
-                  </button>
-                </div>
-              )}
-
-              {/* Manual placement form */}
-              {manualFormOpen && (
-                <div className="border-t border-[var(--border)] px-3.5 py-3 flex flex-col gap-2">
-                  <div className="text-[10.5px] text-[var(--text-dim)] leading-snug">{t('placement.manualIntro')}</div>
-
-                  {/* Pick on a real map instead of guessing two numbers. Gated
-                      on the same consent as 3D map mode — it fetches tiles. */}
-                  {store.consentGiven && (
-                    <Suspense fallback={<div className="h-[150px] rounded-[8px] bg-[var(--surface-2)]" />}>
-                      <PlacementMiniMap
-                        lat={Number.isFinite(parseFloat(manualLat)) ? parseFloat(manualLat) : MANUAL_FALLBACK.lat}
-                        lon={Number.isFinite(parseFloat(manualLon)) ? parseFloat(manualLon) : MANUAL_FALLBACK.lon}
-                        onChange={(la, lo) => {
-                          setManualLat(la.toFixed(6))
-                          setManualLon(lo.toFixed(6))
-                        }}
-                        otherPins={otherPins}
-                      />
-                    </Suspense>
-                  )}
-
-                  <div className="flex gap-1.5">
-                    <div className="flex-1 min-w-0">
-                      <label className="text-[10px] text-[var(--text-faint)]">{t('placement.lat')}</label>
-                      <input value={manualLat} onChange={(e) => setManualLat(e.target.value)} placeholder="41.3851" className="geo-input" inputMode="decimal" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <label className="text-[10px] text-[var(--text-faint)]">{t('placement.lon')}</label>
-                      <input value={manualLon} onChange={(e) => setManualLon(e.target.value)} placeholder="2.1734" className="geo-input" inputMode="decimal" />
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { void handleManualApply() }}
-                    disabled={!Number.isFinite(parseFloat(manualLat)) || !Number.isFinite(parseFloat(manualLon))}
-                    className="px-2.5 py-1.5 rounded-[7px] text-[11px] font-semibold bg-[var(--accent)] text-white disabled:opacity-40"
-                  >
-                    {t('enable.show')}
-                  </button>
-                </div>
-              )}
-
-              {/* Manual entry shortcut for non-georeferenced models */}
-              {!manualFormOpen && mapMode === 'off' && extraction && (extraction.status === 'none' || extraction.status === 'invalid') && (
-                <div className="border-t border-[var(--border)] px-3.5 py-3">
-                  <button
-                    onClick={() => setManualFormOpen(true)}
-                    className="text-[11px] text-[var(--accent)] hover:underline"
-                  >
-                    {t('placement.manualShow')}
-                  </button>
-                </div>
-              )}
-
-              {/* Layers */}
-              <PanelSection title={t('layers.title')}>
-                <Segmented
-                  options={[
-                    { id: 'osm', label: t('layers.streets'), active: layerKindActive('osm') },
-                    { id: 'opentopomap', label: t('layers.topo'), active: layerKindActive('opentopomap') },
-                    { id: 'satellite', label: t('layers.satellite'), active: satelliteActive },
-                    { id: 'custom', label: t('layers.custom'), active: layerKindActive('custom') },
-                  ]}
-                  onSelect={handleLayerClick}
-                />
-
-                {/* Terrain toggle */}
-                <label className="flex items-start gap-2 text-[11.5px] text-[var(--text-dim)] cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={store.terrainEnabled}
-                    onChange={(e) => handleTerrainToggle(e.target.checked)}
-                    className="accent-[var(--accent)] mt-[2px] shrink-0"
-                  />
-                  <span className="min-w-0 leading-snug">
-                    {store.terrainStatus === 'loading' ? t('layers.terrainLoading') : t('layers.terrain')}
-                    {store.terrainStatus === 'error' && (
-                      <span className="block text-[10px] text-[var(--danger)] leading-snug">{t('errors.terrainFailed')}</span>
-                    )}
-                  </span>
-                </label>
-
-                {/* Surrounding buildings — context that makes the terrain read
-                    as a real place rather than an aerial photo. */}
-                <label className="flex items-start gap-2 text-[11.5px] text-[var(--text-dim)] cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={store.buildingsEnabled}
-                    onChange={(e) => { void handleBuildingsToggle(e.target.checked) }}
-                    disabled={mapMode !== 'on'}
-                    className="accent-[var(--accent)] mt-[2px] shrink-0"
-                  />
-                  <span className="min-w-0 leading-snug">
-                    {store.buildingsStatus === 'loading' ? t('layers.buildingsLoading') : t('layers.buildings')}
-                    {store.buildingsEnabled && store.buildingsStatus === 'ready' && (
-                      <span className="block text-[9.5px] text-[var(--text-faint)] leading-snug">
-                        {t('layers.buildingsCount', { count: store.buildingsCounts.building })}
-                        {store.buildingsEstimated > 0 && ` · ${t('layers.buildingsEstimated', { count: store.buildingsEstimated })}`}
-                      </span>
-                    )}
-                    {store.buildingsStatus === 'empty' && (
-                      <span className="block text-[9.5px] text-[var(--text-faint)] leading-snug">{t('layers.buildingsEmpty')}</span>
-                    )}
-                    {store.buildingsStatus === 'error' && (
-                      <span className="block text-[9.5px] text-[var(--danger)] leading-snug">{t('layers.buildingsFailed')}</span>
-                    )}
-                    {store.buildingsTruncated && (
-                      <span className="block text-[9.5px] text-[var(--warn,#F5A623)] leading-snug">{t('layers.buildingsTruncated')}</span>
-                    )}
-                  </span>
-                </label>
-
-                {/* Per-layer visibility. Rendered only once we know what was
-                    found, and each row states its own count so an empty layer
-                    reads as "none mapped here" rather than as a broken toggle. */}
-                {store.buildingsEnabled && store.buildingsStatus === 'ready' && (
-                  <div className="flex flex-col gap-1 pl-5">
-                    {(['building', 'water', 'green', 'tree', 'bridge'] as const).map((kind) => (
-                      <label key={kind} className="flex items-center gap-1.5 text-[10.5px] text-[var(--text-dim)] cursor-pointer min-w-0">
-                        <input
-                          type="checkbox"
-                          checked={store.featureLayers[kind]}
-                          onChange={(e) => handleFeatureLayer(kind, e.target.checked)}
-                          className="accent-[var(--accent)] shrink-0"
-                        />
-                        <span className="truncate">{t(`layers.osm.${kind}`)}</span>
-                        <span className="ml-auto shrink-0 font-mono tabular-nums text-[9.5px] text-[var(--text-faint)]">
-                          {store.buildingsCounts[kind]}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-
-                {/* Terrain visualization controls */}
-                {store.terrainEnabled && (
-                  <div className="flex flex-col gap-2 pt-0.5">
-                    <div className="text-[10px] text-[var(--text-faint)]">{t('layers.style')}</div>
-                    <Segmented
-                      options={([
-                        ['imagery', t('layers.styleImagery')],
-                        ['shaded', t('layers.styleShaded')],
-                        ['hypsometric', t('layers.styleHypso')],
-                        ['slope', t('layers.styleSlope')],
-                        ['ecosystem', t('layers.styleEcosystem')],
-                      ] as const).map(([id, label]) => ({ id, label, active: store.terrainStyle === id }))}
-                      onSelect={handleTerrainStyle}
-                    />
-                    {/* This style INFERS vegetation belts from altitude — it is
-                        not observed land cover, and must never be read as such. */}
-                    {store.terrainStyle === 'ecosystem' && (
-                      <div className="text-[9.5px] leading-snug text-[var(--warn,#F5A623)]">
-                        {t('layers.styleEcosystemNote')}
-                      </div>
-                    )}
-                    <LookSlider
-                      label={t('layers.exaggeration')}
-                      value={store.terrainExaggeration}
-                      min={1} max={3} step={0.25}
-                      format={(v) => `×${v}`}
-                      onChange={handleTerrainExaggeration}
-                    />
-
-                    {/* ── Advanced relief controls ────────────────────────────
-                        Everything here re-bakes live from data already in
-                        memory — no refetch, so dragging a slider is instant. */}
-                    <details className="mt-1 group">
-                      <summary className="cursor-pointer list-none text-[10px] text-[var(--text-faint)] hover:text-[var(--text-dim)] select-none">
-                        ▸ {t('layers.advancedRelief')}
-                      </summary>
-                      <div className="mt-1.5 flex flex-col gap-1.5 pl-1 border-l border-[var(--border)]">
-                        <LookSlider
-                          label={t('layers.sunAzimuth')}
-                          value={store.terrainLook.sunAzimuth}
-                          min={0} max={359} step={5}
-                          format={(v) => `${v}°`}
-                          onChange={(v) => handleTerrainLook({ sunAzimuth: v })}
-                        />
-                        <LookSlider
-                          label={t('layers.sunAltitude')}
-                          value={store.terrainLook.sunAltitude}
-                          min={5} max={90} step={5}
-                          format={(v) => `${v}°`}
-                          onChange={(v) => handleTerrainLook({ sunAltitude: v })}
-                        />
-                        <LookSlider
-                          label={t('layers.softness')}
-                          value={store.terrainLook.softness}
-                          min={0} max={1} step={0.1}
-                          format={(v) => `${Math.round(v * 100)}%`}
-                          onChange={(v) => handleTerrainLook({ softness: v })}
-                        />
-                        <LookSlider
-                          label={t('layers.occlusion')}
-                          value={store.terrainLook.occlusion}
-                          min={0} max={1} step={0.1}
-                          format={(v) => `${Math.round(v * 100)}%`}
-                          onChange={(v) => handleTerrainLook({ occlusion: v })}
-                        />
-                        <LookSlider
-                          label={t('layers.detail')}
-                          value={store.terrainLook.detail}
-                          min={0} max={1} step={0.1}
-                          format={(v) => `${Math.round(v * 100)}%`}
-                          onChange={(v) => handleTerrainLook({ detail: v })}
-                        />
-                        {/* Non-negotiable: invented geometry must say so. */}
-                        {store.terrainLook.detail > 0 && (
-                          <div className="text-[9.5px] leading-snug text-[var(--warn,#F5A623)]">
-                            {t('layers.detailWarning')}
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] text-[var(--text-faint)] whitespace-nowrap">
-                            {t('layers.contours')}
-                          </span>
-                          <select
-                            value={store.terrainLook.contourInterval}
-                            onChange={(e) => handleTerrainLook({ contourInterval: parseFloat(e.target.value) })}
-                            className="flex-1 bg-[var(--surface-2)] border border-[var(--border-strong)] rounded-[5px] px-1 h-[22px] text-[10.5px] outline-none"
-                          >
-                            {CONTOUR_INTERVALS.map((m) => (
-                              <option key={m} value={m}>{m === 0 ? t('layers.contoursOff') : `${m} m`}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <button
-                          onClick={handleResetLook}
-                          className="self-start text-[10px] text-[var(--text-dim)] hover:text-[var(--text)] underline"
-                        >
-                          {t('layers.resetRelief')}
-                        </button>
-                      </div>
-                    </details>
-                  </div>
-                )}
-              </PanelSection>
-
-              {/* Satellite terms sheet */}
-              {termsSheetOpen && (
-                <div className="border-t border-[var(--border)] px-3.5 py-3 flex flex-col gap-2">
-                  <div className="text-[11px] font-semibold">{t('layers.termsTitle')}</div>
-                  <div className="text-[10px] text-[var(--text-dim)] leading-snug">{t('layers.termsBody')}</div>
-                  {[
-                    { id: 'esri-imagery', note: t('layers.esriNote') },
-                    { id: 'eox-s2', note: t('layers.eoxNote') },
-                    { id: 'gibs', note: t('layers.gibsNote') },
-                  ].map((opt) => (
-                    <button
-                      key={opt.id}
-                      onClick={() => handleTermsAccept(opt.id)}
-                      className="text-left px-2 py-1.5 rounded-[7px] border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
-                    >
-                      <div className="text-[10.5px] leading-snug text-[var(--text-dim)]">{opt.note}</div>
-                      <div className="text-[10px] text-[var(--accent)] mt-0.5">{t('layers.accept')}</div>
-                    </button>
-                  ))}
-                  <button onClick={() => setTermsSheetOpen(false)} className="text-[10.5px] text-[var(--text-faint)] hover:text-[var(--text)]">
-                    {t('layers.cancel')}
-                  </button>
-                </div>
-              )}
-
-              {/* Custom provider form */}
-              {customFormOpen && (
-                <div className="border-t border-[var(--border)] px-3.5 py-3 flex flex-col gap-2">
-                  <div className="text-[11px] font-semibold">{t('layers.customTitle')}</div>
-                  <label className="text-[10px] text-[var(--text-faint)]">{t('layers.customUrl')}</label>
-                  <input value={customUrl} onChange={(e) => setCustomUrl(e.target.value)} placeholder={t('layers.customUrlPlaceholder')} className="geo-input" />
-                  <label className="text-[10px] text-[var(--text-faint)]">{t('layers.customAttribution')}</label>
-                  <input value={customAttr} onChange={(e) => setCustomAttr(e.target.value)} className="geo-input" />
-                  {customError && <div className="text-[10px] text-[var(--danger)]">{t('layers.customInvalid')}</div>}
-                  <button onClick={handleCustomSave} className="px-2.5 py-1.5 rounded-[7px] text-[11px] font-semibold bg-[var(--accent)] text-white">
-                    {t('layers.customSave')}
-                  </button>
-                </div>
-              )}
-
-              {/* Placement section (map on) */}
-              {mapMode === 'on' && store.placement && (
-                <div className="border-t border-[var(--border)] px-3.5 py-3 flex flex-col gap-2">
-                  <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.08em] uppercase">
-                    {t('placement.title')}
-                  </div>
-                  <div className="text-[10px] text-[var(--text-faint)]">
-                    {store.placement.source === 'ifc' ? t('placement.sourceIfc') : t('placement.sourceManual')}
-                    {' · '}
-                    {store.placement.confidence === 'high' ? t('status.confidenceHigh') : t('status.confidenceApproximate')}
-                  </div>
-                  <div className="text-[10.5px] font-mono text-[var(--text-dim)] tabular-nums break-words">
-                    {store.placement.lat.toFixed(5)}, {store.placement.lon.toFixed(5)} · {normalizeDeg(store.placement.rotationDeg).toFixed(1)}°
-                  </div>
-
-                  {/* Where it actually landed. Editable while the placement
-                      editor is open, read-only review otherwise. */}
-                  {store.consentGiven && (
-                    <Suspense fallback={<div className="h-[150px] rounded-[8px] bg-[var(--surface-2)]" />}>
-                      <PlacementMiniMap
-                        lat={(editing && draftPlacement ? draftPlacement : store.placement).lat}
-                        lon={(editing && draftPlacement ? draftPlacement : store.placement).lon}
-                        onChange={editing ? (la, lo) => store.updateDraft({ lat: la, lon: lo }) : undefined}
-                        otherPins={otherPins}
-                        fitAll={modelSites.farApart}
-                      />
-                    </Suspense>
-                  )}
-
-                  {/* Multi-model context — which model the map is anchored to,
-                      and whether the loaded files agree with each other. */}
-                  {modelSites.located.length > 1 && (
-                    <div className="text-[10px] text-[var(--text-faint)] leading-snug">
-                      {t('placement.anchorHint')}
-                    </div>
-                  )}
-                  {modelSites.farApart && (
-                    <div className="text-[10px] leading-snug px-2 py-1.5 rounded-[7px] border border-[rgba(245,166,35,0.4)] bg-[rgba(245,166,35,0.08)] text-[var(--text-dim)]">
-                      {t('placement.modelsFarApart', {
-                        count: modelSites.located.length,
-                        km: Math.round(modelSites.spreadM / 1000),
-                      })}
-                    </div>
-                  )}
-                  {modelSites.sites.length > 1 && (
-                    <ul className="flex flex-col gap-0.5">
-                      {modelSites.sites.map((s) => (
-                        <li key={s.modelId} className="flex items-center gap-1.5 text-[10px] min-w-0">
-                          <span
-                            className="w-[6px] h-[6px] rounded-full shrink-0"
-                            style={{ background: s.lat === null ? 'var(--text-faint)' : s.anchor ? 'var(--accent)' : 'var(--text-dim)' }}
-                          />
-                          <span className="truncate text-[var(--text-dim)]" title={s.label}>{s.label}</span>
-                          {s.anchor && (
-                            <span className="shrink-0 text-[9px] text-[var(--accent)]">{t('placement.anchorModel')}</span>
-                          )}
-                          {s.lat === null && (
-                            <span className="shrink-0 text-[9px] text-[var(--text-faint)]">{t('placement.noGeoref')}</span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  {!editing && (
-                    <button
-                      onClick={() => { void beginEdit() }}
-                      className="px-2.5 py-1.5 rounded-[7px] text-[11px] font-medium border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
-                    >
-                      {t('placement.edit')}
-                    </button>
-                  )}
-
-                  {/* Write the placement into the file itself. Until this is
-                      used, a location chosen here lives only in this browser. */}
-                  {!editing && (
-                    extraction?.siteExpressId ? (
-                      <div className="flex flex-col gap-1">
-                        <button
-                          onClick={handleSaveGeorefToIfc}
-                          className="px-2.5 py-1.5 rounded-[7px] text-[11px] font-medium border border-[var(--accent)] text-[var(--accent)] hover:bg-[rgba(94,106,210,0.12)] transition-colors"
-                        >
-                          {t('placement.saveToIfc')}
-                        </button>
-                        <span className="text-[9.5px] text-[var(--text-faint)] leading-snug">
-                          {t('placement.saveToIfcHint')}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-[9.5px] text-[var(--text-faint)] leading-snug">
-                        {t('placement.saveToIfcNoSite')}
-                      </span>
-                    )
-                  )}
-
-                  {editing && draftPlacement && (
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex gap-1.5">
-                        <div className="flex-1">
-                          <label className="text-[10px] text-[var(--text-faint)]">{t('placement.lat')}</label>
-                          <input
-                            value={String(draftPlacement.lat)}
-                            onChange={(e) => {
-                              const v = parseFloat(e.target.value)
-                              if (Number.isFinite(v)) store.updateDraft({ lat: v })
-                            }}
-                            className="geo-input" inputMode="decimal"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <label className="text-[10px] text-[var(--text-faint)]">{t('placement.lon')}</label>
-                          <input
-                            value={String(draftPlacement.lon)}
-                            onChange={(e) => {
-                              const v = parseFloat(e.target.value)
-                              if (Number.isFinite(v)) store.updateDraft({ lon: v })
-                            }}
-                            className="geo-input" inputMode="decimal"
-                          />
-                        </div>
-                      </div>
-
-                      <label className="text-[10px] text-[var(--text-faint)]">{t('placement.rotation')}</label>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="range" min={0} max={360} step={0.5}
-                          value={normalizeDeg(draftPlacement.rotationDeg)}
-                          onChange={(e) => store.updateDraft({ rotationDeg: parseFloat(e.target.value) })}
-                          className="flex-1 accent-[var(--accent)]"
-                        />
-                        <span className="text-[10.5px] font-mono w-12 text-right tabular-nums">
-                          {normalizeDeg(draftPlacement.rotationDeg).toFixed(1)}°
-                        </span>
-                      </div>
-
-                      <label className="text-[10px] text-[var(--text-faint)]">{t('placement.height')}</label>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number" step={0.5}
-                          value={String(draftPlacement.heightOffsetM)}
-                          onChange={(e) => {
-                            const v = parseFloat(e.target.value)
-                            if (Number.isFinite(v)) store.updateDraft({ heightOffsetM: v })
-                          }}
-                          className="geo-input flex-1"
-                        />
-                        <button
-                          onClick={() => store.updateDraft({ heightOffsetM: 0 })}
-                          className="text-[10px] text-[var(--text-faint)] hover:text-[var(--text)]"
-                        >
-                          {t('placement.resetHeight')}
-                        </button>
-                      </div>
-
-                      {/* Nudge pad */}
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-[var(--text-faint)]">{t('placement.nudge')}</span>
-                        <div className="grid grid-cols-3 gap-0.5">
-                          <span />
-                          <NudgeBtn label="↑" onClick={() => nudgeDraft(0, 10)} />
-                          <span />
-                          <NudgeBtn label="←" onClick={() => nudgeDraft(-10, 0)} />
-                          <NudgeBtn label="·" onClick={() => { /* centre — no-op */ }} />
-                          <NudgeBtn label="→" onClick={() => nudgeDraft(10, 0)} />
-                          <span />
-                          <NudgeBtn label="↓" onClick={() => nudgeDraft(0, -10)} />
-                          <span />
-                        </div>
-                        <span className="text-[9.5px] text-[var(--text-faint)]">10 m</span>
-                      </div>
-
+                      <p className="text-[10.5px] text-[var(--text-dim)] leading-snug">
+                        {t('crs.body', { name: extraction?.epsgCode ?? '?' })}
+                      </p>
+                      <Field label={t('crs.epsgLabel')}>
+                        <input value={crsCode} onChange={(e) => setCrsCode(e.target.value)} placeholder={t('crs.epsgPlaceholder')} className="geo-input" />
+                      </Field>
+                      <Field label={t('crs.proj4Label')}>
+                        <input value={crsProj4} onChange={(e) => setCrsProj4(e.target.value)} placeholder={t('crs.proj4Placeholder')} className="geo-input" />
+                      </Field>
+                      {crsError && <Notice tone="danger">{t('crs.invalid')}</Notice>}
+                      <button onClick={() => { void handleCrsApply() }} className="h-[30px] rounded-[8px] text-[11.5px] font-semibold bg-[var(--accent)] text-white hover:brightness-110 transition-all">
+                        {t('crs.apply')}
+                      </button>
+                      {/* Not knowing the CRS must not be a dead end. */}
                       <button
-                        onClick={() => setPicking((v) => !v)}
+                        onClick={() => { setCrsFormOpen(false); setManualFormOpen(true) }}
+                        className="self-start text-[11px] text-[var(--accent)] hover:underline underline-offset-2"
+                      >
+                        {t('placement.manualShow')}
+                      </button>
+                    </Sheet>
+                  )}
+
+                  {blockingStep === 'manual' && (
+                    <Sheet
+                      title={t('placement.manualShow')}
+                      onBack={() => setManualFormOpen(false)}
+                      backLabel={t('panel.back')}
+                    >
+                      <p className="text-[10.5px] text-[var(--text-dim)] leading-snug">{t('placement.manualIntro')}</p>
+
+                      {/* Pick on a real map instead of guessing two numbers. Gated
+                          on the same consent as 3D map mode — it fetches tiles. */}
+                      {store.consentGiven && (
+                        <Suspense fallback={<div className="h-[150px] rounded-[8px] bg-[var(--surface-2)]" />}>
+                          <PlacementMiniMap
+                            lat={Number.isFinite(parseFloat(manualLat)) ? parseFloat(manualLat) : MANUAL_FALLBACK.lat}
+                            lon={Number.isFinite(parseFloat(manualLon)) ? parseFloat(manualLon) : MANUAL_FALLBACK.lon}
+                            onChange={(la, lo) => {
+                              setManualLat(la.toFixed(6))
+                              setManualLon(lo.toFixed(6))
+                            }}
+                            otherPins={otherPins}
+                          />
+                        </Suspense>
+                      )}
+
+                      <div className="flex gap-1.5">
+                        <Field label={t('placement.lat')} className="flex-1 min-w-0">
+                          <input value={manualLat} onChange={(e) => setManualLat(e.target.value)} placeholder="41.3851" inputMode="decimal" className="geo-input" />
+                        </Field>
+                        <Field label={t('placement.lon')} className="flex-1 min-w-0">
+                          <input value={manualLon} onChange={(e) => setManualLon(e.target.value)} placeholder="2.1734" inputMode="decimal" className="geo-input" />
+                        </Field>
+                      </div>
+                      <button
+                        onClick={() => { void handleManualApply() }}
+                        disabled={!Number.isFinite(parseFloat(manualLat)) || !Number.isFinite(parseFloat(manualLon))}
+                        className="h-[30px] rounded-[8px] text-[11.5px] font-semibold bg-[var(--accent)] text-white disabled:opacity-40 hover:brightness-110 transition-all"
+                      >
+                        {t('enable.show')}
+                      </button>
+                    </Sheet>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {/* ── Tabs ────────────────────────────────────────────────── */}
+                  <div
+                    role="tablist"
+                    aria-label={t('panel.title')}
+                    className={`${SECTION_X} flex gap-0.5 border-b border-[var(--border)] shrink-0`}
+                    onKeyDown={(e) => {
+                      const i = TABS.findIndex((x) => x.id === tab)
+                      if (e.key === 'ArrowRight') { e.preventDefault(); setTab(TABS[(i + 1) % TABS.length].id) }
+                      if (e.key === 'ArrowLeft')  { e.preventDefault(); setTab(TABS[(i - 1 + TABS.length) % TABS.length].id) }
+                    }}
+                  >
+                    {TABS.map((x) => (
+                      <button
+                        key={x.id}
+                        role="tab"
+                        id={`geo-tab-${x.id}`}
+                        aria-selected={tab === x.id}
+                        aria-controls={`geo-panel-${x.id}`}
+                        tabIndex={tab === x.id ? 0 : -1}
+                        onClick={() => setTab(x.id)}
                         className={[
-                          'px-2.5 py-1.5 rounded-[7px] text-[11px] font-medium border transition-colors',
-                          picking
-                            ? 'border-[var(--accent)] text-[var(--accent)]'
-                            : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)]',
+                          'relative flex-1 min-w-0 pt-1.5 pb-2 px-0.5 text-[10px] font-medium leading-tight',
+                          'transition-colors rounded-t-[6px]',
+                          tab === x.id
+                            ? 'text-[var(--text)]'
+                            : 'text-[var(--text-faint)] hover:text-[var(--text-dim)] hover:bg-[var(--surface-2)]',
                         ].join(' ')}
                       >
-                        {picking ? t('placement.picking') : t('placement.pick')}
+                        <span className="flex items-center justify-center gap-[3px] min-w-0">
+                          <span className="truncate">{x.label}</span>
+                          {x.badge
+                            ? <span className="shrink-0 font-mono text-[9px] text-[var(--text-faint)] tabular-nums">{x.badge}</span>
+                            : x.dot
+                              ? <span className="shrink-0 w-[5px] h-[5px] rounded-full bg-[var(--accent)]" />
+                              : null}
+                        </span>
+                        {tab === x.id && (
+                          <motion.span
+                            layoutId="geo-tab-underline"
+                            className="absolute left-1 right-1 -bottom-px h-[2px] rounded-full bg-[var(--accent)]"
+                            transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                          />
+                        )}
                       </button>
+                    ))}
+                  </div>
 
-                      <div className="flex gap-1.5">
-                        <button
-                          onClick={() => { void finishEdit(true) }}
-                          className="flex-1 px-2.5 py-1.5 rounded-[7px] text-[11px] font-semibold bg-[var(--accent)] text-white"
-                        >
-                          {t('placement.apply')}
-                        </button>
-                        <button
-                          onClick={() => { void finishEdit(false) }}
-                          className="flex-1 px-2.5 py-1.5 rounded-[7px] text-[11px] font-medium border border-[var(--border-strong)] text-[var(--text-dim)]"
-                        >
-                          {t('placement.cancel')}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                  <div
+                    role="tabpanel"
+                    id={`geo-panel-${tab}`}
+                    aria-labelledby={`geo-tab-${tab}`}
+                    className="flex-1 overflow-y-auto overscroll-contain"
+                  >
+                    {/* ── Basemap ─────────────────────────────────────────── */}
+                    {tab === 'base' && (
+                      baseSheet === 'terms' ? (
+                        <Sheet title={t('layers.termsTitle')} onBack={() => setTermsSheetOpen(false)} backLabel={t('panel.back')}>
+                          <p className="text-[10px] text-[var(--text-dim)] leading-snug">{t('layers.termsBody')}</p>
+                          {[
+                            { id: 'esri-imagery', note: t('layers.esriNote') },
+                            { id: 'eox-s2', note: t('layers.eoxNote') },
+                            { id: 'gibs', note: t('layers.gibsNote') },
+                          ].map((opt) => (
+                            <button
+                              key={opt.id}
+                              onClick={() => handleTermsAccept(opt.id)}
+                              className="text-left px-2.5 py-2 rounded-[8px] border border-[var(--border)] hover:border-[var(--accent)] hover:bg-[var(--surface-2)] transition-colors"
+                            >
+                              <div className="text-[10.5px] leading-snug text-[var(--text-dim)]">{opt.note}</div>
+                              <div className="text-[10px] text-[var(--accent)] mt-0.5">{t('layers.accept')}</div>
+                            </button>
+                          ))}
+                        </Sheet>
+                      ) : baseSheet === 'custom' ? (
+                        <Sheet title={t('layers.customTitle')} onBack={() => setCustomFormOpen(false)} backLabel={t('panel.back')}>
+                          <Field label={t('layers.customUrl')}>
+                            <input value={customUrl} onChange={(e) => setCustomUrl(e.target.value)} placeholder={t('layers.customUrlPlaceholder')} className="geo-input" />
+                          </Field>
+                          <Field label={t('layers.customAttribution')}>
+                            <input value={customAttr} onChange={(e) => setCustomAttr(e.target.value)} className="geo-input" />
+                          </Field>
+                          {customError && <Notice tone="danger">{t('layers.customInvalid')}</Notice>}
+                          <button onClick={handleCustomSave} className="h-[30px] rounded-[8px] text-[11.5px] font-semibold bg-[var(--accent)] text-white hover:brightness-110 transition-all">
+                            {t('layers.customSave')}
+                          </button>
+                        </Sheet>
+                      ) : (
+                        <Group>
+                          <Choices
+                            options={[
+                              { id: 'osm', label: t('layers.streets'), active: layerKindActive('osm') },
+                              { id: 'opentopomap', label: t('layers.topo'), active: layerKindActive('opentopomap') },
+                              { id: 'satellite', label: t('layers.satellite'), active: satelliteActive },
+                              { id: 'custom', label: t('layers.custom'), active: layerKindActive('custom') },
+                            ]}
+                            onSelect={handleLayerClick}
+                          />
+                        </Group>
+                      )
+                    )}
 
-              {/* Vertical datum disclaimer when terrain is on */}
-              {store.terrainEnabled && store.terrainStatus === 'ready' && (
-                <div className="border-t border-[var(--border)] px-3.5 py-3 text-[9.5px] text-[var(--text-faint)] leading-snug">
-                  {t('attribution.vertical')}
-                </div>
+                    {/* ── Terrain ─────────────────────────────────────────── */}
+                    {tab === 'terrain' && (
+                      <Group>
+                        <SwitchRow
+                          label={t('layers.terrain')}
+                          checked={store.terrainEnabled}
+                          onChange={handleTerrainToggle}
+                          busy={store.terrainStatus === 'loading'}
+                          note={
+                            store.terrainStatus === 'loading' ? t('layers.terrainLoading')
+                            : store.terrainStatus === 'error' ? t('errors.terrainFailed')
+                            : undefined
+                          }
+                          tone={store.terrainStatus === 'error' ? 'danger' : 'muted'}
+                        />
+
+                        {!store.terrainEnabled && (
+                          <p className="text-[10px] text-[var(--text-faint)] leading-snug">
+                            {t('panel.terrainHint')}
+                          </p>
+                        )}
+
+                        {store.terrainEnabled && (
+                          <>
+                            <Caption>{t('layers.style')}</Caption>
+                            <Choices
+                              options={([
+                                ['imagery', t('layers.styleImagery')],
+                                ['shaded', t('layers.styleShaded')],
+                                ['hypsometric', t('layers.styleHypso')],
+                                ['slope', t('layers.styleSlope')],
+                                ['ecosystem', t('layers.styleEcosystem')],
+                              ] as const).map(([id, label]) => ({ id, label, active: store.terrainStyle === id }))}
+                              onSelect={handleTerrainStyle}
+                            />
+                            {/* This style INFERS vegetation belts from altitude — it is
+                                not observed land cover, and must never be read as such. */}
+                            {store.terrainStyle === 'ecosystem' && (
+                              <Notice tone="warn">{t('layers.styleEcosystemNote')}</Notice>
+                            )}
+
+                            <LookSlider
+                              label={t('layers.exaggeration')}
+                              value={store.terrainExaggeration}
+                              min={1} max={3} step={0.25}
+                              format={(v) => `×${v}`}
+                              onChange={handleTerrainExaggeration}
+                            />
+
+                            {/* Everything below re-bakes from data already in
+                                memory — dragging a slider is instant, no refetch. */}
+                            <Expander
+                              open={reliefOpen}
+                              onToggle={() => setReliefOpen((v) => !v)}
+                              label={t('layers.advancedRelief')}
+                            >
+                              <LookSlider label={t('layers.sunAzimuth')} value={store.terrainLook.sunAzimuth} min={0} max={359} step={5} format={(v) => `${v}°`} onChange={(v) => handleTerrainLook({ sunAzimuth: v })} />
+                              <LookSlider label={t('layers.sunAltitude')} value={store.terrainLook.sunAltitude} min={5} max={90} step={5} format={(v) => `${v}°`} onChange={(v) => handleTerrainLook({ sunAltitude: v })} />
+                              <LookSlider label={t('layers.softness')} value={store.terrainLook.softness} min={0} max={1} step={0.1} format={(v) => `${Math.round(v * 100)}%`} onChange={(v) => handleTerrainLook({ softness: v })} />
+                              <LookSlider label={t('layers.occlusion')} value={store.terrainLook.occlusion} min={0} max={1} step={0.1} format={(v) => `${Math.round(v * 100)}%`} onChange={(v) => handleTerrainLook({ occlusion: v })} />
+                              <LookSlider label={t('layers.detail')} value={store.terrainLook.detail} min={0} max={1} step={0.1} format={(v) => `${Math.round(v * 100)}%`} onChange={(v) => handleTerrainLook({ detail: v })} />
+                              {/* Non-negotiable: invented geometry must say so. */}
+                              {store.terrainLook.detail > 0 && (
+                                <Notice tone="warn">{t('layers.detailWarning')}</Notice>
+                              )}
+
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-[var(--text-faint)] w-[54px] shrink-0">
+                                  {t('layers.contours')}
+                                </span>
+                                <select
+                                  value={store.terrainLook.contourInterval}
+                                  onChange={(e) => handleTerrainLook({ contourInterval: parseFloat(e.target.value) })}
+                                  className="flex-1 bg-[var(--surface-2)] border border-[var(--border-strong)] rounded-[6px] px-1.5 h-[24px] text-[10.5px] outline-none focus:border-[var(--accent)]"
+                                >
+                                  {CONTOUR_INTERVALS.map((m) => (
+                                    <option key={m} value={m}>{m === 0 ? t('layers.contoursOff') : `${m} m`}</option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <button
+                                onClick={handleResetLook}
+                                className="self-start text-[10px] text-[var(--text-dim)] hover:text-[var(--text)] underline underline-offset-2"
+                              >
+                                {t('layers.resetRelief')}
+                              </button>
+                            </Expander>
+
+                            {store.terrainStatus === 'ready' && (
+                              <p className="text-[9.5px] text-[var(--text-faint)] leading-snug pt-1">
+                                {t('attribution.vertical')}
+                              </p>
+                            )}
+                          </>
+                        )}
+                      </Group>
+                    )}
+
+                    {/* ── Surroundings ────────────────────────────────────── */}
+                    {tab === 'context' && (
+                      <Group>
+                        {!mapOn && <Notice tone="muted">{t('panel.mapOff')}</Notice>}
+
+                        <SwitchRow
+                          label={t('layers.buildings')}
+                          checked={store.buildingsEnabled}
+                          onChange={(v) => { void handleBuildingsToggle(v) }}
+                          disabled={!mapOn}
+                          busy={store.buildingsStatus === 'loading'}
+                          note={
+                            store.buildingsStatus === 'loading' ? t('layers.buildingsLoading')
+                            : store.buildingsStatus === 'error' ? t('layers.buildingsFailed')
+                            : store.buildingsStatus === 'empty' ? t('layers.buildingsEmpty')
+                            : store.buildingsEnabled && store.buildingsStatus === 'ready'
+                              ? t('layers.buildingsCount', { count: store.buildingsCounts.building })
+                                + (store.buildingsEstimated > 0
+                                  ? ` · ${t('layers.buildingsEstimated', { count: store.buildingsEstimated })}`
+                                  : '')
+                              : undefined
+                          }
+                          tone={store.buildingsStatus === 'error' ? 'danger' : 'muted'}
+                        />
+                        {store.buildingsTruncated && <Notice tone="warn">{t('layers.buildingsTruncated')}</Notice>}
+
+                        {/* Per-layer visibility, with counts, so an empty layer
+                            reads as "none mapped here" and not as a dead toggle. */}
+                        {store.buildingsEnabled && store.buildingsStatus === 'ready' && (
+                          <>
+                            <Caption>{t('panel.tabs.context')}</Caption>
+                            <div className="flex flex-col">
+                              {(['building', 'water', 'green', 'tree', 'bridge'] as const).map((kind) => (
+                                <SwitchRow
+                                  key={kind}
+                                  compact
+                                  label={t(`layers.osm.${kind}`)}
+                                  trailing={
+                                    <span className="font-mono tabular-nums text-[9.5px] text-[var(--text-faint)]">
+                                      {store.buildingsCounts[kind]}
+                                    </span>
+                                  }
+                                  checked={store.featureLayers[kind]}
+                                  disabled={store.buildingsCounts[kind] === 0}
+                                  onChange={(v) => handleFeatureLayer(kind, v)}
+                                />
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </Group>
+                    )}
+
+                    {/* ── Placement ───────────────────────────────────────── */}
+                    {tab === 'place' && (
+                      <Group>
+                        {mapOn && store.placement && (
+                          <>
+                            <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-faint)]">
+                              <span>{store.placement.source === 'ifc' ? t('placement.sourceIfc') : t('placement.sourceManual')}</span>
+                              <span>·</span>
+                              <span>{store.placement.confidence === 'high' ? t('status.confidenceHigh') : t('status.confidenceApproximate')}</span>
+                            </div>
+
+                            {store.consentGiven && (
+                              <Suspense fallback={<div className="h-[150px] rounded-[8px] bg-[var(--surface-2)]" />}>
+                                <PlacementMiniMap
+                                  lat={(editing && draftPlacement ? draftPlacement : store.placement).lat}
+                                  lon={(editing && draftPlacement ? draftPlacement : store.placement).lon}
+                                  onChange={editing ? (la, lo) => store.updateDraft({ lat: la, lon: lo }) : undefined}
+                                  otherPins={otherPins}
+                                  fitAll={modelSites.farApart}
+                                />
+                              </Suspense>
+                            )}
+
+                            {modelSites.located.length > 1 && (
+                              <p className="text-[10px] text-[var(--text-faint)] leading-snug">{t('placement.anchorHint')}</p>
+                            )}
+                            {modelSites.farApart && (
+                              <Notice tone="warn">
+                                {t('placement.modelsFarApart', {
+                                  count: modelSites.located.length,
+                                  km: Math.round(modelSites.spreadM / 1000),
+                                })}
+                              </Notice>
+                            )}
+                            {modelSites.sites.length > 1 && (
+                              <ul className="flex flex-col gap-0.5">
+                                {modelSites.sites.map((s) => (
+                                  <li key={s.modelId} className="flex items-center gap-1.5 text-[10px] min-w-0">
+                                    <span
+                                      className="w-[6px] h-[6px] rounded-full shrink-0"
+                                      style={{ background: s.lat === null ? 'var(--text-faint)' : s.anchor ? 'var(--accent)' : 'var(--text-dim)' }}
+                                    />
+                                    <span className="truncate text-[var(--text-dim)]" title={s.label}>{s.label}</span>
+                                    {s.anchor && <span className="shrink-0 text-[9px] text-[var(--accent)]">{t('placement.anchorModel')}</span>}
+                                    {s.lat === null && <span className="shrink-0 text-[9px] text-[var(--text-faint)]">{t('placement.noGeoref')}</span>}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+
+                            {!editing ? (
+                              <div className="flex flex-col gap-1.5">
+                                <button
+                                  onClick={() => { void beginEdit() }}
+                                  className="h-[30px] rounded-[8px] text-[11.5px] font-medium border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+                                >
+                                  {t('placement.edit')}
+                                </button>
+                                {extraction?.siteExpressId ? (
+                                  <>
+                                    <button
+                                      onClick={handleSaveGeorefToIfc}
+                                      className="h-[30px] rounded-[8px] text-[11.5px] font-medium border border-[var(--accent)] text-[var(--accent)] hover:bg-[rgba(94,106,210,0.12)] transition-colors"
+                                    >
+                                      {t('placement.saveToIfc')}
+                                    </button>
+                                    <span className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('placement.saveToIfcHint')}</span>
+                                  </>
+                                ) : (
+                                  <span className="text-[9.5px] text-[var(--text-faint)] leading-snug">{t('placement.saveToIfcNoSite')}</span>
+                                )}
+                              </div>
+                            ) : draftPlacement && (
+                              <div className="flex flex-col gap-2">
+                                <div className="flex gap-1.5">
+                                  <Field label={t('placement.lat')} className="flex-1">
+                                    <input
+                                      value={String(draftPlacement.lat)}
+                                      onChange={(e) => {
+                                        const v = parseFloat(e.target.value)
+                                        if (Number.isFinite(v)) store.updateDraft({ lat: v })
+                                      }}
+                                      className="geo-input" inputMode="decimal"
+                                    />
+                                  </Field>
+                                  <Field label={t('placement.lon')} className="flex-1">
+                                    <input
+                                      value={String(draftPlacement.lon)}
+                                      onChange={(e) => {
+                                        const v = parseFloat(e.target.value)
+                                        if (Number.isFinite(v)) store.updateDraft({ lon: v })
+                                      }}
+                                      className="geo-input" inputMode="decimal"
+                                    />
+                                  </Field>
+                                </div>
+
+                                <LookSlider
+                                  label={t('placement.rotation')}
+                                  value={normalizeDeg(draftPlacement.rotationDeg)}
+                                  min={0} max={360} step={0.5}
+                                  format={(v) => `${v.toFixed(0)}°`}
+                                  onChange={(v) => store.updateDraft({ rotationDeg: v })}
+                                />
+
+                                <div className="flex items-end gap-1.5">
+                                  <Field label={t('placement.height')} className="flex-1">
+                                    <input
+                                      type="number" step={0.5}
+                                      value={String(draftPlacement.heightOffsetM)}
+                                      onChange={(e) => {
+                                        const v = parseFloat(e.target.value)
+                                        if (Number.isFinite(v)) store.updateDraft({ heightOffsetM: v })
+                                      }}
+                                      className="geo-input"
+                                    />
+                                  </Field>
+                                  <button
+                                    onClick={() => store.updateDraft({ heightOffsetM: 0 })}
+                                    className="h-[26px] px-2 text-[10px] text-[var(--text-faint)] hover:text-[var(--text)] transition-colors"
+                                  >
+                                    {t('placement.resetHeight')}
+                                  </button>
+                                </div>
+
+                                {/* Nudge pad — a d-pad reads as one control, where
+                                    a row of arrows read as four unrelated buttons. */}
+                                <div className="flex items-center gap-2.5">
+                                  <div className="grid grid-cols-3 gap-0.5 shrink-0">
+                                    <span />
+                                    <NudgeBtn label="↑" onClick={() => nudgeDraft(0, 10)} />
+                                    <span />
+                                    <NudgeBtn label="←" onClick={() => nudgeDraft(-10, 0)} />
+                                    <span className="w-6 h-6 flex items-center justify-center text-[9px] text-[var(--text-faint)]">10m</span>
+                                    <NudgeBtn label="→" onClick={() => nudgeDraft(10, 0)} />
+                                    <span />
+                                    <NudgeBtn label="↓" onClick={() => nudgeDraft(0, -10)} />
+                                    <span />
+                                  </div>
+                                  <button
+                                    onClick={() => setPicking((v) => !v)}
+                                    className={[
+                                      'flex-1 h-[30px] rounded-[8px] text-[11px] font-medium border transition-colors',
+                                      picking
+                                        ? 'border-[var(--accent)] text-[var(--accent)] bg-[rgba(94,106,210,0.10)]'
+                                        : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)]',
+                                    ].join(' ')}
+                                  >
+                                    {picking ? t('placement.picking') : t('placement.pick')}
+                                  </button>
+                                </div>
+
+                                <div className="flex gap-1.5">
+                                  <button
+                                    onClick={() => { void finishEdit(true) }}
+                                    className="flex-1 h-[30px] rounded-[8px] text-[11.5px] font-semibold bg-[var(--accent)] text-white hover:brightness-110 active:scale-[0.99] transition-all"
+                                  >
+                                    {t('placement.apply')}
+                                  </button>
+                                  <button
+                                    onClick={() => { void finishEdit(false) }}
+                                    className="flex-1 h-[30px] rounded-[8px] text-[11.5px] font-medium border border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
+                                  >
+                                    {t('placement.cancel')}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+
+                        {/* Georeferencing provenance — why the model landed here. */}
+                        {extraction && (
+                          <>
+                            <Caption>{t('status.title')}</Caption>
+                            <div className="flex items-center gap-1.5 text-[11px] font-medium min-w-0">
+                              <StatusDot status={extraction.status} />
+                              <span className="truncate">{t(`status.${extraction.status}`)}</span>
+                            </div>
+                            {extraction.rung !== null && (
+                              <p className="text-[10px] text-[var(--text-faint)] leading-snug">{t(`status.rung${extraction.rung}`)}</p>
+                            )}
+                            {extraction.epsgCode && (
+                              <p className="text-[10.5px] font-mono text-[var(--text-dim)] break-words">
+                                {t('status.crs')}: {extraction.epsgCode}
+                              </p>
+                            )}
+                            {extraction.largeWcsOffset && <Notice tone="warn">{t('status.largeOffset')}</Notice>}
+                            {extraction.reasons.length > 0 && (
+                              <ul className="flex flex-col gap-1">
+                                {extraction.reasons.map((r) => (
+                                  <li key={r} className="text-[10px] text-[var(--text-faint)] leading-snug break-words">• {tDynamic(`reasons.${r}`)}</li>
+                                ))}
+                              </ul>
+                            )}
+                            {!mapOn && (extraction.status === 'none' || extraction.status === 'invalid') && (
+                              <button
+                                onClick={() => setManualFormOpen(true)}
+                                className="self-start text-[11px] text-[var(--accent)] hover:underline underline-offset-2"
+                              >
+                                {t('placement.manualShow')}
+                              </button>
+                            )}
+                            <Expander open={debugOpen} onToggle={() => setDebugOpen((v) => !v)} label={t('status.debug')}>
+                              <pre className="text-[9px] font-mono text-[var(--text-faint)] whitespace-pre-wrap break-all leading-snug max-h-[120px] overflow-y-auto">
+                                {Object.entries(extraction.raw).map(([k, v]) => `${k}: ${String(v)}`).join('\n') || '—'}
+                              </pre>
+                            </Expander>
+                          </>
+                        )}
+                      </Group>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </motion.div>
@@ -1191,66 +1222,180 @@ function NudgeBtn({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="w-6 h-6 rounded-[5px] text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] transition-colors"
+      className="w-6 h-6 rounded-[5px] text-[11px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] active:scale-95 transition-all"
     >
       {label}
     </button>
   )
 }
 
+/** Map state as a colour + word, next to the title where it is read first. */
+function ModeChip({ mode, label }: { mode: string; label: string }) {
+  const tone =
+    mode === 'on' ? { fg: 'var(--ok, #30A46C)', bg: 'rgba(48,163,108,0.12)' }
+    : mode === 'starting' ? { fg: 'var(--accent-2)', bg: 'rgba(94,106,210,0.14)' }
+    : mode === 'error' ? { fg: 'var(--danger)', bg: 'rgba(229,72,77,0.12)' }
+    : { fg: 'var(--text-faint)', bg: 'var(--surface-2)' }
+  return (
+    <span
+      className="px-1.5 py-[1px] rounded-[5px] text-[9px] font-medium uppercase tracking-[0.08em]"
+      style={{ color: tone.fg, background: tone.bg }}
+    >
+      {label}
+    </span>
+  )
+}
+
 // ── Panel layout primitives ────────────────────────────────────────────────────
-// The panel grew section by section and each one invented its own padding, which
-// is how labels ended up overflowing their buttons. These three primitives are
-// the whole layout system: one spacing scale, one section rhythm, and controls
+// The panel grew section by section and each one invented its own padding and
+// its own idea of a control, which is how it ended up as 1500px of scroll with
+// no visible hierarchy. These primitives are the whole layout system: one
+// spacing scale, one row shape, one way to say "this is a group", and controls
 // that are physically incapable of clipping their own text.
 
 /** Horizontal padding shared by every section — the panel's optical margin. */
 const SECTION_X = 'px-3.5'
 
-interface PanelSectionProps {
-  title?: string
-  /** First section omits the divider; every other one carries it. */
-  divided?: boolean
-  children: React.ReactNode
+type TabId = 'base' | 'terrain' | 'context' | 'place'
+
+/** A tab body: consistent padding and vertical rhythm, nothing else. */
+function Group({ children }: { children: React.ReactNode }) {
+  return <div className={`${SECTION_X} py-3 flex flex-col gap-2.5`}>{children}</div>
 }
 
-function PanelSection({ title, divided = true, children }: PanelSectionProps) {
+/** Small uppercase label that starts a group of related controls. */
+function Caption({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${SECTION_X} py-3 ${divided ? 'border-t border-[var(--border)]' : ''}`}>
-      {title && (
-        <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.08em] uppercase mb-2">
-          {title}
-        </div>
-      )}
-      <div className="flex flex-col gap-2">{children}</div>
+    <div className="text-[9.5px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase pt-0.5">
+      {children}
     </div>
   )
 }
 
-interface SegmentedOption<T extends string> {
-  id: T
-  label: string
-  active?: boolean
+/** Inline message with a tone. Replaces five bespoke coloured divs. */
+function Notice({ tone = 'muted', children }: { tone?: 'muted' | 'warn' | 'danger'; children: React.ReactNode }) {
+  const style =
+    tone === 'danger' ? 'border-[rgba(229,72,77,0.4)] bg-[rgba(229,72,77,0.08)] text-[var(--text-dim)]'
+    : tone === 'warn' ? 'border-[rgba(245,166,35,0.4)] bg-[rgba(245,166,35,0.08)] text-[var(--text-dim)]'
+    : 'border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-faint)]'
+  return (
+    <div className={`text-[10px] leading-snug px-2 py-1.5 rounded-[7px] border ${style}`}>
+      {children}
+    </div>
+  )
 }
 
-interface SegmentedProps<T extends string> {
-  options: ReadonlyArray<SegmentedOption<T>>
-  onSelect: (id: T) => void
-  /**
-   * Minimum width per segment; segments wrap onto a new row below it. The
-   * default lays four options out as a tidy 2×2 inside the panel, which gives
-   * every translated label room to be read in full rather than ellipsised.
-   */
-  minWidth?: number
+/** Labelled form field — label and control always travel together. */
+function Field({ label, className = '', children }: { label: string; className?: string; children: React.ReactNode }) {
+  return (
+    <label className={`flex flex-col gap-0.5 ${className}`}>
+      <span className="text-[10px] text-[var(--text-faint)]">{label}</span>
+      {children}
+    </label>
+  )
+}
+
+/** A sub-flow that takes over the body, with an unmistakable way back. */
+function Sheet({ title, backLabel, onBack, children }: {
+  title: string
+  backLabel: string
+  onBack: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <div className={`${SECTION_X} py-3 flex flex-col gap-2.5`}>
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={onBack}
+          className="-ml-1 p-1 rounded-[6px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+          aria-label={backLabel}
+          title={backLabel}
+        >
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M8.5 2.5L4 7l4.5 4.5" />
+          </svg>
+        </button>
+        <span className="text-[11.5px] font-semibold">{title}</span>
+      </div>
+      {children}
+    </div>
+  )
 }
 
 /**
- * Wrapping segmented control. `flex-wrap` + a min-width per segment is what
- * fixes the clipping: a long label ("Personalizada", "Hypsometric") pushes its
- * segment onto the next row instead of being cut off, in EVERY locale — which a
- * fixed `grid-cols-4` can never guarantee, since translations vary in length.
+ * One setting per row: name on the left, state on the right, always in the same
+ * place. A real switch rather than a checkbox — at this size a checkbox reads as
+ * a bullet, and "is it on?" has to be answerable from across the panel.
  */
-function Segmented<T extends string>({ options, onSelect, minWidth = 118 }: SegmentedProps<T>) {
+function SwitchRow({ label, checked, onChange, disabled = false, busy = false, note, tone = 'muted', trailing, compact = false }: {
+  label: string
+  checked: boolean
+  onChange: (v: boolean) => void
+  disabled?: boolean
+  busy?: boolean
+  note?: string
+  tone?: 'muted' | 'danger'
+  trailing?: React.ReactNode
+  compact?: boolean
+}) {
+  return (
+    <label
+      className={[
+        'flex items-center gap-2 rounded-[7px] -mx-1 px-1 transition-colors',
+        compact ? 'py-1' : 'py-1.5',
+        disabled ? 'opacity-45 cursor-not-allowed' : 'cursor-pointer hover:bg-[var(--surface-2)]',
+      ].join(' ')}
+    >
+      <span className="min-w-0 flex-1">
+        <span className={`block truncate ${compact ? 'text-[10.5px]' : 'text-[11.5px]'} text-[var(--text-dim)]`}>
+          {label}
+        </span>
+        {note && (
+          <span className={`block text-[9.5px] leading-snug ${tone === 'danger' ? 'text-[var(--danger)]' : 'text-[var(--text-faint)]'}`}>
+            {note}
+          </span>
+        )}
+      </span>
+      {trailing}
+      {busy && (
+        <span className="w-[9px] h-[9px] rounded-full border-[1.5px] border-[var(--accent)] border-t-transparent animate-spin shrink-0" aria-hidden />
+      )}
+      <input
+        type="checkbox"
+        role="switch"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+        className="sr-only peer"
+      />
+      <span
+        aria-hidden
+        className={[
+          'relative shrink-0 w-[26px] h-[15px] rounded-full transition-colors',
+          checked ? 'bg-[var(--accent)]' : 'bg-[var(--border-strong)]',
+          'peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--accent)] peer-focus-visible:ring-offset-1 peer-focus-visible:ring-offset-[var(--bg)]',
+        ].join(' ')}
+      >
+        <span
+          className="absolute top-[2px] left-[2px] w-[11px] h-[11px] rounded-full bg-white transition-transform duration-150"
+          style={{ transform: checked ? 'translateX(11px)' : 'translateX(0)' }}
+        />
+      </span>
+    </label>
+  )
+}
+
+/**
+ * Wrapping choice group. `flex-wrap` + a min-width per option is what fixes the
+ * clipping: a long label ("Personalizada", "Hypsometric") pushes its option onto
+ * the next row instead of being cut off, in EVERY locale — which a fixed
+ * `grid-cols-4` can never guarantee, since translations vary in length.
+ */
+function Choices<T extends string>({ options, onSelect, minWidth = 90 }: {
+  options: ReadonlyArray<{ id: T; label: string; active?: boolean }>
+  onSelect: (id: T) => void
+  minWidth?: number
+}) {
   return (
     <div className="flex flex-wrap gap-1">
       {options.map((o) => (
@@ -1261,11 +1406,11 @@ function Segmented<T extends string>({ options, onSelect, minWidth = 118 }: Segm
           aria-pressed={o.active ?? false}
           style={{ minWidth }}
           className={[
-            'flex-1 px-2 py-1.5 rounded-[7px] text-[10.5px] font-medium leading-tight',
-            'truncate transition-colors',
+            'flex-1 px-2 h-[28px] rounded-[7px] text-[10.5px] font-medium leading-tight truncate',
+            'border transition-colors active:scale-[0.98]',
             o.active
-              ? 'bg-[var(--accent)] text-white'
-              : 'text-[var(--text-dim)] hover:bg-[var(--surface-2)]',
+              ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
+              : 'border-[var(--border)] text-[var(--text-dim)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-2)]',
           ].join(' ')}
         >
           {o.label}
@@ -1275,7 +1420,40 @@ function Segmented<T extends string>({ options, onSelect, minWidth = 118 }: Segm
   )
 }
 
-// ── Compact labelled slider for the advanced relief controls ───────────────────
+/** Secondary controls behind one obvious affordance — a row, not a `▸` glyph. */
+function Expander({ open, onToggle, label, children }: {
+  open: boolean
+  onToggle: () => void
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-col">
+      <button
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex items-center gap-1.5 -mx-1 px-1 py-1 rounded-[7px] text-[10.5px] text-[var(--text-faint)] hover:text-[var(--text-dim)] hover:bg-[var(--surface-2)] transition-colors"
+      >
+        <svg
+          width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+          className="transition-transform duration-150 shrink-0"
+          style={{ transform: open ? 'rotate(90deg)' : 'none' }}
+          aria-hidden
+        >
+          <path d="M4 2.5L8 6l-4 3.5" />
+        </svg>
+        {label}
+      </button>
+      {open && (
+        <div className="mt-1.5 flex flex-col gap-1.5 pl-2 border-l border-[var(--border)]">
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Compact labelled slider ────────────────────────────────────────────────────
 
 interface LookSliderProps {
   label: string
@@ -1298,7 +1476,7 @@ function LookSlider({ label, value, min, max, step, format, onChange }: LookSlid
         className="flex-1 accent-[var(--accent)]"
         aria-label={label}
       />
-      <span className="text-[10px] font-mono w-[30px] text-right tabular-nums text-[var(--text-dim)]">
+      <span className="text-[10px] font-mono w-[34px] text-right tabular-nums text-[var(--text-dim)]">
         {format(value)}
       </span>
     </label>

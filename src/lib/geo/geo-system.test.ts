@@ -498,3 +498,96 @@ describe('geo-system · terrain sync', () => {
     geo.dispose()
   })
 })
+
+// ── Surrounding features: one query per neighbourhood ─────────────────────────
+//
+// Overpass is a shared public service with rate limits, and the query takes
+// seconds. Toggling the surroundings off and on, or re-enabling map mode at the
+// same site, must rebuild from the reply already in memory — otherwise the
+// control feels broken and the service gets hammered for bytes we are holding.
+
+describe('geo-system · OSM feature cache', () => {
+  /** Fake worker that answers one canned reply and counts how often it is built. */
+  class FakeBuildingsWorker {
+    static built = 0
+    onmessage: ((e: MessageEvent<unknown>) => void) | null = null
+    onerror: ((e: ErrorEvent) => void) | null = null
+    constructor() { FakeBuildingsWorker.built++ }
+    postMessage(msg: { id: string }): void {
+      queueMicrotask(() => {
+        this.onmessage?.({
+          data: {
+            type: 'buildings',
+            id: msg.id,
+            features: [{
+              id: 'w1',
+              kind: 'building',
+              ring: [
+                { lat: 41.3851, lon: 2.1734 }, { lat: 41.3852, lon: 2.1734 },
+                { lat: 41.3852, lon: 2.1735 }, { lat: 41.3851, lon: 2.1735 },
+              ],
+              height: { heightM: 12, source: 'tag' },
+              style: { roofShape: 'flat', roofHeightM: 0 },
+            }],
+            counts: { building: 1, water: 0, green: 0, tree: 0, bridge: 0 },
+            truncated: false,
+          },
+        } as MessageEvent<unknown>)
+      })
+    }
+    terminate(): void { /* no-op */ }
+  }
+
+  const originalWorker = globalThis.Worker
+
+  beforeEach(() => {
+    FakeBuildingsWorker.built = 0
+    ;(globalThis as { Worker: unknown }).Worker = FakeBuildingsWorker
+  })
+  afterEach(() => {
+    ;(globalThis as { Worker: unknown }).Worker = originalWorker
+  })
+
+  it('queries once, then rebuilds from memory when toggled off and on', async () => {
+    const geo = createGeoSystem(makeFixture().ctx)
+    await geo.enable(PLACEMENT, PROVIDER)
+
+    const first = await geo.setBuildings(true)
+    expect(first.status).toBe('ready')
+    expect(FakeBuildingsWorker.built).toBe(1)
+
+    await geo.setBuildings(false)
+    const second = await geo.setBuildings(true)
+
+    expect(second.status).toBe('ready')
+    expect(FakeBuildingsWorker.built).toBe(1) // served from cache
+    if (second.status === 'ready') expect(second.counts.building).toBe(1)
+  })
+
+  it('survives a map-mode cycle at the same site', async () => {
+    const geo = createGeoSystem(makeFixture().ctx)
+    await geo.enable(PLACEMENT, PROVIDER)
+    await geo.setBuildings(true)
+    geo.disable()
+
+    await geo.enable(PLACEMENT, PROVIDER)
+    const again = await geo.setBuildings(true)
+
+    expect(again.status).toBe('ready')
+    expect(FakeBuildingsWorker.built).toBe(1)
+  })
+
+  it('re-queries once the model moves out of the cached neighbourhood', async () => {
+    const geo = createGeoSystem(makeFixture().ctx)
+    await geo.enable(PLACEMENT, PROVIDER)
+    await geo.setBuildings(true)
+    expect(FakeBuildingsWorker.built).toBe(1)
+
+    geo.disable()
+    // ~1.5 km north — a different neighbourhood, so a different query.
+    await geo.enable({ ...PLACEMENT, lat: PLACEMENT.lat + 0.015 }, PROVIDER)
+    await geo.setBuildings(true)
+
+    expect(FakeBuildingsWorker.built).toBe(2)
+  })
+})
