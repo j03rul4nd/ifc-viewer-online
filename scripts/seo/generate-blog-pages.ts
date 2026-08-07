@@ -24,42 +24,53 @@
 
 import path    from 'path'
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
-import { BLOG_POSTS, BLOG_POSTS_ES, BLOG_POSTS_DE, BLOG_POSTS_FR, type BlogPost } from '../../src/lib/blog-posts'
+import { ALL_BLOG_POSTS, type BlogPost } from '../../src/lib/blog-posts'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 const OG_IMAGE = `${SITE}/og-image.png`
 
-// Map lang → { prefix in URL, posts array, blog title, blog description }
+// Map lang → { prefix in URL, blog title, blog description }.
+//
+// The post LIST is not part of this table on purpose. Posts are grouped by their
+// own `lang` field (see postsFor below), never by which exported array they
+// happen to sit in — English posts were once appended to BLOG_POSTS_FR, which
+// silently published their shells at /fr/blog/<slug>/ with a French canonical
+// while the SPA served them in English. Grouping by the post's own language
+// makes that class of mistake impossible to repeat.
 const LANG_CONFIG: Record<string, {
   prefix: string
-  posts: BlogPost[]
   blogTitle: string
   blogDesc: string
 }> = {
   en: {
     prefix: '',
-    posts: BLOG_POSTS,
     blogTitle: 'BIM & IFC Blog — Practical Guides for BIM Coordinators | IFC Viewer',
     blogDesc: 'Practical guides for BIM coordinators: how to fix IFC validation errors, improve IFC Health Scores, and deliver clean models to the CDE.',
   },
   es: {
     prefix: 'es/',
-    posts: BLOG_POSTS_ES,
     blogTitle: 'Blog BIM e IFC — Guías prácticas para coordinadores BIM | IFC Viewer',
     blogDesc: 'Guías prácticas para coordinadores BIM: cómo corregir errores de validación IFC, mejorar el Health Score y entregar modelos limpios al ECD.',
   },
   de: {
     prefix: 'de/',
-    posts: BLOG_POSTS_DE,
     blogTitle: 'BIM & IFC Blog — Praxisanleitungen für BIM-Koordinatoren | IFC Viewer',
     blogDesc: 'Praxisanleitungen für BIM-Koordinatoren: IFC-Validierungsfehler beheben, Health Scores verbessern und saubere Modelle ans CDE liefern.',
   },
   fr: {
     prefix: 'fr/',
-    posts: BLOG_POSTS_FR,
     blogTitle: 'Blog BIM & IFC — Guides pratiques pour coordinateurs BIM | IFC Viewer',
     blogDesc: 'Guides pratiques pour coordinateurs BIM : corriger les erreurs de validation IFC, améliorer le Health Score et livrer des modèles propres à la GED.',
   },
+}
+
+/**
+ * Posts belonging to a language, by their own `lang` field (default 'en') —
+ * the same rule `getBlogPostsByLang` applies at runtime, so the static shells
+ * and the SPA can never disagree about which URL a post lives at.
+ */
+export function postsFor(lang: string): BlogPost[] {
+  return ALL_BLOG_POSTS.filter(p => (p.lang ?? 'en') === lang)
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -158,10 +169,12 @@ function sitemapBlogEntry(urlPath: string, lastmod: string, priority: number, ch
 
 // ── llms.txt section ──────────────────────────────────────────────────────────
 
+/** A markdown section listing the given English posts. Callers pass only the
+ *  posts that are not already in llms.txt, so the heading says "more". */
 function llmsBlogSection(posts: BlogPost[]): string {
   const lines = [
     '',
-    '## Blog — BIM & IFC guides',
+    '## Blog — more BIM & IFC guides',
     '',
     'Practical articles for BIM coordinators on IFC validation, model quality, and delivery.',
     `Blog index: ${SITE}/blog/`,
@@ -183,6 +196,8 @@ export interface BlogPagesResult {
   errors: number
   /** Whether the sitemap was updated this run. */
   sitemap: boolean
+  /** How many blog URLs were added to the sitemap this run. */
+  sitemapAdded?: number
   /** Whether llms.txt was updated this run. */
   llms: boolean
 }
@@ -203,7 +218,8 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
 
   // ── Generate pages for each language ──────────────────────────────────────
   for (const [lang, cfg] of Object.entries(LANG_CONFIG)) {
-    if (cfg.posts.length === 0) continue
+    const posts = postsFor(lang)
+    if (posts.length === 0) continue
 
     const urlBase = `${SITE}/${cfg.prefix}blog/`
 
@@ -225,7 +241,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
             description: cfg.blogDesc,
             inLanguage: lang,
             publisher: { '@type': 'Person', name: 'Joel Benitez', url: 'https://github.com/j03rul4nd' },
-            blogPost: cfg.posts.map(p => ({
+            blogPost: posts.map(p => ({
               '@type': 'BlogPosting',
               headline: p.title,
               description: p.excerpt,
@@ -242,7 +258,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
     }
 
     // Per-post pages
-    for (const post of cfg.posts) {
+    for (const post of posts) {
       try {
         const canonical = `${SITE}/${cfg.prefix}blog/${post.slug}/`
         const outDir = path.join(distDir, ...cfg.prefix.split('/').filter(Boolean), 'blog', post.slug)
@@ -300,35 +316,54 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
     }
   }
 
-  // ── Sitemap injection (idempotent — all languages) ─────────────────────────
+  // ── Sitemap injection ──────────────────────────────────────────────────────
+  //
+  // Idempotent PER URL, not per section. The previous "skip everything if the
+  // file already mentions /blog/" guard meant that once public/sitemap.xml had
+  // been hand-written with the blog in it, every post added afterwards was
+  // silently left out — fourteen English posts were missing when this was
+  // found. Adding only the locs that are absent keeps hand-maintained entries
+  // untouched and makes a new post self-registering.
   const sitemapPath = path.join(distDir, 'sitemap.xml')
   if (existsSync(sitemapPath)) {
     const xml = readFileSync(sitemapPath, 'utf-8')
-    if (!xml.includes(`${SITE}/blog/`)) {
-      const allEntries: string[] = []
-      for (const [, cfg] of Object.entries(LANG_CONFIG)) {
-        if (cfg.posts.length === 0) continue
-        allEntries.push(sitemapBlogEntry(`/${cfg.prefix}blog/`, today, 0.85, 'weekly'))
-        cfg.posts.forEach(p =>
-          allEntries.push(sitemapBlogEntry(`/${cfg.prefix}blog/${p.slug}/`, p.date, 0.75, 'monthly')),
-        )
-      }
+    const missing: string[] = []
+
+    const addIfMissing = (urlPath: string, lastmod: string, priority: number, changefreq: string): void => {
+      if (xml.includes(`<loc>${SITE}${urlPath}</loc>`)) return
+      missing.push(sitemapBlogEntry(urlPath, lastmod, priority, changefreq))
+    }
+
+    for (const [lang, cfg] of Object.entries(LANG_CONFIG)) {
+      const posts = postsFor(lang)
+      if (posts.length === 0) continue
+      addIfMissing(`/${cfg.prefix}blog/`, today, 0.85, 'weekly')
+      posts.forEach(p => addIfMissing(`/${cfg.prefix}blog/${p.slug}/`, p.date, 0.75, 'monthly'))
+    }
+
+    if (missing.length > 0) {
       writeFileSync(
         sitemapPath,
-        xml.replace('</urlset>', `\n  <!-- Blog (EN + ES + DE + FR) -->\n${allEntries.join('\n\n')}\n\n</urlset>`),
+        xml.replace('</urlset>', `\n  <!-- Blog (EN + ES + DE + FR) -->\n${missing.join('\n\n')}\n\n</urlset>`),
       )
       result.sitemap = true
+      result.sitemapAdded = missing.length
     }
   } else {
     console.warn('[blog-pages] dist/sitemap.xml not found — blog URLs not added to sitemap.')
   }
 
-  // ── llms.txt injection (idempotent) ────────────────────────────────────────
+  // ── llms.txt injection ─────────────────────────────────────────────────────
+  //
+  // Same trap as the sitemap: a "does the file already have a ## Blog section?"
+  // guard froze the list at whatever was hand-written. Append only the English
+  // posts whose URL is absent, so new posts register themselves.
   const llmsPath = path.join(distDir, 'llms.txt')
   if (existsSync(llmsPath)) {
-    const txt = readFileSync(llmsPath, 'utf-8')
-    if (!txt.includes('## Blog')) {
-      writeFileSync(llmsPath, `${txt.trimEnd()}\n${llmsBlogSection(BLOG_POSTS)}`)
+    const txt     = readFileSync(llmsPath, 'utf-8')
+    const missing = postsFor('en').filter(p => !txt.includes(`${SITE}/blog/${p.slug}/`))
+    if (missing.length > 0) {
+      writeFileSync(llmsPath, `${txt.trimEnd()}\n${llmsBlogSection(missing)}`)
       result.llms = true
     }
   }

@@ -2,6 +2,7 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { getBlogPost, getBlogPostsByLang, getFeaturedPost, type BlogPost, type ContentBlock, type RichText } from '../lib/blog-posts'
 import * as Icons from './Icons'
+import { EBOOKS, PRIMARY_EBOOK, ebookById } from '../lib/ebook'
 import SpotlightCard  from './reactbits/SpotlightCard'
 import CountUp        from './reactbits/CountUp'
 import FaultyTerminal from './reactbits/FaultyTerminal'
@@ -323,6 +324,44 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
         </blockquote>
       )
 
+    case 'ebook-cta': {
+      const book = (block.book ? ebookById(block.book) : undefined) ?? PRIMARY_EBOOK
+      return (
+        <aside className="my-9 rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] overflow-hidden">
+          <div className="flex flex-col sm:flex-row gap-5 p-5 sm:p-6">
+            <img
+              src={`/${book.coverFile}`}
+              alt={`Cover of ${book.title}`}
+              width={794}
+              height={1123}
+              loading="lazy"
+              className="w-[92px] sm:w-[104px] h-auto shrink-0 self-start rounded-md"
+              style={{ boxShadow: '0 12px 26px -12px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06)' }}
+            />
+            <div className="min-w-0">
+              <p className="text-[10.5px] font-medium uppercase tracking-[0.14em] text-[var(--accent-2)]">
+                Free PDF · normally {book.retail}
+              </p>
+              <p className="mt-1.5 text-[16px] font-semibold tracking-tight text-[var(--text)]">
+                {block.headline ?? book.title}
+              </p>
+              <p className="mt-2 text-[14px] leading-[1.7] text-[var(--text-dim)]">
+                {block.body ?? `${book.pages} pages. ${book.blurb}`}
+              </p>
+              <a
+                href={`/ebook/${book.route ? `${book.route}/` : ''}`}
+                className="mt-4 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ background: 'var(--accent)' }}
+              >
+                {block.cta ?? 'Get the free handbook'}
+                <Icons.ArrowRight size={14} aria-hidden="true" />
+              </a>
+            </div>
+          </div>
+        </aside>
+      )
+    }
+
     case 'table': {
       const rowHeaders = block.rowHeaders ?? true
       return (
@@ -592,6 +631,44 @@ function FeaturedCard({ post, onClick, theme = 'dark' }: { post: BlogPost; onCli
 
 // ─── Blog list ────────────────────────────────────────────────────────────────
 
+/** Free-handbook shelf on the blog index — real links, so it also feeds /ebook. */
+function EbookBanner() {
+  return (
+    <div className="mt-4 sm:mt-5 grid gap-3 sm:gap-4 sm:grid-cols-2">
+      {EBOOKS.map((book) => (
+        <a
+          key={book.id}
+          href={`/ebook/${book.route ? `${book.route}/` : ''}`}
+          className="flex items-start gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-2)] p-4 sm:p-5 transition-colors hover:border-[var(--accent)]"
+        >
+          <img
+            src={`/${book.coverFile}`}
+            alt={`Cover of ${book.title}`}
+            width={794}
+            height={1123}
+            loading="lazy"
+            className="w-[58px] sm:w-[64px] h-auto shrink-0 rounded-md"
+            style={{ boxShadow: '0 10px 22px -12px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06)' }}
+          />
+          <div className="min-w-0 flex-1">
+            <p className="text-[10.5px] font-medium uppercase tracking-[0.14em] text-[var(--accent-2)]">
+              Free PDF · {book.pages} pages
+            </p>
+            <p className="mt-1 text-[15px] sm:text-[16px] font-semibold tracking-tight text-[var(--text)]">
+              {book.title}
+            </p>
+            <p className="mt-1.5 text-[13px] leading-[1.6] text-[var(--text-dim)]">{book.blurb}</p>
+            <span className="mt-2.5 inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--accent-2)]">
+              Get it free
+              <Icons.ArrowRight size={12} aria-hidden="true" />
+            </span>
+          </div>
+        </a>
+      ))}
+    </div>
+  )
+}
+
 function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingTheme, onToggleLandingTheme }: {
   lang?: string
   onNavigateToPost: (slug: string) => void
@@ -733,6 +810,10 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
       <main className="max-w-[1120px] mx-auto px-4 sm:px-7 py-6 sm:py-12">
         {/* Featured */}
         <FeaturedCard post={featured} onClick={() => onNavigateToPost(featured.slug)} theme={landingTheme} />
+
+        {/* Free handbook — English only: the PDF is English, so promoting it on
+            the localized indexes would promise something the download can't keep. */}
+        {lang === 'en' && <EbookBanner />}
 
         {/* Grid — 1 col on mobile, 2 on sm, 3 on lg */}
         <div className="mt-4 sm:mt-5 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">

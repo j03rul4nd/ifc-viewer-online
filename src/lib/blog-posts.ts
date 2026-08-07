@@ -54,6 +54,14 @@ export type ContentBlock =
   | { type: 'comparison'; left: { label: string; color: string; items: string[] }; right: { label: string; color: string; items: string[] } }
   | { type: 'health-score'; items: Array<{ score: number; label: string }> }
   | { type: 'pull-quote'; text: string; cite?: string }
+  /**
+   * Inline lead-magnet card linking to a free handbook (see src/lib/ebook.ts).
+   * `book` is a book id — omit it for the primary one, The IFC Delivery
+   * Handbook. Rendered as a real <a href="/ebook/…"> so it is a crawlable
+   * internal link, not just a conversion surface. Drop ONE per post,
+   * mid-article: a post carrying two reads as an advert, not as a guide.
+   */
+  | { type: 'ebook-cta'; headline?: string; body?: string; cta?: string; book?: string }
   | {
       type: 'table'
       headers: string[]
@@ -208,6 +216,10 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'h2', text: "Score vs. Issue Count: The Key Difference" },
       { type: 'p', text: "A model with 800 issues can score 81. A model with 12 issues can score 34. The difference is severity. Eight hundred empty name warnings (info level, tiny penalty each) vs twelve missing IfcProject + broken aggregates + circular spatial references (errors, 3× weight each, logarithmic but still severe)." },
       { type: 'p', text: "This is intentional. Optimising for issue count creates perverse incentives — you'd disable the naming rules and look clean. Optimising for a score forces you to fix the things that actually matter." },
+      {
+        type: 'p',
+        text: ['One caveat on contractualising the number: a score is only meaningful alongside the rule set that produced it, so a threshold clause has to name both. The wording that does that — plus the three other clauses worth adding — is in ', { text: 'BEP clauses that actually prevent bad IFC deliveries', to: 'bim-execution-plan-ifc-quality-clauses' }, '.'],
+      },
     ],
   },
 
@@ -544,6 +556,17 @@ export const BLOG_POSTS: BlogPost[] = [
         'Classification system matches the one agreed in the PIR.',
         'Health Score ≥ 80 (structural quality prerequisite for formal delivery).',
       ]},
+      { type: 'h2', text: 'Turning the Checklist Into an Agreement' },
+      {
+        type: 'p',
+        text: ['A checklist only changes behaviour once it is somebody\'s obligation. The wording that puts these items into a BIM Execution Plan is in ', { text: 'BEP clauses that actually prevent bad IFC deliveries', to: 'bim-execution-plan-ifc-quality-clauses' }, '; the table the receiver applies at the gate is in ', { text: 'IFC acceptance criteria', to: 'ifc-acceptance-criteria' }, '; and what travels alongside the file is in ', { text: 'what to hand over with an IFC model', to: 'ifc-model-handover-documentation' }, '.'],
+      },
+      {
+        type: 'ebook-cta',
+        book: 'bim-information',
+        headline: 'The machinery behind the checklist',
+        body: 'The BIM Information Handbook covers what this checklist sits inside: how a common data environment actually works, the OIR → AIR → EIR → BEP requirement chain, level of information need instead of LOD numbers, delivery planning and handover. 48 pages, free.',
+      },
     ],
   },
 
@@ -1633,383 +1656,302 @@ fragments.load(cached);            // fast`,
     ],
   },
 
-]
-
-// ─── Posts en español ─────────────────────────────────────────────────────────
-
-export const BLOG_POSTS_ES: BlogPost[] = [
+  // ── The delivery-contract trio ─────────────────────────────────────────────
+  // Three posts about the layer *around* the IFC file: what the BEP should say,
+  // how a receiver accepts or rejects, and what travels alongside the model.
+  // They interlink with each other and feed /ebook (The IFC Delivery Handbook),
+  // which is the long-form version of the same argument.
 
   {
-    slug: 'como-exportar-ifc-desde-revit',
-    title: 'Cómo exportar un IFC limpio desde Revit: la guía definitiva',
-    excerpt: 'La configuración de exportación IFC que viene por defecto en Revit genera decenas de avisos evitables. Esta guía muestra los ajustes exactos que eliminan los errores más comunes antes de que el archivo llegue al ECD.',
-    date: '2026-06-01',
-    readTimeMin: 8,
-    category: 'Guías de herramientas',
-    categorySlug: 'tool-guides',
+    slug: 'bim-execution-plan-ifc-quality-clauses',
+    title: 'BEP Clauses That Actually Prevent Bad IFC Deliveries',
+    excerpt: "Most BEPs say models must be \"of suitable quality\" and nothing else — which is why quality arguments never end. Four short clauses, written to be pasted, that turn an opinion into a testable condition.",
+    date: '2026-08-07',
+    readTimeMin: 9,
+    category: 'Standards',
+    categorySlug: 'standards',
     author: 'IFC Viewer Team',
-    lang: 'es',
-    featured: true,
-    heroImage: 'como-exportar-ifc-desde-revit',
+    keywords: ['BIM execution plan clauses', 'BEP IFC quality', 'IFC delivery requirements', 'BEP template quality', 'ISO 19650 BEP', 'IFC acceptance clause'],
+    faqs: [
+      { q: 'What should a BEP say about IFC quality?', a: 'At minimum four things: that every container is checked before issue with a named rule set, a numeric minimum quality threshold, that GlobalIds must be persistent between revisions, and that all teams use the same shared reference point and metric SI units. Each one is testable — which is what separates a clause from a wish.' },
+      { q: 'What is a reasonable minimum Health Score to require in a BEP?', a: 'A threshold of 80/100 is a workable starting point for coordination-stage deliveries: it rejects structurally broken files without demanding information that is outside the level of information need for the stage. Record the rule set alongside the number — a score is meaningless without knowing which checks produced it.' },
+      { q: 'Can a BEP clause require GUID stability?', a: 'Yes, and it is the single most valuable clause you can add. GlobalIds that change on every export silently break issue tracking, revision comparison and asset data reconciliation, and no amount of downstream effort can repair the history once it is lost.' },
+    ],
     content: [
-      { type: 'p', text: 'Revit lleva exportando IFC desde 2012. El problema no es el soporte — es que la configuración predeterminada está optimizada para la compatibilidad máxima con el mayor número de herramientas receptoras, no para la calidad del modelo. El resultado: archivos que generan decenas de avisos de validación que se podrían haber evitado con cuatro ajustes.' },
+      { type: 'p', text: "Open a random BIM Execution Plan at the information delivery section and you will find a sentence like this: \"All models shall be delivered in a suitable format and be of appropriate quality for their intended use.\" Everybody signs it. Nobody can fail it, and nobody can enforce it." },
+      { type: 'p', text: "That sentence is why IFC quality arguments on projects are so bitter: there is nothing to point at. When the coordinator says the model is unusable and the author says it is fine, both are giving opinions, because the contract never converted \"quality\" into a condition anyone could test." },
+      { type: 'pull-quote', text: "A quality clause that cannot fail is not a clause. It is a hope with a clause number." },
+      { type: 'h2', text: 'What makes a clause enforceable' },
+      { type: 'p', text: "Three properties, and they are worth checking against anything already in your BEP:" },
+      { type: 'ol', items: [
+        "It names a test. Not \"good quality\" but a specific check, run by a specific method, producing a specific output.",
+        "It names a threshold. A number, a count, or a binary condition — something a reviewer can compare against without judgement.",
+        "It names what happens when the threshold is missed. A clause with no consequence is documentation, not a requirement.",
+      ]},
+      { type: 'p', text: "The four clauses below have all three. They are deliberately short: a quality clause nobody reads has no effect, and a clause that fits on half a page gets quoted back at people, which is the entire point." },
+      { type: 'callout', variant: 'info', text: "These are drafting aids, not legal advice. Adapt them to your project, your appointment and your jurisdiction, and have them reviewed by whoever signs your contracts." },
+
+      { type: 'h2', text: 'Clause 1 — Automated check before issue' },
+      { type: 'code', lang: 'text', text: "Every IFC container issued to the CDE at status S2 (Shared) or above shall\nhave been checked with the project's agreed rule set within the 24 hours\npreceding issue. The check report shall be issued alongside the container.\nContainers issued without a check report may be rejected without review." },
+      { type: 'p', text: "The last sentence does the work. Without it, the clause creates an obligation with no cost attached to skipping it, and it will be skipped on the week when the programme is tight — which is exactly the week the check matters." },
+      { type: 'p', text: "Note the placement: at S2, not at publication. By the time something is published, three disciplines have coordinated against it, and a structural fault means re-doing their work rather than yours. The whole economics of pre-delivery checking depends on catching things at the Work in progress → Shared boundary." },
       {
-        type: 'stat-row',
-        stats: [
-          { value: 4,   suffix: '', label: 'ajustes clave' },
-          { value: 38,  suffix: '', label: 'reglas de validación' },
-          { value: 30,  suffix: 's', label: 'para validar un modelo' },
-          { value: 0,   suffix: ' MB', label: 'subidos al servidor' },
+        type: 'p',
+        text: ['If you have not settled on a rule set yet, start from the standard checks any validator runs — the ', { text: 'most common IFC validation errors', to: 'common-ifc-validation-errors' }, ' cover the great majority of real rejections, and they are the same everywhere because they come from export settings rather than from modelling style.'],
+      },
+
+      { type: 'h2', text: 'Clause 2 — A minimum quality threshold' },
+      { type: 'code', lang: 'text', text: "IFC containers shall achieve a Health Score of at least 80/100 under the\nproject rule set. Containers scoring below the threshold may be issued only\nwith the prior written agreement of the Information Manager, recording the\nfindings concerned and the reason." },
+      { type: 'p', text: "Two design decisions worth copying. First, the escape hatch is explicit: sometimes a model below the threshold genuinely needs to be shared, and a rule with no legitimate exception gets ignored rather than followed. Second, the exception has to be written down, which converts \"we agreed to let it go\" into a record with a date and an author." },
+      {
+        type: 'p',
+        text: ['Pick your threshold deliberately. A score is a compression of a whole report into one number, weighted by category and severity — worth understanding before you contractualise it. The ', { text: 'guide to the IFC Health Score', to: 'ifc-health-score-guide' }, ' explains what moves it and by how much.'],
+      },
+      { type: 'callout', variant: 'warning', text: "Always record the rule set next to the number. A score of 92 under a permissive rule set and a score of 92 under a strict one are not the same claim, and a threshold clause that omits the rule set can be met by disabling checks." },
+
+      {
+        type: 'ebook-cta',
+        headline: 'All four clauses, plus the acceptance table and two emails',
+        body: 'The IFC Delivery Handbook has these clauses in full, an acceptance criteria table you can paste into an EIR appendix, and the two emails to send when a delivery has to go back. 64 pages, free.',
+      },
+
+      { type: 'h2', text: 'Clause 3 — Identifier stability' },
+      { type: 'code', lang: 'text', text: "IFC GlobalIds shall be persistent for the life of the project: the identifier\nof an element shall not change between revisions unless the element itself is\ndeleted and replaced. Task teams shall configure authoring and export tools\naccordingly, and shall report any event that invalidates identifiers (model\nrecreation, round-trip import, template migration) at the time it occurs." },
+      { type: 'p', text: "If you add only one clause from this article, add this one. Threshold clauses improve the average delivery; the identifier clause prevents a class of damage that cannot be repaired afterwards." },
+      { type: 'p', text: "When GlobalIds change on every export, three things break silently and simultaneously: issues detach from the elements they were raised against, revision comparison becomes fiction because every element looks new, and asset data cannot be reconciled with the model it came from. None of these produce an error message. They produce a project where nobody quite trusts the coordination history and nobody can say why." },
+      {
+        type: 'p',
+        text: ['The reporting obligation in the last sentence matters more than it looks. GUID turnover is usually caused by a process event somebody knows about — a model rebuilt, a file round-tripped through another tool. Knowing when it happened is the difference between a note in the log and a forensic exercise. See ', { text: 'why IFC GUIDs change on every export', to: 'ifc-guids-changing-every-export' }, ' for the specific causes, and ', { text: 'duplicate GUIDs in IFC files', to: 'duplicate-guids-ifc' }, ' for the related failure where two elements share one identifier.'],
+      },
+
+      { type: 'h2', text: 'Clause 4 — Shared coordinates and units' },
+      { type: 'code', lang: 'text', text: "All task teams shall use the project shared reference point and rotation\ndefined in {document}, and shall deliver in metric SI length units. Storey\nnames and elevations shall follow the agreed level schedule without local\nvariation." },
+      { type: 'p', text: "This is the clause that only pays off in federation. Each discipline model can be internally perfect and the federated set still be unusable, because three failure modes are invisible until models meet: models referenced to different origins, one file in imperial units, and per-discipline level schedules that require a translation table maintained by a human." },
+      {
+        type: 'p',
+        text: ['The georeferencing half is the one that produces the spectacular failures — a building several hundred kilometres from site, or rotated. The mechanics are covered in ', { text: 'IFC coordinates and georeferencing', to: 'ifc-coordinates-georeferencing' }, '.'],
+      },
+
+      { type: 'h2', text: 'Where these clauses go' },
+      {
+        type: 'table',
+        headers: ['Document', 'What belongs there'],
+        rows: [
+          ['EIR (client-side)', 'What the client requires: the purpose of each delivery, the classification system, the asset data expected at handover.'],
+          ['BEP (delivery team)', 'How it will be met: these four clauses, the named rule set, the export configuration references, the responsibility matrix.'],
+          ['BEP appendix', 'The acceptance criteria table — one row per criterion, with the project position filled in before the first delivery.'],
+          ['Transmittal', 'The per-delivery statement: revision, suitability, score, rule set, and any findings accepted by agreement.'],
         ],
+        caption: 'The clauses are worth little on their own — they need a place where the receiver applies them, which is the acceptance criteria table.',
       },
-      { type: 'h2', text: 'Paso 1: Instalar el exportador IFC de código abierto' },
-      { type: 'p', text: 'El exportador IFC integrado en Revit funciona, pero va por detrás del mantenido por la comunidad. El exportador open source (gratuito en el Autodesk App Store) genera GUIDs más fiables, jerarquías espaciales más limpias y soporta IFC4 correctamente. Instálalo antes de cambiar cualquier otra configuración.' },
-      { type: 'h2', text: 'Paso 2: Elegir IFC4 Reference View' },
-      { type: 'p', text: 'Salvo que el pliego de condiciones exija explícitamente IFC2x3, exporta a IFC4 Reference View. IFC4 es el estándar ISO actual (ISO 16739-1:2018), produce archivos más pequeños gracias a la geometría teselada y resuelve varias ambigüedades estructurales del esquema anterior.' },
-      { type: 'h2', text: 'Paso 3: Los cuatro ajustes críticos' },
-      { type: 'ul', items: [
-        '"Exportar GUIDs IFC": ponlo en "Mantener existentes". Jamás en "Generar nuevos" — eso rompe las referencias cruzadas en BCF en cada nueva exportación.',
-        '"Colocación en emplazamiento": activa "Coordenadas compartidas". Evita que los elementos se coloquen a 10 km del origen WCS.',
-        '"Incluir conexiones de acero": desactivado (a menos que entregues un modelo estructural de acero).',
-        '"Dividir muros y pilares por nivel": activado. Garantiza que los muros queden asociados a las plantas correctas.',
-      ]},
-      { type: 'callout', variant: 'warning', text: 'Nunca exportes directamente al ECD. Una entrega fallida que requiere volver a subir el archivo crea una nueva revisión en el historial del ECD y genera notificaciones a todo el equipo del proyecto. Valida siempre en local primero.' },
-      { type: 'h2', text: 'Paso 4: Validar antes de subir' },
-      { type: 'p', text: 'Exporta a una carpeta local. Abre el archivo IFC en un validador y comprueba: desfase de coordenadas (las coordenadas compartidas no se han aplicado), exceso de proxies (más del 5% de los elementos son IfcBuildingElementProxy — familias Revit sin mapear) y tipos faltantes.' },
       {
-        type: 'ifc-demo',
-        modelId: 'duplex-architecture',
-        title: 'Valida el modelo Duplex de referencia',
-        description: 'Abre el modelo buildingSMART en el visor para ver cómo es un informe de validación limpio. Luego prueba con tu propio archivo de Revit.',
-        schema: 'IFC2x3',
-        size: '2.4 MB',
+        type: 'p',
+        text: ['That table is the subject of the next article: ', { text: 'IFC acceptance criteria — how to accept or reject a model without an argument', to: 'ifc-acceptance-criteria' }, '. And once a container passes, the question becomes what travels with it, which is covered in ', { text: 'what to hand over with an IFC model', to: 'ifc-model-handover-documentation' }, '.'],
       },
-      { type: 'h2', text: 'Problemas habituales en archivos IFC exportados desde Revit' },
-      { type: 'ul', items: [
-        'Exceso de proxies: Las familias Revit sin asignación IFC se exportan como IfcBuildingElementProxy. Revisa la tabla de mapeo IFC y asigna las familias más usadas a sus tipos IFC correctos.',
-        'Desfase de coordenadas: Comprueba que el proyecto tiene coordenadas compartidas con el punto de agrimensura antes de exportar.',
-        'Property sets faltantes: Los parámetros de Revit se exportan por defecto como Psets personalizados. Revisa el mapeo de Psets para incluir los estándar (Pset_WallCommon, etc.).',
-      ]},
+
+      { type: 'h2', text: 'The one-paragraph version' },
+      { type: 'p', text: "If your BEP is already written and reopening it is politically expensive, add this single paragraph to the information delivery section and you will have captured most of the value:" },
+      { type: 'code', lang: 'text', text: "IFC containers issued at S2 or above shall be checked with the project rule\nset immediately before issue, shall reach a Health Score of at least 80/100,\nand shall carry persistent GlobalIds between revisions. The check report\nshall accompany the container; exceptions require the written agreement of\nthe Information Manager." },
+      {
+        type: 'p',
+        text: ['To see what those requirements look like in practice before you commit to them, run the checks on a model you have already delivered — the ', { text: 'pre-delivery model check workflow', to: 'how-to-check-ifc-model-before-delivery' }, ' takes about a minute per file, and the result will tell you whether 80 is a generous threshold on your project or an ambitious one.'],
+      },
+      { type: 'callout', variant: 'tip', text: "Run your last three delivered models through the checks before you set the number. A threshold that your own team cannot currently meet is a clause that will be waived on the first delivery, and a clause waived once is a clause gone." },
     ],
   },
 
   {
-    slug: 'health-score-ifc-que-es',
-    title: 'Health Score en IFC: el número que necesita tu proyecto BIM',
-    excerpt: 'Un Health Score de 0 a 100 resume la calidad estructural y de datos de un modelo IFC en un solo número. Te explicamos cómo se calcula, qué significa cada umbral y por qué debería estar en el PEB de todos tus proyectos.',
-    date: '2026-05-22',
-    readTimeMin: 6,
-    category: 'Buenas prácticas BIM',
+    slug: 'ifc-acceptance-criteria',
+    title: 'IFC Acceptance Criteria: How to Accept or Reject a Model Without an Argument',
+    excerpt: "\"This model is unusable\" versus \"the model is fine\" is an argument with no ending. A one-page acceptance table, agreed before the first delivery, turns it into a five-minute check with a documented outcome.",
+    date: '2026-08-07',
+    readTimeMin: 10,
+    category: 'Standards',
+    categorySlug: 'standards',
+    author: 'IFC Viewer Team',
+    keywords: ['IFC acceptance criteria', 'reject IFC model', 'BIM model acceptance', 'IFC quality gate', 'CDE acceptance checklist', 'IFC delivery review'],
+    faqs: [
+      { q: 'On what grounds can you reject an IFC delivery?', a: 'On any ground agreed in advance and testable on the file: structural findings at severity error, a Health Score below the agreed threshold, incomplete check coverage, GUID turnover above an agreed percentage, wrong units, wrong coordinate reference, or a filename that breaks the project convention. Rejecting on grounds that were never agreed is how quality reviews turn into disputes.' },
+      { q: 'Who decides whether an IFC model is acceptable?', a: 'The information manager applies criteria that the whole delivery team agreed before the first delivery — usually recorded in a table appended to the BEP. The point of agreeing first is that acceptance becomes an application of a rule rather than a judgement about somebody\'s work.' },
+      { q: 'What should you do when a model fails acceptance?', a: 'Return it with the specific findings, the rule identifiers, the element counts and a plain statement of what is blocked until it is fixed — and hold coordination on that container rather than working around it. Working around a failed delivery teaches the project that the gate is optional.' },
+    ],
+    content: [
+      { type: 'p', text: "Somewhere on every project there is a moment where a coordinator opens a delivered model, spends twenty minutes discovering it cannot be used, and writes an email that begins \"unfortunately\". What happens next depends almost entirely on one thing: whether anybody wrote down, in advance, what an acceptable delivery looks like." },
+      { type: 'p', text: "If they did, the email is short, factual and uncontroversial. If they did not, the email is the opening move in a negotiation about whose standards apply, and it will be re-litigated at every gateway for the rest of the project." },
+      { type: 'h2', text: 'Acceptance is a checklist, not an opinion' },
+      { type: 'p', text: "The mental shift is small and it changes everything. Reviewing a delivery is not assessing quality — it is applying agreed criteria to a file. That has three consequences worth stating explicitly:" },
+      { type: 'ul', items: [
+        "The reviewer needs no authority beyond the agreed table. They are not judging the model author's competence; they are reporting a result.",
+        "The author can predict the outcome before they issue. Anything predictable can be prevented, which is the entire point.",
+        "The disagreement, when it happens, is about the criteria — a conversation that can be held once, calmly, rather than every month in the middle of a delivery.",
+      ]},
+      { type: 'pull-quote', text: "You cannot reject a delivery for failing a standard the sender never agreed to. You can only reject it for failing the one you both did." },
+
+      { type: 'h2', text: 'The acceptance criteria table' },
+      { type: 'p', text: "This is the artefact. Ten rows, one page, appended to the BEP or the EIR. The third column is empty on purpose — the project fills it in before the first delivery, and that act of filling it in is where the real agreement happens." },
+      {
+        type: 'table',
+        headers: ['Criterion', 'Reject if…', 'Project position'],
+        rows: [
+          ['Structural integrity', 'Any schema or spatial finding at severity error', 'Reject / accept with note'],
+          ['Health Score', 'Below the agreed threshold', 'Threshold: __ /100'],
+          ['Check coverage', 'Any check reported as not-run or failed', 'Reject / re-run required'],
+          ['Identifier stability', 'GUID turnover above an agreed percentage between revisions', 'Max turnover: __ %'],
+          ['Naming', 'Filename does not follow the agreed convention', 'Reject / rename and log'],
+          ['Georeferencing', 'Model not on the project shared reference point', 'Reject'],
+          ['Units', 'Non-metric length units', 'Reject'],
+          ['Classification', 'Elements without a classification reference', 'Applies from stage: __'],
+          ['Property sets', 'Required psets missing for the declared level of information need', 'Pset schedule: __'],
+          ['Spaces', 'Spaces without name, long name or floor area', 'Applies from stage: __'],
+        ],
+        caption: 'Its purpose is not to be strict — it is to be decided. A lenient table that everybody agreed beats a strict one that arrived with the rejection email.',
+      },
+      {
+        type: 'p',
+        text: ['The first three rows are the ones that carry the weight, and they are also the ones most often left out. The clauses that put them into the BEP in the first place are covered in ', { text: 'BEP clauses that actually prevent bad IFC deliveries', to: 'bim-execution-plan-ifc-quality-clauses' }, '.'],
+      },
+
+      { type: 'h2', text: 'Row 3 deserves its own section: check coverage' },
+      { type: 'p', text: "Most acceptance tables check the results of a validation run. Almost none check whether the run actually happened, and that is a hole big enough to drive a delivery through." },
+      { type: 'p', text: "A check that did not run looks exactly like a check that passed: both produce zero findings. A large file times out, a worker crashes, a geometry-dependent check quietly gives up — and the report comes back clean with a perfect score. The delivery is accepted, having been checked in name only." },
+      { type: 'callout', variant: 'warning', text: "Ask any validation tool one question before you trust its clean reports: how do I know every check ran? A tool that reports only \"pass\" and \"fail\", with no third state for \"not attempted\", cannot answer it." },
+      {
+        type: 'table',
+        headers: ['Coverage state', 'What it means', 'Acceptance action'],
+        rows: [
+          ['Ran', 'The check completed. Zero findings means zero findings.', 'Trust the result.'],
+          ['Not run', 'Attempted but produced no outcome — usually a timeout or a cancelled run.', 'Re-run before accepting. Never read as a pass.'],
+          ['Failed', 'The check errored.', 'Report it. A score computed over failed checks is not comparable to a clean run.'],
+        ],
+      },
+
+      {
+        type: 'ebook-cta',
+        headline: 'The acceptance table, ready to paste',
+        body: 'This table, the four BEP clauses behind it, and the complete reference to every check it depends on — with the fix for each one in Revit, ArchiCAD, Tekla and Allplan. 64 pages, free.',
+      },
+
+      { type: 'h2', text: 'Reviewing a delivery in five minutes' },
+      {
+        type: 'ol',
+        items: [
+          "Open the container and run the project rule set. Under a minute for most discipline models.",
+          "Check coverage first, results second. If anything did not run, stop — you do not have a review yet.",
+          "Read the score against the threshold, then the findings at severity error. Everything else is a note, not a gate.",
+          "Compare against the previous revision. New findings are the story; resolved ones are the receipt that the last review was acted on.",
+          "Record the outcome in the transmittal or the CDE comment — score, rule set, coverage, and any finding accepted by agreement.",
+        ],
+      },
+      {
+        type: 'p',
+        text: ['Step 1 is the same routine the sender should have run before issuing; ', { text: 'how to check an IFC model before delivery', to: 'how-to-check-ifc-model-before-delivery' }, ' walks through it from the sending side. When both ends run the same checks, the review stops being an inspection and becomes a confirmation.'],
+      },
+
+      { type: 'h2', text: 'How to write the rejection' },
+      { type: 'p', text: "The register matters as much as the content, because the person receiving it is usually behind schedule and rarely at fault personally. Three rules: name the criterion, not the model. Give the cause, not just the symptom. Say what is blocked and for how long." },
+      { type: 'code', lang: 'text', text: "Hi {name},\n\nWe've run the agreed pre-acceptance check on {filename} (rev {n}) and it\ncomes back at {score}/100, below the {threshold} we set in clause {x} of\nthe BEP.\n\nThe two findings driving that are:\n  - {rule id} — {plain description} ({n} elements)\n  - {rule id} — {plain description} ({n} elements)\n\nBoth look like export settings rather than modelling, so they should be\nquick — the report is attached with the element references.\n\nWe'll hold coordination on this container until the next issue." },
+      { type: 'p', text: "Notice what is absent: any adjective about the model, and any speculation about why it happened. A number, two rule identifiers, a likely cause and a consequence. That is a message nobody has to defend themselves against, which is why it gets acted on instead of escalated." },
+      { type: 'callout', variant: 'tip', text: "\"Both look like export settings rather than modelling\" is the most useful sentence in that email. Roughly nine findings in ten are a setting, and saying so out loud converts a criticism into a five-minute fix." },
+
+      { type: 'h2', text: 'When to accept a model that failed' },
+      { type: 'p', text: "Sometimes the right answer is yes anyway — the missing information is outside the level of information need for the stage, or a supplier has not delivered yet, or the alternative is stopping the project. Accepting a failed delivery is a legitimate decision. Accepting it silently is not." },
+      { type: 'p', text: "A waived finding needs three things attached: a reason, a person who agreed, and a date. That is the whole difference between a finding accepted and a finding ignored, and it is what stops the same issue being rediscovered as a crisis two stages later." },
+      {
+        type: 'p',
+        text: ['Those waivers belong in the transmittal, alongside the report and everything else that travels with the container — see ', { text: 'what to hand over with an IFC model', to: 'ifc-model-handover-documentation' }, '.'],
+      },
+    ],
+  },
+
+  {
+    slug: 'ifc-model-handover-documentation',
+    title: 'What to Hand Over With an IFC Model (Beyond the IFC)',
+    excerpt: "A delivery is a claim: this model is fit for this purpose at this revision. Evidence is what turns the claim into something the receiver can check without repeating your work — and what stops the same argument happening twice.",
+    date: '2026-08-07',
+    readTimeMin: 9,
+    category: 'Best Practices',
     categorySlug: 'best-practices',
     author: 'IFC Viewer Team',
-    lang: 'es',
-    content: [
-      { type: 'p', text: 'En todos los proyectos BIM en los que he trabajado, el Plan de Ejecución BIM menciona "entrega de un IFC de calidad". En ninguno se ha definido con precisión qué significa eso. La validación ocurre de forma manual, inconsistente, o directamente no ocurre — hasta que el modelo federado produce absurdos y alguien empieza a investigar.' },
-      { type: 'p', text: 'Un Health Score cambia eso. Es un número de 0 a 100 calculado automáticamente contra 44 reglas de validación. Siempre el mismo número, en cualquier máquina, en cualquier versión del modelo. Debería estar en el PEB como requisito de entrega.' },
-      { type: 'pull-quote', text: 'Un Health Score convierte un requisito de calidad vago en un criterio de entrega medible y exigible contractualmente.', cite: 'IFC Viewer Blog' },
-      { type: 'h2', text: 'Cómo se calcula' },
-      { type: 'p', text: 'La puntuación parte de 100. Cada problema de validación resta puntos usando un modelo de penalización logarítmica: el error número 1.000 de GUIDs duplicados resta muchos menos que el número 10, porque la degradación de calidad no es lineal. Un modelo fundamentalmente roto colapsa cerca de cero; uno con inconsistencias menores de nomenclatura se mantiene por encima de 85.' },
-      {
-        type: 'health-score',
-        items: [
-          { score: 34, label: 'Entrega rechazada' },
-          { score: 71, label: 'Revisión interna' },
-          { score: 84, label: 'Listo para el ECD' },
-          { score: 94, label: 'Calidad excelente' },
-        ],
-      },
-      { type: 'h2', text: 'Qué significa cada umbral' },
-      {
-        type: 'feature-grid',
-        items: [
-          { icon: '🔴', title: '0–59: Crítico', body: 'Problemas estructurales que romperán las herramientas de aguas abajo. IfcProject faltante, elementos huérfanos, referencias circulares. No entregar.' },
-          { icon: '🟡', title: '60–79: Necesita trabajo', body: 'Problemas de calidad de datos significativos. Aceptable para revisión interna; no aceptable para el ECD ni para sesiones de coordinación multidisciplinar.' },
-          { icon: '🟢', title: '80–89: Listo para entrega', body: 'Problemas menores que no afectan la validez estructural. Válido para entrega estándar al ECD y coordinación de diseño.' },
-          { icon: '✅', title: '90–100: Excelencia', body: 'Modelo limpio. Válido para entregas LOD 300+, documentación ISO 19650 y fase de licitación/construcción.' },
-        ],
-      },
-      { type: 'callout', variant: 'info', text: 'Añade un umbral mínimo de Health Score al PEB de tu proyecto. Una cláusula del tipo "Las entregas IFC deben alcanzar un Health Score ≥ 80 antes de la subida al ECD" no cuesta nada escribirla y evita semanas de retrasos de coordinación.' },
-      { type: 'h2', text: 'Puntuación vs. número de problemas: la diferencia clave' },
-      { type: 'p', text: 'Un modelo con 800 problemas puede tener una puntuación de 81. Uno con 12 puede tener 34. La diferencia está en la severidad. Ochocientos avisos de nombres vacíos (nivel informativo, penalización mínima) frente a doce errores de IfcProject faltante + agregaciones rotas + referencias espaciales circulares (errores de esquema, peso 3×). Optimiza la puntuación, no el recuento de problemas.' },
+    keywords: ['IFC handover documentation', 'BIM delivery evidence', 'IFC transmittal', 'BCF issue file', 'COBie handover', 'validation report delivery'],
+    faqs: [
+      { q: 'What documents should accompany an IFC model delivery?', a: 'A validation report naming the rule set and the coverage, a record of the check tied to the exact file, a BCF file for issues that remain open, asset data where the stage requires it, and a short transmittal note stating revision, suitability, score, waived findings and what the container is not suitable for.' },
+      { q: 'Why attach a validation report to a delivery?', a: 'Because it makes the quality claim checkable without the receiver repeating your work. A report that names its rule set and its coverage lets the reviewer confirm in seconds what would otherwise take them twenty minutes and a second opinion.' },
+      { q: 'What is a transmittal note for an IFC delivery?', a: 'Six lines stating the container name, revision and suitability status, schema, when it was checked and with what, the score, the findings left open by agreement, and explicitly what the container is not suitable for. It is the cheapest dispute prevention available on a BIM project.' },
     ],
-  },
-
-  {
-    slug: 'errores-ifc-mas-comunes',
-    title: 'Los 7 errores IFC más comunes (y cómo corregirlos antes de la entrega)',
-    excerpt: 'GUIDs duplicados, elementos huérfanos y jerarquías espaciales rotas causan más del 80% de los rechazos en el ECD. Aquí tienes cómo detectar y corregir cada uno antes de que el modelo llegue al coordinador.',
-    date: '2026-05-12',
-    readTimeMin: 7,
-    category: 'Validación',
-    categorySlug: 'validation',
-    author: 'IFC Viewer Team',
-    lang: 'es',
     content: [
-      { type: 'p', text: 'Todo coordinador BIM lo ha vivido: exportas un archivo IFC, lo subes al Entorno Común de Datos y el sistema lo rechaza por errores estructurales que no sabías que existían. Tras analizar miles de archivos IFC, los mismos siete errores explican la gran mayoría de los rechazos.' },
-      { type: 'h2', text: '1. GlobalIds duplicados (GUIDs duplicados)' },
-      { type: 'p', text: 'El GlobalId es la identidad permanente de un elemento IFC. Sobrevive a fusiones de modelos, actualizaciones de versión y migraciones de software. Cuando dos elementos comparten el mismo GUID, todas las herramientas que dependen de referencias estables (flujos BCF, seguimiento de links en Revit, versionado en el ECD) fallan silenciosamente.' },
-      { type: 'callout', variant: 'tip', text: 'En Revit: Archivo → Exportar → IFC → Modificar configuración → Avanzado → pon "Exportar GUIDs IFC" en "Mantener existentes". Esto preserva los GlobalIds estables que Revit asigna internamente en lugar de regenerarlos en cada exportación.' },
-      { type: 'h2', text: '2. Elementos huérfanos' },
-      { type: 'p', text: 'Un elemento huérfano es un elemento físico sin contenedor espacial en la jerarquía IFC: existe en el archivo pero no aparece en Proyecto → Emplazamiento → Edificio → Planta. La mayoría de los visualizadores ignoran los huérfanos por completo — son invisibles en el modelo de coordinación.' },
-      { type: 'h2', text: '3. Contenedor incorrecto' },
-      { type: 'p', text: 'El elemento tiene contenedor, pero es el incorrecto: está situado directamente dentro de IfcSite en lugar de una planta. La ubicación a nivel de emplazamiento solo es válida para elementos de infraestructura. Muros o pilares dentro de IfcSite confundirán a todas las herramientas de aguas abajo.' },
-      { type: 'h2', text: '4. Agregaciones rotas' },
-      { type: 'p', text: 'IfcRelAggregates es la relación que construye el árbol espacial. Una agregación rota significa que una de estas relaciones apunta a una entidad inexistente — normalmente porque la entidad fue eliminada después de que se escribiera la relación, o durante una fusión de modelos mal ejecutada.' },
-      { type: 'h2', text: '5. Violaciones de jerarquía espacial' },
-      { type: 'p', text: 'IFC exige un orden estricto: IfcProject → IfcSite → IfcBuilding → IfcBuildingStorey → elementos físicos. Cuando este orden se rompe — un Edificio directamente bajo Proyecto sin Emplazamiento, o elementos en IfcBuilding sin pasar por una planta — muchas herramientas no construyen el árbol correctamente.' },
-      { type: 'h2', text: '6. IfcProject faltante' },
-      { type: 'p', text: 'Todos los archivos IFC válidos deben contener exactamente un IfcProject. Algunos flujos de exportación de sub-modelos lo omiten. El resultado es un archivo que parsea sin errores pero no tiene raíz espacial.' },
-      { type: 'h2', text: '7. Nombres de elemento vacíos' },
-      { type: 'p', text: 'Los elementos con Name = "" o nulo no son una violación de esquema, pero rompen casi todos los flujos de trabajo de aguas abajo: los comentarios BCF no pueden referenciarlos con claridad, las tablas de mediciones muestran filas en blanco, y los informes de colisiones se vuelven ilegibles.' },
+      { type: 'p', text: "Every IFC delivery is an assertion: this model is fit for this purpose, at this revision. The file itself does not carry that assertion — it carries geometry and data. Everything that makes the assertion checkable travels alongside it, and on most projects almost none of it does." },
+      { type: 'p', text: "That is why the same conversation happens twice. The first time, somebody checks the model and finds it acceptable. The second time — a month later, a different person, a different gateway — somebody checks it again, because there was no record of the first check that anybody could rely on." },
+      { type: 'h2', text: 'Five artefacts, four of which you already have' },
       {
-        type: 'ifc-demo',
-        modelId: 'duplex-architecture',
-        title: 'Valida un modelo real ahora',
-        description: 'Abre el modelo Duplex buildingSMART para ver cómo es un informe de validación limpio. Después prueba con tu propio archivo IFC.',
-        schema: 'IFC2x3',
-        size: '2.4 MB',
-      },
-      { type: 'h2', text: 'Lista de comprobación pre-entrega' },
-      { type: 'ol', items: [
-        'Ejecuta la validación antes de cada subida al ECD — no después.',
-        'Objetivo: Health Score ≥ 80 para entregas de coordinación.',
-        'Cero GUIDs duplicados — innegociable para flujos de trabajo BCF.',
-        'Todos los elementos físicos dentro de una planta, no directamente en Emplazamiento o Edificio.',
-        'Un único IfcProject en la raíz — siempre.',
-        'Da nombre a todos los elementos, aunque sea genérico ("Muro-001" es mejor que vacío).',
-      ]},
-    ],
-  },
-
-  {
-    slug: 'ifc-vs-rvt-que-entregar',
-    title: 'IFC vs RVT: ¿qué formato BIM debes entregar en tus proyectos?',
-    excerpt: 'El estructurista entrega RVT. El instalador usa NWD. El cliente pide IFC. El jefe de proyecto pide DWG. Aquí tienes cómo navegar el laberinto de formatos y por qué el BIM abierto importa de verdad para la entrega.',
-    date: '2026-05-02',
-    readTimeMin: 7,
-    category: 'Consejos IFC',
-    categorySlug: 'ifc-tips',
-    author: 'IFC Viewer Team',
-    lang: 'es',
-    content: [
-      { type: 'p', text: 'Los proyectos BIM generan modelos en una docena de formatos. La mayoría son propietarios. La mayoría requieren licencias costosas para abrirse. Cuando el cliente necesita inspeccionar el modelo, hacer mediciones o entregarlo al facility manager para los próximos 30 años, ninguna de esas licencias estará disponible.' },
-      { type: 'p', text: 'Ese es el argumento práctico para IFC. No es ideología — es logística.' },
-      { type: 'h2', text: 'Los cuatro formatos que encontrarás en obra' },
-      {
-        type: 'feature-grid',
-        items: [
-          { icon: '📦', title: 'IFC (.ifc)', body: 'ISO 16739-1. Abierto, neutral, basado en esquema. Todas las herramientas BIM certificadas pueden exportarlo. El único formato que el cliente podrá abrir en 2045.' },
-          { icon: '🔒', title: 'RVT (.rvt)', body: 'Nativo de Autodesk Revit. Datos paramétricos ricos y bibliotecas de familias. Requiere Revit para abrirse — y la versión correcta de Revit. No compatible hacia adelante.' },
-          { icon: '🔗', title: 'NWD / NWF (.nwd)', body: 'Navisworks. Formato solo de coordinación: agrega geometría para detección de colisiones y Timeliner. Solo lectura; no hay forma de devolver cambios al modelo fuente.' },
-          { icon: '📐', title: 'DWG (.dwg)', body: 'AutoCAD / Autodesk. Planos 2D y algo de geometría 3D. No es un formato BIM — sin datos semánticos, sin jerarquía espacial, sin property sets.' },
+        type: 'table',
+        headers: ['Artefact', 'Answers', 'Audience'],
+        rows: [
+          ['Validation report', 'What was checked and what was found', 'The receiving coordinator'],
+          ['Check record', 'That the check happened, on this exact file, at this time', 'The information manager, the client, an auditor'],
+          ['Issue file (BCF)', 'What is not fixed, and where to look', 'The person who has to act'],
+          ['Asset data (COBie)', 'What the building contains, as data', 'The client and the FM team'],
+          ['Transmittal note', 'Revision, status, score, rule set, waivers', 'Everyone, and the record'],
         ],
       },
-      {
-        type: 'comparison',
-        left: {
-          label: 'IFC — BIM Abierto',
-          color: 'accent',
-          items: [
-            'Legible por cualquier herramienta BIM certificada',
-            'Activo permanente — sin dependencia de proveedor',
-            'Incluye property sets completos y jerarquía espacial',
-            'Compatible con flujos de trabajo de coordinación BCF',
-            'Validable contra reglas de esquema',
-            'ISO 16739-1 normalizado internacionalmente',
-            'Requerido para entregas de cumplimiento ISO 19650',
-          ],
-        },
-        right: {
-          label: 'RVT / NWD — Propietario',
-          color: 'muted',
-          items: [
-            'Requiere software del proveedor para abrirse',
-            'Los cambios de formato rompen la compatibilidad',
-            'Datos paramétricos más ricos en la herramienta nativa',
-            'Más rápido para el flujo de diseño interno',
-            'Detección de colisiones NWD más precisa que IFC',
-            'Sin esquema acordado universalmente para validación',
-            'Difícil de entregar a FM sin licencia',
-          ],
-        },
-      },
-      { type: 'callout', variant: 'info', text: 'La respuesta a "¿IFC o RVT para la entrega?" es casi siempre IFC. La pregunta real es: "¿Qué esquema IFC?" — IFC4 para proyectos nuevos, IFC2x3 solo si el ECD o la herramienta receptora lo exige explícitamente.' },
-      { type: 'h2', text: 'Cuándo usar cada formato' },
-      { type: 'h3', text: 'Usa IFC para:' },
+      { type: 'p', text: "Assembling all five takes about ten minutes once, and rather less every time after that. It replaces roughly four emails per delivery, and it is the difference between a delivery that is accepted and a delivery that is discussed." },
+
+      { type: 'h2', text: '1. The validation report' },
+      { type: 'p', text: "Export it, attach it, and do not paraphrase it in the email body. Three properties make a report useful to somebody who was not there when it ran:" },
       { type: 'ul', items: [
-        'Todas las entregas formales al ECD e intercambios de información entre organizaciones.',
-        'Paquetes de entrega a clientes, facility managers y propietarios de activos.',
-        'Cualquier entrega gobernada por ISO 19650 o el EIR del proyecto.',
-        'Coordinación multidisciplinar donde los participantes usan herramientas de autor distintas.',
+        "It names the rule set, not just the results. A score without its rule set cannot be interpreted, and cannot be compared to the next revision.",
+        "It states coverage — which checks ran, which did not. A report that cannot distinguish \"passed\" from \"not attempted\" is a marketing document.",
+        "It carries element identifiers, so a finding can be located rather than hunted for. A report you have to go looking with is a report nobody uses twice.",
       ]},
-      { type: 'h3', text: 'Usa RVT para:' },
+      {
+        type: 'p',
+        text: ['If you are not sure which findings in your report are worth reporting on and which are noise, ', { text: 'the most common IFC model errors', to: 'common-ifc-model-errors' }, ' is a reasonable triage list — the structural ones are the ones a receiver cares about.'],
+      },
+
+      { type: 'h2', text: '2. The check record' },
+      { type: 'p', text: "The weakest link in every quality process is that the check and the claim are separate things. Anyone can say a model scored 92. A check record ties the number to a specific file: the file's own fingerprint, the rule set, the schema, the timestamp, the score." },
+      { type: 'p', text: "Two properties make such a record worth more than a screenshot of a panel:" },
+      { type: 'ol', items: [
+        "It is derived from the file's content, so that changing one byte of the model and re-issuing the same record is detectable.",
+        "It is verifiable by the receiver, independently, without your involvement. A record that only your own software can confirm is a promise, not evidence.",
+      ]},
+      { type: 'callout', variant: 'info', text: "This matters more every year. As soon as a delivery is a payment milestone — and increasingly it is — \"we checked it\" stops being a professional courtesy and becomes a claim somebody may contest. The cheapest moment to make it verifiable is before it is contested." },
+
+      {
+        type: 'ebook-cta',
+        headline: 'The whole delivery process, in one PDF',
+        body: 'The evidence pack, the seven-step delivery workflow, the acceptance criteria table, and a reference to every validation check with the fix in Revit, ArchiCAD, Tekla and Allplan. 64 pages, free, no account.',
+      },
+
+      { type: 'h2', text: '3. The issue file' },
+      { type: 'p', text: "BCF exists so that issues survive leaving your screen. Its whole value is the viewpoint: a camera position, a selection and a comment, which together mean the receiver spends ten seconds finding the problem instead of ten minutes." },
+      { type: 'p', text: "Two conventions separate a BCF file that gets acted on from one that gets ignored:" },
       { type: 'ul', items: [
-        'Trabajo de diseño interno dentro de un equipo completamente Revit.',
-        'Intercambios con consultores que también usan Revit y la misma versión.',
-        'Exploración de diseño paramétrico donde el round-tripping IFC destruiría las relaciones de familia.',
+        "One topic per cause, not per element. Four thousand elements missing a property set are one topic with a representative viewpoint — not four thousand topics that make the file unopenable.",
+        "Title the topic with the rule identifier and the fix, not the symptom. \"Missing property set — add the required Pset to the export template\" is actionable; \"missing properties\" is a complaint.",
       ]},
+
+      { type: 'h2', text: '4. Asset data' },
+      { type: 'p', text: "COBie, or whatever schedule your client asked for, is the point at which model quality becomes commercially visible — because it is delivered to somebody who never opens a model and has no way to interpret an excuse." },
+      { type: 'p', text: "It is also, usefully, a validator of your validator. Spaces without names, types without manufacturers, components not assigned to a space: those gaps arrive as blank columns that a facilities manager can see at a glance. If a COBie export from your model would be embarrassing, the model is not ready, whatever the geometry looks like." },
+
+      { type: 'h2', text: '5. The transmittal note' },
+      { type: 'p', text: "Six lines, and it prevents most delivery disputes:" },
+      { type: 'code', lang: 'text', text: "Container:        {filename}\nRevision/status:  {rev} - {suitability code}\nSchema:           {IFC2X3 | IFC4 | IFC4X3}\nChecked:          {date} - rule set {name} - {n} of {n} checks completed\nHealth Score:     {score}/100\nOpen by agreement: {rule id - reason - agreed with - date}\nNot suitable for: {e.g. quantity take-off, fabrication}" },
+      { type: 'p', text: "The last line is the one people skip, and it is the one that protects you. Stating what a container is not for is not defensive — it is the definition of a level of information need, delivered at the only moment anybody actually reads it." },
+      { type: 'callout', variant: 'tip', text: "Put the transmittal note in the CDE comment field as well as the email. Emails leave the project when people do; the CDE record is what the next information manager will find." },
+
+      { type: 'h2', text: 'What this adds up to' },
+      { type: 'p', text: "Nothing here is new technology, and none of it requires a tool you do not already have. What it requires is treating a delivery as a claim that somebody else has to be able to check — which is a small change in posture with a disproportionate effect on how many deliveries come back." },
       {
-        type: 'ifc-demo',
-        modelId: 'ifc4-revit-arc',
-        title: 'Modelo de oficina IFC4 desde Revit',
-        description: 'Abre este modelo real de Revit exportado como IFC4 para ver cómo se ve la validación en un archivo de tamaño real (14 MB, arquitectura completa).',
-        schema: 'IFC4',
-        size: '14 MB',
+        type: 'p',
+        text: ['The criteria the receiver applies to all of this are covered in ', { text: 'IFC acceptance criteria', to: 'ifc-acceptance-criteria' }, ', and the clauses that make them binding in ', { text: 'BEP clauses that actually prevent bad IFC deliveries', to: 'bim-execution-plan-ifc-quality-clauses' }, '. For the ISO 19650 framing around all three, see the ', { text: 'ISO 19650 IFC delivery checklist', to: 'iso19650-ifc-checklist' }, '.'],
       },
     ],
   },
 
-]
-
-// ─── Posts en alemán ──────────────────────────────────────────────────────────
-
-export const BLOG_POSTS_DE: BlogPost[] = [
-
-  {
-    slug: 'ifc-datei-im-browser-oeffnen',
-    title: 'IFC-Dateien im Browser öffnen — kostenlos, ohne Installation',
-    excerpt: 'Ihr Auftraggeber hat Ihnen eine 200 MB große IFC-Datei geschickt. Kein Revit, kein Navisworks installiert. So öffnen, prüfen und validieren Sie die Datei — direkt im Browser.',
-    date: '2026-06-01',
-    readTimeMin: 5,
-    category: 'Anleitungen',
-    categorySlug: 'tool-guides',
-    author: 'IFC Viewer Team',
-    lang: 'de',
-    featured: true,
-    heroImage: 'ifc-datei-im-browser-oeffnen',
-    content: [
-      { type: 'p', text: 'IFC-Dateien sind der offene Standard für den BIM-Datenaustausch — aber sie lassen sich nur schwer öffnen, ohne eine teure Workstation und proprietäre Software. Die meisten Online-Viewer laden die Datei auf einen Server hoch (bei vertraulichen Projektdaten keine Option) oder versagen bei Dateien über 10 MB.' },
-      { type: 'p', text: 'Dieser Viewer analysiert IFC-Dateien vollständig im Browser via WebAssembly. Die Geometrie verlässt Ihr Gerät zu keinem Zeitpunkt. Eine 200-MB-Datei kann im Flugzeug ohne WLAN geöffnet werden.' },
-      {
-        type: 'stat-row',
-        stats: [
-          { value: 38,  suffix: '', label: 'Prüfregeln' },
-          { value: 0,   suffix: ' Byte', label: 'auf den Server hochgeladen' },
-          { value: 100, suffix: '%', label: 'läuft im Browser' },
-          { value: 13,  suffix: '', label: 'Demo-IFC-Modelle' },
-        ],
-      },
-      { type: 'h2', text: 'IFC-Datei in 3 Schritten öffnen' },
-      { type: 'ol', items: [
-        'IFC Viewer im Browser öffnen — Chrome, Firefox, Safari, Edge. Kein Plugin erforderlich.',
-        'IFC-Datei per Drag & Drop in den Viewer ziehen oder über "Datei öffnen" auswählen.',
-        'Das Modell wird in Sekunden gerendert. Die Validierung läuft automatisch im Hintergrund — der Health Score erscheint in der oberen linken Ecke.',
-      ]},
-      {
-        type: 'feature-grid',
-        items: [
-          { icon: '🔒', title: 'Privatsphäre by Design', body: 'Dateien werden client-seitig via web-ifc WASM analysiert. Kein Byte erreicht einen Server. Kein Konto erforderlich.' },
-          { icon: '⚡', title: 'Einmal analysiert, dauerhaft gecacht', body: 'Die Geometrie wird im Origin Private File System des Browsers gespeichert. Wiederholte Ladevorgänge sind ~10× schneller.' },
-          { icon: '📐', title: '44 Validierungsregeln', body: 'Von duplizierten GUIDs bis zu Verletzungen der räumlichen Hierarchie — alle wichtigen IFC-Qualitätsprobleme werden in unter 30 Sekunden erkannt.' },
-          { icon: '🌐', title: 'Offline-fähig', body: 'Einmal geladen, läuft die App ohne Netzwerkverbindung. Ideal für Baustellen mit schlechter Verbindung.' },
-        ],
-      },
-      {
-        type: 'ifc-demo',
-        modelId: 'duplex-architecture',
-        title: 'Duplex-Apartment — Architektur',
-        description: 'Das klassische buildingSMART-Duplex. Öffnen Sie dieses Modell, um zu sehen, wie ein sauberer Validierungsbericht aussieht — und testen Sie dann Ihre eigene IFC-Datei.',
-        schema: 'IFC2x3',
-        size: '2.4 MB',
-      },
-      { type: 'h2', text: 'Was ist der Health Score?' },
-      { type: 'p', text: 'Jede IFC-Datei erhält einen Health Score von 0 bis 100. Er fasst die strukturelle und datentechnische Qualität des Modells in einer einzigen Zahl zusammen. Ein Wert von 87 bedeutet "geringfügige Probleme, bereit für die Koordination". Ein Wert von 43 bedeutet "schwerwiegende Probleme, nicht an das CDE liefern".' },
-      { type: 'callout', variant: 'tip', text: 'Tastaturkürzel: F um das ausgewählte Element einzurahmen, H um es auszublenden, I um es zu isolieren, Umschalt+H um die volle Sichtbarkeit wiederherzustellen. Strg+Umschalt+V um die Validierung auszuführen.' },
-    ],
-  },
-
-  {
-    slug: 'ifc-validierung-haeufige-fehler',
-    title: 'Die 5 häufigsten IFC-Fehler vor der CDE-Lieferung',
-    excerpt: 'Duplizierte GUIDs, verwaiste Elemente und fehlerhafte räumliche Hierarchien verursachen den Großteil aller Ablehnungen im Common Data Environment. So erkennen und beheben Sie diese Fehler.',
-    date: '2026-05-15',
-    readTimeMin: 7,
-    category: 'Validierung',
-    categorySlug: 'validation',
-    author: 'IFC Viewer Team',
-    lang: 'de',
-    content: [
-      { type: 'p', text: 'Nach der Analyse von Tausenden von IFC-Dateien zeigen sich immer wieder dieselben Muster: Eine Handvoll struktureller Fehler verursacht den Großteil aller abgelehnten CDE-Lieferungen. Hier sind die fünf häufigsten — und wie Sie sie beheben, bevor die Datei den Koordinator erreicht.' },
-      { type: 'h2', text: '1. Duplizierte GlobalIds (GUIDs)' },
-      { type: 'p', text: 'Ein GlobalId ist die dauerhafte Identität eines IFC-Elements über Modellzusammenführungen, Versionsaktualisierungen und Softwaremigrationen hinweg. Wenn zwei Elemente dieselbe GUID teilen, versagt jedes Werkzeug, das auf stabile Referenzen angewiesen ist — BCF-Workflows, Revit-Links, CDE-Versionierung — lautlos.' },
-      { type: 'callout', variant: 'tip', text: 'In Revit: Datei → Exportieren → IFC → Setup ändern → Erweitert → "IFC-GUIDs exportieren" auf "Vorhandene beibehalten" setzen. Dadurch werden die stabilen GlobalIds erhalten, anstatt sie bei jedem Export neu zu generieren.' },
-      { type: 'h2', text: '2. Verwaiste Elemente' },
-      { type: 'p', text: 'Ein verwaistes Element ist ein physisches Element ohne räumlichen Container in der IFC-Hierarchie. Es existiert in der Datei, erscheint aber nicht im Baum Projekt → Gelände → Gebäude → Geschoss. Die meisten Viewer überspringen verwaiste Elemente vollständig.' },
-      { type: 'h2', text: '3. Falscher Container' },
-      { type: 'p', text: 'Das Element hat einen Container, aber den falschen — es befindet sich direkt in IfcSite statt in einem Geschoss. Die Platzierung auf Geländeebene ist nur für Infrastrukturelemente gültig. Wände oder Stützen in IfcSite werden jedes nachgelagerte Werkzeug verwirren.' },
-      { type: 'h2', text: '4. Fehlendes IfcProject' },
-      { type: 'p', text: 'Jede gültige IFC-Datei muss genau ein IfcProject enthalten — den Wurzelknoten der gesamten Modellhierarchie. Einige Export-Workflows, die Teilmodelle generieren, lassen es weg.' },
-      { type: 'h2', text: '5. Fehler in der räumlichen Hierarchie' },
-      { type: 'p', text: 'IFC schreibt eine strenge Reihenfolge vor: IfcProject → IfcSite → IfcBuilding → IfcBuildingStorey → physische Elemente. Wenn diese Reihenfolge durchbrochen wird, bauen viele Werkzeuge den Baum nicht korrekt auf.' },
-      {
-        type: 'ifc-demo',
-        modelId: 'duplex-architecture',
-        title: 'Live-Validierung starten',
-        description: 'Öffnen Sie das buildingSMART-Duplex und sehen Sie, wie ein sauberer IFC-Validierungsbericht aussieht — dann testen Sie Ihre eigene Datei auf diese fünf Fehler.',
-        schema: 'IFC2x3',
-        size: '2.4 MB',
-      },
-    ],
-  },
-
-]
-
-// ─── Posts en francés ─────────────────────────────────────────────────────────
-
-export const BLOG_POSTS_FR: BlogPost[] = [
-
-  {
-    slug: 'ouvrir-fichier-ifc-navigateur',
-    title: 'Ouvrir un fichier IFC dans le navigateur — gratuit, sans installation',
-    excerpt: "Votre client vient de vous envoyer un fichier IFC de 200 Mo. Pas de Revit, pas de Navisworks. Voici comment l'ouvrir, l'inspecter et le valider directement dans votre navigateur.",
-    date: '2026-06-01',
-    readTimeMin: 5,
-    category: 'Guides outils',
-    categorySlug: 'tool-guides',
-    author: 'IFC Viewer Team',
-    lang: 'fr',
-    featured: true,
-    heroImage: 'ouvrir-fichier-ifc-navigateur',
-    content: [
-      { type: 'p', text: "Les fichiers IFC sont la langue commune de l'open BIM — mais ils sont notoirement difficiles à ouvrir sans logiciel spécialisé et des licences coûteuses. La plupart des visionneuses en ligne téléchargent votre fichier sur un serveur (impossible pour les données de projet confidentielles) ou échouent sur les fichiers de plus de 10 Mo." },
-      { type: 'p', text: "Ce visualiseur analyse les fichiers IFC entièrement dans le navigateur via WebAssembly. La géométrie ne quitte jamais votre appareil. Vous pouvez ouvrir un fichier de 200 Mo dans un avion, en mode hors ligne." },
-      {
-        type: 'stat-row',
-        stats: [
-          { value: 38,  suffix: '', label: 'règles de validation' },
-          { value: 0,   suffix: ' octet', label: 'envoyé au serveur' },
-          { value: 100, suffix: '%', label: 'dans le navigateur' },
-          { value: 13,  suffix: '', label: 'modèles IFC de démo' },
-        ],
-      },
-      { type: 'h2', text: 'Ouvrir un fichier IFC en 3 étapes' },
-      { type: 'ol', items: [
-        "Ouvrez IFC Viewer dans n'importe quel navigateur — Chrome, Firefox, Safari, Edge. Aucune extension requise.",
-        "Glissez-déposez votre fichier .ifc dans la visionneuse, ou cliquez sur \"Ouvrir un fichier\" pour le sélectionner.",
-        "Le modèle s'affiche en quelques secondes. La validation démarre automatiquement en arrière-plan — le Health Score apparaît en haut à gauche.",
-      ]},
-      {
-        type: 'feature-grid',
-        items: [
-          { icon: '🔒', title: 'Confidentialité by design', body: 'Les fichiers sont analysés côté client via web-ifc WASM. Aucun octet n\'atteint un serveur. Aucun compte requis.' },
-          { icon: '⚡', title: 'Analysé une fois, mis en cache', body: 'La géométrie est stockée dans le système de fichiers privé du navigateur. Les chargements répétés sont ~10× plus rapides.' },
-          { icon: '📐', title: '44 règles de validation', body: 'Des GUIDs dupliqués aux violations de hiérarchie spatiale — tous les problèmes majeurs de qualité IFC détectés en moins de 30 secondes.' },
-          { icon: '🌐', title: 'Fonctionne hors ligne', body: 'Une fois chargée, l\'application fonctionne sans connexion réseau. Idéal pour les chantiers avec une mauvaise connectivité.' },
-        ],
-      },
-      {
-        type: 'ifc-demo',
-        modelId: 'duplex-architecture',
-        title: 'Duplex — Architecture (modèle de démonstration)',
-        description: 'Ouvrez le duplex buildingSMART de référence pour voir ce qu\'un rapport de validation propre ressemble — puis testez votre propre fichier IFC.',
-        schema: 'IFC2x3',
-        size: '2.4 MB',
-      },
-      { type: 'h2', text: "Qu'est-ce que le Health Score ?" },
-      { type: 'p', text: "Chaque fichier IFC reçoit un Health Score de 0 à 100. Il résume la qualité structurelle et des données du modèle en un seul chiffre. Un score de 87 signifie 'problèmes mineurs, prêt pour la coordination'. Un score de 43 signifie 'problèmes graves, ne pas livrer à la GED'." },
-      { type: 'callout', variant: 'info', text: "Ajoutez un seuil minimum de Health Score dans votre PEB (Plan d'Exécution BIM). Une clause comme 'Les livraisons IFC doivent atteindre un Health Score ≥ 80 avant upload vers la GED' ne coûte rien à écrire et évite des semaines de retard en coordination." },
-    ],
-  },
+  // ── English posts, continued ───────────────────────────────────────────────
+  // (These were historically appended to BLOG_POSTS_FR by mistake, which put
+  //  their static shells under /fr/blog/. They are English, so they live here.)
 
   // ── Article #1 — "ifc editor online" primary keyword ────────────────────────
 
@@ -6428,6 +6370,15 @@ Archive report → Upload to CDE`,
         type: 'p',
         text: ['See also: the full three-level validation framework in the ', { text: 'IFC model checker complete guide', to: 'ifc-model-checker' }, '. How checkers differ from viewers — ', { text: 'IFC model checker vs IFC viewer', to: 'ifc-model-checker-vs-ifc-viewer' }, '. Which tool to choose — ', { text: 'best IFC model checkers in 2026', to: 'best-ifc-model-checkers-2026' }, '. The 10 most common IFC errors and how to detect each one — ', { text: '10 common IFC model errors', to: 'common-ifc-model-errors' }, '.'],
       },
+      {
+        type: 'p',
+        text: ['And once the check is routine, the next question is what to send with the file and on what grounds the receiver accepts it: ', { text: 'what to hand over with an IFC model', to: 'ifc-model-handover-documentation' }, ' and ', { text: 'IFC acceptance criteria', to: 'ifc-acceptance-criteria' }, '.'],
+      },
+      {
+        type: 'ebook-cta',
+        headline: 'The full pre-delivery routine, in one PDF',
+        body: 'Every check with the fix in Revit, ArchiCAD, Tekla and Allplan, the Health Score formula in full, the seven-step delivery workflow and a pre-delivery checklist you can print. 64 pages, free.',
+      },
     ],
   },
 
@@ -6784,8 +6735,391 @@ Archive report → Upload to CDE`,
       },
       {
         type: 'p',
-        text: ['For a step-by-step workflow to check and fix these errors before delivery, see ', { text: 'how to check an IFC model before delivery', to: 'how-to-check-ifc-model-before-delivery' }, '. For the tool to run the check, see the ', { text: 'best IFC model checkers comparison', to: 'best-ifc-model-checkers-2026' }, '. For the complete framework behind the checking levels, see the ', { text: 'IFC model checker complete guide', to: 'ifc-model-checker' }, '. For the conceptual distinction between checkers and viewers, see ', { text: 'IFC model checker vs IFC viewer', to: 'ifc-model-checker-vs-ifc-viewer' }, '.'],
+        text: ['For a step-by-step workflow to check and fix these errors before delivery, see ', { text: 'how to check an IFC model before delivery', to: 'how-to-check-ifc-model-before-delivery' }, '. For the tool to run the check, see the ', { text: 'best IFC model checkers comparison', to: 'best-ifc-model-checkers-2026' }, '. For the complete framework behind the checking levels, see the ', { text: 'IFC model checker complete guide', to: 'ifc-model-checker' }, '. For the conceptual distinction between checkers and viewers, see ', { text: 'IFC model checker vs IFC viewer', to: 'ifc-model-checker-vs-ifc-viewer' }, '. To stop them recurring, put a threshold in the contract: ', { text: 'BEP clauses that actually prevent bad IFC deliveries', to: 'bim-execution-plan-ifc-quality-clauses' }, '.'],
       },
+      {
+        type: 'ebook-cta',
+        headline: 'All the checks, not just the top ten',
+        body: 'The IFC Delivery Handbook documents every validation check one by one — cause, consequence and the exact fix in Revit, ArchiCAD, Tekla and Allplan — plus the delivery workflow and the paperwork around it. 64 pages, free.',
+      },
+    ],
+  },
+
+]
+
+// ─── Posts en español ─────────────────────────────────────────────────────────
+
+export const BLOG_POSTS_ES: BlogPost[] = [
+
+  {
+    slug: 'como-exportar-ifc-desde-revit',
+    title: 'Cómo exportar un IFC limpio desde Revit: la guía definitiva',
+    excerpt: 'La configuración de exportación IFC que viene por defecto en Revit genera decenas de avisos evitables. Esta guía muestra los ajustes exactos que eliminan los errores más comunes antes de que el archivo llegue al ECD.',
+    date: '2026-06-01',
+    readTimeMin: 8,
+    category: 'Guías de herramientas',
+    categorySlug: 'tool-guides',
+    author: 'IFC Viewer Team',
+    lang: 'es',
+    featured: true,
+    heroImage: 'como-exportar-ifc-desde-revit',
+    content: [
+      { type: 'p', text: 'Revit lleva exportando IFC desde 2012. El problema no es el soporte — es que la configuración predeterminada está optimizada para la compatibilidad máxima con el mayor número de herramientas receptoras, no para la calidad del modelo. El resultado: archivos que generan decenas de avisos de validación que se podrían haber evitado con cuatro ajustes.' },
+      {
+        type: 'stat-row',
+        stats: [
+          { value: 4,   suffix: '', label: 'ajustes clave' },
+          { value: 38,  suffix: '', label: 'reglas de validación' },
+          { value: 30,  suffix: 's', label: 'para validar un modelo' },
+          { value: 0,   suffix: ' MB', label: 'subidos al servidor' },
+        ],
+      },
+      { type: 'h2', text: 'Paso 1: Instalar el exportador IFC de código abierto' },
+      { type: 'p', text: 'El exportador IFC integrado en Revit funciona, pero va por detrás del mantenido por la comunidad. El exportador open source (gratuito en el Autodesk App Store) genera GUIDs más fiables, jerarquías espaciales más limpias y soporta IFC4 correctamente. Instálalo antes de cambiar cualquier otra configuración.' },
+      { type: 'h2', text: 'Paso 2: Elegir IFC4 Reference View' },
+      { type: 'p', text: 'Salvo que el pliego de condiciones exija explícitamente IFC2x3, exporta a IFC4 Reference View. IFC4 es el estándar ISO actual (ISO 16739-1:2018), produce archivos más pequeños gracias a la geometría teselada y resuelve varias ambigüedades estructurales del esquema anterior.' },
+      { type: 'h2', text: 'Paso 3: Los cuatro ajustes críticos' },
+      { type: 'ul', items: [
+        '"Exportar GUIDs IFC": ponlo en "Mantener existentes". Jamás en "Generar nuevos" — eso rompe las referencias cruzadas en BCF en cada nueva exportación.',
+        '"Colocación en emplazamiento": activa "Coordenadas compartidas". Evita que los elementos se coloquen a 10 km del origen WCS.',
+        '"Incluir conexiones de acero": desactivado (a menos que entregues un modelo estructural de acero).',
+        '"Dividir muros y pilares por nivel": activado. Garantiza que los muros queden asociados a las plantas correctas.',
+      ]},
+      { type: 'callout', variant: 'warning', text: 'Nunca exportes directamente al ECD. Una entrega fallida que requiere volver a subir el archivo crea una nueva revisión en el historial del ECD y genera notificaciones a todo el equipo del proyecto. Valida siempre en local primero.' },
+      { type: 'h2', text: 'Paso 4: Validar antes de subir' },
+      { type: 'p', text: 'Exporta a una carpeta local. Abre el archivo IFC en un validador y comprueba: desfase de coordenadas (las coordenadas compartidas no se han aplicado), exceso de proxies (más del 5% de los elementos son IfcBuildingElementProxy — familias Revit sin mapear) y tipos faltantes.' },
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Valida el modelo Duplex de referencia',
+        description: 'Abre el modelo buildingSMART en el visor para ver cómo es un informe de validación limpio. Luego prueba con tu propio archivo de Revit.',
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+      },
+      { type: 'h2', text: 'Problemas habituales en archivos IFC exportados desde Revit' },
+      { type: 'ul', items: [
+        'Exceso de proxies: Las familias Revit sin asignación IFC se exportan como IfcBuildingElementProxy. Revisa la tabla de mapeo IFC y asigna las familias más usadas a sus tipos IFC correctos.',
+        'Desfase de coordenadas: Comprueba que el proyecto tiene coordenadas compartidas con el punto de agrimensura antes de exportar.',
+        'Property sets faltantes: Los parámetros de Revit se exportan por defecto como Psets personalizados. Revisa el mapeo de Psets para incluir los estándar (Pset_WallCommon, etc.).',
+      ]},
+    ],
+  },
+
+  {
+    slug: 'health-score-ifc-que-es',
+    title: 'Health Score en IFC: el número que necesita tu proyecto BIM',
+    excerpt: 'Un Health Score de 0 a 100 resume la calidad estructural y de datos de un modelo IFC en un solo número. Te explicamos cómo se calcula, qué significa cada umbral y por qué debería estar en el PEB de todos tus proyectos.',
+    date: '2026-05-22',
+    readTimeMin: 6,
+    category: 'Buenas prácticas BIM',
+    categorySlug: 'best-practices',
+    author: 'IFC Viewer Team',
+    lang: 'es',
+    content: [
+      { type: 'p', text: 'En todos los proyectos BIM en los que he trabajado, el Plan de Ejecución BIM menciona "entrega de un IFC de calidad". En ninguno se ha definido con precisión qué significa eso. La validación ocurre de forma manual, inconsistente, o directamente no ocurre — hasta que el modelo federado produce absurdos y alguien empieza a investigar.' },
+      { type: 'p', text: 'Un Health Score cambia eso. Es un número de 0 a 100 calculado automáticamente contra 44 reglas de validación. Siempre el mismo número, en cualquier máquina, en cualquier versión del modelo. Debería estar en el PEB como requisito de entrega.' },
+      { type: 'pull-quote', text: 'Un Health Score convierte un requisito de calidad vago en un criterio de entrega medible y exigible contractualmente.', cite: 'IFC Viewer Blog' },
+      { type: 'h2', text: 'Cómo se calcula' },
+      { type: 'p', text: 'La puntuación parte de 100. Cada problema de validación resta puntos usando un modelo de penalización logarítmica: el error número 1.000 de GUIDs duplicados resta muchos menos que el número 10, porque la degradación de calidad no es lineal. Un modelo fundamentalmente roto colapsa cerca de cero; uno con inconsistencias menores de nomenclatura se mantiene por encima de 85.' },
+      {
+        type: 'health-score',
+        items: [
+          { score: 34, label: 'Entrega rechazada' },
+          { score: 71, label: 'Revisión interna' },
+          { score: 84, label: 'Listo para el ECD' },
+          { score: 94, label: 'Calidad excelente' },
+        ],
+      },
+      { type: 'h2', text: 'Qué significa cada umbral' },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '🔴', title: '0–59: Crítico', body: 'Problemas estructurales que romperán las herramientas de aguas abajo. IfcProject faltante, elementos huérfanos, referencias circulares. No entregar.' },
+          { icon: '🟡', title: '60–79: Necesita trabajo', body: 'Problemas de calidad de datos significativos. Aceptable para revisión interna; no aceptable para el ECD ni para sesiones de coordinación multidisciplinar.' },
+          { icon: '🟢', title: '80–89: Listo para entrega', body: 'Problemas menores que no afectan la validez estructural. Válido para entrega estándar al ECD y coordinación de diseño.' },
+          { icon: '✅', title: '90–100: Excelencia', body: 'Modelo limpio. Válido para entregas LOD 300+, documentación ISO 19650 y fase de licitación/construcción.' },
+        ],
+      },
+      { type: 'callout', variant: 'info', text: 'Añade un umbral mínimo de Health Score al PEB de tu proyecto. Una cláusula del tipo "Las entregas IFC deben alcanzar un Health Score ≥ 80 antes de la subida al ECD" no cuesta nada escribirla y evita semanas de retrasos de coordinación.' },
+      { type: 'h2', text: 'Puntuación vs. número de problemas: la diferencia clave' },
+      { type: 'p', text: 'Un modelo con 800 problemas puede tener una puntuación de 81. Uno con 12 puede tener 34. La diferencia está en la severidad. Ochocientos avisos de nombres vacíos (nivel informativo, penalización mínima) frente a doce errores de IfcProject faltante + agregaciones rotas + referencias espaciales circulares (errores de esquema, peso 3×). Optimiza la puntuación, no el recuento de problemas.' },
+    ],
+  },
+
+  {
+    slug: 'errores-ifc-mas-comunes',
+    title: 'Los 7 errores IFC más comunes (y cómo corregirlos antes de la entrega)',
+    excerpt: 'GUIDs duplicados, elementos huérfanos y jerarquías espaciales rotas causan más del 80% de los rechazos en el ECD. Aquí tienes cómo detectar y corregir cada uno antes de que el modelo llegue al coordinador.',
+    date: '2026-05-12',
+    readTimeMin: 7,
+    category: 'Validación',
+    categorySlug: 'validation',
+    author: 'IFC Viewer Team',
+    lang: 'es',
+    content: [
+      { type: 'p', text: 'Todo coordinador BIM lo ha vivido: exportas un archivo IFC, lo subes al Entorno Común de Datos y el sistema lo rechaza por errores estructurales que no sabías que existían. Tras analizar miles de archivos IFC, los mismos siete errores explican la gran mayoría de los rechazos.' },
+      { type: 'h2', text: '1. GlobalIds duplicados (GUIDs duplicados)' },
+      { type: 'p', text: 'El GlobalId es la identidad permanente de un elemento IFC. Sobrevive a fusiones de modelos, actualizaciones de versión y migraciones de software. Cuando dos elementos comparten el mismo GUID, todas las herramientas que dependen de referencias estables (flujos BCF, seguimiento de links en Revit, versionado en el ECD) fallan silenciosamente.' },
+      { type: 'callout', variant: 'tip', text: 'En Revit: Archivo → Exportar → IFC → Modificar configuración → Avanzado → pon "Exportar GUIDs IFC" en "Mantener existentes". Esto preserva los GlobalIds estables que Revit asigna internamente en lugar de regenerarlos en cada exportación.' },
+      { type: 'h2', text: '2. Elementos huérfanos' },
+      { type: 'p', text: 'Un elemento huérfano es un elemento físico sin contenedor espacial en la jerarquía IFC: existe en el archivo pero no aparece en Proyecto → Emplazamiento → Edificio → Planta. La mayoría de los visualizadores ignoran los huérfanos por completo — son invisibles en el modelo de coordinación.' },
+      { type: 'h2', text: '3. Contenedor incorrecto' },
+      { type: 'p', text: 'El elemento tiene contenedor, pero es el incorrecto: está situado directamente dentro de IfcSite en lugar de una planta. La ubicación a nivel de emplazamiento solo es válida para elementos de infraestructura. Muros o pilares dentro de IfcSite confundirán a todas las herramientas de aguas abajo.' },
+      { type: 'h2', text: '4. Agregaciones rotas' },
+      { type: 'p', text: 'IfcRelAggregates es la relación que construye el árbol espacial. Una agregación rota significa que una de estas relaciones apunta a una entidad inexistente — normalmente porque la entidad fue eliminada después de que se escribiera la relación, o durante una fusión de modelos mal ejecutada.' },
+      { type: 'h2', text: '5. Violaciones de jerarquía espacial' },
+      { type: 'p', text: 'IFC exige un orden estricto: IfcProject → IfcSite → IfcBuilding → IfcBuildingStorey → elementos físicos. Cuando este orden se rompe — un Edificio directamente bajo Proyecto sin Emplazamiento, o elementos en IfcBuilding sin pasar por una planta — muchas herramientas no construyen el árbol correctamente.' },
+      { type: 'h2', text: '6. IfcProject faltante' },
+      { type: 'p', text: 'Todos los archivos IFC válidos deben contener exactamente un IfcProject. Algunos flujos de exportación de sub-modelos lo omiten. El resultado es un archivo que parsea sin errores pero no tiene raíz espacial.' },
+      { type: 'h2', text: '7. Nombres de elemento vacíos' },
+      { type: 'p', text: 'Los elementos con Name = "" o nulo no son una violación de esquema, pero rompen casi todos los flujos de trabajo de aguas abajo: los comentarios BCF no pueden referenciarlos con claridad, las tablas de mediciones muestran filas en blanco, y los informes de colisiones se vuelven ilegibles.' },
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Valida un modelo real ahora',
+        description: 'Abre el modelo Duplex buildingSMART para ver cómo es un informe de validación limpio. Después prueba con tu propio archivo IFC.',
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+      },
+      { type: 'h2', text: 'Lista de comprobación pre-entrega' },
+      { type: 'ol', items: [
+        'Ejecuta la validación antes de cada subida al ECD — no después.',
+        'Objetivo: Health Score ≥ 80 para entregas de coordinación.',
+        'Cero GUIDs duplicados — innegociable para flujos de trabajo BCF.',
+        'Todos los elementos físicos dentro de una planta, no directamente en Emplazamiento o Edificio.',
+        'Un único IfcProject en la raíz — siempre.',
+        'Da nombre a todos los elementos, aunque sea genérico ("Muro-001" es mejor que vacío).',
+      ]},
+    ],
+  },
+
+  {
+    slug: 'ifc-vs-rvt-que-entregar',
+    title: 'IFC vs RVT: ¿qué formato BIM debes entregar en tus proyectos?',
+    excerpt: 'El estructurista entrega RVT. El instalador usa NWD. El cliente pide IFC. El jefe de proyecto pide DWG. Aquí tienes cómo navegar el laberinto de formatos y por qué el BIM abierto importa de verdad para la entrega.',
+    date: '2026-05-02',
+    readTimeMin: 7,
+    category: 'Consejos IFC',
+    categorySlug: 'ifc-tips',
+    author: 'IFC Viewer Team',
+    lang: 'es',
+    content: [
+      { type: 'p', text: 'Los proyectos BIM generan modelos en una docena de formatos. La mayoría son propietarios. La mayoría requieren licencias costosas para abrirse. Cuando el cliente necesita inspeccionar el modelo, hacer mediciones o entregarlo al facility manager para los próximos 30 años, ninguna de esas licencias estará disponible.' },
+      { type: 'p', text: 'Ese es el argumento práctico para IFC. No es ideología — es logística.' },
+      { type: 'h2', text: 'Los cuatro formatos que encontrarás en obra' },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '📦', title: 'IFC (.ifc)', body: 'ISO 16739-1. Abierto, neutral, basado en esquema. Todas las herramientas BIM certificadas pueden exportarlo. El único formato que el cliente podrá abrir en 2045.' },
+          { icon: '🔒', title: 'RVT (.rvt)', body: 'Nativo de Autodesk Revit. Datos paramétricos ricos y bibliotecas de familias. Requiere Revit para abrirse — y la versión correcta de Revit. No compatible hacia adelante.' },
+          { icon: '🔗', title: 'NWD / NWF (.nwd)', body: 'Navisworks. Formato solo de coordinación: agrega geometría para detección de colisiones y Timeliner. Solo lectura; no hay forma de devolver cambios al modelo fuente.' },
+          { icon: '📐', title: 'DWG (.dwg)', body: 'AutoCAD / Autodesk. Planos 2D y algo de geometría 3D. No es un formato BIM — sin datos semánticos, sin jerarquía espacial, sin property sets.' },
+        ],
+      },
+      {
+        type: 'comparison',
+        left: {
+          label: 'IFC — BIM Abierto',
+          color: 'accent',
+          items: [
+            'Legible por cualquier herramienta BIM certificada',
+            'Activo permanente — sin dependencia de proveedor',
+            'Incluye property sets completos y jerarquía espacial',
+            'Compatible con flujos de trabajo de coordinación BCF',
+            'Validable contra reglas de esquema',
+            'ISO 16739-1 normalizado internacionalmente',
+            'Requerido para entregas de cumplimiento ISO 19650',
+          ],
+        },
+        right: {
+          label: 'RVT / NWD — Propietario',
+          color: 'muted',
+          items: [
+            'Requiere software del proveedor para abrirse',
+            'Los cambios de formato rompen la compatibilidad',
+            'Datos paramétricos más ricos en la herramienta nativa',
+            'Más rápido para el flujo de diseño interno',
+            'Detección de colisiones NWD más precisa que IFC',
+            'Sin esquema acordado universalmente para validación',
+            'Difícil de entregar a FM sin licencia',
+          ],
+        },
+      },
+      { type: 'callout', variant: 'info', text: 'La respuesta a "¿IFC o RVT para la entrega?" es casi siempre IFC. La pregunta real es: "¿Qué esquema IFC?" — IFC4 para proyectos nuevos, IFC2x3 solo si el ECD o la herramienta receptora lo exige explícitamente.' },
+      { type: 'h2', text: 'Cuándo usar cada formato' },
+      { type: 'h3', text: 'Usa IFC para:' },
+      { type: 'ul', items: [
+        'Todas las entregas formales al ECD e intercambios de información entre organizaciones.',
+        'Paquetes de entrega a clientes, facility managers y propietarios de activos.',
+        'Cualquier entrega gobernada por ISO 19650 o el EIR del proyecto.',
+        'Coordinación multidisciplinar donde los participantes usan herramientas de autor distintas.',
+      ]},
+      { type: 'h3', text: 'Usa RVT para:' },
+      { type: 'ul', items: [
+        'Trabajo de diseño interno dentro de un equipo completamente Revit.',
+        'Intercambios con consultores que también usan Revit y la misma versión.',
+        'Exploración de diseño paramétrico donde el round-tripping IFC destruiría las relaciones de familia.',
+      ]},
+      {
+        type: 'ifc-demo',
+        modelId: 'ifc4-revit-arc',
+        title: 'Modelo de oficina IFC4 desde Revit',
+        description: 'Abre este modelo real de Revit exportado como IFC4 para ver cómo se ve la validación en un archivo de tamaño real (14 MB, arquitectura completa).',
+        schema: 'IFC4',
+        size: '14 MB',
+      },
+    ],
+  },
+
+]
+
+// ─── Posts en alemán ──────────────────────────────────────────────────────────
+
+export const BLOG_POSTS_DE: BlogPost[] = [
+
+  {
+    slug: 'ifc-datei-im-browser-oeffnen',
+    title: 'IFC-Dateien im Browser öffnen — kostenlos, ohne Installation',
+    excerpt: 'Ihr Auftraggeber hat Ihnen eine 200 MB große IFC-Datei geschickt. Kein Revit, kein Navisworks installiert. So öffnen, prüfen und validieren Sie die Datei — direkt im Browser.',
+    date: '2026-06-01',
+    readTimeMin: 5,
+    category: 'Anleitungen',
+    categorySlug: 'tool-guides',
+    author: 'IFC Viewer Team',
+    lang: 'de',
+    featured: true,
+    heroImage: 'ifc-datei-im-browser-oeffnen',
+    content: [
+      { type: 'p', text: 'IFC-Dateien sind der offene Standard für den BIM-Datenaustausch — aber sie lassen sich nur schwer öffnen, ohne eine teure Workstation und proprietäre Software. Die meisten Online-Viewer laden die Datei auf einen Server hoch (bei vertraulichen Projektdaten keine Option) oder versagen bei Dateien über 10 MB.' },
+      { type: 'p', text: 'Dieser Viewer analysiert IFC-Dateien vollständig im Browser via WebAssembly. Die Geometrie verlässt Ihr Gerät zu keinem Zeitpunkt. Eine 200-MB-Datei kann im Flugzeug ohne WLAN geöffnet werden.' },
+      {
+        type: 'stat-row',
+        stats: [
+          { value: 38,  suffix: '', label: 'Prüfregeln' },
+          { value: 0,   suffix: ' Byte', label: 'auf den Server hochgeladen' },
+          { value: 100, suffix: '%', label: 'läuft im Browser' },
+          { value: 13,  suffix: '', label: 'Demo-IFC-Modelle' },
+        ],
+      },
+      { type: 'h2', text: 'IFC-Datei in 3 Schritten öffnen' },
+      { type: 'ol', items: [
+        'IFC Viewer im Browser öffnen — Chrome, Firefox, Safari, Edge. Kein Plugin erforderlich.',
+        'IFC-Datei per Drag & Drop in den Viewer ziehen oder über "Datei öffnen" auswählen.',
+        'Das Modell wird in Sekunden gerendert. Die Validierung läuft automatisch im Hintergrund — der Health Score erscheint in der oberen linken Ecke.',
+      ]},
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '🔒', title: 'Privatsphäre by Design', body: 'Dateien werden client-seitig via web-ifc WASM analysiert. Kein Byte erreicht einen Server. Kein Konto erforderlich.' },
+          { icon: '⚡', title: 'Einmal analysiert, dauerhaft gecacht', body: 'Die Geometrie wird im Origin Private File System des Browsers gespeichert. Wiederholte Ladevorgänge sind ~10× schneller.' },
+          { icon: '📐', title: '44 Validierungsregeln', body: 'Von duplizierten GUIDs bis zu Verletzungen der räumlichen Hierarchie — alle wichtigen IFC-Qualitätsprobleme werden in unter 30 Sekunden erkannt.' },
+          { icon: '🌐', title: 'Offline-fähig', body: 'Einmal geladen, läuft die App ohne Netzwerkverbindung. Ideal für Baustellen mit schlechter Verbindung.' },
+        ],
+      },
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Duplex-Apartment — Architektur',
+        description: 'Das klassische buildingSMART-Duplex. Öffnen Sie dieses Modell, um zu sehen, wie ein sauberer Validierungsbericht aussieht — und testen Sie dann Ihre eigene IFC-Datei.',
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+      },
+      { type: 'h2', text: 'Was ist der Health Score?' },
+      { type: 'p', text: 'Jede IFC-Datei erhält einen Health Score von 0 bis 100. Er fasst die strukturelle und datentechnische Qualität des Modells in einer einzigen Zahl zusammen. Ein Wert von 87 bedeutet "geringfügige Probleme, bereit für die Koordination". Ein Wert von 43 bedeutet "schwerwiegende Probleme, nicht an das CDE liefern".' },
+      { type: 'callout', variant: 'tip', text: 'Tastaturkürzel: F um das ausgewählte Element einzurahmen, H um es auszublenden, I um es zu isolieren, Umschalt+H um die volle Sichtbarkeit wiederherzustellen. Strg+Umschalt+V um die Validierung auszuführen.' },
+    ],
+  },
+
+  {
+    slug: 'ifc-validierung-haeufige-fehler',
+    title: 'Die 5 häufigsten IFC-Fehler vor der CDE-Lieferung',
+    excerpt: 'Duplizierte GUIDs, verwaiste Elemente und fehlerhafte räumliche Hierarchien verursachen den Großteil aller Ablehnungen im Common Data Environment. So erkennen und beheben Sie diese Fehler.',
+    date: '2026-05-15',
+    readTimeMin: 7,
+    category: 'Validierung',
+    categorySlug: 'validation',
+    author: 'IFC Viewer Team',
+    lang: 'de',
+    content: [
+      { type: 'p', text: 'Nach der Analyse von Tausenden von IFC-Dateien zeigen sich immer wieder dieselben Muster: Eine Handvoll struktureller Fehler verursacht den Großteil aller abgelehnten CDE-Lieferungen. Hier sind die fünf häufigsten — und wie Sie sie beheben, bevor die Datei den Koordinator erreicht.' },
+      { type: 'h2', text: '1. Duplizierte GlobalIds (GUIDs)' },
+      { type: 'p', text: 'Ein GlobalId ist die dauerhafte Identität eines IFC-Elements über Modellzusammenführungen, Versionsaktualisierungen und Softwaremigrationen hinweg. Wenn zwei Elemente dieselbe GUID teilen, versagt jedes Werkzeug, das auf stabile Referenzen angewiesen ist — BCF-Workflows, Revit-Links, CDE-Versionierung — lautlos.' },
+      { type: 'callout', variant: 'tip', text: 'In Revit: Datei → Exportieren → IFC → Setup ändern → Erweitert → "IFC-GUIDs exportieren" auf "Vorhandene beibehalten" setzen. Dadurch werden die stabilen GlobalIds erhalten, anstatt sie bei jedem Export neu zu generieren.' },
+      { type: 'h2', text: '2. Verwaiste Elemente' },
+      { type: 'p', text: 'Ein verwaistes Element ist ein physisches Element ohne räumlichen Container in der IFC-Hierarchie. Es existiert in der Datei, erscheint aber nicht im Baum Projekt → Gelände → Gebäude → Geschoss. Die meisten Viewer überspringen verwaiste Elemente vollständig.' },
+      { type: 'h2', text: '3. Falscher Container' },
+      { type: 'p', text: 'Das Element hat einen Container, aber den falschen — es befindet sich direkt in IfcSite statt in einem Geschoss. Die Platzierung auf Geländeebene ist nur für Infrastrukturelemente gültig. Wände oder Stützen in IfcSite werden jedes nachgelagerte Werkzeug verwirren.' },
+      { type: 'h2', text: '4. Fehlendes IfcProject' },
+      { type: 'p', text: 'Jede gültige IFC-Datei muss genau ein IfcProject enthalten — den Wurzelknoten der gesamten Modellhierarchie. Einige Export-Workflows, die Teilmodelle generieren, lassen es weg.' },
+      { type: 'h2', text: '5. Fehler in der räumlichen Hierarchie' },
+      { type: 'p', text: 'IFC schreibt eine strenge Reihenfolge vor: IfcProject → IfcSite → IfcBuilding → IfcBuildingStorey → physische Elemente. Wenn diese Reihenfolge durchbrochen wird, bauen viele Werkzeuge den Baum nicht korrekt auf.' },
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Live-Validierung starten',
+        description: 'Öffnen Sie das buildingSMART-Duplex und sehen Sie, wie ein sauberer IFC-Validierungsbericht aussieht — dann testen Sie Ihre eigene Datei auf diese fünf Fehler.',
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+      },
+    ],
+  },
+
+]
+
+// ─── Posts en francés ─────────────────────────────────────────────────────────
+
+export const BLOG_POSTS_FR: BlogPost[] = [
+
+  {
+    slug: 'ouvrir-fichier-ifc-navigateur',
+    title: 'Ouvrir un fichier IFC dans le navigateur — gratuit, sans installation',
+    excerpt: "Votre client vient de vous envoyer un fichier IFC de 200 Mo. Pas de Revit, pas de Navisworks. Voici comment l'ouvrir, l'inspecter et le valider directement dans votre navigateur.",
+    date: '2026-06-01',
+    readTimeMin: 5,
+    category: 'Guides outils',
+    categorySlug: 'tool-guides',
+    author: 'IFC Viewer Team',
+    lang: 'fr',
+    featured: true,
+    heroImage: 'ouvrir-fichier-ifc-navigateur',
+    content: [
+      { type: 'p', text: "Les fichiers IFC sont la langue commune de l'open BIM — mais ils sont notoirement difficiles à ouvrir sans logiciel spécialisé et des licences coûteuses. La plupart des visionneuses en ligne téléchargent votre fichier sur un serveur (impossible pour les données de projet confidentielles) ou échouent sur les fichiers de plus de 10 Mo." },
+      { type: 'p', text: "Ce visualiseur analyse les fichiers IFC entièrement dans le navigateur via WebAssembly. La géométrie ne quitte jamais votre appareil. Vous pouvez ouvrir un fichier de 200 Mo dans un avion, en mode hors ligne." },
+      {
+        type: 'stat-row',
+        stats: [
+          { value: 38,  suffix: '', label: 'règles de validation' },
+          { value: 0,   suffix: ' octet', label: 'envoyé au serveur' },
+          { value: 100, suffix: '%', label: 'dans le navigateur' },
+          { value: 13,  suffix: '', label: 'modèles IFC de démo' },
+        ],
+      },
+      { type: 'h2', text: 'Ouvrir un fichier IFC en 3 étapes' },
+      { type: 'ol', items: [
+        "Ouvrez IFC Viewer dans n'importe quel navigateur — Chrome, Firefox, Safari, Edge. Aucune extension requise.",
+        "Glissez-déposez votre fichier .ifc dans la visionneuse, ou cliquez sur \"Ouvrir un fichier\" pour le sélectionner.",
+        "Le modèle s'affiche en quelques secondes. La validation démarre automatiquement en arrière-plan — le Health Score apparaît en haut à gauche.",
+      ]},
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '🔒', title: 'Confidentialité by design', body: 'Les fichiers sont analysés côté client via web-ifc WASM. Aucun octet n\'atteint un serveur. Aucun compte requis.' },
+          { icon: '⚡', title: 'Analysé une fois, mis en cache', body: 'La géométrie est stockée dans le système de fichiers privé du navigateur. Les chargements répétés sont ~10× plus rapides.' },
+          { icon: '📐', title: '44 règles de validation', body: 'Des GUIDs dupliqués aux violations de hiérarchie spatiale — tous les problèmes majeurs de qualité IFC détectés en moins de 30 secondes.' },
+          { icon: '🌐', title: 'Fonctionne hors ligne', body: 'Une fois chargée, l\'application fonctionne sans connexion réseau. Idéal pour les chantiers avec une mauvaise connectivité.' },
+        ],
+      },
+      {
+        type: 'ifc-demo',
+        modelId: 'duplex-architecture',
+        title: 'Duplex — Architecture (modèle de démonstration)',
+        description: 'Ouvrez le duplex buildingSMART de référence pour voir ce qu\'un rapport de validation propre ressemble — puis testez votre propre fichier IFC.',
+        schema: 'IFC2x3',
+        size: '2.4 MB',
+      },
+      { type: 'h2', text: "Qu'est-ce que le Health Score ?" },
+      { type: 'p', text: "Chaque fichier IFC reçoit un Health Score de 0 à 100. Il résume la qualité structurelle et des données du modèle en un seul chiffre. Un score de 87 signifie 'problèmes mineurs, prêt pour la coordination'. Un score de 43 signifie 'problèmes graves, ne pas livrer à la GED'." },
+      { type: 'callout', variant: 'info', text: "Ajoutez un seuil minimum de Health Score dans votre PEB (Plan d'Exécution BIM). Une clause comme 'Les livraisons IFC doivent atteindre un Health Score ≥ 80 avant upload vers la GED' ne coûte rien à écrire et évite des semaines de retard en coordination." },
     ],
   },
 

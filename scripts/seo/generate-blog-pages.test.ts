@@ -231,3 +231,107 @@ describe('generateBlogPages — llms.txt injection', () => {
     expect(count).toBe(1)
   })
 })
+
+// ── Language grouping ─────────────────────────────────────────────────────────
+//
+// Regression guard. English posts were once appended to BLOG_POSTS_FR, so the
+// generator — which used to map "array" to "URL prefix" — published their shells
+// at /fr/blog/<slug>/ with a French canonical, while the SPA (which groups by
+// each post's own `lang`) served them in English at /blog/<slug>/. Nothing
+// caught it because every assertion above only looks at BLOG_POSTS.
+
+describe('generateBlogPages — language grouping', () => {
+  const ARRAYS: [string, typeof BLOG_POSTS][] = [
+    ['en', BLOG_POSTS],
+    ['es', BLOG_POSTS_ES],
+    ['de', BLOG_POSTS_DE],
+    ['fr', BLOG_POSTS_FR],
+  ]
+
+  it('every post sits in the array matching its own lang', () => {
+    for (const [lang, arr] of ARRAYS) {
+      for (const post of arr) {
+        expect(
+          post.lang ?? 'en',
+          `"${post.slug}" is lang="${post.lang ?? 'en'}" but lives in the ${lang.toUpperCase()} array`,
+        ).toBe(lang)
+      }
+    }
+  })
+
+  it('publishes every post under its own language prefix only', () => {
+    for (const [lang, arr] of ARRAYS) {
+      const prefix = lang === 'en' ? [] : [lang]
+      for (const post of arr) {
+        expect(
+          existsSync(path.join(OUT, ...prefix, 'blog', post.slug, 'index.html')),
+          `${post.slug} should be published at /${lang === 'en' ? '' : `${lang}/`}blog/`,
+        ).toBe(true)
+      }
+    }
+  })
+
+  it('does not publish English posts under a language prefix', () => {
+    for (const post of BLOG_POSTS) {
+      for (const lang of ['es', 'de', 'fr']) {
+        expect(
+          existsSync(path.join(OUT, lang, 'blog', post.slug, 'index.html')),
+          `${post.slug} is English — it must not exist at /${lang}/blog/`,
+        ).toBe(false)
+      }
+    }
+  })
+
+  it('gives every post a canonical matching the directory it was written to', () => {
+    for (const [lang, arr] of ARRAYS) {
+      const prefix = lang === 'en' ? '' : `${lang}/`
+      for (const post of arr) {
+        const html = readFileSync(
+          path.join(OUT, ...(lang === 'en' ? [] : [lang]), 'blog', post.slug, 'index.html'),
+          'utf-8',
+        )
+        expect(html).toContain(`rel="canonical" href="${SITE}/${prefix}blog/${post.slug}/"`)
+      }
+    }
+  })
+})
+
+// ── Sitemap completeness ──────────────────────────────────────────────────────
+//
+// The injection used to be all-or-nothing ("skip if the file already mentions
+// /blog/"), which froze the list at whatever public/sitemap.xml was hand-written
+// with — fourteen English posts were missing. It now adds per URL.
+
+describe('generateBlogPages — sitemap completeness', () => {
+  it('adds posts that a pre-existing sitemap does not already list', () => {
+    const partial = path.join(OUT, 'sitemap-partial.xml')
+    const dir     = path.join(OUT, 'partial')
+    rmSync(dir, { recursive: true, force: true })
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(path.join(dir, 'index.html'), TEMPLATE_HTML)
+
+    // A sitemap that already knows about /blog/ and the first post, nothing else.
+    writeFileSync(
+      path.join(dir, 'sitemap.xml'),
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' +
+      `  <url><loc>${SITE}/blog/</loc></url>\n` +
+      `  <url><loc>${SITE}/blog/${BLOG_POSTS[0].slug}/</loc></url>\n` +
+      '</urlset>\n',
+    )
+
+    const r = generateBlogPages(dir)
+    expect(r.sitemap).toBe(true)
+
+    const xml = readFileSync(path.join(dir, 'sitemap.xml'), 'utf-8')
+    for (const post of BLOG_POSTS) {
+      expect(xml, `${post.slug} missing from the sitemap`).toContain(`<loc>${SITE}/blog/${post.slug}/</loc>`)
+    }
+    // The entry that was already there is not duplicated.
+    const dupes = (xml.match(new RegExp(`<loc>${SITE}/blog/${BLOG_POSTS[0].slug}/</loc>`, 'g')) ?? []).length
+    expect(dupes).toBe(1)
+
+    rmSync(partial, { force: true })
+    rmSync(dir, { recursive: true, force: true })
+  })
+})
