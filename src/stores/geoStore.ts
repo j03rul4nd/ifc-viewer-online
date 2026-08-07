@@ -19,7 +19,7 @@ const log = createLogger('GeoStore')
 
 /** Empty per-layer counts — the shape `buildingsCounts` always has. */
 const NO_FEATURE_COUNTS: Record<FeatureKind, number> =
-  { building: 0, water: 0, green: 0, tree: 0, bridge: 0 }
+  { building: 0, water: 0, green: 0, tree: 0, bridge: 0, road: 0, rail: 0 }
 
 /**
  * The transient half of the buildings state: everything a finished query filled
@@ -49,6 +49,7 @@ const LS_LAYERS        = 'ifc-geo-osm-layers:v1'
 function readFeatureLayers(): FeatureLayerVisibility {
   const fallback: FeatureLayerVisibility = {
     building: true, water: true, green: true, tree: true, bridge: true,
+    road: true, rail: true,
   }
   const raw = lsGet(LS_LAYERS)
   if (!raw) return fallback
@@ -219,7 +220,7 @@ export const useGeoStore = create<GeoStore>()(
       terrainLook:    readTerrainLook(),
       buildingsEnabled:   lsGet(LS_BUILDINGS) === '1',
       buildingsStatus:    'idle' as const,
-      buildingsCounts:    { building: 0, water: 0, green: 0, tree: 0, bridge: 0 },
+      buildingsCounts:    { building: 0, water: 0, green: 0, tree: 0, bridge: 0, road: 0, rail: 0 },
       buildingsEstimated: 0,
       featureLayers:      readFeatureLayers(),
       buildingsTruncated: false,

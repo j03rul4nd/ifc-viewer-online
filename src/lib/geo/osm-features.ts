@@ -21,9 +21,11 @@ import {
 import { treeShape, greenTone, type TreeShape } from './feature-variation'
 
 /** Scene layers the user can show or hide independently. */
-export type FeatureKind = 'building' | 'water' | 'green' | 'tree' | 'bridge'
+export type FeatureKind =
+  | 'building' | 'water' | 'green' | 'tree' | 'bridge' | 'road' | 'rail'
 
-export const FEATURE_KINDS: readonly FeatureKind[] = ['building', 'water', 'green', 'tree', 'bridge']
+export const FEATURE_KINDS: readonly FeatureKind[] =
+  ['building', 'water', 'green', 'tree', 'bridge', 'road', 'rail']
 
 export interface LatLonPoint { lat: number; lon: number }
 
@@ -54,8 +56,11 @@ export interface FeatureStyle {
   crownRadiusM?: number
   /** Canopy silhouette (trees), resolved from `leaf_type`. */
   treeShape?: TreeShape
+  /** Rail features: a corridor of track, or a station platform slab. */
+  railKind?: 'track' | 'platform'
   /**
-   * Base RGB for greenery, by what it actually is (forest vs lawn vs pitch).
+   * Base RGB for a surface, by what it actually is — greenery (forest vs lawn),
+   * road (motorway vs footpath), rail (ballast vs platform).
    * Resolved HERE rather than shipping raw tags to the renderer: a
    * neighbourhood is thousands of features, and cloning every tag map across
    * the worker boundary would cost far more than the few numbers we need.
@@ -78,6 +83,82 @@ const GREEN_LANDUSE = new Set([
   'allotments', 'orchard', 'vineyard', 'cemetery',
 ])
 const GREEN_NATURAL = new Set(['wood', 'scrub', 'grassland', 'heath'])
+
+/**
+ * Road classes worth drawing. Excludes what is not a carriageway (crossings and
+ * bus stops are nodes) and what does not exist yet — a proposed motorway drawn
+ * as asphalt is a lie about the site.
+ */
+const ROAD_VALUES = new Set([
+  'motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary', 'primary_link',
+  'secondary', 'secondary_link', 'tertiary', 'tertiary_link', 'unclassified',
+  'residential', 'living_street', 'service', 'pedestrian', 'footway', 'path',
+  'cycleway', 'track', 'steps',
+])
+
+/** Rail we draw. Abandoned, disused and proposed alignments are deliberately out. */
+const RAIL_VALUES = new Set([
+  'rail', 'light_rail', 'subway', 'tram', 'narrow_gauge', 'monorail',
+  'funicular', 'preserved', 'platform',
+])
+
+/** Per-class carriageway width when the way carries neither width nor lanes. */
+const ROAD_DEFAULT_WIDTH: Record<string, number> = {
+  motorway: 14, motorway_link: 7, trunk: 12, trunk_link: 7,
+  primary: 10, primary_link: 6, secondary: 9, secondary_link: 6,
+  tertiary: 8, tertiary_link: 5.5, unclassified: 6.5, residential: 6.5,
+  living_street: 5.5, service: 4, pedestrian: 5, footway: 2,
+  path: 1.6, cycleway: 2.2, track: 3, steps: 1.6,
+}
+
+/**
+ * Carriageway width in metres: an explicit `width` wins, else lanes x 3.2 m plus
+ * a shoulder on the fast classes, else the per-class default.
+ */
+export function roadWidth(tags: Record<string, string> | undefined): number {
+  const t = tags ?? {}
+  const explicit = parseLengthM(t['width'])
+  if (explicit && explicit > 0) return Math.min(40, explicit)
+  const cls = t['highway'] ?? ''
+  const lanes = parseFloat(t['lanes'] ?? '')
+  if (Number.isFinite(lanes) && lanes > 0) {
+    const shoulder = cls.startsWith('motorway') || cls.startsWith('trunk') ? 2.5 : 0.6
+    return Math.min(40, lanes * 3.2 + shoulder)
+  }
+  return ROAD_DEFAULT_WIDTH[cls] ?? 6
+}
+
+/**
+ * Rail corridor width: the ballast shoulder, not the 1.435 m gauge — a track
+ * occupies about 4.5 m of ground, and `tracks` multiplies it.
+ */
+export function railWidth(tags: Record<string, string> | undefined): number {
+  const t = tags ?? {}
+  const explicit = parseLengthM(t['width'])
+  if (explicit && explicit > 0) return Math.min(60, explicit)
+  const tracks = parseFloat(t['tracks'] ?? '')
+  const n = Number.isFinite(tracks) && tracks > 0 ? tracks : 1
+  const light = t['railway'] === 'tram' || t['railway'] === 'subway'
+  return Math.min(60, n * (light ? 3.2 : 4.5))
+}
+
+/** Asphalt darkens with importance; unpaved ways go warm. */
+const ROAD_TONES: Record<string, [number, number, number]> = {
+  motorway: [0.30, 0.30, 0.33], trunk: [0.32, 0.32, 0.35],
+  primary: [0.35, 0.35, 0.38], secondary: [0.37, 0.37, 0.40],
+  tertiary: [0.39, 0.39, 0.41], unclassified: [0.41, 0.41, 0.43],
+  residential: [0.41, 0.41, 0.43], living_street: [0.43, 0.43, 0.45],
+  service: [0.44, 0.44, 0.46], pedestrian: [0.50, 0.47, 0.44],
+  footway: [0.52, 0.46, 0.39], path: [0.50, 0.44, 0.36],
+  cycleway: [0.36, 0.36, 0.44], track: [0.47, 0.43, 0.34],
+  steps: [0.50, 0.46, 0.42],
+}
+
+export function roadTone(tags: Record<string, string> | undefined): [number, number, number] {
+  const cls = (tags?.['highway'] ?? '').replace(/_link$/, '')
+  return ROAD_TONES[cls] ?? [0.41, 0.41, 0.43]
+}
+
 const WATER_LANDUSE = new Set(['reservoir', 'basin'])
 
 /**
@@ -112,6 +193,13 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
     GREEN_LANDUSE.has(t['landuse'] ?? '') ||
     GREEN_NATURAL.has(t['natural'] ?? '')
   ) return 'green'
+
+  // Rail before road: a tramway down a street is rail infrastructure, and a
+  // station platform is not a footpath.
+  if (RAIL_VALUES.has(t['railway'] ?? '')) return 'rail'
+  if (t['public_transport'] === 'platform' && t['railway'] !== undefined) return 'rail'
+
+  if (ROAD_VALUES.has(t['highway'] ?? '')) return 'road'
 
   return null
 }
@@ -180,6 +268,20 @@ export function resolveFeatureStyle(
     return { roofShape: 'flat', roofHeightM: 0, tone: greenTone(t) }
   }
 
+  if (kind === 'road') {
+    return { roofShape: 'flat', roofHeightM: 0, tone: roadTone(t) }
+  }
+
+  if (kind === 'rail') {
+    const platform = t['railway'] === 'platform' || t['public_transport'] === 'platform'
+    return {
+      roofShape: 'flat', roofHeightM: 0,
+      railKind: platform ? 'platform' : 'track',
+      // Ballast is warm grey; a platform is paler concrete.
+      tone: platform ? [0.52, 0.51, 0.52] : [0.40, 0.37, 0.33],
+    }
+  }
+
   const roofShape = parseRoofShape(t['roof:shape'])
   const tagged = parseLengthM(t['roof:height'])
   return {
@@ -210,6 +312,9 @@ export const MIN_AREA_M2: Record<Exclude<FeatureKind, 'tree'>, number> = {
   water: 40,
   green: 60,
   bridge: 10,
+  // Linear ways carry a width instead of an area; only platforms are polygons.
+  road: 0,
+  rail: 4,
 }
 
 /**
@@ -254,6 +359,17 @@ export function parseOsmFeatures(json: unknown): OsmFeature[] {
         out.push({
           id: `w${el.id}`, kind, ring: pts, height,
           widthM: bridgeWidth(el.tags), style,
+        })
+        continue
+      }
+
+      // Roads and track are centrelines with a width. Closed ones exist (a
+      // roundabout, a loop of track) and are still ribbons, not areas — only a
+      // platform is a real polygon.
+      if ((kind === 'road' || kind === 'rail') && style.railKind !== 'platform') {
+        out.push({
+          id: `w${el.id}`, kind, ring: pts, height,
+          widthM: kind === 'road' ? roadWidth(el.tags) : railWidth(el.tags), style,
         })
         continue
       }
@@ -348,6 +464,9 @@ export function buildFeaturesQuery(
     `way["bridge"]["highway"](${b});`,
     `way["bridge"]["railway"](${b});`,
     `node["natural"="tree"](${b});`,
+    `way["highway"](${b});`,
+    `way["railway"](${b});`,
+    area('["railway"="platform"]'),
     ');',
     `out geom ${maxElements};`,
   ].join('')
@@ -355,7 +474,7 @@ export function buildFeaturesQuery(
 
 /** Count features per layer — for the "what did we find?" panel readout. */
 export function countByKind(features: ReadonlyArray<OsmFeature>): Record<FeatureKind, number> {
-  const counts = { building: 0, water: 0, green: 0, tree: 0, bridge: 0 }
+  const counts = { building: 0, water: 0, green: 0, tree: 0, bridge: 0, road: 0, rail: 0 }
   for (const f of features) counts[f.kind]++
   return counts
 }

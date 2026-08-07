@@ -130,7 +130,9 @@
       "water": "Acqua",
       "green": "Parchi e verde",
       "tree": "Alberi",
-      "bridge": "Ponti"
+      "bridge": "Ponti",
+      "road": "Roads & paths",
+      "rail": "Railways & platforms"
     }
   },
   "placement": {

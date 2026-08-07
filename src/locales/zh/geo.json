@@ -130,7 +130,9 @@
       "water": "水域",
       "green": "公园与绿地",
       "tree": "树木",
-      "bridge": "桥梁"
+      "bridge": "桥梁",
+      "road": "Roads & paths",
+      "rail": "Railways & platforms"
     }
   },
   "placement": {

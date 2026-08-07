@@ -5,7 +5,9 @@
 
 import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
-import { buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, bufferCentreline } from './osm-scene'
+import {
+  buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, bufferCentreline, buildLinearLayer,
+} from './osm-scene'
 import type { OsmFeature } from './osm-features'
 
 const LAT = 48.8556
@@ -262,5 +264,97 @@ describe('buildTreeLayer', () => {
       return p.z
     }
     expect(zOf(raised)).toBeGreaterThan(zOf(flat))
+  })
+})
+
+// ── Roads and rail ────────────────────────────────────────────────────────────
+
+function linear(kind: 'road' | 'rail', id: string, opts: Partial<OsmFeature> = {}): OsmFeature {
+  return {
+    id, kind,
+    ring: [
+      { lat: LAT, lon: LON },
+      { lat: LAT, lon: LON + 0.002 },
+      { lat: LAT + 0.001, lon: LON + 0.004 },
+    ],
+    height: { heightM: 0, minHeightM: 0, estimated: true },
+    widthM: 8,
+    style: { roofShape: 'flat', roofHeightM: 0, tone: [0.4, 0.4, 0.42], railKind: kind === 'rail' ? 'track' : undefined },
+    ...opts,
+  }
+}
+
+describe('buildLinearLayer', () => {
+  it('returns null when the layer has nothing in it', () => {
+    expect(buildLinearLayer([], 'road', OPTS)).toBeNull()
+    expect(buildLinearLayer([linear('rail', 'r1')], 'road', OPTS)).toBeNull()
+  })
+
+  it('buffers a centreline into a ribbon with a colour per vertex', () => {
+    const built = buildLinearLayer([linear('road', 'w1')], 'road', OPTS)!
+    expect(built.count).toBe(1)
+    const g = built.object.geometry
+    expect(g.getAttribute('position').count).toBeGreaterThan(0)
+    expect(g.getAttribute('color').count).toBe(g.getAttribute('position').count)
+  })
+
+  it('keeps every class in ONE draw call', () => {
+    const many = Array.from({ length: 60 }, (_, i) => linear('road', `w${i}`, {
+      style: { roofShape: 'flat', roofHeightM: 0, tone: [i / 100, 0.4, 0.4] },
+    }))
+    const built = buildLinearLayer(many, 'road', OPTS)!
+    expect(built.count).toBe(60)
+    expect(built.object.isMesh).toBe(true)
+    // Distinct tones survive, in a single geometry.
+    const c = built.object.geometry.getAttribute('color')
+    const reds = new Set<string>()
+    for (let i = 0; i < c.count; i++) reds.add(c.getX(i).toFixed(4))
+    expect(reds.size).toBeGreaterThan(30)
+  })
+
+  it('lays rails on top of the ballast, so a corridor reads as a railway', () => {
+    const ballastOnly = buildLinearLayer(
+      [linear('rail', 'r1', { style: { roofShape: 'flat', roofHeightM: 0, tone: [0.4, 0.37, 0.33], railKind: 'platform' } })],
+      'rail', OPTS,
+    )!
+    const withRails = buildLinearLayer([linear('rail', 'r2')], 'rail', OPTS)!
+    // The track version carries the two extra steel ribbons.
+    expect(withRails.object.geometry.getAttribute('position').count)
+      .toBeGreaterThan(ballastOnly.object.geometry.getAttribute('position').count)
+  })
+
+  it('sits rail above road, and both above the ground', () => {
+    const road = buildLinearLayer([linear('road', 'w1')], 'road', OPTS)!
+    const rail = buildLinearLayer([linear('rail', 'r1')], 'rail', OPTS)!
+    const topZ = (m: THREE.Mesh): number => {
+      const p = m.geometry.getAttribute('position')
+      let max = -Infinity
+      for (let i = 0; i < p.count; i++) max = Math.max(max, p.getZ(i))
+      return max
+    }
+    expect(topZ(road.object)).toBeGreaterThan(0)
+    expect(topZ(rail.object)).toBeGreaterThan(topZ(road.object))
+    // Both sit in the same overlay band, above greenery (2) and water (3);
+    // within the band the stack comes from the order geo-system adds them, so a
+    // tramway lands on the asphalt rather than under it.
+    expect(road.object.renderOrder).toBe(4)
+    expect(rail.object.renderOrder).toBe(4)
+  })
+
+  it('drapes over the ground it is given', () => {
+    const sloped = buildLinearLayer([linear('road', 'w1')], 'road', {
+      ...OPTS,
+      anchorElevationM: 0,
+      sampleGroundM: (nx: number) => nx * 100_000,
+    })!
+    const p = sloped.object.geometry.getAttribute('position')
+    const zs = Array.from({ length: p.count }, (_, i) => p.getZ(i))
+    expect(Math.max(...zs) - Math.min(...zs)).toBeGreaterThan(0)
+  })
+
+  it('caps how much it will draw', () => {
+    const many = Array.from({ length: 5000 }, (_, i) => linear('road', `w${i}`))
+    const built = buildLinearLayer(many, 'road', OPTS)!
+    expect(built.count).toBeLessThanOrEqual(3000)
   })
 })

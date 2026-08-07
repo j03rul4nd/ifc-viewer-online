@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   classifyFeature, parseOsmColor, parseRoofShape, resolveFeatureStyle,
   parseOsmFeatures, buildFeaturesQuery, bridgeWidth, countByKind,
+  roadWidth, railWidth, roadTone,
   FEATURE_KINDS, MIN_AREA_M2,
   type OsmFeature,
 } from './osm-features'
@@ -31,8 +32,9 @@ describe('classifyFeature', () => {
   })
 
   it('does not call a plain road a bridge', () => {
-    expect(classifyFeature({ highway: 'primary' })).toBeNull()
-    expect(classifyFeature({ bridge: 'no', highway: 'primary' })).toBeNull()
+    // A road is a road; only bridge=yes lifts it onto a deck.
+    expect(classifyFeature({ highway: 'primary' })).toBe('road')
+    expect(classifyFeature({ bridge: 'no', highway: 'primary' })).toBe('road')
     // bridge=yes without a carried way is not enough on its own
     expect(classifyFeature({ bridge: 'yes' })).toBeNull()
   })
@@ -203,8 +205,11 @@ describe('parseOsmFeatures', () => {
   it('ignores untagged and unmodelled elements', () => {
     const out = parseOsmFeatures({
       elements: [
-        { type: 'way', id: 30, tags: { highway: 'residential' }, geometry: ring(41.38, 2.17) },
-        { type: 'way', id: 31, geometry: ring(41.39, 2.17) },
+        // Mapped, but nothing this scene draws.
+        { type: 'way', id: 30, tags: { barrier: 'fence' }, geometry: ring(41.38, 2.17) },
+        { type: 'way', id: 31, tags: { highway: 'proposed' }, geometry: ring(41.385, 2.17) },
+        { type: 'way', id: 32, tags: { railway: 'abandoned' }, geometry: ring(41.39, 2.17) },
+        { type: 'way', id: 33, geometry: ring(41.395, 2.17) },
       ],
     })
     expect(out).toHaveLength(0)
@@ -254,5 +259,146 @@ describe('countByKind', () => {
     expect(counts.tree).toBe(1)
     expect(counts.water).toBe(0)
     for (const k of FEATURE_KINDS) expect(counts[k]).toBeGreaterThanOrEqual(0)
+  })
+})
+
+// ── Roads and railways ────────────────────────────────────────────────────────
+
+describe('road and rail classification', () => {
+  it('draws the carriageway classes and ignores the rest', () => {
+    for (const v of ['motorway', 'residential', 'footway', 'cycleway', 'steps']) {
+      expect(classifyFeature({ highway: v })).toBe('road')
+    }
+    // Not a carriageway, or not built yet.
+    for (const v of ['proposed', 'construction', 'bus_stop', 'street_lamp']) {
+      expect(classifyFeature({ highway: v })).toBeNull()
+    }
+  })
+
+  it('draws live rail and ignores what is gone or not built', () => {
+    for (const v of ['rail', 'light_rail', 'subway', 'tram', 'narrow_gauge', 'platform']) {
+      expect(classifyFeature({ railway: v })).toBe('rail')
+    }
+    for (const v of ['abandoned', 'disused', 'razed', 'proposed']) {
+      expect(classifyFeature({ railway: v })).toBeNull()
+    }
+  })
+
+  it('puts rail ahead of road, so a tramway in a street stays rail', () => {
+    expect(classifyFeature({ highway: 'secondary', railway: 'tram' })).toBe('rail')
+  })
+
+  it('keeps buildings and bridges ahead of both', () => {
+    expect(classifyFeature({ building: 'train_station', railway: 'platform' })).toBe('building')
+    expect(classifyFeature({ highway: 'primary', bridge: 'yes' })).toBe('bridge')
+    expect(classifyFeature({ railway: 'rail', bridge: 'yes' })).toBe('bridge')
+  })
+})
+
+describe('roadWidth', () => {
+  it('prefers an explicit width', () => {
+    expect(roadWidth({ highway: 'residential', width: '9' })).toBe(9)
+    expect(roadWidth({ highway: 'residential', width: '9 m' })).toBe(9)
+  })
+
+  it('derives from lanes, with a shoulder on the fast classes', () => {
+    expect(roadWidth({ highway: 'residential', lanes: '2' })).toBeCloseTo(7.0, 5)
+    expect(roadWidth({ highway: 'motorway', lanes: '3' })).toBeCloseTo(12.1, 5)
+  })
+
+  it('falls back to a per-class default that keeps the hierarchy legible', () => {
+    expect(roadWidth({ highway: 'motorway' })).toBeGreaterThan(roadWidth({ highway: 'residential' }))
+    expect(roadWidth({ highway: 'residential' })).toBeGreaterThan(roadWidth({ highway: 'footway' }))
+    expect(roadWidth({ highway: 'nonsense' })).toBeGreaterThan(0)
+    expect(roadWidth(undefined)).toBeGreaterThan(0)
+  })
+
+  it('never returns an absurd ribbon', () => {
+    expect(roadWidth({ highway: 'motorway', width: '4000' })).toBeLessThanOrEqual(40)
+    expect(roadWidth({ highway: 'motorway', lanes: '400' })).toBeLessThanOrEqual(40)
+  })
+})
+
+describe('railWidth', () => {
+  it('measures the ballast corridor, not the gauge', () => {
+    // A single track is metres wide on the ground, not 1.435.
+    expect(railWidth({ railway: 'rail' })).toBeGreaterThan(3)
+  })
+
+  it('scales with the number of tracks', () => {
+    expect(railWidth({ railway: 'rail', tracks: '4' }))
+      .toBeCloseTo(railWidth({ railway: 'rail' }) * 4, 5)
+  })
+
+  it('keeps trams and metros narrower than heavy rail', () => {
+    expect(railWidth({ railway: 'tram' })).toBeLessThan(railWidth({ railway: 'rail' }))
+  })
+})
+
+describe('roadTone', () => {
+  it('darkens asphalt as the class gets faster', () => {
+    const lum = (t: [number, number, number]): number => t[0] + t[1] + t[2]
+    expect(lum(roadTone({ highway: 'motorway' }))).toBeLessThan(lum(roadTone({ highway: 'residential' })))
+  })
+
+  it('treats a link like its parent class', () => {
+    expect(roadTone({ highway: 'motorway_link' })).toEqual(roadTone({ highway: 'motorway' }))
+  })
+
+  it('sends unpaved ways warm, so a path never reads as tarmac', () => {
+    const path = roadTone({ highway: 'path' })
+    expect(path[0]).toBeGreaterThan(path[2])
+  })
+})
+
+describe('parseOsmFeatures — linear roads and rail', () => {
+  const line = (lat: number): Array<{ lat: number; lon: number }> => [
+    { lat, lon: 2.17 }, { lat, lon: 2.172 }, { lat: lat + 0.0005, lon: 2.174 },
+  ]
+
+  it('keeps a road as a centreline plus a width', () => {
+    const [f] = parseOsmFeatures({
+      elements: [{ type: 'way', id: 5, tags: { highway: 'secondary' }, geometry: line(41.38) }],
+    })
+    expect(f.kind).toBe('road')
+    expect(f.widthM).toBe(roadWidth({ highway: 'secondary' }))
+    expect(f.ring).toHaveLength(3)   // NOT closed into a polygon
+    expect(f.style.tone).toBeDefined()
+  })
+
+  it('keeps a closed way (a roundabout) as a ribbon, not an area', () => {
+    const loop = [...line(41.38), { lat: 41.38, lon: 2.17 }]
+    const [f] = parseOsmFeatures({
+      elements: [{ type: 'way', id: 6, tags: { highway: 'residential', junction: 'roundabout' }, geometry: loop }],
+    })
+    expect(f.kind).toBe('road')
+    expect(f.widthM).toBeGreaterThan(0)
+  })
+
+  it('marks a platform as an area, and track as a corridor', () => {
+    const out = parseOsmFeatures({
+      elements: [
+        { type: 'way', id: 7, tags: { railway: 'rail', tracks: '2' }, geometry: line(41.39) },
+        {
+          type: 'way', id: 8, tags: { railway: 'platform' },
+          geometry: [
+            { lat: 41.4, lon: 2.17 }, { lat: 41.4, lon: 2.1705 },
+            { lat: 41.4004, lon: 2.1705 }, { lat: 41.4004, lon: 2.17 },
+          ],
+        },
+      ],
+    })
+    const track = out.find((f) => f.style.railKind === 'track')!
+    const platform = out.find((f) => f.style.railKind === 'platform')!
+    expect(track.widthM).toBeGreaterThan(0)
+    expect(platform.widthM).toBeUndefined()      // a real polygon
+    expect(platform.ring!.length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('asks Overpass for both, in the same single query', () => {
+    const q = buildFeaturesQuery({ south: 0, west: 0, north: 1, east: 1 })
+    expect(q).toContain('way["highway"]')
+    expect(q).toContain('way["railway"]')
+    expect((q.match(/\[out:json/g) ?? []).length).toBe(1)
   })
 })

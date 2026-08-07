@@ -17,7 +17,9 @@ import { createBasemapEngine, type BasemapEngine } from './basemap-engine'
 import { buildTerrainPatch, tileNormalizedCenter, TERRAIN_EDGE_FADE, type TerrainPatch } from './geo-terrain'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from './terrain-look'
 import { buildBuildingsGeometry } from './building-mesh'
-import { buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, disposeLayer } from './osm-scene'
+import {
+  buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, buildLinearLayer, disposeLayer,
+} from './osm-scene'
 import { FEATURE_KINDS, type OsmFeature, type FeatureKind } from './osm-features'
 import type { BuildingsRequest, BuildingsResponse } from '../../workers/geo-buildings.worker'
 import { composeGeoRootTransform, normalizedToLatLon, northDirection, latLonToTile, type LatLon } from './geo-math'
@@ -213,6 +215,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   const layerObjects = new Map<FeatureKind, THREE.Object3D>()
   let layerVisibility: FeatureLayerVisibility = {
     building: true, water: true, green: true, tree: true, bridge: true,
+    road: true, rail: true,
   }
   let degradedCallback: ((degraded: boolean) => void) | null = null
 
@@ -529,6 +532,14 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     for (const layer of ['water', 'green'] as const) {
       if (!layerVisibility[layer]) continue
       const built = buildSurfaceLayer(osmFeatures, layer, opts)
+      if (built) { geoRoot.add(built.object); layerObjects.set(layer, built.object) }
+    }
+
+    // Ground ribbons before the things that sit on them: roads over greenery,
+    // ballast over roads, bridges over everything.
+    for (const layer of ['road', 'rail'] as const) {
+      if (!layerVisibility[layer]) continue
+      const built = buildLinearLayer(osmFeatures, layer, opts)
       if (built) { geoRoot.add(built.object); layerObjects.set(layer, built.object) }
     }
 

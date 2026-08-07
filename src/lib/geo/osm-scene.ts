@@ -256,6 +256,154 @@ export function buildBridgeLayer(
   return { object: mesh, count }
 }
 
+// ── Roads and rail ─────────────────────────────────────────────────────────────
+
+/** Cap per linear layer. A dense city block can map thousands of service ways. */
+export const MAX_LINEAR = 3000
+
+/**
+ * How far each layer floats above the ground, in metres. Ground surfaces are
+ * coplanar by nature, so the order here IS the draw order: greenery, then
+ * asphalt over it, then ballast over that, then the rails on top.
+ */
+const LINEAR_LIFT_M: Record<'road' | 'rail', number> = { road: 0.25, rail: 0.40 }
+
+/** Steel rail heads sitting on the ballast. */
+const RAIL_STEEL: [number, number, number] = [0.29, 0.29, 0.32]
+/** Half-distance between the two rails of a track, in metres (standard gauge). */
+const RAIL_GAUGE_HALF_M = 0.72
+/** Rail head width, exaggerated to survive at map scale without shimmering. */
+const RAIL_HEAD_HALF_M = 0.22
+
+/**
+ * Ground-hugging ribbons for roads and railways.
+ *
+ * Both are the same problem — a centreline plus a width, draped on whatever the
+ * ground is doing — so they share one builder and differ only in tone and lift.
+ * Colour travels per vertex, which keeps a motorway, a footpath and a tramway in
+ * ONE draw call instead of one per class.
+ *
+ * Why draw them at all when the basemap already shows streets: a raster street
+ * is a picture painted on the terrain. It has no width when you tilt the camera,
+ * it slides over a hill instead of following it, and it cannot pass under a
+ * bridge. For a client-facing view, that difference is the whole point.
+ */
+export function buildLinearLayer(
+  features: ReadonlyArray<OsmFeature>,
+  kind: 'road' | 'rail',
+  opts: LayerMeshOptions,
+): LayerMesh<THREE.Mesh> | null {
+  const mToN = metresToNormalized(opts.anchorLat)
+  const anchorElevation = opts.anchorElevationM ?? 0
+  const sample = opts.sampleGroundM
+  const lift = LINEAR_LIFT_M[kind] * mToN
+
+  const positions: number[] = []
+  const colors: number[] = []
+  let count = 0
+
+  /** Height of the ground under a planar point, in normalized units. */
+  const groundZ = (x: number, y: number): number =>
+    ((sample ? sample(x, y) : anchorElevation) - anchorElevation) * mToN
+
+  /** Two triangles per quad, each vertex draped and tinted. */
+  const pushQuad = (
+    quad: THREE.Vector2[], tone: [number, number, number], extraLift: number,
+  ): void => {
+    const [a, b, c, d] = quad
+    for (const [p0, p1, p2] of [[a, b, c], [a, c, d]] as const) {
+      for (const v of [p0, p1, p2]) {
+        positions.push(v.x, v.y, groundZ(v.x, v.y) + lift + extraLift)
+        colors.push(tone[0], tone[1], tone[2])
+      }
+    }
+  }
+
+  const wanted = features.filter((f) => f.kind === kind && f.ring).slice(0, MAX_LINEAR)
+  for (const f of wanted) {
+    const line = projectRing(f.ring!)
+    const tone = f.style.tone ?? [0.42, 0.42, 0.44]
+
+    if (f.widthM === undefined) {
+      // A platform is a real polygon: fill it, slightly proud of the ballast.
+      const faces = triangulate(line, mToN)
+      if (!faces) continue
+      const platformLift = 0.55 * mToN
+      for (const [i0, i1, i2] of faces) {
+        for (const idx of [i0, i1, i2]) {
+          const v = line[idx]
+          positions.push(v.x, v.y, groundZ(v.x, v.y) + lift + platformLift)
+          colors.push(tone[0], tone[1], tone[2])
+        }
+      }
+      count++
+      continue
+    }
+
+    const half = (f.widthM / 2) * mToN
+    for (const quad of bufferCentreline(line, half)) pushQuad(quad, tone, 0)
+
+    // Rails on top of the ballast: two thin steel ribbons. This is what makes a
+    // corridor read as "railway" rather than "grey path" from any distance.
+    if (kind === 'rail' && f.style.railKind !== 'platform') {
+      const headHalf = RAIL_HEAD_HALF_M * mToN
+      const gauge = RAIL_GAUGE_HALF_M * mToN
+      for (const side of [-1, 1]) {
+        const offsetLine = offsetCentreline(line, side * gauge)
+        for (const quad of bufferCentreline(offsetLine, headHalf)) {
+          pushQuad(quad, RAIL_STEEL, 0.12 * mToN)
+        }
+      }
+    }
+    count++
+  }
+
+  if (count === 0) return null
+
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+  geometry.computeVertexNormals()
+  geometry.computeBoundingSphere()
+
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+    vertexColors: true,
+    // Same contract as the other ground layers: these are coplanar with the
+    // basemap and with each other, and a few centimetres of separation cannot
+    // survive a depth buffer at city scale. Drawing them as ordered, non
+    // depth-writing overlays is what makes the stack deterministic instead of
+    // a flicker that changes with the camera.
+    transparent: true,
+    opacity: kind === 'road' ? 0.82 : 0.88,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  }))
+  mesh.name = `osm-${kind}`
+  // Above greenery (2) and water (3). Rail is added after road, so where a
+  // tramway shares a street the track lands on top of the asphalt.
+  mesh.renderOrder = 4
+  return { object: mesh, count }
+}
+
+/**
+ * Shift a polyline sideways by `offset` (signed, normalized units). Used for the
+ * two rails of a track; simple per-segment offsetting is enough at this scale
+ * because rail alignments have long radii and no sharp corners.
+ */
+function offsetCentreline(line: THREE.Vector2[], offset: number): THREE.Vector2[] {
+  const out: THREE.Vector2[] = []
+  for (let i = 0; i < line.length; i++) {
+    const prev = line[Math.max(0, i - 1)]
+    const next = line[Math.min(line.length - 1, i + 1)]
+    const dx = next.x - prev.x
+    const dy = next.y - prev.y
+    const len = Math.hypot(dx, dy)
+    if (len === 0) { out.push(line[i].clone()); continue }
+    out.push(new THREE.Vector2(line[i].x - (dy / len) * offset, line[i].y + (dx / len) * offset))
+  }
+  return out
+}
+
 // ── Trees ──────────────────────────────────────────────────────────────────────
 
 /** Cap on rendered trees; beyond this the visual gain is nil and the cost is not. */

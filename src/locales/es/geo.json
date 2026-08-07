@@ -129,7 +129,9 @@
       "water": "Agua",
       "green": "Parques y zonas verdes",
       "tree": "Árboles",
-      "bridge": "Puentes"
+      "bridge": "Puentes",
+      "road": "Carreteras y caminos",
+      "rail": "Vías y andenes"
     }
   },
   "placement": {

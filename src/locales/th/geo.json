@@ -130,7 +130,9 @@
       "water": "แหล่งน้ำ",
       "green": "สวนและพื้นที่สีเขียว",
       "tree": "ต้นไม้",
-      "bridge": "สะพาน"
+      "bridge": "สะพาน",
+      "road": "Roads & paths",
+      "rail": "Railways & platforms"
     }
   },
   "placement": {

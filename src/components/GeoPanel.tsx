@@ -24,7 +24,7 @@ import { TERRARIUM_ATTRIBUTION } from '../lib/geo/elevation'
 import { CONTOUR_INTERVALS } from '../lib/geo/terrain-look'
 import { BUILDINGS_ATTRIBUTION } from '../lib/geo/buildings'
 import { collectModelSites, type ModelInput } from '../lib/geo/model-sites'
-import type { FeatureKind } from '../lib/geo/osm-features'
+import { FEATURE_KINDS, type FeatureKind } from '../lib/geo/osm-features'
 import { WGS84_RADIUS, normalizeDeg } from '../lib/geo/geo-math'
 import {
   trackMapModeEnabled, trackMapModeDisabled, trackMapLayerChanged,
@@ -519,8 +519,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
   const baseSheet: 'terms' | 'custom' | null =
     termsSheetOpen ? 'terms' : customFormOpen ? 'custom' : null
 
-  const visibleLayerCount = (['building', 'water', 'green', 'tree', 'bridge'] as const)
-    .filter((k) => store.featureLayers[k]).length
+  const visibleLayerCount = FEATURE_KINDS.filter((k) => store.featureLayers[k]).length
 
   // Badges tell each tab to speak for itself, so nothing has to be opened just
   // to find out whether anything in it is on.
@@ -533,8 +532,9 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
       dot: store.buildingsEnabled,
       // Only when something is hidden: "5/5" is noise that also squeezes the
       // label, while "3/5" is the one fact you cannot see from the outside.
-      badge: store.buildingsEnabled && store.buildingsStatus === 'ready' && visibleLayerCount < 5
-        ? `${visibleLayerCount}/5` : undefined,
+      badge: store.buildingsEnabled && store.buildingsStatus === 'ready'
+        && visibleLayerCount < FEATURE_KINDS.length
+        ? `${visibleLayerCount}/${FEATURE_KINDS.length}` : undefined,
     },
     { id: 'place',   label: t('panel.tabs.place'), dot: mapOn && !!store.placement },
   ]
@@ -930,7 +930,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                           <>
                             <Caption>{t('panel.tabs.context')}</Caption>
                             <div className="flex flex-col">
-                              {(['building', 'water', 'green', 'tree', 'bridge'] as const).map((kind) => (
+                              {FEATURE_KINDS.map((kind) => (
                                 <SwitchRow
                                   key={kind}
                                   compact

@@ -129,7 +129,9 @@
       "water": "Water",
       "green": "Parks & greenery",
       "tree": "Trees",
-      "bridge": "Bridges"
+      "bridge": "Bridges",
+      "road": "Roads & paths",
+      "rail": "Railways & platforms"
     }
   },
   "placement": {
