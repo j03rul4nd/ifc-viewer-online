@@ -100,7 +100,7 @@
     "contours": "Contours",
     "contoursOff": "Off",
     "resetRelief": "Reset relief",
-    "buildings": "Surrounding buildings",
+    "buildings": "Surroundings (OpenStreetMap)",
     "buildingsLoading": "Loading buildings…",
     "buildingsCount": "{{count}} buildings from OpenStreetMap",
     "buildingsEstimated": "{{count}} heights estimated",
@@ -108,7 +108,14 @@
     "buildingsFailed": "Buildings could not be loaded — the map service was busy. Try again.",
     "buildingsTruncated": "Dense area — only part of the buildings are shown.",
     "styleEcosystem": "Ecosystems",
-    "styleEcosystemNote": "Vegetation belts inferred from altitude, latitude and slope — plausible, not observed land cover."
+    "styleEcosystemNote": "Vegetation belts inferred from altitude, latitude and slope — plausible, not observed land cover.",
+    "osm": {
+      "building": "Buildings",
+      "water": "Water",
+      "green": "Parks & greenery",
+      "tree": "Trees",
+      "bridge": "Bridges"
+    }
   },
   "placement": {
     "title": "Placement",

@@ -101,7 +101,7 @@
     "contours": "Curve di livello",
     "contoursOff": "Nessuna",
     "resetRelief": "Reimposta rilievo",
-    "buildings": "Edifici circostanti",
+    "buildings": "Dintorni (OpenStreetMap)",
     "buildingsLoading": "Caricamento edifici…",
     "buildingsCount": "{{count}} edifici da OpenStreetMap",
     "buildingsEstimated": "{{count}} altezze stimate",
@@ -109,7 +109,14 @@
     "buildingsFailed": "Impossibile caricare gli edifici — il servizio era occupato. Riprova.",
     "buildingsTruncated": "Zona densa — è mostrata solo una parte degli edifici.",
     "styleEcosystem": "Ecosistemi",
-    "styleEcosystemNote": "Fasce di vegetazione dedotte da quota, latitudine e pendenza: plausibili, non copertura del suolo rilevata."
+    "styleEcosystemNote": "Fasce di vegetazione dedotte da quota, latitudine e pendenza: plausibili, non copertura del suolo rilevata.",
+    "osm": {
+      "building": "Edifici",
+      "water": "Acqua",
+      "green": "Parchi e verde",
+      "tree": "Alberi",
+      "bridge": "Ponti"
+    }
   },
   "placement": {
     "title": "Placement",

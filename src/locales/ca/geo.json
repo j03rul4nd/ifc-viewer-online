@@ -101,7 +101,7 @@
     "contours": "Corbes de nivell",
     "contoursOff": "Cap",
     "resetRelief": "Restableix el relleu",
-    "buildings": "Edificis de l’entorn",
+    "buildings": "Entorn (OpenStreetMap)",
     "buildingsLoading": "Carregant edificis…",
     "buildingsCount": "{{count}} edificis d’OpenStreetMap",
     "buildingsEstimated": "{{count}} alçades estimades",
@@ -109,7 +109,14 @@
     "buildingsFailed": "No s’han pogut carregar els edificis — el servei estava ocupat. Torna-ho a provar.",
     "buildingsTruncated": "Zona densa — només se’n mostra una part.",
     "styleEcosystem": "Ecosistemes",
-    "styleEcosystemNote": "Estatges de vegetació inferits de l’altitud, la latitud i el pendent: versemblants, no cobertura del sòl observada."
+    "styleEcosystemNote": "Estatges de vegetació inferits de l’altitud, la latitud i el pendent: versemblants, no cobertura del sòl observada.",
+    "osm": {
+      "building": "Edificis",
+      "water": "Aigua",
+      "green": "Parcs i zones verdes",
+      "tree": "Arbres",
+      "bridge": "Ponts"
+    }
   },
   "placement": {
     "title": "Placement",

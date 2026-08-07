@@ -101,7 +101,7 @@
     "contours": "等高线",
     "contoursOff": "关闭",
     "resetRelief": "重置地形渲染",
-    "buildings": "周边建筑",
+    "buildings": "周边环境（OpenStreetMap）",
     "buildingsLoading": "正在加载建筑…",
     "buildingsCount": "来自 OpenStreetMap 的 {{count}} 座建筑",
     "buildingsEstimated": "{{count}} 个高度为估算值",
@@ -109,7 +109,14 @@
     "buildingsFailed": "无法加载建筑 — 服务繁忙，请重试。",
     "buildingsTruncated": "密集区域 — 仅显示部分建筑。",
     "styleEcosystem": "生态带",
-    "styleEcosystemNote": "植被垂直带由海拔、纬度和坡度推断而来 — 合理推测，并非实测地表覆盖。"
+    "styleEcosystemNote": "植被垂直带由海拔、纬度和坡度推断而来 — 合理推测，并非实测地表覆盖。",
+    "osm": {
+      "building": "建筑",
+      "water": "水域",
+      "green": "公园与绿地",
+      "tree": "树木",
+      "bridge": "桥梁"
+    }
   },
   "placement": {
     "title": "Placement",

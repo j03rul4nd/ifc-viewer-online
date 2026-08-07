@@ -11,6 +11,8 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { createLogger } from '../lib/logger'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from '../lib/geo/terrain-look'
+import type { FeatureKind } from '../lib/geo/osm-features'
+import type { FeatureLayerVisibility } from '../lib/geo/geo-system'
 import type { GeoPlacement, GeorefExtraction, MapMode, TerrainStatus, TerrainStyle, TerrainLook } from '../lib/geo/geo-types'
 
 const log = createLogger('GeoStore')
@@ -24,6 +26,26 @@ const LS_TERRAIN_STYLE = 'ifc-geo-terrain-style:v1'
 const LS_TERRAIN_EXAGG = 'ifc-geo-terrain-exagg:v1'
 const LS_TERRAIN_LOOK  = 'ifc-geo-terrain-look:v1'
 const LS_BUILDINGS     = 'ifc-geo-buildings:v1'
+const LS_LAYERS        = 'ifc-geo-osm-layers:v1'
+
+/** Per-layer visibility, persisted. Everything on by default. */
+function readFeatureLayers(): FeatureLayerVisibility {
+  const fallback: FeatureLayerVisibility = {
+    building: true, water: true, green: true, tree: true, bridge: true,
+  }
+  const raw = lsGet(LS_LAYERS)
+  if (!raw) return fallback
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return fallback
+    const o = parsed as Record<string, unknown>
+    const out = { ...fallback }
+    for (const k of Object.keys(fallback) as Array<keyof FeatureLayerVisibility>) {
+      if (typeof o[k] === 'boolean') out[k] = o[k] as boolean
+    }
+    return out
+  } catch { return fallback }
+}
 
 function readTerrainStyle(): TerrainStyle {
   const raw = lsGet(LS_TERRAIN_STYLE)
@@ -100,9 +122,11 @@ interface GeoStore {
   buildingsEnabled: boolean
   /** Lifecycle of the building fetch, for honest UI states. */
   buildingsStatus: 'idle' | 'loading' | 'ready' | 'empty' | 'error'
-  /** How many buildings are drawn, and how many had guessed heights. */
-  buildingsCount: number
+  /** Features drawn per layer, and how many building heights were guessed. */
+  buildingsCounts: Record<FeatureKind, number>
   buildingsEstimated: number
+  /** Which OSM layers are shown. */
+  featureLayers: FeatureLayerVisibility
   /** True when the query hit its cap — the view is a partial picture. */
   buildingsTruncated: boolean
   georefByModel: Record<string, GeorefExtraction>
@@ -136,8 +160,15 @@ interface GeoStore {
   setBuildingsEnabled: (v: boolean) => void
   setBuildingsResult: (
     epoch: number,
-    result: { status: 'idle' | 'loading' | 'ready' | 'empty' | 'error'; count?: number; estimated?: number; truncated?: boolean },
+    result: {
+      status: 'idle' | 'loading' | 'ready' | 'empty' | 'error'
+      counts?: Record<FeatureKind, number>
+      estimated?: number
+      truncated?: boolean
+    },
   ) => void
+  /** Toggle one OSM layer (persisted). */
+  setFeatureLayer: (kind: FeatureKind, visible: boolean) => void
   setTerrainExaggeration: (k: number) => void
   setGeoref: (modelId: string, g: GeorefExtraction) => void
   removeGeoref: (modelId: string) => void
@@ -171,8 +202,9 @@ export const useGeoStore = create<GeoStore>()(
       terrainLook:    readTerrainLook(),
       buildingsEnabled:   lsGet(LS_BUILDINGS) === '1',
       buildingsStatus:    'idle' as const,
-      buildingsCount:     0,
+      buildingsCounts:    { building: 0, water: 0, green: 0, tree: 0, bridge: 0 },
       buildingsEstimated: 0,
+      featureLayers:      readFeatureLayers(),
       buildingsTruncated: false,
       georefByModel:  {},
       placement:      null,
@@ -278,7 +310,11 @@ export const useGeoStore = create<GeoStore>()(
         set(
           v
             ? { buildingsEnabled: true, buildingsStatus: 'loading' as const }
-            : { buildingsEnabled: false, buildingsStatus: 'idle' as const, buildingsCount: 0, buildingsEstimated: 0, buildingsTruncated: false },
+            : {
+                buildingsEnabled: false, buildingsStatus: 'idle' as const,
+                buildingsCounts: { building: 0, water: 0, green: 0, tree: 0, bridge: 0 },
+                buildingsEstimated: 0, buildingsTruncated: false,
+              },
           false,
           'setBuildingsEnabled',
         )
@@ -291,12 +327,23 @@ export const useGeoStore = create<GeoStore>()(
           (s) => (epoch !== s.epoch ? s : {
             ...s,
             buildingsStatus: result.status,
-            buildingsCount: result.count ?? 0,
+            buildingsCounts: result.counts ?? { building: 0, water: 0, green: 0, tree: 0, bridge: 0 },
             buildingsEstimated: result.estimated ?? 0,
             buildingsTruncated: result.truncated ?? false,
           }),
           false,
           'setBuildingsResult',
+        ),
+
+      setFeatureLayer: (kind, visible) =>
+        set(
+          (s) => {
+            const featureLayers = { ...s.featureLayers, [kind]: visible }
+            lsSet(LS_LAYERS, JSON.stringify(featureLayers))
+            return { featureLayers }
+          },
+          false,
+          'setFeatureLayer',
         ),
 
       resetTerrainLook: () => {

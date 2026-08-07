@@ -101,7 +101,7 @@
     "contours": "เส้นชั้นความสูง",
     "contoursOff": "ปิด",
     "resetRelief": "รีเซ็ตภูมิประเทศ",
-    "buildings": "อาคารโดยรอบ",
+    "buildings": "สภาพแวดล้อมโดยรอบ (OpenStreetMap)",
     "buildingsLoading": "กำลังโหลดอาคาร…",
     "buildingsCount": "อาคาร {{count}} หลังจาก OpenStreetMap",
     "buildingsEstimated": "ความสูงประมาณการ {{count}} หลัง",
@@ -109,7 +109,14 @@
     "buildingsFailed": "โหลดอาคารไม่สำเร็จ — บริการไม่ว่าง ลองใหม่อีกครั้ง",
     "buildingsTruncated": "พื้นที่หนาแน่น — แสดงอาคารเพียงบางส่วน",
     "styleEcosystem": "ระบบนิเวศ",
-    "styleEcosystemNote": "แถบพืชพรรณอนุมานจากระดับความสูง ละติจูด และความชัน — สมเหตุสมผลแต่ไม่ใช่สิ่งปกคลุมดินที่สำรวจจริง"
+    "styleEcosystemNote": "แถบพืชพรรณอนุมานจากระดับความสูง ละติจูด และความชัน — สมเหตุสมผลแต่ไม่ใช่สิ่งปกคลุมดินที่สำรวจจริง",
+    "osm": {
+      "building": "อาคาร",
+      "water": "แหล่งน้ำ",
+      "green": "สวนและพื้นที่สีเขียว",
+      "tree": "ต้นไม้",
+      "bridge": "สะพาน"
+    }
   },
   "placement": {
     "title": "Placement",

@@ -24,6 +24,7 @@ import { TERRARIUM_ATTRIBUTION } from '../lib/geo/elevation'
 import { CONTOUR_INTERVALS } from '../lib/geo/terrain-look'
 import { BUILDINGS_ATTRIBUTION } from '../lib/geo/buildings'
 import { collectModelSites, type ModelInput } from '../lib/geo/model-sites'
+import type { FeatureKind } from '../lib/geo/osm-features'
 import { WGS84_RADIUS, normalizeDeg } from '../lib/geo/geo-math'
 import {
   trackMapModeEnabled, trackMapModeDisabled, trackMapLayerChanged,
@@ -368,7 +369,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
       const outcome = await geo.setBuildings(true)
       useGeoStore.getState().setBuildingsResult(epoch, {
         status: outcome.status === 'off' ? 'idle' : outcome.status,
-        count: outcome.status === 'ready' ? outcome.count : 0,
+        counts: outcome.status === 'ready' ? outcome.counts : undefined,
         estimated: outcome.status === 'ready' ? outcome.estimatedCount : 0,
         truncated: outcome.status === 'ready' ? outcome.truncated : false,
       })
@@ -379,6 +380,13 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
       trackMapError({ stage: 'buildings' })
     }
   }, [getGeo, refreshAttributions])
+
+  /** Toggle one OSM layer — instant, rebuilt from the cached features. */
+  const handleFeatureLayer = useCallback((kind: FeatureKind, visible: boolean): void => {
+    useGeoStore.getState().setFeatureLayer(kind, visible)
+    const layers = useGeoStore.getState().featureLayers
+    void getGeo()?.then((geo) => geo.setFeatureLayers(layers))
+  }, [getGeo])
 
   const handleTerrainLook = useCallback((patch: Partial<TerrainLook>): void => {
     useGeoStore.getState().setTerrainLook(patch)
@@ -725,7 +733,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                     {store.buildingsStatus === 'loading' ? t('layers.buildingsLoading') : t('layers.buildings')}
                     {store.buildingsEnabled && store.buildingsStatus === 'ready' && (
                       <span className="block text-[9.5px] text-[var(--text-faint)] leading-snug">
-                        {t('layers.buildingsCount', { count: store.buildingsCount })}
+                        {t('layers.buildingsCount', { count: store.buildingsCounts.building })}
                         {store.buildingsEstimated > 0 && ` · ${t('layers.buildingsEstimated', { count: store.buildingsEstimated })}`}
                       </span>
                     )}
@@ -740,6 +748,28 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                     )}
                   </span>
                 </label>
+
+                {/* Per-layer visibility. Rendered only once we know what was
+                    found, and each row states its own count so an empty layer
+                    reads as "none mapped here" rather than as a broken toggle. */}
+                {store.buildingsEnabled && store.buildingsStatus === 'ready' && (
+                  <div className="flex flex-col gap-1 pl-5">
+                    {(['building', 'water', 'green', 'tree', 'bridge'] as const).map((kind) => (
+                      <label key={kind} className="flex items-center gap-1.5 text-[10.5px] text-[var(--text-dim)] cursor-pointer min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={store.featureLayers[kind]}
+                          onChange={(e) => handleFeatureLayer(kind, e.target.checked)}
+                          className="accent-[var(--accent)] shrink-0"
+                        />
+                        <span className="truncate">{t(`layers.osm.${kind}`)}</span>
+                        <span className="ml-auto shrink-0 font-mono tabular-nums text-[9.5px] text-[var(--text-faint)]">
+                          {store.buildingsCounts[kind]}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
 
                 {/* Terrain visualization controls */}
                 {store.terrainEnabled && (

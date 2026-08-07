@@ -101,7 +101,7 @@
     "contours": "Courbes de niveau",
     "contoursOff": "Aucune",
     "resetRelief": "Réinitialiser le relief",
-    "buildings": "Bâtiments environnants",
+    "buildings": "Environs (OpenStreetMap)",
     "buildingsLoading": "Chargement des bâtiments…",
     "buildingsCount": "{{count}} bâtiments issus d’OpenStreetMap",
     "buildingsEstimated": "{{count}} hauteurs estimées",
@@ -109,7 +109,14 @@
     "buildingsFailed": "Impossible de charger les bâtiments — le service était occupé. Réessayez.",
     "buildingsTruncated": "Zone dense — seule une partie des bâtiments est affichée.",
     "styleEcosystem": "Écosystèmes",
-    "styleEcosystemNote": "Étages de végétation déduits de l'altitude, de la latitude et de la pente : plausibles, pas une occupation du sol observée."
+    "styleEcosystemNote": "Étages de végétation déduits de l'altitude, de la latitude et de la pente : plausibles, pas une occupation du sol observée.",
+    "osm": {
+      "building": "Bâtiments",
+      "water": "Eau",
+      "green": "Parcs et espaces verts",
+      "tree": "Arbres",
+      "bridge": "Ponts"
+    }
   },
   "placement": {
     "title": "Placement",

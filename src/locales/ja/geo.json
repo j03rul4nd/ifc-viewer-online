@@ -101,7 +101,7 @@
     "contours": "等高線",
     "contoursOff": "なし",
     "resetRelief": "レリーフをリセット",
-    "buildings": "周辺の建物",
+    "buildings": "周辺環境（OpenStreetMap）",
     "buildingsLoading": "建物を読み込み中…",
     "buildingsCount": "OpenStreetMap の建物 {{count}} 件",
     "buildingsEstimated": "{{count}} 件は高さが推定値",
@@ -109,7 +109,14 @@
     "buildingsFailed": "建物を読み込めませんでした — サービスが混雑しています。再試行してください。",
     "buildingsTruncated": "密集地域のため、建物の一部のみ表示しています。",
     "styleEcosystem": "生態帯",
-    "styleEcosystemNote": "標高・緯度・傾斜から推定した植生帯です。もっともらしい推定であり、実測の土地被覆ではありません。"
+    "styleEcosystemNote": "標高・緯度・傾斜から推定した植生帯です。もっともらしい推定であり、実測の土地被覆ではありません。",
+    "osm": {
+      "building": "建物",
+      "water": "水域",
+      "green": "公園・緑地",
+      "tree": "樹木",
+      "bridge": "橋"
+    }
   },
   "placement": {
     "title": "Placement",

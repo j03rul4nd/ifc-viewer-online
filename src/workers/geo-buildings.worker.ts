@@ -1,7 +1,12 @@
-// ─── Building footprints Web Worker ───────────────────────────────────────────
-// Fetches OpenStreetMap building footprints around a site (Overpass) and parses
-// them off the main thread. Parsing a dense city block is tens of thousands of
+// ─── OSM scene features Web Worker ────────────────────────────────────────────
+// Fetches the surroundings of a site from OpenStreetMap (Overpass) and parses
+// them off the main thread: buildings, water, greenery, trees and bridges in
+// ONE query. Parsing a dense neighbourhood is hundreds of thousands of
 // coordinates — enough to drop frames if it ran on the UI thread.
+//
+// One query for every layer is deliberate: it keeps us to a single request per
+// site against a shared public service, and makes toggling a layer instant
+// rather than a several-second refetch.
 //
 // Message protocol
 // ─────────────────
@@ -11,18 +16,18 @@
 //
 // No three.js here — the mesh is extruded in geo-system.
 
-import {
-  parseOverpassBuildings, buildOverpassQuery, bboxAround,
-  OVERPASS_ENDPOINT,
-  type BuildingFootprint,
-} from '../lib/geo/buildings'
+import { bboxAround, OVERPASS_ENDPOINT } from '../lib/geo/buildings'
+import { parseOsmFeatures, buildFeaturesQuery, countByKind, type OsmFeature, type FeatureKind } from '../lib/geo/osm-features'
 
 /** Server-side budget. Overpass rejects the query if it cannot finish in time. */
 const QUERY_TIMEOUT_S = 25
 /** Client-side budget, longer than the server's so we see its error, not ours. */
 const FETCH_TIMEOUT_MS = 35_000
-/** Cap on elements returned; a dense centre must not stream tens of megabytes. */
-const MAX_ELEMENTS = 4000
+/**
+ * Cap on elements returned; a dense centre must not stream tens of megabytes.
+ * Raised from the buildings-only era because ONE query now serves every layer.
+ */
+const MAX_ELEMENTS = 6000
 
 export interface BuildingsRequest {
   type: 'fetch-buildings'
@@ -34,7 +39,14 @@ export interface BuildingsRequest {
 }
 
 export type BuildingsResponse =
-  | { type: 'done'; id: string; buildings: BuildingFootprint[]; truncated: boolean }
+  | {
+      type: 'done'
+      id: string
+      /** Every layer, in one payload — toggling a layer never refetches. */
+      features: OsmFeature[]
+      counts: Record<FeatureKind, number>
+      truncated: boolean
+    }
   | { type: 'error'; id: string; message: string }
 
 self.onmessage = (e: MessageEvent<BuildingsRequest>): void => {
@@ -45,7 +57,7 @@ self.onmessage = (e: MessageEvent<BuildingsRequest>): void => {
 async function handleFetch(req: BuildingsRequest): Promise<void> {
   try {
     const bbox = bboxAround(req.lat, req.lon, req.halfSizeM)
-    const query = buildOverpassQuery(bbox, QUERY_TIMEOUT_S, MAX_ELEMENTS)
+    const query = buildFeaturesQuery(bbox, QUERY_TIMEOUT_S, MAX_ELEMENTS)
 
     // AbortController rather than a bare race: a hung request must actually be
     // cancelled, not merely ignored while it keeps the connection open.
@@ -72,11 +84,12 @@ async function handleFetch(req: BuildingsRequest): Promise<void> {
     }
 
     const elements = (json as { elements?: unknown[] })?.elements
-    const buildings = parseOverpassBuildings(json)
+    const features = parseOsmFeatures(json)
     post({
       type: 'done',
       id: req.id,
-      buildings,
+      features,
+      counts: countByKind(features),
       // Hitting the element cap means the view is showing a partial picture.
       truncated: Array.isArray(elements) && elements.length >= MAX_ELEMENTS,
     })

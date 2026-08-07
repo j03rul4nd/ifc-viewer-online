@@ -16,7 +16,20 @@
 
 import * as THREE from 'three'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
-import type { BuildingFootprint } from './buildings'
+import type { BuildingHeight } from './buildings'
+import type { FeatureStyle } from './osm-features'
+
+/**
+ * What this module needs from a building. Structural rather than tied to one
+ * parser, so both the plain footprint list and the richer OSM feature stream
+ * can be extruded by the same code.
+ */
+export interface BuildingLike {
+  ring: ReadonlyArray<{ lat: number; lon: number }>
+  height: BuildingHeight
+  /** Roof shape and tagged colours; absent means a plain flat grey block. */
+  style?: FeatureStyle
+}
 
 /** How far the base is pushed below the sampled ground, metres. */
 const SKIRT_M = 6
@@ -49,7 +62,7 @@ export interface BuildingMeshOptions {
  * should treat that as "no buildings here", not an error.
  */
 export function buildBuildingsGeometry(
-  footprints: ReadonlyArray<BuildingFootprint>,
+  footprints: ReadonlyArray<BuildingLike>,
   opts: BuildingMeshOptions,
 ): BuildingMeshResult | null {
   const metresToNormalized = 1 / (WEB_MERCATOR_WORLD_M * cosLatScale(opts.anchorLat))
@@ -103,15 +116,55 @@ export function buildBuildingsGeometry(
     const baseZ = (baseM - anchorElevation - SKIRT_M) * metresToNormalized
     const topZ = (topM - anchorElevation) * metresToNormalized
 
-    // ── Roof cap ───────────────────────────────────────────────────────────────
-    for (const [a, bIdx, c] of faces) {
-      pushTriangle(
-        positions, normals, colors,
-        ring2d[a], ring2d[bIdx], ring2d[c],
-        topZ, topZ, topZ,
-        0, 0, 1,
-        roofShade(b.height.heightM),
-      )
+    // ── Roof ───────────────────────────────────────────────────────────────────
+    // A shaped roof eats into the tagged total height rather than adding to it:
+    // `height` in OSM is to the ridge, so raising walls to it and then stacking
+    // a roof on top would make every gabled building too tall.
+    const roofShape = b.style?.roofShape ?? 'flat'
+    const roofM = roofShape === 'flat' ? 0 : Math.min(b.style?.roofHeightM ?? 0, (topM - baseM) * 0.5)
+    const eaveZ = (topM - roofM - anchorElevation) * metresToNormalized
+    const roofTint = b.style?.roofColor ? hexToRgb(b.style.roofColor) : null
+    const wallTint = b.style?.wallColor ? hexToRgb(b.style.wallColor) : null
+    const roofBase = roofShade(b.height.heightM)
+
+    if (roofShape === 'flat' || roofM <= 0) {
+      for (const [a, bIdx, c] of faces) {
+        pushTriangle(
+          positions, normals, colors,
+          ring2d[a], ring2d[bIdx], ring2d[c],
+          topZ, topZ, topZ,
+          0, 0, 1,
+          tinted(roofBase, roofTint),
+        )
+      }
+    } else if (roofShape === 'pyramidal') {
+      // Fan every edge up to the centroid — works for any convex-ish outline.
+      const apex = new THREE.Vector2(centroid.x, centroid.y)
+      for (let i = 0; i < ring2d.length; i++) {
+        const p0 = ring2d[i]
+        const p1 = ring2d[(i + 1) % ring2d.length]
+        pushTriangle(
+          positions, normals, colors, p0, p1, apex, eaveZ, eaveZ, topZ,
+          0, 0, 1, tinted(roofBase * 0.94, roofTint),
+        )
+      }
+    } else {
+      // Gabled: a ridge along the footprint's LONG axis. Running it along the
+      // short axis is the classic giveaway of a fake roof — real ridges follow
+      // the building, so the axis is measured rather than assumed.
+      const axis = longestAxis(ring2d)
+      const half = ring2d.map((p) => signedOffset(p, centroid, axis))
+      for (let i = 0; i < ring2d.length; i++) {
+        const j = (i + 1) % ring2d.length
+        const p0 = ring2d[i]
+        const p1 = ring2d[j]
+        // Ridge points are each eave point projected onto the ridge line.
+        const r0 = projectToAxis(p0, centroid, axis)
+        const r1 = projectToAxis(p1, centroid, axis)
+        const shade = roofBase * (half[i] + half[j] > 0 ? 1.0 : 0.86)
+        pushTriangle(positions, normals, colors, p0, p1, r1, eaveZ, eaveZ, topZ, 0, 0, 1, tinted(shade, roofTint))
+        pushTriangle(positions, normals, colors, p0, r1, r0, eaveZ, topZ, topZ, 0, 0, 1, tinted(shade, roofTint))
+      }
     }
 
     // ── Walls ──────────────────────────────────────────────────────────────────
@@ -129,10 +182,12 @@ export function buildBuildingsGeometry(
       const shadeTop = wallShade(nx, ny) * 1.0
       const shadeBottom = wallShade(nx, ny) * 0.72 // ambient darkening at grade
 
-      pushTriangle(positions, normals, colors, p0, p1, p1, baseZ, baseZ, topZ, nx, ny, 0,
-        [shadeBottom, shadeBottom, shadeTop])
-      pushTriangle(positions, normals, colors, p0, p1, p0, baseZ, topZ, topZ, nx, ny, 0,
-        [shadeBottom, shadeTop, shadeTop])
+      // Walls rise to the EAVES, not the ridge — the roof covers the rest.
+      const wallTopZ = eaveZ
+      pushTriangle(positions, normals, colors, p0, p1, p1, baseZ, baseZ, wallTopZ, nx, ny, 0,
+        tintedTriple([shadeBottom, shadeBottom, shadeTop], wallTint))
+      pushTriangle(positions, normals, colors, p0, p1, p0, baseZ, wallTopZ, wallTopZ, nx, ny, 0,
+        tintedTriple([shadeBottom, shadeTop, shadeTop], wallTint))
     }
 
     count++
@@ -187,15 +242,88 @@ function roofShade(heightM: number): number {
   return 0.62 + 0.22 * Math.min(1, heightM / 60)
 }
 
+/** '#rrggbb' → linear-ish 0-1 triple, or null when unparseable. */
+function hexToRgb(hex: string): [number, number, number] | null {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex)
+  if (!m) return null
+  const n = parseInt(m[1], 16)
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]
+}
+
+/**
+ * Combine a shade with an optional tagged colour. Without a colour the shade
+ * IS the greyscale value; with one it modulates the colour, so a tagged
+ * terracotta roof still shows relief instead of turning into a flat sticker.
+ */
+function tinted(shade: number, rgb: [number, number, number] | null): ShadedVertices {
+  const c: [number, number, number] = rgb
+    ? [rgb[0] * shade, rgb[1] * shade, rgb[2] * shade]
+    : [shade, shade, shade]
+  return [c, c, c]
+}
+
+function tintedTriple(
+  shades: [number, number, number], rgb: [number, number, number] | null,
+): ShadedVertices {
+  return shades.map((s) => (
+    rgb ? [rgb[0] * s, rgb[1] * s, rgb[2] * s] : [s, s, s]
+  ) as [number, number, number]) as ShadedVertices
+}
+
+/** Per-vertex RGB for a triangle, when the three corners differ in colour. */
+type ShadedVertices = [
+  [number, number, number], [number, number, number], [number, number, number],
+]
+
+/** Unit vector along the footprint's longest extent — the natural ridge line. */
+function longestAxis(ring: ReadonlyArray<THREE.Vector2>): { x: number; y: number } {
+  let best = { x: 1, y: 0 }
+  let bestLen = -1
+  for (let i = 0; i < ring.length; i++) {
+    for (let j = i + 1; j < ring.length; j++) {
+      const dx = ring[j].x - ring[i].x
+      const dy = ring[j].y - ring[i].y
+      const len = dx * dx + dy * dy
+      if (len > bestLen) { bestLen = len; best = { x: dx, y: dy } }
+    }
+  }
+  const n = Math.hypot(best.x, best.y)
+  return n === 0 ? { x: 1, y: 0 } : { x: best.x / n, y: best.y / n }
+}
+
+/** Which side of the ridge a point falls on (sign only). */
+function signedOffset(
+  p: THREE.Vector2, centre: { x: number; y: number }, axis: { x: number; y: number },
+): number {
+  return (p.x - centre.x) * -axis.y + (p.y - centre.y) * axis.x
+}
+
+/** Foot of the perpendicular from p onto the ridge line through `centre`. */
+function projectToAxis(
+  p: THREE.Vector2, centre: { x: number; y: number }, axis: { x: number; y: number },
+): THREE.Vector2 {
+  const t = (p.x - centre.x) * axis.x + (p.y - centre.y) * axis.y
+  return new THREE.Vector2(centre.x + axis.x * t, centre.y + axis.y * t)
+}
+
 function pushTriangle(
   positions: number[], normals: number[], colors: number[],
   a: THREE.Vector2, b: THREE.Vector2, c: THREE.Vector2,
   az: number, bz: number, cz: number,
   nx: number, ny: number, nz: number,
-  shade: number | [number, number, number],
+  /**
+   * Either ONE uniform grey, or an explicit RGB per vertex. A bare triple of
+   * numbers is deliberately NOT accepted: it is indistinguishable from three
+   * per-vertex greys, and that ambiguity silently painted tinted faces in
+   * greyscale (caught by the roof-colour test).
+   */
+  shade: number | ShadedVertices,
 ): void {
   positions.push(a.x, a.y, az, b.x, b.y, bz, c.x, c.y, cz)
   normals.push(nx, ny, nz, nx, ny, nz, nx, ny, nz)
-  const s = typeof shade === 'number' ? [shade, shade, shade] as const : shade
-  for (const v of s) colors.push(v, v, v)
+  if (typeof shade === 'number') {
+    for (let i = 0; i < 3; i++) colors.push(shade, shade, shade)
+    return
+  }
+  for (const v of shade) colors.push(v[0], v[1], v[2])
 }

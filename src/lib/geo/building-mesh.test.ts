@@ -140,3 +140,74 @@ describe('buildBuildingsGeometry', () => {
     expect(r.count).toBe(1)
   })
 })
+
+describe('roof shapes', () => {
+  const withStyle = (shape: 'flat' | 'gabled' | 'pyramidal', roofHeightM = 3) => ({
+    ...squareFootprint('r', 20, 12),
+    style: { roofShape: shape, roofHeightM },
+  })
+
+  it('a flat roof caps the extrusion at the top', () => {
+    const g = buildBuildingsGeometry([withStyle('flat')], OPTS)!.geometry
+    expect(g.getAttribute('position').count).toBe(30)
+  })
+
+  it('a gabled roof adds ridge geometry beyond the flat cap', () => {
+    const flat = buildBuildingsGeometry([withStyle('flat')], OPTS)!.geometry
+    const gabled = buildBuildingsGeometry([withStyle('gabled')], OPTS)!.geometry
+    expect(gabled.getAttribute('position').count)
+      .toBeGreaterThan(flat.getAttribute('position').count)
+  })
+
+  it('a pyramidal roof rises to a single apex', () => {
+    const g = buildBuildingsGeometry([withStyle('pyramidal')], OPTS)!.geometry
+    const p = g.getAttribute('position')
+    let maxZ = -Infinity
+    let atMax = 0
+    for (let i = 0; i < p.count; i++) {
+      const z = p.getZ(i)
+      if (z > maxZ + 1e-12) { maxZ = z; atMax = 1 } else if (Math.abs(z - maxZ) < 1e-12) atMax++
+    }
+    // Four apex vertices (one per fanned edge), all at the same point.
+    expect(atMax).toBe(4)
+  })
+
+  it('never exceeds the tagged total height — the roof eats into it', () => {
+    const top = (shape: 'flat' | 'gabled' | 'pyramidal'): number => {
+      const p = buildBuildingsGeometry([withStyle(shape)], OPTS)!.geometry.getAttribute('position')
+      let max = -Infinity
+      for (let i = 0; i < p.count; i++) max = Math.max(max, p.getZ(i))
+      return max
+    }
+    expect(top('gabled')).toBeCloseTo(top('flat'), 12)
+    expect(top('pyramidal')).toBeCloseTo(top('flat'), 12)
+  })
+
+  it('clamps an absurd roof height to half the building', () => {
+    // roof:height 999 on a 12 m building must not invert the walls.
+    const g = buildBuildingsGeometry([withStyle('gabled', 999)], OPTS)!.geometry
+    const p = g.getAttribute('position')
+    let min = Infinity
+    let max = -Infinity
+    for (let i = 0; i < p.count; i++) { min = Math.min(min, p.getZ(i)); max = Math.max(max, p.getZ(i)) }
+    expect(max).toBeGreaterThan(min)
+  })
+
+  it('tints roof and walls from tagged colours', () => {
+    const plain = buildBuildingsGeometry([squareFootprint('a', 20)], OPTS)!.geometry
+    const tintedG = buildBuildingsGeometry([{
+      ...squareFootprint('a', 20),
+      style: { roofShape: 'flat', roofHeightM: 0, roofColor: '#ff0000', wallColor: '#0000ff' },
+    }], OPTS)!.geometry
+    const colorOf = (g: typeof plain, i: number): number[] => {
+      const c = g.getAttribute('color')
+      return [c.getX(i), c.getY(i), c.getZ(i)]
+    }
+    // Untinted vertices are greyscale; tinted ones are not.
+    const [pr, pg, pb] = colorOf(plain, 0)
+    expect(pr).toBeCloseTo(pg, 9)
+    expect(pg).toBeCloseTo(pb, 9)
+    const [tr, tg] = colorOf(tintedG, 0)
+    expect(tr).toBeGreaterThan(tg)
+  })
+})

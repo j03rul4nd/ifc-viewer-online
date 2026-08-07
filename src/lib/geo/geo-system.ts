@@ -17,7 +17,8 @@ import { createBasemapEngine, type BasemapEngine } from './basemap-engine'
 import { buildTerrainPatch, tileNormalizedCenter, TERRAIN_EDGE_FADE, type TerrainPatch } from './geo-terrain'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from './terrain-look'
 import { buildBuildingsGeometry } from './building-mesh'
-import type { BuildingFootprint } from './buildings'
+import { buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, disposeLayer } from './osm-scene'
+import { FEATURE_KINDS, type OsmFeature, type FeatureKind } from './osm-features'
 import type { BuildingsRequest, BuildingsResponse } from '../../workers/geo-buildings.worker'
 import { composeGeoRootTransform, normalizedToLatLon, northDirection, latLonToTile, type LatLon } from './geo-math'
 import { createLogger } from '../logger'
@@ -43,12 +44,16 @@ export type BuildingsOutcome =
   | { status: 'error'; message: string }
   | {
       status: 'ready'
-      count: number
-      /** How many of those heights were inferred rather than surveyed. */
+      /** Features drawn per layer. */
+      counts: Record<FeatureKind, number>
+      /** How many building heights were inferred rather than surveyed. */
       estimatedCount: number
       /** True when the query hit its element cap and the picture is partial. */
       truncated?: boolean
     }
+
+/** Which scene layers are currently drawn. */
+export type FeatureLayerVisibility = Record<FeatureKind, boolean>
 
 // ── Context provided by viewer.ts ───────────────────────────────────────────────
 
@@ -114,6 +119,11 @@ export interface GeoSystemAPI {
    * reported through the returned status rather than thrown.
    */
   setBuildings(enabled: boolean): Promise<BuildingsOutcome>
+  /**
+   * Show/hide individual OSM layers. Rebuilds only from the cached features —
+   * never refetches, so toggling a layer is instant.
+   */
+  setFeatureLayers(visible: FeatureLayerVisibility): void
   /** Raycast the map ground plane at client pixel coords → WGS84. */
   pickGround(clientX: number, clientY: number): LatLon | null
   /**
@@ -174,7 +184,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * (which changes the ground the buildings sit on) re-extrudes locally
    * instead of issuing another Overpass query for data we already have.
    */
-  let buildingFootprints: BuildingFootprint[] | null = null
+  let osmFeatures: OsmFeature[] | null = null
+  /** Built meshes per layer, so each can be added or dropped independently. */
+  const layerObjects = new Map<FeatureKind, THREE.Object3D>()
+  let layerVisibility: FeatureLayerVisibility = {
+    building: true, water: true, green: true, tree: true, bridge: true,
+  }
   let degradedCallback: ((degraded: boolean) => void) | null = null
 
   const raycaster = new THREE.Raycaster()
@@ -242,7 +257,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
       teardownTerrain()
       teardownBuildings()
-      buildingFootprints = null
+      osmFeatures = null
       buildingsEnabled = false
       engine.dispose()
       if (geoRoot) {
@@ -356,13 +371,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // Disabled or re-triggered while the query ran — drop the result.
       if (token !== buildingsToken || !geoRoot || !buildingsEnabled) return { status: 'off' }
       if (reply.type === 'error') return { status: 'error', message: reply.message }
-      if (reply.buildings.length === 0) return { status: 'empty' }
+      if (reply.features.length === 0) return { status: 'empty' }
 
-      buildingFootprints = reply.buildings
-      const outcome = addBuildingsMesh(reply.buildings)
-      return outcome
-        ? { ...outcome, truncated: reply.truncated }
-        : { status: 'empty' }
+      osmFeatures = reply.features
+      const estimatedCount = rebuildLayers()
+      return { status: 'ready', counts: reply.counts, estimatedCount, truncated: reply.truncated }
+    },
+
+    setFeatureLayers(visible) {
+      layerVisibility = { ...visible }
+      rebuildLayers()
     },
 
     pickGround(clientX, clientY) {
@@ -419,56 +437,78 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   /** Half-side of the building query area, metres (≈1.4 km across). */
   const BUILDINGS_HALF_SIZE_M = 700
 
-  function addBuildingsMesh(footprints: ReadonlyArray<BuildingFootprint>): BuildingsOutcome | null {
-    if (!geoRoot || !placement) return null
-    const result = buildBuildingsGeometry(footprints, {
+  /**
+   * (Re)build every visible layer from the cached features. Returns how many
+   * building heights were estimated. Never fetches — that is what makes a
+   * layer toggle instant.
+   */
+  function rebuildLayers(): number {
+    clearLayers()
+    if (!geoRoot || !placement || !osmFeatures) return 0
+
+    const opts = {
       anchorLat: placement.lat,
-      // Sit them on the terrain when it exists; on the flat map everything
-      // shares the ground plane, which is the honest answer there.
-      sampleGroundM: terrain ? (nx, ny) => terrain!.sampleGroundM(nx, ny) : null,
+      // Sit everything on the terrain when it exists; on the flat map the
+      // ground plane is the honest answer.
+      sampleGroundM: terrain ? (nx: number, ny: number) => terrain!.sampleGroundM(nx, ny) : null,
       anchorElevationM: terrain?.anchorElevation ?? 0,
-    })
-    if (!result) return null
-
-    const material = new THREE.MeshBasicMaterial({ vertexColors: true })
-    const mesh = new THREE.Mesh(result.geometry, material)
-    // Above the flat tiles, like the terrain patch, so grade-level walls do
-    // not z-fight with the basemap.
-    mesh.renderOrder = 2
-    mesh.name = 'context-buildings'
-    geoRoot.add(mesh)
-    buildings = mesh
-
-    return {
-      status: 'ready',
-      count: result.count,
-      estimatedCount: result.estimatedCount,
     }
+
+    let estimatedCount = 0
+
+    if (layerVisibility.building) {
+      const footprints = osmFeatures
+        .filter((f) => f.kind === 'building' && f.ring)
+        .map((f) => ({ ring: f.ring!, height: f.height, style: f.style }))
+      const built = buildBuildingsGeometry(footprints, opts)
+      if (built) {
+        const mesh = new THREE.Mesh(
+          built.geometry,
+          new THREE.MeshBasicMaterial({ vertexColors: true }),
+        )
+        mesh.name = 'osm-buildings'
+        // Above the flat tiles and the surface layers, so grade-level walls do
+        // not z-fight with the basemap or with a park drawn under them.
+        mesh.renderOrder = 5
+        geoRoot.add(mesh)
+        layerObjects.set('building', mesh)
+        estimatedCount = built.estimatedCount
+      }
+    }
+
+    for (const layer of ['water', 'green'] as const) {
+      if (!layerVisibility[layer]) continue
+      const built = buildSurfaceLayer(osmFeatures, layer, opts)
+      if (built) { geoRoot.add(built.object); layerObjects.set(layer, built.object) }
+    }
+
+    if (layerVisibility.bridge) {
+      const built = buildBridgeLayer(osmFeatures, opts)
+      if (built) { geoRoot.add(built.object); layerObjects.set('bridge', built.object) }
+    }
+
+    if (layerVisibility.tree) {
+      const built = buildTreeLayer(osmFeatures, opts)
+      if (built) { geoRoot.add(built.object); layerObjects.set('tree', built.object) }
+    }
+
+    return estimatedCount
   }
 
-  /** Re-extrude the cached footprints against the current ground. */
+  function clearLayers(): void {
+    for (const [, obj] of layerObjects) disposeLayer(obj)
+    layerObjects.clear()
+  }
+
+  /** Re-extrude the cached features against the current ground. */
   function reseatBuildings(): void {
-    if (!buildingsEnabled || !buildingFootprints || !geoRoot) return
-    if (buildings) {
-      buildings.removeFromParent()
-      buildings.geometry.dispose()
-      const mat = buildings.material
-      if (Array.isArray(mat)) for (const m of mat) m.dispose()
-      else mat.dispose()
-      buildings = null
-    }
-    addBuildingsMesh(buildingFootprints)
+    if (!buildingsEnabled || !osmFeatures || !geoRoot) return
+    rebuildLayers()
   }
 
   function teardownBuildings(): void {
     buildingsToken++
-    if (!buildings) return
-    buildings.removeFromParent()
-    buildings.geometry.dispose()
-    const mat = buildings.material
-    if (Array.isArray(mat)) for (const m of mat) m.dispose()
-    else mat.dispose()
-    buildings = null
+    clearLayers()
   }
 
   function runBuildingsWorker(message: BuildingsRequest): Promise<BuildingsResponse> {
