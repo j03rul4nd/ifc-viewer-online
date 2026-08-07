@@ -8,6 +8,7 @@ import * as THREE from 'three'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, bufferCentreline, buildLinearLayer,
 } from './osm-scene'
+import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import type { OsmFeature } from './osm-features'
 
 const LAT = 48.8556
@@ -442,5 +443,164 @@ describe('buildLinearLayer — solidity', () => {
     expect(mat.transparent).toBe(false)
     // Still no depth writing: these layers are coplanar and ordered by hand.
     expect(mat.depthWrite).toBe(false)
+  })
+})
+
+// ── Detailed ground cover ─────────────────────────────────────────────────────
+//
+// The claim the detailed path makes is that the ground is REAL geometry, not a
+// tinted lid. These tests pin the two things that were actually broken before
+// it existed: a polygon had no interior vertices, so it could neither follow
+// the terrain under it nor know where its own edge was.
+
+const LARGE = 220   // metres — big enough that subdivision has work to do
+
+function surface(kind: 'green' | 'sand' | 'rock' | 'water', id: string): OsmFeature {
+  return {
+    id, kind,
+    ring: ringAround(LAT, LON, LARGE),
+    height: { heightM: 0, minHeightM: 0, estimated: true },
+    style: { roofShape: 'flat', roofHeightM: 0, tone: [0.3, 0.5, 0.3], roughness: 0.4 },
+  }
+}
+
+const DETAILED = {
+  ...OPTS, quality: 'detailed' as const, sun: { azimuthDeg: 315, altitudeDeg: 45 },
+}
+
+/** Metres per normalized unit at the test latitude. Mercator is conformal, so
+ *  one factor covers both axes. */
+const M_TO_N = 1 / (WEB_MERCATOR_WORLD_M * cosLatScale(LAT))
+
+/**
+ * A 100 m hill whose summit sits in the MIDDLE of the polygon, well away from
+ * any corner — so the only way a mesh can find it is by having interior
+ * vertices to sample at.
+ */
+function centreHill(ring: ReadonlyArray<{ lat: number; lon: number }>):
+  (nx: number, ny: number) => number {
+  const pts = ring.map((p) => latLonToNormalized(p.lat, p.lon))
+  const cx = pts.reduce((a, p) => a + p.nx, 0) / pts.length
+  const cy = pts.reduce((a, p) => a + p.ny, 0) / pts.length
+  const sigma = 60 * M_TO_N
+  return (nx, ny) => 100 * Math.exp(-((Math.hypot(nx - cx, ny - cy) / sigma) ** 2))
+}
+
+function extent(attr: THREE.BufferAttribute | THREE.InterleavedBufferAttribute,
+                get: 'getX' | 'getY' | 'getZ'): { lo: number; hi: number } {
+  let lo = Infinity
+  let hi = -Infinity
+  for (let i = 0; i < attr.count; i++) {
+    const v = attr[get](i)
+    lo = Math.min(lo, v)
+    hi = Math.max(hi, v)
+  }
+  return { lo, hi }
+}
+
+describe('buildSurfaceLayer · detailed', () => {
+  it('gives the polygon interior vertices instead of a corners-only lid', () => {
+    const simple = buildSurfaceLayer([surface('green', 'g1')], 'green', OPTS)!
+    const rich = buildSurfaceLayer([surface('green', 'g1')], 'green', DETAILED)!
+    const simpleVerts = simple.object.geometry.getAttribute('position').count
+    const richVerts = rich.object.geometry.getAttribute('position').count
+    expect(richVerts).toBeGreaterThan(simpleVerts * 10)
+    // Indexed: subdivision only pays off if neighbours share their vertices.
+    expect(rich.object.geometry.getIndex()).not.toBeNull()
+  })
+
+  it('follows a hill UNDER the polygon that a corners-only mesh flies over', () => {
+    // This is the bug in one assertion. Earcut puts vertices only on the
+    // outline, so a park on a hillside used to be a flat plane stretched
+    // between its corners — the summit inside it simply did not exist.
+    const flat = buildSurfaceLayer([surface('green', 'g1')], 'green', {
+      ...OPTS, sampleGroundM: centreHill(surface('green', 'h').ring!), anchorElevationM: 0,
+    })!
+    const draped = buildSurfaceLayer([surface('green', 'g1')], 'green', {
+      ...DETAILED, sampleGroundM: centreHill(surface('green', 'h').ring!), anchorElevationM: 0,
+    })!
+    const top = (m: typeof flat): number =>
+      extent(m.object.geometry.getAttribute('position') as THREE.BufferAttribute, 'getZ').hi
+    expect(top(draped)).toBeGreaterThan(top(flat) * 5)
+  })
+
+  it('shades from the ground slope, not from the triangles', () => {
+    // Face normals on a draped mesh give faceted, low-poly lighting. Normals
+    // taken from the terrain gradient vary smoothly and point off vertical
+    // wherever the ground does.
+    const draped = buildSurfaceLayer([surface('green', 'g1')], 'green', {
+      ...DETAILED, sampleGroundM: centreHill(surface('green', 'h').ring!), anchorElevationM: 0,
+    })!
+    const n = draped.object.geometry.getAttribute('normal')
+    let tilted = 0
+    for (let i = 0; i < n.count; i++) if (n.getZ(i) < 0.999) tilted++
+    expect(tilted).toBeGreaterThan(0)
+    // Still unit length, or the lighting maths downstream is nonsense.
+    expect(Math.hypot(n.getX(0), n.getY(0), n.getZ(0))).toBeCloseTo(1, 5)
+  })
+
+  it('carries pattern coordinates in METRES, not normalized units', () => {
+    // Normalized coordinates near 0.5 quantize to ~1.5 m in float32, which
+    // would turn every procedural surface into visible blocks. aSurf is the
+    // whole defence against that.
+    const rich = buildSurfaceLayer([surface('green', 'g1')], 'green', DETAILED)!
+    const span = extent(rich.object.geometry.getAttribute('aSurf') as THREE.BufferAttribute, 'getX')
+    expect(span.hi - span.lo).toBeGreaterThan(LARGE * 0.5)
+    expect(span.hi - span.lo).toBeLessThan(LARGE * 2)
+  })
+
+  it('shares one pattern origin across polygons, so two parks do not match', () => {
+    // Per-polygon origins would restart the noise identically in every feature,
+    // which reads as tiling — the exact tell we are trying to avoid.
+    const near = surface('green', 'g1')
+    const far = {
+      ...surface('green', 'g2'),
+      ring: ringAround(LAT + 0.004, LON + 0.004, LARGE),
+    }
+    const rich = buildSurfaceLayer([near, far], 'green', DETAILED)!
+    const span = extent(rich.object.geometry.getAttribute('aSurf') as THREE.BufferAttribute, 'getY')
+    // The second park is hundreds of metres away in the SAME frame.
+    expect(span.hi).toBeGreaterThan(LARGE)
+  })
+
+  it('keeps water level and tells it where its own bank is', () => {
+    const rich = buildSurfaceLayer([surface('water', 'w1')], 'water', {
+      ...DETAILED, sampleGroundM: centreHill(surface('green', 'h').ring!), anchorElevationM: 0,
+    })!
+    const z = extent(rich.object.geometry.getAttribute('position') as THREE.BufferAttribute, 'getZ')
+    expect(z.hi - z.lo).toBeLessThan(1e-9)
+
+    const shore = rich.object.geometry.getAttribute('aShore')
+    expect(shore).toBeTruthy()
+    const s = extent(shore as THREE.BufferAttribute, 'getX')
+    expect(s.lo).toBeCloseTo(0, 4)              // the outline itself
+    expect(s.hi).toBeGreaterThan(LARGE / 4)     // the middle of the body
+  })
+
+  it('only water carries a shore attribute — the others have no banks', () => {
+    const rich = buildSurfaceLayer([surface('green', 'g1')], 'green', DETAILED)!
+    expect(rich.object.geometry.getAttribute('aShore')).toBeUndefined()
+  })
+
+  it('builds sand and rock as their own layers', () => {
+    for (const kind of ['sand', 'rock'] as const) {
+      const built = buildSurfaceLayer([surface(kind, 'x-' + kind)], kind, DETAILED)
+      expect(built).not.toBeNull()
+      expect(built!.object.name).toBe('osm-' + kind)
+      expect(built!.object.geometry.getAttribute('aRough')).toBeTruthy()
+    }
+    // And a layer with nothing in it is still null, not an empty mesh.
+    expect(buildSurfaceLayer([surface('green', 'g')], 'sand', DETAILED)).toBeNull()
+  })
+
+  it('keeps the coplanar-ground contract: ordered, non depth-writing', () => {
+    const green = buildSurfaceLayer([surface('green', 'g')], 'green', DETAILED)!
+    const water = buildSurfaceLayer([surface('water', 'w')], 'water', DETAILED)!
+    for (const m of [green, water]) {
+      const mat = m.object.material as THREE.Material
+      expect(mat.transparent).toBe(true)
+      expect(mat.depthWrite).toBe(false)
+    }
+    expect(water.object.renderOrder).toBeGreaterThan(green.object.renderOrder)
   })
 })

@@ -188,9 +188,35 @@ const FRAGMENT_HEADER = /* glsl */ `
 `
 
 /**
+ * Weight for a noise layer at the given frequency (cycles per metre), faded out
+ * as its wavelength approaches the size of a pixel.
+ *
+ * This is the difference between detail and shimmer, and it is not optional at
+ * map scale. Looking at a whole neighbourhood, one pixel covers a metre or
+ * more; a 5 cm grain sampled there does not read as grain, it aliases into a
+ * flat grey that cancels the layers underneath and leaves the surface looking
+ * WORSE than if the detail had never been added. Fading every layer out at its
+ * own Nyquist limit is what lets one material hold up both from across the
+ * street and from 800 m up.
+ *
+ * fwidth is core in GLSL ES 3.00, which is what three compiles to on WebGL2 —
+ * the only context this viewer runs in.
+ */
+const DETAIL_FADE_GLSL = /* glsl */ `
+float detailFade(vec2 p, float cyclesPerMetre) {
+  float metresPerPixel = max(fwidth(p.x), fwidth(p.y));
+  return 1.0 - smoothstep(0.30, 0.80, metresPerPixel * cyclesPerMetre);
+}
+`
+
+/**
  * Key light + hemispheric sky. Not physically based and not trying to be: the
  * job is to make slope and micro-relief legible in a screenshot, so the ambient
  * term stays high enough that nothing in shadow turns into a black hole.
+ *
+ * Used by the OSM ground layers. The terrain does NOT use it — its macro light
+ * is baked per vertex on the CPU, which is the only place the sky-view factor
+ * and the contour lines can be worked out.
  */
 const LIGHTING_GLSL = /* glsl */ `
 vec3 shade(vec3 albedo, vec3 n) {
@@ -213,149 +239,217 @@ const OUTPUT_GLSL = /* glsl */ `
   #include <fog_fragment>
 `
 
-// ── Grass ──────────────────────────────────────────────────────────────────────
+// ── The surfaces themselves ────────────────────────────────────────────────────
 
 /**
- * Lawn, meadow, forest floor — whatever the tagged tone says it is.
+ * Three material families, as plain functions of a planar position in METRES.
  *
- * Three scales stacked, because that is what a real sward has: metre-wide
- * patches where the ground is drier or has been mown differently, tuft-scale
- * clumping, and a fine breakup that stops the surface going glassy up close.
- * The tuft layer also drives the normal, which is what makes a park catch the
- * light unevenly instead of reading as painted cardboard.
+ * They are functions rather than whole shaders because the terrain needs to
+ * BLEND them — a mountainside is grass low down, rock on the crags and snow on
+ * top, and the boundary between those has to be a gradient, not a seam. The
+ * standalone OSM layer materials are thin wrappers around the same code, so
+ * a park and the hillside behind it are literally the same grass.
+ *
+ * Each returns an albedo, a bump gradient in the surface plane (already scaled,
+ * so callers just perturb by it), and a specular strength.
  */
-const GRASS_FRAGMENT = /* glsl */ `
-  ${FRAGMENT_HEADER}
-  ${NOISE_GLSL}
-  ${LIGHTING_GLSL}
+const SURFACE_FN_GLSL = /* glsl */ `
+struct Surface {
+  vec3 albedo;
+  vec2 grad;
+  float sheen;
+};
 
-  void main() {
-    // Metre-scale patchiness: mowing, wear, drainage.
-    float patch = fbm(vSurf * 0.09, 4);
-    // Tufts. `vRough` carries how coarse the vegetation is — a mown pitch is
-    // smooth, heath and scrub are shaggy.
-    float tuftScale = mix(2.2, 5.5, vRough);
-    vec2 grad = fbmGrad(vSurf * tuftScale, 0.35, 2);
-    float tuft = fbm(vSurf * tuftScale, 2);
-    float fine = vnoise(vSurf * 22.0);
+/**
+ * A noise layer AND its gradient, sharing the centre sample: three evaluations
+ * instead of four. Returns (value, dx, dy).
+ *
+ * Worth its own function because every family wants both from the same layer —
+ * the albedo modulation and the bump come from the same lumps, and computing
+ * that lump field twice was a third of the fragment cost.
+ */
+vec3 fbmAndGrad(vec2 p, float eps, int octaves) {
+  float c = fbm(p, octaves);
+  return vec3(
+    c,
+    (fbm(p + vec2(eps, 0.0), octaves) - c) / eps,
+    (fbm(p + vec2(0.0, eps), octaves) - c) / eps
+  );
+}
 
-    // Dry grass is yellower and lighter; shade between tufts is darker and
-    // slightly bluer. Both are small moves — a park is still green.
-    vec3 dry = vTone * vec3(1.30, 1.16, 0.72);
-    vec3 albedo = mix(vTone, dry, smoothstep(0.45, 0.85, patch) * 0.55);
-    albedo *= 0.80 + 0.34 * tuft;
-    albedo *= 0.95 + 0.10 * fine;
+/**
+ * Lawn, meadow, forest floor. A ladder of scales, because that is what a real
+ * sward has: tens of metres of wet/dry and mown/rough variation, metre-scale
+ * wear, clump-scale texture, and a fine breakup for close-ups. \`rough\` moves it
+ * from a mown pitch to heath and scrub.
+ *
+ * Each fine layer is SKIPPED once its own fade says it cannot be resolved. That
+ * is not a micro-optimisation: the terrain fills the screen exactly when the
+ * camera is far enough that those layers have faded to nothing, so the most
+ * expensive frames are the ones with the least to compute.
+ */
+Surface grassSurface(vec2 p, float rough, vec3 tone) {
+  float clumpF = 0.40;                       // 2.5 m — the texture you see
+  float tuftF  = mix(1.4, 3.0, rough);       // 0.3-0.7 m
+  float fineF  = 9.0;                        // 11 cm
 
-    vec3 n = perturb(normalize(vNormalW), grad, mix(0.05, 0.16, vRough));
-    // Self-shadowing between blades: the gaps never see the full sky.
-    float occl = 0.82 + 0.18 * tuft;
-    gl_FragColor = vec4(shade(albedo, n) * occl, uOpacity);
+  // Fades first, and outside every branch: fwidth needs neighbouring fragments
+  // to agree on how far it has come.
+  float wClump = detailFade(p, clumpF);
+  float wTuft  = detailFade(p, tuftF);
+  float wFine  = detailFade(p, fineF);
 
-    ${OUTPUT_GLSL}
+  float meadow = fbm(p * 0.035, 3);          // 30 m — drainage, aspect, mowing
+  float wear   = fbm(p * 0.13, 3);           // 8 m  — paths, bare patches
+
+  // Dry grass is yellower and lighter. A small move — a park is still green.
+  vec3 dry = tone * vec3(1.34, 1.18, 0.70);
+  vec3 albedo = mix(tone, dry, smoothstep(0.38, 0.80, meadow) * 0.5);
+  albedo *= 0.80 + 0.42 * wear;
+
+  vec2 grad = vec2(0.0);
+  float clump = 0.5;
+  if (wClump > 0.01) {
+    vec3 c = fbmAndGrad(p * clumpF, 0.25, 2);
+    clump = c.x;
+    albedo *= 1.0 + (clump - 0.5) * mix(0.52, 0.84, rough) * wClump;
+    grad += c.yz * (0.7 * wClump);
   }
-`
+  if (wTuft > 0.01) {
+    vec3 t = fbmAndGrad(p * tuftF, 0.25, 2);
+    albedo *= 1.0 + (t.x - 0.5) * 0.34 * wTuft;
+    grad += t.yz * wTuft;
+  }
+  if (wFine > 0.01) {
+    albedo *= 1.0 + (vnoise(p * fineF) - 0.5) * 0.20 * wFine;
+  }
 
-// ── Sand ───────────────────────────────────────────────────────────────────────
+  // Self-shadowing between clumps: the gaps never see the full sky.
+  albedo *= 0.84 + 0.16 * mix(0.5, clump, wClump);
+
+  return Surface(albedo, grad * mix(0.10, 0.26, rough), 0.0);
+}
 
 /**
- * Beach, dune, shingle, mud.
- *
- * The ripples are the whole point. Flat sand-coloured polygons read as paper;
- * what says "sand" from any angle is the regular wind or wave ripple, one
- * dominant direction, bent by larger drifts. Wavelength scales with `vRough`
- * so a fine beach gets centimetre ripples and a dune field gets metre ones,
- * and shingle drops the ripples for pebble-scale lumps instead.
+ * Beach, dune, shingle, mud — and wind-packed snow, which behaves the same way:
+ * a fine granular surface the wind carves into regular ripples. The ripples are
+ * the whole point. Flat sand-coloured polygons read as paper; what says "sand"
+ * from any angle is the regular ripple, one dominant direction, bent by larger
+ * drifts. High \`rough\` drops the ripples for pebble-scale lumps instead.
  */
-const SAND_FRAGMENT = /* glsl */ `
-  ${FRAGMENT_HEADER}
-  ${NOISE_GLSL}
-  ${LIGHTING_GLSL}
+Surface sandSurface(vec2 p, float rough, vec3 tone) {
+  // Large drifts: where the surface piles up and where it is scoured.
+  float drift = fbm(p * 0.035, 3);
 
-  void main() {
-    // Large drifts: where the surface piles up and where it is scoured.
-    float drift = fbm(vSurf * 0.06, 4);
+  // Ripple bearing, bent by the drift so the crests are never dead straight.
+  float bearing = 0.9 + drift * 1.6;
+  vec2 dir = vec2(cos(bearing), sin(bearing));
+  // Real wave ripples on a beach are ~10 cm apart and real dune ripples a few
+  // metres. The short end is deliberately stretched: below about a metre the
+  // crests fall under the pixel size at any view that includes the building,
+  // and a ripple you cannot resolve is just noise.
+  float wavelength = mix(1.1, 5.0, rough);
+  float rippleF = 1.0 / wavelength;
+  float pebbleF = mix(4.0, 1.6, rough);
+  float grainF = 22.0;
 
-    // Ripple direction, bent by the drift so the crests are never dead straight.
-    float bearing = 0.9 + drift * 1.4;
-    vec2 dir = vec2(cos(bearing), sin(bearing));
-    float wavelength = mix(0.45, 3.2, vRough);
-    float phase = dot(vSurf, dir) * (6.2831853 / wavelength) + fbm(vSurf * 0.35, 3) * 5.0;
+  float wRipple = detailFade(p, rippleF);
+  float wPebble = detailFade(p, pebbleF);
+  float wGrain = detailFade(p, grainF);
+  float rippleMix = 1.0 - smoothstep(0.55, 0.9, rough);
+
+  vec3 albedo = tone * (0.90 + 0.24 * drift);
+  vec2 grad = vec2(0.0);
+
+  if (wRipple * rippleMix > 0.01) {
+    float phase = dot(p, dir) * (6.2831853 * rippleF) + fbm(p * 0.18, 3) * 6.0;
     // Sharper than a sine: wind ripples have flat troughs and crisp crests.
     float ripple = pow(0.5 + 0.5 * sin(phase), 1.6);
-    // Shingle (high roughness) trades ripples for pebbles.
-    float pebble = vnoise(vSurf * mix(9.0, 3.0, vRough));
-    float rippleMix = 1.0 - smoothstep(0.55, 0.9, vRough);
-
-    // Grain. Fine enough that it reads as texture rather than as noise, and it
-    // is what keeps sand from going plastic in a close-up screenshot.
-    float grain = vnoise(vSurf * 130.0) * 0.5 + vnoise(vSurf * 47.0) * 0.5;
-
-    vec3 albedo = vTone;
-    albedo *= 0.88 + 0.20 * mix(pebble, ripple, rippleMix);
-    albedo *= 0.93 + 0.16 * drift;
-    albedo *= 0.94 + 0.12 * grain;
-
-    // Normal from the ripple crests plus the grain, so the low sun rakes across
-    // them the way it does on a real beach.
-    vec2 rippleGrad = dir * cos(phase) * (6.2831853 / wavelength) * 0.5 * rippleMix;
-    vec2 grainGrad = fbmGrad(vSurf * 30.0, 0.02, 2) * 0.35;
-    vec3 n = perturb(normalize(vNormalW), rippleGrad * 0.09 + grainGrad, 0.55);
-
-    vec3 lit = shade(albedo, n);
-
-    // Dry quartz sand has a real sheen at grazing angles — subtle, warm, and
-    // the reason a beach goes bright silver when you look towards the sun.
-    vec3 view = normalize(cameraPosition - vWorld);
-    vec3 halfway = normalize(view + vSunW);
-    float sheen = pow(max(dot(n, halfway), 0.0), 22.0) * (0.16 * (1.0 - vRough));
-    lit += uSunColor * sheen;
-
-    gl_FragColor = vec4(lit, uOpacity);
-
-    ${OUTPUT_GLSL}
+    albedo *= 1.0 + (ripple - 0.5) * 0.30 * rippleMix * wRipple;
+    // A low sun raking across the crests is most of what sells the surface.
+    grad += dir * cos(phase) * (6.2831853 * rippleF) * rippleMix * wRipple * 0.05;
   }
-`
+  if (wPebble > 0.01) {
+    vec3 pb = fbmAndGrad(p * pebbleF, 0.25, 2);
+    albedo *= 1.0 + (pb.x - 0.5) * 0.26 * (1.0 - rippleMix) * wPebble;
+    grad += pb.yz * (0.6 * wPebble);
+  }
+  if (wGrain > 0.01) {
+    // Grain — what keeps sand from going plastic in a close-up.
+    albedo *= 1.0 + (vnoise(p * grainF) - 0.5) * 0.16 * wGrain;
+  }
 
-// ── Rock ───────────────────────────────────────────────────────────────────────
+  // Dry quartz sand — and fresh snow — have a real sheen at grazing angles.
+  return Surface(albedo, grad * 0.55, 0.16 * (1.0 - rough));
+}
 
 /**
- * Bare rock, scree, glacier — the ground a site in the mountains actually sits
- * on. Ridged noise gives the fracture pattern; `vRough` moves it from smooth
- * ice (no fractures, faint sparkle) through slabbed rock to loose scree.
+ * Bare rock, scree, glacier ice. Ridged noise gives the fracture pattern;
+ * \`rough\` moves it from smooth ice through slabbed rock to loose scree.
  */
-const ROCK_FRAGMENT = /* glsl */ `
-  ${FRAGMENT_HEADER}
-  ${NOISE_GLSL}
-  ${LIGHTING_GLSL}
+Surface rockSurface(vec2 p, float rough, vec3 tone) {
+  float blockF = mix(0.8, 2.2, rough);       // 0.45-1.25 m
+  float gritF  = 14.0;                       // 7 cm
 
-  void main() {
-    float bed = fbm(vSurf * 0.05, 4);
-    float fracture = ridge(vSurf * 0.55, 3);
-    float blocks = ridge(vSurf * mix(1.6, 5.0, vRough), 2);
-    float grit = vnoise(vSurf * 26.0);
+  float wBlocks = detailFade(p, blockF);
+  float wGrit = detailFade(p, gritF);
 
-    // Crevices are darker and less saturated — dirt and shadow collect in them.
-    float crev = smoothstep(0.55, 0.95, mix(fracture, blocks, 0.6));
-    vec3 albedo = vTone * (0.82 + 0.28 * bed);
-    albedo = mix(albedo, albedo * vec3(0.62, 0.60, 0.60), crev * mix(0.35, 0.75, vRough));
-    albedo *= 0.94 + 0.12 * grit;
+  float bed = fbm(p * 0.03, 3);              // 33 m — the shape of the massif
 
-    vec2 grad = fbmGrad(vSurf * mix(1.2, 4.0, vRough), 0.12, 3);
-    vec3 n = perturb(normalize(vNormalW), grad, mix(0.30, 0.85, vRough));
+  // Joints and gullies, at 4.5 m: the layer that makes rock read as rock, and
+  // the one that survives all the way out to a whole-mountain view.
+  vec3 fr = fbmAndGrad(p * 0.22, 0.25, 3);
+  float fracture = 1.0 - abs(fr.x * 2.0 - 1.0);
+  vec2 grad = fr.yz * 0.8;
 
-    vec3 lit = shade(albedo, n);
-
-    // Wet-looking ice keeps a tight highlight; dry rock barely has one.
-    vec3 view = normalize(cameraPosition - vWorld);
-    vec3 halfway = normalize(view + vSunW);
-    float gloss = (1.0 - vRough) * 0.35;
-    lit += uSunColor * pow(max(dot(n, halfway), 0.0), 60.0) * gloss;
-
-    gl_FragColor = vec4(lit, uOpacity);
-
-    ${OUTPUT_GLSL}
+  float blocks = fracture;
+  if (wBlocks > 0.01) {
+    vec3 bl = fbmAndGrad(p * blockF, 0.25, 2);
+    blocks = 1.0 - abs(bl.x * 2.0 - 1.0);
+    grad += bl.yz * wBlocks;
   }
+
+  // Crevices are darker and less saturated — dirt and shadow collect in them.
+  float crev = smoothstep(0.50, 0.95, mix(fracture, blocks, 0.55 * wBlocks));
+  vec3 albedo = tone * (0.80 + 0.34 * bed);
+  albedo = mix(albedo, albedo * vec3(0.58, 0.57, 0.58), crev * mix(0.40, 0.80, rough));
+  if (wGrit > 0.01) {
+    albedo *= 1.0 + (vnoise(p * gritF) - 0.5) * 0.20 * wGrit;
+  }
+
+  return Surface(albedo, grad * mix(0.35, 0.95, rough), (1.0 - rough) * 0.35);
+}
 `
+
+// ── OSM ground layers ──────────────────────────────────────────────────────────
+
+/**
+ * Grass, sand and rock as standalone layer materials: pick the family, light it
+ * with the layer's own sun. Water is separate — it is not a granular surface
+ * and shares none of this.
+ */
+function groundFragment(surfaceFn: string): string {
+  return /* glsl */ `
+    ${FRAGMENT_HEADER}
+    ${NOISE_GLSL}
+    ${DETAIL_FADE_GLSL}
+    ${LIGHTING_GLSL}
+    ${SURFACE_FN_GLSL}
+
+    void main() {
+      Surface s = ${surfaceFn}(vSurf, vRough, vTone);
+      vec3 n = perturb(normalize(vNormalW), s.grad, 1.0);
+      vec3 lit = shade(s.albedo, n);
+      if (s.sheen > 0.0) {
+        vec3 halfway = normalize(normalize(cameraPosition - vWorld) + vSunW);
+        lit += uSunColor * pow(max(dot(n, halfway), 0.0), 32.0) * s.sheen;
+      }
+      gl_FragColor = vec4(lit, uOpacity);
+
+      ${OUTPUT_GLSL}
+    }
+  `
+}
 
 // ── Water ──────────────────────────────────────────────────────────────────────
 
@@ -368,14 +462,15 @@ const ROCK_FRAGMENT = /* glsl */ `
  *   • moving normals — two scrolling noise layers, coarse swell over fine chop.
  *   • the sun's glitter path, which is the single most recognisable thing on
  *     any body of water.
- *   • the shore. Shallows go pale and warm as the bed comes up, and there is a
- *     foam fringe against the bank. `aShore` (metres to the outline, computed
- *     on the CPU) is what makes both possible; a polygon triangulated the plain
- *     way has no interior and cannot know where its own edge is.
+ *   • the shore. Shallows go pale as the bed comes up, and there is a foam
+ *     fringe against the bank. `aShore` (metres to the outline, computed on the
+ *     CPU) is what makes both possible; a polygon triangulated the plain way
+ *     has no interior and cannot know where its own edge is.
  */
 const WATER_FRAGMENT = /* glsl */ `
   ${FRAGMENT_HEADER}
   ${NOISE_GLSL}
+  ${DETAIL_FADE_GLSL}
   ${LIGHTING_GLSL}
 
   uniform float uTime;
@@ -389,10 +484,13 @@ const WATER_FRAGMENT = /* glsl */ `
   void main() {
     // Swell and chop travel in different directions at different speeds; a
     // single scrolling layer reads as a sliding texture, two read as water.
-    vec2 swell = vSurf * 0.085 + vec2(uTime * 0.055, uTime * 0.021);
-    vec2 chop  = vSurf * 0.42  - vec2(uTime * 0.031, uTime * 0.074);
+    float swellF = 0.085;      // ~12 m crests
+    float chopF  = 0.42;       // ~2.4 m
+    vec2 swell = vSurf * swellF + vec2(uTime * 0.36, uTime * 0.14);
+    vec2 chop  = vSurf * chopF  - vec2(uTime * 0.19, uTime * 0.44);
 
-    vec2 grad = fbmGrad(swell, 0.35, 3) * 0.55 + fbmGrad(chop, 0.10, 2) * 0.22;
+    vec2 grad = fbmGrad(swell, 0.25, 3) * (0.55 * detailFade(vSurf, swellF))
+              + fbmGrad(chop,  0.25, 2) * (0.22 * detailFade(vSurf, chopF));
     vec3 n = perturb(normalize(vNormalW), grad, 1.1);
 
     vec3 view = normalize(cameraPosition - vWorld);
@@ -400,7 +498,7 @@ const WATER_FRAGMENT = /* glsl */ `
     // Schlick, with a floor so water seen from directly above still reflects.
     float fresnel = 0.03 + 0.97 * pow(1.0 - facing, 5.0);
 
-    // Depth from the bank. Not measured — OSM does not carry bathymetry — but
+    // Depth from the bank. Not measured — OSM carries no bathymetry — but
     // "shallower at the edge" is true of every natural body of water.
     float depth = clamp(vShore / uShallowM, 0.0, 1.0);
     vec3 body = mix(uShallowColor, vTone, smoothstep(0.0, 1.0, depth));
@@ -433,9 +531,9 @@ const WATER_FRAGMENT = /* glsl */ `
 // ── Factory ────────────────────────────────────────────────────────────────────
 
 const FRAGMENT_BY_KIND: Record<SurfaceKind, string> = {
-  grass: GRASS_FRAGMENT,
-  sand: SAND_FRAGMENT,
-  rock: ROCK_FRAGMENT,
+  grass: groundFragment('grassSurface'),
+  sand: groundFragment('sandSurface'),
+  rock: groundFragment('rockSurface'),
   water: WATER_FRAGMENT,
 }
 
@@ -555,6 +653,7 @@ const FOLIAGE_FRAGMENT = /* glsl */ `
   uniform vec3 uSunColor;
   uniform vec3 uSkyColor;
   uniform vec3 uGroundColor;
+  uniform vec3 uTint;
   uniform float uClump;
   uniform float uTransmission;
 
@@ -575,11 +674,15 @@ const FOLIAGE_FRAGMENT = /* glsl */ `
     float masses = fbm(vObj.xy * 6.0 + vObj.z * 3.1, 3);
     float leaves = vnoise(vObj.xy * 26.0 + vObj.z * 11.0);
 
-    vec3 albedo = vTone * (0.74 + 0.46 * masses);
+    // Instanced canopies carry their colour per instance; trunks and anything
+    // uninstanced take it from the tint uniform instead.
+    vec3 base = vTone * uTint;
+
+    vec3 albedo = base * (0.74 + 0.46 * masses);
     albedo *= 0.93 + 0.14 * leaves;
     // Undersides of a crown are darker; tops catch the sky.
     albedo *= 0.86 + 0.24 * clamp(vObj.z * 0.5 + 0.5, 0.0, 1.0);
-    albedo = mix(vTone, albedo, uClump);
+    albedo = mix(base, albedo, uClump);
 
     float key = max(dot(n, vSunW), 0.0);
     float sky = 0.5 + 0.5 * n.y;
@@ -589,7 +692,7 @@ const FOLIAGE_FRAGMENT = /* glsl */ `
     vec3 view = normalize(cameraPosition - vWorld);
     float through = pow(max(dot(-view, vSunW), 0.0), 3.0) * max(0.0, 1.0 - key);
     vec3 lit = albedo * (ambient + uSunColor * key)
-             + vTone * uSunColor * through * uTransmission;
+             + base * uSunColor * through * uTransmission;
 
     gl_FragColor = vec4(lit, 1.0);
 
@@ -604,6 +707,8 @@ export interface FoliageOptions extends SurfaceMaterialOptions {
   clump?: number
   /** Strength of the backlit glow. Bark has none. */
   transmission?: number
+  /** Multiplied into the vertex/instance colour — how trunks get their brown. */
+  tint?: THREE.Color
 }
 
 /** Canopy material — also used, with clump/transmission near zero, for trunks. */
@@ -615,11 +720,13 @@ export function createFoliageMaterial(opts: FoliageOptions): THREE.ShaderMateria
       uSunColor: { value: new THREE.Color(0.80, 0.76, 0.66) },
       uSkyColor: { value: new THREE.Color(0.42, 0.48, 0.58) },
       uGroundColor: { value: new THREE.Color(0.18, 0.19, 0.16) },
+      uTint: { value: new THREE.Color(1, 1, 1) },
       uClump: { value: opts.clump ?? 1 },
       uTransmission: { value: opts.transmission ?? 0.45 },
     },
   ])
   uniforms.uSunLocal.value = sunDirectionLocal(opts.sun)
+  if (opts.tint) (uniforms.uTint.value as THREE.Color).copy(opts.tint)
 
   const material = new THREE.ShaderMaterial({
     uniforms,
@@ -628,6 +735,156 @@ export function createFoliageMaterial(opts: FoliageOptions): THREE.ShaderMateria
     fog: true,
   })
   material.name = 'surface-foliage'
+  return material
+}
+
+// ── Terrain ────────────────────────────────────────────────────────────────────
+
+/**
+ * The relief patch itself, drawn with the same three material families blended
+ * per vertex: vegetation low down, rock on the crags, snow on top.
+ *
+ * TWO THINGS MAKE THIS DIFFERENT FROM THE LAYER MATERIALS.
+ *
+ * 1. The macro light is NOT computed here. It arrives baked per vertex, because
+ *    the CPU is the only place that can work out the multi-directional
+ *    hillshade, the sky-view factor (which is what gives a valley floor its
+ *    depth) and the contour lines. The shader contributes only MICRO relief, as
+ *    a ratio against the unperturbed normal, so the two never double-shade.
+ *
+ * 2. Patch geometry is a PlaneGeometry centred on zero and about 1e-4 units
+ *    wide, so — unlike the OSM layers, whose vertices are absolute mercator
+ *    coordinates near 0.5 — it can read metres straight off `position` without
+ *    falling off the float32 cliff. No `aSurf` attribute needed.
+ */
+const TERRAIN_VERTEX = /* glsl */ `
+  attribute vec4 aGround;
+  uniform float uMetresPerUnit;
+
+  varying vec2 vSurf;
+  varying vec3 vNormalL;
+  varying vec4 vGround;
+  varying vec3 vTone;
+  varying float vAlpha;
+
+  #include <fog_pars_vertex>
+
+  void main() {
+    vSurf = position.xy * uMetresPerUnit;
+    // Lighting stays in the patch's OWN frame (x east, y north, z up), which
+    // sidesteps the vertical exaggeration: mesh.scale.z is non-uniform, so a
+    // world-space normal would be wrong exactly when the relief is stretched.
+    vNormalL = normal;
+    vGround = aGround;
+
+    #if defined( USE_COLOR_ALPHA )
+      vTone = color.rgb;
+      vAlpha = color.a;
+    #elif defined( USE_COLOR )
+      vTone = color;
+      vAlpha = 1.0;
+    #else
+      vTone = vec3(0.5);
+      vAlpha = 1.0;
+    #endif
+
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+
+    #include <fog_vertex>
+  }
+`
+
+const TERRAIN_FRAGMENT = /* glsl */ `
+  uniform vec3 uSunLocal;
+
+  varying vec2 vSurf;
+  varying vec3 vNormalL;
+  varying vec4 vGround;
+  varying vec3 vTone;
+  varying float vAlpha;
+
+  #include <fog_pars_fragment>
+  ${NOISE_GLSL}
+  ${DETAIL_FADE_GLSL}
+  ${SURFACE_FN_GLSL}
+
+  void main() {
+    float veg = vGround.x;
+    float mineral = vGround.y;
+    float snow = clamp(1.0 - veg - mineral, 0.0, 1.0);
+    float rough = vGround.z;
+
+    vec3 albedo = vec3(0.0);
+    vec2 grad = vec2(0.0);
+
+    // Skipping a family whose weight is nil keeps the cost of three materials
+    // near the cost of one: a wavefront inside a forest never evaluates the
+    // rock or the snow branch, and the belts are large and coherent on screen.
+    if (veg > 0.004) {
+      Surface s = grassSurface(vSurf, rough, vTone);
+      albedo += s.albedo * veg;
+      grad += s.grad * veg;
+    }
+    if (mineral > 0.004) {
+      Surface s = rockSurface(vSurf, rough, vTone);
+      albedo += s.albedo * mineral;
+      grad += s.grad * mineral;
+    }
+    if (snow > 0.004) {
+      // Wind-packed snow is a granular surface the wind carves into regular
+      // ripples — sastrugi. That is the sand family, not the rock one.
+      Surface s = sandSurface(vSurf, rough, vTone);
+      albedo += s.albedo * snow;
+      grad += s.grad * snow;
+    }
+
+    vec3 nL = normalize(vNormalL);
+    vec3 nP = normalize(nL - vec3(grad, 0.0));
+    float lit = max(dot(nP, uSunLocal), 0.0);
+    float flatLit = max(dot(nL, uSunLocal), 0.0);
+    float micro = clamp(1.0 + (lit - flatLit) * 1.5, 0.45, 1.75);
+
+    gl_FragColor = vec4(albedo * vGround.w * micro, vAlpha);
+
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+    #include <fog_fragment>
+  }
+`
+
+export interface TerrainMaterialOptions extends SurfaceMaterialOptions {
+  /** Metres per unit of patch-local geometry — the pattern's only scale. */
+  metresPerUnit: number
+}
+
+/**
+ * Material for the terrain patch. Expects a `vec4 aGround` attribute carrying
+ * (vegetation, mineral, roughness, baked light) per vertex, and the usual RGBA
+ * vertex colour where RGB is the belt tone and A is the patch edge fade.
+ */
+export function createTerrainMaterial(opts: TerrainMaterialOptions): THREE.ShaderMaterial {
+  const uniforms = THREE.UniformsUtils.merge([
+    THREE.UniformsLib.fog,
+    {
+      uSunLocal: { value: new THREE.Vector3() },
+      uMetresPerUnit: { value: 1 },
+    },
+  ])
+  uniforms.uSunLocal.value = sunDirectionLocal(opts.sun)
+  uniforms.uMetresPerUnit.value = opts.metresPerUnit
+
+  const material = new THREE.ShaderMaterial({
+    uniforms,
+    vertexShader: TERRAIN_VERTEX,
+    fragmentShader: TERRAIN_FRAGMENT,
+    vertexColors: true,
+    // Same as the MeshBasicMaterial it replaces: the patch edge fades out into
+    // the flat basemap tiles, and that fade lives in the vertex alpha.
+    transparent: true,
+    fog: true,
+  })
+  material.name = 'surface-terrain'
   return material
 }
 
@@ -646,11 +903,28 @@ export function applySurfaceSun(root: THREE.Object3D, sun: SurfaceSun): void {
   })
 }
 
+/**
+ * Re-aim one material directly. Needed where the material is held but not
+ * currently attached to anything — a detached material never gets traversed,
+ * and would come back with a stale sun when it is put back on.
+ */
+export function setMaterialSun(material: THREE.ShaderMaterial, sun: SurfaceSun): void {
+  const u = material.uniforms.uSunLocal
+  if (u) (u.value as THREE.Vector3).copy(sunDirectionLocal(sun))
+}
+
 /** Advance the animated materials (water) to an absolute time in seconds. */
 export function setSurfaceTime(root: THREE.Object3D, seconds: number): void {
   forEachShaderMaterial(root, (m) => {
     if (m.userData.animated && m.uniforms.uTime) m.uniforms.uTime.value = seconds
   })
+}
+
+/** True when anything under `root` needs a per-frame uniform update. */
+export function hasAnimatedMaterial(root: THREE.Object3D): boolean {
+  let found = false
+  forEachShaderMaterial(root, (m) => { if (m.userData.animated) found = true })
+  return found
 }
 
 function forEachShaderMaterial(

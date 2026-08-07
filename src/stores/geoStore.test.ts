@@ -181,7 +181,7 @@ describe('geoStore · buildings status', () => {
 
     useGeoStore.getState().setBuildingsResult(epoch, {
       status: 'ready',
-      counts: { building: 12, water: 1, green: 3, tree: 40, bridge: 0, road: 0, rail: 0 },
+      counts: { building: 12, water: 1, green: 3, sand: 0, rock: 0, tree: 40, bridge: 0, road: 0, rail: 0 },
       estimated: 4,
     })
     expect(useGeoStore.getState().buildingsStatus).toBe('ready')
@@ -201,7 +201,7 @@ describe('geoStore · buildings status', () => {
     // The late reply is still dropped — it must not resurrect a stale count.
     useGeoStore.getState().setBuildingsResult(epoch, {
       status: 'ready',
-      counts: { building: 99, water: 0, green: 0, tree: 0, bridge: 0, road: 0, rail: 0 },
+      counts: { building: 99, water: 0, green: 0, sand: 0, rock: 0, tree: 0, bridge: 0, road: 0, rail: 0 },
     })
     expect(useGeoStore.getState().buildingsStatus).toBe('idle')
     expect(useGeoStore.getState().buildingsCounts.building).toBe(0)
@@ -222,7 +222,7 @@ describe('geoStore · buildings status', () => {
     useGeoStore.getState().setBuildingsEnabled(true)
     useGeoStore.getState().setBuildingsResult(epoch, {
       status: 'ready',
-      counts: { building: 7, water: 0, green: 0, tree: 0, bridge: 0, road: 0, rail: 0 },
+      counts: { building: 7, water: 0, green: 0, sand: 0, rock: 0, tree: 0, bridge: 0, road: 0, rail: 0 },
       truncated: true,
     })
     useGeoStore.getState().resetForScene()
@@ -237,7 +237,7 @@ describe('geoStore · buildings status', () => {
     useGeoStore.getState().setBuildingsEnabled(true)
     useGeoStore.getState().setBuildingsResult(epoch, {
       status: 'ready',
-      counts: { building: 5, water: 0, green: 0, tree: 0, bridge: 0, road: 0, rail: 0 },
+      counts: { building: 5, water: 0, green: 0, sand: 0, rock: 0, tree: 0, bridge: 0, road: 0, rail: 0 },
     })
     useGeoStore.getState().setBuildingsEnabled(false)
     expect(useGeoStore.getState().buildingsStatus).toBe('idle')

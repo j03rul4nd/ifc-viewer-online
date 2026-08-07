@@ -128,15 +128,18 @@
       "building": "Edificios",
       "water": "Agua",
       "green": "Parques y zonas verdes",
+      "sand": "Arena y playas",
+      "rock": "Roca y pedregales",
       "tree": "Árboles",
       "bridge": "Puentes",
       "road": "Carreteras y caminos",
       "rail": "Vías y andenes"
     },
-    "facadeDetail": "Detalle de fachada",
-    "facadeSimple": "Simple",
-    "facadeRich": "Detallado",
-    "facadeHint": "Detallado modela cada planta — acristalamiento, antepechos y planta baja. Más pesado, y mucho más parecido a una calle real."
+    "detailLevel": "Detalle",
+    "detailSimple": "Simple",
+    "detailRich": "Detallado",
+    "detailHint": "Detallado modela cada planta de los edificios del entorno y dibuja césped, arena, roca, nieve y agua como superficies reales iluminadas: agua en movimiento con espuma en la orilla, ondulaciones en la arena y el propio relieve con el estilo Ecosistemas. Más pesado, y el modo para llevar a una reunión con cliente.",
+    "styleEcosystemDetailHint": "Pon Detalle en Detallado, en la pestaña Entorno, para dibujar estas franjas como césped, roca y nieve reales en vez de un tinte plano."
   },
   "placement": {
     "title": "Ubicación",

@@ -562,32 +562,221 @@ export function ecosystemColor(zone: EcosystemZone): { r: number; g: number; b: 
 }
 
 /**
+ * The belts in play at one point, with the boundary softened SYMMETRICALLY.
+ *
+ * Belts have hard thresholds, and a hard threshold painted on a hillside reads
+ * as a contour line — the one artefact that instantly says "generated". The
+ * blend has to be centred ON the boundary: half the band below it and half
+ * above. Blending only upward (the obvious version, and what this did at first)
+ * reaches 50 % right at the boundary and then snaps back to the pure upper belt
+ * one metre higher — a step of half the colour difference, which is exactly the
+ * banding the blend was supposed to remove.
+ *
+ * The boundary elevation comes from bisection: far simpler than inverting every
+ * threshold in `ecosystemZone`, and it keeps working if the rules change.
+ *
+ * Belts thinner than `blendM` can be stepped over — at 60 m against belts
+ * hundreds of metres deep, that does not arise.
+ */
+export interface EcosystemMix {
+  here: EcosystemZone
+  /** Belt above, when one is within half a band. Equals `here` otherwise. */
+  above: EcosystemZone
+  /** Belt below, same rule. */
+  below: EcosystemZone
+  /** Weight of `above`, 0–0.5. */
+  wAbove: number
+  /** Weight of `below`, 0–0.5. */
+  wBelow: number
+}
+
+export function ecosystemBlend(
+  elevationM: number, latDeg: number, slopeDeg: number, blendM = 60,
+): EcosystemMix {
+  const half = blendM / 2
+  const here = ecosystemZone(elevationM, latDeg, slopeDeg)
+  const mix: EcosystemMix = { here, above: here, below: here, wAbove: 0, wBelow: 0 }
+  if (!(blendM > 0)) return mix
+
+  const upper = ecosystemZone(elevationM + half, latDeg, slopeDeg)
+  if (upper !== here) {
+    const boundary = findBoundary(elevationM, elevationM + half, here, latDeg, slopeDeg, true)
+    mix.above = upper
+    mix.wAbove = Math.min(0.5, Math.max(0, (elevationM - (boundary - half)) / blendM))
+  }
+
+  const lower = ecosystemZone(elevationM - half, latDeg, slopeDeg)
+  if (lower !== here) {
+    const boundary = findBoundary(elevationM - half, elevationM, here, latDeg, slopeDeg, false)
+    mix.below = lower
+    mix.wBelow = Math.min(0.5, Math.max(0, ((boundary + half) - elevationM) / blendM))
+  }
+
+  return mix
+}
+
+/**
+ * Elevation at which the belt stops being `zone`, by bisection.
+ * `upward` says which end of the bracket is inside the zone.
+ */
+function findBoundary(
+  lo: number, hi: number, zone: EcosystemZone,
+  latDeg: number, slopeDeg: number, upward: boolean,
+): number {
+  for (let i = 0; i < 12; i++) {
+    const mid = (lo + hi) / 2
+    const inZone = ecosystemZone(mid, latDeg, slopeDeg) === zone
+    if (inZone === upward) lo = mid
+    else hi = mid
+  }
+  return (lo + hi) / 2
+}
+
+/**
  * Zone colour with the band boundary softened, so belts blend instead of
- * banding into contour-like steps. Blends toward the NEXT zone up across the
- * last `blendM` metres of the current belt.
+ * banding into contour-like steps.
  */
 export function ecosystemColorSmooth(
   elevationM: number, latDeg: number, slopeDeg: number, blendM = 60,
 ): { r: number; g: number; b: number } {
-  const here = ecosystemZone(elevationM, latDeg, slopeDeg)
-  const above = ecosystemZone(elevationM + blendM, latDeg, slopeDeg)
-  const a = ecosystemColor(here)
-  if (above === here) return a
-  const b = ecosystemColor(above)
-  // How far into the blend band this point sits. Find the boundary by
-  // bisection — cheaper and simpler than inverting every threshold.
-  let lo = elevationM
-  let hi = elevationM + blendM
-  for (let i = 0; i < 8; i++) {
-    const mid = (lo + hi) / 2
-    if (ecosystemZone(mid, latDeg, slopeDeg) === here) lo = mid
-    else hi = mid
-  }
-  const t = Math.min(1, Math.max(0, (elevationM - (lo - blendM / 2)) / blendM))
+  const mix = ecosystemBlend(elevationM, latDeg, slopeDeg, blendM)
+  const h = ecosystemColor(mix.here)
+  if (mix.wAbove === 0 && mix.wBelow === 0) return h
+  const a = ecosystemColor(mix.above)
+  const b = ecosystemColor(mix.below)
+  const wh = 1 - mix.wAbove - mix.wBelow
   return {
-    r: a.r + (b.r - a.r) * t,
-    g: a.g + (b.g - a.g) * t,
-    b: a.b + (b.b - a.b) * t,
+    r: h.r * wh + a.r * mix.wAbove + b.r * mix.wBelow,
+    g: h.g * wh + a.g * mix.wAbove + b.g * mix.wBelow,
+    b: h.b * wh + a.b * mix.wAbove + b.b * mix.wBelow,
+  }
+}
+
+// ── Belts as materials ─────────────────────────────────────────────────────────
+
+/**
+ * What a belt is MADE of, for the procedural terrain surface.
+ *
+ * The same honesty note applies as to the colours: this is the altitudinal-belt
+ * model, not observed land cover. It says "at this height, at this latitude, on
+ * this slope, ground like THIS is plausible" — and then draws that ground
+ * properly instead of tinting the mesh a flat green.
+ */
+export interface EcosystemGround {
+  /** Share drawn with the vegetation material, 0-1. */
+  vegetation: number
+  /** Share drawn with the bare-mineral material, 0-1. The rest is snow. */
+  mineral: number
+  /** Surface coarseness, 0-1 — mown turf to loose scree. */
+  roughness: number
+}
+
+/**
+ * Belt make-up. Alpine and subalpine are deliberately MIXED rather than pure:
+ * a tundra bench is grass with rock showing through it, and painting it either
+ * one alone is what makes a generated mountain look like a contour map.
+ */
+const ZONE_GROUND: Record<EcosystemZone, EcosystemGround> = {
+  lowland:   { vegetation: 1.00, mineral: 0.00, roughness: 0.30 }, // cultivated
+  forest:    { vegetation: 1.00, mineral: 0.00, roughness: 0.85 }, // closed canopy
+  subalpine: { vegetation: 0.90, mineral: 0.10, roughness: 0.70 }, // thinning trees
+  alpine:    { vegetation: 0.72, mineral: 0.28, roughness: 0.55 }, // meadow + outcrop
+  rock:      { vegetation: 0.00, mineral: 1.00, roughness: 0.62 }, // scree and slabs
+  snow:      { vegetation: 0.00, mineral: 0.00, roughness: 0.12 }, // wind-packed
+}
+
+export function ecosystemGround(zone: EcosystemZone): EcosystemGround {
+  return ZONE_GROUND[zone]
+}
+
+/**
+ * Deterministic wobble to add to an elevation before classifying it, in metres.
+ *
+ * Softening a boundary stops it being a STEP; it does not stop it being a LINE.
+ * Measured on a straight altitude ramp, the snow line still came out as a
+ * perfectly horizontal band across the hillside — and no real ecotone looks
+ * like that. Treelines and snowlines wander by a hundred metres of altitude
+ * with aspect, wind and gully shelter, none of which this model knows about.
+ *
+ * So the boundary is displaced by a smooth noise field instead. This is not
+ * extra invention on top of the belt model: a straight line is a STRONGER claim
+ * about the site than a wandering one, and it is the claim that is wrong. Two
+ * octaves — a long meander plus a shorter one — and it is deterministic, so the
+ * same mountain always renders the same way.
+ *
+ * `i`/`j` are vertex indices; at ~9.5 m spacing the long octave is a ~320 m
+ * meander and the short one ~100 m. `sdM` is the TYPICAL wander in metres, not
+ * a peak — 40 m against belts several hundred metres deep.
+ */
+export function beltJitterM(i: number, j: number, sdM = 40): number {
+  const long = valueNoise(i / 34, j / 34, 7)
+  const short = valueNoise(i / 11, j / 11, 13)
+  // Value noise clusters near zero: this blend has a standard deviation of
+  // about 0.31, so scaling by its inverse makes `sdM` mean what it says instead
+  // of being an arbitrary knob (at face value it delivered barely a third of
+  // the wander asked for, which is why the first attempt did almost nothing).
+  // Clamped at 3 sd so a rare extreme cannot swallow a whole belt — the
+  // narrowest, alpine to rock, is about 300 m deep.
+  const raw = (long * 0.68 + short * 0.32) / 0.31
+  return Math.max(-3, Math.min(3, raw)) * sdM
+}
+
+/**
+ * Break a two-material belt into PATCHES instead of an even blend.
+ *
+ * The alpine belt is 72 % turf and 28 % rock, and applying that as a uniform
+ * mix everywhere gives every square metre the same slightly-stony green — the
+ * "everything is an average" look that reads as generated at a glance. Real
+ * tundra is benches of turf BETWEEN slabs of rock. Thresholding the mix against
+ * a noise field keeps the same overall proportion while making any given spot
+ * mostly one thing or the other.
+ *
+ * It is also cheaper to draw: a fragment that is pure turf skips the rock
+ * material entirely, where an even blend has to evaluate both everywhere.
+ *
+ * The snow share is left untouched — snow lies ON the ground rather than being
+ * a kind of it, and patchy snow at altitude would be a claim about wind and
+ * aspect that this model has no basis for.
+ */
+export function patchMix(
+  ground: EcosystemGround, i: number, j: number, softness = 0.28,
+): EcosystemGround {
+  const mineral = ground.vegetation + ground.mineral
+  // Nothing to split: one material already has it all.
+  if (mineral <= 0 || ground.vegetation <= 0 || ground.mineral <= 0) return ground
+
+  const share = ground.vegetation / mineral
+  // A different lattice and seed from the belt jitter, or the patches would
+  // line up with the boundary wobble and read as one pattern.
+  //
+  // Thresholding only preserves the belt average if the field it is compared
+  // against is UNIFORM, and value noise is not — it clusters near the middle
+  // (sd ≈ 0.31 of its range). Fed in raw it pushed the alpine belt from 72 %
+  // turf to 84 %. Passing it through a matched logistic CDF flattens it out;
+  // the scale is σ·√3/π, the standard normal-to-logistic match.
+  const u = 1 / (1 + Math.exp(-valueNoise(i / 6.5, j / 6.5, 29) / 0.17))
+  const veg = Math.min(1, Math.max(0, (share - u) / softness + 0.5))
+  return {
+    vegetation: mineral * veg,
+    mineral: mineral * (1 - veg),
+    roughness: ground.roughness,
+  }
+}
+
+/** Belt make-up with the boundary softened, exactly like the colour. */
+export function ecosystemGroundSmooth(
+  elevationM: number, latDeg: number, slopeDeg: number, blendM = 60,
+): EcosystemGround {
+  const mix = ecosystemBlend(elevationM, latDeg, slopeDeg, blendM)
+  const h = ZONE_GROUND[mix.here]
+  if (mix.wAbove === 0 && mix.wBelow === 0) return h
+  const a = ZONE_GROUND[mix.above]
+  const b = ZONE_GROUND[mix.below]
+  const wh = 1 - mix.wAbove - mix.wBelow
+  return {
+    vegetation: h.vegetation * wh + a.vegetation * mix.wAbove + b.vegetation * mix.wBelow,
+    mineral: h.mineral * wh + a.mineral * mix.wAbove + b.mineral * mix.wBelow,
+    roughness: h.roughness * wh + a.roughness * mix.wAbove + b.roughness * mix.wBelow,
   }
 }
 

@@ -846,6 +846,14 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                             {store.terrainStyle === 'ecosystem' && (
                               <Notice tone="warn">{t('layers.styleEcosystemNote')}</Notice>
                             )}
+                            {/* Procedural ground only bites on this style, and
+                                the switch for it lives in another tab — so say
+                                so here rather than let it look broken. */}
+                            {store.terrainStyle === 'ecosystem' && store.contextDetail === 'simple' && (
+                              <p className="text-[10px] text-[var(--text-faint)] leading-snug">
+                                {t('layers.styleEcosystemDetailHint')}
+                              </p>
+                            )}
 
                             <LookSlider
                               label={t('layers.exaggeration')}
@@ -931,20 +939,21 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                         />
                         {store.buildingsTruncated && <Notice tone="warn">{t('layers.buildingsTruncated')}</Notice>}
 
-                        {/* How much of a facade to model. Re-extrudes from the
-                            features already in memory — no refetch. */}
-                        <Caption>{t('layers.facadeDetail')}</Caption>
+                        {/* How much of the surroundings to model — facades AND
+                            ground surfaces. Rebuilds from the features already
+                            in memory, so it is instant and never refetches. */}
+                        <Caption>{t('layers.detailLevel')}</Caption>
                         <Choices
                           options={([
-                            ['simple', t('layers.facadeSimple')],
-                            ['detailed', t('layers.facadeRich')],
+                            ['simple', t('layers.detailSimple')],
+                            ['detailed', t('layers.detailRich')],
                           ] as const).map(([id, label]) => ({
                             id, label, active: store.contextDetail === id,
                           }))}
                           onSelect={handleContextDetail}
                         />
                         <p className="text-[10px] text-[var(--text-faint)] leading-snug">
-                          {t('layers.facadeHint')}
+                          {t('layers.detailHint')}
                         </p>
 
                         {/* Per-layer visibility, with counts, so an empty layer

@@ -129,15 +129,18 @@
       "building": "建筑",
       "water": "水域",
       "green": "公园与绿地",
+      "sand": "Sand & beaches",
+      "rock": "Rock & scree",
       "tree": "树木",
       "bridge": "桥梁",
       "road": "Roads & paths",
       "rail": "Railways & platforms"
     },
-    "facadeDetail": "Facade detail",
-    "facadeSimple": "Simple",
-    "facadeRich": "Detailed",
-    "facadeHint": "Detailed models each storey — glazing, spandrels and a ground floor. Heavier, and much closer to a real street."
+    "detailLevel": "Detail",
+    "detailSimple": "Simple",
+    "detailRich": "Detailed",
+    "detailHint": "Detailed models each storey of the surrounding buildings, and draws grass, sand, rock, snow and water as real lit surfaces — moving water with a foam line along the banks, ripples across a beach, and the relief itself under the Ecosystems style. Heavier, and the one to bring to a client meeting.",
+    "styleEcosystemDetailHint": "Set Detail to Detailed, under Surroundings, to draw these belts as real grass, rock and snow instead of a flat tint."
   },
   "placement": {
     "title": "Placement",

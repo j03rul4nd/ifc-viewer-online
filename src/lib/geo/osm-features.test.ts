@@ -402,3 +402,83 @@ describe('parseOsmFeatures — linear roads and rail', () => {
     expect((q.match(/\[out:json/g) ?? []).length).toBe(1)
   })
 })
+
+// ── Bare ground: sand and rock ────────────────────────────────────────────────
+//
+// A site by the sea or under a mountain is exactly where the ground AROUND the
+// model is what a client looks at, and these were previously classified as
+// nothing at all — the beach was simply missing from the scene.
+
+describe('sand and rock classification', () => {
+  it('recognises the bare-ground tags', () => {
+    expect(classifyFeature({ natural: 'beach' })).toBe('sand')
+    expect(classifyFeature({ natural: 'sand' })).toBe('sand')
+    expect(classifyFeature({ natural: 'dune' })).toBe('sand')
+    expect(classifyFeature({ natural: 'shingle' })).toBe('sand')
+    expect(classifyFeature({ landuse: 'sand' })).toBe('sand')
+    expect(classifyFeature({ natural: 'bare_rock' })).toBe('rock')
+    expect(classifyFeature({ natural: 'scree' })).toBe('rock')
+    expect(classifyFeature({ natural: 'glacier' })).toBe('rock')
+    expect(classifyFeature({ landuse: 'quarry' })).toBe('rock')
+  })
+
+  it('puts a golf bunker in the sand, not in the green it sits inside', () => {
+    expect(classifyFeature({ golf: 'bunker' })).toBe('sand')
+    // The course itself is still greenery.
+    expect(classifyFeature({ leisure: 'golf_course' })).toBe('green')
+  })
+
+  it('keeps a dune inside a nature reserve as sand', () => {
+    // Reserve boundaries cover whole coastlines; if greenery won here, every
+    // protected dune field would render as lawn.
+    expect(classifyFeature({ natural: 'dune', leisure: 'nature_reserve' })).toBe('sand')
+  })
+
+  it('still treats wetland as greenery, since it is vegetated', () => {
+    expect(classifyFeature({ natural: 'wetland' })).toBe('green')
+  })
+
+  it('gives each surface its own tone and coarseness', () => {
+    const beach = resolveFeatureStyle('sand', { natural: 'beach' })
+    const shingle = resolveFeatureStyle('sand', { natural: 'shingle' })
+    const mud = resolveFeatureStyle('sand', { natural: 'mud' })
+    // Shingle is pebbles, beach sand is fine, mud is finer still — the whole
+    // point of carrying roughness rather than one "sand" material.
+    expect(shingle.roughness!).toBeGreaterThan(beach.roughness!)
+    expect(mud.roughness!).toBeLessThan(beach.roughness!)
+    // And mud is not the colour of a beach.
+    expect(mud.tone![0]).toBeLessThan(beach.tone![0])
+
+    const ice = resolveFeatureStyle('rock', { natural: 'glacier' })
+    const scree = resolveFeatureStyle('rock', { natural: 'scree' })
+    expect(scree.roughness!).toBeGreaterThan(ice.roughness!)
+    expect(ice.tone![2]).toBeGreaterThan(0.8)          // ice reads blue-white
+  })
+
+  it('separates a mown pitch from scrub by coarseness alone', () => {
+    const pitch = resolveFeatureStyle('green', { leisure: 'pitch' })
+    const scrub = resolveFeatureStyle('green', { natural: 'scrub' })
+    expect(scrub.roughness!).toBeGreaterThan(pitch.roughness! + 0.5)
+  })
+
+  it('asks Overpass for the new surfaces in the SAME single query', () => {
+    const q = buildFeaturesQuery({ south: 0, west: 0, north: 1, east: 1 })
+    expect(q).toContain('beach|sand|dune|shingle|mud')
+    expect(q).toContain('bare_rock|rock|scree|stone|glacier')
+    expect(q).toContain('["golf"="bunker"]')
+    // One request per site is the decision the whole module hangs off.
+    expect((q.match(/\[out:json/g) ?? []).length).toBe(1)
+  })
+
+  it('counts them per layer', () => {
+    const counts = countByKind([
+      { id: 'a', kind: 'sand', height: { heightM: 0, minHeightM: 0, estimated: true },
+        style: { roofShape: 'flat', roofHeightM: 0 } },
+      { id: 'b', kind: 'rock', height: { heightM: 0, minHeightM: 0, estimated: true },
+        style: { roofShape: 'flat', roofHeightM: 0 } },
+    ])
+    expect(counts.sand).toBe(1)
+    expect(counts.rock).toBe(1)
+    expect(counts.green).toBe(0)
+  })
+})

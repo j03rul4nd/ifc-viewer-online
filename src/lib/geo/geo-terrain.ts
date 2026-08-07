@@ -23,10 +23,12 @@ import { WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import {
   terrainZoomFor, imageryZoomFor, hillshade, hypsometricColor,
   slopeColor, slopeFraction, occlusionFactor, contourFactor,
-  ecosystemColorSmooth,
+  ecosystemColorSmooth, ecosystemGroundSmooth, beltJitterM, patchMix,
   computeNormals, vertexSpacingM, clampTerrainLook, DEFAULT_TERRAIN_LOOK,
   SHADE_AMBIENT_IMAGERY, SHADE_AMBIENT_RELIEF,
 } from './terrain-sampling'
+import { createTerrainMaterial, setMaterialSun } from './surface-shaders'
+import type { SurfaceQuality } from './osm-scene'
 import { createLogger } from '../logger'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
 import type { TerrainWorkerIn, TerrainWorkerOut } from '../../workers/geo-terrain.worker'
@@ -77,6 +79,16 @@ export interface TerrainPatch {
   redrape(provider: MapProvider | null): Promise<void>
   /** Switch visualization style (imagery / shaded relief / hypsometric / slope). */
   setStyle(style: TerrainStyle): void
+  /**
+   * Flat vertex colours, or procedural ground materials.
+   *
+   * 'detailed' only bites on the ECOSYSTEM style, and that is deliberate rather
+   * than a limitation. Imagery is real photography — inventing a texture over it
+   * would be a lie about the site. Hypsometric and slope are cartography, where
+   * a flat readable tint IS the product. Ecosystems is already a plausible model
+   * of what the ground is, so drawing it as real ground is the honest upgrade.
+   */
+  setQuality(quality: SurfaceQuality): void
   /** Vertical exaggeration ×k — live (scales displacement + re-bakes shading). */
   setExaggeration(k: number): void
   /**
@@ -163,7 +175,16 @@ function assemblePatch(
   geometry.setAttribute('color', colorAttr)
 
   const material = new THREE.MeshBasicMaterial({ transparent: true, vertexColors: true })
-  const mesh = new THREE.Mesh(geometry, material)
+  /**
+   * Built on first use: allocating its attribute costs ~2.4 MB on a 385² patch,
+   * which is not worth paying for every user who never turns detail up.
+   */
+  let terrainMaterial: THREE.ShaderMaterial | null = null
+  let groundAttr: THREE.BufferAttribute | null = null
+  // Typed loosely on purpose: the mesh swaps between the flat-colour material
+  // and the procedural one, so it cannot be pinned to either.
+  const mesh: THREE.Mesh<THREE.BufferGeometry, THREE.Material> =
+    new THREE.Mesh(geometry, material)
   mesh.position.set(centre.nx, centre.ny, 0)
   // Draw above the flat basemap tiles to avoid z-fighting at elevation ≈ 0.
   mesh.renderOrder = 1
@@ -178,6 +199,7 @@ function assemblePatch(
   let texture: THREE.Texture | null = null
   let bitmap: ImageBitmap | null = null
   let style: TerrainStyle = 'imagery'
+  let quality: SurfaceQuality = 'simple'
   let exaggeration = 1
   let look: TerrainLook = { ...DEFAULT_TERRAIN_LOOK }
 
@@ -221,6 +243,11 @@ function assemblePatch(
   function recolor(): void {
     const ambient = style === 'imagery' ? SHADE_AMBIENT_IMAGERY : SHADE_AMBIENT_RELIEF
     const sun = { azimuthDeg: look.sunAzimuth, altitudeDeg: look.sunAltitude }
+    // In procedural mode the vertex colour carries the belt TONE and the light
+    // moves into aGround.w, because the shader supplies the albedo and would
+    // otherwise multiply a tint that already had the light baked into it.
+    const proc = isProcedural()
+    const ground = proc ? ensureGroundAttr().array as Float32Array : null
     for (let j = 0; j < verts; j++) {
       for (let i = 0; i < verts; i++) {
         const idx = j * verts + i
@@ -233,7 +260,27 @@ function assemblePatch(
         shade *= occlusionFactor(sky[idx], look.occlusion)
 
         let r = shade, g = shade, b = shade
-        if (style === 'hypsometric') {
+        if (proc) {
+          const slopeDeg = (Math.acos(Math.min(1, Math.max(0, nz))) * 180) / Math.PI
+          // Displace the boundary, not the terrain: a straight snow line is a
+          // stronger claim about the site than a wandering one, and it is the
+          // claim that is wrong. Colour and material read the SAME jittered
+          // height, or the tint would stop matching what it is made of.
+          const belt = effective[idx] + beltJitterM(i, j)
+          const tint = ecosystemColorSmooth(belt, anchorLat, slopeDeg)
+          const make = patchMix(ecosystemGroundSmooth(belt, anchorLat, slopeDeg), i, j)
+          r = tint.r; g = tint.g; b = tint.b
+          const go = idx * 4
+          ground![go] = make.vegetation
+          ground![go + 1] = make.mineral
+          ground![go + 2] = make.roughness
+          ground![go + 3] = shade * (look.contourInterval > 0
+            ? contourFactor(
+                effective[idx], look.contourInterval,
+                (Math.hypot(nx, ny) / Math.max(1e-6, nz)) * spacingM,
+              )
+            : 1)
+        } else if (style === 'hypsometric') {
           const tint = hypsometricColor((effective[idx] - minH) / heightRange)
           r = tint.r * shade; g = tint.g * shade; b = tint.b * shade
         } else if (style === 'slope') {
@@ -244,11 +291,11 @@ function assemblePatch(
           // to real metres above sea level, so a low hill must NOT be painted
           // like a high summit just because it is the highest thing nearby.
           const slopeDeg = (Math.acos(Math.min(1, Math.max(0, nz))) * 180) / Math.PI
-          const tint = ecosystemColorSmooth(effective[idx], anchorLat, slopeDeg)
+          const tint = ecosystemColorSmooth(effective[idx] + beltJitterM(i, j), anchorLat, slopeDeg)
           r = tint.r * shade; g = tint.g * shade; b = tint.b * shade
         }
 
-        if (look.contourInterval > 0) {
+        if (!proc && look.contourInterval > 0) {
           // Height change per vertex sets the line width so contours stay
           // readable on both plateaus and cliffs.
           const gradient = Math.hypot(nx, ny) / Math.max(1e-6, nz) * spacingM
@@ -264,10 +311,37 @@ function assemblePatch(
       }
     }
     colorAttr.needsUpdate = true
+    if (groundAttr) groundAttr.needsUpdate = true
   }
 
-  /** Point material.map/color at the right resource for the current style. */
+  /** True when the patch should draw itself with real ground materials. */
+  function isProcedural(): boolean {
+    return quality === 'detailed' && style === 'ecosystem'
+  }
+
+  function ensureGroundAttr(): THREE.BufferAttribute {
+    if (!groundAttr) {
+      groundAttr = new THREE.BufferAttribute(new Float32Array(pos.count * 4), 4)
+      geometry.setAttribute('aGround', groundAttr)
+    }
+    return groundAttr
+  }
+
+  /** Point the mesh at the right material, and that material at the right map. */
   function applyVisuals(): void {
+    if (isProcedural()) {
+      if (!terrainMaterial) {
+        terrainMaterial = createTerrainMaterial({
+          sun: { azimuthDeg: look.sunAzimuth, altitudeDeg: look.sunAltitude },
+          // The pattern's only scale. Patch geometry is centred on zero, so the
+          // shader can read metres straight off `position`.
+          metresPerUnit: 1 / metresToNormalized,
+        })
+      }
+      mesh.material = terrainMaterial
+      return
+    }
+    mesh.material = material
     if (style === 'imagery' && texture) {
       material.map = texture
       material.color.set(0xffffff)
@@ -357,6 +431,15 @@ function assemblePatch(
       recolor()
     },
 
+    setQuality(next) {
+      if (disposed || quality === next) return
+      quality = next
+      applyVisuals()
+      // The bake itself changes shape between the two modes, so it has to run
+      // again even though nothing about the terrain or the light moved.
+      recolor()
+    },
+
     setExaggeration(k) {
       if (disposed || !Number.isFinite(k) || k <= 0) return
       exaggeration = k
@@ -373,6 +456,14 @@ function assemblePatch(
       // is a colour re-bake, which is why the sun slider feels instant.
       if (detailChanged) applyHeights()
       recolor()
+      // The procedural surface lights itself from the same sun, so it has to
+      // follow the sliders too — even while it is detached, or switching back
+      // to the ecosystem style would bring a stale sun with it.
+      if (terrainMaterial) {
+        setMaterialSun(terrainMaterial, {
+          azimuthDeg: look.sunAzimuth, altitudeDeg: look.sunAltitude,
+        })
+      }
     },
 
     dispose() {
@@ -382,6 +473,8 @@ function assemblePatch(
       group.clear()
       geometry.dispose()
       material.dispose()
+      terrainMaterial?.dispose()
+      terrainMaterial = null
       texture?.dispose()
       bitmap?.close()
       texture = null

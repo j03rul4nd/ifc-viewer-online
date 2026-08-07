@@ -853,13 +853,26 @@ export function buildTreeLayer(
     else bySpecies.set(shape, [f])
   }
 
+  // Detailed ground with unlit trees standing on it looks worse than both did
+  // before, so the canopies join the same sun. `clump` breaks the silhouette
+  // into leaf masses; the trunk reuses the material with it turned down and no
+  // backlit glow, since bark does not transmit light.
+  const sun = opts.sun ?? FALLBACK_SUN
+  const detailed = opts.quality === 'detailed'
+  const canopyMaterial = (): THREE.Material => detailed
+    ? createFoliageMaterial({ sun, clump: 1, transmission: 0.5 })
+    : new THREE.MeshBasicMaterial()
+  const trunkMaterial = (): THREE.Material => detailed
+    ? createFoliageMaterial({ sun, clump: 0.35, transmission: 0, tint: TRUNK_COLOR })
+    : new THREE.MeshBasicMaterial({ color: TRUNK_COLOR })
+
   for (const [shape, subset] of bySpecies) {
     const canopy = new THREE.InstancedMesh(
-      canopyGeometry(shape), new THREE.MeshBasicMaterial(), subset.length,
+      canopyGeometry(shape), canopyMaterial(), subset.length,
     )
     canopy.name = `osm-trees-${shape}`
     const trunks = new THREE.InstancedMesh(
-      trunkGeometry(shape), new THREE.MeshBasicMaterial({ color: TRUNK_COLOR }), subset.length,
+      trunkGeometry(shape), trunkMaterial(), subset.length,
     )
     trunks.name = `osm-trunks-${shape}`
 

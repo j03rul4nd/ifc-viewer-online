@@ -30,6 +30,11 @@ import {
   ecosystemColor,
   ecosystemColorSmooth,
   type EcosystemZone,
+  ecosystemGround,
+  ecosystemGroundSmooth,
+  ecosystemBlend,
+  beltJitterM,
+  patchMix,
 } from './terrain-sampling'
 import { latLonToTileFloat, latLonToTile } from './geo-math'
 
@@ -634,5 +639,176 @@ describe('ecosystemColorSmooth', () => {
         expect(v).toBeLessThanOrEqual(1)
       }
     }
+  })
+})
+
+// ── Belts as materials ────────────────────────────────────────────────────────
+//
+// The belt model already said what COLOUR a height is. This says what it is MADE
+// of, which is what lets the terrain be drawn as grass, rock and snow instead of
+// tinted. Same model, same caveats — it is plausible, not observed.
+
+describe('ecosystemGround', () => {
+  const ALPS = 46
+
+  it('runs from all vegetation at the bottom to all snow at the top', () => {
+    const valley = ecosystemGroundSmooth(300, ALPS, 5)
+    const summit = ecosystemGroundSmooth(snowlineM(ALPS) + 600, ALPS, 5)
+    expect(valley.vegetation).toBeCloseTo(1, 5)
+    expect(valley.mineral).toBeCloseTo(0, 5)
+    // Snow is what is left over once vegetation and mineral are accounted for.
+    expect(1 - summit.vegetation - summit.mineral).toBeCloseTo(1, 5)
+  })
+
+  it('mixes rather than switching in the alpine belt', () => {
+    // A tundra bench is grass with rock showing through. Painting it purely one
+    // or the other is what makes a generated mountain look like a contour map.
+    const alpine = ecosystemGround('alpine')
+    expect(alpine.vegetation).toBeGreaterThan(0)
+    expect(alpine.mineral).toBeGreaterThan(0)
+    expect(alpine.vegetation + alpine.mineral).toBeCloseTo(1, 5)
+  })
+
+  it('turns a cliff to bare mineral at any height', () => {
+    // Slope beats altitude, exactly as it does for the colours: a crag in a
+    // forested valley is rock, not woodland.
+    const crag = ecosystemGroundSmooth(600, ALPS, 55)
+    expect(crag.mineral).toBeCloseTo(1, 5)
+    expect(crag.vegetation).toBeCloseTo(0, 5)
+  })
+
+  it('never leaves a weight outside 0-1, anywhere on the mountain', () => {
+    for (let elev = 0; elev <= 5000; elev += 25) {
+      for (const slope of [0, 20, 37, 39, 70]) {
+        const g = ecosystemGroundSmooth(elev, ALPS, slope)
+        const snow = 1 - g.vegetation - g.mineral
+        for (const w of [g.vegetation, g.mineral, snow, g.roughness]) {
+          expect(w).toBeGreaterThanOrEqual(-1e-9)
+          expect(w).toBeLessThanOrEqual(1 + 1e-9)
+        }
+      }
+    }
+  })
+
+  it('crosses every boundary smoothly — no step a shader would draw as a line', () => {
+    // Hard thresholds painted on a hillside read as contour lines, which is the
+    // one artefact that instantly says "generated".
+    let biggestJump = 0
+    for (let elev = 100; elev <= 4200; elev += 5) {
+      const a = ecosystemGroundSmooth(elev, ALPS, 15)
+      const b = ecosystemGroundSmooth(elev + 5, ALPS, 15)
+      biggestJump = Math.max(
+        biggestJump,
+        Math.abs(a.vegetation - b.vegetation),
+        Math.abs(a.mineral - b.mineral),
+        Math.abs(a.roughness - b.roughness),
+      )
+    }
+    // 5 m of climb inside a 60 m blend band can move a weight by ~1/12 at most.
+    expect(biggestJump).toBeLessThan(0.15)
+  })
+
+  it('makes forest floor coarser than a valley meadow and snow smoothest of all', () => {
+    expect(ecosystemGround('forest').roughness)
+      .toBeGreaterThan(ecosystemGround('lowland').roughness)
+    expect(ecosystemGround('snow').roughness)
+      .toBeLessThan(ecosystemGround('lowland').roughness)
+  })
+})
+
+describe('ecosystemBlend', () => {
+  it('reports no blend well inside a belt', () => {
+    const m = ecosystemBlend(300, 46, 5)
+    expect(m.above).toBe(m.here)
+    expect(m.below).toBe(m.here)
+    expect(m.wAbove).toBe(0)
+    expect(m.wBelow).toBe(0)
+  })
+
+  it('reaches exactly half at the boundary, from BOTH sides', () => {
+    // This is the whole point of centring the band on the boundary. Blending
+    // only upward hits 50 % at the line and then snaps to the pure upper belt
+    // one metre higher — a visible step, which is the banding it was meant to
+    // remove.
+    const tree = treelineM(46)
+    const under = ecosystemBlend(tree - 0.01, 46, 5, 60)
+    const over = ecosystemBlend(tree + 0.01, 46, 5, 60)
+    expect(under.wAbove).toBeCloseTo(0.5, 3)
+    expect(over.wBelow).toBeCloseTo(0.5, 3)
+    // And they name the same pair of belts, in mirror image.
+    expect(under.above).toBe(over.here)
+    expect(under.here).toBe(over.below)
+  })
+
+  it('never lets the two neighbours outweigh the belt itself', () => {
+    for (let elev = 0; elev <= 5000; elev += 13) {
+      const m = ecosystemBlend(elev, 46, 15)
+      expect(m.wAbove + m.wBelow).toBeLessThanOrEqual(1 + 1e-9)
+    }
+  })
+})
+
+describe('beltJitterM', () => {
+  it('is deterministic — the same mountain renders the same way twice', () => {
+    expect(beltJitterM(17, 42)).toBe(beltJitterM(17, 42))
+    expect(beltJitterM(17, 42)).not.toBe(beltJitterM(18, 42))
+  })
+
+  it('delivers the wander it advertises, in metres', () => {
+    // Value noise clusters near zero, so the raw blend gave barely a third of
+    // the amplitude asked for. This is the guard on that correction.
+    const vals: number[] = []
+    for (let j = 0; j < 200; j++) for (let i = 0; i < 200; i++) vals.push(beltJitterM(i, j, 40))
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length
+    const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length)
+    expect(Math.abs(mean)).toBeLessThan(6)
+    expect(sd).toBeGreaterThan(32)
+    expect(sd).toBeLessThan(48)
+  })
+
+  it('never wanders far enough to swallow a belt', () => {
+    // The narrowest belt (alpine → rock in the Alps) is about 300 m deep, so a
+    // displacement has to stay well inside that or a whole band would vanish.
+    for (let j = 0; j < 120; j++) {
+      for (let i = 0; i < 120; i++) expect(Math.abs(beltJitterM(i, j, 40))).toBeLessThanOrEqual(120)
+    }
+  })
+})
+
+describe('patchMix', () => {
+  const ALPINE = ecosystemGround('alpine')
+
+  it('leaves a single-material belt alone', () => {
+    // Nothing to split — and touching it would be inventing rock in a forest.
+    expect(patchMix(ecosystemGround('forest'), 3, 7)).toEqual(ecosystemGround('forest'))
+    expect(patchMix(ecosystemGround('rock'), 3, 7)).toEqual(ecosystemGround('rock'))
+  })
+
+  it('keeps the overall proportion while making any one spot mostly one thing', () => {
+    let vegSum = 0
+    let mixed = 0
+    let n = 0
+    for (let j = 0; j < 120; j++) {
+      for (let i = 0; i < 120; i++) {
+        const m = patchMix(ALPINE, i, j)
+        // Total material is conserved: patchiness redistributes, never adds.
+        expect(m.vegetation + m.mineral).toBeCloseTo(ALPINE.vegetation + ALPINE.mineral, 9)
+        vegSum += m.vegetation
+        if (m.vegetation > 0.05 && m.mineral > 0.05) mixed++
+        n++
+      }
+    }
+    // The belt average survives...
+    expect(vegSum / n).toBeGreaterThan(ALPINE.vegetation - 0.12)
+    expect(vegSum / n).toBeLessThan(ALPINE.vegetation + 0.12)
+    // ...but most of the ground is now turf OR rock, not an even blend of both.
+    // That is what stops every square metre being the same stony green, and it
+    // is what lets a fragment skip the other material entirely.
+    expect(mixed / n).toBeLessThan(0.45)
+  })
+
+  it('is deterministic and leaves roughness alone', () => {
+    expect(patchMix(ALPINE, 5, 9)).toEqual(patchMix(ALPINE, 5, 9))
+    expect(patchMix(ALPINE, 5, 9).roughness).toBe(ALPINE.roughness)
   })
 })
