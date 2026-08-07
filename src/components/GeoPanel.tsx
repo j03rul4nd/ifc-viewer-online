@@ -159,7 +159,11 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
       enabledAtRef.current = Date.now()
       trackMapModeEnabled({ georef_status: g?.status ?? 'none', source: placement.source })
       void refreshAttributions()
+      // Re-apply the persisted toggles. Both survive a reload in localStorage,
+      // so without this the checkboxes come back ticked over an empty scene and
+      // the only way to get the context back is to untick and tick again.
       if (useGeoStore.getState().terrainEnabled) void applyTerrain(true)
+      if (useGeoStore.getState().buildingsEnabled) void handleBuildingsToggle(true)
     } catch {
       useGeoStore.getState().fail(epoch, 'errors.enableFailed')
       trackMapError({ stage: 'enable' })
@@ -362,7 +366,13 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
   const handleBuildingsToggle = useCallback(async (enabled: boolean): Promise<void> => {
     const epoch = useGeoStore.getState().epoch
     useGeoStore.getState().setBuildingsEnabled(enabled)
-    if (!enabled) return
+    if (!enabled) {
+      // Tell the scene too. Without this the checkbox reads "off" while the
+      // buildings, trees and water are still standing in the viewport — the
+      // control and what you can see disagree until the next enable rebuilds.
+      void getGeo()?.then((geo) => geo.setBuildings(false))
+      return
+    }
     try {
       const geo = await getGeo()
       if (!geo) return

@@ -163,3 +163,95 @@ describe('geoStore · georef + attributions', () => {
     expect(useGeoStore.getState().attributions).toBe(ref) // same reference
   })
 })
+
+// ── Surrounding OSM buildings ─────────────────────────────────────────────────
+//
+// Regression guard for a state/UI mismatch: the buildings query is epoch-guarded
+// like everything else, so a reply that lands after the user turned map mode off
+// is dropped — which used to leave `buildingsStatus` on 'loading' forever. The
+// panel then showed a ticked checkbox above a permanent "Loading buildings…"
+// with no way out except toggling twice.
+
+describe('geoStore · buildings status', () => {
+  it('reports the outcome of a query that finishes in the same epoch', () => {
+    const epoch = useGeoStore.getState().startEnable()
+    useGeoStore.getState().confirmEnabled(epoch)
+    useGeoStore.getState().setBuildingsEnabled(true)
+    expect(useGeoStore.getState().buildingsStatus).toBe('loading')
+
+    useGeoStore.getState().setBuildingsResult(epoch, {
+      status: 'ready',
+      counts: { building: 12, water: 1, green: 3, tree: 40, bridge: 0 },
+      estimated: 4,
+    })
+    expect(useGeoStore.getState().buildingsStatus).toBe('ready')
+    expect(useGeoStore.getState().buildingsCounts.building).toBe(12)
+    expect(useGeoStore.getState().buildingsEstimated).toBe(4)
+  })
+
+  it('does not leave the status on "loading" when map mode is disabled mid-query', () => {
+    const epoch = useGeoStore.getState().startEnable()
+    useGeoStore.getState().confirmEnabled(epoch)
+    useGeoStore.getState().setBuildingsEnabled(true)
+    expect(useGeoStore.getState().buildingsStatus).toBe('loading')
+
+    useGeoStore.getState().disable()
+    expect(useGeoStore.getState().buildingsStatus).toBe('idle')
+
+    // The late reply is still dropped — it must not resurrect a stale count.
+    useGeoStore.getState().setBuildingsResult(epoch, {
+      status: 'ready',
+      counts: { building: 99, water: 0, green: 0, tree: 0, bridge: 0 },
+    })
+    expect(useGeoStore.getState().buildingsStatus).toBe('idle')
+    expect(useGeoStore.getState().buildingsCounts.building).toBe(0)
+  })
+
+  it('keeps the enabled preference across a disable (it is persisted, not a result)', () => {
+    const epoch = useGeoStore.getState().startEnable()
+    useGeoStore.getState().confirmEnabled(epoch)
+    useGeoStore.getState().setBuildingsEnabled(true)
+    useGeoStore.getState().disable()
+    expect(useGeoStore.getState().buildingsEnabled).toBe(true)
+    expect(localStorage.getItem('ifc-geo-buildings:v1')).toBe('1')
+  })
+
+  it('clears counts and status when the scene is reset', () => {
+    const epoch = useGeoStore.getState().startEnable()
+    useGeoStore.getState().confirmEnabled(epoch)
+    useGeoStore.getState().setBuildingsEnabled(true)
+    useGeoStore.getState().setBuildingsResult(epoch, {
+      status: 'ready',
+      counts: { building: 7, water: 0, green: 0, tree: 0, bridge: 0 },
+      truncated: true,
+    })
+    useGeoStore.getState().resetForScene()
+    expect(useGeoStore.getState().buildingsStatus).toBe('idle')
+    expect(useGeoStore.getState().buildingsCounts.building).toBe(0)
+    expect(useGeoStore.getState().buildingsTruncated).toBe(false)
+  })
+
+  it('turning the toggle off clears the previous results', () => {
+    const epoch = useGeoStore.getState().startEnable()
+    useGeoStore.getState().confirmEnabled(epoch)
+    useGeoStore.getState().setBuildingsEnabled(true)
+    useGeoStore.getState().setBuildingsResult(epoch, {
+      status: 'ready',
+      counts: { building: 5, water: 0, green: 0, tree: 0, bridge: 0 },
+    })
+    useGeoStore.getState().setBuildingsEnabled(false)
+    expect(useGeoStore.getState().buildingsStatus).toBe('idle')
+    expect(useGeoStore.getState().buildingsCounts.building).toBe(0)
+    expect(localStorage.getItem('ifc-geo-buildings:v1')).toBe('0')
+  })
+
+  it('one layer toggle does not disturb the others', () => {
+    useGeoStore.getState().setFeatureLayer('tree', false)
+    const layers = useGeoStore.getState().featureLayers
+    expect(layers.tree).toBe(false)
+    expect(layers.building).toBe(true)
+    expect(layers.water).toBe(true)
+    // Persisted, so the choice survives a reload.
+    expect(JSON.parse(localStorage.getItem('ifc-geo-osm-layers:v1') ?? '{}').tree).toBe(false)
+  })
+})

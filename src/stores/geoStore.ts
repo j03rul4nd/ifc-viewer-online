@@ -17,6 +17,23 @@ import type { GeoPlacement, GeorefExtraction, MapMode, TerrainStatus, TerrainSty
 
 const log = createLogger('GeoStore')
 
+/** Empty per-layer counts — the shape `buildingsCounts` always has. */
+const NO_FEATURE_COUNTS: Record<FeatureKind, number> =
+  { building: 0, water: 0, green: 0, tree: 0, bridge: 0 }
+
+/**
+ * The transient half of the buildings state: everything a finished query filled
+ * in. Cleared whenever the epoch is bumped, because an in-flight reply will be
+ * dropped and 'loading' would otherwise be permanent. `buildingsEnabled` is NOT
+ * in here — that is the user's persisted preference, not a result.
+ */
+const clearedBuildingsResult = {
+  buildingsStatus:    'idle' as const,
+  buildingsCounts:    NO_FEATURE_COUNTS,
+  buildingsEstimated: 0,
+  buildingsTruncated: false,
+}
+
 // ── localStorage keys (versioned) ──────────────────────────────────────────────
 
 const LS_CONSENT = 'ifc-geo-consent:v1'
@@ -256,6 +273,12 @@ export const useGeoStore = create<GeoStore>()(
             editing:        false,
             draftPlacement: null,
             terrainStatus:  'idle' as TerrainStatus,
+            // Bumping the epoch invalidates an in-flight buildings query, and
+            // its reply will be dropped by setBuildingsResult — so the status
+            // has to be cleared HERE or it stays 'loading' forever and the
+            // panel keeps claiming it is fetching something that no longer is.
+            // (The enabled flag is a persisted preference and survives.)
+            ...clearedBuildingsResult,
             attributions:   [],
             degraded:       false,
           }),
@@ -310,11 +333,7 @@ export const useGeoStore = create<GeoStore>()(
         set(
           v
             ? { buildingsEnabled: true, buildingsStatus: 'loading' as const }
-            : {
-                buildingsEnabled: false, buildingsStatus: 'idle' as const,
-                buildingsCounts: { building: 0, water: 0, green: 0, tree: 0, bridge: 0 },
-                buildingsEstimated: 0, buildingsTruncated: false,
-              },
+            : { buildingsEnabled: false, ...clearedBuildingsResult },
           false,
           'setBuildingsEnabled',
         )
@@ -327,7 +346,7 @@ export const useGeoStore = create<GeoStore>()(
           (s) => (epoch !== s.epoch ? s : {
             ...s,
             buildingsStatus: result.status,
-            buildingsCounts: result.counts ?? { building: 0, water: 0, green: 0, tree: 0, bridge: 0 },
+            buildingsCounts: result.counts ?? NO_FEATURE_COUNTS,
             buildingsEstimated: result.estimated ?? 0,
             buildingsTruncated: result.truncated ?? false,
           }),
@@ -435,6 +454,7 @@ export const useGeoStore = create<GeoStore>()(
             epoch:          s.epoch + 1,
             terrainEnabled: false,
             terrainStatus:  'idle' as TerrainStatus,
+            ...clearedBuildingsResult,
             georefByModel:  {},
             placement:      null,
             editing:        false,
