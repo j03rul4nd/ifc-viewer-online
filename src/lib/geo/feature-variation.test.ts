@@ -201,3 +201,38 @@ describe('greenTone', () => {
     }
   })
 })
+
+describe('tree species detection', () => {
+  it('reads the broad split from leaf_type', () => {
+    expect(treeShape({ leaf_type: 'needleleaved' })).toBe('needleleaf')
+    expect(treeShape({ leaf_type: 'broadleaved' })).toBe('broadleaf')
+  })
+
+  it('recognises the two silhouettes nothing else can stand in for', () => {
+    // Spindles: a poplar avenue rendered as round crowns loses its rhythm.
+    expect(treeShape({ genus: 'Populus' })).toBe('columnar')
+    expect(treeShape({ species: 'Cupressus sempervirens' })).toBe('columnar')
+    expect(treeShape({ taxon: 'Thuja occidentalis' })).toBe('columnar')
+    // Palms: a coastal site full of green balls is noticed immediately.
+    expect(treeShape({ genus: 'Phoenix' })).toBe('palm')
+    expect(treeShape({ species: 'Washingtonia robusta' })).toBe('palm')
+    expect(treeShape({ 'species:en': 'Canary Island date palm' })).toBe('palm')
+  })
+
+  it('lets the species override a contradictory leaf_type', () => {
+    // Palms are broadleaved by botany and nothing like a lime by silhouette.
+    expect(treeShape({ leaf_type: 'broadleaved', genus: 'Trachycarpus' })).toBe('palm')
+  })
+
+  it('falls back to broadleaf for anything unmapped', () => {
+    expect(treeShape(undefined)).toBe('broadleaf')
+    expect(treeShape({})).toBe('broadleaf')
+    expect(treeShape({ genus: 'Tilia' })).toBe('broadleaf')
+  })
+
+  it('gives every silhouette its own foliage tone', () => {
+    const tones = (['broadleaf', 'needleleaf', 'columnar', 'palm'] as const)
+      .map((s) => foliageColor('t1', s).map((v) => v.toFixed(4)).join())
+    expect(new Set(tones).size).toBe(4)
+  })
+})

@@ -40,14 +40,38 @@ export function jitter(id: string, channel: number, base: number, amount: number
 // ── Tree species ───────────────────────────────────────────────────────────────
 
 /**
- * Canopy silhouette. OSM's `leaf_type` is the reliable signal; `genus` and
- * `species` are far rarer and not worth a lookup table that would be wrong more
- * often than right.
+ * Canopy silhouette. `leaf_type` is the reliable signal and covers the broad
+ * split; `genus`/`species`/`taxon` are rarer but worth reading for the two
+ * shapes nothing else can stand in for — a spindle-shaped poplar or cypress,
+ * and a palm. Everything outside those lists falls back to the leaf type, so a
+ * wrong guess is never worse than the old single-shape default.
  */
-export type TreeShape = 'broadleaf' | 'needleleaf'
+export type TreeShape = 'broadleaf' | 'needleleaf' | 'columnar' | 'palm'
+
+/** Genera whose habit is a narrow spindle rather than a round crown. */
+const COLUMNAR_GENERA = [
+  'populus', 'cupressus', 'thuja', 'juniperus', 'taxodium', 'calocedrus',
+]
+
+/** Palms, by the genera actually planted in streets and parks. */
+const PALM_GENERA = [
+  'phoenix', 'washingtonia', 'trachycarpus', 'chamaerops', 'syagrus',
+  'butia', 'livistona', 'roystonea', 'arecaceae', 'cocos',
+]
 
 export function treeShape(tags: Record<string, string> | undefined): TreeShape {
   const t = tags ?? {}
+  // genus/species/taxon are all used in the wild for the same information.
+  const name = [t['genus'], t['species'], t['taxon'], t['genus:en'], t['species:en']]
+    .filter(Boolean).join(' ').toLowerCase()
+
+  if (name) {
+    if (PALM_GENERA.some((g) => name.includes(g)) || name.includes('palm')) return 'palm'
+    if (COLUMNAR_GENERA.some((g) => name.includes(g)) || name.includes('cypress') || name.includes('poplar')) {
+      return 'columnar'
+    }
+  }
+
   const leaf = (t['leaf_type'] ?? '').toLowerCase()
   if (leaf === 'needleleaved') return 'needleleaf'
   if (leaf === 'broadleaved') return 'broadleaf'
@@ -62,6 +86,10 @@ export function treeShape(tags: Record<string, string> | undefined): TreeShape {
 const FOLIAGE_BASE: Record<TreeShape, [number, number, number]> = {
   broadleaf: [0.29, 0.47, 0.24],
   needleleaf: [0.20, 0.36, 0.26],
+  // Cypress and poplar read darker and greyer than a street lime.
+  columnar: [0.22, 0.38, 0.22],
+  // Palm fronds are yellower and lighter than temperate foliage.
+  palm: [0.36, 0.50, 0.22],
 }
 
 /**

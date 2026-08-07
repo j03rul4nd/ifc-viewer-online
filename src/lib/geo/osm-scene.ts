@@ -18,7 +18,8 @@
 
 import * as THREE from 'three'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
-import { jitter, foliageColor, variate } from './feature-variation'
+import { jitter, foliageColor, variate, type TreeShape } from './feature-variation'
+import { canopyGeometry, trunkGeometry, TREE_PROPORTIONS } from './tree-geometry'
 import type { OsmFeature, LatLonPoint } from './osm-features'
 
 export interface LayerMeshOptions {
@@ -277,32 +278,9 @@ export function buildTreeLayer(
   const trees = features.filter((f) => f.kind === 'tree' && f.point).slice(0, MAX_TREES)
   if (trees.length === 0) return null
 
-  // Split by silhouette so each gets the right geometry. A street of identical
-  // cones is the clearest tell that a scene is generated; broadleaf crowns are
-  // round and conifers are not, and OSM tells us which via `leaf_type`.
-  const broad = trees.filter((f) => (f.style.treeShape ?? 'broadleaf') === 'broadleaf')
-  const needle = trees.filter((f) => f.style.treeShape === 'needleleaf')
-
-  // Low-poly on purpose: at map scale a tree is a silhouette, and detail here
-  // buys nothing but triangles across thousands of instances.
-  const broadGeo = new THREE.IcosahedronGeometry(1, 0)
-  const needleGeo = new THREE.ConeGeometry(1, 1, 6)
-  const trunkGeo = new THREE.CylinderGeometry(0.75, 1, 1, 5)
-  // Cones/cylinders are built around +Y; the planar frame is Z-up, and both are
-  // anchored at their base so instance scaling grows them upward.
-  needleGeo.rotateX(Math.PI / 2)
-  needleGeo.translate(0, 0, 0.5)
-  trunkGeo.rotateX(Math.PI / 2)
-  trunkGeo.translate(0, 0, 0.5)
-
   const group = new THREE.Group()
   group.name = 'osm-trees'
   group.renderOrder = 4
-
-  const trunk = new THREE.InstancedMesh(
-    trunkGeo, new THREE.MeshBasicMaterial({ color: TRUNK_COLOR }), trees.length,
-  )
-  group.add(trunk)
 
   const m = new THREE.Matrix4()
   const pos = new THREE.Vector3()
@@ -311,70 +289,79 @@ export function buildTreeLayer(
   const color = new THREE.Color()
   const zAxis = new THREE.Vector3(0, 0, 1)
 
-  /** Place one canopy set, returning the instanced mesh. */
-  const placeCanopy = (
-    subset: OsmFeature[], geo: THREE.BufferGeometry, rounded: boolean,
-  ): THREE.InstancedMesh | null => {
-    if (subset.length === 0) return null
-    const mesh = new THREE.InstancedMesh(
-      geo, new THREE.MeshBasicMaterial({ vertexColors: false }), subset.length,
-    )
-    subset.forEach((f, i) => {
-      const { nx, ny } = latLonToNormalized(f.point!.lat, f.point!.lon)
-      const ground = sample ? sample(nx, ny) : anchorElevation
-      const baseZ = (ground - anchorElevation) * mToN
-
-      // Deterministic per-tree variation: same tree, same look, every time.
-      const totalM = jitter(f.id, 0, f.height.heightM, 0.22)
-      const radiusM = jitter(f.id, 1, f.style.crownRadiusM ?? 3, 0.25)
-      const trunkM = totalM * 0.34
-      const canopyM = totalM - trunkM
-
-      // A round crown is centred on its middle; a cone sits on its base.
-      const centreZ = rounded ? baseZ + (trunkM + canopyM / 2) * mToN : baseZ + trunkM * mToN
-      pos.set(nx, ny, centreZ)
-      // Yaw only — a leaning tree would read as a bug, not as character.
-      quat.setFromAxisAngle(zAxis, variate(f.id, 4) * Math.PI * 2)
-      scale.set(
-        radiusM * mToN,
-        radiusM * mToN,
-        (rounded ? canopyM / 2 : canopyM) * mToN,
-      )
-      mesh.setMatrixAt(i, m.compose(pos, quat, scale))
-      const [r, g, b] = foliageColor(f.id, f.style.treeShape ?? 'broadleaf')
-      mesh.setColorAt(i, color.setRGB(r, g, b))
-    })
-    mesh.instanceMatrix.needsUpdate = true
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
-    return mesh
-  }
-
-  // Trunks for every tree, in one instanced mesh.
-  trees.forEach((f, i) => {
+  /** Everything a placed tree needs, derived once and shared by both meshes. */
+  const measure = (f: OsmFeature) => {
+    const shape = f.style.treeShape ?? 'broadleaf'
+    const p = TREE_PROPORTIONS[shape]
     const { nx, ny } = latLonToNormalized(f.point!.lat, f.point!.lon)
     const ground = sample ? sample(nx, ny) : anchorElevation
-    const baseZ = (ground - anchorElevation) * mToN
+    // Deterministic per-tree variation: same tree, same look, every time.
     const totalM = jitter(f.id, 0, f.height.heightM, 0.22)
-    const radiusM = jitter(f.id, 1, f.style.crownRadiusM ?? 3, 0.25)
-    const trunkM = totalM * 0.34
-    const trunkR = Math.max(0.12, radiusM * 0.11) * mToN
-    pos.set(nx, ny, baseZ)
-    quat.identity()
-    scale.set(trunkR, trunkR, trunkM * mToN)
-    trunk.setMatrixAt(i, m.compose(pos, quat, scale))
-  })
-  trunk.instanceMatrix.needsUpdate = true
+    const radiusM = jitter(f.id, 1, (f.style.crownRadiusM ?? 3) * p.crown, 0.25)
+    return {
+      shape, p, nx, ny,
+      baseZ: (ground - anchorElevation) * mToN,
+      totalM,
+      radiusM,
+      trunkM: totalM * p.trunk,
+    }
+  }
 
-  const broadMesh = placeCanopy(broad, broadGeo, true)
-  const needleMesh = placeCanopy(needle, needleGeo, false)
-  if (broadMesh) group.add(broadMesh)
-  if (needleMesh) group.add(needleMesh)
-  // Geometries with no instances would otherwise leak.
-  if (!broadMesh) broadGeo.dispose()
-  if (!needleMesh) needleGeo.dispose()
+  // One instanced mesh per species: four draw calls for the whole canopy, no
+  // matter how many trees the neighbourhood has.
+  const bySpecies = new Map<TreeShape, OsmFeature[]>()
+  for (const f of trees) {
+    const shape = f.style.treeShape ?? 'broadleaf'
+    const list = bySpecies.get(shape)
+    if (list) list.push(f)
+    else bySpecies.set(shape, [f])
+  }
+
+  for (const [shape, subset] of bySpecies) {
+    const canopy = new THREE.InstancedMesh(
+      canopyGeometry(shape), new THREE.MeshBasicMaterial(), subset.length,
+    )
+    canopy.name = `osm-trees-${shape}`
+    const trunks = new THREE.InstancedMesh(
+      trunkGeometry(shape), new THREE.MeshBasicMaterial({ color: TRUNK_COLOR }), subset.length,
+    )
+    trunks.name = `osm-trunks-${shape}`
+
+    subset.forEach((f, i) => {
+      const t = measure(f)
+      const canopyM = t.totalM - t.trunkM
+      // Yaw only — a leaning tree would read as a bug, not as character.
+      quat.setFromAxisAngle(zAxis, variate(f.id, 4) * Math.PI * 2)
+
+      // A round crown hangs off its centre; tiered and radial ones sit on the
+      // top of the trunk.
+      const centreZ = t.p.baseAnchored
+        ? t.baseZ + t.trunkM * mToN
+        : t.baseZ + (t.trunkM + canopyM / 2) * mToN
+      pos.set(t.nx, t.ny, centreZ)
+      scale.set(
+        t.radiusM * mToN,
+        t.radiusM * mToN,
+        (t.p.baseAnchored ? canopyM : canopyM / 2) * mToN,
+      )
+      canopy.setMatrixAt(i, m.compose(pos, quat, scale))
+      canopy.setColorAt(i, color.setRGB(...foliageColor(f.id, t.shape)))
+
+      const trunkR = Math.max(0.12, t.radiusM * t.p.trunkRadius) * mToN
+      pos.set(t.nx, t.ny, t.baseZ)
+      scale.set(trunkR, trunkR, t.trunkM * mToN)
+      trunks.setMatrixAt(i, m.compose(pos, quat, scale))
+    })
+
+    canopy.instanceMatrix.needsUpdate = true
+    if (canopy.instanceColor) canopy.instanceColor.needsUpdate = true
+    trunks.instanceMatrix.needsUpdate = true
+    group.add(trunks, canopy)
+  }
 
   return { object: group, count: trees.length }
 }
+
 
 /** Dispose a layer's GPU resources, whatever shape it took. */
 export function disposeLayer(object: THREE.Object3D): void {

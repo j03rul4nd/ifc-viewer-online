@@ -162,33 +162,54 @@ describe('buildTreeLayer', () => {
     expect(buildTreeLayer([area('green', 'g1')], OPTS)).toBeNull()
   })
 
-  it('splits species into separate canopy meshes', () => {
+  it('gives each species its own trunk and canopy mesh', () => {
     const built = buildTreeLayer([
       tree('n1'),
       tree('n2', { style: { roofShape: 'flat', roofHeightM: 0, crownRadiusM: 3, treeShape: 'needleleaf' } }),
     ], OPTS)!
-    // trunk + broadleaf canopy + needleleaf canopy
-    expect(built.object.children).toHaveLength(3)
+    // Trunks differ by species too (a palm is not a lime), so it is a
+    // trunk + canopy pair per silhouette present.
+    expect(built.object.children).toHaveLength(4)
     expect(built.count).toBe(2)
+    const names = built.object.children.map((o) => o.name).sort()
+    expect(names).toEqual([
+      'osm-trees-broadleaf', 'osm-trees-needleleaf',
+      'osm-trunks-broadleaf', 'osm-trunks-needleleaf',
+    ])
   })
 
-  it('uses only ONE canopy mesh when every tree shares a silhouette', () => {
+  it('uses only ONE pair when every tree shares a silhouette', () => {
     const built = buildTreeLayer([tree('n1'), tree('n2'), tree('n3')], OPTS)!
     expect(built.object.children).toHaveLength(2) // trunk + one canopy
+  })
+
+  it('renders every silhouette OSM can tell us about', () => {
+    const shapes = ['broadleaf', 'needleleaf', 'columnar', 'palm'] as const
+    const built = buildTreeLayer(shapes.map((sh, i) => tree(`n${i}`, {
+      style: { roofShape: 'flat', roofHeightM: 0, crownRadiusM: 3, treeShape: sh },
+    })), OPTS)!
+    expect(built.object.children).toHaveLength(8) // four pairs
+    // Each canopy is a DIFFERENT geometry — the whole point of the split.
+    const canopies = built.object.children.filter((o) => o.name.startsWith('osm-trees-'))
+    const vertexCounts = canopies.map(
+      (o) => (o as THREE.InstancedMesh).geometry.getAttribute('position').count,
+    )
+    expect(new Set(vertexCounts).size).toBe(4)
   })
 
   it('keeps thousands of trees to a handful of draw calls', () => {
     const many = Array.from({ length: 1500 }, (_, i) => tree(`n${i}`))
     const built = buildTreeLayer(many, OPTS)!
     expect(built.count).toBe(1500)
-    expect(built.object.children.length).toBeLessThanOrEqual(3)
+    // One species in, one pair out — count does not drive draw calls.
+    expect(built.object.children.length).toBeLessThanOrEqual(2)
   })
 
   it('varies size between trees instead of cloning one cone', () => {
     const many = Array.from({ length: 30 }, (_, i) => tree(`n${i}`))
     const built = buildTreeLayer(many, OPTS)!
     const canopy = built.object.children.find(
-      (o) => (o as THREE.InstancedMesh).isInstancedMesh && o !== built.object.children[0],
+      (o) => o.name.startsWith('osm-trees-'),
     ) as THREE.InstancedMesh
     const m = new THREE.Matrix4()
     const scales = new Set<string>()
@@ -204,7 +225,9 @@ describe('buildTreeLayer', () => {
   it('gives each tree its own foliage colour', () => {
     const many = Array.from({ length: 30 }, (_, i) => tree(`n${i}`))
     const built = buildTreeLayer(many, OPTS)!
-    const canopy = built.object.children[1] as THREE.InstancedMesh
+    const canopy = built.object.children.find(
+      (o) => o.name.startsWith('osm-trees-'),
+    ) as THREE.InstancedMesh
     expect(canopy.instanceColor).toBeTruthy()
     const seen = new Set<string>()
     const c = new THREE.Color()
