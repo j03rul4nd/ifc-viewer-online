@@ -328,3 +328,80 @@ describe('facade detail levels', () => {
     expect(g.getAttribute('position').count).toBeLessThan(2000)
   })
 })
+
+describe('lit facades', () => {
+  const block = {
+    ...squareFootprint('a', 24),
+    id: 'w1',
+    height: { heightM: 28, minHeightM: 0, estimated: false },
+  }
+
+  it('leaves directional shading OUT when a shader will do the lighting', () => {
+    // Unlit: opposite walls differ, because the sun is baked into the colours.
+    const baked = buildBuildingsGeometry([block], OPTS)!.geometry
+    // Lit: the same walls carry the same albedo, and the material shades them.
+    const albedo = buildBuildingsGeometry([block], { ...OPTS, lit: true })!.geometry
+
+    const wallTones = (g: THREE.BufferGeometry): Set<string> => {
+      const n = g.getAttribute('normal')
+      const c = g.getAttribute('color')
+      const out = new Set<string>()
+      for (let i = 0; i < c.count; i++) {
+        if (n.getZ(i) === 0) out.add(c.getX(i).toFixed(4))
+      }
+      return out
+    }
+
+    // Baking a sun into four differently-oriented walls produces more distinct
+    // tones than pure albedo does.
+    expect(wallTones(baked).size).toBeGreaterThan(wallTones(albedo).size)
+  })
+
+  it('keeps the contact shading at grade — a lit building must not float', () => {
+    const g = buildBuildingsGeometry([block], { ...OPTS, lit: true })!.geometry
+    const pos = g.getAttribute('position')
+    const nor = g.getAttribute('normal')
+    const col = g.getAttribute('color')
+
+    let lowest = Infinity, highest = -Infinity
+    for (let i = 0; i < pos.count; i++) {
+      if (nor.getZ(i) !== 0) continue
+      lowest = Math.min(lowest, pos.getZ(i))
+      highest = Math.max(highest, pos.getZ(i))
+    }
+    let atBase = 0, atTop = 0
+    for (let i = 0; i < pos.count; i++) {
+      if (nor.getZ(i) !== 0) continue
+      if (pos.getZ(i) === lowest) atBase = Math.max(atBase, col.getX(i))
+      if (pos.getZ(i) === highest) atTop = Math.max(atTop, col.getX(i))
+    }
+    expect(atBase).toBeLessThan(atTop)
+  })
+
+  it('sets a parapet on detailed flat roofs, and none on simple ones', () => {
+    const roofZ = (detail: 'simple' | 'detailed'): number => {
+      const g = buildBuildingsGeometry([block], { ...OPTS, detail })!.geometry
+      const pos = g.getAttribute('position')
+      const nor = g.getAttribute('normal')
+      let z = -Infinity
+      for (let i = 0; i < pos.count; i++) {
+        if (nor.getZ(i) === 1) z = Math.max(z, pos.getZ(i))
+      }
+      return z
+    }
+    const wallTop = (detail: 'simple' | 'detailed'): number => {
+      const g = buildBuildingsGeometry([block], { ...OPTS, detail })!.geometry
+      const pos = g.getAttribute('position')
+      const nor = g.getAttribute('normal')
+      let z = -Infinity
+      for (let i = 0; i < pos.count; i++) {
+        if (nor.getZ(i) === 0) z = Math.max(z, pos.getZ(i))
+      }
+      return z
+    }
+    // Simple: roof deck is flush with the top of the wall.
+    expect(roofZ('simple')).toBeCloseTo(wallTop('simple'), 12)
+    // Detailed: the wall carries on above the deck as an upstand.
+    expect(roofZ('detailed')).toBeLessThan(wallTop('detailed'))
+  })
+})

@@ -17,9 +17,11 @@ import { createBasemapEngine, type BasemapEngine } from './basemap-engine'
 import { buildTerrainPatch, tileNormalizedCenter, TERRAIN_EDGE_FADE, type TerrainPatch } from './geo-terrain'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from './terrain-look'
 import { buildBuildingsGeometry, type BuildingDetail } from './building-mesh'
+import { createFacadeMaterial } from './facade-shader'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, buildLinearLayer, disposeLayer,
 } from './osm-scene'
+import { applySurfaceSun, setSurfaceTime, hasAnimatedMaterial } from './surface-shaders'
 import { FEATURE_KINDS, type OsmFeature, type FeatureKind } from './osm-features'
 import type { BuildingsRequest, BuildingsResponse } from '../../workers/geo-buildings.worker'
 import { composeGeoRootTransform, normalizedToLatLon, northDirection, latLonToTile, type LatLon } from './geo-math'
@@ -217,9 +219,15 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   } | null = null
   /** Built meshes per layer, so each can be added or dropped independently. */
   const layerObjects = new Map<FeatureKind, THREE.Object3D>()
+  /**
+   * Subset of the above that needs a per-frame uniform update (water). Kept as
+   * its own list so the RAF does not traverse the whole scene graph every frame
+   * looking for something that is usually not there.
+   */
+  const animatedLayers: THREE.Object3D[] = []
   let layerVisibility: FeatureLayerVisibility = {
-    building: true, water: true, green: true, tree: true, bridge: true,
-    road: true, rail: true,
+    building: true, water: true, green: true, sand: true, rock: true,
+    tree: true, bridge: true, road: true, rail: true,
   }
   let degradedCallback: ((degraded: boolean) => void) | null = null
 
@@ -268,9 +276,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       })
 
       // 5 — geo-owned RAF driving tile LOD/streaming (see T0 decision block)
+      // and the animated surfaces. Water is the only thing that moves; its
+      // clock is wall time, so a swell keeps the same speed whatever the frame
+      // rate, and it stops dead the moment map mode is off with the RAF.
       const tick = (): void => {
         if (!engine) return
         engine.update()
+        if (animatedLayers.length > 0) {
+          const seconds = performance.now() / 1000
+          for (const obj of animatedLayers) setSurfaceTime(obj, seconds)
+        }
         rafId = requestAnimationFrame(tick)
       }
       rafId = requestAnimationFrame(tick)
@@ -352,6 +367,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // Re-apply sticky visuals (style/exaggeration survive rebuilds).
       if (terrainStyle !== 'imagery') patch.setStyle(terrainStyle)
       if (terrainExaggeration !== 1) patch.setExaggeration(terrainExaggeration)
+      if (contextDetail !== 'simple') patch.setQuality(contextDetail)
       patch.setLook(terrainLook)
       // Clip the flat basemap under the patch so valleys BELOW the ground
       // plane are visible (they'd otherwise be hidden by the opaque tiles).
@@ -374,6 +390,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     setTerrainLook(look) {
       terrainLook = clampTerrainLook(look)
       terrain?.setLook(terrainLook)
+      // The relief light IS the light on the surfaces standing on it. Updating
+      // the uniforms in place rather than rebuilding keeps the sun sliders
+      // live, which is the whole point of them.
+      const sun = surfaceSun()
+      for (const [, obj] of layerObjects) applySurfaceSun(obj, sun)
     },
 
     async setBuildings(enabled) {
@@ -443,6 +464,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     setContextDetail(level) {
       if (level === contextDetail) return
       contextDetail = level
+      // One control, whole scene: facades, ground layers AND the relief itself.
+      terrain?.setQuality(level)
       rebuildLayers()
     },
 
@@ -515,6 +538,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // ground plane is the honest answer.
       sampleGroundM: terrain ? (nx: number, ny: number) => terrain!.sampleGroundM(nx, ny) : null,
       anchorElevationM: terrain?.anchorElevation ?? 0,
+      // One control governs how much of everything is modelled: storey-banded
+      // facades AND procedural ground. Splitting them would be two switches for
+      // one decision — "is this a working view or a view I am presenting".
+      quality: contextDetail,
+      sun: surfaceSun(),
     }
 
     let estimatedCount = 0
@@ -523,26 +551,35 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       const footprints = osmFeatures
         .filter((f) => f.kind === 'building' && f.ring)
         .map((f) => ({ id: f.id, ring: f.ring!, height: f.height, style: f.style }))
-      const built = buildBuildingsGeometry(footprints, { ...opts, detail: contextDetail })
+      // At 'detailed' the facades join the same sun as the ground and the
+      // canopies; at 'simple' they stay unlit, which is cheaper and is the
+      // right answer when the surroundings are only there for orientation.
+      const litFacades = contextDetail === 'detailed'
+      const built = buildBuildingsGeometry(footprints, {
+        ...opts, detail: contextDetail, lit: litFacades,
+      })
       if (built) {
         const mesh = new THREE.Mesh(
           built.geometry,
-          new THREE.MeshBasicMaterial({ vertexColors: true }),
+          litFacades
+            ? createFacadeMaterial({ sun: opts.sun })
+            : new THREE.MeshBasicMaterial({ vertexColors: true }),
         )
         mesh.name = 'osm-buildings'
         // Above the flat tiles and the surface layers, so grade-level walls do
         // not z-fight with the basemap or with a park drawn under them.
         mesh.renderOrder = 5
-        geoRoot.add(mesh)
-        layerObjects.set('building', mesh)
+        addLayer('building', mesh)
         estimatedCount = built.estimatedCount
       }
     }
 
-    for (const layer of ['water', 'green'] as const) {
+    // Ground cover, coarsest first: greenery, then bare ground over it, then
+    // water on top — a river drawn under its own banks would vanish.
+    for (const layer of ['green', 'sand', 'rock', 'water'] as const) {
       if (!layerVisibility[layer]) continue
       const built = buildSurfaceLayer(osmFeatures, layer, opts)
-      if (built) { geoRoot.add(built.object); layerObjects.set(layer, built.object) }
+      if (built) { addLayer(layer, built.object) }
     }
 
     // Ground ribbons before the things that sit on them: roads over greenery,
@@ -550,25 +587,39 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     for (const layer of ['road', 'rail'] as const) {
       if (!layerVisibility[layer]) continue
       const built = buildLinearLayer(osmFeatures, layer, opts)
-      if (built) { geoRoot.add(built.object); layerObjects.set(layer, built.object) }
+      if (built) { addLayer(layer, built.object) }
     }
 
     if (layerVisibility.bridge) {
       const built = buildBridgeLayer(osmFeatures, opts)
-      if (built) { geoRoot.add(built.object); layerObjects.set('bridge', built.object) }
+      if (built) { addLayer('bridge', built.object) }
     }
 
     if (layerVisibility.tree) {
       const built = buildTreeLayer(osmFeatures, opts)
-      if (built) { geoRoot.add(built.object); layerObjects.set('tree', built.object) }
+      if (built) { addLayer('tree', built.object) }
     }
 
     return estimatedCount
   }
 
+  /** The light every procedural surface uses — the terrain's, deliberately. */
+  function surfaceSun(): { azimuthDeg: number; altitudeDeg: number } {
+    return { azimuthDeg: terrainLook.sunAzimuth, altitudeDeg: terrainLook.sunAltitude }
+  }
+
+  function addLayer(kind: FeatureKind, object: THREE.Object3D): void {
+    geoRoot!.add(object)
+    layerObjects.set(kind, object)
+    // Water is the only animated layer today, but asking the object rather than
+    // hard-coding the kind keeps the RAF honest if that ever changes.
+    if (hasAnimatedMaterial(object)) animatedLayers.push(object)
+  }
+
   function clearLayers(): void {
     for (const [, obj] of layerObjects) disposeLayer(obj)
     layerObjects.clear()
+    animatedLayers.length = 0
   }
 
   /** Re-extrude the cached features against the current ground. */

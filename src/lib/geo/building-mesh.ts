@@ -34,6 +34,9 @@ export interface BuildingLike {
   style?: FeatureStyle
 }
 
+/** Parapet upstand on a flat roof, metres. */
+const PARAPET_M = 0.9
+
 /** How far the base is pushed below the sampled ground, metres. */
 const SKIRT_M = 6
 
@@ -63,6 +66,12 @@ export interface BuildingMeshOptions {
   /** Facade modelling level. Defaults to 'simple'. */
   detail?: BuildingDetail
   /**
+   * True when a lit material will shade the result. Directional shading is then
+   * left OUT of the vertex colours — baking it in as well would light every
+   * facade twice, from two different suns.
+   */
+  lit?: boolean
+  /**
    * Ground height in METRES at a normalized position, or null for a flat map.
    * Supplied by the terrain patch when 3D terrain is on.
    */
@@ -85,6 +94,7 @@ export function buildBuildingsGeometry(
   const metresToNormalized = 1 / (WEB_MERCATOR_WORLD_M * cosLatScale(opts.anchorLat))
   const anchorElevation = opts.anchorElevationM ?? 0
   const detailed = opts.detail === 'detailed'
+  const lit = opts.lit === true
 
   const positions: number[] = []
   const normals: number[] = []
@@ -147,16 +157,26 @@ export function buildBuildingsGeometry(
     const seed = b.id ?? `${b.ring[0].lat.toFixed(6)},${b.ring[0].lon.toFixed(6)}`
     const roofTint = b.style?.roofColor ? hexToRgb(b.style.roofColor) : null
     const wallTint = b.style?.wallColor ? hexToRgb(b.style.wallColor) : facadeColor(seed)
-    const roofBase = roofShade(b.height.heightM)
+    // Lit: the shader does the light, so these are albedo only.
+    const roofBase = lit ? 0.88 : roofShade(b.height.heightM)
 
     if (roofShape === 'flat' || roofM <= 0) {
+      // The roof surface sits BELOW the top of the wall in detailed mode, so
+      // the wall continues past it as a parapet. A flat roof flush with its
+      // walls is the "sheared box" look — every real flat roof has an upstand,
+      // and that one edge is what gives a skyline its bite.
+      const parapet = detailed
+        ? Math.min(PARAPET_M, (topM - baseM) * 0.08) * metresToNormalized
+        : 0
+      const capZ = topZ - parapet
       for (const [a, bIdx, c] of faces) {
         pushTriangle(
           positions, normals, colors,
           ring2d[a], ring2d[bIdx], ring2d[c],
-          topZ, topZ, topZ,
+          capZ, capZ, capZ,
           0, 0, 1,
-          tinted(roofBase, roofTint),
+          // Roof deck reads darker than the parapet coping that surrounds it.
+          tinted(roofBase * (detailed ? 0.9 : 1), roofTint),
         )
       }
     } else if (roofShape === 'pyramidal') {
@@ -205,8 +225,11 @@ export function buildBuildingsGeometry(
       // colour reads as a solid block at any distance, while faint floor lines
       // say "eight storeys" rather than "one tall thing".
       const storeys = storeysFor(topM - roofM - baseM)
-      const shadeTop = wallShade(nx, ny) * storeyBanding(1, storeys)
-      const shadeBottom = wallShade(nx, ny) * 0.72 * storeyBanding(0, storeys)
+      const face = lit ? 1 : wallShade(nx, ny)
+      const shadeTop = face * storeyBanding(1, storeys)
+      // Contact shading at grade survives lighting: it is ambient occlusion,
+      // not sun, and it is what stops a building from floating.
+      const shadeBottom = face * (lit ? 0.86 : 0.72) * storeyBanding(0, storeys)
 
       // Walls rise to the EAVES, not the ridge — the roof covers the rest.
       const wallTopZ = eaveZ
@@ -214,7 +237,7 @@ export function buildBuildingsGeometry(
       if (detailed) {
         pushDetailedWall(
           positions, normals, colors, p0, p1, nx, ny,
-          baseZ, wallTopZ, storeys, wallShade(nx, ny), wallTint,
+          baseZ, wallTopZ, storeys, face, wallTint,
         )
         continue
       }
