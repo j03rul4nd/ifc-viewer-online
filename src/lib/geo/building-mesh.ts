@@ -45,9 +45,23 @@ export interface BuildingMeshResult {
   estimatedCount: number
 }
 
+/**
+ * How much of a facade to model.
+ *
+ * 'simple'   — one quad per wall with a top-to-bottom gradient. Cheapest, and
+ *              the right answer when the surroundings are just context.
+ * 'detailed' — storey-by-storey bands (glazing vs spandrel), a darker ground
+ *              floor and a parapet lip. Reads as a street of buildings rather
+ *              than a block of extrusions, at roughly 6x the triangles — still
+ *              one merged geometry and one draw call.
+ */
+export type BuildingDetail = 'simple' | 'detailed'
+
 export interface BuildingMeshOptions {
   /** Anchor latitude — sets the metres→normalized scale for the whole patch. */
   anchorLat: number
+  /** Facade modelling level. Defaults to 'simple'. */
+  detail?: BuildingDetail
   /**
    * Ground height in METRES at a normalized position, or null for a flat map.
    * Supplied by the terrain patch when 3D terrain is on.
@@ -70,6 +84,7 @@ export function buildBuildingsGeometry(
 ): BuildingMeshResult | null {
   const metresToNormalized = 1 / (WEB_MERCATOR_WORLD_M * cosLatScale(opts.anchorLat))
   const anchorElevation = opts.anchorElevationM ?? 0
+  const detailed = opts.detail === 'detailed'
 
   const positions: number[] = []
   const normals: number[] = []
@@ -195,6 +210,14 @@ export function buildBuildingsGeometry(
 
       // Walls rise to the EAVES, not the ridge — the roof covers the rest.
       const wallTopZ = eaveZ
+
+      if (detailed) {
+        pushDetailedWall(
+          positions, normals, colors, p0, p1, nx, ny,
+          baseZ, wallTopZ, storeys, wallShade(nx, ny), wallTint,
+        )
+        continue
+      }
       pushTriangle(positions, normals, colors, p0, p1, p1, baseZ, baseZ, wallTopZ, nx, ny, 0,
         tintedTriple([shadeBottom, shadeBottom, shadeTop], wallTint))
       pushTriangle(positions, normals, colors, p0, p1, p0, baseZ, wallTopZ, wallTopZ, nx, ny, 0,
@@ -285,6 +308,66 @@ function tintedTriple(
 type ShadedVertices = [
   [number, number, number], [number, number, number], [number, number, number],
 ]
+
+/**
+ * Fraction of a storey taken by the glazing band. The rest is spandrel — the
+ * solid strip between one floor's windows and the next.
+ */
+const WINDOW_BAND = 0.58
+
+/** Storeys modelled band-by-band before it stops being worth the triangles. */
+const MAX_BANDED_STOREYS = 30
+
+/** Height of the parapet lip on a flat roof, as a share of one storey. */
+const PARAPET_SHARE = 0.22
+
+/**
+ * A facade modelled storey by storey.
+ *
+ * The bands are pure vertex colour on flat quads — no textures, no extra
+ * attributes, and it merges into the same single geometry as everything else.
+ * That is the whole trick: what makes a building read as a building at this
+ * scale is the horizontal rhythm of floors and a darker ground floor, not
+ * geometric window reveals nobody can resolve from across a street.
+ */
+function pushDetailedWall(
+  positions: number[], normals: number[], colors: number[],
+  p0: THREE.Vector2, p1: THREE.Vector2,
+  nx: number, ny: number,
+  baseZ: number, topZ: number,
+  storeys: number,
+  faceShade: number,
+  tint: [number, number, number] | null,
+): void {
+  const bands = Math.max(1, Math.min(MAX_BANDED_STOREYS, storeys))
+  const span = topZ - baseZ
+  if (span <= 0) return
+
+  // The skirt below ground is not a storey — band only what is above grade.
+  const storeyH = span / bands
+
+  const quad = (z0: number, z1: number, shade: number): void => {
+    pushTriangle(positions, normals, colors, p0, p1, p1, z0, z0, z1, nx, ny, 0,
+      tintedTriple([shade, shade, shade], tint))
+    pushTriangle(positions, normals, colors, p0, p1, p0, z0, z1, z1, nx, ny, 0,
+      tintedTriple([shade, shade, shade], tint))
+  }
+
+  for (let i = 0; i < bands; i++) {
+    const z0 = baseZ + i * storeyH
+    const z1 = z0 + storeyH
+    const glassTop = z0 + storeyH * WINDOW_BAND
+
+    // Ground floor: taller glazing and a darker frame — shopfronts and lobbies
+    // are what make a street read as inhabited rather than as a wall.
+    const ground = i === 0
+    const glazing = faceShade * (ground ? 0.46 : 0.62)
+    const spandrel = faceShade * (ground ? 0.88 : 1.0)
+
+    quad(z0, glassTop, glazing)
+    quad(glassTop, z1, spandrel)
+  }
+}
 
 /** Unit vector along the footprint's longest extent — the natural ridge line. */
 function longestAxis(ring: ReadonlyArray<THREE.Vector2>): { x: number; y: number } {

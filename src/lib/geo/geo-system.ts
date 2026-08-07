@@ -16,7 +16,7 @@ import * as THREE from 'three'
 import { createBasemapEngine, type BasemapEngine } from './basemap-engine'
 import { buildTerrainPatch, tileNormalizedCenter, TERRAIN_EDGE_FADE, type TerrainPatch } from './geo-terrain'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from './terrain-look'
-import { buildBuildingsGeometry } from './building-mesh'
+import { buildBuildingsGeometry, type BuildingDetail } from './building-mesh'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, buildLinearLayer, disposeLayer,
 } from './osm-scene'
@@ -135,6 +135,8 @@ export interface GeoSystemAPI {
    * never refetches, so toggling a layer is instant.
    */
   setFeatureLayers(visible: FeatureLayerVisibility): void
+  /** Switch the surrounding facades between plain extrusions and storey bands. */
+  setContextDetail(level: BuildingDetail): void
   /** Raycast the map ground plane at client pixel coords → WGS84. */
   pickGround(clientX: number, clientY: number): LatLon | null
   /**
@@ -190,6 +192,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   /** Bumped on teardown — invalidates building fetches still in flight. */
   let buildingsToken = 0
   let buildingsEnabled = false
+  /** How much of a surrounding facade to model. */
+  let contextDetail: BuildingDetail = 'simple'
   /**
    * Last fetched footprints for the current site. Cached so toggling terrain
    * (which changes the ground the buildings sit on) re-extrudes locally
@@ -436,6 +440,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       rebuildLayers()
     },
 
+    setContextDetail(level) {
+      if (level === contextDetail) return
+      contextDetail = level
+      rebuildLayers()
+    },
+
     pickGround(clientX, clientY) {
       const hit = intersectGround(clientX, clientY)
       if (!hit || !geoRoot) return null
@@ -513,7 +523,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       const footprints = osmFeatures
         .filter((f) => f.kind === 'building' && f.ring)
         .map((f) => ({ id: f.id, ring: f.ring!, height: f.height, style: f.style }))
-      const built = buildBuildingsGeometry(footprints, opts)
+      const built = buildBuildingsGeometry(footprints, { ...opts, detail: contextDetail })
       if (built) {
         const mesh = new THREE.Mesh(
           built.geometry,

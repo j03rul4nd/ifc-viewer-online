@@ -284,6 +284,12 @@ function linear(kind: 'road' | 'rail', id: string, opts: Partial<OsmFeature> = {
   }
 }
 
+/** The ribbon mesh, whether the layer came back bare or wrapped with masts. */
+function surfaceOf(o: THREE.Object3D): THREE.Mesh {
+  if ((o as THREE.Mesh).isMesh) return o as THREE.Mesh
+  return o.children.find((c) => (c as THREE.Mesh).isMesh && !(c as THREE.InstancedMesh).isInstancedMesh) as THREE.Mesh
+}
+
 describe('buildLinearLayer', () => {
   it('returns null when the layer has nothing in it', () => {
     expect(buildLinearLayer([], 'road', OPTS)).toBeNull()
@@ -293,7 +299,7 @@ describe('buildLinearLayer', () => {
   it('buffers a centreline into a ribbon with a colour per vertex', () => {
     const built = buildLinearLayer([linear('road', 'w1')], 'road', OPTS)!
     expect(built.count).toBe(1)
-    const g = built.object.geometry
+    const g = surfaceOf(built.object).geometry
     expect(g.getAttribute('position').count).toBeGreaterThan(0)
     expect(g.getAttribute('color').count).toBe(g.getAttribute('position').count)
   })
@@ -304,9 +310,9 @@ describe('buildLinearLayer', () => {
     }))
     const built = buildLinearLayer(many, 'road', OPTS)!
     expect(built.count).toBe(60)
-    expect(built.object.isMesh).toBe(true)
+    expect((built.object as THREE.Mesh).isMesh).toBe(true)
     // Distinct tones survive, in a single geometry.
-    const c = built.object.geometry.getAttribute('color')
+    const c = surfaceOf(built.object).geometry.getAttribute('color')
     const reds = new Set<string>()
     for (let i = 0; i < c.count; i++) reds.add(c.getX(i).toFixed(4))
     expect(reds.size).toBeGreaterThan(30)
@@ -319,8 +325,8 @@ describe('buildLinearLayer', () => {
     )!
     const withRails = buildLinearLayer([linear('rail', 'r2')], 'rail', OPTS)!
     // The track version carries the two extra steel ribbons.
-    expect(withRails.object.geometry.getAttribute('position').count)
-      .toBeGreaterThan(ballastOnly.object.geometry.getAttribute('position').count)
+    expect(surfaceOf(withRails.object).geometry.getAttribute('position').count)
+      .toBeGreaterThan(surfaceOf(ballastOnly.object).geometry.getAttribute('position').count)
   })
 
   it('sits rail above road, and both above the ground', () => {
@@ -332,8 +338,8 @@ describe('buildLinearLayer', () => {
       for (let i = 0; i < p.count; i++) max = Math.max(max, p.getZ(i))
       return max
     }
-    expect(topZ(road.object)).toBeGreaterThan(0)
-    expect(topZ(rail.object)).toBeGreaterThan(topZ(road.object))
+    expect(topZ(surfaceOf(road.object))).toBeGreaterThan(0)
+    expect(topZ(surfaceOf(rail.object))).toBeGreaterThan(topZ(surfaceOf(road.object)))
     // Both sit in the same overlay band, above greenery (2) and water (3);
     // within the band the stack comes from the order geo-system adds them, so a
     // tramway lands on the asphalt rather than under it.
@@ -347,9 +353,48 @@ describe('buildLinearLayer', () => {
       anchorElevationM: 0,
       sampleGroundM: (nx: number) => nx * 100_000,
     })!
-    const p = sloped.object.geometry.getAttribute('position')
+    const p = surfaceOf(sloped.object).geometry.getAttribute('position')
     const zs = Array.from({ length: p.count }, (_, i) => p.getZ(i))
     expect(Math.max(...zs) - Math.min(...zs)).toBeGreaterThan(0)
+  })
+
+  it('stands overhead line masts along electrified track only', () => {
+    const plain = buildLinearLayer([linear('rail', 'r1')], 'rail', OPTS)!
+    const wired = buildLinearLayer([linear('rail', 'r2', {
+      style: {
+        roofShape: 'flat', roofHeightM: 0, tone: [0.4, 0.37, 0.33],
+        railKind: 'track', electrified: true,
+      },
+    })], 'rail', OPTS)!
+
+    expect((plain.object as THREE.Mesh).isMesh).toBe(true)   // no masts, no group
+    const posts = wired.object.children.find(
+      (c) => (c as THREE.InstancedMesh).isInstancedMesh,
+    ) as THREE.InstancedMesh
+    expect(posts).toBeTruthy()
+    expect(posts.count).toBeGreaterThan(1)
+
+    // Regularly spaced: consecutive gaps are the same length along the line.
+    const m = new THREE.Matrix4()
+    const at = (i: number): THREE.Vector3 => {
+      posts.getMatrixAt(i, m)
+      return new THREE.Vector3().setFromMatrixPosition(m)
+    }
+    const gaps: number[] = []
+    for (let i = 1; i < Math.min(4, posts.count); i++) gaps.push(at(i).distanceTo(at(i - 1)))
+    for (const g of gaps) expect(g).toBeCloseTo(gaps[0], 6)
+  })
+
+  it('paints the edge line on a platform', () => {
+    const slab = buildLinearLayer([linear('rail', 'p1', {
+      widthM: undefined,
+      style: { roofShape: 'flat', roofHeightM: 0, tone: [0.52, 0.51, 0.52], railKind: 'platform' },
+    })], 'rail', OPTS)!
+    const c = surfaceOf(slab.object).geometry.getAttribute('color')
+    // The warm stripe is a different colour from the concrete slab.
+    const tones = new Set<string>()
+    for (let i = 0; i < c.count; i++) tones.add(`${c.getX(i).toFixed(3)},${c.getY(i).toFixed(3)}`)
+    expect(tones.size).toBeGreaterThan(1)
   })
 
   it('caps how much it will draw', () => {

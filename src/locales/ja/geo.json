@@ -133,7 +133,11 @@
       "bridge": "橋",
       "road": "Roads & paths",
       "rail": "Railways & platforms"
-    }
+    },
+    "facadeDetail": "Facade detail",
+    "facadeSimple": "Simple",
+    "facadeRich": "Detailed",
+    "facadeHint": "Detailed models each storey — glazing, spandrels and a ground floor. Heavier, and much closer to a real street."
   },
   "placement": {
     "title": "Placement",

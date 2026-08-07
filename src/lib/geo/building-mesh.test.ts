@@ -5,6 +5,7 @@
 // were silently dropped — a whole city block rendered as a handful of blocks.
 
 import { describe, it, expect } from 'vitest'
+import * as THREE from 'three'
 import { buildBuildingsGeometry } from './building-mesh'
 import type { BuildingFootprint } from './buildings'
 
@@ -258,5 +259,72 @@ describe('facade variation and storey banding', () => {
     // Wall vertices (after the 6 roof-cap ones) must be strongly red.
     const [r, g] = [tagged.getX(10), tagged.getY(10)]
     expect(r).toBeGreaterThan(g * 3)
+  })
+})
+
+describe('facade detail levels', () => {
+  const tower = {
+    ...squareFootprint('a', 24),
+    id: 'w1',
+    height: { heightM: 32, minHeightM: 0, estimated: false },
+  }
+
+  it('models each storey when asked, and one quad per wall when not', () => {
+    const simple = buildBuildingsGeometry([tower], OPTS)!.geometry
+    const detailed = buildBuildingsGeometry([tower], { ...OPTS, detail: 'detailed' })!.geometry
+    const verts = (g: THREE.BufferGeometry): number => g.getAttribute('position').count
+
+    // 32 m ≈ 10 storeys, each two bands — an order of magnitude more wall.
+    expect(verts(detailed)).toBeGreaterThan(verts(simple) * 4)
+    // Still ONE merged geometry: the whole point is that detail costs
+    // triangles, never draw calls.
+    expect(detailed.groups.length).toBe(simple.groups.length)
+  })
+
+  it('gives the facade a rhythm instead of one flat gradient', () => {
+    const lums = (detail: 'simple' | 'detailed'): number[] => {
+      const g = buildBuildingsGeometry([tower], { ...OPTS, detail })!.geometry
+      const pos = g.getAttribute('position')
+      const col = g.getAttribute('color')
+      const out: number[] = []
+      for (let i = 0; i < pos.count; i++) {
+        // Wall vertices only: the roof cap is the one facing straight up.
+        if (g.getAttribute('normal').getZ(i) === 0) {
+          out.push(Number((col.getX(i) + col.getY(i) + col.getZ(i)).toFixed(4)))
+        }
+      }
+      return out
+    }
+
+    const simple = lums('simple')
+    const detailed = lums('detailed')
+
+    // Banding means several distinct tones up a wall, not a two-stop gradient.
+    expect(new Set(detailed).size).toBeGreaterThan(new Set(simple).size)
+    // And the darkest thing on the facade — ground-floor glazing — is darker
+    // than anything the plain extrusion produces.
+    expect(Math.min(...detailed)).toBeLessThan(Math.min(...simple))
+  })
+
+  it('keeps a tagged colour in charge at either level', () => {
+    const red = {
+      ...tower,
+      style: { roofShape: 'flat' as const, roofHeightM: 0, wallColor: '#ff0000' },
+    }
+    for (const detail of ['simple', 'detailed'] as const) {
+      const col = buildBuildingsGeometry([red], { ...OPTS, detail })!.geometry.getAttribute('color')
+      let reddest = 0
+      for (let i = 0; i < col.count; i++) {
+        if (col.getX(i) > col.getY(i) * 3) reddest++
+      }
+      expect(reddest).toBeGreaterThan(0)
+    }
+  })
+
+  it('does not explode on a 200-storey tower', () => {
+    const spire = { ...tower, height: { heightM: 640, minHeightM: 0, estimated: false } }
+    const g = buildBuildingsGeometry([spire], { ...OPTS, detail: 'detailed' })!.geometry
+    // Banding is capped, so height cannot run the triangle budget away.
+    expect(g.getAttribute('position').count).toBeLessThan(2000)
   })
 })

@@ -270,6 +270,20 @@ const LINEAR_LIFT_M: Record<'road' | 'rail', number> = { road: 0.25, rail: 0.40 
 
 /** Steel rail heads sitting on the ballast. */
 const RAIL_STEEL: [number, number, number] = [0.29, 0.29, 0.32]
+/** The painted safety line along a platform edge. */
+const PLATFORM_EDGE: [number, number, number] = [0.86, 0.72, 0.25]
+/** Width of that line, metres — generous so it survives at map scale. */
+const PLATFORM_EDGE_M = 0.9
+/** Spacing and size of overhead line masts along an electrified track. */
+const MAST_SPACING_M = 45
+/** How far off the centreline a mast stands, metres. */
+const MAST_OFFSET_M = 3.4
+/** Hard cap per layer — a safety valve, never reached by a real neighbourhood. */
+const MAX_MASTS = 4000
+const MAST_HEIGHT_M = 6.5
+const MAST_RADIUS_M = 0.22
+const MAST_COLOR = new THREE.Color(0x53565c)
+
 /** Half-distance between the two rails of a track, in metres (standard gauge). */
 const RAIL_GAUGE_HALF_M = 0.72
 /** Rail head width, exaggerated to survive at map scale without shimmering. */
@@ -292,7 +306,7 @@ export function buildLinearLayer(
   features: ReadonlyArray<OsmFeature>,
   kind: 'road' | 'rail',
   opts: LayerMeshOptions,
-): LayerMesh<THREE.Mesh> | null {
+): LayerMesh<THREE.Object3D> | null {
   const mToN = metresToNormalized(opts.anchorLat)
   const anchorElevation = opts.anchorElevationM ?? 0
   const sample = opts.sampleGroundM
@@ -300,6 +314,8 @@ export function buildLinearLayer(
 
   const positions: number[] = []
   const colors: number[] = []
+  /** Where to stand an overhead line mast, for electrified track. */
+  const masts: THREE.Vector2[] = []
   let count = 0
 
   /** Height of the ground under a planar point, in normalized units. */
@@ -336,6 +352,12 @@ export function buildLinearLayer(
           colors.push(tone[0], tone[1], tone[2])
         }
       }
+      // The painted edge line. Nothing else says "platform" as immediately —
+      // it is the one marking every station on earth has.
+      const closed = [...line, line[0]]
+      for (const quad of bufferCentreline(closed, (PLATFORM_EDGE_M / 2) * mToN)) {
+        pushQuad(quad, PLATFORM_EDGE, platformLift + 0.02 * mToN)
+      }
       count++
       continue
     }
@@ -355,6 +377,12 @@ export function buildLinearLayer(
         }
       }
     }
+    if (kind === 'rail' && f.style.electrified && masts.length < MAX_MASTS) {
+      for (const at of mastPoints(line, MAST_SPACING_M * mToN, MAST_OFFSET_M * mToN)) {
+        if (masts.length >= MAX_MASTS) break
+        masts.push(at)
+      }
+    }
     count++
   }
 
@@ -366,7 +394,7 @@ export function buildLinearLayer(
   geometry.computeVertexNormals()
   geometry.computeBoundingSphere()
 
-  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+  const surface = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
     vertexColors: true,
     // Same contract as the other ground layers: these are coplanar with the
     // basemap and with each other, and a few centimetres of separation cannot
@@ -378,11 +406,70 @@ export function buildLinearLayer(
     depthWrite: false,
     side: THREE.DoubleSide,
   }))
-  mesh.name = `osm-${kind}`
+  surface.name = `osm-${kind}`
   // Above greenery (2) and water (3). Rail is added after road, so where a
   // tramway shares a street the track lands on top of the asphalt.
-  mesh.renderOrder = 4
-  return { object: mesh, count }
+  surface.renderOrder = 4
+
+  // Overhead line masts. A line of posts along a corridor is the silhouette
+  // that says "main line" from a distance where the rails themselves are a
+  // grey smudge — and they are the one piece of rail infrastructure that
+  // actually stands up out of the ground.
+  if (masts.length === 0) return { object: surface, count }
+
+  const group = new THREE.Group()
+  group.name = `osm-${kind}`
+  group.renderOrder = 4
+  group.add(surface)
+
+  const mastGeo = new THREE.CylinderGeometry(MAST_RADIUS_M, MAST_RADIUS_M * 1.5, 1, 5)
+  mastGeo.rotateX(Math.PI / 2)
+  mastGeo.translate(0, 0, 0.5)
+  const posts = new THREE.InstancedMesh(
+    mastGeo, new THREE.MeshBasicMaterial({ color: MAST_COLOR }), masts.length,
+  )
+  posts.name = `osm-${kind}-masts`
+  const m = new THREE.Matrix4()
+  const p = new THREE.Vector3()
+  const q = new THREE.Quaternion()
+  const sc = new THREE.Vector3()
+  masts.forEach((at, i) => {
+    p.set(at.x, at.y, groundZ(at.x, at.y) + lift)
+    sc.set(MAST_RADIUS_M * mToN, MAST_RADIUS_M * mToN, MAST_HEIGHT_M * mToN)
+    posts.setMatrixAt(i, m.compose(p, q, sc))
+  })
+  posts.instanceMatrix.needsUpdate = true
+  group.add(posts)
+
+  return { object: group, count }
+}
+
+/**
+ * Points along a polyline at a fixed spacing, offset to one side — where the
+ * masts of an overhead line stand. Spacing is walked in arc length so a curve
+ * gets the same rhythm as a straight, which is what makes it read as regular
+ * infrastructure rather than as scattered posts.
+ */
+function mastPoints(line: THREE.Vector2[], spacing: number, lateral: number): THREE.Vector2[] {
+  // Everything here is in normalized units; a metre value slipping in would
+  // offset the line by a fraction of the planet and spin the walk below.
+  if (!Number.isFinite(spacing) || spacing <= 0 || line.length < 2) return []
+  const side = offsetCentreline(line, lateral)
+  const out: THREE.Vector2[] = []
+  let carried = spacing * 0.5
+  for (let i = 0; i < side.length - 1; i++) {
+    const a = side[i]
+    const b = side[i + 1]
+    const seg = a.distanceTo(b)
+    if (seg === 0) continue
+    let t = carried
+    while (t <= seg) {
+      out.push(new THREE.Vector2(a.x + ((b.x - a.x) * t) / seg, a.y + ((b.y - a.y) * t) / seg))
+      t += spacing
+    }
+    carried = t - seg
+  }
+  return out
 }
 
 /**

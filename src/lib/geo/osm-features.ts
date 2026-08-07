@@ -58,6 +58,8 @@ export interface FeatureStyle {
   treeShape?: TreeShape
   /** Rail features: a corridor of track, or a station platform slab. */
   railKind?: 'track' | 'platform'
+  /** Overhead line present — drives the catenary masts along a track. */
+  electrified?: boolean
   /**
    * Base RGB for a surface, by what it actually is — greenery (forest vs lawn),
    * road (motorway vs footpath), rail (ballast vs platform).
@@ -274,9 +276,12 @@ export function resolveFeatureStyle(
 
   if (kind === 'rail') {
     const platform = t['railway'] === 'platform' || t['public_transport'] === 'platform'
+    const power = (t['electrified'] ?? '').toLowerCase()
     return {
       roofShape: 'flat', roofHeightM: 0,
       railKind: platform ? 'platform' : 'track',
+      // `electrified=no` is a real, common answer and must not read as yes.
+      electrified: !platform && power !== '' && power !== 'no',
       // Ballast is warm grey; a platform is paler concrete.
       tone: platform ? [0.52, 0.51, 0.52] : [0.40, 0.37, 0.33],
     }

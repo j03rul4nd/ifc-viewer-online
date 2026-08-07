@@ -25,6 +25,7 @@ import { CONTOUR_INTERVALS } from '../lib/geo/terrain-look'
 import { BUILDINGS_ATTRIBUTION } from '../lib/geo/buildings'
 import { collectModelSites, type ModelInput } from '../lib/geo/model-sites'
 import { FEATURE_KINDS, type FeatureKind } from '../lib/geo/osm-features'
+import type { BuildingDetail } from '../lib/geo/building-mesh'
 import { WGS84_RADIUS, normalizeDeg } from '../lib/geo/geo-math'
 import {
   trackMapModeEnabled, trackMapModeDisabled, trackMapLayerChanged,
@@ -405,6 +406,12 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
     useGeoStore.getState().setFeatureLayer(kind, visible)
     const layers = useGeoStore.getState().featureLayers
     void getGeo()?.then((geo) => geo.setFeatureLayers(layers))
+  }, [getGeo])
+
+  /** Facade detail — re-extrudes from the cached features, so it is instant. */
+  const handleContextDetail = useCallback((level: BuildingDetail): void => {
+    useGeoStore.getState().setContextDetail(level)
+    void getGeo()?.then((geo) => geo.setContextDetail(level))
   }, [getGeo])
 
   const handleTerrainLook = useCallback((patch: Partial<TerrainLook>): void => {
@@ -923,6 +930,22 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                           tone={store.buildingsStatus === 'error' ? 'danger' : 'muted'}
                         />
                         {store.buildingsTruncated && <Notice tone="warn">{t('layers.buildingsTruncated')}</Notice>}
+
+                        {/* How much of a facade to model. Re-extrudes from the
+                            features already in memory — no refetch. */}
+                        <Caption>{t('layers.facadeDetail')}</Caption>
+                        <Choices
+                          options={([
+                            ['simple', t('layers.facadeSimple')],
+                            ['detailed', t('layers.facadeRich')],
+                          ] as const).map(([id, label]) => ({
+                            id, label, active: store.contextDetail === id,
+                          }))}
+                          onSelect={handleContextDetail}
+                        />
+                        <p className="text-[10px] text-[var(--text-faint)] leading-snug">
+                          {t('layers.facadeHint')}
+                        </p>
 
                         {/* Per-layer visibility, with counts, so an empty layer
                             reads as "none mapped here" and not as a dead toggle. */}

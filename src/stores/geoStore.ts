@@ -13,6 +13,7 @@ import { createLogger } from '../lib/logger'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from '../lib/geo/terrain-look'
 import type { FeatureKind } from '../lib/geo/osm-features'
 import type { FeatureLayerVisibility } from '../lib/geo/geo-system'
+import type { BuildingDetail } from '../lib/geo/building-mesh'
 import type { GeoPlacement, GeorefExtraction, MapMode, TerrainStatus, TerrainStyle, TerrainLook } from '../lib/geo/geo-types'
 
 const log = createLogger('GeoStore')
@@ -44,6 +45,7 @@ const LS_TERRAIN_EXAGG = 'ifc-geo-terrain-exagg:v1'
 const LS_TERRAIN_LOOK  = 'ifc-geo-terrain-look:v1'
 const LS_BUILDINGS     = 'ifc-geo-buildings:v1'
 const LS_LAYERS        = 'ifc-geo-osm-layers:v1'
+const LS_DETAIL        = 'ifc-geo-detail:v1'
 
 /** Per-layer visibility, persisted. Everything on by default. */
 function readFeatureLayers(): FeatureLayerVisibility {
@@ -145,6 +147,8 @@ interface GeoStore {
   buildingsEstimated: number
   /** Which OSM layers are shown. */
   featureLayers: FeatureLayerVisibility
+  /** How much of a surrounding facade to model (persisted). */
+  contextDetail: BuildingDetail
   /** True when the query hit its cap — the view is a partial picture. */
   buildingsTruncated: boolean
   georefByModel: Record<string, GeorefExtraction>
@@ -187,6 +191,7 @@ interface GeoStore {
   ) => void
   /** Toggle one OSM layer (persisted). */
   setFeatureLayer: (kind: FeatureKind, visible: boolean) => void
+  setContextDetail: (d: BuildingDetail) => void
   setTerrainExaggeration: (k: number) => void
   setGeoref: (modelId: string, g: GeorefExtraction) => void
   removeGeoref: (modelId: string) => void
@@ -223,6 +228,7 @@ export const useGeoStore = create<GeoStore>()(
       buildingsCounts:    { building: 0, water: 0, green: 0, tree: 0, bridge: 0, road: 0, rail: 0 },
       buildingsEstimated: 0,
       featureLayers:      readFeatureLayers(),
+      contextDetail:      lsGet(LS_DETAIL) === 'detailed' ? 'detailed' : 'simple',
       buildingsTruncated: false,
       georefByModel:  {},
       placement:      null,
@@ -354,6 +360,11 @@ export const useGeoStore = create<GeoStore>()(
           false,
           'setBuildingsResult',
         ),
+
+      setContextDetail: (d) => {
+        lsSet(LS_DETAIL, d)
+        set({ contextDetail: d }, false, 'setContextDetail')
+      },
 
       setFeatureLayer: (kind, visible) =>
         set(

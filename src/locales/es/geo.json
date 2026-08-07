@@ -132,7 +132,11 @@
       "bridge": "Puentes",
       "road": "Carreteras y caminos",
       "rail": "Vías y andenes"
-    }
+    },
+    "facadeDetail": "Detalle de fachada",
+    "facadeSimple": "Simple",
+    "facadeRich": "Detallado",
+    "facadeHint": "Detallado modela cada planta — acristalamiento, antepechos y planta baja. Más pesado, y mucho más parecido a una calle real."
   },
   "placement": {
     "title": "Ubicación",
