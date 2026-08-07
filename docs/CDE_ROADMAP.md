@@ -6,7 +6,8 @@
 > AEC teams — "DocuSign for BIM deliveries." This document is the forward build plan: phases
 > **F0..F6** with goals, gates, ordered tasks, files‑to‑touch, and the moat each phase compounds.
 >
-> **Where we are (2026‑07‑12):** **F0 ✅ · F1 ✅ · F1.1 ✅ · F1.5 ✅ — live in production.**
+> **Where we are (2026‑07‑14):** **F0 ✅ · F1 ✅ · F1.1 ✅ · F1.5 ✅ · F5 ✅ (COBie + delivery report, client‑side) — live.**
+> A **v5 platform super‑admin console** (`/admin/*` Worker routes + `AdminView.tsx`) also shipped 2026‑07‑13/14 as a cross‑cutting operator layer (see `CONFORMANCE_DOMAIN.md` §3.8 / schema v5), orthogonal to the F0–F6 phase line below.
 > Anonymous signed `ConformityReport` issuance, public `/verify` with in‑browser signature check,
 > printable certificate + QR, ×10 localisation, and deep verification (drop the file → local
 > re‑hash + optional local re‑run) are all deployed. **F2 is ~95 % built and deliberately dark**:
@@ -40,7 +41,7 @@ never a date — nothing in this plan is calendar-driven.
 | **Now** | Keep the shipped surface honest on every change: canonical mirror test, locale-parity test, anon-footprint grep, rule-count guard. | Executor (continuous) | — |
 | **Next** | **F2 activation (§F2-ACT)** — configuration, not construction: secrets + flags + one env var + smoke. | Founder + executor (smoke) | F1 commercial signal **+** the pricing decision (both private-suite gates). |
 | **Next** | F2 close-out packages: ~~§F2-TRIGGERS~~ **done 2026-07-13** (all four entry points live) · **§F2-PROFILES** first profile shipped (`builtin-simba21-general`, SIMBA 2.1); further profiles as official sources land. | Executor | PROFILES (remaining): official requirement sources in hand. |
-| **Next (parallel)** | F5 COBie + delivery report — 100 % client-side, zero backend, different skill profile (parser/UI, not infra). | Executor | Technically unblocked today; the `useEntitlement` gate it needs already ships. |
+| ~~**Next (parallel)**~~ **✅ SHIPPED (2026-07-14)** | F5 COBie 2.4 + delivery report — 100 % client-side, zero backend. `src/lib/cobie/*` (mapping/extract/lazy-exceljs XLSX/FM-readiness) + `cobieStore` + `src/lib/delivery-report.ts`, wired into the export dialog. | Executor | — (done). |
 | **Later** | F3 Org dashboard · F4 verify-batch endpoint (+ `api_usage`). | Executor | F3: F2 live + 1 real org with ≥2 issuers. F4: 1 real B2B/CI integrator (needs only F1). |
 | **Blocked** | F6 cloud processing + CDE monitor. | — | **D-27 ratified AND a real demand signal — both.** Do not start; do not present as imminent. |
 
@@ -91,7 +92,7 @@ graph TD
     F2["F2 · Pro (issuer P1) 🔶 BUILT, DARK<br/>account surface behind config switches<br/>opens on the F1 commercial signal"]
     F3["F3 · Org<br/>Workspace dashboard over conformity_report.org_id"]
     F4["F4 · verify-batch API<br/>read-only · api_keys (mgmt UI already shipped in F2) · P2 + B2B"]
-    F5["F5 · COBie + delivery report<br/>100% client-side · no backend"]
+    F5["F5 · COBie + delivery report ✅ SHIPPED<br/>100% client-side · no backend"]
     F6["F6 · Cloud processing + CDE monitor<br/>D-27-gated AND signal-gated"]
 
     F0 --> F1
@@ -106,6 +107,7 @@ graph TD
     style F0 fill:#1b5e20,color:#fff
     style F1 fill:#1b5e20,color:#fff
     style F2 fill:#4a4a10,color:#fff
+    style F5 fill:#1b5e20,color:#fff
     style F6 stroke-dasharray: 5 5,stroke:#b71c1c,stroke-width:2px
 ```
 
@@ -585,10 +587,16 @@ nothing starts opening exactly one read‑only door.
 
 ---
 
-## F5 — COBie + client‑side delivery report
+## F5 — COBie + client‑side delivery report ✅ SHIPPED (2026‑07‑14)
 
 **Goal.** Add COBie export and a plain‑language **"why this delivery would be rejected"** report —
 **100 % client‑side, no backend, no invariant risk.** Parallelizable with F2–F4.
+
+**Status.** Shipped as `src/lib/cobie/*` (IFC→COBie 2.4 sheet mapping, off‑thread extract on the
+validator worker, lazy `exceljs` XLSX writer, FM‑readiness badge — commits F5‑P1..P4) + `cobieStore`
+and `src/lib/delivery‑report.ts` (remediation‑first prose over the D‑22 corpus), both wired into
+`ValidationExportModal` / `ModelInfoPanel`. Runs entirely in‑browser; `exceljs` in its own lazy chunk.
+The `useEntitlement` gate it depends on already ships (F2). Gate criteria below are met.
 
 **The user flow this phase serves.** P1 is hours from a milestone. Instead of decoding a rule
 table, they read one page in delivery language: *what would get this rejected, in what order to

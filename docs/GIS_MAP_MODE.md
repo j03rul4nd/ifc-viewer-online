@@ -51,10 +51,14 @@ byte-identical to a build without the feature. This is the kill switch.
    light ↔ multi-directional Imhof blend), sky-view-factor occlusion, synthetic
    micro-relief blend, and contour lines. All re-bake vertex colours live with
    no refetch; only the micro-relief slider re-displaces geometry.
-7. **Surrounding buildings** toggle: OpenStreetMap footprints around the site,
-   extruded and stood on the terrain (see Maintainer notes for the source
-   decision and its usage discipline). The panel reports how many were drawn
-   and how many heights were *estimated* rather than surveyed.
+7. **Surroundings (OpenStreetMap)** toggle: the site's actual context, fetched
+   in ONE Overpass query and shown as five independently toggleable layers —
+   buildings, water, parks/greenery, trees and bridges. Each row states its own
+   count, so an empty layer reads as "none mapped here" rather than a broken
+   switch. Toggling is instant: layers rebuild from the cached features and
+   never refetch. Buildings carry roof shapes (`roof:shape` → flat / gabled /
+   pyramidal) and tagged wall/roof colours, and the panel reports how many
+   heights were *estimated* rather than surveyed.
 8. **Placement minimap** (Leaflet): drag the pin or click to place a
    non-georeferenced model, review where an IFC's own georeferencing landed,
    and "use my location" (opt-in per click; coordinates never leave the
@@ -91,7 +95,10 @@ byte-identical to a build without the feature. This is the kill switch.
 | Terrain worker + mesh assembly | `src/workers/geo-terrain.worker.ts`, `src/lib/geo/geo-terrain.ts` |
 | web-ifc attribute unwrapping (pure, shared with the extractor) | `src/lib/geo/ifc-value.ts` |
 | Multi-model siting (pure: haversine, anchor, disagreement) | `src/lib/geo/model-sites.ts` |
-| OSM buildings: parsing/heights (pure) · fetch worker · extrusion | `src/lib/geo/buildings.ts`, `src/workers/geo-buildings.worker.ts`, `src/lib/geo/building-mesh.ts` |
+| OSM buildings: heights/bbox (pure) · extrusion incl. roof shapes | `src/lib/geo/buildings.ts`, `src/lib/geo/building-mesh.ts` |
+| OSM feature classification + single multi-layer query (pure) | `src/lib/geo/osm-features.ts` |
+| OSM layer meshes (water, greenery, instanced trees, bridge decks) | `src/lib/geo/osm-scene.ts` |
+| Fetch worker (one query, all layers) | `src/workers/geo-buildings.worker.ts` |
 | Placement minimap (Leaflet, lazy) | `src/components/PlacementMiniMap.tsx` |
 | Product state (epoch-guarded) | `src/stores/geoStore.ts` |
 | UI (panel, consent, layers, editor, pill) | `src/components/GeoPanel.tsx` |
@@ -135,6 +142,22 @@ Key invariants:
   which is a maintenance marker, not a UI string) and pins the honesty
   disclaimers so none can go missing in a locale.
 
+### Ground handling differs per layer, on purpose
+
+- **water** — flat, at the *lowest* ground under its own outline. Water is level
+  by definition, and the minimum keeps a river in its bed rather than floating
+  over the banks.
+- **greenery** — follows the terrain per vertex; a flat patch would slice
+  through a hillside park.
+- **buildings** — flat base at the footprint centroid plus a buried skirt.
+  Following terrain per-vertex would shear each building into a parallelogram.
+- **bridges** — flat decks at their own height. Most bridges are tagged on the
+  WAY, not as an area (measured in Paris: 56 of 81), so linear centrelines are
+  buffered to a deck from `width`, lane count, or a per-type default. Treating
+  the linear case as an edge case would lose two thirds of all bridges.
+- **trees** — two InstancedMeshes (trunk + canopy): 1486 trees cost 2 draw
+  calls. Low-poly on purpose; at map scale a tree is a silhouette.
+
 ### Buildings: why Overpass, and the usage rules
 
 Footprints come from the **Overpass API**, not from a free 3D-buildings tile
@@ -144,10 +167,10 @@ terms or vanish, for data available at the source. That choice only stays
 acceptable if the query pattern stays small and interactive:
 
 - ONE query per user toggle. Never per tile, never on camera movement.
-- bbox no wider than the terrain patch (±700 m), 4000-element cap, timeouts on
+- bbox no wider than the terrain patch (±700 m), 6000-element cap, timeouts on
   both the server (`[timeout:25]`) and the client.
-- Results are cached per site, so toggling terrain re-extrudes locally instead
-  of re-querying.
+- ONE query covers every layer. Results are cached per site, so toggling a
+  layer — or terrain — re-extrudes locally instead of re-querying.
 - Every failure degrades to "no buildings" with an honest message. Overpass
   rate-limits aggressively per IP: a handful of queries in quick succession
   earns a multi-minute cooldown, which the UI reports as "the service was
@@ -175,3 +198,11 @@ acceptable if the query pattern stays small and interactive:
 - Synthetic terrain detail and the ecosystem style are **models, not
   measurements**. Both are off/opt-in by default and both carry a UI
   disclaimer. Keep it that way.
+- **An RGB triple and three per-vertex greys have the same TypeScript shape.**
+  `pushTriangle` once accepted both and silently painted every tinted building
+  face in greyscale. The ambiguous overload is gone: it takes either one grey
+  or explicit per-vertex RGB. Do not reintroduce the convenience form.
+- OSM is volunteer-mapped and uneven: a missing park is not an empty field.
+  Report what was found; never let the UI imply absence of data means absence
+  of the thing. Roof shapes are the clearest case — in Paris only 20 of 1254
+  buildings tag `roof:shape` at all.
