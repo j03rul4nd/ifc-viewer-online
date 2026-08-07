@@ -106,7 +106,9 @@
     "buildingsEstimated": "{{count}} heights estimated",
     "buildingsEmpty": "No buildings mapped around this site.",
     "buildingsFailed": "Buildings could not be loaded — the map service was busy. Try again.",
-    "buildingsTruncated": "Dense area — only part of the buildings are shown."
+    "buildingsTruncated": "Dense area — only part of the buildings are shown.",
+    "styleEcosystem": "Ecosystems",
+    "styleEcosystemNote": "Vegetation belts inferred from altitude, latitude and slope — plausible, not observed land cover."
   },
   "placement": {
     "title": "Placement",

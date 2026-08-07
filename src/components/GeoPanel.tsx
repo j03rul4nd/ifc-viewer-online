@@ -751,9 +751,17 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                         ['shaded', t('layers.styleShaded')],
                         ['hypsometric', t('layers.styleHypso')],
                         ['slope', t('layers.styleSlope')],
+                        ['ecosystem', t('layers.styleEcosystem')],
                       ] as const).map(([id, label]) => ({ id, label, active: store.terrainStyle === id }))}
                       onSelect={handleTerrainStyle}
                     />
+                    {/* This style INFERS vegetation belts from altitude — it is
+                        not observed land cover, and must never be read as such. */}
+                    {store.terrainStyle === 'ecosystem' && (
+                      <div className="text-[9.5px] leading-snug text-[var(--warn,#F5A623)]">
+                        {t('layers.styleEcosystemNote')}
+                      </div>
+                    )}
                     <LookSlider
                       label={t('layers.exaggeration')}
                       value={store.terrainExaggeration}

@@ -107,7 +107,9 @@
     "buildingsEstimated": "{{count}} alturas estimadas",
     "buildingsEmpty": "Não há edifícios mapeados à volta deste local.",
     "buildingsFailed": "Não foi possível carregar os edifícios — o serviço estava ocupado. Tente novamente.",
-    "buildingsTruncated": "Zona densa — só é mostrada parte dos edifícios."
+    "buildingsTruncated": "Zona densa — só é mostrada parte dos edifícios.",
+    "styleEcosystem": "Ecossistemas",
+    "styleEcosystemNote": "Andares de vegetação inferidos da altitude, latitude e declive — plausíveis, não cobertura do solo observada."
   },
   "placement": {
     "title": "Placement",

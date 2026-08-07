@@ -27,7 +27,8 @@ const LS_BUILDINGS     = 'ifc-geo-buildings:v1'
 
 function readTerrainStyle(): TerrainStyle {
   const raw = lsGet(LS_TERRAIN_STYLE)
-  return raw === 'shaded' || raw === 'hypsometric' || raw === 'slope' ? raw : 'imagery'
+  return raw === 'shaded' || raw === 'hypsometric' || raw === 'slope' || raw === 'ecosystem'
+    ? raw : 'imagery'
 }
 
 /** Persisted advanced look; anything malformed falls back to the defaults. */

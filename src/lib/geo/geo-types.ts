@@ -13,8 +13,12 @@ export type TerrainStatus = 'idle' | 'loading' | 'ready' | 'error'
  *   imagery     — provider tiles draped on the relief (subtle baked hillshade)
  *   shaded      — no imagery: neutral high-contrast hillshade (landforms pop)
  *   hypsometric — atlas-style elevation tint × hillshade
+ *   slope       — steepness ramp × hillshade
+ *   ecosystem   — MODELLED altitudinal belts (valley → forest → alpine → snow)
+ *                 derived from elevation, latitude and slope. Plausible, not
+ *                 observed land cover — see terrain-sampling for the caveats.
  */
-export type TerrainStyle = 'imagery' | 'shaded' | 'hypsometric' | 'slope'
+export type TerrainStyle = 'imagery' | 'shaded' | 'hypsometric' | 'slope' | 'ecosystem'
 
 /**
  * Advanced terrain look — every field re-bakes vertex colours (or, for

@@ -481,6 +481,116 @@ export function hypsometricColor(t: number): { r: number; g: number; b: number }
   return rampColor(HYPSO_STOPS, t)
 }
 
+// ── Altitudinal zonation ("ecosystems") ─────────────────────────────────────────
+//
+// HONESTY NOTE — this is a MODEL, not observed land cover.
+// It answers "what grows at this altitude, at this latitude, on this slope?"
+// from the DEM we already downloaded, using the classic altitudinal-belt
+// pattern (valley → forest → treeline → alpine → rock → permanent snow). It
+// reads a mountain the way an atlas does, and it costs zero extra network
+// requests, which is why it exists.
+//
+// What it CANNOT know, and the UI must not imply it does: actual vegetation,
+// land use, water bodies, or anything about a specific site. It ignores
+// continentality and precipitation, which move real treelines by hundreds of
+// metres — a maritime range and a dry continental one at the same latitude do
+// not behave alike. Treat it as terrain shading that happens to be plausible,
+// never as a land-cover map.
+
+export type EcosystemZone = 'lowland' | 'forest' | 'subalpine' | 'alpine' | 'rock' | 'snow'
+
+/**
+ * Approximate climatic treeline for a latitude, metres.
+ *
+ * Fits the observed latitudinal trend: ~4000 m at the equator, ~2300 m in the
+ * Alps (46°), ~900 m at 68°N. `cos(lat)^1.5` reproduces those anchors closely
+ * and, unlike a linear fit, does not go negative or overshoot at the extremes.
+ */
+export function treelineM(latDeg: number): number {
+  const lat = Math.min(89, Math.abs(latDeg))
+  const c = Math.cos((lat * Math.PI) / 180)
+  return 4000 * Math.pow(Math.max(0, c), 1.5)
+}
+
+/**
+ * Approximate permanent snow line, metres. Sits above the treeline by a gap
+ * that itself narrows toward the poles (~900 m at the equator, ~600 m in the
+ * Alps, ~340 m at 68°) — which is why it is scaled by cos(lat) rather than
+ * being a constant offset.
+ */
+export function snowlineM(latDeg: number): number {
+  const lat = Math.min(89, Math.abs(latDeg))
+  return treelineM(latDeg) + 900 * Math.cos((lat * Math.PI) / 180)
+}
+
+/** Above this steepness nothing holds soil, at any altitude. */
+export const ROCK_SLOPE_DEG = 38
+
+/**
+ * Classify a point into an altitudinal belt.
+ *
+ * Slope wins over altitude for `rock`: a cliff face is bare regardless of how
+ * low it sits, which is what keeps gorges and crags from being painted as
+ * forest.
+ */
+export function ecosystemZone(elevationM: number, latDeg: number, slopeDeg: number): EcosystemZone {
+  const snow = snowlineM(latDeg)
+  const tree = treelineM(latDeg)
+
+  if (elevationM >= snow) return 'snow'
+  // Steep ground is rock — but not above the snow line, where snow covers it.
+  if (slopeDeg >= ROCK_SLOPE_DEG) return 'rock'
+  if (elevationM >= tree + (snow - tree) * 0.5) return 'rock'
+  if (elevationM >= tree) return 'alpine'
+  // The subalpine band is the last ~20 % below the treeline: thinning forest.
+  if (elevationM >= tree * 0.8) return 'subalpine'
+  if (elevationM >= tree * 0.25) return 'forest'
+  return 'lowland'
+}
+
+const ZONE_COLORS: Record<EcosystemZone, { r: number; g: number; b: number }> = {
+  lowland:   { r: 0.55, g: 0.63, b: 0.40 }, // cultivated valley floor
+  forest:    { r: 0.24, g: 0.42, b: 0.26 }, // closed conifer/broadleaf
+  subalpine: { r: 0.38, g: 0.50, b: 0.32 }, // thinning treeline forest
+  alpine:    { r: 0.62, g: 0.62, b: 0.45 }, // meadow / tundra
+  rock:      { r: 0.55, g: 0.53, b: 0.51 }, // scree and bare rock
+  snow:      { r: 0.94, g: 0.95, b: 0.97 }, // permanent snow and ice
+}
+
+export function ecosystemColor(zone: EcosystemZone): { r: number; g: number; b: number } {
+  return ZONE_COLORS[zone]
+}
+
+/**
+ * Zone colour with the band boundary softened, so belts blend instead of
+ * banding into contour-like steps. Blends toward the NEXT zone up across the
+ * last `blendM` metres of the current belt.
+ */
+export function ecosystemColorSmooth(
+  elevationM: number, latDeg: number, slopeDeg: number, blendM = 60,
+): { r: number; g: number; b: number } {
+  const here = ecosystemZone(elevationM, latDeg, slopeDeg)
+  const above = ecosystemZone(elevationM + blendM, latDeg, slopeDeg)
+  const a = ecosystemColor(here)
+  if (above === here) return a
+  const b = ecosystemColor(above)
+  // How far into the blend band this point sits. Find the boundary by
+  // bisection — cheaper and simpler than inverting every threshold.
+  let lo = elevationM
+  let hi = elevationM + blendM
+  for (let i = 0; i < 8; i++) {
+    const mid = (lo + hi) / 2
+    if (ecosystemZone(mid, latDeg, slopeDeg) === here) lo = mid
+    else hi = mid
+  }
+  const t = Math.min(1, Math.max(0, (elevationM - (lo - blendM / 2)) / blendM))
+  return {
+    r: a.r + (b.r - a.r) * t,
+    g: a.g + (b.g - a.g) * t,
+    b: a.b + (b.b - a.b) * t,
+  }
+}
+
 // ── Zoom selection (plan D3) ────────────────────────────────────────────────────
 
 /**

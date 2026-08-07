@@ -24,6 +24,12 @@ import {
   contourFactor,
   clampTerrainLook,
   DEFAULT_TERRAIN_LOOK,
+  treelineM,
+  snowlineM,
+  ecosystemZone,
+  ecosystemColor,
+  ecosystemColorSmooth,
+  type EcosystemZone,
 } from './terrain-sampling'
 import { latLonToTileFloat, latLonToTile } from './geo-math'
 
@@ -475,5 +481,158 @@ describe('clampTerrainLook', () => {
   it('ignores wrong-typed and NaN fields', () => {
     expect(clampTerrainLook({ softness: NaN })).toEqual(DEFAULT_TERRAIN_LOOK)
     expect(clampTerrainLook({ detail: 'lots' as unknown as number })).toEqual(DEFAULT_TERRAIN_LOOK)
+  })
+})
+
+// ── Altitudinal zonation ───────────────────────────────────────────────────────
+
+describe('treelineM', () => {
+  it('reproduces the observed latitudinal anchors', () => {
+    expect(treelineM(0)).toBeCloseTo(4000, 0)
+    // Alps ≈ 2200-2400 m at 46°N
+    expect(treelineM(46)).toBeGreaterThan(2100)
+    expect(treelineM(46)).toBeLessThan(2500)
+    // Northern Scandinavia ≈ 600-1000 m at 68°N
+    expect(treelineM(68)).toBeGreaterThan(600)
+    expect(treelineM(68)).toBeLessThan(1100)
+  })
+
+  it('falls monotonically away from the equator', () => {
+    let prev = Infinity
+    for (let lat = 0; lat <= 85; lat += 5) {
+      const t = treelineM(lat)
+      expect(t).toBeLessThanOrEqual(prev)
+      prev = t
+    }
+  })
+
+  it('is symmetric across the equator', () => {
+    expect(treelineM(-46)).toBeCloseTo(treelineM(46), 6)
+  })
+
+  it('never goes negative, even at the pole', () => {
+    expect(treelineM(90)).toBeGreaterThanOrEqual(0)
+    expect(treelineM(89.9)).toBeGreaterThanOrEqual(0)
+  })
+})
+
+describe('snowlineM', () => {
+  it('always sits above the treeline', () => {
+    for (let lat = 0; lat <= 85; lat += 5) {
+      expect(snowlineM(lat)).toBeGreaterThan(treelineM(lat))
+    }
+  })
+
+  it('has a gap that narrows toward the poles', () => {
+    const gap = (lat: number): number => snowlineM(lat) - treelineM(lat)
+    expect(gap(0)).toBeGreaterThan(gap(46))
+    expect(gap(46)).toBeGreaterThan(gap(68))
+  })
+
+  it('lands near observed values in the Alps', () => {
+    // Permanent snow ≈ 2900-3100 m at 46°N
+    expect(snowlineM(46)).toBeGreaterThan(2700)
+    expect(snowlineM(46)).toBeLessThan(3300)
+  })
+})
+
+describe('ecosystemZone', () => {
+  const ALPS = 46
+
+  it('walks the belts in order as altitude rises', () => {
+    const flat = 5
+    expect(ecosystemZone(200, ALPS, flat)).toBe('lowland')
+    expect(ecosystemZone(1200, ALPS, flat)).toBe('forest')
+    expect(ecosystemZone(1900, ALPS, flat)).toBe('subalpine')
+    expect(ecosystemZone(2400, ALPS, flat)).toBe('alpine')
+    expect(ecosystemZone(4000, ALPS, flat)).toBe('snow')
+  })
+
+  it('never skips backwards — the sequence is monotonic in altitude', () => {
+    const order: Record<string, number> = {
+      lowland: 0, forest: 1, subalpine: 2, alpine: 3, rock: 4, snow: 5,
+    }
+    let prev = -1
+    for (let h = 0; h <= 5000; h += 25) {
+      const rank = order[ecosystemZone(h, ALPS, 5)]
+      expect(rank).toBeGreaterThanOrEqual(prev)
+      prev = rank
+    }
+  })
+
+  it('calls a steep face rock at ANY altitude — cliffs hold no soil', () => {
+    expect(ecosystemZone(300, ALPS, 55)).toBe('rock')
+    expect(ecosystemZone(1200, ALPS, 45)).toBe('rock')
+  })
+
+  it('keeps snow above the snow line even on a cliff', () => {
+    expect(ecosystemZone(4000, ALPS, 70)).toBe('snow')
+  })
+
+  it('shifts the belts downward at higher latitude', () => {
+    // 2000 m is forest in the tropics and bare above the treeline in Norway.
+    expect(ecosystemZone(2000, 0, 5)).toBe('forest')
+    expect(ecosystemZone(2000, 68, 5)).toBe('snow')
+  })
+
+  it('handles sea level and negative elevations', () => {
+    expect(ecosystemZone(0, ALPS, 0)).toBe('lowland')
+    expect(ecosystemZone(-50, ALPS, 0)).toBe('lowland')
+  })
+})
+
+describe('ecosystemColor', () => {
+  it('gives every zone a distinct colour', () => {
+    const zones: EcosystemZone[] = ['lowland', 'forest', 'subalpine', 'alpine', 'rock', 'snow']
+    const seen = new Set(zones.map((z) => JSON.stringify(ecosystemColor(z))))
+    expect(seen.size).toBe(zones.length)
+  })
+
+  it('keeps every channel in [0,1]', () => {
+    for (const z of ['lowland', 'forest', 'subalpine', 'alpine', 'rock', 'snow'] as EcosystemZone[]) {
+      const c = ecosystemColor(z)
+      for (const v of [c.r, c.g, c.b]) {
+        expect(v).toBeGreaterThanOrEqual(0)
+        expect(v).toBeLessThanOrEqual(1)
+      }
+    }
+  })
+
+  it('paints forest green and snow near-white', () => {
+    const forest = ecosystemColor('forest')
+    expect(forest.g).toBeGreaterThan(forest.r)
+    expect(forest.g).toBeGreaterThan(forest.b)
+    const snow = ecosystemColor('snow')
+    expect(Math.min(snow.r, snow.g, snow.b)).toBeGreaterThan(0.9)
+  })
+})
+
+describe('ecosystemColorSmooth', () => {
+  it('matches the hard colour well inside a belt', () => {
+    const hard = ecosystemColor(ecosystemZone(800, 46, 5))
+    const soft = ecosystemColorSmooth(800, 46, 5)
+    expect(soft).toEqual(hard)
+  })
+
+  it('blends between belts near a boundary instead of stepping', () => {
+    // Just below the Alpine treeline, blending toward the alpine belt.
+    const tree = treelineM(46)
+    const soft = ecosystemColorSmooth(tree - 10, 46, 5)
+    const below = ecosystemColor('subalpine')
+    const above = ecosystemColor('alpine')
+    expect(soft).not.toEqual(below)
+    // Must sit between the two, never outside them.
+    expect(soft.r).toBeGreaterThanOrEqual(Math.min(below.r, above.r) - 1e-9)
+    expect(soft.r).toBeLessThanOrEqual(Math.max(below.r, above.r) + 1e-9)
+  })
+
+  it('stays in range everywhere on a full mountain profile', () => {
+    for (let h = 0; h <= 5000; h += 37) {
+      const c = ecosystemColorSmooth(h, 46, 10)
+      for (const v of [c.r, c.g, c.b]) {
+        expect(v).toBeGreaterThanOrEqual(0)
+        expect(v).toBeLessThanOrEqual(1)
+      }
+    }
   })
 })

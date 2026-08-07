@@ -23,6 +23,7 @@ import { WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import {
   terrainZoomFor, imageryZoomFor, hillshade, hypsometricColor,
   slopeColor, slopeFraction, occlusionFactor, contourFactor,
+  ecosystemColorSmooth,
   computeNormals, vertexSpacingM, clampTerrainLook, DEFAULT_TERRAIN_LOOK,
   SHADE_AMBIENT_IMAGERY, SHADE_AMBIENT_RELIEF,
 } from './terrain-sampling'
@@ -237,6 +238,13 @@ function assemblePatch(
           r = tint.r * shade; g = tint.g * shade; b = tint.b * shade
         } else if (style === 'slope') {
           const tint = slopeColor(slopeFraction(nz, SLOPE_MAX_DEG))
+          r = tint.r * shade; g = tint.g * shade; b = tint.b * shade
+        } else if (style === 'ecosystem') {
+          // Absolute elevation, not a normalized fraction: the belts are tied
+          // to real metres above sea level, so a low hill must NOT be painted
+          // like a high summit just because it is the highest thing nearby.
+          const slopeDeg = (Math.acos(Math.min(1, Math.max(0, nz))) * 180) / Math.PI
+          const tint = ecosystemColorSmooth(effective[idx], anchorLat, slopeDeg)
           r = tint.r * shade; g = tint.g * shade; b = tint.b * shade
         }
 

@@ -107,7 +107,9 @@
     "buildingsEstimated": "{{count}} 件は高さが推定値",
     "buildingsEmpty": "この敷地の周辺には登録された建物がありません。",
     "buildingsFailed": "建物を読み込めませんでした — サービスが混雑しています。再試行してください。",
-    "buildingsTruncated": "密集地域のため、建物の一部のみ表示しています。"
+    "buildingsTruncated": "密集地域のため、建物の一部のみ表示しています。",
+    "styleEcosystem": "生態帯",
+    "styleEcosystemNote": "標高・緯度・傾斜から推定した植生帯です。もっともらしい推定であり、実測の土地被覆ではありません。"
   },
   "placement": {
     "title": "Placement",

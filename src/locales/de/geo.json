@@ -107,7 +107,9 @@
     "buildingsEstimated": "{{count}} Höhen geschätzt",
     "buildingsEmpty": "Um diesen Standort sind keine Gebäude erfasst.",
     "buildingsFailed": "Gebäude konnten nicht geladen werden — der Dienst war ausgelastet. Bitte erneut versuchen.",
-    "buildingsTruncated": "Dichtes Gebiet — es wird nur ein Teil der Gebäude gezeigt."
+    "buildingsTruncated": "Dichtes Gebiet — es wird nur ein Teil der Gebäude gezeigt.",
+    "styleEcosystem": "Ökosysteme",
+    "styleEcosystemNote": "Vegetationsstufen aus Höhe, Breitengrad und Neigung abgeleitet — plausibel, keine erfasste Landbedeckung."
   },
   "placement": {
     "title": "Placement",

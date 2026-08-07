@@ -107,7 +107,9 @@
     "buildingsEstimated": "{{count}} alçades estimades",
     "buildingsEmpty": "No hi ha edificis cartografiats al voltant d’aquest emplaçament.",
     "buildingsFailed": "No s’han pogut carregar els edificis — el servei estava ocupat. Torna-ho a provar.",
-    "buildingsTruncated": "Zona densa — només se’n mostra una part."
+    "buildingsTruncated": "Zona densa — només se’n mostra una part.",
+    "styleEcosystem": "Ecosistemes",
+    "styleEcosystemNote": "Estatges de vegetació inferits de l’altitud, la latitud i el pendent: versemblants, no cobertura del sòl observada."
   },
   "placement": {
     "title": "Placement",
