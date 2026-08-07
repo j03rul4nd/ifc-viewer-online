@@ -403,3 +403,44 @@ describe('buildLinearLayer', () => {
     expect(built.count).toBeLessThanOrEqual(3000)
   })
 })
+
+describe('buildLinearLayer — solidity', () => {
+  it('builds a cambered surface with kerb faces, not a flat decal', () => {
+    const built = buildLinearLayer([linear('road', 'w1')], 'road', OPTS)!
+    const g = surfaceOf(built.object).geometry
+    const pos = g.getAttribute('position')
+
+    // Vertical faces exist: some vertices sit below the surface plane.
+    const zs = Array.from({ length: pos.count }, (_, i) => pos.getZ(i))
+    expect(Math.max(...zs) - Math.min(...zs)).toBeGreaterThan(0)
+
+    // The crown is lighter than the gutters — three distinct surface tones
+    // (gutter, crown, kerb) rather than one flat colour.
+    const c = g.getAttribute('color')
+    const tones = new Set<string>()
+    for (let i = 0; i < c.count; i++) tones.add(c.getX(i).toFixed(4))
+    expect(tones.size).toBeGreaterThanOrEqual(3)
+  })
+
+  it('paints a centre line on a carriageway, and none on a footpath', () => {
+    const brightest = (f: OsmFeature): number => {
+      const g = surfaceOf(buildLinearLayer([f], 'road', OPTS)!.object).geometry
+      const c = g.getAttribute('color')
+      let max = 0
+      for (let i = 0; i < c.count; i++) max = Math.max(max, c.getX(i))
+      return max
+    }
+    const road = linear('road', 'w1', { widthM: 9 })
+    const path = linear('road', 'w2', { widthM: 1.8 })
+    // The marking is far lighter than any asphalt tone.
+    expect(brightest(road)).toBeGreaterThan(brightest(path) + 0.2)
+  })
+
+  it('is opaque — the map underneath must not show through the asphalt', () => {
+    const built = buildLinearLayer([linear('road', 'w1')], 'road', OPTS)!
+    const mat = surfaceOf(built.object).material as THREE.MeshBasicMaterial
+    expect(mat.transparent).toBe(false)
+    // Still no depth writing: these layers are coplanar and ordered by hand.
+    expect(mat.depthWrite).toBe(false)
+  })
+})

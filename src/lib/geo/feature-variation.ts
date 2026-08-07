@@ -179,6 +179,83 @@ export function greenTone(tags: Record<string, string> | undefined): [number, nu
   return [0.29, 0.48, 0.27]
 }
 
+/**
+ * How shaggy the vegetation is, 0-1. A mown pitch is smooth, heath and scrub
+ * are coarse, and woodland floor is somewhere in between. Feeds the tuft scale
+ * and bump strength of the grass material — the same tone at two roughnesses
+ * reads as two different kinds of ground, which is the point.
+ */
+export function greenRoughness(tags: Record<string, string> | undefined): number {
+  const t = tags ?? {}
+  const landuse = (t['landuse'] ?? '').toLowerCase()
+  const natural = (t['natural'] ?? '').toLowerCase()
+  const leisure = (t['leisure'] ?? '').toLowerCase()
+
+  if (leisure === 'pitch' || leisure === 'golf_course') return 0.12
+  if (landuse === 'grass' || landuse === 'village_green') return 0.22
+  if (leisure === 'park' || leisure === 'garden') return 0.3
+  if (landuse === 'cemetery') return 0.3
+  if (landuse === 'meadow' || landuse === 'allotments') return 0.55
+  if (landuse === 'vineyard' || landuse === 'orchard') return 0.6
+  if (natural === 'wetland') return 0.65
+  if (natural === 'wood' || landuse === 'forest') return 0.8
+  if (natural === 'scrub' || natural === 'heath') return 0.9
+  return 0.4
+}
+
+// ── Bare ground: sand and rock ─────────────────────────────────────────────────
+
+/**
+ * Colour of unvegetated ground.
+ *
+ * Sand is not one colour — a quartz beach is pale and slightly pink, a dune
+ * field is warmer, a river bar is grey shingle and tidal mud is brown. Painting
+ * them all "beige" is the same mistake as painting every park one green, and it
+ * is more obvious, because a beach is usually the biggest thing in the frame.
+ */
+export function bareTone(
+  kind: 'sand' | 'rock', tags: Record<string, string> | undefined,
+): [number, number, number] {
+  const t = tags ?? {}
+  const natural = (t['natural'] ?? '').toLowerCase()
+
+  if (kind === 'sand') {
+    if (natural === 'mud') return [0.42, 0.37, 0.30]
+    if (natural === 'shingle') return [0.60, 0.58, 0.54]
+    if (natural === 'dune') return [0.79, 0.68, 0.47]
+    if (t['golf'] === 'bunker') return [0.87, 0.82, 0.68]
+    // beach / sand / landuse=sand
+    return [0.81, 0.73, 0.56]
+  }
+
+  if (natural === 'glacier') return [0.82, 0.87, 0.92]
+  if (natural === 'scree') return [0.53, 0.50, 0.47]
+  if (t['landuse'] === 'quarry') return [0.60, 0.56, 0.50]
+  // bare_rock / rock / stone
+  return [0.47, 0.46, 0.44]
+}
+
+/** Surface coarseness for bare ground — see `FeatureStyle.roughness`. */
+export function bareRoughness(
+  kind: 'sand' | 'rock', tags: Record<string, string> | undefined,
+): number {
+  const t = tags ?? {}
+  const natural = (t['natural'] ?? '').toLowerCase()
+
+  if (kind === 'sand') {
+    if (natural === 'mud') return 0.08
+    if (natural === 'shingle') return 0.95
+    if (natural === 'dune') return 0.72
+    if (t['golf'] === 'bunker') return 0.2
+    return 0.3
+  }
+
+  // Ice has no fractures to speak of at this scale; scree is nothing but.
+  if (natural === 'glacier') return 0.06
+  if (natural === 'scree') return 0.92
+  return 0.5
+}
+
 function clamp01(v: number): number {
   return Math.min(1, Math.max(0, v))
 }

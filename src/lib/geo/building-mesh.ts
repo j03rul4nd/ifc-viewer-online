@@ -291,16 +291,27 @@ function hexToRgb(hex: string): [number, number, number] | null {
  */
 function tinted(shade: number, rgb: [number, number, number] | null): ShadedVertices {
   const c: [number, number, number] = rgb
-    ? [rgb[0] * shade, rgb[1] * shade, rgb[2] * shade]
-    : [shade, shade, shade]
+    ? [clamp1(rgb[0] * shade), clamp1(rgb[1] * shade), clamp1(rgb[2] * shade)]
+    : [clamp1(shade), clamp1(shade), clamp1(shade)]
   return [c, c, c]
+}
+
+/**
+ * Colour channels are 0–1. Shades above 1 are deliberate (a lit spandrel is
+ * brighter than the base tone), so the clamp lives here rather than forcing
+ * every caller to stay under one — a tagged near-white wall must not wrap.
+ */
+function clamp1(v: number): number {
+  return v < 0 ? 0 : v > 1 ? 1 : v
 }
 
 function tintedTriple(
   shades: [number, number, number], rgb: [number, number, number] | null,
 ): ShadedVertices {
   return shades.map((s) => (
-    rgb ? [rgb[0] * s, rgb[1] * s, rgb[2] * s] : [s, s, s]
+    rgb
+      ? [clamp1(rgb[0] * s), clamp1(rgb[1] * s), clamp1(rgb[2] * s)]
+      : [clamp1(s), clamp1(s), clamp1(s)]
   ) as [number, number, number]) as ShadedVertices
 }
 
@@ -360,9 +371,14 @@ function pushDetailedWall(
 
     // Ground floor: taller glazing and a darker frame — shopfronts and lobbies
     // are what make a street read as inhabited rather than as a wall.
+    //
+    // The gap between the two bands is what carries at distance. Too narrow and
+    // the floors dissolve into a flat wall a hundred metres out; the values
+    // below keep the rhythm legible from across a block while staying inside
+    // the muted range that keeps context behind the model.
     const ground = i === 0
-    const glazing = faceShade * (ground ? 0.46 : 0.62)
-    const spandrel = faceShade * (ground ? 0.88 : 1.0)
+    const glazing = faceShade * (ground ? 0.30 : 0.44)
+    const spandrel = faceShade * (ground ? 0.98 : 1.16)
 
     quad(z0, glassTop, glazing)
     quad(glassTop, z1, spandrel)

@@ -1,6 +1,6 @@
 // ─── osm-features ─────────────────────────────────────────────────────────────
 // Classifying OpenStreetMap elements into the scene layers we render around a
-// site: buildings, water, greenery, trees and bridges. PURE — tag reasoning and
+// site: buildings, water, greenery, sand, rock, trees and bridges. PURE — tag reasoning and
 // geometry preparation only; meshes are built in `osm-scene.ts` / `building-mesh.ts`.
 //
 // Why one module and ONE Overpass query for all of it: each extra query is
@@ -18,14 +18,24 @@ import {
   resolveBuildingHeight, parseLengthM, approximateAreaM2,
   type BuildingHeight,
 } from './buildings'
-import { treeShape, greenTone, type TreeShape } from './feature-variation'
+import {
+  treeShape, greenTone, greenRoughness, bareTone, bareRoughness, type TreeShape,
+} from './feature-variation'
 
-/** Scene layers the user can show or hide independently. */
+/**
+ * Scene layers the user can show or hide independently.
+ *
+ * `sand` and `rock` are separate kinds rather than shades of `green` because
+ * they are not vegetation and do not behave like it: a beach, a dune field and
+ * a scree slope each need their own surface treatment, and a site by the sea or
+ * under a mountain is exactly the case where the ground around the model is the
+ * thing a client is looking at.
+ */
 export type FeatureKind =
-  | 'building' | 'water' | 'green' | 'tree' | 'bridge' | 'road' | 'rail'
+  | 'building' | 'water' | 'green' | 'sand' | 'rock' | 'tree' | 'bridge' | 'road' | 'rail'
 
 export const FEATURE_KINDS: readonly FeatureKind[] =
-  ['building', 'water', 'green', 'tree', 'bridge', 'road', 'rail']
+  ['building', 'water', 'green', 'sand', 'rock', 'tree', 'bridge', 'road', 'rail']
 
 export interface LatLonPoint { lat: number; lon: number }
 
@@ -58,6 +68,14 @@ export interface FeatureStyle {
   treeShape?: TreeShape
   /** Rail features: a corridor of track, or a station platform slab. */
   railKind?: 'track' | 'platform'
+  /**
+   * How coarse the surface is, 0-1 — a mown pitch vs heath, fine beach sand vs
+   * shingle, an ice field vs loose scree. Drives grain size, ripple wavelength
+   * and bump strength in the procedural materials. One number instead of a
+   * material enum because it has to travel as a per-vertex attribute on a
+   * merged geometry, where a whole layer shares ONE material.
+   */
+  roughness?: number
   /** Overhead line present — drives the catenary masts along a track. */
   electrified?: boolean
   /**
@@ -84,7 +102,13 @@ const GREEN_LANDUSE = new Set([
   'grass', 'forest', 'meadow', 'village_green', 'recreation_ground',
   'allotments', 'orchard', 'vineyard', 'cemetery',
 ])
-const GREEN_NATURAL = new Set(['wood', 'scrub', 'grassland', 'heath'])
+const GREEN_NATURAL = new Set(['wood', 'scrub', 'grassland', 'heath', 'wetland'])
+
+/** Loose mineral ground: beaches, dunes, river bars, golf bunkers. */
+const SAND_NATURAL = new Set(['beach', 'sand', 'dune', 'shingle', 'mud'])
+
+/** Solid or broken mineral ground, plus permanent ice. */
+const ROCK_NATURAL = new Set(['bare_rock', 'rock', 'scree', 'stone', 'glacier'])
 
 /**
  * Road classes worth drawing. Excludes what is not a carriageway (crossings and
@@ -190,6 +214,13 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
     WATER_LANDUSE.has(t['landuse'] ?? '')
   ) return 'water'
 
+  // Bare ground before greenery: a dune tagged as part of a nature reserve is
+  // still sand, and a golf bunker sits inside a green golf course.
+  if (SAND_NATURAL.has(t['natural'] ?? '') || t['landuse'] === 'sand' || t['golf'] === 'bunker') {
+    return 'sand'
+  }
+  if (ROCK_NATURAL.has(t['natural'] ?? '') || t['landuse'] === 'quarry') return 'rock'
+
   if (
     GREEN_LEISURE.has(t['leisure'] ?? '') ||
     GREEN_LANDUSE.has(t['landuse'] ?? '') ||
@@ -267,7 +298,17 @@ export function resolveFeatureStyle(
   }
 
   if (kind === 'green') {
-    return { roofShape: 'flat', roofHeightM: 0, tone: greenTone(t) }
+    return {
+      roofShape: 'flat', roofHeightM: 0,
+      tone: greenTone(t), roughness: greenRoughness(t),
+    }
+  }
+
+  if (kind === 'sand' || kind === 'rock') {
+    return {
+      roofShape: 'flat', roofHeightM: 0,
+      tone: bareTone(kind, t), roughness: bareRoughness(kind, t),
+    }
   }
 
   if (kind === 'road') {
@@ -316,6 +357,10 @@ export const MIN_AREA_M2: Record<Exclude<FeatureKind, 'tree'>, number> = {
   building: 8,
   water: 40,
   green: 60,
+  sand: 40,
+  // Mountain polygons are enormous; anything smaller than this is a boulder
+  // somebody mapped, not ground worth drawing.
+  rock: 120,
   bridge: 10,
   // Linear ways carry a width instead of an area; only platforms are polygons.
   road: 0,
@@ -464,7 +509,11 @@ export function buildFeaturesQuery(
     area('["landuse"~"^(reservoir|basin)$"]'),
     area('["leisure"~"^(park|garden|pitch|golf_course|nature_reserve)$"]'),
     area('["landuse"~"^(grass|forest|meadow|village_green|recreation_ground|allotments|orchard|vineyard|cemetery)$"]'),
-    area('["natural"~"^(wood|scrub|grassland|heath)$"]'),
+    area('["natural"~"^(wood|scrub|grassland|heath|wetland)$"]'),
+    area('["natural"~"^(beach|sand|dune|shingle|mud)$"]'),
+    area('["natural"~"^(bare_rock|rock|scree|stone|glacier)$"]'),
+    area('["landuse"~"^(sand|quarry)$"]'),
+    area('["golf"="bunker"]'),
     area('["man_made"="bridge"]'),
     `way["bridge"]["highway"](${b});`,
     `way["bridge"]["railway"](${b});`,
@@ -479,7 +528,10 @@ export function buildFeaturesQuery(
 
 /** Count features per layer — for the "what did we find?" panel readout. */
 export function countByKind(features: ReadonlyArray<OsmFeature>): Record<FeatureKind, number> {
-  const counts = { building: 0, water: 0, green: 0, tree: 0, bridge: 0, road: 0, rail: 0 }
+  const counts = {
+    building: 0, water: 0, green: 0, sand: 0, rock: 0,
+    tree: 0, bridge: 0, road: 0, rail: 0,
+  }
   for (const f of features) counts[f.kind]++
   return counts
 }

@@ -1,7 +1,8 @@
 // ─── osm-scene ────────────────────────────────────────────────────────────────
-// Meshes for the non-building OSM layers: water, greenery, trees and bridges.
-// Everything lands in the normalized planar frame under geoRoot, so it inherits
-// placement, yaw and scale like the terrain and buildings do.
+// Meshes for the non-building OSM layers: water, greenery, sand, rock, trees,
+// bridges, roads and rail. Everything lands in the normalized planar frame under
+// geoRoot, so it inherits placement, yaw and scale like the terrain and
+// buildings do.
 //
 // One merged geometry per layer, not per feature: a neighbourhood is hundreds
 // of polygons and thousands of trees, and each layer must toggle as a unit
@@ -9,18 +10,40 @@
 // makes a few thousand of them free.
 //
 // Ground handling differs per layer ON PURPOSE:
-//   • green   — follows the terrain per vertex. A park on a hillside is on the
-//               hillside; a flat patch would slice through it.
+//   • green/sand/rock — follow the terrain per vertex. A park on a hillside is
+//               on the hillside; a flat patch would slice through it.
 //   • water   — FLAT, at the lowest ground under its own outline. Water is
 //               level by definition, and taking the minimum keeps a river in
 //               its bed instead of floating over the banks.
 //   • bridge  — flat deck at its own height; that is the whole point of a bridge.
+//
+// TWO QUALITY LEVELS. 'simple' is the original flat-coloured surface: one
+// triangle fan per polygon, unlit, cheap. 'detailed' subdivides the polygon,
+// samples the ground and its slope at every new vertex, and hands the result to
+// the procedural materials in surface-shaders. The subdivision is not decoration
+// — without interior vertices a park on a slope is a flat lid over the hill and
+// a river has no idea where its own bank is.
 
 import * as THREE from 'three'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import { jitter, foliageColor, variate, type TreeShape } from './feature-variation'
 import { canopyGeometry, trunkGeometry, TREE_PROPORTIONS } from './tree-geometry'
+import { subdivideMesh, distanceToRing, type Vec2, type Face } from './surface-tessellation'
+import {
+  createSurfaceMaterial, createFoliageMaterial, type SurfaceKind, type SurfaceSun,
+} from './surface-shaders'
 import type { OsmFeature, LatLonPoint } from './osm-features'
+
+/** How much work a layer is allowed to spend on looking real. */
+export type SurfaceQuality = 'simple' | 'detailed'
+
+/** Polygon layers that describe ground cover. */
+export type SurfaceLayerKind = 'water' | 'green' | 'sand' | 'rock'
+
+/** Which procedural material each ground layer is drawn with. */
+const SURFACE_MATERIAL: Record<SurfaceLayerKind, SurfaceKind> = {
+  water: 'water', green: 'grass', sand: 'sand', rock: 'rock',
+}
 
 export interface LayerMeshOptions {
   anchorLat: number
@@ -28,18 +51,57 @@ export interface LayerMeshOptions {
   sampleGroundM?: ((nx: number, ny: number) => number) | null
   /** Elevation the map plane represents, metres. */
   anchorElevationM?: number
+  /** Flat colour, or procedural surfaces. Defaults to 'simple'. */
+  quality?: SurfaceQuality
+  /** Relief light. Shared with the terrain hillshade so the scene has one sun. */
+  sun?: SurfaceSun
 }
+
+/** Fallback light, matching DEFAULT_TERRAIN_LOOK — NW at 45°, cartographic. */
+const FALLBACK_SUN: SurfaceSun = { azimuthDeg: 315, altitudeDeg: 45 }
 
 /** Surface colours. Deliberately muted — this is context, not the subject. */
 const WATER_COLOR = new THREE.Color(0x2c5a7a)
 const BRIDGE_COLOR = new THREE.Color(0x6b6b6e)
 const TRUNK_COLOR = new THREE.Color(0x5b4636)
 
+/** Default tone per ground layer when the feature carries none. */
+const FALLBACK_TONE: Record<SurfaceLayerKind, [number, number, number]> = {
+  water: [0.17, 0.35, 0.48],
+  green: [0.29, 0.48, 0.27],
+  sand: [0.81, 0.73, 0.56],
+  rock: [0.47, 0.46, 0.44],
+}
+
 /**
  * Lift each layer off the ground by a hair so coplanar surfaces do not
  * z-fight. Metres, applied before the normalized conversion.
  */
-const LIFT_M: Record<'water' | 'green', number> = { water: 0.15, green: 0.05 }
+const LIFT_M: Record<SurfaceLayerKind, number> =
+  { water: 0.15, green: 0.05, sand: 0.06, rock: 0.07 }
+
+/** Ground layers are coplanar; the order here IS what resolves them. */
+const SURFACE_RENDER_ORDER: Record<SurfaceLayerKind, number> =
+  { green: 2, sand: 2, rock: 2, water: 3 }
+
+/**
+ * Target edge length per layer, metres — how fine the subdivision goes in
+ * detailed mode. Water is finest because its foam fringe is only metres wide;
+ * rock is coarsest because mountain polygons are square kilometres and their
+ * detail comes from the shader, not from geometry.
+ */
+const DETAIL_EDGE_M: Record<SurfaceLayerKind, number> =
+  { water: 8, green: 16, sand: 12, rock: 22 }
+
+/**
+ * Vertex ceiling per layer. Reached only by something like a forest covering
+ * the whole query box; the subdivision stops one level short rather than
+ * degrading, so the surface stays conformal.
+ */
+const DETAIL_MAX_POINTS = 40_000
+
+/** Baseline over which the ground slope is measured, metres. */
+const SLOPE_STEP_M = 4
 
 export interface LayerMesh<T extends THREE.Object3D = THREE.Object3D> {
   object: T
@@ -77,16 +139,28 @@ function triangulate(ring: THREE.Vector2[], mToN: number): number[][] | null {
   }
 }
 
-// ── Flat / draped surfaces (water, green) ──────────────────────────────────────
+// ── Ground cover (water, green, sand, rock) ────────────────────────────────────
 
 /**
- * Build one merged surface for a polygon layer.
- * `flatten` picks water semantics (single level per polygon) over green
- * semantics (per-vertex terrain following).
+ * Build one merged surface for a ground-cover layer.
+ *
+ * Dispatches on quality: 'simple' keeps the original flat translucent tint,
+ * 'detailed' builds a subdivided, terrain-following, procedurally shaded
+ * surface. Both produce ONE mesh for the whole layer.
  */
 export function buildSurfaceLayer(
   features: ReadonlyArray<OsmFeature>,
-  layer: 'water' | 'green',
+  layer: SurfaceLayerKind,
+  opts: LayerMeshOptions,
+): LayerMesh<THREE.Mesh> | null {
+  return opts.quality === 'detailed'
+    ? buildDetailedSurface(features, layer, opts)
+    : buildSimpleSurface(features, layer, opts)
+}
+
+function buildSimpleSurface(
+  features: ReadonlyArray<OsmFeature>,
+  layer: SurfaceLayerKind,
   opts: LayerMeshOptions,
 ): LayerMesh<THREE.Mesh> | null {
   const mToN = metresToNormalized(opts.anchorLat)
@@ -108,18 +182,13 @@ export function buildSurfaceLayer(
     // it — the surface of a river is not the height of its banks.
     let flatZ = 0
     if (layer === 'water') {
-      let minGround = Infinity
-      for (const p of ring) {
-        const g = sample ? sample(p.x, p.y) : anchorElevation
-        if (g < minGround) minGround = g
-      }
-      if (!Number.isFinite(minGround)) minGround = anchorElevation
-      flatZ = (minGround + lift - anchorElevation) * mToN
+      flatZ = (waterLevelM(ring, sample, anchorElevation) + lift - anchorElevation) * mToN
     }
 
-    // Greenery is coloured by WHAT IT IS: a forest is much darker than a lawn,
-    // and OSM already tells us. Painting them all one green throws that away.
-    const tone = layer === 'green' ? (f.style.tone ?? [0.29, 0.48, 0.27]) : null
+    // Ground cover is coloured by WHAT IT IS: a forest is much darker than a
+    // lawn, shingle is not dune sand, and OSM already tells us. Painting them
+    // all one colour per layer throws that away.
+    const tone = layer === 'water' ? null : (f.style.tone ?? FALLBACK_TONE[layer])
 
     for (const [a, b, c] of faces) {
       for (const idx of [a, b, c]) {
@@ -138,7 +207,7 @@ export function buildSurfaceLayer(
 
   const geometry = new THREE.BufferGeometry()
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-  if (layer === 'green') {
+  if (colors.length > 0) {
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
   }
   geometry.computeVertexNormals()
@@ -146,7 +215,7 @@ export function buildSurfaceLayer(
 
   const material = new THREE.MeshBasicMaterial({
     color: layer === 'water' ? WATER_COLOR : 0xffffff,
-    vertexColors: layer === 'green',
+    vertexColors: colors.length > 0,
     transparent: true,
     // Slight translucency lets the basemap imagery read through, so a park
     // tints the map instead of erasing what is under it.
@@ -156,7 +225,163 @@ export function buildSurfaceLayer(
   })
   const mesh = new THREE.Mesh(geometry, material)
   mesh.name = `osm-${layer}`
-  mesh.renderOrder = layer === 'water' ? 3 : 2
+  mesh.renderOrder = SURFACE_RENDER_ORDER[layer]
+  return { object: mesh, count }
+}
+
+/** Level a water body sits at: the LOWEST ground under its own outline. */
+function waterLevelM(
+  ring: ReadonlyArray<THREE.Vector2>,
+  sample: ((nx: number, ny: number) => number) | null | undefined,
+  anchorElevation: number,
+): number {
+  let minGround = Infinity
+  for (const p of ring) {
+    const g = sample ? sample(p.x, p.y) : anchorElevation
+    if (g < minGround) minGround = g
+  }
+  return Number.isFinite(minGround) ? minGround : anchorElevation
+}
+
+/**
+ * The detailed path.
+ *
+ * Everything is worked out in planar METRES relative to a single origin shared
+ * by the whole layer. That origin matters twice over: it is what keeps
+ * subdivision maths away from the float32 cliff (a metre is ~4e-8 of a
+ * normalized coordinate), and it is what makes the procedural pattern continue
+ * across polygon boundaries instead of restarting identically in every park —
+ * two neighbouring lawns with the same noise are as obvious a tell as one flat
+ * green.
+ */
+function buildDetailedSurface(
+  features: ReadonlyArray<OsmFeature>,
+  layer: SurfaceLayerKind,
+  opts: LayerMeshOptions,
+): LayerMesh<THREE.Mesh> | null {
+  const mToN = metresToNormalized(opts.anchorLat)
+  const anchorElevation = opts.anchorElevationM ?? 0
+  const sample = opts.sampleGroundM
+  const lift = LIFT_M[layer]
+  const isWater = layer === 'water'
+
+  const wanted = features.filter((f) => f.kind === layer && f.ring && f.ring.length >= 3)
+  if (wanted.length === 0) return null
+
+  // Layer-wide origin, in normalized units.
+  const first = latLonToNormalized(wanted[0].ring![0].lat, wanted[0].ring![0].lon)
+  const originX = first.nx
+  const originY = first.ny
+
+  const positions: number[] = []
+  const normals: number[] = []
+  const colors: number[] = []
+  const surf: number[] = []
+  const rough: number[] = []
+  const shore: number[] = []
+  const indices: number[] = []
+  let vertexBase = 0
+  let budget = DETAIL_MAX_POINTS
+  let count = 0
+
+  /** Ground height in metres at a point given in layer-local metres. */
+  const groundAt = (mx: number, my: number): number =>
+    sample ? sample(originX + mx * mToN, originY + my * mToN) : anchorElevation
+
+  for (const f of wanted) {
+    if (budget <= 0) break
+
+    // Ring in layer-local metres, wound counter-clockwise for the triangulator.
+    const ringM: Vec2[] = f.ring!.map((p) => {
+      const { nx, ny } = latLonToNormalized(p.lat, p.lon)
+      return { x: (nx - originX) / mToN, y: (ny - originY) / mToN }
+    })
+    const asVectors = ringM.map((p) => new THREE.Vector2(p.x, p.y))
+    if (THREE.ShapeUtils.isClockWise(asVectors)) {
+      asVectors.reverse()
+      ringM.reverse()
+    }
+
+    let faces: Face[]
+    try {
+      const raw = THREE.ShapeUtils.triangulateShape(asVectors, [])
+      if (raw.length === 0) continue
+      faces = raw.map((t) => [t[0], t[1], t[2]] as Face)
+    } catch {
+      continue
+    }
+
+    const mesh = subdivideMesh(ringM, faces, {
+      maxEdgeM: DETAIL_EDGE_M[layer],
+      maxPoints: Math.max(ringM.length, budget),
+    })
+    budget -= mesh.points.length
+
+    const tone = f.style.tone ?? FALLBACK_TONE[layer]
+    const roughness = f.style.roughness ?? 0.4
+    // Water is level across the whole polygon; the rest follows the ground.
+    const flatZ = isWater
+      ? (waterLevelM(
+          ringM.map((p) => new THREE.Vector2(originX + p.x * mToN, originY + p.y * mToN)),
+          sample, anchorElevation,
+        ) + lift - anchorElevation) * mToN
+      : 0
+    const shoreDist = isWater ? distanceToRing(mesh.points, ringM) : null
+
+    for (let i = 0; i < mesh.points.length; i++) {
+      const p = mesh.points[i]
+      const nx = originX + p.x * mToN
+      const ny = originY + p.y * mToN
+      const z = isWater
+        ? flatZ
+        : (groundAt(p.x, p.y) + lift - anchorElevation) * mToN
+      positions.push(nx, ny, z)
+
+      // Normals from the SLOPE OF THE GROUND, not from the triangles. Face
+      // normals on a draped mesh give faceted lighting that reads as low-poly;
+      // the terrain's own gradient is both smooth and true to the relief.
+      if (isWater || !sample) {
+        normals.push(0, 0, 1)
+      } else {
+        const dzx = (groundAt(p.x + SLOPE_STEP_M, p.y) - groundAt(p.x - SLOPE_STEP_M, p.y))
+          / (2 * SLOPE_STEP_M)
+        const dzy = (groundAt(p.x, p.y + SLOPE_STEP_M) - groundAt(p.x, p.y - SLOPE_STEP_M))
+          / (2 * SLOPE_STEP_M)
+        const len = Math.hypot(dzx, dzy, 1)
+        normals.push(-dzx / len, -dzy / len, 1 / len)
+      }
+
+      colors.push(tone[0], tone[1], tone[2])
+      surf.push(p.x, p.y)
+      rough.push(roughness)
+      if (shoreDist) shore.push(shoreDist[i])
+    }
+
+    for (const [a, b, c] of mesh.faces) {
+      indices.push(vertexBase + a, vertexBase + b, vertexBase + c)
+    }
+    vertexBase += mesh.points.length
+    count++
+  }
+
+  if (count === 0) return null
+
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+  geometry.setAttribute('aSurf', new THREE.Float32BufferAttribute(surf, 2))
+  geometry.setAttribute('aRough', new THREE.Float32BufferAttribute(rough, 1))
+  if (isWater) geometry.setAttribute('aShore', new THREE.Float32BufferAttribute(shore, 1))
+  geometry.setIndex(indices)
+  geometry.computeBoundingSphere()
+
+  const material = createSurfaceMaterial(SURFACE_MATERIAL[layer], {
+    sun: opts.sun ?? FALLBACK_SUN,
+  })
+  const mesh = new THREE.Mesh(geometry, material)
+  mesh.name = `osm-${layer}`
+  mesh.renderOrder = SURFACE_RENDER_ORDER[layer]
   return { object: mesh, count }
 }
 
@@ -270,6 +495,20 @@ const LINEAR_LIFT_M: Record<'road' | 'rail', number> = { road: 0.25, rail: 0.40 
 
 /** Steel rail heads sitting on the ballast. */
 const RAIL_STEEL: [number, number, number] = [0.29, 0.29, 0.32]
+/** Depth of the kerb face along a carriageway / the ballast shoulder, metres. */
+const SIDE_DROP_M: Record<'road' | 'rail', number> = { road: 0.16, rail: 0.45 }
+/** Shading of that vertical face — it faces sideways, so it never catches light. */
+const SIDE_SHADE = 0.58
+/** Camber: the crown of a road is fractionally lighter than its gutters. */
+const CROWN_GAIN = 1.09
+const GUTTER_GAIN = 0.9
+/** Carriageways at least this wide get a centre line painted. */
+const CENTRE_LINE_MIN_WIDTH_M = 6.5
+/** Width of that line, metres — wider than reality so it survives at map scale. */
+const CENTRE_LINE_M = 0.34
+/** Worn road-marking white. */
+const CENTRE_LINE_TONE: [number, number, number] = [0.80, 0.78, 0.68]
+
 /** The painted safety line along a platform edge. */
 const PLATFORM_EDGE: [number, number, number] = [0.86, 0.72, 0.25]
 /** Width of that line, metres — generous so it survives at map scale. */
@@ -335,6 +574,60 @@ export function buildLinearLayer(
     }
   }
 
+  /** Scale a tone without letting it wrap past white. */
+  const gain = (t: [number, number, number], k: number): [number, number, number] =>
+    [Math.min(1, t[0] * k), Math.min(1, t[1] * k), Math.min(1, t[2] * k)]
+
+  /**
+   * A carriageway quad with a camber and a kerb.
+   *
+   * Flat translucent ribbons read as a tint painted on the map. Three things
+   * turn that into a surface you believe: the crown is fractionally lighter
+   * than the gutters, the edges drop to a vertical face so the ribbon has
+   * thickness from an oblique view, and the ends are left open (the next
+   * segment closes them, and at a junction the overlap hides it).
+   */
+  const pushSurfaceQuad = (
+    quad: THREE.Vector2[], tone: [number, number, number], drop: number,
+  ): void => {
+    const [l0, l1, r1, r0] = quad
+    const c0 = new THREE.Vector2((l0.x + r0.x) / 2, (l0.y + r0.y) / 2)
+    const c1 = new THREE.Vector2((l1.x + r1.x) / 2, (l1.y + r1.y) / 2)
+    const crown = gain(tone, CROWN_GAIN)
+    const gutter = gain(tone, GUTTER_GAIN)
+    const side = gain(tone, SIDE_SHADE)
+
+    // Two half-ribbons meeting at the crown.
+    pushShaded([l0, l1, c1, c0], [gutter, gutter, crown, crown])
+    pushShaded([c0, c1, r1, r0], [crown, crown, gutter, gutter])
+
+    // Kerb faces down both edges.
+    for (const [e0, e1] of [[l0, l1], [r1, r0]] as const) {
+      const z0 = groundZ(e0.x, e0.y) + lift
+      const z1 = groundZ(e1.x, e1.y) + lift
+      for (const [v, z] of [[e0, z0], [e1, z1], [e1, z1 - drop]] as const) {
+        positions.push(v.x, v.y, z)
+        colors.push(side[0], side[1], side[2])
+      }
+      for (const [v, z] of [[e0, z0], [e1, z1 - drop], [e0, z0 - drop]] as const) {
+        positions.push(v.x, v.y, z)
+        colors.push(side[0], side[1], side[2])
+      }
+    }
+  }
+
+  /** Quad with a tone per corner, draped on the ground. */
+  function pushShaded(quad: THREE.Vector2[], tones: [number, number, number][]): void {
+    const idx = [[0, 1, 2], [0, 2, 3]] as const
+    for (const tri of idx) {
+      for (const i of tri) {
+        const v = quad[i]
+        positions.push(v.x, v.y, groundZ(v.x, v.y) + lift)
+        colors.push(tones[i][0], tones[i][1], tones[i][2])
+      }
+    }
+  }
+
   const wanted = features.filter((f) => f.kind === kind && f.ring).slice(0, MAX_LINEAR)
   for (const f of wanted) {
     const line = projectRing(f.ring!)
@@ -363,7 +656,17 @@ export function buildLinearLayer(
     }
 
     const half = (f.widthM / 2) * mToN
-    for (const quad of bufferCentreline(line, half)) pushQuad(quad, tone, 0)
+    const drop = SIDE_DROP_M[kind] * mToN
+    for (const quad of bufferCentreline(line, half)) pushSurfaceQuad(quad, tone, drop)
+
+    // Centre line on anything wide enough to have one. Nothing else says
+    // "carriageway" as immediately, and a road without markings reads as a
+    // strip of grey no matter how well it is shaded.
+    if (kind === 'road' && f.widthM >= CENTRE_LINE_MIN_WIDTH_M) {
+      for (const quad of bufferCentreline(line, (CENTRE_LINE_M / 2) * mToN)) {
+        pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
+      }
+    }
 
     // Rails on top of the ballast: two thin steel ribbons. This is what makes a
     // corridor read as "railway" rather than "grey path" from any distance.
@@ -396,13 +699,11 @@ export function buildLinearLayer(
 
   const surface = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
     vertexColors: true,
-    // Same contract as the other ground layers: these are coplanar with the
-    // basemap and with each other, and a few centimetres of separation cannot
-    // survive a depth buffer at city scale. Drawing them as ordered, non
-    // depth-writing overlays is what makes the stack deterministic instead of
-    // a flicker that changes with the camera.
-    transparent: true,
-    opacity: kind === 'road' ? 0.82 : 0.88,
+    // OPAQUE: asphalt is a surface, not a tint over the map underneath, and
+    // letting the raster street show through was what made these read as a
+    // decal. Depth writing stays off because these layers are coplanar with the
+    // basemap and with each other — a few centimetres cannot survive a depth
+    // buffer at city scale, so the stack is ordered by renderOrder instead.
     depthWrite: false,
     side: THREE.DoubleSide,
   }))
