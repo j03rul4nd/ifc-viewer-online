@@ -459,7 +459,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (layerVisibility.building) {
       const footprints = osmFeatures
         .filter((f) => f.kind === 'building' && f.ring)
-        .map((f) => ({ ring: f.ring!, height: f.height, style: f.style }))
+        .map((f) => ({ id: f.id, ring: f.ring!, height: f.height, style: f.style }))
       const built = buildBuildingsGeometry(footprints, opts)
       if (built) {
         const mesh = new THREE.Mesh(

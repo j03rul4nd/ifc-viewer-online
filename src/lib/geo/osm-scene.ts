@@ -18,6 +18,7 @@
 
 import * as THREE from 'three'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
+import { jitter, foliageColor, variate } from './feature-variation'
 import type { OsmFeature, LatLonPoint } from './osm-features'
 
 export interface LayerMeshOptions {
@@ -30,10 +31,8 @@ export interface LayerMeshOptions {
 
 /** Surface colours. Deliberately muted — this is context, not the subject. */
 const WATER_COLOR = new THREE.Color(0x2c5a7a)
-const GREEN_COLOR = new THREE.Color(0x3f6b3a)
 const BRIDGE_COLOR = new THREE.Color(0x6b6b6e)
 const TRUNK_COLOR = new THREE.Color(0x5b4636)
-const CANOPY_COLOR = new THREE.Color(0x3d6b34)
 
 /**
  * Lift each layer off the ground by a hair so coplanar surfaces do not
@@ -41,8 +40,8 @@ const CANOPY_COLOR = new THREE.Color(0x3d6b34)
  */
 const LIFT_M: Record<'water' | 'green', number> = { water: 0.15, green: 0.05 }
 
-export interface LayerMesh {
-  object: THREE.Object3D
+export interface LayerMesh<T extends THREE.Object3D = THREE.Object3D> {
+  object: T
   count: number
 }
 
@@ -88,13 +87,14 @@ export function buildSurfaceLayer(
   features: ReadonlyArray<OsmFeature>,
   layer: 'water' | 'green',
   opts: LayerMeshOptions,
-): LayerMesh | null {
+): LayerMesh<THREE.Mesh> | null {
   const mToN = metresToNormalized(opts.anchorLat)
   const anchorElevation = opts.anchorElevationM ?? 0
   const sample = opts.sampleGroundM
   const lift = LIFT_M[layer]
 
   const positions: number[] = []
+  const colors: number[] = []
   let count = 0
 
   for (const f of features) {
@@ -116,6 +116,10 @@ export function buildSurfaceLayer(
       flatZ = (minGround + lift - anchorElevation) * mToN
     }
 
+    // Greenery is coloured by WHAT IT IS: a forest is much darker than a lawn,
+    // and OSM already tells us. Painting them all one green throws that away.
+    const tone = layer === 'green' ? (f.style.tone ?? [0.29, 0.48, 0.27]) : null
+
     for (const [a, b, c] of faces) {
       for (const idx of [a, b, c]) {
         const p = ring[idx]
@@ -123,6 +127,7 @@ export function buildSurfaceLayer(
           ? flatZ
           : ((sample ? sample(p.x, p.y) : anchorElevation) + lift - anchorElevation) * mToN
         positions.push(p.x, p.y, z)
+        if (tone) colors.push(tone[0], tone[1], tone[2])
       }
     }
     count++
@@ -132,11 +137,15 @@ export function buildSurfaceLayer(
 
   const geometry = new THREE.BufferGeometry()
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  if (layer === 'green') {
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+  }
   geometry.computeVertexNormals()
   geometry.computeBoundingSphere()
 
   const material = new THREE.MeshBasicMaterial({
-    color: layer === 'water' ? WATER_COLOR : GREEN_COLOR,
+    color: layer === 'water' ? WATER_COLOR : 0xffffff,
+    vertexColors: layer === 'green',
     transparent: true,
     // Slight translucency lets the basemap imagery read through, so a park
     // tints the map instead of erasing what is under it.
@@ -187,7 +196,7 @@ const DECK_THICKNESS_M = 1.2
 export function buildBridgeLayer(
   features: ReadonlyArray<OsmFeature>,
   opts: LayerMeshOptions,
-): LayerMesh | null {
+): LayerMesh<THREE.Mesh> | null {
   const mToN = metresToNormalized(opts.anchorLat)
   const anchorElevation = opts.anchorElevationM ?? 0
   const sample = opts.sampleGroundM
@@ -260,7 +269,7 @@ export const MAX_TREES = 4000
 export function buildTreeLayer(
   features: ReadonlyArray<OsmFeature>,
   opts: LayerMeshOptions,
-): LayerMesh | null {
+): LayerMesh<THREE.Group> | null {
   const mToN = metresToNormalized(opts.anchorLat)
   const anchorElevation = opts.anchorElevationM ?? 0
   const sample = opts.sampleGroundM
@@ -268,55 +277,102 @@ export function buildTreeLayer(
   const trees = features.filter((f) => f.kind === 'tree' && f.point).slice(0, MAX_TREES)
   if (trees.length === 0) return null
 
-  const canopyGeo = new THREE.ConeGeometry(1, 1, 6)
-  const trunkGeo = new THREE.CylinderGeometry(1, 1, 1, 5)
-  // Cones and cylinders are built around +Y; the planar frame is Z-up, and
-  // both are anchored at their base so instance scaling grows them upward.
-  canopyGeo.rotateX(Math.PI / 2)
-  canopyGeo.translate(0, 0, 0.5)
+  // Split by silhouette so each gets the right geometry. A street of identical
+  // cones is the clearest tell that a scene is generated; broadleaf crowns are
+  // round and conifers are not, and OSM tells us which via `leaf_type`.
+  const broad = trees.filter((f) => (f.style.treeShape ?? 'broadleaf') === 'broadleaf')
+  const needle = trees.filter((f) => f.style.treeShape === 'needleleaf')
+
+  // Low-poly on purpose: at map scale a tree is a silhouette, and detail here
+  // buys nothing but triangles across thousands of instances.
+  const broadGeo = new THREE.IcosahedronGeometry(1, 0)
+  const needleGeo = new THREE.ConeGeometry(1, 1, 6)
+  const trunkGeo = new THREE.CylinderGeometry(0.75, 1, 1, 5)
+  // Cones/cylinders are built around +Y; the planar frame is Z-up, and both are
+  // anchored at their base so instance scaling grows them upward.
+  needleGeo.rotateX(Math.PI / 2)
+  needleGeo.translate(0, 0, 0.5)
   trunkGeo.rotateX(Math.PI / 2)
   trunkGeo.translate(0, 0, 0.5)
 
-  const canopy = new THREE.InstancedMesh(
-    canopyGeo, new THREE.MeshBasicMaterial({ color: CANOPY_COLOR }), trees.length,
-  )
+  const group = new THREE.Group()
+  group.name = 'osm-trees'
+  group.renderOrder = 4
+
   const trunk = new THREE.InstancedMesh(
     trunkGeo, new THREE.MeshBasicMaterial({ color: TRUNK_COLOR }), trees.length,
   )
+  group.add(trunk)
 
   const m = new THREE.Matrix4()
   const pos = new THREE.Vector3()
   const scale = new THREE.Vector3()
   const quat = new THREE.Quaternion()
+  const color = new THREE.Color()
+  const zAxis = new THREE.Vector3(0, 0, 1)
 
+  /** Place one canopy set, returning the instanced mesh. */
+  const placeCanopy = (
+    subset: OsmFeature[], geo: THREE.BufferGeometry, rounded: boolean,
+  ): THREE.InstancedMesh | null => {
+    if (subset.length === 0) return null
+    const mesh = new THREE.InstancedMesh(
+      geo, new THREE.MeshBasicMaterial({ vertexColors: false }), subset.length,
+    )
+    subset.forEach((f, i) => {
+      const { nx, ny } = latLonToNormalized(f.point!.lat, f.point!.lon)
+      const ground = sample ? sample(nx, ny) : anchorElevation
+      const baseZ = (ground - anchorElevation) * mToN
+
+      // Deterministic per-tree variation: same tree, same look, every time.
+      const totalM = jitter(f.id, 0, f.height.heightM, 0.22)
+      const radiusM = jitter(f.id, 1, f.style.crownRadiusM ?? 3, 0.25)
+      const trunkM = totalM * 0.34
+      const canopyM = totalM - trunkM
+
+      // A round crown is centred on its middle; a cone sits on its base.
+      const centreZ = rounded ? baseZ + (trunkM + canopyM / 2) * mToN : baseZ + trunkM * mToN
+      pos.set(nx, ny, centreZ)
+      // Yaw only — a leaning tree would read as a bug, not as character.
+      quat.setFromAxisAngle(zAxis, variate(f.id, 4) * Math.PI * 2)
+      scale.set(
+        radiusM * mToN,
+        radiusM * mToN,
+        (rounded ? canopyM / 2 : canopyM) * mToN,
+      )
+      mesh.setMatrixAt(i, m.compose(pos, quat, scale))
+      const [r, g, b] = foliageColor(f.id, f.style.treeShape ?? 'broadleaf')
+      mesh.setColorAt(i, color.setRGB(r, g, b))
+    })
+    mesh.instanceMatrix.needsUpdate = true
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+    return mesh
+  }
+
+  // Trunks for every tree, in one instanced mesh.
   trees.forEach((f, i) => {
     const { nx, ny } = latLonToNormalized(f.point!.lat, f.point!.lon)
     const ground = sample ? sample(nx, ny) : anchorElevation
     const baseZ = (ground - anchorElevation) * mToN
-
-    const totalM = f.height.heightM
-    const trunkM = totalM * 0.35
-    const canopyM = totalM - trunkM
-    const radiusM = f.style.crownRadiusM ?? 3
-
-    pos.set(nx, ny, baseZ + trunkM * mToN)
-    scale.set(radiusM * mToN, radiusM * mToN, canopyM * mToN)
-    canopy.setMatrixAt(i, m.compose(pos, quat, scale))
-
+    const totalM = jitter(f.id, 0, f.height.heightM, 0.22)
+    const radiusM = jitter(f.id, 1, f.style.crownRadiusM ?? 3, 0.25)
+    const trunkM = totalM * 0.34
+    const trunkR = Math.max(0.12, radiusM * 0.11) * mToN
     pos.set(nx, ny, baseZ)
-    // Trunk radius is a fraction of the crown, floored so it never disappears.
-    const trunkR = Math.max(0.15, radiusM * 0.12) * mToN
+    quat.identity()
     scale.set(trunkR, trunkR, trunkM * mToN)
     trunk.setMatrixAt(i, m.compose(pos, quat, scale))
   })
-
-  canopy.instanceMatrix.needsUpdate = true
   trunk.instanceMatrix.needsUpdate = true
 
-  const group = new THREE.Group()
-  group.name = 'osm-trees'
-  group.renderOrder = 4
-  group.add(trunk, canopy)
+  const broadMesh = placeCanopy(broad, broadGeo, true)
+  const needleMesh = placeCanopy(needle, needleGeo, false)
+  if (broadMesh) group.add(broadMesh)
+  if (needleMesh) group.add(needleMesh)
+  // Geometries with no instances would otherwise leak.
+  if (!broadMesh) broadGeo.dispose()
+  if (!needleMesh) needleGeo.dispose()
+
   return { object: group, count: trees.length }
 }
 

@@ -18,6 +18,7 @@ import {
   resolveBuildingHeight, parseLengthM, approximateAreaM2,
   type BuildingHeight,
 } from './buildings'
+import { treeShape, greenTone, type TreeShape } from './feature-variation'
 
 /** Scene layers the user can show or hide independently. */
 export type FeatureKind = 'building' | 'water' | 'green' | 'tree' | 'bridge'
@@ -51,6 +52,15 @@ export interface FeatureStyle {
   roofHeightM: number
   /** Canopy radius (trees), metres. */
   crownRadiusM?: number
+  /** Canopy silhouette (trees), resolved from `leaf_type`. */
+  treeShape?: TreeShape
+  /**
+   * Base RGB for greenery, by what it actually is (forest vs lawn vs pitch).
+   * Resolved HERE rather than shipping raw tags to the renderer: a
+   * neighbourhood is thousands of features, and cloning every tag map across
+   * the worker boundary would cost far more than the few numbers we need.
+   */
+  tone?: [number, number, number]
 }
 
 /**
@@ -162,7 +172,12 @@ export function resolveFeatureStyle(
       roofHeightM: 0,
       // Half the crown diameter; a sane default when untagged.
       crownRadiusM: crown && crown > 0 ? crown / 2 : 3,
+      treeShape: treeShape(t),
     }
+  }
+
+  if (kind === 'green') {
+    return { roofShape: 'flat', roofHeightM: 0, tone: greenTone(t) }
   }
 
   const roofShape = parseRoofShape(t['roof:shape'])

@@ -16,6 +16,7 @@
 
 import * as THREE from 'three'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
+import { facadeColor, storeyBanding, storeysFor } from './feature-variation'
 import type { BuildingHeight } from './buildings'
 import type { FeatureStyle } from './osm-features'
 
@@ -25,6 +26,8 @@ import type { FeatureStyle } from './osm-features'
  * can be extruded by the same code.
  */
 export interface BuildingLike {
+  /** Stable id — seeds the deterministic facade variation. */
+  id?: string
   ring: ReadonlyArray<{ lat: number; lon: number }>
   height: BuildingHeight
   /** Roof shape and tagged colours; absent means a plain flat grey block. */
@@ -123,8 +126,12 @@ export function buildBuildingsGeometry(
     const roofShape = b.style?.roofShape ?? 'flat'
     const roofM = roofShape === 'flat' ? 0 : Math.min(b.style?.roofHeightM ?? 0, (topM - baseM) * 0.5)
     const eaveZ = (topM - roofM - anchorElevation) * metresToNormalized
+    // A tagged colour always wins. Without one, pick a deterministic muted
+    // facade tone: a block of identical grey extrusions is the clearest tell
+    // that a scene was generated, and real streets are not one colour.
+    const seed = b.id ?? `${b.ring[0].lat.toFixed(6)},${b.ring[0].lon.toFixed(6)}`
     const roofTint = b.style?.roofColor ? hexToRgb(b.style.roofColor) : null
-    const wallTint = b.style?.wallColor ? hexToRgb(b.style.wallColor) : null
+    const wallTint = b.style?.wallColor ? hexToRgb(b.style.wallColor) : facadeColor(seed)
     const roofBase = roofShade(b.height.heightM)
 
     if (roofShape === 'flat' || roofM <= 0) {
@@ -179,8 +186,12 @@ export function buildBuildingsGeometry(
       const nx = ey / len
       const ny = -ex / len
 
-      const shadeTop = wallShade(nx, ny) * 1.0
-      const shadeBottom = wallShade(nx, ny) * 0.72 // ambient darkening at grade
+      // Storey banding gives the eye a sense of scale: a flat wall of one
+      // colour reads as a solid block at any distance, while faint floor lines
+      // say "eight storeys" rather than "one tall thing".
+      const storeys = storeysFor(topM - roofM - baseM)
+      const shadeTop = wallShade(nx, ny) * storeyBanding(1, storeys)
+      const shadeBottom = wallShade(nx, ny) * 0.72 * storeyBanding(0, storeys)
 
       // Walls rise to the EAVES, not the ridge — the roof covers the rest.
       const wallTopZ = eaveZ

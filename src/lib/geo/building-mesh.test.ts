@@ -211,3 +211,52 @@ describe('roof shapes', () => {
     expect(tr).toBeGreaterThan(tg)
   })
 })
+
+describe('facade variation and storey banding', () => {
+  it('gives a block many facade tones, not one flat grey', () => {
+    const many = Array.from({ length: 40 }, (_, i) => ({
+      ...squareFootprint(`b${i}`, 20),
+      id: `w${i}`,
+    }))
+    const g = buildBuildingsGeometry(many, OPTS)!.geometry
+    const c = g.getAttribute('color')
+    const wall = new Set<string>()
+    // Sample wall vertices (they follow the 6 roof-cap vertices of each block).
+    for (let i = 10; i < c.count; i += 30) {
+      wall.add([c.getX(i), c.getY(i), c.getZ(i)].map((v) => v.toFixed(4)).join())
+    }
+    expect(wall.size).toBeGreaterThan(20)
+  })
+
+  it('is deterministic — the same block renders identically every time', () => {
+    const f = { ...squareFootprint('a', 20), id: 'w7' }
+    const colorsOf = (): number[] => {
+      const c = buildBuildingsGeometry([f], OPTS)!.geometry.getAttribute('color')
+      return Array.from({ length: c.count }, (_, i) => c.getX(i))
+    }
+    expect(colorsOf()).toEqual(colorsOf())
+  })
+
+  it('keeps facades muted — context must not out-shout the model', () => {
+    const many = Array.from({ length: 40 }, (_, i) => ({
+      ...squareFootprint(`b${i}`, 20),
+      id: `w${i}`,
+    }))
+    const c = buildBuildingsGeometry(many, OPTS)!.geometry.getAttribute('color')
+    for (let i = 10; i < c.count; i += 30) {
+      const [r, g, b] = [c.getX(i), c.getY(i), c.getZ(i)]
+      expect(Math.max(r, g, b) - Math.min(r, g, b)).toBeLessThan(0.25)
+    }
+  })
+
+  it('still lets a tagged wall colour win over the generated tone', () => {
+    const tagged = buildBuildingsGeometry([{
+      ...squareFootprint('a', 20),
+      id: 'w1',
+      style: { roofShape: 'flat' as const, roofHeightM: 0, wallColor: '#ff0000' },
+    }], OPTS)!.geometry.getAttribute('color')
+    // Wall vertices (after the 6 roof-cap ones) must be strongly red.
+    const [r, g] = [tagged.getX(10), tagged.getY(10)]
+    expect(r).toBeGreaterThan(g * 3)
+  })
+})
