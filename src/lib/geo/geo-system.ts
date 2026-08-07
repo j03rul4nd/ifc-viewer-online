@@ -16,6 +16,9 @@ import * as THREE from 'three'
 import { createBasemapEngine, type BasemapEngine } from './basemap-engine'
 import { buildTerrainPatch, tileNormalizedCenter, TERRAIN_EDGE_FADE, type TerrainPatch } from './geo-terrain'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from './terrain-look'
+import { buildBuildingsGeometry } from './building-mesh'
+import type { BuildingFootprint } from './buildings'
+import type { BuildingsRequest, BuildingsResponse } from '../../workers/geo-buildings.worker'
 import { composeGeoRootTransform, normalizedToLatLon, northDirection, latLonToTile, type LatLon } from './geo-math'
 import { createLogger } from '../logger'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
@@ -30,6 +33,22 @@ const MAP_FOG_FAR_M = 55_000
 const MAP_MAX_DISTANCE_M = 30_000
 /** Keep the camera just above the horizon — can't go under the map. */
 const MAP_MAX_POLAR_RAD = (88 * Math.PI) / 180
+/** Client-side ceiling on a building query, longer than the worker's own. */
+const BUILDINGS_TIMEOUT_MS = 45_000
+
+/** What `setBuildings` reports back, so the UI can be specific about failures. */
+export type BuildingsOutcome =
+  | { status: 'off' }
+  | { status: 'empty' }
+  | { status: 'error'; message: string }
+  | {
+      status: 'ready'
+      count: number
+      /** How many of those heights were inferred rather than surveyed. */
+      estimatedCount: number
+      /** True when the query hit its element cap and the picture is partial. */
+      truncated?: boolean
+    }
 
 // ── Context provided by viewer.ts ───────────────────────────────────────────────
 
@@ -89,6 +108,12 @@ export interface GeoSystemAPI {
    * synthetic detail, contours) — live, sticky across rebuilds.
    */
   setTerrainLook(look: TerrainLook): void
+  /**
+   * Toggle surrounding OpenStreetMap buildings, extruded onto the ground.
+   * Resolves once the fetch settles; failures leave the map usable and are
+   * reported through the returned status rather than thrown.
+   */
+  setBuildings(enabled: boolean): Promise<BuildingsOutcome>
   /** Raycast the map ground plane at client pixel coords → WGS84. */
   pickGround(clientX: number, clientY: number): LatLon | null
   /**
@@ -140,6 +165,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let terrainStyle: TerrainStyle = 'imagery'
   let terrainExaggeration = 1
   let terrainLook: TerrainLook = { ...DEFAULT_TERRAIN_LOOK }
+  let buildings: THREE.Mesh | null = null
+  /** Bumped on teardown — invalidates building fetches still in flight. */
+  let buildingsToken = 0
+  let buildingsEnabled = false
+  /**
+   * Last fetched footprints for the current site. Cached so toggling terrain
+   * (which changes the ground the buildings sit on) re-extrudes locally
+   * instead of issuing another Overpass query for data we already have.
+   */
+  let buildingFootprints: BuildingFootprint[] | null = null
   let degradedCallback: ((degraded: boolean) => void) | null = null
 
   const raycaster = new THREE.Raycaster()
@@ -206,6 +241,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       unsubscribeProjection = null
 
       teardownTerrain()
+      teardownBuildings()
+      buildingFootprints = null
+      buildingsEnabled = false
       engine.dispose()
       if (geoRoot) {
         geoRoot.removeFromParent()
@@ -272,6 +310,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // Clip the flat basemap under the patch so valleys BELOW the ground
       // plane are visible (they'd otherwise be hidden by the opaque tiles).
       engine.setHole(computeHolePlanes())
+      // The ground buildings stand on just changed — re-extrude from cache.
+      reseatBuildings()
     },
 
     setTerrainStyle(style) {
@@ -288,6 +328,41 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     setTerrainLook(look) {
       terrainLook = clampTerrainLook(look)
       terrain?.setLook(terrainLook)
+    },
+
+    async setBuildings(enabled) {
+      buildingsEnabled = enabled
+      if (!enabled) {
+        teardownBuildings()
+        return { status: 'off' }
+      }
+      if (!geoRoot || !placement) return { status: 'error', message: 'map not active' }
+
+      teardownBuildings()
+      const token = ++buildingsToken
+
+      let reply: BuildingsResponse
+      try {
+        reply = await runBuildingsWorker({
+          type: 'fetch-buildings',
+          id: crypto.randomUUID(),
+          lat: placement.lat,
+          lon: placement.lon,
+          halfSizeM: BUILDINGS_HALF_SIZE_M,
+        })
+      } catch (e) {
+        return { status: 'error', message: e instanceof Error ? e.message : String(e) }
+      }
+      // Disabled or re-triggered while the query ran — drop the result.
+      if (token !== buildingsToken || !geoRoot || !buildingsEnabled) return { status: 'off' }
+      if (reply.type === 'error') return { status: 'error', message: reply.message }
+      if (reply.buildings.length === 0) return { status: 'empty' }
+
+      buildingFootprints = reply.buildings
+      const outcome = addBuildingsMesh(reply.buildings)
+      return outcome
+        ? { ...outcome, truncated: reply.truncated }
+        : { status: 'empty' }
     },
 
     pickGround(clientX, clientY) {
@@ -339,6 +414,83 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
   // ── Internals ─────────────────────────────────────────────────────────────────
 
+  // ── Context buildings ───────────────────────────────────────────────────────
+
+  /** Half-side of the building query area, metres (≈1.4 km across). */
+  const BUILDINGS_HALF_SIZE_M = 700
+
+  function addBuildingsMesh(footprints: ReadonlyArray<BuildingFootprint>): BuildingsOutcome | null {
+    if (!geoRoot || !placement) return null
+    const result = buildBuildingsGeometry(footprints, {
+      anchorLat: placement.lat,
+      // Sit them on the terrain when it exists; on the flat map everything
+      // shares the ground plane, which is the honest answer there.
+      sampleGroundM: terrain ? (nx, ny) => terrain!.sampleGroundM(nx, ny) : null,
+      anchorElevationM: terrain?.anchorElevation ?? 0,
+    })
+    if (!result) return null
+
+    const material = new THREE.MeshBasicMaterial({ vertexColors: true })
+    const mesh = new THREE.Mesh(result.geometry, material)
+    // Above the flat tiles, like the terrain patch, so grade-level walls do
+    // not z-fight with the basemap.
+    mesh.renderOrder = 2
+    mesh.name = 'context-buildings'
+    geoRoot.add(mesh)
+    buildings = mesh
+
+    return {
+      status: 'ready',
+      count: result.count,
+      estimatedCount: result.estimatedCount,
+    }
+  }
+
+  /** Re-extrude the cached footprints against the current ground. */
+  function reseatBuildings(): void {
+    if (!buildingsEnabled || !buildingFootprints || !geoRoot) return
+    if (buildings) {
+      buildings.removeFromParent()
+      buildings.geometry.dispose()
+      const mat = buildings.material
+      if (Array.isArray(mat)) for (const m of mat) m.dispose()
+      else mat.dispose()
+      buildings = null
+    }
+    addBuildingsMesh(buildingFootprints)
+  }
+
+  function teardownBuildings(): void {
+    buildingsToken++
+    if (!buildings) return
+    buildings.removeFromParent()
+    buildings.geometry.dispose()
+    const mat = buildings.material
+    if (Array.isArray(mat)) for (const m of mat) m.dispose()
+    else mat.dispose()
+    buildings = null
+  }
+
+  function runBuildingsWorker(message: BuildingsRequest): Promise<BuildingsResponse> {
+    return new Promise<BuildingsResponse>((resolve, reject) => {
+      const worker = new Worker(
+        new URL('../../workers/geo-buildings.worker.ts', import.meta.url),
+        { type: 'module' },
+      )
+      const finish = (fn: () => void): void => { clearTimeout(timer); fn(); worker.terminate() }
+      const timer = setTimeout(
+        () => finish(() => reject(new Error('buildings request timed out'))),
+        BUILDINGS_TIMEOUT_MS,
+      )
+      worker.onmessage = (e: MessageEvent<BuildingsResponse>): void => {
+        if (!e.data || e.data.id !== message.id) return
+        finish(() => resolve(e.data))
+      }
+      worker.onerror = (e): void => finish(() => reject(new Error(e.message || 'buildings worker error')))
+      worker.postMessage(message)
+    })
+  }
+
   function teardownTerrain(): void {
     terrainToken++
     if (terrainRebuildTimer !== null) { clearTimeout(terrainRebuildTimer); terrainRebuildTimer = null }
@@ -346,6 +498,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       terrain.dispose()
       terrain = null
       engine?.setHole(null) // restore the full flat basemap
+      // Buildings were sitting on that terrain; drop them back to the plane.
+      reseatBuildings()
     }
   }
 

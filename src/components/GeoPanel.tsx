@@ -22,6 +22,7 @@ import { registerCustomProj4, resolveCrs } from '../lib/geo/crs'
 import { DEFAULT_PROVIDER_ID, resolveProvider, saveCustomProvider } from '../lib/geo/providers'
 import { TERRARIUM_ATTRIBUTION } from '../lib/geo/elevation'
 import { CONTOUR_INTERVALS } from '../lib/geo/terrain-look'
+import { BUILDINGS_ATTRIBUTION } from '../lib/geo/buildings'
 import { collectModelSites, type ModelInput } from '../lib/geo/model-sites'
 import { WGS84_RADIUS, normalizeDeg } from '../lib/geo/geo-math'
 import {
@@ -129,6 +130,9 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
     const s = useGeoStore.getState()
     const list = [...geo.getAttributions()]
     if (s.terrainEnabled && s.terrainStatus === 'ready') list.push(TERRARIUM_ATTRIBUTION)
+    // ODbL requires attributing OSM whenever its data is shown, and building
+    // footprints are OSM data even when the basemap is someone else's imagery.
+    if (s.buildingsEnabled && s.buildingsStatus === 'ready') list.push(BUILDINGS_ATTRIBUTION)
     s.setAttributions(list)
   }, [getGeo])
 
@@ -348,6 +352,33 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
     })
     toast(t('placement.saveToIfcDone'), 'success')
   }, [activeModelId, t])
+
+  /**
+   * Toggle surrounding OSM buildings. The query can take seconds and can fail
+   * (Overpass is a shared public service), so every outcome maps to a distinct
+   * status the panel reports rather than a spinner that never resolves.
+   */
+  const handleBuildingsToggle = useCallback(async (enabled: boolean): Promise<void> => {
+    const epoch = useGeoStore.getState().epoch
+    useGeoStore.getState().setBuildingsEnabled(enabled)
+    if (!enabled) return
+    try {
+      const geo = await getGeo()
+      if (!geo) return
+      const outcome = await geo.setBuildings(true)
+      useGeoStore.getState().setBuildingsResult(epoch, {
+        status: outcome.status === 'off' ? 'idle' : outcome.status,
+        count: outcome.status === 'ready' ? outcome.count : 0,
+        estimated: outcome.status === 'ready' ? outcome.estimatedCount : 0,
+        truncated: outcome.status === 'ready' ? outcome.truncated : false,
+      })
+      if (outcome.status === 'error') trackMapError({ stage: 'buildings' })
+      void refreshAttributions()
+    } catch {
+      useGeoStore.getState().setBuildingsResult(epoch, { status: 'error' })
+      trackMapError({ stage: 'buildings' })
+    }
+  }, [getGeo, refreshAttributions])
 
   const handleTerrainLook = useCallback((patch: Partial<TerrainLook>): void => {
     useGeoStore.getState().setTerrainLook(patch)
@@ -676,6 +707,36 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                     {store.terrainStatus === 'loading' ? t('layers.terrainLoading') : t('layers.terrain')}
                     {store.terrainStatus === 'error' && (
                       <span className="block text-[10px] text-[var(--danger)] leading-snug">{t('errors.terrainFailed')}</span>
+                    )}
+                  </span>
+                </label>
+
+                {/* Surrounding buildings — context that makes the terrain read
+                    as a real place rather than an aerial photo. */}
+                <label className="flex items-start gap-2 text-[11.5px] text-[var(--text-dim)] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={store.buildingsEnabled}
+                    onChange={(e) => { void handleBuildingsToggle(e.target.checked) }}
+                    disabled={mapMode !== 'on'}
+                    className="accent-[var(--accent)] mt-[2px] shrink-0"
+                  />
+                  <span className="min-w-0 leading-snug">
+                    {store.buildingsStatus === 'loading' ? t('layers.buildingsLoading') : t('layers.buildings')}
+                    {store.buildingsEnabled && store.buildingsStatus === 'ready' && (
+                      <span className="block text-[9.5px] text-[var(--text-faint)] leading-snug">
+                        {t('layers.buildingsCount', { count: store.buildingsCount })}
+                        {store.buildingsEstimated > 0 && ` · ${t('layers.buildingsEstimated', { count: store.buildingsEstimated })}`}
+                      </span>
+                    )}
+                    {store.buildingsStatus === 'empty' && (
+                      <span className="block text-[9.5px] text-[var(--text-faint)] leading-snug">{t('layers.buildingsEmpty')}</span>
+                    )}
+                    {store.buildingsStatus === 'error' && (
+                      <span className="block text-[9.5px] text-[var(--danger)] leading-snug">{t('layers.buildingsFailed')}</span>
+                    )}
+                    {store.buildingsTruncated && (
+                      <span className="block text-[9.5px] text-[var(--warn,#F5A623)] leading-snug">{t('layers.buildingsTruncated')}</span>
                     )}
                   </span>
                 </label>

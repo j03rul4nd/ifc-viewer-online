@@ -462,7 +462,7 @@ export function trackMapGeorefExtracted(props: {
 }
 
 /** Something in map mode failed (stage-level only, no details). */
-export function trackMapError(props: { stage: 'enable' | 'extract' | 'terrain' | 'tiles' }): void {
+export function trackMapError(props: { stage: 'enable' | 'extract' | 'terrain' | 'tiles' | 'buildings' }): void {
   track('map_error', props)
 }
 

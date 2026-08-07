@@ -60,6 +60,12 @@ export interface TerrainPatch {
   group: THREE.Group
   /** Terrain elevation at the anchor (metres) — for the height-offset UI. */
   anchorElevation: number
+  /**
+   * Ground elevation in METRES at a normalized planar position, bilinearly
+   * interpolated from the patch grid. Outside the patch it clamps to the edge.
+   * Used to sit context buildings on the terrain.
+   */
+  sampleGroundM(nx: number, ny: number): number
   zoom: number
   centerTx: number
   centerTy: number
@@ -294,6 +300,27 @@ function assemblePatch(
     zoom,
     centerTx,
     centerTy,
+
+    sampleGroundM(nx, ny) {
+      // Normalized position → fractional vertex index. The patch spans
+      // `patchSize` centred on `centre`; row 0 is the NORTH edge, so the Y
+      // axis is inverted relative to the grid index.
+      const u = (nx - (centre.nx - patchSize / 2)) / patchSize
+      const v = ((centre.ny + patchSize / 2) - ny) / patchSize
+      const fx = Math.min(Math.max(u, 0), 1) * grid
+      const fy = Math.min(Math.max(v, 0), 1) * grid
+      const x0 = Math.floor(fx)
+      const y0 = Math.floor(fy)
+      const x1 = Math.min(x0 + 1, grid)
+      const y1 = Math.min(y0 + 1, grid)
+      const tx = fx - x0
+      const ty = fy - y0
+      // Sample the EFFECTIVE surface (measured + any synthetic blend) so a
+      // building sits on the ground the user is actually looking at.
+      const top = effective[y0 * verts + x0] * (1 - tx) + effective[y0 * verts + x1] * tx
+      const bot = effective[y1 * verts + x0] * (1 - tx) + effective[y1 * verts + x1] * tx
+      return top * (1 - ty) + bot * ty
+    },
 
     async redrape(provider) {
       if (disposed) return

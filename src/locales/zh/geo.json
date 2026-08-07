@@ -100,7 +100,14 @@
     "detailWarning": "微地形是为填补高程采样间隙而生成的合成细节 — 看似合理，但并非实测。分析时请关闭。",
     "contours": "等高线",
     "contoursOff": "关闭",
-    "resetRelief": "重置地形渲染"
+    "resetRelief": "重置地形渲染",
+    "buildings": "周边建筑",
+    "buildingsLoading": "正在加载建筑…",
+    "buildingsCount": "来自 OpenStreetMap 的 {{count}} 座建筑",
+    "buildingsEstimated": "{{count}} 个高度为估算值",
+    "buildingsEmpty": "该场地周边没有已测绘的建筑。",
+    "buildingsFailed": "无法加载建筑 — 服务繁忙，请重试。",
+    "buildingsTruncated": "密集区域 — 仅显示部分建筑。"
   },
   "placement": {
     "title": "Placement",

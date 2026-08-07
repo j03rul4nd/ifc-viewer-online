@@ -99,7 +99,14 @@
     "detailWarning": "El microrrelieve es detalle sintético generado para rellenar los huecos entre muestras de elevación: es verosímil, no medido. Desactívalo para analizar.",
     "contours": "Curvas de nivel",
     "contoursOff": "Ninguna",
-    "resetRelief": "Restablecer relieve"
+    "resetRelief": "Restablecer relieve",
+    "buildings": "Edificios del entorno",
+    "buildingsLoading": "Cargando edificios…",
+    "buildingsCount": "{{count}} edificios de OpenStreetMap",
+    "buildingsEstimated": "{{count}} alturas estimadas",
+    "buildingsEmpty": "No hay edificios cartografiados alrededor de este emplazamiento.",
+    "buildingsFailed": "No se pudieron cargar los edificios — el servicio estaba ocupado. Inténtalo de nuevo.",
+    "buildingsTruncated": "Zona densa — solo se muestra parte de los edificios."
   },
   "placement": {
     "title": "Ubicación",

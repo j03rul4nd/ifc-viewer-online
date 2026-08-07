@@ -23,6 +23,7 @@ const LS_TERMS   = 'ifc-geo-terms:v1'
 const LS_TERRAIN_STYLE = 'ifc-geo-terrain-style:v1'
 const LS_TERRAIN_EXAGG = 'ifc-geo-terrain-exagg:v1'
 const LS_TERRAIN_LOOK  = 'ifc-geo-terrain-look:v1'
+const LS_BUILDINGS     = 'ifc-geo-buildings:v1'
 
 function readTerrainStyle(): TerrainStyle {
   const raw = lsGet(LS_TERRAIN_STYLE)
@@ -94,6 +95,15 @@ interface GeoStore {
   terrainExaggeration: number
   /** Advanced terrain look (sun, softness, occlusion, detail, contours). */
   terrainLook: TerrainLook
+  /** Surrounding OSM buildings toggle (persisted). */
+  buildingsEnabled: boolean
+  /** Lifecycle of the building fetch, for honest UI states. */
+  buildingsStatus: 'idle' | 'loading' | 'ready' | 'empty' | 'error'
+  /** How many buildings are drawn, and how many had guessed heights. */
+  buildingsCount: number
+  buildingsEstimated: number
+  /** True when the query hit its cap — the view is a partial picture. */
+  buildingsTruncated: boolean
   georefByModel: Record<string, GeorefExtraction>
   /** EFFECTIVE placement driving the geoRoot transform. */
   placement: GeoPlacement | null
@@ -122,6 +132,11 @@ interface GeoStore {
   setTerrainLook: (patch: Partial<TerrainLook>) => void
   /** Restore the shipped look (measured-only: no synthetic detail, no contours). */
   resetTerrainLook: () => void
+  setBuildingsEnabled: (v: boolean) => void
+  setBuildingsResult: (
+    epoch: number,
+    result: { status: 'idle' | 'loading' | 'ready' | 'empty' | 'error'; count?: number; estimated?: number; truncated?: boolean },
+  ) => void
   setTerrainExaggeration: (k: number) => void
   setGeoref: (modelId: string, g: GeorefExtraction) => void
   removeGeoref: (modelId: string) => void
@@ -153,6 +168,11 @@ export const useGeoStore = create<GeoStore>()(
       terrainStyle:   readTerrainStyle(),
       terrainExaggeration: readTerrainExaggeration(),
       terrainLook:    readTerrainLook(),
+      buildingsEnabled:   lsGet(LS_BUILDINGS) === '1',
+      buildingsStatus:    'idle' as const,
+      buildingsCount:     0,
+      buildingsEstimated: 0,
+      buildingsTruncated: false,
       georefByModel:  {},
       placement:      null,
       editing:        false,
@@ -250,6 +270,32 @@ export const useGeoStore = create<GeoStore>()(
           },
           false,
           'setTerrainLook',
+        ),
+
+      setBuildingsEnabled: (v) => {
+        lsSet(LS_BUILDINGS, v ? '1' : '0')
+        set(
+          v
+            ? { buildingsEnabled: true, buildingsStatus: 'loading' as const }
+            : { buildingsEnabled: false, buildingsStatus: 'idle' as const, buildingsCount: 0, buildingsEstimated: 0, buildingsTruncated: false },
+          false,
+          'setBuildingsEnabled',
+        )
+      },
+
+      // Epoch-guarded like every other async result (plan §6.3): a reply that
+      // lands after the user disabled map mode must not resurrect state.
+      setBuildingsResult: (epoch, result) =>
+        set(
+          (s) => (epoch !== s.epoch ? s : {
+            ...s,
+            buildingsStatus: result.status,
+            buildingsCount: result.count ?? 0,
+            buildingsEstimated: result.estimated ?? 0,
+            buildingsTruncated: result.truncated ?? false,
+          }),
+          false,
+          'setBuildingsResult',
         ),
 
       resetTerrainLook: () => {

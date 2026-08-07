@@ -100,7 +100,14 @@
     "detailWarning": "O microrrelevo é detalhe sintético gerado para preencher lacunas entre amostras de elevação — plausível, não medido. Desligue-o para análise.",
     "contours": "Curvas de nível",
     "contoursOff": "Nenhuma",
-    "resetRelief": "Repor relevo"
+    "resetRelief": "Repor relevo",
+    "buildings": "Edifícios envolventes",
+    "buildingsLoading": "A carregar edifícios…",
+    "buildingsCount": "{{count}} edifícios do OpenStreetMap",
+    "buildingsEstimated": "{{count}} alturas estimadas",
+    "buildingsEmpty": "Não há edifícios mapeados à volta deste local.",
+    "buildingsFailed": "Não foi possível carregar os edifícios — o serviço estava ocupado. Tente novamente.",
+    "buildingsTruncated": "Zona densa — só é mostrada parte dos edifícios."
   },
   "placement": {
     "title": "Placement",

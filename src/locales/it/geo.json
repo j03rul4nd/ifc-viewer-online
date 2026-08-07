@@ -100,7 +100,14 @@
     "detailWarning": "Il microrilievo è dettaglio sintetico generato per colmare i vuoti tra i campioni di quota: plausibile, non misurato. Disattivalo per l'analisi.",
     "contours": "Curve di livello",
     "contoursOff": "Nessuna",
-    "resetRelief": "Reimposta rilievo"
+    "resetRelief": "Reimposta rilievo",
+    "buildings": "Edifici circostanti",
+    "buildingsLoading": "Caricamento edifici…",
+    "buildingsCount": "{{count}} edifici da OpenStreetMap",
+    "buildingsEstimated": "{{count}} altezze stimate",
+    "buildingsEmpty": "Nessun edificio mappato intorno a questo sito.",
+    "buildingsFailed": "Impossibile caricare gli edifici — il servizio era occupato. Riprova.",
+    "buildingsTruncated": "Zona densa — è mostrata solo una parte degli edifici."
   },
   "placement": {
     "title": "Placement",

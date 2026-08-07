@@ -100,7 +100,14 @@
     "detailWarning": "Das Mikrorelief ist synthetisch erzeugtes Detail, das Lücken zwischen Höhenstützpunkten füllt — plausibel, nicht gemessen. Für Analysen ausschalten.",
     "contours": "Höhenlinien",
     "contoursOff": "Aus",
-    "resetRelief": "Relief zurücksetzen"
+    "resetRelief": "Relief zurücksetzen",
+    "buildings": "Umgebende Gebäude",
+    "buildingsLoading": "Gebäude werden geladen…",
+    "buildingsCount": "{{count}} Gebäude aus OpenStreetMap",
+    "buildingsEstimated": "{{count}} Höhen geschätzt",
+    "buildingsEmpty": "Um diesen Standort sind keine Gebäude erfasst.",
+    "buildingsFailed": "Gebäude konnten nicht geladen werden — der Dienst war ausgelastet. Bitte erneut versuchen.",
+    "buildingsTruncated": "Dichtes Gebiet — es wird nur ein Teil der Gebäude gezeigt."
   },
   "placement": {
     "title": "Placement",

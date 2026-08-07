@@ -99,7 +99,14 @@
     "detailWarning": "Micro-relief is synthetic detail generated to fill gaps between elevation samples — plausible, not measured. Turn it off for analysis.",
     "contours": "Contours",
     "contoursOff": "Off",
-    "resetRelief": "Reset relief"
+    "resetRelief": "Reset relief",
+    "buildings": "Surrounding buildings",
+    "buildingsLoading": "Loading buildings…",
+    "buildingsCount": "{{count}} buildings from OpenStreetMap",
+    "buildingsEstimated": "{{count}} heights estimated",
+    "buildingsEmpty": "No buildings mapped around this site.",
+    "buildingsFailed": "Buildings could not be loaded — the map service was busy. Try again.",
+    "buildingsTruncated": "Dense area — only part of the buildings are shown."
   },
   "placement": {
     "title": "Placement",

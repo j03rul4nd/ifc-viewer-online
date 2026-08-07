@@ -100,7 +100,14 @@
     "detailWarning": "マイクロレリーフは標高サンプル間の隙間を埋めるために生成された合成ディテールです。もっともらしい形状ですが実測ではありません。解析時はオフにしてください。",
     "contours": "等高線",
     "contoursOff": "なし",
-    "resetRelief": "レリーフをリセット"
+    "resetRelief": "レリーフをリセット",
+    "buildings": "周辺の建物",
+    "buildingsLoading": "建物を読み込み中…",
+    "buildingsCount": "OpenStreetMap の建物 {{count}} 件",
+    "buildingsEstimated": "{{count}} 件は高さが推定値",
+    "buildingsEmpty": "この敷地の周辺には登録された建物がありません。",
+    "buildingsFailed": "建物を読み込めませんでした — サービスが混雑しています。再試行してください。",
+    "buildingsTruncated": "密集地域のため、建物の一部のみ表示しています。"
   },
   "placement": {
     "title": "Placement",
