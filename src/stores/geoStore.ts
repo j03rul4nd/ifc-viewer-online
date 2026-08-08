@@ -21,7 +21,7 @@ const log = createLogger('GeoStore')
 /** Empty per-layer counts — the shape `buildingsCounts` always has. */
 const NO_FEATURE_COUNTS: Record<FeatureKind, number> = {
   building: 0, water: 0, green: 0, sand: 0, rock: 0,
-  tree: 0, bridge: 0, road: 0, rail: 0,
+  tree: 0, bridge: 0, road: 0, rail: 0, signal: 0,
 }
 
 /**
@@ -48,12 +48,15 @@ const LS_TERRAIN_LOOK  = 'ifc-geo-terrain-look:v1'
 const LS_BUILDINGS     = 'ifc-geo-buildings:v1'
 const LS_LAYERS        = 'ifc-geo-osm-layers:v1'
 const LS_DETAIL        = 'ifc-geo-detail:v1'
+const LS_VEHICLES      = 'ifc-geo-vehicles:v1'
 
 /** Per-layer visibility, persisted. Everything on by default. */
 function readFeatureLayers(): FeatureLayerVisibility {
   const fallback: FeatureLayerVisibility = {
     building: true, water: true, green: true, sand: true, rock: true,
     tree: true, bridge: true, road: true, rail: true,
+    // Off by default: a junction full of masts is a choice, not a default.
+    signal: false,
   }
   const raw = lsGet(LS_LAYERS)
   if (!raw) return fallback
@@ -151,6 +154,8 @@ interface GeoStore {
   featureLayers: FeatureLayerVisibility
   /** How much of a surrounding facade to model (persisted). */
   contextDetail: BuildingDetail
+  /** Decorative cars and trains (persisted). Invented placement — off by default. */
+  vehicles: boolean
   /** True when the query hit its cap — the view is a partial picture. */
   buildingsTruncated: boolean
   georefByModel: Record<string, GeorefExtraction>
@@ -194,6 +199,7 @@ interface GeoStore {
   /** Toggle one OSM layer (persisted). */
   setFeatureLayer: (kind: FeatureKind, visible: boolean) => void
   setContextDetail: (d: BuildingDetail) => void
+  setVehicles: (v: boolean) => void
   setTerrainExaggeration: (k: number) => void
   setGeoref: (modelId: string, g: GeorefExtraction) => void
   removeGeoref: (modelId: string) => void
@@ -231,6 +237,7 @@ export const useGeoStore = create<GeoStore>()(
       buildingsEstimated: 0,
       featureLayers:      readFeatureLayers(),
       contextDetail:      lsGet(LS_DETAIL) === 'detailed' ? 'detailed' : 'simple',
+      vehicles:           lsGet(LS_VEHICLES) === '1',
       buildingsTruncated: false,
       georefByModel:  {},
       placement:      null,
@@ -362,6 +369,11 @@ export const useGeoStore = create<GeoStore>()(
           false,
           'setBuildingsResult',
         ),
+
+      setVehicles: (v) => {
+        lsSet(LS_VEHICLES, v ? '1' : '0')
+        set({ vehicles: v }, false, 'setVehicles')
+      },
 
       setContextDetail: (d) => {
         lsSet(LS_DETAIL, d)

@@ -416,6 +416,12 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
     void getGeo()?.then((geo) => geo.setContextDetail(level))
   }, [getGeo])
 
+  /** Decorative vehicles — rebuilt from cached features, so it is instant. */
+  const handleVehicles = useCallback((enabled: boolean): void => {
+    useGeoStore.getState().setVehicles(enabled)
+    void getGeo()?.then((geo) => geo.setVehicles(enabled))
+  }, [getGeo])
+
   const handleTerrainLook = useCallback((patch: Partial<TerrainLook>): void => {
     useGeoStore.getState().setTerrainLook(patch)
     const look = useGeoStore.getState().terrainLook
@@ -1018,6 +1024,19 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                             </div>
                           </>
                         )}
+
+                        {/* Scenery, kept apart from the mapped layers above —
+                            the distinction is the point, not a detail. */}
+                        <Caption>{t('layers.vehicles')}</Caption>
+                        <SwitchRow
+                          label={t('layers.vehicles')}
+                          checked={store.vehicles}
+                          onChange={handleVehicles}
+                          disabled={!mapOn}
+                        />
+                        <p className="text-[10px] text-[var(--text-faint)] leading-snug">
+                          {t('layers.vehiclesHint')}
+                        </p>
                       </Group>
                     )}
 

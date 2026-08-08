@@ -133,13 +133,16 @@
       "tree": "Árboles",
       "bridge": "Puentes",
       "road": "Carreteras y caminos",
-      "rail": "Vías y andenes"
+      "rail": "Vías y andenes",
+      "signal": "Semáforos"
     },
     "detailLevel": "Detalle",
     "detailSimple": "Simple",
     "detailRich": "Detallado",
     "detailHint": "Detallado modela cada planta de los edificios del entorno y dibuja césped, arena, roca, nieve y agua como superficies reales iluminadas: agua en movimiento con espuma en la orilla, ondulaciones en la arena y el propio relieve con el estilo Ecosistemas. Más pesado, y el modo para llevar a una reunión con cliente.",
-    "styleEcosystemDetailHint": "Pon Detalle en Detallado, en la pestaña Entorno, para dibujar estas franjas como césped, roca y nieve reales en vez de un tinte plano."
+    "styleEcosystemDetailHint": "Pon Detalle en Detallado, en la pestaña Entorno, para dibujar estas franjas como césped, roca y nieve reales en vez de un tinte plano.",
+    "vehicles": "Vehículos (atrezo)",
+    "vehiclesHint": "Los coches y trenes NO son datos mapeados — OpenStreetMap no registra dónde está aparcado un coche. Su colocación es inventada para que la vista se sienta habitada, y es la misma siempre."
   },
   "placement": {
     "title": "Ubicación",

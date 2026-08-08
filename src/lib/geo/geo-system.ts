@@ -20,10 +20,12 @@ import {
   buildBuildingsGeometry, type BuildingDetail, type BuildingRange,
 } from './building-mesh'
 import { createFacadeMaterial } from './facade-shader'
+import { buildSignalLayer, buildVehicleLayer } from './props-scene'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, buildLinearLayer, disposeLayer,
 } from './osm-scene'
-import { applySurfaceSun, setSurfaceTime, hasAnimatedMaterial } from './surface-shaders'
+import { setSurfaceTime, hasAnimatedMaterial } from './surface-shaders'
+import { buildSkyEnvironment } from './sky-environment'
 import { FEATURE_KINDS, type OsmFeature, type FeatureKind } from './osm-features'
 import type { BuildingsRequest, BuildingsResponse } from '../../workers/geo-buildings.worker'
 import { composeGeoRootTransform, normalizedToLatLon, northDirection, latLonToTile, type LatLon } from './geo-math'
@@ -100,6 +102,17 @@ export interface GeoSystemContext {
   setSceneTuneLock(locked: boolean): void
   /** Suppress model hover/select raycasts (placement editor drag). */
   setPointerSuppressed(s: boolean): void
+  /**
+   * The scene's key light, so map mode can aim it at the same sun the relief
+   * hillshade and the sky environment use. Optional: without it the map still
+   * works, it just keeps whatever direction the viewer had.
+   */
+  keyLight?: THREE.DirectionalLight
+  /**
+   * True while Sun Study owns the key light. Map mode must not fight it — a
+   * real solar position beats a cartographic one, and the user asked for it.
+   */
+  isSolarActive?: () => boolean
   /** World-space bounds of the active model (viewer.getModelBounds shape). */
   getActiveModelBounds(): {
     center: { x: number; y: number; z: number }
@@ -152,6 +165,11 @@ export interface GeoSystemAPI {
   setFeatureLayers(visible: FeatureLayerVisibility): void
   /** Switch the surrounding facades between plain extrusions and storey bands. */
   setContextDetail(level: BuildingDetail): void
+  /**
+   * Decorative cars and trains. Deliberately NOT a feature layer: their
+   * placement is invented, and the UI has to be able to say so separately.
+   */
+  setVehicles(enabled: boolean): void
   /** Raycast the map ground plane at client pixel coords → WGS84. */
   pickGround(clientX: number, clientY: number): LatLon | null
   /**
@@ -189,6 +207,10 @@ interface EnvSnapshot {
   gridVisible: boolean
   cameraPos: THREE.Vector3
   cameraTarget: THREE.Vector3
+  /** Whatever was lighting the scene indirectly before the map took over. */
+  environment: THREE.Texture | null
+  /** Where the key light was pointing before the map aimed it. */
+  keyLightPos: THREE.Vector3 | null
 }
 
 export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
@@ -215,6 +237,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let buildingsEnabled = false
   /** How much of a surrounding facade to model. */
   let contextDetail: BuildingDetail = 'simple'
+  /** Decorative vehicles. Not a feature layer: OSM does not map them. */
+  let vehiclesEnabled = false
+  /** Prop groups, disposed with the rest but not part of layerObjects. */
+  const propObjects: THREE.Object3D[] = []
   /**
    * Last fetched footprints for the current site. Cached so toggling terrain
    * (which changes the ground the buildings sit on) re-extrudes locally
@@ -254,8 +280,22 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let layerVisibility: FeatureLayerVisibility = {
     building: true, water: true, green: true, sand: true, rock: true,
     tree: true, bridge: true, road: true, rail: true,
+    // Opt-in: signals are real, but a junction full of masts is a choice.
+    signal: false,
   }
   let degradedCallback: ((degraded: boolean) => void) | null = null
+  /**
+   * Prefiltered sky driving image-based lighting while the map is on.
+   *
+   * Physically based materials take roughly half their light from the
+   * environment; with `scene.environment` unset they are lit by direct lights
+   * alone, which is the "plastic in a black room" look. This is the missing
+   * term, and it is built from the SAME sun as the terrain hillshade so the
+   * whole scene agrees on where the light comes from.
+   */
+  let skyEnvironment: THREE.Texture | null = null
+  /** Rebuilding costs a PMREM pass, so a slider drag must not do it per frame. */
+  let skyTimer: ReturnType<typeof setTimeout> | null = null
 
   const raycaster = new THREE.Raycaster()
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
@@ -294,6 +334,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       engine.setResolution(ctx.getActiveCamera(), ctx.renderer)
 
       applyPlacement(p)
+      applySky()
 
       // 4 — projection swaps must re-register the camera or LOD freezes (T9)
       unsubscribeProjection = ctx.onProjectionChanged((camera) => {
@@ -329,6 +370,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
       teardownTerrain()
       teardownBuildings()
+      teardownSky()
       if (hoverAttached) {
         ctx.renderer.domElement.removeEventListener('pointermove', hoverAttached)
         hoverAttached = null
@@ -424,11 +466,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     setTerrainLook(look) {
       terrainLook = clampTerrainLook(look)
       terrain?.setLook(terrainLook)
-      // The relief light IS the light on the surfaces standing on it. Updating
-      // the uniforms in place rather than rebuilding keeps the sun sliders
-      // live, which is the whole point of them.
-      const sun = surfaceSun()
-      for (const [, obj] of layerObjects) applySurfaceSun(obj, sun)
+      // The relief light IS the light on everything standing on it, and under
+      // PBR that light arrives through the sky. Rebuilding it is what makes the
+      // sun sliders move the whole scene rather than just the hillshade.
+      scheduleSky()
     },
 
     async setBuildings(enabled) {
@@ -492,6 +533,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
     setFeatureLayers(visible) {
       layerVisibility = { ...visible }
+      rebuildLayers()
+    },
+
+    setVehicles(enabled) {
+      if (enabled === vehiclesEnabled) return
+      vehiclesEnabled = enabled
       rebuildLayers()
     },
 
@@ -586,6 +633,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    */
   function rebuildLayers(): number {
     clearLayers()
+    for (const o of propObjects.splice(0)) { o.removeFromParent(); disposeLayer(o) }
     buildingRanges = []
     buildingsMesh = null
     if (!geoRoot || !placement || !osmFeatures) return 0
@@ -650,6 +698,18 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       if (built) { addLayer(layer, built.object) }
     }
 
+    // Traffic signals are mapped data and get a layer switch like any other.
+    if (layerVisibility.signal) {
+      const built = buildSignalLayer(osmFeatures, opts)
+      if (built) addLayer('signal', built.object)
+    }
+
+    // Vehicles are NOT data. Separate flag, off by default, and the UI says so.
+    if (vehiclesEnabled) {
+      const built = buildVehicleLayer(osmFeatures, opts)
+      if (built) { geoRoot.add(built.object); propObjects.push(built.object) }
+    }
+
     if (layerVisibility.bridge) {
       const built = buildBridgeLayer(osmFeatures, opts)
       if (built) { addLayer('bridge', built.object) }
@@ -674,6 +734,60 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // Water is the only animated layer today, but asking the object rather than
     // hard-coding the kind keeps the RAF honest if that ever changes.
     if (hasAnimatedMaterial(object)) animatedLayers.push(object)
+  }
+
+  /** (Re)build the sky environment from the current relief sun, and aim at it. */
+  function applySky(): void {
+    if (!engine) return
+    aimKeyLight()
+    const next = buildSkyEnvironment(ctx.renderer, {
+      sunAzimuthDeg: terrainLook.sunAzimuth,
+      sunAltitudeDeg: terrainLook.sunAltitude,
+    })
+    if (!next) return
+    skyEnvironment?.dispose()
+    skyEnvironment = next
+    ctx.scene.environment = next
+  }
+
+  /**
+   * Point the scene's key light at the relief sun.
+   *
+   * Without this there are visibly TWO suns: the hillshade and the sky say the
+   * light comes from the north-west, and the viewer's rig — positioned for
+   * looking at a building on a turntable, not for standing outdoors — throws it
+   * from the south-east. Shadows then fall the opposite way to the shading on
+   * the ground they land on, which reads as broken long before anyone works out
+   * why.
+   *
+   * The distance is preserved, not the position: the shadow camera is framed
+   * around the model at a particular range, and moving the light closer or
+   * further would silently change what the shadow map covers.
+   */
+  function aimKeyLight(): void {
+    const key = ctx.keyLight
+    // Sun Study is a real solar position for a real date. It wins.
+    if (!key || ctx.isSolarActive?.()) return
+    const az = (terrainLook.sunAzimuth * Math.PI) / 180
+    const alt = (terrainLook.sunAltitude * Math.PI) / 180
+    const distance = key.position.length() || 100
+    key.position.set(
+      Math.cos(alt) * Math.sin(az),
+      Math.sin(alt),
+      -Math.cos(alt) * Math.cos(az),
+    ).multiplyScalar(distance)
+  }
+
+  /** Coalesce a burst of slider moves into one rebuild. */
+  function scheduleSky(): void {
+    if (skyTimer !== null) clearTimeout(skyTimer)
+    skyTimer = setTimeout(() => { skyTimer = null; applySky() }, 160)
+  }
+
+  function teardownSky(): void {
+    if (skyTimer !== null) { clearTimeout(skyTimer); skyTimer = null }
+    skyEnvironment?.dispose()
+    skyEnvironment = null
   }
 
   function clearLayers(): void {
@@ -825,6 +939,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       maxDistance: ctx.controls.maxDistance,
       maxPolarAngle: ctx.controls.maxPolarAngle,
       gridVisible: ctx.getGridVisible(),
+      environment: ctx.scene.environment,
+      keyLightPos: ctx.keyLight ? ctx.keyLight.position.clone() : null,
       cameraPos: ctx.controls.getPosition(new THREE.Vector3()),
       cameraTarget: ctx.controls.getTarget(new THREE.Vector3()),
     }
@@ -846,6 +962,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     ctx.controls.maxDistance = snapshot.maxDistance
     ctx.controls.maxPolarAngle = snapshot.maxPolarAngle
     ctx.setGridVisible(snapshot.gridVisible)
+    ctx.scene.environment = snapshot.environment
+    if (ctx.keyLight && snapshot.keyLightPos) ctx.keyLight.position.copy(snapshot.keyLightPos)
     void ctx.controls.setLookAt(
       snapshot.cameraPos.x, snapshot.cameraPos.y, snapshot.cameraPos.z,
       snapshot.cameraTarget.x, snapshot.cameraTarget.y, snapshot.cameraTarget.z,

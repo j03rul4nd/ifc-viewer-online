@@ -33,9 +33,10 @@ import {
  */
 export type FeatureKind =
   | 'building' | 'water' | 'green' | 'sand' | 'rock' | 'tree' | 'bridge' | 'road' | 'rail'
+  | 'signal'
 
 export const FEATURE_KINDS: readonly FeatureKind[] =
-  ['building', 'water', 'green', 'sand', 'rock', 'tree', 'bridge', 'road', 'rail']
+  ['building', 'water', 'green', 'sand', 'rock', 'tree', 'bridge', 'road', 'rail', 'signal']
 
 export interface LatLonPoint { lat: number; lon: number }
 
@@ -235,6 +236,10 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
 
   if (t['natural'] === 'tree') return 'tree'
 
+  // A surveyed junction control. Only the signals themselves — a crossing node
+  // that merely REFERS to signals is part of that crossing, not a mast.
+  if (t['highway'] === 'traffic_signals') return 'signal'
+
   // Bridges: either mapped as an area (man_made=bridge) or as a way carrying
   // bridge=yes. The linear case is far more common, which is why it is here
   // and not treated as an edge case.
@@ -390,7 +395,7 @@ interface OverpassEl {
 }
 
 /** Smallest area worth drawing, m² — below this it is mapping noise. */
-export const MIN_AREA_M2: Record<Exclude<FeatureKind, 'tree'>, number> = {
+export const MIN_AREA_M2: Record<Exclude<FeatureKind, 'tree' | 'signal'>, number> = {
   building: 8,
   water: 40,
   green: 60,
@@ -425,7 +430,16 @@ export function parseOsmFeatures(json: unknown): OsmFeature[] {
     const style = resolveFeatureStyle(kind, el.tags)
     const height = resolveBuildingHeight(el.tags)
 
-    // Trees are nodes.
+    // Trees and signals are nodes.
+    if (kind === 'signal') {
+      if (el.type !== 'node' || !Number.isFinite(el.lat) || !Number.isFinite(el.lon)) continue
+      out.push({
+        id: `n${el.id}`, kind, point: { lat: el.lat!, lon: el.lon! },
+        height: { heightM: 3.4, minHeightM: 0, estimated: true }, style,
+      })
+      continue
+    }
+
     if (kind === 'tree') {
       if (el.type !== 'node' || !Number.isFinite(el.lat) || !Number.isFinite(el.lon)) continue
       out.push({
@@ -500,7 +514,7 @@ function closeRing(pts: OverpassGeom[], kind: FeatureKind): LatLonPoint[] | null
   if (pts.length < 3) return null
   const ring = isClosed(pts) ? pts.slice(0, -1) : pts
   if (ring.length < 3) return null
-  const min = kind === 'tree' ? 0 : MIN_AREA_M2[kind]
+  const min = kind === 'tree' || kind === 'signal' ? 0 : MIN_AREA_M2[kind]
   if (approximateAreaM2(ring) < min) return null
   return ring
 }
@@ -564,6 +578,7 @@ export function buildFeaturesQuery(
     `way["bridge"]["highway"](${b});`,
     `way["bridge"]["railway"](${b});`,
     `node["natural"="tree"](${b});`,
+    `node["highway"="traffic_signals"](${b});`,
     `way["highway"](${b});`,
     `way["railway"](${b});`,
     area('["railway"="platform"]'),
@@ -633,8 +648,7 @@ export function featureLabel(tags: Record<string, string> | undefined): string |
 export function countByKind(features: ReadonlyArray<OsmFeature>): Record<FeatureKind, number> {
   const counts = {
     building: 0, water: 0, green: 0, sand: 0, rock: 0,
-    tree: 0, bridge: 0, road: 0, rail: 0,
-  }
+    tree: 0, bridge: 0, road: 0, rail: 0, signal: 0 }
   for (const f of features) counts[f.kind]++
   return counts
 }
