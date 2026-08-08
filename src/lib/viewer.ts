@@ -2495,6 +2495,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           setGridVisible: (v) => { grid.visible = v },
           setSceneTuneLock: (locked) => { sceneTuneLocked = locked },
           setPointerSuppressed: (s) => { geoPointerSuppressed = s },
+          keyLight: dir,
+          // Read through the lazy instance rather than importing the solar
+          // module: map mode must not drag the sun-study chunk in with it.
+          isSolarActive: () => solarSystemInstance?.isActive() ?? false,
           getActiveModelBounds: () => self.getModelBounds(),
         })
         return geoSystemInstance

@@ -17,6 +17,9 @@
 // enough to light a scene convincingly, and honest about being an approximation.
 
 import * as THREE from 'three'
+import { createLogger } from '../logger'
+
+const log = createLogger('SkyEnvironment')
 
 export interface SkyOptions {
   /** Bearing the sun comes FROM, degrees clockwise from north. */
@@ -124,18 +127,28 @@ export function buildSkyTexture(opts: SkyOptions): THREE.DataTexture {
  * The caller owns the result and must dispose it. PMREM generation is the
  * expensive part (a few ms), which is why the sky is rebuilt only when the sun
  * actually moves rather than every frame.
+ *
+ * Returns null when the renderer cannot prefilter — a stubbed renderer under
+ * test, or a context that has been lost. Ambient light is an ENHANCEMENT, and
+ * losing it must not take map mode down with it.
  */
 export function buildSkyEnvironment(
   renderer: THREE.WebGLRenderer, opts: SkyOptions,
-): THREE.Texture {
+): THREE.Texture | null {
   const equirect = buildSkyTexture(opts)
-  const pmrem = new THREE.PMREMGenerator(renderer)
-  pmrem.compileEquirectangularShader()
-  const target = pmrem.fromEquirectangular(equirect)
-  // Both the source and the generator are scaffolding — only the cube target's
-  // texture outlives this call, and leaking either would cost real GPU memory
-  // every time the user nudges the sun.
-  equirect.dispose()
-  pmrem.dispose()
-  return target.texture
+  let pmrem: THREE.PMREMGenerator | null = null
+  try {
+    pmrem = new THREE.PMREMGenerator(renderer)
+    const target = pmrem.fromEquirectangular(equirect)
+    return target.texture
+  } catch (e) {
+    log.warn('sky environment unavailable; falling back to direct lights only', e)
+    return null
+  } finally {
+    // Both the source and the generator are scaffolding — only the cube
+    // target's texture outlives this call, and leaking either would cost real
+    // GPU memory every time the user nudges the sun.
+    equirect.dispose()
+    pmrem?.dispose()
+  }
 }

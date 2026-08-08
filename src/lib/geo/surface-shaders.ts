@@ -2,21 +2,18 @@
 // Procedural materials for the ground layers: grass, sand, rock, water — plus
 // foliage and bark, so the trees standing on them are lit by the same sun.
 //
-// WHY PROCEDURAL AND NOT TEXTURES
-// A texture set good enough for a client meeting is several megabytes of images
-// that would have to be downloaded, cached, licensed and colour-matched, and it
-// still tiles visibly at the scale we draw (a river is 400 m long on screen).
-// Noise evaluated in the fragment shader has none of those problems: it ships as
-// a few kB of source, never repeats, costs no network request — which matters
-// here, this viewer is privacy-first and offline-capable — and can be driven by
-// the same sun the terrain hillshade already uses, so the whole scene agrees on
-// where the light comes from.
+// SPLIT BY SCALE. Coarse variation (8-30 m) is evaluated procedurally: those
+// wavelengths cannot repeat inside one site and cannot alias, and they carry the
+// information — mowing, wear, drift, bedding. Fine detail comes from a baked
+// tileable map (surface-textures) sampled with hex-tiling, because that is where
+// the cost and the aliasing were, and mipmaps solve both properly. No image
+// files are downloaded: the map is baked at runtime from the same noise.
 //
-// WHY NOT THE BUILT-IN THREE MATERIALS
-// MeshStandardMaterial would tie the surroundings to whatever lights the viewer
-// happens to have, which change when Sun Study is on. These materials carry
-// their own key light + hemispheric sky, taken from `terrainLook`, so the map
-// context is internally consistent and independent of the model's lighting rig.
+// THESE ARE REAL PBR MATERIALS. MeshStandardMaterial extended through
+// onBeforeCompile, not a hand-written ShaderMaterial. Feeding procedural values
+// into three's own shader keeps energy-conserving specular, image-based lighting
+// from the sky environment, received shadows, fog and tone mapping — every one
+// of which a hand-rolled material reimplements badly or not at all.
 //
 // COORDINATES — the one thing that must not be got wrong.
 // Layer geometry lives in NORMALIZED web-mercator units under a geoRoot scaled
@@ -27,9 +24,10 @@
 // double precision on the CPU. Nothing procedural may use `position`.
 
 import * as THREE from 'three'
+import { surfaceTexture, TILE_M, type TextureFamily } from './surface-textures'
 
 /** The surfaces we can draw procedurally. */
-export type SurfaceKind = 'grass' | 'sand' | 'rock' | 'water'
+export type SurfaceKind = 'grass' | 'sand' | 'rock' | 'water' | 'asphalt'
 
 export interface SurfaceSun {
   /** Bearing the light comes FROM, degrees clockwise from north. */
@@ -39,7 +37,12 @@ export interface SurfaceSun {
 }
 
 export interface SurfaceMaterialOptions {
-  sun: SurfaceSun
+  /**
+   * Kept for callers that still pass it, and ignored: these are PBR materials
+   * now and their light comes from the scene and the sky environment. The type
+   * survives because facade-shader is still self-lit and shares it.
+   */
+  sun?: SurfaceSun
   /** Base opacity for the layer; water modulates it with fresnel. */
   opacity?: number
 }
@@ -97,62 +100,10 @@ float fbm(vec2 p, int octaves) {
   return sum;
 }
 
-/** Ridged noise — the fracture lines that make rock read as rock. */
-float ridge(vec2 p, int octaves) {
-  return 1.0 - abs(fbm(p, octaves) * 2.0 - 1.0);
-}
-`
-
-/**
- * Weight for a noise layer at the given frequency (cycles per metre), faded out
- * as its wavelength approaches the size of a pixel.
- *
- * This is the difference between detail and shimmer, and it is not optional at
- * map scale. Looking at a whole neighbourhood, one pixel covers a metre or
- * more; a 5 cm grain sampled there does not read as grain, it aliases into a
- * flat grey that cancels the layers underneath and leaves the surface looking
- * WORSE than if the detail had never been added. Fading every layer out at its
- * own Nyquist limit is what lets one material hold up both from across the
- * street and from 800 m up.
- *
- * fwidth is core in GLSL ES 3.00, which is what three compiles to on WebGL2 —
- * the only context this viewer runs in.
- */
-const DETAIL_FADE_GLSL = /* glsl */ `
-float detailFade(vec2 p, float cyclesPerMetre) {
-  float metresPerPixel = max(fwidth(p.x), fwidth(p.y));
-  return 1.0 - smoothstep(0.30, 0.80, metresPerPixel * cyclesPerMetre);
-}
-`
-
-// ── The surfaces themselves ────────────────────────────────────────────────────
-
-/**
- * Three material families, as plain functions of a planar position in METRES.
- *
- * They are functions rather than whole shaders because the terrain needs to
- * BLEND them — a mountainside is grass low down, rock on the crags and snow on
- * top, and the boundary between those has to be a gradient, not a seam. The
- * standalone OSM layer materials are thin wrappers around the same code, so
- * a park and the hillside behind it are literally the same grass.
- *
- * Each returns an albedo, a bump gradient in the surface plane (already scaled,
- * so callers just perturb by it), and a specular strength.
- */
-const SURFACE_FN_GLSL = /* glsl */ `
-struct Surface {
-  vec3 albedo;
-  vec2 grad;
-  float sheen;
-};
-
 /**
  * A noise layer AND its gradient, sharing the centre sample: three evaluations
- * instead of four. Returns (value, dx, dy).
- *
- * Worth its own function because every family wants both from the same layer —
- * the albedo modulation and the bump come from the same lumps, and computing
- * that lump field twice was a third of the fragment cost.
+ * instead of four. Only water needs it now — the granular families take their
+ * fine detail from a baked map instead.
  */
 vec3 fbmAndGrad(vec2 p, float eps, int octaves) {
   float c = fbm(p, octaves);
@@ -162,29 +113,128 @@ vec3 fbmAndGrad(vec2 p, float eps, int octaves) {
     (fbm(p + vec2(0.0, eps), octaves) - c) / eps
   );
 }
+`
 
 /**
- * Lawn, meadow, forest floor. A ladder of scales, because that is what a real
- * sward has: tens of metres of wet/dry and mown/rough variation, metre-scale
- * wear, clump-scale texture, and a fine breakup for close-ups. \`rough\` moves it
- * from a mown pitch to heath and scrub.
+ * Hex-tiling: sampling a tileable map so it never visibly repeats.
  *
- * Each fine layer is SKIPPED once its own fade says it cannot be resolved. That
- * is not a micro-optimisation: the terrain fills the screen exactly when the
- * camera is far enough that those layers have faded to nothing, so the most
- * expensive frames are the ones with the least to compute.
+ * A seamless tile still repeats — at ground scale the eye picks the pattern out
+ * within two or three tiles, and that is the single biggest tell that a surface
+ * is textured rather than real. Mikkelsen's hex-tiling (Practical Real-Time
+ * Hex-Tiling, JCGT 2022, after Heitz & Neyret) lays a triangular lattice over
+ * the UVs, gives every hexagonal cell its own random offset into the map, and
+ * blends the three cells nearest the fragment.
+ *
+ * Two details are what make it work rather than look like a smudge:
+ *
+ *   • textureGrad with EXPLICIT derivatives. The UV jumps between cells, and
+ *     automatic mip selection reads that jump as an enormous gradient and picks
+ *     the blurriest mip — the surface turns to fog exactly at the cell seams.
+ *   • variance-preserving blending. Averaging three offset samples averages the
+ *     contrast away too; rescaling around the map's mean puts it back.
+ *
+ * textureGrad is core in GLSL ES 3.00, which is what three compiles to on
+ * WebGL2 — the only context this viewer runs in.
  */
-Surface grassSurface(vec2 p, float rough, vec3 tone) {
-  float clumpF = 0.40;                       // 2.5 m — the texture you see
-  float tuftF  = mix(1.4, 3.0, rough);       // 0.3-0.7 m
-  float fineF  = 9.0;                        // 11 cm
+const HEX_TILE_GLSL = /* glsl */ `
+vec2 hexHash(vec2 p) {
+  vec2 r = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+  return fract(sin(r) * 43758.5453);
+}
 
-  // Fades first, and outside every branch: fwidth needs neighbouring fragments
-  // to agree on how far it has come.
-  float wClump = detailFade(p, clumpF);
-  float wTuft  = detailFade(p, tuftF);
-  float wFine  = detailFade(p, fineF);
+void triangleGrid(vec2 uv, out vec3 w, out vec2 v1, out vec2 v2, out vec2 v3) {
+  uv *= 3.4641016;                                  // 2 * sqrt(3)
+  vec2 s = mat2(1.0, 0.0, -0.5773503, 1.1547005) * uv;
+  vec2 base = floor(s);
+  vec3 t = vec3(fract(s), 0.0);
+  t.z = 1.0 - t.x - t.y;
+  if (t.z > 0.0) {
+    w = vec3(t.z, t.y, t.x);
+    v1 = base;
+    v2 = base + vec2(0.0, 1.0);
+    v3 = base + vec2(1.0, 0.0);
+  } else {
+    w = vec3(-t.z, 1.0 - t.y, 1.0 - t.x);
+    v1 = base + vec2(1.0, 1.0);
+    v2 = base + vec2(1.0, 0.0);
+    v3 = base + vec2(0.0, 1.0);
+  }
+}
 
+vec4 hexSample(sampler2D map, vec2 uv) {
+  vec2 dx = dFdx(uv);
+  vec2 dy = dFdy(uv);
+
+  // Once a pixel covers a good fraction of a tile, every hex cell resolves to
+  // the same mip level and the same mean, so the three fetches all return the
+  // same answer. Taking one instead is not an approximation — the mip pyramid
+  // has already done the blending. It matters because the expensive frames are
+  // exactly the distant ones, where the terrain fills the screen.
+  //
+  // The branch is safe here only because textureGrad carries its own explicit
+  // derivatives; a plain texture() in non-uniform control flow would be
+  // undefined. And the footprint varies smoothly across the screen, so the
+  // branch stays coherent within a wavefront.
+  if (max(length(dx), length(dy)) > 0.28) return textureGrad(map, uv, dx, dy);
+
+  vec3 w;
+  vec2 v1, v2, v3;
+  triangleGrid(uv, w, v1, v2, v3);
+  vec4 c1 = textureGrad(map, uv + hexHash(v1), dx, dy);
+  vec4 c2 = textureGrad(map, uv + hexHash(v2), dx, dy);
+  vec4 c3 = textureGrad(map, uv + hexHash(v3), dx, dy);
+
+  // Sharpen so one cell usually dominates; a soft blend is what smears detail.
+  w = w * w * w;
+  w /= (w.x + w.y + w.z);
+
+  vec4 blended = w.x * c1 + w.y * c2 + w.z * c3;
+  // Normal XY and albedo are centred on 0.5 by construction, so that is the
+  // mean to rescale around. Roughness is left linear: restoring its variance
+  // would push it outside [0,1] at cell centres.
+  float gain = inversesqrt(dot(w, w));
+  vec4 centre = vec4(0.5, 0.5, blended.b, 0.5);
+  return (blended - centre) * gain + centre;
+}
+`
+
+// ── The surfaces themselves ────────────────────────────────────────────────────
+
+/**
+ * Three material families, as plain functions of a planar position in METRES.
+ *
+ * Each is split by SCALE, and the split is the whole design:
+ *
+ *   • COARSE (8–30 m) stays procedural. Wavelengths that long cannot repeat
+ *     inside one site and cannot alias, and this is where the information lives
+ *     — mowing, wear, drift, bedding. Two fbm calls.
+ *   • FINE (under a few metres) comes from the baked detail map. This is where
+ *     all the cost and all the aliasing used to be, and it is exactly what
+ *     mipmaps and anisotropic filtering are for.
+ *
+ * They are functions rather than whole shaders because the terrain BLENDS them —
+ * a mountainside is grass low down, rock on the crags and snow on top, and that
+ * boundary has to be a gradient rather than a seam. The standalone layer
+ * materials are thin wrappers around the same code, so a park and the hillside
+ * behind it are literally the same grass.
+ */
+const SURFACE_FN_GLSL = /* glsl */ `
+struct Surface {
+  vec3 albedo;
+  vec2 grad;
+  float roughness;
+};
+
+/** Unpack a detail sample into a slope and a roughness. */
+vec2 detailSlope(vec4 d, float strength) {
+  return (d.rg - 0.5) * -2.0 * strength;
+}
+
+/**
+ * Lawn, meadow, forest floor. \`rough\` moves it from a mown pitch to heath and
+ * scrub — it drives the grain SIZE, which is what actually distinguishes them.
+ */
+Surface grassSurface(sampler2D detail, vec2 p, float rough, vec3 tone) {
   float meadow = fbm(p * 0.035, 3);          // 30 m — drainage, aspect, mowing
   float wear   = fbm(p * 0.13, 3);           // 8 m  — paths, bare patches
 
@@ -193,117 +243,57 @@ Surface grassSurface(vec2 p, float rough, vec3 tone) {
   vec3 albedo = mix(tone, dry, smoothstep(0.38, 0.80, meadow) * 0.5);
   albedo *= 0.80 + 0.42 * wear;
 
-  vec2 grad = vec2(0.0);
-  float clump = 0.5;
-  if (wClump > 0.01) {
-    vec3 c = fbmAndGrad(p * clumpF, 0.25, 2);
-    clump = c.x;
-    albedo *= 1.0 + (clump - 0.5) * mix(0.52, 0.84, rough) * wClump;
-    grad += c.yz * (0.7 * wClump);
-  }
-  if (wTuft > 0.01) {
-    vec3 t = fbmAndGrad(p * tuftF, 0.25, 2);
-    albedo *= 1.0 + (t.x - 0.5) * 0.34 * wTuft;
-    grad += t.yz * wTuft;
-  }
-  if (wFine > 0.01) {
-    albedo *= 1.0 + (vnoise(p * fineF) - 0.5) * 0.20 * wFine;
-  }
-
-  // Self-shadowing between clumps: the gaps never see the full sky.
-  albedo *= 0.84 + 0.16 * mix(0.5, clump, wClump);
-
-  return Surface(albedo, grad * mix(0.10, 0.26, rough), 0.0);
+  vec4 d = hexSample(detail, p / mix(1.6, 4.4, rough));
+  albedo *= 1.0 + (d.a - 0.5) * 0.60;
+  return Surface(albedo, detailSlope(d, mix(0.55, 1.0, rough)), d.b);
 }
 
 /**
  * Beach, dune, shingle, mud — and wind-packed snow, which behaves the same way:
- * a fine granular surface the wind carves into regular ripples. The ripples are
- * the whole point. Flat sand-coloured polygons read as paper; what says "sand"
- * from any angle is the regular ripple, one dominant direction, bent by larger
- * drifts. High \`rough\` drops the ripples for pebble-scale lumps instead.
+ * a granular surface the wind carves into regular ripples.
  */
-Surface sandSurface(vec2 p, float rough, vec3 tone) {
-  // Large drifts: where the surface piles up and where it is scoured.
-  float drift = fbm(p * 0.035, 3);
-
-  // Ripple bearing, bent by the drift so the crests are never dead straight.
-  float bearing = 0.9 + drift * 1.6;
-  vec2 dir = vec2(cos(bearing), sin(bearing));
-  // Real wave ripples on a beach are ~10 cm apart and real dune ripples a few
-  // metres. The short end is deliberately stretched: below about a metre the
-  // crests fall under the pixel size at any view that includes the building,
-  // and a ripple you cannot resolve is just noise.
-  float wavelength = mix(1.1, 5.0, rough);
-  float rippleF = 1.0 / wavelength;
-  float pebbleF = mix(4.0, 1.6, rough);
-  float grainF = 22.0;
-
-  float wRipple = detailFade(p, rippleF);
-  float wPebble = detailFade(p, pebbleF);
-  float wGrain = detailFade(p, grainF);
-  float rippleMix = 1.0 - smoothstep(0.55, 0.9, rough);
+Surface sandSurface(sampler2D detail, vec2 p, float rough, vec3 tone) {
+  float drift = fbm(p * 0.035, 3);           // 28 m — where it piles and scours
 
   vec3 albedo = tone * (0.90 + 0.24 * drift);
-  vec2 grad = vec2(0.0);
-
-  if (wRipple * rippleMix > 0.01) {
-    float phase = dot(p, dir) * (6.2831853 * rippleF) + fbm(p * 0.18, 3) * 6.0;
-    // Sharper than a sine: wind ripples have flat troughs and crisp crests.
-    float ripple = pow(0.5 + 0.5 * sin(phase), 1.6);
-    albedo *= 1.0 + (ripple - 0.5) * 0.30 * rippleMix * wRipple;
-    // A low sun raking across the crests is most of what sells the surface.
-    grad += dir * cos(phase) * (6.2831853 * rippleF) * rippleMix * wRipple * 0.05;
-  }
-  if (wPebble > 0.01) {
-    vec3 pb = fbmAndGrad(p * pebbleF, 0.25, 2);
-    albedo *= 1.0 + (pb.x - 0.5) * 0.26 * (1.0 - rippleMix) * wPebble;
-    grad += pb.yz * (0.6 * wPebble);
-  }
-  if (wGrain > 0.01) {
-    // Grain — what keeps sand from going plastic in a close-up.
-    albedo *= 1.0 + (vnoise(p * grainF) - 0.5) * 0.16 * wGrain;
-  }
-
-  // Dry quartz sand — and fresh snow — have a real sheen at grazing angles.
-  return Surface(albedo, grad * 0.55, 0.16 * (1.0 - rough));
+  vec4 d = hexSample(detail, p / mix(1.4, 5.0, rough));
+  albedo *= 1.0 + (d.a - 0.5) * 0.44;
+  // A low sun raking across the ripple crests is most of what sells sand, so
+  // this family leans harder on its normal than the others.
+  return Surface(albedo, detailSlope(d, mix(0.55, 1.0, rough)), d.b);
 }
 
 /**
- * Bare rock, scree, glacier ice. Ridged noise gives the fracture pattern;
- * \`rough\` moves it from smooth ice through slabbed rock to loose scree.
+ * Carriageway, ballast, platform slab, bridge deck.
+ *
+ * The tone arrives per vertex and already says what the way is — motorway
+ * asphalt, a gravel track, a concrete platform — so this only has to make the
+ * surface a surface. The rough parameter stretches the aggregate: fine for a
+ * paved road, coarse for ballast.
  */
-Surface rockSurface(vec2 p, float rough, vec3 tone) {
-  float blockF = mix(0.8, 2.2, rough);       // 0.45-1.25 m
-  float gritF  = 14.0;                       // 7 cm
+Surface asphaltSurface(sampler2D detail, vec2 p, float rough, vec3 tone) {
+  // Patching and repair, at the scale a street actually varies.
+  float patchwork = fbm(p * 0.09, 3);
+  vec3 albedo = tone * (0.90 + 0.22 * patchwork);
 
-  float wBlocks = detailFade(p, blockF);
-  float wGrit = detailFade(p, gritF);
+  vec4 d = hexSample(detail, p / mix(1.1, 3.0, rough));
+  albedo *= 1.0 + (d.a - 0.5) * 0.32;
+  // Gentle: chippings are a millimetre-scale relief and a strong normal here
+  // turns tarmac into gravel.
+  return Surface(albedo, detailSlope(d, mix(0.25, 0.6, rough)), d.b);
+}
 
+/** Bare rock, scree, glacier ice. */
+Surface rockSurface(sampler2D detail, vec2 p, float rough, vec3 tone) {
   float bed = fbm(p * 0.03, 3);              // 33 m — the shape of the massif
 
-  // Joints and gullies, at 4.5 m: the layer that makes rock read as rock, and
-  // the one that survives all the way out to a whole-mountain view.
-  vec3 fr = fbmAndGrad(p * 0.22, 0.25, 3);
-  float fracture = 1.0 - abs(fr.x * 2.0 - 1.0);
-  vec2 grad = fr.yz * 0.8;
-
-  float blocks = fracture;
-  if (wBlocks > 0.01) {
-    vec3 bl = fbmAndGrad(p * blockF, 0.25, 2);
-    blocks = 1.0 - abs(bl.x * 2.0 - 1.0);
-    grad += bl.yz * wBlocks;
-  }
-
-  // Crevices are darker and less saturated — dirt and shadow collect in them.
-  float crev = smoothstep(0.50, 0.95, mix(fracture, blocks, 0.55 * wBlocks));
   vec3 albedo = tone * (0.80 + 0.34 * bed);
-  albedo = mix(albedo, albedo * vec3(0.58, 0.57, 0.58), crev * mix(0.40, 0.80, rough));
-  if (wGrit > 0.01) {
-    albedo *= 1.0 + (vnoise(p * gritF) - 0.5) * 0.20 * wGrit;
-  }
-
-  return Surface(albedo, grad * mix(0.35, 0.95, rough), (1.0 - rough) * 0.35);
+  vec4 d = hexSample(detail, p / mix(1.2, 3.4, rough));
+  albedo *= 1.0 + (d.a - 0.5) * 0.68;
+  // Ice is smooth and keeps a highlight; scree is neither. The map's own
+  // roughness is pulled toward the family's floor as \`rough\` drops.
+  float roughness = mix(min(d.b, 0.35), d.b, clamp(rough * 1.6, 0.0, 1.0));
+  return Surface(albedo, detailSlope(d, mix(0.45, 1.15, rough)), roughness);
 }
 `
 
@@ -318,6 +308,8 @@ Surface rockSurface(vec2 p, float rough, vec3 tone) {
  * water is, and where the foam breaks.
  */
 const WATER_GLSL = /* glsl */ `
+uniform float uTileM;
+
 struct Water {
   vec3 albedo;
   vec2 grad;
@@ -326,22 +318,31 @@ struct Water {
 };
 
 Water waterSurface(
-  vec2 p, float t, float shore,
+  sampler2D waves, vec2 p, float t, float shore,
   vec3 deep, vec3 shallow, float foamM, float shallowM
 ) {
-  // Swell and chop travel in different directions at different speeds; a
-  // single scrolling layer reads as a sliding texture, two read as water.
-  float swellF = 0.085;      // ~12 m crests
-  float chopF  = 0.42;       // ~2.4 m
-  vec2 swell = p * swellF + vec2(t * 0.36, t * 0.14);
-  vec2 chop  = p * chopF  - vec2(t * 0.19, t * 0.44);
+  // Swell and chop: the SAME baked wave field sampled at two scales, drifting
+  // in different directions at different speeds. One scrolling layer reads as a
+  // sliding texture; two read as water. Plain sampling, not hex-tiling — two
+  // layers at incommensurate scales already destroy the repeat, and hex-tiling
+  // would triple the fetches for nothing.
+  //
+  // Amplitudes, not physical rescalings: the map holds the wave SHAPE and these
+  // say how steep this water is. A 12 m swell has a real surface slope around
+  // 0.08 and chop around 0.15, which is what these are set to.
+  float swellM = 14.0;
+  float chopM = 3.5;
+  float swellAmp = 0.09;
+  float chopAmp = 0.15;
+  // Scroll rates are in TILE units per second, so the surface speed is the rate
+  // times the span: about 0.6 m/s each, which is a river rather than a canal.
+  // Both layers move at a similar speed but in different directions — that
+  // crossing is what stops it reading as one sheet sliding past.
+  vec4 s1 = texture2D(waves, p / swellM + vec2(t * 0.040, t * 0.016));
+  vec4 s2 = texture2D(waves, p / chopM - vec2(t * 0.075, t * 0.130));
 
-  vec3 sw = fbmAndGrad(swell, 0.25, 3);
-  vec2 grad = sw.yz * (0.55 * detailFade(p, swellF));
-  float chopAmount = detailFade(p, chopF);
-  if (chopAmount > 0.01) {
-    grad += fbmAndGrad(chop, 0.25, 2).yz * (0.22 * chopAmount);
-  }
+  vec2 grad = (s1.rg - 0.5) * (2.0 * swellAmp)
+            + (s2.rg - 0.5) * (2.0 * chopAmp);
 
   // Depth from the bank. Not measured — OSM carries no bathymetry — but
   // "shallower at the edge" is true of every natural body of water.
@@ -361,8 +362,10 @@ Water waterSurface(
   // makes the bank read as surf rather than as white paint.
   float roughness = mix(0.035, 0.62, foam);
   // Chop roughens the surface where it is disturbed, which is what breaks the
-  // glitter path up into sparkles instead of one hard streak.
-  roughness += length(grad) * 0.03;
+  // glitter path up into sparkles instead of one hard streak. At distance the
+  // mip pyramid flattens the normal, so this fades out on its own — which is
+  // exactly right, and is what un-mipmapped noise could never do.
+  roughness += length(grad) * 0.08;
 
   return Water(albedo, grad, clamp(roughness, 0.02, 1.0), foam);
 }
@@ -429,11 +432,12 @@ const SURFACE_FN: Record<Exclude<SurfaceKind, 'water'>, string> = {
   grass: 'grassSurface',
   sand: 'sandSurface',
   rock: 'rockSurface',
+  asphalt: 'asphaltSurface',
 }
 
 /** Default opacity per surface. Water alone is see-through. */
 const DEFAULT_OPACITY: Record<SurfaceKind, number> = {
-  grass: 1, sand: 1, rock: 1, water: 0.62,
+  grass: 1, sand: 1, rock: 1, water: 0.62, asphalt: 1,
 }
 
 /** Uniforms a caller may want to reach later, kept on `material.userData`. */
@@ -444,6 +448,8 @@ export interface SurfaceUniforms {
   uFoamM: { value: number }
   uShallowM: { value: number }
   uMetresPerUnit: { value: number }
+  /** Ground span of one baked tile, so shaders can rescale its slopes. */
+  uTileM: { value: number }
 }
 
 function makeUniforms(opacity: number): SurfaceUniforms {
@@ -454,6 +460,7 @@ function makeUniforms(opacity: number): SurfaceUniforms {
     uFoamM: { value: 3.2 },
     uShallowM: { value: 22 },
     uMetresPerUnit: { value: 1 },
+    uTileM: { value: TILE_M },
   }
 }
 
@@ -471,6 +478,11 @@ export function createSurfaceMaterial(
 ): THREE.MeshStandardMaterial {
   const uniforms = makeUniforms(opts.opacity ?? DEFAULT_OPACITY[kind])
   const water = kind === 'water'
+  // Water is animated and cannot come from a static tile; the rest share the
+  // three baked maps between every layer and the terrain.
+  // Water's map is a wave field rather than a granular detail map, but it is
+  // baked, tiled and mipmapped by exactly the same machinery.
+  const detail = surfaceTexture(kind as TextureFamily)
 
   const material = new THREE.MeshStandardMaterial({
     vertexColors: true,
@@ -489,6 +501,7 @@ export function createSurfaceMaterial(
 
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms)
+    shader.uniforms.uDetail = { value: detail }
     const v = vertexInjection(water)
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>\n${v.head}`)
@@ -505,9 +518,10 @@ export function createSurfaceMaterial(
       ${water ? 'varying float vShore;' : ''}
       varying vec3 vTanX;
       varying vec3 vTanY;
+      uniform sampler2D uDetail;
       ${NOISE_GLSL}
-      ${DETAIL_FADE_GLSL}
-      ${SURFACE_FN_GLSL}
+      ${water ? '' : HEX_TILE_GLSL}
+      ${water ? '' : SURFACE_FN_GLSL}
       ${water ? WATER_GLSL : ''}
     `
 
@@ -516,7 +530,7 @@ export function createSurfaceMaterial(
     if (water) {
       f = replaceChunk(f, 'map_fragment', /* glsl */ `
         Water w = waterSurface(
-          vSurf, uTime, vShore,
+          uDetail, vSurf, uTime, vShore,
           #ifdef USE_COLOR
             vColor.rgb,
           #else
@@ -540,7 +554,7 @@ export function createSurfaceMaterial(
     } else {
       f = replaceChunk(f, 'map_fragment', /* glsl */ `
         Surface surf = ${SURFACE_FN[kind]}(
-          vSurf, vRough,
+          uDetail, vSurf, vRough,
           #ifdef USE_COLOR
             vColor.rgb
           #else
@@ -551,10 +565,10 @@ export function createSurfaceMaterial(
         diffuseColor.a = uOpacity;
       `)
       f = replaceChunk(f, 'color_fragment', '')
-      // `sheen` is how polished the surface is — wet rock and dry quartz sand
-      // keep a highlight, grass has none — so it maps straight onto roughness.
+      // Roughness now comes off the baked map, per texel, so a crevice can be
+      // rougher than the crest beside it.
       f = replaceChunk(f, 'roughnessmap_fragment',
-        'float roughnessFactor = clamp(1.0 - surf.sheen * 1.6, 0.28, 1.0);')
+        'float roughnessFactor = clamp(surf.roughness, 0.05, 1.0);')
       f = replaceChunk(f, 'normal_fragment_maps',
         'normal = normalize(normal - surf.grad.x * vTanX - surf.grad.y * vTanY);')
     }
@@ -648,6 +662,11 @@ export interface TerrainMaterialOptions extends SurfaceMaterialOptions {
  */
 export function createTerrainMaterial(opts: TerrainMaterialOptions): THREE.MeshStandardMaterial {
   const uniforms = makeUniforms(1)
+  const maps = {
+    uGrassMap: { value: surfaceTexture('grass') },
+    uRockMap: { value: surfaceTexture('rock') },
+    uSandMap: { value: surfaceTexture('sand') },
+  }
   uniforms.uMetresPerUnit.value = opts.metresPerUnit
 
   const material = new THREE.MeshStandardMaterial({
@@ -663,7 +682,7 @@ export function createTerrainMaterial(opts: TerrainMaterialOptions): THREE.MeshS
   material.customProgramCacheKey = () => 'surface-terrain'
 
   material.onBeforeCompile = (shader) => {
-    Object.assign(shader.uniforms, uniforms)
+    Object.assign(shader.uniforms, uniforms, maps)
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', /* glsl */ `
         #include <common>
@@ -688,8 +707,11 @@ export function createTerrainMaterial(opts: TerrainMaterialOptions): THREE.MeshS
       varying vec2 vSurf;
       varying vec3 vTanX;
       varying vec3 vTanY;
+      uniform sampler2D uGrassMap;
+      uniform sampler2D uRockMap;
+      uniform sampler2D uSandMap;
       ${NOISE_GLSL}
-      ${DETAIL_FADE_GLSL}
+      ${HEX_TILE_GLSL}
       ${SURFACE_FN_GLSL}
     `)
 
@@ -702,36 +724,36 @@ export function createTerrainMaterial(opts: TerrainMaterialOptions): THREE.MeshS
 
       vec3 groundAlbedo = vec3(0.0);
       vec2 groundGrad = vec2(0.0);
-      float groundSheen = 0.0;
+      float groundRough = 0.0;
       // Skipping a family whose weight is nil keeps the cost of three materials
       // near the cost of one: a wavefront inside a forest never evaluates the
       // rock or the snow branch, and the belts are large and coherent on screen.
       if (veg > 0.004) {
-        Surface s = grassSurface(vSurf, beltRough, tone);
+        Surface s = grassSurface(uGrassMap, vSurf, beltRough, tone);
         groundAlbedo += s.albedo * veg;
         groundGrad += s.grad * veg;
-        groundSheen += s.sheen * veg;
+        groundRough += s.roughness * veg;
       }
       if (mineral > 0.004) {
-        Surface s = rockSurface(vSurf, beltRough, tone);
+        Surface s = rockSurface(uRockMap, vSurf, beltRough, tone);
         groundAlbedo += s.albedo * mineral;
         groundGrad += s.grad * mineral;
-        groundSheen += s.sheen * mineral;
+        groundRough += s.roughness * mineral;
       }
       if (snow > 0.004) {
         // Wind-packed snow is a granular surface the wind carves into regular
         // ripples — sastrugi. That is the sand family, not the rock one.
-        Surface s = sandSurface(vSurf, beltRough, tone);
+        Surface s = sandSurface(uSandMap, vSurf, beltRough, tone);
         groundAlbedo += s.albedo * snow;
         groundGrad += s.grad * snow;
-        groundSheen += s.sheen * snow;
+        groundRough += s.roughness * snow;
       }
       diffuseColor.rgb = groundAlbedo;
       diffuseColor.a = vColor.a;
     `)
     f = replaceChunk(f, 'color_fragment', '')
     f = replaceChunk(f, 'roughnessmap_fragment',
-      'float roughnessFactor = clamp(1.0 - groundSheen * 1.6, 0.28, 1.0);')
+      'float roughnessFactor = clamp(groundRough, 0.05, 1.0);')
     f = replaceChunk(f, 'normal_fragment_maps',
       'normal = normalize(normal - groundGrad.x * vTanX - groundGrad.y * vTanY);')
     // The sky-view factor, applied where an AO map would be.
