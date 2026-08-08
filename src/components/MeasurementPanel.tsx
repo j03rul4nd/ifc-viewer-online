@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { ViewportPanel } from './ViewportPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useUIStore } from '../stores/uiStore'
@@ -170,17 +171,13 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
   const count = measurements.length
 
   return (
-    <AnimatePresence>
-      {measurementPanelOpen && (
-        <motion.div
-          initial={{ opacity: 0, x: 12 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 12 }}
-          transition={{ duration: 0.2 }}
-          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 pointer-events-auto select-none"
-          style={{ width: 'min(180px, calc(100vw - 24px))' }}
-        >
-          <div className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl">
+    <ViewportPanel
+      open={measurementPanelOpen}
+      label={t('panel.title')}
+      mobile="dock"
+      widthPx={180}
+      anchor="center"
+    >
             {/* Header */}
             <div className="px-3 pt-2.5 pb-1.5 border-b border-[var(--border)]">
               <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase mb-0.5">
@@ -304,9 +301,6 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                 <div className="mt-0.5 opacity-70">{t('actions.escToCancel')}</div>
               </div>
             )}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </ViewportPanel>
   )
 }
