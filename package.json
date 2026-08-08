@@ -6,7 +6,7 @@
     "scripts": {
         "dev": "vite",
         "build": "npm run build:sdk && npm run build:embed && tsc -b && node --max-old-space-size=6144 node_modules/vite/bin/vite.js build",
-        "build:sdk": "vite build --config vite.config.sdk.ts && node scripts/sdk/build-sdk-docs.mjs",
+        "build:sdk": "vite build --config vite.config.sdk.ts && tsc -p tsconfig.sdk.json && node scripts/sdk/finalize-types.mjs && node scripts/sdk/build-sdk-docs.mjs",
         "build:embed": "node scripts/embed/build-embed-pages.mjs",
         "lint": "eslint .",
         "preview": "vite preview",
@@ -16,7 +16,8 @@
         "og": "node scripts/og/build-og.mjs",
         "blog-covers": "node scripts/og/build-blog-covers.mjs",
         "fix-covers": "node scripts/og/build-fix-covers.mjs",
-        "covers": "node scripts/og/build-blog-covers.mjs && node scripts/og/build-fix-covers.mjs"
+        "covers": "node scripts/og/build-blog-covers.mjs && node scripts/og/build-fix-covers.mjs",
+        "props": "blender --background --python scripts/blender/build-props.py -- public/models/props"
     },
     "dependencies": {
         "@clerk/react": "^6.12.2",
