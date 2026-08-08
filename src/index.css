@@ -177,10 +177,26 @@ body {
   background: rgba(16, 16, 20, 0.82);
 }
 
+/*
+ * The five panels that float over the 3D canvas (Geo, Solar, Section,
+ * Measurement, FloorPlan) — and the ONLY ones, deliberately.
+ *
+ * Everything else in the app sits over chrome we control, so a light tint is
+ * safe. These sit over a scene whose background the USER picks, and at the old
+ * 0.72 the panel was effectively painted by whatever was behind it. Measured
+ * against a white backdrop: secondary text fell to 2.33:1 and hint text to
+ * 1.04:1 — that second number is invisible, not merely dim.
+ *
+ * 0.94 makes the panel read the SAME on any background, which is the actual
+ * requirement. Over white it now gives 13.9:1 / 5.0:1 / 2.3:1 for body,
+ * secondary and hint text, against 16.2 / 5.8 / 2.6 over black. The blur is
+ * widened to match: the little that still shows through should be a wash, not
+ * a recognisable shape competing with the text on top of it.
+ */
 .glass-md {
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  background: rgba(16, 16, 20, 0.72);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  background: rgba(16, 16, 20, 0.94);
 }
 
 .glass-xl {
