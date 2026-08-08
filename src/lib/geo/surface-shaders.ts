@@ -234,7 +234,7 @@ vec2 detailSlope(vec4 d, float strength) {
  * Lawn, meadow, forest floor. \`rough\` moves it from a mown pitch to heath and
  * scrub — it drives the grain SIZE, which is what actually distinguishes them.
  */
-Surface grassSurface(sampler2D detail, vec2 p, float rough, vec3 tone) {
+Surface grassSurface(sampler2D grassMap, sampler2D shrubMap, vec2 p, float rough, vec3 tone) {
   float meadow = fbm(p * 0.035, 3);          // 30 m — drainage, aspect, mowing
   float wear   = fbm(p * 0.13, 3);           // 8 m  — paths, bare patches
 
@@ -243,9 +243,30 @@ Surface grassSurface(sampler2D detail, vec2 p, float rough, vec3 tone) {
   vec3 albedo = mix(tone, dry, smoothstep(0.38, 0.80, meadow) * 0.5);
   albedo *= 0.80 + 0.42 * wear;
 
-  vec4 d = hexSample(detail, p / mix(1.6, 4.4, rough));
-  albedo *= 1.0 + (d.a - 0.5) * 0.60;
-  return Surface(albedo, detailSlope(d, mix(0.55, 1.0, rough)), d.b);
+  // OSM already says whether this is a mown pitch or a scrub hillside, and it
+  // arrives as the rough parameter. They are not the same surface at any grain
+  // size — one is dense and fine, the other lumpy with real gaps between bushes —
+  // so they get different maps and are blended across the middle.
+  float bushy = smoothstep(0.52, 0.84, rough);
+
+  vec4 d = vec4(0.5, 0.5, 0.9, 0.5);
+  vec2 slope = vec2(0.0);
+  if (bushy < 0.996) {
+    vec4 g = hexSample(grassMap, p / mix(1.5, 3.4, rough));
+    d = mix(g, d, bushy);
+    slope += detailSlope(g, mix(0.55, 0.85, rough)) * (1.0 - bushy);
+  }
+  if (bushy > 0.004) {
+    // Bushes are bigger than tufts, so the same map is stretched further.
+    vec4 b = hexSample(shrubMap, p / mix(3.0, 6.5, rough));
+    d = mix(d, b, bushy);
+    slope += detailSlope(b, 1.15) * bushy;
+    // Shade collects under a shrub canopy the way it never does in turf.
+    albedo *= 1.0 - bushy * 0.22 * (1.0 - b.a);
+  }
+
+  albedo *= 1.0 + (d.a - 0.5) * mix(0.60, 0.92, bushy);
+  return Surface(albedo, slope, d.b);
 }
 
 /**
@@ -349,18 +370,33 @@ Water waterSurface(
   float depth = clamp(shore / shallowM, 0.0, 1.0);
   vec3 albedo = mix(shallow, deep, smoothstep(0.0, 1.0, depth));
 
-  // Foam against the bank, torn up by noise and drifting, so the line is
-  // ragged the way surf is rather than a clean offset outline.
+  // FOAM. Three things separate surf from a white line painted along the bank:
+  //
+  //   * it SURGES. Water runs up the shore and drains back, so the band has to
+  //     breathe rather than sit still. The phase is offset ALONG the bank, or
+  //     the whole shoreline pulses in unison and reads as a throbbing outline.
+  //   * it is RAGGED at two scales — how far each reach runs up, and the broken
+  //     edge of any one reach.
+  //   * it is BUBBLY, not flat white. The wave map's own height channel, read
+  //     small and scrolling, is a free bubble texture.
+  float alongBank = fbm(p * 0.05, 2) * 6.28318;
+  float surge = 0.72 + 0.28 * sin(t * 0.55 + alongBank);
   float fringe = fbm(p * 0.9 + vec2(t * 0.06, -t * 0.04), 3);
-  float foam = 1.0 - smoothstep(0.0, foamM * (0.45 + 1.1 * fringe), shore);
+  float foam = 1.0 - smoothstep(0.0, foamM * surge * (0.45 + 1.1 * fringe), shore);
   foam *= 0.55 + 0.45 * fbm(p * 2.6 - vec2(t * 0.09), 2);
-  foam = clamp(foam, 0.0, 1.0);
 
-  albedo = mix(albedo, vec3(0.92, 0.95, 0.96), foam * 0.9);
+  // Whitecaps: the steepest crests break, anywhere on the water. Subtle, and
+  // the reason open water stops being a uniform sheet at a distance.
+  float steep = smoothstep(0.55, 1.0, length(grad) * 3.2);
+  foam = clamp(max(foam, steep * 0.5), 0.0, 1.0);
+
+  vec3 bubbles = vec3(0.92, 0.95, 0.96)
+    * (0.80 + 0.34 * texture2D(waves, p * 0.55 - vec2(t * 0.05, t * 0.02)).a);
+  albedo = mix(albedo, bubbles, foam * 0.9);
 
   // Open water is a near-mirror; foam is not. Getting this split right is what
   // makes the bank read as surf rather than as white paint.
-  float roughness = mix(0.035, 0.62, foam);
+  float roughness = mix(0.022, 0.62, foam);
   // Chop roughens the surface where it is disturbed, which is what breaks the
   // glitter path up into sparkles instead of one hard streak. At distance the
   // mip pyramid flattens the normal, so this fades out on its own — which is
@@ -492,6 +528,12 @@ export function createSurfaceMaterial(
     metalness: 0,
     roughness: 1,
   })
+  if (water) {
+    // Water is mostly a mirror, and its whole appearance is the sky in it. The
+    // default environment weight leaves it looking like tinted glass; pushing
+    // it up is what makes the reflection the dominant term it should be.
+    material.envMapIntensity = 1.7
+  }
   material.name = `surface-${kind}`
   material.userData.uniforms = uniforms
   material.userData.animated = water
@@ -502,6 +544,8 @@ export function createSurfaceMaterial(
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms)
     shader.uniforms.uDetail = { value: detail }
+    // Greenery carries a second map: scrub and heath are bushes, not long grass.
+    shader.uniforms.uShrub = { value: surfaceTexture(kind === 'grass' ? 'shrub' : 'grass') }
     const v = vertexInjection(water)
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>\n${v.head}`)
@@ -519,6 +563,7 @@ export function createSurfaceMaterial(
       varying vec3 vTanX;
       varying vec3 vTanY;
       uniform sampler2D uDetail;
+      uniform sampler2D uShrub;
       ${NOISE_GLSL}
       ${water ? '' : HEX_TILE_GLSL}
       ${water ? '' : SURFACE_FN_GLSL}
@@ -554,7 +599,7 @@ export function createSurfaceMaterial(
     } else {
       f = replaceChunk(f, 'map_fragment', /* glsl */ `
         Surface surf = ${SURFACE_FN[kind]}(
-          uDetail, vSurf, vRough,
+          ${kind === 'grass' ? 'uDetail, uShrub,' : 'uDetail,'} vSurf, vRough,
           #ifdef USE_COLOR
             vColor.rgb
           #else
@@ -664,6 +709,7 @@ export function createTerrainMaterial(opts: TerrainMaterialOptions): THREE.MeshS
   const uniforms = makeUniforms(1)
   const maps = {
     uGrassMap: { value: surfaceTexture('grass') },
+    uShrubMap: { value: surfaceTexture('shrub') },
     uRockMap: { value: surfaceTexture('rock') },
     uSandMap: { value: surfaceTexture('sand') },
   }
@@ -708,6 +754,7 @@ export function createTerrainMaterial(opts: TerrainMaterialOptions): THREE.MeshS
       varying vec3 vTanX;
       varying vec3 vTanY;
       uniform sampler2D uGrassMap;
+      uniform sampler2D uShrubMap;
       uniform sampler2D uRockMap;
       uniform sampler2D uSandMap;
       ${NOISE_GLSL}
@@ -729,7 +776,7 @@ export function createTerrainMaterial(opts: TerrainMaterialOptions): THREE.MeshS
       // near the cost of one: a wavefront inside a forest never evaluates the
       // rock or the snow branch, and the belts are large and coherent on screen.
       if (veg > 0.004) {
-        Surface s = grassSurface(uGrassMap, vSurf, beltRough, tone);
+        Surface s = grassSurface(uGrassMap, uShrubMap, vSurf, beltRough, tone);
         groundAlbedo += s.albedo * veg;
         groundGrad += s.grad * veg;
         groundRough += s.roughness * veg;

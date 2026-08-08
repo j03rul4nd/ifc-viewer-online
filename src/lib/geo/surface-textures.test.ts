@@ -5,22 +5,33 @@
 import { describe, it, expect } from 'vitest'
 import { surfaceTexture, disposeSurfaceTextures, TILE_M, type TextureFamily } from './surface-textures'
 
-const FAMILIES: TextureFamily[] = ['grass', 'sand', 'rock', 'water']
+const FAMILIES: TextureFamily[] = ['grass', 'shrub', 'sand', 'rock', 'water']
 
 /**
  * Families whose roughness channel is actually used. Water's is not: its
  * material derives roughness from its own foam and chop, so the baked band sits
  * far below the granular ones and testing it against them would be meaningless.
  */
-const GRANULAR: TextureFamily[] = ['grass', 'sand', 'rock']
+const GRANULAR: TextureFamily[] = ['grass', 'shrub', 'sand', 'rock']
 
-/** Mean absolute difference between horizontally adjacent texels, per channel. */
-function interiorStep(data: Uint8Array, size: number, channel: number): number {
+/**
+ * Mean absolute difference between adjacent texels ALONG ONE AXIS.
+ *
+ * The axis matters: grass blades are stretched about eight to one, so the field
+ * genuinely steps harder down the tile than across it. Comparing a vertical
+ * seam against a horizontal baseline flagged a perfectly good anisotropic
+ * texture as seamed — the test was wrong, not the bake.
+ */
+function interiorStep(
+  data: Uint8Array, size: number, channel: number, vertical: boolean,
+): number {
   let sum = 0
   let n = 0
-  for (let y = 0; y < size; y += 4) {
-    for (let x = 0; x < size - 1; x++) {
-      sum += Math.abs(data[(y * size + x) * 4 + channel] - data[(y * size + x + 1) * 4 + channel])
+  for (let a = 0; a < size; a += 4) {
+    for (let b = 0; b < size - 1; b++) {
+      const i = vertical ? (b * size + a) : (a * size + b)
+      const j = vertical ? ((b + 1) * size + a) : (a * size + b + 1)
+      sum += Math.abs(data[i * 4 + channel] - data[j * 4 + channel])
       n++
     }
   }
@@ -48,13 +59,13 @@ describe('surfaceTexture', () => {
       const data = t.image.data as Uint8Array
       const size = t.image.width
       for (const channel of [0, 1, 3]) {
-        const interior = interiorStep(data, size, channel)
-        const across = seamStep(data, size, channel, false)
-        const down = seamStep(data, size, channel, true)
+        // Each seam is judged against the interior step along its OWN axis.
         // Generous factor: one texel across a seam is a real step, just not a
         // discontinuity. A non-wrapping lattice scores 10-30× here.
-        expect(across).toBeLessThan(interior * 4 + 3)
-        expect(down).toBeLessThan(interior * 4 + 3)
+        expect(seamStep(data, size, channel, false))
+          .toBeLessThan(interiorStep(data, size, channel, false) * 4 + 3)
+        expect(seamStep(data, size, channel, true))
+          .toBeLessThan(interiorStep(data, size, channel, true) * 4 + 3)
       }
     }
   })
@@ -110,9 +121,10 @@ describe('surfaceTexture', () => {
     const t = surfaceTexture('water')
     const data = t.image.data as Uint8Array
     const size = t.image.width
-    const interior = interiorStep(data, size, 0)
-    expect(seamStep(data, size, 0, false)).toBeLessThan(interior * 4 + 3)
-    expect(seamStep(data, size, 0, true)).toBeLessThan(interior * 4 + 3)
+    expect(seamStep(data, size, 0, false))
+      .toBeLessThan(interiorStep(data, size, 0, false) * 4 + 3)
+    expect(seamStep(data, size, 0, true))
+      .toBeLessThan(interiorStep(data, size, 0, true) * 4 + 3)
   })
 
   it('bakes once and shares the result', () => {
