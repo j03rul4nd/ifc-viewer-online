@@ -3,6 +3,7 @@ import {
   classifyFeature, parseOsmColor, parseRoofShape, resolveFeatureStyle,
   parseOsmFeatures, buildFeaturesQuery, bridgeWidth, countByKind,
   roadWidth, railWidth, roadTone, featureLabel, isCrossing, CROSSING_BAND_M,
+  waterwayWidth, bufferWaterway,
   FEATURE_KINDS, MIN_AREA_M2,
   type OsmFeature,
 } from './osm-features'
@@ -589,5 +590,102 @@ describe('parseOsmFeatures — crossings', () => {
     })
     expect(f.style.crossing).toBeUndefined()
     expect(f.widthM).toBe(roadWidth({ highway: 'footway' }))
+  })
+})
+
+// ── Watercourses mapped as lines ──────────────────────────────────────────────
+
+describe('waterwayWidth', () => {
+  it('prefers a surveyed width', () => {
+    expect(waterwayWidth({ waterway: 'river', width: '35' })).toBe(35)
+    expect(waterwayWidth({ waterway: 'stream', width: '2.5 m' })).toBe(2.5)
+  })
+
+  it('keeps a stream from being drawn like a river', () => {
+    expect(waterwayWidth({ waterway: 'river' }))
+      .toBeGreaterThan(waterwayWidth({ waterway: 'canal' }))
+    expect(waterwayWidth({ waterway: 'canal' }))
+      .toBeGreaterThan(waterwayWidth({ waterway: 'stream' }))
+    expect(waterwayWidth({ waterway: 'stream' }))
+      .toBeGreaterThan(waterwayWidth({ waterway: 'ditch' }))
+  })
+
+  it('refuses an absurd width', () => {
+    expect(waterwayWidth({ waterway: 'river', width: '99999' })).toBeLessThanOrEqual(400)
+  })
+})
+
+describe('bufferWaterway', () => {
+  // A due-north reach, so the banks must be offset in longitude only.
+  const north = [
+    { lat: 41.380, lon: 2.170 },
+    { lat: 41.382, lon: 2.170 },
+    { lat: 41.384, lon: 2.170 },
+  ]
+
+  it('returns a closed ring: one bank out, the other back', () => {
+    const ring = bufferWaterway(north, 20)!
+    expect(ring).toHaveLength(north.length * 2)
+    // First and last points are the two banks at the same end of the reach.
+    expect(ring[0].lat).toBeCloseTo(ring[ring.length - 1].lat, 9)
+    expect(ring[0].lon).not.toBeCloseTo(ring[ring.length - 1].lon, 9)
+  })
+
+  it('offsets in METRES, not in degrees', () => {
+    // 111_320 m per degree of longitude at the equator, shrinking with latitude:
+    // a 20 m river at 41° must be WIDER in degrees than the naive 20/111_320.
+    const ring = bufferWaterway(north, 20)!
+    const widthDeg = Math.abs(ring[0].lon - ring[ring.length - 1].lon)
+    const naive = 20 / 111_320
+    expect(widthDeg).toBeGreaterThan(naive)
+    // And it must equal 20 m once converted back at this latitude.
+    const mPerDegLon = 111_320 * Math.cos((41.382 * Math.PI) / 180)
+    expect(widthDeg * mPerDegLon).toBeCloseTo(20, 1)
+  })
+
+  it('declines what it cannot buffer', () => {
+    expect(bufferWaterway([{ lat: 41.38, lon: 2.17 }], 20)).toBeNull()
+    expect(bufferWaterway(north, 0)).toBeNull()
+    // Every point identical: no direction to offset along.
+    const still = [
+      { lat: 41.38, lon: 2.17 }, { lat: 41.38, lon: 2.17 }, { lat: 41.38, lon: 2.17 },
+    ]
+    expect(bufferWaterway(still, 10)).toBeNull()
+  })
+})
+
+describe('parseOsmFeatures — linear watercourses', () => {
+  const reach = [
+    { lat: 41.380, lon: 2.170 }, { lat: 41.381, lon: 2.1705 }, { lat: 41.382, lon: 2.171 },
+  ]
+
+  it('draws a river that is mapped as a centreline', () => {
+    const [f] = parseOsmFeatures({
+      elements: [{ type: 'way', id: 77, tags: { waterway: 'river', name: 'Besòs' }, geometry: reach }],
+    })
+    expect(f.kind).toBe('water')
+    // Turned into a bank-to-bank polygon, so everything downstream treats it
+    // exactly like a lake.
+    expect(f.ring).toHaveLength(reach.length * 2)
+    expect(f.widthM).toBeUndefined()
+  })
+
+  it('still handles the area form', () => {
+    const [f] = parseOsmFeatures({
+      elements: [{
+        type: 'way', id: 78, tags: { waterway: 'riverbank' },
+        geometry: [
+          { lat: 41.38, lon: 2.17 }, { lat: 41.38, lon: 2.1705 },
+          { lat: 41.3805, lon: 2.1705 }, { lat: 41.3805, lon: 2.17 },
+        ],
+      }],
+    })
+    expect(f.kind).toBe('water')
+  })
+
+  it('asks Overpass for the line form too', () => {
+    const q = buildFeaturesQuery({ south: 0, west: 0, north: 1, east: 1 })
+    expect(q).toContain('waterway')
+    expect(q).toMatch(/river\|stream\|canal/)
   })
 })

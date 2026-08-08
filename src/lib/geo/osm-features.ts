@@ -223,6 +223,31 @@ export function roadTone(tags: Record<string, string> | undefined): [number, num
 const WATER_LANDUSE = new Set(['reservoir', 'basin'])
 
 /**
+ * Watercourses mapped as a CENTRELINE rather than as an area.
+ *
+ * This is how most rivers are mapped, and until now they drew as nothing at
+ * all: a site on a riverbank came back with dry ground where the river is.
+ * `riverbank` (the area form) was handled; the line form is far more common.
+ */
+const WATERWAY_LINEAR = new Set(['river', 'stream', 'canal', 'ditch', 'drain'])
+
+/**
+ * Surface width of a watercourse, metres. An explicit `width` wins; otherwise a
+ * per-class default that is honest about scale — a stream is not a river, and
+ * drawing both 20 m wide would put a canal through somebody's garden.
+ */
+const WATERWAY_DEFAULT_WIDTH: Record<string, number> = {
+  river: 22, canal: 12, stream: 3, ditch: 1.6, drain: 1.6,
+}
+
+export function waterwayWidth(tags: Record<string, string> | undefined): number {
+  const t = tags ?? {}
+  const explicit = parseLengthM(t['width'])
+  if (explicit && explicit > 0) return Math.min(400, explicit)
+  return WATERWAY_DEFAULT_WIDTH[t['waterway'] ?? ''] ?? 6
+}
+
+/**
  * Classify an element from its tags. Order matters and encodes precedence:
  * a bridge carrying a road over a river is a bridge, and a building on a
  * bridge is still a building.
@@ -249,6 +274,7 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
   if (
     t['natural'] === 'water' ||
     t['waterway'] === 'riverbank' ||
+    WATERWAY_LINEAR.has(t['waterway'] ?? '') ||
     t['water'] !== undefined ||
     WATER_LANDUSE.has(t['landuse'] ?? '')
   ) return 'water'
@@ -464,6 +490,15 @@ export function parseOsmFeatures(json: unknown): OsmFeature[] {
         continue
       }
 
+      // A watercourse mapped as a line becomes its own bank-to-bank polygon
+      // here, so everything downstream — triangulation, terrain draping, the
+      // water material — treats it exactly like a lake and needs no new path.
+      if (kind === 'water' && !closed && WATERWAY_LINEAR.has(el.tags?.['waterway'] ?? '')) {
+        const ring = bufferWaterway(pts, waterwayWidth(el.tags))
+        if (ring) out.push({ id: `w${el.id}`, kind, ring, height, style })
+        continue
+      }
+
       // Roads and track are centrelines with a width. Closed ones exist (a
       // roundabout, a loop of track) and are still ribbons, not areas — only a
       // platform is a real polygon.
@@ -500,6 +535,50 @@ export function parseOsmFeatures(json: unknown): OsmFeature[] {
     }
   }
   return out
+}
+
+/**
+ * Turn a watercourse centreline into a bank-to-bank ring.
+ *
+ * Offsetting happens in METRES and is converted back to degrees per point,
+ * because a degree of longitude is not a degree of latitude anywhere but the
+ * equator — buffering in raw degrees would make every river north of the Alps
+ * visibly wider than it is, in one axis only.
+ *
+ * Sharp meanders can fold the ring over itself. That is left alone rather than
+ * mitred: a self-intersecting ring fails triangulation and is dropped by the
+ * mesh stage, which is the honest outcome — better a missing bend than a
+ * confident triangle across a river.
+ */
+export function bufferWaterway(
+  pts: ReadonlyArray<{ lat: number; lon: number }>, widthM: number,
+): LatLonPoint[] | null {
+  if (pts.length < 2 || !(widthM > 0)) return null
+  const half = widthM / 2
+  const midLat = pts[Math.floor(pts.length / 2)].lat
+  const mPerDegLat = 111_132
+  const mPerDegLon = 111_320 * Math.max(0.01, Math.cos((midLat * Math.PI) / 180))
+
+  const left: LatLonPoint[] = []
+  const right: LatLonPoint[] = []
+
+  for (let i = 0; i < pts.length; i++) {
+    const prev = pts[Math.max(0, i - 1)]
+    const next = pts[Math.min(pts.length - 1, i + 1)]
+    // Direction in metres, so the normal is perpendicular on the ground rather
+    // than perpendicular in a stretched coordinate space.
+    const dx = (next.lon - prev.lon) * mPerDegLon
+    const dy = (next.lat - prev.lat) * mPerDegLat
+    const len = Math.hypot(dx, dy)
+    if (len === 0) continue
+    const offLon = ((-dy / len) * half) / mPerDegLon
+    const offLat = ((dx / len) * half) / mPerDegLat
+    left.push({ lat: pts[i].lat + offLat, lon: pts[i].lon + offLon })
+    right.push({ lat: pts[i].lat - offLat, lon: pts[i].lon - offLon })
+  }
+
+  if (left.length < 2) return null
+  return [...left, ...right.reverse()]
 }
 
 function isClosed(pts: OverpassGeom[]): boolean {
@@ -566,6 +645,7 @@ export function buildFeaturesQuery(
     area('["building"]'),
     area('["natural"="water"]'),
     area('["waterway"="riverbank"]'),
+    `way["waterway"~"^(river|stream|canal|ditch|drain)$"](${b});`,
     area('["landuse"~"^(reservoir|basin)$"]'),
     area('["leisure"~"^(park|garden|pitch|golf_course|nature_reserve)$"]'),
     area('["landuse"~"^(grass|forest|meadow|village_green|recreation_ground|allotments|orchard|vineyard|cemetery)$"]'),
