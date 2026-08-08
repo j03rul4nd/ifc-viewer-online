@@ -66,12 +66,22 @@ describe('the assets are the size of the real thing', () => {
   const EXPECTED: Record<string, [number, number, number]> = {
     car:               [4.10, 1.84, 1.49],
     van:               [5.45, 2.08, 2.10],
+    bus:               [11.95, 2.84, 2.99],
+    'traffic-signal':  [0.55, 0.54, 3.95],
+    'catenary-mast':   [3.60, 0.60, 8.01],
     'train-carriage':  [19.00, 2.92, 4.02],
     'tree-broadleaf':  [3.84, 3.52, 6.15],
     'tree-conifer':    [3.50, 3.50, 7.10],
     'street-lamp':     [2.02, 0.32, 7.67],
     'platform-canopy': [11.80, 6.39, 3.93],
   }
+
+  it('measures every asset, so a new one cannot skip the check', () => {
+    // Iterating the table would let an asset added to PROP_ASSETS but not to
+    // EXPECTED sail through untested — which is exactly how the broken lamp
+    // survived its first release.
+    expect(Object.keys(EXPECTED).sort()).toEqual([...PROP_ASSETS].sort())
+  })
 
   it('measures up, within a fifth of the intended size', () => {
     for (const [name, want] of Object.entries(EXPECTED)) {

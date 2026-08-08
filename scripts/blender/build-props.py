@@ -39,6 +39,9 @@ from mathutils import Vector
 BUDGET = {
     'car': 400,
     'van': 400,
+    'bus': 500,
+    'traffic-signal': 400,
+    'catenary-mast': 400,
     'tree-broadleaf': 900,
     'tree-conifer': 700,
     'street-lamp': 300,
@@ -309,9 +312,81 @@ def build_platform_canopy():
     return finish('platform-canopy', parts)
 
 
+def build_bus():
+    """A city bus: the silhouette that says "this is a street with a service"."""
+    parts = [
+        cube('body', (11.90, 2.52, 2.10), (0, 0, 1.10), BODY),
+        cube('glazing', (11.30, 2.58, 0.95), (0, 0, 2.05), GLASS),
+        cube('screen', (0.16, 2.34, 1.25), (5.92, 0, 1.95), GLASS),
+        cube('skirt', (11.70, 2.58, 0.55), (0, 0, 0.62), TRIM),
+    ]
+    # A shallow crowned roof. Flat-topped buses read as shipping containers.
+    parts.append(squash(
+        cyl('roof', 1.30, 11.6, (0, 0, 2.62), BODY, verts=10, axis='X'),
+        (1.0, 1.0, 0.30),
+    ))
+    # Doors are what make the scale legible: two dark slots at kerb height.
+    for x in (4.05, -1.35):
+        parts.append(cube(f'door{x}', (1.15, 2.60, 1.95), (x, 0, 1.30), GLASS))
+    for x, y in ((4.30, 1.28), (4.30, -1.28), (-3.30, 1.28), (-3.30, -1.28)):
+        parts.append(cyl(f'wheel{x}{y}', 0.51, 0.28, (x, y, 0.51), TYRE, verts=8, axis='Y'))
+    return finish('bus', parts)
+
+
+def build_traffic_signal():
+    """
+    A signal head on a pole, facing +X.
+
+    The backboard is not decoration. At the size a signal occupies in a street
+    view, three coloured dots on a dark box wash out against whatever is behind
+    them; the pale surround is exactly what real installations add for the same
+    reason, and it is what makes the head read at a distance.
+    """
+    H = 3.35
+    column = cyl('column', 0.075, H, (0, 0, H / 2), METAL, verts=6)
+    taper(column, 0.8)
+    parts = [column, cube('base', (0.30, 0.30, 0.28), (0, 0, 0.14), TRIM)]
+    parts.append(cube('backboard', (0.05, 0.54, 1.30), (-0.02, 0, H - 0.05), (0.80, 0.79, 0.76)))
+    parts.append(cube('housing', (0.24, 0.38, 1.12), (0.10, 0, H - 0.05), (0.14, 0.15, 0.16)))
+    for dz, rgb in ((0.38, (0.88, 0.16, 0.13)), (0.0, (0.94, 0.68, 0.10)), (-0.38, (0.20, 0.76, 0.34))):
+        lens = cyl(f'lens{dz}', 0.115, 0.07, (0.235, 0, H - 0.05 + dz), rgb, verts=8, axis='X')
+        parts.append(lens)
+        # A hood over each lens: the shadow it casts is most of what stops the
+        # three reading as one bright smear in a low sun.
+        parts.append(cube(f'hood{dz}', (0.20, 0.28, 0.05), (0.30, 0, H + 0.10 + dz), (0.12, 0.13, 0.14)))
+    return finish('traffic-signal', parts)
+
+
+def build_catenary_mast():
+    """
+    An overhead line mast with its cantilever reaching over the track (+X).
+
+    The bare post it replaces was indistinguishable from a fence stake. What
+    makes a catenary mast recognisable is the cantilever and the stay above it —
+    the triangle they form is the shape people have seen from every train.
+    """
+    H = 7.6
+    column = cyl('column', 0.16, H, (0, 0, H / 2), METAL, verts=6)
+    taper(column, 0.62)
+    parts = [column, cube('footing', (0.60, 0.60, 0.45), (0, 0, 0.22), CONCRETE)]
+    # Cantilever out over the track, and the diagonal stay that carries it.
+    parts.append(cube('cantilever', (3.30, 0.13, 0.15), (1.62, 0, H - 0.55), METAL))
+    stay = cyl('stay', 0.055, 3.05, (1.45, 0, H - 0.05), METAL, verts=5)
+    parts.append(spin(stay, (0, 1.30, 0)))
+    # Registration arm and the dropper that holds the contact wire.
+    parts.append(cube('registration', (0.70, 0.09, 0.09), (2.95, 0, H - 1.05), METAL))
+    parts.append(cube('dropper', (0.06, 0.06, 0.55), (3.20, 0, H - 1.35), METAL))
+    for z in (H - 1.90, H - 2.55):
+        parts.append(cube(f'insulator{z}', (0.16, 0.16, 0.22), (0.30, 0, z), (0.72, 0.70, 0.66)))
+    return finish('catenary-mast', parts)
+
+
 BUILDERS = {
     'car': build_car,
     'van': build_van,
+    'bus': build_bus,
+    'traffic-signal': build_traffic_signal,
+    'catenary-mast': build_catenary_mast,
     'train-carriage': build_train_carriage,
     'tree-broadleaf': build_tree_broadleaf,
     'tree-conifer': build_tree_conifer,

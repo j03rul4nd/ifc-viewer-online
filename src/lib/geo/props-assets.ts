@@ -27,12 +27,13 @@ const log = createLogger('PropsAssets')
 
 /** Everything scripts/blender/build-props.py produces. */
 export type PropAsset =
-  | 'car' | 'van' | 'train-carriage'
+  | 'car' | 'van' | 'bus' | 'train-carriage'
+  | 'traffic-signal' | 'catenary-mast'
   | 'tree-broadleaf' | 'tree-conifer'
   | 'street-lamp' | 'platform-canopy'
 
 export const PROP_ASSETS: readonly PropAsset[] = [
-  'car', 'van', 'train-carriage',
+  'car', 'van', 'bus', 'train-carriage', 'traffic-signal', 'catenary-mast',
   'tree-broadleaf', 'tree-conifer', 'street-lamp', 'platform-canopy',
 ]
 
@@ -44,7 +45,7 @@ export const PROP_ASSETS: readonly PropAsset[] = [
  * files: an over-estimate passes a `<=` check forever and still misinforms the
  * person deciding whether to download.
  */
-export const PROP_ASSETS_KB = 94
+export const PROP_ASSETS_KB = 136
 
 function assetUrl(name: PropAsset): string {
   const base = (import.meta.env.BASE_URL ?? '/') as string

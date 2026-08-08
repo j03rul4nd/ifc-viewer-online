@@ -134,8 +134,9 @@ export function buildSignalLayer(
   const anchorElevation = opts.anchorElevationM ?? 0
   const sample = opts.sampleGroundM
 
+  const authored = opts.assets?.get('traffic-signal') ?? null
   const mesh = new THREE.InstancedMesh(
-    signalGeometry(),
+    authored ? authored.clone() : signalGeometry(),
     // Lit like everything else in the scene. A signal head is painted metal in
     // a dark housing; the lenses read as lenses because they are baked bright
     // in the vertex colour and the housing is not.
@@ -281,6 +282,8 @@ function principalAxis(pts: ReadonlyArray<{ nx: number; ny: number }>):
 
 /** Roads too narrow to hold a car — placing one there is obviously wrong. */
 const MIN_ROAD_WIDTH_M = 4.5
+/** And a 12 m bus needs more than a car does. */
+const MIN_BUS_ROAD_WIDTH_M = 7
 /** Spacing along a carriageway, metres. Sparse on purpose: a full road reads as a jam. */
 const CAR_SPACING_M = 85
 const MAX_CARS = 700
@@ -317,7 +320,11 @@ export function buildVehicleLayer(
   const sample = opts.sampleGroundM
   const spacing = CAR_SPACING_M * mToN
 
-  interface Placement { x: number; y: number; z: number; yaw: number; seed: string }
+  interface Placement {
+    x: number; y: number; z: number; yaw: number; seed: string
+    /** Road wide enough for a bus. Decided at placement, where the width is. */
+    wide?: boolean
+  }
   const cars: Placement[] = []
   const carriages: Placement[] = []
   const lamps: Placement[] = []
@@ -358,7 +365,10 @@ export function buildVehicleLayer(
         const px = x - (dy / len) * off
         const py = y + (dx / len) * off
         const seed = `${f.id}#${cars.length + carriages.length}`
-        const spot = { x: px, y: py, z: groundZ(px, py), yaw, seed }
+        const spot = {
+          x: px, y: py, z: groundZ(px, py), yaw, seed,
+          wide: isRoad && f.widthM! >= MIN_BUS_ROAD_WIDTH_M,
+        }
         if (isRoad) cars.push(spot)
         else carriages.push(spot)
         t += isTrack ? (20 * mToN) : spacing
@@ -486,8 +496,19 @@ export function buildVehicleLayer(
     // The authored bodies are painted neutral, so ONE mesh per silhouette
     // carries the whole palette through per-instance colour — fewer draw calls
     // than the procedural path, not more.
+    //
+    // The mix is what sells a street: all hatchbacks reads as a car park. Buses
+    // are rarest and only where one could physically turn — a 12 m bus on a
+    // 5 m lane is the sort of detail that undoes the whole view.
+    const authoredBus = opts.assets?.get('bus') ?? null
+    const buses = authoredBus
+      ? cars.filter((c) => c.wide && hashId(`${c.seed}#kind`) % 23 === 0)
+      : []
+    const busSet = new Set(buses)
     const vanSet = new Set(
-      authoredVan ? cars.filter((c) => hashId(`${c.seed}#kind`) % 7 === 0) : [],
+      authoredVan
+        ? cars.filter((c) => !busSet.has(c) && hashId(`${c.seed}#kind`) % 7 === 0)
+        : [],
     )
     const tinted = (spots: Placement[], geo: THREE.BufferGeometry, name: string): void => {
       const mesh = place(spots, geo.clone(), name)
@@ -500,8 +521,9 @@ export function buildVehicleLayer(
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
       group.add(mesh)
     }
-    tinted(cars.filter((c) => !vanSet.has(c)), authoredCar, 'osm-cars')
+    tinted(cars.filter((c) => !vanSet.has(c) && !busSet.has(c)), authoredCar, 'osm-cars')
     if (authoredVan && vanSet.size > 0) tinted([...vanSet], authoredVan, 'osm-vans')
+    if (authoredBus && buses.length > 0) tinted(buses, authoredBus, 'osm-buses')
   } else {
     // One instanced mesh per body colour: the palette is what stops a street of
     // identical silver boxes, and seven draw calls is still nothing.

@@ -533,6 +533,9 @@ const CENTRE_LINE_TONE: [number, number, number] = [0.80, 0.78, 0.68]
 const PLATFORM_EDGE: [number, number, number] = [0.86, 0.72, 0.25]
 /** Width of that line, metres — generous so it survives at map scale. */
 const PLATFORM_EDGE_M = 0.9
+/** Where an overhead line mast stands, and which way its cantilever reaches. */
+interface Mast { at: THREE.Vector2; yaw: number }
+
 /** Spacing and size of overhead line masts along an electrified track. */
 const MAST_SPACING_M = 45
 /** How far off the centreline a mast stands, metres. */
@@ -574,7 +577,7 @@ export function buildLinearLayer(
   const positions: number[] = []
   const colors: number[] = []
   /** Where to stand an overhead line mast, for electrified track. */
-  const masts: THREE.Vector2[] = []
+  const masts: Mast[] = []
   let count = 0
 
   /** Height of the ground under a planar point, in normalized units. */
@@ -749,7 +752,7 @@ export function buildLinearLayer(
     }))
     paved.name = `osm-${kind}`
     paved.renderOrder = 4
-    return finishLinear(paved, masts, kind, mToN, groundZ, lift, count)
+    return finishLinear(paved, masts, kind, mToN, groundZ, lift, count, opts.assets)
   }
 
   const surface = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
@@ -767,7 +770,7 @@ export function buildLinearLayer(
   // tramway shares a street the track lands on top of the asphalt.
   surface.renderOrder = 4
 
-  return finishLinear(surface, masts, kind, mToN, groundZ, lift, count)
+  return finishLinear(surface, masts, kind, mToN, groundZ, lift, count, opts.assets)
 }
 
 /** Aggregate coarseness per linear layer: tarmac is fine, ballast is not. */
@@ -782,12 +785,13 @@ const ROUGHNESS_BY_KIND: Record<'road' | 'rail', number> = { road: 0.22, rail: 0
  */
 function finishLinear(
   surface: THREE.Mesh,
-  masts: THREE.Vector2[],
+  masts: Mast[],
   kind: 'road' | 'rail',
   mToN: number,
   groundZ: (x: number, y: number) => number,
   lift: number,
   count: number,
+  assets?: Map<string, THREE.BufferGeometry> | null,
 ): LayerMesh<THREE.Object3D> {
   if (masts.length === 0) return { object: surface, count }
 
@@ -796,23 +800,44 @@ function finishLinear(
   group.renderOrder = 4
   group.add(surface)
 
-  const mastGeo = new THREE.CylinderGeometry(MAST_RADIUS_M, MAST_RADIUS_M * 1.5, 1, 5)
-  mastGeo.rotateX(Math.PI / 2)
-  mastGeo.translate(0, 0, 0.5)
-  const posts = new THREE.InstancedMesh(
-    mastGeo,
+  const authored = assets?.get('catenary-mast') ?? null
+
+  let mastGeo: THREE.BufferGeometry
+  let material: THREE.Material
+  if (authored) {
+    mastGeo = authored.clone()
+    // The authored mast carries its own painted metal and concrete footing.
+    material = new THREE.MeshStandardMaterial({
+      vertexColors: true, metalness: 0.1, roughness: 0.7,
+    })
+  } else {
+    mastGeo = new THREE.CylinderGeometry(MAST_RADIUS_M, MAST_RADIUS_M * 1.5, 1, 5)
+    mastGeo.rotateX(Math.PI / 2)
+    mastGeo.translate(0, 0, 0.5)
     // Galvanised steel: matte, but not paper. Lit with everything else.
-    new THREE.MeshStandardMaterial({ color: MAST_COLOR, metalness: 0.1, roughness: 0.7 }),
-    masts.length,
-  )
+    material = new THREE.MeshStandardMaterial({
+      color: MAST_COLOR, metalness: 0.1, roughness: 0.7,
+    })
+  }
+
+  const posts = new THREE.InstancedMesh(mastGeo, material, masts.length)
   posts.name = `osm-${kind}-masts`
   const m = new THREE.Matrix4()
   const p = new THREE.Vector3()
   const q = new THREE.Quaternion()
   const sc = new THREE.Vector3()
-  masts.forEach((at, i) => {
-    p.set(at.x, at.y, groundZ(at.x, at.y) + lift)
-    sc.set(MAST_RADIUS_M * mToN, MAST_RADIUS_M * mToN, MAST_HEIGHT_M * mToN)
+  const zAxis = new THREE.Vector3(0, 0, 1)
+  masts.forEach((mast, i) => {
+    p.set(mast.at.x, mast.at.y, groundZ(mast.at.x, mast.at.y) + lift)
+    // The authored mast is modelled at true size, so it scales like every other
+    // prop. The procedural post is a unit cylinder stretched to height.
+    if (authored) {
+      sc.set(mToN, mToN, mToN)
+      q.setFromAxisAngle(zAxis, mast.yaw)
+    } else {
+      sc.set(MAST_RADIUS_M * mToN, MAST_RADIUS_M * mToN, MAST_HEIGHT_M * mToN)
+      q.identity()
+    }
     posts.setMatrixAt(i, m.compose(p, q, sc))
   })
   posts.instanceMatrix.needsUpdate = true
@@ -932,21 +957,29 @@ const MAX_DASHES = 4000
  * gets the same rhythm as a straight, which is what makes it read as regular
  * infrastructure rather than as scattered posts.
  */
-function mastPoints(line: THREE.Vector2[], spacing: number, lateral: number): THREE.Vector2[] {
+function mastPoints(line: THREE.Vector2[], spacing: number, lateral: number): Mast[] {
   // Everything here is in normalized units; a metre value slipping in would
   // offset the line by a fraction of the planet and spin the walk below.
   if (!Number.isFinite(spacing) || spacing <= 0 || line.length < 2) return []
   const side = offsetCentreline(line, lateral)
-  const out: THREE.Vector2[] = []
+  const out: Mast[] = []
   let carried = spacing * 0.5
   for (let i = 0; i < side.length - 1; i++) {
     const a = side[i]
     const b = side[i + 1]
     const seg = a.distanceTo(b)
     if (seg === 0) continue
+    // The mast stands `lateral` to one side, so its cantilever has to reach
+    // back ACROSS the track. A bare post did not care which way it faced; an
+    // authored mast whose arm points down the line instead of over it is the
+    // one thing everybody who has stood on a platform would notice.
+    const yaw = Math.atan2(b.y - a.y, b.x - a.x) - Math.sign(lateral) * (Math.PI / 2)
     let t = carried
     while (t <= seg) {
-      out.push(new THREE.Vector2(a.x + ((b.x - a.x) * t) / seg, a.y + ((b.y - a.y) * t) / seg))
+      out.push({
+        at: new THREE.Vector2(a.x + ((b.x - a.x) * t) / seg, a.y + ((b.y - a.y) * t) / seg),
+        yaw,
+      })
       t += spacing
     }
     carried = t - seg

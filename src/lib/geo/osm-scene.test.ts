@@ -788,3 +788,61 @@ describe('buildTreeLayer — authored geometry (showcase)', () => {
       .toEqual(['osm-trees-broadleaf', 'osm-trunks-broadleaf'])
   })
 })
+
+describe('catenary masts', () => {
+  const track = (id: string, electrified: boolean): OsmFeature => ({
+    id, kind: 'rail', widthM: 3,
+    ring: Array.from({ length: 20 }, (_, i) => ({ lat: LAT, lon: LON + i * 0.0004 })),
+    height: { heightM: 0, minHeightM: 0, estimated: true },
+    style: { roofShape: 'flat', roofHeightM: 0, railKind: 'track', electrified },
+  })
+
+  const masts = (o: THREE.Object3D): THREE.InstancedMesh | undefined =>
+    o.children.find((c) => c.name === 'osm-rail-masts') as THREE.InstancedMesh | undefined
+
+  it('stands masts only where the line is electrified', () => {
+    expect(masts(buildLinearLayer([track('r1', false)], 'rail', OPTS)!.object)).toBeUndefined()
+    expect(masts(buildLinearLayer([track('r1', true)], 'rail', OPTS)!.object)).toBeTruthy()
+  })
+
+  it('turns the cantilever across the track, not along it', () => {
+    const assets = new Map([['catenary-mast', new THREE.BoxGeometry(3.6, 0.6, 8)]])
+    const mesh = masts(
+      buildLinearLayer([track('r1', true)], 'rail', { ...OPTS, assets })!.object,
+    )!
+    const m = new THREE.Matrix4()
+    const q = new THREE.Quaternion()
+    const e = new THREE.Euler()
+    mesh.getMatrixAt(0, m)
+    // decompose, NOT setFromRotationMatrix: every instance matrix here carries
+    // the metres-to-normalized scale (~4e-8), and reading a rotation straight
+    // off a scaled matrix returns near-identity whatever the real yaw was.
+    m.decompose(new THREE.Vector3(), q, new THREE.Vector3())
+    e.setFromQuaternion(q, 'ZYX')
+    // The track runs due east; the arm must point across it, so ±90°.
+    expect(Math.abs(Math.abs(e.z) - Math.PI / 2)).toBeLessThan(0.01)
+  })
+
+  it('scales the authored mast in metres, not as a stretched unit post', () => {
+    const assets = new Map([['catenary-mast', new THREE.BoxGeometry(3.6, 0.6, 8)]])
+    const mesh = masts(
+      buildLinearLayer([track('r1', true)], 'rail', { ...OPTS, assets })!.object,
+    )!
+    const m = new THREE.Matrix4()
+    const s = new THREE.Vector3()
+    mesh.getMatrixAt(0, m)
+    s.setFromMatrixScale(m)
+    // Uniform: the asset is already 8 m tall, so height must not be scaled in.
+    expect(s.x).toBeCloseTo(s.z, 12)
+  })
+
+  it('keeps the bare post when no asset arrived', () => {
+    const mesh = masts(buildLinearLayer([track('r1', true)], 'rail', OPTS)!.object)!
+    const m = new THREE.Matrix4()
+    const s = new THREE.Vector3()
+    mesh.getMatrixAt(0, m)
+    s.setFromMatrixScale(m)
+    // The procedural post IS a unit cylinder stretched to height.
+    expect(s.z).toBeGreaterThan(s.x * 10)
+  })
+})

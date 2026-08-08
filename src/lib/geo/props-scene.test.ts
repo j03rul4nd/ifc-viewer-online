@@ -237,7 +237,8 @@ describe('platform shelters', () => {
     const q = new THREE.Quaternion()
     const euler = new THREE.Euler()
     mesh.getMatrixAt(0, m)
-    q.setFromRotationMatrix(m)
+    // decompose, not setFromRotationMatrix — the matrix is scaled.
+    m.decompose(new THREE.Vector3(), q, new THREE.Vector3())
     euler.setFromQuaternion(q, 'ZYX')
     // The fixture runs due east, so the long axis is the x axis: yaw ≈ 0.
     expect(Math.abs(euler.z)).toBeLessThan(0.05)
@@ -248,5 +249,53 @@ describe('platform shelters', () => {
     // 0.00002° of latitude is about 2.2 m — a kerb, not a platform.
     const built = buildVehicleLayer([platform('p1', 0.002, 0.00002)], { ...OPTS, assets })
     expect(built).toBeNull()
+  })
+})
+
+describe('authored heads and the vehicle mix', () => {
+  it('uses the authored signal head when showcase has it', () => {
+    const head = new THREE.BoxGeometry(0.5, 0.5, 3.9)
+    const built = buildSignalLayer([signal('n1')], { ...OPTS, assets: new Map([['traffic-signal', head]]) })!
+    const mesh = instanced(built.object)[0]
+    // Same instance count and same one draw call — only the geometry changed.
+    expect(mesh.count).toBe(1)
+    expect(mesh.geometry.getAttribute('position').count)
+      .toBe(head.getAttribute('position').count)
+  })
+
+  it('puts buses only on roads a bus could use', () => {
+    const assets = new Map([
+      ['car', fakeAsset()], ['van', fakeAsset()], ['bus', fakeAsset()],
+    ])
+    const wide = Array.from({ length: 40 }, (_, i) => way(`w${i}`, 'road', 9))
+    const narrow = Array.from({ length: 40 }, (_, i) => way(`w${i}`, 'road', 5))
+    const busesOn = (fs: OsmFeature[]): number =>
+      meshNamed(buildVehicleLayer(fs, { ...OPTS, assets })!.object, 'osm-buses')?.count ?? 0
+
+    expect(busesOn(wide)).toBeGreaterThan(0)
+    // 5 m holds a parked car and could not turn a 12 m bus.
+    expect(busesOn(narrow)).toBe(0)
+  })
+
+  it('keeps buses rare — a bus every 85 m is a depot, not a street', () => {
+    const assets = new Map([
+      ['car', fakeAsset()], ['van', fakeAsset()], ['bus', fakeAsset()],
+    ])
+    const roads = Array.from({ length: 40 }, (_, i) => way(`w${i}`, 'road', 9))
+    const group = buildVehicleLayer(roads, { ...OPTS, assets })!.object
+    const buses = meshNamed(group, 'osm-buses')!.count
+    const cars = meshNamed(group, 'osm-cars')!.count
+    expect(buses).toBeLessThan(cars / 5)
+  })
+
+  it('never counts one vehicle twice across the three silhouettes', () => {
+    const assets = new Map([
+      ['car', fakeAsset()], ['van', fakeAsset()], ['bus', fakeAsset()],
+    ])
+    const roads = Array.from({ length: 40 }, (_, i) => way(`w${i}`, 'road', 9))
+    const built = buildVehicleLayer(roads, { ...OPTS, assets })!
+    const drawn = ['osm-cars', 'osm-vans', 'osm-buses']
+      .reduce((n, name) => n + (meshNamed(built.object, name)?.count ?? 0), 0)
+    expect(drawn).toBe(built.counts.vehicles)
   })
 })
