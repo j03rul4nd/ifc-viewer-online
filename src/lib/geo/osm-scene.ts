@@ -32,6 +32,7 @@ import { subdivideMesh, distanceToRing, type Vec2, type Face } from './surface-t
 import {
   createSurfaceMaterial, createFoliageMaterial, type SurfaceKind, type SurfaceSun,
 } from './surface-shaders'
+import { metricAttributes } from './surface-attributes'
 import type { OsmFeature, LatLonPoint } from './osm-features'
 
 /** How much work a layer is allowed to spend on looking real. */
@@ -475,6 +476,18 @@ export function buildBridgeLayer(
   geometry.computeVertexNormals()
   geometry.computeBoundingSphere()
 
+  if (opts.quality === 'detailed') {
+    metricAttributes(geometry, mToN, 0.3)
+    const deck = new THREE.Mesh(geometry, createSurfaceMaterial('asphalt', { opacity: 1 }))
+    deck.name = 'osm-bridges'
+    deck.renderOrder = 4
+    // A deck has real thickness and real sides, so unlike the ground layers it
+    // must write depth or its own underside shows through the top.
+    deck.material.depthWrite = true
+    deck.material.transparent = false
+    return { object: deck, count }
+  }
+
   const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: BRIDGE_COLOR }))
   mesh.name = 'osm-bridges'
   mesh.renderOrder = 4
@@ -723,6 +736,19 @@ export function buildLinearLayer(
   geometry.computeVertexNormals()
   geometry.computeBoundingSphere()
 
+  // Detailed: the carriageway joins the same PBR pass as the ground it lies on.
+  // A ribbon of unlit tarmac beside lit grass is the last thing in the scene
+  // that still reads as a diagram.
+  if (opts.quality === 'detailed') {
+    metricAttributes(geometry, mToN, ROUGHNESS_BY_KIND[kind])
+    const paved = new THREE.Mesh(geometry, createSurfaceMaterial('asphalt', {
+      opacity: kind === 'road' ? 0.94 : 0.96,
+    }))
+    paved.name = `osm-${kind}`
+    paved.renderOrder = 4
+    return finishLinear(paved, masts, kind, mToN, groundZ, lift, count)
+  }
+
   const surface = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
     vertexColors: true,
     // OPAQUE: asphalt is a surface, not a tint over the map underneath, and
@@ -738,10 +764,28 @@ export function buildLinearLayer(
   // tramway shares a street the track lands on top of the asphalt.
   surface.renderOrder = 4
 
-  // Overhead line masts. A line of posts along a corridor is the silhouette
-  // that says "main line" from a distance where the rails themselves are a
-  // grey smudge — and they are the one piece of rail infrastructure that
-  // actually stands up out of the ground.
+  return finishLinear(surface, masts, kind, mToN, groundZ, lift, count)
+}
+
+/** Aggregate coarseness per linear layer: tarmac is fine, ballast is not. */
+const ROUGHNESS_BY_KIND: Record<'road' | 'rail', number> = { road: 0.22, rail: 0.85 }
+
+/**
+ * Attach the overhead line masts, if any, and hand back the layer.
+ *
+ * A line of posts along a corridor is the silhouette that says "main line" from
+ * a distance where the rails themselves are a grey smudge — and they are the
+ * one piece of rail infrastructure that actually stands up out of the ground.
+ */
+function finishLinear(
+  surface: THREE.Mesh,
+  masts: THREE.Vector2[],
+  kind: 'road' | 'rail',
+  mToN: number,
+  groundZ: (x: number, y: number) => number,
+  lift: number,
+  count: number,
+): LayerMesh<THREE.Object3D> {
   if (masts.length === 0) return { object: surface, count }
 
   const group = new THREE.Group()
@@ -753,7 +797,10 @@ export function buildLinearLayer(
   mastGeo.rotateX(Math.PI / 2)
   mastGeo.translate(0, 0, 0.5)
   const posts = new THREE.InstancedMesh(
-    mastGeo, new THREE.MeshBasicMaterial({ color: MAST_COLOR }), masts.length,
+    mastGeo,
+    // Galvanised steel: matte, but not paper. Lit with everything else.
+    new THREE.MeshStandardMaterial({ color: MAST_COLOR, metalness: 0.1, roughness: 0.7 }),
+    masts.length,
   )
   posts.name = `osm-${kind}-masts`
   const m = new THREE.Matrix4()

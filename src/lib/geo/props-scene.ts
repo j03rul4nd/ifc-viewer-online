@@ -126,7 +126,10 @@ export function buildSignalLayer(
 
   const mesh = new THREE.InstancedMesh(
     signalGeometry(),
-    new THREE.MeshBasicMaterial({ vertexColors: true }),
+    // Lit like everything else in the scene. A signal head is painted metal in
+    // a dark housing; the lenses read as lenses because they are baked bright
+    // in the vertex colour and the housing is not.
+    new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0, roughness: 0.55 }),
     signals.length,
   )
   mesh.name = 'osm-signals'
@@ -280,7 +283,11 @@ export function buildVehicleLayer(
   ): THREE.InstancedMesh | null => {
     if (spots.length === 0) { geo.dispose(); return null }
     const mesh = new THREE.InstancedMesh(
-      geo, new THREE.MeshBasicMaterial({ vertexColors: true }), spots.length,
+      // Vehicle paint: smoother than the road under it, which is most of what
+      // makes a parked car read as a car at this size.
+      geo,
+      new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0, roughness: 0.38 }),
+      spots.length,
     )
     mesh.name = name
     spots.forEach((spot, i) => {
