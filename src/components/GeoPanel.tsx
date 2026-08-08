@@ -25,6 +25,9 @@ import { CONTOUR_INTERVALS } from '../lib/geo/terrain-look'
 import { BUILDINGS_ATTRIBUTION } from '../lib/geo/buildings'
 import { collectModelSites, type ModelInput } from '../lib/geo/model-sites'
 import { FEATURE_KINDS, type FeatureKind } from '../lib/geo/osm-features'
+import { appBus } from '../lib/event-bus'
+import { useIsMobile } from '../hooks/useIsMobile'
+import { MobileSheet } from './mobile/MobileSheet'
 import type { BuildingDetail } from '../lib/geo/building-mesh'
 import { WGS84_RADIUS, normalizeDeg } from '../lib/geo/geo-math'
 import {
@@ -55,6 +58,7 @@ const PlacementMiniMap = React.lazy(() => import('./PlacementMiniMap'))
 const MANUAL_FALLBACK = { lat: 41.3851, lon: 2.1734 }
 
 export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
+  const isMobile = useIsMobile()
   const { t } = useTranslation('geo')
   // Reason codes from the extraction ladder and store error keys arrive as
   // plain strings — valid geo-namespace keys by construction, but not provable
@@ -607,19 +611,12 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
         </div>
       )}
 
-      <AnimatePresence>
-        {panelOpen && (
-          <motion.div
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 12 }}
-            transition={{ duration: 0.2 }}
-            className="absolute right-3 top-14 z-20 pointer-events-auto select-none"
-            style={{ width: 'min(332px, calc(100vw - 24px))' }}
-          >
-            {/* Column layout, not one long scroller: header, action and tabs are
-                pinned, and ONLY the active tab body scrolls. */}
-            <div className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl flex flex-col max-h-[calc(100vh-140px)]">
+      <PanelShell
+        open={panelOpen}
+        isMobile={isMobile}
+        onClose={() => store.setPanelOpen(false)}
+        label={t('panel.title')}
+      >
 
               {/* ── Header ────────────────────────────────────────────────── */}
               <div className={`${SECTION_X} pt-2.5 pb-2 flex items-center gap-2 shrink-0`}>
@@ -1255,10 +1252,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                   </div>
                 </>
               )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </PanelShell>
 
       {/* Consent modal — shown once before the first tile request */}
       <AnimatePresence>
@@ -1569,5 +1563,66 @@ function LookSlider({ label, value, min, max, step, format, onChange }: LookSlid
         {format(value)}
       </span>
     </label>
+  )
+}
+
+/**
+ * Where the panel lives.
+ *
+ * Desktop: a floating card pinned top-right, which is where a tool palette
+ * belongs when there is room for one.
+ *
+ * Mobile: the same content in a bottom sheet. A 332px card pinned to the right
+ * edge of a 375px phone leaves a 43px gutter, puts every control in the corner
+ * hardest for a thumb to reach, and lands on top of the floating nav. The
+ * content is already a header, a pinned action and a scrolling body — which is
+ * precisely a sheet's anatomy — so nothing inside had to be rebuilt for it.
+ *
+ * Two detents: half height to glance at the status and toggle a layer, full for
+ * the placement work. Half is the default because that is the common errand.
+ */
+function PanelShell({ open, isMobile, onClose, label, children }: {
+  open: boolean
+  isMobile: boolean
+  onClose: () => void
+  label: string
+  children: React.ReactNode
+}) {
+  const [detent, setDetent] = useState(0)
+
+  if (isMobile) {
+    return (
+      <MobileSheet
+        open={open}
+        onClose={onClose}
+        label={label}
+        snapPoints={[0.55, 0.94]}
+        detentIndex={detent}
+        onDetentChange={setDetent}
+      >
+        <div className="flex flex-col h-full min-h-0">{children}</div>
+      </MobileSheet>
+    )
+  }
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0, x: 12 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 12 }}
+          transition={{ duration: 0.2 }}
+          className="absolute right-3 top-14 z-20 pointer-events-auto select-none"
+          style={{ width: 'min(332px, calc(100vw - 24px))' }}
+        >
+          {/* Column layout, not one long scroller: header, action and tabs are
+              pinned, and ONLY the active tab body scrolls. */}
+          <div className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl flex flex-col max-h-[calc(100vh-140px)]">
+            {children}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
