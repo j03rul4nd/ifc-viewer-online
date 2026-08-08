@@ -55,17 +55,22 @@ def reset():
 
 def cube(name, size, at, color):
     """An axis-aligned box: size (x, y, z) in metres, `at` is the centre."""
-    bpy.ops.mesh.primitive_cube_add(size=1, location=at)
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, 0))
     ob = bpy.context.active_object
     ob.name = name
     ob.scale = Vector(size)
     bpy.ops.object.transform_apply(scale=True)
+    ob.location = at
     ob['color'] = color
     return ob
 
 
 def cyl(name, radius, depth, at, color, verts=8, axis='Z'):
-    bpy.ops.mesh.primitive_cylinder_add(radius=radius, depth=depth, vertices=verts, location=at)
+    # Built at the origin, turned, THEN moved. See spin() for why the order is
+    # not a style choice.
+    bpy.ops.mesh.primitive_cylinder_add(
+        radius=radius, depth=depth, vertices=verts, location=(0, 0, 0),
+    )
     ob = bpy.context.active_object
     ob.name = name
     if axis == 'X':
@@ -73,7 +78,50 @@ def cyl(name, radius, depth, at, color, verts=8, axis='Z'):
     elif axis == 'Y':
         ob.rotation_euler[0] = 1.5707963
     bpy.ops.object.transform_apply(rotation=True)
+    ob.location = at
     ob['color'] = color
+    return ob
+
+
+def _alone(ob):
+    """Make `ob` the only selected object — transform_apply acts on selection."""
+    bpy.ops.object.select_all(action='DESELECT')
+    ob.select_set(True)
+    bpy.context.view_layer.objects.active = ob
+
+
+def spin(ob, euler):
+    """
+    Rotate a part about its OWN centre.
+
+    THIS IS THE BUG THAT ATE THE FIRST BUILD OF THESE ASSETS, so it is worth
+    stating plainly: setting `rotation_euler` on an object that has already been
+    positioned and then applying the transform swings the mesh around the WORLD
+    origin, not around the part. A lamp arm authored 0.3 m off the column came
+    out six metres down the street and four metres in the air, and nothing in
+    the pipeline complains — the export succeeds, the triangle budget passes,
+    the file is the right size. You only find out by measuring the result or by
+    looking at it.
+
+    Rotating at the origin and translating afterwards cannot do that.
+    """
+    at = tuple(ob.location)
+    ob.location = (0, 0, 0)
+    ob.rotation_euler = euler
+    _alone(ob)
+    bpy.ops.object.transform_apply(rotation=True)
+    ob.location = at
+    return ob
+
+
+def squash(ob, scale):
+    """Scale a part about its own centre — same trap as spin(), same fix."""
+    at = tuple(ob.location)
+    ob.location = (0, 0, 0)
+    ob.scale = Vector(scale)
+    _alone(ob)
+    bpy.ops.object.transform_apply(scale=True)
+    ob.location = at
     return ob
 
 
@@ -189,16 +237,18 @@ def build_van():
 
 def build_train_carriage():
     """A carriage with a rounded roof and a continuous window band."""
+    # Height matters more than it looks: a carriage that tops out at 2.9 m sits
+    # barely twice a car's roofline, and the eye reads it as a tram. A real one
+    # is close to 4 m above rail, which is nearly three times the car.
     parts = [
-        cube('body', (19.0, 2.86, 2.30), (0, 0, 1.95), BODY),
-        cube('windows', (17.2, 2.92, 0.62), (0, 0, 2.55), GLASS),
+        cube('body', (19.0, 2.86, 2.60), (0, 0, 2.30), BODY),
+        cube('windows', (17.2, 2.92, 0.72), (0, 0, 2.90), GLASS),
         cube('skirt', (18.6, 2.62, 0.75), (0, 0, 0.75), TRIM),
     ]
-    roof = cyl('roof', 1.44, 18.6, (0, 0, 3.10), BODY, verts=10, axis='X')
-    roof.scale = (1.0, 1.0, 0.34)
-    bpy.context.view_layer.objects.active = roof
-    bpy.ops.object.transform_apply(scale=True)
-    parts.append(roof)
+    parts.append(squash(
+        cyl('roof', 1.44, 18.6, (0, 0, 3.75), BODY, verts=10, axis='X'),
+        (1.0, 1.0, 0.34),
+    ))
     for x in (7.0, -7.0):
         parts.append(cube(f'bogie{x}', (2.6, 2.2, 0.5), (x, 0, 0.45), TYRE))
     return finish('train-carriage', parts)
@@ -213,11 +263,7 @@ def build_tree_broadleaf():
                   ((-0.80, -0.45, 4.0), 1.05), ((0.15, -0.85, 5.2), 0.90)):
         parts.append(sphere(f'lobe{at}', r, at, LEAF, segments=8, rings=5))
     for a, b in (((0.6, 0.2, 3.4), 0.09), ((-0.5, -0.2, 3.2), 0.08)):
-        limb = cyl(f'limb{a}', b, 1.4, a, BARK, verts=5)
-        limb.rotation_euler = (0.5, 0.4, 0)
-        bpy.context.view_layer.objects.active = limb
-        bpy.ops.object.transform_apply(rotation=True)
-        parts.append(limb)
+        parts.append(spin(cyl(f'limb{a}', b, 1.4, a, BARK, verts=5), (0.5, 0.4, 0)))
     return finish('tree-broadleaf', parts)
 
 
@@ -242,12 +288,10 @@ def build_street_lamp():
     column = cyl('column', 0.09, 7.0, (0, 0, 3.5), METAL, verts=6)
     taper(column, 0.7)
     parts = [column, cube('base', (0.32, 0.32, 0.35), (0, 0, 0.17), TRIM)]
+    # The arm sweeps up and out from the column top: each segment is turned in
+    # place and stepped along, so the joints meet instead of scattering.
     for i, (x, z, rot) in enumerate(((0.28, 6.95, 0.9), (0.72, 7.25, 0.5), (1.15, 7.38, 0.15))):
-        seg = cyl(f'arm{i}', 0.065, 0.55, (x, 0, z), METAL, verts=5)
-        seg.rotation_euler = (0, rot, 0)
-        bpy.context.view_layer.objects.active = seg
-        bpy.ops.object.transform_apply(rotation=True)
-        parts.append(seg)
+        parts.append(spin(cyl(f'arm{i}', 0.065, 0.55, (x, 0, z), METAL, verts=5), (0, rot, 0)))
     parts.append(cube('luminaire', (0.62, 0.26, 0.13), (1.55, 0, 7.34), (0.85, 0.84, 0.80)))
     return finish('street-lamp', parts)
 
@@ -259,11 +303,8 @@ def build_platform_canopy():
         parts.append(cyl(f'col{x}', 0.11, 3.2, (x, 0, 1.6), METAL, verts=6))
     parts.append(cube('beam', (11.4, 0.28, 0.30), (0, 0, 3.30), METAL))
     for y, rot in ((1.55, -0.16), (-1.55, 0.16)):
-        pane = cube(f'roof{y}', (11.8, 3.30, 0.09), (0, y, 3.62), CONCRETE)
-        pane.rotation_euler = (rot, 0, 0)
-        bpy.context.view_layer.objects.active = pane
-        bpy.ops.object.transform_apply(rotation=True)
-        parts.append(pane)
+        parts.append(spin(cube(f'roof{y}', (11.8, 3.30, 0.09), (0, y, 3.62), CONCRETE),
+                          (rot, 0, 0)))
     parts.append(cube('fascia', (11.8, 0.10, 0.20), (0, 3.15, 3.42), TRIM))
     return finish('platform-canopy', parts)
 
