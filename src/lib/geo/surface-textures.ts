@@ -40,7 +40,7 @@ import * as THREE from 'three'
  * per fragment. Un-mipmapped waves shimmer badly the moment a river is more
  * than a hundred metres away.
  */
-export type TextureFamily = 'grass' | 'sand' | 'rock' | 'water' | 'asphalt'
+export type TextureFamily = 'grass' | 'shrub' | 'sand' | 'rock' | 'water' | 'asphalt'
 
 /**
  * Texels per side. 256 covers the tile below at ~1.6 cm/texel, which is finer
@@ -89,6 +89,44 @@ function periodicNoise(x: number, y: number, period: number, seed: number): numb
   return top + (bot - top) * sy
 }
 
+/**
+ * Periodic fbm with a DIFFERENT cell count per axis, so features come out
+ * stretched. Grass blades are the reason it exists: a lawn is not isotropic
+ * mush, it is fine streaks lying roughly one way, and isotropic noise can never
+ * produce that however many octaves it gets.
+ */
+function periodicFbmAniso(
+  u: number, v: number, cellsU: number, cellsV: number, octaves: number, seed: number,
+): number {
+  let sum = 0
+  let amp = 0.5
+  let cu = cellsU
+  let cv = cellsV
+  for (let o = 0; o < octaves; o++) {
+    // Each axis wraps at its own period, which is what keeps the tile seamless
+    // even though the lattice is no longer square.
+    const ix = Math.floor(u * cu)
+    const iy = Math.floor(v * cv)
+    const fx = u * cu - ix
+    const fy = v * cv - iy
+    const sx = fx * fx * (3 - 2 * fx)
+    const sy = fy * fy * (3 - 2 * fy)
+    const wrapU = (k: number): number => ((k % cu) + cu) % cu
+    const wrapV = (k: number): number => ((k % cv) + cv) % cv
+    const n00 = hash2(wrapU(ix), wrapV(iy), seed + o * 17)
+    const n10 = hash2(wrapU(ix + 1), wrapV(iy), seed + o * 17)
+    const n01 = hash2(wrapU(ix), wrapV(iy + 1), seed + o * 17)
+    const n11 = hash2(wrapU(ix + 1), wrapV(iy + 1), seed + o * 17)
+    const top = n00 + (n10 - n00) * sx
+    const bot = n01 + (n11 - n01) * sx
+    sum += amp * (top + (bot - top) * sy)
+    cu *= 2
+    cv *= 2
+    amp *= 0.5
+  }
+  return sum
+}
+
 /** Periodic fbm in TILE units (0..1 across the tile). */
 function periodicFbm(
   u: number, v: number, baseCells: number, octaves: number, seed: number,
@@ -112,9 +150,28 @@ function periodicFbm(
  * what keeps the three channels agreeing with one another.
  */
 const HEIGHT: Record<TextureFamily, (u: number, v: number) => number> = {
-  // Tufts: dense, roughly isotropic clumping with a fine breakup on top.
-  grass: (u, v) =>
-    periodicFbm(u, v, 8, 4, 11) * 0.75 + periodicFbm(u, v, 32, 2, 23) * 0.25,
+  // Grass is three things at once, and it needed all three to stop reading as
+  // green gravel: tussocks you could step between, clumps, and BLADES — fine,
+  // stretched, and the whole reason the anisotropic variant above exists.
+  grass: (u, v) => {
+    const tussock = periodicFbm(u, v, 5, 3, 11)
+    const clumps = periodicFbm(u, v, 14, 3, 23)
+    // Blades lie roughly one way and are about eight times longer than wide.
+    const blades = periodicFbmAniso(u, v, 10, 80, 2, 29)
+    return tussock * 0.34 + clumps * 0.30 + blades * 0.36
+  },
+
+  // Shrubs: rounded MASSES, not tufts. A bush is a dome of foliage with deep
+  // shade between it and the next one, which is the opposite of grass — grass
+  // is dense everywhere and varies gently, scrub is lumpy with real gaps.
+  shrub: (u, v) => {
+    const masses = periodicFbm(u, v, 4, 2, 43)
+    // Doming pushes mid values up toward the crown and leaves the gaps deep,
+    // so the field reads as separate bushes rather than a rolling surface.
+    const domed = 1 - Math.pow(1 - Math.min(1, Math.max(0, masses * 1.35)), 2.2)
+    const leaves = periodicFbm(u, v, 26, 3, 57)
+    return domed * 0.72 + leaves * 0.28
+  },
 
   // Wind ripples: a directional wave, bent by a slower drift, plus grain.
   sand: (u, v) => {
@@ -142,15 +199,19 @@ const HEIGHT: Record<TextureFamily, (u: number, v: number) => number> = {
   water: (u, v) => {
     // (cyclesU, cyclesV, amplitude). Crossing directions at incommensurate
     // ratios are what stop it reading as corduroy.
+    // ONE dominant long swell with shorter waves riding it, rather than four of
+    // similar size — an even mix averages into a rippled sheet, and what makes
+    // water read as water is a single direction the eye can follow.
     const waves: Array<[number, number, number]> = [
-      [2, 1, 0.42], [1, -3, 0.28], [4, 3, 0.17], [-5, 2, 0.13],
+      [1, 0, 0.46], [2, 1, 0.24], [1, -3, 0.16], [4, 3, 0.09], [-5, 2, 0.05],
     ]
     let h = 0
     for (const [ku, kv, amp] of waves) {
-      // Sharpened, because a real swell has rounded troughs and tighter crests.
-      h += amp * Math.pow(0.5 + 0.5 * Math.sin((u * ku + v * kv) * Math.PI * 2), 1.4)
+      // Sharpened hard: a real swell has broad rounded troughs and tight
+      // crests, and that asymmetry is what the glitter path forms along.
+      h += amp * Math.pow(0.5 + 0.5 * Math.sin((u * ku + v * kv) * Math.PI * 2), 1.9)
     }
-    return h * 0.78 + periodicFbm(u, v, 12, 3, 61) * 0.22
+    return h * 0.82 + periodicFbm(u, v, 16, 3, 61) * 0.18
   },
 
   // Asphalt: aggregate. A road surface is chippings in bitumen, and what makes
@@ -172,6 +233,8 @@ const HEIGHT: Record<TextureFamily, (u: number, v: number) => number> = {
  */
 const RELIEF_M: Record<TextureFamily, number> = {
   grass: 0.055, sand: 0.03, rock: 0.28,
+  // A shrub mass stands the better part of a metre proud of the gaps between.
+  shrub: 0.45,
   // The map carries the SHAPE of the waves; how steep the water actually is
   // gets set in the shader, per layer. Baking it gently instead (0.02 m, the
   // physically honest figure for a swell) put the whole normal inside two or
@@ -185,6 +248,9 @@ const RELIEF_M: Record<TextureFamily, number> = {
 /** Roughness range per family: (smoothest, roughest). Crests are smoother. */
 const ROUGHNESS: Record<TextureFamily, [number, number]> = {
   grass: [0.86, 1.0],
+  // Leaves have a waxy cuticle: a shrub crown catches noticeably more light
+  // than the matte shade underneath it.
+  shrub: [0.62, 0.98],
   sand: [0.72, 0.94],
   rock: [0.62, 0.92],
   // Unused — the water material derives roughness from its own foam and chop.
@@ -199,7 +265,7 @@ const ROUGHNESS: Record<TextureFamily, [number, number]> = {
  * and the artistic amount stays adjustable without a re-bake.
  */
 export const ALBEDO_SWING: Record<TextureFamily, number> =
-  { grass: 0.30, sand: 0.22, rock: 0.34, water: 0, asphalt: 0.16 }
+  { grass: 0.30, shrub: 0.46, sand: 0.22, rock: 0.34, water: 0, asphalt: 0.16 }
 
 // ── Baking ─────────────────────────────────────────────────────────────────────
 
