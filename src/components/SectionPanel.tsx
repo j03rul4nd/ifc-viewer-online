@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
+import { ViewportPanel } from './ViewportPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useUIStore } from '../stores/uiStore'
@@ -137,17 +138,14 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
   }
 
   return (
-    <AnimatePresence>
-      {clipPanelOpen && (
-        <motion.div
-          initial={{ opacity: 0, x: 12 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 12 }}
-          transition={{ duration: 0.2 }}
-          className="absolute right-3 z-20 pointer-events-auto select-none"
-          style={{ width: 'min(188px, calc(100vw - 24px))', top: '50%', transform: 'translateY(-30%)' }}
-        >
-          <div className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl">
+    <ViewportPanel
+      open={clipPanelOpen}
+      label={t('section.title')}
+      mobile="dock"
+      widthPx={188}
+      anchor="center"
+      centerShift="translateY(-30%)"
+    >
             {/* Header */}
             <div className="px-3 pt-2.5 pb-1.5 border-b border-[var(--border)]">
               <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase mb-0.5">
@@ -245,9 +243,6 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
                 <div className="mt-0.5 opacity-70">{t('section.escToCancel')}</div>
               </div>
             )}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </ViewportPanel>
   )
 }

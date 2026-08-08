@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react'
+import { ViewportPanel } from './ViewportPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useUIStore } from '../stores/uiStore'
@@ -112,17 +113,14 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
   }, [viewerApiRef, setActivePlanViewId])
 
   return (
-    <AnimatePresence>
-      {plansPanelOpen && (
-        <motion.div
-          initial={{ opacity: 0, x: 12 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 12 }}
-          transition={{ duration: 0.2 }}
-          className="absolute right-3 z-20 pointer-events-auto select-none"
-          style={{ width: 'min(200px, calc(100vw - 24px))', top: '50%', transform: 'translateY(-70%)' }}
-        >
-          <div className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl">
+    <ViewportPanel
+      open={plansPanelOpen}
+      label={t('floorPlan.title')}
+      mobile="dock"
+      widthPx={200}
+      anchor="center"
+      centerShift="translateY(-70%)"
+    >
             {/* Header */}
             <div className="px-3 pt-2.5 pb-1.5 border-b border-[var(--border)]">
               <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase mb-0.5">
@@ -237,9 +235,6 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
                 </button>
               </div>
             )}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </ViewportPanel>
   )
 }
