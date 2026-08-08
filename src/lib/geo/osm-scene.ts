@@ -25,7 +25,7 @@
 // a river has no idea where its own bank is.
 
 import * as THREE from 'three'
-import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
+import { latLonToNormalized, metresToNormalized } from './geo-math'
 import { jitter, foliageColor, variate, type TreeShape } from './feature-variation'
 import { canopyGeometry, trunkGeometry, TREE_PROPORTIONS } from './tree-geometry'
 import { subdivideMesh, distanceToRing, type Vec2, type Face } from './surface-tessellation'
@@ -56,6 +56,13 @@ export interface LayerMeshOptions {
   quality?: SurfaceQuality
   /** Relief light. Shared with the terrain hillshade so the scene has one sun. */
   sun?: SurfaceSun
+  /**
+   * Authored geometry, present only in showcase mode and only once it has
+   * downloaded. Absent means "use the procedural version", which is also what a
+   * failed download looks like — so a missing asset degrades one species at a
+   * time rather than emptying the canopy.
+   */
+  assets?: Map<string, THREE.BufferGeometry> | null
 }
 
 /** Fallback light, matching DEFAULT_TERRAIN_LOOK — NW at 45°, cartographic. */
@@ -110,10 +117,6 @@ export interface LayerMesh<T extends THREE.Object3D = THREE.Object3D> {
 }
 
 // ── Shared helpers ─────────────────────────────────────────────────────────────
-
-function metresToNormalized(anchorLat: number): number {
-  return 1 / (WEB_MERCATOR_WORLD_M * cosLatScale(anchorLat))
-}
 
 function projectRing(ring: ReadonlyArray<LatLonPoint>): THREE.Vector2[] {
   return ring.map((p) => {
@@ -981,6 +984,84 @@ export const MAX_TREES = 4000
  * trees affordable. Deliberately low-poly — at map scale a tree is a silhouette,
  * and detail here would buy nothing but triangles.
  */
+/** Which authored asset stands in for which species. The rest stay procedural. */
+const AUTHORED_TREE: Partial<Record<TreeShape, string>> = {
+  broadleaf: 'tree-broadleaf',
+  needleleaf: 'tree-conifer',
+}
+
+/**
+ * An authored tree scaled into a unit box — base on z=0, one unit tall, one
+ * unit across — so the instance matrix can size it from the OSM crown radius
+ * and height exactly as the procedural canopies are sized.
+ *
+ * It also derives LEAFNESS from the baked vertex colour. The Blender build
+ * paints bark brown and foliage green, so green dominance separates the two
+ * without a second attribute to author, and that is what lets a per-instance
+ * tint recolour the canopy while leaving the trunk brown. Without it, tinting
+ * an instanced tree tints its trunk too, and a forest of green trunks is worse
+ * than a forest of identical greens.
+ */
+function unitTree(source: THREE.BufferGeometry): THREE.BufferGeometry | null {
+  const col = source.getAttribute('color')
+  if (!col) return null
+
+  const geo = source.clone()
+  geo.computeBoundingBox()
+  const bb = geo.boundingBox!
+  const height = Math.max(1e-9, bb.max.z - bb.min.z)
+  const radius = Math.max(1e-9, Math.max(bb.max.x - bb.min.x, bb.max.y - bb.min.y) / 2)
+  geo.translate(-(bb.min.x + bb.max.x) / 2, -(bb.min.y + bb.max.y) / 2, -bb.min.z)
+  geo.scale(1 / radius, 1 / radius, 1 / height)
+
+  const c = geo.getAttribute('color')
+  const leaf = new Float32Array(c.count)
+  for (let i = 0; i < c.count; i++) {
+    const g = c.getY(i)
+    leaf[i] = g > c.getX(i) && g > c.getZ(i) * 0.9 ? 1 : 0
+  }
+  geo.setAttribute('aLeaf', new THREE.BufferAttribute(leaf, 1))
+  return geo
+}
+
+/**
+ * Lit material for the authored trees, with a per-instance foliage tint that
+ * only touches the leaves.
+ */
+function createAuthoredTreeMaterial(): THREE.MeshStandardMaterial {
+  const mat = new THREE.MeshStandardMaterial({
+    vertexColors: true, metalness: 0, roughness: 0.86,
+  })
+  mat.name = 'authored-tree'
+  mat.customProgramCacheKey = () => 'authored-tree'
+  mat.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', /* glsl */ `
+        #include <common>
+        attribute float aLeaf;
+        attribute vec3 aTint;
+        varying float vLeafness;
+        varying vec3 vLeafTint;
+      `)
+      .replace('#include <begin_vertex>', /* glsl */ `
+        #include <begin_vertex>
+        vLeafness = aLeaf;
+        vLeafTint = aTint;
+      `)
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', /* glsl */ `
+        #include <common>
+        varying float vLeafness;
+        varying vec3 vLeafTint;
+      `)
+      .replace('#include <color_fragment>', /* glsl */ `
+        #include <color_fragment>
+        diffuseColor.rgb = mix(diffuseColor.rgb, vLeafTint, vLeafness * 0.9);
+      `)
+  }
+  return mat
+}
+
 export function buildTreeLayer(
   features: ReadonlyArray<OsmFeature>,
   opts: LayerMeshOptions,
@@ -1045,6 +1126,35 @@ export function buildTreeLayer(
     : new THREE.MeshBasicMaterial({ color: TRUNK_COLOR })
 
   for (const [shape, subset] of bySpecies) {
+    // Showcase: one authored mesh IS the whole tree — trunk, limbs and crown in
+    // a single instanced draw, half the draw calls of the procedural pair.
+    const assetName = AUTHORED_TREE[shape]
+    const authored = assetName ? (opts.assets?.get(assetName) ?? null) : null
+    const unit = authored ? unitTree(authored) : null
+    if (unit) {
+      const mesh = new THREE.InstancedMesh(unit, createAuthoredTreeMaterial(), subset.length)
+      mesh.name = `osm-trees-${shape}-authored`
+      const tint = new Float32Array(subset.length * 3)
+      subset.forEach((f, i) => {
+        const t = measure(f)
+        quat.setFromAxisAngle(zAxis, variate(f.id, 4) * Math.PI * 2)
+        // Base-anchored: the authored geometry stands on its own z=0, so the
+        // trunk meets the ground without the crown/trunk split the procedural
+        // canopies need.
+        pos.set(t.nx, t.ny, t.baseZ)
+        scale.set(t.radiusM * mToN, t.radiusM * mToN, t.totalM * mToN)
+        mesh.setMatrixAt(i, m.compose(pos, quat, scale))
+        const [r, g, b] = foliageColor(f.id, shape)
+        tint[i * 3] = r
+        tint[i * 3 + 1] = g
+        tint[i * 3 + 2] = b
+      })
+      mesh.instanceMatrix.needsUpdate = true
+      unit.setAttribute('aTint', new THREE.InstancedBufferAttribute(tint, 3))
+      group.add(mesh)
+      continue
+    }
+
     const canopy = new THREE.InstancedMesh(
       canopyGeometry(shape), canopyMaterial(), subset.length,
     )

@@ -1,22 +1,24 @@
 // ─── props-scene ──────────────────────────────────────────────────────────────
-// The things that make a street look inhabited: traffic signals, cars, trains.
+// The things that make a street look inhabited: traffic signals, cars, trains,
+// street lamps, platform shelters.
 //
 // ONE HONESTY LINE RUNS THROUGH THIS FILE, and it is not decoration:
 //
 //   • Traffic signals are DATA. `highway=traffic_signals` is a mapped node —
 //     somebody surveyed that junction. We draw them where they are.
-//   • Vehicles are PROPS. OpenStreetMap does not record where cars are parked
-//     or where a train is standing, and it never could. Everything about their
+//   • Everything else here is SCENERY. OpenStreetMap does not record where cars
+//     are parked, where a train is standing, which kerb carries a lamp column or
+//     whether a platform is sheltered. It never could. Every bit of that
 //     placement is invented to make a view feel lived-in.
 //
 // So they are separate layers with separate switches, both off by default, and
-// the vehicle switch says in the UI that it is scenery. A client looking at a
+// the scenery switch says in the UI that it is scenery. A client looking at a
 // render must never be able to mistake our set dressing for survey.
 //
 // Everything is instanced: one draw call per prop type, whatever the count.
 
 import * as THREE from 'three'
-import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
+import { latLonToNormalized, metresToNormalized } from './geo-math'
 import { hashId, variate } from './feature-variation'
 import type { OsmFeature } from './osm-features'
 
@@ -35,10 +37,12 @@ export interface PropsOptions {
 export interface PropsLayer {
   object: THREE.Group
   count: number
-}
-
-function metresToNormalized(anchorLat: number): number {
-  return cosLatScale(anchorLat) / WEB_MERCATOR_WORLD_M
+  /**
+   * What the count is made of. Vehicles and street furniture are placed by
+   * different rules with different densities, and a single total hides a
+   * street full of lamps behind a street with two cars on it.
+   */
+  counts: { vehicles: number; lamps: number; canopies: number }
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
@@ -161,7 +165,11 @@ export function buildSignalLayer(
   group.name = 'osm-signals'
   group.renderOrder = 5
   group.add(mesh)
-  return { object: group, count: signals.length }
+  return {
+    object: group,
+    count: signals.length,
+    counts: { vehicles: 0, lamps: 0, canopies: 0 },
+  }
 }
 
 // ── Vehicles (PROPS — invented placement) ─────────────────────────────────────
@@ -200,6 +208,77 @@ function carriageGeometry(): THREE.BufferGeometry {
   ])
 }
 
+/** A column with a luminaire on a short arm. The procedural stand-in. */
+function lampGeometry(): THREE.BufferGeometry {
+  const COLUMN = [0.34, 0.35, 0.36] as [number, number, number]
+  const HEAD = [0.82, 0.81, 0.77] as [number, number, number]
+  const H = 7
+  const column = new THREE.CylinderGeometry(0.06, 0.1, H, 6)
+  column.rotateX(Math.PI / 2)
+  column.translate(0, 0, H / 2)
+  return merge([
+    { geo: column, color: COLUMN },
+    { geo: box(0.32, 0.32, 0.35, [0, 0, 0]), color: COLUMN },
+    // The arm reaches over the carriageway, which is the shape that says
+    // "street lamp" rather than "post".
+    { geo: box(1.5, 0.13, 0.13, [0.75, 0, H - 0.2]), color: COLUMN },
+    { geo: box(0.62, 0.26, 0.13, [1.55, 0, H - 0.28]), color: HEAD },
+  ])
+}
+
+/**
+ * The long axis of a polygon, by the covariance of its vertices.
+ *
+ * A station platform is a long thin rectangle at an arbitrary angle, and its
+ * ring is not wound in any dependable order — the longest single edge is the
+ * wrong answer for a platform mapped with a rounded end. The principal axis is
+ * the direction the shape actually runs, which is what a shelter has to align
+ * with; anything else stands across the platform and reads as a mistake.
+ *
+ * Returns null for a degenerate ring (every point the same), because there is
+ * no axis to speak of and atan2 would happily invent one.
+ */
+function principalAxis(pts: ReadonlyArray<{ nx: number; ny: number }>):
+{ cx: number; cy: number; yaw: number; extentU: number; extentV: number } | null {
+  const n = pts.length
+  let cx = 0
+  let cy = 0
+  for (const p of pts) { cx += p.nx; cy += p.ny }
+  cx /= n
+  cy /= n
+
+  let sxx = 0
+  let sxy = 0
+  let syy = 0
+  for (const p of pts) {
+    const dx = p.nx - cx
+    const dy = p.ny - cy
+    sxx += dx * dx
+    sxy += dx * dy
+    syy += dy * dy
+  }
+  if (sxx + syy <= 0) return null
+
+  const yaw = 0.5 * Math.atan2(2 * sxy, sxx - syy)
+  const cos = Math.cos(yaw)
+  const sin = Math.sin(yaw)
+  let minU = Infinity
+  let maxU = -Infinity
+  let minV = Infinity
+  let maxV = -Infinity
+  for (const p of pts) {
+    const dx = p.nx - cx
+    const dy = p.ny - cy
+    const u = dx * cos + dy * sin
+    const v = -dx * sin + dy * cos
+    if (u < minU) minU = u
+    if (u > maxU) maxU = u
+    if (v < minV) minV = v
+    if (v > maxV) maxV = v
+  }
+  return { cx, cy, yaw, extentU: maxU - minU, extentV: maxV - minV }
+}
+
 /** Roads too narrow to hold a car — placing one there is obviously wrong. */
 const MIN_ROAD_WIDTH_M = 4.5
 /** Spacing along a carriageway, metres. Sparse on purpose: a full road reads as a jam. */
@@ -208,6 +287,20 @@ const MAX_CARS = 700
 const MAX_TRAINS = 40
 /** Carriages in a standing train. */
 const TRAIN_CARRIAGES = 4
+
+/** Column spacing along a lit street, metres. */
+const LAMP_SPACING_M = 38
+/** Below this, it is a lane or an alley and a lighting column would look odd. */
+const MIN_LAMP_ROAD_WIDTH_M = 6
+const MAX_LAMPS = 900
+
+/** The authored shelter's own footprint, metres — what we scale relative to. */
+const CANOPY_WIDTH_M = 6.8
+/** A platform narrower than this cannot hold a shelter. */
+const MIN_PLATFORM_WIDTH_M = 3.2
+/** Platform length each shelter is taken to cover. */
+const CANOPY_EVERY_M = 34
+const MAX_CANOPIES = 60
 
 /**
  * Cars on the carriageways and trains on the track.
@@ -227,6 +320,8 @@ export function buildVehicleLayer(
   interface Placement { x: number; y: number; z: number; yaw: number; seed: string }
   const cars: Placement[] = []
   const carriages: Placement[] = []
+  const lamps: Placement[] = []
+  const canopies: Array<{ x: number; y: number; z: number; yaw: number; widthScale: number }> = []
 
   const groundZ = (x: number, y: number): number =>
     ((sample ? sample(x, y) : anchorElevation) - anchorElevation) * mToN
@@ -272,7 +367,85 @@ export function buildVehicleLayer(
     }
   }
 
-  if (cars.length === 0 && carriages.length === 0) return null
+  // ── Lighting columns ────────────────────────────────────────────────────────
+  // A separate walk rather than a branch inside the one above: lamps have their
+  // own spacing, their own minimum road, and they stand on the kerb rather than
+  // in a lane. Folding them in would make both harder to reason about.
+  const lampSpacing = LAMP_SPACING_M * mToN
+  for (const f of features) {
+    if (lamps.length >= MAX_LAMPS) break
+    if (f.kind !== 'road' || f.widthM === undefined || f.style.crossing) continue
+    if (f.widthM < MIN_LAMP_ROAD_WIDTH_M || !f.ring || f.ring.length < 2) continue
+
+    // Which kerb is decided ONCE per way. Columns that swap sides halfway down
+    // a street is the kind of detail nobody names but everybody notices.
+    const side = variate(f.id, 21) < 0.5 ? 1 : -1
+    const off = (f.widthM * 0.5 + 0.9) * mToN
+    const pts = f.ring.map((pt) => latLonToNormalized(pt.lat, pt.lon))
+    let carried = lampSpacing * variate(f.id, 22)
+
+    for (let i = 0; i < pts.length - 1 && lamps.length < MAX_LAMPS; i++) {
+      const a = pts[i]
+      const b = pts[i + 1]
+      const dx = b.nx - a.nx
+      const dy = b.ny - a.ny
+      const len = Math.hypot(dx, dy)
+      if (len === 0) continue
+      const yaw = Math.atan2(dy, dx)
+
+      let t = carried
+      while (t <= len && lamps.length < MAX_LAMPS) {
+        const x = a.nx + (dx * t) / len - (dy / len) * off * side
+        const y = a.ny + (dy * t) / len + (dx / len) * off * side
+        lamps.push({
+          x, y, z: groundZ(x, y),
+          // The arm has to reach OVER the carriageway, so the column faces back
+          // across the road it lights — not along it.
+          yaw: yaw - (side * Math.PI) / 2,
+          seed: `${f.id}#lamp${lamps.length}`,
+        })
+        t += lampSpacing
+      }
+      carried = Math.max(0, t - len)
+    }
+  }
+
+  // ── Platform shelters ───────────────────────────────────────────────────────
+  // Showcase only: there is no procedural fallback, because a grey box standing
+  // on a platform is worse than an unsheltered platform.
+  const authoredCanopy = opts.assets?.get('platform-canopy') ?? null
+  if (authoredCanopy) {
+    for (const f of features) {
+      if (canopies.length >= MAX_CANOPIES) break
+      if (f.kind !== 'rail' || f.style.railKind !== 'platform') continue
+      if (!f.ring || f.ring.length < 3) continue
+
+      const pts = f.ring.map((pt) => latLonToNormalized(pt.lat, pt.lon))
+      const axis = principalAxis(pts)
+      if (!axis) continue
+      const lengthM = axis.extentU / mToN
+      const widthM = axis.extentV / mToN
+      if (widthM < MIN_PLATFORM_WIDTH_M || lengthM < 12) continue
+
+      // One shelter per stretch of platform, spread down the middle of it —
+      // real platforms are sheltered in the centre and open at the ends.
+      const n = Math.min(4, Math.max(1, Math.floor(lengthM / CANOPY_EVERY_M)))
+      const span = axis.extentU * 0.6
+      for (let i = 0; i < n && canopies.length < MAX_CANOPIES; i++) {
+        const at = n === 1 ? 0 : -span / 2 + (span * i) / (n - 1)
+        const x = axis.cx + Math.cos(axis.yaw) * at
+        const y = axis.cy + Math.sin(axis.yaw) * at
+        canopies.push({
+          x, y, z: groundZ(x, y), yaw: axis.yaw,
+          // Fit the platform's width; never wider than the asset was authored.
+          widthScale: Math.min(1.15, Math.max(0.6, widthM / CANOPY_WIDTH_M)),
+        })
+      }
+    }
+  }
+
+  if (cars.length === 0 && carriages.length === 0
+    && lamps.length === 0 && canopies.length === 0) return null
 
   const group = new THREE.Group()
   group.name = 'osm-vehicles'
@@ -344,5 +517,41 @@ export function buildVehicleLayer(
   )
   if (train) group.add(train)
 
-  return { object: group, count: cars.length + carriages.length }
+  const authoredLamp = opts.assets?.get('street-lamp') ?? null
+  const lampMesh = place(
+    lamps, authoredLamp ? authoredLamp.clone() : lampGeometry(), 'osm-lamps',
+  )
+  if (lampMesh) {
+    // Painted metal, and rougher than a car: a column that mirrors the sky reads
+    // as chrome, which no street lamp is.
+    ;(lampMesh.material as THREE.MeshStandardMaterial).roughness = 0.62
+    group.add(lampMesh)
+  }
+
+  if (authoredCanopy && canopies.length > 0) {
+    const mesh = new THREE.InstancedMesh(
+      authoredCanopy.clone(),
+      new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0, roughness: 0.7 }),
+      canopies.length,
+    )
+    mesh.name = 'osm-platform-canopies'
+    const cs = new THREE.Vector3()
+    canopies.forEach((spot, i) => {
+      p.set(spot.x, spot.y, spot.z)
+      q.setFromAxisAngle(zAxis, spot.yaw)
+      // Only across: stretching a shelter lengthways would stretch its columns
+      // with it, and a leaning column is worse than a shelter of the wrong size.
+      cs.set(mToN, mToN * spot.widthScale, mToN)
+      mesh.setMatrixAt(i, m.compose(p, q, cs))
+    })
+    mesh.instanceMatrix.needsUpdate = true
+    group.add(mesh)
+  }
+
+  const vehicles = cars.length + carriages.length
+  return {
+    object: group,
+    count: vehicles + lamps.length + canopies.length,
+    counts: { vehicles, lamps: lamps.length, canopies: canopies.length },
+  }
 }

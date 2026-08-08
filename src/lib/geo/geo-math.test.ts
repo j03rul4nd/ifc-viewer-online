@@ -18,6 +18,7 @@ import {
   normalizeDeg,
   formatCoord,
   composeGeoRootTransform,
+  metresToNormalized,
   eastDirection,
   northDirection,
   panPlacement,
@@ -169,6 +170,27 @@ describe('geo-math · IFC angles', () => {
     expect(wrapLon(190)).toBeCloseTo(-170)
     expect(wrapLon(-190)).toBeCloseTo(170)
     expect(wrapLon(2.17)).toBeCloseTo(2.17)
+  })
+})
+
+describe('geo-math · metresToNormalized', () => {
+  // The round trip is the only thing that matters, and it is the thing that
+  // fails silently: get the cosine backwards and every prop still renders, just
+  // at cos²(lat) of its real size. Checking it against geoRoot's own scale is
+  // what makes a flipped sign a red test instead of a shrug at the screen.
+  it('a metre survives the trip out to the scene and back', () => {
+    for (const lat of [0, 41.3851, 48.8566, 60, 69.65]) {
+      const placement = { lat, lon: 2.1734, rotationDeg: 0, heightOffsetM: 0 }
+      const { scale } = composeGeoRootTransform({
+        placement, anchorScene: { x: 0, z: 0 }, modelMinY: 0,
+      })
+      // 10 m expressed in normalized units, then scaled by geoRoot, is 10 m.
+      expect(10 * metresToNormalized(lat) * scale).toBeCloseTo(10, 6)
+    }
+  })
+
+  it('grows with latitude — a normalized unit covers less ground up north', () => {
+    expect(metresToNormalized(60)).toBeGreaterThan(metresToNormalized(0))
   })
 })
 

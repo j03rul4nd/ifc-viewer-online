@@ -65,6 +65,25 @@ export function groundResolution(lat: number, zoom: number): number {
   return (Math.cos(clampLat(lat) * DEG) * WEB_MERCATOR_WORLD_M) / (256 * Math.pow(2, zoom))
 }
 
+/**
+ * True ground metres → normalized planar units, at the anchor latitude.
+ *
+ * THE DIRECTION OF THE COSINE IS THE WHOLE POINT, and it is easy to get
+ * backwards. Mercator inflates distance by 1/cos(lat), so a ground metre is
+ * `1/cos` mercator metres, which is `1/(cos · WORLD_M)` normalized. `geoRoot`
+ * then scales by `WORLD_M · cos` (see composeGeoRootTransform) and the metre
+ * comes back out a metre.
+ *
+ * Flip it and everything still renders — just at cos²(lat) of its real size,
+ * which is right at the equator, 43% at Paris and invisible in Tromsø. Nothing
+ * throws, no test on a single module notices, and the only symptom is that the
+ * cars look like toys. That is exactly why this lives here and not as a private
+ * copy in each module that needs it.
+ */
+export function metresToNormalized(lat: number): number {
+  return 1 / (WEB_MERCATOR_WORLD_M * cosLatScale(lat))
+}
+
 /** Mercator-to-true-metre compensation factor at the anchor latitude. */
 export function cosLatScale(lat: number): number {
   return Math.cos(clampLat(lat) * DEG)

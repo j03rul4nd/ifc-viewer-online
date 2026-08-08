@@ -673,6 +673,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // 'detailed' rather than being a third surface treatment.
       quality: surfaceQuality(),
       sun: surfaceSun(),
+      // Only showcase draws the authored geometry. The assets stay cached after
+      // the user drops back to 'detailed' — re-downloading them if they change
+      // their mind would be rude — but the level, not the cache, decides what is
+      // on screen. Otherwise 'detailed' would look different depending on where
+      // the user had been, which is the kind of state bug nobody can report.
+      assets: contextDetail === 'showcase' ? propAssets : null,
     }
 
     let estimatedCount = 0
@@ -728,9 +734,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       if (built) addLayer('signal', built.object)
     }
 
-    // Vehicles are NOT data. Separate flag, off by default, and the UI says so.
+    // Scenery is NOT data. Separate flag, off by default, and the UI says so.
     if (vehiclesEnabled) {
-      const built = buildVehicleLayer(osmFeatures, { ...opts, assets: propAssets })
+      const built = buildVehicleLayer(osmFeatures, opts)
       if (built) { geoRoot.add(built.object); propObjects.push(built.object) }
     }
 

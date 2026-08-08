@@ -142,10 +142,10 @@
     "detailRich": "Detailed",
     "detailHint": "Detailed models each storey of the surrounding buildings, and draws grass, sand, rock, snow and water as real lit surfaces — moving water with a foam line along the banks, ripples across a beach, and the relief itself under the Ecosystems style. Heavier, and the one to bring to a client meeting.",
     "styleEcosystemDetailHint": "Set Detail to Detailed, under Surroundings, to draw these belts as real grass, rock and snow instead of a flat tint.",
-    "vehicles": "Vehicles (scenery)",
-    "vehiclesHint": "Cars and trains are NOT mapped data — OpenStreetMap does not record where a car is parked. Their placement is invented to make a view feel lived-in, and it is the same every time.",
+    "vehicles": "Scenery (vehicles, lamps, shelters)",
+    "vehiclesHint": "Cars, trains, street lamps and platform shelters are NOT mapped data — OpenStreetMap does not record where a car is parked or which kerb carries a lamp. Their placement is invented to make a view feel lived-in, and it is the same every time.",
     "facadeShowcase": "Showcase",
-    "facadeShowcaseHint": "Showcase adds authored 3D models — cars, vans, carriages — downloaded once from this site (about 116 KB). Everything else works without them."
+    "facadeShowcaseHint": "Showcase swaps in authored 3D models — trees, cars, vans, carriages, street lamps and platform shelters — downloaded once from this site (about 94 KB). Everything else works without them."
   },
   "placement": {
     "title": "Placement",

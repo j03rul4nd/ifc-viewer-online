@@ -714,3 +714,77 @@ describe('buildLinearLayer — crossings', () => {
     expect(topZ(surfaceOf(zebra.object))).toBeGreaterThan(topZ(surfaceOf(road.object)))
   })
 })
+
+describe('buildTreeLayer — authored geometry (showcase)', () => {
+  /** Stand-in for a GLB: bark-brown below, leaf-green above. */
+  function authoredTree(): THREE.BufferGeometry {
+    const g = new THREE.BoxGeometry(2, 2, 6)
+    g.translate(0, 0, 3)
+    const n = g.getAttribute('position').count
+    const col = new Float32Array(n * 3)
+    for (let i = 0; i < n; i++) {
+      const leaf = g.getAttribute('position').getZ(i) > 2
+      col[i * 3] = leaf ? 0.22 : 0.33
+      col[i * 3 + 1] = leaf ? 0.38 : 0.24
+      col[i * 3 + 2] = leaf ? 0.26 : 0.16
+    }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3))
+    return g
+  }
+
+  const assets = (): Map<string, THREE.BufferGeometry> =>
+    new Map([['tree-broadleaf', authoredTree()]])
+
+  it('draws the whole tree in one mesh instead of a trunk/canopy pair', () => {
+    const built = buildTreeLayer([tree('n1'), tree('n2')], { ...OPTS, assets: assets() })!
+    expect(built.object.children).toHaveLength(1)
+    expect(built.object.children[0].name).toBe('osm-trees-broadleaf-authored')
+    expect((built.object.children[0] as THREE.InstancedMesh).count).toBe(2)
+  })
+
+  it('falls back per species — an unauthored silhouette keeps its pair', () => {
+    const built = buildTreeLayer([
+      tree('n1'),
+      tree('n2', { style: { roofShape: 'flat', roofHeightM: 0, crownRadiusM: 3, treeShape: 'palm' } }),
+    ], { ...OPTS, assets: assets() })!
+    const names = built.object.children.map((o) => o.name).sort()
+    expect(names).toEqual([
+      'osm-trees-broadleaf-authored', 'osm-trees-palm', 'osm-trunks-palm',
+    ])
+  })
+
+  it('tints the leaves and leaves the bark alone', () => {
+    const built = buildTreeLayer([tree('n1'), tree('n2')], { ...OPTS, assets: assets() })!
+    const geo = (built.object.children[0] as THREE.InstancedMesh).geometry
+    const leaf = geo.getAttribute('aLeaf')
+    const tint = geo.getAttribute('aTint')
+    // One leafness per vertex, one tint per instance — not the other way round.
+    expect(leaf.count).toBe(geo.getAttribute('position').count)
+    expect(tint.count).toBe(2)
+    // The fixture is half bark, half foliage, so both values must appear.
+    const values = new Set<number>()
+    for (let i = 0; i < leaf.count; i++) values.add(leaf.getX(i))
+    expect([...values].sort()).toEqual([0, 1])
+  })
+
+  it('sizes the authored tree from the OSM crown, standing it on the ground', () => {
+    const built = buildTreeLayer([tree('n1')], { ...OPTS, assets: assets() })!
+    const m = new THREE.Matrix4()
+    ;(built.object.children[0] as THREE.InstancedMesh).getMatrixAt(0, m)
+    const pos = new THREE.Vector3()
+    const scale = new THREE.Vector3()
+    pos.setFromMatrixPosition(m)
+    scale.setFromMatrixScale(m)
+    // Base-anchored: the trunk meets z = 0, it does not float at crown height.
+    expect(pos.z).toBeCloseTo(0, 12)
+    // Taller than wide, from a 10 m tree with a 3 m crown.
+    expect(scale.z).toBeGreaterThan(scale.x)
+  })
+
+  it('ignores an asset with no baked colour — there is no leafness to derive', () => {
+    const bare = new Map([['tree-broadleaf', new THREE.BoxGeometry(2, 2, 6)]])
+    const built = buildTreeLayer([tree('n1')], { ...OPTS, assets: bare })!
+    expect(built.object.children.map((o) => o.name).sort())
+      .toEqual(['osm-trees-broadleaf', 'osm-trunks-broadleaf'])
+  })
+})

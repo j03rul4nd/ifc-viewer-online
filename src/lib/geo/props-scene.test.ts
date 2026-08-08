@@ -6,6 +6,7 @@
 import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import { buildSignalLayer, buildVehicleLayer } from './props-scene'
+import { latLonToNormalized } from './geo-math'
 import type { OsmFeature } from './osm-features'
 
 const LAT = 48.8556
@@ -104,8 +105,10 @@ describe('buildVehicleLayer', () => {
     const roads = Array.from({ length: 40 }, (_, i) => way(`w${i}`, 'road', 8, 6))
     const built = buildVehicleLayer(roads, OPTS)!
     // Sparse by construction: far fewer vehicles than the streets could hold.
-    expect(built.count).toBeLessThan(roads.length * 3)
-    expect(built.count).toBeGreaterThan(0)
+    // Vehicles only — lamps are placed on every lit street by design, so a
+    // total would pass this for the wrong reason.
+    expect(built.counts.vehicles).toBeLessThan(roads.length * 3)
+    expect(built.counts.vehicles).toBeGreaterThan(0)
   })
 
   it('is deterministic — a view must not reshuffle between screenshots', () => {
@@ -134,5 +137,116 @@ describe('buildVehicleLayer', () => {
     expect(totalInstances(built.object)).toBe(built.count)
     // One per body colour, plus the train. Not one per car.
     expect(built.object.children.length).toBeLessThanOrEqual(8)
+  })
+})
+
+// ── Street furniture ──────────────────────────────────────────────────────────
+// Lamps and shelters are scenery too: invented placement, deterministic, and
+// never anywhere a real one could not stand.
+
+function platform(id: string, lengthDeg = 0.002, widthDeg = 0.00005): OsmFeature {
+  return {
+    id, kind: 'rail',
+    ring: [
+      { lat: LAT, lon: LON },
+      { lat: LAT, lon: LON + lengthDeg },
+      { lat: LAT + widthDeg, lon: LON + lengthDeg },
+      { lat: LAT + widthDeg, lon: LON },
+    ],
+    height: { heightM: 0, minHeightM: 0, estimated: true },
+    style: { roofShape: 'flat', roofHeightM: 0, railKind: 'platform' },
+  }
+}
+
+/** Stand-in for an authored GLB: the placement code only needs geometry. */
+const fakeAsset = (): THREE.BufferGeometry => {
+  const g = new THREE.BoxGeometry(1, 1, 1)
+  g.setAttribute('color', new THREE.Float32BufferAttribute(
+    new Array(g.getAttribute('position').count * 3).fill(0.5), 3,
+  ))
+  return g
+}
+
+const meshNamed = (o: THREE.Object3D, name: string): THREE.InstancedMesh | undefined =>
+  instanced(o).find((m) => m.name === name)
+
+describe('street lamps', () => {
+  it('lights a wide street and leaves a lane alone', () => {
+    const wide = buildVehicleLayer([way('w1', 'road', 9)], OPTS)!
+    expect(wide.counts.lamps).toBeGreaterThan(0)
+
+    // 5 m is wide enough to park on but not a road anybody lights with columns.
+    // Several, because only some ways are dressed at all — one lane would prove
+    // nothing about lamps if it happened to be an undressed way.
+    const lanes = Array.from({ length: 8 }, (_, i) => way(`w${i}`, 'road', 5))
+    const built = buildVehicleLayer(lanes, OPTS)!
+    expect(built.counts.vehicles).toBeGreaterThan(0)
+    expect(built.counts.lamps).toBe(0)
+  })
+
+  it('never stands one on a crossing or on the track', () => {
+    const crossing: OsmFeature = {
+      ...way('c1', 'road', 9),
+      style: { roofShape: 'flat', roofHeightM: 0, crossing: true },
+    }
+    expect(buildVehicleLayer([crossing], OPTS)).toBeNull()
+    expect(buildVehicleLayer([way('r1', 'rail', 9)], OPTS)!.counts.lamps).toBe(0)
+  })
+
+  it('keeps every column on the same kerb of a given street', () => {
+    const mesh = meshNamed(buildVehicleLayer([way('w1', 'road', 9)], OPTS)!.object, 'osm-lamps')!
+    const m = new THREE.Matrix4()
+    const p = new THREE.Vector3()
+    const sides = new Set<number>()
+    for (let i = 0; i < mesh.count; i++) {
+      mesh.getMatrixAt(i, m)
+      p.setFromMatrixPosition(m)
+      sides.add(Math.sign(p.y - latLonToNormalized(LAT, LON).ny))
+    }
+    // Off the centreline (never 0), and all on one side of it.
+    expect(sides.has(0)).toBe(false)
+    expect(sides.size).toBe(1)
+  })
+
+  it('is deterministic — the same street lights the same way twice', () => {
+    const read = (): number => buildVehicleLayer([way('w1', 'road', 9)], OPTS)!.counts.lamps
+    expect(read()).toBe(read())
+  })
+})
+
+describe('platform shelters', () => {
+  it('needs the authored asset — there is no procedural shelter', () => {
+    expect(buildVehicleLayer([platform('p1')], OPTS)).toBeNull()
+  })
+
+  it('shelters the middle of a long platform', () => {
+    const assets = new Map([['platform-canopy', fakeAsset()]])
+    const built = buildVehicleLayer([platform('p1')], { ...OPTS, assets })!
+    expect(built.counts.canopies).toBeGreaterThan(1)
+    expect(meshNamed(built.object, 'osm-platform-canopies')!.count)
+      .toBe(built.counts.canopies)
+  })
+
+  it('aligns with the platform it stands on, not with north', () => {
+    const assets = new Map([['platform-canopy', fakeAsset()]])
+    const mesh = meshNamed(
+      buildVehicleLayer([platform('p1')], { ...OPTS, assets })!.object,
+      'osm-platform-canopies',
+    )!
+    const m = new THREE.Matrix4()
+    const q = new THREE.Quaternion()
+    const euler = new THREE.Euler()
+    mesh.getMatrixAt(0, m)
+    q.setFromRotationMatrix(m)
+    euler.setFromQuaternion(q, 'ZYX')
+    // The fixture runs due east, so the long axis is the x axis: yaw ≈ 0.
+    expect(Math.abs(euler.z)).toBeLessThan(0.05)
+  })
+
+  it('leaves a platform too narrow to shelter uncovered', () => {
+    const assets = new Map([['platform-canopy', fakeAsset()]])
+    // 0.00002° of latitude is about 2.2 m — a kerb, not a platform.
+    const built = buildVehicleLayer([platform('p1', 0.002, 0.00002)], { ...OPTS, assets })
+    expect(built).toBeNull()
   })
 })

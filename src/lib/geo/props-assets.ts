@@ -38,10 +38,13 @@ export const PROP_ASSETS: readonly PropAsset[] = [
 
 /**
  * Total download for the whole set, KB. Quoted in the UI so the choice is
- * informed rather than a leap — and asserted by a test, so it cannot drift into
- * a lie after somebody adds a mesh.
+ * informed rather than a leap — and asserted by a test IN BOTH DIRECTIONS, so
+ * it can neither creep past what we promised nor sit comfortably above the
+ * truth. The first version of this number was 116 against 93 KB of actual
+ * files: an over-estimate passes a `<=` check forever and still misinforms the
+ * person deciding whether to download.
  */
-export const PROP_ASSETS_KB = 116
+export const PROP_ASSETS_KB = 94
 
 function assetUrl(name: PropAsset): string {
   const base = (import.meta.env.BASE_URL ?? '/') as string

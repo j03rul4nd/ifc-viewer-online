@@ -141,10 +141,10 @@
     "detailRich": "Detallado",
     "detailHint": "Detallado modela cada planta de los edificios del entorno y dibuja césped, arena, roca, nieve y agua como superficies reales iluminadas: agua en movimiento con espuma en la orilla, ondulaciones en la arena y el propio relieve con el estilo Ecosistemas. Más pesado, y el modo para llevar a una reunión con cliente.",
     "styleEcosystemDetailHint": "Pon Detalle en Detallado, en la pestaña Entorno, para dibujar estas franjas como césped, roca y nieve reales en vez de un tinte plano.",
-    "vehicles": "Vehículos (atrezo)",
-    "vehiclesHint": "Los coches y trenes NO son datos mapeados — OpenStreetMap no registra dónde está aparcado un coche. Su colocación es inventada para que la vista se sienta habitada, y es la misma siempre.",
+    "vehicles": "Atrezo (vehículos, farolas, marquesinas)",
+    "vehiclesHint": "Los coches, trenes, farolas y marquesinas de andén NO son datos mapeados — OpenStreetMap no registra dónde está aparcado un coche ni qué acera lleva farola. Su colocación es inventada para que la vista se sienta habitada, y es la misma siempre.",
     "facadeShowcase": "Presentación",
-    "facadeShowcaseHint": "Presentación añade modelos 3D propios — coches, furgonetas, vagones — que se descargan una vez desde este mismo sitio (unos 116 KB). Todo lo demás funciona sin ellos."
+    "facadeShowcaseHint": "El modo presentación sustituye por modelos 3D creados a medida — árboles, coches, furgonetas, vagones, farolas y marquesinas de andén — que se descargan una sola vez desde este sitio (unos 94 KB). Todo lo demás funciona sin ellos."
   },
   "placement": {
     "title": "Ubicación",
