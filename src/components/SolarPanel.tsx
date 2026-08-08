@@ -22,6 +22,7 @@ import {
   moonPhaseIndex, type DayTimes,
 } from '../lib/solar/sun-math'
 import { parseAppUrlParams } from '../lib/url-params'
+import { ViewportPanel } from './ViewportPanel'
 import { loadCities, searchCities, type City } from '../lib/solar/city-search'
 import {
   trackSolarEnabled, trackSolarDisabled, trackSolarPresetSaved,
@@ -326,17 +327,19 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
         </button>
       )}
 
-      <AnimatePresence>
-        {store.panelOpen && (
-          <motion.div
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 12 }}
-            transition={{ duration: 0.2 }}
-            className="absolute right-3 top-14 z-20 pointer-events-auto select-none"
-            style={{ width: 'min(280px, calc(100vw - 24px))' }}
-          >
-            <div className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl max-h-[calc(100vh-140px)] overflow-y-auto">
+      <ViewportPanel
+        open={store.panelOpen}
+        onClose={() => store.setPanelOpen(false)}
+        label={t('panel.title')}
+        mobile="sheet"
+        widthPx={280}
+        anchor="top"
+        maxHeight="calc(100vh - 140px)"
+      >
+        {/* The scroller lives here rather than on the card, so the SAME element
+            does the job in both shells: it flexes inside the desktop card's
+            max-height and inside the sheet's full height. */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
               {/* Header */}
               <div className="px-3 pt-2.5 pb-1.5 border-b border-[var(--border)] flex items-center justify-between">
                 <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase">
@@ -597,10 +600,8 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
                   </div>
                 </div>
               )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </ViewportPanel>
 
       {/* Blocking default-location notice — requirement #1 */}
       <AnimatePresence>
