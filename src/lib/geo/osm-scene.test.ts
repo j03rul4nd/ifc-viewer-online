@@ -7,6 +7,7 @@ import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, bufferCentreline, buildLinearLayer,
+  dashCentreline,
 } from './osm-scene'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import type { OsmFeature } from './osm-features'
@@ -602,5 +603,114 @@ describe('buildSurfaceLayer · detailed', () => {
       expect(mat.depthWrite).toBe(false)
     }
     expect(water.object.renderOrder).toBeGreaterThan(green.object.renderOrder)
+  })
+})
+
+// ── Corners and crossings ─────────────────────────────────────────────────────
+
+describe('buildLinearLayer — corners', () => {
+  /** A closed ring of short segments: a roundabout. */
+  function roundabout(id: string, sides = 12, radiusM = 12): OsmFeature {
+    const ring: Array<{ lat: number; lon: number }> = []
+    const dLat = radiusM / 111_132
+    const dLon = radiusM / (111_320 * Math.cos((LAT * Math.PI) / 180))
+    for (let i = 0; i <= sides; i++) {
+      const a = (i / sides) * Math.PI * 2
+      ring.push({ lat: LAT + Math.sin(a) * dLat, lon: LON + Math.cos(a) * dLon })
+    }
+    return {
+      id, kind: 'road', ring,
+      height: { heightM: 0, minHeightM: 0, estimated: true },
+      widthM: 7,
+      style: { roofShape: 'flat', roofHeightM: 0, tone: [0.41, 0.41, 0.43] },
+    }
+  }
+
+  it('closes the wedges a buffered polyline leaves at every turn', () => {
+    const built = buildLinearLayer([roundabout('w1')], 'road', OPTS)!
+    const verts = surfaceOf(built.object).geometry.getAttribute('position').count
+
+    // A straight of the same segment count has no interior corners to fill, so
+    // the ring must carry strictly more geometry than the straight does.
+    const straight: OsmFeature = {
+      ...roundabout('w2'),
+      ring: Array.from({ length: 13 }, (_, i) => ({ lat: LAT, lon: LON + i * 0.0002 })),
+    }
+    const straightVerts = surfaceOf(
+      buildLinearLayer([straight], 'road', OPTS)!.object,
+    ).geometry.getAttribute('position').count
+    expect(verts).toBeGreaterThan(straightVerts)
+  })
+
+  it('still draws the closing segment of a loop', () => {
+    // The ring's last point repeats its first, so the final segment exists and
+    // the road has no notch where it meets itself.
+    const built = buildLinearLayer([roundabout('w1', 4)], 'road', OPTS)!
+    expect(built.count).toBe(1)
+    expect(surfaceOf(built.object).geometry.getAttribute('position').count).toBeGreaterThan(0)
+  })
+})
+
+describe('dashCentreline', () => {
+  const line = [new THREE.Vector2(0, 0), new THREE.Vector2(10, 0)]
+
+  it('alternates paint and gap along the way', () => {
+    const quads = dashCentreline(line, 1, 1, 1)
+    // 10 long, period 2 → 5 stripes.
+    expect(quads.length).toBe(5)
+    for (const q of quads) expect(q).toHaveLength(4)
+  })
+
+  it('lays the stripes ACROSS the way, which is how a zebra reads', () => {
+    const [q] = dashCentreline(line, 2, 1, 1)
+    // The way runs along x, so each stripe spans y.
+    const ys = q.map((p) => p.y)
+    expect(Math.max(...ys) - Math.min(...ys)).toBeCloseTo(4, 6)
+    const xs = q.map((p) => p.x)
+    expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(1, 6)
+  })
+
+  it('keeps the rhythm even across a segment join', () => {
+    const bent = [new THREE.Vector2(0, 0), new THREE.Vector2(3, 0), new THREE.Vector2(6, 0)]
+    const one = dashCentreline([new THREE.Vector2(0, 0), new THREE.Vector2(6, 0)], 1, 1, 1)
+    expect(dashCentreline(bent, 1, 1, 1).length).toBe(one.length)
+  })
+
+  it('is not fooled by a zero-length segment', () => {
+    const dup = [new THREE.Vector2(0, 0), new THREE.Vector2(0, 0), new THREE.Vector2(4, 0)]
+    expect(dashCentreline(dup, 1, 1, 1).length).toBe(2)
+  })
+})
+
+describe('buildLinearLayer — crossings', () => {
+  function crossing(id: string): OsmFeature {
+    return {
+      id, kind: 'road',
+      ring: [{ lat: LAT, lon: LON }, { lat: LAT, lon: LON + 0.0002 }],
+      height: { heightM: 0, minHeightM: 0, estimated: true },
+      widthM: 4,
+      style: { roofShape: 'flat', roofHeightM: 0, crossing: true, tone: [0.82, 0.80, 0.72] },
+    }
+  }
+
+  it('draws stripes and no carriageway — it is paint on somebody else s asphalt', () => {
+    const zebra = buildLinearLayer([crossing('w1')], 'road', OPTS)!
+    const g = surfaceOf(zebra.object).geometry
+    const c = g.getAttribute('color')
+
+    // Every vertex is marking white: no asphalt surface, no kerb face.
+    for (let i = 0; i < c.count; i++) expect(c.getX(i)).toBeGreaterThan(0.7)
+  })
+
+  it('sits above the road it is painted on', () => {
+    const road = buildLinearLayer([linear('road', 'w1')], 'road', OPTS)!
+    const zebra = buildLinearLayer([crossing('w2')], 'road', OPTS)!
+    const topZ = (m: THREE.Mesh): number => {
+      const p = m.geometry.getAttribute('position')
+      let max = -Infinity
+      for (let i = 0; i < p.count; i++) max = Math.max(max, p.getZ(i))
+      return max
+    }
+    expect(topZ(surfaceOf(zebra.object))).toBeGreaterThan(topZ(surfaceOf(road.object)))
   })
 })

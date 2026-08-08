@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   classifyFeature, parseOsmColor, parseRoofShape, resolveFeatureStyle,
   parseOsmFeatures, buildFeaturesQuery, bridgeWidth, countByKind,
-  roadWidth, railWidth, roadTone, featureLabel,
+  roadWidth, railWidth, roadTone, featureLabel, isCrossing, CROSSING_BAND_M,
   FEATURE_KINDS, MIN_AREA_M2,
   type OsmFeature,
 } from './osm-features'
@@ -534,5 +534,60 @@ describe('parseOsmFeatures — identity', () => {
     })
     expect(f.name).toBeUndefined()
     expect(f.label).toBeUndefined()
+  })
+})
+
+// ── Pedestrian crossings ──────────────────────────────────────────────────────
+
+describe('isCrossing', () => {
+  it('recognises the ways that carry paint', () => {
+    expect(isCrossing({ highway: 'footway', footway: 'crossing' })).toBe(true)
+    expect(isCrossing({ highway: 'footway', footway: 'crossing', crossing: 'zebra' })).toBe(true)
+    expect(isCrossing({ highway: 'footway', footway: 'crossing', crossing: 'marked' })).toBe(true)
+    expect(isCrossing({ highway: 'cycleway', cycleway: 'crossing' })).toBe(true)
+  })
+
+  it('honours a statement that there are no markings', () => {
+    // Painting stripes where there is no paint invents a traffic control.
+    expect(isCrossing({ highway: 'footway', footway: 'crossing', crossing: 'unmarked' })).toBe(false)
+    expect(isCrossing({ highway: 'footway', footway: 'crossing', crossing: 'no' })).toBe(false)
+  })
+
+  it('leaves ordinary footways alone', () => {
+    expect(isCrossing({ highway: 'footway' })).toBe(false)
+    expect(isCrossing({ highway: 'residential' })).toBe(false)
+    expect(isCrossing(undefined)).toBe(false)
+  })
+})
+
+describe('parseOsmFeatures — crossings', () => {
+  const across = [{ lat: 41.38, lon: 2.17 }, { lat: 41.38, lon: 2.1701 }]
+
+  it('is paint on the carriageway, not a tan footpath', () => {
+    const [f] = parseOsmFeatures({
+      elements: [{
+        type: 'way', id: 9,
+        tags: { highway: 'footway', footway: 'crossing', crossing: 'marked' },
+        geometry: across,
+      }],
+    })
+    expect(f.kind).toBe('road')
+    expect(f.style.crossing).toBe(true)
+    // The painted band, not the 2 m a footway would get.
+    expect(f.widthM).toBe(CROSSING_BAND_M)
+    // Marking white, not the warm tone of an unpaved path.
+    expect(f.style.tone![0]).toBeGreaterThan(0.7)
+  })
+
+  it('keeps an unmarked crossing as an ordinary footway', () => {
+    const [f] = parseOsmFeatures({
+      elements: [{
+        type: 'way', id: 10,
+        tags: { highway: 'footway', footway: 'crossing', crossing: 'unmarked' },
+        geometry: across,
+      }],
+    })
+    expect(f.style.crossing).toBeUndefined()
+    expect(f.widthM).toBe(roadWidth({ highway: 'footway' }))
   })
 })

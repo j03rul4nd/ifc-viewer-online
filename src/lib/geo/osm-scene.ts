@@ -506,6 +506,10 @@ const GUTTER_GAIN = 0.9
 const CENTRE_LINE_MIN_WIDTH_M = 6.5
 /** Width of that line, metres — wider than reality so it survives at map scale. */
 const CENTRE_LINE_M = 0.34
+/** Stripe and gap of a zebra, metres. */
+const ZEBRA_STRIPE_M = 0.55
+const ZEBRA_GAP_M = 0.45
+
 /** Worn road-marking white. */
 const CENTRE_LINE_TONE: [number, number, number] = [0.80, 0.78, 0.68]
 
@@ -656,8 +660,30 @@ export function buildLinearLayer(
     }
 
     const half = (f.widthM / 2) * mToN
+
+    // A crossing is paint on somebody else's asphalt: no surface, no kerb, just
+    // the stripes, laid a hair above the carriageway it belongs to.
+    if (f.style.crossing) {
+      for (const quad of dashCentreline(
+        line, half, ZEBRA_STRIPE_M * mToN, ZEBRA_GAP_M * mToN,
+      )) {
+        pushQuad(quad, tone, 0.03 * mToN)
+      }
+      count++
+      continue
+    }
+
     const drop = SIDE_DROP_M[kind] * mToN
     for (const quad of bufferCentreline(line, half)) pushSurfaceQuad(quad, tone, drop)
+    // Corners: a buffered polyline leaves a wedge open on the outside of every
+    // turn, which on a roundabout — dozens of short segments in a circle —
+    // shows up as a scalloped ring rather than a road.
+    for (const tri of centrelineJoins(line, half)) {
+      pushShaded(
+        [tri[0], tri[1], tri[2], tri[0]],
+        [tone, tone, tone, tone],
+      )
+    }
 
     // Centre line on anything wide enough to have one. Nothing else says
     // "carriageway" as immediately, and a road without markings reads as a
@@ -744,6 +770,111 @@ export function buildLinearLayer(
 
   return { object: group, count }
 }
+
+/**
+ * Triangles that fill the wedge left open at each interior vertex of a buffered
+ * polyline. Emitted for BOTH sides: the one on the inside of the turn falls
+ * within the ribbon already drawn and costs nothing but two triangles, which is
+ * far cheaper than working out which side is which.
+ */
+function centrelineJoins(line: ReadonlyArray<THREE.Vector2>, half: number): THREE.Vector2[][] {
+  const out: THREE.Vector2[][] = []
+  for (let i = 1; i < line.length - 1; i++) {
+    const prev = line[i - 1]
+    const at = line[i]
+    const next = line[i + 1]
+
+    const n1 = normalOf(prev, at, half)
+    const n2 = normalOf(at, next, half)
+    if (!n1 || !n2) continue
+    // A vertex that does not actually turn leaves no wedge to fill, and its
+    // join triangles would be degenerate. A long straight road carries plenty
+    // of such vertices, so this is most of them.
+    if (Math.abs(n1.x * n2.y - n1.y * n2.x) < half * half * 1e-6) continue
+
+    for (const sign of [1, -1]) {
+      out.push([
+        at.clone(),
+        new THREE.Vector2(at.x + n1.x * sign, at.y + n1.y * sign),
+        new THREE.Vector2(at.x + n2.x * sign, at.y + n2.y * sign),
+      ])
+    }
+  }
+  return out
+}
+
+/** Left-hand normal of a segment, scaled to `half`. Null on a zero-length one. */
+function normalOf(a: THREE.Vector2, b: THREE.Vector2, half: number): THREE.Vector2 | null {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const len = Math.hypot(dx, dy)
+  if (len === 0) return null
+  return new THREE.Vector2((-dy / len) * half, (dx / len) * half)
+}
+
+/**
+ * Quads for alternating dashes along a polyline — the stripes of a zebra.
+ *
+ * Walked in arc length so the rhythm is even across segment joins, and the
+ * stripes run ACROSS the way, which is the direction of travel of the traffic
+ * they interrupt. That is what a zebra looks like from above.
+ */
+export function dashCentreline(
+  line: ReadonlyArray<THREE.Vector2>, half: number, dash: number, gap: number,
+): THREE.Vector2[][] {
+  const out: THREE.Vector2[][] = []
+  const period = dash + gap
+  if (!(dash > 0) || !(period > 0) || line.length < 2) return out
+
+  // Cumulative arc length. Everything below indexes into this rather than
+  // stepping a running total: these coordinates are normalized (a metre is
+  // ~2.5e-8), and at that magnitude a `(travelled + t) % period` walk loses
+  // enough precision that the remainder can round to zero and the walk stops
+  // advancing. Addressing stripes BY INDEX cannot fail to terminate.
+  const cum = [0]
+  for (let i = 1; i < line.length; i++) cum.push(cum[i - 1] + line[i - 1].distanceTo(line[i]))
+  const total = cum[cum.length - 1]
+  if (total <= 0) return out
+
+  const count = Math.floor(total / period) + 1
+  // Sanity valve: a mis-scaled dash would otherwise ask for millions of quads.
+  if (count > MAX_DASHES) return out
+
+  /** Point and left normal at an arc length along the line. */
+  const at = (sAt: number): { p: THREE.Vector2; n: THREE.Vector2 } | null => {
+    // `<=` rather than `<`: it steps PAST a degenerate segment (a repeated
+    // node, which OSM ways do carry) instead of landing on one and giving up.
+    let i = 1
+    while (i < cum.length - 1 && cum[i] <= sAt) i++
+    const a = line[i - 1]
+    const b = line[i]
+    const segLen = cum[i] - cum[i - 1]
+    if (segLen <= 0) return null
+    const t = Math.min(1, Math.max(0, (sAt - cum[i - 1]) / segLen))
+    const n = normalOf(a, b, half)
+    if (!n) return null
+    return { p: a.clone().lerp(b, t), n }
+  }
+
+  for (let i = 0; i < count; i++) {
+    const s0 = i * period
+    const s1 = Math.min(total, s0 + dash)
+    if (s1 <= s0) continue
+    const A = at(s0)
+    const B = at(s1)
+    if (!A || !B) continue
+    out.push([
+      new THREE.Vector2(A.p.x + A.n.x, A.p.y + A.n.y),
+      new THREE.Vector2(B.p.x + B.n.x, B.p.y + B.n.y),
+      new THREE.Vector2(B.p.x - B.n.x, B.p.y - B.n.y),
+      new THREE.Vector2(A.p.x - A.n.x, A.p.y - A.n.y),
+    ])
+  }
+  return out
+}
+
+/** Upper bound on stripes per way — a mis-scaled dash must not allocate a city. */
+const MAX_DASHES = 4000
 
 /**
  * Points along a polyline at a fixed spacing, offset to one side — where the

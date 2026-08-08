@@ -73,6 +73,12 @@ export interface FeatureStyle {
   /** Rail features: a corridor of track, or a station platform slab. */
   railKind?: 'track' | 'platform'
   /**
+   * A marked pedestrian crossing. Rendered as paint on the carriageway rather
+   * than as a footpath of its own — which is what it is, and drawing it as a
+   * tan strip across the asphalt was plainly wrong.
+   */
+  crossing?: boolean
+  /**
    * How coarse the surface is, 0-1 — a mown pitch vs heath, fine beach sand vs
    * shingle, an ice field vs loose scree. Drives grain size, ripple wavelength
    * and bump strength in the procedural materials. One number instead of a
@@ -133,6 +139,9 @@ const RAIL_VALUES = new Set([
 ])
 
 /** Per-class carriageway width when the way carries neither width nor lanes. */
+/** Width of a marked crossing band, metres. */
+export const CROSSING_BAND_M = 4
+
 const ROAD_DEFAULT_WIDTH: Record<string, number> = {
   motorway: 14, motorway_link: 7, trunk: 12, trunk_link: 7,
   primary: 10, primary_link: 6, secondary: 9, secondary_link: 6,
@@ -182,6 +191,27 @@ const ROAD_TONES: Record<string, [number, number, number]> = {
   footway: [0.52, 0.46, 0.39], path: [0.50, 0.44, 0.36],
   cycleway: [0.36, 0.36, 0.44], track: [0.47, 0.43, 0.34],
   steps: [0.50, 0.46, 0.42],
+}
+
+/** Road-marking white, worn — the same paint as the centre line. */
+const CROSSING_TONE: [number, number, number] = [0.82, 0.80, 0.72]
+
+/**
+ * A marked pedestrian crossing. `crossing=no` and unmarked crossings are
+ * excluded: painting stripes where there is no paint would be inventing a
+ * traffic control that is not there.
+ */
+export function isCrossing(tags: Record<string, string> | undefined): boolean {
+  const t = tags ?? {}
+  const marked = new Set(['marked', 'zebra', 'traffic_signals', 'uncontrolled'])
+  if (t['footway'] === 'crossing' || t['cycleway'] === 'crossing' || t['highway'] === 'crossing') {
+    const kind = t['crossing'] ?? t['crossing:markings'] ?? ''
+    // An untagged footway=crossing is marked far more often than not; an
+    // explicit "unmarked" or "no" is a statement and is honoured.
+    if (kind === 'unmarked' || kind === 'no') return false
+    return kind === '' || marked.has(kind) || t['crossing:markings'] === 'yes'
+  }
+  return false
 }
 
 export function roadTone(tags: Record<string, string> | undefined): [number, number, number] {
@@ -316,6 +346,9 @@ export function resolveFeatureStyle(
   }
 
   if (kind === 'road') {
+    if (isCrossing(t)) {
+      return { roofShape: 'flat', roofHeightM: 0, crossing: true, tone: CROSSING_TONE }
+    }
     return { roofShape: 'flat', roofHeightM: 0, tone: roadTone(t) }
   }
 
@@ -423,7 +456,11 @@ export function parseOsmFeatures(json: unknown): OsmFeature[] {
       if ((kind === 'road' || kind === 'rail') && style.railKind !== 'platform') {
         out.push({
           id: `w${el.id}`, kind, ring: pts, height,
-          widthM: kind === 'road' ? roadWidth(el.tags) : railWidth(el.tags), style,
+          widthM: style.crossing
+            // The painted band, not the 2 m footway the way is tagged as.
+            ? CROSSING_BAND_M
+            : kind === 'road' ? roadWidth(el.tags) : railWidth(el.tags),
+          style,
         })
         continue
       }
