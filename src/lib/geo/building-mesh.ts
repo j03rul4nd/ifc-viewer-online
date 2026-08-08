@@ -73,7 +73,7 @@ export interface BuildingRange {
  *              than a block of extrusions, at roughly 6x the triangles — still
  *              one merged geometry and one draw call.
  */
-export type BuildingDetail = 'simple' | 'detailed'
+export type BuildingDetail = 'simple' | 'detailed' | 'showcase'
 
 export interface BuildingMeshOptions {
   /** Anchor latitude — sets the metres→normalized scale for the whole patch. */
@@ -108,7 +108,8 @@ export function buildBuildingsGeometry(
 ): BuildingMeshResult | null {
   const metresToNormalized = 1 / (WEB_MERCATOR_WORLD_M * cosLatScale(opts.anchorLat))
   const anchorElevation = opts.anchorElevationM ?? 0
-  const detailed = opts.detail === 'detailed'
+  // 'showcase' is 'detailed' plus authored props; the facades are the same.
+  const detailed = opts.detail === 'detailed' || opts.detail === 'showcase'
   const lit = opts.lit === true
 
   const positions: number[] = []

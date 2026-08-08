@@ -94,7 +94,36 @@
     "corsNote": "Le modèle est récupéré dans le navigateur du visiteur — il ne passe jamais par nos serveurs. L'hôte doit envoyer des en-têtes CORS (Access-Control-Allow-Origin) pour que le fichier se charge.",
     "whereHint": "Collez-le dans un blog, un panneau CDE, Notion, un visuel « Contenu Web » de Power BI ou tout autre tableau de bord.",
     "openBuilder": "Ouvrir le générateur d'intégration complet ↗",
-    "close": "Fermer"
+    "close": "Fermer",
+    "backdropLabel": "Arrière-plan",
+    "backdrop": {
+      "studio": "Studio (par défaut)",
+      "white": "Blanc",
+      "paper": "Papier",
+      "blueprint": "Bleu technique",
+      "sky": "Ciel"
+    },
+    "advanced": "Plus d’options",
+    "chromeLabel": "Afficher / masquer",
+    "chromeAuto": "Selon la disposition",
+    "chrome": {
+      "toolbar": "Barre d’outils",
+      "tree": "Arborescence du modèle",
+      "sidebar": "Panneau de propriétés",
+      "home": "Bouton d’accueil",
+      "controls": "Boutons de caméra"
+    },
+    "sunLabel": "Étude solaire et lunaire",
+    "sunOn": "Ouvrir l’étude solaire au chargement",
+    "sunDate": "Date",
+    "sunTime": "Heure",
+    "sunMoon": "Lumière de la lune",
+    "sunEvergreen": "Sans l’année, le lien reste intemporel — le même jour, chaque année.",
+    "siteLabel": "Contexte du site",
+    "siteOn": "Afficher les environs réels",
+    "siteTerrain": "Terrain 3D",
+    "siteBuildings": "Bâtiments environnants",
+    "siteNote": "Nécessite un modèle géoréférencé. Les tuiles de carte et de terrain proviennent de tiers, et les données OpenStreetMap doivent rester attribuées — en l’activant, vous décidez cela pour les visiteurs de votre page."
   },
   "exportModal": {
     "title": "Exporter",

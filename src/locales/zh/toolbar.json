@@ -94,7 +94,36 @@
     "corsNote": "模型会在访客的浏览器中获取——绝不会经过我们的服务器。主机必须发送 CORS 头(Access-Control-Allow-Origin)才能加载该文件。",
     "whereHint": "粘贴到博客、CDE 面板、Notion、Power BI 的“Web 内容”视觉对象或任何仪表盘中。",
     "openBuilder": "打开完整的嵌入生成器 ↗",
-    "close": "关闭"
+    "close": "关闭",
+    "backdropLabel": "背景",
+    "backdrop": {
+      "studio": "影棚（默认）",
+      "white": "白色",
+      "paper": "纸张",
+      "blueprint": "蓝图",
+      "sky": "天空"
+    },
+    "advanced": "更多选项",
+    "chromeLabel": "显示 / 隐藏",
+    "chromeAuto": "跟随布局",
+    "chrome": {
+      "toolbar": "工具栏",
+      "tree": "模型树",
+      "sidebar": "属性侧栏",
+      "home": "首页按钮",
+      "controls": "相机按钮"
+    },
+    "sunLabel": "日月研究",
+    "sunOn": "加载时打开日照研究",
+    "sunDate": "日期",
+    "sunTime": "时间",
+    "sunMoon": "月光",
+    "sunEvergreen": "省略年份，链接将长期有效——每年的同一天。",
+    "siteLabel": "场地环境",
+    "siteOn": "显示真实周边环境",
+    "siteTerrain": "3D 地形",
+    "siteBuildings": "周边建筑",
+    "siteNote": "需要已地理参照的模型。会从第三方加载地图与地形瓦片，且 OpenStreetMap 数据必须保留署名——启用即代表你替页面访客做出该决定。"
   },
   "exportModal": {
     "title": "导出",

@@ -94,7 +94,36 @@
     "corsNote": "モデルは訪問者のブラウザで取得され、当社のサーバーを経由することはありません。ファイルを読み込むには、ホストがCORSヘッダー(Access-Control-Allow-Origin)を送信する必要があります。",
     "whereHint": "ブログ、CDEパネル、Notion、Power BIの「Webコンテンツ」ビジュアル、または任意のダッシュボードに貼り付けます。",
     "openBuilder": "埋め込みビルダーを開く ↗",
-    "close": "閉じる"
+    "close": "閉じる",
+    "backdropLabel": "背景",
+    "backdrop": {
+      "studio": "スタジオ（既定）",
+      "white": "ホワイト",
+      "paper": "ペーパー",
+      "blueprint": "ブループリント",
+      "sky": "スカイ"
+    },
+    "advanced": "その他のオプション",
+    "chromeLabel": "表示 / 非表示",
+    "chromeAuto": "レイアウト既定",
+    "chrome": {
+      "toolbar": "ツールバー",
+      "tree": "モデルツリー",
+      "sidebar": "プロパティサイドバー",
+      "home": "ホームボタン",
+      "controls": "カメラボタン"
+    },
+    "sunLabel": "太陽と月の検討",
+    "sunOn": "読み込み時に日照検討を開く",
+    "sunDate": "日付",
+    "sunTime": "時刻",
+    "sunMoon": "月明かり",
+    "sunEvergreen": "年を省くとリンクは陳腐化しません — 毎年同じ日付になります。",
+    "siteLabel": "敷地の周辺環境",
+    "siteOn": "実際の周辺を表示",
+    "siteTerrain": "3D 地形",
+    "siteBuildings": "周辺の建物",
+    "siteNote": "座標付きモデルが必要です。地図と地形のタイルは第三者から取得され、OpenStreetMap データには帰属表示の義務があります。有効化は、その判断をページの訪問者に代わって行うことを意味します。"
   },
   "exportModal": {
     "title": "エクスポート",

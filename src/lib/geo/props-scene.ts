@@ -24,6 +24,12 @@ export interface PropsOptions {
   anchorLat: number
   sampleGroundM?: ((nx: number, ny: number) => number) | null
   anchorElevationM?: number
+  /**
+   * Authored geometry for showcase mode, once it has loaded. Absent means "use
+   * the procedural version" — which is also what a failed download looks like,
+   * so a missing asset degrades to the box rather than to nothing.
+   */
+  assets?: Map<string, THREE.BufferGeometry> | null
 }
 
 export interface PropsLayer {
@@ -299,15 +305,43 @@ export function buildVehicleLayer(
     return mesh
   }
 
-  // One instanced mesh per body colour: the palette is what stops a street of
-  // identical silver boxes, and seven draw calls is still nothing.
-  CAR_COLORS.forEach((color, ci) => {
-    const mine = cars.filter((c) => hashId(`${c.seed}#paint`) % CAR_COLORS.length === ci)
-    const mesh = place(mine, carGeometry(color), `osm-cars-${ci}`)
-    if (mesh) group.add(mesh)
-  })
+  const authoredCar = opts.assets?.get('car') ?? null
+  const authoredVan = opts.assets?.get('van') ?? null
+  const authoredCarriage = opts.assets?.get('train-carriage') ?? null
 
-  const train = place(carriages, carriageGeometry(), 'osm-train')
+  if (authoredCar) {
+    // The authored bodies are painted neutral, so ONE mesh per silhouette
+    // carries the whole palette through per-instance colour — fewer draw calls
+    // than the procedural path, not more.
+    const vanSet = new Set(
+      authoredVan ? cars.filter((c) => hashId(`${c.seed}#kind`) % 7 === 0) : [],
+    )
+    const tinted = (spots: Placement[], geo: THREE.BufferGeometry, name: string): void => {
+      const mesh = place(spots, geo.clone(), name)
+      if (!mesh) return
+      const col = new THREE.Color()
+      spots.forEach((spot, i) => {
+        const [r, g, b] = CAR_COLORS[hashId(`${spot.seed}#paint`) % CAR_COLORS.length]
+        mesh.setColorAt(i, col.setRGB(r, g, b))
+      })
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+      group.add(mesh)
+    }
+    tinted(cars.filter((c) => !vanSet.has(c)), authoredCar, 'osm-cars')
+    if (authoredVan && vanSet.size > 0) tinted([...vanSet], authoredVan, 'osm-vans')
+  } else {
+    // One instanced mesh per body colour: the palette is what stops a street of
+    // identical silver boxes, and seven draw calls is still nothing.
+    CAR_COLORS.forEach((color, ci) => {
+      const mine = cars.filter((c) => hashId(`${c.seed}#paint`) % CAR_COLORS.length === ci)
+      const mesh = place(mine, carGeometry(color), `osm-cars-${ci}`)
+      if (mesh) group.add(mesh)
+    })
+  }
+
+  const train = place(
+    carriages, authoredCarriage ? authoredCarriage.clone() : carriageGeometry(), 'osm-train',
+  )
   if (train) group.add(train)
 
   return { object: group, count: cars.length + carriages.length }

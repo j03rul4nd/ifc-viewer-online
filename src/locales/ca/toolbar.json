@@ -94,7 +94,36 @@
     "corsNote": "El model es descarrega al navegador del visitant — mai passa pels nostres servidors. L'amfitrió ha d'enviar capçaleres CORS (Access-Control-Allow-Origin) perquè el fitxer es carregui.",
     "whereHint": "Enganxa-ho en un blog, un panell CDE, Notion, un element «Contingut web» de Power BI o qualsevol tauler.",
     "openBuilder": "Obre el generador d'incrustació complet ↗",
-    "close": "Tanca"
+    "close": "Tanca",
+    "backdropLabel": "Fons",
+    "backdrop": {
+      "studio": "Estudi (per defecte)",
+      "white": "Blanc",
+      "paper": "Paper",
+      "blueprint": "Plànol",
+      "sky": "Cel"
+    },
+    "advanced": "Més opcions",
+    "chromeLabel": "Mostra / amaga",
+    "chromeAuto": "Segons el disseny",
+    "chrome": {
+      "toolbar": "Barra d’eines",
+      "tree": "Arbre del model",
+      "sidebar": "Panell de propietats",
+      "home": "Botó d’inici",
+      "controls": "Botons de càmera"
+    },
+    "sunLabel": "Estudi de sol i lluna",
+    "sunOn": "Obre l’estudi solar en carregar",
+    "sunDate": "Data",
+    "sunTime": "Hora",
+    "sunMoon": "Llum de la lluna",
+    "sunEvergreen": "Omet l’any i l’enllaç no caduca: el mateix dia, cada any.",
+    "siteLabel": "Context de l’emplaçament",
+    "siteOn": "Mostra l’entorn real",
+    "siteTerrain": "Terreny 3D",
+    "siteBuildings": "Edificis de l’entorn",
+    "siteNote": "Cal un model georeferenciat. Descarrega tessel·les de mapa i terreny de tercers, i les dades d’OpenStreetMap han de mantenir l’atribució: en activar-ho ho decideixes pels visitants de la teva pàgina."
   },
   "exportModal": {
     "title": "Exporta",

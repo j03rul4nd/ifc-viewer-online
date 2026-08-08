@@ -94,7 +94,36 @@
     "corsNote": "O modelo é obtido no navegador do visitante — nunca passa pelos nossos servidores. O host deve enviar cabeçalhos CORS (Access-Control-Allow-Origin) para que o arquivo seja carregado.",
     "whereHint": "Cole em um blog, um painel CDE, Notion, um elemento “Conteúdo da Web” do Power BI ou qualquer painel.",
     "openBuilder": "Abrir o gerador de incorporação completo ↗",
-    "close": "Fechar"
+    "close": "Fechar",
+    "backdropLabel": "Fundo",
+    "backdrop": {
+      "studio": "Estúdio (predefinido)",
+      "white": "Branco",
+      "paper": "Papel",
+      "blueprint": "Planta",
+      "sky": "Céu"
+    },
+    "advanced": "Mais opções",
+    "chromeLabel": "Mostrar / ocultar",
+    "chromeAuto": "Conforme o esquema",
+    "chrome": {
+      "toolbar": "Barra de ferramentas",
+      "tree": "Árvore do modelo",
+      "sidebar": "Painel de propriedades",
+      "home": "Botão de início",
+      "controls": "Botões de câmara"
+    },
+    "sunLabel": "Estudo do sol e da lua",
+    "sunOn": "Abrir o estudo solar ao carregar",
+    "sunDate": "Data",
+    "sunTime": "Hora",
+    "sunMoon": "Luz da lua",
+    "sunEvergreen": "Sem o ano, o link não caduca — o mesmo dia, todos os anos.",
+    "siteLabel": "Contexto do local",
+    "siteOn": "Mostrar a envolvente real",
+    "siteTerrain": "Terreno 3D",
+    "siteBuildings": "Edifícios envolventes",
+    "siteNote": "Requer um modelo georreferenciado. Descarrega mosaicos de mapa e terreno de terceiros, e os dados do OpenStreetMap têm de manter a atribuição — ao ativar, decide isto pelos visitantes da sua página."
   },
   "exportModal": {
     "title": "Exportar",

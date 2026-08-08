@@ -96,7 +96,36 @@
     "corsNote": "The model is fetched in the visitor's browser — it never touches our servers. The host must send CORS headers (Access-Control-Allow-Origin) for the file to load.",
     "whereHint": "Paste into a blog, a CDE panel, Notion, a Power BI “Web content” visual or any dashboard.",
     "openBuilder": "Open the full embed builder ↗",
-    "close": "Close"
+    "close": "Close",
+    "backdropLabel": "Backdrop",
+    "backdrop": {
+      "studio": "Studio (default)",
+      "white": "White",
+      "paper": "Paper",
+      "blueprint": "Blueprint",
+      "sky": "Sky"
+    },
+    "advanced": "More options",
+    "chromeLabel": "Show / hide",
+    "chromeAuto": "Preset default",
+    "chrome": {
+      "toolbar": "Toolbar",
+      "tree": "Model tree",
+      "sidebar": "Properties sidebar",
+      "home": "Home button",
+      "controls": "Camera buttons"
+    },
+    "sunLabel": "Sun & Moon study",
+    "sunOn": "Open the sun study on load",
+    "sunDate": "Date",
+    "sunTime": "Time",
+    "sunMoon": "Moon light",
+    "sunEvergreen": "Leave the year out and the link stays evergreen — the same day, every year.",
+    "siteLabel": "Site context",
+    "siteOn": "Show the real surroundings",
+    "siteTerrain": "3D terrain",
+    "siteBuildings": "Surrounding buildings",
+    "siteNote": "Needs a georeferenced model. Streams map and terrain tiles from third parties, and OpenStreetMap data must stay attributed — enabling this makes that call for your page’s visitors."
   },
   "exportModal": {
     "title": "Export",

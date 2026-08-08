@@ -1,0 +1,144 @@
+{
+  "title": "Nube de puntos",
+  "subtitle": "Muestra un escaneo junto al modelo",
+  "entry": "Nube de puntos",
+  "close": "Cerrar",
+
+  "load": {
+    "button": "Cargar nube de puntos",
+    "another": "Añadir otra",
+    "drop": "Suelta un escaneo aquí, o examina",
+    "formats": "LAS · PLY · XYZ · PTS · CSV",
+    "hint": "Se procesa en tu navegador. No se sube nada.",
+    "parsing": "Leyendo {{name}}…",
+    "parsingShort": "Leyendo…"
+  },
+
+  "status": {
+    "points": "{{count}} puntos",
+    "pointsDrawn": "{{drawn}} de {{total}} dibujados",
+    "chunks": "{{count}} bloques",
+    "memory": "{{mb}} MB en la GPU",
+    "truncated": "Detenido en {{count}} puntos: el archivo contiene más de los que este visor mantiene en memoria a la vez.",
+    "estimatedBounds": "Extensión medida durante la lectura (este formato no incluye caja envolvente).",
+    "noModel": "No hay modelo IFC cargado: el escaneo se coloca por su cuenta.",
+    "empty": "Todavía no hay ninguna nube cargada."
+  },
+
+  "align": {
+    "title": "Alineación",
+    "rung": {
+      "map-conversion": "Georreferenciado (conversión de mapa)",
+      "shared-crs": "Georreferenciado (misma cuadrícula)",
+      "geographic": "Anclaje geográfico",
+      "local": "Coordenadas locales compartidas",
+      "manual": "Colocado a mano"
+    },
+    "confidence": {
+      "exact": "Exacta",
+      "high": "Alta",
+      "approximate": "Aproximada",
+      "manual": "Sin verificar"
+    },
+    "crs": "CRS del escaneo: {{code}}",
+    "crsNone": "El archivo del escaneo no declara ningún sistema de referencia de coordenadas.",
+    "unit": "Unidad: {{unit}}",
+    "unitDeclared": "declarada por el archivo",
+    "unitAssumed": "asumida",
+    "reason": {
+      "sameCrs": "El escaneo y el modelo usan el mismo sistema de referencia de coordenadas.",
+      "assumedSameCrs": "El modelo da coordenadas de cuadrícula pero no nombra ningún CRS: se ha asumido el del escaneo.",
+      "reprojected": "El escaneo se ha reproyectado desde su cuadrícula a la del modelo.",
+      "ifcCrsUnknown": "El modelo nombra un CRS que esta versión no puede resolver; se ha usado la cuadrícula del escaneo tal cual.",
+      "noElevationDatum": "El modelo no declara cota de referencia: las alturas pueden estar desplazadas verticalmente.",
+      "geographicAnchor": "Alineado mediante la latitud/longitud del emplazamiento del modelo, más basta que una conversión de mapa.",
+      "groundMatched": "El suelo del escaneo se ha situado sobre el suelo del modelo.",
+      "sharedLocalFrame": "Ninguno de los dos está georreferenciado, pero ambos ocupan las mismas coordenadas locales.",
+      "unitMillimetres": "La extensión sugiere milímetros: escalado por 0,001.",
+      "unitCentimetres": "La extensión sugiere centímetros: escalado por 0,01.",
+      "unitFeet": "La extensión sugiere pies: escalado por 0,3048.",
+      "unitAssumed": "Unidad no declarada; se asumen metros.",
+      "noCommonReference": "Nada relaciona los dos archivos, así que el escaneo se ha centrado sobre el modelo. Usa los desplazamientos de abajo para situarlo."
+    },
+    "manualWarning": "Esta colocación es un punto de partida, no una medición.",
+    "recompute": "Recalcular alineación"
+  },
+
+  "transform": {
+    "title": "Ajustar colocación",
+    "x": "Este / oeste",
+    "y": "Arriba / abajo",
+    "z": "Norte / sur",
+    "rotation": "Rotación",
+    "scale": "Escala",
+    "reset": "Restablecer colocación",
+    "hint": "Los desplazamientos se aplican sobre la alineación detectada y nunca se integran en ella."
+  },
+
+  "display": {
+    "title": "Apariencia",
+    "pointSize": "Tamaño de punto",
+    "attenuate": "Reducir con la distancia",
+    "opacity": "Opacidad",
+    "density": "Detalle",
+    "densityHint": "Cuántos puntos se dibujan a la vez. Bájalo si la navegación se entrecorta.",
+    "round": "Puntos redondos",
+    "colorMode": "Colorear por",
+    "mode": {
+      "rgb": "Color del escaneo",
+      "intensity": "Intensidad",
+      "elevation": "Altura",
+      "classification": "Clasificación",
+      "flat": "Color único"
+    },
+    "modeUnavailable": "No está en este archivo",
+    "flatColor": "Color",
+    "confidence": "Umbral de confianza",
+    "confidenceHint": "Oculta los puntos de los que la reconstrucción estaba menos segura. Solo lo tienen los archivos con confianza por punto."
+  },
+
+  "view": {
+    "title": "Vista",
+    "fitCloud": "Encuadrar escaneo",
+    "fitBoth": "Encuadrar modelo + escaneo",
+    "showModel": "Ver modelo",
+    "showCloud": "Ver escaneo",
+    "isolateCloud": "Solo escaneo",
+    "isolateModel": "Solo modelo",
+    "both": "Ambos"
+  },
+
+  "actions": {
+    "remove": "Quitar",
+    "cancel": "Cancelar",
+    "visible": "Visible",
+    "hidden": "Oculto"
+  },
+
+  "unsupported": {
+    "laz": "Es un archivo LAZ (LAS comprimido). Este visor lee LAS sin comprimir: expórtalo o conviértelo a .las e inténtalo de nuevo.",
+    "e57": "E57 todavía no está soportado. Exporta el escaneo como LAS o PLY desde el software del escáner.",
+    "copc": "Las nubes optimizadas para la nube (COPC) todavía no están soportadas. Exporta un .las normal.",
+    "pcd": "PCD todavía no está soportado. Exporta como PLY.",
+    "proprietary": "Es un archivo de proyecto nativo del escáner. Expórtalo primero como LAS o PLY.",
+    "unknown": "Ese tipo de archivo no es una nube de puntos que este visor pueda leer."
+  },
+
+  "error": {
+    "emptyFile": "Ese archivo está vacío.",
+    "notLas": "Esto no parece un archivo LAS.",
+    "notPly": "Esto no parece un archivo PLY.",
+    "plyNoXyz": "El archivo PLY no tiene propiedades de vértice x/y/z.",
+    "plyLayout": "Este PLY guarda los vértices en una disposición que el lector no puede direccionar.",
+    "plyMalformed": "No se ha podido leer la cabecera del PLY.",
+    "noPoints": "No se han encontrado puntos en el archivo.",
+    "malformedHeader": "La cabecera del archivo está truncada o mal formada.",
+    "headerFailed": "No se ha podido leer la cabecera del archivo.",
+    "parseFailed": "No se ha podido leer el archivo.",
+    "readerInit": "No hay lector disponible para ese formato.",
+    "workerFailed": "El worker de nubes de puntos se ha detenido inesperadamente.",
+    "timeout": "El archivo no ha empezado a leerse a tiempo.",
+    "cancelled": "Se ha cancelado la carga.",
+    "budgetExhausted": "El presupuesto de puntos está lleno. Quita un escaneo antes de cargar otro."
+  }
+}

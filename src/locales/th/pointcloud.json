@@ -1,0 +1,136 @@
+{
+  "_status": "machine-copy-of-en — translate before promoting",
+  "title": "Point cloud",
+  "subtitle": "Show a scan alongside the model",
+  "entry": "Point cloud",
+  "close": "Close",
+  "load": {
+    "button": "Load point cloud",
+    "another": "Add another",
+    "drop": "Drop a scan here, or browse",
+    "formats": "LAS · PLY · XYZ · PTS · CSV",
+    "hint": "Parsed in your browser. Nothing is uploaded.",
+    "parsing": "Reading {{name}}…",
+    "parsingShort": "Reading…"
+  },
+  "status": {
+    "points": "{{count}} points",
+    "pointsDrawn": "{{drawn}} of {{total}} drawn",
+    "chunks": "{{count}} blocks",
+    "memory": "{{mb}} MB on the GPU",
+    "truncated": "Stopped at {{count}} points — the file holds more than this viewer keeps in memory at once.",
+    "estimatedBounds": "Extent measured while reading (this format carries no bounding box).",
+    "noModel": "No IFC model loaded — the scan is placed on its own.",
+    "empty": "No point cloud loaded yet."
+  },
+  "align": {
+    "title": "Alignment",
+    "rung": {
+      "map-conversion": "Georeferenced (map conversion)",
+      "shared-crs": "Georeferenced (shared grid)",
+      "geographic": "Geographic anchor",
+      "local": "Shared local coordinates",
+      "manual": "Placed by hand"
+    },
+    "confidence": {
+      "exact": "Exact",
+      "high": "High",
+      "approximate": "Approximate",
+      "manual": "Unverified"
+    },
+    "crs": "Scan CRS: {{code}}",
+    "crsNone": "The scan file declares no coordinate reference system.",
+    "unit": "Unit: {{unit}}",
+    "unitDeclared": "declared by the file",
+    "unitAssumed": "assumed",
+    "reason": {
+      "sameCrs": "The scan and the model use the same coordinate reference system.",
+      "assumedSameCrs": "The model gives grid coordinates but names no CRS — the scan's was assumed to match.",
+      "reprojected": "The scan was reprojected from its own grid into the model's.",
+      "ifcCrsUnknown": "The model names a CRS this build cannot resolve; the scan's grid was used directly.",
+      "noElevationDatum": "The model declares no reference elevation — heights may be offset vertically.",
+      "geographicAnchor": "Aligned through the model's site latitude/longitude, which is coarser than a map conversion.",
+      "groundMatched": "The scan's floor was placed on the model's floor.",
+      "sharedLocalFrame": "Neither file is georeferenced, but the two occupy the same local coordinates.",
+      "unitMillimetres": "Extent suggests millimetres — scaled by 0.001.",
+      "unitCentimetres": "Extent suggests centimetres — scaled by 0.01.",
+      "unitFeet": "Extent suggests feet — scaled by 0.3048.",
+      "unitAssumed": "Unit not declared; metres assumed.",
+      "noCommonReference": "Nothing links the two files, so the scan was centred on the model. Use the offsets below to place it."
+    },
+    "manualWarning": "This placement is a starting point, not a measurement.",
+    "recompute": "Re-run alignment"
+  },
+  "transform": {
+    "title": "Adjust placement",
+    "x": "East / west",
+    "y": "Up / down",
+    "z": "North / south",
+    "rotation": "Rotation",
+    "scale": "Scale",
+    "reset": "Reset placement",
+    "hint": "Offsets are applied on top of the detected alignment and are never folded into it."
+  },
+  "display": {
+    "title": "Appearance",
+    "pointSize": "Point size",
+    "attenuate": "Shrink with distance",
+    "opacity": "Opacity",
+    "density": "Detail",
+    "densityHint": "How many points are drawn at once. Lower this if navigation stutters.",
+    "round": "Round points",
+    "colorMode": "Colour by",
+    "mode": {
+      "rgb": "Scan colour",
+      "intensity": "Intensity",
+      "elevation": "Height",
+      "classification": "Classification",
+      "flat": "Single colour"
+    },
+    "modeUnavailable": "Not in this file",
+    "flatColor": "Colour",
+    "confidence": "Confidence cut-off",
+    "confidenceHint": "Hides points the reconstruction was least sure about. Only files that carry a per-point confidence have this."
+  },
+  "view": {
+    "title": "View",
+    "fitCloud": "Fit to scan",
+    "fitBoth": "Fit model + scan",
+    "showModel": "Show model",
+    "showCloud": "Show scan",
+    "isolateCloud": "Scan only",
+    "isolateModel": "Model only",
+    "both": "Both"
+  },
+  "actions": {
+    "remove": "Remove",
+    "cancel": "Cancel",
+    "visible": "Visible",
+    "hidden": "Hidden"
+  },
+  "unsupported": {
+    "laz": "This is a LAZ file (compressed LAS). This viewer reads uncompressed LAS — export or convert to .las and try again.",
+    "e57": "E57 is not supported yet. Export the scan as LAS or PLY from your scanner software.",
+    "copc": "Cloud-optimised point clouds are not supported yet. Export a plain .las instead.",
+    "pcd": "PCD is not supported yet. Export as PLY instead.",
+    "proprietary": "That is a scanner-native project file. Export it as LAS or PLY first.",
+    "unknown": "That file type is not a point cloud this viewer can read."
+  },
+  "error": {
+    "emptyFile": "That file is empty.",
+    "notLas": "This does not look like a LAS file.",
+    "notPly": "This does not look like a PLY file.",
+    "plyNoXyz": "The PLY file has no x/y/z vertex properties.",
+    "plyLayout": "This PLY stores its vertices in a layout the reader cannot address.",
+    "plyMalformed": "The PLY header could not be read.",
+    "noPoints": "No points were found in the file.",
+    "malformedHeader": "The file header is truncated or malformed.",
+    "headerFailed": "The file header could not be read.",
+    "parseFailed": "The file could not be read.",
+    "readerInit": "No reader is available for that format.",
+    "workerFailed": "The point cloud worker stopped unexpectedly.",
+    "timeout": "The file did not start reading in time.",
+    "cancelled": "Loading was cancelled.",
+    "budgetExhausted": "The point budget is full. Remove a scan before loading another."
+  }
+}

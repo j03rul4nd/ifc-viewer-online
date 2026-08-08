@@ -21,6 +21,7 @@ import {
 } from './building-mesh'
 import { createFacadeMaterial } from './facade-shader'
 import { buildSignalLayer, buildVehicleLayer } from './props-scene'
+import { loadPropAssets } from './props-assets'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, buildLinearLayer, disposeLayer,
 } from './osm-scene'
@@ -237,10 +238,14 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let buildingsEnabled = false
   /** How much of a surrounding facade to model. */
   let contextDetail: BuildingDetail = 'simple'
+  /** Invalidates an asset fetch the user has already navigated away from. */
+  let assetEpoch = 0
   /** Decorative vehicles. Not a feature layer: OSM does not map them. */
   let vehiclesEnabled = false
   /** Prop groups, disposed with the rest but not part of layerObjects. */
   const propObjects: THREE.Object3D[] = []
+  /** Authored props, once fetched. Null until showcase mode asks for them. */
+  let propAssets: Map<string, THREE.BufferGeometry> | null = null
   /**
    * Last fetched footprints for the current site. Cached so toggling terrain
    * (which changes the ground the buildings sit on) re-extrudes locally
@@ -443,7 +448,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // Re-apply sticky visuals (style/exaggeration survive rebuilds).
       if (terrainStyle !== 'imagery') patch.setStyle(terrainStyle)
       if (terrainExaggeration !== 1) patch.setExaggeration(terrainExaggeration)
-      if (contextDetail !== 'simple') patch.setQuality(contextDetail)
+      if (contextDetail !== 'simple') patch.setQuality(surfaceQuality())
       patch.setLook(terrainLook)
       // Clip the flat basemap under the patch so valleys BELOW the ground
       // plane are visible (they'd otherwise be hidden by the opaque tiles).
@@ -545,8 +550,20 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     setContextDetail(level) {
       if (level === contextDetail) return
       contextDetail = level
+
+      // Showcase is the only level that downloads anything. Fetch once, then
+      // rebuild — the scene is usable throughout, it just gets better when the
+      // assets land instead of blocking on them.
+      if (level === 'showcase' && !propAssets) {
+        const epoch = ++assetEpoch
+        void loadPropAssets().then((assets) => {
+          if (epoch !== assetEpoch || !geoRoot) return
+          propAssets = assets
+          rebuildLayers()
+        })
+      }
       // One control, whole scene: facades, ground layers AND the relief itself.
-      terrain?.setQuality(level)
+      terrain?.setQuality(surfaceQuality())
       rebuildLayers()
     },
 
@@ -631,6 +648,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * building heights were estimated. Never fetches — that is what makes a
    * layer toggle instant.
    */
+  /** Surface quality for the current level — showcase renders as detailed. */
+  function surfaceQuality(): 'simple' | 'detailed' {
+    return contextDetail === 'simple' ? 'simple' : 'detailed'
+  }
+
   function rebuildLayers(): number {
     clearLayers()
     for (const o of propObjects.splice(0)) { o.removeFromParent(); disposeLayer(o) }
@@ -647,7 +669,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // One control governs how much of everything is modelled: storey-banded
       // facades AND procedural ground. Splitting them would be two switches for
       // one decision — "is this a working view or a view I am presenting".
-      quality: contextDetail,
+      // Surfaces know two levels; 'showcase' adds authored props on top of
+      // 'detailed' rather than being a third surface treatment.
+      quality: surfaceQuality(),
       sun: surfaceSun(),
     }
 
@@ -706,7 +730,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
     // Vehicles are NOT data. Separate flag, off by default, and the UI says so.
     if (vehiclesEnabled) {
-      const built = buildVehicleLayer(osmFeatures, opts)
+      const built = buildVehicleLayer(osmFeatures, { ...opts, assets: propAssets })
       if (built) { geoRoot.add(built.object); propObjects.push(built.object) }
     }
 

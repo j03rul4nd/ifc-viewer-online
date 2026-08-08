@@ -94,7 +94,36 @@
     "corsNote": "Das Modell wird im Browser des Besuchers geladen — es läuft nie über unsere Server. Der Host muss CORS-Header (Access-Control-Allow-Origin) senden, damit die Datei geladen werden kann.",
     "whereHint": "Füge es in einen Blog, ein CDE-Panel, Notion, ein Power-BI-„Webinhalt“-Element oder ein beliebiges Dashboard ein.",
     "openBuilder": "Vollständigen Einbettungs-Generator öffnen ↗",
-    "close": "Schließen"
+    "close": "Schließen",
+    "backdropLabel": "Hintergrund",
+    "backdrop": {
+      "studio": "Studio (Standard)",
+      "white": "Weiß",
+      "paper": "Papier",
+      "blueprint": "Blaupause",
+      "sky": "Himmel"
+    },
+    "advanced": "Weitere Optionen",
+    "chromeLabel": "Ein- / ausblenden",
+    "chromeAuto": "Voreinstellung",
+    "chrome": {
+      "toolbar": "Werkzeugleiste",
+      "tree": "Modellbaum",
+      "sidebar": "Eigenschaften-Seitenleiste",
+      "home": "Home-Schaltfläche",
+      "controls": "Kamera-Schaltflächen"
+    },
+    "sunLabel": "Sonne- und Mondstudie",
+    "sunOn": "Sonnenstudie beim Laden öffnen",
+    "sunDate": "Datum",
+    "sunTime": "Uhrzeit",
+    "sunMoon": "Mondlicht",
+    "sunEvergreen": "Ohne Jahresangabe bleibt der Link zeitlos — derselbe Tag, jedes Jahr.",
+    "siteLabel": "Standortumgebung",
+    "siteOn": "Reale Umgebung anzeigen",
+    "siteTerrain": "3D-Gelände",
+    "siteBuildings": "Umliegende Gebäude",
+    "siteNote": "Erfordert ein georeferenziertes Modell. Karten- und Geländekacheln werden von Dritten geladen, und OpenStreetMap-Daten müssen attributiert bleiben — mit dem Aktivieren entscheiden Sie das für die Besucher Ihrer Seite."
   },
   "exportModal": {
     "title": "Exportieren",
