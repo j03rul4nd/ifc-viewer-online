@@ -59,17 +59,34 @@ byte-identical to a build without the feature. This is the kill switch.
    never refetch. Buildings carry roof shapes (`roof:shape` → flat / gabled /
    pyramidal) and tagged wall/roof colours, and the panel reports how many
    heights were *estimated* rather than surveyed.
-8. **Placement minimap** (Leaflet): drag the pin or click to place a
+8. **Detail level** (under Surroundings): *Simple* · *Detailed* · *Showcase*.
+   One control governs how much of everything is modelled — storey-banded
+   facades, procedural ground surfaces and the relief itself — because the real
+   question is "is this a working view or a view I am presenting", not three
+   independent switches. **Showcase is the only level that downloads anything**:
+   ~136 KB of authored GLB props from our own origin, fetched once, quoted in
+   the panel before the user commits. Everything degrades asset-by-asset if a
+   download fails, and the *level* decides what is drawn — never whether the
+   assets happen to be cached, or "detailed" would look different depending on
+   where the user had been.
+9. **Scenery** toggle (vehicles, lamps, shelters), off by default and separate
+   from every data layer. Cars, trains, street lamps and platform shelters are
+   INVENTED placement — OSM does not record where a car is parked or which kerb
+   carries a lamp — so they get their own switch and the UI says so. Traffic
+   signals are the counter-example: `highway=traffic_signals` is a surveyed
+   node, so they are a data layer like any other. A client looking at a render
+   must never be able to mistake our set dressing for survey.
+10. **Placement minimap** (Leaflet): drag the pin or click to place a
    non-georeferenced model, review where an IFC's own georeferencing landed,
    and "use my location" (opt-in per click; coordinates never leave the
    browser and never reach analytics). With several models loaded it also
    shows sibling pins and warns when the files disagree by more than 10 km.
-9. **Save location to the IFC**: writes `IfcSite.RefLatitude/RefLongitude/
+11. **Save location to the IFC**: writes `IfcSite.RefLatitude/RefLongitude/
    RefElevation` as a normal, undoable edit that is applied on export.
-10. Attribution pill (bottom-right) is a **license obligation**, not decor.
+12. Attribution pill (bottom-right) is a **license obligation**, not decor.
     OSM building data is ODbL — attributed whenever buildings are shown, even
     when the basemap comes from another provider.
-11. Manual placements persist per file (`ifc-geo-placement:v1:<cacheKey>`) and
+13. Manual placements persist per file (`ifc-geo-placement:v1:<cacheKey>`) and
    win over extracted georeferencing on the next load. Note: demo-gallery
    models get a fresh `lastModified` per download, so their cache key — and
    therefore the saved placement — does not survive a re-download. User files
@@ -97,7 +114,10 @@ byte-identical to a build without the feature. This is the kill switch.
 | Multi-model siting (pure: haversine, anchor, disagreement) | `src/lib/geo/model-sites.ts` |
 | OSM buildings: heights/bbox (pure) · extrusion incl. roof shapes | `src/lib/geo/buildings.ts`, `src/lib/geo/building-mesh.ts` |
 | OSM feature classification + single multi-layer query (pure) | `src/lib/geo/osm-features.ts` |
-| OSM layer meshes (water, greenery, instanced trees, bridge decks) | `src/lib/geo/osm-scene.ts` |
+| OSM layer meshes (water, greenery, instanced trees, bridge decks, catenary masts) | `src/lib/geo/osm-scene.ts` |
+| Signals (data) and scenery (vehicles, lamps, shelters) | `src/lib/geo/props-scene.ts` |
+| Showcase GLB loading + cache + quoted download size | `src/lib/geo/props-assets.ts` |
+| Authored assets, and the script that builds them (`npm run props`) | `public/models/props/*.glb`, `scripts/blender/build-props.py` |
 | Fetch worker (one query, all layers) | `src/workers/geo-buildings.worker.ts` |
 | Placement minimap (Leaflet, lazy) | `src/components/PlacementMiniMap.tsx` |
 | Product state (epoch-guarded) | `src/stores/geoStore.ts` |
@@ -202,6 +222,36 @@ acceptable if the query pattern stays small and interactive:
   `pushTriangle` once accepted both and silently painted every tinted building
   face in greyscale. The ambiguous overload is gone: it takes either one grey
   or explicit per-vertex RGB. Do not reintroduce the convenience form.
+- **Metres → normalized has a cosine, and its direction is invisible when
+  wrong.** Mercator inflates distance by `1/cos(lat)`, so a ground metre is
+  `1/(cos φ · WORLD_M)` normalized, and `geoRoot` scales by `WORLD_M · cos φ` to
+  bring it back. Flip it and *everything still renders* — at `cos²(lat)` of its
+  real size: correct at the equator, 43 % in Paris, invisible in Tromsø.
+  Nothing throws and no single-module test notices; the only symptom is that
+  the props look like toys. `props-scene.ts` shipped with it backwards and
+  nobody saw it, because the scenery layer is off by default. There is now ONE
+  `metresToNormalized` in `geo-math.ts` with a round-trip test at five
+  latitudes. Do not write a private copy.
+- **Reading a rotation off an instance matrix needs `decompose`, not
+  `setFromRotationMatrix`.** Every instance matrix in the geo layers carries the
+  ~4e-8 metres-to-normalized scale, and `setFromRotationMatrix` assumes a pure
+  rotation — it returns near-identity whatever the real yaw is. Two placement
+  tests were passing without checking anything because of this.
+- **Blender: rotating a part that is already positioned swings it around the
+  world origin.** Setting `rotation_euler` and then applying the transform
+  displaces the mesh instead of turning it in place. The export succeeds, the
+  triangle budget passes, the GLB is valid and the right size — the street
+  lamp's arm shipped six metres down the street and four metres in the air, and
+  the only way to find it was to measure the result. `build-props.py` builds
+  every primitive at the origin and translates afterwards; use `spin()` /
+  `squash()` for any further rotation or scale, never the raw ops.
+- **Authored assets are checked against a tape measure, not a file size.**
+  `scripts/blender/props-assets.test.ts` asserts every asset's extents in
+  metres and that its base sits on `z = 0`, and asserts the table covers
+  `PROP_ASSETS` exactly — iterating the table alone let a new asset skip the
+  check, which is how the broken lamp survived. `PROP_ASSETS_KB` is checked in
+  BOTH directions: an over-estimate passes a `<=` forever and still misinforms
+  the person deciding whether to download.
 - OSM is volunteer-mapped and uneven: a missing park is not an empty field.
   Report what was found; never let the UI imply absence of data means absence
   of the thing. Roof shapes are the clearest case — in Paris only 20 of 1254
