@@ -42,6 +42,10 @@ export interface LatLonPoint { lat: number; lon: number }
 export interface OsmFeature {
   id: string
   kind: FeatureKind
+  /** `name` as mapped, when there is one. Never invented. */
+  name?: string
+  /** What the thing IS, in one readable phrase — 'Train station', 'School'. */
+  label?: string
   /** Closed ring for area features (buildings, water, green, bridge decks). */
   ring?: LatLonPoint[]
   /** Single position for point features (trees). */
@@ -425,7 +429,12 @@ export function parseOsmFeatures(json: unknown): OsmFeature[] {
       }
 
       const ring = closeRing(pts, kind)
-      if (ring) out.push({ id: `w${el.id}`, kind, ring, height, style })
+      if (ring) {
+        out.push({
+          id: `w${el.id}`, kind, ring, height, style,
+          name: el.tags?.['name'], label: featureLabel(el.tags),
+        })
+      }
       continue
     }
 
@@ -524,6 +533,63 @@ export function buildFeaturesQuery(
     ');',
     `out geom ${maxElements};`,
   ].join('')
+}
+
+/**
+ * What a feature IS, in words a person reads rather than a tag.
+ *
+ * Order matters: the most specific answer wins, because "Station" is a more
+ * useful thing to be told than "Building". Anything unmapped returns undefined
+ * rather than a guess — a building we know nothing about must say nothing, not
+ * "Building" over and over.
+ */
+export function featureLabel(tags: Record<string, string> | undefined): string | undefined {
+  const t = tags ?? {}
+
+  // Transport first: on a site next to a station, that is the one landmark
+  // everyone in the room is orienting by.
+  if (t['railway'] === 'station' || t['building'] === 'train_station') return 'Train station'
+  if (t['railway'] === 'halt') return 'Railway halt'
+  if (t['railway'] === 'platform' || t['public_transport'] === 'platform') return 'Platform'
+  if (t['railway'] === 'subway_entrance') return 'Metro entrance'
+  if (t['aeroway'] === 'terminal') return 'Airport terminal'
+
+  const amenity = t['amenity'] ?? ''
+  const AMENITY: Record<string, string> = {
+    school: 'School', university: 'University', college: 'College',
+    kindergarten: 'Kindergarten', hospital: 'Hospital', clinic: 'Clinic',
+    doctors: 'Medical centre', pharmacy: 'Pharmacy', police: 'Police station',
+    fire_station: 'Fire station', townhall: 'Town hall', courthouse: 'Courthouse',
+    library: 'Library', theatre: 'Theatre', cinema: 'Cinema', museum: 'Museum',
+    place_of_worship: 'Place of worship', restaurant: 'Restaurant', cafe: 'Café',
+    bank: 'Bank', post_office: 'Post office', parking: 'Car park',
+    community_centre: 'Community centre', bus_station: 'Bus station',
+  }
+  if (AMENITY[amenity]) return AMENITY[amenity]
+
+  if (t['shop']) return 'Shop'
+  if (t['office']) return 'Office'
+  if (t['tourism'] === 'hotel') return 'Hotel'
+  if (t['tourism'] === 'museum') return 'Museum'
+  if (t['leisure'] === 'sports_centre') return 'Sports centre'
+  if (t['leisure'] === 'stadium') return 'Stadium'
+
+  const BUILDING: Record<string, string> = {
+    apartments: 'Apartments', residential: 'Residential', house: 'House',
+    detached: 'House', terrace: 'Terraced housing', dormitory: 'Halls of residence',
+    hotel: 'Hotel', commercial: 'Commercial', retail: 'Retail', office: 'Office',
+    industrial: 'Industrial', warehouse: 'Warehouse', civic: 'Civic building',
+    government: 'Government building', school: 'School', university: 'University',
+    hospital: 'Hospital', church: 'Church', cathedral: 'Cathedral',
+    mosque: 'Mosque', synagogue: 'Synagogue', temple: 'Temple',
+    chapel: 'Chapel', stadium: 'Stadium', garage: 'Garage', garages: 'Garages',
+    parking: 'Car park', train_station: 'Train station', transportation: 'Transport building',
+    construction: 'Under construction', roof: 'Canopy', greenhouse: 'Greenhouse',
+  }
+  const building = t['building'] ?? ''
+  if (BUILDING[building]) return BUILDING[building]
+
+  return undefined
 }
 
 /** Count features per layer — for the "what did we find?" panel readout. */

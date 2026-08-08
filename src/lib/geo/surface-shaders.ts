@@ -97,94 +97,10 @@ float fbm(vec2 p, int octaves) {
   return sum;
 }
 
-/** Finite-difference gradient of fbm — the cheapest usable bump normal. */
-vec2 fbmGrad(vec2 p, float eps, int octaves) {
-  float c = fbm(p, octaves);
-  return vec2(fbm(p + vec2(eps, 0.0), octaves) - c,
-              fbm(p + vec2(0.0, eps), octaves) - c) / eps;
-}
-
 /** Ridged noise — the fracture lines that make rock read as rock. */
 float ridge(vec2 p, int octaves) {
   return 1.0 - abs(fbm(p, octaves) * 2.0 - 1.0);
 }
-`
-
-/**
- * One vertex shader for every ground surface.
- *
- * Lighting happens in WORLD space, which is the only frame where the camera
- * (fresnel, specular) and the layer's own sun can meet. The sun arrives in
- * layer-local coordinates and is rotated by the model matrix here, so it keeps
- * pointing the same way on the ground no matter how the placement is yawed.
- */
-function vertexShader(water: boolean): string {
-  return /* glsl */ `
-    attribute vec2 aSurf;
-    attribute float aRough;
-    ${water ? 'attribute float aShore;' : ''}
-
-    uniform vec3 uSunLocal;
-
-    varying vec2 vSurf;
-    varying float vRough;
-    varying vec3 vTone;
-    varying vec3 vNormalW;
-    varying vec3 vWorld;
-    varying vec3 vSunW;
-    varying vec3 vTanX;
-    varying vec3 vTanY;
-    varying vec3 vUpW;
-    ${water ? 'varying float vShore;' : ''}
-
-    #include <fog_pars_vertex>
-
-    void main() {
-      vSurf = aSurf;
-      vRough = aRough;
-      ${water ? 'vShore = aShore;' : ''}
-      #ifdef USE_COLOR
-        vTone = color;
-      #else
-        vTone = vec3(1.0);
-      #endif
-
-      mat3 m = mat3(modelMatrix);
-      vNormalW = normalize(m * normal);
-      vSunW    = normalize(m * uSunLocal);
-      // Images of the layer's own axes: the frame a bump normal is perturbed in.
-      vTanX = normalize(m * vec3(1.0, 0.0, 0.0));
-      vTanY = normalize(m * vec3(0.0, 1.0, 0.0));
-      vUpW  = normalize(m * vec3(0.0, 0.0, 1.0));
-
-      vec4 wp = modelMatrix * vec4(position, 1.0);
-      vWorld = wp.xyz;
-      vec4 mvPosition = viewMatrix * wp;
-      gl_Position = projectionMatrix * mvPosition;
-
-      #include <fog_vertex>
-    }
-  `
-}
-
-/** Declarations every ground fragment shader needs. */
-const FRAGMENT_HEADER = /* glsl */ `
-  uniform vec3 uSunColor;
-  uniform vec3 uSkyColor;
-  uniform vec3 uGroundColor;
-  uniform float uOpacity;
-
-  varying vec2 vSurf;
-  varying float vRough;
-  varying vec3 vTone;
-  varying vec3 vNormalW;
-  varying vec3 vWorld;
-  varying vec3 vSunW;
-  varying vec3 vTanX;
-  varying vec3 vTanY;
-  varying vec3 vUpW;
-
-  #include <fog_pars_fragment>
 `
 
 /**
@@ -207,36 +123,6 @@ float detailFade(vec2 p, float cyclesPerMetre) {
   float metresPerPixel = max(fwidth(p.x), fwidth(p.y));
   return 1.0 - smoothstep(0.30, 0.80, metresPerPixel * cyclesPerMetre);
 }
-`
-
-/**
- * Key light + hemispheric sky. Not physically based and not trying to be: the
- * job is to make slope and micro-relief legible in a screenshot, so the ambient
- * term stays high enough that nothing in shadow turns into a black hole.
- *
- * Used by the OSM ground layers. The terrain does NOT use it — its macro light
- * is baked per vertex on the CPU, which is the only place the sky-view factor
- * and the contour lines can be worked out.
- */
-const LIGHTING_GLSL = /* glsl */ `
-vec3 shade(vec3 albedo, vec3 n) {
-  float key = max(dot(n, vSunW), 0.0);
-  float sky = 0.5 + 0.5 * dot(n, vUpW);
-  vec3 ambient = mix(uGroundColor, uSkyColor, sky);
-  return albedo * (ambient + uSunColor * key);
-}
-
-/** Tilt a normal by a gradient expressed in the layer's own plane. */
-vec3 perturb(vec3 n, vec2 grad, float strength) {
-  return normalize(n - (grad.x * strength) * vTanX - (grad.y * strength) * vTanY);
-}
-`
-
-/** Matches the built-in materials' output stage exactly — see meshbasic_frag. */
-const OUTPUT_GLSL = /* glsl */ `
-  #include <tonemapping_fragment>
-  #include <colorspace_fragment>
-  #include <fog_fragment>
 `
 
 // ── The surfaces themselves ────────────────────────────────────────────────────
@@ -421,125 +307,154 @@ Surface rockSurface(vec2 p, float rough, vec3 tone) {
 }
 `
 
-// ── OSM ground layers ──────────────────────────────────────────────────────────
-
-/**
- * Grass, sand and rock as standalone layer materials: pick the family, light it
- * with the layer's own sun. Water is separate — it is not a granular surface
- * and shares none of this.
- */
-function groundFragment(surfaceFn: string): string {
-  return /* glsl */ `
-    ${FRAGMENT_HEADER}
-    ${NOISE_GLSL}
-    ${DETAIL_FADE_GLSL}
-    ${LIGHTING_GLSL}
-    ${SURFACE_FN_GLSL}
-
-    void main() {
-      Surface s = ${surfaceFn}(vSurf, vRough, vTone);
-      vec3 n = perturb(normalize(vNormalW), s.grad, 1.0);
-      vec3 lit = shade(s.albedo, n);
-      if (s.sheen > 0.0) {
-        vec3 halfway = normalize(normalize(cameraPosition - vWorld) + vSunW);
-        lit += uSunColor * pow(max(dot(n, halfway), 0.0), 32.0) * s.sheen;
-      }
-      gl_FragColor = vec4(lit, uOpacity);
-
-      ${OUTPUT_GLSL}
-    }
-  `
-}
-
 // ── Water ──────────────────────────────────────────────────────────────────────
 
 /**
- * A river, lake or basin.
- *
- * Four things, together, are what separate water from a blue polygon:
- *   • fresnel — water is nearly a mirror at grazing angles and nearly clear
- *     looking straight down. Get this wrong and nothing else rescues it.
- *   • moving normals — two scrolling noise layers, coarse swell over fine chop.
- *   • the sun's glitter path, which is the single most recognisable thing on
- *     any body of water.
- *   • the shore. Shallows go pale as the bed comes up, and there is a foam
- *     fringe against the bank. `aShore` (metres to the outline, computed on the
- *     CPU) is what makes both possible; a polygon triangulated the plain way
- *     has no interior and cannot know where its own edge is.
+ * Water is not a granular surface, so it gets its own function rather than a
+ * member of the family above. Under PBR most of what used to be hand-written
+ * here comes for free: the fresnel rim, the sky in the surface and the sun's
+ * glitter path are all just a smooth dielectric with an environment map. What
+ * is left is the part no BRDF knows about — where the bank is, how deep the
+ * water is, and where the foam breaks.
  */
-const WATER_FRAGMENT = /* glsl */ `
-  ${FRAGMENT_HEADER}
-  ${NOISE_GLSL}
-  ${DETAIL_FADE_GLSL}
-  ${LIGHTING_GLSL}
+const WATER_GLSL = /* glsl */ `
+struct Water {
+  vec3 albedo;
+  vec2 grad;
+  float roughness;
+  float foam;
+};
 
-  uniform float uTime;
-  uniform vec3 uShallowColor;
-  uniform vec3 uSkyReflect;
-  uniform float uFoamM;
-  uniform float uShallowM;
+Water waterSurface(
+  vec2 p, float t, float shore,
+  vec3 deep, vec3 shallow, float foamM, float shallowM
+) {
+  // Swell and chop travel in different directions at different speeds; a
+  // single scrolling layer reads as a sliding texture, two read as water.
+  float swellF = 0.085;      // ~12 m crests
+  float chopF  = 0.42;       // ~2.4 m
+  vec2 swell = p * swellF + vec2(t * 0.36, t * 0.14);
+  vec2 chop  = p * chopF  - vec2(t * 0.19, t * 0.44);
 
-  varying float vShore;
-
-  void main() {
-    // Swell and chop travel in different directions at different speeds; a
-    // single scrolling layer reads as a sliding texture, two read as water.
-    float swellF = 0.085;      // ~12 m crests
-    float chopF  = 0.42;       // ~2.4 m
-    vec2 swell = vSurf * swellF + vec2(uTime * 0.36, uTime * 0.14);
-    vec2 chop  = vSurf * chopF  - vec2(uTime * 0.19, uTime * 0.44);
-
-    vec2 grad = fbmGrad(swell, 0.25, 3) * (0.55 * detailFade(vSurf, swellF))
-              + fbmGrad(chop,  0.25, 2) * (0.22 * detailFade(vSurf, chopF));
-    vec3 n = perturb(normalize(vNormalW), grad, 1.1);
-
-    vec3 view = normalize(cameraPosition - vWorld);
-    float facing = max(dot(n, view), 0.0);
-    // Schlick, with a floor so water seen from directly above still reflects.
-    float fresnel = 0.03 + 0.97 * pow(1.0 - facing, 5.0);
-
-    // Depth from the bank. Not measured — OSM carries no bathymetry — but
-    // "shallower at the edge" is true of every natural body of water.
-    float depth = clamp(vShore / uShallowM, 0.0, 1.0);
-    vec3 body = mix(uShallowColor, vTone, smoothstep(0.0, 1.0, depth));
-
-    // The bed showing through the shallows, and the sky on the surface.
-    vec3 col = mix(body, uSkyReflect, fresnel * 0.85);
-    col += uSunColor * pow(max(dot(n, normalize(view + vSunW)), 0.0), 180.0) * 0.9;
-    col *= 0.85 + 0.30 * max(dot(n, vUpW), 0.0);
-
-    // Foam against the bank, torn up by noise and drifting, so the line is
-    // ragged the way surf is rather than a clean offset outline.
-    float fringe = fbm(vSurf * 0.9 + vec2(uTime * 0.06, -uTime * 0.04), 3);
-    float foamEdge = uFoamM * (0.45 + 1.1 * fringe);
-    float foam = 1.0 - smoothstep(0.0, foamEdge, vShore);
-    foam *= 0.55 + 0.45 * fbm(vSurf * 2.6 - vec2(uTime * 0.09), 2);
-    foam = clamp(foam, 0.0, 1.0);
-    col = mix(col, vec3(0.92, 0.95, 0.96), foam * 0.85);
-
-    // Opaque where it reflects, clearer where you can see into it — and always
-    // opaque in the foam.
-    float alpha = mix(uOpacity, min(1.0, uOpacity + 0.28), fresnel);
-    alpha = mix(alpha, 1.0, foam * 0.8);
-
-    gl_FragColor = vec4(col, alpha);
-
-    ${OUTPUT_GLSL}
+  vec3 sw = fbmAndGrad(swell, 0.25, 3);
+  vec2 grad = sw.yz * (0.55 * detailFade(p, swellF));
+  float chopAmount = detailFade(p, chopF);
+  if (chopAmount > 0.01) {
+    grad += fbmAndGrad(chop, 0.25, 2).yz * (0.22 * chopAmount);
   }
+
+  // Depth from the bank. Not measured — OSM carries no bathymetry — but
+  // "shallower at the edge" is true of every natural body of water.
+  float depth = clamp(shore / shallowM, 0.0, 1.0);
+  vec3 albedo = mix(shallow, deep, smoothstep(0.0, 1.0, depth));
+
+  // Foam against the bank, torn up by noise and drifting, so the line is
+  // ragged the way surf is rather than a clean offset outline.
+  float fringe = fbm(p * 0.9 + vec2(t * 0.06, -t * 0.04), 3);
+  float foam = 1.0 - smoothstep(0.0, foamM * (0.45 + 1.1 * fringe), shore);
+  foam *= 0.55 + 0.45 * fbm(p * 2.6 - vec2(t * 0.09), 2);
+  foam = clamp(foam, 0.0, 1.0);
+
+  albedo = mix(albedo, vec3(0.92, 0.95, 0.96), foam * 0.9);
+
+  // Open water is a near-mirror; foam is not. Getting this split right is what
+  // makes the bank read as surf rather than as white paint.
+  float roughness = mix(0.035, 0.62, foam);
+  // Chop roughens the surface where it is disturbed, which is what breaks the
+  // glitter path up into sparkles instead of one hard streak.
+  roughness += length(grad) * 0.03;
+
+  return Water(albedo, grad, clamp(roughness, 0.02, 1.0), foam);
+}
 `
 
-// ── Factory ────────────────────────────────────────────────────────────────────
+// ── Injection into three's PBR shader ──────────────────────────────────────────
 
-const FRAGMENT_BY_KIND: Record<SurfaceKind, string> = {
-  grass: groundFragment('grassSurface'),
-  sand: groundFragment('sandSurface'),
-  rock: groundFragment('rockSurface'),
-  water: WATER_FRAGMENT,
+/**
+ * Everything below extends MeshStandardMaterial through `onBeforeCompile`
+ * rather than replacing it with a ShaderMaterial.
+ *
+ * This is the whole point of the PBR rewrite. A hand-written material has to
+ * reimplement — badly — every one of: energy-conserving specular, image-based
+ * lighting from the environment, shadow reception, light probes, fog and tone
+ * mapping. Feeding procedural values INTO three's own shader keeps all of that
+ * and costs only the few lines that say what the surface is made of.
+ *
+ * The three hooks used, in the order they appear in meshphysical_frag:
+ *   map_fragment          → what colour the surface is
+ *   roughnessmap_fragment → how rough it is
+ *   normal_fragment_maps  → which way it faces, in the small
+ * Everything after those is three's, untouched.
+ */
+
+/** Declarations shared by the vertex half of every surface material. */
+function vertexInjection(water: boolean): { head: string; body: string } {
+  return {
+    head: /* glsl */ `
+      attribute vec2 aSurf;
+      attribute float aRough;
+      ${water ? 'attribute float aShore;' : ''}
+      varying vec2 vSurf;
+      varying float vRough;
+      ${water ? 'varying float vShore;' : ''}
+      varying vec3 vTanX;
+      varying vec3 vTanY;
+    `,
+    body: /* glsl */ `
+      vSurf = aSurf;
+      vRough = aRough;
+      ${water ? 'vShore = aShore;' : ''}
+      // The layer's own axes, in VIEW space — the frame the bump gradient is
+      // expressed in, and the space three's \`normal\` already lives in.
+      vTanX = normalize(normalMatrix * vec3(1.0, 0.0, 0.0));
+      vTanY = normalize(normalMatrix * vec3(0.0, 1.0, 0.0));
+    `,
+  }
+}
+
+/** Patch a shader in place. Throws loudly if three moved a chunk we rely on. */
+function replaceChunk(source: string, chunk: string, replacement: string): string {
+  const token = `#include <${chunk}>`
+  if (!source.includes(token)) {
+    // Silent failure here would look like "the material just stopped working"
+    // after a three upgrade, which is a miserable thing to debug.
+    throw new Error(`surface-shaders: three no longer emits <${chunk}>`)
+  }
+  return source.replace(token, replacement)
+}
+
+// ── OSM ground layers ──────────────────────────────────────────────────────────
+
+const SURFACE_FN: Record<Exclude<SurfaceKind, 'water'>, string> = {
+  grass: 'grassSurface',
+  sand: 'sandSurface',
+  rock: 'rockSurface',
 }
 
 /** Default opacity per surface. Water alone is see-through. */
 const DEFAULT_OPACITY: Record<SurfaceKind, number> = {
-  grass: 1, sand: 1, rock: 1, water: 0.66,
+  grass: 1, sand: 1, rock: 1, water: 0.62,
+}
+
+/** Uniforms a caller may want to reach later, kept on `material.userData`. */
+export interface SurfaceUniforms {
+  uTime: { value: number }
+  uOpacity: { value: number }
+  uShallowColor: { value: THREE.Color }
+  uFoamM: { value: number }
+  uShallowM: { value: number }
+  uMetresPerUnit: { value: number }
+}
+
+function makeUniforms(opacity: number): SurfaceUniforms {
+  return {
+    uTime: { value: 0 },
+    uOpacity: { value: opacity },
+    uShallowColor: { value: new THREE.Color(0.46, 0.66, 0.64) },
+    uFoamM: { value: 3.2 },
+    uShallowM: { value: 22 },
+    uMetresPerUnit: { value: 1 },
+  }
 }
 
 /**
@@ -553,305 +468,162 @@ const DEFAULT_OPACITY: Record<SurfaceKind, number> = {
  */
 export function createSurfaceMaterial(
   kind: SurfaceKind, opts: SurfaceMaterialOptions,
-): THREE.ShaderMaterial {
-  const uniforms = THREE.UniformsUtils.merge([
-    THREE.UniformsLib.fog,
-    {
-      uSunLocal:  { value: new THREE.Vector3() },
-      uSunColor:  { value: new THREE.Color(0.78, 0.74, 0.66) },
-      uSkyColor:  { value: new THREE.Color(0.40, 0.45, 0.54) },
-      uGroundColor: { value: new THREE.Color(0.20, 0.19, 0.17) },
-      uOpacity:   { value: opts.opacity ?? DEFAULT_OPACITY[kind] },
-      uTime:      { value: 0 },
-      uShallowColor: { value: new THREE.Color(0.42, 0.62, 0.62) },
-      uSkyReflect:   { value: new THREE.Color(0.52, 0.63, 0.78) },
-      uFoamM:        { value: 3.2 },
-      uShallowM:     { value: 22 },
-    },
-  ])
-  uniforms.uSunLocal.value = sunDirectionLocal(opts.sun)
+): THREE.MeshStandardMaterial {
+  const uniforms = makeUniforms(opts.opacity ?? DEFAULT_OPACITY[kind])
+  const water = kind === 'water'
 
-  const material = new THREE.ShaderMaterial({
-    uniforms,
-    vertexShader: vertexShader(kind === 'water'),
-    fragmentShader: FRAGMENT_BY_KIND[kind],
+  const material = new THREE.MeshStandardMaterial({
     vertexColors: true,
     transparent: true,
     depthWrite: false,
     side: THREE.DoubleSide,
-    fog: true,
+    metalness: 0,
+    roughness: 1,
   })
   material.name = `surface-${kind}`
-  // Marks the materials the render loop has to advance. Only water animates,
-  // but the flag lives on all of them so the caller never has to know which.
-  material.userData.animated = kind === 'water'
+  material.userData.uniforms = uniforms
+  material.userData.animated = water
+  // Without this, three reuses one compiled program for every material that
+  // looks alike — and all four of these look alike to the cache key.
+  material.customProgramCacheKey = () => `surface-${kind}`
+
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms)
+    const v = vertexInjection(water)
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>\n${v.head}`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>\n${v.body}`)
+
+    const declarations = /* glsl */ `
+      uniform float uTime;
+      uniform float uOpacity;
+      uniform vec3 uShallowColor;
+      uniform float uFoamM;
+      uniform float uShallowM;
+      varying vec2 vSurf;
+      varying float vRough;
+      ${water ? 'varying float vShore;' : ''}
+      varying vec3 vTanX;
+      varying vec3 vTanY;
+      ${NOISE_GLSL}
+      ${DETAIL_FADE_GLSL}
+      ${SURFACE_FN_GLSL}
+      ${water ? WATER_GLSL : ''}
+    `
+
+    let f = shader.fragmentShader.replace('#include <common>', `#include <common>\n${declarations}`)
+
+    if (water) {
+      f = replaceChunk(f, 'map_fragment', /* glsl */ `
+        Water w = waterSurface(
+          vSurf, uTime, vShore,
+          #ifdef USE_COLOR
+            vColor.rgb,
+          #else
+            vec3(0.17, 0.35, 0.48),
+          #endif
+          uShallowColor, uFoamM, uShallowM);
+        diffuseColor.rgb = w.albedo;
+      `)
+      // The tone has already been consumed as the deep-water colour; letting
+      // three multiply it in again would square it.
+      f = replaceChunk(f, 'color_fragment', '')
+      f = replaceChunk(f, 'roughnessmap_fragment', 'float roughnessFactor = w.roughness;')
+      f = replaceChunk(f, 'normal_fragment_maps', /* glsl */ `
+        normal = normalize(normal - w.grad.x * vTanX - w.grad.y * vTanY);
+        // Fresnel decides how SEE-THROUGH the water is. The reflection itself
+        // is three's — a smooth dielectric against the sky environment — which
+        // is exactly the term a hand-written water shader always gets wrong.
+        float fres = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 5.0);
+        diffuseColor.a = mix(uOpacity, 1.0, max(fres, w.foam));
+      `)
+    } else {
+      f = replaceChunk(f, 'map_fragment', /* glsl */ `
+        Surface surf = ${SURFACE_FN[kind]}(
+          vSurf, vRough,
+          #ifdef USE_COLOR
+            vColor.rgb
+          #else
+            vec3(0.5)
+          #endif
+        );
+        diffuseColor.rgb = surf.albedo;
+        diffuseColor.a = uOpacity;
+      `)
+      f = replaceChunk(f, 'color_fragment', '')
+      // `sheen` is how polished the surface is — wet rock and dry quartz sand
+      // keep a highlight, grass has none — so it maps straight onto roughness.
+      f = replaceChunk(f, 'roughnessmap_fragment',
+        'float roughnessFactor = clamp(1.0 - surf.sheen * 1.6, 0.28, 1.0);')
+      f = replaceChunk(f, 'normal_fragment_maps',
+        'normal = normalize(normal - surf.grad.x * vTanX - surf.grad.y * vTanY);')
+    }
+
+    shader.fragmentShader = f
+  }
+
   return material
 }
 
 // ── Foliage and bark ───────────────────────────────────────────────────────────
 
-/**
- * Tree canopies.
- *
- * Unlit cones next to a properly shaded lawn look worse than both did before,
- * so the trees have to join the same lighting. Two things beyond plain diffuse
- * earn their cost here: a clumping noise in OBJECT space, which breaks the cone
- * silhouette into masses of leaves, and a transmission term — a canopy lit from
- * behind GLOWS, and that single cue does more for "these are trees" than any
- * amount of geometry would.
- */
-const FOLIAGE_VERTEX = /* glsl */ `
-  uniform vec3 uSunLocal;
-
-  varying vec3 vObj;
-  varying vec3 vTone;
-  varying vec3 vNormalW;
-  varying vec3 vWorld;
-  varying vec3 vSunW;
-
-  #include <fog_pars_vertex>
-
-  void main() {
-    vec3 transformed = position;
-    vec3 objectNormal = normal;
-
-    #ifdef USE_INSTANCING
-      mat4 im = instanceMatrix;
-      transformed = (im * vec4(position, 1.0)).xyz;
-      // Instance scales are non-uniform (a tall thin crown), so the normal is
-      // approximate. At canopy scale that is invisible, and the exact inverse
-      // transpose per instance is not worth a mat3 inverse per vertex.
-      objectNormal = normalize(mat3(im) * normal);
-    #endif
-
-    // Noise coordinates: the vertex in the tree's OWN space, so every tree gets
-    // its own clumping instead of a pattern sliding across the whole forest.
-    vObj = position;
-
-    #ifdef USE_INSTANCING_COLOR
-      vTone = instanceColor;
-    #elif defined( USE_COLOR )
-      vTone = color;
-    #else
-      vTone = vec3(1.0);
-    #endif
-
-    mat3 m = mat3(modelMatrix);
-    vNormalW = normalize(m * objectNormal);
-    vSunW = normalize(m * uSunLocal);
-
-    vec4 wp = modelMatrix * vec4(transformed, 1.0);
-    vWorld = wp.xyz;
-    vec4 mvPosition = viewMatrix * wp;
-    gl_Position = projectionMatrix * mvPosition;
-
-    #include <fog_vertex>
-  }
-`
-
-const FOLIAGE_FRAGMENT = /* glsl */ `
-  uniform vec3 uSunColor;
-  uniform vec3 uSkyColor;
-  uniform vec3 uGroundColor;
-  uniform vec3 uTint;
-  uniform float uClump;
-  uniform float uTransmission;
-
-  varying vec3 vObj;
-  varying vec3 vTone;
-  varying vec3 vNormalW;
-  varying vec3 vWorld;
-  varying vec3 vSunW;
-
-  #include <fog_pars_fragment>
-  ${NOISE_GLSL}
-
-  void main() {
-    vec3 n = normalize(vNormalW);
-
-    // Leaf masses. The canopy geometry is a unit blob, so object coordinates
-    // are ~1 across and the frequencies here are in "crown widths".
-    float masses = fbm(vObj.xy * 6.0 + vObj.z * 3.1, 3);
-    float leaves = vnoise(vObj.xy * 26.0 + vObj.z * 11.0);
-
-    // Instanced canopies carry their colour per instance; trunks and anything
-    // uninstanced take it from the tint uniform instead.
-    vec3 base = vTone * uTint;
-
-    vec3 albedo = base * (0.74 + 0.46 * masses);
-    albedo *= 0.93 + 0.14 * leaves;
-    // Undersides of a crown are darker; tops catch the sky.
-    albedo *= 0.86 + 0.24 * clamp(vObj.z * 0.5 + 0.5, 0.0, 1.0);
-    albedo = mix(base, albedo, uClump);
-
-    float key = max(dot(n, vSunW), 0.0);
-    float sky = 0.5 + 0.5 * n.y;
-    vec3 ambient = mix(uGroundColor, uSkyColor, sky);
-
-    // Backlit leaves: light coming through the far side of the crown.
-    vec3 view = normalize(cameraPosition - vWorld);
-    float through = pow(max(dot(-view, vSunW), 0.0), 3.0) * max(0.0, 1.0 - key);
-    vec3 lit = albedo * (ambient + uSunColor * key)
-             + base * uSunColor * through * uTransmission;
-
-    gl_FragColor = vec4(lit, 1.0);
-
-    #include <tonemapping_fragment>
-    #include <colorspace_fragment>
-    #include <fog_fragment>
-  }
-`
-
 export interface FoliageOptions extends SurfaceMaterialOptions {
   /** 0 = flat colour, 1 = full leaf clumping. Bark uses a low value. */
   clump?: number
-  /** Strength of the backlit glow. Bark has none. */
-  transmission?: number
-  /** Multiplied into the vertex/instance colour — how trunks get their brown. */
+  /** Base colour, multiplied by the per-instance colour. */
   tint?: THREE.Color
 }
 
-/** Canopy material — also used, with clump/transmission near zero, for trunks. */
-export function createFoliageMaterial(opts: FoliageOptions): THREE.ShaderMaterial {
-  const uniforms = THREE.UniformsUtils.merge([
-    THREE.UniformsLib.fog,
-    {
-      uSunLocal: { value: new THREE.Vector3() },
-      uSunColor: { value: new THREE.Color(0.80, 0.76, 0.66) },
-      uSkyColor: { value: new THREE.Color(0.42, 0.48, 0.58) },
-      uGroundColor: { value: new THREE.Color(0.18, 0.19, 0.16) },
-      uTint: { value: new THREE.Color(1, 1, 1) },
-      uClump: { value: opts.clump ?? 1 },
-      uTransmission: { value: opts.transmission ?? 0.45 },
-    },
-  ])
-  uniforms.uSunLocal.value = sunDirectionLocal(opts.sun)
-  if (opts.tint) (uniforms.uTint.value as THREE.Color).copy(opts.tint)
-
-  const material = new THREE.ShaderMaterial({
-    uniforms,
-    vertexShader: FOLIAGE_VERTEX,
-    fragmentShader: FOLIAGE_FRAGMENT,
-    fog: true,
+/**
+ * Tree canopies, and trunks with the clumping turned down.
+ *
+ * The clumping noise runs in OBJECT space, so every tree gets its own pattern
+ * instead of one field sliding across the whole forest. Under PBR the canopy
+ * also picks up sky light from above and bounce from the ground below, which is
+ * most of what used to be faked with a hand-rolled hemispheric term.
+ */
+export function createFoliageMaterial(opts: FoliageOptions): THREE.MeshStandardMaterial {
+  const clump = opts.clump ?? 1
+  const material = new THREE.MeshStandardMaterial({
+    color: opts.tint ?? new THREE.Color(1, 1, 1),
+    metalness: 0,
+    // Leaves are matte, bark more so. Nothing in a tree is polished.
+    roughness: 0.92,
   })
   material.name = 'surface-foliage'
+  material.customProgramCacheKey = () => `foliage-${clump.toFixed(2)}`
+
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uClump = { value: clump }
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vObj;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObj = position;')
+
+    shader.fragmentShader = replaceChunk(
+      shader.fragmentShader.replace('#include <common>', /* glsl */ `
+        #include <common>
+        uniform float uClump;
+        varying vec3 vObj;
+        ${NOISE_GLSL}
+      `),
+      'map_fragment', /* glsl */ `
+        // The canopy geometry is a unit blob, so these frequencies are in
+        // "crown widths" rather than metres.
+        float masses = fbm(vObj.xy * 6.0 + vObj.z * 3.1, 3);
+        float leaves = vnoise(vObj.xy * 26.0 + vObj.z * 11.0);
+        float shade = 0.74 + 0.46 * masses;
+        shade *= 0.93 + 0.14 * leaves;
+        // Undersides of a crown are darker; tops catch the sky.
+        shade *= 0.86 + 0.24 * clamp(vObj.z * 0.5 + 0.5, 0.0, 1.0);
+        diffuseColor.rgb *= mix(1.0, shade, uClump);
+      `,
+    )
+  }
+
   return material
 }
 
 // ── Terrain ────────────────────────────────────────────────────────────────────
-
-/**
- * The relief patch itself, drawn with the same three material families blended
- * per vertex: vegetation low down, rock on the crags, snow on top.
- *
- * TWO THINGS MAKE THIS DIFFERENT FROM THE LAYER MATERIALS.
- *
- * 1. The macro light is NOT computed here. It arrives baked per vertex, because
- *    the CPU is the only place that can work out the multi-directional
- *    hillshade, the sky-view factor (which is what gives a valley floor its
- *    depth) and the contour lines. The shader contributes only MICRO relief, as
- *    a ratio against the unperturbed normal, so the two never double-shade.
- *
- * 2. Patch geometry is a PlaneGeometry centred on zero and about 1e-4 units
- *    wide, so — unlike the OSM layers, whose vertices are absolute mercator
- *    coordinates near 0.5 — it can read metres straight off `position` without
- *    falling off the float32 cliff. No `aSurf` attribute needed.
- */
-const TERRAIN_VERTEX = /* glsl */ `
-  attribute vec4 aGround;
-  uniform float uMetresPerUnit;
-
-  varying vec2 vSurf;
-  varying vec3 vNormalL;
-  varying vec4 vGround;
-  varying vec3 vTone;
-  varying float vAlpha;
-
-  #include <fog_pars_vertex>
-
-  void main() {
-    vSurf = position.xy * uMetresPerUnit;
-    // Lighting stays in the patch's OWN frame (x east, y north, z up), which
-    // sidesteps the vertical exaggeration: mesh.scale.z is non-uniform, so a
-    // world-space normal would be wrong exactly when the relief is stretched.
-    vNormalL = normal;
-    vGround = aGround;
-
-    #if defined( USE_COLOR_ALPHA )
-      vTone = color.rgb;
-      vAlpha = color.a;
-    #elif defined( USE_COLOR )
-      vTone = color;
-      vAlpha = 1.0;
-    #else
-      vTone = vec3(0.5);
-      vAlpha = 1.0;
-    #endif
-
-    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-    gl_Position = projectionMatrix * mvPosition;
-
-    #include <fog_vertex>
-  }
-`
-
-const TERRAIN_FRAGMENT = /* glsl */ `
-  uniform vec3 uSunLocal;
-
-  varying vec2 vSurf;
-  varying vec3 vNormalL;
-  varying vec4 vGround;
-  varying vec3 vTone;
-  varying float vAlpha;
-
-  #include <fog_pars_fragment>
-  ${NOISE_GLSL}
-  ${DETAIL_FADE_GLSL}
-  ${SURFACE_FN_GLSL}
-
-  void main() {
-    float veg = vGround.x;
-    float mineral = vGround.y;
-    float snow = clamp(1.0 - veg - mineral, 0.0, 1.0);
-    float rough = vGround.z;
-
-    vec3 albedo = vec3(0.0);
-    vec2 grad = vec2(0.0);
-
-    // Skipping a family whose weight is nil keeps the cost of three materials
-    // near the cost of one: a wavefront inside a forest never evaluates the
-    // rock or the snow branch, and the belts are large and coherent on screen.
-    if (veg > 0.004) {
-      Surface s = grassSurface(vSurf, rough, vTone);
-      albedo += s.albedo * veg;
-      grad += s.grad * veg;
-    }
-    if (mineral > 0.004) {
-      Surface s = rockSurface(vSurf, rough, vTone);
-      albedo += s.albedo * mineral;
-      grad += s.grad * mineral;
-    }
-    if (snow > 0.004) {
-      // Wind-packed snow is a granular surface the wind carves into regular
-      // ripples — sastrugi. That is the sand family, not the rock one.
-      Surface s = sandSurface(vSurf, rough, vTone);
-      albedo += s.albedo * snow;
-      grad += s.grad * snow;
-    }
-
-    vec3 nL = normalize(vNormalL);
-    vec3 nP = normalize(nL - vec3(grad, 0.0));
-    float lit = max(dot(nP, uSunLocal), 0.0);
-    float flatLit = max(dot(nL, uSunLocal), 0.0);
-    float micro = clamp(1.0 + (lit - flatLit) * 1.5, 0.45, 1.75);
-
-    gl_FragColor = vec4(albedo * vGround.w * micro, vAlpha);
-
-    #include <tonemapping_fragment>
-    #include <colorspace_fragment>
-    #include <fog_fragment>
-  }
-`
 
 export interface TerrainMaterialOptions extends SurfaceMaterialOptions {
   /** Metres per unit of patch-local geometry — the pattern's only scale. */
@@ -859,81 +631,144 @@ export interface TerrainMaterialOptions extends SurfaceMaterialOptions {
 }
 
 /**
- * Material for the terrain patch. Expects a `vec4 aGround` attribute carrying
- * (vegetation, mineral, roughness, baked light) per vertex, and the usual RGBA
- * vertex colour where RGB is the belt tone and A is the patch edge fade.
+ * The relief patch, drawn with the same three material families blended per
+ * vertex: vegetation low down, rock on the crags, snow on top.
+ *
+ * Two things make it different from a layer material.
+ *
+ * 1. Patch geometry is a PlaneGeometry centred on zero and about 1e-4 units
+ *    wide, so — unlike the OSM layers, whose vertices are absolute mercator
+ *    coordinates near 0.5 — it can read metres straight off `position` without
+ *    falling off the float32 cliff. No `aSurf` attribute needed.
+ * 2. `aGround.w` carries the SKY-VIEW FACTOR baked per vertex on the CPU. That
+ *    is a real ambient-occlusion term and it is the one thing a fragment cannot
+ *    work out for itself — it needs the horizon in every direction. It is fed
+ *    into the indirect light, which is exactly what gives a valley floor its
+ *    depth once the directional part is handled by real lighting.
  */
-export function createTerrainMaterial(opts: TerrainMaterialOptions): THREE.ShaderMaterial {
-  const uniforms = THREE.UniformsUtils.merge([
-    THREE.UniformsLib.fog,
-    {
-      uSunLocal: { value: new THREE.Vector3() },
-      uMetresPerUnit: { value: 1 },
-    },
-  ])
-  uniforms.uSunLocal.value = sunDirectionLocal(opts.sun)
+export function createTerrainMaterial(opts: TerrainMaterialOptions): THREE.MeshStandardMaterial {
+  const uniforms = makeUniforms(1)
   uniforms.uMetresPerUnit.value = opts.metresPerUnit
 
-  const material = new THREE.ShaderMaterial({
-    uniforms,
-    vertexShader: TERRAIN_VERTEX,
-    fragmentShader: TERRAIN_FRAGMENT,
+  const material = new THREE.MeshStandardMaterial({
     vertexColors: true,
-    // Same as the MeshBasicMaterial it replaces: the patch edge fades out into
-    // the flat basemap tiles, and that fade lives in the vertex alpha.
+    // The patch edge fades out into the flat basemap tiles, and that fade lives
+    // in the vertex alpha.
     transparent: true,
-    fog: true,
+    metalness: 0,
+    roughness: 1,
   })
   material.name = 'surface-terrain'
+  material.userData.uniforms = uniforms
+  material.customProgramCacheKey = () => 'surface-terrain'
+
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms)
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', /* glsl */ `
+        #include <common>
+        attribute vec4 aGround;
+        uniform float uMetresPerUnit;
+        varying vec4 vGround;
+        varying vec2 vSurf;
+        varying vec3 vTanX;
+        varying vec3 vTanY;
+      `)
+      .replace('#include <begin_vertex>', /* glsl */ `
+        #include <begin_vertex>
+        vSurf = position.xy * uMetresPerUnit;
+        vGround = aGround;
+        vTanX = normalize(normalMatrix * vec3(1.0, 0.0, 0.0));
+        vTanY = normalize(normalMatrix * vec3(0.0, 1.0, 0.0));
+      `)
+
+    let f = shader.fragmentShader.replace('#include <common>', /* glsl */ `
+      #include <common>
+      varying vec4 vGround;
+      varying vec2 vSurf;
+      varying vec3 vTanX;
+      varying vec3 vTanY;
+      ${NOISE_GLSL}
+      ${DETAIL_FADE_GLSL}
+      ${SURFACE_FN_GLSL}
+    `)
+
+    f = replaceChunk(f, 'map_fragment', /* glsl */ `
+      float veg = vGround.x;
+      float mineral = vGround.y;
+      float snow = clamp(1.0 - veg - mineral, 0.0, 1.0);
+      float beltRough = vGround.z;
+      vec3 tone = vColor.rgb;
+
+      vec3 groundAlbedo = vec3(0.0);
+      vec2 groundGrad = vec2(0.0);
+      float groundSheen = 0.0;
+      // Skipping a family whose weight is nil keeps the cost of three materials
+      // near the cost of one: a wavefront inside a forest never evaluates the
+      // rock or the snow branch, and the belts are large and coherent on screen.
+      if (veg > 0.004) {
+        Surface s = grassSurface(vSurf, beltRough, tone);
+        groundAlbedo += s.albedo * veg;
+        groundGrad += s.grad * veg;
+        groundSheen += s.sheen * veg;
+      }
+      if (mineral > 0.004) {
+        Surface s = rockSurface(vSurf, beltRough, tone);
+        groundAlbedo += s.albedo * mineral;
+        groundGrad += s.grad * mineral;
+        groundSheen += s.sheen * mineral;
+      }
+      if (snow > 0.004) {
+        // Wind-packed snow is a granular surface the wind carves into regular
+        // ripples — sastrugi. That is the sand family, not the rock one.
+        Surface s = sandSurface(vSurf, beltRough, tone);
+        groundAlbedo += s.albedo * snow;
+        groundGrad += s.grad * snow;
+        groundSheen += s.sheen * snow;
+      }
+      diffuseColor.rgb = groundAlbedo;
+      diffuseColor.a = vColor.a;
+    `)
+    f = replaceChunk(f, 'color_fragment', '')
+    f = replaceChunk(f, 'roughnessmap_fragment',
+      'float roughnessFactor = clamp(1.0 - groundSheen * 1.6, 0.28, 1.0);')
+    f = replaceChunk(f, 'normal_fragment_maps',
+      'normal = normalize(normal - groundGrad.x * vTanX - groundGrad.y * vTanY);')
+    // The sky-view factor, applied where an AO map would be.
+    f = replaceChunk(f, 'aomap_fragment', /* glsl */ `
+      reflectedLight.indirectDiffuse *= vGround.w;
+      reflectedLight.indirectSpecular *= vGround.w;
+    `)
+
+    shader.fragmentShader = f
+  }
+
   return material
 }
 
 // ── Live updates ───────────────────────────────────────────────────────────────
 
-/**
- * Re-aim the sun on every procedural material under an object. Called when the
- * relief light moves, so the whole scene turns together instead of the terrain
- * hillshade drifting away from the surfaces standing on it.
- */
-export function applySurfaceSun(root: THREE.Object3D, sun: SurfaceSun): void {
-  const dir = sunDirectionLocal(sun)
-  forEachShaderMaterial(root, (m) => {
-    const u = m.uniforms.uSunLocal
-    if (u) (u.value as THREE.Vector3).copy(dir)
-  })
-}
-
-/**
- * Re-aim one material directly. Needed where the material is held but not
- * currently attached to anything — a detached material never gets traversed,
- * and would come back with a stale sun when it is put back on.
- */
-export function setMaterialSun(material: THREE.ShaderMaterial, sun: SurfaceSun): void {
-  const u = material.uniforms.uSunLocal
-  if (u) (u.value as THREE.Vector3).copy(sunDirectionLocal(sun))
-}
-
 /** Advance the animated materials (water) to an absolute time in seconds. */
 export function setSurfaceTime(root: THREE.Object3D, seconds: number): void {
-  forEachShaderMaterial(root, (m) => {
-    if (m.userData.animated && m.uniforms.uTime) m.uniforms.uTime.value = seconds
+  forEachSurfaceMaterial(root, (m) => {
+    if (m.userData.animated) (m.userData.uniforms as SurfaceUniforms).uTime.value = seconds
   })
 }
 
 /** True when anything under `root` needs a per-frame uniform update. */
 export function hasAnimatedMaterial(root: THREE.Object3D): boolean {
   let found = false
-  forEachShaderMaterial(root, (m) => { if (m.userData.animated) found = true })
+  forEachSurfaceMaterial(root, (m) => { if (m.userData.animated) found = true })
   return found
 }
 
-function forEachShaderMaterial(
-  root: THREE.Object3D, fn: (m: THREE.ShaderMaterial) => void,
+function forEachSurfaceMaterial(
+  root: THREE.Object3D, fn: (m: THREE.Material) => void,
 ): void {
   root.traverse((o) => {
     const mat = (o as THREE.Mesh).material
     for (const m of Array.isArray(mat) ? mat : [mat]) {
-      if (m instanceof THREE.ShaderMaterial) fn(m)
+      if (m && m.userData && m.userData.uniforms) fn(m)
     }
   })
 }

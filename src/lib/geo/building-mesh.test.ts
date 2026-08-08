@@ -405,3 +405,26 @@ describe('lit facades', () => {
     expect(roofZ('detailed')).toBeLessThan(wallTop('detailed'))
   })
 })
+
+describe('hit-testing a merged neighbourhood', () => {
+  it('reports which slice of the buffer each building owns', () => {
+    const a = { ...squareFootprint('a', 20), id: 'w1' }
+    const b = { ...squareFootprint('b', 20), id: 'w2' }
+    const built = buildBuildingsGeometry([a, b], OPTS)!
+
+    expect(built.ranges).toHaveLength(2)
+    expect(built.ranges[0].id).toBe('w1')
+    expect(built.ranges[1].id).toBe('w2')
+    // Contiguous and in order — that is what lets a hit be binary-searched.
+    expect(built.ranges[0].start).toBe(0)
+    expect(built.ranges[0].end).toBe(built.ranges[1].start)
+    expect(built.ranges[1].end).toBe(built.geometry.getAttribute('position').count)
+  })
+
+  it('skips buildings with no id rather than mis-attributing them', () => {
+    const anon = { ...squareFootprint('a', 20), id: undefined }
+    const named = { ...squareFootprint('b', 20), id: 'w2' }
+    const built = buildBuildingsGeometry([anon, named], OPTS)!
+    expect(built.ranges.map((r) => r.id)).toEqual(['w2'])
+  })
+})

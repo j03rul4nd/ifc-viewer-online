@@ -32,7 +32,7 @@ import {
   trackMapPlacementSaved, trackMapTerrainToggled, trackMapGeorefExtracted, trackMapError,
 } from '../lib/analytics'
 import type { ViewerAPI } from '../lib/viewer'
-import type { GeoSystemAPI } from '../lib/geo/geo-system'
+import type { GeoSystemAPI, ContextHover } from '../lib/geo/geo-system'
 import type { GeoPlacement, GeorefExtraction, MapProvider, TerrainStyle, TerrainLook } from '../lib/geo/geo-types'
 
 interface GeoPanelProps {
@@ -89,6 +89,8 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
   const [tab, setTab] = useState<TabId>('base')
   /** Relief sliders are secondary to the style choice — collapsed by default. */
   const [reliefOpen, setReliefOpen] = useState(false)
+  /** What the pointer is over among the surrounding buildings, if anything. */
+  const [hover, setHover] = useState<ContextHover | null>(null)
 
   const enabledAtRef = useRef(0)
 
@@ -506,6 +508,24 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
     })
   }, [])
 
+  // Identify the surroundings on hover. Subscribed only while the map is on,
+  // so nothing raycasts in the ordinary viewer.
+  useEffect(() => {
+    if (store.mapMode !== 'on') { setHover(null); return }
+    let cancelled = false
+    let api: GeoSystemAPI | null = null
+    void getGeo()?.then((geo) => {
+      if (cancelled) return
+      api = geo
+      geo.setContextHoverCallback(setHover)
+    })
+    return () => {
+      cancelled = true
+      api?.setContextHoverCallback(null)
+      setHover(null)
+    }
+  }, [store.mapMode, getGeo])
+
   // ── Render ───────────────────────────────────────────────────────────────────
 
   const { mapMode, panelOpen } = store
@@ -560,6 +580,24 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
           data-testid="geo-attribution"
         >
           {store.attributions.join(' · ')}
+        </div>
+      )}
+
+      {/* What am I looking at? Follows the pointer, says only what OSM knows. */}
+      {mapMode === 'on' && hover && (
+        <div
+          className="absolute z-30 pointer-events-none px-2 py-1.5 rounded-[7px] max-w-[220px]
+                     bg-[rgba(10,10,14,0.88)] border border-[var(--border-strong)] shadow-lg"
+          style={{ left: hover.x + 14, top: hover.y + 14 }}
+        >
+          {hover.name && (
+            <div className="text-[11.5px] font-medium text-[var(--text)] leading-snug truncate">
+              {hover.name}
+            </div>
+          )}
+          {hover.label && (
+            <div className="text-[10px] text-[var(--text-faint)] leading-snug">{hover.label}</div>
+          )}
         </div>
       )}
 

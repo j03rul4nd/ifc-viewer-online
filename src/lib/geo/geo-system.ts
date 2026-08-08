@@ -16,7 +16,9 @@ import * as THREE from 'three'
 import { createBasemapEngine, type BasemapEngine } from './basemap-engine'
 import { buildTerrainPatch, tileNormalizedCenter, TERRAIN_EDGE_FADE, type TerrainPatch } from './geo-terrain'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from './terrain-look'
-import { buildBuildingsGeometry, type BuildingDetail } from './building-mesh'
+import {
+  buildBuildingsGeometry, type BuildingDetail, type BuildingRange,
+} from './building-mesh'
 import { createFacadeMaterial } from './facade-shader'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, buildLinearLayer, disposeLayer,
@@ -107,6 +109,17 @@ export interface GeoSystemContext {
 
 // ── Public API ──────────────────────────────────────────────────────────────────
 
+/** What the pointer is over: an OSM building we can actually describe. */
+export interface ContextHover {
+  /** `name` as mapped, when there is one. */
+  name?: string
+  /** What it is — 'Train station', 'School'. */
+  label?: string
+  /** Screen position to anchor a tooltip to. */
+  x: number
+  y: number
+}
+
 export interface GeoSystemAPI {
   /** Build the geoRoot, start tile streaming, apply env overrides, fly in. */
   enable(placement: GeoPlacement, provider: MapProvider): Promise<void>
@@ -154,6 +167,12 @@ export interface GeoSystemAPI {
   setEditorPointerLock(locked: boolean): void
   /** Subscribe to the tile-failure degraded signal (null to clear). */
   setDegradedCallback(cb: ((degraded: boolean) => void) | null): void
+  /**
+   * Report what the pointer is over among the SURROUNDING buildings. Null when
+   * it is over nothing, or over something we know no name or use for — an
+   * unmapped block must stay silent rather than announce itself as "Building".
+   */
+  setContextHoverCallback(cb: ((info: ContextHover | null) => void) | null): void
   isActive(): boolean
   dispose(): void
 }
@@ -202,6 +221,13 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * instead of issuing another Overpass query for data we already have.
    */
   let osmFeatures: OsmFeature[] | null = null
+  /** Vertex slices of the merged buildings mesh, for hit-testing. */
+  let buildingRanges: BuildingRange[] = []
+  let buildingsMesh: THREE.Mesh | null = null
+  let hoverCallback: ((info: ContextHover | null) => void) | null = null
+  let hoverAttached: ((e: PointerEvent) => void) | null = null
+  /** Last thing reported, so an unchanged hover does not re-render the UI. */
+  let hoverKey: string | null = null
   /**
    * The last Overpass reply, kept across teardown and even across map-mode
    * disable so that turning the surroundings back on at the same site is
@@ -303,6 +329,14 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
       teardownTerrain()
       teardownBuildings()
+      if (hoverAttached) {
+        ctx.renderer.domElement.removeEventListener('pointermove', hoverAttached)
+        hoverAttached = null
+      }
+      hoverCallback = null
+      hoverKey = null
+      buildingRanges = []
+      buildingsMesh = null
       osmFeatures = null
       buildingsEnabled = false
       engine.dispose()
@@ -501,6 +535,28 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       ctx.setPointerSuppressed(locked)
     },
 
+    setContextHoverCallback(cb) {
+      hoverCallback = cb
+      if (cb && !hoverAttached) {
+        // Throttled by the browser's own pointer coalescing plus an early-out
+        // on the picked id: a raycast against a merged neighbourhood is cheap,
+        // re-rendering React on every pixel of mouse travel is not.
+        hoverAttached = (e: PointerEvent): void => {
+          const hit = pickBuilding(e.clientX, e.clientY)
+          const key = hit ? `${hit.name ?? ''}|${hit.label ?? ''}` : null
+          if (key === null && hoverKey === null) return
+          hoverKey = key
+          hoverCallback?.(hit)
+        }
+        ctx.renderer.domElement.addEventListener('pointermove', hoverAttached)
+      }
+      if (!cb && hoverAttached) {
+        ctx.renderer.domElement.removeEventListener('pointermove', hoverAttached)
+        hoverAttached = null
+        hoverKey = null
+      }
+    },
+
     setDegradedCallback(cb) {
       degradedCallback = cb
       if (engine) engine.onDegraded = cb
@@ -530,6 +586,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    */
   function rebuildLayers(): number {
     clearLayers()
+    buildingRanges = []
+    buildingsMesh = null
     if (!geoRoot || !placement || !osmFeatures) return 0
 
     const opts = {
@@ -566,6 +624,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
             : new THREE.MeshBasicMaterial({ vertexColors: true }),
         )
         mesh.name = 'osm-buildings'
+        buildingRanges = built.ranges
+        buildingsMesh = mesh
         // Above the flat tiles and the surface layers, so grade-level walls do
         // not z-fight with the basemap or with a park drawn under them.
         mesh.renderOrder = 5
@@ -697,6 +757,47 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       teardownTerrain()
       void api.setTerrain(true)
     }, 800)
+  }
+
+  /**
+   * Which surrounding building is under the pointer.
+   *
+   * The neighbourhood is one merged mesh, so three.js can only tell us WHICH
+   * TRIANGLE was hit. `buildingRanges` turns that back into a feature: the
+   * ranges are built in order, so a binary search finds the owner in a few
+   * steps however many blocks are on screen.
+   */
+  function pickBuilding(clientX: number, clientY: number): ContextHover | null {
+    if (!buildingsMesh || buildingRanges.length === 0 || !osmFeatures) return null
+
+    const rect = ctx.renderer.domElement.getBoundingClientRect()
+    if (rect.width === 0 || rect.height === 0) return null
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1,
+    )
+    raycaster.setFromCamera(ndc, ctx.getActiveCamera() as THREE.PerspectiveCamera)
+    const hits = raycaster.intersectObject(buildingsMesh, false)
+    const face = hits[0]?.faceIndex
+    if (face === undefined || face === null) return null
+
+    const vertex = face * 3
+    let lo = 0
+    let hi = buildingRanges.length - 1
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1
+      const r = buildingRanges[mid]
+      if (vertex < r.start) hi = mid - 1
+      else if (vertex >= r.end) lo = mid + 1
+      else {
+        const f = osmFeatures.find((x) => x.id === r.id)
+        // Nothing worth saying about it — stay quiet rather than label every
+        // anonymous block "Building".
+        if (!f?.name && !f?.label) return null
+        return { name: f.name, label: f.label, x: clientX, y: clientY }
+      }
+    }
+    return null
   }
 
   function intersectGround(clientX: number, clientY: number): THREE.Vector3 | null {

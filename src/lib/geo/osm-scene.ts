@@ -860,10 +860,10 @@ export function buildTreeLayer(
   const sun = opts.sun ?? FALLBACK_SUN
   const detailed = opts.quality === 'detailed'
   const canopyMaterial = (): THREE.Material => detailed
-    ? createFoliageMaterial({ sun, clump: 1, transmission: 0.5 })
+    ? createFoliageMaterial({ sun, clump: 1 })
     : new THREE.MeshBasicMaterial()
   const trunkMaterial = (): THREE.Material => detailed
-    ? createFoliageMaterial({ sun, clump: 0.35, transmission: 0, tint: TRUNK_COLOR })
+    ? createFoliageMaterial({ sun, clump: 0.35, tint: TRUNK_COLOR })
     : new THREE.MeshBasicMaterial({ color: TRUNK_COLOR })
 
   for (const [shape, subset] of bySpecies) {

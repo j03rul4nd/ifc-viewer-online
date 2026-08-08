@@ -27,7 +27,7 @@ import {
   computeNormals, vertexSpacingM, clampTerrainLook, DEFAULT_TERRAIN_LOOK,
   SHADE_AMBIENT_IMAGERY, SHADE_AMBIENT_RELIEF,
 } from './terrain-sampling'
-import { createTerrainMaterial, setMaterialSun } from './surface-shaders'
+import { createTerrainMaterial } from './surface-shaders'
 import type { SurfaceQuality } from './osm-scene'
 import { createLogger } from '../logger'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
@@ -179,7 +179,7 @@ function assemblePatch(
    * Built on first use: allocating its attribute costs ~2.4 MB on a 385² patch,
    * which is not worth paying for every user who never turns detail up.
    */
-  let terrainMaterial: THREE.ShaderMaterial | null = null
+  let terrainMaterial: THREE.MeshStandardMaterial | null = null
   let groundAttr: THREE.BufferAttribute | null = null
   // Typed loosely on purpose: the mesh swaps between the flat-colour material
   // and the procedural one, so it cannot be pinned to either.
@@ -456,14 +456,9 @@ function assemblePatch(
       // is a colour re-bake, which is why the sun slider feels instant.
       if (detailChanged) applyHeights()
       recolor()
-      // The procedural surface lights itself from the same sun, so it has to
-      // follow the sliders too — even while it is detached, or switching back
-      // to the ecosystem style would bring a stale sun with it.
-      if (terrainMaterial) {
-        setMaterialSun(terrainMaterial, {
-          azimuthDeg: look.sunAzimuth, altitudeDeg: look.sunAltitude,
-        })
-      }
+      // Nothing to re-aim here any more: the procedural surface is lit by the
+      // scene and by the sky environment, and geo-system rebuilds that sky when
+      // the sun moves.
     },
 
     dispose() {

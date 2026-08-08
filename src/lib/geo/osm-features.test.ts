@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   classifyFeature, parseOsmColor, parseRoofShape, resolveFeatureStyle,
   parseOsmFeatures, buildFeaturesQuery, bridgeWidth, countByKind,
-  roadWidth, railWidth, roadTone,
+  roadWidth, railWidth, roadTone, featureLabel,
   FEATURE_KINDS, MIN_AREA_M2,
   type OsmFeature,
 } from './osm-features'
@@ -480,5 +480,59 @@ describe('sand and rock classification', () => {
     expect(counts.sand).toBe(1)
     expect(counts.rock).toBe(1)
     expect(counts.green).toBe(0)
+  })
+})
+
+// ── Telling the user what a building is ───────────────────────────────────────
+
+describe('featureLabel', () => {
+  it('puts transport first — it is what a room orients by', () => {
+    expect(featureLabel({ building: 'yes', railway: 'station' })).toBe('Train station')
+    expect(featureLabel({ building: 'train_station' })).toBe('Train station')
+    expect(featureLabel({ railway: 'platform' })).toBe('Platform')
+    // Specific beats generic even when both are mapped.
+    expect(featureLabel({ building: 'commercial', amenity: 'hospital' })).toBe('Hospital')
+  })
+
+  it('reads amenity, shop, office and building use', () => {
+    expect(featureLabel({ amenity: 'school' })).toBe('School')
+    expect(featureLabel({ shop: 'bakery' })).toBe('Shop')
+    expect(featureLabel({ office: 'lawyer' })).toBe('Office')
+    expect(featureLabel({ building: 'apartments' })).toBe('Apartments')
+    expect(featureLabel({ building: 'warehouse' })).toBe('Warehouse')
+  })
+
+  it('says NOTHING about a building it knows nothing about', () => {
+    // The alternative is labelling half a city "Building", which is noise.
+    expect(featureLabel({ building: 'yes' })).toBeUndefined()
+    expect(featureLabel({})).toBeUndefined()
+    expect(featureLabel(undefined)).toBeUndefined()
+  })
+})
+
+describe('parseOsmFeatures — identity', () => {
+  const square = [
+    { lat: 41.38, lon: 2.17 }, { lat: 41.38, lon: 2.1705 },
+    { lat: 41.3804, lon: 2.1705 }, { lat: 41.3804, lon: 2.17 },
+  ]
+
+  it('carries name and label through to the renderer', () => {
+    const [f] = parseOsmFeatures({
+      elements: [{
+        type: 'way', id: 42,
+        tags: { building: 'yes', name: 'Union Station', railway: 'station' },
+        geometry: square,
+      }],
+    })
+    expect(f.name).toBe('Union Station')
+    expect(f.label).toBe('Train station')
+  })
+
+  it('leaves both undefined when the tags say nothing', () => {
+    const [f] = parseOsmFeatures({
+      elements: [{ type: 'way', id: 43, tags: { building: 'yes' }, geometry: square }],
+    })
+    expect(f.name).toBeUndefined()
+    expect(f.label).toBeUndefined()
   })
 })

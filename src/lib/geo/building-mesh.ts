@@ -46,6 +46,21 @@ export interface BuildingMeshResult {
   count: number
   /** How many of those had an estimated rather than surveyed height. */
   estimatedCount: number
+  /**
+   * Which slice of the merged buffer each building owns, in vertex indices and
+   * in build order. The whole neighbourhood is ONE geometry for the sake of
+   * draw calls, which costs the ability to tell what was clicked — this hands
+   * that back: a hit vertex index maps to the building it belongs to.
+   */
+  ranges: BuildingRange[]
+}
+
+export interface BuildingRange {
+  id: string
+  /** First vertex index (inclusive). */
+  start: number
+  /** Last vertex index (exclusive). */
+  end: number
 }
 
 /**
@@ -97,6 +112,7 @@ export function buildBuildingsGeometry(
   const lit = opts.lit === true
 
   const positions: number[] = []
+  const ranges: BuildingRange[] = []
   const normals: number[] = []
   // Vertex colours carry a subtle height gradient, so a block of flat-topped
   // extrusions still reads as three-dimensional under an unlit material.
@@ -134,6 +150,8 @@ export function buildBuildingsGeometry(
       continue // self-intersecting footprint — skip it, never fail the batch
     }
     if (faces.length === 0) continue
+
+    const rangeStart = positions.length / 3
 
     // Ground under the centroid: one height for the whole building.
     const centroid = ringCentroid(ring2d)
@@ -247,6 +265,7 @@ export function buildBuildingsGeometry(
         tintedTriple([shadeBottom, shadeTop, shadeTop], wallTint))
     }
 
+    if (b.id) ranges.push({ id: b.id, start: rangeStart, end: positions.length / 3 })
     count++
     if (b.height.estimated) estimatedCount++
   }
@@ -259,7 +278,7 @@ export function buildBuildingsGeometry(
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
   geometry.computeBoundingSphere()
 
-  return { geometry, count, estimatedCount }
+  return { geometry, count, estimatedCount, ranges }
 }
 
 /** Area-weighted centroid of a simple polygon (falls back to the mean). */
