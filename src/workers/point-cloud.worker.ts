@@ -15,6 +15,7 @@ import { createReader } from '../lib/pointcloud/pc-format'
 import { PointChunker, cellSizeFor, chunkTransferables } from '../lib/pointcloud/pc-chunker'
 import { Bounds } from '../lib/pointcloud/pc-reader'
 import { CopcReader } from '../lib/pointcloud/copc-reader'
+import { sharedNodeCache } from '../lib/pointcloud/pc-node-cache'
 import type {
   PointCloudParseRequest, PointCloudStreamOpenRequest, PointCloudStreamNodesRequest,
   PointCloudWorkerIn, PointCloudWorkerOut, SourceFrame, PointChunk,
@@ -57,7 +58,7 @@ async function streamOpen(req: PointCloudStreamOpenRequest): Promise<void> {
   let reader: CopcReader
   let header
   try {
-    reader = new CopcReader(req.file)
+    reader = new CopcReader(req.file, { scanKey: req.scanKey, cache: sharedNodeCache() })
     header = await reader.open()
   } catch (e) {
     post({ type: 'error', id: req.id, errorKey: headerErrorKey(e), detail: detailOf(e) })
@@ -289,6 +290,18 @@ function headerErrorKey(e: unknown): string {
     case 'plyUnknownType':
     case 'plyNoFormat':
     case 'plyNoHeaderEnd':       return 'error.plyMalformed'
+    case 'pcdNoXyz':             return 'error.pcdNoXyz'
+    case 'pcdUnknownEncoding':   return 'error.pcdEncoding'
+    case 'pcdCompressedSizeMismatch':
+    case 'pcdLzfOverflow':
+    case 'pcdLzfTruncated':
+    case 'pcdLzfBadRef':
+    case 'pcdLzfShort':          return 'error.pcdCompressed'
+    case 'pcdNoData':
+    case 'pcdNoEncoding':
+    case 'pcdNoFields':
+    case 'pcdUnknownType':       return 'error.pcdMalformed'
+    case 'pcdNoPoints':
     case 'plyNoVertices':
     case 'xyzEmpty':
     case 'xyzNoData':            return 'error.noPoints'

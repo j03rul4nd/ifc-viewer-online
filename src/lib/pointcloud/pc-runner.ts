@@ -38,6 +38,16 @@ export interface LoadOptions {
   modelBounds: ModelBoundsLike | null
   /** The model the alignment is computed against (provenance for the UI). */
   modelId: string | null
+  /**
+   * Where the bytes came from, when they came from a URL.
+   *
+   * This is what makes a fetched scan identifiable across sessions. A `File`
+   * built from downloaded bytes gets `lastModified = Date.now()`, so keying on
+   * the file alone gives the same demo a different identity every single load —
+   * which quietly defeated saved manual offsets and saved proj4 definitions, and
+   * would defeat the decoded-node cache too.
+   */
+  sourceUrl?: string | null
 }
 
 export interface LoadResult {
@@ -78,7 +88,7 @@ export async function loadPointCloud(opts: LoadOptions): Promise<LoadResult> {
 
   const cloudId = `pc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
   const epoch = usePointCloudStore.getState().epoch
-  const fileKey = cloudFileKey(file)
+  const fileKey = cloudFileKey(file, opts.sourceUrl)
 
   const entry: PointCloudEntry = {
     id: cloudId,
@@ -303,7 +313,7 @@ export async function streamPointCloud(opts: LoadOptions): Promise<LoadResult> {
 
   const cloudId = `pc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
   const epoch = usePointCloudStore.getState().epoch
-  const fileKey = cloudFileKey(file)
+  const fileKey = cloudFileKey(file, opts.sourceUrl)
 
   usePointCloudStore.getState().addCloud({
     id: cloudId, fileName: file.name, fileSize: file.size, format: 'copc',
@@ -402,7 +412,7 @@ export async function streamPointCloud(opts: LoadOptions): Promise<LoadResult> {
       }
     }
 
-    worker.postMessage({ type: 'stream-open', id: cloudId, file, format: 'copc' })
+    worker.postMessage({ type: 'stream-open', id: cloudId, file, format: 'copc', scanKey: fileKey })
   })
 }
 

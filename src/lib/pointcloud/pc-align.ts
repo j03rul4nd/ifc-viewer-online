@@ -377,7 +377,14 @@ export function loadCloudProj4(fileKey: string): { code: string; def: string } |
 }
 
 /** Stable identity for a cloud file. Same fields buildCacheKey uses for IFCs. */
-export function cloudFileKey(file: { name: string; size: number; lastModified: number }): string {
+export function cloudFileKey(
+  file: { name: string; size: number; lastModified: number },
+  sourceUrl?: string | null,
+): string {
+  // A downloaded scan is identified by where it came from, never by the File
+  // wrapper around it: that wrapper's lastModified is the instant of the fetch,
+  // so it differs on every load and nothing keyed by it ever persists.
+  if (sourceUrl) return `url:${sourceUrl}`
   return `${file.name}:${file.size}:${file.lastModified}`
 }
 

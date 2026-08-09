@@ -1,6 +1,6 @@
 // ─── pc-format ────────────────────────────────────────────────────────────────
 // Format detection + the reader registry. THIS is the extension point: adding
-// LAZ, COPC, E57 or PCD means writing one reader module and adding one entry to
+// LAZ, COPC, PCD or E57 means writing one reader module and adding one entry to
 // `READERS` below. Nothing downstream (chunker, alignment, renderer, UI) needs
 // to know a new format exists.
 
@@ -9,6 +9,7 @@ import { LazReader } from './laz-reader'
 import { CopcReader } from './copc-reader'
 import { PlyReader } from './ply-reader'
 import { XyzReader } from './xyz-reader'
+import { PcdReader } from './pcd-reader'
 import type { PointReader } from './pc-reader'
 import { DEFERRED_EXTENSIONS, type PointCloudFormat } from './pc-types'
 
@@ -20,6 +21,7 @@ const READERS: Record<PointCloudFormat, ReaderFactory> = {
   copc: (f) => new CopcReader(f),
   ply: (f) => new PlyReader(f),
   xyz: (f) => new XyzReader(f),
+  pcd: (f) => new PcdReader(f),
 }
 
 const EXTENSION_FORMATS: Record<string, PointCloudFormat> = {
@@ -27,6 +29,7 @@ const EXTENSION_FORMATS: Record<string, PointCloudFormat> = {
   '.laz': 'laz',
   '.copc': 'copc',
   '.ply': 'ply',
+  '.pcd': 'pcd',
   '.xyz': 'xyz',
   '.pts': 'xyz',
   '.csv': 'xyz',
@@ -94,6 +97,12 @@ export function sniffMagic(bytes: Uint8Array): PointCloudFormat | null {
   if (bytes.length >= 4) {
     if (bytes[0] === 0x4c && bytes[1] === 0x41 && bytes[2] === 0x53 && bytes[3] === 0x46) return 'las'
     if (bytes[0] === 0x70 && bytes[1] === 0x6c && bytes[2] === 0x79) return 'ply'
+  }
+  // PCD opens with either the PCL banner comment or the VERSION keyword. Worth
+  // sniffing because ROS tooling routinely writes these out as `.txt`.
+  if (bytes.length >= 7) {
+    const head = String.fromCharCode(...bytes.subarray(0, 7))
+    if (head.startsWith('# .PCD') || head.startsWith('VERSION')) return 'pcd'
   }
   return null
 }

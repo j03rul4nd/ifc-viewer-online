@@ -153,6 +153,13 @@ export class PointChunker implements PointConsumer {
     r: number, g: number, b: number,
     intensity: number, classification: number, confidence: number,
   ): void {
+    // Backstop against non-finite coordinates. A reader is expected to filter
+    // its own (PCD does — organised clouds are a third NaN by design), but one
+    // that slips through is uniquely destructive: `cellKey` floors NaN into the
+    // same bucket for every such point, and a single NaN vertex makes the
+    // geometry's bounding sphere NaN, at which point frustum culling drops the
+    // ENTIRE cloud and the viewer renders nothing with no error anywhere.
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return
     const key = this.cellKey(x, y, z)
     let bucket = this.buckets.get(key)
     if (!bucket) {

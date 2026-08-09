@@ -24,6 +24,7 @@ import {
   type LasHeader, type LasCrsInfo, type RecordLayout,
 } from './las-reader'
 import { loadLazPerf, type LazPerfModule } from './laz-reader'
+import { nodeKey, throughCache, type PointNodeCache } from './pc-node-cache'
 import {
   readSlice, type PointReader, type PointConsumer, type ReadOptions, type ReaderHeader,
 } from './pc-reader'
@@ -134,7 +135,33 @@ export class CopcReader implements PointReader {
   private sample: Uint8Array | null = null
   private sampleCount = 0
 
-  constructor(private readonly file: File) {}
+  /**
+   * `scanKey` + `cache` are optional on purpose: without them the reader behaves
+   * exactly as before, which is what the format tests want. With them, decoded
+   * nodes survive both eviction and the end of the session.
+   */
+  constructor(
+    private readonly file: File,
+    private readonly opts: { scanKey?: string; cache?: PointNodeCache } = {},
+  ) {}
+
+  /**
+   * `decodeNode`, but served from the node cache when it can be.
+   *
+   * The size check is not paranoia for its own sake: a cached buffer is
+   * interpreted through `this.layout`, so handing back an entry of the wrong
+   * length would silently misread every record after the first. If it does not
+   * match what this file's header implies, treat it as a miss.
+   */
+  private cachedDecode(node: CopcNode): Promise<Uint8Array> {
+    const { cache, scanKey } = this.opts
+    return throughCache(
+      cache,
+      scanKey ? nodeKey(scanKey, keyId(node)) : null,
+      node.pointCount * this.header!.recordLength,
+      () => this.decodeNode(node),
+    )
+  }
 
   async open(): Promise<ReaderHeader> {
     const head = await readSlice(this.file, 0, Math.min(this.file.size, 64 * 1024))
@@ -228,7 +255,9 @@ export class CopcReader implements PointReader {
     if (!this.pointPtr) throw new Error('copcOutOfMemory')
 
     const root = this.nodes[0]
-    const records = await this.decodeNode(root)
+    // Through the cache too: re-opening a scan should not pay for the root node
+    // again, and this decode sits on the critical path of open().
+    const records = await this.cachedDecode(root)
     this.sample = records
     this.sampleCount = root.pointCount
 
@@ -363,10 +392,13 @@ export class CopcReader implements PointReader {
     // range-read and decompress the same bytes twice.
     const records = (this.sample && keyId(this.nodes[0]) === nodeId)
       ? this.sample
-      : await this.decodeNode(node)
+      : await this.cachedDecode(node)
     if (this.sample && keyId(this.nodes[0]) === nodeId) this.sample = null
 
-    const view = new DataView(records.buffer)
+    // Bound the view explicitly. Records now sometimes arrive from the cache
+    // rather than straight from the decoder, and assuming offset 0 over a whole
+    // buffer is the kind of assumption that holds until it suddenly does not.
+    const view = new DataView(records.buffer, records.byteOffset, records.byteLength)
     for (let i = 0; i < node.pointCount; i++) {
       decodeRecord(view, i * this.header!.recordLength, layout, consumer)
     }

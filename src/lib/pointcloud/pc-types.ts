@@ -15,12 +15,13 @@
  *   laz — LASzip-compressed LAS, via the laz-perf WASM decoder
  *   copc — Cloud Optimized Point Cloud: LAZ + an octree, range-read node by node
  *   xyz — whitespace/comma separated text (also .pts, .csv, .asc)
+ *   pcd — Point Cloud Library: ascii, binary and LZF binary_compressed
  */
-export type PointCloudFormat = 'las' | 'laz' | 'copc' | 'ply' | 'xyz'
+export type PointCloudFormat = 'las' | 'laz' | 'copc' | 'ply' | 'xyz' | 'pcd'
 
 /** Extensions accepted by the file picker, in the order they are advertised. */
 export const POINT_CLOUD_EXTENSIONS =
-  ['.las', '.laz', '.copc', '.ply', '.xyz', '.pts', '.csv', '.asc', '.txt'] as const
+  ['.las', '.laz', '.copc', '.ply', '.pcd', '.xyz', '.pts', '.csv', '.asc', '.txt'] as const
 
 /**
  * Formats we deliberately do NOT decode yet, mapped to the i18n reason key the
@@ -30,7 +31,6 @@ export const POINT_CLOUD_EXTENSIONS =
  */
 export const DEFERRED_EXTENSIONS: Record<string, string> = {
   '.e57': 'unsupported.e57',
-  '.pcd': 'unsupported.pcd',
   '.rcp': 'unsupported.proprietary',
   '.rcs': 'unsupported.proprietary',
   '.fls': 'unsupported.proprietary',
@@ -294,6 +294,12 @@ export interface PointCloudStreamOpenRequest {
   id: string
   file: File
   format: PointCloudFormat
+  /**
+   * Stable identity of this scan across sessions, used to key the decoded-node
+   * cache. Omit it and the reader simply decodes everything afresh, which is the
+   * old behaviour and always correct.
+   */
+  scanKey?: string
 }
 
 export interface PointCloudStreamNodesRequest {

@@ -104,7 +104,10 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
   }, [store.clouds.length, getSystem])
 
   // ── Loading ─────────────────────────────────────────────────────────────────
-  const handleFiles = useCallback(async (files: FileList | File[]): Promise<void> => {
+  const handleFiles = useCallback(async (
+    files: FileList | File[],
+    sourceUrl?: string,
+  ): Promise<void> => {
     const viewer = viewerApiRef.current
     if (!viewer) return
     const system = await viewer.getPointClouds()
@@ -115,6 +118,10 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
         system,
         modelBounds: activeModelId ? viewer.getModelBounds(activeModelId) : viewer.getModelBounds(),
         modelId: activeModelId,
+        // A downloaded scan is identified by its URL. Without this the File's
+        // lastModified — the instant of the fetch — becomes its identity, and a
+        // demo would arrive as a brand new scan on every single load.
+        sourceUrl,
       }
       // COPC carries an octree, so it streams: the worker stays open and the
       // camera decides what gets read. Everything else is one-shot.
@@ -142,7 +149,7 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
     setDemoProgress(0)
     try {
       const file = await fetchDemoPointCloud(demo, { onProgress: setDemoProgress })
-      await handleFiles([file])
+      await handleFiles([file], demo.url)
     } catch (e) {
       toast(t('demos.failed'), 'error')
       log.warn(`demo cloud "${demo.id}" failed:`, e)
@@ -180,6 +187,7 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
             if (!cmd.file) throw new Error('No point cloud data provided')
             const load = {
               file: cmd.file,
+              sourceUrl: cmd.sourceUrl,
               system,
               modelBounds: activeModelId ? viewer.getModelBounds(activeModelId) : viewer.getModelBounds(),
               modelId: activeModelId,

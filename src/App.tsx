@@ -1500,7 +1500,9 @@ export default function App() {
               throw new Error('Provide bytes (ArrayBuffer) or url')
             }
             const cloudId = await dispatchPanelCommand('sdk:pointcloud',
-              { action: 'add', file },
+              // Pass the URL through when we fetched it: that, not the File we
+              // just wrapped the bytes in, is what identifies this scan later.
+              { action: 'add', file, sourceUrl: typeof msg.url === 'string' ? msg.url : undefined },
               { unavailable: 'Point clouds are not enabled in this build' })
             return { cloudId }
           })

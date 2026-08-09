@@ -72,6 +72,14 @@ export interface SdkPointCloudCommand {
   action: 'add' | 'remove' | 'clear' | 'visible' | 'display' | 'frame' | 'inspect'
   /** `add`: the scan itself. A File so the readers can stream slices of it. */
   file?: File
+  /**
+   * `add`: the URL the bytes were fetched from, when they were. This is the
+   * scan's identity across sessions — a File wrapped around downloaded bytes
+   * carries the fetch time as its lastModified, so it has no stable one of its
+   * own, and anything keyed by it (saved offsets, saved proj4, the decoded-node
+   * cache) would miss every time.
+   */
+  sourceUrl?: string
   /** `remove` / `visible` / `frame`: which cloud. */
   cloudId?: string
   visible?: boolean

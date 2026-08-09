@@ -474,8 +474,9 @@ describe('format detection', () => {
   it('gives deferred formats their own reason instead of "unsupported"', () => {
     expect(detectFormat('scan.e57').errorKey).toBe('unsupported.e57')
     expect(detectFormat('scan.rcp').errorKey).toBe('unsupported.proprietary')
-    expect(detectFormat('scan.pcd').errorKey).toBe('unsupported.pcd')
     expect(detectFormat('scan.docx').errorKey).toBe('unsupported.unknown')
+    // .pcd used to be here. It has a reader now — see pcd-reader.test.ts.
+    expect(detectFormat('scan.pcd').ok).toBe(true)
   })
 
   it('lets the magic number override a misleading extension', () => {
