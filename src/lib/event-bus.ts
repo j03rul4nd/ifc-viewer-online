@@ -20,6 +20,69 @@ const log = createLogger('EventBus')
 // Every event and its payload type is declared here — the compiler enforces
 // that emitters and subscribers agree on the shape.
 
+// ── SDK command payloads ──────────────────────────────────────────────────────
+// The embed bridge in App.tsx owns the postMessage protocol, but Map mode and
+// the Sun & Moon study are orchestrated inside their panels (location
+// resolution, tile providers, consent) — logic that would have to be duplicated
+// to drive them from App. So the bridge emits a command on the bus and the
+// panel that already knows how executes it, acknowledging through `done`.
+// No listener (feature flag off, or no model yet) = no ack, which the bridge
+// reports back to the host as a plain error instead of hanging.
+
+/** `sdk:solar` — drive the Sun & Moon study. Omitted fields are left alone. */
+export interface SdkSolarCommand {
+  /** Start (true) or stop (false) the study. */
+  active?: boolean
+  /** Site-local date, `YYYY-MM-DD` or evergreen `MM-DD`. */
+  date?: string
+  /** Site-local time, `HH:MM`. */
+  time?: string
+  moon?: boolean
+  sky?: boolean
+  quality?: 'standard' | 'high'
+  /** Site location to use when the IFC carries no georeference. */
+  location?: { lat: number; lon: number }
+  done?: (ok: boolean, error?: string) => void
+}
+
+/** `sdk:site` — drive Map mode (site context). Omitted fields are left alone. */
+export interface SdkSiteCommand {
+  enabled?: boolean
+  terrain?: boolean
+  buildings?: boolean
+  /** Per-kind OSM feature layers, e.g. `{ water: true, tree: false }`. */
+  layers?: Record<string, boolean>
+  /** Surrounding-facade fidelity. `showcase` also downloads the authored props. */
+  detail?: 'simple' | 'detailed' | 'showcase'
+  /** Terrain relief style. */
+  terrainStyle?: 'imagery' | 'shaded' | 'hypsometric' | 'slope' | 'ecosystem'
+  /** Vertical exaggeration multiplier for the terrain (1–3). */
+  exaggeration?: number
+  /** Decorative cars and trains. */
+  vehicles?: boolean
+  done?: (ok: boolean, error?: string) => void
+}
+
+/**
+ * `sdk:pointcloud` — load and tune point clouds. Same delegation reason as the
+ * two above: the loader needs the viewer's PointCloudSystem, the model bounds
+ * to align against, and the alignment ladder — all of which live in the panel.
+ */
+export interface SdkPointCloudCommand {
+  action: 'add' | 'remove' | 'clear' | 'visible' | 'display' | 'frame'
+  /** `add`: the scan itself. A File so the readers can stream slices of it. */
+  file?: File
+  /** `remove` / `visible` / `frame`: which cloud. */
+  cloudId?: string
+  visible?: boolean
+  /** `display`: partial patch over the shared display settings. */
+  display?: Record<string, unknown>
+  /** Points drawn per frame at density 1. */
+  renderBudget?: number
+  /** `add` resolves with the new cloud's id so the host can address it. */
+  done?: (ok: boolean, errorOrId?: string) => void
+}
+
 export type AppEventMap = {
   'model:loaded':           { modelInfo: ModelInfo; fromCache: boolean; cacheKey: string; modelId: string }
   'model:cleared':          void
@@ -43,6 +106,9 @@ export type AppEventMap = {
   'tour:step-changed':      { tourId: string; index: number; total: number }
   'tour:completed':         { tourId: string }
   'ui:client-mode-toggled': { enabled: boolean }
+  'sdk:solar':              SdkSolarCommand
+  'sdk:site':               SdkSiteCommand
+  'sdk:pointcloud':         SdkPointCloudCommand
 }
 
 // ── Core bus class ─────────────────────────────────────────────────────────────
