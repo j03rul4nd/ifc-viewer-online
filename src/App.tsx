@@ -64,12 +64,17 @@ const TourRecorder = React.lazy(() => import('./components/TourRecorder'))
 const ClientPresentationLayout = React.lazy(() => import('./components/ClientPresentationLayout'))
 import { isGisEnabled } from './lib/geo/gis-flag'
 import { isSolarEnabled } from './lib/solar/solar-flag'
+import { isPointCloudEnabled } from './lib/pointcloud/pc-flag'
+import { usePointCloudStore } from './stores/pointCloudStore'
 import { useSolarStore } from './stores/solarStore'
 
 // Lazy: GeoPanel statically imports proj4/placement/geo runners, which must
 // stay out of the entry chunk. Only ever mounted when VITE_FEATURE_GIS is on.
 const GeoPanel = React.lazy(() => import('./components/GeoPanel'))
 const SolarPanel = React.lazy(() => import('./components/SolarPanel'))
+// Lazy: PointCloudPanel statically imports the point cloud engine, its shader
+// and its readers — none of that may reach the entry chunk.
+const PointCloudPanel = React.lazy(() => import('./components/PointCloudPanel'))
 import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, type DemoModel } from './demo-models/models'
 import { fetchDemoModel } from './demo-models/fetchDemoModel'
 import { lighten } from './lib/utils'
@@ -1079,6 +1084,18 @@ export default function App() {
     useSolarStore.getState().resetForScene()
     useCaptureStore.getState().resetCapture()
     usePresentationStore.getState().resetPresentation()
+    // Point clouds hold the largest GPU allocation in the app — drop them with
+    // the rest of the scene, and dispose the buffers rather than just the state.
+    const loadedClouds = usePointCloudStore.getState().clouds
+    if (loadedClouds.length > 0) {
+      // Dynamic import: the runner chunk is already resolved whenever a cloud
+      // exists, so this costs nothing — and keeps proj4 out of the entry bundle.
+      void import('./lib/pointcloud/pc-runner').then((m) => {
+        for (const cloud of loadedClouds) m.cancelPointCloud(cloud.id)
+      })
+      void viewerApiRef.current?.getPointClouds().then((system) => system.dispose())
+    }
+    usePointCloudStore.getState().clearClouds()
     modelRegistry.clear()
     clearScene()
     // Clean up Sprint 7+8 panel state and viewer tools
@@ -1896,6 +1913,15 @@ export default function App() {
                   {isSolarEnabled() && sceneModels.length > 0 && (
                     <React.Suspense fallback={null}>
                       <SolarPanel viewerApiRef={viewerApiRef} variant={clientMode ? 'client' : 'technical'} />
+                    </React.Suspense>
+                  )}
+
+                  {/* Point cloud panel (flag-gated, lazy — pulls the point engine).
+                      Available with no IFC loaded too: a scan on its own is a
+                      legitimate thing to open. */}
+                  {isPointCloudEnabled() && !clientMode && (
+                    <React.Suspense fallback={null}>
+                      <PointCloudPanel viewerApiRef={viewerApiRef} />
                     </React.Suspense>
                   )}
 

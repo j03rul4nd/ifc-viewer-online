@@ -44,6 +44,7 @@
         "i18next": "^26.2.0",
         "i18next-browser-languagedetector": "^8.2.1",
         "i18next-resources-to-backend": "^1.2.1",
+        "laz-perf": "^0.0.7",
         "leaflet": "^1.9.4",
         "lucide-react": "^0.469.0",
         "ogl": "^1.0.11",

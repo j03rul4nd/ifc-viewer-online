@@ -17,6 +17,8 @@ import { usePresentationStore } from '../stores/presentationStore'
 import { isGisEnabled } from '../lib/geo/gis-flag'
 import { useSolarStore } from '../stores/solarStore'
 import { isSolarEnabled } from '../lib/solar/solar-flag'
+import { usePointCloudStore } from '../stores/pointCloudStore'
+import { isPointCloudEnabled } from '../lib/pointcloud/pc-flag'
 import { modelRegistry } from '../lib/model-registry'
 import { useCloudAccountStore, isAccountEnabled } from '../stores/cloudAccountStore'
 import { trackProEntryClick } from '../lib/analytics'
@@ -239,6 +241,7 @@ export default function Toolbar({
   const { t } = useTranslation('toolbar')
   const { t: tCommon } = useTranslation('common')
   const { t: tTour } = useTranslation('tour')
+  const { t: tPointCloud } = useTranslation('pointcloud')
   const { t: tClient } = useTranslation('client')
   const { t: tPro } = useTranslation('pro')
 
@@ -274,6 +277,12 @@ export default function Toolbar({
   const setTourRecording = usePresentationStore((s) => s.setRecording)
   const toggleGeoPanel = (): void => {
     const s = useGeoStore.getState()
+    s.setPanelOpen(!s.panelOpen)
+  }
+  const pointCloudPanelOpen = usePointCloudStore((s) => s.panelOpen)
+  const pointCloudCount     = usePointCloudStore((s) => s.clouds.length)
+  const togglePointCloudPanel = (): void => {
+    const s = usePointCloudStore.getState()
     s.setPanelOpen(!s.panelOpen)
   }
   const solarPanelOpen = useSolarStore((s) => s.panelOpen)
@@ -449,6 +458,14 @@ export default function Toolbar({
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="7" cy="7" r="3" />
       <path d="M7 0.8v1.6M7 11.6v1.6M0.8 7h1.6M11.6 7h1.6M2.6 2.6l1.2 1.2M10.2 10.2l1.2 1.2M11.4 2.6l-1.2 1.2M3.8 10.2l-1.2 1.2" />
+    </svg>
+  )
+  const PointCloudSVG = (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" stroke="none">
+      <circle cx="3" cy="4" r="0.9" /><circle cx="6.2" cy="2.6" r="0.9" /><circle cx="9.6" cy="3.6" r="0.9" />
+      <circle cx="2.4" cy="7.6" r="0.9" /><circle cx="5.6" cy="6.4" r="0.9" /><circle cx="9" cy="7.2" r="0.9" />
+      <circle cx="12" cy="6" r="0.9" /><circle cx="4.2" cy="10.8" r="0.9" /><circle cx="7.8" cy="10.2" r="0.9" />
+      <circle cx="11.2" cy="10.8" r="0.9" />
     </svg>
   )
   const ViewMenuSVG = (
@@ -699,6 +716,11 @@ export default function Toolbar({
             <MenuItem icon={SunSVG} label={t('sun')} active={solarPanelOpen || solarActive}
               badge={solarActive ? '●' : undefined}
               onClick={() => { toggleSolarPanel(); setOpenMenu(null) }} />
+          )}
+          {isPointCloudEnabled() && (
+            <MenuItem icon={PointCloudSVG} label={tPointCloud('entry')} active={pointCloudPanelOpen || pointCloudCount > 0}
+              badge={pointCloudCount > 0 ? pointCloudCount : undefined}
+              onClick={() => { togglePointCloudPanel(); setOpenMenu(null) }} />
           )}
           <MenuItem icon={TourSVG} label={tTour('entry')} active={tourMode !== 'idle'}
             badge={tourMode !== 'idle' ? '●' : undefined}

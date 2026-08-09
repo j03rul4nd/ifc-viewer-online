@@ -311,12 +311,13 @@ npm test        # vitest (jsdom)
 src/
   components/      # Landing, Viewer, ValidationPanel, IdsPanel, BcfPanel, GeoPanel, Sidebar, ModelTree, ScenePanel, …
                    #   + mobile/ (bottom-sheet panels) · ids/ · blog/ · legal/ · reactbits/
-  workers/         # ifc-parser · validator · export · ids · bcf-parser · geo-extract · geo-terrain · gif-export (.worker.ts)
+  workers/         # ifc-parser · validator · export · ids · bcf-parser · geo-extract · geo-terrain · gif-export · point-cloud (.worker.ts)
   stores/          # 13 Zustand stores (model, scene, validation, editor, ui, takeoff, toast, bcf, ids, geo, waiver, capture, presentation)
   hooks/           # useModelSession, useValidationRunner, useIdsRun, useElementFocus, useIsMobile, …
   lib/             # viewer.ts · loader.ts · validator.ts · diffStore.ts · worker-schemas.ts · share-report.ts
     ids/           # IDS 1.0 engine (parser, facets, runner, report, golden testcases)
     geo/           # GIS / Map mode (basemap engine, CRS, georef ladder, terrain, providers)
+    pointcloud/    # Point clouds (LAS/LAZ/COPC/PLY/XYZ readers, chunker, alignment ladder, LOD, shader)
   sdk/             # IfcViewer embeddable JS SDK (built to public/sdk/)
   i18n/ · locales/ # i18next config + per-locale JSON — en/ es/ fr/ de/ pt/ ja/ ca/ zh/ it/ th/
   types/           # Zod schemas + TypeScript types (ValidationRules, EditDiff, …)

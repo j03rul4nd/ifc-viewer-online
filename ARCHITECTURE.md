@@ -488,4 +488,4 @@ ScenePanel transform callbacks pass explicit `model.id` so the correct pivot is 
 
 ---
 
-*Last updated: 2026-07-02 (Capture Toolkit + Tour Mode) · Sprints 1–9 complete + IDS 1.0 / 3D Map (GIS) / BCF panel / embed+SDK / mobile UI / Capture Toolkit / Tour Mode shipped · 44 validation rules · 13 Zustand stores · 8 workers · Deploy: Vercel · Forward plan: ROADMAP.md Roadmap v2 + Solibri-parity backlog*
+*Last updated: 2026-07-02 (Capture Toolkit + Tour Mode) · Sprints 1–9 complete + IDS 1.0 / 3D Map (GIS) / BCF panel / embed+SDK / mobile UI / Capture Toolkit / Tour Mode shipped · 44 validation rules · 20 Zustand stores · 9 workers · Deploy: Vercel · Forward plan: ROADMAP.md Roadmap v2 + Solibri-parity backlog*
