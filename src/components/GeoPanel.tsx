@@ -390,6 +390,19 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
     try {
       const geo = await getGeo()
       if (!geo) return
+      // Push the STICKY preferences into the scene before the first build.
+      //
+      // The geo system is constructed fresh with hardcoded defaults ('simple',
+      // no scenery), while these two are persisted and are already rendering
+      // as chosen in this panel. Nothing else carries them across, and both
+      // setters early-return when the value "has not changed" — so a reload
+      // left the detail control reading Showcase and the switch reading on
+      // while the scene was built simple and empty. That is the failure users
+      // describe as "the button doesn't do anything", and it is invisible in
+      // tests because the store and the UI agreed perfectly with each other.
+      const prefs = useGeoStore.getState()
+      geo.setContextDetail(prefs.contextDetail)
+      geo.setVehicles(prefs.vehicles)
       const outcome = await geo.setBuildings(true)
       useGeoStore.getState().setBuildingsResult(epoch, {
         status: outcome.status === 'off' ? 'idle' : outcome.status,

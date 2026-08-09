@@ -255,3 +255,30 @@ describe('geoStore · buildings status', () => {
     expect(JSON.parse(localStorage.getItem('ifc-geo-osm-layers:v1') ?? '{}').tree).toBe(false)
   })
 })
+
+describe('persisted detail level', () => {
+  // Rehydration runs at module init, so the only honest way to test it is to
+  // seed localStorage and re-import. The bug this guards: the reader tested for
+  // one level and fell through to 'simple', so adding a third level silently
+  // demoted anyone who picked it on their next reload.
+  it('restores every level the type allows, not just the two it used to know', async () => {
+    const { vi } = await import('vitest')
+    for (const level of ['simple', 'detailed', 'showcase'] as const) {
+      localStorage.clear()
+      localStorage.setItem('ifc-geo-detail:v1', level)
+      vi.resetModules()
+      const fresh = await import('./geoStore')
+      expect(fresh.useGeoStore.getState().contextDetail, `after reload with "${level}"`)
+        .toBe(level)
+    }
+  })
+
+  it('falls back to simple for a value it does not recognise', async () => {
+    const { vi } = await import('vitest')
+    localStorage.clear()
+    localStorage.setItem('ifc-geo-detail:v1', 'ultra')
+    vi.resetModules()
+    const fresh = await import('./geoStore')
+    expect(fresh.useGeoStore.getState().contextDetail).toBe('simple')
+  })
+})
