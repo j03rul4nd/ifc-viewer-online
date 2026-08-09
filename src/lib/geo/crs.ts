@@ -4,8 +4,9 @@
 // formulaically. Unknown codes return err('unknownCrs') so the UI can offer a
 // proj4-string paste. NO network lookups (plan §7 T3 — offline determinism).
 //
-// Accuracy note: legacy-datum defs without NTv2 grid shifts (27700, 3146x) carry
-// metre-level error. Acceptable — map mode is context visualization, not survey.
+// Accuracy note: legacy-datum defs without NTv2/NADCON grid shifts (27700,
+// 3146x, the NAD27 UTM band) carry metre-level error, and each says so in its
+// `note`. Acceptable — map mode is context visualization, not survey.
 
 import proj4 from 'proj4'
 import { ok, err, type Result } from '../result'
@@ -63,8 +64,30 @@ const STATIC_DEFS: CrsDef[] = [
 
 // ── Formulaic UTM definitions ──────────────────────────────────────────────────
 
-function utmDef(zone: number, opts: { south?: boolean; etrs?: boolean }): string {
-  const datum = opts.etrs ? '+ellps=GRS80 +towgs84=0,0,0,0,0,0,0' : '+datum=WGS84'
+type UtmDatum = 'wgs84' | 'etrs89' | 'nad83' | 'nad27'
+
+/**
+ * The datum half of a UTM definition, written out per datum rather than left to
+ * proj4's `+datum=` shorthand.
+ *
+ * That is deliberate for NAD27: `+datum=NAD27` expands to `+nadgrids=@conus,…`,
+ * and proj4js bundles no NADCON grids. The optional-grid syntax means it does
+ * not fail — it quietly skips the shift and returns Clarke 1866 coordinates as
+ * if they were WGS84, roughly 100 m out. An explicit 3-parameter CONUS shift is
+ * both honest and an order of magnitude closer.
+ *
+ * NAD83 and ETRS89 are GRS80-based and within ~2 m of WGS84 over their own
+ * continents, which is inside this module's stated tolerance.
+ */
+const UTM_DATUM: Record<UtmDatum, string> = {
+  wgs84:  '+datum=WGS84',
+  etrs89: '+ellps=GRS80 +towgs84=0,0,0,0,0,0,0',
+  nad83:  '+ellps=GRS80 +towgs84=0,0,0,0,0,0,0',
+  nad27:  '+ellps=clrk66 +towgs84=-8,160,176,0,0,0,0',
+}
+
+function utmDef(zone: number, opts: { south?: boolean; datum?: UtmDatum }): string {
+  const datum = UTM_DATUM[opts.datum ?? 'wgs84']
   return `+proj=utm +zone=${zone} ${opts.south ? '+south ' : ''}${datum} +units=m +no_defs`
 }
 
@@ -78,7 +101,33 @@ function resolveUtm(codeNum: number): CrsDef | null {
   // ETRS89 / UTM (Europe): EPSG:25828–25838
   if (codeNum >= 25828 && codeNum <= 25838) {
     const zone = codeNum - 25800
-    return { code: `EPSG:${codeNum}`, def: utmDef(zone, { etrs: true }), domain: utmDomain(zone, false) }
+    return { code: `EPSG:${codeNum}`, def: utmDef(zone, { datum: 'etrs89' }), domain: utmDomain(zone, false) }
+  }
+  // NAD83 / UTM (North America): EPSG:26901–26923, zones 1–23.
+  // This is what essentially every US public LiDAR delivery is written in —
+  // USGS 3DEP, NOAA, state programmes, and the PDAL sample corpus behind the
+  // demo scans. Without it a US site got the paste-a-proj4-line prompt, which
+  // is a fair answer for something exotic and an embarrassing one for the most
+  // common projected CRS on the continent.
+  if (codeNum >= 26901 && codeNum <= 26923) {
+    const zone = codeNum - 26900
+    return {
+      code: `EPSG:${codeNum}`,
+      def: utmDef(zone, { datum: 'nad83' }),
+      domain: utmDomain(zone, false),
+      note: 'NAD83 aligned to WGS84 — sub-2 m offset in North America.',
+    }
+  }
+  // NAD27 / UTM (North America): EPSG:26701–26722, zones 1–22. Older deliveries
+  // and archive survey data still arrive in it.
+  if (codeNum >= 26701 && codeNum <= 26722) {
+    const zone = codeNum - 26700
+    return {
+      code: `EPSG:${codeNum}`,
+      def: utmDef(zone, { datum: 'nad27' }),
+      domain: utmDomain(zone, false),
+      note: 'NAD27 via a 3-parameter CONUS shift, no NADCON grid — expect ~5-10 m error.',
+    }
   }
   // WGS84 / UTM north: EPSG:32601–32660
   if (codeNum >= 32601 && codeNum <= 32660) {

@@ -37,6 +37,32 @@ describe('crs · resolveCrs', () => {
     expect(unwrap(resolveCrs('EPSG:25832')).def).toContain('+proj=utm +zone=32')
     expect(unwrap(resolveCrs('EPSG:32618')).def).toContain('+proj=utm +zone=18')
     expect(unwrap(resolveCrs('EPSG:32733')).def).toContain('+south')
+    // NAD83 / UTM — what US public LiDAR is delivered in.
+    expect(unwrap(resolveCrs('EPSG:26913')).def).toContain('+proj=utm +zone=13')
+    expect(unwrap(resolveCrs('EPSG:26901')).def).toContain('+proj=utm +zone=1')
+    expect(unwrap(resolveCrs('EPSG:26923')).def).toContain('+proj=utm +zone=23')
+    expect(unwrap(resolveCrs('EPSG:26715')).def).toContain('+proj=utm +zone=15')
+  })
+
+  it('never expands NAD27 to +datum=NAD27, which proj4js cannot shift', () => {
+    // +datum=NAD27 pulls in +nadgrids=@conus,… and proj4js ships no NADCON
+    // grids. The @ makes them optional, so the shift is SKIPPED silently and
+    // Clarke 1866 coordinates come back labelled WGS84, ~100 m out. An explicit
+    // 3-parameter shift is the honest substitute.
+    const def = unwrap(resolveCrs('EPSG:26715')).def
+    expect(def).not.toContain('nadgrids')
+    expect(def).not.toContain('+datum=NAD27')
+    expect(def).toContain('+ellps=clrk66')
+    expect(def).toContain('+towgs84=-8,160,176')
+    expect(unwrap(resolveCrs('EPSG:26715')).note).toMatch(/NAD27/)
+  })
+
+  it('leaves the codes between the NAD bands unresolved rather than guessing', () => {
+    // 26924-26999 and 26723-26799 are not UTM. An off-by-one in the band
+    // arithmetic would hand back a plausible zone for a code that is not one.
+    for (const code of ['EPSG:26924', 'EPSG:26900', 'EPSG:26723', 'EPSG:26700']) {
+      expect(resolveCrs(code).ok, code).toBe(false)
+    }
   })
 
   it('resolves bundled static defs', () => {
@@ -89,6 +115,17 @@ describe('crs · gridToWgs84 control points (projection-origin invariants)', () 
     const out = unwrap(gridToWgs84(def, 155_000, 463_000))
     expect(out.lat).toBeCloseTo(52.1562, 2)
     expect(out.lon).toBeCloseTo(5.3876, 2)
+  })
+
+  it('NAD83 UTM13N puts the Red Rocks sample scan in Colorado', () => {
+    // The demo cloud's own header bbox corner (see demo-models/point-clouds.ts).
+    // Red Rocks Amphitheatre sits at roughly 39.665°N, 105.205°W, so this is a
+    // check against the real world rather than against the projection's origin.
+    const def = unwrap(resolveCrs('EPSG:26913'))
+    const out = unwrap(gridToWgs84(def, 482_060.5, 4_390_187.5))
+    expect(out.lat).toBeCloseTo(39.66, 2)
+    expect(out.lon).toBeCloseTo(-105.21, 2)
+    expect(out.inDomain).toBe(true)
   })
 
   it('flags out-of-domain results (UTM32 coordinates fed to UTM18)', () => {
