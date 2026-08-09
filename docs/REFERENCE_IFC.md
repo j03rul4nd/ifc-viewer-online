@@ -159,6 +159,37 @@ of nesting ports under their element with `IfcRelNests`. Every correctly-authore
 IFC4 services model it ever saw came back "disconnected". The rule now reads both.
 That is what a reference model is for.
 
+## Driving the demo
+
+All four Poblenou files together — three disciplines federated, on the basemap
+with the real neighbourhood around them, under a scan that lines up — is the shot
+the whole set exists for. It has been checked end to end; this is the recipe.
+
+**The link.** Relative paths work, so it is the same URL everywhere (dev, preview,
+production):
+
+```
+/?model=/models/poblenou/BCN-IVO-ZZ-XX-M3-A-0001.ifc,/models/poblenou/BCN-IVO-ZZ-XX-M3-S-0001.ifc,/models/poblenou/BCN-IVO-ZZ-XX-M3-M-0001.ifc
+```
+
+That loads all three and the header reads **3 MODELS**. Add `&ui=client` for a
+clean frame with no chrome, `&validate=0` to skip the automatic Health Score, or
+`&isolate=IfcColumn` to open straight into the frame. Full list:
+[`EMBED_URL_PARAMS.md`](EMBED_URL_PARAMS.md).
+
+**Then two panels, because neither has a URL parameter yet:**
+
+1. *Tools ▸ Map ▸ Show on map.* The header shows `41.4042, 2.1905 · 45°`, read
+   out of the `IfcMapConversion` — location **and** rotation. Turn on
+   **Surroundings** for the OpenStreetMap buildings (~115 within 600 m); the OSM
+   attribution appearing is how you know they arrived.
+2. *Tools ▸ Point cloud ▸ Poblenou Pavilion — site survey.* The alignment panel
+   reads **"Georeferenced (map conversion) · Exact"**. Nothing to drag.
+
+Both surfaces are reachable from the SDK too (`addPointCloud`), but `map` and
+`scan` are not URL parameters today — adding them would make the whole shot a
+single link, which is the obvious next step if these get used for recorded demos.
+
 ## How they were created
 
 With **Blender 4.5 + Bonsai**, headless:
