@@ -846,3 +846,56 @@ describe('catenary masts', () => {
     expect(s.z).toBeGreaterThan(s.x * 10)
   })
 })
+
+describe('every lit layer supplies the colours its material declares', () => {
+  // The invariant, not the instance: a material with `vertexColors: true` and
+  // no `color` attribute reads zero and renders BLACK. The bridge decks shipped
+  // that way — the flat-coloured 'simple' path never needed the attribute, so
+  // nothing looked wrong until the deck moved to the shared asphalt material.
+  // Asserting the pairing across every layer stops the next one silently.
+  const scene = (): OsmFeature[] => [
+    area('water', 'w1'), area('green', 'g1'),
+    tree('n1'),
+    {
+      id: 'b1', kind: 'bridge',
+      ring: ringAround(LAT, LON, 40),
+      height: { heightM: 6, minHeightM: 4, estimated: false },
+      style: { roofShape: 'flat', roofHeightM: 0 },
+    },
+    {
+      id: 'road1', kind: 'road', widthM: 9,
+      ring: Array.from({ length: 6 }, (_, i) => ({ lat: LAT, lon: LON + i * 0.0004 })),
+      height: { heightM: 0, minHeightM: 0, estimated: true },
+      style: { roofShape: 'flat', roofHeightM: 0 },
+    },
+  ]
+
+  for (const quality of ['simple', 'detailed'] as const) {
+    it(`holds at quality '${quality}'`, () => {
+      const opts = { ...OPTS, quality }
+      const built: Array<THREE.Object3D | undefined> = [
+        ...(['water', 'green'] as const)
+          .map((k) => buildSurfaceLayer(scene(), k, opts)?.object),
+        buildBridgeLayer(scene(), opts)?.object,
+        buildLinearLayer(scene(), 'road', opts)?.object,
+        buildTreeLayer(scene(), opts)?.object,
+      ]
+
+      let checked = 0
+      for (const root of built) {
+        root?.traverse((o) => {
+          const mesh = o as THREE.Mesh
+          const mat = mesh.material as THREE.Material & { vertexColors?: boolean }
+          if (!mesh.geometry || !mat || Array.isArray(mat) || !mat.vertexColors) return
+          checked++
+          expect(
+            mesh.geometry.getAttribute('color'),
+            `${o.name || o.type} declares vertexColors but supplies none — it will render black`,
+          ).toBeTruthy()
+        })
+      }
+      // Guard the guard: if nothing matched, the test proves nothing.
+      expect(checked).toBeGreaterThan(0)
+    })
+  }
+})
