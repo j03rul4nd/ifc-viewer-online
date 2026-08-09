@@ -232,9 +232,21 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
   function applyAlignment(cloud: CloudRecord): void {
     const t = effectiveTransform(cloud.alignment)
     cloud.root.position.set(t.position.x, t.position.y, t.position.z)
-    // yaw(Y) ∘ tilt(X) — the same decomposition the basemap group uses, so the
-    // two subsystems land geographic data on the scene identically.
-    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), t.yawRad)
+    // yaw(Y) ∘ pitch(X) ∘ roll(Z) ∘ tilt(X).
+    //
+    // The structural tilt is INNERMOST: it lays a Z-up source into the Y-up
+    // scene, and everything after it therefore operates on a scan that is already
+    // the right way up. That ordering is what makes the levelling sliders
+    // intuitive — pitch really does tip the far edge up, whatever the source's
+    // own convention was.
+    //
+    // Euler order 'YXZ' is yaw-pitch-roll, and with pitch and roll at zero this
+    // collapses to exactly the yaw(Y) ∘ tilt(X) it has always been — the same
+    // decomposition the basemap group uses, so the two subsystems still land
+    // geographic data on the scene identically.
+    const q = new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(t.pitchRad, t.yawRad, t.rollRad, 'YXZ'),
+    )
     if (t.tiltRad !== 0) {
       q.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), t.tiltRad))
     }

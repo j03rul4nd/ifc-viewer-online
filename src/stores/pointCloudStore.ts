@@ -12,7 +12,7 @@ import { devtools } from 'zustand/middleware'
 import { createLogger } from '../lib/logger'
 import {
   clampOffset, DEFAULT_DISPLAY, MAX_POINTS_DEFAULT, RENDER_BUDGET_DEFAULT,
-  type AlignmentOffset, type PointCloudAlignment, type PointCloudDisplay,
+  type AlignmentOffset, type PointCloudAlignment, type PointCloudDisplay, type UpAxis,
   type PointCloudEntry, type PointColorMode,
 } from '../lib/pointcloud/pc-types'
 
@@ -71,10 +71,14 @@ export function parseDisplay(raw: string | null): PointCloudDisplay {
  */
 let onOffsetPersist: ((fileKey: string, offset: AlignmentOffset) => void) | null = null
 
+let onUpAxisPersist: ((fileKey: string, axis: UpAxis) => void) | null = null
+
 export function registerOffsetPersistence(
   fn: (fileKey: string, offset: AlignmentOffset) => void,
+  upAxisFn?: (fileKey: string, axis: UpAxis) => void,
 ): void {
   onOffsetPersist = fn
+  if (upAxisFn) onUpAxisPersist = upAxisFn
 }
 
 function readBudget(): number {
@@ -108,6 +112,15 @@ interface PointCloudStore {
   setAlignment: (id: string, alignment: PointCloudAlignment) => void
   /** Merge a manual nudge into the active alignment. Clamped. */
   setOffset: (id: string, offset: Partial<AlignmentOffset>) => void
+  /**
+   * Correct which axis the source treats as up.
+   *
+   * Writes to the FRAME rather than to the alignment, because the frame is the
+   * single source of truth the aligner reads — leaving the two to disagree is
+   * how a cloud ends up rendering one way and reporting another. The caller
+   * re-runs the alignment afterwards.
+   */
+  setUpAxis: (id: string, axis: UpAxis) => void
   resetOffset: (id: string) => void
   setDisplay: (patch: Partial<PointCloudDisplay>) => void
   setRenderBudget: (budget: number) => void
@@ -192,6 +205,21 @@ export const usePointCloudStore = create<PointCloudStore>()(
           }),
           false,
           'setOffset',
+        ),
+
+      setUpAxis: (id, axis) =>
+        set(
+          (s) => ({
+            clouds: s.clouds.map((c) => {
+              if (c.id !== id || !c.frame) return c
+              // 'user' outranks both 'declared' and 'assumed' from here on, so
+              // the panel stops offering a guess it no longer owns.
+              onUpAxisPersist?.(c.fileKey, axis)
+              return { ...c, frame: { ...c.frame, upAxis: axis, upAxisSource: 'user' } }
+            }),
+          }),
+          false,
+          'setUpAxis',
         ),
 
       resetOffset: (id) =>

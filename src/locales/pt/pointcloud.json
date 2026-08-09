@@ -86,7 +86,11 @@
       "apply": "Usar esta definição",
       "invalid": "O proj4 não conseguiu interpretar essa definição.",
       "applied": "Definição aceite — o levantamento foi realinhado."
-    }
+    },
+    "upAxis": "Eixo vertical",
+    "upAxisZ": "Z para cima",
+    "upAxisY": "Y para cima",
+    "upAxisGuessed": "O ficheiro não o indica — deduzido da forma do levantamento. Se o levantamento estiver deitado, troque aqui."
   },
   "transform": {
     "title": "Ajustar a colocação",
@@ -96,7 +100,9 @@
     "rotation": "Rotação",
     "scale": "Escala",
     "reset": "Repor a colocação",
-    "hint": "Os desvios aplicam-se por cima do alinhamento detetado e nunca são incorporados nele."
+    "hint": "Os desvios aplicam-se por cima do alinhamento detetado e nunca são incorporados nele.",
+    "pitch": "Inclinar para a frente / trás",
+    "roll": "Inclinar para a esquerda / direita"
   },
   "display": {
     "title": "Aparência",

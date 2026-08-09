@@ -70,6 +70,7 @@ export interface SdkSiteCommand {
  */
 export interface SdkPointCloudCommand {
   action: 'add' | 'remove' | 'clear' | 'visible' | 'display' | 'frame' | 'inspect'
+    | 'placement' | 'upAxis'
   /** `add`: the scan itself. A File so the readers can stream slices of it. */
   file?: File
   /**
@@ -87,6 +88,17 @@ export interface SdkPointCloudCommand {
   display?: Record<string, unknown>
   /** Points drawn per frame at density 1. */
   renderBudget?: number
+  /**
+   * `placement`: a partial manual offset — position, yaw, the two levelling
+   * angles, scale. Merged over whatever is there, then persisted per file.
+   */
+  placement?: Record<string, unknown>
+  /**
+   * `upAxis`: which axis the SOURCE treats as up. Correcting this re-runs the
+   * whole alignment rather than patching the transform, because the up axis
+   * feeds the bounding-box comparisons the local rung makes.
+   */
+  upAxis?: 'y' | 'z'
   /**
    * `inspect`: arm (default) or disarm click-to-read on the scan. Picks are
    * reported to the host through the `pointcloud-picked` event.

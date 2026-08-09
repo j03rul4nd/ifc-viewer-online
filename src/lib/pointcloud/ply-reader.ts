@@ -224,11 +224,16 @@ export class PlyReader implements PointReader {
       ? await this.sampleBoundsAscii()
       : await this.sampleBoundsBinary()
 
+    // PLY declares no orientation, and the two worlds that emit it disagree:
+    // survey tooling writes Z-up, ARKit and photogrammetry write Y-up. Infer it
+    // and mark it inferred — see Bounds.inferUpAxis.
+    const up = bounds.inferUpAxis()
     const frame: SourceFrame = bounds.toFrame({
       unitScale: 1,
       unitSource: 'assumed',
       epsgCode: null,
-      upAxis: 'z',
+      upAxis: up.axis,
+      upAxisSource: 'assumed',
     })
 
     const l = this.layout

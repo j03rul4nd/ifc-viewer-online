@@ -173,8 +173,12 @@ export class XyzReader implements PointReader {
       })
     }
 
+    // Three numbers a line and no context whatsoever — the orientation has to be
+    // read out of the shape of the data. See Bounds.inferUpAxis.
+    const up = bounds.inferUpAxis()
     const frame: SourceFrame = bounds.toFrame({
-      unitScale: 1, unitSource: 'assumed', epsgCode: null, upAxis: 'z',
+      unitScale: 1, unitSource: 'assumed', epsgCode: null,
+      upAxis: up.axis, upAxisSource: 'assumed',
     })
 
     return {

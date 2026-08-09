@@ -37,7 +37,7 @@ function alignment(patch: Partial<PointCloudAlignment> = {}): PointCloudAlignmen
   return {
     rung: 'local', confidence: 'high',
     origin: { x: 0, y: 0, z: 0 }, yawRad: 0, scale: 1, upAxis: 'z',
-    reasons: [], offset: { x: 0, y: 0, z: 0, yawDeg: 0, scaleMul: 1 },
+    reasons: [], offset: { x: 0, y: 0, z: 0, yawDeg: 0, pitchDeg: 0, rollDeg: 0, scaleMul: 1 },
     ...patch,
   }
 }

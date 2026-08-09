@@ -15,10 +15,14 @@ import { usePointCloudStore, registerOffsetPersistence } from '../../stores/poin
 import { createLogger } from '../logger'
 import { detectFormat } from './pc-format'
 import {
-  alignCloud, cloudFileKey, loadOffset, saveOffset, loadCloudProj4, type ModelBoundsLike,
+  alignCloud, cloudFileKey, loadOffset, saveOffset, loadCloudProj4,
+  loadCloudUpAxis, saveCloudUpAxis, type ModelBoundsLike,
 } from './pc-align'
 import { registerCustomProj4 } from '../geo/crs'
-import { CHUNK_POINTS, type PointChunk, type PointCloudEntry, type PointCloudWorkerOut } from './pc-types'
+import {
+  CHUNK_POINTS,
+  type PointChunk, type PointCloudEntry, type PointCloudWorkerOut, type SourceFrame,
+} from './pc-types'
 import type { GeorefExtraction, GeoPlacement } from '../geo/geo-types'
 import type { PointCloudSystemAPI } from './point-cloud-system'
 
@@ -62,7 +66,24 @@ const activeWorkers = new Map<string, Worker>()
 // Wire the store's placement persistence to the writer that lives next to proj4.
 // Done at module load, which happens the first time anything point-cloud-shaped
 // is opened — exactly when a placement could first be made.
-registerOffsetPersistence(saveOffset)
+registerOffsetPersistence(saveOffset, saveCloudUpAxis)
+
+/**
+ * Apply an up-axis the user corrected for this file, before anything is aligned.
+ *
+ * The readers that have to guess (PLY, PCD, text) guess from the shape of the
+ * data, and sometimes get it wrong — a tall narrow scan reads as lying down.
+ * Correcting it once has to be enough: without this, every reopen would put the
+ * scan back on its side and the user would conclude the control does not work.
+ *
+ * Returns the frame to align against, which is the same object when there is
+ * nothing saved.
+ */
+function withSavedUpAxis(frame: SourceFrame, fileKey: string): SourceFrame {
+  const saved = loadCloudUpAxis(fileKey)
+  if (!saved || saved === frame.upAxis) return frame
+  return { ...frame, upAxis: saved, upAxisSource: 'user' }
+}
 
 /**
  * Load one point cloud end to end. Resolves when the parse finishes (or fails);
@@ -185,8 +206,9 @@ export async function loadPointCloud(opts: LoadOptions): Promise<LoadResult> {
             // still reaches the top rungs on reopen.
             const savedProj4 = loadCloudProj4(fileKey)
             if (savedProj4) registerCustomProj4(savedProj4.code, savedProj4.def)
+            const frame = withSavedUpAxis(msg.frame, fileKey)
             const alignment = alignCloud({
-              frame: msg.frame,
+              frame,
               georef: geo.georef,
               placement: geo.placement,
               modelBounds,
@@ -196,12 +218,12 @@ export async function loadPointCloud(opts: LoadOptions): Promise<LoadResult> {
             const saved = loadOffset(fileKey)
             if (saved) alignment.offset = saved
             usePointCloudStore.getState().updateCloud(cloudId, {
-              frame: msg.frame,
+              frame,
               attributes: msg.attributes,
               declaredCount: msg.declaredCount,
               alignment,
             })
-            system.create(cloudId, alignment, msg.frame.origin)
+            system.create(cloudId, alignment, frame.origin)
             ready = true
             drainPending()
           })
@@ -361,16 +383,17 @@ export async function streamPointCloud(opts: LoadOptions): Promise<LoadResult> {
             if (stale() || settled) return
             const savedProj4 = loadCloudProj4(fileKey)
             if (savedProj4) registerCustomProj4(savedProj4.code, savedProj4.def)
+            const frame = withSavedUpAxis(msg.frame, fileKey)
             const alignment = alignCloud({
-              frame: msg.frame, georef: geo.georef, placement: geo.placement, modelBounds,
+              frame, georef: geo.georef, placement: geo.placement, modelBounds,
             })
             const saved = loadOffset(fileKey)
             if (saved) alignment.offset = saved
             usePointCloudStore.getState().updateCloud(cloudId, {
-              frame: msg.frame, attributes: msg.attributes,
+              frame, attributes: msg.attributes,
               declaredCount: msg.declaredCount, alignment, status: 'ready', progress: 100,
             })
-            system.create(cloudId, alignment, msg.frame.origin)
+            system.create(cloudId, alignment, frame.origin)
             ready = true
             for (const p of pendingNodes) system.addChunk(cloudId, p.chunk)
             pendingNodes.length = 0

@@ -240,6 +240,26 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
             system.frame(id)
             break
           }
+          case 'placement': {
+            const target = cmd.cloudId ?? usePointCloudStore.getState().activeCloudId
+            if (!target) throw new Error('No point cloud loaded')
+            // clampOffset in the store is what keeps a host from tipping a scan
+            // somewhere only a reset escapes from.
+            usePointCloudStore.getState().setOffset(target, (cmd.placement ?? {}) as never)
+            break
+          }
+          case 'upAxis': {
+            const target = cmd.cloudId ?? usePointCloudStore.getState().activeCloudId
+            if (!target) throw new Error('No point cloud loaded')
+            if (cmd.upAxis !== 'y' && cmd.upAxis !== 'z') throw new Error('upAxis must be "y" or "z"')
+            usePointCloudStore.getState().setUpAxis(target, cmd.upAxis)
+            await realignCloud(target, {
+              modelBounds: activeModelId ? viewer.getModelBounds(activeModelId) : viewer.getModelBounds(),
+              modelId: activeModelId,
+              system,
+            })
+            break
+          }
           case 'inspect': {
             // Arms the same click-to-read mode the panel's button arms; picks
             // are reported to the host through `pointcloud-picked`.
@@ -316,6 +336,34 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
     setProj4Text('')
     await handleRealign()
   }, [store.activeCloudId, proj4Text])
+
+  /**
+   * Flip which axis the scan treats as up, and re-derive the placement.
+   *
+   * This is the "my scan is lying on its side" button. It is one click rather
+   * than a slider because the correction is always exactly 90° — expressing that
+   * through a rotation control would be asking the user to find a right angle by
+   * dragging, and they would land on 89.5°.
+   */
+  const handleUpAxis = useCallback((axis: 'y' | 'z'): void => {
+    const cloud = usePointCloudStore.getState().clouds
+      .find((c) => c.id === usePointCloudStore.getState().activeCloudId)
+    if (!cloud) return
+    usePointCloudStore.getState().setUpAxis(cloud.id, axis)
+    // Re-run the ladder rather than patching the transform: the up axis feeds
+    // the bbox comparisons the local rung makes, so the whole placement can
+    // legitimately change once it is right.
+    void (async () => {
+      const viewer = viewerApiRef.current
+      if (!viewer) return
+      const system = await viewer.getPointClouds()
+      await realignCloud(cloud.id, {
+        modelBounds: activeModelId ? viewer.getModelBounds(activeModelId) : viewer.getModelBounds(),
+        modelId: activeModelId,
+        system,
+      })
+    })()
+  }, [viewerApiRef, activeModelId])
 
   const handleResetOffset = useCallback((): void => {
     const id = store.activeCloudId
@@ -581,6 +629,35 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
                 </div>
               )}
 
+              {activeCloud.frame && activeCloud.frame.upAxisSource !== 'declared' && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-[10px] text-[var(--text-faint)] shrink-0">
+                    {t('align.upAxis')}
+                  </span>
+                  <div className="flex rounded-[7px] overflow-hidden border border-[var(--border-strong)]">
+                    {(['z', 'y'] as const).map((axis) => (
+                      <button
+                        key={axis}
+                        onClick={() => handleUpAxis(axis)}
+                        aria-pressed={activeCloud.frame!.upAxis === axis}
+                        className={`px-2 py-1 text-[10px] font-medium transition-colors ${
+                          activeCloud.frame!.upAxis === axis
+                            ? 'bg-[var(--accent)] text-[var(--accent-contrast,#fff)]'
+                            : 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]'
+                        }`}
+                      >
+                        {axis === 'z' ? t('align.upAxisZ') : t('align.upAxisY')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {activeCloud.frame && activeCloud.frame.upAxisSource === 'assumed' && (
+                <div className="text-[10px] text-[var(--text-faint)] mt-1 leading-snug">
+                  {t('align.upAxisGuessed')}
+                </div>
+              )}
+
               {alignment.reasons.length > 0 && (
                 <ul className="mt-1.5 flex flex-col gap-1">
                   {alignment.reasons.map((key) => (
@@ -641,6 +718,10 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
                 unit="m" onChange={(v) => handleOffset({ z: v })} />
               <Slider label={t('transform.rotation')} value={alignment.offset.yawDeg} min={-180} max={180} step={0.5}
                 unit="°" onChange={(v) => handleOffset({ yawDeg: v })} />
+              <Slider label={t('transform.pitch')} value={alignment.offset.pitchDeg} min={-45} max={45} step={0.25}
+                unit="°" onChange={(v) => handleOffset({ pitchDeg: v })} />
+              <Slider label={t('transform.roll')} value={alignment.offset.rollDeg} min={-45} max={45} step={0.25}
+                unit="°" onChange={(v) => handleOffset({ rollDeg: v })} />
               <Slider label={t('transform.scale')} value={alignment.offset.scaleMul} min={0.1} max={3} step={0.001}
                 unit="×" digits={3} onChange={(v) => handleOffset({ scaleMul: v })} />
               <button

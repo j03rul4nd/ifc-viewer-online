@@ -56,6 +56,20 @@ export interface SourceFrame {
   /** Normalized EPSG code from the file (LAS VLRs), or null. */
   epsgCode: string | null
   upAxis: UpAxis
+  /**
+   * How `upAxis` was arrived at, surfaced in the UI exactly like `unitSource`.
+   *
+   *   declared — the FORMAT defines it. LAS/LAZ/COPC say Z is elevation, so
+   *              there is nothing to guess and nothing to offer the user.
+   *   assumed  — inferred from the shape of the data. PLY, PCD and text carry
+   *              no orientation at all, and a scan from a phone or a
+   *              photogrammetry pipeline is as likely to be Y-up as Z-up.
+   *   user     — someone corrected it, and that decision outranks both.
+   *
+   * This field exists because getting it wrong lays a whole scan on its side,
+   * and until it was carried the guess was silent: every reader hardcoded 'z'.
+   */
+  upAxisSource: 'declared' | 'assumed' | 'user'
   /** Source-space bounding box, in source units, float64. */
   min: Vec3
   max: Vec3
@@ -139,11 +153,24 @@ export interface AlignmentOffset {
   z: number
   /** Extra yaw about scene +Y, degrees. */
   yawDeg: number
+  /**
+   * Extra pitch about scene +X and roll about scene +Z, degrees.
+   *
+   * These exist because yaw alone cannot fix a scan that arrived lying on its
+   * side. Until they were added, a source whose vertical axis we read wrongly —
+   * or one that was simply captured off-level, which handheld scanning does all
+   * the time — could not be corrected by ANY control in the product. The up-axis
+   * switch handles the 90° case; these handle the couple of degrees that are
+   * left, and that a client will notice in a presentation.
+   */
+  pitchDeg: number
+  rollDeg: number
   /** Extra uniform scale multiplier (1 = none). */
   scaleMul: number
 }
 
-export const NO_OFFSET: AlignmentOffset = { x: 0, y: 0, z: 0, yawDeg: 0, scaleMul: 1 }
+export const NO_OFFSET: AlignmentOffset =
+  { x: 0, y: 0, z: 0, yawDeg: 0, pitchDeg: 0, rollDeg: 0, scaleMul: 1 }
 
 /**
  * Clamp a user offset to values the UI can express. Lives here rather than in
@@ -156,9 +183,20 @@ export function clampOffset(o: Partial<AlignmentOffset>): AlignmentOffset {
   return {
     x: num(o.x, 0), y: num(o.y, 0), z: num(o.z, 0),
     yawDeg: num(o.yawDeg, 0) % 360,
+    // Levelling corrections, not free rotation: ±45° is far more than any real
+    // capture is off by, and clamping keeps a stray drag from tipping a scan
+    // somewhere it takes a reset to escape from. Placements saved before these
+    // existed simply arrive without them and default to level — which is what
+    // they were.
+    pitchDeg: clampAngle(num(o.pitchDeg, 0)),
+    rollDeg: clampAngle(num(o.rollDeg, 0)),
     scaleMul: Math.min(1000, Math.max(0.001, num(o.scaleMul, 1))),
   }
 }
+
+/** Levelling range for pitch/roll, degrees. */
+export const MAX_LEVEL_DEG = 45
+const clampAngle = (v: number): number => Math.min(MAX_LEVEL_DEG, Math.max(-MAX_LEVEL_DEG, v))
 
 /**
  * The complete source→scene transform for one cloud. Serialisable: this is what

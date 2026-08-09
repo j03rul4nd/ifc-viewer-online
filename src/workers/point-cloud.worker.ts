@@ -252,7 +252,11 @@ async function run(req: PointCloudParseRequest): Promise<void> {
         unitScale: header.frame.unitScale,
         unitSource: header.frame.unitSource,
         epsgCode: header.frame.epsgCode,
+        // Carried through rather than re-inferred. The reader saw the header and
+        // its own sampling; re-running the guess against the exact box here
+        // could disagree with what the panel already told the user.
         upAxis: header.frame.upAxis,
+        upAxisSource: header.frame.upAxisSource,
       })
   // Keep the origin the chunks were written against — recentring it now would
   // silently shift every chunk that has already been uploaded.

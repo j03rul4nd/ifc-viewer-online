@@ -244,7 +244,7 @@ type Listener<T> = (payload: T) => void
 // which differ once `truncated` is set) and `alignment.confidence` (a scan on
 // the `local` or `manual` rung was inferred or placed by hand, and must not be
 // presented with the authority of an exact map conversion).
-const SDK_VERSION = '1.8.0'
+const SDK_VERSION = '1.9.0'
 const DEFAULT_LOAD_TIMEOUT = 120_000
 const REQUEST_TIMEOUT = 30_000
 const FALLBACK_LANGUAGES = LANGUAGES.map((l) => l.code)
@@ -312,10 +312,46 @@ export interface PointCloudInfo {
   visible: boolean
   /** EPSG code the scan declares, or null. */
   crs: string | null
+  /**
+   * Which axis the SOURCE treats as up, and where that came from.
+   *
+   * `declared` means the format states it — LAS and its relatives define Z as
+   * elevation. `assumed` means it was inferred from the shape of the scan,
+   * because PLY, PCD and text say nothing at all; a host showing scans from
+   * phones or photogrammetry should expect this and may want to offer the
+   * correction itself. `user` means someone already corrected it.
+   */
+  upAxis: 'y' | 'z'
+  upAxisSource: 'declared' | 'assumed' | 'user'
+  /** The manual placement on top of the derived alignment. */
+  placement: PointCloudPlacement
   alignment: {
     rung: 'map-conversion' | 'shared-crs' | 'geographic' | 'local' | 'manual'
     confidence: 'exact' | 'high' | 'approximate' | 'manual'
   } | null
+}
+
+/**
+ * A manual correction applied ON TOP of the alignment the viewer derived, never
+ * folded into it — so re-running the alignment cannot silently discard the
+ * user's work, and the two can always be told apart.
+ *
+ * `pitchDeg` and `rollDeg` are levelling, clamped to ±45°. They exist because
+ * yaw alone cannot fix a scan that arrived lying on its side or captured
+ * off-level, which handheld scanning does constantly.
+ */
+export interface PointCloudPlacement {
+  /** Scene metres. */
+  x: number
+  y: number
+  z: number
+  /** Degrees about scene +Y. */
+  yawDeg: number
+  /** Degrees about scene +X and +Z. Levelling only, ±45. */
+  pitchDeg: number
+  rollDeg: number
+  /** Uniform multiplier, 1 = none. */
+  scaleMul: number
 }
 
 /** Appearance controls shared by every loaded scan. */
@@ -575,6 +611,39 @@ export class IfcViewer {
    */
   inspectPointCloud(enabled = true): Promise<void> {
     return this.request<unknown>('ifcviewer:inspect-pointcloud', { inspect: enabled })
+      .then(() => undefined)
+  }
+
+  /**
+   * Nudge a scan by hand: position, yaw, levelling, scale. Partial — anything
+   * omitted is left alone. Values are clamped by the viewer, so a host cannot
+   * put a scan somewhere only a reset escapes from.
+   *
+   * This sits on top of the derived alignment rather than replacing it, so it
+   * survives a re-alignment and is persisted per file.
+   */
+  setPointCloudPlacement(
+    placement: Partial<PointCloudPlacement>, cloudId?: string,
+  ): Promise<void> {
+    return this.request<unknown>('ifcviewer:pointcloud-placement', { placement, cloudId })
+      .then(() => undefined)
+  }
+
+  /**
+   * Correct which axis the scan's own coordinates treat as up, and re-derive the
+   * placement from it.
+   *
+   * Worth exposing because the formats a phone or a photogrammetry pipeline
+   * emits — PLY, PCD, plain text — declare no orientation at all, so the viewer
+   * has to infer it from the shape of the data and can be wrong. `upAxisSource`
+   * on PointCloudInfo tells you whether it was inferred.
+   *
+   * This re-runs the whole alignment rather than patching the transform: the up
+   * axis feeds the bounding-box comparisons the local rung makes, so the
+   * placement can legitimately change once it is right.
+   */
+  setPointCloudUpAxis(axis: 'y' | 'z', cloudId?: string): Promise<void> {
+    return this.request<unknown>('ifcviewer:pointcloud-upaxis', { upAxis: axis, cloudId })
       .then(() => undefined)
   }
 

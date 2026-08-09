@@ -7,7 +7,7 @@
 // chunker needs to see points as they arrive so the first ones can reach the
 // GPU while the rest are still being decoded.
 
-import type { PointCloudFormat, PointAttributesPresent, SourceFrame } from './pc-types'
+import type { PointCloudFormat, PointAttributesPresent, SourceFrame, UpAxis } from './pc-types'
 
 /**
  * Receives every decoded point. All channels are pre-normalized to 0-255 so the
@@ -96,6 +96,48 @@ export class Bounds {
   }
 
   get isEmpty(): boolean { return !Number.isFinite(this.minX) }
+
+  /**
+   * Guess which axis points up, for formats that do not say.
+   *
+   * PLY, PCD and delimited text carry no orientation. Survey tooling writes
+   * Z-up; ARKit, most photogrammetry and most game-adjacent exporters write
+   * Y-up. Reading one as the other lays the whole scan on its side, and that was
+   * happening silently because every reader hardcoded 'z'.
+   *
+   * The signal used is that things people scan are WIDER THAN THEY ARE TALL: a
+   * room, a floor, a site, a facade viewed from across the street. So the axis
+   * with the smallest extent is the vertical one. It is a heuristic and it is
+   * treated as one — `upAxisSource: 'assumed'`, shown in the panel, one click to
+   * override.
+   *
+   * The margin matters more than the comparison. A near-cubic scan carries no
+   * signal at all, and picking a winner from noise would be worse than
+   * defaulting: a wrong confident answer is harder to notice than a wrong
+   * default, because the user stops looking for the control.
+   */
+  inferUpAxis(): { axis: UpAxis; confident: boolean } {
+    if (this.isEmpty) return { axis: 'z', confident: false }
+    const dx = this.maxX - this.minX
+    const dy = this.maxY - this.minY
+    const dz = this.maxZ - this.minZ
+
+    // Degenerate: a flat or linear scan has no shape to read.
+    const largest = Math.max(dx, dy, dz)
+    if (!(largest > 0)) return { axis: 'z', confident: false }
+
+    const horizontalIfY = Math.min(dx, dz)
+    const horizontalIfZ = Math.min(dx, dy)
+
+    // Y is up when Y is clearly the shortest; Z is up when Z is. "Clearly" means
+    // at least this much shorter than the smaller of the two candidates for
+    // horizontal — below that the scan is too cubic to call.
+    const MARGIN = 1.35
+    if (dy * MARGIN < horizontalIfY && dy < dz) return { axis: 'y', confident: true }
+    if (dz * MARGIN < horizontalIfZ && dz < dy) return { axis: 'z', confident: true }
+    // No signal — keep the survey-world default, and say it was not confident.
+    return { axis: 'z', confident: false }
+  }
 
   /** Falls back to a unit box around the origin when nothing was added. */
   toFrame(base: Omit<SourceFrame, 'min' | 'max' | 'origin'>): SourceFrame {

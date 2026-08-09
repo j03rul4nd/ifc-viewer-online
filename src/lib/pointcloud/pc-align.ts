@@ -22,7 +22,7 @@ import { WGS84_RADIUS } from '../geo/geo-math'
 import type { GeorefExtraction, GeoPlacement } from '../geo/geo-types'
 import {
   NO_OFFSET, clampOffset,
-  type AlignmentOffset, type PointCloudAlignment, type SourceFrame, type Vec3,
+  type AlignmentOffset, type PointCloudAlignment, type SourceFrame, type UpAxis, type Vec3,
 } from './pc-types'
 
 const DEG = Math.PI / 180
@@ -354,6 +354,36 @@ function manualFallback(input: AlignInput): PointCloudAlignment {
 
 const LS_PREFIX = 'ifc-pc-offset:v1:'
 const LS_PROJ4 = 'ifc-pc-proj4:v1:'
+const LS_UPAXIS = 'ifc-pc-upaxis:v1:'
+
+/**
+ * Which way is up, when the user had to tell us.
+ *
+ * Kept apart from the offset because it is not a nudge — it is a correction to
+ * something the file failed to state and we guessed. Persisting it per file
+ * means correcting a scan once is enough; without this, every reopen of a Y-up
+ * PLY would land it on its side again and the user would learn that the control
+ * does not stick, which is worse than not having it.
+ */
+export function saveCloudUpAxis(fileKey: string, axis: UpAxis): void {
+  try { localStorage.setItem(LS_UPAXIS + fileKey, JSON.stringify({ v: 1, axis })) }
+  catch { /* quota / private mode */ }
+}
+
+export function loadCloudUpAxis(fileKey: string): UpAxis | null {
+  let raw: string | null = null
+  try { raw = localStorage.getItem(LS_UPAXIS + fileKey) } catch { return null }
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw) as { v?: number; axis?: unknown }
+    if (parsed.v !== 1) return null
+    return parsed.axis === 'y' || parsed.axis === 'z' ? parsed.axis : null
+  } catch { return null }
+}
+
+export function clearCloudUpAxis(fileKey: string): void {
+  try { localStorage.removeItem(LS_UPAXIS + fileKey) } catch { /* ignore */ }
+}
 
 /**
  * A proj4 definition the user supplied for a CRS this build cannot resolve,
@@ -426,6 +456,13 @@ export function clearOffset(fileKey: string): void {
 export interface EffectiveTransform {
   position: Vec3
   yawRad: number
+  /**
+   * User levelling, radians. Applied in SCENE axes, on top of the structural
+   * tilt below — so once the up-axis is right, these behave the way a person
+   * expects: pitch tips the far edge up, roll drops one side.
+   */
+  pitchRad: number
+  rollRad: number
   /** Fixed tilt laying a Z-up source onto the Y-up scene. 0 for a Y-up source. */
   tiltRad: number
   scale: number
@@ -436,6 +473,8 @@ export function effectiveTransform(a: PointCloudAlignment): EffectiveTransform {
   return {
     position: { x: a.origin.x + o.x, y: a.origin.y + o.y, z: a.origin.z + o.z },
     yawRad: a.yawRad + o.yawDeg * DEG,
+    pitchRad: (o.pitchDeg || 0) * DEG,
+    rollRad: (o.rollDeg || 0) * DEG,
     tiltRad: a.upAxis === 'z' ? -Math.PI / 2 : 0,
     scale: a.scale * (o.scaleMul || 1),
   }

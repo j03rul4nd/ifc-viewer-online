@@ -86,7 +86,11 @@
       "apply": "Usar esta definición",
       "invalid": "proj4 no ha podido interpretar esa definición.",
       "applied": "Definición aceptada: el escaneo se ha realineado."
-    }
+    },
+    "upAxis": "Eje vertical",
+    "upAxisZ": "Z arriba",
+    "upAxisY": "Y arriba",
+    "upAxisGuessed": "El archivo no lo indica — se ha deducido de la forma del escaneo. Si el escaneo aparece tumbado, cámbialo."
   },
   "transform": {
     "title": "Ajustar colocación",
@@ -96,7 +100,9 @@
     "rotation": "Rotación",
     "scale": "Escala",
     "reset": "Restablecer colocación",
-    "hint": "Los desplazamientos se aplican sobre la alineación detectada y nunca se integran en ella."
+    "hint": "Los desplazamientos se aplican sobre la alineación detectada y nunca se integran en ella.",
+    "pitch": "Inclinar adelante / atrás",
+    "roll": "Inclinar izquierda / derecha"
   },
   "display": {
     "title": "Apariencia",

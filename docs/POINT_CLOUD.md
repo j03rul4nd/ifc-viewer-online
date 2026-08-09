@@ -193,6 +193,52 @@ it again.
 
 ---
 
+### Which way is up
+
+Only the survey formats say. LAS, LAZ and COPC define Z as elevation, so for
+those it is read from the specification and there is nothing to offer the user.
+**PLY, PCD and delimited text declare no orientation at all** — and the two
+worlds that produce them disagree: survey tooling writes Z-up, while ARKit,
+photogrammetry and anything game-adjacent write Y-up.
+
+Reading one as the other lays the entire scan on its side. Until this landed
+that was happening silently, because every reader hardcoded Z-up and the manual
+controls offered yaw only — so a Y-up scan arrived sideways and **no control in
+the product could correct it**.
+
+Three parts to the answer:
+
+1. **Inferred, from the shape of the scan.** Things people scan are wider than
+   they are tall — a room, a floor, a site, a facade seen from across the street
+   — so the shortest axis is the vertical one. `Bounds.inferUpAxis` requires a
+   clear margin before it will commit; a near-cubic scan carries no signal, and
+   a confident wrong answer is worse than a default, because the user stops
+   looking for the control. The documented limit is a corridor about as narrow
+   as it is tall, which a bounding box genuinely cannot resolve.
+2. **Stated, and switchable.** The panel shows the up axis whenever it was not
+   declared by the format, with a one-click Z ⇄ Y switch. One click rather than
+   a slider because the correction is always exactly 90°, and asking someone to
+   find a right angle by dragging gets you 89.5°.
+3. **Remembered.** The correction is persisted per file, so a scan is corrected
+   once. Without that, every reopen would put it back on its side and the user
+   would conclude the control does not work.
+
+Flipping the axis re-runs the whole alignment rather than patching the
+transform, because the up axis feeds the bounding-box comparisons the local rung
+makes — the placement can legitimately change once it is right.
+
+### Levelling
+
+`Tilt forward / back` and `Tilt left / right` sit with the other manual
+controls, clamped to ±45°. They are what the up-axis switch cannot do: handheld
+capture is routinely a couple of degrees off level, and a client notices a
+floor that is not flat long before they notice anything else.
+
+They apply in SCENE axes, on top of the structural up-axis tilt, so once the
+axis is right the sliders behave the way a person expects. With both at zero the
+composition reduces exactly to what it always was — pinned by a test, because
+adding two angles must not move a single existing scan.
+
 ## 4. Display controls
 
 | Control | Effect |

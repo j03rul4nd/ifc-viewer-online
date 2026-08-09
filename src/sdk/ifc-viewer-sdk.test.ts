@@ -571,3 +571,78 @@ describe('IfcViewer — point clouds', () => {
     v.dispose()
   })
 })
+
+describe('IfcViewer — scan placement and orientation', () => {
+  it('sends a partial placement without inventing the fields it was not given', async () => {
+    // A host levelling a scan sends two angles, not seven numbers. Filling the
+    // rest in here would silently reset a position the user had already set.
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    // dispose() rejects anything still in flight, so the handler is attached
+    // here rather than leaving an unhandled rejection behind.
+    v.setPointCloudPlacement({ pitchDeg: 2.5, rollDeg: -1 }, 'pc-1').catch(() => {})
+    await tick()
+    const sent = postsOfType(post, 'ifcviewer:pointcloud-placement')[0]
+    expect(sent.placement).toEqual({ pitchDeg: 2.5, rollDeg: -1 })
+    expect(sent.cloudId).toBe('pc-1')
+    v.dispose()
+  })
+
+  it('addresses the active scan when no id is given', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    v.setPointCloudUpAxis('y').catch(() => {})
+    await tick()
+    const sent = postsOfType(post, 'ifcviewer:pointcloud-upaxis')[0]
+    expect(sent.upAxis).toBe('y')
+    expect(sent.cloudId).toBeUndefined()
+    v.dispose()
+  })
+
+  it('reports how the up axis was decided, not just what it is', async () => {
+    // The distinction a host needs: 'assumed' means the viewer guessed from the
+    // shape of the scan because the format says nothing, and may be wrong.
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    const p = v.listPointClouds()
+    await tick()
+    const req = postsOfType(post, 'ifcviewer:get-pointclouds')[0]
+    emitFromIframe(v, {
+      type: 'result', requestId: req.requestId, ok: true,
+      data: {
+        clouds: [{
+          id: 'pc-1', fileName: 'room.ply', pointCount: 10, declaredCount: 10,
+          truncated: false, upAxis: 'y', upAxisSource: 'assumed',
+          placement: { x: 0, y: 0, z: 0, yawDeg: 0, pitchDeg: 2, rollDeg: 0, scaleMul: 1 },
+        }],
+      },
+    })
+    const clouds = await p
+    expect(clouds[0].upAxis).toBe('y')
+    expect(clouds[0].upAxisSource).toBe('assumed')
+    expect(clouds[0].placement.pitchDeg).toBe(2)
+    v.dispose()
+  })
+
+  it('allows a long wait for an up-axis change, which re-runs the alignment', async () => {
+    // Correcting the axis re-derives the placement, and that reaches the web-ifc
+    // worker for the model's georeferencing. A wrapper that timed out at the
+    // usual few seconds would report failure on a working correction.
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    const p = v.setPointCloudUpAxis('z', 'pc-1')
+    await tick()
+    const req = postsOfType(post, 'ifcviewer:pointcloud-upaxis')[0]
+    emitFromIframe(v, { type: 'result', requestId: req.requestId, ok: true, data: { ok: true } })
+    await expect(p).resolves.toBeUndefined()
+    v.dispose()
+  })
+})

@@ -86,7 +86,11 @@
       "apply": "Usa questa definizione",
       "invalid": "proj4 non è riuscito a interpretare questa definizione.",
       "applied": "Definizione accettata — la scansione è stata riallineata."
-    }
+    },
+    "upAxis": "Asse verticale",
+    "upAxisZ": "Z in alto",
+    "upAxisY": "Y in alto",
+    "upAxisGuessed": "Il file non lo dichiara — dedotto dalla forma della scansione. Se la scansione è coricata, cambialo."
   },
   "transform": {
     "title": "Regola il posizionamento",
@@ -96,7 +100,9 @@
     "rotation": "Rotazione",
     "scale": "Scala",
     "reset": "Reimposta il posizionamento",
-    "hint": "Gli scostamenti si applicano sopra l'allineamento rilevato e non vi vengono mai incorporati."
+    "hint": "Gli scostamenti si applicano sopra l'allineamento rilevato e non vi vengono mai incorporati.",
+    "pitch": "Inclina avanti / indietro",
+    "roll": "Inclina a sinistra / destra"
   },
   "display": {
     "title": "Aspetto",

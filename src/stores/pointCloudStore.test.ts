@@ -19,7 +19,7 @@ function entry(id: string, patch: Partial<PointCloudEntry> = {}): PointCloudEntr
 const ALIGNMENT: PointCloudAlignment = {
   rung: 'local', confidence: 'high',
   origin: { x: 1, y: 2, z: 3 }, yawRad: 0.5, scale: 1, upAxis: 'z',
-  reasons: [], offset: { x: 0, y: 0, z: 0, yawDeg: 0, scaleMul: 1 },
+  reasons: [], offset: { x: 0, y: 0, z: 0, yawDeg: 0, pitchDeg: 0, rollDeg: 0, scaleMul: 1 },
 }
 
 beforeEach(() => {
@@ -70,7 +70,7 @@ describe('pointCloudStore', () => {
   it('merges and clamps a manual offset without disturbing the derived transform', () => {
     usePointCloudStore.getState().addCloud(entry('a', { alignment: ALIGNMENT }))
     usePointCloudStore.getState().setOffset('a', { x: 5 })
-    usePointCloudStore.getState().setOffset('a', { yawDeg: 45, scaleMul: 0 })
+    usePointCloudStore.getState().setOffset('a', { yawDeg: 45, pitchDeg: 0, rollDeg: 0, scaleMul: 0 })
 
     const cloud = usePointCloudStore.getState().clouds[0]
     expect(cloud.alignment!.offset.x).toBe(5)          // earlier nudge survives
@@ -85,7 +85,7 @@ describe('pointCloudStore', () => {
     usePointCloudStore.getState().setOffset('a', { x: 5, yawDeg: 30 })
     usePointCloudStore.getState().resetOffset('a')
     expect(usePointCloudStore.getState().clouds[0].alignment!.offset)
-      .toEqual({ x: 0, y: 0, z: 0, yawDeg: 0, scaleMul: 1 })
+      .toEqual({ x: 0, y: 0, z: 0, yawDeg: 0, pitchDeg: 0, rollDeg: 0, scaleMul: 1 })
   })
 
   it('ignores an offset on a cloud with no alignment yet', () => {

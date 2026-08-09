@@ -262,11 +262,13 @@ export class PcdReader implements PointReader {
     if (info.encoding === 'binary_compressed') await this.expandCompressed()
 
     const bounds = await this.sampleBounds()
+    const up = bounds.inferUpAxis()
     const frame: SourceFrame = bounds.toFrame({
       unitScale: 1,
       unitSource: 'assumed',
       epsgCode: null,
-      upAxis: 'z',
+      upAxis: up.axis,
+      upAxisSource: 'assumed',
     })
 
     const l = this.layout

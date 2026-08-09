@@ -86,7 +86,11 @@
       "apply": "Use this definition",
       "invalid": "proj4 could not parse that definition.",
       "applied": "Definition accepted — the scan was re-aligned."
-    }
+    },
+    "upAxis": "Up axis",
+    "upAxisZ": "Z up",
+    "upAxisY": "Y up",
+    "upAxisGuessed": "Not stated by the file — inferred from the shape of the scan. If the scan is lying on its side, switch it."
   },
   "transform": {
     "title": "Adjust placement",
@@ -96,7 +100,9 @@
     "rotation": "Rotation",
     "scale": "Scale",
     "reset": "Reset placement",
-    "hint": "Offsets are applied on top of the detected alignment and are never folded into it."
+    "hint": "Offsets are applied on top of the detected alignment and are never folded into it.",
+    "pitch": "Tilt forward / back",
+    "roll": "Tilt left / right"
   },
   "display": {
     "title": "Appearance",

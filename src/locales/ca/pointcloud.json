@@ -86,7 +86,11 @@
       "apply": "Fes servir aquesta definició",
       "invalid": "El proj4 no ha pogut interpretar aquesta definició.",
       "applied": "Definició acceptada — s'ha tornat a alinear l'escaneig."
-    }
+    },
+    "upAxis": "Eix vertical",
+    "upAxisZ": "Z amunt",
+    "upAxisY": "Y amunt",
+    "upAxisGuessed": "El fitxer no ho indica — s'ha deduït de la forma de l'escaneig. Si l'escaneig surt ajagut, canvia-ho."
   },
   "transform": {
     "title": "Ajusta la col·locació",
@@ -96,7 +100,9 @@
     "rotation": "Rotació",
     "scale": "Escala",
     "reset": "Restableix la col·locació",
-    "hint": "Els desplaçaments s'apliquen damunt de l'alineació detectada i mai no s'hi incorporen."
+    "hint": "Els desplaçaments s'apliquen damunt de l'alineació detectada i mai no s'hi incorporen.",
+    "pitch": "Inclina endavant / enrere",
+    "roll": "Inclina a esquerra / dreta"
   },
   "display": {
     "title": "Aparença",

@@ -86,7 +86,11 @@
       "apply": "Utiliser cette définition",
       "invalid": "proj4 n'a pas pu analyser cette définition.",
       "applied": "Définition acceptée — le relevé a été réaligné."
-    }
+    },
+    "upAxis": "Axe vertical",
+    "upAxisZ": "Z vers le haut",
+    "upAxisY": "Y vers le haut",
+    "upAxisGuessed": "Non indiqué par le fichier — déduit de la forme du relevé. Si le relevé est couché, changez-le ici."
   },
   "transform": {
     "title": "Ajuster le placement",
@@ -96,7 +100,9 @@
     "rotation": "Rotation",
     "scale": "Échelle",
     "reset": "Réinitialiser le placement",
-    "hint": "Les décalages s'appliquent par-dessus l'alignement détecté et ne sont jamais fondus dedans."
+    "hint": "Les décalages s'appliquent par-dessus l'alignement détecté et ne sont jamais fondus dedans.",
+    "pitch": "Incliner avant / arrière",
+    "roll": "Incliner gauche / droite"
   },
   "display": {
     "title": "Apparence",

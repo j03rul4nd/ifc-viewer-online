@@ -343,7 +343,10 @@ export class LasReader implements PointReader {
       unitScale: this.crs.unitScale,
       unitSource: this.crs.unitDeclared ? 'declared' : 'assumed',
       epsgCode: this.crs.epsg !== null ? `EPSG:${this.crs.epsg}` : null,
+      // ASPRS LAS defines X/Y as horizontal and Z as elevation, so this
+      // is read from the specification, not inferred from the points.
       upAxis: 'z',
+      upAxisSource: 'declared',
       min: header.min,
       max: header.max,
       origin: {

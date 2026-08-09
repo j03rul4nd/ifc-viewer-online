@@ -12,7 +12,7 @@ import { DEFAULT_DISPLAY, type PointCloudEntry, type PointCloudAlignment, type S
 import type { PointCloudSystemAPI } from './point-cloud-system'
 
 const FRAME: SourceFrame = {
-  unitScale: 1, unitSource: 'assumed', epsgCode: null, upAxis: 'z',
+  unitScale: 1, unitSource: 'assumed', epsgCode: null, upAxis: 'z', upAxisSource: 'declared',
   min: { x: -10, y: -8, z: 0 }, max: { x: 10, y: 8, z: 6 },
   origin: { x: 0, y: 0, z: 3 },
 }
@@ -23,7 +23,7 @@ const NUDGED: PointCloudAlignment = {
   rung: 'manual', confidence: 'manual',
   origin: { x: 999, y: 999, z: 999 },   // deliberately wrong — re-alignment must replace it
   yawRad: 0, scale: 1, upAxis: 'z', reasons: [],
-  offset: { x: 3.5, y: -0.25, z: 1, yawDeg: 15, scaleMul: 1.05 },
+  offset: { x: 3.5, y: -0.25, z: 1, yawDeg: 15, pitchDeg: 0, rollDeg: 0, scaleMul: 1.05 },
 }
 
 function entry(patch: Partial<PointCloudEntry> = {}): PointCloudEntry {

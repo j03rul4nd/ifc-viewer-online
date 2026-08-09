@@ -66,7 +66,7 @@ function georef(patch: Partial<GeorefExtraction> = {}): GeorefExtraction {
 
 function frameOf(min: Vec3, max: Vec3, patch: Partial<SourceFrame> = {}): SourceFrame {
   return {
-    unitScale: 1, unitSource: 'assumed', epsgCode: 'EPSG:25832', upAxis: 'z',
+    unitScale: 1, unitSource: 'assumed', epsgCode: 'EPSG:25832', upAxis: 'z', upAxisSource: 'declared',
     min, max,
     origin: { x: (min.x + max.x) / 2, y: (min.y + max.y) / 2, z: (min.z + max.z) / 2 },
     ...patch,
@@ -299,7 +299,7 @@ describe('manual offsets', () => {
     const alignment = alignCloud({ frame, georef: null, placement: null, modelBounds: MODEL_BOUNDS })
     const nudged: PointCloudAlignment = {
       ...alignment,
-      offset: clampOffset({ x: 3, y: -1, z: 2, yawDeg: 90, scaleMul: 2 }),
+      offset: clampOffset({ x: 3, y: -1, z: 2, yawDeg: 90, pitchDeg: 0, rollDeg: 0, scaleMul: 2 }),
     }
 
     // The derived half is untouched — "reset" can always get back to it.
@@ -323,7 +323,7 @@ describe('manual offsets', () => {
   })
 
   it('a Y-up source is not tilted', () => {
-    const frame = frameOf({ x: -10, y: 0, z: -10 }, { x: 10, y: 5, z: 10 }, { epsgCode: null, upAxis: 'y' })
+    const frame = frameOf({ x: -10, y: 0, z: -10 }, { x: 10, y: 5, z: 10 }, { epsgCode: null, upAxis: 'y', upAxisSource: 'declared' })
     const alignment = alignCloud({ frame, georef: null, placement: null, modelBounds: MODEL_BOUNDS })
     expect(effectiveTransform(alignment).tiltRad).toBe(0)
   })
@@ -401,7 +401,7 @@ describe('offset persistence', () => {
 
   it('round-trips a manual placement', () => {
     const key = cloudFileKey(file)
-    const offset = clampOffset({ x: 2.5, y: -1, z: 0.25, yawDeg: 12, scaleMul: 1.02 })
+    const offset = clampOffset({ x: 2.5, y: -1, z: 0.25, yawDeg: 12, pitchDeg: 0, rollDeg: 0, scaleMul: 1.02 })
     saveOffset(key, offset)
     expect(loadOffset(key)).toEqual(offset)
   })

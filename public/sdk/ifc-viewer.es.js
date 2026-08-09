@@ -12,7 +12,7 @@ const m = [
   { code: "zh", label: "中文" },
   { code: "ja", label: "日本語" },
   { code: "th", label: "ไทย" }
-], g = "1.8.0", y = 12e4, b = 3e4, c = m.map((s) => s.code);
+], g = "1.9.0", y = 12e4, b = 3e4, c = m.map((s) => s.code);
 function E() {
   try {
     return new URL("../", import.meta.url).href;
@@ -272,6 +272,35 @@ const l = class l {
     return this.request("ifcviewer:inspect-pointcloud", { inspect: t }).then(() => {
     });
   }
+  /**
+   * Nudge a scan by hand: position, yaw, levelling, scale. Partial — anything
+   * omitted is left alone. Values are clamped by the viewer, so a host cannot
+   * put a scan somewhere only a reset escapes from.
+   *
+   * This sits on top of the derived alignment rather than replacing it, so it
+   * survives a re-alignment and is persisted per file.
+   */
+  setPointCloudPlacement(t, e) {
+    return this.request("ifcviewer:pointcloud-placement", { placement: t, cloudId: e }).then(() => {
+    });
+  }
+  /**
+   * Correct which axis the scan's own coordinates treat as up, and re-derive the
+   * placement from it.
+   *
+   * Worth exposing because the formats a phone or a photogrammetry pipeline
+   * emits — PLY, PCD, plain text — declare no orientation at all, so the viewer
+   * has to infer it from the shape of the data and can be wrong. `upAxisSource`
+   * on PointCloudInfo tells you whether it was inferred.
+   *
+   * This re-runs the whole alignment rather than patching the transform: the up
+   * axis feeds the bounding-box comparisons the local rung makes, so the
+   * placement can legitimately change once it is right.
+   */
+  setPointCloudUpAxis(t, e) {
+    return this.request("ifcviewer:pointcloud-upaxis", { upAxis: t, cloudId: e }).then(() => {
+    });
+  }
   /** Check the loaded model against a buildingSMART IDS (.ids XML string). */
   checkIds(t) {
     return this.request("ifcviewer:check-ids", { idsXml: t }, 12e4);
@@ -350,8 +379,8 @@ const l = class l {
         if (!this.disposed)
           try {
             t(r);
-          } catch (a) {
-            this.settle(r, !1, a instanceof Error ? a : new Error(String(a)));
+          } catch (d) {
+            this.settle(r, !1, d instanceof Error ? d : new Error(String(d)));
           }
       });
     });
@@ -371,12 +400,12 @@ const l = class l {
   }
   /** Send a query and resolve with the iframe's `result` payload. */
   request(t, e = {}, i = b, r = []) {
-    return this.disposed ? Promise.reject(new Error("IfcViewer disposed")) : new Promise((o, a) => {
-      const d = this.nextRequestId(), w = setTimeout(() => {
-        this.requests.delete(d), a(new Error(`IfcViewer: "${t}" timed out after ${i}ms`));
+    return this.disposed ? Promise.reject(new Error("IfcViewer disposed")) : new Promise((o, d) => {
+      const a = this.nextRequestId(), w = setTimeout(() => {
+        this.requests.delete(a), d(new Error(`IfcViewer: "${t}" timed out after ${i}ms`));
       }, i);
-      this.requests.set(d, { resolve: o, reject: a, timer: w }), this.whenReady().then(() => {
-        this.disposed || this.post({ type: t, requestId: d, ...e }, r);
+      this.requests.set(a, { resolve: o, reject: d, timer: w }), this.whenReady().then(() => {
+        this.disposed || this.post({ type: t, requestId: a, ...e }, r);
       });
     });
   }
@@ -416,10 +445,10 @@ class q extends HTMLElement {
     this.style.display || (this.style.display = "block");
     const e = document.createElement("div");
     e.style.cssText = "width:100%;height:100%", this.appendChild(e);
-    const i = (a) => this.getAttribute(a) ?? void 0, r = (a) => {
-      if (!this.hasAttribute(a)) return;
-      const d = this.getAttribute(a);
-      return d !== "false" && d !== "0" && d !== "no";
+    const i = (d) => this.getAttribute(d) ?? void 0, r = (d) => {
+      if (!this.hasAttribute(d)) return;
+      const a = this.getAttribute(d);
+      return a !== "false" && a !== "0" && a !== "no";
     }, o = new u(e, {
       ui: i("ui"),
       lang: i("lang"),
@@ -431,8 +460,8 @@ class q extends HTMLElement {
       height: "100%"
     });
     this._viewer = o;
-    for (const a of C)
-      o.on(a, (d) => this.dispatchEvent(new CustomEvent(`ifcviewer:${a}`, { detail: d, bubbles: !0, composed: !0 })));
+    for (const d of C)
+      o.on(d, (a) => this.dispatchEvent(new CustomEvent(`ifcviewer:${d}`, { detail: a, bubbles: !0, composed: !0 })));
   }
   disconnectedCallback() {
     this._viewer?.dispose(), this._viewer = null, this.innerHTML = "";

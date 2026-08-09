@@ -66,6 +66,9 @@ import { isGisEnabled } from './lib/geo/gis-flag'
 import { isSolarEnabled } from './lib/solar/solar-flag'
 import { isPointCloudEnabled } from './lib/pointcloud/pc-flag'
 import { usePointCloudStore } from './stores/pointCloudStore'
+// pc-types is deliberately dependency-free — importing it here costs the
+// entry bundle nothing, which is why clampOffset and NO_OFFSET live there.
+import { NO_OFFSET } from './lib/pointcloud/pc-types'
 import { useSolarStore } from './stores/solarStore'
 
 // Lazy: GeoPanel statically imports proj4/placement/geo runners, which must
@@ -1596,6 +1599,33 @@ export default function App() {
             return { ok: true }
           })
           break
+        case 'ifcviewer:pointcloud-placement':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:pointcloud',
+              {
+                action: 'placement',
+                cloudId: typeof msg.cloudId === 'string' ? msg.cloudId : undefined,
+                placement: (msg.placement ?? undefined) as Record<string, unknown> | undefined,
+              },
+              { unavailable: 'Point clouds are not enabled in this build', timeoutMs: 30_000 })
+            return { ok: true }
+          })
+          break
+        case 'ifcviewer:pointcloud-upaxis':
+          void respond(async () => {
+            // Longer than the other placement commands: correcting the up axis
+            // re-runs the alignment ladder, which reaches into the web-ifc
+            // worker for the model's georeferencing.
+            await dispatchPanelCommand('sdk:pointcloud',
+              {
+                action: 'upAxis',
+                cloudId: typeof msg.cloudId === 'string' ? msg.cloudId : undefined,
+                upAxis: msg.upAxis === 'y' ? 'y' : 'z',
+              },
+              { unavailable: 'Point clouds are not enabled in this build', timeoutMs: 120_000 })
+            return { ok: true }
+          })
+          break
         case 'ifcviewer:get-pointclouds':
           void respond(() => ({
             clouds: usePointCloudStore.getState().clouds.map((c) => ({
@@ -1610,6 +1640,13 @@ export default function App() {
               truncated: c.truncated,
               visible: c.visible,
               crs: c.frame?.epsgCode ?? null,
+              // PLY, PCD and text declare no orientation, so this is often a
+              // guess — and getting it wrong lays the whole scan on its side.
+              // `upAxisSource` is what lets a host know it may need to offer the
+              // correction rather than trusting the number.
+              upAxis: c.frame?.upAxis ?? 'z',
+              upAxisSource: c.frame?.upAxisSource ?? 'assumed',
+              placement: c.alignment?.offset ?? NO_OFFSET,
               // A scan placed by the `local` or `manual` rung is a guess. Hosts
               // must be able to tell that apart from an exact map conversion.
               alignment: c.alignment

@@ -86,7 +86,11 @@
       "apply": "Diese Definition verwenden",
       "invalid": "proj4 konnte diese Definition nicht verarbeiten.",
       "applied": "Definition übernommen — der Scan wurde neu ausgerichtet."
-    }
+    },
+    "upAxis": "Hochachse",
+    "upAxisZ": "Z oben",
+    "upAxisY": "Y oben",
+    "upAxisGuessed": "Von der Datei nicht angegeben — aus der Form des Scans abgeleitet. Liegt der Scan auf der Seite, wechseln Sie hier."
   },
   "transform": {
     "title": "Platzierung anpassen",
@@ -96,7 +100,9 @@
     "rotation": "Drehung",
     "scale": "Maßstab",
     "reset": "Platzierung zurücksetzen",
-    "hint": "Versätze werden auf die erkannte Ausrichtung aufgesetzt und nie in sie hineingerechnet."
+    "hint": "Versätze werden auf die erkannte Ausrichtung aufgesetzt und nie in sie hineingerechnet.",
+    "pitch": "Nach vorn / hinten neigen",
+    "roll": "Nach links / rechts neigen"
   },
   "display": {
     "title": "Darstellung",
