@@ -476,6 +476,22 @@ export function buildBridgeLayer(
 
   const geometry = new THREE.BufferGeometry()
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  // Every deck vertex carries the bridge tone.
+  //
+  // This is not decoration: the detailed path uses the shared asphalt material,
+  // which declares `vertexColors: true`. A material that expects a colour
+  // attribute and does not get one reads zero — so the decks rendered BLACK,
+  // and a black slab across a river is the most visible thing in an aerial
+  // view. It survived because the simple path uses a flat-coloured
+  // MeshBasicMaterial that never needed the attribute, so nothing looked wrong
+  // until the deck moved to PBR.
+  const colors = new Float32Array(positions.length)
+  for (let i = 0; i < colors.length; i += 3) {
+    colors[i] = BRIDGE_COLOR.r
+    colors[i + 1] = BRIDGE_COLOR.g
+    colors[i + 2] = BRIDGE_COLOR.b
+  }
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
   geometry.computeVertexNormals()
   geometry.computeBoundingSphere()
 
