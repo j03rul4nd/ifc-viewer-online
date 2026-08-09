@@ -50,6 +50,20 @@ const LS_LAYERS        = 'ifc-geo-osm-layers:v1'
 const LS_DETAIL        = 'ifc-geo-detail:v1'
 const LS_VEHICLES      = 'ifc-geo-vehicles:v1'
 
+/**
+ * Detail level, persisted.
+ *
+ * Reads every level the type has. The previous version tested for 'detailed'
+ * and fell through to 'simple', so when a third level was added the store
+ * silently demoted anyone who had chosen it back to the cheapest one on the
+ * next reload — a preference that only appears to persist is worse than one
+ * that plainly does not.
+ */
+function readContextDetail(): BuildingDetail {
+  const raw = lsGet(LS_DETAIL)
+  return raw === 'detailed' || raw === 'showcase' ? raw : 'simple'
+}
+
 /** Per-layer visibility, persisted. Everything on by default. */
 function readFeatureLayers(): FeatureLayerVisibility {
   const fallback: FeatureLayerVisibility = {
@@ -236,7 +250,7 @@ export const useGeoStore = create<GeoStore>()(
       buildingsCounts:    NO_FEATURE_COUNTS,
       buildingsEstimated: 0,
       featureLayers:      readFeatureLayers(),
-      contextDetail:      lsGet(LS_DETAIL) === 'detailed' ? 'detailed' : 'simple',
+      contextDetail:      readContextDetail(),
       vehicles:           lsGet(LS_VEHICLES) === '1',
       buildingsTruncated: false,
       georefByModel:  {},
