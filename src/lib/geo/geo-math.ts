@@ -233,6 +233,31 @@ export function formatCoord(value: number, digits = 5): string {
 
 // ── geoRoot transform composition (THE single placement code path) ────────────
 
+/**
+ * `placement.rotationDeg` → the yaw the basemap must actually take, in radians.
+ *
+ * THE TWO ARE NOT THE SAME NUMBER, and conflating them was a real bug. Read
+ * this before touching any call site.
+ *
+ * `rotationDeg` is γ, the bearing of the project +X axis expressed in the map
+ * grid — exactly what `rotationFromXAxis` returns and what `IfcMapConversion`
+ * means. `placement.ts` and the point cloud aligner both consume it that way
+ * (`grid = origin + s·R(+γ)·project`), so the stored value is right and stays.
+ *
+ * Derivation of the yaw. Inverting that conversion, grid north (0,1) sits at
+ * project `(sin γ, cos γ)`; the project→scene convention `x=x, y=z, z=−y` puts
+ * it at scene `(sin γ, 0, −cos γ)`. A basemap yawed by ψ has its north at
+ * `northDirection(ψ) = (−sin ψ, −cos ψ)`. Equating the two gives ψ = −γ.
+ *
+ * The map used to yaw by +γ, mirroring the basemap in X for any site with a
+ * non-zero MapConversion — the model over a grid rotated the wrong way. Nothing
+ * caught it because the tests checked that the anchor stays put under yaw,
+ * which is true for either sign.
+ */
+export function mapYawRad(rotationDeg: number): number {
+  return -rotationDeg * DEG
+}
+
 export interface ComposeInput {
   placement: { lat: number; lon: number; rotationDeg: number; heightOffsetM: number }
   /** Scene-space plan position where the anchor must land (model bbox centre). */
@@ -247,7 +272,8 @@ export interface ComposeInput {
  *     (anchorScene.x, groundY, anchorScene.z) with groundY = modelMinY − heightOffsetM,
  *   • 1 scene unit = 1 true metre at the anchor latitude (cos φ₀ compensation),
  *   • the tile plane lies on the scene ground (tilt −π/2 about X), then yawed by
- *     +rotationDeg about scene +Y around the anchor point.
+ *     `mapYawRad(rotationDeg)` about scene +Y around the anchor point — see that
+ *     function for why the yaw is the NEGATIVE of the stored rotation.
  *
  * Derivation: M = T(anchorWorld) · Ry(ψ) · S · Rx(−π/2) · T(−normAnchor) collapses
  * to a plain TRS because S is uniform:  position = anchorWorld − R·(S·normAnchor).
@@ -256,7 +282,7 @@ export interface ComposeInput {
 export function composeGeoRootTransform(input: ComposeInput): import('./geo-types').GeoRootTransform {
   const { placement, anchorScene, modelMinY } = input
   const scale = WEB_MERCATOR_WORLD_M * cosLatScale(placement.lat)
-  const yawRad = placement.rotationDeg * DEG
+  const yawRad = mapYawRad(placement.rotationDeg)
   const groundY = modelMinY - placement.heightOffsetM
 
   const { nx, ny } = latLonToNormalized(placement.lat, placement.lon)
@@ -296,7 +322,9 @@ export function northDirection(yawRad: number): { x: number; z: number } {
 export function panPlacement<P extends { lat: number; lon: number; rotationDeg: number }>(
   placement: P, dxScene: number, dzScene: number,
 ): P {
-  const yaw = placement.rotationDeg * DEG
+  // Same yaw the basemap is actually drawn with, or a drag would pan the site
+  // mirrored in X relative to what the user sees under their cursor.
+  const yaw = mapYawRad(placement.rotationDeg)
   const e = eastDirection(yaw)
   const n = northDirection(yaw)
   // Project the drag onto the map's east/north axes, then invert (map-grab).

@@ -296,7 +296,7 @@ That is the whole intended relationship.
   alignment in `pc-align.ts` is deliberately independent of "points"; it maps a
   `SourceFrame` to the scene and would serve any georeferenced source.
 
-## 6b. A sign discrepancy found in map mode (NOT changed)
+## 6b. A sign discrepancy found in map mode (FIXED)
 
 Deriving the point cloud rotation from `IfcMapConversion` surfaced an
 inconsistency in the existing map code, recorded here rather than acted on.
@@ -315,12 +315,23 @@ the wrong way relative to the model. `geo-math.test.ts` covers the anchor's
 invariance under yaw but never checks the sign against grid north, so nothing
 caught it.
 
-Not fixed here, deliberately: map mode's manual placement drags the same
-`rotationDeg`, so flipping the sign would change behaviour users have already
-tuned by eye, and that is a separate change with its own verification. The point
-cloud path uses the mathematically derived sign and is unit-tested
-(`pc-align.test.ts`, "inverts a rotated MapConversion"). **Follow-up: settle the
-convention in one place and make both subsystems read from it.**
+**Resolved.** `rotationDeg` keeps its meaning — γ, the project→grid bearing —
+because `placement.ts`, `georef-ladder.ts` and `pc-align.ts` all already read it
+that way and are correct. What was wrong was the map's *use* of it. The
+conversion now lives in one function, `geo-math.mapYawRad()`, which returns −γ,
+and the three places that yaw the map read from it: `composeGeoRootTransform`,
+`panPlacement` and `geoSystem.getNorthDirection`.
+
+Pinned by `geo-math.test.ts` → "the basemap yaw agrees with grid north", which
+derives grid north from the MapConversion axes directly rather than reusing the
+formula under test. Reverting the sign fails it at 30°, −30°, 90° and 145.7°;
+0° passes, since an unrotated site has no mirror to expose. The old
+anchor-invariance test passes under either sign — that is why this survived.
+
+**Consequence to expect:** on a georeferenced site whose rotation was nudged by
+hand to look right against the mirrored basemap, that stored nudge is now
+wrong-way-round and needs re-tuning once. Auto-derived placements improve with
+no action.
 
 ## 6c. Two defects the real files found
 

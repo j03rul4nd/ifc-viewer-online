@@ -29,7 +29,7 @@ import { setSurfaceTime, hasAnimatedMaterial } from './surface-shaders'
 import { buildSkyEnvironment } from './sky-environment'
 import { FEATURE_KINDS, type OsmFeature, type FeatureKind } from './osm-features'
 import type { BuildingsRequest, BuildingsResponse } from '../../workers/geo-buildings.worker'
-import { composeGeoRootTransform, normalizedToLatLon, northDirection, latLonToTile, type LatLon } from './geo-math'
+import { composeGeoRootTransform, mapYawRad, normalizedToLatLon, northDirection, latLonToTile, type LatLon } from './geo-math'
 import { createLogger } from '../logger'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
 
@@ -582,7 +582,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     },
 
     getNorthDirection() {
-      const yaw = placement ? (placement.rotationDeg * Math.PI) / 180 : 0
+      // mapYawRad, not rotationDeg: this arrow has to agree with the basemap it
+      // is drawn over, and the two differ by a sign.
+      const yaw = placement ? mapYawRad(placement.rotationDeg) : 0
       const n = northDirection(yaw)
       return { x: n.x, y: 0, z: n.z }
     },

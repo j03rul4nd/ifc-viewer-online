@@ -18,6 +18,7 @@ import {
   normalizeDeg,
   formatCoord,
   composeGeoRootTransform,
+  mapYawRad,
   metresToNormalized,
   eastDirection,
   northDirection,
@@ -285,13 +286,72 @@ describe('geo-math · directions & panning', () => {
     expect(merc.mx).toBeCloseTo(1000, 0)
   })
 
-  it('pan respects yaw (drag along yawed east axis changes only longitude)', () => {
-    const yawDeg = 90
-    const p = { lat: 0, lon: 0, rotationDeg: yawDeg }
-    // At yaw 90°, scene east axis is (cos90, −sin90) = (0, −1) → dragging −Z is "east drag"
-    const out = panPlacement(p, 0, -1000)
+  it('pan respects yaw (a drag along the map east axis changes only longitude)', () => {
+    const rotationDeg = 90
+    const p = { lat: 0, lon: 0, rotationDeg }
+    // Take the east axis at the yaw the basemap is ACTUALLY drawn with. Writing
+    // the axis out by hand here would just re-assert whichever sign the code
+    // happens to use, which is how the mirrored basemap went unnoticed.
+    const e = eastDirection(mapYawRad(rotationDeg))
+    const out = panPlacement(p, e.x * 1000, e.z * 1000)
     expect(Math.abs(out.lat)).toBeLessThan(1e-9)
-    expect(out.lon).toBeLessThan(0)
+    expect(out.lon).toBeLessThan(0) // map-grab: drag the ground east → site goes west
+  })
+})
+
+describe('geo-math · the basemap yaw agrees with grid north', () => {
+  // The regression that hid for months: composeGeoRootTransform yawed the map by
+  // +rotationDeg, mirroring it in X for any site with a real MapConversion. The
+  // suite only ever checked that the anchor holds still under yaw, which is true
+  // whichever way the map faces.
+  //
+  // So this derives grid north from the MapConversion axes directly — no call to
+  // mapYawRad, no reuse of the formula under test — and demands the basemap point
+  // the same way.
+  it.each([0, 30, -30, 90, 145.7])('holds at a %s° map rotation', (rotationDeg) => {
+    const g = (rotationDeg * Math.PI) / 180
+    // The project +X axis expressed in the grid, exactly as IfcMapConversion
+    // stores it. Confirm the repo reads γ back out of it before relying on that.
+    const xAbs = Math.cos(g)
+    const xOrd = Math.sin(g)
+    expect(rotationFromXAxis(xAbs, xOrd)).toBeCloseTo(g, 9)
+
+    // Solve R(+γ)·p = (0, 1) for p: grid north as a project-space direction.
+    // R(+γ)⁻¹ = Rᵀ for a rotation, so p = (xOrd, xAbs).
+    const projectNorth = { x: xOrd, y: xAbs }
+    // project → scene is x=x, y=z, z=−y (the normative convention in this file).
+    const gridNorthScene = { x: projectNorth.x, z: -projectNorth.y }
+
+    const t = composeGeoRootTransform({
+      placement: { lat: BCN.lat, lon: BCN.lon, rotationDeg, heightOffsetM: 0 },
+      anchorScene: { x: 0, z: 0 },
+      modelMinY: 0,
+    })
+    const mapNorth = northDirection(t.yawRad)
+
+    expect(mapNorth.x).toBeCloseTo(gridNorthScene.x, 9)
+    expect(mapNorth.z).toBeCloseTo(gridNorthScene.z, 9)
+  })
+
+  it('still leaves the anchor exactly on the model, whatever the rotation', () => {
+    // The property the old tests did check. Keep it: the fix must move the map's
+    // facing without letting the building drift off its own coordinates.
+    for (const rotationDeg of [0, 30, -77.25]) {
+      const t = composeGeoRootTransform({
+        placement: { lat: BCN.lat, lon: BCN.lon, rotationDeg, heightOffsetM: 0 },
+        anchorScene: { x: 12, z: -8 },
+        modelMinY: 3,
+      })
+      const { nx, ny } = latLonToNormalized(BCN.lat, BCN.lon)
+      // Apply the composed TRS to the anchor in map-local coordinates.
+      const ax = t.scale * nx
+      const az = -t.scale * ny
+      const c = Math.cos(t.yawRad)
+      const s = Math.sin(t.yawRad)
+      expect(t.position.x + ax * c + az * s).toBeCloseTo(12, 6)
+      expect(t.position.z + (-ax * s + az * c)).toBeCloseTo(-8, 6)
+      expect(t.position.y).toBeCloseTo(3, 9)
+    }
   })
 })
 
