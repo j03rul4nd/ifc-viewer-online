@@ -11,7 +11,7 @@
   },
   "demos": {
     "title": "Beispiel-Scans",
-    "hint": "Echtes öffentliches LiDAR, direkt in Ihren Browser geladen. Keiner dieser Scans zeigt die Demo-Gebäude, sie landen also auf dem Modell, statt sich damit zu decken.",
+    "hint": "Echte öffentliche Scans, direkt in Ihren Browser geladen. Keiner dieser Scans zeigt die Demo-Gebäude, sie landen also auf dem Modell, statt sich damit zu decken.",
     "failed": "Dieses Beispiel konnte nicht geladen werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
     "source": "Quelle",
     "chip": {
@@ -22,8 +22,13 @@
     },
     "items": {
       "autzen": "Luftgestütztes LiDAR über einem Stadion, mit Echtfarben sowie Boden- und unklassifizierten Rückgaben. LASzip-komprimiert und in Fuß erfasst — beides wird beim Einlesen behandelt.",
+      "redRocks": "Vier Millionen Punkte eines Sandstein-Amphitheaters, eingefärbt aus den Aufnahmen der Befliegung selbst — das Nächste an einer Fotografie, durch die man hindurchfliegen kann. Mehr als Farbe steckt nicht darin: keine Klassen, keine Intensität. 10 MB, also etwas Geduld.",
+      "sampleC": "Die vollständigste Datei der Sammlung in einem halben Megabyte: Echtfarben, Intensität und acht Klassifizierungscodes auf einmal. Genau die richtige, um alle Modi von Farbe nach durchzugehen.",
       "newMexico": "Eine LAS-1.4-Geländeaufnahme in US-Vermessungsfuß. Gut geeignet, um zu prüfen, ob das neuere Punktformat korrekt gelesen wird.",
       "mvk": "Klein und sofort da, mit sechs Klassifizierungscodes — der schnellste Weg, Farbe nach → Klassifizierung zu sehen.",
+      "loneStar": "Ein Geysirkegel vom Boden aus gescannt, gespeichert als Cloud Optimized Point Cloud. Der Octree wird von grob nach fein gelesen: Der Kegel ist sofort vollständig da und wird dann schärfer.",
+      "tabletop": "Schachteln auf einem Holztisch, nah genug, um die Verpackung zu lesen: Die Farbe stammt von einer Kamera und ist nicht zugewiesen. Dazu ein Label je Punkt, sodass Klassifizierung die Objekte vom Tisch trennt.",
+      "indoorRoom": "Eine Raumecke in derselben fotografischen Farbe, in Raum- statt Objektgröße — das Nächste hier an dem, wie ein Bestandsscan eines Innenraums tatsächlich aussieht.",
       "warsaw": "Ein winziges farbiges Beispiel. Lädt im Nu; nützlich, um die Darstellungsregler auszuprobieren."
     }
   },

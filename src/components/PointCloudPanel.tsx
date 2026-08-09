@@ -27,7 +27,7 @@ import { createLogger } from '../lib/logger'
 import { appBus } from '../lib/event-bus'
 import { emitEmbedEvent } from '../lib/url-params'
 import {
-  DEMO_POINT_CLOUDS, fetchDemoPointCloud, formatDemoSize, type DemoPointCloud,
+  DEMO_POINT_CLOUDS, DEMO_SOURCES, fetchDemoPointCloud, formatDemoSize, type DemoPointCloud,
 } from '../demo-models/point-clouds'
 import type { ViewerAPI } from '../lib/viewer'
 import type { PointCloudSystemAPI, CloudStats, PickedPoint } from '../lib/pointcloud/point-cloud-system'
@@ -518,14 +518,24 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
                   </button>
                 )
               })}
-              <a
-                href={DEMO_POINT_CLOUDS[0].sourceUrl}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="text-[10px] text-[var(--text-faint)] hover:text-[var(--text)] underline underline-offset-2 self-start mt-0.5"
-              >
-                {t('demos.source')} · {DEMO_POINT_CLOUDS[0].sourceLabel}
-              </a>
+              {/* One link per distinct source. Crediting them all to the first
+                  one silently mis-attributed every sample that came from
+                  somewhere else — and one of these corpora is CC BY, where the
+                  attribution is the licence term, not a courtesy. */}
+              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 mt-0.5">
+                <span className="text-[10px] text-[var(--text-faint)]">{t('demos.source')}</span>
+                {DEMO_SOURCES.map((source) => (
+                  <a
+                    key={source.sourceUrl}
+                    href={source.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-[10px] text-[var(--text-faint)] hover:text-[var(--text)] underline underline-offset-2"
+                  >
+                    {source.sourceLabel}
+                  </a>
+                ))}
+              </div>
             </Section>
           )}
 

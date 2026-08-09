@@ -11,7 +11,7 @@
   },
   "demos": {
     "title": "Escaneigs d'exemple",
-    "hint": "LiDAR públic real, descarregat directament al teu navegador. Cap d'aquests no és un escaneig dels edificis de demostració, així que se situen sobre el model en comptes d'encaixar-hi.",
+    "hint": "Escaneigs públics reals, descarregats directament al teu navegador. Cap d'aquests no és un escaneig dels edificis de demostració, així que se situen sobre el model en comptes d'encaixar-hi.",
     "failed": "No s'ha pogut descarregar aquest exemple. Comprova la connexió i torna-ho a provar.",
     "source": "Font",
     "chip": {
@@ -22,8 +22,13 @@
     },
     "items": {
       "autzen": "LiDAR aeri sobre un estadi, amb color real i retorns de terreny i no classificats. Comprimit en LASzip i registrat en peus — tots dos casos es tracten en llegir-lo.",
+      "redRocks": "Quatre milions de punts d'un amfiteatre de gres, acolorits amb les fotografies del mateix vol: el més semblant aquí a una fotografia per dins de la qual pots volar. Només porta color: ni classes ni intensitat. Són 10 MB, dona-li un moment.",
+      "sampleC": "El fitxer més complet del conjunt en mig megabyte: color real, intensitat i vuit codis de classificació alhora. És el que has de carregar per recórrer tots els modes d'Acolorir per.",
       "newMexico": "Un aixecament del terreny LAS 1.4 en peus topogràfics dels EUA. Va bé per comprovar que el format de punt més nou es llegeix correctament.",
       "mvk": "Petit i immediat, amb sis codis de classificació — la manera més ràpida de veure Acoloreix per → Classificació.",
+      "loneStar": "Un con de guèiser escanejat des de terra, desat com a Cloud Optimized Point Cloud. L'octree es llegeix de menys a més detall, així que el con hi és sencer de seguida i després s'afina.",
+      "tabletop": "Capses sobre una taula de fusta, prou a prop per llegir-ne l'envàs: el color surt d'una càmera, no està assignat. També porta una etiqueta per punt, així que Classificació separa els objectes de la taula.",
+      "indoorRoom": "Un racó d'habitació amb aquest mateix color fotogràfic, a escala d'estança i no d'objecte: el més semblant aquí a com es veu realment un escaneig as-built d'un interior.",
       "warsaw": "Una mostra minúscula amb color. Es carrega en un instant; útil per provar els controls d'aparença."
     }
   },

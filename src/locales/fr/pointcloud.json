@@ -11,7 +11,7 @@
   },
   "demos": {
     "title": "Relevés d'exemple",
-    "hint": "Du vrai LiDAR public, chargé directement dans votre navigateur. Aucun de ces relevés ne correspond aux bâtiments de démonstration : ils se posent sur le modèle au lieu de s'y aligner.",
+    "hint": "De vrais relevés publics, chargés directement dans votre navigateur. Aucun de ces relevés ne correspond aux bâtiments de démonstration : ils se posent sur le modèle au lieu de s'y aligner.",
     "failed": "Cet exemple n'a pas pu être téléchargé. Vérifiez votre connexion et réessayez.",
     "source": "Source",
     "chip": {
@@ -22,8 +22,13 @@
     },
     "items": {
       "autzen": "LiDAR aéroporté au-dessus d'un stade, en couleurs réelles avec retours sol et non classés. Compressé en LASzip et enregistré en pieds — les deux sont gérés à la lecture.",
+      "redRocks": "Quatre millions de points d'un amphithéâtre de grès, colorés à partir des photos du vol lui-même — ce qui se rapproche le plus ici d'une photographie que l'on peut survoler. Il ne porte que la couleur : ni classes, ni intensité. 10 Mo, laissez-lui un instant.",
+      "sampleC": "Le fichier le plus complet du lot en un demi-mégaoctet : couleurs réelles, intensité et huit codes de classification à la fois. Celui à charger pour parcourir tous les modes de Colorer par.",
       "newMexico": "Un relevé de terrain LAS 1.4 en pieds d'arpentage américains. Pratique pour vérifier que le format de point le plus récent se lit correctement.",
       "mvk": "Petit et instantané, avec six codes de classification — le moyen le plus rapide de voir Colorer par → Classification.",
+      "loneStar": "Un cône de geyser relevé depuis le sol, stocké en Cloud Optimized Point Cloud. Son octree se lit du plus grossier au plus fin : le cône entier est là tout de suite, puis il s'affine.",
+      "tabletop": "Des boîtes sur une table en bois, d'assez près pour lire les emballages : la couleur vient d'une caméra, elle n'est pas attribuée. Chaque point porte aussi une étiquette, donc Classification sépare les objets de la table.",
+      "indoorRoom": "Un coin de pièce dans cette même couleur photographique, à l'échelle d'une pièce et non d'un objet — ce qui ressemble le plus ici à un relevé d'intérieur tel qu'exécuté.",
       "warsaw": "Un tout petit échantillon coloré. Se charge en un clin d'œil ; utile pour essayer les réglages d'apparence."
     }
   },

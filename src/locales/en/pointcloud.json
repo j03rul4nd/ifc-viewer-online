@@ -11,7 +11,7 @@
   },
   "demos": {
     "title": "Sample scans",
-    "hint": "Real public LiDAR, fetched straight into your browser. None of these is a scan of the demo buildings, so they land on the model rather than lining up with it.",
+    "hint": "Real public scans, fetched straight into your browser. None of these is a scan of the demo buildings, so they land on the model rather than lining up with it.",
     "failed": "That sample could not be downloaded. Check your connection and try again.",
     "source": "Source",
     "chip": {
@@ -22,8 +22,13 @@
     },
     "items": {
       "autzen": "Aerial LiDAR over a stadium, with true colour and ground/unclassified returns. LASzip-compressed and recorded in feet — both handled on the way in.",
+      "redRocks": "Four million points of a sandstone amphitheatre, coloured from the survey's own photographs — the closest thing here to a photograph you can fly through. Colour is all it carries: no classes, no intensity. 10 MB, so give it a moment.",
+      "sampleC": "The most complete file of the set in half a megabyte: true colour, intensity and eight classification codes at once. The one to load when you want to flip through every Colour by mode.",
       "newMexico": "A LAS 1.4 ground survey in US survey feet. Good for checking the newer point format reads correctly.",
       "mvk": "Small and instant, with six classification codes — the quickest way to see Colour by → Classification.",
+      "loneStar": "A geyser cone scanned from the ground, stored as a Cloud Optimized Point Cloud. Its octree is read coarsest-first, so the whole cone is there immediately and then sharpens.",
+      "tabletop": "Boxes on a wooden table, close enough to read the packaging: the colour came off a camera rather than being assigned. It carries a label per point too, so Classification separates the objects from the table.",
+      "indoorRoom": "A room corner in that same photographic colour, at room scale rather than object scale — the nearest thing here to what an as-built scan of an interior actually looks like.",
       "warsaw": "A tiny coloured sample. Loads in a blink; useful for trying the appearance controls."
     }
   },

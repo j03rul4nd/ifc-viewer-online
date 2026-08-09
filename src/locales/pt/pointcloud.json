@@ -11,7 +11,7 @@
   },
   "demos": {
     "title": "Levantamentos de exemplo",
-    "hint": "LiDAR público real, obtido diretamente para o seu navegador. Nenhum destes é um levantamento dos edifícios de demonstração, por isso assentam sobre o modelo em vez de coincidirem com ele.",
+    "hint": "Levantamentos públicos reais, obtidos diretamente para o seu navegador. Nenhum destes é um levantamento dos edifícios de demonstração, por isso assentam sobre o modelo em vez de coincidirem com ele.",
     "failed": "Não foi possível descarregar esse exemplo. Verifique a ligação e tente novamente.",
     "source": "Fonte",
     "chip": {
@@ -22,8 +22,13 @@
     },
     "items": {
       "autzen": "LiDAR aéreo sobre um estádio, com cor real e retornos de solo/não classificados. Comprimido em LASzip e registado em pés — ambos tratados à entrada.",
+      "redRocks": "Quatro milhões de pontos de um anfiteatro de arenito, coloridos a partir das próprias fotografias do voo — o mais próximo aqui de uma fotografia que se pode sobrevoar. Só traz cor: sem classes nem intensidade. São 10 MB, dê-lhe um momento.",
+      "sampleC": "O ficheiro mais completo do conjunto em meio megabyte: cor real, intensidade e oito códigos de classificação ao mesmo tempo. É o que se carrega para percorrer todos os modos de Colorir por.",
       "newMexico": "Um levantamento de terreno LAS 1.4 em pés topográficos dos EUA. Útil para confirmar que o formato de ponto mais recente é lido corretamente.",
       "mvk": "Pequeno e imediato, com seis códigos de classificação — a forma mais rápida de ver Colorir por → Classificação.",
+      "loneStar": "Um cone de géiser levantado a partir do solo, guardado como Cloud Optimized Point Cloud. A octree é lida do mais grosseiro para o mais fino, por isso o cone aparece inteiro de imediato e depois ganha detalhe.",
+      "tabletop": "Caixas sobre uma mesa de madeira, perto o suficiente para ler as embalagens: a cor vem de uma câmara, não é atribuída. Traz também uma etiqueta por ponto, por isso Classificação separa os objetos da mesa.",
+      "indoorRoom": "Um canto de sala com a mesma cor fotográfica, à escala do compartimento e não do objeto — o mais parecido aqui com o aspeto real de um levantamento as-built de um interior.",
       "warsaw": "Uma amostra minúscula com cor. Carrega num instante; útil para experimentar os controlos de aparência."
     }
   },

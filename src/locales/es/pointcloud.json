@@ -11,7 +11,7 @@
   },
   "demos": {
     "title": "Escaneos de ejemplo",
-    "hint": "LiDAR público real, descargado directamente en tu navegador. Ninguno es un escaneo de los edificios de demostración, así que se colocan sobre el modelo en vez de encajar con él.",
+    "hint": "Escaneos públicos reales, descargados directamente en tu navegador. Ninguno es un escaneo de los edificios de demostración, así que se colocan sobre el modelo en vez de encajar con él.",
     "failed": "No se ha podido descargar ese ejemplo. Comprueba la conexión e inténtalo de nuevo.",
     "source": "Fuente",
     "chip": {
@@ -22,8 +22,13 @@
     },
     "items": {
       "autzen": "LiDAR aéreo sobre un estadio, con color real y retornos de suelo/sin clasificar. Comprimido con LASzip y grabado en pies: ambas cosas se resuelven al cargarlo.",
+      "redRocks": "Cuatro millones de puntos de un anfiteatro de arenisca, coloreados con las propias fotos del vuelo: lo más parecido aquí a una fotografía por la que puedes volar. Solo lleva color: ni clases ni intensidad. Son 10 MB, dale un momento.",
+      "sampleC": "El archivo más completo del conjunto en medio megabyte: color real, intensidad y ocho códigos de clasificación a la vez. El que hay que cargar para recorrer todos los modos de Colorear por.",
       "newMexico": "Levantamiento de terreno en LAS 1.4 y pies topográficos de EE. UU. Útil para comprobar que el formato de punto nuevo se lee bien.",
       "mvk": "Pequeño e instantáneo, con seis códigos de clasificación: la forma más rápida de ver Colorear por → Clasificación.",
+      "loneStar": "Un cono de géiser escaneado desde el suelo, guardado como Cloud Optimized Point Cloud. Su octree se lee de menos a más detalle, así que el cono aparece entero enseguida y luego se afina.",
+      "tabletop": "Cajas sobre una mesa de madera, tan cerca que se lee el envase: el color sale de una cámara, no está asignado. Además trae una etiqueta por punto, así que Clasificación separa los objetos de la mesa.",
+      "indoorRoom": "Una esquina de habitación con ese mismo color fotográfico, a escala de estancia y no de objeto: lo más parecido aquí a cómo se ve de verdad un escaneo as-built de un interior.",
       "warsaw": "Una muestra diminuta con color. Carga al instante; sirve para probar los controles de apariencia."
     }
   },
