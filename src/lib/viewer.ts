@@ -7,6 +7,7 @@ import { appBus } from './event-bus'
 import { cameraRangeForBounds, widenCameraRange } from './camera-range'
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
 import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
+import { clearInspectorTarget } from './inspector'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
 
 // ─── Palette & label tables ──────────────────────────────────────────────────
@@ -1092,6 +1093,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const rawType = typeMap.get(expressId) ?? 'IFCELEMENT'
       const canon   = canonicalType(rawType)
       const name    = `${IFC_DISPLAY_NAMES[canon] ?? prettyType(canon)} #${expressId}`
+      // An IFC element is now the most recent answer to "what is this?", so the
+      // inspector must stop showing a scanned point or an OSM building.
+      clearInspectorTarget()
       selectCallback?.({ id: String(expressId), name, type: rawType, storey: '', modelId: targetId ?? undefined })
     })()
   }

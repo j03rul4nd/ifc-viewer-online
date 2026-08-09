@@ -25,6 +25,7 @@ import { acceptAttribute, isCopcName } from '../lib/pointcloud/pc-format'
 import { toast } from '../stores/toastStore'
 import { createLogger } from '../lib/logger'
 import { appBus } from '../lib/event-bus'
+import { publishInspectorTarget } from '../lib/inspector'
 import { emitEmbedEvent } from '../lib/url-params'
 import {
   DEMO_POINT_CLOUDS, DEMO_SOURCES, fetchDemoPointCloud, formatDemoSize, type DemoPointCloud,
@@ -393,6 +394,24 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
         const hit = system.pickPoint(e.clientX, e.clientY)
         setPicked(hit)
         setPickMissed(hit === null)
+        // And to the shared inspector, so a scanned point is read in the same
+        // place as an IFC element and an OSM building - rather than in a
+        // readout only someone who already opened this panel would find.
+        if (hit) {
+          const cloud = usePointCloudStore.getState().clouds.find((c) => c.id === hit.cloudId)
+          publishInspectorTarget({
+            kind: 'point',
+            cloudId: hit.cloudId,
+            cloudName: cloud?.fileName ?? hit.cloudId,
+            // The FILE's coordinates, not the scene's: the scene position has
+            // the alignment transform baked in and matches nothing anybody has
+            // on paper.
+            position: hit.sourcePosition,
+            unit: cloud?.frame?.unitScale === 1 ? 'm' : null,
+            intensity: hit.intensity ?? undefined,
+            classification: hit.classification ?? undefined,
+          })
+        }
         // Mirror the pick to an embedding host (SDK `pointcloud-picked`).
         // sourcePosition is the value a surveyor would quote, so it rides
         // alongside the scene position rather than instead of it.

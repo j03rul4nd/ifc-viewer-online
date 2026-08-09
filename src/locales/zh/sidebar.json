@@ -110,5 +110,41 @@
   "validation": {
     "issueCount": "验证 · {{count}} 个问题",
     "issueCount_other": "验证 · {{count}} 个问题"
+  },
+  "inspector": {
+    "clear": "Clear",
+    "point": {
+      "badge": "SCANNED POINT",
+      "inSourceCoords": "In the scan’s own coordinates ({{unit}})",
+      "intensity": "Intensity",
+      "classification": "Class",
+      "colour": "Colour",
+      "class": {
+        "created": "created",
+        "unclassified": "unclassified",
+        "ground": "ground",
+        "lowVegetation": "low vegetation",
+        "mediumVegetation": "medium vegetation",
+        "highVegetation": "high vegetation",
+        "building": "building",
+        "lowPoint": "low point",
+        "water": "water",
+        "rail": "rail",
+        "roadSurface": "road surface",
+        "wireGuard": "wire guard",
+        "wireConductor": "wire conductor",
+        "transmissionTower": "transmission tower",
+        "bridgeDeck": "bridge deck",
+        "highNoise": "high noise"
+      }
+    },
+    "map": {
+      "unnamed": "Unnamed building",
+      "height": "Height",
+      "estimated": "estimated",
+      "storeys": "Storeys",
+      "osmId": "OSM id",
+      "contextNote": "Surroundings from OpenStreetMap — context, not part of your model. Nothing here is validated or exported."
+    }
   }
 }

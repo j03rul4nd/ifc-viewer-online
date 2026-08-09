@@ -26,6 +26,7 @@ import { BUILDINGS_ATTRIBUTION } from '../lib/geo/buildings'
 import { collectModelSites, type ModelInput } from '../lib/geo/model-sites'
 import { FEATURE_KINDS, type FeatureKind } from '../lib/geo/osm-features'
 import { appBus } from '../lib/event-bus'
+import { publishInspectorTarget } from '../lib/inspector'
 import { ViewportPanel } from './ViewportPanel'
 import type { BuildingDetail } from '../lib/geo/building-mesh'
 import { WGS84_RADIUS, normalizeDeg } from '../lib/geo/geo-math'
@@ -616,6 +617,44 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
       setHover(null)
     }
   }, [store.mapMode, getGeo])
+
+  // Click the surroundings to inspect them. The hover tooltip answers "what is
+  // that?" for as long as the mouse holds still; this answers it for as long as
+  // you want, in the same panel that describes an IFC element or a scanned
+  // point — one place for the question, whatever was clicked.
+  //
+  // Capture phase, like the scan's own inspect handler, so identifying a
+  // neighbour never doubles as deselecting your model. Anonymous buildings are
+  // included here where the tooltip suppresses them: no name is not the same as
+  // nothing to say, and the height and storeys are exactly what a massing study
+  // wants.
+  useEffect(() => {
+    if (store.mapMode !== 'on' || !store.buildingsEnabled) return
+    const canvas = viewerApiRef.current?.getCanvas()
+    if (!canvas) return
+
+    const onClick = (e: MouseEvent): void => {
+      void getGeo()?.then((geo) => {
+        const feature = geo.pickContextFeature(e.clientX, e.clientY)
+        if (!feature) return
+        e.stopPropagation()
+        publishInspectorTarget({
+          kind: 'map-feature',
+          id: feature.id,
+          name: feature.name,
+          label: feature.label,
+          featureKind: feature.kind,
+          heightM: feature.height?.heightM,
+          // Estimated far more often than not — the panel says which, because
+          // an OSM height presented as surveyed is the kind of number that ends
+          // up in someone's shadow study.
+          heightEstimated: feature.height?.estimated,
+        })
+      })
+    }
+    canvas.addEventListener('click', onClick, true)
+    return () => canvas.removeEventListener('click', onClick, true)
+  }, [store.mapMode, store.buildingsEnabled, viewerApiRef, getGeo])
 
   // ── Render ───────────────────────────────────────────────────────────────────
 

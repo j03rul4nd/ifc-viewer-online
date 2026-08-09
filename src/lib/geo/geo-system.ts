@@ -192,6 +192,13 @@ export interface GeoSystemAPI {
    * unmapped block must stay silent rather than announce itself as "Building".
    */
   setContextHoverCallback(cb: ((info: ContextHover | null) => void) | null): void
+  /**
+   * The OSM feature at a screen position, whole and including the anonymous
+   * ones. Hover suppresses those (a tooltip saying nothing is noise); a click
+   * asking "what is this?" deserves the height and storeys even when the
+   * building has no name.
+   */
+  pickContextFeature(clientX: number, clientY: number): OsmFeature | null
   isActive(): boolean
   dispose(): void
 }
@@ -601,6 +608,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       ctx.setPointerSuppressed(locked)
     },
 
+    pickContextFeature(clientX, clientY) {
+      return pickFeatureAt(clientX, clientY)
+    },
+
     setContextHoverCallback(cb) {
       hoverCallback = cb
       if (cb && !hoverAttached) {
@@ -913,7 +924,15 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * ranges are built in order, so a binary search finds the owner in a few
    * steps however many blocks are on screen.
    */
-  function pickBuilding(clientX: number, clientY: number): ContextHover | null {
+  /**
+   * Which OSM feature is under the cursor, whole.
+   *
+   * The neighbourhood is ONE merged geometry for the sake of draw calls, which
+   * costs the ability to tell what was clicked. `buildingRanges` hands that
+   * back: the hit triangle's first vertex index binary-searches to the building
+   * that owns that slice of the buffer.
+   */
+  function pickFeatureAt(clientX: number, clientY: number): OsmFeature | null {
     if (!buildingsMesh || buildingRanges.length === 0 || !osmFeatures) return null
 
     const rect = ctx.renderer.domElement.getBoundingClientRect()
@@ -935,15 +954,17 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       const r = buildingRanges[mid]
       if (vertex < r.start) hi = mid - 1
       else if (vertex >= r.end) lo = mid + 1
-      else {
-        const f = osmFeatures.find((x) => x.id === r.id)
-        // Nothing worth saying about it — stay quiet rather than label every
-        // anonymous block "Building".
-        if (!f?.name && !f?.label) return null
-        return { name: f.name, label: f.label, x: clientX, y: clientY }
-      }
+      else return osmFeatures.find((x) => x.id === r.id) ?? null
     }
     return null
+  }
+
+  function pickBuilding(clientX: number, clientY: number): ContextHover | null {
+    const f = pickFeatureAt(clientX, clientY)
+    // Hover stays quiet for anonymous blocks rather than labelling every one
+    // of them "Building". A CLICK is different — see pickContextFeature.
+    if (!f?.name && !f?.label) return null
+    return { name: f!.name, label: f!.label, x: clientX, y: clientY }
   }
 
   function intersectGround(clientX: number, clientY: number): THREE.Vector3 | null {

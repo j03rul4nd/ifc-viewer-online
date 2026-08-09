@@ -110,5 +110,41 @@
   "validation": {
     "issueCount": "Validación · {{count}} incidencia",
     "issueCount_other": "Validación · {{count}} incidencias"
+  },
+  "inspector": {
+    "clear": "Limpiar",
+    "point": {
+      "badge": "PUNTO ESCANEADO",
+      "inSourceCoords": "En las coordenadas propias del escaneo ({{unit}})",
+      "intensity": "Intensidad",
+      "classification": "Clase",
+      "colour": "Color",
+      "class": {
+        "created": "creado",
+        "unclassified": "sin clasificar",
+        "ground": "suelo",
+        "lowVegetation": "vegetación baja",
+        "mediumVegetation": "vegetación media",
+        "highVegetation": "vegetación alta",
+        "building": "edificio",
+        "lowPoint": "punto bajo",
+        "water": "agua",
+        "rail": "vía",
+        "roadSurface": "calzada",
+        "wireGuard": "cable de guarda",
+        "wireConductor": "conductor",
+        "transmissionTower": "torre de transmisión",
+        "bridgeDeck": "tablero de puente",
+        "highNoise": "ruido alto"
+      }
+    },
+    "map": {
+      "unnamed": "Edificio sin nombre",
+      "height": "Altura",
+      "estimated": "estimada",
+      "storeys": "Plantas",
+      "osmId": "ID OSM",
+      "contextNote": "Entorno de OpenStreetMap: contexto, no forma parte de tu modelo. Nada de esto se valida ni se exporta."
+    }
   }
 }

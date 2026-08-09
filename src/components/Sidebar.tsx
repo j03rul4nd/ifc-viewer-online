@@ -11,6 +11,10 @@ import { useEditorHistory } from '../hooks/useEditorHistory'
 import { useEditorStore, pendingEditsFor } from '../stores/editorStore'
 import { useTakeoffStore, selectTakeoffGroups, selectTakeoffStatus } from '../stores/takeoffStore'
 import { useSceneStore } from '../stores/sceneStore'
+import {
+  useInspectorStore, clearInspectorTarget, LAS_CLASSES,
+  type PointTarget, type MapFeatureTarget,
+} from '../lib/inspector'
 import { computeTakeoff } from '../lib/takeoff'
 import { buildRenameCommand, buildSetPropertyCommand, exportElementToJson, exportElementToCsv, downloadBlob } from '../lib/diffStore'
 import type { Category, SceneModel, SelectedInfo, SpatialNode, SpatialElement, ValidationIssue, TakeoffGroup, EditDiff } from '../types'
@@ -547,6 +551,151 @@ function useIFCItemData(
   return state
 }
 
+
+// ─── Non-IFC inspector bodies ─────────────────────────────────────────────────
+// A scene here is up to three kinds of thing at once — federated IFC models, a
+// survey scan, and the real neighbourhood from OpenStreetMap — and "what is
+// this?" used to be answered in three different places: this panel, a readout
+// buried in the point cloud panel, and a hover tooltip that vanished when the
+// mouse moved. These render the two that are not IFC, in the same panel, so
+// there is one place to look.
+
+function InspectorShell({
+  source, badge, title, subtitle, onClear, children,
+}: {
+  source: string
+  badge: string
+  title: string
+  subtitle?: string
+  onClear: () => void
+  children: React.ReactNode
+}) {
+  const { t } = useTranslation('sidebar')
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }} className="pb-4"
+    >
+      <div className="px-4 pt-3.5 pb-3 border-b border-[var(--border)]">
+        <div className="mb-2 max-w-full flex items-center gap-1.5 h-5 px-1.5 rounded-md bg-[var(--surface-2)] border border-[var(--border)] text-[10px] text-[var(--text-faint)] w-fit">
+          <span className="truncate">{source}</span>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="font-mono text-[10px] text-[var(--text-faint)] tracking-wider uppercase">{badge}</span>
+          <button
+            onClick={onClear}
+            className="ml-auto text-[10px] text-[var(--text-faint)] hover:text-[var(--text)] transition-colors"
+          >
+            {t('inspector.clear')}
+          </button>
+        </div>
+        <div className="text-[13.5px] font-medium text-[var(--text)] leading-snug break-words">{title}</div>
+        {subtitle && (
+          <div className="mt-0.5 text-[11px] text-[var(--text-faint)] leading-snug break-words">{subtitle}</div>
+        )}
+      </div>
+      {children}
+    </motion.div>
+  )
+}
+
+function InspectorRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline gap-3 px-4 py-1.5 border-b border-[var(--border)] last:border-0">
+      <span className="w-[92px] shrink-0 text-[10.5px] text-[var(--text-faint)]">{label}</span>
+      <span className="flex-1 min-w-0 text-[11.5px] text-[var(--text-dim)] font-mono break-words">{value}</span>
+    </div>
+  )
+}
+
+function PointBody({ target, onClear }: { target: PointTarget; onClear: () => void }) {
+  const { t } = useTranslation('sidebar')
+  const unit = target.unit ?? 'm'
+  // Millimetres. A survey point quoted to fewer decimals is not a survey point;
+  // quoted to more, it is pretending the scanner was better than it was.
+  const xyz = (v: number): string => v.toFixed(3)
+  const cls = target.classification
+  const clsName = cls !== undefined ? LAS_CLASSES[cls] : undefined
+
+  return (
+    <InspectorShell
+      source={target.cloudName}
+      badge={t('inspector.point.badge')}
+      title={`${xyz(target.position.x)}, ${xyz(target.position.y)}, ${xyz(target.position.z)}`}
+      subtitle={t('inspector.point.inSourceCoords', { unit })}
+      onClear={onClear}
+    >
+      <div className="pt-1">
+        <InspectorRow label="X" value={`${xyz(target.position.x)} ${unit}`} />
+        <InspectorRow label="Y" value={`${xyz(target.position.y)} ${unit}`} />
+        <InspectorRow label="Z" value={`${xyz(target.position.z)} ${unit}`} />
+        {target.intensity !== undefined && (
+          <InspectorRow label={t('inspector.point.intensity')} value={String(target.intensity)} />
+        )}
+        {cls !== undefined && (
+          <InspectorRow
+            label={t('inspector.point.classification')}
+            value={clsName ? `${cls} · ${t(('inspector.point.class.' + clsName) as never)}` : String(cls)}
+          />
+        )}
+        {target.color && (
+          <InspectorRow
+            label={t('inspector.point.colour')}
+            value={
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  className="w-3 h-3 rounded-[3px] border border-[var(--border)]"
+                  style={{ background: `rgb(${target.color.r},${target.color.g},${target.color.b})` }}
+                />
+                {`${target.color.r}, ${target.color.g}, ${target.color.b}`}
+              </span>
+            }
+          />
+        )}
+      </div>
+    </InspectorShell>
+  )
+}
+
+function MapFeatureBody({ target, onClear }: { target: MapFeatureTarget; onClear: () => void }) {
+  const { t } = useTranslation('sidebar')
+  return (
+    <InspectorShell
+      source="OpenStreetMap"
+      badge={target.featureKind}
+      // Most OSM buildings carry no name at all. Saying so beats inventing one.
+      title={target.name ?? target.label ?? t('inspector.map.unnamed')}
+      subtitle={target.name && target.label ? target.label : undefined}
+      onClear={onClear}
+    >
+      <div className="pt-1">
+        {target.heightM !== undefined && (
+          <InspectorRow
+            label={t('inspector.map.height')}
+            value={
+              <>
+                {target.heightM.toFixed(1)} m
+                {target.heightEstimated && (
+                  <span className="ml-1.5 text-[10px] text-[var(--text-faint)] font-sans">
+                    {t('inspector.map.estimated')}
+                  </span>
+                )}
+              </>
+            }
+          />
+        )}
+        {target.storeys !== undefined && (
+          <InspectorRow label={t('inspector.map.storeys')} value={String(target.storeys)} />
+        )}
+        <InspectorRow label={t('inspector.map.osmId')} value={target.id} />
+      </div>
+      <p className="px-4 pt-3 text-[10.5px] text-[var(--text-faint)] leading-relaxed">
+        {t('inspector.map.contextNote')}
+      </p>
+    </InspectorShell>
+  )
+}
+
 // ─── Properties Panel ──────────────────────────────────────────────────────────
 
 interface PropertiesPanelProps {
@@ -570,6 +719,7 @@ function PropertiesPanel({
   // was waking on every unrelated store write.
   const hiddenElements     = useUIStore((s) => s.hiddenElements)
   const setElementsVisible = useUIStore((s) => s.setElementsVisible)
+  const inspectorTarget = useInspectorStore((s) => s.target)
   const sceneModels    = useSceneStore((s) => s.models)
   const activeModelId  = useSceneStore((s) => s.activeModelId)
   const setActiveModel = useSceneStore((s) => s.setActiveModel)
@@ -696,6 +846,15 @@ function PropertiesPanel({
 
   // Must be called unconditionally (Rules of Hooks) — uses optional chaining internally
   const decompMap = useValidationStore((s) => selected?.modelId ? s.decompMaps[selected.modelId] : undefined)
+
+  // A scanned point or a map feature was picked more recently than any IFC
+  // element, so that is what "what is this?" means right now.
+  if (inspectorTarget?.kind === 'point') {
+    return <PointBody target={inspectorTarget} onClear={clearInspectorTarget} />
+  }
+  if (inspectorTarget?.kind === 'map-feature') {
+    return <MapFeatureBody target={inspectorTarget} onClear={clearInspectorTarget} />
+  }
 
   if (!selected || expressId === null) {
     return (
