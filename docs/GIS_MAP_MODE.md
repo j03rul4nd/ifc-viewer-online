@@ -153,6 +153,28 @@ Key invariants:
   freeze rAF in hidden tabs, so streaming pauses while the tab is hidden and
   resumes on focus (also true for the rest of the viewer). In dev,
   `globalThis.__basemapTiles` exposes the live `TilesRenderer` for diagnosis.
+- **What showcase actually costs, measured 2026-08-09** on a city-centre
+  feature set (320 ways ≈ 46 km of road, 24 electrified tracks, 2400 trees,
+  120 green polygons, 90 signals), 1600×900, no terrain and no buildings in the
+  scene so the numbers isolate these layers:
+
+  | level | draw calls | triangles | programs | frame |
+  |---|---|---|---|---|
+  | simple | 19 | 606 k | 7 | 0.42 ms |
+  | detailed | 21 | 665 k | 13 | 0.59 ms |
+  | **showcase** | **15** | 849 k | 16 | **0.44 ms** |
+
+  Showcase draws FEWER calls than either — one instanced mesh per silhouette
+  replaces the seven colour-split car meshes and the trunk/canopy pair per tree
+  species — so the authored props are not a cost, they are a saving. Build time
+  is not comparable across a single run in that order: the ~70 ms
+  `surface-textures` bake and the tree geometry caches land on whichever level
+  runs first and needs them. The frame cost that matters in this scene is the
+  terrain shader (2–9 ms, measured separately), not these layers.
+  `MAX_LAMPS` was raised from 900 to 3000 off the back of this: the real demand
+  was 961, so the cap was truncating a real scene — and it truncates in Overpass
+  order, which is spatially arbitrary, so the symptom is half a map lit and half
+  dark rather than uniformly sparse.
 - **Community PBR assets: surveyed 2026-08-09, and deliberately NOT adopted for
   the ground.** The candidates are genuinely good and genuinely free — Poly
   Haven and ambientCG are both CC0, no attribution, redistribution and bundling

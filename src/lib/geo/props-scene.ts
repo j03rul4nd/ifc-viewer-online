@@ -295,7 +295,15 @@ const TRAIN_CARRIAGES = 4
 const LAMP_SPACING_M = 38
 /** Below this, it is a lane or an alley and a lighting column would look odd. */
 const MIN_LAMP_ROAD_WIDTH_M = 6
-const MAX_LAMPS = 900
+/**
+ * Hard cap, set from a measurement rather than a guess. A city-centre feature
+ * set (320 ways, ~46 km of road) wants ~900 columns, so the original 900
+ * truncated a REAL scene — and it truncates in Overpass order, which is
+ * spatially arbitrary, so the symptom is half the map lit and half dark rather
+ * than uniformly sparse. At 92 triangles in one instanced draw, headroom is
+ * cheap. Trees, by comparison, are capped at 4000 and cost 3× each.
+ */
+const MAX_LAMPS = 3000
 
 /** The authored shelter's own footprint, metres — what we scale relative to. */
 const CANOPY_WIDTH_M = 6.8
