@@ -21,12 +21,19 @@
 // of its business. It fails only when a file plainly exists on disk and is
 // plainly absent from git, which is the bug and nothing else.
 
+// WHY IT LIVES IN scripts/ AND NOT NEXT TO WHAT IT GUARDS: tsconfig.json is the
+// BROWSER program — `"include": ["src"]` with `"types": ["vite/client"]` and no
+// @types/node. A test under src/ that imports `node:fs` therefore fails
+// `tsc -b`, which `npm run build` runs, so the guard against a broken build
+// broke the build. scripts/ sits outside that include, which is the same reason
+// scripts/blender/props-assets.test.ts lives there. vitest finds it either way.
+
 import { describe, it, expect } from 'vitest'
 import { execFileSync } from 'node:child_process'
 import { existsSync, statSync } from 'node:fs'
 import { resolve, join, posix } from 'node:path'
 
-const ROOT = resolve(__dirname, '..', '..')
+const ROOT = resolve(__dirname, '..')
 
 function git(args: string[]): string {
   return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
