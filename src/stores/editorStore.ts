@@ -5,12 +5,25 @@ import type { EditDiff, EditorCommand } from '../types'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
+/** An element the user has selected, scoped to its model when that is known. */
+export interface SelectionRef {
+  expressId: number
+  modelId?:  string
+}
+
 interface EditorStore {
   diffs:        EditDiff[]
   history:      EditorCommand[]
   /** Index of last applied command; -1 means nothing applied. */
   historyIndex: number
-  selection:    number[]  // expressIds
+  /**
+   * What the tree highlights. A bare expressId is NOT enough once more than one
+   * model is loaded — every IFC numbers from #1, so #348 exists in all of them.
+   * The modelId is optional because some callers genuinely do not know it (a
+   * click in the 3D scene resolves it later); the tree resolves those against
+   * the loaded trees rather than highlighting the number everywhere it appears.
+   */
+  selection:    SelectionRef[]
 
   canUndo: boolean
   canRedo: boolean
@@ -19,7 +32,7 @@ interface EditorStore {
   undo:                () => void
   redo:                () => void
   clearHistory:        () => void
-  setSelection:        (expressIds: number[]) => void
+  setSelection:        (refs: SelectionRef[]) => void
   /** Remove all commands (and their diffs) that touch a specific expressId. */
   discardForElement:   (expressId: number, modelId?: string) => void
 }
@@ -111,8 +124,8 @@ export const useEditorStore = create<EditorStore>()(
         appBus.emit('editor:history-cleared', undefined)
       },
 
-      setSelection: (expressIds) =>
-        set({ selection: expressIds }, false, 'setSelection'),
+      setSelection: (refs) =>
+        set({ selection: refs }, false, 'setSelection'),
 
       discardForElement: (expressId, modelId) => {
         set((s) => {

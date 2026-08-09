@@ -23,7 +23,7 @@ interface SceneContextMenuProps {
   onHide: (expressId: number, modelId: string) => void
   onIsolateElement: (expressId: number, modelId?: string) => void
   onIsolateCategory: (type: string) => void
-  onReveal: (expressId: number) => void
+  onReveal: (expressId: number, modelId?: string) => void
   /** Number of currently hidden elements — drives the "show all" footer. */
   hiddenCount: number
   /** Whether a single element is currently isolated — also drives the footer. */
@@ -163,7 +163,7 @@ export default function SceneContextMenu({
           <Item icon={<IsolateElementIcon />} label={t('contextMenu.isolateElement')} hint="I" onClick={run(() => onIsolateElement(expressId, info.modelId))} />
           <Item icon={<Icons.EyeOff size={13} />} label={t('contextMenu.hide')}      hint="H" onClick={run(() => onHide(expressId, info.modelId ?? ''))} />
           <Item icon={<Icons.Isolate size={13} />} label={t('contextMenu.isolateCategory')} onClick={run(() => onIsolateCategory(info.type))} />
-          <Item icon={<TreeIcon />}         label={t('contextMenu.revealInTree')}    onClick={run(() => onReveal(expressId))} />
+          <Item icon={<TreeIcon />}         label={t('contextMenu.revealInTree')}    onClick={run(() => onReveal(expressId, info.modelId))} />
           <Item
             icon={copied
               ? <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="#30A46C" strokeWidth="1.8" strokeLinecap="round"><path d="M2 6l3 3 5-5" /></svg>

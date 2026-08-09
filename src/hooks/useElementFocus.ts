@@ -13,8 +13,8 @@ interface ElementFocusHandlers {
   focusElements:     (ids: number[]) => void
   /** Frame + select a single element */
   frameElement:      (expressId: number, modelId?: string) => void
-  /** Open tree (if closed) then scroll to element */
-  revealInTree:      (expressId: number) => void
+  /** Open tree (if closed) then scroll to element, in the model that owns it */
+  revealInTree:      (expressId: number, modelId?: string) => void
 }
 
 export function useElementFocus(
@@ -39,13 +39,13 @@ export function useElementFocus(
     viewerApiRef.current?.selectElement(expressId, modelId)
   }, [viewerApiRef])
 
-  const revealInTree = useCallback((expressId: number) => {
+  const revealInTree = useCallback((expressId: number, modelId?: string) => {
     if (!useUIStore.getState().treeVisible) {
       useUIStore.getState().setTreeVisible(true)
     }
     // Slight delay so the tree has time to mount/expand before scrolling
     setTimeout(() => {
-      modelTreeRef.current?.revealElement(expressId)
+      modelTreeRef.current?.revealElement(expressId, modelId)
     }, 80)
   }, [modelTreeRef])
 

@@ -5,232 +5,40 @@ import React, {
 import { useTranslation } from 'react-i18next'
 import * as ContextMenu from '@radix-ui/react-context-menu'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { useShallow } from 'zustand/react/shallow'
 import { useValidationStore, selectAllSpatialTrees } from '../stores/validationStore'
 import { useEditorStore } from '../stores/editorStore'
 import { useUIStore } from '../stores/uiStore'
 import { modelRegistry } from '../lib/model-registry'
 import { makeHiddenKey, expandWithDecomp } from '../lib/visibility'
+import {
+  scopedElementKey, flattenTrees, flattenTreesFiltered, collectSpatialKeys,
+  nextExpansion, locateElement, buildIssueIndex, emptyIssueIndex, fileNameFromModelId,
+  type FlatNode, type ModelIssueIndex, type ModelTreeSource,
+} from '../lib/spatial-tree'
 import { useEditorHistory } from '../hooks/useEditorHistory'
 import { buildRenameCommand, buildFixGuidCommand } from '../lib/diffStore'
 import { generateIfcGuid } from '../lib/diffStore'
-import type { SpatialNode, SpatialElement, ValidationIssue } from '../types'
+import type { SpatialNode } from '../types'
 
 // ── Imperative handle ─────────────────────────────────────────────────────────
 
 export interface ModelTreeHandle {
-  revealElement: (expressId: number) => void
+  /**
+   * Open the tree down to an element and scroll to it.
+   *
+   * `modelId` is not optional decoration: with federated models the same
+   * expressId exists in all of them, so without it this reveals whichever model
+   * happens to be first — the right row number in the wrong building.
+   */
+  revealElement: (expressId: number, modelId?: string) => void
 }
 
-// ── Flat list items ────────────────────────────────────────────────────────────
-
-type FlatNode =
-  | {
-      kind: 'model-header'
-      modelId: string
-      fileName: string
-      nodeCount: number
-      isCollapsed: boolean
-    }
-  | {
-      kind: 'spatial'
-      depth: number
-      node: SpatialNode
-      isExpanded: boolean
-      hasChildren: boolean
-      modelId: string
-    }
-  | {
-      kind: 'element'
-      depth: number
-      element: SpatialElement
-      parentExpressId: number
-      modelId: string
-    }
-
-function flattenTree(
-  nodes: SpatialNode[],
-  modelId: string,
-  expanded: Set<number>,
-  depth = 0,
-  result: FlatNode[] = [],
-): FlatNode[] {
-  for (const node of nodes) {
-    const hasChildren =
-      node.children.length > 0 || node.containedElements.length > 0
-    result.push({
-      kind: 'spatial',
-      depth,
-      node,
-      isExpanded: expanded.has(node.expressId),
-      hasChildren,
-      modelId,
-    })
-    if (expanded.has(node.expressId)) {
-      flattenTree(node.children, modelId, expanded, depth + 1, result)
-      for (const elem of node.containedElements) {
-        result.push({ kind: 'element', depth: depth + 1, element: elem, parentExpressId: node.expressId, modelId })
-      }
-    }
-  }
-  return result
-}
-
-/** Strips the viewer-appended `-${Date.now()}` suffix to recover the file name. */
-function fileNameFromModelId(modelId: string): string {
-  return modelId.replace(/-\d{13,}$/, '') || modelId
-}
-
-function flattenAllTrees(
-  trees: Array<{ modelId: string; tree: SpatialNode[] }>,
-  expanded: Set<number>,
-  collapsedModels: Set<string>,
-  showHeaders: boolean,
-): FlatNode[] {
-  const result: FlatNode[] = []
-  for (const { modelId, tree } of trees) {
-    if (tree.length === 0) continue
-    const regEntry = modelRegistry.get(modelId)
-    const fileName = regEntry?.fileName ?? fileNameFromModelId(modelId)
-    const isCollapsed = collapsedModels.has(modelId)
-    if (showHeaders) {
-      result.push({ kind: 'model-header', modelId, fileName, nodeCount: tree.length, isCollapsed })
-    }
-    if (!isCollapsed) {
-      flattenTree(tree, modelId, expanded, 0, result)
-    }
-  }
-  return result
-}
-
-// ── Search / filter ─────────────────────────────────────────────────────────
-
-function nodeMatches(node: SpatialNode, q: string): boolean {
-  return (
-    node.name.toLowerCase().includes(q) ||
-    node.ifcClass.toLowerCase().includes(q) ||
-    (node.longName?.toLowerCase().includes(q) ?? false) ||
-    (node.globalId?.toLowerCase().includes(q) ?? false) ||
-    String(node.expressId).includes(q)
-  )
-}
-
-function elementMatches(el: SpatialElement, q: string): boolean {
-  return (
-    el.name.toLowerCase().includes(q) ||
-    el.ifcClass.toLowerCase().includes(q) ||
-    (el.globalId?.toLowerCase().includes(q) ?? false) ||
-    String(el.expressId).includes(q)
-  )
-}
-
-/** Recursively keep a node when it (or any descendant) matches the query.
- *  Matched nodes are force-expanded so the path to every hit stays visible. */
-function flattenFiltered(
-  nodes: SpatialNode[],
-  modelId: string,
-  q: string,
-  depth: number,
-  result: FlatNode[],
-): boolean {
-  let anyKept = false
-  for (const node of nodes) {
-    const selfMatch = nodeMatches(node, q)
-    const matchedElems = node.containedElements.filter((e) => elementMatches(e, q))
-    const childBuffer: FlatNode[] = []
-    const childKept = flattenFiltered(node.children, modelId, q, depth + 1, childBuffer)
-
-    if (selfMatch || matchedElems.length > 0 || childKept) {
-      anyKept = true
-      result.push({
-        kind: 'spatial',
-        depth,
-        node,
-        isExpanded: true,
-        hasChildren: node.children.length > 0 || node.containedElements.length > 0,
-        modelId,
-      })
-      // When the node itself matches show all its direct elements; otherwise only the matches.
-      const elemsToShow = selfMatch ? node.containedElements : matchedElems
-      for (const elem of elemsToShow) {
-        result.push({ kind: 'element', depth: depth + 1, element: elem, parentExpressId: node.expressId, modelId })
-      }
-      result.push(...childBuffer)
-    }
-  }
-  return anyKept
-}
-
-function flattenAllTreesFiltered(
-  trees: Array<{ modelId: string; tree: SpatialNode[] }>,
-  q: string,
-  showHeaders: boolean,
-): FlatNode[] {
-  const result: FlatNode[] = []
-  for (const { modelId, tree } of trees) {
-    if (tree.length === 0) continue
-    const buffer: FlatNode[] = []
-    const kept = flattenFiltered(tree, modelId, q, 0, buffer)
-    if (!kept) continue
-    if (showHeaders) {
-      const regEntry = modelRegistry.get(modelId)
-      const fileName = regEntry?.fileName ?? fileNameFromModelId(modelId)
-      result.push({ kind: 'model-header', modelId, fileName, nodeCount: tree.length, isCollapsed: false })
-    }
-    result.push(...buffer)
-  }
-  return result
-}
-
-/** Collect every spatial-node expressId across all trees (for expand-all / pruning). */
-function collectAllSpatialIds(nodes: SpatialNode[], out: Set<number>): void {
-  for (const n of nodes) {
-    out.add(n.expressId)
-    collectAllSpatialIds(n.children, out)
-  }
-}
-
-// ── Issue rollup ──────────────────────────────────────────────────────────────
-
-function buildIssueRollup(
-  issues: ValidationIssue[],
-  modelId?: string,
-): Map<number, { errors: number; warnings: number; info: number }> {
-  const map = new Map<number, { errors: number; warnings: number; info: number }>()
-  for (const issue of issues) {
-    // Filter by modelId when provided; include un-stamped issues for backward compat
-    if (modelId && issue.modelId && issue.modelId !== modelId) continue
-    const cur = map.get(issue.expressId) ?? { errors: 0, warnings: 0, info: 0 }
-    if (issue.severity === 'error')        cur.errors++
-    else if (issue.severity === 'warning') cur.warnings++
-    else                                   cur.info++
-    map.set(issue.expressId, cur)
-  }
-  return map
-}
-
-function rollupSubtree(
-  node: SpatialNode,
-  directMap: Map<number, { errors: number; warnings: number; info: number }>,
-  rollupMap: Map<number, { errors: number; warnings: number; info: number }>,
-): void {
-  let errors = 0, warnings = 0, info = 0
-
-  const direct = directMap.get(node.expressId)
-  if (direct) { errors += direct.errors; warnings += direct.warnings; info += direct.info }
-
-  for (const elem of node.containedElements) {
-    const d = directMap.get(elem.expressId)
-    if (d) { errors += d.errors; warnings += d.warnings; info += d.info }
-  }
-
-  for (const child of node.children) {
-    rollupSubtree(child, directMap, rollupMap)
-    const c = rollupMap.get(child.expressId)
-    if (c) { errors += c.errors; warnings += c.warnings; info += c.info }
-  }
-
-  rollupMap.set(node.expressId, { errors, warnings, info })
-}
+// The flattening, filtering, expansion and issue-indexing all live in
+// ../lib/spatial-tree, because all of it turns on one thing that is invisible
+// in a screenshot: an expressId is only unique inside its own file. See the
+// header there, and spatial-tree.test.ts for the two-model fixture that proves
+// it.
 
 // ── IFC class icons ───────────────────────────────────────────────────────────
 
@@ -509,68 +317,56 @@ interface ModelTreeProps {
 
 const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
   function ModelTree({ onSelectElement, onFilterBySubtree, onFocusElements }, ref) {
-    // Read the raw Record (stable reference when unchanged) — derive array in useMemo
-    // to avoid re-creating objects every render, which would trigger an infinite loop.
+    // Narrow selectors, not the whole store. Subscribing to all of
+    // useValidationStore re-rendered the entire tree on every partial issue
+    // batch — which, while a large model streams, is many times a second.
     const spatialTreesRecord = useValidationStore((s) => s.spatialTrees)
-    const { result, partialIssues } = useValidationStore()
+    const result        = useValidationStore((s) => s.result)
+    const partialIssues = useValidationStore((s) => s.partialIssues)
 
-    const allTrees = useMemo(
+    const allTrees: ModelTreeSource[] = useMemo(
       () => Object.entries(spatialTreesRecord).map(([modelId, tree]) => ({ modelId, tree })),
       [spatialTreesRecord],
     )
-    const { selection, setSelection }            = useEditorStore()
+    const { selection, setSelection } = useEditorStore(
+      useShallow((s) => ({ selection: s.selection, setSelection: s.setSelection })),
+    )
     const { addCommand }                         = useEditorHistory()
     const { t } = useTranslation('tree')
 
-    const [expanded,        setExpanded]        = useState<Set<number>>(new Set())
+    // Expansion is keyed by scopedElementKey, never by expressId. Every IFC
+    // numbers from #1, so a bare number opens the same-numbered node in every
+    // other loaded model at once.
+    const [expanded,        setExpanded]        = useState<Set<string>>(new Set())
     const [collapsedModels, setCollapsedModels] = useState<Set<string>>(new Set())
     const [query,           setQuery]           = useState('')
-    const [editingId, setEditingId]       = useState<number | null>(null)
+    const [editingKey, setEditingKey]     = useState<string | null>(null)
     const [editingField, setEditingField] = useState<'Name' | 'LongName' | 'Description' | 'GlobalId'>('Name')
     const [guidWarning, setGuidWarning]   = useState<{ expressId: number; currentGuid: string; modelId?: string } | null>(null)
 
     const parentRef = useRef<HTMLDivElement>(null)
 
-    // Backwards-compat: all spatial nodes across all trees (for GUID lookup etc.)
-    const spatialTree = useMemo(
-      () => allTrees.flatMap((m) => m.tree),
-      [allTrees],
-    )
-
     const showModelHeaders = allTrees.length > 1
 
-    // Set of every valid spatial-node id and model id (recomputed when trees change)
-    const { allNodeIds, allModelIds } = useMemo(() => {
-      const ids = new Set<number>()
-      const models = new Set<string>()
-      for (const { modelId, tree } of allTrees) {
-        models.add(modelId)
-        collectAllSpatialIds(tree, ids)
-      }
-      return { allNodeIds: ids, allModelIds: models }
-    }, [allTrees])
+    const fileNameOf = useCallback(
+      (modelId: string) => modelRegistry.get(modelId)?.fileName ?? fileNameFromModelId(modelId),
+      [],
+    )
 
-    // Auto-expand first two levels when a new tree arrives, and prune stale ids
-    // (nodes/models that no longer exist after a model is removed/replaced).
+    const allModelIds = useMemo(() => new Set(allTrees.map((m) => m.modelId)), [allTrees])
+
+    // Auto-expand the first two levels when a tree arrives, and drop expansion
+    // belonging to models that are gone. Pruning by scoped key rather than by
+    // number is what stops a removed model's open storeys from reappearing on
+    // the next model to reuse those ids — which, ids starting at #1 everywhere,
+    // is every model.
     useEffect(() => {
       if (allTrees.length === 0) {
         setExpanded((prev) => (prev.size ? new Set() : prev))
         setCollapsedModels((prev) => (prev.size ? new Set() : prev))
         return
       }
-      setExpanded((prev) => {
-        const next = new Set<number>()
-        // keep only still-valid expanded ids
-        for (const id of prev) if (allNodeIds.has(id)) next.add(id)
-        // auto-expand first two levels
-        for (const { tree } of allTrees) {
-          for (const root of tree) {
-            next.add(root.expressId)
-            for (const child of root.children) next.add(child.expressId)
-          }
-        }
-        return next
-      })
+      setExpanded((prev) => nextExpansion(allTrees, prev))
       setCollapsedModels((prev) => {
         let changed = false
         const next = new Set<string>()
@@ -580,15 +376,13 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
         }
         return changed ? next : prev
       })
-    }, [allTrees, allNodeIds, allModelIds])
+    }, [allTrees, allModelIds])
 
     const trimmedQuery = query.trim().toLowerCase()
     const isFiltering = trimmedQuery.length > 0
 
     const expandAll = useCallback(() => {
-      const ids = new Set<number>()
-      for (const { tree } of allTrees) collectAllSpatialIds(tree, ids)
-      setExpanded(ids)
+      setExpanded(collectSpatialKeys(allTrees))
       setCollapsedModels(new Set())
     }, [allTrees])
 
@@ -596,25 +390,38 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
       setExpanded(new Set())
     }, [])
 
-    // Build per-model issue rollup (keyed by modelId)
-    const issueRollupByModel = useMemo(() => {
-      const allIssues = result?.issues ?? partialIssues
-      const byModel = new Map<string, { direct: Map<number, { errors: number; warnings: number; info: number }>; rollup: Map<number, { errors: number; warnings: number; info: number }> }>()
-      for (const { modelId, tree } of allTrees) {
-        const direct = buildIssueRollup(allIssues, modelId)
-        const rollup = new Map<number, { errors: number; warnings: number; info: number }>()
-        for (const root of tree) rollupSubtree(root, direct, rollup)
-        byModel.set(modelId, { direct, rollup })
+    /**
+     * Issues indexed onto their own model, once. Rows read from it instead of
+     * scanning the issue array themselves — which they used to do, per row, on
+     * every partial batch.
+     */
+    const issueIndex = useMemo(
+      () => buildIssueIndex(result?.issues ?? partialIssues, allTrees),
+      [result, partialIssues, allTrees],
+    )
+
+    /**
+     * The rows to highlight. A selection that names no model is resolved
+     * against the loaded trees rather than lighting up its number everywhere:
+     * three models, one click, three highlights is exactly the confusion this
+     * whole file is about.
+     */
+    const selectedKeys = useMemo(() => {
+      const keys = new Set<string>()
+      for (const ref of selection) {
+        if (ref.modelId) { keys.add(scopedElementKey(ref.modelId, ref.expressId)); continue }
+        const found = locateElement(allTrees, ref.expressId)
+        if (found) keys.add(scopedElementKey(found.modelId, ref.expressId))
       }
-      return byModel
-    }, [result, partialIssues, allTrees])
+      return keys
+    }, [selection, allTrees])
 
     // Flatten visible tree(s) — filtered view when a query is active
     const flatNodes = useMemo(
       () => isFiltering
-        ? flattenAllTreesFiltered(allTrees, trimmedQuery, showModelHeaders)
-        : flattenAllTrees(allTrees, expanded, collapsedModels, showModelHeaders),
-      [allTrees, expanded, collapsedModels, showModelHeaders, isFiltering, trimmedQuery],
+        ? flattenTreesFiltered(allTrees, trimmedQuery, { showHeaders: showModelHeaders, fileNameOf })
+        : flattenTrees(allTrees, { expanded, collapsedModels, showHeaders: showModelHeaders, fileNameOf }),
+      [allTrees, expanded, collapsedModels, showModelHeaders, isFiltering, trimmedQuery, fileNameOf],
     )
 
     const virtualizer = useVirtualizer({
@@ -624,17 +431,21 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
       overscan:         8,
     })
 
-    const toggleExpand = useCallback((expressId: number) => {
+    const toggleExpand = useCallback((key: string) => {
       setExpanded((prev) => {
         const next = new Set(prev)
-        if (next.has(expressId)) next.delete(expressId)
-        else                     next.add(expressId)
+        if (next.has(key)) next.delete(key)
+        else               next.add(key)
         return next
       })
     }, [])
 
     const startEdit = useCallback((expressId: number, field: typeof editingField, modelId?: string) => {
       if (field === 'GlobalId') {
+        // Search the OWNING model only. Searching every tree finds the first
+        // node with that number, which in a federated set is routinely a
+        // different element in a different building with a different GUID —
+        // and this dialog then offers to rewrite it.
         const findGuid = (nodes: SpatialNode[]): string | null => {
           for (const n of nodes) {
             if (n.expressId === expressId) return n.globalId
@@ -643,13 +454,14 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
           }
           return null
         }
-        const guid = findGuid(spatialTree) ?? ''
-        setGuidWarning({ expressId, currentGuid: guid, modelId })
+        const owning = allTrees.find((m) => m.modelId === modelId)?.tree
+          ?? allTrees.flatMap((m) => m.tree)
+        setGuidWarning({ expressId, currentGuid: findGuid(owning) ?? '', modelId })
         return
       }
-      setEditingId(expressId)
+      setEditingKey(modelId ? scopedElementKey(modelId, expressId) : String(expressId))
       setEditingField(field)
-    }, [spatialTree])
+    }, [allTrees])
 
     const commitEdit = useCallback((
       expressId: number,
@@ -658,88 +470,88 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
       newValue: string,
       modelId?: string,
     ) => {
-      setEditingId(null)
+      setEditingKey(null)
       const trimmed = newValue.trim()
       if (trimmed === oldValue) return
       addCommand(buildRenameCommand(expressId, field, oldValue, trimmed, modelId))
     }, [addCommand])
 
     const handleSelectNode = useCallback((expressId: number, modelId?: string) => {
-      setSelection([expressId])
+      setSelection([{ expressId, modelId }])
       onSelectElement?.(expressId, modelId)
     }, [setSelection, onSelectElement])
 
+    /**
+     * The name after any pending rename. Scoped to the model, because a rename
+     * diff carries one — without the check, renaming a storey in one model
+     * relabels the same-numbered storey in the others.
+     */
     const getNodeCurrentName = useCallback((
       expressId: number,
       defaultName: string,
+      modelId?: string,
     ): string => {
-      const { diffs } = useEditorStore.getState()
-      const rename = [...diffs].reverse().find(
-        (d) => d.type === 'RENAME' && d.expressId === expressId && d.field === 'Name',
-      )
-      return (rename?.type === 'RENAME' ? rename.newValue : undefined) ?? defaultName
+      // Walked over the HISTORY rather than the flattened diffs, because the
+      // modelId lives on the command — flattening throws away the only thing
+      // that says which model a rename belongs to.
+      const { history, historyIndex } = useEditorStore.getState()
+      for (let i = historyIndex; i >= 0; i--) {
+        const command = history[i]
+        if (!command) continue
+        if (modelId && command.modelId && command.modelId !== modelId) continue
+        for (let j = command.diffs.length - 1; j >= 0; j--) {
+          const diff = command.diffs[j]
+          if (diff.type === 'RENAME' && diff.expressId === expressId && diff.field === 'Name') {
+            return diff.newValue
+          }
+        }
+      }
+      return defaultName
     }, [])
 
     // ── Imperative handle: revealElement ────────────────────────────────────
     useImperativeHandle(ref, () => ({
-      revealElement(expressId: number) {
-        // Step 0 — clear any active filter so the target row is in the rendered list
-        setQuery('')
-        // Step 1 — expand ancestors across all loaded models
-        setExpanded(prev => {
+      revealElement(expressId: number, modelId?: string) {
+        // Which model, decided once and up front. The old version expanded
+        // ancestors in whichever tree matched first and then selected without a
+        // model at all, so revealing an issue in a federated set opened the
+        // right row number in the wrong building.
+        const target = locateElement(allTrees, expressId, modelId)
+        if (!target) return
+
+        setQuery('')   // a filtered list may not contain the target row
+        setCollapsedModels((prev) => {
+          if (!prev.has(target.modelId)) return prev
           const next = new Set(prev)
-
-          const expandAncestors = (nodes: SpatialNode[]): boolean => {
-            for (const node of nodes) {
-              if (node.expressId === expressId) {
-                next.add(node.expressId)
-                return true
-              }
-              if (node.containedElements.some(e => e.expressId === expressId)) {
-                next.add(node.expressId)
-                return true
-              }
-              if (expandAncestors(node.children)) {
-                next.add(node.expressId)
-                return true
-              }
-            }
-            return false
-          }
-
-          // Also make sure the owning model is not collapsed
-          for (const { modelId, tree } of allTrees) {
-            if (expandAncestors(tree)) {
-              setCollapsedModels(c => { const s = new Set(c); s.delete(modelId); return s })
-              break
-            }
-          }
-
+          next.delete(target.modelId)
           return next
         })
+        const expandedNext = new Set(expanded)
+        for (const key of target.ancestorKeys) expandedNext.add(key)
+        setExpanded(expandedNext)
 
-        // Step 2 — after React re-renders the expanded tree, scroll to the row.
+        // Scroll after React has rendered the newly opened rows. The list is
+        // recomputed from the state we just set rather than read back out of
+        // it, so this does not depend on the re-render having landed.
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
-            setExpanded(prev => {
-              const flat = flattenAllTrees(allTrees, prev, collapsedModels, showModelHeaders)
-              const idx  = flat.findIndex(f =>
-                (f.kind === 'spatial' && f.node.expressId === expressId) ||
-                (f.kind === 'element' && f.element.expressId === expressId),
-              )
-              if (idx !== -1) {
-                virtualizer.scrollToIndex(idx, { align: 'center', behavior: 'smooth' })
-              }
-              return prev
+            const flat = flattenTrees(allTrees, {
+              expanded: expandedNext,
+              collapsedModels: new Set([...collapsedModels].filter((m) => m !== target.modelId)),
+              showHeaders: showModelHeaders,
+              fileNameOf,
             })
+            const wanted = scopedElementKey(target.modelId, expressId)
+            const idx = flat.findIndex((f) => f.kind !== 'model-header' && f.key === wanted)
+            if (idx !== -1) virtualizer.scrollToIndex(idx, { align: 'center', behavior: 'smooth' })
           })
         })
 
-        // Step 3 — select the element (modelId unknown at this point — use best-effort)
-        setSelection([expressId])
-        onSelectElement?.(expressId)
+        setSelection([{ expressId, modelId: target.modelId }])
+        onSelectElement?.(expressId, target.modelId)
       },
-    }), [allTrees, collapsedModels, showModelHeaders, virtualizer, setSelection, onSelectElement])
+    }), [allTrees, expanded, collapsedModels, showModelHeaders, fileNameOf, virtualizer,
+         setSelection, onSelectElement])
 
     // ────────────────────────────────────────────────────────────────────────
 
@@ -867,16 +679,16 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
                   ) : flat.kind === 'spatial' ? (
                     <SpatialRow
                       flat={flat}
-                      issueRollup={issueRollupByModel.get(flat.modelId)?.rollup ?? new Map()}
-                      isSelected={selection.includes(flat.node.expressId)}
-                      editingId={editingId}
+                      issues={issueIndex.get(flat.modelId) ?? emptyIssueIndex()}
+                      isSelected={selectedKeys.has(flat.key)}
+                      editingKey={editingKey}
                       editingField={editingField}
                       onToggle={toggleExpand}
                       onSelect={handleSelectNode}
                       onFocusElements={onFocusElements}
                       onStartEdit={startEdit}
                       onCommitEdit={commitEdit}
-                      onCancelEdit={() => setEditingId(null)}
+                      onCancelEdit={() => setEditingKey(null)}
                       onBadgeClick={(eid) => {
                         const allIds = collectSubtreeIds(flat.node)
                         onFilterBySubtree?.(allIds)
@@ -886,8 +698,8 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
                   ) : (
                     <ElementRow
                       flat={flat}
-                      directIssues={issueRollupByModel.get(flat.modelId)?.direct ?? new Map()}
-                      isSelected={selection.includes(flat.element.expressId)}
+                      issues={issueIndex.get(flat.modelId) ?? emptyIssueIndex()}
+                      isSelected={selectedKeys.has(flat.key)}
                       onSelect={handleSelectNode}
                       onFocusElements={onFocusElements}
                       onCommitRename={(expressId, oldName, newName) =>
@@ -1010,35 +822,39 @@ function ModelHeaderRow({
 // ── Spatial row ───────────────────────────────────────────────────────────────
 
 function SpatialRow({
-  flat, issueRollup, isSelected, editingId, editingField,
+  flat, issues, isSelected, editingKey, editingField,
   onToggle, onSelect, onFocusElements, onStartEdit, onCommitEdit, onCancelEdit, onBadgeClick, getNodeCurrentName,
 }: {
   flat: FlatNode & { kind: 'spatial' }
-  issueRollup: Map<number, { errors: number; warnings: number; info: number }>
+  /** This model's issue index — never another model's, and never rebuilt here. */
+  issues: ModelIssueIndex
   isSelected: boolean
-  editingId: number | null
+  editingKey: string | null
   editingField: 'Name' | 'LongName' | 'Description' | 'GlobalId'
-  onToggle: (id: number) => void
+  onToggle: (key: string) => void
   onSelect: (id: number, modelId?: string) => void
   onFocusElements?: (ids: number[]) => void
   onStartEdit: (id: number, field: 'Name' | 'LongName' | 'Description' | 'GlobalId', modelId?: string) => void
   onCommitEdit: (id: number, field: 'Name' | 'LongName' | 'Description', old: string, newVal: string, modelId?: string) => void
   onCancelEdit: () => void
   onBadgeClick: (id: number) => void
-  getNodeCurrentName: (id: number, def: string) => string
+  getNodeCurrentName: (id: number, def: string, modelId?: string) => string
 }) {
   const { t } = useTranslation('tree')
   const { node, depth, isExpanded, hasChildren } = flat
   const modelId = flat.modelId
-  const rollup    = issueRollup.get(node.expressId)
-  const isEditingName     = editingId === node.expressId && editingField === 'Name'
-  const isEditingLongName = editingId === node.expressId && editingField === 'LongName'
-  const isEditingDesc     = editingId === node.expressId && editingField === 'Description'
+  const rollup    = issues.rollup.get(node.expressId)
+  const isEditingName     = editingKey === flat.key && editingField === 'Name'
+  const isEditingLongName = editingKey === flat.key && editingField === 'LongName'
+  const isEditingDesc     = editingKey === flat.key && editingField === 'Description'
   const isEditing         = isEditingName || isEditingLongName || isEditingDesc
-  const displayName = getNodeCurrentName(node.expressId, node.name)
+  const displayName = getNodeCurrentName(node.expressId, node.name, modelId)
   const childCount  = node.containedElements.length + node.children.length
 
-  const { hiddenElements, setElementsVisible } = useUIStore()
+  // Selectors, not the whole store: these rows re-render for every visible row
+  // and useUIStore() without one wakes all of them on any UI change.
+  const hiddenElements    = useUIStore((s) => s.hiddenElements)
+  const setElementsVisible = useUIStore((s) => s.setElementsVisible)
   const decompMap = useValidationStore((s) => modelId ? s.decompMaps[modelId] : undefined)
   const elemIds   = useMemo(() => collectElementIds(node, decompMap), [node, decompMap])
   const anyHidden = elemIds.length > 0 && elemIds.some((id) => hiddenElements.has(makeHiddenKey(modelId, id)))
@@ -1049,17 +865,12 @@ function SpatialRow({
     setElementsVisible(elemIds, allHidden, modelId)
   }
 
-  const { addCommand } = useEditorStore()
+  const addCommand = useEditorStore((s) => s.addCommand)
 
-  // Build Fix GUID handler if this node has a GUID issue in current results
-  const { result, partialIssues } = useValidationStore()
-  const hasGuidIssue = useMemo(() => {
-    const issues = result?.issues ?? partialIssues
-    return issues.some(
-      (i) => i.expressId === node.expressId &&
-        (i.ruleId === 'RULE_INVALID_GUID_FORMAT' || i.ruleId === 'RULE_DUPLICATE_GUID'),
-    )
-  }, [result, partialIssues, node.expressId])
+  // Indexed once for the whole tree, per model. Asking the issue array itself —
+  // inside every visible row, on every partial validation batch — was O(rows x
+  // issues) several times a second, and answered for the wrong model besides.
+  const hasGuidIssue = issues.guidIssues.has(node.expressId)
 
   return (
     <TreeContextMenu
@@ -1097,7 +908,7 @@ function SpatialRow({
       <button
         className={`w-4 h-4 flex items-center justify-center text-[var(--text-faint)] shrink-0
           ${hasChildren ? 'hover:text-[var(--text)]' : 'opacity-0 pointer-events-none'}`}
-        onClick={(e) => { e.stopPropagation(); onToggle(node.expressId) }}
+        onClick={(e) => { e.stopPropagation(); onToggle(flat.key) }}
       >
         <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
           {isExpanded
@@ -1205,10 +1016,11 @@ function SpatialRow({
 // ── Element row ───────────────────────────────────────────────────────────────
 
 function ElementRow({
-  flat, directIssues, isSelected, onSelect, onFocusElements, onCommitRename,
+  flat, issues, isSelected, onSelect, onFocusElements, onCommitRename,
 }: {
   flat: FlatNode & { kind: 'element' }
-  directIssues: Map<number, { errors: number; warnings: number; info: number }>
+  /** This model's issue index — never another model's. */
+  issues: ModelIssueIndex
   isSelected: boolean
   onSelect: (id: number, modelId?: string) => void
   onFocusElements?: (ids: number[]) => void
@@ -1217,13 +1029,14 @@ function ElementRow({
   const { t } = useTranslation('tree')
   const { element, depth } = flat
   const modelId = flat.modelId
-  const issues = directIssues.get(element.expressId)
+  const counts = issues.direct.get(element.expressId)
 
   const [editing, setEditing] = useState(false)
   const [editVal, setEditVal] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const { hiddenElements, setElementsVisible } = useUIStore()
+  const hiddenElements     = useUIStore((s) => s.hiddenElements)
+  const setElementsVisible = useUIStore((s) => s.setElementsVisible)
   const decompMap = useValidationStore((s) => modelId ? s.decompMaps[modelId] : undefined)
   const isHidden = hiddenElements.has(makeHiddenKey(modelId, element.expressId))
 
@@ -1241,15 +1054,8 @@ function ElementRow({
     setEditing(false)
   }
 
-  const { addCommand } = useEditorStore()
-  const { result: vResult, partialIssues: vPartial } = useValidationStore()
-  const hasGuidIssue = useMemo(() => {
-    const issues = vResult?.issues ?? vPartial
-    return issues.some(
-      (i) => i.expressId === element.expressId &&
-        (i.ruleId === 'RULE_INVALID_GUID_FORMAT' || i.ruleId === 'RULE_DUPLICATE_GUID'),
-    )
-  }, [vResult, vPartial, element.expressId])
+  const addCommand = useEditorStore((s) => s.addCommand)
+  const hasGuidIssue = issues.guidIssues.has(element.expressId)
 
   return (
     <TreeContextMenu
@@ -1320,8 +1126,8 @@ function ElementRow({
         </span>
       )}
 
-      {issues && (issues.errors > 0 || issues.warnings > 0) && !editing && (
-        <IssueBadge errors={issues.errors} warnings={issues.warnings} />
+      {counts && (counts.errors > 0 || counts.warnings > 0) && !editing && (
+        <IssueBadge errors={counts.errors} warnings={counts.warnings} />
       )}
 
       {!editing && (

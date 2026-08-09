@@ -4,12 +4,27 @@
 // hidden-element tracking stays consistent.
 
 /**
- * Composite key used in the hiddenElements Set.
- * Scopes each expressId to its owning model so hiding element 100 in model A
- * never accidentally hides element 100 in model B.
+ * An expressId scoped to the model it belongs to.
+ *
+ * THIS IS THE ONLY SAFE WAY TO IDENTIFY AN ELEMENT once more than one model is
+ * loaded, and the reason is not obvious: every IFC file numbers its entities
+ * from #1 independently. In the federated Poblenou set, #348 is a column in the
+ * structural model, a glazed panel in the architectural one and a duct in the
+ * services one. Any state keyed on the bare number — expansion, selection,
+ * "which row am I editing" — silently applies to all three at once.
+ *
+ * So anything that remembers something ABOUT an element keys on this.
+ */
+export function scopedElementKey(modelId: string, expressId: number): string {
+  return `${modelId}:${expressId}`
+}
+
+/**
+ * Composite key used in the hiddenElements Set — the same scoping, kept under
+ * its original name because half the app already calls it that.
  */
 export function makeHiddenKey(modelId: string, expressId: number): string {
-  return `${modelId}:${expressId}`
+  return scopedElementKey(modelId, expressId)
 }
 
 /**

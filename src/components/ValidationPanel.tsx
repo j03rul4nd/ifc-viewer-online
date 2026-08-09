@@ -1607,7 +1607,8 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface ValidationPanelProps {
-  onJumpToElement?: (expressId: number) => void
+  /** modelId is not optional decoration — see handleJumpTo. */
+  onJumpToElement?: (expressId: number, modelId?: string) => void
   viewer?: Pick<ViewerHandle, 'setCameraViewpoint' | 'getCameraViewpoint' | 'takeSnapshot'> | null | undefined
 }
 
@@ -1880,8 +1881,11 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   // ── Handlers ──────────────────────────────────────────────────────────
 
   const handleJumpTo = useCallback((issue: ValidationIssue) => {
-    setSelection([issue.expressId])
-    onJumpToElement?.(issue.expressId)
+    // The modelId travels with the click. Without it the tree lights up every
+    // element that happens to share the number, and the viewer frames whichever
+    // model it finds first — which in a federated set is usually not this one.
+    setSelection([{ expressId: issue.expressId, modelId: issue.modelId }])
+    onJumpToElement?.(issue.expressId, issue.modelId)
     trackIssueViewed({ rule_id: issue.ruleId, severity: issue.severity })
   }, [setSelection, onJumpToElement])
 

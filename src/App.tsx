@@ -130,7 +130,8 @@ import {
 
 // ── ModelTree imperative handle ───────────────────────────────────────────────
 export interface ModelTreeHandle {
-  revealElement: (expressId: number) => void
+  /** `modelId` decides WHICH model to reveal in — see ModelTree's own copy. */
+  revealElement: (expressId: number, modelId?: string) => void
 }
 
 /**

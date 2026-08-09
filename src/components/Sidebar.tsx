@@ -555,7 +555,7 @@ interface PropertiesPanelProps {
   isolated: string | null
   viewerApiRef?: React.MutableRefObject<ViewerAPI | null>
   onFrame?: (expressId: number) => void
-  onRevealInTree?: (expressId: number) => void
+  onRevealInTree?: (expressId: number, modelId?: string) => void
   onIsolate?: () => void
 }
 
@@ -869,7 +869,7 @@ function PropertiesPanel({
             )
           })()}
           <button
-            onClick={() => onRevealInTree?.(expressId)}
+            onClick={() => onRevealInTree?.(expressId, selected?.modelId)}
             className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors"
             title={t('actions.revealInTree')}
           >
@@ -908,7 +908,7 @@ function PropertiesPanel({
                       return (
                         <React.Fragment key={node.expressId}>
                           <button
-                            onClick={() => onRevealInTree?.(node.expressId)}
+                            onClick={() => onRevealInTree?.(node.expressId, selected?.modelId)}
                             className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] hover:bg-[var(--surface-2)] transition-colors"
                             style={{ color }}
                             title={`Go to ${node.name}`}
@@ -1882,7 +1882,7 @@ interface SidebarProps {
   onSelectElement?: (expressId: number) => void
   onFrameElement?: (expressId: number) => void
   /** Called when user clicks "Reveal in tree" — parent should expand tree & scroll */
-  onRevealInTree?: (expressId: number) => void
+  onRevealInTree?: (expressId: number, modelId?: string) => void
   /** ViewerAPI ref — used to fetch real IFC data for the selected element */
   viewerApiRef?: React.MutableRefObject<ViewerAPI | null>
   /** Mobile-only: whether the drawer is open (ignored on md+ where it's always visible) */
@@ -1927,9 +1927,13 @@ export default function Sidebar({
     return m
   }, [cachedResultsByModel, partialIssues])
 
-  // Close mobile drawer when user navigates to tree
-  const handleRevealInTree = useCallback((id: number) => {
-    onRevealInTree?.(id)
+  // Close mobile drawer when user navigates to tree.
+  // The modelId has to be forwarded, not just the id: this wrapper dropping it
+  // was enough to send "reveal in tree" to whichever loaded model happened to
+  // have that expressId first — which, since every IFC numbers from #1, was
+  // routinely the wrong one.
+  const handleRevealInTree = useCallback((id: number, modelId?: string) => {
+    onRevealInTree?.(id, modelId)
     onMobileClose?.()
   }, [onRevealInTree, onMobileClose])
 
