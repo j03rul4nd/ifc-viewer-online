@@ -317,7 +317,7 @@ src/
   lib/             # viewer.ts · loader.ts · validator.ts · diffStore.ts · worker-schemas.ts · share-report.ts
     ids/           # IDS 1.0 engine (parser, facets, runner, report, golden testcases)
     geo/           # GIS / Map mode (basemap engine, CRS, georef ladder, terrain, providers)
-    pointcloud/    # Point clouds (LAS/LAZ/COPC/PLY/XYZ readers, chunker, alignment ladder, LOD, shader)
+    pointcloud/    # Point clouds (LAS/LAZ/COPC/PLY/PCD/XYZ readers, chunker, alignment ladder, LOD, shader)
   sdk/             # IfcViewer embeddable JS SDK (built to public/sdk/)
   i18n/ · locales/ # i18next config + per-locale JSON — en/ es/ fr/ de/ pt/ ja/ ca/ zh/ it/ th/
   types/           # Zod schemas + TypeScript types (ValidationRules, EditDiff, …)
@@ -383,7 +383,7 @@ Contributions are welcome — new validation rules, translations, and bug fixes 
 
 **Add a translation:** copy `src/locales/en/` to a new locale folder, translate the JSON values, and register the locale in `src/i18n/config.ts`. Translations of this README are equally welcome — match the file naming (`README.<lang>.md`) and add a link to the language row at the top.
 
-**Before opening a PR:** run `npm test` and `npm run lint`.
+**Before opening a PR:** run `npm test` and `npx tsc -b`.
 
 ---
 

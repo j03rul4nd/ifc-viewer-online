@@ -21,11 +21,13 @@ off there is no toolbar entry, no chunk and no worker.
 | **LAZ** (LASzip-compressed LAS) | `.laz` | ✅ | ✅ | ✅ | — | ✅ |
 | **COPC** (LAZ + octree index) | `.copc.laz` | ✅ | ✅ | ✅ | — | ✅ |
 | **PLY** ascii / binary LE / binary BE | `.ply` | ✅ | ✅ | ✅ | ✅ | — |
+| **PCD** ascii / binary / binary_compressed | `.pcd` | ✅ | ✅ | ✅ | ✅ | — |
 | **Text** whitespace / comma / semicolon / tab | `.xyz` `.pts` `.csv` `.asc` `.txt` | ✅ | ✅ | — | — | — |
 
 **Not supported yet** — and each says so specifically rather than "unknown file":
-`.e57`, `.pcd`, and scanner-native project files (`.rcp`, `.rcs`, `.fls`,
-`.zfs`). See [§7](#7-adding-a-format).
+`.e57` (see [§12](#12-e57--assessed-and-deliberately-still-refused) for why) and
+scanner-native project files (`.rcp`, `.rcs`, `.fls`, `.zfs`). See
+[§7](#7-adding-a-format).
 
 ### What the readers sniff for you
 
@@ -46,6 +48,18 @@ off there is no toolbar entry, no chunk and no worker.
 * **PLY** — property names, including the aliases scanners actually emit
   (`red`/`r`/`diffuse_red`, `intensity`/`scalar_intensity`/`reflectance`,
   `confidence`/`quality`/`scalar_confidence`).
+* **PCD** — the field table (`FIELDS`/`SIZE`/`TYPE`/`COUNT`), and which of the
+  three encodings the body uses. Two things about this format bite parsers, and
+  both are handled explicitly: `COUNT` is values-per-field, **not** the point
+  total; and `binary_compressed` stores the cloud **column-major** — every x,
+  then every y — so it is decompressed (LZF) and transposed back into records
+  before anything reads it. Colour is one packed 32-bit field whose float *bits*
+  are `0xRRGGBB`, so it is reinterpreted rather than converted. Organised clouds
+  (`WIDTH`×`HEIGHT`, straight off a depth camera) reserve a slot per pixel and
+  write `NaN` where there was no return — a real 640×480 frame is about a third
+  `NaN` — and those are dropped rather than passed on, because a single `NaN`
+  vertex makes a geometry's bounding sphere `NaN` and frustum culling then
+  discards the entire cloud silently.
 * **Text** — the delimiter, an optional header row, the `.pts` leading
   point-count line, and what the columns after XYZ mean. `x y z r g b` and
   `x y z nx ny nz` are told apart by sign: colour channels are never negative.
@@ -131,9 +145,22 @@ The alignment tests assert millimetre accuracy 1.2 km from the survey origin.
 
 ### When the scan's CRS is not in the build
 
-`crs.ts` bundles the construction-common EPSG definitions plus every UTM zone,
-which is not everything — US State Plane, for instance, is ~120 zones with
-per-zone parameters and none of them are formulaic.
+`crs.ts` bundles the construction-common EPSG definitions, every UTM zone, and
+the **full NAD83 US State Plane set** — 260 zones across metres, US survey feet
+and international feet.
+
+State Plane could not be generated the way UTM is: each zone carries its own
+standard parallels and false origin, so there is nothing to derive, only data to
+carry. `crs-stateplane.ts` carries it, compactly — every zone shares an
+ellipsoid, a datum shift and one of three projection shapes, so the table stores
+only what differs and rebuilds the rest. That compaction is worthless if the
+rebuilt definition is subtly different, so the authoritative strings are
+committed as a fixture and `crs-stateplane.test.ts` projects real coordinates
+through both, zone by zone, at five points spread across each zone. Corrupting a
+single standard parallel by 0.01° fails it by name.
+
+That still is not everything — regional national grids outside Europe and the US
+remain unbundled — so the fallback below stays, and stays the answer for them.
 
 Rather than ship a wrong-shaped subset, an unresolvable CRS is treated as an
 **actionable** gap, distinct from "no CRS at all": the panel says the scan named
@@ -369,6 +396,30 @@ more useful than a thin haze over the whole site.
 
 ---
 
+### Re-opening a COPC is cheap now
+
+Streaming a COPC decodes each octree node through the laz-perf WASM
+decompressor, one record at a time, and that was being repeated in full every
+time a node was evicted and the camera came back to it — and again from scratch
+the next session. There is now a two-tier **decoded-node cache**
+(`pc-node-cache.ts`): an in-memory LRU, which is what makes orbiting back and
+forth free, and IndexedDB, which is what makes re-opening the same scan free.
+
+It caches the *decompressed* form deliberately. The source bytes are already on
+disk or in the HTTP cache, so re-reading them costs nothing; re-running WASM over
+twenty million points costs seconds of a viewer that looks frozen.
+
+Both tiers are hard-bounded (64 MB memory, 256 MB disk) and evict
+least-recently-used. Every IndexedDB failure — quota, private browsing, a blocked
+upgrade, no IndexedDB at all — degrades to memory only. A cache that can break
+loading would be worse than no cache, so a miss is always a legal answer.
+
+One prerequisite had to be fixed before any of it worked on the sample scans: a
+fetched cloud was identified by the `File` wrapped around its bytes, whose
+`lastModified` is the instant of the fetch. That identity changed on every load,
+which had also been silently defeating saved manual offsets and saved proj4
+definitions. Downloaded scans are now keyed by URL.
+
 ## 6. Reconstruction outputs
 
 Feed-forward reconstruction pipelines (LingBot-Map and its relatives) emit a PLY
@@ -472,20 +523,20 @@ conventions.
 * No E57 or PCD yet (§7). Each is refused with a specific message.
 * A plain LAZ is decompressed whole in memory, so a very large one is capped
   rather than streamed. Converting it to COPC removes that limit entirely.
-* Streaming has no node cache across sessions: reopening a COPC re-reads the
-  nodes it needs. They are small range reads, so this is cheap, but it is not
-  free.
-* Streaming holds no decoded-node cache: a node dropped after its grace period
-  is re-read if the camera returns much later. The reads are small, so this is
-  cheap rather than free.
+* COPC nodes are cached decoded, in memory and in IndexedDB, so neither
+  revisiting a node nor reopening a scan re-runs the decompressor — see
+  "Re-opening a COPC is cheap now". Both tiers are bounded and every persistence
+  failure degrades to memory, so the cache can slow nothing down and break
+  nothing.
 * The "shared local coordinates" rung is a heuristic. It can be wrong for a scan
   that is legitimately far from the model — it is always labelled, and the manual
   controls are one click away.
 * Legacy-datum EPSG codes without NTv2 grid shifts carry metre-level error,
   inherited from `crs.ts` and acceptable for the same reason (context, not survey).
-* The bundled CRS registry does not cover US State Plane and other regional
-  grids. Those are not silently ignored — see "When the scan's CRS is not in
-  the build" above for the one-paste fix.
+* The bundled CRS registry covers UTM, the European construction grids and the
+  260 NAD83 US State Plane zones, but not every national grid on earth. The rest
+  are not silently ignored — see "When the scan's CRS is not in the build" above
+  for the one-paste fix.
 * No eviction: a loaded cloud stays in VRAM until removed. The 20 M cap is what
   protects the tab.
 * Clouds are not included in exports (IFC/GLB/BCF) or in the SDK surface.
@@ -511,3 +562,84 @@ re-import.
 
 **A 400-million-point city scan.** Crop or decimate it first (§5) — the viewer
 will otherwise stop at 20 M points and tell you it did.
+
+## 11. Measuring against a scan — the decision, and the evidence for it
+
+The open question was whether point-to-point and point-to-IFC-surface measurement
+should join `@thatopen`'s measurement system or live in the point cloud panel.
+
+**Decision: join `@thatopen`'s** — but through a custom `raycast`, not by
+re-enabling three.js point picking. The evidence, read out of the dependency
+rather than assumed:
+
+`Casters.castRay` (`@thatopen/components`) does two lookups and returns whichever
+is nearer: a GPU fast-pick over `FragmentsModel`s, and a plain
+`Raycaster.intersectObjects` over `world.meshes`. That merge is exactly the
+as-built-vs-as-designed question — *how far is this scanned point from the wall
+that was designed there* — answered for free, by construction. A panel-owned
+measurement tool cannot answer it at all without re-implementing the IFC side.
+
+So a second system would mean two measurement lists, two unit settings, two
+exports, and the one measurement that matters spanning neither. Duplication is
+the failure mode here, not integration.
+
+**But the naive integration is a trap.** Registering the cloud in `world.meshes`
+as-is means re-enabling `Points.raycast`, which `point-cloud-system.ts` disables
+on purpose (line ~517) because three.js tests *every vertex in the geometry*
+against the ray. At twenty million points that is not a slow pick, it is a frozen
+tab on every mouse move. Three's point picking also uses a fixed **world-space**
+`Raycaster.params.Points.threshold`, which is wrong at both ends of a site —
+precisely the problem `pc-pick.ts` already solved with a screen-space-derived
+radius.
+
+**The seam that avoids all of it:** `Raycaster.intersectObjects` calls
+`object.raycast(raycaster, intersects)`. Give the cloud ROOT group its own
+`raycast` that delegates to `pc-pick` and pushes one properly shaped
+`Intersection`. That is:
+
+- **one** registration in `world.meshes`, not one per chunk — so nothing has to
+  stay in sync with LOD chunk churn, which would otherwise leak stale entries
+  every time the camera moved;
+- fast, because it keeps the bounding-sphere rejection and draw-range awareness
+  `pc-pick` already has;
+- correct at any distance, because the threshold stays screen-space;
+- **no fork.** `LengthMeasurement.create()` takes no arguments and reads the
+  pointer itself; every hook that could inject an external point (`_temp`,
+  `initHandlers`, `updatePreviewLine`) is private. Feeding it a point from
+  outside would mean monkey-patching private fields — which is the option that
+  breaks on their next release, and the reason this route is preferred over it.
+
+Two caveats to budget for: `world.meshes` is typed `Set<THREE.Mesh>`, so
+registering a `Points`-bearing group needs a cast; and `castRay`'s
+`intersect(items)` is **non-recursive**, which is why the root group must carry
+the `raycast`, not the chunks.
+
+**Not built yet** — this section records the decision and the route, so whoever
+picks it up does not rediscover the O(n) pathology by shipping it.
+
+## 12. E57 — assessed, and deliberately still refused
+
+E57 (ASTM E2807) is the format most worth having and the only one on the list
+that was not added. The assessment, since "add it if you judge it feasible" was
+the instruction:
+
+PCD took one reader module because the format is a text header over either plain
+records or an LZF-compressed column block — bounded, and verifiable against real
+PCL files, which is what happened.
+
+E57 is a different order of problem. Point data lives in a `CompressedVector`:
+a packet-structured bitstream where each field is bit-packed to a width derived
+from its own declared min/max/precision, described by an XML section that sits at
+the *end* of the file. There is no small, mature pure-JS decoder to lean on. A
+half-correct implementation of that bitstream does not fail loudly — it yields
+points, in the wrong places, which is the single worst outcome available to a
+tool whose entire claim is that the scan and the model line up.
+
+Shipping that would contradict the reason this viewer is worth using. It stays
+refused, with a message that names the format and says what to export instead.
+
+The honest partial: files whose prototype uses `FloatNode` for the cartesian
+fields need packet parsing plus straight float reads, not the bit-packing codec,
+and that subset *is* tractable. If E57 becomes a real blocker for a real user,
+that subset is where to start — and it must refuse anything outside it rather
+than guess.

@@ -337,7 +337,7 @@ Les contribucions són benvingudes — especialment noves regles de validació, 
 
 **Afegir una traducció:** copia `src/locales/en/` a una nova carpeta d'idioma, tradueix els valors JSON i registra l'idioma a `src/i18n/config.ts`. Les traduccions d'aquest README també són benvingudes — respecta el nom (`README.<lang>.md`) i afegeix un enllaç a la fila d'idiomes de dalt.
 
-**Abans d'obrir un PR:** executa `npm test` i `npm run lint`.
+**Abans d'obrir un PR:** executa `npm test` i `npx tsc -b`.
 
 ---
 

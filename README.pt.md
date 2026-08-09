@@ -337,7 +337,7 @@ Contribuições são bem-vindas — especialmente novas regras de validação, t
 
 **Adicionar uma tradução:** copie `src/locales/en/` para uma nova pasta de idioma, traduza os valores JSON e registre o idioma em `src/i18n/config.ts`. Traduções deste README também são bem-vindas — siga a nomenclatura (`README.<lang>.md`) e adicione um link na linha de idiomas no topo.
 
-**Antes de abrir um PR:** rode `npm test` e `npm run lint`.
+**Antes de abrir um PR:** rode `npm test` e `npx tsc -b`.
 
 ---
 

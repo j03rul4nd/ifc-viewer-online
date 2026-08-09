@@ -8,7 +8,6 @@
         "build": "npm run build:sdk && npm run build:embed && tsc -b && node --max-old-space-size=6144 node_modules/vite/bin/vite.js build",
         "build:sdk": "vite build --config vite.config.sdk.ts && tsc -p tsconfig.sdk.json && node scripts/sdk/finalize-types.mjs && node scripts/sdk/build-sdk-docs.mjs",
         "build:embed": "node scripts/embed/build-embed-pages.mjs",
-        "lint": "eslint .",
         "preview": "vite preview",
         "test": "vitest run",
         "test:watch": "vitest",

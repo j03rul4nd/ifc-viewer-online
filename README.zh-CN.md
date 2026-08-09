@@ -337,7 +337,7 @@ cf-worker/         # Cloudflare Worker —— 无状态邮件采集代理（绝�
 
 **添加翻译：** 将 `src/locales/en/` 复制到新的语言文件夹，翻译 JSON 值，并在 `src/i18n/config.ts` 中注册该语言。同样欢迎翻译本 README —— 遵循文件命名（`README.<lang>.md`）并在顶部语言行添加链接。
 
-**提交 PR 前：** 运行 `npm test` 和 `npm run lint`。
+**提交 PR 前：** 运行 `npm test` 和 `npx tsc -b`。
 
 ---
 

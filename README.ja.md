@@ -337,7 +337,7 @@ cf-worker/         # Cloudflare Worker — ステートレスなメール収集�
 
 **翻訳を追加する：** `src/locales/en/` を新しいロケールフォルダにコピーし、JSON の値を翻訳して、`src/i18n/config.ts` にロケールを登録します。この README の翻訳も同様に歓迎します——命名（`README.<lang>.md`）に従い、先頭の言語行にリンクを追加してください。
 
-**PR を開く前に：** `npm test` と `npm run lint` を実行してください。
+**PR を開く前に：** `npm test` と `npx tsc -b` を実行してください。
 
 ---
 

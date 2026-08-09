@@ -46,6 +46,12 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 - **Zustand stores (20)** — `modelStore`, `validationStore`, `editorStore`, `uiStore`, `sceneStore`, `toastStore`, `takeoffStore`, `bcfStore`, `idsStore`, `geoStore`, `waiverStore`, `captureStore`, `presentationStore`, `eirStore`, `overlayStore`, `solarStore`, `consentStore`, `cobieStore`, `cloudAccountStore`, `pointCloudStore` — all with Zustand devtools, named actions, and typed selectors. `editorStore` emits `appBus` events on every mutation. (`cloudAccountStore` is the only account-aware store and stays Clerk-free; see the conformance-CDE surface below.)
 - **IFC validation — 44 rules** — `validator.worker.ts` runs rule-based checks off the main thread (18 core + 11 spatial/file-header incl. ISO 19650 + 9 LOD/classification/MEP + 6 geometry/storey integrity). Streams partial results into `validationStore`. Emits `appBus` events for full lifecycle. All messages validated via zod schemas before routing. Full list in `ARCHITECTURE.md`. `DEFAULT_RULES` in `src/types/index.ts` is the canonical count.
 - **buildingSMART IDS 1.0** — `ids.worker.ts` + pure-TS engine (`src/lib/ids/`) check a user-supplied `.ids` spec against the model. All six facets, golden-tested against 100 official bSI testcases. `IdsPanel` docks beside `ValidationPanel`; export to JSON/CSV/HTML/BCF; check-all-models; run-diff; SDK `checkIds()`. See `docs/IDS_IMPLEMENTATION_PLAN.md`.
+- **Point clouds** (flag-gated `VITE_FEATURE_POINTCLOUD`) — loads a survey scan
+  beside the IFC and reconciles the two coordinate systems through a five-rung
+  alignment ladder (IfcMapConversion → shared CRS → geographic anchor → shared
+  local frame → manual). Reads LAS, LAZ, COPC, PLY, PCD and delimited text, all
+  in the browser with nothing uploaded. `pointCloudStore`, `PointCloudPanel`,
+  `point-cloud.worker.ts`, `src/lib/pointcloud/`. See `docs/POINT_CLOUD.md`.
 - **3D Map / GIS mode** (flag-gated `VITE_FEATURE_GIS`) — places a georeferenced model on a real-world basemap + optional 3D terrain inside the existing scene. `geoStore`, `GeoPanel`, `geo-extract.worker.ts`, `geo-terrain.worker.ts`, `src/lib/geo/`. See `docs/GIS_MAP_MODE.md`.
 - **BCF 2.1 / 3.0** — `bcf-parser.worker.ts` import + `bcf.ts` export; `BcfPanel` with topic CRUD, comments, viewpoint capture, filters; `bcfStore` (persisted).
 - **Measurements / floor plans / sections** — length/area/edge/volume measurement tools, 2D floor plans per storey, clipping/section planes (Sprints 7–8).
@@ -106,7 +112,7 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 ### Deferred or killed (resolution 2026-05-29 — see `ROADMAP.md` Roadmap v2)
 
 - ❌ WebGPU renderer (old Sprint 10) — deferred indefinitely; no documented perf pain.
-- ❌ Point cloud overlays (LAS/LAZ/E57) / scan-to-BIM / AR (old Sprint 11) — killed; different product and buyer, violates large-file constraint.
+- ⚠️ Point cloud overlays — **the kill was reversed and the feature shipped** (see the feature list above and `docs/POINT_CLOUD.md`). The original objection was the large-file constraint; that is answered by streaming COPC octree nodes on demand and by a hard point budget, not by loading whole scans. Scan-to-BIM and AR remain killed.
 - ❌ AI-assisted validation / natural language query (old Sprint 12) — killed as AI slop; the useful slice (per-rule fix guidance) is reclassified as a deterministic content table in i18n.
 
 ---
