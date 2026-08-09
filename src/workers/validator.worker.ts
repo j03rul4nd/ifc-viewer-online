@@ -13,6 +13,7 @@
 import { IfcAPI } from 'web-ifc'
 import type { ValidationIssue, ValidationResult, SpatialNode, SpatialElement, RulesConfig } from '../types'
 import { validateIfcBuffer, assertModelId } from '../lib/ifc-guards'
+import { collectPortedElements } from '../lib/ifc-ports'
 import { createLogger } from '../lib/logger'
 
 const log = createLogger('ValidatorWorker')
@@ -88,7 +89,6 @@ import {
   IFCSIUNIT,
   IFCCONVERSIONBASEDUNIT,
   IFCUNITASSIGNMENT,
-  IFCRELCONNECTSPORTTOELEMENT,
   IFCPERSON,
   IFCORGANIZATION,
 } from 'web-ifc'
@@ -2492,16 +2492,10 @@ async function ruleConnectedMep(
 ): Promise<ValidationIssue[]> {
   const issues: ValidationIssue[] = []
 
-  // Build the set of MEP elements that have at least one IfcDistributionPort connected
-  const connectedIds = new Set<number>()
-  const relIds = api.GetLineIDsWithType(modelId, IFCRELCONNECTSPORTTOELEMENT)
-  for (let i = 0; i < relIds.size(); i++) {
-    try {
-      const rel = getLine<{ RelatedElement?: IfcRefValue | null }>(api, modelId, relIds.get(i))
-      const eid = getRefId(rel.RelatedElement)
-      if (eid != null) connectedIds.add(eid)
-    } catch { continue }
-  }
+  // Elements that have at least one IfcDistributionPort. IFC spells that two
+  // ways and reading only the older one reported every modern services model as
+  // broken — see ifc-ports.ts, where the fix lives so it can be tested.
+  const connectedIds = collectPortedElements(api, modelId)
 
   const MEP_SEGMENT_TYPES = [IFCPIPESEGMENT, IFCDUCTSEGMENT, IFCFLOWSEGMENT]
   for (const typeId of MEP_SEGMENT_TYPES) {
