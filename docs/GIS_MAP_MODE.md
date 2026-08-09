@@ -153,6 +153,35 @@ Key invariants:
   freeze rAF in hidden tabs, so streaming pauses while the tab is hidden and
   resumes on focus (also true for the rest of the viewer). In dev,
   `globalThis.__basemapTiles` exposes the live `TilesRenderer` for diagnosis.
+- **Community PBR assets: surveyed 2026-08-09, and deliberately NOT adopted for
+  the ground.** The candidates are genuinely good and genuinely free — Poly
+  Haven and ambientCG are both CC0, no attribution, redistribution and bundling
+  into a product explicitly permitted, so licensing is not the obstacle. Size
+  is. One 1K PBR set is 5–10 MB as published, ~1.5–3 MB trimmed to the three
+  maps we would use; the five families here (grass, sand, rock, water, asphalt)
+  come to roughly **7–15 MB**, or ~2–4 MB re-encoded to KTX2/ETC1S plus a
+  ~250 KB transcoder. `surface-textures.ts` bakes the same five at 256² in
+  ~70 ms and downloads **zero bytes** — and it is hex-tiled, so it does not
+  repeat across a 400 m river the way a photo tile does. The whole authored
+  showcase set is 136 KB; photo ground would be 15–100× the entire budget for a
+  gain that mostly disappears at the distances this map is viewed from. Revisit
+  only if street-level walkthroughs become a real use case, and then as an
+  opt-in level of its own, never as a default.
+- **Do not import community low-poly kits into `public/models/props`.** Kenney's
+  city kits and similar are CC0 and comparable in per-model size (~1.9 MB for
+  25–70 models), but they are texture-atlased and stylised for games, and
+  importing them would forfeit the two properties that keep this set at 136 KB
+  and reviewable: colour lives in the vertices, and **the script is the source
+  of truth** — an asset's diff is the diff of the code that made it. Authoring
+  one more asset in `build-props.py` costs about as much as importing one.
+- Already evaluated and rejected as dependencies, for the record:
+  THREE-CustomShaderMaterial (the `onBeforeCompile` technique it wraps is used
+  directly), `three-hex-tiling` (supports three 0.151–0.173; this project is on
+  0.184 — the algorithm is implemented by hand instead), TSL/WebGPU (needs
+  `WebGPURenderer`, which would cost the `PostproductionRenderer` the whole
+  viewer depends on), and HDRI environments (the procedural sky in
+  `sky-environment.ts` follows the user's chosen sun, which a fixed-time HDRI
+  cannot).
 - Provider licensing was reviewed 2026-06 (`lastReviewed` in `providers.ts`).
   Re-verify before GA, especially Esri terms and the EOX layer year.
 - i18n namespace `geo`: EN + ES are hand-written; the other 8 locales are
