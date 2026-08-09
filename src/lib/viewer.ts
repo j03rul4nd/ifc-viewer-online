@@ -4,6 +4,7 @@ import * as OBCF from '@thatopen/components-front'
 import * as FRAGS from '@thatopen/fragments'
 import { safeVoid } from './errors'
 import { appBus } from './event-bus'
+import { cameraRangeForBounds, widenCameraRange } from './camera-range'
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
 import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
@@ -837,6 +838,16 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       cam.far  = far
       cam.updateProjectionMatrix()
     }
+
+    // ── The camera must be ALLOWED to stand where a fit needs it
+    // camera-controls clamps the distance `fitToBox` computes into
+    // [minDistance, maxDistance] — silently, so a box outside that range does
+    // not fail, it frames wrong. OBC's defaults (1 m … 300 m) fit a building
+    // and nothing either side of it: the Red Rocks scan is 703 × 884 m, and
+    // "fit to scan" parked the camera at 300 m, inside the cloud, with no way
+    // to back out. See camera-range.ts for the arithmetic and its tests.
+    const range = cameraRangeForBounds(size, world.camera.threePersp.fov)
+    if (range) Object.assign(world.camera.controls, widenCameraRange(world.camera.controls, range))
 
     // Keep all real geometry unfogged; only fade the distant background for depth.
     const fog = world.scene.three.fog
@@ -2551,7 +2562,25 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           getActiveModelBounds: () => self.getModelBounds(),
           frameBox: (min, max) => {
             try {
-              void world.camera.controls.fitToBox(new THREE.Box3(min, max), true)
+              const box = new THREE.Box3(min, max)
+              // Retune to the WHOLE scene, then frame just the box. A scan is
+              // the one thing that arrives after the camera was tuned, and it
+              // can be two orders of magnitude bigger than the IFC model it
+              // sits next to — without this the fit clamps against limits set
+              // for the model (see tuneSceneToBounds).
+              //
+              // The union matters: tuning to the scan alone would pull the fog
+              // in around a 1 m tabletop capture and swallow the building.
+              const scene = box.clone()
+              const model = self.getModelBounds()
+              if (model) {
+                const half = new THREE.Vector3(model.size.x / 2, model.size.y / 2, model.size.z / 2)
+                const centre = new THREE.Vector3(model.center.x, model.center.y, model.center.z)
+                scene.expandByPoint(centre.clone().sub(half))
+                scene.expandByPoint(centre.clone().add(half))
+              }
+              tuneSceneToBounds(scene)
+              void world.camera.controls.fitToBox(box, true)
             } catch (e) {
               console.debug('[Viewer] point cloud fit failed:', e instanceof Error ? e.message : e)
             }
