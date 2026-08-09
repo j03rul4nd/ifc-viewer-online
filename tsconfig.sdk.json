@@ -1,0 +1,25 @@
+{
+  // ── SDK type declarations ────────────────────────────────────────────────────
+  // Emits public/sdk/ifc-viewer.es.d.ts from the SDK source. The file used to be
+  // hand-maintained and drifted (it was still missing checkEir and the `client`
+  // preset), so TypeScript consumers of the hosted module got stale types.
+  // Generating it removes that failure mode entirely.
+  //
+  //   npx tsc -p tsconfig.sdk.json && node scripts/sdk/finalize-types.mjs
+  //
+  // Standalone on purpose: the SDK imports nothing from the app, so it must not
+  // inherit the app's project references or path aliases.
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "public/sdk",
+    "types": []
+  },
+  "include": ["src/sdk/ifc-viewer-sdk.ts"]
+}
