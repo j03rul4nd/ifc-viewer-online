@@ -9,6 +9,7 @@
 //   ?model=https://host/a.ifc,https://host/b.ifc&embed=1          (federated)
 //   ?model=https://host/file.ifc&embed=1&ui=kiosk&validate=0
 //   ?model=https://host/file.ifc&embed=1&select=1234&lang=es
+//   ?model=https://host/file.ifc&map=terrain,buildings&scan=https://host/site.laz
 //
 // See docs/EMBED_URL_PARAMS.md for the full reference.
 
@@ -52,6 +53,25 @@ export interface AppUrlParams {
   solar?: { year?: number; month: number; day: number; minutes: number }
   /** `?moon=1` — enable the moon light for the solar deep link. */
   solarMoon?: boolean
+  /**
+   * `?map=1` — drop the model onto the basemap once it loads, using its own
+   * georeferencing. Extra tokens turn on the layers a demo usually wants:
+   * `?map=terrain,buildings,showcase`.
+   *
+   * Only worth anything for a georeferenced model: with nothing to place the
+   * building by, map mode has to ask the user where it is, and a deep link that
+   * opens a "where is this?" dialog is worse than one that does nothing.
+   */
+  map?: MapDeepLink
+  /**
+   * `?scan=<url>` — point clouds to fetch and load alongside the model
+   * (comma-separated or repeated, like `model`).
+   *
+   * The scan lands wherever the alignment ladder puts it. When it shares a
+   * projected CRS with the model that is exact; when it does not, the panel
+   * says so rather than pretending.
+   */
+  scanUrls: string[]
   /** Granular chrome overrides. `undefined` = fall back to the preset default. */
   overrides: {
     toolbar?: boolean
@@ -61,6 +81,15 @@ export interface AppUrlParams {
     home?: boolean
     cameraControls?: boolean
   }
+}
+
+/** What `?map=` asked for. Omitted fields leave the app's own defaults alone. */
+export interface MapDeepLink {
+  enabled: boolean
+  terrain?: boolean
+  buildings?: boolean
+  /** `showcase` also downloads the authored props — heavier, and the nicer shot. */
+  detail?: 'showcase'
 }
 
 /** Fully-resolved chrome flags — preset defaults with per-param overrides applied. */
@@ -108,12 +137,27 @@ export function parseInvitePath(pathname?: string): string | undefined {
   return m ? m[1] : undefined
 }
 
-/** Accept absolute http(s) URLs and same-origin relative paths; reject the rest. */
+/**
+ * Accept absolute http(s) URLs and root-relative paths; reject the rest.
+ *
+ * THE LEADING SLASH IS NOT PEDANTRY. These lists are comma-separated, so a
+ * rejected URL that happens to contain a comma leaves its tail behind as a
+ * separate entry: `?scan=data:text/plain,x` splits into `data:text/plain`
+ * (rejected on its scheme) and a bare `x`. Resolved against the current page
+ * that is a perfectly good same-origin URL, so without this it sails through
+ * and the app goes off to fetch a path nobody asked for.
+ *
+ * Requiring `/` costs nothing — every relative link a host would write, and
+ * every one we write ourselves, is root-relative — and it makes the tail of a
+ * rejected URL stay rejected.
+ */
 export function isLoadableUrl(u: string): boolean {
-  if (!u) return false
+  const raw = u?.trim()
+  if (!raw) return false
+  if (!/^https?:\/\//i.test(raw) && !raw.startsWith('/')) return false
   try {
     const base = typeof window !== 'undefined' ? window.location.href : 'http://localhost/'
-    const parsed = new URL(u, base)
+    const parsed = new URL(raw, base)
     return parsed.protocol === 'http:' || parsed.protocol === 'https:'
   } catch {
     return false
@@ -170,6 +214,8 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
     ref: refRaw,
     solar: parseSolarParam(p.get('solar')),
     solarMoon: parseBool(p.get('moon')),
+    map: parseMapParam(p.get('map')),
+    scanUrls: splitList(p.getAll('scan')).filter(isLoadableUrl),
     overrides: {
       toolbar:        parseBool(p.get('toolbar')),
       tree:           parseBool(p.get('tree')),
@@ -179,6 +225,32 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
       cameraControls: parseBool(p.get('controls')),
     },
   }
+}
+
+/**
+ * `?map=1` / `?map=0`, or a comma list of layers: `terrain`, `buildings`,
+ * `showcase`. Naming a layer implies the map itself — `?map=terrain` meaning
+ * "terrain but no map" is not a thing anyone wants.
+ *
+ * An unrecognised token turns the map on and is otherwise ignored, on purpose:
+ * a typo in one layer should not silently cost the host the whole feature.
+ */
+function parseMapParam(v: string | null): MapDeepLink | undefined {
+  if (v === null) return undefined
+  const raw = v.trim().toLowerCase()
+  const bool = parseBool(raw)
+  if (bool === false) return undefined
+  if (bool === true || raw === '') return { enabled: true }
+
+  const tokens = raw.split(',').map((t) => t.trim()).filter(Boolean)
+  if (tokens.length === 0) return { enabled: true }
+  const link: MapDeepLink = { enabled: true }
+  for (const token of tokens) {
+    if (token === 'terrain')   link.terrain = true
+    if (token === 'buildings') link.buildings = true
+    if (token === 'showcase')  link.detail = 'showcase'
+  }
+  return link
 }
 
 /** Mirror of the viewer's canonicalType() so isolate=IfcWallStandardCase matches. */

@@ -170,6 +170,21 @@ async function dispatchPanelCommand<E extends 'sdk:solar' | 'sdk:site' | 'sdk:po
   })
 }
 
+/**
+ * A file name for a scan fetched from a URL.
+ *
+ * It has to keep its extension: the point cloud reader registry routes on it,
+ * so a scan called "download" is a scan nothing can open. Falls back to .las,
+ * which is what an extensionless LiDAR URL almost always is.
+ */
+function deriveScanFileName(url: string): string {
+  let last = ''
+  try { last = decodeURIComponent(new URL(url, window.location.href).pathname.split('/').pop() ?? '') }
+  catch { last = '' }
+  const name = last.replace(/[\/?:*"<>|]+/g, '_').trim()
+  return /\.[a-z0-9]{2,5}$/i.test(name) ? name : `${name || 'scan'}.las`
+}
+
 // Camera presets accepted by the `ifcviewer:view` embed command.
 const CAMERA_PRESETS: CameraPreset[] = ['iso', 'top', 'bottom', 'front', 'back', 'left', 'right']
 
@@ -1219,6 +1234,7 @@ export default function App() {
   // ── Auto-load model(s) from URL params on mount (?model=…&embed=1) ────────
   const urlLoadStartedRef   = useRef(false)
   const urlActionsAppliedRef = useRef(false)
+  const urlSceneAppliedRef   = useRef(false)
 
   useEffect(() => {
     if (urlLoadStartedRef.current) return
@@ -1647,6 +1663,70 @@ export default function App() {
       }
     }, 350)
     return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingState, sceneModels.length])
+
+  // ── Apply the map / scan deep links once the first model is loaded ─────────
+  //
+  // Both go through the same `sdk:*` commands the SDK uses rather than reaching
+  // into the panels: the map needs the georeference ladder and the scan needs
+  // the alignment ladder, and both of those live in the panel that owns them.
+  //
+  // They wait for a model because neither means anything without one — the map
+  // has nothing to place, and a scan would have nothing to align against.
+  useEffect(() => {
+    if (urlSceneAppliedRef.current) return
+    if (loadingState !== 'loaded' || sceneModels.length === 0) return
+    if (!urlParams.map && urlParams.scanUrls.length === 0) return
+    urlSceneAppliedRef.current = true
+
+    let cancelled = false
+
+    // Two independent chains, NOT one sequence. Turning on OSM surroundings
+    // awaits an Overpass query that routinely takes half a minute; running the
+    // scan behind it meant a link with both looked like the scan had silently
+    // failed for as long as the map took.
+    if (urlParams.map) {
+      const wanted = urlParams.map
+      void (async () => {
+        try {
+          await dispatchPanelCommand('sdk:site', {
+            enabled:   wanted.enabled,
+            terrain:   wanted.terrain,
+            buildings: wanted.buildings,
+            detail:    wanted.detail,
+          }, { unavailable: 'Map mode is not available in this build', timeoutMs: 120_000 })
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err)
+          console.error('[App] ?map= deep link failed:', message)
+          if (!cancelled) toast(tToasts('model.mapFailed', { message }), 'error')
+        }
+      })()
+    }
+
+    void (async () => {
+      // Scans one at a time, like the model URLs: two decoding at once compete
+      // for the same worker and the same point budget.
+      for (const url of urlParams.scanUrls) {
+        if (cancelled) return
+        try {
+          const res = await fetch(url, { cache: 'force-cache', mode: 'cors' })
+          if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
+          const file = new File([await res.arrayBuffer()], deriveScanFileName(url))
+          await dispatchPanelCommand('sdk:pointcloud',
+            // The URL, not the File, is the scan's identity across sessions —
+            // see SdkPointCloudCommand.sourceUrl.
+            { action: 'add', file, sourceUrl: url },
+            { unavailable: 'Point clouds are not available in this build' })
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err)
+          console.error('[App] ?scan= deep link failed:', url, message)
+          if (!cancelled) toast(tToasts('model.scanLoadFailed', { message }), 'error')
+        }
+      }
+    })()
+
+    return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingState, sceneModels.length])
 

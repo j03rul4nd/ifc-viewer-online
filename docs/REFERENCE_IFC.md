@@ -165,30 +165,22 @@ All four Poblenou files together — three disciplines federated, on the basemap
 with the real neighbourhood around them, under a scan that lines up — is the shot
 the whole set exists for. It has been checked end to end; this is the recipe.
 
-**The link.** Relative paths work, so it is the same URL everywhere (dev, preview,
-production):
+**One link.** Relative paths work, so it is the same URL everywhere (dev,
+preview, production):
 
 ```
-/?model=/models/poblenou/BCN-IVO-ZZ-XX-M3-A-0001.ifc,/models/poblenou/BCN-IVO-ZZ-XX-M3-S-0001.ifc,/models/poblenou/BCN-IVO-ZZ-XX-M3-M-0001.ifc
+/?model=/models/poblenou/BCN-IVO-ZZ-XX-M3-A-0001.ifc,/models/poblenou/BCN-IVO-ZZ-XX-M3-S-0001.ifc,/models/poblenou/BCN-IVO-ZZ-XX-M3-M-0001.ifc&map=terrain,buildings&scan=/models/poblenou/poblenou-site-scan.las
 ```
 
-That loads all three and the header reads **3 MODELS**. Add `&ui=client` for a
-clean frame with no chrome, `&validate=0` to skip the automatic Health Score, or
-`&isolate=IfcColumn` to open straight into the frame. Full list:
-[`EMBED_URL_PARAMS.md`](EMBED_URL_PARAMS.md).
+That loads all three disciplines (**3 MODELS** in the header), puts them on the
+basemap at `41.4042, 2.1905 · 45°` with terrain and the real OpenStreetMap
+neighbourhood, and drops the survey on top at **"Georeferenced (map conversion)
+· Exact"**. Nothing to click.
 
-**Then two panels, because neither has a URL parameter yet:**
-
-1. *Tools ▸ Map ▸ Show on map.* The header shows `41.4042, 2.1905 · 45°`, read
-   out of the `IfcMapConversion` — location **and** rotation. Turn on
-   **Surroundings** for the OpenStreetMap buildings (~115 within 600 m); the OSM
-   attribution appearing is how you know they arrived.
-2. *Tools ▸ Point cloud ▸ Poblenou Pavilion — site survey.* The alignment panel
-   reads **"Georeferenced (map conversion) · Exact"**. Nothing to drag.
-
-Both surfaces are reachable from the SDK too (`addPointCloud`), but `map` and
-`scan` are not URL parameters today — adding them would make the whole shot a
-single link, which is the obvious next step if these get used for recorded demos.
+Add `&ui=kiosk` for a chrome-less recording, `&validate=0` to skip the automatic
+Health Score, or `&isolate=IfcColumn` to open straight into the frame. Full
+reference: [`EMBED_URL_PARAMS.md`](EMBED_URL_PARAMS.md) — including why `map` and
+`scan` do not work with `ui=client`.
 
 ## How they were created
 

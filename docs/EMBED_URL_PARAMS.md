@@ -40,6 +40,39 @@ live preview). This doc is the reference for the underlying parameters.
 | `isolate`  | IFC class, e.g. `IfcWall`        | —         | Isolate a category after load (best-effort, by canonical IFC class). |
 | `lang`     | locale code (`en`, `es`, …)      | auto      | Force the UI language (only if supported). |
 | `accent`   | hex `rrggbb` / `#rrggbb`         | brand     | Tint the viewer's accent to match your dashboard. |
+| `map`      | `1` / `0` / layer list           | off       | Drop the model onto the basemap using its own georeferencing. A layer list turns extras on: `map=terrain,buildings,showcase`. Naming a layer implies the map. |
+| `scan`     | URL(s)                           | —         | Point cloud(s) to load alongside the model. Comma-separated or repeated, like `model`. |
+
+### Scene deep links (`map` / `scan`)
+
+Both wait for the first model — the map has nothing to place without one, and a
+scan would have nothing to align against — and both then drive the same internal
+commands the SDK uses, so behaviour is identical either way.
+
+```
+?model=/models/poblenou/BCN-IVO-ZZ-XX-M3-A-0001.ifc&map=terrain,buildings&scan=/models/poblenou/poblenou-site-scan.las
+```
+
+`map` layers: `terrain` (3D relief), `buildings` (OpenStreetMap surroundings),
+`showcase` (presentation-grade context — also downloads the authored props). An
+unrecognised layer turns the map on and is otherwise ignored, so a typo costs
+you that layer rather than the whole feature.
+
+Three things worth knowing before you build a link:
+
+- **`map` needs a georeferenced model.** With nothing to place the building by,
+  map mode would have to ask where it is — and a deep link that opens a "where
+  is this?" dialog is worse than one that does nothing. It reports an error
+  instead. `IfcMapConversion` (or at minimum `IfcSite` latitude/longitude) is
+  what makes it work.
+- **`scan` lands wherever the alignment ladder puts it.** Sharing a projected
+  CRS with the model is exact; anything less is labelled as the guess it is.
+- **Neither works with `ui=client`.** The panels that serve them are not mounted
+  in the client skin, so the command has nobody to answer it and you get an
+  error toast. Use `ui=kiosk` for a chrome-less recording instead.
+
+Turning on OpenStreetMap surroundings queries a public service (Overpass) and
+can take half a minute; the scan loads in parallel rather than queueing behind it.
 
 ### Granular chrome overrides (embed mode)
 

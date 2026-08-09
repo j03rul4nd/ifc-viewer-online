@@ -5,7 +5,9 @@
     "loadFailed": "Failed to load: {{message}}",
     "demoUnavailable": "Demo file could not be loaded. Please open your own IFC file.",
     "removeFailed": "Could not remove model: {{message}}",
-    "urlLoadFailed": "Could not load the linked model: {{message}}"
+    "urlLoadFailed": "Could not load the linked model: {{message}}",
+    "mapFailed": "Map mode could not open: {{message}}",
+    "scanLoadFailed": "Could not load the linked scan: {{message}}"
   },
   "validation": {
     "complete": "Validation complete — {{count}} issues found",

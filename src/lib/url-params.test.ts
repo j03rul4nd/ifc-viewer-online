@@ -215,3 +215,68 @@ describe('parseAppUrlParams · solar deep link', () => {
     expect(parseAppUrlParams('?solar=06-21T22:00').solarMoon).toBeUndefined()
   })
 })
+
+// ── Scene deep links (?map= / ?scan=) ────────────────────────────────────────
+// The two params that turn the Poblenou federated set into a single link: the
+// building on its real plot, with its survey scan on top of it.
+
+describe('parseAppUrlParams · map deep link', () => {
+  it('reads the plain on/off form', () => {
+    expect(parseAppUrlParams('?map=1').map).toEqual({ enabled: true })
+    expect(parseAppUrlParams('?map').map).toEqual({ enabled: true })
+    expect(parseAppUrlParams('?map=true').map).toEqual({ enabled: true })
+  })
+
+  it('treats an explicit off exactly like an absent param', () => {
+    // Not `{ enabled: false }`: nothing downstream should have to decide
+    // between "turn it off" and "was never asked", because they are the same.
+    expect(parseAppUrlParams('?map=0').map).toBeUndefined()
+    expect(parseAppUrlParams('').map).toBeUndefined()
+  })
+
+  it('reads the layer list, and a layer implies the map', () => {
+    expect(parseAppUrlParams('?map=terrain').map).toEqual({ enabled: true, terrain: true })
+    expect(parseAppUrlParams('?map=terrain,buildings').map)
+      .toEqual({ enabled: true, terrain: true, buildings: true })
+    expect(parseAppUrlParams('?map=buildings,showcase').map)
+      .toEqual({ enabled: true, buildings: true, detail: 'showcase' })
+  })
+
+  it('survives a typo in one layer rather than dropping the feature', () => {
+    // A host that misspells a layer should lose that layer, not the map.
+    expect(parseAppUrlParams('?map=terain,buildings').map)
+      .toEqual({ enabled: true, buildings: true })
+    expect(parseAppUrlParams('?map=nonsense').map).toEqual({ enabled: true })
+  })
+
+  it('is case- and whitespace-insensitive', () => {
+    expect(parseAppUrlParams('?map=%20Terrain%20,%20BUILDINGS%20').map)
+      .toEqual({ enabled: true, terrain: true, buildings: true })
+  })
+})
+
+describe('parseAppUrlParams · scan deep link', () => {
+  it('accepts one scan, several, and repeats — like ?model=', () => {
+    expect(parseAppUrlParams('?scan=https://h/a.las').scanUrls).toEqual(['https://h/a.las'])
+    expect(parseAppUrlParams('?scan=https://h/a.las,https://h/b.laz').scanUrls)
+      .toEqual(['https://h/a.las', 'https://h/b.laz'])
+    expect(parseAppUrlParams('?scan=https://h/a.las&scan=https://h/b.laz').scanUrls)
+      .toEqual(['https://h/a.las', 'https://h/b.laz'])
+  })
+
+  it('takes same-origin relative paths, which is how our own demo links read', () => {
+    expect(parseAppUrlParams('?scan=/models/poblenou/poblenou-site-scan.las').scanUrls)
+      .toEqual(['/models/poblenou/poblenou-site-scan.las'])
+  })
+
+  it('drops anything that is not http(s)', () => {
+    // Same gate as ?model=. A deep link is attacker-controlled input.
+    expect(parseAppUrlParams('?scan=javascript:alert(1)').scanUrls).toEqual([])
+    expect(parseAppUrlParams('?scan=file:///etc/passwd').scanUrls).toEqual([])
+    expect(parseAppUrlParams('?scan=data:text/plain,x').scanUrls).toEqual([])
+  })
+
+  it('is an empty list when nobody asked', () => {
+    expect(parseAppUrlParams('').scanUrls).toEqual([])
+  })
+})

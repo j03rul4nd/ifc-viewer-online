@@ -5,7 +5,9 @@
     "loadFailed": "Falha ao carregar: {{message}}",
     "demoUnavailable": "O arquivo de demonstração não pôde ser carregado. Abra seu próprio arquivo IFC.",
     "removeFailed": "Não foi possível remover o modelo: {{message}}",
-    "urlLoadFailed": "Não foi possível carregar o modelo vinculado: {{message}}"
+    "urlLoadFailed": "Não foi possível carregar o modelo vinculado: {{message}}",
+    "mapFailed": "Não foi possível abrir o modo mapa: {{message}}",
+    "scanLoadFailed": "Não foi possível carregar o scan do link: {{message}}"
   },
   "validation": {
     "complete": "Validação concluída — {{count}} problema(s) encontrado(s)",

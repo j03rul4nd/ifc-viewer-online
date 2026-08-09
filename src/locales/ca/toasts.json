@@ -5,7 +5,9 @@
     "loadFailed": "Error en carregar: {{message}}",
     "demoUnavailable": "No s'ha pogut carregar el fitxer de demostració. Obre el teu propi fitxer IFC.",
     "removeFailed": "No s'ha pogut eliminar el model: {{message}}",
-    "urlLoadFailed": "No s'ha pogut carregar el model enllaçat: {{message}}"
+    "urlLoadFailed": "No s'ha pogut carregar el model enllaçat: {{message}}",
+    "mapFailed": "No s'ha pogut obrir el mode mapa: {{message}}",
+    "scanLoadFailed": "No s'ha pogut carregar l'escaneig de l'enllaç: {{message}}"
   },
   "validation": {
     "complete": "Validació completada — {{count}} problema(es) trobat(s)",

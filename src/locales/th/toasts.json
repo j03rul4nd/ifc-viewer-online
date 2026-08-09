@@ -5,7 +5,9 @@
     "loadFailed": "โหลดล้มเหลว: {{message}}",
     "demoUnavailable": "ไม่สามารถโหลดไฟล์ตัวอย่างได้ กรุณาเปิดไฟล์ IFC ของคุณเอง",
     "removeFailed": "ไม่สามารถนำโมเดลออกได้: {{message}}",
-    "urlLoadFailed": "ไม่สามารถโหลดโมเดลที่เชื่อมโยงได้: {{message}}"
+    "urlLoadFailed": "ไม่สามารถโหลดโมเดลที่เชื่อมโยงได้: {{message}}",
+    "mapFailed": "ไม่สามารถเปิดโหมดแผนที่ได้: {{message}}",
+    "scanLoadFailed": "ไม่สามารถโหลดข้อมูลสแกนจากลิงก์ได้: {{message}}"
   },
   "validation": {
     "complete": "การตรวจสอบเสร็จสิ้น — พบ {{count}} ปัญหา",
