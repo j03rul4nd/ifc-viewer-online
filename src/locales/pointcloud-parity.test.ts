@@ -114,10 +114,18 @@ describe('pointcloud locale parity', () => {
   })
 
   it('explains every format it refuses, rather than saying only "unsupported"', () => {
-    // 'laz' and 'copc' are deliberately absent: both are decoded now, so their
-    // refusal texts were deleted rather than left to rot into lies.
-    for (const key of ['e57', 'pcd', 'proprietary', 'unknown']) {
+    // 'laz', 'copc' and 'pcd' are deliberately absent: all three are decoded
+    // now, so their refusal texts were deleted rather than left to rot into
+    // lies. This list shrinking is the intended direction of travel.
+    for (const key of ['e57', 'proprietary', 'unknown']) {
       expect(EN[`unsupported.${key}`], `missing refusal text for ${key}`).toBeTruthy()
+    }
+    // And the deleted ones must stay deleted in EVERY locale, or one language
+    // goes on telling people to convert a file the viewer opens perfectly well.
+    for (const gone of ['laz', 'copc', 'pcd']) {
+      for (const [lng, dict] of Object.entries(LOCALES)) {
+        expect(dict[`unsupported.${gone}`], `${lng} still refuses ${gone}`).toBeUndefined()
+      }
     }
   })
 })

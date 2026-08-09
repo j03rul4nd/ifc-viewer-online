@@ -5,7 +5,7 @@
   "load": {
     "another": "Añadir otra",
     "drop": "Suelta un escaneo aquí, o examina",
-    "formats": "LAS · LAZ · COPC · PLY · XYZ · PTS · CSV",
+    "formats": "LAS · LAZ · COPC · PLY · PCD · XYZ · PTS · CSV",
     "hint": "Se procesa en tu navegador. No se sube nada.",
     "parsingShort": "Leyendo…"
   },
@@ -142,7 +142,6 @@
   },
   "unsupported": {
     "e57": "E57 todavía no está soportado. Exporta el escaneo como LAS o PLY desde el software del escáner.",
-    "pcd": "PCD todavía no está soportado. Exporta como PLY.",
     "proprietary": "Es un archivo de proyecto nativo del escáner. Expórtalo primero como LAS o PLY.",
     "unknown": "Ese tipo de archivo no es una nube de puntos que este visor pueda leer."
   },
@@ -170,6 +169,10 @@
     "copcDecode": "No se ha podido decodificar el octree COPC. El archivo puede estar truncado o escrito con otra revisión de la especificación.",
     "copcNoNodes": "El índice COPC está vacío: declara un octree sin nodos con puntos.",
     "copcTruncated": "La cabecera COPC está truncada.",
-    "copcOutOfMemory": "No hay memoria suficiente para decodificar ese nodo COPC."
+    "copcOutOfMemory": "No hay memoria suficiente para decodificar ese nodo COPC.",
+    "pcdNoXyz": "El archivo PCD no tiene campos x/y/z.",
+    "pcdEncoding": "Ese PCD usa una codificación de datos que este lector no admite.",
+    "pcdCompressed": "No se pudo descomprimir el cuerpo del PCD. Puede que el archivo esté truncado.",
+    "pcdMalformed": "No se pudo leer la cabecera del PCD."
   }
 }
