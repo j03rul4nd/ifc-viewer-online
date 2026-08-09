@@ -11,7 +11,7 @@
   },
   "demos": {
     "title": "Escaneos de ejemplo",
-    "hint": "Escaneos públicos reales, descargados directamente en tu navegador. Ninguno es un escaneo de los edificios de demostración, así que se colocan sobre el modelo en vez de encajar con él.",
+    "hint": "Escaneos públicos reales, más uno nuestro. Los públicos son capturas de lugares reales, así que se colocan sobre el modelo en vez de encajar con él. El levantamiento de Poblenou usa el mismo CRS que sus modelos y encaja exactamente.",
     "failed": "No se ha podido descargar ese ejemplo. Comprueba la conexión e inténtalo de nuevo.",
     "source": "Fuente",
     "chip": {
@@ -29,7 +29,8 @@
       "loneStar": "Un cono de géiser escaneado desde el suelo, guardado como Cloud Optimized Point Cloud. Su octree se lee de menos a más detalle, así que el cono aparece entero enseguida y luego se afina.",
       "tabletop": "Cajas sobre una mesa de madera, tan cerca que se lee el envase: el color sale de una cámara, no está asignado. Además trae una etiqueta por punto, así que Clasificación separa los objetos de la mesa.",
       "indoorRoom": "Una esquina de habitación con ese mismo color fotográfico, a escala de estancia y no de objeto: lo más parecido aquí a cómo se ve de verdad un escaneo as-built de un interior.",
-      "warsaw": "Una muestra diminuta con color. Carga al instante; sirve para probar los controles de apariencia."
+      "warsaw": "Una muestra diminuta con color. Carga al instante; sirve para probar los controles de apariencia.",
+      "poblenou": "Nuestro propio levantamiento de la parcela del Poblenou Pavilion, escrito en el mismo CRS proyectado que el modelo. Cárgalo con cualquiera de las tres disciplinas y encaja sobre ellas: el único par aquí que muestra un escaneo alineándose con un modelo en vez de quedarse al lado. Sintético, generado junto a los modelos."
     }
   },
   "status": {

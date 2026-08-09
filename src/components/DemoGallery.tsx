@@ -18,6 +18,7 @@ const log = createLogger('DemoGallery')
 
 // Typed i18n keys for category labels (keeps react-i18next's key-literal typing happy).
 const CATEGORY_KEY = {
+  Reference:      'demoGallery.categories.reference',
   Residential:    'demoGallery.categories.residential',
   Commercial:     'demoGallery.categories.commercial',
   Industrial:     'demoGallery.categories.industrial',

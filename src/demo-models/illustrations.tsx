@@ -31,6 +31,73 @@ function Frame({ accent, children }: { accent: string; children: ReactNode }) {
 type Illo = (accent: string) => ReactNode
 
 const ILLUSTRATIONS: Record<string, Illo> = {
+  // ── Reference ────────────────────────────────────────────────────────────
+  'hello-world': (a) => (
+    <Frame accent={a}>
+      {/* the reference room, axonometric: a slab and the three walls that
+          stand on it, open toward the viewer — the same shape the model is */}
+      <path d="M80 30 L137 59 L93 81 L36 52 Z" fill={a} fillOpacity={0.12} />
+      <path d="M36 52 L36 58 L93 87 L93 81 Z" fill={a} fillOpacity={0.06} />
+      <path d="M93 81 L93 87 L137 65 L137 59 Z" fill={a} fillOpacity={0.06} />
+      <path d="M80 30 L137 59 L137 35 L80 6 Z" fill={a} fillOpacity={0.16} />
+      <path d="M80 30 L36 52 L36 28 L80 6 Z" fill={a} fillOpacity={0.1} />
+      <path d="M137 59 L93 81 L93 57 L137 35 Z" fill={a} fillOpacity={0.1} />
+      {/* the open side, dashed: three walls, not four */}
+      <path d="M36 28 L36 52" stroke={SOFT} strokeDasharray="4 5" />
+      <path d="M93 57 L93 81" stroke={SOFT} strokeDasharray="4 5" />
+    </Frame>
+  ),
+  'japanese-temple': (a) => (
+    <Frame accent={a}>
+      {/* elevation of the hondō: stone podium, pillar grid under deep eaves,
+          and the gable roof that gives the whole thing its silhouette */}
+      <path d="M14 40 L80 14 L146 40 Z" fill={a} fillOpacity={0.16} />
+      <path d="M14 40 L146 40 L146 46 L14 46 Z" fill={a} fillOpacity={0.12} />
+      <line x1="80" y1="14" x2="80" y2="20" stroke={SOFT} />
+      {[30, 48, 66, 94, 112, 130].map((x) => (
+        <line key={x} x1={x} y1="46" x2={x} y2="72" />
+      ))}
+      <rect x="24" y="72" width="112" height="6" fill={a} fillOpacity={0.12} />
+      <path d="M18 78 L142 78 L142 88 L18 88 Z" fill={a} fillOpacity={0.08} />
+      {/* the kizahashi steps, on the south front */}
+      <path d="M70 88 L90 88 L90 82 L70 82 Z" stroke={SOFT} />
+    </Frame>
+  ),
+  // The three disciplines of one building: each drawing shows the SAME
+  // elevation with only its own layer inked, which is the point of federation.
+  'poblenou-arc': (a) => (
+    <Frame accent={a}>
+      <rect x="26" y="18" width="108" height="62" rx="1.5" fill={a} fillOpacity={0.1} />
+      <line x1="26" y1="18" x2="134" y2="18" strokeWidth={2.6} />
+      {[38, 59, 80].map((y) => <line key={y} x1="26" y1={y} x2="134" y2={y} stroke={SOFT} />)}
+      {[45, 64, 83, 102, 121].map((x) => <line key={x} x1={x} y1="18" x2={x} y2="80" stroke={SOFT} />)}
+      <line x1="20" y1="80" x2="140" y2="80" strokeWidth={2.4} />
+    </Frame>
+  ),
+  'poblenou-str': (a) => (
+    <Frame accent={a}>
+      {[34, 60, 80, 100, 126].map((x) => <line key={x} x1={x} y1="18" x2={x} y2="76" />)}
+      {[18, 38, 58, 76].map((y) => <line key={y} x1="30" y1={y} x2="130" y2={y} strokeWidth={2.2} />)}
+      {[34, 60, 80, 100, 126].map((x) => (
+        <rect key={x} x={x - 7} y="76" width="14" height="8" fill={a} fillOpacity={0.16} />
+      ))}
+    </Frame>
+  ),
+  'poblenou-mep': (a) => (
+    <Frame accent={a}>
+      <rect x="26" y="18" width="108" height="62" rx="1.5" stroke={SOFT} />
+      {[32, 52, 72].map((y) => (
+        <g key={y}>
+          <line x1="34" y1={y} x2="126" y2={y} strokeWidth={3} />
+          {[46, 68, 90, 112].map((x) => (
+            <rect key={x} x={x - 5} y={y + 3} width="10" height="5" fill={a} fillOpacity={0.2} />
+          ))}
+        </g>
+      ))}
+      <rect x="66" y="8" width="28" height="10" fill={a} fillOpacity={0.16} />
+    </Frame>
+  ),
+
   // ── Residential ──────────────────────────────────────────────────────────
   'duplex-architecture': (a) => (
     <Frame accent={a}>

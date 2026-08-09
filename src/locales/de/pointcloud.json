@@ -11,7 +11,7 @@
   },
   "demos": {
     "title": "Beispiel-Scans",
-    "hint": "Echte öffentliche Scans, direkt in Ihren Browser geladen. Keiner dieser Scans zeigt die Demo-Gebäude, sie landen also auf dem Modell, statt sich damit zu decken.",
+    "hint": "Echte öffentliche Scans, dazu einer von uns. Die öffentlichen sind Aufnahmen realer Orte und legen sich deshalb auf das Modell, statt sich damit zu decken. Die Poblenou-Vermessung nutzt dasselbe CRS wie ihre Modelle und passt exakt.",
     "failed": "Dieses Beispiel konnte nicht geladen werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
     "source": "Quelle",
     "chip": {
@@ -29,7 +29,8 @@
       "loneStar": "Ein Geysirkegel vom Boden aus gescannt, gespeichert als Cloud Optimized Point Cloud. Der Octree wird von grob nach fein gelesen: Der Kegel ist sofort vollständig da und wird dann schärfer.",
       "tabletop": "Schachteln auf einem Holztisch, nah genug, um die Verpackung zu lesen: Die Farbe stammt von einer Kamera und ist nicht zugewiesen. Dazu ein Label je Punkt, sodass Klassifizierung die Objekte vom Tisch trennt.",
       "indoorRoom": "Eine Raumecke in derselben fotografischen Farbe, in Raum- statt Objektgröße — das Nächste hier an dem, wie ein Bestandsscan eines Innenraums tatsächlich aussieht.",
-      "warsaw": "Ein winziges farbiges Beispiel. Lädt im Nu; nützlich, um die Darstellungsregler auszuprobieren."
+      "warsaw": "Ein winziges farbiges Beispiel. Lädt im Nu; nützlich, um die Darstellungsregler auszuprobieren.",
+      "poblenou": "Unsere eigene Vermessung des Poblenou-Pavilion-Grundstücks, im selben projizierten CRS wie das Modell geschrieben. Mit einer der drei Poblenou-Disziplinen geladen, legt sie sich exakt darauf — das einzige Paar hier, das einen Scan zeigt, der zum Modell passt, statt nur daneben zu liegen. Synthetisch, zusammen mit den Modellen erzeugt."
     }
   },
   "status": {

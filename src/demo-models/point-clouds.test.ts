@@ -43,11 +43,17 @@ describe('demo point clouds', () => {
     }
   })
 
-  it('fetches only over https from a CORS-enabled host', () => {
+  it('fetches only over https from a CORS-enabled host, or from ourselves', () => {
     for (const demo of DEMO_POINT_CLOUDS) {
-      const url = new URL(demo.url)
-      expect(url.protocol, demo.id).toBe('https:')
-      expect(ALLOWED_HOSTS, demo.id).toContain(url.hostname)
+      // Our own scan ships in /public and is fetched with a site-relative URL,
+      // so there is no host to check — and no CORS to get wrong.
+      if (!/^https?:/i.test(demo.url)) {
+        expect(demo.url.startsWith('/'), demo.id).toBe(true)
+      } else {
+        const url = new URL(demo.url)
+        expect(url.protocol, demo.id).toBe('https:')
+        expect(ALLOWED_HOSTS, demo.id).toContain(url.hostname)
+      }
       expect(new URL(demo.sourceUrl).protocol, demo.id).toBe('https:')
     }
   })

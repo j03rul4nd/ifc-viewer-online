@@ -11,7 +11,7 @@
   },
   "demos": {
     "title": "Relevés d'exemple",
-    "hint": "De vrais relevés publics, chargés directement dans votre navigateur. Aucun de ces relevés ne correspond aux bâtiments de démonstration : ils se posent sur le modèle au lieu de s'y aligner.",
+    "hint": "De vrais scans publics, plus un des nôtres. Les scans publics sont des captures de lieux réels : ils se posent sur le modèle au lieu de s'y aligner. Le relevé de Poblenou utilise le même CRS que ses modèles et s'aligne exactement.",
     "failed": "Cet exemple n'a pas pu être téléchargé. Vérifiez votre connexion et réessayez.",
     "source": "Source",
     "chip": {
@@ -29,7 +29,8 @@
       "loneStar": "Un cône de geyser relevé depuis le sol, stocké en Cloud Optimized Point Cloud. Son octree se lit du plus grossier au plus fin : le cône entier est là tout de suite, puis il s'affine.",
       "tabletop": "Des boîtes sur une table en bois, d'assez près pour lire les emballages : la couleur vient d'une caméra, elle n'est pas attribuée. Chaque point porte aussi une étiquette, donc Classification sépare les objets de la table.",
       "indoorRoom": "Un coin de pièce dans cette même couleur photographique, à l'échelle d'une pièce et non d'un objet — ce qui ressemble le plus ici à un relevé d'intérieur tel qu'exécuté.",
-      "warsaw": "Un tout petit échantillon coloré. Se charge en un clin d'œil ; utile pour essayer les réglages d'apparence."
+      "warsaw": "Un tout petit échantillon coloré. Se charge en un clin d'œil ; utile pour essayer les réglages d'apparence.",
+      "poblenou": "Notre propre relevé de la parcelle du Poblenou Pavilion, écrit dans le même CRS projeté que le modèle. Chargez-le avec l'une des trois disciplines Poblenou et il se cale dessus — le seul couple ici qui montre un scan aligné sur un modèle plutôt que posé à côté. Synthétique, généré avec les modèles."
     }
   },
   "status": {

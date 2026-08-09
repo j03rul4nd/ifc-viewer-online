@@ -11,7 +11,7 @@
   },
   "demos": {
     "title": "Levantamentos de exemplo",
-    "hint": "Levantamentos públicos reais, obtidos diretamente para o seu navegador. Nenhum destes é um levantamento dos edifícios de demonstração, por isso assentam sobre o modelo em vez de coincidirem com ele.",
+    "hint": "Scans públicos reais, mais um nosso. Os públicos são capturas de lugares reais, por isso assentam sobre o modelo em vez de encaixar com ele. O levantamento de Poblenou usa o mesmo CRS dos seus modelos e encaixa exatamente.",
     "failed": "Não foi possível descarregar esse exemplo. Verifique a ligação e tente novamente.",
     "source": "Fonte",
     "chip": {
@@ -29,7 +29,8 @@
       "loneStar": "Um cone de géiser levantado a partir do solo, guardado como Cloud Optimized Point Cloud. A octree é lida do mais grosseiro para o mais fino, por isso o cone aparece inteiro de imediato e depois ganha detalhe.",
       "tabletop": "Caixas sobre uma mesa de madeira, perto o suficiente para ler as embalagens: a cor vem de uma câmara, não é atribuída. Traz também uma etiqueta por ponto, por isso Classificação separa os objetos da mesa.",
       "indoorRoom": "Um canto de sala com a mesma cor fotográfica, à escala do compartimento e não do objeto — o mais parecido aqui com o aspeto real de um levantamento as-built de um interior.",
-      "warsaw": "Uma amostra minúscula com cor. Carrega num instante; útil para experimentar os controlos de aparência."
+      "warsaw": "Uma amostra minúscula com cor. Carrega num instante; útil para experimentar os controlos de aparência.",
+      "poblenou": "O nosso próprio levantamento do lote do Poblenou Pavilion, escrito no mesmo CRS projetado do modelo. Carrega-o com qualquer uma das três disciplinas e assenta sobre elas — o único par aqui que mostra um scan alinhado com um modelo em vez de apenas ao lado. Sintético, gerado junto com os modelos."
     }
   },
   "status": {

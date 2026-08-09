@@ -11,7 +11,7 @@
   },
   "demos": {
     "title": "Scansioni di esempio",
-    "hint": "Scansioni pubbliche reali, scaricate direttamente nel tuo browser. Nessuna di queste è una scansione degli edifici dimostrativi, quindi si appoggiano al modello invece di allinearsi ad esso.",
+    "hint": "Scansioni pubbliche reali, più una nostra. Quelle pubbliche sono catture di luoghi reali, quindi si posano sul modello invece di combaciare. Il rilievo di Poblenou usa lo stesso CRS dei suoi modelli e combacia esattamente.",
     "failed": "Non è stato possibile scaricare questo esempio. Controlla la connessione e riprova.",
     "source": "Fonte",
     "chip": {
@@ -29,7 +29,8 @@
       "loneStar": "Un cono di geyser rilevato da terra, salvato come Cloud Optimized Point Cloud. L'octree si legge dal grossolano al fine: il cono c'è tutto subito e poi si affina.",
       "tabletop": "Scatole su un tavolo di legno, abbastanza da vicino da leggere le confezioni: il colore viene da una fotocamera, non è assegnato. Porta anche un etichetta per punto, così Classificazione separa gli oggetti dal tavolo.",
       "indoorRoom": "L'angolo di una stanza nello stesso colore fotografico, a scala di ambiente e non di oggetto — qui è la cosa più vicina all'aspetto reale di una scansione as-built di un interno.",
-      "warsaw": "Un campione minuscolo a colori. Si carica in un attimo; comodo per provare i controlli di aspetto."
+      "warsaw": "Un campione minuscolo a colori. Si carica in un attimo; comodo per provare i controlli di aspetto.",
+      "poblenou": "Il nostro rilievo del lotto del Poblenou Pavilion, scritto nello stesso CRS proiettato del modello. Caricalo con una qualsiasi delle tre discipline e si posa esattamente su di esse: l'unica coppia qui che mostra una scansione allineata a un modello invece che semplicemente accanto. Sintetico, generato insieme ai modelli."
     }
   },
   "status": {

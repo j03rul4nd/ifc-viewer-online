@@ -55,7 +55,93 @@ const BSMART =
 /** Bundled copy that ships in /public — the default demo's reliable fallback. */
 const BUNDLED_DUPLEX = `${import.meta.env.BASE_URL}Ifc2x3_Duplex_Architecture.ifc`
 
+/** The reference models. Authored here, so they ship here — see docs/REFERENCE_IFC.md. */
+const BUNDLED_HELLO_WORLD = `${import.meta.env.BASE_URL}HelloWorld.ifc`
+const BUNDLED_TEMPLE = `${import.meta.env.BASE_URL}JapaneseTemple.ifc`
+/** The federated set — three disciplines of one building, ISO 19650 file names. */
+const POBLENOU = `${import.meta.env.BASE_URL}models/poblenou`
+
 export const DEMO_MODELS: DemoModel[] = [
+  // ── Reference ────────────────────────────────────────────────────────────
+  {
+    id: 'hello-world',
+    name: 'IFC Hello World',
+    description:
+      'Our reference model: three walls, one slab, one storey. Small enough to read end to end, correct by construction.',
+    category: 'Reference',
+    fileName: 'HelloWorld.ifc',
+    ifcUrl: BUNDLED_HELLO_WORLD,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-hello-world.py',
+    sourceLabel: 'Authored with Blender + Bonsai',
+    schema: 'IFC4',
+    approximateSize: '9 KB',
+    sizeBytes: 9_696,
+    featured: true,
+  },
+  {
+    id: 'japanese-temple',
+    name: 'Japanese Temple — Main Hall',
+    description:
+      'The same promise at building scale: a timber-frame hondō on three levels, 92 elements, still a perfect score.',
+    category: 'Reference',
+    fileName: 'JapaneseTemple.ifc',
+    ifcUrl: BUNDLED_TEMPLE,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-temple.py',
+    sourceLabel: 'Authored with Blender + Bonsai',
+    schema: 'IFC4',
+    approximateSize: '161 KB',
+    sizeBytes: 165_332,
+    featured: true,
+  },
+  {
+    id: 'poblenou-arc',
+    name: 'Poblenou Pavilion — Architecture',
+    description:
+      'Georeferenced onto a real Barcelona plot (ETRS89 / UTM 31N) and rotated to the Cerdà grid. Load all three disciplines together.',
+    category: 'Reference',
+    fileName: 'BCN-IVO-ZZ-XX-M3-A-0001.ifc',
+    ifcUrl: `${POBLENOU}/BCN-IVO-ZZ-XX-M3-A-0001.ifc`,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-district.py',
+    sourceLabel: 'Authored with Blender + Bonsai',
+    schema: 'IFC4',
+    approximateSize: '258 KB',
+    sizeBytes: 263_610,
+    featured: true,
+  },
+  {
+    id: 'poblenou-str',
+    name: 'Poblenou Pavilion — Structure',
+    description:
+      'The frame of the same building: pad footings, a 7.2 m column grid, beams and slabs. Federates with the other two.',
+    category: 'Reference',
+    fileName: 'BCN-IVO-ZZ-XX-M3-S-0001.ifc',
+    ifcUrl: `${POBLENOU}/BCN-IVO-ZZ-XX-M3-S-0001.ifc`,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-district.py',
+    sourceLabel: 'Authored with Blender + Bonsai',
+    schema: 'IFC4',
+    approximateSize: '371 KB',
+    sizeBytes: 379_754,
+  },
+  {
+    id: 'poblenou-mep',
+    name: 'Poblenou Pavilion — Services',
+    description:
+      'Supply ductwork for the same building, in one IfcSystem with connected distribution ports.',
+    category: 'Reference',
+    fileName: 'BCN-IVO-ZZ-XX-M3-M-0001.ifc',
+    ifcUrl: `${POBLENOU}/BCN-IVO-ZZ-XX-M3-M-0001.ifc`,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-district.py',
+    sourceLabel: 'Authored with Blender + Bonsai',
+    schema: 'IFC4',
+    approximateSize: '51 KB',
+    sizeBytes: 52_144,
+  },
+
   // ── Residential ──────────────────────────────────────────────────────────
   {
     id: 'duplex-architecture',
@@ -226,7 +312,7 @@ export const DEMO_FILENAMES: ReadonlySet<string> = new Set(DEMO_MODELS.map((m) =
 export function activeCategories(): DemoCategory[] {
   const present = new Set(DEMO_MODELS.map((m) => m.category))
   // Preserve the canonical order from categories.ts.
-  return (['Residential', 'Commercial', 'Industrial', 'MEP', 'Structural', 'Infrastructure'] as DemoCategory[])
+  return (['Reference', 'Residential', 'Commercial', 'Industrial', 'MEP', 'Structural', 'Infrastructure'] as DemoCategory[])
     .filter((c) => present.has(c))
 }
 

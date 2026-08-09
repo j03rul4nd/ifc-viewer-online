@@ -11,7 +11,7 @@
   },
   "demos": {
     "title": "Sample scans",
-    "hint": "Real public scans, fetched straight into your browser. None of these is a scan of the demo buildings, so they land on the model rather than lining up with it.",
+    "hint": "Real public scans, plus one of our own. The public ones are captures of real places, so they land on the model rather than lining up with it. The Poblenou survey is written in the same CRS as its models and lines up exactly.",
     "failed": "That sample could not be downloaded. Check your connection and try again.",
     "source": "Source",
     "chip": {
@@ -29,7 +29,8 @@
       "loneStar": "A geyser cone scanned from the ground, stored as a Cloud Optimized Point Cloud. Its octree is read coarsest-first, so the whole cone is there immediately and then sharpens.",
       "tabletop": "Boxes on a wooden table, close enough to read the packaging: the colour came off a camera rather than being assigned. It carries a label per point too, so Classification separates the objects from the table.",
       "indoorRoom": "A room corner in that same photographic colour, at room scale rather than object scale — the nearest thing here to what an as-built scan of an interior actually looks like.",
-      "warsaw": "A tiny coloured sample. Loads in a blink; useful for trying the appearance controls."
+      "warsaw": "A tiny coloured sample. Loads in a blink; useful for trying the appearance controls.",
+      "poblenou": "Our own survey of the Poblenou Pavilion plot, written in the same projected CRS as the model. Load it with any of the three Poblenou disciplines and it lands on them — the one pair here that can show a scan lining up with a model instead of merely sitting near it. Synthetic, generated alongside the models."
     }
   },
   "status": {

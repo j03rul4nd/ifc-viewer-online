@@ -298,6 +298,7 @@
     "loadFailed": "No se pudo cargar este modelo. Inténtalo de nuevo o elige otro.",
     "close": "Cerrar",
     "categories": {
+      "reference": "Referencia",
       "residential": "Residencial",
       "commercial": "Comercial",
       "industrial": "Industrial",

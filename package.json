@@ -16,7 +16,14 @@
         "blog-covers": "node scripts/og/build-blog-covers.mjs",
         "fix-covers": "node scripts/og/build-fix-covers.mjs",
         "covers": "node scripts/og/build-blog-covers.mjs && node scripts/og/build-fix-covers.mjs",
-        "props": "blender --background --python scripts/blender/build-props.py -- public/models/props"
+        "props": "blender --background --python scripts/blender/build-props.py -- public/models/props",
+        "hello-world": "blender --background --python scripts/blender/build-hello-world.py -- public/HelloWorld.ifc",
+        "temple": "blender --background --python scripts/blender/build-temple.py -- public/JapaneseTemple.ifc",
+        "district": "npm run district:str && npm run district:arc && npm run district:mep",
+        "district:str": "blender --background --python scripts/blender/build-district.py -- public/models/poblenou STR",
+        "district:arc": "blender --background --python scripts/blender/build-district.py -- public/models/poblenou ARC",
+        "district:mep": "blender --background --python scripts/blender/build-district.py -- public/models/poblenou MEP",
+        "site-scan": "node scripts/pointcloud/build-site-scan.mjs"
     },
     "dependencies": {
         "@clerk/react": "^6.12.2",

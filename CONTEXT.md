@@ -128,6 +128,7 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 | `ROADMAP.md` | Sprint-by-sprint plan (status, goals, deliverables, constraints) |
 | `PROMPTS.md` | Log of Claude Code prompts used to build the project |
 | `docs/DEPLOYMENT.md` | Vercel deployment, WASM paths, COEP/COOP strategy, production bug history |
+| `docs/REFERENCE_IFC.md` | **IFC Hello World** and **Japanese Temple** — the two reference models we author ourselves (Blender + Bonsai), what they contain, how to rebuild and validate them |
 | `docs/IDS_IMPLEMENTATION_PLAN.md` | buildingSMART IDS 1.0 — engine, facets, worker, golden tests (SHIPPED banner up top) |
 | `docs/GIS_MAP_MODE.md` · `docs/GIS_MAP_INTEGRATION_PLAN.md` | 3D Map / GIS mode — user guide + architecture |
 | `docs/IFC_VIEWER_SDK.md` · `docs/EMBED_URL_PARAMS.md` | Embed + JS SDK reference |

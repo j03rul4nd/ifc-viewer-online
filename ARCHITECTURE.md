@@ -149,7 +149,8 @@ ifc/
 │
 ├── docs/                             # DEPLOYMENT (Vercel), IDS_IMPLEMENTATION_PLAN, GIS_MAP_MODE,
 │   │                                 #   GIS_MAP_INTEGRATION_PLAN, IFC_VIEWER_SDK, EMBED_URL_PARAMS,
-│   │                                 #   INVITE_SYSTEM, SEO_PRERENDER_PLAN, TERRAIN_3D_IMPROVEMENT_PLAN, …
+│   │                                 #   INVITE_SYSTEM, REFERENCE_IFC, SEO_PRERENDER_PLAN,
+│   │                                 #   TERRAIN_3D_IMPROVEMENT_PLAN, …
 ├── cf-worker/                        # Stateless edge worker: email proxy + crawlable /r?d= report route
 ├── CONTEXT.md                        # ← Read first in every Claude session
 ├── ARCHITECTURE.md                   # This file

@@ -8,6 +8,9 @@
 // and add a label in every locale's landing.json under demoGallery.categories.
 
 export const DEMO_CATEGORIES = [
+  // Not a building type — the kind of file. It holds the models we authored
+  // ourselves to be read rather than admired, starting with IFC Hello World.
+  'Reference',
   'Residential',
   'Commercial',
   'Industrial',
@@ -20,6 +23,7 @@ export type DemoCategory = (typeof DEMO_CATEGORIES)[number]
 
 /** Per-category accent colour (CSS rgb/hex) used for the gallery chip + card tag. */
 export const CATEGORY_META: Record<DemoCategory, { accent: string }> = {
+  Reference:      { accent: '#94A3B8' },
   Residential:    { accent: '#6FB8D9' },
   Commercial:     { accent: '#5E6AD2' },
   Industrial:     { accent: '#C99A4B' },

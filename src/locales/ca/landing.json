@@ -279,6 +279,7 @@
     "loadFailed": "No s’ha pogut carregar aquest model. Torna-ho a provar o tria’n un altre.",
     "close": "Tanca",
     "categories": {
+      "reference": "Referència",
       "residential": "Residencial",
       "commercial": "Comercial",
       "industrial": "Industrial",

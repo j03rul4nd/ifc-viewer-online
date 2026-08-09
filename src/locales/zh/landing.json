@@ -279,6 +279,7 @@
     "loadFailed": "无法加载此模型。请重试或选择其他模型。",
     "close": "关闭",
     "categories": {
+      "reference": "参考",
       "residential": "住宅",
       "commercial": "商业",
       "industrial": "工业",

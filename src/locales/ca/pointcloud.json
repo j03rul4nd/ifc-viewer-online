@@ -11,7 +11,7 @@
   },
   "demos": {
     "title": "Escaneigs d'exemple",
-    "hint": "Escaneigs públics reals, descarregats directament al teu navegador. Cap d'aquests no és un escaneig dels edificis de demostració, així que se situen sobre el model en comptes d'encaixar-hi.",
+    "hint": "Escaneigs públics reals, més un de nostre. Els públics són captures de llocs reals, així que es col·loquen sobre el model en lloc d'encaixar-hi. L'aixecament de Poblenou fa servir el mateix CRS que els seus models i hi encaixa exactament.",
     "failed": "No s'ha pogut descarregar aquest exemple. Comprova la connexió i torna-ho a provar.",
     "source": "Font",
     "chip": {
@@ -29,7 +29,8 @@
       "loneStar": "Un con de guèiser escanejat des de terra, desat com a Cloud Optimized Point Cloud. L'octree es llegeix de menys a més detall, així que el con hi és sencer de seguida i després s'afina.",
       "tabletop": "Capses sobre una taula de fusta, prou a prop per llegir-ne l'envàs: el color surt d'una càmera, no està assignat. També porta una etiqueta per punt, així que Classificació separa els objectes de la taula.",
       "indoorRoom": "Un racó d'habitació amb aquest mateix color fotogràfic, a escala d'estança i no d'objecte: el més semblant aquí a com es veu realment un escaneig as-built d'un interior.",
-      "warsaw": "Una mostra minúscula amb color. Es carrega en un instant; útil per provar els controls d'aparença."
+      "warsaw": "Una mostra minúscula amb color. Es carrega en un instant; útil per provar els controls d'aparença.",
+      "poblenou": "El nostre propi aixecament de la parcel·la del Poblenou Pavilion, escrit en el mateix CRS projectat que el model. Carrega'l amb qualsevol de les tres disciplines i hi encaixa: l'únic parell aquí que mostra un escaneig alineant-se amb un model en lloc de quedar-se al costat. Sintètic, generat al costat dels models."
     }
   },
   "status": {

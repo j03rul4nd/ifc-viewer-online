@@ -279,6 +279,7 @@
     "loadFailed": "このモデルを読み込めませんでした。もう一度試すか、別のモデルを選んでください。",
     "close": "閉じる",
     "categories": {
+      "reference": "リファレンス",
       "residential": "住宅",
       "commercial": "商業",
       "industrial": "産業",

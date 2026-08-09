@@ -279,6 +279,7 @@
     "loadFailed": "Impossible de charger ce modèle. Réessayez ou choisissez-en un autre.",
     "close": "Fermer",
     "categories": {
+      "reference": "Référence",
       "residential": "Résidentiel",
       "commercial": "Commercial",
       "industrial": "Industriel",

@@ -306,6 +306,7 @@
     "loadFailed": "Couldn’t load this model. Try again or pick another.",
     "close": "Close",
     "categories": {
+      "reference": "Reference",
       "residential": "Residential",
       "commercial": "Commercial",
       "industrial": "Industrial",

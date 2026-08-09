@@ -26,16 +26,26 @@
 //      Several otherwise perfect coloured candidates were rejected for this.
 //      Before adding a .laz, decode it, do not just parse its header.
 //
-// HONESTY NOTE, and it matters for what these demos can show: these are surveys
-// and captures of real places. None of them is a scan OF the demo IFC buildings,
-// so loading one next to a demo model lands on the bottom rung of the alignment
+// HONESTY NOTE, and it matters for what these demos can show: the public scans
+// below are captures of real places, and none of them is a scan OF a demo IFC
+// model, so loading one next to one lands on the bottom rung of the alignment
 // ladder ("placed by hand") — which is the correct answer, and is exactly what
 // the panel will tell the user. They demonstrate reading, rendering, colour
 // modes, classification, units and LOD. They cannot demonstrate a matched
 // scan-to-model alignment, because no such public pair exists.
+//
+// ONE EXCEPTION, and it is the last entry: `poblenou-site-scan` is ours. It is
+// generated (scripts/pointcloud/build-site-scan.mjs) alongside the Poblenou
+// Pavilion reference models and written in the SAME projected CRS at the same
+// eastings and northings, so it reaches the TOP rung — shared CRS — and lands
+// on the model without anybody dragging anything. It is synthetic, and its card
+// says so; that is the price of being able to show the alignment at all.
 
 /** What a demo is useful for showing — drives the card's one-line pitch. */
-export type PointCloudDemoKind = 'colour' | 'classification' | 'units' | 'scale' | 'octree'
+export type PointCloudDemoKind =
+  | 'colour' | 'classification' | 'units' | 'scale' | 'octree'
+  /** Ours, and the only one that can: a scan of a demo model, in its CRS. */
+  | 'alignment'
 
 export interface DemoPointCloud {
   /** Stable id (kebab-case). Used for analytics + React keys. */
@@ -83,6 +93,13 @@ const PDAL_DATA_SOURCE = 'https://github.com/PDAL/data'
 const PCL = 'https://raw.githubusercontent.com/PointCloudLibrary/data/master/tutorials'
 const PCL_SEG = 'https://raw.githubusercontent.com/PointCloudLibrary/data/master/segmentation/mOSD/learn'
 const PCL_SOURCE = 'https://github.com/PointCloudLibrary/data'
+
+/**
+ * The one scan that ships with the app rather than being fetched from someone
+ * else's repo, because it is a survey of OUR reference building and lives
+ * beside it. See docs/REFERENCE_IFC.md.
+ */
+const BUNDLED_POBLENOU = `${import.meta.env.BASE_URL}models/poblenou/poblenou-site-scan.las`
 
 export const DEMO_POINT_CLOUDS: DemoPointCloud[] = [
   {
@@ -259,6 +276,27 @@ export const DEMO_POINT_CLOUDS: DemoPointCloud[] = [
     hasClassification: true,
     unit: null,
     epsg: null,
+  },
+  {
+    id: 'poblenou-site-scan',
+    name: 'Poblenou Pavilion — site survey',
+    descriptionKey: 'poblenou',
+    kind: 'alignment',
+    fileName: 'poblenou-site-scan.las',
+    url: BUNDLED_POBLENOU,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/pointcloud/build-site-scan.mjs',
+    sourceLabel: 'Generated with the Poblenou models',
+    sizeBytes: 3_900_313,
+    pointCount: 150_000,
+    format: 'LAS 1.2 · PDRF 2',
+    hasColor: true,
+    hasClassification: true,
+    unit: 'm',
+    // The same CRS the Poblenou IfcMapConversion declares, which is the whole
+    // reason this file exists — it is what gets the aligner to the top rung.
+    epsg: 25_831,
+    featured: true,
   },
 ]
 

@@ -54,3 +54,7 @@ skills-lock.json
 
 # Ebook build intermediates (the shipped PDF in public/ebook/ IS committed)
 scripts/ebook/.out/
+
+# Blender's bytecode cache for the Bonsai build scripts (the .ifc files they
+# write into public/ ARE committed)
+scripts/blender/__pycache__/

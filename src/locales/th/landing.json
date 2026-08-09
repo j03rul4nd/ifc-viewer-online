@@ -279,6 +279,7 @@
     "loadFailed": "ไม่สามารถโหลดโมเดลนี้ได้ ลองอีกครั้งหรือเลือกโมเดลอื่น",
     "close": "ปิด",
     "categories": {
+      "reference": "อ้างอิง",
       "residential": "ที่พักอาศัย",
       "commercial": "พาณิชย์",
       "industrial": "อุตสาหกรรม",
