@@ -335,9 +335,11 @@ describe('unresolved cloud CRS', () => {
   beforeEach(() => { clearCustomProj4() })
 
   it('flags a CRS the build has no definition for, as an actionable reason', () => {
-    // EPSG:2903 (New Mexico Central, ftUS) is real and NOT in the bundled
-    // registry — the aligner must say so rather than silently degrading.
-    const frame = frameOf({ x: 0, y: 0, z: 0 }, { x: 100, y: 100, z: 10 }, { epsgCode: 'EPSG:2903' })
+    // EPSG:21781 (CH1903 / LV03, the legacy Swiss grid) is real and NOT in the
+    // bundled registry — the aligner must say so rather than silently degrading.
+    // This used to be EPSG:2903; that became resolvable when the US State Plane
+    // table landed, which would have left these three tests asserting nothing.
+    const frame = frameOf({ x: 0, y: 0, z: 0 }, { x: 100, y: 100, z: 10 }, { epsgCode: 'EPSG:21781' })
     expect(unresolvedCloudCrs(frame)).toBe(true)
     const alignment = alignCloud({ frame, georef: null, placement: null, modelBounds: MODEL_BOUNDS })
     expect(alignment.reasons).toContain('align.reason.cloudCrsUnknown')
@@ -357,7 +359,7 @@ describe('unresolved cloud CRS', () => {
   it('a registered proj4 definition unlocks the georeferenced rungs', () => {
     const frame = frameOf(
       { x: 499_900, y: 4_499_900, z: 0 }, { x: 500_100, y: 4_500_100, z: 10 },
-      { epsgCode: 'EPSG:2903' },
+      { epsgCode: 'EPSG:21781' },
     )
     const g = georef({ epsgCode: null, eastings: 500_000, northings: 4_500_000 })
 
@@ -366,7 +368,7 @@ describe('unresolved cloud CRS', () => {
       .not.toBe('shared-crs')
 
     // The user pastes a definition — the same registry map mode writes to.
-    const reg = registerCustomProj4('EPSG:2903',
+    const reg = registerCustomProj4('EPSG:21781',
       '+proj=tmerc +lat_0=31 +lon_0=-106.25 +k=0.9999 +x_0=500000.0000000002 ' +
       '+y_0=0 +ellps=GRS80 +units=us-ft +no_defs')
     expect(reg.ok).toBe(true)
@@ -377,8 +379,8 @@ describe('unresolved cloud CRS', () => {
   })
 
   it('rejects a definition proj4 cannot parse, leaving the registry untouched', () => {
-    expect(registerCustomProj4('EPSG:2903', 'not a projection at all').ok).toBe(false)
-    const frame = frameOf({ x: 0, y: 0, z: 0 }, { x: 100, y: 100, z: 10 }, { epsgCode: 'EPSG:2903' })
+    expect(registerCustomProj4('EPSG:21781', 'not a projection at all').ok).toBe(false)
+    const frame = frameOf({ x: 0, y: 0, z: 0 }, { x: 100, y: 100, z: 10 }, { epsgCode: 'EPSG:21781' })
     expect(unresolvedCloudCrs(frame)).toBe(true)
   })
 })
@@ -431,8 +433,8 @@ describe('offset persistence', () => {
   it('round-trips a user-supplied proj4 definition per file', () => {
     const key = cloudFileKey(file)
     const def = '+proj=tmerc +lat_0=31 +lon_0=-106.25 +k=0.9999 +x_0=500000 +y_0=0 +ellps=GRS80 +units=us-ft +no_defs'
-    saveCloudProj4(key, 'EPSG:2903', def)
-    expect(loadCloudProj4(key)).toEqual({ code: 'EPSG:2903', def })
+    saveCloudProj4(key, 'EPSG:21781', def)
+    expect(loadCloudProj4(key)).toEqual({ code: 'EPSG:21781', def })
     expect(loadCloudProj4('another-file')).toBeNull()
   })
 

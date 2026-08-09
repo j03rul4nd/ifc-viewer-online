@@ -9,6 +9,7 @@
 
 import proj4 from 'proj4'
 import { ok, err, type Result } from '../result'
+import { resolveStatePlane } from './crs-stateplane'
 
 export interface CrsDef {
   /** Normalized code, e.g. "EPSG:25832". */
@@ -157,6 +158,12 @@ export function resolveCrs(code: string): Result<CrsDef> {
     const utm = resolveUtm(parseInt(m[1], 10))
     if (utm) return ok(utm)
   }
+  // US State Plane: a table rather than a formula, so it lives in its own module.
+  // Checked after UTM because a US site is far likelier to be delivered in UTM,
+  // and before failing because "paste a proj4 string" is a bad thing to ask of
+  // someone whose file already told us exactly which zone it is in.
+  const sp = resolveStatePlane(normalized)
+  if (sp) return ok(sp)
   return err(new Error('unknownCrs'))
 }
 
