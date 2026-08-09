@@ -31,5 +31,9 @@
     "fixApplied": "修正を適用しました: {{description}}",
     "undone": "元に戻しました: {{description}}",
     "redone": "やり直しました: {{description}}"
+  },
+  "tree": {
+    "notInTree": "この要素は空間ツリーにありません。その上位もありません。",
+    "revealedHost": "単体では空間ツリーにありません。所属先を表示しました:「{{name}}」"
   }
 }

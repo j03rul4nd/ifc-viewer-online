@@ -40,8 +40,24 @@ live preview). This doc is the reference for the underlying parameters.
 | `isolate`  | IFC class, e.g. `IfcWall`        | —         | Isolate a category after load (best-effort, by canonical IFC class). |
 | `lang`     | locale code (`en`, `es`, …)      | auto      | Force the UI language (only if supported). |
 | `accent`   | hex `rrggbb` / `#rrggbb`         | brand     | Tint the viewer's accent to match your dashboard. |
+| `solar`    | `YYYY-MM-DDTHH:MM` or `MM-DDTHH:MM` | —      | Open the Sun & Moon study at this **site-local** wall time. The evergreen form (no year) uses the current year. |
+| `moon`     | `1` / `0`                        | off       | Turn on the moon light for a `solar` deep link. |
 | `map`      | `1` / `0` / layer list           | off       | Drop the model onto the basemap using its own georeferencing. A layer list turns extras on: `map=terrain,buildings,showcase`. Naming a layer implies the map. |
 | `scan`     | URL(s)                           | —         | Point cloud(s) to load alongside the model. Comma-separated or repeated, like `model`. |
+
+### Sun study (`solar` / `moon`)
+
+```
+?model=/models/poblenou/BCN-IVO-ZZ-XX-M3-A-0001.ifc&solar=06-21T18:30&moon=1
+```
+
+Starts the study at the summer solstice, 18:30 local, and reads the timezone from
+the model's own georeferencing — the Poblenou set comes up as `UTC+2` in June.
+
+It only fires when a location actually resolves. A model with no georeferencing
+would otherwise pop the blocking "where is this?" notice, and a deep link that
+opens a modal is worse than one that quietly does nothing; in that case the
+study simply does not start.
 
 ### Scene deep links (`map` / `scan`)
 

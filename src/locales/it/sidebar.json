@@ -78,7 +78,9 @@
     "empty": "vuoto",
     "loadingPsets": "Caricamento set di proprietà…",
     "filterProps": "Filtra proprietà…",
-    "noPropsMatch": "Nessuna proprietà corrisponde"
+    "noPropsMatch": "Nessuna proprietà corrisponde",
+    "ownerModel": "Appartiene a {{name}} — clicca per renderlo attivo",
+    "unknownModel": "Modello sconosciuto"
   },
   "tabs": {
     "properties": "Proprietà",

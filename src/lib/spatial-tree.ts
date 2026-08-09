@@ -294,6 +294,83 @@ export function locateElement(
   return null
 }
 
+/**
+ * Where "reveal in tree" should actually go.
+ *
+ * THE CASE THIS EXISTS FOR: the tree lists what each storey CONTAINS
+ * (IfcRelContainedInSpatialStructure). Anything that is a PART of something
+ * else — the 102 glazed panels of a curtain wall, the flight inside a stair —
+ * is aggregated into its host and appears nowhere in the tree. Clicking
+ * "reveal in tree" on one of those used to do nothing at all: no scroll, no
+ * message, no indication that the button had been pressed.
+ *
+ * So when the element itself is not listed, walk up its decomposition until
+ * something is, and reveal that instead — the curtain wall for a panel, the
+ * stair for a flight. That is what the user wanted anyway, and saying which
+ * one you landed on is the difference between an answer and a shrug.
+ *
+ * `hostOf` returns the element that a part belongs to (IfcRelAggregates),
+ * or undefined at the top. Passed in rather than imported so this stays free
+ * of store shapes.
+ */
+export interface RevealTarget {
+  modelId: string
+  /** What to scroll to: the element asked for, or the nearest listed host. */
+  expressId: number
+  ancestorKeys: string[]
+  /** True when the element asked for is not in the tree and a host stood in. */
+  viaHost: boolean
+  /** False when the model was guessed rather than given. */
+  exact: boolean
+}
+
+/** How far up a decomposition chain to look before giving up. */
+const MAX_HOST_HOPS = 8
+
+export function resolveRevealTarget(
+  trees: readonly ModelTreeSource[],
+  expressId: number,
+  preferModelId: string | undefined,
+  hostOf: (modelId: string, expressId: number) => number | undefined,
+): RevealTarget | null {
+  const direct = locateElement(trees, expressId, preferModelId)
+  if (direct) {
+    return { modelId: direct.modelId, expressId, ancestorKeys: direct.ancestorKeys, viaHost: false, exact: direct.exact }
+  }
+
+  // Not listed anywhere. Try to climb, in each candidate model — the chain is
+  // per model, so a part of model A must not be resolved through model B's
+  // aggregation just because the ids collide.
+  const candidates = preferModelId
+    ? [preferModelId, ...trees.map((t) => t.modelId).filter((id) => id !== preferModelId)]
+    : trees.map((t) => t.modelId)
+
+  for (const modelId of candidates) {
+    const seen = new Set<number>([expressId])
+    let current = hostOf(modelId, expressId)
+    for (let hop = 0; current !== undefined && hop < MAX_HOST_HOPS; hop++) {
+      if (seen.has(current)) break            // circular aggregation, seen in the wild
+      seen.add(current)
+      const found = locateElement(trees, current, modelId)
+      if (found && found.modelId === modelId) {
+        return { modelId, expressId: current, ancestorKeys: found.ancestorKeys, viaHost: true, exact: found.exact }
+      }
+      current = hostOf(modelId, current)
+    }
+  }
+  return null
+}
+
+/** Invert a host → parts map into the parts → host lookup `resolveRevealTarget` wants. */
+export function invertDecomposition(decomp: Map<number, number[]> | undefined): Map<number, number> {
+  const out = new Map<number, number>()
+  if (!decomp) return out
+  for (const [host, parts] of decomp) {
+    for (const part of parts) if (!out.has(part)) out.set(part, host)
+  }
+  return out
+}
+
 // ── Issue index ───────────────────────────────────────────────────────────────
 
 export interface IssueCounts { errors: number; warnings: number; info: number }

@@ -8,7 +8,7 @@ import { useUIStore } from '../stores/uiStore'
 type SidebarTab = 'props' | 'cats' | 'qty'
 import { makeHiddenKey, expandWithDecomp } from '../lib/visibility'
 import { useEditorHistory } from '../hooks/useEditorHistory'
-import { useEditorStore } from '../stores/editorStore'
+import { useEditorStore, pendingEditsFor } from '../stores/editorStore'
 import { useTakeoffStore, selectTakeoffGroups, selectTakeoffStatus } from '../stores/takeoffStore'
 import { useSceneStore } from '../stores/sceneStore'
 import { computeTakeoff } from '../lib/takeoff'
@@ -566,9 +566,16 @@ function PropertiesPanel({
   // Read raw record (stable reference) to avoid infinite-loop selector issue
   const spatialTreesRecord = useValidationStore((s) => s.spatialTrees)
   const result             = useValidationStore((s) => s.result)
-  const { hiddenElements, setElementsVisible } = useUIStore()
+  // Selectors, not whole stores: this panel re-renders on every selection and
+  // was waking on every unrelated store write.
+  const hiddenElements     = useUIStore((s) => s.hiddenElements)
+  const setElementsVisible = useUIStore((s) => s.setElementsVisible)
+  const sceneModels    = useSceneStore((s) => s.models)
+  const activeModelId  = useSceneStore((s) => s.activeModelId)
+  const setActiveModel = useSceneStore((s) => s.setActiveModel)
+  const showModelChip  = sceneModels.length > 1
   const { addCommand } = useEditorHistory()
-  const { diffs } = useEditorStore()
+  const diffs = useEditorStore((s) => s.diffs)
 
   const [sections, setSections] = useState({
     location: true,
@@ -622,23 +629,26 @@ function PropertiesPanel({
   }, [selected, spatialTree])
 
   // ── Issues for this element ──────────────────────────────────────────────
+  // Scoped to its model. Without that, selecting a column in the structural
+  // model listed the issues of whatever shares its number in the architectural
+  // and services models too — and every IFC numbers from #1, so something
+  // always does.
   const elementIssues = useMemo(() => {
     if (!selected || !result) return []
     const id = parseInt(selected.id, 10)
-    return result.issues.filter(i => i.expressId === id)
+    return result.issues.filter(
+      (i) => i.expressId === id && (!selected.modelId || !i.modelId || i.modelId === selected.modelId),
+    )
   }, [selected, result])
 
   // ── Pending diffs for this element ───────────────────────────────────────
+  // `diffs` is in the dependency list but not read: it is the store's own
+  // change signal, and pendingEditsFor walks the history (which keeps the
+  // modelId that flattening drops).
   const { pendingDiffs, pendingPropDiffs } = useMemo(() => {
     if (!selected) return { pendingDiffs: new Map<string, string>(), pendingPropDiffs: new Map<string, string>() }
-    const id = parseInt(selected.id, 10)
-    const renames = new Map<string, string>()
-    const propEdits = new Map<string, string>()  // propExpressId string → newValue
-    for (const d of diffs) {
-      if (d.type === 'RENAME' && d.expressId === id) renames.set(d.field, d.newValue)
-      if (d.type === 'SET_PROPERTY' && d.expressId === id) propEdits.set(String(d.propExpressId), d.newValue)
-    }
-    return { pendingDiffs: renames, pendingPropDiffs: propEdits }
+    const edits = pendingEditsFor(parseInt(selected.id, 10), selected.modelId)
+    return { pendingDiffs: edits.renames, pendingPropDiffs: edits.properties }
   }, [selected, diffs])
 
   // Resolve display value: pending diff → real IFC data → synthetic fallback
@@ -701,6 +711,15 @@ function PropertiesPanel({
     )
   }
 
+  // WHICH MODEL AM I LOOKING AT. In a federated scene the panel used to answer
+  // everything about an element except the one thing that disambiguates it: the
+  // file it came from. Three disciplines of one building have the same storeys
+  // at the same elevations and elements numbered from #1 in each, so "Column A1
+  // - Ground" on its own is genuinely ambiguous.
+  const ownerModel = selected.modelId
+    ? sceneModels.find((m) => m.id === selected.modelId) ?? null
+    : null
+
   const cat = categories.find(c => c.id === selected.type || c.id === selected.type.replace('STANDARDCASE', ''))
   const catColor = cat ? `#${cat.color.toString(16).padStart(6, '0')}` : 'var(--text-dim)'
   const isHidden = expressId != null && hiddenElements.has(makeHiddenKey(selected?.modelId ?? '', expressId))
@@ -756,6 +775,26 @@ function PropertiesPanel({
     >
       {/* ── Header ── */}
       <div className="px-4 pt-3.5 pb-3 border-b border-[var(--border)]">
+        {/* Which model this element belongs to — only worth the row when there
+            is more than one to confuse it with. Clicking makes it active, which
+            is what every other model-targeted action then follows. */}
+        {showModelChip && (
+          <button
+            onClick={() => ownerModel && setActiveModel(ownerModel.id)}
+            disabled={!ownerModel || ownerModel.id === activeModelId}
+            title={ownerModel ? t('properties.ownerModel', { name: ownerModel.fileName }) : undefined}
+            className="mb-2 max-w-full flex items-center gap-1.5 h-5 px-1.5 rounded-md bg-[var(--surface-2)] border border-[var(--border)] text-[10px] text-[var(--text-faint)] hover:text-[var(--text)] hover:border-[var(--accent)] disabled:hover:text-[var(--text-faint)] disabled:hover:border-[var(--border)] transition-colors"
+          >
+            <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+              <path d="M6 1L11 3.5L6 6L1 3.5Z" /><path d="M1 6.5L6 9L11 6.5" />
+            </svg>
+            <span className="truncate">{ownerModel?.fileName ?? t('properties.unknownModel')}</span>
+            {ownerModel && ownerModel.id === activeModelId && (
+              <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
+            )}
+          </button>
+        )}
+
         {/* Type badge row */}
         <div className="flex items-center gap-2 mb-2">
           <div className="w-2.5 h-2.5 rounded-[3px] shrink-0" style={{ background: catColor }} />

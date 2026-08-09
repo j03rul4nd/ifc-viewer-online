@@ -156,3 +156,46 @@ export const selectCanUndo    = (s: EditorStore) => s.canUndo
 export const selectCanRedo    = (s: EditorStore) => s.canRedo
 export const selectDiffCount  = (s: EditorStore) => s.diffs.length
 export const selectSelection  = (s: EditorStore) => s.selection
+
+// ── Pending edits for one element ─────────────────────────────────────────────
+
+/** Uncommitted edits on a single element, by field and by property. */
+export interface PendingEdits {
+  /** RENAME field → new value. */
+  renames: Map<string, string>
+  /** SET_PROPERTY propExpressId (as string) → new value. */
+  properties: Map<string, string>
+}
+
+/**
+ * What is pending on `expressId` in `modelId`.
+ *
+ * Walks the HISTORY rather than the flattened `diffs`, because the modelId
+ * lives on the command and flattening throws it away — the one thing that says
+ * which model an edit belongs to. Reading `diffs` instead is how renaming a
+ * storey in one model came out looking like a pending rename on the
+ * same-numbered storey in every other loaded model.
+ *
+ * A command with no modelId (single-model history, or an older session) counts
+ * for whoever asks: it cannot be attributed, and dropping it would hide a real
+ * pending edit.
+ */
+export function pendingEditsFor(expressId: number, modelId?: string): PendingEdits {
+  const { history, historyIndex } = useEditorStore.getState()
+  const renames = new Map<string, string>()
+  const properties = new Map<string, string>()
+  for (let i = 0; i <= historyIndex; i++) {
+    const command = history[i]
+    if (!command) continue
+    if (modelId && command.modelId && command.modelId !== modelId) continue
+    for (const diff of command.diffs) {
+      if (diff.type === 'RENAME' && diff.expressId === expressId) {
+        renames.set(diff.field, diff.newValue)
+      }
+      if (diff.type === 'SET_PROPERTY' && diff.expressId === expressId) {
+        properties.set(String(diff.propExpressId), diff.newValue)
+      }
+    }
+  }
+  return { renames, properties }
+}

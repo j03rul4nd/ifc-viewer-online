@@ -31,5 +31,9 @@
     "fixApplied": "Correcció aplicada: {{description}}",
     "undone": "Desfet: {{description}}",
     "redone": "Refet: {{description}}"
+  },
+  "tree": {
+    "notInTree": "Aquest element no és a l'arbre espacial, ni res per sobre seu.",
+    "revealedHost": "No és a l'arbre pel seu compte. S'ha mostrat allò de què forma part: «{{name}}»."
   }
 }

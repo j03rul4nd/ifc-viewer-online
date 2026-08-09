@@ -11,7 +11,8 @@
 import { describe, it, expect } from 'vitest'
 import {
   scopedElementKey, flattenTrees, flattenTreesFiltered, collectSpatialKeys,
-  nextExpansion, locateElement, buildIssueIndex, fileNameFromModelId,
+  nextExpansion, locateElement, resolveRevealTarget, invertDecomposition,
+  buildIssueIndex, fileNameFromModelId,
   type ModelTreeSource,
 } from './spatial-tree'
 import { makeHiddenKey } from './visibility'
@@ -240,5 +241,92 @@ describe('fileNameFromModelId', () => {
 
   it('leaves an id it does not recognise alone', () => {
     expect(fileNameFromModelId('model-a')).toBe('model-a')
+  })
+})
+
+// ── resolveRevealTarget ──────────────────────────────────────────────────────
+// The tree lists what a storey CONTAINS. Anything that is a PART of something
+// else is aggregated into its host and appears nowhere — which in the Poblenou
+// architectural model is all 102 glazed panels and all 3 stair flights.
+// "Reveal in tree" on one of those used to do nothing whatsoever.
+
+describe('resolveRevealTarget', () => {
+  /** A curtain wall listed in the storey, with panels that are not. */
+  function withParts(): { trees: ModelTreeSource[]; hostOf: (m: string, id: number) => number | undefined } {
+    const wall = element(50, 'Curtain Wall North', 'IfcCurtainWall')
+    const arc = node(10, 'Project A', 'IfcProject', [
+      node(20, 'Site A', 'IfcSite', [
+        node(30, 'Storey A', 'IfcBuildingStorey', [], [wall]),
+      ]),
+    ])
+    const trees = [{ modelId: 'arc-1', tree: [arc] }, ...twoCollidingModels().slice(1)]
+    // 51 and 52 are panels of wall 50; 53 is a part of panel 51 (two hops).
+    const hosts: Record<string, Map<number, number>> = {
+      'arc-1': new Map([[51, 50], [52, 50], [53, 51], [90, 91], [91, 90]]),
+      'str-1': new Map(),
+    }
+    return { trees, hostOf: (m, id) => hosts[m]?.get(id) }
+  }
+
+  it('returns the element itself when the tree lists it', () => {
+    const { trees, hostOf } = withParts()
+    const target = resolveRevealTarget(trees, 50, 'arc-1', hostOf)
+    expect(target).toMatchObject({ modelId: 'arc-1', expressId: 50, viaHost: false })
+  })
+
+  it('shows the host when the element is a part — the panel case', () => {
+    const { trees, hostOf } = withParts()
+    const target = resolveRevealTarget(trees, 51, 'arc-1', hostOf)
+    expect(target).toMatchObject({ modelId: 'arc-1', expressId: 50, viaHost: true })
+    // And it opens the path down to the host, not to nothing.
+    expect(target!.ancestorKeys).toEqual([
+      scopedElementKey('arc-1', 10), scopedElementKey('arc-1', 20), scopedElementKey('arc-1', 30),
+    ])
+  })
+
+  it('climbs more than one hop', () => {
+    const { trees, hostOf } = withParts()
+    expect(resolveRevealTarget(trees, 53, 'arc-1', hostOf))
+      .toMatchObject({ expressId: 50, viaHost: true })
+  })
+
+  it('climbs within the named model, never through another one', () => {
+    // str-1 has no aggregation at all. Asking for a part of arc-1's wall while
+    // naming str-1 must not resolve through arc-1's chain and land in str-1.
+    const { trees, hostOf } = withParts()
+    const target = resolveRevealTarget(trees, 51, 'str-1', hostOf)
+    expect(target?.modelId).toBe('arc-1')
+    expect(target?.viaHost).toBe(true)
+  })
+
+  it('gives up rather than looping on circular aggregation', () => {
+    // 90 hosts 91 hosts 90. Real files contain this; an unguarded walk hangs.
+    const { trees, hostOf } = withParts()
+    expect(resolveRevealTarget(trees, 90, 'arc-1', hostOf)).toBeNull()
+  })
+
+  it('returns null for something in no model and part of nothing', () => {
+    const { trees, hostOf } = withParts()
+    expect(resolveRevealTarget(trees, 9999, 'arc-1', hostOf)).toBeNull()
+  })
+})
+
+describe('invertDecomposition', () => {
+  it('turns host → parts into part → host', () => {
+    const inverted = invertDecomposition(new Map([[50, [51, 52]], [10, [20]]]))
+    expect(inverted.get(51)).toBe(50)
+    expect(inverted.get(52)).toBe(50)
+    expect(inverted.get(20)).toBe(10)
+    expect(inverted.get(50)).toBeUndefined()
+  })
+
+  it('keeps the first host when a part is claimed twice', () => {
+    // Malformed but real: an element listed under two aggregates. Picking one
+    // deterministically beats letting the last writer win.
+    expect(invertDecomposition(new Map([[1, [9]], [2, [9]]])).get(9)).toBe(1)
+  })
+
+  it('handles no map at all', () => {
+    expect(invertDecomposition(undefined).size).toBe(0)
   })
 })

@@ -78,7 +78,9 @@
     "empty": "leer",
     "loadingPsets": "Eigenschafts-Sets werden geladen…",
     "filterProps": "Eigenschaften filtern…",
-    "noPropsMatch": "Keine passenden Eigenschaften"
+    "noPropsMatch": "Keine passenden Eigenschaften",
+    "ownerModel": "Gehört zu {{name}} — zum Aktivieren klicken",
+    "unknownModel": "Unbekanntes Modell"
   },
   "tabs": {
     "properties": "Eigenschaften",

@@ -78,7 +78,9 @@
     "empty": "buit",
     "loadingPsets": "Carregant conjunts de propietats…",
     "filterProps": "Filtra les propietats…",
-    "noPropsMatch": "Cap propietat coincideix"
+    "noPropsMatch": "Cap propietat coincideix",
+    "ownerModel": "Pertany a {{name}} — fes clic per activar-lo",
+    "unknownModel": "Model desconegut"
   },
   "tabs": {
     "properties": "Propietats",

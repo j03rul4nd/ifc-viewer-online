@@ -31,5 +31,9 @@
     "fixApplied": "Korrektur angewendet: {{description}}",
     "undone": "Rückgängig gemacht: {{description}}",
     "redone": "Wiederhergestellt: {{description}}"
+  },
+  "tree": {
+    "notInTree": "Dieses Element steht nicht im Strukturbaum — und nichts darüber auch nicht.",
+    "revealedHost": "Nicht einzeln im Strukturbaum. Stattdessen sein Ganzes gezeigt: „{{name}}“."
   }
 }

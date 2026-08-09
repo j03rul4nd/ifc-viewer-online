@@ -31,5 +31,9 @@
     "fixApplied": "Correzione applicata: {{description}}",
     "undone": "Annullato: {{description}}",
     "redone": "Ripristinato: {{description}}"
+  },
+  "tree": {
+    "notInTree": "Questo elemento non è nell'albero spaziale, e nemmeno nulla sopra di esso.",
+    "revealedHost": "Non è nell'albero da solo. Mostrato ciò di cui fa parte: «{{name}}»."
   }
 }

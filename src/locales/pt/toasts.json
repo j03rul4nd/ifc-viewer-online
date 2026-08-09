@@ -31,5 +31,9 @@
     "fixApplied": "Correção aplicada: {{description}}",
     "undone": "Desfeito: {{description}}",
     "redone": "Refeito: {{description}}"
+  },
+  "tree": {
+    "notInTree": "Este elemento não está na árvore espacial, nem nada acima dele.",
+    "revealedHost": "Não está na árvore por si só. Mostrado aquilo de que faz parte: «{{name}}»."
   }
 }

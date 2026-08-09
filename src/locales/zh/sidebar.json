@@ -78,7 +78,9 @@
     "empty": "空",
     "loadingPsets": "加载属性集中…",
     "filterProps": "筛选属性…",
-    "noPropsMatch": "没有匹配的属性"
+    "noPropsMatch": "没有匹配的属性",
+    "ownerModel": "属于 {{name}} — 点击设为当前模型",
+    "unknownModel": "未知模型"
   },
   "tabs": {
     "properties": "属性",

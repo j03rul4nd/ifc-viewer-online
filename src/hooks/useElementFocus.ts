@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import type { RefObject } from 'react'
 import type { ViewerAPI } from '../lib/viewer'
-import type { ModelTreeHandle } from '../App'
+import type { ModelTreeHandle, RevealOutcome } from '../App'
 import { useUIStore } from '../stores/uiStore'
 
 interface ElementFocusHandlers {
@@ -13,8 +13,11 @@ interface ElementFocusHandlers {
   focusElements:     (ids: number[]) => void
   /** Frame + select a single element */
   frameElement:      (expressId: number, modelId?: string) => void
-  /** Open tree (if closed) then scroll to element, in the model that owns it */
-  revealInTree:      (expressId: number, modelId?: string) => void
+  /**
+   * Open tree (if closed) then scroll to element, in the model that owns it.
+   * Resolves with what the tree managed to do, so the caller can say so.
+   */
+  revealInTree:      (expressId: number, modelId?: string) => Promise<RevealOutcome>
 }
 
 export function useElementFocus(
@@ -39,14 +42,16 @@ export function useElementFocus(
     viewerApiRef.current?.selectElement(expressId, modelId)
   }, [viewerApiRef])
 
-  const revealInTree = useCallback((expressId: number, modelId?: string) => {
+  const revealInTree = useCallback((expressId: number, modelId?: string): Promise<RevealOutcome> => {
     if (!useUIStore.getState().treeVisible) {
       useUIStore.getState().setTreeVisible(true)
     }
-    // Slight delay so the tree has time to mount/expand before scrolling
-    setTimeout(() => {
-      modelTreeRef.current?.revealElement(expressId, modelId)
-    }, 80)
+    // Slight delay so the tree has time to mount/expand before scrolling.
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(modelTreeRef.current?.revealElement(expressId, modelId) ?? { ok: false })
+      }, 80)
+    })
   }, [modelTreeRef])
 
   return { jumpToElement, selectElement, focusElements, frameElement, revealInTree }

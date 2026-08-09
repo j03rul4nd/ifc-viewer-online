@@ -78,7 +78,9 @@
     "empty": "empty",
     "loadingPsets": "Loading property sets…",
     "filterProps": "Filter properties…",
-    "noPropsMatch": "No properties match"
+    "noPropsMatch": "No properties match",
+    "ownerModel": "Belongs to {{name}} — click to make it the active model",
+    "unknownModel": "Unknown model"
   },
   "tabs": {
     "properties": "Properties",

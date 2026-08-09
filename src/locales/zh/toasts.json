@@ -31,5 +31,9 @@
     "fixApplied": "已应用修复：{{description}}",
     "undone": "已撤销：{{description}}",
     "redone": "已重做：{{description}}"
+  },
+  "tree": {
+    "notInTree": "该元素不在空间树中，其上层也不在。",
+    "revealedHost": "它本身不在空间树中，已显示它所属的构件：“{{name}}”。"
   }
 }

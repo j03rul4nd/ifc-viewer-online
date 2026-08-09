@@ -78,7 +78,9 @@
     "empty": "空",
     "loadingPsets": "プロパティセットを読み込み中…",
     "filterProps": "プロパティを絞り込み…",
-    "noPropsMatch": "一致するプロパティがありません"
+    "noPropsMatch": "一致するプロパティがありません",
+    "ownerModel": "{{name}} に属します — クリックでアクティブに",
+    "unknownModel": "不明なモデル"
   },
   "tabs": {
     "properties": "プロパティ",

@@ -129,10 +129,10 @@ import {
 } from './lib/analytics'
 
 // ── ModelTree imperative handle ───────────────────────────────────────────────
-export interface ModelTreeHandle {
-  /** `modelId` decides WHICH model to reveal in — see ModelTree's own copy. */
-  revealElement: (expressId: number, modelId?: string) => void
-}
+// Re-exported from the component so the ref type has one definition; see
+// ModelTree.tsx for what the outcome means and why there is one.
+import type { ModelTreeHandle, RevealOutcome } from './components/ModelTree'
+export type { ModelTreeHandle, RevealOutcome }
 
 /**
  * Hand an SDK command to the panel that owns the feature and resolve once that
@@ -1064,7 +1064,23 @@ export default function App() {
   )
   const handleFocusElements      = elementFocus.focusElements
   const handleFrameElement       = elementFocus.frameElement
-  const handleRevealInTree       = elementFocus.revealInTree
+  /**
+   * Reveal, and report when it could not do exactly what was asked.
+   *
+   * The tree lists what a storey CONTAINS, so anything that is a PART of
+   * something else — the glazed panels of a curtain wall, the flight inside a
+   * stair — is not in it. This used to be a button that did nothing at all for
+   * those; now it shows the host and says which one.
+   */
+  const handleRevealInTree = useCallback((expressId: number, modelId?: string): void => {
+    void elementFocus.revealInTree(expressId, modelId).then((outcome) => {
+      if (!outcome.ok) {
+        toast(tToasts('tree.notInTree'), 'info')
+      } else if (outcome.viaHost) {
+        toast(tToasts('tree.revealedHost', { name: outcome.hostName }), 'info')
+      }
+    })
+  }, [elementFocus, tToasts])
 
   // ── Activate a specific model in both store and viewer ───────────────────
   const handleSetActiveModel = useCallback((id: string): void => {

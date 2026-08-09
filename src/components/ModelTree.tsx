@@ -13,7 +13,8 @@ import { modelRegistry } from '../lib/model-registry'
 import { makeHiddenKey, expandWithDecomp } from '../lib/visibility'
 import {
   scopedElementKey, flattenTrees, flattenTreesFiltered, collectSpatialKeys,
-  nextExpansion, locateElement, buildIssueIndex, emptyIssueIndex, fileNameFromModelId,
+  nextExpansion, locateElement, resolveRevealTarget, invertDecomposition,
+  buildIssueIndex, emptyIssueIndex, fileNameFromModelId,
   type FlatNode, type ModelIssueIndex, type ModelTreeSource,
 } from '../lib/spatial-tree'
 import { useEditorHistory } from '../hooks/useEditorHistory'
@@ -23,6 +24,14 @@ import type { SpatialNode } from '../types'
 
 // ── Imperative handle ─────────────────────────────────────────────────────────
 
+/** What `revealElement` actually managed to do — see the Sidebar's button. */
+export type RevealOutcome =
+  | { ok: true; viaHost: false }
+  /** The element is not in the tree; its host was shown instead. */
+  | { ok: true; viaHost: true; hostName: string }
+  /** Nothing to reveal: not in any tree, and nothing above it is either. */
+  | { ok: false }
+
 export interface ModelTreeHandle {
   /**
    * Open the tree down to an element and scroll to it.
@@ -30,8 +39,11 @@ export interface ModelTreeHandle {
    * `modelId` is not optional decoration: with federated models the same
    * expressId exists in all of them, so without it this reveals whichever model
    * happens to be first — the right row number in the wrong building.
+   *
+   * Returns what it did, because it cannot always do what was asked and a
+   * button that silently does nothing is worse than one that says why.
    */
-  revealElement: (expressId: number, modelId?: string) => void
+  revealElement: (expressId: number, modelId?: string) => RevealOutcome
 }
 
 // The flattening, filtering, expansion and issue-indexing all live in
@@ -510,14 +522,22 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
     }, [])
 
     // ── Imperative handle: revealElement ────────────────────────────────────
+    const decompMaps = useValidationStore((s) => s.decompMaps)
+    const hostOf = useCallback((modelId: string, id: number): number | undefined => {
+      // Inverted lazily and per call: reveal is a click, not a render, and the
+      // maps are per model so caching them here would just be another thing to
+      // invalidate when a model is removed.
+      return invertDecomposition(decompMaps[modelId]).get(id)
+    }, [decompMaps])
+
     useImperativeHandle(ref, () => ({
-      revealElement(expressId: number, modelId?: string) {
+      revealElement(expressId: number, modelId?: string): RevealOutcome {
         // Which model, decided once and up front. The old version expanded
         // ancestors in whichever tree matched first and then selected without a
         // model at all, so revealing an issue in a federated set opened the
         // right row number in the wrong building.
-        const target = locateElement(allTrees, expressId, modelId)
-        if (!target) return
+        const target = resolveRevealTarget(allTrees, expressId, modelId, hostOf)
+        if (!target) return { ok: false }
 
         setQuery('')   // a filtered list may not contain the target row
         setCollapsedModels((prev) => {
@@ -533,25 +553,31 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
         // Scroll after React has rendered the newly opened rows. The list is
         // recomputed from the state we just set rather than read back out of
         // it, so this does not depend on the re-render having landed.
+        const collapsedNext = new Set([...collapsedModels].filter((m) => m !== target.modelId))
+        const flat = flattenTrees(allTrees, {
+          expanded: expandedNext, collapsedModels: collapsedNext,
+          showHeaders: showModelHeaders, fileNameOf,
+        })
+        const wanted = scopedElementKey(target.modelId, target.expressId)
+        const idx = flat.findIndex((f) => f.kind !== 'model-header' && f.key === wanted)
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
-            const flat = flattenTrees(allTrees, {
-              expanded: expandedNext,
-              collapsedModels: new Set([...collapsedModels].filter((m) => m !== target.modelId)),
-              showHeaders: showModelHeaders,
-              fileNameOf,
-            })
-            const wanted = scopedElementKey(target.modelId, expressId)
-            const idx = flat.findIndex((f) => f.kind !== 'model-header' && f.key === wanted)
             if (idx !== -1) virtualizer.scrollToIndex(idx, { align: 'center', behavior: 'smooth' })
           })
         })
 
-        setSelection([{ expressId, modelId: target.modelId }])
-        onSelectElement?.(expressId, target.modelId)
+        setSelection([{ expressId: target.expressId, modelId: target.modelId }])
+        onSelectElement?.(target.expressId, target.modelId)
+
+        if (!target.viaHost) return { ok: true, viaHost: false }
+        const row = flat[idx]
+        const hostName = row?.kind === 'spatial' ? row.node.name
+          : row?.kind === 'element' ? row.element.name
+          : `#${target.expressId}`
+        return { ok: true, viaHost: true, hostName }
       },
     }), [allTrees, expanded, collapsedModels, showModelHeaders, fileNameOf, virtualizer,
-         setSelection, onSelectElement])
+         hostOf, setSelection, onSelectElement])
 
     // ────────────────────────────────────────────────────────────────────────
 
