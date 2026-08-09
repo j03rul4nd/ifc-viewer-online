@@ -67,6 +67,13 @@ export interface PointCloudContext {
   } | null
   /** Frame a world-space box. Reuses the viewer's own camera framing. */
   frameBox(min: THREE.Vector3, max: THREE.Vector3): void
+  /**
+   * Offer an object to the app's shared raycaster, so measurement tools can hit
+   * a scan. Optional: without it clouds stay inspect-only, which is what every
+   * test context and any embedder without a world gets.
+   */
+  registerRaycastTarget?(object: THREE.Object3D): void
+  unregisterRaycastTarget?(object: THREE.Object3D): void
 }
 
 // ── Public API ─────────────────────────────────────────────────────────────────
@@ -139,6 +146,14 @@ export interface PointCloudSystemAPI {
    * has asked to inspect the scan.
    */
   pickPoint(clientX: number, clientY: number, tolerancePx?: number): PickedPoint | null
+  /**
+   * The same search, from a world-space ray rather than a screen position, and
+   * optionally restricted to one cloud.
+   *
+   * This is what the per-cloud `raycast` hook calls, and it is exported so the
+   * measurement path can be tested without a canvas or a pointer event.
+   */
+  pickAlongRay(ray: THREE.Ray, tolerancePx?: number, cloudId?: string | null): PickedPoint | null
   /** Number of clouds currently resident. */
   count(): number
   dispose(): void
@@ -452,10 +467,120 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
   function disposeCloud(cloud: CloudRecord): void {
     for (const chunk of cloud.chunks) disposeChunk(chunk)
     cloud.chunks.length = 0
+    // Withdraw from the shared raycaster BEFORE leaving the scene. The registry
+    // is a Set held elsewhere, so a root left in it survives removal from the
+    // scene graph entirely — the closure keeps its chunks and their GPU buffers
+    // reachable, and every later ray still runs a pick against a cloud the user
+    // deleted. INV-P3 covers the buffers; this covers the reference.
+    ctx.unregisterRaycastTarget?.(cloud.root)
     cloud.root.removeFromParent()
   }
 
   // ── API ──────────────────────────────────────────────────────────────────────
+
+
+  /**
+   * Screen-space pick tolerance in pixels when the ray comes from a measurement
+   * tool rather than a deliberate inspect click.
+   *
+   * Tighter than inspect's 8 px on purpose. Someone measuring is aiming at one
+   * specific point on one specific surface, and a generous radius does not help
+   * them there — it silently snaps to a neighbour and reports a number that
+   * looks entirely plausible.
+   */
+  const MEASURE_TOLERANCE_PX = 6
+
+  /**
+   * Nearest cloud point to a WORLD-SPACE ray — the shared core behind both
+   * click-to-inspect and the measurement raycast.
+   *
+   * `only` restricts the search to one cloud, which is what the per-cloud
+   * `raycast` needs: three calls it once per registered object and expects that
+   * call to answer for that object alone.
+   */
+  function pickAlongRay(
+    ray: THREE.Ray, tolerancePx: number, only: CloudRecord | null,
+  ): PickedPoint | null {
+    if (disposed || clouds.size === 0) return null
+    const camera = ctx.getActiveCamera()
+
+    const size = ctx.renderer.getSize(new THREE.Vector2())
+    const persp = camera as THREE.PerspectiveCamera
+    const fov = typeof persp.fov === 'number' ? persp.fov : 60
+    const projectionFactor = size.y / (2 * Math.tan((fov * Math.PI) / 360))
+
+    let best: PickedPoint | null = null
+    let bestT = Infinity
+
+    for (const cloud of (only ? [only] : clouds.values())) {
+      if (!cloud.root.visible) continue
+      cloud.root.updateMatrixWorld(true)
+
+      // Take the ray into the cloud's local space once, rather than taking
+      // every point out of it. The scale cancels in the comparison below.
+      const inverse = new THREE.Matrix4().copy(cloud.root.matrixWorld).invert()
+      const localOrigin = ray.origin.clone().applyMatrix4(inverse)
+      const localDir = ray.direction.clone()
+        .transformDirection(inverse).normalize()
+      const localRay = {
+        origin: { x: localOrigin.x, y: localOrigin.y, z: localOrigin.z },
+        direction: { x: localDir.x, y: localDir.y, z: localDir.z },
+      }
+      const scale = cloud.root.scale.x || 1
+
+      for (const chunk of cloud.chunks) {
+        if (!chunk.points.visible) continue
+        const centre = chunk.points.position
+        // Prefilter on the chunk sphere: a few hundred cheap tests before any
+        // point is touched at all.
+        const hitAt = raySphereDistance(
+          localRay, { x: centre.x, y: centre.y, z: centre.z }, chunk.localRadius * 1.05,
+        )
+        if (hitAt === null) continue
+
+        // Screen-space tolerance, converted into this cloud's local units.
+        const worldDistance = Math.max(hitAt * scale, 1e-3)
+        const threshold = pickThresholdAt(worldDistance, tolerancePx, projectionFactor) / scale
+
+        // Only the DRAWN range — LOD already decided what is visible, and
+        // picking something the user cannot see would be a lie.
+        const drawn = chunk.geometry.drawRange.count
+        const count = Math.min(
+          Number.isFinite(drawn) ? drawn : chunk.count,
+          chunk.count,
+        )
+        if (count <= 0) continue
+
+        const positions = chunk.geometry.getAttribute('position').array as Float32Array
+        const hit = pickInPositions(localRay, positions, count, threshold, centre)
+        if (!hit) continue
+
+        const worldT = hit.t * scale
+        if (worldT >= bestT) continue
+        bestT = worldT
+
+        const world = new THREE.Vector3(hit.point.x, hit.point.y, hit.point.z)
+          .applyMatrix4(cloud.root.matrixWorld)
+        const cls = chunk.geometry.getAttribute('pcClass')
+        const inten = chunk.geometry.getAttribute('pcIntensity')
+        best = {
+          cloudId: cloud.id,
+          position: world,
+          // Local coordinates are relative to SourceFrame.origin; adding it
+          // back gives the number that appears in the file itself.
+          sourcePosition: {
+            x: hit.point.x + (cloud.streaming?.frameOrigin.x ?? cloud.sourceOrigin.x),
+            y: hit.point.y + (cloud.streaming?.frameOrigin.y ?? cloud.sourceOrigin.y),
+            z: hit.point.z + (cloud.streaming?.frameOrigin.z ?? cloud.sourceOrigin.z),
+          },
+          classification: cls ? (cls.array as Uint8Array)[hit.index] : null,
+          intensity: inten ? (inten.array as Uint8Array)[hit.index] : null,
+          distance: worldT,
+        }
+      }
+    }
+    return best
+  }
 
   const api: PointCloudSystemAPI = {
     create(cloudId, alignment, sourceOrigin) {
@@ -468,7 +593,44 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
       // Points are never lit, never shadowed and never picked by the model
       // raycaster — keeping them out of those paths is most of the win.
       root.matrixAutoUpdate = true
+
+      /**
+       * The seam that lets measurement tools reach a scan.
+       *
+       * `Raycaster.intersectObjects` calls `object.raycast(raycaster, intersects)`,
+       * so anything that raycasts the scene — including @thatopen's `castRay`,
+       * which merges this with its IFC fast-pick and keeps whichever is nearer —
+       * gets cloud points through this one hook. That merge is precisely the
+       * as-built-vs-as-designed question: how far is this scanned point from the
+       * wall that was designed there.
+       *
+       * It hangs on the ROOT, not on the chunks, for two reasons. `castRay`
+       * hands `world.meshes` straight to three, so one registration means
+       * nothing has to stay in sync with LOD churn — chunks appear and vanish
+       * on every camera move, and a stale entry per chunk is a leak per chunk.
+       * And it routes through `pickAlongRay`, which keeps the bounding-sphere
+       * rejection, the draw-range awareness and the screen-space tolerance that
+       * three's own `Points.raycast` has none of: three tests EVERY vertex
+       * against the ray, which at twenty million points is a frozen tab, and
+       * that is exactly why the chunks below disable it.
+       */
+      root.raycast = (raycaster, intersects) => {
+        const hit = pickAlongRay(raycaster.ray, MEASURE_TOLERANCE_PX, clouds.get(cloudId) ?? null)
+        if (!hit) return
+        intersects.push({
+          // Distance from the ray ORIGIN, in world units — the same scale the
+          // IFC hit is measured in, or the nearer-wins comparison is meaningless.
+          distance: hit.distance,
+          point: hit.position.clone(),
+          object: root,
+        })
+      }
+
       ctx.scene.add(root)
+      // Opt in to being raycast by the rest of the app. Optional: a context that
+      // does not provide it (the tests, and any embedder without a world) simply
+      // keeps the pre-existing behaviour where clouds are inspect-only.
+      ctx.registerRaycastTarget?.(root)
 
       const record: CloudRecord = {
         id: cloudId, root, chunks: [], alignment,
@@ -660,84 +822,15 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
       )
       const raycaster = new THREE.Raycaster()
       raycaster.setFromCamera(ndc, camera)
-
-      const size = ctx.renderer.getSize(new THREE.Vector2())
-      const persp = camera as THREE.PerspectiveCamera
-      const fov = typeof persp.fov === 'number' ? persp.fov : 60
-      const projectionFactor = size.y / (2 * Math.tan((fov * Math.PI) / 360))
-
-      let best: PickedPoint | null = null
-      let bestT = Infinity
-
-      for (const cloud of clouds.values()) {
-        if (!cloud.root.visible) continue
-        cloud.root.updateMatrixWorld(true)
-
-        // Take the ray into the cloud's local space once, rather than taking
-        // every point out of it. The scale cancels in the comparison below.
-        const inverse = new THREE.Matrix4().copy(cloud.root.matrixWorld).invert()
-        const localOrigin = raycaster.ray.origin.clone().applyMatrix4(inverse)
-        const localDir = raycaster.ray.direction.clone()
-          .transformDirection(inverse).normalize()
-        const localRay = {
-          origin: { x: localOrigin.x, y: localOrigin.y, z: localOrigin.z },
-          direction: { x: localDir.x, y: localDir.y, z: localDir.z },
-        }
-        const scale = cloud.root.scale.x || 1
-
-        for (const chunk of cloud.chunks) {
-          if (!chunk.points.visible) continue
-          const centre = chunk.points.position
-          // Prefilter on the chunk sphere: a few hundred cheap tests before any
-          // point is touched at all.
-          const hitAt = raySphereDistance(
-            localRay, { x: centre.x, y: centre.y, z: centre.z }, chunk.localRadius * 1.05,
-          )
-          if (hitAt === null) continue
-
-          // Screen-space tolerance, converted into this cloud's local units.
-          const worldDistance = Math.max(hitAt * scale, 1e-3)
-          const threshold = pickThresholdAt(worldDistance, tolerancePx, projectionFactor) / scale
-
-          // Only the DRAWN range — LOD already decided what is visible, and
-          // picking something the user cannot see would be a lie.
-          const drawn = chunk.geometry.drawRange.count
-          const count = Math.min(
-            Number.isFinite(drawn) ? drawn : chunk.count,
-            chunk.count,
-          )
-          if (count <= 0) continue
-
-          const positions = chunk.geometry.getAttribute('position').array as Float32Array
-          const hit = pickInPositions(localRay, positions, count, threshold, centre)
-          if (!hit) continue
-
-          const worldT = hit.t * scale
-          if (worldT >= bestT) continue
-          bestT = worldT
-
-          const world = new THREE.Vector3(hit.point.x, hit.point.y, hit.point.z)
-            .applyMatrix4(cloud.root.matrixWorld)
-          const cls = chunk.geometry.getAttribute('pcClass')
-          const inten = chunk.geometry.getAttribute('pcIntensity')
-          best = {
-            cloudId: cloud.id,
-            position: world,
-            // Local coordinates are relative to SourceFrame.origin; adding it
-            // back gives the number that appears in the file itself.
-            sourcePosition: {
-              x: hit.point.x + (cloud.streaming?.frameOrigin.x ?? cloud.sourceOrigin.x),
-              y: hit.point.y + (cloud.streaming?.frameOrigin.y ?? cloud.sourceOrigin.y),
-              z: hit.point.z + (cloud.streaming?.frameOrigin.z ?? cloud.sourceOrigin.z),
-            },
-            classification: cls ? (cls.array as Uint8Array)[hit.index] : null,
-            intensity: inten ? (inten.array as Uint8Array)[hit.index] : null,
-            distance: worldT,
-          }
-        }
-      }
-      return best
+      return pickAlongRay(raycaster.ray, tolerancePx, null)
     },
+
+    pickAlongRay(ray, tolerancePx = 8, cloudId = null) {
+      const only = cloudId === null ? null : clouds.get(cloudId) ?? null
+      if (cloudId !== null && !only) return null
+      return pickAlongRay(ray, tolerancePx, only)
+    },
+
 
     remove(cloudId) {
       const cloud = clouds.get(cloudId)

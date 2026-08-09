@@ -2556,6 +2556,21 @@ export function createViewer(container: HTMLElement): ViewerAPI {
               console.debug('[Viewer] point cloud fit failed:', e instanceof Error ? e.message : e)
             }
           },
+          // `world.meshes` is what OBC's Casters hand to three, so putting a
+          // cloud root in it is what lets the measurement tools reach a scan —
+          // castRay runs this alongside its IFC fast-pick and keeps whichever is
+          // nearer, which is the whole as-built-vs-as-designed measurement.
+          //
+          // The Set is typed Set<THREE.Mesh> and a cloud root is a Group. The
+          // cast is safe and deliberate: three's raycasting is polymorphic and
+          // only ever calls `.raycast()`, which the root provides. Nothing here
+          // reads Mesh-specific members.
+          registerRaycastTarget: (object) => {
+            world.meshes.add(object as unknown as THREE.Mesh)
+          },
+          unregisterRaycastTarget: (object) => {
+            world.meshes.delete(object as unknown as THREE.Mesh)
+          },
         })
         return pointCloudInstance
       })

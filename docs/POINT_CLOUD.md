@@ -563,14 +563,15 @@ re-import.
 **A 400-million-point city scan.** Crop or decimate it first (§5) — the viewer
 will otherwise stop at 20 M points and tell you it did.
 
-## 11. Measuring against a scan — the decision, and the evidence for it
+## 11. Measuring against a scan
 
-The open question was whether point-to-point and point-to-IFC-surface measurement
-should join `@thatopen`'s measurement system or live in the point cloud panel.
+**Built.** The viewer's existing measurement tools reach a scan: pick Length,
+click a point on the cloud and a point on a wall, and you get the as-built
+deviation. No second measurement system, no second list, no second unit setting.
 
-**Decision: join `@thatopen`'s** — but through a custom `raycast`, not by
-re-enabling three.js point picking. The evidence, read out of the dependency
-rather than assumed:
+The question was whether to join `@thatopen`'s measurement system or grow one in
+the point cloud panel. The answer came out of reading the dependency rather than
+guessing at it:
 
 `Casters.castRay` (`@thatopen/components`) does two lookups and returns whichever
 is nearer: a GPU fast-pick over `FragmentsModel`s, and a plain
@@ -614,8 +615,39 @@ registering a `Points`-bearing group needs a cast; and `castRay`'s
 `intersect(items)` is **non-recursive**, which is why the root group must carry
 the `raycast`, not the chunks.
 
-**Not built yet** — this section records the decision and the route, so whoever
-picks it up does not rediscover the O(n) pathology by shipping it.
+### How it is wired
+
+`point-cloud-system.ts` gives each cloud root a `raycast` that routes through
+`pickAlongRay` — the same core `pickPoint` uses, so the bounding-sphere
+rejection, the draw-range awareness and the screen-space tolerance all come
+along. `viewer.ts` adds the root to `world.meshes` through two optional context
+hooks (`registerRaycastTarget` / `unregisterRaycastTarget`), which is what makes
+the whole thing opt-in: a context without them — every test, any embedder with no
+world — keeps the previous inspect-only behaviour instead of failing.
+
+Four details that are load-bearing rather than incidental:
+
+- **The chunks stay unpickable.** `points.raycast = () => {}` is untouched and
+  tested. Only the root answers, and it answers through the fast path.
+- **`distance` is world-space from the ray origin**, asserted against the
+  returned point rather than a fixed number. OBC compares it directly against
+  its IFC hit to decide which wins; any other convention makes the scan win or
+  lose every comparison for reasons unrelated to geometry.
+- **Unregistering happens before the root leaves the scene.** The registry is a
+  Set held elsewhere, so a root left in it keeps its chunks and their GPU
+  buffers reachable after the user deleted the scan — and every later ray still
+  picks against it.
+- **Inspect mode stands down while a measurement tool is armed.** Its click
+  handler does not `stopPropagation`, so otherwise a single click would both
+  read out a point and place a measurement vertex.
+
+Measurement tolerance is 6 px against inspect's 8: someone measuring is aiming
+at one specific point, and a generous radius there does not help them — it snaps
+to a neighbour and reports a number that looks entirely plausible.
+
+Still open, deliberately: there is no UI copy anywhere saying "scans are
+measurable". The behaviour is discoverable by doing it, and the alternative is
+ten more translated strings for a sentence that may not be needed.
 
 ## 12. E57 — assessed, and deliberately still refused
 

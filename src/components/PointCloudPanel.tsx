@@ -17,6 +17,7 @@ import type { TFunction } from 'i18next'
 import { ViewportPanel } from './ViewportPanel'
 import { usePointCloudStore } from '../stores/pointCloudStore'
 import { useSceneStore } from '../stores/sceneStore'
+import { useUIStore } from '../stores/uiStore'
 import { loadPointCloud, streamPointCloud, cancelPointCloud, realignCloud } from '../lib/pointcloud/pc-runner'
 import { saveCloudProj4 } from '../lib/pointcloud/pc-align'
 import { registerCustomProj4 } from '../lib/geo/crs'
@@ -70,6 +71,7 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
   const [proj4Text, setProj4Text] = useState('')
   const [proj4Error, setProj4Error] = useState(false)
   const [inspecting, setInspecting] = useState(false)
+  const measurementTool = useUIStore((st) => st.activeMeasurementTool)
   const [picked, setPicked] = useState<PickedPoint | null>(null)
   const [pickMissed, setPickMissed] = useState(false)
 
@@ -329,6 +331,12 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
   // ── Inspect: click one point and read what the file recorded there ──────────
   useEffect(() => {
     if (!inspecting) return
+    // Stand down while a measurement tool is armed. Scans are measurable now —
+    // the cloud root is a raycast target, so @thatopen's tools reach it — and
+    // this handler does not stopPropagation, so both would act on the same
+    // click: one point read out here, one measurement vertex placed there. The
+    // measurement is the deliberate action; inspect yields to it.
+    if (measurementTool !== 'none') return
     const canvas = viewerApiRef.current?.getCanvas()
     if (!canvas) return
 
@@ -360,7 +368,7 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
       canvas.removeEventListener('click', onClick, true)
       canvas.style.cursor = ''
     }
-  }, [inspecting, viewerApiRef, getSystem])
+  }, [inspecting, measurementTool, viewerApiRef, getSystem])
 
   // ── Visibility presets (model / scan / both) ────────────────────────────────
   const setIsolation = useCallback((mode: 'both' | 'cloud' | 'model'): void => {

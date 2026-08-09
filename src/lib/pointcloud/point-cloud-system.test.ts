@@ -386,3 +386,192 @@ describe('createPointCloudSystem — picking', () => {
     expect(createPointCloudSystem(pickingContext()).pickPoint(400, 300)).toBeNull()
   })
 })
+
+// ── Measurement: the scan as a raycast target ─────────────────────────────────
+//
+// Measuring against a scan works by joining the app's shared raycaster rather
+// than by growing a second measurement system. These guard the seam.
+
+describe('point-cloud-system · raycast integration', () => {
+  /** A ray down −Z from in front of the cloud, which the fixture sits on. */
+  const rayAtCloud = (): THREE.Ray =>
+    new THREE.Ray(new THREE.Vector3(0, 0, 50), new THREE.Vector3(0, 0, -1))
+
+  it('registers the cloud root as a raycast target, and withdraws it on remove', () => {
+    // The withdrawal is the half that leaks. The registry is a Set owned
+    // elsewhere, so a root left in it keeps the whole closure — chunks, GPU
+    // buffers and all — reachable after the user deleted the scan, and every
+    // later ray still picks against it.
+    const registered: THREE.Object3D[] = []
+    const ctx = makeContext({
+      registerRaycastTarget: (o) => { registered.push(o) },
+      unregisterRaycastTarget: (o) => {
+        const i = registered.indexOf(o)
+        if (i >= 0) registered.splice(i, 1)
+      },
+    })
+    const sys = createPointCloudSystem(ctx)
+
+    sys.create('pc-1', alignment())
+    sys.addChunk('pc-1', chunk('c0', 100))
+    expect(registered).toHaveLength(1)
+    expect(registered[0].name).toBe('point-cloud:pc-1')
+
+    sys.remove('pc-1')
+    expect(registered).toHaveLength(0)
+  })
+
+  it('withdraws every cloud on dispose', () => {
+    const registered = new Set<THREE.Object3D>()
+    const ctx = makeContext({
+      registerRaycastTarget: (o) => { registered.add(o) },
+      unregisterRaycastTarget: (o) => { registered.delete(o) },
+    })
+    const sys = createPointCloudSystem(ctx)
+    sys.create('a', alignment())
+    sys.create('b', alignment())
+    expect(registered.size).toBe(2)
+    sys.dispose()
+    expect(registered.size).toBe(0)
+  })
+
+  it('works without the optional hooks, staying inspect-only', () => {
+    // Any embedder without a world, and every older context, must keep the
+    // previous behaviour rather than throw.
+    const sys = createPointCloudSystem(makeContext())
+    expect(() => {
+      sys.create('pc-1', alignment())
+      sys.addChunk('pc-1', chunk('c0', 50))
+      sys.remove('pc-1')
+    }).not.toThrow()
+  })
+
+  it('the root reports an intersection three can consume', () => {
+    const ctx = makeContext()
+    const sys = createPointCloudSystem(ctx)
+    sys.create('pc-1', alignment())
+    sys.addChunk('pc-1', chunk('c0', 100))
+
+    const root = findRoot(ctx.scene)
+    expect(root).toBeTruthy()
+
+    const raycaster = new THREE.Raycaster()
+    raycaster.ray.copy(rayAtCloud())
+    const hits: THREE.Intersection[] = []
+    root!.raycast(raycaster, hits)
+
+    expect(hits).toHaveLength(1)
+    // Shape matters: OBC's castRay compares `distance` against its IFC hit to
+    // decide which wins, and filterClippingPlanes reads `point`. A malformed
+    // intersection would not throw — it would quietly always lose, or crash the
+    // clipping filter.
+    expect(hits[0].point).toBeInstanceOf(THREE.Vector3)
+    expect(hits[0].object).toBe(root)
+    expect(hits[0].distance).toBeGreaterThan(0)
+    expect(Number.isFinite(hits[0].distance)).toBe(true)
+    // The load-bearing property, asserted against the returned point rather
+    // than a hardcoded number: `distance` must be the world-space distance from
+    // the ray ORIGIN to `point`. OBC compares it directly against the distance
+    // of its IFC hit, so any other convention — distance from the near plane,
+    // distance in the cloud's local units — makes the scan win or lose every
+    // comparison for reasons that have nothing to do with geometry.
+    expect(hits[0].distance).toBeCloseTo(
+      raycaster.ray.origin.distanceTo(hits[0].point), 4,
+    )
+  })
+
+  it('reports nothing when the ray misses, rather than a bogus point', () => {
+    const ctx = makeContext()
+    const sys = createPointCloudSystem(ctx)
+    sys.create('pc-1', alignment())
+    sys.addChunk('pc-1', chunk('c0', 100))
+    const root = findRoot(ctx.scene)!
+
+    const raycaster = new THREE.Raycaster()
+    raycaster.ray.copy(new THREE.Ray(
+      new THREE.Vector3(500, 500, 50), new THREE.Vector3(0, 0, -1),
+    ))
+    const hits: THREE.Intersection[] = []
+    root.raycast(raycaster, hits)
+    expect(hits).toHaveLength(0)
+  })
+
+  it('a hidden cloud is not measurable', () => {
+    // Measuring to something the user cannot see would be indefensible.
+    const ctx = makeContext()
+    const sys = createPointCloudSystem(ctx)
+    sys.create('pc-1', alignment())
+    sys.addChunk('pc-1', chunk('c0', 100))
+    const root = findRoot(ctx.scene)!
+    sys.setVisible('pc-1', false)
+
+    const raycaster = new THREE.Raycaster()
+    raycaster.ray.copy(rayAtCloud())
+    const hits: THREE.Intersection[] = []
+    root.raycast(raycaster, hits)
+    expect(hits).toHaveLength(0)
+  })
+
+  it("each root answers only for its own cloud", () => {
+    // three calls raycast once per registered object. A root that answered for
+    // every cloud would report the same nearest point N times and make the
+    // merge-by-distance comparison meaningless.
+    const ctx = makeContext()
+    const sys = createPointCloudSystem(ctx)
+    sys.create('near', alignment())
+    sys.addChunk('near', chunk('c0', 100))
+    sys.create('far', alignment({ origin: { x: 0, y: 0, z: -40 } }))
+    sys.addChunk('far', chunk('c1', 100))
+
+    const roots = ctx.scene.children.filter((c) => c.name.startsWith('point-cloud:'))
+    expect(roots).toHaveLength(2)
+
+    const raycaster = new THREE.Raycaster()
+    raycaster.ray.copy(rayAtCloud())
+    const nearHits: THREE.Intersection[] = []
+    const farHits: THREE.Intersection[] = []
+    roots.find((r) => r.name.endsWith('near'))!.raycast(raycaster, nearHits)
+    roots.find((r) => r.name.endsWith('far'))!.raycast(raycaster, farHits)
+
+    expect(nearHits).toHaveLength(1)
+    expect(farHits).toHaveLength(1)
+    // And the nearer cloud must genuinely be nearer, or "whichever is closest
+    // wins" picks the wrong surface.
+    expect(nearHits[0].distance).toBeLessThan(farHits[0].distance)
+  })
+
+  it('STILL never lets a chunk intercept a model click', () => {
+    // The invariant that made this integration safe in the first place. Three
+    // tests every vertex in a Points geometry against the ray; at twenty million
+    // points that is a frozen tab, so the chunks stay unpickable and only the
+    // root — which routes through the fast pc-pick path — answers.
+    const ctx = makeContext()
+    const sys = createPointCloudSystem(ctx)
+    sys.create('pc-1', alignment())
+    sys.addChunk('pc-1', chunk('c0', 100))
+
+    const root = findRoot(ctx.scene)!
+    const raycaster = new THREE.Raycaster()
+    raycaster.ray.copy(rayAtCloud())
+    for (const child of root.children) {
+      const hits: THREE.Intersection[] = []
+      child.raycast(raycaster, hits)
+      expect(hits, 'a chunk answered a raycast').toHaveLength(0)
+    }
+  })
+
+  it('pickAlongRay can be scoped to one cloud, and rejects an unknown id', () => {
+    const sys = createPointCloudSystem(makeContext())
+    sys.create('pc-1', alignment())
+    sys.addChunk('pc-1', chunk('c0', 100))
+
+    expect(sys.pickAlongRay(rayAtCloud())?.cloudId).toBe('pc-1')
+    expect(sys.pickAlongRay(rayAtCloud(), 8, 'pc-1')?.cloudId).toBe('pc-1')
+    expect(sys.pickAlongRay(rayAtCloud(), 8, 'nope')).toBeNull()
+  })
+})
+
+/** The single cloud root in a scene, for tests that made exactly one. */
+function findRoot(scene: THREE.Scene): THREE.Object3D | null {
+  return scene.children.find((c) => c.name.startsWith('point-cloud:')) ?? null
+}
