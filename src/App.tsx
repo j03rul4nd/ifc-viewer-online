@@ -133,6 +133,42 @@ export interface ModelTreeHandle {
   revealElement: (expressId: number) => void
 }
 
+/**
+ * Hand an SDK command to the panel that owns the feature and resolve once that
+ * panel acknowledges it.
+ *
+ * The panels serving `sdk:*` are lazy AND gated, so a host command can arrive
+ * before there is anyone to receive it. Dropping it would look to the host like
+ * a silent failure; re-emitting until something answers would run a command
+ * like `add` twice. So we wait for a subscriber to exist, then emit exactly
+ * once, and give up with a reason the host can act on.
+ */
+async function dispatchPanelCommand<E extends 'sdk:solar' | 'sdk:site' | 'sdk:pointcloud'>(
+  event: E,
+  payload: Omit<Parameters<Parameters<typeof appBus.on<E>>[1]>[0], 'done'>,
+  opts: { unavailable: string; timeoutMs?: number } = { unavailable: 'Panel unavailable' },
+): Promise<string | undefined> {
+  const deadline = Date.now() + 3_000
+  while (!appBus.hasListeners(event)) {
+    if (Date.now() > deadline) throw new Error(opts.unavailable)
+    await new Promise((r) => setTimeout(r, 50))
+  }
+  return new Promise<string | undefined>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`"${event}" did not complete in time`)),
+      opts.timeoutMs ?? 15 * 60_000,   // a multi-GB scan parses for minutes
+    )
+    appBus.emit(event, {
+      ...payload,
+      done: (ok: boolean, errorOrId?: string) => {
+        clearTimeout(timer)
+        if (ok) resolve(errorOrId)
+        else reject(new Error(errorOrId ?? 'Command failed'))
+      },
+    } as Parameters<Parameters<typeof appBus.on<E>>[1]>[0])
+  })
+}
+
 // Camera presets accepted by the `ifcviewer:view` embed command.
 const CAMERA_PRESETS: CameraPreset[] = ['iso', 'top', 'bottom', 'front', 'back', 'left', 'right']
 
@@ -1445,6 +1481,109 @@ export default function App() {
           break
 
         // ── Mutating commands (fire-and-forget) ──────────────────────────────
+        // ── Point clouds ───────────────────────────────────────────────
+        // Every one delegates to PointCloudPanel rather than reaching into the
+        // loader here: the alignment ladder, the viewer's PointCloudSystem and
+        // the model bounds all live behind that panel, and a second code path
+        // would be a second set of bugs.
+        case 'ifcviewer:add-pointcloud': {
+          void respond(async () => {
+            const name = typeof msg.name === 'string' ? msg.name : 'scan.las'
+            let file: File
+            if (msg.bytes instanceof ArrayBuffer) {
+              file = new File([msg.bytes], name)
+            } else if (typeof msg.url === 'string') {
+              const res = await fetch(msg.url)
+              if (!res.ok) throw new Error(`Fetch failed: HTTP ${res.status}`)
+              file = new File([await res.arrayBuffer()], name)
+            } else {
+              throw new Error('Provide bytes (ArrayBuffer) or url')
+            }
+            const cloudId = await dispatchPanelCommand('sdk:pointcloud',
+              { action: 'add', file },
+              { unavailable: 'Point clouds are not enabled in this build' })
+            return { cloudId }
+          })
+          break
+        }
+        case 'ifcviewer:remove-pointcloud':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:pointcloud',
+              { action: 'remove', cloudId: typeof msg.cloudId === 'string' ? msg.cloudId : undefined },
+              { unavailable: 'Point clouds are not enabled in this build', timeoutMs: 30_000 })
+            return { ok: true }
+          })
+          break
+        case 'ifcviewer:clear-pointclouds':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:pointcloud', { action: 'clear' },
+              { unavailable: 'Point clouds are not enabled in this build', timeoutMs: 30_000 })
+            return { ok: true }
+          })
+          break
+        case 'ifcviewer:pointcloud-visible':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:pointcloud',
+              {
+                action: 'visible',
+                cloudId: typeof msg.cloudId === 'string' ? msg.cloudId : undefined,
+                visible: msg.visible !== false,
+              },
+              { unavailable: 'Point clouds are not enabled in this build', timeoutMs: 30_000 })
+            return { ok: true }
+          })
+          break
+        case 'ifcviewer:fit-pointcloud':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:pointcloud',
+              { action: 'frame', cloudId: typeof msg.cloudId === 'string' ? msg.cloudId : undefined },
+              { unavailable: 'Point clouds are not enabled in this build', timeoutMs: 30_000 })
+            return { ok: true }
+          })
+          break
+        case 'ifcviewer:pointcloud-display':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:pointcloud',
+              {
+                action: 'display',
+                display: (msg.display ?? undefined) as Record<string, unknown> | undefined,
+                renderBudget: typeof msg.renderBudget === 'number' ? msg.renderBudget : undefined,
+              },
+              { unavailable: 'Point clouds are not enabled in this build', timeoutMs: 30_000 })
+            return { ok: true }
+          })
+          break
+        case 'ifcviewer:inspect-pointcloud':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:pointcloud',
+              { action: 'inspect', inspect: msg.inspect !== false },
+              { unavailable: 'Point clouds are not enabled in this build', timeoutMs: 30_000 })
+            return { ok: true }
+          })
+          break
+        case 'ifcviewer:get-pointclouds':
+          void respond(() => ({
+            clouds: usePointCloudStore.getState().clouds.map((c) => ({
+              id: c.id,
+              fileName: c.fileName,
+              format: c.format,
+              status: c.status,
+              // pointCount is what is RESIDENT, which is not what the file holds
+              // when the budget truncated the parse — declaredCount is.
+              pointCount: c.pointCount,
+              declaredCount: c.declaredCount,
+              truncated: c.truncated,
+              visible: c.visible,
+              crs: c.frame?.epsgCode ?? null,
+              // A scan placed by the `local` or `manual` rung is a guess. Hosts
+              // must be able to tell that apart from an exact map conversion.
+              alignment: c.alignment
+                ? { rung: c.alignment.rung, confidence: c.alignment.confidence }
+                : null,
+            })),
+          }))
+          break
+
         case 'ifcviewer:remove-model': {
           const modelId = typeof msg.modelId === 'string' ? msg.modelId : null
           if (modelId) void handleRemoveModel(modelId)

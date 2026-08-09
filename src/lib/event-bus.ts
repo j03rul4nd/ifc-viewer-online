@@ -125,6 +125,19 @@ export class TypedEventBus<M extends Record<string, unknown>> {
   private readonly _listeners = new Map<keyof M, Set<AnyHandler>>()
 
   /**
+   * Is anyone subscribed to this event yet?
+   *
+   * Needed because the panels that serve `sdk:*` commands are lazy AND gated on
+   * a loaded model, so a host command can easily arrive before its handler
+   * exists. Emitting into the void would look like a silent failure; retrying
+   * blindly would double-execute a command like `add`. Asking first makes the
+   * wait explicit and side-effect free.
+   */
+  hasListeners(event: keyof M): boolean {
+    return (this._listeners.get(event)?.size ?? 0) > 0
+  }
+
+  /**
    * Subscribe to an event.
    * @returns An unsubscribe function — call it to stop listening.
    */

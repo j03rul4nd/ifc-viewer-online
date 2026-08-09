@@ -436,3 +436,138 @@ describe('IfcViewer SDK', () => {
     expect(document.getElementById('mount')?.querySelector('iframe')).toBeNull()
   })
 })
+
+describe('IfcViewer — point clouds', () => {
+  it('addPointCloud transfers the buffer instead of copying it', async () => {
+    // A scan can be gigabytes. Copying it across postMessage would double the
+    // memory and can simply fail, so the buffer must ride the transfer list.
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    const buf = new Uint8Array([1, 2, 3, 4]).buffer
+    // dispose() rejects anything still pending; swallow it rather than
+    // leaving an unhandled rejection that fails an unrelated test file.
+    v.addPointCloud('site.laz', buf).catch(() => {})
+    await tick()
+
+    const call = post.mock.calls.find(
+      (c) => (c[0] as Record<string, unknown>).type === 'ifcviewer:add-pointcloud',
+    )!
+    expect(call).toBeTruthy()
+    expect((call[0] as Record<string, unknown>).name).toBe('site.laz')
+    // postMessage's typed overload stops at two params; the transfer list is
+    // the third argument the spy actually recorded.
+    const transfer = (call as unknown as unknown[])[2] as Transferable[]
+    expect(transfer).toHaveLength(1)
+    v.dispose()
+  })
+
+  it('resolves addPointCloud with the cloud id the app reports', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    const p = v.addPointCloud('site.las', new Uint8Array([1]).buffer)
+    await tick()
+    const req = postsOfType(post, 'ifcviewer:add-pointcloud')[0]
+    emitFromIframe(v, {
+      type: 'result', requestId: req.requestId, ok: true, data: { cloudId: 'pc-1' },
+    })
+    await expect(p).resolves.toBe('pc-1')
+    v.dispose()
+  })
+
+  it('rejects with the app reason when point clouds are not enabled', async () => {
+    // The build flag can be off. A host must get a reason, not a hang.
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    const p = v.fitPointCloud()
+    await tick()
+    const req = postsOfType(post, 'ifcviewer:fit-pointcloud')[0]
+    emitFromIframe(v, {
+      type: 'result', requestId: req.requestId, ok: false,
+      error: 'Point clouds are not enabled in this build',
+    })
+    await expect(p).rejects.toThrow('not enabled')
+    v.dispose()
+  })
+
+  it('listPointClouds unwraps the clouds array', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    const p = v.listPointClouds()
+    await tick()
+    const req = postsOfType(post, 'ifcviewer:get-pointclouds')[0]
+    emitFromIframe(v, {
+      type: 'result', requestId: req.requestId, ok: true,
+      data: { clouds: [{ id: 'pc-1', fileName: 'a.laz', pointCount: 100, declaredCount: 500, truncated: true }] },
+    })
+    const clouds = await p
+    expect(clouds).toHaveLength(1)
+    // The two counts stay distinct: pointCount is what is resident, declaredCount
+    // what the file holds. Collapsing them would understate a truncated survey.
+    expect(clouds[0].pointCount).toBe(100)
+    expect(clouds[0].declaredCount).toBe(500)
+    expect(clouds[0].truncated).toBe(true)
+    v.dispose()
+  })
+
+  it('forwards pointcloud-picked with the file coordinates intact', () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const onPick = vi.fn()
+    v.on('pointcloud-picked', onPick)
+    emitFromIframe(v, {
+      type: 'pointcloud-picked',
+      cloudId: 'pc-1',
+      position: { x: 1, y: 2, z: 3 },
+      sourcePosition: { x: 639928.39, y: 485161.45, z: 86.38 },
+      classification: 2, intensity: 130, distance: 12.5,
+    })
+    // sourcePosition is the number a survey record already holds — it must
+    // survive the bridge unrounded.
+    expect(onPick).toHaveBeenCalledWith(expect.objectContaining({
+      sourcePosition: { x: 639928.39, y: 485161.45, z: 86.38 },
+      classification: 2,
+    }))
+    v.dispose()
+  })
+
+  it('sends display settings and the render budget together', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    // dispose() rejects anything still pending; swallow it rather than
+    // leaving an unhandled rejection that fails an unrelated test file.
+    v.setPointCloudDisplay({ colorMode: 'classification', pointSize: 4 }, 2_000_000).catch(() => {})
+    await tick()
+    expect(postsOfType(post, 'ifcviewer:pointcloud-display')[0]).toMatchObject({
+      display: { colorMode: 'classification', pointSize: 4 },
+      renderBudget: 2_000_000,
+    })
+    v.dispose()
+  })
+
+  it('arms inspect by default and can disarm it', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    // dispose() rejects anything still pending; swallow it rather than
+    // leaving an unhandled rejection that fails an unrelated test file.
+    v.inspectPointCloud().catch(() => {})
+    // dispose() rejects anything still pending; swallow it rather than
+    // leaving an unhandled rejection that fails an unrelated test file.
+    v.inspectPointCloud(false).catch(() => {})
+    await tick()
+    const sent = postsOfType(post, 'ifcviewer:inspect-pointcloud')
+    expect(sent[0].inspect).toBe(true)
+    expect(sent[1].inspect).toBe(false)
+    v.dispose()
+  })
+})

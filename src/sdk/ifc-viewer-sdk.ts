@@ -183,6 +183,27 @@ export interface IfcElementData {
 
 export interface Vec3 { x: number; y: number; z: number }
 
+/**
+ * A point read off a scan while inspect mode is armed.
+ *
+ * `sourcePosition` is the point in the FILE's own coordinates — the number a
+ * survey record already holds — which is why it travels alongside the scene
+ * position rather than instead of it.
+ */
+export interface PointCloudPickedEvent {
+  cloudId: string
+  /** Scene metres. */
+  position: { x: number; y: number; z: number }
+  /** The file's own coordinates, in its own units. */
+  sourcePosition: { x: number; y: number; z: number }
+  /** ASPRS classification code, when the file carried one. */
+  classification: number | null
+  /** 0-255, when the file carried intensity. */
+  intensity: number | null
+  /** Distance from the camera, scene metres. */
+  distance: number
+}
+
 export interface IfcViewerEventMap {
   ready: ReadyEvent
   'model-loaded': ModelLoadedEvent
@@ -190,6 +211,7 @@ export interface IfcViewerEventMap {
   'model-progress': ModelProgressEvent
   'validation-completed': ValidationCompletedEvent
   'element-selected': ElementSelectedEvent
+  'pointcloud-picked': PointCloudPickedEvent
 }
 
 /** Languages the viewer ships with — code + native label, for building a picker. */
@@ -214,7 +236,15 @@ type Listener<T> = (payload: T) => void
 // `reasonCodes` field alongside the stable EN `reasons` strings.
 // 1.7.0: `checkEir(profile)` runs editable EIR / BIM Validation profiles (compiled
 // to IDS, same engine + result shape); failures now also carry `globalId`.
-const SDK_VERSION = '1.7.0'
+// 1.8.0: point clouds. Add a LAS/LAZ/COPC/PLY/XYZ scan from bytes (transferred,
+// not copied) or a URL, list/remove/clear/show/frame them, drive the shared
+// appearance, and arm click-to-read inspection which reports picks through
+// `pointcloud-picked`. Two fields there deserve care rather than convenience:
+// `declaredCount` vs `pointCount` (what the file holds vs what is resident,
+// which differ once `truncated` is set) and `alignment.confidence` (a scan on
+// the `local` or `manual` rung was inferred or placed by hand, and must not be
+// presented with the authority of an exact map conversion).
+const SDK_VERSION = '1.8.0'
 const DEFAULT_LOAD_TIMEOUT = 120_000
 const REQUEST_TIMEOUT = 30_000
 const FALLBACK_LANGUAGES = LANGUAGES.map((l) => l.code)
@@ -251,6 +281,55 @@ interface PendingLoad {
   resolve: (e: ModelLoadedEvent) => void
   reject: (err: Error) => void
   timer: ReturnType<typeof setTimeout> | null
+}
+
+/**
+ * One loaded scan, as `listPointClouds` reports it.
+ *
+ * Two fields carry meaning that is easy to get wrong, so they are named apart
+ * rather than collapsed:
+ *
+ * - `pointCount` is what is RESIDENT in the viewer. `declaredCount` is what the
+ *   file says it holds. They differ when `truncated` is true, because the parse
+ *   stopped at the point budget. Showing pointCount as "the size of the scan"
+ *   would understate the survey.
+ * - `alignment.confidence` says how much to trust the placement. A scan on the
+ *   `local` or `manual` rung was positioned by inference or by hand; presenting
+ *   it with the authority of an `exact` map conversion would be a lie your
+ *   users could act on.
+ */
+export interface PointCloudInfo {
+  id: string
+  fileName: string
+  format: 'las' | 'laz' | 'copc' | 'ply' | 'xyz'
+  status: 'parsing' | 'ready' | 'error'
+  /** Points resident in the viewer right now. */
+  pointCount: number
+  /** Points the file's header declares, when it declares any. */
+  declaredCount: number | null
+  /** True when the parse stopped at the budget — the file holds more. */
+  truncated: boolean
+  visible: boolean
+  /** EPSG code the scan declares, or null. */
+  crs: string | null
+  alignment: {
+    rung: 'map-conversion' | 'shared-crs' | 'geographic' | 'local' | 'manual'
+    confidence: 'exact' | 'high' | 'approximate' | 'manual'
+  } | null
+}
+
+/** Appearance controls shared by every loaded scan. */
+export interface PointCloudDisplayOptions {
+  pointSize?: number
+  attenuate?: boolean
+  opacity?: number
+  colorMode?: 'rgb' | 'intensity' | 'elevation' | 'classification' | 'flat'
+  flatColor?: number
+  /** 0.05-1. Fraction of the render budget to use. */
+  density?: number
+  /** 0-1. Hides points below this confidence, for files that carry one. */
+  confidenceThreshold?: number
+  round?: boolean
 }
 
 export class IfcViewer {
@@ -418,6 +497,87 @@ export class IfcViewer {
     return this.request<IssuesResult>('ifcviewer:get-issues', opts)
   }
 
+  // ── Point clouds ────────────────────────────────────────────────────────────
+  // Requires the host build to enable them (VITE_FEATURE_POINTCLOUD); every call
+  // rejects with a clear reason when it does not. Scans are parsed in the
+  // visitor's browser exactly like an IFC — nothing is uploaded.
+
+  /**
+   * Add a scan from bytes. LAS, LAZ, COPC, PLY and delimited text (.xyz/.pts/
+   * .csv). Resolves with the new cloud's id.
+   *
+   * The buffer is TRANSFERRED, not copied, so it is neutered in the caller
+   * afterwards — that is what makes handing over a multi-gigabyte scan free.
+   * The generous timeout is deliberate: a large file legitimately parses for
+   * minutes, and a wrapper that gives up before the parser has any hope of
+   * finishing would report failure on a working load.
+   */
+  addPointCloud(fileName: string, bytes: ArrayBuffer | Uint8Array): Promise<string> {
+    const buffer = toArrayBuffer(bytes)
+    return this.request<{ cloudId: string }>(
+      'ifcviewer:add-pointcloud', { name: fileName, bytes: buffer }, 15 * 60_000, [buffer],
+    ).then((r) => r.cloudId)
+  }
+
+  /** Add a scan the viewer fetches itself. The URL must allow CORS. */
+  addPointCloudFromUrl(url: string, fileName?: string): Promise<string> {
+    return this.request<{ cloudId: string }>(
+      'ifcviewer:add-pointcloud',
+      { url, name: fileName ?? url.split('/').pop() ?? 'scan.las' },
+      15 * 60_000,
+    ).then((r) => r.cloudId)
+  }
+
+  /** Every scan currently loaded. See PointCloudInfo on reading the counts. */
+  listPointClouds(): Promise<PointCloudInfo[]> {
+    return this.request<{ clouds: PointCloudInfo[] }>('ifcviewer:get-pointclouds')
+      .then((r) => r.clouds)
+  }
+
+  /** Remove one scan and free its GPU buffers. */
+  removePointCloud(cloudId: string): Promise<void> {
+    return this.request<unknown>('ifcviewer:remove-pointcloud', { cloudId }).then(() => undefined)
+  }
+
+  /** Remove every scan. */
+  clearPointClouds(): Promise<void> {
+    return this.request<unknown>('ifcviewer:clear-pointclouds').then(() => undefined)
+  }
+
+  /** Show or hide one scan without unloading it. */
+  setPointCloudVisible(cloudId: string, visible: boolean): Promise<void> {
+    return this.request<unknown>('ifcviewer:pointcloud-visible', { cloudId, visible })
+      .then(() => undefined)
+  }
+
+  /** Frame the camera on a scan (or the first one loaded). */
+  fitPointCloud(cloudId?: string): Promise<void> {
+    return this.request<unknown>('ifcviewer:fit-pointcloud', { cloudId }).then(() => undefined)
+  }
+
+  /**
+   * Appearance, shared by every scan. Each setting is a shader uniform or a
+   * draw-range change, so these are instant even on a 20-million-point cloud.
+   */
+  setPointCloudDisplay(
+    display: PointCloudDisplayOptions, renderBudget?: number,
+  ): Promise<void> {
+    return this.request<unknown>('ifcviewer:pointcloud-display', { display, renderBudget })
+      .then(() => undefined)
+  }
+
+  /**
+   * Arm (or disarm) click-to-read on the scan. While armed, clicking a point
+   * emits `pointcloud-picked` — which carries the point's coordinates IN THE
+   * FILE alongside the scene ones, since that is the number a survey record
+   * will already hold. Clicks are read in the capture phase, so inspecting a
+   * scan never doubles as selecting the IFC element behind it.
+   */
+  inspectPointCloud(enabled = true): Promise<void> {
+    return this.request<unknown>('ifcviewer:inspect-pointcloud', { inspect: enabled })
+      .then(() => undefined)
+  }
+
   /** Check the loaded model against a buildingSMART IDS (.ids XML string). */
   checkIds(idsXml: string): Promise<IdsResult> {
     return this.request<IdsResult>('ifcviewer:check-ids', { idsXml }, 120_000)
@@ -551,7 +711,10 @@ export class IfcViewer {
   }
 
   /** Send a query and resolve with the iframe's `result` payload. */
-  private request<T>(type: string, params: Record<string, unknown> = {}, timeoutMs = REQUEST_TIMEOUT): Promise<T> {
+  private request<T>(
+    type: string, params: Record<string, unknown> = {}, timeoutMs = REQUEST_TIMEOUT,
+    transfer: Transferable[] = [],
+  ): Promise<T> {
     if (this.disposed) return Promise.reject(new Error('IfcViewer disposed'))
     return new Promise<T>((resolve, reject) => {
       const requestId = this.nextRequestId()
@@ -562,7 +725,7 @@ export class IfcViewer {
       this.requests.set(requestId, { resolve: resolve as (v: unknown) => void, reject, timer })
       void this.whenReady().then(() => {
         if (this.disposed) return
-        this.post({ type, requestId, ...params })
+        this.post({ type, requestId, ...params }, transfer)
       })
     })
   }
@@ -606,6 +769,9 @@ export class IfcViewer {
         break
       case 'element-selected':
         this.emit('element-selected', data as unknown as ElementSelectedEvent)
+        break
+      case 'pointcloud-picked':
+        this.emit('pointcloud-picked', data as unknown as PointCloudPickedEvent)
         break
       case 'result': {
         const rid = data.requestId
@@ -697,6 +863,15 @@ export class IfcViewerElement extends HTMLElement {
   getStats(): Promise<StatsResult> { return this._viewer!.getStats() }
   getIssues(opts?: { severity?: 'error' | 'warning' | 'info'; limit?: number }): Promise<IssuesResult> { return this._viewer!.getIssues(opts) }
   screenshot(): Promise<string> { return this._viewer!.screenshot() }
+  addPointCloud(name: string, bytes: ArrayBuffer | Uint8Array): Promise<string> { return this._viewer!.addPointCloud(name, bytes) }
+  addPointCloudFromUrl(url: string, name?: string): Promise<string> { return this._viewer!.addPointCloudFromUrl(url, name) }
+  listPointClouds(): Promise<PointCloudInfo[]> { return this._viewer!.listPointClouds() }
+  removePointCloud(cloudId: string): Promise<void> { return this._viewer!.removePointCloud(cloudId) }
+  clearPointClouds(): Promise<void> { return this._viewer!.clearPointClouds() }
+  setPointCloudVisible(cloudId: string, visible: boolean): Promise<void> { return this._viewer!.setPointCloudVisible(cloudId, visible) }
+  fitPointCloud(cloudId?: string): Promise<void> { return this._viewer!.fitPointCloud(cloudId) }
+  setPointCloudDisplay(display: PointCloudDisplayOptions, renderBudget?: number): Promise<void> { return this._viewer!.setPointCloudDisplay(display, renderBudget) }
+  inspectPointCloud(enabled?: boolean): Promise<void> { return this._viewer!.inspectPointCloud(enabled) }
 }
 
 /** Register the <ifc-viewer> element (idempotent). Auto-called on import. */
