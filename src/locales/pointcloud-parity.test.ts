@@ -99,7 +99,11 @@ describe('pointcloud locale parity', () => {
       'align.reason.noCommonReference',
       'align.reason.noElevationDatum',
       'status.truncated',
-      'status.estimatedBounds',
+      // NOT here: an "extent is estimated" note. PLY and XYZ carry no bounding
+      // box, so the header's is sampled — but the worker measures the exact box
+      // while streaming and sends it with `done`, so by the time the panel shows
+      // anything the bounds are measured, not estimated. A disclaimer that is no
+      // longer true is worse than none.
     ]
     for (const key of disclaimers) {
       expect(EN[key], `missing disclaimer ${key} in en`).toBeTruthy()
@@ -110,7 +114,9 @@ describe('pointcloud locale parity', () => {
   })
 
   it('explains every format it refuses, rather than saying only "unsupported"', () => {
-    for (const key of ['laz', 'e57', 'copc', 'pcd', 'proprietary', 'unknown']) {
+    // 'laz' and 'copc' are deliberately absent: both are decoded now, so their
+    // refusal texts were deleted rather than left to rot into lies.
+    for (const key of ['e57', 'pcd', 'proprietary', 'unknown']) {
       expect(EN[`unsupported.${key}`], `missing refusal text for ${key}`).toBeTruthy()
     }
   })

@@ -1,30 +1,40 @@
 {
   "title": "Nube de puntos",
-  "subtitle": "Muestra un escaneo junto al modelo",
   "entry": "Nube de puntos",
   "close": "Cerrar",
-
   "load": {
-    "button": "Cargar nube de puntos",
     "another": "Añadir otra",
     "drop": "Suelta un escaneo aquí, o examina",
-    "formats": "LAS · PLY · XYZ · PTS · CSV",
+    "formats": "LAS · LAZ · COPC · PLY · XYZ · PTS · CSV",
     "hint": "Se procesa en tu navegador. No se sube nada.",
-    "parsing": "Leyendo {{name}}…",
     "parsingShort": "Leyendo…"
   },
-
+  "demos": {
+    "title": "Escaneos de ejemplo",
+    "hint": "LiDAR público real, descargado directamente en tu navegador. Ninguno es un escaneo de los edificios de demostración, así que se colocan sobre el modelo en vez de encajar con él.",
+    "failed": "No se ha podido descargar ese ejemplo. Comprueba la conexión e inténtalo de nuevo.",
+    "source": "Fuente",
+    "chip": {
+      "colour": "Color",
+      "classification": "Clases",
+      "noCrs": "Sin CRS",
+      "crs": "EPSG:{{code}}"
+    },
+    "items": {
+      "autzen": "LiDAR aéreo sobre un estadio, con color real y retornos de suelo/sin clasificar. Comprimido con LASzip y grabado en pies: ambas cosas se resuelven al cargarlo.",
+      "newMexico": "Levantamiento de terreno en LAS 1.4 y pies topográficos de EE. UU. Útil para comprobar que el formato de punto nuevo se lee bien.",
+      "mvk": "Pequeño e instantáneo, con seis códigos de clasificación: la forma más rápida de ver Colorear por → Clasificación.",
+      "warsaw": "Una muestra diminuta con color. Carga al instante; sirve para probar los controles de apariencia."
+    }
+  },
   "status": {
     "points": "{{count}} puntos",
     "pointsDrawn": "{{drawn}} de {{total}} dibujados",
     "chunks": "{{count}} bloques",
     "memory": "{{mb}} MB en la GPU",
     "truncated": "Detenido en {{count}} puntos: el archivo contiene más de los que este visor mantiene en memoria a la vez.",
-    "estimatedBounds": "Extensión medida durante la lectura (este formato no incluye caja envolvente).",
-    "noModel": "No hay modelo IFC cargado: el escaneo se coloca por su cuenta.",
-    "empty": "Todavía no hay ninguna nube cargada."
+    "noModel": "No hay modelo IFC cargado: el escaneo se coloca por su cuenta."
   },
-
   "align": {
     "title": "Alineación",
     "rung": {
@@ -58,12 +68,20 @@
       "unitCentimetres": "La extensión sugiere centímetros: escalado por 0,01.",
       "unitFeet": "La extensión sugiere pies: escalado por 0,3048.",
       "unitAssumed": "Unidad no declarada; se asumen metros.",
-      "noCommonReference": "Nada relaciona los dos archivos, así que el escaneo se ha centrado sobre el modelo. Usa los desplazamientos de abajo para situarlo."
+      "noCommonReference": "Nada relaciona los dos archivos, así que el escaneo se ha centrado sobre el modelo. Usa los desplazamientos de abajo para situarlo.",
+      "cloudCrsUnknown": "El escaneo nombra un sistema de coordenadas del que esta versión no tiene definición, así que no se ha podido usar su georreferenciación. Pega abajo una definición proj4 para desbloquearlo."
     },
     "manualWarning": "Esta colocación es un punto de partida, no una medición.",
-    "recompute": "Recalcular alineación"
+    "recompute": "Recalcular alineación",
+    "crsForm": {
+      "title": "Sistema de coordenadas",
+      "hint": "Busca la definición de {{code}} en epsg.io y pega la línea proj4.",
+      "placeholder": "+proj=lcc +lat_0=... +units=us-ft +no_defs",
+      "apply": "Usar esta definición",
+      "invalid": "proj4 no ha podido interpretar esa definición.",
+      "applied": "Definición aceptada: el escaneo se ha realineado."
+    }
   },
-
   "transform": {
     "title": "Ajustar colocación",
     "x": "Este / oeste",
@@ -74,7 +92,6 @@
     "reset": "Restablecer colocación",
     "hint": "Los desplazamientos se aplican sobre la alineación detectada y nunca se integran en ella."
   },
-
   "display": {
     "title": "Apariencia",
     "pointSize": "Tamaño de punto",
@@ -96,34 +113,39 @@
     "confidence": "Umbral de confianza",
     "confidenceHint": "Oculta los puntos de los que la reconstrucción estaba menos segura. Solo lo tienen los archivos con confianza por punto."
   },
-
+  "inspect": {
+    "title": "Inspeccionar",
+    "enable": "Pulsa un punto",
+    "active": "Pulsa sobre el escaneo…",
+    "hint": "Lee un punto del escaneo: dónde está y qué registró el archivo ahí.",
+    "none": "No hay ningún punto bajo el cursor. Prueba más cerca de una zona densa.",
+    "scene": "Posición en la escena",
+    "source": "Coordenadas del archivo",
+    "classification": "Clasificación",
+    "intensity": "Intensidad",
+    "distance": "Distancia a la cámara",
+    "clear": "Limpiar"
+  },
   "view": {
     "title": "Vista",
     "fitCloud": "Encuadrar escaneo",
     "fitBoth": "Encuadrar modelo + escaneo",
-    "showModel": "Ver modelo",
-    "showCloud": "Ver escaneo",
     "isolateCloud": "Solo escaneo",
     "isolateModel": "Solo modelo",
     "both": "Ambos"
   },
-
   "actions": {
     "remove": "Quitar",
     "cancel": "Cancelar",
     "visible": "Visible",
     "hidden": "Oculto"
   },
-
   "unsupported": {
-    "laz": "Es un archivo LAZ (LAS comprimido). Este visor lee LAS sin comprimir: expórtalo o conviértelo a .las e inténtalo de nuevo.",
     "e57": "E57 todavía no está soportado. Exporta el escaneo como LAS o PLY desde el software del escáner.",
-    "copc": "Las nubes optimizadas para la nube (COPC) todavía no están soportadas. Exporta un .las normal.",
     "pcd": "PCD todavía no está soportado. Exporta como PLY.",
     "proprietary": "Es un archivo de proyecto nativo del escáner. Expórtalo primero como LAS o PLY.",
     "unknown": "Ese tipo de archivo no es una nube de puntos que este visor pueda leer."
   },
-
   "error": {
     "emptyFile": "Ese archivo está vacío.",
     "notLas": "Esto no parece un archivo LAS.",
@@ -139,6 +161,15 @@
     "workerFailed": "El worker de nubes de puntos se ha detenido inesperadamente.",
     "timeout": "El archivo no ha empezado a leerse a tiempo.",
     "cancelled": "Se ha cancelado la carga.",
-    "budgetExhausted": "El presupuesto de puntos está lleno. Quita un escaneo antes de cargar otro."
+    "budgetExhausted": "El presupuesto de puntos está lleno. Quita un escaneo antes de cargar otro.",
+    "notLaz": "Este archivo no está comprimido con LASzip.",
+    "lazDecode": "No se han podido descomprimir los puntos. El archivo puede estar truncado o usar una variante de LASzip que este decodificador no maneja.",
+    "lazTooLarge": "Ese LAZ es demasiado grande para descomprimirlo en una pestaña del navegador. Recórtalo o diézmalo antes — en la documentación hay una línea de PDAL.",
+    "lazOutOfMemory": "No hay memoria suficiente para descomprimir ese LAZ. Cierra otras pestañas o recorta el archivo.",
+    "notCopc": "Este archivo no tiene índice octree COPC. Si es un LAZ normal, renómbralo sin la parte copc.",
+    "copcDecode": "No se ha podido decodificar el octree COPC. El archivo puede estar truncado o escrito con otra revisión de la especificación.",
+    "copcNoNodes": "El índice COPC está vacío: declara un octree sin nodos con puntos.",
+    "copcTruncated": "La cabecera COPC está truncada.",
+    "copcOutOfMemory": "No hay memoria suficiente para decodificar ese nodo COPC."
   }
 }

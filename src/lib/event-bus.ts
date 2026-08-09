@@ -69,7 +69,7 @@ export interface SdkSiteCommand {
  * to align against, and the alignment ladder — all of which live in the panel.
  */
 export interface SdkPointCloudCommand {
-  action: 'add' | 'remove' | 'clear' | 'visible' | 'display' | 'frame'
+  action: 'add' | 'remove' | 'clear' | 'visible' | 'display' | 'frame' | 'inspect'
   /** `add`: the scan itself. A File so the readers can stream slices of it. */
   file?: File
   /** `remove` / `visible` / `frame`: which cloud. */
@@ -79,6 +79,11 @@ export interface SdkPointCloudCommand {
   display?: Record<string, unknown>
   /** Points drawn per frame at density 1. */
   renderBudget?: number
+  /**
+   * `inspect`: arm (default) or disarm click-to-read on the scan. Picks are
+   * reported to the host through the `pointcloud-picked` event.
+   */
+  inspect?: boolean
   /** `add` resolves with the new cloud's id so the host can address it. */
   done?: (ok: boolean, errorOrId?: string) => void
 }

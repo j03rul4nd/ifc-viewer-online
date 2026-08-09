@@ -355,6 +355,12 @@ export interface ViewerAPI {
    */
   getSolar(): Promise<import('./solar/solar-system').SolarSystemAPI>
   /**
+   * Lazily load and return the point cloud subsystem (separate chunk, created
+   * once per viewer, disposed with it). Point clouds render in THIS scene with
+   * THIS camera; the IFC model is never moved to accommodate them.
+   */
+  getPointClouds(): Promise<import('./pointcloud/point-cloud-system').PointCloudSystemAPI>
+  /**
    * Switch between standard WebGL rendering and quality mode (SSAO + edge detection).
    * Falls back silently to standard if postproduction failed to initialise on this GPU.
    */
@@ -804,6 +810,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // Sun & Moon study (lazy chunk) — set by getSolar().
   let solarSystemInstance: import('./solar/solar-system').SolarSystemAPI | null = null
   let solarLoadPromise: Promise<import('./solar/solar-system').SolarSystemAPI> | null = null
+
+  // Point clouds (lazy chunk) — set by getPointClouds().
+  let pointCloudInstance: import('./pointcloud/point-cloud-system').PointCloudSystemAPI | null = null
+  let pointCloudLoadPromise: Promise<import('./pointcloud/point-cloud-system').PointCloudSystemAPI> | null = null
 
   void world.camera.controls.setLookAt(30, 24, 36, 0, 2, 0, false)
 
@@ -1809,9 +1819,14 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     getGpuEstimateBytes() {
       const info      = wr.info
-      const geomBytes = info.memory.geometries * 1024 * 128
-      const texBytes  = info.memory.textures   * 1024 * 256
-      return geomBytes + texBytes
+      // Point cloud buffers are the largest single allocation the app can make
+      // and their size is known exactly — count them for real and take their
+      // geometries out of the 128 KB-per-geometry guess so they aren't double-counted.
+      const pc         = pointCloudInstance?.getStats() ?? { gpuBytes: 0, chunkCount: 0 }
+      const geometries = Math.max(0, info.memory.geometries - pc.chunkCount)
+      const geomBytes  = geometries * 1024 * 128
+      const texBytes   = info.memory.textures * 1024 * 256
+      return geomBytes + texBytes + pc.gpuBytes
     },
 
     // ─── Camera presets ───────────────────────────────────────────────────────
@@ -2524,7 +2539,33 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return solarLoadPromise
     },
 
+    getPointClouds() {
+      // Dynamic import keeps the point cloud engine, its shader and its readers
+      // in their own chunk: a user who never opens a scan never downloads them.
+      const self = this
+      pointCloudLoadPromise ??= import('./pointcloud/point-cloud-system').then((m) => {
+        pointCloudInstance = m.createPointCloudSystem({
+          scene: world.scene.three,
+          getActiveCamera: () => world.camera.three,
+          renderer: world.renderer!.three,
+          getActiveModelBounds: () => self.getModelBounds(),
+          frameBox: (min, max) => {
+            try {
+              void world.camera.controls.fitToBox(new THREE.Box3(min, max), true)
+            } catch (e) {
+              console.debug('[Viewer] point cloud fit failed:', e instanceof Error ? e.message : e)
+            }
+          },
+        })
+        return pointCloudInstance
+      })
+      return pointCloudLoadPromise
+    },
+
     dispose() {
+      try { pointCloudInstance?.dispose() } catch { /* ok */ }
+      pointCloudInstance = null
+      pointCloudLoadPromise = null
       try { solarSystemInstance?.dispose() } catch { /* ok */ }
       solarSystemInstance = null
       solarLoadPromise    = null

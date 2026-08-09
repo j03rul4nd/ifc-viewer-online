@@ -1,0 +1,767 @@
+// ─── point-cloud-system ───────────────────────────────────────────────────────
+// Point cloud lifecycle owner — the third sibling of geo-system.ts and
+// solar-system.ts. This module owns EVERY Three.js resource point clouds touch
+// (root groups, geometries, the shared material, the LOD loop); pointCloudStore
+// owns the product state; the viewer carries only a lazy getPointClouds() hook.
+//
+// Loaded via dynamic import — never import it statically from entry-path code.
+//
+// Invariants:
+//   INV-P1 — the IFC model is never moved, scaled or re-parented. The cloud is
+//            transformed into the model's frame (pc-align), matching the map's
+//            INV-2 rule. Nothing downstream of the IFC can be invalidated by
+//            loading a scan.
+//   INV-P2 — ONE Object3D per chunk, never per point. Enforced by construction
+//            here and asserted by point-cloud-system.test.ts.
+//   INV-P3 — every buffer this module uploads is disposed in remove()/dispose().
+//            Point clouds are the largest GPU allocation the app can make; a
+//            leak here is measured in hundreds of megabytes.
+
+import * as THREE from 'three'
+import { createPointCloudMaterial, type PointCloudMaterial } from './pc-material'
+import { effectiveTransform } from './pc-align'
+import { allocateBudget, type ChunkView } from './pc-lod'
+import {
+  selectNodes, planResidency,
+  type OctreeNode, type OctreeRoot, type NodeBounds,
+} from './pc-octree'
+import { raySphereDistance, pickInPositions, pickThresholdAt } from './pc-pick'
+import { createLogger } from '../logger'
+import {
+  BYTES_PER_POINT, DEFAULT_DISPLAY, RENDER_BUDGET_DEFAULT,
+  type PointChunk, type PointCloudAlignment, type PointCloudDisplay,
+} from './pc-types'
+
+const log = createLogger('PointCloud')
+
+/** How often the LOD pass may run, ms. 12 Hz is invisible and nearly free. */
+const LOD_INTERVAL_MS = 80
+/**
+ * On-screen point spacing to refine towards, in pixels. Below ~2 px a scan reads
+ * as a continuous surface; above ~6 px it reads as confetti.
+ */
+const TARGET_SPACING_PX = 3
+/** Don't re-run node selection more than this often — it fetches from disk. */
+const STREAM_INTERVAL_MS = 400
+/**
+ * How long a node that has left the selection is held before being dropped.
+ * Without it, nudging the camera across a node boundary re-reads and
+ * re-decompresses the same node forever.
+ */
+const NODE_GRACE_MS = 4_000
+/** Held nodes may push resident points this far past the budget, and no further. */
+const NODE_OVERSHOOT = 1.6
+/** Camera movement below this (metres) does not justify a re-allocation. */
+const LOD_CAMERA_EPSILON = 0.05
+
+// ── Context provided by viewer.ts ──────────────────────────────────────────────
+
+export interface PointCloudContext {
+  scene: THREE.Scene
+  getActiveCamera(): THREE.Camera
+  renderer: THREE.WebGLRenderer
+  /** World-space bounds of the active IFC model (viewer.getModelBounds shape). */
+  getActiveModelBounds(): {
+    center: { x: number; y: number; z: number }
+    size: { x: number; y: number; z: number }
+  } | null
+  /** Frame a world-space box. Reuses the viewer's own camera framing. */
+  frameBox(min: THREE.Vector3, max: THREE.Vector3): void
+}
+
+// ── Public API ─────────────────────────────────────────────────────────────────
+
+/** What a click on the cloud reports back. */
+export interface PickedPoint {
+  cloudId: string
+  /** World (scene) position of the picked point, metres. */
+  position: THREE.Vector3
+  /** The point in the FILE's own coordinates — what a surveyor would quote. */
+  sourcePosition: { x: number; y: number; z: number }
+  /** ASPRS classification code, when the file carried one. */
+  classification: number | null
+  /** 0-255, when the file carried intensity. */
+  intensity: number | null
+  /** Distance from the camera, scene metres. */
+  distance: number
+}
+
+export interface CloudStats {
+  /** Points resident in GPU buffers. */
+  pointCount: number
+  /** Points the last LOD pass decided to draw. */
+  drawnCount: number
+  chunkCount: number
+  gpuBytes: number
+}
+
+export interface PointCloudSystemAPI {
+  /**
+   * Create an (empty) cloud root. Chunks stream in afterwards.
+   * `sourceOrigin` is SourceFrame.origin — without it a pick can still report a
+   * scene position, but not the coordinates written in the file.
+   */
+  create(
+    cloudId: string, alignment: PointCloudAlignment,
+    sourceOrigin?: { x: number; y: number; z: number },
+  ): void
+  /** Upload one chunk. Safe to call before or after the cloud is visible. */
+  addChunk(cloudId: string, chunk: PointChunk): void
+  /** Re-apply an alignment (manual nudges call this on every slider move). */
+  setAlignment(cloudId: string, alignment: PointCloudAlignment): void
+  setVisible(cloudId: string, visible: boolean): void
+  /** Display settings are global — one material, every cloud. */
+  setDisplay(display: PointCloudDisplay): void
+  /** Points drawn per frame at density 1. */
+  setRenderBudget(budget: number): void
+  /** World-space bounds of one cloud, or of all of them when id is omitted. */
+  getBounds(cloudId?: string): { min: THREE.Vector3; max: THREE.Vector3 } | null
+  /** Frame a cloud (or every cloud) with the viewer's own camera framing. */
+  frame(cloudId?: string): void
+  /** Frame the IFC model and every cloud together. */
+  frameWithModel(): void
+  getStats(cloudId?: string): CloudStats
+  /**
+   * Put a cloud under view-dependent streaming: the LOD pass will decide which
+   * octree nodes should be resident and call `onRequest` with the difference.
+   * Only COPC has an index to stream from; every other format stays one-shot.
+   */
+  enableStreaming(cloudId: string, opts: StreamingSource): void
+  /** Drop one streamed node's GPU resources (eviction). */
+  removeNode(cloudId: string, nodeId: string): void
+  /** Dispose one cloud's GPU resources and drop it from the scene. */
+  remove(cloudId: string): void
+  /**
+   * Nearest visible point under a screen position, or null.
+   *
+   * Deliberately NOT wired into the model raycaster: a cloud must never
+   * intercept an IFC click. This is an explicit call, made only when something
+   * has asked to inspect the scan.
+   */
+  pickPoint(clientX: number, clientY: number, tolerancePx?: number): PickedPoint | null
+  /** Number of clouds currently resident. */
+  count(): number
+  dispose(): void
+}
+
+/** What the system needs in order to stream a cloud's octree. */
+export interface StreamingSource {
+  root: OctreeRoot
+  nodes: OctreeNode[]
+  /** SourceFrame.origin — chunk positions are relative to it. */
+  frameOrigin: { x: number; y: number; z: number }
+  /** Called when the resident set should change. Never called with empty lists. */
+  onRequest(load: string[], evict: string[]): void
+}
+
+// ── Internals ──────────────────────────────────────────────────────────────────
+
+interface ChunkRecord {
+  id: string
+  points: THREE.Points
+  geometry: THREE.BufferGeometry
+  count: number
+  /** Chunk centre in world space, refreshed whenever the alignment changes. */
+  worldCentre: THREE.Vector3
+  /** Chunk bounding radius in world space (source radius × alignment scale). */
+  worldRadius: number
+  localRadius: number
+}
+
+interface CloudRecord {
+  id: string
+  root: THREE.Group
+  chunks: ChunkRecord[]
+  alignment: PointCloudAlignment
+  pointCount: number
+  drawnCount: number
+  /** Local-space bbox accumulated as chunks arrive. */
+  localBox: THREE.Box3
+  /** SourceFrame.origin, so a pick can report the file's own coordinates. */
+  sourceOrigin: { x: number; y: number; z: number }
+  /** Set only for streamed (COPC) clouds. */
+  streaming: StreamingSource | null
+  /** Node ids currently resident or in flight — the diff is taken against this. */
+  residentNodes: Set<string>
+  /** Unwanted nodes on borrowed time: id → when they left the selection. */
+  deferredNodes: Map<string, number>
+  /** Points per resident node, so the hard ceiling can be enforced. */
+  nodePointCounts: Map<string, number>
+  lastStreamAt: number
+}
+
+export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystemAPI {
+  const clouds = new Map<string, CloudRecord>()
+  let display: PointCloudDisplay = { ...DEFAULT_DISPLAY }
+  let renderBudget = RENDER_BUDGET_DEFAULT
+  let material: PointCloudMaterial | null = null
+  let disposed = false
+
+  let rafId: number | null = null
+  let lastLodAt = 0
+  let lastStreamAt = 0
+  const lastCameraPos = new THREE.Vector3(NaN, NaN, NaN)
+
+  const frustum = new THREE.Frustum()
+  const projScreen = new THREE.Matrix4()
+  const tmpVec = new THREE.Vector3()
+  const tmpSphere = new THREE.Sphere()
+
+  function getMaterial(): PointCloudMaterial {
+    material ??= createPointCloudMaterial(display, ctx.renderer.getPixelRatio())
+    return material
+  }
+
+  // ── Transform ────────────────────────────────────────────────────────────────
+
+  function applyAlignment(cloud: CloudRecord): void {
+    const t = effectiveTransform(cloud.alignment)
+    cloud.root.position.set(t.position.x, t.position.y, t.position.z)
+    // yaw(Y) ∘ tilt(X) — the same decomposition the basemap group uses, so the
+    // two subsystems land geographic data on the scene identically.
+    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), t.yawRad)
+    if (t.tiltRad !== 0) {
+      q.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), t.tiltRad))
+    }
+    cloud.root.quaternion.copy(q)
+    cloud.root.scale.setScalar(t.scale)
+    cloud.root.updateMatrixWorld(true)
+    refreshChunkWorldGeometry(cloud)
+    refreshElevationRange()
+  }
+
+  function refreshChunkWorldGeometry(cloud: CloudRecord): void {
+    const scale = cloud.root.scale.x
+    for (const chunk of cloud.chunks) {
+      chunk.worldCentre.copy(chunk.points.position).applyMatrix4(cloud.root.matrixWorld)
+      chunk.worldRadius = chunk.localRadius * scale
+    }
+  }
+
+  /** Elevation ramp domain = the union of every resident cloud, in world Y. */
+  function refreshElevationRange(): void {
+    const bounds = worldBounds()
+    if (bounds && material) material.setElevationRange(bounds.min.y, bounds.max.y)
+  }
+
+  // ── Bounds ───────────────────────────────────────────────────────────────────
+
+  function cloudWorldBox(cloud: CloudRecord): THREE.Box3 | null {
+    if (cloud.localBox.isEmpty()) return null
+    cloud.root.updateMatrixWorld(true)
+    return cloud.localBox.clone().applyMatrix4(cloud.root.matrixWorld)
+  }
+
+  function worldBounds(cloudId?: string): { min: THREE.Vector3; max: THREE.Vector3 } | null {
+    const box = new THREE.Box3()
+    let any = false
+    for (const cloud of clouds.values()) {
+      if (cloudId && cloud.id !== cloudId) continue
+      const b = cloudWorldBox(cloud)
+      if (b) { box.union(b); any = true }
+    }
+    return any ? { min: box.min.clone(), max: box.max.clone() } : null
+  }
+
+  // ── LOD loop ─────────────────────────────────────────────────────────────────
+
+  function startLoop(): void {
+    if (rafId !== null || disposed) return
+    const tick = (): void => {
+      rafId = requestAnimationFrame(tick)
+      const now = performance.now()
+      if (now - lastLodAt < LOD_INTERVAL_MS) return
+      lastLodAt = now
+      runLodPass()
+    }
+    rafId = requestAnimationFrame(tick)
+  }
+
+  function stopLoop(): void {
+    if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null }
+  }
+
+  /** Force the next pass to recompute even if the camera has not moved. */
+  function invalidateLod(): void {
+    lastCameraPos.set(NaN, NaN, NaN)
+  }
+
+  /**
+   * Decide which octree nodes should be resident for a streamed cloud, and ask
+   * for the difference.
+   *
+   * The selection runs in the cloud's OWN coordinates, not the scene's: node
+   * bounds and point spacing both come from the file, so putting the camera into
+   * that space keeps the comparison unit-free and makes the alignment scale
+   * cancel out instead of having to be threaded through.
+   */
+  function updateStreaming(
+    cloud: CloudRecord, camWorld: THREE.Vector3, opts: { useFrustum: boolean } = { useFrustum: true },
+  ): void {
+    const src = cloud.streaming
+    if (!src) return
+
+    cloud.root.updateMatrixWorld(true)
+    const camLocal = cloud.root.worldToLocal(camWorld.clone())
+    const camSource = {
+      x: camLocal.x + src.frameOrigin.x,
+      y: camLocal.y + src.frameOrigin.y,
+      z: camLocal.z + src.frameOrigin.z,
+    }
+
+    const size = ctx.renderer.getSize(new THREE.Vector2())
+    const camera = ctx.getActiveCamera() as THREE.PerspectiveCamera
+    const fov = typeof camera.fov === 'number' ? camera.fov : 60
+    const projectionFactor = size.y / (2 * Math.tan((fov * Math.PI) / 360))
+
+    const selection = selectNodes(src.nodes, src.root, {
+      position: camSource,
+      projectionFactor,
+      // The very first pass runs before any frustum has been computed, and
+      // culling the initial coarse load would leave the scene empty.
+      isVisible: opts.useFrustum ? (b) => nodeVisible(cloud, b) : undefined,
+    }, {
+      maxSpacingPx: TARGET_SPACING_PX,
+      budget: Math.max(1, Math.floor(renderBudget * display.density)),
+    })
+
+    const now = performance.now()
+    const plan = planResidency(
+      {
+        resident: cloud.residentNodes,
+        deferred: cloud.deferredNodes,
+        pointCounts: cloud.nodePointCounts,
+      },
+      selection,
+      {
+        now,
+        graceMs: NODE_GRACE_MS,
+        overshoot: NODE_OVERSHOOT,
+        budget: Math.max(1, Math.floor(renderBudget * display.density)),
+      },
+    )
+
+    // A revived node never left the GPU — cancelling its clock costs nothing and
+    // is the entire benefit of the grace period.
+    for (const id of plan.revive) cloud.deferredNodes.delete(id)
+    for (const id of plan.defer) cloud.deferredNodes.set(id, now)
+    // Recorded as resident up front so the next pass does not re-request the
+    // same nodes while they are still in flight.
+    for (const id of plan.load) cloud.residentNodes.add(id)
+    for (const id of plan.evict) {
+      cloud.residentNodes.delete(id)
+      cloud.deferredNodes.delete(id)
+    }
+
+    if (plan.load.length === 0 && plan.evict.length === 0) return
+    src.onRequest(plan.load, plan.evict)
+  }
+
+  /** Frustum test for a node cube, taken into world space. */
+  function nodeVisible(cloud: CloudRecord, bounds: NodeBounds): boolean {
+    const src = cloud.streaming!
+    tmpSphere.center.set(
+      bounds.center.x - src.frameOrigin.x,
+      bounds.center.y - src.frameOrigin.y,
+      bounds.center.z - src.frameOrigin.z,
+    ).applyMatrix4(cloud.root.matrixWorld)
+    // The cube's circumradius, scaled into the scene.
+    tmpSphere.radius = bounds.halfSize * Math.sqrt(3) * cloud.root.scale.x
+    return frustum.intersectsSphere(tmpSphere)
+  }
+
+  function runLodPass(): void {
+    if (clouds.size === 0) return
+    const camera = ctx.getActiveCamera()
+    camera.updateMatrixWorld()
+    const camPos = tmpVec.setFromMatrixPosition(camera.matrixWorld)
+
+    // A static camera over a static scene needs no re-allocation at all.
+    const moved = !(Number.isFinite(lastCameraPos.x) && camPos.distanceTo(lastCameraPos) < LOD_CAMERA_EPSILON)
+    // A streamed cloud still needs passes while the camera is still: nodes are
+    // arriving, and each one changes what is drawable. diffSelection makes that
+    // idempotent, so a settled view asks for nothing.
+    const streaming = [...clouds.values()].some((c) => c.streaming !== null)
+    if (!moved && !streaming) return
+    lastCameraPos.copy(camPos)
+
+    projScreen.multiplyMatrices(
+      (camera as THREE.PerspectiveCamera).projectionMatrix,
+      camera.matrixWorldInverse,
+    )
+    frustum.setFromProjectionMatrix(projScreen)
+
+    const budget = Math.max(1, Math.floor(renderBudget * display.density))
+    const views: ChunkView[] = []
+    const byId = new Map<string, ChunkRecord>()
+
+    for (const cloud of clouds.values()) {
+      if (!cloud.root.visible) {
+        for (const chunk of cloud.chunks) chunk.points.visible = false
+        cloud.drawnCount = 0
+        continue
+      }
+      for (const chunk of cloud.chunks) {
+        tmpSphere.center.copy(chunk.worldCentre)
+        tmpSphere.radius = Math.max(chunk.worldRadius, 1e-4)
+        const key = `${cloud.id}/${chunk.id}`
+        byId.set(key, chunk)
+        views.push({
+          id: key,
+          count: chunk.count,
+          distance: camPos.distanceTo(chunk.worldCentre),
+          radius: tmpSphere.radius,
+          visible: frustum.intersectsSphere(tmpSphere),
+        })
+      }
+    }
+
+    // Streamed clouds get a chance to change WHAT is resident, not just how much
+    // of it is drawn. Throttled separately: this one hits the disk.
+    const streamNow = performance.now()
+    if (streamNow - lastStreamAt >= STREAM_INTERVAL_MS) {
+      lastStreamAt = streamNow
+      for (const cloud of clouds.values()) {
+        if (cloud.streaming && cloud.root.visible) updateStreaming(cloud, camPos)
+      }
+    }
+
+    const { draw } = allocateBudget(views, budget)
+    const drawnPerCloud = new Map<string, number>()
+
+    for (const [key, n] of draw) {
+      const chunk = byId.get(key)
+      if (!chunk) continue
+      chunk.points.visible = n > 0
+      chunk.geometry.setDrawRange(0, n)
+      const cloudId = key.slice(0, key.indexOf('/'))
+      drawnPerCloud.set(cloudId, (drawnPerCloud.get(cloudId) ?? 0) + n)
+    }
+    for (const cloud of clouds.values()) {
+      if (cloud.root.visible) cloud.drawnCount = drawnPerCloud.get(cloud.id) ?? 0
+    }
+  }
+
+  // ── Disposal ─────────────────────────────────────────────────────────────────
+
+  function disposeChunk(chunk: ChunkRecord): void {
+    chunk.geometry.dispose()
+    chunk.points.removeFromParent()
+  }
+
+  function disposeCloud(cloud: CloudRecord): void {
+    for (const chunk of cloud.chunks) disposeChunk(chunk)
+    cloud.chunks.length = 0
+    cloud.root.removeFromParent()
+  }
+
+  // ── API ──────────────────────────────────────────────────────────────────────
+
+  const api: PointCloudSystemAPI = {
+    create(cloudId, alignment, sourceOrigin) {
+      if (disposed) return
+      const existing = clouds.get(cloudId)
+      if (existing) disposeCloud(existing)
+
+      const root = new THREE.Group()
+      root.name = `point-cloud:${cloudId}`
+      // Points are never lit, never shadowed and never picked by the model
+      // raycaster — keeping them out of those paths is most of the win.
+      root.matrixAutoUpdate = true
+      ctx.scene.add(root)
+
+      const record: CloudRecord = {
+        id: cloudId, root, chunks: [], alignment,
+        pointCount: 0, drawnCount: 0, localBox: new THREE.Box3(),
+        sourceOrigin: sourceOrigin ?? { x: 0, y: 0, z: 0 },
+        streaming: null, residentNodes: new Set(),
+        deferredNodes: new Map(), nodePointCounts: new Map(), lastStreamAt: 0,
+      }
+      clouds.set(cloudId, record)
+      applyAlignment(record)
+      startLoop()
+    },
+
+    addChunk(cloudId, chunk) {
+      if (disposed) return
+      const cloud = clouds.get(cloudId)
+      if (!cloud) { log.warn(`addChunk for unknown cloud "${cloudId}"`); return }
+
+      const geometry = new THREE.BufferGeometry()
+      geometry.setAttribute('position', new THREE.BufferAttribute(chunk.positions, 3))
+      // Uint8 attributes, normalized — 3 bytes per point instead of 12. The
+      // shader reads them as 0-1 floats with no extra work.
+      geometry.setAttribute('pcColor', chunk.colors
+        ? new THREE.BufferAttribute(chunk.colors, 3, true)
+        : new THREE.BufferAttribute(new Uint8Array(chunk.count * 3).fill(200), 3, true))
+      geometry.setAttribute('pcIntensity', chunk.intensity
+        ? new THREE.BufferAttribute(chunk.intensity, 1, true)
+        : new THREE.BufferAttribute(new Uint8Array(chunk.count).fill(255), 1, true))
+      geometry.setAttribute('pcClass', chunk.classification
+        ? new THREE.BufferAttribute(chunk.classification, 1, true)
+        : new THREE.BufferAttribute(new Uint8Array(chunk.count), 1, true))
+      geometry.setAttribute('pcConfidence', chunk.confidence
+        ? new THREE.BufferAttribute(chunk.confidence, 1, true)
+        : new THREE.BufferAttribute(new Uint8Array(chunk.count).fill(255), 1, true))
+
+      // Three culls Points by boundingSphere; ours is known exactly, so setting
+      // it avoids the full-attribute scan computeBoundingSphere would do.
+      geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), chunk.radius || 1e-3)
+      geometry.setDrawRange(0, chunk.count)
+
+      const points = new THREE.Points(geometry, getMaterial())
+      points.position.set(chunk.origin.x, chunk.origin.y, chunk.origin.z)
+      points.frustumCulled = true
+      // Never intercept a model click: the IFC selection raycast must behave
+      // exactly as it did before a cloud was loaded.
+      points.raycast = () => { /* not pickable */ }
+      cloud.root.add(points)
+
+      const record: ChunkRecord = {
+        id: chunk.id, points, geometry, count: chunk.count,
+        worldCentre: new THREE.Vector3(), worldRadius: chunk.radius,
+        localRadius: chunk.radius,
+      }
+      cloud.chunks.push(record)
+      cloud.pointCount += chunk.count
+      // Streamed clouds need per-node counts to enforce the residency ceiling.
+      if (cloud.streaming) cloud.nodePointCounts.set(chunk.id, chunk.count)
+      // A new chunk is uploaded with its draw range wide open, so it IS fully
+      // drawn until the first LOD pass narrows it. Counting it now keeps the
+      // stats honest in the window before that pass (and in environments where
+      // rAF is throttled, such as a background tab).
+      cloud.drawnCount += chunk.count
+
+      cloud.localBox.expandByPoint(new THREE.Vector3(
+        chunk.origin.x - chunk.radius, chunk.origin.y - chunk.radius, chunk.origin.z - chunk.radius))
+      cloud.localBox.expandByPoint(new THREE.Vector3(
+        chunk.origin.x + chunk.radius, chunk.origin.y + chunk.radius, chunk.origin.z + chunk.radius))
+
+      cloud.root.updateMatrixWorld(true)
+      record.worldCentre.copy(points.position).applyMatrix4(cloud.root.matrixWorld)
+      record.worldRadius = chunk.radius * cloud.root.scale.x
+      refreshElevationRange()
+      invalidateLod()
+    },
+
+    setAlignment(cloudId, alignment) {
+      const cloud = clouds.get(cloudId)
+      if (!cloud) return
+      cloud.alignment = alignment
+      applyAlignment(cloud)
+      invalidateLod()
+    },
+
+    setVisible(cloudId, visible) {
+      const cloud = clouds.get(cloudId)
+      if (!cloud) return
+      cloud.root.visible = visible
+      if (!visible) cloud.drawnCount = 0
+      invalidateLod()
+    },
+
+    setDisplay(next) {
+      display = next
+      material?.applyDisplay(next, ctx.renderer.getPixelRatio())
+      invalidateLod()
+    },
+
+    setRenderBudget(budget) {
+      renderBudget = Math.max(1, budget)
+      invalidateLod()
+    },
+
+    getBounds(cloudId) {
+      return worldBounds(cloudId)
+    },
+
+    frame(cloudId) {
+      const b = worldBounds(cloudId)
+      if (b) ctx.frameBox(b.min, b.max)
+    },
+
+    frameWithModel() {
+      const b = worldBounds()
+      const model = ctx.getActiveModelBounds()
+      if (!b && !model) return
+      const box = new THREE.Box3()
+      if (b) box.union(new THREE.Box3(b.min, b.max))
+      if (model) {
+        const half = new THREE.Vector3(model.size.x / 2, model.size.y / 2, model.size.z / 2)
+        const centre = new THREE.Vector3(model.center.x, model.center.y, model.center.z)
+        box.union(new THREE.Box3(centre.clone().sub(half), centre.clone().add(half)))
+      }
+      if (!box.isEmpty()) ctx.frameBox(box.min, box.max)
+    },
+
+    getStats(cloudId) {
+      let pointCount = 0, drawnCount = 0, chunkCount = 0
+      for (const cloud of clouds.values()) {
+        if (cloudId && cloud.id !== cloudId) continue
+        pointCount += cloud.pointCount
+        drawnCount += cloud.drawnCount
+        chunkCount += cloud.chunks.length
+      }
+      return { pointCount, drawnCount, chunkCount, gpuBytes: pointCount * BYTES_PER_POINT }
+    },
+
+    enableStreaming(cloudId, opts) {
+      const cloud = clouds.get(cloudId)
+      if (!cloud) { log.warn(`enableStreaming for unknown cloud "${cloudId}"`); return }
+      cloud.streaming = opts
+      // Whatever open() already delivered (the root node) is resident.
+      for (const chunk of cloud.chunks) {
+        cloud.residentNodes.add(chunk.id)
+        cloud.nodePointCounts.set(chunk.id, chunk.count)
+      }
+      invalidateLod()
+      startLoop()
+
+      // Ask for the first nodes NOW rather than waiting for the LOD loop.
+      // Two reasons, and the second is the important one: it saves a frame plus
+      // the stream interval before anything appears, and it means a cloud still
+      // loads when requestAnimationFrame never fires at all — a background tab,
+      // a hidden window, a browser in a low-power mode. A streamed cloud that
+      // silently stays empty because the loop was throttled is indistinguishable
+      // from a broken one.
+      const camera = ctx.getActiveCamera()
+      camera.updateMatrixWorld()
+      const camPos = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld)
+      updateStreaming(cloud, camPos, { useFrustum: false })
+    },
+
+    removeNode(cloudId, nodeId) {
+      const cloud = clouds.get(cloudId)
+      if (!cloud) return
+      const index = cloud.chunks.findIndex((c) => c.id === nodeId)
+      if (index < 0) { cloud.residentNodes.delete(nodeId); return }
+      const [chunk] = cloud.chunks.splice(index, 1)
+      cloud.pointCount -= chunk.count
+      cloud.drawnCount = Math.max(0, cloud.drawnCount - chunk.count)
+      cloud.residentNodes.delete(nodeId)
+      cloud.deferredNodes.delete(nodeId)
+      cloud.nodePointCounts.delete(nodeId)
+      disposeChunk(chunk)
+      refreshElevationRange()
+      invalidateLod()
+    },
+
+    pickPoint(clientX, clientY, tolerancePx = 8) {
+      if (disposed || clouds.size === 0) return null
+      const camera = ctx.getActiveCamera()
+      camera.updateMatrixWorld()
+
+      const canvas = ctx.renderer.domElement
+      const rect = canvas.getBoundingClientRect()
+      if (rect.width === 0 || rect.height === 0) return null
+      const ndc = new THREE.Vector2(
+        ((clientX - rect.left) / rect.width) * 2 - 1,
+        -((clientY - rect.top) / rect.height) * 2 + 1,
+      )
+      const raycaster = new THREE.Raycaster()
+      raycaster.setFromCamera(ndc, camera)
+
+      const size = ctx.renderer.getSize(new THREE.Vector2())
+      const persp = camera as THREE.PerspectiveCamera
+      const fov = typeof persp.fov === 'number' ? persp.fov : 60
+      const projectionFactor = size.y / (2 * Math.tan((fov * Math.PI) / 360))
+
+      let best: PickedPoint | null = null
+      let bestT = Infinity
+
+      for (const cloud of clouds.values()) {
+        if (!cloud.root.visible) continue
+        cloud.root.updateMatrixWorld(true)
+
+        // Take the ray into the cloud's local space once, rather than taking
+        // every point out of it. The scale cancels in the comparison below.
+        const inverse = new THREE.Matrix4().copy(cloud.root.matrixWorld).invert()
+        const localOrigin = raycaster.ray.origin.clone().applyMatrix4(inverse)
+        const localDir = raycaster.ray.direction.clone()
+          .transformDirection(inverse).normalize()
+        const localRay = {
+          origin: { x: localOrigin.x, y: localOrigin.y, z: localOrigin.z },
+          direction: { x: localDir.x, y: localDir.y, z: localDir.z },
+        }
+        const scale = cloud.root.scale.x || 1
+
+        for (const chunk of cloud.chunks) {
+          if (!chunk.points.visible) continue
+          const centre = chunk.points.position
+          // Prefilter on the chunk sphere: a few hundred cheap tests before any
+          // point is touched at all.
+          const hitAt = raySphereDistance(
+            localRay, { x: centre.x, y: centre.y, z: centre.z }, chunk.localRadius * 1.05,
+          )
+          if (hitAt === null) continue
+
+          // Screen-space tolerance, converted into this cloud's local units.
+          const worldDistance = Math.max(hitAt * scale, 1e-3)
+          const threshold = pickThresholdAt(worldDistance, tolerancePx, projectionFactor) / scale
+
+          // Only the DRAWN range — LOD already decided what is visible, and
+          // picking something the user cannot see would be a lie.
+          const drawn = chunk.geometry.drawRange.count
+          const count = Math.min(
+            Number.isFinite(drawn) ? drawn : chunk.count,
+            chunk.count,
+          )
+          if (count <= 0) continue
+
+          const positions = chunk.geometry.getAttribute('position').array as Float32Array
+          const hit = pickInPositions(localRay, positions, count, threshold, centre)
+          if (!hit) continue
+
+          const worldT = hit.t * scale
+          if (worldT >= bestT) continue
+          bestT = worldT
+
+          const world = new THREE.Vector3(hit.point.x, hit.point.y, hit.point.z)
+            .applyMatrix4(cloud.root.matrixWorld)
+          const cls = chunk.geometry.getAttribute('pcClass')
+          const inten = chunk.geometry.getAttribute('pcIntensity')
+          best = {
+            cloudId: cloud.id,
+            position: world,
+            // Local coordinates are relative to SourceFrame.origin; adding it
+            // back gives the number that appears in the file itself.
+            sourcePosition: {
+              x: hit.point.x + (cloud.streaming?.frameOrigin.x ?? cloud.sourceOrigin.x),
+              y: hit.point.y + (cloud.streaming?.frameOrigin.y ?? cloud.sourceOrigin.y),
+              z: hit.point.z + (cloud.streaming?.frameOrigin.z ?? cloud.sourceOrigin.z),
+            },
+            classification: cls ? (cls.array as Uint8Array)[hit.index] : null,
+            intensity: inten ? (inten.array as Uint8Array)[hit.index] : null,
+            distance: worldT,
+          }
+        }
+      }
+      return best
+    },
+
+    remove(cloudId) {
+      const cloud = clouds.get(cloudId)
+      if (!cloud) return
+      disposeCloud(cloud)
+      clouds.delete(cloudId)
+      if (clouds.size === 0) stopLoop()
+      refreshElevationRange()
+    },
+
+    count() {
+      return clouds.size
+    },
+
+    dispose() {
+      if (disposed) return
+      disposed = true
+      stopLoop()
+      for (const cloud of clouds.values()) disposeCloud(cloud)
+      clouds.clear()
+      material?.dispose()
+      material = null
+    },
+  }
+
+  return api
+}

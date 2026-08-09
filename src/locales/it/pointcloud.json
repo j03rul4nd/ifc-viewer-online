@@ -1,17 +1,32 @@
 {
   "_status": "machine-copy-of-en — translate before promoting",
   "title": "Point cloud",
-  "subtitle": "Show a scan alongside the model",
   "entry": "Point cloud",
   "close": "Close",
   "load": {
-    "button": "Load point cloud",
     "another": "Add another",
     "drop": "Drop a scan here, or browse",
-    "formats": "LAS · PLY · XYZ · PTS · CSV",
+    "formats": "LAS · LAZ · COPC · PLY · XYZ · PTS · CSV",
     "hint": "Parsed in your browser. Nothing is uploaded.",
-    "parsing": "Reading {{name}}…",
     "parsingShort": "Reading…"
+  },
+  "demos": {
+    "title": "Sample scans",
+    "hint": "Real public LiDAR, fetched straight into your browser. None of these is a scan of the demo buildings, so they land on the model rather than lining up with it.",
+    "failed": "That sample could not be downloaded. Check your connection and try again.",
+    "source": "Source",
+    "chip": {
+      "colour": "Colour",
+      "classification": "Classes",
+      "noCrs": "No CRS",
+      "crs": "EPSG:{{code}}"
+    },
+    "items": {
+      "autzen": "Aerial LiDAR over a stadium, with true colour and ground/unclassified returns. LASzip-compressed and recorded in feet — both handled on the way in.",
+      "newMexico": "A LAS 1.4 ground survey in US survey feet. Good for checking the newer point format reads correctly.",
+      "mvk": "Small and instant, with six classification codes — the quickest way to see Colour by → Classification.",
+      "warsaw": "A tiny coloured sample. Loads in a blink; useful for trying the appearance controls."
+    }
   },
   "status": {
     "points": "{{count}} points",
@@ -19,9 +34,7 @@
     "chunks": "{{count}} blocks",
     "memory": "{{mb}} MB on the GPU",
     "truncated": "Stopped at {{count}} points — the file holds more than this viewer keeps in memory at once.",
-    "estimatedBounds": "Extent measured while reading (this format carries no bounding box).",
-    "noModel": "No IFC model loaded — the scan is placed on its own.",
-    "empty": "No point cloud loaded yet."
+    "noModel": "No IFC model loaded — the scan is placed on its own."
   },
   "align": {
     "title": "Alignment",
@@ -56,10 +69,19 @@
       "unitCentimetres": "Extent suggests centimetres — scaled by 0.01.",
       "unitFeet": "Extent suggests feet — scaled by 0.3048.",
       "unitAssumed": "Unit not declared; metres assumed.",
-      "noCommonReference": "Nothing links the two files, so the scan was centred on the model. Use the offsets below to place it."
+      "noCommonReference": "Nothing links the two files, so the scan was centred on the model. Use the offsets below to place it.",
+      "cloudCrsUnknown": "The scan names a coordinate system this build has no definition for, so its georeferencing could not be used. Paste a proj4 definition below to unlock it."
     },
     "manualWarning": "This placement is a starting point, not a measurement.",
-    "recompute": "Re-run alignment"
+    "recompute": "Re-run alignment",
+    "crsForm": {
+      "title": "Coordinate system",
+      "hint": "Find the definition for {{code}} at epsg.io and paste the proj4 line.",
+      "placeholder": "+proj=lcc +lat_0=... +units=us-ft +no_defs",
+      "apply": "Use this definition",
+      "invalid": "proj4 could not parse that definition.",
+      "applied": "Definition accepted — the scan was re-aligned."
+    }
   },
   "transform": {
     "title": "Adjust placement",
@@ -92,12 +114,23 @@
     "confidence": "Confidence cut-off",
     "confidenceHint": "Hides points the reconstruction was least sure about. Only files that carry a per-point confidence have this."
   },
+  "inspect": {
+    "title": "Inspect",
+    "enable": "Click a point",
+    "active": "Click the scan…",
+    "hint": "Reads one point from the scan: where it is, and what the file recorded there.",
+    "none": "No point under the cursor. Try closer to a dense area.",
+    "scene": "Scene position",
+    "source": "File coordinates",
+    "classification": "Classification",
+    "intensity": "Intensity",
+    "distance": "Distance from camera",
+    "clear": "Clear"
+  },
   "view": {
     "title": "View",
     "fitCloud": "Fit to scan",
     "fitBoth": "Fit model + scan",
-    "showModel": "Show model",
-    "showCloud": "Show scan",
     "isolateCloud": "Scan only",
     "isolateModel": "Model only",
     "both": "Both"
@@ -109,9 +142,7 @@
     "hidden": "Hidden"
   },
   "unsupported": {
-    "laz": "This is a LAZ file (compressed LAS). This viewer reads uncompressed LAS — export or convert to .las and try again.",
     "e57": "E57 is not supported yet. Export the scan as LAS or PLY from your scanner software.",
-    "copc": "Cloud-optimised point clouds are not supported yet. Export a plain .las instead.",
     "pcd": "PCD is not supported yet. Export as PLY instead.",
     "proprietary": "That is a scanner-native project file. Export it as LAS or PLY first.",
     "unknown": "That file type is not a point cloud this viewer can read."
@@ -131,6 +162,15 @@
     "workerFailed": "The point cloud worker stopped unexpectedly.",
     "timeout": "The file did not start reading in time.",
     "cancelled": "Loading was cancelled.",
-    "budgetExhausted": "The point budget is full. Remove a scan before loading another."
+    "budgetExhausted": "The point budget is full. Remove a scan before loading another.",
+    "notLaz": "This file is not LASzip-compressed.",
+    "lazDecode": "The compressed point data could not be decoded. The file may be truncated or use a LASzip variant this decoder does not handle.",
+    "lazTooLarge": "That LAZ is too large to decompress in a browser tab. Crop or decimate it first — see the docs for a PDAL one-liner.",
+    "lazOutOfMemory": "Not enough memory to decompress that LAZ. Close other tabs, or crop the file first.",
+    "notCopc": "This file has no Cloud Optimized Point Cloud index. If it is plain LAZ, rename it without the copc part.",
+    "copcDecode": "The COPC octree could not be decoded. The file may be truncated or written to a different revision of the spec.",
+    "copcNoNodes": "The COPC index is empty — the file declares an octree with no populated nodes.",
+    "copcTruncated": "The COPC header is truncated.",
+    "copcOutOfMemory": "Not enough memory to decode that COPC node."
   }
 }

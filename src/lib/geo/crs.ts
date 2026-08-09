@@ -169,6 +169,37 @@ export interface GridToWgs84Result {
   inDomain: boolean
 }
 
+/**
+ * Convert between two projected CRSs directly (metres → metres).
+ * Used by the point cloud aligner when a scan and its IFC were delivered in
+ * different grids — going through WGS84 by hand would lose precision the
+ * proj4 pipeline keeps.
+ */
+export function gridToGrid(
+  from: CrsDef, to: CrsDef, eastings: number, northings: number,
+): Result<{ eastings: number; northings: number }> {
+  try {
+    const [e, n] = proj4(from.def, to.def).forward([eastings, northings])
+    if (!Number.isFinite(e) || !Number.isFinite(n)) return err(new Error('crsConversionFailed'))
+    return ok({ eastings: e, northings: n })
+  } catch {
+    return err(new Error('crsConversionFailed'))
+  }
+}
+
+/** WGS84 degrees → grid eastings/northings (metres). Inverse of gridToWgs84. */
+export function wgs84ToGrid(
+  def: CrsDef, lat: number, lon: number,
+): Result<{ eastings: number; northings: number }> {
+  try {
+    const [e, n] = proj4('EPSG:4326', def.def).forward([lon, lat])
+    if (!Number.isFinite(e) || !Number.isFinite(n)) return err(new Error('crsConversionFailed'))
+    return ok({ eastings: e, northings: n })
+  } catch {
+    return err(new Error('crsConversionFailed'))
+  }
+}
+
 /** Convert grid eastings/northings (metres) → WGS84 degrees using a resolved def. */
 export function gridToWgs84(def: CrsDef, eastings: number, northings: number): Result<GridToWgs84Result> {
   try {

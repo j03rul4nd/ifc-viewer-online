@@ -20,6 +20,7 @@ import type enInvite from '../locales/en/invite.json';
 import type enCapture from '../locales/en/capture.json';
 import type enVerify from '../locales/en/verify.json';
 import type enPro from '../locales/en/pro.json';
+import type enPointCloud from '../locales/en/pointcloud.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -47,6 +48,7 @@ declare module 'i18next' {
       client: typeof enClient;
       verify: typeof enVerify;
       pro: typeof enPro;
+      pointcloud: typeof enPointCloud;
     };
   }
 }

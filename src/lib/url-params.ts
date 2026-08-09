@@ -258,6 +258,10 @@ export type EmbedEventType =
   | 'model-progress'
   | 'validation-completed'
   | 'element-selected'
+  // Emitted when click-to-read is armed on a point cloud and a point is hit.
+  // The payload carries the file's own coordinates alongside the scene ones,
+  // because that is the number a host system will already have on record.
+  | 'pointcloud-picked'
   | 'result'
 
 /** True when the app is running inside an iframe. */
