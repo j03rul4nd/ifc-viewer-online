@@ -53,5 +53,21 @@
     "emptyFile": "Quel file è vuoto.",
     "budgetExhausted": "Il budget di triangoli è esaurito. Rimuovi un modello prima di aggiungerne un altro.",
     "cancelled": "L'importazione è stata annullata."
+  },
+  "demos": {
+    "title": "Modelli di esempio",
+    "hint": "Modelli pubblici reali, scaricati direttamente nel tuo browser. Non viene caricato nulla.",
+    "failed": "Non è stato possibile scaricare questo esempio. Controlla la connessione e riprova.",
+    "chip": {
+      "triangles": "{{count}} tri",
+      "textures": "{{count}} tex",
+      "files": "{{count}} file"
+    },
+    "items": {
+      "box": "La cosa più piccola che possa funzionare — dodici triangoli, nessuna texture. Se fallisce questo, il problema non è il tuo file.",
+      "duckDraco": "Geometria compressa in Draco distribuita su tre file. Richiede Draco, quindi senza decodificatore non si apre affatto — e la sua texture viene trovata per nome nella stessa selezione.",
+      "helmet": "Un modello PBR texturizzato in un unico file autonomo. Anche una lezione sul perché esistono i budget: cinque mappe 2K da 3,8 MB scaricati.",
+      "humanFigure": "Si importa SBAGLIATO di proposito. È in centimetri e in piedi, quindi unità e asse verticale sbagliano entrambi — correggili con i due controlli qui sotto."
+    }
   }
 }

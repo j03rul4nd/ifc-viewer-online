@@ -53,5 +53,21 @@
     "emptyFile": "Aquest fitxer és buit.",
     "budgetExhausted": "El pressupost de triangles és ple. Elimina un model abans d'afegir-ne un altre.",
     "cancelled": "S'ha cancel·lat la importació."
+  },
+  "demos": {
+    "title": "Models d’exemple",
+    "hint": "Models públics reals, descarregats directament al teu navegador. No es puja res.",
+    "failed": "No s’ha pogut descarregar aquest exemple. Comprova la connexió i torna-ho a provar.",
+    "chip": {
+      "triangles": "{{count}} tri",
+      "textures": "{{count}} tex",
+      "files": "{{count}} fitxers"
+    },
+    "items": {
+      "box": "La cosa més petita que pot funcionar — dotze triangles, sense textures. Si aquest falla, el problema no és el teu fitxer.",
+      "duckDraco": "Geometria comprimida amb Draco repartida en tres fitxers. Exigeix Draco, així que sense descodificador no s’obre — i la seva textura es localitza pel nom dins la mateixa selecció.",
+      "helmet": "Un model PBR amb textures en un sol fitxer. També una lliçó de per què hi ha pressupostos: cinc mapes de 2K des d’una descàrrega de 3,8 MB.",
+      "humanFigure": "S’importa MALAMENT a propòsit. És en centímetres i dret, així que la unitat i l’eix vertical fallen tots dos — corregeix-los amb els dos controls de sota."
+    }
   }
 }

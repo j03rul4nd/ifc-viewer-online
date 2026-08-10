@@ -53,5 +53,21 @@
     "emptyFile": "Ce fichier est vide.",
     "budgetExhausted": "Le budget de triangles est plein. Retirez un modèle avant d’en ajouter un autre.",
     "cancelled": "L'import a été annulé."
+  },
+  "demos": {
+    "title": "Modèles d’exemple",
+    "hint": "De vrais modèles publics, chargés directement dans votre navigateur. Rien n’est envoyé.",
+    "failed": "Cet exemple n’a pas pu être téléchargé. Vérifiez votre connexion et réessayez.",
+    "chip": {
+      "triangles": "{{count}} tri",
+      "textures": "{{count}} tex",
+      "files": "{{count}} fichiers"
+    },
+    "items": {
+      "box": "La plus petite chose qui puisse marcher — douze triangles, aucune texture. Si celui-ci échoue, le problème ne vient pas de votre fichier.",
+      "duckDraco": "Géométrie compressée en Draco répartie sur trois fichiers. Elle exige Draco, donc elle ne s’ouvre pas du tout sans décodeur — et sa texture est retrouvée par nom dans la même sélection.",
+      "helmet": "Un modèle PBR texturé en un seul fichier autonome. Aussi une leçon sur l’utilité des budgets : cinq textures 2K pour 3,8 Mo téléchargés.",
+      "humanFigure": "S’importe MAL exprès. Il est en centimètres et debout, donc l’unité et l’axe vertical se trompent tous les deux — corrigez-les avec les deux réglages ci-dessous."
+    }
   }
 }

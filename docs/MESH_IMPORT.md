@@ -136,6 +136,31 @@ alongside the values: neither format records a unit, and only glTF records an
 orientation, so reading the numbers without their provenance is how a model ends
 up a thousand times too big with nobody questioning it.
 
+## Sample models
+
+Four, in the panel, fetched straight into the browser. Each earns its place by
+exercising something different rather than by looking good:
+
+| | What it proves |
+|---|---|
+| **Box** (2 KB) | The smallest thing that can work. If this fails, the problem is not the user's file. |
+| **Duck (Draco)** (30 KB, 3 files) | Declares Draco as *required*, so it cannot open without a decoder — and its texture is resolved by basename out of the same selection. |
+| **Damaged Helmet** (3.8 MB) | A textured PBR model, and a lesson in the budgets: five 2K maps ≈ 110 MB on the GPU from a 3.8 MB download. |
+| **Human figure** (OBJ, 5 files) | **Imports wrong on purpose.** |
+
+That last one is deliberate. It is in centimetres and standing up, so the unit
+heuristic reads it as metres (182 is a plausible number of metres for something)
+and the up-axis heuristic misses too — it assumes what people model is wider than
+it is tall, which holds for a room and inverts for anything standing. Both are
+marked `assumed` and both are one control away from right.
+
+A demo that lands perfectly teaches nobody where those controls are. This one
+teaches it in about four seconds, and its card says so rather than leaving the
+user to conclude the importer is broken.
+
+Every figure on those cards was measured by running the file through this app's
+own loader, not copied from an upstream description.
+
 ## Verified against a real compressed file
 
 The Khronos Draco Duck — a `.gltf` that declares

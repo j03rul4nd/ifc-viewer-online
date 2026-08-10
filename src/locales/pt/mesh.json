@@ -53,5 +53,21 @@
     "emptyFile": "Esse ficheiro está vazio.",
     "budgetExhausted": "O orçamento de triângulos está cheio. Remova um modelo antes de adicionar outro.",
     "cancelled": "A importação foi cancelada."
+  },
+  "demos": {
+    "title": "Modelos de exemplo",
+    "hint": "Modelos públicos reais, obtidos diretamente para o seu navegador. Nada é enviado.",
+    "failed": "Não foi possível descarregar esse exemplo. Verifique a ligação e tente novamente.",
+    "chip": {
+      "triangles": "{{count}} tri",
+      "textures": "{{count}} tex",
+      "files": "{{count}} ficheiros"
+    },
+    "items": {
+      "box": "A coisa mais pequena que pode funcionar — doze triângulos, sem texturas. Se este falhar, o problema não é o seu ficheiro.",
+      "duckDraco": "Geometria comprimida em Draco repartida por três ficheiros. Exige Draco, por isso nem abre sem descodificador — e a textura é encontrada pelo nome dentro da mesma seleção.",
+      "helmet": "Um modelo PBR texturizado num único ficheiro. Também uma lição sobre por que existem os orçamentos: cinco mapas 2K a partir de 3,8 MB descarregados.",
+      "humanFigure": "Importa MAL de propósito. Está em centímetros e de pé, por isso a unidade e o eixo vertical falham ambos — corrija-os com os dois controlos abaixo."
+    }
   }
 }

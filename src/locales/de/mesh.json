@@ -53,5 +53,21 @@
     "emptyFile": "Diese Datei ist leer.",
     "budgetExhausted": "Das Dreiecks-Budget ist voll. Entfernen Sie ein Modell, bevor Sie ein weiteres hinzufügen.",
     "cancelled": "Der Import wurde abgebrochen."
+  },
+  "demos": {
+    "title": "Beispielmodelle",
+    "hint": "Echte öffentliche Modelle, direkt in Ihren Browser geladen. Nichts wird hochgeladen.",
+    "failed": "Dieses Beispiel konnte nicht geladen werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "chip": {
+      "triangles": "{{count}} Dreiecke",
+      "textures": "{{count}} Tex",
+      "files": "{{count}} Dateien"
+    },
+    "items": {
+      "box": "Das Kleinste, was funktionieren kann — zwölf Dreiecke, keine Texturen. Scheitert dieses, liegt es nicht an Ihrer Datei.",
+      "duckDraco": "Draco-komprimierte Geometrie über drei Dateien. Sie fordert Draco verbindlich, öffnet also ohne Decoder gar nicht — und ihre Textur wird per Namen aus derselben Auswahl gefunden.",
+      "helmet": "Ein texturiertes PBR-Modell in einer eigenständigen Datei. Zugleich eine Lehrstunde, warum es Budgets gibt: fünf 2K-Maps aus 3,8 MB Download.",
+      "humanFigure": "Wird absichtlich FALSCH importiert. Es steht und ist in Zentimetern, also liegen Einheit und Hochachse beide daneben — korrigieren Sie beides unten und sehen Sie zu."
+    }
   }
 }

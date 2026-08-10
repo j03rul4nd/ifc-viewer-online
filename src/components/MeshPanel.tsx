@@ -14,6 +14,9 @@ import { ViewportPanel } from './ViewportPanel'
 import { useMeshStore } from '../stores/meshStore'
 import { loadMesh, removeMesh as dropMesh, reapply } from '../lib/mesh/mesh-runner'
 import { MESH_EXTENSIONS } from '../lib/mesh/mesh-types'
+import {
+  DEMO_MESHES, fetchDemoMesh, formatDemoSize, type DemoMesh,
+} from '../demo-models/meshes'
 import { toast } from '../stores/toastStore'
 import { createLogger } from '../lib/logger'
 import { appBus } from '../lib/event-bus'
@@ -40,6 +43,8 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
   const store = useMeshStore()
   const fileRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
+  const [demoBusy, setDemoBusy] = useState<string | null>(null)
+  const [demoProgress, setDemoProgress] = useState(0)
 
   const active = store.meshes.find((m) => m.id === store.activeMeshId) ?? null
 
@@ -57,7 +62,10 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
   }, [viewerApiRef])
 
   // ── Import ─────────────────────────────────────────────────────────────────
-  const handleFiles = useCallback(async (files: FileList | File[]): Promise<void> => {
+  const handleFiles = useCallback(async (
+    files: FileList | File[],
+    sourceUrl?: string,
+  ): Promise<void> => {
     const viewer = viewerApiRef.current
     if (!viewer) return
     setBusy(true)
@@ -70,6 +78,11 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
         files: Array.from(files),
         system,
         modelBounds: activeModelId ? viewer.getModelBounds(activeModelId) : viewer.getModelBounds(),
+        // A fetched model is identified by its URL. Without this the File we
+        // just wrapped the bytes in carries the fetch time as its identity, so
+        // a demo would arrive as a brand new import on every single load and
+        // whatever the user corrected about it would be forgotten.
+        sourceUrl,
       })
       if (!result.ok) {
         // i18next returns the KEY when it does not know it, so an unmapped
@@ -87,6 +100,21 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
       setBusy(false)
     }
   }, [viewerApiRef, activeModelId, t])
+
+  const handleDemo = useCallback(async (demo: DemoMesh): Promise<void> => {
+    setDemoBusy(demo.id)
+    setDemoProgress(0)
+    try {
+      const files = await fetchDemoMesh(demo, { onProgress: setDemoProgress })
+      await handleFiles(files, demo.urls[0])
+    } catch (e) {
+      log.warn(`demo mesh "${demo.id}" failed:`, e)
+      toast(t('demos.failed'), 'error')
+    } finally {
+      setDemoBusy(null)
+      setDemoProgress(0)
+    }
+  }, [handleFiles, t])
 
   // ── Placement ──────────────────────────────────────────────────────────────
   const nudge = useCallback((patch: Parameters<typeof store.setPlacement>[1]): void => {
@@ -243,6 +271,38 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
           </div>
         </div>
 
+        {/* Sample models */}
+        <div className="flex flex-col gap-1.5 pt-2 border-t border-[var(--border)]">
+          <div className="text-[11px] font-medium">{t('demos.title')}</div>
+          <div className="text-[10px] text-[var(--text-faint)] leading-snug">{t('demos.hint')}</div>
+          {DEMO_MESHES.map((demo) => (
+            <button
+              key={demo.id}
+              disabled={busy || demoBusy !== null}
+              onClick={() => void handleDemo(demo)}
+              className="text-left px-2 py-1.5 rounded-[7px] border border-[var(--border)] hover:border-[var(--accent)] hover:bg-[var(--surface-2)] transition-colors disabled:opacity-40"
+            >
+              <div className="flex items-center gap-2">
+                <span className="flex-1 text-[11px]">{demo.name}</span>
+                <span className="text-[10px] font-mono text-[var(--text-faint)]">
+                  {demoBusy === demo.id
+                    ? `${Math.round(demoProgress * 100)}%`
+                    : formatDemoSize(demo.totalBytes)}
+                </span>
+              </div>
+              <div className="text-[10px] text-[var(--text-faint)] leading-snug mt-0.5">
+                {t(`demos.items.${demo.descriptionKey}` as never)}
+              </div>
+              <div className="flex gap-1 mt-1 flex-wrap">
+                <Chip>{t('demos.chip.triangles', { count: demo.triangles })}</Chip>
+                {demo.textures > 0 && <Chip>{t('demos.chip.textures', { count: demo.textures })}</Chip>}
+                {demo.urls.length > 1 && <Chip>{t('demos.chip.files', { count: demo.urls.length })}</Chip>}
+                <Chip>{demo.license}</Chip>
+              </div>
+            </button>
+          ))}
+        </div>
+
         {/* What is loaded */}
         {store.meshes.length > 0 && (
           <div className="flex flex-col gap-1">
@@ -378,6 +438,15 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
         )}
       </div>
     </ViewportPanel>
+  )
+}
+
+/** A small tag on a demo card. */
+function Chip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="px-1.5 py-0.5 rounded-[5px] bg-[var(--surface-2)] text-[9px] text-[var(--text-faint)] font-mono">
+      {children}
+    </span>
   )
 }
 

@@ -53,5 +53,21 @@
     "emptyFile": "That file is empty.",
     "budgetExhausted": "The triangle budget is full. Remove a model before adding another.",
     "cancelled": "Import was cancelled."
+  },
+  "demos": {
+    "title": "Sample models",
+    "hint": "Real public models, fetched straight into your browser. Nothing is uploaded.",
+    "failed": "That sample could not be downloaded. Check your connection and try again.",
+    "chip": {
+      "triangles": "{{count}} tris",
+      "textures": "{{count}} tex",
+      "files": "{{count}} files"
+    },
+    "items": {
+      "box": "The smallest thing that can work — twelve triangles, no textures. If this one fails, the problem is not your file.",
+      "duckDraco": "Draco-compressed geometry across three files. It declares Draco as required, so it cannot open at all without a decoder — and its texture is found by name out of the same selection.",
+      "helmet": "A textured PBR model in one self-contained file. Also a lesson in why the triangle and texture budgets exist: five 2K maps from a 3.8 MB download.",
+      "humanFigure": "Imports WRONG on purpose. It is in centimetres and standing up, so both the unit and the up-axis guesses miss — fix them with the two controls below and watch it land."
+    }
   }
 }
