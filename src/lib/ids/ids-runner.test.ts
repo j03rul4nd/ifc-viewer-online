@@ -133,12 +133,15 @@ describe('runIds (worker protocol v2)', () => {
     await expect(p).resolves.toMatchObject({ result: { score: 100 } })
   })
 
-  it('ignores malformed worker messages (Zod gate)', async () => {
+  it('ignores malformed worker messages that were not the run settlement (Zod gate)', async () => {
+    // Noise must not kill a healthy run: a progress ping the schema rejects costs
+    // a progress update, and a worker that then goes quiet is still covered by the
+    // watchdog. (A malformed result/error is the opposite case — see below.)
     const p = runIds(DOC, toBuffer('ifc'))
     const w = FakeWorker.instances[0]
-    w.emit({ type: 'result' })                  // missing id/result
     w.emit({ banana: true })                    // not a message at all
     w.emit({ type: 'progress', id: w.runId })   // missing phase/pct
+    w.emit({ type: 'progress', id: w.runId, phase: 'warp', pct: 5 })
     w.respondResult(RESULT)
     await expect(p).resolves.toMatchObject({ result: { score: 100 } })
   })
@@ -205,6 +208,35 @@ describe('runIds (worker protocol v2)', () => {
     await expect(runIds(DOC, toBuffer('ifc'), { signal: controller.signal }))
       .rejects.toMatchObject({ code: 'cancelled' })
     expect(FakeWorker.instances).toHaveLength(0)
+  })
+
+  // A settlement message that fails validation is the case that can actually
+  // happen: add a field to a worker message, forget to declare it in
+  // worker-schemas, and Zod rejects the result. Ignoring it left the run with no
+  // signal at all — it died 120 s later as `timeout`, which reads to the user as
+  // "your model is too big".
+  it('fails the run when the settlement message itself fails validation', async () => {
+    const p = runIds(DOC, toBuffer('ifc'))
+    const w = FakeWorker.instances[0]
+    w.emit({ type: 'result', id: w.runId, result: { ...RESULT, score: 'not a number' } })
+    await expect(p).rejects.toMatchObject({ name: 'IdsCheckError', code: 'unknown' })
+    expect(w.terminated).toBe(true)
+  })
+
+  it('fails the run on a malformed error message too', async () => {
+    const p = runIds(DOC, toBuffer('ifc'))
+    FakeWorker.instances[0].emit({ type: 'error', id: 'r', code: 'invented', message: 'x' })
+    await expect(p).rejects.toMatchObject({ name: 'IdsCheckError', code: 'unknown' })
+  })
+
+  it('still ignores a well-formed message belonging to another run', async () => {
+    // Distinct from the case above: this one parses, so the id can be checked and
+    // the run must keep waiting rather than fail on someone else's traffic.
+    const p = runIds(DOC, toBuffer('ifc'))
+    const w = FakeWorker.instances[0]
+    w.respondError('oom', 'not for us', 'some-other-run')
+    w.respondResult(RESULT)
+    await expect(p).resolves.toMatchObject({ result: { score: 100 } })
   })
 
   it('a late message after settlement does not double-settle (single-shot latch)', async () => {

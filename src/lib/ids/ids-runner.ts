@@ -115,7 +115,24 @@ export async function runIds(
 
       worker.onmessage = (e: MessageEvent<unknown>): void => {
         const parsed = parseIdsWorkerMsg(e.data)
-        if (!parsed.ok) return // logged inside parseIdsWorkerMsg
+        if (!parsed.ok) {
+          // Split by what the message was FOR, using the only field available
+          // before validation. A malformed `progress` ping is noise and dropping
+          // it costs a progress update — the watchdog still covers a worker that
+          // goes on to say nothing. A malformed `result`/`error` was this run's
+          // settlement: drop it and the run has no signal left at all, so it can
+          // only end 120 s later as `timeout`, which blames the model for what is
+          // really a protocol break (most plausibly a field added to a worker
+          // message and not declared in worker-schemas, since Zod strips what it
+          // does not know). Failing here trades a hypothetical healthy-run-killed-
+          // by-noise for an immediate, accurate error in the case that can happen.
+          const claimed = (e.data as { type?: unknown } | null)?.type
+          if (claimed === 'result' || claimed === 'error') {
+            log.warn('IDS worker settlement failed validation — failing the run', { error: parsed.error.message })
+            settle(() => reject(new IdsCheckError('unknown', parsed.error.message)))
+          }
+          return // logged inside parseIdsWorkerMsg
+        }
         const m = parsed.data
         if (m.id !== id) {
           log.debug('Dropping IDS worker message for stale run', { got: m.id, want: id })
