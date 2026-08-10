@@ -229,6 +229,24 @@ describe('IDS worker message schemas', () => {
     expect(parseIdsWorkerMsg({ type: 'result', id: 'r' }).ok).toBe(false)
   })
 
+  // The schemas strip anything they don't declare (worker-schemas.ts header), so
+  // the count that says "this score covers part of the model" would silently
+  // vanish on its way out of the worker if IdsResultSchema forgot it.
+  it('carries unreadableEntities through to the caller instead of stripping it', async () => {
+    const parsed = parseIdsWorkerMsg({ type: 'result', id: 'r', result: { ...RESULT, unreadableEntities: 7 } })
+    expect(parsed.ok).toBe(true)
+    expect(parsed.ok && parsed.data.type === 'result' && parsed.data.result.unreadableEntities).toBe(7)
+
+    const p = runIds(DOC, toBuffer('ifc'))
+    FakeWorker.instances[0].respondResult({ ...RESULT, unreadableEntities: 7 })
+    await expect(p).resolves.toMatchObject({ result: { score: 100, unreadableEntities: 7 } })
+  })
+
+  it('rejects a negative or fractional unreadableEntities count', () => {
+    expect(parseIdsWorkerMsg({ type: 'result', id: 'r', result: { ...RESULT, unreadableEntities: -1 } }).ok).toBe(false)
+    expect(parseIdsWorkerMsg({ type: 'result', id: 'r', result: { ...RESULT, unreadableEntities: 1.5 } }).ok).toBe(false)
+  })
+
   it('rejects results with malformed reason codes', () => {
     const bad = {
       ...RESULT,

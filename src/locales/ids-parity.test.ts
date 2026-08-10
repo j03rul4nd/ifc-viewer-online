@@ -38,6 +38,24 @@ describe('ids locale parity (en ↔ es)', () => {
     }
   })
 
+  // The honesty strips render inside a coloured banner. A locale missing one of
+  // these keys does not fall back to something harmless-looking — i18next returns
+  // the key itself, so the user gets "states.unreadableEntities" in red where the
+  // explanation should be. Checked across all ten shipped locales, not just ES,
+  // because that failure is equally ugly in every one of them.
+  it('carries the honesty strings in every shipped locale', () => {
+    const all = import.meta.glob('./*/ids.json', { import: 'default', eager: true }) as Record<string, Json>
+    const HONESTY = ['states.unreadableEntities', 'states.staleIds', 'states.bufferUnavailable']
+    expect(Object.keys(all).length, 'expected ten shipped locales').toBe(10)
+    for (const [path, json] of Object.entries(all)) {
+      const flat = flatten(json)
+      for (const key of HONESTY) {
+        expect(flat[key], `${path} is missing ${key}`).toBeTruthy()
+        expect(paramsOf(flat[key] ?? ''), `param drift on ${key} in ${path}`).toEqual(paramsOf(en[key]))
+      }
+    }
+  })
+
   it('covers every engine reason code', () => {
     const codes = ['missingRequired', 'wrongValue', 'prohibitedPresent', 'specRequiredButAbsent', 'specProhibitedButPresent', 'wrongDataType', 'unsupportedPattern']
     for (const c of codes) {

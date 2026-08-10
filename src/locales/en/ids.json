@@ -111,6 +111,7 @@
     "noResultGeneric": "the loaded IDS",
     "noMatch": "No specifications match the current filters.",
     "bufferUnavailable": "The IFC source buffer is unavailable for this model — reload the .ifc to run IDS.",
+    "unreadableEntities": "{{count}} entities could not be read and were not checked. The score and pass/fail counts cover the rest of the model.",
     "staleIds": "These results were produced with {{file}} — re-run with the current file."
   },
   "truncation": "Showing first 200 — {{count}} more failing element; export for the full list.",

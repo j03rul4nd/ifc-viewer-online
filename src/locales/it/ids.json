@@ -111,6 +111,7 @@
     "noResultGeneric": "l'IDS caricato",
     "noMatch": "Nessuna specifica corrisponde ai filtri attuali.",
     "bufferUnavailable": "Il buffer sorgente IFC non è disponibile per questo modello — ricarica l'.ifc per eseguire la verifica IDS.",
+    "unreadableEntities": "Non è stato possibile leggere {{count}} entità, che non sono state verificate. Il punteggio e i conteggi riguardano il resto del modello.",
     "staleIds": "Questi risultati sono stati generati con {{file}} — riesegui con il file attuale."
   },
   "truncation": "Vengono mostrati i primi 200 — {{count}} altro elemento non conforme; esporta per l'elenco completo.",

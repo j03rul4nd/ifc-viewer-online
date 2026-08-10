@@ -111,6 +111,7 @@
     "noResultGeneric": "die geladene IDS",
     "noMatch": "Keine Spezifikationen entsprechen den aktuellen Filtern.",
     "bufferUnavailable": "Der IFC-Quellpuffer ist für dieses Modell nicht verfügbar — laden Sie die .ifc neu, um IDS auszuführen.",
+    "unreadableEntities": "{{count}} Entitäten konnten nicht gelesen und daher nicht geprüft werden. Bewertung und Zählungen beziehen sich auf den Rest des Modells.",
     "staleIds": "Diese Ergebnisse wurden mit {{file}} erzeugt — mit der aktuellen Datei erneut ausführen."
   },
   "truncation": "Erste 200 werden angezeigt — {{count}} weiteres fehlerhaftes Element; für die vollständige Liste exportieren.",

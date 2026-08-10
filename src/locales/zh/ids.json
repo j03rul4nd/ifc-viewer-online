@@ -111,6 +111,7 @@
     "noResultGeneric": "已加载的 IDS",
     "noMatch": "没有符合当前筛选条件的规范。",
     "bufferUnavailable": "此模型的 IFC 源缓冲区不可用 — 请重新加载 .ifc 以运行 IDS 检查。",
+    "unreadableEntities": "有 {{count}} 个实体无法读取，因此未参与检查。分数与通过/失败计数仅涵盖模型的其余部分。",
     "staleIds": "这些结果是使用 {{file}} 生成的 — 请用当前文件重新运行。"
   },
   "truncation": "仅显示前 200 个 — 另有 {{count}} 个未通过的构件；导出以获取完整列表。",

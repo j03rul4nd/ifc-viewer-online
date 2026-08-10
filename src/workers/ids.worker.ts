@@ -8,6 +8,9 @@
 // event loop between chunks so a posted `cancel` message can actually be handled
 // (a worker cannot receive messages while synchronous code is running). The
 // runner additionally hard-terminates after a 2 s grace — cancel never hangs.
+//
+// Results carry the count of entities the gather could not read, so a score
+// computed over part of the model can say so.
 
 import { IfcAPI } from 'web-ifc'
 import { checkSpec, summarizeResults } from '../lib/ids/ids-engine'
@@ -83,17 +86,26 @@ async function runCheck(msg: IdsCheckMsg): Promise<void> {
     progress('open', 20)
     throwIfCancelled(id)
 
-    // Model schema for the ifcVersion gate (P2-4); tolerated as unknown.
+    // Model schema, reported on the result (IdsResult.modelSchema) and passed to
+    // the engine. It does NOT drive the ifcVersion gate: that gate is opt-in via
+    // IdsCheckOptions.filterByIfcVersion and nothing in the app turns it on, so
+    // a spec targeting another schema is evaluated rather than skipped. Losing
+    // the schema therefore costs the result's label, not the check.
     let modelSchema: string | undefined
     try {
       const s = api.GetModelSchema(modelId)
       if (typeof s === 'string' && s) modelSchema = s
-    } catch { /* unknown schema → specs apply to all */ }
+    } catch { /* header unreadable → the result carries no schema */ }
 
+    // Entities the gather had to skip. Every skip is deliberate (one bad line
+    // must not abort a check over the other 400 000) but a skipped element never
+    // becomes applicable, so it leaves the score silently — hence the count.
+    let unreadable = 0
     const elements = await gatherIdsElements(api, modelId, doc, {
       onProgress: (pct) => progress('gather', pct),
       yieldNow: tick,
       throwIfCancelled: () => throwIfCancelled(id),
+      onUnreadable: () => { unreadable++ },
     })
     progress('check', 75)
 
@@ -114,7 +126,7 @@ async function runCheck(msg: IdsCheckMsg): Promise<void> {
     }
 
     const result = summarizeResults(doc.title, specs, modelSchema)
-    post({ type: 'result', id, result })
+    post({ type: 'result', id, result: { ...result, unreadableEntities: unreadable } })
   } catch (err) {
     if (err instanceof CancelledError) {
       post({ type: 'error', id, code: 'cancelled', message: 'Check cancelled' })

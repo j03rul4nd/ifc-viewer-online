@@ -167,5 +167,15 @@ export interface IdsResult {
   naSpecs: number
   /** 0–100, share of applicable element-checks that passed across all specs. */
   score: number
+  /**
+   * IFC entities the gather could not read, and therefore never checked. Set by
+   * the worker (the pure engine has no way to know). > 0 means the score was
+   * computed over part of the model: a skipped element cannot be applicable, so
+   * it silently leaves both sides of the ratio and every spec can still report
+   * `pass`. Reported beside the score rather than folded into it — the same
+   * split as ValidationCoverage.unreadableEntities, which answers the same
+   * question for the validator.
+   */
+  unreadableEntities?: number
   specs: IdsSpecResult[]
 }

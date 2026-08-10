@@ -111,6 +111,7 @@
     "noResultGeneric": "l'IDS carregat",
     "noMatch": "Cap especificació coincideix amb els filtres actuals.",
     "bufferUnavailable": "El buffer d'origen de l'IFC no està disponible per a aquest model — torna a carregar l'.ifc per executar l'IDS.",
+    "unreadableEntities": "No s'han pogut llegir {{count}} entitats i no s'han comprovat. La puntuació i els recomptes reflecteixen la resta del model.",
     "staleIds": "Aquests resultats es van generar amb {{file}} — torna a executar-ho amb el fitxer actual."
   },
   "truncation": "Es mostren els primers 200 — {{count}} element més que falla; exporta per obtenir la llista completa.",

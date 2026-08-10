@@ -38,6 +38,36 @@ describe('toIdsJson', () => {
   })
 })
 
+// A report is the artifact that gets attached to a delivery. If entities could
+// not be read, all three formats must say so — a green score standing alone is a
+// claim about the whole model that the check never made.
+describe('unreadable entities reach every export format', () => {
+  const PARTIAL: IdsResult = { ...RESULT, unreadableEntities: 12 }
+
+  it('is a number in the JSON report, zero when the read was complete', () => {
+    expect(JSON.parse(toIdsJson(PARTIAL)).unreadableEntities).toBe(12)
+    expect(JSON.parse(toIdsJson(RESULT)).unreadableEntities).toBe(0)
+  })
+
+  it('is a leading note row in the CSV, absent when the read was complete', () => {
+    const rows = toIdsCsv(PARTIAL).split('\r\n')
+    expect(rows[1]).toContain('12 IFC entities could not be read')
+    expect(toIdsCsv(RESULT)).not.toContain('could not be read')
+  })
+
+  it('is a banner in the HTML report, absent when the read was complete', () => {
+    const html = toIdsHtml(PARTIAL)
+    expect(html).toContain('12 IFC entities could not be read')
+    // Above the per-spec sections, where the score is — not buried at the bottom.
+    expect(html.indexOf('could not be read')).toBeLessThan(html.indexOf('class="spec"'))
+    expect(toIdsHtml(RESULT)).not.toContain('could not be read')
+  })
+
+  it('says "entity" for exactly one', () => {
+    expect(toIdsHtml({ ...RESULT, unreadableEntities: 1 })).toContain('1 IFC entity could not be read')
+  })
+})
+
 describe('toIdsCsv', () => {
   const csv = toIdsCsv(RESULT)
 

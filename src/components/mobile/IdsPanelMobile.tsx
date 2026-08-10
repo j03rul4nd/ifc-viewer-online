@@ -333,6 +333,9 @@ export default function IdsPanelMobile({ viewerApiRef, onOpenLoader }: Props) {
             {stale && runMeta && (
               <Strip tone="warn">{t('states.staleIds', { file: runMeta.idsFileName })}</Strip>
             )}
+            {result && (result.unreadableEntities ?? 0) > 0 && (
+              <Strip tone="danger">{t('states.unreadableEntities', { count: result.unreadableEntities ?? 0 })}</Strip>
+            )}
             {status === 'error' && error && (
               <Strip tone="danger" action={{ label: t('run.retry'), onClick: () => void run() }}>{error.message}</Strip>
             )}

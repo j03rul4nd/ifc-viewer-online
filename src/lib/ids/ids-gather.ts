@@ -11,8 +11,9 @@
 //
 // The caller owns the IfcAPI lifecycle (Init/OpenModel/CloseModel). Hooks make
 // the chunked loops observable: the worker injects progress posts, event-loop
-// yields (required for cancel-message delivery) and cancellation checks; tests
-// pass no hooks and the loops run straight through.
+// yields (required for cancel-message delivery), cancellation checks and the
+// unreadable-entity counter; tests pass no hooks and the loops run straight
+// through.
 
 import {
   IFCRELDEFINESBYPROPERTIES, IFCRELDEFINESBYTYPE,
@@ -45,6 +46,38 @@ export interface GatherHooks {
   yieldNow?: () => Promise<void>
   /** Throw (e.g. CancelledError) to abort between chunks. */
   throwIfCancelled?: () => void
+  /**
+   * One IFC entity could not be read and was skipped. Every `catch` below is a
+   * deliberate "one bad line must not abort the gather" — but a skipped element
+   * never becomes applicable, so it silently leaves the score's denominator and
+   * the check reports a clean pass over whatever happened to parse. The worker
+   * counts these into `IdsResult.unreadableEntities` so the result can say so.
+   */
+  onUnreadable?: () => void
+}
+
+/** Records one unreadable entity. Passed to helpers that don't take the full hooks. */
+type SkipFn = () => void
+
+const noSkip: SkipFn = () => { /* tests pass no hooks */ }
+
+/**
+ * Did web-ifc actually resolve this line to an IFC class?
+ *
+ * A line it cannot parse does NOT make GetLineType/GetNameFromTypeCode throw:
+ * the type code comes back as a hash of the unrecognised keyword and the name as
+ * a sentinel ("<web-ifc-type-unknown>" in the current build). Left unchecked, the
+ * walk below then filters that line out through the ordinary "not a class this
+ * IDS asks about" branch — an unparseable entity becomes indistinguishable from
+ * an IfcFurniture nobody asked for, which is how an unreadable element used to
+ * leave an IDS check without a trace.
+ *
+ * Tested by name shape rather than against the sentinel string, which is
+ * web-ifc's private wording and could change: every entity in every IFC schema
+ * is named IfcSomething, so anything else did not resolve.
+ */
+function isResolvedIfcClass(upperName: string): boolean {
+  return /^IFC[A-Z0-9_]*$/.test(upperName)
 }
 
 function val(v: unknown): string | number | boolean | null {
@@ -116,7 +149,7 @@ function propertyValues(p: Record<string, unknown>): { primary: PropValue; type:
 
 /** Read one IfcPropertySetDefinition line (pset or quantity set) → name + props (+ value types P2-5, + multi-value lists P2-7). */
 function readPsetDefinition(
-  api: IfcAPI, modelId: number, defId: number,
+  api: IfcAPI, modelId: number, defId: number, skip: SkipFn = noSkip,
 ): { name: string; props: Record<string, PropValue>; types: Record<string, string>; lists: Record<string, PropValue[]> } | null {
   const def = api.GetLine(modelId, defId, false) as {
     Name?: { value: string }
@@ -138,7 +171,7 @@ function readPsetDefinition(
       props[name] = primary
       if (type) types[name] = type
       if (list) lists[name] = list
-    } catch { /* skip */ }
+    } catch { skip() /* unreadable property line */ }
   }
   for (const ref of def.HasQuantities ?? []) {
     if (ref?.value == null) continue
@@ -151,7 +184,7 @@ function readPsetDefinition(
       props[name] = key ? val(q[key]) : null
       const t = key ? valueTypeName(q[key]) : null
       if (t) types[name] = t
-    } catch { /* skip */ }
+    } catch { skip() /* unreadable quantity line */ }
   }
   if (Object.keys(props).length === 0) return null
   return { name: setName, props, types, lists }
@@ -162,6 +195,7 @@ async function buildPsetMap(
   api: IfcAPI, modelId: number, hooks: GatherHooks,
 ): Promise<Map<number, PsetData>> {
   const map = new Map<number, PsetData>()
+  const skip = hooks.onUnreadable ?? noSkip
   const relIds = api.GetLineIDsWithType(modelId, IFCRELDEFINESBYPROPERTIES)
   const total = relIds.size()
   for (let i = 0; i < total; i++) {
@@ -177,7 +211,7 @@ async function buildPsetMap(
       }
       const defId = rel.RelatingPropertyDefinition?.value
       if (defId == null || !rel.RelatedObjects) continue
-      const def = readPsetDefinition(api, modelId, defId)
+      const def = readPsetDefinition(api, modelId, defId, skip)
       if (!def) continue
       for (const ref of rel.RelatedObjects) {
         if (ref?.value == null) continue
@@ -187,23 +221,25 @@ async function buildPsetMap(
         existing.lists[def.name] = { ...(existing.lists[def.name] ?? {}), ...def.lists }
         map.set(ref.value, existing)
       }
-    } catch { /* corrupt rel */ }
+    } catch { skip() /* unreadable IfcRelDefinesByProperties */ }
   }
   return map
 }
 
 /** Read a type object's HasPropertySets refs into PsetData. */
-function readTypePsets(api: IfcAPI, modelId: number, refs: Array<{ value: number } | null> | undefined): PsetData {
+function readTypePsets(
+  api: IfcAPI, modelId: number, refs: Array<{ value: number } | null> | undefined, skip: SkipFn = noSkip,
+): PsetData {
   const data: PsetData = { values: {}, types: {}, lists: {} }
   for (const ref of refs ?? []) {
     if (ref?.value == null) continue
     try {
-      const def = readPsetDefinition(api, modelId, ref.value)
+      const def = readPsetDefinition(api, modelId, ref.value, skip)
       if (!def) continue
       data.values[def.name] = { ...(data.values[def.name] ?? {}), ...def.props }
       data.types[def.name] = { ...(data.types[def.name] ?? {}), ...def.types }
       data.lists[def.name] = { ...(data.lists[def.name] ?? {}), ...def.lists }
-    } catch { /* skip corrupt pset */ }
+    } catch { skip() /* unreadable type pset */ }
   }
   return data
 }
@@ -225,6 +261,7 @@ async function buildTypeIndex(
 ): Promise<{ occToType: Map<number, number>; typeInfo: Map<number, TypeInfo> }> {
   const occToType = new Map<number, number>()
   const typeInfo = new Map<number, TypeInfo>()
+  const skip = hooks.onUnreadable ?? noSkip
   const relIds = api.GetLineIDsWithType(modelId, IFCRELDEFINESBYTYPE)
   const total = relIds.size()
   for (let i = 0; i < total; i++) {
@@ -250,20 +287,20 @@ async function buildTypeIndex(
             ElementType?: { value: string }
             ProcessType?: { value: string }
           }
-          psets = readTypePsets(api, modelId, typeLine.HasPropertySets)
+          psets = readTypePsets(api, modelId, typeLine.HasPropertySets, skip)
           const raw = typeof typeLine.PredefinedType === 'string'
             ? typeLine.PredefinedType
             : (typeLine.PredefinedType?.value ?? null)
           if (raw === 'USERDEFINED') pt = typeLine.ElementType?.value ?? typeLine.ProcessType?.value ?? null
           else if (raw !== 'NOTDEFINED') pt = raw
-        } catch { /* corrupt type line */ }
+        } catch { skip() /* unreadable type line */ }
         typeInfo.set(typeId, { psets, predefinedType: pt })
       }
       for (const ref of rel.RelatedObjects) {
         if (ref?.value == null) continue
         occToType.set(ref.value, typeId)
       }
-    } catch { /* corrupt rel */ }
+    } catch { skip() /* unreadable IfcRelDefinesByType */ }
   }
   return { occToType, typeInfo }
 }
@@ -291,6 +328,7 @@ async function buildClassificationMap(
 ): Promise<Map<number, ClassificationRef[]>> {
   const map = new Map<number, ClassificationRef[]>()
   const refCache = new Map<number, ClassificationRef>()
+  const skip = hooks.onUnreadable ?? noSkip
 
   const resolveRef = (refId: number): ClassificationRef => {
     const cached = refCache.get(refId)
@@ -306,7 +344,7 @@ async function buildClassificationMap(
       try {
         className = String(api.GetNameFromTypeCode(api.GetLineType(modelId, currentId))).toUpperCase()
         line = api.GetLine(modelId, currentId, false) as Record<string, unknown>
-      } catch { break }
+      } catch { skip(); break /* unreadable classification reference */ }
       if (className === 'IFCCLASSIFICATION') {
         const n = val(line.Name)
         system = n != null ? String(n) : null
@@ -347,7 +385,7 @@ async function buildClassificationMap(
         arr.push(ref)
         map.set(r.value, arr)
       }
-    } catch { /* corrupt rel */ }
+    } catch { skip() /* unreadable IfcRelAssociatesClassification */ }
   }
   return map
 }
@@ -363,6 +401,7 @@ async function buildMaterialMap(
 ): Promise<Map<number, string[]>> {
   const map = new Map<number, string[]>()
   const matCache = new Map<number, string[]>()
+  const skip = hooks.onUnreadable ?? noSkip
 
   const nameOf = (line: Record<string, unknown>, key: string): string | null => {
     const v = val(line[key])
@@ -383,7 +422,7 @@ async function buildMaterialMap(
     try {
       className = String(api.GetNameFromTypeCode(api.GetLineType(modelId, id))).toUpperCase()
       line = api.GetLine(modelId, id, false) as Record<string, unknown>
-    } catch { return names }
+    } catch { skip(); return names /* unreadable material entity */ }
 
     const followRef = (key: string): void => {
       const ref = line[key] as { value?: unknown } | null | undefined
@@ -449,7 +488,7 @@ async function buildMaterialMap(
         for (const n of names) if (!arr.includes(n)) arr.push(n)
         map.set(r.value, arr)
       }
-    } catch { /* corrupt rel */ }
+    } catch { skip() /* unreadable IfcRelAssociatesMaterial */ }
   }
   return map
 }
@@ -463,6 +502,7 @@ async function buildPartOfMap(
 ): Promise<Map<number, PartOfEdge[]>> {
   const map = new Map<number, PartOfEdge[]>()
   const parentCache = new Map<number, { cls: string; pt: string | null } | null>()
+  const skip = hooks.onUnreadable ?? noSkip
 
   const parentInfo = (id: number): { cls: string; pt: string | null } | null => {
     if (parentCache.has(id)) return parentCache.get(id) ?? null
@@ -476,7 +516,7 @@ async function buildPartOfMap(
         if (ud != null && ud !== '') pt = String(ud)
       }
       info = { cls, pt }
-    } catch { info = null }
+    } catch { info = null; skip() /* unreadable whole-part parent */ }
     parentCache.set(id, info)
     return info
   }
@@ -519,7 +559,7 @@ async function buildPartOfMap(
           const v = (c as { value?: unknown } | null)?.value
           if (typeof v === 'number') addEdge(v, pass.relation, parentRef.value)
         }
-      } catch { /* corrupt rel */ }
+      } catch { skip() /* unreadable whole-part relationship */ }
     }
   }
   return map
@@ -543,6 +583,7 @@ export async function gatherIdsElements(
 ): Promise<IdsElement[]> {
   const targets = targetClasses(doc)
   const kinds = facetKindsNeeded(doc)
+  const skip = hooks.onUnreadable ?? noSkip
   const psetMap = await buildPsetMap(api, modelId, hooks)
   const { occToType, typeInfo } = await buildTypeIndex(api, modelId, hooks)
   // Relationship passes only for the facet kinds the document actually uses.
@@ -561,9 +602,11 @@ export async function gatherIdsElements(
     }
     const id = allIds.get(i)
     let typeCode: number
-    try { typeCode = api.GetLineType(modelId, id) } catch { continue }
+    try { typeCode = api.GetLineType(modelId, id) } catch { skip(); continue }
     let className: string
-    try { className = String(api.GetNameFromTypeCode(typeCode)).toUpperCase() } catch { continue }
+    try { className = String(api.GetNameFromTypeCode(typeCode)).toUpperCase() } catch { skip(); continue }
+    // Unparseable line, not an uninteresting one — see isResolvedIfcClass.
+    if (!isResolvedIfcClass(className)) { skip(); continue }
 
     const include = targets ? targets.has(canon(className)) : (api.IsIfcElement(typeCode) || SPATIAL.has(className))
     if (!include) continue
@@ -616,7 +659,7 @@ export async function gatherIdsElements(
       // "inherited from the type 2/2" checks the IfcWallType itself).
       const fromType = tInfo != null
         ? tInfo.psets
-        : (typeInfo.get(id)?.psets ?? (Array.isArray(line.HasPropertySets) ? readTypePsets(api, modelId, line.HasPropertySets) : undefined))
+        : (typeInfo.get(id)?.psets ?? (Array.isArray(line.HasPropertySets) ? readTypePsets(api, modelId, line.HasPropertySets, skip) : undefined))
 
       const own = psetMap.get(id)
 
@@ -647,7 +690,7 @@ export async function gatherIdsElements(
         ...(materials ? { materials } : {}),
         ...(partOf ? { partOf } : {}),
       })
-    } catch { /* skip corrupt element */ }
+    } catch { skip() /* unreadable element line — it never reaches the check */ }
   }
   return elements
 }

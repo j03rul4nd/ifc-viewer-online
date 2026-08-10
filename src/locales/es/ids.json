@@ -118,6 +118,7 @@
     "noResultGeneric": "el IDS cargado",
     "noMatch": "Ninguna especificación coincide con los filtros actuales.",
     "bufferUnavailable": "El búfer de origen IFC no está disponible para este modelo — recarga el .ifc para ejecutar IDS.",
+    "unreadableEntities": "No se pudieron leer {{count}} entidades y no se han comprobado. La puntuación y los recuentos reflejan el resto del modelo.",
     "staleIds": "Estos resultados se produjeron con {{file}} — vuelve a ejecutar con el archivo actual."
   },
   "truncation": "Mostrando los primeros 200 — {{count}} elemento con fallo más; exporta para la lista completa.",

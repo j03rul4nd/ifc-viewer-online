@@ -397,6 +397,10 @@ export const IdsResultSchema: z.ZodType<IdsResult> = z.object({
   failedSpecs: z.number().int().nonnegative(),
   naSpecs:     z.number().int().nonnegative(),
   score:       z.number().min(0).max(100),
+  // MUST be declared or Zod strips it on the runner's parse — and a count whose
+  // whole purpose is to say "the score covers part of the model" would vanish
+  // exactly on the models that need it.
+  unreadableEntities: z.number().int().nonnegative().optional(),
   specs:       z.array(IdsSpecResultSchema),
 })
 

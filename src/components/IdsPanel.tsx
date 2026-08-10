@@ -341,6 +341,16 @@ export default function IdsPanel({ viewerApiRef, onOpenLoader }: IdsPanelProps) 
         </div>
       )}
 
+      {/* Partial-read honesty banner: the score above covers only what parsed. */}
+      {result && (result.unreadableEntities ?? 0) > 0 && (
+        <div
+          className="px-3 py-1 text-[10px] border-b border-[var(--border)] font-semibold"
+          style={{ color: 'var(--danger)', background: 'color-mix(in srgb, var(--danger) 8%, transparent)' }}
+        >
+          {t('states.unreadableEntities', { count: result.unreadableEntities ?? 0 })}
+        </div>
+      )}
+
       {/* Since-last-run strip (P7-3) */}
       {diff && !diff.unchanged && !diffDismissed && !busy && (
         <div className="flex items-center gap-2.5 px-3 h-7 border-b border-[var(--border)] shrink-0 text-[10.5px]">
