@@ -34,14 +34,10 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
  * it means the docs generator gained an entry — which needs all ten languages,
  * since the pages are fully localized.
  */
-const KNOWN_UNDOCUMENTED = new Set([
-  // Point clouds — shipped v1.8.0/v1.9.0, documented in docs/POINT_CLOUD.md only.
-  'addPointCloud', 'addPointCloudFromUrl', 'listPointClouds', 'removePointCloud',
-  'clearPointClouds', 'setPointCloudVisible', 'fitPointCloud', 'setPointCloudDisplay',
-  'inspectPointCloud', 'setPointCloudPlacement', 'setPointCloudUpAxis',
-  // Imported meshes — shipped v1.10.0, documented in docs/MESH_IMPORT.md only.
-  'addMesh', 'addMeshFromUrl', 'listMeshes', 'removeMesh', 'clearMeshes',
-  'setMeshVisible', 'fitMesh', 'setMeshPlacement', 'setMeshUpAxis', 'setMeshUnit',
+const KNOWN_UNDOCUMENTED = new Set<string>([
+  // Empty, and worth keeping that way. The point cloud and mesh surfaces that
+  // seeded this list were documented in v1.10.0; anything added here again is a
+  // deliberate decision to ship a method nobody can find.
 ])
 
 /** Plumbing, not API. */
