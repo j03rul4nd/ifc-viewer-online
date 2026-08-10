@@ -39,7 +39,8 @@
     "chunks": "{{count}} blocchi",
     "memory": "{{mb}} MB sulla GPU",
     "truncated": "Fermato a {{count}} punti — il file ne contiene più di quanti questo visualizzatore ne tenga in memoria contemporaneamente.",
-    "noModel": "Nessun modello IFC caricato — la scansione è posizionata da sola."
+    "noModel": "Nessun modello IFC caricato — la scansione è posizionata da sola.",
+    "partial": "Una parte di questa scansione non è stata letta e manca dalla vista. Quello che vedi è incompleto."
   },
   "align": {
     "title": "Allineamento",

@@ -8,7 +8,7 @@ function entry(id: string, patch: Partial<PointCloudEntry> = {}): PointCloudEntr
   return {
     id, fileName: `${id}.las`, fileSize: 1024, format: 'las',
     status: 'parsing', errorKey: null, progress: 0,
-    pointCount: 0, declaredCount: null, truncated: false, visible: true,
+    pointCount: 0, declaredCount: null, truncated: false, streamErrorKey: null, visible: true,
     frame: null,
     attributes: { color: false, intensity: false, classification: false, confidence: false },
     alignment: null, alignedToModelId: null, fileKey: `${id}.las:1024:1`, loadedAt: 1,

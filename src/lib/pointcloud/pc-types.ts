@@ -246,6 +246,17 @@ export interface PointCloudEntry {
   declaredCount: number | null
   /** True when the parse stopped at the maxPoints budget. */
   truncated: boolean
+  /**
+   * A failure that happened AFTER the cloud was already on screen — a COPC node
+   * that would not decode, or the worker dying mid-session.
+   *
+   * Kept apart from `errorKey` on purpose. `errorKey` means the load failed and
+   * there is nothing to show; this means most of the scan is there and some of
+   * it is missing. Collapsing the two would either throw away a usable cloud or,
+   * as it did until now, say nothing at all — the user navigates into a hole in
+   * their survey with no indication that anything went wrong.
+   */
+  streamErrorKey: string | null
   visible: boolean
   frame: SourceFrame | null
   attributes: PointAttributesPresent

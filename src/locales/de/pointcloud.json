@@ -39,7 +39,8 @@
     "chunks": "{{count}} Blöcke",
     "memory": "{{mb}} MB auf der GPU",
     "truncated": "Bei {{count}} Punkten gestoppt — die Datei enthält mehr, als dieser Viewer gleichzeitig im Speicher hält.",
-    "noModel": "Kein IFC-Modell geladen — der Scan steht für sich allein."
+    "noModel": "Kein IFC-Modell geladen — der Scan steht für sich allein.",
+    "partial": "Ein Teil dieses Scans konnte nicht gelesen werden und fehlt in der Ansicht. Was Sie sehen, ist unvollständig."
   },
   "align": {
     "title": "Ausrichtung",

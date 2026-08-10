@@ -39,7 +39,8 @@
     "chunks": "{{count}} blocs",
     "memory": "{{mb}} Mo sur le GPU",
     "truncated": "Arrêté à {{count}} points — le fichier en contient plus que ce que ce visualiseur garde en mémoire à la fois.",
-    "noModel": "Aucun modèle IFC chargé — le relevé est placé seul."
+    "noModel": "Aucun modèle IFC chargé — le relevé est placé seul.",
+    "partial": "Une partie de ce relevé n'a pas pu être lue et manque à l'affichage. Ce que vous voyez est incomplet."
   },
   "align": {
     "title": "Alignement",

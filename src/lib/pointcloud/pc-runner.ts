@@ -146,6 +146,7 @@ export async function loadPointCloud(opts: LoadOptions): Promise<LoadResult> {
     pointCount: 0,
     declaredCount: null,
     truncated: false,
+    streamErrorKey: null,
     visible: true,
     frame: null,
     attributes: { color: false, intensity: false, classification: false, confidence: false },
@@ -364,7 +365,7 @@ export async function streamPointCloud(opts: LoadOptions): Promise<LoadResult> {
   usePointCloudStore.getState().addCloud({
     id: cloudId, fileName: file.name, fileSize: file.size, format: 'copc',
     status: 'parsing', errorKey: null, progress: 0,
-    pointCount: 0, declaredCount: null, truncated: false, visible: true,
+    pointCount: 0, declaredCount: null, truncated: false, streamErrorKey: null, visible: true,
     frame: null,
     attributes: { color: false, intensity: false, classification: false, confidence: false },
     alignment: null, alignedToModelId: modelId, fileKey, loadedAt: Date.now(),
@@ -383,8 +384,31 @@ export async function streamPointCloud(opts: LoadOptions): Promise<LoadResult> {
 
     const stale = (): boolean => usePointCloudStore.getState().epoch !== epoch
 
+    /**
+     * A failure once the cloud is already streaming.
+     *
+     * `fail()` below is a no-op after the load has settled, which is correct —
+     * the load DID succeed. But it meant a node that would not decode, or a
+     * worker that died mid-session, produced a console warning and nothing else:
+     * part of the scan silently never arrived. On a delivery tool that is data
+     * loss the user is not told about.
+     *
+     * Latched, because a corrupt file can fail hundreds of nodes in a row and
+     * one toast per node would bury the app.
+     */
+    let streamErrorReported = false
+    function reportStreamError(errorKey: string): void {
+      if (streamErrorReported) return
+      streamErrorReported = true
+      // The store field only — translating belongs to the panel, which owns the
+      // i18n namespace and already knows how to render an unmapped key safely.
+      usePointCloudStore.getState().updateCloud(cloudId, { streamErrorKey: errorKey })
+    }
+
     function fail(errorKey: string): void {
-      if (settled) return
+      // Already streaming: the load succeeded, so this is a partial failure and
+      // must not tear down a cloud the user is looking at.
+      if (settled) { reportStreamError(errorKey); return }
       settled = true
       worker.terminate()
       activeWorkers.delete(cloudId)

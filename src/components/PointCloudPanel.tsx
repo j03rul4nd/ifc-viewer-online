@@ -693,6 +693,21 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
                 </div>
               )}
 
+              {/* A failure AFTER the cloud was already on screen. Not an error
+                  state — most of the scan is there — but the user has to be told
+                  that some of it is not, or they present a survey with a hole in
+                  it and never know. */}
+              {activeCloud.streamErrorKey && (
+                <div className="mt-2 px-2 py-1.5 rounded-[7px] border border-[var(--warn,#c98a2e)] bg-[color-mix(in_srgb,var(--warn,#c98a2e)_12%,transparent)]">
+                  <div className="text-[10px] text-[var(--text)] leading-snug">
+                    {t('status.partial')}
+                  </div>
+                  <div className="text-[10px] text-[var(--text-faint)] leading-snug mt-0.5">
+                    {describeError(activeCloud.streamErrorKey)}
+                  </div>
+                </div>
+              )}
+
               {alignment.reasons.length > 0 && (
                 <ul className="mt-1.5 flex flex-col gap-1">
                   {alignment.reasons.map((key) => (

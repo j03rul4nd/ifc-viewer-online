@@ -30,7 +30,7 @@ function entry(patch: Partial<PointCloudEntry> = {}): PointCloudEntry {
   return {
     id: 'pc-1', fileName: 'scan.las', fileSize: 2048, format: 'las',
     status: 'ready', errorKey: null, progress: 100,
-    pointCount: 5_000, declaredCount: 5_000, truncated: false, visible: true,
+    pointCount: 5_000, declaredCount: 5_000, truncated: false, streamErrorKey: null, visible: true,
     frame: FRAME,
     attributes: { color: true, intensity: true, classification: true, confidence: false },
     alignment: NUDGED, alignedToModelId: null, fileKey: 'scan.las:2048:1', loadedAt: 1,
@@ -141,5 +141,39 @@ describe('guardPostHeader', () => {
     await new Promise((r) => setTimeout(r, 0))
     // Reaching here without an unhandled rejection is the assertion.
     expect(true).toBe(true)
+  })
+})
+
+// ── A failure after the cloud is already on screen ────────────────────────────
+
+describe('mid-stream failures', () => {
+  it('records a partial scan without tearing down what is already there', () => {
+    // The bug: `fail()` is a no-op once the load has settled, which is correct —
+    // the load DID succeed. But it meant a COPC node that would not decode, or a
+    // worker dying mid-session, produced a console warning and nothing else. The
+    // user navigates into a hole in their survey with no indication anything
+    // went wrong, and on a delivery tool that is data loss nobody was told about.
+    const store = usePointCloudStore.getState()
+    store.addCloud(entry({ id: 'pc-partial', status: 'ready' }))
+
+    store.updateCloud('pc-partial', { streamErrorKey: 'error.copcDecode' })
+
+    const after = usePointCloudStore.getState().clouds.find((c) => c.id === 'pc-partial')!
+    // Still usable: the cloud stays ready and keeps its points.
+    expect(after.status).toBe('ready')
+    expect(after.pointCount).toBeGreaterThan(0)
+    // And the loss is on the record rather than only in the console.
+    expect(after.streamErrorKey).toBe('error.copcDecode')
+    // errorKey stays clear — the two mean different things and collapsing them
+    // would either discard a usable cloud or say nothing at all.
+    expect(after.errorKey).toBeNull()
+  })
+
+  it('starts every cloud with nothing to report', () => {
+    const store = usePointCloudStore.getState()
+    store.addCloud(entry({ id: 'pc-clean' }))
+    expect(
+      usePointCloudStore.getState().clouds.find((c) => c.id === 'pc-clean')!.streamErrorKey,
+    ).toBeNull()
   })
 })

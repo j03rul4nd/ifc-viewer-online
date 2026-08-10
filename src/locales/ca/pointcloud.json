@@ -39,7 +39,8 @@
     "chunks": "{{count}} blocs",
     "memory": "{{mb}} MB a la GPU",
     "truncated": "S'ha aturat als {{count}} punts — el fitxer en conté més dels que aquest visor manté a la memòria alhora.",
-    "noModel": "No hi ha cap model IFC carregat — l'escaneig se situa tot sol."
+    "noModel": "No hi ha cap model IFC carregat — l'escaneig se situa tot sol.",
+    "partial": "Una part d'aquest escaneig no s'ha pogut llegir i falta a la vista. El que veus és incomplet."
   },
   "align": {
     "title": "Alineació",

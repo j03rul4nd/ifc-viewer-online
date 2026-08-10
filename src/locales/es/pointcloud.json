@@ -39,7 +39,8 @@
     "chunks": "{{count}} bloques",
     "memory": "{{mb}} MB en la GPU",
     "truncated": "Detenido en {{count}} puntos: el archivo contiene más de los que este visor mantiene en memoria a la vez.",
-    "noModel": "No hay modelo IFC cargado: el escaneo se coloca por su cuenta."
+    "noModel": "No hay modelo IFC cargado: el escaneo se coloca por su cuenta.",
+    "partial": "Parte de este escaneo no se pudo leer y falta en la vista. Lo que ves está incompleto."
   },
   "align": {
     "title": "Alineación",

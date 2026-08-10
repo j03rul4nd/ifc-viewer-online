@@ -39,7 +39,8 @@
     "chunks": "{{count}} blocks",
     "memory": "{{mb}} MB on the GPU",
     "truncated": "Stopped at {{count}} points — the file holds more than this viewer keeps in memory at once.",
-    "noModel": "No IFC model loaded — the scan is placed on its own."
+    "noModel": "No IFC model loaded — the scan is placed on its own.",
+    "partial": "Part of this scan could not be read and is missing from the view. What you see is incomplete."
   },
   "align": {
     "title": "Alignment",
