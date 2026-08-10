@@ -1263,7 +1263,12 @@ function CoverageStrip({ rules, qualityScore, onDismiss }: CoverageStripProps) {
 function CoverageIntegrityStrip({ coverage, language }: { coverage: ValidationCoverage; language: string }) {
   const { t } = useTranslation('validation')
   const problems = coverage.entries.filter((e) => e.status !== 'ok')
-  if (problems.length === 0) return null
+  const unreadable = coverage.unreadableEntities ?? 0
+  // Unreadable entities are a reason to show this strip in their own right. Every
+  // rule can run perfectly on a file where thousands of entities failed to parse,
+  // and without this the score would carry its warning mark with nothing anywhere
+  // explaining it.
+  if (problems.length === 0 && unreadable === 0) return null
 
   return (
     <div
@@ -1275,12 +1280,24 @@ function CoverageIntegrityStrip({ coverage, language }: { coverage: ValidationCo
         <path d="M6 5v2.5M6 9h.01" />
       </svg>
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-semibold leading-tight" style={{ color: 'var(--danger)' }}>
-          {t('coverage.partialTitle', { ran: coverage.okCount, total: coverage.attempted.length })}
-        </p>
-        <p className="text-[9px] text-[var(--text-faint)] leading-tight mt-0.5">
-          {t('coverage.partialDesc')}
-        </p>
+        {problems.length > 0 && (
+          <>
+            <p className="text-[10px] font-semibold leading-tight" style={{ color: 'var(--danger)' }}>
+              {t('coverage.partialTitle', { ran: coverage.okCount, total: coverage.attempted.length })}
+            </p>
+            <p className="text-[9px] text-[var(--text-faint)] leading-tight mt-0.5">
+              {t('coverage.partialDesc')}
+            </p>
+          </>
+        )}
+        {unreadable > 0 && (
+          <p
+            className={`text-[10px] font-semibold leading-tight${problems.length > 0 ? ' mt-1' : ''}`}
+            style={{ color: 'var(--danger)' }}
+          >
+            {t('coverage.unreadableEntities', { count: unreadable })}
+          </p>
+        )}
         <div className="flex flex-wrap gap-1 mt-1">
           {problems.map((e) => (
             <span
@@ -1802,7 +1819,12 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
 
   // Honest-score signals: a run is only trustworthy when every enabled rule ran.
   const coverage = result?.metadata?.coverage
-  const coverageIncomplete = !!coverage && !coverage.complete
+  // Two different ways a run can be less than it appears, and they are not the
+  // same thing. `complete` says every enabled RULE ran. `unreadableEntities`
+  // says how much of the MODEL the rules could actually see — a file where
+  // thousands of entities failed to parse still runs every rule, and used to
+  // report a Health Score as though it had read the whole thing.
+  const coverageIncomplete = !!coverage && (!coverage.complete || coverage.unreadableEntities > 0)
 
   // Run-to-run comparison for the active model (Phase 4): the panel diffs the
   // current cached result against the snapshot taken before the latest run.

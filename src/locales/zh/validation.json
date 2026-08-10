@@ -141,7 +141,8 @@
     "acceptable": "可接受",
     "critical": "严重",
     "suggestedProfile": "建议配置：{{name}}",
-    "allCovered": "所有类别已覆盖"
+    "allCovered": "所有类别已覆盖",
+    "unreadableEntities": "有 {{count}} 个实体无法读取，已被跳过。评分只反映模型的其余部分。"
   },
   "empty": {
     "noModel": "未加载模型",

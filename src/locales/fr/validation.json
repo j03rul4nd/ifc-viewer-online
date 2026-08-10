@@ -141,7 +141,8 @@
     "acceptable": "Acceptable",
     "critical": "Critique",
     "suggestedProfile": "Profil suggéré : {{name}}",
-    "allCovered": "Toutes les catégories couvertes"
+    "allCovered": "Toutes les catégories couvertes",
+    "unreadableEntities": "{{count}} entités n'ont pas pu être lues et ont été ignorées. Le score porte sur le reste du modèle."
   },
   "empty": {
     "noModel": "Aucun modèle chargé",

@@ -267,7 +267,7 @@ function buildSpatialIndex(api: IfcAPI, modelId: number): SpatialIndex {
 
       const existing = idx.aggChildren.get(parentId) ?? []
       idx.aggChildren.set(parentId, [...existing, ...children])
-    } catch { /* corrupt IfcRelAggregates — skip this relation */ }
+    } catch { skipCorrupt() /* corrupt IfcRelAggregates — skip this relation */ }
   }
 
   // ── IfcRelContainedInSpatialStructure ────────────────────────────────
@@ -288,7 +288,7 @@ function buildSpatialIndex(api: IfcAPI, modelId: number): SpatialIndex {
 
       const existing = idx.containerElements.get(structId) ?? []
       idx.containerElements.set(structId, [...existing, ...elems])
-    } catch { /* corrupt IfcRelContainedInSpatialStructure — skip */ }
+    } catch { skipCorrupt() /* corrupt IfcRelContainedInSpatialStructure — skip */ }
   }
 
   // ── Pre-load names and GUIDs for spatial structure elements ──────────
@@ -305,7 +305,7 @@ function buildSpatialIndex(api: IfcAPI, modelId: number): SpatialIndex {
         idx.globalIds.set(id, guid)
         idx.names.set(id, name)
         if (guid) idx.guidToId.set(guid, id)
-      } catch { /* corrupt spatial entity — register type only */ }
+      } catch { skipCorrupt() /* corrupt spatial entity — register type only */ }
     }
   }
 
@@ -461,7 +461,7 @@ async function ruleEmptyName(
             autoFixable: false,
           })
         }
-      } catch { /* corrupt entity — skip */ }
+      } catch { skipCorrupt() /* corrupt entity — skip */ }
     }
   }
   return issues
@@ -489,7 +489,7 @@ async function ruleEmptyLongName(
           path: getSpatialPath(id, idx), autoFixable: false,
         })
       }
-    } catch { /* corrupt entity — skip */ }
+    } catch { skipCorrupt() /* corrupt entity — skip */ }
   }
 
   // IfcBuildingStorey + IfcBuilding — info (floor/building label useful for documentation)
@@ -511,7 +511,7 @@ async function ruleEmptyLongName(
             path: getSpatialPath(id, idx), autoFixable: false,
           })
         }
-      } catch { /* corrupt entity — skip */ }
+      } catch { skipCorrupt() /* corrupt entity — skip */ }
     }
   }
 
@@ -548,7 +548,7 @@ async function ruleDuplicateName(
         const existing = nameMap.get(name) ?? []
         existing.push(id)
         nameMap.set(name, existing)
-      } catch { /* corrupt entity — skip */ }
+      } catch { skipCorrupt() /* corrupt entity — skip */ }
     }
   }
 
@@ -571,7 +571,7 @@ async function ruleDuplicateName(
             path: getSpatialPath(id, idx),
             autoFixable: false,
           })
-        } catch { /* corrupt entity — skip */ }
+        } catch { skipCorrupt() /* corrupt entity — skip */ }
       }
     }
   }
@@ -627,7 +627,7 @@ async function ruleNamingConvention(
             break
           }
         }
-      } catch { /* corrupt entity — skip */ }
+      } catch { skipCorrupt() /* corrupt entity — skip */ }
     }
   }
   return issues
@@ -649,7 +649,7 @@ async function ruleMissingType(
         const id = getRefId(ref)
         if (id !== null) hasType.add(id)
       }
-    } catch { /* corrupt relation — skip */ }
+    } catch { skipCorrupt() /* corrupt relation — skip */ }
   }
 
   for (const typeId of ELEMENT_TYPES) {
@@ -671,7 +671,7 @@ async function ruleMissingType(
             path: getSpatialPath(id, idx),
             autoFixable: false,
           })
-        } catch { /* corrupt entity — skip */ }
+        } catch { skipCorrupt() /* corrupt entity — skip */ }
       }
     }
   }
@@ -711,7 +711,7 @@ async function ruleDuplicateGuid(
         } else {
           seen.set(guid, id)
         }
-      } catch { /* corrupt entity — skip */ }
+      } catch { skipCorrupt() /* corrupt entity — skip */ }
     }
   }
   return issues
@@ -818,7 +818,7 @@ async function ruleOrphanElement(
             path: [],
             autoFixable: false,
           })
-        } catch { /* corrupt entity — skip */ }
+        } catch { skipCorrupt() /* corrupt entity — skip */ }
       }
     }
   }
@@ -856,7 +856,7 @@ async function ruleWrongContainer(
             path: getSpatialPath(id, idx),
             autoFixable: false,
           })
-        } catch { /* corrupt entity — skip */ }
+        } catch { skipCorrupt() /* corrupt entity — skip */ }
       }
     }
   }
@@ -936,7 +936,7 @@ async function ruleInvalidGuidFormat(
           path: getSpatialPath(id, idx),
           autoFixable: true,
         })
-      } catch { /* corrupt entity — skip */ }
+      } catch { skipCorrupt() /* corrupt entity — skip */ }
     }
   }
   return issues
@@ -975,7 +975,7 @@ async function ruleSpatialHierarchy(
             path: getSpatialPath(id, idx),
             autoFixable: false,
           })
-        } catch { /* corrupt entity — skip */ }
+        } catch { skipCorrupt() /* corrupt entity — skip */ }
       }
     }
   }
@@ -1189,7 +1189,7 @@ async function ruleMissingMaterial(
           path: getSpatialPath(id, idx),
           autoFixable: false,
         })
-      } catch { /* corrupt entity — skip */ }
+      } catch { skipCorrupt() /* corrupt entity — skip */ }
     }
   }
   return issues
@@ -1222,7 +1222,7 @@ async function ruleElementInBuilding(
             path: getSpatialPath(id, idx),
             autoFixable: false,
           })
-        } catch { /* corrupt entity — skip */ }
+        } catch { skipCorrupt() /* corrupt entity — skip */ }
       }
     }
   }
@@ -1453,7 +1453,7 @@ async function ruleMissingStorey(
           message: 'IfcBuilding has no IfcBuildingStorey — elements cannot be organized by floor.',
           path: getSpatialPath(bid, idx), autoFixable: false,
         })
-      } catch { /* corrupt entity — skip */ }
+      } catch { skipCorrupt() /* corrupt entity — skip */ }
     }
   }
   return issues
@@ -1482,7 +1482,7 @@ async function ruleEmptyStorey(
           message: 'IfcBuildingStorey has no contained elements or spaces.',
           path: getSpatialPath(sid, idx), autoFixable: false,
         })
-      } catch { /* corrupt entity — skip */ }
+      } catch { skipCorrupt() /* corrupt entity — skip */ }
     }
   }
   return issues
@@ -1535,7 +1535,7 @@ async function ruleProjectLongNameMissing(
           path: [], autoFixable: false,
         })
       }
-    } catch { /* corrupt entity — skip */ }
+    } catch { skipCorrupt() /* corrupt entity — skip */ }
   }
   return issues
 }
@@ -1590,7 +1590,7 @@ async function ruleIso19650ProjectInfo(
           path: [], autoFixable: false,
         })
       }
-    } catch { /* corrupt entity — skip */ }
+    } catch { skipCorrupt() /* corrupt entity — skip */ }
   }
   return issues
 }
@@ -1718,12 +1718,12 @@ async function ruleMissingClassification(
           const classRef = getLine<{ Name?: MaybeString }>(api, modelId, rel.RelatingClassification.value)
           const sysName = getStr(classRef.Name).toLowerCase()
           if (!allowedSystems.some((s) => sysName.includes(s.toLowerCase()))) continue
-        } catch { /* skip */ }
+        } catch { skipCorrupt() /* skip */ }
       }
       for (const ref of rel.RelatedObjects) {
         if (ref?.value != null) classifiedIds.add(ref.value)
       }
-    } catch { /* corrupt line */ }
+    } catch { skipCorrupt() /* corrupt line */ }
   }
 
   for (const typeId of ELEMENT_TYPES) {
@@ -1740,7 +1740,7 @@ async function ruleMissingClassification(
           message: `${TYPE_NAME[typeId] ?? 'IfcElement'} has no classification reference${allowedSystems.length > 0 ? ` from ${allowedSystems.join('/')}` : ''}.`,
           path: getSpatialPath(id, idx), autoFixable: false,
         })
-      } catch { /* corrupt */ }
+      } catch { skipCorrupt() /* corrupt */ }
     }
   }
   return issues
@@ -1770,7 +1770,7 @@ async function ruleLodPsetMissing(
         existing.add(psetName)
         elementPsets.set(ref.value, existing)
       }
-    } catch { /* corrupt */ }
+    } catch { skipCorrupt() /* corrupt */ }
   }
 
   const typeMap: Record<number, string> = {
@@ -1799,7 +1799,7 @@ async function ruleLodPsetMissing(
           message: `${className} missing required Pset(s) for LOD ${lodLevel}: ${missing.join(', ')}.`,
           path: getSpatialPath(id, idx), autoFixable: false,
         })
-      } catch { /* corrupt */ }
+      } catch { skipCorrupt() /* corrupt */ }
     }
   }
   return issues
@@ -1833,7 +1833,7 @@ async function ruleLodQuantityMissing(
       for (const ref of rel.RelatedObjects) {
         if (ref?.value != null) quantifiedIds.add(ref.value)
       }
-    } catch { /* corrupt */ }
+    } catch { skipCorrupt() /* corrupt */ }
   }
 
   for (const typeId of LOD_QUANTITY_TYPES) {
@@ -1851,7 +1851,7 @@ async function ruleLodQuantityMissing(
           message: `${className} has no IfcElementQuantity — required at LOD ${lodLevel}.`,
           path: getSpatialPath(id, idx), autoFixable: false,
         })
-      } catch { /* corrupt */ }
+      } catch { skipCorrupt() /* corrupt */ }
     }
   }
   return issues
@@ -1884,7 +1884,7 @@ async function ruleLodMaterialLayerMissing(
       for (const ref of rel.RelatedObjects) {
         if (ref?.value != null) layeredIds.add(ref.value)
       }
-    } catch { /* corrupt */ }
+    } catch { skipCorrupt() /* corrupt */ }
   }
 
   for (const typeId of LAYERED_ELEMENT_TYPES) {
@@ -1902,7 +1902,7 @@ async function ruleLodMaterialLayerMissing(
           message: `${className} has no IfcMaterialLayerSetUsage — required at LOD ${lodLevel}.`,
           path: getSpatialPath(id, idx), autoFixable: false,
         })
-      } catch { /* corrupt */ }
+      } catch { skipCorrupt() /* corrupt */ }
     }
   }
   return issues
@@ -1928,7 +1928,7 @@ async function ruleMepSystemMissing(
       for (const ref of rel.RelatedObjects) {
         if (ref?.value != null) assignedIds.add(ref.value)
       }
-    } catch { /* corrupt */ }
+    } catch { skipCorrupt() /* corrupt */ }
   }
 
   for (const typeId of MEP_ELEMENT_TYPES) {
@@ -1946,7 +1946,7 @@ async function ruleMepSystemMissing(
           message: `${className} is not assigned to any IfcSystem.`,
           path: getSpatialPath(id, idx), autoFixable: false,
         })
-      } catch { /* corrupt */ }
+      } catch { skipCorrupt() /* corrupt */ }
     }
   }
   return issues
@@ -2143,7 +2143,7 @@ async function ruleProxyOveruse(
         path:        getSpatialPath(id, idx),
         autoFixable: false,
       })
-    } catch { /* corrupt entity — skip */ }
+    } catch { skipCorrupt() /* corrupt entity — skip */ }
   }
   return issues
 }
@@ -2280,7 +2280,7 @@ async function ruleOpeningWithoutHost(
       const rel = getLine<{ RelatedOpeningElement?: MaybeRef }>(api, modelId, voidRelIds.get(i))
       const openId = getRefId(rel.RelatedOpeningElement as MaybeRef)
       if (openId !== null) hostedIds.add(openId)
-    } catch { /* corrupt rel */ }
+    } catch { skipCorrupt() /* corrupt rel */ }
   }
 
   const issues: ValidationIssue[] = []
@@ -2302,7 +2302,7 @@ async function ruleOpeningWithoutHost(
         path: getSpatialPath(id, idx),
         autoFixable: false,
       })
-    } catch { /* corrupt entity */ }
+    } catch { skipCorrupt() /* corrupt entity */ }
   }
   return issues
 }
@@ -2457,7 +2457,7 @@ async function ruleSpaceAreaMissing(
       for (const ref of rel.RelatedObjects) {
         if (ref?.value != null) spacesWithArea.add(ref.value)
       }
-    } catch { /* corrupt line */ }
+    } catch { skipCorrupt() /* corrupt line */ }
   }
 
   const spaceIds = api.GetLineIDsWithType(modelId, IFCSPACE)
@@ -2480,7 +2480,7 @@ async function ruleSpaceAreaMissing(
         path: getSpatialPath(sid, idx),
         autoFixable: false,
       })
-    } catch { /* corrupt */ }
+    } catch { skipCorrupt() /* corrupt */ }
   }
   return issues
 }
@@ -2585,6 +2585,9 @@ const post = self.postMessage.bind(self) as PostFn
 async function handleValidate(msg: ValidateMessage): Promise<void> {
   const { id, buffer, rules, skipTree } = msg
   const startTime = Date.now()
+  // Per run. A worker handles more than one validation in its life, and a
+  // counter that carried over would attribute one model's corruption to the next.
+  unreadableEntities = 0
   const allIssues: ValidationIssue[] = []
 
   // ── Pre-flight: validate the IFC buffer before attempting WASM init ────────
@@ -2852,6 +2855,10 @@ async function handleValidate(msg: ValidateMessage): Promise<void> {
       issues: allIssues,
       stats: { total: allIssues.length, errors, warnings, info, byRule },
       durationMs: Date.now() - startTime,
+      // Entities this run could not read. Zero on a healthy file; on a corrupt
+      // one it is what stops the score being presented as though the whole model
+      // had been seen.
+      unreadableEntities,
       ...(clashCap ? { metadata: { clashCapped: clashCap } } : {}),
     }
 
@@ -3123,7 +3130,7 @@ async function handleExtractCobie(msg: ExtractCobieMessage): Promise<void> {
             globalId: getStr(line.GlobalId) || null,
             name,
           })
-        } catch { /* malformed line — skip, never abort the extraction */ }
+        } catch { skipCorrupt() /* malformed line — skip, never abort the extraction */ }
       }
     }
 
@@ -3153,6 +3160,26 @@ async function handleExtractCobie(msg: ExtractCobieMessage): Promise<void> {
       try { api.CloseModel(modelId) } catch (err: unknown) { log.debug('handleExtractCobie: CloseModel failed:', err) }
     }
   }
+}
+
+/**
+ * How many entities this run could not read.
+ *
+ * The rules below wrap every per-entity read in `catch { skipCorrupt() }`, and
+ * that is deliberate: one unreadable line must never abort a validation of the
+ * other 400 000. What was NOT deliberate is that it happened silently. Thirty
+ * nine of these sites swallowed a corrupt entity and the run then reported a
+ * Health Score as though it had seen the whole model.
+ *
+ * On a healthy file this is zero and nothing changes. On a corrupt one — which
+ * is exactly the file a validator exists for — it is the difference between a
+ * score and a score computed on whatever happened to parse.
+ */
+let unreadableEntities = 0
+
+/** Record an entity we could not read. Called from every skip site. */
+function skipCorrupt(): void {
+  unreadableEntities++
 }
 
 self.onmessage = (e: MessageEvent<ValidateMessage | BuildTreeMessage | ComputeTakeoffMessage | ExtractCobieMessage>): void => {

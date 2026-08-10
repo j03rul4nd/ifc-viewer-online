@@ -132,6 +132,12 @@ function worstStatus(a: RuleCoverageStatus | undefined, b: RuleCoverageStatus): 
 export function buildCoverage(
   attempted: string[],
   known: Map<string, RuleCoverageEntry>,
+  /**
+   * Entities no worker could read, summed across the pool. Defaults to 0 so a
+   * caller that predates the count reports an honest "none seen" rather than
+   * being forced to invent a number.
+   */
+  unreadableEntities = 0,
 ): ValidationCoverage {
   const entries: RuleCoverageEntry[] = attempted.map(
     (ruleId) => known.get(ruleId) ?? { ruleId, status: 'not-run' },
@@ -148,6 +154,9 @@ export function buildCoverage(
     okCount,
     failedCount,
     notRunCount,
+    // Summed across the pool: with several workers on one model, each reports
+    // only what IT could not read, and the user cares about the model.
+    unreadableEntities,
     complete: failedCount === 0 && notRunCount === 0,
   }
 }
@@ -221,9 +230,15 @@ export function composeMultiModelResult(
     }
   }
 
-  const coverage = anyCoverage ? buildCoverage([...attemptedSet], covByRule) : undefined
+  // Summed, not maxed: each model (and each pool worker) reports only what IT
+  // could not read, and the user cares about the delivery rather than the worker.
+  const unreadable = ids.reduce((n, id) => n + (perModel[id].unreadableEntities ?? 0), 0)
+  const coverage = anyCoverage
+    ? buildCoverage([...attemptedSet], covByRule, unreadable)
+    : undefined
 
   const merged: ValidationResult = {
+    unreadableEntities: unreadable,
     issues: allIssues,
     stats:  { total: allIssues.length, errors, warnings, info, byRule },
     durationMs,
@@ -632,6 +647,7 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
     let w1Progress = 0
     let w0Error: WorkerError | null = null
     let clashCapped: { checkedCount: number; totalCount: number } | undefined
+    let unreadableTotal = 0
 
     // Per-rule coverage reported by the workers (key: ruleId). The launcher owns
     // the full attempted set (enabledRuleKeys) and gap-fills the rest as not-run.
@@ -706,7 +722,7 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
 
       // Honest coverage: gap-fill every enabled rule the workers didn't report
       // (silent secondary-worker failure, terminate, etc.) as 'not-run'.
-      const coverage = buildCoverage(enabledRuleKeys, cov)
+      const coverage = buildCoverage(enabledRuleKeys, cov, unreadableTotal)
       const mergedResult = {
         issues:    allIssues,
         stats:     { total: allIssues.length, errors, warnings, info, byRule },
@@ -806,6 +822,9 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
         })
         .with({ type: 'done' }, (msg) => {
           if (msg.result?.metadata?.clashCapped) clashCapped = msg.result.metadata.clashCapped
+          // Each worker only knows what IT could not read; the user cares about
+          // the model, so the counts add.
+          unreadableTotal += msg.result?.unreadableEntities ?? 0
           w0Done = true; tryFinalize()
         })
         .with({ type: 'error' }, (msg) => {
@@ -848,6 +867,7 @@ export async function runValidation(modelId?: string, rules?: RulesConfig, force
         })
         .with({ type: 'done' }, (msg) => {
           if (msg.result?.metadata?.clashCapped) clashCapped = msg.result.metadata.clashCapped
+          unreadableTotal += msg.result?.unreadableEntities ?? 0
           w1Done = true; tryFinalize()
         })
         .with({ type: 'error' }, (msg) => {

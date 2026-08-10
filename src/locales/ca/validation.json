@@ -141,7 +141,8 @@
     "acceptable": "Acceptable",
     "critical": "Crític",
     "suggestedProfile": "Perfil suggerit: {{name}}",
-    "allCovered": "Totes les categories cobertes"
+    "allCovered": "Totes les categories cobertes",
+    "unreadableEntities": "No s'han pogut llegir {{count}} entitats i s'han omès. La puntuació reflecteix la resta del model."
   },
   "empty": {
     "noModel": "Cap model carregat",

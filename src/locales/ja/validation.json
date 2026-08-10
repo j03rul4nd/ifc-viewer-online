@@ -141,7 +141,8 @@
     "acceptable": "許容範囲",
     "critical": "重大",
     "suggestedProfile": "推奨プロファイル: {{name}}",
-    "allCovered": "すべてのカテゴリをカバー"
+    "allCovered": "すべてのカテゴリをカバー",
+    "unreadableEntities": "{{count}} 件のエンティティを読み込めず、スキップしました。スコアはモデルの残りの部分に基づいています。"
   },
   "empty": {
     "noModel": "モデル未読み込み",

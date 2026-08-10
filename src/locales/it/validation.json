@@ -141,7 +141,8 @@
     "acceptable": "Accettabile",
     "critical": "Critico",
     "suggestedProfile": "Profilo suggerito: {{name}}",
-    "allCovered": "Tutte le categorie coperte"
+    "allCovered": "Tutte le categorie coperte",
+    "unreadableEntities": "Non è stato possibile leggere {{count}} entità, che sono state saltate. Il punteggio riguarda il resto del modello."
   },
   "empty": {
     "noModel": "Nessun modello caricato",

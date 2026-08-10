@@ -52,6 +52,14 @@ const ValidationResultSchema = z.object({
   issues:       z.array(ValidationIssueSchema),
   stats:        ValidationStatsSchema,
   durationMs:   z.number().nonnegative(),
+  /**
+   * Entities the worker could not parse and skipped. Declared here for the same
+   * reason as the coverage block below: Zod STRIPS what it does not know, so an
+   * undeclared field arrives from the worker and silently vanishes — which is
+   * exactly how a count meant to make partial results visible would itself
+   * become invisible.
+   */
+  unreadableEntities: z.number().int().nonnegative().default(0),
   qualityScore: z.number().min(0).max(100).optional(),
   metadata:     z.object({
     clashCapped: z.object({
@@ -71,6 +79,11 @@ const ValidationResultSchema = z.object({
       failedCount: z.number().int().nonnegative(),
       notRunCount: z.number().int().nonnegative(),
       complete:    z.boolean(),
+      // Declared here for the reason the comment above gives: Zod STRIPS what
+      // it does not know, so an undeclared field arrives and vanishes. Default
+      // 0 rather than optional, so a message from an older worker reports an
+      // honest "none seen" instead of undefined leaking into the UI.
+      unreadableEntities: z.number().int().nonnegative().default(0),
     }).optional(),
   }).optional(),
 })

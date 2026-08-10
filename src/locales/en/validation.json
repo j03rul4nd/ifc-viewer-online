@@ -153,7 +153,8 @@
     "partialDesc": "Some checks didn't finish, so the real score may be higher than reality. Re-run, or turn off the affected checks.",
     "statusFailed": "Failed to run",
     "statusNotRun": "Did not run",
-    "ranAll": "All {{total}} checks ran"
+    "ranAll": "All {{total}} checks ran",
+    "unreadableEntities": "{{count}} entities could not be read and were skipped. The score reflects the rest of the model."
   },
   "summary": {
     "fixFirst": "Fix first to recover the most",

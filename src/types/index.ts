@@ -180,6 +180,12 @@ export interface ValidationResult {
     byRule: Record<string, number>
   }
   durationMs: number
+  /**
+   * Entities the run could not parse and skipped. Reported by the worker and
+   * folded into `coverage.unreadableEntities` by the launcher, which is where
+   * the UI reads it. Optional because older messages and fixtures predate it.
+   */
+  unreadableEntities?: number
   /** 0–100 quality score, calculated client-side after worker returns. Higher = fewer issues. */
   qualityScore?: number
   metadata?: {
@@ -218,7 +224,21 @@ export interface ValidationCoverage {
   okCount: number
   failedCount: number
   notRunCount: number
+  /**
+   * Every enabled rule ran. NOT the same as "the whole model was read" — see
+   * `unreadableEntities`, which is why the panel checks both.
+   */
   complete: boolean
+  /**
+   * Entities the run could not parse and silently skipped.
+   *
+   * The rules wrap every per-entity read so one corrupt line cannot abort a
+   * validation of the other 400 000 — correct, and it used to be invisible. A
+   * model where thousands of entities failed to read still produced a Health
+   * Score presented as if the whole file had been seen, which on a corrupt file
+   * is the one case a validator exists for.
+   */
+  unreadableEntities: number
 }
 
 export interface RulesConfig {

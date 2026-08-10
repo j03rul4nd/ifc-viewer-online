@@ -141,7 +141,8 @@
     "acceptable": "Aceitável",
     "critical": "Crítico",
     "suggestedProfile": "Perfil sugerido: {{name}}",
-    "allCovered": "Todas as categorias cobertas"
+    "allCovered": "Todas as categorias cobertas",
+    "unreadableEntities": "Não foi possível ler {{count}} entidades, que foram ignoradas. A pontuação reflete o resto do modelo."
   },
   "empty": {
     "noModel": "Nenhum modelo carregado",

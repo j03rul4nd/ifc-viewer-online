@@ -148,3 +148,46 @@ describe('issueKey (waivers)', () => {
     expect(issueKey({ ruleId: 'RULE_X', globalId: null, expressId: 42 })).toBe('RULE_X::e42')
   })
 })
+
+// ── Entities the run could not read ───────────────────────────────────────────
+// The rules wrap every per-entity read so one corrupt line cannot abort a
+// validation of the other 400 000. That is right, and it used to be silent: 39
+// skip sites swallowed a corrupt entity and the run then reported a Health Score
+// as though it had seen the whole model — on a corrupt file, which is the one
+// case a validator exists for.
+
+describe('coverage counts what could not be read', () => {
+  it('defaults to none seen, so an older caller reports honestly', () => {
+    // buildCoverage predates the count. It must say zero rather than undefined,
+    // which would leak into the UI as a warning nobody can explain.
+    const cov = buildCoverage(['RULE_A'], new Map([['RULE_A', { ruleId: 'RULE_A', status: 'ok' as const }]]))
+    expect(cov.unreadableEntities).toBe(0)
+  })
+
+  it('carries the count through', () => {
+    const cov = buildCoverage(
+      ['RULE_A'],
+      new Map([['RULE_A', { ruleId: 'RULE_A', status: 'ok' as const }]]),
+      1_234,
+    )
+    expect(cov.unreadableEntities).toBe(1_234)
+    // Every rule ran. `complete` is about RULES, and it is still true — which is
+    // exactly why the panel has to check both and not just this flag.
+    expect(cov.complete).toBe(true)
+  })
+
+  it('does not let unreadable entities masquerade as a rule failure', () => {
+    const cov = buildCoverage(
+      ['RULE_A', 'RULE_B'],
+      new Map([
+        ['RULE_A', { ruleId: 'RULE_A', status: 'ok' as const }],
+        ['RULE_B', { ruleId: 'RULE_B', status: 'ok' as const }],
+      ]),
+      50,
+    )
+    expect(cov.okCount).toBe(2)
+    expect(cov.failedCount).toBe(0)
+    expect(cov.notRunCount).toBe(0)
+    expect(cov.unreadableEntities).toBe(50)
+  })
+})

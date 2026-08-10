@@ -141,7 +141,8 @@
     "acceptable": "Akzeptabel",
     "critical": "Kritisch",
     "suggestedProfile": "Vorgeschlagenes Profil: {{name}}",
-    "allCovered": "Alle Kategorien abgedeckt"
+    "allCovered": "Alle Kategorien abgedeckt",
+    "unreadableEntities": "{{count}} Entitäten konnten nicht gelesen werden und wurden übersprungen. Die Bewertung bezieht sich auf den Rest des Modells."
   },
   "empty": {
     "noModel": "Kein Modell geladen",
