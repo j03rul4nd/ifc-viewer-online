@@ -47,6 +47,7 @@ import enCapture     from '../locales/en/capture.json'
 import enVerify      from '../locales/en/verify.json'
 import enPro         from '../locales/en/pro.json'
 import enPointCloud  from '../locales/en/pointcloud.json'
+import enMesh        from '../locales/en/mesh.json'
 
 const EN_RESOURCES = {
   common:      enCommon,
@@ -72,6 +73,7 @@ const EN_RESOURCES = {
   tour:        enTour,
   client:      enClient,
   pointcloud:  enPointCloud,
+  mesh:        enMesh,
 } as const
 
 // ── Init ──────────────────────────────────────────────────────────────────────

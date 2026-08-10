@@ -1,0 +1,57 @@
+{
+  "title": "3D-Modell",
+  "entry": "3D-Modell",
+  "load": {
+    "drop": "Modell hinzufügen oder auswählen",
+    "working": "Wird gelesen…",
+    "formats": "GLB · glTF · OBJ",
+    "multiHint": "Wählen Sie das Modell UND seine Texturen zusammen aus — eine .gltf braucht ihre .bin, eine .obj ihre .mtl."
+  },
+  "stats": {
+    "triangles": "{{count}} Dreiecke",
+    "textures": "{{count}} Texturen"
+  },
+  "source": {
+    "title": "Quelle",
+    "unit": "Einheit",
+    "unitM": "Meter",
+    "unitCm": "Zentimeter",
+    "unitMm": "Millimeter",
+    "unitFt": "Fuß",
+    "unitGuessed": "Von der Datei nicht angegeben — aus der Größe des Modells geschätzt. Ändern Sie es, falls es falsch ankam.",
+    "upAxis": "Hochachse",
+    "upAxisY": "Y oben",
+    "upAxisZ": "Z oben",
+    "upAxisDeclared": "glTF speichert immer Y oben, es gibt also nichts zu wählen."
+  },
+  "placement": {
+    "title": "Platzierung",
+    "x": "Ost / West",
+    "y": "Auf / Ab",
+    "z": "Nord / Süd",
+    "rotation": "Drehung",
+    "pitch": "Nach vorn / hinten neigen",
+    "roll": "Nach links / rechts neigen",
+    "scale": "Maßstab",
+    "reset": "Platzierung zurücksetzen",
+    "fit": "Auf Modell zoomen",
+    "hint": "Das Modell startet mittig über dem IFC, auf dessen Boden. Nichts hier bewegt das IFC."
+  },
+  "actions": {
+    "remove": "Entfernen",
+    "visible": "Sichtbar",
+    "hidden": "Ausgeblendet"
+  },
+  "reason": {
+    "unitMillimetres": "Die Größe deutet auf Millimeter hin — mit 0,001 skaliert.",
+    "unitCentimetres": "Die Größe deutet auf Zentimeter hin — mit 0,01 skaliert."
+  },
+  "error": {
+    "noEntryFile": "Kein GLB, glTF oder OBJ in dieser Auswahl.",
+    "noGeometry": "Diese Datei enthält keine Geometrie.",
+    "parseFailed": "Dieses Modell konnte nicht gelesen werden.",
+    "emptyFile": "Diese Datei ist leer.",
+    "budgetExhausted": "Das Dreiecks-Budget ist voll. Entfernen Sie ein Modell, bevor Sie ein weiteres hinzufügen.",
+    "cancelled": "Der Import wurde abgebrochen."
+  }
+}

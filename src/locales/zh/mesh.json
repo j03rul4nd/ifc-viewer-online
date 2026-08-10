@@ -1,0 +1,57 @@
+{
+  "title": "3D 模型",
+  "entry": "3D 模型",
+  "load": {
+    "drop": "添加模型，或浏览选择",
+    "working": "读取中…",
+    "formats": "GLB · glTF · OBJ",
+    "multiHint": "请把模型和它的贴图一起选中——.gltf 需要它的 .bin，.obj 需要它的 .mtl。"
+  },
+  "stats": {
+    "triangles": "{{count}} 个三角面",
+    "textures": "{{count}} 张贴图"
+  },
+  "source": {
+    "title": "来源",
+    "unit": "单位",
+    "unitM": "米",
+    "unitCm": "厘米",
+    "unitMm": "毫米",
+    "unitFt": "英尺",
+    "unitGuessed": "文件未声明——根据模型尺寸推测得出。如果导入结果不对，请在此更改。",
+    "upAxis": "垂直轴",
+    "upAxisY": "Y 向上",
+    "upAxisZ": "Z 向上",
+    "upAxisDeclared": "glTF 始终以 Y 向上存储，因此无需选择。"
+  },
+  "placement": {
+    "title": "放置",
+    "x": "东 / 西",
+    "y": "上 / 下",
+    "z": "北 / 南",
+    "rotation": "旋转",
+    "pitch": "前后倾斜",
+    "roll": "左右倾斜",
+    "scale": "缩放",
+    "reset": "重置放置",
+    "fit": "缩放到模型",
+    "hint": "模型初始居中于 IFC 之上、落在其地面。此处的操作都不会移动 IFC。"
+  },
+  "actions": {
+    "remove": "移除",
+    "visible": "显示",
+    "hidden": "已隐藏"
+  },
+  "reason": {
+    "unitMillimetres": "尺寸显示单位应为毫米——已按 0.001 缩放。",
+    "unitCentimetres": "尺寸显示单位应为厘米——已按 0.01 缩放。"
+  },
+  "error": {
+    "noEntryFile": "该选择中没有 GLB、glTF 或 OBJ 文件。",
+    "noGeometry": "该文件不包含任何几何体。",
+    "parseFailed": "无法读取该模型。",
+    "emptyFile": "该文件是空的。",
+    "budgetExhausted": "三角面预算已满。请先移除一个模型，再添加新的。",
+    "cancelled": "导入已取消。"
+  }
+}

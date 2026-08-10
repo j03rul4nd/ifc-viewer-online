@@ -1,0 +1,57 @@
+{
+  "title": "Model 3D",
+  "entry": "Model 3D",
+  "load": {
+    "drop": "Afegeix un model, o navega",
+    "working": "S'està llegint…",
+    "formats": "GLB · glTF · OBJ",
+    "multiHint": "Selecciona el model I les seves textures alhora — un .gltf necessita el seu .bin, un .obj el seu .mtl."
+  },
+  "stats": {
+    "triangles": "{{count}} triangles",
+    "textures": "{{count}} textures"
+  },
+  "source": {
+    "title": "Origen",
+    "unit": "Unitat",
+    "unitM": "Metres",
+    "unitCm": "Centímetres",
+    "unitMm": "Mil·límetres",
+    "unitFt": "Peus",
+    "unitGuessed": "El fitxer no ho indica — s'ha deduït de la mida del model. Canvia-ho si ha entrat malament.",
+    "upAxis": "Eix vertical",
+    "upAxisY": "Y amunt",
+    "upAxisZ": "Z amunt",
+    "upAxisDeclared": "El glTF sempre desa Y amunt, així que no hi ha res a triar."
+  },
+  "placement": {
+    "title": "Col·locació",
+    "x": "Est / oest",
+    "y": "Amunt / avall",
+    "z": "Nord / sud",
+    "rotation": "Rotació",
+    "pitch": "Inclina endavant / enrere",
+    "roll": "Inclina a esquerra / dreta",
+    "scale": "Escala",
+    "reset": "Restableix la col·locació",
+    "fit": "Enquadra el model",
+    "hint": "El model comença centrat sobre l'IFC i recolzat al seu terra. Res d'això no mou l'IFC."
+  },
+  "actions": {
+    "remove": "Elimina",
+    "visible": "Visible",
+    "hidden": "Amagat"
+  },
+  "reason": {
+    "unitMillimetres": "La mida suggereix mil·límetres — escalat per 0,001.",
+    "unitCentimetres": "La mida suggereix centímetres — escalat per 0,01."
+  },
+  "error": {
+    "noEntryFile": "No hi ha cap GLB, glTF ni OBJ en aquesta selecció.",
+    "noGeometry": "Aquest fitxer no conté geometria.",
+    "parseFailed": "No s'ha pogut llegir aquest model.",
+    "emptyFile": "Aquest fitxer és buit.",
+    "budgetExhausted": "El pressupost de triangles és ple. Elimina un model abans d'afegir-ne un altre.",
+    "cancelled": "S'ha cancel·lat la importació."
+  }
+}

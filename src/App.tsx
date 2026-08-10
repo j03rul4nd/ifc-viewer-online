@@ -65,6 +65,8 @@ const ClientPresentationLayout = React.lazy(() => import('./components/ClientPre
 import { isGisEnabled } from './lib/geo/gis-flag'
 import { isSolarEnabled } from './lib/solar/solar-flag'
 import { isPointCloudEnabled } from './lib/pointcloud/pc-flag'
+import { isMeshEnabled } from './lib/mesh/mesh-flag'
+import { useMeshStore } from './stores/meshStore'
 import { usePointCloudStore } from './stores/pointCloudStore'
 // pc-types is deliberately dependency-free — importing it here costs the
 // entry bundle nothing, which is why clampOffset and NO_OFFSET live there.
@@ -78,6 +80,9 @@ const SolarPanel = React.lazy(() => import('./components/SolarPanel'))
 // Lazy: PointCloudPanel statically imports the point cloud engine, its shader
 // and its readers — none of that may reach the entry chunk.
 const PointCloudPanel = React.lazy(() => import('./components/PointCloudPanel'))
+// Lazy for the same reason: MeshPanel statically imports three's GLTF, OBJ and
+// MTL loaders, which nobody who never imports a model should download.
+const MeshPanel = React.lazy(() => import('./components/MeshPanel'))
 import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, type DemoModel } from './demo-models/models'
 import { fetchDemoModel } from './demo-models/fetchDemoModel'
 import { lighten } from './lib/utils'
@@ -2197,6 +2202,18 @@ export default function App() {
                   {isPointCloudEnabled() && !clientMode && (
                     <React.Suspense fallback={null}>
                       <PointCloudPanel viewerApiRef={viewerApiRef} />
+                    </React.Suspense>
+                  )}
+                  {/* Same treatment as scans: an imported model is legitimate
+                      with no IFC loaded, and hidden in client presentation mode
+                      where the audience is not placing anything. */}
+                  {isMeshEnabled() && !clientMode && (
+                    <React.Suspense fallback={null}>
+                      <MeshPanel
+                        viewerApiRef={viewerApiRef}
+                        activeModelId={activeModelId}
+                        onClose={() => useMeshStore.getState().setPanelOpen(false)}
+                      />
                     </React.Suspense>
                   )}
 

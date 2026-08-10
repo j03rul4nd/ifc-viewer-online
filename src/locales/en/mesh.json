@@ -1,0 +1,57 @@
+{
+  "title": "3D model",
+  "entry": "3D model",
+  "load": {
+    "drop": "Add a model, or browse",
+    "working": "Reading…",
+    "formats": "GLB · glTF · OBJ",
+    "multiHint": "Select the model AND its textures together — a .gltf needs its .bin, an .obj needs its .mtl."
+  },
+  "stats": {
+    "triangles": "{{count}} triangles",
+    "textures": "{{count}} textures"
+  },
+  "source": {
+    "title": "Source",
+    "unit": "Unit",
+    "unitM": "Metres",
+    "unitCm": "Centimetres",
+    "unitMm": "Millimetres",
+    "unitFt": "Feet",
+    "unitGuessed": "Not stated by the file — guessed from the size of the model. Change it if it came in wrong.",
+    "upAxis": "Up axis",
+    "upAxisY": "Y up",
+    "upAxisZ": "Z up",
+    "upAxisDeclared": "glTF always stores Y up, so there is nothing to choose."
+  },
+  "placement": {
+    "title": "Placement",
+    "x": "East / west",
+    "y": "Up / down",
+    "z": "North / south",
+    "rotation": "Rotation",
+    "pitch": "Tilt forward / back",
+    "roll": "Tilt left / right",
+    "scale": "Scale",
+    "reset": "Reset placement",
+    "fit": "Zoom to model",
+    "hint": "The model starts centred on the IFC, sitting on its floor. Nothing here moves the IFC."
+  },
+  "actions": {
+    "remove": "Remove",
+    "visible": "Visible",
+    "hidden": "Hidden"
+  },
+  "reason": {
+    "unitMillimetres": "Size suggests millimetres — scaled by 0.001.",
+    "unitCentimetres": "Size suggests centimetres — scaled by 0.01."
+  },
+  "error": {
+    "noEntryFile": "No GLB, glTF or OBJ in that selection.",
+    "noGeometry": "That file contains no geometry.",
+    "parseFailed": "That model could not be read.",
+    "emptyFile": "That file is empty.",
+    "budgetExhausted": "The triangle budget is full. Remove a model before adding another.",
+    "cancelled": "Import was cancelled."
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "title": "Modèle 3D",
+  "entry": "Modèle 3D",
+  "load": {
+    "drop": "Ajoutez un modèle, ou parcourez",
+    "working": "Lecture…",
+    "formats": "GLB · glTF · OBJ",
+    "multiHint": "Sélectionnez le modèle ET ses textures ensemble — un .gltf a besoin de son .bin, un .obj de son .mtl."
+  },
+  "stats": {
+    "triangles": "{{count}} triangles",
+    "textures": "{{count}} textures"
+  },
+  "source": {
+    "title": "Source",
+    "unit": "Unité",
+    "unitM": "Mètres",
+    "unitCm": "Centimètres",
+    "unitMm": "Millimètres",
+    "unitFt": "Pieds",
+    "unitGuessed": "Non indiqué par le fichier — déduit de la taille du modèle. Changez-le s'il est arrivé de travers.",
+    "upAxis": "Axe vertical",
+    "upAxisY": "Y vers le haut",
+    "upAxisZ": "Z vers le haut",
+    "upAxisDeclared": "glTF stocke toujours Y vers le haut : il n’y a rien à choisir."
+  },
+  "placement": {
+    "title": "Placement",
+    "x": "Est / ouest",
+    "y": "Haut / bas",
+    "z": "Nord / sud",
+    "rotation": "Rotation",
+    "pitch": "Incliner avant / arrière",
+    "roll": "Incliner gauche / droite",
+    "scale": "Échelle",
+    "reset": "Réinitialiser le placement",
+    "fit": "Cadrer sur le modèle",
+    "hint": "Le modèle démarre centré sur l'IFC, posé sur son sol. Rien ici ne déplace l'IFC."
+  },
+  "actions": {
+    "remove": "Supprimer",
+    "visible": "Visible",
+    "hidden": "Masqué"
+  },
+  "reason": {
+    "unitMillimetres": "La taille suggère des millimètres — mise à l'échelle par 0,001.",
+    "unitCentimetres": "La taille suggère des centimètres — mise à l'échelle par 0,01."
+  },
+  "error": {
+    "noEntryFile": "Aucun GLB, glTF ou OBJ dans cette sélection.",
+    "noGeometry": "Ce fichier ne contient aucune géométrie.",
+    "parseFailed": "Ce modèle n'a pas pu être lu.",
+    "emptyFile": "Ce fichier est vide.",
+    "budgetExhausted": "Le budget de triangles est plein. Retirez un modèle avant d’en ajouter un autre.",
+    "cancelled": "L'import a été annulé."
+  }
+}

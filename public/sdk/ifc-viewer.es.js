@@ -12,7 +12,7 @@ const m = [
   { code: "zh", label: "中文" },
   { code: "ja", label: "日本語" },
   { code: "th", label: "ไทย" }
-], g = "1.9.0", y = 12e4, b = 3e4, c = m.map((s) => s.code);
+], g = "1.10.0", y = 12e4, b = 3e4, c = m.map((s) => s.code);
 function E() {
   try {
     return new URL("../", import.meta.url).href;
@@ -87,6 +87,9 @@ const l = class l {
             break;
           case "pointcloud-picked":
             this.emit("pointcloud-picked", e);
+            break;
+          case "map-feature-picked":
+            this.emit("map-feature-picked", e);
             break;
           case "result": {
             const i = e.requestId;
@@ -379,8 +382,8 @@ const l = class l {
         if (!this.disposed)
           try {
             t(r);
-          } catch (d) {
-            this.settle(r, !1, d instanceof Error ? d : new Error(String(d)));
+          } catch (a) {
+            this.settle(r, !1, a instanceof Error ? a : new Error(String(a)));
           }
       });
     });
@@ -400,12 +403,12 @@ const l = class l {
   }
   /** Send a query and resolve with the iframe's `result` payload. */
   request(t, e = {}, i = b, r = []) {
-    return this.disposed ? Promise.reject(new Error("IfcViewer disposed")) : new Promise((o, d) => {
-      const a = this.nextRequestId(), w = setTimeout(() => {
-        this.requests.delete(a), d(new Error(`IfcViewer: "${t}" timed out after ${i}ms`));
+    return this.disposed ? Promise.reject(new Error("IfcViewer disposed")) : new Promise((o, a) => {
+      const d = this.nextRequestId(), w = setTimeout(() => {
+        this.requests.delete(d), a(new Error(`IfcViewer: "${t}" timed out after ${i}ms`));
       }, i);
-      this.requests.set(a, { resolve: o, reject: d, timer: w }), this.whenReady().then(() => {
-        this.disposed || this.post({ type: t, requestId: a, ...e }, r);
+      this.requests.set(d, { resolve: o, reject: a, timer: w }), this.whenReady().then(() => {
+        this.disposed || this.post({ type: t, requestId: d, ...e }, r);
       });
     });
   }
@@ -445,10 +448,10 @@ class q extends HTMLElement {
     this.style.display || (this.style.display = "block");
     const e = document.createElement("div");
     e.style.cssText = "width:100%;height:100%", this.appendChild(e);
-    const i = (d) => this.getAttribute(d) ?? void 0, r = (d) => {
-      if (!this.hasAttribute(d)) return;
-      const a = this.getAttribute(d);
-      return a !== "false" && a !== "0" && a !== "no";
+    const i = (a) => this.getAttribute(a) ?? void 0, r = (a) => {
+      if (!this.hasAttribute(a)) return;
+      const d = this.getAttribute(a);
+      return d !== "false" && d !== "0" && d !== "no";
     }, o = new u(e, {
       ui: i("ui"),
       lang: i("lang"),
@@ -460,8 +463,8 @@ class q extends HTMLElement {
       height: "100%"
     });
     this._viewer = o;
-    for (const d of C)
-      o.on(d, (a) => this.dispatchEvent(new CustomEvent(`ifcviewer:${d}`, { detail: a, bubbles: !0, composed: !0 })));
+    for (const a of C)
+      o.on(a, (d) => this.dispatchEvent(new CustomEvent(`ifcviewer:${a}`, { detail: d, bubbles: !0, composed: !0 })));
   }
   disconnectedCallback() {
     this._viewer?.dispose(), this._viewer = null, this.innerHTML = "";

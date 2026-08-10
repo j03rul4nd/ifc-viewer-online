@@ -5,6 +5,7 @@ import * as FRAGS from '@thatopen/fragments'
 import { safeVoid } from './errors'
 import { appBus } from './event-bus'
 import { cameraRangeForBounds, widenCameraRange } from './camera-range'
+import { bindNavigation } from './camera-nav'
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
 import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
 import { clearInspectorTarget } from './inspector'
@@ -362,6 +363,11 @@ export interface ViewerAPI {
    * THIS camera; the IFC model is never moved to accommodate them.
    */
   getPointClouds(): Promise<import('./pointcloud/point-cloud-system').PointCloudSystemAPI>
+  /**
+   * Lazy mesh importer. Owns every GPU resource a GLB/OBJ import touches; the
+   * IFC model is never moved to accommodate one.
+   */
+  getMeshes(): Promise<import('./mesh/mesh-system').MeshSystemAPI>
   /**
    * Switch between standard WebGL rendering and quality mode (SSAO + edge detection).
    * Falls back silently to standard if postproduction failed to initialise on this GPU.
@@ -814,6 +820,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let solarLoadPromise: Promise<import('./solar/solar-system').SolarSystemAPI> | null = null
 
   // Point clouds (lazy chunk) — set by getPointClouds().
+  let meshInstance: import('./mesh/mesh-system').MeshSystemAPI | null = null
+  let meshLoadPromise: Promise<import('./mesh/mesh-system').MeshSystemAPI> | null = null
   let pointCloudInstance: import('./pointcloud/point-cloud-system').PointCloudSystemAPI | null = null
   let pointCloudLoadPromise: Promise<import('./pointcloud/point-cloud-system').PointCloudSystemAPI> | null = null
 
@@ -884,48 +892,16 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // So: middle-drag pans (the CAD convention), Shift+left-drag pans too (for
   // anyone without a middle button), and double-clicking geometry re-centres
   // the orbit on the point you clicked without moving the camera.
+  let unbindNavigation: (() => void) | null = null
   try {
     const ctrls = world.camera.controls
-    let restoreLeftAction: typeof ctrls.mouseButtons.left | null = null
     // camera-controls narrows each button to the actions it accepts, and ACTION
     // reached through the constructor is only `number` — same values, less type.
     type ButtonAction = typeof ctrls.mouseButtons.left
-    const ACTION = (ctrls.constructor as unknown as { ACTION: Record<string, ButtonAction> }).ACTION
+    const ACTION = (ctrls.constructor as unknown as { ACTION?: Record<string, ButtonAction> }).ACTION
 
-    ctrls.dollyToCursor = true
-    ctrls.dollySpeed    = 0.8   // slightly gentler than the default 1.0
-    ctrls.truckSpeed    = 1.5   // a touch faster panning for large models
-
-    // Without this, a dolly that reaches minDistance stops dead — the cursor is
-    // over something ten metres further in and the wheel simply does nothing.
-    // `infinityDolly` pushes the target ahead instead, so zooming in keeps
-    // going for as long as you keep turning the wheel.
-    ctrls.infinityDolly = true
-
-    if (ACTION) {
-      ctrls.mouseButtons.middle = ACTION.TRUCK
-      const onKey = (e: KeyboardEvent): void => {
-        if (e.key !== 'Shift') return
-        if (e.type === 'keydown') {
-          if (restoreLeftAction === null) {
-            restoreLeftAction = ctrls.mouseButtons.left
-            ctrls.mouseButtons.left = ACTION.TRUCK
-          }
-        } else if (restoreLeftAction !== null) {
-          ctrls.mouseButtons.left = restoreLeftAction
-          restoreLeftAction = null
-        }
-      }
-      window.addEventListener('keydown', onKey)
-      window.addEventListener('keyup', onKey)
-      // A window that loses focus mid-drag never sees the keyup, and the left
-      // button would stay stuck on pan.
-      window.addEventListener('blur', () => {
-        if (restoreLeftAction !== null) {
-          ctrls.mouseButtons.left = restoreLeftAction
-          restoreLeftAction = null
-        }
-      })
+    if (ACTION?.TRUCK !== undefined) {
+      unbindNavigation = bindNavigation(ctrls, window, { truckAction: ACTION.TRUCK })
     }
   } catch (err) {
     console.debug('[Viewer] camera-controls tuning skipped:', err instanceof Error ? err.message : err)
@@ -1250,26 +1226,29 @@ export function createViewer(container: HTMLElement): ViewerAPI {
    * ray direction times distance is the same point without depending on a field
    * that may not be there.
    */
+  /**
+   * The world-space point under the cursor, across every loaded model.
+   *
+   * `raycast` already hands back the hit point, so take it. Rebuilding it from
+   * the distance and a fresh ray is not just redundant, it is wrong: `mouse`
+   * holds raw client coordinates, and the canvas does not start at the top-left
+   * of the viewport — it sits under the toolbar. Everywhere else that offset is
+   * handled by passing `dom: canvas` and letting fragments do the arithmetic.
+   */
   const pickWorldPoint = async (): Promise<THREE.Vector3 | null> => {
-    let nearest = Infinity
+    let best: { point: THREE.Vector3; distance: number } | null = null
     for (const model of modelObjects.values()) {
       try {
         const hit = await model.raycast({
           camera: world.camera.three, mouse, dom: canvas,
-        }) as { distance?: number } | null
-        if (hit?.distance !== undefined && hit.distance < nearest) nearest = hit.distance
+        }) as { point?: THREE.Vector3; distance?: number } | null
+        if (!hit?.point || hit.distance === undefined) continue
+        if (!best || hit.distance < best.distance) {
+          best = { point: hit.point, distance: hit.distance }
+        }
       } catch { /* a model that cannot be picked simply does not win */ }
     }
-    if (!Number.isFinite(nearest)) return null
-
-    const camera = world.camera.three
-    const ndc = new THREE.Vector2(
-      (mouse.x / canvas.clientWidth) * 2 - 1,
-      -(mouse.y / canvas.clientHeight) * 2 + 1,
-    )
-    const raycaster = new THREE.Raycaster()
-    raycaster.setFromCamera(ndc, camera)
-    return raycaster.ray.at(nearest, new THREE.Vector3())
+    return best ? best.point : null
   }
 
   const commitSelection = async (): Promise<SelectedInfo | null> => {
@@ -2647,6 +2626,51 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return solarLoadPromise
     },
 
+    getMeshes() {
+      // Dynamic import keeps GLTFLoader, OBJLoader and MTLLoader in their own
+      // chunk: a user who never imports a model never downloads them.
+      const self = this
+      meshLoadPromise ??= import('./mesh/mesh-system').then((m) => {
+        meshInstance = m.createMeshSystem({
+          scene: world.scene.three,
+          getActiveCamera: () => world.camera.three,
+          renderer: world.renderer!.three,
+          frameBox: (min, max) => {
+            try {
+              // Same reasoning as the point cloud fit: retune to the WHOLE scene
+              // before framing, or an import that is far larger or far smaller
+              // than the model clamps against limits tuned for the model alone.
+              const box = new THREE.Box3(min, max)
+              const scene = box.clone()
+              const model = self.getModelBounds()
+              if (model) {
+                const half = new THREE.Vector3(model.size.x / 2, model.size.y / 2, model.size.z / 2)
+                const centre = new THREE.Vector3(model.center.x, model.center.y, model.center.z)
+                scene.expandByPoint(centre.clone().sub(half))
+                scene.expandByPoint(centre.clone().add(half))
+              }
+              tuneSceneToBounds(scene)
+              void world.camera.controls.fitToBox(box, true)
+            } catch (e) {
+              console.debug('[Viewer] mesh fit failed:', e instanceof Error ? e.message : e)
+            }
+          },
+          // An imported mesh is ordinary geometry, so registering it makes it
+          // both measurable and selectable by the same raycaster everything else
+          // uses. Unlike a point cloud root this really is mesh-shaped, so no
+          // custom raycast is needed — three handles it.
+          registerRaycastTarget: (object) => {
+            world.meshes.add(object as unknown as THREE.Mesh)
+          },
+          unregisterRaycastTarget: (object) => {
+            world.meshes.delete(object as unknown as THREE.Mesh)
+          },
+        })
+        return meshInstance
+      })
+      return meshLoadPromise
+    },
+
     getPointClouds() {
       // Dynamic import keeps the point cloud engine, its shader and its readers
       // in their own chunk: a user who never opens a scan never downloads them.
@@ -2704,6 +2728,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     dispose() {
+      try { meshInstance?.dispose() } catch { /* ok */ }
+      meshInstance = null
+      meshLoadPromise = null
       try { pointCloudInstance?.dispose() } catch { /* ok */ }
       pointCloudInstance = null
       pointCloudLoadPromise = null
@@ -2718,6 +2745,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       canvas.removeEventListener('pointerup',    onPointerUp)
       canvas.removeEventListener('dblclick',     onDoubleClick)
       canvas.removeEventListener('contextmenu',  onContextMenu)
+      // Window-level, so nothing else here would have caught it: without this
+      // every reload leaves another set of key listeners holding dead controls.
+      unbindNavigation?.()
       try { lengthMeasurement.dispose() } catch { /* ok */ }
       try { areaMeasurement.dispose() } catch { /* ok */ }
       try { clipper.dispose() } catch { /* ok */ }

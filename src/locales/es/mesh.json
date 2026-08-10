@@ -1,0 +1,57 @@
+{
+  "title": "Modelo 3D",
+  "entry": "Modelo 3D",
+  "load": {
+    "drop": "Añade un modelo, o examina",
+    "working": "Leyendo…",
+    "formats": "GLB · glTF · OBJ",
+    "multiHint": "Selecciona el modelo Y sus texturas a la vez — un .gltf necesita su .bin, un .obj necesita su .mtl."
+  },
+  "stats": {
+    "triangles": "{{count}} triángulos",
+    "textures": "{{count}} texturas"
+  },
+  "source": {
+    "title": "Origen",
+    "unit": "Unidad",
+    "unitM": "Metros",
+    "unitCm": "Centímetros",
+    "unitMm": "Milímetros",
+    "unitFt": "Pies",
+    "unitGuessed": "El archivo no lo indica — se ha deducido del tamaño del modelo. Cámbialo si ha entrado mal.",
+    "upAxis": "Eje vertical",
+    "upAxisY": "Y arriba",
+    "upAxisZ": "Z arriba",
+    "upAxisDeclared": "glTF siempre guarda Y arriba, así que no hay nada que elegir."
+  },
+  "placement": {
+    "title": "Colocación",
+    "x": "Este / oeste",
+    "y": "Arriba / abajo",
+    "z": "Norte / sur",
+    "rotation": "Rotación",
+    "pitch": "Inclinar adelante / atrás",
+    "roll": "Inclinar izquierda / derecha",
+    "scale": "Escala",
+    "reset": "Restablecer colocación",
+    "fit": "Encuadrar el modelo",
+    "hint": "El modelo empieza centrado sobre el IFC y apoyado en su suelo. Nada de aquí mueve el IFC."
+  },
+  "actions": {
+    "remove": "Eliminar",
+    "visible": "Visible",
+    "hidden": "Oculto"
+  },
+  "reason": {
+    "unitMillimetres": "El tamaño sugiere milímetros — escalado por 0,001.",
+    "unitCentimetres": "El tamaño sugiere centímetros — escalado por 0,01."
+  },
+  "error": {
+    "noEntryFile": "No hay ningún GLB, glTF ni OBJ en esa selección.",
+    "noGeometry": "Ese archivo no contiene geometría.",
+    "parseFailed": "No se pudo leer ese modelo.",
+    "emptyFile": "Ese archivo está vacío.",
+    "budgetExhausted": "El presupuesto de triángulos está lleno. Elimina un modelo antes de añadir otro.",
+    "cancelled": "Se canceló la importación."
+  }
+}

@@ -19,6 +19,8 @@ import { useSolarStore } from '../stores/solarStore'
 import { isSolarEnabled } from '../lib/solar/solar-flag'
 import { usePointCloudStore } from '../stores/pointCloudStore'
 import { isPointCloudEnabled } from '../lib/pointcloud/pc-flag'
+import { useMeshStore } from '../stores/meshStore'
+import { isMeshEnabled } from '../lib/mesh/mesh-flag'
 import { modelRegistry } from '../lib/model-registry'
 import { useCloudAccountStore, isAccountEnabled } from '../stores/cloudAccountStore'
 import { trackProEntryClick } from '../lib/analytics'
@@ -242,6 +244,7 @@ export default function Toolbar({
   const { t: tCommon } = useTranslation('common')
   const { t: tTour } = useTranslation('tour')
   const { t: tPointCloud } = useTranslation('pointcloud')
+  const { t: tMesh } = useTranslation('mesh')
   const { t: tClient } = useTranslation('client')
   const { t: tPro } = useTranslation('pro')
 
@@ -283,6 +286,12 @@ export default function Toolbar({
   const pointCloudCount     = usePointCloudStore((s) => s.clouds.length)
   const togglePointCloudPanel = (): void => {
     const s = usePointCloudStore.getState()
+    s.setPanelOpen(!s.panelOpen)
+  }
+  const meshPanelOpen = useMeshStore((s) => s.panelOpen)
+  const meshCount     = useMeshStore((s) => s.meshes.length)
+  const toggleMeshPanel = (): void => {
+    const s = useMeshStore.getState()
     s.setPanelOpen(!s.panelOpen)
   }
   const solarPanelOpen = useSolarStore((s) => s.panelOpen)
@@ -460,6 +469,14 @@ export default function Toolbar({
       <path d="M7 0.8v1.6M7 11.6v1.6M0.8 7h1.6M11.6 7h1.6M2.6 2.6l1.2 1.2M10.2 10.2l1.2 1.2M11.4 2.6l-1.2 1.2M3.8 10.2l-1.2 1.2" />
     </svg>
   )
+  const MeshSVG = (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"
+      strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2.5 21 7v10l-9 4.5L3 17V7z" />
+      <path d="M12 2.5v19M3 7l9 4.5L21 7" />
+    </svg>
+  )
+
   const PointCloudSVG = (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" stroke="none">
       <circle cx="3" cy="4" r="0.9" /><circle cx="6.2" cy="2.6" r="0.9" /><circle cx="9.6" cy="3.6" r="0.9" />
@@ -721,6 +738,11 @@ export default function Toolbar({
             <MenuItem icon={PointCloudSVG} label={tPointCloud('entry')} active={pointCloudPanelOpen || pointCloudCount > 0}
               badge={pointCloudCount > 0 ? pointCloudCount : undefined}
               onClick={() => { togglePointCloudPanel(); setOpenMenu(null) }} />
+          )}
+          {isMeshEnabled() && (
+            <MenuItem icon={MeshSVG} label={tMesh('entry')} active={meshPanelOpen || meshCount > 0}
+              badge={meshCount > 0 ? meshCount : undefined}
+              onClick={() => { toggleMeshPanel(); setOpenMenu(null) }} />
           )}
           <MenuItem icon={TourSVG} label={tTour('entry')} active={tourMode !== 'idle'}
             badge={tourMode !== 'idle' ? '●' : undefined}

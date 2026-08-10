@@ -1,0 +1,57 @@
+{
+  "title": "3D モデル",
+  "entry": "3D モデル",
+  "load": {
+    "drop": "モデルを追加、または選択",
+    "working": "読み込み中…",
+    "formats": "GLB · glTF · OBJ",
+    "multiHint": "モデルとテクスチャーはまとめて選択してください——.gltf には .bin が、.obj には .mtl が必要です。"
+  },
+  "stats": {
+    "triangles": "{{count}} 三角形",
+    "textures": "{{count}} テクスチャー"
+  },
+  "source": {
+    "title": "ソース",
+    "unit": "単位",
+    "unitM": "メートル",
+    "unitCm": "センチメートル",
+    "unitMm": "ミリメートル",
+    "unitFt": "フィート",
+    "unitGuessed": "ファイルに記載がないため、モデルの大きさから推定しました。取り込み結果がおかしい場合は変更してください。",
+    "upAxis": "上方向の軸",
+    "upAxisY": "Y が上",
+    "upAxisZ": "Z が上",
+    "upAxisDeclared": "glTF は常に Y を上として保存するため、選ぶものはありません。"
+  },
+  "placement": {
+    "title": "配置",
+    "x": "東 / 西",
+    "y": "上 / 下",
+    "z": "北 / 南",
+    "rotation": "回転",
+    "pitch": "前後に傾ける",
+    "roll": "左右に傾ける",
+    "scale": "スケール",
+    "reset": "配置をリセット",
+    "fit": "モデルに合わせる",
+    "hint": "モデルは IFC の中央、その床の上から始まります。ここの操作が IFC を動かすことはありません。"
+  },
+  "actions": {
+    "remove": "削除",
+    "visible": "表示",
+    "hidden": "非表示"
+  },
+  "reason": {
+    "unitMillimetres": "大きさからミリメートルと判断——0.001 倍しました。",
+    "unitCentimetres": "大きさからセンチメートルと判断——0.01 倍しました。"
+  },
+  "error": {
+    "noEntryFile": "その選択に GLB、glTF、OBJ がありません。",
+    "noGeometry": "そのファイルにはジオメトリーがありません。",
+    "parseFailed": "そのモデルを読み込めませんでした。",
+    "emptyFile": "そのファイルは空です。",
+    "budgetExhausted": "三角形の上限に達しています。別のモデルを追加する前に 1 つ削除してください。",
+    "cancelled": "読み込みをキャンセルしました。"
+  }
+}
