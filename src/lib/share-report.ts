@@ -12,6 +12,8 @@
 //   • In-app hash    →  <app>/#report=<base64>              (legacy fallback)
 // Both carry the same JSON; only the base64 flavour differs (url-safe vs standard).
 
+import type { ValidationResult } from '../types'
+
 /** A single condensed issue in a shared report. */
 export interface ShareIssue {
   r: string   // ruleId
@@ -31,11 +33,80 @@ export interface ShareReportPayload {
   i: number
   ms: number
   ts: string
+  /**
+   * Entities the run could not read, and therefore never checked. > 0 means the
+   * score beside it covers only part of the model.
+   *
+   * This payload is the most public thing the app produces: it server-renders a
+   * crawlable page and feeds an embeddable badge on other people's sites. Both
+   * carried a bare score, so a run that skipped unreadable entities published a
+   * clean number with no caveat — the panel says so since 9616000, the artifact
+   * that travels did not.
+   *
+   * Optional: an older link decodes with it absent, which the Worker reads as
+   * "none reported" rather than inventing a caveat.
+   */
+  u?: number
+  /**
+   * Checks that did not run (validator rules that failed or were skipped). A
+   * different question from `u` — every rule can run perfectly on a file half of
+   * whose entities are unreadable, and vice versa — so it is reported separately
+   * rather than summed, matching ValidationCoverage.
+   */
+  nr?: number
   issues: ShareIssue[]
 }
 
-/** Payload schema version. Bump when the shape changes incompatibly. */
+/**
+ * Payload schema version. Bump when the shape changes incompatibly.
+ * `u`/`nr` were added compatibly: absent means "not reported", so v1 links keep
+ * decoding and an older deployed Worker ignores them.
+ */
 export const SHARE_REPORT_VERSION = 1
+
+/**
+ * Build the compact shared-report payload from a validation result (score +
+ * condensed top-50 issues, no geometry). Used by the Share button and by the
+ * embeddable Badge so both publish the identical report. Errors first, so the
+ * length-trimming in buildShareUrl keeps the worst issues.
+ *
+ * Lives here rather than inside ValidationPanel — where it used to — next to the
+ * codec it feeds and to `idsResultToSharePayload`, its IDS twin. Buried in a
+ * 1900-line component it was the copy that hardcoded `v: 1` instead of the
+ * version constant and dropped the coverage caveats, with no way to test it.
+ */
+export function validationResultToSharePayload(result: ValidationResult, fileName: string): ShareReportPayload {
+  const order = { error: 0, warning: 1, info: 2 }
+  const coverage = result.metadata?.coverage
+  // The caveats the panel shows beside the score travel WITH the score. Without
+  // them the shared page and the badge published a bare number for a run that
+  // had skipped unreadable entities or never ran some rules — the honesty added
+  // in 9616000 stopped at the edge of the app.
+  const unreadable = coverage?.unreadableEntities ?? 0
+  const notRun = coverage ? coverage.failedCount + coverage.notRunCount : 0
+  return {
+    v: SHARE_REPORT_VERSION,
+    score: result.qualityScore ?? 0,
+    file: fileName.slice(0, 80),
+    e: result.stats.errors,
+    w: result.stats.warnings,
+    i: result.stats.info,
+    ms: result.durationMs,
+    ts: new Date().toISOString(),
+    ...(unreadable > 0 ? { u: unreadable } : {}),
+    ...(notRun > 0 ? { nr: notRun } : {}),
+    issues: [...result.issues]
+      .sort((a, b) => (order[a.severity] ?? 2) - (order[b.severity] ?? 2))
+      .slice(0, 50)
+      .map((iss) => ({
+        r: iss.ruleId,
+        s: iss.severity[0],          // 'e' | 'w' | 'i'
+        n: iss.elementName.slice(0, 60),
+        c: iss.ifcClass,
+        m: iss.message.slice(0, 120),
+      })),
+  }
+}
 
 /** UTF-8-safe JSON → standard base64 (the in-app `#report=` hash flavour). */
 export function encodeReportPayload(payload: ShareReportPayload): string {

@@ -241,6 +241,11 @@ function decodeReport(d) {
       i:     toCount(data.i),
       ms:    toCount(data.ms),
       ts:    str(data.ts),
+      // Honesty caveats (share-report.ts `u` / `nr`). Coerced like every other
+      // count because the payload is attacker-controlled; absent (older links)
+      // reads as 0, i.e. "nothing reported", never as a fabricated caveat.
+      u:     toCount(data.u),
+      nr:    toCount(data.nr),
       issues,
     }
   } catch {
@@ -335,10 +340,25 @@ function renderReportHtml(report, selfUrl, appUrl, ogImage) {
   const label   = scoreLabel(report.score)
   const total   = report.e + report.w + report.i
   const fileEsc  = esc(report.file)
+  // Partial-read caveat. `u` = entities that could not be read (so they were
+  // never checked); `nr` = checks that did not run. Either one means the score
+  // above covers part of the model, and this page is the version of that score
+  // that gets crawled, unfurled and cited — so the caveat goes in the indexed
+  // description too, not only in the body where a scraper will miss it.
+  const caveats = []
+  if (report.u > 0) caveats.push(`${report.u} ${report.u === 1 ? 'entity' : 'entities'} could not be read and ${report.u === 1 ? 'was' : 'were'} not checked`)
+  if (report.nr > 0) caveats.push(`${report.nr} ${report.nr === 1 ? 'check' : 'checks'} did not run`)
+  const caveatTxt = caveats.length > 0
+    ? `${caveats.join('; ')}. The score covers the rest of the model.`
+    : ''
+
   const titleTxt = `IFC Health Score: ${report.score}/100 — ${report.file}`
-  const descTxt  = total > 0
-    ? `${report.file} scored ${report.score}/100 (${label}) on the IFC Health Check: ${report.e} errors, ${report.w} warnings, ${report.i} info. Validated free in the browser — no upload.`
-    : `${report.file} scored ${report.score}/100 (${label}) on the IFC Health Check — no issues found across 38 validation rules. Validated free in the browser — no upload.`
+  const descBase = total > 0
+    ? `${report.file} scored ${report.score}/100 (${label}) on the IFC Health Check: ${report.e} errors, ${report.w} warnings, ${report.i} info.`
+    : caveatTxt
+      ? `${report.file} scored ${report.score}/100 (${label}) on the IFC Health Check — no issues found in what could be checked.`
+      : `${report.file} scored ${report.score}/100 (${label}) on the IFC Health Check — no issues found across 38 validation rules.`
+  const descTxt = `${descBase}${caveatTxt ? ` ${caveatTxt}` : ''} Validated free in the browser — no upload.`
 
   const dateTxt = (() => {
     const dte = new Date(report.ts)
@@ -448,6 +468,7 @@ function renderReportHtml(report, selfUrl, appUrl, ogImage) {
   .ok-box{border:1px solid #22c55e44;background:#22c55e0a;border-radius:12px;padding:24px;text-align:center;margin-bottom:16px}
   .ok-box b{color:#22c55e;font-size:13px}
   .ok-box p{margin:6px 0 0;font-size:11px;color:#737b85}
+  .caveat{margin:0 0 18px;padding:10px 13px;border:1px solid #E5484D55;border-radius:9px;background:#E5484D14;color:#E5484D;font-size:12.5px;font-weight:600;line-height:1.45}
 </style>
 </head>
 <body>
@@ -478,10 +499,14 @@ function renderReportHtml(report, selfUrl, appUrl, ogImage) {
       </div>
     </div>
 
+    ${caveatTxt ? `<p class="caveat" role="note">${esc(caveatTxt)}</p>` : ''}
+
     ${groups.length > 0 ? issuesHtml : `
     <div class="ok-box">
       <b>No issues found</b>
-      <p>This model passed all 38 validation rules.</p>
+      <p>${caveatTxt
+        ? 'Nothing failed in the parts of this model that could be checked. That is not the same as passing all 38 validation rules — see the note above.'
+        : 'This model passed all 38 validation rules.'}</p>
     </div>`}
 
     <div class="cta">
@@ -663,8 +688,13 @@ function handleBadge(url) {
     // No usable score → neutral badge, don't cache aggressively.
     return svgResponse(badgeSvg('IFC Health Score', 'n/a', '#9f9f9f'), 'no-store')
   }
+  // A partial run gets an asterisk. The badge is 20px tall and travels to other
+  // people's READMEs, so it cannot carry the explanation — but it must not claim
+  // a whole-model score either, and it links to the report that explains it. Only
+  // the ?d= path knows: a bare ?score= carries no coverage information at all.
+  const partial = report != null && (report.u > 0 || report.nr > 0)
   return svgResponse(
-    badgeSvg('IFC Health Score', `${score}/100`, scoreColor(score)),
+    badgeSvg('IFC Health Score', `${score}/100${partial ? '*' : ''}`, scoreColor(score)),
     'public, max-age=3600, s-maxage=86400',
   )
 }

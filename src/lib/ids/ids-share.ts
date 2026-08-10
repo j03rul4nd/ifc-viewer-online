@@ -57,6 +57,11 @@ export function idsResultToSharePayload(result: IdsResult, fileName: string): Sh
     e, w, i,
     ms: 0,
     ts: new Date().toISOString(),
+    // Carry the partial-read caveat into the public report. An unreadable entity
+    // never became applicable to any spec, so it left the score's ratio entirely
+    // and every spec could still say `pass` — the one thing a shared link must
+    // not do is present that as a complete check.
+    ...((result.unreadableEntities ?? 0) > 0 ? { u: result.unreadableEntities } : {}),
     issues: issues.slice(0, 50),
   }
 }

@@ -9,6 +9,28 @@ function result(specs: IdsResult['specs'], score = 70): IdsResult {
   return { totalSpecs: specs.length, passedSpecs: 0, failedSpecs: 0, naSpecs: 0, score, specs }
 }
 
+describe('idsResultToSharePayload honesty', () => {
+  it('carries the unreadable-entity count into the shared payload', () => {
+    const r = { ...result([spec({ status: 'pass' })], 100), unreadableEntities: 9 }
+    expect(idsResultToSharePayload(r, 'm.ifc').u).toBe(9)
+  })
+
+  it('omits the caveat entirely when the read was complete', () => {
+    // Absent rather than 0: the payload rides in a URL under a length budget, and
+    // "no caveat" is the common case.
+    expect(idsResultToSharePayload(result([spec({ status: 'pass' })], 100), 'm.ifc').u).toBeUndefined()
+    expect(idsResultToSharePayload({ ...result([], 100), unreadableEntities: 0 }, 'm.ifc').u).toBeUndefined()
+  })
+
+  it('keeps the caveat on a spotless 100 — the case the caveat exists for', () => {
+    // Every spec passed and the score is perfect BECAUSE the unreadable elements
+    // never became applicable. This is the payload that would otherwise publish a
+    // flawless public report for a model that was never fully read.
+    const p = idsResultToSharePayload({ ...result([spec({ status: 'pass' })], 100), unreadableEntities: 1 }, 'm.ifc')
+    expect(p).toMatchObject({ score: 100, e: 0, w: 0, i: 0, u: 1 })
+  })
+})
+
 describe('idsResultToSharePayload', () => {
   it('maps EIR severities and counts', () => {
     const p = idsResultToSharePayload(result([

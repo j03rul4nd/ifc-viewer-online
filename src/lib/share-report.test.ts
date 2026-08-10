@@ -16,8 +16,10 @@ import {
   buildBadgeMarkdown,
   MAX_SHARE_URL_LEN,
   SHARE_REPORT_VERSION,
+  validationResultToSharePayload,
   type ShareReportPayload,
 } from './share-report'
+import type { ValidationResult } from '../types'
 
 function makePayload(over: Partial<ShareReportPayload> = {}): ShareReportPayload {
   return {
@@ -93,6 +95,89 @@ describe('cross-boundary contract with the Cloudflare Worker', () => {
     expect(recovered.file).toBe('Müller_中文.ifc')
     expect(Array.isArray(recovered.issues)).toBe(true)
     expect((recovered.issues as unknown[]).length).toBe(2)
+  })
+
+  // The caveat fields are the whole reason the public report can be trusted, and
+  // they cross the same boundary as everything else: encoded here, coerced in the
+  // Worker's decodeReport with toCount. Mirrored below — if the Worker stops
+  // reading them, a shared link publishes a bare score again.
+  it('carries the partial-read caveats across the boundary', () => {
+    const d = toBase64Url(encodeReportPayload(makePayload({ u: 1234, nr: 2 })))
+    const recovered = workerDecode(d)
+    expect(recovered.u).toBe(1234)
+    expect(recovered.nr).toBe(2)
+  })
+
+  /** Mirror of the Worker's `toCount`: attacker-controlled, so never NaN/negative. */
+  const toCount = (val: unknown): number =>
+    typeof val === 'number' && Number.isFinite(val) && val >= 0 ? Math.round(val) : 0
+
+  it('reads a missing or hostile caveat as "none reported", never as a fabricated one', () => {
+    // An older link has no `u`/`nr` at all. The Worker must not invent a caveat…
+    const old = workerDecode(toBase64Url(encodeReportPayload(makePayload())))
+    expect(toCount(old.u)).toBe(0)
+    expect(toCount(old.nr)).toBe(0)
+    // …and must not be talked into a nonsensical one either.
+    for (const hostile of [-5, NaN, Infinity, '12', null, {}]) {
+      expect(toCount(hostile)).toBe(0)
+    }
+    expect(toCount(3.6)).toBe(4)
+  })
+})
+
+describe('validationResultToSharePayload', () => {
+  const base: ValidationResult = {
+    issues: [],
+    stats: { total: 0, errors: 0, warnings: 0, info: 0, byRule: {} },
+    durationMs: 1200,
+    qualityScore: 100,
+  }
+  const coverage = (over: Partial<NonNullable<NonNullable<ValidationResult['metadata']>['coverage']>>) => ({
+    attempted: ['A'], entries: [], okCount: 1, failedCount: 0, notRunCount: 0, complete: true,
+    unreadableEntities: 0, ...over,
+  })
+
+  it('uses the version constant rather than a hardcoded literal', () => {
+    // The copy this replaced hardcoded `v: 1`, so bumping the constant would have
+    // silently left the validator's links on the old version.
+    expect(validationResultToSharePayload(base, 'm.ifc').v).toBe(SHARE_REPORT_VERSION)
+  })
+
+  it('publishes the unreadable-entity caveat with the score', () => {
+    const result = { ...base, metadata: { coverage: coverage({ unreadableEntities: 1234 }) } }
+    const p = validationResultToSharePayload(result, 'm.ifc')
+    // A perfect 100 with a caveat: exactly the report that must not go out bare.
+    expect(p).toMatchObject({ score: 100, u: 1234 })
+  })
+
+  it('publishes checks that did not run, summing failed and not-run', () => {
+    const result = { ...base, metadata: { coverage: coverage({ failedCount: 2, notRunCount: 3, complete: false }) } }
+    expect(validationResultToSharePayload(result, 'm.ifc').nr).toBe(5)
+  })
+
+  it('keeps the two caveats separate, because they answer different questions', () => {
+    // Every rule can run perfectly on a file half of whose entities are
+    // unreadable, and vice versa — summing them would lose one.
+    const result = { ...base, metadata: { coverage: coverage({ unreadableEntities: 7, notRunCount: 1, complete: false }) } }
+    expect(validationResultToSharePayload(result, 'm.ifc')).toMatchObject({ u: 7, nr: 1 })
+  })
+
+  it('omits both when the run was complete, and when there is no coverage at all', () => {
+    const complete = validationResultToSharePayload({ ...base, metadata: { coverage: coverage({}) } }, 'm.ifc')
+    expect(complete.u).toBeUndefined()
+    expect(complete.nr).toBeUndefined()
+    const noMeta = validationResultToSharePayload(base, 'm.ifc')
+    expect(noMeta.u).toBeUndefined()
+    expect(noMeta.nr).toBeUndefined()
+  })
+
+  it('still orders issues errors-first so length-trimming keeps the worst', () => {
+    const issue = (severity: 'error' | 'warning' | 'info', ruleId: string) => ({
+      id: ruleId, ruleId, severity, expressId: 1, globalId: null,
+      ifcClass: 'IfcWall', elementName: 'W', message: 'm', path: [], autoFixable: false,
+    })
+    const result = { ...base, issues: [issue('info', 'I'), issue('error', 'E'), issue('warning', 'W')] }
+    expect(validationResultToSharePayload(result, 'm.ifc').issues.map((i) => i.s)).toEqual(['e', 'w', 'i'])
   })
 })
 

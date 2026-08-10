@@ -43,7 +43,7 @@ import {
   trackGuidFixed, trackShareReportClicked, trackValidationPanelOpened,
   trackIssueViewed, trackIssueFixApplied, trackValidationProfileChanged, trackFeatureUsed,
 } from '../lib/analytics'
-import { buildShareUrl, buildBadgeMarkdown, type ShareReportPayload } from '../lib/share-report'
+import { buildShareUrl, buildBadgeMarkdown, validationResultToSharePayload } from '../lib/share-report'
 import { postBenchmark, fetchBenchmark, benchmarkReady, type BenchStats } from '../lib/benchmark'
 import { useIsMobile } from '../hooks/useIsMobile'
 import ValidationPanelMobile from './mobile/ValidationPanelMobile'
@@ -108,35 +108,6 @@ async function copyToClipboard(text: string): Promise<boolean> {
 // Result objects already posted to the benchmark — dedupe across remounts so the
 // same validation is counted once (the store keeps the result identity stable).
 const benchPosted = new WeakSet<object>()
-
-/**
- * Build the compact shared-report payload (score + condensed top-50 issues, no
- * geometry). Shared by the Share button and the embeddable Badge so both encode
- * the identical report. Errors first so length-trimming keeps the worst issues.
- */
-function buildReportPayload(result: ValidationResult, fileName: string): ShareReportPayload {
-  const order = { error: 0, warning: 1, info: 2 }
-  return {
-    v: 1,
-    score: result.qualityScore ?? 0,
-    file: fileName.slice(0, 80),
-    e: result.stats.errors,
-    w: result.stats.warnings,
-    i: result.stats.info,
-    ms: result.durationMs,
-    ts: new Date().toISOString(),
-    issues: [...result.issues]
-      .sort((a, b) => (order[a.severity] ?? 2) - (order[b.severity] ?? 2))
-      .slice(0, 50)
-      .map((iss) => ({
-        r: iss.ruleId,
-        s: iss.severity[0],          // 'e' | 'w' | 'i'
-        n: iss.elementName.slice(0, 60),
-        c: iss.ifcClass,
-        m: iss.message.slice(0, 120),
-      })),
-  }
-}
 
 function buildCopyForAIText(result: ValidationResult, fileName: string): string {
   const score = result.qualityScore ?? 0
@@ -1985,7 +1956,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   const handleShareReport = useCallback(async () => {
     if (!result) return
 
-    const payload = buildReportPayload(result, sceneModels[0]?.fileName ?? 'model.ifc')
+    const payload = validationResultToSharePayload(result, sceneModels[0]?.fileName ?? 'model.ifc')
 
     try {
       // Prefer the crawlable Cloudflare Worker route (server-rendered HTML + OG
@@ -2036,7 +2007,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   const handleCopyBadge = useCallback(async () => {
     if (!result) return
     const fileName   = sceneModels[0]?.fileName ?? 'model.ifc'
-    const payload    = buildReportPayload(result, fileName)
+    const payload    = validationResultToSharePayload(result, fileName)
     const reportBase = import.meta.env.VITE_REPORT_URL as string | undefined
     const appBase    = `${window.location.origin}${window.location.pathname}`
     const { url }    = buildShareUrl(payload, reportBase, appBase)

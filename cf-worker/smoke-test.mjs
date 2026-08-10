@@ -78,5 +78,54 @@ function check(name, cond) {
   check('/r still responds 200 (noindex fallback)', res.status === 200)
 }
 
+// ── /r partial-read caveat (share-report.ts `u` / `nr`) ──
+//
+// This page IS the public claim: it gets crawled, unfurled and cited, and the
+// badge below travels into other people's READMEs. A run that skipped unreadable
+// entities must not publish a bare score here — that is the whole point of the
+// caveat fields, so they are checked on the rendered output, not just on decode.
+const encode = (payload) => {
+  const json = JSON.stringify(payload)
+  const bytes = new TextEncoder().encode(json)
+  let bin = ''
+  for (const b of bytes) bin += String.fromCharCode(b)
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+const basePayload = { v: 1, score: 100, file: 'Tower-A.ifc', e: 0, w: 0, i: 0, ms: 900, ts: '2026-08-11T00:00:00.000Z', issues: [] }
+{
+  // The dangerous case: a flawless 100 with nothing failing, because the entities
+  // that would have failed were never read.
+  const d = encode({ ...basePayload, u: 1234 })
+  const body = await worker.fetch(req(`https://w/r?d=${d}`), {}).then((r) => r.text())
+  check('/r shows the unreadable-entity caveat', body.includes('1234 entities could not be read'))
+  check('/r puts the caveat in the indexed description', /<meta name="description"[^>]*could not be read/.test(body))
+  check('/r stops claiming all 38 rules passed', !body.includes('passed all 38 validation rules'))
+  check('/r still shows the score', body.includes('100'))
+}
+{
+  const d = encode({ ...basePayload, nr: 1 })
+  const body = await worker.fetch(req(`https://w/r?d=${d}`), {}).then((r) => r.text())
+  check('/r reports a check that did not run (singular)', body.includes('1 check did not run'))
+}
+{
+  // No caveat must be invented for a complete run, nor for an older link that
+  // predates the fields.
+  const body = await worker.fetch(req(`https://w/r?d=${encode(basePayload)}`), {}).then((r) => r.text())
+  check('/r invents no caveat for a complete run', !body.includes('could not be read') && !body.includes('did not run'))
+  check('/r keeps the all-38-rules claim when it is true', body.includes('passed all 38 validation rules'))
+}
+{
+  // Attacker-controlled payload: a hostile count must not reach the page.
+  const body = await worker.fetch(req(`https://w/r?d=${encode({ ...basePayload, u: -5, nr: 'lots' })}`), {}).then((r) => r.text())
+  check('/r coerces hostile caveat values away', !body.includes('could not be read') && !body.includes('lots'))
+}
+// ── /badge marks a partial run ──
+{
+  const partial = await worker.fetch(req(`https://w/badge?d=${encode({ ...basePayload, u: 3 })}`), {}).then((r) => r.text())
+  const complete = await worker.fetch(req(`https://w/badge?d=${encode(basePayload)}`), {}).then((r) => r.text())
+  check('badge asterisks a partial run', partial.includes('100/100*'))
+  check('badge leaves a complete run unmarked', complete.includes('100/100') && !complete.includes('100/100*'))
+}
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail === 0 ? 0 : 1)
