@@ -9,6 +9,12 @@
 // (a worker cannot receive messages while synchronous code is running). The
 // runner additionally hard-terminates after a 2 s grace — cancel never hangs.
 //
+// Every inbound `check-ids` gets exactly one `result` or one `error` back. There
+// is no third outcome and no silent drop: the main thread's only other signal is
+// a 120 s watchdog, and an unhandled rejection in a worker does not fire
+// worker.onerror, so anything this file swallows becomes two minutes of spinner
+// followed by the wrong error code.
+//
 // Results carry the count of entities the gather could not read, so a score
 // computed over part of the model can say so.
 
@@ -142,10 +148,15 @@ self.onmessage = (e: MessageEvent<unknown>): void => {
   const parsed = parseIdsInMsg(e.data)
   if (!parsed.ok) {
     // Never leave the runner hanging: if the malformed payload carries an id,
-    // answer with a typed error instead of dropping it silently.
+    // answer with a typed error instead of dropping it silently. The Zod reason
+    // rides along — the panel renders this message verbatim, and "Invalid
+    // check-ids payload" is not something a user can act on. An IDS document
+    // that fails validation lands here (an EIR profile with every rule ignored
+    // compiles to zero specifications), and the reason is the only thing that
+    // says which field was wrong.
     const raw = e.data as { type?: unknown; id?: unknown } | null
     if (raw && typeof raw.id === 'string' && raw.type === 'check-ids') {
-      post({ type: 'error', id: raw.id, code: 'unknown', message: 'Invalid check-ids payload' })
+      post({ type: 'error', id: raw.id, code: 'unknown', message: parsed.error.message })
     }
     return
   }
@@ -154,9 +165,24 @@ self.onmessage = (e: MessageEvent<unknown>): void => {
     cancelledRuns.add(msg.id)
     return
   }
-  if (checkStarted) return // one check per worker lifetime (runner spawns per job)
+  // One check per worker lifetime (the runner spawns one worker per job). A
+  // second check-ids is answered rather than dropped: this worker will never run
+  // it, and a silent return would leave that caller waiting out its 120 s
+  // watchdog and then blaming a timeout.
+  if (checkStarted) {
+    post({ type: 'error', id: msg.id, code: 'unknown', message: 'This IDS worker already ran a check — spawn a new worker per check' })
+    return
+  }
   checkStarted = true
-  void runCheck(msg)
+  // runCheck posts its own errors, so a rejection escaping it means the error
+  // reporting itself broke — which still has to be reported. An unhandled
+  // rejection inside a worker does NOT fire worker.onerror, so without this the
+  // main thread learns nothing at all and waits out the watchdog.
+  void runCheck(msg).catch((err: unknown) => {
+    try {
+      post({ type: 'error', id: msg.id, code: classifyError(err), message: err instanceof Error ? err.message : String(err) })
+    } catch { /* postMessage itself is gone — the runner's watchdog is the last resort */ }
+  })
 }
 
 export {}
