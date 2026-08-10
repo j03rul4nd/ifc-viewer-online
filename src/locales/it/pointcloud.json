@@ -185,6 +185,7 @@
     "pcdNoXyz": "Il file PCD non ha campi x/y/z.",
     "pcdEncoding": "Questo PCD usa una codifica dei dati che questo lettore non gestisce.",
     "pcdCompressed": "Non è stato possibile decodificare il corpo compresso del PCD. Il file potrebbe essere troncato.",
-    "pcdMalformed": "Non è stato possibile leggere l'intestazione PCD."
+    "pcdMalformed": "Non è stato possibile leggere l'intestazione PCD.",
+    "alignFailed": "La scansione è stata letta, ma non è stato possibile calcolarne il posizionamento. È rimasta non posizionata."
   }
 }

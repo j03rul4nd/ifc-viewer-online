@@ -185,6 +185,7 @@
     "pcdNoXyz": "该 PCD 文件没有 x/y/z 字段。",
     "pcdEncoding": "该 PCD 使用了本读取器不支持的数据编码方式。",
     "pcdCompressed": "无法解码 PCD 的压缩数据体。文件可能被截断。",
-    "pcdMalformed": "无法读取 PCD 文件头。"
+    "pcdMalformed": "无法读取 PCD 文件头。",
+    "alignFailed": "扫描已成功读取，但无法计算它的放置位置，因此未被放置。"
   }
 }

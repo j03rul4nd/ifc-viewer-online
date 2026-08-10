@@ -6,7 +6,7 @@
 // that way.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { realignCloud } from './pc-runner'
+import { realignCloud, guardPostHeader } from './pc-runner'
 import { usePointCloudStore } from '../../stores/pointCloudStore'
 import { DEFAULT_DISPLAY, type PointCloudEntry, type PointCloudAlignment, type SourceFrame } from './pc-types'
 import type { PointCloudSystemAPI } from './point-cloud-system'
@@ -97,5 +97,49 @@ describe('realignCloud', () => {
     usePointCloudStore.getState().addCloud(entry())
     await realignCloud('pc-1', { system: fakeSystem(), modelId: null, modelBounds: null })
     expect(usePointCloudStore.getState().clouds[0].alignment!.rung).toBe('manual')
+  })
+})
+
+// ── The hang ──────────────────────────────────────────────────────────────────
+
+describe('guardPostHeader', () => {
+  it('does nothing when the work succeeds', async () => {
+    const onFail = vi.fn()
+    guardPostHeader(Promise.resolve(), onFail, 'test')
+    await Promise.resolve()
+    expect(onFail).not.toHaveBeenCalled()
+  })
+
+  it('settles the load when the work throws, instead of hanging it', async () => {
+    // The bug this exists for. These callbacks run AFTER the header watchdog has
+    // been cleared, so a throw inside one used to produce an unhandled rejection
+    // and nothing else: finish() never ran, the promise never settled, the worker
+    // was never terminated, and the cloud sat at status 'parsing' with a spinner
+    // for the rest of the session. No error reached the user because no error
+    // path ran.
+    const onFail = vi.fn()
+    guardPostHeader(Promise.reject(new Error('proj4 exploded')), onFail, 'alignment')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(onFail).toHaveBeenCalledTimes(1)
+  })
+
+  it('swallows the rejection rather than leaving it unhandled', async () => {
+    // An unhandled rejection is not cosmetic here: it reaches window.onerror and
+    // any error reporting the host has wired up, reported as a crash when the
+    // real event is a scan that could not be placed.
+    const onFail = vi.fn()
+    expect(() => guardPostHeader(Promise.reject(new Error('x')), onFail, 'test')).not.toThrow()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(onFail).toHaveBeenCalled()
+  })
+
+  it('survives an onFail that itself throws', async () => {
+    // finish() runs store updates and terminates a worker. If any of that throws,
+    // the recovery path must not become a second unhandled rejection.
+    const hostile = (): never => { throw new Error('finish blew up') }
+    guardPostHeader(Promise.reject(new Error('x')), hostile, 'test')
+    await new Promise((r) => setTimeout(r, 0))
+    // Reaching here without an unhandled rejection is the assertion.
+    expect(true).toBe(true)
   })
 })

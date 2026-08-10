@@ -185,6 +185,7 @@
     "pcdNoXyz": "O ficheiro PCD não tem campos x/y/z.",
     "pcdEncoding": "Esse PCD usa uma codificação de dados que este leitor não trata.",
     "pcdCompressed": "Não foi possível descodificar o corpo comprimido do PCD. O ficheiro pode estar truncado.",
-    "pcdMalformed": "Não foi possível ler o cabeçalho PCD."
+    "pcdMalformed": "Não foi possível ler o cabeçalho PCD.",
+    "alignFailed": "O levantamento foi lido, mas não foi possível calcular a sua colocação. Ficou por situar."
   }
 }

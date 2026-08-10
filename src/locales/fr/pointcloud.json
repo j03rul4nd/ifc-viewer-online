@@ -185,6 +185,7 @@
     "pcdNoXyz": "Le fichier PCD n'a pas de champs x/y/z.",
     "pcdEncoding": "Ce PCD utilise un encodage de données que ce lecteur ne gère pas.",
     "pcdCompressed": "Le corps compressé du PCD n'a pas pu être décodé. Le fichier est peut-être tronqué.",
-    "pcdMalformed": "L'en-tête PCD n'a pas pu être lu."
+    "pcdMalformed": "L'en-tête PCD n'a pas pu être lu.",
+    "alignFailed": "Le relevé a bien été lu, mais son placement n'a pas pu être calculé. Il reste non placé."
   }
 }

@@ -79,6 +79,30 @@ registerOffsetPersistence(saveOffset, saveCloudUpAxis)
  * Returns the frame to align against, which is the same object when there is
  * nothing saved.
  */
+/**
+ * Run post-header work that must never be able to hang the load.
+ *
+ * These callbacks fire AFTER `clearHeaderTimer()`, so the watchdog that would
+ * otherwise rescue a stuck load is already gone. A throw inside one — a corrupt
+ * saved proj4 definition, a proj4 edge case in `alignCloud`, a GPU failure in
+ * `system.create` — produced an unhandled rejection and NOTHING else: `finish()`
+ * was never called, so the promise never settled, the worker was never
+ * terminated, and the cloud sat at `status: 'parsing'` with a spinner for the
+ * rest of the session. No error reached the user because no error path ran.
+ *
+ * A real catch rather than a bare `void`, in one place, because there are four
+ * of these call sites and the next one added would have repeated the mistake.
+ */
+export function guardPostHeader(work: Promise<void>, onFail: () => void, what: string): void {
+  void work.catch((e: unknown) => {
+    log.warn(`point cloud ${what} failed after the header arrived:`, e)
+    // onFail is finish(): store updates plus worker.terminate(). If any of that
+    // throws, it must not become a SECOND unhandled rejection — the recovery
+    // path is the last thing standing between a failure and a frozen spinner.
+    try { onFail() } catch (inner) { log.warn('point cloud failure handler threw:', inner) }
+  })
+}
+
 function withSavedUpAxis(frame: SourceFrame, fileKey: string): SourceFrame {
   const saved = loadCloudUpAxis(fileKey)
   if (!saved || saved === frame.upAxis) return frame
@@ -199,7 +223,7 @@ export async function loadPointCloud(opts: LoadOptions): Promise<LoadResult> {
       switch (msg.type) {
         case 'header': {
           clearHeaderTimer()
-          void georefPromise.then((geo) => {
+          guardPostHeader(georefPromise.then((geo) => {
             if (stale() || settled) return
             // Re-register a proj4 definition the user supplied for this file
             // BEFORE aligning, so a CRS this build cannot resolve on its own
@@ -226,7 +250,7 @@ export async function loadPointCloud(opts: LoadOptions): Promise<LoadResult> {
             system.create(cloudId, alignment, frame.origin)
             ready = true
             drainPending()
-          })
+          }), () => finish({ ok: false, errorKey: 'error.alignFailed' }), 'alignment')
           break
         }
 
@@ -238,7 +262,7 @@ export async function loadPointCloud(opts: LoadOptions): Promise<LoadResult> {
         }
 
         case 'done': {
-          void georefPromise.then(() => {
+          guardPostHeader(georefPromise.then(() => {
             if (stale() || settled) return
             drainPending()
             usePointCloudStore.getState().updateCloud(cloudId, {
@@ -249,7 +273,7 @@ export async function loadPointCloud(opts: LoadOptions): Promise<LoadResult> {
               frame: msg.frame,
             })
             finish({ ok: true, cloudId })
-          })
+          }), () => finish({ ok: false, errorKey: 'error.alignFailed' }), 'completion')
           break
         }
 
@@ -379,7 +403,7 @@ export async function streamPointCloud(opts: LoadOptions): Promise<LoadResult> {
       switch (msg.type) {
         case 'header': {
           frameOrigin = msg.frame.origin
-          void georefPromise.then((geo) => {
+          guardPostHeader(georefPromise.then((geo) => {
             if (stale() || settled) return
             const savedProj4 = loadCloudProj4(fileKey)
             if (savedProj4) registerCustomProj4(savedProj4.code, savedProj4.def)
@@ -397,12 +421,12 @@ export async function streamPointCloud(opts: LoadOptions): Promise<LoadResult> {
             ready = true
             for (const p of pendingNodes) system.addChunk(cloudId, p.chunk)
             pendingNodes.length = 0
-          })
+          }), () => fail('error.alignFailed'), 'alignment')
           break
         }
 
         case 'index': {
-          void georefPromise.then(() => {
+          guardPostHeader(georefPromise.then(() => {
             if (stale() || settled) return
             system.enableStreaming(cloudId, {
               root: msg.root,
@@ -415,7 +439,7 @@ export async function streamPointCloud(opts: LoadOptions): Promise<LoadResult> {
             })
             settled = true
             resolve({ ok: true, cloudId })
-          })
+          }), () => fail('error.alignFailed'), 'streaming setup')
           break
         }
 

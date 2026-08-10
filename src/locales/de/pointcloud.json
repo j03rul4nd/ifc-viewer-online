@@ -185,6 +185,7 @@
     "pcdNoXyz": "Die PCD-Datei hat keine x/y/z-Felder.",
     "pcdEncoding": "Diese PCD nutzt eine Datenkodierung, die dieser Leser nicht behandelt.",
     "pcdCompressed": "Der komprimierte PCD-Inhalt konnte nicht dekodiert werden. Die Datei ist möglicherweise abgeschnitten.",
-    "pcdMalformed": "Der PCD-Header konnte nicht gelesen werden."
+    "pcdMalformed": "Der PCD-Header konnte nicht gelesen werden.",
+    "alignFailed": "Der Scan wurde gelesen, aber seine Platzierung ließ sich nicht bestimmen. Er bleibt unplatziert."
   }
 }

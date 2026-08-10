@@ -185,6 +185,7 @@
     "pcdNoXyz": "El fitxer PCD no té camps x/y/z.",
     "pcdEncoding": "Aquest PCD fa servir una codificació de dades que aquest lector no tracta.",
     "pcdCompressed": "No s'ha pogut descodificar el cos comprimit del PCD. Pot ser que el fitxer estigui truncat.",
-    "pcdMalformed": "No s'ha pogut llegir la capçalera PCD."
+    "pcdMalformed": "No s'ha pogut llegir la capçalera PCD.",
+    "alignFailed": "L'escaneig s'ha llegit bé, però no s'ha pogut calcular la seva col·locació. Ha quedat sense situar."
   }
 }

@@ -185,6 +185,7 @@
     "pcdNoXyz": "El archivo PCD no tiene campos x/y/z.",
     "pcdEncoding": "Ese PCD usa una codificación de datos que este lector no admite.",
     "pcdCompressed": "No se pudo descomprimir el cuerpo del PCD. Puede que el archivo esté truncado.",
-    "pcdMalformed": "No se pudo leer la cabecera del PCD."
+    "pcdMalformed": "No se pudo leer la cabecera del PCD.",
+    "alignFailed": "El escaneo se leyó bien, pero no se pudo calcular su colocación. Se ha dejado sin situar."
   }
 }

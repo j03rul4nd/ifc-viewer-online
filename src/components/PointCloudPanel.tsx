@@ -58,6 +58,22 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
   // against the typed resource map — same escape hatch GeoPanel uses.
   const tDynamic = (key: string, opts?: Record<string, unknown>): string =>
     t(key, { defaultValue: key, ...opts })
+
+  /**
+   * An error key the namespace knows, or a message a person can act on.
+   *
+   * i18next echoes back a key it does not have, so an unmapped failure used to
+   * put the literal string "error.somethingWeird" in a toast. That is worse than
+   * a generic message: it looks like a crash, it is untranslated, and it tells
+   * the user nothing they can do. The specific code still reaches the console.
+   */
+  const describeError = useCallback((key: string | null | undefined): string => {
+    if (!key) return t('error.parseFailed')
+    const text = t(key as never, { defaultValue: key })
+    if (text !== key) return text
+    log.warn(`unmapped point cloud error key: ${key}`)
+    return t('error.parseFailed')
+  }, [t])
   const store = usePointCloudStore()
   const sceneModels = useSceneStore((s) => s.models)
   const activeModelId = useSceneStore((s) => s.activeModelId)
@@ -132,7 +148,7 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
         ? await streamPointCloud(load)
         : await loadPointCloud(load)
       if (!result.ok) {
-        toast(tDynamic(result.errorKey ?? 'error.parseFailed'), 'error')
+        toast(describeError(result.errorKey), 'error')
       } else if (result.cloudId) {
         // First scan in an empty scene: show the user what they just loaded.
         if (usePointCloudStore.getState().clouds.length === 1 && sceneModels.length === 0) {
@@ -203,7 +219,7 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
               : await loadPointCloud(load)
             if (!result.ok || !result.cloudId) {
               // The runner speaks in i18n keys; resolve to prose the host can read.
-              throw new Error(tDynamic(result.errorKey ?? 'error.parseFailed'))
+              throw new Error(describeError(result.errorKey))
             }
             // Same courtesy the drop target gets: a first scan in an empty
             // scene is framed, otherwise the camera would sit on nothing.
