@@ -139,6 +139,15 @@
     "soon": "Brevemente"
   },
   "errors": {
+    "codes": {
+      "cancelled": "A verificação foi cancelada.",
+      "worker-init": "Não foi possível iniciar o motor IFC. Recarregue a página e tente novamente.",
+      "model-open": "Não foi possível abrir este IFC para verificação — pode estar corrompido ou truncado.",
+      "oom": "A verificação ficou sem memória. Tente um modelo menor ou feche outras abas.",
+      "timeout": "A verificação deixou de responder e foi abortada. O modelo pode ser demasiado grande ou estar demasiado danificado.",
+      "unknown": "A verificação falhou: {{detail}}"
+    },
+    "someModelsFailed": "Não foi possível verificar {{count}} de {{total}} modelos.",
     "checkFailed": "A verificação IDS falhou",
     "bufferUnavailable": "O buffer de origem do IFC não está disponível. Recarregue o ficheiro .ifc.",
     "untitled": "sem-titulo.ids",

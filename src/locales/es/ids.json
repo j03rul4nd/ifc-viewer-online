@@ -146,6 +146,15 @@
     "soon": "Próximamente"
   },
   "errors": {
+    "codes": {
+      "cancelled": "Se ha cancelado la comprobación.",
+      "worker-init": "No se pudo iniciar el motor IFC. Recarga la página e inténtalo de nuevo.",
+      "model-open": "No se pudo abrir este IFC para comprobarlo: puede estar corrupto o truncado.",
+      "oom": "La comprobación se quedó sin memoria. Prueba con un modelo más pequeño o cierra otras pestañas.",
+      "timeout": "La comprobación dejó de responder y se ha abortado. El modelo puede ser demasiado grande o estar demasiado dañado.",
+      "unknown": "La comprobación ha fallado: {{detail}}"
+    },
+    "someModelsFailed": "No se pudieron comprobar {{count}} de {{total}} modelos.",
     "checkFailed": "La comprobación IDS falló",
     "bufferUnavailable": "El búfer de origen IFC no está disponible. Recarga el archivo .ifc.",
     "untitled": "sin-titulo.ids",

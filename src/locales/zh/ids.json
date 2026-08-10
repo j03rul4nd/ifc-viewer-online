@@ -139,6 +139,15 @@
     "soon": "即将推出"
   },
   "errors": {
+    "codes": {
+      "cancelled": "检查已取消。",
+      "worker-init": "IFC 引擎无法启动。请重新加载页面后重试。",
+      "model-open": "无法打开此 IFC 文件进行检查，文件可能已损坏或被截断。",
+      "oom": "检查过程内存不足。请尝试较小的模型，或关闭其他标签页后重试。",
+      "timeout": "检查已无响应并被中止。模型可能过大或损坏过于严重。",
+      "unknown": "检查失败：{{detail}}"
+    },
+    "someModelsFailed": "{{total}} 个模型中有 {{count}} 个无法检查。",
     "checkFailed": "IDS 检查失败",
     "bufferUnavailable": "IFC 源缓冲区不可用。请重新加载 .ifc 文件。",
     "untitled": "untitled.ids",

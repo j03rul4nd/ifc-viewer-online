@@ -139,6 +139,15 @@
     "soon": "Prossimamente"
   },
   "errors": {
+    "codes": {
+      "cancelled": "La verifica è stata annullata.",
+      "worker-init": "Non è stato possibile avviare il motore IFC. Ricarica la pagina e riprova.",
+      "model-open": "Non è stato possibile aprire questo IFC per la verifica — potrebbe essere corrotto o troncato.",
+      "oom": "La verifica ha esaurito la memoria. Prova un modello più piccolo o chiudi altre schede.",
+      "timeout": "La verifica ha smesso di rispondere ed è stata interrotta. Il modello potrebbe essere troppo grande o troppo danneggiato.",
+      "unknown": "La verifica è fallita: {{detail}}"
+    },
+    "someModelsFailed": "Non è stato possibile verificare {{count}} modelli su {{total}}.",
     "checkFailed": "Verifica IDS non riuscita",
     "bufferUnavailable": "Il buffer sorgente IFC non è disponibile. Ricarica il file .ifc.",
     "untitled": "senza-titolo.ids",

@@ -139,6 +139,15 @@
     "soon": "Bientôt disponible"
   },
   "errors": {
+    "codes": {
+      "cancelled": "La vérification a été annulée.",
+      "worker-init": "Le moteur IFC n'a pas pu démarrer. Rechargez la page et réessayez.",
+      "model-open": "Ce fichier IFC n'a pas pu être ouvert pour la vérification — il est peut-être corrompu ou tronqué.",
+      "oom": "La vérification a manqué de mémoire. Essayez un modèle plus petit ou fermez d'autres onglets.",
+      "timeout": "La vérification a cessé de répondre et a été interrompue. Le modèle est peut-être trop volumineux ou trop endommagé.",
+      "unknown": "La vérification a échoué : {{detail}}"
+    },
+    "someModelsFailed": "{{count}} modèles sur {{total}} n'ont pas pu être vérifiés.",
     "checkFailed": "Échec de la vérification IDS",
     "bufferUnavailable": "Le buffer source IFC n'est pas disponible. Rechargez le fichier .ifc.",
     "untitled": "untitled.ids",

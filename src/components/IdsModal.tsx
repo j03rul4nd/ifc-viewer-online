@@ -22,6 +22,7 @@ import { ComplianceDonut } from './ids/ComplianceDonut'
 import { idsElementStats } from '../lib/ids/ids-stats'
 import { weightedCompliance } from '../lib/eir'
 import { SCORE_COLOR } from './ids/score'
+import { localizeIdsError, idsErrorDetail } from './ids/error-text'
 import { idsResultToSharePayload } from '../lib/ids/ids-share'
 import { buildShareUrl } from '../lib/share-report'
 import SavedRulesetPicker from './pro/SavedRulesetPicker'
@@ -252,7 +253,11 @@ export default function IdsModal({ onClose }: IdsModalProps) {
           {!hasBuffer && modelId && (
             <p className="text-[11px] m-0" style={{ color: '#F5A623' }}>{t('states.bufferUnavailable')}</p>
           )}
-          {error && <p className="text-[11.5px] text-[var(--danger)] m-0">{error.message}</p>}
+          {error && (
+            <p className="text-[11.5px] text-[var(--danger)] m-0" title={idsErrorDetail(t, error)}>
+              {localizeIdsError(t, error)}
+            </p>
+          )}
 
           {/* Progress + cancel (worker protocol v2) */}
           {busy && (

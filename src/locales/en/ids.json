@@ -139,6 +139,15 @@
     "soon": "Coming soon"
   },
   "errors": {
+    "codes": {
+      "cancelled": "The check was cancelled.",
+      "worker-init": "The IFC engine could not start. Reload the page and try again.",
+      "model-open": "This IFC could not be opened for checking — it may be corrupt or truncated.",
+      "oom": "The check ran out of memory. Try a smaller model, or close other tabs and retry.",
+      "timeout": "The check stopped responding and was aborted. The model may be too large or too damaged to check.",
+      "unknown": "The check failed: {{detail}}"
+    },
+    "someModelsFailed": "{{count}} of {{total}} models could not be checked.",
     "checkFailed": "IDS check failed",
     "bufferUnavailable": "The IFC source buffer is unavailable. Reload the .ifc file.",
     "untitled": "untitled.ids",

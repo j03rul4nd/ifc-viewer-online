@@ -29,6 +29,7 @@ import { toast } from '../../stores/toastStore'
 import { SCORE_COLOR } from '../ids/score'
 import { FacetChip, FACET_KINDS } from '../ids/FacetChip'
 import { localizeReasons, localizeRemediation } from '../ids/reasons'
+import { localizeIdsError, idsErrorDetail } from '../ids/error-text'
 import * as Icons from '../Icons'
 import { MobileSheet } from './MobileSheet'
 import { MobileActionSheet, type SheetAction } from './MobileActionSheet'
@@ -337,7 +338,9 @@ export default function IdsPanelMobile({ viewerApiRef, onOpenLoader }: Props) {
               <Strip tone="danger">{t('states.unreadableEntities', { count: result.unreadableEntities ?? 0 })}</Strip>
             )}
             {status === 'error' && error && (
-              <Strip tone="danger" action={{ label: t('run.retry'), onClick: () => void run() }}>{error.message}</Strip>
+              <Strip tone="danger" action={{ label: t('run.retry'), onClick: () => void run() }}>
+                <span title={idsErrorDetail(t, error)}>{localizeIdsError(t, error)}</span>
+              </Strip>
             )}
             {diff && !diff.unchanged && !diffDismissed && !busy && (
               <Strip

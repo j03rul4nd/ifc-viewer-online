@@ -139,6 +139,15 @@
     "soon": "Demnächst verfügbar"
   },
   "errors": {
+    "codes": {
+      "cancelled": "Die Prüfung wurde abgebrochen.",
+      "worker-init": "Die IFC-Engine konnte nicht gestartet werden. Seite neu laden und erneut versuchen.",
+      "model-open": "Diese IFC-Datei konnte nicht zur Prüfung geöffnet werden — sie ist möglicherweise beschädigt oder unvollständig.",
+      "oom": "Der Prüfung ist der Speicher ausgegangen. Kleineres Modell verwenden oder andere Tabs schließen.",
+      "timeout": "Die Prüfung reagierte nicht mehr und wurde abgebrochen. Das Modell ist möglicherweise zu groß oder zu stark beschädigt.",
+      "unknown": "Die Prüfung ist fehlgeschlagen: {{detail}}"
+    },
+    "someModelsFailed": "{{count}} von {{total}} Modellen konnten nicht geprüft werden.",
     "checkFailed": "IDS-Prüfung fehlgeschlagen",
     "bufferUnavailable": "Der IFC-Quellpuffer ist nicht verfügbar. Laden Sie die .ifc-Datei neu.",
     "untitled": "unbenannt.ids",

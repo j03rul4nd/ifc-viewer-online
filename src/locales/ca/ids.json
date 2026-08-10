@@ -139,6 +139,15 @@
     "soon": "Properament"
   },
   "errors": {
+    "codes": {
+      "cancelled": "S'ha cancel·lat la comprovació.",
+      "worker-init": "No s'ha pogut iniciar el motor IFC. Torna a carregar la pàgina i prova-ho de nou.",
+      "model-open": "No s'ha pogut obrir aquest IFC per comprovar-lo: pot estar corromput o truncat.",
+      "oom": "La comprovació s'ha quedat sense memòria. Prova amb un model més petit o tanca altres pestanyes.",
+      "timeout": "La comprovació ha deixat de respondre i s'ha avortat. El model pot ser massa gran o estar massa malmès.",
+      "unknown": "La comprovació ha fallat: {{detail}}"
+    },
+    "someModelsFailed": "No s'han pogut comprovar {{count}} de {{total}} models.",
     "checkFailed": "Ha fallat la comprovació IDS",
     "bufferUnavailable": "El buffer d'origen de l'IFC no està disponible. Torna a carregar el fitxer .ifc.",
     "untitled": "sense-titol.ids",

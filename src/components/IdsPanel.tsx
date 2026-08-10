@@ -20,6 +20,7 @@ import { SCORE_COLOR } from './ids/score'
 import { FacetChip, FACET_KINDS } from './ids/FacetChip'
 import { IdsExportMenu } from './ids/IdsExportMenu'
 import { localizeReasons, localizeRemediation } from './ids/reasons'
+import { localizeIdsError, idsErrorDetail } from './ids/error-text'
 import { diffIdsResults } from '../lib/ids/ids-diff'
 import * as Icons from './Icons'
 import type { TFunction } from 'i18next'
@@ -441,7 +442,7 @@ export default function IdsPanel({ viewerApiRef, onOpenLoader }: IdsPanelProps) 
       {/* Error strip */}
       {status === 'error' && error && (
         <div className="px-3 py-1.5 text-[10.5px] text-[var(--danger)] border-b border-[var(--border)] flex items-center gap-2 shrink-0">
-          <span className="truncate">{error.message}</span>
+          <span className="truncate" title={idsErrorDetail(t, error)}>{localizeIdsError(t, error)}</span>
           <button onClick={() => void run()} className="ml-auto h-5 px-2 rounded border border-[var(--border)] text-[10px] text-[var(--text-dim)] hover:text-[var(--text)] shrink-0">{t('run.retry')}</button>
         </div>
       )}

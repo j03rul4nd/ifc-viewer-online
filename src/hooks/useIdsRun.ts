@@ -89,11 +89,21 @@ export function useIdsRun(): {
 
     useIdsStore.getState().setMultiRun({ done: 0, total: targets.length })
     trackIdsCheckStarted({ spec_count: doc.specifications.length })
-    let failures = 0
+    // Counts every model that ends the batch WITHOUT a result, for either reason:
+    // the check threw, or its buffer went away between the filter above and its
+    // turn. A model with no result used to be indistinguishable from a model that
+    // was never in the batch — `done` counted it either way and the closing toast
+    // said only "IDS check failed", so a 5-model run where 2 silently produced
+    // nothing looked like a 3-model run that went fine.
+    let notChecked = 0
     for (let i = 0; i < targets.length; i++) {
       const m = targets[i]
       const buffer = modelRegistry.getBuffer(m.id)
-      if (!buffer) { useIdsStore.getState().setMultiRun({ done: i + 1, total: targets.length }); continue }
+      if (!buffer) {
+        notChecked++
+        useIdsStore.getState().setMultiRun({ done: i + 1, total: targets.length })
+        continue
+      }
       useIdsStore.getState().startRun(m.id)
       const t0 = performance.now()
       try {
@@ -116,12 +126,16 @@ export function useIdsRun(): {
           useIdsStore.getState().setMultiRun(null)
           return // user cancelled → stop the whole batch
         }
-        failures++ // a corrupt model just gets no result; keep going
+        notChecked++ // a corrupt model just gets no result; keep going
       }
       useIdsStore.getState().setMultiRun({ done: i + 1, total: targets.length })
     }
     useIdsStore.getState().setMultiRun(null)
-    if (failures > 0) toast(i18n.t('ids:errors.checkFailed'), 'error')
+    // Says how many, out of how many — the panel shows per-model score chips, and
+    // "2 of 5" is what tells the user to go looking for the two that are missing.
+    if (notChecked > 0) {
+      toast(i18n.t('ids:errors.someModelsFailed', { count: notChecked, total: targets.length }), 'error')
+    }
   }, [])
 
   const cancel = useCallback((): void => {
