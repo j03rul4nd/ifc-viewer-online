@@ -4,6 +4,7 @@
 // to the correct model's buffer (avoiding expressId collisions across models).
 
 import type { EditDiff, EditorCommand } from '../types'
+import { APP_VERSION } from './app-version'
 import type { IFCItemData } from './viewer'
 import type { SelectedInfo } from '../types'
 import { useEditorStore } from '../stores/editorStore'
@@ -110,9 +111,43 @@ export function getDiffCountForModel(modelId: string): number {
  * Returns a new Uint8Array with the modified IFC file.
  * Runs WASM off the main thread — UI stays responsive during export.
  */
+/** What the export writes into the file's FILE_NAME header. */
+export interface IfcExportOptions {
+  /**
+   * Record that this physical file was written here, and when. On by default.
+   *
+   * web-ifc round-trips the header faithfully, so without this an edited export
+   * still claims the authoring tool produced it at the original timestamp. That
+   * is a false provenance record, and provenance is the product here — turning
+   * it off should be a deliberate act.
+   */
+  stampHeader?: boolean
+  /** Overrides FILE_NAME author. Omitted leaves whatever the file carried. */
+  author?: string[]
+  organization?: string[]
+  /** FILE_NAME authorization, for deliverables that require one. */
+  authorization?: string
+}
+
+export interface IfcExportResult {
+  bytes: Uint8Array
+  /** What the exported file declares — 'IFC4', 'IFC2X3', 'IFC4X3_ADD2'… */
+  schema: string | null
+  /** Diffs web-ifc refused. Already surfaced as a toast; returned for callers. */
+  skippedDiffs: number
+}
+
+let lastExportSchema: string | null = null
+
+/** Schema the most recent IFC export declared. Null before the first one. */
+export function getLastExportSchema(): string | null {
+  return lastExportSchema
+}
+
 export async function exportAsIfc(
   buffer: ArrayBuffer,
   diffs: EditDiff[],
+  options: IfcExportOptions = {},
 ): Promise<Uint8Array> {
   if (!buffer || buffer.byteLength === 0) throw new Error('No IFC buffer provided')
 
@@ -132,7 +167,10 @@ export async function exportAsIfc(
 
   return new Promise<Uint8Array>((resolve, reject) => {
     worker.onmessage = (e: MessageEvent): void => {
-      const msg = e.data as { type: string; id: string; result?: Uint8Array; message?: string; skippedDiffs?: number }
+      const msg = e.data as {
+        type: string; id: string; result?: Uint8Array; message?: string
+        skippedDiffs?: number; schema?: string | null
+      }
       if (msg.id !== id) return
       worker.terminate()
       if (msg.type === 'done' && msg.result) {
@@ -144,7 +182,11 @@ export async function exportAsIfc(
             'warning',
           )
         }
-        log.info('IFC export complete, size:', msg.result.byteLength)
+        log.info(
+          'IFC export complete, size:', msg.result.byteLength,
+          'schema:', msg.schema ?? 'unknown',
+        )
+        lastExportSchema = msg.schema ?? null
         resolve(msg.result)
       } else {
         reject(new Error(msg.message ?? 'Export worker failed'))
@@ -154,8 +196,21 @@ export async function exportAsIfc(
       worker.terminate()
       reject(new Error(e.message || 'Export worker script error — WASM may have failed to initialise'))
     }
+    // Default ON. An export that silently keeps the authoring tool's stamp is
+    // the thing being fixed, so opting OUT is what takes an argument.
+    const stamp = options.stampHeader === false ? null : {
+      // preprocessor_version means "the toolkit that wrote this physical file",
+      // which after an export is genuinely us. originating_system is left alone:
+      // the model still came from wherever it was authored, and overwriting that
+      // would be a different falsehood from the one being corrected.
+      preprocessorVersion: `IFC Viewer Online ${APP_VERSION}`,
+      ...(options.author ? { author: options.author } : {}),
+      ...(options.organization ? { organization: options.organization } : {}),
+      ...(options.authorization !== undefined ? { authorization: options.authorization } : {}),
+    }
+
     worker.postMessage(
-      { type: 'export', id, buffer: bufferCopy, diffs, wasmBase },
+      { type: 'export', id, buffer: bufferCopy, diffs, wasmBase, stamp },
       [bufferCopy],
     )
   })

@@ -10,6 +10,7 @@
 
 import { IfcAPI, IFCRELAGGREGATES, IFCRELCONTAINEDINSPATIALSTRUCTURE } from 'web-ifc'
 import { degreesToCompoundAngle } from '../lib/geo/geo-math'
+import { stampIfcHeader, type IfcHeaderStamp } from '../lib/ifc-header'
 import type { EditDiff } from '../types'
 
 // Force single-threaded WASM — nested workers (pthreads) fail inside a worker context
@@ -28,10 +29,19 @@ type ExportInMsg = {
   buffer:   ArrayBuffer
   diffs:    EditDiff[]
   wasmBase: string
+  /**
+   * What to record in FILE_NAME. Omit to leave the header exactly as it was —
+   * which is the old behaviour, and a lie the moment a diff was applied.
+   */
+  stamp?:   IfcHeaderStamp | null
 }
 
 type ExportOutMsg =
-  | { type: 'done';  id: string; result: Uint8Array; skippedDiffs: number }
+  | {
+      type: 'done'; id: string; result: Uint8Array; skippedDiffs: number
+      /** What the exported file declares — surfaced so the UI never has to guess. */
+      schema: string | null
+    }
   | { type: 'error'; id: string; message: string }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -142,7 +152,7 @@ function applyDiff(api: IfcAPI, modelId: number, diff: EditDiff): void {
 // ── Main message handler ──────────────────────────────────────────────────────
 
 self.onmessage = async (e: MessageEvent<ExportInMsg>): Promise<void> => {
-  const { id, buffer, diffs, wasmBase } = e.data
+  const { id, buffer, diffs, wasmBase, stamp } = e.data
 
   try {
     const api = new IfcAPI()
@@ -161,10 +171,23 @@ self.onmessage = async (e: MessageEvent<ExportInMsg>): Promise<void> => {
       }
     }
 
-    const result = api.SaveModel(modelId)
+    const saved = api.SaveModel(modelId)
+    const schema = (() => {
+      try { return api.GetModelSchema(modelId) || null } catch { return null }
+    })()
     api.CloseModel(modelId)
 
-    const out: ExportOutMsg = { type: 'done', id, result, skippedDiffs }
+    // Record that this physical file was written here, and when.
+    //
+    // web-ifc round-trips the header faithfully, which means an edited export
+    // still claims the authoring tool produced it, at the original timestamp.
+    // For a delivery and conformance tool that is a false provenance record, and
+    // it is the one thing a receiving party would use to tell the file apart
+    // from what was originally shipped. Stamping is opt-in through the message
+    // so the caller stays in control of what goes in.
+    const result = stamp ? stampIfcHeader(saved, stamp) : saved
+
+    const out: ExportOutMsg = { type: 'done', id, result, skippedDiffs, schema }
     ;(self as unknown as Worker).postMessage(out, { transfer: [result.buffer] })
 
   } catch (err) {
