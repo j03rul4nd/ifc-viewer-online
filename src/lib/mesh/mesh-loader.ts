@@ -34,6 +34,9 @@ export interface MeshLoadResult {
   entryFile: File
 }
 
+/** How long to wait for textures before revoking their URLs. */
+const TEXTURE_DRAIN_TIMEOUT_MS = 30_000
+
 const EXT_FORMATS: Record<string, MeshFormat> = {
   '.glb': 'glb', '.gltf': 'gltf', '.obj': 'obj',
 }
@@ -130,6 +133,25 @@ export async function loadMeshFiles(files: File[]): Promise<MeshLoadResult> {
   const minted: string[] = []
 
   const manager = new THREE.LoadingManager()
+
+  // Whether the manager ever queued anything, and a promise for it draining.
+  //
+  // This exists because of a race that fails INVISIBLY. `MTLLoader.preload()`
+  // kicks off texture loads asynchronously, and `OBJLoader.parse()` returns
+  // synchronously — so without waiting, the `finally` below revokes the blob
+  // URLs while the textures are still being fetched, and the model arrives with
+  // black or missing maps depending on timing. Nothing throws. It just looks
+  // wrong sometimes, which is the worst kind of wrong.
+  let queued = false
+  let drained = false
+  const whenDrained = new Promise<void>((resolve) => {
+    manager.onStart = () => { queued = true }
+    manager.onLoad = () => { drained = true; resolve() }
+    // A texture that 404s must not hang the import behind a promise that never
+    // settles. The manager reports it and we carry on untextured.
+    manager.onError = () => { /* reported by three; handled by the timeout */ }
+  })
+
   manager.setURLModifier((url) => {
     // Already a blob or data URL — one of ours, or embedded in the file.
     if (url.startsWith('blob:') || url.startsWith('data:')) return url
@@ -146,6 +168,10 @@ export async function loadMeshFiles(files: File[]): Promise<MeshLoadResult> {
       ? await loadObj(entry.file, files, manager)
       : await loadGltf(entry.file, manager)
 
+    // Yield once so anything MTLLoader queued has registered with the manager
+    // before the finally block asks whether it needs to wait.
+    await Promise.resolve()
+
     const stats = collectStats(object)
     if (stats.meshes === 0) throw new Error('noGeometry')
 
@@ -154,8 +180,15 @@ export async function loadMeshFiles(files: File[]): Promise<MeshLoadResult> {
 
     return { object, format: entry.format, stats, box, entryFile: entry.file }
   } finally {
-    // Released even when the parse threw. The decoded textures have already been
-    // copied into GPU-bound images by this point; the URLs are only the route in.
+    // Wait for in-flight texture loads before pulling their URLs out from under
+    // them — see the manager above. Bounded, because a hung request must cost a
+    // texture, not the whole import.
+    if (queued && !drained) {
+      await Promise.race([
+        whenDrained,
+        new Promise<void>((r) => setTimeout(r, TEXTURE_DRAIN_TIMEOUT_MS)),
+      ])
+    }
     for (const url of minted) URL.revokeObjectURL(url)
   }
 }

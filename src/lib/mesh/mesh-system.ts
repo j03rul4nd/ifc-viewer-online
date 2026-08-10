@@ -36,10 +36,16 @@ export interface MeshContext {
 }
 
 export interface MeshSystemAPI {
+  /**
+   * Put a decoded object in the scene. Returns false when the system is already
+   * disposed — the caller MUST treat that as a failure and free the object, or
+   * the store ends up claiming a model is ready that is not in the scene and
+   * whose textures nothing will ever release.
+   */
   add(
     id: string, object: THREE.Object3D, frame: MeshFrame,
     placement: AlignmentOffset, stats: MeshStats,
-  ): void
+  ): boolean
   setPlacement(id: string, frame: MeshFrame, placement: AlignmentOffset): void
   setVisible(id: string, visible: boolean): void
   getBounds(id?: string): { min: THREE.Vector3; max: THREE.Vector3 } | null
@@ -89,9 +95,29 @@ export function createMeshSystem(ctx: MeshContext): MeshSystemAPI {
     rec.root.removeFromParent()
   }
 
+  /**
+   * World bounds of one import, or of every visible one.
+   *
+   * A named function rather than a method, because `frame()` below needs it and
+   * `this.getBounds(...)` breaks the moment a caller writes
+   * `const { frame } = system` — which is what people write without thinking.
+   * A `this` that silently becomes undefined is a crash in the one path nobody
+   * exercises.
+   */
+  function boundsOf(id?: string): { min: THREE.Vector3; max: THREE.Vector3 } | null {
+    const targets = id ? ([items.get(id)].filter(Boolean) as Record_[]) : [...items.values()]
+    if (targets.length === 0) return null
+    const box = new THREE.Box3()
+    for (const rec of targets) {
+      if (!rec.root.visible) continue
+      box.union(new THREE.Box3().setFromObject(rec.root))
+    }
+    return box.isEmpty() ? null : { min: box.min.clone(), max: box.max.clone() }
+  }
+
   return {
     add(id, object, frame, placement, stats) {
-      if (disposed) return
+      if (disposed) return false
       const existing = items.get(id)
       if (existing) disposeRecord(existing)
 
@@ -104,6 +130,7 @@ export function createMeshSystem(ctx: MeshContext): MeshSystemAPI {
       items.set(id, rec)
       applyPlacement(rec, frame, placement)
       ctx.registerRaycastTarget?.(root)
+      return true
     },
 
     setPlacement(id, frame, placement) {
@@ -116,19 +143,10 @@ export function createMeshSystem(ctx: MeshContext): MeshSystemAPI {
       if (rec) rec.root.visible = visible
     },
 
-    getBounds(id) {
-      const targets = id ? [items.get(id)].filter(Boolean) as Record_[] : [...items.values()]
-      if (targets.length === 0) return null
-      const box = new THREE.Box3()
-      for (const rec of targets) {
-        if (!rec.root.visible) continue
-        box.union(new THREE.Box3().setFromObject(rec.root))
-      }
-      return box.isEmpty() ? null : { min: box.min.clone(), max: box.max.clone() }
-    },
+    getBounds: boundsOf,
 
     frame(id) {
-      const b = this.getBounds(id)
+      const b = boundsOf(id)
       if (b) ctx.frameBox(b.min, b.max)
     },
 

@@ -43,6 +43,14 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
 
   const active = store.meshes.find((m) => m.id === store.activeMeshId) ?? null
 
+  /** An error key the mesh namespace knows, or a generic fallback. */
+  const describeError = useCallback((key: string | null | undefined): string => {
+    if (!key) return t('error.parseFailed')
+    const text = t(key as never)
+    // i18next echoes an unknown key straight back. That is the signal.
+    return text === key ? t('error.parseFailed') : text
+  }, [t])
+
   const getSystem = useCallback((): Promise<MeshSystemAPI> | null => {
     const viewer = viewerApiRef.current
     return viewer ? viewer.getMeshes() : null
@@ -64,7 +72,11 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
         modelBounds: activeModelId ? viewer.getModelBounds(activeModelId) : viewer.getModelBounds(),
       })
       if (!result.ok) {
-        toast(t(result.errorKey as never), 'error')
+        // i18next returns the KEY when it does not know it, so an unmapped
+        // failure would show the user "error.somethingWeird". A generic message
+        // is worse information but it is still a message; the specific one is
+        // in the console for whoever has to diagnose it.
+        toast(describeError(result.errorKey), 'error')
       } else if (result.meshId) {
         system.frame(result.meshId)
       }
@@ -261,7 +273,7 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
                 </div>
                 <div className="text-[10px] font-mono text-[var(--text-faint)]">
                   {m.status === 'loading' && t('load.working')}
-                  {m.status === 'error' && t(m.errorKey as never)}
+                  {m.status === 'error' && describeError(m.errorKey)}
                   {m.status === 'ready' && (
                     <>
                       {t('stats.triangles', { count: m.stats.triangles })}

@@ -11,7 +11,7 @@
 
 import { useMeshStore, pendingEntry, registerMeshPersistence } from '../../stores/meshStore'
 import { createLogger } from '../logger'
-import { loadMeshFiles, findEntryFile } from './mesh-loader'
+import { loadMeshFiles, findEntryFile, disposeObject } from './mesh-loader'
 import {
   inferUnitScale, inferUpAxis, initialPlacement, meshFileKey,
   savePlacement, loadPlacement, saveMeshUpAxis, loadMeshUpAxis,
@@ -53,8 +53,17 @@ const ERROR_KEYS: Record<string, string> = {
 }
 
 export async function loadMesh(opts: MeshLoadOptions): Promise<MeshLoadResult> {
-  const { files, system, modelBounds } = opts
+  const { system, modelBounds } = opts
+  // Defensive rather than paranoid: this is reachable from the SDK, where the
+  // caller is someone else's code and `files` has already been through a
+  // postMessage round trip. A non-array here would throw inside the loader with
+  // a stack that says nothing about what the host did wrong.
+  const files = Array.isArray(opts.files) ? opts.files.filter((f) => f instanceof File) : []
   if (files.length === 0) return { ok: false, errorKey: 'error.noEntryFile' }
+  if (!system || typeof system.add !== 'function') {
+    log.warn('loadMesh called without a mesh system')
+    return { ok: false, errorKey: 'error.parseFailed' }
+  }
 
   const entry = findEntryFile(files)
   if (!entry) return { ok: false, errorKey: 'error.noEntryFile' }
@@ -73,7 +82,6 @@ export async function loadMesh(opts: MeshLoadOptions): Promise<MeshLoadResult> {
     if (stale()) {
       // Removed while decoding. Free it here — the system never saw it, so
       // nothing else will.
-      const { disposeObject } = await import('./mesh-loader')
       disposeObject(result.object)
       return { ok: false, errorKey: 'error.cancelled' }
     }
@@ -83,7 +91,6 @@ export async function loadMesh(opts: MeshLoadOptions): Promise<MeshLoadResult> {
     // the IFC model too, and that is not a trade an import gets to make.
     const store = useMeshStore.getState()
     if (system.triangleCount() + result.stats.triangles > store.maxTriangles) {
-      const { disposeObject } = await import('./mesh-loader')
       disposeObject(result.object)
       store.updateMesh(meshId, { status: 'error', errorKey: 'error.budgetExhausted' })
       return { ok: false, errorKey: 'error.budgetExhausted' }
@@ -108,14 +115,29 @@ export async function loadMesh(opts: MeshLoadOptions): Promise<MeshLoadResult> {
 
     const placement = loadPlacement(fileKey) ?? initialPlacement({ frame, modelBounds })
 
-    system.add(meshId, result.object, frame, placement, result.stats)
+    // A refusal here means the system was disposed mid-import (the scene was
+    // torn down while we decoded). Reporting 'ready' would leave the store
+    // claiming a model that is in no scene and whose textures nothing will free.
+    if (!system.add(meshId, result.object, frame, placement, result.stats)) {
+      disposeObject(result.object)
+      useMeshStore.getState().updateMesh(meshId, { status: 'error', errorKey: 'error.cancelled' })
+      return { ok: false, errorKey: 'error.cancelled' }
+    }
     useMeshStore.getState().updateMesh(meshId, {
       status: 'ready', stats: result.stats, frame, placement,
     })
     return { ok: true, meshId }
   } catch (e) {
-    const key = e instanceof Error ? (ERROR_KEYS[e.message] ?? 'error.parseFailed') : 'error.parseFailed'
-    log.warn('mesh import failed:', e)
+    const raw = e instanceof Error ? e.message : String(e)
+    const key = ERROR_KEYS[raw] ?? 'error.parseFailed'
+    // Both halves matter. The key is what the user reads; `raw` is the only
+    // record of what three.js actually objected to, and an unmapped one is a
+    // gap in ERROR_KEYS that should be visible rather than flattened.
+    log.warn(
+      `mesh import failed (${entry.file.name}, ${entry.format}): ${raw}` +
+      (ERROR_KEYS[raw] ? '' : ' — unmapped, shown as a generic failure'),
+      e,
+    )
     useMeshStore.getState().updateMesh(meshId, { status: 'error', errorKey: key })
     return { ok: false, errorKey: key }
   }

@@ -10,7 +10,8 @@ import { inferUnitScale, inferUpAxis, initialPlacement, meshFileKey,
   savePlacement, loadPlacement, clearPlacement } from './mesh-align'
 import { effectivePlacement } from './mesh-transform'
 import { buildUrlMap, findEntryFile, collectStats, disposeObject } from './mesh-loader'
-import { createMeshSystem, type MeshContext } from './mesh-system'
+import { createMeshSystem, type MeshContext, type MeshSystemAPI } from './mesh-system'
+import { loadMesh } from './mesh-runner'
 import { NO_OFFSET } from '../pointcloud/pc-types'
 import type { MeshFrame, MeshStats } from './mesh-types'
 
@@ -385,5 +386,135 @@ describe('placement is remembered per file', () => {
     const a = meshFileKey({ name: 'a.glb', size: 10, lastModified: 1 }, 'https://x/a.glb')
     const b = meshFileKey({ name: 'a.glb', size: 10, lastModified: 999 }, 'https://x/a.glb')
     expect(a).toBe(b)
+  })
+})
+
+// ── Robustness: the failures that do not announce themselves ──────────────────
+
+describe('loadMesh input guards', () => {
+  const system = (): MeshSystemAPI => createMeshSystem(makeContext())
+
+  it('refuses a selection with nothing importable in it', async () => {
+    const out = await loadMesh({ files: [fileOf('notes.txt')], system: system(), modelBounds: null })
+    expect(out).toEqual({ ok: false, errorKey: 'error.noEntryFile' })
+  })
+
+  it('survives the shapes an SDK caller can send', async () => {
+    // Reachable from the embed bridge, where `files` has been through a
+    // postMessage round trip and the caller is someone else's code. A non-array
+    // here used to throw inside the loader with a stack that said nothing about
+    // what the host did wrong.
+    for (const files of [undefined, null, 'scene.glb', 42, {}] as unknown[]) {
+      const out = await loadMesh({
+        files: files as File[], system: system(), modelBounds: null,
+      })
+      expect(out.ok, `files=${JSON.stringify(files)}`).toBe(false)
+      expect(out.errorKey).toBe('error.noEntryFile')
+    }
+  })
+
+  it('drops non-File entries rather than handing them to the loader', async () => {
+    const out = await loadMesh({
+      files: [null, 'a.glb', { name: 'b.glb' }] as unknown as File[],
+      system: system(), modelBounds: null,
+    })
+    expect(out.errorKey).toBe('error.noEntryFile')
+  })
+
+  it('reports an empty file as empty, not as a parse failure', async () => {
+    const empty = new File([], 'model.glb')
+    const out = await loadMesh({ files: [empty], system: system(), modelBounds: null })
+    expect(out.errorKey).toBe('error.emptyFile')
+  })
+
+  it('does not throw when handed no system at all', async () => {
+    const out = await loadMesh({
+      files: [fileOf('a.glb')], system: undefined as unknown as MeshSystemAPI, modelBounds: null,
+    })
+    expect(out.ok).toBe(false)
+  })
+})
+
+describe('a disposed system refuses rather than swallowing', () => {
+  it('add() returns false once disposed', () => {
+    // It used to return void. The runner could not tell refusal from success, so
+    // it marked the store 'ready' for a model that was in no scene and whose
+    // textures nothing would ever free.
+    const sys = createMeshSystem(makeContext())
+    sys.dispose()
+    const accepted = sys.add('m1', new THREE.Group(), frameOf(), { ...NO_OFFSET }, STATS)
+    expect(accepted).toBe(false)
+    expect(sys.count()).toBe(0)
+  })
+
+  it('add() returns true on the normal path', () => {
+    const sys = createMeshSystem(makeContext())
+    expect(sys.add('m1', new THREE.Group(), frameOf(), { ...NO_OFFSET }, STATS)).toBe(true)
+  })
+})
+
+describe('mesh-system tolerates being driven wrongly', () => {
+  it('ignores operations on ids that do not exist', () => {
+    // The SDK can address a mesh that was removed a moment earlier, and a panel
+    // effect can fire after its subject is gone. None of it may throw.
+    const sys = createMeshSystem(makeContext())
+    expect(() => {
+      sys.setPlacement('ghost', frameOf(), { ...NO_OFFSET })
+      sys.setVisible('ghost', false)
+      sys.remove('ghost')
+      sys.frame('ghost')
+    }).not.toThrow()
+    expect(sys.getBounds('ghost')).toBeNull()
+  })
+
+  it('survives being disposed twice', () => {
+    const sys = createMeshSystem(makeContext())
+    sys.add('a', new THREE.Group(), frameOf(), { ...NO_OFFSET }, STATS)
+    sys.dispose()
+    expect(() => sys.dispose()).not.toThrow()
+    expect(sys.count()).toBe(0)
+  })
+
+  it('keeps working when the raycast hooks are absent', () => {
+    // Every older context, and any embedder without a world, has neither hook.
+    const sys = createMeshSystem(makeContext())
+    expect(() => {
+      sys.add('a', new THREE.Group(), frameOf(), { ...NO_OFFSET }, STATS)
+      sys.remove('a')
+    }).not.toThrow()
+  })
+
+  it('frame() does not depend on `this`, so a destructured API still works', () => {
+    // `const { frame } = system` is what a caller writes without thinking, and a
+    // `this` that silently becomes undefined is a crash in the one path nobody
+    // exercises.
+    const ctx = makeContext()
+    const sys = createMeshSystem(ctx)
+    sys.add('a', new THREE.Group(), frameOf(), { ...NO_OFFSET }, STATS)
+    const { frame, getBounds } = sys
+    expect(() => { frame('a'); getBounds('a') }).not.toThrow()
+  })
+})
+
+describe('disposeObject tolerates malformed graphs', () => {
+  it('handles a mesh with no material and a material with no textures', () => {
+    const root = new THREE.Group()
+    const bare = new THREE.Mesh(new THREE.BufferGeometry())
+    ;(bare as unknown as { material: unknown }).material = null
+    root.add(bare, meshWith(1, false))
+    expect(() => disposeObject(root)).not.toThrow()
+  })
+
+  it('handles an array of materials on one mesh', () => {
+    const a = new THREE.MeshStandardMaterial()
+    const b = new THREE.MeshStandardMaterial()
+    const spyA = vi.spyOn(a, 'dispose')
+    const spyB = vi.spyOn(b, 'dispose')
+    const mesh = meshWith(1, false)
+    mesh.material = [a, b]
+    const root = new THREE.Group(); root.add(mesh)
+    disposeObject(root)
+    expect(spyA).toHaveBeenCalled()
+    expect(spyB).toHaveBeenCalled()
   })
 })
