@@ -64,7 +64,8 @@
       "sections": "剖切",
       "editing": "编辑",
       "camera": "相机视图",
-      "element": "选中的构件"
+      "element": "选中的构件",
+      "mouse": "鼠标"
     },
     "keys": {
       "openFile": "打开文件",
@@ -84,7 +85,13 @@
       "topView": "俯视图",
       "frontView": "正视图",
       "rightView": "右视图",
-      "showShortcuts": "显示键盘快捷键"
+      "showShortcuts": "显示键盘快捷键",
+      "orbit": "环绕",
+      "pan": "平移",
+      "panShift": "平移（无中键时）",
+      "zoom": "缩放",
+      "recentre": "将旋转中心移到此处",
+      "contextMenu": "构件菜单"
     }
   },
   "upload": {

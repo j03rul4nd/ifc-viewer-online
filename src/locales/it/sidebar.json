@@ -112,39 +112,39 @@
     "issueCount_other": "Validazione · {{count}} problemi"
   },
   "inspector": {
-    "clear": "Clear",
+    "clear": "Cancella",
     "point": {
-      "badge": "SCANNED POINT",
-      "inSourceCoords": "In the scan’s own coordinates ({{unit}})",
-      "intensity": "Intensity",
-      "classification": "Class",
-      "colour": "Colour",
+      "badge": "PUNTO SCANSIONATO",
+      "inSourceCoords": "Nelle coordinate proprie della scansione ({{unit}})",
+      "intensity": "Intensità",
+      "classification": "Classe",
+      "colour": "Colore",
       "class": {
-        "created": "created",
-        "unclassified": "unclassified",
-        "ground": "ground",
-        "lowVegetation": "low vegetation",
-        "mediumVegetation": "medium vegetation",
-        "highVegetation": "high vegetation",
-        "building": "building",
-        "lowPoint": "low point",
-        "water": "water",
-        "rail": "rail",
-        "roadSurface": "road surface",
-        "wireGuard": "wire guard",
-        "wireConductor": "wire conductor",
-        "transmissionTower": "transmission tower",
-        "bridgeDeck": "bridge deck",
-        "highNoise": "high noise"
+        "created": "creato",
+        "unclassified": "non classificato",
+        "ground": "terreno",
+        "lowVegetation": "vegetazione bassa",
+        "mediumVegetation": "vegetazione media",
+        "highVegetation": "vegetazione alta",
+        "building": "edificio",
+        "lowPoint": "punto basso",
+        "water": "acqua",
+        "rail": "binario",
+        "roadSurface": "carreggiata",
+        "wireGuard": "fune di guardia",
+        "wireConductor": "conduttore",
+        "transmissionTower": "traliccio",
+        "bridgeDeck": "impalcato",
+        "highNoise": "rumore alto"
       }
     },
     "map": {
-      "unnamed": "Unnamed building",
-      "height": "Height",
-      "estimated": "estimated",
-      "storeys": "Storeys",
-      "osmId": "OSM id",
-      "contextNote": "Surroundings from OpenStreetMap — context, not part of your model. Nothing here is validated or exported."
+      "unnamed": "Edificio senza nome",
+      "height": "Altezza",
+      "estimated": "stimata",
+      "storeys": "Piani",
+      "osmId": "ID OSM",
+      "contextNote": "Dintorni da OpenStreetMap — contesto, non fanno parte del tuo modello. Nulla di questo viene validato o esportato."
     }
   }
 }

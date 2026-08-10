@@ -64,7 +64,8 @@
       "sections": "Seccions",
       "editing": "Edició",
       "camera": "Vistes de càmera",
-      "element": "Element seleccionat"
+      "element": "Element seleccionat",
+      "mouse": "Ratolí"
     },
     "keys": {
       "openFile": "Obre fitxer",
@@ -84,7 +85,13 @@
       "topView": "Vista superior",
       "frontView": "Vista frontal",
       "rightView": "Vista lateral dreta",
-      "showShortcuts": "Mostra les dreceres de teclat"
+      "showShortcuts": "Mostra les dreceres de teclat",
+      "orbit": "Orbitar",
+      "pan": "Desplaçar",
+      "panShift": "Desplaçar (sense botó central)",
+      "zoom": "Zoom",
+      "recentre": "Centrar el gir aquí",
+      "contextMenu": "Menú de l’element"
     }
   },
   "upload": {

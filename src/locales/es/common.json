@@ -64,7 +64,8 @@
       "sections": "Secciones",
       "editing": "Edición",
       "camera": "Vistas de cámara",
-      "element": "Elemento seleccionado"
+      "element": "Elemento seleccionado",
+      "mouse": "Ratón"
     },
     "keys": {
       "openFile": "Abrir archivo",
@@ -84,7 +85,13 @@
       "topView": "Vista superior",
       "frontView": "Vista frontal",
       "rightView": "Vista derecha",
-      "showShortcuts": "Mostrar atajos de teclado"
+      "showShortcuts": "Mostrar atajos de teclado",
+      "orbit": "Orbitar",
+      "pan": "Desplazar",
+      "panShift": "Desplazar (sin botón central)",
+      "zoom": "Zoom",
+      "recentre": "Centrar el giro aquí",
+      "contextMenu": "Menú del elemento"
     }
   },
   "upload": {

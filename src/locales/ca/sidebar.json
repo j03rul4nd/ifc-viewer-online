@@ -112,39 +112,39 @@
     "issueCount_other": "Validació · {{count}} problemes"
   },
   "inspector": {
-    "clear": "Clear",
+    "clear": "Neteja",
     "point": {
-      "badge": "SCANNED POINT",
-      "inSourceCoords": "In the scan’s own coordinates ({{unit}})",
-      "intensity": "Intensity",
-      "classification": "Class",
-      "colour": "Colour",
+      "badge": "PUNT ESCANEJAT",
+      "inSourceCoords": "En les coordenades pròpies de l’escaneig ({{unit}})",
+      "intensity": "Intensitat",
+      "classification": "Classe",
+      "colour": "Color",
       "class": {
-        "created": "created",
-        "unclassified": "unclassified",
-        "ground": "ground",
-        "lowVegetation": "low vegetation",
-        "mediumVegetation": "medium vegetation",
-        "highVegetation": "high vegetation",
-        "building": "building",
-        "lowPoint": "low point",
-        "water": "water",
-        "rail": "rail",
-        "roadSurface": "road surface",
-        "wireGuard": "wire guard",
-        "wireConductor": "wire conductor",
-        "transmissionTower": "transmission tower",
-        "bridgeDeck": "bridge deck",
-        "highNoise": "high noise"
+        "created": "creat",
+        "unclassified": "sense classificar",
+        "ground": "terreny",
+        "lowVegetation": "vegetació baixa",
+        "mediumVegetation": "vegetació mitjana",
+        "highVegetation": "vegetació alta",
+        "building": "edifici",
+        "lowPoint": "punt baix",
+        "water": "aigua",
+        "rail": "via",
+        "roadSurface": "calçada",
+        "wireGuard": "cable de guarda",
+        "wireConductor": "conductor",
+        "transmissionTower": "torre de transmissió",
+        "bridgeDeck": "tauler de pont",
+        "highNoise": "soroll alt"
       }
     },
     "map": {
-      "unnamed": "Unnamed building",
-      "height": "Height",
-      "estimated": "estimated",
-      "storeys": "Storeys",
-      "osmId": "OSM id",
-      "contextNote": "Surroundings from OpenStreetMap — context, not part of your model. Nothing here is validated or exported."
+      "unnamed": "Edifici sense nom",
+      "height": "Alçada",
+      "estimated": "estimada",
+      "storeys": "Plantes",
+      "osmId": "ID OSM",
+      "contextNote": "Entorn d’OpenStreetMap: context, no forma part del teu model. Res d’això es valida ni s’exporta."
     }
   }
 }

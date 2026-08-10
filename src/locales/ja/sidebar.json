@@ -112,39 +112,39 @@
     "issueCount_other": "検証 · {{count}} 件の問題"
   },
   "inspector": {
-    "clear": "Clear",
+    "clear": "クリア",
     "point": {
-      "badge": "SCANNED POINT",
-      "inSourceCoords": "In the scan’s own coordinates ({{unit}})",
-      "intensity": "Intensity",
-      "classification": "Class",
-      "colour": "Colour",
+      "badge": "スキャン点",
+      "inSourceCoords": "スキャン自身の座標系（{{unit}}）",
+      "intensity": "強度",
+      "classification": "クラス",
+      "colour": "色",
       "class": {
-        "created": "created",
-        "unclassified": "unclassified",
-        "ground": "ground",
-        "lowVegetation": "low vegetation",
-        "mediumVegetation": "medium vegetation",
-        "highVegetation": "high vegetation",
-        "building": "building",
-        "lowPoint": "low point",
-        "water": "water",
-        "rail": "rail",
-        "roadSurface": "road surface",
-        "wireGuard": "wire guard",
-        "wireConductor": "wire conductor",
-        "transmissionTower": "transmission tower",
-        "bridgeDeck": "bridge deck",
-        "highNoise": "high noise"
+        "created": "作成",
+        "unclassified": "未分類",
+        "ground": "地表",
+        "lowVegetation": "低木",
+        "mediumVegetation": "中木",
+        "highVegetation": "高木",
+        "building": "建物",
+        "lowPoint": "低点",
+        "water": "水面",
+        "rail": "軌道",
+        "roadSurface": "路面",
+        "wireGuard": "架空地線",
+        "wireConductor": "電力線",
+        "transmissionTower": "送電鉄塔",
+        "bridgeDeck": "橋桁",
+        "highNoise": "高ノイズ"
       }
     },
     "map": {
-      "unnamed": "Unnamed building",
-      "height": "Height",
-      "estimated": "estimated",
-      "storeys": "Storeys",
-      "osmId": "OSM id",
-      "contextNote": "Surroundings from OpenStreetMap — context, not part of your model. Nothing here is validated or exported."
+      "unnamed": "名称のない建物",
+      "height": "高さ",
+      "estimated": "推定値",
+      "storeys": "階数",
+      "osmId": "OSM ID",
+      "contextNote": "周辺は OpenStreetMap のデータです。文脈であって、あなたのモデルの一部ではありません。検証も書き出しもされません。"
     }
   }
 }

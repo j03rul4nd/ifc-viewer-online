@@ -517,6 +517,25 @@ describe('IfcViewer — point clouds', () => {
     v.dispose()
   })
 
+  it('forwards map-feature-picked, saying outright that the height is a guess', () => {
+    // The surroundings are context: not validated, not exported, and their
+    // heights are mostly inferred from storey counts. A host that treats one as
+    // surveyed puts it in a shadow study, so the flag is required rather than
+    // optional and rides on every pick.
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const onPick = vi.fn()
+    v.on('map-feature-picked', onPick)
+    emitFromIframe(v, {
+      type: 'map-feature-picked',
+      id: 'way/12345', name: 'Torre Glòries', label: 'Office building',
+      featureKind: 'building', heightM: 144.4, heightEstimated: false,
+    })
+    expect(onPick).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'way/12345', featureKind: 'building', heightEstimated: false,
+    }))
+    v.dispose()
+  })
+
   it('forwards pointcloud-picked with the file coordinates intact', () => {
     const v = new IfcViewer('#mount', { baseUrl: BASE })
     const onPick = vi.fn()

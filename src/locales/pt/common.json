@@ -64,7 +64,8 @@
       "sections": "Cortes",
       "editing": "Edição",
       "camera": "Vistas de câmera",
-      "element": "Elemento selecionado"
+      "element": "Elemento selecionado",
+      "mouse": "Rato"
     },
     "keys": {
       "openFile": "Abrir arquivo",
@@ -84,7 +85,13 @@
       "topView": "Vista superior",
       "frontView": "Vista frontal",
       "rightView": "Vista lateral direita",
-      "showShortcuts": "Exibir atalhos de teclado"
+      "showShortcuts": "Exibir atalhos de teclado",
+      "orbit": "Orbitar",
+      "pan": "Deslocar",
+      "panShift": "Deslocar (sem botão do meio)",
+      "zoom": "Zoom",
+      "recentre": "Centrar a órbita aqui",
+      "contextMenu": "Menu do elemento"
     }
   },
   "upload": {

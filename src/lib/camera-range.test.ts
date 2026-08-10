@@ -22,30 +22,53 @@ describe('cameraRangeForBounds', () => {
 
     const widened = widenCameraRange(OBC_DEFAULTS, range)
     expect(widened.maxDistance).toBeGreaterThan(range.reach)
-    expect(widened.minDistance).toBe(1)
+    // And the near limit comes DOWN, so you can still fly into the cloud after
+    // backing out far enough to see all of it.
+    expect(widened.minDistance).toBeLessThan(1)
   })
 
   it('drops the near limit below 1 m for a sub-metre object scan', () => {
-    // A 0.4 m box needs to be approached to ~0.4 m; the 1 m floor would hold
-    // the camera back and frame it at less than half the size it should be.
+    // A 0.4 m box has to be approachable to well inside itself, or the 1 m
+    // floor holds the camera back and frames it at less than half the size.
     const range = cameraRangeForBounds(0.4, FOV)!
     expect(range.reach).toBeLessThan(OBC_DEFAULTS.minDistance)
-    expect(widenCameraRange(OBC_DEFAULTS, range).minDistance).toBeCloseTo(range.reach, 6)
+    expect(widenCameraRange(OBC_DEFAULTS, range).minDistance).toBeLessThan(range.reach)
   })
 
-  it('leaves a building-sized model on the defaults it already had', () => {
-    // A 30 m duplex reaches ~30 m: inside 1 … 300, so nothing should move.
+  it('lets you get close to a building, which the 1 m default did not', () => {
+    // THIS IS THE ONE THAT WAS WRONG, and it read as "zoom is broken".
+    // minDistance is how close you may GET, not how far back a fit stands, and
+    // it used to be set to the fit distance — so in a 30 m model the nearest
+    // the camera could ever be to its target was the shot that framed the whole
+    // building. Turning the wheel past that did nothing at all.
     const range = cameraRangeForBounds(30, FOV)!
-    const widened = widenCameraRange(OBC_DEFAULTS, range)
-    expect(widened).toEqual(OBC_DEFAULTS)
+    expect(range.minDistance).toBeLessThan(0.1)
+    expect(widenCameraRange(OBC_DEFAULTS, range).minDistance).toBeLessThan(0.1)
+    // The ceiling is still left alone: 30 m fits inside 300 comfortably.
+    expect(widenCameraRange(OBC_DEFAULTS, range).maxDistance).toBe(OBC_DEFAULTS.maxDistance)
   })
 
-  it('never narrows limits another mode has already widened', () => {
+  it('scales the approach floor to the scene instead of fixing it', () => {
+    // "Close" is a centimetre in an object scan and a few centimetres in a
+    // building. A single hard floor suits one and lands wrong in the other.
+    const object = cameraRangeForBounds(0.4, FOV)!
+    const building = cameraRangeForBounds(30, FOV)!
+    const city = cameraRangeForBounds(1200, FOV)!
+    expect(object.minDistance).toBeLessThan(building.minDistance)
+    expect(building.minDistance).toBeLessThan(city.minDistance)
+    // Never zero, or dollying in pins the camera to its own target.
+    expect(object.minDistance).toBeGreaterThan(0)
+  })
+
+  it('never pulls in a ceiling another mode has already raised', () => {
     // Map mode runs with a 30 km ceiling. Loading a small model while the map
-    // is on screen must not pull the horizon back in.
+    // is on screen must not pull the horizon back in. The FLOOR may still come
+    // down — being allowed closer never took anything away from anybody.
     const mapMode = { minDistance: 0.5, maxDistance: 30_000 }
     const range = cameraRangeForBounds(30, FOV)!
-    expect(widenCameraRange(mapMode, range)).toEqual(mapMode)
+    const widened = widenCameraRange(mapMode, range)
+    expect(widened.maxDistance).toBe(mapMode.maxDistance)
+    expect(widened.minDistance).toBeLessThanOrEqual(mapMode.minDistance)
   })
 
   it('refuses a degenerate box or a nonsense lens instead of returning Infinity', () => {

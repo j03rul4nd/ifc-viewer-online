@@ -64,7 +64,8 @@
       "sections": "Sections",
       "editing": "Editing",
       "camera": "Camera presets",
-      "element": "Selected element"
+      "element": "Selected element",
+      "mouse": "Mouse"
     },
     "keys": {
       "openFile": "Open file",
@@ -84,7 +85,13 @@
       "topView": "Top view",
       "frontView": "Front view",
       "rightView": "Right view",
-      "showShortcuts": "Show keyboard shortcuts"
+      "showShortcuts": "Show keyboard shortcuts",
+      "orbit": "Orbit",
+      "pan": "Pan",
+      "panShift": "Pan (no middle button)",
+      "zoom": "Zoom",
+      "recentre": "Re-centre orbit here",
+      "contextMenu": "Element menu"
     }
   },
   "upload": {

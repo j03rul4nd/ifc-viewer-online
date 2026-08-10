@@ -36,7 +36,16 @@ export function cameraRangeForBounds(diagonal: number, fovDegrees: number): Came
 
   return {
     reach,
-    minDistance: Math.max(FLOOR_M, reach),
+    // HOW CLOSE YOU MAY GET, which is not the same question as how far back a
+    // fit needs to stand. Setting this to `reach` reads plausibly — it is the
+    // number in hand — and means the closest you can ever be to the orbit
+    // target is the distance at which the whole model fills the screen. Zoom
+    // then stops dead at the wide shot, which is exactly what it felt like.
+    //
+    // Scaled to the scene rather than fixed, because "close" means a
+    // centimetre in an object scan and a few centimetres in a building, and a
+    // hard floor that suits one lands wrong in the other.
+    minDistance: Math.max(FLOOR_M, diagonal / 2000),
     // ×2 so the fit lands with somewhere left to orbit out to, instead of
     // pinned against the very ceiling it just raised.
     maxDistance: reach * 2,

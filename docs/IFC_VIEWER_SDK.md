@@ -119,6 +119,8 @@ Concurrent `add()`/`addFromUrl()` calls are **serialized** internally (one load 
 | `validation-completed` | `{ qualityScore, errors, warnings, info }` — the Health Score |
 | `model-error` | `{ message, url?, name? }` |
 | `element-selected` | `{ expressId, modelId, ifcType, name }` |
+| `pointcloud-picked` | `{ cloudId, position, sourcePosition, classification, intensity, distance }` — armed with `inspectPointCloud()`. `sourcePosition` is the file's own coordinates, which is the number a survey record already holds |
+| `map-feature-picked` | `{ id, name?, label?, featureKind, heightM?, heightEstimated }` — a building in the OpenStreetMap surroundings. Context, not model: never validated, never exported, and `heightEstimated` is true far more often than not |
 
 ## Querying the viewer (CDE workflows)
 

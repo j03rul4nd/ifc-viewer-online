@@ -64,7 +64,8 @@
       "sections": "断面",
       "editing": "編集",
       "camera": "カメラビュー",
-      "element": "選択した要素"
+      "element": "選択した要素",
+      "mouse": "マウス"
     },
     "keys": {
       "openFile": "ファイルを開く",
@@ -84,7 +85,13 @@
       "topView": "上面図",
       "frontView": "正面図",
       "rightView": "右側面図",
-      "showShortcuts": "キーボードショートカットを表示"
+      "showShortcuts": "キーボードショートカットを表示",
+      "orbit": "回転",
+      "pan": "平行移動",
+      "panShift": "平行移動（中ボタンなし）",
+      "zoom": "ズーム",
+      "recentre": "ここを回転の中心に",
+      "contextMenu": "要素メニュー"
     }
   },
   "upload": {

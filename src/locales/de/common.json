@@ -64,7 +64,8 @@
       "sections": "Schnitte",
       "editing": "Bearbeitung",
       "camera": "Kameraansichten",
-      "element": "Ausgewähltes Element"
+      "element": "Ausgewähltes Element",
+      "mouse": "Maus"
     },
     "keys": {
       "openFile": "Datei öffnen",
@@ -84,7 +85,13 @@
       "topView": "Draufsicht",
       "frontView": "Vorderansicht",
       "rightView": "Rechte Seitenansicht",
-      "showShortcuts": "Tastaturkürzel anzeigen"
+      "showShortcuts": "Tastaturkürzel anzeigen",
+      "orbit": "Umkreisen",
+      "pan": "Verschieben",
+      "panShift": "Verschieben (ohne mittlere Taste)",
+      "zoom": "Zoom",
+      "recentre": "Drehpunkt hierher setzen",
+      "contextMenu": "Elementmenü"
     }
   },
   "upload": {

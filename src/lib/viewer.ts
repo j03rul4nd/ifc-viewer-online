@@ -872,13 +872,61 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   world.camera.controls.addEventListener('rest',    triggerUpdate)
 
   // ─── Navigation feel ───────────────────────────────────────────────────────
-  // Zoom toward the cursor (instead of the screen centre) so users can dive into
-  // a specific area naturally — the single biggest win for intuitive orbiting.
+  //
+  // THE SCENE HAD NO PAN. camera-controls maps right-drag to TRUCK by default,
+  // and this viewer takes right-click for the element context menu — so the
+  // truck never got a chance. Left-drag orbits and the wheel dollies, which
+  // leaves the orbit target as the only thing that decides where you can look,
+  // and the only way to change it was to focus another element. With several
+  // models loaded that reads as "I cannot get away from this one", because you
+  // could not.
+  //
+  // So: middle-drag pans (the CAD convention), Shift+left-drag pans too (for
+  // anyone without a middle button), and double-clicking geometry re-centres
+  // the orbit on the point you clicked without moving the camera.
   try {
     const ctrls = world.camera.controls
+    let restoreLeftAction: typeof ctrls.mouseButtons.left | null = null
+    // camera-controls narrows each button to the actions it accepts, and ACTION
+    // reached through the constructor is only `number` — same values, less type.
+    type ButtonAction = typeof ctrls.mouseButtons.left
+    const ACTION = (ctrls.constructor as unknown as { ACTION: Record<string, ButtonAction> }).ACTION
+
     ctrls.dollyToCursor = true
     ctrls.dollySpeed    = 0.8   // slightly gentler than the default 1.0
     ctrls.truckSpeed    = 1.5   // a touch faster panning for large models
+
+    // Without this, a dolly that reaches minDistance stops dead — the cursor is
+    // over something ten metres further in and the wheel simply does nothing.
+    // `infinityDolly` pushes the target ahead instead, so zooming in keeps
+    // going for as long as you keep turning the wheel.
+    ctrls.infinityDolly = true
+
+    if (ACTION) {
+      ctrls.mouseButtons.middle = ACTION.TRUCK
+      const onKey = (e: KeyboardEvent): void => {
+        if (e.key !== 'Shift') return
+        if (e.type === 'keydown') {
+          if (restoreLeftAction === null) {
+            restoreLeftAction = ctrls.mouseButtons.left
+            ctrls.mouseButtons.left = ACTION.TRUCK
+          }
+        } else if (restoreLeftAction !== null) {
+          ctrls.mouseButtons.left = restoreLeftAction
+          restoreLeftAction = null
+        }
+      }
+      window.addEventListener('keydown', onKey)
+      window.addEventListener('keyup', onKey)
+      // A window that loses focus mid-drag never sees the keyup, and the left
+      // button would stay stuck on pan.
+      window.addEventListener('blur', () => {
+        if (restoreLeftAction !== null) {
+          ctrls.mouseButtons.left = restoreLeftAction
+          restoreLeftAction = null
+        }
+      })
+    }
   } catch (err) {
     console.debug('[Viewer] camera-controls tuning skipped:', err instanceof Error ? err.message : err)
   }
@@ -1194,6 +1242,36 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   let lastRaycastTime = 0
   const RAYCAST_THROTTLE_MS = 32
 
+  /**
+   * The nearest world-space point under `mouse`, across every loaded model.
+   *
+   * Derived from the raycast DISTANCE rather than asking the hit for a point:
+   * distance is what every fragments raycast reports, and camera position plus
+   * ray direction times distance is the same point without depending on a field
+   * that may not be there.
+   */
+  const pickWorldPoint = async (): Promise<THREE.Vector3 | null> => {
+    let nearest = Infinity
+    for (const model of modelObjects.values()) {
+      try {
+        const hit = await model.raycast({
+          camera: world.camera.three, mouse, dom: canvas,
+        }) as { distance?: number } | null
+        if (hit?.distance !== undefined && hit.distance < nearest) nearest = hit.distance
+      } catch { /* a model that cannot be picked simply does not win */ }
+    }
+    if (!Number.isFinite(nearest)) return null
+
+    const camera = world.camera.three
+    const ndc = new THREE.Vector2(
+      (mouse.x / canvas.clientWidth) * 2 - 1,
+      -(mouse.y / canvas.clientHeight) * 2 + 1,
+    )
+    const raycaster = new THREE.Raycaster()
+    raycaster.setFromCamera(ndc, camera)
+    return raycaster.ray.at(nearest, new THREE.Vector3())
+  }
+
   const commitSelection = async (): Promise<SelectedInfo | null> => {
     if (modelObjects.size === 0) return null
 
@@ -1335,10 +1413,25 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   }
 
   // Double-click: finish in-progress area polygon (needs ≥ 3 points already placed)
-  const onDoubleClick = (): void => {
+  const onDoubleClick = (e: MouseEvent): void => {
     if (activeMeasurementTool === 'area') {
       try { areaMeasurement.endCreation?.() } catch { /* ok */ }
+      return
     }
+    // Re-centre the orbit on whatever was double-clicked, WITHOUT moving the
+    // camera. Orbiting only ever revolves around the target, so being unable to
+    // move it is being unable to look at anything else — and until now the only
+    // thing that moved it was framing an element, which also flies you there.
+    // This changes what you turn around and leaves you where you are.
+    if (modelObjects.size === 0) return
+    mouse.set(e.clientX, e.clientY)
+    void (async () => {
+      const point = await pickWorldPoint()
+      if (!point) return
+      try { world.camera.controls.setOrbitPoint(point.x, point.y, point.z) } catch (err) {
+        console.debug('[Viewer] setOrbitPoint failed:', err instanceof Error ? err.message : err)
+      }
+    })()
   }
 
   // Right-click: select the element under the cursor and surface a context menu.

@@ -334,6 +334,10 @@ export type EmbedEventType =
   // The payload carries the file's own coordinates alongside the scene ones,
   // because that is the number a host system will already have on record.
   | 'pointcloud-picked'
+  // Emitted when a feature of the OpenStreetMap surroundings is clicked in map
+  // mode. Context, not model: none of it is validated or exported, and its
+  // height is usually an estimate — which the payload says outright.
+  | 'map-feature-picked'
   | 'result'
 
 /** True when the app is running inside an iframe. */

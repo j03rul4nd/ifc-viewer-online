@@ -204,6 +204,29 @@ export interface PointCloudPickedEvent {
   distance: number
 }
 
+/**
+ * A feature of the OpenStreetMap surroundings, clicked in map mode.
+ *
+ * CONTEXT, NOT MODEL. Nothing here comes from the delivery: it is neighbourhood
+ * data fetched to give the model something to stand in, it is not validated,
+ * and it does not export. Treat a height from here as what it usually is — an
+ * estimate — which is why `heightEstimated` is not optional.
+ */
+export interface MapFeaturePickedEvent {
+  /** OSM element id, e.g. `way/12345`. */
+  id: string
+  /** `name` as mapped. Absent on most buildings, and never invented. */
+  name?: string
+  /** What it is, in one phrase: 'School', 'Train station'. */
+  label?: string
+  /** Which layer: building, water, green, bridge, tree. */
+  featureKind: string
+  /** Metres. */
+  heightM?: number
+  /** True when the height was inferred from tags rather than surveyed. */
+  heightEstimated: boolean
+}
+
 export interface IfcViewerEventMap {
   ready: ReadyEvent
   'model-loaded': ModelLoadedEvent
@@ -212,6 +235,7 @@ export interface IfcViewerEventMap {
   'validation-completed': ValidationCompletedEvent
   'element-selected': ElementSelectedEvent
   'pointcloud-picked': PointCloudPickedEvent
+  'map-feature-picked': MapFeaturePickedEvent
 }
 
 /** Languages the viewer ships with — code + native label, for building a picker. */
@@ -244,7 +268,14 @@ type Listener<T> = (payload: T) => void
 // which differ once `truncated` is set) and `alignment.confidence` (a scan on
 // the `local` or `manual` rung was inferred or placed by hand, and must not be
 // presented with the authority of an exact map conversion).
-const SDK_VERSION = '1.9.0'
+// 1.10.0: one inspector for the whole scene. A click on the OpenStreetMap
+// surroundings now reports through `map-feature-picked`, alongside the IFC
+// `element-selected` and the scan's `pointcloud-picked` — the three things a
+// scene here is made of, on three events with the same shape of answer. The
+// map event carries `heightEstimated` as a required field on purpose: most OSM
+// heights are inferred from storey counts, and one presented as surveyed is the
+// kind of number that ends up in somebody's shadow study.
+const SDK_VERSION = '1.10.0'
 const DEFAULT_LOAD_TIMEOUT = 120_000
 const REQUEST_TIMEOUT = 30_000
 const FALLBACK_LANGUAGES = LANGUAGES.map((l) => l.code)
@@ -841,6 +872,9 @@ export class IfcViewer {
         break
       case 'pointcloud-picked':
         this.emit('pointcloud-picked', data as unknown as PointCloudPickedEvent)
+        break
+      case 'map-feature-picked':
+        this.emit('map-feature-picked', data as unknown as MapFeaturePickedEvent)
         break
       case 'result': {
         const rid = data.requestId

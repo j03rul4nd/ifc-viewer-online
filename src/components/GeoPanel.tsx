@@ -27,6 +27,7 @@ import { collectModelSites, type ModelInput } from '../lib/geo/model-sites'
 import { FEATURE_KINDS, type FeatureKind } from '../lib/geo/osm-features'
 import { appBus } from '../lib/event-bus'
 import { publishInspectorTarget } from '../lib/inspector'
+import { emitEmbedEvent } from '../lib/url-params'
 import { ViewportPanel } from './ViewportPanel'
 import type { BuildingDetail } from '../lib/geo/building-mesh'
 import { WGS84_RADIUS, normalizeDeg } from '../lib/geo/geo-math'
@@ -638,6 +639,16 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
         const feature = geo.pickContextFeature(e.clientX, e.clientY)
         if (!feature) return
         e.stopPropagation()
+        // Out to an embedding host too, so a CDE can react to "they clicked the
+        // school next door" the same way it reacts to an element selection.
+        emitEmbedEvent('map-feature-picked', {
+          id: feature.id,
+          name: feature.name,
+          label: feature.label,
+          featureKind: feature.kind,
+          heightM: feature.height?.heightM,
+          heightEstimated: feature.height?.estimated ?? true,
+        })
         publishInspectorTarget({
           kind: 'map-feature',
           id: feature.id,

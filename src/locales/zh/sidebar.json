@@ -112,39 +112,39 @@
     "issueCount_other": "验证 · {{count}} 个问题"
   },
   "inspector": {
-    "clear": "Clear",
+    "clear": "清除",
     "point": {
-      "badge": "SCANNED POINT",
-      "inSourceCoords": "In the scan’s own coordinates ({{unit}})",
-      "intensity": "Intensity",
-      "classification": "Class",
-      "colour": "Colour",
+      "badge": "扫描点",
+      "inSourceCoords": "以扫描数据自身的坐标表示（{{unit}}）",
+      "intensity": "强度",
+      "classification": "类别",
+      "colour": "颜色",
       "class": {
-        "created": "created",
-        "unclassified": "unclassified",
-        "ground": "ground",
-        "lowVegetation": "low vegetation",
-        "mediumVegetation": "medium vegetation",
-        "highVegetation": "high vegetation",
-        "building": "building",
-        "lowPoint": "low point",
-        "water": "water",
-        "rail": "rail",
-        "roadSurface": "road surface",
-        "wireGuard": "wire guard",
-        "wireConductor": "wire conductor",
-        "transmissionTower": "transmission tower",
-        "bridgeDeck": "bridge deck",
-        "highNoise": "high noise"
+        "created": "已创建",
+        "unclassified": "未分类",
+        "ground": "地面",
+        "lowVegetation": "低矮植被",
+        "mediumVegetation": "中等植被",
+        "highVegetation": "高大植被",
+        "building": "建筑",
+        "lowPoint": "低点",
+        "water": "水体",
+        "rail": "轨道",
+        "roadSurface": "路面",
+        "wireGuard": "避雷线",
+        "wireConductor": "导线",
+        "transmissionTower": "输电塔",
+        "bridgeDeck": "桥面",
+        "highNoise": "高噪声"
       }
     },
     "map": {
-      "unnamed": "Unnamed building",
-      "height": "Height",
-      "estimated": "estimated",
-      "storeys": "Storeys",
-      "osmId": "OSM id",
-      "contextNote": "Surroundings from OpenStreetMap — context, not part of your model. Nothing here is validated or exported."
+      "unnamed": "无名建筑",
+      "height": "高度",
+      "estimated": "为估算值",
+      "storeys": "层数",
+      "osmId": "OSM 编号",
+      "contextNote": "周边环境来自 OpenStreetMap — 仅作背景参考，不属于你的模型。这些内容不会被校验，也不会被导出。"
     }
   }
 }

@@ -112,39 +112,39 @@
     "issueCount_other": "การตรวจสอบ · {{count}} ปัญหา"
   },
   "inspector": {
-    "clear": "Clear",
+    "clear": "ล้าง",
     "point": {
-      "badge": "SCANNED POINT",
-      "inSourceCoords": "In the scan’s own coordinates ({{unit}})",
-      "intensity": "Intensity",
-      "classification": "Class",
-      "colour": "Colour",
+      "badge": "จุดจากการสแกน",
+      "inSourceCoords": "ในระบบพิกัดของไฟล์สแกนเอง ({{unit}})",
+      "intensity": "ความเข้ม",
+      "classification": "ประเภท",
+      "colour": "สี",
       "class": {
-        "created": "created",
-        "unclassified": "unclassified",
-        "ground": "ground",
-        "lowVegetation": "low vegetation",
-        "mediumVegetation": "medium vegetation",
-        "highVegetation": "high vegetation",
-        "building": "building",
-        "lowPoint": "low point",
-        "water": "water",
-        "rail": "rail",
-        "roadSurface": "road surface",
-        "wireGuard": "wire guard",
-        "wireConductor": "wire conductor",
-        "transmissionTower": "transmission tower",
-        "bridgeDeck": "bridge deck",
-        "highNoise": "high noise"
+        "created": "สร้างขึ้น",
+        "unclassified": "ยังไม่จำแนก",
+        "ground": "พื้นดิน",
+        "lowVegetation": "พืชคลุมดินต่ำ",
+        "mediumVegetation": "พืชความสูงปานกลาง",
+        "highVegetation": "พืชสูง",
+        "building": "อาคาร",
+        "lowPoint": "จุดต่ำ",
+        "water": "น้ำ",
+        "rail": "ราง",
+        "roadSurface": "ผิวถนน",
+        "wireGuard": "สายล่อฟ้า",
+        "wireConductor": "สายส่งไฟฟ้า",
+        "transmissionTower": "เสาส่งไฟฟ้า",
+        "bridgeDeck": "พื้นสะพาน",
+        "highNoise": "สัญญาณรบกวนสูง"
       }
     },
     "map": {
-      "unnamed": "Unnamed building",
-      "height": "Height",
-      "estimated": "estimated",
-      "storeys": "Storeys",
-      "osmId": "OSM id",
-      "contextNote": "Surroundings from OpenStreetMap — context, not part of your model. Nothing here is validated or exported."
+      "unnamed": "อาคารที่ไม่มีชื่อ",
+      "height": "ความสูง",
+      "estimated": "ประมาณการ",
+      "storeys": "จำนวนชั้น",
+      "osmId": "รหัส OSM",
+      "contextNote": "สภาพแวดล้อมจาก OpenStreetMap — เป็นบริบท ไม่ใช่ส่วนหนึ่งของโมเดลคุณ ไม่มีการตรวจสอบหรือส่งออกข้อมูลนี้"
     }
   }
 }

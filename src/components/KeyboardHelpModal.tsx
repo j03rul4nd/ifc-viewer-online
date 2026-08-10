@@ -156,6 +156,18 @@ export default function KeyboardHelpModal({ open, onClose }: KeyboardHelpModalPr
             <Row label={k('rightView')}  keys={['Num3']} />
           </Section>
 
+          {/* Mouse, which is where the actual navigation lives and where none of
+              it was written down. Panning in particular is unguessable: the
+              usual right-drag is taken by the context menu here. */}
+          <Section title={g('mouse')}>
+            <Row label={k('orbit')}        keys={['Drag']} />
+            <Row label={k('pan')}          keys={['Middle drag']} />
+            <Row label={k('panShift')}     keys={['Shift', 'Drag']} />
+            <Row label={k('zoom')}         keys={['Wheel']} />
+            <Row label={k('recentre')}     keys={['Double-click']} />
+            <Row label={k('contextMenu')}  keys={['Right-click']} />
+          </Section>
+
           <Section title={g('navigation')}>
             <Row label={k('showShortcuts')}  keys={['?']} />
           </Section>

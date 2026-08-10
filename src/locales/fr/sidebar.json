@@ -112,39 +112,39 @@
     "issueCount_other": "Validation · {{count}} problèmes"
   },
   "inspector": {
-    "clear": "Clear",
+    "clear": "Effacer",
     "point": {
-      "badge": "SCANNED POINT",
-      "inSourceCoords": "In the scan’s own coordinates ({{unit}})",
-      "intensity": "Intensity",
-      "classification": "Class",
-      "colour": "Colour",
+      "badge": "POINT SCANNÉ",
+      "inSourceCoords": "Dans les coordonnées propres du scan ({{unit}})",
+      "intensity": "Intensité",
+      "classification": "Classe",
+      "colour": "Couleur",
       "class": {
-        "created": "created",
-        "unclassified": "unclassified",
-        "ground": "ground",
-        "lowVegetation": "low vegetation",
-        "mediumVegetation": "medium vegetation",
-        "highVegetation": "high vegetation",
-        "building": "building",
-        "lowPoint": "low point",
-        "water": "water",
+        "created": "créé",
+        "unclassified": "non classé",
+        "ground": "sol",
+        "lowVegetation": "végétation basse",
+        "mediumVegetation": "végétation moyenne",
+        "highVegetation": "végétation haute",
+        "building": "bâtiment",
+        "lowPoint": "point bas",
+        "water": "eau",
         "rail": "rail",
-        "roadSurface": "road surface",
-        "wireGuard": "wire guard",
-        "wireConductor": "wire conductor",
-        "transmissionTower": "transmission tower",
-        "bridgeDeck": "bridge deck",
-        "highNoise": "high noise"
+        "roadSurface": "chaussée",
+        "wireGuard": "câble de garde",
+        "wireConductor": "conducteur",
+        "transmissionTower": "pylône",
+        "bridgeDeck": "tablier de pont",
+        "highNoise": "bruit élevé"
       }
     },
     "map": {
-      "unnamed": "Unnamed building",
-      "height": "Height",
-      "estimated": "estimated",
-      "storeys": "Storeys",
-      "osmId": "OSM id",
-      "contextNote": "Surroundings from OpenStreetMap — context, not part of your model. Nothing here is validated or exported."
+      "unnamed": "Bâtiment sans nom",
+      "height": "Hauteur",
+      "estimated": "estimée",
+      "storeys": "Étages",
+      "osmId": "ID OSM",
+      "contextNote": "Environs issus d’OpenStreetMap — du contexte, pas une partie de votre modèle. Rien ici n’est validé ni exporté."
     }
   }
 }

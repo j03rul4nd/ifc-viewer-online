@@ -112,39 +112,39 @@
     "issueCount_other": "Validação · {{count}} problemas"
   },
   "inspector": {
-    "clear": "Clear",
+    "clear": "Limpar",
     "point": {
-      "badge": "SCANNED POINT",
-      "inSourceCoords": "In the scan’s own coordinates ({{unit}})",
-      "intensity": "Intensity",
-      "classification": "Class",
-      "colour": "Colour",
+      "badge": "PONTO DIGITALIZADO",
+      "inSourceCoords": "Nas coordenadas próprias do scan ({{unit}})",
+      "intensity": "Intensidade",
+      "classification": "Classe",
+      "colour": "Cor",
       "class": {
-        "created": "created",
-        "unclassified": "unclassified",
-        "ground": "ground",
-        "lowVegetation": "low vegetation",
-        "mediumVegetation": "medium vegetation",
-        "highVegetation": "high vegetation",
-        "building": "building",
-        "lowPoint": "low point",
-        "water": "water",
-        "rail": "rail",
-        "roadSurface": "road surface",
-        "wireGuard": "wire guard",
-        "wireConductor": "wire conductor",
-        "transmissionTower": "transmission tower",
-        "bridgeDeck": "bridge deck",
-        "highNoise": "high noise"
+        "created": "criado",
+        "unclassified": "não classificado",
+        "ground": "solo",
+        "lowVegetation": "vegetação baixa",
+        "mediumVegetation": "vegetação média",
+        "highVegetation": "vegetação alta",
+        "building": "edifício",
+        "lowPoint": "ponto baixo",
+        "water": "água",
+        "rail": "via férrea",
+        "roadSurface": "pavimento",
+        "wireGuard": "cabo de guarda",
+        "wireConductor": "condutor",
+        "transmissionTower": "torre de transmissão",
+        "bridgeDeck": "tabuleiro de ponte",
+        "highNoise": "ruído alto"
       }
     },
     "map": {
-      "unnamed": "Unnamed building",
-      "height": "Height",
-      "estimated": "estimated",
-      "storeys": "Storeys",
-      "osmId": "OSM id",
-      "contextNote": "Surroundings from OpenStreetMap — context, not part of your model. Nothing here is validated or exported."
+      "unnamed": "Edifício sem nome",
+      "height": "Altura",
+      "estimated": "estimada",
+      "storeys": "Pisos",
+      "osmId": "ID OSM",
+      "contextNote": "Envolvente do OpenStreetMap — contexto, não faz parte do seu modelo. Nada disto é validado nem exportado."
     }
   }
 }

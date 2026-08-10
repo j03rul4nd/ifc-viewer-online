@@ -112,39 +112,39 @@
     "issueCount_other": "Validierung · {{count}} Probleme"
   },
   "inspector": {
-    "clear": "Clear",
+    "clear": "Zurücksetzen",
     "point": {
-      "badge": "SCANNED POINT",
-      "inSourceCoords": "In the scan’s own coordinates ({{unit}})",
-      "intensity": "Intensity",
-      "classification": "Class",
-      "colour": "Colour",
+      "badge": "GESCANNTER PUNKT",
+      "inSourceCoords": "In den eigenen Koordinaten des Scans ({{unit}})",
+      "intensity": "Intensität",
+      "classification": "Klasse",
+      "colour": "Farbe",
       "class": {
-        "created": "created",
-        "unclassified": "unclassified",
-        "ground": "ground",
-        "lowVegetation": "low vegetation",
-        "mediumVegetation": "medium vegetation",
-        "highVegetation": "high vegetation",
-        "building": "building",
-        "lowPoint": "low point",
-        "water": "water",
-        "rail": "rail",
-        "roadSurface": "road surface",
-        "wireGuard": "wire guard",
-        "wireConductor": "wire conductor",
-        "transmissionTower": "transmission tower",
-        "bridgeDeck": "bridge deck",
-        "highNoise": "high noise"
+        "created": "erzeugt",
+        "unclassified": "nicht klassifiziert",
+        "ground": "Boden",
+        "lowVegetation": "niedrige Vegetation",
+        "mediumVegetation": "mittlere Vegetation",
+        "highVegetation": "hohe Vegetation",
+        "building": "Gebäude",
+        "lowPoint": "tiefer Punkt",
+        "water": "Wasser",
+        "rail": "Schiene",
+        "roadSurface": "Fahrbahn",
+        "wireGuard": "Erdseil",
+        "wireConductor": "Leiterseil",
+        "transmissionTower": "Freileitungsmast",
+        "bridgeDeck": "Brückendeck",
+        "highNoise": "starkes Rauschen"
       }
     },
     "map": {
-      "unnamed": "Unnamed building",
-      "height": "Height",
-      "estimated": "estimated",
-      "storeys": "Storeys",
-      "osmId": "OSM id",
-      "contextNote": "Surroundings from OpenStreetMap — context, not part of your model. Nothing here is validated or exported."
+      "unnamed": "Gebäude ohne Namen",
+      "height": "Höhe",
+      "estimated": "geschätzt",
+      "storeys": "Geschosse",
+      "osmId": "OSM-ID",
+      "contextNote": "Umgebung aus OpenStreetMap — Kontext, nicht Teil Ihres Modells. Nichts davon wird geprüft oder exportiert."
     }
   }
 }
