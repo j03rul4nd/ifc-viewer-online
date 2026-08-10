@@ -352,14 +352,51 @@ export function isEmbedded(): boolean {
 }
 
 /**
+ * The origin that last sent us a command, learned from the incoming message.
+ *
+ * Replies are addressed to it rather than broadcast. See emitEmbedEvent.
+ */
+let hostOrigin: string | null = null
+
+/**
+ * Remember where commands are coming from, so answers can be addressed there.
+ *
+ * `"null"` is what a sandboxed or file:// parent reports, and postMessage
+ * rejects it as a target — those hosts keep the broadcast behaviour, because a
+ * reply nobody can receive is worse than a reply more windows can see.
+ */
+export function rememberHostOrigin(origin: string | undefined): void {
+  if (origin && origin !== 'null') hostOrigin = origin
+}
+
+/** Test seam. */
+export function __resetHostOrigin(): void { hostOrigin = null }
+
+/**
  * Post an event to the embedding parent window so a host (CDE, blog) can react
- * to viewer lifecycle. No-op when not embedded. Uses '*' targetOrigin because
- * the host origin is unknown; payloads never contain model contents, only meta.
+ * to viewer lifecycle.  No-op when not embedded.
+ *
+ * ── Why the target origin is not simply '*'
+ * A previous version of this comment claimed payloads "never contain model
+ * contents, only meta". That has not been true for a long time: `result`
+ * envelopes carry whatever the SDK asked for — `getElement` returns an element's
+ * attributes and property sets — and `pointcloud-picked` carries the survey
+ * coordinates of a real site.
+ *
+ * With '*', every one of those is readable by ANY script running on the
+ * embedding page, not just the host's own code. The host chose to embed the
+ * viewer, so it is entitled to the data; a third-party analytics or ad script
+ * sharing that page is not, and it only has to add a message listener.
+ *
+ * So replies go to the origin that asked. The fallback stays '*' for the case
+ * where no command has arrived yet (lifecycle events fired before any host
+ * interaction) or the parent has an opaque origin — there, a message nobody can
+ * receive would be strictly worse.
  */
 export function emitEmbedEvent(type: EmbedEventType, payload?: Record<string, unknown>): void {
   if (typeof window === 'undefined' || window.parent === window) return
   try {
-    window.parent.postMessage({ source: 'ifc-validator', type, ...payload }, '*')
+    window.parent.postMessage({ source: 'ifc-validator', type, ...payload }, hostOrigin ?? '*')
   } catch {
     /* parent may reject the message; nothing we can do, ignore */
   }

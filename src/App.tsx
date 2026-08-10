@@ -115,6 +115,7 @@ import {
   resolveEmbedChrome,
   emitEmbedEvent,
   isEmbedded,
+  rememberHostOrigin,
 } from './lib/url-params'
 import { fetchIfcFromUrl } from './lib/fetch-ifc-url'
 import { resolveInvite, shouldShowInviteRibbon, shouldShowInviteView } from './lib/invite-registry'
@@ -1308,6 +1309,9 @@ export default function App() {
       const data = e.data as { type?: unknown } | null
       if (!data || typeof data.type !== 'string' || !data.type.startsWith('ifcviewer:')) return
       const msg = data as { type: string; [k: string]: unknown }
+      // Address replies to whoever asked, rather than broadcasting them to every
+      // script on the embedding page. See emitEmbedEvent.
+      rememberHostOrigin(e.origin)
       const requestId = typeof msg.requestId === 'string' ? msg.requestId : undefined
       // Reply to a query command with a `result` envelope the SDK correlates by id.
       const respond = async (fn: () => unknown): Promise<void> => {

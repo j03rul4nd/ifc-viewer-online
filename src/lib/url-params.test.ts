@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import {
   parseAppUrlParams,
   resolveEmbedChrome,
@@ -6,6 +6,9 @@ import {
   buildIframeSnippet,
   isLoadableUrl,
   parseInvitePath,
+  emitEmbedEvent,
+  rememberHostOrigin,
+  __resetHostOrigin,
 } from './url-params'
 
 const MODEL = 'https://host.example/model.ifc'
@@ -278,5 +281,79 @@ describe('parseAppUrlParams · scan deep link', () => {
 
   it('is an empty list when nobody asked', () => {
     expect(parseAppUrlParams('').scanUrls).toEqual([])
+  })
+})
+
+// ── Where replies go ──────────────────────────────────────────────────────────
+// A previous comment on emitEmbedEvent claimed payloads "never contain model
+// contents, only meta". That has not been true for a long time: `result`
+// envelopes carry whatever the SDK asked for — getElement returns an element's
+// attributes and property sets — and pointcloud-picked carries the survey
+// coordinates of a real site. With '*' every one of those is readable by any
+// script on the embedding page, not just the host's own code.
+
+describe('emitEmbedEvent target origin', () => {
+  let posted: Array<{ message: unknown; target: string }> = []
+  let originalParent: unknown
+
+  beforeEach(() => {
+    posted = []
+    __resetHostOrigin()
+    originalParent = Object.getOwnPropertyDescriptor(window, 'parent')
+    Object.defineProperty(window, 'parent', {
+      configurable: true,
+      value: {
+        postMessage: (message: unknown, target: string) => { posted.push({ message, target }) },
+      },
+    })
+  })
+
+  afterEach(() => {
+    if (originalParent) {
+      Object.defineProperty(window, 'parent', originalParent as PropertyDescriptor)
+    }
+  })
+
+  it('broadcasts before any host has identified itself', () => {
+    // Lifecycle events can fire before the host sends a single command. A
+    // message nobody can receive would be strictly worse than a broadcast one.
+    emitEmbedEvent('ready')
+    expect(posted[0].target).toBe('*')
+  })
+
+  it('addresses replies to the origin that asked', () => {
+    rememberHostOrigin('https://cde.example.com')
+    emitEmbedEvent('result', { requestId: 'r1', ok: true, data: { secret: 1 } })
+    expect(posted[0].target).toBe('https://cde.example.com')
+  })
+
+  it('ignores an opaque origin rather than sending to a target postMessage rejects', () => {
+    // A sandboxed or file:// parent reports "null", and postMessage throws on it
+    // as a target. Those hosts keep the broadcast behaviour deliberately.
+    rememberHostOrigin('null')
+    emitEmbedEvent('ready')
+    expect(posted[0].target).toBe('*')
+  })
+
+  it('ignores undefined, which is what a synthetic event carries', () => {
+    rememberHostOrigin(undefined)
+    emitEmbedEvent('ready')
+    expect(posted[0].target).toBe('*')
+  })
+
+  it('follows the most recent host, so a re-embed is not answered to the old one', () => {
+    rememberHostOrigin('https://first.example')
+    rememberHostOrigin('https://second.example')
+    emitEmbedEvent('ready')
+    expect(posted[0].target).toBe('https://second.example')
+  })
+
+  it('never throws when the parent rejects the message', () => {
+    // A cross-origin parent can refuse; the viewer must carry on regardless.
+    Object.defineProperty(window, 'parent', {
+      configurable: true,
+      value: { postMessage: () => { throw new Error('refused') } },
+    })
+    expect(() => emitEmbedEvent('ready')).not.toThrow()
   })
 })
