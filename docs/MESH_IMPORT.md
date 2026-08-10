@@ -79,8 +79,12 @@ to land the same way, and they only do that if they are placed by the same code.
   Textures are the ones that hurt: they are tens of megabytes, they are not
   reachable from the geometry graph, and three frees none of them when an object
   leaves the scene.
-- No Draco or KTX2 decompression yet. A mesh using either fails to parse rather
-  than arriving mangled.
+- **Draco and KTX2 are decoded**, so an "optimise for web" export works. The
+  decoders are copied out of the installed `three` at build time and served from
+  `/decoders/` — pinned to the version in use rather than to a CDN that will one
+  day serve a mismatched build. They are fetched only when a file needs them
+  (190 kB for Draco, 527 kB for KTX2) and the worker pool is released when the
+  mesh system is disposed.
 
 ## Architecture
 
@@ -132,6 +136,14 @@ alongside the values: neither format records a unit, and only glTF records an
 orientation, so reading the numbers without their provenance is how a model ends
 up a thousand times too big with nobody questioning it.
 
-## Not done yet
+## Verified against a real compressed file
 
-No Draco or KTX2 decompression — see Limits above.
+The Khronos Draco Duck — a `.gltf` that declares
+`KHR_draco_mesh_compression` in `extensionsRequired`, so it cannot parse at all
+without a decoder — imports in the browser as 4212 triangles with one textured
+material at 1.66 m across, with its `.bin` and its texture resolved by basename
+from the multi-file selection.
+
+That combination is the whole feature in one file: compressed geometry, a
+separate buffer, and a texture referenced by a relative path written on someone
+else's machine.

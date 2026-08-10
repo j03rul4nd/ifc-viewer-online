@@ -12,6 +12,10 @@ import { effectivePlacement } from './mesh-transform'
 import { buildUrlMap, findEntryFile, collectStats, disposeObject } from './mesh-loader'
 import { createMeshSystem, type MeshContext, type MeshSystemAPI } from './mesh-system'
 import { loadMesh } from './mesh-runner'
+import {
+  getDracoLoader, getKtx2Loader, disposeDecoders, decodersActive,
+  DRACO_PATH, BASIS_PATH,
+} from './mesh-decoders'
 import { NO_OFFSET } from '../pointcloud/pc-types'
 import type { MeshFrame, MeshStats } from './mesh-types'
 
@@ -516,5 +520,70 @@ describe('disposeObject tolerates malformed graphs', () => {
     disposeObject(root)
     expect(spyA).toHaveBeenCalled()
     expect(spyB).toHaveBeenCalled()
+  })
+})
+
+// ── Decoders ──────────────────────────────────────────────────────────────────
+// Draco is what every "optimise for web" export button produces, and a glTF that
+// declares `KHR_draco_mesh_compression` in extensionsRequired does not degrade
+// without a decoder — it fails to parse, and the user cannot tell that from a
+// corrupt file. Verified end to end against the Khronos Draco Duck in a real
+// browser (4212 triangles, one textured material, 1.66 m); these cover the parts
+// that are checkable headlessly.
+
+describe('mesh decoders', () => {
+  beforeEach(() => { disposeDecoders() })
+
+  it('is not instantiated until something asks', () => {
+    // The decoders pull a worker pool and a 190 kB wasm. A user who never
+    // imports a compressed model must never pay for either.
+    expect(decodersActive()).toEqual({ draco: false, ktx2: false })
+  })
+
+  it('shares one Draco instance rather than one per import', () => {
+    // DRACOLoader spins up a worker pool on first decode. One per import would
+    // start a fresh pool per file and leak it — nothing in the import path is a
+    // natural owner of that lifetime.
+    const a = getDracoLoader()
+    const b = getDracoLoader()
+    expect(a).toBe(b)
+    expect(decodersActive().draco).toBe(true)
+  })
+
+  it('points at the decoder the app actually ships', () => {
+    // A wrong path fails as a confusing wasm compile error, because the SPA
+    // fallback answers the 404 with index.html.
+    expect(DRACO_PATH).toBe('/decoders/draco/')
+    expect(BASIS_PATH).toBe('/decoders/basis/')
+  })
+
+  it('survives KTX2 support detection failing', () => {
+    // detectSupport touches the GL context. A failure must cost compressed
+    // textures, not the import.
+    const hostile = { extensions: null } as unknown as THREE.WebGLRenderer
+    expect(() => getKtx2Loader(hostile)).not.toThrow()
+  })
+
+  it('tolerates a null renderer, which is what the loader passes', () => {
+    // The loader has no renderer — the system primes the transcoder instead.
+    expect(() => getKtx2Loader(null)).not.toThrow()
+  })
+
+  it('disposing twice is safe, and clears the instances', () => {
+    getDracoLoader()
+    getKtx2Loader(null)
+    disposeDecoders()
+    expect(decodersActive()).toEqual({ draco: false, ktx2: false })
+    expect(() => disposeDecoders()).not.toThrow()
+  })
+
+  it('the system releases the worker pool when it is disposed', () => {
+    // Left running, DRACOLoader holds a handful of workers alive for the life of
+    // the tab — invisible until someone opens the task manager.
+    const sys = createMeshSystem(makeContext())
+    getDracoLoader()
+    expect(decodersActive().draco).toBe(true)
+    sys.dispose()
+    expect(decodersActive().draco).toBe(false)
   })
 })

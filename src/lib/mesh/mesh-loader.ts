@@ -22,6 +22,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js'
+import { getDracoLoader, getKtx2Loader } from './mesh-decoders'
 import type { MeshFormat, MeshStats } from './mesh-types'
 
 export interface MeshLoadResult {
@@ -195,6 +196,13 @@ export async function loadMeshFiles(files: File[]): Promise<MeshLoadResult> {
 
 async function loadGltf(file: File, manager: THREE.LoadingManager): Promise<THREE.Object3D> {
   const loader = new GLTFLoader(manager)
+  // Draco is what every "optimise for web" export button produces, and KTX2 is
+  // where texture compression is heading. Without these a compressed glTF does
+  // not arrive degraded — it fails to parse, and the user cannot tell that from
+  // a corrupt file. Both decoders are shared and fetched only when a file
+  // actually uses them.
+  loader.setDRACOLoader(getDracoLoader())
+  loader.setKTX2Loader(getKtx2Loader(null))
   const buffer = await file.arrayBuffer()
   return new Promise((resolve, reject) => {
     loader.parse(

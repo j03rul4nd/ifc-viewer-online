@@ -20,6 +20,7 @@
 import * as THREE from 'three'
 import { disposeObject } from './mesh-loader'
 import { effectivePlacement } from './mesh-transform'
+import { getKtx2Loader, disposeDecoders } from './mesh-decoders'
 import { createLogger } from '../logger'
 import type { AlignmentOffset, MeshFrame, MeshStats } from './mesh-types'
 
@@ -68,6 +69,12 @@ interface Record_ {
 export function createMeshSystem(ctx: MeshContext): MeshSystemAPI {
   const items = new Map<string, Record_>()
   let disposed = false
+
+  // Prime the KTX2 transcoder here, because this is the only layer that holds a
+  // renderer — a KTX2 texture is transcoded into whichever compressed format
+  // THIS GPU supports, and there is no single right answer to pick without one.
+  // The loader then reuses the primed instance.
+  try { getKtx2Loader(ctx.renderer) } catch (e) { log.warn('KTX2 priming failed:', e) }
 
   function applyPlacement(rec: Record_, frame: MeshFrame, placement: AlignmentOffset): void {
     const t = effectivePlacement(frame, placement)
@@ -170,6 +177,10 @@ export function createMeshSystem(ctx: MeshContext): MeshSystemAPI {
       disposed = true
       for (const rec of items.values()) disposeRecord(rec)
       items.clear()
+      // Terminates DRACOLoader's worker pool. Left running, it holds a handful
+      // of workers alive for the life of the tab — invisible until someone opens
+      // the task manager and asks why the page has eight threads.
+      disposeDecoders()
     },
   }
 }

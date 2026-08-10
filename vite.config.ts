@@ -164,8 +164,61 @@ function copyWebIfcWasm() {
   }
 }
 
+/**
+ * Serve three's Draco and KTX2 decoders from `/decoders/`.
+ *
+ * Both are a JS wrapper plus a sibling .wasm that the wrapper fetches by
+ * relative path, so they cannot be bundled — the relationship between the two
+ * files is the whole mechanism. Copying them out of the installed `three` keeps
+ * them pinned to the version actually in use, rather than to a CDN that will one
+ * day serve a build that does not match.
+ *
+ * Both hooks are needed. `writeBundle` covers production; `configureServer`
+ * covers dev, where nothing has been written to disk and a request for
+ * `/decoders/draco/draco_decoder.wasm` would otherwise fall through to the SPA
+ * fallback and be answered with index.html — which fails as a confusing WASM
+ * compile error rather than as a 404.
+ */
+function copyThreeDecoders() {
+  const SETS = [
+    { url: 'draco', from: 'node_modules/three/examples/jsm/libs/draco/gltf',
+      files: ['draco_wasm_wrapper.js', 'draco_decoder.wasm'] },
+    { url: 'basis', from: 'node_modules/three/examples/jsm/libs/basis',
+      files: ['basis_transcoder.js', 'basis_transcoder.wasm'] },
+  ]
+  const MIME: Record<string, string> = { '.js': 'text/javascript', '.wasm': 'application/wasm' }
+
+  return {
+    name: 'copy-three-decoders',
+    writeBundle() {
+      for (const set of SETS) {
+        const src = path.resolve(__dirname, set.from)
+        const dst = path.resolve(__dirname, 'dist', 'decoders', set.url)
+        mkdirSync(dst, { recursive: true })
+        for (const file of set.files) {
+          const srcPath = path.join(src, file)
+          if (existsSync(srcPath)) copyFileSync(srcPath, path.join(dst, file))
+        }
+      }
+    },
+    configureServer(server: { middlewares: { use: (fn: (req: { url?: string }, res: { setHeader: (k: string, v: string) => void; end: (b?: unknown) => void }, next: () => void) => void) => void } }) {
+      server.middlewares.use((req, res, next) => {
+        const url = (req.url ?? '').split('?')[0]
+        const m = /^\/decoders\/(draco|basis)\/([\w.]+)$/.exec(url)
+        if (!m) { next(); return }
+        const set = SETS.find((x) => x.url === m[1])
+        if (!set || !set.files.includes(m[2])) { next(); return }
+        const file = path.resolve(__dirname, set.from, m[2])
+        if (!existsSync(file)) { next(); return }
+        res.setHeader('Content-Type', MIME[path.extname(m[2])] ?? 'application/octet-stream')
+        res.end(readFileSync(file))
+      })
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [react(), copyWebIfcWasm(), injectLandingContent(), generateRuleFixPages(), generateBlogPageShells(), generateLegalPageShells(), generateEbookPageShell()],
+  plugins: [react(), copyWebIfcWasm(), copyThreeDecoders(), injectLandingContent(), generateRuleFixPages(), generateBlogPageShells(), generateLegalPageShells(), generateEbookPageShell()],
   // Served from the domain root on Vercel (https://www.ifcvieweronline.eu/).
   // BASE_PATH is honoured if set, but defaults to '/' — the single deploy target.
   base: process.env.BASE_PATH || '/',
