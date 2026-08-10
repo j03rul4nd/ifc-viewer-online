@@ -6,6 +6,11 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import {
+  loadExportPrefs, saveExportPrefs, prefsToExportOptions,
+  type IfcExportPrefs,
+} from '../lib/ifc-export-prefs'
+import { APP_VERSION } from '../lib/app-version'
 import { useSceneStore } from '../stores/sceneStore'
 import { useEditorStore } from '../stores/editorStore'
 import { modelRegistry } from '../lib/model-registry'
@@ -44,6 +49,18 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
   const history = useEditorStore((s) => s.history)
   const historyIndex = useEditorStore((s) => s.historyIndex)
 
+  // Header preferences — per person, not per model. Loaded once; written on every
+  // change so closing the dialog is not a way to lose them.
+  const [prefs, setPrefsState] = useState<IfcExportPrefs>(() => loadExportPrefs())
+  const [advancedOpen, setAdvancedOpen] = useState(false)
+  const setPrefs = (patch: Partial<IfcExportPrefs>): void => {
+    setPrefsState((prev) => {
+      const next = { ...prev, ...patch }
+      saveExportPrefs(next)
+      return next
+    })
+  }
+
   // Per-model export statuses
   const [statuses, setStatuses] = useState<Record<string, ModelExportState>>(() =>
     Object.fromEntries(models.map((m) => [m.id, { ifc: 'idle', glb: 'idle' }])),
@@ -78,7 +95,7 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
         )
       }
       const diffs = getDiffsForModel(modelId)
-      const bytes = await exportAsIfc(buffer, diffs)
+      const bytes = await exportAsIfc(buffer, diffs, prefsToExportOptions(prefs))
       const stem  = fileName.replace(/\.ifc$/i, '')
       await downloadBlob(new Blob([bytes], { type: 'application/x-step' }), `${stem}-exported.ifc`)
       setStatus(modelId, 'ifc', 'done')
@@ -260,6 +277,71 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
               </div>
             )
           })}
+        </div>
+
+        {/* Advanced — what the exported file will say about itself */}
+        <div className="px-4 py-3 border-t border-[var(--border)]">
+          <button
+            onClick={() => setAdvancedOpen((v) => !v)}
+            aria-expanded={advancedOpen}
+            className="w-full flex items-center justify-between text-[11px] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
+          >
+            <span>{t('exportModal.advanced')}</span>
+            <span className="font-mono text-[10px]">{advancedOpen ? '−' : '+'}</span>
+          </button>
+
+          {advancedOpen && (
+            <div className="mt-3 flex flex-col gap-2.5">
+              <p className="text-[10px] text-[var(--text-muted)] leading-snug">
+                {t('exportModal.advancedHint')}
+              </p>
+
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={prefs.stampHeader}
+                  onChange={(e) => setPrefs({ stampHeader: e.target.checked })}
+                  className="mt-0.5 accent-[var(--accent)]"
+                />
+                <span className="flex flex-col">
+                  <span className="text-[11px] text-[var(--text)]">{t('exportModal.stampHeader')}</span>
+                  <span className="text-[10px] text-[var(--text-muted)] leading-snug">
+                    {prefs.stampHeader
+                      ? t('exportModal.stampOn', { app: `IFC Viewer Online ${APP_VERSION}` })
+                      : t('exportModal.stampOff')}
+                  </span>
+                </span>
+              </label>
+
+              {/* The three FILE_NAME fields a deliverable actually needs. Disabled
+                  rather than hidden when stamping is off, so the relationship
+                  between the switch and the fields stays visible. */}
+              {([
+                ['author', t('exportModal.author'), t('exportModal.authorPlaceholder')],
+                ['organization', t('exportModal.organization'), t('exportModal.organizationPlaceholder')],
+                ['authorization', t('exportModal.authorization'), t('exportModal.authorizationPlaceholder')],
+              ] as const).map(([key, label, placeholder]) => (
+                <label key={key} className="flex flex-col gap-1">
+                  <span className="text-[10px] text-[var(--text-muted)]">{label}</span>
+                  <input
+                    type="text"
+                    value={prefs[key]}
+                    disabled={!prefs.stampHeader}
+                    placeholder={placeholder}
+                    onChange={(e) => setPrefs({ [key]: e.target.value } as Partial<IfcExportPrefs>)}
+                    className="h-7 px-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-[11px] text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] outline-none disabled:opacity-40"
+                  />
+                </label>
+              ))}
+
+              <p className="text-[10px] text-[var(--text-muted)] leading-snug">
+                {t('exportModal.blankKeeps')}
+              </p>
+              <p className="text-[10px] text-[var(--text-muted)] leading-snug">
+                {t('exportModal.schemaNote')}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Footer — bulk actions when multiple models */}

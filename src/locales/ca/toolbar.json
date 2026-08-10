@@ -139,6 +139,20 @@
     "ifcNotAvailable": "Buffer IFC no disponible (model carregat només des de la memòria cau de fragments)",
     "elements": "{{count}} elements",
     "edits": "{{count}} edició",
-    "edits_other": "{{count}} edicions"
-  }
+    "edits_other": "{{count}} edicions",
+    "advanced": "Avançat — capçalera del fitxer",
+    "advancedHint": "El que el fitxer exportat diu de si mateix. L'IFC ho desa a la seva capçalera STEP, i és el que llegeix qui el rep per distingir el teu fitxer del que va lliurar l'eina d'autoria.",
+    "stampHeader": "Registrar aquesta exportació al fitxer",
+    "stampOn": "Posa la data d'escriptura a ara i l'eina que l'escriu a {{app}}. L'aplicació d'autoria es deixa com era — el model encara ve d'allà.",
+    "stampOff": "La capçalera conservarà l'eina i la data originals, així que el fitxer semblarà intacte encara que l'hagis editat.",
+    "author": "Autor",
+    "authorPlaceholder": "El teu nom",
+    "organization": "Organització",
+    "organizationPlaceholder": "La teva empresa",
+    "authorization": "Autorització",
+    "authorizationPlaceholder": "L'exigeixen alguns plecs de lliurament",
+    "blankKeeps": "Deixa un camp en blanc per conservar el que el fitxer ja portava.",
+    "schemaNote": "L'esquema IFC no es canvia mai. Un fitxer obert com a IFC2x3 s'exporta com a IFC2x3."
+  },
+  "exportSettings": "Configuració d'exportació…"
 }

@@ -139,6 +139,20 @@
     "ifcNotAvailable": "Buffer IFC no disponible (modelo cargado solo desde caché de fragmentos)",
     "elements": "{{count}} elementos",
     "edits": "{{count}} edición",
-    "edits_other": "{{count}} ediciones"
-  }
+    "edits_other": "{{count}} ediciones",
+    "advanced": "Avanzado — cabecera del archivo",
+    "advancedHint": "Lo que el archivo exportado dice de sí mismo. IFC lo guarda en su cabecera STEP, y es lo que lee quien lo recibe para distinguir tu archivo del que entregó la herramienta de autoría.",
+    "stampHeader": "Registrar esta exportación en el archivo",
+    "stampOn": "Pone la fecha de escritura en ahora y la herramienta que lo escribe en {{app}}. La aplicación de autoría se deja como estaba — el modelo sigue viniendo de ahí.",
+    "stampOff": "La cabecera conservará la herramienta y la fecha originales, así que el archivo parecerá intacto aunque lo hayas editado.",
+    "author": "Autor",
+    "authorPlaceholder": "Tu nombre",
+    "organization": "Organización",
+    "organizationPlaceholder": "Tu empresa",
+    "authorization": "Autorización",
+    "authorizationPlaceholder": "La exigen algunos pliegos de entrega",
+    "blankKeeps": "Deja un campo en blanco para conservar lo que el archivo ya traía.",
+    "schemaNote": "El esquema IFC nunca se cambia. Un archivo abierto como IFC2x3 se exporta como IFC2x3."
+  },
+  "exportSettings": "Ajustes de exportación…"
 }

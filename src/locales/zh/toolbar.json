@@ -139,6 +139,20 @@
     "ifcNotAvailable": "IFC 缓冲区不可用（模型仅从片段缓存加载）",
     "elements": "{{count}} 个构件",
     "edits": "{{count}} 处修改",
-    "edits_other": "{{count}} 处修改"
-  }
+    "edits_other": "{{count}} 处修改",
+    "advanced": "高级——文件头",
+    "advancedHint": "导出文件对自身的声明。IFC 把这些记录在 STEP 文件头里，接收方正是据此分辨你的文件与创作工具原本交付的文件。",
+    "stampHeader": "在文件中记录本次导出",
+    "stampOn": "把写入日期设为现在，写入工具设为 {{app}}。创作应用保持原样——模型仍然来自那里。",
+    "stampOff": "文件头将保留原来的工具和日期，因此即使你做过编辑，文件看起来也像未被改动。",
+    "author": "作者",
+    "authorPlaceholder": "你的姓名",
+    "organization": "机构",
+    "organizationPlaceholder": "你的公司",
+    "authorization": "授权",
+    "authorizationPlaceholder": "部分交付规范会要求填写",
+    "blankKeeps": "留空某一项即可保留文件原有的内容。",
+    "schemaNote": "IFC 模式版本永远不会被更改。以 IFC2x3 打开的文件仍导出为 IFC2x3。"
+  },
+  "exportSettings": "导出设置…"
 }

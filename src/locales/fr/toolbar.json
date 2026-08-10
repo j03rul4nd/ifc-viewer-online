@@ -139,6 +139,20 @@
     "ifcNotAvailable": "Tampon IFC indisponible (modèle chargé depuis le cache de fragments uniquement)",
     "elements": "{{count}} éléments",
     "edits": "{{count}} modification",
-    "edits_other": "{{count}} modifications"
-  }
+    "edits_other": "{{count}} modifications",
+    "advanced": "Avancé — en-tête du fichier",
+    "advancedHint": "Ce que le fichier exporté dit de lui-même. L'IFC l'enregistre dans son en-tête STEP, et c'est ce que lit un destinataire pour distinguer votre fichier de celui livré par l'outil de création.",
+    "stampHeader": "Consigner cet export dans le fichier",
+    "stampOn": "Met la date d'écriture à maintenant et l'outil d'écriture à {{app}}. L'application de création reste inchangée — le modèle en provient toujours.",
+    "stampOff": "L'en-tête conservera l'outil et la date d'origine : le fichier paraîtra intact même si vous l'avez modifié.",
+    "author": "Auteur",
+    "authorPlaceholder": "Votre nom",
+    "organization": "Organisation",
+    "organizationPlaceholder": "Votre société",
+    "authorization": "Autorisation",
+    "authorizationPlaceholder": "Exigée par certains cahiers des charges",
+    "blankKeeps": "Laissez un champ vide pour conserver ce que le fichier contenait déjà.",
+    "schemaNote": "Le schéma IFC n'est jamais modifié. Un fichier ouvert en IFC2x3 est exporté en IFC2x3."
+  },
+  "exportSettings": "Paramètres d'export…"
 }

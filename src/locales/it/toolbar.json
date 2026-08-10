@@ -139,6 +139,20 @@
     "ifcNotAvailable": "Buffer IFC non disponibile (modello caricato solo dalla cache dei frammenti)",
     "elements": "{{count}} elementi",
     "edits": "{{count}} modifica",
-    "edits_other": "{{count}} modifiche"
-  }
+    "edits_other": "{{count}} modifiche",
+    "advanced": "Avanzate — intestazione del file",
+    "advancedHint": "Ciò che il file esportato dichiara di sé. L'IFC lo registra nella sua intestazione STEP, ed è quello che legge chi lo riceve per distinguere il tuo file da quello consegnato dallo strumento di authoring.",
+    "stampHeader": "Registrare questa esportazione nel file",
+    "stampOn": "Imposta la data di scrittura a ora e lo strumento che scrive a {{app}}. L'applicazione di authoring resta invariata — il modello viene ancora da lì.",
+    "stampOff": "L'intestazione manterrà strumento e data originali, quindi il file sembrerà intatto anche se lo hai modificato.",
+    "author": "Autore",
+    "authorPlaceholder": "Il tuo nome",
+    "organization": "Organizzazione",
+    "organizationPlaceholder": "La tua azienda",
+    "authorization": "Autorizzazione",
+    "authorizationPlaceholder": "Richiesta da alcuni capitolati di consegna",
+    "blankKeeps": "Lascia un campo vuoto per mantenere ciò che il file già conteneva.",
+    "schemaNote": "Lo schema IFC non viene mai cambiato. Un file aperto come IFC2x3 viene esportato come IFC2x3."
+  },
+  "exportSettings": "Impostazioni di esportazione…"
 }

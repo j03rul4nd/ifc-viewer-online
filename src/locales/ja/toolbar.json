@@ -139,6 +139,20 @@
     "ifcNotAvailable": "IFC バッファが利用できません（フラグメントキャッシュのみから読み込まれたモデル）",
     "elements": "{{count}} 要素",
     "edits": "{{count}} 件の編集",
-    "edits_other": "{{count}} 件の編集"
-  }
+    "edits_other": "{{count}} 件の編集",
+    "advanced": "詳細設定 — ファイルヘッダー",
+    "advancedHint": "書き出されたファイルが自身について述べる内容です。IFC はこれを STEP ヘッダーに記録し、受け取った側はそこを読んで、あなたのファイルと作成ツールが出したファイルを見分けます。",
+    "stampHeader": "この書き出しをファイルに記録する",
+    "stampOn": "書き込み日時を現在に、書き込んだツールを {{app}} にします。作成アプリケーションはそのままです——モデルは今もそこから来ています。",
+    "stampOff": "ヘッダーは元のツールと日付を保持するため、編集していてもファイルは手つかずに見えます。",
+    "author": "作成者",
+    "authorPlaceholder": "あなたの名前",
+    "organization": "組織",
+    "organizationPlaceholder": "会社名",
+    "authorization": "承認",
+    "authorizationPlaceholder": "一部の納品仕様で必須",
+    "blankKeeps": "空欄にすると、ファイルが元々持っていた値がそのまま残ります。",
+    "schemaNote": "IFC スキーマは決して変更されません。IFC2x3 として開いたファイルは IFC2x3 として書き出されます。"
+  },
+  "exportSettings": "書き出し設定…"
 }

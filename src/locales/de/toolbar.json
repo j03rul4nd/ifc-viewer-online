@@ -139,6 +139,20 @@
     "ifcNotAvailable": "IFC-Puffer nicht verfügbar (Modell nur aus Fragment-Cache geladen)",
     "elements": "{{count}} Elemente",
     "edits": "{{count}} Änderung",
-    "edits_other": "{{count}} Änderungen"
-  }
+    "edits_other": "{{count}} Änderungen",
+    "advanced": "Erweitert — Dateikopf",
+    "advancedHint": "Was die exportierte Datei über sich selbst aussagt. IFC hält das im STEP-Header fest, und genau das liest ein Empfänger, um Ihre Datei von der des Autorenwerkzeugs zu unterscheiden.",
+    "stampHeader": "Diesen Export in der Datei vermerken",
+    "stampOn": "Setzt das Schreibdatum auf jetzt und das schreibende Werkzeug auf {{app}}. Die Autorenanwendung bleibt unverändert — das Modell stammt weiterhin von dort.",
+    "stampOff": "Der Header behält Werkzeug und Datum des Originals, die Datei wirkt also unberührt, auch wenn Sie sie bearbeitet haben.",
+    "author": "Autor",
+    "authorPlaceholder": "Ihr Name",
+    "organization": "Organisation",
+    "organizationPlaceholder": "Ihr Unternehmen",
+    "authorization": "Autorisierung",
+    "authorizationPlaceholder": "Von manchen Lieferspezifikationen gefordert",
+    "blankKeeps": "Lassen Sie ein Feld leer, um zu behalten, was die Datei bereits enthielt.",
+    "schemaNote": "Das IFC-Schema wird nie geändert. Eine als IFC2x3 geöffnete Datei wird als IFC2x3 exportiert."
+  },
+  "exportSettings": "Export-Einstellungen…"
 }

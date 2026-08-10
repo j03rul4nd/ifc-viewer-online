@@ -141,6 +141,20 @@
     "ifcNotAvailable": "IFC buffer not available (model loaded from fragments cache only)",
     "elements": "{{count}} elements",
     "edits": "{{count}} edit",
-    "edits_other": "{{count}} edits"
-  }
+    "edits_other": "{{count}} edits",
+    "advanced": "Advanced — file header",
+    "advancedHint": "What the exported file says about itself. IFC records this in its STEP header, and it is what a recipient reads to tell your file apart from what the authoring tool shipped.",
+    "stampHeader": "Record this export in the file",
+    "stampOn": "Sets the write date to now and the writing tool to {{app}}. The authoring application is left as it was — the model still came from there.",
+    "stampOff": "The header will keep the original tool and date, so the file will look untouched even if you edited it.",
+    "author": "Author",
+    "authorPlaceholder": "Your name",
+    "organization": "Organisation",
+    "organizationPlaceholder": "Your company",
+    "authorization": "Authorisation",
+    "authorizationPlaceholder": "Required by some delivery specs",
+    "blankKeeps": "Leave a field blank to keep whatever the file already carried.",
+    "schemaNote": "The IFC schema is never changed. A file opened as IFC2x3 is exported as IFC2x3."
+  },
+  "exportSettings": "Export settings…"
 }

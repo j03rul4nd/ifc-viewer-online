@@ -21,6 +21,7 @@ import { usePointCloudStore } from '../stores/pointCloudStore'
 import { isPointCloudEnabled } from '../lib/pointcloud/pc-flag'
 import { useMeshStore } from '../stores/meshStore'
 import { isMeshEnabled } from '../lib/mesh/mesh-flag'
+import { loadExportPrefs, prefsToExportOptions } from '../lib/ifc-export-prefs'
 import { modelRegistry } from '../lib/model-registry'
 import { useCloudAccountStore, isAccountEnabled } from '../stores/cloudAccountStore'
 import { trackProEntryClick } from '../lib/analytics'
@@ -83,10 +84,12 @@ function ExportDropdown({
   diffs,
   onExportIfc,
   onExportGlb,
+  onOpenSettings,
 }: {
   diffs: number
   onExportIfc: () => void
   onExportGlb: () => void
+  onOpenSettings: () => void
 }) {
   const { t } = useTranslation('toolbar')
   return (
@@ -109,6 +112,14 @@ function ExportDropdown({
       >
         <span className="font-mono text-[var(--ok)] text-[10px]">GLB</span>
         {t('exportGlb')}
+      </button>
+      <div className="my-1 border-t border-[var(--border)]" />
+      <button
+        onClick={onOpenSettings}
+        className="w-full text-left px-3 py-2.5 xs:py-2 text-[12px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] hover:text-[var(--text)] flex items-center gap-2"
+      >
+        <span className="font-mono text-[var(--text-faint)] text-[10px]">···</span>
+        {t('exportSettings')}
       </button>
     </div>
   )
@@ -338,7 +349,11 @@ export default function Toolbar({
         )
       }
       const modelDiffs = getDiffsForModel(model.id)
-      const bytes = await exportAsIfc(buffer, modelDiffs)
+      // The SAME header preferences the export dialog uses. This is the quick
+      // path from the toolbar menu and it is the one most people take — leaving
+      // it unstamped would mean the setting only applied when you happened to
+      // export the long way round.
+      const bytes = await exportAsIfc(buffer, modelDiffs, prefsToExportOptions(loadExportPrefs()))
       const stem  = model.fileName.replace(/\.ifc$/i, '')
       await downloadBlob(new Blob([bytes.buffer as ArrayBuffer], { type: 'application/x-step' }), `${stem}-exported.ifc`)
     } catch (err) {
@@ -783,6 +798,7 @@ export default function Toolbar({
             diffs={diffs.length}
             onExportIfc={() => void handleExportIfc()}
             onExportGlb={() => void handleExportGlb()}
+            onOpenSettings={() => { setOpenMenu(null); onOpenExportModal() }}
           />
         )}
       </div>
