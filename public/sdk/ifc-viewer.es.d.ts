@@ -377,6 +377,44 @@ export interface PointCloudDisplayOptions {
     confidenceThreshold?: number;
     round?: boolean;
 }
+/** What an imported model brought with it. Drives the triangle budget too. */
+export interface MeshStats {
+    meshes: number;
+    triangles: number;
+    materials: number;
+    textures: number;
+    /** Estimated from image dimensions, not from file size. */
+    textureBytes: number;
+}
+/**
+ * One imported 3D model, as `listMeshes` reports it.
+ *
+ * Read `unitSource` and `upAxisSource` before trusting the two values above
+ * them. Neither GLB, glTF nor OBJ records a coordinate system, and only glTF
+ * records an orientation — so `unitScale` is ALWAYS inferred unless someone set
+ * it, and `upAxis` is inferred for OBJ. Presenting either as fact is how a model
+ * ends up a thousand times too big with nobody questioning it.
+ */
+export interface MeshInfo {
+    id: string;
+    fileName: string;
+    format: 'glb' | 'gltf' | 'obj';
+    status: 'loading' | 'ready' | 'error';
+    visible: boolean;
+    stats: MeshStats;
+    /** Source unit → metre. 1, 0.01, 0.001 or 0.3048. */
+    unitScale: number;
+    unitSource: 'assumed' | 'user';
+    upAxis: 'y' | 'z';
+    /** 'declared' only for glTF, whose specification mandates Y-up. */
+    upAxisSource: 'declared' | 'assumed' | 'user';
+    placement: PointCloudPlacement;
+}
+/** One file of an import: the model itself, or something it references. */
+export interface MeshFileInput {
+    name: string;
+    bytes: ArrayBuffer;
+}
 export declare class IfcViewer {
     /** Languages the viewer ships with (code + native label). */
     static readonly LANGUAGES: readonly {
@@ -507,6 +545,61 @@ export declare class IfcViewer {
      * placement can legitimately change once it is right.
      */
     setPointCloudUpAxis(axis: 'y' | 'z', cloudId?: string): Promise<void>;
+    /**
+     * Import a model from bytes. GLB, glTF and OBJ.
+     *
+     * Takes a LIST because two of the three formats need one: a `.gltf` points at
+     * its `.bin` and its images by relative path, an `.obj` points at its `.mtl`.
+     * Send only the entry file and you get grey geometry — which is the failure
+     * that makes an import worthless for showing someone what a place looks like.
+     * References resolve by basename, so a flat list is fine.
+     *
+     * Every buffer is TRANSFERRED, not copied, so it is neutered in the caller
+     * afterwards. That is what makes handing over a textured model free.
+     */
+    addMesh(files: MeshFileInput[]): Promise<string>;
+    /**
+     * Import a model the viewer fetches itself. Pass every URL the model needs —
+     * the `.gltf` AND its `.bin` and textures — and they are fetched in parallel.
+     * All must allow CORS.
+     */
+    addMeshFromUrl(urls: string | string[]): Promise<string>;
+    /** Every model currently imported. See MeshInfo on trusting unit and axis. */
+    listMeshes(): Promise<MeshInfo[]>;
+    /** Remove one import and free its geometry, materials and textures. */
+    removeMesh(meshId?: string): Promise<void>;
+    /** Remove every import. */
+    clearMeshes(): Promise<void>;
+    /** Show or hide an import without unloading it. */
+    setMeshVisible(visible: boolean, meshId?: string): Promise<void>;
+    /** Frame the camera on an import (or on all of them). */
+    fitMesh(meshId?: string): Promise<void>;
+    /**
+     * Place an import by hand: position, yaw, levelling, scale. Partial — anything
+     * omitted is left alone, and the viewer clamps what it is given.
+     *
+     * An import starts centred on the IFC and sitting on its floor, so this is a
+     * correction rather than the only thing standing between the model and the
+     * world origin.
+     */
+    setMeshPlacement(placement: Partial<PointCloudPlacement>, meshId?: string): Promise<void>;
+    /**
+     * Correct which axis the source treats as up.
+     *
+     * Only meaningful for OBJ: glTF's specification mandates Y-up, so a `.glb` or
+     * `.gltf` reports `upAxisSource: 'declared'` and this has nothing to fix.
+     */
+    setMeshUpAxis(axis: 'y' | 'z', meshId?: string): Promise<void>;
+    /**
+     * Correct the source unit — 1 for metres, 0.01 centimetres, 0.001
+     * millimetres, 0.3048 feet.
+     *
+     * None of these formats records a unit, so the viewer infers one from the size
+     * of the model: a 12-metre building arriving as 12 000 units is
+     * indistinguishable from a 12 km one except by plausibility. When that guess
+     * is wrong, this is the fix.
+     */
+    setMeshUnit(unitScale: number, meshId?: string): Promise<void>;
     /** Check the loaded model against a buildingSMART IDS (.ids XML string). */
     checkIds(idsXml: string): Promise<IdsResult>;
     /**

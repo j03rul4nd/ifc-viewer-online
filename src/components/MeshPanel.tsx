@@ -16,6 +16,7 @@ import { loadMesh, removeMesh as dropMesh, reapply } from '../lib/mesh/mesh-runn
 import { MESH_EXTENSIONS } from '../lib/mesh/mesh-types'
 import { toast } from '../stores/toastStore'
 import { createLogger } from '../lib/logger'
+import { appBus } from '../lib/event-bus'
 import type { ViewerAPI } from '../lib/viewer'
 import type { MeshSystemAPI } from '../lib/mesh/mesh-system'
 
@@ -105,6 +106,83 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
     useMeshStore.getState().setVisible(id, visible)
     void getSystem()?.then((system) => system.setVisible(id, visible))
   }, [getSystem])
+
+  // ── SDK bridge: `sdk:mesh` from the embed postMessage handler ──────────────
+  // Delegates here rather than duplicating the loader, the budget check and the
+  // placement ladder in App.tsx — a second code path would be a second set of
+  // bugs, and this one already owns the viewer handle it all needs.
+  useEffect(() => appBus.on('sdk:mesh', (cmd) => {
+    void (async () => {
+      try {
+        const viewer = viewerApiRef.current
+        if (!viewer) throw new Error('Viewer not ready')
+        const system = await viewer.getMeshes()
+        const target = cmd.meshId ?? useMeshStore.getState().activeMeshId
+
+        switch (cmd.action) {
+          case 'add': {
+            if (!cmd.files?.length) throw new Error('No model files provided')
+            const result = await loadMesh({
+              files: cmd.files,
+              system,
+              modelBounds: activeModelId
+                ? viewer.getModelBounds(activeModelId)
+                : viewer.getModelBounds(),
+            })
+            if (!result.ok) throw new Error(result.errorKey ?? 'error.parseFailed')
+            cmd.done?.(true, result.meshId)
+            return
+          }
+          case 'remove': {
+            if (!target) throw new Error('No model loaded')
+            dropMesh(target, system)
+            break
+          }
+          case 'clear': {
+            for (const m of [...useMeshStore.getState().meshes]) dropMesh(m.id, system)
+            break
+          }
+          case 'visible': {
+            if (!target) throw new Error('No model loaded')
+            useMeshStore.getState().setVisible(target, cmd.visible !== false)
+            system.setVisible(target, cmd.visible !== false)
+            break
+          }
+          case 'frame': {
+            system.frame(cmd.meshId ?? undefined)
+            break
+          }
+          case 'placement': {
+            if (!target) throw new Error('No model loaded')
+            // Clamped by the store, so a host cannot put a model somewhere only
+            // a reset escapes from.
+            useMeshStore.getState().setPlacement(target, (cmd.placement ?? {}) as never)
+            reapply(target, system)
+            break
+          }
+          case 'upAxis': {
+            if (!target) throw new Error('No model loaded')
+            if (cmd.upAxis !== 'y' && cmd.upAxis !== 'z') throw new Error('upAxis must be "y" or "z"')
+            useMeshStore.getState().setUpAxis(target, cmd.upAxis)
+            reapply(target, system)
+            break
+          }
+          case 'unit': {
+            if (!target) throw new Error('No model loaded')
+            if (typeof cmd.unitScale !== 'number') throw new Error('unitScale must be a number')
+            useMeshStore.getState().setUnitScale(target, cmd.unitScale)
+            reapply(target, system)
+            break
+          }
+          default:
+            throw new Error(`Unknown mesh action: ${String(cmd.action)}`)
+        }
+        cmd.done?.(true)
+      } catch (e) {
+        cmd.done?.(false, e instanceof Error ? e.message : 'Mesh command failed')
+      }
+    })()
+  }), [viewerApiRef, activeModelId])
 
   // Keep the scene in step if the store is changed from elsewhere (the SDK).
   useEffect(() => {

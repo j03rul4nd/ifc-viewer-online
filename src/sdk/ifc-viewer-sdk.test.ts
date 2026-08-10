@@ -665,3 +665,134 @@ describe('IfcViewer — scan placement and orientation', () => {
     v.dispose()
   })
 })
+
+describe('IfcViewer — imported 3D models', () => {
+  it('sends every file of a multi-part model, and transfers all their buffers', async () => {
+    // A .gltf needs its .bin and its textures. Sending only the entry file is
+    // what gets a host grey geometry, so the LIST is the contract — and each
+    // buffer rides the transfer list rather than being copied.
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    const files = [
+      { name: 'scene.gltf', bytes: new Uint8Array([1]).buffer },
+      { name: 'scene.bin', bytes: new Uint8Array([2]).buffer },
+      { name: 'wall.jpg', bytes: new Uint8Array([3]).buffer },
+    ]
+    v.addMesh(files).catch(() => {})
+    await tick()
+
+    const call = post.mock.calls.find(
+      (c) => (c[0] as Record<string, unknown>).type === 'ifcviewer:add-mesh',
+    )!
+    expect(call).toBeTruthy()
+    expect((call[0] as Record<string, unknown>).files).toHaveLength(3)
+    // postMessage's typed tuple stops at 2 elements; the transfer list is the
+    // third argument the SDK really passes, so it is read through a cast.
+    expect((call as unknown as unknown[])[2]).toHaveLength(3)
+    v.dispose()
+  })
+
+  it('fetches a multi-part model from URLs when asked to', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    v.addMeshFromUrl(['https://x/a.gltf', 'https://x/a.bin']).catch(() => {})
+    await tick()
+    expect(postsOfType(post, 'ifcviewer:add-mesh')[0].urls).toEqual(['https://x/a.gltf', 'https://x/a.bin'])
+    v.dispose()
+  })
+
+  it('accepts a single URL without making the caller wrap it', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    v.addMeshFromUrl('https://x/chair.glb').catch(() => {})
+    await tick()
+    expect(postsOfType(post, 'ifcviewer:add-mesh')[0].urls).toEqual(['https://x/chair.glb'])
+    v.dispose()
+  })
+
+  it('resolves with the id the app assigns', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    const p = v.addMesh([{ name: 'a.glb', bytes: new Uint8Array([1]).buffer }])
+    await tick()
+    const req = postsOfType(post, 'ifcviewer:add-mesh')[0]
+    emitFromIframe(v, {
+      type: 'result', requestId: req.requestId, ok: true, data: { meshId: 'mesh-1' },
+    })
+    await expect(p).resolves.toBe('mesh-1')
+    v.dispose()
+  })
+
+  it('rejects with the app reason when mesh import is not enabled', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    const p = v.fitMesh()
+    await tick()
+    const req = postsOfType(post, 'ifcviewer:fit-mesh')[0]
+    emitFromIframe(v, {
+      type: 'result', requestId: req.requestId, ok: false,
+      error: 'Mesh import is not enabled in this build',
+    })
+    await expect(p).rejects.toThrow('not enabled')
+    v.dispose()
+  })
+
+  it('reports both guesses as guesses', async () => {
+    // Neither format records a unit and only glTF records an axis. A host that
+    // reads unitScale without unitSource has no way to know it was arrived at by
+    // looking at how big the thing is.
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    const p = v.listMeshes()
+    await tick()
+    const req = postsOfType(post, 'ifcviewer:get-meshes')[0]
+    emitFromIframe(v, {
+      type: 'result', requestId: req.requestId, ok: true,
+      data: {
+        meshes: [{
+          id: 'mesh-1', fileName: 'room.obj', format: 'obj', status: 'ready', visible: true,
+          stats: { meshes: 4, triangles: 120_000, materials: 3, textures: 2, textureBytes: 5_000_000 },
+          unitScale: 0.001, unitSource: 'assumed',
+          upAxis: 'z', upAxisSource: 'assumed',
+          placement: { x: 0, y: 0, z: 0, yawDeg: 0, pitchDeg: 0, rollDeg: 0, scaleMul: 1 },
+        }],
+      },
+    })
+    const meshes = await p
+    expect(meshes[0].unitSource).toBe('assumed')
+    expect(meshes[0].upAxisSource).toBe('assumed')
+    expect(meshes[0].stats.triangles).toBe(120_000)
+    v.dispose()
+  })
+
+  it('addresses the active import when no id is given', async () => {
+    const v = new IfcViewer('#mount', { baseUrl: BASE })
+    const post = spyPost(v)
+    emitFromIframe(v, { type: 'ready' })
+
+    v.setMeshUnit(0.001).catch(() => {})
+    v.setMeshUpAxis('z').catch(() => {})
+    v.setMeshPlacement({ yawDeg: 90 }).catch(() => {})
+    await tick()
+
+    expect(postsOfType(post, 'ifcviewer:mesh-unit')[0].unitScale).toBe(0.001)
+    expect(postsOfType(post, 'ifcviewer:mesh-upaxis')[0].upAxis).toBe('z')
+    expect(postsOfType(post, 'ifcviewer:mesh-placement')[0].placement).toEqual({ yawDeg: 90 })
+    for (const type of ['ifcviewer:mesh-unit', 'ifcviewer:mesh-upaxis', 'ifcviewer:mesh-placement']) {
+      expect(postsOfType(post, type)[0].meshId).toBeUndefined()
+    }
+    v.dispose()
+  })
+})

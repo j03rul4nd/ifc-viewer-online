@@ -103,8 +103,35 @@ the same tools as everything else — and withdrawn from it *before* leaving the
 scene, or the registry keeps every texture reachable after the user deleted the
 import.
 
+## From the SDK and the embed bridge
+
+Carried in full since SDK v1.10.0:
+
+```js
+// Every part together — the .gltf alone gets you grey geometry.
+const id = await viewer.addMesh([
+  { name: 'scene.gltf', bytes: gltfBytes },
+  { name: 'scene.bin',  bytes: binBytes  },
+  { name: 'wall.jpg',   bytes: texBytes  },
+])
+// Or let the viewer fetch them (CORS required, fetched in parallel):
+await viewer.addMeshFromUrl(['https://…/a.gltf', 'https://…/a.bin'])
+
+const meshes = await viewer.listMeshes()
+if (meshes[0].unitSource === 'assumed') await viewer.setMeshUnit(0.001)
+if (meshes[0].upAxisSource === 'assumed') await viewer.setMeshUpAxis('z')
+await viewer.setMeshPlacement({ yawDeg: 90, pitchDeg: 1.5 })
+```
+
+Also `removeMesh`, `clearMeshes`, `setMeshVisible` and `fitMesh`.
+
+Two things a host should not skip. Buffers are **transferred**, not copied, so
+they are neutered in the caller afterwards — that is what makes handing over a
+textured model free. And `listMeshes` reports `unitSource` and `upAxisSource`
+alongside the values: neither format records a unit, and only glTF records an
+orientation, so reading the numbers without their provenance is how a model ends
+up a thousand times too big with nobody questioning it.
+
 ## Not done yet
 
-The SDK and the embed bridge do **not** carry mesh import. Scans do
-(`addPointCloud`, `setPointCloudPlacement`, …); the equivalent surface for
-meshes — add, list, remove, place — is the next piece of work.
+No Draco or KTX2 decompression — see Limits above.

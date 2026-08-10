@@ -68,6 +68,30 @@ export interface SdkSiteCommand {
  * two above: the loader needs the viewer's PointCloudSystem, the model bounds
  * to align against, and the alignment ladder — all of which live in the panel.
  */
+/**
+ * Import and place a 3D model from the embed bridge.
+ *
+ * `files` is a LIST because two of the three formats need one: a .gltf points at
+ * its .bin and its images, an .obj at its .mtl. Sending only the entry file gets
+ * the host grey geometry, which is the failure that makes the import pointless.
+ */
+export interface SdkMeshCommand {
+  action: 'add' | 'remove' | 'clear' | 'visible' | 'frame' | 'placement' | 'upAxis' | 'unit'
+  /** `add`: the model and everything it references. */
+  files?: File[]
+  /** `remove` / `visible` / `frame` / placement: which import. Omit for the active one. */
+  meshId?: string
+  visible?: boolean
+  /** `placement`: a partial manual offset, merged over what is there. */
+  placement?: Record<string, unknown>
+  /** `upAxis`: which axis the SOURCE treats as up. Ignored for glTF, which declares it. */
+  upAxis?: 'y' | 'z'
+  /** `unit`: source unit → metre. 1, 0.01, 0.001, 0.3048. */
+  unitScale?: number
+  /** Resolves with the new id on `add`, or rejects with a reason. */
+  done?: (ok: boolean, errorOrId?: string) => void
+}
+
 export interface SdkPointCloudCommand {
   action: 'add' | 'remove' | 'clear' | 'visible' | 'display' | 'frame' | 'inspect'
     | 'placement' | 'upAxis'
@@ -134,6 +158,7 @@ export type AppEventMap = {
   'sdk:solar':              SdkSolarCommand
   'sdk:site':               SdkSiteCommand
   'sdk:pointcloud':         SdkPointCloudCommand
+  'sdk:mesh':               SdkMeshCommand
 }
 
 // ── Core bus class ─────────────────────────────────────────────────────────────

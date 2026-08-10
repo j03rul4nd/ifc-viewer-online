@@ -152,7 +152,7 @@ export type { ModelTreeHandle, RevealOutcome }
  * like `add` twice. So we wait for a subscriber to exist, then emit exactly
  * once, and give up with a reason the host can act on.
  */
-async function dispatchPanelCommand<E extends 'sdk:solar' | 'sdk:site' | 'sdk:pointcloud'>(
+async function dispatchPanelCommand<E extends 'sdk:solar' | 'sdk:site' | 'sdk:pointcloud' | 'sdk:mesh'>(
   event: E,
   payload: Omit<Parameters<Parameters<typeof appBus.on<E>>[1]>[0], 'done'>,
   opts: { unavailable: string; timeoutMs?: number } = { unavailable: 'Panel unavailable' },
@@ -1631,6 +1631,134 @@ export default function App() {
             return { ok: true }
           })
           break
+        // ── Imported models ────────────────────────────────────────────
+        // Same delegation as scans: MeshPanel owns the loader, the triangle
+        // budget and the placement, so the bridge asks it rather than growing a
+        // second copy of any of that.
+        case 'ifcviewer:add-mesh': {
+          void respond(async () => {
+            const files: File[] = []
+            // Bytes the host handed over directly. A .gltf needs its .bin and
+            // its textures alongside it, so this is a LIST, not a file.
+            if (Array.isArray(msg.files)) {
+              for (const f of msg.files as Array<{ name?: unknown; bytes?: unknown }>) {
+                if (typeof f?.name === 'string' && f.bytes instanceof ArrayBuffer) {
+                  files.push(new File([f.bytes], f.name))
+                }
+              }
+            }
+            // Or URLs for us to fetch. Fetched in parallel: a glTF with a dozen
+            // textures would otherwise serialise a dozen round trips.
+            const urls = Array.isArray(msg.urls) ? (msg.urls as unknown[]).filter((u): u is string => typeof u === 'string') : []
+            if (urls.length > 0) {
+              const fetched = await Promise.all(urls.map(async (url) => {
+                const res = await fetch(url)
+                if (!res.ok) throw new Error(`Fetch failed for ${url}: HTTP ${res.status}`)
+                return new File([await res.arrayBuffer()], url.split('/').pop() ?? 'model.glb')
+              }))
+              files.push(...fetched)
+            }
+            if (files.length === 0) throw new Error('Provide files (name + bytes) or urls')
+
+            const meshId = await dispatchPanelCommand('sdk:mesh',
+              { action: 'add', files },
+              { unavailable: 'Mesh import is not enabled in this build' })
+            return { meshId }
+          })
+          break
+        }
+        case 'ifcviewer:remove-mesh':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:mesh',
+              { action: 'remove', meshId: typeof msg.meshId === 'string' ? msg.meshId : undefined },
+              { unavailable: 'Mesh import is not enabled in this build', timeoutMs: 30_000 })
+            return { ok: true }
+          })
+          break
+        case 'ifcviewer:clear-meshes':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:mesh', { action: 'clear' },
+              { unavailable: 'Mesh import is not enabled in this build', timeoutMs: 30_000 })
+            return { ok: true }
+          })
+          break
+        case 'ifcviewer:mesh-visible':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:mesh',
+              {
+                action: 'visible',
+                meshId: typeof msg.meshId === 'string' ? msg.meshId : undefined,
+                visible: msg.visible !== false,
+              },
+              { unavailable: 'Mesh import is not enabled in this build', timeoutMs: 30_000 })
+            return { ok: true }
+          })
+          break
+        case 'ifcviewer:fit-mesh':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:mesh',
+              { action: 'frame', meshId: typeof msg.meshId === 'string' ? msg.meshId : undefined },
+              { unavailable: 'Mesh import is not enabled in this build', timeoutMs: 30_000 })
+            return { ok: true }
+          })
+          break
+        case 'ifcviewer:mesh-placement':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:mesh',
+              {
+                action: 'placement',
+                meshId: typeof msg.meshId === 'string' ? msg.meshId : undefined,
+                placement: (msg.placement ?? undefined) as Record<string, unknown> | undefined,
+              },
+              { unavailable: 'Mesh import is not enabled in this build', timeoutMs: 30_000 })
+            return { ok: true }
+          })
+          break
+        case 'ifcviewer:mesh-upaxis':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:mesh',
+              {
+                action: 'upAxis',
+                meshId: typeof msg.meshId === 'string' ? msg.meshId : undefined,
+                upAxis: msg.upAxis === 'z' ? 'z' : 'y',
+              },
+              { unavailable: 'Mesh import is not enabled in this build', timeoutMs: 30_000 })
+            return { ok: true }
+          })
+          break
+        case 'ifcviewer:mesh-unit':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:mesh',
+              {
+                action: 'unit',
+                meshId: typeof msg.meshId === 'string' ? msg.meshId : undefined,
+                unitScale: typeof msg.unitScale === 'number' ? msg.unitScale : 1,
+              },
+              { unavailable: 'Mesh import is not enabled in this build', timeoutMs: 30_000 })
+            return { ok: true }
+          })
+          break
+        case 'ifcviewer:get-meshes':
+          void respond(() => ({
+            meshes: useMeshStore.getState().meshes.map((m) => ({
+              id: m.id,
+              fileName: m.fileName,
+              format: m.format,
+              status: m.status,
+              visible: m.visible,
+              stats: m.stats,
+              // Both of these are usually GUESSES, and the host needs to know
+              // which: glTF declares its axis, OBJ does not, and no format here
+              // declares its unit at all.
+              unitScale: m.frame?.unitScale ?? 1,
+              unitSource: m.frame?.unitSource ?? 'assumed',
+              upAxis: m.frame?.upAxis ?? 'y',
+              upAxisSource: m.frame?.upAxisSource ?? 'assumed',
+              placement: m.placement,
+            })),
+          }))
+          break
+
         case 'ifcviewer:get-pointclouds':
           void respond(() => ({
             clouds: usePointCloudStore.getState().clouds.map((c) => ({
