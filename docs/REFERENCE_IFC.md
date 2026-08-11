@@ -9,6 +9,7 @@ we control:
 | **Japanese Temple — Main Hall** — `public/JapaneseTemple.ifc` | 92 elements, 3 storeys, 161 KB |
 | **Poblenou Pavilion** — `public/models/poblenou/*.ifc` | 3 federated files, 349 elements, 695 KB |
 | **Poblenou site survey** — `public/models/poblenou/poblenou-site-scan.las` | 150 k points, 3.7 MB |
+| **Torre Poblenou** — `public/models/torre-poblenou/*.ifc` | 1 file, 1,930 elements, 3.5 MB |
 
 Every IFC here is IFC4, scores **100 / 100 with zero issues** on our own validator,
 and is asserted entity-by-entity by a test that reads it through web-ifc — the parser
@@ -159,6 +160,83 @@ of nesting ports under their element with `IfcRelNests`. Every correctly-authore
 IFC4 services model it ever saw came back "disconnected". The rule now reads both.
 That is what a reference model is for.
 
+## Torre Poblenou — the one built to be looked at
+
+`public/models/torre-poblenou/BCN-IVO-ZZ-XX-M3-Z-0002.ifc` — **1,930 elements,
+3.5 MB, IFC4, 100/100 with no issues.** A sixteen-storey office tower on the
+block next to the Pavilion, same CRS and same 45° Cerdà rotation.
+
+**Load it on its own.** The app places every IFC model at its own local origin and
+anchors the *basemap* to one of them — it does not offset federated models from
+each other by their map conversions. Two buildings authored on different plots
+therefore land on top of one another rather than side by side, verified by reading
+the scene: both model pivots sit at (0, 0, 0) with scale 1. That is fine for the
+Pavilion's three discipline files, which share one origin by design, and it is why
+the tower ships as a single file meant to be loaded alone. Genuine side-by-side
+would need both buildings authored in one shared site origin — a masterplan file —
+not two separate map conversions.
+
+Every other reference model exists to prove a *property* (it is minimal; it is
+realistic; it federates). This one exists to be **filmed**. That is a real
+requirement and it drove real decisions:
+
+- **Stepped massing.** 82 m to the mast, stepping back a bay off *each* end of
+  the long axis at Level 10, so both long elevations read as a ziggurat.
+- **An expressed floor line.** Every storey's glazing is an opaque spandrel band
+  at the floor datum plus vision glass above it, and the spandrel stands 120 mm
+  proud so it throws a shadow line.
+- **Brise-soleil.** Full-height aluminium fins standing clear of the spandrel
+  face. They are what make the tower read as designed rather than extruded.
+- **A ground plane.** Granite paving, planters and a cantilevered entrance
+  canopy, so the model *meets* the basemap instead of hovering over it. On the
+  map, the join between our geometry and OpenStreetMap's is what people notice
+  first.
+- **One file, role `Z`.** The Pavilion is deliberately three files, to show
+  federation. This one is deliberately one, because "drag it in and hit record"
+  has to be a single step.
+
+**The bug being one file found.** In the Pavilion, the frame and the façade live
+in different discipline files, so nothing ever compared them — and both models
+draw their perimeter columns and beams *centred on the grid line*, which puts
+half a column outside the slab edge and straight through the curtain walling hung
+off it. Federated, invisible. Combined, it was 492 clashes on the first sweep.
+Perimeter members now sit wholly **inside** their grid line, flush with the slab
+edge, and beams stop at the real column faces rather than at "grid line plus half
+a column" — see `member_span()` in
+[`build-tower.py`](../scripts/blender/build-tower.py). The core is inset off the
+grid for the same reason.
+
+**Two things only a render caught.** Neither is a schema problem and no test
+would have flagged them, because both are about how the building *looks*:
+
+1. The first massing stepped back on **one** face. On the elevation facing that
+   face the step is a change of depth and reads as nothing at all, and from an
+   angle it is a small ledge — so a 68 m tower looked like a plain slab from the
+   two angles a camera uses most. It now steps a bay off each end.
+2. The façade had **no floor line**: sixteen storeys of unbroken curtain wall,
+   which made a 68 m elevation indistinguishable from a 20 m one. Splitting each
+   panel into a proud spandrel plus vision glass is what fixed it.
+
+Both were found by rasterising the geometry to a PNG and looking at it. The app's
+own screenshot could not do it — its camera tweens on `requestAnimationFrame`,
+which is suspended whenever the browser pane is not compositing, so every shot
+came out framed on the podium regardless of which view button was pressed.
+
+`scripts/blender/tower-ifc.test.ts` runs the app's own AABB clash sweep over the
+whole file, and reports failures grouped by element family — with ~2,000
+elements, a list of the first eight clashes tells you nothing and a histogram
+tells you everything.
+
+**One link**, the tower on the basemap with the real neighbourhood around it:
+
+```
+/?model=/models/torre-poblenou/BCN-IVO-ZZ-XX-M3-Z-0002.ifc&map=terrain,buildings
+```
+
+That anchors it to the Poblenou plot at the Cerdà rotation and draws the
+surrounding OpenStreetMap buildings, roads, rail and trees around it. Do **not**
+append the Pavilion to that list expecting two buildings on two plots — see above.
+
 ## Driving the demo
 
 All four Poblenou files together — three disciplines federated, on the basemap
@@ -196,6 +274,10 @@ npm run temple
 
 ```bash
 npm run district && npm run site-scan
+```
+
+```bash
+npm run tower
 ```
 
 The IFC builds need `blender` on PATH with the Bonsai extension installed (see

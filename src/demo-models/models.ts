@@ -60,6 +60,7 @@ const BUNDLED_HELLO_WORLD = `${import.meta.env.BASE_URL}HelloWorld.ifc`
 const BUNDLED_TEMPLE = `${import.meta.env.BASE_URL}JapaneseTemple.ifc`
 /** The federated set — three disciplines of one building, ISO 19650 file names. */
 const POBLENOU = `${import.meta.env.BASE_URL}models/poblenou`
+const TORRE = `${import.meta.env.BASE_URL}models/torre-poblenou`
 
 export const DEMO_MODELS: DemoModel[] = [
   // ── Reference ────────────────────────────────────────────────────────────
@@ -125,6 +126,22 @@ export const DEMO_MODELS: DemoModel[] = [
     schema: 'IFC4',
     approximateSize: '371 KB',
     sizeBytes: 379_754,
+  },
+  {
+    id: 'torre-poblenou',
+    name: 'Torre Poblenou',
+    description:
+      'A 16-storey tower on the block next to the Pavilion: stepped massing, expressed floor lines, brise-soleil, plaza and ~1,900 elements. Built to be looked at — load it in map mode.',
+    category: 'Reference',
+    fileName: 'BCN-IVO-ZZ-XX-M3-Z-0002.ifc',
+    ifcUrl: `${TORRE}/BCN-IVO-ZZ-XX-M3-Z-0002.ifc`,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-tower.py',
+    sourceLabel: 'Authored with Blender + Bonsai',
+    schema: 'IFC4',
+    approximateSize: '3.5 MB',
+    sizeBytes: 3_472_837,
+    featured: true,
   },
   {
     id: 'poblenou-mep',
