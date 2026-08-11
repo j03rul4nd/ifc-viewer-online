@@ -8,11 +8,8 @@
   "lastSeconds": "直近 {{seconds}} 秒",
   "recording": "リプレイバッファ録画中",
   "captureFailed": "キャプチャに失敗しました",
-  "previewTitle": "キャプチャのプレビュー",
+  "previewTitle": "クリップエディタ",
   "close": "閉じる",
-  "trimLabel": "トリミング",
-  "trimStart": "トリミング開始",
-  "trimEnd": "トリミング終了",
   "fpsLabel": "GIF の FPS",
   "resolutionLabel": "解像度",
   "sourceRes": "オリジナル",
@@ -20,14 +17,16 @@
   "cancel": "キャンセル",
   "exporting": "エクスポート中…",
   "pngDone": "フレームを PNG でダウンロードしました",
-  "webmDone": "クリップを WebM でダウンロードしました",
+  "videoDone": "クリップを {{format}} でダウンロードしました",
   "gifDone": "GIF をダウンロードしました",
   "exportFailed": "エクスポートに失敗しました: {{message}}",
   "aspect": {
     "label": "比率",
     "source": "オリジナル",
     "square": "1:1",
-    "vertical": "4:5"
+    "vertical": "4:5",
+    "story": "9:16",
+    "wide": "16:9"
   },
   "durationTitle": "クリップの長さ",
   "bufferReady": "準備完了 — 直近 {{seconds}} 秒をバッファ済み",
@@ -35,6 +34,119 @@
   "wholeClip": "クリップ全体",
   "estimate": "≈{{size}} · {{frames}} フレーム · {{width}}×{{height}}",
   "frameCapNotice": "{{max}} フレームで打ち切り — 実効 FPS は低くなります",
+  "editor": {
+    "preview": "クリップのプレビュー",
+    "timeline": "タイムライン",
+    "playhead": "再生ヘッド",
+    "trimIn": "イン点",
+    "trimOut": "アウト点",
+    "trackVideo": "ビデオ",
+    "trackText": "テキスト",
+    "trackAudio": "オーディオ",
+    "noText": "テキストはまだありません — T キーでカードを追加",
+    "noAudio": "音楽なし — クリックして追加",
+    "shortcuts": "スペースで再生 · I / O でイン点とアウト点 · ← → で 1 フレーム移動（Shift で 1 秒）· T でテキスト追加 · Del で削除",
+    "tabs": {
+      "text": "テキスト",
+      "effects": "エフェクト",
+      "audio": "オーディオ",
+      "export": "書き出し"
+    },
+    "transport": {
+      "play": "再生",
+      "pause": "一時停止",
+      "toStart": "イン点へ移動",
+      "toEnd": "アウト点へ移動",
+      "stepBack": "前のフレーム",
+      "stepFwd": "次のフレーム",
+      "loop": "ループ再生",
+      "markIn": "再生ヘッドにイン点を設定 (I)",
+      "markOut": "再生ヘッドにアウト点を設定 (O)"
+    },
+    "text": {
+      "add": "テキストを追加",
+      "addAt": "再生ヘッドのある {{time}} 秒の位置に追加されます",
+      "newCard": "テキストを入力",
+      "empty": "カードが選択されていません。追加するか、テキストトラックのブロックをクリックしてください。",
+      "content": "テキスト",
+      "placeholder": "キャプションを入力…",
+      "style": "スタイル",
+      "anchor": "位置",
+      "anim": "アニメーション",
+      "color": "色",
+      "size": "サイズ",
+      "timing": "タイミング",
+      "atPlayhead": "再生ヘッドへ移動",
+      "delete": "削除"
+    },
+    "styles": {
+      "title": "タイトル",
+      "subtitle": "サブタイトル",
+      "caption": "キャプション",
+      "lowerThird": "テロップ",
+      "badge": "バッジ"
+    },
+    "anims": {
+      "none": "なし",
+      "fade": "フェード",
+      "slideUp": "スライド",
+      "pop": "ポップ"
+    },
+    "effects": {
+      "in": "オープニング",
+      "out": "エンディング",
+      "duration": "長さ",
+      "hint": "トランジションはタイトルを含めたフレーム全体をフェードします — フィード上でカットが始まり、終わる形です。"
+    },
+    "transitions": {
+      "none": "なし",
+      "fade": "フェード",
+      "dipWhite": "ホワイトアウト"
+    },
+    "audio": {
+      "builtin": "内蔵の音楽",
+      "upload": "自分のオーディオ",
+      "chooseFile": "ファイルを選択…",
+      "uploadHint": "MP3、WAV、M4A、OGG（最大 {{max}} MB）。端末の外には出ません。",
+      "synthNote": "これらの楽曲はブラウザ内で生成されるため、自由に使えてクレジット表記も不要です。",
+      "gifNote": "オーディオは動画の書き出しに適用されます。GIF は仕様上、無音です。",
+      "volume": "音量",
+      "fade": "フェードイン・アウト",
+      "offset": "音楽の開始位置",
+      "remove": "音楽を削除",
+      "loading": "オーディオを準備中…",
+      "decodeFailed": "このファイルはデコードできませんでした",
+      "bedFailed": "楽曲を生成できませんでした"
+    },
+    "beds": {
+      "calm": "カーム",
+      "corporate": "コーポレート",
+      "upbeat": "アップビート",
+      "cinematic": "シネマティック"
+    },
+    "presets": {
+      "original": "オリジナル",
+      "reel": "リール",
+      "post": "投稿",
+      "portrait": "縦型",
+      "wide": "ワイド"
+    },
+    "export": {
+      "preset": "どこに投稿しますか？",
+      "framing": "フレーミング",
+      "fitMode": "フィット",
+      "fillMode": "フィル",
+      "fitHint": "ビュー全体がフレームに収まります。余白はキャプションの置き場所になります。",
+      "fillHint": "フレームいっぱいに広げ、はみ出した部分は切り取ります。",
+      "pad": "余白",
+      "pad_blur": "ぼかし",
+      "pad_dark": "ダーク",
+      "pad_light": "ライト",
+      "mp4Note": "MP4（H.264）で書き出します — Instagram、TikTok、LinkedIn にそのままアップロードできます。",
+      "webmNote": "このブラウザは WebM で録画します。多くの SNS は MP4 を求めるため、Chrome か Edge をお試しください。",
+      "noVideoNote": "このブラウザは動画を録画できません。GIF と PNG は利用できます。"
+    }
+  },
   "background": {
     "tooltip": "シーンの背景",
     "title": "背景",

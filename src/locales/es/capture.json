@@ -8,11 +8,8 @@
   "lastSeconds": "Últimos {{seconds}}s",
   "recording": "Buffer de repetición grabando",
   "captureFailed": "La captura falló",
-  "previewTitle": "Vista previa de la captura",
+  "previewTitle": "Editor de clips",
   "close": "Cerrar",
-  "trimLabel": "Recorte",
-  "trimStart": "Inicio del recorte",
-  "trimEnd": "Fin del recorte",
   "fpsLabel": "FPS del GIF",
   "resolutionLabel": "Resolución",
   "sourceRes": "Original",
@@ -20,14 +17,16 @@
   "cancel": "Cancelar",
   "exporting": "Exportando…",
   "pngDone": "Fotograma descargado como PNG",
-  "webmDone": "Clip descargado como WebM",
+  "videoDone": "Clip descargado como {{format}}",
   "gifDone": "GIF descargado",
   "exportFailed": "La exportación falló: {{message}}",
   "aspect": {
     "label": "Formato",
     "source": "Original",
     "square": "1:1",
-    "vertical": "4:5"
+    "vertical": "4:5",
+    "story": "9:16",
+    "wide": "16:9"
   },
   "durationTitle": "Duración del clip",
   "bufferReady": "Listo — los últimos {{seconds}}s están en el búfer",
@@ -35,6 +34,119 @@
   "wholeClip": "Clip completo",
   "estimate": "≈{{size}} · {{frames}} fotogramas · {{width}}×{{height}}",
   "frameCapNotice": "Limitado a {{max}} fotogramas — los FPS reales son menores",
+  "editor": {
+    "preview": "Vista previa del clip",
+    "timeline": "Línea de tiempo",
+    "playhead": "Cabezal de reproducción",
+    "trimIn": "Punto de entrada",
+    "trimOut": "Punto de salida",
+    "trackVideo": "Vídeo",
+    "trackText": "Texto",
+    "trackAudio": "Audio",
+    "noText": "Aún no hay texto — pulsa T para añadir una tarjeta",
+    "noAudio": "Sin música — haz clic para añadirla",
+    "shortcuts": "Espacio reproduce · I / O marcan entrada y salida · ← → avanzan un fotograma (Mayús para 1s) · T añade texto · Supr elimina",
+    "tabs": {
+      "text": "Texto",
+      "effects": "Efectos",
+      "audio": "Audio",
+      "export": "Exportar"
+    },
+    "transport": {
+      "play": "Reproducir",
+      "pause": "Pausar",
+      "toStart": "Ir al punto de entrada",
+      "toEnd": "Ir al punto de salida",
+      "stepBack": "Fotograma anterior",
+      "stepFwd": "Fotograma siguiente",
+      "loop": "Reproducir en bucle",
+      "markIn": "Marcar entrada en el cabezal (I)",
+      "markOut": "Marcar salida en el cabezal (O)"
+    },
+    "text": {
+      "add": "Añadir texto",
+      "addAt": "Se añade en {{time}}s, donde está el cabezal",
+      "newCard": "Tu texto",
+      "empty": "No hay ninguna tarjeta seleccionada. Añade una o haz clic en un bloque de la pista de texto.",
+      "content": "Texto",
+      "placeholder": "Escribe tu rótulo…",
+      "style": "Estilo",
+      "anchor": "Posición",
+      "anim": "Animación",
+      "color": "Color",
+      "size": "Tamaño",
+      "timing": "Tiempos",
+      "atPlayhead": "Mover al cabezal",
+      "delete": "Eliminar"
+    },
+    "styles": {
+      "title": "Título",
+      "subtitle": "Subtítulo",
+      "caption": "Rótulo",
+      "lowerThird": "Faldón",
+      "badge": "Etiqueta"
+    },
+    "anims": {
+      "none": "Ninguna",
+      "fade": "Fundido",
+      "slideUp": "Deslizar",
+      "pop": "Rebote"
+    },
+    "effects": {
+      "in": "Apertura",
+      "out": "Cierre",
+      "duration": "Duración",
+      "hint": "Las transiciones funden el fotograma entero, títulos incluidos — como abre y cierra un corte en un feed."
+    },
+    "transitions": {
+      "none": "Ninguna",
+      "fade": "Fundido",
+      "dipWhite": "Fundido a blanco"
+    },
+    "audio": {
+      "builtin": "Música incluida",
+      "upload": "Tu propio audio",
+      "chooseFile": "Elegir un archivo…",
+      "uploadHint": "MP3, WAV, M4A u OGG, hasta {{max}} MB. No sale de tu dispositivo.",
+      "synthNote": "Estas pistas se generan en tu navegador, así que son de uso libre y no requieren atribución.",
+      "gifNote": "El audio se aplica a la exportación de vídeo. Los GIF son mudos por definición.",
+      "volume": "Volumen",
+      "fade": "Fundido de entrada y salida",
+      "offset": "Empezar la música en",
+      "remove": "Quitar la música",
+      "loading": "Preparando el audio…",
+      "decodeFailed": "No se pudo decodificar ese archivo",
+      "bedFailed": "No se pudo generar la pista de música"
+    },
+    "beds": {
+      "calm": "Calmada",
+      "corporate": "Corporativa",
+      "upbeat": "Animada",
+      "cinematic": "Cinematográfica"
+    },
+    "presets": {
+      "original": "Original",
+      "reel": "Reel",
+      "post": "Post",
+      "portrait": "Vertical",
+      "wide": "Panorámico"
+    },
+    "export": {
+      "preset": "¿Dónde va a publicarse?",
+      "framing": "Encuadre",
+      "fitMode": "Ajustar",
+      "fillMode": "Rellenar",
+      "fitHint": "Toda la vista cabe dentro del fotograma; las bandas dejan sitio para un rótulo.",
+      "fillHint": "Rellena el fotograma de borde a borde y recorta lo que quede fuera.",
+      "pad": "Bandas",
+      "pad_blur": "Desenfoque",
+      "pad_dark": "Oscuras",
+      "pad_light": "Claras",
+      "mp4Note": "Se exporta en MP4 (H.264) — listo para subir a Instagram, TikTok o LinkedIn.",
+      "webmNote": "Este navegador graba en WebM. La mayoría de redes quieren MP4 — prueba con Chrome o Edge.",
+      "noVideoNote": "Este navegador no puede grabar vídeo. El GIF y el PNG siguen funcionando."
+    }
+  },
   "background": {
     "tooltip": "Fondo de la escena",
     "title": "Fondo",

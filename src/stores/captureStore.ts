@@ -8,9 +8,11 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import {
-  clampCaptureSeconds, CAPTURE_ASPECTS, GIF_FPS_OPTIONS, GIF_HEIGHT_OPTIONS,
+  clampCaptureSeconds, computeTrimToLastSeconds, CAPTURE_ASPECTS, GIF_FPS_OPTIONS, GIF_HEIGHT_OPTIONS,
   type CaptureAspect, type CaptureDuration,
 } from '../lib/capture/replay-buffer-core'
+import { FRAME_FITS, PAD_STYLES, type FrameFit, type PadStyle } from '../lib/capture/frame-layout'
+import { createTimeline, clampTimeline, type EditTimeline } from '../lib/capture/timeline'
 
 const LS_WATERMARK = 'ifc-capture-watermark:v1'
 const LS_PREFS = 'ifc-capture-prefs:v1'
@@ -35,12 +37,18 @@ function readWatermark(): boolean {
 export interface CapturePrefs {
   seconds: CaptureDuration
   fps: number
-  /** GIF/WebM target height in px; null = keep the source resolution. */
+  /** GIF/video target height in px; null = keep the source resolution. */
   height: number | null
   aspect: CaptureAspect
+  /** Whether a non-source aspect crops to fill or letterboxes to contain. */
+  fit: FrameFit
+  /** How the bars around a letterboxed frame are filled. */
+  padStyle: PadStyle
 }
 
-export const DEFAULT_PREFS: CapturePrefs = { seconds: 15, fps: 10, height: 480, aspect: 'source' }
+export const DEFAULT_PREFS: CapturePrefs = {
+  seconds: 15, fps: 10, height: 720, aspect: 'source', fit: 'fit', padStyle: 'blur',
+}
 
 /** Read persisted prefs, discarding anything outside the offered options. */
 export function parseStoredPrefs(raw: string | null): CapturePrefs {
@@ -58,6 +66,10 @@ export function parseStoredPrefs(raw: string | null): CapturePrefs {
         ? o.height : DEFAULT_PREFS.height,
     aspect: typeof o.aspect === 'string' && CAPTURE_ASPECTS.includes(o.aspect as CaptureAspect)
       ? (o.aspect as CaptureAspect) : DEFAULT_PREFS.aspect,
+    fit: typeof o.fit === 'string' && FRAME_FITS.includes(o.fit as FrameFit)
+      ? (o.fit as FrameFit) : DEFAULT_PREFS.fit,
+    padStyle: typeof o.padStyle === 'string' && PAD_STYLES.includes(o.padStyle as PadStyle)
+      ? (o.padStyle as PadStyle) : DEFAULT_PREFS.padStyle,
   }
 }
 
@@ -87,15 +99,28 @@ interface CaptureStore {
   captureSeconds: CaptureDuration
   /** Watermark toggle — applies to PNG, GIF and re-encoded WebM (persisted). */
   watermark: boolean
-  /** Export aspect preset (D-26) — set by presentation templates, adjustable in the modal. */
+  /** Export aspect preset (D-26) — set by presentation templates, adjustable in the editor. */
   aspectPreset: CaptureAspect
+  /** Crop-to-fill vs letterbox-to-contain for non-source aspects (persisted). */
+  fit: FrameFit
+  /** Bar treatment for letterboxed frames (persisted). */
+  padStyle: PadStyle
   /** GIF frame rate last used (persisted). */
   gifFps: number
   /** Export target height in px, null = source resolution (persisted). */
   exportHeight: number | null
-  /** Clip being previewed; null = preview modal closed. */
+  /** Clip being edited; null = editor closed. */
   clip: CapturedClip | null
-  /** A GIF/WebM export is running. */
+  /**
+   * The edit applied to `clip`: trim, text cards, transitions and the audio
+   * selection. Reset whenever a new clip is captured — an edit belongs to the
+   * footage it was made against. Serialisable throughout (D-05/D-18): the
+   * decoded AudioBuffer lives in the audio library's cache, never here.
+   */
+  timeline: EditTimeline
+  /** Text card currently open in the inspector. */
+  selectedTextId: string | null
+  /** A GIF/video export is running. */
   exporting: boolean
   /** 0–100 progress of the running export. */
   exportProgress: number
@@ -105,8 +130,13 @@ interface CaptureStore {
   setCaptureSeconds: (v: CaptureDuration) => void
   setWatermark: (v: boolean) => void
   setAspectPreset: (v: CaptureAspect) => void
+  setFit: (v: FrameFit) => void
+  setPadStyle: (v: PadStyle) => void
   setGifFps: (v: number) => void
   setExportHeight: (v: number | null) => void
+  /** Replace the edit. Always re-clamped against the clip's real duration. */
+  updateTimeline: (updater: (t: EditTimeline) => EditTimeline) => void
+  setSelectedTextId: (id: string | null) => void
   openPreview: (clip: CapturedClip) => void
   closePreview: () => void
   startExport: () => void
@@ -125,6 +155,8 @@ function persistFrom(s: CaptureStore): void {
     fps: s.gifFps,
     height: s.exportHeight,
     aspect: s.aspectPreset,
+    fit: s.fit,
+    padStyle: s.padStyle,
   })
 }
 
@@ -136,9 +168,13 @@ export const useCaptureStore = create<CaptureStore>()(
       captureSeconds:  initialPrefs.seconds,
       watermark:       readWatermark(),
       aspectPreset:    initialPrefs.aspect,
+      fit:             initialPrefs.fit,
+      padStyle:        initialPrefs.padStyle,
       gifFps:          initialPrefs.fps,
       exportHeight:    initialPrefs.height,
       clip:            null,
+      timeline:        createTimeline({ start: 0, end: 1 }),
+      selectedTextId:  null,
       exporting:       false,
       exportProgress:  0,
 
@@ -161,6 +197,16 @@ export const useCaptureStore = create<CaptureStore>()(
         persistFrom(get())
       },
 
+      setFit: (v) => {
+        set({ fit: v }, false, 'setFit')
+        persistFrom(get())
+      },
+
+      setPadStyle: (v) => {
+        set({ padStyle: v }, false, 'setPadStyle')
+        persistFrom(get())
+      },
+
       setGifFps: (v) => {
         set({ gifFps: v }, false, 'setGifFps')
         persistFrom(get())
@@ -171,11 +217,31 @@ export const useCaptureStore = create<CaptureStore>()(
         persistFrom(get())
       },
 
+      updateTimeline: (updater) => {
+        const { clip, timeline } = get()
+        const duration = clip?.durationSec ?? timeline.trim.end
+        set({ timeline: clampTimeline(updater(timeline), duration) }, false, 'updateTimeline')
+      },
+
+      setSelectedTextId: (id) => set({ selectedTextId: id }, false, 'setSelectedTextId'),
+
       openPreview: (clip) =>
-        set({ clip, exporting: false, exportProgress: 0 }, false, 'openPreview'),
+        set(
+          {
+            clip,
+            // A fresh edit per capture: pre-trimmed to what the user asked for
+            // (the buffer always holds more than the requested window).
+            timeline: createTimeline(computeTrimToLastSeconds(clip.durationSec, clip.requestedSec)),
+            selectedTextId: null,
+            exporting: false,
+            exportProgress: 0,
+          },
+          false,
+          'openPreview',
+        ),
 
       closePreview: () =>
-        set({ clip: null, exporting: false, exportProgress: 0 }, false, 'closePreview'),
+        set({ clip: null, selectedTextId: null, exporting: false, exportProgress: 0 }, false, 'closePreview'),
 
       startExport: () =>
         set({ exporting: true, exportProgress: 0 }, false, 'startExport'),
@@ -188,7 +254,11 @@ export const useCaptureStore = create<CaptureStore>()(
 
       resetCapture: () =>
         set(
-          { isRecording: false, clip: null, exporting: false, exportProgress: 0 },
+          {
+            isRecording: false, clip: null, selectedTextId: null,
+            timeline: createTimeline({ start: 0, end: 1 }),
+            exporting: false, exportProgress: 0,
+          },
           false,
           'resetCapture',
         ),
@@ -208,3 +278,7 @@ export const selectExportProgress  = (s: CaptureStore) => s.exportProgress
 export const selectGifFps          = (s: CaptureStore) => s.gifFps
 export const selectExportHeight    = (s: CaptureStore) => s.exportHeight
 export const selectReplaySupported = (s: CaptureStore) => s.replaySupported
+export const selectTimeline        = (s: CaptureStore) => s.timeline
+export const selectSelectedTextId  = (s: CaptureStore) => s.selectedTextId
+export const selectFit             = (s: CaptureStore) => s.fit
+export const selectPadStyle        = (s: CaptureStore) => s.padStyle

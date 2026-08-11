@@ -8,11 +8,8 @@
   "lastSeconds": "{{seconds}} dernières s",
   "recording": "Tampon de relecture en cours d'enregistrement",
   "captureFailed": "Échec de la capture",
-  "previewTitle": "Aperçu de la capture",
+  "previewTitle": "Éditeur de clip",
   "close": "Fermer",
-  "trimLabel": "Découpage",
-  "trimStart": "Début du découpage",
-  "trimEnd": "Fin du découpage",
   "fpsLabel": "FPS du GIF",
   "resolutionLabel": "Résolution",
   "sourceRes": "Originale",
@@ -20,14 +17,16 @@
   "cancel": "Annuler",
   "exporting": "Export en cours…",
   "pngDone": "Image téléchargée en PNG",
-  "webmDone": "Clip téléchargé en WebM",
+  "videoDone": "Clip téléchargé en {{format}}",
   "gifDone": "GIF téléchargé",
   "exportFailed": "Échec de l'export : {{message}}",
   "aspect": {
     "label": "Format",
     "source": "Original",
     "square": "1:1",
-    "vertical": "4:5"
+    "vertical": "4:5",
+    "story": "9:16",
+    "wide": "16:9"
   },
   "durationTitle": "Durée du clip",
   "bufferReady": "Prêt — les {{seconds}} dernières secondes sont en mémoire",
@@ -35,6 +34,119 @@
   "wholeClip": "Clip entier",
   "estimate": "≈{{size}} · {{frames}} images · {{width}}×{{height}}",
   "frameCapNotice": "Limité à {{max}} images — les FPS réels sont plus bas",
+  "editor": {
+    "preview": "Aperçu du clip",
+    "timeline": "Ligne de temps",
+    "playhead": "Tête de lecture",
+    "trimIn": "Point d'entrée",
+    "trimOut": "Point de sortie",
+    "trackVideo": "Vidéo",
+    "trackText": "Texte",
+    "trackAudio": "Audio",
+    "noText": "Pas encore de texte — appuyez sur T pour ajouter un carton",
+    "noAudio": "Pas de musique — cliquez pour en ajouter",
+    "shortcuts": "Espace lit · I / O placent l'entrée et la sortie · ← → avancent d'une image (Maj pour 1 s) · T ajoute du texte · Suppr efface",
+    "tabs": {
+      "text": "Texte",
+      "effects": "Effets",
+      "audio": "Audio",
+      "export": "Export"
+    },
+    "transport": {
+      "play": "Lire",
+      "pause": "Pause",
+      "toStart": "Aller au point d'entrée",
+      "toEnd": "Aller au point de sortie",
+      "stepBack": "Image précédente",
+      "stepFwd": "Image suivante",
+      "loop": "Lecture en boucle",
+      "markIn": "Placer l'entrée à la tête de lecture (I)",
+      "markOut": "Placer la sortie à la tête de lecture (O)"
+    },
+    "text": {
+      "add": "Ajouter du texte",
+      "addAt": "Ajouté à {{time}}s, là où se trouve la tête de lecture",
+      "newCard": "Votre texte",
+      "empty": "Aucun carton sélectionné. Ajoutez-en un, ou cliquez sur un bloc de la piste texte.",
+      "content": "Texte",
+      "placeholder": "Saisissez votre légende…",
+      "style": "Style",
+      "anchor": "Position",
+      "anim": "Animation",
+      "color": "Couleur",
+      "size": "Taille",
+      "timing": "Minutage",
+      "atPlayhead": "Déplacer à la tête de lecture",
+      "delete": "Supprimer"
+    },
+    "styles": {
+      "title": "Titre",
+      "subtitle": "Sous-titre",
+      "caption": "Légende",
+      "lowerThird": "Synthé",
+      "badge": "Badge"
+    },
+    "anims": {
+      "none": "Aucune",
+      "fade": "Fondu",
+      "slideUp": "Glissement",
+      "pop": "Rebond"
+    },
+    "effects": {
+      "in": "Ouverture",
+      "out": "Fermeture",
+      "duration": "Durée",
+      "hint": "Les transitions fondent toute l'image, titres compris — comme un plan qui s'ouvre et se ferme dans un fil."
+    },
+    "transitions": {
+      "none": "Aucune",
+      "fade": "Fondu",
+      "dipWhite": "Fondu au blanc"
+    },
+    "audio": {
+      "builtin": "Musique intégrée",
+      "upload": "Votre propre audio",
+      "chooseFile": "Choisir un fichier…",
+      "uploadHint": "MP3, WAV, M4A ou OGG, jusqu'à {{max}} Mo. Reste sur votre appareil.",
+      "synthNote": "Ces nappes sont générées dans votre navigateur : libres d'usage et sans attribution.",
+      "gifNote": "L'audio s'applique à l'export vidéo. Les GIF sont muets par nature.",
+      "volume": "Volume",
+      "fade": "Fondu d'entrée et de sortie",
+      "offset": "Démarrer la musique à",
+      "remove": "Retirer la musique",
+      "loading": "Préparation de l'audio…",
+      "decodeFailed": "Ce fichier n'a pas pu être décodé",
+      "bedFailed": "La nappe musicale n'a pas pu être générée"
+    },
+    "beds": {
+      "calm": "Calme",
+      "corporate": "Corporate",
+      "upbeat": "Entraînant",
+      "cinematic": "Cinématique"
+    },
+    "presets": {
+      "original": "Original",
+      "reel": "Reel",
+      "post": "Post",
+      "portrait": "Portrait",
+      "wide": "Large"
+    },
+    "export": {
+      "preset": "Destination ?",
+      "framing": "Cadrage",
+      "fitMode": "Ajuster",
+      "fillMode": "Remplir",
+      "fitHint": "Toute la vue tient dans le cadre ; les bandes laissent la place à une légende.",
+      "fillHint": "Remplit le cadre bord à bord et rogne ce qui dépasse.",
+      "pad": "Bandes",
+      "pad_blur": "Flou",
+      "pad_dark": "Sombres",
+      "pad_light": "Claires",
+      "mp4Note": "Export en MP4 (H.264) — prêt pour Instagram, TikTok ou LinkedIn.",
+      "webmNote": "Ce navigateur enregistre en WebM. La plupart des plateformes veulent du MP4 — essayez Chrome ou Edge.",
+      "noVideoNote": "Ce navigateur ne peut pas enregistrer de vidéo. Le GIF et le PNG fonctionnent toujours."
+    }
+  },
   "background": {
     "tooltip": "Arrière-plan de la scène",
     "title": "Arrière-plan",
