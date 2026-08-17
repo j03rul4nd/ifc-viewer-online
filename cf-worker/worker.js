@@ -35,6 +35,47 @@ const ALLOWED_ORIGINS = [
 const DEFAULT_APP_URL   = 'https://www.ifcvieweronline.eu/'
 const DEFAULT_OG_IMAGE  = 'https://www.ifcvieweronline.eu/og-image.png'
 
+// ── Public origin vs Worker origin ────────────────────────────────────────────
+//
+// The badge and the shared reports are the site's two link-earning assets: a
+// badge pasted in someone's README, and a report a client forwards. Served from
+// *.workers.dev they built authority for a shared Cloudflare subdomain that
+// search engines discount as user-generated, so the whole mechanism earned the
+// main domain nothing.
+//
+// They are now proxied by Vercel from the real domain (see the rewrites in
+// vercel.json). Two consequences the Worker has to handle:
+//
+//  1. Vercel proxies to the INTERNAL paths /_r and /_badge. The public /r,
+//     /report and /badge paths 301 to the real domain instead of serving —
+//     that reclaims the authority of links already out in the wild. Serving
+//     both from /r would make Vercel→Worker→Vercel loop forever.
+//
+//  2. Behind the proxy, `new URL(request.url).origin` is the workers.dev origin,
+//     so a report's canonical and og:url would still advertise workers.dev. Use
+//     publicOrigin() for anything that ends up in markup.
+//
+// /bench needs neither: it is a JSON API nobody links to, so it is proxied
+// straight through with no redirect and no loop.
+function publicOrigin(env) {
+  try {
+    return new URL(env.PUBLIC_ORIGIN || env.APP_URL || DEFAULT_APP_URL).origin
+  } catch {
+    return new URL(DEFAULT_APP_URL).origin
+  }
+}
+
+/** 301 to the same resource on the public domain, query string preserved. */
+function redirectToPublic(env, publicPath, search) {
+  return new Response(null, {
+    status: 301,
+    headers: {
+      Location:        `${publicOrigin(env)}${publicPath}${search || ''}`,
+      'Cache-Control': 'public, max-age=86400',
+    },
+  })
+}
+
 // Shared reports are point-in-time snapshots — expire links after this many days.
 // Advisory only: the payload is stateless, so a forged `ts` can bypass it; real
 // links carry their true creation time. Override with REPORT_MAX_AGE_DAYS.
@@ -557,7 +598,12 @@ function renderMessageHtml(appUrl, title, desc) {
 async function handleReport(request, url, env) {
   const appUrl  = env.APP_URL  || DEFAULT_APP_URL
   const ogImage = env.OG_IMAGE_URL || DEFAULT_OG_IMAGE
-  const selfUrl = url.origin + url.pathname + url.search
+  // Always the PUBLIC url, never the Worker's. Behind the Vercel proxy the
+  // request arrives at …workers.dev/_r, and using that origin here would put a
+  // workers.dev canonical + og:url on every shared report — the exact problem
+  // the proxy exists to fix. The public path is always /r (/report is a legacy
+  // alias that 301s to it).
+  const selfUrl = `${publicOrigin(env)}/r${url.search}`
 
   // Lenient per-IP limit. Edge-cached hits never reach the Worker, so this only
   // throttles cache misses / scrapers hammering unique payloads.
@@ -829,23 +875,36 @@ export default {
         return new Response(null, { status: 204, headers: c })
       }
 
-      // Crawlable shared report — top-level navigation, no CORS needed. HEAD is
-      // answered exactly like GET but without the body: some unfurlers
-      // (Slack/WhatsApp/…) probe with HEAD before the GET, and a 404 there
-      // kills the link preview.
-      if (
-        (url.pathname === '/r' || url.pathname === '/report') &&
-        (request.method === 'GET' || request.method === 'HEAD')
-      ) {
+      // ── Internal paths, reached only through the Vercel proxy ───────────────
+      // These do the actual work. They are NOT the public URLs: keeping them
+      // distinct is what stops Vercel→Worker→Vercel from looping, since the
+      // public paths below redirect rather than serve.
+      //
+      // HEAD is answered exactly like GET but without the body: some unfurlers
+      // (Slack/WhatsApp/…) probe with HEAD before the GET, and a 404 there kills
+      // the link preview.
+      if (url.pathname === '/_r' && (request.method === 'GET' || request.method === 'HEAD')) {
         const res = await handleReport(request, url, env)
         return request.method === 'HEAD'
           ? new Response(null, { status: res.status, headers: res.headers })
           : res
       }
-
-      // Embeddable Health Score badge (SVG) — top-level <img>, no CORS needed.
-      if (url.pathname === '/badge' && request.method === 'GET') {
+      if (url.pathname === '/_badge' && request.method === 'GET') {
         return handleBadge(url)
+      }
+
+      // ── Public paths → 301 to the real domain ───────────────────────────────
+      // Every badge and report link already shared points here. A 301 both keeps
+      // them working and hands their accumulated authority to the main domain.
+      // /report is a legacy alias and collapses onto /r.
+      if (
+        (url.pathname === '/r' || url.pathname === '/report') &&
+        (request.method === 'GET' || request.method === 'HEAD')
+      ) {
+        return redirectToPublic(env, '/r', url.search)
+      }
+      if (url.pathname === '/badge' && request.method === 'GET') {
+        return redirectToPublic(env, '/badge', url.search)
       }
 
       // Anonymous Health Score benchmark — fetched cross-origin from the SPA (CORS).

@@ -3,6 +3,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/badge", "destination": "https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/_badge" },
+    { "source": "/r",     "destination": "https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/_r" },
+    { "source": "/bench", "destination": "https://ifc-viewer-email-capture.joelbenitezdonari.workers.dev/bench" },
     { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ],
   "headers": [
