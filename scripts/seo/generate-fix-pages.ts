@@ -19,6 +19,10 @@ import path from 'path'
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
 import { RULE_REMEDIATION, AUTHORING_TOOLS, type AuthoringTool } from '../../src/i18n/rule-remediation'
 import { RULE_TRANSLATIONS, RULE_METADATA, VALIDATION_CATEGORY_LABELS } from '../../src/types'
+import {
+  FIX_GUIDE_LANGS, FIX_GUIDE_LANG_PATH, HANDWRITTEN_FIX_GUIDES, fixGuideSlug,
+  type FixGuideLang,
+} from '../../src/lib/fix-guide-url'
 import { validatorPath, solibriPath } from './localized-landings'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
@@ -38,12 +42,14 @@ posthog.init('${_PH_KEY}',{api_host:'${_PH_HOST}',capture_pageview:true,autocapt
 </script>`
   : ''
 
-/** Languages to emit. EN is canonical at root; others get a /<lang>/ prefix. */
-const LANGS = ['en', 'es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th'] as const
-type Lang = (typeof LANGS)[number]
-
-/** Where the fix pages live per language (relative to site root). EN = root. */
-const LANG_PATH: Record<Lang, string> = { en: '', es: 'es/', de: 'de/', fr: 'fr/', pt: 'pt/', it: 'it/', ca: 'ca/', zh: 'zh/', ja: 'ja/', th: 'th/' }
+/**
+ * Languages to emit, and where each one's pages live. EN is canonical at root;
+ * others get a /<lang>/ prefix. Shared with the app — the ValidationPanel links
+ * to these pages and must agree about which ones exist. See fix-guide-url.ts.
+ */
+const LANGS = FIX_GUIDE_LANGS
+type Lang = FixGuideLang
+const LANG_PATH = FIX_GUIDE_LANG_PATH
 
 /**
  * Where the app shell lives per language. Every language now has its own home:
@@ -93,9 +99,10 @@ const THEME_COLOR = '#0A0A0C'
 const FAVICON =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%235E6AD2'/%3E%3Cpath d='M8 22 L16 8 L24 22 Z M12 22 L16 15 L20 22' stroke='white' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"
 
-// Rules already covered by the richer, hand-authored /tools/fix-duplicate-guids/
-// page — skip them here so we don't publish a thinner competing page.
-const SKIP = new Set(['RULE_DUPLICATE_GUID', 'RULE_INVALID_GUID_FORMAT'])
+// Rules already covered by a richer, hand-authored page — skip them here so we
+// don't publish a thinner competing page. Shared with the app, which links to
+// the hand-authored page for exactly these rules.
+const SKIP = new Set(Object.keys(HANDWRITTEN_FIX_GUIDES))
 
 const TOOL_LABEL: Record<AuthoringTool, string> = {
   revit: 'Revit', archicad: 'ArchiCAD', tekla: 'Tekla', allplan: 'Allplan',
@@ -645,10 +652,8 @@ function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
-/** RULE_MISSING_PROPERTY_SET → missing-property-set */
-function slugOf(ruleId: string): string {
-  return ruleId.replace(/^RULE_/, '').toLowerCase().replace(/_/g, '-')
-}
+/** RULE_MISSING_PROPERTY_SET → missing-property-set. Shared with the app. */
+const slugOf = fixGuideSlug
 
 function clip(s: string, n: number): string {
   if (s.length <= n) return s

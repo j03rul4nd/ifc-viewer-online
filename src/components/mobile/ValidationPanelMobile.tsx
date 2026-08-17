@@ -18,6 +18,7 @@ import type {
   ValidationIssue, ValidationResult, ValidationCoverage, ValidationProfile, RulesConfig,
   ViewerHandle, AuthoringTool,
 } from '../../types'
+import { fixGuideUrl } from '../../lib/fix-guide-url'
 import type { ScoreContribution } from '../../lib/validator'
 import { benchmarkReady, type BenchStats } from '../../lib/benchmark'
 import type { ValidationDiff } from '../../lib/validation-diff'
@@ -103,14 +104,6 @@ function scoreColor(s: number): string {
 }
 function gradeKey(s: number): 'excellent' | 'good' | 'fair' | 'poor' | 'critical' {
   return s >= 85 ? 'excellent' : s >= 70 ? 'good' : s >= 50 ? 'fair' : s >= 30 ? 'poor' : 'critical'
-}
-function fixGuideUrl(ruleId: string, language: string): string {
-  const base = import.meta.env.BASE_URL
-  if (ruleId === 'RULE_DUPLICATE_GUID' || ruleId === 'RULE_INVALID_GUID_FORMAT') return `${base}tools/fix-duplicate-guids/`
-  const lang = language.slice(0, 2)
-  const prefix = ['es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th'].includes(lang) ? `${lang}/` : ''
-  const slug = ruleId.replace(/^RULE_/, '').toLowerCase().replace(/_/g, '-')
-  return `${base}${prefix}fix/${slug}/`
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -651,7 +644,7 @@ function MobileRemediation({ ruleId, language, tool, onSelectTool }: {
       <p className="text-[11.5px] leading-relaxed m-0" style={{ color: steps ? 'var(--text)' : 'var(--text-faint)' }}>
         {steps ?? t('remediation.noToolSteps', { tool: t(`remediation.tools.${tool}`) })}
       </p>
-      <a href={fixGuideUrl(ruleId, language)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-2 text-[11px] font-semibold text-[var(--accent-2)]">
+      <a href={fixGuideUrl(ruleId, language, import.meta.env.BASE_URL)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-2 text-[11px] font-semibold text-[var(--accent-2)]">
         {t('remediation.fullGuide')}
         <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 6h7M6.5 3l3 3-3 3" /></svg>
       </a>

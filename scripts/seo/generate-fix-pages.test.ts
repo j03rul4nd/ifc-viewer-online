@@ -9,6 +9,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import path from 'path'
 import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'fs'
 import { generateFixPages, type FixPagesResult } from './generate-fix-pages'
+import { fixGuideUrl, fixGuideSlug } from '../../src/lib/fix-guide-url'
 
 const SITE = 'https://www.ifcvieweronline.eu'
 const OUT = path.join(process.cwd(), '.seo-test-out')
@@ -186,5 +187,46 @@ describe('generateFixPages — sitemap + skips', () => {
     expect(r2.llms).toBe(false)
     const txt2 = readFileSync(path.join(OUT, 'llms.txt'), 'utf8')
     expect(txt2.match(/## How to fix IFC validation errors/g)).toHaveLength(1)
+  })
+})
+
+// ── The app must link where the generator publishes ───────────────────────────
+//
+// The generator decides which guide pages exist; the ValidationPanel renders the
+// links to them. Those two lived as separate word-for-word copies of the same
+// routing rule — in the desktop panel, in the mobile panel, and here — so a
+// change in one published links to pages nobody generated. The rule now lives in
+// src/lib/fix-guide-url.ts and this asserts nobody has re-copied it.
+
+describe('the app links where these pages actually are', () => {
+  const read = (p: string) => readFileSync(path.join(process.cwd(), p), 'utf8')
+  const PANELS = {
+    desktop: 'src/components/ValidationPanel.tsx',
+    mobile: 'src/components/mobile/ValidationPanelMobile.tsx',
+  }
+
+  it('has no private copy of fixGuideUrl left in either panel', () => {
+    for (const [name, file] of Object.entries(PANELS)) {
+      const src = read(file)
+      expect(src, `${name} redefines fixGuideUrl`).not.toMatch(/function\s+fixGuideUrl/)
+      expect(src, `${name} does not import it`).toMatch(/import\s*\{[^}]*fixGuideUrl[^}]*\}\s*from\s*'[^']*lib\/fix-guide-url'/)
+    }
+  })
+
+  it('generates a page at exactly the path the panel links to', () => {
+    // The check that actually matters: resolve a link the way the app does, and
+    // find that file on disk in every language.
+    for (const lang of LANGS) {
+      const url = fixGuideUrl('RULE_MISSING_TYPE', lang === '' ? 'en' : lang.slice(0, 2), '/')
+      expect(url, lang).toBe(`/${lang}fix/missing-type/`)
+      expect(existsSync(path.join(OUT, url.slice(1), 'index.html')), url).toBe(true)
+    }
+  })
+
+  it('links the GUID rules to the hand-authored page, which it does not generate', () => {
+    for (const ruleId of ['RULE_DUPLICATE_GUID', 'RULE_INVALID_GUID_FORMAT']) {
+      expect(fixGuideUrl(ruleId, 'es', '/')).toBe('/tools/fix-duplicate-guids/')
+      expect(existsSync(path.join(OUT, 'fix', fixGuideSlug(ruleId)))).toBe(false)
+    }
   })
 })
