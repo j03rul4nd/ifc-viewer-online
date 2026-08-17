@@ -140,7 +140,7 @@ export const DEMO_MODELS: DemoModel[] = [
     sourceLabel: 'Authored with Blender + Bonsai',
     schema: 'IFC4',
     approximateSize: '3.5 MB',
-    sizeBytes: 3_472_837,
+    sizeBytes: 3_489_029,
     featured: true,
   },
   {

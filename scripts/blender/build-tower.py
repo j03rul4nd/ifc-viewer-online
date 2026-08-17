@@ -80,6 +80,13 @@ import bonsai_kit as kit  # noqa: E402
 
 BAY = 7.2
 
+# Where the tower sits in the SHARED site origin it now uses with the pavilion,
+# in project metres along +X (the Cerda street direction). See "Where on earth".
+# The pavilion occupies x 0..36; 57.6 is eight bays, which leaves 21.6 m between
+# the two buildings' faces — a street, not a gap. Every footprint below is
+# expressed relative to it, so moving the building is one number.
+SITE_OFFSET_X = 57.6
+
 # Three stacked footprints, each a whole number of bays of the one below, so
 # every tower column lands on a podium column instead of on a slab.
 #
@@ -89,9 +96,9 @@ BAY = 7.2
 # a change of DEPTH and reads as nothing at all, and from an angle it is a small
 # ledge. Taking a bay off both ends gives a ziggurat profile on both long
 # elevations, which are the faces a camera actually spends its time on.
-PODIUM = (0.0, 0.0, 50.4, 28.8)          # 7 x 4 bays
-TOWER_A = (7.2, 7.2, 43.2, 21.6)         # 5 x 2 bays
-TOWER_B = (14.4, 7.2, 36.0, 21.6)        # 3 x 2 bays
+PODIUM = (SITE_OFFSET_X + 0.0, 0.0, SITE_OFFSET_X + 50.4, 28.8)     # 7 x 4 bays
+TOWER_A = (SITE_OFFSET_X + 7.2, 7.2, SITE_OFFSET_X + 43.2, 21.6)    # 5 x 2 bays
+TOWER_B = (SITE_OFFSET_X + 14.4, 7.2, SITE_OFFSET_X + 36.0, 21.6)   # 3 x 2 bays
 
 # The service core. It sits INSIDE one bay rather than on the grid lines: a core
 # drawn corner-to-corner on the grid puts its walls straight through the columns
@@ -99,7 +106,8 @@ TOWER_B = (14.4, 7.2, 36.0, 21.6)        # 3 x 2 bays
 # the columns live in different discipline files and nothing ever compared them.
 # This model is one file, so it has to be right here.
 CORE_INSET = 0.60
-CORE = (21.6 + CORE_INSET, 7.2 + CORE_INSET, 28.8 - CORE_INSET, 14.4 - CORE_INSET)
+CORE = (SITE_OFFSET_X + 21.6 + CORE_INSET, 7.2 + CORE_INSET,
+        SITE_OFFSET_X + 28.8 - CORE_INSET, 14.4 - CORE_INSET)
 
 
 def member_span(coords, i, width):
@@ -141,8 +149,12 @@ def gridref(x, y):
     column is not tier P's first column, and naming them both "A1" makes two
     different columns share a reference. A camera never sees that; a coordinator
     reading the tree does.
+
+    Measured from the BUILDING's own south-west corner, not from the shared site
+    origin — the grid belongs to the building, and "column H1" should not become
+    "column P1" because the masterplan moved it down the street.
     """
-    return f"{X_LABELS[int(round(x / BAY))]}{int(round(y / BAY)) + 1}"
+    return f"{X_LABELS[int(round((x - SITE_OFFSET_X) / BAY))]}{int(round(y / BAY)) + 1}"
 
 # ── Levels ────────────────────────────────────────────────────────────────────
 # (name, long name, elevation, which footprint the floor plate covers)
@@ -236,22 +248,37 @@ MAST_R, MAST_TOP = 0.30, 82.0
 PANEL_TARGET = 3.6
 
 # ── Where on earth ────────────────────────────────────────────────────────────
-# Poblenou, Barcelona, one block from the pavilion. ETRS89 / UTM zone 31N.
+# Poblenou, Barcelona. ETRS89 / UTM zone 31N.
 #
-# The axis pair is the project +X expressed in the map grid: 45 degrees
-# anticlockwise from grid east, which is the Cerda grid. Identical to the
-# pavilion on purpose — so the tower lands on the same street alignment the
-# pavilion does, one block along, when either is dropped on the basemap.
+# SHARED SITE ORIGIN, and this is the whole point of the numbers below being
+# byte-identical to build-district.py's. The tower and the pavilion are two
+# buildings on one site, so they get ONE project coordinate system: the same
+# IfcMapConversion, the same site latitude and longitude, the same 45-degree
+# Cerda rotation. The tower is then positioned WITHIN that system by
+# SITE_OFFSET_X — a masterplan, which is exactly how two buildings on one plot
+# are delivered.
+#
+# The first version gave the tower its own eastings and northings one block
+# along, on the assumption that the viewer would place each model by its own map
+# conversion. It does not: every IFC model is placed at its own local origin and
+# the BASEMAP is anchored to one of them (both model pivots sit at (0,0,0), which
+# is checkable from the scene graph). Two buildings with two map conversions
+# therefore land on top of each other. Sharing the origin is what actually makes
+# them stand side by side, and tower-ifc.test.ts now asserts it across the two
+# files so the claim cannot rot again.
 
 EPSG = "EPSG:25831"
 DATUM = "ETRS89"
-EASTINGS, NORTHINGS = 432436.0, 4584041.0
+EASTINGS, NORTHINGS = 432340.0, 4583945.0
 ORTHOGONAL_HEIGHT = 12.50
 GRID_ROTATION_DEG = 45.0
 
-SITE_LATITUDE = (41, 24, 18, 720000)
-SITE_LONGITUDE = (2, 11, 30, 240000)
+SITE_LATITUDE = (41, 24, 15, 636000)
+SITE_LONGITUDE = (2, 11, 26, 400000)
 SITE_ELEVATION = 12.50
+
+# SITE_OFFSET_X — where the tower sits in that shared system — is defined up with
+# the grid, because the footprints are expressed in terms of it.
 
 AUTHOR = "IFC Viewer Online"
 ORGANISATION = "IFC Viewer Online"
@@ -340,7 +367,9 @@ class Model:
         )
         kit.edit(
             ifc, ifc.by_type("IfcSite")[0],
-            Name="Torre Poblenou Plot", LongName="Barcelona 22@ - Poblenou tower plot",
+            # Word for word the pavilion's site. It IS the pavilion's site: two
+            # buildings sharing one plot should not describe it two ways.
+            Name="Poblenou Plot", LongName="Barcelona 22@ - Poblenou plot",
             Description="Georeferenced to ETRS89 / UTM 31N, aligned to the Cerda grid",
             CompositionType="ELEMENT",
             RefLatitude=SITE_LATITUDE, RefLongitude=SITE_LONGITUDE, RefElevation=SITE_ELEVATION,
@@ -985,18 +1014,22 @@ def build(out_dir):
 def expected_origins():
     """Elements whose placement the build could plausibly get wrong."""
     return {
-        "Pad Footing A1": (-FOOTING / 2, -FOOTING / 2, LEVEL_Z["Foundation"]),
+        # Every x here carries SITE_OFFSET_X: the building's own grid starts at
+        # its south-west corner, which in the shared site system is 57.6 m along.
+        # A check written against 0.0 would pass a build that quietly lost the
+        # masterplan offset — which is the failure this whole change is about.
+        "Pad Footing A1": (PODIUM[0] - FOOTING / 2, -FOOTING / 2, LEVEL_Z["Foundation"]),
         "Floor Slab - Level 02": (PODIUM[0], PODIUM[1], LEVEL_Z["Level 02"] - SLAB_T),
         # The setback plate must follow tower A, not the podium.
         "Floor Slab - Level 11": (TOWER_B[0], TOWER_B[1], LEVEL_Z["Level 11"] - SLAB_T),
         # A1 is a corner column, so it is flush on BOTH axes — its origin is the
         # grid intersection itself, not the intersection minus half a column.
-        "Column A1 - Ground": (0.0, 0.0, 0.0),
+        "Column A1 - Ground": (PODIUM[0], 0.0, 0.0),
         # A panel, not the curtain wall that hosts it: a decomposed element has
         # no body of its own, so there would be nothing to check. The vision
         # glass starts a spandrel's height up, which is the whole point of it.
-        "Spandrel Panel North 01 - Ground": (-GLAZING_T, PODIUM[3], 0.0),
-        "Glazed Panel North 01 - Ground": (-GLAZING_T, PODIUM[3], SPANDREL_H),
+        "Spandrel Panel North 01 - Ground": (PODIUM[0] - GLAZING_T, PODIUM[3], 0.0),
+        "Glazed Panel North 01 - Ground": (PODIUM[0] - GLAZING_T, PODIUM[3], SPANDREL_H),
         "Roof Covering": (TOWER_B[0], TOWER_B[1], LEVEL_Z["Roof"]),
         "Entrance Canopy": (PODIUM[0] + 7.2, PODIUM[1] - CANOPY_REACH,
                             LEVEL_Z["Level 01"] - CANOPY_T),

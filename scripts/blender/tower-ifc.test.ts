@@ -21,17 +21,28 @@ import { DEMO_MODELS } from '../../src/demo-models/models'
 const DIR = path.join(process.cwd(), 'public', 'models', 'torre-poblenou')
 const FILE = 'BCN-IVO-ZZ-XX-M3-Z-0002.ifc'
 
-/** The georeferencing the map mode depends on — same grid as the pavilion. */
+/**
+ * The georeferencing the map mode depends on. These are the PAVILION's numbers,
+ * on purpose: the two buildings share one site origin, so they must share one
+ * map conversion exactly. See the shared-origin block at the bottom.
+ */
 const EPSG = 'EPSG:25831'
-const EASTINGS = 432436.0
-const NORTHINGS = 4584041.0
+const EASTINGS = 432340.0
+const NORTHINGS = 4583945.0
 const HEIGHT = 12.5
 const ROTATION_DEG = 45
 
+/**
+ * Where the tower sits in the site origin it SHARES with the pavilion. The
+ * pavilion holds x 0..36; the tower starts eight bays along, which is what makes
+ * the two stand side by side when both are loaded.
+ */
+const SITE_OFFSET_X = 57.6
+
 /** The three stacked footprints, and the levels each one carries. */
-const PODIUM: Footprint = [0.0, 0.0, 50.4, 28.8]
-const TOWER_A: Footprint = [7.2, 7.2, 43.2, 21.6]
-const TOWER_B: Footprint = [14.4, 7.2, 36.0, 21.6]
+const PODIUM: Footprint = [SITE_OFFSET_X + 0.0, 0.0, SITE_OFFSET_X + 50.4, 28.8]
+const TOWER_A: Footprint = [SITE_OFFSET_X + 7.2, 7.2, SITE_OFFSET_X + 43.2, 21.6]
+const TOWER_B: Footprint = [SITE_OFFSET_X + 14.4, 7.2, SITE_OFFSET_X + 36.0, 21.6]
 type Footprint = [number, number, number, number]
 
 const SLAB_T = 0.32
@@ -82,36 +93,59 @@ let model: number
 let index: Map<string, Line[]>
 let classOf: Map<number, string>
 
+/**
+ * The pavilion, opened alongside so the shared-origin claim can be checked.
+ * The STRUCTURAL file, not the architectural one: the pavilion is federated
+ * across three files and the floor slabs — the elements this compares extents
+ * against — are delivered by structures. All three carry the same site and the
+ * same map conversion, which is the point.
+ */
+const PAVILION_DIR = path.join(process.cwd(), 'public', 'models', 'poblenou')
+const PAVILION_FILE = 'BCN-IVO-ZZ-XX-M3-S-0001.ifc'
+let pavModel: number
+let pavIndex: Map<string, Line[]>
+
 const str = (v: { value?: unknown } | null | undefined): string =>
   v && typeof v.value === 'string' ? v.value : ''
 const num = (v: { value?: unknown } | null | undefined): number =>
   v && typeof v.value === 'number' ? v.value : NaN
 
 const of = (ifcClass: string): Line[] => index.get(ifcClass.toUpperCase()) ?? []
+const ofPav = (ifcClass: string): Line[] => pavIndex.get(ifcClass.toUpperCase()) ?? []
 const named = (name: string): Line | undefined =>
   [...index.values()].flat().find((l) => str(l.Name) === name)
+const namedIn = (idx: Map<string, Line[]>, name: string): Line | undefined =>
+  [...idx.values()].flat().find((l) => str(l.Name) === name)
+
+function indexModel(m: number, classSink?: Map<number, string>): Map<string, Line[]> {
+  const idx = new Map<string, Line[]>()
+  for (const type of api.GetIfcEntityList(m)) {
+    const name = api.GetNameFromTypeCode(type).toUpperCase()
+    const ids = api.GetLineIDsWithType(m, type)
+    const lines: Line[] = []
+    for (let i = 0; i < ids.size(); i++) {
+      const entity = api.GetLine(m, ids.get(i), false)
+      classSink?.set(entity.expressID, name)
+      lines.push(entity)
+    }
+    idx.set(name, (idx.get(name) ?? []).concat(lines))
+  }
+  return idx
+}
 
 beforeAll(async () => {
   api = new IfcAPI()
   await api.Init()
-  model = api.OpenModel(new Uint8Array(readFileSync(path.join(DIR, FILE))))
-  index = new Map()
   classOf = new Map()
-  for (const type of api.GetIfcEntityList(model)) {
-    const name = api.GetNameFromTypeCode(type).toUpperCase()
-    const ids = api.GetLineIDsWithType(model, type)
-    const lines: Line[] = []
-    for (let i = 0; i < ids.size(); i++) {
-      const entity = api.GetLine(model, ids.get(i), false)
-      classOf.set(entity.expressID, name)
-      lines.push(entity)
-    }
-    index.set(name, (index.get(name) ?? []).concat(lines))
-  }
-}, 180_000)
+  model = api.OpenModel(new Uint8Array(readFileSync(path.join(DIR, FILE))))
+  index = indexModel(model, classOf)
+  pavModel = api.OpenModel(new Uint8Array(readFileSync(path.join(PAVILION_DIR, PAVILION_FILE))))
+  pavIndex = indexModel(pavModel)
+}, 240_000)
 
 afterAll(() => {
   if (model !== undefined) api?.CloseModel?.(model)
+  if (pavModel !== undefined) api?.CloseModel?.(pavModel)
   api?.Dispose?.()
 })
 
@@ -119,14 +153,16 @@ afterAll(() => {
 
 type Box = [[number, number], [number, number], [number, number]]
 
-function extents(expressID: number): Box {
-  const mesh = api.GetFlatMesh(model, expressID)
+const extents = (expressID: number): Box => extentsIn(model, expressID)
+
+function extentsIn(target: number, expressID: number): Box {
+  const mesh = api.GetFlatMesh(target, expressID)
   const lo = [Infinity, Infinity, Infinity]
   const hi = [-Infinity, -Infinity, -Infinity]
   for (let g = 0; g < mesh.geometries.size(); g++) {
     const placed = mesh.geometries.get(g)
     const m = placed.flatTransformation
-    const geom = api.GetGeometry(model, placed.geometryExpressID)
+    const geom = api.GetGeometry(target, placed.geometryExpressID)
     const verts = api.GetVertexArray(geom.GetVertexData(), geom.GetVertexDataSize())
     for (let i = 0; i < verts.length; i += 6) {
       const [x, y, z] = [verts[i], verts[i + 1], verts[i + 2]]
@@ -188,7 +224,7 @@ describe('where on earth it says it is', () => {
     expect(str(crs.Name)).toBe(EPSG)
   })
 
-  it('places the origin on the tower plot, rotated onto the Cerda grid', () => {
+  it('places the origin on the shared plot, rotated onto the Cerda grid', () => {
     const conv = of('IfcMapConversion')[0]
     expect(conv, 'no IfcMapConversion').toBeTruthy()
     expect(num(conv.Eastings)).toBeCloseTo(EASTINGS, 3)
@@ -200,13 +236,61 @@ describe('where on earth it says it is', () => {
     expect(angle).toBeCloseTo(ROTATION_DEG, 3)
   })
 
-  it('stands north-east of the pavilion, not on top of it', () => {
-    // Both models are meant to be loadable together. Same CRS, different plot.
-    const pavilion = { e: 432340.0, n: 4583945.0 }
-    const conv = of('IfcMapConversion')[0]
-    const away = Math.hypot(num(conv.Eastings) - pavilion.e, num(conv.Northings) - pavilion.n)
-    expect(away).toBeGreaterThan(60)
-    expect(away).toBeLessThan(400)
+})
+
+// ── The claim that was wrong once, now asserted across both files ─────────────
+//
+// The tower first shipped with its OWN eastings and northings one block along,
+// on the assumption that the viewer places each model by its own map conversion.
+// It does not — every model goes to its own local origin and the basemap is
+// anchored to one of them — so the two buildings landed on top of each other
+// while every single-file test stayed green. These are the checks that fail if
+// that ever comes back.
+
+describe('it federates with the pavilion on one shared origin', () => {
+  const conv = () => of('IfcMapConversion')[0]
+  const pavConv = () => ofPav('IfcMapConversion')[0]
+
+  it('declares the very same map conversion as the pavilion', () => {
+    for (const attr of ['Eastings', 'Northings', 'OrthogonalHeight',
+                        'XAxisAbscissa', 'XAxisOrdinate'] as const) {
+      expect(num(conv()[attr]), attr).toBeCloseTo(num(pavConv()[attr]), 6)
+    }
+    expect(str(of('IfcProjectedCRS')[0].Name)).toBe(str(ofPav('IfcProjectedCRS')[0].Name))
+  })
+
+  it('puts both buildings on the same site, described the same way', () => {
+    const site = of('IfcSite')[0]
+    const pavSite = ofPav('IfcSite')[0]
+    expect(str(site.Name)).toBe(str(pavSite.Name))
+    expect(str(site.LongName)).toBe(str(pavSite.LongName))
+    // Latitude/longitude are IfcCompoundPlaneAngleMeasure: ONE value holding a
+    // list of [degrees, minutes, seconds, millionths], not a list of values.
+    for (const attr of ['RefLatitude', 'RefLongitude'] as const) {
+      const dms = (v: { value?: unknown } | null | undefined) =>
+        Array.isArray(v?.value) ? (v.value as number[]) : []
+      expect(dms(site[attr]), attr).not.toEqual([])
+      expect(dms(site[attr]), attr).toEqual(dms(pavSite[attr]))
+    }
+  })
+
+  it('stands beside the pavilion in the shared system, not on top of it', () => {
+    // Project coordinates, not map coordinates — that is what actually decides
+    // where the two land relative to each other once both are loaded.
+    const tower = extents(named('Floor Slab - Ground')!.expressID)
+    const pav = extentsIn(pavModel, namedIn(pavIndex, 'Floor Slab - Ground')!.expressID)
+
+    // The pavilion holds the origin; the tower is offset along +X.
+    expect(pav[0][0]).toBeCloseTo(0, 2)
+    expect(tower[0][0]).toBeCloseTo(SITE_OFFSET_X, 2)
+
+    // Disjoint in x, with a real street between the two faces.
+    const gap = tower[0][0] - pav[0][1]
+    expect(gap, 'buildings overlap or touch').toBeGreaterThan(10)
+    expect(gap).toBeCloseTo(SITE_OFFSET_X - 36.0, 2)
+
+    // And they share the ground datum, so neither floats above the other.
+    expect(tower[2][1]).toBeCloseTo(pav[2][1], 2)
   })
 })
 

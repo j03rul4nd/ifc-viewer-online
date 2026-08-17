@@ -166,15 +166,26 @@ That is what a reference model is for.
 3.5 MB, IFC4, 100/100 with no issues.** A sixteen-storey office tower on the
 block next to the Pavilion, same CRS and same 45° Cerdà rotation.
 
-**Load it on its own.** The app places every IFC model at its own local origin and
-anchors the *basemap* to one of them — it does not offset federated models from
-each other by their map conversions. Two buildings authored on different plots
-therefore land on top of one another rather than side by side, verified by reading
-the scene: both model pivots sit at (0, 0, 0) with scale 1. That is fine for the
-Pavilion's three discipline files, which share one origin by design, and it is why
-the tower ships as a single file meant to be loaded alone. Genuine side-by-side
-would need both buildings authored in one shared site origin — a masterplan file —
-not two separate map conversions.
+**It shares the Pavilion's site origin**, and that is load-bearing rather than
+tidy. The tower first shipped with its own eastings and northings one block along,
+on the assumption that the viewer places each model by its own `IfcMapConversion`.
+It does not: every IFC model goes to its own local origin and the *basemap* is
+anchored to one of them — both model pivots sit at (0, 0, 0) with scale 1, which is
+readable straight off the scene graph. Two buildings with two map conversions
+therefore land on top of each other, and every single-file test stayed green while
+they did.
+
+So the two now share one project coordinate system — same map conversion, same site
+latitude and longitude, same 45° rotation — and the tower is positioned *within* it
+by `SITE_OFFSET_X = 57.6` m along the Cerdà street direction. That is what a
+masterplan is, and it is how two buildings on one plot are actually delivered. The
+Pavilion holds x 0..36; the tower starts eight bays along, leaving 21.6 m between
+the two faces.
+
+`tower-ifc.test.ts` opens **both** files and asserts it: identical map conversion,
+identical site description, and footprints that are disjoint in x with a real gap
+between them. A cross-file claim needs a cross-file test, which is the lesson —
+the original claim was never checked against anything.
 
 Every other reference model exists to prove a *property* (it is minimal; it is
 realistic; it federates). This one exists to be **filmed**. That is a real
@@ -227,15 +238,18 @@ whole file, and reports failures grouped by element family — with ~2,000
 elements, a list of the first eight clashes tells you nothing and a histogram
 tells you everything.
 
-**One link**, the tower on the basemap with the real neighbourhood around it:
+**One link**, the tower alone on the basemap with the real neighbourhood:
 
 ```
 /?model=/models/torre-poblenou/BCN-IVO-ZZ-XX-M3-Z-0002.ifc&map=terrain,buildings
 ```
 
-That anchors it to the Poblenou plot at the Cerdà rotation and draws the
-surrounding OpenStreetMap buildings, roads, rail and trees around it. Do **not**
-append the Pavilion to that list expecting two buildings on two plots — see above.
+**Or both buildings**, side by side on the shared origin — the tower across the
+street from the Pavilion, with the OpenStreetMap neighbourhood around them:
+
+```
+/?model=/models/torre-poblenou/BCN-IVO-ZZ-XX-M3-Z-0002.ifc,/models/poblenou/BCN-IVO-ZZ-XX-M3-A-0001.ifc&map=terrain,buildings
+```
 
 ## Driving the demo
 
