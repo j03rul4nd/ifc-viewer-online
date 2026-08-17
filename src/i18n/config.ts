@@ -107,7 +107,19 @@ void i18n
     partialBundledLanguages: true,
 
     detection: {
-      order:              ['localStorage', 'navigator'],
+      // 'path' comes FIRST so a localized URL always wins over a stale stored
+      // preference. The static shells at /<lang>/ (see
+      // scripts/seo/generate-lang-shells.ts) and the ~460 localized fix pages at
+      // /<lang>/fix/<slug>/ declare <html lang> + hreflang for that language;
+      // without path detection they would boot in whatever localStorage or the
+      // browser says, so Google would see hreflang pointing at a page rendered
+      // in the wrong language and drop the whole cluster.
+      //
+      // Non-locale first segments ('fix', 'blog', 'tools', 'sdk', …) are ignored
+      // because supportedLngs below filters anything not in the registry, so
+      // /fix/<slug>/ falls through to localStorage exactly as before.
+      order:              ['path', 'localStorage', 'navigator'],
+      lookupFromPathIndex: 0,
       lookupLocalStorage: 'ifc-locale',
       caches:             ['localStorage'],
     },

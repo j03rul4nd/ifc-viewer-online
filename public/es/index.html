@@ -27,24 +27,28 @@
   <meta name="twitter:title" content="Visor IFC Online — Gratis, Sin Instalación" />
   <meta name="twitter:description" content="Visor, validador y editor de IFC en el navegador. Health Score 0–100, 44 reglas, sin subir archivos. Funciona con WebAssembly." />
   <meta name="twitter:image" content="https://www.ifcvieweronline.eu/og-image-es.png" />
-  <link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/" />
+  <!-- hreflang — the full ten-language cluster, identical on every home page.
+       Kept in sync by hand here and in /index.html; the other eight are emitted
+       by scripts/seo/generate-lang-shells.ts. A cluster is only honoured if every
+       member links to every other member AND to itself. -->
   <link rel="alternate" hreflang="en"        href="https://www.ifcvieweronline.eu/" />
+  <link rel="alternate" hreflang="es"        href="https://www.ifcvieweronline.eu/es/" />
+  <link rel="alternate" hreflang="fr"        href="https://www.ifcvieweronline.eu/fr/" />
+  <link rel="alternate" hreflang="de"        href="https://www.ifcvieweronline.eu/de/" />
+  <link rel="alternate" hreflang="pt"        href="https://www.ifcvieweronline.eu/pt/" />
+  <link rel="alternate" hreflang="it"        href="https://www.ifcvieweronline.eu/it/" />
+  <link rel="alternate" hreflang="zh"        href="https://www.ifcvieweronline.eu/zh/" />
+  <link rel="alternate" hreflang="ja"        href="https://www.ifcvieweronline.eu/ja/" />
+  <link rel="alternate" hreflang="th"        href="https://www.ifcvieweronline.eu/th/" />
+  <link rel="alternate" hreflang="ca"        href="https://www.ifcvieweronline.eu/ca/" />
   <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/" />
 
-  <meta property="og:type"        content="website" />
-  <meta property="og:url"         content="https://www.ifcvieweronline.eu/es/" />
-  <meta property="og:title"       content="Visor IFC Online — Gratis, Sin Instalación" />
-  <meta property="og:description" content="Abre, valida y edita archivos IFC en tu navegador. Sin subir archivos. Sin cuenta. Compatible con IFC2x3, IFC4, IFC4x3." />
-  <meta property="og:site_name"   content="IFC Viewer Online" />
-  <meta property="og:locale"      content="es_ES" />
   <meta property="og:locale:alternate" content="en_US" />
-  <meta name="twitter:card"        content="summary" />
-  <meta name="twitter:title"       content="Visor IFC Online — Gratis, Sin Instalación" />
-  <meta name="twitter:description" content="Abre, valida y edita archivos IFC en tu navegador. Sin subir archivos, sin cuenta." />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Fonts are self-hosted (see public/fonts.css). This page previously loaded
+       Geist from fonts.googleapis.com, which leaks visitor IPs to Google and was
+       removed from every other page during the GDPR pass — this file was missed. -->
+  <link rel="stylesheet" href="/fonts.css" />
 
   <script type="application/ld+json">
   {

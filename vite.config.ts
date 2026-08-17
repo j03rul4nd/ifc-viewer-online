@@ -6,6 +6,7 @@ import { generateFixPages } from './scripts/seo/generate-fix-pages'
 import { generateBlogPages } from './scripts/seo/generate-blog-pages'
 import { generateLegalPages } from './scripts/seo/generate-legal-pages'
 import { generateEbookPage } from './scripts/seo/generate-ebook-page'
+import { generateLangShells } from './scripts/seo/generate-lang-shells'
 
 // ── Static landing content injection ─────────────────────────────────────────
 // Reads src/locales/en/landing.json after the build and injects the FAQ and
@@ -148,6 +149,33 @@ function generateEbookPageShell(): import('vite').Plugin {
   }
 }
 
+// ── Localized app home shells ────────────────────────────────────────────────
+// Generates dist/<lang>/index.html for the eight languages that had no home page
+// of their own and were therefore served the English shell with a canonical
+// pointing at the root — which is why Search Console reported /it/ as a
+// duplicate. See scripts/seo/generate-lang-shells.ts for the full story.
+//
+// Ordering matters: this reads dist/index.html as its template, so it must run
+// BEFORE injectLandingContent(), which appends an English <noscript> block to
+// that same file. See the note on the plugins array below.
+function generateLanguageShells(): import('vite').Plugin {
+  return {
+    name: 'generate-language-shells',
+    apply: 'build',
+    closeBundle() {
+      const distDir = path.resolve(__dirname, 'dist')
+      if (!existsSync(distDir)) return
+      const r = generateLangShells(distDir)
+      const status = r.errors > 0 ? `⚠ ${r.errors} errors` : 'ok'
+      // eslint-disable-next-line no-console
+      console.log(
+        `\n  ✓ Language home shells: ${r.shells} written` +
+        ` · sitemap ${r.sitemap ? `+${r.sitemapAdded} urls` : 'unchanged'} · ${status}\n`,
+      )
+    },
+  }
+}
+
 function copyWebIfcWasm() {
   return {
     name: 'copy-web-ifc-wasm',
@@ -218,7 +246,11 @@ function copyThreeDecoders() {
 }
 
 export default defineConfig({
-  plugins: [react(), copyWebIfcWasm(), copyThreeDecoders(), injectLandingContent(), generateRuleFixPages(), generateBlogPageShells(), generateLegalPageShells(), generateEbookPageShell()],
+  // generateLanguageShells() runs BEFORE injectLandingContent(): it uses
+  // dist/index.html as its template, and injectLandingContent() appends an
+  // ENGLISH <noscript> block to that file. Reversing the two would give every
+  // localized shell the English copy on top of its own translated block.
+  plugins: [react(), copyWebIfcWasm(), copyThreeDecoders(), generateLanguageShells(), injectLandingContent(), generateRuleFixPages(), generateBlogPageShells(), generateLegalPageShells(), generateEbookPageShell()],
   // Served from the domain root on Vercel (https://www.ifcvieweronline.eu/).
   // BASE_PATH is honoured if set, but defaults to '/' — the single deploy target.
   base: process.env.BASE_PATH || '/',
