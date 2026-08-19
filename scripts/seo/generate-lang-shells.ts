@@ -36,7 +36,7 @@
 
 import path from 'path'
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
-import { validatorPath } from './localized-landings'
+import { validatorPath } from '../../src/lib/localized-landings'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 

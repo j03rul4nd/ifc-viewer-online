@@ -10,8 +10,21 @@ import { MIN_WINDOW_SECONDS, MAX_WINDOW_SECONDS } from '../lib/capture/replay-bu
 
 describe('parseStoredPrefs', () => {
   it('round-trips a full, valid preference set', () => {
-    const prefs = { seconds: 22, fps: 15, height: 720, aspect: 'square' as const }
+    const prefs = {
+      seconds: 22, fps: 15, height: 720, aspect: 'square' as const,
+      fit: 'crop' as const, padStyle: 'dark' as const,
+    }
     expect(parseStoredPrefs(JSON.stringify(prefs))).toEqual(prefs)
+  })
+
+  it('reads prefs written before fit/padStyle existed', () => {
+    // Anyone who used the toolkit before the editor shipped has a v1 blob;
+    // it must load rather than reset every other choice they made.
+    const legacy = JSON.stringify({ seconds: 22, fps: 15, height: 720, aspect: 'square' })
+    expect(parseStoredPrefs(legacy)).toEqual({
+      seconds: 22, fps: 15, height: 720, aspect: 'square',
+      fit: DEFAULT_PREFS.fit, padStyle: DEFAULT_PREFS.padStyle,
+    })
   })
 
   it('preserves an explicit source-resolution choice (null height)', () => {

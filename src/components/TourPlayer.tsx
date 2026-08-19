@@ -26,6 +26,7 @@ import { replayController } from '../lib/capture/replay-controller'
 import { PRESENTATION_TEMPLATES } from '../lib/templates/presentationTemplates'
 import { computeTrimToLastSeconds } from '../lib/capture/replay-buffer-core'
 import { exportGif, readClipDuration } from '../lib/capture/gif-export'
+import { createTimeline } from '../lib/capture/timeline'
 import { downloadBlob } from '../lib/diffStore'
 import { createLogger } from '../lib/logger'
 import { getRuleLabel, type ValidationIssue, type TourStep } from '../types'
@@ -224,9 +225,12 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
       const result = await exportGif(blob, {
         fps: 10,
         targetHeight: 480,
-        trim: computeTrimToLastSeconds(duration, seconds),
+        // One-click export: the template's framing, no text and no transitions.
+        timeline: createTimeline(computeTrimToLastSeconds(duration, seconds)),
         watermark,
         aspect: aspectPreset,
+        fit: store.fit,
+        padStyle: store.padStyle,
         onProgress: store.setExportProgress,
       })
       if (result.ok) {

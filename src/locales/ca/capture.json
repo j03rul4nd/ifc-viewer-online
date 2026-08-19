@@ -8,11 +8,8 @@
   "lastSeconds": "Últims {{seconds}}s",
   "recording": "Memòria de repetició gravant",
   "captureFailed": "La captura ha fallat",
-  "previewTitle": "Previsualització de la captura",
+  "previewTitle": "Editor de clips",
   "close": "Tanca",
-  "trimLabel": "Retall",
-  "trimStart": "Inici del retall",
-  "trimEnd": "Final del retall",
   "fpsLabel": "FPS del GIF",
   "resolutionLabel": "Resolució",
   "sourceRes": "Original",
@@ -20,14 +17,16 @@
   "cancel": "Cancel·la",
   "exporting": "Exportant…",
   "pngDone": "Fotograma baixat com a PNG",
-  "webmDone": "Clip baixat com a WebM",
+  "videoDone": "Clip baixat com a {{format}}",
   "gifDone": "GIF baixat",
   "exportFailed": "L'exportació ha fallat: {{message}}",
   "aspect": {
     "label": "Format",
     "source": "Original",
     "square": "1:1",
-    "vertical": "4:5"
+    "vertical": "4:5",
+    "story": "9:16",
+    "wide": "16:9"
   },
   "durationTitle": "Durada del clip",
   "bufferReady": "A punt — els darrers {{seconds}}s són a la memòria",
@@ -35,6 +34,119 @@
   "wholeClip": "Clip sencer",
   "estimate": "≈{{size}} · {{frames}} fotogrames · {{width}}×{{height}}",
   "frameCapNotice": "Limitat a {{max}} fotogrames — els FPS reals són menors",
+  "editor": {
+    "preview": "Previsualització del clip",
+    "timeline": "Línia de temps",
+    "playhead": "Capçal de reproducció",
+    "trimIn": "Punt d'entrada",
+    "trimOut": "Punt de sortida",
+    "trackVideo": "Vídeo",
+    "trackText": "Text",
+    "trackAudio": "Àudio",
+    "noText": "Encara no hi ha text — prem T per afegir una targeta",
+    "noAudio": "Sense música — fes clic per afegir-ne",
+    "shortcuts": "Espai reprodueix · I / O marquen entrada i sortida · ← → avancen un fotograma (Maj per 1s) · T afegeix text · Supr elimina",
+    "tabs": {
+      "text": "Text",
+      "effects": "Efectes",
+      "audio": "Àudio",
+      "export": "Exporta"
+    },
+    "transport": {
+      "play": "Reprodueix",
+      "pause": "Pausa",
+      "toStart": "Vés al punt d'entrada",
+      "toEnd": "Vés al punt de sortida",
+      "stepBack": "Fotograma anterior",
+      "stepFwd": "Fotograma següent",
+      "loop": "Reprodueix en bucle",
+      "markIn": "Marca l'entrada al capçal (I)",
+      "markOut": "Marca la sortida al capçal (O)"
+    },
+    "text": {
+      "add": "Afegeix text",
+      "addAt": "S'afegeix a {{time}}s, on hi ha el capçal",
+      "newCard": "El teu text",
+      "empty": "No hi ha cap targeta seleccionada. Afegeix-ne una, o fes clic en un bloc de la pista de text.",
+      "content": "Text",
+      "placeholder": "Escriu el teu rètol…",
+      "style": "Estil",
+      "anchor": "Posició",
+      "anim": "Animació",
+      "color": "Color",
+      "size": "Mida",
+      "timing": "Temps",
+      "atPlayhead": "Mou al capçal",
+      "delete": "Elimina"
+    },
+    "styles": {
+      "title": "Títol",
+      "subtitle": "Subtítol",
+      "caption": "Rètol",
+      "lowerThird": "Faldó",
+      "badge": "Etiqueta"
+    },
+    "anims": {
+      "none": "Cap",
+      "fade": "Fosa",
+      "slideUp": "Lliscament",
+      "pop": "Rebot"
+    },
+    "effects": {
+      "in": "Obertura",
+      "out": "Tancament",
+      "duration": "Durada",
+      "hint": "Les transicions fonen tot el fotograma, títols inclosos — com obre i tanca un tall en un feed."
+    },
+    "transitions": {
+      "none": "Cap",
+      "fade": "Fosa",
+      "dipWhite": "Fosa a blanc"
+    },
+    "audio": {
+      "builtin": "Música inclosa",
+      "upload": "El teu propi àudio",
+      "chooseFile": "Tria un fitxer…",
+      "uploadHint": "MP3, WAV, M4A o OGG, fins a {{max}} MB. No surt del teu dispositiu.",
+      "synthNote": "Aquestes bases es generen al teu navegador, així que són d'ús lliure i no requereixen atribució.",
+      "gifNote": "L'àudio s'aplica a l'exportació de vídeo. Els GIF són muts per definició.",
+      "volume": "Volum",
+      "fade": "Fosa d'entrada i sortida",
+      "offset": "Comença la música a",
+      "remove": "Treu la música",
+      "loading": "Preparant l'àudio…",
+      "decodeFailed": "No s'ha pogut descodificar aquest fitxer",
+      "bedFailed": "No s'ha pogut generar la base musical"
+    },
+    "beds": {
+      "calm": "Calmada",
+      "corporate": "Corporativa",
+      "upbeat": "Animada",
+      "cinematic": "Cinematogràfica"
+    },
+    "presets": {
+      "original": "Original",
+      "reel": "Reel",
+      "post": "Post",
+      "portrait": "Vertical",
+      "wide": "Panoràmic"
+    },
+    "export": {
+      "preset": "On es publicarà?",
+      "framing": "Enquadrament",
+      "fitMode": "Ajusta",
+      "fillMode": "Omple",
+      "fitHint": "Tota la vista cap dins del fotograma; les bandes deixen lloc per a un rètol.",
+      "fillHint": "Omple el fotograma de vora a vora i retalla el que queda fora.",
+      "pad": "Bandes",
+      "pad_blur": "Desenfocament",
+      "pad_dark": "Fosques",
+      "pad_light": "Clares",
+      "mp4Note": "S'exporta en MP4 (H.264) — a punt per pujar a Instagram, TikTok o LinkedIn.",
+      "webmNote": "Aquest navegador grava en WebM. La majoria de xarxes volen MP4 — prova amb Chrome o Edge.",
+      "noVideoNote": "Aquest navegador no pot gravar vídeo. El GIF i el PNG continuen funcionant."
+    }
+  },
   "background": {
     "tooltip": "Fons de l'escena",
     "title": "Fons",

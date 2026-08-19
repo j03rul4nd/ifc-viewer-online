@@ -8,11 +8,8 @@
   "lastSeconds": "Last {{seconds}}s",
   "recording": "Replay buffer recording",
   "captureFailed": "Capture failed",
-  "previewTitle": "Capture preview",
+  "previewTitle": "Clip editor",
   "close": "Close",
-  "trimLabel": "Trim",
-  "trimStart": "Trim start",
-  "trimEnd": "Trim end",
   "fpsLabel": "GIF FPS",
   "resolutionLabel": "Resolution",
   "sourceRes": "Original",
@@ -20,14 +17,16 @@
   "cancel": "Cancel",
   "exporting": "Exporting…",
   "pngDone": "Frame downloaded as PNG",
-  "webmDone": "Clip downloaded as WebM",
+  "videoDone": "Clip downloaded as {{format}}",
   "gifDone": "GIF downloaded",
   "exportFailed": "Export failed: {{message}}",
   "aspect": {
     "label": "Format",
     "source": "Original",
     "square": "1:1",
-    "vertical": "4:5"
+    "vertical": "4:5",
+    "story": "9:16",
+    "wide": "16:9"
   },
   "durationTitle": "Clip length",
   "bufferReady": "Ready — the last {{seconds}}s are buffered",
@@ -35,6 +34,119 @@
   "wholeClip": "Whole clip",
   "estimate": "≈{{size}} · {{frames}} frames · {{width}}×{{height}}",
   "frameCapNotice": "Capped at {{max}} frames — effective FPS is lower",
+  "editor": {
+    "preview": "Clip preview",
+    "timeline": "Timeline",
+    "playhead": "Playhead",
+    "trimIn": "In point",
+    "trimOut": "Out point",
+    "trackVideo": "Video",
+    "trackText": "Text",
+    "trackAudio": "Audio",
+    "noText": "No text yet — press T to add a card",
+    "noAudio": "No music — click to add",
+    "shortcuts": "Space play · I / O set in and out · ← → step a frame (Shift for 1s) · T add text · Del remove",
+    "tabs": {
+      "text": "Text",
+      "effects": "Effects",
+      "audio": "Audio",
+      "export": "Export"
+    },
+    "transport": {
+      "play": "Play",
+      "pause": "Pause",
+      "toStart": "Go to in point",
+      "toEnd": "Go to out point",
+      "stepBack": "Previous frame",
+      "stepFwd": "Next frame",
+      "loop": "Loop playback",
+      "markIn": "Set in point at the playhead (I)",
+      "markOut": "Set out point at the playhead (O)"
+    },
+    "text": {
+      "add": "Add text",
+      "addAt": "Added at {{time}}s, where the playhead is",
+      "newCard": "Your text",
+      "empty": "No card selected. Add one, or click a block on the text track.",
+      "content": "Text",
+      "placeholder": "Type your caption…",
+      "style": "Style",
+      "anchor": "Position",
+      "anim": "Animation",
+      "color": "Colour",
+      "size": "Size",
+      "timing": "Timing",
+      "atPlayhead": "Move to playhead",
+      "delete": "Delete"
+    },
+    "styles": {
+      "title": "Title",
+      "subtitle": "Subtitle",
+      "caption": "Caption",
+      "lowerThird": "Lower third",
+      "badge": "Badge"
+    },
+    "anims": {
+      "none": "None",
+      "fade": "Fade",
+      "slideUp": "Slide",
+      "pop": "Pop"
+    },
+    "effects": {
+      "in": "Opening",
+      "out": "Closing",
+      "duration": "Duration",
+      "hint": "Transitions fade the whole frame, titles included — the way a cut opens and closes on a feed."
+    },
+    "transitions": {
+      "none": "None",
+      "fade": "Fade",
+      "dipWhite": "Dip to white"
+    },
+    "audio": {
+      "builtin": "Built-in music",
+      "upload": "Your own audio",
+      "chooseFile": "Choose a file…",
+      "uploadHint": "MP3, WAV, M4A or OGG, up to {{max}} MB. Stays on your device.",
+      "synthNote": "These beds are generated in your browser, so they are free to use and carry no attribution.",
+      "gifNote": "Audio applies to the video export. GIFs are silent by definition.",
+      "volume": "Volume",
+      "fade": "Fade in and out",
+      "offset": "Start music at",
+      "remove": "Remove music",
+      "loading": "Preparing audio…",
+      "decodeFailed": "That file could not be decoded",
+      "bedFailed": "The music bed could not be generated"
+    },
+    "beds": {
+      "calm": "Calm",
+      "corporate": "Corporate",
+      "upbeat": "Upbeat",
+      "cinematic": "Cinematic"
+    },
+    "presets": {
+      "original": "Original",
+      "reel": "Reel",
+      "post": "Post",
+      "portrait": "Portrait",
+      "wide": "Wide"
+    },
+    "export": {
+      "preset": "Where is this going?",
+      "framing": "Framing",
+      "fitMode": "Fit",
+      "fillMode": "Fill",
+      "fitHint": "The whole view fits inside the frame; the bars leave room for a caption.",
+      "fillHint": "Fills the frame edge to edge, cropping whatever falls outside it.",
+      "pad": "Bars",
+      "pad_blur": "Blur",
+      "pad_dark": "Dark",
+      "pad_light": "Light",
+      "mp4Note": "Exports as MP4 (H.264) — ready to upload to Instagram, TikTok or LinkedIn.",
+      "webmNote": "This browser records WebM. Most social platforms want MP4 — try Chrome or Edge for that.",
+      "noVideoNote": "This browser cannot record video. GIF and PNG still work."
+    }
+  },
   "background": {
     "tooltip": "Scene background",
     "title": "Background",

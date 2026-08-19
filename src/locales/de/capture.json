@@ -8,11 +8,8 @@
   "lastSeconds": "Letzte {{seconds}} s",
   "recording": "Replay-Puffer nimmt auf",
   "captureFailed": "Aufnahme fehlgeschlagen",
-  "previewTitle": "Aufnahme-Vorschau",
+  "previewTitle": "Clip-Editor",
   "close": "Schließen",
-  "trimLabel": "Zuschnitt",
-  "trimStart": "Zuschnitt-Beginn",
-  "trimEnd": "Zuschnitt-Ende",
   "fpsLabel": "GIF-FPS",
   "resolutionLabel": "Auflösung",
   "sourceRes": "Original",
@@ -20,14 +17,16 @@
   "cancel": "Abbrechen",
   "exporting": "Exportiere…",
   "pngDone": "Einzelbild als PNG heruntergeladen",
-  "webmDone": "Clip als WebM heruntergeladen",
+  "videoDone": "Clip als {{format}} heruntergeladen",
   "gifDone": "GIF heruntergeladen",
   "exportFailed": "Export fehlgeschlagen: {{message}}",
   "aspect": {
     "label": "Format",
     "source": "Original",
     "square": "1:1",
-    "vertical": "4:5"
+    "vertical": "4:5",
+    "story": "9:16",
+    "wide": "16:9"
   },
   "durationTitle": "Cliplänge",
   "bufferReady": "Bereit — die letzten {{seconds}}s sind gepuffert",
@@ -35,6 +34,119 @@
   "wholeClip": "Ganzer Clip",
   "estimate": "≈{{size}} · {{frames}} Bilder · {{width}}×{{height}}",
   "frameCapNotice": "Auf {{max}} Bilder begrenzt — effektive FPS sind niedriger",
+  "editor": {
+    "preview": "Clip-Vorschau",
+    "timeline": "Zeitleiste",
+    "playhead": "Abspielkopf",
+    "trimIn": "In-Punkt",
+    "trimOut": "Out-Punkt",
+    "trackVideo": "Video",
+    "trackText": "Text",
+    "trackAudio": "Audio",
+    "noText": "Noch kein Text — T drücken, um eine Karte hinzuzufügen",
+    "noAudio": "Keine Musik — zum Hinzufügen klicken",
+    "shortcuts": "Leertaste spielt · I / O setzen In und Out · ← → springen ein Bild (Umschalt für 1 s) · T fügt Text hinzu · Entf löscht",
+    "tabs": {
+      "text": "Text",
+      "effects": "Effekte",
+      "audio": "Audio",
+      "export": "Export"
+    },
+    "transport": {
+      "play": "Abspielen",
+      "pause": "Pause",
+      "toStart": "Zum In-Punkt springen",
+      "toEnd": "Zum Out-Punkt springen",
+      "stepBack": "Vorheriges Bild",
+      "stepFwd": "Nächstes Bild",
+      "loop": "In Schleife abspielen",
+      "markIn": "In-Punkt am Abspielkopf setzen (I)",
+      "markOut": "Out-Punkt am Abspielkopf setzen (O)"
+    },
+    "text": {
+      "add": "Text hinzufügen",
+      "addAt": "Wird bei {{time}}s eingefügt, wo der Abspielkopf steht",
+      "newCard": "Dein Text",
+      "empty": "Keine Karte ausgewählt. Füge eine hinzu oder klicke einen Block in der Textspur an.",
+      "content": "Text",
+      "placeholder": "Bildtext eingeben…",
+      "style": "Stil",
+      "anchor": "Position",
+      "anim": "Animation",
+      "color": "Farbe",
+      "size": "Größe",
+      "timing": "Timing",
+      "atPlayhead": "Zum Abspielkopf verschieben",
+      "delete": "Löschen"
+    },
+    "styles": {
+      "title": "Titel",
+      "subtitle": "Untertitel",
+      "caption": "Bildtext",
+      "lowerThird": "Bauchbinde",
+      "badge": "Label"
+    },
+    "anims": {
+      "none": "Keine",
+      "fade": "Blende",
+      "slideUp": "Schieben",
+      "pop": "Pop"
+    },
+    "effects": {
+      "in": "Anfang",
+      "out": "Ende",
+      "duration": "Dauer",
+      "hint": "Übergänge blenden das ganze Bild ab, Titel eingeschlossen — so wie ein Schnitt im Feed öffnet und schließt."
+    },
+    "transitions": {
+      "none": "Keiner",
+      "fade": "Blende",
+      "dipWhite": "Weißblende"
+    },
+    "audio": {
+      "builtin": "Mitgelieferte Musik",
+      "upload": "Eigenes Audio",
+      "chooseFile": "Datei wählen…",
+      "uploadHint": "MP3, WAV, M4A oder OGG, bis {{max}} MB. Bleibt auf deinem Gerät.",
+      "synthNote": "Diese Betten werden in deinem Browser erzeugt — frei verwendbar und ohne Namensnennung.",
+      "gifNote": "Audio gilt für den Videoexport. GIFs sind grundsätzlich stumm.",
+      "volume": "Lautstärke",
+      "fade": "Ein- und ausblenden",
+      "offset": "Musik beginnt bei",
+      "remove": "Musik entfernen",
+      "loading": "Audio wird vorbereitet…",
+      "decodeFailed": "Diese Datei konnte nicht dekodiert werden",
+      "bedFailed": "Das Musikbett konnte nicht erzeugt werden"
+    },
+    "beds": {
+      "calm": "Ruhig",
+      "corporate": "Corporate",
+      "upbeat": "Beschwingt",
+      "cinematic": "Filmisch"
+    },
+    "presets": {
+      "original": "Original",
+      "reel": "Reel",
+      "post": "Post",
+      "portrait": "Hochformat",
+      "wide": "Breitbild"
+    },
+    "export": {
+      "preset": "Wo soll das hin?",
+      "framing": "Bildausschnitt",
+      "fitMode": "Einpassen",
+      "fillMode": "Füllen",
+      "fitHint": "Die ganze Ansicht passt ins Bild; die Balken lassen Platz für einen Bildtext.",
+      "fillHint": "Füllt das Bild randlos und schneidet ab, was darüber hinausgeht.",
+      "pad": "Balken",
+      "pad_blur": "Unschärfe",
+      "pad_dark": "Dunkel",
+      "pad_light": "Hell",
+      "mp4Note": "Export als MP4 (H.264) — bereit für Instagram, TikTok oder LinkedIn.",
+      "webmNote": "Dieser Browser nimmt WebM auf. Die meisten Plattformen wollen MP4 — dafür Chrome oder Edge nutzen.",
+      "noVideoNote": "Dieser Browser kann kein Video aufnehmen. GIF und PNG funktionieren weiterhin."
+    }
+  },
   "background": {
     "tooltip": "Szenenhintergrund",
     "title": "Hintergrund",

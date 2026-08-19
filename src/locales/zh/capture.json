@@ -8,11 +8,8 @@
   "lastSeconds": "最近 {{seconds}} 秒",
   "recording": "回放缓冲区录制中",
   "captureFailed": "捕获失败",
-  "previewTitle": "捕获预览",
+  "previewTitle": "短片编辑器",
   "close": "关闭",
-  "trimLabel": "剪辑",
-  "trimStart": "剪辑起点",
-  "trimEnd": "剪辑终点",
   "fpsLabel": "GIF 帧率",
   "resolutionLabel": "分辨率",
   "sourceRes": "原始",
@@ -20,14 +17,16 @@
   "cancel": "取消",
   "exporting": "导出中…",
   "pngDone": "帧已下载为 PNG",
-  "webmDone": "短片已下载为 WebM",
+  "videoDone": "短片已下载为 {{format}}",
   "gifDone": "GIF 已下载",
   "exportFailed": "导出失败：{{message}}",
   "aspect": {
     "label": "画幅",
     "source": "原始",
     "square": "1:1",
-    "vertical": "4:5"
+    "vertical": "4:5",
+    "story": "9:16",
+    "wide": "16:9"
   },
   "durationTitle": "片段时长",
   "bufferReady": "就绪 — 最近 {{seconds}} 秒已缓存",
@@ -35,6 +34,119 @@
   "wholeClip": "整个片段",
   "estimate": "≈{{size}} · {{frames}} 帧 · {{width}}×{{height}}",
   "frameCapNotice": "上限 {{max}} 帧 — 实际帧率会降低",
+  "editor": {
+    "preview": "片段预览",
+    "timeline": "时间线",
+    "playhead": "播放头",
+    "trimIn": "入点",
+    "trimOut": "出点",
+    "trackVideo": "视频",
+    "trackText": "文字",
+    "trackAudio": "音频",
+    "noText": "还没有文字 — 按 T 添加一张字卡",
+    "noAudio": "没有音乐 — 点击添加",
+    "shortcuts": "空格播放 · I / O 设置入点和出点 · ← → 逐帧移动（Shift 为 1 秒）· T 添加文字 · Del 删除",
+    "tabs": {
+      "text": "文字",
+      "effects": "特效",
+      "audio": "音频",
+      "export": "导出"
+    },
+    "transport": {
+      "play": "播放",
+      "pause": "暂停",
+      "toStart": "跳到入点",
+      "toEnd": "跳到出点",
+      "stepBack": "上一帧",
+      "stepFwd": "下一帧",
+      "loop": "循环播放",
+      "markIn": "在播放头设置入点（I）",
+      "markOut": "在播放头设置出点（O）"
+    },
+    "text": {
+      "add": "添加文字",
+      "addAt": "将添加在 {{time}} 秒处，也就是播放头所在位置",
+      "newCard": "你的文字",
+      "empty": "未选中字卡。添加一张，或点击文字轨道上的色块。",
+      "content": "文字",
+      "placeholder": "输入你的字幕…",
+      "style": "样式",
+      "anchor": "位置",
+      "anim": "动画",
+      "color": "颜色",
+      "size": "大小",
+      "timing": "时间",
+      "atPlayhead": "移到播放头",
+      "delete": "删除"
+    },
+    "styles": {
+      "title": "标题",
+      "subtitle": "副标题",
+      "caption": "字幕",
+      "lowerThird": "下三分之一",
+      "badge": "标签"
+    },
+    "anims": {
+      "none": "无",
+      "fade": "淡入淡出",
+      "slideUp": "滑动",
+      "pop": "弹出"
+    },
+    "effects": {
+      "in": "开场",
+      "out": "结尾",
+      "duration": "时长",
+      "hint": "转场会让整帧淡出，标题也一起 — 就像一个镜头在信息流里开场和收尾。"
+    },
+    "transitions": {
+      "none": "无",
+      "fade": "淡入淡出",
+      "dipWhite": "淡入白场"
+    },
+    "audio": {
+      "builtin": "内置音乐",
+      "upload": "你自己的音频",
+      "chooseFile": "选择文件…",
+      "uploadHint": "MP3、WAV、M4A 或 OGG，最大 {{max}} MB。不会离开你的设备。",
+      "synthNote": "这些配乐在你的浏览器中生成，可自由使用，无需署名。",
+      "gifNote": "音频用于视频导出。GIF 本身没有声音。",
+      "volume": "音量",
+      "fade": "淡入与淡出",
+      "offset": "音乐起始位置",
+      "remove": "移除音乐",
+      "loading": "正在准备音频…",
+      "decodeFailed": "无法解码该文件",
+      "bedFailed": "无法生成配乐"
+    },
+    "beds": {
+      "calm": "舒缓",
+      "corporate": "商务",
+      "upbeat": "轻快",
+      "cinematic": "电影感"
+    },
+    "presets": {
+      "original": "原始",
+      "reel": "Reel",
+      "post": "帖子",
+      "portrait": "竖版",
+      "wide": "宽屏"
+    },
+    "export": {
+      "preset": "发布到哪里？",
+      "framing": "取景",
+      "fitMode": "适应",
+      "fillMode": "填充",
+      "fitHint": "整个视图都装进画面；留出的黑边正好放字幕。",
+      "fillHint": "铺满整个画面，超出的部分会被裁掉。",
+      "pad": "边条",
+      "pad_blur": "模糊",
+      "pad_dark": "深色",
+      "pad_light": "浅色",
+      "mp4Note": "导出为 MP4（H.264）— 可直接上传到 Instagram、TikTok 或 LinkedIn。",
+      "webmNote": "此浏览器录制的是 WebM。多数社交平台需要 MP4 — 可改用 Chrome 或 Edge。",
+      "noVideoNote": "此浏览器无法录制视频。GIF 和 PNG 仍可使用。"
+    }
+  },
   "background": {
     "tooltip": "场景背景",
     "title": "背景",

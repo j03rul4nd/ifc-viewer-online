@@ -8,11 +8,8 @@
   "lastSeconds": "Ultimi {{seconds}}s",
   "recording": "Buffer di replay in registrazione",
   "captureFailed": "Cattura non riuscita",
-  "previewTitle": "Anteprima della cattura",
+  "previewTitle": "Editor di clip",
   "close": "Chiudi",
-  "trimLabel": "Ritaglio",
-  "trimStart": "Inizio ritaglio",
-  "trimEnd": "Fine ritaglio",
   "fpsLabel": "FPS della GIF",
   "resolutionLabel": "Risoluzione",
   "sourceRes": "Originale",
@@ -20,14 +17,16 @@
   "cancel": "Annulla",
   "exporting": "Esportazione…",
   "pngDone": "Fotogramma scaricato come PNG",
-  "webmDone": "Clip scaricata come WebM",
+  "videoDone": "Clip scaricata come {{format}}",
   "gifDone": "GIF scaricata",
   "exportFailed": "Esportazione non riuscita: {{message}}",
   "aspect": {
     "label": "Formato",
     "source": "Originale",
     "square": "1:1",
-    "vertical": "4:5"
+    "vertical": "4:5",
+    "story": "9:16",
+    "wide": "16:9"
   },
   "durationTitle": "Durata della clip",
   "bufferReady": "Pronto — gli ultimi {{seconds}}s sono nel buffer",
@@ -35,6 +34,119 @@
   "wholeClip": "Clip intera",
   "estimate": "≈{{size}} · {{frames}} fotogrammi · {{width}}×{{height}}",
   "frameCapNotice": "Limitato a {{max}} fotogrammi — gli FPS reali sono inferiori",
+  "editor": {
+    "preview": "Anteprima della clip",
+    "timeline": "Linea temporale",
+    "playhead": "Indicatore di riproduzione",
+    "trimIn": "Punto di attacco",
+    "trimOut": "Punto di stacco",
+    "trackVideo": "Video",
+    "trackText": "Testo",
+    "trackAudio": "Audio",
+    "noText": "Ancora nessun testo — premi T per aggiungere una scheda",
+    "noAudio": "Nessuna musica — clicca per aggiungerla",
+    "shortcuts": "Spazio riproduce · I / O impostano attacco e stacco · ← → spostano di un fotogramma (Maiusc per 1s) · T aggiunge testo · Canc elimina",
+    "tabs": {
+      "text": "Testo",
+      "effects": "Effetti",
+      "audio": "Audio",
+      "export": "Esporta"
+    },
+    "transport": {
+      "play": "Riproduci",
+      "pause": "Pausa",
+      "toStart": "Vai al punto di attacco",
+      "toEnd": "Vai al punto di stacco",
+      "stepBack": "Fotogramma precedente",
+      "stepFwd": "Fotogramma successivo",
+      "loop": "Riproduci in loop",
+      "markIn": "Imposta l'attacco sull'indicatore (I)",
+      "markOut": "Imposta lo stacco sull'indicatore (O)"
+    },
+    "text": {
+      "add": "Aggiungi testo",
+      "addAt": "Aggiunto a {{time}}s, dove si trova l'indicatore",
+      "newCard": "Il tuo testo",
+      "empty": "Nessuna scheda selezionata. Aggiungine una, o clicca un blocco sulla traccia testo.",
+      "content": "Testo",
+      "placeholder": "Scrivi la tua didascalia…",
+      "style": "Stile",
+      "anchor": "Posizione",
+      "anim": "Animazione",
+      "color": "Colore",
+      "size": "Dimensione",
+      "timing": "Tempi",
+      "atPlayhead": "Sposta sull'indicatore",
+      "delete": "Elimina"
+    },
+    "styles": {
+      "title": "Titolo",
+      "subtitle": "Sottotitolo",
+      "caption": "Didascalia",
+      "lowerThird": "Sottopancia",
+      "badge": "Etichetta"
+    },
+    "anims": {
+      "none": "Nessuna",
+      "fade": "Dissolvenza",
+      "slideUp": "Scorrimento",
+      "pop": "Rimbalzo"
+    },
+    "effects": {
+      "in": "Apertura",
+      "out": "Chiusura",
+      "duration": "Durata",
+      "hint": "Le transizioni dissolvono l'intero fotogramma, titoli compresi — come un taglio apre e chiude in un feed."
+    },
+    "transitions": {
+      "none": "Nessuna",
+      "fade": "Dissolvenza",
+      "dipWhite": "Dissolvenza al bianco"
+    },
+    "audio": {
+      "builtin": "Musica inclusa",
+      "upload": "Il tuo audio",
+      "chooseFile": "Scegli un file…",
+      "uploadHint": "MP3, WAV, M4A o OGG, fino a {{max}} MB. Resta sul tuo dispositivo.",
+      "synthNote": "Queste basi sono generate nel tuo browser: libere da usare e senza attribuzione.",
+      "gifNote": "L'audio vale per l'esportazione video. Le GIF sono mute per definizione.",
+      "volume": "Volume",
+      "fade": "Dissolvenza in entrata e in uscita",
+      "offset": "Inizia la musica a",
+      "remove": "Rimuovi la musica",
+      "loading": "Preparazione dell'audio…",
+      "decodeFailed": "Impossibile decodificare quel file",
+      "bedFailed": "Impossibile generare la base musicale"
+    },
+    "beds": {
+      "calm": "Calma",
+      "corporate": "Corporate",
+      "upbeat": "Vivace",
+      "cinematic": "Cinematografica"
+    },
+    "presets": {
+      "original": "Originale",
+      "reel": "Reel",
+      "post": "Post",
+      "portrait": "Verticale",
+      "wide": "Panoramico"
+    },
+    "export": {
+      "preset": "Dove va a finire?",
+      "framing": "Inquadratura",
+      "fitMode": "Adatta",
+      "fillMode": "Riempi",
+      "fitHint": "L'intera vista entra nel fotogramma; le bande lasciano spazio a una didascalia.",
+      "fillHint": "Riempie il fotogramma da bordo a bordo, tagliando ciò che resta fuori.",
+      "pad": "Bande",
+      "pad_blur": "Sfocatura",
+      "pad_dark": "Scure",
+      "pad_light": "Chiare",
+      "mp4Note": "Esporta in MP4 (H.264) — pronto da caricare su Instagram, TikTok o LinkedIn.",
+      "webmNote": "Questo browser registra in WebM. La maggior parte delle piattaforme vuole MP4 — prova Chrome o Edge.",
+      "noVideoNote": "Questo browser non può registrare video. GIF e PNG continuano a funzionare."
+    }
+  },
   "background": {
     "tooltip": "Sfondo della scena",
     "title": "Sfondo",

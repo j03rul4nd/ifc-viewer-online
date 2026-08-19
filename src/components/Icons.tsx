@@ -52,3 +52,19 @@ export const Lock = (p: IconProps) => <Icon {...p}><rect x="3" y="11" width="18"
 export const Shield = (p: IconProps) => <Icon {...p} d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
 export const Globe = (p: IconProps) => <Icon {...p}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18" /></Icon>
 export const Comment = (p: IconProps) => <Icon {...p}><path d="M21 11.5a8.38 8.38 0 01-9 8.5 8.5 8.5 0 01-3.8-.9L3 21l1.9-5.2A8.5 8.5 0 0112 3a8.38 8.38 0 019 8.5z" /></Icon>
+
+// ── Video editor transport & tracks ────────────────────────────────────────────
+export const Play = (p: IconProps) => <Icon {...p} fill="currentColor" strokeWidth={1}><path d="M7 4.5l12 7.5-12 7.5z" /></Icon>
+export const Pause = (p: IconProps) => <Icon {...p} fill="currentColor" strokeWidth={1}><rect x="6.5" y="4.5" width="4" height="15" rx="1" /><rect x="13.5" y="4.5" width="4" height="15" rx="1" /></Icon>
+export const SkipStart = (p: IconProps) => <Icon {...p} fill="currentColor" strokeWidth={1}><rect x="4" y="5" width="2.5" height="14" rx="1" /><path d="M20 5.5v13L9 12z" /></Icon>
+export const SkipEnd = (p: IconProps) => <Icon {...p} fill="currentColor" strokeWidth={1}><rect x="17.5" y="5" width="2.5" height="14" rx="1" /><path d="M4 5.5v13L15 12z" /></Icon>
+export const StepBack = (p: IconProps) => <Icon {...p} d="M15 5l-7 7 7 7" />
+export const StepFwd = (p: IconProps) => <Icon {...p} d="M9 5l7 7-7 7" />
+export const Loop = (p: IconProps) => <Icon {...p}><path d="M4 9a4 4 0 014-4h9l-2.5-2.5M20 15a4 4 0 01-4 4H7l2.5 2.5" /></Icon>
+export const TypeTool = (p: IconProps) => <Icon {...p}><path d="M5 6V4h14v2M12 4v16M9 20h6" /></Icon>
+export const Music = (p: IconProps) => <Icon {...p}><path d="M9 18V5l11-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="17" cy="16" r="3" /></Icon>
+export const Film = (p: IconProps) => <Icon {...p}><rect x="2.5" y="4" width="19" height="16" rx="2" /><path d="M7 4v16M17 4v16M2.5 12h19M2.5 8h4.5M2.5 16h4.5M17 8h4.5M17 16h4.5" /></Icon>
+export const Trash = (p: IconProps) => <Icon {...p}><path d="M4 7h16M10 7V5a1 1 0 011-1h2a1 1 0 011 1v2" /><path d="M6 7l1 13a1 1 0 001 1h8a1 1 0 001-1l1-13" /></Icon>
+export const Plus = (p: IconProps) => <Icon {...p} d="M12 5v14M5 12h14" />
+export const Transition = (p: IconProps) => <Icon {...p}><rect x="2.5" y="5" width="8" height="14" rx="1.5" /><rect x="13.5" y="5" width="8" height="14" rx="1.5" /><path d="M10.5 12h3" /></Icon>
+export const Sliders = (p: IconProps) => <Icon {...p}><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h8M16 18h4" /><circle cx="16" cy="6" r="2" /><circle cx="10" cy="12" r="2" /><circle cx="14" cy="18" r="2" /></Icon>

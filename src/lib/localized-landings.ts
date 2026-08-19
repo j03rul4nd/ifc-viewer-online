@@ -5,9 +5,11 @@
 // derived from the language code — this file is the single source of truth, and
 // each entry must match a directory name on disk.
 //
-// Shared by generate-fix-pages.ts (footer links on ~510 fix pages) and
-// generate-lang-shells.ts (the <noscript> links on each language home). Kept
-// here so the two generators cannot drift and start linking different targets.
+// Shared by generate-fix-pages.ts (footer links on ~510 fix pages),
+// generate-lang-shells.ts (the <noscript> links on each language home) and the
+// app's own Landing footer. Kept here so they cannot drift and start linking
+// different targets. It lives under src/ because the app imports it too — the
+// build-time generators may reach into src/, not the other way round.
 //
 // Before this existed, the fix-page footer hardcoded
 //   langPath === 'es/' ? 'es/ifc-validador/' : 'ifc-validator/'

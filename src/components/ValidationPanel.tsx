@@ -32,6 +32,7 @@ import type {
 } from '../types'
 import { VALIDATION_PROFILES, RULE_METADATA, RULE_COUNT, getRuleLabel, getRuleRemediation, AUTHORING_TOOLS } from '../types'
 import type { AuthoringTool } from '../types'
+import { fixGuideUrl } from '../lib/fix-guide-url'
 import { getCoveredCategories, ALL_CATEGORIES } from './ValidationCoverageSummary'
 import BcfPanel from './BcfPanel'
 import { useIdsStore } from '../stores/idsStore'
@@ -530,28 +531,13 @@ interface RemediationBlockProps {
   onSelectTool: (tool: AuthoringTool) => void
 }
 
-// Map a ruleId to its static, crawlable "how to fix" guide page (generated at
-// build time — see scripts/seo/generate-fix-pages.ts). The two GUID rules are
-// covered by the richer hand-authored /tools/fix-duplicate-guids/ page instead.
-// Localised pages exist for es/de/fr; every other UI language falls back to EN.
-function fixGuideUrl(ruleId: string, language: string): string {
-  const base = import.meta.env.BASE_URL
-  if (ruleId === 'RULE_DUPLICATE_GUID' || ruleId === 'RULE_INVALID_GUID_FORMAT') {
-    return `${base}tools/fix-duplicate-guids/`
-  }
-  const lang = language.slice(0, 2)
-  const prefix = ['es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th'].includes(lang) ? `${lang}/` : ''
-  const slug = ruleId.replace(/^RULE_/, '').toLowerCase().replace(/_/g, '-')
-  return `${base}${prefix}fix/${slug}/`
-}
-
 function RemediationBlock({ ruleId, language, selectedTool, onSelectTool }: RemediationBlockProps) {
   const { t } = useTranslation('validation')
   const remediation = getRuleRemediation(ruleId, language)
   if (!remediation) return null
 
   const toolSteps = remediation.tools[selectedTool]
-  const guideUrl = fixGuideUrl(ruleId, language)
+  const guideUrl = fixGuideUrl(ruleId, language, import.meta.env.BASE_URL)
 
   return (
     <div className="px-3 py-2.5 border-b border-[var(--border)] bg-[var(--surface-2)]">

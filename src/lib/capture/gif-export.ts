@@ -1,30 +1,45 @@
-// ─── GIF / WebM export orchestrator ────────────────────────────────────────────
+// ─── GIF / video export orchestrator ───────────────────────────────────────────
 // Frame extraction must happen on the main thread (decoding a WebM clip needs
 // an HTMLVideoElement — a WASM demuxer in the worker would cost megabytes for
 // no gain), but everything CPU-heavy (quantize + LZW encode) runs in
 // gif-export.worker.ts. Frames are streamed one at a time with backpressure:
 // the next frame is only decoded after the worker acks the previous one, so
 // peak memory is ~1 RGBA frame regardless of clip length (D-23).
+//
+// Both exporters draw through compositor.composeFrame, so text cards,
+// transitions and padding are identical to what the editor previewed.
+//
+// The video path prefers MP4 (H.264/AAC) when MediaRecorder offers it and falls
+// back to WebM: Instagram, TikTok and LinkedIn all reject WebM uploads, so a
+// "share this to a Reel" feature that only emits WebM does not actually work.
 
 import { createLogger } from '../logger'
 import { ok, err, type Result } from '../result'
 import { ExportError } from '../errors'
 import { parseGifWorkerMsg, type GifInMsg } from '../worker-schemas'
-import { planFrameTimestamps, computeScaledSize, clampTrimWindow, computeCropRect, type TrimWindow, type CaptureAspect } from './replay-buffer-core'
-import { drawWatermark } from './watermark'
+import { planFrameTimestamps, clampTrimWindow, type CaptureAspect } from './replay-buffer-core'
+import { computeFrameLayout, type FrameFit, type FrameLayout, type PadStyle } from './frame-layout'
+import { composeFrame } from './compositor'
+import { clampTimeline, type EditTimeline } from './timeline'
+import { scheduleAudioEnvelope, resolveAudioOffset } from './audio-library'
 
 const log = createLogger('GifExport')
 
-export interface GifExportOptions {
-  /** GIF frames per second (default 10). */
-  fps: number
+/** Everything that decides how a frame is painted — shared by both exporters. */
+export interface RenderSettings {
+  /** The edit: trim window, text cards, transitions, audio selection. */
+  timeline: EditTimeline
+  watermark: boolean
+  aspect: CaptureAspect
+  fit: FrameFit
+  padStyle: PadStyle
   /** Target output height in px, aspect-preserved; null = source resolution. */
   targetHeight: number | null
-  /** Trim window in seconds, relative to the clip start. */
-  trim: TrimWindow
-  watermark: boolean
-  /** Centre-crop to a social aspect ratio at frame extraction (D-26). Default 'source'. */
-  aspect?: CaptureAspect
+}
+
+export interface GifExportOptions extends RenderSettings {
+  /** GIF frames per second. */
+  fps: number
   onProgress?: (percent: number) => void
   signal?: AbortSignal
 }
@@ -83,12 +98,18 @@ export async function readClipDuration(blob: Blob): Promise<number> {
   }
 }
 
+function layoutFor(video: HTMLVideoElement, s: RenderSettings): FrameLayout {
+  return computeFrameLayout(video.videoWidth, video.videoHeight, s.aspect, s.fit, s.targetHeight)
+}
+
+// ── GIF ────────────────────────────────────────────────────────────────────────
+
 /**
- * Convert an already-captured WebM clip into an animated GIF.
+ * Convert an already-captured clip into an animated GIF.
  * Runs entirely client-side; encode happens in gif-export.worker.ts.
  */
 export async function exportGif(blob: Blob, options: GifExportOptions): Promise<Result<Blob, ExportError>> {
-  const { fps, targetHeight, watermark, onProgress, signal } = options
+  const { fps, onProgress, signal } = options
 
   let source: FrameSource | null = null
   const worker = new Worker(new URL('../../workers/gif-export.worker.ts', import.meta.url), { type: 'module' })
@@ -103,19 +124,17 @@ export async function exportGif(blob: Blob, options: GifExportOptions): Promise<
       return err(new ExportError('EXPORT_FAILED', 'Clip has no readable duration — cannot extract frames'))
     }
 
-    const trim = clampTrimWindow(options.trim.start, options.trim.end, duration)
+    const timeline = clampTimeline(options.timeline, duration)
+    const trim = timeline.trim
     const timestamps = planFrameTimestamps(trim, fps)
     if (timestamps.length === 0) {
       return err(new ExportError('EXPORT_FAILED', 'Trim window contains no frames'))
     }
 
-    // Aspect crop (D-26): a drawImage source rect on the already-captured
-    // stream — the model is never re-rendered for a different ratio.
-    const crop = computeCropRect(video.videoWidth, video.videoHeight, options.aspect ?? 'source')
-    const size = computeScaledSize(crop.sw, crop.sh, targetHeight)
+    const layout = layoutFor(video, options)
     const canvas = document.createElement('canvas')
-    canvas.width = size.width
-    canvas.height = size.height
+    canvas.width = layout.width
+    canvas.height = layout.height
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
     if (!ctx) {
       return err(new ExportError('EXPORT_FAILED', '2D canvas context unavailable'))
@@ -147,7 +166,7 @@ export async function exportGif(blob: Blob, options: GifExportOptions): Promise<
     }
     worker.onerror = (e) => { rejectAll?.(new Error(e.message || 'GIF worker crashed')) }
 
-    send({ type: 'init', id, width: size.width, height: size.height, fps, totalFrames: timestamps.length })
+    send({ type: 'init', id, width: layout.width, height: layout.height, fps, totalFrames: timestamps.length })
 
     const donePromise = new Promise<ArrayBuffer>((resolve, reject) => {
       resolveDone = resolve
@@ -162,9 +181,16 @@ export async function exportGif(blob: Blob, options: GifExportOptions): Promise<
     for (let i = 0; i < timestamps.length; i++) {
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
       await seekTo(video, timestamps[i], signal)
-      ctx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, size.width, size.height)
-      if (watermark) drawWatermark(ctx, size.width, size.height)
-      const imageData = ctx.getImageData(0, 0, size.width, size.height)
+      composeFrame({
+        ctx,
+        source: video,
+        layout,
+        padStyle: options.padStyle,
+        timeline,
+        t: timestamps[i],
+        watermark: options.watermark,
+      })
+      const imageData = ctx.getImageData(0, 0, layout.width, layout.height)
       const ack = new Promise<number>((resolve, reject) => {
         resolveAck = resolve
         const prevReject = rejectAll
@@ -191,85 +217,240 @@ export async function exportGif(blob: Blob, options: GifExportOptions): Promise<
   }
 }
 
-export interface WebmTrimOptions {
-  trim: TrimWindow
-  watermark: boolean
-  /** Centre-crop to a social aspect ratio (D-26). Default 'source'. */
-  aspect?: CaptureAspect
-  signal?: AbortSignal
+// ── Video container pick ───────────────────────────────────────────────────────
+
+/**
+ * Preference order for the recorded container. MP4 first because that is what
+ * social platforms accept; WebM is the fallback for browsers (Firefox today)
+ * whose MediaRecorder cannot produce MP4.
+ *
+ * The audio variants are listed separately: asking for a video-only codec
+ * string and then handing MediaRecorder a stream with an audio track is how you
+ * get a file whose audio silently goes missing.
+ */
+const MP4_WITH_AUDIO = 'video/mp4;codecs=avc1.42E01E,mp4a.40.2'
+const MP4_VIDEO_ONLY = 'video/mp4;codecs=avc1.42E01E'
+
+const VIDEO_MIMES_WITH_AUDIO = [
+  MP4_WITH_AUDIO,
+  'video/mp4',
+  'video/webm;codecs=vp9,opus',
+  'video/webm;codecs=vp8,opus',
+  'video/webm',
+] as const
+
+const VIDEO_MIMES_SILENT = [
+  MP4_VIDEO_ONLY,
+  'video/mp4',
+  'video/webm;codecs=vp9',
+  'video/webm;codecs=vp8',
+  'video/webm',
+] as const
+
+export interface VideoContainer {
+  mime: string
+  /** File extension WITHOUT the dot. */
+  extension: 'mp4' | 'webm'
 }
 
 /**
- * Produce a trimmed / watermarked WebM from a captured clip by replaying the
- * selected range through a canvas + captureStream + MediaRecorder (realtime —
- * a 15 s trim takes ~15 s). No byte-level WebM surgery (D-23). When neither
- * trim nor watermark changes anything, callers should download the source
- * blob directly instead.
+ * First recordable container for the given track set, or null when the browser
+ * cannot record video at all. Pure — `isTypeSupported` is injected so the
+ * choice is testable without a MediaRecorder.
  */
-export async function reencodeWebm(blob: Blob, options: WebmTrimOptions): Promise<Result<Blob, ExportError>> {
-  const { watermark, signal } = options
+export function pickVideoContainer(
+  hasAudio: boolean,
+  isTypeSupported: (t: string) => boolean,
+): VideoContainer | null {
+  const candidates = hasAudio ? VIDEO_MIMES_WITH_AUDIO : VIDEO_MIMES_SILENT
+  for (const mime of candidates) {
+    try {
+      if (isTypeSupported(mime)) return { mime, extension: mime.startsWith('video/mp4') ? 'mp4' : 'webm' }
+    } catch { /* jsdom / exotic UA */ }
+  }
+  return null
+}
+
+/** What the export button should advertise before the user commits to a render. */
+export function probeVideoContainer(hasAudio: boolean): VideoContainer | null {
+  if (typeof MediaRecorder === 'undefined') return null
+  return pickVideoContainer(hasAudio, (t) => MediaRecorder.isTypeSupported(t))
+}
+
+// ── Video ──────────────────────────────────────────────────────────────────────
+
+/** Resume an audio context, giving up after `ms` rather than awaiting forever. */
+async function resumeWithin(ctx: AudioContext, ms: number): Promise<void> {
+  await Promise.race([
+    ctx.resume(),
+    new Promise<void>((resolve) => setTimeout(resolve, ms)),
+  ]).catch(() => { /* a context that will not start records silence */ })
+}
+
+export interface VideoExportOptions extends RenderSettings {
+  /** Decoded music bed. Omit for a silent export. */
+  audioBuffer?: AudioBuffer | null
+  onProgress?: (percent: number) => void
+  signal?: AbortSignal
+}
+
+export interface VideoExportOutput {
+  blob: Blob
+  extension: 'mp4' | 'webm'
+  mime: string
+}
+
+/**
+ * Render the edit to a video file by replaying the trim window through a canvas
+ * + captureStream + MediaRecorder, mixing in the audio bed. Realtime by
+ * construction — a 15 s clip takes ~15 s — because there is no frame-accurate
+ * encoder in the browser that does not cost megabytes of WASM (D-23).
+ */
+export async function exportVideo(blob: Blob, options: VideoExportOptions): Promise<Result<VideoExportOutput, ExportError>> {
+  const { signal, onProgress, audioBuffer } = options
   let source: FrameSource | null = null
+  let audioCtx: AudioContext | null = null
+
   try {
     source = await openClip(blob)
     const { video } = source
     const duration = Number.isFinite(video.duration) ? video.duration : 0
     if (duration <= 0) return err(new ExportError('EXPORT_FAILED', 'Clip has no readable duration'))
-    const trim = clampTrimWindow(options.trim.start, options.trim.end, duration)
 
-    const crop = computeCropRect(video.videoWidth, video.videoHeight, options.aspect ?? 'source')
+    const timeline = clampTimeline(options.timeline, duration)
+    const trim = clampTrimWindow(timeline.trim.start, timeline.trim.end, duration)
+    const windowSec = Math.max(0.1, trim.end - trim.start)
+
+    const layout = layoutFor(video, options)
     const canvas = document.createElement('canvas')
-    canvas.width = crop.sw
-    canvas.height = crop.sh
+    canvas.width = layout.width
+    canvas.height = layout.height
     const ctx = canvas.getContext('2d')
     if (!ctx) return err(new ExportError('EXPORT_FAILED', '2D canvas context unavailable'))
 
+    const wantsAudio = timeline.audio.kind !== 'none' && !!audioBuffer
+    const container = pickVideoContainer(wantsAudio, (t) => MediaRecorder.isTypeSupported(t))
+    if (!container) return err(new ExportError('EXPORT_FAILED', 'This browser cannot record video'))
+
+    // ── Build the recorded stream ──────────────────────────────────────────────
     const stream = canvas.captureStream(30)
-    const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9'
-      : MediaRecorder.isTypeSupported('video/webm;codecs=vp8') ? 'video/webm;codecs=vp8'
-      : 'video/webm'
-    const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 5_000_000 })
+    let audioSource: AudioBufferSourceNode | null = null
+    let audioGain: GainNode | null = null
+
+    if (wantsAudio && audioBuffer) {
+      audioCtx = new AudioContext()
+      // A context created from a click is normally already running; resume
+      // anyway so an autoplay-suspended one does not record silence. Bounded,
+      // because resume() on a page with no user activation never settles at
+      // all — and a silent clip beats an export that hangs forever.
+      if (audioCtx.state === 'suspended') await resumeWithin(audioCtx, 2000)
+      const dest = audioCtx.createMediaStreamDestination()
+      audioSource = audioCtx.createBufferSource()
+      audioSource.buffer = audioBuffer
+      audioSource.loop = audioBuffer.duration < windowSec
+      audioGain = audioCtx.createGain()
+      audioGain.gain.value = 0
+      audioSource.connect(audioGain)
+      audioGain.connect(dest)
+      for (const track of dest.stream.getAudioTracks()) stream.addTrack(track)
+    }
+
+    const recorder = new MediaRecorder(stream, {
+      mimeType: container.mime,
+      videoBitsPerSecond: 8_000_000,
+      audioBitsPerSecond: 128_000,
+    })
     const chunks: Blob[] = []
     recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data) }
 
+    // Park on the first frame and paint it before recording opens, so the clip
+    // never starts on a blank canvas.
     await seekTo(video, trim.start, signal)
-    ctx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, crop.sw, crop.sh)
-    if (watermark) drawWatermark(ctx, canvas.width, canvas.height)
+    composeFrame({ ctx, source: video, layout, padStyle: options.padStyle, timeline, t: trim.start, watermark: options.watermark })
 
-    const result = await new Promise<Blob>((resolve, reject) => {
+    const recorded = await new Promise<Blob>((resolve, reject) => {
       let rafId = 0
+      let watchdog: ReturnType<typeof setTimeout> | undefined
+      let stopped = false
       const stop = (): void => {
+        if (stopped) return
+        stopped = true
         cancelAnimationFrame(rafId)
+        clearTimeout(watchdog)
         video.pause()
+        try { audioSource?.stop() } catch { /* never started */ }
         if (recorder.state !== 'inactive') recorder.stop()
       }
-      recorder.onstop = () => resolve(new Blob(chunks, { type: mime }))
+      // The end of the recording is normally detected inside the rAF tick, but
+      // rAF is suspended while the tab is hidden, and a hidden tab can also
+      // leave video.play() pending forever. Either way the export would hang
+      // with a progress bar that never moves. Timers keep firing when hidden,
+      // so this always resolves it — closing the file if we got as far as
+      // recording, and failing loudly if playback never started at all.
+      watchdog = setTimeout(() => {
+        if (recorder.state === 'inactive') {
+          stopped = true
+          cancelAnimationFrame(rafId)
+          video.pause()
+          reject(new Error('clip playback did not start — the tab may be in the background'))
+          return
+        }
+        stop()
+      }, windowSec * 1000 + 2000)
+      recorder.onstop = () => resolve(new Blob(chunks, { type: container.mime }))
       recorder.onerror = () => { stop(); reject(new Error('re-encode recorder failed')) }
       signal?.addEventListener('abort', () => { stop(); reject(new DOMException('Aborted', 'AbortError')) }, { once: true })
 
       const tick = (): void => {
         if (video.currentTime >= trim.end || video.ended) { stop(); return }
-        ctx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, crop.sw, crop.sh)
-        if (watermark) drawWatermark(ctx, canvas.width, canvas.height)
+        composeFrame({
+          ctx,
+          source: video,
+          layout,
+          padStyle: options.padStyle,
+          timeline,
+          t: video.currentTime,
+          watermark: options.watermark,
+        })
+        onProgress?.(Math.min(99, ((video.currentTime - trim.start) / windowSec) * 100))
         rafId = requestAnimationFrame(tick)
       }
-      recorder.start(1000)
-      video.play().then(() => { rafId = requestAnimationFrame(tick) }).catch((e: unknown) => {
-        stop(); reject(e instanceof Error ? e : new Error('clip playback failed'))
+
+      video.play().then(() => {
+        // Start the bed on the audio clock the instant playback begins. Any
+        // residual offset is a few milliseconds — inaudible under a music bed.
+        if (audioCtx && audioSource && audioGain) {
+          const startAt = audioCtx.currentTime
+          scheduleAudioEnvelope(audioGain.gain, timeline.audio, windowSec, startAt)
+          audioSource.start(startAt, resolveAudioOffset(timeline.audio, audioSource.buffer?.duration ?? 0))
+        }
+        recorder.start(1000)
+        rafId = requestAnimationFrame(tick)
+      }).catch((e: unknown) => {
+        stop()
+        reject(e instanceof Error ? e : new Error('clip playback failed'))
       })
     })
 
-    // Realtime re-encode → we know the exact duration; patch it so the result
-    // is seekable (same MediaRecorder duration bug as the live buffer).
-    const { default: fixWebmDuration } = await import('fix-webm-duration')
-    const fixed = await fixWebmDuration(result, (trim.end - trim.start) * 1000, { logger: false })
-    return ok(fixed)
+    onProgress?.(100)
+
+    // MediaRecorder writes an unseekable WebM (duration 0) — the same bug the
+    // live replay buffer works around. MP4 output carries a real duration, and
+    // running the WebM patcher over it would corrupt the file.
+    if (container.extension === 'webm') {
+      const { default: fixWebmDuration } = await import('fix-webm-duration')
+      const fixed = await fixWebmDuration(recorded, windowSec * 1000, { logger: false })
+      return ok({ blob: fixed, extension: 'webm', mime: container.mime })
+    }
+    return ok({ blob: recorded, extension: container.extension, mime: container.mime })
   } catch (e) {
     if (e instanceof DOMException && e.name === 'AbortError') {
-      return err(new ExportError('EXPORT_FAILED', 'WebM export cancelled'))
+      return err(new ExportError('EXPORT_FAILED', 'Video export cancelled'))
     }
-    log.error('WebM re-encode failed:', e)
-    return err(new ExportError('EXPORT_FAILED', e instanceof Error ? e.message : 'WebM export failed'))
+    log.error('Video export failed:', e)
+    return err(new ExportError('EXPORT_FAILED', e instanceof Error ? e.message : 'Video export failed'))
   } finally {
     source?.revoke()
+    void audioCtx?.close().catch(() => { /* already closed */ })
   }
 }

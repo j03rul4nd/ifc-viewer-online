@@ -51,10 +51,10 @@ export const MAX_BYTES_PER_SLOT = 48 * 1024 * 1024 // 48 MB
 export const MAX_GIF_FRAMES = 600
 
 /** GIF export fps choices (default 10). */
-export const GIF_FPS_OPTIONS = [5, 10, 15] as const
+export const GIF_FPS_OPTIONS = [5, 10, 15, 20] as const
 
 /** GIF export resolution choices — target height in px; null = source size. */
-export const GIF_HEIGHT_OPTIONS = [480, 720] as const
+export const GIF_HEIGHT_OPTIONS = [480, 720, 1080] as const
 
 // ── Codec pick ─────────────────────────────────────────────────────────────────
 
@@ -202,18 +202,22 @@ export function formatBytes(bytes: number): string {
 export interface FrameSize { width: number; height: number }
 
 /**
- * Export aspect preset (D-26): 'source' keeps the canvas ratio; 'square' (1:1)
- * and 'vertical' (4:5) centre-crop for social feeds. The crop happens at frame
+ * Export aspect preset (D-26): 'source' keeps the canvas ratio, the rest
+ * centre-crop for a specific destination — 'square' (1:1) feed posts,
+ * 'vertical' (4:5) LinkedIn/Instagram portrait, 'story' (9:16) Reels/TikTok/
+ * Stories, 'wide' (16:9) YouTube and slide decks. The crop happens at frame
  * extraction (drawImage source rect) — never a re-render of the model.
  */
-export type CaptureAspect = 'source' | 'square' | 'vertical'
+export type CaptureAspect = 'source' | 'square' | 'vertical' | 'story' | 'wide'
 
-export const CAPTURE_ASPECTS: readonly CaptureAspect[] = ['source', 'square', 'vertical']
+export const CAPTURE_ASPECTS: readonly CaptureAspect[] = ['source', 'square', 'vertical', 'story', 'wide']
 
-/** Width/height ratio per non-source preset. 4:5 = LinkedIn/Instagram portrait. */
+/** Width/height ratio per non-source preset. */
 const ASPECT_RATIO: Record<Exclude<CaptureAspect, 'source'>, number> = {
   square: 1,
   vertical: 4 / 5,
+  story: 9 / 16,
+  wide: 16 / 9,
 }
 
 export interface CropRect { sx: number; sy: number; sw: number; sh: number }
