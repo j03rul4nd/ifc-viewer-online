@@ -15,6 +15,13 @@ const SITE = 'https://www.ifcvieweronline.eu'
 const OUT = path.join(process.cwd(), '.seo-test-out')
 const LANGS = ['', 'es/', 'de/', 'fr/', 'pt/', 'it/', 'ca/', 'zh/', 'ja/', 'th/'] as const
 
+/** The languages we ask Google to index — the ones INDEXED_LANGS in the
+ *  generator lists. The other four are still generated and still linked from
+ *  the language switcher; they are just kept out of the sitemap and out of the
+ *  hreflang clusters, and carry `noindex, follow`. */
+const INDEXED = ['', 'es/', 'de/', 'fr/', 'pt/', 'it/'] as const
+const NOINDEX = ['ca/', 'zh/', 'ja/', 'th/'] as const
+
 let result: FixPagesResult
 
 beforeAll(() => {
@@ -74,12 +81,45 @@ describe('generateFixPages — EN rule page', () => {
     expect(html).toContain('viewport-fit=cover')
   })
 
-  it('emits reciprocal hreflang for every language + x-default', () => {
+  it('emits reciprocal hreflang for every indexed language + x-default', () => {
     const html = readFileSync(file, 'utf8')
-    for (const l of ['en', 'es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th']) {
+    for (const l of ['en', 'es', 'de', 'fr', 'pt', 'it']) {
       expect(html).toContain(`hreflang="${l}"`)
     }
     expect(html).toContain('hreflang="x-default"')
+  })
+
+  it('leaves the noindex languages out of the hreflang cluster', () => {
+    // A cluster that names a page Google will not index is discarded whole, so
+    // the noindex set has to be absent here, not merely marked.
+    const html = readFileSync(file, 'utf8')
+    for (const l of ['ca', 'zh', 'ja', 'th']) {
+      expect(html, l).not.toContain(`hreflang="${l}"`)
+    }
+  })
+
+  it('marks indexed languages index,follow and the rest noindex,follow', () => {
+    for (const lp of INDEXED) {
+      const html = readFileSync(path.join(OUT, lp, 'fix', 'missing-type', 'index.html'), 'utf8')
+      expect(html, lp).toContain('name="robots" content="index, follow"')
+    }
+    for (const lp of NOINDEX) {
+      const html = readFileSync(path.join(OUT, lp, 'fix', 'missing-type', 'index.html'), 'utf8')
+      expect(html, lp).toContain('name="robots" content="noindex, follow"')
+    }
+  })
+
+  it('does not repeat the authoring-tool fixes in the visible step cards', () => {
+    // The per-tool fixes are the page's only genuinely unique paragraphs. They
+    // used to be printed twice — once in the causes table, once clipped to 150
+    // chars in the numbered steps — which is exactly what a duplicate-content
+    // check picks up on 420 templated pages. The JSON-LD HowTo still carries
+    // the full sequence; the visible cards are workflow-only.
+    const html = readFileSync(file, 'utf8')
+    const body = html.slice(html.indexOf('<body'))
+    expect(body).toContain('<td>')          // the causes table is still there
+    expect(body).not.toContain('Fix in Revit')
+    expect(html).toContain('"name": "Fix in Revit"') // …but JSON-LD keeps it
   })
 
   it('falls back to the generic OG image when no localized image is present', () => {
@@ -162,9 +202,12 @@ describe('generateFixPages — category pages', () => {
 })
 
 describe('generateFixPages — sitemap + skips', () => {
-  it('injects every per-language URL into the sitemap and keeps it well-formed', () => {
+  it('injects every indexed-language URL into the sitemap and keeps it well-formed', () => {
     const xml = readFileSync(path.join(OUT, 'sitemap.xml'), 'utf8')
-    for (const lp of LANGS) {
+    for (const lp of NOINDEX) {
+      expect(xml, lp).not.toContain(`<loc>${SITE}/${lp}fix/missing-type/</loc>`)
+    }
+    for (const lp of INDEXED) {
       expect(xml).toContain(`<loc>${SITE}/${lp}fix/missing-type/</loc>`)
       expect(xml).toContain(`<loc>${SITE}/${lp}fix/</loc>`) // hub
       expect(xml).toContain(`<loc>${SITE}/${lp}fix/category/spatial/</loc>`) // category

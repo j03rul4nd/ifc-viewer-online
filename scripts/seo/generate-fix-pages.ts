@@ -18,12 +18,12 @@
 import path from 'path'
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
 import { RULE_REMEDIATION, AUTHORING_TOOLS, type AuthoringTool } from '../../src/i18n/rule-remediation'
-import { RULE_TRANSLATIONS, RULE_METADATA, VALIDATION_CATEGORY_LABELS } from '../../src/types'
+import { RULE_TRANSLATIONS, RULE_METADATA, VALIDATION_CATEGORY_LABELS, RULE_COUNT } from '../../src/types'
 import {
   FIX_GUIDE_LANGS, FIX_GUIDE_LANG_PATH, HANDWRITTEN_FIX_GUIDES, fixGuideSlug,
   type FixGuideLang,
 } from '../../src/lib/fix-guide-url'
-import { validatorPath, solibriPath } from './localized-landings'
+import { validatorPath, solibriPath } from '../../src/lib/localized-landings'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 
@@ -50,6 +50,30 @@ posthog.init('${_PH_KEY}',{api_host:'${_PH_HOST}',capture_pageview:true,autocapt
 const LANGS = FIX_GUIDE_LANGS
 type Lang = FixGuideLang
 const LANG_PATH = FIX_GUIDE_LANG_PATH
+
+/**
+ * Which of those languages we ask Google to index.
+ *
+ * Every language is still generated and still reachable from the visible
+ * language switcher — a Japanese coordinator who lands here gets Japanese. But
+ * 42 rules x 10 languages is 420 near-identical templated pages, and Search
+ * Console answered that with "Crawled - currently not indexed" across the
+ * board: the same template, translated, does not earn 420 index slots.
+ *
+ * So we concentrate the crawl budget on the six languages whose BIM market we
+ * actually sell into, and the other four are emitted `noindex, follow` — they
+ * still pass link equity through, they just stop competing with their own
+ * siblings for indexation. The `follow` half matters: their internal links
+ * still count.
+ *
+ * A noindex page must NOT appear in an hreflang cluster or in the sitemap
+ * (Google discards a cluster whose members it will not index), so this set
+ * drives `altLinks`, `catAltLinks` and `sitemapEntries` too — not just the tag.
+ *
+ * To index a language again, add it back here. Nothing else needs to change.
+ */
+const INDEXED_LANGS = new Set<Lang>(['en', 'es', 'de', 'fr', 'it', 'pt'])
+const indexedLangs = (): Lang[] => LANGS.filter((l) => INDEXED_LANGS.has(l))
 
 /**
  * Where the app shell lives per language. Every language now has its own home:
@@ -164,7 +188,7 @@ const UIS: Record<Lang, UI> = {
     navOpen: 'Open tool →', home: 'Home', checks: 'IFC checks', autoFixBadge: 'Auto-fixable',
     h1Pre: 'How to fix', h1Post: 'in IFC files',
     heroCta: 'Check your IFC file — free',
-    heroNote: 'No account · No upload · Runs in your browser · 38 validation checks',
+    heroNote: `No account · No upload · Runs in your browser · ${RULE_COUNT} validation checks`,
     whatLabel: 'What it means', whatTitle: (l) => `The ${l} check`,
     fixLabel: 'The fix', fixTitle: (l) => `How to fix ${l} in your authoring tool`,
     fixSub: 'Concrete, tool-specific steps. The check itself is schema-agnostic and works for IFC2x3, IFC4, IFC4x1 and IFC4x3.',
@@ -175,7 +199,7 @@ const UIS: Record<Lang, UI> = {
     howSub: 'The whole flow runs client-side — your IFC file never leaves your machine.',
     relatedLabel: 'Related checks', relatedTitle: (c) => `Other ${c} checks`,
     ctaTitle: 'Check your whole model, not just one rule.',
-    ctaBody: (l) => `${l} is 1 of 38 checks. Run the full IFC Health Score to see every issue and a single 0–100 number — free, no account, no upload.`,
+    ctaBody: (l) => `${l} is 1 of ${RULE_COUNT} checks. Run the full IFC Health Score to see every issue and a single 0–100 number — free, no account, no upload.`,
     ctaBtn: 'Run the free Health Score →',
     pageTitle: (l) => `How to Fix ${l} in IFC Files — Free Online Validator`,
     ogTitle: (l) => `How to Fix ${l} in IFC Files`,
@@ -191,7 +215,7 @@ const UIS: Record<Lang, UI> = {
     sAutoText: 'Apply the one-click fix in the validation panel, then export a corrected IFC — generated in a Web Worker, server-free.',
     sRevalName: 'Re-validate',
     sRevalText: 'Re-export from your authoring tool and re-run validation to confirm the issue is resolved and your Health Score improved.',
-    hubTitle: 'How to Fix IFC Validation Errors — 38 Checks Explained',
+    hubTitle: `How to Fix IFC Validation Errors — ${RULE_COUNT} Checks Explained`,
     hubMeta: 'Browse every IFC validation check with concrete, tool-specific fixes for Revit, ArchiCAD, Tekla and Allplan. Free, browser-based, no upload — fix your IFC and improve your Health Score.',
     hubBadge: (n) => `Free · No upload · ${n} checks documented`,
     hubH1Pre: 'How to fix', hubH1Accent: 'IFC validation errors',
@@ -200,7 +224,7 @@ const UIS: Record<Lang, UI> = {
     hubRefLabel: 'Reference', hubRefTitle: 'IFC checks by category',
     hubRefSubPre: 'Also see the dedicated tool for ', hubRefLink: 'fixing duplicate GUIDs', hubRefSubPost: '.',
     hubCtaTitle: 'Get your IFC Health Score.',
-    hubCtaBody: 'One 0–100 number across all 38 checks — free, no account, no upload. See exactly what to fix and how.',
+    hubCtaBody: `One 0–100 number across all ${RULE_COUNT} checks — free, no account, no upload. See exactly what to fix and how.`,
     hubCtaBtn: 'Run the free Health Score →',
     catTitle: (cat, n) => `How to Fix ${cat} Issues in IFC — ${n} Checks`,
     catMeta: (cat, n) => `${n} IFC ${cat} validation checks with concrete fixes for Revit, ArchiCAD, Tekla and Allplan. Free, browser-based, no upload.`,
@@ -210,7 +234,7 @@ const UIS: Record<Lang, UI> = {
     navOpen: 'Abrir herramienta →', home: 'Inicio', checks: 'Comprobaciones IFC', autoFixBadge: 'Corrección automática',
     h1Pre: 'Cómo corregir', h1Post: 'en archivos IFC',
     heroCta: 'Analiza tu archivo IFC — gratis',
-    heroNote: 'Sin cuenta · Sin subida · Se ejecuta en tu navegador · 38 comprobaciones',
+    heroNote: `Sin cuenta · Sin subida · Se ejecuta en tu navegador · ${RULE_COUNT} comprobaciones`,
     whatLabel: 'Qué significa', whatTitle: (l) => `La comprobación «${l}»`,
     fixLabel: 'La solución', fixTitle: (l) => `Cómo corregir «${l}» en tu herramienta de autoría`,
     fixSub: 'Pasos concretos por herramienta. La comprobación es independiente del esquema y funciona con IFC2x3, IFC4, IFC4x1 e IFC4x3.',
@@ -221,7 +245,7 @@ const UIS: Record<Lang, UI> = {
     howSub: 'Todo el proceso se ejecuta en tu navegador — tu archivo IFC nunca sale de tu equipo.',
     relatedLabel: 'Comprobaciones relacionadas', relatedTitle: (c) => `Otras comprobaciones de ${c}`,
     ctaTitle: 'Analiza todo tu modelo, no solo una regla.',
-    ctaBody: (l) => `«${l}» es 1 de 38 comprobaciones. Ejecuta el IFC Health Score completo para ver cada problema y un único número 0–100 — gratis, sin cuenta, sin subida.`,
+    ctaBody: (l) => `«${l}» es 1 de ${RULE_COUNT} comprobaciones. Ejecuta el IFC Health Score completo para ver cada problema y un único número 0–100 — gratis, sin cuenta, sin subida.`,
     ctaBtn: 'Ejecuta el Health Score gratis →',
     pageTitle: (l) => `Cómo corregir ${l} en archivos IFC — Validador IFC online gratis`,
     ogTitle: (l) => `Cómo corregir ${l} en archivos IFC`,
@@ -237,7 +261,7 @@ const UIS: Record<Lang, UI> = {
     sAutoText: 'Aplica la corrección de un clic en el panel de validación y exporta un IFC corregido — generado en un Web Worker, sin servidor.',
     sRevalName: 'Vuelve a validar',
     sRevalText: 'Reexporta desde tu herramienta de autoría y vuelve a validar para confirmar que el problema está resuelto y que tu Health Score ha mejorado.',
-    hubTitle: 'Cómo corregir errores de validación IFC — 38 comprobaciones explicadas',
+    hubTitle: `Cómo corregir errores de validación IFC — ${RULE_COUNT} comprobaciones explicadas`,
     hubMeta: 'Explora cada comprobación de validación IFC con soluciones concretas por herramienta para Revit, ArchiCAD, Tekla y Allplan. Gratis, en el navegador, sin subida — corrige tu IFC y mejora tu Health Score.',
     hubBadge: (n) => `Gratis · Sin subida · ${n} comprobaciones documentadas`,
     hubH1Pre: 'Cómo corregir', hubH1Accent: 'errores de validación IFC',
@@ -246,7 +270,7 @@ const UIS: Record<Lang, UI> = {
     hubRefLabel: 'Referencia', hubRefTitle: 'Comprobaciones IFC por categoría',
     hubRefSubPre: 'Consulta también la herramienta dedicada para ', hubRefLink: 'corregir GUID duplicados', hubRefSubPost: '.',
     hubCtaTitle: 'Obtén tu IFC Health Score.',
-    hubCtaBody: 'Un único número 0–100 en las 38 comprobaciones — gratis, sin cuenta, sin subida. Verás exactamente qué corregir y cómo.',
+    hubCtaBody: `Un único número 0–100 en las ${RULE_COUNT} comprobaciones — gratis, sin cuenta, sin subida. Verás exactamente qué corregir y cómo.`,
     hubCtaBtn: 'Ejecuta el Health Score gratis →',
     catTitle: (cat, n) => `Cómo corregir problemas de ${cat} en IFC — ${n} comprobaciones`,
     catMeta: (cat, n) => `${n} comprobaciones de validación IFC de ${cat} con soluciones concretas para Revit, ArchiCAD, Tekla y Allplan. Gratis, en el navegador, sin subida.`,
@@ -256,7 +280,7 @@ const UIS: Record<Lang, UI> = {
     navOpen: 'Tool öffnen →', home: 'Start', checks: 'IFC-Prüfungen', autoFixBadge: 'Automatisch behebbar',
     h1Pre: 'So beheben Sie', h1Post: 'in IFC-Dateien',
     heroCta: 'IFC-Datei prüfen — kostenlos',
-    heroNote: 'Kein Konto · Kein Upload · Läuft im Browser · 38 Prüfungen',
+    heroNote: `Kein Konto · Kein Upload · Läuft im Browser · ${RULE_COUNT} Prüfungen`,
     whatLabel: 'Was es bedeutet', whatTitle: (l) => `Die Prüfung „${l}“`,
     fixLabel: 'Die Lösung', fixTitle: (l) => `So beheben Sie „${l}“ in Ihrer Autorensoftware`,
     fixSub: 'Konkrete, werkzeugspezifische Schritte. Die Prüfung ist schemaunabhängig und funktioniert mit IFC2x3, IFC4, IFC4x1 und IFC4x3.',
@@ -267,7 +291,7 @@ const UIS: Record<Lang, UI> = {
     howSub: 'Der gesamte Ablauf läuft im Browser — Ihre IFC-Datei verlässt nie Ihr Gerät.',
     relatedLabel: 'Verwandte Prüfungen', relatedTitle: (c) => `Weitere Prüfungen: ${c}`,
     ctaTitle: 'Prüfen Sie Ihr gesamtes Modell, nicht nur eine Regel.',
-    ctaBody: (l) => `„${l}“ ist 1 von 38 Prüfungen. Führen Sie den vollständigen IFC Health Score aus, um jedes Problem und eine einzige Zahl von 0–100 zu sehen — kostenlos, ohne Konto, ohne Upload.`,
+    ctaBody: (l) => `„${l}“ ist 1 von ${RULE_COUNT} Prüfungen. Führen Sie den vollständigen IFC Health Score aus, um jedes Problem und eine einzige Zahl von 0–100 zu sehen — kostenlos, ohne Konto, ohne Upload.`,
     ctaBtn: 'Kostenlosen Health Score starten →',
     pageTitle: (l) => `${l} in IFC-Dateien beheben — kostenloser Online-Validator`,
     ogTitle: (l) => `So beheben Sie ${l} in IFC-Dateien`,
@@ -283,7 +307,7 @@ const UIS: Record<Lang, UI> = {
     sAutoText: 'Wenden Sie die Ein-Klick-Behebung im Validierungspanel an und exportieren Sie eine korrigierte IFC — erzeugt in einem Web Worker, ohne Server.',
     sRevalName: 'Erneut validieren',
     sRevalText: 'Exportieren Sie erneut aus Ihrer Autorensoftware und validieren Sie erneut, um zu bestätigen, dass das Problem behoben ist und Ihr Health Score gestiegen ist.',
-    hubTitle: 'IFC-Validierungsfehler beheben — 38 Prüfungen erklärt',
+    hubTitle: `IFC-Validierungsfehler beheben — ${RULE_COUNT} Prüfungen erklärt`,
     hubMeta: 'Durchsuchen Sie jede IFC-Validierungsprüfung mit konkreten, werkzeugspezifischen Lösungen für Revit, ArchiCAD, Tekla und Allplan. Kostenlos, im Browser, ohne Upload — beheben Sie Ihre IFC und verbessern Sie Ihren Health Score.',
     hubBadge: (n) => `Kostenlos · Kein Upload · ${n} Prüfungen dokumentiert`,
     hubH1Pre: 'So beheben Sie', hubH1Accent: 'IFC-Validierungsfehler',
@@ -292,7 +316,7 @@ const UIS: Record<Lang, UI> = {
     hubRefLabel: 'Referenz', hubRefTitle: 'IFC-Prüfungen nach Kategorie',
     hubRefSubPre: 'Siehe auch das spezielle Tool zum ', hubRefLink: 'Beheben doppelter GUIDs', hubRefSubPost: '.',
     hubCtaTitle: 'Holen Sie sich Ihren IFC Health Score.',
-    hubCtaBody: 'Eine Zahl von 0–100 über alle 38 Prüfungen — kostenlos, ohne Konto, ohne Upload. Sehen Sie genau, was und wie zu beheben ist.',
+    hubCtaBody: `Eine Zahl von 0–100 über alle ${RULE_COUNT} Prüfungen — kostenlos, ohne Konto, ohne Upload. Sehen Sie genau, was und wie zu beheben ist.`,
     hubCtaBtn: 'Kostenlosen Health Score starten →',
     catTitle: (cat, n) => `${cat}-Probleme in IFC beheben — ${n} Prüfungen`,
     catMeta: (cat, n) => `${n} IFC-Validierungsprüfungen der Kategorie ${cat} mit konkreten Lösungen für Revit, ArchiCAD, Tekla und Allplan. Kostenlos, im Browser, ohne Upload.`,
@@ -302,7 +326,7 @@ const UIS: Record<Lang, UI> = {
     navOpen: 'Ouvrir l’outil →', home: 'Accueil', checks: 'Vérifications IFC', autoFixBadge: 'Correction automatique',
     h1Pre: 'Comment corriger', h1Post: 'dans les fichiers IFC',
     heroCta: 'Vérifiez votre fichier IFC — gratuit',
-    heroNote: 'Sans compte · Sans téléversement · Dans le navigateur · 38 vérifications',
+    heroNote: `Sans compte · Sans téléversement · Dans le navigateur · ${RULE_COUNT} vérifications`,
     whatLabel: 'Ce que cela signifie', whatTitle: (l) => `La vérification « ${l} »`,
     fixLabel: 'La solution', fixTitle: (l) => `Comment corriger « ${l} » dans votre logiciel de conception`,
     fixSub: 'Étapes concrètes par logiciel. La vérification est indépendante du schéma et fonctionne avec IFC2x3, IFC4, IFC4x1 et IFC4x3.',
@@ -313,7 +337,7 @@ const UIS: Record<Lang, UI> = {
     howSub: 'Tout le processus s’exécute dans votre navigateur — votre fichier IFC ne quitte jamais votre machine.',
     relatedLabel: 'Vérifications liées', relatedTitle: (c) => `Autres vérifications : ${c}`,
     ctaTitle: 'Vérifiez tout votre modèle, pas seulement une règle.',
-    ctaBody: (l) => `« ${l} » est 1 des 38 vérifications. Lancez le IFC Health Score complet pour voir chaque problème et un seul score de 0 à 100 — gratuit, sans compte, sans téléversement.`,
+    ctaBody: (l) => `« ${l} » est 1 des ${RULE_COUNT} vérifications. Lancez le IFC Health Score complet pour voir chaque problème et un seul score de 0 à 100 — gratuit, sans compte, sans téléversement.`,
     ctaBtn: 'Lancer le Health Score gratuit →',
     pageTitle: (l) => `Comment corriger ${l} dans les fichiers IFC — validateur IFC en ligne gratuit`,
     ogTitle: (l) => `Comment corriger ${l} dans les fichiers IFC`,
@@ -329,7 +353,7 @@ const UIS: Record<Lang, UI> = {
     sAutoText: 'Appliquez la correction en un clic dans le panneau de validation, puis exportez un IFC corrigé — généré dans un Web Worker, sans serveur.',
     sRevalName: 'Revalidez',
     sRevalText: 'Réexportez depuis votre logiciel de conception et relancez la validation pour confirmer que le problème est résolu et que votre Health Score a progressé.',
-    hubTitle: 'Comment corriger les erreurs de validation IFC — 38 vérifications expliquées',
+    hubTitle: `Comment corriger les erreurs de validation IFC — ${RULE_COUNT} vérifications expliquées`,
     hubMeta: 'Parcourez chaque vérification de validation IFC avec des corrections concrètes par logiciel pour Revit, ArchiCAD, Tekla et Allplan. Gratuit, dans le navigateur, sans téléversement — corrigez votre IFC et améliorez votre Health Score.',
     hubBadge: (n) => `Gratuit · Sans téléversement · ${n} vérifications documentées`,
     hubH1Pre: 'Comment corriger', hubH1Accent: 'les erreurs de validation IFC',
@@ -338,7 +362,7 @@ const UIS: Record<Lang, UI> = {
     hubRefLabel: 'Référence', hubRefTitle: 'Vérifications IFC par catégorie',
     hubRefSubPre: 'Voir aussi l’outil dédié pour ', hubRefLink: 'corriger les GUID en double', hubRefSubPost: '.',
     hubCtaTitle: 'Obtenez votre IFC Health Score.',
-    hubCtaBody: 'Un seul score de 0 à 100 sur les 38 vérifications — gratuit, sans compte, sans téléversement. Voyez exactement quoi corriger et comment.',
+    hubCtaBody: `Un seul score de 0 à 100 sur les ${RULE_COUNT} vérifications — gratuit, sans compte, sans téléversement. Voyez exactement quoi corriger et comment.`,
     hubCtaBtn: 'Lancer le Health Score gratuit →',
     catTitle: (cat, n) => `Corriger les problèmes de ${cat} dans IFC — ${n} vérifications`,
     catMeta: (cat, n) => `${n} vérifications de validation IFC de ${cat} avec des corrections concrètes pour Revit, ArchiCAD, Tekla et Allplan. Gratuit, dans le navigateur, sans téléversement.`,
@@ -348,7 +372,7 @@ const UIS: Record<Lang, UI> = {
     navOpen: 'Abrir ferramenta →', home: 'Início', checks: 'Verificações IFC', autoFixBadge: 'Correção automática',
     h1Pre: 'Como corrigir', h1Post: 'em ficheiros IFC',
     heroCta: 'Verifique o seu ficheiro IFC — grátis',
-    heroNote: 'Sem conta · Sem upload · Funciona no navegador · 38 verificações',
+    heroNote: `Sem conta · Sem upload · Funciona no navegador · ${RULE_COUNT} verificações`,
     whatLabel: 'O que significa', whatTitle: (l) => `A verificação «${l}»`,
     fixLabel: 'A solução', fixTitle: (l) => `Como corrigir «${l}» na sua ferramenta de autoria`,
     fixSub: 'Passos concretos por ferramenta. A verificação é independente do esquema e funciona com IFC2x3, IFC4, IFC4x1 e IFC4x3.',
@@ -359,7 +383,7 @@ const UIS: Record<Lang, UI> = {
     howSub: 'Todo o processo é executado no seu navegador — o seu ficheiro IFC nunca sai do seu dispositivo.',
     relatedLabel: 'Verificações relacionadas', relatedTitle: (c) => `Outras verificações: ${c}`,
     ctaTitle: 'Verifique todo o seu modelo, não apenas uma regra.',
-    ctaBody: (l) => `«${l}» é 1 de 38 verificações. Execute o IFC Health Score completo para ver cada problema e um único número de 0 a 100 — grátis, sem conta, sem upload.`,
+    ctaBody: (l) => `«${l}» é 1 de ${RULE_COUNT} verificações. Execute o IFC Health Score completo para ver cada problema e um único número de 0 a 100 — grátis, sem conta, sem upload.`,
     ctaBtn: 'Executar o Health Score grátis →',
     pageTitle: (l) => `Como corrigir ${l} em ficheiros IFC — validador IFC online grátis`,
     ogTitle: (l) => `Como corrigir ${l} em ficheiros IFC`,
@@ -375,7 +399,7 @@ const UIS: Record<Lang, UI> = {
     sAutoText: 'Aplique a correção de um clique no painel de validação e exporte um IFC corrigido — gerado num Web Worker, sem servidor.',
     sRevalName: 'Revalide',
     sRevalText: 'Reexporte da sua ferramenta de autoria e execute novamente a validação para confirmar que o problema está resolvido e que o seu Health Score melhorou.',
-    hubTitle: 'Como corrigir erros de validação IFC — 38 verificações explicadas',
+    hubTitle: `Como corrigir erros de validação IFC — ${RULE_COUNT} verificações explicadas`,
     hubMeta: 'Explore cada verificação de validação IFC com soluções concretas por ferramenta para Revit, ArchiCAD, Tekla e Allplan. Grátis, no navegador, sem upload — corrija o seu IFC e melhore o seu Health Score.',
     hubBadge: (n) => `Grátis · Sem upload · ${n} verificações documentadas`,
     hubH1Pre: 'Como corrigir', hubH1Accent: 'erros de validação IFC',
@@ -384,7 +408,7 @@ const UIS: Record<Lang, UI> = {
     hubRefLabel: 'Referência', hubRefTitle: 'Verificações IFC por categoria',
     hubRefSubPre: 'Veja também a ferramenta dedicada para ', hubRefLink: 'corrigir GUIDs duplicados', hubRefSubPost: '.',
     hubCtaTitle: 'Obtenha o seu IFC Health Score.',
-    hubCtaBody: 'Um único número de 0 a 100 nas 38 verificações — grátis, sem conta, sem upload. Veja exatamente o que corrigir e como.',
+    hubCtaBody: `Um único número de 0 a 100 nas ${RULE_COUNT} verificações — grátis, sem conta, sem upload. Veja exatamente o que corrigir e como.`,
     hubCtaBtn: 'Executar o Health Score grátis →',
     catTitle: (cat, n) => `Como corrigir problemas de ${cat} em IFC — ${n} verificações`,
     catMeta: (cat, n) => `${n} verificações de validação IFC de ${cat} com soluções concretas para Revit, ArchiCAD, Tekla e Allplan. Grátis, no navegador, sem upload.`,
@@ -394,7 +418,7 @@ const UIS: Record<Lang, UI> = {
     navOpen: 'Apri lo strumento →', home: 'Home', checks: 'Controlli IFC', autoFixBadge: 'Correzione automatica',
     h1Pre: 'Come correggere', h1Post: 'nei file IFC',
     heroCta: 'Controlla il tuo file IFC — gratis',
-    heroNote: 'Senza account · Senza caricamento · Funziona nel browser · 38 controlli',
+    heroNote: `Senza account · Senza caricamento · Funziona nel browser · ${RULE_COUNT} controlli`,
     whatLabel: 'Cosa significa', whatTitle: (l) => `Il controllo «${l}»`,
     fixLabel: 'La soluzione', fixTitle: (l) => `Come correggere «${l}» nel tuo software di authoring`,
     fixSub: 'Passaggi concreti per software. Il controllo è indipendente dallo schema e funziona con IFC2x3, IFC4, IFC4x1 e IFC4x3.',
@@ -405,7 +429,7 @@ const UIS: Record<Lang, UI> = {
     howSub: 'L’intero processo viene eseguito nel browser — il tuo file IFC non lascia mai il tuo dispositivo.',
     relatedLabel: 'Controlli correlati', relatedTitle: (c) => `Altri controlli: ${c}`,
     ctaTitle: 'Controlla l’intero modello, non solo una regola.',
-    ctaBody: (l) => `«${l}» è 1 di 38 controlli. Esegui l’IFC Health Score completo per vedere ogni problema e un unico punteggio da 0 a 100 — gratis, senza account, senza caricamento.`,
+    ctaBody: (l) => `«${l}» è 1 di ${RULE_COUNT} controlli. Esegui l’IFC Health Score completo per vedere ogni problema e un unico punteggio da 0 a 100 — gratis, senza account, senza caricamento.`,
     ctaBtn: 'Esegui l’Health Score gratis →',
     pageTitle: (l) => `Come correggere ${l} nei file IFC — validatore IFC online gratuito`,
     ogTitle: (l) => `Come correggere ${l} nei file IFC`,
@@ -421,7 +445,7 @@ const UIS: Record<Lang, UI> = {
     sAutoText: 'Applica la correzione con un clic nel pannello di validazione, poi esporta un IFC corretto — generato in un Web Worker, senza server.',
     sRevalName: 'Rivalida',
     sRevalText: 'Riesporta dal tuo software di authoring ed esegui nuovamente la validazione per confermare che il problema è risolto e che il tuo Health Score è migliorato.',
-    hubTitle: 'Come correggere gli errori di validazione IFC — 38 controlli spiegati',
+    hubTitle: `Come correggere gli errori di validazione IFC — ${RULE_COUNT} controlli spiegati`,
     hubMeta: 'Esplora ogni controllo di validazione IFC con correzioni concrete per Revit, ArchiCAD, Tekla e Allplan. Gratis, nel browser, senza caricamento — correggi il tuo IFC e migliora il tuo Health Score.',
     hubBadge: (n) => `Gratis · Senza caricamento · ${n} controlli documentati`,
     hubH1Pre: 'Come correggere', hubH1Accent: 'gli errori di validazione IFC',
@@ -430,7 +454,7 @@ const UIS: Record<Lang, UI> = {
     hubRefLabel: 'Riferimento', hubRefTitle: 'Controlli IFC per categoria',
     hubRefSubPre: 'Vedi anche lo strumento dedicato per ', hubRefLink: 'correggere i GUID duplicati', hubRefSubPost: '.',
     hubCtaTitle: 'Ottieni il tuo IFC Health Score.',
-    hubCtaBody: 'Un unico punteggio da 0 a 100 su tutti i 38 controlli — gratis, senza account, senza caricamento. Vedi esattamente cosa correggere e come.',
+    hubCtaBody: `Un unico punteggio da 0 a 100 su tutti i ${RULE_COUNT} controlli — gratis, senza account, senza caricamento. Vedi esattamente cosa correggere e come.`,
     hubCtaBtn: 'Esegui l’Health Score gratis →',
     catTitle: (cat, n) => `Come correggere i problemi di ${cat} in IFC — ${n} controlli`,
     catMeta: (cat, n) => `${n} controlli di validazione IFC di ${cat} con correzioni concrete per Revit, ArchiCAD, Tekla e Allplan. Gratis, nel browser, senza caricamento.`,
@@ -440,7 +464,7 @@ const UIS: Record<Lang, UI> = {
     navOpen: 'Obrir l’eina →', home: 'Inici', checks: 'Comprovacions IFC', autoFixBadge: 'Correcció automàtica',
     h1Pre: 'Com corregir', h1Post: 'en fitxers IFC',
     heroCta: 'Analitza el teu fitxer IFC — gratis',
-    heroNote: 'Sense compte · Sense pujada · S’executa al navegador · 38 comprovacions',
+    heroNote: `Sense compte · Sense pujada · S’executa al navegador · ${RULE_COUNT} comprovacions`,
     whatLabel: 'Què significa', whatTitle: (l) => `La comprovació «${l}»`,
     fixLabel: 'La solució', fixTitle: (l) => `Com corregir «${l}» a la teva eina d’autoria`,
     fixSub: 'Passos concrets per eina. La comprovació és independent de l’esquema i funciona amb IFC2x3, IFC4, IFC4x1 i IFC4x3.',
@@ -451,7 +475,7 @@ const UIS: Record<Lang, UI> = {
     howSub: 'Tot el procés s’executa al navegador — el teu fitxer IFC mai no surt del teu equip.',
     relatedLabel: 'Comprovacions relacionades', relatedTitle: (c) => `Altres comprovacions de ${c}`,
     ctaTitle: 'Analitza tot el model, no només una regla.',
-    ctaBody: (l) => `«${l}» és 1 de 38 comprovacions. Executa l’IFC Health Score complet per veure cada problema i un únic número 0–100 — gratis, sense compte, sense pujada.`,
+    ctaBody: (l) => `«${l}» és 1 de ${RULE_COUNT} comprovacions. Executa l’IFC Health Score complet per veure cada problema i un únic número 0–100 — gratis, sense compte, sense pujada.`,
     ctaBtn: 'Executa el Health Score gratis →',
     pageTitle: (l) => `Com corregir ${l} en fitxers IFC — Validador IFC en línia gratis`,
     ogTitle: (l) => `Com corregir ${l} en fitxers IFC`,
@@ -467,7 +491,7 @@ const UIS: Record<Lang, UI> = {
     sAutoText: 'Aplica la correcció d’un clic al panell de validació i exporta un IFC corregit — generat en un Web Worker, sense servidor.',
     sRevalName: 'Torna a validar',
     sRevalText: 'Reexporta des de la teva eina d’autoria i torna a validar per confirmar que el problema està resolt i que el teu Health Score ha millorat.',
-    hubTitle: 'Com corregir errors de validació IFC — 38 comprovacions explicades',
+    hubTitle: `Com corregir errors de validació IFC — ${RULE_COUNT} comprovacions explicades`,
     hubMeta: 'Explora cada comprovació de validació IFC amb solucions concretes per eina per a Revit, ArchiCAD, Tekla i Allplan. Gratis, al navegador, sense pujada — corregeix el teu IFC i millora el teu Health Score.',
     hubBadge: (n) => `Gratis · Sense pujada · ${n} comprovacions documentades`,
     hubH1Pre: 'Com corregir', hubH1Accent: 'errors de validació IFC',
@@ -476,7 +500,7 @@ const UIS: Record<Lang, UI> = {
     hubRefLabel: 'Referència', hubRefTitle: 'Comprovacions IFC per categoria',
     hubRefSubPre: 'Consulta també l’eina dedicada per ', hubRefLink: 'corregir GUID duplicats', hubRefSubPost: '.',
     hubCtaTitle: 'Obtén el teu IFC Health Score.',
-    hubCtaBody: 'Un únic número 0–100 a les 38 comprovacions — gratis, sense compte, sense pujada. Veuràs exactament què corregir i com.',
+    hubCtaBody: `Un únic número 0–100 a les ${RULE_COUNT} comprovacions — gratis, sense compte, sense pujada. Veuràs exactament què corregir i com.`,
     hubCtaBtn: 'Executa el Health Score gratis →',
     catTitle: (cat, n) => `Com corregir problemes de ${cat} en IFC — ${n} comprovacions`,
     catMeta: (cat, n) => `${n} comprovacions de validació IFC de ${cat} amb solucions concretes per a Revit, ArchiCAD, Tekla i Allplan. Gratis, al navegador, sense pujada.`,
@@ -486,7 +510,7 @@ const UIS: Record<Lang, UI> = {
     navOpen: '打开工具 →', home: '首页', checks: 'IFC 检查', autoFixBadge: '可自动修复',
     h1Pre: '如何修复', h1Post: '（IFC 文件）',
     heroCta: '检查你的 IFC 文件 — 免费',
-    heroNote: '无需账户 · 无需上传 · 在浏览器中运行 · 38 项检查',
+    heroNote: `无需账户 · 无需上传 · 在浏览器中运行 · ${RULE_COUNT} 项检查`,
     whatLabel: '含义', whatTitle: (l) => `「${l}」检查`,
     fixLabel: '解决方法', fixTitle: (l) => `如何在你的建模软件中修复「${l}」`,
     fixSub: '针对各软件的具体步骤。该检查与模式无关，适用于 IFC2x3、IFC4、IFC4x1 和 IFC4x3。',
@@ -497,7 +521,7 @@ const UIS: Record<Lang, UI> = {
     howSub: '整个流程在浏览器中运行 — 你的 IFC 文件绝不离开你的设备。',
     relatedLabel: '相关检查', relatedTitle: (c) => `其他${c}检查`,
     ctaTitle: '检查整个模型，而不只是一条规则。',
-    ctaBody: (l) => `「${l}」是 38 项检查之一。运行完整的 IFC Health Score，查看每个问题以及一个 0–100 的总分 — 免费、无需账户、无需上传。`,
+    ctaBody: (l) => `「${l}」是 ${RULE_COUNT} 项检查之一。运行完整的 IFC Health Score，查看每个问题以及一个 0–100 的总分 — 免费、无需账户、无需上传。`,
     ctaBtn: '免费运行 Health Score →',
     pageTitle: (l) => `如何修复 IFC 文件中的 ${l} — 免费在线验证器`,
     ogTitle: (l) => `如何修复 IFC 文件中的 ${l}`,
@@ -513,7 +537,7 @@ const UIS: Record<Lang, UI> = {
     sAutoText: '在验证面板中应用一键修复，然后导出修正后的 IFC — 在 Web Worker 中生成，无需服务器。',
     sRevalName: '重新验证',
     sRevalText: '从你的建模软件重新导出并再次运行验证，以确认问题已解决且 Health Score 有所提升。',
-    hubTitle: '如何修复 IFC 验证错误 — 38 项检查详解',
+    hubTitle: `如何修复 IFC 验证错误 — ${RULE_COUNT} 项检查详解`,
     hubMeta: '浏览每一项 IFC 验证检查，附带针对 Revit、ArchiCAD、Tekla 和 Allplan 的具体修复步骤。免费、基于浏览器、无需上传 — 修复你的 IFC 并提升 Health Score。',
     hubBadge: (n) => `免费 · 无需上传 · 已记录 ${n} 项检查`,
     hubH1Pre: '如何修复', hubH1Accent: 'IFC 验证错误',
@@ -522,7 +546,7 @@ const UIS: Record<Lang, UI> = {
     hubRefLabel: '参考', hubRefTitle: '按类别划分的 IFC 检查',
     hubRefSubPre: '另请参阅专用工具：', hubRefLink: '修复重复 GUID', hubRefSubPost: '。',
     hubCtaTitle: '获取你的 IFC Health Score。',
-    hubCtaBody: '所有 38 项检查汇成一个 0–100 的分数 — 免费、无需账户、无需上传。准确了解需要修复什么以及如何修复。',
+    hubCtaBody: `所有 ${RULE_COUNT} 项检查汇成一个 0–100 的分数 — 免费、无需账户、无需上传。准确了解需要修复什么以及如何修复。`,
     hubCtaBtn: '免费运行 Health Score →',
     catTitle: (cat, n) => `如何修复 IFC 中的${cat}问题 — ${n} 项检查`,
     catMeta: (cat, n) => `${n} 项 IFC ${cat}校验检查，附带针对 Revit、ArchiCAD、Tekla 和 Allplan 的具体修复方法。免费、基于浏览器、无需上传。`,
@@ -532,7 +556,7 @@ const UIS: Record<Lang, UI> = {
     navOpen: 'ツールを開く →', home: 'ホーム', checks: 'IFC チェック', autoFixBadge: '自動修正可能',
     h1Pre: '修正方法：', h1Post: '（IFC ファイル）',
     heroCta: 'IFC ファイルをチェック — 無料',
-    heroNote: 'アカウント不要 · アップロード不要 · ブラウザで実行 · 38 項目のチェック',
+    heroNote: `アカウント不要 · アップロード不要 · ブラウザで実行 · ${RULE_COUNT} 項目のチェック`,
     whatLabel: '意味', whatTitle: (l) => `「${l}」チェック`,
     fixLabel: '解決方法', fixTitle: (l) => `オーサリングツールで「${l}」を修正する方法`,
     fixSub: 'ツールごとの具体的な手順です。チェック自体はスキーマに依存せず、IFC2x3、IFC4、IFC4x1、IFC4x3 に対応します。',
@@ -543,7 +567,7 @@ const UIS: Record<Lang, UI> = {
     howSub: 'すべての処理がブラウザ内で実行され、IFC ファイルが端末から外に出ることはありません。',
     relatedLabel: '関連チェック', relatedTitle: (c) => `その他の${c}チェック`,
     ctaTitle: '1 つのルールだけでなく、モデル全体をチェック。',
-    ctaBody: (l) => `「${l}」は 38 項目のチェックのうちの 1 つです。完全な IFC Health Score を実行すると、すべての問題と 0–100 の単一スコアを確認できます — 無料、アカウント不要、アップロード不要。`,
+    ctaBody: (l) => `「${l}」は ${RULE_COUNT} 項目のチェックのうちの 1 つです。完全な IFC Health Score を実行すると、すべての問題と 0–100 の単一スコアを確認できます — 無料、アカウント不要、アップロード不要。`,
     ctaBtn: '無料で Health Score を実行 →',
     pageTitle: (l) => `IFC ファイルの ${l} を修正する方法 — 無料オンライン検証ツール`,
     ogTitle: (l) => `IFC ファイルの ${l} を修正する方法`,
@@ -559,7 +583,7 @@ const UIS: Record<Lang, UI> = {
     sAutoText: '検証パネルでワンクリック修正を適用し、修正済みの IFC をエクスポートします — Web Worker で生成され、サーバーは不要です。',
     sRevalName: '再検証',
     sRevalText: 'オーサリングツールから再エクスポートし、再度検証を実行して、問題が解決され Health Score が向上したことを確認します。',
-    hubTitle: 'IFC 検証エラーの修正方法 — 38 項目のチェックを解説',
+    hubTitle: `IFC 検証エラーの修正方法 — ${RULE_COUNT} 項目のチェックを解説`,
     hubMeta: 'すべての IFC 検証チェックを、Revit、ArchiCAD、Tekla、Allplan 向けの具体的な修正手順とともに確認できます。無料、ブラウザベース、アップロード不要 — IFC を修正して Health Score を向上させましょう。',
     hubBadge: (n) => `無料 · アップロード不要 · ${n} 項目のチェックを掲載`,
     hubH1Pre: '修正方法：', hubH1Accent: 'IFC 検証エラー',
@@ -568,7 +592,7 @@ const UIS: Record<Lang, UI> = {
     hubRefLabel: 'リファレンス', hubRefTitle: 'カテゴリ別の IFC チェック',
     hubRefSubPre: '専用ツールもご覧ください：', hubRefLink: '重複 GUID の修正', hubRefSubPost: '。',
     hubCtaTitle: 'IFC Health Score を取得。',
-    hubCtaBody: '38 項目すべてのチェックを 0–100 の単一スコアに — 無料、アカウント不要、アップロード不要。何をどう修正すべきかが正確にわかります。',
+    hubCtaBody: `${RULE_COUNT} 項目すべてのチェックを 0–100 の単一スコアに — 無料、アカウント不要、アップロード不要。何をどう修正すべきかが正確にわかります。`,
     hubCtaBtn: '無料で Health Score を実行 →',
     catTitle: (cat, n) => `IFC の${cat}の問題を修正する方法 — ${n} 項目のチェック`,
     catMeta: (cat, n) => `${cat}の IFC 検証チェック ${n} 項目を、Revit、ArchiCAD、Tekla、Allplan 向けの具体的な修正方法とともに紹介。無料、ブラウザベース、アップロード不要。`,
@@ -578,7 +602,7 @@ const UIS: Record<Lang, UI> = {
     navOpen: 'เปิดเครื่องมือ →', home: 'หน้าแรก', checks: 'การตรวจสอบ IFC', autoFixBadge: 'แก้ไขอัตโนมัติได้',
     h1Pre: 'วิธีแก้ไข', h1Post: 'ในไฟล์ IFC',
     heroCta: 'ตรวจสอบไฟล์ IFC ของคุณ — ฟรี',
-    heroNote: 'ไม่ต้องมีบัญชี · ไม่ต้องอัปโหลด · ทำงานในเบราว์เซอร์ · 38 การตรวจสอบ',
+    heroNote: `ไม่ต้องมีบัญชี · ไม่ต้องอัปโหลด · ทำงานในเบราว์เซอร์ · ${RULE_COUNT} การตรวจสอบ`,
     whatLabel: 'ความหมาย', whatTitle: (l) => `การตรวจสอบ «${l}»`,
     fixLabel: 'วิธีแก้ไข', fixTitle: (l) => `วิธีแก้ไข «${l}» ในซอฟต์แวร์ออกแบบของคุณ`,
     fixSub: 'ขั้นตอนที่เฉพาะเจาะจงสำหรับแต่ละซอฟต์แวร์ การตรวจสอบไม่ขึ้นกับสคีมาและใช้ได้กับ IFC2x3, IFC4, IFC4x1 และ IFC4x3',
@@ -589,7 +613,7 @@ const UIS: Record<Lang, UI> = {
     howSub: 'กระบวนการทั้งหมดทำงานในเบราว์เซอร์ — ไฟล์ IFC ของคุณไม่เคยออกจากเครื่องของคุณ',
     relatedLabel: 'การตรวจสอบที่เกี่ยวข้อง', relatedTitle: (c) => `การตรวจสอบ${c}อื่น ๆ`,
     ctaTitle: 'ตรวจสอบทั้งโมเดล ไม่ใช่แค่กฎเดียว',
-    ctaBody: (l) => `«${l}» เป็น 1 ใน 38 การตรวจสอบ เรียกใช้ IFC Health Score ฉบับเต็มเพื่อดูทุกปัญหาและคะแนนเดียว 0–100 — ฟรี ไม่ต้องมีบัญชี ไม่ต้องอัปโหลด`,
+    ctaBody: (l) => `«${l}» เป็น 1 ใน ${RULE_COUNT} การตรวจสอบ เรียกใช้ IFC Health Score ฉบับเต็มเพื่อดูทุกปัญหาและคะแนนเดียว 0–100 — ฟรี ไม่ต้องมีบัญชี ไม่ต้องอัปโหลด`,
     ctaBtn: 'เรียกใช้ Health Score ฟรี →',
     pageTitle: (l) => `วิธีแก้ไข ${l} ในไฟล์ IFC — เครื่องมือตรวจสอบ IFC ออนไลน์ฟรี`,
     ogTitle: (l) => `วิธีแก้ไข ${l} ในไฟล์ IFC`,
@@ -605,7 +629,7 @@ const UIS: Record<Lang, UI> = {
     sAutoText: 'ใช้การแก้ไขแบบคลิกเดียวในแผงการตรวจสอบ จากนั้นส่งออกไฟล์ IFC ที่แก้ไขแล้ว — สร้างใน Web Worker โดยไม่ต้องใช้เซิร์ฟเวอร์',
     sRevalName: 'ตรวจสอบอีกครั้ง',
     sRevalText: 'ส่งออกจากซอฟต์แวร์ออกแบบของคุณอีกครั้งแล้วเรียกใช้การตรวจสอบใหม่ เพื่อยืนยันว่าปัญหาได้รับการแก้ไขและ Health Score ดีขึ้น',
-    hubTitle: 'วิธีแก้ไขข้อผิดพลาดการตรวจสอบ IFC — อธิบาย 38 การตรวจสอบ',
+    hubTitle: `วิธีแก้ไขข้อผิดพลาดการตรวจสอบ IFC — อธิบาย ${RULE_COUNT} การตรวจสอบ`,
     hubMeta: 'เรียกดูการตรวจสอบ IFC ทุกรายการพร้อมวิธีแก้ไขที่เฉพาะเจาะจงสำหรับ Revit, ArchiCAD, Tekla และ Allplan ฟรี ทำงานบนเบราว์เซอร์ ไม่ต้องอัปโหลด — แก้ไข IFC ของคุณและปรับปรุง Health Score',
     hubBadge: (n) => `ฟรี · ไม่ต้องอัปโหลด · บันทึกไว้ ${n} การตรวจสอบ`,
     hubH1Pre: 'วิธีแก้ไข', hubH1Accent: 'ข้อผิดพลาดการตรวจสอบ IFC',
@@ -614,7 +638,7 @@ const UIS: Record<Lang, UI> = {
     hubRefLabel: 'ข้อมูลอ้างอิง', hubRefTitle: 'การตรวจสอบ IFC ตามหมวดหมู่',
     hubRefSubPre: 'ดูเครื่องมือเฉพาะสำหรับ ', hubRefLink: 'การแก้ไข GUID ที่ซ้ำกัน', hubRefSubPost: ' ด้วย',
     hubCtaTitle: 'รับ IFC Health Score ของคุณ',
-    hubCtaBody: 'คะแนนเดียว 0–100 จากการตรวจสอบทั้ง 38 รายการ — ฟรี ไม่ต้องมีบัญชี ไม่ต้องอัปโหลด ดูได้ชัดเจนว่าต้องแก้ไขอะไรและอย่างไร',
+    hubCtaBody: `คะแนนเดียว 0–100 จากการตรวจสอบทั้ง ${RULE_COUNT} รายการ — ฟรี ไม่ต้องมีบัญชี ไม่ต้องอัปโหลด ดูได้ชัดเจนว่าต้องแก้ไขอะไรและอย่างไร`,
     hubCtaBtn: 'เรียกใช้ Health Score ฟรี →',
     catTitle: (cat, n) => `วิธีแก้ไขปัญหา${cat}ใน IFC — ${n} การตรวจสอบ`,
     catMeta: (cat, n) => `การตรวจสอบการตรวจสอบ IFC ${cat} จำนวน ${n} รายการ พร้อมวิธีแก้ไขที่เฉพาะเจาะจงสำหรับ Revit, ArchiCAD, Tekla และ Allplan ฟรี ทำงานบนเบราว์เซอร์ ไม่ต้องอัปโหลด`,
@@ -716,7 +740,7 @@ function fixUrl(langPath: string, slug: string | null): string {
 }
 
 function altLinks(slug: string | null): string {
-  const lines = LANGS.map((l) => `  <link rel="alternate" hreflang="${l}" href="${fixUrl(LANG_PATH[l], slug)}" />`)
+  const lines = indexedLangs().map((l) => `  <link rel="alternate" hreflang="${l}" href="${fixUrl(LANG_PATH[l], slug)}" />`)
   lines.push(`  <link rel="alternate" hreflang="x-default" href="${fixUrl('', slug)}" />`)
   return lines.join('\n')
 }
@@ -727,7 +751,7 @@ function catUrl(langPath: string, cat: string): string {
 }
 
 function catAltLinks(cat: string): string {
-  const lines = LANGS.map((l) => `  <link rel="alternate" hreflang="${l}" href="${catUrl(LANG_PATH[l], cat)}" />`)
+  const lines = indexedLangs().map((l) => `  <link rel="alternate" hreflang="${l}" href="${catUrl(LANG_PATH[l], cat)}" />`)
   lines.push(`  <link rel="alternate" hreflang="x-default" href="${catUrl('', cat)}" />`)
   return lines.join('\n')
 }
@@ -832,6 +856,8 @@ interface HeadParams {
   slug: string | null
   jsonLd: unknown
   keywords?: string
+  /** Emit `noindex, follow` instead of `index, follow` — see INDEXED_LANGS. */
+  noindex?: boolean
   /** Pre-rendered hreflang block. Overrides the default `altLinks(slug)` when set
    *  (e.g. category pages, whose alternates live under a different path). */
   altLinksHtml?: string
@@ -847,7 +873,7 @@ function pageHead(p: HeadParams): string {
   <title>${esc(p.title)}</title>
   <meta name="description" content="${esc(p.desc)}" />
 ${p.keywords ? `  <meta name="keywords" content="${esc(p.keywords)}" />\n` : ''}  <meta name="author" content="Joel Benitez" />
-  <meta name="robots" content="index, follow" />
+  <meta name="robots" content="${p.noindex ? 'noindex, follow' : 'index, follow'}" />
   <link rel="canonical" href="${p.url}" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="${p.url}" />
@@ -940,6 +966,8 @@ function renderRulePage(base: RuleBase, lang: Lang, loc: LocaleData, related: { 
   const metaDesc = clip(summary, 158)
   const ogImg = fixCoverUrl(lang, base.category)
 
+  const toolStepNames = new Set(tools.map((t) => ui.sFixIn(t.label)))
+
   const howToSteps: { name: string; text: string }[] = [
     { name: ui.sOpenName, text: ui.sOpenText },
     { name: ui.sValidateName, text: ui.sValidateText(label, base.ruleId) },
@@ -980,7 +1008,14 @@ function renderRulePage(base: RuleBase, lang: Lang, loc: LocaleData, related: { 
     : `
             <tr><td colspan="2">${esc(summary)}</td></tr>`
 
-  const stepCards = howToSteps.map((s, i) => `
+  // The per-tool rows already carry the authoring-tool fixes verbatim in the
+  // table above. Repeating them here (clipped to 150 chars) padded every page
+  // with a second, truncated copy of its only unique paragraphs — which is what
+  // a duplicate-content check sees. The JSON-LD HowTo keeps the full sequence;
+  // the visible cards show the workflow steps only.
+  const workflowSteps = howToSteps.filter((s) => !toolStepNames.has(s.name))
+
+  const stepCards = workflowSteps.map((s, i) => `
           <div class="step">
             <div class="step-n">${String(i + 1).padStart(2, '0')}</div>
             <div class="step-title">${esc(s.name)}</div>
@@ -991,6 +1026,7 @@ function renderRulePage(base: RuleBase, lang: Lang, loc: LocaleData, related: { 
 
   return `${pageHead({
     htmlLang: ui.htmlLang,
+    noindex: !INDEXED_LANGS.has(lang),
     url,
     title,
     desc: metaDesc,
@@ -1164,6 +1200,7 @@ function renderHub(bases: RuleBase[], lang: Lang, loc: LocaleData): string {
 
   return `${pageHead({
     htmlLang: ui.htmlLang,
+    noindex: !INDEXED_LANGS.has(lang),
     url,
     title: ui.hubTitle,
     desc: ui.hubMeta,
@@ -1266,6 +1303,7 @@ function renderCategoryPage(cat: string, rules: RuleBase[], lang: Lang, loc: Loc
 
   return `${pageHead({
     htmlLang: ui.htmlLang,
+    noindex: !INDEXED_LANGS.has(lang),
     url,
     title,
     desc: metaDesc,
@@ -1327,7 +1365,7 @@ ${footer(ui, root, appHome, langPath)}
 
 function sitemapEntries(bases: RuleBase[], lastmod: string): string {
   const alternates = (slug: string | null): string => {
-    const lines = LANGS.map((l) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${fixUrl(LANG_PATH[l], slug)}" />`)
+    const lines = indexedLangs().map((l) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${fixUrl(LANG_PATH[l], slug)}" />`)
     lines.push(`    <xhtml:link rel="alternate" hreflang="x-default" href="${fixUrl('', slug)}" />`)
     return lines.join('\n')
   }
@@ -1341,7 +1379,7 @@ ${alternates(slug)}
   </url>`
   // Category pages have their own URL space (/fix/category/<cat>/) + alternates.
   const catAlternates = (cat: string): string => {
-    const lines = LANGS.map((l) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${catUrl(LANG_PATH[l], cat)}" />`)
+    const lines = indexedLangs().map((l) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${catUrl(LANG_PATH[l], cat)}" />`)
     lines.push(`    <xhtml:link rel="alternate" hreflang="x-default" href="${catUrl('', cat)}" />`)
     return lines.join('\n')
   }
@@ -1355,8 +1393,10 @@ ${catAlternates(cat)}
   </url>`
 
   const { cats } = categoriesOf(bases)
-  let xml = `\n  <!-- Programmatic: IFC checks hub + category pages + per-rule fix pages (${LANGS.map((l) => l.toUpperCase()).join(' + ')}) -->`
-  for (const lang of LANGS) {
+  // Only indexable languages are listed: submitting a noindex URL in a sitemap
+  // is a contradictory signal and spends the crawl budget we are trying to save.
+  let xml = `\n  <!-- Programmatic: IFC checks hub + category pages + per-rule fix pages (${indexedLangs().map((l) => l.toUpperCase()).join(' + ')}) -->`
+  for (const lang of indexedLangs()) {
     const lp = LANG_PATH[lang]
     xml += entry(lp, null, '0.7')
     for (const cat of cats) xml += catEntry(lp, cat)

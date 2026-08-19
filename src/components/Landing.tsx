@@ -220,6 +220,8 @@ const FIX_CATEGORIES = ['schema', 'spatial', 'quality', 'lod', 'iso19650', 'clas
 
 // Languages that ship localized fix pages under a /<lang>/ prefix. EN lives at
 // the site root. Mirrors LANG_PATH in scripts/seo/generate-fix-pages.ts.
+import { validatorPath, solibriPath } from '../lib/localized-landings'
+
 const FIX_LANG_PREFIXES = ['es', 'de', 'fr', 'pt', 'it', 'ca', 'zh', 'ja', 'th']
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -233,6 +235,16 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
   // under a /<lang>/ prefix (mirrors LANG_PATH in the page generator).
   const langShort = i18n.language.slice(0, 2)
   const fixBase = `${import.meta.env.BASE_URL}${FIX_LANG_PREFIXES.includes(langShort) ? langShort + '/' : ''}fix/`
+  // The blog links used to be <button onClick>, so the only path from the home
+  // page to ~130 blog URLs was invisible to a crawler. They stay client-side
+  // navigations, but now carry the href they actually navigate to. Mirrors
+  // blogUrlBase() in App.tsx.
+  const blogBase = `${import.meta.env.BASE_URL}${langShort !== 'en' ? langShort + '/' : ''}blog/`
+  // The hand-authored SEO landings only ever linked to each other and to their
+  // own translations — a closed island with no edge from the home page, which
+  // is why Search Console reports them "crawled, currently not indexed".
+  const validatorHref = `${import.meta.env.BASE_URL}${validatorPath(langShort)}`
+  const solibriHref = `${import.meta.env.BASE_URL}${solibriPath(langShort)}`
 
   // ── Safety-net re-render subscription ────────────────────────────────────────
   // react-i18next v17 uses useSyncExternalStore internally. In some timing
@@ -439,10 +451,11 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             <a href="#faq"
               className="text-[12px] lg:text-[13px] text-[var(--text-dim)] no-underline hover:text-[var(--text)] transition-colors whitespace-nowrap"
             >{t('nav.faq')}</a>
-            <button
-              onClick={() => onNavigateToBlog(langShort)}
+            <a
+              href={blogBase}
+              onClick={(e) => { e.preventDefault(); onNavigateToBlog(langShort) }}
               className="text-[12px] lg:text-[13px] text-[var(--text-dim)] bg-transparent border-0 p-0 cursor-pointer hover:text-[var(--text)] transition-colors whitespace-nowrap"
-            >Blog</button>
+            >Blog</a>
             {/* F2-TRIGGERS: pricing CTA → opens the app with the account/upsell
                 surface, nothing else changed. Invisible when accounts are off
                 (VITE_CLERK_PUBLISHABLE_KEY absent) — the anonymous nav stays
@@ -473,10 +486,11 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
 
           {/* Mobile: Blog + GitHub icon + theme toggle + language selector + primary CTA */}
           <div className="flex md:hidden items-center gap-2">
-            <button
-              onClick={() => onNavigateToBlog(langShort)}
+            <a
+              href={blogBase}
+              onClick={(e) => { e.preventDefault(); onNavigateToBlog(langShort) }}
               className="text-[12px] font-medium text-[var(--text-dim)] bg-transparent border-0 px-1 py-1 cursor-pointer hover:text-[var(--text)] transition-colors whitespace-nowrap"
-            >Blog</button>
+            >Blog</a>
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer"
               className="w-9 h-9 flex items-center justify-center rounded-lg text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
               aria-label="GitHub repository"
@@ -1449,12 +1463,25 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             >
               {t('footer.fixGuide')}
             </a>
-            <button
-              onClick={() => onNavigateToBlog(langShort)}
+            <a
+              href={validatorHref}
+              className="hover:text-[var(--text)] transition-colors no-underline"
+            >
+              {t('footer.validator', 'IFC Validator')}
+            </a>
+            <a
+              href={solibriHref}
+              className="hover:text-[var(--text)] transition-colors no-underline"
+            >
+              {t('footer.solibri', 'Solibri alternative')}
+            </a>
+            <a
+              href={blogBase}
+              onClick={(e) => { e.preventDefault(); onNavigateToBlog(langShort) }}
               className="bg-transparent border-0 p-0 text-[var(--text-faint)] text-[11px] sm:text-[12px] cursor-pointer hover:text-[var(--text)] transition-colors"
             >
               Blog
-            </button>
+            </a>
             {/* The handbook is English-only, so it is only offered on the EN landing. */}
             {langShort === 'en' && (
               <a
