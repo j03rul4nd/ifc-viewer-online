@@ -42,6 +42,16 @@ export interface AlignInput {
   placement: GeoPlacement | null
   /** Scene-space bounds of the IFC model. */
   modelBounds: ModelBoundsLike | null
+  /**
+   * Translation the viewer applied between the model's own IFC coordinates and
+   * the geometry it draws, in scene axes (viewer.getModelCoordination).
+   *
+   * Every rung above 'manual' places the cloud by absolute coordinates read out
+   * of its file, so all of them are expressed in the MODEL'S frame — not in the
+   * frame the model is drawn in. When a loader moves the model for precision,
+   * that difference is exactly how far a correctly registered scan misses by.
+   */
+  modelCoordination?: Vec3 | null
 }
 
 // ── Public entry point ─────────────────────────────────────────────────────────
@@ -63,6 +73,19 @@ export function alignCloud(input: AlignInput): PointCloudAlignment {
   // hides that, so the reason is attached wherever the ladder ended up.
   if (unresolvedCloudCrs(input.frame) && alignment.rung !== 'map-conversion' && alignment.rung !== 'shared-crs') {
     alignment.reasons = [...alignment.reasons, 'align.reason.cloudCrsUnknown']
+  }
+
+  // Move the result out of the model's own coordinates and into the ones it is
+  // DRAWN in. 'manual' is excluded on purpose: it is positioned against the
+  // model's scene bounds, which already live in drawn space, so adding this
+  // would count the same shift twice.
+  const c = input.modelCoordination
+  if (c && alignment.rung !== 'manual' && (c.x !== 0 || c.y !== 0 || c.z !== 0)) {
+    alignment.origin = {
+      x: alignment.origin.x + c.x,
+      y: alignment.origin.y + c.y,
+      z: alignment.origin.z + c.z,
+    }
   }
   return alignment
 }

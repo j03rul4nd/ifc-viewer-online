@@ -17,7 +17,14 @@ const log     = createLogger('OPFS')
 const DIR_NAME = 'ifc-cache'
 
 // Increment when the fragments binary format changes (forces cache invalidation)
-const CACHE_VERSION = 'v2'
+//
+// v3 — the converter stopped translating models to the origin
+// (COORDINATE_TO_ORIGIN, see ifc-parser.worker). Every .frag written before that
+// has the shift baked into its vertices, so a cached model would keep rendering
+// metres away from its own coordinates and a registered point cloud would keep
+// missing it. The geometry is unchanged in FORMAT and wrong in PLACE, which is
+// exactly the case a version bump exists for.
+const CACHE_VERSION = 'v3'
 
 // ── Key helpers ───────────────────────────────────────────────────────────────
 

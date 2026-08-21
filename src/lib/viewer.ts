@@ -279,6 +279,17 @@ export interface ViewerAPI {
    * reaches into the plot next door. This keeps the rotation.
    */
   getModelFootprint(modelId?: string): Array<{ x: number; z: number }> | null
+  /**
+   * Translation between a model's own IFC coordinates and the geometry drawn on
+   * screen, in SCENE axes, or null when it is not known.
+   *
+   * ADD this to a position expressed in the model's IFC coordinates to get where
+   * that position belongs in the scene. Anything registered against the real
+   * file — a surveyed point cloud above all — has to go through here, because a
+   * loader is entitled to move geometry for precision and the datum must not be
+   * lost when it does.
+   */
+  getModelCoordination(modelId?: string): { x: number; y: number; z: number } | null
   /** Read back a model's transform values (in degrees for rotation). Defaults to active model. */
   getModelTransform(modelId?: string): Required<ModelTransform>
   /** Fit the camera to the combined bounding box of ALL loaded models. */
@@ -1004,6 +1015,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   // Per-model maps — survive a model swap so past data stays addressable
   const modelObjects:    Map<string, FRAGS.FragmentsModel> = new Map()
+  /**
+   * Translation the loader applied between a model's own IFC coordinates and the
+   * geometry we draw, in SCENE axes. See getModelCoordination.
+   */
+  const modelCoordination: Map<string, { x: number; y: number; z: number }> = new Map()
   const typeMapByModel:  Map<string, Map<number, string>>  = new Map()
   // Models explicitly hidden at the model level (via setModelVisible / isolateModel).
   // applyFilters skips these so element-level calls never re-show a model-hidden model.
@@ -1637,6 +1653,22 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       currentModelId = assignedId
       currentPivot   = pivot
       modelObjects.set(assignedId, model)
+
+      // Record whatever the loader did to this model's datum, rather than
+      // assuming it did nothing. The converter no longer translates models to
+      // the origin, so this is normally zero — but `loadIfc` still asks for
+      // coordination, and a library default can change under us again. Reading
+      // it once and handing it to whoever needs it is what stops that from
+      // silently misplacing every coordinate-registered thing in the scene.
+      try {
+        const t = new THREE.Vector3().setFromMatrixPosition(await model.getCoordinationMatrix())
+        if (Number.isFinite(t.x) && Number.isFinite(t.y) && Number.isFinite(t.z)) {
+          modelCoordination.set(assignedId, { x: t.x, y: t.y, z: t.z })
+        }
+      } catch {
+        // Older fragments build without the accessor. Absent beats invented:
+        // callers read null as "unknown" and leave positions alone.
+      }
       onProgress?.(60)
 
       return setupLoadedModel(model, assignedId, file.name, file.size, onProgress)
@@ -1678,6 +1710,22 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       currentModelId = modelId
       currentPivot   = pivot
       modelObjects.set(modelId, model)
+
+      // Record whatever the loader did to this model's datum, rather than
+      // assuming it did nothing. The converter no longer translates models to
+      // the origin, so this is normally zero — but `loadIfc` still asks for
+      // coordination, and a library default can change under us again. Reading
+      // it once and handing it to whoever needs it is what stops that from
+      // silently misplacing every coordinate-registered thing in the scene.
+      try {
+        const t = new THREE.Vector3().setFromMatrixPosition(await model.getCoordinationMatrix())
+        if (Number.isFinite(t.x) && Number.isFinite(t.y) && Number.isFinite(t.z)) {
+          modelCoordination.set(modelId, { x: t.x, y: t.y, z: t.z })
+        }
+      } catch {
+        // Older fragments build without the accessor. Absent beats invented:
+        // callers read null as "unknown" and leave positions alone.
+      }
 
       const result = await setupLoadedModel(model, modelId, fileName, fileSize ?? 0, onProgress)
       return { ...result, modelId }
@@ -2069,6 +2117,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
+    getModelCoordination(modelId?: string) {
+      const tid = modelId ?? currentModelId
+      return (tid ? modelCoordination.get(tid) : null) ?? null
+    },
+
     getModelFootprint(modelId?: string) {
       const tid   = modelId ?? currentModelId
       const model = (tid ? modelObjects.get(tid) : null) ?? currentModel
@@ -2243,6 +2296,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
       await model.dispose()
       modelObjects.delete(modelId)
+      modelCoordination.delete(modelId)
       typeMapByModel.delete(modelId)
       modelHidden.delete(modelId)
 

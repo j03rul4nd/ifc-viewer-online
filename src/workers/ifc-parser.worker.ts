@@ -65,6 +65,30 @@ async function handleParse(msg: ParseMessage): Promise<void> {
   try {
     const importer = new IfcImporter()
 
+    // KEEP THE MODEL'S OWN COORDINATES.
+    //
+    // web-ifc defaults COORDINATE_TO_ORIGIN to false; @thatopen/fragments
+    // overrides it to true, which silently translates every model toward the
+    // origin. That is a reasonable default for a pure geometry viewer and it is
+    // wrong for this app: half of what we do reasons in the model's REAL
+    // coordinates — georeferencing, map mode, and above all a surveyed point
+    // cloud registered against the IFC. With the datum thrown away, a scan that
+    // is correct to two centimetres lands metres from the building it measures.
+    // Measured on the CRAS demo: the model was drawn 5.9 m from where its own
+    // IFC says it is, so the scan looked badly calibrated when it was not.
+    //
+    // The cost is real and worth stating: a model with coordinates baked in a
+    // projected CRS (UTM eastings run to seven digits) now renders far from the
+    // origin, where float32 runs out of resolution and surfaces shimmer. That is
+    // already a defect this app REPORTS rather than hides — the validator tells
+    // the author to re-export with a base point offset or an IfcMapConversion —
+    // so drawing it honestly beats silently moving it and breaking every
+    // coordinate-based feature for every other model.
+    importer.webIfcSettings = {
+      ...importer.webIfcSettings,
+      COORDINATE_TO_ORIGIN: false,
+    }
+
     // Use local WASM files; CDN is blocked by COEP require-corp
     importer.wasm = import.meta.env.DEV
       ? { path: `${import.meta.env.BASE_URL}node_modules/web-ifc/`, absolute: true }
