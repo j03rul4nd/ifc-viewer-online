@@ -60,6 +60,32 @@ function asset(name: string): string {
   return `${BASE}blog/covers/${name}.png`
 }
 
+const BLOG_LIST_META: Record<string, { title: string; description: string }> = {
+  en: {
+    title: 'BIM & IFC Blog — Practical Guides for BIM Coordinators | IFC Viewer',
+    description: 'Practical guides for BIM coordinators: fix IFC validation errors, improve IFC Health Scores, and deliver clean models to the CDE.',
+  },
+  es: {
+    title: 'Blog BIM e IFC — Guías prácticas para coordinadores BIM | IFC Viewer',
+    description: 'Guías prácticas para coordinadores BIM: corrige errores de validación IFC, mejora el Health Score y entrega modelos limpios al ECD.',
+  },
+  de: {
+    title: 'BIM & IFC Blog — Praxisanleitungen für BIM-Koordinatoren | IFC Viewer',
+    description: 'Praxisanleitungen für BIM-Koordinatoren: IFC-Validierungsfehler beheben, Health Scores verbessern und saubere Modelle ans CDE liefern.',
+  },
+  fr: {
+    title: 'Blog BIM & IFC — Guides pratiques pour coordinateurs BIM | IFC Viewer',
+    description: 'Guides pratiques pour coordinateurs BIM : corriger les erreurs IFC, améliorer le Health Score et livrer des modèles propres à la GED.',
+  },
+}
+
+function patchDocumentMeta(selector: string, value: string): string {
+  const element = document.querySelector<HTMLMetaElement>(selector)
+  const previous = element?.content ?? ''
+  if (element) element.content = value
+  return previous
+}
+
 // ─── Design helpers ───────────────────────────────────────────────────────────
 
 function formatDate(iso: string): string {
@@ -540,10 +566,12 @@ function PostCard({ post, onClick, theme = 'dark' }: { post: BlogPost; onClick: 
           <div className="relative h-[138px] overflow-hidden bg-[var(--surface-2,#0e0e12)] flex-shrink-0">
             <img
               src={asset(post.slug)}
-              alt=""
-              aria-hidden="true"
+              alt={`${post.title} — IFC Viewer Online article cover`}
+              width={1800}
+              height={945}
               loading="lazy"
-              className="w-full h-full object-cover object-center opacity-75 group-hover:opacity-90 transition-opacity duration-300"
+              decoding="async"
+              className="w-full h-full object-cover object-center opacity-90 group-hover:opacity-100 transition-opacity duration-300"
               onError={() => setShowCover(false)}
             />
             <div
@@ -604,20 +632,21 @@ function FeaturedCard({ post, onClick, theme = 'dark' }: { post: BlogPost; onCli
       />
 
       {/* Mobile hero image strip — shown only on mobile */}
-      {post.heroImage && (
-        <div className="sm:hidden relative h-[130px] overflow-hidden bg-black">
-          <img
-            src={asset(post.heroImage)}
-            alt=""
-            aria-hidden="true"
-            className="w-full h-full object-cover opacity-45 group-hover:opacity-55 transition-opacity duration-300"
-          />
-          <div
-            className="absolute inset-0"
-            style={{ background: 'linear-gradient(to bottom, transparent 30%, var(--surface) 100%)' }}
-          />
-        </div>
-      )}
+      <div className="sm:hidden relative h-[130px] overflow-hidden bg-black">
+        <img
+          src={asset(post.slug)}
+          alt={`${post.title} — IFC Viewer Online featured article cover`}
+          width={1800}
+          height={945}
+          loading="eager"
+          decoding="async"
+          className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300"
+        />
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(to bottom, transparent 30%, var(--surface) 100%)' }}
+        />
+      </div>
 
       {/* Content + desktop image layout */}
       <div className="sm:grid sm:grid-cols-[1fr_300px] lg:grid-cols-[1fr_380px]">
@@ -662,20 +691,21 @@ function FeaturedCard({ post, onClick, theme = 'dark' }: { post: BlogPost; onCli
         </div>
 
         {/* Desktop hero image column */}
-        {post.heroImage && (
-          <div className="hidden sm:block relative overflow-hidden bg-black border-l border-[var(--border)]">
-            <img
-              src={asset(post.heroImage)}
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-65 transition-opacity duration-500"
-            />
-            <div
-              className="absolute inset-0"
-              style={{ background: 'linear-gradient(to right, var(--surface) 0%, transparent 40%)' }}
-            />
-          </div>
-        )}
+        <div className="hidden sm:block relative overflow-hidden bg-black border-l border-[var(--border)]">
+          <img
+            src={asset(post.slug)}
+            alt={`${post.title} — IFC Viewer Online featured article cover`}
+            width={1800}
+            height={945}
+            loading="eager"
+            decoding="async"
+            className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500"
+          />
+          <div
+            className="absolute inset-0"
+            style={{ background: 'linear-gradient(to right, var(--surface) 0%, transparent 35%)' }}
+          />
+        </div>
       </div>
     </article>
   )
@@ -731,6 +761,47 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
   const posts    = getBlogPostsByLang(lang)
   const featured = getFeaturedPost(lang)
   const rest     = posts.filter(p => p !== featured)
+
+  React.useEffect(() => {
+    const meta = BLOG_LIST_META[lang] ?? BLOG_LIST_META.en
+    const previousTitle = document.title
+    const previousLang = document.documentElement.lang
+    document.title = meta.title
+    document.documentElement.lang = lang
+
+    const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+    const previousCanonical = canonical?.href ?? ''
+    const canonicalUrl = canonical
+      ? new URL(window.location.pathname, canonical.href).href
+      : window.location.href
+    if (canonical) canonical.href = canonicalUrl
+
+    const previous = [
+      patchDocumentMeta('meta[name="description"]', meta.description),
+      patchDocumentMeta('meta[property="og:type"]', 'website'),
+      patchDocumentMeta('meta[property="og:title"]', meta.title),
+      patchDocumentMeta('meta[property="og:description"]', meta.description),
+      patchDocumentMeta('meta[property="og:url"]', canonicalUrl),
+      patchDocumentMeta('meta[name="twitter:title"]', meta.title),
+      patchDocumentMeta('meta[name="twitter:description"]', meta.description),
+    ]
+
+    return () => {
+      document.title = previousTitle
+      document.documentElement.lang = previousLang
+      if (canonical) canonical.href = previousCanonical
+      const selectors = [
+        'meta[name="description"]',
+        'meta[property="og:type"]',
+        'meta[property="og:title"]',
+        'meta[property="og:description"]',
+        'meta[property="og:url"]',
+        'meta[name="twitter:title"]',
+        'meta[name="twitter:description"]',
+      ]
+      selectors.forEach((selector, index) => patchDocumentMeta(selector, previous[index]))
+    }
+  }, [lang])
 
   const navBg = landingTheme === 'dark'
     ? 'bg-[rgba(10,10,14,0.88)]'
@@ -907,7 +978,7 @@ function HeroCoverStrip({ slug, heroImage, alt }: { slug: string; heroImage?: st
     ? `${asset(compactHero)} 800w, ${src} 1600w`
     : undefined
   return (
-    <div className="relative h-[180px] sm:h-[240px] overflow-hidden bg-black border-b border-[var(--border)]">
+    <div className="relative h-[240px] sm:h-[420px] overflow-hidden bg-black border-b border-[var(--border)]">
       <img
         src={src}
         srcSet={srcSet}
@@ -915,13 +986,13 @@ function HeroCoverStrip({ slug, heroImage, alt }: { slug: string; heroImage?: st
         alt={alt ?? ''}
         width={1600}
         height={900}
-        className="w-full h-full object-cover object-center opacity-50"
+        className="w-full h-full object-cover object-center opacity-[0.88]"
         decoding="async"
         onError={() => setVisible(false)}
       />
       <div
         className="absolute inset-0"
-        style={{ background: 'linear-gradient(to bottom, transparent 10%, var(--bg) 100%)' }}
+        style={{ background: 'linear-gradient(to bottom, transparent 58%, var(--bg) 100%)' }}
       />
     </div>
   )
@@ -941,9 +1012,12 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
   // Update document title + OG/Twitter meta while viewing a specific post.
   React.useEffect(() => {
     const prevTitle = document.title
-    document.title = `${post.title} | IFC Viewer Online`
+    const brandedTitle = `${post.title} | IFC Viewer Online`
+    document.title = brandedTitle.length <= 64 ? brandedTitle : post.title
+    const prevLang = document.documentElement.lang
+    document.documentElement.lang = post.lang ?? 'en'
 
-    const coverUrl = new URL(asset(post.heroImage ?? post.slug), window.location.origin).href
+    const coverUrl = new URL(asset(post.slug), window.location.origin).href
 
     const update = (sel: string, attr: string, val: string) => {
       const el = document.querySelector(sel)
@@ -954,19 +1028,35 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
 
     const prevOgImg  = update('meta[property="og:image"]',       'content', coverUrl)
     const prevTwImg  = update('meta[name="twitter:image"]',      'content', coverUrl)
+    const prevDesc   = update('meta[name="description"]',         'content', post.excerpt)
+    const prevOgType = update('meta[property="og:type"]',         'content', 'article')
     const prevOgT    = update('meta[property="og:title"]',       'content', post.title)
     const prevTwT    = update('meta[name="twitter:title"]',      'content', post.title)
     const prevOgD    = update('meta[property="og:description"]', 'content', post.excerpt)
     const prevTwD    = update('meta[name="twitter:description"]','content', post.excerpt)
+    const prevOgAlt  = update('meta[property="og:image:alt"]',    'content', post.heroAlt ?? post.title)
+    const prevTwAlt  = update('meta[name="twitter:image:alt"]',   'content', post.heroAlt ?? post.title)
+    const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+    const prevCanonical = canonical?.href ?? ''
+    const canonicalUrl = canonical ? new URL(window.location.pathname, canonical.href).href : window.location.href
+    if (canonical) canonical.href = canonicalUrl
+    const prevOgUrl = update('meta[property="og:url"]', 'content', canonicalUrl)
 
     return () => {
       document.title = prevTitle
+      document.documentElement.lang = prevLang
       update('meta[property="og:image"]',       'content', prevOgImg)
       update('meta[name="twitter:image"]',      'content', prevTwImg)
+      update('meta[name="description"]',         'content', prevDesc)
+      update('meta[property="og:type"]',         'content', prevOgType)
       update('meta[property="og:title"]',       'content', prevOgT)
       update('meta[name="twitter:title"]',      'content', prevTwT)
       update('meta[property="og:description"]', 'content', prevOgD)
       update('meta[name="twitter:description"]','content', prevTwD)
+      update('meta[property="og:image:alt"]',    'content', prevOgAlt)
+      update('meta[name="twitter:image:alt"]',   'content', prevTwAlt)
+      update('meta[property="og:url"]',          'content', prevOgUrl)
+      if (canonical) canonical.href = prevCanonical
     }
   }, [post.slug])
 

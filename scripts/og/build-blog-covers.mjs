@@ -1,8 +1,8 @@
-// Build blog post cover images (1200×630) for IFC Viewer Online.
+// Build blog post cover images (rendered at 1800×945) for IFC Viewer Online.
 //
-// Each card: branded header + category badge + post title + IFC Viewer URL,
-// on a dark background with a category-coloured glow and abstract SVG art.
-// No app screenshot needed — pure HTML → PNG via Playwright.
+// Standard articles use a deterministic branded HTML composition. Spatial
+// articles use actual viewer / project captures with an honest source badge.
+// This pipeline does not use generative AI.
 //
 // Output: public/blog/covers/<slug>.png
 //
@@ -11,7 +11,7 @@
 //   node scripts/og/build-blog-covers.mjs <slug>...  # specific slugs
 
 import { chromium } from 'playwright-core'
-import { mkdirSync } from 'node:fs'
+import { copyFileSync, mkdirSync, readFileSync } from 'node:fs'
 
 const EXE = process.env.CHROME_EXE || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
 const W = 1200, H = 630
@@ -25,12 +25,13 @@ const CAT_COLORS = {
   'best-practices': { color: '#818cf8', glow: '94,106,210' },
   'ifc-tips':       { color: '#67d7f0', glow: '103,215,240' },
   'standards':      { color: '#c084fc', glow: '192,132,252' },
+  'digital-twins':  { color: '#22d3ee', glow: '34,211,238' },
 }
 
 // Category badge labels per language
 const CAT_LABELS = {
-  en: { 'tool-guides': 'TOOL GUIDES', 'validation': 'VALIDATION', 'best-practices': 'BEST PRACTICES', 'ifc-tips': 'IFC TIPS', 'standards': 'STANDARDS' },
-  es: { 'tool-guides': 'GUÍAS', 'validation': 'VALIDACIÓN', 'best-practices': 'BUENAS PRÁCTICAS', 'ifc-tips': 'CONSEJOS IFC', 'standards': 'ESTÁNDARES' },
+  en: { 'tool-guides': 'TOOL GUIDES', 'validation': 'VALIDATION', 'best-practices': 'BEST PRACTICES', 'ifc-tips': 'IFC TIPS', 'standards': 'STANDARDS', 'digital-twins': 'DIGITAL TWINS' },
+  es: { 'tool-guides': 'GUÍAS', 'validation': 'VALIDACIÓN', 'best-practices': 'BUENAS PRÁCTICAS', 'ifc-tips': 'CONSEJOS IFC', 'standards': 'ESTÁNDARES', 'digital-twins': 'GEMELOS DIGITALES' },
   de: { 'tool-guides': 'ANLEITUNGEN', 'validation': 'VALIDIERUNG', 'best-practices': 'BEST PRACTICES', 'ifc-tips': 'IFC-TIPPS', 'standards': 'NORMEN' },
   fr: { 'tool-guides': 'GUIDES OUTILS', 'validation': 'VALIDATION', 'best-practices': 'MEILLEURES PRATIQUES', 'ifc-tips': 'CONSEILS IFC', 'standards': 'NORMES' },
   pt: { 'tool-guides': 'GUIAS', 'validation': 'VALIDAÇÃO', 'best-practices': 'BOAS PRÁTICAS', 'ifc-tips': 'DICAS IFC', 'standards': 'NORMAS' },
@@ -75,44 +76,38 @@ function catIcon(slug, color) {
   return icons[slug] || icons['tool-guides']
 }
 
-// ── All posts (with language for localized category labels) ───────────────────
-const ALL_POSTS = [
-  // EN
-  { slug: 'view-ifc-online-free',               lang: 'en', title: 'View IFC Files in Your Browser — Free, No Installation',                               cat: 'tool-guides' },
-  { slug: 'ifc-health-score-guide',             lang: 'en', title: 'What Is a BIM Health Check? The IFC Health Score Explained',                           cat: 'best-practices' },
-  { slug: 'duplicate-guids-ifc',                lang: 'en', title: 'Duplicate GUIDs in IFC: The Silent Error That Breaks Everything',                      cat: 'validation' },
-  { slug: 'ifc-vs-rvt-vs-nwd',                  lang: 'en', title: 'IFC, RVT, NWD, DWG: Which BIM File Format Should You Deliver?',                       cat: 'ifc-tips' },
-  { slug: 'common-ifc-validation-errors',       lang: 'en', title: 'The 7 Most Common IFC Validation Errors (and How to Fix Them)',                        cat: 'validation' },
-  { slug: 'ifc-health-score-explained',         lang: 'en', title: 'IFC Health Score: The Single Number Your BIM Team Needs',                             cat: 'best-practices' },
-  { slug: 'clean-ifc-export-revit',             lang: 'en', title: 'How to Export Clean IFC Files from Revit: A Step-by-Step Guide',                      cat: 'tool-guides' },
-  { slug: 'ifc2x3-vs-ifc4',                     lang: 'en', title: 'IFC2x3 vs IFC4: Should You Upgrade Your Export Schema?',                              cat: 'ifc-tips' },
-  { slug: 'iso19650-ifc-checklist',             lang: 'en', title: 'ISO 19650 Compliance for IFC Deliveries: A Practical Checklist',                      cat: 'standards' },
-  { slug: 'ifc-guids-changing-every-export',    lang: 'en', title: 'Why IFC GUIDs Change on Every Export (and How to Keep Them Stable)',                  cat: 'validation' },
-  { slug: 'ifc-properties-missing-after-export',lang: 'en', title: 'IFC Properties Missing After Export From Revit? The Fix Checklist',                   cat: 'tool-guides' },
-  { slug: 'how-to-validate-ifc-file',           lang: 'en', title: 'How to Validate an IFC File Before You Send It (Free, No Upload)',                    cat: 'validation' },
-  { slug: 'large-ifc-file-browser-crash',       lang: 'en', title: 'Why Large IFC Files Crash Your Browser (and How to View a 1 GB Model)',               cat: 'tool-guides' },
-  { slug: 'revit-ifc-export-breaks',            lang: 'en', title: 'Why Your Revit IFC Export Breaks (and How to Fix Each Cause)',                        cat: 'tool-guides' },
-  { slug: 'ifc-quality-guide',                  lang: 'en', title: 'The Complete Guide to IFC Quality: From Export to Delivery',                          cat: 'best-practices' },
-  { slug: 'ifc-coordinates-georeferencing',     lang: 'en', title: 'IFC Coordinates Are Wrong: Survey Point, Base Point & Georeferencing Explained',      cat: 'ifc-tips' },
-  { slug: 'revit-archicad-ifc-roundtrip',       lang: 'en', title: 'Revit ↔ Archicad via IFC: The Round-Trip Problems Nobody Warns You About',           cat: 'ifc-tips' },
-  { slug: 'free-online-ifc-viewers-compared',   lang: 'en', title: 'Free Online IFC Viewers Compared (2026): Privacy, Size Limits & Features',            cat: 'tool-guides' },
-  { slug: 'reduce-ifc-file-size',               lang: 'en', title: 'How to Reduce IFC File Size (Without Breaking the Model)',                            cat: 'tool-guides' },
-  { slug: 'read-ifc-property-sets-python',      lang: 'en', title: 'Read IFC Property Sets in Python with IfcOpenShell',                                  cat: 'ifc-tips' },
-  { slug: 'view-ifc-web-threejs-fragments',     lang: 'en', title: 'How to View IFC in the Browser with three.js, web-ifc & Fragments',                  cat: 'tool-guides' },
-  { slug: 'ifc-viewer-confidential-nda-projects',lang:'en', title: 'Can You Use an Online IFC Viewer with Confidential Project Data?',                    cat: 'best-practices' },
-  { slug: 'gdpr-bim-ifc-data-guide',            lang: 'en', title: 'GDPR and BIM Data: What Every Project Manager Needs to Know (2026)',                  cat: 'best-practices' },
-  { slug: 'bim-tool-it-security-checklist',     lang: 'en', title: 'The BIM Tool IT Security Checklist: 10 Questions Your IT Department Will Ask',        cat: 'best-practices' },
-  // ES
-  { slug: 'como-exportar-ifc-desde-revit',      lang: 'es', title: 'Cómo exportar un IFC limpio desde Revit: la guía definitiva',                        cat: 'tool-guides' },
-  { slug: 'health-score-ifc-que-es',            lang: 'es', title: 'Health Score en IFC: el número que necesita tu proyecto BIM',                        cat: 'best-practices' },
-  { slug: 'errores-ifc-mas-comunes',            lang: 'es', title: 'Los 7 errores IFC más comunes (y cómo corregirlos antes de la entrega)',              cat: 'validation' },
-  { slug: 'ifc-vs-rvt-que-entregar',            lang: 'es', title: 'IFC vs RVT: ¿qué formato BIM debes entregar en tus proyectos?',                      cat: 'ifc-tips' },
-  // DE
-  { slug: 'ifc-datei-im-browser-oeffnen',       lang: 'de', title: 'IFC-Dateien im Browser öffnen — kostenlos, ohne Installation',                       cat: 'tool-guides' },
-  { slug: 'ifc-validierung-haeufige-fehler',    lang: 'de', title: 'Die 5 häufigsten IFC-Fehler vor der CDE-Lieferung',                                  cat: 'validation' },
-  // FR
-  { slug: 'ouvrir-fichier-ifc-navigateur',      lang: 'fr', title: 'Ouvrir un fichier IFC dans le navigateur — gratuit, sans installation',              cat: 'tool-guides' },
-]
+// ── All posts — source of truth is the same data used by the application ─────
+const { ALL_BLOG_POSTS } = await import('../../src/lib/blog-posts.ts')
+const ALL_POSTS = ALL_BLOG_POSTS.map((post) => ({
+  slug: post.slug,
+  lang: post.lang ?? 'en',
+  title: post.title,
+  cat: post.categorySlug,
+  translationKey: post.translationKey,
+}))
+
+// These backgrounds are captures produced by the real repository pipeline,
+// never generated images. The LiDAR capture is explicitly a simulated replay.
+const REAL_CAPTURE_BY_KEY = {
+  'ifc-point-cloud-scan-to-bim': {
+    source: 'public/blog/images/scan-to-bim-ifc-point-cloud-alignment.jpg',
+    publicCopy: 'cras-ifc-tls-point-cloud-real-alignment.jpg',
+    badge: { en: 'REAL IFC + TLS DATA', es: 'DATOS IFC + TLS REALES' },
+    shortTitle: 'IFC + POINT CLOUD',
+  },
+  'real-time-lidar-web-mcap': {
+    source: 'docs/images/lidar-replay-demo.png',
+    publicCopy: 'ifc-lidar-temporal-replay-real-viewer.png',
+    badge: { en: 'ACTUAL VIEWER · SIMULATED REPLAY', es: 'VISOR REAL · REPLAY SIMULADO' },
+    shortTitle: 'IFC + LIDAR REPLAY',
+  },
+  'ifc-video-3d-terrain': {
+    source: 'docs/images/video-3d-demo.png',
+    publicCopy: 'ifc-video-3d-placement-controls-real-viewer.png',
+    badge: { en: 'ACTUAL IFC VIEWER CAPTURE', es: 'CAPTURA REAL DEL VISOR IFC' },
+    shortTitle: 'IFC + 3D VIDEO',
+  },
+}
 
 // ── HTML template ──────────────────────────────────────────────────────────────
 function coverHtml({ slug, lang, title, cat }) {
@@ -184,6 +179,65 @@ h1{font-size:${fs}px;line-height:1.09;font-weight:800;letter-spacing:-.025em;col
 </body></html>`
 }
 
+function imageDataUrl(file) {
+  const mime = file.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg'
+  return `data:${mime};base64,${readFileSync(file).toString('base64')}`
+}
+
+function realCoverHtml(post, width, height, overrideTitle) {
+  const capture = REAL_CAPTURE_BY_KEY[post.translationKey]
+  if (!capture) return coverHtml(post)
+
+  const title = overrideTitle ?? post.title
+  const badge = capture.badge[post.lang] ?? capture.badge.en
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const horizontal = width / height > 1.25
+  const titleSize = Math.round(horizontal
+    ? Math.max(38, Math.min(72, width * 0.048))
+    : Math.max(42, Math.min(68, width * 0.055)))
+  const pad = Math.round(Math.max(34, width * 0.055))
+  const brandSize = Math.round(Math.max(15, width * 0.016))
+  const badgeSize = Math.round(Math.max(11, width * 0.011))
+
+  return `<!doctype html><html><head><meta charset="utf-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:${width}px;height:${height}px;overflow:hidden}
+body{font-family:Inter,Segoe UI,Arial,sans-serif;background:#08090c;color:white;position:relative}
+.photo{position:absolute;inset:0;background-image:url('${imageDataUrl(capture.source)}');background-size:cover;background-position:center}
+.scrim{position:absolute;inset:0;background:
+  linear-gradient(180deg,rgba(5,7,12,.38) 0%,rgba(5,7,12,.02) 34%,rgba(5,7,12,.2) 52%,rgba(5,7,12,.94) 100%),
+  linear-gradient(90deg,rgba(5,7,12,.46) 0%,transparent 58%)}
+.top{position:absolute;left:${pad}px;right:${pad}px;top:${Math.round(pad*.72)}px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.brand{display:flex;align-items:center;gap:12px;padding:10px 15px;border-radius:13px;background:rgba(8,9,14,.76);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(10px);font-size:${brandSize}px;font-weight:800}
+.logo{width:${Math.round(brandSize*1.9)}px;height:${Math.round(brandSize*1.9)}px;border-radius:9px;background:#5e6ad2;display:grid;place-items:center;font-size:${brandSize}px}
+.badge{padding:9px 14px;border-radius:999px;background:rgba(8,9,14,.82);border:1px solid rgba(34,211,238,.48);color:#67e8f9;font:800 ${badgeSize}px/1.1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.08em;text-align:center}
+.content{position:absolute;left:${pad}px;right:${pad}px;bottom:${Math.round(pad*.78)}px}
+h1{max-width:${horizontal ? '94%' : '100%'};font-size:${titleSize}px;line-height:1.04;letter-spacing:-.035em;font-weight:850;text-wrap:balance;text-shadow:0 3px 25px rgba(0,0,0,.9)}
+.rule{width:${Math.round(Math.max(80,width*.09))}px;height:5px;border-radius:5px;background:#22d3ee;margin:0 0 ${Math.round(titleSize*.32)}px;box-shadow:0 0 24px rgba(34,211,238,.75)}
+.url{margin-top:${Math.round(titleSize*.34)}px;font-size:${Math.round(Math.max(13,titleSize*.27))}px;font-weight:700;color:#d4d7e2;letter-spacing:.02em}
+</style></head><body>
+<div class="photo"></div><div class="scrim"></div>
+<div class="top"><div class="brand"><span class="logo">△</span><span>IFC Viewer Online</span></div><div class="badge">${esc(badge)}</div></div>
+<div class="content"><div class="rule"></div><h1>${esc(title)}</h1><div class="url">www.ifcvieweronline.eu · IFC · BIM · WebGL</div></div>
+</body></html>`
+}
+
+async function renderImage(browser, html, out, width, height, scale = 1) {
+  const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: scale })
+  const page = await ctx.newPage()
+  await page.setContent(html, { waitUntil: 'load' })
+  await page.evaluate(() => document.fonts.ready).catch(() => {})
+  await page.waitForTimeout(80)
+  const jpeg = /\.jpe?g$/i.test(out)
+  await page.screenshot({
+    path: out,
+    type: jpeg ? 'jpeg' : 'png',
+    quality: jpeg ? 88 : undefined,
+    clip: { x: 0, y: 0, width, height },
+  })
+  await ctx.close()
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────────
 const wanted = process.argv.slice(2)
 const posts  = wanted.length
@@ -191,6 +245,11 @@ const posts  = wanted.length
   : ALL_POSTS
 
 mkdirSync(OUT, { recursive: true })
+mkdirSync('public/blog/images', { recursive: true })
+
+for (const capture of Object.values(REAL_CAPTURE_BY_KEY)) {
+  copyFileSync(capture.source, `public/blog/images/${capture.publicCopy}`)
+}
 
 const browser = await chromium.launch({
   executablePath: EXE,
@@ -201,16 +260,38 @@ const browser = await chromium.launch({
 for (const post of posts) {
   const out = `${OUT}/${post.slug}.png`
   try {
-    const ctx  = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1.5 })
-    const page = await ctx.newPage()
-    await page.setContent(coverHtml(post), { waitUntil: 'networkidle' })
-    await page.evaluate(() => document.fonts.ready).catch(() => {})
-    await page.waitForTimeout(300)
-    await page.screenshot({ path: out, clip: { x: 0, y: 0, width: W, height: H } })
-    await ctx.close()
+    const real = REAL_CAPTURE_BY_KEY[post.translationKey]
+    await renderImage(browser, real ? realCoverHtml(post, W, H) : coverHtml(post), out, W, H, 1.5)
+    if (real) {
+      for (const [width, height] of [[1600, 900], [1200, 900], [1200, 1200], [800, 450]]) {
+        const variant = `public/blog/images/${post.slug}-${width}x${height}.jpg`
+        await renderImage(browser, realCoverHtml(post, width, height), variant, width, height)
+      }
+    }
     log(`✓  ${post.slug}`)
   } catch (e) {
     log(`✗  ${post.slug}:`, e.message.slice(0, 100))
+  }
+}
+
+// Keep the previously published shared URLs alive, but replace their former
+// conceptual artwork with covers made from the actual captures above.
+for (const [translationKey, capture] of Object.entries(REAL_CAPTURE_BY_KEY)) {
+  const post = ALL_POSTS.find((candidate) => candidate.translationKey === translationKey)
+  if (!post) continue
+  const legacyBase = translationKey === 'ifc-point-cloud-scan-to-bim'
+    ? 'ifc-point-cloud-scan-to-bim'
+    : translationKey === 'real-time-lidar-web-mcap'
+      ? 'real-time-lidar-digital-twin'
+      : 'ifc-video-3d-terrain'
+  for (const [width, height] of [[1600, 900], [1200, 900], [1200, 1200], [800, 450]]) {
+    await renderImage(
+      browser,
+      realCoverHtml(post, width, height, capture.shortTitle),
+      `public/blog/images/${legacyBase}-${width}x${height}.jpg`,
+      width,
+      height,
+    )
   }
 }
 

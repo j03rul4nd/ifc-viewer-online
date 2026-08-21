@@ -24,12 +24,14 @@ const TEMPLATE_HTML = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="index, follow" />
   <title>IFC Viewer Online — Free Browser-Based BIM Viewer</title>
   <meta name="description" content="Free online IFC viewer, validator and editor." />
   <link rel="canonical" href="https://www.ifcvieweronline.eu/" />
   <meta property="og:title" content="IFC Viewer Online" />
   <meta property="og:description" content="Free online IFC viewer." />
   <meta property="og:url" content="https://www.ifcvieweronline.eu/" />
+  <meta property="og:type" content="website" />
   <meta property="og:image" content="https://www.ifcvieweronline.eu/og-image.png" />
   <meta name="twitter:title" content="IFC Viewer Online" />
   <meta name="twitter:description" content="Free online IFC viewer." />
@@ -38,7 +40,7 @@ const TEMPLATE_HTML = `<!DOCTYPE html>
   <link rel="alternate" hreflang="x-default" href="https://www.ifcvieweronline.eu/" />
   <script type="application/ld+json">{"@type":"WebApplication"}</script>
 </head>
-<body><div id="root"></div></body>
+<body><noscript><main><h1>IFC Viewer Online — Free Browser-Based BIM Viewer</h1></main></noscript><div id="root"></div></body>
 </html>`
 
 let result: BlogPagesResult
@@ -119,6 +121,15 @@ describe('generateBlogPages — blog index (/blog/)', () => {
     }
   })
 
+  it('exposes every article cover and link in the static fallback', () => {
+    const html = readFileSync(file, 'utf-8')
+    for (const post of BLOG_POSTS) {
+      expect(html).toContain(`/blog/covers/${post.slug}.png`)
+      expect(html).toContain(`/blog/${post.slug}/`)
+    }
+    expect(html).not.toContain('Free Browser-Based BIM Viewer</h1>')
+  })
+
   it('removes root hreflang and adds self-referencing blog hreflang', () => {
     const html = readFileSync(file, 'utf-8')
     // Root hreflang should be gone
@@ -141,7 +152,18 @@ describe('generateBlogPages — per-post pages (EN)', () => {
   it('each EN post page has the post title in <title>', () => {
     for (const post of BLOG_POSTS) {
       const html = readFileSync(path.join(OUT, 'blog', post.slug, 'index.html'), 'utf-8')
-      expect(html).toContain('IFC Viewer Blog')
+      expect(html).toContain(`<title>${post.title.replace(/&/g, '&amp;')}`)
+    }
+  })
+
+  it('each post publishes an indexable, article-specific static fallback and cover', () => {
+    for (const post of BLOG_POSTS) {
+      const html = readFileSync(path.join(OUT, 'blog', post.slug, 'index.html'), 'utf-8')
+      expect(html).toContain('content="index, follow, max-image-preview:large, max-snippet:-1"')
+      expect(html).toContain('property="og:type" content="article"')
+      expect(html).toContain(`<h1>${post.title.replace(/&/g, '&amp;')}</h1>`)
+      expect(html).toContain(`/blog/covers/${post.slug}.png`)
+      expect(html).not.toContain('Free Browser-Based BIM Viewer</h1>')
     }
   })
 
@@ -164,9 +186,10 @@ describe('generateBlogPages — per-post pages (EN)', () => {
       path.join(OUT, 'blog', 'ifc-point-cloud-browser-scan-to-bim', 'index.html'),
       'utf-8',
     )
-    expect(html).toContain('blog/images/ifc-point-cloud-scan-to-bim-1600x900.jpg')
+    expect(html).toContain('blog/covers/ifc-point-cloud-browser-scan-to-bim.png')
+    expect(html).toContain('blog/images/ifc-point-cloud-browser-scan-to-bim-1600x900.jpg')
     expect(html).toContain('"@type":"ImageObject"')
-    expect(html).toContain('Architect reviewing a cyan IFC pavilion')
+    expect(html).toContain('real CRAS Labs TLS point cloud')
   })
 
   it('links translated spatial articles with hreflang', () => {
@@ -222,6 +245,7 @@ describe('generateBlogPages — sitemap injection', () => {
     const xml = readFileSync(path.join(OUT, 'sitemap.xml'), 'utf-8')
     for (const post of BLOG_POSTS) {
       expect(xml).toContain(`${SITE}/blog/${post.slug}/`)
+      expect(xml).toContain(`${SITE}/blog/covers/${post.slug}.png`)
     }
   })
 
@@ -229,7 +253,8 @@ describe('generateBlogPages — sitemap injection', () => {
     const xml = readFileSync(path.join(OUT, 'sitemap.xml'), 'utf-8')
     expect(xml).toContain('xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"')
     expect(xml).toContain('xmlns:video="http://www.google.com/schemas/sitemap-video/1.1"')
-    expect(xml).toContain('<image:loc>https://www.ifcvieweronline.eu/blog/images/real-time-lidar-digital-twin-1600x900.jpg</image:loc>')
+    expect(xml).toContain('<image:loc>https://www.ifcvieweronline.eu/blog/covers/real-time-lidar-web-digital-twin-mcap.png</image:loc>')
+    expect(xml).toContain('<image:loc>https://www.ifcvieweronline.eu/blog/images/real-time-lidar-web-digital-twin-mcap-1600x900.jpg</image:loc>')
     expect(xml).toContain('<video:content_loc>https://www.ifcvieweronline.eu/models/video-demo/operations-pavilion-progress.mp4</video:content_loc>')
   })
 
@@ -370,6 +395,7 @@ describe('generateBlogPages — sitemap completeness', () => {
     // The entry that was already there is not duplicated.
     const dupes = (xml.match(new RegExp(`<loc>${SITE}/blog/${BLOG_POSTS[0].slug}/</loc>`, 'g')) ?? []).length
     expect(dupes).toBe(1)
+    expect(xml).toContain(`${SITE}/blog/covers/${BLOG_POSTS[0].slug}.png`)
 
     rmSync(partial, { force: true })
     rmSync(dir, { recursive: true, force: true })
