@@ -44,8 +44,26 @@ describe('cameraRangeForBounds', () => {
     const range = cameraRangeForBounds(30, FOV)!
     expect(range.minDistance).toBeLessThan(0.1)
     expect(widenCameraRange(OBC_DEFAULTS, range).minDistance).toBeLessThan(0.1)
-    // The ceiling is still left alone: 30 m fits inside 300 comfortably.
-    expect(widenCameraRange(OBC_DEFAULTS, range).maxDistance).toBe(OBC_DEFAULTS.maxDistance)
+    // And the ceiling now RISES above the 300 m default rather than staying
+    // under it. A 30 m building you can only back 71 m away from is a building
+    // you cannot see in its context, which is the other half of what read as
+    // "the camera is locked onto the model".
+    expect(widenCameraRange(OBC_DEFAULTS, range).maxDistance)
+      .toBeGreaterThan(OBC_DEFAULTS.maxDistance)
+  })
+
+  it('leaves room to back off and look around, not just to frame the box', () => {
+    // The zoom-out wall, as an assertion. At the old x2 the wheel stopped dead
+    // at roughly twice the model's own size with nothing on screen to explain
+    // why. Whatever the number is, standing several model-lengths back has to
+    // be allowed.
+    for (const diagonal of [0.4, 30, 900]) {
+      const range = cameraRangeForBounds(diagonal, FOV)!
+      expect(range.maxDistance / range.reach).toBeGreaterThan(10)
+      // ...and still inside the far plane the viewer derives from the same box
+      // (size x 50), so backing out never clips the model into the distance.
+      expect(range.maxDistance).toBeLessThan(diagonal * 50)
+    }
   })
 
   it('scales the approach floor to the scene instead of fixing it', () => {

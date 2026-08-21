@@ -14,7 +14,7 @@ function makeControls(): NavigableControls<number> {
     draggingSmoothTime: 0.125,
     restThreshold: 0.0025,
     infinityDolly: false,
-    mouseButtons: { left: ORBIT, middle: 0 },
+    mouseButtons: { left: ORBIT, middle: 0, right: 0 },
   }
 }
 
@@ -77,9 +77,18 @@ describe('bindNavigation', () => {
 
     target.fire('wheel', undefined, { deltaY: 100, timeStamp: 1_080 })
     expect(controls.dollySpeed).toBeGreaterThan(firstOut)
-    expect(controls.dollySpeed).toBeLessThanOrEqual(3.4)
 
-    target.fire('wheel', undefined, { deltaY: -100, timeStamp: 1_400 })
+    // However long the gesture runs, it plateaus rather than running away. The
+    // ceiling itself is a tuning value and is deliberately not pinned here —
+    // raising it is a legitimate change and should not fail the build.
+    let t = 1_080
+    for (let i = 0; i < 40; i++) target.fire('wheel', undefined, { deltaY: 100, timeStamp: (t += 80) })
+    const plateau = controls.dollySpeed
+    target.fire('wheel', undefined, { deltaY: 100, timeStamp: (t += 80) })
+    expect(controls.dollySpeed).toBe(plateau)
+    expect(plateau).toBeGreaterThan(firstOut)
+
+    target.fire('wheel', undefined, { deltaY: -100, timeStamp: t + 400 })
     expect(controls.dollySpeed).toBe(2)
   })
 
@@ -159,5 +168,111 @@ describe('bindNavigation', () => {
 
     target.fire('keydown', 'Shift')
     expect(controls.mouseButtons.left).toBe(ORBIT)
+  })
+})
+
+describe('right button: drag pans, click still opens the menu', () => {
+  /**
+   * A right press that moves `dx` pixels, then releases.
+   * Returns what the app would actually see: whether the platform's own menu
+   * event was let through, and whether a menu was raised on the canvas.
+   */
+  function rightPress(target: ReturnType<typeof makeTarget>, dx: number) {
+    let nativeAllowed = true
+    let raised = 0
+    const canvas = {
+      dispatchEvent: (ev: Event) => { if (ev.type === 'contextmenu') raised++; return true },
+    }
+
+    target.fire('pointerdown', undefined, { button: 2, clientX: 100, clientY: 100, target: canvas })
+    target.fire('pointermove', undefined, { button: 2, clientX: 100 + dx, clientY: 100, target: canvas })
+    // The platform raises its menu event: on Windows/Linux at release, on macOS
+    // at press. Either way it must not reach the app.
+    target.fire('contextmenu', undefined, {
+      preventDefault: () => { nativeAllowed = false },
+      stopPropagation: () => {},
+      stopImmediatePropagation: () => {},
+    })
+    target.fire('pointerup', undefined, { button: 2, clientX: 100 + dx, clientY: 100, target: canvas })
+    return { nativeAllowed, raised }
+  }
+
+  it('binds the right button to pan, which is what people reach for', () => {
+    // Pan used to live on the middle button and a Shift override only. Anyone
+    // on a trackpad or a Magic Mouse had no pan at all, so the scene turned
+    // around one fixed point and read as "locked onto the model".
+    const { controls } = bind()
+    expect(controls.mouseButtons.right).toBe(TRUCK)
+  })
+
+  it("never lets the platform's own menu event through", () => {
+    // Suppressing only "after a drag" is not portable: macOS fires contextmenu
+    // on mouse DOWN, before any movement exists to judge, so a menu would pop
+    // up at the start of every pan.
+    const target = makeTarget()
+    bind(makeControls(), target)
+    expect(rightPress(target, 40).nativeAllowed).toBe(false)
+    expect(rightPress(target, 1).nativeAllowed).toBe(false)
+  })
+
+  it('raises the menu itself when the press was a CLICK', () => {
+    const target = makeTarget()
+    bind(makeControls(), target)
+    expect(rightPress(target, 2).raised).toBe(1)
+  })
+
+  it('raises no menu when the press was a DRAG', () => {
+    const target = makeTarget()
+    bind(makeControls(), target)
+    expect(rightPress(target, 40).raised).toBe(0)
+  })
+
+  it('does not let one drag suppress the NEXT click menu', () => {
+    const target = makeTarget()
+    bind(makeControls(), target)
+    expect(rightPress(target, 40).raised).toBe(0)
+    expect(rightPress(target, 1).raised).toBe(1)
+  })
+
+  it('ignores movement from other buttons', () => {
+    const target = makeTarget()
+    bind(makeControls(), target)
+    target.fire('pointermove', undefined, { button: 0, clientX: 900, clientY: 900 })
+    expect(rightPress(target, 1).raised).toBe(1)
+  })
+
+  it('removes its pointer listeners on teardown', () => {
+    const target = makeTarget()
+    const { teardown } = bind(makeControls(), target)
+    expect(target.count()).toBeGreaterThan(0)
+    teardown()
+    expect(target.count()).toBe(0)
+  })
+})
+
+describe('zooming out must not lose the model', () => {
+  it('lets the target run ahead going IN, and pins it going OUT', () => {
+    // infinityDolly cuts both ways: past maxDistance it drags the orbit target
+    // outward as well, so a sustained scroll-out walks the whole rig into empty
+    // space. Measured on a 118 m model, thirty wheel clicks ended 3 900 km away
+    // with nothing on screen. In: unbounded. Out: bounded.
+    const { controls, target } = bind()
+
+    target.fire('wheel', undefined, { deltaY: -100, timeStamp: 1_000 })
+    expect(controls.infinityDolly).toBe(true)
+
+    target.fire('wheel', undefined, { deltaY: 100, timeStamp: 1_400 })
+    expect(controls.infinityDolly).toBe(false)
+
+    target.fire('wheel', undefined, { deltaY: -100, timeStamp: 1_800 })
+    expect(controls.infinityDolly).toBe(true)
+  })
+
+  it('re-arms the inward behaviour for a pinch', () => {
+    const { controls, target } = bind()
+    target.fire('wheel', undefined, { deltaY: 100, timeStamp: 1_000 })
+    expect(controls.infinityDolly).toBe(false)
+    target.fire('pointerdown', undefined, { button: 0 })
+    expect(controls.infinityDolly).toBe(true)
   })
 })

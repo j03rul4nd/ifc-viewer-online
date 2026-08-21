@@ -46,9 +46,17 @@ export function cameraRangeForBounds(diagonal: number, fovDegrees: number): Came
     // centimetre in an object scan and a few centimetres in a building, and a
     // hard floor that suits one lands wrong in the other.
     minDistance: Math.max(FLOOR_M, diagonal / 2000),
-    // ×2 so the fit lands with somewhere left to orbit out to, instead of
-    // pinned against the very ceiling it just raised.
-    maxDistance: reach * 2,
+    // HOW FAR YOU MAY GET. This used to be ×2, which is enough for a fit to
+    // land with a little room above it and nothing like enough to look around.
+    // At ×2 the camera hits an invisible wall at roughly twice the model's own
+    // size: the wheel stops responding, nothing says why, and the scene reads as
+    // "locked onto the model" — which is exactly what it was.
+    //
+    // ×24 instead, which is still comfortably inside the far plane the viewer
+    // sets for the same box (size × 50), so backing out never fades geometry
+    // into the clip distance. Map mode raises this further for itself, and
+    // widenCameraRange only ever widens, so this cannot pull that back down.
+    maxDistance: reach * 24,
   }
 }
 
