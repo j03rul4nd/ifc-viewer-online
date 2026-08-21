@@ -2,7 +2,8 @@
 // The point cloud twin of demo-models/models.ts, and it follows the same
 // sourcing policy:
 //
-//   • Consumed EXTERNALLY via stable raw URLs — no large binaries in this repo.
+//   • Most samples use stable external raw URLs. Verified open-data pairs may
+//     be bundled when self-hosting is permitted and reliability matters.
 //   • Every host serves `Access-Control-Allow-Origin: *`, so the browser fetches
 //     them directly (verified per URL, including the LFS media host).
 //   • Sources are long-lived public repos: the PDAL project's test corpus and
@@ -26,15 +27,13 @@
 //      Several otherwise perfect coloured candidates were rejected for this.
 //      Before adding a .laz, decode it, do not just parse its header.
 //
-// HONESTY NOTE, and it matters for what these demos can show: the public scans
-// below are captures of real places, and none of them is a scan OF a demo IFC
-// model, so loading one next to one lands on the bottom rung of the alignment
-// ladder ("placed by hand") — which is the correct answer, and is exactly what
-// the panel will tell the user. They demonstrate reading, rendering, colour
-// modes, classification, units and LOD. They cannot demonstrate a matched
-// scan-to-model alignment, because no such public pair exists.
+// HONESTY NOTE, and it matters for what these demos can show: most public scans
+// below are captures of real places without a corresponding demo IFC, so loading
+// one next to an unrelated model lands on the bottom rung. CRAS is the verified
+// exception: a real TLS scan plus its as-built IFC, aligned and attributed under
+// CC BY 4.0. The synthetic Poblenou pair remains useful for testing shared CRS.
 //
-// ONE EXCEPTION, and it is the last entry: `poblenou-site-scan` is ours. It is
+// The synthetic counterpart is `poblenou-site-scan`. It is
 // generated (scripts/pointcloud/build-site-scan.mjs) alongside the Poblenou
 // Pavilion reference models and written in the SAME projected CRS at the same
 // eastings and northings, so it reaches the TOP rung — shared CRS — and lands
@@ -95,11 +94,11 @@ const PCL_SEG = 'https://raw.githubusercontent.com/PointCloudLibrary/data/master
 const PCL_SOURCE = 'https://github.com/PointCloudLibrary/data'
 
 /**
- * The one scan that ships with the app rather than being fetched from someone
- * else's repo, because it is a survey of OUR reference building and lives
- * beside it. See docs/REFERENCE_IFC.md.
+ * Scans that ship with the app: Poblenou is our synthetic CRS reference, while
+ * CRAS is the corresponding real scan/IFC pair published under CC BY 4.0.
  */
 const BUNDLED_POBLENOU = `${import.meta.env.BASE_URL}models/poblenou/poblenou-site-scan.las`
+const BUNDLED_CRAS = `${import.meta.env.BASE_URL}models/cras/pointcloud-web.ply`
 
 export const DEMO_POINT_CLOUDS: DemoPointCloud[] = [
   {
@@ -276,6 +275,24 @@ export const DEMO_POINT_CLOUDS: DemoPointCloud[] = [
     hasClassification: true,
     unit: null,
     epsg: null,
+  },
+  {
+    id: 'cras-feup-labs',
+    name: 'CRAS Labs @ FEUP — real Scan vs BIM',
+    descriptionKey: 'cras',
+    kind: 'alignment',
+    fileName: 'pointcloud-web.ply',
+    url: BUNDLED_CRAS,
+    sourceUrl: 'https://doi.org/10.5281/zenodo.7948116',
+    sourceLabel: 'Abreu et al. · CRAS Labs (CC BY 4.0)',
+    sizeBytes: 16_991_723,
+    pointCount: 999_491,
+    format: 'PLY · binary LE',
+    hasColor: true,
+    hasClassification: true,
+    unit: 'm',
+    epsg: null,
+    featured: true,
   },
   {
     id: 'poblenou-site-scan',

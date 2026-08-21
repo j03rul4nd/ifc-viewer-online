@@ -1,0 +1,77 @@
+{
+  "entry": "3D video",
+  "title": "3D video",
+  "fair": {
+    "title": "Exhibition demo: IFC + video",
+    "description": "Load the authored pavilion and its matching progress loop together.",
+    "loadBoth": "Load IFC + video demo",
+    "loadVideo": "Load matching video",
+    "offline": "local assets · works without venue Wi-Fi"
+  },
+  "load": {
+    "file": "Open MP4, WebM or Ogg",
+    "hint": "The clip stays on this device and becomes a positionable surface in the 3D scene.",
+    "working": "Loading…"
+  },
+  "live": {
+    "camera": "Live camera",
+    "screen": "Share screen",
+    "cameraName": "Live camera",
+    "screenName": "Live screen",
+    "hint": "Permission is requested only after you press a button. No microphone and no upload.",
+    "badge": "LIVE",
+    "active": "LIVE source active",
+    "stop": "Stop",
+    "ended": "LIVE ended"
+  },
+  "mode": {
+    "title": "Surface preset",
+    "screen": "Screen",
+    "ground": "Terrain",
+    "billboard": "Billboard",
+    "screenHint": "A fixed vertical surface placed on the camera-facing side of the active IFC.",
+    "groundHint": "A horizontal overlay with a small lift to prevent flicker against terrain or slabs.",
+    "billboardHint": "Always faces the camera — ideal for a legible fair presentation."
+  },
+  "playback": {
+    "play": "Play",
+    "pause": "Pause",
+    "timeline": "Video timeline",
+    "loop": "Loop",
+    "muted": "Muted",
+    "sound": "Sound on",
+    "autoplayBlocked": "The browser blocked autoplay. Press Play to start the video."
+  },
+  "placement": {
+    "title": "Position and appearance",
+    "x": "X · left / right",
+    "y": "Y · elevation",
+    "z": "Z · forward / back",
+    "width": "Width",
+    "opacity": "Opacity",
+    "yaw": "Heading",
+    "pitch": "Tilt",
+    "roll": "Roll",
+    "offset": "Surface lift",
+    "snapSurface": "Fit to visible surface",
+    "noSurface": "No terrain or visible surface was found below the video.",
+    "surfaceReady": "Video fitted to the sampled surface.",
+    "reliefWarning": "The sampled relief varies by {{variation}} m. The rigid video was placed above the highest point; reduce its size for a tighter fit.",
+    "auto": "Place automatically",
+    "frame": "Video",
+    "frameTogether": "IFC + video",
+    "cameraHint": "Wheel: zoom at cursor · middle/Shift+drag: pan · double-click: orbit pivot."
+  },
+  "actions": {
+    "hide": "Hide",
+    "show": "Show",
+    "remove": "Remove"
+  },
+  "error": {
+    "decode": "This video could not be decoded. Try H.264 MP4 or VP9 WebM.",
+    "liveUnsupported": "Live capture needs HTTPS or localhost and a compatible browser.",
+    "permission": "Camera or screen permission was not granted.",
+    "deviceUnavailable": "The selected camera or screen source is unavailable.",
+    "live": "The live source could not be started."
+  }
+}

@@ -48,8 +48,8 @@ import path from 'node:path'
 // Straight out of build-district.py's georeferencing block.
 
 const EPSG = 25831
-const EASTINGS = 432340.0
-const NORTHINGS = 4583945.0
+const EASTINGS = 432290.0
+const NORTHINGS = 4584167.0
 const HEIGHT = 12.5
 const GRID_ROTATION_DEG = 45.0
 

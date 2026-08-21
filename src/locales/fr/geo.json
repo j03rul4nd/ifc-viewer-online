@@ -145,7 +145,9 @@
     "vehicles": "Scenery (vehicles, lamps, shelters)",
     "vehiclesHint": "Cars, trains, street lamps and platform shelters are NOT mapped data — OpenStreetMap does not record where a car is parked or which kerb carries a lamp. Their placement is invented to make a view feel lived-in, and it is the same every time.",
     "facadeShowcase": "Showcase",
-    "facadeShowcaseHint": "Showcase swaps in authored 3D models — trees, cars, vans, buses, carriages, signal heads, catenary masts, street lamps and platform shelters — downloaded once from this site (about 136 KB). Everything else works without them."
+    "facadeShowcaseHint": "Showcase swaps in authored 3D models — trees, cars, vans, buses, carriages, signal heads, catenary masts, street lamps and platform shelters — downloaded once from this site (about 136 KB). Everything else works without them.",
+    "suppress": "Masquer le contexte cartographique sous le modèle",
+    "suppressHint": "Là où se trouve le modèle, la carte décrit deux fois la même chose. Un bâtiment masque le bâtiment cartographié de sa parcelle et les arbres dans son emprise ; un pont ou un tunnel masquent en plus la chaussée qu'ils portent. La rue extérieure n'est jamais masquée. Désactivez pour comparer les deux."
   },
   "placement": {
     "title": "Placement",

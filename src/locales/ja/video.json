@@ -1,0 +1,11 @@
+{
+  "entry": "3D ビデオ", "title": "3D ビデオ",
+  "fair": { "title": "展示会デモ：IFC + ビデオ", "description": "デモ用パビリオンと対応する進捗ループを一緒に読み込みます。", "loadBoth": "IFC + ビデオデモを読込", "loadVideo": "対応ビデオを読込", "offline": "ローカル素材 · 会場 Wi-Fi 不要" },
+  "load": { "file": "MP4、WebM、Ogg を開く", "hint": "動画は端末内に留まり、3D シーンで配置できるサーフェスになります。", "working": "読み込み中…" },
+  "live": { "camera": "ライブカメラ", "screen": "画面を共有", "cameraName": "ライブカメラ", "screenName": "ライブ画面", "hint": "クリック後にのみ権限を要求します。マイクやアップロードは使用しません。", "badge": "LIVE", "active": "ライブソースが有効", "stop": "停止", "ended": "ライブ終了" },
+  "mode": { "title": "サーフェスプリセット", "screen": "スクリーン", "ground": "地形", "billboard": "ビルボード", "screenHint": "カメラ側の IFC 面に置かれる固定の垂直サーフェスです。", "groundHint": "地形やスラブとのちらつきを防ぐため少し浮かせた水平オーバーレイです。", "billboardHint": "常にカメラを向き、展示会で読みやすく表示できます。" },
+  "playback": { "play": "再生", "pause": "一時停止", "timeline": "ビデオタイムライン", "loop": "ループ", "muted": "ミュート", "sound": "音声オン", "autoplayBlocked": "ブラウザが自動再生をブロックしました。再生を押してください。" },
+  "placement": { "title": "位置と外観", "x": "X · 左 / 右", "y": "Y · 高さ", "z": "Z · 前 / 後", "width": "幅", "opacity": "不透明度", "yaw": "方位", "pitch": "傾き", "roll": "ロール", "offset": "表面オフセット", "snapSurface": "表示サーフェスに合わせる", "noSurface": "ビデオの下に地形または表示サーフェスが見つかりません。", "surfaceReady": "サンプリングしたサーフェスにビデオを合わせました。", "reliefWarning": "標高差は {{variation}} m です。剛体ビデオを最高点の上に配置しました。小さくするとより密着します。", "auto": "自動配置", "frame": "ビデオ", "frameTogether": "IFC + ビデオ", "cameraHint": "ホイール：カーソル位置でズーム · 中ボタン/Shift+ドラッグ：パン · ダブルクリック：回転中心。" },
+  "actions": { "hide": "非表示", "show": "表示", "remove": "削除" },
+  "error": { "decode": "この動画をデコードできません。H.264 MP4 または VP9 WebM をお試しください。", "liveUnsupported": "ライブキャプチャには HTTPS または localhost と対応ブラウザが必要です。", "permission": "カメラまたは画面の権限が許可されませんでした。", "deviceUnavailable": "選択したカメラまたは画面ソースを利用できません。", "live": "ライブソースを開始できませんでした。" }
+}

@@ -21,6 +21,8 @@ import { usePointCloudStore } from '../stores/pointCloudStore'
 import { isPointCloudEnabled } from '../lib/pointcloud/pc-flag'
 import { useMeshStore } from '../stores/meshStore'
 import { isMeshEnabled } from '../lib/mesh/mesh-flag'
+import { useVideoStore } from '../stores/videoStore'
+import { isVideoEnabled } from '../lib/video/video-flag'
 import { loadExportPrefs, prefsToExportOptions } from '../lib/ifc-export-prefs'
 import { modelRegistry } from '../lib/model-registry'
 import { useCloudAccountStore, isAccountEnabled } from '../stores/cloudAccountStore'
@@ -256,6 +258,7 @@ export default function Toolbar({
   const { t: tTour } = useTranslation('tour')
   const { t: tPointCloud } = useTranslation('pointcloud')
   const { t: tMesh } = useTranslation('mesh')
+  const { t: tVideo } = useTranslation('video')
   const { t: tClient } = useTranslation('client')
   const { t: tPro } = useTranslation('pro')
 
@@ -304,6 +307,12 @@ export default function Toolbar({
   const toggleMeshPanel = (): void => {
     const s = useMeshStore.getState()
     s.setPanelOpen(!s.panelOpen)
+  }
+  const videoPanelOpen = useVideoStore((s) => s.panelOpen)
+  const videoCount = useVideoStore((s) => s.videos.length)
+  const toggleVideoPanel = (): void => {
+    const state = useVideoStore.getState()
+    state.setPanelOpen(!state.panelOpen)
   }
   const solarPanelOpen = useSolarStore((s) => s.panelOpen)
   const solarActive    = useSolarStore((s) => s.active)
@@ -527,7 +536,8 @@ export default function Toolbar({
   const viewActive  = scenePanelOpen
   const toolsActive =
     measurementPanelOpen || clipPanelOpen || plansPanelOpen || geoPanelOpen ||
-    activeMeasurementTool !== 'none' || clipPlaneCount > 0 || !!activePlanViewId || mapModeOn
+    videoPanelOpen || activeMeasurementTool !== 'none' || clipPlaneCount > 0 ||
+    !!activePlanViewId || mapModeOn
 
   // Issue count chip (reused in two places)
   const IssueChip = hasIssues && !isRunning ? (
@@ -758,6 +768,11 @@ export default function Toolbar({
             <MenuItem icon={MeshSVG} label={tMesh('entry')} active={meshPanelOpen || meshCount > 0}
               badge={meshCount > 0 ? meshCount : undefined}
               onClick={() => { toggleMeshPanel(); setOpenMenu(null) }} />
+          )}
+          {isVideoEnabled() && (
+            <MenuItem icon={<Icons.Film size={15} />} label={tVideo('entry')} active={videoPanelOpen || videoCount > 0}
+              badge={videoCount > 0 ? videoCount : undefined}
+              onClick={() => { toggleVideoPanel(); setOpenMenu(null) }} />
           )}
           <MenuItem icon={TourSVG} label={tTour('entry')} active={tourMode !== 'idle'}
             badge={tourMode !== 'idle' ? '●' : undefined}

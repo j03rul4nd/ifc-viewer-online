@@ -1,0 +1,11 @@
+{
+  "entry": "3D 视频", "title": "3D 视频",
+  "fair": { "title": "展会演示：IFC + 视频", "description": "同时加载为演示创建的展亭及其施工进度循环视频。", "loadBoth": "加载 IFC + 视频演示", "loadVideo": "加载配套视频", "offline": "本地资源 · 无需场馆 Wi-Fi" },
+  "load": { "file": "打开 MP4、WebM 或 Ogg", "hint": "视频保留在此设备上，并成为 3D 场景中可定位的表面。", "working": "正在加载…" },
+  "live": { "camera": "实时摄像头", "screen": "共享屏幕", "cameraName": "实时摄像头", "screenName": "实时屏幕", "hint": "仅在点击后请求权限。不使用麦克风，也不上传数据。", "badge": "实时", "active": "实时源已启用", "stop": "停止", "ended": "实时源已结束" },
+  "mode": { "title": "表面预设", "screen": "屏幕", "ground": "地形", "billboard": "广告牌", "screenHint": "固定垂直表面，放置在 IFC 面向相机的一侧。", "groundHint": "水平叠加层，略微抬高以避免与地形或楼板闪烁。", "billboardHint": "始终面向相机，适合清晰的展会演示。" },
+  "playback": { "play": "播放", "pause": "暂停", "timeline": "视频时间线", "loop": "循环", "muted": "静音", "sound": "开启声音", "autoplayBlocked": "浏览器阻止了自动播放。请按播放。" },
+  "placement": { "title": "位置与外观", "x": "X · 左 / 右", "y": "Y · 高度", "z": "Z · 前 / 后", "width": "宽度", "opacity": "不透明度", "yaw": "朝向", "pitch": "倾斜", "roll": "滚转", "offset": "表面抬升", "snapSurface": "贴合可见表面", "noSurface": "视频下方未找到地形或可见表面。", "surfaceReady": "视频已贴合采样表面。", "reliefWarning": "采样高差为 {{variation}} 米。刚性视频已置于最高点上方；请缩小尺寸以提高贴合度。", "auto": "自动放置", "frame": "视频", "frameTogether": "IFC + 视频", "cameraHint": "滚轮：光标处缩放 · 中键/Shift+拖动：平移 · 双击：设置环绕中心。" },
+  "actions": { "hide": "隐藏", "show": "显示", "remove": "移除" },
+  "error": { "decode": "无法解码此视频。请尝试 H.264 MP4 或 VP9 WebM。", "liveUnsupported": "实时捕获需要 HTTPS 或 localhost 以及兼容浏览器。", "permission": "未授予摄像头或屏幕权限。", "deviceUnavailable": "所选摄像头或屏幕源不可用。", "live": "无法启动实时源。" }
+}

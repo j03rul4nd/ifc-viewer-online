@@ -13,6 +13,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useGeoStore } from '../stores/geoStore'
 import { useSceneStore } from '../stores/sceneStore'
+import { useValidationStore } from '../stores/validationStore'
+import { facilityKindFromTree } from '../lib/geo/context-suppression'
 import { useEditorStore } from '../stores/editorStore'
 import { toast } from '../stores/toastStore'
 import { modelRegistry } from '../lib/model-registry'
@@ -405,6 +407,21 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
       const prefs = useGeoStore.getState()
       geo.setContextDetail(prefs.contextDetail)
       geo.setVehicles(prefs.vehicles)
+      // Tell the scene WHAT the model is before the first build, so the OSM
+      // context yields correctly on the first frame rather than flickering the
+      // mapped building on and off again. Read from the spatial tree, which is
+      // the only place the file says what it is a model of.
+      // Read the active model from the store, NOT from the closure: this
+      // callback is memoised on [getGeo, refreshAttributions], so a captured
+      // id goes stale the moment the user loads a second model before turning
+      // the map on — and a stale id infers the wrong facility.
+      const modelId = useSceneStore.getState().activeModelId
+      geo.setContextSuppression({
+        enabled: prefs.suppressContext,
+        kind: facilityKindFromTree(
+          modelId ? useValidationStore.getState().spatialTrees[modelId] : null,
+        ),
+      })
       const outcome = await geo.setBuildings(true)
       useGeoStore.getState().setBuildingsResult(epoch, {
         status: outcome.status === 'off' ? 'idle' : outcome.status,
@@ -431,6 +448,22 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
   const handleContextDetail = useCallback((level: BuildingDetail): void => {
     useGeoStore.getState().setContextDetail(level)
     void getGeo()?.then((geo) => geo.setContextDetail(level))
+  }, [getGeo])
+
+  /**
+   * Whether the OSM context gives way where the model stands.
+   *
+   * The facility kind is re-read on every toggle rather than captured once: the
+   * user can load a bridge after the map is already up, and a stale `building`
+   * would leave the mapped deck fighting the modelled one.
+   */
+  const handleSuppressContext = useCallback((enabled: boolean): void => {
+    useGeoStore.getState().setSuppressContext(enabled)
+    const id = useSceneStore.getState().activeModelId
+    const kind = facilityKindFromTree(
+      id ? useValidationStore.getState().spatialTrees[id] : null,
+    )
+    void getGeo()?.then((geo) => geo.setContextSuppression({ enabled, kind }))
   }, [getGeo])
 
   /** Decorative vehicles — rebuilt from cached features, so it is instant. */
@@ -1158,6 +1191,19 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                             </div>
                           </>
                         )}
+
+                        {/* Where the model and the map describe the same
+                            ground, one of them is redundant. */}
+                        <Caption>{t('layers.suppress')}</Caption>
+                        <SwitchRow
+                          label={t('layers.suppress')}
+                          checked={store.suppressContext}
+                          onChange={handleSuppressContext}
+                          disabled={!mapOn}
+                        />
+                        <p className="text-[10px] text-[var(--text-faint)] leading-snug">
+                          {t('layers.suppressHint')}
+                        </p>
 
                         {/* Scenery, kept apart from the mapped layers above —
                             the distinction is the point, not a detail. */}

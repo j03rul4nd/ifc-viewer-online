@@ -1,0 +1,77 @@
+{
+  "entry": "Vídeo 3D",
+  "title": "Vídeo 3D",
+  "fair": {
+    "title": "Demo de feria: IFC + vídeo",
+    "description": "Carga juntos el pabellón creado para la demo y su secuencia de progreso.",
+    "loadBoth": "Cargar demo IFC + vídeo",
+    "loadVideo": "Cargar vídeo asociado",
+    "offline": "recursos locales · funciona sin Wi-Fi"
+  },
+  "load": {
+    "file": "Abrir MP4, WebM u Ogg",
+    "hint": "El vídeo no sale del dispositivo y se convierte en una superficie posicionable en la escena 3D.",
+    "working": "Cargando…"
+  },
+  "live": {
+    "camera": "Cámara en directo",
+    "screen": "Compartir pantalla",
+    "cameraName": "Cámara en directo",
+    "screenName": "Pantalla en directo",
+    "hint": "El permiso solo se solicita al pulsar. Sin micrófono y sin subir datos.",
+    "badge": "EN DIRECTO",
+    "active": "Fuente en directo activa",
+    "stop": "Detener",
+    "ended": "Directo finalizado"
+  },
+  "mode": {
+    "title": "Preset de superficie",
+    "screen": "Pantalla",
+    "ground": "Terreno",
+    "billboard": "Billboard",
+    "screenHint": "Superficie vertical fija colocada en el lado del IFC que mira a la cámara.",
+    "groundHint": "Overlay horizontal con una pequeña separación para evitar parpadeos con terreno o losas.",
+    "billboardHint": "Siempre mira a la cámara: ideal para una presentación de feria legible."
+  },
+  "playback": {
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "timeline": "Línea temporal del vídeo",
+    "loop": "Bucle",
+    "muted": "Silenciado",
+    "sound": "Con sonido",
+    "autoplayBlocked": "El navegador bloqueó el inicio automático. Pulsa Reproducir."
+  },
+  "placement": {
+    "title": "Posición y apariencia",
+    "x": "X · izquierda / derecha",
+    "y": "Y · elevación",
+    "z": "Z · delante / detrás",
+    "width": "Anchura",
+    "opacity": "Opacidad",
+    "yaw": "Orientación",
+    "pitch": "Inclinación",
+    "roll": "Balanceo",
+    "offset": "Separación de superficie",
+    "snapSurface": "Ajustar a superficie visible",
+    "noSurface": "No se encontró terreno ni una superficie visible debajo del vídeo.",
+    "surfaceReady": "Vídeo ajustado a la superficie muestreada.",
+    "reliefWarning": "El relieve varía {{variation}} m. El vídeo rígido se ha colocado sobre el punto más alto; reduce su tamaño para ajustarlo mejor.",
+    "auto": "Colocar automáticamente",
+    "frame": "Vídeo",
+    "frameTogether": "IFC + vídeo",
+    "cameraHint": "Rueda: zoom al cursor · botón central/Mayús+arrastrar: desplazar · doble clic: nuevo pivote."
+  },
+  "actions": {
+    "hide": "Ocultar",
+    "show": "Mostrar",
+    "remove": "Eliminar"
+  },
+  "error": {
+    "decode": "No se pudo decodificar el vídeo. Prueba MP4 H.264 o WebM VP9.",
+    "liveUnsupported": "La captura en directo necesita HTTPS o localhost y un navegador compatible.",
+    "permission": "No se concedió permiso para usar la cámara o compartir la pantalla.",
+    "deviceUnavailable": "La cámara o pantalla seleccionada no está disponible.",
+    "live": "No se pudo iniciar la fuente en directo."
+  }
+}

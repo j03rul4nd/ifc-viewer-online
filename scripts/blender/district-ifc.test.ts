@@ -18,6 +18,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { IfcAPI } from 'web-ifc'
 import { readFileSync, statSync } from 'fs'
 import path from 'path'
+import proj4 from 'proj4'
 import { DEMO_MODELS } from '../../src/demo-models/models'
 
 const DIR = path.join(process.cwd(), 'public', 'models', 'poblenou')
@@ -30,8 +31,8 @@ const SCAN = 'poblenou-site-scan.las'
 
 /** The georeferencing all four files must agree on. */
 const EPSG = 'EPSG:25831'
-const EASTINGS = 432340.0
-const NORTHINGS = 4583945.0
+const EASTINGS = 432290.0
+const NORTHINGS = 4584167.0
 const HEIGHT = 12.5
 const ROTATION_DEG = 45
 
@@ -207,15 +208,32 @@ describe('the three models agree about where they are', () => {
   it('agrees between its map conversion and its site latitude', () => {
     // Two georeferencing statements that disagree are worse than one, because
     // whichever rung a consumer happens to read decides where the model goes.
+    //
+    // This test used to compare the site latitude against two hard-coded
+    // decimals — the same numbers the generator had typed in. It therefore
+    // certified the typo: the site coordinates and the map conversion were
+    // 19.2 m apart for as long as this file existed, enough to stand the
+    // buildings in the middle of Avinguda Diagonal, and this assertion passed
+    // the whole time. A constant checked against itself is not a check. The
+    // grid coordinates are the precise statement, so they are the reference:
+    // project them and compare on the ground, in metres.
+    proj4.defs(EPSG, '+proj=utm +zone=31 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs')
+    const [lon, lat] = proj4(EPSG, 'EPSG:4326', [EASTINGS, NORTHINGS])
+
     for (const disc of Object.keys(FILES)) {
       const site = of(disc, 'IfcSite')[0]
       const angle = (v: Line): number[] =>
         (Array.isArray(v) ? v : v.value).map((n: Line) => (typeof n === 'number' ? n : n.value))
-      const toDegrees = (parts: number[]): number =>
-        parts[0] + parts[1] / 60 + parts[2] / 3600 + (parts[3] ?? 0) / 3.6e9
-      // Poblenou: 41.4042 N, 2.1905 E, within a metre of the grid coordinates.
-      expect(toDegrees(angle(site.RefLatitude)), disc).toBeCloseTo(41.4043, 3)
-      expect(toDegrees(angle(site.RefLongitude)), disc).toBeCloseTo(2.1907, 3)
+      const toDegrees = (parts: number[]): number => {
+        const sign = (parts.find((n) => n !== 0) ?? 0) < 0 ? -1 : 1
+        const [d = 0, m = 0, sec = 0, u = 0] = parts.map(Math.abs)
+        return sign * (d + m / 60 + sec / 3600 + u / 3.6e9)
+      }
+      const dNorthM = (toDegrees(angle(site.RefLatitude)) - lat) * 111_132
+      const dEastM = (toDegrees(angle(site.RefLongitude)) - lon)
+        * 111_320 * Math.cos((lat * Math.PI) / 180)
+      expect(Math.hypot(dNorthM, dEastM), `${disc}: georeferencing statements disagree`)
+        .toBeLessThan(0.5)
       expect(site.RefElevation.value, disc).toBeCloseTo(HEIGHT, 3)
     }
   })

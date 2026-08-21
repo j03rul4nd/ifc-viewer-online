@@ -28,8 +28,9 @@ import {
 import { raySphereDistance, pickInPositions, pickThresholdAt } from './pc-pick'
 import { createLogger } from '../logger'
 import {
-  BYTES_PER_POINT, DEFAULT_DISPLAY, RENDER_BUDGET_DEFAULT,
-  type PointChunk, type PointCloudAlignment, type PointCloudDisplay,
+  BYTES_PER_POINT, DEFAULT_DISPLAY, MAX_POINTS_DEFAULT, RENDER_BUDGET_DEFAULT,
+  type DynamicFrameUpdate, type DynamicPointFrame, type PointChunk,
+  type PointCloudAlignment, type PointCloudDisplay,
 } from './pc-types'
 
 const log = createLogger('PointCloud')
@@ -53,6 +54,8 @@ const NODE_GRACE_MS = 4_000
 const NODE_OVERSHOOT = 1.6
 /** Camera movement below this (metres) does not justify a re-allocation. */
 const LOD_CAMERA_EPSILON = 0.05
+/** Keep interaction fluid, then restore full detail as soon as the camera rests. */
+const INTERACTION_BUDGET_FACTOR = 0.45
 
 // ── Context provided by viewer.ts ──────────────────────────────────────────────
 
@@ -114,6 +117,14 @@ export interface PointCloudSystemAPI {
   ): void
   /** Upload one chunk. Safe to call before or after the cloud is visible. */
   addChunk(cloudId: string, chunk: PointChunk): void
+  /**
+   * Attach one fixed-capacity, DynamicDrawUsage buffer to an empty cloud.
+   * Temporal frames mutate this buffer in place; no geometry is created in the
+   * playback loop.
+   */
+  addDynamicBuffer(cloudId: string, capacity: number): void
+  /** Copy one temporal frame into its cloud's reusable dynamic buffer. */
+  updateDynamicFrame(cloudId: string, frame: DynamicPointFrame): DynamicFrameUpdate | null
   /** Re-apply an alignment (manual nudges call this on every slider move). */
   setAlignment(cloudId: string, alignment: PointCloudAlignment): void
   setVisible(cloudId: string, visible: boolean): void
@@ -121,6 +132,8 @@ export interface PointCloudSystemAPI {
   setDisplay(display: PointCloudDisplay): void
   /** Points drawn per frame at density 1. */
   setRenderBudget(budget: number): void
+  /** Temporarily lower draw pressure while the camera is moving. */
+  setInteractionActive(active: boolean): void
   /** World-space bounds of one cloud, or of all of them when id is omitted. */
   getBounds(cloudId?: string): { min: THREE.Vector3; max: THREE.Vector3 } | null
   /** Frame a cloud (or every cloud) with the viewer's own camera framing. */
@@ -181,6 +194,9 @@ interface ChunkRecord {
   /** Chunk bounding radius in world space (source radius × alignment scale). */
   worldRadius: number
   localRadius: number
+  /** Allocated vertices. Equals count for immutable file chunks. */
+  capacity: number
+  dynamic: boolean
 }
 
 interface CloudRecord {
@@ -209,6 +225,7 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
   const clouds = new Map<string, CloudRecord>()
   let display: PointCloudDisplay = { ...DEFAULT_DISPLAY }
   let renderBudget = RENDER_BUDGET_DEFAULT
+  let interactionActive = false
   let material: PointCloudMaterial | null = null
   let disposed = false
 
@@ -313,6 +330,11 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
     lastCameraPos.set(NaN, NaN, NaN)
   }
 
+  function effectiveRenderBudget(): number {
+    const interactionFactor = interactionActive ? INTERACTION_BUDGET_FACTOR : 1
+    return Math.max(1, Math.floor(renderBudget * display.density * interactionFactor))
+  }
+
   /**
    * Decide which octree nodes should be resident for a streamed cloud, and ask
    * for the difference.
@@ -349,7 +371,7 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
       isVisible: opts.useFrustum ? (b) => nodeVisible(cloud, b) : undefined,
     }, {
       maxSpacingPx: TARGET_SPACING_PX,
-      budget: Math.max(1, Math.floor(renderBudget * display.density)),
+      budget: effectiveRenderBudget(),
     })
 
     const now = performance.now()
@@ -364,7 +386,7 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
         now,
         graceMs: NODE_GRACE_MS,
         overshoot: NODE_OVERSHOOT,
-        budget: Math.max(1, Math.floor(renderBudget * display.density)),
+        budget: effectiveRenderBudget(),
       },
     )
 
@@ -418,7 +440,7 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
     )
     frustum.setFromProjectionMatrix(projScreen)
 
-    const budget = Math.max(1, Math.floor(renderBudget * display.density))
+    const budget = effectiveRenderBudget()
     const views: ChunkView[] = []
     const byId = new Map<string, ChunkRecord>()
 
@@ -694,7 +716,7 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
       const record: ChunkRecord = {
         id: chunk.id, points, geometry, count: chunk.count,
         worldCentre: new THREE.Vector3(), worldRadius: chunk.radius,
-        localRadius: chunk.radius,
+        localRadius: chunk.radius, capacity: chunk.count, dynamic: false,
       }
       cloud.chunks.push(record)
       cloud.pointCount += chunk.count
@@ -716,6 +738,123 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
       record.worldRadius = chunk.radius * cloud.root.scale.x
       refreshElevationRange()
       invalidateLod()
+    },
+
+    addDynamicBuffer(cloudId, requestedCapacity) {
+      if (disposed) return
+      const cloud = clouds.get(cloudId)
+      if (!cloud) { log.warn(`addDynamicBuffer for unknown cloud "${cloudId}"`); return }
+      // A temporal source owns one buffer. Mixing immutable chunks into the
+      // same root would make per-frame bounds and counts ambiguous.
+      if (cloud.chunks.length > 0) {
+        log.warn(`addDynamicBuffer requires an empty cloud "${cloudId}"`)
+        return
+      }
+
+      const finiteCapacity = Number.isFinite(requestedCapacity) ? Math.floor(requestedCapacity) : 1
+      const capacity = Math.min(MAX_POINTS_DEFAULT, Math.max(1, finiteCapacity))
+      const geometry = new THREE.BufferGeometry()
+      const position = new THREE.BufferAttribute(new Float32Array(capacity * 3), 3)
+      const color = new THREE.BufferAttribute(new Uint8Array(capacity * 3).fill(200), 3, true)
+      const intensity = new THREE.BufferAttribute(new Uint8Array(capacity).fill(255), 1, true)
+      const classification = new THREE.BufferAttribute(new Uint8Array(capacity), 1, true)
+      const confidence = new THREE.BufferAttribute(new Uint8Array(capacity).fill(255), 1, true)
+      for (const attribute of [position, color, intensity, classification, confidence]) {
+        attribute.setUsage(THREE.DynamicDrawUsage)
+      }
+      geometry.setAttribute('position', position)
+      geometry.setAttribute('pcColor', color)
+      geometry.setAttribute('pcIntensity', intensity)
+      geometry.setAttribute('pcClass', classification)
+      geometry.setAttribute('pcConfidence', confidence)
+      geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e-3)
+      geometry.setDrawRange(0, 0)
+
+      const points = new THREE.Points(geometry, getMaterial())
+      points.frustumCulled = true
+      points.visible = false
+      points.raycast = () => { /* routed through the cloud root */ }
+      cloud.root.add(points)
+
+      cloud.chunks.push({
+        id: '__temporal__', points, geometry, count: 0, capacity, dynamic: true,
+        worldCentre: new THREE.Vector3(), worldRadius: 1e-3, localRadius: 1e-3,
+      })
+      invalidateLod()
+    },
+
+    updateDynamicFrame(cloudId, frame) {
+      if (disposed) return null
+      const cloud = clouds.get(cloudId)
+      const chunk = cloud?.chunks.find((candidate) => candidate.dynamic)
+      if (!cloud || !chunk) {
+        log.warn(`updateDynamicFrame for cloud without a dynamic buffer "${cloudId}"`)
+        return null
+      }
+
+      const available = Math.floor(frame.positions.length / 3)
+      const declared = Number.isFinite(frame.count) ? Math.floor(frame.count) : 0
+      const requested = Math.max(0, Math.min(declared, available))
+      const count = Math.min(requested, chunk.capacity)
+      const previousCount = chunk.count
+      const previousDrawn = Math.min(previousCount, chunk.geometry.drawRange.count)
+
+      const copy = (
+        name: string, source: Float32Array | Uint8Array | null,
+        itemSize: number, fallback: number,
+      ): void => {
+        const attribute = chunk.geometry.getAttribute(name) as THREE.BufferAttribute
+        const destination = attribute.array as Float32Array | Uint8Array
+        const length = count * itemSize
+        if (source) {
+          const sourceLength = Math.min(length, source.length)
+          destination.set(source.subarray(0, sourceLength), 0)
+          if (sourceLength < length) destination.fill(fallback, sourceLength, length)
+        } else {
+          destination.fill(fallback, 0, length)
+        }
+        // Tell WebGL precisely which active prefix changed. The backing store is
+        // fixed, so this remains one bufferSubData path for the whole replay.
+        attribute.clearUpdateRanges()
+        attribute.addUpdateRange(0, length)
+        attribute.needsUpdate = true
+      }
+
+      copy('position', frame.positions, 3, 0)
+      copy('pcColor', frame.colors, 3, 200)
+      copy('pcIntensity', frame.intensity, 1, 255)
+      copy('pcClass', frame.classification, 1, 0)
+      copy('pcConfidence', frame.confidence, 1, 255)
+
+      const radius = Math.max(Number.isFinite(frame.radius) ? frame.radius : 0, 1e-3)
+      chunk.count = count
+      chunk.localRadius = radius
+      chunk.points.position.set(frame.origin.x, frame.origin.y, frame.origin.z)
+      chunk.geometry.boundingSphere!.center.set(0, 0, 0)
+      chunk.geometry.boundingSphere!.radius = radius
+
+      const drawn = Math.min(count, effectiveRenderBudget())
+      chunk.geometry.setDrawRange(0, drawn)
+      chunk.points.visible = cloud.root.visible && drawn > 0
+      cloud.pointCount += count - previousCount
+      cloud.drawnCount = Math.max(0, cloud.drawnCount - previousDrawn) + drawn
+
+      // A temporal cloud owns its root, so the current frame can replace the
+      // bounds instead of monotonically expanding them across the recording.
+      if (frame.bounds) {
+        cloud.localBox.min.set(frame.bounds.min.x, frame.bounds.min.y, frame.bounds.min.z)
+        cloud.localBox.max.set(frame.bounds.max.x, frame.bounds.max.y, frame.bounds.max.z)
+      } else {
+        cloud.localBox.min.set(frame.origin.x - radius, frame.origin.y - radius, frame.origin.z - radius)
+        cloud.localBox.max.set(frame.origin.x + radius, frame.origin.y + radius, frame.origin.z + radius)
+      }
+      cloud.root.updateMatrixWorld(true)
+      chunk.worldCentre.copy(chunk.points.position).applyMatrix4(cloud.root.matrixWorld)
+      chunk.worldRadius = radius * cloud.root.scale.x
+      refreshElevationRange()
+      invalidateLod()
+
+      return { count, capacity: chunk.capacity, truncated: Math.max(0, frame.count - count) }
     },
 
     setAlignment(cloudId, alignment) {
@@ -745,6 +884,12 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
       invalidateLod()
     },
 
+    setInteractionActive(active) {
+      if (interactionActive === active) return
+      interactionActive = active
+      invalidateLod()
+    },
+
     getBounds(cloudId) {
       return worldBounds(cloudId)
     },
@@ -769,14 +914,15 @@ export function createPointCloudSystem(ctx: PointCloudContext): PointCloudSystem
     },
 
     getStats(cloudId) {
-      let pointCount = 0, drawnCount = 0, chunkCount = 0
+      let pointCount = 0, drawnCount = 0, chunkCount = 0, capacity = 0
       for (const cloud of clouds.values()) {
         if (cloudId && cloud.id !== cloudId) continue
         pointCount += cloud.pointCount
         drawnCount += cloud.drawnCount
         chunkCount += cloud.chunks.length
+        for (const chunk of cloud.chunks) capacity += chunk.capacity
       }
-      return { pointCount, drawnCount, chunkCount, gpuBytes: pointCount * BYTES_PER_POINT }
+      return { pointCount, drawnCount, chunkCount, gpuBytes: capacity * BYTES_PER_POINT }
     },
 
     enableStreaming(cloudId, opts) {

@@ -1,0 +1,12 @@
+.git/
+.vercel/
+node_modules/
+dist/
+
+# Local CRAS audit workspace. Deployable derivatives are in public/models/cras/.
+demo/
+
+# Local test/build scratch directories.
+.blog-test-out/
+.seo-test-out/
+dist-tmp/

@@ -120,6 +120,48 @@ describe('createPointCloudSystem — scene graph', () => {
     expect(geometry.getAttribute('position').array).toBeInstanceOf(Float32Array)
   })
 
+  it('reuses one fixed GPU buffer across temporal frames', () => {
+    const ctx = makeContext()
+    const system = createPointCloudSystem(ctx)
+    system.create('live', alignment({ upAxis: 'y' }))
+    system.addDynamicBuffer('live', 8)
+
+    const points = pointObjects(ctx.scene)[0]
+    const geometry = points.geometry
+    const position = geometry.getAttribute('position') as THREE.BufferAttribute
+    expect(position.usage).toBe(THREE.DynamicDrawUsage)
+    expect(system.getStats('live').gpuBytes).toBe(8 * 18)
+
+    const first = system.updateDynamicFrame('live', {
+      sequence: 1, timestampMs: 0, count: 3,
+      origin: { x: 1, y: 2, z: 3 }, radius: 5,
+      positions: new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+      colors: new Uint8Array(9).fill(90), intensity: null,
+      classification: null, confidence: null,
+    })
+    expect(first).toEqual({ count: 3, capacity: 8, truncated: 0 })
+    expect(system.getStats('live').pointCount).toBe(3)
+    expect(points.position.toArray()).toEqual([1, 2, 3])
+
+    const second = system.updateDynamicFrame('live', {
+      sequence: 2, timestampMs: 80, count: 12,
+      origin: { x: 0, y: 0, z: 0 }, radius: 9,
+      bounds: { min: { x: -2, y: 0, z: -3 }, max: { x: 4, y: 5, z: 6 } },
+      positions: new Float32Array(12 * 3).fill(4),
+      colors: null, intensity: null, classification: null, confidence: null,
+    })
+    expect(second).toEqual({ count: 8, capacity: 8, truncated: 4 })
+    expect(system.getStats('live').pointCount).toBe(8)
+    // The geometry and attribute objects are stable: only their array prefixes
+    // were updated, so replay cannot create one allocation per frame.
+    expect(pointObjects(ctx.scene)).toHaveLength(1)
+    expect(points.geometry).toBe(geometry)
+    expect(geometry.getAttribute('position')).toBe(position)
+    expect(geometry.drawRange.count).toBe(8)
+    expect(system.getBounds('live')!.min.toArray()).toEqual([-2, 0, -3])
+    expect(system.getBounds('live')!.max.toArray()).toEqual([4, 5, 6])
+  })
+
   it('never intercepts a model pick', () => {
     const ctx = makeContext()
     const system = createPointCloudSystem(ctx)
@@ -303,6 +345,34 @@ describe('createPointCloudSystem — display and budget', () => {
     system.addChunk('c1', chunk('k0', 100_000))
     const stats = system.getStats()
     expect(stats.gpuBytes).toBe(100_000 * 18)
+  })
+
+  it('draws a lighter cloud while the camera moves and restores detail at rest', () => {
+    let scheduled: FrameRequestCallback | null = null
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      scheduled = cb
+      return 1
+    })
+    const now = vi.spyOn(performance, 'now')
+    const ctx = makeContext()
+    const system = createPointCloudSystem(ctx)
+    system.create('c1', alignment())
+    system.addChunk('c1', chunk('k0', 10_000))
+    system.setRenderBudget(10_000)
+
+    now.mockReturnValue(100)
+    ;(scheduled as unknown as FrameRequestCallback)(100)
+    expect(system.getStats().drawnCount).toBe(10_000)
+
+    system.setInteractionActive(true)
+    now.mockReturnValue(200)
+    ;(scheduled as unknown as FrameRequestCallback)(200)
+    expect(system.getStats().drawnCount).toBe(4_500)
+
+    system.setInteractionActive(false)
+    now.mockReturnValue(300)
+    ;(scheduled as unknown as FrameRequestCallback)(300)
+    expect(system.getStats().drawnCount).toBe(10_000)
   })
 })
 

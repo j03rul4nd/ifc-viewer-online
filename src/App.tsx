@@ -66,7 +66,9 @@ import { isGisEnabled } from './lib/geo/gis-flag'
 import { isSolarEnabled } from './lib/solar/solar-flag'
 import { isPointCloudEnabled } from './lib/pointcloud/pc-flag'
 import { isMeshEnabled } from './lib/mesh/mesh-flag'
+import { isVideoEnabled } from './lib/video/video-flag'
 import { useMeshStore } from './stores/meshStore'
+import { useVideoStore } from './stores/videoStore'
 import { usePointCloudStore } from './stores/pointCloudStore'
 // pc-types is deliberately dependency-free — importing it here costs the
 // entry bundle nothing, which is why clampOffset and NO_OFFSET live there.
@@ -83,7 +85,10 @@ const PointCloudPanel = React.lazy(() => import('./components/PointCloudPanel'))
 // Lazy for the same reason: MeshPanel statically imports three's GLTF, OBJ and
 // MTL loaders, which nobody who never imports a model should download.
 const MeshPanel = React.lazy(() => import('./components/MeshPanel'))
-import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, type DemoModel } from './demo-models/models'
+// Video resources are a separate lazy chunk: no media/Three implementation is
+// downloaded until the tool is opened.
+const VideoPanel = React.lazy(() => import('./components/VideoPanel'))
+import { DEFAULT_DEMO_MODEL, DEMO_FILENAMES, DEMO_MODELS, type DemoModel } from './demo-models/models'
 import { fetchDemoModel } from './demo-models/fetchDemoModel'
 import { lighten } from './lib/utils'
 import { modelRegistry } from './lib/model-registry'
@@ -153,12 +158,23 @@ export type { ModelTreeHandle, RevealOutcome }
  * like `add` twice. So we wait for a subscriber to exist, then emit exactly
  * once, and give up with a reason the host can act on.
  */
-async function dispatchPanelCommand<E extends 'sdk:solar' | 'sdk:site' | 'sdk:pointcloud' | 'sdk:mesh'>(
+async function dispatchPanelCommand<E extends 'sdk:solar' | 'sdk:site' | 'sdk:pointcloud' | 'sdk:video' | 'sdk:mesh'>(
   event: E,
   payload: Omit<Parameters<Parameters<typeof appBus.on<E>>[1]>[0], 'done'>,
-  opts: { unavailable: string; timeoutMs?: number } = { unavailable: 'Panel unavailable' },
+  opts: {
+    unavailable: string
+    timeoutMs?: number
+    /**
+     * How long to wait for the owning panel to mount. The default suits a
+     * command sent by a host into a running viewer. A command that rides the
+     * PAGE LOAD needs far longer: the panels are lazy and gated behind the
+     * model being ready, so on a cold load the wasm parse of a multi-megabyte
+     * IFC happens first and three seconds expires before anyone is listening.
+     */
+    subscriberTimeoutMs?: number
+  } = { unavailable: 'Panel unavailable' },
 ): Promise<string | undefined> {
-  const deadline = Date.now() + 3_000
+  const deadline = Date.now() + (opts.subscriberTimeoutMs ?? 3_000)
   while (!appBus.hasListeners(event)) {
     if (Date.now() > deadline) throw new Error(opts.unavailable)
     await new Promise((r) => setTimeout(r, 50))
@@ -1001,6 +1017,36 @@ export default function App() {
     handleFileLoad(file)
   }
 
+  // One-click exhibition path from VideoPanel. The matching IFC is a normal
+  // gallery model and goes through the normal loader/cache pipeline; the video
+  // may already be playing while the IFC finishes parsing because it owns an
+  // independent world-space transform.
+  const handleLoadVideoCompanion = async (): Promise<void> => {
+    const demo = DEMO_MODELS.find((model) => model.id === 'operations-pavilion-video')
+    if (!demo || sceneModels.some((model) => model.fileName === demo.fileName)) return
+    try {
+      const file = await fetchDemoModel(demo)
+      demoLoadRef.current = true
+      await new Promise<void>((resolve, reject) => {
+        const off = appBus.on('model:loaded', ({ modelInfo }) => {
+          if (modelInfo.fileName !== demo.fileName) return
+          window.clearTimeout(timeout)
+          off()
+          resolve()
+        })
+        const timeout = window.setTimeout(() => {
+          off()
+          reject(new Error('Companion IFC load timed out'))
+        }, 30_000)
+        handleFileLoad(file)
+      })
+    } catch (error) {
+      console.warn('[App] Video companion IFC unavailable:', error)
+      toast(tToasts('model.demoUnavailable'), 'warning')
+      throw error
+    }
+  }
+
   const handleToggleHidden = (id: string): void => {
     setHidden((prev) => {
       const n = new Set(prev)
@@ -1635,6 +1681,22 @@ export default function App() {
             return { ok: true }
           })
           break
+        case 'ifcviewer:start-pointcloud-replay':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:pointcloud',
+              { action: 'replay' },
+              { unavailable: 'Point cloud replay is not enabled in this build', timeoutMs: 120_000 })
+            return { ok: true }
+          })
+          break
+        case 'ifcviewer:start-video-demo':
+          void respond(async () => {
+            await dispatchPanelCommand('sdk:video',
+              { action: 'demo' },
+              { unavailable: '3D video is not enabled in this build', timeoutMs: 120_000 })
+            return { ok: true }
+          })
+          break
         // ── Imported models ────────────────────────────────────────────
         // Same delegation as scans: MeshPanel owns the loader, the triangle
         // budget and the placement, so the bridge asks it rather than growing a
@@ -1885,7 +1947,17 @@ export default function App() {
             terrain:   wanted.terrain,
             buildings: wanted.buildings,
             detail:    wanted.detail,
-          }, { unavailable: 'Map mode is not available in this build', timeoutMs: 120_000 })
+          }, {
+            // Two different failures wearing one message cost a debugging
+            // session: the build flag being off, and the panel simply not
+            // having mounted yet on a cold load. Only the flag can be checked,
+            // so say which one this is.
+            unavailable: isGisEnabled()
+              ? 'Map mode did not come up in time'
+              : 'Map mode is not available in this build',
+            timeoutMs: 120_000,
+            subscriberTimeoutMs: 60_000,
+          })
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err)
           console.error('[App] ?map= deep link failed:', message)
@@ -2333,7 +2405,11 @@ export default function App() {
                       legitimate thing to open. */}
                   {isPointCloudEnabled() && !clientMode && (
                     <React.Suspense fallback={null}>
-                      <PointCloudPanel viewerApiRef={viewerApiRef} />
+                      <PointCloudPanel
+                        viewerApiRef={viewerApiRef}
+                        companionLoaded={sceneModels.some((model) => model.fileName === 'IVO-Operations-Pavilion.ifc')}
+                        onLoadCompanionModel={handleLoadVideoCompanion}
+                      />
                     </React.Suspense>
                   )}
                   {/* Same treatment as scans: an imported model is legitimate
@@ -2345,6 +2421,16 @@ export default function App() {
                         viewerApiRef={viewerApiRef}
                         activeModelId={activeModelId}
                         onClose={() => useMeshStore.getState().setPanelOpen(false)}
+                      />
+                    </React.Suspense>
+                  )}
+                  {isVideoEnabled() && !clientMode && (
+                    <React.Suspense fallback={null}>
+                      <VideoPanel
+                        viewerApiRef={viewerApiRef}
+                        companionLoaded={sceneModels.some((model) => model.fileName === 'IVO-Operations-Pavilion.ifc')}
+                        onLoadCompanionModel={handleLoadVideoCompanion}
+                        onClose={() => useVideoStore.getState().setPanelOpen(false)}
                       />
                     </React.Suspense>
                   )}

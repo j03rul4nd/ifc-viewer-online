@@ -342,6 +342,14 @@ export default defineConfig({
             // leaflet powers the placement minimap inside the (lazy) GeoPanel
             id.includes('/leaflet/')
           ) return
+          // MCAP is used only when a user exports or opens a temporal point
+          // recording. Keep the reader and optional WASM decompressors out of
+          // the eager React/UI vendor chunk; their dynamic imports stay lazy.
+          if (
+            id.includes('@mcap/') || id.includes('@foxglove/crc') ||
+            id.includes('@foxglove/wasm-') || id.includes('/heap-js/') ||
+            id.includes('/protobufjs/') || id.includes('/@protobufjs/')
+          ) return
           // Clerk (F2 auth) must NEVER ride in the eager vendor-ui chunk
           // (invariant I-1: zero auth bytes for the anonymous user). main.tsx
           // imports it dynamically and only when a publishable key is set —

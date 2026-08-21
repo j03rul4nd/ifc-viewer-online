@@ -144,7 +144,9 @@
     "vehicles": "Atrezo (vehículos, farolas, marquesinas)",
     "vehiclesHint": "Los coches, trenes, farolas y marquesinas de andén NO son datos mapeados — OpenStreetMap no registra dónde está aparcado un coche ni qué acera lleva farola. Su colocación es inventada para que la vista se sienta habitada, y es la misma siempre.",
     "facadeShowcase": "Presentación",
-    "facadeShowcaseHint": "El modo presentación sustituye por modelos 3D creados a medida — árboles, coches, furgonetas, autobuses, vagones, semáforos, postes de catenaria, farolas y marquesinas de andén — que se descargan una sola vez desde este sitio (unos 136 KB). Todo lo demás funciona sin ellos."
+    "facadeShowcaseHint": "El modo presentación sustituye por modelos 3D creados a medida — árboles, coches, furgonetas, autobuses, vagones, semáforos, postes de catenaria, farolas y marquesinas de andén — que se descargan una sola vez desde este sitio (unos 136 KB). Todo lo demás funciona sin ellos.",
+    "suppress": "Ocultar el contexto del mapa bajo el modelo",
+    "suppressHint": "Donde está el modelo, el mapa describe lo mismo dos veces. Un edificio oculta el edificio mapeado de su solar y los árboles dentro de su planta; un puente o un túnel ocultan además la calzada que sostienen. La calle de fuera no se oculta nunca. Desactívalo para comparar ambos."
   },
   "placement": {
     "title": "Ubicación",

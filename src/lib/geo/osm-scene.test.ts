@@ -510,19 +510,34 @@ describe('buildSurfaceLayer · detailed', () => {
     expect(rich.object.geometry.getIndex()).not.toBeNull()
   })
 
-  it('follows a hill UNDER the polygon that a corners-only mesh flies over', () => {
-    // This is the bug in one assertion. Earcut puts vertices only on the
+  it('follows a hill UNDER the polygon, at BOTH qualities', () => {
+    // This was the bug in one assertion. Earcut puts vertices only on the
     // outline, so a park on a hillside used to be a flat plane stretched
     // between its corners — the summit inside it simply did not exist.
-    const flat = buildSurfaceLayer([surface('green', 'g1')], 'green', {
-      ...OPTS, sampleGroundM: centreHill(surface('green', 'h').ring!), anchorElevationM: 0,
-    })!
-    const draped = buildSurfaceLayer([surface('green', 'g1')], 'green', {
-      ...DETAILED, sampleGroundM: centreHill(surface('green', 'h').ring!), anchorElevationM: 0,
-    })!
-    const top = (m: typeof flat): number =>
-      extent(m.object.geometry.getAttribute('position') as THREE.BufferAttribute, 'getZ').hi
-    expect(top(draped)).toBeGreaterThan(top(flat) * 5)
+    //
+    // 'detailed' fixed it by subdividing for its procedural materials, which
+    // left 'simple' still flying over every hill. Both now split their faces
+    // against the DEM spacing, because following the ground is correctness, not
+    // a finish level: the summit is there whichever quality is on screen.
+    const ground = centreHill(surface('green', 'h').ring!)
+    const built = (base: typeof OPTS): number => {
+      const m = buildSurfaceLayer([surface('green', 'g1')], 'green', {
+        ...base, sampleGroundM: ground, anchorElevationM: 0,
+      })!
+      return extent(m.object.geometry.getAttribute('position') as THREE.BufferAttribute, 'getZ').hi
+    }
+    const summitZ = built(DETAILED)
+    expect(summitZ).toBeGreaterThan(0)
+    // Within a hair of each other: same ground, same answer.
+    expect(built(OPTS)).toBeGreaterThan(summitZ * 0.9)
+  })
+
+  it('leaves the polygon a bare lid when there is no terrain to follow', () => {
+    // The subdivision must not fire on the flat basemap — it would be pure cost
+    // for a surface that is genuinely flat.
+    const m = buildSurfaceLayer([surface('green', 'g1')], 'green', OPTS)!
+    const z = extent(m.object.geometry.getAttribute('position') as THREE.BufferAttribute, 'getZ')
+    expect(z.hi).toBeCloseTo(z.lo)
   })
 
   it('shades from the ground slope, not from the triangles', () => {

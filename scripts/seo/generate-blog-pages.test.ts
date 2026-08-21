@@ -158,6 +158,36 @@ describe('generateBlogPages — per-post pages (EN)', () => {
       expect(html).toContain('"@type":"BlogPosting"')
     }
   })
+
+  it('uses the spatial article hero in OG and Article image metadata', () => {
+    const html = readFileSync(
+      path.join(OUT, 'blog', 'ifc-point-cloud-browser-scan-to-bim', 'index.html'),
+      'utf-8',
+    )
+    expect(html).toContain('blog/images/ifc-point-cloud-scan-to-bim-1600x900.jpg')
+    expect(html).toContain('"@type":"ImageObject"')
+    expect(html).toContain('Architect reviewing a cyan IFC pavilion')
+  })
+
+  it('links translated spatial articles with hreflang', () => {
+    const html = readFileSync(
+      path.join(OUT, 'blog', 'real-time-lidar-web-digital-twin-mcap', 'index.html'),
+      'utf-8',
+    )
+    expect(html).toContain('hreflang="en"')
+    expect(html).toContain('hreflang="es"')
+    expect(html).toContain('/es/blog/lidar-tiempo-real-web-gemelo-digital-mcap/')
+  })
+
+  it('adds VideoObject metadata to the IFC + video article', () => {
+    const html = readFileSync(
+      path.join(OUT, 'blog', 'ifc-video-3d-terrain-construction-progress', 'index.html'),
+      'utf-8',
+    )
+    expect(html).toContain('"@type":"VideoObject"')
+    expect(html).toContain('/models/video-demo/operations-pavilion-progress.mp4')
+    expect(html).toContain('PT8S')
+  })
 })
 
 describe('generateBlogPages — per-post pages (ES)', () => {
@@ -195,15 +225,25 @@ describe('generateBlogPages — sitemap injection', () => {
     }
   })
 
+  it('declares image/video namespaces and lists spatial media', () => {
+    const xml = readFileSync(path.join(OUT, 'sitemap.xml'), 'utf-8')
+    expect(xml).toContain('xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"')
+    expect(xml).toContain('xmlns:video="http://www.google.com/schemas/sitemap-video/1.1"')
+    expect(xml).toContain('<image:loc>https://www.ifcvieweronline.eu/blog/images/real-time-lidar-digital-twin-1600x900.jpg</image:loc>')
+    expect(xml).toContain('<video:content_loc>https://www.ifcvieweronline.eu/models/video-demo/operations-pavilion-progress.mp4</video:content_loc>')
+  })
+
   it('is idempotent — running twice does not duplicate entries', () => {
     // Run generator again against the same dir
     const r2 = generateBlogPages(OUT)
     expect(r2.sitemap).toBe(false) // already injected, should skip
     const xml = readFileSync(path.join(OUT, 'sitemap.xml'), 'utf-8')
-    const count = (xml.match(new RegExp(`${SITE}/blog/`, 'g')) ?? []).length
-    // The blog index URL appears: once in <loc>, once per hreflang (2 hreflangs)
-    // We just want to confirm it's not doubled
-    expect(count).toBeLessThanOrEqual(3 * (1 + BLOG_POSTS.length))
+    const indexLocs = (xml.match(new RegExp(`<loc>${SITE}/blog/</loc>`, 'g')) ?? []).length
+    expect(indexLocs).toBe(1)
+    for (const post of BLOG_POSTS) {
+      const postLocs = (xml.match(new RegExp(`<loc>${SITE}/blog/${post.slug}/</loc>`, 'g')) ?? []).length
+      expect(postLocs, `${post.slug} should have one sitemap <loc>`).toBe(1)
+    }
   })
 })
 

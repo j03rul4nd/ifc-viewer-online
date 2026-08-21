@@ -126,15 +126,15 @@ DOOR_W, DOOR_H = 1.20, 2.40
 
 EPSG = "EPSG:25831"
 DATUM = "ETRS89"
-EASTINGS, NORTHINGS = 432340.0, 4583945.0
+EASTINGS, NORTHINGS = 432290.0, 4584167.0
 ORTHOGONAL_HEIGHT = 12.50
 GRID_ROTATION_DEG = 45.0
 
 # The same point as a latitude and longitude, for IfcSite. Derived from the
 # eastings/northings above, not typed in separately — two georeferencing
 # statements that disagree are worse than one.
-SITE_LATITUDE = (41, 24, 15, 636000)
-SITE_LONGITUDE = (2, 11, 26, 400000)
+SITE_LATITUDE = (41, 24, 22, 310013)
+SITE_LONGITUDE = (2, 11, 23, 680963)
 SITE_ELEVATION = 12.50
 
 AUTHOR = "IFC Viewer Online"

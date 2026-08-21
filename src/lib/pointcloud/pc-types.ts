@@ -131,6 +131,44 @@ export interface PointChunk {
   confidence: Uint8Array | null
 }
 
+/**
+ * One timestamped frame from a temporal point source (recorded LiDAR today,
+ * WebSocket/sensor data later).
+ *
+ * The arrays may be reused by the producer on the next frame. The renderer
+ * copies their active prefix into a fixed-capacity GPU buffer immediately, so
+ * neither side has to allocate a new BufferGeometry for every timestamp.
+ */
+export interface DynamicPointFrame {
+  /** Monotonic sequence within the source. Gaps are observable dropped frames. */
+  sequence: number
+  /** Source/playback time, milliseconds from the beginning of the recording. */
+  timestampMs: number
+  /** Requested number of points in the active array prefix. */
+  count: number
+  /** Frame centre relative to SourceFrame.origin, in source units. */
+  origin: Vec3
+  /** Bounding-sphere radius around origin, in source units. */
+  radius: number
+  /** Optional exact frame bounds, preferred for framing over the culling sphere. */
+  bounds?: { min: Vec3; max: Vec3 }
+  positions: Float32Array
+  colors: Uint8Array | null
+  intensity: Uint8Array | null
+  classification: Uint8Array | null
+  confidence: Uint8Array | null
+}
+
+/** Result of copying a temporal frame into the resident GPU buffer. */
+export interface DynamicFrameUpdate {
+  /** Points accepted after validating array length and applying capacity. */
+  count: number
+  /** Fixed resident capacity. It never grows during replay. */
+  capacity: number
+  /** Points omitted because the incoming frame exceeded capacity. */
+  truncated: number
+}
+
 // ── Alignment ──────────────────────────────────────────────────────────────────
 
 /**
@@ -233,6 +271,8 @@ export type PointCloudStatus = 'parsing' | 'ready' | 'error'
 export interface PointCloudEntry {
   id: string
   fileName: string
+  /** Distinguishes a changing recording from an immutable scan in the UI. */
+  sourceKind?: 'file' | 'demo' | 'temporal-replay'
   fileSize: number
   format: PointCloudFormat
   status: PointCloudStatus

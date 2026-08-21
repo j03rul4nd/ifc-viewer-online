@@ -11,6 +11,10 @@ off there is no toolbar entry, no chunk and no worker.
 **Design decisions and the alternatives they beat live in
 [`POINT_CLOUD_PLAN.md`](./POINT_CLOUD_PLAN.md).** This document is the how-to.
 
+For recorded sequences, RGB video, live LiDAR, ROS 2/MCAP gateways and the
+temporal rendering roadmap, see
+[`REALTIME_LIDAR_VIDEO.md`](./REALTIME_LIDAR_VIDEO.md).
+
 ---
 
 ## 1. Supported formats
@@ -28,6 +32,28 @@ off there is no toolbar entry, no chunk and no worker.
 `.e57` (see [§12](#12-e57--assessed-and-deliberately-still-refused) for why) and
 scanner-native project files (`.rcp`, `.rcs`, `.fls`, `.zfs`). See
 [§7](#7-adding-a-format).
+
+### Temporal LiDAR exhibition replay
+
+The panel also contains an offline **IFC + temporal LiDAR** example. It is not a
+file-format claim and is labelled `SIMULATED REPLAY` in the UI: the point returns
+are generated from the same dimension table as the bundled Operations Pavilion
+IFC, not captured by a physical scanner.
+
+Press **Load IFC + start replay** to get a 16-second timeline with Play/Pause,
+seek, 0.5×/1×/2×, Latest and loop. This is the performance-safe foundation for
+recorded MCAP and later live sources:
+
+- one `THREE.Points` and one fixed-capacity `BufferGeometry` for the stream;
+- `DynamicDrawUsage`, partial update ranges and a changing draw range;
+- no geometry or typed-array allocation in the playback loop;
+- a 12 Hz GPU update ceiling with skipped-frame telemetry;
+- GPU memory reported from allocated capacity, so the number does not shrink
+  misleadingly when an early replay frame contains fewer points.
+
+The MCAP/WebSocket adapter, real sensor pose and RGB synchronization remain
+future work. See [`REALTIME_LIDAR_VIDEO.md`](./REALTIME_LIDAR_VIDEO.md) for the
+evidence, contract and gates.
 
 ### What the readers sniff for you
 
@@ -86,11 +112,13 @@ your own scan. Registry: `src/demo-models/point-clouds.ts`.
 | Mississippi Valley — classified | 175 kB | 6.3 k | Six ASPRS classes — the fastest way to see **Colour by → Classification**. |
 | Warsaw — coloured sample | 100 kB | 3 k | Instant load; handy for trying the appearance controls. |
 
-**These are surveys of real places, not scans of the demo buildings.** No public
-scan-and-IFC pair of the same site exists, so every sample lands on the bottom
-rung of the ladder and the panel says so. They demonstrate reading, rendering,
-units, colour modes, classification and LOD — not a matched alignment. To see the
-top rungs you need your own georeferenced pair.
+Most samples are surveys of real places, not scans of the demo buildings. The
+exception is **CRAS Labs @ FEUP**, a real 21-scan TLS capture with its
+corresponding IFC2X3 as-built, published under CC BY 4.0. Its published files use
+different local frames; `demo/transformation.json` records the rigid transform
+calculated by yaw search and multi-scale point-to-plane ICP, and the bundled web
+PLY has that transform baked in. See `demo/research.md` for the evidence and the
+other candidates that were rejected on licensing or provenance grounds.
 
 Every number in the registry (byte size, point count, CRS, unit, which channels
 are present) was read out of the actual file rather than copied from a
@@ -551,6 +579,11 @@ PointCloudPanel (React.lazy)         pointCloudStore (Zustand, serialisable only
 | `src/lib/pointcloud/pc-material.ts` | The point ShaderMaterial (colour modes, confidence, sprites). |
 | `src/lib/pointcloud/point-cloud-system.ts` | Owns every Three.js resource. Twin of `geo-system` / `solar-system`. |
 | `src/lib/pointcloud/pc-runner.ts` | Worker orchestration + store updates. |
+| `src/lib/pointcloud/temporal-replay.ts` | Finite replay clock: seek, speed, loop and coalesced display frames. |
+| `src/lib/pointcloud/live-point-frame.ts` | Versioned 18-byte point payload, CRC32, strict validation and reusable decode slots. |
+| `src/lib/pointcloud/live-frame-buffer.ts` | Fixed two/three-slot jitter buffer with newest-frame-wins backpressure. |
+| `src/lib/pointcloud/simulated-live-transport.ts` | Deterministic loss, reorder, corruption and reconnect profile used by the exhibition demo. |
+| `src/lib/pointcloud/mcap-point-recording.ts` | Lazy MCAP writer/indexed reader for the application payload; message bodies are iterated by chunk. |
 | `src/workers/point-cloud.worker.ts` | Off-thread parse, streams transferable chunks. |
 | `src/stores/pointCloudStore.ts` | Product state, display prefs, epoch cancellation. |
 | `src/components/PointCloudPanel.tsx` | The UI. Uses the shared `ViewportPanel` shell, so it is a right-hand card on desktop and a two-detent bottom sheet on a phone, like the map and solar panels. |

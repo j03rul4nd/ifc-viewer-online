@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">IFC video placement modes on 3D terrain</title>
+  <desc id="desc">Three side-by-side diagrams compare a construction video placed as a screen, draped over terrain, and used as a camera-facing billboard beside an IFC pavilion.</desc>
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0b1119"/><stop offset="1" stop-color="#171724"/></linearGradient>
+    <linearGradient id="terrain" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#334155"/><stop offset="1" stop-color="#172033"/></linearGradient>
+    <linearGradient id="video" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f59e0b"/><stop offset=".5" stop-color="#fb7185"/><stop offset="1" stop-color="#5e6ad2"/></linearGradient>
+  </defs>
+  <rect width="1600" height="900" rx="40" fill="url(#bg2)"/>
+  <text x="100" y="115" fill="#f8fafc" font-family="Inter,Segoe UI,sans-serif" font-size="50" font-weight="700">Place video in the same 3D frame as IFC</text>
+  <text x="100" y="168" fill="#94a3b8" font-family="Inter,Segoe UI,sans-serif" font-size="25">Choose a presentation mode, then control metric position, rotation, scale and opacity</text>
+
+  <g font-family="Inter,Segoe UI,sans-serif">
+    <g transform="translate(80 250)">
+      <rect width="450" height="520" rx="28" fill="#111827" stroke="#334155" stroke-width="2"/>
+      <path d="M35 380Q120 315 215 350T415 320V450H35Z" fill="url(#terrain)"/>
+      <path d="M210 360V190h190v170" fill="none" stroke="#22d3ee" stroke-width="8"/>
+      <rect x="225" y="205" width="160" height="105" rx="7" fill="url(#video)" stroke="#fed7aa" stroke-width="4"/>
+      <path d="M289 238l45 20-45 20z" fill="#fff" opacity=".9"/>
+      <text x="225" y="70" text-anchor="middle" fill="#f8fafc" font-size="30" font-weight="700">Screen</text>
+      <text x="225" y="110" text-anchor="middle" fill="#94a3b8" font-size="20">Vertical project monitor</text>
+      <text x="225" y="480" text-anchor="middle" fill="#cbd5e1" font-size="19">Best for inspections and briefings</text>
+    </g>
+
+    <g transform="translate(575 250)">
+      <rect width="450" height="520" rx="28" fill="#111827" stroke="#334155" stroke-width="2"/>
+      <path d="M35 380Q120 315 215 350T415 320V450H35Z" fill="url(#terrain)"/>
+      <path d="M100 365l140-78 125 52-143 83z" fill="url(#video)" opacity=".76" stroke="#fed7aa" stroke-width="4"/>
+      <path d="M125 330l85-50 90 37" fill="none" stroke="#fff" stroke-width="5" opacity=".8"/>
+      <path d="M122 380V245M122 245l85-45 85 45v104M207 200v108" fill="none" stroke="#22d3ee" stroke-width="7"/>
+      <text x="225" y="70" text-anchor="middle" fill="#f8fafc" font-size="30" font-weight="700">Terrain overlay</text>
+      <text x="225" y="110" text-anchor="middle" fill="#94a3b8" font-size="20">Ground-aligned evidence</text>
+      <text x="225" y="480" text-anchor="middle" fill="#cbd5e1" font-size="19">Best for progress and site context</text>
+    </g>
+
+    <g transform="translate(1070 250)">
+      <rect width="450" height="520" rx="28" fill="#111827" stroke="#334155" stroke-width="2"/>
+      <path d="M35 380Q120 315 215 350T415 320V450H35Z" fill="url(#terrain)"/>
+      <path d="M100 380V245M100 245l85-45 85 45v120M185 200v120" fill="none" stroke="#22d3ee" stroke-width="7"/>
+      <g transform="translate(215 180)">
+        <rect width="175" height="120" rx="9" fill="url(#video)" stroke="#fed7aa" stroke-width="4"/>
+        <path d="M70 38l45 22-45 22z" fill="#fff" opacity=".9"/>
+      </g>
+      <path d="M390 335q-55 30-115 0" fill="none" stroke="#a78bfa" stroke-width="5" stroke-dasharray="9 9"/>
+      <text x="225" y="70" text-anchor="middle" fill="#f8fafc" font-size="30" font-weight="700">Billboard</text>
+      <text x="225" y="110" text-anchor="middle" fill="#94a3b8" font-size="20">Always faces the camera</text>
+      <text x="225" y="480" text-anchor="middle" fill="#cbd5e1" font-size="19">Best for fairs and guided demos</text>
+    </g>
+  </g>
+</svg>

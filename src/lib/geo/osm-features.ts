@@ -80,6 +80,14 @@ export interface FeatureStyle {
    */
   crossing?: boolean
   /**
+   * Mapped lane count on a carriageway. Width already accounts for it, but the
+   * MARKINGS cannot be inferred from width alone — a 12 m one-way slip road and
+   * a 12 m four-lane avenue are the same ribbon and want different paint.
+   */
+  lanes?: number
+  /** Traffic runs one way only — so there is no centre line to divide it. */
+  oneway?: boolean
+  /**
    * How coarse the surface is, 0-1 — a mown pitch vs heath, fine beach sand vs
    * shingle, an ice field vs loose scree. Drives grain size, ripple wavelength
    * and bump strength in the procedural materials. One number instead of a
@@ -380,7 +388,17 @@ export function resolveFeatureStyle(
     if (isCrossing(t)) {
       return { roofShape: 'flat', roofHeightM: 0, crossing: true, tone: CROSSING_TONE }
     }
-    return { roofShape: 'flat', roofHeightM: 0, tone: roadTone(t) }
+    const lanes = parseFloat(t['lanes'] ?? '')
+    const oneway = (t['oneway'] ?? '').toLowerCase()
+    return {
+      roofShape: 'flat', roofHeightM: 0, tone: roadTone(t),
+      lanes: Number.isFinite(lanes) && lanes > 0 ? Math.min(12, Math.round(lanes)) : undefined,
+      // A roundabout is one-way by definition even when nobody tagged it, and
+      // painting a centre line down a ring road is the giveaway of a renderer
+      // that never looked at the topology.
+      oneway: (oneway !== '' && oneway !== 'no')
+        || t['junction'] === 'roundabout' || t['junction'] === 'circular',
+    }
   }
 
   if (kind === 'rail') {
@@ -639,31 +657,52 @@ export function buildFeaturesQuery(
 ): string {
   const b = `${bbox.south.toFixed(6)},${bbox.west.toFixed(6)},${bbox.north.toFixed(6)},${bbox.east.toFixed(6)}`
   const area = (sel: string): string => `way${sel}(${b});relation${sel}(${b});`
+
+  // Each GROUP gets its own result set and its own `out`, so each one gets its
+  // own share of the budget.
+  //
+  // This used to be a single union with one `out geom N`, and that is a trap:
+  // Overpass truncates the combined set, and the order it emits in is nothing to
+  // do with the order the query asks in. Measured on a 1.4 km box over Poblenou,
+  // the first 6000 elements were 5581 land-cover polygons and only 347 of the
+  // 3113 highways — so the app drew 11 % of the streets and looked like the road
+  // renderer was broken. Land cover is a handful of enormous polygons; roads are
+  // thousands of small ways. Letting them compete for one number means the big
+  // cheap ones always win.
+  //
+  // Shares are weighted by what a SITE VIEW is actually for: the street network
+  // is the skeleton everything else hangs off, so it is funded first.
+  const groups: Array<[string, number]> = [
+    // The street network, and the bridges that carry it.
+    [`way["highway"](${b});way["railway"](${b});`, Math.round(maxElements * 0.55)],
+    [`way["bridge"]["highway"](${b});way["bridge"]["railway"](${b});`
+      + area('["man_made"="bridge"]'), Math.round(maxElements * 0.05)],
+    [area('["building"]'), Math.round(maxElements * 0.45)],
+    // Ground cover: few polygons, huge area. A tight cap costs nothing visible.
+    [
+      area('["natural"="water"]')
+      + area('["waterway"="riverbank"]')
+      + `way["waterway"~"^(river|stream|canal|ditch|drain)$"](${b});`
+      + area('["landuse"~"^(reservoir|basin)$"]')
+      + area('["leisure"~"^(park|garden|pitch|golf_course|nature_reserve)$"]')
+      + area('["landuse"~"^(grass|forest|meadow|village_green|recreation_ground|allotments|orchard|vineyard|cemetery)$"]')
+      + area('["natural"~"^(wood|scrub|grassland|heath|wetland)$"]')
+      + area('["natural"~"^(beach|sand|dune|shingle|mud)$"]')
+      + area('["natural"~"^(bare_rock|rock|scree|stone|glacier)$"]')
+      + area('["landuse"~"^(sand|quarry)$"]')
+      + area('["golf"="bunker"]'),
+      Math.round(maxElements * 0.30),
+    ],
+    [area('["railway"="platform"]'), Math.round(maxElements * 0.02)],
+    // Nodes are cheap — one coordinate each — so they are not taken from the
+    // geometry budget that the ways are competing over.
+    [`node["natural"="tree"](${b});`, Math.round(maxElements * 0.35)],
+    [`node["highway"="traffic_signals"](${b});`, Math.round(maxElements * 0.05)],
+  ]
+
   return [
     `[out:json][timeout:${timeoutS}];`,
-    '(',
-    area('["building"]'),
-    area('["natural"="water"]'),
-    area('["waterway"="riverbank"]'),
-    `way["waterway"~"^(river|stream|canal|ditch|drain)$"](${b});`,
-    area('["landuse"~"^(reservoir|basin)$"]'),
-    area('["leisure"~"^(park|garden|pitch|golf_course|nature_reserve)$"]'),
-    area('["landuse"~"^(grass|forest|meadow|village_green|recreation_ground|allotments|orchard|vineyard|cemetery)$"]'),
-    area('["natural"~"^(wood|scrub|grassland|heath|wetland)$"]'),
-    area('["natural"~"^(beach|sand|dune|shingle|mud)$"]'),
-    area('["natural"~"^(bare_rock|rock|scree|stone|glacier)$"]'),
-    area('["landuse"~"^(sand|quarry)$"]'),
-    area('["golf"="bunker"]'),
-    area('["man_made"="bridge"]'),
-    `way["bridge"]["highway"](${b});`,
-    `way["bridge"]["railway"](${b});`,
-    `node["natural"="tree"](${b});`,
-    `node["highway"="traffic_signals"](${b});`,
-    `way["highway"](${b});`,
-    `way["railway"](${b});`,
-    area('["railway"="platform"]'),
-    ');',
-    `out geom ${maxElements};`,
+    ...groups.map(([body, cap]) => `(${body});out geom ${Math.max(1, cap)};`),
   ].join('')
 }
 

@@ -23,7 +23,40 @@ export type ContentBlock =
   | { type: 'ol'; items: string[] }
   | { type: 'code'; text: string; lang?: string }
   | { type: 'callout'; variant: 'tip' | 'warning' | 'info'; text: string }
-  | { type: 'image'; src: string; alt: string; caption?: string }
+  | {
+      type: 'image'
+      src: string
+      alt: string
+      caption?: string
+      width?: number
+      height?: number
+      /** Responsive alternatives of the same composition. */
+      srcSet?: Array<{ src: string; width: number }>
+      sizes?: string
+      credit?: string
+      license?: string
+    }
+  | {
+      type: 'spatial-demo'
+      demo: 'poblenou-scan-ifc' | 'pavilion-lidar-replay' | 'pavilion-video-terrain'
+      title: string
+      description: string
+      poster: string
+      posterAlt: string
+      launchLabel?: string
+      readyLabel?: string
+      height?: number
+    }
+  | {
+      type: 'video'
+      src: string
+      poster: string
+      title: string
+      description: string
+      caption?: string
+      width?: number
+      height?: number
+    }
   | {
       type: 'ifc-demo'
       modelId: string
@@ -83,12 +116,26 @@ export interface BlogPost {
   author: string
   featured?: boolean
   heroImage?: string
+  heroAlt?: string
+  /** High-resolution 16:9, 4:3 and 1:1 variants used by Article structured data. */
+  heroImageVariants?: Array<{ src: string; width: number; height: number }>
+  /** Connects translated versions for hreflang generation. */
+  translationKey?: string
+  dateModified?: string
   /** BCP-47 language code. Default 'en'. */
   lang?: string
   /** SEO keywords for JSON-LD structured data. */
   keywords?: string[]
   /** FAQ entries — rendered as FAQPage schema in the static HTML shell. */
   faqs?: { q: string; a: string }[]
+  videos?: Array<{
+    name: string
+    description: string
+    thumbnailUrl: string
+    contentUrl: string
+    uploadDate: string
+    duration: string
+  }>
   content: ContentBlock[]
 }
 
@@ -6745,6 +6792,317 @@ Archive report → Upload to CDE`,
     ],
   },
 
+  // ── Spatial media series: IFC + point clouds + temporal data ─────────────
+
+  {
+    slug: 'ifc-point-cloud-browser-scan-to-bim',
+    translationKey: 'ifc-point-cloud-scan-to-bim',
+    title: 'IFC + Point Clouds in the Browser: A Practical Scan-to-BIM Workflow',
+    excerpt: 'Overlay a measured or synthetic point cloud with an IFC model, understand what makes alignment trustworthy, and try the workflow in a live browser example.',
+    date: '2026-08-21',
+    dateModified: '2026-08-21',
+    readTimeMin: 11,
+    category: 'Digital Twins',
+    categorySlug: 'digital-twins',
+    author: 'IFC Viewer Team',
+    heroImage: 'blog/images/ifc-point-cloud-scan-to-bim-1600x900.jpg',
+    heroAlt: 'Architect reviewing a cyan IFC pavilion aligned with a coloured LiDAR point cloud on a desktop monitor',
+    heroImageVariants: [
+      { src: 'blog/images/ifc-point-cloud-scan-to-bim-1600x900.jpg', width: 1600, height: 900 },
+      { src: 'blog/images/ifc-point-cloud-scan-to-bim-1200x900.jpg', width: 1200, height: 900 },
+      { src: 'blog/images/ifc-point-cloud-scan-to-bim-1200x1200.jpg', width: 1200, height: 1200 },
+    ],
+    keywords: ['IFC point cloud', 'Scan to BIM browser', 'LiDAR BIM overlay', 'point cloud viewer web', 'IFC LAS viewer'],
+    faqs: [
+      { q: 'Can a browser display IFC and a point cloud together?', a: 'Yes. A WebGL viewer can parse IFC geometry and point-cloud formats such as LAS, LAZ, COPC, PLY, PCD or XYZ, then render both in one local coordinate frame. The difficult part is not drawing them; it is proving units, axes and alignment.' },
+      { q: 'Does matching bounding boxes prove Scan-to-BIM alignment?', a: 'No. Similar bounds are only evidence for an initial placement. Trustworthy alignment comes from a shared CRS or a documented transform validated against control points or model surfaces.' },
+      { q: 'Is the live example a measured survey?', a: 'The inline live example uses a synthetic, georeferenced Poblenou site scan so it loads quickly and deterministically. The article screenshots also show the real CRAS Labs Scan-vs-BIM dataset and identify its source.' },
+    ],
+    content: [
+      { type: 'p', text: 'Putting an IFC model and a point cloud in the same WebGL scene is visually impressive. Making the comparison defensible is a different job. A useful Scan-to-BIM viewer has to preserve source units, identify the up axis, resolve coordinate systems, expose any manual transform and keep enough points on screen to reveal deviations without exhausting the GPU.' },
+      { type: 'p', text: 'This guide separates those concerns. The live example below uses a small synthetic pair for a fast exhibition experience; the validation images use a real terrestrial laser scanning dataset so that a concept illustration is never presented as survey evidence.' },
+      {
+        type: 'stat-row',
+        stats: [
+          { value: 7, suffix: '', label: 'supported point formats' },
+          { value: 999491, suffix: '', label: 'points in the CRAS web sample' },
+          { value: 3, suffix: '', label: 'alignment confidence levels' },
+          { value: 0, suffix: ' uploads', label: 'required for local files' },
+        ],
+      },
+      { type: 'h2', text: 'Try IFC + a Point Cloud Live' },
+      { type: 'p', text: 'Start the example to load a lightweight IFC4 pavilion and its matching LAS survey in the real viewer. Orbit the scene, inspect the overlay and open the full viewer if you want the complete point-cloud controls. This pair is synthetic and uses a shared ETRS89 / UTM 31N reference; it demonstrates the workflow, not the accuracy of a physical instrument.' },
+      {
+        type: 'spatial-demo',
+        demo: 'poblenou-scan-ifc',
+        title: 'Poblenou Pavilion — IFC + LAS overlay',
+        description: 'Interactive browser example using a bundled IFC4 pavilion and a 150,000-point synthetic site survey with a shared projected CRS.',
+        poster: 'blog/images/ifc-point-cloud-scan-to-bim-800x450.jpg',
+        posterAlt: 'Preview of an IFC steel pavilion combined with a coloured point cloud',
+        launchLabel: 'Load IFC + point cloud',
+        readyLabel: 'IFC and LAS are ready — drag to orbit',
+      },
+      { type: 'h2', text: 'What Alignment Actually Means' },
+      { type: 'p', text: ['IFC can declare a projected coordinate reference through map conversion data. A point cloud may carry an EPSG code, local survey coordinates or no reference at all. When both sources declare the same CRS, placement can be exact in the mathematical sense. When they do not, the viewer needs a documented transform and must label its confidence. The ', { text: 'buildingSMART IfcMapConversion definition', href: 'https://standards.buildingsmart.org/IFC/RELEASE/IFC4_3/HTML/lexical/IfcMapConversion.htm' }, ' describes the coordinate operation on the IFC side.'] },
+      {
+        type: 'table',
+        headers: ['Alignment rung', 'Evidence', 'What the UI should say'],
+        rows: [
+          ['Exact', 'Common declared CRS and valid map conversion', 'Aligned by shared coordinate reference'],
+          ['Inferred', 'Compatible units, axes and geometry bounds', 'Probable placement — verify against control'],
+          ['Manual', 'User translation, rotation and scale', 'Placed manually — not survey control'],
+        ],
+        caption: 'A confidence label prevents a convenient visual overlay from being mistaken for surveyed truth.',
+      },
+      {
+        type: 'image',
+        src: 'blog/images/scan-to-bim-ifc-point-cloud-alignment.jpg',
+        alt: 'Perspective view of the CRAS Labs coloured point cloud aligned with translucent IFC walls, doors and windows',
+        caption: 'Real Scan-vs-BIM alignment: the CRAS Labs TLS web sample over the unmodified IFC model.',
+        width: 1200,
+        height: 800,
+        credit: 'Abreu et al. · CRAS Labs @ FEUP',
+        license: 'https://creativecommons.org/licenses/by/4.0/',
+      },
+      { type: 'h2', text: 'A Browser Pipeline That Survives Large Scans' },
+      { type: 'p', text: 'The browser should never assume that file size equals resident GPU size. Headers are inspected before allocating. The parser applies a point budget, workers keep decoding off the UI thread, and the renderer stores only the attributes the current display mode needs. For spatially indexed COPC or 3D Tiles, the camera selects visible nodes instead of downloading the whole survey.' },
+      { type: 'p', text: ['OGC describes 3D Tiles as a hierarchical standard for streaming massive geospatial content including BIM/CAD and point clouds. That hierarchy is the important idea: screen-space error and view selection decide what to load. See the ', { text: 'official OGC 3D Tiles overview', href: 'https://www.ogc.org/standards/3dtiles/' }, '.'] },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '🧭', title: 'Keep a local origin', body: 'Global coordinates stay in Float64 metadata; GPU vertices remain small local values to avoid visible jitter.' },
+          { icon: '🧱', title: 'Budget points, not files', body: 'A declared count and a resident count are different facts. Show both when sampling or truncation occurs.' },
+          { icon: '🎨', title: 'Reuse GPU attributes', body: 'RGB, intensity, classification and deviation views should share buffers instead of cloning the cloud.' },
+          { icon: '📦', title: 'Stream indexed formats', body: 'COPC or tiled data lets the camera request spatial nodes while a plain LAS file remains a one-shot decode.' },
+        ],
+      },
+      {
+        type: 'image',
+        src: 'blog/images/ifc-point-cloud-section-comparison.jpg',
+        alt: 'Section view cutting through an IFC model and its registered point cloud to compare wall and ceiling surfaces',
+        caption: 'A section makes offsets easier to inspect than an attractive perspective view.',
+        width: 1200,
+        height: 800,
+        credit: 'Abreu et al. · CRAS Labs @ FEUP',
+        license: 'https://creativecommons.org/licenses/by/4.0/',
+      },
+      { type: 'h2', text: 'How to Present It at a Fair' },
+      { type: 'ol', items: [
+        'Begin with IFC only so the audience understands the designed geometry.',
+        'Reveal the scan at medium opacity and explain the alignment confidence before discussing deviations.',
+        'Switch to a section or deviation colour mode; do not rely only on a photogenic perspective.',
+        'Pick one point and show source coordinates, classification and distance to make the scene operational.',
+        'Finish by loading the offline bundled example again: a repeatable demo is more persuasive than venue Wi-Fi.',
+      ]},
+      { type: 'callout', variant: 'warning', text: 'A point cloud that visually overlaps an IFC is not automatically survey-accurate. Keep instrument accuracy, registration error, sampling error, modelling tolerance and residual alignment error as separate quantities.' },
+      { type: 'p', text: ['The same viewer can also handle time rather than only space. Continue with ', { text: 'the real-time LiDAR architecture and MCAP replay guide', to: 'real-time-lidar-web-digital-twin-mcap' }, ', or add visual project evidence with ', { text: 'IFC video placed on 3D terrain', to: 'ifc-video-3d-terrain-construction-progress' }, '.'] },
+    ],
+  },
+
+  {
+    slug: 'real-time-lidar-web-digital-twin-mcap',
+    translationKey: 'real-time-lidar-web-mcap',
+    title: 'Real-Time LiDAR in a Web Digital Twin: MCAP Replay, Backpressure and IFC',
+    excerpt: 'A realistic architecture for temporal point clouds in the browser: bounded buffers, timestamped binary frames, fault telemetry and an honest simulated IFC + LiDAR replay.',
+    date: '2026-08-21',
+    dateModified: '2026-08-21',
+    readTimeMin: 12,
+    category: 'Digital Twins',
+    categorySlug: 'digital-twins',
+    author: 'IFC Viewer Team',
+    heroImage: 'blog/images/real-time-lidar-digital-twin-1600x900.jpg',
+    heroAlt: 'Industrial LiDAR scanner and rugged laptop displaying a temporal point cloud aligned with an IFC steel pavilion',
+    heroImageVariants: [
+      { src: 'blog/images/real-time-lidar-digital-twin-1600x900.jpg', width: 1600, height: 900 },
+      { src: 'blog/images/real-time-lidar-digital-twin-1200x900.jpg', width: 1200, height: 900 },
+      { src: 'blog/images/real-time-lidar-digital-twin-1200x1200.jpg', width: 1200, height: 1200 },
+    ],
+    keywords: ['real-time LiDAR web', 'temporal point cloud browser', 'MCAP point cloud replay', 'IFC digital twin', 'WebSocket point cloud'],
+    faqs: [
+      { q: 'Is the inline LiDAR example connected to a physical sensor?', a: 'No. It is clearly labelled simulated and deterministic. It validates temporal playback, binary parsing, GPU updates, fault handling and IFC alignment without claiming that a sensor or gateway is connected.' },
+      { q: 'Why keep only two or three point-cloud frames?', a: 'For a live view, a fresh frame is more useful than an old one. A bounded newest-valid-frame-wins buffer prevents network jitter or slow rendering from growing latency indefinitely.' },
+      { q: 'Can the custom MCAP recording open as ROS PointCloud2 automatically?', a: 'Not automatically. MCAP is a container for timestamped messages with arbitrary serialization. The demo uses an application-owned binary point-frame schema; ROS PointCloud2 and Foxglove PointCloud require explicit adapters.' },
+    ],
+    content: [
+      { type: 'p', text: 'A video of a point cloud and a live point-cloud stream are not the same product. Video has fixed pixels and mature hardware codecs. A temporal point cloud has coordinates, attributes, poses and timestamps that users may inspect or compare with IFC. That flexibility creates a harder transport and memory problem.' },
+      { type: 'p', text: 'The architecture below treats recordings and live sources as two adapters feeding one bounded frame contract. It lets a team validate playback, seeking, corruption handling and GPU updates with recorded data before purchasing or integrating a sensor.' },
+      {
+        type: 'image',
+        src: 'blog/images/real-time-lidar-web-pipeline.svg',
+        alt: 'Five-stage real-time LiDAR web pipeline from sensor and edge filtering through binary transport and a two-to-three-frame buffer to an IFC point-cloud overlay',
+        caption: 'The browser receives bounded, validated frames; filtering and coordinate normalization belong at the edge.',
+        width: 1600,
+        height: 900,
+        credit: 'IFC Viewer Online',
+      },
+      { type: 'h2', text: 'Try the Temporal IFC + LiDAR Replay' },
+      { type: 'p', text: 'The following live example generates a deterministic scan front around the matching IFC pavilion. The same frame passes through binary encoding, CRC validation and a fixed three-slot transport buffer before it reaches the GPU. Switch to the full viewer to inject deterministic loss, reordering, corruption and a reconnect window.' },
+      {
+        type: 'spatial-demo',
+        demo: 'pavilion-lidar-replay',
+        title: 'Operations Pavilion — simulated temporal LiDAR',
+        description: 'A 16-second, 12 FPS simulated scan aligned to a bundled IFC4 pavilion. This proves the playback pipeline; it is not a physical-sensor claim.',
+        poster: 'blog/images/real-time-lidar-digital-twin-800x450.jpg',
+        posterAlt: 'Preview of a construction pavilion being observed by a LiDAR scanner and temporal point-cloud display',
+        launchLabel: 'Start simulated LiDAR replay',
+        readyLabel: 'Simulated LiDAR is playing — drag to orbit',
+      },
+      { type: 'h2', text: 'The Minimum Frame Contract' },
+      { type: 'p', text: 'A transport packet needs more than XYZ values. Sequence numbers reveal loss and reordering. Nanosecond timestamps align points with video, pose and annotations. A declared origin keeps large world coordinates out of Float32 GPU vertices. Attribute flags prevent the UI from pretending that intensity or classification exists when the source never provided it.' },
+      {
+        type: 'table',
+        headers: ['Field', 'Why it exists', 'Failure caught'],
+        rows: [
+          ['sequence', 'Monotonic frame identity', 'Loss, duplicate or reorder'],
+          ['timestampNs', 'Common temporal reference', 'Video/pose drift'],
+          ['origin + bounds', 'Local precision and culling', 'Jitter or absurd allocation'],
+          ['pointCount + stride', 'Payload budget', 'Truncated or malicious packet'],
+          ['attribute flags', 'Explicit semantics', 'Invented RGB/intensity/class'],
+          ['CRC32', 'Payload integrity', 'Corruption in storage or transport'],
+        ],
+      },
+      { type: 'h2', text: 'Backpressure: Newest Valid Frame Wins' },
+      { type: 'p', text: 'A reliable network stream can still produce a bad live experience. If decoding takes 120 ms while frames arrive every 80 ms, a normal queue grows forever and the viewer becomes a delayed recording. The correct live policy is bounded: retain two or three reusable slots, reject invalid frames, discard superseded pending work and present latency and drop counts to the user.' },
+      {
+        type: 'comparison',
+        left: {
+          label: 'Unbounded queue',
+          color: 'neutral',
+          items: ['Latency grows during a slow period', 'Old frames consume memory and decoder time', 'The UI still says connected while showing the past', 'Recovery can take longer than the incident'],
+        },
+        right: {
+          label: 'Bounded live buffer',
+          color: 'accent',
+          items: ['Memory stays constant', 'The freshest valid frame replaces stale work', 'Drops and age remain visible', 'Recovery is immediate when capacity returns'],
+        },
+      },
+      { type: 'h2', text: 'MCAP for Recording and Reproducible Replay' },
+      { type: 'p', text: ['MCAP is a modular container for timestamped publish/subscribe messages with arbitrary serialization. Its chunks and indexes support lookup by time and topic, which is exactly what a replay timeline needs. The ', { text: 'MCAP format specification', href: 'https://mcap.dev/spec' }, ' describes the container and random-access summary records.'] },
+      { type: 'p', text: ['Container compatibility is not message compatibility. ROS publishes organized or unordered points through ', { text: 'sensor_msgs/PointCloud2', href: 'https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/msg/PointCloud2.msg' }, '; Foxglove defines its own ', { text: 'PointCloud schema', href: 'https://docs.foxglove.dev/docs/sdk/schemas/point-cloud' }, '. The demo MCAP uses a versioned application payload, so importing either ecosystem requires a named adapter rather than hopeful byte casting.'] },
+      {
+        type: 'feature-grid',
+        items: [
+          { icon: '📼', title: 'Recorded first', body: 'A licensed fixture makes pause, seek, reconnect and regression tests reproducible before hardware integration.' },
+          { icon: '📡', title: 'Live adapter second', body: 'WebSocket or WebTransport changes delivery, not the frame semantics consumed by the renderer.' },
+          { icon: '📊', title: 'Visible telemetry', body: 'Latency, frame age, loss, reordering, invalid packets and reconnects belong in the product UI.' },
+          { icon: '🧪', title: 'Fault injection', body: 'Deterministic faults turn conference Wi-Fi failure from a surprise into a rehearsed state transition.' },
+        ],
+      },
+      { type: 'callout', variant: 'info', text: 'The inline source is simulated. Calling it LIVE would require a real gateway, a documented sensor, calibration/pose data and an end-to-end latency measurement from capture time to display time.' },
+      { type: 'p', text: ['For static measured context, return to the ', { text: 'IFC + point-cloud Scan-to-BIM workflow', to: 'ifc-point-cloud-browser-scan-to-bim' }, '. For a pixel-based resource that can use hardware video codecs and still sit inside the 3D scene, see ', { text: 'IFC + video on 3D terrain', to: 'ifc-video-3d-terrain-construction-progress' }, '.'] },
+    ],
+  },
+
+  {
+    slug: 'ifc-video-3d-terrain-construction-progress',
+    translationKey: 'ifc-video-3d-terrain',
+    title: 'IFC + Video on 3D Terrain: Construction Progress in a Browser',
+    excerpt: 'Place construction video beside IFC as a screen, a terrain overlay or a camera-facing billboard, with metric position, opacity and an offline live example.',
+    date: '2026-08-21',
+    dateModified: '2026-08-21',
+    readTimeMin: 10,
+    category: 'Digital Twins',
+    categorySlug: 'digital-twins',
+    author: 'IFC Viewer Team',
+    heroImage: 'blog/images/ifc-video-3d-terrain-1600x900.jpg',
+    heroAlt: 'Trade-fair visitors viewing an IFC pavilion, 3D terrain and construction progress video on a large display',
+    heroImageVariants: [
+      { src: 'blog/images/ifc-video-3d-terrain-1600x900.jpg', width: 1600, height: 900 },
+      { src: 'blog/images/ifc-video-3d-terrain-1200x900.jpg', width: 1200, height: 900 },
+      { src: 'blog/images/ifc-video-3d-terrain-1200x1200.jpg', width: 1200, height: 1200 },
+    ],
+    keywords: ['IFC video 3D', 'construction progress digital twin', 'video texture terrain', 'BIM video viewer', 'IFC trade fair demo'],
+    videos: [{
+      name: 'Operations Pavilion IFC + 3D video demonstration',
+      description: 'An eight-second synthetic construction-progress loop authored for the matching IFC4 operations pavilion and used as a 3D video texture.',
+      thumbnailUrl: 'blog/images/ifc-video-terrain-operations-pavilion-poster.jpg',
+      contentUrl: 'models/video-demo/operations-pavilion-progress.mp4',
+      uploadDate: '2026-08-20',
+      duration: 'PT8S',
+    }],
+    faqs: [
+      { q: 'Can an MP4 be placed inside a Three.js IFC scene?', a: 'Yes. An HTMLVideoElement can drive a VideoTexture applied to a plane in the same scene as the IFC model. The application must own and dispose the media element, texture, material and geometry.' },
+      { q: 'Which video placement mode works best at a trade fair?', a: 'A camera-facing billboard is the most robust first view because it remains legible as the presenter moves the camera. Ground overlays provide stronger spatial context but require careful placement and opacity.' },
+      { q: 'Is the Operations Pavilion clip real construction footage?', a: 'No. It is a clearly labelled synthetic eight-second loop authored with the matching IFC solely to make the offline exhibition workflow reproducible.' },
+    ],
+    content: [
+      { type: 'p', text: 'A normal video player explains time but loses space. A normal IFC viewer explains space but often loses the visual evidence captured on site. Putting the two resources in one 3D frame lets a presenter point at the designed element, the terrain context and the recorded condition without switching applications.' },
+      { type: 'p', text: 'The goal is not to drape video everywhere. It is to choose a placement mode that answers a user question: What did this camera see? Where does this progress evidence belong? Which surface or work area is being discussed?' },
+      { type: 'h2', text: 'Watch the Offline Example Clip' },
+      {
+        type: 'video',
+        src: 'models/video-demo/operations-pavilion-progress.mp4',
+        poster: 'blog/images/ifc-video-terrain-operations-pavilion-poster.jpg',
+        title: 'Operations Pavilion construction progress loop',
+        description: 'Synthetic eight-second loop paired with the bundled IFC4 pavilion.',
+        caption: 'Synthetic media authored for this repository; no real project or site is represented.',
+        width: 960,
+        height: 540,
+      },
+      { type: 'h2', text: 'Try IFC + 3D Video Live' },
+      { type: 'p', text: 'Start the live example to load the exact IFC companion, create one video texture and frame both resources together. The clip begins muted and loops locally, so the demo does not depend on a streaming service or exhibition Wi-Fi.' },
+      {
+        type: 'spatial-demo',
+        demo: 'pavilion-video-terrain',
+        title: 'Operations Pavilion — IFC + video texture',
+        description: 'Interactive WebGL example using a bundled IFC4 model and its matching synthetic progress loop as a camera-facing 3D resource.',
+        poster: 'blog/images/ifc-video-3d-terrain-800x450.jpg',
+        posterAlt: 'Preview of an IFC pavilion on 3D terrain with a construction video surface in an exhibition display',
+        launchLabel: 'Load IFC + 3D video',
+        readyLabel: 'IFC and video are ready — drag to orbit',
+      },
+      { type: 'h2', text: 'Three Placement Modes, Three Different Jobs' },
+      {
+        type: 'image',
+        src: 'blog/images/ifc-video-terrain-placement-modes.svg',
+        alt: 'Comparison of a construction video placed as a vertical screen, a ground-aligned terrain overlay and a camera-facing billboard beside an IFC pavilion',
+        caption: 'Screen, ground overlay and billboard are presentation choices, not interchangeable visual effects.',
+        width: 1600,
+        height: 900,
+        credit: 'IFC Viewer Online',
+      },
+      {
+        type: 'table',
+        headers: ['Mode', 'Best use', 'Main risk'],
+        rows: [
+          ['Screen', 'Inspection station, façade or equipment camera', 'Looks detached if its 3D position is arbitrary'],
+          ['Ground / terrain', 'Progress area, drone context, excavation evidence', 'Z-fighting or false precision on uneven terrain'],
+          ['Billboard', 'Fairs, guided tours and quick storytelling', 'Less spatially authoritative because it follows the camera'],
+        ],
+      },
+      { type: 'h2', text: 'Opacity and Terrain Are Product Controls' },
+      { type: 'p', text: 'Opacity is useful when the audience needs to see designed geometry through recorded pixels. It is not a decoration slider: at low opacity the video may become impossible to interpret, while at full opacity it can hide the IFC evidence being discussed. A useful default keeps the media legible and offers a one-click comparison state.' },
+      { type: 'p', text: 'A ground video also needs a metric width, local position, yaw and a small surface offset. If the application can sample the visible terrain or scene meshes, it can snap the plane onto the surface. The UI should still expose the resulting placement; an automatic snap is a convenience, not a surveyed transform.' },
+      {
+        type: 'image',
+        src: 'blog/images/ifc-video-terrain-operations-pavilion-poster.jpg',
+        alt: 'Operations Pavilion IFC model shown with a warm construction progress video frame prepared for placement as a 3D texture',
+        caption: 'The stable poster is used by the player, social metadata and video search markup.',
+        width: 960,
+        height: 540,
+        credit: 'IFC Viewer Online · Blender/Bonsai synthetic asset',
+      },
+      { type: 'h2', text: 'Performance and Lifecycle Rules' },
+      { type: 'ul', items: [
+        'Create the HTMLVideoElement and WebGL VideoTexture only after a user opens the example or the resource enters the viewport.',
+        'Reuse one texture while changing opacity or placement; do not recreate the decoder for every slider movement.',
+        'Pause video when hidden, and dispose the media element, texture, material, geometry and object URL when removed.',
+        'Keep a static poster in the page so users and crawlers have useful content before WebGL starts.',
+        'Prefer a small local MP4/WebM loop for fairs, then add WebRTC camera or screen capture as an explicitly live source.',
+      ]},
+      { type: 'h2', text: 'A Five-Minute Fair Narrative' },
+      { type: 'ol', items: [
+        'Open the IFC alone and frame the pavilion.',
+        'Load the matching clip as a billboard so every attendee can see it immediately.',
+        'Switch to ground mode and adjust opacity to reveal the spatial relationship.',
+        'Move the camera while the clip continues, demonstrating that it is part of the 3D scene rather than an overlay on the webpage.',
+        'End by loading the same pair offline again and explain how a real camera, shared screen or recorded inspection could replace the synthetic source.',
+      ]},
+      { type: 'callout', variant: 'tip', text: 'For discoverability, keep the MP4 and poster at stable crawlable URLs and describe the same video consistently in the visible caption, VideoObject markup and sitemap.' },
+      { type: 'p', text: ['If the evidence must remain inspectable as XYZ points rather than pixels, use the ', { text: 'temporal LiDAR and MCAP architecture', to: 'real-time-lidar-web-digital-twin-mcap' }, '. If the comparison is static and measured, start with ', { text: 'IFC + point-cloud Scan-to-BIM alignment', to: 'ifc-point-cloud-browser-scan-to-bim' }, '.'] },
+    ],
+  },
+
 ]
 
 // ─── Posts en español ─────────────────────────────────────────────────────────
@@ -6968,6 +7326,250 @@ export const BLOG_POSTS_ES: BlogPost[] = [
         schema: 'IFC4',
         size: '14 MB',
       },
+    ],
+  },
+
+  {
+    slug: 'ifc-nube-de-puntos-scan-to-bim-navegador',
+    translationKey: 'ifc-point-cloud-scan-to-bim',
+    title: 'IFC + nube de puntos en el navegador: flujo Scan-to-BIM práctico',
+    excerpt: 'Superpone una nube de puntos con un modelo IFC, distingue una alineación fiable de una coincidencia visual y prueba el flujo completo en un ejemplo 3D interactivo.',
+    date: '2026-08-21',
+    dateModified: '2026-08-21',
+    readTimeMin: 11,
+    category: 'Gemelos digitales',
+    categorySlug: 'digital-twins',
+    author: 'IFC Viewer Team',
+    lang: 'es',
+    heroImage: 'blog/images/ifc-point-cloud-scan-to-bim-1600x900.jpg',
+    heroAlt: 'Técnico revisando un pabellón IFC en color cian alineado con una nube de puntos LiDAR coloreada',
+    heroImageVariants: [
+      { src: 'blog/images/ifc-point-cloud-scan-to-bim-1600x900.jpg', width: 1600, height: 900 },
+      { src: 'blog/images/ifc-point-cloud-scan-to-bim-1200x900.jpg', width: 1200, height: 900 },
+      { src: 'blog/images/ifc-point-cloud-scan-to-bim-1200x1200.jpg', width: 1200, height: 1200 },
+    ],
+    keywords: ['IFC nube de puntos', 'Scan to BIM navegador', 'visor LAS IFC', 'LiDAR BIM web', 'comparar nube de puntos IFC'],
+    faqs: [
+      { q: '¿Se pueden visualizar IFC y LAS juntos en el navegador?', a: 'Sí. WebGL permite renderizar la geometría IFC y formatos de nube como LAS, LAZ, COPC, PLY, PCD o XYZ en una misma escena. La dificultad real es justificar unidades, ejes y transformación.' },
+      { q: '¿Hacer coincidir las cajas envolventes demuestra la alineación?', a: 'No. Sirve como colocación inicial, pero una alineación fiable necesita un CRS compartido o una transformación documentada y verificada con control o superficies del modelo.' },
+      { q: '¿La demo interactiva procede de un levantamiento real?', a: 'La demo usa una nube sintética georreferenciada de Poblenou para que la carga sea rápida y repetible. Las capturas del artículo también muestran el conjunto real CRAS Labs y citan su procedencia.' },
+    ],
+    content: [
+      { type: 'p', text: 'Dibujar IFC y puntos en una misma escena es sencillo comparado con demostrar que ocupan el mismo sistema de referencia. Un visor Scan-to-BIM útil debe conservar las unidades de origen, resolver el eje vertical, documentar el CRS o la transformación manual y limitar los puntos residentes sin ocultar que se ha aplicado muestreo.' },
+      { type: 'p', text: 'Este artículo separa la demostración visual de la evidencia métrica. El ejemplo en vivo utiliza un conjunto sintético ligero; las imágenes de validación proceden de un escaneado láser terrestre real.' },
+      { type: 'h2', text: 'Prueba IFC + nube de puntos en vivo' },
+      {
+        type: 'spatial-demo',
+        demo: 'poblenou-scan-ifc',
+        title: 'Pabellón Poblenou — superposición IFC + LAS',
+        description: 'Ejemplo interactivo con un pabellón IFC4 y una nube sintética de 150.000 puntos que comparten ETRS89 / UTM 31N.',
+        poster: 'blog/images/ifc-point-cloud-scan-to-bim-800x450.jpg',
+        posterAlt: 'Vista previa de un pabellón IFC combinado con una nube de puntos coloreada',
+        launchLabel: 'Cargar IFC + nube de puntos',
+        readyLabel: 'IFC y LAS listos — arrastra para orbitar',
+      },
+      { type: 'h2', text: 'La escalera de confianza de alineación' },
+      { type: 'p', text: ['IFC puede declarar una referencia proyectada mediante IfcMapConversion. Una nube puede contener un EPSG, coordenadas locales de levantamiento o ninguna referencia. La ', { text: 'definición oficial de buildingSMART para IfcMapConversion', href: 'https://standards.buildingsmart.org/IFC/RELEASE/IFC4_3/HTML/lexical/IfcMapConversion.htm' }, ' describe la operación del lado IFC.'] },
+      {
+        type: 'table',
+        headers: ['Nivel', 'Evidencia', 'Mensaje correcto'],
+        rows: [
+          ['Exacto', 'CRS común declarado y map conversion válida', 'Alineado mediante referencia compartida'],
+          ['Inferido', 'Unidades, ejes y límites compatibles', 'Colocación probable; verificar con control'],
+          ['Manual', 'Traslación, rotación y escala del usuario', 'Colocado manualmente; no es control topográfico'],
+        ],
+      },
+      {
+        type: 'image',
+        src: 'blog/images/scan-to-bim-ifc-point-cloud-alignment.jpg',
+        alt: 'Perspectiva de la nube de puntos CRAS Labs alineada con muros, puertas y ventanas IFC translúcidos',
+        caption: 'Alineación Scan-vs-BIM real: muestra TLS de CRAS Labs sobre el IFC sin modificar.',
+        width: 1200,
+        height: 800,
+        credit: 'Abreu et al. · CRAS Labs @ FEUP',
+        license: 'https://creativecommons.org/licenses/by/4.0/',
+      },
+      { type: 'h2', text: 'Rendimiento sin perder trazabilidad' },
+      { type: 'p', text: 'El tamaño del archivo y el tamaño residente en GPU no son el mismo dato. El visor inspecciona cabeceras antes de reservar, aplica presupuesto, decodifica en workers y reutiliza buffers para RGB, intensidad, clasificación y desviación. En COPC o contenido teselado, la cámara solicita solo los nodos visibles.' },
+      { type: 'p', text: ['OGC define 3D Tiles como una jerarquía para transmitir contenido geoespacial masivo, incluyendo BIM/CAD y nubes de puntos. Consulta la ', { text: 'descripción oficial de OGC 3D Tiles', href: 'https://www.ogc.org/standards/3dtiles/' }, '.'] },
+      {
+        type: 'image',
+        src: 'blog/images/ifc-point-cloud-section-comparison.jpg',
+        alt: 'Sección transversal de un IFC y su nube registrada para comparar superficies de muro y techo',
+        caption: 'La sección revela desplazamientos que una perspectiva atractiva puede ocultar.',
+        width: 1200,
+        height: 800,
+        credit: 'Abreu et al. · CRAS Labs @ FEUP',
+        license: 'https://creativecommons.org/licenses/by/4.0/',
+      },
+      { type: 'h2', text: 'Guion corto para una feria' },
+      { type: 'ol', items: ['Muestra primero el IFC diseñado.', 'Revela la nube y explica el nivel de confianza.', 'Pasa a sección o mapa de desviación.', 'Inspecciona un punto y enseña coordenadas, clase e intensidad.', 'Reinicia la demo local para demostrar que no depende del Wi-Fi.'] },
+      { type: 'callout', variant: 'warning', text: 'Una nube que se solapa visualmente con IFC no es automáticamente precisa. Exactitud del instrumento, registro, muestreo, tolerancia BIM y error residual son cantidades diferentes.' },
+      { type: 'p', text: ['Continúa con ', { text: 'LiDAR temporal y replay MCAP', to: 'lidar-tiempo-real-web-gemelo-digital-mcap' }, ' o con ', { text: 'vídeo IFC colocado sobre terreno 3D', to: 'ifc-video-terreno-3d-seguimiento-obra' }, '.'] },
+    ],
+  },
+
+  {
+    slug: 'lidar-tiempo-real-web-gemelo-digital-mcap',
+    translationKey: 'real-time-lidar-web-mcap',
+    title: 'LiDAR en tiempo real para un gemelo digital web: MCAP, buffers e IFC',
+    excerpt: 'Arquitectura realista para nubes temporales en el navegador: frames binarios, buffer acotado, telemetría de fallos y replay IFC + LiDAR claramente simulado.',
+    date: '2026-08-21',
+    dateModified: '2026-08-21',
+    readTimeMin: 12,
+    category: 'Gemelos digitales',
+    categorySlug: 'digital-twins',
+    author: 'IFC Viewer Team',
+    lang: 'es',
+    heroImage: 'blog/images/real-time-lidar-digital-twin-1600x900.jpg',
+    heroAlt: 'Escáner LiDAR industrial y portátil mostrando una nube temporal alineada con un pabellón IFC',
+    heroImageVariants: [
+      { src: 'blog/images/real-time-lidar-digital-twin-1600x900.jpg', width: 1600, height: 900 },
+      { src: 'blog/images/real-time-lidar-digital-twin-1200x900.jpg', width: 1200, height: 900 },
+      { src: 'blog/images/real-time-lidar-digital-twin-1200x1200.jpg', width: 1200, height: 1200 },
+    ],
+    keywords: ['LiDAR tiempo real web', 'nube de puntos temporal', 'MCAP nube de puntos', 'gemelo digital IFC', 'streaming LiDAR navegador'],
+    faqs: [
+      { q: '¿La demo está conectada a un sensor físico?', a: 'No. Es una fuente determinista y claramente etiquetada como simulada. Valida reproducción, parser binario, actualización GPU y fallos sin afirmar una conexión real.' },
+      { q: '¿Por qué se conservan solo dos o tres frames?', a: 'En una vista viva un frame reciente vale más que uno antiguo. Un buffer acotado evita que una cola transforme la latencia de red en un retraso creciente.' },
+      { q: '¿El MCAP de la demo es ROS PointCloud2?', a: 'No. MCAP admite serializaciones arbitrarias. La demo usa un contrato binario propio; ROS PointCloud2 y Foxglove PointCloud necesitan adaptadores explícitos.' },
+    ],
+    content: [
+      { type: 'p', text: 'Un vídeo de una nube y un stream de puntos no son equivalentes. El stream conserva XYZ, atributos, pose y tiempo para inspección y comparación con IFC, pero exige controlar memoria, retraso, corrupción y reordenamiento.' },
+      {
+        type: 'image',
+        src: 'blog/images/real-time-lidar-web-pipeline.svg',
+        alt: 'Pipeline LiDAR web en cinco etapas desde el sensor y filtrado edge hasta transporte binario, buffer de dos o tres frames y superposición con IFC',
+        caption: 'El edge normaliza y filtra; el navegador valida y conserva únicamente frames acotados.',
+        width: 1600,
+        height: 900,
+        credit: 'IFC Viewer Online',
+      },
+      { type: 'h2', text: 'Prueba el replay temporal IFC + LiDAR' },
+      {
+        type: 'spatial-demo',
+        demo: 'pavilion-lidar-replay',
+        title: 'Pabellón de operaciones — LiDAR temporal simulado',
+        description: 'Escaneo simulado de 16 segundos a 12 FPS alineado con un IFC4. Demuestra el pipeline; no representa un sensor físico.',
+        poster: 'blog/images/real-time-lidar-digital-twin-800x450.jpg',
+        posterAlt: 'Vista previa de un pabellón observado por LiDAR y una visualización temporal de puntos',
+        launchLabel: 'Iniciar replay LiDAR simulado',
+        readyLabel: 'LiDAR simulado en reproducción — arrastra para orbitar',
+      },
+      { type: 'h2', text: 'Contrato mínimo del frame' },
+      {
+        type: 'table',
+        headers: ['Campo', 'Función', 'Problema detectado'],
+        rows: [
+          ['sequence', 'Identidad monotónica', 'Pérdida, duplicado o reorder'],
+          ['timestampNs', 'Referencia temporal común', 'Desfase con vídeo o pose'],
+          ['origin + bounds', 'Precisión local y culling', 'Jitter o reserva absurda'],
+          ['pointCount + stride', 'Presupuesto del payload', 'Paquete truncado o malicioso'],
+          ['flags', 'Semántica explícita', 'RGB, intensidad o clase inventados'],
+          ['CRC32', 'Integridad', 'Corrupción'],
+        ],
+      },
+      { type: 'h2', text: 'Backpressure: gana el frame válido más nuevo' },
+      { type: 'p', text: 'Si llegan frames cada 80 ms y decodificar tarda 120 ms, una cola normal crece indefinidamente. El visor termina mostrando el pasado aunque la conexión siga activa. El enfoque vivo conserva dos o tres slots reutilizables, descarta trabajo obsoleto y muestra edad, pérdidas, inválidos y reconexiones.' },
+      { type: 'h2', text: 'MCAP para grabar antes de conectar hardware' },
+      { type: 'p', text: ['MCAP es un contenedor modular para mensajes pub/sub con timestamp y serialización arbitraria. Sus chunks e índices permiten buscar por tiempo y topic; consulta la ', { text: 'especificación oficial de MCAP', href: 'https://mcap.dev/spec' }, '.'] },
+      { type: 'p', text: ['Compatibilidad de contenedor no significa compatibilidad de mensaje. ', { text: 'ROS sensor_msgs/PointCloud2', href: 'https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/msg/PointCloud2.msg' }, ' y ', { text: 'Foxglove PointCloud', href: 'https://docs.foxglove.dev/docs/sdk/schemas/point-cloud' }, ' requieren adaptadores definidos.'] },
+      { type: 'callout', variant: 'info', text: 'Para llamarlo LIVE todavía hacen falta gateway real, sensor identificado, calibración y pose, además de medir la latencia completa desde captura hasta pantalla.' },
+      { type: 'p', text: ['Para contexto estático vuelve al ', { text: 'flujo Scan-to-BIM con IFC y nube', to: 'ifc-nube-de-puntos-scan-to-bim-navegador' }, '. Para recursos comprimidos en píxeles, consulta ', { text: 'IFC + vídeo sobre terreno 3D', to: 'ifc-video-terreno-3d-seguimiento-obra' }, '.'] },
+    ],
+  },
+
+  {
+    slug: 'ifc-video-terreno-3d-seguimiento-obra',
+    translationKey: 'ifc-video-3d-terrain',
+    title: 'IFC + vídeo sobre terreno 3D: seguimiento de obra en el navegador',
+    excerpt: 'Coloca vídeo de obra junto al IFC como pantalla, proyección sobre terreno o billboard, con posición métrica, opacidad y una demo offline interactiva.',
+    date: '2026-08-21',
+    dateModified: '2026-08-21',
+    readTimeMin: 10,
+    category: 'Gemelos digitales',
+    categorySlug: 'digital-twins',
+    author: 'IFC Viewer Team',
+    lang: 'es',
+    heroImage: 'blog/images/ifc-video-3d-terrain-1600x900.jpg',
+    heroAlt: 'Visitantes de una feria observando un pabellón IFC, terreno 3D y un vídeo de progreso de obra',
+    heroImageVariants: [
+      { src: 'blog/images/ifc-video-3d-terrain-1600x900.jpg', width: 1600, height: 900 },
+      { src: 'blog/images/ifc-video-3d-terrain-1200x900.jpg', width: 1200, height: 900 },
+      { src: 'blog/images/ifc-video-3d-terrain-1200x1200.jpg', width: 1200, height: 1200 },
+    ],
+    keywords: ['IFC vídeo 3D', 'seguimiento obra gemelo digital', 'vídeo terreno 3D', 'visor BIM vídeo', 'demo IFC feria'],
+    videos: [{
+      name: 'Demostración IFC + vídeo 3D del pabellón de operaciones',
+      description: 'Loop sintético de ocho segundos creado para el IFC4 correspondiente y utilizado como textura de vídeo 3D.',
+      thumbnailUrl: 'blog/images/ifc-video-terrain-operations-pavilion-poster.jpg',
+      contentUrl: 'models/video-demo/operations-pavilion-progress.mp4',
+      uploadDate: '2026-08-20',
+      duration: 'PT8S',
+    }],
+    faqs: [
+      { q: '¿Se puede colocar un MP4 dentro de una escena IFC?', a: 'Sí. Un HTMLVideoElement alimenta una VideoTexture aplicada a un plano de la misma escena Three.js. El sistema debe gestionar y liberar vídeo, textura, material y geometría.' },
+      { q: '¿Qué modo funciona mejor en una feria?', a: 'El billboard orientado a cámara es el inicio más robusto porque permanece visible al mover la escena. El modo terreno comunica mejor la posición, pero exige controlar opacidad y superficie.' },
+      { q: '¿El vídeo del pabellón es una obra real?', a: 'No. Es un loop sintético de ocho segundos, etiquetado como tal y creado para que la demostración offline sea reproducible.' },
+    ],
+    content: [
+      { type: 'p', text: 'El vídeo explica tiempo; IFC explica espacio. Al situarlos en el mismo marco 3D, una persona puede señalar el elemento diseñado, el contexto del terreno y la evidencia visual sin cambiar de aplicación.' },
+      { type: 'h2', text: 'Reproduce el clip offline' },
+      {
+        type: 'video',
+        src: 'models/video-demo/operations-pavilion-progress.mp4',
+        poster: 'blog/images/ifc-video-terrain-operations-pavilion-poster.jpg',
+        title: 'Loop de progreso del pabellón de operaciones',
+        description: 'Clip sintético de ocho segundos emparejado con el IFC4 incluido.',
+        caption: 'Medio sintético creado para este repositorio; no representa una obra real.',
+        width: 960,
+        height: 540,
+      },
+      { type: 'h2', text: 'Prueba IFC + vídeo 3D en vivo' },
+      {
+        type: 'spatial-demo',
+        demo: 'pavilion-video-terrain',
+        title: 'Pabellón de operaciones — IFC + textura de vídeo',
+        description: 'Ejemplo WebGL con un IFC4 incluido y su loop sintético colocado como recurso 3D orientado a cámara.',
+        poster: 'blog/images/ifc-video-3d-terrain-800x450.jpg',
+        posterAlt: 'Vista previa de un pabellón IFC sobre terreno con un vídeo de construcción en una pantalla de feria',
+        launchLabel: 'Cargar IFC + vídeo 3D',
+        readyLabel: 'IFC y vídeo listos — arrastra para orbitar',
+      },
+      { type: 'h2', text: 'Pantalla, terreno o billboard' },
+      {
+        type: 'image',
+        src: 'blog/images/ifc-video-terrain-placement-modes.svg',
+        alt: 'Comparación de vídeo colocado como pantalla vertical, proyección sobre terreno y billboard orientado a cámara junto a un pabellón IFC',
+        caption: 'Cada modo responde a una pregunta distinta; no son efectos intercambiables.',
+        width: 1600,
+        height: 900,
+        credit: 'IFC Viewer Online',
+      },
+      {
+        type: 'table',
+        headers: ['Modo', 'Uso principal', 'Riesgo'],
+        rows: [
+          ['Pantalla', 'Cámara de inspección, fachada o equipo', 'Parece desconectada si la posición es arbitraria'],
+          ['Terreno', 'Área de avance, dron o excavación', 'Z-fighting o falsa precisión'],
+          ['Billboard', 'Feria, visita guiada y narrativa rápida', 'Menor autoridad espacial porque sigue a la cámara'],
+        ],
+      },
+      { type: 'h2', text: 'Opacidad y colocación métrica' },
+      { type: 'p', text: 'La opacidad permite ver geometría diseñada bajo los píxeles grabados, pero valores extremos ocultan una de las dos evidencias. Un vídeo de suelo también necesita anchura en metros, XYZ local, yaw y un pequeño offset de superficie. El snap automático ayuda, pero no equivale a una transformación topográfica.' },
+      {
+        type: 'image',
+        src: 'blog/images/ifc-video-terrain-operations-pavilion-poster.jpg',
+        alt: 'Pabellón IFC con un fotograma cálido de progreso preparado como textura de vídeo 3D',
+        caption: 'El poster estable se comparte entre el reproductor, los metadatos sociales y el marcado de vídeo.',
+        width: 960,
+        height: 540,
+        credit: 'IFC Viewer Online · activo sintético Blender/Bonsai',
+      },
+      { type: 'h2', text: 'Reglas de rendimiento' },
+      { type: 'ul', items: ['Crear el decoder y la VideoTexture solo tras interacción o entrada en viewport.', 'Reutilizar la textura al modificar opacidad o posición.', 'Pausar al ocultar y liberar elemento, textura, material, geometría y URL al eliminar.', 'Mantener un poster estático para personas y crawlers antes de iniciar WebGL.', 'Usar un MP4/WebM local para feria y tratar cámara o pantalla compartida como fuente LIVE explícita.'] },
+      { type: 'callout', variant: 'tip', text: 'Mantén MP4 y poster en URLs estables y describe el vídeo de forma coherente en el pie visible, VideoObject y sitemap.' },
+      { type: 'p', text: ['Si necesitas conservar XYZ y atributos utiliza ', { text: 'LiDAR temporal con MCAP', to: 'lidar-tiempo-real-web-gemelo-digital-mcap' }, '. Para una comparación estática medida, consulta ', { text: 'IFC + nube de puntos Scan-to-BIM', to: 'ifc-nube-de-puntos-scan-to-bim-navegador' }, '.'] },
     ],
   },
 

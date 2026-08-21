@@ -96,6 +96,9 @@ interface PageMeta {
   description: string
   canonical: string
   jsonLd: Record<string, unknown>
+  image?: string
+  imageAlt?: string
+  alternates?: Array<{ lang: string; href: string }>
 }
 
 /**
@@ -130,19 +133,30 @@ function tweakHtml(template: string, meta: PageMeta): string {
   html = html.replace(/(<meta\s+name="twitter:title"\s+content=")[^"]*(")/,       `$1${esc(meta.title)}$2`)
   html = html.replace(/(<meta\s+name="twitter:description"\s+content=")[^"]*(")/,  `$1${esc(meta.description)}$2`)
 
+  const preferredImage = meta.image ?? OG_IMAGE
+  html = html.replace(/(<meta\s+property="og:image"\s+content=")[^"]*(")/, `$1${esc(preferredImage)}$2`)
+  if (/<meta\s+name="twitter:image"/.test(html)) {
+    html = html.replace(/(<meta\s+name="twitter:image"\s+content=")[^"]*(")/, `$1${esc(preferredImage)}$2`)
+  } else {
+    html = html.replace('</head>', `  <meta name="twitter:image" content="${esc(preferredImage)}" />\n</head>`)
+  }
+
   // 6. Remove the root hreflang alternates (they'd point to the wrong URL).
   //    Blog pages are English-only; we replace with self-referencing hreflang.
   html = html.replace(/<link\s+rel="alternate"\s+hreflang="[^"]*"\s+href="[^"]*"\s*\/>\s*/g, '')
 
   // 7. Inject blog-specific hreflang + og:image:alt + twitter:image:alt + JSON-LD
-  const hreflang = [
-    `<link rel="alternate" hreflang="en"        href="${esc(meta.canonical)}" />`,
-    `<link rel="alternate" hreflang="x-default" href="${esc(meta.canonical)}" />`,
-  ].join('\n  ')
+  const alternates = meta.alternates?.length
+    ? meta.alternates
+    : [{ lang: 'en', href: meta.canonical }, { lang: 'x-default', href: meta.canonical }]
+  const hreflang = alternates
+    .map((alternate) => `<link rel="alternate" hreflang="${esc(alternate.lang)}" href="${esc(alternate.href)}" />`)
+    .join('\n  ')
 
   // og:image:alt derived from title — improves accessibility and social-share clarity
-  const ogAlt      = `<meta property="og:image:alt"  content="${esc(meta.title)}" />`
-  const twitterAlt = `<meta name="twitter:image:alt" content="${esc(meta.title)}" />`
+  const imageAlt   = meta.imageAlt ?? meta.title
+  const ogAlt      = `<meta property="og:image:alt"  content="${esc(imageAlt)}" />`
+  const twitterAlt = `<meta name="twitter:image:alt" content="${esc(imageAlt)}" />`
 
   const jsonLd = `<script type="application/ld+json">${jsonEsc(JSON.stringify(meta.jsonLd))}</script>`
 
@@ -153,9 +167,85 @@ function tweakHtml(template: string, meta: PageMeta): string {
 
 // ── Sitemap entries ───────────────────────────────────────────────────────────
 
-function sitemapBlogEntry(urlPath: string, lastmod: string, priority: number, changefreq: string): string {
+interface SearchImage {
+  url: string
+  caption: string
+  credit?: string
+  license?: string
+}
+
+function mediaUrl(src: string): string {
+  if (/^https?:\/\//i.test(src)) return src
+  return `${SITE}/${src.replace(/^\//, '')}`
+}
+
+function postImages(post: BlogPost): SearchImage[] {
+  const images: SearchImage[] = []
+  const seen = new Set<string>()
+  const add = (image: SearchImage): void => {
+    if (seen.has(image.url)) return
+    seen.add(image.url)
+    images.push(image)
+  }
+
+  for (const variant of post.heroImageVariants ?? []) {
+    add({ url: mediaUrl(variant.src), caption: post.heroAlt ?? post.title, credit: 'IFC Viewer Online' })
+  }
+  if (post.heroImage && (post.heroImage.includes('/') || /\.(?:avif|gif|jpe?g|png|svg|webp)$/i.test(post.heroImage))) {
+    add({ url: mediaUrl(post.heroImage), caption: post.heroAlt ?? post.title, credit: 'IFC Viewer Online' })
+  }
+  for (const block of post.content) {
+    if (block.type !== 'image') continue
+    add({
+      url: mediaUrl(block.src),
+      caption: block.caption ?? block.alt,
+      credit: block.credit,
+      license: block.license,
+    })
+  }
+  return images
+}
+
+function articleImageJsonLd(post: BlogPost): Array<Record<string, unknown> | string> {
+  const images = postImages(post)
+  if (images.length === 0) return [OG_IMAGE]
+  return images.map((image) => ({
+    '@type': 'ImageObject',
+    contentUrl: image.url,
+    caption: image.caption,
+    ...(image.credit ? {
+      creditText: image.credit,
+      creator: { '@type': 'Organization', name: image.credit },
+      copyrightNotice: image.credit,
+    } : {}),
+    ...(image.license ? { license: image.license } : {}),
+  }))
+}
+
+function postAlternates(post: BlogPost): Array<{ lang: string; href: string }> {
+  const translations = post.translationKey
+    ? ALL_BLOG_POSTS.filter((candidate) => candidate.translationKey === post.translationKey)
+    : [post]
+  const alternates = translations.map((candidate) => {
+    const lang = candidate.lang ?? 'en'
+    const prefix = LANG_CONFIG[lang]?.prefix ?? ''
+    return { lang, href: `${SITE}/${prefix}blog/${candidate.slug}/` }
+  })
+  const fallback = alternates.find((alternate) => alternate.lang === 'en') ?? alternates[0]
+  if (fallback) alternates.push({ lang: 'x-default', href: fallback.href })
+  return alternates
+}
+
+function sitemapBlogEntry(
+  urlPath: string,
+  lastmod: string,
+  priority: number,
+  changefreq: string,
+  images: SearchImage[] = [],
+  videos: BlogPost['videos'] = [],
+): string {
   const loc = `${SITE}${urlPath}`
-  return [
+  const lines = [
     '  <url>',
     `    <loc>${loc}</loc>`,
     `    <lastmod>${lastmod}</lastmod>`,
@@ -163,8 +253,27 @@ function sitemapBlogEntry(urlPath: string, lastmod: string, priority: number, ch
     `    <priority>${priority.toFixed(2)}</priority>`,
     `    <xhtml:link rel="alternate" hreflang="en"        href="${loc}" />`,
     `    <xhtml:link rel="alternate" hreflang="x-default" href="${loc}" />`,
-    '  </url>',
-  ].join('\n')
+  ]
+  for (const image of images) {
+    lines.push(
+      '    <image:image>',
+      `      <image:loc>${esc(image.url)}</image:loc>`,
+      `      <image:caption>${esc(image.caption)}</image:caption>`,
+      '    </image:image>',
+    )
+  }
+  for (const video of videos ?? []) {
+    lines.push(
+      '    <video:video>',
+      `      <video:thumbnail_loc>${esc(mediaUrl(video.thumbnailUrl))}</video:thumbnail_loc>`,
+      `      <video:title>${esc(video.name)}</video:title>`,
+      `      <video:description>${esc(video.description)}</video:description>`,
+      `      <video:content_loc>${esc(mediaUrl(video.contentUrl))}</video:content_loc>`,
+      '    </video:video>',
+    )
+  }
+  lines.push('  </url>')
+  return lines.join('\n')
 }
 
 // ── llms.txt section ──────────────────────────────────────────────────────────
@@ -233,6 +342,10 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
           title: cfg.blogTitle,
           description: cfg.blogDesc,
           canonical: urlBase,
+          alternates: [
+            { lang, href: urlBase },
+            { lang: 'x-default', href: lang === 'en' ? urlBase : `${SITE}/blog/` },
+          ],
           jsonLd: {
             '@context': 'https://schema.org',
             '@type': 'Blog',
@@ -261,6 +374,8 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
     for (const post of posts) {
       try {
         const canonical = `${SITE}/${cfg.prefix}blog/${post.slug}/`
+        const images = postImages(post)
+        const primaryImage = images[0]?.url ?? OG_IMAGE
         const outDir = path.join(distDir, ...cfg.prefix.split('/').filter(Boolean), 'blog', post.slug)
         mkdirSync(outDir, { recursive: true })
         writeFileSync(
@@ -269,18 +384,22 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
             title: `${post.title} | IFC Viewer Blog`,
             description: post.excerpt,
             canonical,
+            image: primaryImage,
+            imageAlt: post.heroAlt ?? post.title,
+            alternates: postAlternates(post),
             jsonLd: {
               '@context': 'https://schema.org',
               '@type': 'BlogPosting',
               headline: post.title,
               description: post.excerpt,
               datePublished: post.date,
+              dateModified: post.dateModified ?? post.date,
               inLanguage: lang,
               author:    { '@type': 'Organization', name: post.author },
               publisher: { '@type': 'Person', name: 'Joel Benitez', url: 'https://github.com/j03rul4nd' },
               url: canonical,
               mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
-              image: OG_IMAGE,
+              image: articleImageJsonLd(post),
               keywords: [
                 ...(post.keywords ?? []),
                 post.category,
@@ -308,6 +427,25 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
           const existing = readFileSync(outFilePath, 'utf-8')
           writeFileSync(outFilePath, existing.replace('</head>', `  ${faqScript}\n</head>`))
         }
+        if (post.videos && post.videos.length > 0) {
+          const videoScripts = post.videos.map((video) => {
+            const videoLd = {
+              '@context': 'https://schema.org',
+              '@type': 'VideoObject',
+              name: video.name,
+              description: video.description,
+              thumbnailUrl: mediaUrl(video.thumbnailUrl),
+              contentUrl: mediaUrl(video.contentUrl),
+              uploadDate: video.uploadDate,
+              duration: video.duration,
+              embedUrl: canonical,
+            }
+            return `<script type="application/ld+json">${jsonEsc(JSON.stringify(videoLd))}</script>`
+          }).join('\n  ')
+          const outFilePath = path.join(outDir, 'index.html')
+          const existing = readFileSync(outFilePath, 'utf-8')
+          writeFileSync(outFilePath, existing.replace('</head>', `  ${videoScripts}\n</head>`))
+        }
         result.pages++
       } catch (err) {
         console.error(`[blog-pages][${lang}] Error generating post "${post.slug}":`, err)
@@ -326,25 +464,48 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
   // untouched and makes a new post self-registering.
   const sitemapPath = path.join(distDir, 'sitemap.xml')
   if (existsSync(sitemapPath)) {
-    const xml = readFileSync(sitemapPath, 'utf-8')
+    const originalXml = readFileSync(sitemapPath, 'utf-8')
+    let xml = originalXml
+    if (!xml.includes('xmlns:image=')) {
+      xml = xml.replace(/<urlset\b/, '<urlset xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"')
+    }
+    if (!xml.includes('xmlns:video=')) {
+      xml = xml.replace(/<urlset\b/, '<urlset xmlns:video="http://www.google.com/schemas/sitemap-video/1.1"')
+    }
     const missing: string[] = []
 
-    const addIfMissing = (urlPath: string, lastmod: string, priority: number, changefreq: string): void => {
+    const addIfMissing = (
+      urlPath: string,
+      lastmod: string,
+      priority: number,
+      changefreq: string,
+      post?: BlogPost,
+    ): void => {
       if (xml.includes(`<loc>${SITE}${urlPath}</loc>`)) return
-      missing.push(sitemapBlogEntry(urlPath, lastmod, priority, changefreq))
+      missing.push(sitemapBlogEntry(
+        urlPath,
+        lastmod,
+        priority,
+        changefreq,
+        post ? postImages(post) : [],
+        post?.videos,
+      ))
     }
 
     for (const [lang, cfg] of Object.entries(LANG_CONFIG)) {
       const posts = postsFor(lang)
       if (posts.length === 0) continue
       addIfMissing(`/${cfg.prefix}blog/`, today, 0.85, 'weekly')
-      posts.forEach(p => addIfMissing(`/${cfg.prefix}blog/${p.slug}/`, p.date, 0.75, 'monthly'))
+      posts.forEach(p => addIfMissing(`/${cfg.prefix}blog/${p.slug}/`, p.dateModified ?? p.date, 0.75, 'monthly', p))
     }
 
     if (missing.length > 0) {
+      xml = xml.replace('</urlset>', `\n  <!-- Blog (EN + ES + DE + FR) -->\n${missing.join('\n\n')}\n\n</urlset>`)
+    }
+    if (xml !== originalXml) {
       writeFileSync(
         sitemapPath,
-        xml.replace('</urlset>', `\n  <!-- Blog (EN + ES + DE + FR) -->\n${missing.join('\n\n')}\n\n</urlset>`),
+        xml,
       )
       result.sitemap = true
       result.sitemapAdded = missing.length

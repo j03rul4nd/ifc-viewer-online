@@ -1,0 +1,402 @@
+{
+  "dataset": {
+    "name": "Indoor point cloud dataset for BIM related applications",
+    "shortName": "CRAS Labs @ FEUP",
+    "version": "v1",
+    "published": "2023-05-18",
+    "doi": "10.5281/zenodo.7948116",
+    "descriptorDoi": "10.3390/data8060101",
+    "authors": [
+      "Nuno Abreu",
+      "Rayssa Souza",
+      "Andry Pinto",
+      "Anibal Matos",
+      "Miguel Pires"
+    ],
+    "buildingType": "Electrical and computer engineering laboratories, workshop, offices and hallway",
+    "location": "Faculty of Engineering, University of Porto, Portugal",
+    "realBuilding": true,
+    "pairTier": "A",
+    "license": "CC BY 4.0",
+    "commercialDemoAllowed": true,
+    "attributionRequired": true
+  },
+  "acquisition": {
+    "method": "Terrestrial laser scanning",
+    "scanner": "Leica BLK360 G2",
+    "scanCount": 21,
+    "date": "2023-03",
+    "declaredResolution": "5 mm at 10 m",
+    "registrationSoftware": "Leica Cyclone Register 360",
+    "declaredMeanRegistrationErrorM": 0.003
+  },
+  "pointCloud": {
+    "originalFormat": "ZIP containing tab-delimited ASCII",
+    "originalPointCount": 584701977,
+    "originalUncompressedBytes": 26752658348,
+    "columns": [
+      "x",
+      "y",
+      "z",
+      "red",
+      "green",
+      "blue",
+      "intensity",
+      "label"
+    ],
+    "units": "metres",
+    "upAxis": "Z",
+    "crs": null,
+    "semanticClasses": 34,
+    "qualityOutput": {
+      "path": "demo/processed/pointcloud-clean.ply",
+      "stride": 117,
+      "pointCount": 4997453,
+      "recordBytes": 17,
+      "bounds": {
+        "min": [
+          0.0435,
+          -4.1815,
+          -2.0195
+        ],
+        "max": [
+          18.3115,
+          20.2605,
+          3.2385
+        ],
+        "extent": [
+          18.267999999999997,
+          24.442,
+          5.258
+        ]
+      }
+    },
+    "webSourceOutput": {
+      "path": "demo/processed/pointcloud-web-source.ply",
+      "stride": 585,
+      "pointCount": 999491,
+      "recordBytes": 17,
+      "bounds": {
+        "min": [
+          0.0565,
+          -4.1765,
+          -1.9785
+        ],
+        "max": [
+          18.2895,
+          20.2525,
+          3.2385
+        ],
+        "extent": [
+          18.233,
+          24.429000000000002,
+          5.2170000000000005
+        ]
+      },
+      "frame": "CRAS source local frame"
+    },
+    "webOutput": {
+      "path": "demo/processed/pointcloud-web.ply",
+      "stride": 585,
+      "pointCount": 999491,
+      "recordBytes": 17,
+      "bounds": {
+        "min": [
+          -9.931315422058105,
+          -4.410673141479492,
+          -0.7227669358253479
+        ],
+        "max": [
+          8.202118873596191,
+          19.965961456298828,
+          4.491275787353516
+        ],
+        "extent": [
+          18.133434295654297,
+          24.37663459777832,
+          5.214042663574219
+        ]
+      },
+      "frame": "IFC project local frame"
+    }
+  },
+  "ifc": {
+    "schema": "IFC2X3",
+    "unitScaleToMetres": 1.0,
+    "crs": null,
+    "worldBounds": {
+      "min": [
+        -9.915754403207806,
+        -4.533520020041771,
+        -1.17
+      ],
+      "max": [
+        8.286239344287049,
+        19.95151572983451,
+        3.0000000000000004
+      ],
+      "extent": [
+        18.201993747494853,
+        24.485035749876282,
+        4.17
+      ]
+    },
+    "registrationGeometry": {
+      "types": {
+        "IfcColumn": 10,
+        "IfcCovering": 7,
+        "IfcDoor": 6,
+        "IfcSlab": 5,
+        "IfcStairFlight": 2,
+        "IfcWallStandardCase": 61,
+        "IfcWindow": 44
+      },
+      "shapeCount": 135,
+      "triangleCount": 1170882
+    },
+    "modified": false
+  },
+  "alignment": {
+    "sourceFrame": "CRAS point-cloud local coordinates, metres, Z-up",
+    "targetFrame": "IFC world/project coordinates, metres, Z-up",
+    "method": "yaw sweep + rigid point-to-point ICP + multi-scale point-to-plane ICP",
+    "scaleLocked": true,
+    "pointCloudToIfc": {
+      "translation": [
+        -9.848211067791766,
+        -0.39063038786961135,
+        1.2560517744093875
+      ],
+      "rotationEulerXYZDegrees": [
+        -0.011465592643521297,
+        -0.0022945654313575644,
+        0.7774680730818256
+      ],
+      "scale": 1.0,
+      "matrix4x4RowMajor": [
+        [
+          0.9999079366051453,
+          -0.013568953006168673,
+          -4.275935057879962e-05,
+          -9.848211067791766
+        ],
+        [
+          0.013568961280277875,
+          0.9999079174950913,
+          0.00019955051215104824,
+          -0.39063038786961135
+        ],
+        [
+          4.004772166892865e-05,
+          -0.00020011234082583398,
+          0.9999999791756172,
+          1.2560517744093875
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    "validation": {
+      "metric": "Euclidean point-to-nearest IFC triangle surface distance",
+      "qualityStructuralSample": {
+        "count": 3588276,
+        "meanM": 0.01834597997367382,
+        "rmseM": 0.04624907672405243,
+        "medianM": 0.006373882293701172,
+        "p90M": 0.040837083011865616,
+        "p95M": 0.05763059854507446,
+        "p99M": 0.23594647645950317,
+        "within2cmPct": 80.66352755473659,
+        "within5cmPct": 93.76201830628413,
+        "within10cmPct": 96.69546043838322,
+        "within20cmPct": 98.12584093308318
+      },
+      "perSemanticClass": {
+        "1": {
+          "name": "ceiling",
+          "count": 1948929,
+          "meanM": 0.011581473052501678,
+          "rmseM": 0.03766733035445213,
+          "medianM": 0.004248380661010742,
+          "p90M": 0.009625911712646484,
+          "p95M": 0.032862567901611295,
+          "p99M": 0.23572778701782227,
+          "within2cmPct": 92.71733346879235,
+          "within5cmPct": 96.57863370086854,
+          "within10cmPct": 97.33443342471686,
+          "within20cmPct": 97.86380109280533
+        },
+        "2": {
+          "name": "floor",
+          "count": 625771,
+          "meanM": 0.00763160502538085,
+          "rmseM": 0.010459279641509056,
+          "medianM": 0.007144175469875336,
+          "p90M": 0.01352129876613617,
+          "p95M": 0.0145936980843544,
+          "p99M": 0.016725760698318503,
+          "within2cmPct": 99.46018591465568,
+          "within5cmPct": 99.75182614726474,
+          "within10cmPct": 99.84371279589497,
+          "within20cmPct": 99.99552551971888
+        },
+        "3": {
+          "name": "wall",
+          "count": 767376,
+          "meanM": 0.03644932433962822,
+          "rmseM": 0.06692298501729965,
+          "medianM": 0.0288999080657959,
+          "p90M": 0.05536292493343353,
+          "p95M": 0.09571092016994953,
+          "p99M": 0.34424420446157455,
+          "within2cmPct": 46.4159681824816,
+          "within5cmPct": 86.08218135568482,
+          "within10cmPct": 95.1005765100811,
+          "within20cmPct": 97.90832655699423
+        },
+        "4": {
+          "name": "door",
+          "count": 137730,
+          "meanM": 0.05770722031593323,
+          "rmseM": 0.09724069386720657,
+          "medianM": 0.03289437294006348,
+          "p90M": 0.19048861712217333,
+          "p95M": 0.20535193309187885,
+          "p99M": 0.26313119947910296,
+          "within2cmPct": 40.092935453423365,
+          "within5cmPct": 71.87395629129456,
+          "within10cmPct": 80.16045886880127,
+          "within20cmPct": 93.07558266172947
+        },
+        "5": {
+          "name": "window",
+          "count": 102881,
+          "meanM": 0.023357640951871872,
+          "rmseM": 0.030344152823090553,
+          "medianM": 0.020120620727539062,
+          "p90M": 0.04669380187988281,
+          "p95M": 0.06764984130859375,
+          "p99M": 0.09206228405237195,
+          "within2cmPct": 49.76137479223569,
+          "within5cmPct": 91.17426930142591,
+          "within10cmPct": 99.34098618792586,
+          "within20cmPct": 99.99902800322702
+        },
+        "27": {
+          "name": "stairs",
+          "count": 5589,
+          "meanM": 0.028972361236810684,
+          "rmseM": 0.037073809653520584,
+          "medianM": 0.022737503051757812,
+          "p90M": 0.0608222723007202,
+          "p95M": 0.0778744637966156,
+          "p99M": 0.0992246413230896,
+          "within2cmPct": 43.69296833064949,
+          "within5cmPct": 82.41188047951333,
+          "within10cmPct": 99.1411701556629,
+          "within20cmPct": 100.0
+        }
+      },
+      "webSample": {
+        "count": 999491,
+        "meanM": 0.127125084400177,
+        "rmseM": 0.279020220041275,
+        "medianM": 0.009666204452514648,
+        "p90M": 0.49323439598083496,
+        "p95M": 0.7277846038341522,
+        "p99M": 1.0898981928825375,
+        "within2cmPct": 60.78363887218594,
+        "within5cmPct": 71.90039730222684,
+        "within10cmPct": 75.92494579741089,
+        "within20cmPct": 80.36020334350185
+      },
+      "interpretation": "Distances include real as-built/model differences, occlusion, clutter labels, IFC modelling abstractions and residual registration error; they are not survey accuracy."
+    }
+  },
+  "blender": {
+    "version": "4.5.12 LTS",
+    "ifcImporter": "Bonsai bpy.ops.bim.load_project",
+    "bonsaiImportSucceeded": true,
+    "collections": [
+      "PointCloud",
+      "IFC",
+      "Reference"
+    ],
+    "ifcMeshObjectCount": 281,
+    "pointCloudVertices": 999491
+  },
+  "processing": {
+    "qualitySampling": "Deterministic systematic stride 117 (4,997,453 points)",
+    "webSampling": "Deterministic systematic stride 585 (999,491 points)",
+    "outlierRemoval": "None; source authors already removed unwanted scan noise",
+    "attributesRetained": [
+      "RGB",
+      "intensity",
+      "semantic label as classification"
+    ],
+    "intensityConversion": "0-1 source values mapped linearly to uint8 0-255",
+    "webCoordinates": "Rigid pointCloudToIfc transform baked into XYZ",
+    "deviationBandsM": [
+      0.02,
+      0.05,
+      0.1
+    ]
+  },
+  "files": [
+    {
+      "path": "demo/raw/pointcloud-original.zip",
+      "role": "unaltered original point cloud",
+      "sizeBytes": 4267281425,
+      "md5": "e5ecedab8f2a1d1f91861a3aec028a72",
+      "md5Verified": true
+    },
+    {
+      "path": "demo/raw/model-original.ifc",
+      "role": "unaltered original IFC",
+      "sizeBytes": 67553572,
+      "md5": "e20658f0d2d9e13c62363169b7fa3193",
+      "md5Verified": true
+    },
+    {
+      "path": "demo/processed/pointcloud-clean.ply",
+      "role": "quality source-frame sample",
+      "sizeBytes": 84957077,
+      "sha256": "6990321b22f2090c3fdf3ed82f492be53e7e414b1bcfe9473457e7a8856e6745"
+    },
+    {
+      "path": "demo/processed/pointcloud-web-source.ply",
+      "role": "web sample before alignment",
+      "sizeBytes": 16991723,
+      "sha256": "492296cf538d0c4b4921b8ac22a427d6e22194d96c63e01104b76e76fbaef16d"
+    },
+    {
+      "path": "demo/processed/pointcloud-web.ply",
+      "role": "web sample aligned to IFC",
+      "sizeBytes": 16991723,
+      "sha256": "0bcca02b171df7004ed4d01b2be5b986e70dc956902ef9fd2ad5d7ffbe41441a"
+    },
+    {
+      "path": "demo/processed/pointcloud-deviation-web.ply",
+      "role": "aligned web deviation heatmap",
+      "sizeBytes": 16991723,
+      "sha256": "7381a3ea9c0672290df7e828ce793773d358fb96a500b8b0f777a6fb2d25a938"
+    },
+    {
+      "path": "demo/processed/model.ifc",
+      "role": "unaltered IFC web copy",
+      "sizeBytes": 67553572,
+      "sha256": "a83e573037b0c4cbba30f1167ed96cda52eb51859091d2c7d47cec7a59e1a36b"
+    },
+    {
+      "path": "demo/blender/alignment.blend",
+      "role": "Bonsai validation scene",
+      "sizeBytes": 168456893,
+      "sha256": "353929cc5c74c6ea97df960a0cfdb8793987d0c7420326a0b7958a8ad77ec3a2"
+    }
+  ],
+  "generatedOn": "2026-08-20"
+}

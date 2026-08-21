@@ -3,9 +3,8 @@
 // lives here — no IFC URLs are hardcoded anywhere else in the codebase.
 //
 // Sourcing policy (see also the PR / research notes):
-//   • Models are consumed *externally* via stable raw URLs (no large binaries in
-//     this repo) — the only bundled file is the default Duplex Architecture model
-//     that already ships in /public for a guaranteed-offline first demo.
+//   • Most models use stable external raw URLs. Reference models and verified
+//     open-data pairs may be bundled for a reliable, attributable demo.
 //   • All external hosts serve `Access-Control-Allow-Origin: *`, so the browser
 //     can fetch them directly (verified: raw.githubusercontent.com).
 //   • Sources are long-lived public repos: buildingSMART official sample files,
@@ -61,9 +60,26 @@ const BUNDLED_TEMPLE = `${import.meta.env.BASE_URL}JapaneseTemple.ifc`
 /** The federated set — three disciplines of one building, ISO 19650 file names. */
 const POBLENOU = `${import.meta.env.BASE_URL}models/poblenou`
 const TORRE = `${import.meta.env.BASE_URL}models/torre-poblenou`
+const CRAS = `${import.meta.env.BASE_URL}models/cras`
+const VIDEO_DEMO = `${import.meta.env.BASE_URL}models/video-demo`
 
 export const DEMO_MODELS: DemoModel[] = [
   // ── Reference ────────────────────────────────────────────────────────────
+  {
+    id: 'cras-feup-as-built',
+    name: 'CRAS Labs @ FEUP — As-Built',
+    description:
+      'The real IFC counterpart to the CRAS TLS point cloud: laboratories, workshop, offices and hallway. Load the matching scan from Point cloud for a measured Scan-vs-BIM overlay.',
+    category: 'Reference',
+    fileName: 'model.ifc',
+    ifcUrl: `${CRAS}/model.ifc`,
+    sourceUrl: 'https://doi.org/10.5281/zenodo.7948116',
+    sourceLabel: 'Abreu et al. · CRAS Labs (CC BY 4.0)',
+    schema: 'IFC2x3',
+    approximateSize: '64.4 MB',
+    sizeBytes: 67_553_572,
+    featured: true,
+  },
   {
     id: 'hello-world',
     name: 'IFC Hello World',
@@ -78,6 +94,23 @@ export const DEMO_MODELS: DemoModel[] = [
     schema: 'IFC4',
     approximateSize: '9 KB',
     sizeBytes: 9_696,
+    featured: true,
+  },
+  {
+    id: 'operations-pavilion-video',
+    name: 'Operations Pavilion — IFC + Video',
+    description:
+      'A compact IFC4 pavilion authored for the 3D video demo. Open Tools → Video to place its matching progress loop as a screen, terrain overlay or billboard.',
+    category: 'Reference',
+    fileName: 'IVO-Operations-Pavilion.ifc',
+    ifcUrl: `${VIDEO_DEMO}/IVO-Operations-Pavilion.ifc`,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-video-demo.py',
+    sourceLabel: 'Authored with Blender + Bonsai',
+    schema: 'IFC4',
+    approximateSize: '21 KB',
+    sizeBytes: 21_034,
+    thumbnail: `${VIDEO_DEMO}/operations-pavilion-poster.jpg`,
     featured: true,
   },
   {

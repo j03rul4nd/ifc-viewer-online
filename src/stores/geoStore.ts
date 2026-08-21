@@ -49,6 +49,7 @@ const LS_BUILDINGS     = 'ifc-geo-buildings:v1'
 const LS_LAYERS        = 'ifc-geo-osm-layers:v1'
 const LS_DETAIL        = 'ifc-geo-detail:v1'
 const LS_VEHICLES      = 'ifc-geo-vehicles:v1'
+const LS_SUPPRESS      = 'ifc-geo-suppress-context:v1'
 
 /**
  * Detail level, persisted.
@@ -170,6 +171,14 @@ interface GeoStore {
   contextDetail: BuildingDetail
   /** Decorative cars and trains (persisted). Invented placement — off by default. */
   vehicles: boolean
+  /**
+   * Whether the OSM context gives way where the model stands (persisted).
+   *
+   * ON by default: a mapped building standing inside the surveyed one is never
+   * what anyone wants to look at. Off is for checking the two against each
+   * other, which is a real thing to want and the reason this is a switch.
+   */
+  suppressContext: boolean
   /** True when the query hit its cap — the view is a partial picture. */
   buildingsTruncated: boolean
   georefByModel: Record<string, GeorefExtraction>
@@ -214,6 +223,7 @@ interface GeoStore {
   setFeatureLayer: (kind: FeatureKind, visible: boolean) => void
   setContextDetail: (d: BuildingDetail) => void
   setVehicles: (v: boolean) => void
+  setSuppressContext: (v: boolean) => void
   setTerrainExaggeration: (k: number) => void
   setGeoref: (modelId: string, g: GeorefExtraction) => void
   removeGeoref: (modelId: string) => void
@@ -252,6 +262,7 @@ export const useGeoStore = create<GeoStore>()(
       featureLayers:      readFeatureLayers(),
       contextDetail:      readContextDetail(),
       vehicles:           lsGet(LS_VEHICLES) === '1',
+      suppressContext:    lsGet(LS_SUPPRESS) !== '0',
       buildingsTruncated: false,
       georefByModel:  {},
       placement:      null,
@@ -387,6 +398,11 @@ export const useGeoStore = create<GeoStore>()(
       setVehicles: (v) => {
         lsSet(LS_VEHICLES, v ? '1' : '0')
         set({ vehicles: v }, false, 'setVehicles')
+      },
+
+      setSuppressContext: (v) => {
+        lsSet(LS_SUPPRESS, v ? '1' : '0')
+        set({ suppressContext: v }, false, 'setSuppressContext')
       },
 
       setContextDetail: (d) => {

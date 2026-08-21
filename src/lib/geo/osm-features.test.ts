@@ -233,14 +233,36 @@ describe('buildFeaturesQuery', () => {
     expect(q).toContain('leisure')
     expect(q).toContain('["man_made"="bridge"]')
     expect(q).toContain('node["natural"="tree"]')
-    // A single statement group, so one request serves every toggle.
-    expect(q.match(/out geom/g)).toHaveLength(1)
+    // Still ONE request — several `out` statements, one round trip.
+    expect(q.match(/\[out:json\]/g)).toHaveLength(1)
   })
 
-  it('always bounds server work and result size', () => {
-    const q = buildFeaturesQuery(bbox, 12, 900)
+  it('gives every layer its OWN budget so none can starve the rest', () => {
+    // The bug this replaced: one union with one `out geom N`. Overpass
+    // truncates the combined set in an order that has nothing to do with the
+    // query, and on a real 1.4 km box over Poblenou the first 6000 elements
+    // were 5581 land-cover polygons and 347 of the 3113 highways — so the app
+    // drew 11 % of the streets. Land cover is a few enormous polygons; roads
+    // are thousands of small ways. They must not compete for one number.
+    const q = buildFeaturesQuery(bbox, 12, 1000)
     expect(q).toContain('[timeout:12]')
-    expect(q).toContain('out geom 900;')
+    const caps = [...q.matchAll(/out geom (\d+);/g)].map((m) => Number(m[1]))
+    expect(caps.length).toBeGreaterThan(4)
+    for (const c of caps) expect(c).toBeGreaterThan(0)
+
+    // Roads are the skeleton of a site view: funded FIRST and funded most.
+    expect(q.indexOf('way["highway"]')).toBeLessThan(q.indexOf('["building"]'))
+    expect(caps[0]).toBe(550)
+    expect(Math.max(...caps)).toBe(caps[0])
+  })
+
+  it('keeps the total bounded — the cap is a budget, not a suggestion', () => {
+    const q = buildFeaturesQuery(bbox, 12, 1000)
+    const caps = [...q.matchAll(/out geom (\d+);/g)].map((m) => Number(m[1]))
+    // Ways compete for geometry payload; nodes are one coordinate each and are
+    // budgeted separately, so the way groups are what has to stay in bounds.
+    const wayTotal = caps.reduce((a, b) => a + b, 0) - 350 - 50
+    expect(wayTotal).toBeLessThanOrEqual(1000 * 1.4)
   })
 
   it('asks for trees as nodes only — an area is never a tree', () => {

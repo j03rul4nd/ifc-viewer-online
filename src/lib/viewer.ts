@@ -6,6 +6,7 @@ import { safeVoid } from './errors'
 import { appBus } from './event-bus'
 import { cameraRangeForBounds, widenCameraRange } from './camera-range'
 import { bindNavigation } from './camera-nav'
+import { createFrameCoalescer } from './frame-coalescer'
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
 import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
 import { clearInspectorTarget } from './inspector'
@@ -268,6 +269,16 @@ export interface ViewerAPI {
    * Returns null when the model has no geometry or is not loaded.
    */
   getModelBounds(modelId?: string): { center: { x: number; y: number; z: number }; size: { x: number; y: number; z: number } } | null
+  /**
+   * The model's plan outline in world space, as four ORIENTED corners.
+   *
+   * `getModelBounds` re-boxes the transformed corners into a world-axis-aligned
+   * Box3, which is the right answer for framing a camera and the wrong one for
+   * asking "what ground does this cover": a building at 45 degrees to the world
+   * axes reports a box twice its own area, and anything keyed off that box
+   * reaches into the plot next door. This keeps the rotation.
+   */
+  getModelFootprint(modelId?: string): Array<{ x: number; z: number }> | null
   /** Read back a model's transform values (in degrees for rotation). Defaults to active model. */
   getModelTransform(modelId?: string): Required<ModelTransform>
   /** Fit the camera to the combined bounding box of ALL loaded models. */
@@ -291,6 +302,12 @@ export interface ViewerAPI {
    * No-ops silently if the modelId is not currently loaded.
    */
   setModelVisible(modelId: string, visible: boolean): void
+  /**
+   * Set a uniform presentation opacity on one model or every loaded model.
+   * Values are clamped to 0.02–1. Used by scan/BIM comparison modes; geometry
+   * and model placements are not changed. Passing 1 restores source opacity.
+   */
+  setModelOpacity(opacity: number, modelId?: string): void
   /**
    * Fully unload a model from the scene and release its GPU/memory resources.
    * After this call the modelId is no longer valid in the viewer.
@@ -368,6 +385,11 @@ export interface ViewerAPI {
    * IFC model is never moved to accommodate one.
    */
   getMeshes(): Promise<import('./mesh/mesh-system').MeshSystemAPI>
+  /**
+   * Lazy 3D video surfaces. Video elements, decoders and GPU textures are
+   * created only after the user opens a clip and disposed with the viewer.
+   */
+  getVideos(): Promise<import('./video/video-system').VideoSystemAPI>
   /**
    * Switch between standard WebGL rendering and quality mode (SSAO + edge detection).
    * Falls back silently to standard if postproduction failed to initialise on this GPU.
@@ -822,6 +844,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // Point clouds (lazy chunk) — set by getPointClouds().
   let meshInstance: import('./mesh/mesh-system').MeshSystemAPI | null = null
   let meshLoadPromise: Promise<import('./mesh/mesh-system').MeshSystemAPI> | null = null
+  let videoInstance: import('./video/video-system').VideoSystemAPI | null = null
+  let videoLoadPromise: Promise<import('./video/video-system').VideoSystemAPI> | null = null
   let pointCloudInstance: import('./pointcloud/point-cloud-system').PointCloudSystemAPI | null = null
   let pointCloudLoadPromise: Promise<import('./pointcloud/point-cloud-system').PointCloudSystemAPI> | null = null
 
@@ -875,9 +899,20 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   const fragmentsManager = components.get(OBC.FragmentsManager)
   const ifcLoader        = components.get(OBC.IfcLoader)
 
-  const triggerUpdate = (): void => { void fragmentsManager.core.update() }
-  world.camera.controls.addEventListener('control', triggerUpdate)
-  world.camera.controls.addEventListener('rest',    triggerUpdate)
+  // Raw wheel and pointer events can arrive faster than the display refresh.
+  // Updating the fragments core for every one of them competes with the camera
+  // itself; one update per animation frame is both fresher and cheaper.
+  const fragmentUpdates = createFrameCoalescer(() => { void fragmentsManager.core.update() })
+  const onCameraControl = (): void => {
+    pointCloudInstance?.setInteractionActive(true)
+    fragmentUpdates.request()
+  }
+  const onCameraRest = (): void => {
+    pointCloudInstance?.setInteractionActive(false)
+    fragmentUpdates.request()
+  }
+  world.camera.controls.addEventListener('control', onCameraControl)
+  world.camera.controls.addEventListener('rest', onCameraRest)
 
   // ─── Navigation feel ───────────────────────────────────────────────────────
   //
@@ -901,7 +936,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     const ACTION = (ctrls.constructor as unknown as { ACTION?: Record<string, ButtonAction> }).ACTION
 
     if (ACTION?.TRUCK !== undefined) {
-      unbindNavigation = bindNavigation(ctrls, window, { truckAction: ACTION.TRUCK })
+      unbindNavigation = bindNavigation(ctrls, window, {
+        truckAction: ACTION.TRUCK,
+        wheelTarget: wr.domElement,
+      })
     }
   } catch (err) {
     console.debug('[Viewer] camera-controls tuning skipped:', err instanceof Error ? err.message : err)
@@ -2031,6 +2069,32 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
+    getModelFootprint(modelId?: string) {
+      const tid   = modelId ?? currentModelId
+      const model = (tid ? modelObjects.get(tid) : null) ?? currentModel
+      const pivot = (tid ? modelPivots.get(tid) : null) ?? currentPivot
+      if (!model || !pivot) return null
+      const box = model.box
+      if (box.isEmpty()) return null
+
+      pivot.updateMatrixWorld(true)
+      const m = pivot.matrixWorld
+      // The four plan corners of the LOCAL box, transformed individually and
+      // NOT re-boxed. Taken at the box's floor: a transform with any tilt in it
+      // would otherwise report the roof's outline, and the footprint question
+      // is always about where the model meets the ground.
+      const corners = [
+        new THREE.Vector3(box.min.x, box.min.y, box.min.z),
+        new THREE.Vector3(box.max.x, box.min.y, box.min.z),
+        new THREE.Vector3(box.max.x, box.min.y, box.max.z),
+        new THREE.Vector3(box.min.x, box.min.y, box.max.z),
+      ]
+      return corners.map((v) => {
+        v.applyMatrix4(m)
+        return { x: v.x, z: v.z }
+      })
+    },
+
     getModelTransform(modelId?: string) {
       const tid    = modelId ?? currentModelId
       const stored = tid ? (pivotTransforms.get(tid) ?? null) : null
@@ -2141,6 +2205,23 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         // Show all elements first; the caller (App.tsx) immediately re-calls
         // applyFilters to restore the correct per-element/category visibility.
         if (allIds.length) void model.setVisible(allIds, true)
+      }
+      void fragmentsManager.core.update()
+    },
+
+    setModelOpacity(opacity: number, modelId?: string) {
+      const clamped = Math.max(0.02, Math.min(1, opacity))
+      const targets = modelId
+        ? [[modelId, modelObjects.get(modelId)] as const]
+        : [...modelObjects.entries()]
+
+      for (const [id, model] of targets) {
+        if (!model) {
+          console.warn(`[Viewer] setModelOpacity: "${id}" is not loaded`)
+          continue
+        }
+        if (clamped >= 0.999) void model.resetOpacity(undefined)
+        else void model.setOpacity(undefined, clamped)
       }
       void fragmentsManager.core.update()
     },
@@ -2602,6 +2683,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           // module: map mode must not drag the sun-study chunk in with it.
           isSolarActive: () => solarSystemInstance?.isActive() ?? false,
           getActiveModelBounds: () => self.getModelBounds(),
+          getActiveModelFootprint: () => self.getModelFootprint(),
         })
         return geoSystemInstance
       })
@@ -2671,6 +2753,36 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return meshLoadPromise
     },
 
+    getVideos() {
+      const self = this
+      videoLoadPromise ??= import('./video/video-system').then((module) => {
+        videoInstance = module.createVideoSystem({
+          scene: world.scene.three,
+          getActiveCamera: () => world.camera.three,
+          getActiveModelBounds: () => self.getModelBounds(),
+          frameBox: (min, max) => {
+            try {
+              const box = new THREE.Box3(min, max)
+              const scene = box.clone()
+              const model = self.getModelBounds()
+              if (model) {
+                const half = new THREE.Vector3(model.size.x / 2, model.size.y / 2, model.size.z / 2)
+                const centre = new THREE.Vector3(model.center.x, model.center.y, model.center.z)
+                scene.expandByPoint(centre.clone().sub(half))
+                scene.expandByPoint(centre.clone().add(half))
+              }
+              tuneSceneToBounds(scene)
+              void world.camera.controls.fitToBox(box, true)
+            } catch (error) {
+              console.debug('[Viewer] video fit failed:', error instanceof Error ? error.message : error)
+            }
+          },
+        })
+        return videoInstance
+      })
+      return videoLoadPromise
+    },
+
     getPointClouds() {
       // Dynamic import keeps the point cloud engine, its shader and its readers
       // in their own chunk: a user who never opens a scan never downloads them.
@@ -2728,6 +2840,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     dispose() {
+      try { videoInstance?.dispose() } catch { /* ok */ }
+      videoInstance = null
+      videoLoadPromise = null
       try { meshInstance?.dispose() } catch { /* ok */ }
       meshInstance = null
       meshLoadPromise = null
@@ -2748,6 +2863,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       // Window-level, so nothing else here would have caught it: without this
       // every reload leaves another set of key listeners holding dead controls.
       unbindNavigation?.()
+      world.camera.controls.removeEventListener('control', onCameraControl)
+      world.camera.controls.removeEventListener('rest', onCameraRest)
+      fragmentUpdates.dispose()
       try { lengthMeasurement.dispose() } catch { /* ok */ }
       try { areaMeasurement.dispose() } catch { /* ok */ }
       try { clipper.dispose() } catch { /* ok */ }

@@ -27,9 +27,18 @@ import { createLogger } from '../lib/logger'
 import { appBus } from '../lib/event-bus'
 import { publishInspectorTarget } from '../lib/inspector'
 import { emitEmbedEvent } from '../lib/url-params'
+import { TemporalReplayController, type TemporalReplaySnapshot } from '../lib/pointcloud/temporal-replay'
+import {
+  SimulatedLiveTransport,
+  type SimulatedTransportMode, type SimulatedTransportSnapshot,
+} from '../lib/pointcloud/simulated-live-transport'
 import {
   DEMO_POINT_CLOUDS, DEMO_SOURCES, fetchDemoPointCloud, formatDemoSize, type DemoPointCloud,
 } from '../demo-models/point-clouds'
+import {
+  createPavilionLidarReplay, PAVILION_LIDAR_DURATION_MS, PAVILION_LIDAR_FRAME_RATE,
+  PAVILION_LIDAR_REPLAY_ID, pavilionReplayAlignment,
+} from '../demo-models/pavilion-lidar-replay'
 import type { ViewerAPI } from '../lib/viewer'
 import type { PointCloudSystemAPI, CloudStats, PickedPoint } from '../lib/pointcloud/point-cloud-system'
 import type {
@@ -38,11 +47,14 @@ import type {
 
 interface PointCloudPanelProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
+  companionLoaded?: boolean
+  onLoadCompanionModel?: () => Promise<void>
 }
 
 const log = createLogger('PointCloudPanel')
 
 const COLOR_MODES: PointColorMode[] = ['rgb', 'intensity', 'elevation', 'classification', 'flat']
+type DemoViewMode = 'point-cloud' | 'ifc' | 'overlay' | 'xray' | 'scan-vs-bim' | 'comparison'
 
 /** Confidence → badge colour. A guess must never look like a measurement. */
 const CONFIDENCE_TINT: Record<string, string> = {
@@ -52,7 +64,9 @@ const CONFIDENCE_TINT: Record<string, string> = {
   manual: '#E5484D',
 }
 
-export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) {
+export default function PointCloudPanel({
+  viewerApiRef, companionLoaded = false, onLoadCompanionModel,
+}: PointCloudPanelProps) {
   const { t } = useTranslation('pointcloud')
   // Runtime-built keys (reader error codes, alignment reasons) can't be proved
   // against the typed resource map — same escape hatch GeoPanel uses.
@@ -91,6 +105,19 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
   const measurementTool = useUIStore((st) => st.activeMeasurementTool)
   const [picked, setPicked] = useState<PickedPoint | null>(null)
   const [pickMissed, setPickMissed] = useState(false)
+  const [demoViewMode, setDemoViewMode] = useState<DemoViewMode>('overlay')
+  const [comparisonBlend, setComparisonBlend] = useState(0.5)
+  const replayControllerRef = useRef<TemporalReplayController | null>(null)
+  const replayTransportRef = useRef<SimulatedLiveTransport | null>(null)
+  const [replayState, setReplayState] = useState<TemporalReplaySnapshot | null>(null)
+  const [transportMode, setTransportMode] = useState<SimulatedTransportMode>('stable')
+  const [transportState, setTransportState] = useState<SimulatedTransportSnapshot | null>(null)
+  const [replayPointCount, setReplayPointCount] = useState(0)
+  const [replayTruncated, setReplayTruncated] = useState(0)
+  const [replayBusy, setReplayBusy] = useState(false)
+  const [replayError, setReplayError] = useState(false)
+  const [mcapBusy, setMcapBusy] = useState(false)
+  const [mcapError, setMcapError] = useState(false)
 
   const activeCloud = store.clouds.find((c) => c.id === store.activeCloudId) ?? null
 
@@ -178,13 +205,198 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
     }
   }, [handleFiles, t])
 
+  const stopReplay = useCallback((): void => {
+    replayControllerRef.current?.dispose()
+    replayControllerRef.current = null
+    replayTransportRef.current = null
+    setReplayState(null)
+    setTransportState(null)
+    setReplayPointCount(0)
+    setReplayTruncated(0)
+  }, [])
+
+  /**
+   * Exhibition path: load the companion IFC, create ONE resident dynamic
+   * buffer, and drive it with a finite recorded-style timeline. The geometry is
+   * synthetic and the UI says so; what this proves is the temporal workflow,
+   * not a physical sensor connection.
+   */
+  const handleStartReplay = useCallback(async (): Promise<void> => {
+    const viewer = viewerApiRef.current
+    if (!viewer || replayBusy) return
+    setReplayBusy(true)
+    setReplayError(false)
+    try {
+      if (!companionLoaded && onLoadCompanionModel) await onLoadCompanionModel()
+      const system = await viewer.getPointClouds()
+
+      stopReplay()
+      system.remove(PAVILION_LIDAR_REPLAY_ID)
+      usePointCloudStore.getState().removeCloud(PAVILION_LIDAR_REPLAY_ID)
+
+      const source = createPavilionLidarReplay()
+      const transport = new SimulatedLiveTransport(source.capacity)
+      transport.setMode(transportMode)
+      replayTransportRef.current = transport
+      const companion = useSceneStore.getState().models
+        .find((model) => model.fileName === 'IVO-Operations-Pavilion.ifc')
+      const alignment = pavilionReplayAlignment(
+        companion ? viewer.getModelBounds(companion.id) : viewer.getModelBounds(),
+      )
+      system.create(PAVILION_LIDAR_REPLAY_ID, alignment, source.sourceFrame.origin)
+      system.addDynamicBuffer(PAVILION_LIDAR_REPLAY_ID, source.capacity)
+
+      usePointCloudStore.getState().addCloud({
+        id: PAVILION_LIDAR_REPLAY_ID,
+        fileName: t('replay.name'),
+        sourceKind: 'temporal-replay',
+        fileSize: 0,
+        // The frame is already GPU-ready rather than parsed from a container;
+        // PLY is retained only as the closest immutable format in the existing
+        // store union. sourceKind is the product-facing truth.
+        format: 'ply',
+        status: 'ready',
+        errorKey: null,
+        progress: 100,
+        pointCount: source.basePointCount,
+        declaredCount: source.basePointCount,
+        truncated: false,
+        streamErrorKey: null,
+        visible: true,
+        frame: source.sourceFrame,
+        attributes: { color: true, intensity: true, classification: true, confidence: false },
+        alignment,
+        alignedToModelId: companion?.id ?? null,
+        fileKey: `demo:${PAVILION_LIDAR_REPLAY_ID}:v1`,
+        loadedAt: Date.now(),
+      })
+
+      // A translucent IFC makes the moving returns legible while keeping the
+      // designed geometry available for comparison.
+      for (const model of useSceneStore.getState().models) {
+        viewer.setModelVisible(model.id, true)
+        viewer.setModelOpacity(model.fileName === 'IVO-Operations-Pavilion.ifc' ? 0.42 : 0.18, model.id)
+        useSceneStore.getState().setModelVisible(model.id, true)
+      }
+      usePointCloudStore.getState().setDisplay({
+        colorMode: 'rgb', pointSize: 2.6, opacity: 0.94,
+        density: 1, attenuate: false, round: true,
+      })
+      system.setDisplay(usePointCloudStore.getState().display)
+
+      const controller = new TemporalReplayController({
+        durationMs: PAVILION_LIDAR_DURATION_MS,
+        frameRate: PAVILION_LIDAR_FRAME_RATE,
+        createFrame: (positionMs, sequence) => source.sample(positionMs, sequence),
+        onFrame: (frame, state) => {
+          setReplayState(state)
+          transport.transmit(frame, (decoded) => {
+            const update = system.updateDynamicFrame(PAVILION_LIDAR_REPLAY_ID, decoded)
+            if (!update) return
+            setReplayPointCount(update.count)
+            setReplayTruncated(update.truncated)
+          })
+          setTransportState(transport.snapshot())
+        },
+      })
+      replayControllerRef.current = controller
+      controller.play()
+      setReplayState(controller.snapshot())
+      setTransportState(transport.snapshot())
+      system.frameWithModel()
+    } catch (error) {
+      log.warn('LiDAR temporal replay could not start:', error)
+      setReplayError(true)
+    } finally {
+      setReplayBusy(false)
+    }
+  }, [viewerApiRef, replayBusy, companionLoaded, onLoadCompanionModel, stopReplay, t, transportMode])
+
+  const handleTransportMode = useCallback((mode: SimulatedTransportMode): void => {
+    setTransportMode(mode)
+    const transport = replayTransportRef.current
+    if (!transport) return
+    transport.setMode(mode)
+    setTransportState(transport.snapshot())
+  }, [])
+
+  const handleDownloadReplayMcap = useCallback(async (): Promise<void> => {
+    if (mcapBusy) return
+    setMcapBusy(true)
+    setMcapError(false)
+    try {
+      const { createMcapPointRecordingBlob } = await import('../lib/pointcloud/mcap-point-recording')
+      const source = createPavilionLidarReplay()
+      // 2 fps keeps the portable fixture compact; the on-screen replay remains
+      // 12 fps. Frames are yielded and encoded one at a time because the source
+      // deliberately reuses its typed arrays.
+      function* frames() {
+        let sequence = 1
+        for (let positionMs = 0; positionMs <= PAVILION_LIDAR_DURATION_MS; positionMs += 500) {
+          yield source.sample(positionMs, sequence++)
+        }
+      }
+      const blob = await createMcapPointRecordingBlob(frames())
+      const href = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = href
+      anchor.download = 'operations-pavilion-lidar-demo.mcap'
+      anchor.click()
+      setTimeout(() => URL.revokeObjectURL(href), 0)
+    } catch (error) {
+      log.warn('MCAP point replay example could not be created:', error)
+      setMcapError(true)
+    } finally {
+      setMcapBusy(false)
+    }
+  }, [mcapBusy])
+
+  const handleReplayToggle = useCallback((): void => {
+    const controller = replayControllerRef.current
+    if (!controller) return
+    if (controller.snapshot().status === 'playing') controller.pause()
+    else controller.play()
+    setReplayState(controller.snapshot())
+  }, [])
+
+  const handleReplaySeek = useCallback((positionMs: number): void => {
+    replayControllerRef.current?.seek(positionMs)
+    if (replayControllerRef.current) setReplayState(replayControllerRef.current.snapshot())
+  }, [])
+
+  const handleReplaySpeed = useCallback((speed: number): void => {
+    replayControllerRef.current?.setSpeed(speed)
+    if (replayControllerRef.current) setReplayState(replayControllerRef.current.snapshot())
+  }, [])
+
+  const handleReplayLatest = useCallback((): void => {
+    replayControllerRef.current?.jumpToLatest()
+    if (replayControllerRef.current) setReplayState(replayControllerRef.current.snapshot())
+  }, [])
+
+  const handleReplayLoop = useCallback((): void => {
+    const controller = replayControllerRef.current
+    if (!controller) return
+    controller.setLoop(!controller.snapshot().loop)
+    setReplayState(controller.snapshot())
+  }, [])
+
+  useEffect(() => () => {
+    replayControllerRef.current?.dispose()
+  }, [])
+
   const handleRemove = useCallback((cloud: PointCloudEntry): void => {
+    if (cloud.id === PAVILION_LIDAR_REPLAY_ID) stopReplay()
     cancelPointCloud(cloud.id)
     void getSystem()?.then((system) => system.remove(cloud.id))
     usePointCloudStore.getState().removeCloud(cloud.id)
-  }, [getSystem])
+  }, [getSystem, stopReplay])
 
   const handleVisible = useCallback((cloud: PointCloudEntry, visible: boolean): void => {
+    if (cloud.id === PAVILION_LIDAR_REPLAY_ID && !visible) {
+      replayControllerRef.current?.pause()
+      if (replayControllerRef.current) setReplayState(replayControllerRef.current.snapshot())
+    }
     usePointCloudStore.getState().setVisible(cloud.id, visible)
     void getSystem()?.then((system) => system.setVisible(cloud.id, visible))
   }, [getSystem])
@@ -202,6 +414,10 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
         const system = await viewer.getPointClouds()
 
         switch (cmd.action) {
+          case 'replay': {
+            await handleStartReplay()
+            break
+          }
           case 'add': {
             if (!cmd.file) throw new Error('No point cloud data provided')
             const load = {
@@ -231,12 +447,16 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
           }
           case 'remove': {
             if (!cmd.cloudId) throw new Error('No cloudId provided')
+            if (cmd.cloudId === PAVILION_LIDAR_REPLAY_ID) stopReplay()
             cancelPointCloud(cmd.cloudId)
             system.remove(cmd.cloudId)
             usePointCloudStore.getState().removeCloud(cmd.cloudId)
             break
           }
           case 'clear': {
+            if (usePointCloudStore.getState().clouds.some((c) => c.id === PAVILION_LIDAR_REPLAY_ID)) {
+              stopReplay()
+            }
             for (const c of usePointCloudStore.getState().clouds) {
               cancelPointCloud(c.id)
               system.remove(c.id)
@@ -303,7 +523,7 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
   // tDynamic is recreated every render; the effect only needs it to resolve an
   // error key at call time, so it is deliberately not a dependency.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [viewerApiRef, activeModelId, sceneModels.length])
+  }), [viewerApiRef, activeModelId, sceneModels.length, stopReplay])
 
   const handleOffset = useCallback((patch: Parameters<typeof store.setOffset>[1]): void => {
     const cloud = usePointCloudStore.getState().clouds.find((c) => c.id === store.activeCloudId)
@@ -473,9 +693,63 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
     })
   }, [viewerApiRef, sceneModels, getSystem])
 
+  /** Presentation presets only change visibility/material opacity. The measured
+   * point-cloud→IFC transform remains untouched across every mode. */
+  const applyDemoView = useCallback((mode: Exclude<DemoViewMode, 'comparison'>): void => {
+    const viewer = viewerApiRef.current
+    if (!viewer) return
+    setDemoViewMode(mode)
+    viewer.applyStyle(mode === 'xray' ? 'xray' : 'shaded')
+
+    if (mode === 'point-cloud') {
+      setIsolation('cloud')
+      setDisplay({ opacity: 1 })
+      return
+    }
+    if (mode === 'ifc') {
+      setIsolation('model')
+      for (const model of sceneModels) viewer.setModelOpacity(1, model.id)
+      return
+    }
+
+    setIsolation('both')
+    setDisplay({ opacity: mode === 'scan-vs-bim' ? 0.82 : 1 })
+    const modelOpacity = mode === 'overlay' ? 0.45 : mode === 'scan-vs-bim' ? 0.72 : 0.20
+    for (const model of sceneModels) viewer.setModelOpacity(modelOpacity, model.id)
+  // setDisplay is a stable store write wrapper and deliberately not a dependency.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewerApiRef, sceneModels, setIsolation])
+
+  const applyComparison = useCallback((blend: number): void => {
+    const viewer = viewerApiRef.current
+    if (!viewer) return
+    const value = Math.max(0, Math.min(1, blend))
+    setComparisonBlend(value)
+    setDemoViewMode('comparison')
+    viewer.applyStyle('shaded')
+
+    const showModels = value > 0.01
+    const showClouds = value < 0.99
+    for (const model of sceneModels) {
+      viewer.setModelVisible(model.id, showModels)
+      viewer.setModelOpacity(Math.max(0.02, value), model.id)
+      useSceneStore.getState().setModelVisible(model.id, showModels)
+    }
+    setDisplay({ opacity: Math.max(0.05, 1 - value) })
+    void getSystem()?.then((system) => {
+      for (const cloud of usePointCloudStore.getState().clouds) {
+        usePointCloudStore.getState().setVisible(cloud.id, showClouds)
+        system.setVisible(cloud.id, showClouds)
+      }
+    })
+  // setDisplay is a stable store write wrapper and deliberately not a dependency.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewerApiRef, sceneModels, getSystem])
+
   const attributes = activeCloud?.attributes
   const alignment = activeCloud?.alignment ?? null
-  const needsTransform = alignment?.rung === 'manual' || alignment?.rung === 'local'
+  const needsTransform = activeCloud?.sourceKind !== 'temporal-replay' &&
+    (alignment?.rung === 'manual' || alignment?.rung === 'local')
 
   return (
     <ViewportPanel
@@ -554,6 +828,181 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
 
         {/* ── Everything below scrolls ─────────────────────────────────────── */}
         <div className="flex-1 min-h-0 overflow-y-auto">
+
+          {/* ── Temporal LiDAR exhibition replay ──────────────────────────── */}
+          <Section title={t('replay.title')}>
+            <div
+              data-testid="lidar-replay-demo"
+              className="rounded-[9px] border border-[var(--border-strong)] bg-[var(--surface-2)] p-2 flex flex-col gap-1.5"
+            >
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Badge tint="#F5A623">{t('replay.simulatedBadge')}</Badge>
+                <DemoChip>IFC + LiDAR</DemoChip>
+                <DemoChip>{PAVILION_LIDAR_FRAME_RATE} FPS</DemoChip>
+                {(companionLoaded || replayState) && <Badge tint="#30A46C">{t('replay.ifcLoaded')}</Badge>}
+              </div>
+              <div className="text-[11px] font-medium text-[var(--text)]">{t('replay.name')}</div>
+              <div className="text-[10px] leading-snug text-[var(--text-dim)]">{t('replay.description')}</div>
+
+              {!replayState ? (
+                <button
+                  type="button"
+                  data-testid="lidar-replay-start"
+                  disabled={replayBusy}
+                  onClick={() => { void handleStartReplay() }}
+                  className="mt-0.5 w-full px-2 py-2 rounded-[7px] text-[11px] font-semibold bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50 transition"
+                >
+                  {replayBusy ? t('replay.loading') : t('replay.start')}
+                </button>
+              ) : (
+                <div className="flex flex-col gap-1.5" aria-live="polite">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <Badge tint={replayState.status === 'playing' ? '#30A46C' : '#F5A623'}>
+                        {t(`replay.status.${replayState.status}`)}
+                      </Badge>
+                      <span className="text-[9.5px] font-mono tabular-nums text-[var(--text-faint)]">
+                        {formatReplayTime(replayState.positionMs)} / {formatReplayTime(replayState.durationMs)}
+                      </span>
+                    </div>
+                    <span className="text-[9.5px] font-mono text-[var(--text-faint)]">
+                      {formatCount(replayPointCount)} pts
+                    </span>
+                  </div>
+
+                  <input
+                    type="range"
+                    data-testid="lidar-replay-timeline"
+                    aria-label={t('replay.timeline')}
+                    min={0}
+                    max={replayState.durationMs}
+                    step={50}
+                    value={replayState.positionMs}
+                    onChange={(event) => handleReplaySeek(Number(event.target.value))}
+                    className="w-full accent-[var(--accent)]"
+                  />
+
+                  <div className="flex gap-1">
+                    <SmallButton onClick={handleReplayToggle}>
+                      {replayState.status === 'playing' ? t('replay.pause') : t('replay.play')}
+                    </SmallButton>
+                    <SmallButton onClick={handleReplayLatest}>{t('replay.latest')}</SmallButton>
+                    <SmallButton onClick={() => { void handleStartReplay() }}>{t('replay.restart')}</SmallButton>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] text-[var(--text-faint)]">{t('replay.speed')}</span>
+                    <div className="flex gap-1">
+                      {[0.5, 1, 2].map((speed) => (
+                        <button
+                          key={speed}
+                          type="button"
+                          onClick={() => handleReplaySpeed(speed)}
+                          aria-pressed={replayState.speed === speed}
+                          className={`px-1.5 py-0.5 rounded-[5px] text-[9.5px] font-mono transition-colors ${
+                            replayState.speed === speed
+                              ? 'bg-[var(--accent)] text-white'
+                              : 'border border-[var(--border-strong)] text-[var(--text-dim)] hover:bg-[var(--surface-1)]'
+                          }`}
+                        >
+                          {speed}×
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleReplayLoop}
+                    aria-pressed={replayState.loop}
+                    className="flex items-center justify-between text-[10px] text-[var(--text-dim)]"
+                  >
+                    <span>{t('replay.loop')}</span>
+                    <span className={replayState.loop ? 'text-[#30A46C]' : 'text-[var(--text-faint)]'}>
+                      {replayState.loop ? '●' : '○'}
+                    </span>
+                  </button>
+
+                  {transportState && (
+                    <div
+                      data-testid="lidar-transport-telemetry"
+                      className="rounded-[7px] border border-[var(--border)] bg-[var(--surface-1)] p-1.5 flex flex-col gap-1"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[9.5px] font-semibold text-[var(--text-dim)]">
+                          {t('replay.transport.title')}
+                        </span>
+                        <Badge tint={
+                          transportState.status === 'connected' ? '#30A46C'
+                            : transportState.status === 'reconnecting' ? '#E5484D' : '#F5A623'
+                        }>
+                          {t(`replay.transport.status.${transportState.status}`)}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1">
+                        {(['stable', 'unstable'] as const).map((mode) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            data-testid={`lidar-transport-${mode}`}
+                            onClick={() => handleTransportMode(mode)}
+                            aria-pressed={transportMode === mode}
+                            className={`rounded-[5px] px-1.5 py-1 text-[9.5px] transition-colors ${
+                              transportMode === mode
+                                ? 'bg-[var(--accent)] text-white'
+                                : 'border border-[var(--border-strong)] text-[var(--text-dim)] hover:bg-[var(--surface-2)]'
+                            }`}
+                          >
+                            {t(`replay.transport.mode.${mode}`)}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] font-mono text-[var(--text-faint)]">
+                        <span>{t('replay.transport.latency', { count: transportState.simulatedLatencyMs })}</span>
+                        <span className="text-right">
+                          {t('replay.transport.buffer', {
+                            depth: transportState.buffer.depth,
+                            capacity: transportState.buffer.capacity,
+                          })}
+                        </span>
+                        <span>{t('replay.transport.loss', { count: transportState.linkDropped })}</span>
+                        <span className="text-right">
+                          {t('replay.transport.reordered', { count: transportState.buffer.reordered })}
+                        </span>
+                        <span>{t('replay.transport.invalid', { count: transportState.buffer.invalid })}</span>
+                        <span className="text-right">
+                          {t('replay.transport.reconnects', { count: transportState.reconnects })}
+                        </span>
+                      </div>
+                      <div className="text-[8.5px] leading-snug text-[var(--text-faint)]">
+                        {t('replay.transport.hint')}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-1 text-[9.5px] font-mono text-[var(--text-faint)]">
+                    <span>{t('replay.sequence', { count: replayState.sequence })}</span>
+                    <span className="text-right">{t('replay.dropped', { count: replayState.droppedFrames })}</span>
+                  </div>
+                  {replayTruncated > 0 && <Note tone="warn">{t('replay.truncated', { count: replayTruncated })}</Note>}
+                </div>
+              )}
+
+              <div className="text-[9.5px] leading-snug text-[var(--text-faint)]">{t('replay.disclaimer')}</div>
+              <button
+                type="button"
+                data-testid="lidar-replay-download-mcap"
+                disabled={mcapBusy}
+                onClick={() => { void handleDownloadReplayMcap() }}
+                className="w-full rounded-[6px] border border-[var(--border-strong)] px-2 py-1 text-[9.5px] font-medium text-[var(--text-dim)] hover:bg-[var(--surface-1)] disabled:opacity-50 transition-colors"
+              >
+                {mcapBusy ? t('replay.mcapBuilding') : t('replay.mcapDownload')}
+              </button>
+              <div className="text-[8.5px] leading-snug text-[var(--text-faint)]">{t('replay.mcapHint')}</div>
+              {mcapError && <Note tone="warn">{t('replay.mcapFailed')}</Note>}
+              {replayError && <Note tone="warn">{t('replay.failed')}</Note>}
+            </div>
+          </Section>
 
           {/* ── Sample scans ───────────────────────────────────────────────── */}
           {store.clouds.length === 0 && (
@@ -650,18 +1099,22 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
                 </Badge>
               </div>
 
-              {activeCloud.frame?.epsgCode
-                ? <div className="text-[10px] font-mono text-[var(--text-faint)] mt-1">
-                    {t('align.crs', { code: activeCloud.frame.epsgCode })}
-                  </div>
-                : <div className="text-[10px] text-[var(--text-faint)] mt-1">{t('align.crsNone')}</div>}
+              {activeCloud.sourceKind !== 'temporal-replay' && (
+                <>
+                  {activeCloud.frame?.epsgCode
+                    ? <div className="text-[10px] font-mono text-[var(--text-faint)] mt-1">
+                        {t('align.crs', { code: activeCloud.frame.epsgCode })}
+                      </div>
+                    : <div className="text-[10px] text-[var(--text-faint)] mt-1">{t('align.crsNone')}</div>}
 
-              {activeCloud.frame && (
-                <div className="text-[10px] font-mono text-[var(--text-faint)]">
-                  {t('align.unit', { unit: formatUnit(activeCloud.frame.unitScale) })}
-                  {' · '}
-                  {t(activeCloud.frame.unitSource === 'declared' ? 'align.unitDeclared' : 'align.unitAssumed')}
-                </div>
+                  {activeCloud.frame && (
+                    <div className="text-[10px] font-mono text-[var(--text-faint)]">
+                      {t('align.unit', { unit: formatUnit(activeCloud.frame.unitScale) })}
+                      {' · '}
+                      {t(activeCloud.frame.unitSource === 'declared' ? 'align.unitDeclared' : 'align.unitAssumed')}
+                    </div>
+                  )}
+                </>
               )}
 
               {activeCloud.frame && activeCloud.frame.upAxisSource !== 'declared' && (
@@ -742,18 +1195,20 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
                 </div>
               )}
 
-              <div className="flex gap-1 mt-1.5">
-                <SmallButton onClick={() => setShowTransform((v) => !v)}>
-                  {t('transform.title')}
-                </SmallButton>
-                {/* Only worth offering when there IS a model to align against and
-                    the cloud was not already aligned to it. */}
-                {sceneModels.length > 0 && activeCloud.status === 'ready' && (
-                  <SmallButton onClick={() => { void handleRealign() }} disabled={realigning}>
-                    {t('align.recompute')}
+              {activeCloud.sourceKind !== 'temporal-replay' && (
+                <div className="flex gap-1 mt-1.5">
+                  <SmallButton onClick={() => setShowTransform((v) => !v)}>
+                    {t('transform.title')}
                   </SmallButton>
-                )}
-              </div>
+                  {/* Only worth offering when there IS a model to align against and
+                      the cloud was not already aligned to it. */}
+                  {sceneModels.length > 0 && activeCloud.status === 'ready' && (
+                    <SmallButton onClick={() => { void handleRealign() }} disabled={realigning}>
+                      {t('align.recompute')}
+                    </SmallButton>
+                  )}
+                </div>
+              )}
             </Section>
           )}
 
@@ -903,11 +1358,45 @@ export default function PointCloudPanel({ viewerApiRef }: PointCloudPanelProps) 
                 </SmallButton>
               </div>
               {sceneModels.length > 0 && (
-                <div className="flex gap-1 mt-1">
-                  <SmallButton onClick={() => setIsolation('both')}>{t('view.both')}</SmallButton>
-                  <SmallButton onClick={() => setIsolation('cloud')}>{t('view.isolateCloud')}</SmallButton>
-                  <SmallButton onClick={() => setIsolation('model')}>{t('view.isolateModel')}</SmallButton>
-                </div>
+                <>
+                  <div className="grid grid-cols-2 gap-1 mt-1" data-testid="scan-bim-demo-modes">
+                    {([
+                      ['point-cloud', 'Point Cloud'],
+                      ['ifc', 'IFC'],
+                      ['overlay', 'Overlay'],
+                      ['xray', 'X-Ray'],
+                      ['scan-vs-bim', 'Scan vs BIM'],
+                    ] as const).map(([mode, label]) => (
+                      <button
+                        key={mode}
+                        onClick={() => applyDemoView(mode)}
+                        aria-pressed={demoViewMode === mode}
+                        className={`px-2 py-1.5 rounded-[7px] text-[10px] font-medium border transition-colors ${
+                          demoViewMode === mode
+                            ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
+                            : 'border-[var(--border-strong)] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-1.5 rounded-[7px] border border-[var(--border)] px-2 py-1.5">
+                    <div className="flex justify-between text-[9.5px] text-[var(--text-faint)] mb-1">
+                      <span>POINT CLOUD</span><span>IFC</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={comparisonBlend}
+                      aria-label="Point Cloud to IFC comparison"
+                      onChange={(event) => applyComparison(Number(event.target.value))}
+                      className="w-full accent-[var(--accent)]"
+                    />
+                  </div>
+                </>
               )}
 
               {stats && stats.pointCount > 0 && (
@@ -1064,7 +1553,9 @@ function CloudRow({ cloud, active, onSelect, onToggleVisible, onRemove, t, tDyna
               ? tDynamic(cloud.errorKey ?? 'error.parseFailed')
               : parsing
                 ? `${t('load.parsingShort')} ${cloud.progress}%`
-                : t('status.points', { count: formatCount(cloud.pointCount) })}
+                : cloud.sourceKind === 'temporal-replay'
+                  ? t('replay.rowStatus')
+                  : t('status.points', { count: formatCount(cloud.pointCount) })}
           </div>
         </div>
         {!failed && (
@@ -1103,6 +1594,12 @@ function formatCount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)} M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(0)} k`
   return String(n)
+}
+
+function formatReplayTime(milliseconds: number): string {
+  const seconds = Math.max(0, Math.floor(milliseconds / 1000))
+  const minutes = Math.floor(seconds / 60)
+  return `${minutes}:${String(seconds % 60).padStart(2, '0')}`
 }
 
 function formatUnit(unitScale: number): string {

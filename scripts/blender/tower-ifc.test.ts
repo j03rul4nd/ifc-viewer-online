@@ -16,6 +16,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { IfcAPI } from 'web-ifc'
 import { readFileSync, statSync } from 'fs'
 import path from 'path'
+import proj4 from 'proj4'
 import { DEMO_MODELS } from '../../src/demo-models/models'
 
 const DIR = path.join(process.cwd(), 'public', 'models', 'torre-poblenou')
@@ -27,8 +28,8 @@ const FILE = 'BCN-IVO-ZZ-XX-M3-Z-0002.ifc'
  * map conversion exactly. See the shared-origin block at the bottom.
  */
 const EPSG = 'EPSG:25831'
-const EASTINGS = 432340.0
-const NORTHINGS = 4583945.0
+const EASTINGS = 432290.0
+const NORTHINGS = 4584167.0
 const HEIGHT = 12.5
 const ROTATION_DEG = 45
 
@@ -236,6 +237,31 @@ describe('where on earth it says it is', () => {
     expect(angle).toBeCloseTo(ROTATION_DEG, 3)
   })
 
+  it('says the SAME place twice — map conversion and site lat/lon agree', () => {
+    // A file may state where it is twice: precisely, as an IfcMapConversion in a
+    // projected CRS, and coarsely, as IfcSite.RefLatitude/RefLongitude. Nothing
+    // in IFC makes them agree, and this model shipped with them 19.2 m apart —
+    // enough to stand the tower in the middle of Avinguda Diagonal, and enough
+    // that which rung of the georeferencing ladder a viewer happens to prefer
+    // changes where the building lands. Two statements that disagree are worse
+    // than one.
+    const conv = of('IfcMapConversion')[0]
+    const site = of('IfcSite')[0]
+    const dms = (v: { value?: unknown } | null | undefined): number => {
+      const c = Array.isArray(v?.value) ? (v.value as number[]) : []
+      const sign = (c.find((x) => x !== 0) ?? 0) < 0 ? -1 : 1
+      const [d = 0, m = 0, sec = 0, u = 0] = c.map(Math.abs)
+      return sign * (d + m / 60 + sec / 3600 + u / 3.6e9)
+    }
+
+    proj4.defs(EPSG, '+proj=utm +zone=31 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs')
+    const [lon, lat] = proj4(EPSG, 'EPSG:4326', [num(conv.Eastings), num(conv.Northings)])
+
+    const dNorthM = (dms(site.RefLatitude) - lat) * 111_132
+    const dEastM = (dms(site.RefLongitude) - lon) * 111_320 * Math.cos((lat * Math.PI) / 180)
+    expect(Math.hypot(dNorthM, dEastM), 'the two georeferencing statements disagree')
+      .toBeLessThan(0.5)
+  })
 })
 
 // ── The claim that was wrong once, now asserted across both files ─────────────

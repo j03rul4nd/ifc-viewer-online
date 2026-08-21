@@ -23,6 +23,9 @@ export interface NavigableControls<A> {
   dollyToCursor: boolean
   dollySpeed: number
   truckSpeed: number
+  smoothTime: number
+  draggingSmoothTime: number
+  restThreshold: number
   infinityDolly: boolean
   mouseButtons: { left: A; middle: A }
 }
@@ -35,14 +38,34 @@ export interface NavKeyTarget {
   removeEventListener(type: string, listener: Listener): void
 }
 
+/** A capture listener is used so the speed is selected before camera-controls
+ * consumes the same wheel event on the canvas. */
+export interface NavWheelTarget {
+  addEventListener(type: string, listener: Listener, options?: boolean | AddEventListenerOptions): void
+  removeEventListener(type: string, listener: Listener, options?: boolean | EventListenerOptions): void
+}
+
 export interface NavOptions<A> {
   /** camera-controls' ACTION.TRUCK, i.e. pan. */
   truckAction: A
-  /** Gentler than the default 1.0 — the default overshoots on building scale. */
+  /** Base wheel speed while approaching the cursor. */
   dollySpeed?: number
-  /** A touch faster than 1.0, because large models need long pans. */
+  /** Extra leverage when backing away from a close inspection. */
+  outwardDollySpeed?: number
+  /** Ceiling reached by a sustained wheel/trackpad gesture. */
+  burstDollySpeed?: number
+  /** DOM element that camera-controls listens to for wheel input. */
+  wheelTarget?: NavWheelTarget
+  /** Shorter values make camera motion settle sooner. */
+  smoothTime?: number
+  draggingSmoothTime?: number
+  restThreshold?: number
+  /** Building-scale pans should not require repeated long drags. */
   truckSpeed?: number
 }
+
+const WHEEL_BURST_WINDOW_MS = 160
+const WHEEL_BURST_STEP = 0.22
 
 /**
  * Wire up panning, cursor-directed zoom and the Shift override.
@@ -53,11 +76,24 @@ export interface NavOptions<A> {
 export function bindNavigation<A>(
   controls: NavigableControls<A>,
   keyTarget: NavKeyTarget,
-  { truckAction, dollySpeed = 0.8, truckSpeed = 1.5 }: NavOptions<A>,
+  {
+    truckAction,
+    dollySpeed = 2,
+    outwardDollySpeed = 2.6,
+    burstDollySpeed = 3.4,
+    wheelTarget,
+    smoothTime = 0.12,
+    draggingSmoothTime = 0.065,
+    restThreshold = 0.01,
+    truckSpeed = 2,
+  }: NavOptions<A>,
 ): () => void {
   controls.dollyToCursor = true
   controls.dollySpeed = dollySpeed
   controls.truckSpeed = truckSpeed
+  controls.smoothTime = smoothTime
+  controls.draggingSmoothTime = draggingSmoothTime
+  controls.restThreshold = restThreshold
 
   // Without this a dolly that reaches minDistance stops dead: the cursor is
   // over something ten metres further in and the wheel simply does nothing.
@@ -99,14 +135,51 @@ export function bindNavigation<A>(
   // while panning and the left button would stay stuck on pan forever.
   const onBlur = (): void => { release() }
 
+  // camera-controls uses a multiplicative dolly. That is ideal across scans of
+  // wildly different scale, but a low constant speed makes backing out from a
+  // close inspection feel much slower in world metres than approaching it.
+  // Select the speed in capture phase, preserving camera-controls' own wheel
+  // normalisation and dolly-to-cursor implementation.
+  let lastWheelAt = Number.NEGATIVE_INFINITY
+  let lastWheelDirection = 0
+  let burst = 0
+  const onWheel = (event: Event): void => {
+    const wheel = event as WheelEvent
+    const direction = Math.sign(wheel.deltaY)
+    if (direction === 0) return
+
+    const now = Number.isFinite(event.timeStamp) ? event.timeStamp : performance.now()
+    if (direction === lastWheelDirection && now - lastWheelAt <= WHEEL_BURST_WINDOW_MS) {
+      burst = Math.min(1, burst + WHEEL_BURST_STEP)
+    } else {
+      burst = 0
+    }
+    lastWheelAt = now
+    lastWheelDirection = direction
+
+    const directionalBase = direction > 0 ? outwardDollySpeed : dollySpeed
+    controls.dollySpeed = Math.min(
+      burstDollySpeed,
+      directionalBase + (burstDollySpeed - directionalBase) * burst,
+    )
+  }
+
+  // A pinch gesture does not emit wheel events on every platform. Do not let a
+  // previous accelerated wheel-out speed leak into the next touch gesture.
+  const onPointerDown = (): void => { controls.dollySpeed = dollySpeed }
+
   keyTarget.addEventListener('keydown', onKey)
   keyTarget.addEventListener('keyup', onKey)
   keyTarget.addEventListener('blur', onBlur)
+  wheelTarget?.addEventListener('wheel', onWheel, true)
+  wheelTarget?.addEventListener('pointerdown', onPointerDown, true)
 
   return () => {
     keyTarget.removeEventListener('keydown', onKey)
     keyTarget.removeEventListener('keyup', onKey)
     keyTarget.removeEventListener('blur', onBlur)
+    wheelTarget?.removeEventListener('wheel', onWheel, true)
+    wheelTarget?.removeEventListener('pointerdown', onPointerDown, true)
     release()
   }
 }

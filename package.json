@@ -24,10 +24,14 @@
     "district:arc": "blender --background --python scripts/blender/build-district.py -- public/models/poblenou ARC",
     "district:mep": "blender --background --python scripts/blender/build-district.py -- public/models/poblenou MEP",
     "tower": "blender --background --python scripts/blender/build-tower.py -- public/models/torre-poblenou",
-    "site-scan": "node scripts/pointcloud/build-site-scan.mjs"
+    "site-scan": "node scripts/pointcloud/build-site-scan.mjs",
+    "video-demo": "blender --background --python scripts/blender/build-video-demo.py -- public/models/video-demo"
   },
   "dependencies": {
     "@clerk/react": "^6.12.2",
+    "@mcap/browser": "^1.1.0",
+    "@mcap/core": "^2.2.1",
+    "@mcap/support": "^1.1.0",
     "@radix-ui/react-context-menu": "^2.2.16",
     "@radix-ui/react-dialog": "^1.1.4",
     "@radix-ui/react-scroll-area": "^1.2.3",

@@ -94,7 +94,7 @@ export interface SdkMeshCommand {
 
 export interface SdkPointCloudCommand {
   action: 'add' | 'remove' | 'clear' | 'visible' | 'display' | 'frame' | 'inspect'
-    | 'placement' | 'upAxis'
+    | 'placement' | 'upAxis' | 'replay'
   /** `add`: the scan itself. A File so the readers can stream slices of it. */
   file?: File
   /**
@@ -132,6 +132,12 @@ export interface SdkPointCloudCommand {
   done?: (ok: boolean, errorOrId?: string) => void
 }
 
+/** Internal/embed command used by article demos to start the bundled IFC + video scene. */
+export interface SdkVideoCommand {
+  action: 'demo'
+  done?: (ok: boolean, error?: string) => void
+}
+
 export type AppEventMap = {
   'model:loaded':           { modelInfo: ModelInfo; fromCache: boolean; cacheKey: string; modelId: string }
   'model:cleared':          void
@@ -158,6 +164,7 @@ export type AppEventMap = {
   'sdk:solar':              SdkSolarCommand
   'sdk:site':               SdkSiteCommand
   'sdk:pointcloud':         SdkPointCloudCommand
+  'sdk:video':              SdkVideoCommand
   'sdk:mesh':               SdkMeshCommand
 }
 

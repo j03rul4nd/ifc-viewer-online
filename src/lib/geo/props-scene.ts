@@ -20,12 +20,25 @@
 import * as THREE from 'three'
 import { latLonToNormalized, metresToNormalized } from './geo-math'
 import { hashId, variate } from './feature-variation'
+import { createGroundFrame } from './ground-frame'
+
+/** The vertical frame these options describe — see ground-frame. */
+function groundFrameFor(opts: PropsOptions): ReturnType<typeof createGroundFrame> {
+  return createGroundFrame({
+    anchorLat: opts.anchorLat,
+    anchorElevationM: opts.anchorElevationM,
+    sampleGroundM: opts.sampleGroundM,
+    exaggeration: opts.exaggeration,
+  })
+}
 import type { OsmFeature } from './osm-features'
 
 export interface PropsOptions {
   anchorLat: number
   sampleGroundM?: ((nx: number, ny: number) => number) | null
   anchorElevationM?: number
+  /** Vertical exaggeration the terrain is displaying — see ground-frame. */
+  exaggeration?: number
   /**
    * Authored geometry for showcase mode, once it has loaded. Absent means "use
    * the procedural version" — which is also what a failed download looks like,
@@ -130,9 +143,8 @@ export function buildSignalLayer(
   const signals = features.filter((f) => f.kind === 'signal' && f.point)
   if (signals.length === 0) return null
 
-  const mToN = metresToNormalized(opts.anchorLat)
-  const anchorElevation = opts.anchorElevationM ?? 0
-  const sample = opts.sampleGroundM
+  const frame = groundFrameFor(opts)
+  const mToN = frame.mToN
 
   const authored = opts.assets?.get('traffic-signal') ?? null
   const mesh = new THREE.InstancedMesh(
@@ -153,8 +165,7 @@ export function buildSignalLayer(
 
   signals.forEach((f, i) => {
     const { nx, ny } = latLonToNormalized(f.point!.lat, f.point!.lon)
-    const ground = sample ? sample(nx, ny) : anchorElevation
-    p.set(nx, ny, (ground - anchorElevation) * mToN)
+    p.set(nx, ny, frame.groundZ(nx, ny))
     // We do not know which way it faces; a deterministic yaw beats a row of
     // signals all staring the same direction, which reads as a copy-paste.
     q.setFromAxisAngle(zAxis, variate(f.id, 7) * Math.PI * 2)
@@ -323,9 +334,8 @@ const MAX_CANOPIES = 60
 export function buildVehicleLayer(
   features: ReadonlyArray<OsmFeature>, opts: PropsOptions,
 ): PropsLayer | null {
-  const mToN = metresToNormalized(opts.anchorLat)
-  const anchorElevation = opts.anchorElevationM ?? 0
-  const sample = opts.sampleGroundM
+  const frame = groundFrameFor(opts)
+  const mToN = frame.mToN
   const spacing = CAR_SPACING_M * mToN
 
   interface Placement {
@@ -338,8 +348,7 @@ export function buildVehicleLayer(
   const lamps: Placement[] = []
   const canopies: Array<{ x: number; y: number; z: number; yaw: number; widthScale: number }> = []
 
-  const groundZ = (x: number, y: number): number =>
-    ((sample ? sample(x, y) : anchorElevation) - anchorElevation) * mToN
+  const groundZ = (x: number, y: number): number => frame.groundZ(x, y)
 
   for (const f of features) {
     const isRoad = f.kind === 'road' && f.widthM !== undefined

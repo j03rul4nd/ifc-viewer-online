@@ -141,8 +141,28 @@ function blockToMarkdown(block: ContentBlock, t: CopyT): string {
       ].join('\n')
     case 'ifc-demo':
       return `> 💡 *${t('doc.demo')}: ${block.title} — ${block.description} ${t('doc.demoTry')} ${SITE}*\n`
+    case 'spatial-demo':
+      return `> 💡 *Live spatial example: ${block.title} — ${block.description}*\n`
+    case 'video':
+      return `> 🎬 *${block.title}: ${block.description}*\n`
     case 'image':
       return block.caption ? `*[${t('doc.imageLabel')}: ${block.caption}]*\n` : ''
+    case 'table':
+      return [
+        `| ${block.headers.join(' | ')} |`,
+        `| ${block.headers.map(() => '---').join(' | ')} |`,
+        ...block.rows.map((row) => `| ${row.join(' | ')} |`),
+        block.caption ? `\n*${block.caption}*` : '',
+        '',
+      ].join('\n')
+    case 'health-score':
+      return block.items.map((item) => `- **${item.score}/100** ${item.label}`).join('\n') + '\n'
+    case 'pull-quote':
+      return `> ${block.text}${block.cite ? ` — ${block.cite}` : ''}\n`
+    case 'ebook-cta':
+      return block.headline ? `> **${block.headline}**${block.body ? ` — ${block.body}` : ''}\n` : ''
+    case 'embed-configurator':
+      return `> 💡 *${block.title ?? 'IFC embed configurator'}${block.description ? ` — ${block.description}` : ''}*\n`
     default:
       // Registro de tipos inesperados sin crashear
       logger.warn('blockToMarkdown: tipo de bloque desconocido', { block })

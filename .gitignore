@@ -58,3 +58,11 @@ scripts/ebook/.out/
 # Blender's bytecode cache for the Bonsai build scripts (the .ifc files they
 # write into public/ ARE committed)
 scripts/blender/__pycache__/
+
+# CRAS reproducibility workspace — originals and Blender/PLY intermediates are
+# multi-gigabyte local artifacts. The public, web-sized derivatives live under
+# public/models/cras/ and remain versioned.
+/demo/raw/
+/demo/processed/
+/demo/blender/
+/demo/captures/

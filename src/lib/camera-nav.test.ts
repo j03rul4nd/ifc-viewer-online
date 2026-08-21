@@ -10,13 +10,16 @@ function makeControls(): NavigableControls<number> {
     dollyToCursor: false,
     dollySpeed: 1,
     truckSpeed: 1,
+    smoothTime: 0.25,
+    draggingSmoothTime: 0.125,
+    restThreshold: 0.0025,
     infinityDolly: false,
     mouseButtons: { left: ORBIT, middle: 0 },
   }
 }
 
 function makeTarget(): NavKeyTarget & {
-  fire(type: string, key?: string): void
+  fire(type: string, key?: string, patch?: Record<string, unknown>): void
   count(): number
 } {
   const listeners = new Map<string, Set<(e: Event) => void>>()
@@ -28,8 +31,8 @@ function makeTarget(): NavKeyTarget & {
     removeEventListener(type, listener) {
       listeners.get(type)?.delete(listener)
     },
-    fire(type, key) {
-      for (const l of listeners.get(type) ?? []) l({ type, key } as unknown as Event)
+    fire(type, key, patch = {}) {
+      for (const l of listeners.get(type) ?? []) l({ type, key, ...patch } as unknown as Event)
     },
     count() {
       let n = 0
@@ -40,7 +43,7 @@ function makeTarget(): NavKeyTarget & {
 }
 
 function bind(controls = makeControls(), target = makeTarget()) {
-  const teardown = bindNavigation(controls, target, { truckAction: TRUCK })
+  const teardown = bindNavigation(controls, target, { truckAction: TRUCK, wheelTarget: target })
   return { controls, target, teardown }
 }
 
@@ -54,6 +57,38 @@ describe('bindNavigation', () => {
     const { controls } = bind()
     expect(controls.infinityDolly).toBe(true)
     expect(controls.dollyToCursor).toBe(true)
+  })
+
+  it('uses responsive motion timings instead of a long camera tail', () => {
+    const { controls } = bind()
+    expect(controls.dollySpeed).toBe(2)
+    expect(controls.truckSpeed).toBe(2)
+    expect(controls.smoothTime).toBeLessThan(0.2)
+    expect(controls.draggingSmoothTime).toBeLessThan(controls.smoothTime)
+    expect(controls.restThreshold).toBe(0.01)
+  })
+
+  it('backs out faster and accelerates a sustained wheel gesture', () => {
+    const { controls, target } = bind()
+
+    target.fire('wheel', undefined, { deltaY: 100, timeStamp: 1_000 })
+    const firstOut = controls.dollySpeed
+    expect(firstOut).toBe(2.6)
+
+    target.fire('wheel', undefined, { deltaY: 100, timeStamp: 1_080 })
+    expect(controls.dollySpeed).toBeGreaterThan(firstOut)
+    expect(controls.dollySpeed).toBeLessThanOrEqual(3.4)
+
+    target.fire('wheel', undefined, { deltaY: -100, timeStamp: 1_400 })
+    expect(controls.dollySpeed).toBe(2)
+  })
+
+  it('resets wheel acceleration before a pointer/pinch gesture', () => {
+    const { controls, target } = bind()
+    target.fire('wheel', undefined, { deltaY: 100, timeStamp: 1_000 })
+    expect(controls.dollySpeed).toBeGreaterThan(2)
+    target.fire('pointerdown')
+    expect(controls.dollySpeed).toBe(2)
   })
 
   it('pans on Shift+drag and hands the button back on release', () => {

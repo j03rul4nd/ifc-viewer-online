@@ -17,6 +17,7 @@
 import * as THREE from 'three'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import { facadeColor, storeyBanding, storeysFor } from './feature-variation'
+import { createGroundFrame } from './ground-frame'
 import type { BuildingHeight } from './buildings'
 import type { FeatureStyle } from './osm-features'
 
@@ -96,6 +97,8 @@ export interface BuildingMeshOptions {
    * relative to it, exactly like terrain vertices, so everything shares a datum.
    */
   anchorElevationM?: number
+  /** Vertical exaggeration the terrain is displaying — see ground-frame. */
+  exaggeration?: number
 }
 
 /**
@@ -107,7 +110,12 @@ export function buildBuildingsGeometry(
   opts: BuildingMeshOptions,
 ): BuildingMeshResult | null {
   const metresToNormalized = 1 / (WEB_MERCATOR_WORLD_M * cosLatScale(opts.anchorLat))
-  const anchorElevation = opts.anchorElevationM ?? 0
+  const frame = createGroundFrame({
+    anchorLat: opts.anchorLat,
+    anchorElevationM: opts.anchorElevationM,
+    sampleGroundM: opts.sampleGroundM,
+    exaggeration: opts.exaggeration,
+  })
   // 'showcase' is 'detailed' plus authored props; the facades are the same.
   const detailed = opts.detail === 'detailed' || opts.detail === 'showcase'
   const lit = opts.lit === true
@@ -154,14 +162,30 @@ export function buildBuildingsGeometry(
 
     const rangeStart = positions.length / 3
 
-    // Ground under the centroid: one height for the whole building.
+    // Ground under the WHOLE FOOTPRINT, not just under the centroid.
+    //
+    // A building is a rigid box: it has one base elevation, and the question is
+    // which one. The centroid was the wrong answer on any slope — half the
+    // footprint ends up below the ground it was measured at, so the downhill
+    // corner floats and the uphill corner is buried, and a 6 m skirt only hides
+    // it while the fall across the plan stays under 6 m.
+    //
+    // The right answer is the LOWEST ground the footprint covers: that is where
+    // the building meets the ground on its downhill side, which is the edge the
+    // eye checks. The uphill side is then correctly cut into the slope, and the
+    // skirt is sized from the actual fall so it always reaches the hillside.
     const centroid = ringCentroid(ring2d)
-    const groundM = opts.sampleGroundM ? opts.sampleGroundM(centroid.x, centroid.y) : anchorElevation
+    const { minM, maxM } = frame.groundRangeM(ring2d)
+    const groundM = minM
+    const skirtM = SKIRT_M + Math.max(0, maxM - minM)
     const baseM = groundM + b.height.minHeightM
     const topM = groundM + b.height.heightM
 
-    const baseZ = (baseM - anchorElevation - SKIRT_M) * metresToNormalized
-    const topZ = (topM - anchorElevation) * metresToNormalized
+    // Heights stay TRUE metres while the ground follows the exaggerated relief:
+    // a 20 m building is 20 m tall whatever the terrain slider says.
+    const groundZ = frame.zAtElevationM(groundM)
+    const baseZ = groundZ + (b.height.minHeightM - skirtM) * metresToNormalized
+    const topZ = groundZ + b.height.heightM * metresToNormalized
 
     // ── Roof ───────────────────────────────────────────────────────────────────
     // A shaped roof eats into the tagged total height rather than adding to it:
@@ -169,7 +193,7 @@ export function buildBuildingsGeometry(
     // a roof on top would make every gabled building too tall.
     const roofShape = b.style?.roofShape ?? 'flat'
     const roofM = roofShape === 'flat' ? 0 : Math.min(b.style?.roofHeightM ?? 0, (topM - baseM) * 0.5)
-    const eaveZ = (topM - roofM - anchorElevation) * metresToNormalized
+    const eaveZ = topZ - roofM * metresToNormalized
     // A tagged colour always wins. Without one, pick a deterministic muted
     // facade tone: a block of identical grey extrusions is the clearest tell
     // that a scene was generated, and real streets are not one colour.

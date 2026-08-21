@@ -30,7 +30,52 @@
       "tabletop": "Boxes on a wooden table, close enough to read the packaging: the colour came off a camera rather than being assigned. It carries a label per point too, so Classification separates the objects from the table.",
       "indoorRoom": "A room corner in that same photographic colour, at room scale rather than object scale — the nearest thing here to what an as-built scan of an interior actually looks like.",
       "warsaw": "A tiny coloured sample. Loads in a blink; useful for trying the appearance controls.",
-      "poblenou": "Our own survey of the Poblenou Pavilion plot, written in the same projected CRS as the model. Load it with any of the three Poblenou disciplines and it lands on them — the one pair here that can show a scan lining up with a model instead of merely sitting near it. Synthetic, generated alongside the models."
+      "poblenou": "Our own survey of the Poblenou Pavilion plot, written in the same projected CRS as the model. Load it with any of the three Poblenou disciplines and it lands on them — the one pair here that can show a scan lining up with a model instead of merely sitting near it. Synthetic, generated alongside the models.",
+      "cras": "A real 21-scan TLS capture of FEUP laboratories with its corresponding as-built IFC. RGB, intensity and 33 semantic classes; rigidly aligned and published under CC BY 4.0."
+    }
+  },
+  "replay": {
+    "title": "Temporal LiDAR",
+    "name": "Operations Pavilion — temporal LiDAR replay",
+    "simulatedBadge": "SIMULATED REPLAY",
+    "ifcLoaded": "IFC loaded",
+    "description": "A finite scan timeline aligned with its companion IFC. Scrub, pause, change speed and jump to the latest frame.",
+    "start": "Load IFC + start replay",
+    "loading": "Preparing IFC + replay…",
+    "play": "Play",
+    "pause": "Pause",
+    "latest": "Latest",
+    "restart": "Restart",
+    "speed": "Speed",
+    "loop": "Loop replay",
+    "timeline": "LiDAR replay timeline",
+    "status": {
+      "playing": "PLAYING",
+      "paused": "PAUSED",
+      "ended": "LATEST"
+    },
+    "sequence": "frame {{count}}",
+    "dropped": "{{count}} skipped",
+    "truncated": "{{count}} incoming points exceeded the fixed GPU capacity.",
+    "disclaimer": "Synthetic returns authored from the same dimension table as the IFC. This demonstrates temporal playback; no live sensor is connected.",
+    "failed": "The companion IFC or temporal replay could not be started.",
+    "rowStatus": "Temporal replay",
+    "alignReason": "The replay and IFC were authored in the same local coordinate frame.",
+    "mcapDownload": "Download indexed MCAP example",
+    "mcapBuilding": "Building MCAP…",
+    "mcapHint": "33 frames at 2 fps, generated locally with the same validated binary payload. No upload.",
+    "mcapFailed": "The MCAP example could not be created.",
+    "transport": {
+      "title": "Simulated binary channel",
+      "status": { "connected": "CONNECTED", "degraded": "DEGRADED", "reconnecting": "RECONNECTING" },
+      "mode": { "stable": "Stable channel", "unstable": "Inject faults" },
+      "latency": "{{count}} ms simulated",
+      "buffer": "buffer {{depth}}/{{capacity}}",
+      "loss": "{{count}} lost",
+      "reordered": "{{count}} reordered",
+      "invalid": "{{count}} invalid",
+      "reconnects": "{{count}} reconnects",
+      "hint": "Loss, reorder and latency are simulated; the CRC parser and three-frame buffer are the real ingest path."
     }
   },
   "status": {

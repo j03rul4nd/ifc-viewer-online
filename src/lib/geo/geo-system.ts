@@ -19,6 +19,10 @@ import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from './terrain-look'
 import {
   buildBuildingsGeometry, type BuildingDetail, type BuildingRange,
 } from './building-mesh'
+import {
+  createSuppressor, footprintFromBounds, DEFAULT_MARGIN_M,
+  type FacilityKind, type SuppressionPolicy,
+} from './context-suppression'
 import { createFacadeMaterial } from './facade-shader'
 import { buildSignalLayer, buildVehicleLayer } from './props-scene'
 import { loadPropAssets } from './props-assets'
@@ -29,7 +33,10 @@ import { setSurfaceTime, hasAnimatedMaterial } from './surface-shaders'
 import { buildSkyEnvironment } from './sky-environment'
 import { FEATURE_KINDS, type OsmFeature, type FeatureKind } from './osm-features'
 import type { BuildingsRequest, BuildingsResponse } from '../../workers/geo-buildings.worker'
-import { composeGeoRootTransform, mapYawRad, normalizedToLatLon, northDirection, latLonToTile, type LatLon } from './geo-math'
+import {
+  composeGeoRootTransform, mapYawRad, normalizedToLatLon, northDirection, latLonToTile,
+  latLonToNormalized, metresToNormalized, type LatLon,
+} from './geo-math'
 import { createLogger } from '../logger'
 import type { GeoPlacement, MapProvider, TerrainStyle, TerrainLook } from './geo-types'
 
@@ -119,6 +126,12 @@ export interface GeoSystemContext {
     center: { x: number; y: number; z: number }
     size: { x: number; y: number; z: number }
   } | null
+  /**
+   * The active model's ORIENTED plan outline in world space, when the viewer
+   * can supply one. Optional: without it the suppression falls back to the
+   * axis-aligned bounds, which is correct but coarse for a rotated model.
+   */
+  getActiveModelFootprint?(): Array<{ x: number; z: number }> | null
 }
 
 // ── Public API ──────────────────────────────────────────────────────────────────
@@ -164,6 +177,20 @@ export interface GeoSystemAPI {
    * never refetches, so toggling a layer is instant.
    */
   setFeatureLayers(visible: FeatureLayerVisibility): void
+  /**
+   * Whether the OSM context yields where the model stands, what the model IS,
+   * and any per-layer override of the defaults.
+   *
+   * `kind` is the lever that matters. A model that IS a bridge or a tunnel
+   * replaces the mapped bridge and the way it carries; a building replaces only
+   * the mapped building and the furniture inside its plan, and never the street
+   * outside. Defaults live in context-suppression.
+   */
+  setContextSuppression(opts: {
+    enabled?: boolean
+    kind?: FacilityKind
+    overrides?: SuppressionPolicy
+  }): void
   /** Switch the surrounding facades between plain extrusions and storey bands. */
   setContextDetail(level: BuildingDetail): void
   /**
@@ -295,6 +322,64 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // Opt-in: signals are real, but a junction full of masts is a choice.
     signal: false,
   }
+  /**
+   * Whether the OSM context yields to the model where the two overlap, what the
+   * model IS (which decides what it is entitled to replace), and any per-layer
+   * override. On by default: a mapped building standing inside the surveyed one
+   * is never what anybody wants to look at.
+   */
+  let suppressContext = true
+  let facilityKind: FacilityKind = 'unknown'
+  let suppressionOverrides: SuppressionPolicy | undefined
+
+  /**
+   * The predicate for the current model placement.
+   *
+   * Rebuilt per layer rebuild rather than cached: the model bounds change when
+   * a model is added, removed or re-placed, and a stale footprint deletes the
+   * wrong block. It is a handful of vector maths against one box.
+   */
+  function modelSuppressor(): (f: OsmFeature) => boolean {
+    if (!geoRoot || !placement) return () => true
+    const mToN = metresToNormalized(placement.lat)
+    const marginN = DEFAULT_MARGIN_M * mToN
+    const scratch = new THREE.Vector3()
+    // geoRoot carries placement, yaw and scale, so its inverse is exactly the
+    // world -> normalized-planar conversion every layer is drawn in. Deriving it
+    // here rather than recomposing the transform by hand is what keeps this
+    // correct when the user drags the model's placement.
+    const toNormalized = (wx: number, wz: number): { x: number; y: number } => {
+      const local = geoRoot!.worldToLocal(scratch.set(wx, 0, wz))
+      return { x: local.x, y: local.y }
+    }
+
+    // Prefer the ORIENTED outline. A building at an angle to the world axes —
+    // which, on the Cerda grid, is every building — has an axis-aligned box
+    // about twice its own area, and suppression keyed off that box reaches into
+    // the plot next door and deletes the neighbour.
+    const oriented = ctx.getActiveModelFootprint?.()
+    let footprint
+    if (oriented && oriented.length >= 3) {
+      footprint = {
+        polygon: oriented.map((c) => {
+          const n = toNormalized(c.x, c.z)
+          return new THREE.Vector2(n.x, n.y)
+        }),
+        kind: facilityKind,
+        marginN,
+      }
+    } else {
+      const bounds = ctx.getActiveModelBounds()
+      if (!bounds) return () => true
+      footprint = footprintFromBounds(bounds, toNormalized, facilityKind, marginN)
+    }
+
+    return createSuppressor([footprint], (p) => {
+      const n = latLonToNormalized(p.lat, p.lon)
+      return { x: n.nx, y: n.ny }
+    }, suppressionOverrides)
+  }
+
   let degradedCallback: ((degraded: boolean) => void) | null = null
   /**
    * Prefiltered sky driving image-based lighting while the map is on.
@@ -471,8 +556,14 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
     setTerrainExaggeration(k) {
       if (!Number.isFinite(k) || k <= 0) return
+      if (k === terrainExaggeration) return
       terrainExaggeration = k
       terrain?.setExaggeration(k)
+      // The ground moved, so everything laid on it has to be re-derived. The
+      // terrain can stretch itself with a matrix because it is one mesh; a tree
+      // cannot, because scaling z would stretch the tree too. Rebuilding the
+      // layers is what keeps the two on the same surface.
+      if (terrain) rebuildLayers()
     },
 
     setTerrainLook(look) {
@@ -541,6 +632,14 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       osmFeatures = reply.features
       const estimatedCount = rebuildLayers()
       return { status: 'ready', counts: reply.counts, estimatedCount, truncated: reply.truncated }
+    },
+
+    setContextSuppression(next) {
+      if (next.enabled !== undefined) suppressContext = next.enabled
+      if (next.kind !== undefined) facilityKind = next.kind
+      if (next.overrides !== undefined) suppressionOverrides = next.overrides
+      // Suppression decides what is BUILT, so it cannot be a visibility flip.
+      if (osmFeatures) rebuildLayers()
     },
 
     setFeatureLayers(visible) {
@@ -673,12 +772,25 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     buildingsMesh = null
     if (!geoRoot || !placement || !osmFeatures) return 0
 
+    // Where the model stands, the model wins. Applied ONCE here rather than in
+    // each builder: every layer reads this array, so one filter covers roads,
+    // trees, props and buildings alike — and a layer added later inherits it
+    // instead of quietly reintroducing the overlap.
+    const visibleFeatures = suppressContext
+      ? osmFeatures.filter(modelSuppressor())
+      : osmFeatures
+
     const opts = {
       anchorLat: placement.lat,
       // Sit everything on the terrain when it exists; on the flat map the
       // ground plane is the honest answer.
       sampleGroundM: terrain ? (nx: number, ny: number) => terrain!.sampleGroundM(nx, ny) : null,
       anchorElevationM: terrain?.anchorElevation ?? 0,
+      // The terrain shows its relief multiplied by this, so everything standing
+      // on the terrain has to be placed against the SAME surface. Leaving it out
+      // is what buried every object on a hill and floated every object in a
+      // valley the moment the slider left 1x — see ground-frame.
+      exaggeration: terrainExaggeration,
       // One control governs how much of everything is modelled: storey-banded
       // facades AND procedural ground. Splitting them would be two switches for
       // one decision — "is this a working view or a view I am presenting".
@@ -697,7 +809,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     let estimatedCount = 0
 
     if (layerVisibility.building) {
-      const footprints = osmFeatures
+      const footprints = visibleFeatures
         .filter((f) => f.kind === 'building' && f.ring)
         .map((f) => ({ id: f.id, ring: f.ring!, height: f.height, style: f.style }))
       // At 'detailed' the facades join the same sun as the ground and the
@@ -729,7 +841,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // water on top — a river drawn under its own banks would vanish.
     for (const layer of ['green', 'sand', 'rock', 'water'] as const) {
       if (!layerVisibility[layer]) continue
-      const built = buildSurfaceLayer(osmFeatures, layer, opts)
+      const built = buildSurfaceLayer(visibleFeatures, layer, opts)
       if (built) { addLayer(layer, built.object) }
     }
 
@@ -737,29 +849,29 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // ballast over roads, bridges over everything.
     for (const layer of ['road', 'rail'] as const) {
       if (!layerVisibility[layer]) continue
-      const built = buildLinearLayer(osmFeatures, layer, opts)
+      const built = buildLinearLayer(visibleFeatures, layer, opts)
       if (built) { addLayer(layer, built.object) }
     }
 
     // Traffic signals are mapped data and get a layer switch like any other.
     if (layerVisibility.signal) {
-      const built = buildSignalLayer(osmFeatures, opts)
+      const built = buildSignalLayer(visibleFeatures, opts)
       if (built) addLayer('signal', built.object)
     }
 
     // Scenery is NOT data. Separate flag, off by default, and the UI says so.
     if (vehiclesEnabled) {
-      const built = buildVehicleLayer(osmFeatures, opts)
+      const built = buildVehicleLayer(visibleFeatures, opts)
       if (built) { geoRoot.add(built.object); propObjects.push(built.object) }
     }
 
     if (layerVisibility.bridge) {
-      const built = buildBridgeLayer(osmFeatures, opts)
+      const built = buildBridgeLayer(visibleFeatures, opts)
       if (built) { addLayer('bridge', built.object) }
     }
 
     if (layerVisibility.tree) {
-      const built = buildTreeLayer(osmFeatures, opts)
+      const built = buildTreeLayer(visibleFeatures, opts)
       if (built) { addLayer('tree', built.object) }
     }
 

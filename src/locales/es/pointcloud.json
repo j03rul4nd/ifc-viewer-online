@@ -30,7 +30,52 @@
       "tabletop": "Cajas sobre una mesa de madera, tan cerca que se lee el envase: el color sale de una cámara, no está asignado. Además trae una etiqueta por punto, así que Clasificación separa los objetos de la mesa.",
       "indoorRoom": "Una esquina de habitación con ese mismo color fotográfico, a escala de estancia y no de objeto: lo más parecido aquí a cómo se ve de verdad un escaneo as-built de un interior.",
       "warsaw": "Una muestra diminuta con color. Carga al instante; sirve para probar los controles de apariencia.",
-      "poblenou": "Nuestro propio levantamiento de la parcela del Poblenou Pavilion, escrito en el mismo CRS proyectado que el modelo. Cárgalo con cualquiera de las tres disciplinas y encaja sobre ellas: el único par aquí que muestra un escaneo alineándose con un modelo en vez de quedarse al lado. Sintético, generado junto a los modelos."
+      "poblenou": "Nuestro propio levantamiento de la parcela del Poblenou Pavilion, escrito en el mismo CRS proyectado que el modelo. Cárgalo con cualquiera de las tres disciplinas y encaja sobre ellas: el único par aquí que muestra un escaneo alineándose con un modelo en vez de quedarse al lado. Sintético, generado junto a los modelos.",
+      "cras": "Captura TLS real de 21 escaneos de laboratorios de FEUP con su IFC as-built correspondiente. RGB, intensidad y 33 clases semánticas; alineada rígidamente y publicada bajo CC BY 4.0."
+    }
+  },
+  "replay": {
+    "title": "LiDAR temporal",
+    "name": "Pabellón de operaciones — replay LiDAR temporal",
+    "simulatedBadge": "REPLAY SIMULADO",
+    "ifcLoaded": "IFC cargado",
+    "description": "Una línea de tiempo de escaneo alineada con su IFC. Desplázate, pausa, cambia la velocidad y salta al último frame.",
+    "start": "Cargar IFC + iniciar replay",
+    "loading": "Preparando IFC + replay…",
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "latest": "Último",
+    "restart": "Reiniciar",
+    "speed": "Velocidad",
+    "loop": "Repetir replay",
+    "timeline": "Línea de tiempo del replay LiDAR",
+    "status": {
+      "playing": "REPRODUCIENDO",
+      "paused": "PAUSADO",
+      "ended": "ÚLTIMO"
+    },
+    "sequence": "frame {{count}}",
+    "dropped": "{{count}} omitidos",
+    "truncated": "{{count}} puntos entrantes superaron la capacidad GPU fija.",
+    "disclaimer": "Retornos sintéticos creados con la misma tabla de dimensiones que el IFC. Demuestra el replay temporal; no hay ningún sensor en directo conectado.",
+    "failed": "No se pudo iniciar el IFC asociado o el replay temporal.",
+    "rowStatus": "Replay temporal",
+    "alignReason": "El replay y el IFC se crearon en el mismo sistema de coordenadas local.",
+    "mcapDownload": "Descargar ejemplo MCAP indexado",
+    "mcapBuilding": "Generando MCAP…",
+    "mcapHint": "33 frames a 2 fps, generados localmente con el mismo payload binario validado. Sin subida.",
+    "mcapFailed": "No se pudo crear el ejemplo MCAP.",
+    "transport": {
+      "title": "Canal binario simulado",
+      "status": { "connected": "CONECTADO", "degraded": "DEGRADADO", "reconnecting": "RECONECTANDO" },
+      "mode": { "stable": "Canal estable", "unstable": "Inyectar fallos" },
+      "latency": "{{count}} ms simulados",
+      "buffer": "búfer {{depth}}/{{capacity}}",
+      "loss": "{{count}} perdidos",
+      "reordered": "{{count}} reordenados",
+      "invalid": "{{count}} inválidos",
+      "reconnects": "{{count}} reconexiones",
+      "hint": "La pérdida, reordenación y latencia son simuladas; el parser con CRC y el búfer de tres frames son la ruta real de entrada."
     }
   },
   "status": {

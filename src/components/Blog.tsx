@@ -17,6 +17,7 @@ import BimGlossary                 from './blog/BimGlossary'
 import HealthScoreWidget, { HealthScoreRow } from './blog/HealthScoreWidget'
 import EmbedViewer from './blog/EmbedViewer'
 import EmbedConfigurator from './blog/EmbedConfigurator'
+import SpatialMediaDemo from './blog/SpatialMediaDemo'
 
 // ─── Theme toggle button (shared by BlogList + PostView navs) ─────────────────
 
@@ -52,7 +53,11 @@ function asset(name: string): string {
     'og-image':      `${BASE}og-image.png`,
     'og-image-en':   `${BASE}og-image-en.png`,
   }
-  return MAP[name] ?? `${BASE}blog/covers/${name}.png`
+  if (MAP[name]) return MAP[name]
+  if (name.includes('/') || /\.(?:avif|gif|jpe?g|png|svg|webp)$/i.test(name)) {
+    return `${BASE}${name.replace(/^\//, '')}`
+  }
+  return `${BASE}blog/covers/${name}.png`
 }
 
 // ─── Design helpers ───────────────────────────────────────────────────────────
@@ -69,6 +74,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   'tool-guides':    'bg-[rgba(16,185,129,0.10)] text-[#34d399]',
   'ifc-tips':       'bg-[rgba(251,191,36,0.10)] text-[#fbbf24]',
   standards:        'bg-[rgba(167,139,250,0.12)] text-[#a78bfa]',
+  'digital-twins':  'bg-[rgba(34,211,238,0.10)] text-[#22d3ee]',
 }
 function catColor(slug: string): string {
   return CATEGORY_COLORS[slug] ?? 'bg-[rgba(100,116,139,0.12)] text-[var(--text-dim)]'
@@ -211,19 +217,65 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
 
     case 'image': {
       const src = asset(block.src)
+      const srcSet = block.srcSet?.map((item) => `${asset(item.src)} ${item.width}w`).join(', ')
       return (
         <figure className="my-8">
           <div className="rounded-xl overflow-hidden border border-[var(--border)]">
-            <img src={src} alt={block.alt} className="w-full block" loading="lazy" />
+            <img
+              src={src}
+              srcSet={srcSet}
+              sizes={block.sizes ?? '(max-width: 760px) 100vw, 720px'}
+              alt={block.alt}
+              width={block.width}
+              height={block.height}
+              className="w-full block"
+              loading="lazy"
+              decoding="async"
+            />
           </div>
-          {block.caption && (
+          {(block.caption || block.credit) && (
             <figcaption className="text-[12px] text-[var(--text-faint)] text-center mt-2.5">
               {block.caption}
+              {block.credit && <span>{block.caption ? ' · ' : ''}{block.credit}</span>}
+              {block.license && (
+                <span> · <a href={block.license} target="_blank" rel="license noopener noreferrer" className="hover:underline">
+                  {block.license.includes('creativecommons.org/licenses/by/4.0') ? 'CC BY 4.0' : 'Image licence'}
+                </a></span>
+              )}
             </figcaption>
           )}
         </figure>
       )
     }
+
+    case 'spatial-demo':
+      return <SpatialMediaDemo {...block} />
+
+    case 'video':
+      return (
+        <figure className="my-9">
+          <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-black">
+            <video
+              src={asset(block.src)}
+              poster={asset(block.poster)}
+              width={block.width ?? 960}
+              height={block.height ?? 540}
+              controls
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              aria-label={`${block.title}. ${block.description}`}
+              className="block aspect-video w-full bg-black"
+            >
+              <a href={asset(block.src)}>Download {block.title}</a>
+            </video>
+          </div>
+          <figcaption className="mt-2.5 text-center text-[12px] text-[var(--text-faint)]">
+            {block.caption ?? block.description}
+          </figcaption>
+        </figure>
+      )
 
     case 'stat-row':
       return (
@@ -846,17 +898,25 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
 
 // Hero strip shown at the top of every PostView. Tries the generated blog cover
 // first (always present after `npm run blog-covers`). Falls back silently.
-function HeroCoverStrip({ slug, heroImage }: { slug: string; heroImage?: string }) {
+function HeroCoverStrip({ slug, heroImage, alt }: { slug: string; heroImage?: string; alt?: string }) {
   const [visible, setVisible] = React.useState(true)
   if (!visible) return null
   const src = heroImage ? asset(heroImage) : asset(slug)
+  const compactHero = heroImage?.replace(/-1600x900(\.[a-z0-9]+)$/i, '-800x450$1')
+  const srcSet = compactHero && compactHero !== heroImage
+    ? `${asset(compactHero)} 800w, ${src} 1600w`
+    : undefined
   return (
     <div className="relative h-[180px] sm:h-[240px] overflow-hidden bg-black border-b border-[var(--border)]">
       <img
         src={src}
-        alt=""
-        aria-hidden="true"
+        srcSet={srcSet}
+        sizes="100vw"
+        alt={alt ?? ''}
+        width={1600}
+        height={900}
         className="w-full h-full object-cover object-center opacity-50"
+        decoding="async"
         onError={() => setVisible(false)}
       />
       <div
@@ -883,7 +943,7 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
     const prevTitle = document.title
     document.title = `${post.title} | IFC Viewer Online`
 
-    const coverUrl = `${window.location.origin}${BASE}blog/covers/${post.slug}.png`
+    const coverUrl = new URL(asset(post.heroImage ?? post.slug), window.location.origin).href
 
     const update = (sel: string, attr: string, val: string) => {
       const el = document.querySelector(sel)
@@ -954,7 +1014,7 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
       </nav>
 
       {/* ── Hero cover strip — always attempt; hidden via state if image 404s ── */}
-      <HeroCoverStrip slug={post.slug} heroImage={post.heroImage} />
+      <HeroCoverStrip slug={post.slug} heroImage={post.heroImage} alt={post.heroAlt} />
 
       {/* ── Article — single col on mobile / 2-col on xl+ ── */}
       <div className="max-w-[1200px] mx-auto px-4 sm:px-8 pt-7 sm:pt-10 pb-16">

@@ -33,6 +33,8 @@ import {
   createSurfaceMaterial, createFoliageMaterial, type SurfaceKind, type SurfaceSun,
 } from './surface-shaders'
 import { metricAttributes } from './surface-attributes'
+import { buildRoadNetwork, type NetworkWay } from './road-network'
+import { createGroundFrame, type GroundFrame } from './ground-frame'
 import type { OsmFeature, LatLonPoint } from './osm-features'
 
 /** How much work a layer is allowed to spend on looking real. */
@@ -52,6 +54,13 @@ export interface LayerMeshOptions {
   sampleGroundM?: ((nx: number, ny: number) => number) | null
   /** Elevation the map plane represents, metres. */
   anchorElevationM?: number
+  /**
+   * Vertical exaggeration the terrain patch is displaying, x k. Everything laid
+   * on the ground has to move with it — see ground-frame.
+   */
+  exaggeration?: number
+  /** DEM vertex spacing, metres — what geometry is densified against. */
+  groundStepM?: number
   /** Flat colour, or procedural surfaces. Defaults to 'simple'. */
   quality?: SurfaceQuality
   /** Relief light. Shared with the terrain hillshade so the scene has one sun. */
@@ -167,9 +176,8 @@ function buildSimpleSurface(
   layer: SurfaceLayerKind,
   opts: LayerMeshOptions,
 ): LayerMesh<THREE.Mesh> | null {
-  const mToN = metresToNormalized(opts.anchorLat)
-  const anchorElevation = opts.anchorElevationM ?? 0
-  const sample = opts.sampleGroundM
+  const frame = groundFrameFor(opts)
+  const mToN = frame.mToN
   const lift = LIFT_M[layer]
 
   const positions: number[] = []
@@ -186,7 +194,7 @@ function buildSimpleSurface(
     // it — the surface of a river is not the height of its banks.
     let flatZ = 0
     if (layer === 'water') {
-      flatZ = (waterLevelM(ring, sample, anchorElevation) + lift - anchorElevation) * mToN
+      flatZ = frame.zAtElevationM(waterLevelM(ring, frame) + lift)
     }
 
     // Ground cover is coloured by WHAT IT IS: a forest is much darker than a
@@ -194,14 +202,16 @@ function buildSimpleSurface(
     // all one colour per layer throws that away.
     const tone = layer === 'water' ? null : (f.style.tone ?? FALLBACK_TONE[layer])
 
+    // A triangle spanning a whole park is a flat lid over the hill under it, so
+    // on real terrain each face is split until its edges are shorter than the
+    // DEM can resolve. On the flat map this is a no-op and costs nothing.
     for (const [a, b, c] of faces) {
-      for (const idx of [a, b, c]) {
-        const p = ring[idx]
-        const z = layer === 'water'
-          ? flatZ
-          : ((sample ? sample(p.x, p.y) : anchorElevation) + lift - anchorElevation) * mToN
-        positions.push(p.x, p.y, z)
-        if (tone) colors.push(tone[0], tone[1], tone[2])
+      for (const tri of subdivideOnGround([ring[a], ring[b], ring[c]], frame)) {
+        for (const p of tri) {
+          const z = layer === 'water' ? flatZ : frame.groundZ(p.x, p.y) + lift * mToN
+          positions.push(p.x, p.y, z)
+          if (tone) colors.push(tone[0], tone[1], tone[2])
+        }
       }
     }
     count++
@@ -234,18 +244,50 @@ function buildSimpleSurface(
 }
 
 /** Level a water body sits at: the LOWEST ground under its own outline. */
-function waterLevelM(
-  ring: ReadonlyArray<THREE.Vector2>,
-  sample: ((nx: number, ny: number) => number) | null | undefined,
-  anchorElevation: number,
-): number {
-  let minGround = Infinity
-  for (const p of ring) {
-    const g = sample ? sample(p.x, p.y) : anchorElevation
-    if (g < minGround) minGround = g
-  }
-  return Number.isFinite(minGround) ? minGround : anchorElevation
+function waterLevelM(ring: ReadonlyArray<THREE.Vector2>, frame: GroundFrame): number {
+  return frame.groundRangeM(ring).minM
 }
+
+/** The vertical frame these options describe. Built once per layer builder. */
+function groundFrameFor(opts: LayerMeshOptions): GroundFrame {
+  return createGroundFrame({
+    anchorLat: opts.anchorLat,
+    anchorElevationM: opts.anchorElevationM,
+    sampleGroundM: opts.sampleGroundM,
+    exaggeration: opts.exaggeration,
+    groundStepM: opts.groundStepM,
+  })
+}
+
+/**
+ * Split a triangle until no edge outruns the terrain's own resolution.
+ *
+ * Recursive 4-way split on the longest edge is overkill here; splitting all
+ * three edges at once keeps the result conformal (neighbouring triangles split
+ * their shared edge identically, because the decision depends only on that
+ * edge's own length), which is what stops cracks appearing between faces.
+ */
+function subdivideOnGround(
+  tri: [THREE.Vector2, THREE.Vector2, THREE.Vector2], frame: GroundFrame, depth = 0,
+): Array<[THREE.Vector2, THREE.Vector2, THREE.Vector2]> {
+  const [a, b, c] = tri
+  const longest = Math.max(a.distanceTo(b), b.distanceTo(c), c.distanceTo(a))
+  // Depth cap: a mountain polygon is square kilometres, and splitting it to DEM
+  // resolution would allocate the whole patch as greenery.
+  if (depth >= MAX_SURFACE_SPLITS || !frame.hasTerrain || longest <= frame.stepN) return [tri]
+  const ab = a.clone().lerp(b, 0.5)
+  const bc = b.clone().lerp(c, 0.5)
+  const ca = c.clone().lerp(a, 0.5)
+  return [
+    ...subdivideOnGround([a, ab, ca], frame, depth + 1),
+    ...subdivideOnGround([ab, b, bc], frame, depth + 1),
+    ...subdivideOnGround([ca, bc, c], frame, depth + 1),
+    ...subdivideOnGround([ab, bc, ca], frame, depth + 1),
+  ]
+}
+
+/** 4^5 = 1024 triangles from one face is already more than any view needs. */
+const MAX_SURFACE_SPLITS = 5
 
 /**
  * The detailed path.
@@ -263,8 +305,8 @@ function buildDetailedSurface(
   layer: SurfaceLayerKind,
   opts: LayerMeshOptions,
 ): LayerMesh<THREE.Mesh> | null {
-  const mToN = metresToNormalized(opts.anchorLat)
-  const anchorElevation = opts.anchorElevationM ?? 0
+  const frame = groundFrameFor(opts)
+  const mToN = frame.mToN
   const sample = opts.sampleGroundM
   const lift = LIFT_M[layer]
   const isWater = layer === 'water'
@@ -290,7 +332,7 @@ function buildDetailedSurface(
 
   /** Ground height in metres at a point given in layer-local metres. */
   const groundAt = (mx: number, my: number): number =>
-    sample ? sample(originX + mx * mToN, originY + my * mToN) : anchorElevation
+    frame.groundM(originX + mx * mToN, originY + my * mToN)
 
   for (const f of wanted) {
     if (budget <= 0) break
@@ -325,10 +367,10 @@ function buildDetailedSurface(
     const roughness = f.style.roughness ?? 0.4
     // Water is level across the whole polygon; the rest follows the ground.
     const flatZ = isWater
-      ? (waterLevelM(
+      ? frame.zAtElevationM(waterLevelM(
           ringM.map((p) => new THREE.Vector2(originX + p.x * mToN, originY + p.y * mToN)),
-          sample, anchorElevation,
-        ) + lift - anchorElevation) * mToN
+          frame,
+        ) + lift)
       : 0
     const shoreDist = isWater ? distanceToRing(mesh.points, ringM) : null
 
@@ -338,7 +380,7 @@ function buildDetailedSurface(
       const ny = originY + p.y * mToN
       const z = isWater
         ? flatZ
-        : (groundAt(p.x, p.y) + lift - anchorElevation) * mToN
+        : frame.groundZ(originX + p.x * mToN, originY + p.y * mToN) + lift * mToN
       positions.push(nx, ny, z)
 
       // Normals from the SLOPE OF THE GROUND, not from the triangles. Face
@@ -427,9 +469,8 @@ export function buildBridgeLayer(
   features: ReadonlyArray<OsmFeature>,
   opts: LayerMeshOptions,
 ): LayerMesh<THREE.Mesh> | null {
-  const mToN = metresToNormalized(opts.anchorLat)
-  const anchorElevation = opts.anchorElevationM ?? 0
-  const sample = opts.sampleGroundM
+  const frame = groundFrameFor(opts)
+  const mToN = frame.mToN
 
   const positions: number[] = []
   let count = 0
@@ -455,11 +496,12 @@ export function buildBridgeLayer(
 
     // Deck height: its own tagged height above the ground it spans, or a
     // default clearance that reads as "over" rather than "on".
-    const centre = line[Math.floor(line.length / 2)]
-    const ground = sample ? sample(centre.x, centre.y) : anchorElevation
-    const deckM = ground + (f.height.estimated ? 6 : f.height.heightM)
-    const topZ = (deckM - anchorElevation) * mToN
-    const bottomZ = (deckM - DECK_THICKNESS_M - anchorElevation) * mToN
+    // The deck clears the HIGHEST ground it crosses, not the ground at its
+    // midpoint: a bridge whose middle span is over water but whose abutment is
+    // up a bank was burying its own ends in the hillside.
+    const clearanceM = f.height.estimated ? 6 : f.height.heightM
+    const topZ = frame.zAtElevationM(frame.groundRangeM(line).maxM + clearanceM)
+    const bottomZ = topZ - DECK_THICKNESS_M * mToN
 
     if (f.widthM !== undefined) {
       // Linear way → buffer into quads.
@@ -538,6 +580,10 @@ const GUTTER_GAIN = 0.9
 const CENTRE_LINE_MIN_WIDTH_M = 6.5
 /** Width of that line, metres — wider than reality so it survives at map scale. */
 const CENTRE_LINE_M = 0.34
+/** Width, stripe and gap of a broken lane divider, metres. */
+const LANE_LINE_M = 0.26
+const LANE_DASH_M = 3
+const LANE_GAP_M = 5
 /** Stripe and gap of a zebra, metres. */
 const ZEBRA_STRIPE_M = 0.55
 const ZEBRA_GAP_M = 0.45
@@ -585,9 +631,8 @@ export function buildLinearLayer(
   kind: 'road' | 'rail',
   opts: LayerMeshOptions,
 ): LayerMesh<THREE.Object3D> | null {
-  const mToN = metresToNormalized(opts.anchorLat)
-  const anchorElevation = opts.anchorElevationM ?? 0
-  const sample = opts.sampleGroundM
+  const frame = groundFrameFor(opts)
+  const mToN = frame.mToN
   const lift = LINEAR_LIFT_M[kind] * mToN
 
   const positions: number[] = []
@@ -597,8 +642,7 @@ export function buildLinearLayer(
   let count = 0
 
   /** Height of the ground under a planar point, in normalized units. */
-  const groundZ = (x: number, y: number): number =>
-    ((sample ? sample(x, y) : anchorElevation) - anchorElevation) * mToN
+  const groundZ = (x: number, y: number): number => frame.groundZ(x, y)
 
   /** Two triangles per quad, each vertex draped and tinted. */
   const pushQuad = (
@@ -667,6 +711,9 @@ export function buildLinearLayer(
     }
   }
 
+  /** Carriageways, collected first and solved as a network once all are known. */
+  const networkWays: NetworkWay[] = []
+
   const wanted = features.filter((f) => f.kind === kind && f.ring).slice(0, MAX_LINEAR)
   for (const f of wanted) {
     const line = projectRing(f.ring!)
@@ -708,25 +755,35 @@ export function buildLinearLayer(
       continue
     }
 
+    // Carriageways are NOT drawn here. They go into the network builder below,
+    // which recovers the shared nodes OSM gives us no ids for, splits the ways
+    // at them and solves each junction as one surface. Drawing a road the moment
+    // we see it is precisely what made forks, merges and roundabouts a pile of
+    // overlapping rectangles: at that point we do not yet know what it meets.
+    if (kind === 'road') {
+      networkWays.push({
+        id: f.id,
+        points: line,
+        halfWidth: half,
+        tone,
+        centreLine: f.widthM >= CENTRE_LINE_MIN_WIDTH_M,
+        lanes: f.style.lanes,
+        oneway: f.style.oneway,
+      })
+      continue
+    }
+
     const drop = SIDE_DROP_M[kind] * mToN
-    for (const quad of bufferCentreline(line, half)) pushSurfaceQuad(quad, tone, drop)
+    const draped = frame.densify(line)
+    for (const quad of bufferCentreline(draped, half)) pushSurfaceQuad(quad, tone, drop)
     // Corners: a buffered polyline leaves a wedge open on the outside of every
-    // turn, which on a roundabout — dozens of short segments in a circle —
-    // shows up as a scalloped ring rather than a road.
-    for (const tri of centrelineJoins(line, half)) {
+    // turn. Rail alignments have long radii, so a per-segment buffer plus these
+    // wedges is enough; roads go through the mitred path instead.
+    for (const tri of centrelineJoins(draped, half)) {
       pushShaded(
         [tri[0], tri[1], tri[2], tri[0]],
         [tone, tone, tone, tone],
       )
-    }
-
-    // Centre line on anything wide enough to have one. Nothing else says
-    // "carriageway" as immediately, and a road without markings reads as a
-    // strip of grey no matter how well it is shaded.
-    if (kind === 'road' && f.widthM >= CENTRE_LINE_MIN_WIDTH_M) {
-      for (const quad of bufferCentreline(line, (CENTRE_LINE_M / 2) * mToN)) {
-        pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
-      }
     }
 
     // Rails on top of the ballast: two thin steel ribbons. This is what makes a
@@ -748,6 +805,82 @@ export function buildLinearLayer(
       }
     }
     count++
+  }
+
+  if (networkWays.length > 0) {
+    const network = buildRoadNetwork(networkWays, { mToN })
+    const drop = SIDE_DROP_M.road * mToN
+
+    for (const ribbon of network.ribbons) {
+      // One quad per station, cut on the MITRED borders rather than on each
+      // segment's own normals — which is what lets the edge of a curve run
+      // continuously instead of stepping at every vertex.
+      //
+      // Stations are also split against the DEM spacing. An OSM way crossing a
+      // hillside can run 200 m between vertices, and a quad that long is a
+      // straight chord through the slope: the road either buries itself in the
+      // hill or flies over the valley between its own endpoints.
+      for (let i = 0; i < ribbon.centre.length - 1; i++) {
+        const steps = frame.subdivisionsFor(ribbon.centre[i].distanceTo(ribbon.centre[i + 1])) + 1
+        for (let s = 0; s < steps; s++) {
+          const t0 = s / steps
+          const t1 = (s + 1) / steps
+          pushSurfaceQuad([
+            ribbon.left[i].clone().lerp(ribbon.left[i + 1], t0),
+            ribbon.left[i].clone().lerp(ribbon.left[i + 1], t1),
+            ribbon.right[i].clone().lerp(ribbon.right[i + 1], t1),
+            ribbon.right[i].clone().lerp(ribbon.right[i + 1], t0),
+          ], ribbon.tone, drop)
+        }
+      }
+      // Whatever the miter had to give up on a sharp turn.
+      for (const tri of ribbon.joins) {
+        pushShaded([tri[0], tri[1], tri[2], tri[0]],
+          [ribbon.tone, ribbon.tone, ribbon.tone, ribbon.tone])
+      }
+
+      // Markings run along the TRIMMED centreline, so no paint is left crossing
+      // a junction — the one place where a road has no centre line in reality.
+      if (ribbon.centreLine && !ribbon.oneway) {
+        for (const quad of bufferCentreline(ribbon.centre, (CENTRE_LINE_M / 2) * mToN)) {
+          pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
+        }
+      }
+      // Broken lane dividers where the lane count is actually mapped. This is
+      // the difference between "a wide grey ribbon" and "a four-lane avenue".
+      const lanes = ribbon.lanes ?? 0
+      if (lanes >= 3) {
+        const nominal = ribbon.halfWidths[0]
+        for (let l = 1; l < lanes; l++) {
+          const offset = -nominal + (2 * nominal * l) / lanes
+          // The centre line already occupies the middle of a two-way road.
+          if (!ribbon.oneway && Math.abs(offset) < nominal * 0.05) continue
+          const lane = offsetCentreline(ribbon.centre, offset)
+          for (const quad of dashCentreline(
+            lane, (LANE_LINE_M / 2) * mToN, LANE_DASH_M * mToN, LANE_GAP_M * mToN,
+          )) {
+            pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
+          }
+        }
+      }
+    }
+
+    // One surface per node, fanned from the node itself. This is the piece that
+    // did not exist before: the asphalt a fork, a merge or a roundabout entry
+    // actually stands on. No kerb — a junction is where the kerb is interrupted.
+    for (const j of network.junctions) {
+      const poly = j.polygon
+      const fan = (p0: THREE.Vector2, p1: THREE.Vector2): void => {
+        for (const tri of subdivideOnGround([j.at, p0, p1], frame)) {
+          pushShaded([tri[0], tri[1], tri[2], tri[0]],
+            [j.tone, j.tone, j.tone, j.tone])
+        }
+      }
+      for (let i = 1; i < poly.length; i++) fan(poly[i - 1], poly[i])
+      if (poly.length > 2) fan(poly[poly.length - 1], poly[0])
+    }
+
+    count += network.count
   }
 
   if (count === 0) return null
@@ -1115,9 +1248,8 @@ export function buildTreeLayer(
   features: ReadonlyArray<OsmFeature>,
   opts: LayerMeshOptions,
 ): LayerMesh<THREE.Group> | null {
-  const mToN = metresToNormalized(opts.anchorLat)
-  const anchorElevation = opts.anchorElevationM ?? 0
-  const sample = opts.sampleGroundM
+  const frame = groundFrameFor(opts)
+  const mToN = frame.mToN
 
   const trees = features.filter((f) => f.kind === 'tree' && f.point).slice(0, MAX_TREES)
   if (trees.length === 0) return null
@@ -1138,13 +1270,12 @@ export function buildTreeLayer(
     const shape = f.style.treeShape ?? 'broadleaf'
     const p = TREE_PROPORTIONS[shape]
     const { nx, ny } = latLonToNormalized(f.point!.lat, f.point!.lon)
-    const ground = sample ? sample(nx, ny) : anchorElevation
     // Deterministic per-tree variation: same tree, same look, every time.
     const totalM = jitter(f.id, 0, f.height.heightM, 0.22)
     const radiusM = jitter(f.id, 1, (f.style.crownRadiusM ?? 3) * p.crown, 0.25)
     return {
       shape, p, nx, ny,
-      baseZ: (ground - anchorElevation) * mToN,
+      baseZ: frame.groundZ(nx, ny),
       totalM,
       radiusM,
       trunkM: totalM * p.trunk,
