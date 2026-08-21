@@ -16,8 +16,15 @@ import { buildCacheKey, loadFromCache, saveToCache, listCacheEntries, deleteCach
 describe('buildCacheKey', () => {
   it('produces a deterministic key from file metadata', () => {
     const file = { name: 'office.ifc', size: 12_345_678, lastModified: 1_700_000_000_000 }
-    // Key format: `${CACHE_VERSION}:${name}:${size}:${lastModified}`
-    expect(buildCacheKey(file)).toBe('v2:office.ifc:12345678:1700000000000')
+    // Key format: `${CACHE_VERSION}:${name}:${size}:${lastModified}`.
+    //
+    // The version is deliberately NOT pinned here. Bumping it is the documented
+    // way to invalidate every cached model, so a test that hard-codes it turns
+    // a correct action into a failing build and teaches people to edit the
+    // expectation without reading why. What matters is the SHAPE and that it is
+    // deterministic.
+    expect(buildCacheKey(file)).toMatch(/^v\d+:office\.ifc:12345678:1700000000000$/)
+    expect(buildCacheKey(file)).toBe(buildCacheKey({ ...file }))
   })
 
   it('differentiates files with the same name but different sizes', () => {

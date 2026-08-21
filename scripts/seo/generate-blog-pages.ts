@@ -24,7 +24,13 @@
 
 import path    from 'path'
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
-import { ALL_BLOG_POSTS, type BlogPost } from '../../src/lib/blog-posts'
+import {
+  ALL_BLOG_POSTS,
+  type BlogPost,
+  type ContentBlock,
+  type RichText,
+} from '../../src/lib/blog-posts'
+import { filterBlogPosts, getBlogHubCopy, sortBlogPosts } from '../../src/lib/blog-hub'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 const OG_IMAGE = `${SITE}/og-image.png`
@@ -99,6 +105,10 @@ interface PageMeta {
   image?: string
   imageAlt?: string
   alternates?: Array<{ lang: string; href: string }>
+  ogType?: 'website' | 'article'
+  bodyFallback?: string
+  publishedTime?: string
+  modifiedTime?: string
 }
 
 /**
@@ -108,6 +118,11 @@ interface PageMeta {
  */
 function tweakHtml(template: string, meta: PageMeta): string {
   let html = template
+
+  html = html.replace(
+    /(<meta\s+name="robots"\s+content=")[^"]*(")/,
+    '$1index, follow, max-image-preview:large, max-snippet:-1$2',
+  )
 
   // 1. <title>
   html = html.replace(/<title>[^<]*<\/title>/, `<title>${esc(meta.title)}</title>`)
@@ -128,6 +143,7 @@ function tweakHtml(template: string, meta: PageMeta): string {
   html = html.replace(/(<meta\s+property="og:title"\s+content=")[^"]*(")/,       `$1${esc(meta.title)}$2`)
   html = html.replace(/(<meta\s+property="og:description"\s+content=")[^"]*(")/,  `$1${esc(meta.description)}$2`)
   html = html.replace(/(<meta\s+property="og:url"\s+content=")[^"]*(")/,          `$1${esc(meta.canonical)}$2`)
+  html = html.replace(/(<meta\s+property="og:type"\s+content=")[^"]*(")/,         `$1${meta.ogType ?? 'website'}$2`)
 
   // 5. Twitter Card
   html = html.replace(/(<meta\s+name="twitter:title"\s+content=")[^"]*(")/,       `$1${esc(meta.title)}$2`)
@@ -159,8 +175,22 @@ function tweakHtml(template: string, meta: PageMeta): string {
   const twitterAlt = `<meta name="twitter:image:alt" content="${esc(imageAlt)}" />`
 
   const jsonLd = `<script type="application/ld+json">${jsonEsc(JSON.stringify(meta.jsonLd))}</script>`
+  const articleMeta = meta.ogType === 'article'
+    ? [
+        meta.publishedTime ? `<meta property="article:published_time" content="${esc(meta.publishedTime)}" />` : '',
+        meta.modifiedTime ? `<meta property="article:modified_time" content="${esc(meta.modifiedTime)}" />` : '',
+      ].filter(Boolean).join('\n  ')
+    : ''
+  const imagePreload = preferredImage !== OG_IMAGE
+    ? `<link rel="preload" as="image" href="${esc(preferredImage)}" />`
+    : ''
 
-  html = html.replace('</head>', `  ${hreflang}\n  ${ogAlt}\n  ${twitterAlt}\n  ${jsonLd}\n</head>`)
+  html = html.replace('</head>', `  ${hreflang}\n  ${ogAlt}\n  ${twitterAlt}\n  ${articleMeta}\n  ${imagePreload}\n  ${jsonLd}\n</head>`)
+
+  if (meta.bodyFallback) {
+    html = html.replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>\s*/gi, '')
+    html = html.replace('<div id="root"></div>', `${meta.bodyFallback}\n    <div id="root"></div>`)
+  }
 
   return html
 }
@@ -172,6 +202,8 @@ interface SearchImage {
   caption: string
   credit?: string
   license?: string
+  width?: number
+  height?: number
 }
 
 function mediaUrl(src: string): string {
@@ -188,8 +220,21 @@ function postImages(post: BlogPost): SearchImage[] {
     images.push(image)
   }
 
+  add({
+    url: mediaUrl(`blog/covers/${post.slug}.png`),
+    caption: post.heroAlt ?? `${post.title} — IFC Viewer Online article cover`,
+    credit: 'IFC Viewer Online',
+    width: 1800,
+    height: 945,
+  })
   for (const variant of post.heroImageVariants ?? []) {
-    add({ url: mediaUrl(variant.src), caption: post.heroAlt ?? post.title, credit: 'IFC Viewer Online' })
+    add({
+      url: mediaUrl(variant.src),
+      caption: post.heroAlt ?? post.title,
+      credit: 'IFC Viewer Online',
+      width: variant.width,
+      height: variant.height,
+    })
   }
   if (post.heroImage && (post.heroImage.includes('/') || /\.(?:avif|gif|jpe?g|png|svg|webp)$/i.test(post.heroImage))) {
     add({ url: mediaUrl(post.heroImage), caption: post.heroAlt ?? post.title, credit: 'IFC Viewer Online' })
@@ -201,6 +246,8 @@ function postImages(post: BlogPost): SearchImage[] {
       caption: block.caption ?? block.alt,
       credit: block.credit,
       license: block.license,
+      width: block.width,
+      height: block.height,
     })
   }
   return images
@@ -219,7 +266,138 @@ function articleImageJsonLd(post: BlogPost): Array<Record<string, unknown> | str
       copyrightNotice: image.credit,
     } : {}),
     ...(image.license ? { license: image.license } : {}),
+    ...(image.width && image.height ? { width: image.width, height: image.height } : {}),
   }))
+}
+
+/** Keep the visible title focused on the query while preserving the brand on
+ * shorter titles. Long title tags are a common source of Google rewrites. */
+function postSeoTitle(post: BlogPost): string {
+  const branded = `${post.title} | IFC Viewer Online`
+  return branded.length <= 64 ? branded : post.title
+}
+
+function renderRichText(text: RichText, prefix: string): string {
+  if (typeof text === 'string') return esc(text)
+  return text.map((segment) => {
+    if (typeof segment === 'string') return esc(segment)
+    if ('to' in segment) {
+      return `<a href="/${prefix}blog/${encodeURIComponent(segment.to)}/">${esc(segment.text)}</a>`
+    }
+    return `<a href="${esc(segment.href)}" rel="noopener noreferrer">${esc(segment.text)}</a>`
+  }).join('')
+}
+
+/**
+ * Render the editorial parts of a post as real HTML inside <noscript>.
+ * The SPA remains the interactive experience; this fallback gives non-JS
+ * crawlers the correct H1, copy, links and standard <img src> elements instead
+ * of the homepage copy inherited from dist/index.html.
+ */
+function renderFallbackBlock(block: ContentBlock, prefix: string): string {
+  switch (block.type) {
+    case 'p':
+      return `<p>${renderRichText(block.text, prefix)}</p>`
+    case 'h2':
+      return `<h2>${esc(block.text)}</h2>`
+    case 'h3':
+      return `<h3>${esc(block.text)}</h3>`
+    case 'ul':
+    case 'ol': {
+      const items = block.items.map((item) => `<li>${esc(item)}</li>`).join('')
+      return `<${block.type}>${items}</${block.type}>`
+    }
+    case 'code':
+      return `<pre><code>${esc(block.text)}</code></pre>`
+    case 'callout':
+      return `<aside><p>${esc(block.text)}</p></aside>`
+    case 'image': {
+      const width = block.width ? ` width="${block.width}"` : ''
+      const height = block.height ? ` height="${block.height}"` : ''
+      return `<figure><img src="${esc(mediaUrl(block.src))}" alt="${esc(block.alt)}"${width}${height} loading="lazy" decoding="async" />${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ''}</figure>`
+    }
+    case 'spatial-demo':
+      return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><figure><img src="${esc(mediaUrl(block.poster))}" alt="${esc(block.posterAlt)}" width="800" height="450" loading="lazy" decoding="async" /><figcaption>${esc(block.readyLabel ?? block.title)}</figcaption></figure></section>`
+    case 'video': {
+      const width = block.width ?? 1280
+      const height = block.height ?? 720
+      return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><figure><a href="${esc(mediaUrl(block.src))}"><img src="${esc(mediaUrl(block.poster))}" alt="${esc(block.title)}" width="${width}" height="${height}" loading="lazy" decoding="async" /></a>${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ''}</figure></section>`
+    }
+    case 'ifc-demo':
+      return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><p>${esc(block.schema)} · ${esc(block.size)}</p><p><a href="/${prefix}">${prefix === 'es/' ? 'Abrir el visor IFC interactivo' : 'Open the interactive IFC viewer'}</a></p></section>`
+    case 'embed-configurator':
+      return `<section>${block.title ? `<h2>${esc(block.title)}</h2>` : ''}${block.description ? `<p>${esc(block.description)}</p>` : ''}<p><a href="/${prefix}">${prefix === 'es/' ? 'Abrir el visor IFC' : 'Open IFC Viewer'}</a></p></section>`
+    case 'stat-row':
+      return `<ul>${block.stats.map((stat) => `<li><strong>${esc(`${stat.prefix ?? ''}${stat.value}${stat.suffix ?? ''}`)}</strong> — ${esc(stat.label)}</li>`).join('')}</ul>`
+    case 'feature-grid':
+      return `<section>${block.items.map((item) => `<article><h3>${esc(item.title)}</h3><p>${esc(item.body)}</p></article>`).join('')}</section>`
+    case 'comparison':
+      return `<section><h3>${esc(block.left.label)}</h3><ul>${block.left.items.map((item) => `<li>${esc(item)}</li>`).join('')}</ul><h3>${esc(block.right.label)}</h3><ul>${block.right.items.map((item) => `<li>${esc(item)}</li>`).join('')}</ul></section>`
+    case 'health-score':
+      return `<ul>${block.items.map((item) => `<li><strong>${item.score}/100</strong> — ${esc(item.label)}</li>`).join('')}</ul>`
+    case 'pull-quote':
+      return `<blockquote><p>${esc(block.text)}</p>${block.cite ? `<cite>${esc(block.cite)}</cite>` : ''}</blockquote>`
+    case 'ebook-cta':
+      return `<aside><h2>${esc(block.headline ?? 'Free IFC delivery handbook')}</h2>${block.body ? `<p>${esc(block.body)}</p>` : ''}<p><a href="/${prefix}ebook/${block.book ? `${encodeURIComponent(block.book)}/` : ''}">${esc(block.cta ?? 'Get the free handbook')}</a></p></aside>`
+    case 'table':
+      return `<figure><table><thead><tr>${block.headers.map((header) => `<th>${esc(header)}</th>`).join('')}</tr></thead><tbody>${block.rows.map((row) => `<tr>${row.map((cell) => `<td>${esc(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table>${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ''}</figure>`
+  }
+}
+
+function postBodyFallback(post: BlogPost, prefix: string, primaryImage: string): string {
+  const articleUrl = `${SITE}/${prefix}blog/${post.slug}/`
+  const backLabel = post.lang === 'es' ? 'Volver al blog BIM e IFC' : 'Back to the BIM & IFC blog'
+  const coverAlt = post.heroAlt ?? `${post.title} — IFC Viewer Online article cover`
+  return `<noscript>
+      <main id="blog-static-fallback">
+        <article lang="${esc(post.lang ?? 'en')}">
+          <p><a href="${SITE}/${prefix}blog/">${esc(backLabel)}</a></p>
+          <header>
+            <p>${esc(post.category)} · ${esc(post.date)} · ${post.readTimeMin} min</p>
+            <h1>${esc(post.title)}</h1>
+            <p>${esc(post.excerpt)}</p>
+            <figure><img src="${esc(primaryImage)}" alt="${esc(coverAlt)}" width="1800" height="945" decoding="async" /><figcaption>${esc(post.title)} — IFC Viewer Online</figcaption></figure>
+          </header>
+          ${post.content.map((block) => renderFallbackBlock(block, prefix)).join('\n          ')}
+          <p><a href="${articleUrl}">${esc(post.title)}</a></p>
+        </article>
+      </main>
+    </noscript>`
+}
+
+function blogIndexBodyFallback(posts: BlogPost[], lang: string, prefix: string): string {
+  const copy = getBlogHubCopy(lang)
+  const sortedPosts = sortBlogPosts(posts, 'newest')
+  const journeys = copy.journeys
+    .map((journey) => {
+      const matches = filterBlogPosts(posts, { journey, sort: 'newest' })
+      if (matches.length === 0) return ''
+      const startingPost = matches[0]
+      return `<article><h3>${esc(journey.title)}</h3><p>${esc(journey.description)}</p><p><a href="${SITE}/${prefix}blog/${startingPost.slug}/">${esc(journey.cta)}</a></p></article>`
+    })
+    .filter(Boolean)
+    .join('\n          ')
+
+  return `<noscript>
+      <main id="blog-static-fallback" lang="${esc(lang)}">
+        <header><h1>${esc(`${copy.heroLead} ${copy.heroAccent}`)}</h1><p>${esc(copy.heroDescription)}</p></header>
+        <section aria-labelledby="static-blog-journeys">
+          <h2 id="static-blog-journeys">${esc(copy.journeysTitle)}</h2>
+          <p>${esc(copy.journeysDescription)}</p>
+          ${journeys}
+        </section>
+        <section aria-labelledby="static-blog-library">
+          <h2 id="static-blog-library">${esc(copy.allGuidesTitle)}</h2>
+          <p>${esc(copy.allGuidesDescription)}</p>
+          ${sortedPosts.map((post) => `<article><a href="${SITE}/${prefix}blog/${post.slug}/"><img src="${mediaUrl(`blog/covers/${post.slug}.png`)}" alt="${esc(`${post.title} — IFC Viewer Online article cover`)}" width="1800" height="945" loading="lazy" decoding="async" /><h3>${esc(post.title)}</h3></a><p>${esc(post.excerpt)}</p></article>`).join('\n          ')}
+        </section>
+        <section aria-labelledby="static-blog-faq">
+          <h2 id="static-blog-faq">${esc(copy.faqTitle)}</h2>
+          <p>${esc(copy.faqDescription)}</p>
+          ${copy.faqs.map((faq) => `<details><summary>${esc(faq.q)}</summary><p>${esc(faq.a)}</p></details>`).join('\n          ')}
+        </section>
+      </main>
+    </noscript>`
 }
 
 function postAlternates(post: BlogPost): Array<{ lang: string; href: string }> {
@@ -243,17 +421,22 @@ function sitemapBlogEntry(
   changefreq: string,
   images: SearchImage[] = [],
   videos: BlogPost['videos'] = [],
+  alternates: Array<{ lang: string; href: string }> = [],
 ): string {
   const loc = `${SITE}${urlPath}`
+  const pageAlternates = alternates.length
+    ? alternates
+    : [{ lang: 'en', href: loc }, { lang: 'x-default', href: loc }]
   const lines = [
     '  <url>',
     `    <loc>${loc}</loc>`,
     `    <lastmod>${lastmod}</lastmod>`,
     `    <changefreq>${changefreq}</changefreq>`,
     `    <priority>${priority.toFixed(2)}</priority>`,
-    `    <xhtml:link rel="alternate" hreflang="en"        href="${loc}" />`,
-    `    <xhtml:link rel="alternate" hreflang="x-default" href="${loc}" />`,
   ]
+  for (const alternate of pageAlternates) {
+    lines.push(`    <xhtml:link rel="alternate" hreflang="${esc(alternate.lang)}" href="${esc(alternate.href)}" />`)
+  }
   for (const image of images) {
     lines.push(
       '    <image:image>',
@@ -274,6 +457,19 @@ function sitemapBlogEntry(
   }
   lines.push('  </url>')
   return lines.join('\n')
+}
+
+function regexEsc(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function blogIndexAlternates(): Array<{ lang: string; href: string }> {
+  const alternates = Object.entries(LANG_CONFIG)
+    .filter(([lang]) => postsFor(lang).length > 0)
+    .map(([lang, cfg]) => ({ lang, href: `${SITE}/${cfg.prefix}blog/` }))
+  const english = alternates.find((alternate) => alternate.lang === 'en') ?? alternates[0]
+  if (english) alternates.push({ lang: 'x-default', href: english.href })
+  return alternates
 }
 
 // ── llms.txt section ──────────────────────────────────────────────────────────
@@ -331,6 +527,8 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
     if (posts.length === 0) continue
 
     const urlBase = `${SITE}/${cfg.prefix}blog/`
+    const hubCopy = getBlogHubCopy(lang)
+    const sortedPosts = sortBlogPosts(posts, 'newest')
 
     // Blog index page
     try {
@@ -342,25 +540,40 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
           title: cfg.blogTitle,
           description: cfg.blogDesc,
           canonical: urlBase,
+          ogType: 'website',
+          bodyFallback: blogIndexBodyFallback(posts, lang, cfg.prefix),
           alternates: [
             { lang, href: urlBase },
             { lang: 'x-default', href: lang === 'en' ? urlBase : `${SITE}/blog/` },
           ],
           jsonLd: {
             '@context': 'https://schema.org',
-            '@type': 'Blog',
-            name: `IFC Viewer Blog${lang !== 'en' ? ` (${lang.toUpperCase()})` : ''}`,
-            url: urlBase,
-            description: cfg.blogDesc,
-            inLanguage: lang,
-            publisher: { '@type': 'Person', name: 'Joel Benitez', url: 'https://github.com/j03rul4nd' },
-            blogPost: posts.map(p => ({
-              '@type': 'BlogPosting',
-              headline: p.title,
-              description: p.excerpt,
-              datePublished: p.date,
-              url: `${SITE}/${cfg.prefix}blog/${p.slug}/`,
-            })),
+            '@graph': [
+              {
+                '@type': 'Blog',
+                name: `IFC Viewer Blog${lang !== 'en' ? ` (${lang.toUpperCase()})` : ''}`,
+                url: urlBase,
+                description: cfg.blogDesc,
+                inLanguage: lang,
+                publisher: { '@type': 'Person', name: 'Joel Benitez', url: 'https://github.com/j03rul4nd' },
+                blogPost: sortedPosts.map(p => ({
+                  '@type': 'BlogPosting',
+                  headline: p.title,
+                  description: p.excerpt,
+                  datePublished: p.date,
+                  url: `${SITE}/${cfg.prefix}blog/${p.slug}/`,
+                })),
+              },
+              {
+                '@type': 'FAQPage',
+                inLanguage: lang,
+                mainEntity: hubCopy.faqs.map((faq) => ({
+                  '@type': 'Question',
+                  name: faq.q,
+                  acceptedAnswer: { '@type': 'Answer', text: faq.a },
+                })),
+              },
+            ],
           },
         }),
       )
@@ -381,11 +594,15 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
         writeFileSync(
           path.join(outDir, 'index.html'),
           tweakHtml(template, {
-            title: `${post.title} | IFC Viewer Blog`,
+            title: postSeoTitle(post),
             description: post.excerpt,
             canonical,
             image: primaryImage,
             imageAlt: post.heroAlt ?? post.title,
+            ogType: 'article',
+            bodyFallback: postBodyFallback(post, cfg.prefix, primaryImage),
+            publishedTime: post.date,
+            modifiedTime: post.dateModified ?? post.date,
             alternates: postAlternates(post),
             jsonLd: {
               '@context': 'https://schema.org',
@@ -474,29 +691,37 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
     }
     const missing: string[] = []
 
-    const addIfMissing = (
+    const upsertEntry = (
       urlPath: string,
       lastmod: string,
       priority: number,
       changefreq: string,
       post?: BlogPost,
     ): void => {
-      if (xml.includes(`<loc>${SITE}${urlPath}</loc>`)) return
-      missing.push(sitemapBlogEntry(
+      const entry = sitemapBlogEntry(
         urlPath,
         lastmod,
         priority,
         changefreq,
         post ? postImages(post) : [],
         post?.videos,
-      ))
+        post ? postAlternates(post) : blogIndexAlternates(),
+      )
+      const loc = `${SITE}${urlPath}`
+      const existingPattern = new RegExp(`  <url>\\s*<loc>${regexEsc(loc)}</loc>[\\s\\S]*?</url>`)
+      const existing = xml.match(existingPattern)?.[0]
+      if (!existing) {
+        missing.push(entry)
+      } else if (existing !== entry) {
+        xml = xml.replace(existingPattern, entry)
+      }
     }
 
     for (const [lang, cfg] of Object.entries(LANG_CONFIG)) {
       const posts = postsFor(lang)
       if (posts.length === 0) continue
-      addIfMissing(`/${cfg.prefix}blog/`, today, 0.85, 'weekly')
-      posts.forEach(p => addIfMissing(`/${cfg.prefix}blog/${p.slug}/`, p.dateModified ?? p.date, 0.75, 'monthly', p))
+      upsertEntry(`/${cfg.prefix}blog/`, today, 0.85, 'weekly')
+      posts.forEach(p => upsertEntry(`/${cfg.prefix}blog/${p.slug}/`, p.dateModified ?? p.date, 0.75, 'monthly', p))
     }
 
     if (missing.length > 0) {

@@ -462,3 +462,53 @@ describe('enuOffset', () => {
     expect(north.east).toBeCloseTo(0, 9)
   })
 })
+
+describe('the model may be drawn away from its own coordinates', () => {
+  // The CRAS regression, in one place. The converter used to translate every
+  // model toward the origin, so a scan registered to the IFC's real coordinates
+  // — correct to two centimetres — was drawn metres from the building. Whatever
+  // a loader does for precision, the cloud has to follow it.
+  const COORD = { x: 5.88, y: -1.26, z: -0.39 }
+
+  const frame: SourceFrame = {
+    unitScale: 1, unitSource: 'assumed', epsgCode: null,
+    upAxis: 'z', upAxisSource: 'assumed',
+    min: { x: -10, y: -4, z: -1 },
+    max: { x: 8, y: 20, z: 4 },
+    origin: { x: 0, y: 0, z: 0 },
+  } as SourceFrame
+
+  const bounds = { center: { x: 5, y: 0, z: -8 }, size: { x: 18, y: 4, z: 24 } }
+
+  it('follows the model when the loader has moved it', () => {
+    const plain = alignCloud({ frame, georef: null, placement: null, modelBounds: bounds })
+    const moved = alignCloud({
+      frame, georef: null, placement: null, modelBounds: bounds, modelCoordination: COORD,
+    })
+    expect(moved.rung).toBe(plain.rung)
+    expect(moved.origin.x - plain.origin.x).toBeCloseTo(COORD.x, 9)
+    expect(moved.origin.y - plain.origin.y).toBeCloseTo(COORD.y, 9)
+    expect(moved.origin.z - plain.origin.z).toBeCloseTo(COORD.z, 9)
+  })
+
+  it('changes nothing when the loader left the model alone', () => {
+    const plain = alignCloud({ frame, georef: null, placement: null, modelBounds: bounds })
+    for (const c of [null, undefined, { x: 0, y: 0, z: 0 }]) {
+      const same = alignCloud({
+        frame, georef: null, placement: null, modelBounds: bounds, modelCoordination: c,
+      })
+      expect(same.origin).toEqual(plain.origin)
+    }
+  })
+
+  it('leaves a MANUAL placement alone — it is already in drawn space', () => {
+    // Manual positions against the model's scene bounds, so adding the shift
+    // here would apply it twice and push the cloud twice as far wrong.
+    const manual = alignCloud({
+      frame, georef: null, placement: null, modelBounds: null, modelCoordination: COORD,
+    })
+    expect(manual.rung).toBe('manual')
+    const bare = alignCloud({ frame, georef: null, placement: null, modelBounds: null })
+    expect(manual.origin).toEqual(bare.origin)
+  })
+})

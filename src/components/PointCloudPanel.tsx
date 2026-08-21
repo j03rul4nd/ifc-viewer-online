@@ -163,6 +163,7 @@ export default function PointCloudPanel({
         file,
         system,
         modelBounds: activeModelId ? viewer.getModelBounds(activeModelId) : viewer.getModelBounds(),
+        modelCoordination: viewer.getModelCoordination(activeModelId ?? undefined),
         modelId: activeModelId,
         // A downloaded scan is identified by its URL. Without this the File's
         // lastModified — the instant of the fetch — becomes its identity, and a
@@ -425,6 +426,7 @@ export default function PointCloudPanel({
               sourceUrl: cmd.sourceUrl,
               system,
               modelBounds: activeModelId ? viewer.getModelBounds(activeModelId) : viewer.getModelBounds(),
+              modelCoordination: viewer.getModelCoordination(activeModelId ?? undefined),
               modelId: activeModelId,
             }
             // Mirror handleFiles: COPC carries an octree and streams, everything
@@ -492,6 +494,7 @@ export default function PointCloudPanel({
             usePointCloudStore.getState().setUpAxis(target, cmd.upAxis)
             await realignCloud(target, {
               modelBounds: activeModelId ? viewer.getModelBounds(activeModelId) : viewer.getModelBounds(),
+              modelCoordination: viewer.getModelCoordination(activeModelId ?? undefined),
               modelId: activeModelId,
               system,
             })
@@ -548,6 +551,7 @@ export default function PointCloudPanel({
         system,
         modelId: activeModelId,
         modelBounds: activeModelId ? viewer.getModelBounds(activeModelId) : viewer.getModelBounds(),
+        modelCoordination: viewer.getModelCoordination(activeModelId ?? undefined),
       })
     } finally {
       setRealigning(false)
@@ -596,6 +600,7 @@ export default function PointCloudPanel({
       const system = await viewer.getPointClouds()
       await realignCloud(cloud.id, {
         modelBounds: activeModelId ? viewer.getModelBounds(activeModelId) : viewer.getModelBounds(),
+        modelCoordination: viewer.getModelCoordination(activeModelId ?? undefined),
         modelId: activeModelId,
         system,
       })

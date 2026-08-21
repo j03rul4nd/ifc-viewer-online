@@ -40,6 +40,8 @@ export interface LoadOptions {
   system: PointCloudSystemAPI
   /** Scene-space bounds of the IFC model to align against, or null. */
   modelBounds: ModelBoundsLike | null
+  /** viewer.getModelCoordination() — see AlignInput.modelCoordination. */
+  modelCoordination?: { x: number; y: number; z: number } | null
   /** The model the alignment is computed against (provenance for the UI). */
   modelId: string | null
   /**
@@ -114,7 +116,7 @@ function withSavedUpAxis(frame: SourceFrame, fileKey: string): SourceFrame {
  * points appear in the scene progressively, long before that.
  */
 export async function loadPointCloud(opts: LoadOptions): Promise<LoadResult> {
-  const { file, system, modelBounds, modelId } = opts
+  const { file, system, modelBounds, modelId, modelCoordination } = opts
 
   if (file.size === 0) return { ok: false, errorKey: 'error.emptyFile' }
 
@@ -237,6 +239,7 @@ export async function loadPointCloud(opts: LoadOptions): Promise<LoadResult> {
               georef: geo.georef,
               placement: geo.placement,
               modelBounds,
+              modelCoordination,
             })
             // A placement the user tuned for THIS file wins over a fresh guess —
             // the same precedence geo/placement.ts gives a saved map placement.
@@ -312,7 +315,12 @@ export async function loadPointCloud(opts: LoadOptions): Promise<LoadResult> {
  */
 export async function realignCloud(
   cloudId: string,
-  opts: { modelBounds: ModelBoundsLike | null; modelId: string | null; system: PointCloudSystemAPI },
+  opts: {
+    modelBounds: ModelBoundsLike | null
+    modelId: string | null
+    system: PointCloudSystemAPI
+    modelCoordination?: { x: number; y: number; z: number } | null
+  },
 ): Promise<boolean> {
   const cloud = usePointCloudStore.getState().clouds.find((c) => c.id === cloudId)
   if (!cloud || !cloud.frame || cloud.status !== 'ready') return false
@@ -327,6 +335,7 @@ export async function realignCloud(
     georef: geo.georef,
     placement: geo.placement,
     modelBounds: opts.modelBounds,
+    modelCoordination: opts.modelCoordination,
   })
   alignment.offset = current.alignment?.offset ?? alignment.offset
 
@@ -355,7 +364,7 @@ function remainingBudget(): number {
  * costs the bytes of that corner, not of the site.
  */
 export async function streamPointCloud(opts: LoadOptions): Promise<LoadResult> {
-  const { file, system, modelBounds, modelId } = opts
+  const { file, system, modelBounds, modelId, modelCoordination } = opts
   if (file.size === 0) return { ok: false, errorKey: 'error.emptyFile' }
 
   const cloudId = `pc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
@@ -434,6 +443,7 @@ export async function streamPointCloud(opts: LoadOptions): Promise<LoadResult> {
             const frame = withSavedUpAxis(msg.frame, fileKey)
             const alignment = alignCloud({
               frame, georef: geo.georef, placement: geo.placement, modelBounds,
+              modelCoordination,
             })
             const saved = loadOffset(fileKey)
             if (saved) alignment.offset = saved

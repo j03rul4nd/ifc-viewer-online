@@ -337,10 +337,10 @@ export default function App() {
     return 'landing'
   })
 
-  // Locale-driven document meta. Disabled on /ebook: that view owns its own
-  // title, and this hook (living in the parent) would otherwise overwrite it —
-  // effects run child-first, so the parent always gets the last word.
-  useSeo({ enabled: route !== 'ebook' })
+  // Locale-driven document meta. Disabled on routes that own their own title
+  // and share metadata. This hook lives in the parent, so it would otherwise
+  // overwrite blog/article meta after the child effect has set it.
+  useSeo({ enabled: route !== 'ebook' && route !== 'blog' })
 
   // /verify/<cert_hash> — public certificate verification (F1). NOT in the
   // sitemap (the space of hashes is unbounded).

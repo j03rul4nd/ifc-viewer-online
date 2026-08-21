@@ -66,3 +66,8 @@ scripts/blender/__pycache__/
 /demo/processed/
 /demo/blender/
 /demo/captures/
+
+# TypeScript's incremental build cache. Machine-local and rewritten by every
+# `tsc -b`, so tracking it means a dirty tree after any build and a diff in
+# every unrelated PR — it has been landing in commits by accident.
+tsconfig.tsbuildinfo
