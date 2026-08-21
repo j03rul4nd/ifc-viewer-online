@@ -30,6 +30,7 @@ import {
   type ContentBlock,
   type RichText,
 } from '../../src/lib/blog-posts'
+import { filterBlogPosts, getBlogHubCopy, sortBlogPosts } from '../../src/lib/blog-hub'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 const OG_IMAGE = `${SITE}/og-image.png`
@@ -364,13 +365,36 @@ function postBodyFallback(post: BlogPost, prefix: string, primaryImage: string):
     </noscript>`
 }
 
-function blogIndexBodyFallback(posts: BlogPost[], lang: string, prefix: string, title: string, description: string): string {
-  const h1 = title.split('|')[0].trim()
+function blogIndexBodyFallback(posts: BlogPost[], lang: string, prefix: string): string {
+  const copy = getBlogHubCopy(lang)
+  const sortedPosts = sortBlogPosts(posts, 'newest')
+  const journeys = copy.journeys
+    .map((journey) => {
+      const matches = filterBlogPosts(posts, { journey, sort: 'newest' })
+      if (matches.length === 0) return ''
+      const startingPost = matches[0]
+      return `<article><h3>${esc(journey.title)}</h3><p>${esc(journey.description)}</p><p><a href="${SITE}/${prefix}blog/${startingPost.slug}/">${esc(journey.cta)}</a></p></article>`
+    })
+    .filter(Boolean)
+    .join('\n          ')
+
   return `<noscript>
       <main id="blog-static-fallback" lang="${esc(lang)}">
-        <header><h1>${esc(h1)}</h1><p>${esc(description)}</p></header>
-        <section aria-label="${esc(h1)}">
-          ${posts.map((post) => `<article><a href="${SITE}/${prefix}blog/${post.slug}/"><img src="${mediaUrl(`blog/covers/${post.slug}.png`)}" alt="${esc(`${post.title} — IFC Viewer Online article cover`)}" width="1800" height="945" loading="lazy" decoding="async" /><h2>${esc(post.title)}</h2></a><p>${esc(post.excerpt)}</p></article>`).join('\n          ')}
+        <header><h1>${esc(`${copy.heroLead} ${copy.heroAccent}`)}</h1><p>${esc(copy.heroDescription)}</p></header>
+        <section aria-labelledby="static-blog-journeys">
+          <h2 id="static-blog-journeys">${esc(copy.journeysTitle)}</h2>
+          <p>${esc(copy.journeysDescription)}</p>
+          ${journeys}
+        </section>
+        <section aria-labelledby="static-blog-library">
+          <h2 id="static-blog-library">${esc(copy.allGuidesTitle)}</h2>
+          <p>${esc(copy.allGuidesDescription)}</p>
+          ${sortedPosts.map((post) => `<article><a href="${SITE}/${prefix}blog/${post.slug}/"><img src="${mediaUrl(`blog/covers/${post.slug}.png`)}" alt="${esc(`${post.title} — IFC Viewer Online article cover`)}" width="1800" height="945" loading="lazy" decoding="async" /><h3>${esc(post.title)}</h3></a><p>${esc(post.excerpt)}</p></article>`).join('\n          ')}
+        </section>
+        <section aria-labelledby="static-blog-faq">
+          <h2 id="static-blog-faq">${esc(copy.faqTitle)}</h2>
+          <p>${esc(copy.faqDescription)}</p>
+          ${copy.faqs.map((faq) => `<details><summary>${esc(faq.q)}</summary><p>${esc(faq.a)}</p></details>`).join('\n          ')}
         </section>
       </main>
     </noscript>`
@@ -503,6 +527,8 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
     if (posts.length === 0) continue
 
     const urlBase = `${SITE}/${cfg.prefix}blog/`
+    const hubCopy = getBlogHubCopy(lang)
+    const sortedPosts = sortBlogPosts(posts, 'newest')
 
     // Blog index page
     try {
@@ -515,26 +541,39 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
           description: cfg.blogDesc,
           canonical: urlBase,
           ogType: 'website',
-          bodyFallback: blogIndexBodyFallback(posts, lang, cfg.prefix, cfg.blogTitle, cfg.blogDesc),
+          bodyFallback: blogIndexBodyFallback(posts, lang, cfg.prefix),
           alternates: [
             { lang, href: urlBase },
             { lang: 'x-default', href: lang === 'en' ? urlBase : `${SITE}/blog/` },
           ],
           jsonLd: {
             '@context': 'https://schema.org',
-            '@type': 'Blog',
-            name: `IFC Viewer Blog${lang !== 'en' ? ` (${lang.toUpperCase()})` : ''}`,
-            url: urlBase,
-            description: cfg.blogDesc,
-            inLanguage: lang,
-            publisher: { '@type': 'Person', name: 'Joel Benitez', url: 'https://github.com/j03rul4nd' },
-            blogPost: posts.map(p => ({
-              '@type': 'BlogPosting',
-              headline: p.title,
-              description: p.excerpt,
-              datePublished: p.date,
-              url: `${SITE}/${cfg.prefix}blog/${p.slug}/`,
-            })),
+            '@graph': [
+              {
+                '@type': 'Blog',
+                name: `IFC Viewer Blog${lang !== 'en' ? ` (${lang.toUpperCase()})` : ''}`,
+                url: urlBase,
+                description: cfg.blogDesc,
+                inLanguage: lang,
+                publisher: { '@type': 'Person', name: 'Joel Benitez', url: 'https://github.com/j03rul4nd' },
+                blogPost: sortedPosts.map(p => ({
+                  '@type': 'BlogPosting',
+                  headline: p.title,
+                  description: p.excerpt,
+                  datePublished: p.date,
+                  url: `${SITE}/${cfg.prefix}blog/${p.slug}/`,
+                })),
+              },
+              {
+                '@type': 'FAQPage',
+                inLanguage: lang,
+                mainEntity: hubCopy.faqs.map((faq) => ({
+                  '@type': 'Question',
+                  name: faq.q,
+                  acceptedAnswer: { '@type': 'Answer', text: faq.a },
+                })),
+              },
+            ],
           },
         }),
       )

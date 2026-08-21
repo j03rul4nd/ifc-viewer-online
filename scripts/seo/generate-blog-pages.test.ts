@@ -114,6 +114,13 @@ describe('generateBlogPages — blog index (/blog/)', () => {
     expect(html).toContain('"@type":"Blog"')
   })
 
+  it('has FAQPage schema backed by visible FAQ content', () => {
+    const html = readFileSync(file, 'utf-8')
+    expect(html).toContain('"@type":"FAQPage"')
+    expect(html).toContain('Where should I start if I only need to open an IFC file?')
+    expect(html).toContain('<summary>Where should I start if I only need to open an IFC file?</summary>')
+  })
+
   it('lists all posts in JSON-LD', () => {
     const html = readFileSync(file, 'utf-8')
     for (const post of BLOG_POSTS) {
@@ -128,6 +135,14 @@ describe('generateBlogPages — blog index (/blog/)', () => {
       expect(html).toContain(`/blog/${post.slug}/`)
     }
     expect(html).not.toContain('Free Browser-Based BIM Viewer</h1>')
+  })
+
+  it('exposes outcome-led paths and newest-first library copy in the static fallback', () => {
+    const html = readFileSync(file, 'utf-8')
+    expect(html).toContain('Start with the job you need to finish')
+    expect(html).toContain('Build a spatial digital twin')
+    expect(html).toContain('All IFC guides')
+    expect(html).toContain('Newest articles appear first.')
   })
 
   it('removes root hreflang and adds self-referencing blog hreflang', () => {
