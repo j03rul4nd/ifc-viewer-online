@@ -9,6 +9,8 @@ import UploadOverlay from './components/UploadOverlay'
 import Landing from './components/Landing'
 import ModelTree from './components/ModelTree'
 import { ColumnStrip } from './components/ColumnStrip'
+import { PanelRail } from './components/PanelRail'
+import { usePanelRail } from './hooks/usePanelRail'
 import ValidationPanel from './components/ValidationPanel'
 import ToastContainer from './components/ToastContainer'
 import CameraControls from './components/CameraControls'
@@ -231,6 +233,13 @@ export default function App() {
   const { t: tViewer } = useTranslation('viewer')
   const { t: tTourNs } = useTranslation('tour')
   const { t: tTree } = useTranslation('tree')
+  const { t: tToolbar } = useTranslation('toolbar')
+  // Each panel already names itself in its own namespace; the rail reuses those
+  // names rather than inventing a second set that could drift from the headers.
+  const { t: tCloud } = useTranslation('pointcloud')
+  const { t: tMesh } = useTranslation('mesh')
+  const { t: tSolar } = useTranslation('solar')
+
 
   // ── Embed / deep-link URL params (?model=…&embed=1&…) ─────────────────────
   // Parsed once at mount; drives auto-loading remote models and the chrome a
@@ -554,6 +563,34 @@ export default function App() {
   const tourMode = usePresentationStore((s) => s.mode)
   const clientMode = useUIStore((s) => s.clientMode)
   const clientAdvancedTools = useUIStore((s) => s.clientAdvancedTools)
+
+  // The rail's vocabulary. Icons live here rather than in the hook so the hook
+  // imports no JSX and stays testable as plain logic.
+  const railIcons = useMemo(() => ({
+    scene:       <Icons.Layers size={15} />,
+    measurement: <Icons.Ruler size={15} />,
+    section:     <Icons.Sliders size={15} />,
+    plans:       <Icons.FileIfc size={15} />,
+    map:         <Icons.Globe size={15} />,
+    solar:       <Icons.Sparkles size={15} />,
+    pointcloud:  <Icons.Zap size={15} />,
+    mesh:        <Icons.Building size={15} />,
+  }), [])
+  const railLabels = useMemo(() => ({
+    scene:       tToolbar('scene'),
+    measurement: tToolbar('measure'),
+    section:     tToolbar('section'),
+    plans:       tToolbar('plans'),
+    map:         tToolbar('map'),
+    solar:       tSolar('panel.title'),
+    pointcloud:  tCloud('title'),
+    mesh:        tMesh('title'),
+  }), [tToolbar, tSolar, tCloud, tMesh])
+  const railItems = usePanelRail({
+    icons: railIcons,
+    labels: railLabels,
+    technical: !clientMode || clientAdvancedTools,
+  })
 
   // Effective chrome (D-25): the client skin layers over the URL-derived embed
   // chrome — everything technical hidden, camera presets kept. All JSX gating
@@ -2388,6 +2425,16 @@ export default function App() {
                       />
                     ) : null
                   })()}
+
+                  {/* The minimised form of every floating panel: a rail of
+                      icons on the right edge, panels opening to its left.
+                      docs/PANEL_RAIL.md. Only with a model — with an empty
+                      viewport there is nothing for any of them to act on. */}
+                  {sceneModels.length > 0 && (
+                    <div className="max-md:hidden">
+                      <PanelRail items={railItems} />
+                    </div>
+                  )}
 
                   {/* Measurement panel (client mode: only via the presenter gear) */}
                   {sceneModels.length > 0 && (!clientMode || clientAdvancedTools) && (
