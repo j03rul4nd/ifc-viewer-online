@@ -17,6 +17,64 @@ export type GpuBackend = 'webgpu' | 'webgl' | 'detecting'
 /** Active measurement tool in the 3D viewport. */
 export type MeasurementTool = 'none' | 'length' | 'area'
 
+// ── Docked columns ────────────────────────────────────────────────────────────
+// The tree, the selection sidebar and the validation panel are LAYOUT REGIONS,
+// not floating cards: several are open at once by design, and they never
+// overlap. So the rule they share is not the floating panels' "one at a time" —
+// it is about how you collapse one and how you get it back.
+//
+//   A column collapses IN PLACE. It leaves a strip on its own edge that still
+//   says what it is, and that strip is the same control that brings it back.
+//
+// This is the validation panel's behaviour, generalised, because it was already
+// the only one that got it right. The other two each did something different:
+// the tree could only be toggled from a menu two clicks away, and the sidebar
+// left a ghost chevron in a corner it had not been in — with its open state in
+// component-local `useState`, so it forgot itself on remount and nothing else
+// could drive it. Three surfaces, three answers to "how do I get that back".
+//
+// Persisted, because a collapsed column is a working preference, not a mode.
+
+const LS_COLUMNS = 'ifc-ui-columns:v1'
+
+interface ColumnState { tree: boolean; sidebar: boolean; validation: boolean }
+
+const COLUMN_DEFAULTS: ColumnState = { tree: true, sidebar: true, validation: false }
+
+function loadColumns(): ColumnState {
+  if (typeof localStorage === 'undefined') return COLUMN_DEFAULTS
+  try {
+    const raw = localStorage.getItem(LS_COLUMNS)
+    if (!raw) return COLUMN_DEFAULTS
+    const saved = JSON.parse(raw) as Partial<ColumnState>
+    return {
+      tree:       typeof saved.tree === 'boolean' ? saved.tree : COLUMN_DEFAULTS.tree,
+      sidebar:    typeof saved.sidebar === 'boolean' ? saved.sidebar : COLUMN_DEFAULTS.sidebar,
+      validation: typeof saved.validation === 'boolean' ? saved.validation : COLUMN_DEFAULTS.validation,
+    }
+  } catch {
+    // A corrupt or unreadable entry must not stop the app from laying out.
+    return COLUMN_DEFAULTS
+  }
+}
+
+/** Persist the three column flags, taking the ones not being changed from state. */
+function rememberColumns(
+  current: { treeVisible: boolean; sidebarExpanded: boolean; validationPanelOpen: boolean },
+  patch: Partial<ColumnState>,
+): void {
+  saveColumns({
+    tree:       patch.tree ?? current.treeVisible,
+    sidebar:    patch.sidebar ?? current.sidebarExpanded,
+    validation: patch.validation ?? current.validationPanelOpen,
+  })
+}
+
+function saveColumns(state: ColumnState): void {
+  if (typeof localStorage === 'undefined') return
+  try { localStorage.setItem(LS_COLUMNS, JSON.stringify(state)) } catch { /* private mode */ }
+}
+
 interface UIStore {
   validationPanelOpen:     boolean
   validationPanelFloating: boolean
@@ -26,6 +84,13 @@ interface UIStore {
   pendingSidebarTab:       'props' | 'cats' | 'qty' | null
   /** Whether the sidebar is open as a mobile drawer (< md breakpoint). */
   mobileSidebarOpen:       boolean
+  /**
+   * Desktop selection/legend column, expanded or collapsed to its edge strip.
+   *
+   * In the store rather than inside Sidebar, so it survives a remount and the
+   * toolbar, keyboard and SDK can drive it — the same as the other two columns.
+   */
+  sidebarExpanded:         boolean
   /** Per-element visibility overrides. Keys are `"${modelId}:${expressId}"` so that
    *  elements from different models with the same expressId stay independent. */
   hiddenElements:          Set<string>
@@ -69,6 +134,7 @@ interface UIStore {
   setValidationPanelFloating: (floating: boolean) => void
   setTreeWidth:             (width: number) => void
   setTreeVisible:           (visible: boolean) => void
+  setSidebarExpanded:       (expanded: boolean) => void
   openSidebarLegend:        () => void
   setPendingSidebarTab:     (tab: 'props' | 'cats' | 'qty') => void
   clearPendingSidebarTab:   () => void
@@ -107,11 +173,12 @@ const TREE_WIDTH_MAX = 600
 export const useUIStore = create<UIStore>()(
   devtools(
     (set) => ({
-      validationPanelOpen:     false,
+      validationPanelOpen:     loadColumns().validation,
       validationPanelFloating: false,
       treeWidth:               300,
-      treeVisible:             true,
+      treeVisible:             loadColumns().tree,
       mobileSidebarOpen:       false,
+      sidebarExpanded:         loadColumns().sidebar,
       hiddenElements:          new Set<string>(),
       cameraControlsVisible:   true,
       transformMode:           'none' as TransformMode,
@@ -129,11 +196,21 @@ export const useUIStore = create<UIStore>()(
       clientMode:              false,
       clientAdvancedTools:     false,
 
+      // Every column setter goes through `rememberColumns`, so "collapsed"
+      // survives a reload for all three or for none. One of them quietly not
+      // persisting is how three surfaces end up feeling like three products.
       toggleValidationPanel: () =>
-        set((s) => ({ validationPanelOpen: !s.validationPanelOpen }), false, 'toggleValidationPanel'),
+        set((s) => {
+          const next = !s.validationPanelOpen
+          rememberColumns(s, { validation: next })
+          return { validationPanelOpen: next }
+        }, false, 'toggleValidationPanel'),
 
       setValidationPanelOpen: (open) =>
-        set({ validationPanelOpen: open }, false, 'setValidationPanelOpen'),
+        set((s) => {
+          rememberColumns(s, { validation: open })
+          return { validationPanelOpen: open }
+        }, false, 'setValidationPanelOpen'),
 
       setValidationPanelFloating: (floating) =>
         set({ validationPanelFloating: floating }, false, 'setValidationPanelFloating'),
@@ -142,7 +219,16 @@ export const useUIStore = create<UIStore>()(
         set({ treeWidth: clamp(width, TREE_WIDTH_MIN, TREE_WIDTH_MAX) }, false, 'setTreeWidth'),
 
       setTreeVisible: (visible) =>
-        set({ treeVisible: visible }, false, 'setTreeVisible'),
+        set((s) => {
+          rememberColumns(s, { tree: visible })
+          return { treeVisible: visible }
+        }, false, 'setTreeVisible'),
+
+      setSidebarExpanded: (expanded) =>
+        set((s) => {
+          rememberColumns(s, { sidebar: expanded })
+          return { sidebarExpanded: expanded }
+        }, false, 'setSidebarExpanded'),
 
       openSidebarLegend: () =>
         set({ treeVisible: true, pendingSidebarTab: 'cats' }, false, 'openSidebarLegend'),

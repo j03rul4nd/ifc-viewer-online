@@ -347,6 +347,7 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
     // useValidationStore re-rendered the entire tree on every partial issue
     // batch — which, while a large model streams, is many times a second.
     const spatialTreesRecord = useValidationStore((s) => s.spatialTrees)
+    const setTreeVisible = useUIStore((s) => s.setTreeVisible)
     const result        = useValidationStore((s) => s.result)
     const partialIssues = useValidationStore((s) => s.partialIssues)
 
@@ -617,6 +618,19 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
             {showModelHeaders ? t('models.count', { count: allTrees.length }) : t('spatialTree')}
           </span>
           <div className="flex items-center gap-1 shrink-0">
+            {/* Collapse the COLUMN. Every docked column carries its own collapse
+                control in its header, so closing one is done where you already
+                are — not in a menu two clicks away. See ColumnStrip. */}
+            <button
+              onClick={() => setTreeVisible(false)}
+              title={t('actions.hide')}
+              aria-label={t('actions.hide')}
+              className="w-6 h-6 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+            >
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 2L4 7l5 5" />
+              </svg>
+            </button>
             {/* Expand all */}
             <button
               onClick={expandAll}
