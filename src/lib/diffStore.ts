@@ -217,34 +217,155 @@ export async function exportAsIfc(
 }
 
 /**
- * Export a Three.js object as a binary GLB file.
- * The caller retrieves the object via viewerApi.getModelObject(modelId).
+ * Rebuild plain, exportable geometry from a fragments model.
+ *
+ * WHY THIS EXISTS. @thatopen/fragments frees the CPU-side copy of every vertex
+ * array once it has uploaded to the GPU — a sensible thing to do for a viewer
+ * that will never read them back. Measured on a real model, every attribute on
+ * every mesh is a BufferAttribute with no `array` at all:
+ *
+ *     position: BufferAttribute [NO ARRAY]   x4
+ *     normal:   BufferAttribute [NO ARRAY]   x4
+ *
+ * GLTFExporter reads those arrays, so handing it the scene object throws inside
+ * `isNormalizedNormalAttribute` with "Cannot read properties of undefined". That
+ * was not a missing guard — the data genuinely is not there, and every GLB
+ * export in the app failed on it.
+ *
+ * The library keeps the geometry and hands it back on request, which is what
+ * this does: ask for every item's geometry, rebuild ordinary BufferGeometry from
+ * the returned arrays, and export THAT.
  */
-export async function exportAsGlb(obj: import('three').Object3D): Promise<Blob> {
+async function meshesFromFragments(
+  model: {
+    getLocalIds(): Promise<number[]>
+    getItemsGeometry(localIds: number[]): Promise<Array<Array<{
+      transform: import('three').Matrix4
+      positions?: Float32Array | Float64Array
+      normals?: Int16Array
+      indices?: Uint8Array | Uint16Array | Uint32Array
+    }>>>
+  },
+): Promise<import('three').Group> {
+  const THREE = await import('three')
+  const group = new THREE.Group()
+  group.name = 'glb-export'
+
+  const localIds = await model.getLocalIds()
+  if (localIds.length === 0) throw new Error('The model reports no items to export')
+
+  // In batches: a large model is tens of thousands of items, and asking for all
+  // of them in one call builds every array before any of them can be released.
+  const BATCH = 500
+  const material = new THREE.MeshStandardMaterial({ vertexColors: false })
+
+  for (let i = 0; i < localIds.length; i += BATCH) {
+    const batch = await model.getItemsGeometry(localIds.slice(i, i + BATCH))
+    for (const item of batch) {
+      for (const part of item) {
+        if (!part?.positions || part.positions.length === 0) continue
+        const geometry = new THREE.BufferGeometry()
+        geometry.setAttribute(
+          'position',
+          new THREE.BufferAttribute(Float32Array.from(part.positions), 3),
+        )
+        if (part.normals && part.normals.length === part.positions.length) {
+          // Int16 normals are stored normalised; `normalized: true` tells three
+          // to map them back to [-1, 1] rather than treating them as 32767.
+          geometry.setAttribute('normal', new THREE.BufferAttribute(part.normals, 3, true))
+        } else {
+          geometry.computeVertexNormals()
+        }
+        if (part.indices) geometry.setIndex(new THREE.BufferAttribute(part.indices, 1))
+
+        const mesh = new THREE.Mesh(geometry, material)
+        // The transform is per PART, not per item: one item can appear many
+        // times through instancing, and baking it here is what keeps those
+        // copies in their own places.
+        if (part.transform) mesh.applyMatrix4(part.transform)
+        group.add(mesh)
+      }
+    }
+  }
+
+  if (group.children.length === 0) throw new Error('No geometry could be read from the model')
+  return group
+}
+
+/** True when a subtree has no vertex data a serialiser could read. */
+function hasReadableGeometry(obj: import('three').Object3D): boolean {
+  let readable = false
+  obj.traverse((node) => {
+    if (readable) return
+    const geometry = (node as { geometry?: { attributes?: Record<string, { array?: unknown }> } }).geometry
+    const position = geometry?.attributes?.position
+    if (position && position.array) readable = true
+  })
+  return readable
+}
+
+/**
+ * Export a model as a binary GLB.
+ *
+ * Takes the scene object AND, optionally, the fragments model behind it. When
+ * the scene object still carries readable vertex arrays it is exported directly;
+ * when it does not — which is the normal case for a fragments model, see
+ * meshesFromFragments — the geometry is rebuilt from the model first.
+ */
+export async function exportAsGlb(
+  obj: import('three').Object3D,
+  fragmentsModel?: unknown,
+): Promise<Blob> {
   log.info('Exporting GLB')
+
+  let target = obj
+  let rebuilt: import('three').Group | null = null
+
+  if (!hasReadableGeometry(obj)) {
+    const model = fragmentsModel as Parameters<typeof meshesFromFragments>[0] | undefined
+    if (!model?.getItemsGeometry || !model?.getLocalIds) {
+      throw new Error(
+        'This model keeps its geometry on the GPU, and no source was supplied to read it back from.',
+      )
+    }
+    log.info('Scene geometry is GPU-only; rebuilding from the fragments model')
+    rebuilt = await meshesFromFragments(model)
+    target = rebuilt
+  }
 
   const { GLTFExporter } = await import('three/addons/exporters/GLTFExporter.js')
   const exporter = new GLTFExporter()
 
-  return new Promise<Blob>((resolve, reject) => {
-    exporter.parse(
-      obj,
-      (result) => {
-        if (result instanceof ArrayBuffer) {
-          log.info('GLB export complete, size:', result.byteLength)
-          resolve(new Blob([result], { type: 'model/gltf-binary' }))
-        } else {
-          reject(new Error('GLTFExporter returned JSON, expected binary'))
-        }
-      },
-      (e) => {
-        const err = e instanceof Error ? e : new Error(String(e))
-        log.error('GLB export failed:', err.message)
-        reject(err)
-      },
-      { binary: true },
-    )
-  })
+  try {
+    return await new Promise<Blob>((resolve, reject) => {
+      exporter.parse(
+        target,
+        (result) => {
+          if (result instanceof ArrayBuffer) {
+            log.info('GLB export complete, size:', result.byteLength)
+            resolve(new Blob([result], { type: 'model/gltf-binary' }))
+          } else {
+            reject(new Error('GLTFExporter returned JSON, expected binary'))
+          }
+        },
+        (e) => {
+          const err = e instanceof Error ? e : new Error(String(e))
+          log.error('GLB export failed:', err.message)
+          reject(err)
+        },
+        { binary: true },
+      )
+    })
+  } finally {
+    // The rebuilt copy exists only for the export; leaving it would hold a
+    // second full set of vertex buffers alive for the life of the tab.
+    if (rebuilt) {
+      rebuilt.traverse((node) => {
+        const mesh = node as { geometry?: { dispose?: () => void } }
+        mesh.geometry?.dispose?.()
+      })
+    }
+  }
 }
 
 /**
