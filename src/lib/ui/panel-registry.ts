@@ -1,4 +1,4 @@
-// ─── viewport-panel-registry ──────────────────────────────────────────────────
+// ─── panel-registry ──────────────────────────────────────────────────
 // The rules every floating panel obeys, in one place.
 //
 // The shell (ViewportPanel) already made them LOOK alike. What was missing is
@@ -23,6 +23,8 @@
 //
 // PURE apart from the listener set, so the ordering rules are testable without
 // mounting anything.
+
+import { anyModalOpen } from './modal-stack'
 
 export type PanelId = string
 
@@ -90,11 +92,18 @@ let detachEscape: (() => void) | null = null
 /**
  * A dialog is on top and owns the key.
  *
- * Modals in this app trap focus and close themselves on Escape. Without this
- * check, a modal opened over a panel would close the PANEL BEHIND IT — the panel
- * the user cannot even see — and leave the modal standing.
+ * Without this, a modal opened over a panel would close the PANEL BEHIND IT —
+ * the one the user cannot even see — and leave the modal standing.
+ *
+ * Asked TWO ways, on purpose. The modal stack is the reliable answer and the
+ * only one that survives a dialog forgetting an attribute; the DOM query is
+ * kept for anything not yet built on `Modal`, and for a third-party dialog that
+ * will never be in our stack at all. Originally this was the DOM query alone,
+ * and six of the ten dialogs in the app did not set `role="dialog"` — so Escape
+ * over those closed the panel behind them.
  */
 function modalIsOpen(): boolean {
+  if (anyModalOpen()) return true
   if (typeof document === 'undefined') return false
   return document.querySelector('[role="dialog"], [role="alertdialog"]') !== null
 }

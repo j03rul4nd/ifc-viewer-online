@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   announceOpen, announceClosed, closeTopPanel, openPanels, resetPanelRegistry,
-} from './viewport-panel-registry'
+} from './panel-registry'
 
 beforeEach(() => {
   resetPanelRegistry()
@@ -113,5 +113,21 @@ describe('the Escape key itself', () => {
     announceOpen('map', close)
     announceClosed('map')
     expect(press()).toBe(false)
+  })
+})
+
+describe('a modal on top owns Escape, attribute or not', () => {
+  it('yields to a modal that is in the stack', async () => {
+    // The DOM query alone was not enough: six of the ten dialogs in this app
+    // never set role="dialog", so Escape over them closed the panel behind.
+    const { pushModal, resetModalStack } = await import('./modal-stack')
+    resetModalStack()
+    const close = vi.fn()
+    announceOpen('map', close)
+    pushModal('export')
+    const event = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })
+    window.dispatchEvent(event)
+    expect(close).not.toHaveBeenCalled()
+    resetModalStack()
   })
 })

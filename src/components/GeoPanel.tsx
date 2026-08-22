@@ -783,8 +783,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
         mobile="sheet"
         widthPx={332}
         anchor="top"
-        maxHeight="calc(100vh - 140px)"
-      >
+        >
 
               {/* ── Header ────────────────────────────────────────────────── */}
               <div className={`${SECTION_X} pt-2.5 pb-2 flex items-center gap-2 shrink-0`}>

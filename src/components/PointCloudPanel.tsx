@@ -767,7 +767,6 @@ export default function PointCloudPanel({
       mobile="sheet"
       widthPx={300}
       anchor="top"
-      maxHeight="calc(100vh - 140px)"
     >
       {/* flex-1 + min-h-0: the only flex child of the shell, so it takes the
           available height and lets the scroll region below actually shrink —

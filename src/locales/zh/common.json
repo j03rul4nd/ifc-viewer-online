@@ -91,7 +91,8 @@
       "panShift": "平移（无中键时）",
       "zoom": "缩放",
       "recentre": "将旋转中心移到此处",
-      "contextMenu": "构件菜单"
+      "contextMenu": "构件菜单",
+      "panMiddle": "平移（中键）"
     }
   },
   "upload": {

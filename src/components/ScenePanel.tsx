@@ -378,7 +378,6 @@ export default function ScenePanel({
       mobile="sheet"
       widthPx={292}
       anchor="top"
-      maxHeight="calc(100dvh - 100px)"
     >
     <div className="flex flex-col min-h-0">
       {/* Header */}
@@ -425,7 +424,9 @@ export default function ScenePanel({
         </div>
       </div>
 
-      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 160px)' }}>
+      {/* The shell already caps the card; the body just takes what is left and
+          scrolls. A second hand-picked height here fought the first one. */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {/* Model list */}
         <div className="p-2 space-y-1">
           {models.length === 0 && (

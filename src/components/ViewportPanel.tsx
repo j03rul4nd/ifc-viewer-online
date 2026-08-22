@@ -28,18 +28,18 @@
 //
 // Desktop rendering is untouched in both cases.
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { MobileSheet } from './mobile/MobileSheet'
-import { announceOpen, announceClosed } from './viewport-panel-registry'
+import { useViewportPanel } from '../hooks/useViewportPanel'
 
 export type ViewportPanelMobile = 'sheet' | 'dock'
 
 interface ViewportPanelBase {
   /**
    * Stable identity, so the panels can be coordinated with each other.
-   * See viewport-panel-registry for the rules this buys.
+   * See panel-registry for the rules this buys.
    */
   id: string
   open: boolean
@@ -55,7 +55,12 @@ interface ViewportPanelBase {
   anchor?: 'top' | 'center'
   /** For anchor='center': how far to shift from true centre, as a CSS translate. */
   centerShift?: string
-  /** Caps the desktop card so a long panel scrolls instead of running off-screen. */
+  /**
+   * Override the computed desktop cap. Rarely needed: the shell already sizes
+   * the card to the space between the toolbar and the viewport chrome, and a
+   * hand-picked value is how four panels ended up with four different heights
+   * — three of which reached down over the camera controls.
+   */
   maxHeight?: string
   children: React.ReactNode
 }
@@ -79,24 +84,12 @@ export function ViewportPanel({
 }: ViewportPanelProps) {
   const isMobile = useIsMobile()
 
-  // Join the coordination described in viewport-panel-registry. Every panel gets
-  // one-at-a-time and Escape-to-close from being a ViewportPanel, rather than
-  // from remembering to wire both — which is how they drifted apart to begin
-  // with.
-  //
-  // The close callback is read through a ref so the registry always calls the
-  // CURRENT one. Registering the callback itself would re-run this effect on
-  // every render of the parent, closing and reopening the panel for no reason.
-  const closeRef = useRef(onClose)
-  closeRef.current = onClose
-  useEffect(() => {
-    if (!open) {
-      announceClosed(id)
-      return
-    }
-    announceOpen(id, () => closeRef.current?.())
-    return () => announceClosed(id)
-  }, [id, open])
+  // One-at-a-time and Escape-to-close come from being a ViewportPanel, not from
+  // each panel remembering to wire them. The rules live in lib/ui/panel-registry;
+  // the hook is the only part that knows about mounting.
+  // The width is passed so the viewport chrome (camera controls, HUD) can move
+  // out from under the panel rather than being covered by it.
+  useViewportPanel(id, open, onClose, isMobile ? undefined : widthPx)
   // Half height by default: glancing at the state is the common errand, and
   // opening full every time buries the model the panel is describing.
   const [detent, setDetent] = useState(0)
@@ -145,6 +138,22 @@ export function ViewportPanel({
     style.transform = centerShift ?? 'translateY(-50%)'
   }
 
+  // THE CARD STOPS ABOVE THE VIEWPORT CHROME.
+  //
+  // The bottom-right of the viewport belongs to the scene: the camera controls,
+  // the model strip and the HUD live there at z-8, under these panels at z-20. A
+  // panel that reaches the bottom edge covers the camera controls outright —
+  // hiding the controls for the very scene it is describing.
+  //
+  // A top-anchored card starts below the toolbar and gives back the reserve; a
+  // centred one is centred, so it must give back twice as much to stay clear at
+  // the bottom. Computed here rather than per panel, which is how four panels
+  // ended up with four different answers.
+  const chrome = 'var(--viewport-chrome-clearance)'
+  style.maxHeight = maxHeight ?? (anchor === 'top'
+    ? `calc(100dvh - 3.5rem - ${chrome} - 12px)`
+    : `calc(100dvh - 2 * ${chrome})`)
+
   return (
     <AnimatePresence>
       {open && (
@@ -157,8 +166,8 @@ export function ViewportPanel({
           style={style}
         >
           <div
-            className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl flex flex-col"
-            style={maxHeight ? { maxHeight } : undefined}
+            className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl flex flex-col min-h-0"
+            style={{ maxHeight: style.maxHeight }}
           >
             {children}
           </div>
