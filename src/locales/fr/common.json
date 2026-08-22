@@ -91,7 +91,8 @@
       "panShift": "Déplacer (sans bouton central)",
       "zoom": "Zoom",
       "recentre": "Recentrer l’orbite ici",
-      "contextMenu": "Menu de l’élément"
+      "contextMenu": "Menu de l’élément",
+      "panMiddle": "Panoramique (milieu)"
     }
   },
   "upload": {

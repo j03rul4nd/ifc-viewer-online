@@ -34,7 +34,10 @@
   "models": {
     "count": "{{count}} モデル",
     "count_other": "{{count}} モデル",
-    "active": "アクティブモデル"
+    "active": "アクティブモデル",
+    "openScene": "シーン設定",
+    "remove": "モデルを削除",
+    "removeConfirm": "削除？"
   },
   "context": {
     "changeGuid": "GlobalId を変更しますか？",

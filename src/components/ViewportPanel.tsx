@@ -32,10 +32,16 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { MobileSheet } from './mobile/MobileSheet'
+import { useViewportPanel } from '../hooks/useViewportPanel'
 
 export type ViewportPanelMobile = 'sheet' | 'dock'
 
 interface ViewportPanelBase {
+  /**
+   * Stable identity, so the panels can be coordinated with each other.
+   * See panel-registry for the rules this buys.
+   */
+  id: string
   open: boolean
   /** Accessible name for the sheet. */
   label: string
@@ -49,7 +55,12 @@ interface ViewportPanelBase {
   anchor?: 'top' | 'center'
   /** For anchor='center': how far to shift from true centre, as a CSS translate. */
   centerShift?: string
-  /** Caps the desktop card so a long panel scrolls instead of running off-screen. */
+  /**
+   * Override the computed desktop cap. Rarely needed: the shell already sizes
+   * the card to the space between the toolbar and the viewport chrome, and a
+   * hand-picked value is how four panels ended up with four different heights
+   * — three of which reached down over the camera controls.
+   */
   maxHeight?: string
   children: React.ReactNode
 }
@@ -68,10 +79,15 @@ export type ViewportPanelProps = ViewportPanelBase & (
 const SHEET_DETENTS = [0.55, 0.94]
 
 export function ViewportPanel({
-  open, onClose, label, mobile, widthPx,
+  id, open, onClose, label, mobile, widthPx,
   anchor = 'center', centerShift, maxHeight, children,
 }: ViewportPanelProps) {
   const isMobile = useIsMobile()
+
+  // One-at-a-time and Escape-to-close come from being a ViewportPanel, not from
+  // each panel remembering to wire them. The rules live in lib/ui/panel-registry;
+  // the hook is the only part that knows about mounting.
+  useViewportPanel(id, open, onClose)
   // Half height by default: glancing at the state is the common errand, and
   // opening full every time buries the model the panel is describing.
   const [detent, setDetent] = useState(0)
@@ -114,11 +130,34 @@ export function ViewportPanel({
     )
   }
 
-  const style: React.CSSProperties = { width: `min(${widthPx}px, calc(100vw - 24px))` }
-  if (anchor === 'center') {
-    style.top = '50%'
-    style.transform = centerShift ?? 'translateY(-50%)'
+  // ── THE RIGHT LANE, SHARED VERTICALLY ───────────────────────────────────────
+  //
+  // Measured on a real session: the viewport is 1168x546 once the tree and the
+  // validation panel have taken their share, while `100dvh` is 950. Panels sized
+  // against dvh were therefore 585px tall in a 546px viewport — they hung out of
+  // the bottom of the scene and over the panel below it.
+  //
+  // So the card is anchored TOP AND BOTTOM inside the viewport instead of being
+  // given a height. It cannot overflow a container it is measured against, and
+  // it needs no magic number to stay inside one.
+  //
+  // The bottom anchor also leaves the scene its own corner. The camera and
+  // position controls live bottom-right at z-8, UNDER these panels: a panel that
+  // reaches the bottom edge buries the controls for the very scene it describes.
+  // Earlier I made the controls move aside instead, and measuring showed why
+  // that was wrong — with no room in the lane they ended up over the middle of
+  // the model. The scene is the subject; the window yields to it, not the
+  // reverse.
+  const style: React.CSSProperties = {
+    width: `min(${widthPx}px, calc(100vw - 24px))`,
+    top: anchor === 'top' ? '3.5rem' : undefined,
+    bottom: 'var(--viewport-chrome-clearance)',
   }
+  if (anchor === 'center') {
+    // Centre what is left of the lane, never the whole viewport.
+    style.top = '3.5rem'
+  }
+  if (maxHeight) style.maxHeight = maxHeight
 
   return (
     <AnimatePresence>
@@ -128,13 +167,12 @@ export function ViewportPanel({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 12 }}
           transition={{ duration: 0.2 }}
-          className={`absolute right-3 z-20 pointer-events-auto select-none${anchor === 'top' ? ' top-14' : ''}`}
+          className="absolute right-3 z-20 pointer-events-auto select-none flex flex-col"
           style={style}
         >
-          <div
-            className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl flex flex-col"
-            style={maxHeight ? { maxHeight } : undefined}
-          >
+          {/* `max-h-full` rather than a height: a short panel stays short, and a
+              long one stops at the lane and scrolls inside. */}
+          <div className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl flex flex-col min-h-0 max-h-full">
             {children}
           </div>
         </motion.div>

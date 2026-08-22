@@ -325,14 +325,29 @@ interface ModelTreeProps {
   onSelectElement?: (expressId: number, modelId?: string) => void
   onFilterBySubtree?: (expressIds: number[]) => void
   onFocusElements?: (ids: number[]) => void
+  /**
+   * Remove a whole model. The tree is where people already look for the model
+   * they mean — hunting for a separate panel to delete the thing you are
+   * pointing at is the long way round.
+   */
+  onRemoveModel?: (modelId: string) => void
+  /**
+   * Open the scene panel on a model: visibility, isolation and the transform
+   * controls. Same reasoning — the tree is the index of what is loaded, so it
+   * should be the way in to what you can do with it.
+   */
+  onOpenScene?: (modelId: string) => void
 }
 
 const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
-  function ModelTree({ onSelectElement, onFilterBySubtree, onFocusElements }, ref) {
+  function ModelTree({
+    onSelectElement, onFilterBySubtree, onFocusElements, onRemoveModel, onOpenScene,
+  }, ref) {
     // Narrow selectors, not the whole store. Subscribing to all of
     // useValidationStore re-rendered the entire tree on every partial issue
     // batch — which, while a large model streams, is many times a second.
     const spatialTreesRecord = useValidationStore((s) => s.spatialTrees)
+    const setTreeVisible = useUIStore((s) => s.setTreeVisible)
     const result        = useValidationStore((s) => s.result)
     const partialIssues = useValidationStore((s) => s.partialIssues)
 
@@ -358,7 +373,10 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
 
     const parentRef = useRef<HTMLDivElement>(null)
 
-    const showModelHeaders = allTrees.length > 1
+    // ALWAYS, not only when models are federated. The row is no longer just a
+    // separator between trees: it carries the actions for the model it names,
+    // and a single-model scene needs those every bit as much as a federated one.
+    const showModelHeaders = allTrees.length > 0
 
     const fileNameOf = useCallback(
       (modelId: string) => modelRegistry.get(modelId)?.fileName ?? fileNameFromModelId(modelId),
@@ -600,6 +618,19 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
             {showModelHeaders ? t('models.count', { count: allTrees.length }) : t('spatialTree')}
           </span>
           <div className="flex items-center gap-1 shrink-0">
+            {/* Collapse the COLUMN. Every docked column carries its own collapse
+                control in its header, so closing one is done where you already
+                are — not in a menu two clicks away. See ColumnStrip. */}
+            <button
+              onClick={() => setTreeVisible(false)}
+              title={t('actions.hide')}
+              aria-label={t('actions.hide')}
+              className="w-6 h-6 flex items-center justify-center rounded text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+            >
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 2L4 7l5 5" />
+              </svg>
+            </button>
             {/* Expand all */}
             <button
               onClick={expandAll}
@@ -701,6 +732,8 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
                           return next
                         })
                       }
+                      onOpenScene={onOpenScene ? () => onOpenScene(flat.modelId) : undefined}
+                      onRemove={onRemoveModel ? () => onRemoveModel(flat.modelId) : undefined}
                     />
                   ) : flat.kind === 'spatial' ? (
                     <SpatialRow
@@ -813,16 +846,23 @@ function EyeBtn({
 // ── Model header row ──────────────────────────────────────────────────────────
 
 function ModelHeaderRow({
-  flat, onToggleCollapse,
+  flat, onToggleCollapse, onOpenScene, onRemove,
 }: {
   flat: FlatNode & { kind: 'model-header' }
   onToggleCollapse: () => void
+  onOpenScene?: () => void
+  onRemove?: () => void
 }) {
   const { t } = useTranslation('tree')
+  const [confirming, setConfirming] = useState(false)
+
+  // Leave confirmation the moment the row stops being hovered, so a stray click
+  // elsewhere cannot land on an armed delete the user has forgotten about.
   return (
     <div
-      className="flex items-center gap-2 px-2 h-[30px] cursor-pointer select-none border-b border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-2)] transition-colors"
+      className="group flex items-center gap-2 px-2 h-[30px] cursor-pointer select-none border-b border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-2)] transition-colors"
       onClick={onToggleCollapse}
+      onMouseLeave={() => setConfirming(false)}
       title={`${flat.isCollapsed ? t('actions.expand') : t('actions.collapse')} · ${flat.fileName}`}
     >
       <svg
@@ -841,6 +881,53 @@ function ModelHeaderRow({
       <span className="text-[10px] text-[var(--text-faint)] font-mono bg-[var(--surface-2)] px-1.5 py-0.5 rounded-md shrink-0">
         {flat.nodeCount}
       </span>
+
+      {/* Model actions. Revealed on hover so the row stays a quiet separator
+          until you are actually reaching for it, and always present for keyboard
+          and touch — `opacity` hides them, it does not remove them. */}
+      {onOpenScene && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onOpenScene() }}
+          title={t('models.openScene')}
+          aria-label={t('models.openScene')}
+          className="shrink-0 w-5 h-5 rounded flex items-center justify-center text-[var(--text-faint)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--text)] hover:bg-[var(--surface-3)] transition"
+        >
+          <svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4">
+            <rect x="1" y="1" width="5" height="5" rx="0.8" />
+            <rect x="7" y="1" width="5" height="5" rx="0.8" />
+            <rect x="1" y="7" width="5" height="5" rx="0.8" />
+            <rect x="7" y="7" width="5" height="5" rx="0.8" />
+          </svg>
+        </button>
+      )}
+      {onRemove && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            // Two taps, not a modal. Removing a model is undoable only by
+            // loading it again, and a dialog for it in a dense list is heavier
+            // than the action deserves.
+            if (!confirming) { setConfirming(true); return }
+            setConfirming(false)
+            onRemove()
+          }}
+          title={confirming ? t('models.removeConfirm') : t('models.remove')}
+          aria-label={confirming ? t('models.removeConfirm') : t('models.remove')}
+          className={`shrink-0 h-5 rounded flex items-center justify-center transition ${
+            confirming
+              ? 'px-1.5 text-[9px] font-semibold text-[var(--danger)] bg-[var(--danger-soft)] opacity-100'
+              : 'w-5 text-[var(--text-faint)] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[var(--danger)] hover:bg-[var(--surface-3)]'
+          }`}
+        >
+          {confirming ? t('models.removeConfirm') : (
+            <svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4">
+              <path d="M2 3.5h9M5 3.5V2h3v1.5M3.2 3.5l.5 7.5h5.6l.5-7.5" />
+            </svg>
+          )}
+        </button>
+      )}
     </div>
   )
 }

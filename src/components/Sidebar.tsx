@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import { useValidationStore } from '../stores/validationStore'
 import { useUIStore } from '../stores/uiStore'
+import { ColumnStrip } from './ColumnStrip'
 
 type SidebarTab = 'props' | 'cats' | 'qty'
 import { makeHiddenKey, expandWithDecomp } from '../lib/visibility'
@@ -2096,7 +2097,16 @@ export default function Sidebar({
 }: SidebarProps) {
   const { t } = useTranslation('sidebar')
   const [tab, setTab] = useState<SidebarTab>('props')
-  const [desktopCollapsed, setDesktopCollapsed] = useState(false)
+  // In the store, not local state. As a `useState` it forgot itself on every
+  // remount and no other surface could open it — which is why this column had a
+  // ghost chevron of its own instead of joining the rule the others follow.
+  const sidebarExpanded = useUIStore((s) => s.sidebarExpanded)
+  const setSidebarExpanded = useUIStore((s) => s.setSidebarExpanded)
+  const desktopCollapsed = !sidebarExpanded
+  const setDesktopCollapsed = useCallback(
+    (collapsed: boolean) => setSidebarExpanded(!collapsed),
+    [setSidebarExpanded],
+  )
 
   // Consume pendingSidebarTab from store — works even when Sidebar was unmounted at click time
   const pendingTab = useUIStore(s => s.pendingSidebarTab)
@@ -2146,24 +2156,19 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Desktop: expand button — visible only when sidebar is collapsed */}
-      <AnimatePresence>
-        {desktopCollapsed && (
-          <motion.button
-            initial={{ opacity: 0, x: 8 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 8 }}
-            transition={{ duration: 0.18 }}
-            onClick={() => setDesktopCollapsed(false)}
-            title={t('actions.showPanel')}
-            className="hidden md:flex absolute top-[68px] right-3 z-[9] glass border border-[var(--border)] rounded-xl w-8 h-8 items-center justify-center text-[var(--text-dim)] hover:text-[var(--text)] transition-colors pointer-events-auto"
-          >
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-              <path d="M9 2L4 7l5 5" />
-            </svg>
-          </motion.button>
-        )}
-      </AnimatePresence>
+      {/* Collapsed: the column's own edge strip, which is also the way back.
+          This used to be a chevron floating near the top-right corner — a
+          different place from the column it restored, and a different gesture
+          from the other two columns. See ColumnStrip for the rule. */}
+      {desktopCollapsed && (
+        <div className="hidden md:flex absolute inset-y-0 right-0 z-[9] pointer-events-auto">
+          <ColumnStrip
+            edge="right"
+            label={t('title')}
+            onExpand={() => setDesktopCollapsed(false)}
+          />
+        </div>
+      )}
 
       <motion.div
         // Only fade opacity — NO x/y transform from Framer Motion.

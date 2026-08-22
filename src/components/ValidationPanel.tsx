@@ -36,6 +36,7 @@ import { fixGuideUrl } from '../lib/fix-guide-url'
 import { getCoveredCategories, ALL_CATEGORIES } from './ValidationCoverageSummary'
 import BcfPanel from './BcfPanel'
 import { useIdsStore } from '../stores/idsStore'
+import { ColumnStrip } from './ColumnStrip'
 import CustomProfileModal from './CustomProfileModal'
 import ValidationExportModal, { type ExportModelEntry } from './ValidationExportModal'
 import { getRecentRuns, getAverageQualityScore, getMostUsedRules } from '../lib/validation-analytics'
@@ -2182,20 +2183,23 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
   // ── Collapsed state ───────────────────────────────────────────────────
 
   if (!validationPanelOpen) {
+    // The same strip component the tree and the sidebar collapse to. This panel
+    // already behaved correctly — it was the one the rule was generalised FROM —
+    // but three copies of a rule drift apart, and these three already had.
     return (
-      <button
-        onClick={() => {
+      <ColumnStrip
+        edge="bottom"
+        label={t('panel.title')}
+        // Below the desktop breakpoint this panel is a different surface
+        // entirely; a desktop rail there would be a second, wrong way in.
+        className="max-md:hidden"
+        onExpand={() => {
           // The bottom slot is shared with the IdsPanel — the two are exclusive.
           useIdsStore.getState().setPanelOpen(false)
           toggleValidationPanel()
           trackValidationPanelOpened({ trigger: 'manual' })
         }}
-        className="flex items-center gap-2 px-3 h-10 xs:h-9 border-t border-[var(--border)] bg-[var(--surface)] w-full text-left hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)] transition-colors shrink-0 max-md:hidden"
       >
-        <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider shrink-0">
-          {t('panel.title')}
-        </span>
-
         {stats ? (
           <div className="flex items-center gap-2">
             <MiniBarChart errors={stats.errors} warnings={stats.warnings} info={stats.info} />
@@ -2228,13 +2232,7 @@ export default function ValidationPanel({ onJumpToElement, viewer }: ValidationP
             {t('validating', { progress })}
           </span>
         ) : null}
-
-        <span className="ml-auto text-[var(--text-faint)]">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-            <path d="M1 8.5L6 3.5L11 8.5L10 9.5L6 5.5L2 9.5Z" />
-          </svg>
-        </span>
-      </button>
+      </ColumnStrip>
     )
   }
 

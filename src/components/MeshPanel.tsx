@@ -232,6 +232,7 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
 
   return (
     <ViewportPanel
+      id="mesh"
       open={store.panelOpen}
       onClose={onClose}
       label={t('title')}
@@ -240,7 +241,6 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
       mobile="sheet"
       widthPx={300}
       anchor="top"
-      maxHeight="calc(100vh - 140px)"
     >
       <div className="flex flex-col gap-3 p-3 overflow-y-auto" data-testid="mesh-panel">
         {/* Import */}

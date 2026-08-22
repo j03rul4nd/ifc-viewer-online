@@ -91,7 +91,8 @@
       "panShift": "Desplaçar (sense botó central)",
       "zoom": "Zoom",
       "recentre": "Centrar el gir aquí",
-      "contextMenu": "Menú de l’element"
+      "contextMenu": "Menú de l’element",
+      "panMiddle": "Enquadrar (central)"
     }
   },
   "upload": {

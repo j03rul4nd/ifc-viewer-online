@@ -4,8 +4,7 @@
 // docked IdsPanel ("View results").
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { Modal } from './Modal'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import { useSceneStore } from '../stores/sceneStore'
@@ -52,12 +51,6 @@ export default function IdsModal({ onClose }: IdsModalProps) {
   // Raw .ids XML kept locally so it can be synced to the account (the store only
   // holds the parsed doc). Set on load, cleared on reset.
   const [rawXml, setRawXml] = useState<string | null>(null)
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent): void => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [onClose])
 
   const onFile = async (file: File): Promise<void> => {
     try {
@@ -129,43 +122,14 @@ export default function IdsModal({ onClose }: IdsModalProps) {
     }
   }
 
-  return createPortal(
-    <AnimatePresence>
-      {/* Full-viewport flex container centers the modal. Centering is done here
-          (flex) — not via translate on the panel — because framer-motion writes
-          an inline transform for the scale/y animation that would clobber a
-          `-translate-x/y-1/2`. Portaled to <body> so `fixed` resolves to the
-          viewport even when an ancestor has a transform. */}
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-        <motion.div
-          key="ids-backdrop"
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-          onClick={onClose}
-        />
-        <motion.div
-          key="ids-panel"
-          initial={{ opacity: 0, scale: 0.96, y: -8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: -8 }}
-          transition={{ duration: 0.18 }}
-          className="relative z-[71] w-[560px] max-w-[calc(100vw-2rem)] rounded-2xl bg-[rgba(12,12,16,0.97)] backdrop-blur-[20px] border border-[var(--border-strong)] shadow-[0_24px_64px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col"
-          style={{ maxHeight: 'calc(100dvh - 4rem)' }}
-          onClick={(e) => e.stopPropagation()}
-        >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
-          <div className="flex items-center gap-2">
-            <Icons.Shield size={15} className="text-[var(--accent)]" />
-            <span className="text-[13px] font-semibold text-[var(--text)]">{t('title')}</span>
-            <span className="text-[10px] text-[var(--text-muted)] bg-[rgba(255,255,255,0.06)] px-1.5 py-0.5 rounded-full">
-              {t('subtitle')}
-            </span>
-          </div>
-          <button onClick={onClose} className="w-6 h-6 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] transition-colors" aria-label="Close">
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M1 1l8 8M9 1L1 9" /></svg>
-          </button>
-        </div>
-
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={t('title')}
+      description={t('subtitle')}
+      size="md"
+    >
         <div className="overflow-y-auto flex-1 px-4 py-4 flex flex-col gap-3">
           {/* Load + run row */}
           <div className="flex items-center gap-2 flex-wrap">
@@ -337,9 +301,6 @@ export default function IdsModal({ onClose }: IdsModalProps) {
             </div>
           )}
         </div>
-        </motion.div>
-      </div>
-    </AnimatePresence>,
-    document.body,
+    </Modal>
   )
 }

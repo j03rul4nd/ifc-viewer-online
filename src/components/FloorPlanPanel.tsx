@@ -23,6 +23,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
   const { t } = useTranslation('viewer')
   const {
     plansPanelOpen, activePlanViewId, setActivePlanViewId,
+    setPlansPanelOpen,
   } = useUIStore()
 
   const sceneModelCount = useSceneStore((s) => s.models.length)
@@ -114,6 +115,8 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
 
   return (
     <ViewportPanel
+      id="plans"
+      onClose={() => setPlansPanelOpen(false)}
       open={plansPanelOpen}
       label={t('floorPlan.title')}
       mobile="dock"

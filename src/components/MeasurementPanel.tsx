@@ -38,6 +38,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
     activeMeasurementTool, setActiveMeasurementTool,
     setMeasurementCount,
     measurementPanelOpen,
+    setMeasurementPanelOpen,
   } = useUIStore()
 
   const TOOLS: { id: MeasurementTool; label: string; icon: React.ReactNode; hint: string }[] = [
@@ -172,6 +173,8 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
 
   return (
     <ViewportPanel
+      id="measurement"
+      onClose={() => setMeasurementPanelOpen(false)}
       open={measurementPanelOpen}
       label={t('panel.title')}
       mobile="dock"

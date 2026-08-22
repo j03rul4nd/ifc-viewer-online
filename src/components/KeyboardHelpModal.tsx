@@ -3,7 +3,7 @@
 // is focused). Also opened via the `?` button in the Toolbar.
 
 import React, { useEffect, useCallback } from 'react'
-import { createPortal } from 'react-dom'
+import { Modal } from './Modal'
 import { useTranslation } from 'react-i18next'
 
 // ── Key chip ──────────────────────────────────────────────────────────────────
@@ -69,9 +69,10 @@ export default function KeyboardHelpModal({ open, onClose }: KeyboardHelpModalPr
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const t = tRaw as (key: string) => string
 
-  // Close on Escape
+  // '?' also closes — the same key that opens it. Escape, focus and the rest
+  // belong to Modal.
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape' || e.key === '?') { e.preventDefault(); onClose() }
+    if (e.key === '?') { e.preventDefault(); onClose() }
   }, [onClose])
 
   useEffect(() => {
@@ -80,45 +81,14 @@ export default function KeyboardHelpModal({ open, onClose }: KeyboardHelpModalPr
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [open, handleKeyDown])
 
-  if (!open) return null
-
   const g = (key: string) => t(`shortcuts.groups.${key}`)
   const k = (key: string) => t(`shortcuts.keys.${key}`)
 
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform)
   const Mod   = isMac ? '⌘' : 'Ctrl'
 
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-
-      {/* Panel */}
-      <div
-        className="relative z-10 w-full max-w-[520px] max-h-[85dvh] overflow-y-auto glass border border-[var(--border)] rounded-2xl shadow-2xl flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)] shrink-0">
-          <div className="flex items-center gap-2.5">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="1.4" strokeLinecap="round">
-              <rect x="1" y="4" width="14" height="9" rx="1.5" />
-              <path d="M4 7.5h1M7 7.5h1M10 7.5h1M4 10h4M10 10h2" />
-            </svg>
-            <span className="text-[13px] font-semibold text-[var(--text)]">{t('shortcuts.title')}</span>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
-          >
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-              <path d="M1.5 1.5l8 8M9.5 1.5l-8 8" />
-            </svg>
-          </button>
-        </div>
+  return (
+    <Modal open={open} onClose={onClose} title={t('shortcuts.title')} size="md">
 
         {/* Content — 2-column grid on sm+ */}
         <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto">
@@ -161,7 +131,10 @@ export default function KeyboardHelpModal({ open, onClose }: KeyboardHelpModalPr
               usual right-drag is taken by the context menu here. */}
           <Section title={g('mouse')}>
             <Row label={k('orbit')}        keys={['Drag']} />
-            <Row label={k('pan')}          keys={['Middle drag']} />
+            {/* Right-drag is the pan people reach for and it now works, so it
+                is listed first. The other two still pan. */}
+            <Row label={k('pan')}          keys={['Right drag']} />
+            <Row label={k('panMiddle')}    keys={['Middle drag']} />
             <Row label={k('panShift')}     keys={['Shift', 'Drag']} />
             <Row label={k('zoom')}         keys={['Wheel']} />
             <Row label={k('recentre')}     keys={['Double-click']} />
@@ -173,8 +146,6 @@ export default function KeyboardHelpModal({ open, onClose }: KeyboardHelpModalPr
           </Section>
 
         </div>
-      </div>
-    </div>,
-    document.body,
+    </Modal>
   )
 }

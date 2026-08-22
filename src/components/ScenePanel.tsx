@@ -9,6 +9,7 @@ import type { ViewerAPI } from '../lib/viewer'
 import type { SceneModel, ModelTransform } from '../types'
 import type { TransformMode } from '../stores/uiStore'
 import { useUIStore } from '../stores/uiStore'
+import { ViewportPanel } from './ViewportPanel'
 
 interface ScenePanelProps {
   models:         SceneModel[]
@@ -364,11 +365,21 @@ export default function ScenePanel({
     viewerApiRef.current?.frameAllModels()
   }, [viewerApiRef])
 
+  // The shared shell, like every other floating panel. It used to carry its own
+  // card — its own corner, width, colours and z-index, and no mobile behaviour
+  // at all — which is why this one felt unlike the rest and covered the model on
+  // a phone. It also joins the one-at-a-time and Escape rules by doing so.
   return (
-    <div
-      className="absolute top-14 right-4 z-[15] rounded-xl bg-[rgba(12,12,16,0.95)] backdrop-blur-[18px] border border-[var(--border)] shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden"
-      style={{ width: 'min(292px, calc(100vw - 24px))', maxHeight: 'calc(100dvh - 100px)' }}
+    <ViewportPanel
+      id="scene"
+      open
+      onClose={onClose}
+      label={t('scene.title')}
+      mobile="sheet"
+      widthPx={292}
+      anchor="top"
     >
+    <div className="flex flex-col min-h-0">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-[var(--border)]">
         <div className="flex items-center gap-2">
@@ -413,7 +424,9 @@ export default function ScenePanel({
         </div>
       </div>
 
-      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 160px)' }}>
+      {/* The shell already caps the card; the body just takes what is left and
+          scrolls. A second hand-picked height here fought the first one. */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {/* Model list */}
         <div className="p-2 space-y-1">
           {models.length === 0 && (
@@ -522,5 +535,6 @@ export default function ScenePanel({
         )}
       </div>
     </div>
+    </ViewportPanel>
   )
 }

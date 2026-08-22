@@ -91,7 +91,8 @@
       "panShift": "Pan (no middle button)",
       "zoom": "Zoom",
       "recentre": "Re-centre orbit here",
-      "contextMenu": "Element menu"
+      "contextMenu": "Element menu",
+      "panMiddle": "Pan (middle)"
     }
   },
   "upload": {

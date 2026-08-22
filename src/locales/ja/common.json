@@ -91,7 +91,8 @@
       "panShift": "平行移動（中ボタンなし）",
       "zoom": "ズーム",
       "recentre": "ここを回転の中心に",
-      "contextMenu": "要素メニュー"
+      "contextMenu": "要素メニュー",
+      "panMiddle": "パン（中ボタン）"
     }
   },
   "upload": {

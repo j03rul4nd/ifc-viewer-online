@@ -4,7 +4,7 @@
 // Each model row offers IFC (with applied edits) or GLB download.
 
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { Modal } from './Modal'
 import { useTranslation } from 'react-i18next'
 import {
   loadExportPrefs, saveExportPrefs, prefsToExportOptions,
@@ -65,13 +65,6 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
   const [statuses, setStatuses] = useState<Record<string, ModelExportState>>(() =>
     Object.fromEntries(models.map((m) => [m.id, { ifc: 'idle', glb: 'idle' }])),
   )
-
-  // Close on Escape
-  useEffect(() => {
-    const handler = (e: KeyboardEvent): void => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [onClose])
 
   const setStatus = (modelId: string, format: 'ifc' | 'glb', status: ExportStatus): void => {
     setStatuses((prev) => ({
@@ -157,48 +150,13 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
   )
 
   return (
-    <AnimatePresence>
-      {/* Backdrop */}
-      <motion.div
-        key="export-backdrop"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        transition={{ duration: 0.15 }}
-        className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Panel */}
-      <motion.div
-        key="export-panel"
-        initial={{ opacity: 0, scale: 0.96, y: -8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: -8 }}
-        transition={{ duration: 0.18 }}
-        className="fixed z-[71] top-16 right-4 w-[380px] max-w-[calc(100vw-2rem)] rounded-2xl bg-[rgba(12,12,16,0.97)] backdrop-blur-[20px] border border-[var(--border-strong)] shadow-[0_24px_64px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col"
-        style={{ maxHeight: 'calc(100dvh - 5rem)' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
-          <div className="flex items-center gap-2">
-            <svg width="14" height="14" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" className="text-[var(--accent)]">
-              <path d="M6.5 1v7M3.5 5.5l3 3.5 3-3.5M1 10v2h11v-2" />
-            </svg>
-            <span className="text-[13px] font-semibold text-[var(--text)]">{t('exportModal.title')}</span>
-            <span className="text-[10px] text-[var(--text-muted)] bg-[rgba(255,255,255,0.06)] px-1.5 py-0.5 rounded-full">
-              {t('exportModal.elements', { count: models.length })}
-            </span>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-6 h-6 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
-          >
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-              <path d="M1 1l8 8M9 1L1 9"/>
-            </svg>
-          </button>
-        </div>
-
+    <Modal
+      open
+      onClose={onClose}
+      title={t('exportModal.title')}
+      description={t('exportModal.elements', { count: models.length })}
+      size="sm"
+    >
         {/* Model rows */}
         <div className="divide-y divide-[var(--border)] overflow-y-auto flex-1">
           {models.map((model) => {
@@ -366,7 +324,6 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
             </div>
           </div>
         )}
-      </motion.div>
-    </AnimatePresence>
+    </Modal>
   )
 }

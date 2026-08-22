@@ -8,6 +8,7 @@ import Sidebar from './components/Sidebar'
 import UploadOverlay from './components/UploadOverlay'
 import Landing from './components/Landing'
 import ModelTree from './components/ModelTree'
+import { ColumnStrip } from './components/ColumnStrip'
 import ValidationPanel from './components/ValidationPanel'
 import ToastContainer from './components/ToastContainer'
 import CameraControls from './components/CameraControls'
@@ -229,6 +230,7 @@ export default function App() {
   const { t: tCommon } = useTranslation('common')
   const { t: tViewer } = useTranslation('viewer')
   const { t: tTourNs } = useTranslation('tour')
+  const { t: tTree } = useTranslation('tree')
 
   // ── Embed / deep-link URL params (?model=…&embed=1&…) ─────────────────────
   // Parsed once at mount; drives auto-loading remote models and the chrome a
@@ -571,7 +573,7 @@ export default function App() {
     [embedChrome, clientMode],
   )
   const {
-    treeVisible, treeWidth, hiddenElements, clearHiddenElements, setElementsVisible, clearHiddenElementsForModel,
+    treeVisible, setTreeVisible, treeWidth, hiddenElements, clearHiddenElements, setElementsVisible, clearHiddenElementsForModel,
     mobileSidebarOpen, setMobileSidebarOpen, setPendingSidebarTab,
     cameraControlsVisible, toggleCameraControls,
     scenePanelOpen, toggleScenePanel, setScenePanelOpen,
@@ -2265,6 +2267,17 @@ export default function App() {
               {/* Tree panel: only mounted on desktop — react-resizable-panels
                   allocates the Panel's flex share even when content is hidden,
                   so mounting it on mobile would shrink the canvas by 22%. */}
+              {/* Collapsed tree: the strip stays on its own edge, and is the
+                  control that brings it back. Before this the tree simply
+                  vanished and the only way back was a menu two clicks away. */}
+              {!treeVisible && sceneModels.length > 0 && isDesktop && effectiveChrome.showTree && (
+                <ColumnStrip
+                  edge="left"
+                  label={tTree('spatialTree')}
+                  onExpand={() => setTreeVisible(true)}
+                />
+              )}
+
               {treeVisible && sceneModels.length > 0 && isDesktop && effectiveChrome.showTree && (
                 <>
                   <Panel
@@ -2281,6 +2294,14 @@ export default function App() {
                         onFocusElements={handleFocusElements}
                         onFilterBySubtree={() => {
                           useValidationStore.getState().setFilters({ ruleIds: [], search: '' })
+                        }}
+                        // Act on a whole model from the row that names it. The
+                        // tree is the index of what is loaded, so it is where
+                        // people already point at the model they mean.
+                        onRemoveModel={(id) => { void handleRemoveModel(id) }}
+                        onOpenScene={(id) => {
+                          handleSetActiveModel(id)
+                          setScenePanelOpen(true)
                         }}
                       />
                     </div>

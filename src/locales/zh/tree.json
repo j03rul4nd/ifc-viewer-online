@@ -34,7 +34,10 @@
   "models": {
     "count": "{{count}} 个模型",
     "count_other": "{{count}} 个模型",
-    "active": "活动模型"
+    "active": "活动模型",
+    "openScene": "场景设置",
+    "remove": "移除模型",
+    "removeConfirm": "移除？"
   },
   "context": {
     "changeGuid": "更改 GlobalId？",

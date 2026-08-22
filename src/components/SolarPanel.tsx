@@ -328,6 +328,7 @@ export default function SolarPanel({ viewerApiRef, variant = 'technical' }: Sola
       )}
 
       <ViewportPanel
+      id="solar"
         open={store.panelOpen}
         onClose={() => store.setPanelOpen(false)}
         label={t('panel.title')}
