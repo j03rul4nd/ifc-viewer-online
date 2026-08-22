@@ -109,7 +109,9 @@ export default function ExportModal({ viewerApiRef, onClose }: ExportModalProps)
       if (!viewerApiRef.current) throw new Error('Viewer is not ready')
       const obj = viewerApiRef.current.getModelObject(modelId)
       if (!obj) throw new Error(`Model "${fileName}" is not found in the 3D scene — it may have been removed.`)
-      const blob = await exportAsGlb(obj)
+      // See the toolbar path: the scene object's vertex arrays are GPU-only, so
+      // the exporter needs the fragments model to read the geometry back.
+      const blob = await exportAsGlb(obj, viewerApiRef.current.getFragmentsModel(modelId))
       const stem = fileName.replace(/\.ifc$/i, '')
       await downloadBlob(blob, `${stem}.glb`)
       setStatus(modelId, 'glb', 'done')

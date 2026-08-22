@@ -381,7 +381,9 @@ export default function Toolbar({
       if (!viewerApiRef.current) throw new Error('Viewer is not ready')
       const obj = viewerApiRef.current.getModelObject(model.id)
       if (!obj) throw new Error('Model object not found in the 3D scene — it may have been removed.')
-      const blob = await exportAsGlb(obj)
+      // The fragments model too: the scene object's vertex arrays live on the
+      // GPU only, so the exporter reads the geometry back through the library.
+      const blob = await exportAsGlb(obj, viewerApiRef.current.getFragmentsModel(model.id))
       const stem = model.fileName.replace(/\.ifc$/i, '')
       await downloadBlob(blob, `${stem}.glb`)
     } catch (err) {

@@ -280,6 +280,15 @@ export interface ViewerAPI {
    */
   getModelFootprint(modelId?: string): Array<{ x: number; z: number }> | null
   /**
+   * The fragments model behind a loaded model, for callers that need to read
+   * geometry back rather than just draw it.
+   *
+   * The scene object is not enough for that: fragments frees the CPU copy of
+   * every vertex array after upload, so anything serialising the model — the GLB
+   * export above all — has to ask the library for the data instead.
+   */
+  getFragmentsModel(modelId?: string): unknown | null
+  /**
    * Translation between a model's own IFC coordinates and the geometry drawn on
    * screen, in SCENE axes, or null when it is not known.
    *
@@ -2120,6 +2129,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     getModelCoordination(modelId?: string) {
       const tid = modelId ?? currentModelId
       return (tid ? modelCoordination.get(tid) : null) ?? null
+    },
+
+    getFragmentsModel(modelId?: string) {
+      const tid = modelId ?? currentModelId
+      return (tid ? modelObjects.get(tid) : null) ?? currentModel ?? null
     },
 
     getModelFootprint(modelId?: string) {
