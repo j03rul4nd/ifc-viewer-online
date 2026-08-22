@@ -88,3 +88,23 @@ describe('a broken preference must not break the layout', () => {
     expect(store.sidebarExpanded).toBe(false) // honoured
   })
 })
+
+describe('camera views', () => {
+  it('starts closed, because it is a command and not a view', async () => {
+    // Open by default it was 245x171 in the corner floating panels open into,
+    // so every panel covered it. docs/RIGHT_EDGE.md.
+    const store = (await freshStore()).getState()
+    expect(store.cameraControlsVisible).toBe(false)
+  })
+
+  it('is not remembered between sessions the way the columns are', async () => {
+    // The columns persist because they are where you left your work. A popover
+    // has no state worth restoring: reopening it is one click, and restoring it
+    // open would reinstate the collision on every reload.
+    const mod = await freshStore()
+    ;(mod.getState() as { toggleCameraControls: () => void }).toggleCameraControls()
+    expect(mod.getState().cameraControlsVisible).toBe(true)
+    expect(localStorage.getItem(KEY) ?? '').not.toContain('camera')
+    expect((await freshStore()).getState().cameraControlsVisible).toBe(false)
+  })
+})

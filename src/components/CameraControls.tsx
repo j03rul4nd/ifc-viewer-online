@@ -1,9 +1,17 @@
 // ─── CameraControls ───────────────────────────────────────────────────────────
-// Floating overlay in the bottom-right of the 3D viewport.
-// Provides one-click camera preset views and zoom controls.
-// Collapses to a single icon when the user hides it.
+// Floating overlay in the bottom-right of the 3D viewport: one-click camera
+// presets.
+//
+// A popover, not a panel. Picking a view is a one-shot command — you press it
+// and you are done — so it is closed at rest and dismisses itself once you
+// choose. Left open it was 245x171 sitting in the corner that floating panels
+// open into, so every panel covered it: present, but showing nothing. That is
+// worse than closed, because closed at least tells the truth about the space.
+// docs/RIGHT_EDGE.md has the rule this follows.
+//
+// The numpad shortcuts work whether it is open or not; they never needed it.
 
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ViewerAPI } from '../lib/viewer'
 import type { CameraPreset } from '../types'
@@ -96,9 +104,34 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
     { label: t('camera.bottom'),           key: 'bottom', shortcut: '',     Icon: Icon.Bottom },
   ]
 
+  const rootRef = useRef<HTMLDivElement>(null)
+
   const go = useCallback((preset: CameraPreset) => {
     viewerApiRef.current?.setCameraPreset(preset)
   }, [viewerApiRef])
+
+  /** Choosing a view is the whole errand, so it also ends it. */
+  const choose = useCallback((preset: CameraPreset) => {
+    go(preset)
+    onToggle()
+  }, [go, onToggle])
+
+  // Dismiss on Escape or on a click anywhere else — what every popover does,
+  // and what stops this one from becoming a panel again by accident.
+  useEffect(() => {
+    if (!visible) return
+    const onKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') onToggle() }
+    const onDown = (e: PointerEvent): void => {
+      if (!rootRef.current?.contains(e.target as Node)) onToggle()
+    }
+    window.addEventListener('keydown', onKey)
+    // Capture: the viewport swallows pointer events on the canvas below.
+    window.addEventListener('pointerdown', onDown, true)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('pointerdown', onDown, true)
+    }
+  }, [visible, onToggle])
 
   // Numpad keyboard shortcuts (non-intrusive — only fire when not typing in an input)
   useEffect(() => {
@@ -118,7 +151,12 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
 
   return (
     <div
-      className="absolute bottom-[76px] sm:bottom-4 right-4 z-[8] select-none"
+      ref={rootRef}
+      // At rest this is a 32px button and must not fight anything, so it sits
+      // below the panels. Open, it is a popover the user just asked for and it
+      // goes on top: at z-[8] it opened BEHIND the properties panel, which is
+      // the same "present but showing nothing" failure in a new place.
+      className={`absolute bottom-[76px] sm:bottom-4 right-4 select-none ${visible ? 'z-[21]' : 'z-[8]'}`}
       style={{ pointerEvents: 'auto' }}
     >
       {visible ? (
@@ -146,7 +184,7 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
             {PRESETS.map(({ label, key, shortcut, Icon: Ic }) => (
               <button
                 key={key}
-                onClick={() => go(key)}
+                onClick={() => choose(key)}
                 title={shortcut ? `${label} (${shortcut})` : label}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-[rgba(255,255,255,0.06)] active:bg-[rgba(255,255,255,0.10)] transition-colors text-[11px] font-medium"
               >
@@ -164,6 +202,9 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
         <button
           onClick={onToggle}
           title={t('cameraControls.show')}
+          aria-label={t('cameraControls.show')}
+          aria-expanded={false}
+          aria-haspopup="true"
           className="flex items-center justify-center w-8 h-8 rounded-lg bg-[rgba(12,12,16,0.82)] backdrop-blur-[14px] border border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
         >
           <Icon.Camera />

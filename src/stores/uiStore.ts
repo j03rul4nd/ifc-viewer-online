@@ -180,7 +180,12 @@ export const useUIStore = create<UIStore>()(
       mobileSidebarOpen:       false,
       sidebarExpanded:         loadColumns().sidebar,
       hiddenElements:          new Set<string>(),
-      cameraControlsVisible:   true,
+      // Closed at rest. Jumping to a view is a one-shot command, not something
+      // you read while you work, so the expanded grid is a popover you dismiss
+      // rather than a panel that sits in the corner the panels open into.
+      // Open by default, it was 245x171 of the viewport being covered by every
+      // panel — visible but unusable. See docs/RIGHT_EDGE.md.
+      cameraControlsVisible:   false,
       transformMode:           'none' as TransformMode,
       scenePanelOpen:          false,
       renderQuality:           'standard' as RenderQuality,
