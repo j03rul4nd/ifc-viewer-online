@@ -2282,6 +2282,14 @@ export default function App() {
                         onFilterBySubtree={() => {
                           useValidationStore.getState().setFilters({ ruleIds: [], search: '' })
                         }}
+                        // Act on a whole model from the row that names it. The
+                        // tree is the index of what is loaded, so it is where
+                        // people already point at the model they mean.
+                        onRemoveModel={(id) => { void handleRemoveModel(id) }}
+                        onOpenScene={(id) => {
+                          handleSetActiveModel(id)
+                          setScenePanelOpen(true)
+                        }}
                       />
                     </div>
                   </Panel>

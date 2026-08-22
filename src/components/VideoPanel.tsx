@@ -363,6 +363,7 @@ export default function VideoPanel({
 
   return (
     <ViewportPanel
+      id="video"
       open={store.panelOpen}
       onClose={onClose}
       label={t('title')}

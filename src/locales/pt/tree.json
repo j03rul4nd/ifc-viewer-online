@@ -34,7 +34,10 @@
   "models": {
     "count": "{{count}} modelo",
     "count_other": "{{count}} modelos",
-    "active": "Modelo ativo"
+    "active": "Modelo ativo",
+    "openScene": "Definições de cena",
+    "remove": "Remover modelo",
+    "removeConfirm": "Remover?"
   },
   "context": {
     "changeGuid": "Alterar GlobalId?",

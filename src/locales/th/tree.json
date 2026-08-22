@@ -34,7 +34,10 @@
   "models": {
     "count": "{{count}} โมเดล",
     "count_other": "{{count}} โมเดล",
-    "active": "โมเดลที่ใช้งาน"
+    "active": "โมเดลที่ใช้งาน",
+    "openScene": "ตั้งค่าฉาก",
+    "remove": "ลบโมเดล",
+    "removeConfirm": "ลบ?"
   },
   "context": {
     "changeGuid": "เปลี่ยน GlobalId?",

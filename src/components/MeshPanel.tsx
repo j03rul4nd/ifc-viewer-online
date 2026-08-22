@@ -232,6 +232,7 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
 
   return (
     <ViewportPanel
+      id="mesh"
       open={store.panelOpen}
       onClose={onClose}
       label={t('title')}

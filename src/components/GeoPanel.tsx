@@ -776,6 +776,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
       )}
 
       <ViewportPanel
+      id="map"
         open={panelOpen}
         onClose={() => store.setPanelOpen(false)}
         label={t('panel.title')}

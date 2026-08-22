@@ -23,6 +23,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
   const { t } = useTranslation('viewer')
   const {
     clipPanelOpen, clipPlaneCount, setClipPlaneCount,
+    setClipPanelOpen,
   } = useUIStore()
 
   const [planes,   setPlanes]   = useState<PlaneEntry[]>([])
@@ -139,6 +140,8 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
 
   return (
     <ViewportPanel
+      id="section"
+      onClose={() => setClipPanelOpen(false)}
       open={clipPanelOpen}
       label={t('section.title')}
       mobile="dock"

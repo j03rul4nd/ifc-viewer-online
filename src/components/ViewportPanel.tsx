@@ -28,14 +28,20 @@
 //
 // Desktop rendering is untouched in both cases.
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { MobileSheet } from './mobile/MobileSheet'
+import { announceOpen, announceClosed } from './viewport-panel-registry'
 
 export type ViewportPanelMobile = 'sheet' | 'dock'
 
 interface ViewportPanelBase {
+  /**
+   * Stable identity, so the panels can be coordinated with each other.
+   * See viewport-panel-registry for the rules this buys.
+   */
+  id: string
   open: boolean
   /** Accessible name for the sheet. */
   label: string
@@ -68,10 +74,29 @@ export type ViewportPanelProps = ViewportPanelBase & (
 const SHEET_DETENTS = [0.55, 0.94]
 
 export function ViewportPanel({
-  open, onClose, label, mobile, widthPx,
+  id, open, onClose, label, mobile, widthPx,
   anchor = 'center', centerShift, maxHeight, children,
 }: ViewportPanelProps) {
   const isMobile = useIsMobile()
+
+  // Join the coordination described in viewport-panel-registry. Every panel gets
+  // one-at-a-time and Escape-to-close from being a ViewportPanel, rather than
+  // from remembering to wire both — which is how they drifted apart to begin
+  // with.
+  //
+  // The close callback is read through a ref so the registry always calls the
+  // CURRENT one. Registering the callback itself would re-run this effect on
+  // every render of the parent, closing and reopening the panel for no reason.
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
+  useEffect(() => {
+    if (!open) {
+      announceClosed(id)
+      return
+    }
+    announceOpen(id, () => closeRef.current?.())
+    return () => announceClosed(id)
+  }, [id, open])
   // Half height by default: glancing at the state is the common errand, and
   // opening full every time buries the model the panel is describing.
   const [detent, setDetent] = useState(0)

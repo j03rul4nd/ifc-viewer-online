@@ -758,6 +758,7 @@ export default function PointCloudPanel({
 
   return (
     <ViewportPanel
+      id="pointcloud"
       open={store.panelOpen}
       onClose={() => store.setPanelOpen(false)}
       label={t('title')}
