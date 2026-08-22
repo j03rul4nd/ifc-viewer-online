@@ -565,6 +565,25 @@ export default function App() {
   const clientMode = useUIStore((s) => s.clientMode)
   const clientAdvancedTools = useUIStore((s) => s.clientAdvancedTools)
 
+
+  // Effective chrome (D-25): the client skin layers over the URL-derived embed
+  // chrome — everything technical hidden, camera presets kept. All JSX gating
+  // below uses this, so toggling client mode is an instant UI-layer change.
+  const effectiveChrome = useMemo(
+    () => clientMode
+      ? {
+          ...embedChrome,
+          showToolbar: false,
+          showTree: false,
+          showSidebar: false,
+          openPanel: false,
+          showHome: false,
+          showCameraControls: true,
+        }
+      : embedChrome,
+    [embedChrome, clientMode],
+  )
+
   // The rail's vocabulary. Icons live here rather than in the hook so the hook
   // imports no JSX and stays testable as plain logic.
   const railIcons = useMemo(() => ({
@@ -593,25 +612,9 @@ export default function App() {
     icons: railIcons,
     labels: railLabels,
     technical: !clientMode || clientAdvancedTools,
+    sidebar: effectiveChrome.showSidebar,
+    allow: effectiveChrome.panels,
   })
-
-  // Effective chrome (D-25): the client skin layers over the URL-derived embed
-  // chrome — everything technical hidden, camera presets kept. All JSX gating
-  // below uses this, so toggling client mode is an instant UI-layer change.
-  const effectiveChrome = useMemo(
-    () => clientMode
-      ? {
-          ...embedChrome,
-          showToolbar: false,
-          showTree: false,
-          showSidebar: false,
-          openPanel: false,
-          showHome: false,
-          showCameraControls: true,
-        }
-      : embedChrome,
-    [embedChrome, clientMode],
-  )
   const {
     treeVisible, setTreeVisible, treeWidth, hiddenElements, clearHiddenElements, setElementsVisible, clearHiddenElementsForModel,
     mobileSidebarOpen, setMobileSidebarOpen, setPendingSidebarTab,
@@ -2433,7 +2436,7 @@ export default function App() {
                       icons on the right edge, panels opening to its left.
                       docs/PANEL_RAIL.md. Only with a model — with an empty
                       viewport there is nothing for any of them to act on. */}
-                  {sceneModels.length > 0 && (
+                  {sceneModels.length > 0 && tourMode !== 'playing' && (
                     <div className="max-md:hidden">
                       <PanelRail items={railItems} />
                     </div>

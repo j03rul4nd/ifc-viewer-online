@@ -69,7 +69,7 @@ export function Modal({
   const [id] = useState(() => `modal-${Math.random().toString(36).slice(2)}`)
   // Membership in the stack, and the layer that follows from it. The ordering
   // rules are pure and live in lib/ui/modal-stack.
-  const { z, isTop } = useModalLayer(id, open)
+  const { z, isTop } = useModalLayer(id, open, onClose)
 
   return (
     <Dialog.Root open={open} onOpenChange={(next) => { if (!next) onClose() }}>

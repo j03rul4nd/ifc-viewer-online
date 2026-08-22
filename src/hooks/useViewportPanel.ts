@@ -39,7 +39,7 @@ export function useViewportPanel(id: string, open: boolean, onClose?: () => void
   //
   // So the lane holds one at a time. The sidebar collapses to its strip while a
   // panel is open and comes back when it closes — it is not closed, it is
-  // stepped aside, and the strip is still the way back to it.
+  // stepped aside, and its rail icon is still the way back to it.
   const restoreSidebar = useRef(false)
   useEffect(() => {
     if (!open) return

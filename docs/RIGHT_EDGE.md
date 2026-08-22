@@ -121,6 +121,40 @@ starts biting. Past that, the answer is Blender's: **group by kind**, with a
 separator, before anyone reaches for a scroll or a customisation UI. We are at
 nine.
 
+## Turning tools on and off, as the set grows
+
+The rail is where every new tool now lands, so the question "which tools does
+*this* audience get" has to have one answer rather than a flag invented per
+tool. The embed chrome already had six coarse switches — toolbar, tree,
+sidebar, panel, home, camera — and none of them could reach a single panel.
+
+So the chrome carries a list:
+
+```
+?embed=1&panels=scene,map        only those two
+?embed=1&panels=-measurement     everything else, including tools shipped later
+?embed=1&panels=                 no rail at all, said explicitly
+```
+
+Three properties worth keeping when this is extended:
+
+- **It filters, it never adds.** Naming `pointcloud` with no scan loaded does
+  not produce the panel, and naming `properties` does not re-enable a column the
+  chrome switched off. Availability is still the app's answer; the list only
+  narrows it.
+- **The subtractive form is the one that ages well.** A host that opts two tools
+  out stays correct when we ship a third; a host that lists seven silently
+  misses it.
+- **Unknown names are ignored, not rejected.** A URL written against a newer
+  build has to still open on an older one.
+
+The `client` preset is expressed in exactly this vocabulary — `scene`, `map`,
+`solar`: the panels that show someone the building rather than inspect it. It
+is a literal list rather than something derived from a `technical` boolean, so
+the set is visible in one place and a new tool has to be added to it on purpose.
+That is also the shape a presentation mode takes when it arrives: a preset, not
+a new mechanism.
+
 ## What is deliberately not being done
 
 **Removing the topbar menus.** Linear could go menu-less because it launched

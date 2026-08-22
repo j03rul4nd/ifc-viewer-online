@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
+import { addPanelCloser } from '../lib/ui/modal-stack'
 import * as Icons from './Icons'
 import { useValidationStore } from '../stores/validationStore'
 import { useUIStore } from '../stores/uiStore'
@@ -2106,6 +2107,15 @@ export default function Sidebar({
     (collapsed: boolean) => setSidebarExpanded(!collapsed),
     [setSidebarExpanded],
   )
+
+  // A dialog is exclusive. Without this you could read the selected element's
+  // properties beside an open modal — two windows both claiming to be the thing
+  // you are working on. This column is not in the panel registry (panels step it
+  // aside rather than close it), so it hands the modal stack its own closer.
+  useEffect(() => {
+    if (!sidebarExpanded) return
+    return addPanelCloser(() => setSidebarExpanded(false))
+  }, [sidebarExpanded, setSidebarExpanded])
 
   // Consume pendingSidebarTab from store — works even when Sidebar was unmounted at click time
   const pendingTab = useUIStore(s => s.pendingSidebarTab)

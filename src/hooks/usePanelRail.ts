@@ -27,9 +27,13 @@ export interface PanelRailSource {
   labels: Partial<Record<PanelId, string>>
   /** False in the client presentation skin, which hides the technical tools. */
   technical: boolean
+  /** False when the chrome does not mount the properties column. */
+  sidebar: boolean
+  /** Host allowlist from the embed chrome; undefined means "all that apply". */
+  allow?: readonly PanelId[]
 }
 
-export function usePanelRail({ icons, labels, technical }: PanelRailSource): RailItem[] {
+export function usePanelRail({ icons, labels, technical, sidebar, allow }: PanelRailSource): RailItem[] {
   const properties = useUIStore((s) => s.sidebarExpanded)
   const setProperties = useUIStore((s) => s.setSidebarExpanded)
   const scene = useUIStore((s) => s.scenePanelOpen)
@@ -61,7 +65,7 @@ export function usePanelRail({ icons, labels, technical }: PanelRailSource): Rai
       plans: setPlans, map: setMap, solar: setSolar,
       pointcloud: setPointcloud, mesh: setMesh,
     }
-    return applicablePanels({ technical, gis: isGisEnabled(), pointClouds, meshes })
+    return applicablePanels({ technical, sidebar, allow, gis: isGisEnabled(), pointClouds, meshes })
       .filter((id) => icons[id])
       .map((id): RailItem => ({
         id,
@@ -72,7 +76,7 @@ export function usePanelRail({ icons, labels, technical }: PanelRailSource): Rai
         onToggle: () => set[id](!open[id]),
       }))
   }, [
-    icons, labels, technical, pointClouds, meshes,
+    icons, labels, technical, sidebar, allow, pointClouds, meshes,
     properties, setProperties, scene, setScene, measurement, setMeasurement, section, setSection,
     plans, setPlans, map, setMap, solar, setSolar,
     pointcloud, setPointcloud, mesh, setMesh,
