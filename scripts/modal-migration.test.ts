@@ -40,8 +40,6 @@ const rel = (f: string): string => path.relative(ROOT, f).replace(/\\/g, '/')
  *   • The rest are queued.
  */
 const NOT_YET_MIGRATED = new Set([
-  'ExportModal.tsx',
-  'EmbedModal.tsx',
   'IdsModal.tsx',
   'CustomProfileModal.tsx',
   'ValidationExportModal.tsx',
@@ -93,7 +91,10 @@ describe('nobody builds their own dialog shell', () => {
 })
 
 describe('what has been migrated stays migrated', () => {
-  const migrated = ['pro/ProUpsellModal.tsx', 'KeyboardHelpModal.tsx']
+  const migrated = [
+    'pro/ProUpsellModal.tsx', 'KeyboardHelpModal.tsx',
+    'ExportModal.tsx', 'EmbedModal.tsx',
+  ]
 
   for (const file of migrated) {
     it(`${file} uses Modal`, () => {

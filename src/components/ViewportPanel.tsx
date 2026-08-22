@@ -87,9 +87,7 @@ export function ViewportPanel({
   // One-at-a-time and Escape-to-close come from being a ViewportPanel, not from
   // each panel remembering to wire them. The rules live in lib/ui/panel-registry;
   // the hook is the only part that knows about mounting.
-  // The width is passed so the viewport chrome (camera controls, HUD) can move
-  // out from under the panel rather than being covered by it.
-  useViewportPanel(id, open, onClose, isMobile ? undefined : widthPx)
+  useViewportPanel(id, open, onClose)
   // Half height by default: glancing at the state is the common errand, and
   // opening full every time buries the model the panel is describing.
   const [detent, setDetent] = useState(0)
@@ -132,27 +130,34 @@ export function ViewportPanel({
     )
   }
 
-  const style: React.CSSProperties = { width: `min(${widthPx}px, calc(100vw - 24px))` }
-  if (anchor === 'center') {
-    style.top = '50%'
-    style.transform = centerShift ?? 'translateY(-50%)'
+  // ── THE RIGHT LANE, SHARED VERTICALLY ───────────────────────────────────────
+  //
+  // Measured on a real session: the viewport is 1168x546 once the tree and the
+  // validation panel have taken their share, while `100dvh` is 950. Panels sized
+  // against dvh were therefore 585px tall in a 546px viewport — they hung out of
+  // the bottom of the scene and over the panel below it.
+  //
+  // So the card is anchored TOP AND BOTTOM inside the viewport instead of being
+  // given a height. It cannot overflow a container it is measured against, and
+  // it needs no magic number to stay inside one.
+  //
+  // The bottom anchor also leaves the scene its own corner. The camera and
+  // position controls live bottom-right at z-8, UNDER these panels: a panel that
+  // reaches the bottom edge buries the controls for the very scene it describes.
+  // Earlier I made the controls move aside instead, and measuring showed why
+  // that was wrong — with no room in the lane they ended up over the middle of
+  // the model. The scene is the subject; the window yields to it, not the
+  // reverse.
+  const style: React.CSSProperties = {
+    width: `min(${widthPx}px, calc(100vw - 24px))`,
+    top: anchor === 'top' ? '3.5rem' : undefined,
+    bottom: 'var(--viewport-chrome-clearance)',
   }
-
-  // THE CARD STOPS ABOVE THE VIEWPORT CHROME.
-  //
-  // The bottom-right of the viewport belongs to the scene: the camera controls,
-  // the model strip and the HUD live there at z-8, under these panels at z-20. A
-  // panel that reaches the bottom edge covers the camera controls outright —
-  // hiding the controls for the very scene it is describing.
-  //
-  // A top-anchored card starts below the toolbar and gives back the reserve; a
-  // centred one is centred, so it must give back twice as much to stay clear at
-  // the bottom. Computed here rather than per panel, which is how four panels
-  // ended up with four different answers.
-  const chrome = 'var(--viewport-chrome-clearance)'
-  style.maxHeight = maxHeight ?? (anchor === 'top'
-    ? `calc(100dvh - 3.5rem - ${chrome} - 12px)`
-    : `calc(100dvh - 2 * ${chrome})`)
+  if (anchor === 'center') {
+    // Centre what is left of the lane, never the whole viewport.
+    style.top = '3.5rem'
+  }
+  if (maxHeight) style.maxHeight = maxHeight
 
   return (
     <AnimatePresence>
@@ -162,13 +167,12 @@ export function ViewportPanel({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 12 }}
           transition={{ duration: 0.2 }}
-          className={`absolute right-3 z-20 pointer-events-auto select-none${anchor === 'top' ? ' top-14' : ''}`}
+          className="absolute right-3 z-20 pointer-events-auto select-none flex flex-col"
           style={style}
         >
-          <div
-            className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl flex flex-col min-h-0"
-            style={{ maxHeight: style.maxHeight }}
-          >
+          {/* `max-h-full` rather than a height: a short panel stays short, and a
+              long one stops at the lane and scrolls inside. */}
+          <div className="glass-md border border-[var(--border-strong)] rounded-[12px] overflow-hidden shadow-2xl flex flex-col min-h-0 max-h-full">
             {children}
           </div>
         </motion.div>

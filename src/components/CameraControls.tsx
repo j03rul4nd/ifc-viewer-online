@@ -118,10 +118,8 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
 
   return (
     <div
-      className="absolute bottom-[76px] sm:bottom-4 z-[8] select-none transition-[right] duration-200"
-      // Steps aside for whatever floating panel is open, instead of being buried
-      // under it. The panel publishes its width; see useViewportPanel.
-      style={{ pointerEvents: 'auto', right: 'calc(1rem + var(--viewport-right-occupied, 0px))' }}
+      className="absolute bottom-[76px] sm:bottom-4 right-4 z-[8] select-none"
+      style={{ pointerEvents: 'auto' }}
     >
       {visible ? (
         <div className="flex flex-col items-end gap-1">

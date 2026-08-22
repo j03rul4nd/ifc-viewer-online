@@ -30,10 +30,15 @@
      thing a panel can do — it hides the controls for the very scene it is
      describing, with no hint that they are still there.
 
-     Panels subtract this from their own height instead of reaching the bottom.
-     One number, so moving the camera controls moves the reserve with them. */
-  --viewport-chrome-h: 132px;
-  --viewport-chrome-clearance: calc(var(--viewport-chrome-h) + 16px);
+     Panels stop above this instead of reaching the bottom. One number, so moving
+     the camera controls moves the reserve with them.
+
+     MEASURED, not guessed: the controls with their view presets open are 171px
+     tall. The first value here was 132px, and the panel still overlapped them by
+     38px — which is the kind of error that only a measurement finds, because
+     38px of overlap still looks roughly right in a screenshot. */
+  --viewport-chrome-h: 172px;
+  --viewport-chrome-clearance: calc(var(--viewport-chrome-h) + 20px);
 }
 
 /* ── Mobile floating pill nav glass ────────────────────────────────────────── */
