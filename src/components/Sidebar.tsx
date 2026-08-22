@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import { useValidationStore } from '../stores/validationStore'
 import { useUIStore } from '../stores/uiStore'
-import { ColumnStrip } from './ColumnStrip'
 
 type SidebarTab = 'props' | 'cats' | 'qty'
 import { makeHiddenKey, expandWithDecomp } from '../lib/visibility'
@@ -2156,19 +2155,10 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Collapsed: the column's own edge strip, which is also the way back.
-          This used to be a chevron floating near the top-right corner — a
-          different place from the column it restored, and a different gesture
-          from the other two columns. See ColumnStrip for the rule. */}
-      {desktopCollapsed && (
-        <div className="hidden md:flex absolute inset-y-0 right-0 z-[9] pointer-events-auto">
-          <ColumnStrip
-            edge="right"
-            label={t('title')}
-            onExpand={() => setDesktopCollapsed(false)}
-          />
-        </div>
-      )}
+      {/* No collapsed strip. The right edge has one owner now — the panel
+          rail — and properties is its first icon. A vertical PROPIEDADES label
+          did exactly what that icon does, in the same 60px, with a second
+          gesture to learn. See docs/RIGHT_EDGE.md. */}
 
       <motion.div
         // Only fade opacity — NO x/y transform from Framer Motion.
@@ -2184,7 +2174,10 @@ export default function Sidebar({
           // Base: glass + border (desktop always, mobile overridden by mobile-sidebar-sheet media query)
           'glass border border-[var(--border)] flex flex-col overflow-hidden',
           // Desktop
-          'md:absolute md:top-[68px] md:right-3 md:bottom-3 md:w-[340px] md:rounded-xl md:z-[9]',
+          // Left of the rail, like every other floating panel: the rail is
+          // pinned to the edge and owns it, so everything else is offset by the
+          // one shared token rather than stacking on top of it.
+          'md:absolute md:top-[68px] md:bottom-3 md:w-[340px] md:rounded-xl md:z-[9] md:right-[var(--panel-rail-clearance)]',
           // Mobile: full-width bottom sheet — mobile-sidebar-sheet overrides glass via @media query
           'max-md:fixed max-md:left-0 max-md:right-0 max-md:bottom-0 max-md:z-[22] max-md:rounded-t-[28px] max-md:mobile-sidebar-sheet',
           // Mobile: leave room for the floating nav pill
@@ -2194,7 +2187,12 @@ export default function Sidebar({
           mobileOpen ? 'max-md:translate-y-0' : 'max-md:translate-y-full',
           // Desktop collapse: slide off to the right
           'md:transition-transform md:duration-[220ms] md:ease-[cubic-bezier(0.32,0.72,0,1)]',
-          desktopCollapsed ? 'md:translate-x-[calc(100%+12px)] md:pointer-events-none' : 'md:translate-x-0',
+          // Must clear its own right offset, not the old fixed 12px: the column
+        // now starts a rail-width further in, so translating by 100%+12px left
+        // a 48px sliver of it poking out over the camera controls.
+        desktopCollapsed
+          ? 'md:translate-x-[calc(100%+var(--panel-rail-clearance))] md:pointer-events-none'
+          : 'md:translate-x-0',
         ].join(' ')}
         style={{ WebkitBackfaceVisibility: 'hidden' }}
       >

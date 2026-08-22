@@ -7,6 +7,7 @@
 
 /** Every floating panel that can appear on the rail, in rail order. */
 export type PanelId =
+  | 'properties'
   | 'scene' | 'measurement' | 'section' | 'plans'
   | 'map' | 'solar' | 'pointcloud' | 'mesh'
 
@@ -27,7 +28,10 @@ export interface RailContext {
  * greyed icon is noise, and it teaches the reader nothing about how to enable it.
  */
 export function applicablePanels(ctx: RailContext): PanelId[] {
-  const ids: PanelId[] = ['scene']
+  // Properties leads: it is the most-used panel in the app, and it is the one
+  // that used to have a surface of its own — a vertical PROPIEDADES strip that
+  // did exactly what a rail icon does, in the same 60px. See docs/RIGHT_EDGE.md.
+  const ids: PanelId[] = ['properties', 'scene']
   // Grouped by kind rather than alphabetically, so the rail reads as
   // "the model" then "the world": measure/cut/plan, then map/sun/scans.
   if (ctx.technical) ids.push('measurement', 'section', 'plans')

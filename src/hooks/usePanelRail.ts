@@ -30,6 +30,8 @@ export interface PanelRailSource {
 }
 
 export function usePanelRail({ icons, labels, technical }: PanelRailSource): RailItem[] {
+  const properties = useUIStore((s) => s.sidebarExpanded)
+  const setProperties = useUIStore((s) => s.setSidebarExpanded)
   const scene = useUIStore((s) => s.scenePanelOpen)
   const setScene = useUIStore((s) => s.setScenePanelOpen)
   const measurement = useUIStore((s) => s.measurementPanelOpen)
@@ -51,9 +53,10 @@ export function usePanelRail({ icons, labels, technical }: PanelRailSource): Rai
 
   return useMemo(() => {
     const open: Record<PanelId, boolean> = {
-      scene, measurement, section, plans, map, solar, pointcloud, mesh,
+      properties, scene, measurement, section, plans, map, solar, pointcloud, mesh,
     }
     const set: Record<PanelId, (v: boolean) => void> = {
+      properties: setProperties,
       scene: setScene, measurement: setMeasurement, section: setSection,
       plans: setPlans, map: setMap, solar: setSolar,
       pointcloud: setPointcloud, mesh: setMesh,
@@ -70,7 +73,7 @@ export function usePanelRail({ icons, labels, technical }: PanelRailSource): Rai
       }))
   }, [
     icons, labels, technical, pointClouds, meshes,
-    scene, setScene, measurement, setMeasurement, section, setSection,
+    properties, setProperties, scene, setScene, measurement, setMeasurement, section, setSection,
     plans, setPlans, map, setMap, solar, setSolar,
     pointcloud, setPointcloud, mesh, setMesh,
   ])

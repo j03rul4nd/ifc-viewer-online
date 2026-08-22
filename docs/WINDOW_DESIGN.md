@@ -7,6 +7,11 @@ viewport with the scene it describes.
 
 Everything here comes from measuring a real session, not from taste.
 
+> **Superseded in part by `RIGHT_EDGE.md`.** The properties column no longer
+> has an edge strip: the right edge has a single owner, the panel rail, and
+> properties is its first icon. The tree and validation columns are unchanged —
+> they are docked columns, a different pattern for a different job.
+
 ## The measurement that started it
 
 A 1500×950 browser window, one model loaded, the scene panel opened from the

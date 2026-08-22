@@ -8,7 +8,7 @@ describe('applicablePanels', () => {
     // An empty rail would be 40px of nothing, and the user would learn that the
     // rail is sometimes a lie.
     expect(applicablePanels({ technical: false, gis: false, pointClouds: 0, meshes: 0 }))
-      .toEqual(['scene', 'solar'])
+      .toEqual(['properties', 'scene', 'solar'])
   })
 
   it('hides the technical tools in the client presentation skin', () => {
@@ -43,8 +43,20 @@ describe('applicablePanels', () => {
 
   it('groups the model tools before the world tools', () => {
     expect(applicablePanels({ ...base, pointClouds: 1, meshes: 1 })).toEqual([
-      'scene', 'measurement', 'section', 'plans', 'map', 'solar', 'pointcloud', 'mesh',
+      'properties', 'scene', 'measurement', 'section', 'plans',
+      'map', 'solar', 'pointcloud', 'mesh',
     ])
+  })
+
+  it('always offers properties, and offers it first', () => {
+    // It is the most-used panel and the one that used to own a surface of its
+    // own on this edge. If it is ever not on the rail, it is unreachable: the
+    // PROPIEDADES strip that used to restore it is gone. docs/RIGHT_EDGE.md.
+    for (const ctx of [
+      base,
+      { ...base, technical: false, gis: false },
+      { ...base, pointClouds: 4, meshes: 4 },
+    ]) expect(applicablePanels(ctx)[0]).toBe('properties')
   })
 
   it('never repeats a panel, which would put two toggles on one state', () => {

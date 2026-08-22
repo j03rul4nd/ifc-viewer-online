@@ -234,6 +234,7 @@ export default function App() {
   const { t: tTourNs } = useTranslation('tour')
   const { t: tTree } = useTranslation('tree')
   const { t: tToolbar } = useTranslation('toolbar')
+  const { t: tSidebar } = useTranslation('sidebar')
   // Each panel already names itself in its own namespace; the rail reuses those
   // names rather than inventing a second set that could drift from the headers.
   const { t: tCloud } = useTranslation('pointcloud')
@@ -567,9 +568,10 @@ export default function App() {
   // The rail's vocabulary. Icons live here rather than in the hook so the hook
   // imports no JSX and stays testable as plain logic.
   const railIcons = useMemo(() => ({
+    properties:  <Icons.Sliders size={15} />,
     scene:       <Icons.Layers size={15} />,
     measurement: <Icons.Ruler size={15} />,
-    section:     <Icons.Sliders size={15} />,
+    section:     <Icons.Isolate size={15} />,
     plans:       <Icons.FileIfc size={15} />,
     map:         <Icons.Globe size={15} />,
     solar:       <Icons.Sparkles size={15} />,
@@ -577,6 +579,7 @@ export default function App() {
     mesh:        <Icons.Building size={15} />,
   }), [])
   const railLabels = useMemo(() => ({
+    properties:  tSidebar('title'),
     scene:       tToolbar('scene'),
     measurement: tToolbar('measure'),
     section:     tToolbar('section'),
@@ -585,7 +588,7 @@ export default function App() {
     solar:       tSolar('panel.title'),
     pointcloud:  tCloud('title'),
     mesh:        tMesh('title'),
-  }), [tToolbar, tSolar, tCloud, tMesh])
+  }), [tToolbar, tSidebar, tSolar, tCloud, tMesh])
   const railItems = usePanelRail({
     icons: railIcons,
     labels: railLabels,
