@@ -16,24 +16,24 @@ import { useGeoStore } from '../stores/geoStore'
 import { usePointCloudStore } from '../stores/pointCloudStore'
 import { useMeshStore } from '../stores/meshStore'
 import { useSolarStore } from '../stores/solarStore'
-import { isGisEnabled } from '../lib/geo/gis-flag'
 import { applicablePanels, type PanelId } from '../lib/ui/panel-rail'
 import type { RailItem } from '../components/PanelRail'
 
 export interface PanelRailSource {
+  /**
+   * Which panels the app is actually rendering, stated by the caller from the
+   * same conditions as the JSX. See panel-rail.ts for why it is not derived.
+   */
+  available: Partial<Record<PanelId, boolean>>
   /** Icons, supplied by the caller so this hook imports no JSX. */
   icons: Partial<Record<PanelId, React.ReactNode>>
   /** Labels, already translated. */
   labels: Partial<Record<PanelId, string>>
-  /** False in the client presentation skin, which hides the technical tools. */
-  technical: boolean
-  /** False when the chrome does not mount the properties column. */
-  sidebar: boolean
-  /** Host allowlist from the embed chrome; undefined means "all that apply". */
+  /** Host allowlist from the embed chrome; undefined means "all available". */
   allow?: readonly PanelId[]
 }
 
-export function usePanelRail({ icons, labels, technical, sidebar, allow }: PanelRailSource): RailItem[] {
+export function usePanelRail({ icons, labels, available, allow }: PanelRailSource): RailItem[] {
   const properties = useUIStore((s) => s.sidebarExpanded)
   const setProperties = useUIStore((s) => s.setSidebarExpanded)
   const scene = useUIStore((s) => s.scenePanelOpen)
@@ -48,10 +48,8 @@ export function usePanelRail({ icons, labels, technical, sidebar, allow }: Panel
   const setMap = useGeoStore((s) => s.setPanelOpen)
   const pointcloud = usePointCloudStore((s) => s.panelOpen)
   const setPointcloud = usePointCloudStore((s) => s.setPanelOpen)
-  const pointClouds = usePointCloudStore((s) => s.clouds.length)
   const mesh = useMeshStore((s) => s.panelOpen)
   const setMesh = useMeshStore((s) => s.setPanelOpen)
-  const meshes = useMeshStore((s) => s.meshes.length)
   const solar = useSolarStore((s) => s.panelOpen)
   const setSolar = useSolarStore((s) => s.setPanelOpen)
 
@@ -65,7 +63,7 @@ export function usePanelRail({ icons, labels, technical, sidebar, allow }: Panel
       plans: setPlans, map: setMap, solar: setSolar,
       pointcloud: setPointcloud, mesh: setMesh,
     }
-    return applicablePanels({ technical, sidebar, allow, gis: isGisEnabled(), pointClouds, meshes })
+    return applicablePanels({ available, allow })
       .filter((id) => icons[id])
       .map((id): RailItem => ({
         id,
@@ -76,7 +74,7 @@ export function usePanelRail({ icons, labels, technical, sidebar, allow }: Panel
         onToggle: () => set[id](!open[id]),
       }))
   }, [
-    icons, labels, technical, sidebar, allow, pointClouds, meshes,
+    icons, labels, available, allow,
     properties, setProperties, scene, setScene, measurement, setMeasurement, section, setSection,
     plans, setPlans, map, setMap, solar, setSolar,
     pointcloud, setPointcloud, mesh, setMesh,

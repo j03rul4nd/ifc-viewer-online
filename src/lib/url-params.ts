@@ -309,11 +309,10 @@ const PRESET_CHROME: Record<EmbedUiPreset, Omit<EmbedChrome, 'embed'>> = {
   // Camera presets stay ON (simplified navigation); everything technical is
   // hidden. uiStore.clientMode is set from this preset at boot and layers the
   // ClientPresentationLayout on top.
-  // A client audience gets the panels that show them the building, not the
-  // ones that inspect it. Listed rather than derived from `technical` so the
-  // set is visible here and a new tool has to be added on purpose.
-  client:  { showToolbar: false, showTree: false, showSidebar: false, openPanel: false, showHome: false, showCameraControls: true,
-             panels: ['scene', 'map', 'solar'] },
+  // No `panels` list here. The client skin already decides what it mounts, and
+  // a second list restating that from memory is how the rail ended up offering
+  // Scene and Map in a skin that renders neither.
+  client:  { showToolbar: false, showTree: false, showSidebar: false, openPanel: false, showHome: false, showCameraControls: true  },
 }
 
 /** Resolve the final chrome flags from a parsed param set. */

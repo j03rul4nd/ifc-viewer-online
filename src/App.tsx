@@ -608,11 +608,32 @@ export default function App() {
     pointcloud:  tCloud('title'),
     mesh:        tMesh('title'),
   }), [tToolbar, tSidebar, tSolar, tCloud, tMesh])
+  // Content gates: these two act ON something loaded, so the tool only earns
+  // its place once there is something for it to act on.
+  const pointCloudCount = usePointCloudStore((s) => s.clouds.length)
+  const meshCount = useMeshStore((s) => s.meshes.length)
+
+  // Availability, stated from the SAME conditions that render each panel below.
+  // Written from memory instead, it drifted immediately: the client skin got a
+  // rail offering Scene and Map, neither of which it mounts, so two of three
+  // icons did nothing when pressed. If you change a panel's render condition,
+  // change its line here.
+  const railAvailable = useMemo(() => ({
+    properties:  effectiveChrome.showSidebar,
+    scene:       !clientMode,
+    measurement: !clientMode || clientAdvancedTools,
+    section:     !clientMode || clientAdvancedTools,
+    plans:       !clientMode,
+    map:         isGisEnabled() && !clientMode,
+    solar:       isSolarEnabled(),
+    pointcloud:  isPointCloudEnabled() && !clientMode && pointCloudCount > 0,
+    mesh:        isMeshEnabled() && !clientMode && meshCount > 0,
+  }), [effectiveChrome.showSidebar, clientMode, clientAdvancedTools, pointCloudCount, meshCount])
+
   const railItems = usePanelRail({
     icons: railIcons,
     labels: railLabels,
-    technical: !clientMode || clientAdvancedTools,
-    sidebar: effectiveChrome.showSidebar,
+    available: railAvailable,
     allow: effectiveChrome.panels,
   })
   const {

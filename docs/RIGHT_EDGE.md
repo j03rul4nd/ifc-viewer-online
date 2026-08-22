@@ -148,12 +148,28 @@ Three properties worth keeping when this is extended:
 - **Unknown names are ignored, not rejected.** A URL written against a newer
   build has to still open on an older one.
 
-The `client` preset is expressed in exactly this vocabulary — `scene`, `map`,
-`solar`: the panels that show someone the building rather than inspect it. It
-is a literal list rather than something derived from a `technical` boolean, so
-the set is visible in one place and a new tool has to be added to it on purpose.
-That is also the shape a presentation mode takes when it arrives: a preset, not
-a new mechanism.
+**The allowlist narrows; it does not decide what exists.** That distinction was
+learned the hard way. The first version of the client preset carried its own
+list of panels, written from memory — `scene`, `map`, `solar` — and the client
+skin mounts none of the first two. The rail dutifully showed three icons, two of
+which did nothing when pressed.
+
+So availability is stated once, in `App.tsx`, from the same expressions that
+render each panel, and the rail cannot form an opinion of its own:
+
+```tsx
+const railAvailable = useMemo(() => ({
+  scene: !clientMode,
+  map:   isGisEnabled() && !clientMode,
+  solar: isSolarEnabled(),
+  …
+}), [...])
+```
+
+A panel the app has never heard of counts as unavailable, so a newly added tool
+is invisible until someone states it — failing invisible rather than failing
+dead. A presentation mode, when it arrives, is a preset over this: not a new
+mechanism, and not a second list of what exists.
 
 ## What is deliberately not being done
 

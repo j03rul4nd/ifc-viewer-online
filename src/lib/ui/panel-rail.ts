@@ -4,6 +4,13 @@
 //
 // This is pure so it can be reasoned about and tested without a store, a React
 // tree or a DOM. The hook reads the stores, this decides, the component draws.
+//
+// It does NOT decide whether a panel exists. It cannot: the conditions are in
+// the JSX, next to the panels themselves, and a copy of them here drifts. It
+// drifted the first day — the client preset was written from memory and offered
+// Scene and Map, neither of which the client skin mounts, so two of three icons
+// on that rail did nothing when pressed. The caller states availability from the
+// same expressions that render the panels; this module owns order and policy.
 
 /** Every floating panel that can appear on the rail, in rail order. */
 export type PanelId =
@@ -12,66 +19,47 @@ export type PanelId =
   | 'map' | 'solar' | 'pointcloud' | 'mesh'
 
 export interface RailContext {
-  /** False in the client presentation skin, which hides the technical tools. */
-  technical: boolean
-  /** Build-time feature flag; an icon for a chunk that never loads is a lie. */
-  gis: boolean
   /**
-   * Whether the properties column is mounted at all.
+   * Which panels are mounted right now, keyed by id.
    *
-   * The embed chrome and the client skin can switch it off, and during tour
-   * playback the app hides its own furniture. An icon for a panel that is not
-   * in the tree is a control that does nothing when pressed — which is what
-   * tour mode was showing.
+   * Built beside the render conditions, so the two cannot disagree. A missing
+   * key means unavailable — a new panel is invisible until it is stated, which
+   * fails in the safe direction.
    */
-  sidebar: boolean
-  /** Content gates: these two act ON something, so they wait for it. */
-  pointClouds: number
-  meshes: number
+  available: Partial<Record<PanelId, boolean>>
   /**
-   * An explicit allowlist, or undefined for "whatever else applies".
+   * A host allowlist, or undefined for "everything available".
    *
    * This is the seam the app scales on. Every tool we add is a rail icon by the
    * rule in docs/RIGHT_EDGE.md, and a host embedding the viewer — a client
    * presentation, a kiosk, a customer's portal — needs to say which of them
    * that audience gets, without a new flag per tool being invented each time.
-   * One list, and a tool added next year is covered by it the day it ships.
    */
   allow?: readonly PanelId[]
 }
 
-/**
- * The panels that apply right now.
- *
- * A panel that does not apply is OMITTED rather than disabled: on a 40px rail a
- * greyed icon is noise, and it teaches the reader nothing about how to enable it.
- */
-export function applicablePanels(ctx: RailContext): PanelId[] {
-  // Properties leads: it is the most-used panel in the app, and it is the one
-  // that used to have a surface of its own — a vertical PROPIEDADES strip that
-  // did exactly what a rail icon does, in the same 60px. See docs/RIGHT_EDGE.md.
-  const ids: PanelId[] = []
-  if (ctx.sidebar) ids.push('properties')
-  ids.push('scene')
-  // Grouped by kind rather than alphabetically, so the rail reads as
-  // "the model" then "the world": measure/cut/plan, then map/sun/scans.
-  if (ctx.technical) ids.push('measurement', 'section', 'plans')
-  if (ctx.gis) ids.push('map')
-  ids.push('solar')
-  if (ctx.pointClouds > 0) ids.push('pointcloud')
-  if (ctx.meshes > 0) ids.push('mesh')
-
-  // The allowlist filters what applies; it never adds. A host cannot conjure
-  // the point cloud panel by naming it when no scan is loaded, and cannot
-  // re-enable a panel the chrome switched off.
-  return ctx.allow ? ids.filter((id) => ctx.allow!.includes(id)) : ids
-}
-
-/** Every panel id, for validating an allowlist that came in from a URL. */
+/** Every panel id, in rail order: the model's own tools, then the world's. */
 export const ALL_PANEL_IDS: readonly PanelId[] = [
+  // Properties leads: it is the most-used panel, and the one that used to have
+  // a surface of its own on this edge. See docs/RIGHT_EDGE.md.
   'properties', 'scene', 'measurement', 'section', 'plans',
   'map', 'solar', 'pointcloud', 'mesh',
 ]
+
+/**
+ * The panels to put on the rail, in rail order.
+ *
+ * A panel that does not apply is OMITTED rather than disabled: on a 40px rail a
+ * greyed icon is noise, and it teaches the reader nothing about how to enable
+ * it. An icon whose panel is not mounted is worse still — a control that does
+ * nothing when pressed.
+ */
+export function applicablePanels(ctx: RailContext): PanelId[] {
+  return ALL_PANEL_IDS.filter((id) => ctx.available[id] === true)
+    // The allowlist narrows what is available; it never adds. A host cannot
+    // conjure a panel the app is not rendering by naming it.
+    .filter((id) => !ctx.allow || ctx.allow.includes(id))
+}
 
 /**
  * Read an allowlist out of a `panels=` parameter.
@@ -79,9 +67,9 @@ export const ALL_PANEL_IDS: readonly PanelId[] = [
  * `panels=scene,map` allows exactly those. `panels=-measurement,-section`
  * subtracts from the full set, which is what a host usually wants: opt out of
  * two tools rather than re-list the other seven and silently miss the ones we
- * add later. Mixing the two forms is a mistake, so the subtractive form wins
- * only when every entry is negative. Unknown names are ignored rather than
- * failing the load — a URL written against a newer build must still work.
+ * add later. The subtractive form applies only when every entry is negative.
+ * Unknown names are ignored rather than failing the load — a URL written
+ * against a newer build must still work on an older one.
  *
  * Returns undefined for "no opinion", which is not the same as the empty list:
  * `panels=` with nothing after it means no rail at all, and says so.
@@ -90,8 +78,7 @@ export function parsePanelAllowlist(raw: string | null | undefined): PanelId[] |
   if (raw == null) return undefined
   const entries = raw.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
   if (entries.length === 0) return []
-  const subtractive = entries.every((e) => e.startsWith('-'))
-  if (subtractive) {
+  if (entries.every((e) => e.startsWith('-'))) {
     const denied = new Set(entries.map((e) => e.slice(1)))
     return ALL_PANEL_IDS.filter((id) => !denied.has(id))
   }

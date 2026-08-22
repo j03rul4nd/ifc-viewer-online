@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { addPanelCloser } from '../lib/ui/modal-stack'
+import { announceOpen, announceClosed } from '../lib/ui/panel-registry'
 import * as Icons from './Icons'
 import { useValidationStore } from '../stores/validationStore'
 import { useUIStore } from '../stores/uiStore'
@@ -2108,13 +2108,23 @@ export default function Sidebar({
     [setSidebarExpanded],
   )
 
-  // A dialog is exclusive. Without this you could read the selected element's
-  // properties beside an open modal — two windows both claiming to be the thing
-  // you are working on. This column is not in the panel registry (panels step it
-  // aside rather than close it), so it hands the modal stack its own closer.
+  // Properties is a panel like the rest, and joins the one-at-a-time rule.
+  //
+  // It used to be exempt: panels stepped it aside when they opened, but nothing
+  // happened in the other direction, so opening properties while Measure was up
+  // left both on screen — which is the bug you could see. Being in the registry
+  // makes the rule symmetrical, and gets Escape and modal-exclusivity with it
+  // rather than each being wired here by hand.
+  //
+  // announceOpen directly rather than useViewportPanel: that hook's job is to
+  // step THIS column aside, and a panel cannot step itself aside.
   useEffect(() => {
-    if (!sidebarExpanded) return
-    return addPanelCloser(() => setSidebarExpanded(false))
+    if (!sidebarExpanded) {
+      announceClosed('properties')
+      return
+    }
+    announceOpen('properties', () => setSidebarExpanded(false))
+    return () => announceClosed('properties')
   }, [sidebarExpanded, setSidebarExpanded])
 
   // Consume pendingSidebarTab from store — works even when Sidebar was unmounted at click time
