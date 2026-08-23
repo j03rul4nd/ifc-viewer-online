@@ -11,6 +11,18 @@ export interface IfcViewerOptions {
     validate?: boolean;
     /** Open the validation panel automatically. Default false. */
     panel?: boolean;
+    /**
+     * Limit the tool rail to these panels, from the first frame.
+     *
+     * The same vocabulary as {@link IfcViewer.setPanels} and the `panels=` URL
+     * parameter. Prefer this over calling `setPanels` after load: the rail is
+     * built before the viewer is ready, so scoping it afterwards shows the full
+     * set first and then takes tools away.
+     *
+     * An empty array means no rail at all. Omitting it means no opinion, and the
+     * preset decides.
+     */
+    panels?: PanelName[];
     /** Force a UI language (e.g. 'en', 'es', 'de'). */
     lang?: string;
     /** Accent colour (`#rrggbb`) to theme the viewer to your dashboard. */
