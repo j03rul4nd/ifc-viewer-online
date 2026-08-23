@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, bufferCentreline, buildLinearLayer,
-  dashCentreline,
+  dashCentreline, MAX_TREES, MAX_SEEDED_TREES,
 } from './osm-scene'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import type { OsmFeature } from './osm-features'
@@ -913,4 +913,426 @@ describe('every lit layer supplies the colours its material declares', () => {
       expect(checked).toBeGreaterThan(0)
     })
   }
+})
+
+describe('detailed surface budget', () => {
+  // A vertex budget says how FINE the ground may be, never how much of it is
+  // drawn. The old code spent it first come, first served and broke out of the
+  // feature loop when it ran out, so on a dense site the parks that happened to
+  // arrive late in the Overpass response simply did not exist — and which ones
+  // survived depended on emission order, which is neither stable nor meaningful.
+
+  /** `n` distinct green polygons of `sizeM`, spread out so none coincide. */
+  const spread = (n: number, sizeM: number): OsmFeature[] =>
+    Array.from({ length: n }, (_, i) => area('green', `g${i}`, {
+      ring: ringAround(LAT + i * 0.004, LON + (i % 7) * 0.004, sizeM),
+    }))
+
+  it('draws EVERY feature when the budget cannot fund them all', () => {
+    // 400 m polygons at a 16 m edge target want thousands of vertices each;
+    // 150 of them cannot all be refined inside one budget.
+    const many = spread(150, 400)
+    const built = buildSurfaceLayer(many, 'green', { ...OPTS, quality: 'detailed' })!
+    expect(built.count).toBe(150)
+    expect(built.dropped).toBe(0)
+    // And the budget is still a budget: sharing it out must not blow it.
+    const verts = built.object.geometry.getAttribute('position').count
+    expect(verts).toBeLessThanOrEqual(60_000)
+  })
+
+  it('degrades the starved features instead of abandoning them', () => {
+    // Enough features that the leftover share cannot pay for even one level of
+    // subdivision. They still land on screen, just flatter.
+    const crowded = spread(4000, 400)
+    const built = buildSurfaceLayer(crowded, 'green', { ...OPTS, quality: 'detailed' })!
+    expect(built.count).toBe(4000)
+    expect(built.dropped).toBe(0)
+    expect(built.degraded).toBeGreaterThan(0)
+  })
+
+  it('does not lose the LAST feature in the list, whatever the order', () => {
+    // The regression in one assertion: order used to decide existence.
+    const many = spread(150, 400)
+    const forward = buildSurfaceLayer(many, 'green', { ...OPTS, quality: 'detailed' })!
+    const reversed = buildSurfaceLayer(
+      [...many].reverse(), 'green', { ...OPTS, quality: 'detailed' },
+    )!
+    expect(forward.count).toBe(reversed.count)
+  })
+
+  it('spends the budget where the area is', () => {
+    // One large polygon and one small one: the large one must come back with
+    // more vertices, because that is what the subdivision is buying.
+    const big = area('green', 'big', { ring: ringAround(LAT, LON, 600) })
+    const small = area('green', 'small', { ring: ringAround(LAT + 0.02, LON, 30) })
+    const built = buildSurfaceLayer([big, small], 'green', { ...OPTS, quality: 'detailed' })!
+    expect(built.count).toBe(2)
+    expect(built.degraded).toBe(0)
+  })
+
+  it('counts a ring the triangulator refuses rather than swallowing it', () => {
+    // Three identical points: no area, no triangles, nothing to draw. The point
+    // is that the loss is REPORTED — an empty layer and a failing layer look
+    // the same on screen and only a number tells them apart.
+    const degenerate = area('green', 'bad', {
+      ring: [{ lat: LAT, lon: LON }, { lat: LAT, lon: LON }, { lat: LAT, lon: LON }],
+    })
+    const good = area('green', 'ok')
+    const built = buildSurfaceLayer([good, degenerate], 'green', {
+      ...OPTS, quality: 'detailed',
+    })!
+    expect(built.count).toBe(1)
+    expect(built.dropped).toBe(1)
+  })
+})
+
+describe('pedestrian ways are not carriageways', () => {
+  // The case that motivated the split, drawn to scale: a 12 m trunk running
+  // east-west, and a 1.6 m footpath coming up from the south that dies on it.
+  //
+  // In one graph that footpath is a vertex OF the trunk. The trunk is cut in
+  // two, the node has three arms, and two of them point almost exactly opposite
+  // each other — the wedge whose border intersection lands hundreds of metres
+  // down the road. The solver clamps that to five half-widths (30 m here) and
+  // duly eats up to 30 m of avenue, replacing it with a junction slab, because
+  // somebody mapped a pavement.
+
+  const MID_LON = LON + 0.002
+
+  const trunk = (): OsmFeature => ({
+    id: 'trunk',
+    kind: 'road',
+    ring: [
+      { lat: LAT, lon: LON },
+      { lat: LAT, lon: MID_LON },
+      { lat: LAT, lon: LON + 0.004 },
+    ],
+    height: { heightM: 0, minHeightM: 0, estimated: true },
+    widthM: 12,
+    style: {
+      roofShape: 'flat', roofHeightM: 0, tone: [0.32, 0.32, 0.35],
+      roadClass: 'vehicular',
+    },
+  })
+
+  /** A footway meeting the trunk at its middle vertex — a shared node. */
+  const footway = (): OsmFeature => ({
+    id: 'foot',
+    kind: 'road',
+    ring: [
+      { lat: LAT - 0.0015, lon: MID_LON },
+      { lat: LAT, lon: MID_LON },
+    ],
+    height: { heightM: 0, minHeightM: 0, estimated: true },
+    widthM: 1.6,
+    style: {
+      roofShape: 'flat', roofHeightM: 0, tone: [0.52, 0.46, 0.39],
+      roadClass: 'pedestrian',
+    },
+  })
+
+  const verts = (f: OsmFeature[]): number => {
+    const built = buildLinearLayer(f, 'road', OPTS)
+    return built ? surfaceOf(built.object).geometry.getAttribute('position').count : 0
+  }
+
+  it('a footway meeting a trunk leaves the trunk exactly as it was', () => {
+    // The identity that says the two networks share no topology: put them in
+    // the same layer and you get precisely the sum of the two on their own.
+    // Any trimming, any junction slab, and this stops holding.
+    const alone = verts([trunk()])
+    const path = verts([footway()])
+    const together = verts([trunk(), footway()])
+    expect(alone).toBeGreaterThan(0)
+    expect(path).toBeGreaterThan(0)
+    expect(together).toBe(alone + path)
+  })
+
+  it('still solves a real junction between two carriageways', () => {
+    // The split must not cost us the thing the node solver is for. A service
+    // road meeting the same trunk IS a junction and must still be trimmed.
+    const service: OsmFeature = {
+      ...footway(),
+      id: 'service',
+      widthM: 6,
+      style: {
+        roofShape: 'flat', roofHeightM: 0, tone: [0.44, 0.44, 0.46],
+        roadClass: 'vehicular',
+      },
+    }
+    const alone = verts([trunk()])
+    const road = verts([service])
+    expect(verts([trunk(), service])).not.toBe(alone + road)
+  })
+
+  it('gives the pedestrian network its own grain', () => {
+    const built = buildLinearLayer([trunk(), footway()], 'road', {
+      ...OPTS, quality: 'detailed',
+    })!
+    const rough = surfaceOf(built.object).geometry.getAttribute('aRough')
+    const seen = new Set<string>()
+    for (let i = 0; i < rough.count; i++) seen.add(rough.getX(i).toFixed(3))
+    // Tarmac and paving are not the same surface, and one number for the whole
+    // layer is what made them look like it.
+    expect(seen.size).toBeGreaterThan(1)
+  })
+
+  it('paints no centre line down a footpath, however wide it is tagged', () => {
+    // A 7 m pedestrian precinct is over the centre-line threshold by width and
+    // must still get no paint: the threshold is about carriageways.
+    const precinct: OsmFeature = {
+      ...footway(),
+      id: 'precinct',
+      widthM: 7,
+      style: {
+        roofShape: 'flat', roofHeightM: 0, tone: [0.50, 0.47, 0.44],
+        roadClass: 'pedestrian',
+      },
+    }
+    const built = buildLinearLayer([precinct], 'road', OPTS)!
+    const colors = surfaceOf(built.object).geometry.getAttribute('color')
+    let painted = 0
+    for (let i = 0; i < colors.count; i++) {
+      if (colors.getX(i) > 0.7 && colors.getY(i) > 0.7) painted++
+    }
+    expect(painted).toBe(0)
+  })
+})
+
+describe('trees grown from greenery polygons', () => {
+  // The gap: a `landuse=forest` polygon drew as a flat green carpet, because
+  // the only trees in the scene were `natural=tree` nodes mapped one at a time.
+  // On the Kyoto site that was 205 greenery polygons against 555 nodes, and the
+  // wooded slopes east of the city were moquette.
+
+  const wood = (id: string, sizeM = 220, cover = 'forest', offsetM = 0): OsmFeature => ({
+    id, kind: 'green',
+    ring: ringAround(LAT + offsetM / 111_132, LON, sizeM),
+    height: { heightM: 0, minHeightM: 0, estimated: true },
+    style: {
+      roofShape: 'flat', roofHeightM: 0,
+      tone: [0.16, 0.33, 0.17],
+      cover: cover as OsmFeature['style']['cover'],
+      coverShape: 'broadleaf',
+    },
+  })
+
+  /** Every InstancedMesh in the layer — one draw call each. */
+  const meshes = (o: THREE.Object3D): THREE.InstancedMesh[] => {
+    const out: THREE.InstancedMesh[] = []
+    o.traverse((c) => { if ((c as THREE.InstancedMesh).isInstancedMesh) out.push(c as THREE.InstancedMesh) })
+    return out
+  }
+  const instances = (o: THREE.Object3D): number =>
+    meshes(o).reduce((n, m) => Math.max(n, m.count), 0)
+
+  /** The same wood, with nothing said about what grows in it. */
+  const untagged = (id: string, sizeM = 220, cover = 'forest'): OsmFeature => {
+    const f = wood(id, sizeM, cover)
+    return { ...f, style: { ...f.style, coverShape: undefined } }
+  }
+
+  /** Species actually placed, read off the instanced meshes by their names. */
+  const speciesCounts = (o: THREE.Object3D): Record<string, number> => {
+    const out: Record<string, number> = {}
+    for (const m of meshes(o)) {
+      const leaf = /needleleaf|conifer/.test(m.name) ? 'needleleaf' : 'broadleaf'
+      out[leaf] = Math.max(out[leaf] ?? 0, m.count)
+    }
+    return out
+  }
+
+  it('grows conifer on a Japanese hillside, not the European default', () => {
+    // Measured before this existed: 8289 of 8292 seeded trees over Kyoto came
+    // out broadleaf, on slopes that are sugi and hinoki plantation.
+    const kyoto = { anchorLat: 34.9949, anchorLon: 135.785 }
+    const built = buildTreeLayer([untagged('w1')], kyoto)!
+    const counts = speciesCounts(built.object)
+    expect(counts.needleleaf ?? 0).toBeGreaterThan(counts.broadleaf ?? 0)
+  })
+
+  it('keeps that same wood MIXED — a plantation of clones is the old tell', () => {
+    const kyoto = { anchorLat: 34.9949, anchorLon: 135.785 }
+    const counts = speciesCounts(buildTreeLayer([untagged('w1')], kyoto)!.object)
+    expect(counts.needleleaf ?? 0).toBeGreaterThan(0)
+    expect(counts.broadleaf ?? 0).toBeGreaterThan(0)
+  })
+
+  it('obeys a mapped leaf_type over any regional guess', () => {
+    // `coverShape` set means the mapper said what grows here. Data beats guess,
+    // and it also stops the mixing: they answered for the whole wood.
+    const kyoto = { anchorLat: 34.9949, anchorLon: 135.785 }
+    const counts = speciesCounts(buildTreeLayer([wood('w1')], kyoto)!.object)
+    expect(counts.needleleaf ?? 0).toBe(0)
+    expect(counts.broadleaf ?? 0).toBeGreaterThan(0)
+  })
+
+  it('falls back to the global mix when there is no longitude to place it', () => {
+    // Absent lon means "no region", not "somewhere in Europe".
+    const counts = speciesCounts(buildTreeLayer([untagged('w1')], OPTS)!.object)
+    expect(counts.broadleaf ?? 0).toBeGreaterThan(counts.needleleaf ?? 0)
+  })
+
+  it('plants a wood that used to be bare ground', () => {
+    expect(buildTreeLayer([wood('w1')], OPTS)).not.toBeNull()
+    const built = buildTreeLayer([wood('w1')], OPTS)!
+    expect(built.count).toBeGreaterThan(200)
+  })
+
+  it('leaves a pitch and a lawn alone', () => {
+    // Inventing trees over a sports pitch is a statement about the site that is
+    // simply false — worse than leaving a genuine park thin.
+    expect(buildTreeLayer([wood('g1', 220, 'bare')], OPTS)).toBeNull()
+  })
+
+  it('does NOT cost a draw call per tree — the whole point of instancing', () => {
+    // The property that must survive: draw calls are a function of how many
+    // SPECIES are present, never of how many trees. A wood of six hundred and a
+    // wood of six cost the same number of calls.
+    const small = buildTreeLayer([wood('w1', 60)], OPTS)!
+    const large = buildTreeLayer([wood('w2', 400)], OPTS)!
+    expect(meshes(large.object).length).toBe(meshes(small.object).length)
+    // Procedural species are a canopy plus a trunk. One species, two calls.
+    expect(meshes(large.object).length).toBe(2)
+    expect(instances(large.object)).toBeGreaterThan(instances(small.object))
+  })
+
+  it('puts mapped and grown trees in the SAME instanced meshes', () => {
+    // Two sources, one canopy. Giving the grown ones their own meshes would
+    // have doubled the draw calls for two things that are the same object once
+    // they have a position and a size.
+    const mapped = tree('t1')
+    const both = buildTreeLayer([mapped, wood('w1')], OPTS)!
+    const grownOnly = buildTreeLayer([wood('w1')], OPTS)!
+    expect(meshes(both.object).length).toBe(meshes(grownOnly.object).length)
+    expect(both.count).toBe(grownOnly.count + 1)
+  })
+
+  it('is deterministic — the same site grows the same forest', () => {
+    const a = buildTreeLayer([wood('w1')], OPTS)!
+    const b = buildTreeLayer([wood('w1')], OPTS)!
+    expect(a.count).toBe(b.count)
+    const ma = meshes(a.object)[0]
+    const mb = meshes(b.object)[0]
+    expect(Array.from(ma.instanceMatrix.array)).toEqual(Array.from(mb.instanceMatrix.array))
+  })
+
+  /** A line of woods marching north, each on its own ground. */
+  const forestBelt = (n: number, sizeM = 400): OsmFeature[] =>
+    Array.from({ length: n }, (_, i) => wood(`w${i}`, sizeM, 'forest', i * sizeM * 1.5))
+
+  it('stays under the instance ceiling however much woodland there is', () => {
+    const built = buildTreeLayer(forestBelt(40), OPTS)!
+    expect(built.count).toBeLessThanOrEqual(MAX_TREES + MAX_SEEDED_TREES)
+    // And still two draw calls.
+    expect(meshes(built.object).length).toBe(2)
+  })
+
+  it('thins rather than dropping woods off the end of the list', () => {
+    // The regression that matters: with a naive cap, whichever wood Overpass
+    // emitted LAST would simply not exist. Forty woods in a line north; the
+    // furthest one has to have trees in it.
+    const belt = forestBelt(40)
+    const built = buildTreeLayer(belt, OPTS)!
+    const mesh = meshes(built.object)[0]
+    const m = new THREE.Matrix4()
+    let north = -Infinity
+    for (let i = 0; i < mesh.count; i++) {
+      mesh.getMatrixAt(i, m)
+      north = Math.max(north, m.elements[13])
+    }
+    // The northernmost ring of the last wood in the list.
+    const last = belt[belt.length - 1].ring!
+    const edge = Math.max(...last.map((p) => latLonToNormalized(p.lat, p.lon).ny))
+    const start = Math.min(...last.map((p) => latLonToNormalized(p.lat, p.lon).ny))
+    expect(north).toBeGreaterThan(start)
+    expect(north).toBeLessThanOrEqual(edge * 1.0001)
+  })
+
+  it('keeps a wood out of the ground the model already occupies', () => {
+    // A park polygon deliberately survives context suppression — a tower does
+    // not replace the park it sits in — so without this the wood would grow up
+    // through the model.
+    const open = buildTreeLayer([tree('t1'), wood('w1')], OPTS)!
+    const blocked = buildTreeLayer(
+      [tree('t1'), wood('w1')], { ...OPTS, excludeAt: () => true },
+    )!
+    expect(blocked.count).toBeLessThan(open.count)
+    // The mapped node is untouched: suppression already had its say about that
+    // one, and this exclusion is only about trees we invented.
+    expect(blocked.count).toBe(1)
+  })
+
+  it('sits every tree on the ground under it, not on one height per polygon', () => {
+    // A wood on a hillside is on the hillside.
+    const built = buildTreeLayer([wood('w1')], {
+      ...OPTS, sampleGroundM: (nx) => nx * 1e6,
+    })!
+    const mesh = meshes(built.object)[0]
+    const m = new THREE.Matrix4()
+    const zs = new Set<string>()
+    for (let i = 0; i < Math.min(60, mesh.count); i++) {
+      mesh.getMatrixAt(i, m)
+      zs.add(m.elements[14].toFixed(9))
+    }
+    expect(zs.size).toBeGreaterThan(10)
+  })
+})
+
+describe('the surface budget spends itself where the view is', () => {
+  // The 144 polygons that came back degraded on the Kyoto site were parks
+  // following the slope coarsely. Not all of them are worth the same: the ground
+  // the reader is standing on earns its interior vertices, the ridge at the back
+  // of the shot does not.
+
+  const patch = (id: string, northM: number): OsmFeature =>
+    area('green', id, { ring: ringAround(LAT + northM / 111_132, LON, 300) })
+
+  /** A belt of parks marching north, enough of them to exhaust the budget. */
+  const belt = (n: number): OsmFeature[] =>
+    Array.from({ length: n }, (_, i) => patch(`p${i}`, i * 320))
+
+  /** Vertices on the near half of the belt against the far half. */
+  const split = (mesh: THREE.Mesh, n: number): { near: number; far: number } => {
+    const p = mesh.geometry.getAttribute('position')
+    const midY = latLonToNormalized(LAT + ((n / 2) * 320) / 111_132, LON).ny
+    let near = 0
+    let far = 0
+    for (let i = 0; i < p.count; i++) {
+      if (p.getY(i) < midY) near++
+      else far++
+    }
+    return { near, far }
+  }
+
+  it('gives the near ground more resolution than the far ridge', () => {
+    // Only visible under pressure: with room for everything the weighting
+    // changes nothing, which is correct — it decides who gives way, not who
+    // gets drawn.
+    const focus = latLonToNormalized(LAT, LON)
+    const built = buildSurfaceLayer(belt(40), 'green', {
+      ...OPTS, quality: 'detailed', focusN: { nx: focus.nx, ny: focus.ny },
+    })!
+    const { near, far } = split(built.object, 40)
+    expect(near).toBeGreaterThan(far * 1.2)
+  })
+
+  it('splits evenly when nothing says what the view is of', () => {
+    // The plain path — no model, no placement — must behave exactly as before.
+    const built = buildSurfaceLayer(belt(40), 'green', {
+      ...OPTS, quality: 'detailed',
+    })!
+    const { near, far } = split(built.object, 40)
+    expect(Math.abs(near - far)).toBeLessThan(near * 0.05)
+  })
+
+  it('still draws every polygon, near or far', () => {
+    const focus = latLonToNormalized(LAT, LON)
+    const built = buildSurfaceLayer(
+      Array.from({ length: 30 }, (_, i) => patch(`p${i}`, i * 400)), 'green',
+      { ...OPTS, quality: 'detailed', focusN: { nx: focus.nx, ny: focus.ny } },
+    )!
+    expect(built.count).toBe(30)
+    expect(built.dropped).toBe(0)
+  })
 })

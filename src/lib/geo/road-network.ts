@@ -477,6 +477,16 @@ export function buildRoadNetwork(
     if (dEnd) push(e.to, { edge: i, atStart: false, dir: dEnd, halfWidth })
   })
 
+  /** What a node worked out, held until the ribbons exist to close it against. */
+  interface SolvedNode {
+    at: THREE.Vector2
+    sorted: HalfEdge[]
+    need: number[]
+    fillets: (THREE.Vector2 | null)[]
+    widest: number
+  }
+  const solved: SolvedNode[] = []
+
   const trimStart = new Array<number>(edges.length).fill(0)
   const trimEnd = new Array<number>(edges.length).fill(0)
   /** Half-width forced on an edge end by a wider neighbour at a degree-2 node. */
@@ -535,51 +545,14 @@ export function buildRoadNetwork(
       else trimEnd[arm.edge] = Math.max(trimEnd[arm.edge], need[i])
     }
 
-    // Walk the arms in order: cross each carriageway, then round the fillet into
-    // the next. Star-shaped about `at` by construction, so a fan triangulates it.
-    const polygon: THREE.Vector2[] = []
-    for (let i = 0; i < k; i++) {
-      const arm = sorted[i]
-      const n = leftOf(arm.dir)
-      const base = at.clone().addScaledVector(arm.dir, need[i])
-      polygon.push(base.clone().addScaledVector(n, -arm.halfWidth))
-      polygon.push(base.clone().addScaledVector(n, arm.halfWidth))
-      const f = fillets[i]
-      // Keep only a fillet genuinely on this wedge's side of the node; a meeting
-      // behind it belongs to the opposite wedge and would fold the polygon.
-      const bisector = arm.dir.clone().add(sorted[(i + 1) % k].dir)
-      if (f && f.clone().sub(at).dot(bisector) > 0) polygon.push(f.clone())
-    }
-
-    // Sort the boundary by heading about the node before handing it over.
-    //
-    // The walk above already produces it in order in the common case, but a
-    // clamped trim breaks that: the arm's corner and the fillet it should have
-    // met no longer coincide, and one can overshoot its neighbour by a few
-    // centimetres. Fanned from the node, that inversion is a folded sliver —
-    // a dark self-overlapping triangle right in the middle of the junction.
-    // Sorting by angle makes the fan valid for ANY set of arms, which is the
-    // only guarantee worth having when the input is somebody else's map data.
-    const ordered = polygon
-      .map((p) => ({ p, a: Math.atan2(p.y - at.y, p.x - at.x) }))
-      .sort((l, r) => l.a - r.a)
-      .map((e) => e.p)
-      .filter((p, i, all) => i === 0 || p.distanceToSquared(all[i - 1]) > snap * snap * 1e-4)
-    polygon.length = 0
-    polygon.push(...ordered)
-
-    const widestArm = sorted.reduce(
-      (best, s, i) => (s.halfWidth > sorted[best].halfWidth ? i : best), 0,
-    )
-    junctions.push({
-      at: at.clone(),
-      polygon,
-      tone: ways[edges[sorted[widestArm].edge].wayIndex].tone,
-      halfWidth: widest,
-    })
+    // The surface itself is NOT built here. It is built after the ribbons, from
+    // the ends the ribbons actually have — see closeJunction. Everything the
+    // node solved is kept until then.
+    solved.push({ at: at.clone(), sorted, need, fillets, widest })
   }
 
   const ribbons: RoadRibbon[] = []
+  const ribbonByEdge = new Array<RoadRibbon | null>(edges.length).fill(null)
   const drawn = new Set<number>()
   edges.forEach((e, i) => {
     const way = ways[e.wayIndex]
@@ -596,7 +569,7 @@ export function buildRoadNetwork(
     }
 
     const { left, right, joins } = mitredBorders(centre, halfWidths)
-    ribbons.push({
+    const ribbon: RoadRibbon = {
       id: `${way.id}#${i}`,
       centre, halfWidths, left, right, joins,
       tone: way.tone,
@@ -605,9 +578,108 @@ export function buildRoadNetwork(
       oneway: way.oneway,
       trimmedStart: trimStart[i] > 0,
       trimmedEnd: trimEnd[i] > 0,
-    })
+    }
+    ribbons.push(ribbon)
+    ribbonByEdge[i] = ribbon
     drawn.add(e.wayIndex)
   })
 
+  for (const node of solved) {
+    junctions.push(closeJunction(node, ribbonByEdge, edges, ways, snap))
+  }
+
   return { ribbons, junctions, count: drawn.size }
+}
+
+/**
+ * Close a solved node into a surface, using the ends the RIBBONS actually have.
+ *
+ * This used to be built from `at + dir * trim`, with `dir` measured on the
+ * UNTRIMMED centreline — the heading towards the way's next original vertex.
+ * The ribbon, meanwhile, is mitred on the centreline AFTER trimming, and that
+ * one starts at an interpolated cut point. On a straight approach the two agree
+ * exactly. On a curve they do not: a trim routinely runs past several vertices,
+ * so the junction's corner and the carriageway's corner come from different
+ * headings, and the pair opens a wedge of missing asphalt on one side of the
+ * road while overlapping on the other. The deeper the trim and the tighter the
+ * bend, the wider the gap — which is why it showed up on precisely the
+ * junctions that matter, the ones approached on a curve or a flare.
+ *
+ * Reading the corners off the ribbon removes the disagreement by construction:
+ * there is one answer for where a carriageway ends and both surfaces use it. It
+ * also picks up the width taper for free, since `left`/`right` already carry the
+ * blended half-width.
+ */
+function closeJunction(
+  node: {
+    at: THREE.Vector2
+    sorted: HalfEdge[]
+    need: number[]
+    fillets: (THREE.Vector2 | null)[]
+    widest: number
+  },
+  ribbonByEdge: ReadonlyArray<RoadRibbon | null>,
+  edges: ReadonlyArray<RawEdge>,
+  ways: ReadonlyArray<NetworkWay>,
+  snap: number,
+): RoadJunctionSurface {
+  const { at, sorted, need, fillets } = node
+  const k = sorted.length
+  const polygon: THREE.Vector2[] = []
+
+  for (let i = 0; i < k; i++) {
+    const arm = sorted[i]
+    const ribbon = ribbonByEdge[arm.edge]
+
+    if (ribbon) {
+      // Walking away from the node, the arm's RIGHT border comes first. At the
+      // far end of an edge the ribbon runs towards the node, so its own left
+      // and right are swapped relative to the arm.
+      const j = arm.atStart ? 0 : ribbon.centre.length - 1
+      polygon.push(
+        (arm.atStart ? ribbon.right[j] : ribbon.left[j]).clone(),
+        (arm.atStart ? ribbon.left[j] : ribbon.right[j]).clone(),
+      )
+    } else {
+      // The edge was consumed entirely and has no ribbon to read. Fall back to
+      // the analytic corner so the node still closes rather than opening a hole.
+      const n = leftOf(arm.dir)
+      const base = at.clone().addScaledVector(arm.dir, need[i])
+      polygon.push(
+        base.clone().addScaledVector(n, -arm.halfWidth),
+        base.clone().addScaledVector(n, arm.halfWidth),
+      )
+    }
+
+    const f = fillets[i]
+    // Keep only a fillet genuinely on this wedge's side of the node; a meeting
+    // behind it belongs to the opposite wedge and would fold the polygon.
+    const bisector = arm.dir.clone().add(sorted[(i + 1) % k].dir)
+    if (f && f.clone().sub(at).dot(bisector) > 0) polygon.push(f.clone())
+  }
+
+  // Sort the boundary by heading about the node before handing it over.
+  //
+  // The walk above already produces it in order in the common case, but a
+  // clamped trim breaks that: the arm's corner and the fillet it should have
+  // met no longer coincide, and one can overshoot its neighbour by a few
+  // centimetres. Fanned from the node, that inversion is a folded sliver —
+  // a dark self-overlapping triangle right in the middle of the junction.
+  // Sorting by angle makes the fan valid for ANY set of arms, which is the
+  // only guarantee worth having when the input is somebody else's map data.
+  const ordered = polygon
+    .map((p) => ({ p, a: Math.atan2(p.y - at.y, p.x - at.x) }))
+    .sort((l, r) => l.a - r.a)
+    .map((e) => e.p)
+    .filter((p, i, all) => i === 0 || p.distanceToSquared(all[i - 1]) > snap * snap * 1e-4)
+
+  const widestArm = sorted.reduce(
+    (best, s, i) => (s.halfWidth > sorted[best].halfWidth ? i : best), 0,
+  )
+  return {
+    at: at.clone(),
+    polygon: ordered,
+    tone: ways[edges[sorted[widestArm].edge].wayIndex].tone,
+    halfWidth: node.widest,
+  }
 }

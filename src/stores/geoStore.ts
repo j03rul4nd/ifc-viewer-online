@@ -13,7 +13,7 @@ import { createLogger } from '../lib/logger'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from '../lib/geo/terrain-look'
 import type { FeatureKind } from '../lib/geo/osm-features'
 import type { FeatureLayerVisibility } from '../lib/geo/geo-system'
-import type { BuildingDetail } from '../lib/geo/building-mesh'
+import type { BuildingDetail, ContextTone } from '../lib/geo/building-mesh'
 import type { GeoPlacement, GeorefExtraction, MapMode, TerrainStatus, TerrainStyle, TerrainLook } from '../lib/geo/geo-types'
 
 const log = createLogger('GeoStore')
@@ -48,6 +48,7 @@ const LS_TERRAIN_LOOK  = 'ifc-geo-terrain-look:v1'
 const LS_BUILDINGS     = 'ifc-geo-buildings:v1'
 const LS_LAYERS        = 'ifc-geo-osm-layers:v1'
 const LS_DETAIL        = 'ifc-geo-detail:v1'
+const LS_TONE          = 'ifc-geo-context-tone:v1'
 const LS_VEHICLES      = 'ifc-geo-vehicles:v1'
 const LS_SUPPRESS      = 'ifc-geo-suppress-context:v1'
 
@@ -63,6 +64,15 @@ const LS_SUPPRESS      = 'ifc-geo-suppress-context:v1'
 function readContextDetail(): BuildingDetail {
   const raw = lsGet(LS_DETAIL)
   return raw === 'detailed' || raw === 'showcase' ? raw : 'simple'
+}
+
+/**
+ * How loud the surroundings are. Persisted separately from the detail level
+ * because it IS separate: a showcase view with a discreet street behind the
+ * model is a perfectly ordinary thing to want.
+ */
+function readContextTone(): ContextTone {
+  return lsGet(LS_TONE) === 'neutral' ? 'neutral' : 'natural'
 }
 
 /** Per-layer visibility, persisted. Everything on by default. */
@@ -169,6 +179,7 @@ interface GeoStore {
   featureLayers: FeatureLayerVisibility
   /** How much of a surrounding facade to model (persisted). */
   contextDetail: BuildingDetail
+  contextTone: ContextTone
   /** Decorative cars and trains (persisted). Invented placement — off by default. */
   vehicles: boolean
   /**
@@ -222,6 +233,7 @@ interface GeoStore {
   /** Toggle one OSM layer (persisted). */
   setFeatureLayer: (kind: FeatureKind, visible: boolean) => void
   setContextDetail: (d: BuildingDetail) => void
+  setContextTone: (t: ContextTone) => void
   setVehicles: (v: boolean) => void
   setSuppressContext: (v: boolean) => void
   setTerrainExaggeration: (k: number) => void
@@ -261,6 +273,7 @@ export const useGeoStore = create<GeoStore>()(
       buildingsEstimated: 0,
       featureLayers:      readFeatureLayers(),
       contextDetail:      readContextDetail(),
+      contextTone:        readContextTone(),
       vehicles:           lsGet(LS_VEHICLES) === '1',
       suppressContext:    lsGet(LS_SUPPRESS) !== '0',
       buildingsTruncated: false,
@@ -408,6 +421,11 @@ export const useGeoStore = create<GeoStore>()(
       setContextDetail: (d) => {
         lsSet(LS_DETAIL, d)
         set({ contextDetail: d }, false, 'setContextDetail')
+      },
+
+      setContextTone: (t) => {
+        lsSet(LS_TONE, t)
+        set({ contextTone: t }, false, 'setContextTone')
       },
 
       setFeatureLayer: (kind, visible) =>

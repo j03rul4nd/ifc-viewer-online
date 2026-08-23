@@ -16,7 +16,10 @@
 
 import * as THREE from 'three'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
-import { facadeColor, storeyBanding, storeysFor } from './feature-variation'
+import {
+  facadeColor, storeyBanding, storeysFor, buildingRegion, roofColorFor,
+  defaultRoofShape, defaultRoofFraction, type FacadeContext,
+} from './feature-variation'
 import { createGroundFrame } from './ground-frame'
 import type { BuildingHeight } from './buildings'
 import type { FeatureStyle } from './osm-features'
@@ -76,6 +79,14 @@ export interface BuildingRange {
  */
 export type BuildingDetail = 'simple' | 'detailed' | 'showcase'
 
+/**
+ * How much the surroundings are allowed to compete with the model.
+ *
+ * Orthogonal to BuildingDetail: 'neutral' is a treatment, not a level, so a
+ * showcase view can still have a quiet street behind the subject.
+ */
+export type ContextTone = 'natural' | 'neutral'
+
 export interface BuildingMeshOptions {
   /** Anchor latitude — sets the metres→normalized scale for the whole patch. */
   anchorLat: number
@@ -99,6 +110,23 @@ export interface BuildingMeshOptions {
   anchorElevationM?: number
   /** Vertical exaggeration the terrain is displaying — see ground-frame. */
   exaggeration?: number
+  /**
+   * Anchor longitude. With the latitude it is the whole of what the palette
+   * needs to know about where it is — a block in Kyoto is not painted like a
+   * block in Rotterdam, and until this arrived it was.
+   */
+  anchorLon?: number
+  /**
+   * 'neutral' draws the surroundings as near-monochrome masses: same skyline,
+   * same footprints, none of the colour. For a view whose subject is the IFC
+   * model and whose context is only there to give it scale.
+   *
+   * Deliberately ORTHOGONAL to `detail` rather than a fourth level of it. "How
+   * much of this is modelled" and "how much is it allowed to compete with the
+   * model" are two independent questions, and folding them into one control
+   * would mean giving up storey-banded facades to get a quiet street.
+   */
+  contextTone?: ContextTone
 }
 
 /**
@@ -119,6 +147,15 @@ export function buildBuildingsGeometry(
   // 'showcase' is 'detailed' plus authored props; the facades are the same.
   const detailed = opts.detail === 'detailed' || opts.detail === 'showcase'
   const lit = opts.lit === true
+  // One answer for the whole patch: every building in a 1.4 km box is in the
+  // same place, and asking per building would be the same lookup 2500 times.
+  const region = opts.anchorLon === undefined
+    ? 'generic'
+    : buildingRegion(opts.anchorLat, opts.anchorLon)
+  const contextTone = opts.contextTone ?? 'natural'
+  const neutral = contextTone === 'neutral'
+  /** Facade contrast, 0-1. Discreet context keeps the mass and drops the detail. */
+  const contrast = neutral ? 0.25 : 1
 
   const positions: number[] = []
   const ranges: BuildingRange[] = []
@@ -191,15 +228,31 @@ export function buildBuildingsGeometry(
     // A shaped roof eats into the tagged total height rather than adding to it:
     // `height` in OSM is to the ridge, so raising walls to it and then stacking
     // a roof on top would make every gabled building too tall.
-    const roofShape = b.style?.roofShape ?? 'flat'
-    const roofM = roofShape === 'flat' ? 0 : Math.min(b.style?.roofHeightM ?? 0, (topM - baseM) * 0.5)
+    // What the building IS decides its roof when nobody tagged one — which is
+    // almost always. A tagged `roof:shape` is the mapper's own answer and still
+    // wins outright; `roofTagged` is what lets the two be told apart.
+    const facade: FacadeContext = { use: b.style?.use, region, tone: contextTone }
+    // Only a building nobody has said anything about gets a shape invented for
+    // it. An explicit `roof:shape` says so through `roofTagged`; a caller that
+    // simply hands us a pitched shape has plainly stated one too, and honouring
+    // that keeps the structural BuildingLike contract meaning what it reads as.
+    const stated = b.style?.roofTagged === true || (b.style?.roofShape ?? 'flat') !== 'flat'
+    const roofShape = stated ? (b.style?.roofShape ?? 'flat') : defaultRoofShape(facade)
+    const wallSpanM = Math.max(0, topM - baseM)
+    const roofWantedM = stated
+      ? (b.style?.roofHeightM ?? 0)
+      : wallSpanM * defaultRoofFraction(facade)
+    const roofM = roofShape === 'flat' ? 0 : Math.min(roofWantedM, wallSpanM * 0.5)
     const eaveZ = topZ - roofM * metresToNormalized
     // A tagged colour always wins. Without one, pick a deterministic muted
     // facade tone: a block of identical grey extrusions is the clearest tell
     // that a scene was generated, and real streets are not one colour.
     const seed = b.id ?? `${b.ring[0].lat.toFixed(6)},${b.ring[0].lon.toFixed(6)}`
-    const roofTint = b.style?.roofColor ? hexToRgb(b.style.roofColor) : null
-    const wallTint = b.style?.wallColor ? hexToRgb(b.style.wallColor) : facadeColor(seed)
+    // Tagged colours win over anything inferred, in both directions.
+    const roofTint = b.style?.roofColor ? hexToRgb(b.style.roofColor) : roofColorFor(facade)
+    const wallTint = b.style?.wallColor && !neutral
+      ? hexToRgb(b.style.wallColor)
+      : facadeColor(seed, facade)
     // Lit: the shader does the light, so these are albedo only.
     const roofBase = lit ? 0.88 : roofShade(b.height.heightM)
 
@@ -269,10 +322,10 @@ export function buildBuildingsGeometry(
       // say "eight storeys" rather than "one tall thing".
       const storeys = storeysFor(topM - roofM - baseM)
       const face = lit ? 1 : wallShade(nx, ny)
-      const shadeTop = face * storeyBanding(1, storeys)
+      const shadeTop = face * storeyBanding(1, storeys, 0.06 * contrast)
       // Contact shading at grade survives lighting: it is ambient occlusion,
       // not sun, and it is what stops a building from floating.
-      const shadeBottom = face * (lit ? 0.86 : 0.72) * storeyBanding(0, storeys)
+      const shadeBottom = face * (lit ? 0.86 : 0.72) * storeyBanding(0, storeys, 0.06 * contrast)
 
       // Walls rise to the EAVES, not the ridge — the roof covers the rest.
       const wallTopZ = eaveZ
@@ -280,7 +333,7 @@ export function buildBuildingsGeometry(
       if (detailed) {
         pushDetailedWall(
           positions, normals, colors, p0, p1, nx, ny,
-          baseZ, wallTopZ, storeys, face, wallTint,
+          baseZ, wallTopZ, storeys, face, wallTint, contrast,
         )
         continue
       }
@@ -416,6 +469,8 @@ function pushDetailedWall(
   storeys: number,
   faceShade: number,
   tint: [number, number, number] | null,
+  /** 1 = full glazing rhythm, 0 = a plain wall. Discreet context runs low. */
+  contrast = 1,
 ): void {
   const bands = Math.max(1, Math.min(MAX_BANDED_STOREYS, storeys))
   const span = topZ - baseZ
@@ -444,8 +499,11 @@ function pushDetailedWall(
     // below keep the rhythm legible from across a block while staying inside
     // the muted range that keeps context behind the model.
     const ground = i === 0
-    const glazing = faceShade * (ground ? 0.30 : 0.44)
-    const spandrel = faceShade * (ground ? 0.98 : 1.16)
+    // Blended towards a flat wall rather than switched off, so the discreet
+    // treatment keeps a hint of the rhythm instead of becoming a slab.
+    const mix = (v: number): number => 1 + (v - 1) * contrast
+    const glazing = faceShade * mix(ground ? 0.30 : 0.44)
+    const spandrel = faceShade * mix(ground ? 0.98 : 1.16)
 
     quad(z0, glassTop, glazing)
     quad(glassTop, z1, spandrel)

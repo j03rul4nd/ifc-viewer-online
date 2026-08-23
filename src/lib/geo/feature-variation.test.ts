@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest'
 import {
   hashId, variate, jitter, treeShape, foliageColor,
   facadeColor, storeyBanding, storeysFor, greenTone,
+  buildingRegion, roofColorFor, defaultRoofShape, defaultRoofFraction,
+  coverSpeciesMix, speciesFor,
 } from './feature-variation'
 
 describe('hashId / variate', () => {
@@ -234,5 +236,144 @@ describe('tree species detection', () => {
     const tones = (['broadleaf', 'needleleaf', 'columnar', 'palm'] as const)
       .map((s) => foliageColor('t1', s).map((v) => v.toFixed(4)).join())
     expect(new Set(tones).size).toBe(4)
+  })
+})
+
+describe('where the building is', () => {
+  it('places the regions that have their own palette', () => {
+    expect(buildingRegion(34.99, 135.78)).toBe('east-asia')   // Kyoto
+    expect(buildingRegion(41.38, 2.17)).toBe('mediterranean') // Barcelona
+    expect(buildingRegion(52.37, 4.90)).toBe('northern-europe')
+    expect(buildingRegion(40.71, -74.0)).toBe('north-america')
+  })
+
+  it('says generic rather than guessing where it does not know', () => {
+    expect(buildingRegion(-33.87, 151.21)).toBe('generic')  // Sydney
+    expect(buildingRegion(-1.29, 36.82)).toBe('generic')    // Nairobi
+    expect(buildingRegion(NaN, 0)).toBe('generic')
+  })
+})
+
+describe('facadeColor in context', () => {
+  it('is still deterministic — the same block always looks the same', () => {
+    const ctx = { use: 'house', region: 'east-asia' } as const
+    expect(facadeColor('w1', ctx)).toEqual(facadeColor('w1', ctx))
+  })
+
+  it('paints a Kyoto street differently from a Rotterdam one', () => {
+    // The whole point. Before this, both came out of one list of six European
+    // renders and a neighbourhood in Japan looked like a Dutch suburb.
+    const ids = Array.from({ length: 40 }, (_, i) => `b${i}`)
+    const asia = ids.map((id) => facadeColor(id, { region: 'east-asia', use: 'house' }))
+    const euro = ids.map((id) => facadeColor(id, { region: 'northern-europe', use: 'house' }))
+    const differ = asia.filter((c, i) => c.join() !== euro[i].join()).length
+    expect(differ).toBeGreaterThan(30)
+  })
+
+  it('gives a shrine a palette nothing else in the street has', () => {
+    const shrine = facadeColor('s1', { region: 'east-asia', use: 'shrine' })
+    const house = facadeColor('s1', { region: 'east-asia', use: 'house' })
+    expect(shrine.join()).not.toBe(house.join())
+  })
+
+  it('falls back to the old behaviour with no context at all', () => {
+    // The plain footprint path has no tags and no site, and must keep working.
+    expect(facadeColor('x')).toEqual(facadeColor('x', {}))
+  })
+
+  it('goes near-monochrome in the discreet treatment', () => {
+    const ids = Array.from({ length: 30 }, (_, i) => `n${i}`)
+    const spread = (cs: Array<[number, number, number]>): number => {
+      const channel = (k: number): number =>
+        Math.max(...cs.map((c) => c[k])) - Math.min(...cs.map((c) => c[k]))
+      return Math.max(channel(0), channel(1), channel(2))
+    }
+    const neutral = ids.map((id) => facadeColor(id, { region: 'east-asia', tone: 'neutral' }))
+    const natural = ids.map((id) => facadeColor(id, { region: 'east-asia' }))
+    expect(spread(neutral)).toBeLessThan(spread(natural))
+    // And every one of them is grey: no channel runs away from the others.
+    for (const c of neutral) {
+      expect(Math.max(...c) - Math.min(...c)).toBeLessThan(0.05)
+    }
+  })
+})
+
+describe('inferring a roof', () => {
+  it('gives an East Asian temple the deep hipped roof it is known for', () => {
+    expect(defaultRoofShape({ use: 'temple', region: 'east-asia' })).toBe('pyramidal')
+    // And it is most of what you see, not a lid.
+    expect(defaultRoofFraction({ use: 'temple' })).toBeGreaterThan(defaultRoofFraction({ use: 'house' }))
+  })
+
+  it('pitches a house anywhere', () => {
+    expect(defaultRoofShape({ use: 'house', region: 'generic' })).toBe('gabled')
+  })
+
+  it('leaves everything urban and everything unknown flat', () => {
+    // Inventing pitches across a city centre would be a louder lie than a cap.
+    expect(defaultRoofShape({ use: 'apartments' })).toBe('flat')
+    expect(defaultRoofShape({ use: 'tower' })).toBe('flat')
+    expect(defaultRoofShape({})).toBe('flat')
+    expect(defaultRoofShape()).toBe('flat')
+  })
+
+  it('states a roof colour only where the place implies one', () => {
+    expect(roofColorFor({ use: 'temple', region: 'east-asia' })).not.toBeNull()
+    expect(roofColorFor({ use: 'generic', region: 'generic' })).toBeNull()
+    // The discreet treatment states nothing.
+    expect(roofColorFor({ use: 'temple', region: 'east-asia', tone: 'neutral' })).toBeNull()
+  })
+})
+
+describe('which species an untagged wood grows', () => {
+  it('grows conifer on a Japanese hillside instead of a European default', () => {
+    // The measured failure this exists for: 8289 of 8292 seeded trees came out
+    // broadleaf over Kyoto, on sugi and hinoki plantation.
+    const [dominant] = coverSpeciesMix('forest', 'east-asia')[0]
+    expect(dominant).toBe('needleleaf')
+  })
+
+  it('keeps every wood a mixture, never a plantation of clones', () => {
+    for (const region of ['east-asia', 'mediterranean', 'northern-europe', 'generic'] as const) {
+      const mix = coverSpeciesMix('forest', region)
+      expect(mix.length).toBeGreaterThan(1)
+      // A minority worth seeing, not a rounding error.
+      const smallest = Math.min(...mix.map(([, w]) => w))
+      expect(smallest).toBeGreaterThan(0.1)
+    }
+  })
+
+  it('draws both species out of one wood, in roughly the stated proportion', () => {
+    const ids = Array.from({ length: 4000 }, (_, i) => `w1@${i}`)
+    const needle = ids.filter((id) => speciesFor(id, 'forest', 'east-asia') === 'needleleaf').length
+    // 0.75 of the mix. Loose bounds: the point is that BOTH appear and the
+    // dominance is real, not that the hash is a perfect uniform.
+    expect(needle / ids.length).toBeGreaterThan(0.68)
+    expect(needle / ids.length).toBeLessThan(0.82)
+  })
+
+  it('is deterministic, so a screenshot is reproducible', () => {
+    expect(speciesFor('w7@42', 'forest', 'east-asia')).toBe(speciesFor('w7@42', 'forest', 'east-asia'))
+  })
+
+  it('never returns a species that would cost a third instanced mesh', () => {
+    // Draw calls follow the number of SPECIES on screen. Broadleaf and conifer
+    // each already have their own mesh; a third here would be a third mesh.
+    const covers = ['forest', 'shrub', 'orchard', 'park'] as const
+    const regions = ['east-asia', 'mediterranean', 'northern-europe', 'north-america', 'generic'] as const
+    for (const cover of covers) {
+      for (const region of regions) {
+        for (const [shape] of coverSpeciesMix(cover, region)) {
+          expect(['broadleaf', 'needleleaf']).toContain(shape)
+        }
+      }
+    }
+  })
+
+  it('leaves scrub and orchards unmixed, for reasons that are not species', () => {
+    // Scrub is a low rounded mass; an orchard is one crop per field, and mixing
+    // it would undo the regularity that makes it read as agriculture.
+    expect(coverSpeciesMix('shrub', 'east-asia')).toHaveLength(1)
+    expect(coverSpeciesMix('orchard', 'east-asia')).toHaveLength(1)
   })
 })

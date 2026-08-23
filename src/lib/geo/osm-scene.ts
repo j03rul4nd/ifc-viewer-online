@@ -26,16 +26,28 @@
 
 import * as THREE from 'three'
 import { latLonToNormalized, metresToNormalized } from './geo-math'
-import { jitter, foliageColor, variate, type TreeShape } from './feature-variation'
+import {
+  jitter, foliageColor, variate, buildingRegion, coverSpeciesMix, speciesFor,
+  type TreeShape, type BuildingRegion,
+} from './feature-variation'
 import { canopyGeometry, trunkGeometry, TREE_PROPORTIONS } from './tree-geometry'
-import { subdivideMesh, distanceToRing, type Vec2, type Face } from './surface-tessellation'
+import {
+  seedRegion, seedFringe, allocateDensity, naturalTotalFor, ringArea, ringPerimeter,
+  type SeedRegion, type SeededTree,
+} from './tree-seeding'
+import {
+  subdivideMesh, distanceToRing, longestEdge, type Vec2, type Face,
+} from './surface-tessellation'
 import {
   createSurfaceMaterial, createFoliageMaterial, type SurfaceKind, type SurfaceSun,
 } from './surface-shaders'
-import { metricAttributes } from './surface-attributes'
+import { metricAttributes, type RoughnessBand } from './surface-attributes'
 import { buildRoadNetwork, type NetworkWay } from './road-network'
 import { createGroundFrame, type GroundFrame } from './ground-frame'
-import type { OsmFeature, LatLonPoint } from './osm-features'
+import {
+  ROAD_CLASS_ROUGHNESS, ROAD_CLASS_KERB_M, COVER_SPACING_M,
+  type OsmFeature, type LatLonPoint, type RoadClass, type GreenCover,
+} from './osm-features'
 
 /** How much work a layer is allowed to spend on looking real. */
 export type SurfaceQuality = 'simple' | 'detailed'
@@ -50,6 +62,12 @@ const SURFACE_MATERIAL: Record<SurfaceLayerKind, SurfaceKind> = {
 
 export interface LayerMeshOptions {
   anchorLat: number
+  /**
+   * Site longitude. Only the canopy reads it, and only to decide what an
+   * UNTAGGED wood grows — see `coverSpeciesMix`. Absent means "no region", not
+   * "somewhere in Europe": the mix falls back to its global default.
+   */
+  anchorLon?: number
   /** Ground height in metres at a normalized position; null on the flat map. */
   sampleGroundM?: ((nx: number, ny: number) => number) | null
   /** Elevation the map plane represents, metres. */
@@ -72,6 +90,27 @@ export interface LayerMeshOptions {
    * time rather than emptying the canopy.
    */
   assets?: Map<string, THREE.BufferGeometry> | null
+  /**
+   * Ground the model already occupies, in normalized coordinates. Only the
+   * seeded canopy consults it: a mapped tree inside the model is dropped by
+   * context-suppression before it ever reaches a builder, but a park polygon
+   * survives suppression on purpose (a tower does not replace the park it sits
+   * in) — and growing a wood up through the model out of that polygon would be
+   * a new way of doing the exact thing suppression exists to prevent.
+   */
+  excludeAt?: ((nx: number, ny: number) => boolean) | null
+  /**
+   * Where the subject of the view is, in normalized coordinates — the model's
+   * own placement. What lets a budget spend itself on the ground the reader is
+   * looking at rather than spreading itself evenly over a square kilometre.
+   *
+   * NOT the camera, deliberately. A budget that depended on where the camera
+   * was would mean rebuilding the ground on every orbit, and one rebuild per
+   * camera move is the single thing this architecture refuses to do. The model
+   * does not move, it sits at the centre of the query box, and every view is of
+   * it.
+   */
+  focusN?: { nx: number; ny: number } | null
 }
 
 /** Fallback light, matching DEFAULT_TERRAIN_LOOK — NW at 45°, cartographic. */
@@ -123,6 +162,20 @@ const SLOPE_STEP_M = 4
 export interface LayerMesh<T extends THREE.Object3D = THREE.Object3D> {
   object: T
   count: number
+  /**
+   * Features that were asked for and produced no geometry at all — a ring the
+   * triangulator refused (self-intersecting, collinear, degenerate). Reported
+   * rather than swallowed: a layer that silently loses a third of its polygons
+   * looks exactly like a layer that was never there, and the only way to tell
+   * the two apart is a number.
+   */
+  dropped?: number
+  /**
+   * Features drawn at their base triangulation because the vertex budget could
+   * not fund the subdivision they wanted. They are on screen and correct in
+   * outline, just flatter against the relief.
+   */
+  degraded?: number
 }
 
 // ── Shared helpers ─────────────────────────────────────────────────────────────
@@ -183,12 +236,15 @@ function buildSimpleSurface(
   const positions: number[] = []
   const colors: number[] = []
   let count = 0
+  let dropped = 0
 
   for (const f of features) {
     if (f.kind !== layer || !f.ring) continue
     const ring = projectRing(f.ring)
     const faces = triangulate(ring, mToN)
-    if (!faces) continue
+    // A ring the triangulator refuses is a feature the user asked for and will
+    // not see. Counted, not swallowed — see LayerMesh.dropped.
+    if (!faces) { dropped++; continue }
 
     // Water: one level for the whole polygon, taken as the MINIMUM ground under
     // it — the surface of a river is not the height of its banks.
@@ -231,16 +287,21 @@ function buildSimpleSurface(
     color: layer === 'water' ? WATER_COLOR : 0xffffff,
     vertexColors: colors.length > 0,
     transparent: true,
-    // Slight translucency lets the basemap imagery read through, so a park
-    // tints the map instead of erasing what is under it.
-    opacity: layer === 'water' ? 0.72 : 0.45,
+    // Water stays translucent — a river genuinely shows what is under it. Ground
+    // cover does NOT: grass is a surface, not a tint over the map underneath,
+    // and at 0.45 the raster park printed on the basemap tile read straight
+    // through our own, which is why greenery looked like a wash rather than
+    // ground. This is the same correction the road layer already made for
+    // exactly the same reason — see the OPAQUE note in buildLinearLayer. A hair
+    // under one keeps the seam with the tiles from reading as a hard cutout.
+    opacity: layer === 'water' ? 0.72 : 0.92,
     depthWrite: false,
     side: THREE.DoubleSide,
   })
   const mesh = new THREE.Mesh(geometry, material)
   mesh.name = `osm-${layer}`
   mesh.renderOrder = SURFACE_RENDER_ORDER[layer]
-  return { object: mesh, count }
+  return { object: mesh, count, dropped }
 }
 
 /** Level a water body sits at: the LOWEST ground under its own outline. */
@@ -289,6 +350,65 @@ function subdivideOnGround(
 /** 4^5 = 1024 triangles from one face is already more than any view needs. */
 const MAX_SURFACE_SPLITS = 5
 
+/** One feature that survived triangulation, ready to be subdivided. */
+interface SurfacePiece {
+  f: OsmFeature
+  /** Ring in layer-local metres, wound counter-clockwise. */
+  ringM: Vec2[]
+  faces: Face[]
+  areaM2: number
+}
+
+/** Shoelace area of a ring given in metres. Sign discarded. */
+function ringAreaM2(ring: ReadonlyArray<Vec2>): number {
+  let twice = 0
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    twice += (ring[j].x + ring[i].x) * (ring[j].y - ring[i].y)
+  }
+  return Math.abs(twice) / 2
+}
+
+/**
+ * Project and triangulate every feature of a layer, counting what falls out.
+ *
+ * Separated from the meshing so the budget can be shared out with the WHOLE
+ * layer in hand. Anything the triangulator refuses is counted rather than
+ * quietly skipped — see LayerMesh.dropped.
+ */
+function collectSurfacePieces(
+  wanted: ReadonlyArray<OsmFeature>,
+  originX: number, originY: number, mToN: number,
+): { items: SurfacePiece[]; dropped: number } {
+  const items: SurfacePiece[] = []
+  let dropped = 0
+
+  for (const f of wanted) {
+    const ringM: Vec2[] = f.ring!.map((p) => {
+      const { nx, ny } = latLonToNormalized(p.lat, p.lon)
+      return { x: (nx - originX) / mToN, y: (ny - originY) / mToN }
+    })
+    const asVectors = ringM.map((p) => new THREE.Vector2(p.x, p.y))
+    if (THREE.ShapeUtils.isClockWise(asVectors)) {
+      asVectors.reverse()
+      ringM.reverse()
+    }
+
+    let faces: Face[]
+    try {
+      const raw = THREE.ShapeUtils.triangulateShape(asVectors, [])
+      if (raw.length === 0) { dropped++; continue }
+      faces = raw.map((t) => [t[0], t[1], t[2]] as Face)
+    } catch {
+      dropped++
+      continue
+    }
+
+    items.push({ f, ringM, faces, areaM2: ringAreaM2(ringM) })
+  }
+
+  return { items, dropped }
+}
+
 /**
  * The detailed path.
  *
@@ -327,41 +447,71 @@ function buildDetailedSurface(
   const shore: number[] = []
   const indices: number[] = []
   let vertexBase = 0
-  let budget = DETAIL_MAX_POINTS
   let count = 0
+  let dropped = 0
+  let degraded = 0
 
   /** Ground height in metres at a point given in layer-local metres. */
   const groundAt = (mx: number, my: number): number =>
     frame.groundM(originX + mx * mToN, originY + my * mToN)
 
-  for (const f of wanted) {
-    if (budget <= 0) break
+  // PASS 1 — triangulate EVERY feature before a single vertex of budget is spent.
+  //
+  // The budget used to be handed out first come, first served, with a `break`
+  // the moment it ran out. That abandoned whole features half way down the list:
+  // on a dense site the parks that happened to arrive late did not exist at all,
+  // and which ones survived depended on the order Overpass emitted them in —
+  // which is neither stable nor anything to do with what matters in the view.
+  //
+  // A vertex budget is a statement about how FINE a surface may be, never about
+  // how much of the world gets drawn. So every feature is guaranteed the points
+  // it needs merely to exist (its own ring), and only what is left over is
+  // shared out — by AREA, because that is what the subdivision is actually
+  // buying. A starved polygon degrades to its base triangulation; it never
+  // disappears.
+  const pieces = collectSurfacePieces(wanted, originX, originY, mToN)
+  dropped = pieces.dropped
 
-    // Ring in layer-local metres, wound counter-clockwise for the triangulator.
-    const ringM: Vec2[] = f.ring!.map((p) => {
-      const { nx, ny } = latLonToNormalized(p.lat, p.lon)
-      return { x: (nx - originX) / mToN, y: (ny - originY) / mToN }
-    })
-    const asVectors = ringM.map((p) => new THREE.Vector2(p.x, p.y))
-    if (THREE.ShapeUtils.isClockWise(asVectors)) {
-      asVectors.reverse()
-      ringM.reverse()
-    }
+  const basePoints = pieces.items.reduce((n, it) => n + it.ringM.length, 0)
+  /** Vertices left for refinement once existence is paid for. */
+  const spare = Math.max(0, DETAIL_MAX_POINTS - basePoints)
 
-    let faces: Face[]
-    try {
-      const raw = THREE.ShapeUtils.triangulateShape(asVectors, [])
-      if (raw.length === 0) continue
-      faces = raw.map((t) => [t[0], t[1], t[2]] as Face)
-    } catch {
-      continue
-    }
+  // Area is what the subdivision buys, but not all ground is worth the same.
+  // A park the reader is standing in earns its interior vertices; the ridge at
+  // the back of the shot follows the slope just as convincingly at a quarter
+  // the resolution, and spending the same on both is how the near ground ends
+  // up coarse. Weighting by distance to the model is what turned a flat
+  // per-area split into one that shows up in the picture.
+  const focusM = opts.focusN
+    ? { x: (opts.focusN.nx - originX) / mToN, y: (opts.focusN.ny - originY) / mToN }
+    : null
+  const weightOf = (it: { ringM: Vec2[] }): number => {
+    if (!focusM) return 1
+    let cx = 0
+    let cy = 0
+    for (const pt of it.ringM) { cx += pt.x; cy += pt.y }
+    cx /= it.ringM.length
+    cy /= it.ringM.length
+    // Gentle, and floored: a hard falloff would draw a visible resolution seam
+    // straight across the middle of a continuous hillside.
+    return Math.max(0.3, 1 - Math.hypot(cx - focusM.x, cy - focusM.y) / 1200)
+  }
+  const totalClaim = pieces.items.reduce((a, it) => a + it.areaM2 * weightOf(it), 0)
 
+  // PASS 2 — subdivide each feature within its own share.
+  for (const { f, ringM, faces, areaM2 } of pieces.items) {
+    const share = totalClaim > 0
+      ? (spare * areaM2 * weightOf({ ringM })) / totalClaim
+      : spare / pieces.items.length
     const mesh = subdivideMesh(ringM, faces, {
       maxEdgeM: DETAIL_EDGE_M[layer],
-      maxPoints: Math.max(ringM.length, budget),
+      maxPoints: ringM.length + share,
     })
-    budget -= mesh.points.length
+    // "Degraded" means it ASKED for refinement and did not get it. A small
+    // polygon already inside the edge target is finished, not starved.
+    if (mesh.points.length === ringM.length && longestEdge(ringM, faces) > DETAIL_EDGE_M[layer]) {
+      degraded++
+    }
 
     const tone = f.style.tone ?? FALLBACK_TONE[layer]
     const roughness = f.style.roughness ?? 0.4
@@ -428,7 +578,7 @@ function buildDetailedSurface(
   const mesh = new THREE.Mesh(geometry, material)
   mesh.name = `osm-${layer}`
   mesh.renderOrder = SURFACE_RENDER_ORDER[layer]
-  return { object: mesh, count }
+  return { object: mesh, count, dropped, degraded }
 }
 
 // ── Bridges ────────────────────────────────────────────────────────────────────
@@ -711,8 +861,23 @@ export function buildLinearLayer(
     }
   }
 
-  /** Carriageways, collected first and solved as a network once all are known. */
-  const networkWays: NetworkWay[] = []
+  /**
+   * Ways collected per CLASS, each solved as its own network once all are known.
+   *
+   * Two graphs, not one. A footway that dies on an avenue used to be a vertex of
+   * that avenue: it split the carriageway in two and produced a three-armed node
+   * whose outer arms are nearly antiparallel, which is precisely the wedge whose
+   * border intersection lands hundreds of metres away — so a pavement joining a
+   * street cost that street tens of metres of asphalt and a junction slab that
+   * has no business existing. Pedestrian ways touch roads constantly and almost
+   * never MERGE with them, so the honest model is two networks that overlap in
+   * plan and share no topology at all.
+   */
+  const networkWays: Record<RoadClass, NetworkWay[]> =
+    { vehicular: [], pedestrian: [], track: [] }
+
+  /** Per-class grain, as vertex ranges into the merged geometry. */
+  const roughBands: RoughnessBand[] = []
 
   const wanted = features.filter((f) => f.kind === kind && f.ring).slice(0, MAX_LINEAR)
   for (const f of wanted) {
@@ -761,13 +926,16 @@ export function buildLinearLayer(
     // we see it is precisely what made forks, merges and roundabouts a pile of
     // overlapping rectangles: at that point we do not yet know what it meets.
     if (kind === 'road') {
-      networkWays.push({
+      const cls = f.style.roadClass ?? 'vehicular'
+      networkWays[cls].push({
         id: f.id,
         points: line,
         halfWidth: half,
         tone,
-        centreLine: f.widthM >= CENTRE_LINE_MIN_WIDTH_M,
-        lanes: f.style.lanes,
+        // Paint belongs to carriageways. A centre line down a footpath is the
+        // clearest possible statement that nobody looked at what it is.
+        centreLine: cls === 'vehicular' && f.widthM >= CENTRE_LINE_MIN_WIDTH_M,
+        lanes: cls === 'vehicular' ? f.style.lanes : undefined,
         oneway: f.style.oneway,
       })
       continue
@@ -807,9 +975,16 @@ export function buildLinearLayer(
     count++
   }
 
-  if (networkWays.length > 0) {
-    const network = buildRoadNetwork(networkWays, { mToN })
-    const drop = SIDE_DROP_M.road * mToN
+  // One network per class, each with its own kerb, its own paint and its own
+  // grain. Order matters only for coplanar resolution: carriageways first, then
+  // the softer surfaces over them, so a pavement crossing a service road reads
+  // as being on top of it rather than sliced by it.
+  for (const cls of ROAD_CLASSES) {
+    const classWays = networkWays[cls]
+    if (classWays.length === 0) continue
+    const network = buildRoadNetwork(classWays, { mToN })
+    const drop = ROAD_CLASS_KERB_M[cls] * mToN
+    const bandStart = positions.length / 3
 
     for (const ribbon of network.ribbons) {
       // One quad per station, cut on the MITRED borders rather than on each
@@ -880,6 +1055,9 @@ export function buildLinearLayer(
       if (poly.length > 2) fan(poly[poly.length - 1], poly[0])
     }
 
+    // Grain is a property of the SURFACE, not of the layer, so it travels as a
+    // band of vertices rather than as one number for every ribbon in the patch.
+    roughBands.push({ start: bandStart, end: positions.length / 3, value: ROAD_CLASS_ROUGHNESS[cls] })
     count += network.count
   }
 
@@ -895,7 +1073,7 @@ export function buildLinearLayer(
   // A ribbon of unlit tarmac beside lit grass is the last thing in the scene
   // that still reads as a diagram.
   if (opts.quality === 'detailed') {
-    metricAttributes(geometry, mToN, ROUGHNESS_BY_KIND[kind])
+    metricAttributes(geometry, mToN, ROUGHNESS_BY_KIND[kind], roughBands)
     const paved = new THREE.Mesh(geometry, createSurfaceMaterial('asphalt', {
       opacity: kind === 'road' ? 0.94 : 0.96,
     }))
@@ -922,8 +1100,14 @@ export function buildLinearLayer(
   return finishLinear(surface, masts, kind, mToN, groundZ, lift, count, opts.assets)
 }
 
-/** Aggregate coarseness per linear layer: tarmac is fine, ballast is not. */
+/**
+ * Aggregate coarseness per linear layer, used for everything the road classes do
+ * not cover: ballast, platforms, painted crossings.
+ */
 const ROUGHNESS_BY_KIND: Record<'road' | 'rail', number> = { road: 0.22, rail: 0.85 }
+
+/** Solve order for the road networks. Softest surfaces land last, so on top. */
+const ROAD_CLASSES: readonly RoadClass[] = ['vehicular', 'track', 'pedestrian']
 
 /**
  * Attach the overhead line masts, if any, and hand back the layer.
@@ -1161,6 +1345,154 @@ function offsetCentreline(line: THREE.Vector2[], offset: number): THREE.Vector2[
 export const MAX_TREES = 4000
 
 /**
+ * Cap on trees GROWN from greenery polygons, on top of the mapped ones.
+ *
+ * The cost of a tree here is an instance, not a draw call: every tree in the
+ * patch of a given species goes into the same InstancedMesh whether a mapper
+ * placed it or this module grew it, so the neighbourhood stays at one draw call
+ * per authored species and two per procedural one however many trees there are.
+ * That property is the whole reason instancing was chosen and nothing below is
+ * allowed to break it.
+ *
+ * What the number costs is vertex work, and that is why it is not simply large.
+ * A wooded site now runs to roughly three times the instances it used to; the
+ * budget is thinned by area and by proximity to the model rather than raised
+ * further, because a ridge two kilometres out reads identically at half the
+ * stems and the near ground does not.
+ */
+export const MAX_SEEDED_TREES = 8000
+
+/**
+ * A tree ready to be written into an instance buffer, wherever it came from.
+ *
+ * Mapped nodes and grown canopy converge here deliberately. Keeping two paths
+ * would have meant two sets of instanced meshes and twice the draw calls, for
+ * two things that are the same object once they have a position and a size.
+ */
+interface PlacedTree {
+  id: string
+  nx: number
+  ny: number
+  shape: TreeShape
+  totalM: number
+  radiusM: number
+}
+
+/**
+ * Grow trees on every greenery polygon that should have them.
+ *
+ * Returns positions in NORMALIZED coordinates, converted from the metres the
+ * seeding module works in — that module is pure planar geometry and knows
+ * nothing about the map projection, which is what keeps it testable in numbers
+ * a person can read.
+ */
+function seededTrees(
+  features: ReadonlyArray<OsmFeature>,
+  mToN: number,
+  excludeAt: ((nx: number, ny: number) => boolean) | null | undefined,
+  regionName: BuildingRegion,
+): PlacedTree[] {
+  const green = features.filter(
+    (f) => f.kind === 'green' && f.ring && f.ring.length >= 3
+      && f.style.cover && f.style.cover !== 'bare',
+  )
+  if (green.length === 0) return []
+
+  // One origin for the whole layer, exactly as the surface builders use: metres
+  // measured from a single point keep the arithmetic away from the float32
+  // cliff that normalized units fall off at building scale.
+  const first = latLonToNormalized(green[0].ring![0].lat, green[0].ring![0].lon)
+  const originX = first.nx
+  const originY = first.ny
+
+  /**
+   * What each polygon grows, kept beside the seed regions rather than inside
+   * them: `SeedRegion` belongs to a module that is pure planar geometry, and
+   * species mixing is not geometry.
+   */
+  const speciesOf = new Map<string, { cover: GreenCover; tagged: boolean }>(
+    green.map((f) => [f.id, { cover: f.style.cover!, tagged: f.style.coverShape !== undefined }]),
+  )
+
+  const regions: Array<SeedRegion & { tagged: boolean }> = green.map((f) => ({
+    id: f.id,
+    ringM: f.ring!.map((pt) => {
+      const { nx, ny } = latLonToNormalized(pt.lat, pt.lon)
+      return { x: (nx - originX) / mToN, y: (ny - originY) / mToN }
+    }),
+    cover: f.style.cover!,
+    // The seeding module wants ONE species per region: it is planar geometry
+    // and has no business knowing about mixtures. So it is handed the mix's
+    // dominant, and each tree's actual species is resolved below — the layout
+    // is the same either way, only the silhouette on top of it changes.
+    shape: f.style.coverShape ?? coverSpeciesMix(f.style.cover!, regionName)[0][0],
+    // A tagged `leaf_type` is data about this wood and beats any regional
+    // guess, so it also stops the mixing: the mapper said what grows here.
+    tagged: f.style.coverShape !== undefined,
+  }))
+
+  // Proximity to the middle of the patch stands in for "is this in the shot".
+  // NOT the camera: a density that depends on where the camera is would mean
+  // rebuilding the canopy on every orbit, and one rebuild per camera move is the
+  // single thing this architecture refuses to do. The model is at the centre of
+  // the query box, it does not move, and it is what every view is of.
+  const weighted = regions.map((r) => {
+    let cx = 0
+    let cy = 0
+    for (const pt of r.ringM) { cx += pt.x; cy += pt.y }
+    cx /= r.ringM.length
+    cy /= r.ringM.length
+    const distanceM = Math.hypot(cx, cy)
+    return {
+      id: r.id,
+      areaM2: ringArea(r.ringM),
+      perimeterM: ringPerimeter(r.ringM),
+      // Full weight within a couple of hundred metres, tapering to a third at
+      // the edge of the query box. Gentle on purpose — a hard falloff would put
+      // a visible density seam across the middle of a continuous wood.
+      weight: Math.max(0.33, 1 - distanceM / 1400),
+    }
+  })
+
+  // The yardstick is the forest spacing, for every cover alike: measuring each
+  // class against its own would let a site full of sparse parkland claim the
+  // same budget as a site full of woodland, which is backwards. Margins are
+  // priced in alongside interiors, because both get planted and a budget that
+  // ignores half its own spend truncates instead of thinning.
+  const byId = new Map(weighted.map((w) => [w.id, w]))
+  const density = allocateDensity(weighted, MAX_SEEDED_TREES, (areaM2, id) =>
+    naturalTotalFor(areaM2, byId.get(id)?.perimeterM ?? 0, COVER_SPACING_M.forest))
+
+  const out: PlacedTree[] = []
+  for (const region of regions) {
+    if (out.length >= MAX_SEEDED_TREES) break
+    const d = density.get(region.id) ?? 1
+    const room = MAX_SEEDED_TREES - out.length
+    const grown: SeededTree[] = [
+      ...seedRegion(region, { density: d, maxTrees: room }),
+      ...seedFringe(region, { density: d, maxTrees: Math.max(0, room - 1) }),
+    ]
+    for (const t of grown) {
+      if (out.length >= MAX_SEEDED_TREES) break
+      const nx = originX + t.x * mToN
+      const ny = originY + t.y * mToN
+      if (excludeAt?.(nx, ny)) continue
+      const species = speciesOf.get(region.id)
+      out.push({
+        id: t.id, nx, ny,
+        // Untagged: the wood is a mixture, drawn per tree from the region's
+        // mix. Tagged: the mapper already answered, for every tree in it.
+        shape: region.tagged || !species
+          ? t.shape
+          : speciesFor(t.id, species.cover, regionName),
+        totalM: t.heightM, radiusM: t.radiusM,
+      })
+    }
+  }
+  return out
+}
+
+/**
  * Instanced trees: one cone canopy + one cylinder trunk, each an InstancedMesh.
  * Two draw calls for the whole neighbourhood, which is what makes thousands of
  * trees affordable. Deliberately low-poly — at map scale a tree is a silhouette,
@@ -1251,7 +1583,34 @@ export function buildTreeLayer(
   const frame = groundFrameFor(opts)
   const mToN = frame.mToN
 
-  const trees = features.filter((f) => f.kind === 'tree' && f.point).slice(0, MAX_TREES)
+  // Mapped nodes first — somebody stood on that pavement and recorded that
+  // tree, and a surveyed position outranks a grown one wherever the two meet.
+  const mapped: PlacedTree[] = features
+    .filter((f) => f.kind === 'tree' && f.point)
+    .slice(0, MAX_TREES)
+    .map((f) => {
+      const shape = f.style.treeShape ?? 'broadleaf'
+      const { nx, ny } = latLonToNormalized(f.point!.lat, f.point!.lon)
+      return {
+        id: f.id,
+        nx,
+        ny,
+        shape,
+        // Deterministic per-tree variation: same tree, same look, every time.
+        totalM: jitter(f.id, 0, f.height.heightM, 0.22),
+        radiusM: jitter(
+          f.id, 1, (f.style.crownRadiusM ?? 3) * TREE_PROPORTIONS[shape].crown, 0.25,
+        ),
+      }
+    })
+
+  // Untagged woods are given the species their part of the world grows. Without
+  // a longitude there is no region to ask, so the guess falls back to the
+  // broadleaf-dominant default rather than inventing a location.
+  const regionName = opts.anchorLon === undefined
+    ? 'generic'
+    : buildingRegion(opts.anchorLat, opts.anchorLon)
+  const trees = [...mapped, ...seededTrees(features, mToN, opts.excludeAt, regionName)]
   if (trees.length === 0) return null
 
   const group = new THREE.Group()
@@ -1265,31 +1624,33 @@ export function buildTreeLayer(
   const color = new THREE.Color()
   const zAxis = new THREE.Vector3(0, 0, 1)
 
-  /** Everything a placed tree needs, derived once and shared by both meshes. */
-  const measure = (f: OsmFeature) => {
-    const shape = f.style.treeShape ?? 'broadleaf'
-    const p = TREE_PROPORTIONS[shape]
-    const { nx, ny } = latLonToNormalized(f.point!.lat, f.point!.lon)
-    // Deterministic per-tree variation: same tree, same look, every time.
-    const totalM = jitter(f.id, 0, f.height.heightM, 0.22)
-    const radiusM = jitter(f.id, 1, (f.style.crownRadiusM ?? 3) * p.crown, 0.25)
+  /**
+   * Everything a placed tree needs, derived once and shared by both meshes.
+   *
+   * Every tree stands on the REAL ground, sampled where it is — which is what
+   * makes a wood follow the hillside it grew on instead of hovering over one
+   * height for the whole polygon.
+   */
+  const measure = (t: PlacedTree) => {
+    const p = TREE_PROPORTIONS[t.shape]
     return {
-      shape, p, nx, ny,
-      baseZ: frame.groundZ(nx, ny),
-      totalM,
-      radiusM,
-      trunkM: totalM * p.trunk,
+      shape: t.shape, p, nx: t.nx, ny: t.ny,
+      baseZ: frame.groundZ(t.nx, t.ny),
+      totalM: t.totalM,
+      radiusM: t.radiusM,
+      trunkM: t.totalM * p.trunk,
     }
   }
 
-  // One instanced mesh per species: four draw calls for the whole canopy, no
-  // matter how many trees the neighbourhood has.
-  const bySpecies = new Map<TreeShape, OsmFeature[]>()
-  for (const f of trees) {
-    const shape = f.style.treeShape ?? 'broadleaf'
-    const list = bySpecies.get(shape)
-    if (list) list.push(f)
-    else bySpecies.set(shape, [f])
+  // One instanced mesh per species: a handful of draw calls for the whole
+  // canopy, no matter how many trees the neighbourhood has. Mapped and grown
+  // trees share these meshes rather than getting their own — which is what
+  // keeps that count independent of where the trees came from.
+  const bySpecies = new Map<TreeShape, PlacedTree[]>()
+  for (const t of trees) {
+    const list = bySpecies.get(t.shape)
+    if (list) list.push(t)
+    else bySpecies.set(t.shape, [t])
   }
 
   // Detailed ground with unlit trees standing on it looks worse than both did
@@ -1315,16 +1676,16 @@ export function buildTreeLayer(
       const mesh = new THREE.InstancedMesh(unit, createAuthoredTreeMaterial(), subset.length)
       mesh.name = `osm-trees-${shape}-authored`
       const tint = new Float32Array(subset.length * 3)
-      subset.forEach((f, i) => {
-        const t = measure(f)
-        quat.setFromAxisAngle(zAxis, variate(f.id, 4) * Math.PI * 2)
+      subset.forEach((placed, i) => {
+        const t = measure(placed)
+        quat.setFromAxisAngle(zAxis, variate(placed.id, 4) * Math.PI * 2)
         // Base-anchored: the authored geometry stands on its own z=0, so the
         // trunk meets the ground without the crown/trunk split the procedural
         // canopies need.
         pos.set(t.nx, t.ny, t.baseZ)
         scale.set(t.radiusM * mToN, t.radiusM * mToN, t.totalM * mToN)
         mesh.setMatrixAt(i, m.compose(pos, quat, scale))
-        const [r, g, b] = foliageColor(f.id, shape)
+        const [r, g, b] = foliageColor(placed.id, shape)
         tint[i * 3] = r
         tint[i * 3 + 1] = g
         tint[i * 3 + 2] = b
@@ -1344,11 +1705,11 @@ export function buildTreeLayer(
     )
     trunks.name = `osm-trunks-${shape}`
 
-    subset.forEach((f, i) => {
-      const t = measure(f)
+    subset.forEach((placed, i) => {
+      const t = measure(placed)
       const canopyM = t.totalM - t.trunkM
       // Yaw only — a leaning tree would read as a bug, not as character.
-      quat.setFromAxisAngle(zAxis, variate(f.id, 4) * Math.PI * 2)
+      quat.setFromAxisAngle(zAxis, variate(placed.id, 4) * Math.PI * 2)
 
       // A round crown hangs off its centre; tiered and radial ones sit on the
       // top of the trunk.
@@ -1362,7 +1723,7 @@ export function buildTreeLayer(
         (t.p.baseAnchored ? canopyM : canopyM / 2) * mToN,
       )
       canopy.setMatrixAt(i, m.compose(pos, quat, scale))
-      canopy.setColorAt(i, color.setRGB(...foliageColor(f.id, t.shape)))
+      canopy.setColorAt(i, color.setRGB(...foliageColor(placed.id, t.shape)))
 
       const trunkR = Math.max(0.12, t.radiusM * t.p.trunkRadius) * mToN
       pos.set(t.nx, t.ny, t.baseZ)

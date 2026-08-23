@@ -260,3 +260,43 @@ describe('an ORIENTED footprint beats an axis-aligned box', () => {
     )(under)).toBe(false)
   })
 })
+
+describe('the model inside the mapped polygon', () => {
+  // The other direction of overlap, and the one that made a mapped block stand
+  // through a temple: OSM draws one outline around a whole precinct, the model
+  // is one building inside it, and not a single vertex of the OSM ring is
+  // anywhere near the model. Vertex coverage is zero, so the old test never
+  // fired however large the margin was.
+
+  it('takes the precinct that the model stands in', () => {
+    // 200 x 200 around the 100 x 100 plot: four times the area, plainly "the
+    // same object, drawn coarsely".
+    const precinct = square('building', 'p1', 0, 0, 200)
+    expect(createSuppressor([plot()], project)(precinct)).toBe(false)
+  })
+
+  it('leaves a polygon far larger than the model alone', () => {
+    // 400 x 400 is sixteen times the plan. That is a block or a campus, and
+    // deleting it because a model sits somewhere inside is the failure this
+    // guard exists to prevent.
+    const district = square('building', 'd1', 0, 0, 400)
+    expect(createSuppressor([plot()], project)(district)).toBe(true)
+  })
+
+  it('leaves a same-sized neighbour that does not contain the model', () => {
+    const neighbour = square('building', 'n1', 300, 300, 200)
+    expect(createSuppressor([plot()], project)(neighbour)).toBe(true)
+  })
+
+  it('still obeys the policy: a building model does not delete the park it is in', () => {
+    // Containment is not a licence to ignore what a facility is entitled to
+    // replace. `green` is not in the building policy, so the park stays.
+    const park = square('green', 'g1', 0, 0, 200)
+    expect(createSuppressor([plot()], project)(park)).toBe(true)
+  })
+
+  it('works with an unknown facility kind, which is what most IFC files are', () => {
+    const precinct = square('building', 'p2', 0, 0, 180)
+    expect(createSuppressor([plot('unknown')], project)(precinct)).toBe(false)
+  })
+})

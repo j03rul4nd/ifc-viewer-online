@@ -17,10 +17,12 @@ import { createBasemapEngine, type BasemapEngine } from './basemap-engine'
 import { buildTerrainPatch, tileNormalizedCenter, TERRAIN_EDGE_FADE, type TerrainPatch } from './geo-terrain'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from './terrain-look'
 import {
-  buildBuildingsGeometry, type BuildingDetail, type BuildingRange,
+  buildBuildingsGeometry,
+  type BuildingDetail, type BuildingRange, type ContextTone,
 } from './building-mesh'
 import {
   createSuppressor, footprintFromBounds, DEFAULT_MARGIN_M,
+  expandPolygon, pointInPolygon,
   type FacilityKind, type SuppressionPolicy,
 } from './context-suppression'
 import { createFacadeMaterial } from './facade-shader'
@@ -194,6 +196,11 @@ export interface GeoSystemAPI {
   /** Switch the surrounding facades between plain extrusions and storey bands. */
   setContextDetail(level: BuildingDetail): void
   /**
+   * How loud the context is: its own palette, or near-monochrome masses that
+   * only give the model scale. Independent of the detail level.
+   */
+  setContextTone(tone: ContextTone): void
+  /**
    * Decorative cars and trains. Deliberately NOT a feature layer: their
    * placement is invented, and the UI has to be able to say so separately.
    */
@@ -272,6 +279,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let buildingsEnabled = false
   /** How much of a surrounding facade to model. */
   let contextDetail: BuildingDetail = 'simple'
+  /**
+   * How loud the surroundings are allowed to be. Independent of `contextDetail`
+   * on purpose — see BuildingMeshOptions.contextTone.
+   */
+  let contextTone: ContextTone = 'natural'
   /** Invalidates an asset fetch the user has already navigated away from. */
   let assetEpoch = 0
   /** Decorative vehicles. Not a feature layer: OSM does not map them. */
@@ -339,6 +351,51 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * a model is added, removed or re-placed, and a stale footprint deletes the
    * wrong block. It is a handful of vector maths against one box.
    */
+  /**
+   * The model's plan in normalized coordinates, or null when there is nothing
+   * to stand on. Shared by the feature suppressor and the seeded canopy, so the
+   * two can never disagree about where the model is.
+   */
+  function modelFootprintPolygon(): THREE.Vector2[] | null {
+    if (!geoRoot || !placement) return null
+    const scratch = new THREE.Vector3()
+    const toNormalized = (wx: number, wz: number): { x: number; y: number } => {
+      const local = geoRoot!.worldToLocal(scratch.set(wx, 0, wz))
+      return { x: local.x, y: local.y }
+    }
+    const oriented = ctx.getActiveModelFootprint?.()
+    if (oriented && oriented.length >= 3) {
+      return oriented.map((c) => {
+        const n = toNormalized(c.x, c.z)
+        return new THREE.Vector2(n.x, n.y)
+      })
+    }
+    const bounds = ctx.getActiveModelBounds()
+    if (!bounds) return null
+    const mToN = metresToNormalized(placement.lat)
+    return footprintFromBounds(
+      bounds, toNormalized, facilityKind, DEFAULT_MARGIN_M * mToN,
+    ).polygon
+  }
+
+  /**
+   * Ground the seeded canopy must leave alone.
+   *
+   * A park polygon deliberately SURVIVES context suppression — a tower does not
+   * replace the park it stands in — so without this a wood grown from that
+   * polygon would come up straight through the model, which is the very artefact
+   * suppression exists to prevent, arriving by a new route.
+   */
+  function modelExclusion(): ((nx: number, ny: number) => boolean) | null {
+    if (!suppressContext) return null
+    const poly = modelFootprintPolygon()
+    if (!poly || poly.length < 3) return null
+    // A tree is a point with a crown; a couple of metres of clearance keeps
+    // branches out of the facades rather than merely out of the plan.
+    const grown = expandPolygon(poly, DEFAULT_MARGIN_M * metresToNormalized(placement!.lat) * 2)
+    return (nx, ny) => pointInPolygon({ x: nx, y: ny }, grown)
+  }
+
   function modelSuppressor(): (f: OsmFeature) => boolean {
     if (!geoRoot || !placement) return () => true
     const mToN = metresToNormalized(placement.lat)
@@ -653,6 +710,14 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       rebuildLayers()
     },
 
+    setContextTone(tone) {
+      if (tone === contextTone) return
+      contextTone = tone
+      // Pure appearance: rebuilt from the features already in memory, never
+      // refetched. Flipping it is as cheap as toggling a layer.
+      rebuildLayers()
+    },
+
     setContextDetail(level) {
       if (level === contextDetail) return
       contextDetail = level
@@ -765,6 +830,27 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     return contextDetail === 'simple' ? 'simple' : 'detailed'
   }
 
+  /**
+   * Say how much of a ground layer made it onto the screen.
+   *
+   * Quiet when nothing was lost, so a healthy site does not fill the console.
+   */
+  function reportSurfaceLoss(
+    layer: 'green' | 'sand' | 'rock' | 'water',
+    source: ReadonlyArray<OsmFeature>,
+    built: { count: number; dropped?: number; degraded?: number } | null,
+  ): void {
+    const wanted = source.reduce((n, f) => (f.kind === layer && f.ring ? n + 1 : n), 0)
+    if (wanted === 0) return
+    const drawn = built?.count ?? 0
+    const dropped = built?.dropped ?? 0
+    const degraded = built?.degraded ?? 0
+    if (dropped === 0 && degraded === 0 && drawn === wanted) return
+    log.info('surface layer', {
+      layer, quality: surfaceQuality(), wanted, drawn, dropped, degraded,
+    })
+  }
+
   function rebuildLayers(): number {
     clearLayers()
     for (const o of propObjects.splice(0)) { o.removeFromParent(); disposeLayer(o) }
@@ -782,6 +868,17 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
     const opts = {
       anchorLat: placement.lat,
+      // The palette needs to know WHERE it is. Latitude alone cannot tell Kyoto
+      // from Rotterdam, and painting both from one list of European renders is
+      // what made every neighbourhood on earth look like the same suburb.
+      anchorLon: placement.lon,
+      // What the view is OF. Budgets — ground subdivision, seeded canopy — spend
+      // themselves around it rather than spreading evenly over a square
+      // kilometre of which the reader will see one corner.
+      focusN: (() => {
+        const n = latLonToNormalized(placement.lat, placement.lon)
+        return { nx: n.nx, ny: n.ny }
+      })(),
       // Sit everything on the terrain when it exists; on the flat map the
       // ground plane is the honest answer.
       sampleGroundM: terrain ? (nx: number, ny: number) => terrain!.sampleGroundM(nx, ny) : null,
@@ -817,7 +914,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // right answer when the surroundings are only there for orientation.
       const litFacades = contextDetail === 'detailed'
       const built = buildBuildingsGeometry(footprints, {
-        ...opts, detail: contextDetail, lit: litFacades,
+        ...opts, detail: contextDetail, lit: litFacades, contextTone,
       })
       if (built) {
         const mesh = new THREE.Mesh(
@@ -843,6 +940,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       if (!layerVisibility[layer]) continue
       const built = buildSurfaceLayer(visibleFeatures, layer, opts)
       if (built) { addLayer(layer, built.object) }
+      // What the layer could NOT draw. A park that fails to triangulate and a
+      // park that was never in the data look identical on screen, and guessing
+      // between them from a screenshot is how an afternoon disappears — so the
+      // builders count both and the number is said out loud here.
+      reportSurfaceLoss(layer, visibleFeatures, built)
     }
 
     // Ground ribbons before the things that sit on them: roads over greenery,
@@ -871,7 +973,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     }
 
     if (layerVisibility.tree) {
-      const built = buildTreeLayer(visibleFeatures, opts)
+      const built = buildTreeLayer(visibleFeatures, { ...opts, excludeAt: modelExclusion() })
       if (built) { addLayer('tree', built.object) }
     }
 

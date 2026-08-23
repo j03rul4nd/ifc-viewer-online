@@ -428,3 +428,79 @@ describe('hit-testing a merged neighbourhood', () => {
     expect(built.ranges.map((r) => r.id)).toEqual(['w2'])
   })
 })
+
+describe('context palette and tone', () => {
+  /** Every distinct wall colour in the merged buffer. */
+  const tones = (g: THREE.BufferGeometry): Set<string> => {
+    const c = g.getAttribute('color')
+    const out = new Set<string>()
+    for (let i = 0; i < c.count; i++) {
+      out.add([c.getX(i), c.getY(i), c.getZ(i)].map((n) => n.toFixed(3)).join())
+    }
+    return out
+  }
+
+  const block = (n: number): BuildingFootprint[] =>
+    Array.from({ length: n }, (_, i) => squareFootprint(`b${i}`, 16, 10 + (i % 5)))
+
+  it('paints the same block differently in Kyoto and in Barcelona', () => {
+    // The regression this closes: with no longitude, one list of six European
+    // renders painted the planet, and a street in Japan came out a Dutch suburb.
+    const kyoto = buildBuildingsGeometry(block(24), { anchorLat: 34.99, anchorLon: 135.78 })!
+    const bcn = buildBuildingsGeometry(block(24), { anchorLat: 41.38, anchorLon: 2.17 })!
+    expect([...tones(kyoto.geometry)].join('|')).not.toBe([...tones(bcn.geometry)].join('|'))
+  })
+
+  it('behaves exactly as before when nobody says where it is', () => {
+    const a = buildBuildingsGeometry(block(12), OPTS)!
+    const b = buildBuildingsGeometry(block(12), { anchorLat: 41.3874 })!
+    expect([...tones(a.geometry)]).toEqual([...tones(b.geometry)])
+  })
+
+  it('gives a temple the roof it is known for, without a roof tag', () => {
+    const plain = buildBuildingsGeometry(
+      [squareFootprint('t', 20, 12)], { anchorLat: 34.99, anchorLon: 135.78 },
+    )!
+    const temple = buildBuildingsGeometry([{
+      ...squareFootprint('t', 20, 12),
+      style: { roofShape: 'flat', roofHeightM: 0, use: 'temple' },
+    }], { anchorLat: 34.99, anchorLon: 135.78 })!
+    // A pitched roof is more geometry than a flat cap, and a temple gets one.
+    expect(temple.geometry.getAttribute('position').count)
+      .toBeGreaterThan(plain.geometry.getAttribute('position').count)
+  })
+
+  it('still lets a tagged roof shape win over anything inferred', () => {
+    const tagged = buildBuildingsGeometry([{
+      ...squareFootprint('t', 20, 12),
+      style: { roofShape: 'flat', roofHeightM: 0, roofTagged: true, use: 'house' },
+    }], { anchorLat: 34.99, anchorLon: 135.78 })!
+    // 30 vertices is the flat-capped square from the roof-shape tests above.
+    expect(tagged.geometry.getAttribute('position').count).toBe(30)
+  })
+
+  it('drains the colour in the discreet treatment but keeps the massing', () => {
+    const natural = buildBuildingsGeometry(block(24), { anchorLat: 34.99, anchorLon: 135.78 })!
+    const neutral = buildBuildingsGeometry(
+      block(24), { anchorLat: 34.99, anchorLon: 135.78, contextTone: 'neutral' },
+    )!
+    // Same skyline, same footprints — only the paint changes.
+    expect(neutral.geometry.getAttribute('position').count)
+      .toBe(natural.geometry.getAttribute('position').count)
+    expect(tones(neutral.geometry).size).toBeLessThan(tones(natural.geometry).size)
+  })
+
+  it('overrides even a tagged colour when the context must stay quiet', () => {
+    const loud = [{
+      ...squareFootprint('c', 20, 12),
+      style: { roofShape: 'flat' as const, roofHeightM: 0, wallColor: '#ff0000' },
+    }]
+    const g = buildBuildingsGeometry(loud, { anchorLat: 41.38, contextTone: 'neutral' })!
+    const c = g.geometry.getAttribute('color')
+    for (let i = 0; i < c.count; i++) {
+      // Nothing red survives: a discreet context that lets one building shout
+      // is not discreet.
+      expect(c.getX(i) - c.getZ(i)).toBeLessThan(0.2)
+    }
+  })
+})

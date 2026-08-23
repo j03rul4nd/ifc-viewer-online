@@ -98,6 +98,46 @@ export const DEFAULT_MARGIN_M = 2
 const COVERAGE_FRACTION = 0.6
 
 /**
+ * The other direction: how much bigger than the model an OSM polygon may be and
+ * still count as describing the same thing.
+ *
+ * The coverage test above only fires when the OSM feature is INSIDE the model,
+ * and that is only half of reality. Mappers routinely draw one polygon around a
+ * whole complex — a temple precinct, a school, a factory, an urban block — and
+ * the surveyed model of one building inside it never puts a single vertex of
+ * that polygon anywhere near itself. Coverage comes out at zero and the mapped
+ * mass stands straight through the model, which is the failure this constant
+ * exists to close.
+ *
+ * The ratio is what keeps it honest. "The model's centre is inside this
+ * polygon" on its own would delete an entire `landuse` district because a bus
+ * shelter sits in it; requiring the polygon to be within a few multiples of the
+ * model's own plan means "this outline is about this building", not "this
+ * outline happens to contain it".
+ */
+const CONTAINMENT_AREA_RATIO = 6
+
+/** Shoelace area of a polygon. Sign discarded; units are the caller's. */
+export function polygonArea(poly: ReadonlyArray<{ x: number; y: number }>): number {
+  if (poly.length < 3) return 0
+  let twice = 0
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    twice += (poly[j].x + poly[i].x) * (poly[j].y - poly[i].y)
+  }
+  return Math.abs(twice) / 2
+}
+
+/** Centroid of a polygon's vertices. Good enough for a containment probe. */
+export function polygonCentre(
+  poly: ReadonlyArray<{ x: number; y: number }>,
+): { x: number; y: number } {
+  let x = 0
+  let y = 0
+  for (const p of poly) { x += p.x; y += p.y }
+  return { x: x / poly.length, y: y / poly.length }
+}
+
+/**
  * IFC spatial classes that say what a file is a model OF.
  *
  * IFC4x3 is what made this answerable: before it, infrastructure was modelled
@@ -150,7 +190,9 @@ export function facilityKindFromTree(
 }
 
 /** Point-in-polygon, ray casting. Boundary counts as inside often enough. */
-export function pointInPolygon(p: { x: number; y: number }, poly: ReadonlyArray<THREE.Vector2>): boolean {
+export function pointInPolygon(
+  p: { x: number; y: number }, poly: ReadonlyArray<{ x: number; y: number }>,
+): boolean {
   let inside = false
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
     const a = poly[i]
@@ -209,6 +251,8 @@ export function createSuppressor(
     }
     return {
       poly, minX, minY, maxX, maxY,
+      area: polygonArea(poly),
+      centre: polygonCentre(poly),
       policy: { ...DEFAULT_POLICY[f.kind], ...overrides },
     }
   })
@@ -226,15 +270,33 @@ export function createSuppressor(
 
       const ring = feature.ring
       if (!ring || ring.length === 0) continue
+      const projected = ring.map(project)
+
+      // Direction one: the mapped feature sits inside the model's plan. The
+      // ring's own bounds fall out of the same walk and pay for the cheap
+      // rejection that direction two opens with.
       let inside = 0
-      let tested = 0
-      for (const q of ring) {
-        const p = project(q)
-        tested++
+      let rMinX = Infinity; let rMinY = Infinity
+      let rMaxX = -Infinity; let rMaxY = -Infinity
+      for (const p of projected) {
+        if (p.x < rMinX) rMinX = p.x
+        if (p.y < rMinY) rMinY = p.y
+        if (p.x > rMaxX) rMaxX = p.x
+        if (p.y > rMaxY) rMaxY = p.y
         if (p.x < f.minX || p.x > f.maxX || p.y < f.minY || p.y > f.maxY) continue
         if (pointInPolygon(p, f.poly)) inside++
       }
-      if (tested > 0 && inside / tested >= COVERAGE_FRACTION) return false
+      if (inside / projected.length >= COVERAGE_FRACTION) return false
+
+      // Direction two: the model sits inside the mapped feature. Guarded by
+      // area, so a precinct goes and a district stays — see the constant.
+      if (projected.length < 3 || f.area <= 0) continue
+      if (f.centre.x < rMinX || f.centre.x > rMaxX
+        || f.centre.y < rMinY || f.centre.y > rMaxY) continue
+      if (polygonArea(projected) <= f.area * CONTAINMENT_AREA_RATIO
+        && pointInPolygon(f.centre, projected)) {
+        return false
+      }
     }
     return true
   }

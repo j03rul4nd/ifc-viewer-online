@@ -5,6 +5,7 @@ import {
   roadWidth, railWidth, roadTone, featureLabel, isCrossing, CROSSING_BAND_M,
   waterwayWidth, bufferWaterway,
   FEATURE_KINDS, MIN_AREA_M2,
+  roadClass, ROAD_CLASS_ROUGHNESS, ROAD_CLASS_KERB_M, buildingUse,
   type OsmFeature,
 } from './osm-features'
 
@@ -709,5 +710,78 @@ describe('parseOsmFeatures — linear watercourses', () => {
     const q = buildFeaturesQuery({ south: 0, west: 0, north: 1, east: 1 })
     expect(q).toContain('waterway')
     expect(q).toMatch(/river\|stream\|canal/)
+  })
+})
+
+describe('roadClass', () => {
+  it('separates what people walk on from what people drive on', () => {
+    for (const hw of ['footway', 'path', 'steps', 'pedestrian', 'cycleway', 'bridleway']) {
+      expect(roadClass({ highway: hw }), hw).toBe('pedestrian')
+    }
+    for (const hw of ['motorway', 'trunk', 'primary', 'residential', 'service', 'living_street']) {
+      expect(roadClass({ highway: hw }), hw).toBe('vehicular')
+    }
+  })
+
+  it('gives a track its own answer', () => {
+    // It carries vehicles, so it is not a footpath; it is three metres of
+    // gravel, so it is not a carriageway either.
+    expect(roadClass({ highway: 'track' })).toBe('track')
+  })
+
+  it('treats an unknown or missing highway tag as a carriageway', () => {
+    expect(roadClass({ highway: 'busway' })).toBe('vehicular')
+    expect(roadClass(undefined)).toBe('vehicular')
+  })
+
+  it('travels on the style, so the mesh stage never sees a tag', () => {
+    expect(resolveFeatureStyle('road', { highway: 'footway' }).roadClass).toBe('pedestrian')
+    expect(resolveFeatureStyle('road', { highway: 'trunk' }).roadClass).toBe('vehicular')
+  })
+
+  it('gives a footpath a flush edge and a coarser surface than tarmac', () => {
+    expect(ROAD_CLASS_KERB_M.pedestrian).toBeLessThan(ROAD_CLASS_KERB_M.vehicular)
+    expect(ROAD_CLASS_ROUGHNESS.pedestrian).toBeGreaterThan(ROAD_CLASS_ROUGHNESS.vehicular)
+    expect(ROAD_CLASS_ROUGHNESS.track).toBeGreaterThan(ROAD_CLASS_ROUGHNESS.pedestrian)
+  })
+})
+
+describe('buildingUse', () => {
+  it('reads the mapper own answer from the building key', () => {
+    expect(buildingUse({ building: 'house' })).toBe('house')
+    expect(buildingUse({ building: 'apartments' })).toBe('apartments')
+    expect(buildingUse({ building: 'warehouse' })).toBe('industrial')
+    expect(buildingUse({ building: 'retail' })).toBe('retail')
+    expect(buildingUse({ building: 'garage' })).toBe('shed')
+  })
+
+  it('falls back to amenity for the very common building=yes', () => {
+    expect(buildingUse({ building: 'yes', amenity: 'place_of_worship' })).toBe('temple')
+    expect(buildingUse({ building: 'yes', amenity: 'townhall' })).toBe('civic')
+  })
+
+  it('tells a shrine from a temple, because they look nothing alike', () => {
+    expect(buildingUse({ building: 'temple', religion: 'shinto' })).toBe('shrine')
+    expect(buildingUse({ building: 'shrine', religion: 'buddhist' })).toBe('temple')
+    expect(buildingUse({ building: 'shrine' })).toBe('shrine')
+  })
+
+  it('says generic for the value that tells us nothing', () => {
+    // `building=yes` is the most common value in the database.
+    expect(buildingUse({ building: 'yes' })).toBe('generic')
+    expect(buildingUse({})).toBe('generic')
+    expect(buildingUse(undefined)).toBe('generic')
+  })
+
+  it('travels on the style, so the mesh stage never sees a tag', () => {
+    const style = resolveFeatureStyle('building', { building: 'temple', religion: 'shinto' })
+    expect(style.use).toBe('shrine')
+  })
+
+  it('records whether the roof shape was actually tagged', () => {
+    // Without this, "the mapper says flat" and "nobody said anything" are the
+    // same value, and no roof can ever be inferred.
+    expect(resolveFeatureStyle('building', { building: 'house' }).roofTagged).toBe(false)
+    expect(resolveFeatureStyle('building', { 'roof:shape': 'flat' }).roofTagged).toBe(true)
   })
 })
