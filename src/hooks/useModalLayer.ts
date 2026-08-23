@@ -7,7 +7,7 @@
 // thing that knows a component has a lifecycle, which keeps the two concerns
 // from growing into each other.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { pushModal, popModal, isTopModal, modalZIndex } from '../lib/ui/modal-stack'
 
 export interface ModalLayer {
@@ -24,14 +24,21 @@ export interface ModalLayer {
  * moves, so a dialog opened on top of this one actually lands on top of it —
  * which a z-index chosen at write time cannot do.
  */
-export function useModalLayer(id: string, open: boolean): ModalLayer {
+export function useModalLayer(id: string, open: boolean, onClose?: () => void): ModalLayer {
   // A counter, not the stack itself: the stack is module state, so the only
   // thing a render needs is a reason to read it again.
   const [, bump] = useState(0)
 
+  // Through a ref so a changing handler identity does not re-run the effect and
+  // re-announce the modal — which would look like it closed and reopened.
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
   useEffect(() => {
     if (!open) return
-    pushModal(id)
+    // The close handler is what makes exclusivity possible: a modal opening
+    // needs a way to dismiss whatever it is taking over from.
+    pushModal(id, () => onCloseRef.current?.())
     bump((n) => n + 1)
     return () => {
       popModal(id)

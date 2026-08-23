@@ -24,7 +24,7 @@
 // PURE apart from the listener set, so the ordering rules are testable without
 // mounting anything.
 
-import { anyModalOpen } from './modal-stack'
+import { anyModalOpen, addPanelCloser } from './modal-stack'
 
 export type PanelId = string
 
@@ -45,6 +45,25 @@ export function resetPanelRegistry(): void {
   detachEscape?.()
   detachEscape = null
 }
+
+/**
+ * Close every open panel.
+ *
+ * Used when a modal takes over: a dialog is exclusive, and the selected
+ * element's properties sitting beside it are a second window claiming to be
+ * what you are working on.
+ */
+export function closeAllPanels(): void {
+  for (const entry of [...open.values()]) {
+    open.delete(entry.id)
+    entry.close()
+  }
+  syncEscapeListener()
+}
+
+// Handed to the modal stack rather than imported by it: that module must not
+// depend on this one, since this one already depends on it.
+addPanelCloser(closeAllPanels)
 
 /** Panels currently open, oldest first. Exported for tests and diagnostics. */
 export function openPanels(): PanelId[] {

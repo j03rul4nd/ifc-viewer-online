@@ -123,8 +123,10 @@ describe('a modal on top owns Escape, attribute or not', () => {
     const { pushModal, resetModalStack } = await import('./modal-stack')
     resetModalStack()
     const close = vi.fn()
-    announceOpen('map', close)
     pushModal('export')
+    // The panel opens while the dialog is up — the SDK and deep links can do
+    // this. It must not then steal Escape from the dialog.
+    announceOpen('map', close)
     const event = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })
     window.dispatchEvent(event)
     expect(close).not.toHaveBeenCalled()

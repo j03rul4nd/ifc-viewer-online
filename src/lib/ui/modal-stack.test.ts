@@ -1,26 +1,38 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
   pushModal, popModal, isTopModal, modalZIndex, modalStack, anyModalOpen,
-  resetModalStack, MODAL_BASE_Z,
+  resetModalStack, addPanelCloser, resetPanelClosers, MODAL_BASE_Z,
 } from './modal-stack'
 
 beforeEach(resetModalStack)
 
 describe('the order is the order things were opened', () => {
-  it('stacks by opening, not by a hard-coded number', () => {
+  it('lets one modal in at a time, and closes the one it takes over from', () => {
     // Ten dialogs used to pick their own z-index — 70, 72, 80, 85, 100, 200 —
-    // so two that could be open together stacked in whatever order those
-    // numbers happened to fall.
-    pushModal('a')
+    // and two of them could end up on screen together, stacked in whatever
+    // order those numbers happened to fall. A dialog is a question; the app has
+    // no reason to ask two at once.
+    const closeA = vi.fn()
+    pushModal('a', closeA)
     pushModal('b')
-    expect(modalStack()).toEqual(['a', 'b'])
-    expect(modalZIndex('b')).toBeGreaterThan(modalZIndex('a'))
+    expect(modalStack()).toEqual(['b'])
+    expect(closeA).toHaveBeenCalledTimes(1)
   })
 
-  it('leaves room between layers for a backdrop and its card', () => {
-    pushModal('a')
-    pushModal('b')
-    expect(modalZIndex('b') - modalZIndex('a')).toBeGreaterThanOrEqual(2)
+  it('closes the floating panels too', () => {
+    // The reported bug: the selected element's properties sitting beside a
+    // dialog, two windows both claiming to be what you are working on.
+    resetPanelClosers()
+    const closePanels = vi.fn()
+    const closeProperties = vi.fn()
+    addPanelCloser(closePanels)
+    // The properties column is not in the panel registry — panels step it
+    // aside rather than closing it — so it hands in a closer of its own.
+    addPanelCloser(closeProperties)
+    pushModal('export')
+    expect(closePanels).toHaveBeenCalledTimes(1)
+    expect(closeProperties).toHaveBeenCalledTimes(1)
+    resetPanelClosers()
   })
 
   it('starts above the floating panels', () => {
@@ -38,13 +50,13 @@ describe('only the top one is the top one', () => {
     expect(isTopModal('b')).toBe(true)
   })
 
-  it('hands the top back when the one above closes', () => {
-    // A dialog opened from a dialog — the account modal over the upsell that
-    // offered it — must give Escape back when it goes.
+  it('leaves nothing on top once the only modal closes', () => {
+    // There is no "the one underneath" any more: opening a modal closed it.
     pushModal('upsell')
     pushModal('account')
     popModal('account')
-    expect(isTopModal('upsell')).toBe(true)
+    expect(isTopModal('upsell')).toBe(false)
+    expect(anyModalOpen()).toBe(false)
   })
 
   it('says nothing is on top when nothing is open', () => {

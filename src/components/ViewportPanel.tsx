@@ -150,6 +150,9 @@ export function ViewportPanel({
   // reverse.
   const style: React.CSSProperties = {
     width: `min(${widthPx}px, calc(100vw - 24px))`,
+    // To the LEFT of the rail, which is the panel's own minimised form. Sharing
+    // the edge with it would put the card on top of the control that closes it.
+    right: 'var(--panel-rail-clearance)',
     top: anchor === 'top' ? '3.5rem' : undefined,
     bottom: 'var(--viewport-chrome-clearance)',
   }
@@ -167,7 +170,7 @@ export function ViewportPanel({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 12 }}
           transition={{ duration: 0.2 }}
-          className="absolute right-3 z-20 pointer-events-auto select-none flex flex-col"
+          className="absolute z-20 pointer-events-auto select-none flex flex-col"
           style={style}
         >
           {/* `max-h-full` rather than a height: a short panel stays short, and a

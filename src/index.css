@@ -37,6 +37,12 @@
      tall. The first value here was 132px, and the panel still overlapped them by
      38px — which is the kind of error that only a measurement finds, because
      38px of overlap still looks roughly right in a screenshot. */
+  /* The minimised form of a floating panel: a rail of icons on the right edge.
+     Panels sit to its LEFT, so this is the width they give up. One token, so
+     the rail and the lane cannot drift apart. See docs/PANEL_RAIL.md. */
+  --panel-rail-w: 40px;
+  --panel-rail-clearance: calc(var(--panel-rail-w) + 20px);
+
   --viewport-chrome-h: 172px;
   --viewport-chrome-clearance: calc(var(--viewport-chrome-h) + 20px);
 }

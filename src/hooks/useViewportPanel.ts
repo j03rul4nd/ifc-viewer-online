@@ -8,7 +8,6 @@
 
 import { useEffect, useRef } from 'react'
 import { announceOpen, announceClosed } from '../lib/ui/panel-registry'
-import { useUIStore } from '../stores/uiStore'
 
 /**
  * Register a floating panel while it is open.
@@ -32,27 +31,17 @@ export function useViewportPanel(id: string, open: boolean, onClose?: () => void
   }, [id, open])
 
   // ── ONE LANE ────────────────────────────────────────────────────────────────
-  // The selection sidebar and these panels are both pinned to the right of the
+  // The properties column and these panels are both pinned to the right of the
   // viewport, and measuring caught them doing it at the same time: a 292px panel
-  // at x 864 over a 340px sidebar at x 816, on a canvas 1168 wide. Two windows,
-  // one lane, one on top of the other.
+  // at x 864 over a 340px column at x 816, on a canvas 1168 wide.
   //
-  // So the lane holds one at a time. The sidebar collapses to its strip while a
-  // panel is open and comes back when it closes — it is not closed, it is
-  // stepped aside, and the strip is still the way back to it.
-  const restoreSidebar = useRef(false)
-  useEffect(() => {
-    if (!open) return
-    const store = useUIStore.getState()
-    if (!store.sidebarExpanded) return
-    restoreSidebar.current = true
-    store.setSidebarExpanded(false)
-    return () => {
-      if (!restoreSidebar.current) return
-      restoreSidebar.current = false
-      // Only if the user has not since expanded it themselves — their action
-      // outranks this one.
-      if (!useUIStore.getState().sidebarExpanded) useUIStore.getState().setSidebarExpanded(true)
-    }
-  }, [open])
+  // This used to be handled here, by stepping the column aside and restoring it
+  // afterwards. That was one-directional — nothing happened when the column
+  // opened over a panel — so opening properties while Measure was up left both
+  // on screen. The column is now a registry member like any other panel, so the
+  // rule is symmetrical and lives in one place instead of two.
+  //
+  // The cost is that the column no longer springs back when the panel closes.
+  // That is the right trade: a peer does not reopen itself, a rail icon brings
+  // it back in one click, and a panel that reappears on its own reads as a bug.
 }

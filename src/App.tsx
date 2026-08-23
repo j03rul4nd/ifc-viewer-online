@@ -9,6 +9,8 @@ import UploadOverlay from './components/UploadOverlay'
 import Landing from './components/Landing'
 import ModelTree from './components/ModelTree'
 import { ColumnStrip } from './components/ColumnStrip'
+import { PanelRail } from './components/PanelRail'
+import { usePanelRail } from './hooks/usePanelRail'
 import ValidationPanel from './components/ValidationPanel'
 import ToastContainer from './components/ToastContainer'
 import CameraControls from './components/CameraControls'
@@ -231,6 +233,14 @@ export default function App() {
   const { t: tViewer } = useTranslation('viewer')
   const { t: tTourNs } = useTranslation('tour')
   const { t: tTree } = useTranslation('tree')
+  const { t: tToolbar } = useTranslation('toolbar')
+  const { t: tSidebar } = useTranslation('sidebar')
+  // Each panel already names itself in its own namespace; the rail reuses those
+  // names rather than inventing a second set that could drift from the headers.
+  const { t: tCloud } = useTranslation('pointcloud')
+  const { t: tMesh } = useTranslation('mesh')
+  const { t: tSolar } = useTranslation('solar')
+
 
   // ── Embed / deep-link URL params (?model=…&embed=1&…) ─────────────────────
   // Parsed once at mount; drives auto-loading remote models and the chrome a
@@ -555,6 +565,7 @@ export default function App() {
   const clientMode = useUIStore((s) => s.clientMode)
   const clientAdvancedTools = useUIStore((s) => s.clientAdvancedTools)
 
+
   // Effective chrome (D-25): the client skin layers over the URL-derived embed
   // chrome — everything technical hidden, camera presets kept. All JSX gating
   // below uses this, so toggling client mode is an instant UI-layer change.
@@ -572,6 +583,59 @@ export default function App() {
       : embedChrome,
     [embedChrome, clientMode],
   )
+
+  // The rail's vocabulary. Icons live here rather than in the hook so the hook
+  // imports no JSX and stays testable as plain logic.
+  const railIcons = useMemo(() => ({
+    properties:  <Icons.Sliders size={15} />,
+    scene:       <Icons.Layers size={15} />,
+    measurement: <Icons.Ruler size={15} />,
+    section:     <Icons.Isolate size={15} />,
+    plans:       <Icons.FileIfc size={15} />,
+    map:         <Icons.Globe size={15} />,
+    solar:       <Icons.Sparkles size={15} />,
+    pointcloud:  <Icons.Zap size={15} />,
+    mesh:        <Icons.Building size={15} />,
+  }), [])
+  const railLabels = useMemo(() => ({
+    properties:  tSidebar('title'),
+    scene:       tToolbar('scene'),
+    measurement: tToolbar('measure'),
+    section:     tToolbar('section'),
+    plans:       tToolbar('plans'),
+    map:         tToolbar('map'),
+    solar:       tSolar('panel.title'),
+    pointcloud:  tCloud('title'),
+    mesh:        tMesh('title'),
+  }), [tToolbar, tSidebar, tSolar, tCloud, tMesh])
+  // Content gates: these two act ON something loaded, so the tool only earns
+  // its place once there is something for it to act on.
+  const pointCloudCount = usePointCloudStore((s) => s.clouds.length)
+  const meshCount = useMeshStore((s) => s.meshes.length)
+
+  // Availability, stated from the SAME conditions that render each panel below.
+  // Written from memory instead, it drifted immediately: the client skin got a
+  // rail offering Scene and Map, neither of which it mounts, so two of three
+  // icons did nothing when pressed. If you change a panel's render condition,
+  // change its line here.
+  const railAvailable = useMemo(() => ({
+    properties:  effectiveChrome.showSidebar,
+    scene:       !clientMode,
+    measurement: !clientMode || clientAdvancedTools,
+    section:     !clientMode || clientAdvancedTools,
+    plans:       !clientMode,
+    map:         isGisEnabled() && !clientMode,
+    solar:       isSolarEnabled(),
+    pointcloud:  isPointCloudEnabled() && !clientMode && pointCloudCount > 0,
+    mesh:        isMeshEnabled() && !clientMode && meshCount > 0,
+  }), [effectiveChrome.showSidebar, clientMode, clientAdvancedTools, pointCloudCount, meshCount])
+
+  const railItems = usePanelRail({
+    icons: railIcons,
+    labels: railLabels,
+    available: railAvailable,
+    allow: effectiveChrome.panels,
+  })
   const {
     treeVisible, setTreeVisible, treeWidth, hiddenElements, clearHiddenElements, setElementsVisible, clearHiddenElementsForModel,
     mobileSidebarOpen, setMobileSidebarOpen, setPendingSidebarTab,
@@ -2388,6 +2452,16 @@ export default function App() {
                       />
                     ) : null
                   })()}
+
+                  {/* The minimised form of every floating panel: a rail of
+                      icons on the right edge, panels opening to its left.
+                      docs/PANEL_RAIL.md. Only with a model — with an empty
+                      viewport there is nothing for any of them to act on. */}
+                  {sceneModels.length > 0 && tourMode !== 'playing' && (
+                    <div className="max-md:hidden">
+                      <PanelRail items={railItems} />
+                    </div>
+                  )}
 
                   {/* Measurement panel (client mode: only via the presenter gear) */}
                   {sceneModels.length > 0 && (!clientMode || clientAdvancedTools) && (

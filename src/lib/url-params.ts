@@ -10,8 +10,12 @@
 //   ?model=https://host/file.ifc&embed=1&ui=kiosk&validate=0
 //   ?model=https://host/file.ifc&embed=1&select=1234&lang=es
 //   ?model=https://host/file.ifc&map=terrain,buildings&scan=https://host/site.laz
+//   ?model=https://host/file.ifc&embed=1&panels=scene,map   (only those tools)
+//   ?model=https://host/file.ifc&embed=1&panels=-measurement (all but that one)
 //
 // See docs/EMBED_URL_PARAMS.md for the full reference.
+
+import { parsePanelAllowlist, type PanelId } from './ui/panel-rail'
 
 export type EmbedUiPreset = 'minimal' | 'full' | 'kiosk' | 'client'
 
@@ -80,6 +84,12 @@ export interface AppUrlParams {
     panel?: boolean
     home?: boolean
     cameraControls?: boolean
+    /**
+     * `panels=scene,map` allows exactly those tools; `panels=-measurement`
+     * subtracts. Undefined means no opinion. One parameter for all nine
+     * panels, and for every one we add — see docs/RIGHT_EDGE.md.
+     */
+    panels?: PanelId[]
   }
 }
 
@@ -103,6 +113,13 @@ export interface EmbedChrome {
   /** Show the "back to home" button. */
   showHome: boolean
   showCameraControls: boolean
+  /**
+   * Which rail panels this audience gets, or undefined for all that apply.
+   *
+   * A list rather than a flag per tool: the rail is where every new tool lands,
+   * so a host must be able to scope it once and stay correct as we ship more.
+   */
+  panels?: PanelId[]
 }
 
 // ── Boolean param parsing ──────────────────────────────────────────────────────
@@ -223,6 +240,7 @@ export function parseAppUrlParams(search?: string): AppUrlParams {
       panel:          parseBool(p.get('panel')),
       home:           parseBool(p.get('home')),
       cameraControls: parseBool(p.get('controls')),
+      panels: parsePanelAllowlist(p.get('panels')),
     },
   }
 }
@@ -291,6 +309,9 @@ const PRESET_CHROME: Record<EmbedUiPreset, Omit<EmbedChrome, 'embed'>> = {
   // Camera presets stay ON (simplified navigation); everything technical is
   // hidden. uiStore.clientMode is set from this preset at boot and layers the
   // ClientPresentationLayout on top.
+  // No `panels` list here. The client skin already decides what it mounts, and
+  // a second list restating that from memory is how the rail ended up offering
+  // Scene and Map in a skin that renders neither.
   client:  { showToolbar: false, showTree: false, showSidebar: false, openPanel: false, showHome: false, showCameraControls: true  },
 }
 
@@ -318,6 +339,7 @@ export function resolveEmbedChrome(params: AppUrlParams): EmbedChrome {
     openPanel:          o.panel          ?? d.openPanel,
     showHome:           o.home           ?? d.showHome,
     showCameraControls: o.cameraControls ?? d.showCameraControls,
+    panels:             o.panels         ?? d.panels,
   }
 }
 
