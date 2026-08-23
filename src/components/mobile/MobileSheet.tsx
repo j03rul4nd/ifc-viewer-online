@@ -154,6 +154,11 @@ export function MobileSheet({
   // detent (and never blocks the canvas) for a resizable layer sheet. Either way
   // opacity is driven by `y` so the scrim fades in step with the slide.
   const dimTop = resizable ? 0.42 : 0.5
+  // How much of the sheet is on screen right now: its height minus how far it
+  // has been translated down. Derived from the motion value so it tracks a drag
+  // in progress rather than only the settled detent.
+  const visibleH = useTransform(y, (v: number) => Math.max(0, sheetH - v))
+
   const dimBottom = resizable ? Math.max(1, detentY(0)) : sheetH
   const scrimOpacity = useTransform(y, [0, dimBottom], [dimTop, 0])
 
@@ -245,16 +250,37 @@ export function MobileSheet({
         onPointerCancel={clearArm}
         className="fixed left-0 right-0 bottom-0 z-[59] flex flex-col mobile-sidebar-sheet overflow-hidden touch-pan-y"
       >
-        {/* Grab handle — always an immediate drag origin. */}
-        <div
-          onPointerDown={(e) => { dragging.current = true; setHandleDragging(true); controls.start(e) }}
-          className="shrink-0 flex items-center justify-center pt-2.5 pb-1.5 cursor-grab active:cursor-grabbing touch-none select-none"
-          style={{ WebkitTapHighlightColor: 'transparent' }}
-        >
-          <div className="sheet-handle" data-dragging={handleDragging} />
-        </div>
+        {/* ── THE VISIBLE BAND ──────────────────────────────────────────────
+            The sheet is always `sheetH` tall — the largest detent — and lower
+            detents are reached by translating it DOWN. That is what makes the
+            drag maths simple, and it used to make the content unreachable:
+            an inner `overflow-y-auto` measured itself against the full height,
+            found it had room, and never scrolled, while the tail of the content
+            sat below the bottom of the screen with nothing to say so.
+            Measured on a phone: 792px of content, a 464px band, and two
+            controls in Scene and in Sun & Moon that could not be reached at all.
 
-        {children}
+            So the content lives in a box that is exactly as tall as the part of
+            the sheet actually on screen. It follows `y`, so it is right while
+            dragging too, and an inner scroller now overflows when it should. */}
+        <motion.div
+          style={{ height: visibleH }}
+          // The band ends at the bottom of the screen, so the home indicator is
+          // over its last row. Applied here rather than by each panel: every
+          // sheet has the same edge and the same problem.
+          className="flex flex-col min-h-0 overflow-hidden sheet-safe-bottom"
+        >
+          {/* Grab handle — always an immediate drag origin. */}
+          <div
+            onPointerDown={(e) => { dragging.current = true; setHandleDragging(true); controls.start(e) }}
+            className="shrink-0 flex items-center justify-center pt-2.5 pb-1.5 cursor-grab active:cursor-grabbing touch-none select-none"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+          >
+            <div className="sheet-handle" data-dragging={handleDragging} />
+          </div>
+
+          {children}
+        </motion.div>
       </motion.div>
     </>,
     document.body,

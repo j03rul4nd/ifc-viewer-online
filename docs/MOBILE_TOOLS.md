@@ -64,6 +64,44 @@ Actions that are not panels — reset, isolate, tree, tour — stay in their own
 section below a divider. They are commands, and the split follows the same line
 `RIGHT_EDGE.md` draws between a view and a command.
 
+## The sheet had a floor under it
+
+Reaching a tool is one thing; using it is another. Measured with the sheet open
+at its half detent on a 390x844 phone:
+
+- The sheet is **792px** of content with **464px** on screen.
+- There was a scroll container inside it, and it **never scrolled**.
+- Two controls in Scene and two in Sun & Moon were **below the fold with no way
+  to reach them**. On a 320x568 phone, Tour's own "Play tour" button was one.
+
+The cause is in the sheet mechanics rather than in any panel. The sheet is
+always as tall as its largest detent, and lower detents are reached by
+translating it DOWN — which keeps the drag maths simple. An inner
+`overflow-y-auto` therefore measured itself against the full height, found it
+had room, and stayed put, while the tail of the content sat below the bottom of
+the screen with nothing on screen to suggest it existed.
+
+So the content now lives in a box exactly as tall as the part of the sheet
+actually on screen, derived from the drag position so it is correct mid-drag
+too. An inner scroller overflows when it should. The same box carries the
+safe-area padding, because every sheet ends at the same edge and the home
+indicator sits over its last row.
+
+## Panels that placed themselves
+
+`TourRecorder` did its own mobile layout: `bottom-[76px]` — a copy of a number
+that has a token — and `max-h-[55%]` of a container it was not measured against.
+It sat tight under the nav with the cache badge across its primary button, had
+no drag handle, no detents, and was not in the panel registry, so it obeyed
+neither one-at-a-time nor Escape.
+
+It is a `ViewportPanel` now, like every other tool. The rule is worth stating
+plainly, because this is the second time it has been broken:
+
+> **A panel does not choose where it goes.** It declares itself a
+> `ViewportPanel` and which mobile form it wants — `sheet` for a tool you read,
+> `dock` for one you use while watching the model. Everything else follows.
+
 ## What is deliberately not being done
 
 **A mobile-only tool list.** It would be a third copy, and this document exists
