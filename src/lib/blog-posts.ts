@@ -2352,34 +2352,41 @@ fragments.load(cached);            // fast`,
       {
         type: 'code',
         lang: 'html',
-        text: `<!-- Add the SDK once -->
-<script src="https://www.ifcvieweronline.eu/sdk/ifc-viewer-sdk.js"></script>
-
+        text: `<!-- The SDK is an ES module -->
 <div id="viewer" style="width:100%;height:600px"></div>
 
-<script>
+<script type="module">
+  import { IfcViewer } from 'https://www.ifcvieweronline.eu/sdk/ifc-viewer.es.js';
+
   const viewer = new IfcViewer('#viewer', {
-    ui: 'minimal',   // 'minimal' | 'full' | 'kiosk'
-    validate: true,  // run 44-rule validation automatically
-    lang: 'en',      // 'en' | 'es' | 'de' | 'fr' | …
+    ui: 'minimal',            // 'minimal' | 'full' | 'kiosk' | 'client'
+    validate: true,           // run 44-rule validation automatically
+    lang: 'en',               // 'en' | 'es' | 'de' | 'fr' | …
+    panels: ['scene', 'map'], // limit the tool rail; [] for none
   });
+  await viewer.whenReady();
 
-  // Load an IFC from a URL
-  viewer.loadUrl('https://your-cdn.com/project-model.ifc');
+  // Load an IFC from a public, CORS-enabled URL
+  await viewer.addFromUrl('https://your-cdn.com/project-model.ifc');
 
-  // Or load from bytes (your own upload flow — nothing leaves the browser)
-  viewer.loadBytes(arrayBuffer, 'project-model.ifc');
+  // Or from bytes — your own upload flow, nothing leaves the browser.
+  // Note the order: name first. The buffer is transferred, not copied.
+  await viewer.add('project-model.ifc', arrayBuffer);
 
   // Listen for element selection
-  viewer.on('element:selected', (el) => {
-    console.log('Selected:', el.globalId, el.name, el.properties);
+  viewer.on('element-selected', (el) => {
+    console.log('Selected:', el.expressId, el.ifcType, el.name);
   });
 
   // Listen for validation completion
-  viewer.on('validation:complete', (report) => {
-    console.log('Health Score:', report.healthScore);
-    console.log('Issues:', report.issues.length);
+  viewer.on('validation-completed', (r) => {
+    console.log('Health Score:', r.qualityScore);
+    console.log('Errors:', r.errors, 'Warnings:', r.warnings);
   });
+
+  // Open a tool panel, or ask what is available
+  viewer.openPanel('map');
+  const { open, available } = await viewer.getPanels();
 </script>`,
       },
       {

@@ -438,6 +438,13 @@ export interface EmbedUrlOptions {
   lang?: string
   /** Accent colour (`#rrggbb`) to theme the viewer. */
   accent?: string
+  /**
+   * Limit the tool rail to these panels. `[]` means no rail at all.
+   *
+   * Undefined is "no opinion" and lets the preset decide, which is why an
+   * empty array has to be serialised rather than skipped as falsy.
+   */
+  panels?: PanelId[]
 }
 
 /** Serialize options into a shareable app URL with embed params. */
@@ -455,6 +462,7 @@ export function buildEmbedUrl(o: EmbedUrlOptions): string {
   if (o.openPanel) u.searchParams.set('panel', '1')
   if (o.lang) u.searchParams.set('lang', o.lang)
   if (o.accent) u.searchParams.set('accent', o.accent.replace(/^#/, ''))
+  if (o.panels) u.searchParams.set('panels', o.panels.join(','))
   return u.toString()
 }
 

@@ -1072,7 +1072,11 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
                 {t('sdk.body')}
               </p>
               <ul className="flex flex-col gap-2 mb-7 list-none p-0">
-                {[t('sdk.b1'), t('sdk.b2'), t('sdk.b3')].map((b, i) => (
+                {/* The fourth is new: a host can now limit which tools the
+                    embedded viewer offers, per audience, from the URL or the
+                    SDK. It is an integration capability rather than a viewer
+                    feature, which is why it belongs in this section. */}
+                {[t('sdk.b1'), t('sdk.b2'), t('sdk.b3'), t('sdk.b4')].map((b, i) => (
                   <li key={i} className="flex items-center gap-2.5 text-[13.5px] text-[var(--text-dim)]">
                     <span className="text-[var(--ok)] shrink-0"><Icons.Check size={15} /></span>
                     {b}

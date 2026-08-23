@@ -1,3 +1,4 @@
+import { parsePanelAllowlist } from './ui/panel-rail'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import {
   parseAppUrlParams,
@@ -355,5 +356,44 @@ describe('emitEmbedEvent target origin', () => {
       value: { postMessage: () => { throw new Error('refused') } },
     })
     expect(() => emitEmbedEvent('ready')).not.toThrow()
+  })
+})
+
+describe('embed URL: the tool rail', () => {
+  const base = {
+    baseUrl: 'https://app.example.com/',
+    modelUrl: 'https://host/a.ifc',
+    preset: 'minimal' as const,
+    autoValidate: true,
+  }
+
+  it('adds no parameter when the host has no opinion', () => {
+    // The common case, and the snippet a reader copies most often.
+    expect(buildEmbedUrl(base)).not.toContain('panels=')
+  })
+
+  it('carries the chosen tools', () => {
+    const url = new URL(buildEmbedUrl({ ...base, panels: ['scene', 'map'] }))
+    expect(url.searchParams.get('panels')).toBe('scene,map')
+  })
+
+  it('serialises an empty list rather than dropping it as falsy', () => {
+    // `panels=` with nothing after it is a host saying "no rail", which is not
+    // the same as saying nothing. Skipping it as falsy would silently give the
+    // reader the full rail they just switched off.
+    const url = new URL(buildEmbedUrl({ ...base, panels: [] }))
+    expect(url.searchParams.has('panels')).toBe(true)
+    expect(url.searchParams.get('panels')).toBe('')
+  })
+
+  it('round-trips through the parser that reads it back', () => {
+    // The builder and the reader must agree, or an embed silently loses tools.
+    const url = new URL(buildEmbedUrl({ ...base, panels: ['scene', 'solar'] }))
+    expect(parsePanelAllowlist(url.searchParams.get('panels'))).toEqual(['scene', 'solar'])
+  })
+
+  it('round-trips the empty list as "no rail", not as "no opinion"', () => {
+    const url = new URL(buildEmbedUrl({ ...base, panels: [] }))
+    expect(parsePanelAllowlist(url.searchParams.get('panels'))).toEqual([])
   })
 })

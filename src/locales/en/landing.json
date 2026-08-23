@@ -203,6 +203,7 @@
     "b1": "No upload backend required",
     "b2": "Runs directly in the browser",
     "b3": "Ready for IFC, BCF & IDS",
+    "b4": "Scope the toolset per audience",
     "explore": "Explore integration",
     "docs": "SDK documentation"
   },

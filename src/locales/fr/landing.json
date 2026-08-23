@@ -302,6 +302,7 @@
     "b1": "Aucun backend de téléversement requis",
     "b2": "S'exécute directement dans le navigateur",
     "b3": "Prêt pour IFC, BCF et IDS",
+    "b4": "Adaptez les outils à chaque audience",
     "explore": "Explorer l'intégration",
     "docs": "Documentation du SDK"
   }
