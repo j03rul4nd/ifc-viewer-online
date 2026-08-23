@@ -19,13 +19,24 @@
 
 import React from 'react'
 
+/**
+ * One tool, in the form both surfaces read.
+ *
+ * The desktop rail draws this as a 32px icon; the mobile sheet draws the same
+ * item as an icon with its label under it. Neither decides what is in the list.
+ * See docs/MOBILE_TOOLS.md.
+ */
 export interface RailItem {
   id: string
-  /** Tooltip and accessible name. A 44px rail cannot carry a label. */
+  /** Tooltip and accessible name on the rail; the visible label on mobile. */
   label: string
   icon: React.ReactNode
   open: boolean
   onToggle: () => void
+  /** A count worth surfacing — clip planes, loaded models. */
+  badge?: number
+  /** Something is active inside the tool, when a count would be misleading. */
+  dot?: boolean
 }
 
 interface PanelRailProps {
@@ -59,7 +70,7 @@ export function PanelRail({ items }: PanelRailProps) {
           // content inside the button.
           aria-pressed={item.open}
           className={[
-            'w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors',
+            'relative w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors',
             item.open
               // The open panel is marked, so the rail also answers "which one am
               // I in" — the question the closed toolbar menu could not.
@@ -68,6 +79,22 @@ export function PanelRail({ items }: PanelRailProps) {
           ].join(' ')}
         >
           {item.icon}
+          {/* State the rail could not show before: a tool that is doing
+              something while parked. Positioned over the icon because the rail
+              has no room beside it. */}
+          {(item.badge != null || item.dot) && (
+            <span
+              aria-hidden
+              className={[
+                'absolute -top-0.5 -right-0.5 rounded-full text-[9px] font-semibold leading-none',
+                'flex items-center justify-center',
+                item.badge != null ? 'min-w-[14px] h-[14px] px-1' : 'w-[7px] h-[7px]',
+                item.open ? 'bg-white text-[var(--accent)]' : 'bg-[var(--accent)] text-white',
+              ].join(' ')}
+            >
+              {item.badge != null ? item.badge : ''}
+            </span>
+          )}
         </button>
       ))}
     </div>
