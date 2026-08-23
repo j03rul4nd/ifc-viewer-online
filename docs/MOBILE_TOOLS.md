@@ -102,6 +102,28 @@ plainly, because this is the second time it has been broken:
 > `ViewportPanel` and which mobile form it wants — `sheet` for a tool you read,
 > `dock` for one you use while watching the model. Everything else follows.
 
+## The dock, brought under the same rule
+
+`dock` is the right form for a tool you use while watching the model — measure,
+section, plans. It should not become a sheet, and it has not. What it did need
+was to stop being measured against the wrong thing, which is the disease this
+whole sequence keeps finding:
+
+- The card stopped at **`46vh`**. A fraction of the visual viewport is not the
+  space the card has: on a 390x844 phone it capped at 388px inside 724px of
+  actual room, and on a shorter screen the same fraction gives a different,
+  equally arbitrary answer. It is anchored top and bottom now, exactly as the
+  desktop lane is, so it takes the room it has and no magic number decides.
+- The **whole card scrolled**, header included. A header that scrolls away is
+  the one thing a header must not do.
+- Each panel's list carried its own ceiling — `max-h-[160px]`, `[200px]`,
+  `[240px]`, three numbers, three files. They are `min-h-0 shrink` now: natural
+  height while there is room, shrinking and scrolling when the card is capped.
+  Same list, same code, right answer on every screen.
+
+All three forms — lane, sheet, dock — now share one sentence: **anchored, not
+sized; header fixed, body scrolls.**
+
 ## What is deliberately not being done
 
 **A mobile-only tool list.** It would be a third copy, and this document exists

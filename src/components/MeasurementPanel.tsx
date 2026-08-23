@@ -182,7 +182,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
       anchor="center"
     >
             {/* Header */}
-            <div className="px-3 pt-2.5 pb-1.5 border-b border-[var(--border)]">
+            <div className="shrink-0 px-3 pt-2.5 pb-1.5 border-b border-[var(--border)]">
               <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase mb-0.5">
                 {t('panel.title')}
               </div>
@@ -220,7 +220,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
 
             {/* Measurement values list */}
             {measurements.length > 0 && (
-              <div className="border-t border-[var(--border)] max-h-[160px] overflow-y-auto">
+              <div className="border-t border-[var(--border)] min-h-0 shrink overflow-y-auto">
                 {measurements.map((m, idx) => (
                   <div
                     key={m.id}

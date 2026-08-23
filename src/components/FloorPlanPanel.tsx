@@ -125,7 +125,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
       centerShift="translateY(-70%)"
     >
             {/* Header */}
-            <div className="px-3 pt-2.5 pb-1.5 border-b border-[var(--border)]">
+            <div className="shrink-0 px-3 pt-2.5 pb-1.5 border-b border-[var(--border)]">
               <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase mb-0.5">
                 {t('floorPlan.title')}
               </div>
@@ -171,7 +171,7 @@ export default function FloorPlanPanel({ viewerApiRef }: FloorPlanPanelProps) {
 
             {/* Storey list */}
             {generated && views.length > 0 && (
-              <div className="p-1.5 flex flex-col gap-0.5 max-h-[240px] overflow-y-auto">
+              <div className="p-1.5 flex flex-col gap-0.5 min-h-0 shrink overflow-y-auto">
                 {views.map((v) => {
                   const isActive = activePlanViewId === v.id
                   return (
