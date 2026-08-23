@@ -305,5 +305,9 @@
     "b4": "Ajusta les eines a cada audiència",
     "explore": "Explorar la integració",
     "docs": "Documentació de l'SDK"
+  },
+  "seo": {
+    "title": "Visualitzador IFC en línia — Validació BIM gratuïta",
+    "description": "Obre un IFC al navegador i obtén un Health Score de 0 a 100 en menys de 30 segons. Sense compte, sense pujar res, sense instal·lar."
   }
 }

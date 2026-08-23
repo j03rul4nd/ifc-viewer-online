@@ -305,5 +305,9 @@
     "b4": "Werkzeugsatz je Zielgruppe zuschneiden",
     "explore": "Integration erkunden",
     "docs": "SDK-Dokumentation"
+  },
+  "seo": {
+    "title": "IFC-Viewer Online — BIM-Validierung im Browser",
+    "description": "IFC im Browser öffnen und in unter 30 Sekunden einen Health Score von 0–100 erhalten. Ohne Konto, ohne Upload, ohne Installation."
   }
 }

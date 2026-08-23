@@ -77,6 +77,8 @@ interface LandingLocale {
   /** Optional: present in every locale today, but the shell degrades gracefully
    *  to an English label rather than failing the build if a new locale lacks it. */
   fixGuides?:      { title: string }
+  /** Copy written for the search result rather than for the page. */
+  seo?:            { title?: string; description?: string }
 }
 
 function esc(s: string): string {
@@ -279,8 +281,19 @@ export function generateLangShells(distDir: string): LangShellsResult {
       assertLocale(lang, t)
 
       const canonical   = `${SITE}${homePath(lang)}`
-      const title       = `${t.hero.h1} ${t.hero.h1Accent} — ${t.hero.subtitle}`
-      const description = t.hero.subtitleFull
+      // ── WHAT THE LISTING SHOWS vs. WHAT THE PAGE SAYS ────────────────────
+      // These used to be the hero copy, reused verbatim. That copy is written
+      // to be read on the page, so it is long: measured on the live site, the
+      // home descriptions ran 186–288 characters against the ~160 Google
+      // renders, and the English root page lost 128 characters of its own
+      // pitch off the end of the listing.
+      //
+      // So a locale can carry `seo.title` / `seo.description`, written to the
+      // budget. The hero derivation stays as the fallback, because a locale
+      // that has not been given one is better served by long copy than by no
+      // copy — and the guard in the test tells us which those are.
+      const title       = t.seo?.title ?? `${t.hero.h1} ${t.hero.h1Accent} — ${t.hero.subtitle}`
+      const description = t.seo?.description ?? t.hero.subtitleFull
 
       let html = tweakHead(template, { lang, title, description, canonical }, jsonLdFor(lang, t, canonical))
       html = html.replace('</body>', `${noscriptBlock(lang, t)}\n</body>`)

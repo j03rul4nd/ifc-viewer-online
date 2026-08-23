@@ -322,5 +322,8 @@
     "copyright": "IFC Viewer Online © 2026",
     "builtWith": "Built with @thatopen/components · three.js · web-ifc",
     "fixGuide": "Fix IFC errors"
+  },
+  "seo": {
+    "description": "Open an IFC in your browser and get a Health Score, 0–100, in under 30 seconds. No account, no upload, no install — nothing leaves your machine."
   }
 }
