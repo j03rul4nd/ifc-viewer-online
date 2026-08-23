@@ -38,6 +38,12 @@ const NUMBER_BEFORE_WORD =
 const HYPHEN_COMPOUND = /(?<![\d.,])(\d{2,3})-(?:rule|regla|règle|Regel|regola|regra)\b/giu
 // Thai writes the counter before the number: "กฎ 44 ข้อ".
 const WORD_BEFORE_NUMBER = /กฎ[^\d\n]{0,6}(\d{2,3})/gu
+// Structured claims, where the number and the rule word sit in separate object
+// fields: `{ value: 44, suffix: '', label: 'validation rules' }` (blog stat-rows).
+// The prose windows above are far too narrow to bind across the intervening keys,
+// which is exactly how seven stale "38"s survived the first sweep.
+const STRUCTURED_CLAIM =
+  /\bvalue:\s*(\d{2,3})\b[^\n]{0,80}?\blabel:\s*['"][^'"\n]*(?:rules|reglas|règles|Regeln|regole|regras|规则|ルール|กฎ)/giu
 
 // "…orphan elements and 41 MORE rules" is arithmetic copy (named + N = total),
 // not a total claim — every locale has its own marker. Skipped: the guard can't
@@ -57,6 +63,7 @@ const SURFACES = {
   ...import.meta.glob('/src/lib/blog-posts.ts', { query: '?raw', import: 'default', eager: true }),
   ...import.meta.glob('/src/locales/*/landing.json', { query: '?raw', import: 'default', eager: true }),
   ...import.meta.glob('/public/**/index.html', { query: '?raw', import: 'default', eager: true }),
+  ...import.meta.glob('/cf-worker/worker.js', { query: '?raw', import: 'default', eager: true }),
 } as Record<string, string>
 
 interface Offender {
@@ -68,7 +75,7 @@ interface Offender {
 
 function sweep(file: string, text: string): Offender[] {
   const offenders: Offender[] = []
-  for (const re of [NUMBER_BEFORE_WORD, HYPHEN_COMPOUND, WORD_BEFORE_NUMBER]) {
+  for (const re of [NUMBER_BEFORE_WORD, HYPHEN_COMPOUND, WORD_BEFORE_NUMBER, STRUCTURED_CLAIM]) {
     re.lastIndex = 0
     for (const m of text.matchAll(re)) {
       const claim = Number(m[1])

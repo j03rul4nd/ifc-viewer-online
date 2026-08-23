@@ -160,7 +160,7 @@ export const BLOG_POSTS: BlogPost[] = [
       {
         type: 'stat-row',
         stats: [
-          { value: 38, suffix: '', label: 'validation rules' },
+          { value: 44, suffix: '', label: 'validation rules' },
           { value: 0,  suffix: ' bytes', label: 'uploaded to server' },
           { value: 100, suffix: '%', label: 'runs in browser' },
           { value: 13, suffix: '', label: 'demo IFC models' },
@@ -228,7 +228,7 @@ export const BLOG_POSTS: BlogPost[] = [
         stats: [
           { value: 3,  suffix: '×', label: 'weight: schema errors' },
           { value: 1,  suffix: '×', label: 'weight: data warnings' },
-          { value: 38, suffix: '',  label: 'rules checked' },
+          { value: 44, suffix: '',  label: 'rules checked' },
           { value: 80, suffix: '+', label: 'target for CDE delivery' },
         ],
       },
@@ -436,7 +436,7 @@ export const BLOG_POSTS: BlogPost[] = [
       {
         type: 'stat-row',
         stats: [
-          { value: 38, suffix: '', label: 'rules checked' },
+          { value: 44, suffix: '', label: 'rules checked' },
           { value: 7,  suffix: '',  label: 'cause 80% of rejections' },
           { value: 30, suffix: 's', label: 'to validate any model' },
           { value: 100, suffix: '%', label: 'runs in your browser' },
@@ -749,15 +749,53 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: 'how-to-validate-ifc-file',
     title: 'How to Validate an IFC File Before You Send It (Free, No Upload)',
-    excerpt: "Your BEP says 'deliver a quality IFC' but never defines how to check it. Here are the three real ways to validate an IFC file — the buildingSMART service, IfcOpenShell, and an in-browser health check — what each one actually catches, and which to use before you hit send.",
+    excerpt: "Your BEP says 'deliver a quality IFC' but never defines how to check it. Here are the three real ways to validate an IFC file — the buildingSMART service, IfcOpenShell, and an in-browser health check — what each one actually catches, and the pre-send checklist that stops models being rejected at the CDE.",
     date: '2026-06-03',
-    readTimeMin: 9,
+    dateModified: '2026-08-23',
+    readTimeMin: 12,
     category: 'Validation',
     categorySlug: 'validation',
     author: 'IFC Viewer Team',
+    keywords: ['how to validate an IFC file', 'validate IFC before sending', 'IFC validation checklist', 'free IFC validator', 'buildingSMART validation service', 'IfcOpenShell validate', 'IFC Health Score', 'pre-delivery IFC check'],
+    faqs: [
+      {
+        q: 'How do I validate an IFC file for free?',
+        a: "Three free routes, and they check different things. The buildingSMART Validation Service checks schema conformance (you upload the file). IfcOpenShell's validate module checks it locally from Python. A browser-based health check runs practical delivery rules client-side in about 30 seconds with nothing uploaded. Before a delivery you normally want the practical check; before a contractual conformance claim you want buildingSMART.",
+      },
+      {
+        q: 'Does a schema-valid IFC file mean it is ready to deliver?',
+        a: "No. Schema validity only says the file is correctly packaged according to ISO 10303-21 and the IFC schema. A file with zero schema errors can still have duplicate GlobalIds, elements sitting outside any storey, thousands of unnamed elements and geometry 10 km from the origin — all of which get models rejected at the CDE. Most rejected deliveries are schema-valid.",
+      },
+      {
+        q: 'Can I validate an IFC file without uploading it anywhere?',
+        a: "Yes. A browser validator parses the IFC with WebAssembly on your own machine, so the bytes never reach a server — the 44 quality rules, the Health Score and the IDS engine all run client-side. For NDA-covered or public-sector models that cannot be sent to a third-party service, this is usually the only compliant option.",
+      },
+      {
+        q: 'What Health Score should I reach before sending a model?',
+        a: "80 or above for a normal CDE delivery or design coordination round. 90 or above for LOD 300+ and ISO 19650 milestone submissions. 70 is acceptable for an internal concept-stage review. Below 60 the model has structural problems — fix the export before anyone else opens it.",
+      },
+      {
+        q: 'How long does validating an IFC file take?',
+        a: "A browser health check on a typical 20–200 MB discipline model takes seconds to about a minute, because parsing and checking run in a background thread. The buildingSMART service depends on upload time and queue. An IfcOpenShell run is roughly proportional to file size and is normally used unattended in CI.",
+      },
+      {
+        q: 'What should I check in an IFC file before delivery?',
+        a: "GlobalIds unique and well-formed, every physical element inside a storey, exactly one IfcProject with a complete spatial hierarchy, no orphan elements, coordinates near the world origin, standard property sets present, elements named, and proxies kept to a minimum. Then a Health Score of 80 or above, recorded on the transmittal.",
+      },
+    ],
     content: [
       { type: 'p', text: "Almost everyone exports an IFC and sends it. Almost no one checks it first — not because they don't care, but because 'validate the IFC' is genuinely ambiguous. Validate against what? The schema? The project requirements? Whether it'll open in the coordinator's tool? Those are three different questions with three different tools, and conflating them is why so many models get rejected at the Common Data Environment." },
-      { type: 'p', text: "This is the practical map: what 'valid' means, the three ways to check it, and what each one will and won't catch." },
+      { type: 'p', text: "This is the practical map: what 'valid' means, the three ways to check it, what each one will and won't catch, and the checklist to run in the ten minutes before you hit send." },
+      { type: 'h2', text: 'The 60-Second Answer' },
+      { type: 'p', text: "If you just need the model checked before a deadline, this is the whole workflow:" },
+      { type: 'ol', items: [
+        'Export to a local folder — never straight to the CDE.',
+        'Open the file in a browser validator: it parses locally, so nothing is uploaded.',
+        'Read the Health Score, then sort the issues by severity rather than by count.',
+        'Fix the causes in the authoring tool — Revit, ArchiCAD, Tekla — and re-export. Never hand-edit the IFC.',
+        'Re-check, confirm a Health Score of 80 or above, then upload and record the score on the transmittal.',
+      ]},
+      { type: 'p', text: "The rest of this article is why each step is there, and which tool to reach for when the fast route isn't enough." },
       { type: 'h2', text: "What 'Valid' Actually Means" },
       { type: 'p', text: "There are two layers, and they're independent. A file can pass one and fail the other." },
       {
@@ -768,6 +806,7 @@ export const BLOG_POSTS: BlogPost[] = [
         ],
       },
       { type: 'callout', variant: 'info', text: "A file with zero schema errors can still score 40 on a practical health check — broken spatial hierarchy, thousands of unnamed elements, geometry 10 km from the origin. Schema-valid does not mean delivery-ready." },
+      { type: 'p', text: ["There is a third layer above these two: checking the model against your project's own information requirements with buildingSMART IDS. That belongs to the EIR rather than to the file itself, and it has its own guide — see ", { text: 'IFC Model Checker: schema, quality and IDS', to: 'ifc-model-checker-guide' }, ". This article stays on the two layers you have to clear before any delivery."] },
       { type: 'h2', text: 'Option 1: The buildingSMART Validation Service' },
       { type: 'p', text: "The official, free, web-based service from buildingSMART International. It judges conformity against the IFC standard: STEP syntax, schema compliance, normative rules, and buildingSMART Data Dictionary alignment. It produces an authoritative pass/fail report — this is the reference for schema correctness." },
       { type: 'ul', items: [
@@ -790,7 +829,7 @@ python validate_and_score.py model.ifc`,
         "What it doesn't do: there's no 3D view and no one-click report — a coordinator who just wants to know if the model is OK won't install Python for it.",
       ]},
       { type: 'h2', text: 'Option 3: An In-Browser Health Check (30 Seconds)' },
-      { type: 'p', text: "Drag the IFC into the viewer. It parses client-side via WebAssembly — nothing is uploaded — runs 38 practical validation rules in a background thread, and returns a single Health Score from 0 to 100 plus a per-issue breakdown you can see against the 3D model. This is the layer the other two don't cover: a fast, private, practical judgment of whether the model is fit to send." },
+      { type: 'p', text: "Drag the IFC into the viewer. It parses client-side via WebAssembly — nothing is uploaded — runs 44 practical validation rules in a background thread, and returns a single Health Score from 0 to 100 plus a per-issue breakdown you can see against the 3D model. This is the layer the other two don't cover: a fast, private, practical judgment of whether the model is fit to send." },
       {
         type: 'ifc-demo',
         modelId: 'duplex-architecture',
@@ -798,6 +837,25 @@ python validate_and_score.py model.ifc`,
         description: "Open the buildingSMART duplex to see a clean Health Score and report, then drop in your own export to check it before delivery. Your file never leaves your machine.",
         schema: 'IFC2x3',
         size: '2.4 MB',
+      },
+      { type: 'h2', text: 'What Each Tool Actually Catches' },
+      { type: 'p', text: "The three options aren't competing answers to one question — they cover different failures. This is the honest breakdown:" },
+      {
+        type: 'table',
+        headers: ['Check', 'buildingSMART service', 'IfcOpenShell', 'Browser health check'],
+        rows: [
+          ['STEP / schema conformance', 'Yes — authoritative', 'Yes', 'Basic integrity only'],
+          ['Normative rules and bSDD', 'Yes', 'Partial', 'No'],
+          ['Duplicate or malformed GlobalIds', 'Partial', 'Partial', 'Yes'],
+          ['Spatial hierarchy and orphan elements', 'No', 'Partial', 'Yes'],
+          ['Coordinates far from the origin', 'No', 'No', 'Yes'],
+          ['Missing property sets and names', 'No', 'No', 'Yes'],
+          ['Single deliverability score', 'No', 'No', 'Yes — Health Score 0–100'],
+          ['Issues navigable against the 3D model', 'No', 'No', 'Yes'],
+          ['Runs without uploading the file', 'No', 'Yes', 'Yes'],
+          ['Scriptable in CI', 'Via API', 'Yes', 'No'],
+        ],
+        caption: 'Coverage as of August 2026. "Partial" means the failure is detectable but not reported as a named, actionable issue.',
       },
       { type: 'h2', text: 'Which One to Use, When' },
       {
@@ -825,6 +883,7 @@ python validate_and_score.py model.ifc`,
           ],
         },
       },
+      { type: 'ebook-cta' },
       { type: 'h2', text: 'The Practical Pre-Send Checklist' },
       { type: 'p', text: "Whatever tool you use, these are the things that actually get models rejected. Each maps to a validation rule with a step-by-step fix guide:" },
       { type: 'ol', items: [
@@ -836,7 +895,34 @@ python validate_and_score.py model.ifc`,
         'Standard property sets are present; elements are named.',
         'Health Score ≥ 80 before any CDE upload.',
       ]},
+      { type: 'h2', text: 'When the Score Comes Back Low' },
+      { type: 'p', text: "A low score is rarely a verdict on the model — it's a pointer at the export settings. Almost every failure traces back to one of five causes, and each is fixed in the authoring tool, not in the IFC:" },
+      {
+        type: 'table',
+        headers: ['What the report says', 'Usual cause', 'Where to fix it'],
+        rows: [
+          ['GlobalIds changed since the last issue', 'The export regenerates GUIDs instead of persisting them', 'Authoring tool export settings'],
+          ['Elements outside any storey', "Levels not flagged as 'Building Story' on export", 'Level settings in Revit'],
+          ['Model far from the origin', 'Exported in survey coordinates instead of shared/project coordinates', 'Coordinate setup before export'],
+          ['High share of IfcBuildingElementProxy', 'Families with no IFC class mapping', 'IFC export mapping table'],
+          ['Property sets missing', 'Pset export disabled, or parameters never mapped', 'Export configuration'],
+        ],
+      },
+      { type: 'p', text: ["Each of these has its own walkthrough: ", { text: 'Why IFC GUIDs Change on Every Export', to: 'ifc-guids-changing-every-export' }, ", ", { text: 'Why Your Revit IFC Export Breaks', to: 'revit-ifc-export-breaks' }, ", ", { text: 'IFC Coordinates Are Wrong', to: 'ifc-coordinates-georeferencing' }, " and ", { text: 'IFC Properties Missing After Export', to: 'ifc-properties-missing-after-export' }, "."] },
+      { type: 'callout', variant: 'warning', text: "Never fix a validation issue by editing the IFC text file. Change the cause in the authoring tool and re-export — hand edits routinely break GUIDs and references in ways that are far harder to find than the original problem." },
+      { type: 'h2', text: 'Turning the Check Into a Rule' },
+      { type: 'p', text: "A check that depends on someone remembering to run it isn't a quality process. Put the threshold in the BEP, and attach the evidence to the delivery:" },
+      {
+        type: 'table',
+        headers: ['Delivery stage', 'Minimum Health Score', 'Evidence to attach'],
+        rows: [
+          ['Internal concept review', '70', 'Score only'],
+          ['Coordination round / CDE upload', '80', 'Score + issue report'],
+          ['ISO 19650 milestone, LOD 300+', '90', 'Score + issue report + resolved-issue log'],
+        ],
+      },
       { type: 'callout', variant: 'tip', text: "Make it contractual: 'IFC deliveries must achieve a Health Score ≥ 80, validated before upload, with the score attached to the transmittal.' A schema-only check won't enforce delivery quality — a practical score will." },
+      { type: 'p', text: ["Once the threshold is agreed, the rest is repetition: export locally, validate, fix the cause, re-export, deliver with the score attached. For the wider picture of what quality means across a whole project, see ", { text: 'The Complete Guide to IFC Quality', to: 'ifc-quality-guide' }, "."] },
     ],
   },
 
@@ -973,7 +1059,7 @@ python validate_and_score.py model.ifc`,
         type: 'stat-row',
         stats: [
           { value: 6,  suffix: '', label: 'failure categories' },
-          { value: 38, suffix: '', label: 'validation rules' },
+          { value: 44, suffix: '', label: 'validation rules' },
           { value: 80, suffix: '+', label: 'Health Score to deliver' },
           { value: 30, suffix: 's', label: 'to validate any model' },
         ],
@@ -7152,7 +7238,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
         type: 'stat-row',
         stats: [
           { value: 4,   suffix: '', label: 'ajustes clave' },
-          { value: 38,  suffix: '', label: 'reglas de validación' },
+          { value: 44,  suffix: '', label: 'reglas de validación' },
           { value: 30,  suffix: 's', label: 'para validar un modelo' },
           { value: 0,   suffix: ' MB', label: 'subidos al servidor' },
         ],
@@ -7640,7 +7726,7 @@ export const BLOG_POSTS_DE: BlogPost[] = [
       {
         type: 'stat-row',
         stats: [
-          { value: 38,  suffix: '', label: 'Prüfregeln' },
+          { value: 44,  suffix: '', label: 'Prüfregeln' },
           { value: 0,   suffix: ' Byte', label: 'auf den Server hochgeladen' },
           { value: 100, suffix: '%', label: 'läuft im Browser' },
           { value: 13,  suffix: '', label: 'Demo-IFC-Modelle' },
@@ -7733,7 +7819,7 @@ export const BLOG_POSTS_FR: BlogPost[] = [
       {
         type: 'stat-row',
         stats: [
-          { value: 38,  suffix: '', label: 'règles de validation' },
+          { value: 44,  suffix: '', label: 'règles de validation' },
           { value: 0,   suffix: ' octet', label: 'envoyé au serveur' },
           { value: 100, suffix: '%', label: 'dans le navigateur' },
           { value: 13,  suffix: '', label: 'modèles IFC de démo' },
