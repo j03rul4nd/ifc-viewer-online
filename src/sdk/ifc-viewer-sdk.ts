@@ -23,6 +23,18 @@ export interface IfcViewerOptions {
   validate?: boolean
   /** Open the validation panel automatically. Default false. */
   panel?: boolean
+  /**
+   * Limit the tool rail to these panels, from the first frame.
+   *
+   * The same vocabulary as {@link IfcViewer.setPanels} and the `panels=` URL
+   * parameter. Prefer this over calling `setPanels` after load: the rail is
+   * built before the viewer is ready, so scoping it afterwards shows the full
+   * set first and then takes tools away.
+   *
+   * An empty array means no rail at all. Omitting it means no opinion, and the
+   * preset decides.
+   */
+  panels?: PanelName[]
   /** Force a UI language (e.g. 'en', 'es', 'de'). */
   lang?: string
   /** Accent colour (`#rrggbb`) to theme the viewer to your dashboard. */
@@ -951,6 +963,9 @@ export class IfcViewer {
     if (ui !== 'minimal') url.searchParams.set('ui', ui)
     if (this.opts.validate === false) url.searchParams.set('validate', '0')
     if (this.opts.panel) url.searchParams.set('panel', '1')
+    // Serialised even when empty: `panels=` with nothing after it is a host
+    // saying "no rail", which is not the same as saying nothing.
+    if (this.opts.panels) url.searchParams.set('panels', this.opts.panels.join(','))
     if (this.opts.lang) url.searchParams.set('lang', this.opts.lang)
     if (this.opts.accent) url.searchParams.set('accent', this.opts.accent.replace(/^#/, ''))
     return url.toString()
@@ -1095,6 +1110,7 @@ export class IfcViewer {
 // Zero-JS integration: drop the tag into any HTML/dashboard and set attributes.
 //
 //   <ifc-viewer model="https://host/a.ifc" ui="minimal" accent="#22c55e"
+//   <ifc-viewer model="https://host/a.ifc" panels="scene,map"
 //               style="display:block;height:520px"></ifc-viewer>
 //
 // Events are re-dispatched as DOM CustomEvents named `ifcviewer:<type>` (detail =
@@ -1126,6 +1142,7 @@ export class IfcViewerElement extends HTMLElement {
 
     const v = new IfcViewer(host, {
       ui: attr('ui') as IfcViewerPreset | undefined,
+      panels: attr('panels')?.split(',').map((p) => p.trim()).filter(Boolean) as PanelName[] | undefined,
       lang: attr('lang'),
       accent: attr('accent'),
       validate: boolAttr('validate'),
