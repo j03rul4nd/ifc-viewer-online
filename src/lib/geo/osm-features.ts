@@ -63,8 +63,22 @@ export interface FeatureStyle {
   /** '#rrggbb' from `building:colour` / `roof:colour`, when parseable. */
   wallColor?: string
   roofColor?: string
+  /**
+   * What the building is for. Drives palette, proportion and roof — the levers
+   * that stop a whole neighbourhood reading as one extruded material. Resolved
+   * from tags here so the tags themselves never cross the worker boundary.
+   */
+  use?: BuildingUse
   /** `roof:shape`, normalised to the shapes we can actually build. */
   roofShape: RoofShape
+  /**
+   * True when `roof:shape` was actually present. Without this, "the mapper says
+   * flat" and "nobody said anything" are the same value, and the renderer has
+   * no way to know whether it is allowed to infer a pitch from what the building
+   * IS — which is the only way most of the world gets a roof, since barely a few
+   * per cent of buildings carry the tag.
+   */
+  roofTagged?: boolean
   /** Roof height in metres for non-flat roofs. */
   roofHeightM: number
   /** Canopy radius (trees), metres. */
@@ -87,6 +101,18 @@ export interface FeatureStyle {
   lanes?: number
   /** Traffic runs one way only — so there is no centre line to divide it. */
   oneway?: boolean
+  /**
+   * Carriageway, footpath or track. Decides which NETWORK the way is solved in
+   * as well as how it is surfaced — see RoadClass.
+   */
+  roadClass?: RoadClass
+  /**
+   * What is growing on a patch of greenery — see GreenCover. Absent on
+   * everything that is not `kind === 'green'`.
+   */
+  cover?: GreenCover
+  /** Which species that cover grows, for the seeded canopy. */
+  coverShape?: TreeShape
   /**
    * How coarse the surface is, 0-1 — a mown pitch vs heath, fine beach sand vs
    * shingle, an ice field vs loose scree. Drives grain size, ripple wavelength
@@ -114,6 +140,82 @@ export interface FeatureStyle {
  */
 export type RoofShape = 'flat' | 'gabled' | 'pyramidal'
 
+/**
+ * What a building is FOR, in the few categories that change how it looks.
+ *
+ * Not a taxonomy of OSM's `building` key — that has hundreds of values and
+ * almost none of them change a facade. These are the ones that do: a house is
+ * small, low and pitched wherever you are; a temple has a deep dark roof and a
+ * palette nothing else shares; a shed is corrugated metal; a tower block is
+ * glazed. Everything unrecognised is `generic`, which is honest — `building=yes`
+ * is the most common value in the database and it tells us nothing.
+ *
+ * The point of resolving this HERE is that the tags never cross the worker
+ * boundary. One short enum travels instead of a map of strings per building, on
+ * a payload that is routinely two and a half thousand buildings.
+ */
+export type BuildingUse =
+  | 'house' | 'apartments' | 'tower' | 'temple' | 'shrine'
+  | 'industrial' | 'retail' | 'civic' | 'shed' | 'generic'
+
+const USE_BY_BUILDING: Record<string, BuildingUse> = {
+  house: 'house', detached: 'house', semidetached_house: 'house',
+  terrace: 'house', bungalow: 'house', hut: 'shed', cabin: 'house',
+  farm: 'house', static_caravan: 'house', houseboat: 'house',
+
+  apartments: 'apartments', residential: 'apartments', dormitory: 'apartments',
+
+  temple: 'temple', shrine: 'shrine', pagoda: 'temple',
+  church: 'temple', chapel: 'temple', cathedral: 'temple',
+  mosque: 'temple', synagogue: 'temple', monastery: 'temple',
+
+  industrial: 'industrial', warehouse: 'industrial', factory: 'industrial',
+  manufacture: 'industrial', hangar: 'industrial', silo: 'industrial',
+  storage_tank: 'industrial',
+
+  retail: 'retail', commercial: 'retail', shop: 'retail',
+  supermarket: 'retail', kiosk: 'retail', office: 'tower',
+
+  civic: 'civic', public: 'civic', government: 'civic', hospital: 'civic',
+  school: 'civic', university: 'civic', college: 'civic', museum: 'civic',
+  train_station: 'civic', stadium: 'civic', sports_hall: 'civic',
+
+  shed: 'shed', garage: 'shed', garages: 'shed', carport: 'shed',
+  greenhouse: 'shed', roof: 'shed', service: 'shed',
+}
+
+/** `amenity` and `historic` answer for a building the `building` key does not. */
+const USE_BY_AMENITY: Record<string, BuildingUse> = {
+  place_of_worship: 'temple', townhall: 'civic', school: 'civic',
+  hospital: 'civic', university: 'civic', college: 'civic', library: 'civic',
+  marketplace: 'retail',
+}
+
+/**
+ * What a building is for, from its tags.
+ *
+ * Order encodes precedence: an explicit `building` value is the mapper's own
+ * answer and wins; `amenity` fills in for the very common
+ * `building=yes` + `amenity=place_of_worship`; and a Shinto shrine is
+ * distinguished from a Buddhist temple through `religion`, because the two look
+ * nothing alike and OSM does carry the difference.
+ */
+export function buildingUse(tags: Record<string, string> | undefined): BuildingUse {
+  const t = tags ?? {}
+  const raw = (t['building'] ?? '').toLowerCase()
+  let use = USE_BY_BUILDING[raw] ?? USE_BY_AMENITY[(t['amenity'] ?? '').toLowerCase()]
+
+  if (!use && (t['historic'] ?? '').toLowerCase() === 'temple') use = 'temple'
+  if (!use) use = 'generic'
+
+  if (use === 'temple' || use === 'shrine') {
+    const religion = (t['religion'] ?? '').toLowerCase()
+    if (religion === 'shinto') return 'shrine'
+    if (religion === 'buddhist' || religion === 'taoist') return 'temple'
+  }
+  return use
+}
+
 // ── Tag → kind classification ──────────────────────────────────────────────────
 
 const GREEN_LEISURE = new Set(['park', 'garden', 'pitch', 'golf_course', 'common', 'nature_reserve'])
@@ -122,6 +224,99 @@ const GREEN_LANDUSE = new Set([
   'allotments', 'orchard', 'vineyard', 'cemetery',
 ])
 const GREEN_NATURAL = new Set(['wood', 'scrub', 'grassland', 'heath', 'wetland'])
+
+/**
+ * What is GROWING on a patch of greenery, as distinct from what colour it is.
+ *
+ * The tone helpers already say a forest is darker than a lawn. This says the
+ * forest has trees ON it — which is the difference between a wooded hillside and
+ * a dark green carpet, and it was the single biggest thing missing from the map.
+ * Until this existed the only trees in the scene were `natural=tree` nodes, so a
+ * `landuse=forest` polygon rendered as flat baize: measured on a Kyoto site, 205
+ * greenery polygons against 555 mapped tree nodes, and the wooded slopes east of
+ * the city were moquette.
+ *
+ * Five classes, because they need five genuinely different treatments:
+ *   forest  — closed canopy, trees touching, ground barely visible.
+ *   shrub   — scrub and heath: low, dense, no trunk worth drawing.
+ *   orchard — planted in ROWS. A grid reads as agriculture instantly, and
+ *             scattering an orchard is the tell that nobody looked at the tag.
+ *   park    — specimen trees over mown grass, well spaced.
+ *   bare    — a pitch, a lawn, a meadow. Grass, and that is all.
+ */
+export type GreenCover = 'forest' | 'shrub' | 'orchard' | 'park' | 'bare'
+
+/** Nominal spacing between stems per cover class, metres. */
+export const COVER_SPACING_M: Record<GreenCover, number> = {
+  // Not real forestry density — a managed wood is hundreds of stems a hectare
+  // and no browser will draw that. This is the spacing at which crowns of the
+  // size OSM implies MEET, which is what the eye reads as "closed canopy".
+  forest: 9,
+  shrub: 5,
+  orchard: 7,
+  park: 18,
+  bare: 0,
+}
+
+/** Canopy radius and height per class, metres, before per-tree variation. */
+export const COVER_TREE_SIZE: Record<GreenCover, { radiusM: number; heightM: number }> = {
+  forest: { radiusM: 4.5, heightM: 14 },
+  shrub: { radiusM: 1.6, heightM: 2.2 },
+  orchard: { radiusM: 2.6, heightM: 5 },
+  park: { radiusM: 5.0, heightM: 12 },
+  bare: { radiusM: 0, heightM: 0 },
+}
+
+/**
+ * What grows here, from the tags.
+ *
+ * `bare` is the default rather than `park`: inventing trees over a sports pitch
+ * or a cemetery lawn is a worse error than leaving a genuine park thin, because
+ * one is a plausible omission and the other is a statement about the site that
+ * is simply false.
+ */
+export function greenCover(tags: Record<string, string> | undefined): GreenCover {
+  const t = tags ?? {}
+  const landuse = (t['landuse'] ?? '').toLowerCase()
+  const natural = (t['natural'] ?? '').toLowerCase()
+  const leisure = (t['leisure'] ?? '').toLowerCase()
+
+  if (natural === 'wood' || landuse === 'forest') return 'forest'
+  if (natural === 'scrub' || natural === 'heath') return 'shrub'
+  if (landuse === 'orchard' || landuse === 'vineyard') return 'orchard'
+  if (leisure === 'park' || leisure === 'garden' || leisure === 'nature_reserve') return 'park'
+  if (leisure === 'common' || landuse === 'village_green') return 'park'
+  // grass, meadow, pitch, golf_course, cemetery, allotments, grassland, wetland.
+  return 'bare'
+}
+
+/**
+ * Which species a patch of greenery grows, WHEN THE TAGS SAY SO — and
+ * `undefined` when they do not.
+ *
+ * The absence is the point. This used to answer 'broadleaf' for everything
+ * untagged, and almost nothing is tagged: measured over a 1.4 km box on Kyoto,
+ * 8 289 of 8 292 seeded trees came out broadleaf, on hillsides that are sugi
+ * and hinoki plantation. That is the same mistake the facade palette made —
+ * one European default applied to the whole planet — and it costs more here,
+ * because a whole wood of one silhouette is precisely the uniformity the
+ * seeding exists to break.
+ *
+ * So the guess moves to where the site's coordinates are known, and this
+ * function is left saying only what the data says. See `coverSpeciesMix`.
+ */
+export function coverTreeShape(
+  cover: GreenCover, tags: Record<string, string> | undefined,
+): TreeShape | undefined {
+  const t = tags ?? {}
+  const leaf = (t['leaf_type'] ?? '').toLowerCase()
+  if (leaf === 'needleleaved') return 'needleleaf'
+  if (leaf === 'broadleaved') return 'broadleaf'
+  // A vineyard is columnar rows. This one IS from the tags — `landuse=vineyard`
+  // says what is planted, so it belongs here and not in the regional guess.
+  if (cover === 'orchard' && (t['landuse'] ?? '') === 'vineyard') return 'columnar'
+  return undefined
+}
 
 /** Loose mineral ground: beaches, dunes, river bars, golf bunkers. */
 const SAND_NATURAL = new Set(['beach', 'sand', 'dune', 'shingle', 'mud'])
@@ -201,6 +396,60 @@ const ROAD_TONES: Record<string, [number, number, number]> = {
   cycleway: [0.36, 0.36, 0.44], track: [0.47, 0.43, 0.34],
   steps: [0.50, 0.46, 0.42],
 }
+
+/**
+ * What KIND of way this is, beyond how wide it is.
+ *
+ * OSM files a footpath and a motorway under the same `highway` key, and until
+ * this existed the renderer took it literally: a 1.6 m path was buffered,
+ * kerbed, surfaced and — worst of all — solved for junctions as though it were
+ * a carriageway. Two things came out of that. A footway looked like a road in
+ * miniature, and, far more damaging, a footway ENDING on an avenue split that
+ * avenue in two and created a three-armed junction whose outer arms are nearly
+ * antiparallel — the exact configuration whose border intersection lands
+ * hundreds of metres away and drags tens of metres of asphalt with it.
+ *
+ * The class is what lets the mesh stage keep the two networks apart, and what
+ * gives each its own surface instead of one tin of asphalt for everything.
+ */
+export type RoadClass = 'vehicular' | 'pedestrian' | 'track'
+
+/** Ways people walk or cycle on. Not carriageways, whatever the tag says. */
+const PEDESTRIAN_HIGHWAYS = new Set([
+  'footway', 'path', 'steps', 'pedestrian', 'cycleway', 'corridor', 'bridleway',
+])
+
+/**
+ * What class a way belongs to. `track` is its own answer rather than being
+ * lumped in with either: it carries vehicles, so calling it a footpath is
+ * wrong, but it is unpaved and three metres wide, so putting it in the road
+ * network alongside a trunk reintroduces the very junction it should not make.
+ */
+export function roadClass(tags: Record<string, string> | undefined): RoadClass {
+  const cls = (tags?.['highway'] ?? '').toLowerCase()
+  if (cls === 'track') return 'track'
+  return PEDESTRIAN_HIGHWAYS.has(cls) ? 'pedestrian' : 'vehicular'
+}
+
+/**
+ * How coarse each class of way reads, 0-1 — feeds the same `aRough` attribute
+ * the ground layers use. Asphalt is fine and near-uniform; paving slabs and
+ * gravel are not, and drawing a farm track with motorway grain is the tell
+ * that one material is doing all the work.
+ */
+export const ROAD_CLASS_ROUGHNESS: Record<RoadClass, number> =
+  { vehicular: 0.22, pedestrian: 0.5, track: 0.78 }
+
+/**
+ * Kerb drop at the edge of a way, metres.
+ *
+ * A carriageway sits in a kerbed channel; a footpath is flush with what it
+ * crosses, and dropping it 16 cm like a road carved a trench through every
+ * park. Steps and paths get the smallest lip that still separates them from
+ * the ground they lie on.
+ */
+export const ROAD_CLASS_KERB_M: Record<RoadClass, number> =
+  { vehicular: 0.16, pedestrian: 0.05, track: 0.03 }
 
 /** Road-marking white, worn — the same paint as the centre line. */
 const CROSSING_TONE: [number, number, number] = [0.82, 0.80, 0.72]
@@ -371,9 +620,12 @@ export function resolveFeatureStyle(
   }
 
   if (kind === 'green') {
+    const cover = greenCover(t)
     return {
       roofShape: 'flat', roofHeightM: 0,
       tone: greenTone(t), roughness: greenRoughness(t),
+      cover,
+      coverShape: coverTreeShape(cover, t),
     }
   }
 
@@ -392,6 +644,7 @@ export function resolveFeatureStyle(
     const oneway = (t['oneway'] ?? '').toLowerCase()
     return {
       roofShape: 'flat', roofHeightM: 0, tone: roadTone(t),
+      roadClass: roadClass(t),
       lanes: Number.isFinite(lanes) && lanes > 0 ? Math.min(12, Math.round(lanes)) : undefined,
       // A roundabout is one-way by definition even when nobody tagged it, and
       // painting a centre line down a ring road is the giveaway of a renderer
@@ -420,6 +673,8 @@ export function resolveFeatureStyle(
     wallColor: parseOsmColor(t['building:colour'] ?? t['colour']),
     roofColor: parseOsmColor(t['roof:colour']),
     roofShape,
+    roofTagged: (t['roof:shape'] ?? '') !== '',
+    use: buildingUse(t),
     roofHeightM: roofShape === 'flat' ? 0 : (tagged && tagged > 0 ? tagged : 3),
   }
 }

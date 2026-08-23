@@ -16,15 +16,33 @@
 import * as THREE from 'three'
 
 /**
+ * A run of vertices that shares one surface grain. `end` is exclusive.
+ *
+ * The alternative was threading a roughness through every push site in the
+ * ribbon builder — a dozen of them, for one number. A layer emits its geometry
+ * in class order anyway, so the runs are contiguous by construction and a
+ * handful of ranges says the same thing for free.
+ */
+export interface RoughnessBand {
+  start: number
+  end: number
+  value: number
+}
+
+/**
  * Add `aSurf` (planar metres, relative to the geometry's own first vertex) and
- * a constant `aRough` to a geometry whose positions are in normalized units.
+ * `aRough` to a geometry whose positions are in normalized units.
  *
  * The origin is per geometry rather than global. For a ribbon layer that is
  * fine: the pattern only has to be continuous WITHIN the layer, and every road
  * in one patch shares this one mesh.
+ *
+ * `roughness` is the value every vertex starts at; `bands` overrides the runs
+ * that are made of something else — paving slabs and gravel among the tarmac.
  */
 export function metricAttributes(
   geometry: THREE.BufferGeometry, metresToNormalized: number, roughness: number,
+  bands?: ReadonlyArray<RoughnessBand>,
 ): void {
   const pos = geometry.getAttribute('position')
   if (!pos) return
@@ -39,6 +57,12 @@ export function metricAttributes(
     surf[i * 2] = (pos.getX(i) - originX) / metresToNormalized
     surf[i * 2 + 1] = (pos.getY(i) - originY) / metresToNormalized
     rough[i] = roughness
+  }
+
+  for (const band of bands ?? []) {
+    const from = Math.max(0, Math.min(count, Math.floor(band.start)))
+    const to = Math.max(from, Math.min(count, Math.floor(band.end)))
+    for (let i = from; i < to; i++) rough[i] = band.value
   }
 
   geometry.setAttribute('aSurf', new THREE.BufferAttribute(surf, 2))

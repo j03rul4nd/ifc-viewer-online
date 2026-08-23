@@ -145,6 +145,10 @@
     "vehiclesHint": "Cars, trains, street lamps and platform shelters are NOT mapped data — OpenStreetMap does not record where a car is parked or which kerb carries a lamp. Their placement is invented to make a view feel lived-in, and it is the same every time.",
     "facadeShowcase": "Showcase",
     "facadeShowcaseHint": "Showcase swaps in authored 3D models — trees, cars, vans, buses, carriages, signal heads, catenary masts, street lamps and platform shelters — downloaded once from this site (about 136 KB). Everything else works without them.",
+    "contextTone": "Context tone",
+    "contextToneNatural": "Natural",
+    "contextToneNeutral": "Discreet",
+    "contextToneHint": "Discreet paints the surroundings as near-monochrome masses. Same skyline, same footprints, none of the colour — for a view whose subject is your model and whose context is only there to give it scale.",
     "suppress": "Hide map context under the model",
     "suppressHint": "Where the model stands, the map is describing the same thing twice. A building hides the mapped building on its plot and any trees inside its plan; a bridge or tunnel also hides the carriageway it carries. The street outside is never hidden. Turn this off to compare the two."
   },

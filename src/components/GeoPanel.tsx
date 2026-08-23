@@ -31,7 +31,7 @@ import { appBus } from '../lib/event-bus'
 import { publishInspectorTarget } from '../lib/inspector'
 import { emitEmbedEvent } from '../lib/url-params'
 import { ViewportPanel } from './ViewportPanel'
-import type { BuildingDetail } from '../lib/geo/building-mesh'
+import type { BuildingDetail, ContextTone } from '../lib/geo/building-mesh'
 import { WGS84_RADIUS, normalizeDeg } from '../lib/geo/geo-math'
 import {
   trackMapModeEnabled, trackMapModeDisabled, trackMapLayerChanged,
@@ -406,6 +406,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
       // tests because the store and the UI agreed perfectly with each other.
       const prefs = useGeoStore.getState()
       geo.setContextDetail(prefs.contextDetail)
+      geo.setContextTone(prefs.contextTone)
       geo.setVehicles(prefs.vehicles)
       // Tell the scene WHAT the model is before the first build, so the OSM
       // context yields correctly on the first frame rather than flickering the
@@ -448,6 +449,12 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
   const handleContextDetail = useCallback((level: BuildingDetail): void => {
     useGeoStore.getState().setContextDetail(level)
     void getGeo()?.then((geo) => geo.setContextDetail(level))
+  }, [getGeo])
+
+  /** How loud the context is — rebuilt from cache, so also instant. */
+  const handleContextTone = useCallback((tone: ContextTone): void => {
+    useGeoStore.getState().setContextTone(tone)
+    void getGeo()?.then((geo) => geo.setContextTone(tone))
   }, [getGeo])
 
   /**
@@ -1166,6 +1173,25 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                             ? t('layers.facadeShowcaseHint')
                             : t('layers.detailHint')}
                         </p>
+
+                        {/* Orthogonal to the level above: how much the context
+                            is allowed to compete with the model, not how much
+                            of it is modelled. Also rebuilt from cache. */}
+                        <Caption>{t('layers.contextTone')}</Caption>
+                        <Choices
+                          options={([
+                            ['natural', t('layers.contextToneNatural')],
+                            ['neutral', t('layers.contextToneNeutral')],
+                          ] as const).map(([id, label]) => ({
+                            id, label, active: store.contextTone === id,
+                          }))}
+                          onSelect={handleContextTone}
+                        />
+                        {store.contextTone === 'neutral' && (
+                          <p className="text-[10px] text-[var(--text-faint)] leading-snug">
+                            {t('layers.contextToneHint')}
+                          </p>
+                        )}
 
                         {/* Per-layer visibility, with counts, so an empty layer
                             reads as "none mapped here" and not as a dead toggle. */}

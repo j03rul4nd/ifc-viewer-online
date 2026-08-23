@@ -412,3 +412,90 @@ describe('markings travel with the edge', () => {
     expect(net.ribbons[0].oneway).toBe(false)
   })
 })
+
+describe('a junction approached on a curve', () => {
+  // The node surface and the carriageway used to be worked out from two
+  // different headings. The junction took the way's ORIGINAL heading out of the
+  // node; the ribbon was mitred on the centreline AFTER trimming, which starts
+  // at an interpolated cut point somewhere past the first vertices. Straight
+  // approaches agree. Curved ones do not, and the disagreement is a wedge of
+  // missing asphalt on one side of the road and an overlap on the other.
+
+  /** An arm leaving the origin heading south and bending, 3 m per vertex. */
+  const bending = (): THREE.Vector2[] => {
+    const pts = [v(0, 0)]
+    let x = 0
+    let y = 0
+    let ang = -Math.PI / 2
+    for (let i = 0; i < 15; i++) {
+      ang += (8 * Math.PI) / 180
+      x += 3 * Math.cos(ang)
+      y += 3 * Math.sin(ang)
+      pts.push(v(x, y))
+    }
+    return pts
+  }
+
+  const built = (): RoadNetwork => buildRoadNetwork([
+    // A 12 m avenue through the node, so the trim is deep enough to run past
+    // several vertices of the bending arm.
+    { id: 'east', points: [v(0, 0), v(200, 0)], halfWidth: 6, tone: GREY },
+    { id: 'west', points: [v(-200, 0), v(0, 0)], halfWidth: 6, tone: GREY },
+    { id: 'bend', points: bending(), halfWidth: 5, tone: GREY },
+  ], SNAP)
+
+  /** Is `p` one of the polygon's own vertices? */
+  const has = (poly: ReadonlyArray<THREE.Vector2>, p: THREE.Vector2): boolean =>
+    poly.some((q) => q.distanceTo(p) < 1e-6)
+
+  it('the trim really does move past the first vertices — the test is not vacuous', () => {
+    const net = built()
+    const bend = net.ribbons.find((r) => r.id.startsWith('bend'))!
+    const original = endDirection(bending(), true)!
+    const trimmed = bend.centre[0].clone().normalize()
+    const deg = (Math.acos(Math.min(1, original.dot(trimmed))) * 180) / Math.PI
+    // Five degrees over a 10 m carriageway is well over a metre of border.
+    expect(deg).toBeGreaterThan(3)
+  })
+
+  it('closes the node on the borders the carriageway actually has', () => {
+    const net = built()
+    const junction = net.junctions[0]
+    const bend = net.ribbons.find((r) => r.id.startsWith('bend'))!
+    expect(bend.trimmedStart).toBe(true)
+    // Both corners of the trimmed end are vertices of the junction polygon.
+    // Anything else and the two surfaces do not meet.
+    expect(has(junction.polygon, bend.left[0])).toBe(true)
+    expect(has(junction.polygon, bend.right[0])).toBe(true)
+  })
+
+  it('is a real fix: the old analytic corner was over a metre away', () => {
+    const net = built()
+    const bend = net.ribbons.find((r) => r.id.startsWith('bend'))!
+    const dir = endDirection(bending(), true)!
+    const normal = v(-dir.y, dir.x)
+    const base = dir.clone().multiplyScalar(bend.centre[0].length())
+    const oldLeft = base.clone().addScaledVector(normal, 5)
+    const oldRight = base.clone().addScaledVector(normal, -5)
+    expect(Math.min(oldLeft.distanceTo(bend.left[0]), oldRight.distanceTo(bend.right[0])))
+      .toBeGreaterThan(0.5)
+  })
+
+  it('keeps every arm of the node closed, curved or not', () => {
+    const net = built()
+    const junction = net.junctions[0]
+    for (const r of net.ribbons) {
+      if (r.trimmedStart) {
+        expect(has(junction.polygon, r.left[0]), `${r.id} left`).toBe(true)
+        expect(has(junction.polygon, r.right[0]), `${r.id} right`).toBe(true)
+      }
+      if (r.trimmedEnd) {
+        const j = r.centre.length - 1
+        expect(has(junction.polygon, r.left[j]), `${r.id} left end`).toBe(true)
+        expect(has(junction.polygon, r.right[j]), `${r.id} right end`).toBe(true)
+      }
+    }
+    // And it is still a face, not a folded sliver.
+    expect(Math.abs(area(junction.polygon))).toBeGreaterThan(0)
+  })
+})

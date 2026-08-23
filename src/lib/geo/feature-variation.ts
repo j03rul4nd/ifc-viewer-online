@@ -48,6 +48,11 @@ export function jitter(id: string, channel: number, base: number, amount: number
  */
 export type TreeShape = 'broadleaf' | 'needleleaf' | 'columnar' | 'palm'
 
+// TYPE-ONLY, and it has to stay that way: osm-features imports this module for
+// its tone helpers, so a value import back would be a genuine cycle. Type
+// imports are erased at compile time and cost nothing at runtime.
+import type { BuildingUse, GreenCover, RoofShape } from './osm-features'
+
 /** Genera whose habit is a narrow spindle rather than a round crown. */
 const COLUMNAR_GENERA = [
   'populus', 'cupressus', 'thuja', 'juniperus', 'taxodium', 'calocedrus',
@@ -125,14 +130,270 @@ const FACADE_TONES: Array<[number, number, number]> = [
 ]
 
 /**
+ * Roughly where in the world the site is, in the few divisions that change what
+ * a street of buildings looks like.
+ *
+ * DELIBERATELY COARSE, and boxes rather than borders. The honest alternative was
+ * shipping a country polygon set to pick a paint colour, which is absurd for
+ * what this buys; the dishonest one was pretending the six European tones fit
+ * everywhere, which is what a neighbourhood in Kyoto looked like. A box that is
+ * right about Japan, the Mediterranean and northern Europe and says `generic`
+ * everywhere else is a real improvement over one palette for the planet, and it
+ * degrades to exactly the old behaviour where it does not know.
+ */
+export type BuildingRegion =
+  | 'east-asia' | 'mediterranean' | 'northern-europe' | 'north-america' | 'generic'
+
+/** south, west, north, east — in that order, degrees. */
+const REGION_BOXES: Array<[BuildingRegion, number, number, number, number]> = [
+  // Japan, Korea, eastern China. The one that motivated this.
+  ['east-asia', 20, 100, 46, 146],
+  // The Mediterranean basin, both shores.
+  ['mediterranean', 30, -10, 45, 36],
+  ['northern-europe', 45, -11, 71, 32],
+  ['north-america', 25, -125, 60, -60],
+]
+
+export function buildingRegion(lat: number, lon: number): BuildingRegion {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return 'generic'
+  for (const [region, s, w, n, e] of REGION_BOXES) {
+    if (lat >= s && lat <= n && lon >= w && lon <= e) return region
+  }
+  return 'generic'
+}
+
+// ── Which species grows where ──────────────────────────────────────────────────
+
+/**
+ * The species mix a cover class grows in a region, as weights that need not sum
+ * to anything in particular.
+ *
+ * TWO DELIBERATE CHOICES, both of which cost something:
+ *
+ * 1. This is a REGIONAL PLAUSIBILITY, not a fact about the polygon it is
+ *    applied to. OSM knows `leaf_type` for a small minority of woods; where it
+ *    knows, it wins and this is never consulted (see `coverTreeShape`). Where
+ *    it does not, the honest options are a coin flip, one global default, or a
+ *    guess informed by where on Earth the site is. The last is the least wrong,
+ *    and calling it a guess in the code is the price of using it.
+ * 2. A wood is a MIXTURE. A single species is a plantation, and rendering every
+ *    wood as one is the uniformity tell all over again — so every entry keeps a
+ *    minority, even where the dominance is overwhelming.
+ *
+ * Only broadleaf and needleleaf appear here. Both already have an authored
+ * asset and an InstancedMesh of their own, so a mix of the two costs NO extra
+ * draw calls — the count follows the number of species on screen, not the
+ * number of trees. Adding a third species to this table would add a third mesh,
+ * and that is a real cost to state out loud rather than discover in a profile.
+ */
+const SPECIES_MIX: Record<string, ReadonlyArray<readonly [TreeShape, number]>> = {
+  // Japan, Korea, eastern China: post-war sugi and hinoki plantation covers the
+  // working hillsides, with broadleaf on the margins and in the old groves.
+  'east-asia:forest': [['needleleaf', 0.75], ['broadleaf', 0.25]],
+  // Pine, cypress and holm oak. Drier and more open than the temperate north.
+  'mediterranean:forest': [['needleleaf', 0.6], ['broadleaf', 0.4]],
+  // The box spans temperate deciduous and boreal alike, so an even hand is the
+  // only defensible answer at this resolution.
+  'northern-europe:forest': [['needleleaf', 0.5], ['broadleaf', 0.5]],
+  'north-america:forest': [['needleleaf', 0.5], ['broadleaf', 0.5]],
+
+  // Planted greenery follows what people plant, which is broadleaf almost
+  // everywhere — a park is shade, and conifers give little of it.
+  'east-asia:park': [['broadleaf', 0.85], ['needleleaf', 0.15]],
+  'mediterranean:park': [['broadleaf', 0.8], ['needleleaf', 0.2]],
+}
+
+/** Broadleaf-dominant, for every region and cover the table does not name. */
+const DEFAULT_MIX: ReadonlyArray<readonly [TreeShape, number]> =
+  [['broadleaf', 0.85], ['needleleaf', 0.15]]
+
+/**
+ * Scrub is a low rounded mass with no trunk worth drawing, and the broadleaf
+ * crown already reads as exactly that. A conifer among it would read as a tree
+ * standing in heather, which is a different landscape.
+ */
+const SHRUB_MIX: ReadonlyArray<readonly [TreeShape, number]> = [['broadleaf', 1]]
+
+export function coverSpeciesMix(
+  cover: GreenCover, region: BuildingRegion,
+): ReadonlyArray<readonly [TreeShape, number]> {
+  if (cover === 'shrub') return SHRUB_MIX
+  // An orchard is one crop per field by definition — mixing it would undo the
+  // regularity that makes it read as agriculture at all.
+  if (cover === 'orchard') return [['broadleaf', 1]]
+  return SPECIES_MIX[`${region}:${cover}`] ?? DEFAULT_MIX
+}
+
+/**
+ * Pick one tree's species from its mix, deterministically per feature id, so a
+ * wood keeps the same trees between reloads and screenshots stay reproducible —
+ * the same rule the rest of this module follows.
+ */
+export function speciesFor(
+  id: string, cover: GreenCover, region: BuildingRegion,
+): TreeShape {
+  const mix = coverSpeciesMix(cover, region)
+  if (mix.length === 1) return mix[0][0]
+  const total = mix.reduce((sum, [, w]) => sum + w, 0)
+  let roll = variate(id, 11) * total
+  for (const [shape, weight] of mix) {
+    roll -= weight
+    if (roll <= 0) return shape
+  }
+  return mix[mix.length - 1][0]
+}
+
+/** Wall palettes that belong to a place. */
+const REGION_TONES: Record<BuildingRegion, Array<[number, number, number]>> = {
+  generic: FACADE_TONES,
+  'northern-europe': FACADE_TONES,
+  mediterranean: [
+    [0.88, 0.85, 0.78], // whitewash
+    [0.84, 0.78, 0.68], // cream render
+    [0.80, 0.70, 0.58], // ochre
+    [0.76, 0.66, 0.60], // faded terracotta render
+    [0.82, 0.80, 0.74], // pale limewash
+  ],
+  'east-asia': [
+    [0.80, 0.78, 0.74], // pale plaster
+    [0.66, 0.64, 0.62], // grey render
+    [0.72, 0.69, 0.63], // sand plaster
+    [0.55, 0.52, 0.49], // dark timber and plaster
+    [0.61, 0.60, 0.61], // concrete
+    [0.74, 0.72, 0.70], // tile-hung wall
+  ],
+  'north-america': [
+    [0.74, 0.72, 0.68], // painted board
+    [0.66, 0.63, 0.58],
+    [0.70, 0.66, 0.60], // brick
+    [0.62, 0.62, 0.63], // concrete
+    [0.78, 0.76, 0.72],
+  ],
+}
+
+/** Palettes that belong to a USE, wherever it is. A steel shed is a steel shed. */
+const USE_TONES: Partial<Record<BuildingUse, Array<[number, number, number]>>> = {
+  industrial: [[0.62, 0.64, 0.66], [0.56, 0.59, 0.62], [0.68, 0.68, 0.66]],
+  shed: [[0.58, 0.58, 0.56], [0.64, 0.62, 0.57], [0.52, 0.53, 0.52]],
+  tower: [[0.58, 0.63, 0.68], [0.52, 0.57, 0.62], [0.64, 0.68, 0.71]],
+}
+
+/** Where a place and a purpose together mean something neither means alone. */
+const REGION_USE_TONES: Record<string, Array<[number, number, number]>> = {
+  // Timber, white plaster and the deep red of a torii. A shrine is not a house
+  // with a different roof, and painting it as one is what made the block around
+  // the temple read as a European suburb.
+  'east-asia:shrine': [[0.55, 0.28, 0.22], [0.78, 0.75, 0.70], [0.45, 0.34, 0.27]],
+  'east-asia:temple': [[0.50, 0.40, 0.32], [0.72, 0.69, 0.64], [0.42, 0.35, 0.30]],
+  'east-asia:house': [[0.78, 0.76, 0.72], [0.62, 0.59, 0.55], [0.70, 0.67, 0.62]],
+  'mediterranean:house': [[0.90, 0.88, 0.82], [0.86, 0.80, 0.70], [0.82, 0.74, 0.62]],
+}
+
+/** Roof colours worth stating outright, rather than shading the wall tone. */
+const ROOF_TONES: Record<string, [number, number, number]> = {
+  'east-asia:temple': [0.20, 0.21, 0.23],   // dark glazed tile
+  'east-asia:shrine': [0.24, 0.25, 0.26],
+  'east-asia:house': [0.28, 0.30, 0.33],    // blue-grey kawara
+  'mediterranean:house': [0.62, 0.38, 0.27], // terracotta
+  'mediterranean:generic': [0.60, 0.40, 0.30],
+  'northern-europe:house': [0.42, 0.30, 0.26],
+}
+
+/** The tone a discreet context block is painted, before its own slight variance. */
+const NEUTRAL_TONE: [number, number, number] = [0.72, 0.72, 0.71]
+
+/**
+ * What a building is, and where. Everything a facade needs beyond its own id.
+ *
+ * Optional throughout: a caller with none of it gets exactly the old behaviour,
+ * which is what keeps the plain footprint path (no tags, no site) working.
+ */
+export interface FacadeContext {
+  use?: BuildingUse
+  region?: BuildingRegion
+  /**
+   * 'neutral' is the discreet treatment: near-monochrome masses whose only job
+   * is to give the IFC model scale. Not a level of detail — it is orthogonal to
+   * simple/detailed/showcase, because "how much is modelled" and "how much is it
+   * allowed to compete with the subject" are two different questions.
+   */
+  tone?: 'natural' | 'neutral'
+}
+
+/**
  * Pick a facade tone for a building without a tagged colour. Deterministic, so
  * the same block always looks the same — and varied, so a block does not read
  * as one extruded mass.
+ *
+ * The palette is chosen by place and purpose, most specific first. Before that
+ * existed there was one list of six European renders picked by hash, which is
+ * why every neighbourhood on earth came out looking like the same suburb.
  */
-export function facadeColor(id: string): [number, number, number] {
-  const tone = FACADE_TONES[hashId(`${id}#facade`) % FACADE_TONES.length]
+export function facadeColor(id: string, ctx?: FacadeContext): [number, number, number] {
+  if (ctx?.tone === 'neutral') {
+    // Enough variance to keep the block from reading as one solid, far too
+    // little to draw the eye off whatever is standing in front of it.
+    const g = 0.96 + variate(id, 5) * 0.08
+    return [clamp01(NEUTRAL_TONE[0] * g), clamp01(NEUTRAL_TONE[1] * g), clamp01(NEUTRAL_TONE[2] * g)]
+  }
+  const palette = facadePalette(ctx)
+  const tone = palette[hashId(`${id}#facade`) % palette.length]
   const brightness = 0.92 + variate(id, 3) * 0.16
   return [clamp01(tone[0] * brightness), clamp01(tone[1] * brightness), clamp01(tone[2] * brightness)]
+}
+
+function facadePalette(ctx?: FacadeContext): Array<[number, number, number]> {
+  const region = ctx?.region ?? 'generic'
+  const use = ctx?.use ?? 'generic'
+  return REGION_USE_TONES[`${region}:${use}`]
+    ?? USE_TONES[use]
+    ?? REGION_TONES[region]
+}
+
+/**
+ * A roof colour the place and purpose actually imply, or null to keep shading
+ * the wall tone as before. A tagged `roof:colour` outranks this everywhere.
+ */
+export function roofColorFor(ctx?: FacadeContext): [number, number, number] | null {
+  if (!ctx || ctx.tone === 'neutral') return null
+  const region = ctx.region ?? 'generic'
+  const use = ctx.use ?? 'generic'
+  return ROOF_TONES[`${region}:${use}`] ?? ROOF_TONES[`${region}:generic`] ?? null
+}
+
+/**
+ * The roof shape to build when nobody tagged one.
+ *
+ * Barely a few per cent of OSM buildings carry `roof:shape`, so this decides
+ * what almost every roof in the scene looks like. Flat stays the default for
+ * everything urban and everything unknown — inventing pitches across a city
+ * centre would be a much louder lie than a flat cap. It is the cases where the
+ * pitch is near-universal that are worth stating: houses, and the deep hipped
+ * roofs that are the single most recognisable thing about an East Asian temple.
+ */
+export function defaultRoofShape(ctx?: FacadeContext): RoofShape {
+  const use = ctx?.use ?? 'generic'
+  const region = ctx?.region ?? 'generic'
+  if (use === 'temple' || use === 'shrine') {
+    return region === 'east-asia' ? 'pyramidal' : 'gabled'
+  }
+  if (use === 'house') return 'gabled'
+  if (use === 'shed') return region === 'east-asia' ? 'gabled' : 'flat'
+  return 'flat'
+}
+
+/**
+ * How deep that inferred roof is, as a fraction of the building's own height.
+ *
+ * A temple roof is not a lid: it is most of what you see, which is why a temple
+ * drawn with a house's pitch reads as a shed. Only ever applied to an INFERRED
+ * shape — a tagged `roof:height` is a measurement and is left alone.
+ */
+export function defaultRoofFraction(ctx?: FacadeContext): number {
+  const use = ctx?.use ?? 'generic'
+  if (use === 'temple' || use === 'shrine') return 0.45
+  if (use === 'house') return 0.3
+  return 0.22
 }
 
 /**
