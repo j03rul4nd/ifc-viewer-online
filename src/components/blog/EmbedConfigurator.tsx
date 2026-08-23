@@ -12,6 +12,7 @@ import {
   isLoadableUrl,
   type EmbedUiPreset,
 } from '../../lib/url-params'
+import { ALL_PANEL_IDS, type PanelId } from '../../lib/ui/panel-rail'
 
 const SAMPLE_URL = 'https://raw.githubusercontent.com/youshengCode/IfcSampleFiles/main/Ifc4_SampleHouse.ifc'
 
@@ -19,6 +20,26 @@ const PRESETS: { id: EmbedUiPreset; label: string; desc: string }[] = [
   { id: 'minimal', label: 'Minimal', desc: '3D + categories + score' },
   { id: 'full',    label: 'Full',    desc: 'Tree + validation panel' },
   { id: 'kiosk',   label: 'Kiosk',   desc: '3D canvas only' },
+  // Shipped a while ago and never offered here, so the one preset built for a
+  // non-technical audience was the one nobody could find.
+  { id: 'client',  label: 'Client',  desc: 'Show-only skin for stakeholders' },
+]
+
+/**
+ * The tools a reader can leave on the rail.
+ *
+ * Not every panel: `properties` follows the selection rather than being a tool
+ * you pick, and point cloud and mesh only appear once something is loaded for
+ * them to act on, so offering them in a builder for a plain IFC embed would
+ * promise something the embed cannot show.
+ */
+const TOOLS: { id: PanelId; label: string }[] = [
+  { id: 'scene',       label: 'Scene' },
+  { id: 'measurement', label: 'Measure' },
+  { id: 'section',     label: 'Section' },
+  { id: 'plans',       label: 'Plans' },
+  { id: 'map',         label: 'Map' },
+  { id: 'solar',       label: 'Sun' },
 ]
 
 export interface EmbedConfiguratorProps {
@@ -43,6 +64,9 @@ export default function EmbedConfigurator({
   const [autoValidate, setAutoValidate] = useState(true)
   const [openPanel, setOpenPanel]       = useState(false)
   const [accent, setAccent]             = useState('#5E6AD2')
+  // null = no opinion, and the preset decides. A Set would lose that
+  // distinction: "every tool" and "I have not chosen" look identical.
+  const [tools, setTools]               = useState<PanelId[] | null>(null)
   const [height, setHeight]             = useState(defaultHeight)
   const [copied, setCopied]             = useState(false)
 
@@ -62,9 +86,10 @@ export default function EmbedConfigurator({
       baseUrl, modelUrl: trimmed, fileName: defaultFileName,
       preset, autoValidate, openPanel,
       accent: accent.toLowerCase() !== '#5e6ad2' ? accent : undefined,
+      panels: tools ?? undefined,
     })
     return buildIframeSnippet(embedUrl, { height })
-  }, [validUrl, baseUrl, trimmed, defaultFileName, preset, autoValidate, openPanel, accent, height])
+  }, [validUrl, baseUrl, trimmed, defaultFileName, preset, autoValidate, openPanel, accent, height, tools])
 
   const copy = async (): Promise<void> => {
     if (!snippet) return
@@ -118,11 +143,65 @@ export default function EmbedConfigurator({
           </span>
         </div>
 
+        {/* Tools — which panels the visitor gets.
+            A preset decides the chrome; this decides the toolbox inside it, and
+            the two are separate questions. Leaving every tool on is the default
+            and adds no parameter, so the snippet stays short for the common
+            case. */}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider">Tools</span>
+            {tools !== null && (
+              <button
+                onClick={() => setTools(null)}
+                className="text-[11px] text-[var(--accent)] hover:underline"
+              >
+                reset
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {TOOLS.map((tool) => {
+              // null means "no opinion", which shows as everything on.
+              const on = tools === null || tools.includes(tool.id)
+              return (
+                <button
+                  key={tool.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => {
+                    const current = tools ?? TOOLS.map((x) => x.id)
+                    const next = on
+                      ? current.filter((id) => id !== tool.id)
+                      : [...current, tool.id]
+                    // Back in rail order, so two readers who picked the same
+                    // tools in a different order get the same snippet.
+                    setTools(ALL_PANEL_IDS.filter((id) => next.includes(id)))
+                  }}
+                  className={[
+                    'px-2.5 py-1 rounded-full border text-[12px] font-medium transition-colors',
+                    on
+                      ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--text)]'
+                      : 'border-[var(--border)] text-[var(--text-faint)] hover:border-[var(--text-faint)] line-through',
+                  ].join(' ')}
+                >
+                  {tool.label}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-[11.5px] text-[var(--text-dim)] leading-relaxed m-0">
+            {tools !== null && tools.length === 0
+              ? 'No tool rail — the viewer shows the model and nothing else.'
+              : 'Turn a tool off and it is gone from the embed, not greyed out.'}
+          </p>
+        </div>
+
         {/* Options */}
         <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
           <div className="flex flex-col gap-1.5 flex-1">
             <span className="text-[11px] font-semibold text-[var(--text-dim)] uppercase tracking-wider">Layout</span>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               {PRESETS.map((p) => (
                 <button
                   key={p.id}

@@ -203,6 +203,7 @@
     "b1": "Sin backend de subida",
     "b2": "Se ejecuta directamente en el navegador",
     "b3": "Preparado para IFC, BCF e IDS",
+    "b4": "Ajusta las herramientas a cada audiencia",
     "explore": "Explorar integración",
     "docs": "Documentación del SDK"
   },

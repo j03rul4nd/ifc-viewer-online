@@ -302,6 +302,7 @@
     "b1": "Sense backend de pujada",
     "b2": "S'executa directament al navegador",
     "b3": "Preparat per a IFC, BCF i IDS",
+    "b4": "Ajusta les eines a cada audiència",
     "explore": "Explorar la integració",
     "docs": "Documentació de l'SDK"
   }

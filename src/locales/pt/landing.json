@@ -302,6 +302,7 @@
     "b1": "Sem backend de upload",
     "b2": "Executa diretamente no navegador",
     "b3": "Preparado para IFC, BCF e IDS",
+    "b4": "Ajusta as ferramentas a cada público",
     "explore": "Explorar integração",
     "docs": "Documentação do SDK"
   }
