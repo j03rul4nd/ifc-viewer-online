@@ -608,6 +608,13 @@ export default function App() {
     pointcloud:  tCloud('title'),
     mesh:        tMesh('title'),
   }), [tToolbar, tSidebar, tSolar, tCloud, tMesh])
+  // Read here rather than from the destructured block below, which is declared
+  // after this point in the component.
+  const railMeasurementTool = useUIStore((s) => s.activeMeasurementTool)
+  const railClipPlanes = useUIStore((s) => s.clipPlaneCount)
+  const railPlanView = useUIStore((s) => s.activePlanViewId)
+  const railModelCount = useSceneStore((s) => s.models.length)
+
   // Content gates: these two act ON something loaded, so the tool only earns
   // its place once there is something for it to act on.
   const pointCloudCount = usePointCloudStore((s) => s.clouds.length)
@@ -630,12 +637,27 @@ export default function App() {
     mesh:        isMeshEnabled() && !clientMode && meshCount > 0,
   }), [effectiveChrome.showSidebar, clientMode, clientAdvancedTools, pointCloudCount, meshCount])
 
+  // A parked tool can still be doing something; the rail and the mobile grid
+  // both show it. The old mobile grid carried these and the rail did not.
+  const railBadges = useMemo(() => ({
+    measurement: { dot: railMeasurementTool !== 'none' },
+    section:     { badge: railClipPlanes > 0 ? railClipPlanes : undefined },
+    plans:       { dot: !!railPlanView },
+    scene:       { badge: railModelCount > 1 ? railModelCount : undefined },
+  }), [railMeasurementTool, railClipPlanes, railPlanView, railModelCount])
+
   const railItems = usePanelRail({
     icons: railIcons,
     labels: railLabels,
+    badges: railBadges,
     available: railAvailable,
     allow: effectiveChrome.panels,
   })
+
+  const mobileTools = useMemo(
+    () => railItems.filter((item) => item.id !== 'properties'),
+    [railItems],
+  )
   const {
     treeVisible, setTreeVisible, treeWidth, hiddenElements, clearHiddenElements, setElementsVisible, clearHiddenElementsForModel,
     mobileSidebarOpen, setMobileSidebarOpen, setPendingSidebarTab,
@@ -2621,6 +2643,10 @@ export default function App() {
                       while a tour is playing — the tour bar takes the stage) ── */}
                   {!embedChrome.embed && tourMode !== 'playing' && !clientMode && (
                   <MobileBottomNav
+                    // Properties is excluded: the bottom nav already has its
+                    // own tab for it, and the rail item toggles the desktop
+                    // column's flag, which is not what a phone shows.
+                    tools={mobileTools}
                     visible={sceneModels.length > 0}
                     selected={selected}
                     canIsolate={!!selected}

@@ -14,6 +14,8 @@ import { useEditorStore } from '../stores/editorStore'
 import { haptic } from '../lib/haptics'
 import { LanguageSelector } from './LanguageSelector'
 import * as Icons from './Icons'
+import { ToolGrid } from './mobile/ToolGrid'
+import type { RailItem } from './PanelRail'
 import type { SelectedInfo } from '../types'
 import type { ViewerAPI } from '../lib/viewer'
 
@@ -31,6 +33,14 @@ interface MobileBottomNavProps {
   onOpenExportModal: () => void
   onOpenHelp: () => void
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
+  /**
+   * The tool catalogue, the same list the desktop rail draws.
+   *
+   * Passed in rather than rebuilt here: a second copy of "what tools exist" is
+   * how this sheet fell four tools behind the rail — Map, Sun, Point cloud and
+   * Mesh had no mobile entry point at all. See docs/MOBILE_TOOLS.md.
+   */
+  tools: RailItem[]
 }
 
 // ── Animated tab button ───────────────────────────────────────────────────────
@@ -241,6 +251,7 @@ function SheetDivider() {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function MobileBottomNav({
+  tools,
   visible, selected, canIsolate,
   onOpenSidebarTab, onReset, onUpload, onIsolate,
   onOpenDemoGallery, onOpenExportModal, onOpenHelp,
@@ -376,7 +387,7 @@ export default function MobileBottomNav({
   return (
     <>
       {/* ── Tools sheet ──────────────────────────────────────────────────────── */}
-      <MiniSheet open={activeSheet === 'tools'} onClose={closeSheet} title={t('measurementTools')}>
+      <MiniSheet open={activeSheet === 'tools'} onClose={closeSheet} title={t('tools')}>
         <div className="px-4 pb-5">
           {/* IDS check — the mobile entry point (unreachable otherwise on phones) */}
           <button
@@ -397,19 +408,11 @@ export default function MobileBottomNav({
             </span>
             {idsHasFailures && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--danger)' }} />}
           </button>
-          <div className="grid grid-cols-4 gap-2 mb-3">
-            <SheetBtn icon={MeasureSVG(22)} label={t('measure')} active={measurementPanelOpen}
-              badge={activeMeasurementTool !== 'none' ? '●' : undefined}
-              onClick={() => { toggleMeasurementPanel(); closeSheet() }} />
-            <SheetBtn icon={SectionSVG(22)} label={t('section')} active={clipPanelOpen}
-              badge={clipPlaneCount > 0 ? clipPlaneCount : undefined}
-              onClick={() => { toggleClipPanel(); closeSheet() }} />
-            <SheetBtn icon={PlansSVG(22)} label={t('plans')} active={plansPanelOpen}
-              dot={!!activePlanViewId}
-              onClick={() => { togglePlansPanel(); closeSheet() }} />
-            <SheetBtn icon={SceneSVG(22)} label={t('scene')} active={scenePanelOpen}
-              badge={sceneModels.length > 1 ? sceneModels.length : undefined}
-              onClick={() => { toggleScenePanel(); closeSheet() }} />
+          {/* Every panel the app is currently rendering, from the same
+              catalogue the desktop rail reads. This used to be four buttons
+              written by hand here. */}
+          <div className="mb-3">
+            <ToolGrid items={tools} onPick={closeSheet} />
           </div>
           <SheetDivider />
           <div className="grid grid-cols-4 gap-2 pt-3">

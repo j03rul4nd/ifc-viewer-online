@@ -29,11 +29,16 @@ export interface PanelRailSource {
   icons: Partial<Record<PanelId, React.ReactNode>>
   /** Labels, already translated. */
   labels: Partial<Record<PanelId, string>>
+  /**
+   * Counts and activity dots, so a parked tool can still say it is doing
+   * something — three clip planes, two models, a measurement in progress.
+   */
+  badges?: Partial<Record<PanelId, { badge?: number; dot?: boolean }>>
   /** Host allowlist from the embed chrome; undefined means "all available". */
   allow?: readonly PanelId[]
 }
 
-export function usePanelRail({ icons, labels, available, allow }: PanelRailSource): RailItem[] {
+export function usePanelRail({ icons, labels, badges, available, allow }: PanelRailSource): RailItem[] {
   const properties = useUIStore((s) => s.sidebarExpanded)
   const setProperties = useUIStore((s) => s.setSidebarExpanded)
   const scene = useUIStore((s) => s.scenePanelOpen)
@@ -70,11 +75,13 @@ export function usePanelRail({ icons, labels, available, allow }: PanelRailSourc
         label: labels[id] ?? id,
         icon: icons[id],
         open: open[id],
+        badge: badges?.[id]?.badge,
+        dot: badges?.[id]?.dot,
         // The same control both ways: click to open, click again to park.
         onToggle: () => set[id](!open[id]),
       }))
   }, [
-    icons, labels, available, allow,
+    icons, labels, badges, available, allow,
     properties, setProperties, scene, setScene, measurement, setMeasurement, section, setSection,
     plans, setPlans, map, setMap, solar, setSolar,
     pointcloud, setPointcloud, mesh, setMesh,
