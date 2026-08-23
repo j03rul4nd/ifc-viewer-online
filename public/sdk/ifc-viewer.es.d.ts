@@ -89,6 +89,21 @@ export interface ModelStats {
         count: number;
     }>;
 }
+/** Every tool that can appear on the viewer's panel rail. */
+export type PanelName = 'properties' | 'scene' | 'measurement' | 'section' | 'plans' | 'map' | 'solar' | 'pointcloud' | 'mesh';
+export interface PanelsResult {
+    /** The panel currently open, or null when none is. */
+    open: PanelName | null;
+    /**
+     * The panels on offer right now — the chrome and the loaded content decide.
+     * A tool missing from this list cannot be opened; it is not merely disabled.
+     */
+    available: {
+        id: PanelName;
+        label: string;
+        open: boolean;
+    }[];
+}
 export interface StatsResult {
     elementCount: number;
     models: ModelStats[];
@@ -617,6 +632,27 @@ export declare class IfcViewer {
     showElements(expressIds: number[], modelId?: string): void;
     /** Place the camera at `position` looking along `direction`. */
     setCamera(position: Vec3, direction: Vec3): void;
+    /**
+     * Open a tool panel, or pass `null` to close whatever is open.
+     *
+     * A panel that is not available — the chrome hides it, or nothing is loaded
+     * for it to act on — is a no-op rather than an error. Use {@link getPanels}
+     * to ask what is available before offering it in your own UI.
+     */
+    openPanel(panel: PanelName | null): void;
+    /** Close whichever panel is open. Same as `openPanel(null)`. */
+    closePanel(): void;
+    /** Which panel is open, and which are available right now. */
+    getPanels(): Promise<PanelsResult>;
+    /**
+     * Limit the rail to these panels, at runtime.
+     *
+     * The same vocabulary as the `panels=` URL parameter, and it outranks it: a
+     * host that scopes the rail after load meant to. It narrows what the viewer
+     * is offering and never adds — naming a panel the viewer is not rendering
+     * does not conjure it. An empty array means no rail at all.
+     */
+    setPanels(panels: PanelName[]): void;
     /** Subscribe to a viewer event. Returns an unsubscribe function. */
     on<K extends keyof IfcViewerEventMap>(event: K, cb: Listener<IfcViewerEventMap[K]>): () => void;
     off<K extends keyof IfcViewerEventMap>(event: K, cb: Listener<IfcViewerEventMap[K]>): void;
