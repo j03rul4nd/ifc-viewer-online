@@ -90,6 +90,21 @@ export interface ModelStats {
   fileSize: number
   categories: Array<{ type: string; label: string; count: number }>
 }
+/** Every tool that can appear on the viewer's panel rail. */
+export type PanelName =
+  | 'properties' | 'scene' | 'measurement' | 'section' | 'plans'
+  | 'map' | 'solar' | 'pointcloud' | 'mesh'
+
+export interface PanelsResult {
+  /** The panel currently open, or null when none is. */
+  open: PanelName | null
+  /**
+   * The panels on offer right now — the chrome and the loaded content decide.
+   * A tool missing from this list cannot be opened; it is not merely disabled.
+   */
+  available: { id: PanelName; label: string; open: boolean }[]
+}
+
 export interface StatsResult { elementCount: number; models: ModelStats[] }
 
 /** A validation issue for a dashboard table (getIssues()). */
@@ -853,6 +868,43 @@ export class IfcViewer {
   /** Place the camera at `position` looking along `direction`. */
   setCamera(position: Vec3, direction: Vec3): void {
     this.send({ type: 'ifcviewer:camera', position, direction })
+  }
+
+  // ── Panels ──────────────────────────────────────────────────────────────
+  // The viewer's tools live on a rail, one open at a time. Until now a host
+  // could load a scan but not open the panel that configures it, could not ask
+  // which tool the user had open, and could not scope the rail without
+  // reloading the iframe with a different `panels=`.
+
+  /**
+   * Open a tool panel, or pass `null` to close whatever is open.
+   *
+   * A panel that is not available — the chrome hides it, or nothing is loaded
+   * for it to act on — is a no-op rather than an error. Use {@link getPanels}
+   * to ask what is available before offering it in your own UI.
+   */
+  openPanel(panel: PanelName | null): void {
+    this.send({ type: 'ifcviewer:open-panel', panel })
+  }
+
+  /** Close whichever panel is open. Same as `openPanel(null)`. */
+  closePanel(): void { this.openPanel(null) }
+
+  /** Which panel is open, and which are available right now. */
+  getPanels(): Promise<PanelsResult> {
+    return this.request<PanelsResult>('ifcviewer:get-panels')
+  }
+
+  /**
+   * Limit the rail to these panels, at runtime.
+   *
+   * The same vocabulary as the `panels=` URL parameter, and it outranks it: a
+   * host that scopes the rail after load meant to. It narrows what the viewer
+   * is offering and never adds — naming a panel the viewer is not rendering
+   * does not conjure it. An empty array means no rail at all.
+   */
+  setPanels(panels: PanelName[]): void {
+    this.send({ type: 'ifcviewer:set-panels', panels })
   }
 
   /** Subscribe to a viewer event. Returns an unsubscribe function. */

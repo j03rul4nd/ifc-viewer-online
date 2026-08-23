@@ -116,12 +116,28 @@ export function ViewportPanel({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.2 }}
-            className="absolute left-3 right-3 z-20 pointer-events-auto select-none"
-            // Above the floating nav, using the nav's own clearance token rather
-            // than a copied number — the pill has moved before and will again.
-            style={{ bottom: 'calc(var(--mobile-nav-clearance) + env(safe-area-inset-bottom, 0px))' }}
+            className="absolute left-3 right-3 z-20 pointer-events-auto select-none flex flex-col"
+            // ── THE SAME RULE AS THE OTHER TWO FORMS ──────────────────────────
+            // Anchored top AND bottom rather than given a height: bottom above
+            // the floating nav (its own token, not a copied number — the pill
+            // has moved before and will again), top below the app chrome.
+            //
+            // It used to stop at `46vh`. A fraction of the visual viewport is
+            // not the space this card has: measured on a 390x844 phone it
+            // capped at 388px inside 724px of actual room, and on a shorter
+            // screen the same fraction is a different, equally arbitrary answer.
+            // The desktop lane learned this already — anchor it, do not size it.
+            style={{
+              bottom: 'calc(var(--mobile-nav-clearance) + env(safe-area-inset-bottom, 0px))',
+              top: '3.5rem',
+              justifyContent: 'flex-end',
+            }}
           >
-            <div className="glass-md border border-[var(--border-strong)] rounded-[14px] overflow-hidden shadow-2xl max-h-[46vh] overflow-y-auto">
+            {/* `max-h-full` and NOT a scroller of its own: the panel inside owns
+                the anatomy every other form already follows — header fixed, body
+                scrolls, footer pinned. Scrolling the whole card took the header
+                with it, which is the one thing a header must not do. */}
+            <div className="glass-md border border-[var(--border-strong)] rounded-[14px] overflow-hidden shadow-2xl flex flex-col min-h-0 max-h-full">
               {children}
             </div>
           </motion.div>

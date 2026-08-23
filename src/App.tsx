@@ -66,6 +66,8 @@ const TourRecorder = React.lazy(() => import('./components/TourRecorder'))
 // Client presentation skin (D-25) — lazy: loads only when ui=client / toggled on
 const ClientPresentationLayout = React.lazy(() => import('./components/ClientPresentationLayout'))
 import { isGisEnabled } from './lib/geo/gis-flag'
+import { parsePanelTarget, parsePanelList } from './lib/ui/panel-commands'
+import { closeAllPanels } from './lib/ui/panel-registry'
 import { isSolarEnabled } from './lib/solar/solar-flag'
 import { isPointCloudEnabled } from './lib/pointcloud/pc-flag'
 import { isMeshEnabled } from './lib/mesh/mesh-flag'
@@ -614,6 +616,7 @@ export default function App() {
   const railClipPlanes = useUIStore((s) => s.clipPlaneCount)
   const railPlanView = useUIStore((s) => s.activePlanViewId)
   const railModelCount = useSceneStore((s) => s.models.length)
+  const runtimePanels = useUIStore((s) => s.runtimePanels)
 
   // Content gates: these two act ON something loaded, so the tool only earns
   // its place once there is something for it to act on.
@@ -651,7 +654,10 @@ export default function App() {
     labels: railLabels,
     badges: railBadges,
     available: railAvailable,
-    allow: effectiveChrome.panels,
+    // A runtime allowlist from the SDK outranks the one the URL arrived with:
+    // a host that scopes the rail after load meant to, and should not have to
+    // reload the iframe to do it.
+    allow: runtimePanels ?? effectiveChrome.panels,
   })
 
   const mobileTools = useMemo(
@@ -1508,6 +1514,34 @@ export default function App() {
           if (CAMERA_PRESETS.includes(preset as CameraPreset)) {
             viewerApiRef.current?.setCameraPreset(preset as CameraPreset)
           }
+          break
+        }
+        // ── The panel rail, from outside ─────────────────────────────────
+        // A host could load a scan but not open the panel that configures it,
+        // could not ask which tool the user had open, and could not scope the
+        // rail without reloading the iframe with a different `panels=`.
+        case 'ifcviewer:open-panel': {
+          const target = parsePanelTarget(msg.panel)
+          // undefined means "an id we do not know" — ignored, not an error, so
+          // a host page written against a newer build still works here.
+          if (target === undefined) break
+          if (target === null) { closeAllPanels(); break }
+          const item = railItems.find((i) => i.id === target)
+          // Not on the rail = not available in this chrome, with this content.
+          // Silently doing nothing beats pretending it opened.
+          if (item && !item.open) item.onToggle()
+          break
+        }
+        case 'ifcviewer:get-panels': {
+          void respond(() => ({
+            open: railItems.find((i) => i.open)?.id ?? null,
+            available: railItems.map((i) => ({ id: i.id, label: i.label, open: i.open })),
+          }))
+          break
+        }
+        case 'ifcviewer:set-panels': {
+          const list = parsePanelList(msg.panels)
+          if (list !== undefined) useUIStore.getState().setRuntimePanels(list)
           break
         }
         case 'ifcviewer:set-language': {

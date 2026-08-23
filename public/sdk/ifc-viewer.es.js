@@ -1,6 +1,6 @@
-var v = Object.defineProperty;
-var p = (r, t, e) => t in r ? v(r, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : r[t] = e;
-var n = (r, t, e) => p(r, typeof t != "symbol" ? t + "" : t, e);
+var p = Object.defineProperty;
+var v = (r, t, e) => t in r ? p(r, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : r[t] = e;
+var n = (r, t, e) => v(r, typeof t != "symbol" ? t + "" : t, e);
 const m = [
   { code: "en", label: "English" },
   { code: "es", label: "Español" },
@@ -20,7 +20,7 @@ function q() {
     return "/";
   }
 }
-function E(r) {
+function P(r) {
   try {
     return new URL(r).origin;
   } catch {
@@ -105,7 +105,7 @@ const l = class l {
     if (!i) throw new Error(`IfcViewer: mount target not found: ${String(t)}`);
     this.opts = e, this.baseUrl = e.baseUrl ?? q(), this.loadTimeout = e.loadTimeout ?? y;
     const s = this.buildSrc();
-    this.appOrigin = E(s);
+    this.appOrigin = P(s);
     const o = document.createElement("iframe");
     o.src = s, o.style.border = "0", o.style.width = f(e.width, "100%"), o.style.height = f(e.height, "100%"), o.setAttribute("allow", "fullscreen"), o.setAttribute("loading", "lazy"), o.title = e.title ?? "IFC model viewer", e.className && (o.className = e.className), i.appendChild(o), this.iframe = o, window.addEventListener("message", this.onMessage), e.onReady && this.on("ready", e.onReady), e.onModelLoaded && this.on("model-loaded", e.onModelLoaded), e.onModelError && this.on("model-error", e.onModelError), e.onProgress && this.on("model-progress", e.onProgress), e.model && this.addFromUrl(e.model);
   }
@@ -430,6 +430,40 @@ const l = class l {
   setCamera(t, e) {
     this.send({ type: "ifcviewer:camera", position: t, direction: e });
   }
+  // ── Panels ──────────────────────────────────────────────────────────────
+  // The viewer's tools live on a rail, one open at a time. Until now a host
+  // could load a scan but not open the panel that configures it, could not ask
+  // which tool the user had open, and could not scope the rail without
+  // reloading the iframe with a different `panels=`.
+  /**
+   * Open a tool panel, or pass `null` to close whatever is open.
+   *
+   * A panel that is not available — the chrome hides it, or nothing is loaded
+   * for it to act on — is a no-op rather than an error. Use {@link getPanels}
+   * to ask what is available before offering it in your own UI.
+   */
+  openPanel(t) {
+    this.send({ type: "ifcviewer:open-panel", panel: t });
+  }
+  /** Close whichever panel is open. Same as `openPanel(null)`. */
+  closePanel() {
+    this.openPanel(null);
+  }
+  /** Which panel is open, and which are available right now. */
+  getPanels() {
+    return this.request("ifcviewer:get-panels");
+  }
+  /**
+   * Limit the rail to these panels, at runtime.
+   *
+   * The same vocabulary as the `panels=` URL parameter, and it outranks it: a
+   * host that scopes the rail after load meant to. It narrows what the viewer
+   * is offering and never adds — naming a panel the viewer is not rendering
+   * does not conjure it. An empty array means no rail at all.
+   */
+  setPanels(t) {
+    this.send({ type: "ifcviewer:set-panels", panels: t });
+  }
   /** Subscribe to a viewer event. Returns an unsubscribe function. */
   on(t, e) {
     let i = this.listeners.get(t);
@@ -478,8 +512,8 @@ const l = class l {
         if (!this.disposed)
           try {
             t(s);
-          } catch (d) {
-            this.settle(s, !1, d instanceof Error ? d : new Error(String(d)));
+          } catch (a) {
+            this.settle(s, !1, a instanceof Error ? a : new Error(String(a)));
           }
       });
     });
@@ -499,12 +533,12 @@ const l = class l {
   }
   /** Send a query and resolve with the iframe's `result` payload. */
   request(t, e = {}, i = b, s = []) {
-    return this.disposed ? Promise.reject(new Error("IfcViewer disposed")) : new Promise((o, d) => {
-      const a = this.nextRequestId(), w = setTimeout(() => {
-        this.requests.delete(a), d(new Error(`IfcViewer: "${t}" timed out after ${i}ms`));
+    return this.disposed ? Promise.reject(new Error("IfcViewer disposed")) : new Promise((o, a) => {
+      const d = this.nextRequestId(), w = setTimeout(() => {
+        this.requests.delete(d), a(new Error(`IfcViewer: "${t}" timed out after ${i}ms`));
       }, i);
-      this.requests.set(a, { resolve: o, reject: d, timer: w }), this.whenReady().then(() => {
-        this.disposed || this.post({ type: t, requestId: a, ...e }, s);
+      this.requests.set(d, { resolve: o, reject: a, timer: w }), this.whenReady().then(() => {
+        this.disposed || this.post({ type: t, requestId: d, ...e }, s);
       });
     });
   }
@@ -526,7 +560,7 @@ const l = class l {
 n(l, "LANGUAGES", m), /** Just the language codes, for convenience. */
 n(l, "SUPPORTED_LANGUAGES", h);
 let u = l;
-const P = ["ready", "model-loaded", "model-error", "model-progress", "validation-completed", "element-selected"];
+const E = ["ready", "model-loaded", "model-error", "model-progress", "validation-completed", "element-selected"];
 class C extends HTMLElement {
   constructor() {
     super(...arguments);
@@ -544,10 +578,10 @@ class C extends HTMLElement {
     this.style.display || (this.style.display = "block");
     const e = document.createElement("div");
     e.style.cssText = "width:100%;height:100%", this.appendChild(e);
-    const i = (d) => this.getAttribute(d) ?? void 0, s = (d) => {
-      if (!this.hasAttribute(d)) return;
-      const a = this.getAttribute(d);
-      return a !== "false" && a !== "0" && a !== "no";
+    const i = (a) => this.getAttribute(a) ?? void 0, s = (a) => {
+      if (!this.hasAttribute(a)) return;
+      const d = this.getAttribute(a);
+      return d !== "false" && d !== "0" && d !== "no";
     }, o = new u(e, {
       ui: i("ui"),
       lang: i("lang"),
@@ -559,8 +593,8 @@ class C extends HTMLElement {
       height: "100%"
     });
     this._viewer = o;
-    for (const d of P)
-      o.on(d, (a) => this.dispatchEvent(new CustomEvent(`ifcviewer:${d}`, { detail: a, bubbles: !0, composed: !0 })));
+    for (const a of E)
+      o.on(a, (d) => this.dispatchEvent(new CustomEvent(`ifcviewer:${a}`, { detail: d, bubbles: !0, composed: !0 })));
   }
   disconnectedCallback() {
     this._viewer?.dispose(), this._viewer = null, this.innerHTML = "";

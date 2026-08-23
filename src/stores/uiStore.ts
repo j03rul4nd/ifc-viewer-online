@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { clamp } from '../lib/utils'
 import { appBus } from '../lib/event-bus'
+import type { PanelId } from '../lib/ui/panel-rail'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -96,6 +97,15 @@ interface UIStore {
   hiddenElements:          Set<string>
   /** Whether the camera preset overlay is visible in the 3D viewport. */
   cameraControlsVisible:   boolean
+  /**
+   * A host allowlist for the panel rail, set at runtime through the SDK.
+   *
+   * null means "no runtime opinion" — the URL's `panels=` stands. An empty
+   * array is an opinion: no rail. Kept out of the persisted column state,
+   * because it belongs to the embedding page rather than to the user.
+   */
+  runtimePanels:           PanelId[] | null
+  setRuntimePanels:        (panels: PanelId[] | null) => void
   /** Active transform mode for the model pivot panel. */
   transformMode:           TransformMode
   /** Whether the scene panel (model list + transform) is open. */
@@ -186,6 +196,7 @@ export const useUIStore = create<UIStore>()(
       // Open by default, it was 245x171 of the viewport being covered by every
       // panel — visible but unusable. See docs/RIGHT_EDGE.md.
       cameraControlsVisible:   false,
+      runtimePanels:           null,
       transformMode:           'none' as TransformMode,
       scenePanelOpen:          false,
       renderQuality:           'standard' as RenderQuality,
@@ -228,6 +239,9 @@ export const useUIStore = create<UIStore>()(
           rememberColumns(s, { tree: visible })
           return { treeVisible: visible }
         }, false, 'setTreeVisible'),
+
+      setRuntimePanels: (panels) =>
+        set({ runtimePanels: panels }, false, 'setRuntimePanels'),
 
       setSidebarExpanded: (expanded) =>
         set((s) => {

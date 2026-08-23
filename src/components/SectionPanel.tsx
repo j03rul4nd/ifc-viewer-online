@@ -150,7 +150,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
       centerShift="translateY(-30%)"
     >
             {/* Header */}
-            <div className="px-3 pt-2.5 pb-1.5 border-b border-[var(--border)]">
+            <div className="shrink-0 px-3 pt-2.5 pb-1.5 border-b border-[var(--border)]">
               <div className="text-[10px] font-mono text-[var(--text-faint)] tracking-[0.1em] uppercase mb-0.5">
                 {t('section.title')}
               </div>
@@ -192,7 +192,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
 
             {/* Plane list */}
             {planes.length > 0 && (
-              <div className="border-t border-[var(--border)] p-1.5 flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
+              <div className="border-t border-[var(--border)] p-1.5 flex flex-col gap-0.5 min-h-0 shrink overflow-y-auto">
                 {planes.map((plane, i) => (
                   <div key={plane.id} className="flex items-center gap-1.5 px-2 py-1.5 rounded-[7px] hover:bg-[var(--surface-2)] group">
                     {/* Enable toggle */}
