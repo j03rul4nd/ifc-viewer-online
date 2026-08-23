@@ -17,8 +17,8 @@
 // someone is editing copy, not after a deploy.
 
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 
 /** What Google renders. Characters are the usual proxy for its pixel budget. */
 const TITLE_BUDGET = 60
@@ -118,5 +118,74 @@ describe.each(HAND_AUTHORED)('the hand-authored $lang home', ({ lang, file }) =>
     // states that the long forms are deliberate rather than overlooked.
     const og = grabFrom(html, /<meta\s+property="og:description"\s+content="([^"]*)"/)
     expect(og.length).toBeGreaterThan(DESC_BUDGET - 40)
+  })
+})
+
+// ─── the hand-authored landing pages ──────────────────────────────────────────
+// 43 static files under public/, one per marketing page per language. Measured
+// before this changed: 20 titles over 60 (worst 71) and 34 descriptions over
+// 160, median 235 — so roughly a third of every landing's pitch was written
+// for a listing that never showed it.
+//
+// Every page is discovered rather than listed, so a landing added tomorrow is
+// covered without anyone remembering to add it here. That is the whole point:
+// the previous versions of this problem all came from a second list drifting.
+
+/** Directories under public/ that are generated or are not landing pages. */
+const NOT_LANDINGS = new Set(['blog', 'fix', 'sdk', 'embed', 'fonts', 'models'])
+
+interface Landed { url: string; file: string; title: string; description: string }
+
+function landingPages(): Landed[] {
+  const out: Landed[] = []
+  const walk = (dir: string, rel: string): void => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (NOT_LANDINGS.has(e.name)) continue
+      const p = join(dir, e.name)
+      if (e.isDirectory()) walk(p, `${rel}${e.name}/`)
+      else if (e.name === 'index.html') {
+        const html = readFileSync(p, 'utf8')
+        out.push({
+          url: `/${rel}`,
+          file: p,
+          title: grabFrom(html, /<title>([^<]*)<\/title>/),
+          description: grabFrom(html, /<meta\s+name="description"\s+content="([^"]*)"/),
+        })
+      }
+    }
+  }
+  walk(resolve(root, 'public'), '')
+  return out
+}
+
+describe('landing page search listings', () => {
+  const pages = landingPages()
+
+  it('finds the landing pages at all', () => {
+    // A moved directory or a renamed skip-list entry would otherwise make every
+    // assertion below pass over an empty array.
+    expect(pages.length).toBeGreaterThan(30)
+    expect(pages.every((p) => p.title.length > 5 && p.description.length > 20)).toBe(true)
+  })
+
+  it('keeps every title inside what Google renders', () => {
+    const over = pages
+      .filter((p) => p.title.length > TITLE_BUDGET)
+      .map((p) => `${p.url} ${p.title.length}`)
+    expect(over, 'landing titles Google will truncate').toEqual([])
+  })
+
+  it('keeps every description inside what Google renders', () => {
+    const over = pages
+      .filter((p) => p.description.length > DESC_BUDGET)
+      .map((p) => `${p.url} ${p.description.length}`)
+    expect(over, 'landing descriptions Google will cut off').toEqual([])
+  })
+
+  it('does not spend the budget on a title so short it says nothing', () => {
+    // The opposite failure, and the easy way to satisfy a budget check: trim
+    // everything to three words and lose the keywords that earn the ranking.
+    const thin = pages.filter((p) => p.title.length < 20).map((p) => p.url)
+    expect(thin, 'landing titles too short to carry a keyword').toEqual([])
   })
 })
