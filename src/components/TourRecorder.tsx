@@ -15,6 +15,7 @@ import React, { useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import * as Icons from './Icons'
+import { ViewportPanel } from './ViewportPanel'
 import TemplateSelector from './TemplateSelector'
 import { usePresentationStore } from '../stores/presentationStore'
 import { useSceneStore } from '../stores/sceneStore'
@@ -78,16 +79,23 @@ export default function TourRecorder({ viewerApiRef }: TourRecorderProps) {
   const iconBtn = 'w-6 h-6 flex items-center justify-center rounded-md text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] active:scale-90 disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-150'
 
   return (
-    <motion.div
-      initial={isMobile ? { opacity: 0, y: 32 } : { opacity: 0, x: 24 }}
-      animate={{ opacity: 1, x: 0, y: 0 }}
-      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-      className={isMobile
-        ? 'absolute left-2 right-2 bottom-[76px] z-[25] max-h-[55%]'
-        : 'absolute top-14 right-4 z-[25] w-[302px] max-h-[calc(100%-120px)]'}
-      style={isMobile ? { paddingBottom: 'env(safe-area-inset-bottom, 0px)' } : undefined}
+    // A ViewportPanel like every other tool, rather than a panel that placed
+    // itself. It used to hard-code `bottom-[76px]` for the mobile nav — a copy
+    // of a number that has its own token — and `max-h-[55%]` of a container it
+    // was not measured against, which is why it sat tight under the nav with the
+    // cache badge across its primary button. Being in the system also brings
+    // one-at-a-time, Escape, and the sheet with detents on mobile, none of which
+    // it had. See docs/MOBILE_TOOLS.md.
+    <ViewportPanel
+      id="tour"
+      open
+      onClose={() => setRecording(false)}
+      label={t('recorder.title')}
+      mobile="sheet"
+      widthPx={302}
+      anchor="top"
     >
-      <div className="flex flex-col max-h-full bg-[rgba(12,12,16,0.95)] backdrop-blur-[18px] border border-[var(--border)] rounded-xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] overflow-hidden">
+      <div className="flex flex-col min-h-0 max-h-full overflow-hidden">
 
         {/* ── Header ── */}
         <div className="flex items-center gap-2 px-3 h-9 border-b border-[var(--border)] shrink-0">
@@ -200,6 +208,6 @@ export default function TourRecorder({ viewerApiRef }: TourRecorderProps) {
           </button>
         </div>
       </div>
-    </motion.div>
+    </ViewportPanel>
   )
 }
