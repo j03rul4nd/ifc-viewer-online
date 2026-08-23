@@ -398,7 +398,7 @@ function renderReportHtml(report, selfUrl, appUrl, ogImage) {
     ? `${report.file} scored ${report.score}/100 (${label}) on the IFC Health Check: ${report.e} errors, ${report.w} warnings, ${report.i} info.`
     : caveatTxt
       ? `${report.file} scored ${report.score}/100 (${label}) on the IFC Health Check — no issues found in what could be checked.`
-      : `${report.file} scored ${report.score}/100 (${label}) on the IFC Health Check — no issues found across 38 validation rules.`
+      : `${report.file} scored ${report.score}/100 (${label}) on the IFC Health Check — no issues found across 44 validation rules.`
   const descTxt = `${descBase}${caveatTxt ? ` ${caveatTxt}` : ''} Validated free in the browser — no upload.`
 
   const dateTxt = (() => {
@@ -546,14 +546,14 @@ function renderReportHtml(report, selfUrl, appUrl, ogImage) {
     <div class="ok-box">
       <b>No issues found</b>
       <p>${caveatTxt
-        ? 'Nothing failed in the parts of this model that could be checked. That is not the same as passing all 38 validation rules — see the note above.'
-        : 'This model passed all 38 validation rules.'}</p>
+        ? 'Nothing failed in the parts of this model that could be checked. That is not the same as passing all 44 validation rules — see the note above.'
+        : 'This model passed all 44 validation rules.'}</p>
     </div>`}
 
     <div class="cta">
       <div class="txt">
         <b>Validate your own IFC model</b>
-        <p>Free · No upload · No account · 38 validation rules · Works in any browser</p>
+        <p>Free · No upload · No account · 44 validation rules · Works in any browser</p>
       </div>
       <a href="${esc(appUrl)}">Open IFC Viewer</a>
     </div>

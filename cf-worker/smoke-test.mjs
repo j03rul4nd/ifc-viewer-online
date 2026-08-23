@@ -104,7 +104,7 @@ const basePayload = { v: 1, score: 100, file: 'Tower-A.ifc', e: 0, w: 0, i: 0, m
   const body = await worker.fetch(req(`https://w/_r?d=${d}`), {}).then((r) => r.text())
   check('/r shows the unreadable-entity caveat', body.includes('1234 entities could not be read'))
   check('/r puts the caveat in the indexed description', /<meta name="description"[^>]*could not be read/.test(body))
-  check('/r stops claiming all 38 rules passed', !body.includes('passed all 38 validation rules'))
+  check('/r stops claiming all 44 rules passed', !body.includes('passed all 44 validation rules'))
   check('/r still shows the score', body.includes('100'))
 }
 {
@@ -117,7 +117,7 @@ const basePayload = { v: 1, score: 100, file: 'Tower-A.ifc', e: 0, w: 0, i: 0, m
   // predates the fields.
   const body = await worker.fetch(req(`https://w/_r?d=${encode(basePayload)}`), {}).then((r) => r.text())
   check('/r invents no caveat for a complete run', !body.includes('could not be read') && !body.includes('did not run'))
-  check('/r keeps the all-38-rules claim when it is true', body.includes('passed all 38 validation rules'))
+  check('/r keeps the all-44-rules claim when it is true', body.includes('passed all 44 validation rules'))
 }
 {
   // Attacker-controlled payload: a hostile count must not reach the page.

@@ -7,8 +7,8 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import path from 'path'
-import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'fs'
-import { generateFixPages, type FixPagesResult } from './generate-fix-pages'
+import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync, readdirSync } from 'fs'
+import { generateFixPages, TITLE_BUDGET, type FixPagesResult } from './generate-fix-pages'
 import { fixGuideUrl, fixGuideSlug } from '../../src/lib/fix-guide-url'
 
 const SITE = 'https://www.ifcvieweronline.eu'
@@ -273,3 +273,65 @@ describe('the app links where these pages actually are', () => {
     }
   })
 })
+
+// ─── title budget ─────────────────────────────────────────────────────────────
+// Google renders about 60 characters of a <title> and drops the rest.
+//
+// Measured on the live site before this was fixed: 279 of 306 fix pages were
+// over 60, median 77, worst 104 — a French page whose boilerplate tail alone
+// ("— validateur IFC en ligne gratuit") was 56 characters. Every one of those
+// listings showed a chopped headline, which is the shape of the complaint that
+// started this: impressions climbing, nobody clicking.
+//
+// The tail is optional now, so a page with a short rule name keeps the hook and
+// a page with a long one spends every character on the words the searcher typed.
+// This keeps it that way when a rule with a long name is added.
+
+describe('search-result titles', () => {
+  // Read once, in beforeAll rather than at collection time: the pages do not
+  // exist until the suite's own beforeAll has generated them.
+  //
+  // Walking 510 directories and reading 510 files inside EVERY assertion put
+  // each of these over the default timeout under full-suite CPU contention —
+  // and only under contention, which is the most misleading way for a test to
+  // fail. The work is identical for all three, so it belongs outside them.
+  let titles: { f: string; title: string }[] = []
+  beforeAll(() => { titles = pages().map((f) => ({ f, title: titleOf(f) })) })
+
+  it('never exceeds the budget Google renders', () => {
+    const over = titles
+      .filter((p) => p.title.length > TITLE_BUDGET)
+      .map((p) => `${p.title.length} ${p.f}: ${p.title}`)
+    expect(over, 'titles Google will truncate').toEqual([])
+  })
+
+  it('is reading real titles, so the check above is not vacuous', () => {
+    expect(titles.length).toBeGreaterThan(300)
+    expect(titles.every((p) => p.title.length > 10)).toBe(true)
+  })
+
+  it('keeps the hook when there is room for it', () => {
+    // Dropping the tail everywhere would also pass the budget check, and would
+    // throw away the words that earn the click. Short rule names must keep it.
+    const withTail = titles.filter((p) => p.title.includes(' — '))
+    expect(withTail.length).toBeGreaterThan(titles.length / 2)
+  })
+})
+
+/** Every generated page, as a path relative to the output root. */
+function pages(): string[] {
+  const out: string[] = []
+  const walk = (dir: string, rel: string): void => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (e.isDirectory()) walk(path.join(dir, e.name), `${rel}${e.name}/`)
+      else if (e.name === 'index.html') out.push(rel)
+    }
+  }
+  walk(OUT, '')
+  return out
+}
+
+function titleOf(rel: string): string {
+  const html = readFileSync(path.join(OUT, rel, 'index.html'), 'utf8')
+  return (html.match(/<title[^>]*>([^<]*)<\/title>/) || [])[1] ?? ''
+}
