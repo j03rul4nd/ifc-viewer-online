@@ -31,11 +31,15 @@ interface BookSeo {
   faq: { q: string; a: string }[]
 }
 
-const SEO: Record<string, (b: EbookMeta) => BookSeo> = {
+export const SEO: Record<string, (b: EbookMeta) => BookSeo> = {
   'ifc-delivery': (b) => ({
-    title: `${b.title} — Free ${b.pages}-Page PDF for BIM Coordinators`,
+    // Google renders about 60 characters of a title and 160 of a description.
+    // The audience qualifier and the tool list were the parts always cut, so
+    // they go; the page count and the rule count stay, because a number in a
+    // listing is what makes it worth clicking. See scripts/seo/serp-budget.test.ts.
+    title: `${b.title} — Free ${b.pages}-Page PDF`,
     description:
-      `Free ${b.pages}-page handbook on delivering IFC models that get accepted: all ${RULE_COUNT} validation checks with the fix in Revit, ArchiCAD, Tekla and Allplan, the Health Score formula in full, BEP clauses and a pre-delivery checklist. No account needed.`,
+      `Free ${b.pages}-page handbook on delivering IFC models that get accepted: all ${RULE_COUNT} checks with their fixes, the Health Score formula and a pre-delivery checklist.`,
     keywords:
       'IFC delivery handbook, IFC validation checklist, BIM delivery guide, IFC quality checks, BEP quality clauses, ISO 19650 IFC delivery, IFC health score, free BIM ebook, IFC model acceptance criteria',
     about: ['Industry Foundation Classes', 'Building Information Modelling', 'ISO 19650', 'IFC validation'],
@@ -64,9 +68,9 @@ const SEO: Record<string, (b: EbookMeta) => BookSeo> = {
   }),
 
   'bim-information': (b) => ({
-    title: `${b.title} — Free ${b.pages}-Page PDF on CDE, ISO 19650 and LOIN`,
+    title: `${b.title} — Free ${b.pages}-Page PDF`,
     description:
-      `Free ${b.pages}-page handbook on BIM information management: how a common data environment actually works, the OIR → AIR → EIR → BEP requirement chain, level of information need instead of LOD numbers, delivery planning, federation, quality gates and asset handover. No account needed.`,
+      `Free ${b.pages}-page handbook on BIM information management: how a CDE works, the OIR → AIR → EIR → BEP chain, and level of information need instead of LOD.`,
     keywords:
       'BIM information management, common data environment, CDE ISO 19650, level of information need, LOIN, LOD explained, EIR template, BIM execution plan, MIDP TIDP, BIM handover COBie, free BIM ebook',
     about: ['Building Information Modelling', 'Common Data Environment', 'ISO 19650', 'Level of Information Need', 'Asset Information Management'],
