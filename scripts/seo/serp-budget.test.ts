@@ -18,6 +18,8 @@
 
 import { describe, it, expect } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
+import { EBOOKS } from '../../src/lib/ebook'
+import { SEO } from './generate-ebook-page'
 import { join, resolve } from 'node:path'
 
 /** What Google renders. Characters are the usual proxy for its pixel budget. */
@@ -187,5 +189,40 @@ describe('landing page search listings', () => {
     // everything to three words and lose the keywords that earn the ranking.
     const thin = pages.filter((p) => p.title.length < 20).map((p) => p.url)
     expect(thin, 'landing titles too short to carry a keyword').toEqual([])
+  })
+})
+
+// ─── the ebook landings ───────────────────────────────────────────────────────
+// Generated rather than static, which is exactly why they slipped past the
+// sweep of public/ above: the two worst titles left on the site after the
+// landings were fixed were these, at 65 and 74.
+//
+// Checked at the source the generator reads, so this fails while someone is
+// writing the copy rather than after a build.
+
+describe('ebook landing listings', () => {
+  const seo = EBOOKS.map((b) => ({ id: b.id, ...SEO[b.id](b) }))
+
+  it('has copy for every ebook, so none is skipped silently', () => {
+    expect(seo.length).toBeGreaterThan(0)
+    expect(seo.every((s) => s.title.length > 10 && s.description.length > 30)).toBe(true)
+  })
+
+  it('keeps every title inside what Google renders', () => {
+    const over = seo.filter((s) => s.title.length > TITLE_BUDGET)
+      .map((s) => `${s.id} ${s.title.length}`)
+    expect(over, 'ebook titles Google will truncate').toEqual([])
+  })
+
+  it('keeps every description inside what Google renders', () => {
+    const over = seo.filter((s) => s.description.length > DESC_BUDGET)
+      .map((s) => `${s.id} ${s.description.length}`)
+    expect(over, 'ebook descriptions Google will cut off').toEqual([])
+  })
+
+  it('keeps the page count in the title, since a number earns the click', () => {
+    // The easy way to satisfy a budget is to cut the specifics. These titles
+    // are worth their length precisely because they carry one.
+    expect(seo.every((s) => /\d+/.test(s.title))).toBe(true)
   })
 })
