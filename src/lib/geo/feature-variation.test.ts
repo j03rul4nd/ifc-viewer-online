@@ -3,7 +3,7 @@ import {
   hashId, variate, jitter, treeShape, foliageColor,
   facadeColor, storeyBanding, storeysFor, greenTone,
   buildingRegion, roofColorFor, defaultRoofShape, defaultRoofFraction,
-  coverSpeciesMix, speciesFor,
+  coverSpeciesMix, speciesFor, broadleafVariant,
 } from './feature-variation'
 
 describe('hashId / variate', () => {
@@ -334,12 +334,15 @@ describe('which species an untagged wood grows', () => {
   })
 
   it('keeps every wood a mixture, never a plantation of clones', () => {
-    for (const region of ['east-asia', 'mediterranean', 'northern-europe', 'generic'] as const) {
-      const mix = coverSpeciesMix('forest', region)
-      expect(mix.length).toBeGreaterThan(1)
-      // A minority worth seeing, not a rounding error.
-      const smallest = Math.min(...mix.map(([, w]) => w))
-      expect(smallest).toBeGreaterThan(0.1)
+    const regions = ['east-asia', 'mediterranean', 'northern-europe', 'generic'] as const
+    for (const region of regions) {
+      for (const mix of [coverSpeciesMix('forest', region), coverSpeciesMix('park', region)]) {
+        expect(mix.length).toBeGreaterThan(1)
+        // A minority worth seeing, not a rounding error: no thinner than one
+        // tree in ten, which is still one per short row of street trees.
+        const smallest = Math.min(...mix.map(([, w]) => w))
+        expect(smallest).toBeGreaterThanOrEqual(0.1)
+      }
     }
   })
 
@@ -356,17 +359,38 @@ describe('which species an untagged wood grows', () => {
     expect(speciesFor('w7@42', 'forest', 'east-asia')).toBe(speciesFor('w7@42', 'forest', 'east-asia'))
   })
 
-  it('never returns a species that would cost a third instanced mesh', () => {
-    // Draw calls follow the number of SPECIES on screen. Broadleaf and conifer
-    // each already have their own mesh; a third here would be a third mesh.
+  it('keeps the per-site asset count inside a stated ceiling', () => {
+    // Draw calls follow how many DISTINCT trees a site contains, never how many
+    // are planted. That ceiling is worth pinning: silhouettes and broadleaf
+    // variants multiply, and each combination that a place can reach is one
+    // more InstancedMesh in every view of it.
     const covers = ['forest', 'shrub', 'orchard', 'park'] as const
     const regions = ['east-asia', 'mediterranean', 'northern-europe', 'north-america', 'generic'] as const
-    for (const cover of covers) {
-      for (const region of regions) {
-        for (const [shape] of coverSpeciesMix(cover, region)) {
-          expect(['broadleaf', 'needleleaf']).toContain(shape)
-        }
+    // Broadleaf splits again into plain/blossom/olive at draw time, so it is
+    // worth three assets wherever it appears at all.
+    const assetsFor = (shape: string): number => (shape === 'broadleaf' ? 3 : 1)
+    for (const region of regions) {
+      const shapes = new Set<string>()
+      for (const cover of covers) {
+        for (const [shape] of coverSpeciesMix(cover, region)) shapes.add(shape)
       }
+      const ceiling = [...shapes].reduce((n, s) => n + assetsFor(s), 0)
+      expect(ceiling).toBeLessThanOrEqual(6)
+    }
+  })
+
+  it('plants cypress and palm in a Mediterranean park', () => {
+    const park = coverSpeciesMix('park', 'mediterranean').map(([s]) => s)
+    expect(park).toContain('columnar')
+    expect(park).toContain('palm')
+  })
+
+  it('but never grows a palm in a wood', () => {
+    // The Mediterranean box reaches well inland. A palm someone PLANTED in a
+    // park is a plausible guess about that band; a palm in a forest is a claim
+    // about what grows there, and it would be false across most of the box.
+    for (const region of ['mediterranean', 'east-asia', 'northern-europe', 'north-america', 'generic'] as const) {
+      expect(coverSpeciesMix('forest', region).map(([s]) => s)).not.toContain('palm')
     }
   })
 
@@ -375,5 +399,41 @@ describe('which species an untagged wood grows', () => {
     // it would undo the regularity that makes it read as agriculture.
     expect(coverSpeciesMix('shrub', 'east-asia')).toHaveLength(1)
     expect(coverSpeciesMix('orchard', 'east-asia')).toHaveLength(1)
+  })
+})
+
+describe('broadleafVariant', () => {
+  const ids = Array.from({ length: 400 }, (_, i) => `n${i}`)
+  const tally = (region: Parameters<typeof broadleafVariant>[1]): Record<string, number> => {
+    const out: Record<string, number> = { plain: 0, blossom: 0, olive: 0 }
+    for (const id of ids) out[broadleafVariant(id, region)]++
+    return out
+  }
+
+  it('is deterministic per tree — a screenshot must not reshuffle the avenue', () => {
+    expect(ids.map((id) => broadleafVariant(id, 'mediterranean')))
+      .toEqual(ids.map((id) => broadleafVariant(id, 'mediterranean')))
+  })
+
+  it('never plants an olive in the north', () => {
+    expect(tally('northern-europe').olive).toBe(0)
+    expect(tally('east-asia').olive).toBe(0)
+    expect(tally('north-america').olive).toBe(0)
+  })
+
+  it('plants olive in quantity around the Mediterranean, and blossom in east Asia', () => {
+    expect(tally('mediterranean').olive).toBeGreaterThan(80)
+    expect(tally('east-asia').blossom).toBeGreaterThan(120)
+    // ...and neither region turns into a monoculture of its signature tree.
+    expect(tally('mediterranean').plain).toBeGreaterThan(tally('mediterranean').olive)
+  })
+
+  it('keeps blossom a minority in the north — a cherry avenue is not the default', () => {
+    expect(tally('northern-europe').blossom).toBeLessThan(ids.length * 0.2)
+  })
+
+  it('falls back to the generic mix for a region with no table of its own', () => {
+    const generic = tally('generic')
+    expect(generic.plain).toBeGreaterThan(generic.blossom + generic.olive)
   })
 })

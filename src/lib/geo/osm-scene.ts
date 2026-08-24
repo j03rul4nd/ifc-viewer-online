@@ -28,9 +28,12 @@ import * as THREE from 'three'
 import { latLonToNormalized, metresToNormalized } from './geo-math'
 import {
   jitter, foliageColor, variate, buildingRegion, coverSpeciesMix, speciesFor,
-  type TreeShape, type BuildingRegion,
+  broadleafVariant,
+  type TreeShape, type BuildingRegion, type BroadleafVariant,
 } from './feature-variation'
 import { canopyGeometry, trunkGeometry, TREE_PROPORTIONS } from './tree-geometry'
+import { roofPropAnchors } from './roof-props'
+import type { RoofProp, RoofPropBuilding, RoofPropKind } from './roof-props'
 import {
   seedRegion, seedFringe, allocateDensity, naturalTotalFor, ringArea, ringPerimeter,
   type SeedRegion, type SeededTree,
@@ -741,6 +744,15 @@ const ZEBRA_GAP_M = 0.45
 /** Worn road-marking white. */
 const CENTRE_LINE_TONE: [number, number, number] = [0.80, 0.78, 0.68]
 
+/**
+ * The centre of a roundabout: paving, a shade lighter than the asphalt round it.
+ *
+ * Neutral on purpose. The ring being a roundabout is mapped; what stands inside
+ * it is not, and painting a lawn there would be scenery dressed as data — the
+ * line props-scene draws in its own header.
+ */
+const ISLAND_TONE: [number, number, number] = [0.52, 0.51, 0.49]
+
 /** The painted safety line along a platform edge. */
 const PLATFORM_EDGE: [number, number, number] = [0.86, 0.72, 0.25]
 /** Width of that line, metres — generous so it survives at map scale. */
@@ -937,6 +949,7 @@ export function buildLinearLayer(
         centreLine: cls === 'vehicular' && f.widthM >= CENTRE_LINE_MIN_WIDTH_M,
         lanes: cls === 'vehicular' ? f.style.lanes : undefined,
         oneway: f.style.oneway,
+        roundabout: f.style.roundabout,
       })
       continue
     }
@@ -1053,6 +1066,25 @@ export function buildLinearLayer(
       }
       for (let i = 1; i < poly.length; i++) fan(poly[i - 1], poly[i])
       if (poly.length > 2) fan(poly[poly.length - 1], poly[0])
+    }
+
+    // The centre of a roundabout. Without this the ring of carriageway has a
+    // hole in it and the basemap shows through the middle of every one.
+    //
+    // Surfaced NEUTRAL rather than planted: OSM says the ring is a roundabout,
+    // it does not say what is inside it. A paved island is the answer that is
+    // wrong least often, and inventing a lawn on top of mapped geometry would
+    // cross the line this file's header draws between data and scenery.
+    for (const island of network.islands) {
+      const poly = island.polygon
+      const fanIsland = (p0: THREE.Vector2, p1: THREE.Vector2): void => {
+        for (const tri of subdivideOnGround([island.centre, p0, p1], frame)) {
+          pushShaded([tri[0], tri[1], tri[2], tri[0]],
+            [ISLAND_TONE, ISLAND_TONE, ISLAND_TONE, ISLAND_TONE])
+        }
+      }
+      for (let i = 1; i < poly.length; i++) fanIsland(poly[i - 1], poly[i])
+      if (poly.length > 2) fanIsland(poly[poly.length - 1], poly[0])
     }
 
     // Grain is a property of the SURFACE, not of the layer, so it travels as a
@@ -1498,10 +1530,26 @@ function seededTrees(
  * trees affordable. Deliberately low-poly — at map scale a tree is a silhouette,
  * and detail here would buy nothing but triangles.
  */
-/** Which authored asset stands in for which species. The rest stay procedural. */
+/**
+ * Which authored asset stands in for which species. The rest stay procedural.
+ *
+ * All four silhouettes are authored now. `broadleaf` names the plain one; the
+ * regional variants (blossom, olive) are chosen per tree below and fall back to
+ * this entry when their asset did not load, so a partial download degrades to
+ * plain broadleaf rather than to a procedural cone standing in a showcase view.
+ */
 const AUTHORED_TREE: Partial<Record<TreeShape, string>> = {
   broadleaf: 'tree-broadleaf',
   needleleaf: 'tree-conifer',
+  columnar: 'tree-columnar',
+  palm: 'tree-palm',
+}
+
+/** Authored asset per broadleaf variant — see `broadleafVariant`. */
+const AUTHORED_BROADLEAF: Record<BroadleafVariant, string> = {
+  plain: 'tree-broadleaf',
+  blossom: 'tree-blossom',
+  olive: 'tree-olive',
 }
 
 /**
@@ -1574,6 +1622,88 @@ function createAuthoredTreeMaterial(): THREE.MeshStandardMaterial {
       `)
   }
   return mat
+}
+
+/**
+ * Everything standing on the roofs: chimneys, plant, tanks, stair overruns.
+ *
+ * Showcase only, and on the same rule as the platform shelter — there is NO
+ * procedural fallback. A grey box on a roof is worse than a bare roof, because
+ * a bare roof is merely plain while a wrong box is a mistake the viewer can name.
+ *
+ * The anchors come from `roof-props`, which is pure arithmetic; this function
+ * only turns them into instanced meshes. One draw call per KIND — four for a
+ * whole city, however many roofs it has.
+ */
+export function buildRoofPropLayer(
+  buildings: ReadonlyArray<RoofPropBuilding>,
+  opts: LayerMeshOptions,
+): LayerMesh<THREE.Group> | null {
+  if (!opts.assets) return null
+  const frame = groundFrameFor(opts)
+  const mToN = frame.mToN
+
+  const anchors = roofPropAnchors(buildings, {
+    anchorLat: opts.anchorLat, anchorLon: opts.anchorLon,
+  })
+  if (anchors.length === 0) return null
+
+  const byKind = new Map<RoofPropKind, RoofProp[]>()
+  for (const a of anchors) {
+    const list = byKind.get(a.kind)
+    if (list) list.push(a)
+    else byKind.set(a.kind, [a])
+  }
+
+  const group = new THREE.Group()
+  group.name = 'osm-roof-props'
+  // With the buildings, not over them: these ARE part of the building mass and
+  // must sort against it the same way.
+  group.renderOrder = 5
+
+  const m = new THREE.Matrix4()
+  const pos = new THREE.Vector3()
+  const quat = new THREE.Quaternion()
+  const scale = new THREE.Vector3(mToN, mToN, mToN)
+  const zAxis = new THREE.Vector3(0, 0, 1)
+  let count = 0
+
+  for (const [kind, list] of byKind) {
+    const geo = opts.assets.get(ROOF_PROP_ASSET[kind])
+    if (!geo) continue
+    const mesh = new THREE.InstancedMesh(
+      geo.clone(),
+      // Painted metal and render. Rougher than vehicle paint: rooftop plant is
+      // weathered, and a mirror-finish air handler is the giveaway of a prop
+      // that was given a material rather than a surface.
+      new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0, roughness: 0.74 }),
+      list.length,
+    )
+    mesh.name = `osm-roof-${kind}`
+    list.forEach((a, i) => {
+      // The anchor's height is measured from the building's BASE, so the ground
+      // under the building is added here — the same datum every other layer
+      // stands on. Getting this from the prop's own x/y instead would put a
+      // chimney on a slope at the height of the slope, not of its house.
+      pos.set(a.nx, a.ny, frame.groundZ(a.nx, a.ny) + a.deckM * mToN)
+      quat.setFromAxisAngle(zAxis, a.yaw)
+      mesh.setMatrixAt(i, m.compose(pos, quat, scale))
+    })
+    mesh.instanceMatrix.needsUpdate = true
+    group.add(mesh)
+    count += list.length
+  }
+
+  if (count === 0) return null
+  return { object: group, count, dropped: 0 }
+}
+
+/** Which authored asset stands for which rooftop anchor. */
+const ROOF_PROP_ASSET: Record<RoofPropKind, string> = {
+  chimney: 'roof-chimney',
+  hvac: 'roof-hvac',
+  tank: 'roof-tank',
+  stairbox: 'roof-stairbox',
 }
 
 export function buildTreeLayer(
@@ -1666,33 +1796,67 @@ export function buildTreeLayer(
     ? createFoliageMaterial({ sun, clump: 0.35, tint: TRUNK_COLOR })
     : new THREE.MeshBasicMaterial({ color: TRUNK_COLOR })
 
+  /**
+   * Split one species into the authored assets that can stand for it.
+   *
+   * Only broadleaf splits, and only when the variant's own asset is present.
+   * The draw-call property is preserved by construction: this returns one group
+   * per ASSET, never one per tree, so the count still depends on how many
+   * distinct trees exist and not on how many are planted.
+   */
+  const byAsset = (shape: TreeShape, subset: PlacedTree[]): Array<[string, PlacedTree[]]> => {
+    const base = AUTHORED_TREE[shape]
+    if (shape !== 'broadleaf' || !base) return base ? [[base, subset]] : []
+    const groups = new Map<string, PlacedTree[]>()
+    for (const t of subset) {
+      const wanted = AUTHORED_BROADLEAF[broadleafVariant(t.id, regionName)]
+      // A variant whose asset did not load falls back to plain broadleaf, which
+      // is the difference between a missing download and a missing tree.
+      const name = opts.assets?.get(wanted) ? wanted : base
+      const list = groups.get(name)
+      if (list) list.push(t)
+      else groups.set(name, [t])
+    }
+    return [...groups]
+  }
+
   for (const [shape, subset] of bySpecies) {
     // Showcase: one authored mesh IS the whole tree — trunk, limbs and crown in
     // a single instanced draw, half the draw calls of the procedural pair.
-    const assetName = AUTHORED_TREE[shape]
-    const authored = assetName ? (opts.assets?.get(assetName) ?? null) : null
-    const unit = authored ? unitTree(authored) : null
-    if (unit) {
-      const mesh = new THREE.InstancedMesh(unit, createAuthoredTreeMaterial(), subset.length)
-      mesh.name = `osm-trees-${shape}-authored`
-      const tint = new Float32Array(subset.length * 3)
-      subset.forEach((placed, i) => {
-        const t = measure(placed)
-        quat.setFromAxisAngle(zAxis, variate(placed.id, 4) * Math.PI * 2)
-        // Base-anchored: the authored geometry stands on its own z=0, so the
-        // trunk meets the ground without the crown/trunk split the procedural
-        // canopies need.
-        pos.set(t.nx, t.ny, t.baseZ)
-        scale.set(t.radiusM * mToN, t.radiusM * mToN, t.totalM * mToN)
-        mesh.setMatrixAt(i, m.compose(pos, quat, scale))
-        const [r, g, b] = foliageColor(placed.id, shape)
-        tint[i * 3] = r
-        tint[i * 3 + 1] = g
-        tint[i * 3 + 2] = b
+    const groups = byAsset(shape, subset)
+      .map(([name, list]) => {
+        const authored = opts.assets?.get(name) ?? null
+        return { name, list, unit: authored ? unitTree(authored) : null }
       })
-      mesh.instanceMatrix.needsUpdate = true
-      unit.setAttribute('aTint', new THREE.InstancedBufferAttribute(tint, 3))
-      group.add(mesh)
+      .filter((g) => g.unit !== null)
+
+    if (groups.length > 0) {
+      for (const g of groups) {
+        const unit = g.unit!
+        const mesh = new THREE.InstancedMesh(unit, createAuthoredTreeMaterial(), g.list.length)
+        // Named by SPECIES, not by asset file: 'tree-broadleaf' is the plain
+        // broadleaf, and a layer name that leaked the filename would change the
+        // name of a mesh nothing else about it changed.
+        mesh.name = `osm-trees-${g.name.replace(/^tree-/, '')}-authored`
+        const tint = new Float32Array(g.list.length * 3)
+        g.list.forEach((placed, i) => {
+          const t = measure(placed)
+          quat.setFromAxisAngle(zAxis, variate(placed.id, 4) * Math.PI * 2)
+          // Base-anchored: the authored geometry stands on its own z=0, so the
+          // trunk meets the ground without the crown/trunk split the procedural
+          // canopies need.
+          pos.set(t.nx, t.ny, t.baseZ)
+          scale.set(t.radiusM * mToN, t.radiusM * mToN, t.totalM * mToN)
+          mesh.setMatrixAt(i, m.compose(pos, quat, scale))
+          const [r, gr, b] = foliageColor(placed.id, shape)
+          tint[i * 3] = r
+          tint[i * 3 + 1] = gr
+          tint[i * 3 + 2] = b
+        })
+        mesh.instanceMatrix.needsUpdate = true
+        unit.setAttribute('aTint', new THREE.InstancedBufferAttribute(tint, 3))
+        group.add(mesh)
+      }
       continue
     }
 

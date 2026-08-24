@@ -102,6 +102,12 @@ export interface FeatureStyle {
   /** Traffic runs one way only — so there is no centre line to divide it. */
   oneway?: boolean
   /**
+   * `junction=roundabout|circular`. Distinct from `oneway`, which a roundabout
+   * also implies: this one says the way is a RING, and a ring has a centre that
+   * has to be surfaced or the basemap shows through it.
+   */
+  roundabout?: boolean
+  /**
    * Carriageway, footpath or track. Decides which NETWORK the way is solved in
    * as well as how it is surfaced — see RoadClass.
    */
@@ -651,6 +657,7 @@ export function resolveFeatureStyle(
       // that never looked at the topology.
       oneway: (oneway !== '' && oneway !== 'no')
         || t['junction'] === 'roundabout' || t['junction'] === 'circular',
+      roundabout: t['junction'] === 'roundabout' || t['junction'] === 'circular',
     }
   }
 

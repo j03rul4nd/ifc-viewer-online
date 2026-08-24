@@ -55,7 +55,7 @@ export interface PropsLayer {
    * different rules with different densities, and a single total hides a
    * street full of lamps behind a street with two cars on it.
    */
-  counts: { vehicles: number; lamps: number; canopies: number }
+  counts: { vehicles: number; lamps: number; canopies: number; furniture: number }
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
@@ -180,7 +180,7 @@ export function buildSignalLayer(
   return {
     object: group,
     count: signals.length,
-    counts: { vehicles: 0, lamps: 0, canopies: 0 },
+    counts: { vehicles: 0, lamps: 0, canopies: 0, furniture: 0 },
   }
 }
 
@@ -323,6 +323,38 @@ const MIN_PLATFORM_WIDTH_M = 3.2
 /** Platform length each shelter is taken to cover. */
 const CANOPY_EVERY_M = 34
 const MAX_CANOPIES = 60
+
+/** How far a bench, bin or shelter stands from the edge of the carriageway. */
+const KERB_MARGIN_M = 1.1
+/**
+ * Spacing of the sparse furniture walk. Deliberately much longer than the lamp
+ * spacing: lighting is a requirement and is therefore regular, while benches
+ * and bins are occasional, and placing them on a lamp-like rhythm is what makes
+ * a street look like a level rather than a place.
+ */
+const FURNITURE_SPACING_M = 62
+/** Below this a street has no pavement worth furnishing. Pedestrian ways skip it. */
+const MIN_FURNITURE_ROAD_WIDTH_M = 7
+/** Bollards are close-set by nature — that spacing IS what identifies them. */
+const BOLLARD_SPACING_M = 9
+/**
+ * Caps. Bollards get a far bigger one because they are the cheapest asset in
+ * the set (68 triangles) and the densest by design; benches and bins share
+ * theirs, since they come off one cursor and compete for the same kerb.
+ */
+const MAX_FURNITURE = 900
+const MAX_BOLLARDS = 2400
+const MAX_SHELTERS = 40
+/**
+ * A bus SHELTER needs more road than a parked bus does.
+ *
+ * MIN_BUS_ROAD_WIDTH_M (7 m) is the width at which a bus can physically stand,
+ * and that is the right test for a vehicle. It is the wrong test for a stop:
+ * 7 m is a two-lane residential street, and putting a sheltered bus stop on
+ * every one of those turns a neighbourhood into a bus station. A route runs on
+ * something wider.
+ */
+const MIN_SHELTER_ROAD_WIDTH_M = 9
 
 /**
  * Cars on the carriageways and trains on the track.
@@ -471,8 +503,113 @@ export function buildVehicleLayer(
     }
   }
 
+  // ── Street furniture ────────────────────────────────────────────────────────
+  // Showcase only, on the same rule the platform shelter follows: there is no
+  // procedural fallback, because a grey box on a pavement is worse than a bare
+  // pavement. What it buys is the thing an empty kerb never has — objects at
+  // human height between the camera and the buildings, which is most of what
+  // gives a street-level shot any depth at all.
+  //
+  // Placement rides the KERB, reusing the lamp walk's geometry: offset half the
+  // carriageway plus a margin, side chosen once per way. Furniture that swaps
+  // pavements halfway down a street reads as scattered litter, not as a street.
+  const benches: Placement[] = []
+  const bins: Placement[] = []
+  const bollards: Placement[] = []
+  const shelters: Placement[] = []
+
+  const authoredBench = opts.assets?.get('bench') ?? null
+  const authoredBin = opts.assets?.get('litter-bin') ?? null
+  const authoredBollard = opts.assets?.get('bollard') ?? null
+  const authoredShelter = opts.assets?.get('bus-shelter') ?? null
+
+  if (authoredBench || authoredBin || authoredBollard || authoredShelter) {
+    const restSpacing = FURNITURE_SPACING_M * mToN
+    const bollardSpacing = BOLLARD_SPACING_M * mToN
+
+    for (const f of features) {
+      if (f.kind !== 'road' || f.widthM === undefined || f.style.crossing) continue
+      if (!f.ring || f.ring.length < 2) continue
+      const pedestrian = f.style.roadClass === 'pedestrian'
+      // A track through a field gets nothing: furniture is an URBAN signal, and
+      // a bench on a farm track is the sort of detail that reads as a mistake.
+      if (f.style.roadClass === 'track') continue
+      if (!pedestrian && f.widthM < MIN_FURNITURE_ROAD_WIDTH_M) continue
+
+      const side = variate(f.id, 31) < 0.5 ? 1 : -1
+      const off = (f.widthM * 0.5 + KERB_MARGIN_M) * mToN
+      const pts = f.ring.map((pt) => latLonToNormalized(pt.lat, pt.lon))
+
+      // Bollards line a PEDESTRIAN way on both sides — that is what they are
+      // for, keeping vehicles off it — and are the one piece placed densely.
+      if (pedestrian && authoredBollard) {
+        for (const s of [-1, 1] as const) {
+          let carried = bollardSpacing * variate(f.id, 32 + s)
+          for (let i = 0; i < pts.length - 1 && bollards.length < MAX_BOLLARDS; i++) {
+            const a = pts[i]
+            const b = pts[i + 1]
+            const dx = b.nx - a.nx
+            const dy = b.ny - a.ny
+            const len = Math.hypot(dx, dy)
+            if (len === 0) continue
+            const yaw = Math.atan2(dy, dx)
+            let t = carried
+            while (t <= len && bollards.length < MAX_BOLLARDS) {
+              const x = a.nx + (dx * t) / len - (dy / len) * off * s
+              const y = a.ny + (dy * t) / len + (dx / len) * off * s
+              bollards.push({ x, y, z: groundZ(x, y), yaw, seed: `${f.id}#bol${bollards.length}` })
+              t += bollardSpacing
+            }
+            carried = Math.max(0, t - len)
+          }
+        }
+      }
+
+      // Benches, bins and shelters share one sparse walk: they compete for the
+      // same stretch of kerb, so drawing them from one cursor is what stops a
+      // bin landing inside a shelter.
+      let carried = restSpacing * variate(f.id, 33)
+      let slot = Math.floor(variate(f.id, 34) * 4)
+      for (let i = 0; i < pts.length - 1 && benches.length + bins.length < MAX_FURNITURE; i++) {
+        const a = pts[i]
+        const b = pts[i + 1]
+        const dx = b.nx - a.nx
+        const dy = b.ny - a.ny
+        const len = Math.hypot(dx, dy)
+        if (len === 0) continue
+        const yaw = Math.atan2(dy, dx)
+
+        let t = carried
+        while (t <= len && benches.length + bins.length < MAX_FURNITURE) {
+          const x = a.nx + (dx * t) / len - (dy / len) * off * side
+          const y = a.ny + (dy * t) / len + (dx / len) * off * side
+          // Facing the street, like the lamp arm: a bench with its back to the
+          // road is a bench nobody would sit on.
+          const facing = yaw - (side * Math.PI) / 2
+          const spot = { x, y, z: groundZ(x, y), yaw: facing, seed: `${f.id}#f${slot}` }
+
+          // A shelter only where a bus could actually stop, and rarely: one on
+          // every corner is a worse lie than none at all.
+          const busable = !pedestrian && f.widthM! >= MIN_SHELTER_ROAD_WIDTH_M
+          if (authoredShelter && busable && slot % 9 === 0 && shelters.length < MAX_SHELTERS) {
+            shelters.push(spot)
+          } else if (authoredBench && slot % 3 === 0) {
+            benches.push(spot)
+          } else if (authoredBin) {
+            bins.push(spot)
+          }
+          slot++
+          t += restSpacing
+        }
+        carried = Math.max(0, t - len)
+      }
+    }
+  }
+
+  const furniture = benches.length + bins.length + bollards.length + shelters.length
+
   if (cars.length === 0 && carriages.length === 0
-    && lamps.length === 0 && canopies.length === 0) return null
+    && lamps.length === 0 && canopies.length === 0 && furniture === 0) return null
 
   const group = new THREE.Group()
   group.name = 'osm-vehicles'
@@ -587,10 +724,30 @@ export function buildVehicleLayer(
     group.add(mesh)
   }
 
+  // Street furniture: one instanced draw per piece, four in total. Painted
+  // metal and timber, so rougher than vehicle paint and smoother than asphalt.
+  const furnish = (
+    spots: Placement[], geo: THREE.BufferGeometry | null, name: string, roughness: number,
+  ): void => {
+    if (!geo || spots.length === 0) return
+    const mesh = place(spots, geo.clone(), name)
+    if (!mesh) return
+    ;(mesh.material as THREE.MeshStandardMaterial).roughness = roughness
+    group.add(mesh)
+  }
+  furnish(benches, authoredBench, 'osm-benches', 0.72)
+  furnish(bins, authoredBin, 'osm-litter-bins', 0.6)
+  furnish(bollards, authoredBollard, 'osm-bollards', 0.58)
+  // The shelter is glazed: low roughness is what lets the glass pick up the sky
+  // instead of reading as four grey panels.
+  furnish(shelters, authoredShelter, 'osm-bus-shelters', 0.34)
+
   const vehicles = cars.length + carriages.length
   return {
     object: group,
-    count: vehicles + lamps.length + canopies.length,
-    counts: { vehicles, lamps: lamps.length, canopies: canopies.length },
+    count: vehicles + lamps.length + canopies.length + furniture,
+    counts: {
+      vehicles, lamps: lamps.length, canopies: canopies.length, furniture,
+    },
   }
 }

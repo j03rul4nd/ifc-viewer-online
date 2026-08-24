@@ -30,6 +30,7 @@
 
 import bpy
 import bmesh
+import math
 import os
 import sys
 from mathutils import Vector
@@ -47,6 +48,21 @@ BUDGET = {
     'street-lamp': 300,
     'platform-canopy': 500,
     'train-carriage': 400,
+    # Round 2. Trees are the expensive family because a crown is spheres; the
+    # street furniture and the rooftop kit are boxes and stay tiny on purpose —
+    # a chimney is instanced onto every pitched roof in view.
+    'tree-palm': 900,
+    'tree-columnar': 700,
+    'tree-blossom': 900,
+    'tree-olive': 800,
+    'bench': 250,
+    'litter-bin': 200,
+    'bollard': 150,
+    'bus-shelter': 300,
+    'roof-chimney': 200,
+    'roof-hvac': 350,
+    'roof-tank': 400,
+    'roof-stairbox': 200,
 }
 
 
@@ -202,6 +218,15 @@ METAL = (0.45, 0.47, 0.50)
 BARK = (0.32, 0.24, 0.18)
 LEAF = (0.32, 0.48, 0.26)
 CONCRETE = (0.66, 0.65, 0.64)
+TIMBER = (0.48, 0.38, 0.28)
+BRICK = (0.58, 0.50, 0.44)
+NEEDLE = (0.24, 0.36, 0.24)
+PALM_STEM = (0.42, 0.36, 0.28)
+FROND = (0.30, 0.44, 0.24)
+OLIVE = (0.42, 0.46, 0.34)
+# Muted on purpose — see build_tree_blossom() for why this one is allowed to
+# carry its own colour when the rest of the palette may not.
+BLOSSOM = (0.72, 0.58, 0.62)
 
 
 # ── Assets ────────────────────────────────────────────────────────────────────
@@ -381,6 +406,239 @@ def build_catenary_mast():
     return finish('catenary-mast', parts)
 
 
+# ── Round 2 assets ────────────────────────────────────────────────────────────
+# WHY THESE TWELVE, and not "more cars". The first ten props fixed the things a
+# camera at street level looks AT. What still read as a game was the things it
+# looks PAST: two tree species for a whole neighbourhood (the repeat is visible
+# the moment there are fifty), pavements with nothing standing on them, and —
+# the one that costs the most and is the least obvious — roofs that are empty
+# planes. A real skyline is broken by chimneys, plant and tanks; an empty roof
+# is the clearest tell that a block was extruded rather than built.
+#
+# The rooftop kit is deliberately NOT a fourth building detail level. These are
+# instanced props scattered onto the roofs the extruder already makes, so they
+# cost draw calls per SPECIES and not per building — the same property the
+# canopy has.
+
+
+def build_tree_palm():
+    """
+    A palm: bare curved stem, crown of drooping fronds.
+
+    The silhouette is the whole asset — a palm at 40 m is a stick and a splash.
+    The stem is stepped rather than swept so it stays inside budget while still
+    leaning, which is what keeps a row of them from reading as lamp posts.
+    """
+    parts = []
+    for i, (x, z, rot) in enumerate(((0.0, 0.9, 0.03), (0.10, 2.6, 0.07),
+                                     (0.30, 4.2, 0.11), (0.62, 5.6, 0.15))):
+        seg = cyl('stem%d' % i, 0.20 - i * 0.02, 1.8, (x, 0, z), PALM_STEM, verts=6)
+        parts.append(spin(seg, (0, rot, 0)))
+    cx, cz = 0.86, 6.35
+    parts.append(sphere('heart', 0.30, (cx, 0, cz), (0.36, 0.40, 0.24), segments=6, rings=4))
+    # Eight fronds around the crown, each a flattened box turned outward and
+    # down. spin() first, place second — the other order orbits the world
+    # origin, which is the trap documented on spin() itself.
+    for i in range(8):
+        a = i * (math.pi / 4)
+        frond = cube('frond%d' % i, (2.30, 0.42, 0.06), (0, 0, 0), FROND)
+        spin(frond, (0, 0.34, a))
+        frond.location = (cx + 1.05 * math.cos(a), 1.05 * math.sin(a), cz - 0.30)
+        parts.append(frond)
+    return finish('tree-palm', parts)
+
+
+def build_tree_columnar():
+    """
+    A cypress or Lombardy poplar: tall, narrow, near-vertical.
+
+    Exists because every avenue in the previous build was broadleaf spheres of
+    one radius. A columnar species breaks that rhythm with a single extra asset,
+    and it is the cheapest tree in the set — three tapered lobes on a stick.
+    """
+    trunk = cyl('trunk', 0.14, 2.0, (0, 0, 1.0), BARK, verts=6)
+    taper(trunk, 0.6)
+    parts = [trunk]
+    for z, r, s in ((2.9, 0.95, (1.0, 1.0, 1.9)), (5.0, 0.82, (1.0, 1.0, 1.7)),
+                    (6.8, 0.55, (1.0, 1.0, 1.5))):
+        lobe = sphere('lobe%s' % z, r, (0, 0, z), NEEDLE, segments=7, rings=5)
+        squash(lobe, s)
+        parts.append(lobe)
+    return finish('tree-columnar', parts)
+
+
+def build_tree_blossom():
+    """
+    A blossoming ornamental — cherry, plum or jacaranda depending on the tint.
+
+    THE ONE ASSET THAT BENDS THE NEUTRAL-PALETTE RULE, on the same precedent the
+    conifer set: for a tree whose entire identity is the colour of its crown, a
+    neutral base tinted at runtime is a grey tree everywhere the tint is not
+    applied. The tone baked here is muted, so a runtime tint reads on top of it
+    instead of fighting a saturated pink.
+    """
+    trunk = cyl('trunk', 0.16, 2.1, (0, 0, 1.05), BARK, verts=6)
+    taper(trunk, 0.58)
+    parts = [trunk]
+    for i, a in enumerate((0.0, 2.09, 4.18)):
+        limb = cyl('limb%d' % i, 0.085, 1.5, (0, 0, 0), BARK, verts=5)
+        spin(limb, (0.55 * math.sin(a), 0.55 * math.cos(a), 0))
+        limb.location = (0.42 * math.cos(a), 0.42 * math.sin(a), 2.6)
+        parts.append(limb)
+    for i, (at, r) in enumerate((((0.0, 0.0, 3.9), 1.55), ((0.95, 0.30, 3.6), 1.00),
+                                 ((-0.85, 0.35, 3.7), 0.95), ((0.05, -0.90, 3.55), 0.90))):
+        lobe = sphere('bloom%d' % i, r, at, BLOSSOM, segments=8, rings=5)
+        squash(lobe, (1.0, 1.0, 0.68))
+        parts.append(lobe)
+    return finish('tree-blossom', parts)
+
+
+def build_tree_olive():
+    """
+    A Mediterranean olive: short gnarled trunk, wide low silver-green crown.
+
+    Wide and LOW is the point — it is the species that stops a southern square
+    looking like a northern one, and it does that by sitting under the eaveline
+    instead of over it.
+    """
+    trunk = cyl('trunk', 0.30, 1.5, (0, 0, 0.75), (0.40, 0.36, 0.30), verts=7)
+    taper(trunk, 0.72)
+    parts = [trunk]
+    for i, (at, r, s) in enumerate((((0.0, 0.0, 2.5), 1.70, (1.25, 1.25, 0.70)),
+                                    ((0.85, 0.45, 2.2), 1.05, (1.15, 1.15, 0.72)),
+                                    ((-0.75, -0.55, 2.3), 1.00, (1.15, 1.15, 0.72)))):
+        lobe = sphere('lobe%d' % i, r, at, OLIVE, segments=8, rings=5)
+        squash(lobe, s)
+        parts.append(lobe)
+    return finish('tree-olive', parts)
+
+
+def build_bench():
+    """A public bench: slatted seat and back on two cast ends."""
+    parts = []
+    for i, x in enumerate((-0.72, 0.72)):
+        parts.append(cube('leg%d' % i, (0.09, 0.56, 0.42), (x, 0, 0.21), TRIM))
+    for i, y in enumerate((-0.22, 0.0, 0.22)):
+        parts.append(cube('slat%d' % i, (1.80, 0.16, 0.05), (0, y, 0.45), TIMBER))
+    for i, (z, y) in enumerate(((0.66, -0.26), (0.84, -0.30))):
+        parts.append(cube('back%d' % i, (1.80, 0.05, 0.15), (0, y, z), TIMBER))
+    return finish('bench', parts)
+
+
+def build_litter_bin():
+    """A street bin. Small, but its absence is what makes a pavement read empty."""
+    body = cyl('body', 0.28, 0.80, (0, 0, 0.40), TRIM, verts=8)
+    taper(body, 1.12)
+    parts = [
+        body,
+        cyl('rim', 0.31, 0.07, (0, 0, 0.82), METAL, verts=8),
+        cyl('post', 0.05, 0.95, (0, 0.34, 0.48), METAL, verts=5),
+    ]
+    return finish('litter-bin', parts)
+
+
+def build_bollard():
+    """A bollard. Cheapest asset in the set, and the one that draws a kerb line."""
+    post = cyl('post', 0.11, 0.90, (0, 0, 0.45), TRIM, verts=8)
+    taper(post, 0.86)
+    parts = [post,
+             cyl('cap', 0.12, 0.06, (0, 0, 0.90), METAL, verts=8),
+             cube('band', (0.24, 0.24, 0.05), (0, 0, 0.72), (0.82, 0.80, 0.76))]
+    return finish('bollard', parts)
+
+
+def build_bus_shelter():
+    """
+    A bus shelter: glazed back and ends, cantilever roof, bench inside.
+
+    Deliberately a DIFFERENT object from platform-canopy — that one is rail and
+    spans a platform; this sits on a pavement, and it is what tells a viewer the
+    street has a bus route without a bus needing to be parked in the shot.
+    """
+    parts = [
+        cube('back', (4.00, 0.06, 2.10), (0, 0.72, 1.20), GLASS),
+        cube('endL', (0.06, 1.44, 2.10), (-1.97, 0, 1.20), GLASS),
+        cube('endR', (0.06, 1.44, 2.10), (1.97, 0, 1.20), GLASS),
+        cube('roof', (4.30, 1.80, 0.10), (0, -0.05, 2.32), CONCRETE),
+        cube('fascia', (4.30, 0.08, 0.20), (0, -0.90, 2.27), TRIM),
+        cube('seat', (3.20, 0.36, 0.06), (0, 0.50, 0.46), TIMBER),
+    ]
+    for i, x in enumerate((-1.90, 1.90)):
+        parts.append(cube('post%d' % i, (0.10, 0.10, 2.30), (x, 0.70, 1.15), METAL))
+        parts.append(cube('seatleg%d' % i, (0.07, 0.34, 0.44), (x * 0.75, 0.50, 0.22), METAL))
+    return finish('bus-shelter', parts)
+
+
+def build_roof_chimney():
+    """
+    A chimney stack with pots.
+
+    The rooftop kit's workhorse: on pitched roofs it is the difference between a
+    village and a set of extruded prisms, for a handful of triangles.
+    """
+    parts = [cube('stack', (0.62, 0.62, 1.30), (0, 0, 0.65), BRICK),
+             cube('crown', (0.74, 0.74, 0.12), (0, 0, 1.36), (0.66, 0.62, 0.58))]
+    for i, x in enumerate((-0.16, 0.16)):
+        parts.append(cyl('pot%d' % i, 0.11, 0.34, (x, 0, 1.59), (0.52, 0.36, 0.30), verts=6))
+    return finish('roof-chimney', parts)
+
+
+def build_roof_hvac():
+    """
+    A packaged rooftop air-handling unit.
+
+    What actually stands on a flat commercial roof. Modelled as the box, the fan
+    cowls and the kerb it sits on — the kerb matters, because plant flush on the
+    deck is exactly what looks pasted on.
+    """
+    parts = [
+        cube('kerb', (2.35, 1.65, 0.16), (0, 0, 0.08), (0.44, 0.44, 0.46)),
+        cube('body', (2.20, 1.50, 0.95), (0, 0, 0.63), (0.70, 0.71, 0.72)),
+        cube('duct', (0.55, 0.70, 0.45), (1.32, 0, 0.40), METAL),
+    ]
+    for i, x in enumerate((-0.52, 0.52)):
+        parts.append(cyl('cowl%d' % i, 0.34, 0.22, (x, 0, 1.21), METAL, verts=8))
+        parts.append(cyl('guard%d' % i, 0.30, 0.06, (x, 0, 1.35), TRIM, verts=8))
+    return finish('roof-hvac', parts)
+
+
+def build_roof_tank():
+    """
+    A cylindrical water tank on a braced frame.
+
+    Regional on purpose: this is the silhouette of a Mediterranean, Middle
+    Eastern or Latin American roofscape. It is placed by the same scatter as the
+    rest, so a site's region can weight tanks where a northern one weights
+    chimneys.
+    """
+    parts = [cyl('tank', 0.80, 1.35, (0, 0, 1.92), (0.74, 0.74, 0.72), verts=10),
+             cyl('lid', 0.84, 0.10, (0, 0, 2.64), METAL, verts=10),
+             cyl('hatch', 0.22, 0.14, (0.28, 0, 2.74), TRIM, verts=6)]
+    for i, x in enumerate((-0.62, 0.62)):
+        for j, y in enumerate((-0.62, 0.62)):
+            parts.append(cube('leg%d%d' % (i, j), (0.09, 0.09, 1.25), (x, y, 0.62), METAL))
+    parts.append(cube('braceX', (1.34, 0.06, 0.06), (0, 0.62, 0.42), METAL))
+    parts.append(cube('braceY', (0.06, 1.34, 0.06), (0.62, 0, 0.42), METAL))
+    return finish('roof-tank', parts)
+
+
+def build_roof_stairbox():
+    """
+    The stair and lift overrun — the little house on top of a flat roof.
+
+    Every flat-roofed building above three storeys has one, and it is the
+    element that gives a rooftop a sense of scale seen from the air.
+    """
+    parts = [
+        cube('box', (3.10, 2.60, 2.55), (0, 0, 1.27), (0.72, 0.71, 0.69)),
+        cube('cap', (3.30, 2.80, 0.14), (0, 0, 2.62), (0.60, 0.60, 0.60)),
+        cube('door', (0.08, 1.00, 2.05), (1.56, 0, 1.02), TRIM),
+        cube('louvre', (1.10, 0.07, 0.60), (0, -1.32, 1.95), METAL),
+        cyl('vent', 0.16, 0.70, (1.05, 0.90, 3.04), METAL, verts=6),
+    ]
+    return finish('roof-stairbox', parts)
+
+
 BUILDERS = {
     'car': build_car,
     'van': build_van,
@@ -392,6 +650,18 @@ BUILDERS = {
     'tree-conifer': build_tree_conifer,
     'street-lamp': build_street_lamp,
     'platform-canopy': build_platform_canopy,
+    'tree-palm': build_tree_palm,
+    'tree-columnar': build_tree_columnar,
+    'tree-blossom': build_tree_blossom,
+    'tree-olive': build_tree_olive,
+    'bench': build_bench,
+    'litter-bin': build_litter_bin,
+    'bollard': build_bollard,
+    'bus-shelter': build_bus_shelter,
+    'roof-chimney': build_roof_chimney,
+    'roof-hvac': build_roof_hvac,
+    'roof-tank': build_roof_tank,
+    'roof-stairbox': build_roof_stairbox,
 }
 
 
@@ -421,7 +691,12 @@ def main():
             use_selection=True,
             export_apply=True,
             export_materials='EXPORT',
-            export_colors=True,
+            # 'MATERIAL' exports the colour layers the material actually reads,
+            # which is exactly the one `finish()` wires into the Base Color.
+            # NOT `export_colors=True`: that keyword was removed from the glTF
+            # exporter in Blender 4.x, and the failure is a hard TypeError at
+            # export time rather than a silently colourless asset.
+            export_vertex_color='MATERIAL',
             export_cameras=False,
             export_lights=False,
             export_yup=False,          # keep Z-up: the scene frame is Z-up

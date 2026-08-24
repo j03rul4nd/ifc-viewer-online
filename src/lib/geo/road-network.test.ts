@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import {
   buildRoadNetwork, solveFillet, trimPolyline, mitredBorders, endDirection,
+  solveIslands, smoothCurve,
   type NetworkWay, type RoadNetwork,
 } from './road-network'
 
@@ -497,5 +498,123 @@ describe('a junction approached on a curve', () => {
     }
     // And it is still a face, not a folded sliver.
     expect(Math.abs(area(junction.polygon))).toBeGreaterThan(0)
+  })
+})
+
+/** A closed roundabout way of `radius` metres, `n` vertices. */
+function roundabout(id: string, radius: number, halfWidth = 4, n = 16): NetworkWay {
+  const pts: Array<[number, number]> = []
+  for (let i = 0; i <= n; i++) {
+    const a = (i % n) * ((Math.PI * 2) / n)
+    pts.push([Math.cos(a) * radius, Math.sin(a) * radius])
+  }
+  return way(id, pts, halfWidth, { roundabout: true, oneway: true })
+}
+
+describe('solveIslands', () => {
+  it('finds nothing where there is no roundabout', () => {
+    expect(solveIslands([way('w', [[0, 0], [50, 0]])], 0.3)).toEqual([])
+  })
+
+  it('fills the hole a ring of ribbons leaves in its own centre', () => {
+    const [island] = solveIslands([roundabout('r', 20)], 0.3)
+    expect(island).toBeDefined()
+    // Inner kerb = ring radius minus the carriageway half-width.
+    expect(island.radius).toBeCloseTo(16, 6)
+    expect(island.centre.length()).toBeCloseTo(0, 6)
+  })
+
+  it('hands back a CCW polygon whichever way the mapper drew it', () => {
+    const clockwise = roundabout('r', 20)
+    const reversed = { ...clockwise, points: [...clockwise.points].reverse() }
+    for (const w of [clockwise, reversed]) {
+      const [island] = solveIslands([w], 0.3)
+      expect(area(island.polygon)).toBeGreaterThan(0)
+    }
+  })
+
+  it('draws no island on a mini-roundabout — that one is paint, not kerb', () => {
+    // 4 m ring, 4 m half-width: the carriageway swallows the centre entirely.
+    expect(solveIslands([roundabout('mini', 4, 4)], 0.3)).toEqual([])
+    // And a ring whose centre is a token sliver is refused for the same reason.
+    expect(solveIslands([roundabout('small', 5.5, 4)], 0.3)).toEqual([])
+  })
+
+  it('keeps an oval roundabout oval instead of replacing it with a disc', () => {
+    const oval = roundabout('o', 30)
+    const stretched = {
+      ...oval,
+      points: oval.points.map((p) => new THREE.Vector2(p.x * 2, p.y)),
+    }
+    const [island] = solveIslands([stretched], 0.3)
+    const xs = island.polygon.map((p) => Math.abs(p.x))
+    const ys = island.polygon.map((p) => Math.abs(p.y))
+    expect(Math.max(...xs)).toBeGreaterThan(Math.max(...ys) * 1.5)
+  })
+
+  it('ignores a roundabout mapped as an open way rather than inventing a ring', () => {
+    const open = roundabout('r', 20)
+    expect(solveIslands([{ ...open, points: open.points.slice(0, -3) }], 0.3)).toEqual([])
+  })
+
+  it('reaches the network result, so the scene has something to draw', () => {
+    const net = buildRoadNetwork([roundabout('r', 20), way('arm', [[20, 0], [80, 0]])], SNAP)
+    expect(net.islands.length).toBe(1)
+  })
+})
+
+describe('smoothCurve', () => {
+  /** Largest turn between consecutive segments, radians. */
+  const sharpest = (pts: ReadonlyArray<THREE.Vector2>): number => {
+    let worst = 0
+    for (let i = 1; i < pts.length - 1; i++) {
+      const a = pts[i].clone().sub(pts[i - 1])
+      const b = pts[i + 1].clone().sub(pts[i])
+      if (a.lengthSq() === 0 || b.lengthSq() === 0) continue
+      worst = Math.max(worst, a.angleTo(b))
+    }
+    return worst
+  }
+
+  it('never moves an endpoint — those are graph nodes', () => {
+    const pts = [[0, 0], [30, 6], [60, 16], [90, 30]].map(([x, y]) => v(x, y))
+    const out = smoothCurve(pts, 4)
+    expect(out[0].distanceTo(pts[0])).toBe(0)
+    expect(out[out.length - 1].distanceTo(pts[3])).toBe(0)
+  })
+
+  it('takes the facets out of a traced bend', () => {
+    // A quarter circle at coarse OSM spacing: gentle turns, one after another.
+    const pts = Array.from({ length: 7 }, (_, i) => {
+      const a = (i / 6) * (Math.PI / 2)
+      return v(Math.cos(a) * 60, Math.sin(a) * 60)
+    })
+    const out = smoothCurve(pts, 5)
+    expect(out.length).toBeGreaterThan(pts.length)
+    expect(sharpest(out)).toBeLessThan(sharpest(pts))
+  })
+
+  it('leaves a street corner square — a 90° turn is not a facet', () => {
+    const corner = [v(0, 0), v(60, 0), v(60, 60)]
+    const out = smoothCurve(corner, 4)
+    expect(sharpest(out)).toBeCloseTo(Math.PI / 2, 6)
+  })
+
+  it('stays inside the polyline it smoothed — a road must not move outward', () => {
+    const pts = Array.from({ length: 7 }, (_, i) => {
+      const a = (i / 6) * (Math.PI / 2)
+      return v(Math.cos(a) * 60, Math.sin(a) * 60)
+    })
+    // Chaikin's limit curve lies in the hull, so no point may exceed the radius.
+    for (const p of smoothCurve(pts, 5)) expect(p.length()).toBeLessThanOrEqual(60.0001)
+  })
+
+  it('leaves an already-dense line alone rather than quadrupling its points', () => {
+    const dense = Array.from({ length: 20 }, (_, i) => v(i * 1.5, 0))
+    expect(smoothCurve(dense, 6).length).toBe(dense.length)
+  })
+
+  it('passes a two-point line straight through', () => {
+    expect(smoothCurve([v(0, 0), v(10, 0)], 4).length).toBe(2)
   })
 })

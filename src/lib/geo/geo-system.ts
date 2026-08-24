@@ -30,6 +30,7 @@ import { buildSignalLayer, buildVehicleLayer } from './props-scene'
 import { loadPropAssets } from './props-assets'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, buildLinearLayer, disposeLayer,
+  buildRoofPropLayer,
 } from './osm-scene'
 import { setSurfaceTime, hasAnimatedMaterial } from './surface-shaders'
 import { buildSkyEnvironment } from './sky-environment'
@@ -932,6 +933,13 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         addLayer('building', mesh)
         estimatedCount = built.estimatedCount
       }
+
+      // Rooftop kit rides the SAME layer switch as the buildings, because it is
+      // part of them: hiding the blocks and leaving their chimneys hanging in
+      // the air is the one outcome nobody would call a feature. Showcase only —
+      // `assets` is null at every other level.
+      const roofProps = buildRoofPropLayer(footprints, opts)
+      if (roofProps) addLayer('building', roofProps.object)
     }
 
     // Ground cover, coarsest first: greenery, then bare ground over it, then
