@@ -20,6 +20,7 @@ import { describe, it, expect } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
 import { EBOOKS } from '../../src/lib/ebook'
 import { SEO } from './generate-ebook-page'
+import { LEGAL_PAGES } from './generate-legal-pages'
 import { join, resolve } from 'node:path'
 
 /** What Google renders. Characters are the usual proxy for its pixel budget. */
@@ -224,5 +225,25 @@ describe('ebook landing listings', () => {
     // The easy way to satisfy a budget is to cut the specifics. These titles
     // are worth their length precisely because they carry one.
     expect(seo.every((s) => /\d+/.test(s.title))).toBe(true)
+  })
+})
+
+// ─── the legal pages ──────────────────────────────────────────────────────────
+// Nobody clicks a privacy policy out of a search result, so these are not a CTR
+// win. They are here because they were the last two pages on the site outside
+// the blog still over budget — 82 and 80 — and a title Google chops mid-word
+// still looks careless on whatever query does surface it.
+
+describe('legal page listings', () => {
+  it('has copy for every legal page', () => {
+    expect(LEGAL_PAGES.length).toBeGreaterThan(0)
+    expect(LEGAL_PAGES.every((p) => p.title.length > 10 && p.description.length > 30)).toBe(true)
+  })
+
+  it('keeps every title and description inside what Google renders', () => {
+    const over = LEGAL_PAGES
+      .filter((p) => p.title.length > TITLE_BUDGET || p.description.length > DESC_BUDGET)
+      .map((p) => `${p.canonical} T${p.title.length} D${p.description.length}`)
+    expect(over, 'legal pages Google will truncate').toEqual([])
   })
 })

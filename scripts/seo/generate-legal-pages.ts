@@ -133,12 +133,15 @@ export interface LegalPagesResult {
   errors: number
 }
 
-const LEGAL_PAGES: PageMeta[] = [
+export const LEGAL_PAGES: PageMeta[] = [
   {
     slug: 'privacy',
-    title: 'Privacy Policy — IFC Viewer Online | No Uploads · No Tracking Cookies · GDPR Ready',
+    // Nobody clicks a privacy policy from a search result, but a title Google
+    // chops mid-word still looks careless on the page it does rank for. Kept to
+    // the same budget as everything else. See scripts/seo/serp-budget.test.ts.
+    title: 'Privacy Policy — IFC Viewer Online | No Uploads, No Cookies',
     description:
-      'IFC Viewer Online Privacy Policy. Your IFC model files are processed entirely in your browser — zero uploads to any server, zero tracking cookies. GDPR-compliant analytics (legitimate interest, memory-only mode). Contact: ' + CONTACT,
+      'IFC Viewer Online Privacy Policy. Model files are processed entirely in your browser — zero uploads, zero tracking cookies, GDPR-compliant analytics.',
     keywords:
       'IFC viewer privacy policy, BIM tool GDPR compliance, IFC file security, online IFC viewer NDA safe, BIM data privacy, IFC viewer no upload, GDPR BIM tool, IFC viewer data handling',
     canonical: `${SITE}/privacy`,
@@ -161,9 +164,9 @@ const LEGAL_PAGES: PageMeta[] = [
   } as PageMeta & { slug: string },
   {
     slug: 'terms',
-    title: 'Terms of Use — IFC Viewer Online | Free Browser-Based IFC Viewer & Validator',
+    title: 'Terms of Use — IFC Viewer Online | Free IFC Viewer',
     description:
-      'Terms of Use for IFC Viewer Online. Free, browser-native IFC viewer and validator — all model processing is client-side, files never leave your device. Results are informational only. Governed by Spanish law.',
+      'Terms of Use for IFC Viewer Online. Free, browser-native IFC viewer and validator — files never leave your device. Results are informational only.',
     keywords:
       'IFC viewer terms of use, BIM tool terms of service, online IFC viewer legal, free IFC viewer terms, IFC validator disclaimer',
     canonical: `${SITE}/terms`,
