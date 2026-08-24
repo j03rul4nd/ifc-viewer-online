@@ -299,3 +299,119 @@ describe('authored heads and the vehicle mix', () => {
     expect(drawn).toBe(built.counts.vehicles)
   })
 })
+
+describe('street furniture', () => {
+  const FURNITURE = ['bench', 'litter-bin', 'bollard', 'bus-shelter'] as const
+  const kit = (): Map<string, THREE.BufferGeometry> =>
+    new Map(FURNITURE.map((n) => [n, fakeAsset()]))
+
+  /** A way with a road class — pedestrian ways are furnished by different rules. */
+  const classed = (
+    id: string, widthM: number, roadClass: 'vehicular' | 'pedestrian' | 'track', len = 40,
+  ): OsmFeature => {
+    const f = way(id, 'road', widthM, len)
+    return { ...f, style: { ...f.style, roadClass } }
+  }
+
+  it('places nothing without the authored assets — a grey box is worse than a bare kerb', () => {
+    const roads = Array.from({ length: 20 }, (_, i) => classed(`w${i}`, 12, 'vehicular'))
+    const built = buildVehicleLayer(roads, OPTS)!
+    expect(built.counts.furniture).toBe(0)
+  })
+
+  it('furnishes a wide street and leaves a lane bare', () => {
+    const assets = kit()
+    const wide = buildVehicleLayer(
+      Array.from({ length: 20 }, (_, i) => classed(`w${i}`, 12, 'vehicular')),
+      { ...OPTS, assets },
+    )!
+    // A 4 m lane holds no car, no lamp and no furniture, so the whole layer is
+    // null rather than an empty group — that is the existing contract.
+    const lane = buildVehicleLayer(
+      Array.from({ length: 20 }, (_, i) => classed(`l${i}`, 4, 'vehicular')),
+      { ...OPTS, assets },
+    )
+    expect(wide.counts.furniture).toBeGreaterThan(0)
+    expect(lane).toBeNull()
+  })
+
+  it('never furnishes a farm track', () => {
+    const tracks = Array.from({ length: 20 }, (_, i) => classed(`t${i}`, 9, 'track'))
+    expect(buildVehicleLayer(tracks, { ...OPTS, assets: kit() })!.counts.furniture).toBe(0)
+  })
+
+  it('lines a pedestrian way with bollards on BOTH sides', () => {
+    const ways = Array.from({ length: 6 }, (_, i) => classed(`p${i}`, 3, 'pedestrian'))
+    const group = buildVehicleLayer(ways, { ...OPTS, assets: kit() })!.object
+    const bollards = meshNamed(group, 'osm-bollards')!
+    // Both kerbs walked at 9 m spacing over ~6 ways: far more than a single side.
+    expect(bollards.count).toBeGreaterThan(20)
+
+    const m = new THREE.Matrix4()
+    const at = new THREE.Vector3()
+    const sides = new Set<number>()
+    for (let i = 0; i < bollards.count; i++) {
+      bollards.getMatrixAt(i, m)
+      at.setFromMatrixPosition(m)
+      sides.add(Math.sign(at.y - latLonToNormalized(LAT, LON).ny))
+    }
+    expect(sides.has(1)).toBe(true)
+    expect(sides.has(-1)).toBe(true)
+  })
+
+  it('puts no bollards on a carriageway — they are a pedestrian signal', () => {
+    const roads = Array.from({ length: 20 }, (_, i) => classed(`w${i}`, 12, 'vehicular'))
+    const group = buildVehicleLayer(roads, { ...OPTS, assets: kit() })!.object
+    expect(meshNamed(group, 'osm-bollards')).toBeUndefined()
+  })
+
+  it('shelters only streets a bus could serve, and keeps them rare', () => {
+    const assets = kit()
+    // 7.5 m: wide enough to park a bus on, not wide enough to run a route.
+    const narrow = Array.from({ length: 30 }, (_, i) => classed(`n${i}`, 7.5, 'vehicular'))
+    const wide = Array.from({ length: 30 }, (_, i) => classed(`w${i}`, 12, 'vehicular'))
+    const shelters = (fs: OsmFeature[]): number =>
+      meshNamed(buildVehicleLayer(fs, { ...OPTS, assets })!.object, 'osm-bus-shelters')?.count ?? 0
+
+    expect(shelters(narrow)).toBe(0)
+    const on = shelters(wide)
+    const bins = meshNamed(
+      buildVehicleLayer(wide, { ...OPTS, assets })!.object, 'osm-litter-bins',
+    )!.count
+    expect(on).toBeGreaterThan(0)
+    expect(on).toBeLessThan(bins)
+  })
+
+  it('counts every piece it draws, exactly once', () => {
+    const mixed = [
+      ...Array.from({ length: 15 }, (_, i) => classed(`w${i}`, 12, 'vehicular')),
+      ...Array.from({ length: 8 }, (_, i) => classed(`p${i}`, 3, 'pedestrian')),
+    ]
+    const built = buildVehicleLayer(mixed, { ...OPTS, assets: kit() })!
+    const drawn = ['osm-benches', 'osm-litter-bins', 'osm-bollards', 'osm-bus-shelters']
+      .reduce((n, name) => n + (meshNamed(built.object, name)?.count ?? 0), 0)
+    expect(drawn).toBe(built.counts.furniture)
+  })
+
+  it('stays one draw call per piece however dense the street gets', () => {
+    const many = Array.from({ length: 120 }, (_, i) => classed(`w${i}`, 12, 'vehicular', 60))
+    const group = buildVehicleLayer(many, { ...OPTS, assets: kit() })!.object
+    const names = instanced(group).map((m) => m.name).filter((n) => n.startsWith('osm-'))
+    expect(new Set(names).size).toBe(names.length)
+  })
+
+  it('builds the same street twice — a screenshot must not reshuffle', () => {
+    const roads = Array.from({ length: 10 }, (_, i) => classed(`w${i}`, 12, 'vehicular'))
+    const read = (): string => {
+      const mesh = meshNamed(
+        buildVehicleLayer(roads, { ...OPTS, assets: kit() })!.object, 'osm-benches',
+      )!
+      const m = new THREE.Matrix4()
+      return Array.from({ length: mesh.count }, (_, i) => {
+        mesh.getMatrixAt(i, m)
+        return m.elements.map((v) => v.toFixed(9)).join()
+      }).join('|')
+    }
+    expect(read()).toBe(read())
+  })
+})

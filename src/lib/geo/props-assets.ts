@@ -31,10 +31,20 @@ export type PropAsset =
   | 'traffic-signal' | 'catenary-mast'
   | 'tree-broadleaf' | 'tree-conifer'
   | 'street-lamp' | 'platform-canopy'
+  // Round 2. Four more species, because two of them repeating across a
+  // neighbourhood is visible at fifty trees; street furniture, because an empty
+  // pavement reads as a game level; and the rooftop kit, because an empty roof
+  // is the clearest sign a block was extruded rather than built.
+  | 'tree-palm' | 'tree-columnar' | 'tree-blossom' | 'tree-olive'
+  | 'bench' | 'litter-bin' | 'bollard' | 'bus-shelter'
+  | 'roof-chimney' | 'roof-hvac' | 'roof-tank' | 'roof-stairbox'
 
 export const PROP_ASSETS: readonly PropAsset[] = [
   'car', 'van', 'bus', 'train-carriage', 'traffic-signal', 'catenary-mast',
   'tree-broadleaf', 'tree-conifer', 'street-lamp', 'platform-canopy',
+  'tree-palm', 'tree-columnar', 'tree-blossom', 'tree-olive',
+  'bench', 'litter-bin', 'bollard', 'bus-shelter',
+  'roof-chimney', 'roof-hvac', 'roof-tank', 'roof-stairbox',
 ]
 
 /**
@@ -45,7 +55,7 @@ export const PROP_ASSETS: readonly PropAsset[] = [
  * files: an over-estimate passes a `<=` check forever and still misinforms the
  * person deciding whether to download.
  */
-export const PROP_ASSETS_KB = 136
+export const PROP_ASSETS_KB = 324
 
 function assetUrl(name: PropAsset): string {
   const base = (import.meta.env.BASE_URL ?? '/') as string

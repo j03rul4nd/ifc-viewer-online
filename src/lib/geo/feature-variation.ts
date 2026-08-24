@@ -180,18 +180,24 @@ export function buildingRegion(lat: number, lon: number): BuildingRegion {
  *    wood as one is the uniformity tell all over again — so every entry keeps a
  *    minority, even where the dominance is overwhelming.
  *
- * Only broadleaf and needleleaf appear here. Both already have an authored
- * asset and an InstancedMesh of their own, so a mix of the two costs NO extra
- * draw calls — the count follows the number of species on screen, not the
- * number of trees. Adding a third species to this table would add a third mesh,
- * and that is a real cost to state out loud rather than discover in a profile.
+ * COST. One InstancedMesh per authored asset actually planted, never one per
+ * tree — so the draw calls follow how many distinct trees a site contains, and
+ * a wood of six thousand costs what a wood of six does. All four silhouettes
+ * are authored now, and the broadleaf bucket splits again by variant, so the
+ * ceiling is the size of that asset table and not something this file can
+ * quietly raise. What this table controls is how much of it a given place
+ * REACHES: a northern site stays on two meshes, a Mediterranean park can ask
+ * for five. That is the trade being made here, and `treeAssetCeiling` in the
+ * tests is what stops it drifting upward unnoticed.
  */
 const SPECIES_MIX: Record<string, ReadonlyArray<readonly [TreeShape, number]>> = {
   // Japan, Korea, eastern China: post-war sugi and hinoki plantation covers the
   // working hillsides, with broadleaf on the margins and in the old groves.
   'east-asia:forest': [['needleleaf', 0.75], ['broadleaf', 0.25]],
-  // Pine, cypress and holm oak. Drier and more open than the temperate north.
-  'mediterranean:forest': [['needleleaf', 0.6], ['broadleaf', 0.4]],
+  // Pine and holm oak, with the cypress that punctuates them. The columnar
+  // minority is small on purpose: cypress is planted in lines and beside
+  // buildings far more than it grows through a wood.
+  'mediterranean:forest': [['needleleaf', 0.55], ['broadleaf', 0.35], ['columnar', 0.1]],
   // The box spans temperate deciduous and boreal alike, so an even hand is the
   // only defensible answer at this resolution.
   'northern-europe:forest': [['needleleaf', 0.5], ['broadleaf', 0.5]],
@@ -200,7 +206,15 @@ const SPECIES_MIX: Record<string, ReadonlyArray<readonly [TreeShape, number]>> =
   // Planted greenery follows what people plant, which is broadleaf almost
   // everywhere — a park is shade, and conifers give little of it.
   'east-asia:park': [['broadleaf', 0.85], ['needleleaf', 0.15]],
-  'mediterranean:park': [['broadleaf', 0.8], ['needleleaf', 0.2]],
+  // PLANTED greenery only, and that is the whole justification for the palm.
+  // The Mediterranean box spans the coast and a good deal of inland Iberia and
+  // the Balkans, where a palm growing in a wood would be plainly wrong — but a
+  // park or a promenade is somewhere a person CHOSE what to put there, and
+  // ornamental palm and cypress are two of the commonest choices in that band.
+  // So both appear here and neither appears in `:forest`.
+  'mediterranean:park': [
+    ['broadleaf', 0.6], ['columnar', 0.18], ['palm', 0.12], ['needleleaf', 0.1],
+  ],
 }
 
 /** Broadleaf-dominant, for every region and cover the table does not name. */
@@ -239,6 +253,51 @@ export function speciesFor(
   for (const [shape, weight] of mix) {
     roll -= weight
     if (roll <= 0) return shape
+  }
+  return mix[mix.length - 1][0]
+}
+
+/**
+ * Which broadleaf a planted tree actually is.
+ *
+ * `TreeShape` answers the SILHOUETTE question — round crown, spire, palm — and
+ * that is the right granularity for a forest seen from above. It is the wrong
+ * granularity at street level, where every round crown being the same green is
+ * the thing that reads as one asset repeated. This splits the broadleaf bucket
+ * by what people actually plant, and it does it BY REGION rather than by roll:
+ * an olive in Helsinki and a cherry avenue in Seville are each worse than no
+ * variety at all.
+ *
+ * Silhouette stays with `TreeShape`, so the procedural path is unaffected — a
+ * variant only chooses between authored assets, and an absent one falls back to
+ * the plain broadleaf.
+ */
+export type BroadleafVariant = 'plain' | 'blossom' | 'olive'
+
+const BROADLEAF_MIX: Record<BuildingRegion, ReadonlyArray<readonly [BroadleafVariant, number]>> = {
+  // Cherry and plum are planted in quantity, and they are what the place looks
+  // like for the weeks anybody photographs it.
+  'east-asia': [['plain', 0.55], ['blossom', 0.45]],
+  // Olive, and enough of it to change the colour of a square. Blossom stays as
+  // a minority: almond and jacaranda are planted, just not in avenues.
+  mediterranean: [['plain', 0.5], ['olive', 0.38], ['blossom', 0.12]],
+  // Ornamental cherry exists in northern streets but never dominates one.
+  'northern-europe': [['plain', 0.9], ['blossom', 0.1]],
+  'north-america': [['plain', 0.85], ['blossom', 0.15]],
+  generic: [['plain', 0.85], ['blossom', 0.1], ['olive', 0.05]],
+}
+
+/**
+ * Pick one broadleaf's variant, deterministically per tree id — same contract
+ * as `speciesFor`, so a street keeps its trees between reloads.
+ */
+export function broadleafVariant(id: string, region: BuildingRegion): BroadleafVariant {
+  const mix = BROADLEAF_MIX[region] ?? BROADLEAF_MIX.generic
+  const total = mix.reduce((sum, [, w]) => sum + w, 0)
+  let roll = variate(id, 41) * total
+  for (const [variant, weight] of mix) {
+    roll -= weight
+    if (roll <= 0) return variant
   }
   return mix[mix.length - 1][0]
 }

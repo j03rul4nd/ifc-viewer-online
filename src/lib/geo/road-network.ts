@@ -47,6 +47,11 @@ export interface NetworkWay {
   lanes?: number
   /** One-way carriageways have no centre line to divide opposing traffic. */
   oneway?: boolean
+  /**
+   * `junction=roundabout|circular`. Only the island solver reads it: the arcs of
+   * a roundabout are ordinary edges and are solved as such — see splitWays.
+   */
+  roundabout?: boolean
 }
 
 /** A node-to-node stretch of carriageway, already pulled back from its ends. */
@@ -83,9 +88,29 @@ export interface RoadJunctionSurface {
   halfWidth: number
 }
 
+/**
+ * The centre of a roundabout.
+ *
+ * WHY IT NEEDED ITS OWN THING. The solver treats a roundabout correctly as a
+ * ring of ordinary edges, and that is the right call for the carriageway. But a
+ * ring of ribbons has a HOLE in the middle, and nothing was ever drawn into it —
+ * so every roundabout in the scene showed the basemap through its own centre.
+ * That is not a shading problem or a junction problem; it is a missing surface,
+ * and no amount of tuning the node solver would have produced it.
+ */
+export interface RoadIsland {
+  /** Inner kerb, CCW and ready to fan-triangulate about `centre`. */
+  polygon: THREE.Vector2[]
+  centre: THREE.Vector2
+  /** Mean inner radius, in the units `points` are in. */
+  radius: number
+}
+
 export interface RoadNetwork {
   ribbons: RoadRibbon[]
   junctions: RoadJunctionSurface[]
+  /** Centres of roundabouts. Empty where the patch has none. */
+  islands: RoadIsland[]
   /** Ways that survived as drawable geometry — the layer's feature count. */
   count: number
 }
@@ -449,17 +474,173 @@ export function mitredBorders(
  * `snap` is in the same units as the way coordinates; callers working in the
  * normalized planar frame pass `mToN` and let the default metric snap scale.
  */
+
+
+// ── 6. Curve smoothing ─────────────────────────────────────────────────────────
+
+/**
+ * Above this turn at a vertex, the corner is INTENTIONAL and is left alone.
+ *
+ * The distinction this constant draws is the whole point of the pass. A mapper
+ * tracing a bend puts down a run of small turns, and drawing those as facets is
+ * what makes a wide curved carriageway look like it was cut from a hexagon. The
+ * same mapper tracing a street corner puts down ONE large turn, and rounding
+ * that is not a smoothing artefact — it is deleting the corner.
+ *
+ * 35° is comfortably above what a traced curve produces per vertex at OSM's
+ * usual spacing and comfortably below a junction turn.
+ */
+const SMOOTH_MAX_TURN = Math.cos((35 * Math.PI) / 180)
+
+/** Chaikin passes. Two is the knee: three is invisible and costs 4x the points. */
+const SMOOTH_PASSES = 2
+
+/** Corners closer together than this are already dense enough to read as curved. */
+const SMOOTH_MIN_SEGMENT_WIDTHS = 0.75
+
+/**
+ * Round the gentle corners of a centreline, leaving the sharp ones alone.
+ *
+ * ENDPOINTS NEVER MOVE. They are graph nodes: the junction solver has already
+ * agreed on where they are, and a smoothing pass that nudged them would open a
+ * gap between a carriageway and the junction surface it runs into — which is a
+ * far more visible defect than the facets this removes.
+ *
+ * Chaikin rather than a spline through the points, because Chaikin's limit curve
+ * stays INSIDE the original polyline's hull. A road that bulges outside the
+ * vertices the mapper surveyed is a road that has moved.
+ */
+export function smoothCurve(
+  points: ReadonlyArray<THREE.Vector2>, halfWidth: number,
+): THREE.Vector2[] {
+  if (points.length < 3) return points.map((p) => p.clone())
+  const minSeg = halfWidth * SMOOTH_MIN_SEGMENT_WIDTHS
+
+  let cur = points.map((p) => p.clone())
+  for (let pass = 0; pass < SMOOTH_PASSES; pass++) {
+    const next: THREE.Vector2[] = [cur[0].clone()]
+    for (let i = 1; i < cur.length - 1; i++) {
+      const a = cur[i - 1]
+      const b = cur[i]
+      const c = cur[i + 1]
+      const d0 = b.clone().sub(a)
+      const d1 = c.clone().sub(b)
+      const l0 = d0.length()
+      const l1 = d1.length()
+      if (l0 < 1e-12 || l1 < 1e-12) { next.push(b.clone()); continue }
+      const turnCos = d0.dot(d1) / (l0 * l1)
+      // Sharp corner, or segments already shorter than the road is wide: keep.
+      if (turnCos < SMOOTH_MAX_TURN || (l0 < minSeg && l1 < minSeg)) {
+        next.push(b.clone())
+        continue
+      }
+      next.push(
+        new THREE.Vector2(b.x - d0.x * 0.25, b.y - d0.y * 0.25),
+        new THREE.Vector2(b.x + d1.x * 0.25, b.y + d1.y * 0.25),
+      )
+    }
+    next.push(cur[cur.length - 1].clone())
+    cur = next
+  }
+  return cur
+}
+
+// ── 5. Roundabout islands ──────────────────────────────────────────────────────
+
+/**
+ * Smallest island worth drawing, as a share of the roundabout's own half-width.
+ * Below this the "island" is a painted mini-roundabout, not a kerbed one, and a
+ * raised disc where the paint is would be wrong rather than merely small.
+ */
+const MIN_ISLAND_RADIUS_RATIO = 0.35
+
+/**
+ * Find the closed rings the roundabout ways form, and inset them to the kerb.
+ *
+ * INSET IS RADIAL, not a general polygon offset, and that is a deliberate
+ * simplification with a reason: a roundabout is a circle in all but name, so
+ * moving every vertex toward the centroid by the carriageway's half-width is
+ * exact for the circular case and degrades smoothly for the oval ones. A true
+ * offset would buy nothing here and would bring self-intersection handling with
+ * it — for a shape that is, in practice, a circle.
+ *
+ * A ring whose half-width swallows its own radius produces NO island. That is
+ * the mini-roundabout case, and drawing one would put a kerb where the real
+ * thing is a painted dome.
+ */
+export function solveIslands(ways: ReadonlyArray<NetworkWay>, snap: number): RoadIsland[] {
+  const loops = ways.filter((w) => w.roundabout && w.points.length > 3)
+  if (loops.length === 0) return []
+
+  const out: RoadIsland[] = []
+  const near = (a: THREE.Vector2, b: THREE.Vector2): boolean => a.distanceTo(b) <= snap
+  const used = new Set<number>()
+
+  loops.forEach((w, wi) => {
+    if (used.has(wi)) return
+    // A roundabout drawn as ONE closed way is the common encoding, and the only
+    // one handled here. A roundabout split across several ways stays a ring of
+    // ribbons with no island — visibly the old behaviour, not a wrong island.
+    const pts = w.points
+    if (!near(pts[0], pts[pts.length - 1])) return
+    used.add(wi)
+
+    const ring = pts.slice(0, -1).map((p) => p.clone())
+    if (ring.length < 4) return
+
+    let cx = 0
+    let cy = 0
+    for (const p of ring) { cx += p.x; cy += p.y }
+    const centre = new THREE.Vector2(cx / ring.length, cy / ring.length)
+
+    let sum = 0
+    for (const p of ring) sum += p.distanceTo(centre)
+    const radius = sum / ring.length
+    const inner = radius - w.halfWidth
+    if (!(inner > 0) || inner < radius * MIN_ISLAND_RADIUS_RATIO) return
+
+    // Each vertex pulled toward the centre by the carriageway half-width, so an
+    // oval roundabout keeps its own shape rather than being replaced by a disc.
+    const polygon = ring.map((p) => {
+      const dx = p.x - centre.x
+      const dy = p.y - centre.y
+      const len = Math.hypot(dx, dy)
+      if (len <= w.halfWidth) return centre.clone()
+      const k = (len - w.halfWidth) / len
+      return new THREE.Vector2(centre.x + dx * k, centre.y + dy * k)
+    })
+
+    // CCW, so the caller can fan it without checking which way the mapper drew.
+    let area = 0
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      area += polygon[j].x * polygon[i].y - polygon[i].x * polygon[j].y
+    }
+    if (area < 0) polygon.reverse()
+
+    out.push({ polygon, centre, radius: inner })
+  })
+
+  return out
+}
+
 export function buildRoadNetwork(
   ways: ReadonlyArray<NetworkWay>, opts: { snap?: number; mToN?: number } = {},
 ): RoadNetwork {
   const snap = opts.snap ?? DEFAULT_SNAP_M * (opts.mToN ?? 1)
   if (ways.length === 0 || !(snap > 0) || !Number.isFinite(snap)) {
-    return { ribbons: [], junctions: [], count: 0 }
+    return { ribbons: [], junctions: [], islands: [], count: 0 }
   }
 
   const index = new NodeIndex(snap)
   const edges = splitWays(ways, index)
-  if (edges.length === 0) return { ribbons: [], junctions: [], count: 0 }
+  if (edges.length === 0) return { ribbons: [], junctions: [], islands: [], count: 0 }
+
+  // Smooth BEFORE anything measures the edges. Trims, tapers and mitres all read
+  // `points`, and smoothing afterwards would leave each of them describing a
+  // centreline that no longer exists.
+  for (const e of edges) {
+    e.points = smoothCurve(e.points, ways[e.wayIndex].halfWidth)
+  }
 
   // Half-edges per node: the local picture the solver needs.
   const incident = new Map<number, HalfEdge[]>()
@@ -588,7 +769,7 @@ export function buildRoadNetwork(
     junctions.push(closeJunction(node, ribbonByEdge, edges, ways, snap))
   }
 
-  return { ribbons, junctions, count: drawn.size }
+  return { ribbons, junctions, islands: solveIslands(ways, snap), count: drawn.size }
 }
 
 /**
