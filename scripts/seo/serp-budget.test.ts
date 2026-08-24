@@ -22,6 +22,8 @@ import { EBOOKS } from '../../src/lib/ebook'
 import { SEO } from './generate-ebook-page'
 import { LEGAL_PAGES } from './generate-legal-pages'
 import { ALL_BLOG_POSTS } from '../../src/lib/blog-posts'
+import { LANG_CONFIG } from './generate-blog-pages'
+import { UIS } from './generate-fix-pages'
 import { join, resolve } from 'node:path'
 
 /** What Google renders. Characters are the usual proxy for its pixel budget. */
@@ -62,7 +64,18 @@ const HAND_AUTHORED = [
   { lang: 'es', file: 'public/es/index.html' },
 ] as const
 
-const grabFrom = (html: string, re: RegExp): string => (html.match(re) || [])[1] ?? ''
+/**
+ * Pull a value out of head markup, decoding the entities the escaper added.
+ *
+ * Without the decode this measured `&amp;` as five characters and reported a
+ * 57-character title as 61. Google renders the ampersand, not the entity, so
+ * the escaped form is an artefact of how the page is stored rather than
+ * anything a searcher sees.
+ */
+const grabFrom = (html: string, re: RegExp): string =>
+  ((html.match(re) || [])[1] ?? '')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
 
 describe('home page search listings', () => {
   it('is reading real copy, so the checks below are not vacuous', () => {
@@ -304,5 +317,53 @@ describe('blog post listings', () => {
       .filter((p) => (p.seoDescription ?? p.excerpt).length < 80)
       .map((p) => p.slug)
     expect(thin, 'blog descriptions too short to say anything').toEqual([])
+  })
+})
+
+// ─── the index pages ──────────────────────────────────────────────────────────
+// The hubs each family of pages hangs off: /blog/ in four languages and /fix/
+// in ten. They were the last thing left after every leaf page was fixed —
+// blog hubs at 68-73 because they carried a brand tail, /fix/ hubs with
+// descriptions of 185-233 — which is what you would expect, since nobody
+// reviews an index page's own listing.
+
+describe('blog hub listings', () => {
+  const hubs = Object.entries(LANG_CONFIG)
+
+  it('covers the languages the blog is published in', () => {
+    expect(hubs.length).toBeGreaterThan(3)
+  })
+
+  it('keeps every hub title and description inside what Google renders', () => {
+    const over = hubs
+      .filter(([, c]) => c.blogTitle.length > TITLE_BUDGET || c.blogDesc.length > DESC_BUDGET)
+      .map(([lang, c]) => `${lang} T${c.blogTitle.length} D${c.blogDesc.length}`)
+    expect(over, 'blog hubs Google will truncate').toEqual([])
+  })
+})
+
+describe('fix hub listings', () => {
+  const hubs = Object.entries(UIS)
+
+  it('covers all ten languages', () => {
+    expect(hubs.length).toBe(10)
+  })
+
+  it('keeps every hub description inside what Google renders', () => {
+    // The hub title is already budgeted by composeTitle in the generator; the
+    // description was not, and ran to 233 in French.
+    const over = hubs
+      .filter(([, ui]) => ui.hubMeta.length > DESC_BUDGET)
+      .map(([lang, ui]) => `${lang} ${ui.hubMeta.length}`)
+    expect(over, 'fix hubs Google will cut off').toEqual([])
+  })
+
+  it('keeps the tool names, which are why the page ranks', () => {
+    // Trimming a description is easy; trimming the words people search for is
+    // the failure that looks like success.
+    for (const [lang, ui] of hubs) {
+      expect(ui.hubMeta, lang).toContain('Revit')
+      expect(ui.hubMeta, lang).toContain('IFC')
+    }
   })
 })

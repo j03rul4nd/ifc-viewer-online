@@ -43,29 +43,29 @@ const OG_IMAGE = `${SITE}/og-image.png`
 // silently published their shells at /fr/blog/<slug>/ with a French canonical
 // while the SPA served them in English. Grouping by the post's own language
 // makes that class of mistake impossible to repeat.
-const LANG_CONFIG: Record<string, {
+export const LANG_CONFIG: Record<string, {
   prefix: string
   blogTitle: string
   blogDesc: string
 }> = {
   en: {
     prefix: '',
-    blogTitle: 'BIM & IFC Blog — Practical Guides for BIM Coordinators | IFC Viewer',
+    blogTitle: 'BIM & IFC Blog — Practical Guides for BIM Coordinators',
     blogDesc: 'Practical guides for BIM coordinators: how to fix IFC validation errors, improve IFC Health Scores, and deliver clean models to the CDE.',
   },
   es: {
     prefix: 'es/',
-    blogTitle: 'Blog BIM e IFC — Guías prácticas para coordinadores BIM | IFC Viewer',
+    blogTitle: 'Blog BIM e IFC — Guías prácticas para coordinadores BIM',
     blogDesc: 'Guías prácticas para coordinadores BIM: cómo corregir errores de validación IFC, mejorar el Health Score y entregar modelos limpios al ECD.',
   },
   de: {
     prefix: 'de/',
-    blogTitle: 'BIM & IFC Blog — Praxisanleitungen für BIM-Koordinatoren | IFC Viewer',
+    blogTitle: 'BIM & IFC Blog — Praxisanleitungen für BIM-Koordinatoren',
     blogDesc: 'Praxisanleitungen für BIM-Koordinatoren: IFC-Validierungsfehler beheben, Health Scores verbessern und saubere Modelle ans CDE liefern.',
   },
   fr: {
     prefix: 'fr/',
-    blogTitle: 'Blog BIM & IFC — Guides pratiques pour coordinateurs BIM | IFC Viewer',
+    blogTitle: 'Blog BIM & IFC — Guides pratiques pour coordinateurs BIM',
     blogDesc: 'Guides pratiques pour coordinateurs BIM : corriger les erreurs de validation IFC, améliorer le Health Score et livrer des modèles propres à la GED.',
   },
 }
