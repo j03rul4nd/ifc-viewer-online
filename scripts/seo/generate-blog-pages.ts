@@ -272,9 +272,33 @@ function articleImageJsonLd(post: BlogPost): Array<Record<string, unknown> | str
 
 /** Keep the visible title focused on the query while preserving the brand on
  * shorter titles. Long title tags are a common source of Google rewrites. */
+/** What Google renders. The same budget the rest of the site is held to. */
+const TITLE_BUDGET = 60
+const DESC_BUDGET = 160
+
+/**
+ * The <title> for a post.
+ *
+ * `seoTitle` wins when the article's own title is too long for a listing; the
+ * brand suffix is then appended only if the whole thing still fits, which is the
+ * rule the rule-fix pages follow.
+ *
+ * The threshold used to be 64, which let a 61-64 title through to be truncated.
+ * Worth knowing before anyone wonders why no title is branded: the suffix is 20
+ * characters and the shortest core title on the site is 42, so at present it
+ * fits on none of the 51 posts. It fitted on exactly one under the old 64. The
+ * branch is reachable — a 40-character title would take it — it is simply not
+ * reached by anything written so far.
+ */
 function postSeoTitle(post: BlogPost): string {
-  const branded = `${post.title} | IFC Viewer Online`
-  return branded.length <= 64 ? branded : post.title
+  const core = post.seoTitle ?? post.title
+  const branded = `${core} | IFC Viewer Online`
+  return branded.length <= TITLE_BUDGET ? branded : core
+}
+
+/** The meta description for a post: listing copy first, on-page excerpt after. */
+function postSeoDescription(post: BlogPost): string {
+  return post.seoDescription ?? post.excerpt
 }
 
 function renderRichText(text: RichText, prefix: string): string {
@@ -595,7 +619,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
           path.join(outDir, 'index.html'),
           tweakHtml(template, {
             title: postSeoTitle(post),
-            description: post.excerpt,
+            description: postSeoDescription(post),
             canonical,
             image: primaryImage,
             imageAlt: post.heroAlt ?? post.title,
@@ -608,7 +632,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
               '@context': 'https://schema.org',
               '@type': 'BlogPosting',
               headline: post.title,
-              description: post.excerpt,
+              description: postSeoDescription(post),
               datePublished: post.date,
               dateModified: post.dateModified ?? post.date,
               inLanguage: lang,

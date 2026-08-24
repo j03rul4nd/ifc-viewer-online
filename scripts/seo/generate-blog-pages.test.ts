@@ -164,10 +164,24 @@ describe('generateBlogPages — per-post pages (EN)', () => {
     }
   })
 
-  it('each EN post page has the post title in <title>', () => {
+  it('each EN post page carries its listing title in <title>', () => {
+    // Was asserting `post.title`. A post may now carry a `seoTitle` — the title
+    // written for a search result, because Google renders about 60 characters
+    // and 25 of these articles have editorial titles past that. The article
+    // keeps its own title on the page; only the listing gets the shorter one.
     for (const post of BLOG_POSTS) {
       const html = readFileSync(path.join(OUT, 'blog', post.slug, 'index.html'), 'utf-8')
-      expect(html).toContain(`<title>${post.title.replace(/&/g, '&amp;')}`)
+      const listing = post.seoTitle ?? post.title
+      expect(html, post.slug).toContain(`<title>${listing.replace(/&/g, '&amp;')}`)
+    }
+  })
+
+  it('never puts a longer title in the listing than on the article', () => {
+    // The override exists to shorten. A seoTitle longer than the title would
+    // mean someone used it for something else.
+    for (const post of BLOG_POSTS) {
+      if (!post.seoTitle) continue
+      expect(post.seoTitle.length, post.slug).toBeLessThanOrEqual(post.title.length)
     }
   })
 

@@ -21,6 +21,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { EBOOKS } from '../../src/lib/ebook'
 import { SEO } from './generate-ebook-page'
 import { LEGAL_PAGES } from './generate-legal-pages'
+import { ALL_BLOG_POSTS } from '../../src/lib/blog-posts'
 import { join, resolve } from 'node:path'
 
 /** What Google renders. Characters are the usual proxy for its pixel budget. */
@@ -245,5 +246,63 @@ describe('legal page listings', () => {
       .filter((p) => p.title.length > TITLE_BUDGET || p.description.length > DESC_BUDGET)
       .map((p) => `${p.canonical} T${p.title.length} D${p.description.length}`)
     expect(over, 'legal pages Google will truncate').toEqual([])
+  })
+})
+
+// ─── the blog ─────────────────────────────────────────────────────────────────
+// The last surface, and the one that had to be handled differently.
+//
+// Measured before: 25 of 51 post titles over 60 (worst 93) and 43 of 51
+// descriptions over 160, median 216 — because the description was the post's
+// `excerpt`, which is also the blog index card. On-page copy again, doing a
+// listing's job.
+//
+// Shortening the article's own title or excerpt would damage the writing, so a
+// post can carry `seoTitle` / `seoDescription` instead: the page keeps its
+// words, the listing gets ones that fit. Both optional, both falling back.
+
+/** The same derivation the generator uses, branding rule included. */
+function postTitle(p: { title: string; seoTitle?: string }): string {
+  const core = p.seoTitle ?? p.title
+  const branded = `${core} | IFC Viewer Online`
+  return branded.length <= TITLE_BUDGET ? branded : core
+}
+
+describe('blog post listings', () => {
+  it('is reading real posts', () => {
+    expect(ALL_BLOG_POSTS.length).toBeGreaterThan(40)
+    expect(ALL_BLOG_POSTS.every((p) => p.title.length > 5 && p.excerpt.length > 20)).toBe(true)
+  })
+
+  it('keeps every title inside what Google renders', () => {
+    const over = ALL_BLOG_POSTS
+      .map((p) => ({ slug: p.slug, len: postTitle(p).length }))
+      .filter((x) => x.len > TITLE_BUDGET)
+      .map((x) => `${x.slug} ${x.len}`)
+    expect(over, 'blog titles Google will truncate').toEqual([])
+  })
+
+  it('keeps every description inside what Google renders', () => {
+    const over = ALL_BLOG_POSTS
+      .map((p) => ({ slug: p.slug, len: (p.seoDescription ?? p.excerpt).length }))
+      .filter((x) => x.len > DESC_BUDGET)
+      .map((x) => `${x.slug} ${x.len}`)
+    expect(over, 'blog descriptions Google will cut off').toEqual([])
+  })
+
+  it("leaves the article's own title and excerpt alone", () => {
+    // The point of the override is that the writing is not the thing being
+    // trimmed. If a post has a listing title, its real title should still be
+    // the longer, fuller one — otherwise someone shortened the article.
+    const flattened = ALL_BLOG_POSTS.filter((p) => p.seoTitle && p.seoTitle.length > p.title.length)
+    expect(flattened.map((p) => p.slug), 'listing title longer than the article title').toEqual([])
+  })
+
+  it('does not pad a listing description out to nothing', () => {
+    // The opposite failure: trimming to a stub that says less than the title.
+    const thin = ALL_BLOG_POSTS
+      .filter((p) => (p.seoDescription ?? p.excerpt).length < 80)
+      .map((p) => p.slug)
+    expect(thin, 'blog descriptions too short to say anything').toEqual([])
   })
 })

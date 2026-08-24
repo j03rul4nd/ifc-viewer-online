@@ -296,7 +296,13 @@ describe('search-result titles', () => {
   // and only under contention, which is the most misleading way for a test to
   // fail. The work is identical for all three, so it belongs outside them.
   let titles: { f: string; title: string }[] = []
-  beforeAll(() => { titles = pages().map((f) => ({ f, title: titleOf(f) })) })
+  // An explicit timeout, because this hook does real work: it walks 510
+  // directories and reads 510 files. On an idle machine that is under a second;
+  // sharing twelve cores with the rest of the suite it has come in over the
+  // 5s default, which fails the whole describe with no assertion to point at.
+  // The work is necessary and already done once rather than per assertion, so
+  // the honest fix is to tell the runner how long it takes.
+  beforeAll(() => { titles = pages().map((f) => ({ f, title: titleOf(f) })) }, 30_000)
 
   it('never exceeds the budget Google renders', () => {
     const over = titles
