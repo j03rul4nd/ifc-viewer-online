@@ -490,6 +490,60 @@ describe('context palette and tone', () => {
     expect(tones(neutral.geometry).size).toBeLessThan(tones(natural.geometry).size)
   })
 
+  it('keeps an inferred pitched roof on top of the building that has it', () => {
+    // THE KYOTO SHARD. A 5 m shrine at Kiyomizu-dera came out as a 1.1 km dark
+    // blade across the map. `building=shrine` in east Asia infers a PYRAMIDAL
+    // roof, whose apex sits at the ring's centroid — and the centroid was
+    // computed by shoelace on ABSOLUTE normalized coordinates, where the whole
+    // ring spans ~1e-7 at an offset of ~0.38. The terms cancel to the last bits
+    // of a double and the quotient lands anywhere; measured, 1151 m away.
+    //
+    // Only an INFERRED pitched roof reads the centroid, so every flat-roofed
+    // block was fine and this survived until a site full of shrines rendered.
+    // A small building is the sharp case: the smaller the ring, the worse the
+    // cancellation, so this must not be relaxed into a large footprint.
+    const lat = 34.9953251
+    const lon = 135.7850208
+    const sizeM = 4.65
+    const dLat = sizeM / 111_132
+    const dLon = sizeM / (111_320 * Math.cos((lat * Math.PI) / 180))
+    const shrine = {
+      id: 'w339277293',
+      ring: [
+        { lat, lon },
+        { lat, lon: lon + dLon },
+        { lat: lat + dLat, lon: lon + dLon },
+        { lat: lat + dLat, lon },
+      ],
+      height: { heightM: 8, minHeightM: 0, estimated: true },
+      // `roofTagged` absent and the shape left flat is exactly what the OSM
+      // parser emits for an untagged roof, so the shape is INFERRED here —
+      // which is the only path that reads the centroid.
+      style: { roofShape: 'flat' as const, roofHeightM: 0, use: 'shrine' as const },
+    }
+    for (const detail of ['simple', 'detailed'] as const) {
+      const g = buildBuildingsGeometry(
+        [shrine], { anchorLat: lat, anchorLon: lon, detail },
+      )!
+      const pos = g.geometry.getAttribute('position')
+      // The building is 4.65 m across; nothing it emits may be more than a few
+      // metres from it. Compared in normalized units against the ring's own
+      // extent, so the assertion means the same thing at any latitude.
+      let minX = Infinity; let maxX = -Infinity
+      let minY = Infinity; let maxY = -Infinity
+      for (let i = 0; i < pos.count; i++) {
+        minX = Math.min(minX, pos.getX(i)); maxX = Math.max(maxX, pos.getX(i))
+        minY = Math.min(minY, pos.getY(i)); maxY = Math.max(maxY, pos.getY(i))
+      }
+      const span = Math.max(maxX - minX, maxY - minY)
+      const ringSpan = Math.max(
+        ...shrine.ring.map((p) => p.lon)) - Math.min(...shrine.ring.map((p) => p.lon),
+      )
+      // Generous: three ring-widths still catches a shard by two orders.
+      expect(span).toBeLessThan(ringSpan * 3 * (Math.PI / 180) / (2 * Math.PI))
+    }
+  })
+
   it('overrides even a tagged colour when the context must stay quiet', () => {
     const loud = [{
       ...squareFootprint('c', 20, 12),

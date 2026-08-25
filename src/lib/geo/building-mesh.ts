@@ -359,25 +359,58 @@ export function buildBuildingsGeometry(
   return { geometry, count, estimatedCount, ranges }
 }
 
-/** Area-weighted centroid of a simple polygon (falls back to the mean). */
+/**
+ * Area-weighted centroid of a simple polygon (falls back to the mean).
+ *
+ * SHIFTED TO A LOCAL ORIGIN FIRST, and that is not a micro-optimisation — it is
+ * the whole reason this function returns a usable answer. Rings arrive in the
+ * NORMALIZED frame, where a 5 m building is ~1.5e-7 across sitting at an
+ * absolute coordinate around 0.38. The shoelace terms are then differences of
+ * numbers that agree to thirteen significant digits: `a.x * b.y - b.x * a.y`
+ * keeps only the last two or three bits of signal, and dividing two such sums
+ * by each other throws the result anywhere. Measured on a 4.65 m shrine in
+ * Kyoto, the absolute-coordinate centroid came out 1151 m from the building.
+ *
+ * That was invisible for a long time because only an INFERRED pitched roof
+ * consults it — the pyramidal apex and the gabled ridge are placed relative to
+ * this point, so they shot off across the map as kilometre-long shards, while
+ * every flat-roofed block (i.e. almost all of a European city) was unaffected.
+ * It took a site where `building=shrine` infers a pyramidal roof to show it.
+ *
+ * Same class of bug as the triangulation above, and the same fix: do the
+ * arithmetic where the numbers have room, then put the answer back.
+ */
 function ringCentroid(ring: ReadonlyArray<THREE.Vector2>): { x: number; y: number } {
+  const ox = ring[0].x
+  const oy = ring[0].y
   let area = 0
   let cx = 0
   let cy = 0
+  let scale = 0
   for (let i = 0; i < ring.length; i++) {
-    const a = ring[i]
-    const b = ring[(i + 1) % ring.length]
-    const cross = a.x * b.y - b.x * a.y
+    const ax = ring[i].x - ox
+    const ay = ring[i].y - oy
+    const j = (i + 1) % ring.length
+    const bx = ring[j].x - ox
+    const by = ring[j].y - oy
+    const cross = ax * by - bx * ay
     area += cross
-    cx += (a.x + b.x) * cross
-    cy += (a.y + b.y) * cross
+    cx += (ax + bx) * cross
+    cy += (ay + by) * cross
+    const r = Math.max(Math.abs(ax), Math.abs(ay))
+    if (r > scale) scale = r
   }
-  if (Math.abs(area) < 1e-18) {
+  // The degeneracy test has to be RELATIVE to the ring's own size: a fixed
+  // epsilon is meaningless against areas that are ~1e-14 in this frame for a
+  // perfectly healthy building, and would send every one of them to the mean.
+  if (Math.abs(area) < scale * scale * 1e-9) {
     // Degenerate (collinear) ring — the mean is the only sane answer.
-    const mean = ring.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 })
-    return { x: mean.x / ring.length, y: mean.y / ring.length }
+    let mx = 0
+    let my = 0
+    for (const p of ring) { mx += p.x - ox; my += p.y - oy }
+    return { x: ox + mx / ring.length, y: oy + my / ring.length }
   }
-  return { x: cx / (3 * area), y: cy / (3 * area) }
+  return { x: ox + cx / (3 * area), y: oy + cy / (3 * area) }
 }
 
 /**

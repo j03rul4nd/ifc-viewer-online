@@ -117,12 +117,23 @@ const COVERAGE_FRACTION = 0.6
  */
 const CONTAINMENT_AREA_RATIO = 6
 
-/** Shoelace area of a polygon. Sign discarded; units are the caller's. */
+/**
+ * Shoelace area of a polygon. Sign discarded; units are the caller's.
+ *
+ * Measured from the first vertex rather than from the coordinate origin. Every
+ * polygon that reaches here is in the NORMALIZED frame, where a building is
+ * ~1e-7 across at an absolute coordinate of order 1 — so `poly[j].x + poly[i].x`
+ * is a sum of two numbers whose difference carries all the information, and the
+ * products cancel down to the last few bits of a double. Shifting first costs
+ * one subtraction per vertex and keeps the containment ratio below meaningful.
+ */
 export function polygonArea(poly: ReadonlyArray<{ x: number; y: number }>): number {
   if (poly.length < 3) return 0
+  const ox = poly[0].x
+  const oy = poly[0].y
   let twice = 0
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    twice += (poly[j].x + poly[i].x) * (poly[j].y - poly[i].y)
+    twice += (poly[j].x - ox + poly[i].x - ox) * (poly[j].y - poly[i].y)
   }
   return Math.abs(twice) / 2
 }

@@ -254,6 +254,22 @@ acceptable if the query pattern stays small and interactive:
   most footprints collapse to zero triangles and vanish silently. Measured:
   437 of 3944 buildings survived before this was fixed. The triangulation is
   topological, so its indices apply unchanged to the normalized ring.
+- **Shoelace formulas need a LOCAL origin in the normalized frame — the same
+  trap as the one above, one function further on.** A centroid or an area
+  computed straight from normalized coordinates is a difference of numbers that
+  agree to thirteen significant digits: a 4.65 m shrine spans ~1e-7 sitting at
+  an absolute x of ~0.38, so `a.x * b.y - b.x * a.y` keeps two or three bits of
+  signal and the quotient `cx / (3 · area)` lands anywhere. Measured at
+  Kiyomizu-dera: the centroid came out **1151 m** from the building. Only an
+  INFERRED pitched roof reads the centroid (the pyramidal apex and the gabled
+  ridge are placed relative to it), so every flat-roofed block was fine and the
+  bug hid until a site full of `building=shrine` rendered — as kilometre-long
+  dark blades fanning across the map. `ringCentroid` and `polygonArea` now
+  subtract the first vertex first; the degeneracy epsilon in `ringCentroid` had
+  to become RELATIVE to the ring's own size at the same time, because a healthy
+  building's area is ~1e-14 in this frame and a fixed `1e-18` was meaningless.
+  Regression: "keeps an inferred pitched roof on top of the building that has
+  it" in `building-mesh.test.ts`, verified failing without the fix.
 - **web-ifc attribute shapes are not interchangeable, and guessing wrong fails
   late.** `IfcSite.RefLatitude` is ONE wrapper around the whole integer list
   (`{ type: 10, value: number[] }`), not an array of tagged values;
