@@ -356,18 +356,42 @@ function assemblePatch(
     material.needsUpdate = true
   }
 
+  /**
+   * Take ownership of the drape as a CANVAS, not as the ImageBitmap the worker
+   * sent.
+   *
+   * An ImageBitmap is a one-shot resource once WebGL is involved: uploading it
+   * can hand its backing store to the GPU, and every upload after that gets an
+   * EMPTY texture. Nothing errors — the terrain simply stops painting, and
+   * because its material is transparent the ground goes to background colour,
+   * which reads as a black hole under the parks and streets that are separate
+   * meshes and still draw. Measured on the Kyoto site: 31 % of the frame.
+   *
+   * Re-uploads are not exotic here: a style switch, an anisotropy change or any
+   * other `needsUpdate` is enough. So the bitmap is drawn ONCE into a canvas we
+   * own, and the canvas is what the texture reads from — canvases survive being
+   * uploaded as many times as three.js likes. The bitmap is closed immediately
+   * afterwards, because past this point it has told us everything it knows.
+   */
   function applyDrape(next: ImageBitmap | null): void {
     texture?.dispose()
-    bitmap?.close()
     texture = null
-    bitmap = null
     if (next) {
-      const tex = new THREE.CanvasTexture(next)
+      const canvas = document.createElement('canvas')
+      canvas.width = next.width
+      canvas.height = next.height
+      const ctx = canvas.getContext('2d')
+      if (ctx) ctx.drawImage(next, 0, 0)
+      const tex = new THREE.CanvasTexture(ctx ? canvas : next)
       tex.colorSpace = THREE.SRGBColorSpace
       tex.anisotropy = anisotropy
       texture = tex
-      bitmap = next
     }
+    // Closed unconditionally: the pixels now live in a canvas we own, and a
+    // bitmap kept alive past that is a megabyte nobody will read again.
+    next?.close()
+    bitmap?.close()
+    bitmap = null
     applyVisuals()
   }
 
