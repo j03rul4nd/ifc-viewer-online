@@ -36,6 +36,7 @@ import { roofPropAnchors } from './roof-props'
 import type { RoofProp, RoofPropBuilding, RoofPropKind } from './roof-props'
 import {
   seedRegion, seedFringe, allocateDensity, naturalTotalFor, ringArea, ringPerimeter,
+  buildKeepOut,
   type SeedRegion, type SeededTree,
 } from './tree-seeding'
 import {
@@ -897,6 +898,24 @@ export function buildLinearLayer(
     const tone = f.style.tone ?? [0.42, 0.42, 0.44]
 
     if (f.widthM === undefined) {
+      // A paved AREA — a square, an esplanade, a pedestrianised street. Same
+      // fill as a platform and deliberately so, but flat on the ground and with
+      // no painted edge: a plaza has no platform lip, and drawing one put a
+      // white line around every square in the city.
+      if (kind === 'road') {
+        const faces = triangulate(line, mToN)
+        if (!faces) continue
+        for (const [i0, i1, i2] of faces) {
+          for (const idx of [i0, i1, i2]) {
+            const v = line[idx]
+            positions.push(v.x, v.y, groundZ(v.x, v.y) + lift)
+            colors.push(tone[0], tone[1], tone[2])
+          }
+        }
+        count++
+        continue
+      }
+
       // A platform is a real polygon: fill it, slightly proud of the ballast.
       const faces = triangulate(line, mToN)
       if (!faces) continue
@@ -1437,6 +1456,24 @@ function seededTrees(
   const originX = first.nx
   const originY = first.ny
 
+  const toMetres = (pt: LatLonPoint): { x: number; y: number } => {
+    const { nx, ny } = latLonToNormalized(pt.lat, pt.lon)
+    return { x: (nx - originX) / mToN, y: (ny - originY) / mToN }
+  }
+
+  /**
+   * Ground the canopy must leave alone: the water and the buildings inside the
+   * very polygons it is planting. A park's outline includes its lake and its
+   * pavilions — see `buildKeepOut` for what that does when nobody tells the
+   * seeder about them.
+   */
+  const blocked = buildKeepOut(
+    features
+      .filter((f) => (f.kind === 'water' || f.kind === 'building')
+        && f.ring && f.ring.length >= 3)
+      .map((f) => f.ring!.map(toMetres)),
+  )
+
   /**
    * What each polygon grows, kept beside the seed regions rather than inside
    * them: `SeedRegion` belongs to a module that is pure planar geometry, and
@@ -1448,10 +1485,7 @@ function seededTrees(
 
   const regions: Array<SeedRegion & { tagged: boolean }> = green.map((f) => ({
     id: f.id,
-    ringM: f.ring!.map((pt) => {
-      const { nx, ny } = latLonToNormalized(pt.lat, pt.lon)
-      return { x: (nx - originX) / mToN, y: (ny - originY) / mToN }
-    }),
+    ringM: f.ring!.map(toMetres),
     cover: f.style.cover!,
     // The seeding module wants ONE species per region: it is planar geometry
     // and has no business knowing about mixtures. So it is handed the mix's
@@ -1501,8 +1535,8 @@ function seededTrees(
     const d = density.get(region.id) ?? 1
     const room = MAX_SEEDED_TREES - out.length
     const grown: SeededTree[] = [
-      ...seedRegion(region, { density: d, maxTrees: room }),
-      ...seedFringe(region, { density: d, maxTrees: Math.max(0, room - 1) }),
+      ...seedRegion(region, { density: d, maxTrees: room, blocked }),
+      ...seedFringe(region, { density: d, maxTrees: Math.max(0, room - 1), blocked }),
     ]
     for (const t of grown) {
       if (out.length >= MAX_SEEDED_TREES) break

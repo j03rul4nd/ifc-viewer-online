@@ -8,6 +8,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   seedRegion, seedFringe, allocateDensity, naturalCountFor, ringArea, principalAxis,
+  buildKeepOut,
   type SeedRegion, type SeededTree,
 } from './tree-seeding'
 import type { GreenCover } from './osm-features'
@@ -210,5 +211,58 @@ describe('the instance budget', () => {
 
   it('measures area the way the caller expects', () => {
     expect(ringArea(box('a', 100, 50, 'forest').ringM)).toBeCloseTo(5000)
+  })
+})
+
+describe('ground that is already taken', () => {
+  // The park polygon includes its own lake and its own pavilions, because that
+  // is how OSM draws a park: one outline around the lot, then the lake and the
+  // buildings on top of it. Planting the outline grows trees out of the water —
+  // 83 of them on Parc de la Ciutadella, 300 more through roofs.
+
+  /** A `w` x `h` rectangle with its corner at (x, y). */
+  const rect = (x: number, y: number, w: number, h: number) =>
+    [{ x, y }, { x: x + w, y }, { x: x + w, y: y + h }, { x, y: y + h }]
+
+  it('answers what is inside and what is not', () => {
+    const blocked = buildKeepOut([rect(40, 40, 60, 60)])
+    expect(blocked(70, 70)).toBe(true)
+    expect(blocked(10, 10)).toBe(false)
+    // Outside the index's own cells entirely.
+    expect(blocked(5000, -5000)).toBe(false)
+  })
+
+  it('indexes a polygon far bigger than one cell', () => {
+    // A lake is hundreds of metres across; the index must not lose it to the
+    // guard that stops one ring filling thousands of cells.
+    const blocked = buildKeepOut([rect(0, 0, 4000, 4000)])
+    expect(blocked(2000, 2000)).toBe(true)
+    expect(blocked(-10, -10)).toBe(false)
+  })
+
+  it('is a constant no with nothing to keep out, so a plain wood pays nothing', () => {
+    const blocked = buildKeepOut([])
+    expect(blocked(0, 0)).toBe(false)
+  })
+
+  it('plants no tree in the lake in the middle of the park', () => {
+    const park = box('p', 200, 200, 'park')
+    const lake = rect(60, 60, 80, 80)
+    const blocked = buildKeepOut([lake])
+    const dry = seedRegion(park)
+    const wet = seedRegion(park, { blocked })
+    expect(wet.length).toBeLessThan(dry.length)
+    const inLake = (t: SeededTree) => t.x > 60 && t.x < 140 && t.y > 60 && t.y < 140
+    expect(dry.some(inLake), 'the old behaviour put trees in it').toBe(true)
+    expect(wet.some(inLake)).toBe(false)
+  })
+
+  it('keeps the fringe out of the water too', () => {
+    // The margin straddles the boundary on purpose, which is exactly how it
+    // reaches over a lakeshore if nothing stops it.
+    const shore = box('s', 100, 100, 'park')
+    const water = rect(-40, -40, 200, 45)   // laps the southern edge
+    const trees = seedFringe(shore, { blocked: buildKeepOut([water]) })
+    expect(trees.every((t) => !(t.y < 5 && t.x > -40 && t.x < 160))).toBe(true)
   })
 })

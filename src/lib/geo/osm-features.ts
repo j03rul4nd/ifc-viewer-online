@@ -72,6 +72,11 @@ export interface FeatureStyle {
   /** `roof:shape`, normalised to the shapes we can actually build. */
   roofShape: RoofShape
   /**
+   * A monument whose form is stated by its tag and cannot be extruded from the
+   * outline — see `monumentShape`. Overrides walls and roof entirely.
+   */
+  monument?: 'arch'
+  /**
    * True when `roof:shape` was actually present. Without this, "the mapper says
    * flat" and "nobody said anything" are the same value, and the renderer has
    * no way to know whether it is allowed to infer a pitch from what the building
@@ -511,6 +516,35 @@ export function waterwayWidth(tags: Record<string, string> | undefined): number 
 }
 
 /**
+ * Is this thing somewhere other than on the ground we are drawing?
+ *
+ * OSM maps the whole solid: metro tunnels, culverted streams, service roads
+ * inside a car park, the corridors of a shopping centre. All of it classifies
+ * perfectly well as road, rail or water, and drawing it lays a network of
+ * phantom streets and blue ribbons across parks and squares that in reality
+ * have nothing on them at all. Measured on the Ciutadella box: 100 roads and
+ * 50 railways in tunnel, 61 more indoors, and three culverted streams — a
+ * spaghetti of asphalt through the park, and a river through the zoo.
+ *
+ * `layer` is deliberately NOT consulted, and that is the whole subtlety. A
+ * negative layer means "below the thing it crosses", which is exactly what a
+ * perfectly ordinary street does where a bridge passes over it. Using it here
+ * would delete real streets in every city with a flyover. Only tags that say
+ * "this is not on the surface" count, and they say it explicitly.
+ *
+ * `covered=yes` is likewise left alone: an arcade, a market hall or a gallery
+ * IS the ground floor of the street, and people walk it.
+ */
+export function isBelowSurface(tags: Record<string, string> | undefined): boolean {
+  const t = tags ?? {}
+  const tunnel = t['tunnel']
+  if (tunnel && tunnel !== 'no') return true
+  if (t['location'] === 'underground' || t['location'] === 'underwater') return true
+  if (t['indoor'] === 'yes') return true
+  return false
+}
+
+/**
  * Classify an element from its tags. Order matters and encodes precedence:
  * a bridge carrying a road over a river is a bridge, and a building on a
  * bridge is still a building.
@@ -521,6 +555,10 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
   // Buildings win over everything — a boathouse in a park is a building.
   const building = t['building']
   if (building && building !== 'no') return 'building'
+
+  // A free-standing arch is masonry with a footprint and a height, so it is
+  // built by the building path even when nobody tagged `building=*` on it.
+  if (t['man_made'] === 'arch') return 'building'
 
   if (t['natural'] === 'tree') return 'tree'
 
@@ -682,8 +720,30 @@ export function resolveFeatureStyle(
     roofShape,
     roofTagged: (t['roof:shape'] ?? '') !== '',
     use: buildingUse(t),
+    monument: monumentShape(t),
     roofHeightM: roofShape === 'flat' ? 0 : (tagged && tagged > 0 ? tagged : 3),
   }
+}
+
+/**
+ * Monuments whose whole point is a shape a solid extrusion cannot express.
+ *
+ * A triumphal arch IS its opening. OSM traces the outline of the masonry and
+ * tags the height, and extruding that gives a 29 m brick cube where the Arc de
+ * Triomf should be — the one building on the site everybody recognises, drawn
+ * as the one thing it is not. There is no `building:part` data to fall back on
+ * for it (nor for most of them), so the shape has to come from the type.
+ *
+ * Deliberately a SHORT list of documented values. This is the seam where "we
+ * model named landmarks" would start, and that is a different product: what
+ * belongs here is only the handful of tags that state a form outright.
+ */
+export function monumentShape(
+  tags: Record<string, string> | undefined,
+): 'arch' | undefined {
+  const t = tags ?? {}
+  if (t['building'] === 'triumphal_arch' || t['man_made'] === 'arch') return 'arch'
+  return undefined
 }
 
 // ── Overpass parsing ───────────────────────────────────────────────────────────
@@ -732,6 +792,9 @@ export function parseOsmFeatures(json: unknown): OsmFeature[] {
     if (!el || typeof el !== 'object') continue
     const kind = classifyFeature(el.tags)
     if (!kind) continue
+    // A tunnel is not scenery. Dropped here rather than in `classifyFeature`,
+    // which answers what a thing IS: a culverted stream is still a stream.
+    if (isBelowSurface(el.tags)) continue
 
     const style = resolveFeatureStyle(kind, el.tags)
     const height = resolveBuildingHeight(el.tags)
@@ -776,6 +839,22 @@ export function parseOsmFeatures(json: unknown): OsmFeature[] {
       if (kind === 'water' && !closed && WATERWAY_LINEAR.has(el.tags?.['waterway'] ?? '')) {
         const ring = bufferWaterway(pts, waterwayWidth(el.tags))
         if (ring) out.push({ id: `w${el.id}`, kind, ring, height, style })
+        continue
+      }
+
+      // A square, an esplanade, a pedestrianised street: mapped as an AREA, and
+      // the only honest way to draw it is to pave the polygon. Ribboning its
+      // outline instead drew a 3 m footpath around the edge of the Passeig de
+      // Lluís Companys and left the middle showing the raster basemap, which is
+      // the opposite of what is there — 83 such areas in the Ciutadella box.
+      if (kind === 'road' && closed && el.tags?.['area'] === 'yes') {
+        const ring = closeRing(pts, kind)
+        if (ring) {
+          out.push({
+            id: `w${el.id}`, kind, ring, height, style,
+            name: el.tags?.['name'], label: featureLabel(el.tags),
+          })
+        }
         continue
       }
 
@@ -939,7 +1018,7 @@ export function buildFeaturesQuery(
     [`way["highway"](${b});way["railway"](${b});`, Math.round(maxElements * 0.55)],
     [`way["bridge"]["highway"](${b});way["bridge"]["railway"](${b});`
       + area('["man_made"="bridge"]'), Math.round(maxElements * 0.05)],
-    [area('["building"]'), Math.round(maxElements * 0.45)],
+    [area('["building"]') + area('["man_made"="arch"]'), Math.round(maxElements * 0.45)],
     // Ground cover: few polygons, huge area. A tight cap costs nothing visible.
     [
       area('["natural"="water"]')

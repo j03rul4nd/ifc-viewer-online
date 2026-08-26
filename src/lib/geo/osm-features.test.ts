@@ -6,6 +6,7 @@ import {
   waterwayWidth, bufferWaterway,
   FEATURE_KINDS, MIN_AREA_M2,
   roadClass, ROAD_CLASS_ROUGHNESS, ROAD_CLASS_KERB_M, buildingUse,
+  isBelowSurface, monumentShape,
   type OsmFeature,
 } from './osm-features'
 
@@ -783,5 +784,105 @@ describe('buildingUse', () => {
     // same value, and no roof can ever be inferred.
     expect(resolveFeatureStyle('building', { building: 'house' }).roofTagged).toBe(false)
     expect(resolveFeatureStyle('building', { 'roof:shape': 'flat' }).roofTagged).toBe(true)
+  })
+})
+
+describe('what is not on the surface is not drawn', () => {
+  // OSM maps the whole solid. Measured on the Ciutadella box: 100 roads and 50
+  // railways in tunnel, 61 more indoors, three culverted streams — a network of
+  // phantom streets under the park and a river through the zoo, all of it drawn
+  // at ground level because it classifies perfectly well.
+
+  const line = [{ lat: 41.388, lon: 2.185 }, { lat: 41.389, lon: 2.186 }]
+
+  it('knows a tunnel, a culvert and an indoor corridor', () => {
+    expect(isBelowSurface({ tunnel: 'yes' })).toBe(true)
+    expect(isBelowSurface({ tunnel: 'culvert' })).toBe(true)
+    expect(isBelowSurface({ location: 'underground' })).toBe(true)
+    expect(isBelowSurface({ indoor: 'yes' })).toBe(true)
+  })
+
+  it('leaves the surface alone', () => {
+    expect(isBelowSurface({})).toBe(false)
+    expect(isBelowSurface({ tunnel: 'no' })).toBe(false)
+    // An arcade or a market hall IS the ground floor of the street.
+    expect(isBelowSurface({ covered: 'yes' })).toBe(false)
+  })
+
+  it('never reads a negative LAYER as underground', () => {
+    // The trap: `layer=-1` is what an ordinary street carries where a bridge
+    // passes over it. Using it here would delete real streets in every city
+    // with a flyover.
+    expect(isBelowSurface({ layer: '-1', highway: 'secondary' })).toBe(false)
+    expect(parseOsmFeatures({
+      elements: [{ type: 'way', id: 1, tags: { highway: 'secondary', layer: '-1' }, geometry: line }],
+    })).toHaveLength(1)
+  })
+
+  it('drops the metro tunnel and the culverted stream from the scene', () => {
+    const out = parseOsmFeatures({
+      elements: [
+        { type: 'way', id: 1, tags: { railway: 'subway', tunnel: 'yes' }, geometry: line },
+        { type: 'way', id: 2, tags: { waterway: 'stream', tunnel: 'culvert', location: 'underground' }, geometry: line },
+        { type: 'way', id: 3, tags: { highway: 'service', indoor: 'yes' }, geometry: line },
+        { type: 'way', id: 4, tags: { highway: 'secondary' }, geometry: line },
+      ],
+    })
+    expect(out.map((f) => f.id)).toEqual(['w4'])
+  })
+})
+
+describe('a square is an area, not a ribbon around its edge', () => {
+  // 83 features in the Ciutadella box are `area=yes` highways. Ribboning them
+  // drew a 3 m footpath around the outline of the Passeig de Lluís Companys and
+  // left the middle showing the raster basemap.
+
+  const plaza = [
+    { lat: 41.390, lon: 2.180 }, { lat: 41.390, lon: 2.1806 },
+    { lat: 41.3906, lon: 2.1806 }, { lat: 41.3906, lon: 2.180 },
+    { lat: 41.390, lon: 2.180 },
+  ]
+
+  it('parses a pedestrian area as a polygon with no width', () => {
+    const out = parseOsmFeatures({
+      elements: [{ type: 'way', id: 7, tags: { highway: 'pedestrian', area: 'yes' }, geometry: plaza }],
+    })
+    expect(out).toHaveLength(1)
+    expect(out[0].kind).toBe('road')
+    expect(out[0].widthM).toBeUndefined()
+    expect(out[0].ring!.length).toBeGreaterThanOrEqual(4)
+  })
+
+  it('leaves a closed way that is NOT an area as a ribbon', () => {
+    // A roundabout is a closed carriageway and emphatically not a plaza.
+    const out = parseOsmFeatures({
+      elements: [{
+        type: 'way', id: 8,
+        tags: { highway: 'secondary', junction: 'roundabout' },
+        geometry: plaza,
+      }],
+    })
+    expect(out[0].widthM).toBeGreaterThan(0)
+  })
+})
+
+describe('monuments whose form their outline cannot carry', () => {
+  it('reads a triumphal arch from either tag', () => {
+    expect(monumentShape({ building: 'triumphal_arch' })).toBe('arch')
+    expect(monumentShape({ man_made: 'arch' })).toBe('arch')
+    expect(monumentShape({ building: 'yes', historic: 'monument' })).toBeUndefined()
+    expect(monumentShape({})).toBeUndefined()
+  })
+
+  it('builds a free-standing arch through the building path', () => {
+    // `man_made=arch` carries no `building` tag, so without this it classified
+    // as nothing at all and never reached the scene.
+    expect(classifyFeature({ man_made: 'arch' })).toBe('building')
+    expect(resolveFeatureStyle('building', { building: 'triumphal_arch' }).monument).toBe('arch')
+  })
+
+  it('asks Overpass for the ones that are not tagged as buildings', () => {
+    const q = buildFeaturesQuery({ south: 41.38, west: 2.17, north: 41.39, east: 2.19 })
+    expect(q).toContain('["man_made"="arch"]')
   })
 })
