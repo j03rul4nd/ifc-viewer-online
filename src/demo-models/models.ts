@@ -60,6 +60,8 @@ const BUNDLED_TEMPLE = `${import.meta.env.BASE_URL}JapaneseTemple.ifc`
 /** The federated set — three disciplines of one building, ISO 19650 file names. */
 const POBLENOU = `${import.meta.env.BASE_URL}models/poblenou`
 const TORRE = `${import.meta.env.BASE_URL}models/torre-poblenou`
+/** The map-mode model: on the Passeig de Lluís Companys, by the Arc de Triomf. */
+const CIUTADELLA = `${import.meta.env.BASE_URL}models/ciutadella`
 const CRAS = `${import.meta.env.BASE_URL}models/cras`
 const VIDEO_DEMO = `${import.meta.env.BASE_URL}models/video-demo`
 
@@ -174,6 +176,22 @@ export const DEMO_MODELS: DemoModel[] = [
     schema: 'IFC4',
     approximateSize: '3.5 MB',
     sizeBytes: 3_489_029,
+    featured: true,
+  },
+  {
+    id: 'ciutadella-pavilion',
+    name: 'Ciutadella Pavilion',
+    description:
+      'Built for map mode: an exhibition pavilion 80 m from the Arc de Triomf, turned onto the promenade axis by a real map conversion. Switch the map on and it lands between the avenue of trees, the park and the lake.',
+    category: 'Reference',
+    fileName: 'BCN-IVO-ZZ-XX-M3-Z-0003.ifc',
+    ifcUrl: `${CIUTADELLA}/BCN-IVO-ZZ-XX-M3-Z-0003.ifc`,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-ciutadella.py',
+    sourceLabel: 'Authored with Blender + Bonsai',
+    schema: 'IFC4',
+    approximateSize: '239 KB',
+    sizeBytes: 245_678,
     featured: true,
   },
   {

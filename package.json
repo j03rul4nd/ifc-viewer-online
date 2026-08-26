@@ -24,6 +24,7 @@
     "district:arc": "blender --background --python scripts/blender/build-district.py -- public/models/poblenou ARC",
     "district:mep": "blender --background --python scripts/blender/build-district.py -- public/models/poblenou MEP",
     "tower": "blender --background --python scripts/blender/build-tower.py -- public/models/torre-poblenou",
+    "ciutadella": "blender --background --python scripts/blender/build-ciutadella.py -- public/models/ciutadella",
     "site-scan": "node scripts/pointcloud/build-site-scan.mjs",
     "video-demo": "blender --background --python scripts/blender/build-video-demo.py -- public/models/video-demo"
   },
