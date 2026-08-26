@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import {
   createSuppressor, footprintFromBounds, expandPolygon, pointInPolygon,
+  convexHull, overlapArea, polygonArea,
   DEFAULT_POLICY, facilityKindFromTree, type ModelFootprint,
 } from './context-suppression'
 import type { OsmFeature, LatLonPoint } from './osm-features'
@@ -152,9 +153,11 @@ describe('policy', () => {
   })
 
   it('the margin reaches a mapped outline that misses the surveyed one', () => {
-    // OSM outlines and surveyed ones never agree to the metre. Without a skirt,
-    // a mapped building offset by a couple of metres survives as a sliver.
-    const offset = square('building', 'b1', 47, 0, 20)
+    // OSM outlines and surveyed ones never agree to the metre. This one sits
+    // almost entirely outside the plan and shares a tenth of itself with it —
+    // too little to read as the same building, so without a skirt it survives
+    // as a sliver along the wall. The skirt is what closes that gap.
+    const offset = square('building', 'b1', 58, 0, 20)
     expect(createSuppressor([plot('building', 0)], project)(offset)).toBe(true)
     expect(createSuppressor([plot('building', 12)], project)(offset)).toBe(false)
   })
@@ -298,5 +301,107 @@ describe('the model inside the mapped polygon', () => {
   it('works with an unknown facility kind, which is what most IFC files are', () => {
     const precinct = square('building', 'p2', 0, 0, 180)
     expect(createSuppressor([plot('unknown')], project)(precinct)).toBe(false)
+  })
+})
+
+describe('plans that simply overlap, with neither inside the other', () => {
+  // The case both other directions are blind to, and the one that put a mapped
+  // hall through the east flank of a surveyed temple: a neighbour that pushes
+  // part of its plan into the model's. Vertex coverage tops out at 0.5 for a
+  // rectangle with two corners inside, and the model's centre is still on its
+  // own side of the wall, so nothing fired.
+
+  it('takes the mapped building standing through the model', () => {
+    // 40 x 40 at x = 50: half of it is inside the 100 x 100 plot.
+    const through = square('building', 't1', 50, 0, 40)
+    expect(createSuppressor([plot()], project)(through)).toBe(false)
+  })
+
+  it('leaves the neighbour that only clips a corner', () => {
+    // 20 x 20 sharing a 4 x 4 corner — 4% of its plan. Two buildings meeting at
+    // a corner is how cities are built, and deleting one of them is not a fix.
+    const corner = square('building', 'c1', 56, 56, 20)
+    expect(createSuppressor([plot()], project)(corner)).toBe(true)
+  })
+
+  it('leaves a block far larger than the model that it happens to reach into', () => {
+    // 400 x 400 covering half the plot. It shares plenty of ground, but it is
+    // sixteen times the model: an urban block, not a description of this
+    // building — so the area guard keeps it, same as for containment.
+    const block = square('building', 'b1', 200, 0, 400)
+    expect(createSuppressor([plot()], project)(block)).toBe(true)
+  })
+
+  it('keeps obeying the policy — an overlapping park is still a park', () => {
+    const park = square('green', 'g2', 50, 0, 40)
+    expect(createSuppressor([plot()], project)(park)).toBe(true)
+  })
+
+  it('survives the normalized frame, where a building spans 1e-7 at x ≈ 0.38', () => {
+    // The frame every real call arrives in. Run on absolute coordinates the
+    // clipper cuts on cancellation noise instead of on geometry — the trap that
+    // put an inferred roof a kilometre from its own building.
+    const O = 0.377_281
+    const M = 1e-7
+    const model: ModelFootprint = {
+      polygon: [
+        new THREE.Vector2(O - M, O - M), new THREE.Vector2(O + M, O - M),
+        new THREE.Vector2(O + M, O + M), new THREE.Vector2(O - M, O + M),
+      ],
+      kind: 'building',
+      marginN: 0,
+    }
+    // Reaches into the model's east half without covering its centre, and with
+    // only two of its four corners inside: invisible to the other two tests.
+    const half = feature('building', 'n1', [
+      [O + 0.1 * M, O - 0.5 * M], [O + 2 * M, O - 0.5 * M],
+      [O + 2 * M, O + 0.5 * M], [O + 0.1 * M, O + 0.5 * M],
+    ])
+    const away = feature('building', 'n2', [
+      [O + 4 * M, O - M], [O + 6 * M, O - M], [O + 6 * M, O + M], [O + 4 * M, O + M],
+    ])
+    const keep = createSuppressor([model], project)
+    expect(keep(half), 'the hall standing in the model goes').toBe(false)
+    expect(keep(away), 'the one down the street stays').toBe(true)
+  })
+})
+
+describe('overlap geometry', () => {
+  const unit = [
+    { x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 },
+  ]
+
+  it('hulls a square to itself, counter-clockwise', () => {
+    const hull = convexHull([...unit].reverse())
+    expect(hull).toHaveLength(4)
+    expect(polygonArea(hull)).toBeCloseTo(100)
+    // Signed area positive = counter-clockwise, which is what the clipper needs.
+    let twice = 0
+    for (let i = 0, j = hull.length - 1; i < hull.length; j = i++) {
+      twice += (hull[j].x + hull[i].x) * (hull[i].y - hull[j].y)
+    }
+    expect(twice).toBeGreaterThan(0)
+  })
+
+  it('drops the interior points that no hull needs', () => {
+    expect(convexHull([...unit, { x: 5, y: 5 }, { x: 2, y: 8 }])).toHaveLength(4)
+  })
+
+  it('measures what two plans share', () => {
+    const shifted = unit.map((p) => ({ x: p.x + 5, y: p.y }))
+    expect(overlapArea(shifted, convexHull(unit))).toBeCloseTo(50)
+    expect(overlapArea(unit, convexHull(unit))).toBeCloseTo(100)
+  })
+
+  it('is zero when the plans miss each other', () => {
+    const away = unit.map((p) => ({ x: p.x + 40, y: p.y }))
+    expect(overlapArea(away, convexHull(unit))).toBe(0)
+  })
+
+  it('clips a polygon that pokes out of both ends', () => {
+    // A long hall crossing the plot completely: the shared part is the plot's
+    // own width, not the hall's length.
+    const hall = [{ x: -20, y: 3 }, { x: 30, y: 3 }, { x: 30, y: 7 }, { x: -20, y: 7 }]
+    expect(overlapArea(hall, convexHull(unit))).toBeCloseTo(40)
   })
 })

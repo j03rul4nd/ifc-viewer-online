@@ -118,6 +118,29 @@ const COVERAGE_FRACTION = 0.6
 const CONTAINMENT_AREA_RATIO = 6
 
 /**
+ * The third case, and the one neither test above can see: the two outlines
+ * simply OVERLAP, with neither containing the other.
+ *
+ * Vertex coverage cannot express it. A mapped hall next door that pushes two of
+ * its four corners into the model's plan scores 0.5 — and with four corners the
+ * only scores available are 0, 0.25, 0.5, 0.75 and 1, so ANY rectangular
+ * neighbour that overlaps by less than three corners survives however deep it
+ * reaches. Containment cannot see it either: the model's centre is still on its
+ * own side of the line. The result is a mapped facade standing through the
+ * model's own facade, which is exactly the artefact suppression exists to
+ * prevent, arriving by the one route left open.
+ *
+ * So the test is area: how much of the SMALLER of the two plans the pair have
+ * in common. A third is deliberately low — two descriptions of one building
+ * rarely agree better than that, mapped outlines being traced from imagery —
+ * and it is still far above the sliver a neighbour shares when the two merely
+ * touch along a party wall, which must survive. `CONTAINMENT_AREA_RATIO` guards
+ * this direction too: a block or a campus that happens to overlap a corner of
+ * the model is not describing it, and deleting it would be the worse artefact.
+ */
+const OVERLAP_FRACTION = 0.3
+
+/**
  * Shoelace area of a polygon. Sign discarded; units are the caller's.
  *
  * Measured from the first vertex rather than from the coordinate origin. Every
@@ -146,6 +169,87 @@ export function polygonCentre(
   let y = 0
   for (const p of poly) { x += p.x; y += p.y }
   return { x: x / poly.length, y: y / poly.length }
+}
+
+/** A plain planar point. The polygons here are read, never mutated. */
+interface Pt { x: number; y: number }
+
+/**
+ * Convex hull of a set of points, counter-clockwise (Andrew's monotone chain).
+ *
+ * The overlap test clips one outline against the model's, and clipping needs a
+ * CONVEX window to be exact. A model plan is the four corners of an oriented
+ * box, so it is already convex and the hull is the identity — but the footprint
+ * is caller-supplied, and a concave one fed to the clipper straight would
+ * report an intersection larger than the two shapes actually share. Hulling
+ * first makes the answer wrong only in the direction the module already
+ * chooses: slightly more of the model's plan, and the model is what wins there.
+ */
+export function convexHull(points: ReadonlyArray<Pt>): Pt[] {
+  if (points.length < 3) return points.map((p) => ({ x: p.x, y: p.y }))
+  const pts = points.map((p) => ({ x: p.x, y: p.y }))
+    .sort((a, b) => (a.x === b.x ? a.y - b.y : a.x - b.x))
+  const cross = (o: Pt, a: Pt, b: Pt): number =>
+    (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x)
+
+  const build = (source: ReadonlyArray<Pt>): Pt[] => {
+    const out: Pt[] = []
+    for (const p of source) {
+      while (out.length >= 2 && cross(out[out.length - 2], out[out.length - 1], p) <= 0) out.pop()
+      out.push(p)
+    }
+    out.pop() // the last point starts the other half
+    return out
+  }
+  const hull = [...build(pts), ...build([...pts].reverse())]
+  return hull.length >= 3 ? hull : pts
+}
+
+/**
+ * Area the two plans have in common — `subject` clipped by a CONVEX `clip`
+ * (Sutherland–Hodgman), then measured.
+ *
+ * `clip` must be counter-clockwise and convex; `convexHull` above produces
+ * exactly that. `subject` may be any simple polygon.
+ *
+ * Both polygons arrive already shifted to a local origin by the caller. That is
+ * not a nicety: in the normalized frame a building spans ~1e-7 at an absolute
+ * coordinate of order 1, so every cross product here would be a difference of
+ * numbers agreeing to thirteen significant digits and the clipper would cut on
+ * noise. Same trap that put an inferred roof a kilometre from its building.
+ */
+export function overlapArea(subject: ReadonlyArray<Pt>, clip: ReadonlyArray<Pt>): number {
+  if (subject.length < 3 || clip.length < 3) return 0
+  let out: Pt[] = subject.map((p) => ({ x: p.x, y: p.y }))
+
+  for (let i = 0, j = clip.length - 1; i < clip.length; j = i++) {
+    if (out.length === 0) return 0
+    const a = clip[j]
+    const b = clip[i]
+    // Left of the edge a→b is inside, the hull being counter-clockwise.
+    const side = (p: Pt): number => (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x)
+    const input = out
+    out = []
+    for (let k = 0, l = input.length - 1; k < input.length; l = k++) {
+      const cur = input[k]
+      const prev = input[l]
+      const dCur = side(cur)
+      const dPrev = side(prev)
+      if (dCur >= 0) {
+        if (dPrev < 0) out.push(intersect(prev, cur, dPrev, dCur))
+        out.push(cur)
+      } else if (dPrev >= 0) {
+        out.push(intersect(prev, cur, dPrev, dCur))
+      }
+    }
+  }
+  return polygonArea(out)
+}
+
+/** Where the segment p→q crosses the clip edge, from the two signed distances. */
+function intersect(p: Pt, q: Pt, dp: number, dq: number): Pt {
+  const t = dp / (dp - dq)
+  return { x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t }
 }
 
 /**
@@ -260,10 +364,14 @@ export function createSuppressor(
       if (p.x > maxX) maxX = p.x
       if (p.y > maxY) maxY = p.y
     }
+    const centre = polygonCentre(poly)
     return {
       poly, minX, minY, maxX, maxY,
       area: polygonArea(poly),
-      centre: polygonCentre(poly),
+      centre,
+      // The clip window for the overlap test, hulled once and held about the
+      // model's own centre so the clipper works on numbers with room in them.
+      hullLocal: convexHull(poly.map((p) => ({ x: p.x - centre.x, y: p.y - centre.y }))),
       policy: { ...DEFAULT_POLICY[f.kind], ...overrides },
     }
   })
@@ -299,15 +407,27 @@ export function createSuppressor(
       }
       if (inside / projected.length >= COVERAGE_FRACTION) return false
 
-      // Direction two: the model sits inside the mapped feature. Guarded by
-      // area, so a precinct goes and a district stays — see the constant.
+      // Both remaining directions need the areas, and both refuse to touch a
+      // polygon far larger than the model — see CONTAINMENT_AREA_RATIO.
       if (projected.length < 3 || f.area <= 0) continue
-      if (f.centre.x < rMinX || f.centre.x > rMaxX
-        || f.centre.y < rMinY || f.centre.y > rMaxY) continue
-      if (polygonArea(projected) <= f.area * CONTAINMENT_AREA_RATIO
+      const ringArea = polygonArea(projected)
+      if (ringArea > f.area * CONTAINMENT_AREA_RATIO) continue
+
+      // Direction two: the model sits inside the mapped feature.
+      if (f.centre.x >= rMinX && f.centre.x <= rMaxX
+        && f.centre.y >= rMinY && f.centre.y <= rMaxY
         && pointInPolygon(f.centre, projected)) {
         return false
       }
+
+      // Direction three: neither contains the other, but the two plans share
+      // enough ground to be descriptions of the same building. Last because it
+      // is the only test that clips, and the two boxes above have already sent
+      // every distant feature away.
+      if (rMaxX < f.minX || rMinX > f.maxX || rMaxY < f.minY || rMinY > f.maxY) continue
+      const ringLocal = projected.map((p) => ({ x: p.x - f.centre.x, y: p.y - f.centre.y }))
+      const shared = overlapArea(ringLocal, f.hullLocal)
+      if (shared > 0 && shared >= Math.min(ringArea, f.area) * OVERLAP_FRACTION) return false
     }
     return true
   }
