@@ -114,6 +114,8 @@ byte-identical to a build without the feature. This is the kill switch.
 | Multi-model siting (pure: haversine, anchor, disagreement) | `src/lib/geo/model-sites.ts` |
 | OSM buildings: heights/bbox (pure) · extrusion incl. roof shapes | `src/lib/geo/buildings.ts`, `src/lib/geo/building-mesh.ts` |
 | OSM feature classification + single multi-layer query (pure) | `src/lib/geo/osm-features.ts` |
+| What the OSM context stops drawing where the model stands (pure) | `src/lib/geo/context-suppression.ts` |
+| Growing a canopy on a greenery polygon, and the ground it must leave alone (pure) | `src/lib/geo/tree-seeding.ts` |
 | OSM layer meshes (water, greenery, instanced trees, bridge decks, catenary masts) | `src/lib/geo/osm-scene.ts` |
 | Signals (data) and scenery (vehicles, lamps, shelters) | `src/lib/geo/props-scene.ts` |
 | Showcase GLB loading + cache + quoted download size | `src/lib/geo/props-assets.ts` |
@@ -246,6 +248,89 @@ acceptable if the query pattern stays small and interactive:
   rate-limits aggressively per IP: a handful of queries in quick succession
   earns a multi-minute cooldown, which the UI reports as "the service was
   busy". **Space out queries when testing.**
+
+### What OSM maps, and what is actually there to look at
+
+OSM maps the whole solid, and a renderer that draws everything it can classify
+draws a great deal that nobody standing on the site can see. Three rules, all
+measured on the Parc de la Ciutadella box (7267 elements, Barcelona):
+
+- **Nothing below the surface.** `tunnel=*`, `location=underground`,
+  `indoor=yes` — 100 roads, 50 railways, 61 indoor ways and 3 culverted streams
+  in that one box, which drew as a network of phantom streets under the park and
+  a stream through the zoo. `isBelowSurface` in `osm-features.ts`. **`layer` is
+  deliberately not consulted**: a negative layer is what an ordinary street
+  carries where a bridge crosses it, and using it would delete real streets in
+  every city with a flyover. `covered=yes` also stays — an arcade is the ground
+  floor of the street.
+- **An area is an area.** A closed `highway=*` with `area=yes` is a square, an
+  esplanade or a pedestrianised street, and it is PAVED, not ribboned: 83 of
+  them in the box, and ribboning the Passeig de Lluís Companys drew a 3 m
+  footpath around its outline and left the middle showing the basemap. The fill
+  shares the platform path in `buildLinearLayer` and skips the platform's
+  painted edge.
+- **The canopy does not plant on ground that is taken.** A park polygon covers
+  its own lake and its own pavilions, because OSM draws the park outline first
+  and the lake on top; seeding the outline put 83 trees in the water (31 in the
+  big lake) and 300 through roofs. `buildKeepOut` in `tree-seeding.ts` indexes
+  the water and building rings once per site and the seeder asks it per tree.
+  Water and buildings only — a canopy that refused to cross a road would strip
+  every avenue in the city.
+
+### Monuments the outline cannot describe
+
+`building=triumphal_arch` / `man_made=arch` builds an ARCH — two piers, an attic
+and an opening — from the oriented box of the footprint, not a solid extrusion
+of it. The Arc de Triomf is a 38-vertex outline with `height=29`, and extruded
+like any other building it is a 29 m brick cube: the one landmark on that site
+everybody recognises, drawn as the one thing it is not.
+
+The oriented box comes from `orientedFootprint`, which is a real minimum-area
+rectangle (every ring edge tried; the minimum has a side collinear with a hull
+edge). Neither "longest edge" nor "longest diagonal" is good enough — on
+Barcelona's diagonal grid both point somewhere between the monument's two axes,
+and a 20° error puts the opening through a corner.
+
+This is a SHORT list on purpose. It is the seam where "we model named
+landmarks" would begin, and that is a different product; what belongs here is
+only tags that state a form outright.
+
+### Where the model and the map describe the same building
+
+The mapped building and the surveyed one are two descriptions of one piece of
+ground, and where they overlap the model wins — it is the subject, and OSM is
+context. `context-suppression.ts` decides that, and it asks **three** questions,
+because one shape can stand inside another in three different ways and each was
+found the hard way:
+
+1. **The mapped feature is inside the model.** ≥ 60 % of its vertices fall in
+   the model's plan. The ordinary case: a small block under a tower.
+2. **The model is inside the mapped feature.** The model's centre falls in the
+   OSM ring. This is the temple-precinct case — one outline drawn around a whole
+   complex, with not a single vertex anywhere near the model, so question 1
+   scores zero however large the margin.
+3. **Neither contains the other, but the plans overlap.** They share at least
+   30 % of the smaller plan. Vertex coverage cannot express this: a rectangular
+   neighbour has only 0/0.25/0.5/0.75/1 available, so any mapped hall that
+   pushes two of its four corners into the model survives question 1 however
+   deep it reaches, and question 2 never fires because the model's centre is
+   still on its own side of the wall. What that looked like: a mapped block
+   standing through the east flank of a surveyed temple.
+
+Questions 2 and 3 are both guarded by `CONTAINMENT_AREA_RATIO` (6): an OSM
+polygon more than a few multiples of the model's own plan is a block, a campus
+or a `landuse` district, not a description of this building, and deleting one
+because a model sits in it or clips its corner is a far worse artefact than a
+redundant polygon. That case is meant to be solved by hiding the feature by
+hand, not by widening the rule.
+
+WHAT is suppressed still depends on what the model IS (`FacilityKind` →
+`DEFAULT_POLICY`): a building takes the building on its plot and the trees
+standing in its plan, never the street outside; a bridge takes the mapped bridge
+and the carriageway it carries. All three questions run inside that policy.
+
+The arithmetic is done about the model's own centre, for the reason the next
+section gives.
 
 ### Traps that cost real debugging time
 

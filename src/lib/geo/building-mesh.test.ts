@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
-import { buildBuildingsGeometry } from './building-mesh'
+import { buildBuildingsGeometry, orientedFootprint } from './building-mesh'
 import type { BuildingFootprint } from './buildings'
 
 /** Square footprint of `sizeM` metres, anchored near Barcelona. */
@@ -556,5 +556,149 @@ describe('context palette and tone', () => {
       // is not discreet.
       expect(c.getX(i) - c.getZ(i)).toBeLessThan(0.2)
     }
+  })
+})
+
+describe('a triumphal arch is its opening', () => {
+  // The Arc de Triomf is `building=triumphal_arch` with `height=29` and a
+  // 38-vertex traced outline. Extruded like any other footprint it is a 29 m
+  // brick cube — the one building on the site everybody recognises, drawn as
+  // the one thing it is not.
+
+  const LAT = 41.3909
+  const LON = 2.1805
+
+  /** A `wideM` x `deepM` monument, optionally turned off the world axes. */
+  const arch = (wideM: number, deepM: number, turnDeg = 0, monument = true) => {
+    const mLat = 111_132
+    const mLon = 111_320 * Math.cos((LAT * Math.PI) / 180)
+    const c = Math.cos((turnDeg * Math.PI) / 180)
+    const s = Math.sin((turnDeg * Math.PI) / 180)
+    const corners: Array<[number, number]> = [
+      [-wideM / 2, -deepM / 2], [wideM / 2, -deepM / 2],
+      [wideM / 2, deepM / 2], [-wideM / 2, deepM / 2],
+    ]
+    return {
+      id: 'arc',
+      ring: corners.map(([x, y]) => ({
+        lat: LAT + (x * s + y * c) / mLat,
+        lon: LON + (x * c - y * s) / mLon,
+      })),
+      height: { heightM: 29, minHeightM: 0, estimated: false },
+      style: {
+        roofShape: 'flat' as const, roofHeightM: 0,
+        ...(monument ? { monument: 'arch' as const } : {}),
+      },
+    }
+  }
+
+  /** Every triangle whose PLAN projection covers (x, y), with its z and normal. */
+  const covering = (
+    g: THREE.BufferGeometry, x: number, y: number,
+  ): Array<{ z: number; nz: number }> => {
+    const pos = g.getAttribute('position')
+    const nor = g.getAttribute('normal')
+    const out: Array<{ z: number; nz: number }> = []
+    for (let i = 0; i < pos.count; i += 3) {
+      const ax = pos.getX(i); const ay = pos.getY(i)
+      const bx = pos.getX(i + 1); const by = pos.getY(i + 1)
+      const cx = pos.getX(i + 2); const cy = pos.getY(i + 2)
+      const den = (bx - ax) * (cy - ay) - (cx - ax) * (by - ay)
+      if (Math.abs(den) < 1e-20) continue        // a vertical wall has no plan area
+      const u = ((x - ax) * (cy - ay) - (cx - ax) * (y - ay)) / den
+      const v = ((bx - ax) * (y - ay) - (x - ax) * (by - ay)) / den
+      if (u < 0 || v < 0 || u + v > 1) continue
+      out.push({
+        z: (pos.getZ(i) + pos.getZ(i + 1) + pos.getZ(i + 2)) / 3,
+        nz: nor.getZ(i),
+      })
+    }
+    return out.sort((p, q) => p.z - q.z)
+  }
+
+  const planCentre = (g: THREE.BufferGeometry): { x: number; y: number } => {
+    g.computeBoundingBox()
+    const b = g.boundingBox!
+    return { x: (b.min.x + b.max.x) / 2, y: (b.min.y + b.max.y) / 2 }
+  }
+
+  it('leaves a hole through the middle, under a curved head', () => {
+    const built = buildBuildingsGeometry([arch(30, 12)], OPTS)!
+    expect(built.count).toBe(1)
+    const c = planCentre(built.geometry)
+    const hits = covering(built.geometry, c.x, c.y)
+    expect(hits.length, 'nothing over the passage at all').toBeGreaterThan(0)
+
+    built.geometry.computeBoundingBox()
+    const top = built.geometry.boundingBox!.max.z
+    // The lowest thing over the middle of the passage is the soffit, which is
+    // the crown of the arch — well below the top of the monument, and facing
+    // down. A solid extrusion has only its roof up there.
+    expect(hits[0].nz, 'the soffit faces down into the passage').toBeLessThan(0)
+    expect(hits[0].z).toBeLessThan(top * 0.999)
+  })
+
+  it('is a solid block without the tag — the A/B this exists for', () => {
+    const solid = buildBuildingsGeometry([arch(30, 12, 0, false)], OPTS)!
+    const c = planCentre(solid.geometry)
+    const hits = covering(solid.geometry, c.x, c.y)
+    solid.geometry.computeBoundingBox()
+    const top = solid.geometry.boundingBox!.max.z
+    // Everything over the middle is the roof cap, at the top, facing up.
+    expect(hits.every((h) => h.nz > 0)).toBe(true)
+    expect(hits[0].z).toBeCloseTo(top, 12)
+  })
+
+  it('keeps the monument its tagged height', () => {
+    const built = buildBuildingsGeometry([arch(30, 12)], OPTS)!
+    const solid = buildBuildingsGeometry([arch(30, 12, 0, false)], OPTS)!
+    built.geometry.computeBoundingBox()
+    solid.geometry.computeBoundingBox()
+    expect(built.geometry.boundingBox!.max.z)
+      .toBeCloseTo(solid.geometry.boundingBox!.max.z, 12)
+  })
+
+  it('turns the passage with the monument, not with north', () => {
+    // Barcelona's grid is on the diagonal, and the Arc is on the grid. An arch
+    // whose opening is cut on the world axes is turned 45° to its own street.
+    const turned = buildBuildingsGeometry([arch(30, 12, 45)], OPTS)!
+    const c = planCentre(turned.geometry)
+    const hits = covering(turned.geometry, c.x, c.y)
+    turned.geometry.computeBoundingBox()
+    expect(hits[0].nz).toBeLessThan(0)
+    expect(hits[0].z).toBeLessThan(turned.geometry.boundingBox!.max.z * 0.999)
+  })
+})
+
+describe('orientedFootprint', () => {
+  const rect = (wide: number, deep: number, turnDeg: number): THREE.Vector2[] => {
+    const c = Math.cos((turnDeg * Math.PI) / 180)
+    const s = Math.sin((turnDeg * Math.PI) / 180)
+    return ([[-wide / 2, -deep / 2], [wide / 2, -deep / 2], [wide / 2, deep / 2], [-wide / 2, deep / 2]] as const)
+      .map(([x, y]) => new THREE.Vector2(x * c - y * s, x * s + y * c))
+  }
+
+  it('finds the real axes of a turned rectangle', () => {
+    for (const turn of [0, 17, 45, 90, 123]) {
+      const box = orientedFootprint(rect(40, 10, turn))
+      expect(box.halfU * 2, `wide at ${turn}°`).toBeCloseTo(40, 6)
+      expect(box.halfV * 2, `deep at ${turn}°`).toBeCloseTo(10, 6)
+      expect(box.centre.length()).toBeLessThan(1e-6)
+      // u and v are a right-angled pair of unit vectors.
+      expect(box.u.dot(box.v)).toBeCloseTo(0, 9)
+      expect(box.u.length()).toBeCloseTo(1, 9)
+    }
+  })
+
+  it('always reports the LONG side as u, whichever edge the ring starts on', () => {
+    const box = orientedFootprint(rect(10, 40, 0))
+    expect(box.halfU).toBeGreaterThan(box.halfV)
+  })
+
+  it('is not fooled by the longest diagonal, which points between the axes', () => {
+    // A 40 x 10 box has its diameter at ~14° off the long axis. Cutting the
+    // opening on that line puts it through a corner.
+    const box = orientedFootprint(rect(40, 10, 0))
+    expect(Math.abs(box.u.y)).toBeLessThan(1e-6)
   })
 })

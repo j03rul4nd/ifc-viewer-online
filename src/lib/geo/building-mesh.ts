@@ -224,6 +224,23 @@ export function buildBuildingsGeometry(
     const baseZ = groundZ + (b.height.minHeightM - skirtM) * metresToNormalized
     const topZ = groundZ + b.height.heightM * metresToNormalized
 
+    // ── Monuments whose form the outline cannot carry ─────────────────────────
+    if (b.style?.monument === 'arch') {
+      const arcTint = b.style.wallColor && !neutral
+        ? hexToRgb(b.style.wallColor)
+        : facadeColor(b.id ?? `${b.ring[0].lat},${b.ring[0].lon}`, {
+          use: b.style.use, region, tone: contextTone,
+        })
+      pushArch(
+        positions, normals, colors, ring2d, metresToNormalized,
+        groundZ, b.height.heightM, lit, arcTint,
+      )
+      if (b.id) ranges.push({ id: b.id, start: rangeStart, end: positions.length / 3 })
+      count++
+      if (b.height.estimated) estimatedCount++
+      continue
+    }
+
     // ── Roof ───────────────────────────────────────────────────────────────────
     // A shaped roof eats into the tagged total height rather than adding to it:
     // `height` in OSM is to the ridge, so raising walls to it and then stacking
@@ -540,6 +557,224 @@ function pushDetailedWall(
 
     quad(z0, glassTop, glazing)
     quad(glassTop, z1, spandrel)
+  }
+}
+
+// ── Arch ──────────────────────────────────────────────────────────────────────
+
+/** Half-width of the opening, as a share of the monument's own half-width. */
+const ARCH_OPENING_HALF = 0.34
+
+/** Height of the springing line — where the curve starts — as a share of total. */
+const ARCH_SPRING_FRACTION = 0.42
+
+/** Segments in the semicircular soffit. Twelve reads as a curve at any distance. */
+const ARCH_SEGMENTS = 12
+
+/**
+ * The smallest rectangle that contains the footprint, and its axes.
+ *
+ * The minimum-area rectangle has a side collinear with an edge of the convex
+ * hull, so trying every edge direction of the ring finds it — the ring's edges
+ * are a superset of the hull's, and the extra directions can only lose. O(n²)
+ * once, for the handful of features that are monuments.
+ *
+ * Needed because a traced monument is not axis-aligned and not a rectangle: the
+ * Arc de Triomf is 38 vertices on Barcelona's diagonal grid, and both "the
+ * longest edge" and "the longest diagonal" point somewhere between its two
+ * axes. Getting this wrong turns the arch 20° and puts its opening through a
+ * corner.
+ */
+export function orientedFootprint(ring: ReadonlyArray<THREE.Vector2>): {
+  centre: THREE.Vector2
+  /** Unit vector along the long side. */
+  u: THREE.Vector2
+  /** Unit vector across it. */
+  v: THREE.Vector2
+  halfU: number
+  halfV: number
+} {
+  const fallback = {
+    centre: new THREE.Vector2(), u: new THREE.Vector2(1, 0), v: new THREE.Vector2(0, 1),
+    halfU: 0, halfV: 0,
+  }
+  if (ring.length < 3) return fallback
+
+  const ox = ring[0].x
+  const oy = ring[0].y
+  let best: { area: number; ux: number; uy: number; lo: [number, number]; hi: [number, number] } | null = null
+
+  for (let i = 0; i < ring.length; i++) {
+    const j = (i + 1) % ring.length
+    const ex = ring[j].x - ring[i].x
+    const ey = ring[j].y - ring[i].y
+    const len = Math.hypot(ex, ey)
+    if (len === 0) continue
+    const ux = ex / len
+    const uy = ey / len
+    let minA = Infinity; let maxA = -Infinity
+    let minB = Infinity; let maxB = -Infinity
+    for (const p of ring) {
+      const px = p.x - ox
+      const py = p.y - oy
+      const a = px * ux + py * uy
+      const bb = -px * uy + py * ux
+      if (a < minA) minA = a
+      if (a > maxA) maxA = a
+      if (bb < minB) minB = bb
+      if (bb > maxB) maxB = bb
+    }
+    const area = (maxA - minA) * (maxB - minB)
+    if (!best || area < best.area) {
+      best = { area, ux, uy, lo: [minA, minB], hi: [maxA, maxB] }
+    }
+  }
+  if (!best) return fallback
+
+  const midA = (best.lo[0] + best.hi[0]) / 2
+  const midB = (best.lo[1] + best.hi[1]) / 2
+  const centre = new THREE.Vector2(
+    ox + midA * best.ux - midB * best.uy,
+    oy + midA * best.uy + midB * best.ux,
+  )
+  let u = new THREE.Vector2(best.ux, best.uy)
+  let v = new THREE.Vector2(-best.uy, best.ux)
+  let halfU = (best.hi[0] - best.lo[0]) / 2
+  let halfV = (best.hi[1] - best.lo[1]) / 2
+  // `u` is the LONG side by contract — a caller reasoning about "along the
+  // facade" and "through the opening" needs that fixed, not left to which edge
+  // the ring happened to start on.
+  if (halfV > halfU) {
+    const swapAxis = u; u = v; v = new THREE.Vector2(-swapAxis.x, -swapAxis.y)
+    const swapHalf = halfU; halfU = halfV; halfV = swapHalf
+  }
+  return { centre, u, v, halfU, halfV }
+}
+
+/**
+ * A triumphal arch: two piers, an attic, and a hole you can see the sky through.
+ *
+ * Built from the oriented box of the footprint rather than from the traced
+ * outline. That loses the mouldings and the reliefs — at map scale nobody is
+ * looking for those — and gains the one thing the outline cannot give at all,
+ * which is the opening. A solid extrusion of the same footprint is a brick cube
+ * 29 m tall, and on a site that has the Arc de Triomf in it, that cube is the
+ * first thing anybody looks at.
+ *
+ * The passage runs through the SHORT axis, which is what an arch is: wide face
+ * to the street it terminates, shallow depth front to back.
+ */
+function pushArch(
+  positions: number[], normals: number[], colors: number[],
+  ring: ReadonlyArray<THREE.Vector2>,
+  metresToNormalized: number,
+  groundZ: number,
+  heightM: number,
+  lit: boolean,
+  tint: [number, number, number] | null,
+): void {
+  const box = orientedFootprint(ring)
+  if (box.halfU <= 0 || box.halfV <= 0) return
+
+  const topZ = groundZ + heightM * metresToNormalized
+  const baseZ = groundZ - SKIRT_M * metresToNormalized
+  const openHalf = box.halfU * ARCH_OPENING_HALF
+  const springZ = groundZ + heightM * ARCH_SPRING_FRACTION * metresToNormalized
+  // A semicircular head: the rise equals the half-span, which is what makes it
+  // read as an arch rather than as a rounded-off rectangle.
+  const crownZ = springZ + openHalf
+  // A monument whose opening would break through its own attic is not an arch;
+  // fall back on filling the whole block rather than producing a broken one.
+  if (crownZ >= topZ) return
+
+  /** Plan point at (along the facade, through the passage) in metres of the box. */
+  const at = (a: number, t: number): THREE.Vector2 => new THREE.Vector2(
+    box.centre.x + box.u.x * a + box.v.x * t,
+    box.centre.y + box.u.y * a + box.v.y * t,
+  )
+
+  const shade = (k: number): ShadedVertices => {
+    const s = lit ? k : k * 0.92
+    return tinted(s, tint)
+  }
+
+  /** One flat quad, wound so its normal points the way it is given. */
+  const quad = (
+    p0: THREE.Vector2, p1: THREE.Vector2, p2: THREE.Vector2, p3: THREE.Vector2,
+    z0: number, z1: number, z2: number, z3: number,
+    nx: number, ny: number, nz: number, k: number,
+  ): void => {
+    pushTriangle(positions, normals, colors, p0, p1, p2, z0, z1, z2, nx, ny, nz, shade(k))
+    pushTriangle(positions, normals, colors, p0, p2, p3, z0, z2, z3, nx, ny, nz, shade(k))
+  }
+
+  /** The four sides and the top of a block spanning `a0..a1` of the facade. */
+  const block = (a0: number, a1: number, z0: number, z1: number): void => {
+    const corners: Array<[number, number]> = [
+      [a0, -box.halfV], [a1, -box.halfV], [a1, box.halfV], [a0, box.halfV],
+    ]
+    for (let i = 0; i < 4; i++) {
+      const [ca, ct] = corners[i]
+      const [na, nt] = corners[(i + 1) % 4]
+      const p0 = at(ca, ct)
+      const p1 = at(na, nt)
+      const ex = p1.x - p0.x
+      const ey = p1.y - p0.y
+      const len = Math.hypot(ex, ey)
+      if (len === 0) continue
+      // Outward normal of this counter-clockwise loop.
+      const nx = ey / len
+      const ny = -ex / len
+      quad(p0, p1, p1, p0, z0, z0, z1, z1, nx, ny, 0, wallShade(nx, ny))
+    }
+    const [c0, c1, c2, c3] = corners.map(([a, t]) => at(a, t))
+    quad(c0, c1, c2, c3, z1, z1, z1, z1, 0, 0, 1, 0.95)
+  }
+
+  // Piers, carrying the spandrels up to the crown of the opening.
+  block(-box.halfU, -openHalf, baseZ, crownZ)
+  block(openHalf, box.halfU, baseZ, crownZ)
+  // The attic above, spanning the whole width — this is the block the opening
+  // is cut out from below.
+  block(-box.halfU, box.halfU, crownZ, topZ)
+
+  // The head of the opening: a soffit under the curve, and the spandrel wall
+  // between that curve and the flat underside of the attic, on both faces.
+  for (let i = 0; i < ARCH_SEGMENTS; i++) {
+    const t0 = (i / ARCH_SEGMENTS) * Math.PI
+    const t1 = ((i + 1) / ARCH_SEGMENTS) * Math.PI
+    const a0 = -Math.cos(t0) * openHalf
+    const a1 = -Math.cos(t1) * openHalf
+    const z0 = springZ + Math.sin(t0) * openHalf
+    const z1 = springZ + Math.sin(t1) * openHalf
+
+    // Soffit: the curved underside, seen from inside the passage.
+    quad(
+      at(a0, -box.halfV), at(a1, -box.halfV), at(a1, box.halfV), at(a0, box.halfV),
+      z0, z1, z1, z0, 0, 0, -1, 0.62,
+    )
+    // Spandrel on each face, filling up to the crown.
+    for (const side of [-1, 1] as const) {
+      const t = side * box.halfV
+      const ex = box.v.x * side
+      const ey = box.v.y * side
+      quad(
+        at(a0, t), at(a1, t), at(a1, t), at(a0, t),
+        z0, z1, crownZ, crownZ,
+        ex, ey, 0, wallShade(ex, ey),
+      )
+    }
+  }
+
+  // The reveals: the flat side walls of the passage below the springing.
+  for (const side of [-1, 1] as const) {
+    const a = side * openHalf
+    const p0 = at(a, -box.halfV)
+    const p1 = at(a, box.halfV)
+    // Facing INTO the opening, which is back towards the centre.
+    const nx = -box.u.x * side
+    const ny = -box.u.y * side
+    quad(p0, p1, p1, p0, baseZ, baseZ, springZ, springZ, nx, ny, 0, 0.7)
   }
 }
 

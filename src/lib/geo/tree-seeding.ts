@@ -139,6 +139,91 @@ export function principalAxis(ring: ReadonlyArray<Vec2>): { cos: number; sin: nu
   return { cos, sin }
 }
 
+// ── Ground that is already taken ───────────────────────────────────────────────
+
+/**
+ * Cell size of the keep-out index, metres.
+ *
+ * A city block is tens of metres and a lake is hundreds, so a cell of this size
+ * holds a handful of rings almost everywhere. It only has to beat "test every
+ * building in the box for every tree", which on a real site is 1942 × 4670.
+ */
+const KEEP_OUT_CELL_M = 24
+
+/**
+ * Rings a ring is too big for. Above this many cells a polygon is tested for
+ * every candidate instead of being written into the index — a park-sized lake
+ * would otherwise fill thousands of cells with the same number.
+ */
+const KEEP_OUT_MAX_CELLS = 400
+
+/**
+ * "Is there already something here?" — built once per site, asked once per tree.
+ *
+ * The seeder plants inside a polygon and nothing else. That is right for a wood,
+ * and wrong for every park in every city: OSM draws `leisure=park` around the
+ * WHOLE park, lake and buildings included, and then draws the lake and the
+ * buildings on top of it. Planting the park's own outline therefore grows trees
+ * out of the water and through the roofs — measured on Parc de la Ciutadella,
+ * 83 trees standing in the lakes (31 of them in the big one) and 300 growing
+ * through buildings. A palm in the middle of a lake is the single most damning
+ * thing a generated scene can show, because everyone can see it is wrong.
+ *
+ * So the canopy is given the ground that is already spoken for. Water and
+ * buildings, not roads: street trees line carriageways everywhere and a canopy
+ * that refused to cross one would strip every avenue in the city.
+ */
+export function buildKeepOut(
+  rings: ReadonlyArray<ReadonlyArray<Vec2>>,
+  cellM = KEEP_OUT_CELL_M,
+): (x: number, y: number) => boolean {
+  const usable = rings.filter((r) => r.length >= 3)
+  if (usable.length === 0) return () => false
+
+  const cells = new Map<string, number[]>()
+  const always: number[] = []
+  const boxes: Array<{ minX: number; minY: number; maxX: number; maxY: number }> = []
+
+  usable.forEach((ring, i) => {
+    let minX = Infinity; let minY = Infinity
+    let maxX = -Infinity; let maxY = -Infinity
+    for (const p of ring) {
+      if (p.x < minX) minX = p.x
+      if (p.y < minY) minY = p.y
+      if (p.x > maxX) maxX = p.x
+      if (p.y > maxY) maxY = p.y
+    }
+    boxes.push({ minX, minY, maxX, maxY })
+
+    const x0 = Math.floor(minX / cellM)
+    const x1 = Math.floor(maxX / cellM)
+    const y0 = Math.floor(minY / cellM)
+    const y1 = Math.floor(maxY / cellM)
+    if ((x1 - x0 + 1) * (y1 - y0 + 1) > KEEP_OUT_MAX_CELLS) { always.push(i); return }
+    for (let cy = y0; cy <= y1; cy++) {
+      for (let cx = x0; cx <= x1; cx++) {
+        const key = `${cx},${cy}`
+        const bucket = cells.get(key)
+        if (bucket) bucket.push(i)
+        else cells.set(key, [i])
+      }
+    }
+  })
+
+  return (x: number, y: number): boolean => {
+    const bucket = cells.get(`${Math.floor(x / cellM)},${Math.floor(y / cellM)}`)
+    for (const list of [bucket, always]) {
+      if (!list) continue
+      for (const i of list) {
+        const b = boxes[i]
+        if (x < b.minX || x > b.maxX || y < b.minY || y > b.maxY) continue
+        if (inside(x, y, usable[i])) return true
+      }
+    }
+    return false
+  }
+}
+
 // ── Budget ─────────────────────────────────────────────────────────────────────
 
 /**
@@ -233,6 +318,12 @@ export interface SeedOptions {
   density?: number
   /** Hard stop for one region, so a pathological ring cannot run away. */
   maxTrees?: number
+  /**
+   * Ground already occupied by something else — see `buildKeepOut`. A tree that
+   * lands here is dropped rather than moved: nudging it would pile a ring of
+   * trees around every lake, and the gap where a lake is IS the right picture.
+   */
+  blocked?: ((x: number, y: number) => boolean) | null
 }
 
 /**
@@ -312,6 +403,7 @@ export function seedRegion(region: SeedRegion, opts: SeedOptions = {}): SeededTr
 
       if (x < minX || x > maxX || y < minY || y > maxY) continue
       if (!inside(x, y, ring)) continue
+      if (opts.blocked?.(x, y)) continue
 
       const d = distanceToEdge(x, y, ring)
       const edge = edgeBand > 0 ? Math.max(0, Math.min(1, 1 - d / edgeBand)) : 0
@@ -389,10 +481,15 @@ export function seedFringe(region: SeedRegion, opts: SeedOptions = {}): SeededTr
       // asymmetry is what makes it read as overhang rather than as a wall.
       const across = (variate(id, 21) - 0.65) * size.radiusM * 1.6
       const along = (variate(id, 22) - 0.5) * step * 0.6
+      const fx = a.x + ux * (d + along) - uy * across
+      const fy = a.y + uy * (d + along) + ux * across
+      // The margin straddles the boundary on purpose, which is exactly how it
+      // reaches over a lakeshore or onto a roof if nothing stops it.
+      if (opts.blocked?.(fx, fy)) { carry = d + step - len; continue }
       out.push({
         id,
-        x: a.x + ux * (d + along) - uy * across,
-        y: a.y + uy * (d + along) + ux * across,
+        x: fx,
+        y: fy,
         // Margin growth is low and bushy whatever the mass behind it is.
         heightM: Math.min(size.heightM, 2.4) * (0.7 + variate(id, 23) * 0.7),
         radiusM: Math.max(1, size.radiusM * 0.42) * (0.75 + variate(id, 24) * 0.6),

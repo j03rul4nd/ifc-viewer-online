@@ -1263,6 +1263,60 @@ describe('trees grown from greenery polygons', () => {
     expect(blocked.count).toBe(1)
   })
 
+  it('leaves the lake in the middle of the park alone', () => {
+    // What this is about: OSM draws `leisure=park` around the WHOLE park — lake,
+    // pavilions and all — and then draws the lake on top of it. Planting the
+    // park's own outline therefore grows trees out of the water. Measured on
+    // Parc de la Ciutadella: 83 trees standing in the lakes, 31 of them in the
+    // big one, and a palm in the middle of a lake is the single most damning
+    // thing a generated scene can show.
+    const park = wood('p1', 260, 'park')
+    // A lake covering the middle of that park, as its own water feature.
+    const lake: OsmFeature = {
+      id: 'lake', kind: 'water',
+      ring: ringAround(LAT + 60 / 111_132, LON + 60 / (111_320 * Math.cos((LAT * Math.PI) / 180)), 90),
+      height: { heightM: 0, minHeightM: 0, estimated: true },
+      style: { roofShape: 'flat', roofHeightM: 0 },
+    }
+
+    const dry = buildTreeLayer([park], OPTS)!
+    const withLake = buildTreeLayer([park, lake], OPTS)!
+    expect(withLake.count).toBeLessThan(dry.count)
+
+    // And specifically: nothing standing inside the water.
+    const ringN = lake.ring!.map((p) => latLonToNormalized(p.lat, p.lon))
+    const insideLake = (nx: number, ny: number): boolean => {
+      let hit = false
+      for (let i = 0, j = ringN.length - 1; i < ringN.length; j = i++) {
+        const a = ringN[i]; const b = ringN[j]
+        if ((a.ny > ny) !== (b.ny > ny)
+          && nx < ((b.nx - a.nx) * (ny - a.ny)) / (b.ny - a.ny) + a.nx) hit = !hit
+      }
+      return hit
+    }
+    const m = new THREE.Matrix4()
+    let inWater = 0
+    for (const mesh of meshes(withLake.object)) {
+      for (let i = 0; i < mesh.count; i++) {
+        mesh.getMatrixAt(i, m)
+        if (insideLake(m.elements[12], m.elements[13])) inWater++
+      }
+    }
+    expect(inWater, 'trees standing in the lake').toBe(0)
+  })
+
+  it('does not grow a wood through the pavilion standing in it', () => {
+    const park = wood('p2', 260, 'park')
+    const pavilion: OsmFeature = {
+      id: 'b1', kind: 'building',
+      ring: ringAround(LAT + 60 / 111_132, LON, 60),
+      height: { heightM: 12, minHeightM: 0, estimated: false },
+      style: { roofShape: 'flat', roofHeightM: 0 },
+    }
+    expect(buildTreeLayer([park, pavilion], OPTS)!.count)
+      .toBeLessThan(buildTreeLayer([park], OPTS)!.count)
+  })
+
   it('sits every tree on the ground under it, not on one height per polygon', () => {
     // A wood on a hillside is on the hillside.
     const built = buildTreeLayer([wood('w1')], {
