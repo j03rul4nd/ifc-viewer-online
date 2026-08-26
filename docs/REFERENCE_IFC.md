@@ -10,6 +10,7 @@ we control:
 | **Poblenou Pavilion** — `public/models/poblenou/*.ifc` | 3 federated files, 349 elements, 695 KB |
 | **Poblenou site survey** — `public/models/poblenou/poblenou-site-scan.las` | 150 k points, 3.7 MB |
 | **Torre Poblenou** — `public/models/torre-poblenou/*.ifc` | 1 file, 1,930 elements, 3.5 MB |
+| **Ciutadella Pavilion** — `public/models/ciutadella/*.ifc` | 1 file, 137 elements, 240 KB |
 
 Every IFC here is IFC4, scores **100 / 100 with zero issues** on our own validator,
 and is asserted entity-by-entity by a test that reads it through web-ifc — the parser
@@ -251,6 +252,59 @@ street from the Pavilion, with the OpenStreetMap neighbourhood around them:
 /?model=/models/torre-poblenou/BCN-IVO-ZZ-XX-M3-Z-0002.ifc,/models/poblenou/BCN-IVO-ZZ-XX-M3-A-0001.ifc&map=terrain,buildings
 ```
 
+## Ciutadella Pavilion — the one that exists for the map
+
+`public/models/ciutadella/BCN-IVO-ZZ-XX-M3-Z-0003.ifc` — **137 elements, 240 KB,
+IFC4, 100/100 with no issues.** An exhibition pavilion standing on the Passeig de
+Lluís Companys, 80 m from the Arc de Triomf.
+
+Every other reference model is about the FILE. This one is about the
+SURROUNDINGS. It is what to open when somebody asks what map mode is:
+
+- **Somewhere worth looking.** The Arc is 80 m up the promenade and the Parc de
+  la Ciutadella starts 200 m down it — a monument, an avenue of plane trees, a
+  lake and a zoo, all inside the ±700 m box the surroundings are fetched in. A
+  demo on an anonymous plot exercises the same code and shows nothing.
+- **Turned the way the street is.** The promenade runs at **-45.5°** to the map
+  grid and the pavilion is authored on that axis through a real
+  `IfcMapConversion`. A model placed by latitude alone lands square to north,
+  which on this street is unmistakably wrong — that difference IS the argument
+  for georeferencing, and this is the file that shows it.
+- **Small enough to read.** 24 × 12 m on a 4.0 × 6.0 m grid: a foyer under a
+  mezzanine gallery, a double-height hall beyond it, a gabled standing-seam roof
+  and glazed long facades, on a granite apron.
+
+**Where the plot came from**, because "next to the Arc" is not a coordinate. The
+real Overpass reply for the site (7,267 elements) was searched for the position
+on the promenade axis where a 24 × 12 m footprint has the most room, measuring
+every candidate against every mapped building and every carriageway edge. The
+answer: 80 m from the Arc, dead centre of the esplanade, **50 m clear of the
+nearest building and 18 m clear of the nearest carriageway**.
+
+The rotation was not typed in either. It is the Arc de Triomf's own passage axis
+— the short axis of the minimum-area rectangle of its mapped outline, 28.1 ×
+12.6 m — cross-checked against the 87 segments of the promenade longer than 20 m,
+which run between -45.2° and -46.1°.
+
+### What the app's clash rule costs a pitched roof
+
+The rule compares **axis-aligned boxes**, so a roof's box covers its whole plan
+from eaves to ridge: anything reaching above the eaves *anywhere under the roof*
+is reported as inside it. That rules out a chimney, a rooflight, a parapet gable
+— and, the first time round, it ruled out closing the gable at all, which left a
+triangular hole at each end that reads as something nobody finished.
+
+The arrangement that closes the gable and still scores 100 is to stop the roof
+**flush with the gable walls** and overhang only the long sides. The wall and the
+roof then share no plan at all, so no box can overlap, and the wall's top edge is
+cut on the roof's own slope so the two meet on a line rather than leaving a wedge
+of daylight. Worth knowing before designing the next one.
+
+Perimeter columns and beams sit **entirely inside** their grid line, for the
+reason the tower taught: centred on the line, half the section hangs over the
+slab edge and straight through the facade hung from it. On this pavilion that was
+54 clashes between the frame and the glazing, all of them the same mistake.
+
 ## Driving the demo
 
 All four Poblenou files together — three disciplines federated, on the basemap
@@ -292,6 +346,10 @@ npm run district && npm run site-scan
 
 ```bash
 npm run tower
+```
+
+```bash
+npm run ciutadella
 ```
 
 The IFC builds need `blender` on PATH with the Bonsai extension installed (see
