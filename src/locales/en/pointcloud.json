@@ -40,6 +40,13 @@
     "simulatedBadge": "SIMULATED REPLAY",
     "ifcLoaded": "IFC loaded",
     "description": "A finite scan timeline aligned with its companion IFC. Scrub, pause, change speed and jump to the latest frame.",
+    "showcaseSelector": "Choose an IFC and temporal LiDAR example",
+    "showcases": {
+      "pavilion": { "name": "Operations pavilion", "short": "Baseline scan replay", "description": "A compact scan timeline aligned with its pavilion IFC, including a moving inspection cart." },
+      "warehouse": { "name": "Moving warehouse", "short": "Forklift + autonomous cart", "description": "Dense warehouse returns with a moving forklift, autonomous cart and scan trails aligned with racks and structure." },
+      "construction": { "name": "4D construction progress", "short": "Phases + deviation cluster", "description": "Structural returns appear by phase while a panel is lifted; a red shifted-column cluster demonstrates spatial deviation review." },
+      "tunnel": { "name": "Mobile tunnel inspection", "short": "Trolley + scan fan", "description": "Dense services, a moving inspection trolley, scan fan and localized wall-condition cluster in a linear utility corridor." }
+    },
     "start": "Load IFC + start replay",
     "loading": "Preparing IFC + replay…",
     "play": "Play",

@@ -40,6 +40,13 @@
     "simulatedBadge": "REPLAY SIMULAT",
     "ifcLoaded": "IFC carregat",
     "description": "Una línia de temps d’escaneig alineada amb el seu IFC. Desplaça’t, pausa, canvia la velocitat i salta a l’últim fotograma.",
+    "showcaseSelector": "Tria un exemple d’IFC i LiDAR temporal",
+    "showcases": {
+      "pavilion": { "name": "Pavelló d’operacions", "short": "Replay d’escaneig base", "description": "Una línia temporal compacta alineada amb el seu IFC i un carro d’inspecció en moviment." },
+      "warehouse": { "name": "Magatzem en moviment", "short": "Carretó + vehicle autònom", "description": "Retorns densos de magatzem amb carretó, vehicle autònom i traces alineades amb prestatgeries i estructura." },
+      "construction": { "name": "Progrés d’obra 4D", "short": "Fases + zona desviada", "description": "L’estructura apareix per fases mentre s’eleva un panell; un pilar desplaçat en vermell mostra la revisió de desviacions." },
+      "tunnel": { "name": "Inspecció mòbil de túnel", "short": "Carro + ventall LiDAR", "description": "Serveis densos, carro mòbil, ventall d’escaneig i una zona localitzada al mur del corredor tècnic." }
+    },
     "start": "Carrega IFC + inicia replay",
     "loading": "Preparant IFC + replay…",
     "play": "Reprodueix",

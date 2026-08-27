@@ -64,6 +64,7 @@ const TORRE = `${import.meta.env.BASE_URL}models/torre-poblenou`
 const CIUTADELLA = `${import.meta.env.BASE_URL}models/ciutadella`
 const CRAS = `${import.meta.env.BASE_URL}models/cras`
 const VIDEO_DEMO = `${import.meta.env.BASE_URL}models/video-demo`
+const REALTIME_LIDAR = `${import.meta.env.BASE_URL}models/realtime-lidar`
 
 export const DEMO_MODELS: DemoModel[] = [
   // ── Reference ────────────────────────────────────────────────────────────
@@ -113,6 +114,54 @@ export const DEMO_MODELS: DemoModel[] = [
     approximateSize: '21 KB',
     sizeBytes: 21_034,
     thumbnail: `${VIDEO_DEMO}/operations-pavilion-poster.jpg`,
+    featured: true,
+  },
+  {
+    id: 'warehouse-operations-lidar',
+    name: 'Warehouse Operations — IFC + LiDAR',
+    description:
+      'A warehouse reference model with racks and circulation lanes, paired with a moving forklift and autonomous-cart LiDAR replay.',
+    category: 'Reference',
+    fileName: 'IVO-Warehouse-Operations.ifc',
+    ifcUrl: `${REALTIME_LIDAR}/IVO-Warehouse-Operations.ifc`,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-realtime-lidar-showcases.py',
+    sourceLabel: 'Authored with Blender + Bonsai',
+    schema: 'IFC4',
+    approximateSize: '47 KB',
+    sizeBytes: 48_349,
+    featured: true,
+  },
+  {
+    id: 'construction-progress-lidar',
+    name: 'Construction Progress — IFC + LiDAR',
+    description:
+      'A structural frame for phased progress review, including a moving lifted panel and a deliberately shifted as-built return cluster.',
+    category: 'Reference',
+    fileName: 'IVO-Construction-Progress.ifc',
+    ifcUrl: `${REALTIME_LIDAR}/IVO-Construction-Progress.ifc`,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-realtime-lidar-showcases.py',
+    sourceLabel: 'Authored with Blender + Bonsai',
+    schema: 'IFC4',
+    approximateSize: '38 KB',
+    sizeBytes: 39_025,
+    featured: true,
+  },
+  {
+    id: 'utility-tunnel-lidar',
+    name: 'Utility Tunnel — IFC + Mobile LiDAR',
+    description:
+      'A dense linear-services reference for a moving inspection trolley, scan fan and localized wall-condition replay.',
+    category: 'Reference',
+    fileName: 'IVO-Utility-Tunnel.ifc',
+    ifcUrl: `${REALTIME_LIDAR}/IVO-Utility-Tunnel.ifc`,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-realtime-lidar-showcases.py',
+    sourceLabel: 'Authored with Blender + Bonsai',
+    schema: 'IFC4',
+    approximateSize: '20 KB',
+    sizeBytes: 20_300,
     featured: true,
   },
   {

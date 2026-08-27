@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-export type SpatialDemoId = 'poblenou-scan-ifc' | 'pavilion-lidar-replay' | 'pavilion-video-terrain'
+export type SpatialDemoId =
+  | 'poblenou-scan-ifc'
+  | 'pavilion-lidar-replay'
+  | 'warehouse-lidar-replay'
+  | 'construction-lidar-replay'
+  | 'tunnel-lidar-replay'
+  | 'pavilion-video-terrain'
 
 interface SpatialMediaDemoProps {
   demo: SpatialDemoId
@@ -37,6 +43,24 @@ const DEMOS: Record<SpatialDemoId, {
     fileName: 'IVO-Operations-Pavilion.ifc',
     command: 'ifcviewer:start-pointcloud-replay',
   },
+  'warehouse-lidar-replay': {
+    model: 'models/realtime-lidar/IVO-Warehouse-Operations.ifc',
+    fileName: 'IVO-Warehouse-Operations.ifc',
+    command: 'ifcviewer:start-pointcloud-replay',
+    commandPayload: { replayId: 'warehouse-operations' },
+  },
+  'construction-lidar-replay': {
+    model: 'models/realtime-lidar/IVO-Construction-Progress.ifc',
+    fileName: 'IVO-Construction-Progress.ifc',
+    command: 'ifcviewer:start-pointcloud-replay',
+    commandPayload: { replayId: 'construction-progress' },
+  },
+  'tunnel-lidar-replay': {
+    model: 'models/realtime-lidar/IVO-Utility-Tunnel.ifc',
+    fileName: 'IVO-Utility-Tunnel.ifc',
+    command: 'ifcviewer:start-pointcloud-replay',
+    commandPayload: { replayId: 'utility-tunnel' },
+  },
   'pavilion-video-terrain': {
     model: 'models/video-demo/IVO-Operations-Pavilion.ifc',
     fileName: 'IVO-Operations-Pavilion.ifc',
@@ -72,7 +96,7 @@ export default function SpatialMediaDemo({
     if (typeof window === 'undefined') return '#'
     const url = new URL(BASE, window.location.origin)
     url.searchParams.set('embed', '1')
-    url.searchParams.set('ui', 'minimal')
+    url.searchParams.set("ui", "minimal")
     url.searchParams.set('validate', '0')
     url.searchParams.set('model', absoluteAsset(config.model))
     url.searchParams.set('name', config.fileName)
@@ -103,7 +127,7 @@ export default function SpatialMediaDemo({
 
       if (message.type === 'model-loaded' && !commandSentRef.current) {
         commandSentRef.current = true
-        setPhase('loading-media')
+        setPhase("loading-media")
         const payload = { ...config.commandPayload }
         if (typeof payload.url === 'string') payload.url = absoluteAsset(payload.url)
         frameRef.current?.contentWindow?.postMessage({

@@ -107,6 +107,24 @@ const REAL_CAPTURE_BY_KEY = {
     badge: { en: 'ACTUAL IFC VIEWER CAPTURE', es: 'CAPTURA REAL DEL VISOR IFC' },
     shortTitle: 'IFC + 3D VIDEO',
   },
+  'warehouse-ifc-moving-lidar-digital-twin': {
+    source: 'docs/images/warehouse-ifc-moving-lidar-real-viewer.png',
+    publicCopy: 'warehouse-ifc-moving-lidar-real-viewer.png',
+    badge: { en: 'ACTUAL VIEWER · SIMULATED MOTION', es: 'VISOR REAL · MOVIMIENTO SIMULADO' },
+    shortTitle: 'WAREHOUSE IFC + LIDAR',
+  },
+  'construction-progress-ifc-temporal-point-cloud': {
+    source: 'docs/images/construction-progress-ifc-lidar-real-viewer.png',
+    publicCopy: 'construction-progress-ifc-lidar-real-viewer.png',
+    badge: { en: 'ACTUAL VIEWER · 4D REPLAY', es: 'VISOR REAL · REPLAY 4D' },
+    shortTitle: '4D IFC + POINT CLOUD',
+  },
+  'utility-tunnel-ifc-mobile-lidar-inspection': {
+    source: 'docs/images/utility-tunnel-ifc-lidar-real-viewer.png',
+    publicCopy: 'utility-tunnel-ifc-lidar-real-viewer.png',
+    badge: { en: 'ACTUAL VIEWER · MOBILE LIDAR REPLAY', es: 'VISOR REAL · REPLAY LIDAR MÓVIL' },
+    shortTitle: 'TUNNEL IFC + MOBILE LIDAR',
+  },
 }
 
 // ── HTML template ──────────────────────────────────────────────────────────────
@@ -276,14 +294,15 @@ for (const post of posts) {
 
 // Keep the previously published shared URLs alive, but replace their former
 // conceptual artwork with covers made from the actual captures above.
-for (const [translationKey, capture] of Object.entries(REAL_CAPTURE_BY_KEY)) {
+const LEGACY_BASE_BY_KEY = {
+  'ifc-point-cloud-scan-to-bim': 'ifc-point-cloud-scan-to-bim',
+  'real-time-lidar-web-mcap': 'real-time-lidar-digital-twin',
+  'ifc-video-3d-terrain': 'ifc-video-3d-terrain',
+}
+for (const [translationKey, legacyBase] of Object.entries(LEGACY_BASE_BY_KEY)) {
+  const capture = REAL_CAPTURE_BY_KEY[translationKey]
   const post = ALL_POSTS.find((candidate) => candidate.translationKey === translationKey)
-  if (!post) continue
-  const legacyBase = translationKey === 'ifc-point-cloud-scan-to-bim'
-    ? 'ifc-point-cloud-scan-to-bim'
-    : translationKey === 'real-time-lidar-web-mcap'
-      ? 'real-time-lidar-digital-twin'
-      : 'ifc-video-3d-terrain'
+  if (!post || !capture) continue
   for (const [width, height] of [[1600, 900], [1200, 900], [1200, 1200], [800, 450]]) {
     await renderImage(
       browser,

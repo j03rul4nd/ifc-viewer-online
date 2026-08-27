@@ -586,6 +586,19 @@ export default function App() {
     [embedChrome, clientMode],
   )
 
+  // Embedded presets are a contract, not a suggestion inherited from the
+  // visitor's last full-viewer session. The column layout is intentionally
+  // remembered for the normal app, but that meant an article iframe opened
+  // with the previously persisted validation drawer covering the entire live
+  // 3D example even though `ui=minimal` resolves to `openPanel: false`.
+  // `setState` changes this isolated runtime without rewriting the visitor's
+  // saved full-viewer preference.
+  useEffect(() => {
+    if (embedChrome.embed) {
+      useUIStore.setState({ validationPanelOpen: embedChrome.openPanel })
+    }
+  }, [embedChrome])
+
   // The rail's vocabulary. Icons live here rather than in the hook so the hook
   // imports no JSX and stays testable as plain logic.
   const railIcons = useMemo(() => ({
@@ -1115,8 +1128,8 @@ export default function App() {
   // gallery model and goes through the normal loader/cache pipeline; the video
   // may already be playing while the IFC finishes parsing because it owns an
   // independent world-space transform.
-  const handleLoadVideoCompanion = async (): Promise<void> => {
-    const demo = DEMO_MODELS.find((model) => model.id === 'operations-pavilion-video')
+  const handleLoadVideoCompanion = async (demoModelId = 'operations-pavilion-video'): Promise<void> => {
+    const demo = DEMO_MODELS.find((model) => model.id === demoModelId)
     if (!demo || sceneModels.some((model) => model.fileName === demo.fileName)) return
     try {
       const file = await fetchDemoModel(demo)
@@ -1135,7 +1148,7 @@ export default function App() {
         handleFileLoad(file)
       })
     } catch (error) {
-      console.warn('[App] Video companion IFC unavailable:', error)
+      console.warn('[App] Spatial companion IFC unavailable:', error)
       toast(tToasts('model.demoUnavailable'), 'warning')
       throw error
     }
@@ -1806,7 +1819,10 @@ export default function App() {
         case 'ifcviewer:start-pointcloud-replay':
           void respond(async () => {
             await dispatchPanelCommand('sdk:pointcloud',
-              { action: 'replay' },
+              {
+                action: 'replay',
+                replayId: typeof msg.replayId === 'string' ? msg.replayId : undefined,
+              },
               { unavailable: 'Point cloud replay is not enabled in this build', timeoutMs: 120_000 })
             return { ok: true }
           })
@@ -2558,7 +2574,6 @@ export default function App() {
                     <React.Suspense fallback={null}>
                       <PointCloudPanel
                         viewerApiRef={viewerApiRef}
-                        companionLoaded={sceneModels.some((model) => model.fileName === 'IVO-Operations-Pavilion.ifc')}
                         onLoadCompanionModel={handleLoadVideoCompanion}
                       />
                     </React.Suspense>

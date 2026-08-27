@@ -38,7 +38,13 @@ export type ContentBlock =
     }
   | {
       type: 'spatial-demo'
-      demo: 'poblenou-scan-ifc' | 'pavilion-lidar-replay' | 'pavilion-video-terrain'
+      demo:
+        | 'poblenou-scan-ifc'
+        | 'pavilion-lidar-replay'
+        | 'warehouse-lidar-replay'
+         | 'construction-lidar-replay'
+         | 'tunnel-lidar-replay'
+         | 'pavilion-video-terrain'
       title: string
       description: string
       poster: string
@@ -117,6 +123,8 @@ export interface BlogPost {
   featured?: boolean
   heroImage?: string
   heroAlt?: string
+  /** Attribution used for the primary article image in structured data. */
+  heroCredit?: string
   /** High-resolution 16:9, 4:3 and 1:1 variants used by Article structured data. */
   heroImageVariants?: Array<{ src: string; width: number; height: number }>
   /** Connects translated versions for hreflang generation. */
@@ -7296,11 +7304,372 @@ Archive report → Upload to CDE`,
     ],
   },
 
+  {
+    slug: 'warehouse-ifc-moving-lidar-digital-twin',
+    title: 'Warehouse Digital Twin: IFC + Moving LiDAR in the Browser',
+    seoTitle: 'Warehouse IFC + Moving LiDAR Digital Twin Demo',
+    excerpt: 'See a forklift and an autonomous cart move through a dense warehouse point cloud while the IFC stays available as the designed spatial reference.',
+    seoDescription: 'Interactive warehouse digital twin demo with IFC, moving LiDAR point clouds, timeline, MCAP export and downloadable IFC + PLY examples.',
+    date: '2026-08-27',
+    readTimeMin: 8,
+    category: 'Digital Twins',
+    categorySlug: 'digital-twins',
+    author: 'IFC Viewer Team',
+    lang: 'en',
+    translationKey: 'warehouse-ifc-moving-lidar-digital-twin',
+    heroImage: 'blog/images/warehouse-ifc-moving-lidar-digital-twin-1600x900.jpg',
+    heroAlt: 'Actual IFC Viewer Online warehouse scene with moving orange forklift returns, cyan autonomous cart points and a translucent IFC reference',
+    heroImageVariants: [
+      { src: 'blog/images/warehouse-ifc-moving-lidar-digital-twin-1600x900.jpg', width: 1600, height: 900 },
+      { src: 'blog/images/warehouse-ifc-moving-lidar-digital-twin-1200x900.jpg', width: 1200, height: 900 },
+      { src: 'blog/images/warehouse-ifc-moving-lidar-digital-twin-1200x1200.jpg', width: 1200, height: 1200 },
+    ],
+    keywords: ['warehouse digital twin', 'IFC LiDAR warehouse', 'moving point cloud web', 'forklift LiDAR visualization', 'MCAP IFC viewer'],
+    faqs: [
+      { q: 'Is the warehouse LiDAR captured by a physical sensor?', a: 'No. The returns and motion are deterministic synthetic data, clearly labelled in the interface. The IFC loading, alignment, binary transport, bounded buffering, timeline and GPU updates use the real viewer path.' },
+      { q: 'Can I download the warehouse files?', a: 'Yes. The compact IFC4 reference and a representative binary PLY snapshot are public assets; the running demo can also generate an indexed MCAP recording locally.' },
+      { q: 'Why use points instead of a normal warehouse video?', a: 'Points retain XYZ, intensity and classification. Users can orbit, inspect spatial relationships and compare motion with racks and structure instead of seeing only fixed camera pixels.' },
+    ],
+    content: [
+      { type: 'p', text: 'Warehouse operations are spatial and temporal at once. A model describes fixed racks, slabs and columns; operational evidence describes vehicles, occupied lanes and changing conditions. An IFC plus a temporal point cloud keeps both layers in one coordinate frame without turning the scan into a flat video.' },
+      { type: 'p', text: 'The example below is designed for a trade-fair screen: it starts from one button, works without venue Wi-Fi and makes movement legible immediately. It is also deliberately honest. The moving returns are simulated from the same dimension table as the IFC, so this is a workflow and performance demonstration rather than a claim about a connected sensor.' },
+      { type: 'h2', text: 'Try the moving warehouse live' },
+      {
+        type: 'spatial-demo',
+        demo: 'warehouse-lidar-replay',
+        title: 'Warehouse operations — IFC + moving LiDAR',
+        description: 'Interactive 18-second replay with roughly 39,000 visible points, a moving forklift, an autonomous cart and the matching IFC4 warehouse.',
+        poster: 'blog/images/warehouse-ifc-moving-lidar-real-viewer.png',
+        posterAlt: 'Actual product interface showing the moving warehouse LiDAR replay aligned with racks, columns and slabs in its IFC model',
+        launchLabel: 'Start warehouse replay',
+        readyLabel: 'Warehouse replay is running — drag to orbit',
+      },
+      { type: 'h2', text: 'What is actually moving?' },
+      { type: 'p', text: 'The building shell and rack returns remain stable. The forklift, its mast, an autonomous cart, LiDAR rings and short motion trails are rewritten into the same resident typed arrays on every frame. No new Three.js geometry or GPU buffer is allocated during playback.' },
+      {
+        type: 'table',
+        headers: ['Layer', 'Purpose', 'Lifecycle'],
+        rows: [
+          ['IFC4 model', 'Designed warehouse context and inspectable objects', 'Loaded once; translucent during replay'],
+          ['Static returns', 'Floor, envelope, columns and rack surfaces', 'One deterministic catalogue'],
+          ['Moving returns', 'Forklift, autonomous cart, scan rings and trails', 'Updated at 12 FPS in one bounded buffer'],
+          ['MCAP recording', 'Portable timestamped example for adapters', 'Generated locally at 2 FPS on demand'],
+        ],
+      },
+      { type: 'h2', text: 'Download the reproducible pair' },
+      { type: 'p', text: ['Use the ', { text: 'warehouse IFC4 reference', href: '/models/realtime-lidar/IVO-Warehouse-Operations.ifc' }, ' with the ', { text: 'representative PLY snapshot', href: '/models/realtime-lidar/warehouse-operations-snapshot.ply' }, '. Both originate from the same declared dimensions. The PLY header states that it is synthetic and names its companion IFC.'] },
+      { type: 'callout', variant: 'info', text: 'A static PLY is useful for testing alignment and styling. Movement exists only in the temporal replay or the generated MCAP sequence; the article never presents a still file as a live sensor feed.' },
+      { type: 'h2', text: 'Performance choices for a useful operations view' },
+      { type: 'ul', items: ['Keep the frame capacity fixed so a slow GPU cannot cause memory growth.', 'Prefer newest-valid-frame-wins to an ever-growing queue; operational latency matters more than replaying stale frames.', 'Filter and voxelize at the edge for real deployments, then send only the attributes the user can inspect.', 'Pause hidden sources and reuse materials, geometry and typed arrays.', 'Keep the IFC independently visible so users can move from an impressive animation to an actual spatial question.'] },
+      { type: 'h2', text: 'From this demo to a real warehouse feed' },
+      { type: 'p', text: 'A physical deployment needs sensor timestamps, a calibrated sensor-to-site transform, edge filtering and an adapter into the same frame contract. The user interface should then replace the simulated badge with a source status only when those facts are known. WebSocket or WebTransport is the delivery choice; neither fixes poor registration or an unbounded browser queue.' },
+      { type: 'p', text: ['For the lower-level packet and buffering design, see ', { text: 'Real-Time LiDAR in a Web Digital Twin', to: 'real-time-lidar-web-digital-twin-mcap' }, '. For a measured static comparison, start with ', { text: 'IFC + point-cloud Scan-to-BIM alignment', to: 'ifc-point-cloud-browser-scan-to-bim' }, '.'] },
+    ],
+  },
+
+  {
+    slug: '4d-construction-progress-ifc-temporal-point-cloud',
+    title: '4D Construction Progress: IFC + Temporal Point Cloud Demo',
+    seoTitle: '4D Construction Progress with IFC + Point Clouds',
+    excerpt: 'Scrub through structural phases, follow a lifted panel and reveal a deliberately shifted column return cluster against the IFC reference.',
+    seoDescription: 'Live 4D construction progress demo combining IFC and a temporal point cloud, with deviation visualization and downloadable IFC, PLY and MCAP examples.',
+    date: '2026-08-27',
+    readTimeMin: 9,
+    category: 'Digital Twins',
+    categorySlug: 'digital-twins',
+    author: 'IFC Viewer Team',
+    lang: 'en',
+    translationKey: 'construction-progress-ifc-temporal-point-cloud',
+    heroImage: 'blog/images/construction-progress-ifc-temporal-point-cloud-1600x900.jpg',
+    heroAlt: 'Actual IFC Viewer Online construction scene with phased point-cloud structure, moving lifted panel and red shifted-column deviation returns',
+    heroImageVariants: [
+      { src: 'blog/images/construction-progress-ifc-temporal-point-cloud-1600x900.jpg', width: 1600, height: 900 },
+      { src: 'blog/images/construction-progress-ifc-temporal-point-cloud-1200x900.jpg', width: 1200, height: 900 },
+      { src: 'blog/images/construction-progress-ifc-temporal-point-cloud-1200x1200.jpg', width: 1200, height: 1200 },
+    ],
+    keywords: ['4D construction progress', 'IFC temporal point cloud', 'Scan to BIM progress monitoring', 'construction deviation visualization', 'LiDAR IFC timeline'],
+    faqs: [
+      { q: 'Does the red column prove a measured construction defect?', a: 'No. It is an intentionally shifted synthetic return cluster used to demonstrate how a spatial deviation can be communicated. A real deviation needs registered survey evidence and a documented tolerance method.' },
+      { q: 'What makes this different from a construction animation?', a: 'The temporal layer remains XYZ point data with attributes and timestamps. The user can orbit, scrub, compare it with inspectable IFC objects and export an MCAP sequence.' },
+      { q: 'Can the timeline represent weekly scans?', a: 'Yes. The same contract can carry individual epochs rather than 12 FPS frames. For real work, label acquisition time, registration transform, coverage and sampling consistently.' },
+    ],
+    content: [
+      { type: 'p', text: 'A 4D construction view becomes useful when time reveals a decision: what exists now, what is planned next and where the observed geometry no longer agrees with the reference. A cinematic build animation answers none of those questions unless every temporal state remains anchored to inspectable project coordinates.' },
+      { type: 'p', text: 'This browser example activates slab, column, wall and beam returns in phases. A panel moves through a lift path and, late in the sequence, one deliberately shifted column cluster turns red. The scenario is synthetic and labelled; the playback, bounded GPU update and IFC alignment are the same product path used by external temporal adapters.' },
+      { type: 'h2', text: 'Run the 4D progress example' },
+      {
+        type: 'spatial-demo',
+        demo: 'construction-lidar-replay',
+        title: 'Structural progress — IFC + temporal point cloud',
+        description: 'Interactive 20-second sequence with roughly 41,000 visible points, phased structure, a lifted panel and a deliberate deviation cluster.',
+        poster: 'blog/images/construction-progress-ifc-lidar-real-viewer.png',
+        posterAlt: 'Actual product interface showing phased construction point returns and a red shifted column cluster against a translucent IFC structure',
+        launchLabel: 'Start 4D progress replay',
+        readyLabel: 'Progress timeline is running — scrub to inspect phases',
+      },
+      { type: 'h2', text: 'Designed, observed and inferred are different layers' },
+      {
+        type: 'table',
+        headers: ['Layer', 'What it means', 'What it must not imply'],
+        rows: [
+          ['IFC geometry', 'Planned reference and element identity', 'That the element has been installed'],
+          ['Temporal points', 'Observed or simulated spatial returns at a time', 'Automatic acceptance or dimensional compliance'],
+          ['Deviation colour', 'A comparison result under declared assumptions', 'Survey-grade accuracy without registration evidence'],
+          ['Timeline status', 'Playback position or acquisition epoch', 'A live connection unless a source is actually connected'],
+        ],
+      },
+      { type: 'h2', text: 'Download the construction example' },
+      { type: 'p', text: ['Open the ', { text: 'construction IFC4 reference', href: '/models/realtime-lidar/IVO-Construction-Progress.ifc' }, ' beside the ', { text: 'representative construction PLY', href: '/models/realtime-lidar/construction-progress-snapshot.ply' }, '. The source generator and tests keep model dimensions, point bounds and fixed replay capacity reproducible.'] },
+      { type: 'h2', text: 'How to make a real progress timeline defensible' },
+      { type: 'ol', items: ['Preserve the original scan and acquisition timestamp.', 'Register every epoch into one site frame using control, targets or a validated SLAM trajectory.', 'Record coverage and sampling so missing points are not mistaken for missing work.', 'Compare only the relevant IFC elements and publish the tolerance used.', 'Keep human review available before a status becomes an approval or payment event.'] },
+      { type: 'callout', variant: 'warning', text: 'The visual distance between a point and IFC surface is only as trustworthy as the registration transform. A polished red heatmap cannot compensate for unknown units, axes or control error.' },
+      { type: 'h2', text: 'Why the bounded replay matters at a trade fair' },
+      { type: 'p', text: 'The example peaks below a fixed 43,000-point buffer and reuses its typed arrays. That keeps the page responsive while the presenter moves the camera and scrubs the timeline. The same controls expose stable and fault-injected transport so the performance story is visible rather than hidden behind a prerecorded screen capture.' },
+    ],
+  },
+
+  {
+    slug: 'utility-tunnel-ifc-mobile-lidar-inspection',
+    title: 'Tunnel Inspection Digital Twin: IFC + Mobile LiDAR Replay',
+    seoTitle: 'Utility Tunnel IFC + Mobile LiDAR Inspection Demo',
+    excerpt: 'Move an inspection trolley through dense services, visualize its scan fan and localize a changing wall-condition cluster in the IFC corridor.',
+    seoDescription: 'Interactive utility tunnel inspection with IFC and mobile LiDAR replay, dense point clouds, issue localization, MCAP and downloadable IFC + PLY files.',
+    date: '2026-08-27',
+    readTimeMin: 8,
+    category: 'Digital Twins',
+    categorySlug: 'digital-twins',
+    author: 'IFC Viewer Team',
+    lang: 'en',
+    translationKey: 'utility-tunnel-ifc-mobile-lidar-inspection',
+    heroImage: 'blog/images/utility-tunnel-ifc-mobile-lidar-inspection-1600x900.jpg',
+    heroAlt: 'Actual IFC Viewer Online utility tunnel with dense service points, moving inspection trolley, cyan scan fan and localized red wall-condition returns',
+    heroImageVariants: [
+      { src: 'blog/images/utility-tunnel-ifc-mobile-lidar-inspection-1600x900.jpg', width: 1600, height: 900 },
+      { src: 'blog/images/utility-tunnel-ifc-mobile-lidar-inspection-1200x900.jpg', width: 1200, height: 900 },
+      { src: 'blog/images/utility-tunnel-ifc-mobile-lidar-inspection-1200x1200.jpg', width: 1200, height: 1200 },
+    ],
+    keywords: ['tunnel inspection digital twin', 'mobile LiDAR IFC', 'utility tunnel point cloud', 'infrastructure inspection web', 'LiDAR issue localization'],
+    faqs: [
+      { q: 'Is the wall-condition patch an automated diagnosis?', a: 'No. It is a pulsing synthetic point cluster for demonstrating localization and communication. A real diagnosis needs calibrated sensing, a defined measurement method and expert review.' },
+      { q: 'Why is the tunnel cloud denser than the other examples?', a: 'Linear infrastructure has repeated services and long surfaces that need enough samples to remain legible while moving. The demo still caps capacity at about 51,000 points and reuses one GPU buffer.' },
+      { q: 'Can this architecture work with a mobile mapping trolley?', a: 'Yes, if an edge adapter supplies normalized frames, timestamps and a calibrated pose in the IFC/site coordinate system. The browser should receive bounded display data rather than raw sensor bandwidth.' },
+    ],
+    content: [
+      { type: 'p', text: 'Linear infrastructure is difficult to explain with isolated photos. A defect image may show moisture or deformation, but not which wall segment, service crossing or chainage the evidence belongs to. A mobile point-cloud replay preserves the geometry around the observation while IFC keeps the corridor assets identifiable.' },
+      { type: 'p', text: 'The demo combines dense envelope and service returns with a moving inspection trolley, a cyan scan fan and a localized red wall-condition cluster. Everything temporal is synthetic and clearly labelled. It exists to exercise the viewer and give exhibitors a repeatable story without claiming a live device connection.' },
+      { type: 'h2', text: 'Inspect the utility tunnel live' },
+      {
+        type: 'spatial-demo',
+        demo: 'tunnel-lidar-replay',
+        title: 'Utility tunnel — IFC + mobile LiDAR',
+        description: 'Interactive 22-second replay with roughly 49,000 visible points, a moving trolley, scan fan and localized wall-condition cluster.',
+        poster: 'blog/images/utility-tunnel-ifc-lidar-real-viewer.png',
+        posterAlt: 'Actual product interface showing the mobile LiDAR trolley and scan fan inside the matching IFC utility tunnel',
+        launchLabel: 'Start tunnel inspection replay',
+        readyLabel: 'Inspection replay is running — follow the trolley',
+      },
+      { type: 'h2', text: 'A useful inspection scene answers three questions' },
+      { type: 'ol', items: ['Where is the observation in the asset coordinate system?', 'What surrounding geometry and IFC objects give it context?', 'What is measured evidence, what is an algorithmic result and what is an annotation?'] },
+      { type: 'p', text: 'Those questions are why the replay does not replace points with a rendered MP4. Video is excellent for texture and narrative, but a point frame still lets the user change viewpoint, query attributes and compare the observation with the model.' },
+      { type: 'h2', text: 'Download the tunnel pair' },
+      { type: 'p', text: ['Use the ', { text: 'utility tunnel IFC4 model', href: '/models/realtime-lidar/IVO-Utility-Tunnel.ifc' }, ' and the ', { text: 'representative mobile LiDAR PLY', href: '/models/realtime-lidar/utility-tunnel-snapshot.ply' }, ' to test alignment and point styling. Start the live example or export MCAP for movement.'] },
+      {
+        type: 'table',
+        headers: ['Browser responsibility', 'Edge responsibility', 'Project responsibility'],
+        rows: [
+          ['Validate packet, bound memory, render, inspect and report status', 'Synchronize pose, filter/voxelize, normalize attributes and compress', 'Define asset frame, control, tolerances, retention and review workflow'],
+          ['Show source truth and uncertainty', 'Drop corrupt or stale frames', 'Decide what creates an issue or work order'],
+        ],
+      },
+      { type: 'h2', text: 'Performance in a long, repetitive corridor' },
+      { type: 'p', text: 'The static service catalogue is created once. Only the trolley, rings, fan and condition patch are rewritten per frame, below a fixed 51,134-point capacity. The viewer draws within its global point budget and can pause, seek or jump to the latest frame without accumulating historical geometry.' },
+      { type: 'callout', variant: 'tip', text: 'For a real mobile system, send display-ready levels of detail from the edge. A browser is the right place for interaction and comparison, not for ingesting every raw laser return from the device.' },
+    ],
+  },
+
 ]
 
 // ─── Posts en español ─────────────────────────────────────────────────────────
 
 export const BLOG_POSTS_ES: BlogPost[] = [
+
+  {
+    slug: 'gemelo-digital-almacen-ifc-lidar-movimiento',
+    title: 'Gemelo digital de almacén: IFC + LiDAR en movimiento',
+    seoTitle: 'Almacén IFC + LiDAR en movimiento: demo en vivo',
+    excerpt: 'Visualiza una carretilla y un carro autónomo dentro de una nube densa mientras el IFC mantiene racks, estructura y zonas de circulación como referencia.',
+    seoDescription: 'Demo interactiva de almacén con IFC, nube LiDAR en movimiento, timeline, MCAP y ejemplos IFC + PLY descargables.',
+    date: '2026-08-27',
+    readTimeMin: 8,
+    category: 'Gemelos digitales',
+    categorySlug: 'digital-twins',
+    author: 'IFC Viewer Team',
+    lang: 'es',
+    translationKey: 'warehouse-ifc-moving-lidar-digital-twin',
+    heroImage: 'blog/images/gemelo-digital-almacen-ifc-lidar-movimiento-1600x900.jpg',
+    heroAlt: 'Captura real de IFC Viewer Online con almacén IFC translúcido, puntos naranjas de una carretilla móvil y carro autónomo en cian',
+    heroImageVariants: [
+      { src: 'blog/images/gemelo-digital-almacen-ifc-lidar-movimiento-1600x900.jpg', width: 1600, height: 900 },
+      { src: 'blog/images/gemelo-digital-almacen-ifc-lidar-movimiento-1200x900.jpg', width: 1200, height: 900 },
+      { src: 'blog/images/gemelo-digital-almacen-ifc-lidar-movimiento-1200x1200.jpg', width: 1200, height: 1200 },
+    ],
+    keywords: ['gemelo digital almacén', 'IFC LiDAR almacén', 'nube de puntos en movimiento', 'visualizar carretilla LiDAR', 'MCAP visor IFC'],
+    faqs: [
+      { q: '¿El LiDAR del almacén procede de un sensor físico?', a: 'No. Los retornos y el movimiento son sintéticos y deterministas, y la interfaz lo indica. La carga IFC, alineación, transporte binario, buffer, timeline y actualización GPU sí utilizan la ruta real del visor.' },
+      { q: '¿Se pueden descargar los archivos?', a: 'Sí. El IFC4 y un PLY binario representativo están publicados; además la demo genera localmente una grabación MCAP indexada.' },
+      { q: '¿Por qué usar puntos y no un vídeo?', a: 'Los puntos conservan XYZ, intensidad y clasificación. Se puede cambiar el punto de vista y comparar el movimiento con racks y estructura, algo que un vídeo de cámara fija no permite.' },
+    ],
+    content: [
+      { type: 'p', text: 'Las operaciones de almacén combinan una referencia fija y evidencia que cambia. IFC describe losas, pilares y racks; una fuente temporal representa vehículos, carriles ocupados y condiciones variables. Mantener ambas capas en el mismo marco permite hacer preguntas espaciales sin reducirlo todo a píxeles.' },
+      { type: 'p', text: 'Este ejemplo está preparado para feria: arranca con un botón, funciona sin depender del Wi-Fi del recinto y comunica movimiento desde el primer segundo. Los datos son sintéticos y están etiquetados como tales; demuestran el flujo y el rendimiento, no una conexión física.' },
+      { type: 'h2', text: 'Prueba el almacén en movimiento' },
+      {
+        type: 'spatial-demo',
+        demo: 'warehouse-lidar-replay',
+        title: 'Operaciones de almacén — IFC + LiDAR móvil',
+        description: 'Replay interactivo de 18 segundos con unos 39.000 puntos visibles, una carretilla, un carro autónomo y su IFC4 correspondiente.',
+        poster: 'blog/images/warehouse-ifc-moving-lidar-real-viewer.png',
+        posterAlt: 'Interfaz real del producto con replay LiDAR de almacén alineado con racks, pilares y losas IFC',
+        launchLabel: 'Iniciar replay de almacén',
+        readyLabel: 'Replay activo — arrastra para orbitar',
+      },
+      { type: 'h2', text: 'Movimiento sin crear geometría cada frame' },
+      { type: 'p', text: 'La envolvente, el suelo y los racks permanecen estables. La carretilla, el mástil, el carro autónomo, los anillos LiDAR y las estelas se reescriben dentro de los mismos arrays tipados. Durante el replay no se reserva un nuevo buffer GPU ni se crea una nueva malla Three.js.' },
+      {
+        type: 'table',
+        headers: ['Capa', 'Función', 'Ciclo de vida'],
+        rows: [
+          ['Modelo IFC4', 'Contexto diseñado y objetos inspeccionables', 'Se carga una vez y queda translúcido'],
+          ['Retornos estáticos', 'Suelo, cerramiento, pilares y racks', 'Catálogo determinista único'],
+          ['Retornos móviles', 'Carretilla, carro, anillos y estelas', 'Actualización a 12 FPS en un buffer acotado'],
+          ['MCAP', 'Secuencia portable para adaptadores', 'Se genera localmente bajo demanda'],
+        ],
+      },
+      { type: 'h2', text: 'Descarga la pareja reproducible' },
+      { type: 'p', text: ['Combina el ', { text: 'IFC4 del almacén', href: '/models/realtime-lidar/IVO-Warehouse-Operations.ifc' }, ' con el ', { text: 'snapshot PLY representativo', href: '/models/realtime-lidar/warehouse-operations-snapshot.ply' }, '. Los dos parten de las mismas dimensiones declaradas y el encabezado PLY identifica su carácter sintético.'] },
+      { type: 'h2', text: 'Rendimiento y paso a una fuente real' },
+      { type: 'ul', items: ['Capacidad fija para impedir que una GPU lenta provoque crecimiento de memoria.', 'Política newest-valid-frame-wins para evitar colas de frames obsoletos.', 'Filtrado y voxelización en edge antes de enviar al navegador.', 'Pausa al ocultar y reutilización de buffers, materiales y geometría.', 'Transformación sensor-a-sitio calibrada y timestamps conocidos antes de retirar la etiqueta de simulación.'] },
+      { type: 'p', text: ['La arquitectura de paquetes, CRC y buffer está documentada en ', { text: 'LiDAR en tiempo real para gemelos digitales web', to: 'lidar-tiempo-real-web-gemelo-digital-mcap' }, '. Para levantamientos estáticos consulta ', { text: 'IFC + nube de puntos Scan-to-BIM', to: 'ifc-nube-de-puntos-scan-to-bim-navegador' }, '.'] },
+    ],
+  },
+
+  {
+    slug: 'progreso-obra-4d-ifc-nube-puntos-temporal',
+    title: 'Progreso de obra 4D: IFC + nube de puntos temporal',
+    seoTitle: 'Progreso de obra 4D con IFC + nube de puntos',
+    excerpt: 'Recorre fases estructurales, sigue un panel elevado y revela un pilar deliberadamente desplazado respecto al IFC.',
+    seoDescription: 'Demo en vivo de progreso de obra 4D con IFC, nube temporal, visualización de desviaciones y archivos IFC, PLY y MCAP.',
+    date: '2026-08-27',
+    readTimeMin: 9,
+    category: 'Gemelos digitales',
+    categorySlug: 'digital-twins',
+    author: 'IFC Viewer Team',
+    lang: 'es',
+    translationKey: 'construction-progress-ifc-temporal-point-cloud',
+    heroImage: 'blog/images/progreso-obra-4d-ifc-nube-puntos-temporal-1600x900.jpg',
+    heroAlt: 'Captura real del visor con estructura IFC, nube que aparece por fases, panel elevado y retornos rojos de un pilar desplazado',
+    heroImageVariants: [
+      { src: 'blog/images/progreso-obra-4d-ifc-nube-puntos-temporal-1600x900.jpg', width: 1600, height: 900 },
+      { src: 'blog/images/progreso-obra-4d-ifc-nube-puntos-temporal-1200x900.jpg', width: 1200, height: 900 },
+      { src: 'blog/images/progreso-obra-4d-ifc-nube-puntos-temporal-1200x1200.jpg', width: 1200, height: 1200 },
+    ],
+    keywords: ['progreso de obra 4D', 'IFC nube de puntos temporal', 'Scan to BIM seguimiento obra', 'desviaciones obra LiDAR', 'timeline IFC LiDAR'],
+    faqs: [
+      { q: '¿El pilar rojo demuestra un defecto medido?', a: 'No. Es un conjunto sintético desplazado a propósito para enseñar cómo comunicar una desviación. Una no conformidad real necesita registro topográfico, método de tolerancia y revisión.' },
+      { q: '¿Qué diferencia hay con una animación de obra?', a: 'La capa temporal continúa siendo XYZ con atributos y tiempo. Se puede orbitar, recorrer la línea temporal, comparar con objetos IFC e incluso exportar la secuencia MCAP.' },
+      { q: '¿Puede representar escaneos semanales?', a: 'Sí. El mismo contrato puede transportar épocas discretas. En un proyecto real hay que publicar fecha, transformación, cobertura y muestreo de cada captura.' },
+    ],
+    content: [
+      { type: 'p', text: 'Una vista 4D aporta valor cuando el tiempo revela una decisión: qué existe, qué debería existir y dónde la geometría observada deja de coincidir con la referencia. Una animación cinematográfica no basta si cada estado no conserva coordenadas y trazabilidad.' },
+      { type: 'p', text: 'En la demo aparecen losa, pilares, muros y vigas por fases. Un panel recorre una trayectoria de elevación y al final se activa un clúster rojo desplazado. El escenario es sintético; la reproducción, el buffer GPU acotado y la alineación son la ruta real del producto.' },
+      { type: 'h2', text: 'Ejecuta el progreso 4D' },
+      {
+        type: 'spatial-demo',
+        demo: 'construction-lidar-replay',
+        title: 'Progreso estructural — IFC + nube temporal',
+        description: 'Secuencia interactiva de 20 segundos con unos 41.000 puntos, estructura por fases, panel elevado y desviación deliberada.',
+        poster: 'blog/images/construction-progress-ifc-lidar-real-viewer.png',
+        posterAlt: 'Interfaz real con nube de obra por fases y pilar rojo desplazado respecto a la estructura IFC translúcida',
+        launchLabel: 'Iniciar progreso 4D',
+        readyLabel: 'Timeline activo — desplázalo para revisar fases',
+      },
+      { type: 'h2', text: 'Diseñado, observado e inferido no son lo mismo' },
+      {
+        type: 'table',
+        headers: ['Capa', 'Significado', 'No implica'],
+        rows: [
+          ['IFC', 'Referencia planificada e identidad de elementos', 'Que el elemento esté ejecutado'],
+          ['Puntos temporales', 'Retornos espaciales en una fecha', 'Aceptación o cumplimiento automático'],
+          ['Color de desviación', 'Comparación con supuestos declarados', 'Precisión topográfica sin evidencia de registro'],
+          ['Estado del timeline', 'Posición de reproducción o época', 'Conexión en vivo si no existe una fuente real'],
+        ],
+      },
+      { type: 'h2', text: 'Descarga y valida el ejemplo' },
+      { type: 'p', text: ['Carga el ', { text: 'IFC4 de progreso estructural', href: '/models/realtime-lidar/IVO-Construction-Progress.ifc' }, ' junto al ', { text: 'PLY representativo de obra', href: '/models/realtime-lidar/construction-progress-snapshot.ply' }, '. El generador y los tests mantienen dimensiones, límites y capacidad reproducibles.'] },
+      { type: 'h2', text: 'Cinco condiciones para una comparación real' },
+      { type: 'ol', items: ['Conservar el escaneo original y su fecha.', 'Registrar cada época en un marco común con control o trayectoria SLAM validada.', 'Documentar cobertura para no confundir ausencia de puntos con ausencia de obra.', 'Comparar elementos relevantes y publicar tolerancias.', 'Mantener revisión humana antes de aprobar, certificar o pagar.'] },
+      { type: 'callout', variant: 'warning', text: 'La distancia visual entre un punto y una superficie IFC solo es tan fiable como la transformación de registro. Un heatmap atractivo no corrige unidades, ejes o control desconocidos.' },
+    ],
+  },
+
+  {
+    slug: 'inspeccion-tunel-ifc-lidar-movil',
+    title: 'Inspección de túnel: IFC + replay LiDAR móvil',
+    seoTitle: 'Inspección de túnel IFC + LiDAR móvil en vivo',
+    excerpt: 'Mueve un carro de inspección entre servicios densos, visualiza el abanico de escaneo y localiza una zona cambiante del muro.',
+    seoDescription: 'Inspección interactiva de túnel técnico con IFC, LiDAR móvil, nube densa, localización de incidencias, MCAP e IFC + PLY descargables.',
+    date: '2026-08-27',
+    readTimeMin: 8,
+    category: 'Gemelos digitales',
+    categorySlug: 'digital-twins',
+    author: 'IFC Viewer Team',
+    lang: 'es',
+    translationKey: 'utility-tunnel-ifc-mobile-lidar-inspection',
+    heroImage: 'blog/images/inspeccion-tunel-ifc-lidar-movil-1600x900.jpg',
+    heroAlt: 'Captura real del túnel técnico IFC con servicios densos, carro móvil, abanico cian y retornos rojos localizados en el muro',
+    heroImageVariants: [
+      { src: 'blog/images/inspeccion-tunel-ifc-lidar-movil-1600x900.jpg', width: 1600, height: 900 },
+      { src: 'blog/images/inspeccion-tunel-ifc-lidar-movil-1200x900.jpg', width: 1200, height: 900 },
+      { src: 'blog/images/inspeccion-tunel-ifc-lidar-movil-1200x1200.jpg', width: 1200, height: 1200 },
+    ],
+    keywords: ['inspección túnel gemelo digital', 'LiDAR móvil IFC', 'nube de puntos túnel técnico', 'inspección infraestructura web', 'localizar incidencias LiDAR'],
+    faqs: [
+      { q: '¿La zona del muro es un diagnóstico automático?', a: 'No. Es un clúster sintético que sirve para demostrar localización y comunicación. Un diagnóstico real requiere sensor calibrado, método definido y revisión experta.' },
+      { q: '¿Por qué esta nube es más densa?', a: 'Los corredores lineales contienen servicios repetidos y superficies largas. Aun así la capacidad queda limitada a 51.134 puntos y el replay reutiliza un único buffer.' },
+      { q: '¿Puede conectarse a un carro de mobile mapping?', a: 'Sí, si un adaptador edge proporciona frames normalizados, timestamps y una pose calibrada en el sistema del sitio. El navegador debe recibir datos acotados, no todo el ancho de banda bruto.' },
+    ],
+    content: [
+      { type: 'p', text: 'La infraestructura lineal es difícil de explicar con fotos aisladas. Una imagen puede mostrar humedad o deformación, pero no necesariamente qué tramo, cruce de servicios o activo la rodea. Un replay de puntos conserva la geometría; IFC aporta identidad y contexto.' },
+      { type: 'p', text: 'La demo combina cerramiento y servicios densos con un carro móvil, un abanico cian y una zona roja en el muro. Todo lo temporal es sintético y está etiquetado. Así se puede demostrar el visor en una feria sin fingir una conexión física.' },
+      { type: 'h2', text: 'Inspecciona el túnel técnico' },
+      {
+        type: 'spatial-demo',
+        demo: 'tunnel-lidar-replay',
+        title: 'Túnel técnico — IFC + LiDAR móvil',
+        description: 'Replay interactivo de 22 segundos con unos 49.000 puntos, carro móvil, abanico LiDAR y zona localizada en el muro.',
+        poster: 'blog/images/utility-tunnel-ifc-lidar-real-viewer.png',
+        posterAlt: 'Interfaz real mostrando el carro LiDAR y el abanico de escaneo dentro del túnel IFC correspondiente',
+        launchLabel: 'Iniciar inspección del túnel',
+        readyLabel: 'Inspección activa — sigue el carro',
+      },
+      { type: 'h2', text: 'Tres preguntas que debe responder la escena' },
+      { type: 'ol', items: ['¿Dónde está la observación en el sistema del activo?', '¿Qué geometría y objetos IFC le dan contexto?', '¿Qué es evidencia medida, resultado algorítmico o anotación?'] },
+      { type: 'p', text: 'Por eso la secuencia no se sustituye por un MP4 renderizado. El vídeo comunica textura y narrativa, pero los puntos permiten cambiar el punto de vista, consultar atributos y comparar con el modelo.' },
+      { type: 'h2', text: 'Descarga la pareja del túnel' },
+      { type: 'p', text: ['Utiliza el ', { text: 'modelo IFC4 del túnel técnico', href: '/models/realtime-lidar/IVO-Utility-Tunnel.ifc' }, ' y el ', { text: 'PLY representativo del LiDAR móvil', href: '/models/realtime-lidar/utility-tunnel-snapshot.ply' }, ' para probar alineación y estilos. El movimiento está en la demo o en el MCAP exportado.'] },
+      {
+        type: 'table',
+        headers: ['Navegador', 'Edge', 'Proyecto'],
+        rows: [
+          ['Validar paquetes, acotar memoria, renderizar e informar estado', 'Sincronizar pose, filtrar, voxelizar y comprimir', 'Definir sistema, control, tolerancias y revisión'],
+          ['Mostrar procedencia e incertidumbre', 'Descartar frames corruptos u obsoletos', 'Decidir qué crea una incidencia u orden de trabajo'],
+        ],
+      },
+      { type: 'h2', text: 'Rendimiento en un corredor repetitivo' },
+      { type: 'p', text: 'Los servicios estáticos se generan una sola vez. Solo el carro, los anillos, el abanico y la zona del muro se reescriben por frame dentro de una capacidad fija. El usuario puede pausar, buscar o saltar al último frame sin acumular geometría histórica.' },
+      { type: 'callout', variant: 'tip', text: 'En un sistema móvil real, envía niveles de detalle listos para visualizar desde el edge. El navegador es el lugar de interacción y comparación, no el destino de cada retorno bruto del láser.' },
+    ],
+  },
 
   {
     slug: 'como-exportar-ifc-desde-revit',

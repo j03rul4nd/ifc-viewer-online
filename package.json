@@ -26,6 +26,7 @@
     "tower": "blender --background --python scripts/blender/build-tower.py -- public/models/torre-poblenou",
     "ciutadella": "blender --background --python scripts/blender/build-ciutadella.py -- public/models/ciutadella",
     "site-scan": "node scripts/pointcloud/build-site-scan.mjs",
+    "realtime-lidar": "node --experimental-strip-types --import ./scripts/ebook/ts-hook.mjs scripts/pointcloud/build-realtime-snapshots.ts",
     "video-demo": "blender --background --python scripts/blender/build-video-demo.py -- public/models/video-demo"
   },
   "dependencies": {
