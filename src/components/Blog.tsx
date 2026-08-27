@@ -1455,12 +1455,14 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
   // Update document title + OG/Twitter meta while viewing a specific post.
   React.useEffect(() => {
     const prevTitle = document.title
-    const brandedTitle = `${post.title} | IFC Viewer Online`
-    document.title = brandedTitle.length <= 64 ? brandedTitle : post.title
+    const metaTitle = post.seoTitle ?? post.title
+    const metaDescription = post.seoDescription ?? post.excerpt
+    const brandedTitle = `${metaTitle} | IFC Viewer Online`
+    document.title = brandedTitle.length <= 64 ? brandedTitle : metaTitle
     const prevLang = document.documentElement.lang
     document.documentElement.lang = post.lang ?? 'en'
 
-    const coverUrl = new URL(asset(post.slug), window.location.origin).href
+    const coverUrl = new URL(asset(post.heroImage ?? post.slug), window.location.origin).href
 
     const update = (sel: string, attr: string, val: string) => {
       const el = document.querySelector(sel)
@@ -1471,12 +1473,12 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
 
     const prevOgImg  = update('meta[property="og:image"]',       'content', coverUrl)
     const prevTwImg  = update('meta[name="twitter:image"]',      'content', coverUrl)
-    const prevDesc   = update('meta[name="description"]',         'content', post.excerpt)
+    const prevDesc   = update('meta[name="description"]',         'content', metaDescription)
     const prevOgType = update('meta[property="og:type"]',         'content', 'article')
     const prevOgT    = update('meta[property="og:title"]',       'content', post.title)
     const prevTwT    = update('meta[name="twitter:title"]',      'content', post.title)
-    const prevOgD    = update('meta[property="og:description"]', 'content', post.excerpt)
-    const prevTwD    = update('meta[name="twitter:description"]','content', post.excerpt)
+    const prevOgD    = update('meta[property="og:description"]', 'content', metaDescription)
+    const prevTwD    = update('meta[name="twitter:description"]','content', metaDescription)
     const prevOgAlt  = update('meta[property="og:image:alt"]',    'content', post.heroAlt ?? post.title)
     const prevTwAlt  = update('meta[name="twitter:image:alt"]',   'content', post.heroAlt ?? post.title)
     const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')

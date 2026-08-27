@@ -7,6 +7,7 @@ export type SpatialDemoId =
   | 'construction-lidar-replay'
   | 'tunnel-lidar-replay'
   | 'pavilion-video-terrain'
+  | 'ciutadella-map-3d'
 
 interface SpatialMediaDemoProps {
   demo: SpatialDemoId
@@ -26,8 +27,10 @@ const BASE = import.meta.env.BASE_URL as string
 const DEMOS: Record<SpatialDemoId, {
   model: string
   fileName: string
-  command: 'ifcviewer:add-pointcloud' | 'ifcviewer:start-pointcloud-replay' | 'ifcviewer:start-video-demo'
+  command?: 'ifcviewer:add-pointcloud' | 'ifcviewer:start-pointcloud-replay' | 'ifcviewer:start-video-demo'
   commandPayload?: Record<string, unknown>
+  map?: string
+  ui?: 'minimal' | 'kiosk'
 }> = {
   'poblenou-scan-ifc': {
     model: 'models/poblenou/BCN-IVO-ZZ-XX-M3-A-0001.ifc',
@@ -66,6 +69,12 @@ const DEMOS: Record<SpatialDemoId, {
     fileName: 'IVO-Operations-Pavilion.ifc',
     command: 'ifcviewer:start-video-demo',
   },
+  'ciutadella-map-3d': {
+    model: 'models/ciutadella/BCN-IVO-ZZ-XX-M3-Z-0003.ifc',
+    fileName: 'BCN-IVO-ZZ-XX-M3-Z-0003.ifc',
+    map: 'terrain,buildings,showcase',
+    ui: 'kiosk',
+  },
 }
 
 function absoluteAsset(path: string): string {
@@ -96,10 +105,11 @@ export default function SpatialMediaDemo({
     if (typeof window === 'undefined') return '#'
     const url = new URL(BASE, window.location.origin)
     url.searchParams.set('embed', '1')
-    url.searchParams.set("ui", "minimal")
+    url.searchParams.set('ui', config.ui ?? 'minimal')
     url.searchParams.set('validate', '0')
     url.searchParams.set('model', absoluteAsset(config.model))
     url.searchParams.set('name', config.fileName)
+    if (config.map) url.searchParams.set('map', config.map)
     return url.href
   }, [config])
 
@@ -127,7 +137,14 @@ export default function SpatialMediaDemo({
 
       if (message.type === 'model-loaded' && !commandSentRef.current) {
         commandSentRef.current = true
-        setPhase("loading-media")
+        // Map demos are driven by the iframe's own ?map= deep link. There is no
+        // second media command to send: once the IFC is ready, map context keeps
+        // streaming progressively inside the live frame.
+        if (!config.command) {
+          setPhase('ready')
+          return
+        }
+        setPhase('loading-media')
         const payload = { ...config.commandPayload }
         if (typeof payload.url === 'string') payload.url = absoluteAsset(payload.url)
         frameRef.current?.contentWindow?.postMessage({

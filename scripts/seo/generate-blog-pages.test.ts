@@ -221,6 +221,23 @@ describe('generateBlogPages — per-post pages (EN)', () => {
     expect(html).toContain('real CRAS Labs TLS point cloud')
   })
 
+  it('uses the clean Ciutadella product capture as the primary map-article image', () => {
+    const en = readFileSync(
+      path.join(OUT, 'blog', 'view-ifc-on-3d-map-online', 'index.html'),
+      'utf-8',
+    )
+    const es = readFileSync(
+      path.join(OUT, 'es', 'blog', 'ver-ifc-mapa-3d-online', 'index.html'),
+      'utf-8',
+    )
+    const cleanCapture = `${SITE}/blog/images/ifc-3d-map-ciutadella-real-viewer.jpg`
+
+    expect(en).toContain(`<meta property="og:image" content="${cleanCapture}"`)
+    expect(es).toContain(`<meta property="og:image" content="${cleanCapture}"`)
+    expect(en.indexOf(cleanCapture)).toBeLessThan(en.indexOf(`${SITE}/blog/covers/view-ifc-on-3d-map-online.png`))
+    expect(es.indexOf(cleanCapture)).toBeLessThan(es.indexOf(`${SITE}/blog/covers/ver-ifc-mapa-3d-online.png`))
+  })
+
   it('links translated spatial articles with hreflang', () => {
     const html = readFileSync(
       path.join(OUT, 'blog', 'real-time-lidar-web-digital-twin-mcap', 'index.html'),

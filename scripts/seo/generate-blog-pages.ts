@@ -220,13 +220,19 @@ function postImages(post: BlogPost): SearchImage[] {
     images.push(image)
   }
 
-  add({
-    url: mediaUrl(`blog/covers/${post.slug}.png`),
-    caption: post.heroAlt ?? `${post.title} — IFC Viewer Online article cover`,
-    credit: 'IFC Viewer Online',
-    width: 1800,
-    height: 945,
-  })
+  const explicitHero = post.heroImage
+    && (post.heroImage.includes('/') || /\.(?:avif|gif|jpe?g|png|svg|webp)$/i.test(post.heroImage))
+  if (explicitHero) {
+    const heroBlock = post.content.find((block) => block.type === 'image' && block.src === post.heroImage)
+    const heroVariant = post.heroImageVariants?.find((variant) => variant.src === post.heroImage)
+    add({
+      url: mediaUrl(post.heroImage!),
+      caption: post.heroAlt ?? post.title,
+      credit: post.heroCredit ?? heroBlock?.credit ?? 'IFC Viewer Online',
+      width: heroVariant?.width ?? heroBlock?.width,
+      height: heroVariant?.height ?? heroBlock?.height,
+    })
+  }
   for (const variant of post.heroImageVariants ?? []) {
     add({
       url: mediaUrl(variant.src),
@@ -236,9 +242,13 @@ function postImages(post: BlogPost): SearchImage[] {
       height: variant.height,
     })
   }
-  if (post.heroImage && (post.heroImage.includes('/') || /\.(?:avif|gif|jpe?g|png|svg|webp)$/i.test(post.heroImage))) {
-    add({ url: mediaUrl(post.heroImage), caption: post.heroAlt ?? post.title, credit: 'IFC Viewer Online' })
-  }
+  add({
+    url: mediaUrl(`blog/covers/${post.slug}.png`),
+    caption: `${post.title} — IFC Viewer Online article cover`,
+    credit: 'IFC Viewer Online',
+    width: 1800,
+    height: 945,
+  })
   for (const block of post.content) {
     if (block.type !== 'image') continue
     add({
@@ -368,10 +378,9 @@ function renderFallbackBlock(block: ContentBlock, prefix: string): string {
   }
 }
 
-function postBodyFallback(post: BlogPost, prefix: string, primaryImage: string): string {
+function postBodyFallback(post: BlogPost, prefix: string, primaryImage: SearchImage): string {
   const articleUrl = `${SITE}/${prefix}blog/${post.slug}/`
   const backLabel = post.lang === 'es' ? 'Volver al blog BIM e IFC' : 'Back to the BIM & IFC blog'
-  const coverAlt = post.heroAlt ?? `${post.title} — IFC Viewer Online article cover`
   return `<noscript>
       <main id="blog-static-fallback">
         <article lang="${esc(post.lang ?? 'en')}">
@@ -380,7 +389,7 @@ function postBodyFallback(post: BlogPost, prefix: string, primaryImage: string):
             <p>${esc(post.category)} · ${esc(post.date)} · ${post.readTimeMin} min</p>
             <h1>${esc(post.title)}</h1>
             <p>${esc(post.excerpt)}</p>
-            <figure><img src="${esc(primaryImage)}" alt="${esc(coverAlt)}" width="1800" height="945" decoding="async" /><figcaption>${esc(post.title)} — IFC Viewer Online</figcaption></figure>
+            <figure><img src="${esc(primaryImage.url)}" alt="${esc(post.heroAlt ?? post.title)}" width="${primaryImage.width ?? 1200}" height="${primaryImage.height ?? 675}" decoding="async" /><figcaption>${esc(primaryImage.caption)}</figcaption></figure>
           </header>
           ${post.content.map((block) => renderFallbackBlock(block, prefix)).join('\n          ')}
           <p><a href="${articleUrl}">${esc(post.title)}</a></p>
@@ -612,7 +621,12 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
       try {
         const canonical = `${SITE}/${cfg.prefix}blog/${post.slug}/`
         const images = postImages(post)
-        const primaryImage = images[0]?.url ?? OG_IMAGE
+        const primaryImage = images[0] ?? {
+          url: OG_IMAGE,
+          caption: post.heroAlt ?? post.title,
+          width: 1200,
+          height: 630,
+        }
         const outDir = path.join(distDir, ...cfg.prefix.split('/').filter(Boolean), 'blog', post.slug)
         mkdirSync(outDir, { recursive: true })
         writeFileSync(
@@ -621,7 +635,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
             title: postSeoTitle(post),
             description: postSeoDescription(post),
             canonical,
-            image: primaryImage,
+            image: primaryImage.url,
             imageAlt: post.heroAlt ?? post.title,
             ogType: 'article',
             bodyFallback: postBodyFallback(post, cfg.prefix, primaryImage),

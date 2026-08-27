@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">IFC georeferencing flow from local model coordinates to a 3D map</title>
+  <desc id="desc">Three-stage diagram: local IFC coordinates, IfcProjectedCRS plus IfcMapConversion, and aligned 3D map context.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#090a0f"/>
+      <stop offset="1" stop-color="#111525"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#818cf8"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity=".035"/>
+    </pattern>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#grid)"/>
+  <circle cx="800" cy="455" r="355" fill="#5e6ad2" opacity=".045"/>
+
+  <text x="100" y="108" fill="#f4f5f8" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="48" font-weight="750">LOCAL IFC → MAP CONVERSION → 3D CONTEXT</text>
+  <text x="102" y="154" fill="#9aa1b5" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="22">The geometry stays close to its project origin; the map is aligned around it.</text>
+
+  <g transform="translate(90 258)">
+    <rect width="390" height="410" rx="30" fill="#11131b" stroke="#313547" stroke-width="2"/>
+    <text x="34" y="58" fill="#818cf8" font-family="ui-monospace,Consolas,monospace" font-size="17" font-weight="700" letter-spacing="2">01 · LOCAL IFC</text>
+    <path d="M90 285V140H250L310 190V285Z" fill="#5e6ad2" fill-opacity=".14" stroke="#a5b4fc" stroke-width="4"/>
+    <path d="M90 140l80 70 80-70M170 210v75M250 140v145" fill="none" stroke="#818cf8" stroke-width="3"/>
+    <path d="M70 318h250M70 318l24-12M70 318l24 12" stroke="#22d3ee" stroke-width="3"/>
+    <path d="M70 318V88M70 88l-12 24M70 88l12 24" stroke="#34d399" stroke-width="3"/>
+    <text x="330" y="324" fill="#67e8f9" font-family="ui-monospace,Consolas,monospace" font-size="16">X</text>
+    <text x="57" y="78" fill="#6ee7b7" font-family="ui-monospace,Consolas,monospace" font-size="16">Y</text>
+    <text x="34" y="370" fill="#c6cad6" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="650">Metres near project origin</text>
+  </g>
+
+  <g transform="translate(605 226)">
+    <rect width="390" height="474" rx="30" fill="#121522" stroke="#4c53a8" stroke-width="2"/>
+    <rect x="1" y="1" width="388" height="472" rx="29" fill="none" stroke="url(#accent)" stroke-opacity=".3"/>
+    <text x="34" y="58" fill="#67e8f9" font-family="ui-monospace,Consolas,monospace" font-size="17" font-weight="700" letter-spacing="2">02 · IFC GEOREFERENCE</text>
+    <text x="34" y="116" fill="#f4f5f8" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="26" font-weight="700">IfcProjectedCRS</text>
+    <text x="34" y="151" fill="#9aa1b5" font-family="ui-monospace,Consolas,monospace" font-size="18">EPSG:25831</text>
+    <line x1="34" y1="184" x2="356" y2="184" stroke="#313547"/>
+    <text x="34" y="231" fill="#f4f5f8" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="26" font-weight="700">IfcMapConversion</text>
+    <g font-family="ui-monospace,Consolas,monospace" font-size="17">
+      <text x="34" y="278" fill="#9aa1b5">EASTING</text><text x="205" y="278" fill="#d8dcff">431543.18</text>
+      <text x="34" y="314" fill="#9aa1b5">NORTHING</text><text x="205" y="314" fill="#d8dcff">4582439.59</text>
+      <text x="34" y="350" fill="#9aa1b5">HEIGHT</text><text x="205" y="350" fill="#d8dcff">18.50 m</text>
+      <text x="34" y="386" fill="#9aa1b5">ROTATION</text><text x="205" y="386" fill="#d8dcff">−45.5°</text>
+      <text x="34" y="422" fill="#9aa1b5">SCALE</text><text x="205" y="422" fill="#d8dcff">1.000</text>
+    </g>
+  </g>
+
+  <g transform="translate(1120 258)">
+    <rect width="390" height="410" rx="30" fill="#101820" stroke="#245d67" stroke-width="2"/>
+    <text x="34" y="58" fill="#22d3ee" font-family="ui-monospace,Consolas,monospace" font-size="17" font-weight="700" letter-spacing="2">03 · 3D MAP</text>
+    <path d="M45 150l95-45 92 39 105-52v192l-105 52-92-39-95 45Z" fill="#0d242a" stroke="#4dd8ee" stroke-width="3"/>
+    <path d="M140 105v192M232 144v192M45 198l95-45 92 39 105-52M45 248l95-45 92 39 105-52" fill="none" stroke="#2d7884" stroke-width="2"/>
+    <path d="M175 254v-65l48-22 48 20v66l-48 23Z" fill="#5e6ad2" fill-opacity=".62" stroke="#b8c1ff" stroke-width="3" filter="url(#glow)"/>
+    <path d="M175 189l48 21 48-23M223 210v66" fill="none" stroke="#d8dcff" stroke-width="2"/>
+    <text x="34" y="370" fill="#c6cad6" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="650">Aligned terrain + surroundings</text>
+  </g>
+
+  <g fill="none" stroke="url(#accent)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M500 463h75"/><path d="M555 445l20 18-20 18"/>
+    <path d="M1025 463h65"/><path d="M1070 445l20 18-20 18"/>
+  </g>
+
+  <text x="800" y="812" text-anchor="middle" fill="#7f879c" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="18">IFC Viewer Online · reproducible Ciutadella Pavilion example · IFC4</text>
+</svg>

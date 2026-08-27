@@ -107,6 +107,12 @@ const REAL_CAPTURE_BY_KEY = {
     badge: { en: 'ACTUAL IFC VIEWER CAPTURE', es: 'CAPTURA REAL DEL VISOR IFC' },
     shortTitle: 'IFC + 3D VIDEO',
   },
+  'ifc-3d-map-georeferenced': {
+    source: 'docs/images/ciutadella-map-mode-real-viewer.png',
+    publicCopy: 'ifc-3d-map-ciutadella-real-viewer.png',
+    badge: { en: 'ACTUAL IFC + 3D MAP', es: 'IFC + MAPA 3D REAL' },
+    shortTitle: 'IFC + 3D MAP',
+  },
   'warehouse-ifc-moving-lidar-digital-twin': {
     source: 'docs/images/warehouse-ifc-moving-lidar-real-viewer.png',
     publicCopy: 'warehouse-ifc-moving-lidar-real-viewer.png',

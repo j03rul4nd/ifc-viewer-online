@@ -68,7 +68,7 @@ const JOURNEY_TERMS = {
   repair: ['duplicate guid', 'export', 'properties missing', 'coordinates', 'reduce ifc', 'corregir', 'errores', 'georeferencing'],
   deliver: ['iso19650', 'execution plan', 'acceptance criteria', 'handover', 'delivery', 'entrega', 'bep clauses'],
   choose: [' vs ', 'compared', 'best free', 'solibri alternative', 'file format', 'que entregar', 'qué entregar'],
-  spatial: ['digital twins', 'point cloud', 'nube de puntos', 'lidar', 'video 3d', 'video terrain', 'video terreno'],
+  spatial: ['digital twins', 'point cloud', 'nube de puntos', 'lidar', 'video 3d', 'video terrain', 'video terreno', '3d map', 'mapa 3d', 'ifc gis', 'georeferenced', 'georreferenciado'],
 } as const
 
 const EN: BlogHubCopy = {
@@ -90,7 +90,7 @@ const EN: BlogHubCopy = {
     { label: 'How do I open an IFC without installing software?', query: 'open IFC browser' },
     { label: 'Why is my IFC being rejected?', query: 'validation errors' },
     { label: 'Which IFC checker should I use?', query: 'model checker' },
-    { label: 'How can I combine IFC with LiDAR or video?', intent: 'spatial' },
+    { label: 'How can I combine IFC with 3D maps, LiDAR or video?', intent: 'spatial' },
   ],
   journeys: [
     { id: 'start', title: 'Open and inspect an IFC', description: 'Get a model on screen, inspect properties and understand what the viewer can verify.', cta: 'Show opening guides', terms: [...JOURNEY_TERMS.start] },
@@ -101,7 +101,7 @@ const EN: BlogHubCopy = {
     { id: 'spatial', title: 'Build a spatial digital twin', description: 'Combine IFC with point clouds, temporal LiDAR and video inside a browser-based 3D scene.', cta: 'Show spatial guides', terms: [...JOURNEY_TERMS.spatial] },
   ],
   labTitle: 'Interactive 3D lab',
-  labDescription: 'Open working IFC, point-cloud, LiDAR replay and 3D video examples directly from their technical guides.',
+  labDescription: 'Open working IFC map, point-cloud, LiDAR replay and 3D video examples directly from their technical guides.',
   labBadge: 'REAL VIEWER DEMOS',
   labCta: 'Open demo guide',
   allGuidesTitle: 'All IFC guides',
@@ -150,7 +150,7 @@ const ES: BlogHubCopy = {
     { label: '¿Cómo abro un IFC sin instalar software?', query: 'abrir IFC navegador' },
     { label: '¿Por qué rechazan mi IFC?', query: 'errores validación' },
     { label: '¿Cómo compruebo un modelo antes de entregarlo?', intent: 'validate' },
-    { label: '¿Cómo combino IFC con LiDAR o vídeo?', intent: 'spatial' },
+    { label: '¿Cómo combino IFC con mapas 3D, LiDAR o vídeo?', intent: 'spatial' },
   ],
   journeys: [
     { id: 'start', title: 'Abrir e inspeccionar un IFC', description: 'Visualiza el modelo, consulta propiedades y entiende qué puede comprobar el visor.', cta: 'Ver guías de apertura', terms: [...JOURNEY_TERMS.start] },
@@ -161,7 +161,7 @@ const ES: BlogHubCopy = {
     { id: 'spatial', title: 'Crear un gemelo digital espacial', description: 'Combina IFC, nubes de puntos, LiDAR temporal y vídeo dentro de una escena 3D web.', cta: 'Ver guías espaciales', terms: [...JOURNEY_TERMS.spatial] },
   ],
   labTitle: 'Laboratorio 3D interactivo',
-  labDescription: 'Abre ejemplos funcionales de IFC, nube de puntos, replay LiDAR y vídeo 3D desde sus guías técnicas.',
+  labDescription: 'Abre ejemplos funcionales de IFC sobre mapa, nube de puntos, replay LiDAR y vídeo 3D desde sus guías técnicas.',
   labBadge: 'DEMOS REALES DEL VISOR',
   labCta: 'Abrir guía con demo',
   allGuidesTitle: 'Todas las guías IFC',
