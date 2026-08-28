@@ -286,7 +286,9 @@
       "mep": "CVC/Élec",
       "structural": "Structure",
       "infrastructure": "Infrastructure"
-    }
+    },
+    "loadAll": "Tout charger",
+    "disciplines": "{{count}} disciplines"
   },
   "footer": {
     "poweredBy": "Propulsé par IFC.js",

@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import { CATEGORY_META, type DemoCategory } from '../demo-models/categories'
-import { sortedDemoModels, activeCategories, type DemoModel } from '../demo-models/models'
+import { demoSets, activeCategories, type DemoModel, type DemoSet } from '../demo-models/models'
 import { fetchDemoModel, type FetchProgress } from '../demo-models/fetchDemoModel'
 import { ModelIllustration } from '../demo-models/illustrations'
 import { createLogger } from '../lib/logger'
@@ -30,8 +30,16 @@ const CATEGORY_KEY = {
 interface DemoGalleryProps {
   open: boolean
   onClose: () => void
-  /** Called with the downloaded File once a model is fetched successfully. */
-  onModelReady: (model: DemoModel, file: File) => void
+  /**
+   * Called with each downloaded File. May return a promise, and when it does
+   * the gallery WAITS for it before fetching the next member of a set.
+   *
+   * That await is load-bearing. The parser adds one model at a time, so firing
+   * a federated set at it without waiting means the second file arrives while
+   * the first is still being read and is silently dropped — which looked
+   * exactly like "only the architecture loaded", with no error anywhere.
+   */
+  onModelReady: (model: DemoModel, file: File) => void | Promise<void>
 }
 
 export default function DemoGallery({ open, onClose, onModelReady }: DemoGalleryProps) {
@@ -43,40 +51,56 @@ export default function DemoGallery({ open, onClose, onModelReady }: DemoGallery
   const abortRef = useRef<AbortController | null>(null)
 
   const categories = useMemo(() => activeCategories(), [])
-  const models     = useMemo(() => sortedDemoModels(), [])
-  const visible    = filter === 'all' ? models : models.filter((m) => m.category === filter)
+  // Sets, not models: a federated project is one demo that happens to be three
+  // files, and offering it as three cards makes the reader federate by hand.
+  const sets       = useMemo(() => demoSets(), [])
+  const visible    = filter === 'all' ? sets : sets.filter((s) => s.category === filter)
 
   useEffect(() => {
     if (open) trackDemoGalleryOpened()
   }, [open])
 
-  const handleLoad = async (model: DemoModel): Promise<void> => {
+  const handleLoad = async (set: DemoSet): Promise<void> => {
     if (loadingId) return
     trackDemoModelSelected({
-      model_id: model.id,
-      category: model.category,
-      size_mb:  Math.round((model.sizeBytes / 1_048_576) * 10) / 10,
+      model_id: set.id,
+      category: set.category,
+      size_mb:  Math.round((set.sizeBytes / 1_048_576) * 10) / 10,
     })
     abortRef.current?.abort()
     const ac = new AbortController()
     abortRef.current = ac
     setErrorId(null)
-    setLoadingId(model.id)
-    setProgress({ ratio: 0, receivedBytes: 0, totalBytes: model.sizeBytes })
+    setLoadingId(set.id)
+    setProgress({ ratio: 0, receivedBytes: 0, totalBytes: set.sizeBytes })
     try {
-      const file = await fetchDemoModel(model, {
-        signal: ac.signal,
-        onProgress: (p) => setProgress(p),
-      })
-      if (ac.signal.aborted) return
-      onModelReady(model, file)
-      // Reset for next time; parent closes the gallery.
+      // Sequential on purpose. The disciplines are federated — they share an
+      // origin and a storey list — so the viewer has to receive them one at a
+      // time and add each to the scene; firing them together races the loader
+      // and the second file can land before the first has a model to join.
+      //
+      // Progress is reported against the WHOLE set, so a three-file project
+      // shows one bar that fills once rather than three that each restart.
+      let done = 0
+      for (const model of set.models) {
+        const file = await fetchDemoModel(model, {
+          signal: ac.signal,
+          onProgress: (p) => setProgress({
+            ratio: (done + p.receivedBytes) / Math.max(1, set.sizeBytes),
+            receivedBytes: done + p.receivedBytes,
+            totalBytes: set.sizeBytes,
+          }),
+        })
+        if (ac.signal.aborted) return
+        done += model.sizeBytes
+        await onModelReady(model, file)
+      }
       setLoadingId(null)
       setProgress(null)
     } catch (err) {
       if (ac.signal.aborted) return
       log.warn('Demo download failed', err)
-      setErrorId(model.id)
+      setErrorId(set.id)
       setLoadingId(null)
       setProgress(null)
     }
@@ -144,16 +168,16 @@ export default function DemoGallery({ open, onClose, onModelReady }: DemoGallery
             {/* Cards */}
             <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 [-webkit-overflow-scrolling:touch]">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
-                {visible.map((m) => (
+                {visible.map((s) => (
                   <DemoCard
-                    key={m.id}
-                    model={m}
-                    categoryLabel={t(CATEGORY_KEY[m.category])}
-                    loading={loadingId === m.id}
-                    progress={loadingId === m.id ? progress : null}
-                    error={errorId === m.id}
-                    disabled={loadingId !== null && loadingId !== m.id}
-                    onLoad={() => void handleLoad(m)}
+                    key={s.id}
+                    set={s}
+                    categoryLabel={t(CATEGORY_KEY[s.category])}
+                    loading={loadingId === s.id}
+                    progress={loadingId === s.id ? progress : null}
+                    error={errorId === s.id}
+                    disabled={loadingId !== null && loadingId !== s.id}
+                    onLoad={() => void handleLoad(s)}
                   />
                 ))}
               </div>
@@ -188,9 +212,9 @@ function FilterChip({
 
 // ── Card ───────────────────────────────────────────────────────────────────────
 function DemoCard({
-  model, categoryLabel, loading, progress, error, disabled, onLoad,
+  set, categoryLabel, loading, progress, error, disabled, onLoad,
 }: {
-  model: DemoModel
+  set: DemoSet
   categoryLabel: string
   loading: boolean
   progress: FetchProgress | null
@@ -199,8 +223,16 @@ function DemoCard({
   onLoad: () => void
 }) {
   const { t } = useTranslation('landing')
-  const accent = CATEGORY_META[model.category].accent
+  // The first member stands for the set on the card: its illustration, its
+  // schema, its source link. For a set of one that IS the model, which is why
+  // the gallery has only one card component rather than two.
+  const model: DemoModel = set.models[0]
+  const federated = set.models.length > 1
+  const accent = CATEGORY_META[set.category].accent
   const pct = progress?.ratio != null ? Math.round(progress.ratio * 100) : null
+  const sizeLabel = federated
+    ? `${(set.sizeBytes / 1_048_576).toFixed(1)} MB`
+    : model.approximateSize
 
   return (
     <div
@@ -229,15 +261,39 @@ function DemoCard({
         <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-black/30 text-[var(--text-faint)] border border-[var(--border)]">
           {model.schema}
         </span>
+        {federated && (
+          <span
+            className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-medium border"
+            style={{ background: `${accent}22`, color: accent, borderColor: `${accent}44` }}
+          >
+            {t('demoGallery.disciplines', {
+              count: set.models.length,
+              defaultValue: '{{count}} disciplines',
+            })}
+          </span>
+        )}
       </div>
 
       {/* Body */}
       <div className="flex-1 flex flex-col p-3.5">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-[13.5px] font-semibold tracking-tight">{model.name}</h3>
-          <span className="flex-none text-[11px] text-[var(--text-faint)]">{model.approximateSize}</span>
+          <h3 className="text-[13.5px] font-semibold tracking-tight">{set.name}</h3>
+          <span className="flex-none text-[11px] text-[var(--text-faint)]">{sizeLabel}</span>
         </div>
         <p className="mt-1.5 text-[12px] leading-snug text-[var(--text-faint)] flex-1">{model.description}</p>
+        {federated && (
+          <ul className="mt-2 flex flex-wrap gap-1">
+            {set.models.map((m) => (
+              <li
+                key={m.id}
+                className="px-1.5 py-0.5 rounded text-[10px] text-[var(--text-faint)] bg-white/5 border border-[var(--border)]"
+                title={m.description}
+              >
+                {m.name.includes('—') ? m.name.split('—')[1].trim() : m.name}
+              </li>
+            ))}
+          </ul>
+        )}
 
         {/* Footer: source + load */}
         <div className="mt-3 flex items-center justify-between gap-2">
@@ -269,7 +325,9 @@ function DemoCard({
             ) : (
               <>
                 <Icons.ArrowRight size={13} />
-                {t('demoGallery.load')}
+                {federated
+                  ? t('demoGallery.loadAll', { defaultValue: 'Load all' })
+                  : t('demoGallery.load')}
               </>
             )}
           </button>

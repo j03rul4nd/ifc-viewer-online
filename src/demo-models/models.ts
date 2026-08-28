@@ -42,6 +42,20 @@ export interface DemoModel {
   thumbnail?: string
   /** Featured models are highlighted + sorted first in the gallery. */
   featured?: boolean
+  /**
+   * Files that belong to ONE project, delivered as several discipline models.
+   *
+   * A federated project is not three demos, it is one demo that happens to be
+   * three files — and loading them one at a time is exactly the chore the
+   * gallery exists to remove. Models sharing a `setId` are offered together and
+   * can be loaded in a single action, which is also the only way to see what
+   * federation is actually for: the structure standing inside the envelope.
+   */
+  setId?: string
+  /** Display name of that set. Only the first member needs to carry it. */
+  setName?: string
+  /** Order within the set — disciplines read A, S, M rather than alphabetically. */
+  setOrder?: number
 }
 
 // Raw-host roots, kept as constants so a host migration is a one-line change.
@@ -183,6 +197,9 @@ export const DEMO_MODELS: DemoModel[] = [
   },
   {
     id: 'poblenou-arc',
+    setId: 'poblenou',
+    setName: 'Poblenou Pavilion',
+    setOrder: 1,
     name: 'Poblenou Pavilion — Architecture',
     description:
       'Georeferenced onto a real Barcelona plot (ETRS89 / UTM 31N) and rotated to the Cerdà grid. Load all three disciplines together.',
@@ -199,6 +216,8 @@ export const DEMO_MODELS: DemoModel[] = [
   },
   {
     id: 'poblenou-str',
+    setId: 'poblenou',
+    setOrder: 2,
     name: 'Poblenou Pavilion — Structure',
     description:
       'The frame of the same building: pad footings, a 7.2 m column grid, beams and slabs. Federates with the other two.',
@@ -229,20 +248,57 @@ export const DEMO_MODELS: DemoModel[] = [
     featured: true,
   },
   {
-    id: 'hotel-vela',
-    name: 'Hotel Vela',
+    id: 'hotel-vela-arc',
+    setId: 'hotel-vela',
+    setName: 'Hotel Vela',
+    setOrder: 1,
+    name: 'Hotel Vela — Architecture',
     description:
-      'The landmark the procedural generator cannot build: a 99 m sail at the mouth of Port Vell, whose plan changes at every one of its 26 storeys. Switch the map on and it stands on the Barceloneta spit, facing the sea it was shaped for.',
+      'Sail envelope: unitised glazing on the surveyed footprint, a spandrel band at every one of its 27 floor lines, and the podium that meets the esplanade.',
     category: 'Reference',
-    fileName: 'HotelVela.ifc',
-    ifcUrl: `${HOTEL_VELA}/HotelVela.ifc`,
+    fileName: 'BCN-IVO-ZZ-XX-M3-A-0002.ifc',
+    ifcUrl: `${HOTEL_VELA}/BCN-IVO-ZZ-XX-M3-A-0002.ifc`,
     sourceUrl:
       'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-hotel-vela.py',
     sourceLabel: 'Authored with Blender + Bonsai',
     schema: 'IFC4',
-    approximateSize: '285 KB',
-    sizeBytes: 292290,
+    approximateSize: '128 KB',
+    sizeBytes: 130741,
     featured: true,
+  },
+  {
+    id: 'hotel-vela-str',
+    setId: 'hotel-vela',
+    setOrder: 2,
+    name: 'Hotel Vela — Structure',
+    description:
+      'Raft on reclaimed harbour ground, a full-height core, perimeter columns and a floor plate per storey — the plate changing shape all the way up.',
+    category: 'Reference',
+    fileName: 'BCN-IVO-ZZ-XX-M3-S-0002.ifc',
+    ifcUrl: `${HOTEL_VELA}/BCN-IVO-ZZ-XX-M3-S-0002.ifc`,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-hotel-vela.py',
+    sourceLabel: 'Authored with Blender + Bonsai',
+    schema: 'IFC4',
+    approximateSize: '811 KB',
+    sizeBytes: 830985,
+  },
+  {
+    id: 'hotel-vela-mep',
+    setId: 'hotel-vela',
+    setOrder: 3,
+    name: 'Hotel Vela — Services',
+    description:
+      'Risers through the core, rooftop air handling and water storage — the smallest file, and the one that proves the three share an origin.',
+    category: 'Reference',
+    fileName: 'BCN-IVO-ZZ-XX-M3-M-0002.ifc',
+    ifcUrl: `${HOTEL_VELA}/BCN-IVO-ZZ-XX-M3-M-0002.ifc`,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-hotel-vela.py',
+    sourceLabel: 'Authored with Blender + Bonsai',
+    schema: 'IFC4',
+    approximateSize: '21 KB',
+    sizeBytes: 21779,
   },
   {
     id: 'ciutadella-pavilion',
@@ -262,6 +318,8 @@ export const DEMO_MODELS: DemoModel[] = [
   },
   {
     id: 'poblenou-mep',
+    setId: 'poblenou',
+    setOrder: 3,
     name: 'Poblenou Pavilion — Services',
     description:
       'Supply ductwork for the same building, in one IfcSystem with connected distribution ports.',
@@ -453,4 +511,65 @@ export function activeCategories(): DemoCategory[] {
 /** Demo models, featured first, otherwise in declaration order. */
 export function sortedDemoModels(): DemoModel[] {
   return [...DEMO_MODELS].sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)))
+}
+
+/** A project delivered as several discipline files. */
+export interface DemoSet {
+  id: string
+  name: string
+  /** Members in discipline order, not alphabetical. */
+  models: DemoModel[]
+  category: DemoCategory
+  sizeBytes: number
+  featured: boolean
+}
+
+/**
+ * Group the catalogue into what the user actually wants to open.
+ *
+ * A federated project is not three demos — it is one demo that happens to be
+ * three files, and offering them as three cards makes the reader do the
+ * federating by hand, one download at a time. Worse, loaded singly they never
+ * show the thing they exist to show: the structure standing inside its own
+ * envelope. So a set is one card with one action.
+ *
+ * Single models come back as sets of one, so the gallery has a single shape to
+ * render rather than two code paths.
+ */
+export function demoSets(): DemoSet[] {
+  const order = sortedDemoModels()
+  const byId = new Map<string, DemoModel[]>()
+  const loose: DemoModel[] = []
+  for (const m of order) {
+    if (!m.setId) { loose.push(m); continue }
+    const list = byId.get(m.setId)
+    if (list) list.push(m)
+    else byId.set(m.setId, [m])
+  }
+
+  const sets: DemoSet[] = []
+  const seen = new Set<string>()
+  for (const m of order) {
+    if (m.setId) {
+      if (seen.has(m.setId)) continue
+      seen.add(m.setId)
+      const members = [...byId.get(m.setId)!]
+        .sort((a, b) => (a.setOrder ?? 99) - (b.setOrder ?? 99))
+      sets.push({
+        id: m.setId,
+        name: members.find((x) => x.setName)?.setName ?? members[0].name,
+        models: members,
+        category: members[0].category,
+        sizeBytes: members.reduce((n, x) => n + x.sizeBytes, 0),
+        featured: members.some((x) => x.featured),
+      })
+      continue
+    }
+    sets.push({
+      id: m.id, name: m.name, models: [m], category: m.category,
+      sizeBytes: m.sizeBytes, featured: Boolean(m.featured),
+    })
+    void loose
+  }
+  return sets
 }

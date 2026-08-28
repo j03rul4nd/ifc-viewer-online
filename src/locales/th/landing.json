@@ -286,7 +286,9 @@
       "mep": "งานระบบ (MEP)",
       "structural": "โครงสร้าง",
       "infrastructure": "โครงสร้างพื้นฐาน"
-    }
+    },
+    "loadAll": "โหลดทั้งหมด",
+    "disciplines": "{{count}} สาขา"
   },
   "footer": {
     "fixGuide": "วิธีแก้ไขข้อผิดพลาด IFC →",

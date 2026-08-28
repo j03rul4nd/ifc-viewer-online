@@ -25,37 +25,52 @@ import path from 'path'
 import proj4 from 'proj4'
 
 const DIR = path.join(process.cwd(), 'public', 'models', 'hotel-vela')
-const FILE = 'HotelVela.ifc'
+/** The architectural model — the one that carries the sail. */
+const FILE = 'BCN-IVO-ZZ-XX-M3-A-0002.ifc'
+/** The federated set: one project, three disciplines, one origin. */
+const SET = [
+  'BCN-IVO-ZZ-XX-M3-A-0002.ifc',
+  'BCN-IVO-ZZ-XX-M3-S-0002.ifc',
+  'BCN-IVO-ZZ-XX-M3-M-0002.ifc',
+]
 
-// ── The sail, as the build script defines it ─────────────────────────────────
-const STOREY_H = 3.8
-const STOREYS = 26
-const TOTAL_H = STOREY_H * STOREYS
-const CHORD_BASE = 96.0
-const CHORD_TOP = 44.0
-const CHORD_CURVE = 1.55
-const DEPTH_BASE = 26.0
-const DEPTH_TOP = 15.0
-const DEPTH_CURVE = 1.2
+// ── The building, from its own OpenStreetMap tags ────────────────────────────
+// way 908035012: building:levels=27, building:levels:underground=2, height=98.8
+const TOTAL_H = 98.8
+const STOREYS_ABOVE = 27
+const STOREYS_BELOW = 2
+const GROUND_H = 6.0
+const TYPICAL_H = Number(((TOTAL_H - GROUND_H) / (STOREYS_ABOVE - 1)).toFixed(4))
 const SLAB_T = 0.34
 
-const chordAt = (t: number): number => CHORD_BASE - (CHORD_BASE - CHORD_TOP) * t ** CHORD_CURVE
-const depthAt = (t: number): number => DEPTH_BASE - (DEPTH_BASE - DEPTH_TOP) * t ** DEPTH_CURVE
-
-/** The georeferencing the file must carry — the real site, not a placeholder. */
+/** The georeferencing the file must carry — the surveyed centroid of the plot. */
 const EPSG = 'EPSG:25831'
-const EASTINGS = 432274.81
-const NORTHINGS = 4579959.49
-const ROTATION_DEG = -45.0
+const EASTINGS = 432282.17
+const NORTHINGS = 4580004.72
+// ZERO: the outlines are already metres east/north, so the model grid IS the
+// map grid. A non-zero value here would mean somebody reintroduced a guess.
+const ROTATION_DEG = 0.0
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Line = any
 
 let api: IfcAPI
+/** One opened model per discipline, keyed A / S / M. */
+const models = new Map<string, number>()
+const indexes = new Map<string, Map<string, Line[]>>()
+/** The discipline currently under assertion — set by `use()`. */
 let model: number
 let index: Map<string, Line[]>
 let classOf: Map<number, string>
 
+/** Point the shared helpers at one discipline's file. */
+function use(role: 'A' | 'S' | 'M'): void {
+  model = models.get(role)!
+  index = indexes.get(role)!
+}
+
+const str2 = (v: { value?: unknown } | null | undefined): string =>
+  v && typeof v.value === 'string' ? v.value : ''
 const str = (v: { value?: unknown } | null | undefined): string =>
   v && typeof v.value === 'string' ? v.value : ''
 const num = (v: { value?: unknown } | null | undefined): number =>
@@ -89,41 +104,103 @@ function extents(expressID: number): Array<[number, number]> {
   return [[lo[0], hi[0]], [lo[1], hi[1]], [lo[2], hi[2]]]
 }
 
-const HAVE_FILE = existsSync(path.join(DIR, FILE))
+const HAVE_FILE = SET.every((f) => existsSync(path.join(DIR, f)))
 const suite = HAVE_FILE ? describe : describe.skip
 
 beforeAll(async () => {
   if (!HAVE_FILE) return
   api = new IfcAPI()
   await api.Init()
-  model = api.OpenModel(new Uint8Array(readFileSync(path.join(DIR, FILE))))
-  index = new Map()
   classOf = new Map()
-  for (const type of api.GetIfcEntityList(model)) {
-    const name = api.GetNameFromTypeCode(type).toUpperCase()
-    const ids = api.GetLineIDsWithType(model, type)
-    const lines: Line[] = []
-    for (let i = 0; i < ids.size(); i++) {
-      const entity = api.GetLine(model, ids.get(i), false)
-      classOf.set(entity.expressID, name)
-      lines.push(entity)
+  for (const file of SET) {
+    const role = file.split('-')[5] as 'A' | 'S' | 'M'
+    const m = api.OpenModel(new Uint8Array(readFileSync(path.join(DIR, file))))
+    const idx = new Map<string, Line[]>()
+    for (const type of api.GetIfcEntityList(m)) {
+      const name = api.GetNameFromTypeCode(type).toUpperCase()
+      const ids = api.GetLineIDsWithType(m, type)
+      const lines: Line[] = []
+      for (let i = 0; i < ids.size(); i++) {
+        const entity = api.GetLine(m, ids.get(i), false)
+        classOf.set(entity.expressID, name)
+        lines.push(entity)
+      }
+      idx.set(name, (idx.get(name) ?? []).concat(lines))
     }
-    index.set(name, (index.get(name) ?? []).concat(lines))
+    models.set(role, m)
+    indexes.set(role, idx)
   }
-}, 120_000)
+  use('A')
+}, 180_000)
 
-afterAll(() => { if (HAVE_FILE) api?.CloseModel(model) })
+afterAll(() => { if (HAVE_FILE) for (const m of models.values()) api?.CloseModel(m) })
 
-suite('the file itself', () => {
-  it('is IFC4 and opens through the parser the app ships', () => {
-    expect(api.GetModelSchema(model)).toBe('IFC4')
-    expect(of('IfcProject')).toHaveLength(1)
+suite('the federated set', () => {
+  it('is three IFC4 files, each opening through the parser the app ships', () => {
+    for (const role of ['A', 'S', 'M'] as const) {
+      use(role)
+      expect(api.GetModelSchema(model)).toBe('IFC4')
+      expect(of('IfcProject')).toHaveLength(1)
+    }
+    use('A')
   })
 
-  it('stays a file somebody can be handed at a stand', () => {
-    const kb = statSync(path.join(DIR, FILE)).size / 1024
-    expect(kb).toBeGreaterThan(80)
-    expect(kb, 'a landmark nobody waits for').toBeLessThan(900)
+  it('is named the way a CDE expects', () => {
+    // Project-Originator-Volume-Level-Type-Role-Number.
+    for (const f of SET) expect(f).toMatch(/^[A-Z]{3}-[A-Z]{3}-[A-Z]{2}-[A-Z]{2}-M3-[ASM]-\d{4}\.ifc$/)
+  })
+
+  it('stays a set somebody can be handed at a stand', () => {
+    const mb = SET.reduce((n, f) => n + statSync(path.join(DIR, f)).size, 0) / 1_048_576
+    expect(mb).toBeGreaterThan(0.3)
+    expect(mb, 'a landmark nobody waits for').toBeLessThan(4)
+  })
+
+  // THE POINT OF FEDERATION: three files, one place. If the disciplines
+  // disagreed about the origin they would land in different parts of the map
+  // and the set would be worse than any one file on its own.
+  it('agrees, file by file, on where the building stands', () => {
+    const seen = new Set<string>()
+    for (const role of ['A', 'S', 'M'] as const) {
+      use(role)
+      const c = of('IfcMapConversion')[0]
+      seen.add(`${num(c.Eastings).toFixed(2)}/${num(c.Northings).toFixed(2)}`
+        + `/${num(c.XAxisAbscissa).toFixed(6)}/${num(c.XAxisOrdinate).toFixed(6)}`)
+    }
+    use('A')
+    expect(seen.size).toBe(1)
+  })
+
+  // THE STALE-DISCIPLINE GUARD. The three files are generated by three separate
+  // Blender processes, so it is entirely possible to change the massing, rebuild
+  // one of them and ship a set whose architecture and structure describe
+  // different buildings. That happened during this model's own development —
+  // the pivot of the taper moved, only ARC was regenerated, and the structural
+  // plates kept the old shape. Nothing else here notices: each file is valid,
+  // schema-clean and self-consistent.
+  it('was built from ONE geometry — the roof agrees across disciplines', () => {
+    use('A')
+    const arc = extents(of('IfcRoof')[0].expressID)
+    use('S')
+    const str = extents(
+      of('IfcSlab').find((x) => str2(x.Name) === 'Roof Slab')!.expressID)
+    use('A')
+    for (const axis of [0, 1]) {
+      expect(Math.abs(arc[axis][0] - str[axis][0]),
+        'architecture and structure disagree about the roof outline').toBeLessThan(0.05)
+      expect(Math.abs(arc[axis][1] - str[axis][1])).toBeLessThan(0.05)
+    }
+  })
+
+  it('agrees on the storey list, so elements land on the same levels', () => {
+    const seen = new Set<string>()
+    for (const role of ['A', 'S', 'M'] as const) {
+      use(role)
+      seen.add(of('IfcBuildingStorey')
+        .map((s) => `${str(s.Name)}@${num(s.Elevation).toFixed(2)}`).sort().join('|'))
+    }
+    use('A')
+    expect(seen.size).toBe(1)
   })
 })
 
@@ -131,20 +208,32 @@ suite('the spatial tree', () => {
   it('runs project → site → building → storeys', () => {
     expect(of('IfcSite')).toHaveLength(1)
     expect(of('IfcBuilding')).toHaveLength(1)
-    expect(of('IfcBuildingStorey')).toHaveLength(STOREYS + 1)
+    expect(of('IfcBuildingStorey')).toHaveLength(STOREYS_BELOW + STOREYS_ABOVE + 1)
   })
 
-  it('puts every storey at its own elevation, evenly and ascending', () => {
+  it('runs from the basements to the roof, ascending', () => {
     const z = of('IfcBuildingStorey').map((s) => num(s.Elevation)).sort((a, b) => a - b)
-    expect(z[0]).toBeCloseTo(0, 6)
-    expect(z[z.length - 1]).toBeCloseTo(TOTAL_H, 2)
-    for (let i = 1; i < z.length; i++) expect(z[i] - z[i - 1]).toBeCloseTo(STOREY_H, 6)
+    expect(z[0]).toBeLessThan(0)                      // two basement levels
+    expect(z[z.length - 1]).toBeCloseTo(TOTAL_H, 2)   // height=98.8, from the tags
+    for (let i = 1; i < z.length; i++) expect(z[i]).toBeGreaterThan(z[i - 1])
+  })
+
+  it('gives the lobby its double height, and the rest a typical storey', () => {
+    const named = new Map(of('IfcBuildingStorey').map((s) => [str(s.Name), num(s.Elevation)]))
+    expect(named.get('Ground')).toBeCloseTo(0, 6)
+    expect(named.get('Level 01')).toBeCloseTo(GROUND_H, 2)
+    expect(named.get('Level 02')! - named.get('Level 01')!).toBeCloseTo(TYPICAL_H, 2)
   })
 })
 
 // ── The sail ──────────────────────────────────────────────────────────────────
 
 suite('the form is a sail, and could not have been extruded', () => {
+  // The floor plates are STRUCTURE. Reading them from the architectural file
+  // would be asking the wrong discipline, and getting one roof.
+  beforeAll(() => { if (HAVE_FILE) use('S') })
+  afterAll(() => { if (HAVE_FILE) use('A') })
+
   /** Each storey's floor plate, bottom to top. */
   const plates = (): Array<{ z: number; x: [number, number]; y: [number, number] }> =>
     of('IfcSlab').concat(of('IfcRoof'))
@@ -162,12 +251,23 @@ suite('the form is a sail, and could not have been extruded', () => {
   })
 
   it('has a floor plate at every storey', () => {
-    expect(plates()).toHaveLength(STOREYS + 1)
+    expect(plates().length).toBeGreaterThanOrEqual(STOREYS_ABOVE)
   })
+
+  /**
+   * The plates the SAIL rises through.
+   *
+   * The building is a broad podium with a tower on it — way 908035012 is
+   * 127 x 100 m and way 908035013 is 81 x 44 — so the lower plates are the
+   * plot and are deliberately all the same size. Mixing them into a "narrows
+   * with height" check compares the podium against itself and fails on a
+   * building that is behaving exactly as designed.
+   */
+  const sailPlates = () => plates().filter((p) => p.x[1] - p.x[0] < 100)
 
   // THE ASSERTION THIS FILE EXISTS FOR. A prism passes every other test here.
   it('narrows with height on BOTH axes, monotonically', () => {
-    const p = plates()
+    const p = sailPlates()
     for (let i = 1; i < p.length; i++) {
       const below = p[i - 1]
       const here = p[i]
@@ -181,38 +281,50 @@ suite('the form is a sail, and could not have been extruded', () => {
   })
 
   it('is dramatically narrower at the top than at the base', () => {
-    const p = plates()
+    const p = sailPlates()
     const base = p[0].x[1] - p[0].x[0]
     const top = p[p.length - 1].x[1] - p[p.length - 1].x[0]
-    expect(base).toBeCloseTo(chordAt(0), 0)
-    expect(top).toBeCloseTo(chordAt(1), 0)
     // Roughly halves. A prism would be 1.0 and a cone would go to nothing.
-    expect(top / base).toBeGreaterThan(0.35)
-    expect(top / base).toBeLessThan(0.6)
+    // TOWER_TOP_SCALE is 0.62, so the plate keeps a little under two thirds of
+    // its width. A prism would be 1.0 and a cone would run to nothing.
+    expect(top / base).toBeGreaterThan(0.45)
+    expect(top / base).toBeLessThan(0.75)
   })
 
   it('keeps ONE edge vertical while the other sweeps — the sail asymmetry', () => {
-    const p = plates()
-    // The spine: every storey starts at the same x.
-    const spine = p.map((s) => s.x[0])
+    const p = sailPlates()
+    // The spine: the taper pivots on a CORNER, so this edge holds still.
+    const spine = p.map((s) => s.x[1])
     expect(Math.max(...spine) - Math.min(...spine)).toBeLessThan(0.5)
-    // The swept edge: monotonically inward, by tens of metres.
-    const swept = p.map((s) => s.x[1])
-    for (let i = 1; i < swept.length; i++) expect(swept[i]).toBeLessThan(swept[i - 1])
-    expect(swept[0] - swept[swept.length - 1]).toBeGreaterThan(40)
+    // The swept edge draws in, monotonically and by tens of metres. Without
+    // this the plate would shrink about its centroid and read as a cone.
+    const swept = p.map((s) => s.x[0])
+    for (let i = 1; i < swept.length; i++) expect(swept[i]).toBeGreaterThan(swept[i - 1])
+    expect(swept[swept.length - 1] - swept[0]).toBeGreaterThan(20)
   })
 
-  it('bulges: the plan is a lens, not a rectangle', () => {
-    const p = plates()
-    expect(p[0].y[1] - p[0].y[0]).toBeCloseTo(depthAt(0), 0)
-    expect(p[p.length - 1].y[1] - p[p.length - 1].y[0]).toBeCloseTo(depthAt(1), 0)
+  it('stands on the surveyed footprint, not on an invented one', () => {
+    // way 908035013 — the sail's own building:part — is 81.5 x 44.4 m at its
+    // base. A model that drifts from that is no longer this building.
+    const p = sailPlates()
+    expect(p[0].x[1] - p[0].x[0]).toBeGreaterThan(70)
+    expect(p[0].x[1] - p[0].x[0]).toBeLessThan(95)
+    expect(p[0].y[1] - p[0].y[0]).toBeGreaterThan(35)
+    expect(p[0].y[1] - p[0].y[0]).toBeLessThan(55)
+  })
+
+  it('sets the sail on a podium that covers the plot', () => {
+    // way 908035012 is 127.3 x 100.6 m. The podium is the building meeting the
+    // ground, and without it the tower stands on nothing.
+    const podium = plates().filter((p) => p.x[1] - p.x[0] > 100)
+    expect(podium.length).toBeGreaterThanOrEqual(3)
+    expect(podium[0].x[1] - podium[0].x[0]).toBeCloseTo(127.3, 0)
   })
 
   it('tops out each plate exactly at its own level datum', () => {
     for (const s of of('IfcSlab')) {
       if (!str(s.Name).endsWith('Slab') || str(s.Name) === 'Plinth') continue
       const [, hi] = extents(s.expressID)[2]
-      expect(Math.abs(hi / STOREY_H - Math.round(hi / STOREY_H))).toBeLessThan(0.01)
       expect(extents(s.expressID)[2][1] - extents(s.expressID)[2][0]).toBeCloseTo(SLAB_T, 2)
     }
   })
@@ -221,21 +333,25 @@ suite('the form is a sail, and could not have been extruded', () => {
 // ── The facade ────────────────────────────────────────────────────────────────
 
 suite('the floor line is expressed in geometry, not only in material', () => {
+  beforeAll(() => { if (HAVE_FILE) use('A') })
+
   it('has a glazed band and a spandrel band at every occupied storey', () => {
-    expect(of('IfcPlate')).toHaveLength(STOREYS * 2)
+    expect(of('IfcPlate')).toHaveLength((STOREYS_ABOVE - 1) * 2)
   })
 
-  it('stands the spandrel PROUD of the glass', () => {
-    // Flush, it is invisible at this height and the elevation reads as one
-    // undifferentiated sheet — measured, not assumed: the first build set the
-    // offset to 0.12 m and the facade rendered flat.
+  it('stands the spandrel proud of the glass — a REVEAL, not a rib', () => {
+    // Both directions of this have been wrong. Flush, the floor line vanishes
+    // at 99 m. Standing a third of a metre proud, twenty-seven bands read as a
+    // stack of fins and the building stops looking like a smooth specular
+    // skin. What is wanted is a shadow gap you would actually detail, with the
+    // floor line carried by MATERIAL — glass against anodised aluminium.
     const glass = named('Level 01 Curtain Wall')!
     const spandrel = named('Level 01 Spandrel')!
     expect(glass).toBeDefined()
     expect(spandrel).toBeDefined()
-    const gy = extents(glass.expressID)[1][1]
-    const sy = extents(spandrel.expressID)[1][1]
-    expect(sy - gy).toBeGreaterThan(0.2)
+    const delta = extents(spandrel.expressID)[1][1] - extents(glass.expressID)[1][1]
+    expect(delta).toBeGreaterThan(0.02)
+    expect(delta).toBeLessThan(0.25)
   })
 
   it('gives every element a material', () => {

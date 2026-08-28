@@ -286,7 +286,9 @@
       "mep": "設備（MEP）",
       "structural": "構造",
       "infrastructure": "インフラ"
-    }
+    },
+    "loadAll": "すべて読み込む",
+    "disciplines": "{{count}} 分野"
   },
   "footer": {
     "fixGuide": "IFC エラーの修正方法 →",

@@ -286,7 +286,9 @@
       "mep": "MEP",
       "structural": "Estructural",
       "infrastructure": "Infraestructura"
-    }
+    },
+    "loadAll": "Carrega-ho tot",
+    "disciplines": "{{count}} disciplines"
   },
   "footer": {
     "fixGuide": "Com corregir errors IFC →",
