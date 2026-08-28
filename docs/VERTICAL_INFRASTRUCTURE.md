@@ -268,11 +268,40 @@ coordinate, no name, no city is special-cased anywhere in the infrastructure
 engine. Port Vell is a stress test, not a subject; the same code has to work in
 Rotterdam, Hamburg or Hong Kong.
 
-`hotel-vela-ifc.test.ts` asserts the things a prism would otherwise pass: the
-plan narrows monotonically on both axes, one edge stays vertical while the other
-sweeps in by more than 40 m, and the floor line stands proud of the glass as
-GEOMETRY rather than only as material — flush, it is invisible at 99 m and
-twenty-six storeys of curtain wall read as one flat sheet.
+### It stands on its own footprint
+
+The plan is not invented either. `hotel_vela_site.py` carries the real
+OpenStreetMap geometry, so the two things a landmark has to get right — WHERE it
+is and WHAT SHAPE it is — both come from survey:
+
+| | source | |
+|---|---|---|
+| plot | way `908035012` | 8 466 m², 127.3 × 100.6 m — the podium |
+| sail | way `908035013`, a `building:part` | 2 332 m², 81.5 × 44.4 m — the tower plate |
+
+and the tags settle the rest: `building:levels=27`, `building:levels:underground=2`,
+`height=98.8`, Ricardo Bofill, 2009. Because the outlines arrive as metres
+east/north, the grid rotation is **zero** — there is no orientation left to guess
+at, which is exactly what a landmark gets wrong when its plan is invented.
+
+### Delivered the way a project is
+
+Three files sharing one origin, one grid and one storey list: architecture,
+structure and services. Each is complete on its own and none repeats another's
+geometry — the floor plates live in STR, the envelope in ARC — which is what
+makes federation mean something rather than being three copies of a building.
+
+`hotel-vela-ifc.test.ts` asserts what a prism would otherwise pass: the plan
+narrows monotonically on both axes across the SAIL levels (the podium is
+deliberately constant), one edge holds still while the other sweeps in, and the
+disciplines agree — same origin, same storeys, same roof outline.
+
+That last one is not theoretical. The three files are built by three separate
+Blender processes, so it is entirely possible to change the massing, rebuild one
+of them and ship a set whose architecture and structure describe different
+buildings. It happened here: the taper's pivot moved, only ARC was regenerated,
+and the structural plates kept the old shape. Every file was still valid,
+schema-clean and self-consistent, and nothing else noticed.
 
 ---
 

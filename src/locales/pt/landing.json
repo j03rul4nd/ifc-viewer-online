@@ -286,7 +286,9 @@
       "mep": "MEP",
       "structural": "Estrutural",
       "infrastructure": "Infraestrutura"
-    }
+    },
+    "loadAll": "Carregar tudo",
+    "disciplines": "{{count}} disciplinas"
   },
   "footer": {
     "poweredBy": "Powered by IFC.js",

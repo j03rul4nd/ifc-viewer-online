@@ -286,7 +286,9 @@
       "mep": "TGA",
       "structural": "Tragwerk",
       "infrastructure": "Infrastruktur"
-    }
+    },
+    "loadAll": "Alle laden",
+    "disciplines": "{{count}} Fachmodelle"
   },
   "footer": {
     "poweredBy": "Powered by IFC.js",

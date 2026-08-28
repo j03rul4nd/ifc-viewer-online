@@ -286,7 +286,9 @@
       "mep": "Impianti",
       "structural": "Strutturale",
       "infrastructure": "Infrastrutture"
-    }
+    },
+    "loadAll": "Carica tutto",
+    "disciplines": "{{count}} discipline"
   },
   "footer": {
     "poweredBy": "Powered by IFC.js",

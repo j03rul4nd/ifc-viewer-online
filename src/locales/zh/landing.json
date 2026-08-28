@@ -286,7 +286,9 @@
       "mep": "机电",
       "structural": "结构",
       "infrastructure": "基础设施"
-    }
+    },
+    "loadAll": "全部加载",
+    "disciplines": "{{count}} 个专业"
   },
   "footer": {
     "fixGuide": "如何修复 IFC 错误 →",

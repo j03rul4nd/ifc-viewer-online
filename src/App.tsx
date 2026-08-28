@@ -1117,11 +1117,26 @@ export default function App() {
 
   // The gallery already downloaded the chosen model into a File — switch to the
   // viewer and run the normal load pipeline (which handles OPFS caching/parse).
-  const handleDemoModelReady = (_model: DemoModel, file: File): void => {
+  const handleDemoModelReady = async (_model: DemoModel, file: File): Promise<void> => {
     setShowDemoGallery(false)
     demoLoadRef.current = true
     setRoute('viewer')
-    handleFileLoad(file)
+    // Resolve only once the model is actually IN the scene. A federated set is
+    // handed over one file at a time and the parser takes them one at a time,
+    // so returning early lets the next file race the one still being read —
+    // and the loser is dropped without an error.
+    await new Promise<void>((resolve) => {
+      const off = appBus.on('model:loaded', ({ modelInfo }) => {
+        if (modelInfo.fileName !== file.name) return
+        window.clearTimeout(timer)
+        off()
+        resolve()
+      })
+      // Never leave the gallery spinning on a file that failed to parse: the
+      // set should carry on to the next discipline.
+      const timer = window.setTimeout(() => { off(); resolve() }, 60_000)
+      handleFileLoad(file)
+    })
   }
 
   // One-click exhibition path from VideoPanel. The matching IFC is a normal
