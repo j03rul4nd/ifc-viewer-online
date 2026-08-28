@@ -11,6 +11,12 @@ describe('realtime LiDAR showcase catalogue', () => {
       .toBe(TEMPORAL_LIDAR_SHOWCASES.length)
   })
 
+  // Generating three full frames of a showcase cloud is CPU-bound work: ~1.6 s
+  // for the heaviest scene on an idle machine, against vitest's 5 s default. The
+  // margin looks comfortable and is not — the suite runs files in parallel, so
+  // the budget is whatever is left over, and this timed out once the geo suite
+  // grew. Raised well clear of the load rather than left to flake; nothing about
+  // what is asserted changes, and a genuine hang still fails.
   it.each(TEMPORAL_LIDAR_SHOWCASES)('$id stays inside its bounded reusable GPU buffer', (showcase) => {
     const source = showcase.createSource()
     const first = source.sample(0, 1)
@@ -30,7 +36,7 @@ describe('realtime LiDAR showcase catalogue', () => {
     for (const value of latest.positions.subarray(0, latest.count * 3)) {
       expect(Number.isFinite(value)).toBe(true)
     }
-  })
+  }, 30_000)
 
   it('gives every new exhibition scene a deliberate first camera pose', () => {
     const newScenes = TEMPORAL_LIDAR_SHOWCASES.filter((item) => item.id !== 'operations-pavilion')
