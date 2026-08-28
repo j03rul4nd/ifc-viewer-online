@@ -36,6 +36,7 @@ interface FakePatch {
   zoom: number
   centerTx: number
   centerTy: number
+  sampleGroundM: (nx: number, ny: number) => number
   redrape: ReturnType<typeof vi.fn>
   setStyle: ReturnType<typeof vi.fn>
   setExaggeration: ReturnType<typeof vi.fn>
@@ -154,6 +155,9 @@ beforeEach(() => {
       zoom: 15,
       centerTx: t.x,
       centerTy: t.y,
+      // A real patch answers this for every point on it, and the layers ask.
+      // Without it any test that builds geometry over terrain throws.
+      sampleGroundM: () => 100,
       redrape: vi.fn(async () => { /* drape swapped */ }),
       setStyle: vi.fn(),
       setExaggeration: vi.fn(),
@@ -522,11 +526,14 @@ describe('geo-system · OSM feature cache', () => {
             features: [{
               id: 'w1',
               kind: 'building',
+              // ~220 m north of the placement. ON the placement it would be
+              // suppressed as the mapped twin of the model itself, which is
+              // correct behaviour and would leave these tests with no mesh.
               ring: [
-                { lat: 41.3851, lon: 2.1734 }, { lat: 41.3852, lon: 2.1734 },
-                { lat: 41.3852, lon: 2.1735 }, { lat: 41.3851, lon: 2.1735 },
+                { lat: 41.3871, lon: 2.1734 }, { lat: 41.3872, lon: 2.1734 },
+                { lat: 41.3872, lon: 2.1735 }, { lat: 41.3871, lon: 2.1735 },
               ],
-              height: { heightM: 12, source: 'tag' },
+              height: { heightM: 12, minHeightM: 0, estimated: false },
               style: { roofShape: 'flat', roofHeightM: 0 },
             }],
             counts: { building: 1, water: 0, green: 0, tree: 0, bridge: 0 },
@@ -575,6 +582,75 @@ describe('geo-system · OSM feature cache', () => {
 
     expect(again.status).toBe('ready')
     expect(FakeBuildingsWorker.built).toBe(1)
+  })
+
+  // The micro-relief slider is not a look — it DISPLACES the terrain mesh, and
+  // `sampleGroundM` reads the displaced array. Anything already baked against
+  // the old surface stays on it: buildings float or sink, roads leave the
+  // ground, water levels detach. Exaggeration has always rebuilt for exactly
+  // this reason; `detail` moves the same surface and did not.
+  it('re-seats the layers when the micro-relief slider moves the ground', async () => {
+    const f = makeFixture()
+    const geo = createGeoSystem(f.ctx)
+    await geo.enable(PLACEMENT, PROVIDER)
+    await geo.setTerrain(true)
+    // The fixture's model footprint is a bare bounding box at the placement;
+    // this test is about the terrain, not about what the model replaces.
+    geo.setContextSuppression({ enabled: false })
+    await geo.setBuildings(true)
+
+    const buildings = (): THREE.Object3D | undefined => {
+      let hit: THREE.Object3D | undefined
+      f.scene.traverse((o) => { if (o.name === 'osm-buildings') hit = o })
+      return hit
+    }
+    const LOOK = {
+      sunAzimuth: 135, sunAltitude: 45, softness: 0.5,
+      occlusion: 0, detail: 0, contourInterval: 0,
+    }
+    geo.setTerrainLook(LOOK)
+    const before = buildings()
+    expect(before).toBeDefined()
+
+    // A sun slider only repaints the hillshade. It must NOT pay for a rebuild.
+    geo.setTerrainLook({ ...LOOK, sunAzimuth: 200 })
+    expect(buildings()).toBe(before)
+
+    // `detail` moves the ground, so everything on it has to be re-derived.
+    geo.setTerrainLook({ ...LOOK, sunAzimuth: 200, detail: 0.6 })
+    const after = buildings()
+    expect(after).toBeDefined()
+    expect(after).not.toBe(before)
+    geo.dispose()
+  })
+
+  // Nothing may survive a terrain toggle holding the PREVIOUS ground's answer.
+  // The vertical field, the ground resolver and every profile sampler are
+  // derived from the terrain, so all three have to be thrown away with it —
+  // and the toggle is a control the user can flip repeatedly and quickly.
+  it('rebuilds the scene on every terrain toggle, in both directions', async () => {
+    const f = makeFixture()
+    const geo = createGeoSystem(f.ctx)
+    await geo.enable(PLACEMENT, PROVIDER)
+    geo.setContextSuppression({ enabled: false })
+    await geo.setBuildings(true)
+
+    const buildings = (): THREE.Object3D | undefined => {
+      let hit: THREE.Object3D | undefined
+      f.scene.traverse((o) => { if (o.name === 'osm-buildings') hit = o })
+      return hit
+    }
+
+    const seen: Array<THREE.Object3D | undefined> = [buildings()]
+    for (const on of [true, false, true, false]) {
+      await geo.setTerrain(on)
+      seen.push(buildings())
+    }
+    for (const o of seen) expect(o).toBeDefined()
+    // Every toggle produced FRESH geometry — no step reused the mesh built
+    // against the other ground.
+    for (let i = 1; i < seen.length; i++) expect(seen[i]).not.toBe(seen[i - 1])
+    geo.dispose()
   })
 
   it('re-queries once the model moves out of the cached neighbourhood', async () => {

@@ -135,7 +135,8 @@
       "bridge": "Pontes",
       "road": "Roads & paths",
       "rail": "Railways & platforms",
-      "signal": "Traffic lights"
+      "signal": "Traffic lights",
+      "pier": "Cais e molhes"
     },
     "detailLevel": "Detail",
     "detailSimple": "Simple",

@@ -84,7 +84,7 @@ async function handleFetch(req: BuildingsRequest): Promise<void> {
     }
 
     const elements = (json as { elements?: unknown[] })?.elements
-    const features = parseOsmFeatures(json)
+    const features = parseOsmFeatures(json, { bbox })
     post({
       type: 'done',
       id: req.id,

@@ -21,7 +21,7 @@ const log = createLogger('GeoStore')
 /** Empty per-layer counts — the shape `buildingsCounts` always has. */
 const NO_FEATURE_COUNTS: Record<FeatureKind, number> = {
   building: 0, water: 0, green: 0, sand: 0, rock: 0,
-  tree: 0, bridge: 0, road: 0, rail: 0, signal: 0,
+  tree: 0, bridge: 0, road: 0, rail: 0, signal: 0, pier: 0,
 }
 
 /**
@@ -79,7 +79,7 @@ function readContextTone(): ContextTone {
 function readFeatureLayers(): FeatureLayerVisibility {
   const fallback: FeatureLayerVisibility = {
     building: true, water: true, green: true, sand: true, rock: true,
-    tree: true, bridge: true, road: true, rail: true,
+    tree: true, bridge: true, road: true, rail: true, pier: true,
     // Off by default: a junction full of masts is a choice, not a default.
     signal: false,
   }

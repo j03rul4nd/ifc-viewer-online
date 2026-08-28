@@ -135,7 +135,8 @@
       "bridge": "Brücken",
       "road": "Roads & paths",
       "rail": "Railways & platforms",
-      "signal": "Traffic lights"
+      "signal": "Traffic lights",
+      "pier": "Piers & Kais"
     },
     "detailLevel": "Detail",
     "detailSimple": "Simple",

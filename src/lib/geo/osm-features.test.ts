@@ -20,9 +20,13 @@ describe('classifyFeature', () => {
     expect(classifyFeature({ landuse: 'forest' })).toBe('green')
     expect(classifyFeature({ natural: 'wood' })).toBe('green')
     expect(classifyFeature({ natural: 'tree' })).toBe('tree')
+    // An area-mapped bridge OUTLINE is its own kind: it is a polygon nobody
+    // else describes.
     expect(classifyFeature({ man_made: 'bridge' })).toBe('bridge')
-    expect(classifyFeature({ bridge: 'yes', highway: 'primary' })).toBe('bridge')
-    expect(classifyFeature({ bridge: 'viaduct', railway: 'rail' })).toBe('bridge')
+    // A `bridge=yes` WAY is not. It stays the road or the railway it is, and
+    // the structure travels beside the kind. See `vertical.ts`.
+    expect(classifyFeature({ bridge: 'yes', highway: 'primary' })).toBe('road')
+    expect(classifyFeature({ bridge: 'viaduct', railway: 'rail' })).toBe('rail')
   })
 
   it('treats building=no as not a building', () => {
@@ -145,7 +149,7 @@ describe('parseOsmFeatures', () => {
     expect(out.map((f) => f.kind).sort()).toEqual(['building', 'green', 'tree', 'water'])
   })
 
-  it('keeps a linear bridge as a centreline with a width', () => {
+  it('keeps a road on a bridge IN the road network, carrying its structure', () => {
     const out = parseOsmFeatures({
       elements: [{
         type: 'way', id: 5, tags: { bridge: 'yes', highway: 'primary', lanes: '2' },
@@ -153,9 +157,38 @@ describe('parseOsmFeatures', () => {
       }],
     })
     expect(out).toHaveLength(1)
-    expect(out[0].kind).toBe('bridge')
+    // It is a ROAD — so it keeps its junctions, its width solving and its
+    // markings — that happens to be carried on a bridge.
+    expect(out[0].kind).toBe('road')
+    expect(out[0].vertical?.structure).toBe('bridge')
+    expect(out[0].functional).toBe('road')
     expect(out[0].ring).toHaveLength(2)   // open centreline, not an area
     expect(out[0].widthM).toBeGreaterThan(0)
+  })
+
+  it('carries the vertical model on a railway in a tunnel too', () => {
+    const out = parseOsmFeatures({
+      elements: [{
+        type: 'way', id: 7, tags: { railway: 'rail', tunnel: 'yes', layer: '-2' },
+        geometry: [{ lat: 41.38, lon: 2.17 }, { lat: 41.381, lon: 2.171 }],
+      }],
+    })
+    expect(out).toHaveLength(1)
+    expect(out[0].kind).toBe('rail')
+    expect(out[0].vertical?.structure).toBe('tunnel')
+    expect(out[0].vertical?.layer).toBe(-2)
+    expect(out[0].functional).toBe('railway')
+  })
+
+  it('reads a footway as pedestrian, which has its own clearances and grades', () => {
+    const out = parseOsmFeatures({
+      elements: [{
+        type: 'way', id: 8, tags: { highway: 'footway', bridge: 'yes' },
+        geometry: [{ lat: 41.38, lon: 2.17 }, { lat: 41.381, lon: 2.171 }],
+      }],
+    })
+    expect(out[0].functional).toBe('pedestrian')
+    expect(out[0].vertical?.structure).toBe('bridge')
   })
 
   it('treats an area-mapped bridge as a polygon', () => {
@@ -315,8 +348,10 @@ describe('road and rail classification', () => {
 
   it('keeps buildings and bridges ahead of both', () => {
     expect(classifyFeature({ building: 'train_station', railway: 'platform' })).toBe('building')
-    expect(classifyFeature({ highway: 'primary', bridge: 'yes' })).toBe('bridge')
-    expect(classifyFeature({ railway: 'rail', bridge: 'yes' })).toBe('bridge')
+    // A bridge tag no longer outranks the thing being carried — that was the
+    // modelling error that removed every overpass from the road graph.
+    expect(classifyFeature({ highway: 'primary', bridge: 'yes' })).toBe('road')
+    expect(classifyFeature({ railway: 'rail', bridge: 'yes' })).toBe('rail')
   })
 })
 
@@ -819,7 +854,7 @@ describe('what is not on the surface is not drawn', () => {
     })).toHaveLength(1)
   })
 
-  it('drops the metro tunnel and the culverted stream from the scene', () => {
+  it('drops the culverted stream and the indoor corridor, KEEPS the metro', () => {
     const out = parseOsmFeatures({
       elements: [
         { type: 'way', id: 1, tags: { railway: 'subway', tunnel: 'yes' }, geometry: line },
@@ -828,7 +863,25 @@ describe('what is not on the surface is not drawn', () => {
         { type: 'way', id: 4, tags: { highway: 'secondary' }, geometry: line },
       ],
     })
-    expect(out.map((f) => f.id)).toEqual(['w4'])
+    // A culverted stream drawn as a blue ribbon through a park, and a shopping
+    // centre's corridors drawn as streets, are still wrong. But a metro is
+    // infrastructure to be drawn BELOW the surface, not scenery to be deleted —
+    // and deleting it at parse time, before the cache, meant no layer toggle
+    // could ever bring it back.
+    expect(out.map((f) => f.id)).toEqual(['w1', 'w4'])
+    expect(out[0].vertical?.structure).toBe('tunnel')
+  })
+
+  it('keeps a building passage, which is the ground floor of a street', () => {
+    // 114 of the 226 tunnel-tagged ways in the benchmark district are these:
+    // arcades and gateways people walk through. All of them used to vanish.
+    const out = parseOsmFeatures({
+      elements: [
+        { type: 'way', id: 9, tags: { highway: 'footway', tunnel: 'building_passage' }, geometry: line },
+      ],
+    })
+    expect(out).toHaveLength(1)
+    expect(out[0].vertical?.structure).toBe('covered')
   })
 })
 
@@ -884,5 +937,61 @@ describe('monuments whose form their outline cannot carry', () => {
   it('asks Overpass for the ones that are not tagged as buildings', () => {
     const q = buildFeaturesQuery({ south: 41.38, west: 2.17, north: 41.39, east: 2.19 })
     expect(q).toContain('["man_made"="arch"]')
+  })
+})
+
+
+// ── The sea ───────────────────────────────────────────────────────────────────
+// `natural=coastline` is a LINE, and the water it implies is not mapped by
+// anybody. Until this existed, a waterfront site drew no sea at all — the open
+// Port Vell basin and the Mediterranean beyond it are pure coastline, and the
+// roads and buildings of the Barceloneta hung over nothing.
+
+describe('coastline becomes the sea', () => {
+  const BBOX = { south: 41.36, west: 2.17, north: 41.38, east: 2.19 }
+
+  /** A northward shore down the middle: land west, water east. */
+  const shore = {
+    type: 'way', id: 900, tags: { natural: 'coastline' },
+    geometry: [
+      { lat: 41.35, lon: 2.18 }, { lat: 41.37, lon: 2.18 }, { lat: 41.39, lon: 2.18 },
+    ],
+  }
+
+  it('emits a water feature covering the seaward side', () => {
+    const out = parseOsmFeatures({ elements: [shore] }, { bbox: BBOX })
+    const sea = out.filter((f) => f.kind === 'water')
+    expect(sea).toHaveLength(1)
+    expect(sea[0].ring!.length).toBeGreaterThanOrEqual(3)
+    // Every vertex east of, or on, the shoreline — the water side.
+    expect(sea[0].ring!.every((p) => p.lon >= 2.18 - 1e-9)).toBe(true)
+  })
+
+  it('is an ORDINARY water feature, so every existing path just works', () => {
+    // Not a new kind, not a new layer, not a new contract. The layer toggle,
+    // the material, the animation and the DEM water mask all already handle it.
+    const sea = parseOsmFeatures({ elements: [shore] }, { bbox: BBOX })
+      .find((f) => f.kind === 'water')!
+    expect(sea.style.roofShape).toBeDefined()
+    expect(sea.height.heightM).toBe(0)
+  })
+
+  it('draws no sea inland', () => {
+    const out = parseOsmFeatures({
+      elements: [{ type: 'way', id: 5, tags: { highway: 'residential' },
+        geometry: [{ lat: 41.37, lon: 2.175 }, { lat: 41.375, lon: 2.176 }] }],
+    }, { bbox: BBOX })
+    expect(out.filter((f) => f.kind === 'water')).toHaveLength(0)
+  })
+
+  it('does not draw the coastline itself as a feature', () => {
+    // It is the EDGE of the water, not a thing. Drawn, it would be a blue line
+    // running down the beach.
+    const out = parseOsmFeatures({ elements: [shore] }, { bbox: BBOX })
+    expect(out.every((f) => f.id !== 'w900')).toBe(true)
+  })
+
+  it('needs the bbox — without it there is nothing to close the sea against', () => {
+    expect(parseOsmFeatures({ elements: [shore] })).toHaveLength(0)
   })
 })

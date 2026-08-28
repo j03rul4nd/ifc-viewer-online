@@ -30,6 +30,10 @@ import { buildSignalLayer, buildVehicleLayer } from './props-scene'
 import { loadPropAssets } from './props-assets'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, buildLinearLayer, disposeLayer,
+  solveSceneVertical, buildWaterMask, buildPierLayer, type LayerMeshOptions,
+} from './osm-scene'
+import { describeProfile, summariseProfiles } from './vertical-network'
+import {
   buildRoofPropLayer,
 } from './osm-scene'
 import { setSurfaceTime, hasAnimatedMaterial } from './surface-shaders'
@@ -331,7 +335,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   const animatedLayers: THREE.Object3D[] = []
   let layerVisibility: FeatureLayerVisibility = {
     building: true, water: true, green: true, sand: true, rock: true,
-    tree: true, bridge: true, road: true, rail: true,
+    tree: true, bridge: true, road: true, rail: true, pier: true,
     // Opt-in: signals are real, but a junction full of masts is a choice.
     signal: false,
   }
@@ -625,12 +629,21 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     },
 
     setTerrainLook(look) {
+      const previous = terrainLook
       terrainLook = clampTerrainLook(look)
       terrain?.setLook(terrainLook)
       // The relief light IS the light on everything standing on it, and under
       // PBR that light arrives through the sky. Rebuilding it is what makes the
       // sun sliders move the whole scene rather than just the hillshade.
       scheduleSky()
+      // `detail` is not a look. The sun sliders repaint the terrain; the
+      // micro-relief slider MOVES IT — `setLook` calls `applyHeights`, which
+      // rewrites the `effective` array that `sampleGroundM` reads, by up to
+      // ~2.4 m × exaggeration on a slope. Every road, building, tree, deck and
+      // water level was baked against the old surface and stays there, which is
+      // the same detachment `setTerrainExaggeration` rebuilds to avoid. Only
+      // `detail` needs this: azimuth and altitude do not touch geometry.
+      if (terrain && terrainLook.detail !== previous.detail) rebuildLayers()
     },
 
     async setBuildings(enabled) {
@@ -867,7 +880,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       ? osmFeatures.filter(modelSuppressor())
       : osmFeatures
 
-    const opts = {
+    const opts: LayerMeshOptions = {
       anchorLat: placement.lat,
       // The palette needs to know WHERE it is. Latitude alone cannot tell Kyoto
       // from Rotterdam, and painting both from one list of European renders is
@@ -902,6 +915,36 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // on screen. Otherwise 'detailed' would look different depending on where
       // the user had been, which is the kind of state bug nobody can report.
       assets: contextDetail === 'showcase' ? propAssets : null,
+    }
+
+    // THE VERTICAL FIELD, solved once for the whole scene.
+    //
+    // Once, and before any layer is built, because grade separation is a
+    // question about PAIRS: a carriageway only knows how much headroom it owes
+    // from what passes beneath it, so roads and railways have to be solved
+    // together and before either is drawn. Every builder then reads the answer
+    // instead of deriving its own — which is the rule that stopped bridges,
+    // roads and tunnels each having a private opinion about the vertical axis.
+    //
+    // The water mask goes in first: over a harbour the raster is measuring
+    // moored ships, and no statistic can find ground in a window that has none.
+    const waterMask = buildWaterMask(visibleFeatures, { mToN: metresToNormalized(placement!.lat) })
+    opts.vertical = solveSceneVertical(visibleFeatures, opts, waterMask)
+    if (import.meta.env.DEV) {
+      // Console-reachable, dev only. When a road is floating, the geometry
+      // cannot say why — every decision that produced it has been forgotten by
+      // the time it is a triangle. This is where they are still written down.
+      //   __geoVertical.summary()
+      //   __geoVertical.describe('w51')
+      const solvedNow = opts.vertical
+      ;(globalThis as Record<string, unknown>).__geoVertical = {
+        profiles: solvedNow,
+        summary: () => summariseProfiles(solvedNow.values()),
+        describe: (id: string) => {
+          const hit = solvedNow.get(id)
+          return hit ? describeProfile(hit) : `no vertical profile for "${id}"`
+        },
+      }
     }
 
     let estimatedCount = 0
@@ -953,6 +996,15 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // between them from a screenshot is how an afternoon disappears — so the
       // builders count both and the number is said out loud here.
       reportSurfaceLoss(layer, visibleFeatures, built)
+    }
+
+    // Decks at the water's edge, after the water and before the roads that run
+    // out along them. A pier stands IN the water it is drawn over, so it has to
+    // come second; and a service road on a quay stands ON the pier, so it has
+    // to come third.
+    if (layerVisibility.pier) {
+      const built = buildPierLayer(visibleFeatures, opts)
+      if (built) { addLayer('pier', built.object) }
     }
 
     // Ground ribbons before the things that sit on them: roads over greenery,

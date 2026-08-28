@@ -6,7 +6,10 @@
 
 import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
-import { buildSurfaceLayer, buildTreeLayer, buildLinearLayer, buildBridgeLayer } from './osm-scene'
+import {
+  buildSurfaceLayer, buildTreeLayer, buildLinearLayer, buildBridgeLayer, solveSceneVertical,
+} from './osm-scene'
+import { readVerticalTags } from './vertical'
 import { buildBuildingsGeometry } from './building-mesh'
 import { buildSignalLayer } from './props-scene'
 import { createGroundFrame } from './ground-frame'
@@ -290,5 +293,191 @@ describe('bridges clear the ground they cross', () => {
     for (let i = 0; i < pos.count; i++) {
       expect(pos.getZ(i)).toBeGreaterThan(frame.groundZ(pos.getX(i), pos.getY(i)) - 1e-12)
     }
+  })
+
+  /** The 300 m span used by the exaggeration cases, rising 75 m across. */
+  const span = (): OsmFeature => ({
+    id: 'b1', kind: 'bridge',
+    ring: [
+      { lat: LAT, lon: LON },
+      { lat: LAT, lon: LON + 300 / (111_320 * Math.cos((LAT * Math.PI) / 180)) },
+    ],
+    height: { heightM: 8, minHeightM: 0, estimated: false },
+    widthM: 10,
+    style: { roofShape: 'flat', roofHeightM: 0 },
+  })
+
+  // The rule from ground-frame's header, for the one builder that had never
+  // been held to it: GROUND is exaggerated, OBJECT HEIGHT never is. Before this
+  // guard existed the clearance was folded into `zAtElevationM`'s argument and
+  // rode the slider — 6 m at ×1, 18 m at ×3 — over a deck that stayed 1.2 m
+  // thick. The old test ran only at ×1, so both the bug and its fix passed it.
+  it('keeps its clearance in TRUE METRES at every exaggeration', () => {
+    // Measured against the frame rather than a hand-computed elevation: the
+    // span's east end is 300 GROUND metres out, which is not exactly 300
+    // MERCATOR metres, and that 0.3 mm of difference is not what this test is
+    // about. What it is about is that the answer does not move with k.
+    const clearances = [1, 2, 3].map((k) => {
+      const built = buildBridgeLayer([span()], OPTS(k))!
+      const frame = frameAt(k)
+      const groundMaxM = frame.groundRangeM(
+        frame.densify(span().ring!.map((p) => {
+          const n = latLonToNormalized(p.lat, p.lon)
+          return new THREE.Vector2(n.nx, n.ny)
+        })),
+      ).maxM
+      return (zRange(built.object.geometry).hi - frame.zAtElevationM(groundMaxM)) / frame.mToN
+    })
+    for (const c of clearances) expect(c).toBeCloseTo(8, 3)
+    // The invariant itself: identical at every exaggeration, to float32.
+    expect(Math.max(...clearances) - Math.min(...clearances)).toBeLessThan(1e-4)
+  })
+
+  it('keeps its deck thickness in TRUE METRES at every exaggeration', () => {
+    for (const k of [1, 2, 3]) {
+      const built = buildBridgeLayer([span()], OPTS(k))!
+      const { lo, hi } = zRange(built.object.geometry)
+      expect((hi - lo) / frameAt(k).mToN).toBeCloseTo(1.2, 4)
+    }
+  })
+
+  it('has a soffit — a deck you can see from underneath', () => {
+    const built = buildBridgeLayer([span()], OPTS())!
+    const geo = built.object.geometry
+    geo.computeVertexNormals()
+    const n = geo.getAttribute('normal') as THREE.BufferAttribute
+    let downward = 0
+    for (let i = 0; i < n.count; i++) if (n.getZ(i) < -0.9) downward++
+    // Without a bottom cap the simple path's FrontSide material is invisible
+    // from below, which is the view from the quay under the bridge.
+    expect(downward).toBeGreaterThan(0)
+  })
+
+  it('clears a ridge that falls BETWEEN two mapped vertices', () => {
+    const RIDGE_M = 40
+    // A bridge is mapped with as few points as its curve allows. This ridge
+    // sits at the midpoint of the span and is invisible to a sampler that only
+    // reads the two endpoints — which is what the deck used to do.
+    const ridgeOpts = {
+      anchorLat: LAT,
+      anchorElevationM: ANCHOR_M,
+      sampleGroundM: (nx: number): number => {
+        const eastM = (nx - ORIGIN.nx) / M_TO_N
+        return ANCHOR_M + RIDGE_M * Math.max(0, 1 - Math.abs(eastM - 150) / 60)
+      },
+      exaggeration: 1,
+    }
+    const built = buildBridgeLayer([span()], ridgeOpts)!
+    const frame = createGroundFrame(ridgeOpts)
+    const { lo } = zRange(built.object.geometry)
+    expect(lo).toBeGreaterThan(frame.zAtElevationM(ANCHOR_M + RIDGE_M))
+  })
+})
+
+
+// ── The vertical field, end to end through the road builder ────────────────────
+//
+// The unit tests prove the solver; these prove the WIRING. Everything the road
+// layer draws — camber, kerbs, lane paint, junction fans — reads one closure,
+// so if the profile reaches that closure it reaches all of them, and if it does
+// not the geometry is indistinguishable from the old draped-only behaviour.
+
+describe('roads carried on structures, through buildLinearLayer', () => {
+  const eastWest = (lat: number, fromM: number, toM: number): Array<{lat:number;lon:number}> => {
+    const dLon = 1 / (111_320 * Math.cos((lat * Math.PI) / 180))
+    return [{ lat, lon: LON + fromM * dLon }, { lat, lon: LON + toM * dLon }]
+  }
+  const northSouth = (fromM: number, toM: number): Array<{lat:number;lon:number}> => [
+    { lat: LAT + fromM / 111_132, lon: LON },
+    { lat: LAT + toM / 111_132, lon: LON },
+  ]
+
+  const road = (
+    id: string, ring: Array<{lat:number;lon:number}>, tags: Record<string,string>,
+  ): OsmFeature => ({
+    id, kind: 'road', ring,
+    height: { heightM: 0, minHeightM: 0, estimated: true },
+    widthM: 8,
+    style: { roofShape: 'flat', roofHeightM: 0, roadClass: 'vehicular' },
+    vertical: readVerticalTags(tags),
+    functional: 'road',
+  })
+
+  /** A crossroads with one arm carried over it, as OSM maps it. */
+  const scene = (): OsmFeature[] => [
+    road('under', eastWest(LAT, -150, 150), { highway: 'primary' }),
+    road('app-s', northSouth(-220, -45), { highway: 'trunk' }),
+    road('span', northSouth(-45, 45), { highway: 'trunk', bridge: 'yes', layer: '1' }),
+    road('app-n', northSouth(45, 220), { highway: 'trunk' }),
+  ]
+
+  // FLAT ground, so every metre of height in the mesh came from the structure
+  // model and not from the terrain.
+  const FLAT = { anchorLat: LAT, anchorElevationM: ANCHOR_M, exaggeration: 1 }
+
+  it('lifts the carriageway itself, not a separate slab', () => {
+    const features = scene()
+    const draped = buildLinearLayer(features, 'road', FLAT)!
+    const carried = buildLinearLayer(
+      features, 'road', { ...FLAT, vertical: solveSceneVertical(features, FLAT) },
+    )!
+    const frame = createGroundFrame(FLAT)
+
+    const flatSpan = zRange(draped.object)
+    const liftedSpan = zRange(carried.object)
+
+    // Draped, the whole layer is one plane.
+    expect((flatSpan.hi - flatSpan.lo) / frame.mToN).toBeLessThan(1)
+    // Carried, the deck is a full clearance above the road it crosses…
+    expect((liftedSpan.hi - liftedSpan.lo) / frame.mToN).toBeGreaterThanOrEqual(5)
+    // …and the road underneath has NOT been dragged up with it.
+    expect(liftedSpan.lo).toBeCloseTo(flatSpan.lo, 9)
+  })
+
+  it('keeps the deck at a TRUE-METRE clearance under exaggeration', () => {
+    // The rule bridges used to break. The deck rides the structure model, which
+    // is metres; only the ground it stands over is exaggerated.
+    const features = scene()
+    const heights = [1, 3].map((k) => {
+      const opts = { ...FLAT, exaggeration: k }
+      const built = buildLinearLayer(
+        features, 'road', { ...opts, vertical: solveSceneVertical(features, opts) },
+      )!
+      const { lo, hi } = zRange(built.object)
+      return (hi - lo) / createGroundFrame(opts).mToN
+    })
+    expect(heights[0]).toBeCloseTo(heights[1], 3)
+  })
+
+  it('sends a tunnelled carriageway down, and stops drawing it at the portal', () => {
+    const features = scene()
+    features[2] = road('span', northSouth(-45, 45), {
+      highway: 'trunk', tunnel: 'yes', layer: '-1',
+    })
+    const vertical = solveSceneVertical(features, FLAT)
+    const built = buildLinearLayer(features, 'road', { ...FLAT, vertical })!
+    const frame = createGroundFrame(FLAT)
+    const { lo } = zRange(built.object)
+    const belowM = (frame.groundZ(0, 0) - lo) / frame.mToN
+
+    // The solver really does put the bore metres down…
+    // Elevations are absolute, in the DEM's own datum — this site's anchor is
+    // 400 m, so a 7 m bore is 393, not −7.
+    const bore = Math.min(...vertical.get('span')!.elevationM)
+    expect(bore).toBeLessThan(ANCHOR_M - 5)
+    // …the mesh shows the descent into it…
+    expect(belowM).toBeGreaterThan(0.2)
+    // …and then stops, because a carriageway drawn under the ground either
+    // z-fights through the hillside or is occluded by it. Where it stops IS
+    // the portal.
+    expect(belowM).toBeLessThan(2)
+  })
+
+  it('is inert when no vertical field is supplied', () => {
+    // Every pre-existing caller passes no `vertical`, and must be unaffected.
+    const features = scene()
+    const a = zRange(buildLinearLayer(features, 'road', FLAT)!.object)
+    const b = zRange(buildLinearLayer(features, 'road', { ...FLAT, vertical: null })!.object)
+    expect(a).toEqual(b)
   })
 })
