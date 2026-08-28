@@ -282,3 +282,51 @@ describe('persisted detail level', () => {
     expect(fresh.useGeoStore.getState().contextDetail).toBe('simple')
   })
 })
+
+describe('geoStore · hand-hidden map features', () => {
+  const VELA = { id: 'w908035012', kind: 'building' as const, name: 'Hotel Vela' }
+
+  beforeEach(() => { useGeoStore.setState({ hiddenFeatures: [] }) })
+
+  it('hides, restores, and never lists the same feature twice', () => {
+    const s = useGeoStore.getState()
+    s.hideFeature(VELA)
+    s.hideFeature(VELA)
+    expect(useGeoStore.getState().hiddenFeatures).toHaveLength(1)
+
+    s.showFeature(VELA.id)
+    expect(useGeoStore.getState().hiddenFeatures).toEqual([])
+  })
+
+  it('keeps the name, because a list of raw ids cannot be undone by anyone', () => {
+    useGeoStore.getState().hideFeature(VELA)
+    expect(useGeoStore.getState().hiddenFeatures[0])
+      .toMatchObject({ id: 'w908035012', kind: 'building', name: 'Hotel Vela' })
+  })
+
+  it('survives a reload', async () => {
+    const { vi } = await import('vitest')
+    useGeoStore.getState().hideFeature(VELA)
+    vi.resetModules()
+    const fresh = await import('./geoStore')
+    expect(fresh.useGeoStore.getState().hiddenFeatures).toEqual([VELA])
+  })
+
+  it('drops a corrupt entry rather than rendering an undefined row', async () => {
+    const { vi } = await import('vitest')
+    localStorage.setItem('ifc-geo-hidden-features:v1',
+      JSON.stringify([{ id: 'w1', kind: 'building' }, { kind: 'building' }, 'nope', null]))
+    vi.resetModules()
+    const fresh = await import('./geoStore')
+    expect(fresh.useGeoStore.getState().hiddenFeatures).toEqual([{ id: 'w1', kind: 'building', name: undefined, label: undefined }])
+  })
+
+  it('restores every one of them at once', () => {
+    const s = useGeoStore.getState()
+    s.hideFeature(VELA)
+    s.hideFeature({ id: 'w2', kind: 'green' })
+    s.showAllFeatures()
+    expect(useGeoStore.getState().hiddenFeatures).toEqual([])
+    expect(localStorage.getItem('ifc-geo-hidden-features:v1')).toBe('[]')
+  })
+})

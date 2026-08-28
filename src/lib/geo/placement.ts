@@ -27,6 +27,27 @@ export interface ModelBoundsLike {
   size: { x: number; y: number; z: number }
 }
 
+/**
+ * How high the model's own origin sits above the vertical datum, from the file.
+ *
+ * SEMANTIC EVIDENCE: `IfcMapConversion.OrthogonalHeight` is defined as the
+ * height of the origin of the engineering coordinate system above the datum —
+ * so this is the model's ground floor, stated by the survey, and it is exactly
+ * what `heightOffsetM` means ("raises the model relative to the map plane").
+ * Extracted for a while and then dropped on the floor: the Hotel Vela states
+ * 2.5 m, the extraction read 2.5 m, and the placement carried 0.
+ *
+ * Clamped because a mistyped datum is a real and recurrent kind of survey error,
+ * and a model 8 km above its city is worse than one at sea level.
+ */
+const MAX_STATED_HEIGHT_M = 4000
+
+function statedHeightOffsetM(g: GeorefExtraction): number {
+  const h = g.heightM
+  if (h === null || h === undefined || !Number.isFinite(h)) return 0
+  return Math.max(-MAX_STATED_HEIGHT_M, Math.min(MAX_STATED_HEIGHT_M, h))
+}
+
 // ── Extraction → placement ─────────────────────────────────────────────────────
 
 /**
@@ -49,7 +70,7 @@ export function placementFromExtraction(
       lat: g.lat,
       lon: g.lon,
       rotationDeg: g.rotationDeg,
-      heightOffsetM: 0,
+      heightOffsetM: statedHeightOffsetM(g),
       source: 'ifc',
       confidence: g.status === 'found' ? 'high' : 'approximate',
     })
@@ -81,7 +102,7 @@ export function placementFromExtraction(
     lat: conv.value.lat,
     lon: conv.value.lon,
     rotationDeg: g.rotationDeg,
-    heightOffsetM: 0,
+    heightOffsetM: statedHeightOffsetM(g),
     source: 'ifc',
     confidence: 'high',
   })

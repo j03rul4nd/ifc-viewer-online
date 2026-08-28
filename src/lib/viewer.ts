@@ -2752,6 +2752,24 @@ export function createViewer(container: HTMLElement): ViewerAPI {
           isSolarActive: () => solarSystemInstance?.isActive() ?? false,
           getActiveModelBounds: () => self.getModelBounds(),
           getActiveModelFootprint: () => self.getModelFootprint(),
+          // EVERY model, not just the active one. A federated delivery is one
+          // building in three files, and the active one is whichever finished
+          // loading last — routinely the MEP set, whose plan is a plant room.
+          // Map mode decides what mapped context to stand down from these, and
+          // one discipline's footprint is not the building's.
+          getModelFootprints: () => self.getLoadedModelIds()
+            .map((id) => self.getModelFootprint(id))
+            .filter((f): f is Array<{ x: number; z: number }> => f !== null && f.length >= 3),
+          // Where the model's own y = 0 ended up: its pivot, plus whatever the
+          // loader's coordination moved it by. Normally both are zero, and it
+          // is the moment they are NOT that this has to be read rather than
+          // assumed — a placement drag moves the pivot, and the map plane has
+          // to follow the model rather than stay behind on the old ground.
+          getModelOriginY: () => {
+            const t = self.getModelTransform()
+            const c = self.getModelCoordination()
+            return t.position.y + (c?.y ?? 0)
+          },
         })
         return geoSystemInstance
       })

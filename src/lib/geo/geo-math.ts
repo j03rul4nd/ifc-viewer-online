@@ -262,9 +262,40 @@ export interface ComposeInput {
   placement: { lat: number; lon: number; rotationDeg: number; heightOffsetM: number }
   /** Scene-space plan position where the anchor must land (model bbox centre). */
   anchorScene: { x: number; z: number }
-  /** Scene Y of the model's bbox bottom — the map plane sits here minus offset. */
+  /** Scene Y of the model's bbox bottom. The FALLBACK ground, not the first choice. */
   modelMinY: number
+  /**
+   * Scene Y of the model's LOCAL ORIGIN — its ground floor, and the right answer.
+   *
+   * THE BUG THIS EXISTS TO END. The map plane used to sit at the bbox bottom,
+   * which for any building with a basement is the bottom of its foundations.
+   * Measured on the Hotel Vela, federated over three files: ARC 0..98.8,
+   * STR −9.8..98.8, MEP 0..102 — so the anchor was −9.8, and every road, quay,
+   * beach and square in Barcelona was laid 9.8 m BELOW the hotel's ground floor.
+   * It is not a Barcelona problem and not a federation problem: one file with
+   * two underground levels does it on its own.
+   *
+   * The origin is the honest anchor because a building model's local origin IS
+   * its ground floor, by the convention IFC is built on — it is what
+   * `IfcMapConversion.OrthogonalHeight` states the elevation OF.
+   *
+   * Null when the host cannot say, and distrusted when it disagrees with the
+   * geometry by more than a building could — see ORIGIN_TRUST_M.
+   */
+  modelOriginY?: number | null
 }
+
+/**
+ * How far the local origin may sit from the model's own bottom and still be
+ * believed as its ground floor, in metres.
+ *
+ * Deep basements exist; the deepest in the world are around 30 m. A model whose
+ * origin is hundreds of metres from its geometry is not a building with a
+ * basement, it is a file with survey coordinates baked into its vertices — the
+ * large-WCS-offset case the georeferencing ladder already knows about — and its
+ * origin says nothing about where the ground is.
+ */
+export const ORIGIN_TRUST_M = 60
 
 /**
  * Compose the basemap group TRS so that:
@@ -279,11 +310,24 @@ export interface ComposeInput {
  * to a plain TRS because S is uniform:  position = anchorWorld − R·(S·normAnchor).
  * Rx(−π/2): (x,y,z)→(x,z,−y).  Ry(ψ): (x,y,z)→(x cosψ + z sinψ, y, −x sinψ + z cosψ).
  */
+/**
+ * The scene Y the map plane is measured from: the model's ground floor.
+ *
+ * Exported because it is the whole of the policy and it is worth testing on its
+ * own — the transform around it is arithmetic.
+ */
+export function groundAnchorY(modelMinY: number, modelOriginY?: number | null): number {
+  if (modelOriginY === null || modelOriginY === undefined || !Number.isFinite(modelOriginY)) {
+    return modelMinY
+  }
+  return Math.abs(modelOriginY - modelMinY) <= ORIGIN_TRUST_M ? modelOriginY : modelMinY
+}
+
 export function composeGeoRootTransform(input: ComposeInput): import('./geo-types').GeoRootTransform {
   const { placement, anchorScene, modelMinY } = input
   const scale = WEB_MERCATOR_WORLD_M * cosLatScale(placement.lat)
   const yawRad = mapYawRad(placement.rotationDeg)
-  const groundY = modelMinY - placement.heightOffsetM
+  const groundY = groundAnchorY(modelMinY, input.modelOriginY) - placement.heightOffsetM
 
   const { nx, ny } = latLonToNormalized(placement.lat, placement.lon)
   // R·(S·normAnchor) with normAnchor = (nx, ny, 0):

@@ -152,7 +152,13 @@
     "contextToneNeutral": "Discreet",
     "contextToneHint": "Discreet paints the surroundings as near-monochrome masses. Same skyline, same footprints, none of the colour — for a view whose subject is your model and whose context is only there to give it scale.",
     "suppress": "ซ่อนบริบทของแผนที่ใต้โมเดล",
-    "suppressHint": "ตรงที่โมเดลตั้งอยู่ แผนที่กำลังอธิบายสิ่งเดียวกันซ้ำสองครั้ง อาคารจะซ่อนอาคารที่ถูกทำแผนที่ไว้บนแปลงที่ดินของมันและต้นไม้ในผังพื้น ส่วนสะพานหรืออุโมงค์จะซ่อนผิวจราจรที่มันรองรับด้วย ถนนด้านนอกจะไม่ถูกซ่อนเลย ปิดตัวเลือกนี้เพื่อเปรียบเทียบทั้งสอง"
+    "suppressHint": "ตรงที่โมเดลตั้งอยู่ แผนที่กำลังอธิบายสิ่งเดียวกันซ้ำสองครั้ง อาคารจะซ่อนอาคารที่ถูกทำแผนที่ไว้บนแปลงที่ดินของมันและต้นไม้ในผังพื้น ส่วนสะพานหรืออุโมงค์จะซ่อนผิวจราจรที่มันรองรับด้วย ถนนด้านนอกจะไม่ถูกซ่อนเลย ปิดตัวเลือกนี้เพื่อเปรียบเทียบทั้งสอง",
+    "hidden": "Hidden by hand",
+    "hidePick": "Click to hide surroundings",
+    "hidePickHint": "Turn this on, then click any mapped building to take it out of the view. Use it when the map and your model describe the same thing and the automatic rule above did not catch it. Nothing is deleted: everything you hide is listed here and comes back with one click.",
+    "hidePickActive": "Click a building on the map to hide it. Turn this off when you are done.",
+    "hiddenRestore": "Show",
+    "hiddenRestoreAll": "Show all again"
   },
   "placement": {
     "title": "Placement",

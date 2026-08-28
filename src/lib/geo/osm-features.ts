@@ -35,6 +35,7 @@ import {
   readVerticalTags, type VerticalTags, type FunctionalType,
 } from './vertical'
 import { buildSeaPolygons, type CoastlineBbox } from './coastline'
+import { assembleMultipolygon } from './multipolygon'
 
 export type FeatureKind =
   | 'building' | 'water' | 'green' | 'sand' | 'rock' | 'tree' | 'bridge' | 'road' | 'rail'
@@ -116,7 +117,15 @@ export interface FeatureStyle {
    * are armour, higher out of the water and never walked. One height and one
    * tone for both would make a marina look like a sea wall.
    */
-  pierKind?: 'deck' | 'mole'
+  pierKind?: 'deck' | 'mole' | 'quay'
+  /**
+   * What the way is PAVED IN, when the survey says so.
+   *
+   * Kept alongside `tone` rather than folded into it: a colour is one decision
+   * this answers, and grain, reflectance and the detail tile are others that
+   * will want the same fact rather than a second guess at it.
+   */
+  surface?: SurfaceMaterial
   /**
    * A marked pedestrian crossing. Rendered as paint on the carriageway rather
    * than as a footpath of its own — which is what it is, and drawing it as a
@@ -421,6 +430,76 @@ export function railWidth(tags: Record<string, string> | undefined): number {
   return Math.min(60, n * (light ? 3.2 : 4.5))
 }
 
+/**
+ * What a way is PAVED IN, from `surface=*`.
+ *
+ * SEMANTIC EVIDENCE: `surface` states the material directly, which `highway`
+ * only ever proxied. Measured on the benchmark harbour, 93 of 311 elements —
+ * 30 % — carry it, and 36 of those are `paving_stones` against 40 `asphalt`:
+ * close to half the paved ground in the box is stone, and every metre of it was
+ * being drawn as tarmac. That is the difference between a seafront promenade
+ * and a service road, and it was thrown away at parse time.
+ *
+ * Closed set on purpose. OSM's surface vocabulary has a long tail of values
+ * nobody can render distinctly, and an unrecognised one returns undefined so
+ * the class default stands rather than a guess.
+ */
+export type SurfaceMaterial =
+  | 'asphalt' | 'concrete' | 'paving_stones' | 'sett' | 'cobblestone'
+  | 'gravel' | 'compacted' | 'ground' | 'sand' | 'grass' | 'wood' | 'metal'
+
+const SURFACE_ALIASES: Record<string, SurfaceMaterial> = {
+  asphalt: 'asphalt', chipseal: 'asphalt', bitumen: 'asphalt',
+  concrete: 'concrete', 'concrete:plates': 'concrete', 'concrete:lanes': 'concrete',
+  paving_stones: 'paving_stones', paved: 'concrete', bricks: 'paving_stones',
+  brick: 'paving_stones', paving_stones_lanes: 'paving_stones',
+  sett: 'sett', cobblestone: 'cobblestone', unhewn_cobblestone: 'cobblestone',
+  gravel: 'gravel', fine_gravel: 'gravel', pebblestone: 'gravel',
+  compacted: 'compacted', ground: 'ground', dirt: 'ground', earth: 'ground',
+  mud: 'ground', unpaved: 'compacted',
+  sand: 'sand', grass: 'grass', wood: 'wood', metal: 'metal',
+}
+
+/** Normalise `surface=*` to something the renderer can actually draw. */
+export function normalizeSurface(raw: string | undefined): SurfaceMaterial | undefined {
+  if (!raw) return undefined
+  return SURFACE_ALIASES[raw.trim().toLowerCase()]
+}
+
+/**
+ * Colour per material.
+ *
+ * ASPHALT IS DELIBERATELY ABSENT. `ROAD_TONES` below is already an asphalt
+ * ramp — it darkens with importance, because a trunk road really is blacker
+ * than a lane — so a way that says `surface=asphalt` is confirming the default,
+ * not overriding it. Every other value genuinely leaves that ramp.
+ */
+const SURFACE_TONES: Partial<Record<SurfaceMaterial, [number, number, number]>> = {
+  concrete:       [0.52, 0.52, 0.51],
+  paving_stones:  [0.55, 0.52, 0.48],
+  sett:           [0.44, 0.42, 0.40],
+  cobblestone:    [0.46, 0.43, 0.40],
+  gravel:         [0.52, 0.48, 0.42],
+  compacted:      [0.50, 0.46, 0.40],
+  ground:         [0.44, 0.38, 0.31],
+  sand:           [0.72, 0.65, 0.50],
+  grass:          [0.38, 0.46, 0.30],
+  wood:           [0.46, 0.35, 0.24],
+  metal:          [0.46, 0.47, 0.50],
+}
+
+/**
+ * Grain per material, on the same scale as ROAD_CLASS_ROUGHNESS.
+ *
+ * The class table guesses this from what a way is FOR; the surface tag says
+ * what it is MADE OF, which is the thing roughness is actually about.
+ */
+export const SURFACE_ROUGHNESS: Record<SurfaceMaterial, number> = {
+  asphalt: 0.22, metal: 0.15, concrete: 0.30, wood: 0.40,
+  paving_stones: 0.55, grass: 0.60, sand: 0.65, compacted: 0.70,
+  sett: 0.72, ground: 0.75, cobblestone: 0.80, gravel: 0.85,
+}
+
 /** Asphalt darkens with importance; unpaved ways go warm. */
 const ROAD_TONES: Record<string, [number, number, number]> = {
   motorway: [0.30, 0.30, 0.33], trunk: [0.32, 0.32, 0.35],
@@ -511,6 +590,31 @@ const CROSSING_TONE: [number, number, number] = [0.82, 0.80, 0.72]
  * excluded: painting stripes where there is no paint would be inventing a
  * traffic control that is not there.
  */
+/**
+ * Is this CLOSED way a paved area rather than a ribbon?
+ *
+ * `area=yes` is the explicit answer and is always believed. The rest is the
+ * case OSM leaves ambiguous and mappers routinely leave untagged: a
+ * `highway=pedestrian` drawn as a closed loop.
+ *
+ * SEMANTIC EVIDENCE, and the reason the rule stops at `pedestrian`. A closed
+ * `highway=footway` is usually a real loop — a path that goes round a pond and
+ * comes back — and paving its interior would tarmac the pond. A closed
+ * `highway=pedestrian` is a pedestrianised STREET or a square, and a square is
+ * the only thing a closed one is ever drawn for. Measured on the benchmark
+ * harbour: six closed pedestrian ways, five carrying `area=yes` and one not —
+ * the Passeig del Mare Nostrum, 2 277 m2, 114 m from the model, drawn as a 5 m
+ * loop with a hole through the middle where the promenade is.
+ *
+ * `area=no` is a statement and is honoured: somebody looked and said ribbon.
+ */
+export function isPavedArea(tags: Record<string, string> | undefined): boolean {
+  const t = tags ?? {}
+  if (t['area'] === 'yes') return true
+  if (t['area'] === 'no') return false
+  return t['highway'] === 'pedestrian'
+}
+
 export function isCrossing(tags: Record<string, string> | undefined): boolean {
   const t = tags ?? {}
   const marked = new Set(['marked', 'zebra', 'traffic_signals', 'uncontrolled'])
@@ -525,6 +629,11 @@ export function isCrossing(tags: Record<string, string> | undefined): boolean {
 }
 
 export function roadTone(tags: Record<string, string> | undefined): [number, number, number] {
+  // The material beats the guess. `highway` only ever stood in for what a way
+  // is paved in; when the survey says so outright, it wins.
+  const surface = normalizeSurface(tags?.['surface'])
+  const fromSurface = surface ? SURFACE_TONES[surface] : undefined
+  if (fromSurface) return fromSurface
   const cls = (tags?.['highway'] ?? '').replace(/_link$/, '')
   return ROAD_TONES[cls] ?? [0.41, 0.41, 0.43]
 }
@@ -636,7 +745,21 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
   // ground cover — which is why they get a kind of their own rather than being
   // folded into `road` (they are not carriageways) or `building` (no walls).
   if (PORT_STRUCTURES.has(t['man_made'] ?? '')) return 'pier'
-  if (t['waterway'] === 'dock') return 'pier'
+
+  // SEMANTIC EVIDENCE: `waterway=dock` is "an enclosed area of WATER", not a
+  // structure. It used to return 'pier' here, one line after the port
+  // structures, and the consequence was measured on the real harbour: both
+  // Port Vell basins — 2 106 m2 and 8 177 m2 — were paved with an opaque
+  // 0.9 m concrete slab hanging 2 m over the water they are made of. Worse
+  // quietly: a dock that is not `kind === 'water'` is invisible to
+  // `buildWaterMask`, so the elevation raster went on reading the moored ships
+  // in those basins as ground.
+  //
+  // A DRY dock is the exception the tag itself marks, with `dock=drydock`. It
+  // is a hole in the ground with a gate, so it is not water — and it is not a
+  // deck either; leaving it to the classifier below is the honest answer until
+  // something knows how to cut one.
+  if (t['waterway'] === 'dock' && t['dock'] !== 'drydock') return 'water'
 
   if (t['natural'] === 'tree') return 'tree'
 
@@ -734,10 +857,29 @@ export function parseRoofShape(raw: string | undefined): RoofShape {
  * storey — and it is always subtracted from the wall height, never added, so a
  * surveyed total height stays the total height.
  */
-/** Armour, or a deck people walk on. */
-function pierKindOf(tags: Record<string, string> | undefined): 'deck' | 'mole' {
+/**
+ * Which of the three port structures this is, because they are not one thing.
+ *
+ * QUAY — the built edge of the land. Water on one side, solid ground on the
+ * other, all the way down. It is the only one of the three that is not
+ * standing IN the water, and drawing it as though it were is what made the
+ * Moll de Barcelona — 1 073 m of Barcelona's principal commercial quay — a 4 m
+ * plank floating at +2 m with open sea rendered on both sides of it.
+ *
+ * PIER — a deck that walks out into the water on legs. Narrow, thin, water
+ * underneath and all around: the finger pontoons of a marina.
+ *
+ * MOLE — a breakwater or groyne. Armour, not a deck: higher out of the water,
+ * never walked, and rough.
+ *
+ * They share a builder because they share a datum — the sea, never the terrain.
+ * They differ in width, in height, and in what is under them.
+ */
+function pierKindOf(tags: Record<string, string> | undefined): 'deck' | 'mole' | 'quay' {
   const mm = (tags ?? {})['man_made']
-  return mm === 'breakwater' || mm === 'groyne' ? 'mole' : 'deck'
+  if (mm === 'breakwater' || mm === 'groyne') return 'mole'
+  if (mm === 'quay') return 'quay'
+  return 'deck'
 }
 
 export function resolveFeatureStyle(
@@ -745,7 +887,18 @@ export function resolveFeatureStyle(
 ): FeatureStyle {
   const t = tags ?? {}
   if (kind === 'pier') {
-    return { roofShape: 'flat', roofHeightM: 0, pierKind: pierKindOf(t) }
+    return {
+      roofShape: 'flat', roofHeightM: 0, pierKind: pierKindOf(t),
+      surface: normalizeSurface(t['surface']),
+      // A PORT STRUCTURE CAN ALSO BE A STREET, and the Rambla de Mar is both:
+      // `man_made=pier` + `highway=pedestrian` + `area=yes` + `surface=wood`,
+      // the most-walked structure in the harbour. The port branch above claims
+      // it first — correctly, it IS a pier standing in the water — but claiming
+      // it must not erase the rest of what it is. Carrying the class here is
+      // what lets anything downstream know a deck is walked on rather than
+      // worked from, and it costs one call.
+      roadClass: t['highway'] !== undefined ? roadClass(t) : undefined,
+    }
   }
   if (kind === 'tree') {
     const crown = parseLengthM(t['diameter_crown'])
@@ -777,12 +930,22 @@ export function resolveFeatureStyle(
 
   if (kind === 'road') {
     if (isCrossing(t)) {
-      return { roofShape: 'flat', roofHeightM: 0, crossing: true, tone: CROSSING_TONE }
+      return {
+        roofShape: 'flat', roofHeightM: 0, crossing: true, tone: CROSSING_TONE,
+        // A crossing is paint, and it is ALSO a footway. Omitting the class
+        // here made `functionalType` call every zebra in the city a road,
+        // which is the wrong answer to a question nothing currently asks —
+        // crossings are excluded from the vertical solve, so no consumer sees
+        // it today. Left correct rather than left latent: the day a zebra on a
+        // deck is solved, this is the line that would have been wrong.
+        roadClass: roadClass(t),
+      }
     }
     const lanes = parseFloat(t['lanes'] ?? '')
     const oneway = (t['oneway'] ?? '').toLowerCase()
     return {
       roofShape: 'flat', roofHeightM: 0, tone: roadTone(t),
+      surface: normalizeSurface(t['surface']),
       roadClass: roadClass(t),
       lanes: Number.isFinite(lanes) && lanes > 0 ? Math.min(12, Math.round(lanes)) : undefined,
       // A roundabout is one-way by definition even when nobody tagged it, and
@@ -889,9 +1052,47 @@ export const MIN_AREA_M2: Record<Exclude<FeatureKind, 'tree' | 'signal'>, number
  * the buffering into a deck polygon happens at mesh time where the metric frame
  * is available.
  */
+/**
+ * Where in the pipeline an element stopped being a thing we draw.
+ *
+ * `classify` — nothing in the tag vocabulary claimed it.
+ * `accept`   — it was understood, then rejected by a rule (below surface, too small).
+ * `geometry` — it was accepted, then produced no ring worth keeping.
+ */
+export type LossStage = 'classify' | 'accept' | 'geometry'
+
+/**
+ * One element that entered the parser and did not come out.
+ *
+ * The point of recording this is that the alternative is finding these by eye,
+ * one at a time, in a rendered scene — which is how the quay that is also the
+ * shoreline stayed missing: it was requested, it arrived, and it silently
+ * became part of the sea instead of a quay. `reason` is a short stable code so
+ * a report can group by it and a grep can find the line that emitted it.
+ */
+export interface FeatureLoss {
+  /** Prefixed as the feature would have been: `w123`, `r45`, `n7`. */
+  id: string
+  tags: Record<string, string>
+  stage: LossStage
+  reason: string
+}
+
+export interface ParseOptions {
+  bbox?: CoastlineBbox
+  /**
+   * Called for every element that is discarded, with the reason.
+   *
+   * OFF by default and never wired up in production: this exists for the
+   * offline benchmark, which asks "of everything real in this box, what reaches
+   * the scene?". Undefined costs one optional call per drop.
+   */
+  onDrop?: (loss: FeatureLoss) => void
+}
+
 export function parseOsmFeatures(
   json: unknown,
-  opts?: { bbox?: CoastlineBbox },
+  opts?: ParseOptions,
 ): OsmFeature[] {
   const elements = (json as { elements?: unknown })?.elements
   if (!Array.isArray(elements)) return []
@@ -899,6 +1100,17 @@ export function parseOsmFeatures(
   const out: OsmFeature[] = []
   /** Shoreline ways, held back to be turned into the sea once all are known. */
   const coastline: LatLonPoint[][] = []
+
+  const drop = (
+    el: OverpassEl, stage: LossStage, reason: string,
+  ): void => {
+    opts?.onDrop?.({
+      id: `${el.type === 'relation' ? 'r' : el.type === 'node' ? 'n' : 'w'}${el.id}`,
+      tags: el.tags ?? {},
+      stage,
+      reason,
+    })
+  }
 
   for (const raw of elements) {
     const el = raw as OverpassEl
@@ -908,28 +1120,57 @@ export function parseOsmFeatures(
     // draws nothing — the water it implies is assembled below, once the whole
     // shoreline is in hand. See `coastline.ts` for why the sea has to be built
     // rather than read.
-    if (el.tags?.['natural'] === 'coastline') {
-      if (el.type === 'way' && Array.isArray(el.geometry)) {
-        const pts = el.geometry.filter((q) => q && Number.isFinite(q.lat) && Number.isFinite(q.lon))
-        if (pts.length >= 2) coastline.push(pts.map((q) => ({ lat: q.lat, lon: q.lon })))
+    //
+    // It does NOT `continue`, and that is the fix for a harbour. In a built
+    // port the land/water boundary IS a structure: Moll de Barcelona carries
+    // `man_made=quay` and `natural=coastline` on one way, as does the mole
+    // guarding the Nova Bocana, and so does the seaward edge of a beach. Taking
+    // the shoreline and stopping meant the quay contributed its shape to the
+    // sea and then drew nothing — the single most visible built edge of the
+    // harbour, missing, while `classifyFeature` carried a comment explaining
+    // that port structures are ranked before water precisely so this could not
+    // happen. It never got the chance to run. A PLAIN coastline way still
+    // classifies to null a few lines below and is dropped exactly as before,
+    // so this costs nothing where the shoreline is only a shoreline.
+    let consumedAsShore = false
+    if (el.tags?.['natural'] === 'coastline'
+      && el.type === 'way' && Array.isArray(el.geometry)) {
+      const pts = el.geometry.filter((q) => q && Number.isFinite(q.lat) && Number.isFinite(q.lon))
+      if (pts.length >= 2) {
+        coastline.push(pts.map((q) => ({ lat: q.lat, lon: q.lon })))
+        consumedAsShore = true
       }
-      continue
     }
 
     const kind = classifyFeature(el.tags)
-    if (!kind) continue
+    if (!kind) {
+      // A plain shoreline way IS used — it is the edge the sea was built from —
+      // and calling that a loss would put nine correct elements in the same
+      // column as the ones nothing claims. The distinction is the whole value
+      // of the report: "we understood this and consumed it" and "nothing in the
+      // vocabulary recognises this" are different problems.
+      drop(el, 'classify', consumedAsShore
+        ? 'coastline-consumed-into-sea' : 'no-classifier-claims-it')
+      continue
+    }
     // Off-surface features are dropped here rather than in `classifyFeature`,
     // which answers what a thing IS: a culverted stream is still a stream. What
     // counts as "drop" depends on the kind — a road in a tunnel is kept and
     // drawn underground. See `shouldDiscardBelowSurface`.
-    if (shouldDiscardBelowSurface(kind, el.tags)) continue
+    if (shouldDiscardBelowSurface(kind, el.tags)) {
+      drop(el, 'accept', 'below-surface')
+      continue
+    }
 
     const style = resolveFeatureStyle(kind, el.tags)
     const height = resolveBuildingHeight(el.tags)
 
     // Trees and signals are nodes.
     if (kind === 'signal') {
-      if (el.type !== 'node' || !Number.isFinite(el.lat) || !Number.isFinite(el.lon)) continue
+      if (el.type !== 'node' || !Number.isFinite(el.lat) || !Number.isFinite(el.lon)) {
+        drop(el, 'geometry', 'point-kind-without-a-position')
+        continue
+      }
       out.push({
         id: `n${el.id}`, kind, point: { lat: el.lat!, lon: el.lon! },
         height: { heightM: 3.4, minHeightM: 0, estimated: true }, style,
@@ -938,7 +1179,10 @@ export function parseOsmFeatures(
     }
 
     if (kind === 'tree') {
-      if (el.type !== 'node' || !Number.isFinite(el.lat) || !Number.isFinite(el.lon)) continue
+      if (el.type !== 'node' || !Number.isFinite(el.lat) || !Number.isFinite(el.lon)) {
+        drop(el, 'geometry', 'point-kind-without-a-position')
+        continue
+      }
       out.push({
         id: `n${el.id}`, kind, point: { lat: el.lat!, lon: el.lon! },
         height: treeHeight(el.tags), style,
@@ -948,7 +1192,7 @@ export function parseOsmFeatures(
 
     if (el.type === 'way' && Array.isArray(el.geometry)) {
       const pts = el.geometry.filter((p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lon))
-      if (pts.length < 2) continue
+      if (pts.length < 2) { drop(el, 'geometry', 'fewer-than-two-points'); continue }
       const closed = isClosed(pts)
 
       // A finger pier, a jetty, a groyne: mapped as a LINE, because it is long
@@ -981,6 +1225,7 @@ export function parseOsmFeatures(
       if (kind === 'water' && !closed && WATERWAY_LINEAR.has(el.tags?.['waterway'] ?? '')) {
         const ring = bufferWaterway(pts, waterwayWidth(el.tags))
         if (ring) out.push({ id: `w${el.id}`, kind, ring, height, style })
+        else drop(el, 'geometry', 'waterway-buffer-collapsed')
         continue
       }
 
@@ -989,14 +1234,14 @@ export function parseOsmFeatures(
       // outline instead drew a 3 m footpath around the edge of the Passeig de
       // Lluís Companys and left the middle showing the raster basemap, which is
       // the opposite of what is there — 83 such areas in the Ciutadella box.
-      if (kind === 'road' && closed && el.tags?.['area'] === 'yes') {
+      if (kind === 'road' && closed && isPavedArea(el.tags)) {
         const ring = closeRing(pts, kind)
         if (ring) {
           out.push({
             id: `w${el.id}`, kind, ring, height, style,
             name: el.tags?.['name'], label: featureLabel(el.tags),
           })
-        }
+        } else drop(el, 'geometry', ringRejection(pts, kind))
         continue
       }
 
@@ -1026,17 +1271,32 @@ export function parseOsmFeatures(
           id: `w${el.id}`, kind, ring, height, style,
           name: el.tags?.['name'], label: featureLabel(el.tags),
         })
-      }
+      } else drop(el, 'geometry', ringRejection(pts, kind))
       continue
     }
 
     if (el.type === 'relation' && Array.isArray(el.members)) {
+      // ASSEMBLE FIRST, then close. A relation does not store rings, it stores
+      // member ways; the ring is what they make joined end to end, in whatever
+      // order and whatever direction the mappers happened to draw them. Closing
+      // each member on its own is not a coarser answer, it is a different
+      // shape — see multipolygon.ts for the measurement that says so.
       let part = 0
-      for (const m of el.members) {
-        if (m?.role !== 'outer' || !Array.isArray(m.geometry)) continue
-        const pts = m.geometry.filter((p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lon))
-        const ring = closeRing(pts, kind)
-        if (ring) out.push({ id: `r${el.id}-${part++}`, kind, ring, height, style })
+      const outer = assembleMultipolygon(el.members).outer
+      for (const chain of outer) {
+        const ring = closeRing(chain, kind)
+        if (ring) {
+          out.push({
+            id: `r${el.id}-${part++}`, kind, ring, height, style,
+            name: el.tags?.['name'], label: featureLabel(el.tags),
+          })
+        }
+      }
+      // A relation that assembled into nothing usable is exactly the failure
+      // the ring assembler exists to end, so it must never be silent again.
+      if (part === 0) {
+        drop(el, 'geometry', outer.length === 0
+          ? 'relation-has-no-outer-members' : 'relation-rings-all-rejected')
       }
     }
   }
@@ -1116,6 +1376,22 @@ function isClosed(pts: OverpassGeom[]): boolean {
 }
 
 /** Strip the duplicate closing vertex and reject areas too small to matter. */
+/**
+ * WHY `closeRing` said no — the two gates, told apart.
+ *
+ * "too small" and "not a polygon at all" are different problems with different
+ * fixes, and a report that merges them tells you nothing. Deliberately mirrors
+ * closeRing rather than being folded into it: the hot path returns a ring or
+ * null and must not pay for a string.
+ */
+function ringRejection(pts: OverpassGeom[], kind: FeatureKind): string {
+  const ring = pts.length >= 3 && isClosed(pts) ? pts.slice(0, -1) : pts
+  if (ring.length < 3) return 'ring-has-fewer-than-three-points'
+  const min = kind === 'tree' || kind === 'signal' ? 0 : MIN_AREA_M2[kind]
+  const area = approximateAreaM2(ring)
+  return area < min ? `ring-under-min-area-${kind}` : 'ring-rejected'
+}
+
 function closeRing(pts: OverpassGeom[], kind: FeatureKind): LatLonPoint[] | null {
   if (pts.length < 3) return null
   const ring = isClosed(pts) ? pts.slice(0, -1) : pts
@@ -1151,7 +1427,14 @@ export function pierWidth(tags: Record<string, string> | undefined): number {
   const t = tags ?? {}
   const explicit = parseLengthM(t['width']) ?? parseLengthM(t['est_width'])
   if (explicit && explicit > 0) return Math.min(80, explicit)
-  return t['man_made'] === 'breakwater' || t['man_made'] === 'groyne' ? 6 : 4
+  const mm = t['man_made']
+  if (mm === 'breakwater' || mm === 'groyne') return 6
+  // A commercial quay mapped as a line is the edge of a working apron, not a
+  // walkway. Measured on the benchmark harbour: Moll de Barcelona and Moll de
+  // Sant Bertran are both over a kilometre long and neither carries `width`,
+  // so the finger-pier default was the only number they ever got.
+  if (mm === 'quay') return 14
+  return 4
 }
 
 /** Tree height: tagged, else a plausible mature street tree. */

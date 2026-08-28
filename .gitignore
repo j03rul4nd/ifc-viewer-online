@@ -71,3 +71,7 @@ scripts/blender/__pycache__/
 # `tsc -b`, so tracking it means a dirty tree after any build and a diff in
 # every unrelated PR — it has been landing in commits by accident.
 tsconfig.tsbuildinfo
+
+# Reality-capture experiment output (renders, EXR depth, .blend, fused clouds)
+experiments/reality-capture/out/
+__pycache__/

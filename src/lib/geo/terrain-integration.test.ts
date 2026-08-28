@@ -312,6 +312,12 @@ describe('bridges clear the ground they cross', () => {
   // guard existed the clearance was folded into `zAtElevationM`'s argument and
   // rode the slider — 6 m at ×1, 18 m at ×3 — over a deck that stayed 1.2 m
   // thick. The old test ran only at ×1, so both the bug and its fix passed it.
+  //
+  // The NUMBER changed from 8 to the default once `height` stopped being read
+  // as headroom. It never was headroom — vertical.ts:99 says `height` on a
+  // bridge is the structure — and this span carries no `min_height`, which is
+  // the tag that does state a soffit. The invariant under test is unaffected:
+  // whatever the clearance is, it must be the same at every exaggeration.
   it('keeps its clearance in TRUE METRES at every exaggeration', () => {
     // Measured against the frame rather than a hand-computed elevation: the
     // span's east end is 300 GROUND metres out, which is not exactly 300
@@ -328,7 +334,7 @@ describe('bridges clear the ground they cross', () => {
       ).maxM
       return (zRange(built.object.geometry).hi - frame.zAtElevationM(groundMaxM)) / frame.mToN
     })
-    for (const c of clearances) expect(c).toBeCloseTo(8, 3)
+    for (const c of clearances) expect(c).toBeCloseTo(6, 3)
     // The invariant itself: identical at every exaggeration, to float32.
     expect(Math.max(...clearances) - Math.min(...clearances)).toBeLessThan(1e-4)
   })
@@ -479,5 +485,59 @@ describe('roads carried on structures, through buildLinearLayer', () => {
     const a = zRange(buildLinearLayer(features, 'road', FLAT)!.object)
     const b = zRange(buildLinearLayer(features, 'road', { ...FLAT, vertical: null })!.object)
     expect(a).toEqual(b)
+  })
+
+  // The standard tagging pair: an outline for the deck's footprint, plus the
+  // way it carries. Two objects, ONE deck — and until the outline started
+  // reading the solved field they were heighted by two different rules, so the
+  // slab and the carriageway it holds up landed at two different heights. On
+  // the real Port Vell box that was a 6 m slab with its footbridge elsewhere.
+  it('puts a bridge OUTLINE at the height of the way it carries', () => {
+    const features = scene()
+    const vertical = solveSceneVertical(features, FLAT)
+    const span = vertical.get('span')!
+    const deckM = Math.max(...span.elevationM)
+    expect(deckM).toBeGreaterThan(3) // the solver really did raise it
+
+    // An outline over the same span, tagged the way a mapper tags one.
+    const outline: OsmFeature = {
+      id: 'deck-outline', kind: 'bridge',
+      ring: northSouth(-45, 45),
+      height: { heightM: 8, minHeightM: 0, estimated: false },
+      widthM: 10,
+      style: { roofShape: 'flat', roofHeightM: 0 },
+    }
+    const opts = { ...FLAT, vertical }
+    const built = buildBridgeLayer([outline], opts)!
+    const pos = built.object.geometry.getAttribute('position') as THREE.BufferAttribute
+    let top = -Infinity
+    for (let i = 0; i < pos.count; i++) top = Math.max(top, pos.getZ(i))
+
+    const frame = frameAt()
+    const groundM = span.groundM[0]
+    // Everything below is compared in METRES ABOVE THE GROUND. The scene is in
+    // normalized units where a metre is ~3.6e-8, so a tolerance expressed in
+    // raw z would be either meaningless or unsatisfiable.
+    const clearanceM = (z: number): number => (z - frame.zAtElevationM(groundM)) / frame.mToN
+
+    // Within a deck thickness of the carriageway it carries — the two now
+    // answer to the same solve instead of guessing separately.
+    expect(clearanceM(top) + groundM).toBeGreaterThan(deckM - 1.5)
+    expect(clearanceM(top) + groundM).toBeLessThan(deckM + 1.5)
+
+    // Without the solved field it falls back to the default clearance.
+    const orphan = buildBridgeLayer([outline], { ...FLAT, vertical: null })!
+    const op = orphan.object.geometry.getAttribute('position') as THREE.BufferAttribute
+    let otop = -Infinity
+    for (let i = 0; i < op.count; i++) otop = Math.max(otop, op.getZ(i))
+    expect(clearanceM(otop)).toBeCloseTo(6, 3)
+
+    // And in NEITHER case is the `height=8` tag read as headroom. That was the
+    // old rule, and it is the one vertical.ts:99 contradicts: on a bridge,
+    // `height` is the structure. (The default clearance and this solve happen
+    // to agree at 6 m here, so THIS is the assertion that separates the fix
+    // from the bug — not a difference between the two answers.)
+    expect(Math.abs(clearanceM(otop) - 8)).toBeGreaterThan(1)
+    expect(Math.abs(clearanceM(top) - 8)).toBeGreaterThan(1)
   })
 })

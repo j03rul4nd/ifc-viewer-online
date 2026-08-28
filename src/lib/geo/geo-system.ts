@@ -139,6 +139,32 @@ export interface GeoSystemContext {
    * axis-aligned bounds, which is correct but coarse for a rotated model.
    */
   getActiveModelFootprint?(): Array<{ x: number; z: number }> | null
+  /**
+   * EVERY loaded model's oriented plan outline, one entry per model.
+   *
+   * A FEDERATED SET IS ONE BUILDING, and the active model is only one file of
+   * it. Loading Architecture, Structure and MEP leaves whichever finished last
+   * as the active one — usually the MEP file, whose plan is a plant room and a
+   * couple of risers. Suppression keyed off that footprint refuses to claim the
+   * mapped block it stands in (rightly: a 20 m plan cannot be entitled to
+   * delete an 8 000 m2 polygon), so the mapped mass survives and stands right
+   * through the model the user came to look at.
+   *
+   * Optional, and falls back to the active model then to the bounds: a host
+   * that cannot enumerate its models still gets the single-model behaviour.
+   */
+  getModelFootprints?(): Array<Array<{ x: number; z: number }>> | null
+  /**
+   * Scene Y of the model's LOCAL ORIGIN — where its own y = 0 ended up.
+   *
+   * The map plane is measured from the model's GROUND FLOOR, and the origin is
+   * what a building model's ground floor is: it is what
+   * `IfcMapConversion.OrthogonalHeight` states the elevation of. The bounding
+   * box bottom is not — for anything with a basement it is the underside of
+   * the foundations, which is how the whole of Barcelona ended up 9.8 m below
+   * the Hotel Vela. See geo-math.groundAnchorY.
+   */
+  getModelOriginY?(): number | null
 }
 
 // ── Public API ──────────────────────────────────────────────────────────────────
@@ -238,6 +264,20 @@ export interface GeoSystemAPI {
    * building has no name.
    */
   pickContextFeature(clientX: number, clientY: number): OsmFeature | null
+  /**
+   * Mapped features the user has struck out BY HAND, as OSM ids.
+   *
+   * The automatic suppression above answers "the model and the map describe the
+   * same thing" from geometry, and geometry can only ever be mostly right: a
+   * mapper draws one polygon for two towers, a model arrives with no
+   * georeference and lands next door, a neighbour is modelled in the file and
+   * mapped in OSM. This is the escape hatch for every one of those, and its
+   * inverse — remove an id here and the feature comes straight back — is why it
+   * is a set of ids rather than a destructive edit of the feature list.
+   *
+   * Replaces the whole set; the caller owns it (the store persists it).
+   */
+  setHiddenFeatures(ids: ReadonlyArray<string>): void
   isActive(): boolean
   dispose(): void
 }
@@ -282,6 +322,22 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   /** Bumped on teardown — invalidates building fetches still in flight. */
   let buildingsToken = 0
   let buildingsEnabled = false
+  /**
+   * The toggle in flight, so two callers cannot start two Overpass queries.
+   *
+   * This is not an optimisation. Enabling map mode re-applies the persisted
+   * surroundings preference, and a deep link (`?map=buildings`) or an SDK host
+   * asks for the same thing again a moment later — so two `setBuildings(true)`
+   * ran side by side, each hitting a shared public service for the SAME
+   * neighbourhood, and the loser of the token race resolved 'off'. Whichever
+   * settled last is what the panel believed, so a perfectly good query landed
+   * as "idle, zero buildings" over a district that was plainly on screen, and
+   * the per-layer toggles and the count never appeared.
+   *
+   * Same target: share the run. Different target: QUEUE it, never overlap —
+   * an off that lands after an on tore the layers down behind it.
+   */
+  let buildingsRun: { enabled: boolean; promise: Promise<BuildingsOutcome> } | null = null
   /** How much of a surrounding facade to model. */
   let contextDetail: BuildingDetail = 'simple'
   /**
@@ -348,39 +404,69 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let suppressContext = true
   let facilityKind: FacilityKind = 'unknown'
   let suppressionOverrides: SuppressionPolicy | undefined
+  /**
+   * Mapped features struck out BY HAND, as OSM ids.
+   *
+   * Automatic suppression reasons from geometry, and geometry is only ever
+   * mostly right — a mapper draws one polygon over two towers, a model with no
+   * georeference lands on the plot next door, a neighbour is in the file AND in
+   * OSM. Rather than keep widening the automatic rule until it starts deleting
+   * streets, the user gets to name the exception. Held as ids, never as an edit
+   * to the feature list, so putting one back is deleting a string.
+   */
+  let hiddenFeatureIds: ReadonlySet<string> = new Set()
 
   /**
-   * The predicate for the current model placement.
+   * EVERY loaded model's plan in normalized coordinates, one polygon per model.
    *
-   * Rebuilt per layer rebuild rather than cached: the model bounds change when
-   * a model is added, removed or re-placed, and a stale footprint deletes the
-   * wrong block. It is a handful of vector maths against one box.
+   * Shared by the feature suppressor and the seeded canopy, so the two can
+   * never disagree about where the models are — and PLURAL, because a federated
+   * delivery is one building split across an architectural, a structural and a
+   * services file. Reading only the active one is how the mapped block survived
+   * a model that filled it: the last file to finish loading was the MEP set,
+   * whose plan is a plant room, and a plan that small is not entitled to claim
+   * the polygon around it (nor should it be — see CONTAINMENT_AREA_RATIO).
+   *
+   * The ladder is deliberate. Every model's own oriented outline is the honest
+   * answer; the active model alone is the fallback for a host that cannot
+   * enumerate them; the axis-aligned bounds are the last resort, coarse for a
+   * rotated model but never absent.
    */
-  /**
-   * The model's plan in normalized coordinates, or null when there is nothing
-   * to stand on. Shared by the feature suppressor and the seeded canopy, so the
-   * two can never disagree about where the model is.
-   */
-  function modelFootprintPolygon(): THREE.Vector2[] | null {
-    if (!geoRoot || !placement) return null
+  function modelPlanPolygons(): THREE.Vector2[][] {
+    if (!geoRoot || !placement) return []
     const scratch = new THREE.Vector3()
+    // geoRoot carries placement, yaw and scale, so its inverse is exactly the
+    // world -> normalized-planar conversion every layer is drawn in. Deriving it
+    // here rather than recomposing the transform by hand is what keeps this
+    // correct when the user drags the model's placement.
     const toNormalized = (wx: number, wz: number): { x: number; y: number } => {
       const local = geoRoot!.worldToLocal(scratch.set(wx, 0, wz))
       return { x: local.x, y: local.y }
     }
-    const oriented = ctx.getActiveModelFootprint?.()
-    if (oriented && oriented.length >= 3) {
-      return oriented.map((c) => {
+    const toPolygon = (outline: ReadonlyArray<{ x: number; z: number }>): THREE.Vector2[] =>
+      outline.map((c) => {
         const n = toNormalized(c.x, c.z)
         return new THREE.Vector2(n.x, n.y)
       })
+
+    // Prefer the ORIENTED outlines. A building at an angle to the world axes —
+    // which, on the Cerda grid, is every building — has an axis-aligned box
+    // about twice its own area, and suppression keyed off that box reaches into
+    // the plot next door and deletes the neighbour.
+    const every = ctx.getModelFootprints?.()
+    if (every) {
+      const polys = every.filter((o) => o && o.length >= 3).map(toPolygon)
+      if (polys.length > 0) return polys
     }
+    const oriented = ctx.getActiveModelFootprint?.()
+    if (oriented && oriented.length >= 3) return [toPolygon(oriented)]
+
     const bounds = ctx.getActiveModelBounds()
-    if (!bounds) return null
+    if (!bounds) return []
     const mToN = metresToNormalized(placement.lat)
-    return footprintFromBounds(
+    return [footprintFromBounds(
       bounds, toNormalized, facilityKind, DEFAULT_MARGIN_M * mToN,
-    ).polygon
+    ).polygon]
   }
 
   /**
@@ -393,53 +479,40 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    */
   function modelExclusion(): ((nx: number, ny: number) => boolean) | null {
     if (!suppressContext) return null
-    const poly = modelFootprintPolygon()
-    if (!poly || poly.length < 3) return null
+    const polys = modelPlanPolygons()
+    if (polys.length === 0) return null
     // A tree is a point with a crown; a couple of metres of clearance keeps
     // branches out of the facades rather than merely out of the plan.
-    const grown = expandPolygon(poly, DEFAULT_MARGIN_M * metresToNormalized(placement!.lat) * 2)
-    return (nx, ny) => pointInPolygon({ x: nx, y: ny }, grown)
+    const clearance = DEFAULT_MARGIN_M * metresToNormalized(placement!.lat) * 2
+    const grown = polys.map((poly) => expandPolygon(poly, clearance))
+    return (nx, ny) => grown.some((g) => pointInPolygon({ x: nx, y: ny }, g))
   }
 
+  /**
+   * The predicate for the current model placement.
+   *
+   * Rebuilt per layer rebuild rather than cached: the model bounds change when
+   * a model is added, removed or re-placed, and a stale footprint deletes the
+   * wrong block. It is a handful of vector maths against one box.
+   */
   function modelSuppressor(): (f: OsmFeature) => boolean {
     if (!geoRoot || !placement) return () => true
-    const mToN = metresToNormalized(placement.lat)
-    const marginN = DEFAULT_MARGIN_M * mToN
-    const scratch = new THREE.Vector3()
-    // geoRoot carries placement, yaw and scale, so its inverse is exactly the
-    // world -> normalized-planar conversion every layer is drawn in. Deriving it
-    // here rather than recomposing the transform by hand is what keeps this
-    // correct when the user drags the model's placement.
-    const toNormalized = (wx: number, wz: number): { x: number; y: number } => {
-      const local = geoRoot!.worldToLocal(scratch.set(wx, 0, wz))
-      return { x: local.x, y: local.y }
-    }
+    const polys = modelPlanPolygons()
+    if (polys.length === 0) return () => true
+    const marginN = DEFAULT_MARGIN_M * metresToNormalized(placement.lat)
 
-    // Prefer the ORIENTED outline. A building at an angle to the world axes —
-    // which, on the Cerda grid, is every building — has an axis-aligned box
-    // about twice its own area, and suppression keyed off that box reaches into
-    // the plot next door and deletes the neighbour.
-    const oriented = ctx.getActiveModelFootprint?.()
-    let footprint
-    if (oriented && oriented.length >= 3) {
-      footprint = {
-        polygon: oriented.map((c) => {
-          const n = toNormalized(c.x, c.z)
-          return new THREE.Vector2(n.x, n.y)
-        }),
-        kind: facilityKind,
-        marginN,
-      }
-    } else {
-      const bounds = ctx.getActiveModelBounds()
-      if (!bounds) return () => true
-      footprint = footprintFromBounds(bounds, toNormalized, facilityKind, marginN)
-    }
-
-    return createSuppressor([footprint], (p) => {
-      const n = latLonToNormalized(p.lat, p.lon)
-      return { x: n.nx, y: n.ny }
-    }, suppressionOverrides)
+    // One footprint per model, NOT their union: createSuppressor already ORs
+    // the list, and a hull around three disciplines of the same building would
+    // also swallow whatever sits in the notch between them. Each file speaks
+    // only for the ground it actually covers.
+    return createSuppressor(
+      polys.map((polygon) => ({ polygon, kind: facilityKind, marginN })),
+      (p) => {
+        const n = latLonToNormalized(p.lat, p.lon)
+        return { x: n.nx, y: n.ny }
+      },
+      suppressionOverrides,
+    )
   }
 
   let degradedCallback: ((degraded: boolean) => void) | null = null
@@ -529,6 +602,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
       teardownTerrain()
       teardownBuildings()
+      // Let go of the toggle in flight. Its fetch is already doomed — the token
+      // moved — and leaving it in the queue would make the NEXT enable wait out
+      // a full Overpass round trip for an answer nobody wants. The orphan comes
+      // back 'off', which callers drop.
+      buildingsRun = null
       teardownSky()
       if (hoverAttached) {
         ctx.renderer.domElement.removeEventListener('pointermove', hoverAttached)
@@ -646,63 +724,17 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       if (terrain && terrainLook.detail !== previous.detail) rebuildLayers()
     },
 
-    async setBuildings(enabled) {
-      buildingsEnabled = enabled
-      if (!enabled) {
-        teardownBuildings()
-        return { status: 'off' }
-      }
-      if (!geoRoot || !placement) return { status: 'error', message: 'map not active' }
-
-      teardownBuildings()
-      const token = ++buildingsToken
-
-      // Already have this neighbourhood — rebuild from memory. Overpass is a
-      // shared public service: re-asking it for bytes we are still holding is
-      // both slow and rude, and it is the difference between a toggle that
-      // responds in a frame and one that spins for several seconds (or fails).
-      const key = osmCacheKey(placement.lat, placement.lon)
-      if (osmCache?.key === key) {
-        osmFeatures = osmCache.features
-        if (osmFeatures.length === 0) return { status: 'empty' }
-        const estimatedCount = rebuildLayers()
-        return {
-          status: 'ready',
-          counts: osmCache.counts,
-          estimatedCount,
-          truncated: osmCache.truncated,
-        }
-      }
-
-      let reply: BuildingsResponse
-      try {
-        reply = await runBuildingsWorker({
-          type: 'fetch-buildings',
-          id: crypto.randomUUID(),
-          lat: placement.lat,
-          lon: placement.lon,
-          halfSizeM: BUILDINGS_HALF_SIZE_M,
-        })
-      } catch (e) {
-        return { status: 'error', message: e instanceof Error ? e.message : String(e) }
-      }
-      // Disabled or re-triggered while the query ran — drop the result.
-      if (token !== buildingsToken || !geoRoot || !buildingsEnabled) return { status: 'off' }
-      if (reply.type === 'error') return { status: 'error', message: reply.message }
-
-      // Cache before the empty check: "this area has nothing mapped" is an
-      // answer worth keeping too, or every toggle re-asks for the same nothing.
-      osmCache = {
-        key,
-        features: reply.features,
-        counts: reply.counts,
-        truncated: reply.truncated,
-      }
-      if (reply.features.length === 0) return { status: 'empty' }
-
-      osmFeatures = reply.features
-      const estimatedCount = rebuildLayers()
-      return { status: 'ready', counts: reply.counts, estimatedCount, truncated: reply.truncated }
+    setBuildings(enabled) {
+      // Already doing exactly this — hand back the same run rather than racing
+      // it. The caller still awaits a real outcome; it is just not a second one.
+      if (buildingsRun && buildingsRun.enabled === enabled) return buildingsRun.promise
+      const previous = buildingsRun
+      const promise = (previous ? previous.promise.then(() => undefined, () => undefined)
+        : Promise.resolve()).then(() => applyBuildings(enabled))
+      const run = { enabled, promise }
+      buildingsRun = run
+      void promise.catch(() => undefined).then(() => { if (buildingsRun === run) buildingsRun = null })
+      return promise
     },
 
     setContextSuppression(next) {
@@ -790,6 +822,17 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       return pickFeatureAt(clientX, clientY)
     },
 
+    setHiddenFeatures(ids) {
+      const next = new Set(ids)
+      if (next.size === hiddenFeatureIds.size
+        && [...next].every((id) => hiddenFeatureIds.has(id))) return
+      hiddenFeatureIds = next
+      // Like suppression, this decides what is BUILT rather than what is
+      // visible: the layers are merged meshes, so there is no per-feature
+      // object left to flip once the geometry exists.
+      if (osmFeatures) rebuildLayers()
+    },
+
     setContextHoverCallback(cb) {
       hoverCallback = cb
       if (cb && !hoverAttached) {
@@ -850,7 +893,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * Quiet when nothing was lost, so a healthy site does not fill the console.
    */
   function reportSurfaceLoss(
-    layer: 'green' | 'sand' | 'rock' | 'water',
+    // Every layer that can lose a polygon, not only the ground cover. A plaza
+    // the triangulator refuses and a plaza nobody mapped look identical on
+    // screen, and the only way to tell them apart is a number — which is the
+    // whole reason this function exists, and it was reaching four of the seven
+    // layers that can produce one.
+    layer: FeatureKind,
     source: ReadonlyArray<OsmFeature>,
     built: { count: number; dropped?: number; degraded?: number } | null,
   ): void {
@@ -876,9 +924,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // each builder: every layer reads this array, so one filter covers roads,
     // trees, props and buildings alike — and a layer added later inherits it
     // instead of quietly reintroducing the overlap.
-    const visibleFeatures = suppressContext
-      ? osmFeatures.filter(modelSuppressor())
+    // The hand-picked exceptions go first: a Set lookup per feature against a
+    // predicate that projects a ring, and it must apply whether or not the
+    // automatic rule is on — the user turning suppression off to compare the
+    // two descriptions is not asking for the block they struck out to return.
+    const kept = hiddenFeatureIds.size > 0
+      ? osmFeatures.filter((f) => !hiddenFeatureIds.has(f.id))
       : osmFeatures
+    const visibleFeatures = suppressContext
+      ? kept.filter(modelSuppressor())
+      : kept
 
     const opts: LayerMeshOptions = {
       anchorLat: placement.lat,
@@ -1004,6 +1059,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // to come third.
     if (layerVisibility.pier) {
       const built = buildPierLayer(visibleFeatures, opts)
+      reportSurfaceLoss('pier', visibleFeatures, built)
       if (built) { addLayer('pier', built.object) }
     }
 
@@ -1012,6 +1068,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     for (const layer of ['road', 'rail'] as const) {
       if (!layerVisibility[layer]) continue
       const built = buildLinearLayer(visibleFeatures, layer, opts)
+      reportSurfaceLoss(layer, visibleFeatures, built)
       if (built) { addLayer(layer, built.object) }
     }
 
@@ -1117,6 +1174,70 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   function reseatBuildings(): void {
     if (!buildingsEnabled || !osmFeatures || !geoRoot) return
     rebuildLayers()
+  }
+
+  /**
+   * The actual toggle. Reached only through `setBuildings`, which serializes
+   * callers — see `buildingsRun` for why running two of these at once left the
+   * panel reporting an empty neighbourhood over a full one.
+   */
+  async function applyBuildings(enabled: boolean): Promise<BuildingsOutcome> {
+    buildingsEnabled = enabled
+    if (!enabled) {
+      teardownBuildings()
+      return { status: 'off' }
+    }
+    if (!geoRoot || !placement) return { status: 'error', message: 'map not active' }
+
+    teardownBuildings()
+    const token = ++buildingsToken
+
+    // Already have this neighbourhood — rebuild from memory. Overpass is a
+    // shared public service: re-asking it for bytes we are still holding is
+    // both slow and rude, and it is the difference between a toggle that
+    // responds in a frame and one that spins for several seconds (or fails).
+    const key = osmCacheKey(placement.lat, placement.lon)
+    if (osmCache?.key === key) {
+      osmFeatures = osmCache.features
+      if (osmFeatures.length === 0) return { status: 'empty' }
+      const estimatedCount = rebuildLayers()
+      return {
+        status: 'ready',
+        counts: osmCache.counts,
+        estimatedCount,
+        truncated: osmCache.truncated,
+      }
+    }
+
+    let reply: BuildingsResponse
+    try {
+      reply = await runBuildingsWorker({
+        type: 'fetch-buildings',
+        id: crypto.randomUUID(),
+        lat: placement.lat,
+        lon: placement.lon,
+        halfSizeM: BUILDINGS_HALF_SIZE_M,
+      })
+    } catch (e) {
+      return { status: 'error', message: e instanceof Error ? e.message : String(e) }
+    }
+    // Disabled or re-triggered while the query ran — drop the result.
+    if (token !== buildingsToken || !geoRoot || !buildingsEnabled) return { status: 'off' }
+    if (reply.type === 'error') return { status: 'error', message: reply.message }
+
+    // Cache before the empty check: "this area has nothing mapped" is an
+    // answer worth keeping too, or every toggle re-asks for the same nothing.
+    osmCache = {
+      key,
+      features: reply.features,
+      counts: reply.counts,
+      truncated: reply.truncated,
+    }
+    if (reply.features.length === 0) return { status: 'empty' }
+
+    osmFeatures = reply.features
+    const estimatedCount = rebuildLayers()
+    return { status: 'ready', counts: reply.counts, estimatedCount, truncated: reply.truncated }
   }
 
   function teardownBuildings(): void {
@@ -1314,7 +1435,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     const anchorScene = bounds ? { x: bounds.center.x, z: bounds.center.z } : { x: 0, z: 0 }
     const modelMinY = bounds ? bounds.center.y - bounds.size.y / 2 : 0
 
-    const t = composeGeoRootTransform({ placement: p, anchorScene, modelMinY })
+    const t = composeGeoRootTransform({
+      placement: p, anchorScene, modelMinY,
+      modelOriginY: ctx.getModelOriginY?.() ?? null,
+    })
     geoRoot.position.set(t.position.x, t.position.y, t.position.z)
     geoRoot.quaternion
       .setFromAxisAngle(new THREE.Vector3(0, 1, 0), t.yawRad)

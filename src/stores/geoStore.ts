@@ -51,6 +51,17 @@ const LS_DETAIL        = 'ifc-geo-detail:v1'
 const LS_TONE          = 'ifc-geo-context-tone:v1'
 const LS_VEHICLES      = 'ifc-geo-vehicles:v1'
 const LS_SUPPRESS      = 'ifc-geo-suppress-context:v1'
+const LS_HIDDEN        = 'ifc-geo-hidden-features:v1'
+
+/**
+ * How many hand-hidden features are remembered.
+ *
+ * A cap rather than none: this is localStorage, the ids come from clicks, and a
+ * user working through a dense district could otherwise grow the entry without
+ * bound. Oldest out first — the thing you struck out five sites ago is the one
+ * you have stopped thinking about.
+ */
+const HIDDEN_LIMIT = 200
 
 /**
  * Detail level, persisted.
@@ -146,6 +157,47 @@ function readTerms(): Record<string, boolean> {
   return {}
 }
 
+/**
+ * One mapped feature the user struck out by hand.
+ *
+ * The id alone would be enough to hide it, but not to OFFER IT BACK: a list
+ * reading `w908035012` cannot be un-done by anyone. The name and kind are
+ * carried so the panel can say "Hotel Vela — building" and mean it, and they
+ * are what OSM said at the time rather than anything invented.
+ */
+export interface HiddenMapFeature {
+  /** OSM id, as `OsmFeature.id`. */
+  id: string
+  kind: FeatureKind
+  /** `name` as mapped, when there was one. Never invented. */
+  name?: string
+  /** What it is — 'Hotel', 'School'. */
+  label?: string
+}
+
+/** Persisted hand-hidden features; anything malformed is dropped, not guessed. */
+function readHiddenFeatures(): HiddenMapFeature[] {
+  const raw = lsGet(LS_HIDDEN)
+  if (!raw) return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    const out: HiddenMapFeature[] = []
+    for (const item of parsed) {
+      if (!item || typeof item !== 'object') continue
+      const o = item as Record<string, unknown>
+      if (typeof o.id !== 'string' || typeof o.kind !== 'string') continue
+      out.push({
+        id: o.id,
+        kind: o.kind as FeatureKind,
+        name:  typeof o.name  === 'string' ? o.name  : undefined,
+        label: typeof o.label === 'string' ? o.label : undefined,
+      })
+    }
+    return out.slice(-HIDDEN_LIMIT)
+  } catch { return [] }
+}
+
 // ── Store types ─────────────────────────────────────────────────────────────────
 
 interface GeoStore {
@@ -190,6 +242,15 @@ interface GeoStore {
    * other, which is a real thing to want and the reason this is a switch.
    */
   suppressContext: boolean
+  /**
+   * Mapped features struck out BY HAND (persisted).
+   *
+   * The manual half of the same decision `suppressContext` automates. It stays
+   * ON while suppression is off, because turning the automatic rule off to
+   * compare the model against the map is not a request for the block you
+   * deliberately struck out to come back.
+   */
+  hiddenFeatures: HiddenMapFeature[]
   /** True when the query hit its cap — the view is a partial picture. */
   buildingsTruncated: boolean
   georefByModel: Record<string, GeorefExtraction>
@@ -236,6 +297,12 @@ interface GeoStore {
   setContextTone: (t: ContextTone) => void
   setVehicles: (v: boolean) => void
   setSuppressContext: (v: boolean) => void
+  /** Strike out one mapped feature. Idempotent on id. */
+  hideFeature: (f: HiddenMapFeature) => void
+  /** Put one back. */
+  showFeature: (id: string) => void
+  /** Put every one of them back. */
+  showAllFeatures: () => void
   setTerrainExaggeration: (k: number) => void
   setGeoref: (modelId: string, g: GeorefExtraction) => void
   removeGeoref: (modelId: string) => void
@@ -276,6 +343,7 @@ export const useGeoStore = create<GeoStore>()(
       contextTone:        readContextTone(),
       vehicles:           lsGet(LS_VEHICLES) === '1',
       suppressContext:    lsGet(LS_SUPPRESS) !== '0',
+      hiddenFeatures:     readHiddenFeatures(),
       buildingsTruncated: false,
       georefByModel:  {},
       placement:      null,
@@ -416,6 +484,30 @@ export const useGeoStore = create<GeoStore>()(
       setSuppressContext: (v) => {
         lsSet(LS_SUPPRESS, v ? '1' : '0')
         set({ suppressContext: v }, false, 'setSuppressContext')
+      },
+
+      hideFeature: (f) => {
+        const current = get().hiddenFeatures
+        // Re-hiding something already hidden is a no-op rather than a duplicate
+        // row: the click that does it is a click on a feature that is not on
+        // screen, which only happens through the SDK or a stale pick.
+        if (current.some((h) => h.id === f.id)) return
+        const next = [...current, f].slice(-HIDDEN_LIMIT)
+        lsSet(LS_HIDDEN, JSON.stringify(next))
+        set({ hiddenFeatures: next }, false, 'hideFeature')
+      },
+
+      showFeature: (id) => {
+        const next = get().hiddenFeatures.filter((h) => h.id !== id)
+        if (next.length === get().hiddenFeatures.length) return
+        lsSet(LS_HIDDEN, JSON.stringify(next))
+        set({ hiddenFeatures: next }, false, 'showFeature')
+      },
+
+      showAllFeatures: () => {
+        if (get().hiddenFeatures.length === 0) return
+        lsSet(LS_HIDDEN, '[]')
+        set({ hiddenFeatures: [] }, false, 'showAllFeatures')
       },
 
       setContextDetail: (d) => {

@@ -233,3 +233,53 @@ describe('resolvePlacement', () => {
     if (!r.ok) expect(r.error.message).toBe('notGeoreferenced')
   })
 })
+
+// ── The height the file states about itself ───────────────────────────────────
+// `IfcMapConversion.OrthogonalHeight` is the elevation of the model's own
+// origin above the vertical datum, which is exactly what `heightOffsetM` means.
+// It was extracted for months and then dropped: the Hotel Vela states 2.5 m,
+// the extraction read 2.5 m, and the placement carried 0.
+
+describe('placementFromExtraction · the stated origin height', () => {
+  it('carries it through from grid coordinates', () => {
+    const r = placementFromExtraction(
+      extraction({ eastings: 500000, northings: 5000000, heightM: 2.5 }), bounds(0, 0))
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.value.heightOffsetM).toBe(2.5)
+  })
+
+  it('carries it through from a site lat/lon too', () => {
+    const r = placementFromExtraction(
+      extraction({ lat: 41.3687, lon: 2.1902, heightM: 12 }), bounds(0, 0))
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.value.heightOffsetM).toBe(12)
+  })
+
+  it('is zero when the file says nothing, exactly as before', () => {
+    const r = placementFromExtraction(
+      extraction({ eastings: 500000, northings: 5000000, heightM: null }), bounds(0, 0))
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.value.heightOffsetM).toBe(0)
+  })
+
+  it('clamps a mistyped datum rather than launching the model into orbit', () => {
+    const r = placementFromExtraction(
+      extraction({ eastings: 500000, northings: 5000000, heightM: 8_000_000 }), bounds(0, 0))
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.value.heightOffsetM).toBe(4000)
+  })
+
+  it('accepts a negative height — below the datum is a real place', () => {
+    const r = placementFromExtraction(
+      extraction({ eastings: 500000, northings: 5000000, heightM: -3.5 }), bounds(0, 0))
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.value.heightOffsetM).toBe(-3.5)
+  })
+
+  it('ignores a height that is not a number', () => {
+    const r = placementFromExtraction(
+      extraction({ eastings: 500000, northings: 5000000, heightM: Number.NaN }), bounds(0, 0))
+    expect(r.ok).toBe(true)
+    if (r.ok) expect(r.value.heightOffsetM).toBe(0)
+  })
+})

@@ -97,6 +97,20 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
   const [reliefOpen, setReliefOpen] = useState(false)
   /** What the pointer is over among the surrounding buildings, if anything. */
   const [hover, setHover] = useState<ContextHover | null>(null)
+  /**
+   * While true a click on the surroundings strikes that feature out instead of
+   * inspecting it.
+   *
+   * A MODE rather than a button on the inspector card, because the thing the
+   * user is trying to do is "get this mass out of my view", and making them
+   * click, read a card and then find a control is three steps for one decision.
+   * It is deliberately not persisted: leaving the app in a state where clicking
+   * the map deletes things, across a reload, is a trap.
+   */
+  const [hideMode, setHideMode] = useState(false)
+  /** Read inside the click handler, so toggling the mode never re-subscribes. */
+  const hideModeRef = useRef(false)
+  useEffect(() => { hideModeRef.current = hideMode }, [hideMode])
 
   const enabledAtRef = useRef(0)
 
@@ -423,9 +437,20 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
           modelId ? useValidationStore.getState().spatialTrees[modelId] : null,
         ),
       })
+      // Same reason as the two setters above: the geo system starts with an
+      // empty set, while these were struck out in a previous session and the
+      // list in this panel is already showing them as hidden.
+      geo.setHiddenFeatures(prefs.hiddenFeatures.map((h) => h.id))
       const outcome = await geo.setBuildings(true)
+      // 'off' is not a result, it is "this call was superseded" — map mode went
+      // down under it, or a later toggle took over. Writing it as 'idle' with
+      // zero counts is a claim about the neighbourhood, and it was a false one:
+      // the panel reported an empty district over one plainly on screen, and
+      // the per-layer toggles and the building count never appeared. Whoever
+      // superseded this call reports; this one says nothing.
+      if (outcome.status === 'off') return
       useGeoStore.getState().setBuildingsResult(epoch, {
-        status: outcome.status === 'off' ? 'idle' : outcome.status,
+        status: outcome.status,
         counts: outcome.status === 'ready' ? outcome.counts : undefined,
         estimated: outcome.status === 'ready' ? outcome.estimatedCount : 0,
         truncated: outcome.status === 'ready' ? outcome.truncated : false,
@@ -659,6 +684,34 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
     }
   }, [store.mapMode, getGeo])
 
+  // The hand-hidden set is a preference like any other, so it is pushed the
+  // same way: the store is the truth, the scene follows. `setHiddenFeatures`
+  // early-returns on an unchanged set, so this costs nothing on unrelated
+  // renders and rebuilds exactly once when the user hides or restores one.
+  useEffect(() => {
+    if (store.mapMode !== 'on') return
+    const ids = store.hiddenFeatures.map((h) => h.id)
+    void getGeo()?.then((geo) => geo.setHiddenFeatures(ids))
+  }, [store.mapMode, store.hiddenFeatures, getGeo])
+
+  // Hide mode is only meaningful while there are surroundings to click, and a
+  // mode nobody can leave is a bug. Dropping it here covers every exit —
+  // turning the map off, turning the buildings off, or a failed refetch.
+  useEffect(() => {
+    if (store.mapMode !== 'on' || !store.buildingsEnabled) setHideMode(false)
+  }, [store.mapMode, store.buildingsEnabled])
+
+  // Say so on the cursor. Without it the only evidence that the next click
+  // deletes something is a switch in a panel the user has already looked away
+  // from.
+  useEffect(() => {
+    const canvas = viewerApiRef.current?.getCanvas()
+    if (!canvas || !hideMode) return
+    const previous = canvas.style.cursor
+    canvas.style.cursor = 'crosshair'
+    return () => { canvas.style.cursor = previous }
+  }, [hideMode, viewerApiRef])
+
   // Click the surroundings to inspect them. The hover tooltip answers "what is
   // that?" for as long as the mouse holds still; this answers it for as long as
   // you want, in the same panel that describes an IFC element or a scanned
@@ -674,37 +727,57 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
     const canvas = viewerApiRef.current?.getCanvas()
     if (!canvas) return
 
+    let cancelled = false
+    let geo: GeoSystemAPI | null = null
+    void getGeo()?.then((g) => { if (!cancelled) geo = g })
+
     const onClick = (e: MouseEvent): void => {
-      void getGeo()?.then((geo) => {
-        const feature = geo.pickContextFeature(e.clientX, e.clientY)
-        if (!feature) return
-        e.stopPropagation()
-        // Out to an embedding host too, so a CDE can react to "they clicked the
-        // school next door" the same way it reacts to an element selection.
-        emitEmbedEvent('map-feature-picked', {
+      // SYNCHRONOUS on purpose. This used to pick inside the promise, by which
+      // time `stopPropagation` no longer stops anything — survivable while the
+      // click only opened an inspector, not survivable when the same click is
+      // also meant not to deselect the model standing behind the building.
+      const feature = geo?.pickContextFeature(e.clientX, e.clientY)
+      if (!feature) return
+      e.stopPropagation()
+
+      if (hideModeRef.current) {
+        useGeoStore.getState().hideFeature({
           id: feature.id,
+          kind: feature.kind,
           name: feature.name,
           label: feature.label,
-          featureKind: feature.kind,
-          heightM: feature.height?.heightM,
-          heightEstimated: feature.height?.estimated ?? true,
         })
-        publishInspectorTarget({
-          kind: 'map-feature',
-          id: feature.id,
-          name: feature.name,
-          label: feature.label,
-          featureKind: feature.kind,
-          heightM: feature.height?.heightM,
-          // Estimated far more often than not — the panel says which, because
-          // an OSM height presented as surveyed is the kind of number that ends
-          // up in someone's shadow study.
-          heightEstimated: feature.height?.estimated,
-        })
+        return
+      }
+
+      // Out to an embedding host too, so a CDE can react to "they clicked the
+      // school next door" the same way it reacts to an element selection.
+      emitEmbedEvent('map-feature-picked', {
+        id: feature.id,
+        name: feature.name,
+        label: feature.label,
+        featureKind: feature.kind,
+        heightM: feature.height?.heightM,
+        heightEstimated: feature.height?.estimated ?? true,
+      })
+      publishInspectorTarget({
+        kind: 'map-feature',
+        id: feature.id,
+        name: feature.name,
+        label: feature.label,
+        featureKind: feature.kind,
+        heightM: feature.height?.heightM,
+        // Estimated far more often than not — the panel says which, because
+        // an OSM height presented as surveyed is the kind of number that ends
+        // up in someone's shadow study.
+        heightEstimated: feature.height?.estimated,
       })
     }
     canvas.addEventListener('click', onClick, true)
-    return () => canvas.removeEventListener('click', onClick, true)
+    return () => {
+      cancelled = true
+      canvas.removeEventListener('click', onClick, true)
+    }
   }, [store.mapMode, store.buildingsEnabled, viewerApiRef, getGeo])
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -1230,6 +1303,70 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                         <p className="text-[10px] text-[var(--text-faint)] leading-snug">
                           {t('layers.suppressHint')}
                         </p>
+
+                        {/* The MANUAL half of the same decision. The rule above
+                            reasons from geometry and is right most of the time;
+                            this is where the user overrules it in either
+                            direction, which is the only honest way to ship a
+                            rule that cannot be right always. */}
+                        <Caption>{t('layers.hidden')}</Caption>
+                        <SwitchRow
+                          label={t('layers.hidePick')}
+                          checked={hideMode}
+                          onChange={setHideMode}
+                          // Gated on the surroundings being ON, not on the
+                          // query having reported 'ready'. The status is a
+                          // report about the last fetch and it is not always
+                          // delivered — a toggle raced by a second one comes
+                          // back 'off' and leaves the panel reading 'idle' over
+                          // a neighbourhood that is plainly on screen. Picking
+                          // over an empty layer does nothing; a dead control
+                          // over a full one is the failure that matters.
+                          disabled={!mapOn || !store.buildingsEnabled}
+                        />
+                        <p className="text-[10px] leading-snug"
+                           style={{ color: hideMode ? 'var(--text-dim)' : 'var(--text-faint)' }}>
+                          {hideMode ? t('layers.hidePickActive') : t('layers.hidePickHint')}
+                        </p>
+
+                        {store.hiddenFeatures.length > 0 && (
+                          <div className="flex flex-col gap-1">
+                            {store.hiddenFeatures.map((h) => (
+                              <div
+                                key={h.id}
+                                className="flex items-center gap-1.5 px-1.5 py-1 rounded-[7px] border border-[var(--border)] bg-[var(--surface-2)]"
+                              >
+                                <div className="min-w-0 flex-1 flex flex-col">
+                                  {/* Whatever OSM actually said, in order of
+                                      usefulness. The id is the last resort and
+                                      is shown next to it either way: two
+                                      unnamed blocks on one street are
+                                      indistinguishable without it. */}
+                                  <span className="truncate text-[10.5px] text-[var(--text-dim)]">
+                                    {h.name ?? h.label ?? t(`layers.osm.${h.kind}`)}
+                                  </span>
+                                  <span className="truncate font-mono text-[9px] text-[var(--text-faint)]">
+                                    {h.id}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => store.showFeature(h.id)}
+                                  title={t('layers.hiddenRestore')}
+                                  aria-label={t('layers.hiddenRestore')}
+                                  className="shrink-0 px-1.5 py-0.5 rounded-[6px] text-[10px] text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[var(--border)] transition-colors"
+                                >
+                                  {t('layers.hiddenRestore')}
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              onClick={store.showAllFeatures}
+                              className="self-start px-1 py-0.5 -mx-1 rounded-[6px] text-[10px] text-[var(--text-faint)] hover:text-[var(--text-dim)] hover:bg-[var(--surface-2)] transition-colors"
+                            >
+                              {t('layers.hiddenRestoreAll')}
+                            </button>
+                          </div>
+                        )}
 
                         {/* Scenery, kept apart from the mapped layers above —
                             the distinction is the point, not a detail. */}
