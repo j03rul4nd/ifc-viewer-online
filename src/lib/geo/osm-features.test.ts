@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import portvell from './__fixtures__/portvell.json'
 import {
   classifyFeature, parseOsmColor, parseRoofShape, resolveFeatureStyle,
   parseOsmFeatures, buildFeaturesQuery, bridgeWidth, countByKind,
@@ -993,5 +994,74 @@ describe('coastline becomes the sea', () => {
 
   it('needs the bbox — without it there is nothing to close the sea against', () => {
     expect(parseOsmFeatures({ elements: [shore] })).toHaveLength(0)
+  })
+})
+
+// ── Real ground, not a shape I drew ───────────────────────────────────────────
+// Two failures that only a real city produces, both measured against the
+// surveyed data for the 700 m box the app actually queries around the Hotel
+// Vela (src/lib/geo/__fixtures__/portvell.json, OpenStreetMap, ODbL). Synthetic
+// tags could not have found either: one needs a relation a mapper split into
+// three ways, the other needs a quay that is also the shoreline, and nobody
+// writes those by hand because nobody expects them.
+
+describe('parseOsmFeatures over the real Port Vell box', () => {
+  const BOX = portvell._bbox as { south: number; west: number; north: number; east: number }
+  const features = parseOsmFeatures(
+    { elements: portvell.elements }, { bbox: BOX },
+  ) as OsmFeature[]
+
+  const MPD_LAT = 111132
+  const MPD_LON = 111320 * Math.cos((41.3687 * Math.PI) / 180)
+  const areaM2 = (ring: ReadonlyArray<{ lat: number; lon: number }>): number => {
+    let a = 0
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      a += (ring[j].lon * MPD_LON) * (ring[i].lat * MPD_LAT)
+         - (ring[i].lon * MPD_LON) * (ring[j].lat * MPD_LAT)
+    }
+    return Math.abs(a) / 2
+  }
+
+  // Platja de Sant Sebastia is relation 7333375, and its outer ring is three
+  // open ways of 463 m, 57 m and 608 m — one of which is the shoreline itself.
+  // Closing each on its own gave two overlapping polygons of 17 139 and 26 603
+  // m2: together twice the beach, neither its shape, and the shoreline folded
+  // back so the sand crossed into the water.
+  it('assembles the beach relation into one ring, not one per member', () => {
+    const beach = features.filter((f) => f.id.startsWith('r7333375'))
+    expect(beach).toHaveLength(1)
+    expect(beach[0].kind).toBe('sand')
+    expect(beach[0].ring).toHaveLength(37)
+    expect(areaM2(beach[0].ring!)).toBeGreaterThan(21_000)
+    expect(areaM2(beach[0].ring!)).toBeLessThan(22_500)
+  })
+
+  // Moll de Barcelona carries man_made=quay AND natural=coastline on one way,
+  // as does the mole guarding the Nova Bocana. Taking the shoreline and
+  // stopping meant the most visible built edge of the harbour drew nothing.
+  it('draws a quay that is also the shoreline, and still builds the sea from it', () => {
+    const quay = features.find((f) => f.id === 'w283764976')
+    expect(quay?.kind).toBe('pier')
+    expect(quay?.widthM).toBeGreaterThan(0)
+
+    const mole = features.find((f) => f.id === 'w500584596')
+    expect(mole?.kind).toBe('pier')
+    expect(mole?.style.pierKind).toBe('mole')
+
+    // The same ways are still shoreline: the sea is unchanged by all of this.
+    const sea = features.filter((f) => f.id.startsWith('sea-'))
+    expect(sea.length).toBeGreaterThan(0)
+    expect(sea.every((f) => (f.ring?.length ?? 0) > 3)).toBe(true)
+  })
+
+  it('a plain coastline way is still not a feature of its own', () => {
+    // The fall-through must not start drawing blue lines down the beach: a way
+    // whose only tag is natural=coastline classifies to null exactly as before.
+    const els = portvell.elements as unknown as Array<{ id: number; tags?: Record<string, string> }>
+    const plain = els.find(
+      (e) => e.tags?.['natural'] === 'coastline' && Object.keys(e.tags).length === 1,
+    )
+    expect(plain).toBeDefined()
+    expect(features.some((f) => f.id === `w${plain!.id}`)).toBe(false)
   })
 })

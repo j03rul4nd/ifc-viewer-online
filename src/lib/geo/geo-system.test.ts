@@ -571,6 +571,42 @@ describe('geo-system · OSM feature cache', () => {
     if (second.status === 'ready') expect(second.counts.building).toBe(1)
   })
 
+  // Enabling map mode re-applies the persisted surroundings preference, and a
+  // deep link (`?map=buildings`) or an SDK host asks for the same thing a
+  // moment later. Both used to run: two queries against a shared public service
+  // for one neighbourhood, and the loser of the token race resolved 'off' —
+  // which the panel wrote as "idle, zero buildings" over a district that was
+  // plainly on screen, so the per-layer toggles and the count never appeared.
+  it('two callers asking for the same thing share one query', async () => {
+    const geo = createGeoSystem(makeFixture().ctx)
+    await geo.enable(PLACEMENT, PROVIDER)
+
+    const [a, b] = await Promise.all([geo.setBuildings(true), geo.setBuildings(true)])
+
+    expect(FakeBuildingsWorker.built).toBe(1)
+    expect(a.status).toBe('ready')
+    expect(b.status).toBe('ready')
+  })
+
+  // Different targets cannot share a run, so they QUEUE. Overlapping them let an
+  // 'off' land after an 'on' and tear the layers down behind it.
+  it('runs an off and an on in the order they were asked for', async () => {
+    const f = makeFixture()
+    const geo = createGeoSystem(f.ctx)
+    await geo.enable(PLACEMENT, PROVIDER)
+    geo.setContextSuppression({ enabled: false })
+
+    const off = geo.setBuildings(false)
+    const on = geo.setBuildings(true)
+    const [, onResult] = await Promise.all([off, on])
+
+    expect(onResult.status).toBe('ready')
+    let hit: THREE.Object3D | undefined
+    f.scene.traverse((o) => { if (o.name === 'osm-buildings') hit = o })
+    expect(hit).toBeDefined()
+    geo.dispose()
+  })
+
   it('survives a map-mode cycle at the same site', async () => {
     const geo = createGeoSystem(makeFixture().ctx)
     await geo.enable(PLACEMENT, PROVIDER)
@@ -665,5 +701,157 @@ describe('geo-system · OSM feature cache', () => {
     await geo.setBuildings(true)
 
     expect(FakeBuildingsWorker.built).toBe(2)
+  })
+})
+
+// ── What the model is entitled to replace ─────────────────────────────────────
+//
+// The failure this block exists for, reported from the app: the Hotel Vela set
+// loaded, the map came on, and the mapped mass on the same plot stood right
+// through the model. Suppression was on, the policy was right and the geometry
+// was right — it was reading ONE footprint, the active model's, and the active
+// model of a federated delivery is whichever file finished loading last. That
+// is routinely the MEP file, whose plan is a plant room, and a plan that small
+// is correctly refused the right to delete the block around it.
+
+describe('geo-system · a federated model is one building', () => {
+  /**
+   * A mapped block on the placement itself, ~110 x 83 m.
+   *
+   * Big on purpose: it has to be more than CONTAINMENT_AREA_RATIO times the
+   * small footprint (so the small one cannot claim it) and less than that times
+   * the large one (so the large one can). A ring the size of the plant room
+   * would be suppressed by either and would prove nothing.
+   */
+  class FakePlotWorker {
+    onmessage: ((e: MessageEvent<unknown>) => void) | null = null
+    onerror: ((e: ErrorEvent) => void) | null = null
+    postMessage(msg: { id: string }): void {
+      queueMicrotask(() => {
+        this.onmessage?.({
+          data: {
+            type: 'buildings',
+            id: msg.id,
+            features: [{
+              id: 'w908035012',
+              kind: 'building',
+              name: 'Hotel Vela',
+              ring: [
+                { lat: PLACEMENT.lat - 0.0005, lon: PLACEMENT.lon - 0.0005 },
+                { lat: PLACEMENT.lat + 0.0005, lon: PLACEMENT.lon - 0.0005 },
+                { lat: PLACEMENT.lat + 0.0005, lon: PLACEMENT.lon + 0.0005 },
+                { lat: PLACEMENT.lat - 0.0005, lon: PLACEMENT.lon + 0.0005 },
+              ],
+              height: { heightM: 98.8, minHeightM: 0, estimated: false },
+              style: { roofShape: 'flat', roofHeightM: 0 },
+            }],
+            counts: { building: 1, water: 0, green: 0, tree: 0, bridge: 0 },
+            truncated: false,
+          },
+        } as MessageEvent<unknown>)
+      })
+    }
+    terminate(): void { /* no-op */ }
+  }
+
+  const originalWorker = globalThis.Worker
+  beforeEach(() => { (globalThis as { Worker: unknown }).Worker = FakePlotWorker })
+  afterEach(() => { (globalThis as { Worker: unknown }).Worker = originalWorker })
+
+  /** Plan corners of a world-space box centred on the model origin. */
+  const plan = (halfX: number, halfZ: number): Array<{ x: number; z: number }> => [
+    { x: -halfX, z: -halfZ }, { x: halfX, z: -halfZ },
+    { x: halfX, z: halfZ }, { x: -halfX, z: halfZ },
+  ]
+
+  const buildingsIn = (scene: THREE.Scene): THREE.Object3D | undefined => {
+    let hit: THREE.Object3D | undefined
+    scene.traverse((o) => { if (o.name === 'osm-buildings') hit = o })
+    return hit
+  }
+
+  it('the services file alone cannot claim the plot — this was the bug', async () => {
+    const f = makeFixture()
+    // 10 x 10 m: a plant room and two risers, which is what an MEP model of a
+    // hotel amounts to in plan. It is the ACTIVE model because it loaded last.
+    f.ctx.getActiveModelFootprint = () => plan(5, 5)
+    const geo = createGeoSystem(f.ctx)
+    await geo.enable(PLACEMENT, PROVIDER)
+    await geo.setBuildings(true)
+
+    expect(buildingsIn(f.scene)).toBeDefined()
+    geo.dispose()
+  })
+
+  it('reading every loaded model instead, the plot goes', async () => {
+    const f = makeFixture()
+    f.ctx.getActiveModelFootprint = () => plan(5, 5)
+    // The same delivery, whole: services, structure and architecture. Only the
+    // last of them is the size of the building, and one of them being right is
+    // the whole point — createSuppressor ORs the list.
+    f.ctx.getModelFootprints = () => [plan(5, 5), plan(38, 20), plan(41, 22)]
+    const geo = createGeoSystem(f.ctx)
+    await geo.enable(PLACEMENT, PROVIDER)
+    await geo.setBuildings(true)
+
+    expect(buildingsIn(f.scene)).toBeUndefined()
+    geo.dispose()
+  })
+
+  it('falls back to the active model when the host cannot enumerate them', async () => {
+    const f = makeFixture()
+    f.ctx.getActiveModelFootprint = () => plan(41, 22)
+    // A host that has the hook but nothing loaded must not read as "no models
+    // anywhere" and silently disable suppression.
+    f.ctx.getModelFootprints = () => []
+    const geo = createGeoSystem(f.ctx)
+    await geo.enable(PLACEMENT, PROVIDER)
+    await geo.setBuildings(true)
+
+    expect(buildingsIn(f.scene)).toBeUndefined()
+    geo.dispose()
+  })
+
+  // The escape hatch for everything the rule above cannot see. It is keyed on
+  // the OSM id and nothing else, so putting one back is deleting a string.
+  it('strikes out a named feature by hand, and puts it back', async () => {
+    const f = makeFixture()
+    const geo = createGeoSystem(f.ctx)
+    await geo.enable(PLACEMENT, PROVIDER)
+    // Suppression OFF: the point is that the hand-picked set is independent of
+    // it. A user comparing the model against the map has not asked for the
+    // block they deliberately struck out to come back.
+    geo.setContextSuppression({ enabled: false })
+    await geo.setBuildings(true)
+    expect(buildingsIn(f.scene)).toBeDefined()
+
+    geo.setHiddenFeatures(['w908035012'])
+    expect(buildingsIn(f.scene)).toBeUndefined()
+
+    geo.setHiddenFeatures([])
+    expect(buildingsIn(f.scene)).toBeDefined()
+    geo.dispose()
+  })
+
+  it('ignores an id that is not in the data rather than rebuilding for it', async () => {
+    const f = makeFixture()
+    const geo = createGeoSystem(f.ctx)
+    await geo.enable(PLACEMENT, PROVIDER)
+    geo.setContextSuppression({ enabled: false })
+    await geo.setBuildings(true)
+
+    const before = buildingsIn(f.scene)
+    geo.setHiddenFeatures(['w-from-another-site'])
+    const after = buildingsIn(f.scene)
+    expect(after).toBeDefined()
+    // Rebuilt, not reused: the set genuinely changed, and geo-system cannot
+    // know an id is absent without walking the features anyway.
+    expect(after).not.toBe(before)
+
+    // The same set twice must NOT rebuild — this is what keeps an unrelated
+    // React render from re-extruding the neighbourhood.
+    geo.setHiddenFeatures(['w-from-another-site'])
+    expect(buildingsIn(f.scene)).toBe(after)
+    geo.dispose()
   })
 })

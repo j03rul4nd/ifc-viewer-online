@@ -6,9 +6,10 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-  buildSeaPolygons, joinChains, perimeterT, perimeterPoint,
+  buildSeaPolygons, buildSea, approximateSea, joinChains, perimeterT, perimeterPoint,
   type LatLon, type CoastlineBbox,
 } from './coastline'
+import { selfIntersections, duplicateVertices } from './ring-checks'
 
 /** A unit box around the origin — the numbers stay readable. */
 const BOX: CoastlineBbox = { south: -1, west: -1, north: 1, east: 1 }
@@ -167,5 +168,92 @@ describe('buildSeaPolygons', () => {
       expect(q.lon).toBeGreaterThanOrEqual(BOX.west - 1e-9)
       expect(q.lon).toBeLessThanOrEqual(BOX.east + 1e-9)
     }
+  })
+})
+
+// ── When the exact walk fails ─────────────────────────────────────────────────
+// Three ways a real shoreline defeats the boundary walk, all reproduced from
+// the audit. None of them fires on the benchmark harbour, whose coastline is
+// clean — which is exactly why they need a net rather than a fix each. Losing
+// the sea is the worst outcome available: the water vanishes and so does the
+// mask that stops the elevation raster reading moored ships as ground.
+
+describe('buildSea · the safe fallback', () => {
+  /** Land north, water south, mapped in three ways — the MIDDLE one backwards. */
+  const reversedMiddle: LatLon[][] = [
+    [p(-2, 0), p(-0.4, 0)],
+    [p(0.4, 0), p(-0.4, 0)],
+    [p(0.4, 0), p(2, 0)],
+  ]
+
+  it('the exact walk really does give up on a reversed way', () => {
+    // Not an assumption: the refusal to flip is deliberate in joinChains,
+    // because a coastline's direction IS the land/water convention.
+    expect(joinChains(reversedMiddle)).toHaveLength(3)
+  })
+
+  it('falls back rather than losing the sea entirely', () => {
+    const built = buildSea(reversedMiddle, BOX)
+    expect(built.quality).toBe('approximate')
+    expect(built.rings).toHaveLength(1)
+    // The water is on the right of travel — south of a west-to-east shore.
+    expect(contains(built.rings[0], p(0, -0.5))).toBe(true)
+    expect(contains(built.rings[0], p(0, 0.5))).toBe(false)
+  })
+
+  it('keeps the exact answer when there is one', () => {
+    const clean: LatLon[][] = [[p(-2, 0), p(2, 0)]]
+    const built = buildSea(clean, BOX)
+    expect(built.quality).toBe('exact')
+    expect(built.rejected).toEqual([])
+  })
+
+  // The fallback must be SAFER than the failure, not merely different. A shore
+  // that wanders cannot be a line, and a half-plane through it would put water
+  // over half the city — worse than drawing none.
+  it('refuses to approximate a shoreline that is not straight', () => {
+    // Asked of the fallback DIRECTLY: this shore chains cleanly, so the exact
+    // walk answers it and the fallback is never consulted in practice. The
+    // guard still has to hold, because the shore that DOES defeat the walk may
+    // be just as convoluted.
+    const zigzag: LatLon[][] = [
+      [p(-2, 0), p(-1, 0.9)], [p(-1, 0.9), p(0, -0.9)],
+      [p(0, -0.9), p(1, 0.9)], [p(1, 0.9), p(2, 0)],
+    ]
+    expect(approximateSea(zigzag, BOX)).toBeNull()
+  })
+
+  it('refuses a shore that does not cross the box', () => {
+    expect(buildSea([[p(0, -2), p(0, 0)]], BOX).quality).toBe('none')
+    expect(buildSea([[p(8, 8), p(9, 9)]], BOX).quality).toBe('none')
+  })
+
+  // Two shorelines CROSSING is not a coastline — a real one never crosses
+  // itself, and OSM's own validators say so. The walk cannot make a region out
+  // of it, and neither can a straight line. What matters is that the failure is
+  // clean: a tangled ring must never reach the triangulator, where it becomes
+  // three faces and a hole where the harbour was.
+  it('never hands out a tangled ring, and says so when it can build none', () => {
+    const crossing: LatLon[][] = [
+      [p(-2, -0.8), p(2, -0.8)],
+      [p(-0.5, -2), p(-0.5, 2)],
+    ]
+    const built = buildSea(crossing, BOX)
+    for (const ring of built.rings) {
+      expect(selfIntersections(ring), 'a ring that reaches the caller is simple').toBe(0)
+      expect(duplicateVertices(ring)).toBe(0)
+    }
+    // Whatever it decided, it wrote down why: a silent empty answer is the one
+    // outcome this whole mechanism exists to prevent.
+    if (built.rings.length === 0) {
+      expect(built.quality).toBe('none')
+      expect(built.rejected.join(' ')).toContain('self-intersecting')
+    }
+  })
+
+  it('repairs a doubled vertex rather than rejecting the ring for it', () => {
+    const built = buildSea([[p(-2, 0), p(0, 0), p(0, 0), p(2, 0)]], BOX)
+    expect(built.quality).toBe('exact')
+    expect(duplicateVertices(built.rings[0])).toBe(0)
   })
 })

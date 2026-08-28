@@ -54,7 +54,7 @@ import { createGroundResolver } from './terrain-truth'
 import { buildRoadNetwork, type NetworkWay } from './road-network'
 import { createGroundFrame, type GroundFrame } from './ground-frame'
 import {
-  ROAD_CLASS_ROUGHNESS, ROAD_CLASS_KERB_M, COVER_SPACING_M,
+  ROAD_CLASS_ROUGHNESS, ROAD_CLASS_KERB_M, COVER_SPACING_M, SURFACE_ROUGHNESS,
   type OsmFeature, type LatLonPoint, type RoadClass, type GreenCover,
 } from './osm-features'
 
@@ -167,6 +167,27 @@ const SURFACE_RENDER_ORDER: Record<SurfaceLayerKind, number> =
  */
 const DETAIL_EDGE_M: Record<SurfaceLayerKind, number> =
   { water: 8, green: 16, sand: 12, rock: 22 }
+
+/**
+ * Edge target for a paved AREA — a square, an esplanade, a pedestrianised street.
+ *
+ * Between sand and greenery, and for the same reason those two differ: paving
+ * is laid flat, so it needs fewer vertices than a hillside to look like it is
+ * following the ground.
+ */
+const PAVED_AREA_EDGE_M = 14
+
+/**
+ * Refinement vertices ONE paved area may spend, over and above its own outline.
+ *
+ * A budget, not a resolution. `subdivideOnGround` has only a recursion cap, and
+ * a cap of N levels on a 365 m plaza is 4^N triangles whatever the polygon
+ * actually needs — measured at 59 412 vertices for the five plazas in the
+ * benchmark box. Capping POINTS instead means a big square gets as much detail
+ * as the budget buys and then stops, which is what every other ground surface
+ * in the scene already does.
+ */
+const PAVED_AREA_SPARE_POINTS = 600
 
 /**
  * Vertex ceiling per layer. Reached only by something like a forest covering
@@ -634,6 +655,92 @@ export function bufferCentreline(
 /** Deck thickness, metres — enough to read as structure from an oblique view. */
 const DECK_THICKNESS_M = 1.2
 
+/**
+ * Clearance for a bridge OUTLINE that carries nothing we solved.
+ *
+ * The last resort, and deliberately a constant. It used to be `height` when the
+ * tag was present — but `height` on a bridge is the STRUCTURE, as vertical.ts
+ * says in as many words, so reading it as headroom put a `height=8` outline at
+ * 8 m of clearance plus its own depth. What the outline is actually at is
+ * whatever the way it carries was solved to; this number is only for an outline
+ * with no such way in the box.
+ */
+const ORPHAN_OUTLINE_CLEARANCE_M = 6
+
+/** At least this many profile stations must fall inside an outline to trust it. */
+const OUTLINE_MIN_STATIONS = 2
+
+/**
+ * Where a bridge OUTLINE's deck sits, taken from the way it carries.
+ *
+ * An outline is a footprint, not an alignment: it has no ends, no gradient and
+ * nothing to solve. The thing that DOES have all three is the `bridge=yes` way
+ * running through it, and the vertical field has already solved that — with its
+ * approaches, its ramps, its clearance over whatever it crosses and its
+ * agreement with every junction at either end.
+ *
+ * Reading it here is what stops the two disagreeing. They used to: the outline
+ * invented a clearance from its own tags while the carriageway obeyed the
+ * solver, so the standard tagging pair — an outline plus the way it carries —
+ * produced a slab and a road at two independently-guessed heights, and on the
+ * real Port Vell box that was a deck at 6.00 m with the footbridge it belongs
+ * to somewhere else entirely.
+ *
+ * Returns the mean ground and mean deck elevation of the stations inside the
+ * outline, so the caller can apply the one height formula the whole scene uses.
+ * Null when nothing raised runs through it.
+ */
+function outlineDeckM(
+  poly: ReadonlyArray<THREE.Vector2>,
+  vertical: ReadonlyMap<string, SolvedProfile> | null | undefined,
+): { elevationM: number; groundM: number } | null {
+  if (!vertical || vertical.size === 0 || poly.length < 3) return null
+  let minX = Infinity; let minY = Infinity
+  let maxX = -Infinity; let maxY = -Infinity
+  for (const q of poly) {
+    if (q.x < minX) minX = q.x
+    if (q.x > maxX) maxX = q.x
+    if (q.y < minY) minY = q.y
+    if (q.y > maxY) maxY = q.y
+  }
+
+  let elevSum = 0
+  let groundSum = 0
+  let n = 0
+  for (const profile of vertical.values()) {
+    // Only what is CARRIED. The road passing underneath is inside the outline's
+    // plan too, and averaging it in would drag the deck down onto the traffic
+    // it is meant to clear.
+    if (profile.structure !== 'bridge') continue
+    for (let i = 0; i < profile.points.length; i++) {
+      const q = profile.points[i]
+      if (q.x < minX || q.x > maxX || q.y < minY || q.y > maxY) continue
+      // Only the DECK itself: a ramp station is on its way up and is not what
+      // this footprint is the footprint of.
+      if (profile.phase[i] !== 'core') continue
+      if (!pointInRing(q.x, q.y, poly)) continue
+      elevSum += profile.elevationM[i]
+      groundSum += profile.groundM[i]
+      n++
+    }
+  }
+  if (n < OUTLINE_MIN_STATIONS) return null
+  return { elevationM: elevSum / n, groundM: groundSum / n }
+}
+
+/** Ray-cast point-in-polygon on the normalized planar frame. */
+function pointInRing(x: number, y: number, poly: ReadonlyArray<THREE.Vector2>): boolean {
+  let inside = false
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i]
+    const b = poly[j]
+    if ((a.y > y) !== (b.y > y) && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) {
+      inside = !inside
+    }
+  }
+  return inside
+}
+
 export function buildBridgeLayer(
   features: ReadonlyArray<OsmFeature>,
   opts: LayerMeshOptions,
@@ -682,15 +789,26 @@ export function buildBridgeLayer(
     // two stations can be 80 m apart with a hill between them that no sample
     // ever sees — and the deck goes straight through it. The road ribbon has
     // solved this since `subdivisionsFor` existed; the deck never asked.
-    const clearanceM = f.height.estimated ? 6 : f.height.heightM
+    // ASK THE SOLVER FIRST. The way this outline carries has already been given
+    // a height, with its ramps and its junctions; anything derived here instead
+    // is a second opinion about the same deck.
+    const carried = outlineDeckM(line, opts.vertical)
     const groundMaxM = frame.groundRangeM(frame.densify(line)).maxM
-    // CLEARANCE IS AN OBJECT HEIGHT, so it is added in TRUE METRES after the
-    // ground is converted — never folded into `zAtElevationM`'s argument, which
-    // multiplies by the vertical exaggeration. Folding it in is how a 6 m
-    // clearance became 18 m at the ×3 slider while `DECK_THICKNESS_M` on the
-    // next line stayed 1.2 m: one function, two conventions. See ground-frame's
-    // header for the rule this obeys.
-    const topZ = frame.zAtElevationM(groundMaxM) + clearanceM * mToN
+    // GROUND is exaggerated, the STRUCTURE ON IT is not — the same formula
+    // `structuralZ` uses for the carriageway, so the slab and the road it holds
+    // up cannot drift apart at the ×3 slider. Folding the whole absolute
+    // elevation into `zAtElevationM` is precisely the bug that floated decks
+    // 18 m; see ground-frame's header for the rule this obeys.
+    // `min_height` is the one tag that genuinely states a soffit — "the
+    // underside of a structure above its own ground", which is what a clearance
+    // IS. `height` is not, whatever it looks like: on a bridge it is the
+    // structure (vertical.ts:99), so reading it as headroom put a `height=8`
+    // outline at 8 m of clearance PLUS its own 1.2 m of deck.
+    const taggedClearanceM = f.height.minHeightM > 0
+      ? f.height.minHeightM : ORPHAN_OUTLINE_CLEARANCE_M
+    const topZ = carried
+      ? frame.zAtElevationM(carried.groundM) + (carried.elevationM - carried.groundM) * mToN
+      : frame.zAtElevationM(groundMaxM) + taggedClearanceM * mToN
     const bottomZ = topZ - DECK_THICKNESS_M * mToN
 
     if (f.widthM !== undefined) {
@@ -759,9 +877,36 @@ const PIER_DECK_M = 2.0
 const MOLE_DECK_M = 3.2
 /** Deck thickness, so a pier reads as a structure and not a decal on the water. */
 const PIER_THICKNESS_M = 0.9
+/**
+ * How far a QUAY's face runs below the water it holds back.
+ *
+ * A quay is not a deck on legs, it is the built edge of the land: the wall goes
+ * to the bed. Drawing the visible part of that wall — deck down to a little
+ * under the waterline — is what separates a quay from a plank in every view
+ * that is not straight down, which is every view a person actually takes.
+ * A metre is plenty: below the surface it is not seen, and paying for depth
+ * nobody looks at is how a harbour gets expensive.
+ */
+const QUAY_FACE_M = 1.0
 
 const PIER_COLOR = new THREE.Color(0x8d8a83)
 const MOLE_COLOR = new THREE.Color(0x77736c)
+/** Slightly warmer and lighter than a pontoon: worn concrete rather than wet timber. */
+const QUAY_COLOR = new THREE.Color(0x97938b)
+/**
+ * A deck's colour when the survey says what it is made of.
+ *
+ * The harbour's most-walked structure, the Rambla de Mar, is `surface=wood` —
+ * a timber boardwalk — and was being painted the same worn concrete as a
+ * commercial quay because the tag never left the parser.
+ */
+const DECK_SURFACE_COLORS: Partial<Record<string, THREE.Color>> = {
+  wood: new THREE.Color(0x7a5a3c),
+  metal: new THREE.Color(0x8e9298),
+  concrete: new THREE.Color(0x97938b),
+  paving_stones: new THREE.Color(0x9b968d),
+  gravel: new THREE.Color(0x8b8377),
+}
 
 /**
  * Decks at the water's edge: piers, quays, breakwaters, groynes and docks.
@@ -789,10 +934,12 @@ export function buildPierLayer(
   let count = 0
   let dropped = 0
 
-  const pushDeck = (poly: THREE.Vector2[], topZ: number, tone: THREE.Color): void => {
+  const pushDeck = (
+    poly: THREE.Vector2[], topZ: number, tone: THREE.Color, thicknessM: number,
+  ): void => {
     const faces = triangulate(poly, mToN)
     if (!faces) { dropped++; return }
-    const bottomZ = topZ - PIER_THICKNESS_M * mToN
+    const bottomZ = topZ - thicknessM * mToN
     const paint = (n: number, c: THREE.Color): void => {
       for (let i = 0; i < n; i++) colors.push(c.r, c.g, c.b)
     }
@@ -815,7 +962,14 @@ export function buildPierLayer(
   for (const f of features) {
     if (f.kind !== 'pier' || !f.ring) continue
     const mole = f.style.pierKind === 'mole'
-    const tone = mole ? MOLE_COLOR : PIER_COLOR
+    const quay = f.style.pierKind === 'quay'
+    const tone = (f.style.surface ? DECK_SURFACE_COLORS[f.style.surface] : undefined)
+      ?? (mole ? MOLE_COLOR : quay ? QUAY_COLOR : PIER_COLOR)
+    // What is UNDER it, which is the difference between the three. A pontoon
+    // and a mole are objects in the water with water beneath them, so they get
+    // a deck's thickness; a quay is the edge of the land and its face runs on
+    // down past the waterline.
+    const thicknessM = quay ? PIER_DECK_M + QUAY_FACE_M : PIER_THICKNESS_M
     // A surveyed `ele` is an absolute height and beats the default outright.
     const deckM = f.vertical?.eleM ?? (mole ? MOLE_DECK_M : PIER_DECK_M)
     const topZ = f.vertical?.eleM !== null && f.vertical?.eleM !== undefined
@@ -825,10 +979,10 @@ export function buildPierLayer(
     const line = projectRing(f.ring)
     if (f.widthM !== undefined) {
       const half = (f.widthM / 2) * mToN
-      for (const quad of bufferCentreline(line, half)) pushDeck(quad, topZ, tone)
+      for (const quad of bufferCentreline(line, half)) pushDeck(quad, topZ, tone, thicknessM)
       count++
     } else {
-      pushDeck(line, topZ, tone)
+      pushDeck(line, topZ, tone, thicknessM)
       count++
     }
   }
@@ -1371,6 +1525,28 @@ export function buildLinearLayer(
 
   /** Per-class grain, as vertex ranges into the merged geometry. */
   const roughBands: RoughnessBand[] = []
+  /**
+   * Grain overrides for the ways that say what they are made of.
+   *
+   * Collected separately and appended AFTER the per-class bands, because
+   * `metricAttributes` lets a later band win: the class value is the guess for
+   * everything, and a surveyed `surface` overrides just its own ribbon. On the
+   * benchmark harbour that is 36 paving-stone ways against 40 asphalt ones —
+   * close to half the paved ground, all of it wearing motorway grain.
+   */
+  const surfaceBands: RoughnessBand[] = []
+  /**
+   * Rings the triangulator refused.
+   *
+   * A plaza that fails to triangulate and a plaza nobody mapped look identical
+   * on screen, and until this was counted there was no way to tell them apart —
+   * `buildLinearLayer` returned only what it drew.
+   */
+  let dropped = 0
+  const surfaceOf = new Map<string, number>()
+  for (const f of features) {
+    if (f.style.surface) surfaceOf.set(f.id, SURFACE_ROUGHNESS[f.style.surface])
+  }
 
   const wanted = features.filter((f) => f.kind === kind && f.ring).slice(0, MAX_LINEAR)
   for (const f of wanted) {
@@ -1386,11 +1562,34 @@ export function buildLinearLayer(
       // no painted edge: a plaza has no platform lip, and drawing one put a
       // white line around every square in the city.
       if (kind === 'road') {
-        const faces = triangulate(line, mToN)
-        if (!faces) continue
-        for (const [i0, i1, i2] of faces) {
+        // A SQUARE IS NOT A LID. Triangulating the raw outline gives a fan
+        // between the mapper's own corners, and a mapper spends corners on
+        // shape, not on relief: measured on the benchmark harbour, the Passeig
+        // del Trencaones is 4 589 m2 spanning 365 m carried by SEVEN vertices.
+        // Over terrain that is one flat plate hanging across a third of a
+        // kilometre of ground. Densifying the outline and splitting the
+        // interior against the DEM is the same treatment every other ground
+        // surface in the scene already gets — see buildSurfaceLayer — and it
+        // costs nothing on the flat map, where `subdivideOnGround` returns the
+        // triangle it was given.
+        const dense = frame.densify(line)
+        const faces = triangulate(dense, mToN)
+        if (!faces) { dropped++; continue }
+        // Refined against the ground, within a budget. On the flat map
+        // `hasTerrain` is false and this is the base triangulation, unchanged.
+        const refined = frame.hasTerrain
+          ? subdivideMesh(
+              dense.map((v) => ({ x: v.x, y: v.y })),
+              faces.map((t) => [t[0], t[1], t[2]] as [number, number, number]),
+              {
+                maxEdgeM: PAVED_AREA_EDGE_M * mToN,
+                maxPoints: dense.length + PAVED_AREA_SPARE_POINTS,
+              },
+            )
+          : { points: dense.map((v) => ({ x: v.x, y: v.y })), faces }
+        for (const [i0, i1, i2] of refined.faces) {
           for (const idx of [i0, i1, i2]) {
-            const v = line[idx]
+            const v = refined.points[idx]
             positions.push(v.x, v.y, structuralZ(v.x, v.y) + lift)
             colors.push(tone[0], tone[1], tone[2])
           }
@@ -1401,7 +1600,7 @@ export function buildLinearLayer(
 
       // A platform is a real polygon: fill it, slightly proud of the ballast.
       const faces = triangulate(line, mToN)
-      if (!faces) continue
+      if (!faces) { dropped++; continue }
       const platformLift = 0.55 * mToN
       for (const [i0, i1, i2] of faces) {
         for (const idx of [i0, i1, i2]) {
@@ -1505,8 +1704,11 @@ export function buildLinearLayer(
     for (const ribbon of network.ribbons) {
       // The ribbon carries the id of the way it came from, which is the whole
       // reason a trimmed, mitred, tapered ribbon can still be given the right
-      // height: it can still say whose it is.
+      // height: it can still say whose it is. The same id answers what it is
+      // PAVED IN.
       activeProfile = profileFor(ribbon.sourceId)
+      const ribbonRough = surfaceOf.get(ribbon.sourceId)
+      const ribbonStart = ribbonRough === undefined ? -1 : positions.length / 3
       // One quad per station, cut on the MITRED borders rather than on each
       // segment's own normals — which is what lets the edge of a curve run
       // continuously instead of stepping at every vertex.
@@ -1564,6 +1766,14 @@ export function buildLinearLayer(
             pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
           }
         }
+      }
+
+      // Close this ribbon's grain band. Its markings are inside it on purpose:
+      // paint takes the grain of the surface it is painted on.
+      if (ribbonStart >= 0) {
+        surfaceBands.push({
+          start: ribbonStart, end: positions.length / 3, value: ribbonRough!,
+        })
       }
     }
 
@@ -1662,13 +1872,15 @@ export function buildLinearLayer(
   // A ribbon of unlit tarmac beside lit grass is the last thing in the scene
   // that still reads as a diagram.
   if (opts.quality === 'detailed') {
-    metricAttributes(geometry, mToN, ROUGHNESS_BY_KIND[kind], roughBands)
+    // Surveyed materials last: a band pushed later wins, so a class guess
+    // covers everything and each way that knows better overrides its own run.
+    metricAttributes(geometry, mToN, ROUGHNESS_BY_KIND[kind], [...roughBands, ...surfaceBands])
     const paved = new THREE.Mesh(geometry, createSurfaceMaterial('asphalt', {
       opacity: kind === 'road' ? 0.94 : 0.96,
     }))
     paved.name = `osm-${kind}`
     paved.renderOrder = 4
-    return finishLinear(paved, masts, kind, mToN, structuralZ, lift, count, opts.assets)
+    return finishLinear(paved, masts, kind, mToN, structuralZ, lift, count, opts.assets, dropped)
   }
 
   const surface = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
@@ -1686,7 +1898,7 @@ export function buildLinearLayer(
   // tramway shares a street the track lands on top of the asphalt.
   surface.renderOrder = 4
 
-  return finishLinear(surface, masts, kind, mToN, structuralZ, lift, count, opts.assets)
+  return finishLinear(surface, masts, kind, mToN, structuralZ, lift, count, opts.assets, dropped)
 }
 
 /**
@@ -1713,9 +1925,11 @@ function finishLinear(
   groundZ: (x: number, y: number) => number,
   lift: number,
   count: number,
-  assets?: Map<string, THREE.BufferGeometry> | null,
+  assets: Map<string, THREE.BufferGeometry> | null | undefined,
+  /** Rings the triangulator refused, carried through so the caller can say so. */
+  dropped: number,
 ): LayerMesh<THREE.Object3D> {
-  if (masts.length === 0) return { object: surface, count }
+  if (masts.length === 0) return { object: surface, count, dropped }
 
   const group = new THREE.Group()
   group.name = `osm-${kind}`
@@ -1765,7 +1979,7 @@ function finishLinear(
   posts.instanceMatrix.needsUpdate = true
   group.add(posts)
 
-  return { object: group, count }
+  return { object: group, count, dropped }
 }
 
 /**

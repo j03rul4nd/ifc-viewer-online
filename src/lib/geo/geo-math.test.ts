@@ -17,7 +17,7 @@ import {
   rotationFromTrueNorth,
   normalizeDeg,
   formatCoord,
-  composeGeoRootTransform,
+  composeGeoRootTransform, groundAnchorY, ORIGIN_TRUST_M,
   mapYawRad,
   metresToNormalized,
   eastDirection,
@@ -411,5 +411,66 @@ describe('geo-math · degreesToCompoundAngle (writing georeferencing back)', () 
     expect(degreesToCompoundAngle(NaN)).toBeNull()
     expect(degreesToCompoundAngle(Infinity)).toBeNull()
     expect(degreesToCompoundAngle('41' as unknown as number)).toBeNull()
+  })
+})
+
+// ── The ground the map is measured from ───────────────────────────────────────
+// The map plane sits at the model's GROUND FLOOR. It used to sit at the bbox
+// bottom, and for anything with a basement that is the underside of the
+// foundations — which is how the entire waterfront ended up 9.8 m below the
+// building it was drawn around.
+
+describe('geo-math · groundAnchorY', () => {
+  it('believes the origin over the bounding box', () => {
+    // The measured Hotel Vela: three files, ARC 0..98.8, STR −9.8..98.8,
+    // MEP 0..102. Combined bbox bottom −9.8; local origin 0.
+    expect(groundAnchorY(-9.8, 0)).toBe(0)
+  })
+
+  it('falls back to the bbox when the host cannot say', () => {
+    expect(groundAnchorY(-9.8, null)).toBe(-9.8)
+    expect(groundAnchorY(-9.8, undefined)).toBe(-9.8)
+    expect(groundAnchorY(-9.8, Number.NaN)).toBe(-9.8)
+  })
+
+  it('distrusts an origin nowhere near the geometry', () => {
+    // Not a basement: a file with survey coordinates baked into its vertices.
+    // Its origin says nothing about where the ground is.
+    expect(groundAnchorY(4_580_000, 0)).toBe(4_580_000)
+    expect(groundAnchorY(-9.8, ORIGIN_TRUST_M + 10)).toBe(-9.8)
+  })
+
+  it('still believes it at the deepest basement anyone has built', () => {
+    expect(groundAnchorY(-30, 0)).toBe(0)
+  })
+})
+
+describe('geo-math · the map plane meets the model at its ground floor', () => {
+  const bcn = { lat: BCN.lat, lon: BCN.lon, rotationDeg: 0 }
+
+  /** Scene Y the map plane lands at, for a given model and placement. */
+  const planeY = (modelMinY: number, modelOriginY: number | null, heightOffsetM: number): number => {
+    const t = composeGeoRootTransform({
+      placement: { ...bcn, heightOffsetM },
+      anchorScene: { x: 0, z: 0 }, modelMinY, modelOriginY,
+    })
+    return t.position.y
+  }
+
+  it('puts the Hotel Vela on its own waterfront, not 9.8 m above it', () => {
+    // What the file states: `IfcMapConversion.OrthogonalHeight = 2.5`, so the
+    // ground floor is 2.5 m above the datum — and the sea is the datum.
+    expect(planeY(-9.8, 0, 2.5)).toBeCloseTo(-2.5, 9)
+    // What it used to do, and the 7.3 m of daylight it left under the building.
+    expect(planeY(-9.8, null, 0)).toBeCloseTo(-9.8, 9)
+  })
+
+  it('is unchanged for a model with no basement and no stated height', () => {
+    expect(planeY(0, 0, 0)).toBeCloseTo(0, 9)
+  })
+
+  it('still lets the user push the model up or down by hand', () => {
+    expect(planeY(0, 0, 3)).toBeCloseTo(-3, 9)
+    expect(planeY(0, 0, -3)).toBeCloseTo(3, 9)
   })
 })

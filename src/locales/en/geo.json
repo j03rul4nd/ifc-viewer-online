@@ -151,7 +151,13 @@
     "contextToneNeutral": "Discreet",
     "contextToneHint": "Discreet paints the surroundings as near-monochrome masses. Same skyline, same footprints, none of the colour — for a view whose subject is your model and whose context is only there to give it scale.",
     "suppress": "Hide map context under the model",
-    "suppressHint": "Where the model stands, the map is describing the same thing twice. A building hides the mapped building on its plot and any trees inside its plan; a bridge or tunnel also hides the carriageway it carries. The street outside is never hidden. Turn this off to compare the two."
+    "suppressHint": "Where the model stands, the map is describing the same thing twice. A building hides the mapped building on its plot and any trees inside its plan; a bridge or tunnel also hides the carriageway it carries. The street outside is never hidden. Turn this off to compare the two.",
+    "hidden": "Hidden by hand",
+    "hidePick": "Click to hide surroundings",
+    "hidePickHint": "Turn this on, then click any mapped building to take it out of the view. Use it when the map and your model describe the same thing and the automatic rule above did not catch it. Nothing is deleted: everything you hide is listed here and comes back with one click.",
+    "hidePickActive": "Click a building on the map to hide it. Turn this off when you are done.",
+    "hiddenRestore": "Show",
+    "hiddenRestoreAll": "Show all again"
   },
   "placement": {
     "title": "Placement",

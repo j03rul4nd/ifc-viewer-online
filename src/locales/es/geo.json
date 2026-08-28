@@ -151,7 +151,13 @@
     "contextToneNeutral": "Discreto",
     "contextToneHint": "Discreto pinta el entorno como masas casi monocromas. El mismo perfil, las mismas plantas, sin color: para una vista cuyo protagonista es tu modelo y cuyo contexto solo está ahí para dar escala.",
     "suppress": "Ocultar el contexto del mapa bajo el modelo",
-    "suppressHint": "Donde está el modelo, el mapa describe lo mismo dos veces. Un edificio oculta el edificio mapeado de su solar y los árboles dentro de su planta; un puente o un túnel ocultan además la calzada que sostienen. La calle de fuera no se oculta nunca. Desactívalo para comparar ambos."
+    "suppressHint": "Donde está el modelo, el mapa describe lo mismo dos veces. Un edificio oculta el edificio mapeado de su solar y los árboles dentro de su planta; un puente o un túnel ocultan además la calzada que sostienen. La calle de fuera no se oculta nunca. Desactívalo para comparar ambos.",
+    "hidden": "Ocultos a mano",
+    "hidePick": "Clic para ocultar el entorno",
+    "hidePickHint": "Actívalo y haz clic en cualquier edificio del mapa para sacarlo de la vista. Sirve cuando el mapa y tu modelo describen lo mismo y la regla automática de arriba no lo ha detectado. No se borra nada: todo lo que ocultes aparece en esta lista y vuelve con un clic.",
+    "hidePickActive": "Haz clic en un edificio del mapa para ocultarlo. Desactívalo cuando termines.",
+    "hiddenRestore": "Mostrar",
+    "hiddenRestoreAll": "Mostrar todos de nuevo"
   },
   "placement": {
     "title": "Ubicación",

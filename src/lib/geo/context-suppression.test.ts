@@ -405,3 +405,78 @@ describe('overlap geometry', () => {
     expect(overlapArea(hall, convexHull(unit))).toBeCloseTo(40)
   })
 })
+
+// ── The case that sent this module back for a second look ─────────────────────
+//
+// Real geometry, from scripts/blender/hotel_vela_site.py, itself generated from
+// the OSM survey of the W Barcelona: metres east/north of the plot centroid.
+// The user loaded the federated model, turned the map on, and the mapped block
+// stood through it. Both halves of that are reproduced here — the footprint
+// that cannot claim the plot, and the one that can.
+
+describe('context-suppression · the Hotel Vela plot', () => {
+  const PLOT: Array<[number, number]> = [
+    [44.12, 34.97], [19.36, 38.30], [19.44, 40.73], [-7.72, 44.41],
+    [-7.95, 41.98], [-83.22, 52.06], [-81.09, 47.99], [-83.08, 46.95],
+    [-58.21, 0.51], [-63.46, -39.19], [8.23, -48.49], [12.53, -38.76],
+    [16.13, -38.11], [15.39, -32.82], [18.46, -32.62], [28.30, -12.01],
+    [25.49, -11.62], [43.54, 27.23], [41.05, 28.36],
+  ]
+  /** way 908035013, `building:part` — the sail itself. */
+  const TOWER: Array<[number, number]> = [
+    [-22.06, -4.29], [-58.21, 0.51], [-63.46, -39.19], [-27.37, -43.85],
+    [-26.32, -36.32], [-29.03, -35.27], [-28.81, -33.70], [-21.31, -36.26],
+    [-9.11, -38.90], [4.71, -39.45], [16.13, -38.11], [15.05, -31.81],
+    [16.99, -32.07], [17.33, -29.52], [15.36, -29.25], [18.00, -23.47],
+    [9.61, -19.65], [-3.73, -15.77], [-17.36, -14.30], [-26.06, -14.58],
+    [-25.86, -13.00], [-23.19, -12.84],
+  ]
+
+  const mapped = feature('building', 'w908035012', PLOT)
+
+  /** Plan corners of an axis-aligned box, which is what the viewer reports. */
+  const boxOf = (pts: Array<[number, number]>): THREE.Vector2[] => {
+    const xs = pts.map((p) => p[0])
+    const ys = pts.map((p) => p[1])
+    const [x0, x1] = [Math.min(...xs), Math.max(...xs)]
+    const [y0, y1] = [Math.min(...ys), Math.max(...ys)]
+    return [new THREE.Vector2(x0, y0), new THREE.Vector2(x1, y0),
+            new THREE.Vector2(x1, y1), new THREE.Vector2(x0, y1)]
+  }
+  const footprint = (polygon: THREE.Vector2[]): ModelFootprint =>
+    ({ polygon, kind: 'building', marginN: 2 })
+
+  /** A plant room and two risers, which is an MEP model of a hotel in plan. */
+  const SERVICES = boxOf([[-30, -30], [-10, -30], [-10, -10], [-30, -10]])
+
+  it('the architectural file claims the plot it stands on', () => {
+    const keep = createSuppressor([footprint(boxOf(TOWER))], project)
+    expect(keep(mapped)).toBe(false)
+  })
+
+  it('the services file on its own does NOT — and must not', () => {
+    // 400 m2 against 8 466 m2. Letting a footprint that small delete the
+    // polygon around it is how a bus shelter deletes a city block; the module
+    // is right to refuse, and the fix belongs upstream in what it is handed.
+    expect(polygonArea(PLOT.map(([x, y]) => ({ x, y })))).toBeGreaterThan(8000)
+    const keep = createSuppressor([footprint(SERVICES)], project)
+    expect(keep(mapped)).toBe(true)
+  })
+
+  it('the delivery as a whole claims it, whichever file loaded last', () => {
+    const keep = createSuppressor(
+      [footprint(SERVICES), footprint(boxOf(TOWER))], project)
+    expect(keep(mapped)).toBe(false)
+  })
+
+  it('leaves the neighbour across the street alone', () => {
+    // 40 m east of the plot's eastern edge: a block of its own, the same size,
+    // sharing no ground with the model. Nothing about the fix above may reach
+    // it — deleting the street is the failure mode this module fears most.
+    const neighbour = feature('building', 'w-neighbour',
+      PLOT.map(([x, y]) => [x + 130, y] as [number, number]))
+    const keep = createSuppressor(
+      [footprint(SERVICES), footprint(boxOf(TOWER))], project)
+    expect(keep(neighbour)).toBe(true)
+  })
+})
