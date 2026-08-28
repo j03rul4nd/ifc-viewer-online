@@ -134,7 +134,8 @@
       "bridge": "Puentes",
       "road": "Carreteras y caminos",
       "rail": "Vías y andenes",
-      "signal": "Semáforos"
+      "signal": "Semáforos",
+      "pier": "Muelles y pantalanes"
     },
     "detailLevel": "Detalle",
     "detailSimple": "Simple",

@@ -61,6 +61,7 @@ const BUNDLED_TEMPLE = `${import.meta.env.BASE_URL}JapaneseTemple.ifc`
 const POBLENOU = `${import.meta.env.BASE_URL}models/poblenou`
 const TORRE = `${import.meta.env.BASE_URL}models/torre-poblenou`
 /** The map-mode model: on the Passeig de Lluís Companys, by the Arc de Triomf. */
+const HOTEL_VELA = `${import.meta.env.BASE_URL}models/hotel-vela`
 const CIUTADELLA = `${import.meta.env.BASE_URL}models/ciutadella`
 const CRAS = `${import.meta.env.BASE_URL}models/cras`
 const VIDEO_DEMO = `${import.meta.env.BASE_URL}models/video-demo`
@@ -225,6 +226,22 @@ export const DEMO_MODELS: DemoModel[] = [
     schema: 'IFC4',
     approximateSize: '3.5 MB',
     sizeBytes: 3_489_029,
+    featured: true,
+  },
+  {
+    id: 'hotel-vela',
+    name: 'Hotel Vela',
+    description:
+      'The landmark the procedural generator cannot build: a 99 m sail at the mouth of Port Vell, whose plan changes at every one of its 26 storeys. Switch the map on and it stands on the Barceloneta spit, facing the sea it was shaped for.',
+    category: 'Reference',
+    fileName: 'HotelVela.ifc',
+    ifcUrl: `${HOTEL_VELA}/HotelVela.ifc`,
+    sourceUrl:
+      'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-hotel-vela.py',
+    sourceLabel: 'Authored with Blender + Bonsai',
+    schema: 'IFC4',
+    approximateSize: '285 KB',
+    sizeBytes: 292290,
     featured: true,
   },
   {

@@ -46,6 +46,11 @@ import {
   createSurfaceMaterial, createFoliageMaterial, type SurfaceKind, type SurfaceSun,
 } from './surface-shaders'
 import { metricAttributes, type RoughnessBand } from './surface-attributes'
+import {
+  solveVerticalNetwork, sampleProfile, junctionElevationM,
+  type SolvedProfile, type VerticalWay, type ProfileSampler,
+} from './vertical-network'
+import { createGroundResolver } from './terrain-truth'
 import { buildRoadNetwork, type NetworkWay } from './road-network'
 import { createGroundFrame, type GroundFrame } from './ground-frame'
 import {
@@ -83,6 +88,16 @@ export interface LayerMeshOptions {
   exaggeration?: number
   /** DEM vertex spacing, metres — what geometry is densified against. */
   groundStepM?: number
+  /**
+   * The solved vertical field, keyed by feature id.
+   *
+   * Computed ONCE for the whole scene (see `solveSceneVertical`) rather than
+   * per layer, because grade separation is a question about pairs: a road only
+   * knows how much room the flyover above it needs if both were solved together.
+   * Absent means "everything is on the ground", which is what the flat basemap
+   * and every pre-existing caller get.
+   */
+  vertical?: ReadonlyMap<string, SolvedProfile> | null
   /** Flat colour, or procedural surfaces. Defaults to 'simple'. */
   quality?: SurfaceQuality
   /** Relief light. Shared with the terrain hillshade so the scene has one sun. */
@@ -635,6 +650,14 @@ export function buildBridgeLayer(
     for (const [a, b, c] of faces) {
       for (const idx of [a, b, c]) positions.push(poly[idx].x, poly[idx].y, topZ)
     }
+    // Soffit. `triangulate` leaves the ring CCW, so the top faces +z and the
+    // same winding reversed faces −z. Without it the simple path — whose
+    // MeshBasicMaterial is FrontSide by default — is transparent from below,
+    // and looking up at a bridge from the quay under it is exactly the view
+    // that makes a bridge read as a bridge.
+    for (const [a, b, c] of faces) {
+      for (const idx of [c, b, a]) positions.push(poly[idx].x, poly[idx].y, bottomZ)
+    }
     // Sides, so the deck has visible thickness rather than being a decal.
     for (let i = 0; i < poly.length; i++) {
       const p0 = poly[i]
@@ -653,8 +676,21 @@ export function buildBridgeLayer(
     // The deck clears the HIGHEST ground it crosses, not the ground at its
     // midpoint: a bridge whose middle span is over water but whose abutment is
     // up a bank was burying its own ends in the hillside.
+    //
+    // The ground is sampled on the DENSIFIED centreline, not on the raw OSM
+    // vertices. A bridge is mapped with as few points as the curve allows, so
+    // two stations can be 80 m apart with a hill between them that no sample
+    // ever sees — and the deck goes straight through it. The road ribbon has
+    // solved this since `subdivisionsFor` existed; the deck never asked.
     const clearanceM = f.height.estimated ? 6 : f.height.heightM
-    const topZ = frame.zAtElevationM(frame.groundRangeM(line).maxM + clearanceM)
+    const groundMaxM = frame.groundRangeM(frame.densify(line)).maxM
+    // CLEARANCE IS AN OBJECT HEIGHT, so it is added in TRUE METRES after the
+    // ground is converted — never folded into `zAtElevationM`'s argument, which
+    // multiplies by the vertical exaggeration. Folding it in is how a 6 m
+    // clearance became 18 m at the ×3 slider while `DECK_THICKNESS_M` on the
+    // next line stayed 1.2 m: one function, two conventions. See ground-frame's
+    // header for the rule this obeys.
+    const topZ = frame.zAtElevationM(groundMaxM) + clearanceM * mToN
     const bottomZ = topZ - DECK_THICKNESS_M * mToN
 
     if (f.widthM !== undefined) {
@@ -709,6 +745,118 @@ export function buildBridgeLayer(
   return { object: mesh, count }
 }
 
+// ── Piers, quays and breakwaters ───────────────────────────────────────────────
+
+/**
+ * Freeboard: how far a deck stands above the water it is built over, metres.
+ *
+ * A working quay is about this far above mean sea level — enough to keep the
+ * deck dry in a swell, low enough to work a boat from. It is a structural
+ * height, in true metres, and is never exaggerated.
+ */
+const PIER_DECK_M = 2.0
+/** A rubble mole is higher and rougher than a walkable deck. */
+const MOLE_DECK_M = 3.2
+/** Deck thickness, so a pier reads as a structure and not a decal on the water. */
+const PIER_THICKNESS_M = 0.9
+
+const PIER_COLOR = new THREE.Color(0x8d8a83)
+const MOLE_COLOR = new THREE.Color(0x77736c)
+
+/**
+ * Decks at the water's edge: piers, quays, breakwaters, groynes and docks.
+ *
+ * THE DATUM IS THE SEA, and that is the whole point of the layer. Draping these
+ * on the terrain is what put the Moll d'Espanya inside its own harbour: over
+ * the benchmark district the raster reads +8.5 m on a flat quay and +4.7 m on
+ * open water, because it is a surface model full of moored vessels and terminal
+ * roofs. A quay's height is not a property of the ground under it — there is no
+ * ground under it — it is a property of the water it stands in.
+ *
+ * The mechanism is the one railway platforms have always used: triangulate the
+ * polygon, lift it a constant unexaggerated height above its datum, and give it
+ * a side face so it has thickness from an oblique view. Only the datum changed.
+ */
+export function buildPierLayer(
+  features: ReadonlyArray<OsmFeature>,
+  opts: LayerMeshOptions,
+): LayerMesh<THREE.Mesh> | null {
+  const frame = groundFrameFor(opts)
+  const mToN = frame.mToN
+
+  const positions: number[] = []
+  const colors: number[] = []
+  let count = 0
+  let dropped = 0
+
+  const pushDeck = (poly: THREE.Vector2[], topZ: number, tone: THREE.Color): void => {
+    const faces = triangulate(poly, mToN)
+    if (!faces) { dropped++; return }
+    const bottomZ = topZ - PIER_THICKNESS_M * mToN
+    const paint = (n: number, c: THREE.Color): void => {
+      for (let i = 0; i < n; i++) colors.push(c.r, c.g, c.b)
+    }
+    for (const [a, b, c] of faces) {
+      for (const idx of [a, b, c]) positions.push(poly[idx].x, poly[idx].y, topZ)
+    }
+    paint(faces.length * 3, tone)
+    // Sides. Shaded down: a vertical face never catches the sun, and without
+    // that the deck and its own edge read as one flat shape.
+    const side = tone.clone().multiplyScalar(0.62)
+    for (let i = 0; i < poly.length; i++) {
+      const p0 = poly[i]
+      const p1 = poly[(i + 1) % poly.length]
+      positions.push(p0.x, p0.y, bottomZ, p1.x, p1.y, bottomZ, p1.x, p1.y, topZ)
+      positions.push(p0.x, p0.y, bottomZ, p1.x, p1.y, topZ, p0.x, p0.y, topZ)
+      paint(6, side)
+    }
+  }
+
+  for (const f of features) {
+    if (f.kind !== 'pier' || !f.ring) continue
+    const mole = f.style.pierKind === 'mole'
+    const tone = mole ? MOLE_COLOR : PIER_COLOR
+    // A surveyed `ele` is an absolute height and beats the default outright.
+    const deckM = f.vertical?.eleM ?? (mole ? MOLE_DECK_M : PIER_DECK_M)
+    const topZ = f.vertical?.eleM !== null && f.vertical?.eleM !== undefined
+      ? frame.zAtElevationM(deckM)
+      : frame.zAboveDatum('sea', 0, 0, deckM)
+
+    const line = projectRing(f.ring)
+    if (f.widthM !== undefined) {
+      const half = (f.widthM / 2) * mToN
+      for (const quad of bufferCentreline(line, half)) pushDeck(quad, topZ, tone)
+      count++
+    } else {
+      pushDeck(line, topZ, tone)
+      count++
+    }
+  }
+
+  if (count === 0) return null
+
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+  geometry.computeVertexNormals()
+  geometry.computeBoundingSphere()
+
+  // Asphalt is the closest surface the shader library has to dock concrete —
+  // a hard, matte, slightly granular deck — and reusing it keeps piers on the
+  // same lighting model as every other paved thing in the scene.
+  const mesh = new THREE.Mesh(geometry, opts.quality === 'detailed'
+    ? createSurfaceMaterial('asphalt', { opacity: 1, sun: opts.sun ?? FALLBACK_SUN })
+    : new THREE.MeshBasicMaterial({ vertexColors: true }))
+  mesh.name = 'osm-piers'
+  // Over the water it stands in, under the buildings that stand on it.
+  mesh.renderOrder = 4
+  // A deck has real thickness and real sides, so it must write depth or its own
+  // underside shows through the top.
+  mesh.material.depthWrite = true
+  mesh.material.transparent = false
+  return { object: mesh, count, dropped }
+}
+
 // ── Roads and rail ─────────────────────────────────────────────────────────────
 
 /** Cap per linear layer. A dense city block can map thousands of service ways. */
@@ -720,6 +868,38 @@ export const MAX_LINEAR = 3000
  * asphalt over it, then ballast over that, then the rails on top.
  */
 const LINEAR_LIFT_M: Record<'road' | 'rail', number> = { road: 0.25, rail: 0.40 }
+
+/**
+ * How close a way's END must be to a junction to count as one of its arms.
+ *
+ * The junction solver trims each arm back from the node, so the node itself is
+ * a few metres from any surviving ribbon vertex — but the ORIGINAL centreline
+ * endpoints are still exactly on it, and those are what the profiles are
+ * indexed by. Generous enough to survive the projection rounding, tight enough
+ * that the next junction down the street is never mistaken for this one.
+ */
+const JUNCTION_SNAP_M = 4
+
+
+/**
+ * Greatest disagreement between a junction's arms that can still be one node.
+ *
+ * Arms that truly meet are pinned to a single elevation by the vertical solver,
+ * so a real junction's spread is numerically zero. Anything approaching a
+ * storey means two different levels have been snapped together, and the
+ * junction is not real. Generous enough to absorb a kerb, a camber and the
+ * projection rounding.
+ */
+const JUNCTION_MAX_SPREAD_M = 1.5
+
+/**
+ * How far under the ground a carriageway must be before it stops being drawn.
+ *
+ * Small: the point is to stop emitting geometry the terrain is going to occlude
+ * or fight with, and half a metre of cover is already enough for both. Larger
+ * would leave a visible stub of road sunk into the hillside at each portal.
+ */
+const BURIED_MARGIN_M = 0.5
 
 /** Steel rail heads sitting on the ballast. */
 const RAIL_STEEL: [number, number, number] = [0.29, 0.29, 0.32]
@@ -777,6 +957,137 @@ const RAIL_GAUGE_HALF_M = 0.72
 const RAIL_HEAD_HALF_M = 0.22
 
 /**
+ * A point-in-water test over the mapped water polygons.
+ *
+ * The raster cannot answer this. Over Barcelona's Port Vell the terrarium tiles
+ * read +4.7 m across the open basin, because the radar came back off moored
+ * vessels and terminal roofs — and no neighbourhood statistic can rescue a
+ * whole harbour of artefacts, because there is no ground in the window to find.
+ * What CAN rescue it is knowing that the surface is water, and OSM says so.
+ *
+ * Bucketed on a uniform grid: a district can hold hundreds of water polygons
+ * and this is asked once per terrain sample.
+ */
+export function buildWaterMask(
+  features: ReadonlyArray<OsmFeature>,
+  opts: { mToN: number; cellM?: number },
+): ((nx: number, ny: number) => boolean) | null {
+  const rings: THREE.Vector2[][] = []
+  for (const f of features) {
+    if (f.kind !== 'water' || !f.ring || f.ring.length < 3) continue
+    rings.push(projectRing(f.ring))
+  }
+  if (rings.length === 0) return null
+
+  const cell = Math.max(1e-12, (opts.cellM ?? 120) * opts.mToN)
+  const buckets = new Map<string, number[]>()
+  const bounds = rings.map((r) => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+    for (const p of r) {
+      if (p.x < x0) x0 = p.x
+      if (p.x > x1) x1 = p.x
+      if (p.y < y0) y0 = p.y
+      if (p.y > y1) y1 = p.y
+    }
+    return { x0, y0, x1, y1 }
+  })
+  for (let i = 0; i < rings.length; i++) {
+    const b = bounds[i]
+    const cx0 = Math.floor(b.x0 / cell)
+    const cx1 = Math.floor(b.x1 / cell)
+    const cy0 = Math.floor(b.y0 / cell)
+    const cy1 = Math.floor(b.y1 / cell)
+    // A polygon spanning the whole patch would fill every bucket; the fetch box
+    // is bounded, so this stays a few hundred entries at worst.
+    for (let x = cx0; x <= cx1 && x - cx0 < 512; x++) {
+      for (let y = cy0; y <= cy1 && y - cy0 < 512; y++) {
+        const k = `${x}:${y}`
+        const list = buckets.get(k)
+        if (list) list.push(i)
+        else buckets.set(k, [i])
+      }
+    }
+  }
+
+  /** Ray casting, the standard even-odd test. */
+  const inside = (ring: THREE.Vector2[], x: number, y: number): boolean => {
+    let hit = false
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const a = ring[i]
+      const b = ring[j]
+      if ((a.y > y) !== (b.y > y) && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) {
+        hit = !hit
+      }
+    }
+    return hit
+  }
+
+  return (nx: number, ny: number): boolean => {
+    const list = buckets.get(`${Math.floor(nx / cell)}:${Math.floor(ny / cell)}`)
+    if (!list) return false
+    for (const i of list) {
+      const b = bounds[i]
+      if (nx < b.x0 || nx > b.x1 || ny < b.y0 || ny > b.y1) continue
+      if (inside(rings[i], nx, ny)) return true
+    }
+    return false
+  }
+}
+
+/**
+ * Solve the whole scene's vertical field, once.
+ *
+ * WHY ONCE, AND WHY HERE. Grade separation is a question about PAIRS — a deck
+ * only knows how much headroom it owes from what passes beneath it — so a
+ * per-layer solve would ask a road about the railway under it after the railway
+ * had already been drawn somewhere else. Roads and rails therefore go in
+ * together, and the answer is handed to every builder as `opts.vertical`.
+ *
+ * The ground handed to the solver is the RESOLVED one, never the raster: see
+ * `terrain-truth` for what the raster does over a harbour.
+ */
+export function solveSceneVertical(
+  features: ReadonlyArray<OsmFeature>,
+  opts: LayerMeshOptions,
+  waterAt?: ((nx: number, ny: number) => boolean) | null,
+): Map<string, SolvedProfile> {
+  const frame = groundFrameFor(opts)
+  const resolver = createGroundResolver({
+    rawSample: opts.sampleGroundM ?? null,
+    mToN: frame.mToN,
+    seaLevelM: frame.seaLevelM,
+    // With no raster the frame answers `anchorElevationM`; the resolver must
+    // say the same thing or every profile lands at the wrong datum.
+    flatGroundM: frame.anchorElevationM,
+    waterAt,
+  })
+
+  const ways: VerticalWay[] = []
+  for (const f of features) {
+    if (!f.vertical || !f.ring || f.ring.length < 2) continue
+    if (f.kind !== 'road' && f.kind !== 'rail') continue
+    // A paved area and a painted crossing are not alignments; they have no
+    // profile to solve and no structure to carry.
+    if (f.widthM === undefined || f.style.crossing) continue
+    ways.push({
+      id: f.id,
+      points: projectRing(f.ring),
+      functional: f.functional ?? (f.kind === 'rail' ? 'railway' : 'road'),
+      tags: f.vertical,
+    })
+  }
+  if (ways.length === 0) return new Map()
+
+  const solved = solveVerticalNetwork(ways, {
+    mToN: frame.mToN,
+    groundM: (nx, ny) => resolver.groundM(nx, ny),
+    groundTrusted: (nx, ny) => resolver.resolve(nx, ny).confidence !== 'low',
+    stepM: opts.groundStepM,
+  })
+  return new Map(solved.map((p) => [p.wayId, p]))
+}
+
+/**
  * Ground-hugging ribbons for roads and railways.
  *
  * Both are the same problem — a centreline plus a width, draped on whatever the
@@ -804,17 +1115,184 @@ export function buildLinearLayer(
   const masts: Mast[] = []
   let count = 0
 
-  /** Height of the ground under a planar point, in normalized units. */
-  const groundZ = (x: number, y: number): number => frame.groundZ(x, y)
+  /**
+   * THE ONE VERTICAL SEAM for everything this builder draws.
+   *
+   * It answers STRUCTURAL elevation — where the carriageway physically is,
+   * ground plus whatever structure carries it. It is deliberately NOT where the
+   * triangle ends up: the small constants added at the call sites (`lift`,
+   * `extraLift`, `platformLift`, the kerb `drop`) are RENDER OFFSETS, existing
+   * only to keep coplanar things from fighting for the same depth. Two rules
+   * follow, and both matter:
+   *
+   *   • a render offset is centimetres and never feeds back into the solver,
+   *     the profile, or the elevation two segments agree on at their join;
+   *   • a structural height is metres and never appears as a magic constant at
+   *     a call site.
+   *
+   * Blurring them is how "+0.2 to stop the flicker" becomes load-bearing.
+   *
+   * Every push routine below — camber, kerb faces, lane paint, junction fans,
+   * platform lips — asks this and nothing else. That is deliberate: replacing
+   * this single closure is what lets a carriageway climb onto a viaduct and
+   * dive into a bore while the camber, the kerbs and the dashed lines follow it
+   * without a line of code in any of them changing.
+   *
+   * `activeProfile` is set to the current way's solved profile before its
+   * geometry is emitted and cleared afterwards. Statefulness in exchange for
+   * not threading an elevation function through nine call sites; the scope is
+   * this one function.
+   */
+  let activeProfile: ProfileSampler | null = null
+  /** A junction is shared asphalt: ONE level for the whole fan. */
+  let junctionZ: number | null = null
+
+  /**
+   * How many pieces a run of length `lenN` must be cut into.
+   *
+   * TWO independent reasons to subdivide, and the maximum of them wins:
+   * the terrain, which is what `subdivisionsFor` has always answered, and the
+   * VERTICAL PROFILE, which the terrain knows nothing about. Only the second
+   * exists when the terrain is switched off, which is exactly the case where a
+   * bridge was being drawn as one flat quad between its own ramp ends.
+   */
+  /**
+   * Subdivision demanded by the TERRAIN alone — the DEM's own resolution.
+   *
+   * It used to also subdivide uniformly at the profile's station spacing, which
+   * is correct and enormously wasteful: measured on a 90-way grid city that
+   * turned 2 700 vertices into 286 500, because every dead-straight residential
+   * street was cut every 9.5 m to express a profile that is a flat line. The
+   * profile's needs are met by `stationsBetween`, which spends vertices where
+   * the shape actually bends and nowhere else.
+   */
+  const stepsFor = (lenN: number): number => frame.subdivisionsFor(lenN) + 1
+
+  /**
+   * Where to cut a run between two planar points, as fractions in (0, 1).
+   *
+   * THE RULE THIS ENCODES: a correct profile is worth nothing if the mesh has
+   * nowhere to express it. Three sources, in order of authority.
+   *
+   *   1. MANDATORY breakpoints — ramp start, deck start, deck end, portal.
+   *      Never dropped, never traded against a budget. A deck whose ends are
+   *      kept and whose middle is not is a flat quad between two ramps.
+   *   2. ADAPTIVE samples — wherever a straight line between neighbours would
+   *      misrepresent the profile by more than the error bound. Error-driven,
+   *      so a straight kilometre is cheap and a short ramp is dense.
+   *   3. TERRAIN — the DEM's own resolution, which is what has always been
+   *      here. Independent of the other two: flat ground still needs a ramp
+   *      subdivided, and flat ROAD still needs a hill subdivided.
+   */
+  const cutsFor = (a: THREE.Vector2, b: THREE.Vector2): number[] => {
+    const terrainSteps = stepsFor(a.distanceTo(b))
+    const uniform: number[] = []
+    for (let s = 1; s < terrainSteps; s++) uniform.push(s / terrainSteps)
+    if (!activeProfile) return uniform
+
+    const s0 = activeProfile.stationAt(a.x, a.y)
+    const s1 = activeProfile.stationAt(b.x, b.y)
+    const span = s1 - s0
+    if (Math.abs(span) < 1e-9) return uniform
+
+    const cuts = new Set(uniform)
+    for (const st of activeProfile.stationsBetween(s0, s1)) {
+      const t = (st - s0) / span
+      if (t > 1e-6 && t < 1 - 1e-6) cuts.add(t)
+    }
+    return [...cuts].sort((x, y) => x - y)
+  }
+
+  /** Split a polyline so no segment outruns the terrain OR the profile. */
+  const densifyFor = (line: ReadonlyArray<THREE.Vector2>): THREE.Vector2[] => {
+    if (line.length < 2) return line.map((p) => p.clone())
+    const out: THREE.Vector2[] = [line[0].clone()]
+    for (let i = 0; i < line.length - 1; i++) {
+      const a = line[i]
+      const b = line[i + 1]
+      for (const t of cutsFor(a, b)) out.push(a.clone().lerp(b, t))
+      out.push(b.clone())
+    }
+    return out
+  }
+
+  /**
+   * Is the carriageway BELOW the ground here — and therefore not to be drawn?
+   *
+   * A tunnel is the one piece of infrastructure whose correct appearance is
+   * absence. Drawn, it either z-fights its way through the hillside above it or
+   * is occluded anyway, so the only thing emitting it achieves is artefacts.
+   * Skipping it puts the PORTAL exactly where the alignment crosses the ground,
+   * which is where a portal is — no portal geometry, no special case, no
+   * hand-placed marker. The ramps descending into it stay, so the eye reads
+   * "it goes under" rather than "it stops".
+   *
+   * The terrain is NOT cut to suit: a bridge lives above the ground and a
+   * tunnel below it, and deforming the surface to accommodate either would be a
+   * different decision from correcting a DEM that is wrong.
+   */
+  const buriedAt = (x: number, y: number): boolean => {
+    if (!activeProfile) return false
+    const { elevationM, groundM } = activeProfile.sample(x, y)
+    return elevationM < groundM - BURIED_MARGIN_M
+  }
+
+  /**
+   * The same question for a polygon, asked at its centroid.
+   *
+   * Applied inside the push routines rather than at their call sites, because
+   * every one of them — carriageway, kerb face, mitre wedge, centre line, lane
+   * dash, zebra — has to answer it the same way. Guarding only the carriageway
+   * leaves the PAINT of a buried road hanging in the hillside, which is a
+   * stranger sight than the road was.
+   */
+  const buriedHere = (quad: ReadonlyArray<THREE.Vector2>): boolean => {
+    if (!activeProfile || quad.length === 0) return false
+    let cx = 0
+    let cy = 0
+    for (const p of quad) { cx += p.x; cy += p.y }
+    return buriedAt(cx / quad.length, cy / quad.length)
+  }
+
+  const structuralZ = (x: number, y: number): number => {
+    if (junctionZ !== null) return junctionZ
+    if (activeProfile) {
+      const { elevationM, groundM } = activeProfile.sample(x, y)
+      // GROUND is exaggerated, the STRUCTURE ON IT is not. Running the whole
+      // absolute elevation through `zAtElevationM` is precisely the bug that
+      // made bridge decks float 18 m at the x3 slider.
+      return frame.zAtElevationM(groundM) + (elevationM - groundM) * mToN
+    }
+    return frame.groundZ(x, y)
+  }
+
+  /**
+   * The solved profile for a FEATURE, or null where nothing was solved for it.
+   *
+   * Always keyed by the source feature id, never by a generated geometry id:
+   * the network builder splits a way at every shared node, and all the pieces
+   * share one alignment and therefore one profile. `RoadRibbon.sourceId` says
+   * which feature a piece came from, so nothing here has to unpick a name.
+   */
+  const samplers = new Map<string, ProfileSampler | null>()
+  const profileFor = (sourceId: string): ProfileSampler | null => {
+    const hit = samplers.get(sourceId)
+    if (hit !== undefined) return hit
+    const solved = opts.vertical?.get(sourceId)
+    const made = solved ? sampleProfile(solved) : null
+    samplers.set(sourceId, made)
+    return made
+  }
 
   /** Two triangles per quad, each vertex draped and tinted. */
   const pushQuad = (
     quad: THREE.Vector2[], tone: [number, number, number], extraLift: number,
   ): void => {
+    if (buriedHere(quad)) return
     const [a, b, c, d] = quad
     for (const [p0, p1, p2] of [[a, b, c], [a, c, d]] as const) {
       for (const v of [p0, p1, p2]) {
-        positions.push(v.x, v.y, groundZ(v.x, v.y) + lift + extraLift)
+        positions.push(v.x, v.y, structuralZ(v.x, v.y) + lift + extraLift)
         colors.push(tone[0], tone[1], tone[2])
       }
     }
@@ -836,6 +1314,7 @@ export function buildLinearLayer(
   const pushSurfaceQuad = (
     quad: THREE.Vector2[], tone: [number, number, number], drop: number,
   ): void => {
+    if (buriedHere(quad)) return
     const [l0, l1, r1, r0] = quad
     const c0 = new THREE.Vector2((l0.x + r0.x) / 2, (l0.y + r0.y) / 2)
     const c1 = new THREE.Vector2((l1.x + r1.x) / 2, (l1.y + r1.y) / 2)
@@ -849,8 +1328,8 @@ export function buildLinearLayer(
 
     // Kerb faces down both edges.
     for (const [e0, e1] of [[l0, l1], [r1, r0]] as const) {
-      const z0 = groundZ(e0.x, e0.y) + lift
-      const z1 = groundZ(e1.x, e1.y) + lift
+      const z0 = structuralZ(e0.x, e0.y) + lift
+      const z1 = structuralZ(e1.x, e1.y) + lift
       for (const [v, z] of [[e0, z0], [e1, z1], [e1, z1 - drop]] as const) {
         positions.push(v.x, v.y, z)
         colors.push(side[0], side[1], side[2])
@@ -864,11 +1343,12 @@ export function buildLinearLayer(
 
   /** Quad with a tone per corner, draped on the ground. */
   function pushShaded(quad: THREE.Vector2[], tones: [number, number, number][]): void {
+    if (buriedHere(quad)) return
     const idx = [[0, 1, 2], [0, 2, 3]] as const
     for (const tri of idx) {
       for (const i of tri) {
         const v = quad[i]
-        positions.push(v.x, v.y, groundZ(v.x, v.y) + lift)
+        positions.push(v.x, v.y, structuralZ(v.x, v.y) + lift)
         colors.push(tones[i][0], tones[i][1], tones[i][2])
       }
     }
@@ -896,6 +1376,9 @@ export function buildLinearLayer(
   for (const f of wanted) {
     const line = projectRing(f.ring!)
     const tone = f.style.tone ?? [0.42, 0.42, 0.44]
+    // Rail, platforms, paved areas and crossings are emitted here and now, so
+    // their profile has to be active for the whole of it.
+    activeProfile = profileFor(f.id)
 
     if (f.widthM === undefined) {
       // A paved AREA — a square, an esplanade, a pedestrianised street. Same
@@ -908,7 +1391,7 @@ export function buildLinearLayer(
         for (const [i0, i1, i2] of faces) {
           for (const idx of [i0, i1, i2]) {
             const v = line[idx]
-            positions.push(v.x, v.y, groundZ(v.x, v.y) + lift)
+            positions.push(v.x, v.y, structuralZ(v.x, v.y) + lift)
             colors.push(tone[0], tone[1], tone[2])
           }
         }
@@ -923,7 +1406,7 @@ export function buildLinearLayer(
       for (const [i0, i1, i2] of faces) {
         for (const idx of [i0, i1, i2]) {
           const v = line[idx]
-          positions.push(v.x, v.y, groundZ(v.x, v.y) + lift + platformLift)
+          positions.push(v.x, v.y, structuralZ(v.x, v.y) + lift + platformLift)
           colors.push(tone[0], tone[1], tone[2])
         }
       }
@@ -960,6 +1443,7 @@ export function buildLinearLayer(
       const cls = f.style.roadClass ?? 'vehicular'
       networkWays[cls].push({
         id: f.id,
+        sourceId: f.id,
         points: line,
         halfWidth: half,
         tone,
@@ -974,7 +1458,7 @@ export function buildLinearLayer(
     }
 
     const drop = SIDE_DROP_M[kind] * mToN
-    const draped = frame.densify(line)
+    const draped = densifyFor(line)
     for (const quad of bufferCentreline(draped, half)) pushSurfaceQuad(quad, tone, drop)
     // Corners: a buffered polyline leaves a wedge open on the outside of every
     // turn. Rail alignments have long radii, so a per-segment buffer plus these
@@ -1019,6 +1503,10 @@ export function buildLinearLayer(
     const bandStart = positions.length / 3
 
     for (const ribbon of network.ribbons) {
+      // The ribbon carries the id of the way it came from, which is the whole
+      // reason a trimmed, mitred, tapered ribbon can still be given the right
+      // height: it can still say whose it is.
+      activeProfile = profileFor(ribbon.sourceId)
       // One quad per station, cut on the MITRED borders rather than on each
       // segment's own normals — which is what lets the edge of a curve run
       // continuously instead of stepping at every vertex.
@@ -1028,10 +1516,13 @@ export function buildLinearLayer(
       // straight chord through the slope: the road either buries itself in the
       // hill or flies over the valley between its own endpoints.
       for (let i = 0; i < ribbon.centre.length - 1; i++) {
-        const steps = frame.subdivisionsFor(ribbon.centre[i].distanceTo(ribbon.centre[i + 1])) + 1
-        for (let s = 0; s < steps; s++) {
-          const t0 = s / steps
-          const t1 = (s + 1) / steps
+        const fences = [0, ...cutsFor(ribbon.centre[i], ribbon.centre[i + 1]), 1]
+        for (let s = 0; s < fences.length - 1; s++) {
+          const t0 = fences[s]
+          const t1 = fences[s + 1]
+          // Below the surface: the portal is wherever this first becomes true.
+          const midC = ribbon.centre[i].clone().lerp(ribbon.centre[i + 1], (t0 + t1) / 2)
+          if (buriedAt(midC.x, midC.y)) continue
           pushSurfaceQuad([
             ribbon.left[i].clone().lerp(ribbon.left[i + 1], t0),
             ribbon.left[i].clone().lerp(ribbon.left[i + 1], t1),
@@ -1049,7 +1540,11 @@ export function buildLinearLayer(
       // Markings run along the TRIMMED centreline, so no paint is left crossing
       // a junction — the one place where a road has no centre line in reality.
       if (ribbon.centreLine && !ribbon.oneway) {
-        for (const quad of bufferCentreline(ribbon.centre, (CENTRE_LINE_M / 2) * mToN)) {
+        // Densified like the asphalt under it. Paint buffered off the RAW
+        // centreline is a straight chord over a curved surface — it floats on
+        // the crest of a hill and sinks into the dip, and on a bridge ramp it
+        // cuts straight through the deck.
+        for (const quad of bufferCentreline(densifyFor(ribbon.centre), (CENTRE_LINE_M / 2) * mToN)) {
           pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
         }
       }
@@ -1075,7 +1570,49 @@ export function buildLinearLayer(
     // One surface per node, fanned from the node itself. This is the piece that
     // did not exist before: the asphalt a fork, a merge or a roundabout entry
     // actually stands on. No kerb — a junction is where the kerb is interrupted.
+    activeProfile = null
     for (const j of network.junctions) {
+      // A junction is where several arms MEET, so it has one height, and the
+      // vertical solver has already forced every arm to agree on it. Sampling
+      // the arms that actually end here — rather than any profile that happens
+      // to pass overhead — is what keeps a crossroads on the ground when a
+      // flyover crosses above it.
+      // THE VERTICAL TEST FOR A JUNCTION.
+      //
+      // The plan test alone is not enough. A junction is built from a SHARED
+      // NODE, and OSM's convention means a flyover and the street beneath it
+      // share none — so a false junction cannot normally arise. But the node
+      // index snaps coincident vertices within 30 cm, and stacked carriageways
+      // do occasionally put two different levels at the same plan position; a
+      // junction welded across that gap would tie a deck to the road under it
+      // with a sheet of asphalt.
+      //
+      // So the arms are collected first and their SPREAD is checked. Arms that
+      // genuinely meet agree to the millimetre, because the solver pinned them.
+      // A large spread is proof this is not one node, and the honest response is
+      // to draw no junction at all: a small gap is a blemish, a ramp fused to
+      // the road passing under it is a lie about the city.
+      const armZ: number[] = []
+      if (opts.vertical) {
+        for (const r of network.ribbons) {
+          const prof = profileFor(r.sourceId)
+          if (!prof) continue
+          // The trim is proportional to the arm's own width, so the search
+          // radius has to be too.
+          const reach = Math.max(JUNCTION_SNAP_M * mToN, (r.halfWidths[0] ?? 0) * 6)
+          const ends = [r.centre[0], r.centre[r.centre.length - 1]]
+          if (!ends.some((e) => e.distanceTo(j.at) <= reach)) continue
+          const { elevationM, groundM } = prof.sample(j.at.x, j.at.y)
+          armZ.push(frame.zAtElevationM(groundM) + (elevationM - groundM) * mToN)
+        }
+      }
+      if (armZ.length > 1) {
+        const spreadM = (Math.max(...armZ) - Math.min(...armZ)) / mToN
+        if (spreadM > JUNCTION_MAX_SPREAD_M) continue
+      }
+      junctionZ = armZ.length === 0
+        ? null
+        : armZ.reduce((a, b) => a + b, 0) / armZ.length + lift
       const poly = j.polygon
       const fan = (p0: THREE.Vector2, p1: THREE.Vector2): void => {
         for (const tri of subdivideOnGround([j.at, p0, p1], frame)) {
@@ -1085,6 +1622,7 @@ export function buildLinearLayer(
       }
       for (let i = 1; i < poly.length; i++) fan(poly[i - 1], poly[i])
       if (poly.length > 2) fan(poly[poly.length - 1], poly[0])
+      junctionZ = null
     }
 
     // The centre of a roundabout. Without this the ring of carriageway has a
@@ -1130,7 +1668,7 @@ export function buildLinearLayer(
     }))
     paved.name = `osm-${kind}`
     paved.renderOrder = 4
-    return finishLinear(paved, masts, kind, mToN, groundZ, lift, count, opts.assets)
+    return finishLinear(paved, masts, kind, mToN, structuralZ, lift, count, opts.assets)
   }
 
   const surface = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
@@ -1148,7 +1686,7 @@ export function buildLinearLayer(
   // tramway shares a street the track lands on top of the asphalt.
   surface.renderOrder = 4
 
-  return finishLinear(surface, masts, kind, mToN, groundZ, lift, count, opts.assets)
+  return finishLinear(surface, masts, kind, mToN, structuralZ, lift, count, opts.assets)
 }
 
 /**

@@ -135,7 +135,8 @@
       "bridge": "Ponts",
       "road": "Roads & paths",
       "rail": "Railways & platforms",
-      "signal": "Traffic lights"
+      "signal": "Traffic lights",
+      "pier": "Quais et jetées"
     },
     "detailLevel": "Detail",
     "detailSimple": "Simple",

@@ -135,7 +135,8 @@
       "bridge": "Ponti",
       "road": "Roads & paths",
       "rail": "Railways & platforms",
-      "signal": "Traffic lights"
+      "signal": "Traffic lights",
+      "pier": "Moli e banchine"
     },
     "detailLevel": "Detail",
     "detailSimple": "Simple",

@@ -31,12 +31,18 @@ import {
  * under a mountain is exactly the case where the ground around the model is the
  * thing a client is looking at.
  */
+import {
+  readVerticalTags, type VerticalTags, type FunctionalType,
+} from './vertical'
+import { buildSeaPolygons, type CoastlineBbox } from './coastline'
+
 export type FeatureKind =
   | 'building' | 'water' | 'green' | 'sand' | 'rock' | 'tree' | 'bridge' | 'road' | 'rail'
-  | 'signal'
+  | 'signal' | 'pier'
 
 export const FEATURE_KINDS: readonly FeatureKind[] =
-  ['building', 'water', 'green', 'sand', 'rock', 'tree', 'bridge', 'road', 'rail', 'signal']
+  ['building', 'water', 'green', 'sand', 'rock', 'tree', 'bridge', 'road', 'rail', 'signal',
+   'pier']
 
 export interface LatLonPoint { lat: number; lon: number }
 
@@ -57,6 +63,17 @@ export interface OsmFeature {
   widthM?: number
   /** Rendering hints read from tags (roof shape/colour, tree size). */
   style: FeatureStyle
+  /**
+   * WHERE THIS SITS VERTICALLY, read from the tags.
+   *
+   * Present on linear infrastructure — the only things that climb, dive or
+   * cross. It is deliberately SEPARATE from `kind`: a road on a bridge is still
+   * a road, and this says how it is carried. See `vertical.ts` for why that
+   * separation had to exist before any of this could be drawn correctly.
+   */
+  vertical?: VerticalTags
+  /** What the way is FOR, which decides its clearances and its maximum grade. */
+  functional?: FunctionalType
 }
 
 export interface FeatureStyle {
@@ -92,6 +109,14 @@ export interface FeatureStyle {
   treeShape?: TreeShape
   /** Rail features: a corridor of track, or a station platform slab. */
   railKind?: 'track' | 'platform'
+  /**
+   * A walkable DECK, or a rubble MOLE.
+   *
+   * A pier and a quay are surfaces people stand on; a breakwater and a groyne
+   * are armour, higher out of the water and never walked. One height and one
+   * tone for both would make a marina look like a sea wall.
+   */
+  pierKind?: 'deck' | 'mole'
   /**
    * A marked pedestrian crossing. Rendered as paint on the carriageway rather
    * than as a footpath of its own — which is what it is, and drawing it as a
@@ -436,6 +461,22 @@ const PEDESTRIAN_HIGHWAYS = new Set([
  * wrong, but it is unpaved and three metres wide, so putting it in the road
  * network alongside a trunk reintroduces the very junction it should not make.
  */
+/**
+ * What a linear feature is FOR — the axis the vertical model reasons on.
+ *
+ * Kept next to `roadClass` because it is the same distinction seen from the
+ * vertical side: a footway and an avenue want different clearances under them
+ * and can be built to wildly different gradients, and a railway is stricter
+ * than either.
+ */
+export function functionalType(
+  kind: FeatureKind, cls: RoadClass | undefined,
+): FunctionalType {
+  if (kind === 'rail') return 'railway'
+  if (kind === 'water') return 'water'
+  return cls === 'pedestrian' ? 'pedestrian' : 'road'
+}
+
 export function roadClass(tags: Record<string, string> | undefined): RoadClass {
   const cls = (tags?.['highway'] ?? '').toLowerCase()
   if (cls === 'track') return 'track'
@@ -545,6 +586,35 @@ export function isBelowSurface(tags: Record<string, string> | undefined): boolea
 }
 
 /**
+ * Should this feature be DISCARDED for being off the surface, given what it is?
+ *
+ * The blunt rule above deleted everything below grade, and for water, greenery
+ * and buildings that is still exactly right: a culverted stream must not be
+ * drawn as a blue ribbon through a park, and the corridors of a shopping centre
+ * are not streets.
+ *
+ * For ROADS AND RAILWAYS it was wrong, and expensively so. A tunnel is not
+ * scenery to be deleted, it is infrastructure to be drawn BELOW the surface —
+ * and deleting it at parse time, before the session cache, meant no layer
+ * toggle could ever bring it back. Worse, the rule caught `building_passage`:
+ * 114 of the 226 tunnel-tagged ways in the benchmark district are arcades and
+ * gateways that are the ground floor of the street, and every one of them
+ * vanished. They are now kept, with `vertical.structure` recording how they sit.
+ *
+ * `indoor=yes` stays deleted for everything. An indoor corridor genuinely is
+ * not a street, and drawing it lays a spaghetti of service ways through the
+ * inside of every mall in the district.
+ */
+export function shouldDiscardBelowSurface(
+  kind: FeatureKind, tags: Record<string, string> | undefined,
+): boolean {
+  const t = tags ?? {}
+  if (t['indoor'] === 'yes') return true
+  if (kind === 'road' || kind === 'rail') return false
+  return isBelowSurface(t)
+}
+
+/**
  * Classify an element from its tags. Order matters and encodes precedence:
  * a bridge carrying a road over a river is a bridge, and a building on a
  * bridge is still a building.
@@ -560,17 +630,33 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
   // built by the building path even when nobody tagged `building=*` on it.
   if (t['man_made'] === 'arch') return 'building'
 
+  // PORT STRUCTURES, before water: a quay is the edge of the harbour and a pier
+  // stands IN it, so a `man_made=pier` that also carries `water=*` context must
+  // not be swallowed by the water rule below. These are decks over water, not
+  // ground cover — which is why they get a kind of their own rather than being
+  // folded into `road` (they are not carriageways) or `building` (no walls).
+  if (PORT_STRUCTURES.has(t['man_made'] ?? '')) return 'pier'
+  if (t['waterway'] === 'dock') return 'pier'
+
   if (t['natural'] === 'tree') return 'tree'
 
   // A surveyed junction control. Only the signals themselves — a crossing node
   // that merely REFERS to signals is part of that crossing, not a mast.
   if (t['highway'] === 'traffic_signals') return 'signal'
 
-  // Bridges: either mapped as an area (man_made=bridge) or as a way carrying
-  // bridge=yes. The linear case is far more common, which is why it is here
-  // and not treated as an edge case.
+  // A bridge OUTLINE — `man_made=bridge` — is a real area feature: the deck's
+  // own footprint, mapped as a polygon.
+  //
+  // A `bridge=yes` WAY is not. It is a road, or a railway, that happens to be
+  // carried on a structure, and promoting it to its own kind here is what used
+  // to remove it from the road graph: it lost its junctions, its width solving
+  // and its markings, and came back as an unrelated slab with no ramps. How a
+  // way is carried is answered by `readVerticalTags`, not by this function, and
+  // the two answers now travel together on the feature. Note this also ends the
+  // DOUBLE DECK: the standard tagging pair — an outline plus the way it carries
+  // — used to produce two overlapping decks at two independently-guessed
+  // heights. Now the outline is the area and the way is the road on it.
   if (t['man_made'] === 'bridge') return 'bridge'
-  if (t['bridge'] && t['bridge'] !== 'no' && (t['highway'] || t['railway'])) return 'bridge'
 
   if (
     t['natural'] === 'water' ||
@@ -648,10 +734,19 @@ export function parseRoofShape(raw: string | undefined): RoofShape {
  * storey — and it is always subtracted from the wall height, never added, so a
  * surveyed total height stays the total height.
  */
+/** Armour, or a deck people walk on. */
+function pierKindOf(tags: Record<string, string> | undefined): 'deck' | 'mole' {
+  const mm = (tags ?? {})['man_made']
+  return mm === 'breakwater' || mm === 'groyne' ? 'mole' : 'deck'
+}
+
 export function resolveFeatureStyle(
   kind: FeatureKind, tags: Record<string, string> | undefined,
 ): FeatureStyle {
   const t = tags ?? {}
+  if (kind === 'pier') {
+    return { roofShape: 'flat', roofHeightM: 0, pierKind: pierKindOf(t) }
+  }
   if (kind === 'tree') {
     const crown = parseLengthM(t['diameter_crown'])
     return {
@@ -705,6 +800,7 @@ export function resolveFeatureStyle(
     return {
       roofShape: 'flat', roofHeightM: 0,
       railKind: platform ? 'platform' : 'track',
+
       // `electrified=no` is a real, common answer and must not read as yes.
       electrified: !platform && power !== '' && power !== 'no',
       // Ballast is warm grey; a platform is paler concrete.
@@ -760,6 +856,15 @@ interface OverpassEl {
   members?: Array<{ type: string; role: string; geometry?: OverpassGeom[] }>
 }
 
+/**
+ * `man_made` values that are a deck or a mole at the water's edge.
+ *
+ * A groyne and a breakwater are not walkable and a quay is, but all four are
+ * the same problem for the generator: a hard surface at a known height above
+ * the SEA rather than at whatever the terrain raster believes.
+ */
+const PORT_STRUCTURES = new Set(['pier', 'quay', 'breakwater', 'groyne'])
+
 /** Smallest area worth drawing, m² — below this it is mapping noise. */
 export const MIN_AREA_M2: Record<Exclude<FeatureKind, 'tree' | 'signal'>, number> = {
   building: 8,
@@ -770,6 +875,8 @@ export const MIN_AREA_M2: Record<Exclude<FeatureKind, 'tree' | 'signal'>, number
   // somebody mapped, not ground worth drawing.
   rock: 120,
   bridge: 10,
+  // A finger pier is long and narrow; a small pontoon is genuinely small.
+  pier: 8,
   // Linear ways carry a width instead of an area; only platforms are polygons.
   road: 0,
   rail: 4,
@@ -782,19 +889,40 @@ export const MIN_AREA_M2: Record<Exclude<FeatureKind, 'tree' | 'signal'>, number
  * the buffering into a deck polygon happens at mesh time where the metric frame
  * is available.
  */
-export function parseOsmFeatures(json: unknown): OsmFeature[] {
+export function parseOsmFeatures(
+  json: unknown,
+  opts?: { bbox?: CoastlineBbox },
+): OsmFeature[] {
   const elements = (json as { elements?: unknown })?.elements
   if (!Array.isArray(elements)) return []
 
   const out: OsmFeature[] = []
+  /** Shoreline ways, held back to be turned into the sea once all are known. */
+  const coastline: LatLonPoint[][] = []
+
   for (const raw of elements) {
     const el = raw as OverpassEl
     if (!el || typeof el !== 'object') continue
+
+    // A coastline is not a feature. It is the EDGE of one, and on its own it
+    // draws nothing — the water it implies is assembled below, once the whole
+    // shoreline is in hand. See `coastline.ts` for why the sea has to be built
+    // rather than read.
+    if (el.tags?.['natural'] === 'coastline') {
+      if (el.type === 'way' && Array.isArray(el.geometry)) {
+        const pts = el.geometry.filter((q) => q && Number.isFinite(q.lat) && Number.isFinite(q.lon))
+        if (pts.length >= 2) coastline.push(pts.map((q) => ({ lat: q.lat, lon: q.lon })))
+      }
+      continue
+    }
+
     const kind = classifyFeature(el.tags)
     if (!kind) continue
-    // A tunnel is not scenery. Dropped here rather than in `classifyFeature`,
-    // which answers what a thing IS: a culverted stream is still a stream.
-    if (isBelowSurface(el.tags)) continue
+    // Off-surface features are dropped here rather than in `classifyFeature`,
+    // which answers what a thing IS: a culverted stream is still a stream. What
+    // counts as "drop" depends on the kind — a road in a tunnel is kept and
+    // drawn underground. See `shouldDiscardBelowSurface`.
+    if (shouldDiscardBelowSurface(kind, el.tags)) continue
 
     const style = resolveFeatureStyle(kind, el.tags)
     const height = resolveBuildingHeight(el.tags)
@@ -822,6 +950,20 @@ export function parseOsmFeatures(json: unknown): OsmFeature[] {
       const pts = el.geometry.filter((p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lon))
       if (pts.length < 2) continue
       const closed = isClosed(pts)
+
+      // A finger pier, a jetty, a groyne: mapped as a LINE, because it is long
+      // and narrow. Closing it into a ring gives a zero-area sliver that the
+      // minimum-area filter then throws away, which is why every pier in a
+      // marina used to vanish even once they were being requested. Kept as a
+      // centreline with a width, exactly like a bridge deck.
+      if (kind === 'pier' && !closed) {
+        out.push({
+          id: `w${el.id}`, kind, ring: pts, height,
+          widthM: pierWidth(el.tags), style,
+          name: el.tags?.['name'], label: featureLabel(el.tags),
+        })
+        continue
+      }
 
       // A bridge tagged on an open way is a centreline: keep it as-is with a
       // width, and let the mesh stage buffer it into a deck.
@@ -869,6 +1011,11 @@ export function parseOsmFeatures(json: unknown): OsmFeature[] {
             ? CROSSING_BAND_M
             : kind === 'road' ? roadWidth(el.tags) : railWidth(el.tags),
           style,
+          // How it is CARRIED, and what it is FOR — the two halves of the
+          // vertical model. Carried alongside `kind` rather than replacing it,
+          // so a way on a bridge is still a road everywhere downstream.
+          vertical: readVerticalTags(el.tags),
+          functional: functionalType(kind, style.roadClass),
         })
         continue
       }
@@ -893,6 +1040,27 @@ export function parseOsmFeatures(json: unknown): OsmFeature[] {
       }
     }
   }
+
+  // ── The sea ─────────────────────────────────────────────────────────────────
+  // Emitted as an ordinary WATER feature, deliberately. Everything downstream —
+  // the water layer, its material and animation, the layer toggle, and the mask
+  // that stops the DEM reading moored ships as ground — then works on it with
+  // no new path and no new contract. The only thing special about the sea is
+  // that nobody mapped it as a polygon, and that is this function's problem.
+  if (opts?.bbox && coastline.length > 0) {
+    const rings = buildSeaPolygons(coastline, opts.bbox)
+    rings.forEach((ring, i) => {
+      out.push({
+        id: `sea-${i}`,
+        kind: 'water',
+        ring,
+        height: { heightM: 0, minHeightM: 0, estimated: true },
+        style: resolveFeatureStyle('water', { natural: 'water' }),
+        label: 'Sea',
+      })
+    })
+  }
+
   return out
 }
 
@@ -971,6 +1139,21 @@ export function bridgeWidth(tags: Record<string, string> | undefined): number {
   return 7
 }
 
+/**
+ * Deck width for a pier mapped as a line.
+ *
+ * A finger pier in a marina is a walkway two people can pass on; a commercial
+ * quay mapped as a line is far wider, and says so with a `width` tag. The
+ * default is deliberately narrow: an over-wide pier paves over the water it is
+ * supposed to stand in, which reads far worse than a slightly thin one.
+ */
+export function pierWidth(tags: Record<string, string> | undefined): number {
+  const t = tags ?? {}
+  const explicit = parseLengthM(t['width']) ?? parseLengthM(t['est_width'])
+  if (explicit && explicit > 0) return Math.min(80, explicit)
+  return t['man_made'] === 'breakwater' || t['man_made'] === 'groyne' ? 6 : 4
+}
+
 /** Tree height: tagged, else a plausible mature street tree. */
 function treeHeight(tags: Record<string, string> | undefined): BuildingHeight {
   const h = parseLengthM((tags ?? {})['height'])
@@ -1016,8 +1199,10 @@ export function buildFeaturesQuery(
   const groups: Array<[string, number]> = [
     // The street network, and the bridges that carry it.
     [`way["highway"](${b});way["railway"](${b});`, Math.round(maxElements * 0.55)],
-    [`way["bridge"]["highway"](${b});way["bridge"]["railway"](${b});`
-      + area('["man_made"="bridge"]'), Math.round(maxElements * 0.05)],
+    // Bridge OUTLINES only. The linear case needs no funding here: a
+    // `bridge=yes` highway is a highway and already arrives in the group above,
+    // which is why this share could be cut to pay for the waterfront.
+    [area('["man_made"="bridge"]'), Math.round(maxElements * 0.02)],
     [area('["building"]') + area('["man_made"="arch"]'), Math.round(maxElements * 0.45)],
     // Ground cover: few polygons, huge area. A tight cap costs nothing visible.
     [
@@ -1035,6 +1220,21 @@ export function buildFeaturesQuery(
       Math.round(maxElements * 0.30),
     ],
     [area('["railway"="platform"]'), Math.round(maxElements * 0.02)],
+    // THE WATERFRONT. None of this was ever requested, and at a harbour that is
+    // the difference between a site and a hole: the benchmark district holds 36
+    // piers, 4 quays, 2 breakwaters and 10 coastline ways, and the open basin
+    // and the sea beyond it are not polygons at all — they are the implicit
+    // seaward side of `natural=coastline`, which nothing else can supply.
+    [
+      `way["natural"="coastline"](${b});`
+      + area('["man_made"~"^(pier|quay|breakwater|groyne)$"]')
+      + area('["waterway"="dock"]')
+      + area('["landuse"~"^(harbour|port)$"]'),
+      // Sized from the data, not from a guess: the benchmark district's entire
+      // waterfront — every pier, quay, breakwater, dock, harbour and coastline
+      // way — is about 55 elements. This is a threefold margin on that.
+      Math.round(maxElements * 0.03),
+    ],
     // Nodes are cheap — one coordinate each — so they are not taken from the
     // geometry budget that the ways are competing over.
     [`node["natural"="tree"](${b});`, Math.round(maxElements * 0.35)],
@@ -1108,7 +1308,7 @@ export function featureLabel(tags: Record<string, string> | undefined): string |
 export function countByKind(features: ReadonlyArray<OsmFeature>): Record<FeatureKind, number> {
   const counts = {
     building: 0, water: 0, green: 0, sand: 0, rock: 0,
-    tree: 0, bridge: 0, road: 0, rail: 0, signal: 0 }
+    tree: 0, bridge: 0, road: 0, rail: 0, signal: 0, pier: 0 }
   for (const f of features) counts[f.kind]++
   return counts
 }

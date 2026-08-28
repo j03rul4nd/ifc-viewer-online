@@ -37,6 +37,18 @@ import * as THREE from 'three'
 /** One centreline handed to the network builder, already in the planar frame. */
 export interface NetworkWay {
   id: string
+  /**
+   * The FEATURE this centreline came from.
+   *
+   * The builder splits a way at every shared node, so one source alignment
+   * becomes several ribbons. Anything that has to look something up about the
+   * original — its vertical profile, its tags, its identity in a picked-feature
+   * event — needs to know which one it was, and reconstructing that by parsing
+   * the generated id (`w51#2` → `w51`) is exactly the kind of string surgery
+   * that breaks the first time an id legitimately contains a `#`. Carried
+   * explicitly instead. Defaults to `id` for callers that do not split.
+   */
+  sourceId?: string
   points: ReadonlyArray<THREE.Vector2>
   /** Half the carriageway width, in the same units as `points`. */
   halfWidth: number
@@ -56,7 +68,10 @@ export interface NetworkWay {
 
 /** A node-to-node stretch of carriageway, already pulled back from its ends. */
 export interface RoadRibbon {
+  /** Identity of THIS piece of geometry — unique, and not a feature id. */
   id: string
+  /** Identity of the FEATURE it was cut from. See `NetworkWay.sourceId`. */
+  sourceId: string
   /** Trimmed centreline. Always >= 2 points. */
   centre: THREE.Vector2[]
   /** Half-width at each centreline point — tapered where widths change. */
@@ -752,6 +767,7 @@ export function buildRoadNetwork(
     const { left, right, joins } = mitredBorders(centre, halfWidths)
     const ribbon: RoadRibbon = {
       id: `${way.id}#${i}`,
+      sourceId: way.sourceId ?? way.id,
       centre, halfWidths, left, right, joins,
       tone: way.tone,
       centreLine: way.centreLine ?? false,

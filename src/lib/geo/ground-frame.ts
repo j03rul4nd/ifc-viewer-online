@@ -32,6 +32,22 @@ import { metresToNormalized } from './geo-math'
 /** Ground elevation in metres at a normalized planar position. */
 export type GroundSampler = (nx: number, ny: number) => number
 
+/**
+ * Which REFERENCE SURFACE a height is measured from.
+ *
+ * The frame started with exactly one — the ground — and that was enough while
+ * everything in the scene stood on soil. It is not enough at a harbour. A quay
+ * deck is 2 m above the SEA, not 2 m above whatever the DEM happens to say
+ * under it; and at Port Vell the DEM says 4.7 m over open water, because the
+ * terrarium mosaic is a SURFACE model that has moored vessels and terminal
+ * roofs baked into it. Draping a quay on that ground puts the Moll d'Espanya
+ * inside the harbour it is supposed to edge.
+ *
+ * So a datum is named, never assumed. Both are exaggerated, because both are
+ * ground the user is looking at; what is measured FROM them never is.
+ */
+export type VerticalDatum = 'ground' | 'sea'
+
 export interface GroundFrameOptions {
   /** Anchor latitude — sets the normalized-to-metres scale. */
   anchorLat: number
@@ -51,6 +67,15 @@ export interface GroundFrameOptions {
    * than the terrain can resolve is a chord that cuts through a hill.
    */
   groundStepM?: number
+  /**
+   * Elevation of mean sea level in the DEM's own datum, metres.
+   *
+   * Zero is right for the terrarium mosaic, whose heights are approximately
+   * orthometric (EGM96-ish) — see `elevation.ts`. It is an option rather than a
+   * constant because a local vertical datum can be metres away from MSL, and a
+   * harbour drawn half a metre into its own quay is a very visible half metre.
+   */
+  seaLevelM?: number
 }
 
 /** DEM vertex spacing at the default zoom (z15, mid latitudes). */
@@ -82,6 +107,24 @@ export interface GroundFrame {
   zAbove(nx: number, ny: number, heightM: number): number
   /** Scene z of an absolute elevation, for anything level by nature (water). */
   zAtElevationM(elevationM: number): number
+
+  /** Sea level in metres, in the DEM's datum. */
+  readonly seaLevelM: number
+  /** Scene z of the SEA SURFACE. Level everywhere, by definition. */
+  seaZ(): number
+  /** Scene z of the named reference surface at a position. */
+  datumZ(datum: VerticalDatum, nx: number, ny: number): number
+  /**
+   * Scene z of a point `heightM` above the named datum — the ONE call every
+   * elevated structure should make.
+   *
+   * `heightM` is a TRUE METRE and stays one: a 5 m clearance is 5 m at every
+   * exaggeration setting, exactly as a 20 m building is 20 m. Getting this
+   * wrong is not hypothetical — folding a clearance into `zAtElevationM`'s
+   * argument is how bridge decks came to float 18 m at the ×3 slider while
+   * their own decks stayed 1.2 m thick.
+   */
+  zAboveDatum(datum: VerticalDatum, nx: number, ny: number, heightM: number): number
   /** Lowest and highest ground over a set of planar points. */
   groundRangeM(points: ReadonlyArray<{ x: number; y: number }>): { minM: number; maxM: number }
   /**
@@ -113,6 +156,13 @@ export function createGroundFrame(opts: GroundFrameOptions): GroundFrame {
   const groundZ = (nx: number, ny: number): number =>
     (groundM(nx, ny) - anchorElevationM) * mToN * exaggeration
 
+  const zAtElevationM = (elevationM: number): number =>
+    (elevationM - anchorElevationM) * mToN * exaggeration
+
+  const rawSea = opts.seaLevelM ?? 0
+  const seaLevelM = Number.isFinite(rawSea) ? rawSea : 0
+  const seaZ = (): number => zAtElevationM(seaLevelM)
+
   const subdivisionsFor = (lengthN: number): number => {
     if (!sample || !(lengthN > stepN)) return 0
     return Math.min(MAX_SUBDIVISIONS, Math.floor(lengthN / stepN))
@@ -131,7 +181,13 @@ export function createGroundFrame(opts: GroundFrameOptions): GroundFrame {
 
     zAbove: (nx, ny, heightM) => groundZ(nx, ny) + heightM * mToN,
 
-    zAtElevationM: (elevationM) => (elevationM - anchorElevationM) * mToN * exaggeration,
+    zAtElevationM,
+
+    seaLevelM,
+    seaZ,
+    datumZ: (datum, nx, ny) => (datum === 'sea' ? seaZ() : groundZ(nx, ny)),
+    zAboveDatum: (datum, nx, ny, heightM) =>
+      (datum === 'sea' ? seaZ() : groundZ(nx, ny)) + heightM * mToN,
 
     groundRangeM(points) {
       let minM = Infinity
