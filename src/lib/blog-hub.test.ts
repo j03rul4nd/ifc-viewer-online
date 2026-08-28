@@ -24,15 +24,18 @@ describe('blog hub discovery', () => {
     expect(blogPostMatchesQuery(post, 'video terreno')).toBe(true)
   })
 
-  it('returns the three English spatial guides for the spatial journey', () => {
+  it('returns all six English spatial guides for the spatial journey', () => {
     const spatial = getBlogHubCopy('en').journeys.find((journey) => journey.id === 'spatial')!
     const results = filterBlogPosts(BLOG_POSTS, { journey: spatial })
     expect(results.map((post) => post.slug)).toEqual(expect.arrayContaining([
       'ifc-point-cloud-browser-scan-to-bim',
       'real-time-lidar-web-digital-twin-mcap',
       'ifc-video-3d-terrain-construction-progress',
+      'warehouse-ifc-moving-lidar-digital-twin',
+      '4d-construction-progress-ifc-temporal-point-cloud',
+      'utility-tunnel-ifc-mobile-lidar-inspection',
     ]))
-    expect(results).toHaveLength(3)
+    expect(results).toHaveLength(6)
   })
 
   it('filters by category and sorts short reads first', () => {

@@ -40,6 +40,13 @@
     "simulatedBadge": "シミュレーション再生",
     "ifcLoaded": "IFC 読み込み済み",
     "description": "対応する IFC に位置合わせされた有限のスキャンタイムラインです。シーク、一時停止、速度変更、最新フレームへの移動ができます。",
+    "showcaseSelector": "IFC と時系列 LiDAR の例を選択",
+    "showcases": {
+      "pavilion": { "name": "オペレーション・パビリオン", "short": "基本スキャン再生", "description": "IFC に整合したコンパクトなタイムラインと移動する点検カートです。" },
+      "warehouse": { "name": "稼働中の倉庫", "short": "フォークリフトと自律搬送車", "description": "ラックと構造に整合した高密度点群、移動するフォークリフト、自律搬送車、走査軌跡です。" },
+      "construction": { "name": "4D 施工進捗", "short": "工程と偏差領域", "description": "構造点群が工程別に現れ、赤い位置ずれ柱領域で偏差確認を示します。" },
+      "tunnel": { "name": "トンネル移動点検", "short": "台車と LiDAR ファン", "description": "高密度設備、移動点検台車、走査ファン、壁面の局所状態領域を表示します。" }
+    },
     "start": "IFC を読み込み再生開始",
     "loading": "IFC とリプレイを準備中…",
     "play": "再生",

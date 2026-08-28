@@ -128,6 +128,8 @@ export interface SdkPointCloudCommand {
    * reported to the host through the `pointcloud-picked` event.
    */
   inspect?: boolean
+  /** `replay`: bundled temporal showcase to start. Defaults to the pavilion. */
+  replayId?: string
   /** `add` resolves with the new cloud's id so the host can address it. */
   done?: (ok: boolean, errorOrId?: string) => void
 }

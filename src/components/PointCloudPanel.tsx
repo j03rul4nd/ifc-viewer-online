@@ -36,9 +36,8 @@ import {
   DEMO_POINT_CLOUDS, DEMO_SOURCES, fetchDemoPointCloud, formatDemoSize, type DemoPointCloud,
 } from '../demo-models/point-clouds'
 import {
-  createPavilionLidarReplay, PAVILION_LIDAR_DURATION_MS, PAVILION_LIDAR_FRAME_RATE,
-  PAVILION_LIDAR_REPLAY_ID, pavilionReplayAlignment,
-} from '../demo-models/pavilion-lidar-replay'
+  getTemporalLidarShowcase, TEMPORAL_LIDAR_SHOWCASES, type TemporalShowcaseId,
+} from '../demo-models/realtime-lidar-showcases'
 import type { ViewerAPI } from '../lib/viewer'
 import type { PointCloudSystemAPI, CloudStats, PickedPoint } from '../lib/pointcloud/point-cloud-system'
 import type {
@@ -47,8 +46,7 @@ import type {
 
 interface PointCloudPanelProps {
   viewerApiRef: React.MutableRefObject<ViewerAPI | null>
-  companionLoaded?: boolean
-  onLoadCompanionModel?: () => Promise<void>
+  onLoadCompanionModel?: (demoModelId?: string) => Promise<void>
 }
 
 const log = createLogger('PointCloudPanel')
@@ -65,7 +63,7 @@ const CONFIDENCE_TINT: Record<string, string> = {
 }
 
 export default function PointCloudPanel({
-  viewerApiRef, companionLoaded = false, onLoadCompanionModel,
+  viewerApiRef, onLoadCompanionModel,
 }: PointCloudPanelProps) {
   const { t } = useTranslation('pointcloud')
   // Runtime-built keys (reader error codes, alignment reasons) can't be proved
@@ -118,8 +116,15 @@ export default function PointCloudPanel({
   const [replayError, setReplayError] = useState(false)
   const [mcapBusy, setMcapBusy] = useState(false)
   const [mcapError, setMcapError] = useState(false)
+  const [selectedReplayId, setSelectedReplayId] = useState<TemporalShowcaseId>('operations-pavilion')
+  const [runningReplayId, setRunningReplayId] = useState<TemporalShowcaseId | null>(null)
 
   const activeCloud = store.clouds.find((c) => c.id === store.activeCloudId) ?? null
+  const selectedShowcase = getTemporalLidarShowcase(selectedReplayId)
+  const activeShowcase = runningReplayId
+    ? getTemporalLidarShowcase(runningReplayId)
+    : selectedShowcase
+  const companionLoaded = sceneModels.some((model) => model.fileName === activeShowcase.modelFileName)
 
   const getSystem = useCallback((): Promise<PointCloudSystemAPI> | null => {
     const viewer = viewerApiRef.current
@@ -214,6 +219,7 @@ export default function PointCloudPanel({
     setTransportState(null)
     setReplayPointCount(0)
     setReplayTruncated(0)
+    setRunningReplayId(null)
   }, [])
 
   /**
@@ -222,34 +228,40 @@ export default function PointCloudPanel({
    * synthetic and the UI says so; what this proves is the temporal workflow,
    * not a physical sensor connection.
    */
-  const handleStartReplay = useCallback(async (): Promise<void> => {
+  const handleStartReplay = useCallback(async (requestedId?: string): Promise<void> => {
     const viewer = viewerApiRef.current
     if (!viewer || replayBusy) return
+    const showcase = getTemporalLidarShowcase(requestedId ?? selectedReplayId)
+    setSelectedReplayId(showcase.id)
     setReplayBusy(true)
     setReplayError(false)
     try {
-      if (!companionLoaded && onLoadCompanionModel) await onLoadCompanionModel()
+      const alreadyLoaded = useSceneStore.getState().models
+        .some((model) => model.fileName === showcase.modelFileName)
+      if (!alreadyLoaded && onLoadCompanionModel) await onLoadCompanionModel(showcase.demoModelId)
       const system = await viewer.getPointClouds()
 
       stopReplay()
-      system.remove(PAVILION_LIDAR_REPLAY_ID)
-      usePointCloudStore.getState().removeCloud(PAVILION_LIDAR_REPLAY_ID)
+      for (const item of TEMPORAL_LIDAR_SHOWCASES) {
+        system.remove(item.cloudId)
+        usePointCloudStore.getState().removeCloud(item.cloudId)
+      }
 
-      const source = createPavilionLidarReplay()
+      const source = showcase.createSource()
       const transport = new SimulatedLiveTransport(source.capacity)
       transport.setMode(transportMode)
       replayTransportRef.current = transport
       const companion = useSceneStore.getState().models
-        .find((model) => model.fileName === 'IVO-Operations-Pavilion.ifc')
-      const alignment = pavilionReplayAlignment(
+        .find((model) => model.fileName === showcase.modelFileName)
+      const alignment = showcase.align(
         companion ? viewer.getModelBounds(companion.id) : viewer.getModelBounds(),
       )
-      system.create(PAVILION_LIDAR_REPLAY_ID, alignment, source.sourceFrame.origin)
-      system.addDynamicBuffer(PAVILION_LIDAR_REPLAY_ID, source.capacity)
+      system.create(showcase.cloudId, alignment, source.sourceFrame.origin)
+      system.addDynamicBuffer(showcase.cloudId, source.capacity)
 
       usePointCloudStore.getState().addCloud({
-        id: PAVILION_LIDAR_REPLAY_ID,
-        fileName: t('replay.name'),
+        id: showcase.cloudId,
+        fileName: tDynamic(`replay.showcases.${showcase.copyKey}.name`),
         sourceKind: 'temporal-replay',
         fileSize: 0,
         // The frame is already GPU-ready rather than parsed from a container;
@@ -268,7 +280,7 @@ export default function PointCloudPanel({
         attributes: { color: true, intensity: true, classification: true, confidence: false },
         alignment,
         alignedToModelId: companion?.id ?? null,
-        fileKey: `demo:${PAVILION_LIDAR_REPLAY_ID}:v1`,
+        fileKey: `demo:${showcase.cloudId}:v1`,
         loadedAt: Date.now(),
       })
 
@@ -276,23 +288,23 @@ export default function PointCloudPanel({
       // designed geometry available for comparison.
       for (const model of useSceneStore.getState().models) {
         viewer.setModelVisible(model.id, true)
-        viewer.setModelOpacity(model.fileName === 'IVO-Operations-Pavilion.ifc' ? 0.42 : 0.18, model.id)
+        viewer.setModelOpacity(model.fileName === showcase.modelFileName ? showcase.modelOpacity : 0.18, model.id)
         useSceneStore.getState().setModelVisible(model.id, true)
       }
       usePointCloudStore.getState().setDisplay({
-        colorMode: 'rgb', pointSize: 2.6, opacity: 0.94,
+        colorMode: 'rgb', pointSize: showcase.pointSize, opacity: 0.94,
         density: 1, attenuate: false, round: true,
       })
       system.setDisplay(usePointCloudStore.getState().display)
 
       const controller = new TemporalReplayController({
-        durationMs: PAVILION_LIDAR_DURATION_MS,
-        frameRate: PAVILION_LIDAR_FRAME_RATE,
+        durationMs: showcase.durationMs,
+        frameRate: showcase.frameRate,
         createFrame: (positionMs, sequence) => source.sample(positionMs, sequence),
         onFrame: (frame, state) => {
           setReplayState(state)
           transport.transmit(frame, (decoded) => {
-            const update = system.updateDynamicFrame(PAVILION_LIDAR_REPLAY_ID, decoded)
+            const update = system.updateDynamicFrame(showcase.cloudId, decoded)
             if (!update) return
             setReplayPointCount(update.count)
             setReplayTruncated(update.truncated)
@@ -301,17 +313,44 @@ export default function PointCloudPanel({
         },
       })
       replayControllerRef.current = controller
+      setRunningReplayId(showcase.id)
       controller.play()
       setReplayState(controller.snapshot())
       setTransportState(transport.snapshot())
       system.frameWithModel()
+      // `frameWithModel` preserves the current viewing direction. That is
+      // useful after manual work, but a fresh article iframe inherits the
+      // orthographic-looking side direction used while its IFC was loading,
+      // flattening a long tunnel into a thin strip. Start exhibition replays
+      // from the same readable 3D preset exposed by the camera menu; visitors
+      // can orbit, pan and dolly from there immediately.
+      if (showcase.camera) {
+        const origin = alignment.origin
+        viewer.setCameraLookAt(
+          {
+            x: origin.x + showcase.camera.position.x,
+            y: origin.y + showcase.camera.position.y,
+            z: origin.z + showcase.camera.position.z,
+          },
+          {
+            x: origin.x + showcase.camera.target.x,
+            y: origin.y + showcase.camera.target.y,
+            z: origin.z + showcase.camera.target.z,
+          },
+        )
+      } else {
+        viewer.setCameraPreset('iso')
+      }
     } catch (error) {
       log.warn('LiDAR temporal replay could not start:', error)
       setReplayError(true)
     } finally {
       setReplayBusy(false)
     }
-  }, [viewerApiRef, replayBusy, companionLoaded, onLoadCompanionModel, stopReplay, t, transportMode])
+  // Runtime catalogue keys are resolved by tDynamic; `t` invalidates the
+  // callback when the active language changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewerApiRef, replayBusy, selectedReplayId, onLoadCompanionModel, stopReplay, t, transportMode])
 
   const handleTransportMode = useCallback((mode: SimulatedTransportMode): void => {
     setTransportMode(mode)
@@ -327,13 +366,14 @@ export default function PointCloudPanel({
     setMcapError(false)
     try {
       const { createMcapPointRecordingBlob } = await import('../lib/pointcloud/mcap-point-recording')
-      const source = createPavilionLidarReplay()
+      const showcase = activeShowcase
+      const source = showcase.createSource()
       // 2 fps keeps the portable fixture compact; the on-screen replay remains
       // 12 fps. Frames are yielded and encoded one at a time because the source
       // deliberately reuses its typed arrays.
       function* frames() {
         let sequence = 1
-        for (let positionMs = 0; positionMs <= PAVILION_LIDAR_DURATION_MS; positionMs += 500) {
+        for (let positionMs = 0; positionMs <= showcase.durationMs; positionMs += 500) {
           yield source.sample(positionMs, sequence++)
         }
       }
@@ -341,7 +381,7 @@ export default function PointCloudPanel({
       const href = URL.createObjectURL(blob)
       const anchor = document.createElement('a')
       anchor.href = href
-      anchor.download = 'operations-pavilion-lidar-demo.mcap'
+      anchor.download = showcase.mcapFileName
       anchor.click()
       setTimeout(() => URL.revokeObjectURL(href), 0)
     } catch (error) {
@@ -350,7 +390,7 @@ export default function PointCloudPanel({
     } finally {
       setMcapBusy(false)
     }
-  }, [mcapBusy])
+  }, [mcapBusy, activeShowcase])
 
   const handleReplayToggle = useCallback((): void => {
     const controller = replayControllerRef.current
@@ -387,14 +427,14 @@ export default function PointCloudPanel({
   }, [])
 
   const handleRemove = useCallback((cloud: PointCloudEntry): void => {
-    if (cloud.id === PAVILION_LIDAR_REPLAY_ID) stopReplay()
+    if (TEMPORAL_LIDAR_SHOWCASES.some((showcase) => showcase.cloudId === cloud.id)) stopReplay()
     cancelPointCloud(cloud.id)
     void getSystem()?.then((system) => system.remove(cloud.id))
     usePointCloudStore.getState().removeCloud(cloud.id)
   }, [getSystem, stopReplay])
 
   const handleVisible = useCallback((cloud: PointCloudEntry, visible: boolean): void => {
-    if (cloud.id === PAVILION_LIDAR_REPLAY_ID && !visible) {
+    if (TEMPORAL_LIDAR_SHOWCASES.some((showcase) => showcase.cloudId === cloud.id) && !visible) {
       replayControllerRef.current?.pause()
       if (replayControllerRef.current) setReplayState(replayControllerRef.current.snapshot())
     }
@@ -416,7 +456,7 @@ export default function PointCloudPanel({
 
         switch (cmd.action) {
           case 'replay': {
-            await handleStartReplay()
+            await handleStartReplay(cmd.replayId)
             break
           }
           case 'add': {
@@ -449,14 +489,15 @@ export default function PointCloudPanel({
           }
           case 'remove': {
             if (!cmd.cloudId) throw new Error('No cloudId provided')
-            if (cmd.cloudId === PAVILION_LIDAR_REPLAY_ID) stopReplay()
+            if (TEMPORAL_LIDAR_SHOWCASES.some((showcase) => showcase.cloudId === cmd.cloudId)) stopReplay()
             cancelPointCloud(cmd.cloudId)
             system.remove(cmd.cloudId)
             usePointCloudStore.getState().removeCloud(cmd.cloudId)
             break
           }
           case 'clear': {
-            if (usePointCloudStore.getState().clouds.some((c) => c.id === PAVILION_LIDAR_REPLAY_ID)) {
+            if (usePointCloudStore.getState().clouds.some((cloud) =>
+              TEMPORAL_LIDAR_SHOWCASES.some((showcase) => showcase.cloudId === cloud.id))) {
               stopReplay()
             }
             for (const c of usePointCloudStore.getState().clouds) {
@@ -526,7 +567,7 @@ export default function PointCloudPanel({
   // tDynamic is recreated every render; the effect only needs it to resolve an
   // error key at call time, so it is deliberately not a dependency.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [viewerApiRef, activeModelId, sceneModels.length, stopReplay])
+  }), [viewerApiRef, activeModelId, sceneModels.length, stopReplay, handleStartReplay, describeError])
 
   const handleOffset = useCallback((patch: Parameters<typeof store.setOffset>[1]): void => {
     const cloud = usePointCloudStore.getState().clouds.find((c) => c.id === store.activeCloudId)
@@ -836,6 +877,40 @@ export default function PointCloudPanel({
 
           {/* ── Temporal LiDAR exhibition replay ──────────────────────────── */}
           <Section title={t('replay.title')}>
+            <div className="grid grid-cols-2 gap-1.5 mb-1.5" role="list" aria-label={tDynamic('replay.showcaseSelector')}>
+              {TEMPORAL_LIDAR_SHOWCASES.map((showcase) => {
+                const selected = activeShowcase.id === showcase.id
+                return (
+                  <button
+                    key={showcase.id}
+                    type="button"
+                    role="listitem"
+                    data-testid={`lidar-showcase-${showcase.id}`}
+                    aria-pressed={selected}
+                    disabled={replayBusy}
+                    onClick={() => {
+                      if (replayState) void handleStartReplay(showcase.id)
+                      else setSelectedReplayId(showcase.id)
+                    }}
+                    className={`rounded-[8px] border px-2 py-1.5 text-left transition-colors disabled:opacity-50 ${
+                      selected
+                        ? 'border-[var(--accent)] bg-[var(--surface-2)]'
+                        : 'border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-1)]'
+                    }`}
+                  >
+                    <div className="text-[10px] font-semibold leading-tight text-[var(--text)]">
+                      {tDynamic(`replay.showcases.${showcase.copyKey}.name`)}
+                    </div>
+                    <div className="mt-0.5 text-[8.5px] leading-tight text-[var(--text-faint)]">
+                      {tDynamic(`replay.showcases.${showcase.copyKey}.short`)}
+                    </div>
+                    <div className="mt-1 font-mono text-[8px] text-[var(--text-faint)]">
+                      {formatCount(showcase.approximatePoints)} pts · {showcase.frameRate} FPS
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
             <div
               data-testid="lidar-replay-demo"
               className="rounded-[9px] border border-[var(--border-strong)] bg-[var(--surface-2)] p-2 flex flex-col gap-1.5"
@@ -843,11 +918,15 @@ export default function PointCloudPanel({
               <div className="flex items-center gap-1.5 flex-wrap">
                 <Badge tint="#F5A623">{t('replay.simulatedBadge')}</Badge>
                 <DemoChip>IFC + LiDAR</DemoChip>
-                <DemoChip>{PAVILION_LIDAR_FRAME_RATE} FPS</DemoChip>
+                <DemoChip>{activeShowcase.frameRate} FPS</DemoChip>
                 {(companionLoaded || replayState) && <Badge tint="#30A46C">{t('replay.ifcLoaded')}</Badge>}
               </div>
-              <div className="text-[11px] font-medium text-[var(--text)]">{t('replay.name')}</div>
-              <div className="text-[10px] leading-snug text-[var(--text-dim)]">{t('replay.description')}</div>
+              <div className="text-[11px] font-medium text-[var(--text)]">
+                {tDynamic(`replay.showcases.${activeShowcase.copyKey}.name`)}
+              </div>
+              <div className="text-[10px] leading-snug text-[var(--text-dim)]">
+                {tDynamic(`replay.showcases.${activeShowcase.copyKey}.description`)}
+              </div>
 
               {!replayState ? (
                 <button

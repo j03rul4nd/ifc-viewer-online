@@ -64,6 +64,9 @@ describe('the assets are the size of the real thing', () => {
   // measure would give, and they are what the placement code assumes: a lamp
   // scaled by metresToNormalized has to come out 7 m tall, not 7 cm or 70 m.
   const EXPECTED: Record<string, [number, number, number]> = {
+    bench:             [1.80, 0.63, 0.91],
+    bollard:           [0.24, 0.24, 0.93],
+    'bus-shelter':     [4.30, 1.80, 2.37],
     car:               [4.10, 1.84, 1.49],
     van:               [5.45, 2.08, 2.10],
     bus:               [11.95, 2.84, 2.99],
@@ -71,9 +74,18 @@ describe('the assets are the size of the real thing', () => {
     'catenary-mast':   [3.60, 0.60, 8.01],
     'train-carriage':  [19.00, 2.92, 4.02],
     'tree-broadleaf':  [3.84, 3.52, 6.15],
+    'tree-blossom':    [3.65, 3.23, 4.95],
+    'tree-columnar':   [1.76, 1.72, 7.63],
     'tree-conifer':    [3.50, 3.50, 7.10],
+    'tree-olive':      [4.04, 4.04, 3.69],
+    'tree-palm':       [4.29, 4.29, 6.65],
     'street-lamp':     [2.02, 0.32, 7.67],
     'platform-canopy': [11.80, 6.39, 3.93],
+    'litter-bin':      [0.63, 0.70, 0.95],
+    'roof-chimney':    [0.74, 0.74, 1.76],
+    'roof-hvac':       [2.77, 1.65, 1.38],
+    'roof-stairbox':   [3.30, 2.80, 3.39],
+    'roof-tank':       [1.60, 1.68, 2.82],
   }
 
   it('measures every asset, so a new one cannot skip the check', () => {

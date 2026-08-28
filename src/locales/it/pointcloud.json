@@ -40,6 +40,13 @@
     "simulatedBadge": "REPLAY SIMULATO",
     "ifcLoaded": "IFC caricato",
     "description": "Una timeline di scansione allineata al suo IFC. Scorri, metti in pausa, cambia velocità e passa all’ultimo frame.",
+    "showcaseSelector": "Scegli un esempio IFC e LiDAR temporale",
+    "showcases": {
+      "pavilion": { "name": "Padiglione operativo", "short": "Replay scansione base", "description": "Una timeline compatta allineata al suo IFC con un carrello di ispezione in movimento." },
+      "warehouse": { "name": "Magazzino in movimento", "short": "Muletto + carrello autonomo", "description": "Resi densi con muletto, carrello autonomo e tracce allineati a scaffalature e struttura." },
+      "construction": { "name": "Avanzamento lavori 4D", "short": "Fasi + zona deviata", "description": "La struttura appare per fasi; una colonna spostata in rosso mostra il controllo delle deviazioni." },
+      "tunnel": { "name": "Ispezione mobile del tunnel", "short": "Carrello + ventaglio LiDAR", "description": "Impianti densi, carrello mobile, ventaglio di scansione e zona localizzata sulla parete del corridoio tecnico." }
+    },
     "start": "Carica IFC + avvia replay",
     "loading": "Preparazione IFC + replay…",
     "play": "Riproduci",

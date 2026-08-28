@@ -40,6 +40,13 @@
     "simulatedBadge": "REPLAY SIMULADO",
     "ifcLoaded": "IFC carregado",
     "description": "Uma linha temporal de varrimento alinhada com o IFC. Navegue, pause, altere a velocidade e salte para o último frame.",
+    "showcaseSelector": "Escolha um exemplo IFC e LiDAR temporal",
+    "showcases": {
+      "pavilion": { "name": "Pavilhão de operações", "short": "Replay de varrimento base", "description": "Uma linha temporal compacta alinhada com o IFC e um carro de inspeção em movimento." },
+      "warehouse": { "name": "Armazém em movimento", "short": "Empilhador + carro autónomo", "description": "Retornos densos com empilhador, carro autónomo e rastos alinhados com estantes e estrutura." },
+      "construction": { "name": "Progresso de obra 4D", "short": "Fases + zona desviada", "description": "A estrutura aparece por fases; uma coluna deslocada a vermelho mostra a análise de desvios." },
+      "tunnel": { "name": "Inspeção móvel de túnel", "short": "Carro + leque LiDAR", "description": "Serviços densos, carro móvel, leque de varrimento e zona localizada na parede do corredor técnico." }
+    },
     "start": "Carregar IFC + iniciar replay",
     "loading": "A preparar IFC + replay…",
     "play": "Reproduzir",

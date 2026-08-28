@@ -40,6 +40,13 @@
     "simulatedBadge": "SIMULIERTES REPLAY",
     "ifcLoaded": "IFC geladen",
     "description": "Eine Scan-Zeitleiste, ausgerichtet am zugehörigen IFC. Spulen, pausieren, Geschwindigkeit ändern und zum letzten Frame springen.",
+    "showcaseSelector": "IFC- und zeitliches LiDAR-Beispiel wählen",
+    "showcases": {
+      "pavilion": { "name": "Betriebspavillon", "short": "Basis-Scan-Replay", "description": "Kompakte, am IFC ausgerichtete Zeitleiste mit einem fahrenden Inspektionswagen." },
+      "warehouse": { "name": "Bewegtes Lager", "short": "Gabelstapler + autonomer Wagen", "description": "Dichte Lagerpunkte mit Gabelstapler, autonomem Wagen und Scan-Spuren entlang von Regalen und Tragwerk." },
+      "construction": { "name": "4D-Baufortschritt", "short": "Phasen + Abweichung", "description": "Tragwerkspunkte erscheinen phasenweise; ein rot versetzter Stützenbereich zeigt die Abweichungsprüfung." },
+      "tunnel": { "name": "Mobile Tunnelinspektion", "short": "Wagen + Scan-Fächer", "description": "Dichte Leitungen, fahrender Inspektionswagen, Scan-Fächer und lokalisierter Wandbereich im Versorgungstunnel." }
+    },
     "start": "IFC laden + Replay starten",
     "loading": "IFC + Replay werden vorbereitet…",
     "play": "Abspielen",

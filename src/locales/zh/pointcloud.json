@@ -40,6 +40,13 @@
     "simulatedBadge": "模拟回放",
     "ifcLoaded": "IFC 已加载",
     "description": "与配套 IFC 对齐的有限扫描时间轴。可拖动、暂停、变速并跳到最新帧。",
+    "showcaseSelector": "选择 IFC 与时序 LiDAR 示例",
+    "showcases": {
+      "pavilion": { "name": "运维展亭", "short": "基础扫描回放", "description": "与 IFC 对齐的紧凑时间轴，包含移动巡检车。" },
+      "warehouse": { "name": "动态仓库", "short": "叉车 + 自动搬运车", "description": "与货架和结构对齐的高密度点云、移动叉车、自动搬运车与扫描轨迹。" },
+      "construction": { "name": "4D 施工进度", "short": "阶段 + 偏差区域", "description": "结构点按阶段出现；红色偏移柱点簇用于演示空间偏差复核。" },
+      "tunnel": { "name": "隧道移动巡检", "short": "巡检车 + 扫描扇面", "description": "密集管线、移动巡检车、扫描扇面和技术廊道墙面的局部状态点簇。" }
+    },
     "start": "加载 IFC 并开始回放",
     "loading": "正在准备 IFC 和回放…",
     "play": "播放",

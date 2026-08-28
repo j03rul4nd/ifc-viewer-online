@@ -40,6 +40,13 @@
     "simulatedBadge": "REPLAY SIMULÉ",
     "ifcLoaded": "IFC chargé",
     "description": "Une chronologie de scan alignée avec son IFC. Naviguez, mettez en pause, changez la vitesse et passez à la dernière image.",
+    "showcaseSelector": "Choisir un exemple IFC et LiDAR temporel",
+    "showcases": {
+      "pavilion": { "name": "Pavillon des opérations", "short": "Replay de scan initial", "description": "Une chronologie compacte alignée avec son IFC et un chariot d’inspection en mouvement." },
+      "warehouse": { "name": "Entrepôt en mouvement", "short": "Chariot + robot autonome", "description": "Des retours denses avec chariot élévateur, robot autonome et traces alignés sur les racks et la structure." },
+      "construction": { "name": "Avancement 4D du chantier", "short": "Phases + zone décalée", "description": "La structure apparaît par phases; une colonne décalée en rouge illustre le contrôle des écarts." },
+      "tunnel": { "name": "Inspection mobile du tunnel", "short": "Chariot + éventail LiDAR", "description": "Réseaux denses, chariot mobile, éventail de scan et zone murale localisée dans une galerie technique." }
+    },
     "start": "Charger l’IFC + démarrer",
     "loading": "Préparation IFC + replay…",
     "play": "Lecture",

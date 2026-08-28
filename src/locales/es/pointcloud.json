@@ -40,6 +40,13 @@
     "simulatedBadge": "REPLAY SIMULADO",
     "ifcLoaded": "IFC cargado",
     "description": "Una línea de tiempo de escaneo alineada con su IFC. Desplázate, pausa, cambia la velocidad y salta al último frame.",
+    "showcaseSelector": "Elige un ejemplo de IFC y LiDAR temporal",
+    "showcases": {
+      "pavilion": { "name": "Pabellón de operaciones", "short": "Replay de escaneo base", "description": "Una línea temporal compacta alineada con su IFC, con un carro de inspección en movimiento." },
+      "warehouse": { "name": "Almacén en movimiento", "short": "Carretilla + carro autónomo", "description": "Retornos densos de almacén con carretilla, carro autónomo y estelas de escaneo alineados con racks y estructura." },
+      "construction": { "name": "Progreso de obra 4D", "short": "Fases + zona desviada", "description": "La estructura aparece por fases mientras se eleva un panel; un pilar desplazado en rojo muestra la revisión de desviaciones." },
+      "tunnel": { "name": "Inspección móvil de túnel", "short": "Carro + abanico LiDAR", "description": "Servicios densos, carro de inspección móvil, abanico de escaneo y una zona localizada en el muro del corredor técnico." }
+    },
     "start": "Cargar IFC + iniciar replay",
     "loading": "Preparando IFC + replay…",
     "play": "Reproducir",
