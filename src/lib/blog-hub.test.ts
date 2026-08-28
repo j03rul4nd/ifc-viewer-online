@@ -24,16 +24,25 @@ describe('blog hub discovery', () => {
     expect(blogPostMatchesQuery(post, 'video terreno')).toBe(true)
   })
 
-  it('returns the required English spatial guides for the spatial journey', () => {
+  // Two branches grew this journey at once and each pinned its own total — one
+  // said exactly six, the other at least seven. Both were right about the
+  // guides they added and both were wrong about the count once the catalogue
+  // held all of them, which is what made this the only merge conflict between
+  // the LiDAR release and the map guides. Listed together, and the total is
+  // measured rather than asserted from either side's expectation.
+  it('returns every English spatial guide for the spatial journey', () => {
     const spatial = getBlogHubCopy('en').journeys.find((journey) => journey.id === 'spatial')!
     const results = filterBlogPosts(BLOG_POSTS, { journey: spatial })
     expect(results.map((post) => post.slug)).toEqual(expect.arrayContaining([
       'ifc-point-cloud-browser-scan-to-bim',
       'real-time-lidar-web-digital-twin-mcap',
       'ifc-video-3d-terrain-construction-progress',
+      'warehouse-ifc-moving-lidar-digital-twin',
+      '4d-construction-progress-ifc-temporal-point-cloud',
+      'utility-tunnel-ifc-mobile-lidar-inspection',
       'view-ifc-on-3d-map-online',
     ]))
-    expect(results.length).toBeGreaterThanOrEqual(7)
+    expect(results).toHaveLength(8)
   })
 
   it('filters by category and sorts short reads first', () => {
