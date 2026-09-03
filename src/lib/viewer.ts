@@ -937,6 +937,13 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       fog.far  = size * 6
     }
 
+    // A walking pace is right for a building and absurd for a site: 3.4 m/s
+    // across 700 m of scan is three minutes of holding a key. Scale the default
+    // to what was loaded — and only the default, because a speed the user chose
+    // with the wheel is an answer, not a guess to be overwritten by the next
+    // file they open.
+    walkNav?.suggestSpeed(Math.max(3.4, Math.min(25, size / 35)))
+
     // Widen the directional shadow frustum so shadows cover the whole model.
     const half = Math.max(50, size * 0.6)
     dsc.left = -half; dsc.right = half; dsc.top = half; dsc.bottom = -half
@@ -1043,6 +1050,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         // transition-less setLookAt. Without this the corridor ahead of you
         // simply does not load in.
         onMove: () => { fragmentUpdates.request() },
+        // A plan or elevation is orthographic: there is no depth to walk into,
+        // so the keys pan the drawing instead of pushing the frustum around.
+        isOrthographic: () => (world.camera.three as THREE.OrthographicCamera).isOrthographicCamera === true,
         onStateChange: (state) => {
           if (state.active !== walkTuningApplied) applyWalkOptics(state.active)
           for (const cb of walkStateSubscribers) {
@@ -1289,6 +1299,27 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // ─── Mouse position — actualizado en cada pointermove ────────────────────
   const mouse = new THREE.Vector2()
 
+  /**
+   * Where the user is actually pointing.
+   *
+   * Normally that is the cursor. Under Pointer Lock there IS no cursor:
+   * clientX/clientY freeze at wherever it was captured, so hovering and
+   * clicking kept picking whatever happened to be under the mouse at the moment
+   * you started walking — an element on the other side of the room, forever.
+   * While the pointer is locked the aim is the centre of the canvas, which is
+   * what the crosshair in the HUD draws and what a first-person view means by
+   * "the thing in front of you".
+   */
+  function aimAt(e: { clientX: number; clientY: number }): void {
+    const locked = typeof document !== 'undefined' && document.pointerLockElement === canvas
+    if (locked) {
+      const r = canvas.getBoundingClientRect()
+      mouse.set(r.left + r.width / 2, r.top + r.height / 2)
+    } else {
+      aimAt(e)
+    }
+  }
+
   function removeSelectionBox(): void {
     if (selectionBox) {
       world.scene.three.remove(selectionBox)
@@ -1462,7 +1493,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   }
 
   const onPointerMove = async (e: PointerEvent): Promise<void> => {
-    mouse.set(e.clientX, e.clientY)
+    aimAt(e)
 
     // Measurement tools handle their own pointer feedback — skip hover highlight
     if (activeMeasurementTool !== 'none') return
@@ -1537,7 +1568,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return
     }
 
-    mouse.set(e.clientX, e.clientY)
+    aimAt(e)
 
     // ── Clipper ───────────────────────────────────────────────────────────────
     if (clipper.enabled) {
@@ -1562,7 +1593,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     // tool converged on, for the same reason.
     if (walkNav?.isActive()) {
       if (modelObjects.size === 0) return
-      mouse.set(e.clientX, e.clientY)
+      aimAt(e)
       void (async () => {
         const point = await pickWorldPoint()
         if (point) walkNav?.walkTo(point)
@@ -1576,7 +1607,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     // thing that moved it was framing an element, which also flies you there.
     // This changes what you turn around and leaves you where you are.
     if (modelObjects.size === 0) return
-    mouse.set(e.clientX, e.clientY)
+    aimAt(e)
     void (async () => {
       const point = await pickWorldPoint()
       if (!point) return
@@ -1593,7 +1624,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     if (modelObjects.size === 0) return
     if (activeMeasurementTool !== 'none' || clipper.enabled) return
     e.preventDefault()
-    mouse.set(e.clientX, e.clientY)
+    aimAt(e)
     void (async () => {
       try {
         const info = await commitSelection()

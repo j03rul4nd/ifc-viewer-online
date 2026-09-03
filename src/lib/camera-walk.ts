@@ -133,6 +133,12 @@ export interface WalkOptions<A> {
   onMove?: () => void
   /** Fired on every state change the HUD renders. */
   onStateChange?: (state: WalkState) => void
+  /**
+   * Whether the active camera is orthographic. A plan or elevation view has no
+   * depth to walk into: moving along the view direction changes nothing you can
+   * see, so "forward" there means up the screen instead.
+   */
+  isOrthographic?: () => boolean
   /** Reports whether the pointer is currently captured, for hosts with a DOM. */
   isPointerLocked?: () => boolean
   exitPointerLock?: () => void
@@ -146,6 +152,12 @@ export interface WalkNavigation {
   getState(): WalkState
   setSpeed(metresPerSecond: number): void
   getSpeed(): number
+  /**
+   * Propose a speed for the model just loaded. Ignored once the user has set
+   * one with the wheel: a speed they chose is an answer, and a new model is not
+   * a reason to overrule it.
+   */
+  suggestSpeed(metresPerSecond: number): void
   /**
    * Analog movement, each axis in [-1, 1], added to whatever the keys say.
    * This is how the on-screen stick drives the same rig as the keyboard —
@@ -233,6 +245,7 @@ export function bindWalkNavigation<A>(
     cancelFrame,
     onMove,
     onStateChange,
+    isOrthographic = () => false,
     isPointerLocked = () => (typeof document !== 'undefined' && document.pointerLockElement != null),
     exitPointerLock = () => { if (typeof document !== 'undefined') document.exitPointerLock?.() },
   }: WalkOptions<A>,
@@ -266,6 +279,8 @@ export function bindWalkNavigation<A>(
   let glideTo: WalkVec | null = null
 
   let ambient = false
+  /** Set once the wheel or the host has been told a speed on purpose. */
+  let speedChosen = false
   let looking = false
   let lastPointer: { x: number; y: number } | null = null
   let lockEnabled = true
@@ -361,7 +376,7 @@ export function bindWalkNavigation<A>(
     // the floor while walking a corridor should still walk the corridor; with a
     // raw forward vector it drives you into the slab, which is the other half of
     // "I cannot get through the building".
-    let fx = dir.x, fz = dir.z
+    let fx = dir.x, fy = 0, fz = dir.z
     const flat = Math.hypot(fx, fz)
     if (flat < 1e-6) {
       const vFlat = Math.hypot(velocity.x, velocity.z)
@@ -370,7 +385,25 @@ export function bindWalkNavigation<A>(
       fx /= flat; fz /= flat
     }
     // right = forward × up
-    const rx = -fz, rz = fx
+    let rx = -fz, ry = 0, rz = fx
+
+    // An orthographic camera has no depth to travel into: pushing the eye along
+    // the view direction moves the frustum and changes not one pixel. In a plan
+    // or elevation that made the keys look broken in exactly the way they used
+    // to before they worked at all — so there, forward means up the screen and
+    // the pair of them pan the drawing.
+    if (isOrthographic()) {
+      // right = view × worldUp, and screenUp = right × view. Both exact screen
+      // axes, so the keys move the drawing the way a drag does.
+      rx = -dir.z; ry = 0; rz = dir.x
+      const rLen = Math.hypot(rx, rz)
+      if (rLen < 1e-6) { rx = 1; rz = 0 } else { rx /= rLen; rz /= rLen }
+      const sx = ry * dir.z - rz * dir.y
+      const sy = rz * dir.x - rx * dir.z
+      const sz = rx * dir.y - ry * dir.x
+      const sLen = Math.hypot(sx, sy, sz)
+      if (sLen > 1e-6) { fx = sx / sLen; fy = sy / sLen; fz = sz / sLen }
+    }
 
     let forwardAxis = analog.forward
     let rightAxis   = analog.right
@@ -389,7 +422,7 @@ export function bindWalkNavigation<A>(
 
     const ax = fx * forwardAxis + rx * rightAxis
     const az = fz * forwardAxis + rz * rightAxis
-    const ay = upAxis
+    const ay = fy * forwardAxis + ry * rightAxis + upAxis
 
     const mag = Math.hypot(ax, ay, az)
     let desiredX = 0, desiredY = 0, desiredZ = 0
@@ -548,6 +581,7 @@ export function bindWalkNavigation<A>(
       direction < 0 ? walkSpeed * SPEED_STEP : walkSpeed / SPEED_STEP,
       minSpeed, maxSpeed,
     )
+    speedChosen = true
     publish()
   }
 
@@ -621,6 +655,13 @@ export function bindWalkNavigation<A>(
     isActive(): boolean { return active },
     getState(): WalkState { return { active, speed: walkSpeed, pointerLocked: lockedNow } },
     setSpeed(metresPerSecond: number): void {
+      if (!Number.isFinite(metresPerSecond) || metresPerSecond <= 0) return
+      walkSpeed = clamp(metresPerSecond, minSpeed, maxSpeed)
+      speedChosen = true
+      publish()
+    },
+    suggestSpeed(metresPerSecond: number): void {
+      if (speedChosen) return
       if (!Number.isFinite(metresPerSecond) || metresPerSecond <= 0) return
       walkSpeed = clamp(metresPerSecond, minSpeed, maxSpeed)
       publish()

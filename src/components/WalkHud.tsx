@@ -163,6 +163,22 @@ export default function WalkHud({ viewerApiRef }: WalkHudProps): React.ReactElem
 
   return (
     <>
+      {/* Under Pointer Lock there is no cursor, and the viewer aims from the
+          centre of the canvas — so the centre has to be drawn, or clicking to
+          inspect an element becomes guesswork about where "here" is. Two thin
+          strokes with a hole in the middle: enough to aim with, not enough to
+          sit in front of the model. */}
+      {state.pointerLocked && (
+        <div className="absolute inset-0 z-[21] pointer-events-none flex items-center justify-center">
+          <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden>
+            <g stroke="rgba(255,255,255,0.85)" strokeWidth="1.2" strokeLinecap="round">
+              <path d="M11 3v5M11 14v5M3 11h5M14 11h5" />
+            </g>
+            <circle cx="11" cy="11" r="1.1" fill="rgba(255,255,255,0.9)" />
+          </svg>
+        </div>
+      )}
+
       {/* Keys, speed and the way out — one row, bottom centre, clear of both
           the side panels and the mobile nav bar. */}
       <div className="absolute left-1/2 -translate-x-1/2 bottom-[92px] sm:bottom-5 z-[22] flex items-center gap-2 pointer-events-none">
