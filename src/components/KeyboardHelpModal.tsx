@@ -126,6 +126,20 @@ export default function KeyboardHelpModal({ open, onClose }: KeyboardHelpModalPr
             <Row label={k('rightView')}  keys={['Num3']} />
           </Section>
 
+          {/* Walk mode. Orbiting is the default and the presets above jump
+              around the outside; this is the only way to get inside a corridor,
+              and none of its keys are guessable from the button that starts it. */}
+          <Section title={g('walk')}>
+            <Row label={k('walkToggle')}  keys={['G']} />
+            <Row label={k('walkMove')}    keys={['W', 'A', 'S', 'D']} />
+            <Row label={k('walkLook')}    keys={['Drag']} />
+            <Row label={k('walkHeight')}  keys={['Q', 'E']} />
+            <Row label={k('walkRun')}     keys={['Shift', 'Alt']} />
+            <Row label={k('walkSpeed')}   keys={['Wheel']} />
+            <Row label={k('walkGo')}      keys={['Double-click']} />
+            <Row label={k('walkExit')}    keys={['Esc']} />
+          </Section>
+
           {/* Mouse, which is where the actual navigation lives and where none of
               it was written down. Panning in particular is unguessable: the
               usual right-drag is taken by the context menu here. */}

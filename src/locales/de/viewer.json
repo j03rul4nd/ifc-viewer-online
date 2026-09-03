@@ -175,5 +175,17 @@
     "partial": "Teilweise — Lücken vor der Übergabe",
     "insufficient": "Unzureichend für FM-Übergabe",
     "tip": "FM-Übergabebereitschaft: {{score}}/100 (COBie-Vollständigkeit — keine offizielle Zertifizierung)"
+  },
+  "walk": {
+    "title": "Begehungsmodus",
+    "enter": "Begehen",
+    "exit": "Begehung beenden",
+    "hint": "WASD bewegen · ziehen zum Umsehen · Q/E Höhe · Shift rennen · Doppelklick zum Hingehen",
+    "hintTouch": "Stick zum Bewegen · ziehen zum Umsehen · Doppeltippen zum Hingehen",
+    "speedHint": "Das Mausrad regelt die Gehgeschwindigkeit",
+    "locked": "Zeiger erfasst",
+    "unlocked": "Halten zum Umsehen",
+    "up": "Hoch",
+    "down": "Runter"
   }
 }

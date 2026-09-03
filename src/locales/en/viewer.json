@@ -187,5 +187,17 @@
     "partial": "Partial — gaps before handover",
     "insufficient": "Insufficient for FM handover",
     "tip": "FM handover readiness: {{score}}/100 (COBie completeness — not an official certification)"
+  },
+  "walk": {
+    "title": "Walk mode",
+    "enter": "Walk through",
+    "exit": "Exit walk",
+    "hint": "WASD move · drag to look · Q/E height · Shift run · double-click to go",
+    "hintTouch": "Stick to move · drag to look · double-tap to go",
+    "speedHint": "Wheel adjusts walking speed",
+    "locked": "Cursor captured",
+    "unlocked": "Hold to look",
+    "up": "Go up",
+    "down": "Go down"
   }
 }

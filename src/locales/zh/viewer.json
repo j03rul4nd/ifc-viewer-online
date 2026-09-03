@@ -175,5 +175,17 @@
     "partial": "部分完成 — 交付前存在缺口",
     "insufficient": "不足以进行FM交付",
     "tip": "FM交付就绪度：{{score}}/100（COBie完整性 — 非官方认证）"
+  },
+  "walk": {
+    "title": "漫游模式",
+    "enter": "进入漫游",
+    "exit": "退出漫游",
+    "hint": "WASD 移动 · 拖动转向 · Q/E 升降 · Shift 加速 · 双击前往",
+    "hintTouch": "摇杆移动 · 拖动转向 · 双击前往",
+    "speedHint": "滚轮调节行走速度",
+    "locked": "已锁定光标",
+    "unlocked": "按住转向",
+    "up": "上升",
+    "down": "下降"
   }
 }

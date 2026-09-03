@@ -175,5 +175,17 @@
     "partial": "Parziale — lacune prima della consegna",
     "insufficient": "Insufficiente per la consegna FM",
     "tip": "Preparazione alla consegna FM: {{score}}/100 (completezza COBie — non è una certificazione ufficiale)"
+  },
+  "walk": {
+    "title": "Modalità a piedi",
+    "enter": "Percorri a piedi",
+    "exit": "Esci dal percorso",
+    "hint": "WASD muovi · trascina per guardare · Q/E altezza · Shift corri · doppio clic per andare",
+    "hintTouch": "Stick per muoverti · trascina per guardare · doppio tocco per andare",
+    "speedHint": "La rotellina regola la velocità di camminata",
+    "locked": "Cursore catturato",
+    "unlocked": "Tieni premuto per guardare",
+    "up": "Salire",
+    "down": "Scendere"
   }
 }
