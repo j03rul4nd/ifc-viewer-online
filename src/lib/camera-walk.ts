@@ -41,6 +41,19 @@
  *     above it — the one interaction every point-cloud tour tool converged on,
  *     because it is aim-and-arrive with no piloting in between.
  *
+ * ── And the one that decides whether anyone ever finds it ────────────────────
+ * WASD MOVES WHETHER OR NOT THE MODE IS ON. Shipped without this, the first
+ * thing a person does — press W, because every 3D tool made since 1996 walks on
+ * W — did nothing at all, and the mode that would have made it work was behind
+ * a button they had no reason to press. A control you must first discover
+ * before the keys do anything is, for anyone who does not discover it, a
+ * control that is not there. So the keys always drive the camera; walk mode
+ * adds the mouse-look, the captured cursor, the wider lens and the HUD on top.
+ *
+ * Ambient movement is deliberately narrower than the mode: WASD and Q/E only.
+ * The arrows and Space stay with the panels and the page, which is where a
+ * person not in walk mode still expects them.
+ *
  * Deliberately NOT here: collision and gravity. In a BIM review walking through
  * a wall is a feature — you are inspecting the wall — and a capsule collider
  * against fragments geometry (whose CPU vertex arrays are freed after upload)
@@ -143,6 +156,12 @@ export interface WalkNavigation {
   look(yawDelta: number, pitchDelta: number): void
   /** Glide to standing height above a world point, keeping the current heading. */
   walkTo(point: WalkVec, standingHeight?: number): void
+  /**
+   * Let WASD / Q-E drive the camera even when walk mode is off — the keys
+   * people press first, before they know the mode exists.
+   */
+  setAmbientMovement(on: boolean): void
+  isAmbientMovement(): boolean
   /** Opt into a captured cursor, which is what makes a 180° turn possible. */
   setPointerLockEnabled(on: boolean): void
   isPointerLockEnabled(): boolean
@@ -167,6 +186,12 @@ const UP_KEYS      = new Set(['KeyE', 'Space', 'PageUp'])
 const DOWN_KEYS    = new Set(['KeyQ', 'KeyC', 'PageDown'])
 
 const MOVEMENT_KEYS = [FORWARD_KEYS, BACK_KEYS, LEFT_KEYS, RIGHT_KEYS, UP_KEYS, DOWN_KEYS]
+
+/** What moves the camera with the mode OFF. Narrower on purpose: the arrows
+ *  scroll the issue list and Space scrolls the page, and taking those from
+ *  someone who never asked to walk would be a worse bug than the one this
+ *  fixes. */
+const AMBIENT_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE'])
 
 function isMovementKey(code: string): boolean {
   return MOVEMENT_KEYS.some((set) => set.has(code))
@@ -240,6 +265,7 @@ export function bindWalkNavigation<A>(
   /** Where a teleport is taking us, or null. Any key cancels it. */
   let glideTo: WalkVec | null = null
 
+  let ambient = false
   let looking = false
   let lastPointer: { x: number; y: number } | null = null
   let lockEnabled = true
@@ -265,14 +291,25 @@ export function bindWalkNavigation<A>(
   /** Read the eye and its heading; both are re-read every frame rather than
    *  cached, so a preset, a fit or a BCF viewpoint landing mid-walk is simply
    *  where you now stand — no snap back to a stale pose. */
-  function readPose(): { pos: WalkVec; dir: WalkVec } {
+  function readPose(): { pos: WalkVec; dir: WalkVec; distance: number } {
     const pos = controls.getPosition({ x: 0, y: 0, z: 0 })
     const tgt = controls.getTarget({ x: 0, y: 0, z: 0 })
     let x = tgt.x - pos.x, y = tgt.y - pos.y, z = tgt.z - pos.z
     const len = Math.hypot(x, y, z)
-    if (!Number.isFinite(len) || len === 0) { x = 0; y = 0; z = -1 }
-    else { x /= len; y /= len; z /= len }
-    return { pos, dir: { x, y, z } }
+    if (!Number.isFinite(len) || len <= 0) return { pos, dir: { x: 0, y: 0, z: -1 }, distance: eyeDistance }
+    return { pos, dir: { x: x / len, y: y / len, z: z / len }, distance: len }
+  }
+
+  /** Movement is live in walk mode and in ambient mode; everything else about
+   *  walking — the look, the lock, the wheel, the teleport — is the mode only. */
+  const movementLive = (): boolean => active || ambient
+
+  /** The loop is only spun up while there is something to integrate, so ambient
+   *  mode does not cost a frame callback for the whole session. */
+  function ensureLoop(): void {
+    if (frame !== 0 || !movementLive()) return
+    lastFrameAt = 0
+    frame = raf(loop)
   }
 
   function applyPose(pos: WalkVec, dir: WalkVec, distance: number, transition: boolean): void {
@@ -285,11 +322,11 @@ export function bindWalkNavigation<A>(
 
   // ── The frame ───────────────────────────────────────────────────────────────
   function tick(dt: number): void {
-    if (!active) return
+    if (!movementLive()) return
     const step = clamp(dt, 0, MAX_STEP)
     if (step <= 0) return
 
-    const { pos, dir } = readPose()
+    const { pos, dir, distance } = readPose()
     let turned = false
 
     // ── Look ──────────────────────────────────────────────────────────────────
@@ -393,35 +430,54 @@ export function bindWalkNavigation<A>(
     const moved = mx !== 0 || my !== 0 || mz !== 0
     if (!moved && !turned) return
 
-    applyPose({ x: pos.x + mx, y: pos.y + my, z: pos.z + mz }, dir, eyeDistance, false)
+    // Walking parks the target at arm's length; ambient movement must not touch
+    // it. Shortening the orbit radius behind someone who only pressed W would
+    // leave their next drag spinning around their own face.
+    applyPose(
+      { x: pos.x + mx, y: pos.y + my, z: pos.z + mz },
+      dir,
+      active ? eyeDistance : distance,
+      false,
+    )
     onMove?.()
   }
 
+  /** Walk mode holds the loop open (the pointer can turn the view at any
+   *  moment). Ambient movement only owes a frame while something is still
+   *  moving, so the loop shuts itself down between key presses instead of
+   *  costing a callback for the whole session. */
+  const stillMoving = (): boolean =>
+    held.size > 0 || glideTo !== null ||
+    Math.hypot(velocity.x, velocity.y, velocity.z) > 1e-4
+
   const loop = (): void => {
-    if (!active) return
+    if (!movementLive()) { frame = 0; return }
     const t = now()
     const dt = lastFrameAt === 0 ? 1 / 60 : (t - lastFrameAt) / 1000
     lastFrameAt = t
     tick(dt)
+    if (!active && !stillMoving()) { frame = 0; return }
     frame = raf(loop)
   }
 
   // ── Listeners ───────────────────────────────────────────────────────────────
   const onKeyDown = (event: Event): void => {
-    if (!active) return
+    if (!movementLive()) return
     const e = event as KeyboardEvent
     if (e.ctrlKey || e.metaKey) return
     if (isTypingTarget(e.target)) return
     sprint = e.shiftKey
     creep  = e.altKey
     if (!isMovementKey(e.code)) return
+    if (!active && !AMBIENT_KEYS.has(e.code)) return
     // Space scrolls the page and the arrows scroll the panel behind the canvas.
     e.preventDefault()
     held.add(e.code)
+    ensureLoop()
   }
 
   const onKeyUp = (event: Event): void => {
-    if (!active) return
+    if (!movementLive()) return
     const e = event as KeyboardEvent
     sprint = e.shiftKey
     creep  = e.altKey
@@ -535,8 +591,8 @@ export function bindWalkNavigation<A>(
     const { pos, dir } = readPose()
     applyPose(pos, dir, eyeDistance, false)
 
-    lastFrameAt = 0
-    frame = raf(loop)
+    if (frame !== 0) { caf(frame); frame = 0 }
+    ensureLoop()
     publish()
   }
 
@@ -587,6 +643,15 @@ export function bindWalkNavigation<A>(
       // the floor is the same view as lying on it.
       glideTo = { x: point.x, y: point.y + standingHeight, z: point.z }
     },
+    setAmbientMovement(on: boolean): void {
+      ambient = on
+      if (!on && !active) {
+        held.clear()
+        velocity.x = 0; velocity.y = 0; velocity.z = 0
+        if (frame !== 0) { caf(frame); frame = 0 }
+      }
+    },
+    isAmbientMovement(): boolean { return ambient },
     setPointerLockEnabled(on: boolean): void {
       lockEnabled = on
       if (!on && lockedNow) { try { exitPointerLock() } catch { /* already released */ } }

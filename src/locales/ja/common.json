@@ -101,7 +101,9 @@
       "walkRun": "ダッシュ・微速",
       "walkSpeed": "歩行速度",
       "walkGo": "面まで移動",
-      "walkExit": "ウォークモードを終了"
+      "walkExit": "ウォークモードを終了",
+      "moveAlways": "カメラを移動（いつでも）",
+      "moveAlwaysHeight": "上昇／下降"
     }
   },
   "upload": {

@@ -1051,6 +1051,11 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         },
       })
     }
+    // WASD moves the camera whether or not walk mode is on. Without this the
+    // first thing anyone does in a 3D scene — press W — did nothing, and the
+    // mode that would have made it work was behind a button they had no reason
+    // to press.
+    walkNav?.setAmbientMovement(true)
   } catch (err) {
     console.debug('[Viewer] walk mode unavailable:', err instanceof Error ? err.message : err)
   }

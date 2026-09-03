@@ -101,7 +101,9 @@
       "walkRun": "Correr · andar devagar",
       "walkSpeed": "Velocidade de caminhada",
       "walkGo": "Ir até uma superfície",
-      "walkExit": "Sair do percurso"
+      "walkExit": "Sair do percurso",
+      "moveAlways": "Mover a câmera (sempre)",
+      "moveAlwaysHeight": "Subir / descer"
     }
   },
   "upload": {

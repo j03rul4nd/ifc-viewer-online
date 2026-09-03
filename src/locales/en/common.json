@@ -101,7 +101,9 @@
       "walkRun": "Run · creep",
       "walkSpeed": "Walking speed",
       "walkGo": "Go to a surface",
-      "walkExit": "Leave walk mode"
+      "walkExit": "Leave walk mode",
+      "moveAlways": "Move the camera (any time)",
+      "moveAlwaysHeight": "Up / down"
     }
   },
   "upload": {

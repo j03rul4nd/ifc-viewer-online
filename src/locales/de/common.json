@@ -101,7 +101,9 @@
       "walkRun": "Rennen · schleichen",
       "walkSpeed": "Gehgeschwindigkeit",
       "walkGo": "Zu einer Fläche gehen",
-      "walkExit": "Begehung beenden"
+      "walkExit": "Begehung beenden",
+      "moveAlways": "Kamera bewegen (jederzeit)",
+      "moveAlwaysHeight": "Hoch / runter"
     }
   },
   "upload": {
