@@ -6,6 +6,7 @@ import { safeVoid } from './errors'
 import { appBus } from './event-bus'
 import { cameraRangeForBounds, widenCameraRange } from './camera-range'
 import { bindNavigation } from './camera-nav'
+import { bindWalkNavigation, type WalkNavigation, type WalkState } from './camera-walk'
 import { createFrameCoalescer } from './frame-coalescer'
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
 import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
@@ -255,6 +256,33 @@ export interface ViewerAPI {
   getGpuEstimateBytes(): number
   /** Fly to a named camera preset (iso, top, front, right, left, back, bottom). */
   setCameraPreset(preset: CameraPreset): void
+  /**
+   * First-person walk mode: WASD to move, left-drag to look, Q/E for height.
+   *
+   * Orbiting is how you look AT a building; this is how you get INSIDE one.
+   * Returns the resulting state, which is `false` when the mode could not be
+   * armed (camera-controls missing its ACTION table on an odd build).
+   */
+  setWalkMode(on: boolean): boolean
+  /** Toggle walk mode; returns the state it ended in. */
+  toggleWalkMode(): boolean
+  isWalkMode(): boolean
+  /** Walking speed in metres per second (Shift sprints, Alt creeps). */
+  setWalkSpeed(metresPerSecond: number): void
+  getWalkSpeed(): number
+  /** Current walk state, for a HUD mounting mid-walk. */
+  getWalkState(): WalkState
+  /** Subscribe to walk state (active / speed / pointer lock). Returns unsubscribe. */
+  onWalkStateChange(cb: (state: WalkState) => void): () => void
+  /**
+   * Analog movement for the on-screen stick, each axis in [-1, 1]. Added to
+   * the keyboard, so there is only ever one movement path.
+   */
+  setWalkMoveInput(forward: number, right: number, up?: number): void
+  /** Turn the view by an explicit amount in radians (touch look). */
+  walkLook(yawDelta: number, pitchDelta: number): void
+  /** Capture the cursor while walking, so a 180° turn is not a drag limit. */
+  setWalkPointerLock(on: boolean): void
   /**
    * Apply a positional/rotational/scale offset to a model's pivot group.
    * Pass modelId to target a specific model; defaults to the active model.
@@ -965,6 +993,68 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     console.debug('[Viewer] camera-controls tuning skipped:', err instanceof Error ? err.message : err)
   }
 
+  // ─── Walk mode ─────────────────────────────────────────────────────────────
+  // Bound once and left inert; toggling it must not re-wire listeners.
+  let walkNav: WalkNavigation | null = null
+  const walkStateSubscribers = new Set<(state: WalkState) => void>()
+
+  /**
+   * Standing inside a building asks different things of the lens than orbiting
+   * one does.
+   *
+   * NEAR PLANE: tuneSceneToBounds scales it to the model — up to 0.5 m on a
+   * site-sized file. That is invisible from outside and it eats the wall you
+   * are standing next to from inside, which reads as the geometry being broken.
+   * FIELD OF VIEW: the orbit default is a portrait lens. In a 1.2 m corridor it
+   * shows the two walls and nothing else; every walkthrough tool widens to
+   * roughly 70-75° because peripheral vision is how you judge a space.
+   *
+   * Both are restored on the way out, and the restore reads the values back
+   * rather than assuming — a model loaded mid-walk re-tunes them underneath us.
+   */
+  let walkTuningApplied = false
+  let restoredOptics: { fov: number; near: number } | null = null
+
+  function applyWalkOptics(on: boolean): void {
+    const cam = world.camera.threePersp
+    if (on) {
+      if (!restoredOptics) restoredOptics = { fov: cam.fov, near: cam.near }
+      cam.fov  = 72
+      cam.near = Math.min(cam.near, 0.05)
+      cam.updateProjectionMatrix()
+    } else if (restoredOptics) {
+      cam.fov  = restoredOptics.fov
+      cam.near = restoredOptics.near
+      cam.updateProjectionMatrix()
+      restoredOptics = null
+    }
+    walkTuningApplied = on
+  }
+  try {
+    const ctrls = world.camera.controls
+    type ButtonAction = typeof ctrls.mouseButtons.left
+    const ACTION = (ctrls.constructor as unknown as { ACTION?: Record<string, ButtonAction> }).ACTION
+    if (ACTION?.NONE !== undefined) {
+      walkNav = bindWalkNavigation(ctrls, window, {
+        noneAction: ACTION.NONE,
+        pointerTarget: wr.domElement,
+        // Fragments stream geometry on camera movement, and walking never fires
+        // camera-controls' own 'control' event because every step is a
+        // transition-less setLookAt. Without this the corridor ahead of you
+        // simply does not load in.
+        onMove: () => { fragmentUpdates.request() },
+        onStateChange: (state) => {
+          if (state.active !== walkTuningApplied) applyWalkOptics(state.active)
+          for (const cb of walkStateSubscribers) {
+            try { cb(state) } catch (err) { console.debug('[Viewer] walk subscriber:', err) }
+          }
+        },
+      })
+    }
+  } catch (err) {
+    console.debug('[Viewer] walk mode unavailable:', err instanceof Error ? err.message : err)
+  }
+
   // ─── Postproduction — start disabled; enable on demand ───────────────────────
   let postproductionReady = false
   try {
@@ -1460,6 +1550,21 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       try { areaMeasurement.endCreation?.() } catch { /* ok */ }
       return
     }
+    // ── Walking: double-click is "go there" ───────────────────────────────────
+    // Re-centring an orbit means nothing while you are standing in a room, and
+    // crossing a building on foot is a minute of holding W. Aim at the floor of
+    // the room you want and arrive standing in it — the interaction every tour
+    // tool converged on, for the same reason.
+    if (walkNav?.isActive()) {
+      if (modelObjects.size === 0) return
+      mouse.set(e.clientX, e.clientY)
+      void (async () => {
+        const point = await pickWorldPoint()
+        if (point) walkNav?.walkTo(point)
+      })()
+      return
+    }
+
     // Re-centre the orbit on whatever was double-clicked, WITHOUT moving the
     // camera. Orbiting only ever revolves around the target, so being unable to
     // move it is being unable to look at anything else — and until now the only
@@ -1808,7 +1913,51 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     resetCamera() {
+      walkNav?.stop()
       void world.camera.controls.setLookAt(30, 24, 36, 0, 2, 0, true)
+    },
+
+    setWalkMode(on: boolean): boolean {
+      if (!walkNav) return false
+      if (on) walkNav.start(); else walkNav.stop()
+      return walkNav.isActive()
+    },
+
+    toggleWalkMode(): boolean {
+      return walkNav ? walkNav.toggle() : false
+    },
+
+    isWalkMode(): boolean {
+      return walkNav?.isActive() ?? false
+    },
+
+    setWalkSpeed(metresPerSecond: number) {
+      walkNav?.setSpeed(metresPerSecond)
+    },
+
+    getWalkSpeed(): number {
+      return walkNav?.getSpeed() ?? 0
+    },
+
+    getWalkState(): WalkState {
+      return walkNav?.getState() ?? { active: false, speed: 0, pointerLocked: false }
+    },
+
+    onWalkStateChange(cb: (state: WalkState) => void): () => void {
+      walkStateSubscribers.add(cb)
+      return () => { walkStateSubscribers.delete(cb) }
+    },
+
+    setWalkMoveInput(forward: number, right: number, up = 0) {
+      walkNav?.setMoveInput(forward, right, up)
+    },
+
+    walkLook(yawDelta: number, pitchDelta: number) {
+      walkNav?.look(yawDelta, pitchDelta)
+    },
+
+    setWalkPointerLock(on: boolean) {
+      walkNav?.setPointerLockEnabled(on)
     },
 
     frameCategory(id, modelId) {
@@ -2689,6 +2838,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     },
 
     openStoreyView(id: string) {
+      // A plan view is an orthographic camera looking straight down. Walking
+      // inside one is a mode with no view of its own — you keep the floor plan
+      // and lose the walls — so the storey wins and the walk ends.
+      walkNav?.stop()
       if (!id || typeof id !== 'string') return
       try {
         // Close any already-open view
@@ -2949,6 +3102,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       // Window-level, so nothing else here would have caught it: without this
       // every reload leaves another set of key listeners holding dead controls.
       unbindNavigation?.()
+      walkNav?.dispose()
       world.camera.controls.removeEventListener('control', onCameraControl)
       world.camera.controls.removeEventListener('rest', onCameraRest)
       fragmentUpdates.dispose()

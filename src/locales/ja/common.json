@@ -65,7 +65,8 @@
       "editing": "編集",
       "camera": "カメラビュー",
       "element": "選択した要素",
-      "mouse": "マウス"
+      "mouse": "マウス",
+      "walk": "ウォークモード"
     },
     "keys": {
       "openFile": "ファイルを開く",
@@ -92,7 +93,15 @@
       "zoom": "ズーム",
       "recentre": "ここを回転の中心に",
       "contextMenu": "要素メニュー",
-      "panMiddle": "パン（中ボタン）"
+      "panMiddle": "パン（中ボタン）",
+      "walkToggle": "ウォークモードの開始／終了",
+      "walkMove": "移動",
+      "walkLook": "見回す",
+      "walkHeight": "上昇／下降",
+      "walkRun": "ダッシュ・微速",
+      "walkSpeed": "歩行速度",
+      "walkGo": "面まで移動",
+      "walkExit": "ウォークモードを終了"
     }
   },
   "upload": {

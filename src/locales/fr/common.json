@@ -65,7 +65,8 @@
       "editing": "Édition",
       "camera": "Vues caméra",
       "element": "Élément sélectionné",
-      "mouse": "Souris"
+      "mouse": "Souris",
+      "walk": "Mode piéton"
     },
     "keys": {
       "openFile": "Ouvrir un fichier",
@@ -92,7 +93,15 @@
       "zoom": "Zoom",
       "recentre": "Recentrer l’orbite ici",
       "contextMenu": "Menu de l’élément",
-      "panMiddle": "Panoramique (milieu)"
+      "panMiddle": "Panoramique (milieu)",
+      "walkToggle": "Entrer / quitter le parcours",
+      "walkMove": "Se déplacer",
+      "walkLook": "Regarder autour",
+      "walkHeight": "Monter / descendre",
+      "walkRun": "Courir · avancer lentement",
+      "walkSpeed": "Vitesse de marche",
+      "walkGo": "Aller vers une surface",
+      "walkExit": "Quitter le parcours"
     }
   },
   "upload": {

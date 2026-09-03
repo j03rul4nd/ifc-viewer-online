@@ -14,6 +14,7 @@ import { usePanelRail } from './hooks/usePanelRail'
 import ValidationPanel from './components/ValidationPanel'
 import ToastContainer from './components/ToastContainer'
 import CameraControls from './components/CameraControls'
+import WalkHud from './components/WalkHud'
 import ModelInfoPanel from './components/ModelInfoPanel'
 import ScenePanel from './components/ScenePanel'
 import MeasurementPanel from './components/MeasurementPanel'
@@ -2500,6 +2501,13 @@ export default function App() {
                       visible={cameraControlsVisible}
                       onToggle={toggleCameraControls}
                     />
+                  )}
+
+                  {/* Walk mode HUD — renders itself only while walking, and
+                      reads the viewer directly (the wheel and pointer lock
+                      change walk state without passing through React). */}
+                  {sceneModels.length > 0 && tourMode !== 'playing' && (
+                    <WalkHud viewerApiRef={viewerApiRef} />
                   )}
 
                   {/* Advanced overlay HUD — shown while the issue overlay is on
