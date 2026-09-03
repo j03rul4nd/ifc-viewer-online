@@ -11,7 +11,7 @@
 //
 // The numpad shortcuts work whether it is open or not; they never needed it.
 
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ViewerAPI } from '../lib/viewer'
 import type { CameraPreset } from '../types'
@@ -83,6 +83,12 @@ const Icon = {
       <path d="M2 6h8M6 2l4 4-4 4" />
     </svg>
   ),
+  Walk: () => (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="2.6" r="1.4" />
+      <path d="M9 5.2 7 7.4v3l1.6 1.4.9 3M7 7.4 5 9.2M9 5.2l2 1.6.8 2.4M8.6 11.8 6.4 14" />
+    </svg>
+  ),
   Camera: () => (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2 5h2l1-2h6l1 2h2v8H2V5Z" />
@@ -105,6 +111,28 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
   ]
 
   const rootRef = useRef<HTMLDivElement>(null)
+
+  // Walk mode lives in the viewer; this mirrors it so the button can show state.
+  const [walking, setWalking] = useState(false)
+
+  const toggleWalk = useCallback(() => {
+    const active = viewerApiRef.current?.toggleWalkMode() ?? false
+    setWalking(active)
+    // Walking with the popover open means navigating around a menu. Starting
+    // the mode IS the errand, so it ends the popover the same way picking a
+    // view does; leaving the mode keeps it open, because you are back to
+    // choosing.
+    if (active && visible) onToggle()
+  }, [viewerApiRef, visible, onToggle])
+
+  // The mode can also be left from the HUD's own exit button, so this button's
+  // lit state follows the viewer rather than its own last click.
+  useEffect(() => {
+    const api = viewerApiRef.current
+    if (!api) return
+    setWalking(api.isWalkMode())
+    return api.onWalkStateChange((s) => setWalking(s.active))
+  }, [viewerApiRef])
 
   const go = useCallback((preset: CameraPreset) => {
     viewerApiRef.current?.setCameraPreset(preset)
@@ -144,10 +172,24 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
       }
       const preset = map[e.code]
       if (preset) { e.preventDefault(); go(preset) }
+
+      // G walks in and out. Escape is the way out that needs no learning —
+      // and only when walking, so it does not steal Escape from every panel.
+      if (e.code === 'KeyG' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault()
+        setWalking(viewerApiRef.current?.toggleWalkMode() ?? false)
+      }
+      // Escape leaves walk mode — but the browser spends the FIRST Escape
+      // releasing the captured cursor, and taking it as "exit" too would drop
+      // people out of the mode every time they let go of the mouse.
+      if (e.code === 'Escape' && viewerApiRef.current?.isWalkMode() && !document.pointerLockElement) {
+        viewerApiRef.current.setWalkMode(false)
+        setWalking(false)
+      }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [go])
+  }, [go, viewerApiRef])
 
   return (
     <div
@@ -175,6 +217,24 @@ export default function CameraControls({ viewerApiRef, visible, onToggle }: Came
               <Icon.Collapse />
             </button>
           </div>
+
+          {/* Walk mode — the one control here that is a MODE, not a jump, so it
+              gets its own row and its own lit state instead of hiding in the
+              grid of one-shot views. */}
+          <button
+            onClick={toggleWalk}
+            title={`${t('walk.title')} (G)`}
+            aria-pressed={walking}
+            className={`flex items-center gap-1.5 w-full px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition-colors ${
+              walking
+                ? 'bg-[rgba(90,140,255,0.18)] border-[rgba(120,160,255,0.45)] text-[var(--text)]'
+                : 'bg-[rgba(12,12,16,0.88)] backdrop-blur-[14px] border-[var(--border)] text-[var(--text-dim)] hover:text-[var(--text)]'
+            }`}
+          >
+            <span className="opacity-80"><Icon.Walk /></span>
+            <span>{walking ? t('walk.exit') : t('walk.enter')}</span>
+            <span className="text-[9px] text-[var(--text-muted)] opacity-60 ml-auto">G</span>
+          </button>
 
           {/* Preset grid — 2 columns */}
           <div

@@ -65,7 +65,8 @@
       "editing": "编辑",
       "camera": "相机视图",
       "element": "选中的构件",
-      "mouse": "鼠标"
+      "mouse": "鼠标",
+      "walk": "漫游模式"
     },
     "keys": {
       "openFile": "打开文件",
@@ -92,7 +93,17 @@
       "zoom": "缩放",
       "recentre": "将旋转中心移到此处",
       "contextMenu": "构件菜单",
-      "panMiddle": "平移（中键）"
+      "panMiddle": "平移（中键）",
+      "walkToggle": "进入／退出漫游",
+      "walkMove": "移动",
+      "walkLook": "环视",
+      "walkHeight": "上升／下降",
+      "walkRun": "加速 · 慢行",
+      "walkSpeed": "行走速度",
+      "walkGo": "前往某个面",
+      "walkExit": "退出漫游",
+      "moveAlways": "移动相机（随时）",
+      "moveAlwaysHeight": "上升／下降"
     }
   },
   "upload": {

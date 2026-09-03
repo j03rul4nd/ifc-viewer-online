@@ -65,7 +65,8 @@
       "editing": "Bearbeitung",
       "camera": "Kameraansichten",
       "element": "Ausgewähltes Element",
-      "mouse": "Maus"
+      "mouse": "Maus",
+      "walk": "Begehungsmodus"
     },
     "keys": {
       "openFile": "Datei öffnen",
@@ -92,7 +93,17 @@
       "zoom": "Zoom",
       "recentre": "Drehpunkt hierher setzen",
       "contextMenu": "Elementmenü",
-      "panMiddle": "Schwenken (Mitte)"
+      "panMiddle": "Schwenken (Mitte)",
+      "walkToggle": "Begehung starten / beenden",
+      "walkMove": "Bewegen",
+      "walkLook": "Umsehen",
+      "walkHeight": "Hoch / runter",
+      "walkRun": "Rennen · schleichen",
+      "walkSpeed": "Gehgeschwindigkeit",
+      "walkGo": "Zu einer Fläche gehen",
+      "walkExit": "Begehung beenden",
+      "moveAlways": "Kamera bewegen (jederzeit)",
+      "moveAlwaysHeight": "Hoch / runter"
     }
   },
   "upload": {

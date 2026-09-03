@@ -175,5 +175,17 @@
     "partial": "Partiel — lacunes avant la remise",
     "insufficient": "Insuffisant pour la remise FM",
     "tip": "Préparation à la remise FM : {{score}}/100 (complétude COBie — pas une certification officielle)"
+  },
+  "walk": {
+    "title": "Mode piéton",
+    "enter": "Parcourir à pied",
+    "exit": "Quitter le parcours",
+    "hint": "WASD se déplacer · glisser pour regarder · Q/E hauteur · Shift courir · double-clic pour y aller",
+    "hintTouch": "Joystick pour se déplacer · glisser pour regarder · double tap pour y aller",
+    "speedHint": "La molette règle la vitesse de marche",
+    "locked": "Curseur capturé",
+    "unlocked": "Maintenir pour regarder",
+    "up": "Monter",
+    "down": "Descendre"
   }
 }

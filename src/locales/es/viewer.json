@@ -175,5 +175,17 @@
     "partial": "Parcial — huecos antes de la entrega",
     "insufficient": "Insuficiente para la entrega FM",
     "tip": "Preparación para entrega FM: {{score}}/100 (completitud COBie — no es una certificación oficial)"
+  },
+  "walk": {
+    "title": "Modo a pie",
+    "enter": "Recorrer a pie",
+    "exit": "Salir del recorrido",
+    "hint": "WASD mover · arrastra para mirar · Q/E altura · Shift correr · doble clic para ir",
+    "hintTouch": "Joystick para mover · arrastra para mirar · doble toque para ir",
+    "speedHint": "La rueda ajusta la velocidad al caminar",
+    "locked": "Cursor capturado",
+    "unlocked": "Mantén para mirar",
+    "up": "Subir",
+    "down": "Bajar"
   }
 }

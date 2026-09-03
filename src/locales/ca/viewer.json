@@ -175,5 +175,17 @@
     "partial": "Parcial — mancances abans del lliurament",
     "insufficient": "Insuficient per al lliurament FM",
     "tip": "Preparació per al lliurament FM: {{score}}/100 (completesa COBie — no és una certificació oficial)"
+  },
+  "walk": {
+    "title": "Mode a peu",
+    "enter": "Recórrer a peu",
+    "exit": "Sortir del recorregut",
+    "hint": "WASD moure · arrossega per mirar · Q/E alçada · Shift córrer · doble clic per anar-hi",
+    "hintTouch": "Joystick per moure · arrossega per mirar · doble toc per anar-hi",
+    "speedHint": "La roda ajusta la velocitat en caminar",
+    "locked": "Cursor capturat",
+    "unlocked": "Mantén per mirar",
+    "up": "Pujar",
+    "down": "Baixar"
   }
 }

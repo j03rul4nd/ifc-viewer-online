@@ -65,7 +65,8 @@
       "editing": "Edició",
       "camera": "Vistes de càmera",
       "element": "Element seleccionat",
-      "mouse": "Ratolí"
+      "mouse": "Ratolí",
+      "walk": "Mode a peu"
     },
     "keys": {
       "openFile": "Obre fitxer",
@@ -92,7 +93,17 @@
       "zoom": "Zoom",
       "recentre": "Centrar el gir aquí",
       "contextMenu": "Menú de l’element",
-      "panMiddle": "Enquadrar (central)"
+      "panMiddle": "Enquadrar (central)",
+      "walkToggle": "Entrar / sortir del recorregut",
+      "walkMove": "Moure's",
+      "walkLook": "Mirar al voltant",
+      "walkHeight": "Pujar / baixar",
+      "walkRun": "Córrer · anar a poc a poc",
+      "walkSpeed": "Velocitat en caminar",
+      "walkGo": "Anar a una superfície",
+      "walkExit": "Sortir del recorregut",
+      "moveAlways": "Moure la càmera (sempre)",
+      "moveAlwaysHeight": "Pujar / baixar"
     }
   },
   "upload": {

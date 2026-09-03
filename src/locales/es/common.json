@@ -65,7 +65,8 @@
       "editing": "Edición",
       "camera": "Vistas de cámara",
       "element": "Elemento seleccionado",
-      "mouse": "Ratón"
+      "mouse": "Ratón",
+      "walk": "Modo a pie"
     },
     "keys": {
       "openFile": "Abrir archivo",
@@ -92,7 +93,17 @@
       "zoom": "Zoom",
       "recentre": "Centrar el giro aquí",
       "contextMenu": "Menú del elemento",
-      "panMiddle": "Encuadrar (central)"
+      "panMiddle": "Encuadrar (central)",
+      "walkToggle": "Entrar / salir del recorrido",
+      "walkMove": "Moverse",
+      "walkLook": "Mirar alrededor",
+      "walkHeight": "Subir / bajar",
+      "walkRun": "Correr · ir despacio",
+      "walkSpeed": "Velocidad al caminar",
+      "walkGo": "Ir a una superficie",
+      "walkExit": "Salir del recorrido",
+      "moveAlways": "Mover la cámara (siempre)",
+      "moveAlwaysHeight": "Subir / bajar"
     }
   },
   "upload": {
