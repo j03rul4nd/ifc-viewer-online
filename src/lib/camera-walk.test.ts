@@ -232,6 +232,79 @@ describe('bindWalkNavigation', () => {
     expect(Math.abs(controls.look.pz)).toBeLessThanOrEqual(2 * 0.1 + 1e-6)
   })
 
+  // ── Ambient movement (the mode is off, the keys still work) ───────────────
+  it('moves on WASD with walk mode off — the keys people press first', () => {
+    nav.setAmbientMovement(true)
+    target.fire('keydown', key('KeyW'))
+    run(1)
+    expect(controls.look.pz).toBeCloseTo(-2, 1)
+    expect(nav.isActive()).toBe(false)
+  })
+
+  it('leaves the orbit rig alone while doing it', () => {
+    nav.setAmbientMovement(true)
+    const radiusBefore = eyeDistanceNow()
+    target.fire('keydown', key('KeyD'))
+    run(1)
+    // The button still orbits, and the orbit still turns around a point at the
+    // same distance — shortening it behind someone who only pressed a key would
+    // leave their next drag spinning around their own face.
+    expect(controls.mouseButtons.left).toBe(ORBIT)
+    expect(eyeDistanceNow()).toBeCloseTo(radiusBefore, 3)
+  })
+
+  it('does not take the arrows or Space from the panels when the mode is off', () => {
+    nav.setAmbientMovement(true)
+    target.fire('keydown', key('ArrowUp'))
+    target.fire('keydown', key('Space'))
+    run(1)
+    expect(controls.look.px).toBe(0)
+    expect(controls.look.py).toBe(0)
+    expect(controls.look.pz).toBe(0)
+  })
+
+  it('does not look on a drag while the mode is off — that is still orbit', () => {
+    nav.setAmbientMovement(true)
+    target.fire('pointerdown', { button: 0, clientX: 0, clientY: 0 })
+    target.fire('pointermove', { clientX: 200, clientY: 0 })
+    nav.tick(1 / 60)
+    expect(controls.look.tx).toBeCloseTo(0, 5)
+  })
+
+  it('stops asking for frames once ambient movement has coasted to a stop', () => {
+    let scheduled = 0
+    let pending: ((t: number) => void) | null = null
+    setup({
+      requestFrame: (cb) => { scheduled++; pending = cb; return scheduled },
+      cancelFrame: () => { pending = null },
+    })
+    const pump = (n: number): void => {
+      for (let i = 0; i < n; i++) { const cb = pending; pending = null; cb?.(0) }
+    }
+    nav.setAmbientMovement(true)
+    expect(scheduled).toBe(0)          // idle costs nothing at all
+
+    target.fire('keydown', key('KeyW'))
+    expect(scheduled).toBe(1)
+    pump(20)
+    const whileHeld = scheduled
+    expect(whileHeld).toBeGreaterThan(1)
+
+    target.fire('keyup', key('KeyW'))
+    pump(400)                          // coast down, then give up
+    const settled = scheduled
+    pump(50)
+    expect(scheduled).toBe(settled)
+  })
+
+  it('gives the keys back when ambient movement is turned off', () => {
+    nav.setAmbientMovement(true)
+    nav.setAmbientMovement(false)
+    target.fire('keydown', key('KeyW'))
+    run(1)
+    expect(controls.look.pz).toBe(0)
+  })
+
   // ── The on-screen stick ───────────────────────────────────────────────────
   it('walks on analog input, at a fraction of the speed for a fraction of the stick', () => {
     nav.start()
