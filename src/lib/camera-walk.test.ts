@@ -461,6 +461,43 @@ describe('bindWalkNavigation', () => {
     expect(nav.getSpeed()).toBe(1)
   })
 
+  it('proposes a speed for a new model, but never overrules one the user chose', () => {
+    nav.suggestSpeed(12)
+    expect(nav.getSpeed()).toBe(12)          // nobody had an opinion yet
+
+    nav.start()
+    target.fire('wheel', wheel(-100))        // the user has one now
+    const chosen = nav.getSpeed()
+    nav.suggestSpeed(30)
+    expect(nav.getSpeed()).toBe(chosen)
+  })
+
+  it('treats an explicit setSpeed as the user having chosen too', () => {
+    nav.setSpeed(8)
+    nav.suggestSpeed(30)
+    expect(nav.getSpeed()).toBe(8)
+  })
+
+  // ── Orthographic views ────────────────────────────────────────────────────
+  it('pans the drawing in an elevation, where walking into the screen shows nothing', () => {
+    // Looking down -Z, orthographic: forward along the view would move the
+    // frustum and change not one pixel, which reads as the keys being dead.
+    setup({ isOrthographic: () => true })
+    nav.setAmbientMovement(true)
+    target.fire('keydown', key('KeyW'))
+    run(1)
+    expect(controls.look.py).toBeCloseTo(2, 1)   // up the screen
+    expect(controls.look.pz).toBeCloseTo(0, 1)   // not into it
+  })
+
+  it('still strafes across the drawing', () => {
+    setup({ isOrthographic: () => true })
+    nav.setAmbientMovement(true)
+    target.fire('keydown', key('KeyD'))
+    run(1)
+    expect(controls.look.px).toBeCloseTo(2, 1)
+  })
+
   // ── Teleport ──────────────────────────────────────────────────────────────
   it('glides to standing height above a double-clicked point', () => {
     nav.start()
