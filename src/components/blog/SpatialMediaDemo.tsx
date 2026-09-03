@@ -122,7 +122,6 @@ export default function SpatialMediaDemo({
   }, [demo])
 
   useEffect(() => {
-    if (phase === 'idle') return
     const onMessage = (event: MessageEvent) => {
       if (event.source !== frameRef.current?.contentWindow) return
       if (event.origin !== window.location.origin) return
@@ -166,7 +165,7 @@ export default function SpatialMediaDemo({
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
-  }, [phase, config])
+  }, [config])
 
   const status = phase === 'loading-model' ? 'Loading IFC…'
     : phase === 'loading-media' ? 'Aligning spatial media…'
