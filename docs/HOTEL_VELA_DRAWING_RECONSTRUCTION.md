@@ -119,3 +119,62 @@ validación IFC4 y recarga completa al terminar. Ejemplo:
 ```powershell
 blender --background --python-exit-code 1 --python scripts/blender/build-hotel-vela.py -- public/models/hotel-vela ARC --fast
 ```
+
+## Tercera revisión: habitaciones y relaciones BIM
+
+Las seis imágenes de esta petición se conservan en
+`demo/blender/hotel-vela-20260905-r3/sources/`. La copia de los tres IFC y de los
+generadores anteriores está en `demo/blender/hotel-vela-20260905-r3/before/`.
+Se conserva el trabajo local de las dos revisiones anteriores.
+
+### Auditoría frente a la nueva documentación
+
+| Parte | Estado al inicio | Intervención / límite de esta revisión |
+|---|---|---|
+| Torre y patio | Envolvente lenticular, retranqueo superior y anexo en U ya reconstruidos | Se conserva su geometría aproximada; no se presenta como medida |
+| Planta 12 | Muros de crujía y hojas sin vínculo a un hueco; una zona bruta | Dormitorios y baños separados, corredor, puertas con jambas y dintel, relaciones de hueco/relleno |
+| Planta 2 | Solo envolvente y zona bruta en la torre | Se incorpora la organización de doble crujía de la imagen 3; extremos singulares y alas pendientes de reconstrucción detallada |
+| Plantas 4 y 24 | Particiones indicativas de las referencias anteriores | Se aplica el mismo sistema de componentes; tamaños y disposición del baño siguen siendo estimaciones |
+| Baños y mobiliario | Ausentes en los módulos de habitaciones | Sanitarios y camas como envolventes paramétricas seleccionables; no son piezas de fabricante |
+| Escalera | Peldaños, descansillos y barandillas de la revisión 2 | Conservada; retorno oculto y continuidad con todos los accesos siguen sin verificación completa |
+| Ascensores | Núcleo estructural bruto y penetraciones MEP | No equivale a cabinas y puertas de ascensor reconstruidas; pendiente |
+| Restaurante y terrazas | Zonas brutas aproximadas | Se conservan; no se afirma una distribución detallada acorde a la imagen 5 |
+| Basamento +2.30 / +6.70 | Datum supuesto, parcialmente relacionado con plantas locales | Pendiente de reconciliar niveles y huellas entre disciplinas |
+| Piscina y chill-out | Sin localización contrastada en el IFC | Pendientes; no se añade un vaso en una posición inventada |
+| Ventanas | Fachada como IfcCurtainWall con montantes | No se convierte artificialmente cada panel en una ventana practicable |
+
+Los nuevos `IfcSpace` usan polígonos que siguen la cara interior aproximada de
+la fachada. Dormitorio y baño no se superponen: cada pareja se agrupa en un
+`IfcZone`, con identificadores internos que **no son los números reales del hotel**.
+En las cuatro plantas intervenidas se retira la antigua zona bruta de torre
+para evitar duplicar superficies con las nuevas habitaciones. Los extremos
+sin detallar quedan sin clasificación espacial fina.
+
+Cada puerta interior tiene un `IfcOpeningElement`, `IfcRelVoidsElement` contra
+su muro y `IfcRelFillsElement` contra la puerta. Los tipos, materiales,
+superficies y propiedades de confianza se exportan al IFC. Los sanitarios son
+`IfcSanitaryTerminal` y las camas `IfcFurniture`, de geometría simplificada.
+
+**Límite de fidelidad:** se interpreta la topología de los dibujos, no se
+digitaliza un plano métrico. Se mantiene el módulo estimado de las revisiones
+anteriores; las dimensiones de baños, camas, carpinterías y espesores no están
+verificadas. No se extrapola este detalle a todas las plantas ni se considera
+terminada la reconstrucción integral descrita en el documento adjunto.
+
+La auditoría reproducible `scripts/blender/audit-hotel-vela-rooms.py` comprueba
+polígonos válidos, ausencia de superposición entre los nuevos espacios de cada
+planta, agregación espacial, triangulación y puertas vinculadas a muros con
+huecos. Es independiente de la prueba del esquema y no acredita fidelidad
+métrica, habitabilidad ni cumplimiento normativo.
+
+Resultado verificado de la tercera revisión: **36/36 pruebas web-ifc aprobadas**,
+IFC4 válido y recarga geométrica en Bonsai. La arquitectura contiene 54 pares
+de dormitorio/baño, 4 corredores detallados, 108 puertas interiores con hueco
+y muro vinculados, 108 sanitarios y 54 camas indicativas. Total ARC: 142 espacios,
+113 puertas y 274 muros. La auditoría de 112 espacios nuevos no detecta
+superposiciones; verifica también el volumen sustraído de cada muro y la
+separación entre WC y lavabo. Informe: `demo/blender/hotel-vela-20260905-r3/audit.json`.
+Se han revisado las vistas de planta en Blender. El IFC ARC validado se instala
+en `public/models/hotel-vela/BCN-IVO-ZZ-XX-M3-A-0002.ifc`; STR y MEP conservan
+sus archivos de entrada. Esto mejora los interiores de las plantas indicadas,
+pero no cierra los pendientes de fidelidad del cuadro anterior.

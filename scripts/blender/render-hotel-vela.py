@@ -155,7 +155,7 @@ def main():
         "hotel-vela-perspective": ((-175.0, -175.0, 122.0), (-10.0, -5.0, 45.0), 55.0),
         "hotel-vela-stair-detail": ((-93.0, -28., 17.), (-40., -28., 17.), 60.),
     }
-    for filename, (location, target, lens) in views.items():
+    for filename, (location, target, lens) in ({} if '--plans-only' in args else views).items():
         camera.location = frame_point(location)
         camera.data.lens = lens
         look_at(camera, frame_point(target))
@@ -168,12 +168,13 @@ def main():
     camera.location = frame_point((-12., -240., 49.))
     look_at(camera, frame_point((-12., -28., 49.)))
     scene.render.filepath = os.path.join(out_dir, "hotel-vela-elevation.png")
-    bpy.ops.render.render(write_still=True)
+    if '--plans-only' not in args:
+        bpy.ops.render.render(write_still=True)
 
     # Plan cut views isolate the authored storey instead of seeing its roof.
     # The neutral floor is generated from the same profile as the STR slab.
     from hotel_vela_geometry import plate_at, ANNEX, link_profiles
-    for level in (4, 12, 24):
+    for level in (2, 4, 12, 24):
         z = 6. + (level-1)*3.25
         level_name = f"Level {level:02d}"
         for obj in list(bpy.data.objects):
@@ -181,7 +182,9 @@ def main():
             if entity is not None or obj.get("qa_ifc_name"):
                 name = (entity.Name or "") if entity else obj["qa_ifc_name"]
                 obj.hide_render = not (
-                    (name.startswith(("Plan ","Core Wall","Annex Room","Annex Corridor")) and level_name in name)
+                    (name.startswith(("Plan ","Core Wall","Annex Room","Annex Corridor")) and level_name in name
+                     and (entity is None or not entity.is_a("IfcSpace"))
+                     and (entity is None or not entity.is_a("IfcOpeningElement")))
                     or name in (f"{level_name} Curtain Wall", f"{level_name} Spandrel")
                     or (level==4 and name in ("Annex Glazing - Level 04","Annex Spandrel - Level 04")))
         mesh = bpy.data.meshes.new(f"QA Floor {level}")

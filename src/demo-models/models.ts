@@ -254,16 +254,16 @@ export const DEMO_MODELS: DemoModel[] = [
     setOrder: 1,
     name: 'Hotel Vela — Architecture',
     description:
-      'Drawing-based reference: curved sail, recessed escape stairs, courtyard wings and indicative interiors on floors 4, 12 and 24. Approximate reconstruction, not as-built.',
+      'Drawing-based reference: curved sail, courtyard wings and 54 indicative bedrooms with bathrooms on floors 2, 4, 12 and 24; selectable interiors and hosted door openings. Approximate reconstruction, not as-built.',
     category: 'Reference',
     fileName: 'BCN-IVO-ZZ-XX-M3-A-0002.ifc',
-    ifcUrl: `${HOTEL_VELA}/BCN-IVO-ZZ-XX-M3-A-0002.ifc?v=20260905-r2`,
+    ifcUrl: `${HOTEL_VELA}/BCN-IVO-ZZ-XX-M3-A-0002.ifc?v=20260905-r3`,
     sourceUrl:
       'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-hotel-vela.py',
     sourceLabel: 'Authored with Blender + Bonsai',
     schema: 'IFC4',
-    approximateSize: '4.1 MB',
-    sizeBytes: 4_113_332,
+    approximateSize: '5.2 MB',
+    sizeBytes: 5229416,
     featured: true,
   },
   {
@@ -275,7 +275,7 @@ export const DEMO_MODELS: DemoModel[] = [
       'Reference structure with changing sail floor plates, courtyard wings, connecting floors and a storey-by-storey core. Coordinated with the architectural model; not a structural design.',
     category: 'Reference',
     fileName: 'BCN-IVO-ZZ-XX-M3-S-0002.ifc',
-    ifcUrl: `${HOTEL_VELA}/BCN-IVO-ZZ-XX-M3-S-0002.ifc?v=20260905-r2`,
+    ifcUrl: `${HOTEL_VELA}/BCN-IVO-ZZ-XX-M3-S-0002.ifc?v=20260905-r3`,
     sourceUrl:
       'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-hotel-vela.py',
     sourceLabel: 'Authored with Blender + Bonsai',
@@ -292,7 +292,7 @@ export const DEMO_MODELS: DemoModel[] = [
       'Representative risers and plant beneath the curved crown, sharing the architectural and structural placement. Service layout is illustrative.',
     category: 'Reference',
     fileName: 'BCN-IVO-ZZ-XX-M3-M-0002.ifc',
-    ifcUrl: `${HOTEL_VELA}/BCN-IVO-ZZ-XX-M3-M-0002.ifc?v=20260905-r2`,
+    ifcUrl: `${HOTEL_VELA}/BCN-IVO-ZZ-XX-M3-M-0002.ifc?v=20260905-r3`,
     sourceUrl:
       'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-hotel-vela.py',
     sourceLabel: 'Authored with Blender + Bonsai',
