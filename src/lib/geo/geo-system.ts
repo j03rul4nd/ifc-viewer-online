@@ -36,6 +36,7 @@ import { describeProfile, summariseProfiles } from './vertical-network'
 import {
   buildRoofPropLayer,
 } from './osm-scene'
+import { SHADOW_ROLES, shadowCameraPlan } from './shadow-policy'
 import { setSurfaceTime, hasAnimatedMaterial } from './surface-shaders'
 import { buildSkyEnvironment } from './sky-environment'
 import { FEATURE_KINDS, type OsmFeature, type FeatureKind } from './osm-features'
@@ -298,6 +299,16 @@ interface EnvSnapshot {
   environment: THREE.Texture | null
   /** Where the key light was pointing before the map aimed it. */
   keyLightPos: THREE.Vector3 | null
+  /**
+   * The shadow camera the viewer had framed around the MODEL.
+   *
+   * Map mode widens it to cover a district, which is the difference between a
+   * building casting onto its own plot and casting onto the street. Restoring
+   * it matters as much as taking it: leaving a district-sized frustum behind
+   * would quietly coarsen every shadow in ordinary model view, and nothing in
+   * that view would explain why.
+   */
+  shadowFrustum: { left: number; right: number; top: number; bottom: number; far: number } | null
 }
 
 export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
@@ -1094,7 +1105,52 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       if (built) { addLayer('tree', built.object) }
     }
 
+    fitShadowCamera()
     return estimatedCount
+  }
+
+  /**
+   * Widen the key light's shadow camera to cover the context that now exists.
+   *
+   * The viewer frames its shadow camera around the MODEL — ±50 units, far 200
+   * — which is right for a building on a turntable and useless the moment the
+   * building has a district around it: everything outside that box casts
+   * nothing, so the context reads as pasted on.
+   *
+   * The frustum is measured from geoRoot's actual bounds rather than from the
+   * Overpass query box, because what is on screen is not what was asked for:
+   * layers get suppressed, budgets truncate, and a frustum sized to the
+   * request would waste half its resolution on empty ground.
+   */
+  function fitShadowCamera(): void {
+    const key = ctx.keyLight
+    if (!key || !geoRoot) return
+
+    const bounds = new THREE.Box3().setFromObject(geoRoot)
+    if (bounds.isEmpty()) return
+    const radius = bounds.getBoundingSphere(new THREE.Sphere()).radius
+    if (!Number.isFinite(radius)) return
+
+    const plan = shadowCameraPlan(
+      radius, key.position.length() || 100, key.shadow.mapSize.width,
+    )
+    const cam = key.shadow.camera
+    cam.left = -plan.halfExtent
+    cam.right = plan.halfExtent
+    cam.top = plan.halfExtent
+    cam.bottom = -plan.halfExtent
+    cam.far = plan.far
+    cam.updateProjectionMatrix()
+
+    if (plan.degraded) {
+      // Honest rather than silent: at this frustum the map size cannot hold a
+      // contact shadow, and a grey smear under every object reads as a bug to
+      // a client even though the geometry is right.
+      log.warn(
+        `shadow map coarse: ${plan.texelSize.toFixed(2)} units per texel over a ` +
+        `${radius.toFixed(0)}-unit scene — contact shadows will smear`,
+      )
+    }
   }
 
   /** The light every procedural surface uses — the terrain's, deliberately. */
@@ -1103,6 +1159,18 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   }
 
   function addLayer(kind: FeatureKind, object: THREE.Object3D): void {
+    // THE ONE PLACE THE CONTEXT JOINS THE SHADOW PASS.
+    //
+    // Here rather than in each builder, for the reason every other cross-layer
+    // decision lives here: the builders in osm-scene are geometry in, geometry
+    // out, and giving each one a private opinion about lighting is how the
+    // vertical axis went wrong before `solveSceneVertical` centralised it.
+    const role = SHADOW_ROLES[kind]
+    object.traverse((o) => {
+      if (!(o as THREE.Mesh).isMesh) return
+      o.castShadow = role.cast
+      o.receiveShadow = role.receive
+    })
     geoRoot!.add(object)
     layerObjects.set(kind, object)
     // Water is the only animated layer today, but asking the object rather than
@@ -1389,6 +1457,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       gridVisible: ctx.getGridVisible(),
       environment: ctx.scene.environment,
       keyLightPos: ctx.keyLight ? ctx.keyLight.position.clone() : null,
+      shadowFrustum: ctx.keyLight
+        ? (() => {
+            const c = ctx.keyLight.shadow.camera
+            return { left: c.left, right: c.right, top: c.top, bottom: c.bottom, far: c.far }
+          })()
+        : null,
       cameraPos: ctx.controls.getPosition(new THREE.Vector3()),
       cameraTarget: ctx.controls.getTarget(new THREE.Vector3()),
     }
@@ -1412,6 +1486,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     ctx.setGridVisible(snapshot.gridVisible)
     ctx.scene.environment = snapshot.environment
     if (ctx.keyLight && snapshot.keyLightPos) ctx.keyLight.position.copy(snapshot.keyLightPos)
+    if (ctx.keyLight && snapshot.shadowFrustum) {
+      const c = ctx.keyLight.shadow.camera
+      const s = snapshot.shadowFrustum
+      c.left = s.left; c.right = s.right; c.top = s.top; c.bottom = s.bottom; c.far = s.far
+      c.updateProjectionMatrix()
+    }
     void ctx.controls.setLookAt(
       snapshot.cameraPos.x, snapshot.cameraPos.y, snapshot.cameraPos.z,
       snapshot.cameraTarget.x, snapshot.cameraTarget.y, snapshot.cameraTarget.z,
