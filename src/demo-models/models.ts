@@ -254,16 +254,16 @@ export const DEMO_MODELS: DemoModel[] = [
     setOrder: 1,
     name: 'Hotel Vela — Architecture',
     description:
-      'Sail envelope: unitised glazing on the surveyed footprint, a spandrel band at every one of its 27 floor lines, and the podium that meets the esplanade.',
+      'Drawing-based reference: curved sail, recessed escape stairs, courtyard wings and indicative interiors on floors 4, 12 and 24. Approximate reconstruction, not as-built.',
     category: 'Reference',
     fileName: 'BCN-IVO-ZZ-XX-M3-A-0002.ifc',
-    ifcUrl: `${HOTEL_VELA}/BCN-IVO-ZZ-XX-M3-A-0002.ifc`,
+    ifcUrl: `${HOTEL_VELA}/BCN-IVO-ZZ-XX-M3-A-0002.ifc?v=20260905-r2`,
     sourceUrl:
       'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-hotel-vela.py',
     sourceLabel: 'Authored with Blender + Bonsai',
     schema: 'IFC4',
-    approximateSize: '128 KB',
-    sizeBytes: 130741,
+    approximateSize: '4.2 MB',
+    sizeBytes: 4_167_264,
     featured: true,
   },
   {
@@ -272,16 +272,16 @@ export const DEMO_MODELS: DemoModel[] = [
     setOrder: 2,
     name: 'Hotel Vela — Structure',
     description:
-      'Raft on reclaimed harbour ground, a full-height core, perimeter columns and a floor plate per storey — the plate changing shape all the way up.',
+      'Reference structure with changing sail floor plates, courtyard wings, connecting floors and a storey-by-storey core. Coordinated with the architectural model; not a structural design.',
     category: 'Reference',
     fileName: 'BCN-IVO-ZZ-XX-M3-S-0002.ifc',
-    ifcUrl: `${HOTEL_VELA}/BCN-IVO-ZZ-XX-M3-S-0002.ifc`,
+    ifcUrl: `${HOTEL_VELA}/BCN-IVO-ZZ-XX-M3-S-0002.ifc?v=20260905-r2`,
     sourceUrl:
       'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-hotel-vela.py',
     sourceLabel: 'Authored with Blender + Bonsai',
     schema: 'IFC4',
-    approximateSize: '811 KB',
-    sizeBytes: 830985,
+    approximateSize: '1.5 MB',
+    sizeBytes: 1_468_417,
   },
   {
     id: 'hotel-vela-mep',
@@ -289,16 +289,16 @@ export const DEMO_MODELS: DemoModel[] = [
     setOrder: 3,
     name: 'Hotel Vela — Services',
     description:
-      'Risers through the core, rooftop air handling and water storage — the smallest file, and the one that proves the three share an origin.',
+      'Representative risers and plant beneath the curved crown, sharing the architectural and structural placement. Service layout is illustrative.',
     category: 'Reference',
     fileName: 'BCN-IVO-ZZ-XX-M3-M-0002.ifc',
-    ifcUrl: `${HOTEL_VELA}/BCN-IVO-ZZ-XX-M3-M-0002.ifc`,
+    ifcUrl: `${HOTEL_VELA}/BCN-IVO-ZZ-XX-M3-M-0002.ifc?v=20260905-r2`,
     sourceUrl:
       'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-hotel-vela.py',
     sourceLabel: 'Authored with Blender + Bonsai',
     schema: 'IFC4',
-    approximateSize: '21 KB',
-    sizeBytes: 21779,
+    approximateSize: '237 KB',
+    sizeBytes: 237_188,
   },
   {
     id: 'ciutadella-pavilion',
