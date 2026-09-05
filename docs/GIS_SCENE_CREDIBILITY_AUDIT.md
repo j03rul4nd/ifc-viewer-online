@@ -176,12 +176,38 @@ definición. No se estira ningún faldón para tapar nada.
 
 Tests: `1091` verdes. Los dos nuevos se verificaron fallando sin el arreglo.
 
-### Fase 3 — Instrumentación del eje A
-Antes de tocar el solver: overlay de depuración que pinte cada feature por su `VerticalConfidence`
-(`surveyed`/`inferred`/`tagged`/`assumed`). El tipo ya existe y su docstring dice que es
-precisamente para esto ("so the debug overlay can explain a floating road by its CAUSE"). Es la
-herramienta que convierte A5/A6 de "síntoma" en "bug localizado", y de paso es la respuesta a la
-restricción de honestidad: lo `assumed` se ve.
+### Fase 3 — Instrumentación del eje A ✅ IMPLEMENTADA
+
+Dos módulos puros nuevos, sin tocar el solver:
+
+- **`vertical-audit.ts`** — censo por calidad de evidencia. Marca una vía sólo cuando la suposición
+  es *portante*: a nivel de suelo un `assumed` no cuesta nada, porque la vía está donde estaría de
+  todos modos. Hundirse cuenta igual que elevarse — un túnel excavado a profundidad por defecto
+  puede acabar dentro de un sótano igual que un viaducto adivinado puede atravesar un edificio. El
+  `assumedShare` se mide contra la escena entera, no contra el subconjunto ya marcado: un
+  denominador de "lo que ya decidí que era interesante" es cómo una métrica se halaga sola.
+- **`vertical-overlay.ts`** — el censo, dibujado. Polilíneas a la cota resuelta, coloreadas por
+  confianza (verde→rojo, la única escala semáforo justificada aquí: el eje va literalmente de bien
+  a mal). Se dibuja **desde los perfiles resueltos**, no tiñendo las mallas reales — teñir daría a
+  cada builder una rama de depuración, y una auditoría que lee la geometría no puede enseñarte el
+  puente que la geometría descartó. Una etapa más arriba sí puede.
+
+Alcanzable desde el mismo handle que el censo textual:
+
+```
+__geoVertical.audit()         // qué cotas son adivinadas, peor primero
+__geoVertical.overlay(true)   // y dónde están
+```
+
+Esto cierra la otra mitad de la restricción de honestidad. El pipeline ya se negaba a blanquear un
+valor por defecto como si fuera medido; **pero una holgura por defecto que nadie puede ver es un
+dato inventado a todos los efectos**, porque nada aguas abajo — ni nadie mirando una captura —
+puede distinguirla de un levantamiento. Ahora se distingue.
+
+Tests: `1114` verdes.
+
+**Pendiente:** el overlay es dev-only. Sacarlo a un toggle en `GeoPanel` es una decisión de producto
+(¿el cliente debe ver qué partes del contexto son inciertas?) y no la tomo yo.
 
 ### Fase 4 — Calidad de asset
 Subdivisión de copa, anclaje de tronco, proporción de coches, resolución del z-fighting de fachada.
