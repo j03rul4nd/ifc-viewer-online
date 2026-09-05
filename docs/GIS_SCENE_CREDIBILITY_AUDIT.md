@@ -1,0 +1,232 @@
+# Auditoría — credibilidad geométrica y visual de la escena GIS
+
+Fecha: 2026-09-05. Rama: `feat/urban-3d-vertical-infrastructure`.
+Escena de referencia: Hotel Vela / Port Vell.
+
+Estado de partida verificado: `npx vitest run src/lib/geo` → **36 ficheros, 1077 tests, todos
+verdes**. Ninguno de los síntomas de las capturas está cubierto por un test que falle. Eso es en sí
+mismo el primer dato: los defectos NO están en la lógica probada, están en el ensamblado, en los
+datums que unen módulos, y en propiedades de render que ningún test puro observa.
+
+---
+
+## 0. La corrección al encuadre de la petición
+
+La petición asumía que "el pipeline GIS→3D pierde la altura". **No es eso.** `vertical.ts` implementa
+una jerarquía de resolución vertical completa y honesta (surveyed → inferred → tagged → assumed),
+con envelope de Lipschitz para el perfil longitudinal, clearances por tipo funcional, y un rechazo
+explícito y razonado del `layer × 5 m` ingenuo. `vertical-network.ts` (1174 líneas) lo resuelve por
+red. `osm-scene.ts` ya emite tableros con espesor, pilas (`buildPierLayer`) y faldón de muelle.
+
+Es decir: **el modelo de alturas que pedías construir ya existe y es mejor que el que yo habría
+propuesto de cero.** Proponer "un modelo de cotas coherente" habría sido reescribir lo que ya está.
+Los síntomas vienen de otra parte, y agruparlos por causa raíz da cuatro causas, no once síntomas.
+
+---
+
+## 1. Diagnóstico priorizado por causa raíz
+
+### C1 — El agua es translúcida sobre el ráster del basemap (opacity 0.72)
+
+`osm-scene.ts:337` — `opacity: layer === 'water' ? 0.72 : 0.92`, con el comentario que lo declara
+deliberado: dejar que la imagen del tile "tiña" la lámina.
+
+El basemap de Port Vell lleva **rotulado y trazado de viales impresos en el ráster**. Con la lámina
+al 72 %, ese 28 % restante es literalmente lo que ves flotando sobre el agua.
+
+Explica los síntomas: A1 (líneas de vial y etiqueta "Rambla de Mar" dibujadas sobre el vano),
+A4 (agua opaca sin transición — no es opaca, es traslúcida sobre una foto).
+
+Esto es importante: **no hay nada que "recortar" ni ninguna máscara que construir.** No estamos
+dibujando viales sobre el agua. Estamos dejando ver una fotografía por debajo. El punto 4 de la
+petición ("máscaras y recorte") ataca un problema que no existe.
+
+### C2 — Agua y estructuras portuarias usan DOS datums distintos
+
+- Agua: `waterLevelM()` (`osm-scene.ts:348`) = **el terreno más bajo bajo su propio contorno**, o sea
+  el DEM.
+- Muelles/pantalanes: `frame.zAboveDatum('sea', 0, 0, deckM)` — el datum de mar.
+
+Los dos sólo coinciden si el DEM bajo el agua lee exactamente el nivel del mar. En Port Vell no lo
+hace: el propio comentario de `buildPierLayer` documenta que el ráster lee **+8,5 m sobre muelle
+plano y +4,7 m sobre agua abierta**, porque es un modelo de superficie con barcos y cubiertas
+dentro. El faldón del muelle es `PIER_DECK_M + QUAY_FACE_M = 3,0 m` fijos, calculado bajo el
+supuesto "un metro basta porque debajo no se ve". Con la lámina caída respecto al datum de mar, ese
+supuesto se rompe y **el canto queda al aire**.
+
+Explica: A3 (muelle flotando con canto suspendido), A2 (masas de tierra como bloques flotando sobre
+el plano de agua), A4 (falta de transición agua-orilla).
+
+Nota sobre honestidad de datos: la solución correcta **no** es bajar el faldón hasta que tape. Es
+hacer que las dos capas compartan datum. Estirar el faldón es fabricar geometría para esconder una
+incoherencia, exactamente lo que la restricción prohíbe.
+
+### C3 — Ninguna malla de contexto participa en el sistema de sombras
+
+`grep -c castShadow src/lib/geo/` → **0**, sobre 32 000 líneas.
+
+Ninguna malla GIS proyecta ni recibe sombras. Y aunque se activaran, no funcionaría: la cámara de
+sombras (`viewer.ts:815-816`) es `left/right/top/bottom = ±50`, `far = 200` — dimensionada para un
+edificio aislado, no para un distrito de varios cientos de metros. `solar-system.ts` es el único
+sitio que activa `castShadow`, y sólo recorre las mallas del modelo BIM.
+
+Explica: B8 (sombras sin relación con la copa ni con la dirección de la luz — **no son sombras**),
+B11 (sin sombra de contacto en la base de los objetos, luz incoherente entre suelo y fachadas).
+
+Sobre las "manchas verdes planas": no existe ningún decal de sombra falsa en el código
+(`tree-seeding.ts` y `props-scene.ts` no dibujan ninguno). La hipótesis principal es que son
+polígonos `green` reales de OSM (alcorques / parterres) renderizados a `opacity: 0.92`, que
+coinciden con la base de cada árbol porque el sembrador los usa como región de siembra. Verificable
+apagando la capa `green` desde `geoStore.setFeatureLayer`: si las manchas desaparecen, es eso.
+
+### C4 — AO y postproceso existen pero están fuera del preset por defecto
+
+SSAO y detección de bordes existen (`viewer.ts:442`, `uiStore.ts:12`) pero cuelgan del preset
+`quality` / del skin de cliente (`ClientPresentationLayout.tsx:10`). La escena fotografiada casi con
+seguridad corría en el preset estándar.
+
+Explica: B11 (falta de AO), y agrava B9/B10 al no haber ningún término de oclusión que dé volumen a
+extrusiones planas.
+
+### Sin causa raíz confirmada (requieren instrumentación antes de tocar nada)
+
+- A5, A6 (túneles a nivel de superficie, viales sin pendiente, cruces coplanares): el solver los
+  resuelve y sus tests pasan. Falta saber **si el solver se está ejecutando en la ruta que se
+  fotografió**. `solveSceneVertical` se invoca desde `osm-scene`, pero `surfaceQuality()`
+  (`geo-system.ts:763`) bifurca por `contextDetail`, y la ruta `simple` usa `MeshBasicMaterial` sin
+  iluminación. Antes de proponer un cambio hay que registrar qué `contextDetail` estaba activo.
+- A1, parte del puente (tablero sin conectar, pilotes que no tocan): `vertical-mesh.test.ts` cubre
+  exactamente este caso ("con el terreno apagado el DEM no pedía subdivisión y el puente salía como
+  un único quad") y pasa. Sospecha: la Rambla de Mar es `man_made=pier` + `surface=wood` — el propio
+  código la nombra en `DECK_SURFACE_COLORS` — o sea que la construye `buildPierLayer` (capa de
+  muelles, sin estribos ni rampas) y **no** la ruta de puentes de `buildLinearLayer`. Se confirma en
+  un minuto inspeccionando el fixture.
+- B7, B9, B10 (árboles low-poly, coches caja, z-fighting en fachada): son calidad de asset, no hay
+  causa raíz oculta. `tree-geometry.ts` usa `IcosahedronGeometry(1, 1)` — subdivisión 1, de ahí el
+  facetado. El tronco en trípode descentrado es un bug real de anclaje: `TREE_PROPORTIONS` tiene
+  `baseAnchored: false` para `broadleaf`, y en la captura los descentrados son justamente de copa
+  ancha.
+
+---
+
+## 2. Por dónde empezar: eje B, con una condición
+
+**Recomendación: eje B (assets y shading), y dentro de él C3 antes que nada.**
+
+El argumento, distinto del que se daría sin leer el código:
+
+C3 no es "pulir materiales". Es que **la mitad del modelo de iluminación no está conectada**. Un
+`castShadow = true` en las mallas GIS más redimensionar la cámara de sombras cambia todas las
+capturas a la vez: da sombra de contacto en la base de cada árbol, cada coche y cada edificio de
+contexto, y hace que el edificio BIM proyecte sobre el paseo — que es exactamente la jerarquía
+visual pedida en el punto 6. Es la intervención con mayor relación mejora/esfuerzo de toda la lista,
+y es reversible con un flag.
+
+C1 es la segunda: es un cambio de una constante y elimina el síntoma que más delata la escena
+(texto de mapa flotando sobre el agua).
+
+El eje A queda para la fase 3 por dos razones: el motor ya existe y funciona, así que el trabajo es
+de instrumentación y conexión, no de construcción; y toca `vertical-network.ts` + `road-network.ts`,
+donde vive el riesgo de regresión sobre 1077 tests verdes.
+
+**La condición que invierte esto:** si la demo enseña vista aérea del conjunto, el muelle flotando y
+el puente sin apoyos son lo primero que salta, y entonces C2 sube a primera posición. C2 es además
+la única causa raíz cuyo arreglo es genuinamente arquitectónico (unificar datums) y no cosmético.
+
+---
+
+## 3. Plan por fases
+
+### Fase 1 — Iluminación coherente y agua honesta ✅ IMPLEMENTADA
+C3 + C1. Sin cambios en geometría ni en el solver.
+
+Entregado:
+- `shadow-policy.ts` + `.test.ts` (nuevo, puro): rol de sombra por `FeatureKind` y dimensionado del
+  frustum. Los volúmenes en pie proyectan y reciben; el suelo drapeado sólo recibe (proyectar sobre
+  sí mismo es acné de sombra a escala de distrito, irreparable con bias); el agua queda fuera
+  mientras siga siendo transparente.
+- `geo-system.ts`: aplicación de la política en `addLayer` — el único punto de ensamblado, para no
+  dar a cada builder una opinión privada sobre iluminación; `fitShadowCamera()` mide los bounds
+  reales de `geoRoot` (no la caja Overpass: las capas se suprimen y los presupuestos truncan) y
+  avisa por log cuando el texel es demasiado grosero, en vez de servir un borrón en silencio; el
+  frustum entra en `EnvSnapshot` y se restaura al salir de map mode.
+- `osm-scene.ts`: agua opaca con `depthWrite`, y `WATER_COLOR` levantado a `0x3f6f8f` porque el
+  valor anterior contaba con que el tile aportara un cuarto del aclarado.
+- Tests: 1089 verdes (1077 previos + 12 nuevos), `tsc --noEmit` limpio.
+
+**Pendiente de la pasada visual.** El color del agua y la densidad de las sombras son juicios que
+ningún test resuelve. Overpass se satura con 3-5 consultas seguidas, así que la verificación es UNA
+pasada planificada, no iteración.
+
+### Fase 2 — Unificar el datum agua/mar
+C2. Hacer que `waterLevelM()` y `frame.zAboveDatum('sea', …)` produzcan la misma cota, o que el agua
+se nivele contra el datum de mar y no contra el DEM. Requiere decidir qué pasa donde no hay dato de
+marea: degradar visible, no rellenar.
+
+### Fase 3 — Instrumentación del eje A
+Antes de tocar el solver: overlay de depuración que pinte cada feature por su `VerticalConfidence`
+(`surveyed`/`inferred`/`tagged`/`assumed`). El tipo ya existe y su docstring dice que es
+precisamente para esto ("so the debug overlay can explain a floating road by its CAUSE"). Es la
+herramienta que convierte A5/A6 de "síntoma" en "bug localizado", y de paso es la respuesta a la
+restricción de honestidad: lo `assumed` se ve.
+
+### Fase 4 — Calidad de asset
+Subdivisión de copa, anclaje de tronco, proporción de coches, resolución del z-fighting de fachada.
+
+---
+
+## 4. Fase 1 — detalle técnico
+
+### 4.1 Conectar el contexto a las sombras
+
+Las mallas GIS se crean en `osm-scene.ts` (`osm-piers`, capas de superficie, lineales, props). El
+punto de conexión correcto es donde se ensambla el grupo, en `geo-system.ts`, no en cada builder:
+mantiene la pureza de los módulos y deja un solo sitio que revertir.
+
+- Recorrer el grupo GIS al montarlo y activar `castShadow`/`receiveShadow` por tipo de capa:
+  edificios de contexto, piers, árboles y props **proyectan**; las superficies de suelo (green,
+  sand, rock, water) **sólo reciben**. Un plano de suelo que proyecta sombras sobre sí mismo es
+  acné de sombra garantizado.
+- El agua no debe recibir sombra mientras siga siendo `transparent` — Three no lo resuelve bien y
+  el resultado es peor que no tenerla.
+
+### 4.2 Redimensionar la cámara de sombras
+
+`viewer.ts:815-817` está fijado a ±50 / far 200. Debe derivarse del radio real de la escena GIS,
+que `geo-system` ya conoce (la caja de consulta Overpass). Con ±700 y `mapSize` 2048 la resolución
+efectiva cae a ~0,7 m/texel, aceptable para contexto urbano pero **no** para la sombra de contacto
+del edificio BIM. Dos opciones, recomendada la primera:
+
+1. **Cascada de dos luces**: la direccional actual, estrecha y de alta resolución, sigue sirviendo
+   al modelo BIM; una segunda direccional con el mismo vector de sol y frustum ancho cubre el
+   contexto. Cuesta una pasada de sombra más, aceptable en gama media.
+2. Una sola cámara ancha, y aceptar que el BIM pierde definición de sombra. Más barato, peor
+   justamente en el objeto protagonista.
+
+**CORRECCIÓN a la primera versión de esta auditoría.** Se afirmó aquí que la direccional de
+`viewer.ts` tenía su `position.set(40, 60, 30)` hardcodeada sin relación con el `sun` de los
+shaders, y que unificarlas era el arreglo de B9. **Es falso.** `geo-system.ts:1209 aimKeyLight()`
+ya reorienta la luz del visor hacia el sol del relieve cada vez que se reconstruye el cielo, y cede
+explícitamente ante Sun Study. Su docstring nombra el bug que evita ("visiblemente DOS soles"). Ese
+`position.set` es sólo el valor inicial antes de que map mode tome el control.
+
+O sea: el sol ya estaba unificado. Lo que faltaba de C3 no era la dirección de la luz, era que
+**nadie proyectaba** y que el frustum era de tamaño de maqueta. La incoherencia B9 que se observa en
+las capturas es consecuencia de la ausencia de sombras, no de dos vectores distintos.
+
+### 4.3 Agua
+
+Cambiar `opacity` de 0.72 a 1.0 para la capa `water` y dejar `depthWrite: true`. El basemap deja de
+verse a través, y con él la etiqueta y los viales impresos. Se pierde el tintado deliberado: hay que
+compensar el color, porque `WATER_COLOR = 0x2c5a7a` fue elegido para verse mezclado con el tile, no
+solo.
+
+Verificable sin píxeles: un test que afirme que el material de la capa `water` no es transparente
+sobre el fixture de Port Vell, y `portvell-benchmark.test.ts` como red de seguridad.
+
+### 4.4 Orden de verificación
+
+1. `npx vitest run src/lib/geo` verde antes y después de cada paso.
+2. Captura de la misma cámara antes/después (el pipeline de props documenta cómo sacar píxeles de
+   la app real — ver memoria `project_showcase_props_pipeline.md`).
+3. Cada paso en su propio commit, revertible por separado.
