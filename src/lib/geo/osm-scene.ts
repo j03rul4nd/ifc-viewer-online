@@ -299,7 +299,7 @@ function buildSimpleSurface(
     // it — the surface of a river is not the height of its banks.
     let flatZ = 0
     if (layer === 'water') {
-      flatZ = frame.zAtElevationM(waterLevelM(ring, frame) + lift)
+      flatZ = frame.zAtElevationM(waterLevelM(ring, frame, f.isSea === true) + lift)
     }
 
     // Ground cover is coloured by WHAT IT IS: a forest is much darker than a
@@ -365,9 +365,31 @@ function buildSimpleSurface(
   return { object: mesh, count, dropped }
 }
 
-/** Level a water body sits at: the LOWEST ground under its own outline. */
-function waterLevelM(ring: ReadonlyArray<THREE.Vector2>, frame: GroundFrame): number {
-  return frame.groundRangeM(ring).minM
+/**
+ * Level a water body sits at, in the DEM's own datum.
+ *
+ * TWO KINDS OF WATER, TWO DATUMS, and conflating them is what left the harbour
+ * hanging.
+ *
+ * Inland water — a river, a lake, a dock — sits at a local level that only the
+ * terrain around it knows, so it is levelled at the LOWEST ground under its own
+ * outline: the surface of a river is not the height of its banks.
+ *
+ * The sea is not a local level. It sits at the sea datum by definition, and the
+ * DEM is the worst available witness to where that is: over this harbour the
+ * raster reads +8.5 m on a flat quay and +4.7 m on open water, because it is a
+ * surface model full of moored vessels and terminal roofs. Taking the minimum
+ * of THAT put the sea surface below the datum the quays are built on, so every
+ * quay's 3 m skirt stopped reaching the water and its underside hung in the
+ * air — the floating-quay symptom, which was never a missing wall.
+ *
+ * `buildPierLayer` has always used the sea datum. This is the other half of
+ * that decision, and until now the two halves disagreed.
+ */
+function waterLevelM(
+  ring: ReadonlyArray<THREE.Vector2>, frame: GroundFrame, isSea: boolean,
+): number {
+  return isSea ? frame.seaLevelM : frame.groundRangeM(ring).minM
 }
 
 /** The vertical frame these options describe. Built once per layer builder. */
@@ -580,7 +602,7 @@ function buildDetailedSurface(
     const flatZ = isWater
       ? frame.zAtElevationM(waterLevelM(
           ringM.map((p) => new THREE.Vector2(originX + p.x * mToN, originY + p.y * mToN)),
-          frame,
+          frame, f.isSea === true,
         ) + lift)
       : 0
     const shoreDist = isWater ? distanceToRing(mesh.points, ringM) : null

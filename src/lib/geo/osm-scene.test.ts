@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, bufferCentreline, buildLinearLayer,
-  dashCentreline, MAX_TREES, MAX_SEEDED_TREES,
+  dashCentreline, MAX_TREES, MAX_SEEDED_TREES, buildPierLayer,
 } from './osm-scene'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import type { OsmFeature } from './osm-features'
@@ -78,6 +78,53 @@ describe('buildSurfaceLayer', () => {
     })!
     const zOf = (m: typeof low): number => m.object.geometry.getAttribute('position').getZ(0)
     expect(zOf(varying)).toBeCloseTo(zOf(low), 12)
+  })
+
+  it('levels THE SEA on the sea datum, not on the DEM under it', () => {
+    // THE FLOATING-QUAY BUG. Over a harbour the DEM is a surface model full of
+    // moored ships and terminal roofs: here it reads 40 m everywhere while the
+    // sea datum says 2 m. Levelling the sea against that raster dropped the
+    // water surface far from the datum the quays are built on, and the quay's
+    // skirt — a fixed 3 m — stopped reaching it. The underside hung in the air.
+    // Asserted as INVARIANCE rather than as a number: the sea's height must not
+    // depend on the raster at all. Two wildly different DEMs, one sea level.
+    const withGround = (m: number) => ({
+      ...OPTS, sampleGroundM: () => m, seaLevelM: 2, anchorElevationM: 0,
+    })
+    const zOf = (f: OsmFeature, groundM: number): number =>
+      buildSurfaceLayer([f], 'water', withGround(groundM))!
+        .object.geometry.getAttribute('position').getZ(0)
+
+    const sea = area('water', 'sea-0', { isSea: true })
+    expect(zOf(sea, 40)).toBe(zOf(sea, 400))
+
+    // Inland water still reads the ground: a lake DOES sit at its local level,
+    // and pinning it to sea level would be the same mistake in reverse.
+    const lake = area('water', 'w1')
+    expect(zOf(lake, 40)).not.toBe(zOf(lake, 400))
+  })
+
+  it('puts the sea at the same datum a quay deck is measured from', () => {
+    // The two halves of the same decision. buildPierLayer has always used
+    // zAboveDatum('sea', …); until the sea surface joined it, the two disagreed
+    // by however much the raster was wrong that day.
+    const seaOpts = { ...OPTS, sampleGroundM: () => 40, seaLevelM: 2, anchorElevationM: 0 }
+    const sea = buildSurfaceLayer(
+      [area('water', 'sea-0', { isSea: true })], 'water', seaOpts,
+    )!
+    const quay = buildPierLayer([{
+      ...area('water', 'q1'), kind: 'pier',
+      style: { roofShape: 'flat', roofHeightM: 0, pierKind: 'quay' },
+    }], seaOpts)!
+
+    const seaZ = sea.object.geometry.getAttribute('position').getZ(0)
+    const quayPos = quay.object.geometry.getAttribute('position')
+    const quayZs = Array.from({ length: quayPos.count }, (_, i) => quayPos.getZ(i))
+    // The quay's deck stands above the sea, and its skirt reaches BELOW it —
+    // which is the whole reason a quay reads as the built edge of the land
+    // rather than a plank floating on it.
+    expect(Math.max(...quayZs)).toBeGreaterThan(seaZ)
+    expect(Math.min(...quayZs)).toBeLessThan(seaZ)
   })
 
   it('lets greenery FOLLOW the terrain per vertex', () => {
