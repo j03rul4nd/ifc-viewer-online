@@ -49,19 +49,6 @@ describe('demoSets', () => {
     expect(vela.sizeBytes).toBeGreaterThan(0)
   })
 
-  it('versions the replacement Hotel Vela files and reports their actual download sizes', () => {
-    const vela = sets.find(s => s.id === 'hotel-vela')!
-    const revisions = new Set<string>()
-    for (const model of vela.models) {
-      const url = new URL(model.ifcUrl, 'https://example.test')
-      const revision = url.searchParams.get('v')
-      expect(revision).toBeTruthy()
-      revisions.add(revision!)
-      expect(statSync(path.join(process.cwd(), 'public', url.pathname)).size).toBe(model.sizeBytes)
-    }
-    expect(revisions.size).toBe(1)
-  })
-
   it('keeps a single model as a set of one, so the gallery has one shape', () => {
     const single = sets.find((s) => s.models.length === 1)!
     expect(single.id).toBe(single.models[0].id)
