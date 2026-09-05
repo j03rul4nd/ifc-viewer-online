@@ -392,8 +392,14 @@ function waterLevelM(
   return isSea ? frame.seaLevelM : frame.groundRangeM(ring).minM
 }
 
-/** The vertical frame these options describe. Built once per layer builder. */
-function groundFrameFor(opts: LayerMeshOptions): GroundFrame {
+/**
+ * The vertical frame these options describe. Built once per layer builder.
+ *
+ * Exported so anything drawing INTO this scene resolves height the same way
+ * rather than reconstructing the parameters itself. Two places deriving one
+ * datum from the same inputs is how the sea and the quays drifted apart.
+ */
+export function groundFrameFor(opts: LayerMeshOptions): GroundFrame {
   return createGroundFrame({
     anchorLat: opts.anchorLat,
     anchorElevationM: opts.anchorElevationM,

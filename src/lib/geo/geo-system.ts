@@ -34,9 +34,11 @@ import {
 } from './osm-scene'
 import { describeProfile, summariseProfiles } from './vertical-network'
 import {
-  buildRoofPropLayer,
+  buildRoofPropLayer, groundFrameFor,
 } from './osm-scene'
 import { SHADOW_ROLES, shadowCameraPlan } from './shadow-policy'
+import { auditVertical, describeAudit } from './vertical-audit'
+import { buildVerticalOverlay, disposeVerticalOverlay, type VerticalOverlay } from './vertical-overlay'
 import { setSurfaceTime, hasAnimatedMaterial } from './surface-shaders'
 import { buildSkyEnvironment } from './sky-environment'
 import { FEATURE_KINDS, type OsmFeature, type FeatureKind } from './osm-features'
@@ -315,6 +317,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let engine: BasemapEngine | null = null
   let geoRoot: THREE.Group | null = null
   let snapshot: EnvSnapshot | null = null
+  /** The layer options of the last build, so the overlay can be raised later. */
+  let lastLayerOpts: LayerMeshOptions | null = null
+  let verticalOverlay: VerticalOverlay | null = null
+  let verticalOverlayOpts: { includeConfident?: boolean } | null = null
   let placement: GeoPlacement | null = null
   let provider: MapProvider | null = null
   let rafId: number | null = null
@@ -637,6 +643,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       engine = null
       placement = null
       provider = null
+      lastLayerOpts = null
+      verticalOverlayOpts = null
 
       restoreSnapshot()
       ctx.setSceneTuneLock(false)
@@ -1002,6 +1010,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // the time it is a triangle. This is where they are still written down.
       //   __geoVertical.summary()
       //   __geoVertical.describe('w51')
+      //   __geoVertical.audit()          — which heights are guesses, worst first
+      //   __geoVertical.overlay(true)    — and where they are
       const solvedNow = opts.vertical
       ;(globalThis as Record<string, unknown>).__geoVertical = {
         profiles: solvedNow,
@@ -1010,6 +1020,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
           const hit = solvedNow.get(id)
           return hit ? describeProfile(hit) : `no vertical profile for "${id}"`
         },
+        audit: () => describeAudit(auditVertical(solvedNow.values())),
+        overlay: (on = true, includeConfident = false) =>
+          setVerticalOverlay(on ? { includeConfident } : null),
       }
     }
 
@@ -1105,8 +1118,48 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       if (built) { addLayer('tree', built.object) }
     }
 
+    // Kept so the overlay can be switched on later without a rebuild: the
+    // profiles are already solved, and re-running Overpass to look at a debug
+    // layer would be a rude way to answer a question about data we hold.
+    lastLayerOpts = opts
+    if (verticalOverlayOpts) applyVerticalOverlay()
+
     fitShadowCamera()
     return estimatedCount
+  }
+
+  /**
+   * Show or hide the vertical-confidence overlay. `null` hides it.
+   *
+   * Dev-facing today, reached through `__geoVertical.overlay()` beside the text
+   * census it draws. It answers the question the census cannot: not how many
+   * heights are guesses, but WHERE they are — which is what tells you a
+   * district's guesses are all one unmapped interchange rather than scattered.
+   */
+  function setVerticalOverlay(opts: { includeConfident?: boolean } | null): string {
+    verticalOverlayOpts = opts
+    return applyVerticalOverlay()
+  }
+
+  function applyVerticalOverlay(): string {
+    if (verticalOverlay) {
+      verticalOverlay.object.removeFromParent()
+      disposeVerticalOverlay(verticalOverlay)
+      verticalOverlay = null
+    }
+    if (!verticalOverlayOpts) return 'vertical overlay off'
+    if (!geoRoot || !lastLayerOpts?.vertical) return 'no solved scene to overlay'
+
+    const frame = groundFrameFor(lastLayerOpts)
+    const built = buildVerticalOverlay(lastLayerOpts.vertical.values(), {
+      zAtElevationM: frame.zAtElevationM,
+      includeConfident: verticalOverlayOpts.includeConfident,
+    })
+    if (!built) return 'nothing to flag: every solved height carries real evidence'
+
+    verticalOverlay = built
+    geoRoot.add(built.object)
+    return `overlaying ${built.count} ways (${built.assumedCount} on a default clearance)`
   }
 
   /**
@@ -1236,6 +1289,15 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     for (const [, obj] of layerObjects) disposeLayer(obj)
     layerObjects.clear()
     animatedLayers.length = 0
+    // The overlay is rebuilt from the next solve rather than carried across it:
+    // it describes a specific solved scene, and showing it over a different one
+    // would be an instrument reporting on data it no longer holds. The REQUEST
+    // (verticalOverlayOpts) survives, so a session left with it on stays on.
+    if (verticalOverlay) {
+      verticalOverlay.object.removeFromParent()
+      disposeVerticalOverlay(verticalOverlay)
+      verticalOverlay = null
+    }
   }
 
   /** Re-extrude the cached features against the current ground. */
