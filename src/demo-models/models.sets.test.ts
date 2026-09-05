@@ -5,8 +5,6 @@
 // loads an envelope with no structure in it and concludes the viewer is broken.
 
 import { describe, it, expect } from 'vitest'
-import { statSync } from 'node:fs'
-import path from 'node:path'
 import { DEMO_MODELS, demoSets, sortedDemoModels } from './models'
 
 describe('demoSets', () => {
