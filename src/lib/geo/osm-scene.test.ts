@@ -104,6 +104,30 @@ describe('buildSurfaceLayer', () => {
     const built = buildSurfaceLayer([area('water', 'w1')], 'water', OPTS)!
     expect(built.object.geometry.getAttribute('color')).toBeUndefined()
   })
+
+  it('keeps water OPAQUE so the basemap cannot print through it', () => {
+    // THE REGRESSION THIS GUARDS. At 0.72 the basemap tile showed through the
+    // sea, and over a harbour that tile carries road casings and place labels:
+    // the "Rambla de Mar" caption and a carriageway ran across open water in
+    // every view of the bridge. Nothing was being drawn on the water — the
+    // water was being drawn on a map. If this ever goes transparent again, the
+    // labels come back.
+    const material = (buildSurfaceLayer([area('water', 'w1')], 'water', OPTS)!
+      .object.material as THREE.MeshBasicMaterial)
+    expect(material.transparent).toBe(false)
+    expect(material.opacity).toBe(1)
+    // An opaque sea must write depth or the tiles it covers z-fight through it.
+    expect(material.depthWrite).toBe(true)
+  })
+
+  it('leaves the blending layers alone', () => {
+    // The opacity change is water-only: greenery still sits a hair under one so
+    // its seam with the tiles does not read as a hard cutout.
+    const material = (buildSurfaceLayer([area('green', 'g1')], 'green', OPTS)!
+      .object.material as THREE.MeshBasicMaterial)
+    expect(material.transparent).toBe(true)
+    expect(material.opacity).toBeCloseTo(0.92, 5)
+  })
 })
 
 describe('bufferCentreline', () => {

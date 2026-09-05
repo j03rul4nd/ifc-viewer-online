@@ -136,7 +136,16 @@ export interface LayerMeshOptions {
 const FALLBACK_SUN: SurfaceSun = { azimuthDeg: 315, altitudeDeg: 45 }
 
 /** Surface colours. Deliberately muted — this is context, not the subject. */
-const WATER_COLOR = new THREE.Color(0x2c5a7a)
+/**
+ * Open water, as seen ON ITS OWN.
+ *
+ * Lifted from the 0x2c5a7a this was, because that value was chosen to be seen
+ * at 72 % over a pale basemap tile: the tile was doing about a quarter of the
+ * lightening. With the layer opaque (see the material note in
+ * `buildSimpleSurface`) the old value renders as near-black harbour. This is
+ * the same hue, raised to land where the blend used to.
+ */
+const WATER_COLOR = new THREE.Color(0x3f6f8f)
 const BRIDGE_COLOR = new THREE.Color(0x6b6b6e)
 const TRUNK_COLOR = new THREE.Color(0x5b4636)
 
@@ -323,19 +332,31 @@ function buildSimpleSurface(
   geometry.computeVertexNormals()
   geometry.computeBoundingSphere()
 
+  // WATER IS OPAQUE, and this is the third and last layer to make that
+  // correction for the same reason.
+  //
+  // Greenery went 0.45 → 0.92 because the raster park printed on the basemap
+  // tile read straight through our own. The road layer made the same move (see
+  // the OPAQUE note in buildLinearLayer). Water was left translucent on the
+  // argument that "a river genuinely shows what is under it" — true of a river
+  // over modelled bed, and false of everything this viewer actually draws:
+  // there is no bathymetry under the sea here, so the 28 % showing through was
+  // never water depth. It was the basemap photograph, and over a harbour that
+  // photograph has ROAD CASINGS AND PLACE LABELS PRINTED ON IT. That is the
+  // "Rambla de Mar" caption and the carriageway lines floating across the open
+  // span in every screenshot of the bridge.
+  //
+  // Nothing was drawn over the water. The water was drawn over a map.
+  const isWaterLayer = layer === 'water'
   const material = new THREE.MeshBasicMaterial({
-    color: layer === 'water' ? WATER_COLOR : 0xffffff,
+    color: isWaterLayer ? WATER_COLOR : 0xffffff,
     vertexColors: colors.length > 0,
-    transparent: true,
-    // Water stays translucent — a river genuinely shows what is under it. Ground
-    // cover does NOT: grass is a surface, not a tint over the map underneath,
-    // and at 0.45 the raster park printed on the basemap tile read straight
-    // through our own, which is why greenery looked like a wash rather than
-    // ground. This is the same correction the road layer already made for
-    // exactly the same reason — see the OPAQUE note in buildLinearLayer. A hair
-    // under one keeps the seam with the tiles from reading as a hard cutout.
-    opacity: layer === 'water' ? 0.72 : 0.92,
-    depthWrite: false,
+    transparent: !isWaterLayer,
+    // A hair under one keeps the seam with the tiles from reading as a hard
+    // cutout, for the layers that still blend.
+    opacity: isWaterLayer ? 1 : 0.92,
+    // An opaque sea must write depth, or the tiles it covers z-fight through it.
+    depthWrite: isWaterLayer,
     side: THREE.DoubleSide,
   })
   const mesh = new THREE.Mesh(geometry, material)
