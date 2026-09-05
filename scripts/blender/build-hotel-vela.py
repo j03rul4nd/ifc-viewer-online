@@ -696,6 +696,8 @@ class Model:
             "Anodised Aluminium": ((.64, .68, .71), 0.),
             "Concrete C35/45": ((.64, .63, .60), 0.),
             "Galvanised Steel": ((.42, .46, .49), 0.),
+            "Indicative interior timber": ((.48, .31, .19), 0.),
+            "Indicative sanitary ceramic": ((.92, .93, .94), 0.),
         }
         for material in self.ifc.by_type("IfcMaterial"):
             if material.Name not in palette:
@@ -941,43 +943,8 @@ def build_arc(out_dir):
                       "Side glazing only: connection ends remain open",name,
                       (x-.08,min(ys),z),(.16,max(ys)-min(ys),height-SLAB_T),code="curtain")
 
-    # Only the two supplied detailed plans receive internal partitions. The
-    # central corridor, repeated bays and larger upper suites are readable;
-    # bathrooms, furniture and exact door schedules are not asserted.
-    for level, bay in (("Level 04", 4.95), ("Level 12", 4.95), ("Level 24", 8.10)):
-        z = LEVEL_Z[level]
-        profile = tower_plate(tower_t(level))
-        x0 = min(p[0] for p in profile) + 6.5
-        x1 = CORE[0] - 1.0
-        clear = TYPICAL_H - SLAB_T
-        divisions = [x0]
-        while divisions[-1] + bay < x1 - 2.0:
-            divisions.append(divisions[-1] + bay)
-        divisions.append(x1)
-        for side, corridor_y, outward in (("South", -29.65, -1), ("North", -26.35, 1)):
-            for j, (a, b) in enumerate(zip(divisions, divisions[1:])):
-                # Real door break; leaf kept within the opening.
-                for k, (start, width) in enumerate(((a, .65), (a+1.65, b-a-1.65))):
-                    if width > .05:
-                        m.box("IfcWall", partition_type,
-                              f"Plan Corridor {level} {side} {j+1}-{k+1}",
-                              "Approximate partition from supplied plan; 1 m door break",
-                              level, (start, corridor_y-.075, z), (width, .15, clear), code="wall")
-                door = m.box("IfcDoor", door_type, f"Plan Room Door {level} {side} {j+1}",
-                             "Indicative door location from plan; dimensions estimated", level,
-                             (a+.65, corridor_y-.025, z), (1., .05, 2.1), code="door")
-                kit.edit(ifc, door, OverallWidth=1., OverallHeight=2.1)
-            for j, x in enumerate(divisions):
-                distance = 0.2
-                # Stop inside the skin, including at the clipped upper floors.
-                while (point_in_ring((x, corridor_y+outward*(distance+.1)), profile)
-                       and distance_to_ring((x, corridor_y+outward*(distance+.1)), profile) > .45):
-                    distance += .1
-                if distance > .4:
-                    origin_y = corridor_y if outward > 0 else corridor_y-distance
-                    m.box("IfcWall", partition_type, f"Plan Party Wall {level} {side} {j+1}",
-                          "Indicative room bay; supplied plan topology, approximate dimensions",
-                          level, (x-.075, origin_y, z), (.15, distance, clear), code="wall")
+    from hotel_vela_rooms import build_rooms
+    build_rooms(m, kit, LEVEL_Z, plate_at, stair_edge, partition_type, space_type)
 
     from hotel_vela_details import low_floor_details
     low_floor_details(m, kit, partition_type, space_type, railing_type)
@@ -986,6 +953,8 @@ def build_arc(out_dir):
     # They are explicitly tagged as approximate zones based on the supplied
     # plans, not as an as-built interior layout.
     for name in OCCUPIED:
+        if name in ("Level 02", "Level 04", "Level 12", "Level 24"):
+            continue  # Detailed spaces replace overlapping gross tower zones.
         nxt = _next_level(name)
         if nxt is None:
             continue

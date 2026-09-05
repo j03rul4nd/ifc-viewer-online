@@ -195,7 +195,9 @@ suite('the federated set', () => {
   it('stays a set somebody can be handed at a stand', () => {
     const mb = SET.reduce((n, f) => n + statSync(path.join(DIR, f)).size, 0) / 1_048_576
     expect(mb).toBeGreaterThan(0.3)
-    expect(mb, 'a landmark nobody waits for').toBeLessThan(6)
+    // Room solids, hosted openings and confidence metadata now form part of
+    // the deliverable; keep an explicit small-file budget for the full set.
+    expect(mb, 'federated landmark including selectable interiors').toBeLessThan(8)
   })
 
   // THE POINT OF FEDERATION: three files, one place. If the disciplines
@@ -507,12 +509,12 @@ suite('structure and services are coordinated', () => {
     use('A')
   })
 
-  it('provides drawing-based partitions on the three supplied detailed floors', () => {
+  it('provides drawing-based partitions on the four supplied detailed floors', () => {
     use('A')
     const partitions = of('IfcWall').filter(x => str(x.Name).startsWith('Plan '))
     expect(partitions.length).toBeGreaterThan(20)
-    for (const wall of partitions) expect(str(wall.Name)).toMatch(/Level (04|12|24)/)
-    for (const level of ['04', '12', '24']) {
+    for (const wall of partitions) expect(str(wall.Name)).toMatch(/Level (02|04|12|24)/)
+    for (const level of ['02', '04', '12', '24']) {
       expect(partitions.filter(x => str(x.Name).includes(`Level ${level}`)).length).toBeGreaterThan(5)
     }
     expect(of('IfcSurfaceStyleRendering').length).toBeGreaterThanOrEqual(3)
@@ -555,6 +557,35 @@ suite('structure and services are coordinated', () => {
 })
 
 // ── Where it is ───────────────────────────────────────────────────────────────
+
+suite('drawing-derived room interiors', () => {
+  it('keeps bedrooms and bathrooms selectable on each documented tower floor', () => {
+    for (const level of ['Level 02', 'Level 04', 'Level 12', 'Level 24']) {
+      const rooms = of('IfcSpace').filter(s => str(s.Name).startsWith(`Plan Guest Room ${level}`))
+      const baths = of('IfcSpace').filter(s => str(s.Name).startsWith(`Plan Bathroom ${level}`))
+      expect(rooms.length).toBeGreaterThan(0)
+      expect(baths.length).toBe(rooms.length)
+      expect(of('IfcSpace').some(s => str(s.Name) === `Gross Hotel Zone - ${level}`)).toBe(false)
+      for (const s of [...rooms, ...baths]) {
+        const bounds = extents(s.expressID)
+        expect(bounds[1][1] - bounds[1][0]).toBeGreaterThan(2)
+      }
+    }
+  })
+
+  it('links each interior door to an opening that voids a wall', () => {
+    const doors = of('IfcDoor').filter(d => /^Plan (Room|Bathroom) Door /.test(str(d.Name)))
+    expect(doors.length).toBeGreaterThan(0)
+    for (const door of doors) {
+      const filling = of('IfcRelFillsElement').find(r => r.RelatedBuildingElement.value === door.expressID)
+      expect(filling, str(door.Name)).toBeDefined()
+      const voiding = of('IfcRelVoidsElement').find(r => r.RelatedOpeningElement.value === filling!.RelatingOpeningElement.value)
+      expect(voiding).toBeDefined()
+      expect(of('IfcWall').some(w => w.expressID === voiding!.RelatingBuildingElement.value)).toBe(true)
+      expect(num(door.OverallWidth)).toBeGreaterThanOrEqual(.8)
+    }
+  })
+})
 
 suite('it stands where the building stands', () => {
   it('carries a real map conversion on the projected CRS', () => {
