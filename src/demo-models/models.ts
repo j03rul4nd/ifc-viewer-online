@@ -262,8 +262,8 @@ export const DEMO_MODELS: DemoModel[] = [
       'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-hotel-vela.py',
     sourceLabel: 'Authored with Blender + Bonsai',
     schema: 'IFC4',
-    approximateSize: '4.2 MB',
-    sizeBytes: 4_167_264,
+    approximateSize: '4.1 MB',
+    sizeBytes: 4_113_332,
     featured: true,
   },
   {
@@ -280,8 +280,8 @@ export const DEMO_MODELS: DemoModel[] = [
       'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-hotel-vela.py',
     sourceLabel: 'Authored with Blender + Bonsai',
     schema: 'IFC4',
-    approximateSize: '1.5 MB',
-    sizeBytes: 1_468_417,
+    approximateSize: '1.4 MB',
+    sizeBytes: 1_444_603,
   },
   {
     id: 'hotel-vela-mep',
@@ -297,8 +297,8 @@ export const DEMO_MODELS: DemoModel[] = [
       'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/scripts/blender/build-hotel-vela.py',
     sourceLabel: 'Authored with Blender + Bonsai',
     schema: 'IFC4',
-    approximateSize: '237 KB',
-    sizeBytes: 237_188,
+    approximateSize: '234 KB',
+    sizeBytes: 233_578,
   },
   {
     id: 'ciutadella-pavilion',
