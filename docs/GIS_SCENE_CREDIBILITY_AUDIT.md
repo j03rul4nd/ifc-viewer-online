@@ -158,10 +158,23 @@ Entregado:
 ningún test resuelve. Overpass se satura con 3-5 consultas seguidas, así que la verificación es UNA
 pasada planificada, no iteración.
 
-### Fase 2 — Unificar el datum agua/mar
-C2. Hacer que `waterLevelM()` y `frame.zAboveDatum('sea', …)` produzcan la misma cota, o que el agua
-se nivele contra el datum de mar y no contra el DEM. Requiere decidir qué pasa donde no hay dato de
-marea: degradar visible, no rellenar.
+### Fase 2 — Unificar el datum agua/mar ✅ IMPLEMENTADA
+
+`waterLevelM()` ahora distingue mar de agua interior. El mar se nivela en `frame.seaLevelM` — el
+mismo datum del que `buildPierLayer` mide siempre las cubiertas — y el agua interior sigue leyendo
+el DEM, porque un río sí está a una cota local que sólo conoce el terreno; fijar un lago al nivel
+del mar sería el mismo error al revés.
+
+La distinción viaja explícita en `OsmFeature.isSea`, puesta donde se construye el mar desde la
+línea de costa, **no inferida del id** `sea-N`: un marcador implícito en una cadena de texto es
+exactamente el tipo de acoplamiento que se rompe en silencio.
+
+Sobre la restricción de honestidad: esto no fabrica ninguna cota. `seaLevelM` ya existía en
+`GroundFrame` con su propio valor por defecto documentado, y el cambio consiste en **dejar de
+preferir una medición mala** (el ráster sobre un puerto, que mide barcos amarrados) a una
+definición. No se estira ningún faldón para tapar nada.
+
+Tests: `1091` verdes. Los dos nuevos se verificaron fallando sin el arreglo.
 
 ### Fase 3 — Instrumentación del eje A
 Antes de tocar el solver: overlay de depuración que pinte cada feature por su `VerticalConfidence`
