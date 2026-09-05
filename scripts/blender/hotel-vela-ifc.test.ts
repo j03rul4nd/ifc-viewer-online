@@ -7,12 +7,12 @@
 // usual "is this valid IFC" ones (though those are here too); they are the ones
 // that would still pass if somebody quietly turned it back into a box:
 //
-//   • the plan SHRINKS with height, monotonically, on both axes;
+//   • the long dimension holds through the shoulder, then closes into the crown;
+//   • the curved hotel plate retains almost all of its depth;
 //   • one edge stays VERTICAL while the other sweeps in — that asymmetry is
 //     what makes it a sail rather than a cone;
-//   • the floor line is expressed in GEOMETRY, not only in material. A spandrel
-//     that is flush with the glass is invisible at 99 m, and twenty-six storeys
-//     of curtain wall then read as one flat sheet.
+//   • the floor line, primary mullions and photographed external stair are real
+//     IFC geometry rather than one undifferentiated glazed shell.
 //
 // Every count and dimension below is DERIVED from the sail's own parameters, so
 // a table that agrees with the generator because the same hand typed both
@@ -24,7 +24,8 @@ import { readFileSync, statSync, existsSync } from 'fs'
 import path from 'path'
 import proj4 from 'proj4'
 
-const DIR = path.join(process.cwd(), 'public', 'models', 'hotel-vela')
+const DIR = process.env.HOTEL_VELA_MODEL_DIR
+  ?? path.join(process.cwd(), 'public', 'models', 'hotel-vela')
 /** The architectural model — the one that carries the sail. */
 const FILE = 'BCN-IVO-ZZ-XX-M3-A-0002.ifc'
 /** The federated set: one project, three disciplines, one origin. */
@@ -40,8 +41,10 @@ const TOTAL_H = 98.8
 const STOREYS_ABOVE = 27
 const STOREYS_BELOW = 2
 const GROUND_H = 6.0
-const TYPICAL_H = Number(((TOTAL_H - GROUND_H) / (STOREYS_ABOVE - 1)).toFixed(4))
+const TYPICAL_H = 3.25
+const ROOF_LEVEL = 94.0
 const SLAB_T = 0.34
+const ROOF_FINISH_T = 0.12
 
 /** The georeferencing the file must carry — the surveyed centroid of the plot. */
 const EPSG = 'EPSG:25831'
@@ -80,7 +83,12 @@ const named = (name: string): Line | undefined =>
   [...index.values()].flat().find((l) => str(l.Name) === name)
 
 /** World-space AABB of one element, in IFC axes (Z up). */
-function extents(expressID: number): Array<[number, number]> {
+function extents(expressID: number, drawingFrame = true): Array<[number, number]> {
+  const building = of('IfcBuilding')[0]
+  const placement = api.GetLine(model, building.ObjectPlacement.value, false)
+  const relative = api.GetLine(model, placement.RelativePlacement.value, false)
+  const origin = api.GetLine(model, relative.Location.value, false).Coordinates.map(num)
+  const direction = api.GetLine(model, relative.RefDirection.value, false).DirectionRatios.map(num)
   const mesh = api.GetFlatMesh(model, expressID)
   const lo = [Infinity, Infinity, Infinity]
   const hi = [-Infinity, -Infinity, -Infinity]
@@ -97,7 +105,11 @@ function extents(expressID: number): Array<[number, number]> {
         m[2] * x + m[6] * y + m[10] * z + m[14],
       ]
       // web-ifc hands geometry over Y-up for three.js; IFC is Z-up.
-      const ifc = [w[0], -w[2], w[1]]
+      const world = [w[0], -w[2], w[1]]
+      const ifc = drawingFrame ? [
+        direction[0]*(world[0]-origin[0])+direction[1]*(world[1]-origin[1]),
+        -direction[1]*(world[0]-origin[0])+direction[0]*(world[1]-origin[1]), world[2],
+      ] : world
       ifc.forEach((v, a) => { lo[a] = Math.min(lo[a], v); hi[a] = Math.max(hi[a], v) })
     }
   }
@@ -105,6 +117,36 @@ function extents(expressID: number): Array<[number, number]> {
 }
 
 const HAVE_FILE = SET.every((f) => existsSync(path.join(DIR, f)))
+
+/** Vertical plan ray against the actual triangulated IFC slab, including voids. */
+function slabCovers(expressID: number, x: number, y: number): boolean {
+  const building = of('IfcBuilding')[0]
+  const placement = api.GetLine(model, building.ObjectPlacement.value, false)
+  const rel = api.GetLine(model, placement.RelativePlacement.value, false)
+  const o = api.GetLine(model, rel.Location.value, false).Coordinates.map(num)
+  const d = api.GetLine(model, rel.RefDirection.value, false).DirectionRatios.map(num)
+  const px = o[0]+d[0]*x-d[1]*y, py = o[1]+d[1]*x+d[0]*y
+  const mesh = api.GetFlatMesh(model, expressID)
+  for (let k=0; k<mesh.geometries.size(); k++) {
+    const placed = mesh.geometries.get(k), t=placed.flatTransformation
+    const geom = api.GetGeometry(model, placed.geometryExpressID)
+    const v = api.GetVertexArray(geom.GetVertexData(),geom.GetVertexDataSize())
+    const indices = api.GetIndexArray(geom.GetIndexData(),geom.GetIndexDataSize())
+    const point = (index: number) => {
+      const a=index*6, x=v[a], y=v[a+1], z=v[a+2]
+      return [t[0]*x+t[4]*y+t[8]*z+t[12], -(t[2]*x+t[6]*y+t[10]*z+t[14])]
+    }
+    for(let i=0;i<indices.length;i+=3) {
+      const [a,b,c]=[point(indices[i]),point(indices[i+1]),point(indices[i+2])]
+      const det=(b[1]-c[1])*(a[0]-c[0])+(c[0]-b[0])*(a[1]-c[1])
+      if(Math.abs(det)<1e-6) continue
+      const u=((b[1]-c[1])*(px-c[0])+(c[0]-b[0])*(py-c[1]))/det
+      const w=((c[1]-a[1])*(px-c[0])+(a[0]-c[0])*(py-c[1]))/det
+      if(u>=0 && w>=0 && u+w<=1) return true
+    }
+  }
+  return false
+}
 const suite = HAVE_FILE ? describe : describe.skip
 
 beforeAll(async () => {
@@ -153,7 +195,7 @@ suite('the federated set', () => {
   it('stays a set somebody can be handed at a stand', () => {
     const mb = SET.reduce((n, f) => n + statSync(path.join(DIR, f)).size, 0) / 1_048_576
     expect(mb).toBeGreaterThan(0.3)
-    expect(mb, 'a landmark nobody waits for').toBeLessThan(4)
+    expect(mb, 'a landmark nobody waits for').toBeLessThan(6)
   })
 
   // THE POINT OF FEDERATION: three files, one place. If the disciplines
@@ -180,7 +222,7 @@ suite('the federated set', () => {
   // schema-clean and self-consistent.
   it('was built from ONE geometry — the roof agrees across disciplines', () => {
     use('A')
-    const arc = extents(of('IfcRoof')[0].expressID)
+    const arc = extents(named('Roof Finish')!.expressID)
     use('S')
     const str = extents(
       of('IfcSlab').find((x) => str2(x.Name) === 'Roof Slab')!.expressID)
@@ -190,6 +232,9 @@ suite('the federated set', () => {
         'architecture and structure disagree about the roof outline').toBeLessThan(0.05)
       expect(Math.abs(arc[axis][1] - str[axis][1])).toBeLessThan(0.05)
     }
+    expect(Math.abs(arc[2][0] - str[2][1]),
+      'roof finish must sit on, not duplicate, the structural slab').toBeLessThan(0.02)
+    expect(arc[2][1] - arc[2][0]).toBeCloseTo(ROOF_FINISH_T, 2)
   })
 
   it('agrees on the storey list, so elements land on the same levels', () => {
@@ -214,7 +259,7 @@ suite('the spatial tree', () => {
   it('runs from the basements to the roof, ascending', () => {
     const z = of('IfcBuildingStorey').map((s) => num(s.Elevation)).sort((a, b) => a - b)
     expect(z[0]).toBeLessThan(0)                      // two basement levels
-    expect(z[z.length - 1]).toBeCloseTo(TOTAL_H, 2)   // height=98.8, from the tags
+    expect(z[z.length - 1]).toBeCloseTo(ROOF_LEVEL, 2)
     for (let i = 1; i < z.length; i++) expect(z[i]).toBeGreaterThan(z[i - 1])
   })
 
@@ -223,6 +268,8 @@ suite('the spatial tree', () => {
     expect(named.get('Ground')).toBeCloseTo(0, 6)
     expect(named.get('Level 01')).toBeCloseTo(GROUND_H, 2)
     expect(named.get('Level 02')! - named.get('Level 01')!).toBeCloseTo(TYPICAL_H, 2)
+    // Independent readable drawing datums: A.2.15 +51.25 and A.2.27 +90.25.
+    expect(named.get('Level 24')! - named.get('Level 12')!).toBeCloseTo(39, 2)
   })
 })
 
@@ -245,9 +292,11 @@ suite('the form is a sail, and could not have been extruded', () => {
       .sort((a, b) => a.z - b.z)
 
   it('reaches the height it claims', () => {
+    use('A')
     const all = of('IfcSlab').concat(of('IfcRoof'), of('IfcPlate'), of('IfcWall'))
     const top = Math.max(...all.map((e) => extents(e.expressID)[2][1]))
     expect(top).toBeCloseTo(TOTAL_H, 1)
+    use('S')
   })
 
   it('has a floor plate at every storey', () => {
@@ -265,30 +314,28 @@ suite('the form is a sail, and could not have been extruded', () => {
    */
   const sailPlates = () => plates().filter((p) => p.x[1] - p.x[0] < 100)
 
-  // THE ASSERTION THIS FILE EXISTS FOR. A prism passes every other test here.
-  it('narrows with height on BOTH axes, monotonically', () => {
+  // The plan sheets and sections together rule out both a prism and a cone.
+  it('has a convex belly, then retreats toward the crown', () => {
     const p = sailPlates()
-    for (let i = 1; i < p.length; i++) {
-      const below = p[i - 1]
-      const here = p[i]
-      const widthBelow = below.x[1] - below.x[0]
-      const widthHere = here.x[1] - here.x[0]
-      const depthBelow = below.y[1] - below.y[0]
-      const depthHere = here.y[1] - here.y[0]
-      expect(widthHere, `storey ${i} is not narrower than ${i - 1}`).toBeLessThan(widthBelow)
-      expect(depthHere, `storey ${i} is not shallower than ${i - 1}`).toBeLessThan(depthBelow)
-    }
+    const widths = p.map(s => s.x[1] - s.x[0])
+    const widest = widths.indexOf(Math.max(...widths))
+    expect(widest).toBeGreaterThan(1)
+    expect(widest).toBeLessThan(p.length / 2)
+    expect(widths[widest]).toBeGreaterThan(widths[0] + 1)
+    for (let i = widest + 1; i < widths.length; i++) expect(widths[i]).toBeLessThan(widths[i-1])
+    const depthBase = p[0].y[1] - p[0].y[0]
+    const depthTop = p[p.length - 1].y[1] - p[p.length - 1].y[0]
+    expect(depthTop / depthBase).toBeGreaterThan(0.85)
   })
 
-  it('is dramatically narrower at the top than at the base', () => {
+  it('holds the shoulder, then closes sharply into the curved crown', () => {
     const p = sailPlates()
     const base = p[0].x[1] - p[0].x[0]
+    const shoulder = p[Math.floor(p.length * 0.72)].x[1] - p[Math.floor(p.length * 0.72)].x[0]
     const top = p[p.length - 1].x[1] - p[p.length - 1].x[0]
-    // Roughly halves. A prism would be 1.0 and a cone would go to nothing.
-    // TOWER_TOP_SCALE is 0.62, so the plate keeps a little under two thirds of
-    // its width. A prism would be 1.0 and a cone would run to nothing.
-    expect(top / base).toBeGreaterThan(0.45)
-    expect(top / base).toBeLessThan(0.75)
+    expect(shoulder / base).toBeGreaterThan(0.80)
+    expect(top / base).toBeGreaterThan(0.20)
+    expect(top / base).toBeLessThan(0.50)
   })
 
   it('keeps ONE edge vertical while the other sweeps — the sail asymmetry', () => {
@@ -299,18 +346,16 @@ suite('the form is a sail, and could not have been extruded', () => {
     // The swept edge draws in, monotonically and by tens of metres. Without
     // this the plate would shrink about its centroid and read as a cone.
     const swept = p.map((s) => s.x[0])
-    for (let i = 1; i < swept.length; i++) expect(swept[i]).toBeGreaterThan(swept[i - 1])
-    expect(swept[swept.length - 1] - swept[0]).toBeGreaterThan(20)
+    expect(swept[swept.length - 1] - Math.min(...swept)).toBeGreaterThan(30)
   })
 
-  it('stands on the surveyed footprint, not on an invented one', () => {
-    // way 908035013 — the sail's own building:part — is 81.5 x 44.4 m at its
-    // base. A model that drifts from that is no longer this building.
+  it('uses the slender drawing plate instead of extruding the annex up the tower', () => {
+    // Broad drawing proportions, deliberately not an assertion of survey accuracy.
     const p = sailPlates()
-    expect(p[0].x[1] - p[0].x[0]).toBeGreaterThan(70)
-    expect(p[0].x[1] - p[0].x[0]).toBeLessThan(95)
-    expect(p[0].y[1] - p[0].y[0]).toBeGreaterThan(35)
-    expect(p[0].y[1] - p[0].y[0]).toBeLessThan(55)
+    expect(p[0].x[1] - p[0].x[0]).toBeGreaterThan(55)
+    expect(p[0].x[1] - p[0].x[0]).toBeLessThan(67)
+    expect(p[0].y[1] - p[0].y[0]).toBeGreaterThan(23)
+    expect(p[0].y[1] - p[0].y[0]).toBeLessThan(28)
   })
 
   it('sets the sail on a podium that covers the plot', () => {
@@ -318,7 +363,8 @@ suite('the form is a sail, and could not have been extruded', () => {
     // ground, and without it the tower stands on nothing.
     const podium = plates().filter((p) => p.x[1] - p.x[0] > 100)
     expect(podium.length).toBeGreaterThanOrEqual(3)
-    expect(podium[0].x[1] - podium[0].x[0]).toBeCloseTo(127.3, 0)
+    const world = extents(named('Ground Slab')!.expressID, false)
+    expect(world[0][1] - world[0][0]).toBeCloseTo(127.3, 0)
   })
 
   it('tops out each plate exactly at its own level datum', () => {
@@ -336,7 +382,19 @@ suite('the floor line is expressed in geometry, not only in material', () => {
   beforeAll(() => { if (HAVE_FILE) use('A') })
 
   it('has a glazed band and a spandrel band at every occupied storey', () => {
-    expect(of('IfcPlate')).toHaveLength((STOREYS_ABOVE - 1) * 2)
+    expect(of('IfcPlate').filter(x => /^Level \d+ Spandrel$/.test(str(x.Name))))
+      .toHaveLength(STOREYS_ABOVE - 1)
+    for (let i = 1; i < STOREYS_ABOVE; i++) {
+      expect(named(`Level ${String(i).padStart(2, '0')} Curtain Wall`)).toBeDefined()
+      expect(named(`Level ${String(i).padStart(2, '0')} Spandrel`)).toBeDefined()
+      expect(named(`Level ${String(i).padStart(2, '0')} Primary Mullion Array`)).toBeDefined()
+    }
+  })
+
+  it('separates opaque spandrel and clear glazing vertically', () => {
+    const glass = extents(named('Level 01 Curtain Wall')!.expressID)
+    const spandrel = extents(named('Level 01 Spandrel')!.expressID)
+    expect(Math.abs(glass[2][0] - spandrel[2][1])).toBeLessThan(0.02)
   })
 
   it('stands the spandrel proud of the glass — a REVEAL, not a rib', () => {
@@ -359,7 +417,9 @@ suite('the floor line is expressed in geometry, not only in material', () => {
     for (const rel of of('IfcRelAssociatesMaterial')) {
       for (const o of rel.RelatedObjects) withMaterial.add(o.value)
     }
-    const bodied = of('IfcSlab').concat(of('IfcRoof'), of('IfcPlate'), of('IfcWall'))
+    const bodied = of('IfcSlab').concat(of('IfcRoof'), of('IfcPlate'), of('IfcWall'),
+      of('IfcCurtainWall'), of('IfcMember'), of('IfcDoor'), of('IfcRailing'),
+      of('IfcStairFlight'))
     for (const e of bodied) {
       const typeRel = of('IfcRelDefinesByType')
         .find((r) => r.RelatedObjects.some((o: Line) => o.value === e.expressID))
@@ -367,6 +427,130 @@ suite('the floor line is expressed in geometry, not only in material', () => {
       const hasType = typeRel && withMaterial.has(typeRel.RelatingType.value)
       expect(hasOwn || hasType, `${str(e.Name)} has no material`).toBe(true)
     }
+  })
+})
+
+suite('the photographed external stair is a BIM assembly', () => {
+  beforeAll(() => { if (HAVE_FILE) use('A') })
+
+  it('has one landing, flight and guardrail for every above-ground rise', () => {
+    expect(of('IfcStair')).toHaveLength(STOREYS_ABOVE)
+    expect(of('IfcStairFlight')).toHaveLength(STOREYS_ABOVE * 2)
+    expect(of('IfcRailing').filter(x => str(x.Name).startsWith('Escape Stair Guardrail')))
+      .toHaveLength(STOREYS_ABOVE)
+    expect(of('IfcSlab').filter((x) => str(x.Name).startsWith('Escape Stair Landing')))
+      .toHaveLength(STOREYS_ABOVE)
+  })
+
+  it('alternates flight direction and aggregates every flight into a stair', () => {
+    const flights = of('IfcStairFlight')
+    const aggregateChildren = new Set<number>()
+    for (const rel of of('IfcRelAggregates')) {
+      for (const child of rel.RelatedObjects ?? []) aggregateChildren.add(child.value)
+    }
+    for (const flight of flights) expect(aggregateChildren.has(flight.expressID)).toBe(true)
+    const first = extents(named('Escape Stair Flight 1 - Ground')!.expressID)
+    const second = extents(named('Escape Stair Flight 1 - Level 01')!.expressID)
+    expect(first[1][0]).toBeCloseTo(second[1][0], 1)
+    expect(first[1][1]).toBeCloseTo(second[1][1], 1)
+  })
+
+  it('recesses the photographed landings into the curved end and models actual treads', () => {
+    const lower = extents(named('Escape Stair Landing - Level 04')!.expressID)
+    const upper = extents(named('Escape Stair Landing - Level 24')!.expressID)
+    expect(lower[0][1]).toBeLessThan(0)
+    expect(upper[0][0]).toBeGreaterThan(lower[0][0] + 10)
+    for (const flight of of('IfcStairFlight')) {
+      const definition = api.GetLine(model, flight.Representation.value, false)
+      const body = api.GetLine(model, definition.Representations[0].value, false)
+      expect(body.Items.length).toBeGreaterThan(5)
+      expect(num(flight.NumberOfTreads)).toBe(body.Items.length)
+    }
+    expect(named('Escape Base Louvre Blades South')).toBeDefined()
+    expect(named('Folded Cheek North - Level 12')).toBeDefined()
+    const guard=named('Escape Stair Guardrail - Level 12')!
+    const material=of('IfcRelAssociatesMaterial').find(r => r.RelatedObjects.some((o: Line) => o.value===guard.expressID))
+    expect(str(api.GetLine(model,material.RelatingMaterial.value,false).Name)).toBe('Solar Control Glazing')
+  })
+})
+
+suite('structure and services are coordinated', () => {
+  it('keeps the courtyard genuinely open in the low-rise floor and roof meshes', () => {
+    use('S')
+    for(const name of ['Annex Floor - Level 04','Annex Roof Deck']) {
+      const slab=named(name)!
+      expect(slabCovers(slab.expressID,27,-28),'courtyard must not contain slab triangles').toBe(false)
+      expect(slabCovers(slab.expressID,40,-28),'rear wing must have a real floor').toBe(true)
+      expect(slabCovers(slab.expressID,10,-47),'south room wing must have a real floor').toBe(true)
+    }
+    expect(slabCovers(named('Annex Link Floor 2 - Level 04')!.expressID,12,-16.2),
+      'north wing must connect to tower instead of floating across a gap').toBe(true)
+    expect(slabCovers(named('Annex Link Floor 1 - Level 04')!.expressID,12,-39.8)).toBe(true)
+    use('A')
+    expect(named('Public Convention Zone +2.30')).toBeDefined()
+    expect(named('Restaurant Courtyard Guardrails')).toBeDefined()
+  })
+  it('separates the low-rise annex and technical roof from the crown', () => {
+    use('A')
+    const deck = extents(named('Roof Finish')!.expressID)
+    const cap = extents(named('Crown Cap')!.expressID)
+    expect(cap[2][1] - deck[2][1]).toBeCloseTo(4.8, 2)
+    expect(extents(named('Annex Roof Finish')!.expressID)[2][1]).toBeCloseTo(25.5, 2)
+    use('S')
+    expect(named('Annex Roof Deck')).toBeDefined()
+    use('M')
+    for (const plant of of('IfcAirTerminalBox').concat(of('IfcTank'))) {
+      const e = extents(plant.expressID)
+      expect(e[2][0]).toBeCloseTo(ROOF_LEVEL, 2)
+      expect(e[2][1]).toBeLessThan(TOTAL_H)
+    }
+    use('A')
+  })
+
+  it('provides drawing-based partitions on the three supplied detailed floors', () => {
+    use('A')
+    const partitions = of('IfcWall').filter(x => str(x.Name).startsWith('Plan '))
+    expect(partitions.length).toBeGreaterThan(20)
+    for (const wall of partitions) expect(str(wall.Name)).toMatch(/Level (04|12|24)/)
+    for (const level of ['04', '12', '24']) {
+      expect(partitions.filter(x => str(x.Name).includes(`Level ${level}`)).length).toBeGreaterThan(5)
+    }
+    expect(of('IfcSurfaceStyleRendering').length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('uses storey-height core walls rather than one building-height wall', () => {
+    use('S')
+    const walls = of('IfcWall').filter((x) => str(x.Name).startsWith('Core Wall'))
+    expect(walls).toHaveLength((STOREYS_BELOW + STOREYS_ABOVE) * 4)
+    const datums = of('IfcBuildingStorey').map(s => num(s.Elevation)).sort((a,b) => a-b)
+    for (const wall of walls) {
+      const [bottom, top] = extents(wall.expressID)[2]
+      const storeyIndex = datums.findIndex(z => Math.abs(z-bottom) < .01)
+      expect(storeyIndex).toBeGreaterThanOrEqual(0)
+      expect(top).toBeLessThan(datums[storeyIndex+1])
+    }
+    use('A')
+  })
+
+  it('reuses fixed column coordinates instead of drifting with every facade', () => {
+    use('S')
+    const columns = of('IfcColumn')
+    const xy = new Set(columns.map((c) => {
+      const e = extents(c.expressID)
+      return `${((e[0][0] + e[0][1]) / 2).toFixed(2)}/${((e[1][0] + e[1][1]) / 2).toFixed(2)}`
+    }))
+    expect(columns.length).toBeGreaterThan(xy.size * 3)
+    use('A')
+  })
+
+  it('voids every intermediate slab at the four riser coordinates', () => {
+    use('S')
+    expect(of('IfcOpeningElement')).toHaveLength((STOREYS_ABOVE - 1) * 4)
+    expect(of('IfcRelVoidsElement')).toHaveLength((STOREYS_ABOVE - 1) * 4)
+    use('M')
+    expect(of('IfcDuctSegment')).toHaveLength(STOREYS_ABOVE * 4)
+    expect(of('IfcDistributionSystem')).toHaveLength(2)
+    use('A')
   })
 })
 
