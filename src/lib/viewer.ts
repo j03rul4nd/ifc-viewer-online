@@ -44,6 +44,24 @@ export const IFC_PALETTE: Record<string, { color: number; opacity?: number }> = 
   IFCPILE:               { color: 0x888888 },
 }
 
+/**
+ * Categories hidden the first time a model is shown, as canonical IFC types.
+ *
+ * SPACES ARE VOLUME, NOT FABRIC. An `IfcSpace` is the air in a room: a solid
+ * box filling the storey from floor to ceiling, one per room, and on a hotel
+ * that is hundreds of them stacked behind the facade. Drawn at 12 % green they
+ * are individually invisible and collectively a wash of colour over everything
+ * behind them — which is what made the Hotel Vela's curtain wall read as
+ * saturated teal when the glass material is `#6693aa`, a muted blue-grey, and
+ * arrives from the IFC exactly as the model authored it. Nothing was wrong with
+ * the glass. It was being seen through the building's own air.
+ *
+ * Hiding them by default is what every BIM viewer does, and for this reason.
+ * They stay one click away in the category list, which is where somebody who
+ * actually wants to look at room volumes will go for them.
+ */
+export const DEFAULT_HIDDEN_TYPES: readonly string[] = ['IFCSPACE']
+
 export const IFC_DISPLAY_NAMES: Record<string, string> = {
   IFCWALL:               'Walls',
   IFCWALLSTANDARDCASE:   'Walls',

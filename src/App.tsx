@@ -117,6 +117,7 @@ import { usePresentationStore } from './stores/presentationStore'
 import { toast } from './stores/toastStore'
 import { appBus } from './lib/event-bus'
 import type { ViewerAPI } from './lib/viewer'
+import { DEFAULT_HIDDEN_TYPES } from './lib/viewer'
 import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo, Category, CameraPreset } from './types'
 import * as Icons from './components/Icons'
 import { useSeo } from './seo'
@@ -549,7 +550,9 @@ export default function App() {
   // Viewer interaction state
   const [viewerStyle] = useState<ViewerStyle>('shaded')
   const [selected,   setSelected]   = useState<SelectedInfo | null>(null)
-  const [hidden,     setHidden]     = useState<Set<string>>(new Set())
+  // Spaces start hidden — see DEFAULT_HIDDEN_TYPES for why a room's air was
+  // tinting the whole facade.
+  const [hidden,     setHidden]     = useState<Set<string>>(() => new Set(DEFAULT_HIDDEN_TYPES))
   const [isolated,   setIsolated]   = useState<string | null>(null)
   // Single-element isolation (localId). Overrides category filters in the viewer.
   const [isolatedElement,      setIsolatedElement]      = useState<number | null>(null)
@@ -798,6 +801,14 @@ export default function App() {
       setModelInfo(info)
       setLoadingState('loaded')
       setLoadError(null)
+      // Re-apply category filters now that there is geometry to apply them to.
+      //
+      // The reactive effect in Viewer.tsx keys on the identity of the hidden
+      // SET, and that set is built before the load starts — so it fires against
+      // an empty scene and never again, because nothing about it changed. That
+      // cost nothing while the default was "hide nothing"; the moment spaces
+      // started hidden by default it meant they were not.
+      setHidden((prev) => new Set(prev))
       // In embed mode the host decides whether the validation panel auto-opens
       // (the 'minimal' preset keeps it collapsed so only the 3D + score show).
       if (embedChrome.openPanel) {
@@ -1014,7 +1025,7 @@ export default function App() {
     if (sceneModels.length === 0) {
       setModelInfo(null)
       setSelected(null)
-      setHidden(new Set())
+      setHidden(new Set(DEFAULT_HIDDEN_TYPES))
       setIsolated(null)
       setIsolatedElement(null)
       setIsolatedElementModel(null)
@@ -1316,7 +1327,7 @@ export default function App() {
     setLoadingState('idle')
     setLoadError(null)
     setSelected(null)
-    setHidden(new Set())
+    setHidden(new Set(DEFAULT_HIDDEN_TYPES))
     setIsolated(null)
     setIsolatedElement(null)
     setIsolatedElementModel(null)
@@ -1376,7 +1387,7 @@ export default function App() {
     if (useSceneStore.getState().models.length === 0) {
       setModelInfo(null)
       setSelected(null)
-      setHidden(new Set())
+      setHidden(new Set(DEFAULT_HIDDEN_TYPES))
       setIsolated(null)
       setIsolatedElement(null)
       setIsolatedElementModel(null)
