@@ -82,6 +82,22 @@ const VIDEO_DEMO = `${import.meta.env.BASE_URL}models/video-demo`
 const REALTIME_LIDAR = `${import.meta.env.BASE_URL}models/realtime-lidar`
 
 export const DEMO_MODELS: DemoModel[] = [
+  {
+    id: 'shanghai-world-financial-center',
+    name: 'Shanghai World Financial Center',
+    description:
+      '492 m, 101 floors and the signature sky portal. Approximate reconstruction from architectural drawings, with facade, core, hotel floors and observation bridges; not an as-built model.',
+    category: 'Commercial',
+    fileName: 'SHA-IVO-SWFC-A-0001.ifc',
+    ifcUrl: `${import.meta.env.BASE_URL}models/swfc/SHA-IVO-SWFC-A-0001.ifc?v=20260906-r1`,
+    sourceUrl: 'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/docs/SWFC_RECONSTRUCTION.md',
+    sourceLabel: 'IFC Viewer Online reconstruction · architecture by KPF / ECADI',
+    schema: 'IFC4',
+    approximateSize: '12.8 MB',
+    sizeBytes: 13_382_675,
+    thumbnail: `${import.meta.env.BASE_URL}models/swfc/swfc-preview.png`,
+    featured: true,
+  },
   // ── Reference ────────────────────────────────────────────────────────────
   {
     id: 'cras-feup-as-built',
