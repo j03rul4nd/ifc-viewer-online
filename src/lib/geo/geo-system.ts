@@ -36,6 +36,7 @@ import { describeProfile, summariseProfiles } from './vertical-network'
 import {
   buildRoofPropLayer, groundFrameFor,
 } from './osm-scene'
+import { satelliteOffset, shouldPlaceSatellite } from './multi-placement'
 import { SHADOW_ROLES, shadowCameraPlan } from './shadow-policy'
 import { depthRangeFor, depthRangeChanged, type DepthRange } from './depth-range'
 import { auditVertical, describeAudit } from './vertical-audit'
@@ -169,6 +170,22 @@ export interface GeoSystemContext {
    * the Hotel Vela. See geo-math.groundAnchorY.
    */
   getModelOriginY?(): number | null
+  /**
+   * Every loaded model OTHER than the map's anchor that carries its own usable
+   * georeferencing, with the bounds needed to place it.
+   *
+   * Optional, and its absence is the previous behaviour: one model on the map
+   * and the rest wherever the scene put them. Supplied by the host because
+   * resolving a placement needs the georef store and per-model bounds, neither
+   * of which this module should know about.
+   */
+  getSatelliteModels?(): Array<{
+    modelId: string
+    placement: GeoPlacement
+    bounds: { center: { x: number; y: number; z: number }; size: { x: number; y: number; z: number } }
+  }> | null
+  /** Translate one model by a scene-space delta. */
+  setModelOffset?(modelId: string, offset: { x: number; y: number; z: number }): void
 }
 
 // ── Public API ──────────────────────────────────────────────────────────────────
@@ -191,6 +208,15 @@ export interface GeoSystemAPI {
   disable(): void
   /** Re-apply a placement live (editor drags call this per move). */
   setPlacement(p: GeoPlacement): void
+  /**
+   * Re-run geographic placement for the non-anchor models.
+   *
+   * Needed because models arrive AFTER the map is placed: a second file loads
+   * a minute into the session, and the placement that would have positioned it
+   * ran while it did not exist. Cheap and idempotent — the offsets it computes
+   * for models already sitting on their coordinates are zero.
+   */
+  refreshSatellites(): void
   setProvider(p: MapProvider): void
   /** Toggle the 3D terrain patch. */
   setTerrain(enabled: boolean): Promise<void>
@@ -838,6 +864,13 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
     getGpuBytesEstimate() {
       return engine?.getGpuBytesEstimate() ?? 0
+    },
+
+    refreshSatellites() {
+      if (!geoRoot || !placement) return
+      const bounds = ctx.getActiveModelBounds()
+      const anchorScene = bounds ? { x: bounds.center.x, z: bounds.center.z } : { x: 0, z: 0 }
+      placeSatellites(placement, anchorScene, geoRoot.position.y)
     },
 
     setEditorPointerLock(locked) {
@@ -1632,8 +1665,34 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), t.tiltRad))
     geoRoot.scale.setScalar(t.scale)
     geoRoot.updateMatrixWorld(true)
+    placeSatellites(p, anchorScene, t.position.y)
     // The hole planes live in WORLD space — refresh them when the root moves.
     if (terrain && engine) engine.setHole(computeHolePlanes())
+  }
+
+  /**
+   * Send every other georeferenced model to its own coordinates on the map.
+   *
+   * The basemap can only be aligned once, so it is aligned to the anchor — but
+   * that constraint was being applied to the MODELS too, and it does not
+   * follow. Without this, loading the Oriental Pearl Tower and then the
+   * Shanghai World Financial Center leaves both at the scene origin, stacked
+   * inside each other and kilometres from either site.
+   *
+   * Re-run on every placement change, because moving or rotating the map moves
+   * where every one of those coordinates lands.
+   */
+  function placeSatellites(
+    anchor: GeoPlacement, anchorScene: { x: number; z: number }, groundY: number,
+  ): void {
+    const satellites = ctx.getSatelliteModels?.()
+    if (!satellites || satellites.length === 0 || !ctx.setModelOffset) return
+
+    const frame = { placement: anchor, anchorScene, groundY }
+    for (const s of satellites) {
+      if (!shouldPlaceSatellite(s.modelId, null, s.placement)) continue
+      ctx.setModelOffset(s.modelId, satelliteOffset(frame, s.placement, s.bounds))
+    }
   }
 
   function flyToAerial(): void {

@@ -118,6 +118,7 @@ import { toast } from './stores/toastStore'
 import { appBus } from './lib/event-bus'
 import type { ViewerAPI } from './lib/viewer'
 import { DEFAULT_HIDDEN_TYPES } from './lib/viewer'
+import type { GeoPlacement } from './lib/geo/geo-types'
 import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo, Category, CameraPreset } from './types'
 import * as Icons from './components/Icons'
 import { useSeo } from './seo'
@@ -703,6 +704,11 @@ export default function App() {
     removeModel:        removeSceneModel,
     clearScene,
   } = useSceneStore()
+
+  // Georef extractions land asynchronously, one per model. Subscribed rather
+  // than read on demand so map placement re-runs the moment a model's
+  // coordinates arrive — see the satellite resolver below.
+  const georefByModel = useGeoStore((s) => s.georefByModel)
 
   // Undo/redo keyboard shortcuts
   useEditorHistory()
@@ -1418,6 +1424,66 @@ export default function App() {
       }
     }
   }, [loadIfcFile, tToasts])
+
+  // ── Tell map mode which models can place themselves ────────────────────────
+  //
+  // The basemap can be aligned to exactly one model, so it is aligned to the
+  // active one. Every OTHER model that carries its own georeferencing can then
+  // be sent to wherever the map says its coordinates land — which is the
+  // difference between the Oriental Pearl Tower and the Shanghai World
+  // Financial Center standing 1.4 km apart in Lujiazui, and both of them
+  // stacked on the scene origin.
+  //
+  // Resolved here rather than in the viewer because it needs the georef store,
+  // and the viewer imports no stores on purpose.
+  useEffect(() => {
+    const api = viewerApiRef.current
+    if (!api?.setSatelliteResolver || !isGisEnabled()) return
+
+    let cancelled = false
+    // Dynamic, and gated on the flag: placement.ts pulls in proj4 through crs.ts,
+    // and the whole geo tree is kept out of the entry chunk on purpose. A static
+    // import here would have shipped a projection library to every visitor who
+    // never opens the map.
+    void import('./lib/geo/placement').then(({ placementFromExtraction }) => {
+      if (cancelled) return
+      api.setSatelliteResolver!(() => {
+      const anchorId = useSceneStore.getState().activeModelId
+      const georefs = useGeoStore.getState().georefByModel
+      const out: Array<{
+        modelId: string
+        placement: GeoPlacement
+        bounds: NonNullable<ReturnType<typeof api.getModelBounds>>
+      }> = []
+      for (const m of useSceneStore.getState().models) {
+        // The anchor is already right: the map was fitted to it, and moving it
+        // would drag the building off its own basemap.
+        if (m.id === anchorId) continue
+        const extraction = georefs[m.id]
+        const bounds = api.getModelBounds(m.id)
+        if (!extraction || !bounds) continue
+        const resolved = placementFromExtraction(extraction, bounds)
+        // A model with no usable georeferencing stays where the scene put it.
+        // Inventing a location for it is the fabrication this pipeline refuses.
+        if (!resolved.ok) continue
+        out.push({ modelId: m.id, placement: resolved.value, bounds })
+      }
+        return out
+      })
+      // Place whatever is loadable NOW. Doing this from onModelLoaded looked
+      // right and was too early: that callback runs before the model reaches
+      // the scene store, so the resolver saw one model however many had
+      // arrived. An effect runs after React has settled, which is the point at
+      // which the stores actually agree with the scene.
+      api.refreshMapSatellites?.()
+    })
+    return () => { cancelled = true; api.setSatelliteResolver?.(null) }
+  // Keyed on the model count AND the georef map, not on mount. viewerApiRef is
+  // still null when this component first runs — the Viewer mounts underneath it
+  // — so a []-deps effect registers nothing and the feature silently does not
+  // exist. And extraction is async: a model can reach the store a beat before
+  // its georeferencing does, so both have to re-trigger the placement.
+  }, [sceneModels.length, georefByModel])
 
   // ── Load model from raw IFC bytes handed in by a host app (SDK path) ───────
   const loadModelFromBytes = useCallback(async (name: string, bytes: Uint8Array, requestId?: string): Promise<void> => {
