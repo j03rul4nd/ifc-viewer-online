@@ -267,7 +267,31 @@ altura total no cambia: la copa crece hacia abajo lo mismo que se hunde. Ambas c
   `detailed`/`showcase` las copas usan `createFoliageMaterial`, que sí se ilumina. La captura del
   síntoma era de `simple`.
 
-**Sigue pendiente:** proporción de los coches y saturación del cristal del edificio protagonista.
+**Coches.** Eran tres cajas apiladas de 1,57 m de alto — una furgoneta pequeña — con una losa oscura
+única bajo todo el vehículo en lugar de ruedas, así que la carrocería parecía apoyada en el asfalto.
+Reconstruidos con las tres proporciones que hacen que un coche se lea como un coche a esa distancia:
+largo y BAJO, cabina retrasada y más estrecha que la carrocería, y ruedas en las esquinas con luz
+por debajo. Medidas de un compacto real: 4,30 x 1,80 x 1,44. Sigue siendo una sola geometría
+instanciada, o sea una draw call para todo el tráfico.
+
+**Cristal "saturado" — no era el cristal.** Medido en la escena viva, el material del muro cortina
+llega como `#6693aa`: el azul grisáceo apagado que declara el IFC, exactamente como lo autoriza el
+modelo. No hay ningún fallo en el pipeline de color.
+
+Lo que teñía la fachada era **IfcSpace**. Un espacio es el AIRE de una habitación: una caja maciza
+que llena la planta de suelo a techo, una por habitación, y en un hotel son cientos apiladas detrás
+de la fachada. Dibujadas al 12 % de verde (`viewer.ts`) son invisibles de una en una y, todas
+juntas, un lavado de color sobre lo que haya detrás. El muro cortina se estaba viendo a través del
+propio aire del edificio.
+
+Ocultarlas por defecto es lo que hace cualquier visor BIM, y por este motivo. Quedan a un clic en la
+lista de categorías.
+
+Segunda mitad del arreglo, y es la trampa: el efecto reactivo de `Viewer.tsx` depende de la
+IDENTIDAD del `Set` de ocultos, y ese set se construye antes de que empiece la carga — así que se
+disparaba contra una escena vacía y nunca más, porque nada en él cambiaba. Con el default "no
+ocultar nada" eso no costaba nada; en cuanto los espacios pasaron a estar ocultos por defecto
+significaba que no lo estaban. Los filtros se reaplican ahora cuando ya hay geometría.
 
 Tests: `3010` verdes en todo el repo.
 
