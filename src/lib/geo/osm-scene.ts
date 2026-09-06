@@ -2710,17 +2710,18 @@ export function buildTreeLayer(
       // Yaw only — a leaning tree would read as a bug, not as character.
       quat.setFromAxisAngle(zAxis, variate(placed.id, 4) * Math.PI * 2)
 
-      // A round crown hangs off its centre; tiered and radial ones sit on the
-      // top of the trunk.
-      const centreZ = t.p.baseAnchored
-        ? t.baseZ + t.trunkM * mToN
-        : t.baseZ + (t.trunkM + canopyM / 2) * mToN
-      pos.set(t.nx, t.ny, centreZ)
-      scale.set(
-        t.radiusM * mToN,
-        t.radiusM * mToN,
-        (t.p.baseAnchored ? canopyM : canopyM / 2) * mToN,
-      )
+      // Every canopy is base-at-zero and one unit tall (see `canopyGeometry`),
+      // so placement is the same for all four species: sit the crown's base on
+      // the trunk, then let it SINK by its species' overlap so it swallows the
+      // top of the trunk instead of balancing on the end of it.
+      //
+      // The tree keeps its tagged height: the crown grows downward by exactly
+      // what it sinks, so the top lands at trunkM + (totalM − trunkM) either
+      // way. Getting that wrong is how a broadleaf ended up half-size and
+      // floating a half-crown clear of its own trunk.
+      const dropM = canopyM * t.p.crownDrop
+      pos.set(t.nx, t.ny, t.baseZ + (t.trunkM - dropM) * mToN)
+      scale.set(t.radiusM * mToN, t.radiusM * mToN, (canopyM + dropM) * mToN)
       canopy.setMatrixAt(i, m.compose(pos, quat, scale))
       canopy.setColorAt(i, color.setRGB(...foliageColor(placed.id, t.shape)))
 

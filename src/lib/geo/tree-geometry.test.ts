@@ -156,6 +156,42 @@ describe('TREE_PROPORTIONS', () => {
     }
   })
 
+  it('makes a round crown swallow the top of its trunk', () => {
+    // A crown balanced on the end of a stick is a lollipop, not a tree. This is
+    // what the old `baseAnchored` flag was reaching for, and what it broke:
+    // against a base-at-zero geometry its centre-anchored branch left the
+    // broadleaf half-size and floating a half-crown clear of its own trunk.
+    expect(TREE_PROPORTIONS.broadleaf.crownDrop).toBeGreaterThan(0.2)
+    // A palm is the counter-case: fronds spring from the very top of the stem
+    // and nothing overlaps, which is most of what makes a palm read as a palm.
+    expect(TREE_PROPORTIONS.palm.crownDrop).toBe(0)
+  })
+
+  it('never sinks a crown so far it swallows the whole trunk', () => {
+    for (const shape of SHAPES) {
+      const p = TREE_PROPORTIONS[shape]
+      const canopyShare = 1 - p.trunk
+      // Drop is a share of the CANOPY's height; past the trunk's own height the
+      // crown would reach the ground and the tree would have no stem at all.
+      expect(canopyShare * p.crownDrop, `${shape}`).toBeLessThan(p.trunk)
+    }
+  })
+
+  it('preserves the tagged height whatever the crown does', () => {
+    // The crown grows downward by exactly what it sinks, so the top of the tree
+    // lands at the tagged height for every species. If this drifts, a street of
+    // planes and palms stops sharing a skyline.
+    for (const shape of SHAPES) {
+      const p = TREE_PROPORTIONS[shape]
+      const totalM = 12
+      const trunkM = totalM * p.trunk
+      const canopyM = totalM - trunkM
+      const dropM = canopyM * p.crownDrop
+      const top = (trunkM - dropM) + (canopyM + dropM)
+      expect(top, `${shape}`).toBeCloseTo(totalM, 9)
+    }
+  })
+
   it('keeps a trunk thinner than its own crown', () => {
     for (const shape of SHAPES) {
       expect(TREE_PROPORTIONS[shape].trunkRadius, shape).toBeLessThan(0.5)

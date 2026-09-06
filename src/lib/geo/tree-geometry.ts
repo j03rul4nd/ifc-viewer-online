@@ -227,8 +227,25 @@ export interface TreeProportions {
   crown: number
   /** Trunk radius as a share of crown radius. */
   trunkRadius: number
-  /** True when the canopy is anchored at its base rather than its centre. */
-  baseAnchored: boolean
+  /**
+   * How far the crown SINKS PAST the top of the trunk, as a share of the
+   * crown's own height.
+   *
+   * REPLACES a `baseAnchored` boolean, which stopped meaning anything once
+   * `canopyGeometry` normalised every species to base-at-zero. That flag was
+   * only ever a patch over the builders disagreeing about their own frame: one
+   * branch placed the crown by its centre and scaled it by half its height,
+   * which — against a geometry that now genuinely starts at zero — left a
+   * broadleaf's crown squashed to half size and floating a full half-crown
+   * above its own trunk. Visible immediately in a render, invisible to every
+   * test, because both halves were self-consistent.
+   *
+   * A real crown swallows the top of its trunk; only a lollipop balances on the
+   * end of one. So the overlap is stated as a number per species instead of
+   * being implied by an anchoring mode. The tree's total height is unchanged by
+   * it — the crown grows downward by the same amount it sinks.
+   */
+  crownDrop: number
 }
 
 /**
@@ -237,8 +254,12 @@ export interface TreeProportions {
  * polygon detail.
  */
 export const TREE_PROPORTIONS: Record<TreeShape, TreeProportions> = {
-  broadleaf:  { trunk: 0.34, crown: 1.0,  trunkRadius: 0.11, baseAnchored: false },
-  needleleaf: { trunk: 0.18, crown: 0.82, trunkRadius: 0.09, baseAnchored: true },
-  columnar:   { trunk: 0.20, crown: 0.55, trunkRadius: 0.10, baseAnchored: true },
-  palm:       { trunk: 0.68, crown: 1.15, trunkRadius: 0.07, baseAnchored: true },
+  // A round crown swallows a good part of its trunk — this is the species the
+  // old centre-anchoring was trying to express, and the one it broke.
+  broadleaf:  { trunk: 0.34, crown: 1.0,  trunkRadius: 0.11, crownDrop: 0.28 },
+  // A fir's skirt reaches the ground-most branches but the trunk still shows.
+  needleleaf: { trunk: 0.18, crown: 0.82, trunkRadius: 0.09, crownDrop: 0.08 },
+  columnar:   { trunk: 0.20, crown: 0.55, trunkRadius: 0.10, crownDrop: 0.12 },
+  // Fronds spring from the very top of the stem. Nothing overlaps.
+  palm:       { trunk: 0.68, crown: 1.15, trunkRadius: 0.07, crownDrop: 0 },
 }
