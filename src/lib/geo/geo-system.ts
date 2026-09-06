@@ -1244,7 +1244,15 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // right extent. The model sits inside them by construction: the query box
     // is centred on it.
     const bounds = new THREE.Box3()
-    for (const [, obj] of layerObjects) bounds.expandByObject(obj)
+    for (const [kind, obj] of layerObjects) {
+      // Only what CASTS. Measuring every layer let one enormous polygon decide
+      // the frustum: an OSM river runs far past the query box, and over the
+      // Huangpu that stretched the shadow camera to 29 km — 33 units per texel,
+      // which is not a shadow, it is a stain. Water does not cast anyway, so it
+      // has no business setting the extent of the map that holds the casters.
+      if (!SHADOW_ROLES[kind].cast) continue
+      bounds.expandByObject(obj)
+    }
     if (bounds.isEmpty()) return
     const radius = bounds.getBoundingSphere(new THREE.Sphere()).radius
     if (!Number.isFinite(radius)) return

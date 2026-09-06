@@ -391,7 +391,39 @@ function buildSimpleSurface(
 function waterLevelM(
   ring: ReadonlyArray<THREE.Vector2>, frame: GroundFrame, isSea: boolean,
 ): number {
-  return isSea ? frame.seaLevelM : frame.groundRangeM(ring).minM
+  if (isSea) return frame.seaLevelM
+
+  return lowGroundM(ring, frame)
+}
+
+/**
+ * The floor of a ring's own ground samples, robustly.
+ *
+ * A STRICT MINIMUM IS ONE BAD PIXEL AWAY FROM A HOLE, and `terrain-truth` says
+ * exactly that about the same raster: "voids and water artefacts really do go
+ * negative", which is why it takes a low percentile rather than a minimum.
+ * This function is that reasoning applied to a water body.
+ *
+ * It matters most on a big river, because the error scales with the ring. The
+ * Huangpu's outline runs for kilometres past a fraction of a per cent of void
+ * pixels, and the minimum over it found one: measured over Lujiazui the river
+ * levelled at −48 m while the terrain around it sat near zero, so a district
+ * defined by its river bend rendered with no visible water at all.
+ *
+ * A low percentile keeps the original intent — the surface of a river is not
+ * the height of its banks, so the floor of the samples is the right estimate —
+ * and spends one sample in a hundred on not believing the worst pixel.
+ */
+function lowGroundM(ring: ReadonlyArray<THREE.Vector2>, frame: GroundFrame): number {
+  if (ring.length === 0) return frame.groundRangeM(ring).minM
+  const samples: number[] = []
+  for (const p of ring) samples.push(frame.groundM(p.x, p.y))
+  samples.sort((a, b) => a - b)
+  // Round rather than floor: on a short ring, flooring collapses to the
+  // minimum and the robustness is lost exactly where a single vertex counts
+  // for most.
+  const i = Math.min(samples.length - 1, Math.round(0.05 * (samples.length - 1)))
+  return samples[i]
 }
 
 /**
