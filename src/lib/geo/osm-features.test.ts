@@ -778,6 +778,32 @@ describe('roadClass', () => {
 
   it('gives a footpath a flush edge and a coarser surface than tarmac', () => {
     expect(ROAD_CLASS_KERB_M.pedestrian).toBeLessThan(ROAD_CLASS_KERB_M.vehicular)
+  })
+
+  it('widens a footway once it is carried on a structure', () => {
+    // A 2 m default is a park path. A footway on a bridge has an abutment at
+    // each end and something underneath it, and nobody builds one 2 m wide.
+    //
+    // Measured over Lujiazui: 31 elevated footways linking the malls, not one
+    // carrying a `width`. All of them were drawn at the park-path default.
+    const ground = roadWidth({ highway: 'footway' })
+    const bridged = roadWidth({ highway: 'footway', bridge: 'yes' })
+    const layered = roadWidth({ highway: 'footway', layer: '2' })
+    expect(bridged).toBeGreaterThan(ground * 2)
+    expect(layered).toBe(bridged)
+  })
+
+  it('lets a surveyed width beat the elevated fallback outright', () => {
+    // The fallback only ever fills a silence. Where somebody measured it, the
+    // measurement wins — including when it is narrower than our guess.
+    expect(roadWidth({ highway: 'footway', bridge: 'yes', width: '2.5' })).toBe(2.5)
+  })
+
+  it('leaves a carriageway its own width on a viaduct', () => {
+    // A road keeps its carriageway width when elevated, because that is what
+    // the width is for. Only personal-scale paths get the structural minimum.
+    const ground = roadWidth({ highway: 'primary' })
+    expect(roadWidth({ highway: 'primary', bridge: 'yes' })).toBe(ground)
     expect(ROAD_CLASS_ROUGHNESS.pedestrian).toBeGreaterThan(ROAD_CLASS_ROUGHNESS.vehicular)
     expect(ROAD_CLASS_ROUGHNESS.track).toBeGreaterThan(ROAD_CLASS_ROUGHNESS.pedestrian)
   })

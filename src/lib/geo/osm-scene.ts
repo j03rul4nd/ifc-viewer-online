@@ -52,7 +52,8 @@ import {
 } from './vertical-network'
 import { createGroundResolver } from './terrain-truth'
 import { buildRoadNetwork, type NetworkWay } from './road-network'
-import { deckProfile } from './deck-profile'
+import { deckProfile, PARAPET_T_M } from './deck-profile'
+import { placePiers, type ProfilePoint } from './deck-supports'
 import { createGroundFrame, type GroundFrame } from './ground-frame'
 import {
   ROAD_CLASS_ROUGHNESS, ROAD_CLASS_KERB_M, COVER_SPACING_M, SURFACE_ROUGHNESS,
@@ -1517,7 +1518,8 @@ export function buildLinearLayer(
    */
   const pushSurfaceQuad = (
     quad: THREE.Vector2[], tone: [number, number, number], drop: number,
-    deck: { soffit: boolean; parapet: number } = { soffit: false, parapet: 0 },
+    deck: { soffit: boolean; parapet: number; thickness: number } =
+      { soffit: false, parapet: 0, thickness: 0 },
   ): void => {
     if (buriedHere(quad)) return
     const [l0, l1, r1, r0] = quad
@@ -1566,22 +1568,99 @@ export function buildLinearLayer(
       // visible as the outer one, and a single winding leaves it missing from
       // half the views.
       const rail = gain(tone, 1.18)
-      for (const [e0, e1] of [[l0, l1], [r1, r0]] as const) {
+      const railIn = gain(tone, 0.92)
+      // GIVEN REAL THICKNESS, not emitted twice in place.
+      //
+      // The first version drew each parapet as one quad wound both ways to make
+      // it visible from inside and out. Two coincident coplanar faces is the
+      // textbook z-fight, and it showed: the deck edge shimmered into a comb of
+      // vertical stripes at any oblique angle. A slab a hand's width across
+      // costs the same six triangles a double-sided plane would have, and it is
+      // what a parapet is anyway.
+      for (const [e0, e1, o0, o1] of [[l0, l1, r0, r1], [r1, r0, l1, l0]] as const) {
         const z0 = structuralZ(e0.x, e0.y) + lift
         const z1 = structuralZ(e1.x, e1.y) + lift
-        const quads: Array<Array<[THREE.Vector2, number]>> = [
-          [[e0, z0], [e1, z1], [e1, z1 + deck.parapet]],
-          [[e0, z0], [e1, z1 + deck.parapet], [e0, z0 + deck.parapet]],
-          [[e1, z1], [e0, z0], [e0, z0 + deck.parapet]],
-          [[e1, z1], [e0, z0 + deck.parapet], [e1, z1 + deck.parapet]],
-        ]
-        for (const tri of quads) {
-          for (const [v, z] of tri) {
+        // Inward, toward the opposite edge of this quad.
+        const t = Math.min(0.45, deck.thickness / Math.max(1e-9, e0.distanceTo(o0)))
+        const i0 = e0.clone().lerp(o0, t)
+        const i1 = e1.clone().lerp(o1, t)
+        const face = (
+          a: THREE.Vector2, az: number, b: THREE.Vector2, bz: number,
+          c: [number, number, number],
+        ): void => {
+          for (const [v, z] of [
+            [a, az], [b, bz], [b, bz + deck.parapet],
+            [a, az], [b, bz + deck.parapet], [a, az + deck.parapet],
+          ] as const) {
             positions.push(v.x, v.y, z)
+            colors.push(c[0], c[1], c[2])
+          }
+        }
+        face(e0, z0, e1, z1, rail)          // outer
+        face(i1, z1, i0, z0, railIn)        // inner, wound the other way
+        // Coping, so the top is a surface rather than an open edge.
+        for (const tri of [
+          [[e0, z0], [e1, z1], [i1, z1]], [[e0, z0], [i1, z1], [i0, z0]],
+        ] as const) {
+          for (const [v, z] of tri) {
+            positions.push(v.x, v.y, z + deck.parapet)
             colors.push(rail[0], rail[1], rail[2])
           }
         }
       }
+    }
+  }
+
+
+  /**
+   * Stand piers under a ribbon that is carried clear of the ground.
+   *
+   * The support is INVENTED — see `deck-supports` for why that is defensible
+   * where an invented car would not be. What is not invented is the ground it
+   * stands on or the soffit it stops at: both come from the solved profile, so
+   * a row of piers steps with the terrain instead of sitting on a flat datum.
+   *
+   * Emitted into the same buffer as the deck: one more prism per bay costs
+   * nothing next to a draw call.
+   */
+  const pushPiers = (
+    centre: THREE.Vector2[], cls: RoadClass, deckDepthM: number,
+    tone: [number, number, number],
+  ): void => {
+    if (!activeProfile || centre.length < 2) return
+    const pts: ProfilePoint[] = []
+    let stationM = 0
+    for (let i = 0; i < centre.length; i++) {
+      if (i > 0) stationM += centre[i].distanceTo(centre[i - 1]) / mToN
+      const { elevationM, groundM } = activeProfile.sample(centre[i].x, centre[i].y)
+      pts.push({ x: centre[i].x, y: centre[i].y, stationM, elevationM, groundM })
+    }
+
+    const shaft = gain(tone, SIDE_SHADE * 1.05)
+    for (const pier of placePiers(pts, cls, deckDepthM)) {
+      const h = (pier.widthM / 2) * mToN
+      // Ground exaggerated, structure a true metre — the same rule structuralZ
+      // obeys, and the one that used to float decks at the x3 slider.
+      const z0 = frame.zAtElevationM(pier.baseM)
+      const z1 = z0 + (pier.topM - pier.baseM) * mToN
+      const c = [
+        [pier.x - h, pier.y - h], [pier.x + h, pier.y - h],
+        [pier.x + h, pier.y + h], [pier.x - h, pier.y + h],
+      ] as const
+      for (let i = 0; i < 4; i++) {
+        const [ax, ay] = c[i]
+        const [bx, by] = c[(i + 1) % 4]
+        for (const [vx, vy, vz] of [
+          [ax, ay, z0], [bx, by, z0], [bx, by, z1],
+          [ax, ay, z0], [bx, by, z1], [ax, ay, z1],
+        ] as const) {
+          positions.push(vx, vy, vz)
+          colors.push(shaft[0], shaft[1], shaft[2])
+        }
+      }
+      // NO CAP. The top of a shaft sits against the soffit it holds up, so it
+      // is never visible from any angle — and being coplanar with the deck's
+      // underside, drawing it would risk fighting with it for no pixels at all.
     }
   }
 
@@ -1807,7 +1886,11 @@ export function buildLinearLayer(
       const solved = opts.vertical?.get(ribbon.sourceId)
       const profile = deckProfile(solved?.structure ?? 'ground', cls, ROAD_CLASS_KERB_M[cls])
       const ribbonDrop = profile.edgeDropM * mToN
-      const ribbonDeck = { soffit: profile.soffit, parapet: profile.parapetM * mToN }
+      const ribbonDeck = {
+        soffit: profile.soffit,
+        parapet: profile.parapetM * mToN,
+        thickness: PARAPET_T_M * mToN,
+      }
       const ribbonRough = surfaceOf.get(ribbon.sourceId)
       const ribbonStart = ribbonRough === undefined ? -1 : positions.length / 3
       // One quad per station, cut on the MITRED borders rather than on each
@@ -1834,6 +1917,15 @@ export function buildLinearLayer(
           ], ribbon.tone, ribbonDrop, ribbonDeck)
         }
       }
+      // Piers only where the scene is being looked at rather than read. The
+      // `simple` level exists to orient someone cheaply, and a density guard
+      // (vertical-mesh.test) holds it to a budget these would blow: 30 of the
+      // 90 ways in that fixture are structures, and supporting every one of
+      // them tripled the cost of the whole layer.
+      if (profile.soffit && opts.quality === 'detailed') {
+        pushPiers(ribbon.centre, cls, profile.edgeDropM, ribbon.tone)
+      }
+
       // Whatever the miter had to give up on a sharp turn.
       for (const tri of ribbon.joins) {
         pushShaded([tri[0], tri[1], tri[2], tri[0]],
