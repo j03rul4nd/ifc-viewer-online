@@ -34,8 +34,12 @@ import {
 } from './osm-scene'
 import { describeProfile, summariseProfiles } from './vertical-network'
 import {
-  buildRoofPropLayer,
+  buildRoofPropLayer, groundFrameFor,
 } from './osm-scene'
+import { SHADOW_ROLES, shadowCameraPlan } from './shadow-policy'
+import { depthRangeFor, depthRangeChanged, type DepthRange } from './depth-range'
+import { auditVertical, describeAudit } from './vertical-audit'
+import { buildVerticalOverlay, disposeVerticalOverlay, type VerticalOverlay } from './vertical-overlay'
 import { setSurfaceTime, hasAnimatedMaterial } from './surface-shaders'
 import { buildSkyEnvironment } from './sky-environment'
 import { FEATURE_KINDS, type OsmFeature, type FeatureKind } from './osm-features'
@@ -298,12 +302,30 @@ interface EnvSnapshot {
   environment: THREE.Texture | null
   /** Where the key light was pointing before the map aimed it. */
   keyLightPos: THREE.Vector3 | null
+  /**
+   * The shadow camera the viewer had framed around the MODEL.
+   *
+   * Map mode widens it to cover a district, which is the difference between a
+   * building casting onto its own plot and casting onto the street. Restoring
+   * it matters as much as taking it: leaving a district-sized frustum behind
+   * would quietly coarsen every shadow in ordinary model view, and nothing in
+   * that view would explain why.
+   */
+  shadowFrustum: { left: number; right: number; top: number; bottom: number; far: number } | null
 }
 
 export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let engine: BasemapEngine | null = null
   let geoRoot: THREE.Group | null = null
   let snapshot: EnvSnapshot | null = null
+  /** The layer options of the last build, so the overlay can be raised later. */
+  let lastLayerOpts: LayerMeshOptions | null = null
+  let verticalOverlay: VerticalOverlay | null = null
+  let verticalOverlayOpts: { includeConfident?: boolean } | null = null
+  let depthRange: DepthRange | null = null
+  /** Reused per frame: the depth re-tune runs in the RAF and must not allocate. */
+  const scratchCam = new THREE.Vector3()
+  const scratchTarget = new THREE.Vector3()
   let placement: GeoPlacement | null = null
   let provider: MapProvider | null = null
   let rafId: number | null = null
@@ -581,6 +603,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       const tick = (): void => {
         if (!engine) return
         engine.update()
+        retuneDepthRange()
         if (animatedLayers.length > 0) {
           const seconds = performance.now() / 1000
           for (const obj of animatedLayers) setSurfaceTime(obj, seconds)
@@ -626,6 +649,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       engine = null
       placement = null
       provider = null
+      lastLayerOpts = null
+      verticalOverlayOpts = null
+      depthRange = null
 
       restoreSnapshot()
       ctx.setSceneTuneLock(false)
@@ -991,6 +1017,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // the time it is a triangle. This is where they are still written down.
       //   __geoVertical.summary()
       //   __geoVertical.describe('w51')
+      //   __geoVertical.audit()          — which heights are guesses, worst first
+      //   __geoVertical.overlay(true)    — and where they are
       const solvedNow = opts.vertical
       ;(globalThis as Record<string, unknown>).__geoVertical = {
         profiles: solvedNow,
@@ -999,6 +1027,9 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
           const hit = solvedNow.get(id)
           return hit ? describeProfile(hit) : `no vertical profile for "${id}"`
         },
+        audit: () => describeAudit(auditVertical(solvedNow.values())),
+        overlay: (on = true, includeConfident = false) =>
+          setVerticalOverlay(on ? { includeConfident } : null),
       }
     }
 
@@ -1094,7 +1125,104 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       if (built) { addLayer('tree', built.object) }
     }
 
+    // Kept so the overlay can be switched on later without a rebuild: the
+    // profiles are already solved, and re-running Overpass to look at a debug
+    // layer would be a rude way to answer a question about data we hold.
+    lastLayerOpts = opts
+    if (verticalOverlayOpts) applyVerticalOverlay()
+
+    fitShadowCamera()
     return estimatedCount
+  }
+
+  /**
+   * Show or hide the vertical-confidence overlay. `null` hides it.
+   *
+   * Dev-facing today, reached through `__geoVertical.overlay()` beside the text
+   * census it draws. It answers the question the census cannot: not how many
+   * heights are guesses, but WHERE they are — which is what tells you a
+   * district's guesses are all one unmapped interchange rather than scattered.
+   */
+  function setVerticalOverlay(opts: { includeConfident?: boolean } | null): string {
+    verticalOverlayOpts = opts
+    return applyVerticalOverlay()
+  }
+
+  function applyVerticalOverlay(): string {
+    if (verticalOverlay) {
+      verticalOverlay.object.removeFromParent()
+      disposeVerticalOverlay(verticalOverlay)
+      verticalOverlay = null
+    }
+    if (!verticalOverlayOpts) return 'vertical overlay off'
+    if (!geoRoot || !lastLayerOpts?.vertical) return 'no solved scene to overlay'
+
+    const frame = groundFrameFor(lastLayerOpts)
+    const built = buildVerticalOverlay(lastLayerOpts.vertical.values(), {
+      zAtElevationM: frame.zAtElevationM,
+      includeConfident: verticalOverlayOpts.includeConfident,
+    })
+    if (!built) return 'nothing to flag: every solved height carries real evidence'
+
+    verticalOverlay = built
+    geoRoot.add(built.object)
+    return `overlaying ${built.count} ways (${built.assumedCount} on a default clearance)`
+  }
+
+  /**
+   * Widen the key light's shadow camera to cover the context that now exists.
+   *
+   * The viewer frames its shadow camera around the MODEL — ±50 units, far 200
+   * — which is right for a building on a turntable and useless the moment the
+   * building has a district around it: everything outside that box casts
+   * nothing, so the context reads as pasted on.
+   *
+   * The frustum is measured from geoRoot's actual bounds rather than from the
+   * Overpass query box, because what is on screen is not what was asked for:
+   * layers get suppressed, budgets truncate, and a frustum sized to the
+   * request would waste half its resolution on empty ground.
+   */
+  function fitShadowCamera(): void {
+    const key = ctx.keyLight
+    if (!key || !geoRoot) return
+
+    // MEASURED FROM THE BUILT LAYERS, NOT FROM geoRoot.
+    //
+    // geoRoot also carries the basemap engine and the 3D-tiles group, and those
+    // run to the horizon. Measuring it gave a 4119-unit radius over a district
+    // a few hundred metres across, which at a 2048 map is 4.6 units per texel —
+    // a contact shadow four metres wide. (The degradation warning below caught
+    // exactly this, on the real scene, which is the only reason it was found.)
+    //
+    // The layer objects are the context that actually casts, so they are the
+    // right extent. The model sits inside them by construction: the query box
+    // is centred on it.
+    const bounds = new THREE.Box3()
+    for (const [, obj] of layerObjects) bounds.expandByObject(obj)
+    if (bounds.isEmpty()) return
+    const radius = bounds.getBoundingSphere(new THREE.Sphere()).radius
+    if (!Number.isFinite(radius)) return
+
+    const plan = shadowCameraPlan(
+      radius, key.position.length() || 100, key.shadow.mapSize.width,
+    )
+    const cam = key.shadow.camera
+    cam.left = -plan.halfExtent
+    cam.right = plan.halfExtent
+    cam.top = plan.halfExtent
+    cam.bottom = -plan.halfExtent
+    cam.far = plan.far
+    cam.updateProjectionMatrix()
+
+    if (plan.degraded) {
+      // Honest rather than silent: at this frustum the map size cannot hold a
+      // contact shadow, and a grey smear under every object reads as a bug to
+      // a client even though the geometry is right.
+      log.warn(
+        `shadow map coarse: ${plan.texelSize.toFixed(2)} units per texel over a ` +
+        `${radius.toFixed(0)}-unit scene — contact shadows will smear`,
+      )
+    }
   }
 
   /** The light every procedural surface uses — the terrain's, deliberately. */
@@ -1103,6 +1231,18 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   }
 
   function addLayer(kind: FeatureKind, object: THREE.Object3D): void {
+    // THE ONE PLACE THE CONTEXT JOINS THE SHADOW PASS.
+    //
+    // Here rather than in each builder, for the reason every other cross-layer
+    // decision lives here: the builders in osm-scene are geometry in, geometry
+    // out, and giving each one a private opinion about lighting is how the
+    // vertical axis went wrong before `solveSceneVertical` centralised it.
+    const role = SHADOW_ROLES[kind]
+    object.traverse((o) => {
+      if (!(o as THREE.Mesh).isMesh) return
+      o.castShadow = role.cast
+      o.receiveShadow = role.receive
+    })
     geoRoot!.add(object)
     layerObjects.set(kind, object)
     // Water is the only animated layer today, but asking the object rather than
@@ -1168,6 +1308,15 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     for (const [, obj] of layerObjects) disposeLayer(obj)
     layerObjects.clear()
     animatedLayers.length = 0
+    // The overlay is rebuilt from the next solve rather than carried across it:
+    // it describes a specific solved scene, and showing it over a different one
+    // would be an instrument reporting on data it no longer holds. The REQUEST
+    // (verticalOverlayOpts) survives, so a session left with it on stays on.
+    if (verticalOverlay) {
+      verticalOverlay.object.removeFromParent()
+      disposeVerticalOverlay(verticalOverlay)
+      verticalOverlay = null
+    }
   }
 
   /** Re-extrude the cached features against the current ground. */
@@ -1389,6 +1538,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       gridVisible: ctx.getGridVisible(),
       environment: ctx.scene.environment,
       keyLightPos: ctx.keyLight ? ctx.keyLight.position.clone() : null,
+      shadowFrustum: ctx.keyLight
+        ? (() => {
+            const c = ctx.keyLight.shadow.camera
+            return { left: c.left, right: c.right, top: c.top, bottom: c.bottom, far: c.far }
+          })()
+        : null,
       cameraPos: ctx.controls.getPosition(new THREE.Vector3()),
       cameraTarget: ctx.controls.getTarget(new THREE.Vector3()),
     }
@@ -1412,12 +1567,44 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     ctx.setGridVisible(snapshot.gridVisible)
     ctx.scene.environment = snapshot.environment
     if (ctx.keyLight && snapshot.keyLightPos) ctx.keyLight.position.copy(snapshot.keyLightPos)
+    if (ctx.keyLight && snapshot.shadowFrustum) {
+      const c = ctx.keyLight.shadow.camera
+      const s = snapshot.shadowFrustum
+      c.left = s.left; c.right = s.right; c.top = s.top; c.bottom = s.bottom; c.far = s.far
+      c.updateProjectionMatrix()
+    }
     void ctx.controls.setLookAt(
       snapshot.cameraPos.x, snapshot.cameraPos.y, snapshot.cameraPos.z,
       snapshot.cameraTarget.x, snapshot.cameraTarget.y, snapshot.cameraTarget.z,
       true,
     )
     snapshot = null
+  }
+
+  /**
+   * Re-tune the near plane to what the camera is actually looking at.
+   *
+   * Map mode locks the viewer's own near/far tuning out (`setSceneTuneLock`)
+   * because it owns the far plane — the map runs to the horizon and the viewer
+   * would keep pulling it in. But it then set the NEAR plane once and left it
+   * there, at 0.5 m, for every distance from a doorway to 30 km up.
+   *
+   * A near plane that small spends the depth buffer where nothing is: it
+   * resolves about a centimetre at 300 m, which is wider than the gap between a
+   * curtain wall and the spandrel set into it, so the two share a depth value
+   * and flicker. Restoring the adaptation the lock removed — for near only, so
+   * the horizon stays where map mode wants it — is the whole fix.
+   *
+   * Driven from the RAF rather than from a controls event because the camera
+   * also moves under inertia and under a flight, neither of which fires one.
+   */
+  function retuneDepthRange(): void {
+    const distance = ctx.controls.getPosition(scratchCam)
+      .distanceTo(ctx.controls.getTarget(scratchTarget))
+    const next = depthRangeFor(distance, MAP_FAR_M)
+    if (!depthRangeChanged(depthRange, next)) return
+    depthRange = next
+    applyCameraPlanes(next.nearM, next.farM)
   }
 
   function applyCameraPlanes(near: number, far: number): void {

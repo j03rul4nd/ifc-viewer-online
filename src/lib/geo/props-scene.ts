@@ -198,13 +198,49 @@ const CAR_COLORS: Array<[number, number, number]> = [
 ]
 const GLASS = [0.22, 0.26, 0.30] as [number, number, number]
 
-/** One car: body, cabin, and a dark band that reads as glazing. */
+/** Rubber, and the shadow under a sill. Nearly black, never fully. */
+const TYRE = [0.09, 0.09, 0.10] as [number, number, number]
+
+/**
+ * One car.
+ *
+ * WHAT MAKES A CAR READ AS A CAR at the distance these are seen from is not
+ * detail, it is three proportions: it is long and LOW, its cabin is set back
+ * and narrower than its body, and it stands on wheels at its corners. The
+ * previous stand-in had none of them — a 0.75 m slab with a 0.62 m box on top
+ * came to 1.57 m tall, which is a small van, and a single dark slab across the
+ * whole underside stood in for the wheels. From a street-level camera that is
+ * a shoebox with a smaller shoebox on it, which is exactly what it looked like.
+ *
+ * The numbers are a real mid-size hatchback: 4.30 long, 1.80 wide, 1.44 tall,
+ * 2.70 between axles. Same argument as the tree canopies — spend the budget on
+ * silhouette, not on polygons — and it is still one instanced geometry, so the
+ * whole traffic layer costs one draw call however many cars are parked.
+ */
 function carGeometry(color: [number, number, number]): THREE.BufferGeometry {
+  const wheel = (x: number, y: number): THREE.BufferGeometry =>
+    box(0.62, 0.20, 0.60, [x, y, 0.02])
+
   return merge([
-    { geo: box(4.3, 1.85, 0.75, [0, 0, 0.22]), color },
-    { geo: box(2.3, 1.72, 0.62, [-0.15, 0, 0.95]), color: GLASS },
-    // Wheels read as a dark shadow line rather than as geometry nobody sees.
-    { geo: box(4.35, 1.95, 0.22, [0, 0, 0]), color: [0.1, 0.1, 0.11] },
+    // Wheels at the corners. The single biggest change: a body floating on a
+    // dark slab reads as a box, and four gaps of daylight under it do not.
+    { geo: wheel(1.35, 0.80), color: TYRE },
+    { geo: wheel(1.35, -0.80), color: TYRE },
+    { geo: wheel(-1.35, 0.80), color: TYRE },
+    { geo: wheel(-1.35, -0.80), color: TYRE },
+    // Sill, inset so the wheels stand proud of it rather than flush.
+    { geo: box(4.10, 1.68, 0.24, [0, 0, 0.28]), color: TYRE },
+    // Body. Low and long — this is the proportion that was wrong.
+    { geo: box(4.30, 1.80, 0.42, [0, 0, 0.46]), color },
+    // Shoulder: a shallow step in before the glazing, so the body does not meet
+    // the cabin in one flat wall.
+    { geo: box(4.06, 1.72, 0.12, [0, 0, 0.88]), color },
+    // Greenhouse, set back and narrowed. Both matter: a cabin the full width of
+    // the body is a van, and one centred on it is a bus.
+    { geo: box(2.10, 1.58, 0.40, [-0.32, 0, 1.00]), color: GLASS },
+    // Roof, narrower again and thin, which fakes the rake without a tapered
+    // mesh. Thin matters: a thick roof plate reads as a lid set on a box.
+    { geo: box(1.82, 1.46, 0.07, [-0.36, 0, 1.40]), color },
   ])
 }
 

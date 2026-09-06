@@ -64,9 +64,67 @@ function put(
   return geo
 }
 
-/** Cone/cylinder primitives are built around +Y; the planar frame is Z-up. */
+/**
+ * Cone/cylinder primitives are built around +Y; the planar frame is Z-up.
+ *
+ * MUST BE APPLIED BEFORE `put`, never after. `put` translates, and a rotation
+ * applied afterwards rotates the translation with it: `zUp(put(cone, s, [0, 0,
+ * 0.3]))` stacks the part along −Y instead of +Z. That is not hypothetical —
+ * it is what smeared the fir's tiers and the poplar's spike sideways out of
+ * their own trunks, and it survived because the result still looked like a
+ * plausible clump of green from directly above.
+ */
 function zUp(geo: THREE.BufferGeometry): THREE.BufferGeometry {
   geo.rotateX(Math.PI / 2)
+  return geo
+}
+
+/**
+ * A cone standing on z = 0 in the Z-up frame, `radius` across and `height` tall.
+ *
+ * Wraps the ordering trap above so no caller has to remember it, and folds in
+ * the half-height shift that `ConeGeometry` needs to stand on its base rather
+ * than straddle the origin.
+ */
+function cone(
+  radius: number, height: number, segments: number, baseZ: number,
+): THREE.BufferGeometry {
+  const geo = zUp(new THREE.ConeGeometry(1, 1, segments))
+  geo.scale(radius, radius, height)
+  geo.translate(0, 0, baseZ + height / 2)
+  return geo
+}
+
+/**
+ * Force a canopy into the frame the whole module claims to work in: base at
+ * z = 0, one unit tall, one unit across.
+ *
+ * THE CONVENTION WAS A COMMENT, NOT A FACT. Measured, the four canopies ran
+ * from 0.52 to 3.0 units tall with bases anywhere from −0.88 to −0.25, and the
+ * instancing in osm-scene scales them as though all of it were true — so a
+ * poplar came out three times its tagged height and every crown sat at the
+ * wrong distance from its own trunk.
+ *
+ * Normalising here rather than by hand-tuning each builder keeps proportion in
+ * ONE place: `TREE_PROPORTIONS`, which is where the module says it lives. A
+ * builder's numbers are then free to describe a SHAPE without also having to
+ * encode a size.
+ */
+function normalize(geo: THREE.BufferGeometry): THREE.BufferGeometry {
+  geo.computeBoundingBox()
+  const box = geo.boundingBox
+  if (!box) return geo
+
+  const height = box.max.z - box.min.z
+  // Radial extent, not the bounding box's width: a crown is scaled by a radius
+  // and taking the half-width of an off-centre box would shrink a leaning tree.
+  const reach = Math.max(
+    Math.abs(box.min.x), Math.abs(box.max.x), Math.abs(box.min.y), Math.abs(box.max.y),
+  )
+  if (height > 1e-6) geo.scale(1, 1, 1 / height)
+  if (reach > 1e-6) geo.scale(1 / reach, 1 / reach, 1)
+  geo.computeBoundingBox()
+  geo.translate(0, 0, -(geo.boundingBox?.min.z ?? 0))
   return geo
 }
 
@@ -91,9 +149,9 @@ function broadleafCanopy(): THREE.BufferGeometry {
  */
 function needleleafCanopy(): THREE.BufferGeometry {
   return merge([
-    zUp(put(new THREE.ConeGeometry(1, 1, 7), [1.0, 0.52, 1.0], [0, 0, 0])),
-    zUp(put(new THREE.ConeGeometry(1, 1, 7), [0.78, 0.46, 0.78], [0, 0, 0.30])),
-    zUp(put(new THREE.ConeGeometry(1, 1, 7), [0.52, 0.44, 0.52], [0, 0, 0.62])),
+    cone(1.00, 0.52, 7, 0),
+    cone(0.78, 0.46, 7, 0.30),
+    cone(0.52, 0.44, 7, 0.62),
   ])
 }
 
@@ -105,7 +163,7 @@ function needleleafCanopy(): THREE.BufferGeometry {
 function columnarCanopy(): THREE.BufferGeometry {
   return merge([
     put(new THREE.IcosahedronGeometry(1, 1), [0.62, 0.62, 1.5], [0, 0, 0.62]),
-    zUp(put(new THREE.ConeGeometry(1, 1, 8), [0.5, 0.42, 0.5], [0, 0, 1.5])),
+    cone(0.5, 0.42, 8, 1.5),
   ])
 }
 
@@ -147,7 +205,7 @@ const CANOPY_BUILDERS: Record<TreeShape, () => THREE.BufferGeometry> = {
  * 1 in radius. Callers scale it per instance.
  */
 export function canopyGeometry(shape: TreeShape): THREE.BufferGeometry {
-  return CANOPY_BUILDERS[shape]()
+  return normalize(CANOPY_BUILDERS[shape]())
 }
 
 /** Trunk: tapered, base at z = 0, height 1, radius 1 at the base. */
@@ -169,8 +227,25 @@ export interface TreeProportions {
   crown: number
   /** Trunk radius as a share of crown radius. */
   trunkRadius: number
-  /** True when the canopy is anchored at its base rather than its centre. */
-  baseAnchored: boolean
+  /**
+   * How far the crown SINKS PAST the top of the trunk, as a share of the
+   * crown's own height.
+   *
+   * REPLACES a `baseAnchored` boolean, which stopped meaning anything once
+   * `canopyGeometry` normalised every species to base-at-zero. That flag was
+   * only ever a patch over the builders disagreeing about their own frame: one
+   * branch placed the crown by its centre and scaled it by half its height,
+   * which — against a geometry that now genuinely starts at zero — left a
+   * broadleaf's crown squashed to half size and floating a full half-crown
+   * above its own trunk. Visible immediately in a render, invisible to every
+   * test, because both halves were self-consistent.
+   *
+   * A real crown swallows the top of its trunk; only a lollipop balances on the
+   * end of one. So the overlap is stated as a number per species instead of
+   * being implied by an anchoring mode. The tree's total height is unchanged by
+   * it — the crown grows downward by the same amount it sinks.
+   */
+  crownDrop: number
 }
 
 /**
@@ -179,8 +254,12 @@ export interface TreeProportions {
  * polygon detail.
  */
 export const TREE_PROPORTIONS: Record<TreeShape, TreeProportions> = {
-  broadleaf:  { trunk: 0.34, crown: 1.0,  trunkRadius: 0.11, baseAnchored: false },
-  needleleaf: { trunk: 0.18, crown: 0.82, trunkRadius: 0.09, baseAnchored: true },
-  columnar:   { trunk: 0.20, crown: 0.55, trunkRadius: 0.10, baseAnchored: true },
-  palm:       { trunk: 0.68, crown: 1.15, trunkRadius: 0.07, baseAnchored: true },
+  // A round crown swallows a good part of its trunk — this is the species the
+  // old centre-anchoring was trying to express, and the one it broke.
+  broadleaf:  { trunk: 0.34, crown: 1.0,  trunkRadius: 0.11, crownDrop: 0.28 },
+  // A fir's skirt reaches the ground-most branches but the trunk still shows.
+  needleleaf: { trunk: 0.18, crown: 0.82, trunkRadius: 0.09, crownDrop: 0.08 },
+  columnar:   { trunk: 0.20, crown: 0.55, trunkRadius: 0.10, crownDrop: 0.12 },
+  // Fronds spring from the very top of the stem. Nothing overlaps.
+  palm:       { trunk: 0.68, crown: 1.15, trunkRadius: 0.07, crownDrop: 0 },
 }

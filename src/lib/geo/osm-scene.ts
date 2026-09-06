@@ -136,7 +136,16 @@ export interface LayerMeshOptions {
 const FALLBACK_SUN: SurfaceSun = { azimuthDeg: 315, altitudeDeg: 45 }
 
 /** Surface colours. Deliberately muted — this is context, not the subject. */
-const WATER_COLOR = new THREE.Color(0x2c5a7a)
+/**
+ * Open water, as seen ON ITS OWN.
+ *
+ * Lifted from the 0x2c5a7a this was, because that value was chosen to be seen
+ * at 72 % over a pale basemap tile: the tile was doing about a quarter of the
+ * lightening. With the layer opaque (see the material note in
+ * `buildSimpleSurface`) the old value renders as near-black harbour. This is
+ * the same hue, raised to land where the blend used to.
+ */
+const WATER_COLOR = new THREE.Color(0x3f6f8f)
 const BRIDGE_COLOR = new THREE.Color(0x6b6b6e)
 const TRUNK_COLOR = new THREE.Color(0x5b4636)
 
@@ -290,7 +299,7 @@ function buildSimpleSurface(
     // it — the surface of a river is not the height of its banks.
     let flatZ = 0
     if (layer === 'water') {
-      flatZ = frame.zAtElevationM(waterLevelM(ring, frame) + lift)
+      flatZ = frame.zAtElevationM(waterLevelM(ring, frame, f.isSea === true) + lift)
     }
 
     // Ground cover is coloured by WHAT IT IS: a forest is much darker than a
@@ -323,19 +332,31 @@ function buildSimpleSurface(
   geometry.computeVertexNormals()
   geometry.computeBoundingSphere()
 
+  // WATER IS OPAQUE, and this is the third and last layer to make that
+  // correction for the same reason.
+  //
+  // Greenery went 0.45 → 0.92 because the raster park printed on the basemap
+  // tile read straight through our own. The road layer made the same move (see
+  // the OPAQUE note in buildLinearLayer). Water was left translucent on the
+  // argument that "a river genuinely shows what is under it" — true of a river
+  // over modelled bed, and false of everything this viewer actually draws:
+  // there is no bathymetry under the sea here, so the 28 % showing through was
+  // never water depth. It was the basemap photograph, and over a harbour that
+  // photograph has ROAD CASINGS AND PLACE LABELS PRINTED ON IT. That is the
+  // "Rambla de Mar" caption and the carriageway lines floating across the open
+  // span in every screenshot of the bridge.
+  //
+  // Nothing was drawn over the water. The water was drawn over a map.
+  const isWaterLayer = layer === 'water'
   const material = new THREE.MeshBasicMaterial({
-    color: layer === 'water' ? WATER_COLOR : 0xffffff,
+    color: isWaterLayer ? WATER_COLOR : 0xffffff,
     vertexColors: colors.length > 0,
-    transparent: true,
-    // Water stays translucent — a river genuinely shows what is under it. Ground
-    // cover does NOT: grass is a surface, not a tint over the map underneath,
-    // and at 0.45 the raster park printed on the basemap tile read straight
-    // through our own, which is why greenery looked like a wash rather than
-    // ground. This is the same correction the road layer already made for
-    // exactly the same reason — see the OPAQUE note in buildLinearLayer. A hair
-    // under one keeps the seam with the tiles from reading as a hard cutout.
-    opacity: layer === 'water' ? 0.72 : 0.92,
-    depthWrite: false,
+    transparent: !isWaterLayer,
+    // A hair under one keeps the seam with the tiles from reading as a hard
+    // cutout, for the layers that still blend.
+    opacity: isWaterLayer ? 1 : 0.92,
+    // An opaque sea must write depth, or the tiles it covers z-fight through it.
+    depthWrite: isWaterLayer,
     side: THREE.DoubleSide,
   })
   const mesh = new THREE.Mesh(geometry, material)
@@ -344,13 +365,41 @@ function buildSimpleSurface(
   return { object: mesh, count, dropped }
 }
 
-/** Level a water body sits at: the LOWEST ground under its own outline. */
-function waterLevelM(ring: ReadonlyArray<THREE.Vector2>, frame: GroundFrame): number {
-  return frame.groundRangeM(ring).minM
+/**
+ * Level a water body sits at, in the DEM's own datum.
+ *
+ * TWO KINDS OF WATER, TWO DATUMS, and conflating them is what left the harbour
+ * hanging.
+ *
+ * Inland water — a river, a lake, a dock — sits at a local level that only the
+ * terrain around it knows, so it is levelled at the LOWEST ground under its own
+ * outline: the surface of a river is not the height of its banks.
+ *
+ * The sea is not a local level. It sits at the sea datum by definition, and the
+ * DEM is the worst available witness to where that is: over this harbour the
+ * raster reads +8.5 m on a flat quay and +4.7 m on open water, because it is a
+ * surface model full of moored vessels and terminal roofs. Taking the minimum
+ * of THAT put the sea surface below the datum the quays are built on, so every
+ * quay's 3 m skirt stopped reaching the water and its underside hung in the
+ * air — the floating-quay symptom, which was never a missing wall.
+ *
+ * `buildPierLayer` has always used the sea datum. This is the other half of
+ * that decision, and until now the two halves disagreed.
+ */
+function waterLevelM(
+  ring: ReadonlyArray<THREE.Vector2>, frame: GroundFrame, isSea: boolean,
+): number {
+  return isSea ? frame.seaLevelM : frame.groundRangeM(ring).minM
 }
 
-/** The vertical frame these options describe. Built once per layer builder. */
-function groundFrameFor(opts: LayerMeshOptions): GroundFrame {
+/**
+ * The vertical frame these options describe. Built once per layer builder.
+ *
+ * Exported so anything drawing INTO this scene resolves height the same way
+ * rather than reconstructing the parameters itself. Two places deriving one
+ * datum from the same inputs is how the sea and the quays drifted apart.
+ */
+export function groundFrameFor(opts: LayerMeshOptions): GroundFrame {
   return createGroundFrame({
     anchorLat: opts.anchorLat,
     anchorElevationM: opts.anchorElevationM,
@@ -559,7 +608,7 @@ function buildDetailedSurface(
     const flatZ = isWater
       ? frame.zAtElevationM(waterLevelM(
           ringM.map((p) => new THREE.Vector2(originX + p.x * mToN, originY + p.y * mToN)),
-          frame,
+          frame, f.isSea === true,
         ) + lift)
       : 0
     const shoreDist = isWater ? distanceToRing(mesh.points, ringM) : null
@@ -2661,17 +2710,18 @@ export function buildTreeLayer(
       // Yaw only — a leaning tree would read as a bug, not as character.
       quat.setFromAxisAngle(zAxis, variate(placed.id, 4) * Math.PI * 2)
 
-      // A round crown hangs off its centre; tiered and radial ones sit on the
-      // top of the trunk.
-      const centreZ = t.p.baseAnchored
-        ? t.baseZ + t.trunkM * mToN
-        : t.baseZ + (t.trunkM + canopyM / 2) * mToN
-      pos.set(t.nx, t.ny, centreZ)
-      scale.set(
-        t.radiusM * mToN,
-        t.radiusM * mToN,
-        (t.p.baseAnchored ? canopyM : canopyM / 2) * mToN,
-      )
+      // Every canopy is base-at-zero and one unit tall (see `canopyGeometry`),
+      // so placement is the same for all four species: sit the crown's base on
+      // the trunk, then let it SINK by its species' overlap so it swallows the
+      // top of the trunk instead of balancing on the end of it.
+      //
+      // The tree keeps its tagged height: the crown grows downward by exactly
+      // what it sinks, so the top lands at trunkM + (totalM − trunkM) either
+      // way. Getting that wrong is how a broadleaf ended up half-size and
+      // floating a half-crown clear of its own trunk.
+      const dropM = canopyM * t.p.crownDrop
+      pos.set(t.nx, t.ny, t.baseZ + (t.trunkM - dropM) * mToN)
+      scale.set(t.radiusM * mToN, t.radiusM * mToN, (canopyM + dropM) * mToN)
       canopy.setMatrixAt(i, m.compose(pos, quat, scale))
       canopy.setColorAt(i, color.setRGB(...foliageColor(placed.id, t.shape)))
 

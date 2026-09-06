@@ -75,6 +75,22 @@ export interface OsmFeature {
   vertical?: VerticalTags
   /** What the way is FOR, which decides its clearances and its maximum grade. */
   functional?: FunctionalType
+  /**
+   * THE SEA, as opposed to any other water.
+   *
+   * The distinction is a DATUM, not a label. Inland water sits at its own local
+   * level and the only thing that knows that level is the terrain under it, so
+   * a lake is levelled against the DEM. The sea does not work that way: it sits
+   * at the sea datum by definition, everywhere, and the DEM is the worst
+   * possible witness to where that is — over a harbour the raster is measuring
+   * moored ships and terminal roofs, and reads metres above open water a few
+   * metres away.
+   *
+   * Levelling the sea against the DEM is what dropped the sea surface below the
+   * datum the quays are built on, which is what left every quay's underside
+   * hanging in the air. See `waterLevelM` in osm-scene.
+   */
+  isSea?: boolean
 }
 
 export interface FeatureStyle {
@@ -1317,6 +1333,8 @@ export function parseOsmFeatures(
         height: { heightM: 0, minHeightM: 0, estimated: true },
         style: resolveFeatureStyle('water', { natural: 'water' }),
         label: 'Sea',
+        // The one thing that IS special about it downstream: its datum.
+        isSea: true,
       })
     })
   }
