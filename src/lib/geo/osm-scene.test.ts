@@ -167,6 +167,27 @@ describe('buildSurfaceLayer', () => {
     expect(material.depthWrite).toBe(true)
   })
 
+  it('keeps water opaque in the DETAILED path too, which is what a demo runs', () => {
+    // THE GAP THAT LET THE FIRST ATTEMPT SHIP BROKEN. buildSimpleSurface and
+    // buildDetailedSurface build their materials independently, so making one
+    // opaque is invisible in the other — and `showcase`, which is the level a
+    // client presentation uses, goes through the detailed one. Measured live on
+    // Port Vell, the sea was still 0.62 and the basemap's street names read
+    // straight across the harbour.
+    //
+    // Asserted on the uniform rather than material.opacity: the detailed water
+    // keeps `transparent` + depthWrite:false deliberately, because every ground
+    // layer here is coplanar with the basemap and render order is what keeps
+    // that stack deterministic. uOpacity is the alpha FLOOR the shader mixes up
+    // from, so it is the number that decides whether anything shows through.
+    const built = buildSurfaceLayer([area('water', 'w1')], 'water', {
+      ...OPTS, quality: 'detailed',
+    })!
+    const material = built.object.material as THREE.MeshStandardMaterial
+    const uniforms = material.userData.uniforms as { uOpacity: { value: number } }
+    expect(uniforms.uOpacity.value).toBe(1)
+  })
+
   it('leaves the blending layers alone', () => {
     // The opacity change is water-only: greenery still sits a hair under one so
     // its seam with the tiles does not read as a hard cutout.

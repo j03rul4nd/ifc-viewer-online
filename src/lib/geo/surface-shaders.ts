@@ -471,9 +471,32 @@ const SURFACE_FN: Record<Exclude<SurfaceKind, 'water'>, string> = {
   asphalt: 'asphaltSurface',
 }
 
-/** Default opacity per surface. Water alone is see-through. */
+/**
+ * Default opacity per surface. All of them opaque, water included.
+ *
+ * WATER WAS 0.62 HERE, on the same reasoning the simple path used at 0.72: a
+ * river shows what is under it. True of a river over a modelled bed, false of
+ * everything this viewer draws — there is no bathymetry, so what showed through
+ * was never depth. It was the basemap photograph, and over a harbour that
+ * photograph has street names and road casings printed on it. Measured live on
+ * Port Vell, "Ciutat Vella" and "Passeig de Colom" read straight across the
+ * open water.
+ *
+ * For water this is the FLOOR, not the alpha: the shader mixes it up to 1.0
+ * with fresnel and foam (see `normal_fragment_maps` below), so a value of 1
+ * makes the surface opaque at every angle while leaving that machinery intact.
+ * The reflection, which is what should make water read as water, is unaffected
+ * — it comes from three's dielectric response to the sky environment, not from
+ * seeing the ground through the surface.
+ *
+ * Note this is a SEPARATE constant from the simple path's, and that is how the
+ * first attempt at this fix missed: `buildSimpleSurface` and
+ * `buildDetailedSurface` build their materials independently, so a change to
+ * one is invisible in the other — and `showcase`, which is what a client demo
+ * runs, uses the detailed one.
+ */
 const DEFAULT_OPACITY: Record<SurfaceKind, number> = {
-  grass: 1, sand: 1, rock: 1, water: 0.62, asphalt: 1,
+  grass: 1, sand: 1, rock: 1, water: 1, asphalt: 1,
 }
 
 /** Uniforms a caller may want to reach later, kept on `material.userData`. */
