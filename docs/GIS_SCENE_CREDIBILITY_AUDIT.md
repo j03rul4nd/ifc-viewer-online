@@ -209,8 +209,46 @@ Tests: `1114` verdes.
 **Pendiente:** el overlay es dev-only. Sacarlo a un toggle en `GeoPanel` es una decisión de producto
 (¿el cliente debe ver qué partes del contexto son inciertas?) y no la tomo yo.
 
-### Fase 4 — Calidad de asset
-Subdivisión de copa, anclaje de tronco, proporción de coches, resolución del z-fighting de fachada.
+### Fase 4 — Calidad de asset ◐ PARCIAL
+
+Dos defectos resultaron ser **bugs de corrección**, no de estilo, y se arreglaron. El resto es
+juicio visual y queda explícitamente pendiente de mirar la escena.
+
+**Árboles (`tree-geometry.ts`).** La cabecera del módulo promete "unit-sized (radius 1, height 1)
+con la base en z = 0", y el instanciado de `osm-scene` hace su aritmética dando eso por cierto.
+Medido: **ninguna de las cuatro copas lo cumplía** — alturas de 0,52 a 3,0 y bases de −0,88 a −0,25.
+Un chopo salía a **tres veces** su altura etiquetada y toda copa se sentaba a distancia equivocada
+de su propio tronco.
+
+Y dos estaban construidas directamente en el marco equivocado: `zUp` aplicado *después* de `put`
+rota también la traslación, así que los pisos del abeto y la punta del chopo se apilaban en −Y en
+vez de +Z — de lado, fuera de su tronco. Sobrevivió porque desde arriba un montón de verde sigue
+pareciendo un montón de verde. **Ese es el síntoma B7 que describiste como "troncos en trípode
+descentrados respecto a la copa".**
+
+Primeros tests que tiene el módulo, que es exactamente por qué esto sobrevivió. Dos de ellos medían
+artefactos antes de medir el tronco (el bbox no está centrado en un prisma de lados impares; el
+centroide de vértices está sesgado por el vértice de costura duplicado de `CylinderGeometry`) — los
+dos leían ~0,1 de desviación en un tronco perfectamente centrado, y cualquiera habría mandado un
+arreglo detrás de un error de medición.
+
+**Z-fighting de fachada (`depth-range.ts`).** Causa raíz en map mode, no en el IFC: `geo-system`
+bloquea el reajuste de planos del visor (`setSceneTuneLock`, porque el mapa llega al horizonte y el
+visor insistía en acercar el far) y luego fijaba `near = 0,5` **una vez**, para cualquier distancia
+entre un portal y 30 km de altura. La resolución de profundidad va como z²/near, así que ese near
+gasta el búfer donde no hay nada: a 300 m resuelve ~1 cm, más que la separación entre un muro
+cortina y su antepecho. Ahora se readapta por frame.
+
+**Lo que esto NO arregla, y hay que decirlo:** caras exactamente coincidentes. A separación cero
+ningún near plane resuelve nada; eso necesita `polygonOffset` o geometría deduplicada en el pipeline
+del modelo. Se deja aparte a propósito — si el parpadeo sobrevive a este cambio, la causa era
+coincidencia y no precisión, y eso es información.
+
+**Pendiente y no hecho:** facetado de copa (subdivisión), color plano del follaje, proporción de
+coches, saturación del cristal. Son decisiones estéticas y llevo cuatro fases sin ver la escena.
+Hacerlas a ciegas sería acumular criterio no verificado sobre una base tampoco verificada.
+
+Tests: `1155` verdes.
 
 ---
 
