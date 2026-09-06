@@ -6,6 +6,7 @@ import { safeVoid } from './errors'
 import { appBus } from './event-bus'
 import { cameraRangeForBounds, widenCameraRange } from './camera-range'
 import { bindNavigation } from './camera-nav'
+import { aimPoint } from './aim-point'
 import { bindWalkNavigation, type WalkNavigation, type WalkState } from './camera-walk'
 import { createFrameCoalescer } from './frame-coalescer'
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
@@ -1312,12 +1313,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
    */
   function aimAt(e: { clientX: number; clientY: number }): void {
     const locked = typeof document !== 'undefined' && document.pointerLockElement === canvas
-    if (locked) {
-      const r = canvas.getBoundingClientRect()
-      mouse.set(r.left + r.width / 2, r.top + r.height / 2)
-    } else {
-      aimAt(e)
-    }
+    const p = aimPoint(locked, canvas.getBoundingClientRect(), e.clientX, e.clientY)
+    mouse.set(p.x, p.y)
   }
 
   function removeSelectionBox(): void {
