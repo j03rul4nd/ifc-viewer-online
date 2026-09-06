@@ -37,6 +37,7 @@ import {
   buildRoofPropLayer, groundFrameFor,
 } from './osm-scene'
 import { SHADOW_ROLES, shadowCameraPlan } from './shadow-policy'
+import { depthRangeFor, depthRangeChanged, type DepthRange } from './depth-range'
 import { auditVertical, describeAudit } from './vertical-audit'
 import { buildVerticalOverlay, disposeVerticalOverlay, type VerticalOverlay } from './vertical-overlay'
 import { setSurfaceTime, hasAnimatedMaterial } from './surface-shaders'
@@ -321,6 +322,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   let lastLayerOpts: LayerMeshOptions | null = null
   let verticalOverlay: VerticalOverlay | null = null
   let verticalOverlayOpts: { includeConfident?: boolean } | null = null
+  let depthRange: DepthRange | null = null
+  /** Reused per frame: the depth re-tune runs in the RAF and must not allocate. */
+  const scratchCam = new THREE.Vector3()
+  const scratchTarget = new THREE.Vector3()
   let placement: GeoPlacement | null = null
   let provider: MapProvider | null = null
   let rafId: number | null = null
@@ -598,6 +603,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       const tick = (): void => {
         if (!engine) return
         engine.update()
+        retuneDepthRange()
         if (animatedLayers.length > 0) {
           const seconds = performance.now() / 1000
           for (const obj of animatedLayers) setSurfaceTime(obj, seconds)
@@ -645,6 +651,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       provider = null
       lastLayerOpts = null
       verticalOverlayOpts = null
+      depthRange = null
 
       restoreSnapshot()
       ctx.setSceneTuneLock(false)
@@ -1560,6 +1567,32 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       true,
     )
     snapshot = null
+  }
+
+  /**
+   * Re-tune the near plane to what the camera is actually looking at.
+   *
+   * Map mode locks the viewer's own near/far tuning out (`setSceneTuneLock`)
+   * because it owns the far plane — the map runs to the horizon and the viewer
+   * would keep pulling it in. But it then set the NEAR plane once and left it
+   * there, at 0.5 m, for every distance from a doorway to 30 km up.
+   *
+   * A near plane that small spends the depth buffer where nothing is: it
+   * resolves about a centimetre at 300 m, which is wider than the gap between a
+   * curtain wall and the spandrel set into it, so the two share a depth value
+   * and flicker. Restoring the adaptation the lock removed — for near only, so
+   * the horizon stays where map mode wants it — is the whole fix.
+   *
+   * Driven from the RAF rather than from a controls event because the camera
+   * also moves under inertia and under a flight, neither of which fires one.
+   */
+  function retuneDepthRange(): void {
+    const distance = ctx.controls.getPosition(scratchCam)
+      .distanceTo(ctx.controls.getTarget(scratchTarget))
+    const next = depthRangeFor(distance, MAP_FAR_M)
+    if (!depthRangeChanged(depthRange, next)) return
+    depthRange = next
+    applyCameraPlanes(next.nearM, next.farM)
   }
 
   function applyCameraPlanes(near: number, far: number): void {
