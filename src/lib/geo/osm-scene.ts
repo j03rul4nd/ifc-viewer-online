@@ -52,6 +52,7 @@ import {
 } from './vertical-network'
 import { createGroundResolver } from './terrain-truth'
 import { buildRoadNetwork, type NetworkWay } from './road-network'
+import { deckProfile } from './deck-profile'
 import { createGroundFrame, type GroundFrame } from './ground-frame'
 import {
   ROAD_CLASS_ROUGHNESS, ROAD_CLASS_KERB_M, COVER_SPACING_M, SURFACE_ROUGHNESS,
@@ -1516,6 +1517,7 @@ export function buildLinearLayer(
    */
   const pushSurfaceQuad = (
     quad: THREE.Vector2[], tone: [number, number, number], drop: number,
+    deck: { soffit: boolean; parapet: number } = { soffit: false, parapet: 0 },
   ): void => {
     if (buriedHere(quad)) return
     const [l0, l1, r1, r0] = quad
@@ -1529,7 +1531,8 @@ export function buildLinearLayer(
     pushShaded([l0, l1, c1, c0], [gutter, gutter, crown, crown])
     pushShaded([c0, c1, r1, r0], [crown, crown, gutter, gutter])
 
-    // Kerb faces down both edges.
+    // Edge faces down both sides. On the ground this is a kerb; held clear of
+    // it, the same faces are the deck's fascia — see `deck-profile`.
     for (const [e0, e1] of [[l0, l1], [r1, r0]] as const) {
       const z0 = structuralZ(e0.x, e0.y) + lift
       const z1 = structuralZ(e1.x, e1.y) + lift
@@ -1540,6 +1543,44 @@ export function buildLinearLayer(
       for (const [v, z] of [[e0, z0], [e1, z1 - drop], [e0, z0 - drop]] as const) {
         positions.push(v.x, v.y, z)
         colors.push(side[0], side[1], side[2])
+      }
+    }
+
+    if (deck.soffit) {
+      // The underside, wound the opposite way so it faces down. Without it a
+      // deck is transparent from below on the unlit path — and looking up at a
+      // walkway from the street is most of how one is ever seen.
+      const under = gain(tone, SIDE_SHADE * 0.85)
+      const z = (v: THREE.Vector2): number => structuralZ(v.x, v.y) + lift - drop
+      for (const tri of [[l0, r0, r1], [l0, r1, l1]] as const) {
+        for (const v of tri) {
+          positions.push(v.x, v.y, z(v))
+          colors.push(under[0], under[1], under[2])
+        }
+      }
+    }
+
+    if (deck.parapet > 0) {
+      // A raised walkway without an edge does not read as a walkway, it reads
+      // as a mistake. Drawn double-sided: at this width the inner face is as
+      // visible as the outer one, and a single winding leaves it missing from
+      // half the views.
+      const rail = gain(tone, 1.18)
+      for (const [e0, e1] of [[l0, l1], [r1, r0]] as const) {
+        const z0 = structuralZ(e0.x, e0.y) + lift
+        const z1 = structuralZ(e1.x, e1.y) + lift
+        const quads: Array<Array<[THREE.Vector2, number]>> = [
+          [[e0, z0], [e1, z1], [e1, z1 + deck.parapet]],
+          [[e0, z0], [e1, z1 + deck.parapet], [e0, z0 + deck.parapet]],
+          [[e1, z1], [e0, z0], [e0, z0 + deck.parapet]],
+          [[e1, z1], [e0, z0 + deck.parapet], [e1, z1 + deck.parapet]],
+        ]
+        for (const tri of quads) {
+          for (const [v, z] of tri) {
+            positions.push(v.x, v.y, z)
+            colors.push(rail[0], rail[1], rail[2])
+          }
+        }
       }
     }
   }
@@ -1747,6 +1788,8 @@ export function buildLinearLayer(
     const classWays = networkWays[cls]
     if (classWays.length === 0) continue
     const network = buildRoadNetwork(classWays, { mToN })
+    // Class-wide fallback, still used by the paths that do not go through the
+    // road network (rail alignments, area ways). Ribbons override it per way.
     const drop = ROAD_CLASS_KERB_M[cls] * mToN
     const bandStart = positions.length / 3
 
@@ -1756,6 +1799,15 @@ export function buildLinearLayer(
       // height: it can still say whose it is. The same id answers what it is
       // PAVED IN.
       activeProfile = profileFor(ribbon.sourceId)
+      // WHAT HOLDS THIS RIBBON UP decides how its edge is built. A kerb is what
+      // a surface has when the ground carries it; a way with air under it needs
+      // a deck. Read per ribbon rather than per class, because one street is
+      // routinely both along its length — it runs on the ground, climbs a ramp
+      // and crosses on a bridge, and the edge has to change with it.
+      const solved = opts.vertical?.get(ribbon.sourceId)
+      const profile = deckProfile(solved?.structure ?? 'ground', cls, ROAD_CLASS_KERB_M[cls])
+      const ribbonDrop = profile.edgeDropM * mToN
+      const ribbonDeck = { soffit: profile.soffit, parapet: profile.parapetM * mToN }
       const ribbonRough = surfaceOf.get(ribbon.sourceId)
       const ribbonStart = ribbonRough === undefined ? -1 : positions.length / 3
       // One quad per station, cut on the MITRED borders rather than on each
@@ -1779,7 +1831,7 @@ export function buildLinearLayer(
             ribbon.left[i].clone().lerp(ribbon.left[i + 1], t1),
             ribbon.right[i].clone().lerp(ribbon.right[i + 1], t1),
             ribbon.right[i].clone().lerp(ribbon.right[i + 1], t0),
-          ], ribbon.tone, drop)
+          ], ribbon.tone, ribbonDrop, ribbonDeck)
         }
       }
       // Whatever the miter had to give up on a sharp turn.

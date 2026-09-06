@@ -60,6 +60,14 @@ export const IFC_PALETTE: Record<string, { color: number; opacity?: number }> = 
  * They stay one click away in the category list, which is where somebody who
  * actually wants to look at room volumes will go for them.
  */
+
+/** What the host tells map mode about models it should place geographically. */
+export type SatelliteResolver = () => Array<{
+  modelId: string
+  placement: import('./geo/geo-types').GeoPlacement
+  bounds: { center: { x: number; y: number; z: number }; size: { x: number; y: number; z: number } }
+}> | null
+
 export const DEFAULT_HIDDEN_TYPES: readonly string[] = ['IFCSPACE']
 
 export const IFC_DISPLAY_NAMES: Record<string, string> = {
@@ -309,6 +317,16 @@ export interface ViewerAPI {
    * Scale can be a uniform number or per-axis object.
    */
   setModelTransform(transform: ModelTransform, modelId?: string): void
+  /**
+   * Host hook: which loaded models carry their own georeferencing.
+   *
+   * Map mode uses it to send every non-anchor model to its own coordinates.
+   * It lives as a callback rather than a store read because resolving a
+   * placement needs the georef store, and this module deliberately imports no
+   * stores — that separation is why the viewer can be driven from an embed, a
+   * test or the SDK without dragging app state in.
+   */
+  setSatelliteResolver(fn: SatelliteResolver | null): void
   /** Reset a model's transform back to identity. Defaults to the active model. */
   resetModelTransform(modelId?: string): void
   /**
@@ -436,6 +454,14 @@ export interface ViewerAPI {
    * per viewer, disposed with it). Nothing GIS-related loads until first call.
    */
   getGeo(): Promise<import('./geo/geo-system').GeoSystemAPI>
+  /**
+   * Re-place non-anchor models on the map, if map mode is already up.
+   *
+   * Deliberately NOT `getGeo().then(...)`: that would CREATE the geo system, so
+   * loading a second model would drag the whole map chunk in for a user who
+   * never opened the map. This is inert unless the map is already running.
+   */
+  refreshMapSatellites(): void
   /**
    * Lazily load and return the Sun & Moon study subsystem (separate chunk,
    * created once per viewer, disposed with it).
@@ -901,6 +927,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // GIS map mode (lazy chunk) — set by getGeo(); guards below stay inert otherwise.
   let sceneTuneLocked      = false
   let geoPointerSuppressed = false
+  let satelliteResolver: SatelliteResolver | null = null
   let geoSystemInstance: import('./geo/geo-system').GeoSystemAPI | null = null
   let geoLoadPromise: Promise<import('./geo/geo-system').GeoSystemAPI> | null = null
 
@@ -2282,6 +2309,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       void fragmentsManager.core.update()
     },
 
+    setSatelliteResolver(fn) { satelliteResolver = fn },
+
     resetModelTransform(modelId?: string) {
       const tid   = modelId ?? currentModelId
       const pivot = (tid ? modelPivots.get(tid) : null) ?? currentPivot
@@ -2930,6 +2959,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return result
     },
 
+    refreshMapSatellites() { geoSystemInstance?.refreshSatellites() },
+
     getGeo() {
       // Dynamic import keeps three-tiles/geo code in its own chunk; nothing
       // GIS-related loads until the user opens map mode.
@@ -2973,6 +3004,21 @@ export function createViewer(container: HTMLElement): ViewerAPI {
             const t = self.getModelTransform()
             const c = self.getModelCoordination()
             return t.position.y + (c?.y ?? 0)
+          },
+          getSatelliteModels: () => satelliteResolver?.() ?? null,
+          // Applied as a DELTA on the pivot rather than an absolute position,
+          // which makes it idempotent: getModelBounds reports WORLD bounds, so
+          // once a model has been sent to its coordinates the next offset comes
+          // out at zero. Re-running on every map move therefore converges
+          // instead of walking the model across the city.
+          setModelOffset: (modelId, offset) => {
+            const pivot = modelPivots.get(modelId)
+            if (!pivot) return
+            self.setModelTransform({ position: {
+              x: pivot.position.x + offset.x,
+              y: pivot.position.y + offset.y,
+              z: pivot.position.z + offset.z,
+            } }, modelId)
           },
         })
         return geoSystemInstance
