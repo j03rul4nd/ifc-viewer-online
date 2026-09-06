@@ -36,6 +36,7 @@ import {
 } from './vertical'
 import { buildSeaPolygons, type CoastlineBbox } from './coastline'
 import { assembleMultipolygon } from './multipolygon'
+import { partitionBuildingParts } from './building-parts'
 
 export type FeatureKind =
   | 'building' | 'water' | 'green' | 'sand' | 'rock' | 'tree' | 'bridge' | 'road' | 'rail'
@@ -75,6 +76,14 @@ export interface OsmFeature {
   vertical?: VerticalTags
   /** What the way is FOR, which decides its clearances and its maximum grade. */
   functional?: FunctionalType
+  /**
+   * True for a `building:part` — a VOLUME of a building rather than a building.
+   *
+   * Kept because the two must be told apart after classification: a part
+   * supersedes the outline it sits in, and an outline that has parts must not
+   * also be extruded. See `building-parts`.
+   */
+  isBuildingPart?: boolean
   /**
    * THE SEA, as opposed to any other water.
    *
@@ -788,6 +797,14 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
   // Buildings win over everything — a boathouse in a park is a building.
   const building = t['building']
   if (building && building !== 'no') return 'building'
+  // A `building:part` is a VOLUME of a building — a podium, a shaft, a crown —
+  // under the Simple 3D Buildings schema. It carries its own `height` and
+  // `min_height`, which is why it is worth fetching at all: over Lujiazui, 74 %
+  // of parts state a height against 14 % of outlines. Classified as a building
+  // because from here down it behaves as one; which outlines it replaces is
+  // decided by `building-parts`, not here.
+  const part = t['building:part']
+  if (part && part !== 'no') return 'building'
 
   // A free-standing arch is masonry with a footprint and a height, so it is
   // built by the building path even when nobody tagged `building=*` on it.
@@ -1324,6 +1341,7 @@ export function parseOsmFeatures(
         out.push({
           id: `w${el.id}`, kind, ring, height, style,
           name: el.tags?.['name'], label: featureLabel(el.tags),
+          isBuildingPart: isBuildingPartTag(el.tags),
         })
       } else drop(el, 'geometry', ringRejection(pts, kind))
       continue
@@ -1377,7 +1395,45 @@ export function parseOsmFeatures(
     })
   }
 
-  return out
+  return supersedeOutlinesWithParts(out)
+}
+
+/**
+ * Stand down every building outline that its own `building:part`s describe.
+ *
+ * A part is not an extra building, it REPLACES the volume of the outline it
+ * sits in. Drawing both leaves the outline's prism standing around its own
+ * parts like shrink-wrap — visible wherever the outline is taller than the
+ * podium, which is most of the time.
+ *
+ * Applied here, at the end of parsing, rather than inside the loop: it is a
+ * decision about the whole feature SET, and one part can supersede an outline
+ * that has not been read yet.
+ */
+/** True where the tags describe a VOLUME of a building rather than a building. */
+function isBuildingPartTag(tags: Record<string, string> | undefined): boolean {
+  const t = tags ?? {}
+  const part = t['building:part']
+  // `building` wins: a way carrying both is a building that also states its own
+  // part, and treating it as a part would delete the outline it IS.
+  if (t['building'] && t['building'] !== 'no') return false
+  return part !== undefined && part !== 'no'
+}
+
+function supersedeOutlinesWithParts(features: OsmFeature[]): OsmFeature[] {
+  const parts = features.filter((f) => f.kind === 'building' && f.isBuildingPart && f.ring)
+  if (parts.length === 0) return features
+
+  const outlines = features
+    .filter((f) => f.kind === 'building' && !f.isBuildingPart && f.ring)
+    .map((f) => ({ id: f.id, ring: f.ring!.map((p) => ({ x: p.lon, y: p.lat })) }))
+
+  const { supersededOutlines } = partitionBuildingParts(
+    outlines,
+    parts.map((f) => ({ id: f.id, ring: f.ring!.map((p) => ({ x: p.lon, y: p.lat })) })),
+  )
+  if (supersededOutlines.size === 0) return features
+  return features.filter((f) => !supersededOutlines.has(f.id))
 }
 
 /**

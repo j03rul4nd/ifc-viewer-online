@@ -250,6 +250,16 @@ export const DEFAULT_TRENCH_DEPTH_M = 4.5
  */
 export const LAYER_SEPARATION_M = 5.5
 
+/**
+ * Deepest a carried structure's own section can plausibly be, metres.
+ *
+ * A footbridge is well under a metre, a road viaduct's box girder a couple, and
+ * a deep truss three. The number is a CEILING on what `height` could mean as a
+ * structure depth, not a typical value — above it the tag must be describing
+ * something else, which on a linear way is where the deck sits.
+ */
+export const MAX_STRUCTURE_DEPTH_M = 3.5
+
 // ── Slope ──────────────────────────────────────────────────────────────────────
 
 /**
@@ -446,6 +456,28 @@ export function resolveStructureElevationM(
     // legitimate — separating levels already known to be stacked.
     const extra = Math.max(0, (ctx.stackedLevels ?? 1) - 1) * LAYER_SEPARATION_M
     return { offsetM: ctx.crossingClearanceM + extra, confidence: 'inferred' }
+  }
+
+  // ── 2b. TAGGED HEIGHT, where it cannot mean anything else ───────────────────
+  //
+  // `height` on a bridge is the STRUCTURE, not the clearance, and reading it as
+  // headroom is a real bug this module already guards against — a `height=8`
+  // outline came out at 8 m of clearance PLUS its own deck. That reasoning is
+  // about bridge OUTLINES, where the tag describes the object being drawn.
+  //
+  // On a LINEAR way it is the same tag doing a different job, and the magnitude
+  // settles which. No footbridge has a nine-metre deck: past the depth any
+  // plausible structure could have, `height` is describing where the way is,
+  // not how thick it is.
+  //
+  // It matters because it is often the ONLY measurement present. Over Lujiazui
+  // — 137 layered ways around the Oriental Pearl — there is not one `ele`, not
+  // one `min_height`, and exactly one `height`: 9 m, on the layer-3 skywalk
+  // ring, the district's signature structure. Discarding it left the ring on
+  // the layer fallback at 5.0 + 2 x 5.5 = 16 m, floating seven metres above
+  // the only figure anybody surveyed.
+  if (!down && tags.heightM !== null && tags.heightM > MAX_STRUCTURE_DEPTH_M) {
+    return { offsetM: tags.heightM, confidence: 'tagged' }
   }
 
   // ── 3. TAGGED ───────────────────────────────────────────────────────────────
