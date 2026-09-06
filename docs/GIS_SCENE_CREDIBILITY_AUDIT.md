@@ -244,11 +244,41 @@ ningún near plane resuelve nada; eso necesita `polygonOffset` o geometría dedu
 del modelo. Se deja aparte a propósito — si el parpadeo sobrevive a este cambio, la causa era
 coincidencia y no precisión, y eso es información.
 
-**Pendiente y no hecho:** facetado de copa (subdivisión), color plano del follaje, proporción de
-coches, saturación del cristal. Son decisiones estéticas y llevo cuatro fases sin ver la escena.
-Hacerlas a ciegas sería acumular criterio no verificado sobre una base tampoco verificada.
+**Colocación de la copa — tercer bug, encontrado renderizando.** Normalizar las copas a base en
+z = 0 dejó huérfana la otra rama del instanciado: `baseAnchored: false` seguía colocando la copa por
+su **centro** y escalándola a **media** altura, lo que contra una geometría que ahora sí empieza en
+cero daba una copa a mitad de tamaño flotando media copa por encima de su tronco. Las dos mitades
+eran coherentes consigo mismas, así que ningún test lo vio; fue evidente en el primer render.
 
-Tests: `1155` verdes.
+El flag se sustituye por `crownDrop`: cuánto se hunde la copa por debajo del extremo del tronco,
+como fracción de su propia altura. Es lo que el flag intentaba expresar — una copa real se traga la
+punta de su tronco, y solo una piruleta se apoya en ella. La palmera mantiene 0, porque que las
+hojas broten justo del ápice es la mitad de lo que hace que una palmera parezca una palmera. La
+altura total no cambia: la copa crece hacia abajo lo mismo que se hunde. Ambas cosas, con test.
+
+**Cerrado como "no es un bug":**
+
+- *Facetado de copa.* Es una decisión deliberada y documentada: a escala de mapa un árbol **es** su
+  silueta, y el módulo gasta el presupuesto ahí (lóbulos fusionados, pisos, frondas) en vez de en
+  subdivisión. Con iluminación real las caras ya dan volumen. Subir la subdivisión multiplica el
+  coste de raster por instancia sobre cientos de árboles a cambio de poco.
+- *Color plano del follaje.* Solo ocurre en `contextDetail: 'simple'`, donde el material es
+  `MeshBasicMaterial` — sin luz, a propósito, porque ese nivel existe para orientarse barato. En
+  `detailed`/`showcase` las copas usan `createFoliageMaterial`, que sí se ilumina. La captura del
+  síntoma era de `simple`.
+
+**Sigue pendiente:** proporción de los coches y saturación del cristal del edificio protagonista.
+
+Tests: `3010` verdes en todo el repo.
+
+### Nota de método — verificar sin Overpass
+
+Overpass estuvo limitándonos durante esta fase (el panel lo dice: "No se pudieron cargar los
+edificios — el servicio estaba ocupado"). La verificación se hizo con un harness temporal en la raíz
+(`scratch-trees.html` + `.ts`, servido por Vite, **borrado después**) que renderiza la geometría
+REAL de `tree-geometry.ts` con luz y sombras. Encontró el bug en el primer intento. Es la técnica ya
+registrada en `project_showcase_props_pipeline.md`, y conviene tenerla como vía por defecto para
+cualquier juicio visual de assets: es más rápida que la app y no depende de un servicio público.
 
 ---
 
