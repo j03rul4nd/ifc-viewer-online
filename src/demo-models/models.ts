@@ -40,6 +40,8 @@ export interface DemoModel {
   sizeBytes: number
   /** Optional thumbnail URL (relative to BASE_URL or absolute). */
   thumbnail?: string
+  /** Tall landmark previews can retain their complete silhouette. */
+  thumbnailFit?: 'cover' | 'contain'
   /** Featured models are highlighted + sorted first in the gallery. */
   featured?: boolean
   /**
@@ -82,6 +84,23 @@ const VIDEO_DEMO = `${import.meta.env.BASE_URL}models/video-demo`
 const REALTIME_LIDAR = `${import.meta.env.BASE_URL}models/realtime-lidar`
 
 export const DEMO_MODELS: DemoModel[] = [
+  {
+    id: 'oriental-pearl-tower',
+    name: 'Oriental Pearl Tower — Torre Perla Oriental',
+    description:
+      '468 m, 11 pearls, tripod supports and triangular glazing. Approximate reconstruction with museum, hotel, observation decks and restaurant across 25 reference levels; not as-built.',
+    category: 'Commercial',
+    fileName: 'SHA-IVO-ORIENTAL-PEARL-A-0001.ifc',
+    ifcUrl: `${import.meta.env.BASE_URL}models/oriental-pearl/SHA-IVO-ORIENTAL-PEARL-A-0001.ifc?v=20260906-r1`,
+    sourceUrl: 'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/docs/ORIENTAL_PEARL_RECONSTRUCTION.md',
+    sourceLabel: 'IFC Viewer Online reconstruction · architecture by Jiang Huancheng',
+    schema: 'IFC4',
+    approximateSize: '16.3 MB',
+    sizeBytes: 17_085_525,
+    thumbnail: `${import.meta.env.BASE_URL}models/oriental-pearl/oriental-pearl-preview.png`,
+    thumbnailFit: 'contain',
+    featured: true,
+  },
   {
     id: 'shanghai-world-financial-center',
     name: 'Shanghai World Financial Center',

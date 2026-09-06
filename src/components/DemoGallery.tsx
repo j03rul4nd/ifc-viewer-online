@@ -246,7 +246,7 @@ function DemoCard({
         style={{ background: `linear-gradient(135deg, ${accent}26, ${accent}05)` }}
       >
         {model.thumbnail ? (
-          <img src={model.thumbnail} alt="" className="w-full h-full object-cover" loading="lazy" />
+          <img src={model.thumbnail} alt="" className="w-full h-full" style={{ objectFit: model.thumbnailFit ?? 'cover' }} loading="lazy" />
         ) : (
           <div className="absolute inset-0 px-6 py-3.5">
             <ModelIllustration id={model.id} accent={accent} />
