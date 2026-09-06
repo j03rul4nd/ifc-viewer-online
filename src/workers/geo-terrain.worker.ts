@@ -25,7 +25,7 @@
 
 import { latLonToTileFloat } from '../lib/geo/geo-math'
 import { decodeTerrarium, terrariumTileUrl } from '../lib/geo/elevation'
-import { clampHeightGrid } from '../lib/geo/height-grid-clamp'
+import { clampHeightGrid, despeckleHeightGrid } from '../lib/geo/height-grid-clamp'
 import { lowerEnvelope } from '../lib/geo/lower-envelope'
 import { WEB_MERCATOR_WORLD_M } from '../lib/geo/geo-math'
 import {
@@ -168,6 +168,17 @@ async function handleBuild(req: TerrainBuildRequest): Promise<void> {
         return blitHeights(unified, cx - 1 + col, cy - 1 + row, req.zoom, col, row)
       }),
     )
+
+    // SPECKLE FIRST, because the two later steps are both hurt by it: the
+    // clamp's percentiles are cleaner without it, and the envelope's erosion
+    // would smear a one-pixel pit across its whole window.
+    const speck = despeckleHeightGrid(unified, PATCH_PX, PATCH_PX)
+    if (speck.replaced > 0) {
+      console.info(
+        `[GeoTerrain] despeckle: replaced ${speck.replaced} isolated samples ` +
+        `(${((speck.replaced / (PATCH_PX * PATCH_PX)) * 100).toFixed(3)}%)`,
+      )
+    }
 
     // OUTLIERS OUT BEFORE THE RESAMPLE, not after.
     //

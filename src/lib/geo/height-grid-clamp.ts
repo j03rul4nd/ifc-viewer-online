@@ -118,3 +118,68 @@ export function clampHeightGrid(heights: Float32Array): ClampReport {
 
   return { loM, hiM, clamped, share: clamped / heights.length }
 }
+
+/**
+ * How far a sample must sit from its own neighbours to be called speckle, metres.
+ *
+ * Measured over Lujiazui after the clamp and the lower envelope: 101 samples of
+ * 148 225 below −30 m, scattered as runs of four or five pixels across most of
+ * the grid. That is not a crater, it is salt-and-pepper — isolated DEM voids
+ * that individually pass any distributional test because there are so few of
+ * them.
+ *
+ * Twenty-five metres across one pixel is, at this raster's ~4 m spacing, a
+ * six-to-one slope. Real ground does that at a sea cliff and almost nowhere
+ * else, and even there the replacement is the local median — a neighbouring
+ * real height, not an invention.
+ */
+export const SPECKLE_THRESHOLD_M = 25
+
+/**
+ * Replace isolated spikes and pits with their local median, in place.
+ *
+ * A MEDIAN AND NOT A MORPHOLOGICAL CLOSING, which is what a hole seems to ask
+ * for. A closing fills every depression narrower than its window, so it cannot
+ * tell a void from a valley and would flatten real ones to remove fake ones.
+ * A median only moves a sample that disagrees with the majority of its own
+ * three-by-three neighbourhood, so terrain that is merely steep survives it
+ * bit for bit — and the threshold means terrain that is merely steep is not
+ * even examined.
+ *
+ * Run BEFORE the clamp and the envelope: the clamp's percentiles are cleaner
+ * without the speckle in them, and the envelope's erosion would otherwise smear
+ * a one-pixel pit across its whole window.
+ */
+export function despeckleHeightGrid(
+  grid: Float32Array, width: number, height: number,
+): { replaced: number } {
+  if (grid.length !== width * height) return { replaced: 0 }
+  const src = Float32Array.from(grid)
+  const window: number[] = []
+  let replaced = 0
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      window.length = 0
+      for (let dy = -1; dy <= 1; dy++) {
+        const yy = y + dy
+        if (yy < 0 || yy >= height) continue
+        for (let dx = -1; dx <= 1; dx++) {
+          const xx = x + dx
+          if (xx < 0 || xx >= width) continue
+          const v = src[yy * width + xx]
+          if (Number.isFinite(v)) window.push(v)
+        }
+      }
+      if (window.length < 5) continue
+      window.sort((a, b) => a - b)
+      const median = window[window.length >> 1]
+      const here = src[y * width + x]
+      if (!Number.isFinite(here) || Math.abs(here - median) > SPECKLE_THRESHOLD_M) {
+        grid[y * width + x] = median
+        replaced++
+      }
+    }
+  }
+  return { replaced }
+}
