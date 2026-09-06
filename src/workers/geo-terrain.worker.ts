@@ -26,6 +26,8 @@
 import { latLonToTileFloat } from '../lib/geo/geo-math'
 import { decodeTerrarium, terrariumTileUrl } from '../lib/geo/elevation'
 import { clampHeightGrid } from '../lib/geo/height-grid-clamp'
+import { lowerEnvelope } from '../lib/geo/lower-envelope'
+import { WEB_MERCATOR_WORLD_M } from '../lib/geo/geo-math'
 import {
   TERRAIN_TILE_DIM,
   sampleHeightGridBicubic,
@@ -184,6 +186,29 @@ async function handleBuild(req: TerrainBuildRequest): Promise<void> {
         `[GeoTerrain] elevation grid: clamped ${(clamp.share * 100).toFixed(1)}% of ` +
         `samples to [${clamp.loM.toFixed(0)}, ${clamp.hiM.toFixed(0)}] m — the raster ` +
         'for this area is mostly outside its own plausible range',
+      )
+    }
+
+    // BARE GROUND, NOT THE SURFACE THAT STANDS ON IT.
+    //
+    // The mosaic is a surface model, so every building in it was a lump of
+    // terrain — and then the OSM building was drawn on top of its own radar
+    // shadow, the same building counted twice. Measured over Lujiazui after the
+    // anchor and outlier fixes the mesh still spanned 114 m in a flat city, and
+    // the high end of that was towers rather than landform.
+    //
+    // A morphological opening is the standard estimator, and `terrain-truth`
+    // already names it as what its own percentile approximates. Applied to the
+    // unified grid before the resample, for the same reason as the clamp: the
+    // bicubic kernel must never see the cliff.
+    const pxM = (WEB_MERCATOR_WORLD_M * Math.cos((req.lat * Math.PI) / 180))
+      / (2 ** req.zoom * TERRAIN_TILE_DIM)
+    const envelope = lowerEnvelope(unified, PATCH_PX, PATCH_PX, pxM)
+    if (envelope.maxDropM > 1) {
+      console.info(
+        `[GeoTerrain] lower envelope: window ${envelope.radiusPx}px (~${pxM.toFixed(1)} m/px), ` +
+        `removed up to ${envelope.maxDropM.toFixed(0)} m of surface, ` +
+        `${envelope.meanDropM.toFixed(1)} m on average`,
       )
     }
 
