@@ -550,6 +550,25 @@ export function createSurfaceMaterial(
     side: THREE.DoubleSide,
     metalness: 0,
     roughness: 1,
+    // AND A DEPTH BIAS, because render order alone is not enough any more.
+    //
+    // The contract above resolves the ground layers against each OTHER and
+    // against the flat basemap, neither of which writes depth. The 3D terrain
+    // patch does, and it is opaque: a layer sitting five centimetres over it
+    // has to pass a depth TEST that, at city scale, cannot tell five
+    // centimetres from zero. Which surface wins then depends on the camera, so
+    // the water and the map tile under it alternate as you orbit — and the same
+    // for every park, beach and carriageway.
+    //
+    // polygonOffset biases in DEPTH-BUFFER units rather than metres, so it
+    // holds at any distance, any zoom and any terrain exaggeration. A lift
+    // measured in metres cannot: whatever value works close up is invisible
+    // from the air, which is why the metre-scale lifts are kept for what they
+    // were tuned for — separating the ground layers from one another — and this
+    // is what separates all of them from the terrain.
+    polygonOffset: true,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -8,
   })
   if (water) {
     // Water is mostly a mirror, and its whole appearance is the sky in it. The

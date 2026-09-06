@@ -360,6 +360,13 @@ function buildSimpleSurface(
     // An opaque sea must write depth, or the tiles it covers z-fight through it.
     depthWrite: isWaterLayer,
     side: THREE.DoubleSide,
+    // Biased toward the camera against the TERRAIN, which is opaque and writes
+    // depth. See the note in `createSurfaceMaterial`: render order settles the
+    // ground layers among themselves, and only a depth-buffer-unit bias settles
+    // them against a surface that participates in the depth test at all.
+    polygonOffset: true,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -8,
   })
   const mesh = new THREE.Mesh(geometry, material)
   mesh.name = `osm-${layer}`
