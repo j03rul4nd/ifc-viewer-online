@@ -1,10 +1,10 @@
 {
   "schema": "IFC4",
-  "elements": 179,
+  "elements": 362,
   "referenceLevels": 25,
   "pearls": 11,
-  "sizeBytes": 17085525,
-  "sha256": "f97945b726634f9c8024c403f0039c97eb01a4d373bbf3b7e348ddbfc942e4e2",
+  "sizeBytes": 22227275,
+  "sha256": "e53ecc7614f2b34a296f6f5ed51ad43a558b5d3fe5b8c56f26f4711553f658c1",
   "expressErrors": 0,
   "errors": []
 }

@@ -10,6 +10,7 @@ import ifcopenshell.api
 import ifcopenshell.validate
 sys.path.insert(0, os.path.dirname(__file__))
 import bonsai_kit as kit
+import shanghai_georeference
 
 OUT=os.path.abspath(sys.argv[sys.argv.index('--')+1]); os.makedirs(OUT,exist_ok=True)
 for o in list(bpy.data.objects): bpy.data.objects.remove(o,do_unlink=True)
@@ -20,11 +21,11 @@ project=api('root.create_entity',ifc_class='IfcProject',name='Oriental Pearl Tow
 api('unit.assign_unit',units=[api('unit.add_si_unit',unit_type=t) for t in ['LENGTHUNIT','AREAUNIT','VOLUMEUNIT']])
 context=api('context.add_context',context_type='Model')
 body=api('context.add_context',context_type='Model',context_identifier='Body',target_view='MODEL_VIEW',parent=context)
-site=api('root.create_entity',ifc_class='IfcSite',name='Lujiazui, Pudong — approximate site')
-building=api('root.create_entity',ifc_class='IfcBuilding',name='Oriental Pearl — approximate reconstruction')
+site=api('root.create_entity',ifc_class='IfcSite',name='Lujiazui, Pudong â€” approximate site')
+building=api('root.create_entity',ifc_class='IfcBuilding',name='Oriental Pearl â€” approximate reconstruction')
 api('aggregate.assign_object',products=[site],relating_object=project)
 api('aggregate.assign_object',products=[building],relating_object=site)
-site.RefLatitude=(31,14,30,0); site.RefLongitude=(121,29,42,0)
+site_data=shanghai_georeference.apply(f,site,building,'oriental-pearl')
 for obj in [site,building]: api('geometry.edit_object_placement',product=obj)
 kit.add_pset(f,building,'ReferenceModelEvidence',{
  'Status':'Approximate reference reconstruction; not an official model, survey or structural design',
@@ -32,7 +33,7 @@ kit.add_pset(f,building,'ReferenceModelEvidence',{
  'HeightMetres':468.,'PearlCount':11,'ReferenceLevels':25,
  'Source':'https://www.meet-in-shanghai.net/en/pudong-new-area/the-oriental-pearl-tv-tower-341119/',
  'GeometryBasis':'User-supplied section: lower sphere 68..118 m; upper sphere 250..295 m. Photographic form and structural cross-section.',
- 'Uncertainty':'25 authored reference levels, not a verified floor schedule. Capsule geometry reconciles contradictory 342/351 m references approximately. Details and site orientation indicative.'})
+ 'Uncertainty':'25 authored reference levels, not a verified floor schedule. Capsule geometry reconciles contradictory 342/351 m references approximately. Interior details indicative; plan alignment from OSM, not surveyed.'})
 
 colors={'Concrete':(.69,.68,.63),'Silver':(.70,.74,.76),'PearlGlass':(.48,.16,.32),'RoseGlass':(.64,.27,.43),'DarkGlass':(.18,.27,.32),'Steel':(.29,.33,.36),'Stone':(.63,.61,.56),'Green':(.22,.37,.25),'White':(.86,.86,.80),'Red':(.57,.16,.21)}
 materials={}
@@ -47,15 +48,15 @@ for name,c in colors.items():
  materials[name]=(mat,style,bm)
 
 levels=[(0,'Museum / arrivals'),(9,'Museum mezzanine'),(18,'Restaurant platform'),(78,'Multimedia show'),(86,'Lower sphere technical'),(90,'Space City / observation'),(98,'Lower sphere recreation')]
-levels += [(z,'Space Hotel — indicative suite level') for z in [132,156,180,204,228]]
+levels += [(z,'Space Hotel â€” indicative suite level') for z in [132,156,180,204,228]]
 levels += [(z,name) for z,name in [(253,'Upper sphere technical'),(257,'Upper sphere services'),(259,'Transparent observatory'),(263,'Sky Galleria'),(267,'Revolving restaurant'),(273,'Broadcasting / technical'),(280,'Broadcasting / technical'),(287,'Upper sphere technical'),(292,'Upper sphere crown')]]
 levels += [(334,'Capsule services'),(340,'Capsule access'),(346,'Capsule gallery'),(351,'Space Capsule observatory')]
 storeys={}
 for z,name in levels:
- s=api('root.create_entity',ifc_class='IfcBuildingStorey',name=f'{z:03} m — {name}'); s.Elevation=float(z); s.CompositionType='ELEMENT'
+ s=api('root.create_entity',ifc_class='IfcBuildingStorey',name=f'{z:03} m â€” {name}'); s.Elevation=float(z); s.CompositionType='ELEMENT'
  api('aggregate.assign_object',products=[s],relating_object=building)
  m=np.eye(4);m[2,3]=z;api('geometry.edit_object_placement',product=s,matrix=m);storeys[z]=s
- space=api('root.create_entity',ifc_class='IfcSpace',name=f'{z} m — {name} (indicative)')
+ space=api('root.create_entity',ifc_class='IfcSpace',name=f'{z} m â€” {name} (indicative)')
  api('aggregate.assign_object',products=[space],relating_object=s);api('geometry.edit_object_placement',product=space,matrix=m)
  kit.add_pset(f,space,'Pset_SpaceCommon',{'Reference':f'OP-{z}','IsExternal':False})
  kit.add_pset(f,space,'ReferenceSpace',{'Use':name,'LayoutStatus':'Indicative, not measured','LevelMetres':float(z)})
@@ -81,7 +82,7 @@ def add(cls,name,z,material,parts,pearl=None):
  api('geometry.edit_object_placement',product=e)
  key=(cls,material)
  if key not in types:
-  types[key]=api('root.create_entity',ifc_class=cls+'Type',name=f'Reference {cls[3:]} — {material}',predefined_type='USERDEFINED')
+  types[key]=api('root.create_entity',ifc_class=cls+'Type',name=f'Reference {cls[3:]} â€” {material}',predefined_type='USERDEFINED')
   types[key].ElementType='Approximate reference component'
  api('type.assign_type',related_objects=[e],relating_type=types[key])
  verts=[];faces=[]
@@ -122,7 +123,7 @@ def sphere(name,center,r,z,rz=None,glazed=True,N=64,M=24):
   if mat in ['PearlGlass','RoseGlass']:
    for a,b in zip(face,face[1:]+face[:1]):edge_set.add(tuple(sorted((a,b))))
  for idx,(mat,fac) in enumerate(buckets.items()):
-  add('IfcCurtainWall',name+' — '+mat,z,mat,[(verts,fac)],{'PearlId':name,'CenterZ':float(cz),'DiameterXY':float(2*r),'VerticalDiameter':float(2*rz),'AssumedGeometry':True})
+  add('IfcCurtainWall',name+' â€” '+mat,z,mat,[(verts,fac)],{'PearlId':name,'CenterZ':float(cz),'DiameterXY':float(2*r),'VerticalDiameter':float(2*rz),'AssumedGeometry':True})
  if edge_set:add('IfcMember',name+' triangular glazing lattice',z,'Silver',[tube(verts[a],verts[b],.065,N=6) for a,b in sorted(edge_set)])
 
 def annulus(ro,ri,z,h,cx=0,cy=0,N=64):
@@ -134,19 +135,19 @@ def annulus(ro,ri,z,h,cx=0,cy=0,N=64):
  return parts
 
 # Museum podium, arrival platform and base tripod.
-add('IfcSlab','Circular arrival plaza — indicative',0,'Stone',[cylinder(55,-.35,.35)])
-add('IfcWall','Museum perimeter glazing',0,'DarkGlass',annulus(36,35.75,0,11))
-for z in [0,9]: add('IfcSlab',f'Museum slab {z} m',z,'Concrete',[cylinder(36,z,.45)])
-add('IfcRoof','Museum ring roof',9,'Silver',annulus(38,18,11,.5))
+add('IfcSlab','Circular arrival plaza â€” indicative',0,'Stone',[cylinder(55,-.35,.35)])
+
+
+
 add('IfcSlab','18 m restaurant platform',18,'Concrete',[cylinder(19,18,.5)])
 add('IfcCurtainWall','18 m restaurant glazing',18,'DarkGlass',annulus(18.5,18.3,18.5,3.8))
 add('IfcRoof','Restaurant canopy',18,'Silver',[cylinder(19,22.3,.35)])
 axes=[]
 for k in range(3):
  a=math.radians(90+120*k);u,v=math.cos(a),math.sin(a);cx,cy=10.8*u,10.8*v;axes.append((cx,cy))
- add('IfcColumn',f'Main concrete tube {k+1} — diameter 9 m',0,'Concrete',[tube((cx,cy,0),(cx,cy,267),4.5,N=48)])
+ add('IfcColumn',f'Main concrete tube {k+1} â€” diameter 9 m',0,'Concrete',annulus(4.5,3.65,0,267,cx,cy,N=48))
  foot=(45*u,45*v,0);head=(cx,cy,68)
- add('IfcColumn',f'Inclined tripod leg {k+1} — diameter 7 m',0,'Concrete',[tube(foot,head,3.5,N=40)])
+ add('IfcColumn',f'Inclined tripod leg {k+1} â€” diameter 7 m',0,'Concrete',[tube(foot,head,3.5,N=40)])
  c=tuple(foot[i]+(head[i]-foot[i])*.47 for i in range(3))
  sphere(f'Base pearl {k+1}',c,5.,0,glazed=False,N=32,M=16)
  add('IfcMember',f'Tripod brace {k+1}',0,'Concrete',[tube(c,(0,0,12),1.8,N=24)])
@@ -155,13 +156,14 @@ for k in range(3):
  for z in range(120,249,6):parts+=annulus(4.54,4.48,z,.055,cx,cy,N=32)
  add('IfcMember',f'Concrete tube {k+1} construction joints',98,'Silver',parts)
  # Lift shaft, no invented lift schedule or equipment specification.
- add('IfcTransportElement',f'Indicative lift route in tube {k+1}',0,'Steel',[box(cx-1.3,cy-1.3,0,2.6,2.6,267)])
+ add('IfcMember',f'Lift guide rails in tube {k+1}',0,'Steel',[box(cx+dx,cy-1.5,0,.12,.12,267) for dx in [-1.5,1.5]])
+ add('IfcTransportElement',f'Indicative lift cabin in tube {k+1}',0,'Silver',[box(cx-1.25,cy-1.25,1,2.5,2.5,2.8)])
 
-sphere('Lower pearl — Space City',(0,0,93),25,78)
-sphere('Upper pearl — observation and restaurant',(0,0,272.5),22.5,253)
+sphere('Lower pearl â€” Space City',(0,0,93),25,78)
+sphere('Upper pearl â€” observation and restaurant',(0,0,272.5),22.5,253)
 for z in [132,156,180,204,228]:
  sphere(f'Hotel pearl {z} m',(0,0,z+1),6,z,N=40,M=16)
- add('IfcSlab',f'Hotel level {z} m — three radial links',z,'Silver',[tube((0,0,z),(cx,cy,z),1.1,N=8) for cx,cy in axes])
+ add('IfcSlab',f'Hotel level {z} m â€” three radial links',z,'Silver',[tube((0,0,z),(cx,cy,z),1.1,N=8) for cx,cy in axes])
  add('IfcCurtainWall',f'Hotel viewing band {z} m',z,'PearlGlass',annulus(6.2,6,z,2.1,N=40))
  for k in range(4):
   a=k*math.pi/2
@@ -176,16 +178,16 @@ for z,name in levels:
  elif z<250:rad=5.5
  elif z<=292:rad=math.sqrt(22.5**2-(z-272.5)**2)-.45
  else:rad=7*math.sqrt(max(.1,1-((z-347)/14)**2))-.35
- add('IfcSlab',f'{z} m — {name} floor',z,'Concrete',[cylinder(rad,z,.3)])
+ add('IfcSlab',f'{z} m â€” {name} floor',z,'Concrete',[cylinder(rad,z,.3)])
  if z in [90,259,263,267]:
   add('IfcRailing',f'{z} m observation balustrade',z,'Silver',[tube(a,b,.05,N=6) for a,b in zip(ring(rad,z+1.4),ring(rad,z+1.4)[1:]+ring(rad,z+1.4)[:1])])
  if z==267:
-  add('IfcSlab','Revolving restaurant annular deck — no mechanical simulation',z,'Stone',annulus(rad-.3,7,z+.3,.12))
+  add('IfcSlab','Revolving restaurant annular deck â€” no mechanical simulation',z,'Stone',annulus(rad-.3,7,z+.3,.12))
   tables=[]
   for i in range(20):
    a=i*2*math.pi/20;x=(rad-3)*math.cos(a);y=(rad-3)*math.sin(a)
    tables.extend([cylinder(.15,z+.4,.7,x,y,N=12),cylinder(.7,z+1.1,.09,x,y,N=20)])
-  add('IfcFurnishingElement','Restaurant tables — indicative arrangement',z,'Stone',tables)
+  add('IfcFurnishingElement','Restaurant tables â€” indicative arrangement',z,'Stone',tables)
 
 # Lower observation gallery is a real annulus, not an opaque belt across the globe.
 for z,rad in [(90,25.5),(259,19.5)]:
@@ -195,7 +197,7 @@ for z,rad in [(90,25.5),(259,19.5)]:
 add('IfcColumn','Central upper broadcast shaft',292,'Concrete',[tube((0,0,292),(0,0,337),3.3,N=48)])
 for z in [299,323,334]:
  add('IfcSlab',f'Technical antenna access collar {z} m',292 if z<334 else 334,'Silver',annulus(5,3.3,z,.35))
-sphere('Space Capsule — approximate elongated envelope',(0,0,347),7,334,rz=14,N=48,M=24)
+sphere('Space Capsule â€” approximate elongated envelope',(0,0,347),7,334,rz=14,N=48,M=24)
 # Mast starts at 350 m and terminates at 468 m. Rings and lattice sit below that top.
 add('IfcMember','118 m broadcast antenna spine',351,'Steel',[tube((0,0,350),(0,0,420),1.5,N=24,r2=.75),tube((0,0,420),(0,0,468),.75,N=20,r2=.12)])
 for z in range(362,468,4):
@@ -207,10 +209,13 @@ for z in range(362,468,4):
   lattice.append(tube((rad*math.cos(a),rad*math.sin(a),z),(rad*math.cos(b),rad*math.sin(b),min(z+4,468)),.07,N=6))
  add('IfcMember',f'Antenna lattice bracing {z} m',351,'Silver',lattice)
 
+import oriental_pearl_details
+oriental_pearl_details.build(globals())
+
 kit.sort_unordered_aggregates(f)
 filename='SHA-IVO-ORIENTAL-PEARL-A-0001.ifc'
 kit.set_header(f,filename,'IFC Viewer Online','IFC Viewer Online','2026-09-06T00:00:00')
-f.header.file_name.originating_system='IfcOpenShell API / Blender — reference reconstruction'
+f.header.file_name.originating_system='IfcOpenShell API / Blender â€” reference reconstruction'
 path=os.path.join(OUT,filename)
 with open(path,'w',encoding='utf-8',newline='\n') as stream:stream.write(f.to_string())
 logger=ifcopenshell.validate.json_logger();ifcopenshell.validate.validate(f,logger,express_rules=True)

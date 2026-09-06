@@ -21,7 +21,11 @@ The IFC contains **25 reference levels**, arranged as 3 base + 4 lower pearl + 5
 
 The 11 pearls are two main spheres, one capsule, five intermediate hotel spheres and three support pearls. `ReferencePearl` property sets preserve the identity and assumed dimensions across material groups. Slabs, glazing, lattice members, support tubes, podium, lift routes, railings and furniture are separate typed IFC elements. Each reference level has a named `IfcSpace`; its layout and use are indicative. Interiors do not imply a measured hotel-room schedule, elevator inventory or operational revolving mechanism.
 
-The model is Z-up in local metres. Approximate `IfcSite` latitude/longitude locates Lujiazui; map orientation and cadastral boundaries are not surveyed. The circular plaza and podium are contextual massing, not the full claimed 54,000 square metre site.
+The model is Z-up in local metres. Revision r2 uses `IfcMapConversion` in EPSG:32651 (WGS84 / UTM 51N), with the tower origin at 31.2418915548 N, 121.4952618973 E and local X rotated -21.46 degrees in the grid. The centroid and three-arm alignment are derived from [OpenStreetMap way 40778038](https://www.openstreetmap.org/way/40778038), version 45, retrieved 2026-09-06. This corrects the original approximate anchor by about 35 m. The museum outline follows the mapped trilobular footprint; its heights, facade details and surrounding circular paving remain indicative. The mapped outline is not a cadastral boundary or the full claimed 54,000 square metre site.
+
+Revision r2 adds hollow main concrete tubes (wall thickness assumed 0.85 m), lift rails and cabins, access stair segments and landing doors, pearl ring/radial girders, observation guard infill, hotel furniture and sanitary fixtures, museum mullions and foundation caps. These are architectural detail approximations, not a continuous verified escape route, structural design or measured interior layout.
+
+Ground elevation is unverified: zero is an explicit local ground assumption, not surveyed orthometric elevation. Cartographic precision is limited by the OSM outline. Derived site data in `scripts/blender/sites/oriental-pearl.json` is attributed to OpenStreetMap contributors under [ODbL 1.0](https://www.openstreetmap.org/copyright). Source images are not redistributed.
 
 ## Reproduction and checks
 

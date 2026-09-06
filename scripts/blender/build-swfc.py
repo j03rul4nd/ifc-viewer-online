@@ -18,6 +18,7 @@ import ifcopenshell.validate
 
 sys.path.insert(0, os.path.dirname(__file__))
 import bonsai_kit as kit
+import shanghai_georeference
 
 OUT = os.path.abspath(sys.argv[sys.argv.index('--') + 1])
 os.makedirs(OUT, exist_ok=True)
@@ -34,8 +35,7 @@ site = api('root.create_entity', ifc_class='IfcSite', name='Pudong, Shanghai —
 building = api('root.create_entity', ifc_class='IfcBuilding', name='SWFC — reference reconstruction')
 api('aggregate.assign_object', products=[site], relating_object=project)
 api('aggregate.assign_object', products=[building], relating_object=site)
-site.RefLatitude = (31,14,12,0)
-site.RefLongitude = (121,30,10,0)
+shanghai_georeference.apply(f,site,building,'swfc')
 for obj in [site, building]:
     api('geometry.edit_object_placement', product=obj)
 kit.add_pset(f, building, 'ReferenceModelEvidence', {
@@ -44,7 +44,7 @@ kit.add_pset(f, building, 'ReferenceModelEvidence', {
     'HeightMetres':492., 'AboveGroundStoreys':101, 'BasementStoreys':3,
     'PrimarySource':'https://www.kpf.com/project/shanghai-world-financial-center',
     'DeveloperSource':'https://www.mori.co.jp/en/projects/swfc/',
-    'Assumptions':'Interpolated floor heights, curved setbacks, facade grid, core, structure and interior layout. Approximate site coordinates; local orientation only.',
+    'Assumptions':'Interpolated floor heights, curved setbacks, facade grid, core, structure and interior layout. OSM-derived footprint centroid and orientation; unsurveyed ground datum.',
 })
 
 materials = {}
