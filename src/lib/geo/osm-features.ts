@@ -429,7 +429,45 @@ export function roadWidth(tags: Record<string, string> | undefined): number {
     const shoulder = cls.startsWith('motorway') || cls.startsWith('trunk') ? 2.5 : 0.6
     return Math.min(40, lanes * 3.2 + shoulder)
   }
-  return ROAD_DEFAULT_WIDTH[cls] ?? 6
+  const base = ROAD_DEFAULT_WIDTH[cls] ?? 6
+  // A FOOTWAY ON A BRIDGE IS NOT A GARDEN PATH.
+  //
+  // The 2 m default is a park path: the width of somewhere one person walks
+  // and another squeezes past. A footway carrying `bridge=yes` is a built
+  // structure with an abutment at each end and something underneath it, and
+  // nobody builds one of those 2 m wide.
+  //
+  // It matters here because the survey does not say. Over Lujiazui — 137
+  // layered ways around the Oriental Pearl, 31 of them elevated footways
+  // linking the malls — NOT ONE carries a `width`. Every deck in that district
+  // was drawn at the park-path default, which is why a public walkway three
+  // storeys up read as a service catwalk.
+  //
+  // Still a fallback, and a wider one is still a guess. But an explicit `width`
+  // continues to win outright above, so this only ever fills a silence, and it
+  // fills it with the kind of thing that actually gets built.
+  if (ELEVATED_DECK_MIN_WIDTH_M[cls] !== undefined && isElevated(t)) {
+    return Math.max(base, ELEVATED_DECK_MIN_WIDTH_M[cls])
+  }
+  return base
+}
+
+/** True where the tags put a way clear of the ground on a structure. */
+function isElevated(t: Record<string, string>): boolean {
+  const bridge = t['bridge']
+  if (bridge && bridge !== 'no') return true
+  const layer = Number.parseInt(t['layer'] ?? '', 10)
+  return Number.isFinite(layer) && layer > 0
+}
+
+/**
+ * Least width a class is built to once it is carried on a structure, metres.
+ *
+ * Only the classes whose ground default is a personal-scale path: a road keeps
+ * its carriageway width on a viaduct, because that is what it is for.
+ */
+const ELEVATED_DECK_MIN_WIDTH_M: Record<string, number> = {
+  footway: 5, path: 4, cycleway: 4, steps: 2.4, pedestrian: 6,
 }
 
 /**
