@@ -25,7 +25,7 @@
 
 import { latLonToTileFloat } from '../lib/geo/geo-math'
 import { decodeTerrarium, terrariumTileUrl } from '../lib/geo/elevation'
-import { clampHeightGrid } from '../lib/geo/height-grid-clamp'
+import { clampHeightGrid, despeckleHeightGrid } from '../lib/geo/height-grid-clamp'
 import { lowerEnvelope } from '../lib/geo/lower-envelope'
 import { WEB_MERCATOR_WORLD_M } from '../lib/geo/geo-math'
 import {
@@ -108,46 +108,6 @@ self.onmessage = (e: MessageEvent<TerrainWorkerIn>): void => {
   else if (msg?.type === 'drape-terrain') void handleDrape(msg)
 }
 
-/**
- * Radius of the window the anchor is taken from, pixels.
- *
- * At z15 a terrarium pixel is roughly 4.8 m at the equator, so this is about a
- * 200 m square — wide enough to contain open ground beside any single building,
- * narrow enough that a hill a street away does not decide where the model sits.
- */
-const ANCHOR_WINDOW_PX = 20
-
-/** Percentile of the window taken as bare ground. */
-const ANCHOR_FLOOR_PCT = 0.15
-
-/**
- * Bare ground under a point: a low percentile of the window around it.
- *
- * See the call site for why a single sample is wrong. A percentile rather than
- * a minimum for the same reason `terrain-truth` gives — voids and water
- * artefacts really do go negative, and a strict floor would anchor the scene
- * inside one.
- */
-function neighbourhoodFloor(
-  grid: Float32Array, dim: number, px: number, py: number,
-): number {
-  const cx = Math.round(px)
-  const cy = Math.round(py)
-  const samples: number[] = []
-  for (let y = cy - ANCHOR_WINDOW_PX; y <= cy + ANCHOR_WINDOW_PX; y++) {
-    if (y < 0 || y >= dim) continue
-    for (let x = cx - ANCHOR_WINDOW_PX; x <= cx + ANCHOR_WINDOW_PX; x++) {
-      if (x < 0 || x >= dim) continue
-      const v = grid[y * dim + x]
-      if (Number.isFinite(v)) samples.push(v)
-    }
-  }
-  if (samples.length === 0) return 0
-  samples.sort((a, b) => a - b)
-  const i = Math.min(samples.length - 1, Math.round(ANCHOR_FLOOR_PCT * (samples.length - 1)))
-  return samples[i]
-}
-
 // ── Build (heights + normals + drape) ───────────────────────────────────────────
 
 async function handleBuild(req: TerrainBuildRequest): Promise<void> {
@@ -168,6 +128,17 @@ async function handleBuild(req: TerrainBuildRequest): Promise<void> {
         return blitHeights(unified, cx - 1 + col, cy - 1 + row, req.zoom, col, row)
       }),
     )
+
+    // SPECKLE FIRST, because the two later steps are both hurt by it: the
+    // clamp's percentiles are cleaner without it, and the envelope's erosion
+    // would smear a one-pixel pit across its whole window.
+    const speck = despeckleHeightGrid(unified, PATCH_PX, PATCH_PX)
+    if (speck.replaced > 0) {
+      console.info(
+        `[GeoTerrain] despeckle: replaced ${speck.replaced} isolated samples ` +
+        `(${((speck.replaced / (PATCH_PX * PATCH_PX)) * 100).toFixed(3)}%)`,
+      )
+    }
 
     // OUTLIERS OUT BEFORE THE RESAMPLE, not after.
     //
@@ -222,25 +193,27 @@ async function handleBuild(req: TerrainBuildRequest): Promise<void> {
     // reused for every live look change on the main thread.
     const detail = synthesizeDetail(heights, verts, spacingM)
     const sky = skyViewFactor(heights, verts, spacingM)
-    // THE ANCHOR IS THE GROUND UNDER THE MODEL, NOT THE ROOF ABOVE IT.
+    // THE ANCHOR IS THE MESH'S OWN HEIGHT AT THE MODEL, and it has to be
+    // exactly that or the ground stops meeting the building.
     //
-    // This was one raw bilinear sample at the model's own position. In a dense
-    // city that lands on a building, because the terrarium mosaic is a SURFACE
-    // model — `terrain-truth` opens with the measurement: a street in the
-    // Gothic Quarter reads 29.8 m where the street is about 10.
+    // This was a raw point sample, which in a dense city lands on a roof: over
+    // Lujiazui it read 38.5 m in a district about 4 m above the sea. The fix at
+    // the time was a low percentile of a window — bare ground as the lower
+    // envelope of a neighbourhood, the rule `terrain-truth` states.
     //
-    // Over Lujiazui it read 38.5 m in a district that sits about 4 m above the
-    // sea. Every height in the scene is expressed against that datum, so the
-    // whole landscape hung thirty metres below the model and the Huangpu came
-    // out at −41 — which is how a river bend rendered with no visible water.
+    // Then the grid itself gained that envelope, and the window became a floor
+    // OF a floor. The anchor stopped agreeing with the mesh it anchors: measured
+    // here, the terrain came out 5.76 m below the underside of the model, so
+    // switching terrain on dropped the ground away and left the building
+    // hovering — which is exactly what a user sees as "the tile moves".
     //
-    // The fix is the rule `terrain-truth` already states: "bare ground is the
-    // lower envelope of a surface model — obstructions only ever add height, so
-    // the floor of a neighbourhood is a better estimate of it than the middle."
-    // A low percentile of a window, not a minimum: a strict floor is one void
-    // pixel away from anchoring the entire scene inside a hole.
-    const anchorElevation = neighbourhoodFloor(
-      unified, PATCH_PX,
+    // A point sample is right again, and for a reason rather than by reverting:
+    // `lowerEnvelope` has already taken the buildings out of the whole grid, so
+    // the value under the model IS bare ground. Anything else re-solves a
+    // problem that is already solved, and breaks the one property this number
+    // exists to guarantee.
+    const anchorElevation = bilinearSample(
+      unified, PATCH_PX, PATCH_PX,
       (fx - (cx - 1)) * TERRAIN_TILE_DIM - 0.5,
       (fy - (cy - 1)) * TERRAIN_TILE_DIM - 0.5,
     )

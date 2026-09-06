@@ -108,6 +108,19 @@ function readFeatureLayers(): FeatureLayerVisibility {
   } catch { return fallback }
 }
 
+/**
+ * Terrain style, persisted. `imagery` by default, deliberately.
+ *
+ * The layering the map is meant to read as, bottom to top: the OpenStreetMap
+ * tile draped on the relief, then our own features over it with the material
+ * of what they ARE — asphalt for a carriageway, grass for a park, sand for a
+ * beach, water for water. Where we have no feature, the tile shows through and
+ * the map is still a map.
+ *
+ * A terrain-only style like `ecosystem` breaks that: it paints the ground from
+ * elevation and slope, so everywhere we have not modelled something turns into
+ * generic moss instead of the street it actually is.
+ */
 function readTerrainStyle(): TerrainStyle {
   const raw = lsGet(LS_TERRAIN_STYLE)
   return raw === 'shaded' || raw === 'hypsometric' || raw === 'slope' || raw === 'ecosystem'

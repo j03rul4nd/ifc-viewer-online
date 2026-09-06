@@ -11,7 +11,8 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-  clampHeightGrid, percentile, MIN_BAND_M, OUTLIER_SLACK,
+  clampHeightGrid, percentile, despeckleHeightGrid,
+  MIN_BAND_M, OUTLIER_SLACK, SPECKLE_THRESHOLD_M,
 } from './height-grid-clamp'
 
 /** A flat delta at `base` metres with `bad` void samples dropped into it. */
@@ -96,5 +97,76 @@ describe('clampHeightGrid', () => {
 
   it('survives an empty grid', () => {
     expect(clampHeightGrid(new Float32Array(0)).clamped).toBe(0)
+  })
+})
+
+describe('despeckleHeightGrid', () => {
+  const flat = (dim: number, base = 5): Float32Array =>
+    new Float32Array(dim * dim).fill(base)
+
+  it('removes an isolated pit', () => {
+    // THE MEASUREMENT THIS EXISTS FOR: over Lujiazui, after the clamp and the
+    // envelope, 101 samples of 148 225 sat below −30 m, scattered as runs of
+    // four or five pixels. Salt-and-pepper, not a crater.
+    const g = flat(9)
+    g[4 * 9 + 4] = -60
+    const r = despeckleHeightGrid(g, 9, 9)
+    expect(r.replaced).toBe(1)
+    expect(g[4 * 9 + 4]).toBe(5)
+  })
+
+  it('removes an isolated spike too', () => {
+    const g = flat(9)
+    g[4 * 9 + 4] = 400
+    despeckleHeightGrid(g, 9, 9)
+    expect(g[4 * 9 + 4]).toBe(5)
+  })
+
+  it('clears a short run, which is what the voids actually look like', () => {
+    // Runs of four or five in a row were the observed shape. A single-pixel
+    // filter that could not clear those would have fixed nothing.
+    const g = flat(15)
+    for (let x = 5; x < 10; x++) g[7 * 15 + x] = -60
+    despeckleHeightGrid(g, 15, 15)
+    let worst = Infinity
+    for (const v of g) worst = Math.min(worst, v)
+    expect(worst).toBeGreaterThan(-30)
+  })
+
+  it('leaves real terrain bit for bit', () => {
+    // A median that softens the landscape to remove speckle has traded the
+    // thing being protected for the thing being removed.
+    const dim = 32
+    const g = new Float32Array(dim * dim)
+    for (let y = 0; y < dim; y++) {
+      for (let x = 0; x < dim; x++) g[y * dim + x] = 100 + x * 3 + y * 2
+    }
+    const before = Array.from(g)
+    const r = despeckleHeightGrid(g, dim, dim)
+    expect(r.replaced).toBe(0)
+    expect(Array.from(g)).toEqual(before)
+  })
+
+  it('does not touch a steep but continuous slope', () => {
+    // Steep is not speckle. The threshold is what tells them apart, and a
+    // gradient just under it must survive untouched.
+    const dim = 16
+    const step = SPECKLE_THRESHOLD_M - 5
+    const g = new Float32Array(dim * dim)
+    for (let y = 0; y < dim; y++) {
+      for (let x = 0; x < dim; x++) g[y * dim + x] = x * step
+    }
+    expect(despeckleHeightGrid(g, dim, dim).replaced).toBe(0)
+  })
+
+  it('repairs a NaN rather than spreading it', () => {
+    const g = flat(9)
+    g[4 * 9 + 4] = NaN
+    despeckleHeightGrid(g, 9, 9)
+    expect(g[4 * 9 + 4]).toBe(5)
+  })
+
+  it('refuses a grid whose size does not match its dimensions', () => {
+    expect(despeckleHeightGrid(new Float32Array(10), 5, 5).replaced).toBe(0)
   })
 })
