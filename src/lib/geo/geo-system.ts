@@ -37,6 +37,17 @@ import {
   buildRoofPropLayer, groundFrameFor,
 } from './osm-scene'
 import { satelliteOffset, shouldPlaceSatellite } from './multi-placement'
+import { distanceM } from './model-sites'
+
+/**
+ * How near a loaded model must be to the map's placement to BE its anchor.
+ *
+ * Generous: a placement is derived from a bounding-box centre, so it can sit
+ * tens of metres from where a hand-edited one was dropped, and still obviously
+ * describe the same building. Beyond a city block it is describing something
+ * else and the map should not claim otherwise.
+ */
+const ANCHOR_MATCH_M = 250
 import { SHADOW_ROLES, shadowCameraPlan } from './shadow-policy'
 import { depthRangeFor, depthRangeChanged, type DepthRange } from './depth-range'
 import { auditVertical, describeAudit } from './vertical-audit'
@@ -867,10 +878,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     },
 
     refreshSatellites() {
+      // Re-runs the WHOLE placement, not just the satellites, and that is the
+      // point: a model arriving can change which one the map is anchored to, so
+      // the anchor scene point has to be re-derived before anything is offset
+      // from it. Idempotent — the same placement resolves to the same transform.
       if (!geoRoot || !placement) return
-      const bounds = ctx.getActiveModelBounds()
-      const anchorScene = bounds ? { x: bounds.center.x, z: bounds.center.z } : { x: 0, z: 0 }
-      placeSatellites(placement, anchorScene, geoRoot.position.y)
+      applyPlacement(placement)
     },
 
     setEditorPointerLock(locked) {
@@ -1649,9 +1662,47 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     ctx.orthoCamera.updateProjectionMatrix()
   }
 
+  /**
+   * WHICH MODEL THIS PLACEMENT DESCRIBES.
+   *
+   * The map lands its lat/lon on one model's bounding-box centre, and until now
+   * that model was "whichever is active". Those are the same thing while one
+   * file is loaded and diverge the moment a second arrives: the placement still
+   * held the Oriental Pearl's coordinates while the anchor scene point had
+   * become the Shanghai World Financial Center's centre, so the map believed
+   * the SWFC stood at the Pearl's address — and placing the Pearl at its own
+   * address then put it inside the SWFC. Both towers on one spot, which is the
+   * bug, one level below where it appeared.
+   *
+   * Resolved by nearest coordinates rather than by a remembered id: the
+   * placement can be edited by hand, restored from a saved file, or arrive from
+   * a deep link, and in each of those the id would have to be threaded through
+   * a path that does not otherwise carry one. Its LOCATION is always available
+   * and is what actually defines the anchor.
+   */
+  function anchorModelFor(p: GeoPlacement): {
+    modelId: string
+    bounds: { center: { x: number; y: number; z: number }; size: { x: number; y: number; z: number } }
+  } | null {
+    const models = ctx.getSatelliteModels?.()
+    if (!models || models.length === 0) return null
+    let best: (typeof models)[number] | null = null
+    let bestD = Infinity
+    for (const m of models) {
+      const d = distanceM(p.lat, p.lon, m.placement.lat, m.placement.lon)
+      if (d < bestD) { bestD = d; best = m }
+    }
+    // A placement nowhere near any loaded model is a manual or deep-linked one.
+    // Anchoring on the least-distant model would drag the map to a building it
+    // has nothing to do with, so fall back to the active model instead.
+    if (!best || bestD > ANCHOR_MATCH_M) return null
+    return { modelId: best.modelId, bounds: best.bounds }
+  }
+
   function applyPlacement(p: GeoPlacement): void {
     if (!geoRoot) return
-    const bounds = ctx.getActiveModelBounds()
+    const anchor = anchorModelFor(p)
+    const bounds = anchor?.bounds ?? ctx.getActiveModelBounds()
     const anchorScene = bounds ? { x: bounds.center.x, z: bounds.center.z } : { x: 0, z: 0 }
     const modelMinY = bounds ? bounds.center.y - bounds.size.y / 2 : 0
 
@@ -1665,7 +1716,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), t.tiltRad))
     geoRoot.scale.setScalar(t.scale)
     geoRoot.updateMatrixWorld(true)
-    placeSatellites(p, anchorScene, t.position.y)
+    placeSatellites(p, anchorScene, t.position.y, anchor?.modelId ?? null)
     // The hole planes live in WORLD space — refresh them when the root moves.
     if (terrain && engine) engine.setHole(computeHolePlanes())
   }
@@ -1684,13 +1735,17 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    */
   function placeSatellites(
     anchor: GeoPlacement, anchorScene: { x: number; z: number }, groundY: number,
+    anchorModelId: string | null,
   ): void {
     const satellites = ctx.getSatelliteModels?.()
     if (!satellites || satellites.length === 0 || !ctx.setModelOffset) return
 
     const frame = { placement: anchor, anchorScene, groundY }
     for (const s of satellites) {
-      if (!shouldPlaceSatellite(s.modelId, null, s.placement)) continue
+      // The anchor is excluded HERE, by identity, rather than by the host
+      // guessing which model that is. The host does not know: the map picks its
+      // anchor from the placement it holds.
+      if (!shouldPlaceSatellite(s.modelId, anchorModelId, s.placement)) continue
       ctx.setModelOffset(s.modelId, satelliteOffset(frame, s.placement, s.bounds))
     }
   }
