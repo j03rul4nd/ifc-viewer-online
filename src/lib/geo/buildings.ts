@@ -268,7 +268,20 @@ export function buildOverpassQuery(
   return [
     `[out:json][timeout:${timeoutS}];`,
     `(way["building"](${s},${w},${n},${e});`,
-    `relation["building"](${s},${w},${n},${e}););`,
+    `relation["building"](${s},${w},${n},${e});`,
+    // SIMPLE 3D BUILDINGS — the layer with the heights in it.
+    //
+    // Measured over Lujiazui, the Oriental Pearl and the Shanghai World
+    // Financial Center: 156 `building` outlines of which 22 carry a height,
+    // fourteen per cent, so 83 blocks of one of the densest business districts
+    // on earth fell through to an eight-metre fallback. In the same box there
+    // are 132 `building:part` ways and 98 of them carry a height. The data was
+    // there the whole time and this query never asked for it.
+    //
+    // Parts also fix the SHAPE: a tower is modelled as podium, shaft and crown
+    // rather than as one prism, which is what made a skyline of flat boxes.
+    `way["building:part"](${s},${w},${n},${e});`,
+    `relation["building:part"](${s},${w},${n},${e}););`,
     `out geom ${maxElements};`,
   ].join('')
 }
