@@ -48,6 +48,16 @@ export interface SceneModel {
   visible:      boolean
   transform:    ModelTransform
   loadedAt:     number
+  /**
+   * Group the user put this file in by hand, overriding what the file says.
+   *
+   * Automatic grouping reads the IFC's own project identity, which is right
+   * most of the time and cannot be right always — a set exported from three
+   * tools may carry three project GUIDs, and two unrelated files may share a
+   * template. The cost of a wrong guess is that somebody cannot move their
+   * model, so the guess is always overridable. See `lib/model-grouping`.
+   */
+  userGroupId?: string | null
 }
 
 export interface SelectedInfo {

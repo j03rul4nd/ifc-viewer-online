@@ -144,7 +144,16 @@
     "showAllModelsBtn": "↑ Show all models",
     "clickHint": "Click a model to activate · use ⊙ to isolate",
     "transformTitle": "Transform · {{fileName}}",
-    "frameAll": "Fit camera to all models"
+    "frameAll": "Fit camera to all models",
+    "group": {
+      "collapse": "Collapse group",
+      "expand": "Expand group",
+      "moveTogether": "Move together",
+      "moveTogetherHint": "Move every file of this building as one, keeping their alignment",
+      "scopeModel": "This file",
+      "scopeGroup": "All {{count}} files",
+      "positionOnly": "Moving the set shifts every file by the same amount. Rotation and scale stay per file — turning each one about its own origin would scatter them."
+    }
   },
   "transform": {
     "position": "Position",

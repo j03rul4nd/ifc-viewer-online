@@ -132,7 +132,16 @@
     "showAllModelsBtn": "↑ Mostra tots els models",
     "clickHint": "Clica un model per activar-lo · usa ⊙ per aïllar",
     "transformTitle": "Transformació · {{fileName}}",
-    "frameAll": "Ajusta la càmera a tots els models"
+    "frameAll": "Ajusta la càmera a tots els models",
+    "group": {
+      "collapse": "Replega el grup",
+      "expand": "Desplega el grup",
+      "moveTogether": "Mou-los junts",
+      "moveTogetherHint": "Mou tots els fitxers d'aquest edifici alhora, mantenint-ne l'alineació",
+      "scopeModel": "Aquest fitxer",
+      "scopeGroup": "Els {{count}} fitxers",
+      "positionOnly": "Moure el conjunt desplaça tots els fitxers per igual. La rotació i l'escala continuen sent per fitxer: girar cadascun sobre el seu origen els dispersaria."
+    }
   },
   "transform": {
     "position": "Posició",

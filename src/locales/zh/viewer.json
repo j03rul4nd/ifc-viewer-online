@@ -132,7 +132,16 @@
     "showAllModelsBtn": "↑ 显示所有模型",
     "clickHint": "点击模型激活 · 使用 ⊙ 隔离",
     "transformTitle": "变换 · {{fileName}}",
-    "frameAll": "将相机调整到适合所有模型"
+    "frameAll": "将相机调整到适合所有模型",
+    "group": {
+      "collapse": "折叠分组",
+      "expand": "展开分组",
+      "moveTogether": "一起移动",
+      "moveTogetherHint": "整体移动该建筑的所有文件，并保持它们之间的对齐",
+      "scopeModel": "此文件",
+      "scopeGroup": "全部 {{count}} 个文件",
+      "positionOnly": "移动整组会让每个文件位移相同距离。旋转和缩放仍按文件进行——让每个文件绕自身原点旋转会把它们打散。"
+    }
   },
   "transform": {
     "position": "位置",

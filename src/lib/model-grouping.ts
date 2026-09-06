@@ -28,6 +28,21 @@
 //   2. PROJECT NAME   — the same project name and site name. Weaker, because a
 //                       name is typed, but a real federation almost always
 //                       agrees here even when tools mint different GUIDs.
+//
+// THE RUNGS MERGE, THEY DO NOT SHORT-CIRCUIT, and this is the correction that
+// makes the feature work on real files. The obvious reading of a ladder is
+// "take the strongest evidence a file offers and stop" — but that hands a file
+// with a GUID to rung 1 and never lets it reach rung 2. The Hotel Vela set is
+// exactly that case: three files authored as one delivery, each stamped with a
+// DIFFERENT IfcProject GlobalId by its authoring tool, all three agreeing on
+// project name 'Hotel Vela' and site 'Placa de la Rosa dels Vents'. Under a
+// short-circuiting ladder they group into three groups of one, i.e. the feature
+// does nothing on the case it was built for.
+//
+// So rung 1 forms the tightest partition it can, and rung 2 then COALESCES the
+// blocks that agree on name. Agreement is evidence whether or not stronger
+// evidence was also present; a GUID that says nothing about another file cannot
+// be read as a denial that they are related.
 //   3. SITE PROXIMITY — georeferences within a few metres AND no contradicting
 //                       project identity. This is the fallback for files that
 //                       carry coordinates and nothing else, and it is
@@ -131,6 +146,29 @@ export function groupModels(models: ReadonlyArray<ModelDescriptor>): ModelGroup[
     const slot = byKey.get(key)
     if (slot) slot.members.push(m)
     else byKey.set(key, { members: [m], basis })
+  }
+
+  // Pass 1b: coalesce blocks that agree on project and site name.
+  //
+  // Where the ladder actually pays. A user override is never coalesced — it is
+  // the one basis that means "a person decided this", and an automatic rule may
+  // not overrule it. Nor is a block merged on a name it does not state: an
+  // absent project name is not a value two files can agree on.
+  const byName = new Map<string, string>()   // nameKey -> the key that keeps it
+  for (const [key, slot] of [...byKey]) {
+    if (slot.basis === 'user') continue
+    const project = clean(slot.members[0].projectName)
+    if (!project) continue
+    const nameKey = `${project}|${clean(slot.members[0].siteName) ?? ''}`
+    const host = byName.get(nameKey)
+    if (host === undefined) { byName.set(nameKey, key); continue }
+    const target = byKey.get(host)
+    if (!target) continue
+    target.members.push(...slot.members)
+    // The merge itself is the weaker evidence, so it is what the group reports —
+    // saying 'projectGuid' would claim a machine identity the files do not share.
+    target.basis = 'projectName'
+    byKey.delete(key)
   }
 
   // Pass 2: the rest, joined only to each other and only when genuinely
@@ -251,4 +289,56 @@ export function identityFromTree(
   }
   walk(nodes)
   return out
+}
+
+// ── Moving a group ────────────────────────────────────────────────────────────
+
+export interface Vec3 { x: number; y: number; z: number }
+
+export interface MemberPosition { id: string; position: Vec3 }
+
+/**
+ * New positions for every member when a group is moved along one axis.
+ *
+ * DELTA, NOT ABSOLUTE, and this is the whole safety property of the feature.
+ * The per-model panel sets an absolute position, which is right for one file
+ * and catastrophic for a set: typing x = 10 into a group would stack all three
+ * files of a building on the same point, destroying the alignment that made
+ * them a federation in the first place. The offsets between members are the
+ * information; only their common origin is being edited.
+ *
+ * The reference member is the one whose number the user is reading and typing
+ * into, so the field they edit lands exactly on the value they entered and
+ * everything else follows by the same amount.
+ */
+export function groupPositionUpdates(
+  members: ReadonlyArray<MemberPosition>,
+  refId: string,
+  axis: keyof Vec3,
+  value: number,
+): MemberPosition[] {
+  if (members.length === 0) return []
+  const ref = members.find((m) => m.id === refId) ?? members[0]
+  const delta = value - ref.position[axis]
+  if (delta === 0) return members.map((m) => ({ id: m.id, position: { ...m.position } }))
+  return members.map((m) => ({
+    id: m.id,
+    position: { ...m.position, [axis]: m.position[axis] + delta },
+  }))
+}
+
+/**
+ * The position a group's fields should SHOW.
+ *
+ * The reference member's own position, not a centroid. A centroid reads as a
+ * number that belongs to nothing: nudge it and no member ends up there, and a
+ * user checking their work against one file's coordinates finds a value they
+ * cannot account for. The reference is a real file with a real position.
+ */
+export function groupReferencePosition(
+  members: ReadonlyArray<MemberPosition>, refId: string,
+): Vec3 {
+  if (members.length === 0) return { x: 0, y: 0, z: 0 }
+  const ref = members.find((m) => m.id === refId) ?? members[0]
+  return { ...ref.position }
 }

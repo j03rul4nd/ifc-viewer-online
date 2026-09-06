@@ -132,7 +132,16 @@
     "showAllModelsBtn": "↑ Afficher tous les modèles",
     "clickHint": "Cliquer sur un modèle pour l'activer · utiliser ⊙ pour isoler",
     "transformTitle": "Transformation · {{fileName}}",
-    "frameAll": "Cadrer la caméra sur tous les modèles"
+    "frameAll": "Cadrer la caméra sur tous les modèles",
+    "group": {
+      "collapse": "Réduire le groupe",
+      "expand": "Développer le groupe",
+      "moveTogether": "Déplacer ensemble",
+      "moveTogetherHint": "Déplacer tous les fichiers de ce bâtiment d'un bloc, en conservant leur alignement",
+      "scopeModel": "Ce fichier",
+      "scopeGroup": "Les {{count}} fichiers",
+      "positionOnly": "Déplacer l'ensemble décale chaque fichier d'autant. Rotation et échelle restent par fichier : les faire tourner chacun sur son propre origine les disperserait."
+    }
   },
   "transform": {
     "position": "Position",

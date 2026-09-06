@@ -11,6 +11,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   groupModels, groupOf, moveTargets, sharedPrefix, identityFromTree, SITE_PROXIMITY_M,
+  groupPositionUpdates, groupReferencePosition,
   type ModelDescriptor,
 } from './model-grouping'
 
@@ -133,6 +134,64 @@ describe('groupModels', () => {
   })
 })
 
+describe('the ladder merges rather than short-circuits', () => {
+  // Read off the three real files in public/models/hotel-vela: their authoring
+  // tool minted a different IfcProject GlobalId for each, and all three agree on
+  // project and site name. This is the case the feature exists for, so it is
+  // pinned to the actual values rather than to a plausible-looking fixture.
+  const vela = [
+    m('a', { projectGuid: '28rVpZtUPPz8uNKGH3H9YJ', projectName: 'Hotel Vela', siteName: 'Placa de la Rosa dels Vents' }),
+    m('s', { projectGuid: '1onHx4drnVV93_YTjbSOlC', projectName: 'Hotel Vela', siteName: 'Placa de la Rosa dels Vents' }),
+    m('mep', { projectGuid: '1DPBBMtxvILPs67GX4x_2B', projectName: 'Hotel Vela', siteName: 'Placa de la Rosa dels Vents' }),
+  ]
+
+  it('groups files whose GUIDs differ but whose project and site names agree', () => {
+    const groups = groupModels(vela)
+    expect(groups).toHaveLength(1)
+    expect(groups[0].memberIds.sort()).toEqual(['a', 'mep', 's'])
+  })
+
+  it('reports the weaker basis it actually used, not the GUID rung', () => {
+    expect(groupModels(vela)[0].basis).toBe('projectName')
+  })
+
+  it('still keeps a differently-named project apart, GUIDs or not', () => {
+    const groups = groupModels([
+      ...vela,
+      m('other', { projectGuid: 'ZZZ', projectName: 'Torre Poblenou', siteName: 'Poblenou' }),
+    ])
+    expect(groups).toHaveLength(2)
+    expect(groupOf(groups, 'other')?.memberIds).toEqual(['other'])
+  })
+
+  it('does not coalesce on a project name neither file states', () => {
+    const groups = groupModels([
+      m('x', { projectGuid: 'G1', siteName: 'Same Site' }),
+      m('y', { projectGuid: 'G2', siteName: 'Same Site' }),
+    ])
+    expect(groups).toHaveLength(2)
+  })
+
+  it('leaves a user override alone when an automatic rule would merge it away', () => {
+    const groups = groupModels([
+      m('a', { projectName: 'Hotel Vela', siteName: 'S' }),
+      m('b', { projectName: 'Hotel Vela', siteName: 'S' }),
+      m('c', { projectName: 'Hotel Vela', siteName: 'S', userGroupId: 'mine' }),
+    ])
+    expect(groupOf(groups, 'c')?.memberIds).toEqual(['c'])
+    expect(groupOf(groups, 'a')?.memberIds).toEqual(['a', 'b'])
+  })
+
+  it('still prefers the GUID when it is the only agreement', () => {
+    const groups = groupModels([
+      m('a', { projectGuid: 'SHARED' }),
+      m('b', { projectGuid: 'SHARED' }),
+    ])
+    expect(groups).toHaveLength(1)
+    expect(groups[0].basis).toBe('projectGuid')
+  })
+})
+
 describe('sharedPrefix', () => {
   it('labels a group from what its file names agree on', () => {
     expect(sharedPrefix(['BCN-IVO-A-0002.ifc', 'BCN-IVO-S-0002.ifc'])).toBe('BCN-IVO')
@@ -248,5 +307,80 @@ describe('identityFromTree', () => {
     expect(groups).toHaveLength(1)
     expect(groups[0].basis).toBe('projectGuid')
     expect(groups[0].label).toBe('Hotel Vela')
+  })
+})
+
+describe('groupPositionUpdates', () => {
+  const members = [
+    { id: 'a', position: { x: 0, y: 0, z: 0 } },
+    { id: 'b', position: { x: 10, y: 0, z: 5 } },
+    { id: 'c', position: { x: -4, y: 2, z: 0 } },
+  ]
+
+  it('moves every member by the SAME delta', () => {
+    // THE SAFETY PROPERTY. The offsets between files are the information; only
+    // their common origin is being edited.
+    const out = groupPositionUpdates(members, 'a', 'x', 100)
+    expect(out.map((m) => m.position.x)).toEqual([100, 110, 96])
+  })
+
+  it('lands the reference exactly on the typed value', () => {
+    // The user is reading and typing into one file's number. It must end up
+    // being that number, not near it.
+    expect(groupPositionUpdates(members, 'b', 'x', 42).find((m) => m.id === 'b')!
+      .position.x).toBe(42)
+  })
+
+  it('preserves relative offsets, which is what makes it a federation', () => {
+    const out = groupPositionUpdates(members, 'a', 'z', 30)
+    const by = Object.fromEntries(out.map((m) => [m.id, m.position]))
+    expect(by.b.z - by.a.z).toBe(5)
+    expect(by.c.z - by.a.z).toBe(0)
+  })
+
+  it('never touches the other axes', () => {
+    const out = groupPositionUpdates(members, 'a', 'x', 100)
+    expect(out.map((m) => m.position.y)).toEqual([0, 0, 2])
+    expect(out.map((m) => m.position.z)).toEqual([0, 5, 0])
+  })
+
+  it('is a no-op for a zero delta, and still returns fresh objects', () => {
+    // Returning the caller's objects would let a later mutation reach into the
+    // store's state.
+    const out = groupPositionUpdates(members, 'a', 'x', 0)
+    expect(out.map((m) => m.position.x)).toEqual([0, 10, -4])
+    expect(out[0].position).not.toBe(members[0].position)
+  })
+
+  it('falls back to the first member when the reference is gone', () => {
+    // A model removed mid-edit must not make the whole group unmovable.
+    expect(groupPositionUpdates(members, 'ghost', 'x', 5)[0].position.x).toBe(5)
+  })
+
+  it('survives an empty group', () => {
+    expect(groupPositionUpdates([], 'a', 'x', 5)).toEqual([])
+  })
+})
+
+describe('groupReferencePosition', () => {
+  const members = [
+    { id: 'a', position: { x: 0, y: 0, z: 0 } },
+    { id: 'b', position: { x: 10, y: 0, z: 0 } },
+  ]
+
+  it('shows a real member position, not a centroid', () => {
+    // A centroid is a number that belongs to nothing: nudge it and no file ends
+    // up there, and a user checking against one file finds a value they cannot
+    // account for.
+    expect(groupReferencePosition(members, 'b')).toEqual({ x: 10, y: 0, z: 0 })
+  })
+
+  it('copies rather than aliasing the member', () => {
+    const p = groupReferencePosition(members, 'a')
+    expect(p).not.toBe(members[0].position)
+  })
+
+  it('survives an empty group', () => {
+    expect(groupReferencePosition([], 'a')).toEqual({ x: 0, y: 0, z: 0 })
   })
 })
