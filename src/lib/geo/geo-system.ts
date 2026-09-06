@@ -1186,7 +1186,19 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     const key = ctx.keyLight
     if (!key || !geoRoot) return
 
-    const bounds = new THREE.Box3().setFromObject(geoRoot)
+    // MEASURED FROM THE BUILT LAYERS, NOT FROM geoRoot.
+    //
+    // geoRoot also carries the basemap engine and the 3D-tiles group, and those
+    // run to the horizon. Measuring it gave a 4119-unit radius over a district
+    // a few hundred metres across, which at a 2048 map is 4.6 units per texel —
+    // a contact shadow four metres wide. (The degradation warning below caught
+    // exactly this, on the real scene, which is the only reason it was found.)
+    //
+    // The layer objects are the context that actually casts, so they are the
+    // right extent. The model sits inside them by construction: the query box
+    // is centred on it.
+    const bounds = new THREE.Box3()
+    for (const [, obj] of layerObjects) bounds.expandByObject(obj)
     if (bounds.isEmpty()) return
     const radius = bounds.getBoundingSphere(new THREE.Sphere()).radius
     if (!Number.isFinite(radius)) return
