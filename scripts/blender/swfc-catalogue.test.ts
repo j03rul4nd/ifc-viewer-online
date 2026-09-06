@@ -11,7 +11,7 @@ describe('Shanghai World Financial Center published reference', () => {
     expect(model.sizeBytes).toBe(statSync(resolve('public/models/swfc', model.fileName)).size)
     expect(model.description).toContain('not an as-built')
     expect(model.sourceLabel).toContain('KPF / ECADI')
-    expect(model.ifcUrl).toContain('?v=20260906-r1')
+    expect(model.ifcUrl).toContain('?v=20260906-r2')
   })
   it('ships IFC4 with the published above-ground and basement hierarchy', () => {
     const ifc = readFileSync(resolve('public/models/swfc/SHA-IVO-SWFC-A-0001.ifc'), 'utf8')

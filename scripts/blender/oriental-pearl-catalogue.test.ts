@@ -10,7 +10,7 @@ describe('Oriental Pearl reference example', () => {
     expect(model).toBeDefined()
     expect(model.sizeBytes).toBe(statSync(resolve('public/models/oriental-pearl', model.fileName)).size)
     expect(model.description).toContain('Approximate reconstruction')
-    expect(model.ifcUrl).toContain('?v=20260906-r1')
+    expect(model.ifcUrl).toContain('?v=20260906-r2')
     expect(model.sourceLabel).toContain('Jiang Huancheng')
   })
   it('preserves functional levels and does not invent occupied antenna floors', () => {
