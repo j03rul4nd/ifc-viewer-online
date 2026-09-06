@@ -778,6 +778,32 @@ describe('roadClass', () => {
 
   it('gives a footpath a flush edge and a coarser surface than tarmac', () => {
     expect(ROAD_CLASS_KERB_M.pedestrian).toBeLessThan(ROAD_CLASS_KERB_M.vehicular)
+  })
+
+  it('widens a footway once it is carried on a structure', () => {
+    // A 2 m default is a park path. A footway on a bridge has an abutment at
+    // each end and something underneath it, and nobody builds one 2 m wide.
+    //
+    // Measured over Lujiazui: 31 elevated footways linking the malls, not one
+    // carrying a `width`. All of them were drawn at the park-path default.
+    const ground = roadWidth({ highway: 'footway' })
+    const bridged = roadWidth({ highway: 'footway', bridge: 'yes' })
+    const layered = roadWidth({ highway: 'footway', layer: '2' })
+    expect(bridged).toBeGreaterThan(ground * 2)
+    expect(layered).toBe(bridged)
+  })
+
+  it('lets a surveyed width beat the elevated fallback outright', () => {
+    // The fallback only ever fills a silence. Where somebody measured it, the
+    // measurement wins — including when it is narrower than our guess.
+    expect(roadWidth({ highway: 'footway', bridge: 'yes', width: '2.5' })).toBe(2.5)
+  })
+
+  it('leaves a carriageway its own width on a viaduct', () => {
+    // A road keeps its carriageway width when elevated, because that is what
+    // the width is for. Only personal-scale paths get the structural minimum.
+    const ground = roadWidth({ highway: 'primary' })
+    expect(roadWidth({ highway: 'primary', bridge: 'yes' })).toBe(ground)
     expect(ROAD_CLASS_ROUGHNESS.pedestrian).toBeGreaterThan(ROAD_CLASS_ROUGHNESS.vehicular)
     expect(ROAD_CLASS_ROUGHNESS.track).toBeGreaterThan(ROAD_CLASS_ROUGHNESS.pedestrian)
   })
@@ -1063,5 +1089,60 @@ describe('parseOsmFeatures over the real Port Vell box', () => {
     )
     expect(plain).toBeDefined()
     expect(features.some((f) => f.id === `w${plain!.id}`)).toBe(false)
+  })
+})
+
+describe('Simple 3D Buildings', () => {
+  const sq = (id: number, r: number, tags: Record<string, string>) => ({
+    type: 'way', id, tags,
+    geometry: [
+      { lat: 31.240 - r, lon: 121.499 - r }, { lat: 31.240 - r, lon: 121.499 + r },
+      { lat: 31.240 + r, lon: 121.499 + r }, { lat: 31.240 + r, lon: 121.499 - r },
+      { lat: 31.240 - r, lon: 121.499 - r },
+    ],
+  })
+
+  it('draws the PARTS of a tower and stands its outline down', () => {
+    // A part replaces the volume of the outline it sits in. Drawing both leaves
+    // the outline's prism wrapped around its own parts, visible wherever the
+    // outline is taller than the podium — which is most of the time.
+    const feats = parseOsmFeatures({ elements: [
+      sq(1, 0.0012, { building: 'yes' }),
+      sq(2, 0.0010, { 'building:part': 'yes', height: '30' }),
+      sq(3, 0.0005, { 'building:part': 'yes', height: '250', min_height: '30' }),
+    ] } as never)
+    const ids = feats.filter((f) => f.kind === 'building').map((f) => f.id)
+    expect(ids).not.toContain('w1')
+    expect(ids).toEqual(expect.arrayContaining(['w2', 'w3']))
+  })
+
+  it('takes the surveyed height off the part', () => {
+    // THE WHOLE POINT. Over Lujiazui 74% of parts state a height against 14% of
+    // outlines, so this is where the district's real massing comes from.
+    const feats = parseOsmFeatures({ elements: [
+      sq(1, 0.0012, { building: 'yes' }),
+      sq(2, 0.0005, { 'building:part': 'yes', height: '250', min_height: '30' }),
+    ] } as never)
+    const part = feats.find((f) => f.id === 'w2')!
+    expect(part.height.heightM).toBe(250)
+    expect(part.height.minHeightM).toBe(30)
+    expect(part.height.estimated).toBe(false)
+  })
+
+  it('leaves a plain outline alone when nothing describes it', () => {
+    // Most of a city is still plain outlines and they must keep being drawn.
+    const feats = parseOsmFeatures({ elements: [
+      sq(1, 0.0012, { building: 'yes' }),
+    ] } as never)
+    expect(feats.filter((f) => f.kind === 'building').map((f) => f.id)).toEqual(['w1'])
+  })
+
+  it('never deletes an outline that merely also tags a part', () => {
+    // A way carrying both is a building that states its own part. Reading it as
+    // a part would delete the outline it IS.
+    const feats = parseOsmFeatures({ elements: [
+      sq(1, 0.0012, { building: 'yes', 'building:part': 'yes', height: '40' }),
+    ] } as never)
+    expect(feats.filter((f) => f.kind === 'building').map((f) => f.id)).toEqual(['w1'])
   })
 })

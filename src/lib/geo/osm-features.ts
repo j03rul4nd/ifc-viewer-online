@@ -36,6 +36,7 @@ import {
 } from './vertical'
 import { buildSeaPolygons, type CoastlineBbox } from './coastline'
 import { assembleMultipolygon } from './multipolygon'
+import { partitionBuildingParts } from './building-parts'
 
 export type FeatureKind =
   | 'building' | 'water' | 'green' | 'sand' | 'rock' | 'tree' | 'bridge' | 'road' | 'rail'
@@ -75,6 +76,30 @@ export interface OsmFeature {
   vertical?: VerticalTags
   /** What the way is FOR, which decides its clearances and its maximum grade. */
   functional?: FunctionalType
+  /**
+   * True for a `building:part` — a VOLUME of a building rather than a building.
+   *
+   * Kept because the two must be told apart after classification: a part
+   * supersedes the outline it sits in, and an outline that has parts must not
+   * also be extruded. See `building-parts`.
+   */
+  isBuildingPart?: boolean
+  /**
+   * THE SEA, as opposed to any other water.
+   *
+   * The distinction is a DATUM, not a label. Inland water sits at its own local
+   * level and the only thing that knows that level is the terrain under it, so
+   * a lake is levelled against the DEM. The sea does not work that way: it sits
+   * at the sea datum by definition, everywhere, and the DEM is the worst
+   * possible witness to where that is — over a harbour the raster is measuring
+   * moored ships and terminal roofs, and reads metres above open water a few
+   * metres away.
+   *
+   * Levelling the sea against the DEM is what dropped the sea surface below the
+   * datum the quays are built on, which is what left every quay's underside
+   * hanging in the air. See `waterLevelM` in osm-scene.
+   */
+  isSea?: boolean
 }
 
 export interface FeatureStyle {
@@ -413,7 +438,45 @@ export function roadWidth(tags: Record<string, string> | undefined): number {
     const shoulder = cls.startsWith('motorway') || cls.startsWith('trunk') ? 2.5 : 0.6
     return Math.min(40, lanes * 3.2 + shoulder)
   }
-  return ROAD_DEFAULT_WIDTH[cls] ?? 6
+  const base = ROAD_DEFAULT_WIDTH[cls] ?? 6
+  // A FOOTWAY ON A BRIDGE IS NOT A GARDEN PATH.
+  //
+  // The 2 m default is a park path: the width of somewhere one person walks
+  // and another squeezes past. A footway carrying `bridge=yes` is a built
+  // structure with an abutment at each end and something underneath it, and
+  // nobody builds one of those 2 m wide.
+  //
+  // It matters here because the survey does not say. Over Lujiazui — 137
+  // layered ways around the Oriental Pearl, 31 of them elevated footways
+  // linking the malls — NOT ONE carries a `width`. Every deck in that district
+  // was drawn at the park-path default, which is why a public walkway three
+  // storeys up read as a service catwalk.
+  //
+  // Still a fallback, and a wider one is still a guess. But an explicit `width`
+  // continues to win outright above, so this only ever fills a silence, and it
+  // fills it with the kind of thing that actually gets built.
+  if (ELEVATED_DECK_MIN_WIDTH_M[cls] !== undefined && isElevated(t)) {
+    return Math.max(base, ELEVATED_DECK_MIN_WIDTH_M[cls])
+  }
+  return base
+}
+
+/** True where the tags put a way clear of the ground on a structure. */
+function isElevated(t: Record<string, string>): boolean {
+  const bridge = t['bridge']
+  if (bridge && bridge !== 'no') return true
+  const layer = Number.parseInt(t['layer'] ?? '', 10)
+  return Number.isFinite(layer) && layer > 0
+}
+
+/**
+ * Least width a class is built to once it is carried on a structure, metres.
+ *
+ * Only the classes whose ground default is a personal-scale path: a road keeps
+ * its carriageway width on a viaduct, because that is what it is for.
+ */
+const ELEVATED_DECK_MIN_WIDTH_M: Record<string, number> = {
+  footway: 5, path: 4, cycleway: 4, steps: 2.4, pedestrian: 6,
 }
 
 /**
@@ -734,6 +797,14 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
   // Buildings win over everything — a boathouse in a park is a building.
   const building = t['building']
   if (building && building !== 'no') return 'building'
+  // A `building:part` is a VOLUME of a building — a podium, a shaft, a crown —
+  // under the Simple 3D Buildings schema. It carries its own `height` and
+  // `min_height`, which is why it is worth fetching at all: over Lujiazui, 74 %
+  // of parts state a height against 14 % of outlines. Classified as a building
+  // because from here down it behaves as one; which outlines it replaces is
+  // decided by `building-parts`, not here.
+  const part = t['building:part']
+  if (part && part !== 'no') return 'building'
 
   // A free-standing arch is masonry with a footprint and a height, so it is
   // built by the building path even when nobody tagged `building=*` on it.
@@ -1270,6 +1341,7 @@ export function parseOsmFeatures(
         out.push({
           id: `w${el.id}`, kind, ring, height, style,
           name: el.tags?.['name'], label: featureLabel(el.tags),
+          isBuildingPart: isBuildingPartTag(el.tags),
         })
       } else drop(el, 'geometry', ringRejection(pts, kind))
       continue
@@ -1317,11 +1389,51 @@ export function parseOsmFeatures(
         height: { heightM: 0, minHeightM: 0, estimated: true },
         style: resolveFeatureStyle('water', { natural: 'water' }),
         label: 'Sea',
+        // The one thing that IS special about it downstream: its datum.
+        isSea: true,
       })
     })
   }
 
-  return out
+  return supersedeOutlinesWithParts(out)
+}
+
+/**
+ * Stand down every building outline that its own `building:part`s describe.
+ *
+ * A part is not an extra building, it REPLACES the volume of the outline it
+ * sits in. Drawing both leaves the outline's prism standing around its own
+ * parts like shrink-wrap — visible wherever the outline is taller than the
+ * podium, which is most of the time.
+ *
+ * Applied here, at the end of parsing, rather than inside the loop: it is a
+ * decision about the whole feature SET, and one part can supersede an outline
+ * that has not been read yet.
+ */
+/** True where the tags describe a VOLUME of a building rather than a building. */
+function isBuildingPartTag(tags: Record<string, string> | undefined): boolean {
+  const t = tags ?? {}
+  const part = t['building:part']
+  // `building` wins: a way carrying both is a building that also states its own
+  // part, and treating it as a part would delete the outline it IS.
+  if (t['building'] && t['building'] !== 'no') return false
+  return part !== undefined && part !== 'no'
+}
+
+function supersedeOutlinesWithParts(features: OsmFeature[]): OsmFeature[] {
+  const parts = features.filter((f) => f.kind === 'building' && f.isBuildingPart && f.ring)
+  if (parts.length === 0) return features
+
+  const outlines = features
+    .filter((f) => f.kind === 'building' && !f.isBuildingPart && f.ring)
+    .map((f) => ({ id: f.id, ring: f.ring!.map((p) => ({ x: p.lon, y: p.lat })) }))
+
+  const { supersededOutlines } = partitionBuildingParts(
+    outlines,
+    parts.map((f) => ({ id: f.id, ring: f.ring!.map((p) => ({ x: p.lon, y: p.lat })) })),
+  )
+  if (supersededOutlines.size === 0) return features
+  return features.filter((f) => !supersededOutlines.has(f.id))
 }
 
 /**

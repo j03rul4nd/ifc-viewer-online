@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, bufferCentreline, buildLinearLayer,
-  dashCentreline, MAX_TREES, MAX_SEEDED_TREES,
+  dashCentreline, MAX_TREES, MAX_SEEDED_TREES, buildPierLayer,
 } from './osm-scene'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import type { OsmFeature } from './osm-features'
@@ -80,6 +80,53 @@ describe('buildSurfaceLayer', () => {
     expect(zOf(varying)).toBeCloseTo(zOf(low), 12)
   })
 
+  it('levels THE SEA on the sea datum, not on the DEM under it', () => {
+    // THE FLOATING-QUAY BUG. Over a harbour the DEM is a surface model full of
+    // moored ships and terminal roofs: here it reads 40 m everywhere while the
+    // sea datum says 2 m. Levelling the sea against that raster dropped the
+    // water surface far from the datum the quays are built on, and the quay's
+    // skirt — a fixed 3 m — stopped reaching it. The underside hung in the air.
+    // Asserted as INVARIANCE rather than as a number: the sea's height must not
+    // depend on the raster at all. Two wildly different DEMs, one sea level.
+    const withGround = (m: number) => ({
+      ...OPTS, sampleGroundM: () => m, seaLevelM: 2, anchorElevationM: 0,
+    })
+    const zOf = (f: OsmFeature, groundM: number): number =>
+      buildSurfaceLayer([f], 'water', withGround(groundM))!
+        .object.geometry.getAttribute('position').getZ(0)
+
+    const sea = area('water', 'sea-0', { isSea: true })
+    expect(zOf(sea, 40)).toBe(zOf(sea, 400))
+
+    // Inland water still reads the ground: a lake DOES sit at its local level,
+    // and pinning it to sea level would be the same mistake in reverse.
+    const lake = area('water', 'w1')
+    expect(zOf(lake, 40)).not.toBe(zOf(lake, 400))
+  })
+
+  it('puts the sea at the same datum a quay deck is measured from', () => {
+    // The two halves of the same decision. buildPierLayer has always used
+    // zAboveDatum('sea', …); until the sea surface joined it, the two disagreed
+    // by however much the raster was wrong that day.
+    const seaOpts = { ...OPTS, sampleGroundM: () => 40, seaLevelM: 2, anchorElevationM: 0 }
+    const sea = buildSurfaceLayer(
+      [area('water', 'sea-0', { isSea: true })], 'water', seaOpts,
+    )!
+    const quay = buildPierLayer([{
+      ...area('water', 'q1'), kind: 'pier',
+      style: { roofShape: 'flat', roofHeightM: 0, pierKind: 'quay' },
+    }], seaOpts)!
+
+    const seaZ = sea.object.geometry.getAttribute('position').getZ(0)
+    const quayPos = quay.object.geometry.getAttribute('position')
+    const quayZs = Array.from({ length: quayPos.count }, (_, i) => quayPos.getZ(i))
+    // The quay's deck stands above the sea, and its skirt reaches BELOW it —
+    // which is the whole reason a quay reads as the built edge of the land
+    // rather than a plank floating on it.
+    expect(Math.max(...quayZs)).toBeGreaterThan(seaZ)
+    expect(Math.min(...quayZs)).toBeLessThan(seaZ)
+  })
+
   it('lets greenery FOLLOW the terrain per vertex', () => {
     const built = buildSurfaceLayer([area('green', 'g1')], 'green', {
       ...OPTS, sampleGroundM: (nx) => nx * 1e6, anchorElevationM: 0,
@@ -103,6 +150,51 @@ describe('buildSurfaceLayer', () => {
   it('gives water a single colour and no vertex-colour attribute', () => {
     const built = buildSurfaceLayer([area('water', 'w1')], 'water', OPTS)!
     expect(built.object.geometry.getAttribute('color')).toBeUndefined()
+  })
+
+  it('keeps water OPAQUE so the basemap cannot print through it', () => {
+    // THE REGRESSION THIS GUARDS. At 0.72 the basemap tile showed through the
+    // sea, and over a harbour that tile carries road casings and place labels:
+    // the "Rambla de Mar" caption and a carriageway ran across open water in
+    // every view of the bridge. Nothing was being drawn on the water — the
+    // water was being drawn on a map. If this ever goes transparent again, the
+    // labels come back.
+    const material = (buildSurfaceLayer([area('water', 'w1')], 'water', OPTS)!
+      .object.material as THREE.MeshBasicMaterial)
+    expect(material.transparent).toBe(false)
+    expect(material.opacity).toBe(1)
+    // An opaque sea must write depth or the tiles it covers z-fight through it.
+    expect(material.depthWrite).toBe(true)
+  })
+
+  it('keeps water opaque in the DETAILED path too, which is what a demo runs', () => {
+    // THE GAP THAT LET THE FIRST ATTEMPT SHIP BROKEN. buildSimpleSurface and
+    // buildDetailedSurface build their materials independently, so making one
+    // opaque is invisible in the other — and `showcase`, which is the level a
+    // client presentation uses, goes through the detailed one. Measured live on
+    // Port Vell, the sea was still 0.62 and the basemap's street names read
+    // straight across the harbour.
+    //
+    // Asserted on the uniform rather than material.opacity: the detailed water
+    // keeps `transparent` + depthWrite:false deliberately, because every ground
+    // layer here is coplanar with the basemap and render order is what keeps
+    // that stack deterministic. uOpacity is the alpha FLOOR the shader mixes up
+    // from, so it is the number that decides whether anything shows through.
+    const built = buildSurfaceLayer([area('water', 'w1')], 'water', {
+      ...OPTS, quality: 'detailed',
+    })!
+    const material = built.object.material as THREE.MeshStandardMaterial
+    const uniforms = material.userData.uniforms as { uOpacity: { value: number } }
+    expect(uniforms.uOpacity.value).toBe(1)
+  })
+
+  it('leaves the blending layers alone', () => {
+    // The opacity change is water-only: greenery still sits a hair under one so
+    // its seam with the tiles does not read as a hard cutout.
+    const material = (buildSurfaceLayer([area('green', 'g1')], 'green', OPTS)!
+      .object.material as THREE.MeshBasicMaterial)
+    expect(material.transparent).toBe(true)
+    expect(material.opacity).toBeCloseTo(0.92, 5)
   })
 })
 

@@ -117,6 +117,8 @@ import { usePresentationStore } from './stores/presentationStore'
 import { toast } from './stores/toastStore'
 import { appBus } from './lib/event-bus'
 import type { ViewerAPI } from './lib/viewer'
+import { DEFAULT_HIDDEN_TYPES } from './lib/viewer'
+import type { GeoPlacement } from './lib/geo/geo-types'
 import type { Route, ViewerStyle, SelectedInfo, ViewerHandle, ModelInfo, Category, CameraPreset } from './types'
 import * as Icons from './components/Icons'
 import { useSeo } from './seo'
@@ -549,7 +551,9 @@ export default function App() {
   // Viewer interaction state
   const [viewerStyle] = useState<ViewerStyle>('shaded')
   const [selected,   setSelected]   = useState<SelectedInfo | null>(null)
-  const [hidden,     setHidden]     = useState<Set<string>>(new Set())
+  // Spaces start hidden — see DEFAULT_HIDDEN_TYPES for why a room's air was
+  // tinting the whole facade.
+  const [hidden,     setHidden]     = useState<Set<string>>(() => new Set(DEFAULT_HIDDEN_TYPES))
   const [isolated,   setIsolated]   = useState<string | null>(null)
   // Single-element isolation (localId). Overrides category filters in the viewer.
   const [isolatedElement,      setIsolatedElement]      = useState<number | null>(null)
@@ -701,6 +705,13 @@ export default function App() {
     clearScene,
   } = useSceneStore()
 
+  // Georef extractions land asynchronously, one per model. Subscribed rather
+  // than read on demand so map placement re-runs the moment a model's
+  // coordinates arrive — see the satellite resolver below.
+  const georefByModel = useGeoStore((s) => s.georefByModel)
+  /** Models a full georef extraction has already been requested for. */
+  const georefRequestedRef = useRef<Set<string>>(new Set())
+
   // Undo/redo keyboard shortcuts
   useEditorHistory()
 
@@ -798,6 +809,14 @@ export default function App() {
       setModelInfo(info)
       setLoadingState('loaded')
       setLoadError(null)
+      // Re-apply category filters now that there is geometry to apply them to.
+      //
+      // The reactive effect in Viewer.tsx keys on the identity of the hidden
+      // SET, and that set is built before the load starts — so it fires against
+      // an empty scene and never again, because nothing about it changed. That
+      // cost nothing while the default was "hide nothing"; the moment spaces
+      // started hidden by default it meant they were not.
+      setHidden((prev) => new Set(prev))
       // In embed mode the host decides whether the validation panel auto-opens
       // (the 'minimal' preset keeps it collapsed so only the 3D + score show).
       if (embedChrome.openPanel) {
@@ -1014,7 +1033,7 @@ export default function App() {
     if (sceneModels.length === 0) {
       setModelInfo(null)
       setSelected(null)
-      setHidden(new Set())
+      setHidden(new Set(DEFAULT_HIDDEN_TYPES))
       setIsolated(null)
       setIsolatedElement(null)
       setIsolatedElementModel(null)
@@ -1316,7 +1335,7 @@ export default function App() {
     setLoadingState('idle')
     setLoadError(null)
     setSelected(null)
-    setHidden(new Set())
+    setHidden(new Set(DEFAULT_HIDDEN_TYPES))
     setIsolated(null)
     setIsolatedElement(null)
     setIsolatedElementModel(null)
@@ -1376,7 +1395,7 @@ export default function App() {
     if (useSceneStore.getState().models.length === 0) {
       setModelInfo(null)
       setSelected(null)
-      setHidden(new Set())
+      setHidden(new Set(DEFAULT_HIDDEN_TYPES))
       setIsolated(null)
       setIsolatedElement(null)
       setIsolatedElementModel(null)
@@ -1407,6 +1426,90 @@ export default function App() {
       }
     }
   }, [loadIfcFile, tToasts])
+
+  // ── Tell map mode which models can place themselves ────────────────────────
+  //
+  // Reports EVERY model that carries its own georeferencing, the anchor
+  // included. Which one is the anchor is the map's decision, not this one's —
+  // it follows from the placement the map holds, and the host does not know
+  // that. Handing over an "everything but the anchor" list was the first
+  // attempt, and it picked the wrong anchor: the active model, which stops
+  // being the placed one the moment a second file loads.
+  //
+  // Everything else is then sent to wherever the map says its coordinates
+  // land — which is the
+  // difference between the Oriental Pearl Tower and the Shanghai World
+  // Financial Center standing 1.4 km apart in Lujiazui, and both of them
+  // stacked on the scene origin.
+  //
+  // Resolved here rather than in the viewer because it needs the georef store,
+  // and the viewer imports no stores on purpose.
+  useEffect(() => {
+    const api = viewerApiRef.current
+    if (!api?.setSatelliteResolver || !isGisEnabled()) return
+
+    let cancelled = false
+    // Dynamic, and gated on the flag: placement.ts pulls in proj4 through crs.ts,
+    // and the whole geo tree is kept out of the entry chunk on purpose. A static
+    // import here would have shipped a projection library to every visitor who
+    // never opens the map.
+    void import('./lib/geo/placement').then(({ placementFromExtraction }) => {
+      if (cancelled) return
+      api.setSatelliteResolver!(() => {
+      const georefs = useGeoStore.getState().georefByModel
+      const out: Array<{
+        modelId: string
+        placement: GeoPlacement
+        bounds: NonNullable<ReturnType<typeof api.getModelBounds>>
+      }> = []
+      for (const m of useSceneStore.getState().models) {
+        const extraction = georefs[m.id]
+        const bounds = api.getModelBounds(m.id)
+        if (!extraction || !bounds) continue
+        const resolved = placementFromExtraction(extraction, bounds)
+        // A model with no usable georeferencing stays where the scene put it.
+        // Inventing a location for it is the fabrication this pipeline refuses.
+        if (!resolved.ok) continue
+        out.push({ modelId: m.id, placement: resolved.value, bounds })
+      }
+        return out
+      })
+      // Ask for a FULL extraction for anything the cheap scan could not read.
+      //
+      // Loading only quick-scans each file (8 MB, token match) and that is
+      // enough for most, but not all: the Shanghai World Financial Center came
+      // back `unknown` and so was invisible to placement even though its
+      // IfcSite carries coordinates. The full worker extraction is the
+      // authority, and asking for it is what turns "we could not see it
+      // cheaply" into either a position or an honest no.
+      //
+      // Guarded by a ref because a model that genuinely carries no
+      // georeferencing settles on `unknown` for good, and re-requesting it
+      // every time this effect runs would spin the worker forever.
+      for (const m of useSceneStore.getState().models) {
+        const g = useGeoStore.getState().georefByModel[m.id]
+        if (g && g.status !== 'unknown') continue
+        if (georefRequestedRef.current.has(m.id)) continue
+        georefRequestedRef.current.add(m.id)
+        void import('./lib/geo/geo-extract-runner')
+          .then((mod) => mod.ensureGeorefExtracted(m.id))
+          .catch(() => { /* an unreadable file simply stays unplaced */ })
+      }
+
+      // Place whatever is loadable NOW. Doing this from onModelLoaded looked
+      // right and was too early: that callback runs before the model reaches
+      // the scene store, so the resolver saw one model however many had
+      // arrived. An effect runs after React has settled, which is the point at
+      // which the stores actually agree with the scene.
+      api.refreshMapSatellites?.()
+    })
+    return () => { cancelled = true; api.setSatelliteResolver?.(null) }
+  // Keyed on the model count AND the georef map, not on mount. viewerApiRef is
+  // still null when this component first runs — the Viewer mounts underneath it
+  // — so a []-deps effect registers nothing and the feature silently does not
+  // exist. And extraction is async: a model can reach the store a beat before
+  // its georeferencing does, so both have to re-trigger the placement.
+  }, [sceneModels.length, georefByModel])
 
   // ── Load model from raw IFC bytes handed in by a host app (SDK path) ───────
   const loadModelFromBytes = useCallback(async (name: string, bytes: Uint8Array, requestId?: string): Promise<void> => {

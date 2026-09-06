@@ -235,3 +235,41 @@ describe('lipschitzEnvelope · continuity beats precision', () => {
     expect(lipschitzEnvelope(chain([7], []), 0.1).elevationM).toEqual([7])
   })
 })
+
+describe('a tagged height on a linear way', () => {
+  const bridge = (tags: Record<string, string>) => readVerticalTags(tags)
+
+  it('uses `height` as the deck elevation when it is too big to be structure', () => {
+    // THE LUJIAZUI CASE. Over 137 layered ways around the Oriental Pearl there
+    // is not one `ele`, not one `min_height`, and exactly one `height`: 9 m on
+    // the layer-3 skywalk ring. Discarding it left the district's signature
+    // structure on the layer fallback, seven metres above the only figure
+    // anybody surveyed.
+    const t = bridge({ bridge: 'yes', layer: '3', height: '9' })
+    const r = resolveStructureElevationM(t, 'pedestrian')
+    expect(r.offsetM).toBe(9)
+    expect(r.confidence).toBe('tagged')
+  })
+
+  it('still refuses a height that could be a structure depth', () => {
+    // The guard this module already had: `height` on a bridge is the structure,
+    // and a 2 m one is a plausible deck. Reading that as clearance is the bug
+    // that put an outline at its own height PLUS its deck.
+    const t = bridge({ bridge: 'yes', layer: '1', height: '2' })
+    expect(resolveStructureElevationM(t, 'road').offsetM).not.toBe(2)
+  })
+
+  it('never lets it beat a real measurement', () => {
+    // `min_height` IS a surveyed soffit. A height tag must not displace it.
+    const t = bridge({ bridge: 'yes', layer: '3', height: '9', min_height: '6' })
+    const r = resolveStructureElevationM(t, 'pedestrian')
+    expect(r.offsetM).toBe(6)
+    expect(r.confidence).toBe('surveyed')
+  })
+
+  it('does not apply it to anything going down', () => {
+    // A tunnel with a height tag is describing its bore, not its depth.
+    const t = bridge({ tunnel: 'yes', layer: '-1', height: '9' })
+    expect(resolveStructureElevationM(t, 'road').offsetM).toBeLessThan(0)
+  })
+})
