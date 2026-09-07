@@ -16,8 +16,10 @@
 
 import {
   resolveBuildingHeight, parseLengthM, approximateAreaM2,
-  type BuildingHeight,
+  DEFAULT_STOREY_HEIGHT_M,
 } from './buildings'
+import { buildHeightPrior, type HeightSample } from './height-prior'
+import type { BuildingHeight } from './buildings'
 import {
   treeShape, greenTone, greenRoughness, bareTone, bareRoughness, type TreeShape,
 } from './feature-variation'
@@ -1171,6 +1173,60 @@ export interface ParseOptions {
   onDrop?: (loss: FeatureLoss) => void
 }
 
+/**
+ * Footprint area, or null when the ring cannot support one.
+ *
+ * Overpass returns `null` entries inside the geometry of an incompletely
+ * downloaded way, and `approximateAreaM2` reads `ring[0].lat` without checking —
+ * so handing it a raw geometry throws, and a throw here would take the WHOLE
+ * feature extraction with it: one broken way and the map builds nothing at all.
+ * The main loop has always filtered these; anything new that touches geometry
+ * has to filter them too.
+ */
+function safeAreaM2(
+  geometry: ReadonlyArray<{ lat: number; lon: number } | null> | undefined,
+): number | null {
+  if (!geometry) return null
+  const pts = geometry.filter(
+    (p): p is { lat: number; lon: number } =>
+      !!p && Number.isFinite(p.lat) && Number.isFinite(p.lon),
+  )
+  if (pts.length < 3) return null
+  const a = approximateAreaM2(pts)
+  return Number.isFinite(a) && a > 0 ? a : null
+}
+
+/**
+ * The buildings in a patch whose height is actually KNOWN.
+ *
+ * `height` is read straight; `building:levels` counts as known because a level
+ * count is surveyed data even though the metres per storey are ours. Everything
+ * else is excluded on purpose — feeding the prior a building that already fell
+ * back to a constant would teach it that constant.
+ */
+function collectHeightSamples(elements: ReadonlyArray<unknown>): HeightSample[] {
+  const out: HeightSample[] = []
+  for (const raw of elements) {
+    const el = raw as OverpassEl
+    if (!el || typeof el !== 'object' || !el.tags || !el.geometry) continue
+    const t = el.tags
+    const type = t['building'] ?? t['building:part']
+    if (!type) continue
+
+    let heightM = parseLengthM(t['height'])
+    if (heightM === null) {
+      const levels = parseFloat(t['building:levels'] ?? '')
+      heightM = Number.isFinite(levels) && levels > 0 ? levels * DEFAULT_STOREY_HEIGHT_M : null
+    }
+    if (heightM === null || !(heightM > 0)) continue
+
+    const areaM2 = safeAreaM2(el.geometry)
+    if (areaM2 === null) continue
+    out.push({ type, areaM2, heightM })
+  }
+  return out
+}
+
 export function parseOsmFeatures(
   json: unknown,
   opts?: ParseOptions,
@@ -1192,6 +1248,17 @@ export function parseOsmFeatures(
       reason,
     })
   }
+
+  /**
+   * What this patch's own surveyed buildings look like.
+   *
+   * A PRE-PASS, and it has to be: the prior is a property of the whole patch,
+   * so it cannot be assembled while the same loop is already consuming it. Only
+   * buildings whose height is genuinely known contribute — a footprint that
+   * fell back to a constant would teach the prior its own guess and the whole
+   * district would converge on 8 m, which is the bug this replaces.
+   */
+  const heightPrior = buildHeightPrior(collectHeightSamples(elements))
 
   for (const raw of elements) {
     const el = raw as OverpassEl
@@ -1244,7 +1311,9 @@ export function parseOsmFeatures(
     }
 
     const style = resolveFeatureStyle(kind, el.tags)
-    const height = resolveBuildingHeight(el.tags)
+    const height = resolveBuildingHeight(
+      el.tags, heightPrior, safeAreaM2(el.geometry) ?? undefined,
+    )
 
     // Trees and signals are nodes.
     if (kind === 'signal') {

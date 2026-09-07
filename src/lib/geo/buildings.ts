@@ -23,6 +23,8 @@
 // that looks measured but is not would be exactly the kind of quiet fiction
 // this codebase avoids elsewhere.
 
+import type { HeightPrior } from './height-prior'
+
 /** Metres per storey when only a level count is known. */
 export const DEFAULT_STOREY_HEIGHT_M = 3.2
 
@@ -51,7 +53,11 @@ export interface BuildingHeight {
  * "40'"), so parsing is deliberately forgiving about a trailing unit and
  * rejects anything it cannot read rather than guessing a number out of it.
  */
-export function resolveBuildingHeight(tags: Record<string, string> | undefined): BuildingHeight {
+export function resolveBuildingHeight(
+  tags: Record<string, string> | undefined,
+  prior?: HeightPrior | null,
+  areaM2?: number,
+): BuildingHeight {
   const t = tags ?? {}
 
   const explicit = parseLengthM(t['height'])
@@ -77,9 +83,20 @@ export function resolveBuildingHeight(tags: Record<string, string> | undefined):
     }
   }
 
+  // Nothing is tagged. Before falling back to a global constant, ask what the
+  // rest of THIS patch measures — an untagged `building=yes` gets 8 m, which in
+  // Lujiazui is the 15th percentile of the district's own surveyed buildings.
+  // The prior declines wherever the evidence is thin or the type is one whose
+  // height does not depend on where it stands; see `height-prior`.
+  const local = prior && areaM2 !== undefined
+    ? prior.heightFor(t['building'] ?? t['building:part'], areaM2)
+    : null
+
   return {
-    heightM: defaultHeightForType(t['building']),
+    heightM: Math.min(local ?? defaultHeightForType(t['building']), MAX_BUILDING_HEIGHT_M),
     minHeightM: 0,
+    // Still a guess, and still says so. The prior moves the fallback from
+    // "wrong everywhere" to "typical of here"; it does not make it surveyed.
     estimated: true,
   }
 }
