@@ -1837,10 +1837,15 @@ export function buildLinearLayer(
               },
             )
           : { points: dense.map((v) => ({ x: v.x, y: v.y })), faces }
+        // `baseLift`, not `lift`: the class loop below raises `lift` per road
+        // class, and an area must not inherit whichever class happened to run
+        // last. Naming the constant here removes an ordering dependency that
+        // would otherwise be invisible until somebody moved a loop.
+        const areaZ = baseLift + PAVED_AREA_LIFT_M * mToN
         for (const [i0, i1, i2] of refined.faces) {
           for (const idx of [i0, i1, i2]) {
             const v = refined.points[idx]
-            positions.push(v.x, v.y, structuralZ(v.x, v.y) + lift)
+            positions.push(v.x, v.y, structuralZ(v.x, v.y) + areaZ)
             colors.push(tone[0], tone[1], tone[2])
           }
         }
@@ -2321,6 +2326,23 @@ const CLASS_LIFT_M: Record<RoadClass, number> = {
   track: 0.03,
   pedestrian: 0.06,
 }
+
+/**
+ * The same offset for a paved AREA — a square, an esplanade, a pedestrianised
+ * street — and it is BELOW every way, which is the point.
+ *
+ * An area was pushed at the bare seam height, so it shared a plane with
+ * whichever class also sat there: all three of them before `CLASS_LIFT_M`, and
+ * carriageways still afterwards, since vehicular is the zero rung. A service
+ * road crossing a square, or an avenue clipping an esplanade, fought for the
+ * same depth exactly as the two networks did.
+ *
+ * Negative because a square IS the ground the ways are drawn on. A path across
+ * a plaza should read as a path across a plaza; lifting the plaza instead would
+ * erase the path it carries. That also keeps the class ladder above unchanged,
+ * so no carriageway moves.
+ */
+const PAVED_AREA_LIFT_M = -0.03
 
 /**
  * Attach the overhead line masts, if any, and hand back the layer.
