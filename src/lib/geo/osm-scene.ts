@@ -1178,6 +1178,14 @@ const LANE_GAP_M = 5
 /** Stripe and gap of a zebra, metres. */
 const ZEBRA_STRIPE_M = 0.55
 const ZEBRA_GAP_M = 0.45
+/**
+ * How wide a tunnel trace is against the carriageway it stands in for, and how
+ * much darker. Narrow and dim on purpose — it marks an alignment, it is not a
+ * road surface, and it must not be mistakable for one.
+ */
+export const TUNNEL_TRACE_FRACTION = 0.34
+export const TUNNEL_TRACE_GAIN = 0.55
+
 /** Width of the edge line on a `lines` / `dashes` / `dots` crossing, metres. */
 const EDGE_LINE_M = 0.3
 /** Dash and gap of a `dashes` crossing edge, metres. */
@@ -1526,6 +1534,16 @@ export function buildLinearLayer(
     let cy = 0
     for (const p of quad) { cx += p.x; cy += p.y }
     return buriedAt(cx / quad.length, cy / quad.length)
+  }
+
+  /**
+   * The GROUND at a point, ignoring whatever the alignment is doing above or
+   * below it. `structuralZ` deliberately follows a way onto its viaduct and
+   * into its bore; this is the surface that way passes over or under.
+   */
+  const groundOnlyZ = (x: number, y: number): number => {
+    if (activeProfile) return frame.zAtElevationM(activeProfile.sample(x, y).groundM)
+    return frame.groundZ(x, y)
   }
 
   const structuralZ = (x: number, y: number): number => {
@@ -1973,6 +1991,70 @@ export function buildLinearLayer(
   }
 
   // One network per class, each with its own kerb, its own paint and its own
+  /**
+   * A buried carriageway, marked rather than drawn.
+   *
+   * ── Why absence was not good enough ───────────────────────────────────────
+   *
+   * The rule was that a tunnel's correct appearance is absence: drawing the
+   * bore either z-fights through the ground above it or is occluded anyway, so
+   * emitting it achieves nothing but artefacts. That reasoning is sound for a
+   * road disappearing into a hillside. It is ruinous in Pudong.
+   *
+   * Measured over the 700 m the viewer fetches around the Shanghai World
+   * Financial Center: 57.8 km of vehicular carriageway, of which **21.3 km —
+   * 37% — is tunnelled and therefore drawn nowhere**. Pudong Avenue Tunnel
+   * loses all 11.4 km of itself, East Fuxing Road Tunnel all 4.6 km, and the
+   * Lujiazui Ring Road — the street that goes round the towers the user came
+   * to look at — loses 69% of its length. The network does not read as a
+   * network; it reads as a renderer that failed halfway.
+   *
+   * ── What is honest to draw instead ────────────────────────────────────────
+   *
+   * Not a carriageway. There is no surface road there and pretending otherwise
+   * would put asphalt over somebody's plaza. What OSM does state is the
+   * ALIGNMENT and that it runs under the ground, which is exactly what every
+   * paper map has drawn for a century: a narrow, muted casing that says "this
+   * road continues here, below you".
+   *
+   * So the trace is deliberately unlike a road — a third of the width, darker
+   * than the asphalt around it, and it takes no markings, no kerb and no
+   * camber. Nobody should be able to mistake it for a surface a car is on.
+   */
+  const pushTunnelTrace = (
+    a: THREE.Vector2, b: THREE.Vector2, halfWidth: number,
+    tone: [number, number, number],
+  ): void => {
+    const half = halfWidth * TUNNEL_TRACE_FRACTION
+    if (!(half > 0)) return
+    const dx = b.x - a.x
+    const dy = b.y - a.y
+    const len = Math.hypot(dx, dy)
+    if (len < 1e-12) return
+    const nx = (-dy / len) * half
+    const ny = (dx / len) * half
+    const muted = gain(tone, TUNNEL_TRACE_GAIN)
+    const quad = [
+      new THREE.Vector2(a.x + nx, a.y + ny),
+      new THREE.Vector2(b.x + nx, b.y + ny),
+      new THREE.Vector2(b.x - nx, b.y - ny),
+      new THREE.Vector2(a.x - nx, a.y - ny),
+    ]
+    // ON THE GROUND, not on the alignment. `structuralZ` follows a tunnel DOWN
+    // — that is its job — and a trace at the invert is six metres inside the
+    // hillside, invisible, which is precisely the nothing this replaces. The
+    // trace marks where the road passes beneath you, so it belongs at your feet.
+    //
+    // Straight to the vertex arrays because `pushQuad` and `pushSurfaceQuad`
+    // both refuse anything buried, which is the whole reason this exists.
+    for (const [p0, p1, p2] of [[quad[0], quad[1], quad[2]], [quad[0], quad[2], quad[3]]] as const) {
+      for (const v of [p0, p1, p2]) {
+        positions.push(v.x, v.y, groundOnlyZ(v.x, v.y) + lift)
+        colors.push(muted[0], muted[1], muted[2])
+      }
+    }
+  }
+
   // grain. Order matters only for coplanar resolution: carriageways first, then
   // the softer surfaces over them, so a pavement crossing a service road reads
   // as being on top of it rather than sliced by it.
@@ -2025,7 +2107,14 @@ export function buildLinearLayer(
           const t1 = fences[s + 1]
           // Below the surface: the portal is wherever this first becomes true.
           const midC = ribbon.centre[i].clone().lerp(ribbon.centre[i + 1], (t0 + t1) / 2)
-          if (buriedAt(midC.x, midC.y)) continue
+          if (buriedAt(midC.x, midC.y)) {
+            pushTunnelTrace(
+              ribbon.centre[i].clone().lerp(ribbon.centre[i + 1], t0),
+              ribbon.centre[i].clone().lerp(ribbon.centre[i + 1], t1),
+              ribbon.halfWidths[i], ribbon.tone,
+            )
+            continue
+          }
           pushSurfaceQuad([
             ribbon.left[i].clone().lerp(ribbon.left[i + 1], t0),
             ribbon.left[i].clone().lerp(ribbon.left[i + 1], t1),
