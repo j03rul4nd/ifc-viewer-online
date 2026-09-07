@@ -1642,3 +1642,62 @@ describe('the two road networks do not share a plane', () => {
     expect(again).toBeCloseTo(before, 12)
   })
 })
+
+describe('a paved area is the ground the ways are drawn on', () => {
+  /** A closed pedestrian way, which `isPavedArea` reads as a square. */
+  function plaza(id: string): OsmFeature {
+    const d = 0.0012
+    return {
+      id, kind: 'road',
+      ring: [
+        { lat: LAT, lon: LON }, { lat: LAT, lon: LON + d },
+        { lat: LAT + d, lon: LON + d }, { lat: LAT + d, lon: LON },
+      ],
+      height: { heightM: 0, minHeightM: 0, estimated: true },
+      // No width is what makes it an AREA rather than a ribbon.
+      widthM: undefined,
+      style: { roofShape: 'flat', roofHeightM: 0, tone: [0.5, 0.47, 0.44], roadClass: 'pedestrian' },
+    } as OsmFeature
+  }
+  function street(id: string): OsmFeature {
+    return {
+      id, kind: 'road',
+      ring: [{ lat: LAT, lon: LON }, { lat: LAT, lon: LON + 0.003 }],
+      height: { heightM: 0, minHeightM: 0, estimated: true },
+      widthM: 10,
+      style: { roofShape: 'flat', roofHeightM: 0, tone: [0.4, 0.4, 0.42], roadClass: 'vehicular' },
+    } as OsmFeature
+  }
+  const topZ = (f: OsmFeature): number => {
+    const g = surfaceOf(buildLinearLayer([f], 'road', OPTS)!.object).geometry
+    const p = g.getAttribute('position')
+    let max = -Infinity
+    for (let i = 0; i < p.count; i++) max = Math.max(max, p.getZ(i))
+    return max
+  }
+
+  it('sits below the carriageway that crosses it', () => {
+    // The second half of the same flicker. An area was pushed at the bare seam
+    // height, which is exactly where `vehicular` sits — so a service road
+    // crossing a square fought for the same depth just as the two networks did.
+    expect(topZ(plaza('sq'))).toBeLessThan(topZ(street('rd')))
+  })
+
+  it('sits below a footway too, so a path across it still reads', () => {
+    const foot = {
+      ...street('f'), widthM: 3,
+      style: { roofShape: 'flat', roofHeightM: 0, tone: [0.5, 0.46, 0.4], roadClass: 'pedestrian' },
+    } as OsmFeature
+    expect(topZ(plaza('sq2'))).toBeLessThan(topZ(foot))
+  })
+
+  it('separates them by centimetres, not by a structural drop', () => {
+    // A render offset, not a claim about the world. The gap has to clear a
+    // depth buffer that resolves about a millimetre at a kilometre and stay
+    // invisible at district scale.
+    const gap = topZ(street('r2')) - topZ(plaza('sq3'))
+    const metres = gap / (1 / (40_075_016.686 * Math.cos((LAT * Math.PI) / 180)))
+    expect(metres).toBeGreaterThan(0.01)
+    expect(metres).toBeLessThan(0.2)
+  })
+})
