@@ -702,3 +702,80 @@ describe('orientedFootprint', () => {
     expect(Math.abs(box.u.y)).toBeLessThan(1e-6)
   })
 })
+
+describe('roof shapes that used to be flattened into something else', () => {
+  /** A rectangle `wM` by `dM`, so the long and short axes are distinguishable. */
+  function rect(id: string, wM: number, dM: number, heightM = 12): BuildingFootprint {
+    const lat = 41.3874
+    const lon = 2.1686
+    const dLat = dM / 111_132
+    const dLon = wM / (111_320 * Math.cos((lat * Math.PI) / 180))
+    return {
+      id,
+      ring: [
+        { lat, lon }, { lat, lon: lon + dLon },
+        { lat: lat + dLat, lon: lon + dLon }, { lat: lat + dLat, lon },
+      ],
+      height: { heightM, minHeightM: 0, estimated: false },
+    }
+  }
+  const zs = (b: BuildingFootprint) => {
+    const g = buildBuildingsGeometry([b], OPTS)!.geometry
+    const p = g.getAttribute('position')
+    return Array.from({ length: p.count }, (_, i) => p.getZ(i))
+  }
+  const roof = (shape: string, extra: Record<string, unknown> = {}) => ({
+    ...rect('r', 40, 20),
+    style: { roofShape: shape, roofTagged: true, roofHeightM: 4, ...extra },
+  }) as BuildingFootprint
+
+  it('builds a dome out of several bands, not one cone', () => {
+    // A cone is one triangle per edge. A dome is bands, so it costs strictly
+    // more — that is what makes its silhouette curved instead of pointed.
+    const domeV = buildBuildingsGeometry([roof('dome')], OPTS)!
+      .geometry.getAttribute('position').count
+    const pyrV = buildBuildingsGeometry([roof('pyramidal')], OPTS)!
+      .geometry.getAttribute('position').count
+    expect(domeV).toBeGreaterThan(pyrV)
+  })
+
+  it('keeps a dome under its own ridge height, never above it', () => {
+    const flat = Math.max(...zs(roof('flat')))
+    const dome = Math.max(...zs(roof('dome')))
+    // The roof rises above the eaves...
+    expect(dome).toBeGreaterThan(flat - 1e-6)
+    // ...and a dome is a cap on the building, not a second storey.
+    expect(dome).toBeLessThan(flat + 10)
+  })
+
+  it('slopes a skillion instead of capping it flat', () => {
+    // The bug this replaces: `skillion` fell through to `flat`, which is the
+    // one shape a mono-pitch is not.
+    //
+    // The total z RANGE cannot tell them apart — the walls span it either way.
+    // What separates them is how many distinct heights the cap sits at: a flat
+    // roof is one, a mono-pitch is a different one at every vertex.
+    const levels = (v: number[]) => new Set(v.map((z) => z.toFixed(9))).size
+    expect(levels(zs(roof('skillion')))).toBeGreaterThan(levels(zs(roof('flat'))))
+  })
+
+  it('turns the ridge ninety degrees when the survey says `across`', () => {
+    // 8 of the 10 tagged roofs in Lujiazui and all 10 in Barcelona say
+    // `across`, and each was drawn with its ridge along the long axis anyway.
+    const along = buildBuildingsGeometry([roof('gabled')], OPTS)!
+    const across = buildBuildingsGeometry([roof('gabled', { roofAcross: true })], OPTS)!
+    const px = (r: typeof along) => {
+      const p = r.geometry.getAttribute('position')
+      return Array.from({ length: p.count }, (_, i) => [p.getX(i), p.getY(i), p.getZ(i)].join(','))
+        .join('|')
+    }
+    expect(px(across)).not.toBe(px(along))
+  })
+
+  it('leaves a roof alone when the orientation is not stated', () => {
+    const bare = buildBuildingsGeometry([roof('gabled')], OPTS)!
+    const along = buildBuildingsGeometry([roof('gabled', { roofAcross: false })], OPTS)!
+    const px = (r: typeof bare) => r.geometry.getAttribute('position').count
+    expect(px(bare)).toBe(px(along))
+  })
+})

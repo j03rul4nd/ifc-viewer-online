@@ -79,7 +79,8 @@ describe('parseRoofShape', () => {
     for (const s of ['gabled', 'hipped', 'half-hipped', 'gambrel']) {
       expect(parseRoofShape(s)).toBe('gabled')
     }
-    for (const s of ['pyramidal', 'dome', 'conical']) {
+    // `dome` used to land here; it now has a shape of its own.
+    for (const s of ['pyramidal', 'conical']) {
       expect(parseRoofShape(s)).toBe('pyramidal')
     }
   })
@@ -88,7 +89,7 @@ describe('parseRoofShape', () => {
     // `skillion` was in this list until the mesh learned to build a mono-pitch.
     // It is the second most common roof tag on `building:part` in the Lujiazui
     // patch, and flat is the one shape a mono-pitch is not.
-    for (const s of [undefined, '', 'onion', 'sawtooth', 'round', 'mansard']) {
+    for (const s of [undefined, '', 'sawtooth', 'mansard', 'quadruple_saltbox']) {
       expect(parseRoofShape(s)).toBe('flat')
     }
   })
@@ -1160,19 +1161,45 @@ describe('parseRoofShape — a mono-pitch is not a flat roof', () => {
     expect(parseRoofShape('shed')).toBe('skillion')
   })
 
+  it('gives a dome its own shape instead of a cone or a flat cap', () => {
+    // 8 domed roofs in the Lujiazui patch and 15 in Barcelona. A cone gets the
+    // silhouette of a market hall or a basilica most obviously wrong.
+    expect(parseRoofShape('dome')).toBe('dome')
+    expect(parseRoofShape('round')).toBe('dome')
+    expect(parseRoofShape('onion')).toBe('dome')
+  })
+
   it('leaves the shapes it already knew alone', () => {
     expect(parseRoofShape('gabled')).toBe('gabled')
     expect(parseRoofShape('hipped')).toBe('gabled')
     expect(parseRoofShape('pyramidal')).toBe('pyramidal')
-    expect(parseRoofShape('dome')).toBe('pyramidal')
     expect(parseRoofShape('flat')).toBe('flat')
   })
 
   it('still falls back to flat for a shape it cannot build', () => {
-    // `round` and `mansard` are mapped here too; a wrong shape confidently
-    // drawn is worse than a flat cap.
-    expect(parseRoofShape('round')).toBe('flat')
+    // A wrong shape confidently drawn is worse than a flat cap.
     expect(parseRoofShape('mansard')).toBe('flat')
+    expect(parseRoofShape('sawtooth')).toBe('flat')
     expect(parseRoofShape(undefined)).toBe('flat')
+  })
+})
+
+describe('roof:orientation — the survey outranks our longest-axis rule', () => {
+  it('flags `across`, which is what almost every tagged roof says', () => {
+    // 8 of the 10 tagged in Lujiazui and all 10 in Barcelona say `across`, and
+    // every one was being drawn with its ridge ninety degrees out.
+    expect(resolveFeatureStyle('building', { building: 'yes', 'roof:orientation': 'across' })
+      .roofAcross).toBe(true)
+  })
+
+  it('treats `along` and an absent tag as the default', () => {
+    expect(resolveFeatureStyle('building', { building: 'yes', 'roof:orientation': 'along' })
+      .roofAcross).toBe(false)
+    expect(resolveFeatureStyle('building', { building: 'yes' }).roofAcross).toBe(false)
+  })
+
+  it('is not fooled by case or padding', () => {
+    expect(resolveFeatureStyle('building', { building: 'yes', 'roof:orientation': ' Across ' })
+      .roofAcross).toBe(true)
   })
 })

@@ -26,7 +26,8 @@
 
 import * as THREE from 'three'
 import {
-  laneDividers, arrowOffsets, arrowPlacements, arrowQuads, offsetByFraction,
+  laneDividers, arrowOffsets, arrowPlacements, offsetByFraction,
+  parseTurnLanes, turnsForOffset, turnArrowQuads, TURN_ANGLES,
   ARROW_SPACING_M, ARROW_LENGTH_M, ARROW_WIDTH_M, ARROW_STEM_M,
 } from './lane-markings'
 import { latLonToNormalized, metresToNormalized } from './geo-math'
@@ -1884,6 +1885,7 @@ export function buildLinearLayer(
         lanes: cls === 'vehicular' ? f.style.lanes : undefined,
         oneway: f.style.oneway,
         onewayReverse: f.style.onewayReverse,
+        turnLanes: cls === 'vehicular' ? f.style.turnLanes : undefined,
         roundabout: f.style.roundabout,
       })
       continue
@@ -2054,18 +2056,27 @@ export function buildLinearLayer(
       // mapped on ZERO ways here, so a left-turn head in the left lane would be
       // a guess about a junction — and a wrong one is worse than a bare lane.
       if (isCarriageway && ribbon.oneway) {
-        for (const frac of arrowOffsets(ribbon.lanes, true)) {
+        // Turn indications where the survey states them. `turn:lanes` is
+        // validated against the lane count and discarded whole on a mismatch —
+        // see `parseTurnLanes`. Where it is absent the arrows stay plain
+        // direction arrows, which is what `oneway` alone supports.
+        const perLane = parseTurnLanes(ribbon.turnLanes, ribbon.lanes ?? 0)
+        const offsets = arrowOffsets(ribbon.lanes, true)
+        offsets.forEach((frac, i) => {
+          const turns = perLane ? turnsForOffset(perLane, i, ribbon.onewayReverse) : []
+          const angles = turns.map((t) => TURN_ANGLES[t]).filter((a) => a !== undefined)
           for (const place of arrowPlacements(
             laneLine(frac), ARROW_SPACING_M * mToN, ARROW_LENGTH_M * mToN,
             ribbon.onewayReverse,
           )) {
-            for (const quad of arrowQuads(
+            for (const quad of turnArrowQuads(
               place, ARROW_LENGTH_M * mToN, ARROW_WIDTH_M * mToN, ARROW_STEM_M * mToN,
+              angles,
             )) {
               pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
             }
           }
-        }
+        })
       }
 
       // The stop bar, where a signal is actually mapped near the end traffic

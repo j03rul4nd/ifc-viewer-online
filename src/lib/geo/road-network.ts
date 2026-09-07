@@ -61,6 +61,8 @@ export interface NetworkWay {
   oneway?: boolean
   /** One-way against the way's own direction — flips the arrows, not the lanes. */
   onewayReverse?: boolean
+  /** Raw `turn:lanes`; validated against `lanes` where it is drawn. */
+  turnLanes?: string
   /**
    * `junction=roundabout|circular`. Only the island solver reads it: the arcs of
    * a roundabout are ordinary edges and are solved as such — see splitWays.
@@ -91,6 +93,7 @@ export interface RoadRibbon {
   lanes?: number
   oneway?: boolean
   onewayReverse?: boolean
+  turnLanes?: string
   /** True where a junction consumed the end — no end cap belongs there. */
   trimmedStart: boolean
   trimmedEnd: boolean
@@ -777,6 +780,7 @@ export function buildRoadNetwork(
       lanes: way.lanes,
       oneway: way.oneway,
       onewayReverse: way.onewayReverse,
+      turnLanes: way.turnLanes,
       trimmedStart: trimStart[i] > 0,
       trimmedEnd: trimEnd[i] > 0,
     }
