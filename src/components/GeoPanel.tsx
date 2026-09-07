@@ -1247,6 +1247,14 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                             : t('layers.detailHint')}
                         </p>
 
+                        {store.contextDetail === 'showcase' && store.placement &&
+                          store.placement.lat >= 30.65 && store.placement.lat <= 31.9 &&
+                          store.placement.lon >= 120.85 && store.placement.lon <= 122.05 && (
+                          <p className="text-[10px] text-[var(--text-faint)] leading-snug">
+                            {t('layers.shanghaiParkHint', { defaultValue: 'Shanghai gardens: regional trees and shoreline planting (+720 KB). Planting and furniture are illustrative.' })}
+                          </p>
+                        )}
+
                         {/* Orthogonal to the level above: how much the context
                             is allowed to compete with the model, not how much
                             of it is modelled. Also rebuilt from cache. */}

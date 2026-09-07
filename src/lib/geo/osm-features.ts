@@ -105,6 +105,8 @@ export interface OsmFeature {
 }
 
 export interface FeatureStyle {
+  /** Preserve basin semantics; a lake must never acquire invented fountain jets. */
+  waterKind?: 'fountain' | 'pond' | 'lake' | 'river' | 'other'
   /** '#rrggbb' from `building:colour` / `roof:colour`, when parseable. */
   wallColor?: string
   /**
@@ -872,7 +874,7 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
   if (t['man_made'] === 'bridge') return 'bridge'
 
   if (
-    t['natural'] === 'water' ||
+    t['amenity'] === 'fountain' || t['natural'] === 'water' ||
     t['waterway'] === 'riverbank' ||
     WATERWAY_LINEAR.has(t['waterway'] ?? '') ||
     t['water'] !== undefined ||
@@ -983,6 +985,11 @@ export function resolveFeatureStyle(
   kind: FeatureKind, tags: Record<string, string> | undefined,
 ): FeatureStyle {
   const t = tags ?? {}
+  if (kind === 'water') {
+    const water = t['water']
+    return { roofShape: 'flat', roofHeightM: 0, waterKind: t['amenity'] === 'fountain'
+      ? 'fountain' : water === 'pond' || water === 'lake' || water === 'river' ? water : 'other' }
+  }
   if (kind === 'pier') {
     return {
       roofShape: 'flat', roofHeightM: 0, pierKind: pierKindOf(t),
@@ -1335,6 +1342,13 @@ export function parseOsmFeatures(
       el.tags, heightPrior, safeAreaM2(el.geometry) ?? undefined,
     )
 
+    if (kind === 'water' && style.waterKind === 'fountain' && el.type === 'node') {
+      if (Number.isFinite(el.lat) && Number.isFinite(el.lon)) {
+        out.push({ id: `n${el.id}`, kind, point: { lat: el.lat!, lon: el.lon! },
+          height, style, name: el.tags?.['name'] })
+      }
+      continue
+    }
     // Trees and signals are nodes.
     if (kind === 'signal') {
       if (el.type !== 'node' || !Number.isFinite(el.lat) || !Number.isFinite(el.lon)) {
@@ -1701,6 +1715,7 @@ export function buildFeaturesQuery(
     // Ground cover: few polygons, huge area. A tight cap costs nothing visible.
     [
       area('["natural"="water"]')
+      + `nwr["amenity"="fountain"](${b});`
       + area('["waterway"="riverbank"]')
       + `way["waterway"~"^(river|stream|canal|ditch|drain)$"](${b});`
       + area('["landuse"~"^(reservoir|basin)$"]')
