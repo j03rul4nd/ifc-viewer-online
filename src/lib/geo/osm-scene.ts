@@ -1174,6 +1174,14 @@ const LANE_GAP_M = 5
 /** Stripe and gap of a zebra, metres. */
 const ZEBRA_STRIPE_M = 0.55
 const ZEBRA_GAP_M = 0.45
+/** Width of the edge line on a `lines` / `dashes` / `dots` crossing, metres. */
+const EDGE_LINE_M = 0.3
+/** Dash and gap of a `dashes` crossing edge, metres. */
+const EDGE_DASH_M = 0.9
+const EDGE_DASH_GAP_M = 0.6
+/** A `dots` edge is the same idea, shorter: near-square marks, close together. */
+const EDGE_DOT_M = 0.35
+const EDGE_DOT_GAP_M = 0.35
 
 /** Worn road-marking white. */
 const CENTRE_LINE_TONE: [number, number, number] = [0.80, 0.78, 0.68]
@@ -1857,10 +1865,31 @@ export function buildLinearLayer(
     // A crossing is paint on somebody else's asphalt: no surface, no kerb, just
     // the stripes, laid a hair above the carriageway it belongs to.
     if (f.style.crossing) {
-      for (const quad of dashCentreline(
-        line, half, ZEBRA_STRIPE_M * mToN, ZEBRA_GAP_M * mToN,
-      )) {
-        pushQuad(quad, tone, 0.03 * mToN)
+      const markings = f.style.crossingMarkings ?? 'zebra'
+      if (markings === 'zebra') {
+        for (const quad of dashCentreline(
+          line, half, ZEBRA_STRIPE_M * mToN, ZEBRA_GAP_M * mToN,
+        )) {
+          pushQuad(quad, tone, 0.03 * mToN)
+        }
+      } else {
+        // `lines`, `dashes` and `dots` are NOT stripes across the path — they
+        // mark its two long EDGES, which is a different drawing entirely.
+        // Barcelona states one of them on 56 crossing ways, `dots` alone on 37,
+        // and each was being painted as a zebra.
+        const edge = EDGE_LINE_M / 2
+        const [dash, gap] = markings === 'edges'
+          ? [0, 0]
+          : markings === 'dashes'
+            ? [EDGE_DASH_M, EDGE_DASH_GAP_M]
+            : [EDGE_DOT_M, EDGE_DOT_GAP_M]
+        for (const side of [-1, 1]) {
+          const rail = offsetCentreline(densifyFor(line), side * (half - edge))
+          const quads = dash > 0
+            ? dashAlong(rail, edge, dash * mToN, gap * mToN)
+            : bufferCentreline(rail, edge)
+          for (const quad of quads) pushQuad(quad, tone, 0.03 * mToN)
+        }
       }
       count++
       continue
@@ -2351,6 +2380,56 @@ function normalOf(a: THREE.Vector2, b: THREE.Vector2, half: number): THREE.Vecto
   const len = Math.hypot(dx, dy)
   if (len === 0) return null
   return new THREE.Vector2((-dy / len) * half, (dx / len) * half)
+}
+
+/**
+ * Quads for a DASHED line running along a polyline.
+ *
+ * The opposite orientation to `dashCentreline`, which lays stripes ACROSS the
+ * line it is given — that is a zebra. This cuts the line itself into dash-long
+ * runs and buffers each, which is what an edge marking is: a broken line
+ * following the crossing rather than crossing it.
+ *
+ * Walked by arc length and addressed by index, so a degenerate segment cannot
+ * spin the loop, and capped for the same reason `dashCentreline` is: a
+ * mis-scaled dash would otherwise ask for millions of quads.
+ */
+export function dashAlong(
+  line: ReadonlyArray<THREE.Vector2>, half: number, dash: number, gap: number,
+): THREE.Vector2[][] {
+  const out: THREE.Vector2[][] = []
+  const period = dash + gap
+  if (!(dash > 0) || !(period > 0) || line.length < 2) return out
+
+  const at = [0]
+  let total = 0
+  for (let i = 0; i < line.length - 1; i++) {
+    total += line[i].distanceTo(line[i + 1])
+    at.push(total)
+  }
+  if (!(total > 0)) return out
+  const count = Math.min(MAX_DASHES, Math.ceil(total / period))
+
+  const pointAt = (sIn: number): THREE.Vector2 => {
+    const s = Math.max(0, Math.min(total, sIn))
+    let i = 0
+    while (i < at.length - 2 && at[i + 1] < s) i++
+    const seg = at[i + 1] - at[i]
+    const t = seg > 0 ? (s - at[i]) / seg : 0
+    return new THREE.Vector2(
+      line[i].x + (line[i + 1].x - line[i].x) * t,
+      line[i].y + (line[i + 1].y - line[i].y) * t,
+    )
+  }
+
+  for (let k = 0; k < count; k++) {
+    const s0 = k * period
+    if (s0 >= total) break
+    const s1 = Math.min(total, s0 + dash)
+    if (s1 - s0 < 1e-12) continue
+    out.push(...bufferCentreline([pointAt(s0), pointAt(s1)], half))
+  }
+  return out
 }
 
 /**
