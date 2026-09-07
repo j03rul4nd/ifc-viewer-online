@@ -340,7 +340,7 @@ struct Water {
 
 Water waterSurface(
   sampler2D waves, vec2 p, float t, float shore,
-  vec3 deep, vec3 shallow, float foamM, float shallowM
+  vec3 deep, vec3 shallow, float foamM, float shallowM, float shelter
 ) {
   // Swell and chop: the SAME baked wave field sampled at two scales, drifting
   // in different directions at different speeds. One scrolling layer reads as a
@@ -353,8 +353,9 @@ Water waterSurface(
   // 0.08 and chop around 0.15, which is what these are set to.
   float swellM = 14.0;
   float chopM = 3.5;
-  float swellAmp = 0.09;
-  float chopAmp = 0.15;
+  float swellAmp = mix(0.09, 0.018, shelter);
+  float chopAmp = mix(0.15, 0.045, shelter);
+  t *= mix(1.0, 0.30, shelter);
   // Scroll rates are in TILE units per second, so the surface speed is the rate
   // times the span: about 0.6 m/s each, which is a river rather than a canal.
   // Both layers move at a similar speed but in different directions — that
@@ -389,6 +390,8 @@ Water waterSurface(
   // the reason open water stops being a uniform sheet at a distance.
   float steep = smoothstep(0.55, 1.0, length(grad) * 3.2);
   foam = clamp(max(foam, steep * 0.5), 0.0, 1.0);
+  // Sheltered ornamental lakes have fine ripples, not ocean surf on each bank.
+  foam *= mix(1.0, 0.06, shelter);
 
   vec3 bubbles = vec3(0.92, 0.95, 0.96)
     * (0.80 + 0.34 * texture2D(waves, p * 0.55 - vec2(t * 0.05, t * 0.02)).a);
@@ -623,7 +626,7 @@ export function createSurfaceMaterial(
           #else
             vec3(0.17, 0.35, 0.48),
           #endif
-          uShallowColor, uFoamM, uShallowM);
+          uShallowColor, uFoamM, uShallowM, clamp((vRough - 0.4) / 0.6, 0.0, 1.0));
         diffuseColor.rgb = w.albedo;
       `)
       // The tone has already been consumed as the deep-water colour; letting

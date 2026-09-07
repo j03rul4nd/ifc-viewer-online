@@ -1,0 +1,42 @@
+{
+  "tree-camphor": {
+    "triangles": 1356,
+    "bytes": 122600
+  },
+  "tree-ginkgo": {
+    "triangles": 1356,
+    "bytes": 122600
+  },
+  "tree-metasequoia": {
+    "triangles": 1032,
+    "bytes": 93448
+  },
+  "tree-willow": {
+    "triangles": 2652,
+    "bytes": 223692
+  },
+  "shrub": {
+    "triangles": 280,
+    "bytes": 27988
+  },
+  "reed": {
+    "triangles": 275,
+    "bytes": 22768
+  },
+  "bench": {
+    "triangles": 168,
+    "bytes": 14224
+  },
+  "lantern": {
+    "triangles": 100,
+    "bytes": 8572
+  },
+  "pergola": {
+    "triangles": 240,
+    "bytes": 19848
+  },
+  "fountain-jets": {
+    "triangles": 1044,
+    "bytes": 81272
+  }
+}

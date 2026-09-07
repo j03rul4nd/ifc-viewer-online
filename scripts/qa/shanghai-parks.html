@@ -1,0 +1,32 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><title>Shanghái · comparación de jardines</title>
+<style>body{margin:0;background:#cad4dc;font:14px system-ui;color:#172b36}aside{position:fixed;z-index:2;top:16px;left:16px;padding:18px;border-radius:12px;background:#fffffff0;max-width:350px;box-shadow:0 5px 25px #1233}h1{font-size:18px;margin:0 0 10px}button{padding:9px;border:1px solid #9ba;background:white;border-radius:6px;cursor:pointer}button[aria-pressed=true]{background:#214c41;color:white}p{font-size:12px;line-height:1.5}#stats{white-space:pre-line}canvas{display:block}</style>
+<aside><h1>Jardines de Lujiazui · Shanghái</h1><button id="base">Objetos anteriores</button> <button id="new">Nuevos jardines</button><p>Cartografía OSM real. Vegetación y mobiliario ilustrativos. Arrastra para orbitar; rueda para acercarte.</p><label><input id="scenery" type="checkbox"> Ambientación de caminos</label><p><button id="lake">Acercar al lago</button> <button id="wide">Vista general</button></p><p id="stats">Cargando geometría…</p></aside>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
+import {buildSkyEnvironment} from '/src/lib/geo/sky-environment.ts';
+import {setSurfaceTime} from '/src/lib/geo/surface-shaders.ts';
+import fixture from '/src/lib/geo/__fixtures__/shanghai-parks.json';
+import {parseOsmFeatures} from '/src/lib/geo/osm-features.ts';
+import {buildTreeLayer,buildSurfaceLayer,buildLinearLayer,disposeLayer,groundFrameFor,waterLevelM} from '/src/lib/geo/osm-scene.ts';
+import {buildShanghaiParkDetails} from '/src/lib/geo/shanghai-parks.ts';
+import {loadPropAssets,loadShanghaiParkAssets} from '/src/lib/geo/props-assets.ts';
+import {latLonToNormalized,metresToNormalized} from '/src/lib/geo/geo-math.ts';
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);document.body.append(renderer.domElement);
+renderer.setClearColor(0xcad4dc);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.9;
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,.1,10000);camera.up.set(0,0,1);camera.position.set(220,-290,270);
+const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,0,0);controls.update();
+scene.add(new THREE.HemisphereLight(0xd9edff,0x747458,1.1));const sun=new THREE.DirectionalLight(0xffeed5,2);sun.position.set(250,-300,650);scene.add(sun);
+const lat=31.2402,lon=121.50176,o=latLonToNormalized(lat,lon),unit=metresToNormalized(lat);
+const root=new THREE.Group();root.scale.setScalar(1/unit);root.position.set(-o.nx/unit,-o.ny/unit,0);scene.add(root);
+scene.environment=buildSkyEnvironment(renderer,{sunAzimuthDeg:140,sunAltitudeDeg:55});scene.environmentRotation.x=Math.PI/2;const features=parseOsmFeatures(fixture);const [base,regional]=await Promise.all([loadPropAssets(),loadShanghaiParkAssets()]);let mode=true,counts={},buildMs=0;
+function rebuild(){const start=performance.now();for(const child of [...root.children])disposeLayer(child);const opts={anchorLat:lat,anchorLon:lon,quality:'detailed',assets:mode?new Map([...base,...regional]):base,sun:{azimuthDeg:140,altitudeDeg:55}};
+for(const kind of ['green','water']){const built=buildSurfaceLayer(features,kind,opts);if(built)root.add(built.object)}
+const roads=buildLinearLayer(features,'road',opts);if(roads)root.add(roads.object);
+const trees=buildTreeLayer(features,opts);if(trees)root.add(trees.object);
+counts={};if(mode){const details=buildShanghaiParkDetails(features,{...opts,scenery:document.querySelector('#scenery').checked,waterElevation:ring=>groundFrameFor(opts).zAtElevationM(waterLevelM(ring,groundFrameFor(opts),false)+.15)});for(const key of ['water','green','scenery'])root.add(details[key]);counts=details.counts;}
+buildMs=performance.now()-start;document.querySelector('#new').setAttribute('aria-pressed',mode);document.querySelector('#base').setAttribute('aria-pressed',!mode);}
+document.querySelector('#base').onclick=()=>{mode=false;rebuild()};document.querySelector('#new').onclick=()=>{mode=true;rebuild()};document.querySelector('#scenery').onchange=rebuild;rebuild();
+let frames=0,start=performance.now();function tick(){requestAnimationFrame(tick);controls.update();setSurfaceTime(root,performance.now()/1000);renderer.render(scene,camera);frames++;if(performance.now()-start>1000){document.querySelector('#stats').textContent=`${mode?'Nuevo detalle':'Geometría anterior'} · ${Math.round(frames*1000/(performance.now()-start))} FPS\n${renderer.info.render.calls} llamadas de dibujo · ${renderer.info.render.triangles.toLocaleString()} triángulos\nConstrucción: ${buildMs.toFixed(0)} ms\n${Object.entries(counts).map(([k,v])=>`${k}: ${v}`).join(' · ')}`;frames=0;start=performance.now()}}tick();
+document.querySelector("#lake").onclick=()=>{controls.target.set(5,32,0);camera.position.set(120,-90,70);controls.update()};document.querySelector("#wide").onclick=()=>{controls.target.set(0,0,0);camera.position.set(220,-290,270);controls.update()};onresize=()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()};
+</script></html>

@@ -57,13 +57,17 @@ export const PROP_ASSETS: readonly PropAsset[] = [
  */
 export const PROP_ASSETS_KB = 324
 
-function assetUrl(name: PropAsset): string {
+export const SHANGHAI_PARK_ASSETS = ['tree-camphor', 'tree-ginkgo', 'tree-metasequoia', 'tree-willow', 'shrub', 'reed', 'bench', 'lantern', 'pergola', 'fountain-jets'] as const
+export const SHANGHAI_PARK_ASSETS_KB = 720
+type LoadableAsset = PropAsset | `shanghai/${typeof SHANGHAI_PARK_ASSETS[number]}`
+
+function assetUrl(name: LoadableAsset): string {
   const base = (import.meta.env.BASE_URL ?? '/') as string
-  return `${base}models/props/${name}.glb`.replace('//', '/')
+  return `${base}models/props/${name}.glb${name.startsWith('shanghai/') ? '?v=20260907-r1' : ''}`.replace('//', '/')
 }
 
 /** One in-flight or finished load per asset, for the life of the tab. */
-const cache = new Map<PropAsset, Promise<THREE.BufferGeometry | null>>()
+const cache = new Map<LoadableAsset, Promise<THREE.BufferGeometry | null>>()
 
 /**
  * The single mesh inside an authored prop, as bare geometry.
@@ -72,7 +76,7 @@ const cache = new Map<PropAsset, Promise<THREE.BufferGeometry | null>>()
  * one alive pins its DRACO/KTX2 sub-loaders for a feature most sessions never
  * turn on.
  */
-async function loadOne(name: PropAsset): Promise<THREE.BufferGeometry | null> {
+async function loadOne(name: LoadableAsset): Promise<THREE.BufferGeometry | null> {
   try {
     const gltf = await new GLTFLoader().loadAsync(assetUrl(name))
     let found: THREE.BufferGeometry | null = null
@@ -99,7 +103,7 @@ async function loadOne(name: PropAsset): Promise<THREE.BufferGeometry | null> {
 }
 
 /** Load one asset, at most once per session. */
-export function loadPropAsset(name: PropAsset): Promise<THREE.BufferGeometry | null> {
+export function loadPropAsset(name: LoadableAsset): Promise<THREE.BufferGeometry | null> {
   let pending = cache.get(name)
   if (!pending) {
     pending = loadOne(name)
@@ -120,6 +124,16 @@ export async function loadPropAssets(): Promise<Map<PropAsset, THREE.BufferGeome
   )
   for (const [name, geo] of results) if (geo) out.set(name, geo)
   return out
+}
+
+/** Optional regional pack; never fetched for Barcelona or a working/simple view. */
+export async function loadShanghaiParkAssets(): Promise<Map<string, THREE.BufferGeometry>> {
+  const result = new Map<string, THREE.BufferGeometry>()
+  await Promise.all(SHANGHAI_PARK_ASSETS.map(async name => {
+    const geometry = await loadPropAsset(`shanghai/${name}`)
+    if (geometry) result.set(`shanghai/${name}`, geometry)
+  }))
+  return result
 }
 
 /** Drop the cache. Only for tests — a real session keeps them for the tab. */

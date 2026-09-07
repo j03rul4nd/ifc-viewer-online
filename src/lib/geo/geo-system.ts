@@ -27,10 +27,12 @@ import {
 } from './context-suppression'
 import { createFacadeMaterial } from './facade-shader'
 import { buildSignalLayer, buildVehicleLayer } from './props-scene'
-import { loadPropAssets } from './props-assets'
+import { loadPropAssets, loadShanghaiParkAssets } from './props-assets'
+import { isShanghai } from './shanghai-region'
+import { buildShanghaiParkDetails } from './shanghai-parks'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, buildLinearLayer, disposeLayer,
-  solveSceneVertical, buildWaterMask, buildPierLayer, type LayerMeshOptions,
+  solveSceneVertical, buildWaterMask, buildPierLayer, waterLevelM, type LayerMeshOptions,
 } from './osm-scene'
 import { describeProfile, summariseProfiles } from './vertical-network'
 import {
@@ -414,6 +416,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   const propObjects: THREE.Object3D[] = []
   /** Authored props, once fetched. Null until showcase mode asks for them. */
   let propAssets: Map<string, THREE.BufferGeometry> | null = null
+  let shanghaiAssets: Map<string, THREE.BufferGeometry> | null = null
+  let shanghaiAssetsLoading = false
   /**
    * Last fetched footprints for the current site. Cached so toggling terrain
    * (which changes the ground the buildings sit on) re-extrudes locally
@@ -1047,6 +1051,18 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       assets: contextDetail === 'showcase' ? propAssets : null,
     }
 
+    if (contextDetail === 'showcase' && isShanghai(placement.lat, placement.lon)) {
+      if (shanghaiAssets) opts.assets = new Map([...(opts.assets ?? []), ...shanghaiAssets])
+      else if (!shanghaiAssetsLoading) {
+        shanghaiAssetsLoading = true
+        void loadShanghaiParkAssets().then(assets => {
+          shanghaiAssets = assets
+          shanghaiAssetsLoading = false
+          if (geoRoot) rebuildLayers()
+        })
+      }
+    }
+
     // THE VERTICAL FIELD, solved once for the whole scene.
     //
     // Once, and before any layer is built, because grade separation is a
@@ -1082,6 +1098,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       }
     }
 
+    const parkDetails = buildShanghaiParkDetails(visibleFeatures, {
+      ...opts, excludeAt: modelExclusion(), scenery: vehiclesEnabled,
+      waterElevation: ring => groundFrameFor(opts).zAtElevationM(waterLevelM(ring, groundFrameFor(opts), false) + .15),
+    })
     let estimatedCount = 0
 
     if (layerVisibility.building) {
@@ -1125,7 +1145,13 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     for (const layer of ['green', 'sand', 'rock', 'water'] as const) {
       if (!layerVisibility[layer]) continue
       const built = buildSurfaceLayer(visibleFeatures, layer, opts)
-      if (built) { addLayer(layer, built.object) }
+      const detail = layer === 'water' ? parkDetails?.water : layer === 'green' ? parkDetails?.green : null
+      if (built || detail?.children.length) {
+        const group = new THREE.Group()
+        if (built) group.add(built.object)
+        if (detail) group.add(detail)
+        addLayer(layer, group)
+      }
       // What the layer could NOT draw. A park that fails to triangulate and a
       // park that was never in the data look identical on screen, and guessing
       // between them from a screenshot is how an afternoon disappears — so the
@@ -1162,6 +1188,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (vehiclesEnabled) {
       const built = buildVehicleLayer(visibleFeatures, opts)
       if (built) { geoRoot.add(built.object); propObjects.push(built.object) }
+      if (parkDetails?.scenery.children.length) { geoRoot.add(parkDetails.scenery); propObjects.push(parkDetails.scenery) }
     }
 
     if (layerVisibility.bridge) {
@@ -1172,6 +1199,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (layerVisibility.tree) {
       const built = buildTreeLayer(visibleFeatures, { ...opts, excludeAt: modelExclusion() })
       if (built) { addLayer('tree', built.object) }
+    }
+
+    // Detail groups may have been constructed while their parent layer was off.
+    if (parkDetails) for (const group of [parkDetails.water, parkDetails.green, parkDetails.scenery]) {
+      if (!group.parent) disposeLayer(group)
     }
 
     // Kept so the overlay can be switched on later without a rebuild: the

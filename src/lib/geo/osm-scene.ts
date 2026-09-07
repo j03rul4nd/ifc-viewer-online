@@ -37,6 +37,7 @@ import {
   type TreeShape, type BuildingRegion, type BroadleafVariant,
 } from './feature-variation'
 import { canopyGeometry, trunkGeometry, TREE_PROPORTIONS } from './tree-geometry'
+import { isShanghai } from './shanghai-region'
 import { roofPropAnchors } from './roof-props'
 import type { RoofProp, RoofPropBuilding, RoofPropKind } from './roof-props'
 import {
@@ -404,7 +405,7 @@ function buildSimpleSurface(
  * `buildPierLayer` has always used the sea datum. This is the other half of
  * that decision, and until now the two halves disagreed.
  */
-function waterLevelM(
+export function waterLevelM(
   ring: ReadonlyArray<THREE.Vector2>, frame: GroundFrame, isSea: boolean,
 ): number {
   if (isSea) return frame.seaLevelM
@@ -652,8 +653,11 @@ function buildDetailedSurface(
       degraded++
     }
 
-    const tone = f.style.tone ?? FALLBACK_TONE[layer]
-    const roughness = f.style.roughness ?? 0.4
+    const parkWater = isWater && isShanghai(opts.anchorLat, opts.anchorLon) &&
+      !f.isSea && f.style.waterKind !== 'river' && areaM2 < 150000
+    const tone = parkWater ? [0.12, 0.29, 0.25] : f.style.tone ?? FALLBACK_TONE[layer]
+    // Water uses the otherwise-unused roughness channel for shelter from wind.
+    const roughness = parkWater ? 1 : f.style.roughness ?? 0.4
     // Water is level across the whole polygon; the rest follows the ground.
     const flatZ = isWater
       ? frame.zAtElevationM(waterLevelM(
@@ -3010,8 +3014,25 @@ export function buildTreeLayer(
   const regionName = opts.anchorLon === undefined
     ? 'generic'
     : buildingRegion(opts.anchorLat, opts.anchorLon)
-  const trees = [...mapped, ...seededTrees(features, mToN, opts.excludeAt, regionName)]
+  const parkKeepOut = isShanghai(opts.anchorLat, opts.anchorLon) ? buildKeepOut(features.flatMap(f => {
+    if (!f.ring) return []
+    if (f.kind === 'green' && f.style.cover === 'bare') return [f.ring.map(p => {
+      const n=latLonToNormalized(p.lat,p.lon);return {x:n.nx/mToN,y:n.ny/mToN}
+    })]
+    if (f.kind !== 'road') return []
+    const line=f.ring.map(p=>{const n=latLonToNormalized(p.lat,p.lon);return new THREE.Vector2(n.nx,n.ny)})
+    return bufferCentreline(line,((f.widthM??2)/2+1.2)*mToN).map(r=>r.map(p=>({x:p.x/mToN,y:p.y/mToN})))
+  })) : null
+  const excludePlanting = (x:number,y:number) => !!opts.excludeAt?.(x,y) || !!parkKeepOut?.(x/mToN,y/mToN)
+  const trees = [...mapped, ...seededTrees(features, mToN, excludePlanting, regionName)]
   if (trees.length === 0) return null
+  const focus = latLonToNormalized(opts.anchorLat, opts.anchorLon ?? 0)
+  // Spend the regional mesh budget near the model; distant trees retain their
+  // existing geometry and positions instead of disappearing when detail rises.
+  const regionalTrees = new Set(isShanghai(opts.anchorLat, opts.anchorLon) ? [...trees]
+    .filter(t => Math.hypot(t.nx-focus.nx,t.ny-focus.ny)/mToN < 850)
+    .sort((a,b) => Math.hypot(a.nx-focus.nx,a.ny-focus.ny)-Math.hypot(b.nx-focus.nx,b.ny-focus.ny) || a.id.localeCompare(b.id))
+    .slice(0,1800).map(t => t.id) : [])
 
   const group = new THREE.Group()
   group.name = 'osm-trees'
@@ -3076,6 +3097,18 @@ export function buildTreeLayer(
    */
   const byAsset = (shape: TreeShape, subset: PlacedTree[]): Array<[string, PlacedTree[]]> => {
     const base = AUTHORED_TREE[shape]
+    if (base && isShanghai(opts.anchorLat, opts.anchorLon) && opts.assets?.has('shanghai/tree-camphor') &&
+        (shape === 'broadleaf' || shape === 'needleleaf' || shape === 'columnar')) {
+      const groups = new Map<string, PlacedTree[]>()
+      for (const t of subset) {
+        const name = !regionalTrees.has(t.id) ? base : shape !== 'broadleaf' ? 'shanghai/tree-metasequoia'
+          : variate(t.id, 17) < .18 ? 'shanghai/tree-willow'
+          : variate(t.id, 17) < .38 ? 'shanghai/tree-ginkgo' : 'shanghai/tree-camphor'
+        const resolved = opts.assets.has(name) ? name : base
+        const list = groups.get(resolved) ?? []; list.push(t); groups.set(resolved, list)
+      }
+      return [...groups]
+    }
     if (shape !== 'broadleaf' || !base) return base ? [[base, subset]] : []
     const groups = new Map<string, PlacedTree[]>()
     for (const t of subset) {

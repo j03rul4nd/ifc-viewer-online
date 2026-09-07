@@ -146,6 +146,7 @@
     "vehicles": "Atrezo (vehículos, farolas, marquesinas)",
     "vehiclesHint": "Los coches, trenes, farolas y marquesinas de andén NO son datos mapeados — OpenStreetMap no registra dónde está aparcado un coche ni qué acera lleva farola. Su colocación es inventada para que la vista se sienta habitada, y es la misma siempre.",
     "facadeShowcase": "Presentación",
+    "shanghaiParkHint": "Jardines de Shanghái: árboles regionales y vegetación de orilla (+720 KB). La plantación y el mobiliario son ilustrativos.",
     "facadeShowcaseHint": "El modo presentación sustituye por modelos 3D creados a medida — árboles, coches, furgonetas, autobuses, vagones, semáforos, postes de catenaria, farolas y marquesinas de andén — que se descargan una sola vez desde este sitio (unos 136 KB). Todo lo demás funciona sin ellos.",
     "contextTone": "Tono del entorno",
     "contextToneNatural": "Natural",
