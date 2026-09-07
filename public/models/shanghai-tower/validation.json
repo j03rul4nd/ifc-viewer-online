@@ -1,0 +1,11 @@
+{
+  "schema": "IFC4",
+  "elements": 2173,
+  "storeys": 133,
+  "aboveGroundStoreys": 128,
+  "heightMetres": 632.0,
+  "sizeBytes": 94255301,
+  "sha256": "782feacc18d2aa7d3c873715ded730c44fd1b6a5b597b1172ee86aee50cb4cc2",
+  "expressErrors": 0,
+  "errors": []
+}

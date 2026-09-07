@@ -8,7 +8,7 @@ const require = createRequire(import.meta.url)
 const web = require('web-ifc')
 
 describe('Shanghai map alignment', () => {
-  for (const [slug, file] of [['oriental-pearl','SHA-IVO-ORIENTAL-PEARL-A-0001.ifc'],['swfc','SHA-IVO-SWFC-A-0001.ifc']]) {
+  for (const [slug, file] of [['oriental-pearl','SHA-IVO-ORIENTAL-PEARL-A-0001.ifc'],['swfc','SHA-IVO-SWFC-A-0001.ifc'],['shanghai-tower','SHA-IVO-SHANGHAI-TOWER-A-0001.ifc']]) {
     it(`${slug}: reads the shipped MapConversion and projects the tower axis onto the mapped footprint`, async () => {
       const site = JSON.parse(readFileSync(`scripts/blender/sites/${slug}.json`, 'utf8'))
       const api = new web.IfcAPI(); await api.Init()
