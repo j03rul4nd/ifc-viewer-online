@@ -1174,6 +1174,29 @@ export interface ParseOptions {
 }
 
 /**
+ * Footprint area, or null when the ring cannot support one.
+ *
+ * Overpass returns `null` entries inside the geometry of an incompletely
+ * downloaded way, and `approximateAreaM2` reads `ring[0].lat` without checking —
+ * so handing it a raw geometry throws, and a throw here would take the WHOLE
+ * feature extraction with it: one broken way and the map builds nothing at all.
+ * The main loop has always filtered these; anything new that touches geometry
+ * has to filter them too.
+ */
+function safeAreaM2(
+  geometry: ReadonlyArray<{ lat: number; lon: number } | null> | undefined,
+): number | null {
+  if (!geometry) return null
+  const pts = geometry.filter(
+    (p): p is { lat: number; lon: number } =>
+      !!p && Number.isFinite(p.lat) && Number.isFinite(p.lon),
+  )
+  if (pts.length < 3) return null
+  const a = approximateAreaM2(pts)
+  return Number.isFinite(a) && a > 0 ? a : null
+}
+
+/**
  * The buildings in a patch whose height is actually KNOWN.
  *
  * `height` is read straight; `building:levels` counts as known because a level
@@ -1197,7 +1220,9 @@ function collectHeightSamples(elements: ReadonlyArray<unknown>): HeightSample[] 
     }
     if (heightM === null || !(heightM > 0)) continue
 
-    out.push({ type, areaM2: approximateAreaM2(el.geometry), heightM })
+    const areaM2 = safeAreaM2(el.geometry)
+    if (areaM2 === null) continue
+    out.push({ type, areaM2, heightM })
   }
   return out
 }
@@ -1287,8 +1312,7 @@ export function parseOsmFeatures(
 
     const style = resolveFeatureStyle(kind, el.tags)
     const height = resolveBuildingHeight(
-      el.tags, heightPrior,
-      el.geometry ? approximateAreaM2(el.geometry) : undefined,
+      el.tags, heightPrior, safeAreaM2(el.geometry) ?? undefined,
     )
 
     // Trees and signals are nodes.
