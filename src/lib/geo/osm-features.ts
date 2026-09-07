@@ -1213,16 +1213,19 @@ function collectHeightSamples(elements: ReadonlyArray<unknown>): HeightSample[] 
     const type = t['building'] ?? t['building:part']
     if (!type) continue
 
-    let heightM = parseLengthM(t['height'])
-    if (heightM === null) {
-      const levels = parseFloat(t['building:levels'] ?? '')
-      heightM = Number.isFinite(levels) && levels > 0 ? levels * DEFAULT_STOREY_HEIGHT_M : null
-    }
+    const rawLevels = parseFloat(t['building:levels'] ?? '')
+    const levels = Number.isFinite(rawLevels) && rawLevels > 0 ? rawLevels : null
+
+    // A surveyed height is the only thing that can measure the local metres per
+    // storey, so `levels` travels only alongside one. Deriving the height FROM
+    // the levels and then dividing it back out would just recover the constant.
+    const surveyed = parseLengthM(t['height'])
+    const heightM = surveyed ?? (levels !== null ? levels * DEFAULT_STOREY_HEIGHT_M : null)
     if (heightM === null || !(heightM > 0)) continue
 
     const areaM2 = safeAreaM2(el.geometry)
     if (areaM2 === null) continue
-    out.push({ type, areaM2, heightM })
+    out.push({ type, areaM2, heightM, levels: surveyed !== null ? levels : null })
   }
   return out
 }

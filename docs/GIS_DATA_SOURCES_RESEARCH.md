@@ -271,3 +271,83 @@ standing in a car park and one with a city under them.
    this worth doing at all.
 5. Nothing on bridge or tunnel elevations. The data does not exist; the
    clearance solver is the answer and already is.
+
+---
+
+## 7. The same measurement on Barcelona — and why it changes the answers
+
+Run over the Vila Olímpica / Poblenou waterfront (41.3730–41.3900 N,
+2.1750–2.2010 E): 1 788 building outlines, **6 490 `building:part`**, 3 893
+highways, 675 vehicular.
+
+| | Shanghai | Barcelona |
+|---|---|---|
+| building `height` | 4.2 % | 4.2 % |
+| **`building:levels`** | 15.8 % | **83.7 %** |
+| `building:material` | 8.2 % | 0.3 % |
+| road `oneway` | 79.8 % | 89.9 % |
+| road `lanes` | 63.7 % | 49.2 % |
+| **road `width`** | **0 %** | **8.4 %** |
+| **`turn:lanes`** | **0 ways** | **51 ways** |
+| `maxspeed` | 4.4 % | 88.6 % |
+| `surface` | 16.7 % | 95.1 % |
+| crossing ways | 49 | 537 |
+
+**The data landscape is city-specific, and so is what it is honest to draw.**
+Three consequences, all measured:
+
+1. **Barcelona is a `building:levels` city.** 83.7 % of its buildings resolve
+   their height through the levels path, against 15.8 % in Shanghai. Whatever
+   metres-per-storey we assume is, in Barcelona, the dominant source of height
+   error in the whole scene.
+2. **Turn arrows are renderable in Barcelona and not in Shanghai.** `turn:lanes`
+   is mapped on 51 ways there and zero here. The rule in `lane-markings` should
+   therefore stay "draw only what is mapped" rather than "never draw" — it is
+   the data that is absent, not the feature.
+3. **Carriageway width is surveyed in Barcelona** (8.4 %) and nowhere in
+   Shanghai. Width can come from survey there and must stay derived here.
+
+### Metres per storey is regional, and the constant never said so
+
+Measured on the buildings that state BOTH a height and a storey count — the only
+ones that can measure it:
+
+| | median m/storey | n |
+|---|---|---|
+| **Barcelona** | **3.14** (apartments 3.14, residential 2.50) | 41 |
+| **Shanghai** | **4.42** (commercial 4.56, `yes` 4.30) | 43 |
+| our constant | 3.2 | — |
+
+Nearly right for a European apartment block and **27 % low for a Chinese office
+tower**: a 30-storey Lujiazui building tagged only by storey count was drawn
+37 m short. Now derived from the patch the same way heights are, declining to
+the constant where too few buildings state both.
+
+---
+
+## 8. Tags we already download and were not reading
+
+The cheapest wins in this whole note came from here, not from new sources.
+Coverage in the Lujiazui patch:
+
+| tag | coverage | status |
+|---|---|---|
+| `building:material` | 8.2 % (88) | **unused** — only three values here: `concrete` 41, `glass` 33, `mirror` 14 |
+| `roof:material` | 6.0 % (65) | unused |
+| **`note:height` = `estimated`** | **5.3 % (57)** | **was unused — now read** |
+| `roof:levels` | 3.3 % | unused, and every value is `1` |
+| `roof:direction` | 1.1 % | unused; mixes degrees (`309.9`) with compass points (`SSW`) |
+| `building:colour`, `roof:colour` | 2.2 %, 1.7 % | already read |
+| `crossing:markings`, `crossing:signals` | 2.2 %, 1.2 % | already read |
+
+**`note:height=estimated` was the important one.** 57 buildings carry it, and
+all 57 also carry a `height` we were reporting as surveyed — **42 % of every
+height in the district**. The mapper had already said the number was a guess and
+we were presenting it as a measurement, in the one part of the codebase whose
+whole purpose is to distinguish the two. Now read, along with `source:height`,
+`height:source` and a `source` containing "estimat" (`estimation;Bing` is a real
+value in this patch).
+
+**`building:material` is the best remaining unused tag.** Three values, a
+trivial mapping, and it lands on the Lujiazui towers — glass and mirror against
+concrete is most of what makes that skyline read as itself.

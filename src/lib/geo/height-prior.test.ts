@@ -11,6 +11,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   buildHeightPrior, MIN_PRIOR_SAMPLES, PRIOR_SIZE_SPLIT_M2, LOCALLY_INVARIANT_TYPES,
+  MIN_STOREY_M, MAX_STOREY_M,
   type HeightSample,
 } from './height-prior'
 
@@ -160,5 +161,54 @@ describe('buildHeightPrior', () => {
     expect(p.heightFor('yes', 3000)).toBeCloseTo(55, 6)
     expect(p.heightFor('yes', 3000)!).toBeGreaterThan(8)
     expect(p.heightFor('residential', 600)).toBeCloseTo(19.2, 6)
+  })
+})
+
+describe('storeyHeightFor — metres per storey is regional, not universal', () => {
+  const withLevels = (type: string, heightM: number, levels: number, n = MIN_PRIOR_SAMPLES) =>
+    Array.from({ length: n }, () => ({ type, areaM2: 3000, heightM, levels }))
+
+  it('measures what the district actually builds', () => {
+    // Shanghai measures 4.42 m per storey against Barcelona's 3.14, and the
+    // codebase had one hardcoded 3.2 for both.
+    const sh = buildHeightPrior(withLevels('commercial', 132.6, 30))
+    expect(sh.storeyHeightFor('commercial')).toBeCloseTo(4.42, 2)
+    const bcn = buildHeightPrior(withLevels('apartments', 25.12, 8))
+    expect(bcn.storeyHeightFor('apartments')).toBeCloseTo(3.14, 2)
+  })
+
+  it('falls to the district as a whole for an unseen type', () => {
+    const p = buildHeightPrior(withLevels('commercial', 132.6, 30))
+    expect(p.storeyHeightFor('civic')).toBeCloseTo(4.42, 2)
+  })
+
+  it('declines on too little evidence, leaving the constant in place', () => {
+    expect(buildHeightPrior(withLevels('yes', 40, 10, 3)).storeyHeightFor('yes')).toBeNull()
+    expect(buildHeightPrior([]).storeyHeightFor('yes')).toBeNull()
+  })
+
+  it('ignores a building that states no storey count', () => {
+    const p = buildHeightPrior(
+      Array.from({ length: 20 }, () => ({ type: 'yes', areaM2: 3000, heightM: 60 })),
+    )
+    expect(p.storeyHeightFor('yes')).toBeNull()
+    // ...but it still informs the height prior.
+    expect(p.heightFor('yes', 3000)).toBeCloseTo(60, 6)
+  })
+
+  it('throws out a mapping error instead of letting it move the median', () => {
+    // `height=3` with `building:levels=30` is a mistake, not a 0.1 m storey, and
+    // one of those drags a median further than ten good samples repair it.
+    const p = buildHeightPrior([
+      ...withLevels('yes', 40, 10, 10),
+      { type: 'yes', areaM2: 3000, heightM: 3, levels: 30 },       // 0.1 m
+      { type: 'yes', areaM2: 3000, heightM: 600, levels: 2 },      // 300 m
+    ])
+    expect(p.storeyHeightFor('yes')).toBeCloseTo(4, 6)
+  })
+
+  it('keeps the accepted band where storeys plausibly live', () => {
+    expect(MIN_STOREY_M).toBeLessThan(2.5)
+    expect(MAX_STOREY_M).toBeGreaterThan(6)
   })
 })
