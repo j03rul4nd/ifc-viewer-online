@@ -176,6 +176,14 @@ export interface FeatureStyle {
   /** Traffic runs one way only — so there is no centre line to divide it. */
   oneway?: boolean
   /**
+   * Raw `turn:lanes`, unparsed.
+   *
+   * Kept raw because validating it needs the LANE COUNT, and the two travel to
+   * the renderer together anyway. Mapped on 52 ways in the Barcelona patch and
+   * on ZERO in Lujiazui — this feature is data-gated, not city-gated.
+   */
+  turnLanes?: string
+  /**
    * `oneway=-1`: one-way AGAINST the way's own direction.
    *
    * Nothing in the measured district uses it, so it earns its place here only
@@ -1051,6 +1059,8 @@ export function resolveFeatureStyle(
       oneway: (oneway !== '' && oneway !== 'no')
         || t['junction'] === 'roundabout' || t['junction'] === 'circular',
       onewayReverse: oneway === '-1' || oneway === 'reverse',
+      // `:forward` is the one-way case restated; we only draw on one-way ways.
+      turnLanes: t['turn:lanes'] ?? t['turn:lanes:forward'] ?? undefined,
       roundabout: t['junction'] === 'roundabout' || t['junction'] === 'circular',
     }
   }

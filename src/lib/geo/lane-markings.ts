@@ -192,51 +192,6 @@ export function arrowPlacements(
 }
 
 /**
- * One arrow as quads, in the caller's units.
- *
- * Returned as quads rather than triangles so the caller can push them through
- * the same routine as every other piece of paint — which is what keeps an arrow
- * subject to the same buried-road test, the same lift and the same surface
- * grain as the dashes beside it. The head is a quad with its two leading
- * corners coincident, i.e. a triangle expressed as a quad; the degenerate edge
- * costs one collapsed triangle and saves the caller a second code path.
- */
-export function arrowQuads(
-  placement: ArrowPlacement,
-  length: number,
-  width: number,
-  stemWidth: number,
-  headFraction = ARROW_HEAD_FRACTION,
-): THREE.Vector2[][] {
-  const { at, heading } = placement
-  const side = new THREE.Vector2(-heading.y, heading.x)
-  const headLen = length * headFraction
-  const stemLen = length - headLen
-  const halfBack = length / 2
-
-  // Local frame: `f` metres forward of the arrow's centre, `s` metres to its
-  // left, expressed in world units.
-  const P = (f: number, s: number): THREE.Vector2 => new THREE.Vector2(
-    at.x + heading.x * f + side.x * s,
-    at.y + heading.y * f + side.y * s,
-  )
-
-  const tail = -halfBack
-  const neck = -halfBack + stemLen
-  const tip = halfBack
-
-  const hs = stemWidth / 2
-  const hw = width / 2
-
-  return [
-    // Stem.
-    [P(tail, -hs), P(neck, -hs), P(neck, hs), P(tail, hs)],
-    // Head, as a triangle written with a doubled tip vertex.
-    [P(neck, -hw), P(tip, 0), P(tip, 0), P(neck, hw)],
-  ]
-}
-
-/**
  * A line running at a constant FRACTION of the carriageway's half-width.
  *
  * WHY A FRACTION AND NOT A DISTANCE. A ribbon carries a half-width per vertex,
@@ -274,6 +229,135 @@ export function offsetByFraction(
     const hw = halfWidths[Math.min(i, halfWidths.length - 1)] ?? 0
     const d = frac * hw
     out.push(new THREE.Vector2(line[i].x + nx * d, line[i].y + ny * d))
+  }
+  return out
+}
+
+// ── Turn indications ──────────────────────────────────────────────────────────
+
+/**
+ * How far each `turn:lanes` value bends off the direction of travel, radians.
+ *
+ * Positive is LEFT, matching `offsetByFraction`, whose normal `(-dy, dx)` points
+ * to the left of the line.
+ *
+ * `merge_to_*` and `none` are deliberately absent: a merge is a lane ending, not
+ * a turn, and painting an arrow for it would tell a driver to change lane at a
+ * point the survey says nothing about.
+ */
+export const TURN_ANGLES: Readonly<Record<string, number>> = {
+  through: 0,
+  slight_left: Math.PI / 4,
+  left: Math.PI / 2,
+  sharp_left: (3 * Math.PI) / 4,
+  slight_right: -Math.PI / 4,
+  right: -Math.PI / 2,
+  sharp_right: -(3 * Math.PI) / 4,
+  reverse: Math.PI,
+}
+
+/**
+ * Turn indications per lane, or null when the tag cannot be trusted.
+ *
+ * `turn:lanes` is `|`-separated per lane and `;`-separated within a lane —
+ * `left|through|through;right` is a three-lane approach whose right lane allows
+ * both. Lanes are ordered LEFT TO RIGHT in the direction of travel.
+ *
+ * RETURNS NULL ON A COUNT MISMATCH, whole tag discarded. Of the 52 tagged ways
+ * in the Barcelona patch, 3 disagree with their own `lanes` — and a mismatch
+ * means we cannot know which indication belongs to which lane. Shifting them by
+ * one paints "left turn only" over a lane that goes straight on, which is worse
+ * than painting nothing: a viewer acts on a turn arrow.
+ *
+ * An unreadable indication yields an empty list for THAT lane rather than
+ * killing the tag — `eft` is a real typo in the Barcelona data, and one
+ * fat-fingered lane should not silence the three beside it that are fine.
+ */
+export function parseTurnLanes(raw: string | undefined, lanes: number): string[][] | null {
+  if (!raw || !Number.isFinite(lanes) || lanes < 1) return null
+  const cells = raw.split('|')
+  if (cells.length !== Math.round(lanes)) return null
+  return cells.map((cell) =>
+    cell.split(';')
+      .map((t) => t.trim().toLowerCase())
+      .filter((t) => t in TURN_ANGLES))
+}
+
+/**
+ * The turn indications for the lane sitting at `offsetIndex` in `arrowOffsets`.
+ *
+ * THE TWO ORDERINGS RUN OPPOSITE WAYS, which is the whole reason this is a
+ * function. `turn:lanes` counts lanes from the LEFT in the direction of travel;
+ * `arrowOffsets` returns them from the most negative offset, and a negative
+ * offset is to the RIGHT. So tag index 0 is the LAST offset, not the first.
+ *
+ * `reversed` (`oneway=-1`) flips it back: the geometry's offsets are measured
+ * against the way as drawn, while the tag is measured against the direction of
+ * travel, and those are opposite when the way runs against itself.
+ */
+export function turnsForOffset(
+  perLane: ReadonlyArray<ReadonlyArray<string>>,
+  offsetIndex: number,
+  reversed = false,
+): string[] {
+  const n = perLane.length
+  if (n === 0 || offsetIndex < 0 || offsetIndex >= n) return []
+  const tagIndex = reversed ? offsetIndex : n - 1 - offsetIndex
+  return [...perLane[tagIndex]]
+}
+
+/**
+ * One arrow with a head per turn indication.
+ *
+ * A lane marked `through;right` carries a stem with TWO heads — one straight on,
+ * one turning off — which is what is painted on the road. Each head is the
+ * ordinary arrowhead rotated about the top of the stem, so a turn arrow is the
+ * same object as a direction arrow with a different angle rather than a
+ * separate shape to keep in sync.
+ *
+ * An empty `angles` falls back to a single straight head: the direction is
+ * still known even when the turn is not.
+ */
+export function turnArrowQuads(
+  placement: ArrowPlacement,
+  length: number,
+  width: number,
+  stemWidth: number,
+  angles: ReadonlyArray<number>,
+): THREE.Vector2[][] {
+  const list = angles.length > 0 ? angles : [0]
+  const { at, heading } = placement
+  const side = new THREE.Vector2(-heading.y, heading.x)
+  const headLen = length * ARROW_HEAD_FRACTION
+  const stemLen = length - headLen
+  const halfBack = length / 2
+  const hs = stemWidth / 2
+  const hw = width / 2
+
+  const P = (f: number, s: number): THREE.Vector2 => new THREE.Vector2(
+    at.x + heading.x * f + side.x * s,
+    at.y + heading.y * f + side.y * s,
+  )
+
+  const tail = -halfBack
+  const neck = -halfBack + stemLen
+  const out: THREE.Vector2[][] = [
+    [P(tail, -hs), P(neck, -hs), P(neck, hs), P(tail, hs)],
+  ]
+
+  // The neck is where every head pivots, so heads fan from one point the way
+  // painted ones do.
+  const pivot = P(neck, 0)
+  for (const a of list) {
+    const dir = new THREE.Vector2(
+      heading.x * Math.cos(a) - heading.y * Math.sin(a),
+      heading.x * Math.sin(a) + heading.y * Math.cos(a),
+    )
+    const nrm = new THREE.Vector2(-dir.y, dir.x)
+    const tip = new THREE.Vector2(pivot.x + dir.x * headLen, pivot.y + dir.y * headLen)
+    const b1 = new THREE.Vector2(pivot.x + nrm.x * hw, pivot.y + nrm.y * hw)
+    const b2 = new THREE.Vector2(pivot.x - nrm.x * hw, pivot.y - nrm.y * hw)
+    out.push([b1, tip, tip, b2])
   }
   return out
 }
