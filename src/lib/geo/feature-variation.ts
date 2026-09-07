@@ -579,3 +579,52 @@ export function bareRoughness(
 function clamp01(v: number): number {
   return Math.min(1, Math.max(0, v))
 }
+
+/**
+ * The tone a SURVEYED facade material implies, or null when the value tells us
+ * nothing usable.
+ *
+ * WHERE THIS SITS. A tagged `building:colour` is somebody stating the answer and
+ * still outranks everything. Below that, a tagged material is surveyed fact and
+ * outranks `facadeColor`, which is a deterministic guess from region and use.
+ * Below that, nothing changes.
+ *
+ * WHY IT EARNS ITS PLACE. `building:material` is on 8.2% of the Lujiazui patch —
+ * 88 buildings — and takes only three values there: `concrete` 41, `glass` 33,
+ * `mirror` 14. It lands on the towers, and glass and mirror against concrete is
+ * most of what makes that skyline read as itself rather than as grey massing.
+ *
+ * WHAT IT CANNOT DO. Buildings carry a per-vertex COLOUR and nothing else — no
+ * roughness, no metalness — so glass here is a cooler, brighter tone and not a
+ * reflection. Stating that plainly beats implying the renderer models curtain
+ * wall when it does not.
+ *
+ * Unknown values return null rather than a nearest guess: OSM materials are a
+ * long tail, and rendering `sandstone` as concrete because both are greyish is
+ * how a surveyed fact quietly becomes a wrong one.
+ */
+const MATERIAL_TONES: Record<string, [number, number, number]> = {
+  // Curtain wall: cool, bright, slightly blue. `mirror` reads brighter still.
+  glass:        [0.62, 0.70, 0.76],
+  mirror:       [0.70, 0.78, 0.83],
+  // Structural greys, warm to cold.
+  concrete:     [0.68, 0.67, 0.64],
+  cement_block: [0.66, 0.65, 0.62],
+  plaster:      [0.80, 0.78, 0.73],
+  stone:        [0.72, 0.69, 0.63],
+  marble:       [0.86, 0.85, 0.82],
+  // Warm masonry.
+  brick:        [0.60, 0.38, 0.31],
+  wood:         [0.55, 0.42, 0.30],
+  timber_framing: [0.62, 0.52, 0.42],
+  // Cold metals.
+  metal:        [0.66, 0.68, 0.70],
+  steel:        [0.62, 0.65, 0.68],
+}
+
+export function materialTone(material: string | undefined): [number, number, number] | null {
+  if (!material) return null
+  // Multi-valued tags are real (`glass;metal`); the first is the dominant one.
+  const first = material.split(';')[0].trim().toLowerCase()
+  return MATERIAL_TONES[first] ?? null
+}

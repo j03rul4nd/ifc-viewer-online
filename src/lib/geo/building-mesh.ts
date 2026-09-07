@@ -17,7 +17,7 @@
 import * as THREE from 'three'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import {
-  facadeColor, storeyBanding, storeysFor, buildingRegion, roofColorFor,
+  facadeColor, storeyBanding, storeysFor, buildingRegion, roofColorFor, materialTone,
   defaultRoofShape, defaultRoofFraction, type FacadeContext,
 } from './feature-variation'
 import { createGroundFrame } from './ground-frame'
@@ -265,11 +265,20 @@ export function buildBuildingsGeometry(
     // facade tone: a block of identical grey extrusions is the clearest tell
     // that a scene was generated, and real streets are not one colour.
     const seed = b.id ?? `${b.ring[0].lat.toFixed(6)},${b.ring[0].lon.toFixed(6)}`
-    // Tagged colours win over anything inferred, in both directions.
-    const roofTint = b.style?.roofColor ? hexToRgb(b.style.roofColor) : roofColorFor(facade)
-    const wallTint = b.style?.wallColor && !neutral
-      ? hexToRgb(b.style.wallColor)
-      : facadeColor(seed, facade)
+    // Three rungs, strongest evidence first. A tagged COLOUR is somebody
+    // stating the answer. A tagged MATERIAL is surveyed fact and outranks
+    // `facadeColor`, which is only a deterministic guess from region and use —
+    // `building:material` is on 8.2% of the Lujiazui patch and lands on the
+    // towers, where glass and mirror against concrete is most of what makes
+    // that skyline read as itself.
+    const roofTint = b.style?.roofColor
+      ? hexToRgb(b.style.roofColor)
+      : materialTone(b.style?.roofMaterial) ?? roofColorFor(facade)
+    const wallTint = neutral
+      ? facadeColor(seed, facade)
+      : b.style?.wallColor
+        ? hexToRgb(b.style.wallColor)
+        : materialTone(b.style?.wallMaterial) ?? facadeColor(seed, facade)
     // Lit: the shader does the light, so these are albedo only.
     const roofBase = lit ? 0.88 : roofShade(b.height.heightM)
 
@@ -290,6 +299,25 @@ export function buildBuildingsGeometry(
           0, 0, 1,
           // Roof deck reads darker than the parapet coping that surrounds it.
           tinted(roofBase * (detailed ? 0.9 : 1), roofTint),
+        )
+      }
+    } else if (roofShape === 'skillion') {
+      // A mono-pitch: ONE tilted plane over the whole footprint, low on one
+      // side and high on the other. Reuses the cap triangulation rather than
+      // fanning to an apex, because a skillion has no ridge to fan from — every
+      // vertex simply gets its own height across the short axis.
+      const axis = longestAxis(ring2d)
+      const across = ring2d.map((p) => signedOffset(p, centroid, axis))
+      const span = Math.max(...across.map(Math.abs)) || 1
+      // Normalised 0 at the low eave, 1 at the high edge.
+      const zAt = (i: number): number =>
+        eaveZ + ((across[i] / span + 1) / 2) * (topZ - eaveZ)
+      for (const [a, bIdx, c] of faces) {
+        pushTriangle(
+          positions, normals, colors,
+          ring2d[a], ring2d[bIdx], ring2d[c],
+          zAt(a), zAt(bIdx), zAt(c),
+          0, 0, 1, tinted(roofBase * 0.95, roofTint),
         )
       }
     } else if (roofShape === 'pyramidal') {

@@ -3,7 +3,7 @@ import {
   hashId, variate, jitter, treeShape, foliageColor,
   facadeColor, storeyBanding, storeysFor, greenTone,
   buildingRegion, roofColorFor, defaultRoofShape, defaultRoofFraction,
-  coverSpeciesMix, speciesFor, broadleafVariant,
+  coverSpeciesMix, speciesFor, broadleafVariant, materialTone,
 } from './feature-variation'
 
 describe('hashId / variate', () => {
@@ -435,5 +435,58 @@ describe('broadleafVariant', () => {
   it('falls back to the generic mix for a region with no table of its own', () => {
     const generic = tally('generic')
     expect(generic.plain).toBeGreaterThan(generic.blossom + generic.olive)
+  })
+})
+
+describe('materialTone — a surveyed material outranks a guessed palette', () => {
+  it('reads the three values the Lujiazui patch actually uses', () => {
+    // `building:material` is on 88 buildings there: concrete 41, glass 33,
+    // mirror 14 — and it lands on the towers.
+    for (const m of ['concrete', 'glass', 'mirror']) {
+      expect(materialTone(m)).not.toBeNull()
+    }
+  })
+
+  it('makes glass and mirror cooler than concrete, which is the whole point', () => {
+    const [gr, , gb] = materialTone('glass')!
+    const [cr, , cb] = materialTone('concrete')!
+    // Blue above red is what reads as curtain wall; concrete is warm-neutral.
+    expect(gb - gr).toBeGreaterThan(0.05)
+    expect(cb - cr).toBeLessThan(0.02)
+  })
+
+  it('makes mirror brighter than glass', () => {
+    const lum = (c: [number, number, number]) => c[0] + c[1] + c[2]
+    expect(lum(materialTone('mirror')!)).toBeGreaterThan(lum(materialTone('glass')!))
+  })
+
+  it('keeps brick and wood warm', () => {
+    for (const m of ['brick', 'wood']) {
+      const [r, , b] = materialTone(m)!
+      expect(r).toBeGreaterThan(b)
+    }
+  })
+
+  it('takes the dominant value of a multi-valued tag', () => {
+    expect(materialTone('glass;metal')).toEqual(materialTone('glass'))
+    expect(materialTone(' Glass ')).toEqual(materialTone('glass'))
+  })
+
+  it('declines an unknown material rather than guessing a near one', () => {
+    // OSM materials are a long tail. Rendering `sandstone` as concrete because
+    // both are greyish is how a surveyed fact quietly becomes a wrong one.
+    expect(materialTone('sandstone')).toBeNull()
+    expect(materialTone('unobtainium')).toBeNull()
+    expect(materialTone('')).toBeNull()
+    expect(materialTone(undefined)).toBeNull()
+  })
+
+  it('stays inside the unit range, since these are albedo', () => {
+    for (const m of ['glass', 'mirror', 'concrete', 'brick', 'marble', 'steel']) {
+      for (const c of materialTone(m)!) {
+        expect(c).toBeGreaterThan(0)
+        expect(c).toBeLessThanOrEqual(1)
+      }
+    }
   })
 })
