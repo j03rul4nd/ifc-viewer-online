@@ -183,6 +183,8 @@ export interface FeatureStyle {
    * on ZERO in Lujiazui — this feature is data-gated, not city-gated.
    */
   turnLanes?: string
+  /** `roof:orientation=across`: the ridge runs on the SHORT axis, not the long. */
+  roofAcross?: boolean
   /**
    * `oneway=-1`: one-way AGAINST the way's own direction.
    *
@@ -235,7 +237,7 @@ export interface FeatureStyle {
  * majority of tagged buildings, and anything else degrades to `flat` rather
  * than being approximated by a shape that would look wrong.
  */
-export type RoofShape = 'flat' | 'gabled' | 'pyramidal' | 'skillion'
+export type RoofShape = 'flat' | 'gabled' | 'pyramidal' | 'skillion' | 'dome'
 
 /**
  * What a building is FOR, in the few categories that change how it looks.
@@ -941,9 +943,16 @@ export function parseRoofShape(raw: string | undefined): RoofShape {
     case 'gambrel':
       return 'gabled'
     case 'pyramidal':
-    case 'dome':        // a pyramid reads better than a flat cap
     case 'conical':
       return 'pyramidal'
+    // A dome used to be flattened into a pyramid and `round` into a flat cap.
+    // Between them they are 8 roofs in the Lujiazui patch and 15 in Barcelona,
+    // and they are the shapes whose silhouette a cone gets most obviously
+    // wrong — a market hall, a basilica, an observation deck.
+    case 'dome':
+    case 'round':
+    case 'onion':
+      return 'dome'
     // A mono-pitch: one plane, high on one side. The SECOND most common roof
     // tag on `building:part` in the Lujiazui patch — 12 of them — and it was
     // falling through to `flat`, which is the one shape it is not.
@@ -1082,6 +1091,12 @@ export function resolveFeatureStyle(
   const roofShape = parseRoofShape(t['roof:shape'])
   const tagged = parseLengthM(t['roof:height'])
   return {
+    // `roof:orientation=across` puts the ridge on the SHORT axis — the opposite
+    // of the longest-axis rule we otherwise assume. 8 of the 10 tagged in
+    // Lujiazui say `across`, and all 10 in Barcelona: every one of them was
+    // being drawn with its ridge ninety degrees out, with the answer in the
+    // data. `along` is the default and needs no flag.
+    roofAcross: (t['roof:orientation'] ?? '').trim().toLowerCase() === 'across',
     wallColor: parseOsmColor(t['building:colour'] ?? t['colour']),
     roofColor: parseOsmColor(t['roof:colour']),
     wallMaterial: (t['building:material'] ?? '').toLowerCase() || undefined,
