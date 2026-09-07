@@ -1482,3 +1482,53 @@ describe('the surface budget spends itself where the view is', () => {
     expect(built.dropped).toBe(0)
   })
 })
+
+describe('turn arrows reach the carriageway', () => {
+  /** A straight one-way carriageway long enough to carry several arrows. */
+  function approach(id: string, style: Record<string, unknown> = {}): OsmFeature {
+    return {
+      id, kind: 'road',
+      ring: [
+        { lat: LAT, lon: LON },
+        { lat: LAT, lon: LON + 0.004 },
+      ],
+      height: { heightM: 0, minHeightM: 0, estimated: true },
+      widthM: 10.5,
+      style: {
+        roofShape: 'flat', roofHeightM: 0, tone: [0.4, 0.4, 0.42],
+        roadClass: 'vehicular', lanes: 3, oneway: true, ...style,
+      },
+    } as OsmFeature
+  }
+  const verts = (f: OsmFeature): number =>
+    surfaceOf(buildLinearLayer([f], 'road', OPTS)!.object)
+      .geometry.getAttribute('position').count
+
+  it('adds geometry for the turns a lane is signed for', () => {
+    // A `turn:lanes` approach carries a head PER indication, so a road whose
+    // right lane allows two movements costs strictly more than a plain one.
+    const plain = verts(approach('a'))
+    const signed = verts(approach('b', { turnLanes: 'left|through|through;right' }))
+    expect(signed).toBeGreaterThan(plain)
+  })
+
+  it('draws nothing extra when the tag disagrees with the lane count', () => {
+    // 3 of Barcelona's 52 tagged ways disagree with their own `lanes`. The tag
+    // is discarded whole, so the road falls back to plain direction arrows.
+    const plain = verts(approach('c'))
+    const mismatched = verts(approach('d', { turnLanes: 'left|through' }))
+    expect(mismatched).toBe(plain)
+  })
+
+  it('ignores the tag on a two-way road, where no arrow is drawn at all', () => {
+    const twoWay = verts(approach('e', { oneway: false }))
+    const twoWaySigned = verts(approach('f', {
+      oneway: false, turnLanes: 'left|through|through;right',
+    }))
+    expect(twoWaySigned).toBe(twoWay)
+  })
+
+  it('leaves a way with no turn tag exactly as it was', () => {
+    expect(verts(approach('g'))).toBe(verts(approach('h', { turnLanes: undefined })))
+  })
+})
