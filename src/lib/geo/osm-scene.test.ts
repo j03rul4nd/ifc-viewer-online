@@ -7,6 +7,7 @@ import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, bufferCentreline, buildLinearLayer,
+  dashAlong,
   dashCentreline, MAX_TREES, MAX_SEEDED_TREES, buildPierLayer,
 } from './osm-scene'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
@@ -1530,5 +1531,58 @@ describe('turn arrows reach the carriageway', () => {
 
   it('leaves a way with no turn tag exactly as it was', () => {
     expect(verts(approach('g'))).toBe(verts(approach('h', { turnLanes: undefined })))
+  })
+})
+
+describe('dashAlong — a broken line that FOLLOWS the way', () => {
+  const v = (x: number, y: number) => new THREE.Vector2(x, y)
+  const straight = [v(0, 0), v(100, 0)]
+
+  it('runs its dashes along the line, not across it', () => {
+    // The opposite orientation to `dashCentreline`, which lays the stripes of a
+    // zebra ACROSS. An edge marking follows the crossing rather than crossing
+    // it, so each dash is long in x and thin in y.
+    const q = dashAlong(straight, 0.15, 4, 2)
+    expect(q.length).toBeGreaterThan(5)
+    for (const quad of q) {
+      const xs = quad.map((p) => p.x)
+      const ys = quad.map((p) => p.y)
+      expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(Math.max(...ys) - Math.min(...ys))
+    }
+  })
+
+  it('leaves gaps rather than running solid', () => {
+    const dashed = dashAlong(straight, 0.15, 4, 2).length
+    const solid = bufferCentreline(straight, 0.15).length
+    expect(dashed).toBeGreaterThan(solid)
+    // ...and covers less than the whole length.
+    const covered = dashAlong(straight, 0.15, 4, 2)
+      .reduce((sum, q) => sum + (Math.max(...q.map((p) => p.x)) - Math.min(...q.map((p) => p.x))), 0)
+    expect(covered).toBeLessThan(100)
+  })
+
+  it('stays inside the line it was given', () => {
+    for (const quad of dashAlong(straight, 0.15, 4, 2)) {
+      for (const p of quad) {
+        expect(p.x).toBeGreaterThanOrEqual(-1e-9)
+        expect(p.x).toBeLessThanOrEqual(100 + 1e-9)
+      }
+    }
+  })
+
+  it('follows a corner instead of cutting it', () => {
+    const bend = [v(0, 0), v(50, 0), v(50, 50)]
+    const q = dashAlong(bend, 0.15, 4, 2)
+    expect(q.some((quad) => quad.some((p) => p.y > 10))).toBe(true)
+  })
+
+  it('refuses degenerate input rather than spinning', () => {
+    expect(dashAlong([v(0, 0)], 0.15, 4, 2)).toEqual([])
+    expect(dashAlong(straight, 0.15, 0, 2)).toEqual([])
+    expect(dashAlong([v(0, 0), v(0, 0)], 0.15, 4, 2)).toEqual([])
+  })
+
+  it('will not allocate a city when the dash is mis-scaled', () => {
+    expect(dashAlong(straight, 0.15, 1e-9, 1e-9).length).toBeLessThanOrEqual(4000)
   })
 })
