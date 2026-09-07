@@ -26,7 +26,7 @@
 
 import * as THREE from 'three'
 import {
-  laneDividers, arrowOffsets, arrowPlacements, arrowQuads,
+  laneDividers, arrowOffsets, arrowPlacements, arrowQuads, offsetByFraction,
   ARROW_SPACING_M, ARROW_LENGTH_M, ARROW_WIDTH_M, ARROW_STEM_M,
 } from './lane-markings'
 import { latLonToNormalized, metresToNormalized } from './geo-math'
@@ -1993,12 +1993,31 @@ export function buildLinearLayer(
       // Which offsets are defensible is decided in `lane-markings`, not here:
       // an odd lane count on a TWO-WAY road returns none, because 3 lanes is
       // 2+1 or 1+2 and the data does not say which.
-      const nominal = ribbon.halfWidths[0]
       const isCarriageway = ribbon.lanes !== undefined || ribbon.centreLine
+
+      /**
+       * A lane's own line, ready to take paint.
+       *
+       * Two things have to happen in this order and neither is optional.
+       * OFFSET FIRST, by a fraction of the per-vertex half-width, so the line
+       * opens with the carriageway through a flare instead of staying at the
+       * width the ribbon started with — `halfWidths` tapers precisely so this
+       * can be followed. THEN DENSIFY, for the reason the centre line above
+       * already densifies: paint laid on the raw centreline is a straight chord
+       * over a curved surface, so it floats on the crest of a hill, sinks into
+       * the dip and cuts through the deck on a bridge ramp. Densifying first
+       * would break the offset, because `halfWidths` is indexed against the
+       * ORIGINAL vertices and inserting points silently shifts every width by
+       * one.
+       */
+      const laneLine = (frac: number): THREE.Vector2[] =>
+        densifyFor(frac === 0
+          ? ribbon.centre
+          : offsetByFraction(ribbon.centre, ribbon.halfWidths, frac))
+
       for (const frac of laneDividers(ribbon.lanes ?? 0, ribbon.oneway ?? false)) {
-        const lane = offsetCentreline(ribbon.centre, frac * nominal)
         for (const quad of dashCentreline(
-          lane, (LANE_LINE_M / 2) * mToN, LANE_DASH_M * mToN, LANE_GAP_M * mToN,
+          laneLine(frac), (LANE_LINE_M / 2) * mToN, LANE_DASH_M * mToN, LANE_GAP_M * mToN,
         )) {
           pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
         }
@@ -2016,11 +2035,9 @@ export function buildLinearLayer(
       // a guess about a junction — and a wrong one is worse than a bare lane.
       if (isCarriageway && ribbon.oneway) {
         for (const frac of arrowOffsets(ribbon.lanes, true)) {
-          const lane = frac === 0
-            ? ribbon.centre
-            : offsetCentreline(ribbon.centre, frac * nominal)
           for (const place of arrowPlacements(
-            lane, ARROW_SPACING_M * mToN, ARROW_LENGTH_M * mToN, ribbon.onewayReverse,
+            laneLine(frac), ARROW_SPACING_M * mToN, ARROW_LENGTH_M * mToN,
+            ribbon.onewayReverse,
           )) {
             for (const quad of arrowQuads(
               place, ARROW_LENGTH_M * mToN, ARROW_WIDTH_M * mToN, ARROW_STEM_M * mToN,

@@ -11,7 +11,7 @@
 import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import {
-  laneDividers, arrowOffsets, arrowPlacements, arrowQuads,
+  laneDividers, arrowOffsets, arrowPlacements, arrowQuads, offsetByFraction,
   ARROW_LENGTH_M, ARROW_WIDTH_M, ARROW_STEM_M,
 } from './lane-markings'
 
@@ -198,5 +198,79 @@ describe('arrowQuads', () => {
     const laneWidth = 3.2
     const q = arrowQuads(place, ARROW_LENGTH_M, ARROW_WIDTH_M, ARROW_STEM_M)
     for (const p of q.flat()) expect(Math.abs(p.y)).toBeLessThan(laneWidth / 2)
+  })
+})
+
+describe('offsetByFraction', () => {
+  it('runs parallel at a constant width', () => {
+    const line = [v(0, 0), v(10, 0), v(20, 0)]
+    const out = offsetByFraction(line, [4, 4, 4], 0.5)
+    for (const p of out) expect(p.y).toBeCloseTo(2, 10)
+    expect(out.map((p) => p.x)).toEqual([0, 10, 20])
+  })
+
+  it('opens with the carriageway through a flare, instead of staying parallel', () => {
+    // THE POINT OF THE FUNCTION. Offsetting by one nominal distance keeps the
+    // lane line where the road STARTED while the kerb walks outwards, so the
+    // outer lane quietly grows and the paint stops dividing anything.
+    const line = [v(0, 0), v(10, 0), v(20, 0)]
+    const out = offsetByFraction(line, [3, 4.5, 6], 0.5)
+    expect(out[0].y).toBeCloseTo(1.5, 10)
+    expect(out[1].y).toBeCloseTo(2.25, 10)
+    expect(out[2].y).toBeCloseTo(3, 10)
+  })
+
+  it('keeps lanes equal all the way through a flare', () => {
+    // Two dividers on a 3-lane one-way road stay at the thirds of whatever the
+    // carriageway is doing at that station.
+    const line = [v(0, 0), v(50, 0)]
+    const hw = [3, 9]
+    const [a, b] = laneDividers(3, true).map((f) => offsetByFraction(line, hw, f))
+    for (const i of [0, 1]) {
+      const span = b[i].y - a[i].y
+      const kerb = 2 * hw[i]
+      expect(span / kerb).toBeCloseTo(1 / 3, 10)
+    }
+  })
+
+  it('mirrors a negative fraction to the other side', () => {
+    const line = [v(0, 0), v(10, 0)]
+    const left = offsetByFraction(line, [4, 4], 0.5)
+    const right = offsetByFraction(line, [4, 4], -0.5)
+    for (let i = 0; i < left.length; i++) expect(left[i].y).toBeCloseTo(-right[i].y, 10)
+  })
+
+  it('returns the centreline itself at zero', () => {
+    const line = [v(0, 0), v(10, 5), v(20, 0)]
+    const out = offsetByFraction(line, [4, 4, 4], 0)
+    for (let i = 0; i < line.length; i++) {
+      expect(out[i].x).toBeCloseTo(line[i].x, 10)
+      expect(out[i].y).toBeCloseTo(line[i].y, 10)
+    }
+  })
+
+  it('turns a corner with the kerb rather than cutting it', () => {
+    // Offset on the angle bisector, so the inside of a right angle pulls in.
+    const line = [v(0, 0), v(10, 0), v(10, 10)]
+    const out = offsetByFraction(line, [2, 2, 2], 1)
+    expect(out).toHaveLength(3)
+    // The corner vertex moves diagonally, not purely on one axis.
+    expect(out[1].x).not.toBeCloseTo(10, 3)
+    expect(out[1].y).not.toBeCloseTo(0, 3)
+  })
+
+  it('survives a repeated vertex without spinning it to an arbitrary angle', () => {
+    const out = offsetByFraction([v(0, 0), v(5, 0), v(5, 0), v(10, 0)], [2, 2, 2, 2], 1)
+    expect(out).toHaveLength(4)
+    for (const p of out) expect(Number.isFinite(p.x) && Number.isFinite(p.y)).toBe(true)
+  })
+
+  it('falls back to the last stated width rather than collapsing the line', () => {
+    const out = offsetByFraction([v(0, 0), v(10, 0), v(20, 0)], [3], 1)
+    for (const p of out) expect(p.y).toBeCloseTo(3, 10)
+  })
+
+  it('passes a degenerate line straight through', () => {
+    expect(offsetByFraction([v(1, 2)], [3], 1).map((p) => [p.x, p.y])).toEqual([[1, 2]])
   })
 })

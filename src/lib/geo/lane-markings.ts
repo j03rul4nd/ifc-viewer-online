@@ -235,3 +235,45 @@ export function arrowQuads(
     [P(neck, -hw), P(tip, 0), P(tip, 0), P(neck, hw)],
   ]
 }
+
+/**
+ * A line running at a constant FRACTION of the carriageway's half-width.
+ *
+ * WHY A FRACTION AND NOT A DISTANCE. A ribbon carries a half-width per vertex,
+ * because a road that changes width does so as a flare rather than a step —
+ * that is what `taperHalfWidths` is for. Offsetting the lane lines by one
+ * nominal distance instead throws that away: through a flare the kerb walks
+ * outwards while the lane lines stay parallel, so the outer lane silently grows
+ * and the paint no longer divides anything. Held as a fraction, every line
+ * opens with the carriageway and the lanes stay equal all the way through.
+ *
+ * The offset is taken along the angle bisector at each vertex, the same
+ * construction the borders themselves use, so a lane line turns a corner
+ * concentrically with the kerb beside it rather than cutting it.
+ */
+export function offsetByFraction(
+  line: ReadonlyArray<THREE.Vector2>,
+  halfWidths: ReadonlyArray<number>,
+  frac: number,
+): THREE.Vector2[] {
+  const out: THREE.Vector2[] = []
+  if (line.length < 2) return line.map((p) => p.clone())
+
+  for (let i = 0; i < line.length; i++) {
+    const prev = line[Math.max(0, i - 1)]
+    const next = line[Math.min(line.length - 1, i + 1)]
+    const dx = next.x - prev.x
+    const dy = next.y - prev.y
+    const len = Math.hypot(dx, dy)
+    // A repeated vertex has no direction of its own; carrying the last good
+    // normal forward beats emitting a point spun to an arbitrary angle.
+    const nx = len > 1e-12 ? -dy / len : 0
+    const ny = len > 1e-12 ? dx / len : 0
+    // Short arrays are a caller error, but falling back to the last stated
+    // width keeps the line on the carriageway instead of collapsing it to zero.
+    const hw = halfWidths[Math.min(i, halfWidths.length - 1)] ?? 0
+    const d = frac * hw
+    out.push(new THREE.Vector2(line[i].x + nx * d, line[i].y + ny * d))
+  }
+  return out
+}
