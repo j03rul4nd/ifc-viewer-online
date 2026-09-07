@@ -138,6 +138,58 @@ is worth stating plainly, because it redirects the effort to §5.
 
 ---
 
+## 3b. Can a rejected source be filtered into a useful one?
+
+Worth asking rather than assuming, because "mostly wrong" and "useless" are
+different things. Both were tested; they gave opposite answers.
+
+### GHSL — no. There is nothing to calibrate.
+
+A biased estimator can be corrected; an uninformative one cannot. GHSL is
+systematically low, which *looks* correctable — it averages building volume over
+a 100 m cell including open ground, so dividing by the built-up fraction is the
+obvious repair.
+
+Tested against ground truth: for every 100 m cell containing surveyed OSM
+buildings, the cell's volume-weighted mean height was compared with GHSL.
+
+| | correlation |
+|---|---|
+| GHSL vs OSM mean height | **r = +0.004** |
+| GHSL vs OSM height × built fraction | r = −0.100 |
+| GHSL ÷ built fraction vs OSM height | r = −0.244 |
+
+Zero, and the "correction" makes it worse. Over these cells GHSL spans
+6.1–33.3 m while the truth spans 6.4–632 m. There is no signal to recover, so no
+filter, threshold or calibration rescues it. (55 cells, only 7 with two or more
+surveyed buildings — a small sample, but a 20× range mismatch at r ≈ 0 is not a
+sample-size artefact.)
+
+### Overture — yes, and the filter is exact
+
+Overture publishes the **provenance of every building**. Over the core bbox:
+
+| cited source | count |
+|---|---|
+| OpenStreetMap | 406 |
+| `doi:10.5281/zenodo.8174931` (ML footprints) | 308 |
+
+The OpenStreetMap subset is exactly the 406 buildings we already fetch — a clean
+cross-check. So taking only the rows Overture does *not* attribute to OSM yields
+**287 genuinely new footprints (40 %)**, median 211 m², p90 1 846 m², with **no
+geometric de-duplication needed**: the dataset says which are ours.
+
+That is the shape the question was after — keep what the source is good at
+(footprint coverage), discard what we measured it to be bad at (heights; only 7
+of the 287 carry one).
+
+Two honest costs. Those 287 buildings would all be `estimated`, pushing the
+assumed share of the skyline from roughly 80 % to 85 %, so the audit has to keep
+showing it. And this cannot be a runtime source: the query above was DuckDB
+scanning GeoParquet on S3 for 140 s, which no browser will do. It is a
+**build-time extract for chosen demo districts**, shipped as a small file, or it
+is nothing.
+
 ## 4. Wikidata — small, precise, and it cross-checks us
 
 Free, keyless SPARQL. 33 of 1 076 buildings in the patch carry a `wikidata` tag.
@@ -212,8 +264,10 @@ standing in a car park and one with a city under them.
 3. **Wikidata build-time enrichment (§4)** for named landmarks, with provenance
    and rank resolution. Small, precise, and it doubles as a cross-check of OSM
    heights we already trust.
-4. **Overture footprints** if we ever want denser building coverage — 59 % more
-   footprints, but understand they arrive with no heights and would *increase*
-   the share of estimated buildings unless §5 lands first.
+4. **Overture footprints as a build-time extract** — filter to rows not
+   attributed to OpenStreetMap and take geometry only. 287 new buildings in the
+   core bbox with exact de-duplication for free. Now that §5 has landed they
+   would arrive at district-typical heights rather than 8 m, which is what makes
+   this worth doing at all.
 5. Nothing on bridge or tunnel elevations. The data does not exist; the
    clearance solver is the answer and already is.
