@@ -187,6 +187,7 @@ export function createBasemapEngine(): BasemapEngine {
 
     t.addEventListener('load-model', onTileSuccess)
     t.addEventListener('load-model', onTileLoadedApplyHole)
+    t.addEventListener('load-model', onTileLoadedTuneTextures)
     t.addEventListener('load-error', onTileError)
 
     if (camera) {
@@ -211,6 +212,7 @@ export function createBasemapEngine(): BasemapEngine {
     if (tiles) {
       tiles.removeEventListener('load-model', onTileSuccess)
       tiles.removeEventListener('load-model', onTileLoadedApplyHole)
+      tiles.removeEventListener('load-model', onTileLoadedTuneTextures)
       tiles.removeEventListener('load-error', onTileError)
       group.remove(tiles.group)
       tiles.dispose()
@@ -222,6 +224,57 @@ export function createBasemapEngine(): BasemapEngine {
 
   function onTileLoadedApplyHole(e: { scene: THREE.Object3D }): void {
     if (holePlanes) applyHoleToScene(e.scene)
+  }
+
+  /**
+   * Give a freshly loaded tile the filtering the rest of the scene already has.
+   *
+   * ── What was measured ─────────────────────────────────────────────────────
+   *
+   * A live basemap tile: 256x256 `ImageBitmap`, `anisotropy: 1`,
+   * `generateMipmaps: false`, and `minFilter: LinearMipmapLinearFilter` with
+   * `mipmaps.length: 0`. That last combination is incoherent — the texture asks
+   * for trilinear minification from mipmap levels nobody generated — and the
+   * practical result is a ground plane minified with no mipmap chain and no
+   * anisotropy at all.
+   *
+   * The basemap is the largest surface in the scene and the one seen at the
+   * most grazing angles, so it is exactly where that costs most: the texture
+   * aliases, and the aliasing pattern crawls with the camera instead of sitting
+   * still on the ground.
+   *
+   * ── Why here and not upstream ─────────────────────────────────────────────
+   *
+   * The tile textures are built by `XYZTilesOverlay`, which never sets
+   * anisotropy — the only mention of it in the whole package copies whatever a
+   * source texture already had. Three.js defaults that to 1. So nobody was
+   * going to set it but us, and this is the one place that sees every tile.
+   *
+   * Terrain patches and the procedural ground covers were both given mipmaps
+   * and anisotropy long ago. This is the surface that was missed.
+   */
+  function onTileLoadedTuneTextures(e: { scene: THREE.Object3D }): void {
+    const maxAnisotropy = renderer?.capabilities?.getMaxAnisotropy?.() ?? 1
+    e.scene.traverse((o) => {
+      const mesh = o as THREE.Mesh
+      if (!mesh.isMesh) return
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+      for (const m of materials) {
+        const map = (m as THREE.MeshBasicMaterial | undefined)?.map
+        if (!map) continue
+        // Both, and in this order: mipmaps give the filter the levels it was
+        // already asking for, anisotropy stops those levels blurring the
+        // distance into mush at a grazing angle. Either alone is half a fix.
+        if (!map.generateMipmaps) {
+          map.generateMipmaps = true
+          map.needsUpdate = true
+        }
+        if (map.anisotropy < maxAnisotropy) {
+          map.anisotropy = maxAnisotropy
+          map.needsUpdate = true
+        }
+      }
+    })
   }
 
   /**
