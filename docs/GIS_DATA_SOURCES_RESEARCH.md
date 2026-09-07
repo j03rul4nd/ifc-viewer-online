@@ -351,3 +351,44 @@ value in this patch).
 **`building:material` is the best remaining unused tag.** Three values, a
 trivial mapping, and it lands on the Lujiazui towers — glass and mirror against
 concrete is most of what makes that skyline read as itself.
+
+---
+
+## 9. Non-OSM sources for Shanghai specifically — what was reachable
+
+Tested for reachability with no key, no account and no session.
+
+| source | result |
+|---|---|
+| **Shanghai open data portal** (`data.sh.gov.cn`) | **HTTP 412** to a plain request — behind a bot/precondition gate. Whatever it holds is not reachable programmatically without a session, so it fails the "no account" constraint. |
+| **ESA WorldCover** via Terrascope WMS | Connection reset from here. Untested rather than rejected — the data is genuinely open and the 10 m land-cover classes would help where OSM maps no ground polygon at all. Worth retrying from the build machine. |
+| **OpenFreeMap** (`tiles.openfreemap.org`) | **200, keyless, no quota.** See below — an operational fallback, not a richer source. |
+
+### OpenFreeMap — the answer to a different question
+
+It serves the whole planet as OpenMapTiles vector tiles with no key and no rate
+limit, which matters because **Overpass rate-limiting is a real production
+risk**: this research exhausted the quota for one IP and the viewer's own
+context fetches started failing as a result.
+
+But it is not a richer source, and adopting it naively would cost us most of
+this session's work. Its schema at z14:
+
+- `building` → `render_height`, `render_min_height`, `colour`. `render_height`
+  is OpenMapTiles' **pre-computed** height, which bakes in its own storey
+  constant (3.66 m) and its own default. We would inherit a guess we cannot
+  inspect, right after building the machinery to derive one from the district.
+- `transportation` → `class`, `oneway`, `layer`, `brunnel`, `access`… and **no
+  `lanes`**. Every lane divider and direction arrow shipped this week depends on
+  `lanes`.
+
+So: a sound emergency fallback for "Overpass is down, draw something", at the
+cost of lane markings and of any control over heights. Not a primary source.
+
+### Still worth trying, not yet tested
+
+- **ESA WorldCover 10 m** — ground cover where OSM maps none. The single
+  biggest remaining gap in "what is the floor made of".
+- **Copernicus GLO-30 DEM** as a cross-check on the terrarium tiles we use.
+- **Wikimedia Commons** for landmark facade colour — free, but not automatable
+  in any way I would trust.
