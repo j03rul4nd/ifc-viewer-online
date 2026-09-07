@@ -166,6 +166,15 @@ export interface FeatureStyle {
   /** Traffic runs one way only — so there is no centre line to divide it. */
   oneway?: boolean
   /**
+   * `oneway=-1`: one-way AGAINST the way's own direction.
+   *
+   * Nothing in the measured district uses it, so it earns its place here only
+   * because of what it costs to ignore: direction arrows are the one marking
+   * whose whole job is to be read, and drawing a street's arrows backwards is a
+   * worse answer than drawing none.
+   */
+  onewayReverse?: boolean
+  /**
    * `junction=roundabout|circular`. Distinct from `oneway`, which a roundabout
    * also implies: this one says the way is a RING, and a ring has a centre that
    * has to be surfaced or the basemap shows through it.
@@ -1024,6 +1033,7 @@ export function resolveFeatureStyle(
       // that never looked at the topology.
       oneway: (oneway !== '' && oneway !== 'no')
         || t['junction'] === 'roundabout' || t['junction'] === 'circular',
+      onewayReverse: oneway === '-1' || oneway === 'reverse',
       roundabout: t['junction'] === 'roundabout' || t['junction'] === 'circular',
     }
   }
