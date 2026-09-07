@@ -175,9 +175,20 @@ Overture publishes the **provenance of every building**. Over the core bbox:
 | `doi:10.5281/zenodo.8174931` (ML footprints) | 308 |
 
 The OpenStreetMap subset is exactly the 406 buildings we already fetch — a clean
-cross-check. So taking only the rows Overture does *not* attribute to OSM yields
-**287 genuinely new footprints (40 %)**, median 211 m², p90 1 846 m², with **no
-geometric de-duplication needed**: the dataset says which are ours.
+cross-check. Taking only the rows Overture does *not* attribute to OSM yields
+287 footprints, median 211 m², p90 1 846 m².
+
+**CORRECTION.** An earlier version of this note said provenance made geometric
+de-duplication unnecessary — "the dataset says which are ours". That was wrong,
+and measuring it is what showed it: of the 308 ML-sourced rows, **47 (15 %) land
+on an OSM building anyway**, because Overture kept both where its matcher did
+not pair them. Provenance alone would admit those 47 as new buildings, doubling
+them on screen.
+
+Both filters are needed. **261 are genuinely new**, not 287. The geometric pass
+also belongs at RUNTIME rather than in the extract: OSM grows, and a
+de-duplication baked in at build time goes stale against the very data it is
+meant to complement.
 
 That is the shape the question was after — keep what the source is good at
 (footprint coverage), discard what we measured it to be bad at (heights; only 7
@@ -265,10 +276,10 @@ standing in a car park and one with a city under them.
    and rank resolution. Small, precise, and it doubles as a cross-check of OSM
    heights we already trust.
 4. **Overture footprints as a build-time extract** — filter to rows not
-   attributed to OpenStreetMap and take geometry only. 287 new buildings in the
-   core bbox with exact de-duplication for free. Now that §5 has landed they
-   would arrive at district-typical heights rather than 8 m, which is what makes
-   this worth doing at all.
+   attributed to OpenStreetMap and take geometry only; then drop, at runtime,
+   the 15 % that land on an OSM building regardless. 261 new buildings in the
+   core bbox. Now that §5 has landed they would arrive at district-typical
+   heights rather than 8 m, which is what makes this worth doing at all.
 5. Nothing on bridge or tunnel elevations. The data does not exist; the
    clearance solver is the answer and already is.
 

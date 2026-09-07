@@ -119,6 +119,7 @@
     "buildings": "Dintorni (OpenStreetMap)",
     "buildingsLoading": "Caricamento edifici…",
     "buildingsCount": "{{count}} edifici da OpenStreetMap",
+    "buildingsCountMixed": "{{count}} edifici · {{overture}} da Overture",
     "buildingsEstimated": "{{count}} altezze stimate",
     "buildingsEmpty": "Nessun edificio mappato intorno a questo sito.",
     "buildingsFailed": "Impossibile caricare gli edifici — il servizio era occupato. Riprova.",

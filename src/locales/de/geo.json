@@ -119,6 +119,7 @@
     "buildings": "Umgebung (OpenStreetMap)",
     "buildingsLoading": "Gebäude werden geladen…",
     "buildingsCount": "{{count}} Gebäude aus OpenStreetMap",
+    "buildingsCountMixed": "{{count}} Gebäude · {{overture}} von Overture",
     "buildingsEstimated": "{{count}} Höhen geschätzt",
     "buildingsEmpty": "Um diesen Standort sind keine Gebäude erfasst.",
     "buildingsFailed": "Gebäude konnten nicht geladen werden — der Dienst war ausgelastet. Bitte erneut versuchen.",

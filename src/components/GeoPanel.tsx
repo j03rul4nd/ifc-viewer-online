@@ -24,7 +24,7 @@ import { registerCustomProj4, resolveCrs } from '../lib/geo/crs'
 import { DEFAULT_PROVIDER_ID, resolveProvider, saveCustomProvider } from '../lib/geo/providers'
 import { TERRARIUM_ATTRIBUTION } from '../lib/geo/elevation'
 import { CONTOUR_INTERVALS } from '../lib/geo/terrain-look'
-import { BUILDINGS_ATTRIBUTION } from '../lib/geo/buildings'
+import { BUILDINGS_ATTRIBUTION, OVERTURE_ATTRIBUTION } from '../lib/geo/buildings'
 import { collectModelSites, type ModelInput } from '../lib/geo/model-sites'
 import { FEATURE_KINDS, type FeatureKind } from '../lib/geo/osm-features'
 import { appBus } from '../lib/event-bus'
@@ -165,7 +165,13 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
     if (s.terrainEnabled && s.terrainStatus === 'ready') list.push(TERRARIUM_ATTRIBUTION)
     // ODbL requires attributing OSM whenever its data is shown, and building
     // footprints are OSM data even when the basemap is someone else's imagery.
-    if (s.buildingsEnabled && s.buildingsStatus === 'ready') list.push(BUILDINGS_ATTRIBUTION)
+    if (s.buildingsEnabled && s.buildingsStatus === 'ready') {
+      list.push(BUILDINGS_ATTRIBUTION)
+      // Credited only while its footprints are actually drawn. Attribution
+      // follows use: a district whose extra buildings all de-duplicated away
+      // is drawing nobody's data but OpenStreetMap's.
+      if (s.buildingsOverture > 0) list.push(OVERTURE_ATTRIBUTION)
+    }
     s.setAttributions(list)
   }, [getGeo])
 
@@ -454,6 +460,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
         counts: outcome.status === 'ready' ? outcome.counts : undefined,
         estimated: outcome.status === 'ready' ? outcome.estimatedCount : 0,
         truncated: outcome.status === 'ready' ? outcome.truncated : false,
+        overture: outcome.status === 'ready' ? outcome.overture : 0,
       })
       if (outcome.status === 'error') trackMapError({ stage: 'buildings' })
       void refreshAttributions()
@@ -1217,7 +1224,16 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                             : store.buildingsStatus === 'error' ? t('layers.buildingsFailed')
                             : store.buildingsStatus === 'empty' ? t('layers.buildingsEmpty')
                             : store.buildingsEnabled && store.buildingsStatus === 'ready'
-                              ? t('layers.buildingsCount', { count: store.buildingsCounts.building })
+                              // Once footprints from the Overture extract are in
+                              // the count, crediting all of them to OpenStreetMap
+                              // is a small untruth in the one line that says
+                              // where the buildings came from.
+                              ? (store.buildingsOverture > 0
+                                ? t('layers.buildingsCountMixed', {
+                                  count: store.buildingsCounts.building,
+                                  overture: store.buildingsOverture,
+                                })
+                                : t('layers.buildingsCount', { count: store.buildingsCounts.building }))
                                 + (store.buildingsEstimated > 0
                                   ? ` · ${t('layers.buildingsEstimated', { count: store.buildingsEstimated })}`
                                   : '')

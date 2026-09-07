@@ -118,6 +118,7 @@
     "buildings": "Surroundings (OpenStreetMap)",
     "buildingsLoading": "Loading buildings…",
     "buildingsCount": "{{count}} buildings from OpenStreetMap",
+    "buildingsCountMixed": "{{count}} buildings · {{overture}} from Overture",
     "buildingsEstimated": "{{count}} heights estimated",
     "buildingsEmpty": "No buildings mapped around this site.",
     "buildingsFailed": "Buildings could not be loaded — the map service was busy. Try again.",
