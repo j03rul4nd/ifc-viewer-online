@@ -16,8 +16,10 @@
 
 import {
   resolveBuildingHeight, parseLengthM, approximateAreaM2,
-  type BuildingHeight,
+  DEFAULT_STOREY_HEIGHT_M,
 } from './buildings'
+import { buildHeightPrior, type HeightSample } from './height-prior'
+import type { BuildingHeight } from './buildings'
 import {
   treeShape, greenTone, greenRoughness, bareTone, bareRoughness, type TreeShape,
 } from './feature-variation'
@@ -105,6 +107,14 @@ export interface OsmFeature {
 export interface FeatureStyle {
   /** '#rrggbb' from `building:colour` / `roof:colour`, when parseable. */
   wallColor?: string
+  /**
+   * `building:material` / `roof:material`, lowercased and unresolved.
+   *
+   * Kept raw rather than resolved to a tone here, because this file answers
+   * WHAT A THING IS and `feature-variation` answers what it looks like.
+   */
+  wallMaterial?: string
+  roofMaterial?: string
   roofColor?: string
   /**
    * What the building is for. Drives palette, proportion and roof — the levers
@@ -166,6 +176,15 @@ export interface FeatureStyle {
   /** Traffic runs one way only — so there is no centre line to divide it. */
   oneway?: boolean
   /**
+   * `oneway=-1`: one-way AGAINST the way's own direction.
+   *
+   * Nothing in the measured district uses it, so it earns its place here only
+   * because of what it costs to ignore: direction arrows are the one marking
+   * whose whole job is to be read, and drawing a street's arrows backwards is a
+   * worse answer than drawing none.
+   */
+  onewayReverse?: boolean
+  /**
    * `junction=roundabout|circular`. Distinct from `oneway`, which a roundabout
    * also implies: this one says the way is a RING, and a ring has a centre that
    * has to be surfaced or the basemap shows through it.
@@ -208,7 +227,7 @@ export interface FeatureStyle {
  * majority of tagged buildings, and anything else degrades to `flat` rather
  * than being approximated by a shape that would look wrong.
  */
-export type RoofShape = 'flat' | 'gabled' | 'pyramidal'
+export type RoofShape = 'flat' | 'gabled' | 'pyramidal' | 'skillion'
 
 /**
  * What a building is FOR, in the few categories that change how it looks.
@@ -917,6 +936,13 @@ export function parseRoofShape(raw: string | undefined): RoofShape {
     case 'dome':        // a pyramid reads better than a flat cap
     case 'conical':
       return 'pyramidal'
+    // A mono-pitch: one plane, high on one side. The SECOND most common roof
+    // tag on `building:part` in the Lujiazui patch — 12 of them — and it was
+    // falling through to `flat`, which is the one shape it is not.
+    case 'skillion':
+    case 'lean_to':
+    case 'shed':
+      return 'skillion'
     default:
       return 'flat'
   }
@@ -1024,6 +1050,7 @@ export function resolveFeatureStyle(
       // that never looked at the topology.
       oneway: (oneway !== '' && oneway !== 'no')
         || t['junction'] === 'roundabout' || t['junction'] === 'circular',
+      onewayReverse: oneway === '-1' || oneway === 'reverse',
       roundabout: t['junction'] === 'roundabout' || t['junction'] === 'circular',
     }
   }
@@ -1047,6 +1074,8 @@ export function resolveFeatureStyle(
   return {
     wallColor: parseOsmColor(t['building:colour'] ?? t['colour']),
     roofColor: parseOsmColor(t['roof:colour']),
+    wallMaterial: (t['building:material'] ?? '').toLowerCase() || undefined,
+    roofMaterial: (t['roof:material'] ?? '').toLowerCase() || undefined,
     roofShape,
     roofTagged: (t['roof:shape'] ?? '') !== '',
     use: buildingUse(t),
@@ -1161,6 +1190,63 @@ export interface ParseOptions {
   onDrop?: (loss: FeatureLoss) => void
 }
 
+/**
+ * Footprint area, or null when the ring cannot support one.
+ *
+ * Overpass returns `null` entries inside the geometry of an incompletely
+ * downloaded way, and `approximateAreaM2` reads `ring[0].lat` without checking —
+ * so handing it a raw geometry throws, and a throw here would take the WHOLE
+ * feature extraction with it: one broken way and the map builds nothing at all.
+ * The main loop has always filtered these; anything new that touches geometry
+ * has to filter them too.
+ */
+function safeAreaM2(
+  geometry: ReadonlyArray<{ lat: number; lon: number } | null> | undefined,
+): number | null {
+  if (!geometry) return null
+  const pts = geometry.filter(
+    (p): p is { lat: number; lon: number } =>
+      !!p && Number.isFinite(p.lat) && Number.isFinite(p.lon),
+  )
+  if (pts.length < 3) return null
+  const a = approximateAreaM2(pts)
+  return Number.isFinite(a) && a > 0 ? a : null
+}
+
+/**
+ * The buildings in a patch whose height is actually KNOWN.
+ *
+ * `height` is read straight; `building:levels` counts as known because a level
+ * count is surveyed data even though the metres per storey are ours. Everything
+ * else is excluded on purpose — feeding the prior a building that already fell
+ * back to a constant would teach it that constant.
+ */
+function collectHeightSamples(elements: ReadonlyArray<unknown>): HeightSample[] {
+  const out: HeightSample[] = []
+  for (const raw of elements) {
+    const el = raw as OverpassEl
+    if (!el || typeof el !== 'object' || !el.tags || !el.geometry) continue
+    const t = el.tags
+    const type = t['building'] ?? t['building:part']
+    if (!type) continue
+
+    const rawLevels = parseFloat(t['building:levels'] ?? '')
+    const levels = Number.isFinite(rawLevels) && rawLevels > 0 ? rawLevels : null
+
+    // A surveyed height is the only thing that can measure the local metres per
+    // storey, so `levels` travels only alongside one. Deriving the height FROM
+    // the levels and then dividing it back out would just recover the constant.
+    const surveyed = parseLengthM(t['height'])
+    const heightM = surveyed ?? (levels !== null ? levels * DEFAULT_STOREY_HEIGHT_M : null)
+    if (heightM === null || !(heightM > 0)) continue
+
+    const areaM2 = safeAreaM2(el.geometry)
+    if (areaM2 === null) continue
+    out.push({ type, areaM2, heightM, levels: surveyed !== null ? levels : null })
+  }
+  return out
+}
+
 export function parseOsmFeatures(
   json: unknown,
   opts?: ParseOptions,
@@ -1182,6 +1268,17 @@ export function parseOsmFeatures(
       reason,
     })
   }
+
+  /**
+   * What this patch's own surveyed buildings look like.
+   *
+   * A PRE-PASS, and it has to be: the prior is a property of the whole patch,
+   * so it cannot be assembled while the same loop is already consuming it. Only
+   * buildings whose height is genuinely known contribute — a footprint that
+   * fell back to a constant would teach the prior its own guess and the whole
+   * district would converge on 8 m, which is the bug this replaces.
+   */
+  const heightPrior = buildHeightPrior(collectHeightSamples(elements))
 
   for (const raw of elements) {
     const el = raw as OverpassEl
@@ -1234,7 +1331,9 @@ export function parseOsmFeatures(
     }
 
     const style = resolveFeatureStyle(kind, el.tags)
-    const height = resolveBuildingHeight(el.tags)
+    const height = resolveBuildingHeight(
+      el.tags, heightPrior, safeAreaM2(el.geometry) ?? undefined,
+    )
 
     // Trees and signals are nodes.
     if (kind === 'signal') {

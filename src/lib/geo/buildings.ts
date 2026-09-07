@@ -23,6 +23,8 @@
 // that looks measured but is not would be exactly the kind of quiet fiction
 // this codebase avoids elsewhere.
 
+import type { HeightPrior } from './height-prior'
+
 /** Metres per storey when only a level count is known. */
 export const DEFAULT_STOREY_HEIGHT_M = 3.2
 
@@ -51,7 +53,11 @@ export interface BuildingHeight {
  * "40'"), so parsing is deliberately forgiving about a trailing unit and
  * rejects anything it cannot read rather than guessing a number out of it.
  */
-export function resolveBuildingHeight(tags: Record<string, string> | undefined): BuildingHeight {
+export function resolveBuildingHeight(
+  tags: Record<string, string> | undefined,
+  prior?: HeightPrior | null,
+  areaM2?: number,
+): BuildingHeight {
   const t = tags ?? {}
 
   const explicit = parseLengthM(t['height'])
@@ -61,27 +67,65 @@ export function resolveBuildingHeight(tags: Record<string, string> | undefined):
     return {
       heightM: Math.min(explicit, MAX_BUILDING_HEIGHT_M),
       minHeightM: Math.max(0, Math.min(minExplicit, explicit - 0.5)),
-      estimated: false,
+      // A `height` is not automatically a SURVEYED height. Mappers say so when
+      // they guessed, and in the Lujiazui patch 57 of the 137 buildings that
+      // carry a height — 42% of them — are tagged `note:height=estimated`.
+      // Reporting those as measured is precisely the quiet fiction the audit
+      // and the confidence overlay exist to prevent, and the person who put the
+      // number there already told us not to.
+      estimated: heightIsFlaggedEstimated(t),
     }
   }
 
   const levels = parseLevels(t['building:levels'])
   const minLevels = parseLevels(t['building:min_level']) ?? 0
   if (levels !== null && levels > 0) {
-    const h = Math.min(levels * DEFAULT_STOREY_HEIGHT_M, MAX_BUILDING_HEIGHT_M)
+    // Metres per storey is REGIONAL and the constant never said so. Measured on
+    // buildings carrying both a height and a storey count, Barcelona runs
+    // 3.14 m and Shanghai 4.42 m against one hardcoded 3.2 — so a 30-storey
+    // Lujiazui tower tagged only by storey count came out 37 m short. Ask the
+    // district first; it answers only where enough buildings state both.
+    const perStorey = prior?.storeyHeightFor(t['building'] ?? t['building:part'])
+      ?? DEFAULT_STOREY_HEIGHT_M
+    const h = Math.min(levels * perStorey, MAX_BUILDING_HEIGHT_M)
     return {
       heightM: h,
-      minHeightM: Math.max(0, Math.min(minLevels * DEFAULT_STOREY_HEIGHT_M, h - 0.5)),
-      // A level count IS data, but the metres are our assumption.
+      minHeightM: Math.max(0, Math.min(minLevels * perStorey, h - 0.5)),
+      // A level count IS data, but the metres are still not surveyed.
       estimated: true,
     }
   }
 
+  // Nothing is tagged. Before falling back to a global constant, ask what the
+  // rest of THIS patch measures — an untagged `building=yes` gets 8 m, which in
+  // Lujiazui is the 15th percentile of the district's own surveyed buildings.
+  // The prior declines wherever the evidence is thin or the type is one whose
+  // height does not depend on where it stands; see `height-prior`.
+  const local = prior && areaM2 !== undefined
+    ? prior.heightFor(t['building'] ?? t['building:part'], areaM2)
+    : null
+
   return {
-    heightM: defaultHeightForType(t['building']),
+    heightM: Math.min(local ?? defaultHeightForType(t['building']), MAX_BUILDING_HEIGHT_M),
     minHeightM: 0,
+    // Still a guess, and still says so. The prior moves the fallback from
+    // "wrong everywhere" to "typical of here"; it does not make it surveyed.
     estimated: true,
   }
+}
+
+/**
+ * Did the mapper flag their own height as a guess?
+ *
+ * `note:height` and `source:height` are where they say so, and `source` carries
+ * it too when the whole object was estimated. Matched as a substring because the
+ * values in the wild are compound — `estimation;Bing` is a real one — and
+ * because a false positive here only costs a building its "surveyed" badge,
+ * while a false negative presents somebody's guess as a survey.
+ */
+function heightIsFlaggedEstimated(t: Record<string, string>): boolean {
+  const notes = [t['note:height'], t['source:height'], t['height:source'], t['source']]
+  return notes.some((v) => /estimat/i.test(v ?? ''))
 }
 
 /** Length in metres from an OSM value, tolerating a unit suffix. */

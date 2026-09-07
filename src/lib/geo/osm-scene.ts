@@ -25,6 +25,10 @@
 // a river has no idea where its own bank is.
 
 import * as THREE from 'three'
+import {
+  laneDividers, arrowOffsets, arrowPlacements, arrowQuads, offsetByFraction,
+  ARROW_SPACING_M, ARROW_LENGTH_M, ARROW_WIDTH_M, ARROW_STEM_M,
+} from './lane-markings'
 import { latLonToNormalized, metresToNormalized } from './geo-math'
 import {
   jitter, foliageColor, variate, buildingRegion, coverSpeciesMix, speciesFor,
@@ -52,6 +56,10 @@ import {
 } from './vertical-network'
 import { createGroundResolver } from './terrain-truth'
 import { buildRoadNetwork, type NetworkWay } from './road-network'
+import {
+  approachEnd, isSignalised, stopBarQuad,
+  STOP_LINE_M, STOP_SETBACK_M, SIGNAL_SEARCH_M,
+} from './stop-lines'
 import { deckProfile, PARAPET_T_M } from './deck-profile'
 import { placePiers, type ProfilePoint } from './deck-supports'
 import { createGroundFrame, type GroundFrame } from './ground-frame'
@@ -1731,6 +1739,22 @@ export function buildLinearLayer(
   const networkWays: Record<RoadClass, NetworkWay[]> =
     { vehicular: [], pedestrian: [], track: [] }
 
+  /**
+   * Mapped traffic signals, in the planar frame.
+   *
+   * Collected here rather than in the props layer because they are wanted for
+   * two different things: that layer draws the MASTS and is off by default,
+   * while a stop bar is paint on the carriageway and belongs to the road. A
+   * junction should read as signalised whether or not someone chose to stand
+   * poles in it.
+   */
+  const signalPoints: THREE.Vector2[] = []
+  for (const f of features) {
+    if (f.kind !== 'signal' || !f.point) continue
+    const { nx, ny } = latLonToNormalized(f.point.lat, f.point.lon)
+    signalPoints.push(new THREE.Vector2(nx, ny))
+  }
+
   /** Per-class grain, as vertex ranges into the merged geometry. */
   const roughBands: RoughnessBand[] = []
   /**
@@ -1859,6 +1883,7 @@ export function buildLinearLayer(
         centreLine: cls === 'vehicular' && f.widthM >= CENTRE_LINE_MIN_WIDTH_M,
         lanes: cls === 'vehicular' ? f.style.lanes : undefined,
         oneway: f.style.oneway,
+        onewayReverse: f.style.onewayReverse,
         roundabout: f.style.roundabout,
       })
       continue
@@ -1984,18 +2009,80 @@ export function buildLinearLayer(
       }
       // Broken lane dividers where the lane count is actually mapped. This is
       // the difference between "a wide grey ribbon" and "a four-lane avenue".
-      const lanes = ribbon.lanes ?? 0
-      if (lanes >= 3) {
-        const nominal = ribbon.halfWidths[0]
-        for (let l = 1; l < lanes; l++) {
-          const offset = -nominal + (2 * nominal * l) / lanes
-          // The centre line already occupies the middle of a two-way road.
-          if (!ribbon.oneway && Math.abs(offset) < nominal * 0.05) continue
-          const lane = offsetCentreline(ribbon.centre, offset)
-          for (const quad of dashCentreline(
-            lane, (LANE_LINE_M / 2) * mToN, LANE_DASH_M * mToN, LANE_GAP_M * mToN,
+      //
+      // Which offsets are defensible is decided in `lane-markings`, not here:
+      // an odd lane count on a TWO-WAY road returns none, because 3 lanes is
+      // 2+1 or 1+2 and the data does not say which.
+      const isCarriageway = ribbon.lanes !== undefined || ribbon.centreLine
+
+      /**
+       * A lane's own line, ready to take paint.
+       *
+       * Two things have to happen in this order and neither is optional.
+       * OFFSET FIRST, by a fraction of the per-vertex half-width, so the line
+       * opens with the carriageway through a flare instead of staying at the
+       * width the ribbon started with — `halfWidths` tapers precisely so this
+       * can be followed. THEN DENSIFY, for the reason the centre line above
+       * already densifies: paint laid on the raw centreline is a straight chord
+       * over a curved surface, so it floats on the crest of a hill, sinks into
+       * the dip and cuts through the deck on a bridge ramp. Densifying first
+       * would break the offset, because `halfWidths` is indexed against the
+       * ORIGINAL vertices and inserting points silently shifts every width by
+       * one.
+       */
+      const laneLine = (frac: number): THREE.Vector2[] =>
+        densifyFor(frac === 0
+          ? ribbon.centre
+          : offsetByFraction(ribbon.centre, ribbon.halfWidths, frac))
+
+      for (const frac of laneDividers(ribbon.lanes ?? 0, ribbon.oneway ?? false)) {
+        for (const quad of dashCentreline(
+          laneLine(frac), (LANE_LINE_M / 2) * mToN, LANE_DASH_M * mToN, LANE_GAP_M * mToN,
+        )) {
+          pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
+        }
+      }
+
+      // Direction of travel — the best-attested fact about a Shanghai
+      // carriageway and the one the scene never said anything about. `oneway`
+      // is mapped on 79.8% of vehicular ways in the measured district against
+      // 63.7% for `lanes`, so an arrow is drawn on the centreline even where the
+      // lane count is unknown: it states direction, which is what was mapped,
+      // and nothing about how many lanes carry it.
+      //
+      // These are plain direction arrows, never turn arrows. `turn:lanes` is
+      // mapped on ZERO ways here, so a left-turn head in the left lane would be
+      // a guess about a junction — and a wrong one is worse than a bare lane.
+      if (isCarriageway && ribbon.oneway) {
+        for (const frac of arrowOffsets(ribbon.lanes, true)) {
+          for (const place of arrowPlacements(
+            laneLine(frac), ARROW_SPACING_M * mToN, ARROW_LENGTH_M * mToN,
+            ribbon.onewayReverse,
           )) {
-            pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
+            for (const quad of arrowQuads(
+              place, ARROW_LENGTH_M * mToN, ARROW_WIDTH_M * mToN, ARROW_STEM_M * mToN,
+            )) {
+              pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
+            }
+          }
+        }
+      }
+
+      // The stop bar, where a signal is actually mapped near the end traffic
+      // arrives at. This is the one marking that tells a crossroads apart from
+      // a forecourt, and the position is not invented: the node solver already
+      // trimmed the ribbon back to the edge of the conflict area, so the bar
+      // just sits behind that end. Nothing is drawn at an unsignalised junction
+      // — a stop bar there would assert a priority OSM never stated.
+      if (isCarriageway && cls === 'vehicular' && signalPoints.length > 0) {
+        const end = approachEnd(ribbon)
+        if (end) {
+          const at = end === 'end' ? ribbon.centre[ribbon.centre.length - 1] : ribbon.centre[0]
+          if (isSignalised(at, signalPoints, SIGNAL_SEARCH_M * mToN)) {
+            const bar = stopBarQuad(
+              ribbon, end, STOP_SETBACK_M * mToN, STOP_LINE_M * mToN,
+            )
+            if (bar) pushQuad(bar, CENTRE_LINE_TONE, 0.02 * mToN)
           }
         }
       }

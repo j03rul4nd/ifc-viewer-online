@@ -3,9 +3,11 @@
 // and exposes model-pivot transform controls (translate / rotate / scale).
 // Designed to scale to multiple models when Sprint 6 multi-model lands.
 
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ViewerAPI } from '../lib/viewer'
+import { groupPositionUpdates, type Vec3 } from '../lib/model-grouping'
+import { useModelGroups } from '../hooks/useModelGroups'
 import type { SceneModel, ModelTransform } from '../types'
 import type { TransformMode } from '../stores/uiStore'
 import { useUIStore } from '../stores/uiStore'
@@ -204,9 +206,17 @@ interface TransformSectionProps {
   model:          SceneModel
   viewerApiRef:   React.MutableRefObject<ViewerAPI | null>
   onSetTransform: (id: string, t: ModelTransform) => void
+  /**
+   * Every model this edit applies to, `model` included and first in intent.
+   *
+   * One entry is the ordinary per-file case. More than one is a federated set
+   * being moved as a unit, and then POSITION is applied as a delta so the
+   * offsets between the files survive — see `groupPositionUpdates`.
+   */
+  targets?: SceneModel[]
 }
 
-function TransformSection({ model, viewerApiRef, onSetTransform }: TransformSectionProps) {
+function TransformSection({ model, viewerApiRef, onSetTransform, targets }: TransformSectionProps) {
   const { t: tViewer } = useTranslation('viewer')
   const t = model.transform
   const pos = (t.position as { x: number; y: number; z: number }) ?? { x: 0, y: 0, z: 0 }
@@ -216,11 +226,30 @@ function TransformSection({ model, viewerApiRef, onSetTransform }: TransformSect
     ? { x: rawScale, y: rawScale, z: rawScale }
     : rawScale as { x: number; y: number; z: number }
 
+  const group = targets && targets.length > 1 ? targets : null
+
   const applyPos = useCallback((axis: 'x'|'y'|'z', v: number) => {
+    if (group) {
+      // A DELTA, never an absolute. Writing the same position into every member
+      // would stack a building's three files on one point and destroy the
+      // alignment that made them a set.
+      const updates = groupPositionUpdates(
+        group.map((m) => ({
+          id: m.id,
+          position: (m.transform.position as Vec3 | undefined) ?? { x: 0, y: 0, z: 0 },
+        })),
+        model.id, axis, v,
+      )
+      for (const u of updates) {
+        onSetTransform(u.id, { position: u.position })
+        viewerApiRef.current?.setModelTransform({ position: u.position }, u.id)
+      }
+      return
+    }
     const next = { ...pos, [axis]: v }
     onSetTransform(model.id, { position: next })
     viewerApiRef.current?.setModelTransform({ position: next }, model.id)
-  }, [pos, model.id, onSetTransform, viewerApiRef])
+  }, [group, pos, model.id, onSetTransform, viewerApiRef])
 
   const applyRot = useCallback((axis: 'x'|'y'|'z', v: number) => {
     const next = { ...rot, [axis]: v }
@@ -239,14 +268,24 @@ function TransformSection({ model, viewerApiRef, onSetTransform }: TransformSect
     viewerApiRef.current?.setModelTransform({ scale: v }, model.id)
   }, [model.id, onSetTransform, viewerApiRef])
 
+  // Reset and centre follow the scope too. Leaving them per-file would be the
+  // feature's own trap: a user who set the scope to the whole set and pressed
+  // Reset would move ONE file back to the origin and leave the other two where
+  // they were — silently destroying exactly the alignment the scope exists to
+  // protect, with a button whose label promises the opposite.
   const resetAll = useCallback(() => {
-    onSetTransform(model.id, {
-      position: { x: 0, y: 0, z: 0 },
-      rotation: { x: 0, y: 0, z: 0 },
-      scale: 1,
-    })
-    viewerApiRef.current?.resetModelTransform(model.id)
-  }, [model.id, onSetTransform, viewerApiRef])
+    // Identity for every member. Their authored coordinates already share a site
+    // origin, so zeroing the whole set restores the federation rather than
+    // scattering it — which is not true of resetting one file out of three.
+    for (const target of group ?? [model]) {
+      onSetTransform(target.id, {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: 1,
+      })
+      viewerApiRef.current?.resetModelTransform(target.id)
+    }
+  }, [group, model, onSetTransform, viewerApiRef])
 
   const centerOnGrid = useCallback(() => {
     const bounds = viewerApiRef.current?.getModelBounds(model.id)
@@ -256,9 +295,23 @@ function TransformSection({ model, viewerApiRef, onSetTransform }: TransformSect
       y: -bounds.center.y + bounds.size.y / 2 + pos.y,
       z: -bounds.center.z + pos.z,
     }
+    if (group) {
+      // The reference file's move, applied to everyone. Centring each member on
+      // its OWN centroid would put three separate buildings on the origin: the
+      // MEP model's centroid is not the architectural model's, and the set would
+      // come apart on a button called "centre".
+      const delta = { x: newPos.x - pos.x, y: newPos.y - pos.y, z: newPos.z - pos.z }
+      for (const target of group) {
+        const p = (target.transform.position as Vec3 | undefined) ?? { x: 0, y: 0, z: 0 }
+        const moved = { x: p.x + delta.x, y: p.y + delta.y, z: p.z + delta.z }
+        onSetTransform(target.id, { position: moved })
+        viewerApiRef.current?.setModelTransform({ position: moved }, target.id)
+      }
+      return
+    }
     onSetTransform(model.id, { position: newPos })
     viewerApiRef.current?.setModelTransform({ position: newPos }, model.id)
-  }, [model.id, pos, onSetTransform, viewerApiRef])
+  }, [group, model, pos, onSetTransform, viewerApiRef])
 
   const isUniform = scale.x === scale.y && scale.y === scale.z
   const uniformScale = isUniform ? scale.x : 1
@@ -331,6 +384,18 @@ export default function ScenePanel({
   const { t } = useTranslation('viewer')
   const activeModel = models.find((m) => m.id === activeModelId) ?? null
   const [isolatedId, setIsolatedId] = useState<string | null>(null)
+  const { groups } = useModelGroups()
+  const byId = useMemo(() => new Map(models.map((m) => [m.id, m])), [models])
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set())
+  /** Whether the transform panel edits one file or the whole family. */
+  const [transformScope, setTransformScope] = useState<'model' | 'group'>('model')
+  /** The family the active model belongs to, for the group scope. */
+  const activeGroupMembers = useMemo(() => {
+    if (!activeModelId) return [] as SceneModel[]
+    const g = groups.find((x) => x.memberIds.includes(activeModelId))
+    if (!g) return [] as SceneModel[]
+    return g.memberIds.map((id) => byId.get(id)).filter((m): m is SceneModel => m !== undefined)
+  }, [groups, activeModelId, byId])
   const [expandTransform, setExpandTransform] = useState(true)
   const { renderQuality, setRenderQuality } = useUIStore()
 
@@ -432,26 +497,84 @@ export default function ScenePanel({
           {models.length === 0 && (
             <p className="text-[11px] text-[var(--text-muted)] text-center py-4">{t('scene.noModels')}</p>
           )}
-          {models.map((model) => (
-            <ModelRow
-              key={model.id}
-              model={model}
-              isActive={model.id === activeModelId}
-              isIsolated={isolatedId === model.id}
-              canDelete={models.length > 1}
-              multiModel={models.length > 1}
-              onActivate={() => onSetActive(model.id)}
-              onVisible={(v) => {
-                onSetVisible(model.id, v)
-                // If toggling visibility while isolated, clear isolation state
-                if (isolatedId) { setIsolatedId(null); viewerApiRef.current?.showAllModels() }
-              }}
-              onRemove={() => onRemove(model.id)}
-              onValidate={() => onValidate(model.id)}
-              onFrame={() => onFrame(model.id)}
-              onIsolate={() => handleIsolate(model.id)}
-            />
-          ))}
+          {groups.map((group) => {
+            const members = group.memberIds
+              .map((id) => byId.get(id))
+              .filter((m): m is SceneModel => m !== undefined)
+            if (members.length === 0) return null
+            // A group of one is just a file. Showing a family header over every
+            // single model would be noise pretending to be structure.
+            const isFamily = members.length > 1
+            const collapsed = collapsedGroups.has(group.id)
+            return (
+              <div key={group.id} className={isFamily ? 'rounded-[8px] border border-[var(--border)]' : ''}>
+                {isFamily && (
+                  <div className="flex items-center gap-1.5 px-2 py-1.5">
+                    <button
+                      onClick={() => setCollapsedGroups((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(group.id)) next.delete(group.id); else next.add(group.id)
+                        return next
+                      })}
+                      className="text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
+                      aria-label={collapsed ? t('scene.group.expand') : t('scene.group.collapse')}
+                    >
+                      <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor"
+                        strokeWidth="1.8" strokeLinecap="round"
+                        className={`transition-transform ${collapsed ? '-rotate-90' : ''}`}>
+                        <path d="M1 3l4 4 4-4"/>
+                      </svg>
+                    </button>
+                    <span className="flex-1 min-w-0 truncate text-[11px] font-medium text-[var(--text)]">
+                      {group.label}
+                    </span>
+                    <span className="text-[10px] text-[var(--text-dim)] tabular-nums">
+                      {members.length}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setTransformScope('group')
+                        onSetActive(members[0].id)
+                      }}
+                      className={[
+                        'h-[20px] px-1.5 rounded-[5px] text-[10px] border transition-all',
+                        transformScope === 'group' && members.some((m) => m.id === activeModelId)
+                          ? 'bg-[var(--surface-2)] text-[var(--text)] border-[var(--border-strong)]'
+                          : 'text-[var(--text-dim)] border-[var(--border)] hover:text-[var(--text)]',
+                      ].join(' ')}
+                      title={t('scene.group.moveTogetherHint')}
+                    >
+                      {t('scene.group.moveTogether')}
+                    </button>
+                  </div>
+                )}
+                {!collapsed && (
+                  <div className={isFamily ? 'px-1 pb-1 space-y-1' : 'space-y-1'}>
+                    {members.map((model) => (
+                      <ModelRow
+                        key={model.id}
+                        model={model}
+                        isActive={model.id === activeModelId}
+                        isIsolated={isolatedId === model.id}
+                        canDelete={models.length > 1}
+                        multiModel={models.length > 1}
+                        onActivate={() => { setTransformScope('model'); onSetActive(model.id) }}
+                        onVisible={(v) => {
+                          onSetVisible(model.id, v)
+                          // If toggling visibility while isolated, clear isolation state
+                          if (isolatedId) { setIsolatedId(null); viewerApiRef.current?.showAllModels() }
+                        }}
+                        onRemove={() => onRemove(model.id)}
+                        onValidate={() => onValidate(model.id)}
+                        onFrame={() => onFrame(model.id)}
+                        onIsolate={() => handleIsolate(model.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
 
         {/* Transform controls — collapsible */}
@@ -473,10 +596,36 @@ export default function ScenePanel({
             </button>
             {expandTransform && (
               <div className="px-3 pb-3">
+                {activeGroupMembers.length > 1 && (
+                  <div className="flex gap-1.5 mb-2.5">
+                    {(['model', 'group'] as const).map((scope) => (
+                      <button
+                        key={scope}
+                        onClick={() => setTransformScope(scope)}
+                        className={[
+                          'flex-1 h-[26px] rounded-[7px] text-[11px] font-medium transition-all border',
+                          transformScope === scope
+                            ? 'bg-[var(--surface-2)] text-[var(--text)] border-[var(--border-strong)]'
+                            : 'text-[var(--text-dim)] border-[var(--border)] hover:text-[var(--text)]',
+                        ].join(' ')}
+                      >
+                        {scope === 'model'
+                          ? t('scene.group.scopeModel')
+                          : t('scene.group.scopeGroup', { count: activeGroupMembers.length })}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {transformScope === 'group' && activeGroupMembers.length > 1 && (
+                  <p className="text-[10px] text-[var(--text-dim)] mb-2 leading-snug">
+                    {t('scene.group.positionOnly')}
+                  </p>
+                )}
                 <TransformSection
                   model={activeModel}
                   viewerApiRef={viewerApiRef}
                   onSetTransform={onSetTransform}
+                  targets={transformScope === 'group' ? activeGroupMembers : undefined}
                 />
               </div>
             )}

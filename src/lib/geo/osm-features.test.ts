@@ -85,7 +85,10 @@ describe('parseRoofShape', () => {
   })
 
   it('degrades unknown shapes to flat instead of guessing', () => {
-    for (const s of [undefined, '', 'onion', 'sawtooth', 'skillion']) {
+    // `skillion` was in this list until the mesh learned to build a mono-pitch.
+    // It is the second most common roof tag on `building:part` in the Lujiazui
+    // patch, and flat is the one shape a mono-pitch is not.
+    for (const s of [undefined, '', 'onion', 'sawtooth', 'round', 'mansard']) {
       expect(parseRoofShape(s)).toBe('flat')
     }
   })
@@ -1144,5 +1147,32 @@ describe('Simple 3D Buildings', () => {
       sq(1, 0.0012, { building: 'yes', 'building:part': 'yes', height: '40' }),
     ] } as never)
     expect(feats.filter((f) => f.kind === 'building').map((f) => f.id)).toEqual(['w1'])
+  })
+})
+
+describe('parseRoofShape — a mono-pitch is not a flat roof', () => {
+  it('reads skillion as its own shape', () => {
+    // The SECOND most common roof tag on `building:part` in the Lujiazui patch
+    // (12 of them), and it used to fall through to `flat` — the one shape a
+    // mono-pitch is not.
+    expect(parseRoofShape('skillion')).toBe('skillion')
+    expect(parseRoofShape('lean_to')).toBe('skillion')
+    expect(parseRoofShape('shed')).toBe('skillion')
+  })
+
+  it('leaves the shapes it already knew alone', () => {
+    expect(parseRoofShape('gabled')).toBe('gabled')
+    expect(parseRoofShape('hipped')).toBe('gabled')
+    expect(parseRoofShape('pyramidal')).toBe('pyramidal')
+    expect(parseRoofShape('dome')).toBe('pyramidal')
+    expect(parseRoofShape('flat')).toBe('flat')
+  })
+
+  it('still falls back to flat for a shape it cannot build', () => {
+    // `round` and `mansard` are mapped here too; a wrong shape confidently
+    // drawn is worse than a flat cap.
+    expect(parseRoofShape('round')).toBe('flat')
+    expect(parseRoofShape('mansard')).toBe('flat')
+    expect(parseRoofShape(undefined)).toBe('flat')
   })
 })
