@@ -240,3 +240,32 @@ describe('bboxAround', () => {
     expect(b.east).toBeLessThanOrEqual(180)
   })
 })
+
+describe('a tagged height is not automatically a surveyed height', () => {
+  // In the Lujiazui patch 57 of the 137 buildings carrying `height` — 42% —
+  // are tagged `note:height=estimated`. Reporting those as measured is the
+  // quiet fiction the confidence overlay exists to prevent, and the person who
+  // put the number there already told us not to.
+  it('believes a plain height', () => {
+    expect(resolveBuildingHeight({ height: '40' }).estimated).toBe(false)
+  })
+
+  it('respects the mapper saying they estimated it', () => {
+    const cases: Array<Record<string, string>> = [
+      { height: '275', 'note:height': 'estimated' },
+      { height: '275', 'source:height': 'estimation' },
+      { height: '275', 'height:source': 'Estimated' },
+      { height: '275', source: 'estimation;Bing' },
+    ]
+    for (const tags of cases) {
+      expect(resolveBuildingHeight(tags).estimated).toBe(true)
+      // The VALUE is still the mapper's, only its confidence changes.
+      expect(resolveBuildingHeight(tags).heightM).toBeCloseTo(275, 6)
+    }
+  })
+
+  it('does not read a survey as an estimate', () => {
+    expect(resolveBuildingHeight({ height: '40', source: 'survey' }).estimated).toBe(false)
+    expect(resolveBuildingHeight({ height: '40', source: 'Bing' }).estimated).toBe(false)
+  })
+})

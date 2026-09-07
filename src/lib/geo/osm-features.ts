@@ -107,6 +107,14 @@ export interface OsmFeature {
 export interface FeatureStyle {
   /** '#rrggbb' from `building:colour` / `roof:colour`, when parseable. */
   wallColor?: string
+  /**
+   * `building:material` / `roof:material`, lowercased and unresolved.
+   *
+   * Kept raw rather than resolved to a tone here, because this file answers
+   * WHAT A THING IS and `feature-variation` answers what it looks like.
+   */
+  wallMaterial?: string
+  roofMaterial?: string
   roofColor?: string
   /**
    * What the building is for. Drives palette, proportion and roof — the levers
@@ -219,7 +227,7 @@ export interface FeatureStyle {
  * majority of tagged buildings, and anything else degrades to `flat` rather
  * than being approximated by a shape that would look wrong.
  */
-export type RoofShape = 'flat' | 'gabled' | 'pyramidal'
+export type RoofShape = 'flat' | 'gabled' | 'pyramidal' | 'skillion'
 
 /**
  * What a building is FOR, in the few categories that change how it looks.
@@ -928,6 +936,13 @@ export function parseRoofShape(raw: string | undefined): RoofShape {
     case 'dome':        // a pyramid reads better than a flat cap
     case 'conical':
       return 'pyramidal'
+    // A mono-pitch: one plane, high on one side. The SECOND most common roof
+    // tag on `building:part` in the Lujiazui patch — 12 of them — and it was
+    // falling through to `flat`, which is the one shape it is not.
+    case 'skillion':
+    case 'lean_to':
+    case 'shed':
+      return 'skillion'
     default:
       return 'flat'
   }
@@ -1059,6 +1074,8 @@ export function resolveFeatureStyle(
   return {
     wallColor: parseOsmColor(t['building:colour'] ?? t['colour']),
     roofColor: parseOsmColor(t['roof:colour']),
+    wallMaterial: (t['building:material'] ?? '').toLowerCase() || undefined,
+    roofMaterial: (t['roof:material'] ?? '').toLowerCase() || undefined,
     roofShape,
     roofTagged: (t['roof:shape'] ?? '') !== '',
     use: buildingUse(t),
@@ -1213,16 +1230,19 @@ function collectHeightSamples(elements: ReadonlyArray<unknown>): HeightSample[] 
     const type = t['building'] ?? t['building:part']
     if (!type) continue
 
-    let heightM = parseLengthM(t['height'])
-    if (heightM === null) {
-      const levels = parseFloat(t['building:levels'] ?? '')
-      heightM = Number.isFinite(levels) && levels > 0 ? levels * DEFAULT_STOREY_HEIGHT_M : null
-    }
+    const rawLevels = parseFloat(t['building:levels'] ?? '')
+    const levels = Number.isFinite(rawLevels) && rawLevels > 0 ? rawLevels : null
+
+    // A surveyed height is the only thing that can measure the local metres per
+    // storey, so `levels` travels only alongside one. Deriving the height FROM
+    // the levels and then dividing it back out would just recover the constant.
+    const surveyed = parseLengthM(t['height'])
+    const heightM = surveyed ?? (levels !== null ? levels * DEFAULT_STOREY_HEIGHT_M : null)
     if (heightM === null || !(heightM > 0)) continue
 
     const areaM2 = safeAreaM2(el.geometry)
     if (areaM2 === null) continue
-    out.push({ type, areaM2, heightM })
+    out.push({ type, areaM2, heightM, levels: surveyed !== null ? levels : null })
   }
   return out
 }

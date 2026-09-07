@@ -138,6 +138,58 @@ is worth stating plainly, because it redirects the effort to §5.
 
 ---
 
+## 3b. Can a rejected source be filtered into a useful one?
+
+Worth asking rather than assuming, because "mostly wrong" and "useless" are
+different things. Both were tested; they gave opposite answers.
+
+### GHSL — no. There is nothing to calibrate.
+
+A biased estimator can be corrected; an uninformative one cannot. GHSL is
+systematically low, which *looks* correctable — it averages building volume over
+a 100 m cell including open ground, so dividing by the built-up fraction is the
+obvious repair.
+
+Tested against ground truth: for every 100 m cell containing surveyed OSM
+buildings, the cell's volume-weighted mean height was compared with GHSL.
+
+| | correlation |
+|---|---|
+| GHSL vs OSM mean height | **r = +0.004** |
+| GHSL vs OSM height × built fraction | r = −0.100 |
+| GHSL ÷ built fraction vs OSM height | r = −0.244 |
+
+Zero, and the "correction" makes it worse. Over these cells GHSL spans
+6.1–33.3 m while the truth spans 6.4–632 m. There is no signal to recover, so no
+filter, threshold or calibration rescues it. (55 cells, only 7 with two or more
+surveyed buildings — a small sample, but a 20× range mismatch at r ≈ 0 is not a
+sample-size artefact.)
+
+### Overture — yes, and the filter is exact
+
+Overture publishes the **provenance of every building**. Over the core bbox:
+
+| cited source | count |
+|---|---|
+| OpenStreetMap | 406 |
+| `doi:10.5281/zenodo.8174931` (ML footprints) | 308 |
+
+The OpenStreetMap subset is exactly the 406 buildings we already fetch — a clean
+cross-check. So taking only the rows Overture does *not* attribute to OSM yields
+**287 genuinely new footprints (40 %)**, median 211 m², p90 1 846 m², with **no
+geometric de-duplication needed**: the dataset says which are ours.
+
+That is the shape the question was after — keep what the source is good at
+(footprint coverage), discard what we measured it to be bad at (heights; only 7
+of the 287 carry one).
+
+Two honest costs. Those 287 buildings would all be `estimated`, pushing the
+assumed share of the skyline from roughly 80 % to 85 %, so the audit has to keep
+showing it. And this cannot be a runtime source: the query above was DuckDB
+scanning GeoParquet on S3 for 140 s, which no browser will do. It is a
+**build-time extract for chosen demo districts**, shipped as a small file, or it
+is nothing.
+
 ## 4. Wikidata — small, precise, and it cross-checks us
 
 Free, keyless SPARQL. 33 of 1 076 buildings in the patch carry a `wikidata` tag.
@@ -212,8 +264,131 @@ standing in a car park and one with a city under them.
 3. **Wikidata build-time enrichment (§4)** for named landmarks, with provenance
    and rank resolution. Small, precise, and it doubles as a cross-check of OSM
    heights we already trust.
-4. **Overture footprints** if we ever want denser building coverage — 59 % more
-   footprints, but understand they arrive with no heights and would *increase*
-   the share of estimated buildings unless §5 lands first.
+4. **Overture footprints as a build-time extract** — filter to rows not
+   attributed to OpenStreetMap and take geometry only. 287 new buildings in the
+   core bbox with exact de-duplication for free. Now that §5 has landed they
+   would arrive at district-typical heights rather than 8 m, which is what makes
+   this worth doing at all.
 5. Nothing on bridge or tunnel elevations. The data does not exist; the
    clearance solver is the answer and already is.
+
+---
+
+## 7. The same measurement on Barcelona — and why it changes the answers
+
+Run over the Vila Olímpica / Poblenou waterfront (41.3730–41.3900 N,
+2.1750–2.2010 E): 1 788 building outlines, **6 490 `building:part`**, 3 893
+highways, 675 vehicular.
+
+| | Shanghai | Barcelona |
+|---|---|---|
+| building `height` | 4.2 % | 4.2 % |
+| **`building:levels`** | 15.8 % | **83.7 %** |
+| `building:material` | 8.2 % | 0.3 % |
+| road `oneway` | 79.8 % | 89.9 % |
+| road `lanes` | 63.7 % | 49.2 % |
+| **road `width`** | **0 %** | **8.4 %** |
+| **`turn:lanes`** | **0 ways** | **51 ways** |
+| `maxspeed` | 4.4 % | 88.6 % |
+| `surface` | 16.7 % | 95.1 % |
+| crossing ways | 49 | 537 |
+
+**The data landscape is city-specific, and so is what it is honest to draw.**
+Three consequences, all measured:
+
+1. **Barcelona is a `building:levels` city.** 83.7 % of its buildings resolve
+   their height through the levels path, against 15.8 % in Shanghai. Whatever
+   metres-per-storey we assume is, in Barcelona, the dominant source of height
+   error in the whole scene.
+2. **Turn arrows are renderable in Barcelona and not in Shanghai.** `turn:lanes`
+   is mapped on 51 ways there and zero here. The rule in `lane-markings` should
+   therefore stay "draw only what is mapped" rather than "never draw" — it is
+   the data that is absent, not the feature.
+3. **Carriageway width is surveyed in Barcelona** (8.4 %) and nowhere in
+   Shanghai. Width can come from survey there and must stay derived here.
+
+### Metres per storey is regional, and the constant never said so
+
+Measured on the buildings that state BOTH a height and a storey count — the only
+ones that can measure it:
+
+| | median m/storey | n |
+|---|---|---|
+| **Barcelona** | **3.14** (apartments 3.14, residential 2.50) | 41 |
+| **Shanghai** | **4.42** (commercial 4.56, `yes` 4.30) | 43 |
+| our constant | 3.2 | — |
+
+Nearly right for a European apartment block and **27 % low for a Chinese office
+tower**: a 30-storey Lujiazui building tagged only by storey count was drawn
+37 m short. Now derived from the patch the same way heights are, declining to
+the constant where too few buildings state both.
+
+---
+
+## 8. Tags we already download and were not reading
+
+The cheapest wins in this whole note came from here, not from new sources.
+Coverage in the Lujiazui patch:
+
+| tag | coverage | status |
+|---|---|---|
+| `building:material` | 8.2 % (88) | **unused** — only three values here: `concrete` 41, `glass` 33, `mirror` 14 |
+| `roof:material` | 6.0 % (65) | unused |
+| **`note:height` = `estimated`** | **5.3 % (57)** | **was unused — now read** |
+| `roof:levels` | 3.3 % | unused, and every value is `1` |
+| `roof:direction` | 1.1 % | unused; mixes degrees (`309.9`) with compass points (`SSW`) |
+| `building:colour`, `roof:colour` | 2.2 %, 1.7 % | already read |
+| `crossing:markings`, `crossing:signals` | 2.2 %, 1.2 % | already read |
+
+**`note:height=estimated` was the important one.** 57 buildings carry it, and
+all 57 also carry a `height` we were reporting as surveyed — **42 % of every
+height in the district**. The mapper had already said the number was a guess and
+we were presenting it as a measurement, in the one part of the codebase whose
+whole purpose is to distinguish the two. Now read, along with `source:height`,
+`height:source` and a `source` containing "estimat" (`estimation;Bing` is a real
+value in this patch).
+
+**`building:material` is the best remaining unused tag.** Three values, a
+trivial mapping, and it lands on the Lujiazui towers — glass and mirror against
+concrete is most of what makes that skyline read as itself.
+
+---
+
+## 9. Non-OSM sources for Shanghai specifically — what was reachable
+
+Tested for reachability with no key, no account and no session.
+
+| source | result |
+|---|---|
+| **Shanghai open data portal** (`data.sh.gov.cn`) | **HTTP 412** to a plain request — behind a bot/precondition gate. Whatever it holds is not reachable programmatically without a session, so it fails the "no account" constraint. |
+| **ESA WorldCover** via Terrascope WMS | Connection reset from here. Untested rather than rejected — the data is genuinely open and the 10 m land-cover classes would help where OSM maps no ground polygon at all. Worth retrying from the build machine. |
+| **OpenFreeMap** (`tiles.openfreemap.org`) | **200, keyless, no quota.** See below — an operational fallback, not a richer source. |
+
+### OpenFreeMap — the answer to a different question
+
+It serves the whole planet as OpenMapTiles vector tiles with no key and no rate
+limit, which matters because **Overpass rate-limiting is a real production
+risk**: this research exhausted the quota for one IP and the viewer's own
+context fetches started failing as a result.
+
+But it is not a richer source, and adopting it naively would cost us most of
+this session's work. Its schema at z14:
+
+- `building` → `render_height`, `render_min_height`, `colour`. `render_height`
+  is OpenMapTiles' **pre-computed** height, which bakes in its own storey
+  constant (3.66 m) and its own default. We would inherit a guess we cannot
+  inspect, right after building the machinery to derive one from the district.
+- `transportation` → `class`, `oneway`, `layer`, `brunnel`, `access`… and **no
+  `lanes`**. Every lane divider and direction arrow shipped this week depends on
+  `lanes`.
+
+So: a sound emergency fallback for "Overpass is down, draw something", at the
+cost of lane markings and of any control over heights. Not a primary source.
+
+### Still worth trying, not yet tested
+
+- **ESA WorldCover 10 m** — ground cover where OSM maps none. The single
+  biggest remaining gap in "what is the floor made of".
+- **Copernicus GLO-30 DEM** as a cross-check on the terrarium tiles we use.
+- **Wikimedia Commons** for landmark facade colour — free, but not automatable
+  in any way I would trust.

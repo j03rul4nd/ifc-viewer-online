@@ -44,6 +44,13 @@ export interface HeightSample {
   type: string
   areaM2: number
   heightM: number
+  /**
+   * `building:levels`, when the SAME building also states one.
+   *
+   * A building carrying both a height and a storey count measures the local
+   * metres per storey, which is otherwise a constant we assume.
+   */
+  levels?: number | null
 }
 
 /**
@@ -68,6 +75,17 @@ export const MIN_PRIOR_SAMPLES = 8
 export const PRIOR_SIZE_SPLIT_M2 = 1000
 
 /**
+ * Plausible bounds on metres per storey, used to reject a sample rather than a
+ * result.
+ *
+ * A building tagged `height=3` and `building:levels=30` is a mapping error, not
+ * a 0.1 m storey, and one of those drags a median more than ten good samples
+ * repair it.
+ */
+export const MIN_STOREY_M = 1.5
+export const MAX_STOREY_M = 12
+
+/**
  * Types whose height is a property of what they ARE, not of where they are.
  *
  * A shed is 3 m in Lujiazui and 3 m in a village. Handing these the district
@@ -86,6 +104,17 @@ export interface HeightPrior {
    * constant.
    */
   heightFor(type: string | undefined, areaM2: number): number | null
+  /**
+   * Metres per storey as this district actually builds them, or null when too
+   * few buildings state both a height and a storey count.
+   *
+   * THE CONSTANT IS REGIONAL AND NOBODY SAID SO. Measured on buildings that
+   * carry both tags, Barcelona runs 3.14 m per storey and Shanghai 4.42 m —
+   * against one hardcoded 3.2 m. That constant is nearly right for a European
+   * apartment block and 27% low for a Chinese office tower, so a 30-storey
+   * Lujiazui building tagged only by storey count is drawn 37 m short.
+   */
+  storeyHeightFor(type: string | undefined): number | null
   /** How many surveyed buildings the prior was built from. Null when unusable. */
   readonly sampleCount: number
 }
@@ -130,6 +159,8 @@ const bandOf = (areaM2: number): 'small' | 'large' =>
 export function buildHeightPrior(samples: ReadonlyArray<HeightSample>): HeightPrior {
   const byTypeBand = new Map<string, number[]>()
   const byBand = new Map<string, number[]>()
+  const storeyByType = new Map<string, number[]>()
+  const storeyAll: number[] = []
 
   let used = 0
   for (const s of samples) {
@@ -147,6 +178,18 @@ export function buildHeightPrior(samples: ReadonlyArray<HeightSample>): HeightPr
     }
     push(byTypeBand, `${type}|${band}`)
     push(byBand, band)
+
+    // Only a building stating BOTH measures the local storey height.
+    const levels = s.levels
+    if (levels != null && Number.isFinite(levels) && levels > 0) {
+      const perStorey = s.heightM / levels
+      if (perStorey >= MIN_STOREY_M && perStorey <= MAX_STOREY_M) {
+        const list = storeyByType.get(type)
+        if (list) list.push(perStorey)
+        else storeyByType.set(type, [perStorey])
+        storeyAll.push(perStorey)
+      }
+    }
   }
 
   const pick = (m: Map<string, number[]>, k: string): number | null => {
@@ -156,6 +199,11 @@ export function buildHeightPrior(samples: ReadonlyArray<HeightSample>): HeightPr
 
   return {
     sampleCount: used,
+    storeyHeightFor(rawType) {
+      const type = (rawType ?? '').toLowerCase()
+      return pick(storeyByType, type)
+        ?? (storeyAll.length >= MIN_PRIOR_SAMPLES ? median(storeyAll) : null)
+    },
     heightFor(rawType, areaM2) {
       const type = (rawType ?? '').toLowerCase()
       if (LOCALLY_INVARIANT_TYPES.has(type)) return null
