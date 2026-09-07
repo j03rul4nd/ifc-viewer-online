@@ -301,12 +301,45 @@ export function buildBuildingsGeometry(
           tinted(roofBase * (detailed ? 0.9 : 1), roofTint),
         )
       }
+    } else if (roofShape === 'dome') {
+      // Rings of triangles on a spherical profile, each ring the FOOTPRINT
+      // shrunk toward its centroid — so a dome over a rectangular hall is an
+      // elongated dome rather than a sphere floating on a box. At height
+      // fraction t the radius fraction is sqrt(1 - t^2), which is the circle
+      // the eye expects; a cone gets the silhouette of a basilica or a market
+      // hall most obviously wrong, and that is what this replaces.
+      const apex = new THREE.Vector2(centroid.x, centroid.y)
+      const at = (i: number, k: number): THREE.Vector2 => {
+        const t = k / DOME_RINGS
+        const r = Math.sqrt(Math.max(0, 1 - t * t))
+        return new THREE.Vector2(
+          apex.x + (ring2d[i].x - apex.x) * r,
+          apex.y + (ring2d[i].y - apex.y) * r,
+        )
+      }
+      const zOf = (k: number): number => eaveZ + (k / DOME_RINGS) * (topZ - eaveZ)
+      for (let k = 0; k < DOME_RINGS; k++) {
+        // Each band darkens as it turns away from the sky, which is what makes
+        // a dome read as curved rather than as a stack of shrinking lids.
+        const shade = roofBase * (0.90 + 0.10 * (k / DOME_RINGS))
+        for (let i = 0; i < ring2d.length; i++) {
+          const j = (i + 1) % ring2d.length
+          const a = at(i, k)
+          const b = at(j, k)
+          const c = at(j, k + 1)
+          const d = at(i, k + 1)
+          pushTriangle(positions, normals, colors, a, b, c,
+            zOf(k), zOf(k), zOf(k + 1), 0, 0, 1, tinted(shade, roofTint))
+          pushTriangle(positions, normals, colors, a, c, d,
+            zOf(k), zOf(k + 1), zOf(k + 1), 0, 0, 1, tinted(shade, roofTint))
+        }
+      }
     } else if (roofShape === 'skillion') {
       // A mono-pitch: ONE tilted plane over the whole footprint, low on one
       // side and high on the other. Reuses the cap triangulation rather than
       // fanning to an apex, because a skillion has no ridge to fan from — every
       // vertex simply gets its own height across the short axis.
-      const axis = longestAxis(ring2d)
+      const axis = ridgeAxis(ring2d, b.style?.roofAcross === true)
       const across = ring2d.map((p) => signedOffset(p, centroid, axis))
       const span = Math.max(...across.map(Math.abs)) || 1
       // Normalised 0 at the low eave, 1 at the high edge.
@@ -335,7 +368,14 @@ export function buildBuildingsGeometry(
       // Gabled: a ridge along the footprint's LONG axis. Running it along the
       // short axis is the classic giveaway of a fake roof — real ridges follow
       // the building, so the axis is measured rather than assumed.
-      const axis = longestAxis(ring2d)
+      //
+      // Unless the survey says otherwise. `roof:orientation=across` states that
+      // the ridge runs the OTHER way, and 8 of the 10 tagged in the Lujiazui
+      // patch say exactly that — as do all 10 in Barcelona. Preferring our own
+      // rule over their measurement is the inversion this codebase avoids
+      // everywhere else, and it was drawing every one of them ninety degrees
+      // out.
+      const axis = ridgeAxis(ring2d, b.style?.roofAcross === true)
       const half = ring2d.map((p) => signedOffset(p, centroid, axis))
       for (let i = 0; i < ring2d.length; i++) {
         const j = (i + 1) % ring2d.length
@@ -820,6 +860,25 @@ function longestAxis(ring: ReadonlyArray<THREE.Vector2>): { x: number; y: number
   }
   const n = Math.hypot(best.x, best.y)
   return n === 0 ? { x: 1, y: 0 } : { x: best.x / n, y: best.y / n }
+}
+
+/** How many bands a dome is built from. Enough to read as curved, few enough
+ * that 23 domes in a district do not cost what 23 towers do. */
+const DOME_RINGS = 4
+
+/**
+ * The axis a ridge runs along.
+ *
+ * `along` (the default) is the footprint's longest axis, because real ridges
+ * follow the building. `across` is the surveyed statement that this one does
+ * not, and it is the perpendicular — not a different measurement, the same one
+ * turned ninety degrees.
+ */
+function ridgeAxis(
+  ring: ReadonlyArray<THREE.Vector2>, across: boolean,
+): { x: number; y: number } {
+  const a = longestAxis(ring)
+  return across ? { x: -a.y, y: a.x } : a
 }
 
 /** Which side of the ridge a point falls on (sign only). */

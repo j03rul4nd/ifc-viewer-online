@@ -35,6 +35,7 @@ const clearedBuildingsResult = {
   buildingsCounts:    NO_FEATURE_COUNTS,
   buildingsEstimated: 0,
   buildingsTruncated: false,
+  buildingsOverture: 0,
 }
 
 // ── localStorage keys (versioned) ──────────────────────────────────────────────
@@ -266,6 +267,14 @@ interface GeoStore {
   hiddenFeatures: HiddenMapFeature[]
   /** True when the query hit its cap — the view is a partial picture. */
   buildingsTruncated: boolean
+  /**
+   * Footprints drawn from the shipped Overture extract.
+   *
+   * Held so attribution can follow USE rather than availability: a district
+   * with none left after de-duplication credits nobody, because it is drawing
+   * nobody's data.
+   */
+  buildingsOverture: number
   georefByModel: Record<string, GeorefExtraction>
   /** EFFECTIVE placement driving the geoRoot transform. */
   placement: GeoPlacement | null
@@ -302,6 +311,7 @@ interface GeoStore {
       counts?: Record<FeatureKind, number>
       estimated?: number
       truncated?: boolean
+      overture?: number
     },
   ) => void
   /** Toggle one OSM layer (persisted). */
@@ -358,6 +368,7 @@ export const useGeoStore = create<GeoStore>()(
       suppressContext:    lsGet(LS_SUPPRESS) !== '0',
       hiddenFeatures:     readHiddenFeatures(),
       buildingsTruncated: false,
+      buildingsOverture: 0,
       georefByModel:  {},
       placement:      null,
       editing:        false,
@@ -484,6 +495,7 @@ export const useGeoStore = create<GeoStore>()(
             buildingsCounts: result.counts ?? NO_FEATURE_COUNTS,
             buildingsEstimated: result.estimated ?? 0,
             buildingsTruncated: result.truncated ?? false,
+            buildingsOverture: result.overture ?? 0,
           }),
           false,
           'setBuildingsResult',

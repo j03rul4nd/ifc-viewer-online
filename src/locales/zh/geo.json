@@ -119,6 +119,7 @@
     "buildings": "周边环境（OpenStreetMap）",
     "buildingsLoading": "正在加载建筑…",
     "buildingsCount": "来自 OpenStreetMap 的 {{count}} 座建筑",
+    "buildingsCountMixed": "{{count}} 座建筑 · 其中 {{overture}} 座来自 Overture",
     "buildingsEstimated": "{{count}} 个高度为估算值",
     "buildingsEmpty": "该场地周边没有已测绘的建筑。",
     "buildingsFailed": "无法加载建筑 — 服务繁忙，请重试。",

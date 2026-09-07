@@ -170,6 +170,19 @@ export interface FeatureStyle {
    */
   crossing?: boolean
   /**
+   * How the crossing is painted, from `crossing:markings`.
+   *
+   * `zebra` is broad stripes ACROSS the pedestrian path. `lines`, `dashes` and
+   * `dots` are not stripes at all — they mark the two long EDGES of the
+   * crossing, which is a different drawing entirely. Barcelona states a
+   * non-zebra kind on 56 crossing ways, `dots` alone on 37, and every one of
+   * them was being painted as a zebra.
+   *
+   * Absent, `yes`, or a value we do not know falls back to zebra — the same
+   * documented default `isCrossing` already applies to an untagged crossing.
+   */
+  crossingMarkings?: CrossingMarkings
+  /**
    * Mapped lane count on a carriageway. Width already accounts for it, but the
    * MARKINGS cannot be inferred from width alone — a 12 m one-way slip road and
    * a 12 m four-lane avenue are the same ribbon and want different paint.
@@ -177,6 +190,16 @@ export interface FeatureStyle {
   lanes?: number
   /** Traffic runs one way only — so there is no centre line to divide it. */
   oneway?: boolean
+  /**
+   * Raw `turn:lanes`, unparsed.
+   *
+   * Kept raw because validating it needs the LANE COUNT, and the two travel to
+   * the renderer together anyway. Mapped on 52 ways in the Barcelona patch and
+   * on ZERO in Lujiazui — this feature is data-gated, not city-gated.
+   */
+  turnLanes?: string
+  /** `roof:orientation=across`: the ridge runs on the SHORT axis, not the long. */
+  roofAcross?: boolean
   /**
    * `oneway=-1`: one-way AGAINST the way's own direction.
    *
@@ -229,7 +252,33 @@ export interface FeatureStyle {
  * majority of tagged buildings, and anything else degrades to `flat` rather
  * than being approximated by a shape that would look wrong.
  */
-export type RoofShape = 'flat' | 'gabled' | 'pyramidal' | 'skillion'
+/** The shapes `crossing:markings` distinguishes that we can actually draw. */
+export type CrossingMarkings = 'zebra' | 'edges' | 'dashes' | 'dots'
+
+/**
+ * Which of those a `crossing:markings` value asks for.
+ *
+ * A multi-valued tag (`zebra;dots` is real in Barcelona) takes its FIRST value:
+ * the combinations are a zebra with edge lines added, and the zebra is the part
+ * that reads at map scale.
+ */
+export function parseCrossingMarkings(raw: string | undefined): CrossingMarkings {
+  switch ((raw ?? '').split(';')[0].trim().toLowerCase()) {
+    case 'lines':
+    case 'solid':
+      return 'edges'
+    case 'dashes':
+      return 'dashes'
+    case 'dots':
+      return 'dots'
+    // `zebra`, `ladder`, `yes`, anything unknown, and an absent tag: the
+    // documented default for a crossing nobody has described.
+    default:
+      return 'zebra'
+  }
+}
+
+export type RoofShape = 'flat' | 'gabled' | 'pyramidal' | 'skillion' | 'dome'
 
 /**
  * What a building is FOR, in the few categories that change how it looks.
@@ -935,9 +984,16 @@ export function parseRoofShape(raw: string | undefined): RoofShape {
     case 'gambrel':
       return 'gabled'
     case 'pyramidal':
-    case 'dome':        // a pyramid reads better than a flat cap
     case 'conical':
       return 'pyramidal'
+    // A dome used to be flattened into a pyramid and `round` into a flat cap.
+    // Between them they are 8 roofs in the Lujiazui patch and 15 in Barcelona,
+    // and they are the shapes whose silhouette a cone gets most obviously
+    // wrong — a market hall, a basilica, an observation deck.
+    case 'dome':
+    case 'round':
+    case 'onion':
+      return 'dome'
     // A mono-pitch: one plane, high on one side. The SECOND most common roof
     // tag on `building:part` in the Lujiazui patch — 12 of them — and it was
     // falling through to `flat`, which is the one shape it is not.
@@ -1043,6 +1099,7 @@ export function resolveFeatureStyle(
         // it today. Left correct rather than left latent: the day a zebra on a
         // deck is solved, this is the line that would have been wrong.
         roadClass: roadClass(t),
+        crossingMarkings: parseCrossingMarkings(t['crossing:markings']),
       }
     }
     const lanes = parseFloat(t['lanes'] ?? '')
@@ -1058,6 +1115,8 @@ export function resolveFeatureStyle(
       oneway: (oneway !== '' && oneway !== 'no')
         || t['junction'] === 'roundabout' || t['junction'] === 'circular',
       onewayReverse: oneway === '-1' || oneway === 'reverse',
+      // `:forward` is the one-way case restated; we only draw on one-way ways.
+      turnLanes: t['turn:lanes'] ?? t['turn:lanes:forward'] ?? undefined,
       roundabout: t['junction'] === 'roundabout' || t['junction'] === 'circular',
     }
   }
@@ -1079,6 +1138,12 @@ export function resolveFeatureStyle(
   const roofShape = parseRoofShape(t['roof:shape'])
   const tagged = parseLengthM(t['roof:height'])
   return {
+    // `roof:orientation=across` puts the ridge on the SHORT axis — the opposite
+    // of the longest-axis rule we otherwise assume. 8 of the 10 tagged in
+    // Lujiazui say `across`, and all 10 in Barcelona: every one of them was
+    // being drawn with its ridge ninety degrees out, with the answer in the
+    // data. `along` is the default and needs no flag.
+    roofAcross: (t['roof:orientation'] ?? '').trim().toLowerCase() === 'across',
     wallColor: parseOsmColor(t['building:colour'] ?? t['colour']),
     roofColor: parseOsmColor(t['roof:colour']),
     wallMaterial: (t['building:material'] ?? '').toLowerCase() || undefined,

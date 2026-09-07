@@ -119,6 +119,7 @@
     "buildings": "Environs (OpenStreetMap)",
     "buildingsLoading": "Chargement des bâtiments…",
     "buildingsCount": "{{count}} bâtiments issus d’OpenStreetMap",
+    "buildingsCountMixed": "{{count}} bâtiments · {{overture}} d'Overture",
     "buildingsEstimated": "{{count}} hauteurs estimées",
     "buildingsEmpty": "Aucun bâtiment cartographié autour de ce site.",
     "buildingsFailed": "Impossible de charger les bâtiments — le service était occupé. Réessayez.",

@@ -119,6 +119,7 @@
     "buildings": "สภาพแวดล้อมโดยรอบ (OpenStreetMap)",
     "buildingsLoading": "กำลังโหลดอาคาร…",
     "buildingsCount": "อาคาร {{count}} หลังจาก OpenStreetMap",
+    "buildingsCountMixed": "อาคาร {{count}} หลัง · จาก Overture {{overture}} หลัง",
     "buildingsEstimated": "ความสูงประมาณการ {{count}} หลัง",
     "buildingsEmpty": "ไม่มีอาคารที่ทำแผนที่ไว้รอบพื้นที่นี้",
     "buildingsFailed": "โหลดอาคารไม่สำเร็จ — บริการไม่ว่าง ลองใหม่อีกครั้ง",

@@ -320,6 +320,15 @@ export const OVERPASS_ENDPOINT = 'https://overpass-api.de/api/interpreter'
 export const BUILDINGS_ATTRIBUTION = '© OpenStreetMap contributors (ODbL)'
 
 /**
+ * Shown only while footprints from the shipped extract are actually on screen.
+ *
+ * Attribution follows USE, not availability: a district with no Overture
+ * buildings left after de-duplication credits nobody, because it is drawing
+ * nobody's data.
+ */
+export const OVERTURE_ATTRIBUTION = '© Overture Maps Foundation'
+
+/**
  * Overpass QL for every building in a bbox, geometry inlined.
  *
  * `[out:json][timeout:N]` bounds server work; `out geom` avoids a second

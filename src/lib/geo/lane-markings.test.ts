@@ -11,7 +11,8 @@
 import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import {
-  laneDividers, arrowOffsets, arrowPlacements, arrowQuads, offsetByFraction,
+  laneDividers, arrowOffsets, arrowPlacements, offsetByFraction,
+  parseTurnLanes, turnsForOffset, turnArrowQuads, TURN_ANGLES,
   ARROW_LENGTH_M, ARROW_WIDTH_M, ARROW_STEM_M,
 } from './lane-markings'
 
@@ -154,53 +155,6 @@ describe('arrowPlacements', () => {
   })
 })
 
-describe('arrowQuads', () => {
-  const place = { at: v(0, 0), heading: v(1, 0) }
-
-  it('builds a stem and a head that together span the arrow length', () => {
-    const q = arrowQuads(place, ARROW_LENGTH_M, ARROW_WIDTH_M, ARROW_STEM_M)
-    expect(q).toHaveLength(2)
-    const xs = q.flat().map((p) => p.x)
-    expect(Math.min(...xs)).toBeCloseTo(-ARROW_LENGTH_M / 2, 10)
-    expect(Math.max(...xs)).toBeCloseTo(ARROW_LENGTH_M / 2, 10)
-  })
-
-  it('points the head the way the placement heads', () => {
-    const q = arrowQuads(place, ARROW_LENGTH_M, ARROW_WIDTH_M, ARROW_STEM_M)
-    const head = q[1]
-    // The tip is the forward-most vertex, and it is doubled.
-    const tip = head.reduce((a, b) => (b.x > a.x ? b : a))
-    expect(tip.x).toBeCloseTo(ARROW_LENGTH_M / 2, 10)
-    expect(head.filter((p) => Math.abs(p.x - tip.x) < 1e-9)).toHaveLength(2)
-  })
-
-  it('makes the head wider than the stem, or it is not an arrow', () => {
-    const q = arrowQuads(place, ARROW_LENGTH_M, ARROW_WIDTH_M, ARROW_STEM_M)
-    const spread = (quad: THREE.Vector2[]) => {
-      const ys = quad.map((p) => p.y)
-      return Math.max(...ys) - Math.min(...ys)
-    }
-    expect(spread(q[1])).toBeGreaterThan(spread(q[0]))
-    expect(spread(q[0])).toBeCloseTo(ARROW_STEM_M, 10)
-    expect(spread(q[1])).toBeCloseTo(ARROW_WIDTH_M, 10)
-  })
-
-  it('rotates with the heading instead of always lying east', () => {
-    const north = arrowQuads({ at: v(0, 0), heading: v(0, 1) },
-      ARROW_LENGTH_M, ARROW_WIDTH_M, ARROW_STEM_M)
-    const tip = north[1].reduce((a, b) => (b.y > a.y ? b : a))
-    expect(tip.y).toBeCloseTo(ARROW_LENGTH_M / 2, 10)
-    expect(tip.x).toBeCloseTo(0, 10)
-  })
-
-  it('stays inside a lane at the width it is drawn', () => {
-    // An arrow wider than its lane would paint over the divider beside it.
-    const laneWidth = 3.2
-    const q = arrowQuads(place, ARROW_LENGTH_M, ARROW_WIDTH_M, ARROW_STEM_M)
-    for (const p of q.flat()) expect(Math.abs(p.y)).toBeLessThan(laneWidth / 2)
-  })
-})
-
 describe('offsetByFraction', () => {
   it('runs parallel at a constant width', () => {
     const line = [v(0, 0), v(10, 0), v(20, 0)]
@@ -272,5 +226,158 @@ describe('offsetByFraction', () => {
 
   it('passes a degenerate line straight through', () => {
     expect(offsetByFraction([v(1, 2)], [3], 1).map((p) => [p.x, p.y])).toEqual([[1, 2]])
+  })
+})
+
+describe('parseTurnLanes', () => {
+  it('splits lanes and the indications within one', () => {
+    expect(parseTurnLanes('left|through|through;right', 3))
+      .toEqual([['left'], ['through'], ['through', 'right']])
+  })
+
+  it('discards the whole tag when it disagrees with the lane count', () => {
+    // 3 of the 52 tagged ways in the Barcelona patch disagree with their own
+    // `lanes`. A mismatch means we cannot know which indication belongs to
+    // which lane, and shifting them by one paints "left turn only" over a lane
+    // that goes straight on — worse than painting nothing, because a viewer
+    // acts on a turn arrow.
+    expect(parseTurnLanes('left|through', 3)).toBeNull()
+    expect(parseTurnLanes('left|through|through|through', 3)).toBeNull()
+  })
+
+  it('drops one unreadable indication without silencing the lanes beside it', () => {
+    // `eft` is a real typo in the Barcelona data.
+    expect(parseTurnLanes('eft|through|right', 3)).toEqual([[], ['through'], ['right']])
+  })
+
+  it('keeps an intentionally empty lane empty', () => {
+    // `||through;right|right` is a real value: the first two lanes say nothing.
+    expect(parseTurnLanes('||through;right|right', 4))
+      .toEqual([[], [], ['through', 'right'], ['right']])
+  })
+
+  it('refuses nonsense rather than guessing', () => {
+    expect(parseTurnLanes(undefined, 3)).toBeNull()
+    expect(parseTurnLanes('', 3)).toBeNull()
+    expect(parseTurnLanes('left', 0)).toBeNull()
+    expect(parseTurnLanes('left', Number.NaN)).toBeNull()
+  })
+
+  it('will not paint a merge as a turn', () => {
+    // A merge is a lane ending, not a turn; an arrow for it would tell a driver
+    // to change lane at a point the survey says nothing about.
+    expect(parseTurnLanes('merge_to_left|none|through', 3)).toEqual([[], [], ['through']])
+  })
+})
+
+describe('turnsForOffset — the two orderings run opposite ways', () => {
+  // `turn:lanes` counts from the LEFT in the direction of travel. `arrowOffsets`
+  // returns the most negative offset first, and negative is to the RIGHT. So
+  // tag index 0 is the LAST offset.
+  const lanes = [['left'], ['through'], ['right']]
+
+  it('gives the rightmost offset the last tag entry', () => {
+    expect(arrowOffsets(3, true)[0]).toBeLessThan(0)          // offset 0 is right
+    expect(turnsForOffset(lanes, 0)).toEqual(['right'])
+  })
+
+  it('gives the leftmost offset the first tag entry', () => {
+    expect(arrowOffsets(3, true)[2]).toBeGreaterThan(0)       // offset 2 is left
+    expect(turnsForOffset(lanes, 2)).toEqual(['left'])
+  })
+
+  it('flips the mapping when the way runs against its own traffic', () => {
+    // Offsets are measured against the way AS DRAWN; the tag is measured against
+    // the direction of TRAVEL. With `oneway=-1` those are opposite.
+    expect(turnsForOffset(lanes, 0, true)).toEqual(['left'])
+    expect(turnsForOffset(lanes, 2, true)).toEqual(['right'])
+  })
+
+  it('answers nothing outside the lane range', () => {
+    expect(turnsForOffset(lanes, 3)).toEqual([])
+    expect(turnsForOffset(lanes, -1)).toEqual([])
+    expect(turnsForOffset([], 0)).toEqual([])
+  })
+})
+
+describe('turnArrowQuads', () => {
+  const place = { at: v(0, 0), heading: v(1, 0) }
+  const q = (angles: number[]) =>
+    turnArrowQuads(place, ARROW_LENGTH_M, ARROW_WIDTH_M, ARROW_STEM_M, angles)
+
+  it('gives a lane one head per indication, on one stem', () => {
+    // `through;right` is painted with two heads on one stem, and so is this.
+    expect(q([TURN_ANGLES.through])).toHaveLength(2)             // stem + 1
+    expect(q([TURN_ANGLES.through, TURN_ANGLES.right])).toHaveLength(3)
+  })
+
+  it('points a left head to the left of travel and a right head to the right', () => {
+    const tipY = (a: number) => {
+      const head = q([a])[1]
+      return head.reduce((m, p) => (Math.abs(p.y) > Math.abs(m.y) ? p : m)).y
+    }
+    expect(tipY(TURN_ANGLES.left)).toBeGreaterThan(0)   // +offset is left
+    expect(tipY(TURN_ANGLES.right)).toBeLessThan(0)
+  })
+
+  it('bends a slight turn less than a full one', () => {
+    const tip = (a: number) => q([a])[1].reduce((m, p) => (Math.abs(p.y) > Math.abs(m.y) ? p : m))
+    expect(Math.abs(tip(TURN_ANGLES.slight_left).y)).toBeLessThan(
+      Math.abs(tip(TURN_ANGLES.left).y))
+  })
+
+  it('spans the arrow length from tail to tip', () => {
+    const xs = q([TURN_ANGLES.through]).flat().map((p) => p.x)
+    expect(Math.min(...xs)).toBeCloseTo(-ARROW_LENGTH_M / 2, 6)
+    expect(Math.max(...xs)).toBeCloseTo(ARROW_LENGTH_M / 2, 6)
+  })
+
+  it('makes the head wider than the stem, or it is not an arrow', () => {
+    const spread = (quad: THREE.Vector2[]) => {
+      const ys = quad.map((p: THREE.Vector2) => p.y)
+      return Math.max(...ys) - Math.min(...ys)
+    }
+    const both = q([TURN_ANGLES.through])
+    expect(spread(both[0])).toBeCloseTo(ARROW_STEM_M, 6)
+    expect(spread(both[1])).toBeCloseTo(ARROW_WIDTH_M, 6)
+  })
+
+  it('keeps a straight arrow inside its own lane', () => {
+    // An arrow wider than its lane would paint over the divider beside it.
+    const laneWidth = 3.2
+    for (const p of q([TURN_ANGLES.through]).flat()) {
+      expect(Math.abs(p.y)).toBeLessThan(laneWidth / 2)
+    }
+  })
+
+  it('rotates with the heading instead of always lying east', () => {
+    const north = turnArrowQuads({ at: v(0, 0), heading: v(0, 1) },
+      ARROW_LENGTH_M, ARROW_WIDTH_M, ARROW_STEM_M, [TURN_ANGLES.through])
+    const tip = north[1].reduce((m: THREE.Vector2, p: THREE.Vector2) => (p.y > m.y ? p : m))
+    expect(tip.y).toBeCloseTo(ARROW_LENGTH_M / 2, 6)
+    expect(tip.x).toBeCloseTo(0, 6)
+  })
+
+  it('still draws a straight arrow when the turn is unknown', () => {
+    // Direction is known even where the turn is not.
+    const bare = q([])
+    expect(bare).toHaveLength(2)
+    expect(bare[1].some((p) => p.x > 0)).toBe(true)
+  })
+
+  it('fans every head from the same pivot, as painted markings do', () => {
+    const both = q([TURN_ANGLES.through, TURN_ANGLES.right])
+    const stemTopX = Math.max(...both[0].map((p) => p.x))
+    // Each head's two base corners straddle the pivot, so their midpoint IS the
+    // pivot — that is what makes two heads read as one marking rather than two.
+    const midpoints = both.slice(1).map((head) => {
+      const base = head.filter((p, i) => i === 0 || i === 3)
+      return { x: (base[0].x + base[1].x) / 2, y: (base[0].y + base[1].y) / 2 }
+    })
+    for (const m of midpoints) {
+      expect(m.x).toBeCloseTo(stemTopX, 6)
+      expect(m.y).toBeCloseTo(0, 6)
+    }
+    expect(midpoints).toHaveLength(2)
   })
 })

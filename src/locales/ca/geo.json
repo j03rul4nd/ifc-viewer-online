@@ -119,6 +119,7 @@
     "buildings": "Entorn (OpenStreetMap)",
     "buildingsLoading": "Carregant edificis…",
     "buildingsCount": "{{count}} edificis d’OpenStreetMap",
+    "buildingsCountMixed": "{{count}} edificis · {{overture}} d'Overture",
     "buildingsEstimated": "{{count}} alçades estimades",
     "buildingsEmpty": "No hi ha edificis cartografiats al voltant d’aquest emplaçament.",
     "buildingsFailed": "No s’han pogut carregar els edificis — el servei estava ocupat. Torna-ho a provar.",

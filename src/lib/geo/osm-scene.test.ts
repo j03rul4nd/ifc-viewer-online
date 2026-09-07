@@ -7,6 +7,7 @@ import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, bufferCentreline, buildLinearLayer,
+  dashAlong,
   dashCentreline, MAX_TREES, MAX_SEEDED_TREES, buildPierLayer,
 } from './osm-scene'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
@@ -1480,5 +1481,223 @@ describe('the surface budget spends itself where the view is', () => {
     )!
     expect(built.count).toBe(30)
     expect(built.dropped).toBe(0)
+  })
+})
+
+describe('turn arrows reach the carriageway', () => {
+  /** A straight one-way carriageway long enough to carry several arrows. */
+  function approach(id: string, style: Record<string, unknown> = {}): OsmFeature {
+    return {
+      id, kind: 'road',
+      ring: [
+        { lat: LAT, lon: LON },
+        { lat: LAT, lon: LON + 0.004 },
+      ],
+      height: { heightM: 0, minHeightM: 0, estimated: true },
+      widthM: 10.5,
+      style: {
+        roofShape: 'flat', roofHeightM: 0, tone: [0.4, 0.4, 0.42],
+        roadClass: 'vehicular', lanes: 3, oneway: true, ...style,
+      },
+    } as OsmFeature
+  }
+  const verts = (f: OsmFeature): number =>
+    surfaceOf(buildLinearLayer([f], 'road', OPTS)!.object)
+      .geometry.getAttribute('position').count
+
+  it('adds geometry for the turns a lane is signed for', () => {
+    // A `turn:lanes` approach carries a head PER indication, so a road whose
+    // right lane allows two movements costs strictly more than a plain one.
+    const plain = verts(approach('a'))
+    const signed = verts(approach('b', { turnLanes: 'left|through|through;right' }))
+    expect(signed).toBeGreaterThan(plain)
+  })
+
+  it('draws nothing extra when the tag disagrees with the lane count', () => {
+    // 3 of Barcelona's 52 tagged ways disagree with their own `lanes`. The tag
+    // is discarded whole, so the road falls back to plain direction arrows.
+    const plain = verts(approach('c'))
+    const mismatched = verts(approach('d', { turnLanes: 'left|through' }))
+    expect(mismatched).toBe(plain)
+  })
+
+  it('ignores the tag on a two-way road, where no arrow is drawn at all', () => {
+    const twoWay = verts(approach('e', { oneway: false }))
+    const twoWaySigned = verts(approach('f', {
+      oneway: false, turnLanes: 'left|through|through;right',
+    }))
+    expect(twoWaySigned).toBe(twoWay)
+  })
+
+  it('leaves a way with no turn tag exactly as it was', () => {
+    expect(verts(approach('g'))).toBe(verts(approach('h', { turnLanes: undefined })))
+  })
+})
+
+describe('dashAlong — a broken line that FOLLOWS the way', () => {
+  const v = (x: number, y: number) => new THREE.Vector2(x, y)
+  const straight = [v(0, 0), v(100, 0)]
+
+  it('runs its dashes along the line, not across it', () => {
+    // The opposite orientation to `dashCentreline`, which lays the stripes of a
+    // zebra ACROSS. An edge marking follows the crossing rather than crossing
+    // it, so each dash is long in x and thin in y.
+    const q = dashAlong(straight, 0.15, 4, 2)
+    expect(q.length).toBeGreaterThan(5)
+    for (const quad of q) {
+      const xs = quad.map((p) => p.x)
+      const ys = quad.map((p) => p.y)
+      expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(Math.max(...ys) - Math.min(...ys))
+    }
+  })
+
+  it('leaves gaps rather than running solid', () => {
+    const dashed = dashAlong(straight, 0.15, 4, 2).length
+    const solid = bufferCentreline(straight, 0.15).length
+    expect(dashed).toBeGreaterThan(solid)
+    // ...and covers less than the whole length.
+    const covered = dashAlong(straight, 0.15, 4, 2)
+      .reduce((sum, q) => sum + (Math.max(...q.map((p) => p.x)) - Math.min(...q.map((p) => p.x))), 0)
+    expect(covered).toBeLessThan(100)
+  })
+
+  it('stays inside the line it was given', () => {
+    for (const quad of dashAlong(straight, 0.15, 4, 2)) {
+      for (const p of quad) {
+        expect(p.x).toBeGreaterThanOrEqual(-1e-9)
+        expect(p.x).toBeLessThanOrEqual(100 + 1e-9)
+      }
+    }
+  })
+
+  it('follows a corner instead of cutting it', () => {
+    const bend = [v(0, 0), v(50, 0), v(50, 50)]
+    const q = dashAlong(bend, 0.15, 4, 2)
+    expect(q.some((quad) => quad.some((p) => p.y > 10))).toBe(true)
+  })
+
+  it('refuses degenerate input rather than spinning', () => {
+    expect(dashAlong([v(0, 0)], 0.15, 4, 2)).toEqual([])
+    expect(dashAlong(straight, 0.15, 0, 2)).toEqual([])
+    expect(dashAlong([v(0, 0), v(0, 0)], 0.15, 4, 2)).toEqual([])
+  })
+
+  it('will not allocate a city when the dash is mis-scaled', () => {
+    expect(dashAlong(straight, 0.15, 1e-9, 1e-9).length).toBeLessThanOrEqual(4000)
+  })
+})
+
+describe('the two road networks do not share a plane', () => {
+  /** A way of one class, running east from the anchor. */
+  function classed(id: string, roadClass: 'vehicular' | 'pedestrian' | 'track'): OsmFeature {
+    return {
+      id, kind: 'road',
+      ring: [{ lat: LAT, lon: LON }, { lat: LAT, lon: LON + 0.003 }],
+      height: { heightM: 0, minHeightM: 0, estimated: true },
+      widthM: roadClass === 'vehicular' ? 10 : 3,
+      style: { roofShape: 'flat', roofHeightM: 0, tone: [0.4, 0.4, 0.42], roadClass },
+    } as OsmFeature
+  }
+  const topZ = (f: OsmFeature): number => {
+    const g = surfaceOf(buildLinearLayer([f], 'road', OPTS)!.object).geometry
+    const p = g.getAttribute('position')
+    let max = -Infinity
+    for (let i = 0; i < p.count; i++) max = Math.max(max, p.getZ(i))
+    return max
+  }
+
+  it('lifts a footway clear of a carriageway', () => {
+    // THE FLICKER THIS GUARDS. The pedestrian and vehicular graphs overlap in
+    // plan on purpose — a footway dying on an avenue must not split it into a
+    // junction — so wherever a path crosses a street the two ribbons occupy the
+    // same plane. At equal depth the winner is decided per fragment and the
+    // seam crawls as the camera moves. Draw order cannot fix that; height can.
+    expect(topZ(classed('foot', 'pedestrian'))).toBeGreaterThan(topZ(classed('road', 'vehicular')))
+  })
+
+  it('puts a track between the two, matching the solve order', () => {
+    const road = topZ(classed('r', 'vehicular'))
+    const track = topZ(classed('t', 'track'))
+    const foot = topZ(classed('f', 'pedestrian'))
+    expect(track).toBeGreaterThan(road)
+    expect(foot).toBeGreaterThan(track)
+  })
+
+  it('separates them by centimetres, not by a structural height', () => {
+    // A render offset, not a claim about the world: big enough to clear a depth
+    // buffer that resolves about a millimetre at a kilometre, small enough that
+    // nobody sees a pavement hovering.
+    const gap = topZ(classed('f', 'pedestrian')) - topZ(classed('r', 'vehicular'))
+    expect(gap).toBeGreaterThan(0)
+    // In normalised mercator, well under a tenth of a metre.
+    const metres = gap / (1 / (40_075_016.686 * Math.cos((LAT * Math.PI) / 180)))
+    expect(metres).toBeLessThan(0.2)
+    expect(metres).toBeGreaterThan(0.01)
+  })
+
+  it('does not move a class that was already alone', () => {
+    // A patch with only carriageways must render exactly as before.
+    const before = topZ(classed('a', 'vehicular'))
+    const again = topZ(classed('b', 'vehicular'))
+    expect(again).toBeCloseTo(before, 12)
+  })
+})
+
+describe('a paved area is the ground the ways are drawn on', () => {
+  /** A closed pedestrian way, which `isPavedArea` reads as a square. */
+  function plaza(id: string): OsmFeature {
+    const d = 0.0012
+    return {
+      id, kind: 'road',
+      ring: [
+        { lat: LAT, lon: LON }, { lat: LAT, lon: LON + d },
+        { lat: LAT + d, lon: LON + d }, { lat: LAT + d, lon: LON },
+      ],
+      height: { heightM: 0, minHeightM: 0, estimated: true },
+      // No width is what makes it an AREA rather than a ribbon.
+      widthM: undefined,
+      style: { roofShape: 'flat', roofHeightM: 0, tone: [0.5, 0.47, 0.44], roadClass: 'pedestrian' },
+    } as OsmFeature
+  }
+  function street(id: string): OsmFeature {
+    return {
+      id, kind: 'road',
+      ring: [{ lat: LAT, lon: LON }, { lat: LAT, lon: LON + 0.003 }],
+      height: { heightM: 0, minHeightM: 0, estimated: true },
+      widthM: 10,
+      style: { roofShape: 'flat', roofHeightM: 0, tone: [0.4, 0.4, 0.42], roadClass: 'vehicular' },
+    } as OsmFeature
+  }
+  const topZ = (f: OsmFeature): number => {
+    const g = surfaceOf(buildLinearLayer([f], 'road', OPTS)!.object).geometry
+    const p = g.getAttribute('position')
+    let max = -Infinity
+    for (let i = 0; i < p.count; i++) max = Math.max(max, p.getZ(i))
+    return max
+  }
+
+  it('sits below the carriageway that crosses it', () => {
+    // The second half of the same flicker. An area was pushed at the bare seam
+    // height, which is exactly where `vehicular` sits — so a service road
+    // crossing a square fought for the same depth just as the two networks did.
+    expect(topZ(plaza('sq'))).toBeLessThan(topZ(street('rd')))
+  })
+
+  it('sits below a footway too, so a path across it still reads', () => {
+    const foot = {
+      ...street('f'), widthM: 3,
+      style: { roofShape: 'flat', roofHeightM: 0, tone: [0.5, 0.46, 0.4], roadClass: 'pedestrian' },
+    } as OsmFeature
+    expect(topZ(plaza('sq2'))).toBeLessThan(topZ(foot))
+  })
+
+  it('separates them by centimetres, not by a structural drop', () => {
+    // A render offset, not a claim about the world. The gap has to clear a
+    // depth buffer that resolves about a millimetre at a kilometre and stay
+    // invisible at district scale.
+    const gap = topZ(street('r2')) - topZ(plaza('sq3'))
+    const metres = gap / (1 / (40_075_016.686 * Math.cos((LAT * Math.PI) / 180)))
+    expect(metres).toBeGreaterThan(0.01)
+    expect(metres).toBeLessThan(0.2)
   })
 })

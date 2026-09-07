@@ -100,6 +100,8 @@ export type BuildingsOutcome =
       estimatedCount: number
       /** True when the query hit its element cap and the picture is partial. */
       truncated?: boolean
+      /** Footprints added from the shipped Overture extract. Drives attribution. */
+      overture?: number
     }
 
 /** Which scene layers are currently drawn. */
@@ -443,6 +445,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     features: OsmFeature[]
     counts: Record<FeatureKind, number>
     truncated: boolean
+    overture: number
   } | null = null
   /** Built meshes per layer, so each can be added or dropped independently. */
   const layerObjects = new Map<FeatureKind, THREE.Object3D>()
@@ -1441,6 +1444,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         counts: osmCache.counts,
         estimatedCount,
         truncated: osmCache.truncated,
+        overture: osmCache.overture,
       }
     }
 
@@ -1467,12 +1471,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       features: reply.features,
       counts: reply.counts,
       truncated: reply.truncated,
+      overture: reply.overture,
     }
     if (reply.features.length === 0) return { status: 'empty' }
 
     osmFeatures = reply.features
     const estimatedCount = rebuildLayers()
-    return { status: 'ready', counts: reply.counts, estimatedCount, truncated: reply.truncated }
+    return {
+      status: 'ready', counts: reply.counts, estimatedCount,
+      truncated: reply.truncated, overture: reply.overture,
+    }
   }
 
   function teardownBuildings(): void {

@@ -26,7 +26,8 @@
 
 import * as THREE from 'three'
 import {
-  laneDividers, arrowOffsets, arrowPlacements, arrowQuads, offsetByFraction,
+  laneDividers, arrowOffsets, arrowPlacements, offsetByFraction,
+  parseTurnLanes, turnsForOffset, turnArrowQuads, TURN_ANGLES,
   ARROW_SPACING_M, ARROW_LENGTH_M, ARROW_WIDTH_M, ARROW_STEM_M,
 } from './lane-markings'
 import { latLonToNormalized, metresToNormalized } from './geo-math'
@@ -1177,6 +1178,14 @@ const LANE_GAP_M = 5
 /** Stripe and gap of a zebra, metres. */
 const ZEBRA_STRIPE_M = 0.55
 const ZEBRA_GAP_M = 0.45
+/** Width of the edge line on a `lines` / `dashes` / `dots` crossing, metres. */
+const EDGE_LINE_M = 0.3
+/** Dash and gap of a `dashes` crossing edge, metres. */
+const EDGE_DASH_M = 0.9
+const EDGE_DASH_GAP_M = 0.6
+/** A `dots` edge is the same idea, shorter: near-square marks, close together. */
+const EDGE_DOT_M = 0.35
+const EDGE_DOT_GAP_M = 0.35
 
 /** Worn road-marking white. */
 const CENTRE_LINE_TONE: [number, number, number] = [0.80, 0.78, 0.68]
@@ -1363,7 +1372,16 @@ export function buildLinearLayer(
 ): LayerMesh<THREE.Object3D> | null {
   const frame = groundFrameFor(opts)
   const mToN = frame.mToN
-  const lift = LINEAR_LIFT_M[kind] * mToN
+  const baseLift = LINEAR_LIFT_M[kind] * mToN
+  /**
+   * The seam height every push routine below adds to `structuralZ`.
+   *
+   * Deliberately `let`: the road-class loop raises it per class so the two
+   * overlapping networks stop sharing a plane — see `CLASS_LIFT_M`. Read at
+   * call time by the closures below rather than captured, which is what lets
+   * one assignment move a whole class of geometry without touching any of them.
+   */
+  let lift = baseLift
 
   const positions: number[] = []
   const colors: number[] = []
@@ -1823,10 +1841,15 @@ export function buildLinearLayer(
               },
             )
           : { points: dense.map((v) => ({ x: v.x, y: v.y })), faces }
+        // `baseLift`, not `lift`: the class loop below raises `lift` per road
+        // class, and an area must not inherit whichever class happened to run
+        // last. Naming the constant here removes an ordering dependency that
+        // would otherwise be invisible until somebody moved a loop.
+        const areaZ = baseLift + PAVED_AREA_LIFT_M * mToN
         for (const [i0, i1, i2] of refined.faces) {
           for (const idx of [i0, i1, i2]) {
             const v = refined.points[idx]
-            positions.push(v.x, v.y, structuralZ(v.x, v.y) + lift)
+            positions.push(v.x, v.y, structuralZ(v.x, v.y) + areaZ)
             colors.push(tone[0], tone[1], tone[2])
           }
         }
@@ -1860,10 +1883,31 @@ export function buildLinearLayer(
     // A crossing is paint on somebody else's asphalt: no surface, no kerb, just
     // the stripes, laid a hair above the carriageway it belongs to.
     if (f.style.crossing) {
-      for (const quad of dashCentreline(
-        line, half, ZEBRA_STRIPE_M * mToN, ZEBRA_GAP_M * mToN,
-      )) {
-        pushQuad(quad, tone, 0.03 * mToN)
+      const markings = f.style.crossingMarkings ?? 'zebra'
+      if (markings === 'zebra') {
+        for (const quad of dashCentreline(
+          line, half, ZEBRA_STRIPE_M * mToN, ZEBRA_GAP_M * mToN,
+        )) {
+          pushQuad(quad, tone, 0.03 * mToN)
+        }
+      } else {
+        // `lines`, `dashes` and `dots` are NOT stripes across the path — they
+        // mark its two long EDGES, which is a different drawing entirely.
+        // Barcelona states one of them on 56 crossing ways, `dots` alone on 37,
+        // and each was being painted as a zebra.
+        const edge = EDGE_LINE_M / 2
+        const [dash, gap] = markings === 'edges'
+          ? [0, 0]
+          : markings === 'dashes'
+            ? [EDGE_DASH_M, EDGE_DASH_GAP_M]
+            : [EDGE_DOT_M, EDGE_DOT_GAP_M]
+        for (const side of [-1, 1]) {
+          const rail = offsetCentreline(densifyFor(line), side * (half - edge))
+          const quads = dash > 0
+            ? dashAlong(rail, edge, dash * mToN, gap * mToN)
+            : bufferCentreline(rail, edge)
+          for (const quad of quads) pushQuad(quad, tone, 0.03 * mToN)
+        }
       }
       count++
       continue
@@ -1888,6 +1932,7 @@ export function buildLinearLayer(
         lanes: cls === 'vehicular' ? f.style.lanes : undefined,
         oneway: f.style.oneway,
         onewayReverse: f.style.onewayReverse,
+        turnLanes: cls === 'vehicular' ? f.style.turnLanes : undefined,
         roundabout: f.style.roundabout,
       })
       continue
@@ -1934,6 +1979,10 @@ export function buildLinearLayer(
   for (const cls of ROAD_CLASSES) {
     const classWays = networkWays[cls]
     if (classWays.length === 0) continue
+    // Make the draw order above TRUE IN THE GEOMETRY. Order alone decides
+    // nothing at equal depth, and equal depth is exactly what two overlapping
+    // networks produce.
+    lift = baseLift + CLASS_LIFT_M[cls] * mToN
     const network = buildRoadNetwork(classWays, { mToN })
     // Class-wide fallback, still used by the paths that do not go through the
     // road network (rail alignments, area ways). Ribbons override it per way.
@@ -2058,18 +2107,27 @@ export function buildLinearLayer(
       // mapped on ZERO ways here, so a left-turn head in the left lane would be
       // a guess about a junction — and a wrong one is worse than a bare lane.
       if (isCarriageway && ribbon.oneway) {
-        for (const frac of arrowOffsets(ribbon.lanes, true)) {
+        // Turn indications where the survey states them. `turn:lanes` is
+        // validated against the lane count and discarded whole on a mismatch —
+        // see `parseTurnLanes`. Where it is absent the arrows stay plain
+        // direction arrows, which is what `oneway` alone supports.
+        const perLane = parseTurnLanes(ribbon.turnLanes, ribbon.lanes ?? 0)
+        const offsets = arrowOffsets(ribbon.lanes, true)
+        offsets.forEach((frac, i) => {
+          const turns = perLane ? turnsForOffset(perLane, i, ribbon.onewayReverse) : []
+          const angles = turns.map((t) => TURN_ANGLES[t]).filter((a) => a !== undefined)
           for (const place of arrowPlacements(
             laneLine(frac), ARROW_SPACING_M * mToN, ARROW_LENGTH_M * mToN,
             ribbon.onewayReverse,
           )) {
-            for (const quad of arrowQuads(
+            for (const quad of turnArrowQuads(
               place, ARROW_LENGTH_M * mToN, ARROW_WIDTH_M * mToN, ARROW_STEM_M * mToN,
+              angles,
             )) {
               pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
             }
           }
-        }
+        })
       }
 
       // The stop bar, where a signal is actually mapped near the end traffic
@@ -2234,6 +2292,63 @@ const ROUGHNESS_BY_KIND: Record<'road' | 'rail', number> = { road: 0.22, rail: 0
 const ROAD_CLASSES: readonly RoadClass[] = ['vehicular', 'track', 'pedestrian']
 
 /**
+ * A render offset PER ROAD CLASS, metres.
+ *
+ * ── The flicker this exists to remove ─────────────────────────────────────────
+ *
+ * The pedestrian and vehicular networks are solved as two separate graphs that
+ * "overlap in plan and share no topology at all" — deliberately, because a
+ * footway dying on an avenue must not split that avenue into a junction. The
+ * consequence is that wherever a path crosses a street, and in a city that is
+ * every corner, two ribbons occupy the SAME PLANE at the SAME height.
+ *
+ * That is exact coplanarity, and `depth-range` says plainly what happens to it:
+ * "no depth precision resolves them: Δz is zero at any near plane. That needs
+ * polygonOffset or de-duplicated geometry." The buffer resolves 0.36 mm at
+ * 300 m here and it does not matter — the two surfaces hold the same depth
+ * value, and which one wins is decided per fragment, so the seam crawls as the
+ * camera moves.
+ *
+ * ── Why draw order was not enough ─────────────────────────────────────────────
+ *
+ * `ROAD_CLASSES` already orders the classes so the softer surface lands last,
+ * and the comment above the loop says that is "for coplanar resolution". Draw
+ * order settles which fragment is written only when the depth test lets it
+ * through, and at equal depth it does not: the later triangle is rejected as
+ * often as it is accepted. Order expresses the INTENT correctly and cannot
+ * carry it out; this makes the same intent true in the geometry.
+ *
+ * ── Why centimetres ──────────────────────────────────────────────────────────
+ *
+ * Big enough to clear the depth buffer with room to spare — 3 cm against
+ * 1.2 mm resolvable at a kilometre — and small enough to stay a render offset
+ * rather than a structural claim. It never feeds the vertical solver, the same
+ * rule `structuralZ` states for every other constant at these call sites.
+ */
+const CLASS_LIFT_M: Record<RoadClass, number> = {
+  vehicular: 0,
+  track: 0.03,
+  pedestrian: 0.06,
+}
+
+/**
+ * The same offset for a paved AREA — a square, an esplanade, a pedestrianised
+ * street — and it is BELOW every way, which is the point.
+ *
+ * An area was pushed at the bare seam height, so it shared a plane with
+ * whichever class also sat there: all three of them before `CLASS_LIFT_M`, and
+ * carriageways still afterwards, since vehicular is the zero rung. A service
+ * road crossing a square, or an avenue clipping an esplanade, fought for the
+ * same depth exactly as the two networks did.
+ *
+ * Negative because a square IS the ground the ways are drawn on. A path across
+ * a plaza should read as a path across a plaza; lifting the plaza instead would
+ * erase the path it carries. That also keeps the class ladder above unchanged,
+ * so no carriageway moves.
+ */
+const PAVED_AREA_LIFT_M = -0.03
+
+/**
  * Attach the overhead line masts, if any, and hand back the layer.
  *
  * A line of posts along a corridor is the silhouette that says "main line" from
@@ -2344,6 +2459,56 @@ function normalOf(a: THREE.Vector2, b: THREE.Vector2, half: number): THREE.Vecto
   const len = Math.hypot(dx, dy)
   if (len === 0) return null
   return new THREE.Vector2((-dy / len) * half, (dx / len) * half)
+}
+
+/**
+ * Quads for a DASHED line running along a polyline.
+ *
+ * The opposite orientation to `dashCentreline`, which lays stripes ACROSS the
+ * line it is given — that is a zebra. This cuts the line itself into dash-long
+ * runs and buffers each, which is what an edge marking is: a broken line
+ * following the crossing rather than crossing it.
+ *
+ * Walked by arc length and addressed by index, so a degenerate segment cannot
+ * spin the loop, and capped for the same reason `dashCentreline` is: a
+ * mis-scaled dash would otherwise ask for millions of quads.
+ */
+export function dashAlong(
+  line: ReadonlyArray<THREE.Vector2>, half: number, dash: number, gap: number,
+): THREE.Vector2[][] {
+  const out: THREE.Vector2[][] = []
+  const period = dash + gap
+  if (!(dash > 0) || !(period > 0) || line.length < 2) return out
+
+  const at = [0]
+  let total = 0
+  for (let i = 0; i < line.length - 1; i++) {
+    total += line[i].distanceTo(line[i + 1])
+    at.push(total)
+  }
+  if (!(total > 0)) return out
+  const count = Math.min(MAX_DASHES, Math.ceil(total / period))
+
+  const pointAt = (sIn: number): THREE.Vector2 => {
+    const s = Math.max(0, Math.min(total, sIn))
+    let i = 0
+    while (i < at.length - 2 && at[i + 1] < s) i++
+    const seg = at[i + 1] - at[i]
+    const t = seg > 0 ? (s - at[i]) / seg : 0
+    return new THREE.Vector2(
+      line[i].x + (line[i + 1].x - line[i].x) * t,
+      line[i].y + (line[i + 1].y - line[i].y) * t,
+    )
+  }
+
+  for (let k = 0; k < count; k++) {
+    const s0 = k * period
+    if (s0 >= total) break
+    const s1 = Math.min(total, s0 + dash)
+    if (s1 - s0 < 1e-12) continue
+    out.push(...bufferCentreline([pointAt(s0), pointAt(s1)], half))
+  }
+  return out
 }
 
 /**
