@@ -25,6 +25,10 @@
 // a river has no idea where its own bank is.
 
 import * as THREE from 'three'
+import {
+  laneDividers, arrowOffsets, arrowPlacements, arrowQuads,
+  ARROW_SPACING_M, ARROW_LENGTH_M, ARROW_WIDTH_M, ARROW_STEM_M,
+} from './lane-markings'
 import { latLonToNormalized, metresToNormalized } from './geo-math'
 import {
   jitter, foliageColor, variate, buildingRegion, coverSpeciesMix, speciesFor,
@@ -1859,6 +1863,7 @@ export function buildLinearLayer(
         centreLine: cls === 'vehicular' && f.widthM >= CENTRE_LINE_MIN_WIDTH_M,
         lanes: cls === 'vehicular' ? f.style.lanes : undefined,
         oneway: f.style.oneway,
+        onewayReverse: f.style.onewayReverse,
         roundabout: f.style.roundabout,
       })
       continue
@@ -1984,18 +1989,44 @@ export function buildLinearLayer(
       }
       // Broken lane dividers where the lane count is actually mapped. This is
       // the difference between "a wide grey ribbon" and "a four-lane avenue".
-      const lanes = ribbon.lanes ?? 0
-      if (lanes >= 3) {
-        const nominal = ribbon.halfWidths[0]
-        for (let l = 1; l < lanes; l++) {
-          const offset = -nominal + (2 * nominal * l) / lanes
-          // The centre line already occupies the middle of a two-way road.
-          if (!ribbon.oneway && Math.abs(offset) < nominal * 0.05) continue
-          const lane = offsetCentreline(ribbon.centre, offset)
-          for (const quad of dashCentreline(
-            lane, (LANE_LINE_M / 2) * mToN, LANE_DASH_M * mToN, LANE_GAP_M * mToN,
+      //
+      // Which offsets are defensible is decided in `lane-markings`, not here:
+      // an odd lane count on a TWO-WAY road returns none, because 3 lanes is
+      // 2+1 or 1+2 and the data does not say which.
+      const nominal = ribbon.halfWidths[0]
+      const isCarriageway = ribbon.lanes !== undefined || ribbon.centreLine
+      for (const frac of laneDividers(ribbon.lanes ?? 0, ribbon.oneway ?? false)) {
+        const lane = offsetCentreline(ribbon.centre, frac * nominal)
+        for (const quad of dashCentreline(
+          lane, (LANE_LINE_M / 2) * mToN, LANE_DASH_M * mToN, LANE_GAP_M * mToN,
+        )) {
+          pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
+        }
+      }
+
+      // Direction of travel — the best-attested fact about a Shanghai
+      // carriageway and the one the scene never said anything about. `oneway`
+      // is mapped on 79.8% of vehicular ways in the measured district against
+      // 63.7% for `lanes`, so an arrow is drawn on the centreline even where the
+      // lane count is unknown: it states direction, which is what was mapped,
+      // and nothing about how many lanes carry it.
+      //
+      // These are plain direction arrows, never turn arrows. `turn:lanes` is
+      // mapped on ZERO ways here, so a left-turn head in the left lane would be
+      // a guess about a junction — and a wrong one is worse than a bare lane.
+      if (isCarriageway && ribbon.oneway) {
+        for (const frac of arrowOffsets(ribbon.lanes, true)) {
+          const lane = frac === 0
+            ? ribbon.centre
+            : offsetCentreline(ribbon.centre, frac * nominal)
+          for (const place of arrowPlacements(
+            lane, ARROW_SPACING_M * mToN, ARROW_LENGTH_M * mToN, ribbon.onewayReverse,
           )) {
-            pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
+            for (const quad of arrowQuads(
+              place, ARROW_LENGTH_M * mToN, ARROW_WIDTH_M * mToN, ARROW_STEM_M * mToN,
+            )) {
+              pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
+            }
           }
         }
       }
