@@ -1,0 +1,21 @@
+{
+  "meshes": 2173,
+  "triangles": 1449750,
+  "storeys": 133,
+  "spaces": 133,
+  "outerSectors": 384,
+  "innerSkins": 112,
+  "crownHits": 0,
+  "coreVoidHits": 0,
+  "min": [
+    -88,
+    -100,
+    -28.5
+  ],
+  "max": [
+    88,
+    100,
+    632.1799926757812
+  ],
+  "mapConversions": 1
+}

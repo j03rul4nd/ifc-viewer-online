@@ -85,6 +85,23 @@ const REALTIME_LIDAR = `${import.meta.env.BASE_URL}models/realtime-lidar`
 
 export const DEMO_MODELS: DemoModel[] = [
   {
+    id: 'shanghai-tower',
+    name: 'Shanghai Tower - Torre de Shanghai',
+    description:
+      '632 m, twisting double skin, nine atrium zones, core, supercolumns and open crown. Approximate reconstruction from architectural drawings with 128 above-ground reference levels; not as-built.',
+    category: 'Commercial',
+    fileName: 'SHA-IVO-SHANGHAI-TOWER-A-0001.ifc',
+    ifcUrl: `${import.meta.env.BASE_URL}models/shanghai-tower/SHA-IVO-SHANGHAI-TOWER-A-0001.ifc?v=20260907-r1`,
+    sourceUrl: 'https://github.com/j03rul4nd/ifc-viewer-online/blob/main/docs/SHANGHAI_TOWER_RECONSTRUCTION.md',
+    sourceLabel: 'IFC Viewer Online reconstruction - Gensler / Thornton Tomasetti',
+    schema: 'IFC4',
+    approximateSize: '89.9 MB',
+    sizeBytes: 94_255_301,
+    thumbnail: `${import.meta.env.BASE_URL}models/shanghai-tower/shanghai-tower-preview.png`,
+    thumbnailFit: 'contain',
+    featured: true,
+  },
+  {
     id: 'oriental-pearl-tower',
     name: 'Oriental Pearl Tower — Torre Perla Oriental',
     description:
