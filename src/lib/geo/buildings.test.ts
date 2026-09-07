@@ -4,6 +4,7 @@ import {
   parseOverpassBuildings, approximateAreaM2, buildOverpassQuery, bboxAround,
   DEFAULT_STOREY_HEIGHT_M, DEFAULT_BUILDING_HEIGHT_M,
   MAX_BUILDING_HEIGHT_M, MIN_FOOTPRINT_AREA_M2,
+  overpassRemarkError,
 } from './buildings'
 
 describe('parseLengthM', () => {
@@ -267,5 +268,40 @@ describe('a tagged height is not automatically a surveyed height', () => {
   it('does not read a survey as an estimate', () => {
     expect(resolveBuildingHeight({ height: '40', source: 'survey' }).estimated).toBe(false)
     expect(resolveBuildingHeight({ height: '40', source: 'Bing' }).estimated).toBe(false)
+  })
+})
+
+describe('overpassRemarkError — a busy server answers 200', () => {
+  it('reports the remark on an empty response as the failure it is', () => {
+    // This is the shape a rate-limited or server-timed-out Overpass returns:
+    // HTTP 200, a normal envelope, no elements, and the reason in `remark`.
+    const busy = {
+      version: 0.6,
+      elements: [],
+      remark: 'runtime error: Query timed out in "query" at line 3',
+    }
+    expect(overpassRemarkError(busy)).toContain('timed out')
+  })
+
+  it('does not confuse a genuinely empty area with a failure', () => {
+    // The two get OPPOSITE treatment upstream: emptiness is cached so a toggle
+    // never re-asks for the same nothing, a failure must never be cached.
+    expect(overpassRemarkError({ version: 0.6, elements: [] })).toBeNull()
+  })
+
+  it('keeps a partial result rather than throwing its elements away', () => {
+    // A remark alongside real elements is a warning about completeness, not a
+    // failure — the elements are real.
+    expect(overpassRemarkError({
+      elements: [{ type: 'way', id: 1 }],
+      remark: 'runtime error: Query run out of memory',
+    })).toBeNull()
+  })
+
+  it('ignores an empty or absent remark', () => {
+    expect(overpassRemarkError({ elements: [], remark: '   ' })).toBeNull()
+    expect(overpassRemarkError({ elements: [], remark: 42 })).toBeNull()
+    expect(overpassRemarkError(null)).toBeNull()
+    expect(overpassRemarkError('nonsense')).toBeNull()
   })
 })

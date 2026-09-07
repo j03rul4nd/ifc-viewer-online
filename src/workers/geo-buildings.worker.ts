@@ -16,7 +16,7 @@
 //
 // No three.js here — the mesh is extruded in geo-system.
 
-import { bboxAround, OVERPASS_ENDPOINT } from '../lib/geo/buildings'
+import { bboxAround, OVERPASS_ENDPOINT, overpassRemarkError } from '../lib/geo/buildings'
 import { parseOsmFeatures, buildFeaturesQuery, countByKind, type OsmFeature, type FeatureKind } from '../lib/geo/osm-features'
 
 /** Server-side budget. Overpass rejects the query if it cannot finish in time. */
@@ -82,6 +82,13 @@ async function handleFetch(req: BuildingsRequest): Promise<void> {
     } finally {
       clearTimeout(timer)
     }
+
+    // A busy Overpass answers 200 with an empty body and a `remark`. Treated as
+    // success it becomes "nothing is mapped here", which the caller then CACHES
+    // — so one unlucky moment blanks the neighbourhood for the whole session
+    // and retrying does nothing. Surface it as the failure it is.
+    const remark = overpassRemarkError(json)
+    if (remark) throw new Error(`Overpass: ${remark}`)
 
     const elements = (json as { elements?: unknown[] })?.elements
     const features = parseOsmFeatures(json, { bbox })

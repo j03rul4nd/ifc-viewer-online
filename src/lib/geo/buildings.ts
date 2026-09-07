@@ -128,6 +128,33 @@ function heightIsFlaggedEstimated(t: Record<string, string>): boolean {
   return notes.some((v) => /estimat/i.test(v ?? ''))
 }
 
+/**
+ * The error Overpass reports inside a 200 response, or null when there is none.
+ *
+ * OVERPASS SIGNALS FAILURE WITH SUCCESS. A busy server, a server-side timeout or
+ * an exhausted rate limit all come back as **HTTP 200** with a normal-looking
+ * JSON body: `elements: []` and a `remark` explaining what went wrong. Checking
+ * `res.ok` therefore passes, the parse yields zero features, and the caller
+ * cannot tell "Overpass is overloaded" from "nothing is mapped here".
+ *
+ * That distinction is the whole point, because the two answers get opposite
+ * treatment: genuine emptiness is cached so a toggle never re-asks for the same
+ * nothing, while a failure must not be cached at all. Conflating them means one
+ * unlucky moment poisons the neighbourhood for the rest of the session — the
+ * map stays blank and retrying does nothing, which is exactly what it did.
+ *
+ * A `remark` on a response that DID return elements is a warning about a partial
+ * result, not a failure; the elements are real and are kept.
+ */
+export function overpassRemarkError(json: unknown): string | null {
+  if (!json || typeof json !== 'object') return null
+  const body = json as { remark?: unknown; elements?: unknown }
+  const remark = typeof body.remark === 'string' ? body.remark.trim() : ''
+  if (remark === '') return null
+  const empty = !Array.isArray(body.elements) || body.elements.length === 0
+  return empty ? remark : null
+}
+
 /** Length in metres from an OSM value, tolerating a unit suffix. */
 export function parseLengthM(raw: string | undefined): number | null {
   if (!raw) return null
