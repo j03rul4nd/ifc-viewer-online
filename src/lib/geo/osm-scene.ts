@@ -1368,7 +1368,16 @@ export function buildLinearLayer(
 ): LayerMesh<THREE.Object3D> | null {
   const frame = groundFrameFor(opts)
   const mToN = frame.mToN
-  const lift = LINEAR_LIFT_M[kind] * mToN
+  const baseLift = LINEAR_LIFT_M[kind] * mToN
+  /**
+   * The seam height every push routine below adds to `structuralZ`.
+   *
+   * Deliberately `let`: the road-class loop raises it per class so the two
+   * overlapping networks stop sharing a plane — see `CLASS_LIFT_M`. Read at
+   * call time by the closures below rather than captured, which is what lets
+   * one assignment move a whole class of geometry without touching any of them.
+   */
+  let lift = baseLift
 
   const positions: number[] = []
   const colors: number[] = []
@@ -1961,6 +1970,10 @@ export function buildLinearLayer(
   for (const cls of ROAD_CLASSES) {
     const classWays = networkWays[cls]
     if (classWays.length === 0) continue
+    // Make the draw order above TRUE IN THE GEOMETRY. Order alone decides
+    // nothing at equal depth, and equal depth is exactly what two overlapping
+    // networks produce.
+    lift = baseLift + CLASS_LIFT_M[cls] * mToN
     const network = buildRoadNetwork(classWays, { mToN })
     // Class-wide fallback, still used by the paths that do not go through the
     // road network (rail alignments, area ways). Ribbons override it per way.
@@ -2268,6 +2281,46 @@ const ROUGHNESS_BY_KIND: Record<'road' | 'rail', number> = { road: 0.22, rail: 0
 
 /** Solve order for the road networks. Softest surfaces land last, so on top. */
 const ROAD_CLASSES: readonly RoadClass[] = ['vehicular', 'track', 'pedestrian']
+
+/**
+ * A render offset PER ROAD CLASS, metres.
+ *
+ * ── The flicker this exists to remove ─────────────────────────────────────────
+ *
+ * The pedestrian and vehicular networks are solved as two separate graphs that
+ * "overlap in plan and share no topology at all" — deliberately, because a
+ * footway dying on an avenue must not split that avenue into a junction. The
+ * consequence is that wherever a path crosses a street, and in a city that is
+ * every corner, two ribbons occupy the SAME PLANE at the SAME height.
+ *
+ * That is exact coplanarity, and `depth-range` says plainly what happens to it:
+ * "no depth precision resolves them: Δz is zero at any near plane. That needs
+ * polygonOffset or de-duplicated geometry." The buffer resolves 0.36 mm at
+ * 300 m here and it does not matter — the two surfaces hold the same depth
+ * value, and which one wins is decided per fragment, so the seam crawls as the
+ * camera moves.
+ *
+ * ── Why draw order was not enough ─────────────────────────────────────────────
+ *
+ * `ROAD_CLASSES` already orders the classes so the softer surface lands last,
+ * and the comment above the loop says that is "for coplanar resolution". Draw
+ * order settles which fragment is written only when the depth test lets it
+ * through, and at equal depth it does not: the later triangle is rejected as
+ * often as it is accepted. Order expresses the INTENT correctly and cannot
+ * carry it out; this makes the same intent true in the geometry.
+ *
+ * ── Why centimetres ──────────────────────────────────────────────────────────
+ *
+ * Big enough to clear the depth buffer with room to spare — 3 cm against
+ * 1.2 mm resolvable at a kilometre — and small enough to stay a render offset
+ * rather than a structural claim. It never feeds the vertical solver, the same
+ * rule `structuralZ` states for every other constant at these call sites.
+ */
+const CLASS_LIFT_M: Record<RoadClass, number> = {
+  vehicular: 0,
+  track: 0.03,
+  pedestrian: 0.06,
+}
 
 /**
  * Attach the overhead line masts, if any, and hand back the layer.

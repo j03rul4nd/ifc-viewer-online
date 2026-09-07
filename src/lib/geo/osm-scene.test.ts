@@ -1586,3 +1586,59 @@ describe('dashAlong — a broken line that FOLLOWS the way', () => {
     expect(dashAlong(straight, 0.15, 1e-9, 1e-9).length).toBeLessThanOrEqual(4000)
   })
 })
+
+describe('the two road networks do not share a plane', () => {
+  /** A way of one class, running east from the anchor. */
+  function classed(id: string, roadClass: 'vehicular' | 'pedestrian' | 'track'): OsmFeature {
+    return {
+      id, kind: 'road',
+      ring: [{ lat: LAT, lon: LON }, { lat: LAT, lon: LON + 0.003 }],
+      height: { heightM: 0, minHeightM: 0, estimated: true },
+      widthM: roadClass === 'vehicular' ? 10 : 3,
+      style: { roofShape: 'flat', roofHeightM: 0, tone: [0.4, 0.4, 0.42], roadClass },
+    } as OsmFeature
+  }
+  const topZ = (f: OsmFeature): number => {
+    const g = surfaceOf(buildLinearLayer([f], 'road', OPTS)!.object).geometry
+    const p = g.getAttribute('position')
+    let max = -Infinity
+    for (let i = 0; i < p.count; i++) max = Math.max(max, p.getZ(i))
+    return max
+  }
+
+  it('lifts a footway clear of a carriageway', () => {
+    // THE FLICKER THIS GUARDS. The pedestrian and vehicular graphs overlap in
+    // plan on purpose — a footway dying on an avenue must not split it into a
+    // junction — so wherever a path crosses a street the two ribbons occupy the
+    // same plane. At equal depth the winner is decided per fragment and the
+    // seam crawls as the camera moves. Draw order cannot fix that; height can.
+    expect(topZ(classed('foot', 'pedestrian'))).toBeGreaterThan(topZ(classed('road', 'vehicular')))
+  })
+
+  it('puts a track between the two, matching the solve order', () => {
+    const road = topZ(classed('r', 'vehicular'))
+    const track = topZ(classed('t', 'track'))
+    const foot = topZ(classed('f', 'pedestrian'))
+    expect(track).toBeGreaterThan(road)
+    expect(foot).toBeGreaterThan(track)
+  })
+
+  it('separates them by centimetres, not by a structural height', () => {
+    // A render offset, not a claim about the world: big enough to clear a depth
+    // buffer that resolves about a millimetre at a kilometre, small enough that
+    // nobody sees a pavement hovering.
+    const gap = topZ(classed('f', 'pedestrian')) - topZ(classed('r', 'vehicular'))
+    expect(gap).toBeGreaterThan(0)
+    // In normalised mercator, well under a tenth of a metre.
+    const metres = gap / (1 / (40_075_016.686 * Math.cos((LAT * Math.PI) / 180)))
+    expect(metres).toBeLessThan(0.2)
+    expect(metres).toBeGreaterThan(0.01)
+  })
+
+  it('does not move a class that was already alone', () => {
+    // A patch with only carriageways must render exactly as before.
+    const before = topZ(classed('a', 'vehicular'))
+    const again = topZ(classed('b', 'vehicular'))
+    expect(again).toBeCloseTo(before, 12)
+  })
+})
