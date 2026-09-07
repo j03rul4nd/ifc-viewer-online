@@ -56,6 +56,10 @@ import {
 } from './vertical-network'
 import { createGroundResolver } from './terrain-truth'
 import { buildRoadNetwork, type NetworkWay } from './road-network'
+import {
+  approachEnd, isSignalised, stopBarQuad,
+  STOP_LINE_M, STOP_SETBACK_M, SIGNAL_SEARCH_M,
+} from './stop-lines'
 import { deckProfile, PARAPET_T_M } from './deck-profile'
 import { placePiers, type ProfilePoint } from './deck-supports'
 import { createGroundFrame, type GroundFrame } from './ground-frame'
@@ -1735,6 +1739,22 @@ export function buildLinearLayer(
   const networkWays: Record<RoadClass, NetworkWay[]> =
     { vehicular: [], pedestrian: [], track: [] }
 
+  /**
+   * Mapped traffic signals, in the planar frame.
+   *
+   * Collected here rather than in the props layer because they are wanted for
+   * two different things: that layer draws the MASTS and is off by default,
+   * while a stop bar is paint on the carriageway and belongs to the road. A
+   * junction should read as signalised whether or not someone chose to stand
+   * poles in it.
+   */
+  const signalPoints: THREE.Vector2[] = []
+  for (const f of features) {
+    if (f.kind !== 'signal' || !f.point) continue
+    const { nx, ny } = latLonToNormalized(f.point.lat, f.point.lon)
+    signalPoints.push(new THREE.Vector2(nx, ny))
+  }
+
   /** Per-class grain, as vertex ranges into the merged geometry. */
   const roughBands: RoughnessBand[] = []
   /**
@@ -2044,6 +2064,25 @@ export function buildLinearLayer(
             )) {
               pushQuad(quad, CENTRE_LINE_TONE, 0.02 * mToN)
             }
+          }
+        }
+      }
+
+      // The stop bar, where a signal is actually mapped near the end traffic
+      // arrives at. This is the one marking that tells a crossroads apart from
+      // a forecourt, and the position is not invented: the node solver already
+      // trimmed the ribbon back to the edge of the conflict area, so the bar
+      // just sits behind that end. Nothing is drawn at an unsignalised junction
+      // — a stop bar there would assert a priority OSM never stated.
+      if (isCarriageway && cls === 'vehicular' && signalPoints.length > 0) {
+        const end = approachEnd(ribbon)
+        if (end) {
+          const at = end === 'end' ? ribbon.centre[ribbon.centre.length - 1] : ribbon.centre[0]
+          if (isSignalised(at, signalPoints, SIGNAL_SEARCH_M * mToN)) {
+            const bar = stopBarQuad(
+              ribbon, end, STOP_SETBACK_M * mToN, STOP_LINE_M * mToN,
+            )
+            if (bar) pushQuad(bar, CENTRE_LINE_TONE, 0.02 * mToN)
           }
         }
       }
