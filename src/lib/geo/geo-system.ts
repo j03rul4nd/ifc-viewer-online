@@ -1456,6 +1456,12 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         lat: placement.lat,
         lon: placement.lon,
         halfSizeM: BUILDINGS_HALF_SIZE_M,
+        // The model's own plan, so the Overture merge can refuse footprints
+        // standing in it. Sent as plain numbers because a worker message is
+        // structured-cloned and a THREE.Vector2 does not survive the trip.
+        modelPlan: modelPlanPolygons().map(
+          (poly) => poly.map((p) => ({ x: p.x, y: p.y })),
+        ),
       })
     } catch (e) {
       return { status: 'error', message: e instanceof Error ? e.message : String(e) }

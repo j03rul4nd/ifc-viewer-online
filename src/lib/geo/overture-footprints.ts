@@ -178,3 +178,58 @@ export function extractCovers(
   const [w, s, e, n] = extract.bbox
   return lon >= w && lon <= e && lat >= s && lat <= n
 }
+
+/**
+ * Does this footprint stay clear of the model's own plan?
+ *
+ * ANY overlap disqualifies it, and the strictness is the point.
+ *
+ * `createSuppressor` already removes context the model replaces, but it asks
+ * that a clear MAJORITY of a ring's vertices fall inside the plan — the right
+ * rule for a hand-drawn OSM outline, which roughly coincides with the surveyed
+ * building. It is the wrong rule for these. The ML detections over a landmark
+ * are small quads that straddle its edge: two of four vertices land inside,
+ * coverage comes out at 0.5 against a 0.6 threshold, and the footprint
+ * survives to stand inside the model.
+ *
+ * Measured on the Shanghai World Financial Center: shipped footprints 20 m and
+ * 25 m from the tower's centre, four vertices each, drawn straight through the
+ * model the user opened the viewer to look at. Two towers competing for one
+ * plot is the single most damaging thing this scene can do, because the model
+ * is the subject and everything else is context.
+ *
+ * The asymmetry against OSM is deliberate: an OSM outline clipping the model
+ * may be a real neighbour worth keeping, while an ML quad on a modelled
+ * landmark is a duplicate by definition — that building is already here, and
+ * surveyed.
+ */
+export function clearsModelPlan(
+  footprint: OvertureFootprint,
+  plan: ReadonlyArray<ReadonlyArray<{ x: number; y: number }>>,
+  project: (p: { lat: number; lon: number }) => { x: number; y: number },
+): boolean {
+  if (plan.length === 0) return true
+  for (const p of footprint.ring) {
+    const q = project(p)
+    for (const poly of plan) {
+      if (poly.length >= 3 && pointInPolygon(q, poly)) return false
+    }
+  }
+  return true
+}
+
+/** Ray casting, kept local so this module depends on nothing but numbers. */
+function pointInPolygon(
+  p: { x: number; y: number }, poly: ReadonlyArray<{ x: number; y: number }>,
+): boolean {
+  let inside = false
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i]
+    const b = poly[j]
+    if ((a.y > p.y) !== (b.y > p.y)
+      && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) {
+      inside = !inside
+    }
+  }
+  return inside
+}

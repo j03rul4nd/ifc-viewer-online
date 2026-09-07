@@ -10,7 +10,7 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-  newFootprints, extractCovers, ringAreaM2,
+  newFootprints, extractCovers, ringAreaM2, clearsModelPlan,
   DUPLICATE_RADIUS_M, MIN_AREA_M2,
   type OvertureFootprint, type RingLike,
 } from './overture-footprints'
@@ -144,5 +144,53 @@ describe('ringAreaM2', () => {
   it('is zero for something that is not a ring', () => {
     expect(ringAreaM2([{ lat: LAT, lon: LON }])).toBe(0)
     expect(ringAreaM2([])).toBe(0)
+  })
+})
+
+describe('clearsModelPlan — the model is the subject, not the context', () => {
+  /** A crude planar projection, enough to reason in metres about one plot. */
+  const project = (p: { lat: number; lon: number }) => ({
+    x: (p.lon - LON) * 111_320 * Math.cos((LAT * Math.PI) / 180),
+    y: (p.lat - LAT) * 111_132,
+  })
+  /** A 60 m square plan centred on the anchor — a tower's footprint. */
+  const plan = [[
+    { x: -30, y: -30 }, { x: 30, y: -30 }, { x: 30, y: 30 }, { x: -30, y: 30 },
+  ]]
+
+  it('refuses a footprint sitting inside the model', () => {
+    expect(clearsModelPlan(square('inside', 20), plan, project)).toBe(false)
+  })
+
+  it('refuses one that merely STRADDLES the edge — the whole bug', () => {
+    // THE REGRESSION THIS CLOSES. `createSuppressor` needs a clear majority of a
+    // ring's vertices inside the plan, which is right for a hand-drawn OSM
+    // outline. The ML detections over a landmark are small quads across its
+    // edge: two of four vertices inside, coverage 0.5 against a 0.6 threshold,
+    // and a second tower ends up wedged into the one the user came to see.
+    // Measured on the SWFC at 20 m and 25 m from its centre.
+    const straddling = square('edge', 20, 0, 30)
+    const corners = straddling.ring.map(project)
+    const inside = corners.filter((c) => Math.abs(c.x) <= 30 && Math.abs(c.y) <= 30).length
+    expect(inside).toBeLessThan(corners.length)   // genuinely straddling
+    expect(inside / corners.length).toBeLessThan(0.6) // and below the OSM rule
+    expect(clearsModelPlan(straddling, plan, project)).toBe(false)
+  })
+
+  it('keeps a genuine neighbour that clears the plan', () => {
+    expect(clearsModelPlan(square('neighbour', 20, 0, 80), plan, project)).toBe(true)
+  })
+
+  it('keeps everything when no model plan is known', () => {
+    expect(clearsModelPlan(square('a', 20), [], project)).toBe(true)
+  })
+
+  it('ignores a degenerate plan polygon rather than dropping the world', () => {
+    expect(clearsModelPlan(square('a', 20), [[{ x: 0, y: 0 }, { x: 1, y: 1 }]], project)).toBe(true)
+  })
+
+  it('refuses against any of several model plans, not just the first', () => {
+    const far = [{ x: 970, y: -30 }, { x: 1030, y: -30 }, { x: 1030, y: 30 }, { x: 970, y: 30 }]
+    expect(clearsModelPlan(square('inside', 20), [far, plan[0]], project)).toBe(false)
   })
 })

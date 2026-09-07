@@ -18,9 +18,10 @@
 
 import { bboxAround, OVERPASS_ENDPOINT, overpassRemarkError } from '../lib/geo/buildings'
 import {
-  newFootprints, extractCovers,
+  newFootprints, extractCovers, clearsModelPlan,
   type OvertureExtract, type OvertureFootprint,
 } from '../lib/geo/overture-footprints'
+import { latLonToNormalized } from '../lib/geo/geo-math'
 import { parseOsmFeatures, buildFeaturesQuery, countByKind, type OsmFeature, type FeatureKind } from '../lib/geo/osm-features'
 
 /** Server-side budget. Overpass rejects the query if it cannot finish in time. */
@@ -40,6 +41,15 @@ export interface BuildingsRequest {
   lon: number
   /** Half the side of the square query area, metres. */
   halfSizeM: number
+  /**
+   * The model's own plan, in normalized planar coordinates.
+   *
+   * Only the Overture merge reads it, and only to REFUSE footprints — see
+   * `overtureExtras`. OSM context is filtered against the model later and far
+   * more carefully, by `createSuppressor`, which knows what kind of facility
+   * the model is and what it is therefore entitled to replace.
+   */
+  modelPlan?: Array<Array<{ x: number; y: number }>>
 }
 
 export type BuildingsResponse =
@@ -105,7 +115,7 @@ async function handleFetch(req: BuildingsRequest): Promise<void> {
     // grain, the audit's estimated count — then treats them exactly like a
     // building that arrived from Overpass. A second parallel path would have to
     // re-derive all of it and would drift the first time one side changed.
-    const extra = await overtureExtras(req.lat, req.lon, elements)
+    const extra = await overtureExtras(req.lat, req.lon, elements, req.modelPlan ?? [])
     const merged = extra.length > 0 && Array.isArray(elements)
       ? { ...(json as object), elements: [...elements, ...extra] }
       : json
@@ -152,6 +162,7 @@ interface OvertureIndex {
  */
 async function overtureExtras(
   lat: number, lon: number, elements: unknown[] | undefined,
+  modelPlan: Array<Array<{ x: number; y: number }>>,
 ): Promise<unknown[]> {
   try {
     const idxRes = await fetch(OVERTURE_INDEX)
@@ -180,7 +191,38 @@ async function overtureExtras(
       if (ring.length >= 3) osmRings.push({ ring })
     }
 
-    return newFootprints(data.footprints, osmRings).map((f: OvertureFootprint) => ({
+    // A SECOND, STRICTER REFUSAL, and only for these footprints.
+    //
+    // `createSuppressor` removes context the model replaces, and it asks that a
+    // clear majority of a ring's vertices fall inside the model's plan — right
+    // for a hand-drawn OSM outline, which roughly coincides with the surveyed
+    // building. It is wrong for these: the ML detections over a landmark are
+    // small quads that straddle its edge, so two of four vertices land inside,
+    // coverage comes out at 0.5 against a 0.6 threshold, and a tower gets a
+    // second tower wedged into it. Measured on the SWFC: footprints 20 m and
+    // 25 m from the tower's centre, four vertices each, drawn straight through
+    // the model the user came to look at.
+    //
+    // So ANY overlap disqualifies an Overture footprint. The asymmetry is the
+    // point: an OSM outline clipping the model may be a real neighbour worth
+    // keeping, while an ML quad on a modelled landmark is a duplicate by
+    // definition — we already have that building, surveyed.
+    //
+    // A LIMIT WORTH STATING. This runs at fetch time, and the caller caches the
+    // fetch per site — so a model dragged to a new placement keeps the footprints
+    // filtered for its old one until the neighbourhood is re-fetched. OSM
+    // context does not have this problem because `createSuppressor` re-runs on
+    // every rebuild. Closing it properly means carrying the source on the
+    // feature so the same rebuild can re-filter, which is a wider change than
+    // the regression in front of me warrants.
+    const toPlanar = (p: { lat: number; lon: number }): { x: number; y: number } => {
+      const n = latLonToNormalized(p.lat, p.lon)
+      return { x: n.nx, y: n.ny }
+    }
+
+    return newFootprints(data.footprints, osmRings)
+      .filter((f) => clearsModelPlan(f, modelPlan, toPlanar))
+      .map((f: OvertureFootprint) => ({
       type: 'way',
       // Namespaced so nothing can collide with an OSM way id, and so a picked
       // feature says plainly where it came from.
