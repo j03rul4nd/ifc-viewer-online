@@ -132,7 +132,16 @@
     "showAllModelsBtn": "↑ すべてのモデルを表示",
     "clickHint": "モデルをクリックしてアクティブ化 · ⊙ で隔離",
     "transformTitle": "変換 · {{fileName}}",
-    "frameAll": "すべてのモデルにカメラをフレーム"
+    "frameAll": "すべてのモデルにカメラをフレーム",
+    "group": {
+      "collapse": "グループを折りたたむ",
+      "expand": "グループを展開",
+      "moveTogether": "まとめて移動",
+      "moveTogetherHint": "この建物のファイルを位置関係を保ったまま一括で移動します",
+      "scopeModel": "このファイル",
+      "scopeGroup": "{{count}} 件すべて",
+      "positionOnly": "セットを移動すると全ファイルが同じだけ動きます。回転と拡大縮小はファイル単位のままです — 各ファイルを自身の原点で回すとばらばらになります。"
+    }
   },
   "transform": {
     "position": "位置",

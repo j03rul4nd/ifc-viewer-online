@@ -1389,6 +1389,22 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     )
   }
 
+  /**
+   * Re-draw the selection outline where the selected element NOW is.
+   *
+   * The outline is a Box3Helper built from the element's world box at the moment
+   * of selection, and it is parented to the scene rather than to the model — so
+   * offsetting a model in the scene panel leaves the outline behind, hanging in
+   * space over the position the element used to occupy. Selecting an element and
+   * then placing its model is the ordinary order of work, which makes the stale
+   * outline the common case rather than the odd one.
+   */
+  function refreshSelectionBox(): void {
+    if (selectedLocalId === null || selectedModelId === null) return
+    const model = modelObjects.get(selectedModelId)
+    if (model) addSelectionBox([selectedLocalId], model)
+  }
+
   // ─── Raycast ─────────────────────────────────────────────────────────────
   async function getBestHit(): Promise<{ localId: number; modelId: string } | null> {
     if (modelObjects.size === 0) return null
@@ -2307,6 +2323,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
       pivotTransforms.set(tid, stored)
       void fragmentsManager.core.update()
+      refreshSelectionBox()
     },
 
     setSatelliteResolver(fn) { satelliteResolver = fn },
@@ -2320,6 +2337,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       pivot.scale.set(1, 1, 1)
       pivotTransforms.set(tid, { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: 1 })
       void fragmentsManager.core.update()
+      refreshSelectionBox()
     },
 
     getModelBounds(modelId?: string) {
