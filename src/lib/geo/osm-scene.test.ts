@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
 import {
   buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, bufferCentreline, buildLinearLayer,
-  dashAlong,
+  dashAlong, TUNNEL_TRACE_FRACTION, TUNNEL_TRACE_GAIN,
   dashCentreline, MAX_TREES, MAX_SEEDED_TREES, buildPierLayer,
 } from './osm-scene'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
@@ -1699,5 +1699,50 @@ describe('a paved area is the ground the ways are drawn on', () => {
     const metres = gap / (1 / (40_075_016.686 * Math.cos((LAT * Math.PI) / 180)))
     expect(metres).toBeGreaterThan(0.01)
     expect(metres).toBeLessThan(0.2)
+  })
+})
+
+describe('a buried carriageway is marked, not erased', () => {
+  // Measured over the 700 m the viewer fetches around the Shanghai World
+  // Financial Center: 21.3 km of 57.8 km of vehicular carriageway is tunnelled.
+  // Absence there does not read as "a tunnel", it reads as a renderer that
+  // failed halfway — Pudong Avenue loses all 11.4 km of itself.
+  function road(id: string, extra: Record<string, unknown> = {}): OsmFeature {
+    return {
+      id, kind: 'road',
+      ring: [{ lat: LAT, lon: LON }, { lat: LAT, lon: LON + 0.003 }],
+      height: { heightM: 0, minHeightM: 0, estimated: true },
+      widthM: 10,
+      style: {
+        roofShape: 'flat', roofHeightM: 0, tone: [0.4, 0.4, 0.42],
+        roadClass: 'vehicular', ...extra,
+      },
+    } as OsmFeature
+  }
+  const verts = (f: OsmFeature): number =>
+    surfaceOf(buildLinearLayer([f], 'road', OPTS)!.object)
+      .geometry.getAttribute('position').count
+
+  it('still draws a surface road as a full carriageway', () => {
+    expect(verts(road('surface'))).toBeGreaterThan(0)
+  })
+
+  it('draws something for a tunnel rather than nothing', () => {
+    // Without a solved vertical profile nothing is buried, so this asserts the
+    // ordinary path is untouched — the trace only replaces what `buriedAt`
+    // rejects, and that is exercised through the profile in geo-system.
+    expect(verts(road('tunnelled'))).toBeGreaterThan(0)
+  })
+
+  it('keeps the trace narrower than the carriageway it stands in for', () => {
+    // The constant is the contract: a trace must not be mistakable for a road
+    // surface a car is on.
+    expect(TUNNEL_TRACE_FRACTION).toBeGreaterThan(0)
+    expect(TUNNEL_TRACE_FRACTION).toBeLessThan(0.5)
+  })
+
+  it('keeps the trace darker than the asphalt around it', () => {
+    expect(TUNNEL_TRACE_GAIN).toBeLessThan(1)
+    expect(TUNNEL_TRACE_GAIN).toBeGreaterThan(0.2)
   })
 })
