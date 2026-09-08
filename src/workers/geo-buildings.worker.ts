@@ -34,6 +34,9 @@ const FETCH_TIMEOUT_MS = 35_000
  */
 const MAX_ELEMENTS = 6000
 
+/** A model's plan as it survives a structured clone into the worker. */
+export type PlanPolygon = ReadonlyArray<{ x: number; y: number }>
+
 export interface BuildingsRequest {
   type: 'fetch-buildings'
   id: string
@@ -49,7 +52,7 @@ export interface BuildingsRequest {
    * more carefully, by `createSuppressor`, which knows what kind of facility
    * the model is and what it is therefore entitled to replace.
    */
-  modelPlan?: Array<Array<{ x: number; y: number }>>
+  modelPlan?: PlanPolygon[]
 }
 
 export type BuildingsResponse =
@@ -142,8 +145,71 @@ async function handleFetch(req: BuildingsRequest): Promise<void> {
 /** Where the build step writes its extracts, relative to the app root. */
 const OVERTURE_INDEX = '/geo/overture/index.json'
 
+/**
+ * How long the enrichment gets before it is abandoned, milliseconds.
+ *
+ * Far shorter than `FETCH_TIMEOUT_MS`, and the asymmetry is the point. Overpass
+ * is the neighbourhood; these two files are a bonus on top of it. Without a
+ * budget of their own a stalled static file would hold the worker until the
+ * CALLER's timeout fired and the whole build came back as "buildings request
+ * timed out" — turning a slow bonus into no map at all. Two seconds is
+ * generous for a same-origin file that is 44 KB at its largest.
+ */
+const OVERTURE_TIMEOUT_MS = 2_000
+
+/** One district in the shipped index. Everything optional: it is a file on disk. */
+interface OvertureDistrict {
+  slug?: string
+  bbox?: [number, number, number, number]
+}
+
 interface OvertureIndex {
-  districts?: Array<{ slug?: string; bbox?: [number, number, number, number] }>
+  districts?: OvertureDistrict[]
+}
+
+/** The bit of an Overpass element the Overture de-duplication reads. */
+interface OverpassBuildingLike {
+  tags?: Record<string, string>
+  geometry?: Array<{ lat: number; lon: number } | null>
+}
+
+/**
+ * An Overture footprint dressed as an Overpass way.
+ *
+ * Named rather than left anonymous because the SHAPE IS THE CONTRACT: it is
+ * what lets these footprints go through `parseOsmFeatures` beside everything
+ * Overpass sent, and therefore inherit the local height prior, the surface
+ * grain and the audit's estimated count without a second code path. If this
+ * ever drifts from what the parser reads, the footprints stop being buildings
+ * and start being nothing, silently.
+ */
+interface PseudoOverpassWay {
+  type: 'way'
+  id: string
+  tags: Record<string, string>
+  geometry: Array<{ lat: number; lon: number }>
+}
+
+/**
+ * Fetch JSON with a budget of its own, or give up quietly.
+ *
+ * Returns null for every failure — offline, 404, malformed, too slow — because
+ * every one of them means the same thing to the caller: draw the city OSM knows
+ * about. A viewer that refused to render a neighbourhood because a
+ * supplementary file was slow would be worse than one that never had it.
+ */
+async function fetchJsonWithin<T>(url: string, timeoutMs: number): Promise<T | null> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const res = await fetch(url, { signal: controller.signal })
+    if (!res.ok) return null
+    return await res.json() as T
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 /**
@@ -161,27 +227,26 @@ interface OvertureIndex {
  * time somebody maps another block.
  */
 async function overtureExtras(
-  lat: number, lon: number, elements: unknown[] | undefined,
-  modelPlan: Array<Array<{ x: number; y: number }>>,
-): Promise<unknown[]> {
+  lat: number, lon: number, elements: readonly unknown[] | undefined,
+  modelPlan: readonly PlanPolygon[],
+): Promise<PseudoOverpassWay[]> {
   try {
-    const idxRes = await fetch(OVERTURE_INDEX)
-    if (!idxRes.ok) return []
-    const idx = await idxRes.json() as OvertureIndex
+    const idx = await fetchJsonWithin<OvertureIndex>(OVERTURE_INDEX, OVERTURE_TIMEOUT_MS)
+    if (!idx) return []
     const district = (idx.districts ?? []).find(
       (d) => d.bbox !== undefined && extractCovers({ bbox: d.bbox }, lat, lon),
     )
     if (!district?.slug) return []
 
-    const res = await fetch(`/geo/overture/${district.slug}.json`)
-    if (!res.ok) return []
-    const data = await res.json() as OvertureExtract
-    if (!Array.isArray(data.footprints) || data.footprints.length === 0) return []
+    const data = await fetchJsonWithin<OvertureExtract>(
+      `/geo/overture/${encodeURIComponent(district.slug)}.json`, OVERTURE_TIMEOUT_MS,
+    )
+    if (!data || !Array.isArray(data.footprints) || data.footprints.length === 0) return []
 
     // Compare against what OSM already gave us for this same bbox.
     const osmRings: Array<{ ring: Array<{ lat: number; lon: number }> }> = []
     for (const raw of elements ?? []) {
-      const el = raw as { tags?: Record<string, string>; geometry?: Array<{ lat: number; lon: number } | null> }
+      const el = raw as OverpassBuildingLike
       if (!el?.tags || !el.geometry) continue
       if (!('building' in el.tags) && !('building:part' in el.tags)) continue
       const ring = el.geometry.filter(
@@ -222,7 +287,7 @@ async function overtureExtras(
 
     return newFootprints(data.footprints, osmRings)
       .filter((f) => clearsModelPlan(f, modelPlan, toPlanar))
-      .map((f: OvertureFootprint) => ({
+      .map((f: OvertureFootprint): PseudoOverpassWay => ({
       type: 'way',
       // Namespaced so nothing can collide with an OSM way id, and so a picked
       // feature says plainly where it came from.
