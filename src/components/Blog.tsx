@@ -18,6 +18,14 @@ import HealthScoreWidget, { HealthScoreRow } from './blog/HealthScoreWidget'
 import EmbedViewer from './blog/EmbedViewer'
 import EmbedConfigurator from './blog/EmbedConfigurator'
 import SpatialMediaDemo from './blog/SpatialMediaDemo'
+import SmartTable from './blog/SmartTable'
+import { editorialCopy } from '../lib/blog-editorial-copy'
+import { QuoteShare, SectionLink, SelectionShare } from './blog/ShareKit'
+import { StatRow } from './blog/EditorialBlocks'
+import { AnnotatedImage } from './blog/ImageViewer'
+import { Citation, PostPreviewLink, ReferenceList, ReferencesProvider } from './blog/References'
+import { ContinueReading, RecsProvider, RelatedPoint, ToolCard, type RecsNav } from './blog/Recommendations'
+import { Bars, Callout, Decision, Steps, Takeaways, Term } from './blog/EditorialBlocks'
 import {
   filterBlogPosts,
   getBlogHubCopy,
@@ -134,22 +142,22 @@ function RenderInline({ text, lang, onNavigateToPost }: {
     <>
       {text.map((seg, i) => {
         if (typeof seg === 'string') return <React.Fragment key={i}>{seg}</React.Fragment>
+        if ('def' in seg) return <Term key={i} text={seg.text} def={seg.def} lang={lang} />
+        if ('cite' in seg) return <Citation key={i} id={seg.cite} text={seg.text} />
         if ('to' in seg) {
-          // Internal post link — real href for crawlers/middle-click, SPA nav on click.
+          // Internal post link — real href for crawlers/middle-click, SPA nav on
+          // click, and a preview of the target post on hover/focus.
           return (
-            <a
+            <PostPreviewLink
               key={i}
+              slug={seg.to}
+              lang={lang}
               href={postHref(seg.to, lang)}
-              onClick={(e) => {
-                // Let modifier-clicks (new tab) and middle-clicks behave natively.
-                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
-                e.preventDefault()
-                onNavigateToPost(seg.to)
-              }}
+              onNavigate={() => onNavigateToPost(seg.to)}
               className={INLINE_LINK_CLASS}
             >
               {seg.text}
-            </a>
+            </PostPreviewLink>
           )
         }
         return (
@@ -163,12 +171,6 @@ function RenderInline({ text, lang, onNavigateToPost }: {
 }
 
 // ─── Block renderer ───────────────────────────────────────────────────────────
-
-const CALLOUT_STYLES = {
-  tip:     { border: 'border-[rgba(52,211,153,0.2)]',  bg: 'bg-[rgba(16,185,129,0.06)]',  icon: '💡', label: 'TIP' },
-  warning: { border: 'border-[rgba(251,191,36,0.22)]', bg: 'bg-[rgba(251,191,36,0.06)]',  icon: '⚠️', label: 'WARNING' },
-  info:    { border: 'border-[rgba(99,102,241,0.22)]', bg: 'bg-[rgba(94,106,210,0.06)]',  icon: 'ℹ️', label: 'NOTE' },
-}
 
 function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
   block: ContentBlock
@@ -192,6 +194,7 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
           className="scroll-mt-20 text-[19px] sm:text-[22px] font-semibold tracking-[-0.025em] text-[var(--text)] mt-8 sm:mt-12 mb-4 pb-3 border-b border-[var(--border)]"
         >
           {block.text}
+          <SectionLink id={slugify(block.text)} heading={block.text} lang={lang} />
         </h2>
       )
 
@@ -202,6 +205,7 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
           className="scroll-mt-20 text-[15px] sm:text-[16.5px] font-semibold tracking-tight text-[var(--text)] mt-6 sm:mt-8 mb-2.5"
         >
           {block.text}
+          <SectionLink id={slugify(block.text)} heading={block.text} lang={lang} />
         </h3>
       )
 
@@ -232,27 +236,75 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
       )
 
     case 'code':
-      return <CodeBlock code={block.text} lang={block.lang} />
+      return <CodeBlock code={block.text} lang={block.lang} articleLang={lang} />
 
-    case 'callout': {
-      const s = CALLOUT_STYLES[block.variant]
+    case 'callout':
       return (
-        <div className={`mb-6 px-4 sm:px-5 py-4 rounded-xl border ${s.border} ${s.bg} flex gap-3`}>
-          <span className="text-[16px] shrink-0 mt-[2px]">{s.icon}</span>
-          <div>
-            <span className="text-[10.5px] font-mono font-bold tracking-widest text-[var(--text-dim)] mr-2">{s.label}</span>
-            <span className="text-[14px] leading-[1.75] text-[var(--text-dim)]">{block.text}</span>
-          </div>
-        </div>
+        <Callout variant={block.variant} title={block.title} lang={lang}>
+          <RenderInline text={block.text} lang={lang} onNavigateToPost={onNavigateToPost} />
+        </Callout>
       )
-    }
+
+    case 'takeaways':
+      return (
+        <Takeaways
+          title={block.title}
+          lang={lang}
+          items={block.items.map((item, i) => <RenderInline key={i} text={item} lang={lang} onNavigateToPost={onNavigateToPost} />)}
+        />
+      )
+
+    case 'steps':
+      return (
+        <Steps
+          lang={lang}
+          items={block.items.map((step) => ({
+            title: step.title,
+            detailLabel: step.detailLabel,
+            body: step.body && <RenderInline text={step.body} lang={lang} onNavigateToPost={onNavigateToPost} />,
+            detail: step.detail && <RenderInline text={step.detail} lang={lang} onNavigateToPost={onNavigateToPost} />,
+          }))}
+        />
+      )
+
+    case 'decision':
+      return (
+        <Decision
+          question={block.question}
+          lang={lang}
+          options={block.options.map((opt) => ({
+            label: opt.label,
+            verdict: opt.verdict,
+            body: <RenderInline text={opt.body} lang={lang} onNavigateToPost={onNavigateToPost} />,
+            link: opt.to && (
+              <RenderInline
+                text={[{ text: `${opt.linkText ?? editorialCopy(lang).readGuide} →`, to: opt.to }]}
+                lang={lang}
+                onNavigateToPost={onNavigateToPost}
+              />
+            ),
+          }))}
+        />
+      )
+
+    case 'related':
+      return <RelatedPoint to={block.to} section={block.section} why={block.why} />
+
+    case 'tool':
+      return <ToolCard id={block.id} why={block.why} />
+
+    case 'bars':
+      return <Bars title={block.title} unit={block.unit} max={block.max} caption={block.caption} items={block.items} lang={lang} />
 
     case 'image': {
       const src = asset(block.src)
       const srcSet = block.srcSet?.map((item) => `${asset(item.src)} ${item.width}w`).join(', ')
+      const ui = editorialCopy(lang)
       return (
-        <figure className="my-8">
-          <div className="rounded-xl overflow-hidden border border-[var(--border)]">
+        <AnnotatedImage
+          annotations={block.annotations}
+          copy={{ enlarge: ui.enlarge, close: ui.close, zoomIn: ui.zoomIn, zoomOut: ui.zoomOut, reset: ui.resetZoom, hint: ui.zoomHint }}
+          image={
             <img
               src={src}
               srcSet={srcSet}
@@ -264,9 +316,9 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
               loading="lazy"
               decoding="async"
             />
-          </div>
-          {(block.caption || block.credit) && (
-            <figcaption className="text-[12px] text-[var(--text-faint)] text-center mt-2.5">
+          }
+          caption={(block.caption || block.credit) && (
+            <>
               {block.caption}
               {block.credit && <span>{block.caption ? ' · ' : ''}{block.credit}</span>}
               {block.license && (
@@ -274,9 +326,9 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
                   {block.license.includes('creativecommons.org/licenses/by/4.0') ? 'CC BY 4.0' : 'Image licence'}
                 </a></span>
               )}
-            </figcaption>
+            </>
           )}
-        </figure>
+        />
       )
     }
 
@@ -311,44 +363,45 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
 
     case 'stat-row':
       return (
-        <div className="my-6 sm:my-8 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-          {block.stats.map((s, i) => (
-            <div
-              key={i}
-              className="flex flex-col items-center justify-center py-4 sm:py-5 px-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-center"
-            >
-              <CountUp
-                to={s.value}
-                prefix={s.prefix}
-                suffix={s.suffix}
-                from={0}
-                stiffness={70}
-                damping={20}
-                numberClassName="text-[26px] sm:text-[32px] font-semibold tracking-tight text-[var(--text)]"
-                labelClassName="text-[11px] sm:text-[11.5px] text-[var(--text-faint)] mt-1 leading-tight"
-                label={s.label}
-                className="flex flex-col items-center"
-              />
-            </div>
-          ))}
-        </div>
+        <StatRow
+          stats={block.stats}
+          renderCount={(s, reduced) => (
+            <CountUp
+              to={s.value}
+              prefix={s.prefix}
+              suffix={s.suffix}
+              from={reduced ? s.value : 0}
+              stiffness={70}
+              damping={20}
+              numberClassName={`${block.stats.length === 3 ? 'text-[22px]' : 'text-[26px]'} sm:text-[32px] font-semibold tracking-tight text-[var(--text)] tabular-nums`}
+              labelClassName="text-[11px] sm:text-[11.5px] text-[var(--text-faint)] mt-1 leading-tight"
+              label={s.label}
+              className="flex flex-col items-center"
+            />
+          )}
+        />
       )
 
     case 'feature-grid':
       return (
-        <div className="my-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="my-8 grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
           {block.items.map((item, i) => (
             <SpotlightCard
               key={i}
-              className="p-5 rounded-xl border border-[var(--border)] bg-[var(--surface)] h-full"
+              className="p-4 sm:p-5 rounded-xl border border-[var(--border)] bg-[var(--surface)] h-full"
               spotlightColor="rgba(94,106,210,0.13)"
             >
-              <div className="text-[22px] mb-3 leading-none">{item.icon}</div>
-              <div className="text-[14.5px] font-semibold tracking-tight text-[var(--text)] mb-1.5">
-                {item.title}
-              </div>
-              <div className="text-[13.5px] text-[var(--text-dim)] leading-[1.65]">
-                {item.body}
+              {/* Phone: icon beside the text — half the height of a stacked card. */}
+              <div className="flex gap-3.5 sm:block">
+                <div className="text-[20px] sm:text-[22px] sm:mb-3 leading-none shrink-0 mt-0.5 sm:mt-0" aria-hidden="true">{item.icon}</div>
+                <div className="min-w-0">
+                  <h3 className="text-[14.5px] font-semibold tracking-tight text-[var(--text)] mb-1">
+                    {item.title}
+                  </h3>
+                  <p className="text-[14px] sm:text-[13.5px] text-[var(--text-dim)] leading-[1.65]">
+                    {item.body}
+                  </p>
+                </div>
               </div>
             </SpotlightCard>
           ))}
@@ -357,35 +410,37 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
 
     case 'comparison':
       return (
-        <div className="my-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {[block.left, block.right].map((side, si) => (
-            <div
-              key={si}
-              className={`p-5 rounded-xl border ${
-                side.color === 'accent'
-                  ? 'border-[rgba(94,106,210,0.4)] bg-[rgba(94,106,210,0.05)]'
-                  : 'border-[var(--border)] bg-[var(--surface)]'
-              }`}
-            >
-              <div className={`text-[10.5px] font-mono font-bold tracking-[0.12em] mb-4 ${
-                side.color === 'accent' ? 'text-[var(--accent-2)]' : 'text-[var(--text-faint)]'
-              }`}>
-                {side.label.toUpperCase()}
-              </div>
-              <ul className="space-y-2.5">
-                {side.items.map((item, i) => (
-                  <li key={i} className="flex gap-2.5 text-[13.5px] leading-[1.6] text-[var(--text-dim)]">
-                    <span className={`shrink-0 mt-[2px] text-[12px] font-bold ${
-                      side.color === 'accent' ? 'text-[var(--accent-2)]' : 'text-[var(--text-faint)]'
-                    }`}>
-                      {side.color === 'accent' ? '✓' : '○'}
-                    </span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+        <div className="my-8 grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+          {[block.left, block.right].map((side, si) => {
+            const accent = side.color === 'accent'
+            return (
+              <section
+                key={si}
+                aria-label={side.label}
+                className={`p-4 sm:p-5 rounded-xl border ${
+                  accent
+                    ? 'border-[rgba(94,106,210,0.4)] bg-[rgba(94,106,210,0.05)]'
+                    : 'border-[var(--border)] bg-[var(--surface)]'
+                }`}
+              >
+                <h3 className={`text-[11px] font-mono font-bold uppercase tracking-[0.12em] mb-3.5 ${
+                  accent ? 'text-[var(--accent-2)]' : 'text-[var(--text-faint)]'
+                }`}>
+                  {side.label}
+                </h3>
+                <ul className="space-y-2.5" role="list">
+                  {side.items.map((item, i) => (
+                    <li key={i} className="flex gap-2.5 text-[14px] sm:text-[13.5px] leading-[1.6] text-[var(--text-dim)]">
+                      <span aria-hidden="true" className={`shrink-0 mt-[3px] ${accent ? 'text-[var(--accent-2)]' : 'text-[var(--text-faint)]'}`}>
+                        {accent ? <Icons.Check size={14} strokeWidth={2} /> : <span className="block mt-[4px] mx-[4px] h-1.5 w-1.5 rounded-full border border-current" />}
+                      </span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )
+          })}
         </div>
       )
 
@@ -405,6 +460,7 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
               — {block.cite}
             </cite>
           )}
+          <QuoteShare quote={block.text} pageUrl={typeof location !== 'undefined' ? location.href : ''} title={typeof document !== 'undefined' ? document.title : ''} lang={lang} />
         </blockquote>
       )
 
@@ -434,7 +490,7 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
               </p>
               <a
                 href={`/ebook/${book.route ? `${book.route}/` : ''}`}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90"
+                className="mt-4 flex w-full sm:inline-flex sm:w-auto min-h-[44px] items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[14px] sm:text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90"
                 style={{ background: 'var(--accent)' }}
               >
                 {block.cta ?? 'Get the free handbook'}
@@ -446,66 +502,17 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
       )
     }
 
-    case 'table': {
-      const rowHeaders = block.rowHeaders ?? true
+    case 'table':
       return (
-        <div className="my-8">
-          {/* -mx-4 lets the table touch viewport edges on mobile; sm:mx-0 restores inset */}
-          <div className="-mx-4 sm:mx-0 overflow-x-auto">
-            <div className="min-w-full sm:rounded-xl border border-[var(--border)] overflow-hidden">
-              <table className="w-full text-[13px] border-collapse">
-                <thead>
-                  <tr className="bg-[var(--surface)]">
-                    {block.headers.map((h, hi) => (
-                      <th
-                        key={hi}
-                        scope="col"
-                        className="px-3.5 py-2.5 text-left text-[10px] font-mono font-bold tracking-[0.09em] uppercase text-[var(--text-dim)] border-b border-[var(--border)] whitespace-nowrap"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {block.rows.map((row, ri) => (
-                    <tr
-                      key={ri}
-                      className={`border-b border-[var(--border)] last:border-0 transition-colors hover:bg-[rgba(94,106,210,0.04)] ${
-                        ri % 2 === 1 ? 'bg-[rgba(94,106,210,0.015)]' : ''
-                      }`}
-                    >
-                      {row.map((cell, ci) => {
-                        const isRH = rowHeaders && ci === 0
-                        return isRH ? (
-                          <th
-                            key={ci}
-                            scope="row"
-                            className="px-3.5 py-2.5 text-left align-top text-[12.5px] font-medium text-[var(--text)] whitespace-nowrap leading-[1.5]"
-                          >
-                            {cell}
-                          </th>
-                        ) : (
-                          <td
-                            key={ci}
-                            className="px-3.5 py-2.5 align-top text-[12.5px] leading-[1.6] text-[var(--text-dim)]"
-                          >
-                            {cell}
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          {block.caption && (
-            <p className="mt-2 px-1 text-[11px] text-[var(--text-faint)]">{block.caption}</p>
-          )}
-        </div>
+        <SmartTable
+          headers={block.headers}
+          rows={block.rows}
+          caption={block.caption}
+          rowHeaders={block.rowHeaders ?? true}
+          layout={block.layout}
+          lang={lang}
+        />
       )
-    }
 
     case 'ifc-demo':
       return (
@@ -1449,7 +1456,58 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
   landingTheme: 'dark' | 'light'
   onToggleLandingTheme: () => void
 }) {
-  const related  = getBlogPostsByLang(post.lang ?? 'en').filter(p => p.slug !== post.slug).slice(0, 3)
+  const bodyRef = React.useRef<HTMLDivElement>(null)
+  const recsNav = React.useMemo<RecsNav>(() => ({
+    lang: post.lang ?? 'en',
+    slugify,
+    hrefFor: (slug: string) => postHref(slug, post.lang ?? 'en'),
+    navigate: (slug: string, section?: string) => {
+      if (slug === post.slug) {
+        if (section) document.getElementById(section)?.scrollIntoView({ block: 'start' })
+        return
+      }
+      onNavigateToPost(slug)
+      // The route change pushed the post URL synchronously; add the section
+      // before the next post renders, so it lands there instead of the top.
+      if (section) history.replaceState(history.state, '', `${window.location.pathname}#${section}`)
+    },
+  }), [post.slug, post.lang, onNavigateToPost])
+
+  const refsCtx = React.useMemo(() => ({
+    refs: post.references ?? [],
+    lang: post.lang ?? 'en',
+    hrefFor: (slug: string) => postHref(slug, post.lang ?? 'en'),
+    navigate: onNavigateToPost,
+  }), [post, onNavigateToPost])
+
+  // Entering a post: land on the section the URL names (#id — shared section
+  // links, references), else at the top. Content above can still grow while
+  // images and embeds lay out, so re-aim for a short while until it settles.
+  React.useLayoutEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1))
+    if (id.startsWith(':~:')) return // text fragment: the browser scrolls to it
+    if (!id || id.includes('=')) { window.scrollTo(0, 0); return }
+    let tries = 0
+    let timer = 0
+    const aim = () => {
+      const el = document.getElementById(id)
+      if (el && Math.abs(el.getBoundingClientRect().top - 80) > 2) el.scrollIntoView({ block: 'start' })
+      if (++tries < 12) timer = window.setTimeout(aim, 120)
+    }
+    aim()
+    // The reader scrolling themselves wins over our correction.
+    const stop = () => window.clearTimeout(timer)
+    const opts = { once: true, passive: true } as const
+    window.addEventListener('wheel', stop, opts)
+    window.addEventListener('touchstart', stop, opts)
+    window.addEventListener('keydown', stop, { once: true })
+    return () => {
+      stop()
+      window.removeEventListener('wheel', stop)
+      window.removeEventListener('touchstart', stop)
+      window.removeEventListener('keydown', stop)
+    }
+  }, [post.slug])
   const headings = extractHeadings(post.content)
 
   // Update document title + OG/Twitter meta while viewing a specific post.
@@ -1510,6 +1568,7 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
     : 'bg-[rgba(245,246,250,0.92)]'
 
   return (
+    <RecsProvider value={recsNav}>
     <motion.div
       key={post.slug}
       initial={{ opacity: 0, y: 10 }}
@@ -1602,7 +1661,8 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
             </div>
 
             {/* Article body */}
-            <div>
+            <ReferencesProvider value={refsCtx}>
+            <div ref={bodyRef}>
               {post.content.map((block, i) => (
                 <RenderBlock
                   key={i}
@@ -1613,6 +1673,11 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
                 />
               ))}
             </div>
+
+            <ReferenceList />
+            </ReferencesProvider>
+
+            <SelectionShare containerRef={bodyRef} pageUrl={`${typeof location !== 'undefined' ? location.origin : ''}${postHref(post.slug, post.lang ?? 'en')}`} title={post.title} lang={post.lang ?? 'en'} />
 
             {/* BIM Glossary */}
             <BimGlossary />
@@ -1642,22 +1707,10 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
         </div>
       </div>
 
-      {/* ── Related posts ── */}
-      {related.length > 0 && (
-        <section className="border-t border-[var(--border)] bg-[var(--surface)]">
-          <div className="max-w-[1120px] mx-auto px-4 sm:px-7 py-8 sm:py-12">
-            <div className="text-[10.5px] font-mono font-bold tracking-[0.12em] text-[var(--text-faint)] mb-5 sm:mb-7">
-              MORE ARTICLES
-            </div>
-            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
-              {related.map(p => (
-                <PostCard key={p.slug} post={p} onClick={() => onNavigateToPost(p.slug)} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* ── What next: ranked reads + tools for the topic ── */}
+      <ContinueReading post={post} />
     </motion.div>
+    </RecsProvider>
   )
 }
 

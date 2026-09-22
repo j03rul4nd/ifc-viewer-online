@@ -24,7 +24,7 @@ import React, {
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation, Trans } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import type { BlogPost, ContentBlock } from '../../lib/blog-posts'
+import type { BlogPost, ContentBlock, RichText } from '../../lib/blog-posts'
 import { SITE_URL } from '../../seo/config'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -98,22 +98,28 @@ const logger = {
 
 type CopyT = TFunction<'blog', 'copyForAI'>
 
+function richToMarkdown(text: RichText): string {
+  if (typeof text === 'string') return text
+  return text
+    .map((seg) => {
+      if (typeof seg === 'string') return seg
+      if ('def' in seg) return `${seg.text} (${seg.def})`
+      if ('cite' in seg) return `${seg.text ?? ''}[^${seg.cite}]`
+      if ('to' in seg) return `[${seg.text}](${SITE}/blog/${seg.to}/)`
+      return `[${seg.text}](${seg.href})`
+    })
+    .join('')
+}
+
 function blockToMarkdown(block: ContentBlock, t: CopyT): string {
   switch (block.type) {
     case 'h2':
       return `\n## ${block.text}\n`
     case 'h3':
       return `\n### ${block.text}\n`
-    case 'p': {
-      const text = typeof block.text === 'string'
-        ? block.text
-        : block.text
-            .map((s) => typeof s === 'string'
-              ? s
-              : 'to' in s ? `[${s.text}](${SITE}/blog/${s.to}/)` : `[${s.text}](${s.href})`)
-            .join('')
-      return `${text}\n`
-    }
+    case 'p':
+      return `${richToMarkdown(block.text)}
+`
     case 'ul':
       return block.items.map((i) => `- ${i}`).join('\n') + '\n'
     case 'ol':
@@ -121,7 +127,21 @@ function blockToMarkdown(block: ContentBlock, t: CopyT): string {
     case 'code':
       return `\`\`\`${block.lang ?? ''}\n${block.text}\n\`\`\`\n`
     case 'callout':
-      return `> **${block.variant.toUpperCase()}:** ${block.text}\n`
+      return `> **${block.title ?? block.variant.toUpperCase()}:** ${richToMarkdown(block.text)}\n`
+    case 'takeaways':
+      return [`**${block.title ?? 'Key takeaways'}**`, ...block.items.map((i) => `- ${richToMarkdown(i)}`), ''].join('\n')
+    case 'steps':
+      return block.items
+        .map((st, n) => `${n + 1}. **${st.title}**${st.body ? ` — ${richToMarkdown(st.body)}` : ''}${st.detail ? ` (${richToMarkdown(st.detail)})` : ''}`)
+        .join('\n') + '\n'
+    case 'decision':
+      return [`**${block.question}**`, ...block.options.map((o) => `- *${o.label}* → **${o.verdict}**: ${richToMarkdown(o.body)}`), ''].join('\n')
+    case 'related':
+      return `> ↪ ${block.why ?? 'Related'}: ${SITE}/blog/${block.to}/\n`
+    case 'tool':
+      return block.why ? `> 🛠 ${block.why}\n` : ''
+    case 'bars':
+      return [block.title ? `**${block.title}**` : '', ...block.items.map((i) => `- ${i.label}: ${i.value}${block.unit ?? ''}${i.note ? ` (${i.note})` : ''}`), ''].join('\n')
     case 'feature-grid':
       return (
         block.items.map((i) => `**${i.icon} ${i.title}:** ${i.body}`).join('\n') + '\n'
@@ -171,8 +191,10 @@ function blockToMarkdown(block: ContentBlock, t: CopyT): string {
 }
 
 export function postToMarkdown(post: BlogPost, t: CopyT): string {
-  const content = post.content
-    .map((block) => blockToMarkdown(block, t))
+  const notes = (post.references ?? [])
+    .map((r) => `[^${r.id}]: ${r.title}${r.source ? `, ${r.source}` : ''}${r.year ? ` (${r.year})` : ''}${r.url ? ` — ${r.url}` : r.to ? ` — ${SITE}/blog/${r.to}/` : ''}${r.note ? `. ${r.note}` : ''}`)
+    .join('\n')
+  const content = [...post.content.map((block) => blockToMarkdown(block, t)), notes]
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
 

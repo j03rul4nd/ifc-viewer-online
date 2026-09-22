@@ -6,11 +6,20 @@
  * - a plain string renders as text
  * - `{ text, to }`   renders an internal link to another blog post (by slug), navigated in-SPA
  * - `{ text, href }` renders an external link (opens in a new tab)
+ * - `{ text, def }`  renders a term with an inline definition (tap/click toggletip)
+ * - `{ cite }`       renders a numbered citation of `post.references`
  */
 export type InlineSegment =
   | string
   | { text: string; to: string }
   | { text: string; href: string }
+  | { text: string; def: string }
+  /**
+   * Citation of an entry in the post's `references`. Renders a numbered
+   * marker that opens the source's context card; `text`, if given, is shown
+   * before the marker ("ISO 19650-2[1]").
+   */
+  | { cite: string; text?: string }
 
 /** A paragraph's text: either a plain string (most common) or rich-text segments for inline links. */
 export type RichText = string | InlineSegment[]
@@ -22,7 +31,39 @@ export type ContentBlock =
   | { type: 'ul'; items: string[] }
   | { type: 'ol'; items: string[] }
   | { type: 'code'; text: string; lang?: string }
-  | { type: 'callout'; variant: 'tip' | 'warning' | 'info'; text: string }
+  /** `title` overrides the variant label ("Tip", "Warning", "Note"). */
+  | { type: 'callout'; variant: 'tip' | 'warning' | 'info'; text: RichText; title?: string }
+  /** "What do I leave with?" — 3–5 bullets, near the top of a long post. See docs/BLOG_COMPONENTS.md. */
+  | { type: 'takeaways'; title?: string; items: RichText[] }
+  /** A procedure. `detail` folds away so the sequence stays scannable. */
+  | { type: 'steps'; items: Array<{ title: string; body?: RichText; detail?: RichText; detailLabel?: string }> }
+  /**
+   * "Which of these applies to me?" The reader picks a situation and gets a
+   * verdict. `to` links the verdict to a post (by slug). 2–6 options.
+   */
+  | {
+      type: 'decision'
+      question: string
+      options: Array<{ label: string; verdict: string; body: RichText; to?: string; linkText?: string }>
+    }
+  /**
+   * A point of interest in ANOTHER post, placed where the reader needs it.
+   * `section` = the target h2's exact text (deep-links to it and quotes its
+   * opening line); `why` = one sentence on why it's worth the detour.
+   */
+  | { type: 'related'; to: string; section?: string; why?: string }
+  /** A tool on this site that does what the paragraph describes (see lib/blog-tools.ts). */
+  | { type: 'tool'; id: 'viewer' | 'validator' | 'guid-fixer' | 'fix-guides' | 'embed' | 'sdk' | 'handbook' | 'bim-handbook'; why?: string }
+  /** Horizontal bars for magnitudes that need comparing side by side. */
+  | {
+      type: 'bars'
+      title?: string
+      unit?: string
+      /** Scale maximum. Defaults to the largest value. */
+      max?: number
+      caption?: string
+      items: Array<{ label: string; value: number; note?: string; highlight?: boolean }>
+    }
   | {
       type: 'image'
       src: string
@@ -35,6 +76,12 @@ export type ContentBlock =
       sizes?: string
       credit?: string
       license?: string
+      /**
+       * Numbered hotspots over the image (x/y in % from top-left). Each opens
+       * its note in place and is listed in a legend below — use them to point
+       * at the part of a screenshot or diagram the paragraph is talking about.
+       */
+      annotations?: Array<{ x: number; y: number; label: string; text?: string }>
     }
   | {
       type: 'spatial-demo'
@@ -110,7 +157,25 @@ export type ContentBlock =
       caption?: string
       /** Style the first column as row headers. Default true. */
       rowHeaders?: boolean
+      /**
+       * Responsive strategy. 'auto' (default) picks one from the table's shape:
+       * cards for prose tables, a column picker for verdict matrices, sideways
+       * scroll with a sticky first column in between. Force 'scroll' when the
+       * grid itself is the point, 'cards' when rows are independent records.
+       */
+      layout?: 'auto' | 'scroll' | 'cards'
     }
+
+export interface BlogReference {
+  id: string
+  title: string
+  /** Publisher, standard body or author, e.g. "buildingSMART International". */
+  source?: string
+  year?: string
+  url?: string
+  to?: string
+  note?: string
+}
 
 export interface BlogPost {
   slug: string
@@ -161,6 +226,13 @@ export interface BlogPost {
   keywords?: string[]
   /** FAQ entries — rendered as FAQPage schema in the static HTML shell. */
   faqs?: { q: string; a: string }[]
+  /**
+   * Sources cited with `{ cite: id }` segments. Listed, numbered in this
+   * order, in a References section at the end of the post. `to` = another
+   * post (by slug), `url` = external source; `note` = why it matters here —
+   * the context the reader sees without leaving the sentence.
+   */
+  references?: BlogReference[]
   videos?: Array<{
     name: string
     description: string
@@ -238,6 +310,8 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'h2', text: 'The Health Score' },
       { type: 'p', text: "Every IFC file opened in this viewer receives a Health Score from 0 to 100. It's a single number that summarises the structural and data quality of your model. A score of 87 means 'minor issues, ready for coordination'. A score of 43 means 'serious problems, do not send to the CDE'." },
       { type: 'p', text: "The score is logarithmically weighted by issue severity — one schema error hurts more than 200 naming warnings. It runs entirely in a Web Worker, so it doesn't block your interaction with the 3D view." },
+      { type: 'related', to: 'ifc-health-score-guide', section: 'What Each Threshold Means', why: 'What a given score means for a delivery, and which threshold to ask for at each stage.' },
+      { type: 'tool', id: 'fix-guides', why: 'Every issue the check reports has its own page: what it means and how to fix it at the source.' },
     ],
   },
 
@@ -272,6 +346,7 @@ export const BLOG_POSTS: BlogPost[] = [
         text: "A Health Score turns vague quality requirements into a measurable, contractable deliverable criterion.",
         cite: 'IFC Viewer Blog',
       },
+      { type: 'tool', id: 'validator', why: 'Get the score for your own model — 44 rules, computed in the browser without uploading the file.' },
       { type: 'h2', text: 'What Each Threshold Means' },
       {
         type: 'health-score',
@@ -295,6 +370,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'p', text: "A BEP clause costs 50 words to write and prevents weeks of coordination delays. Here's a starting point:" },
       { type: 'code', lang: 'text', text: "IFC deliveries must achieve a minimum Health Score of 80 as validated by [agreed tool] before upload to the CDE. Models below this threshold will be rejected by the Information Manager and returned to the originator for remediation. The validated score must be attached to the transmittal as evidence." },
       { type: 'callout', variant: 'info', text: "Set the threshold in your AIR (Asset Information Requirements) or EIR (Employer Information Requirements), not just the BEP. The EIR is contractual; the BEP is the delivery plan. A threshold in the EIR creates a legally enforceable quality gate." },
+      { type: 'related', to: 'bim-execution-plan-ifc-quality-clauses', section: 'Clause 2 — A minimum quality threshold', why: 'The contract wording that turns a threshold into an enforceable BEP clause.' },
       { type: 'h2', text: "Score vs. Issue Count: The Key Difference" },
       { type: 'p', text: "A model with 800 issues can score 81. A model with 12 issues can score 34. The difference is severity. Eight hundred empty name warnings (info level, tiny penalty each) vs twelve missing IfcProject + broken aggregates + circular spatial references (errors, 3× weight each, logarithmic but still severe)." },
       { type: 'p', text: "This is intentional. Optimising for issue count creates perverse incentives — you'd disable the naming rules and look clean. Optimising for a score forces you to fix the things that actually matter." },
@@ -337,6 +413,7 @@ export const BLOG_POSTS: BlogPost[] = [
         "Model merges: Merging two IFC files without checking for GUID collisions between them is a guaranteed way to introduce duplicates, especially if both files were exported from the same source model.",
         "Script-generated GUIDs: Custom export scripts that generate GUIDs using plain UUID (32 hex chars) and truncate to 22 characters without the correct base-64 encoding — producing non-unique strings or invalid format.",
       ]},
+      { type: 'related', to: 'ifc-guids-changing-every-export', section: 'Why Revit Regenerates GUIDs', why: 'The related problem: GUIDs that change on every export, and the Revit setting behind it.' },
       { type: 'h2', text: 'What Duplicate GUIDs Break' },
       {
         type: 'feature-grid',
@@ -365,6 +442,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'h3', text: 'Option 3: Fix in ArchiCAD' },
       { type: 'p', text: "In ArchiCAD: File → Save As → IFC 2x3 → Settings → IFC Translation Settings → enable \"Write stable GlobalIDs (from AC internal IDs)\". Without this enabled, ArchiCAD generates new GUIDs on every export." },
       { type: 'callout', variant: 'warning', text: "Never fix duplicate GUIDs by manually editing the IFC text file and typing new random strings. The IFC GUID format has specific constraints — the first character must be in the range 0–3 (values 0x00–0x03 in the 6-bit alphabet), and random ASCII will produce invalid GlobalIds." },
+      { type: 'tool', id: 'guid-fixer' },
     ],
   },
 
@@ -440,12 +518,14 @@ export const BLOG_POSTS: BlogPost[] = [
         "Parametric design exploration where IFC round-tripping would destroy family relationships.",
       ]},
       { type: 'callout', variant: 'info', text: "The answer to 'IFC or RVT for delivery?' is almost always IFC. The question is really 'which IFC schema?' — IFC4 for new projects, IFC2x3 only if your CDE or receiving tool explicitly requires it." },
+      { type: 'tool', id: 'viewer', why: 'Open an IFC in the browser to see what the receiving side will actually get.' },
       { type: 'h2', text: "IFC Schema Versions: Which to Choose" },
       { type: 'ul', items: [
         "IFC4 (ISO 16739-1:2018): Current standard. Better geometry compression via tessellation (50-70% smaller files), improved material layer assignments, explicit quantity sets. Use this for all new projects.",
         "IFC2x3: The legacy standard from 2006. Still widely supported and required by some contracts and CDEs. Choose if your EIR specifies it, or if any receiving tool doesn't support IFC4.",
         "IFC4x3: The new infrastructure extension for roads, bridges, tunnels. Only relevant for civil/infrastructure projects. Limited tool support as of 2026.",
       ]},
+      { type: 'related', to: 'ifc2x3-vs-ifc4', section: 'Upgrade to IFC4 If...', why: 'When moving to IFC4 is worth it — and when IFC2x3 is still the safer delivery.' },
       { type: 'h2', text: 'Why Most Projects Still Deliver IFC2x3' },
       { type: 'p', text: "Inertia. IFC2x3 was the standard for 15 years; every tool supports it. IFC4 has been available since 2013 and ISO-ratified since 2018, but many CDEs, viewer tools, and procurement workflows were built around IFC2x3 assumptions. Until your CDE explicitly validates IFC4, check before you upgrade." },
       {
@@ -486,6 +566,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'h2', text: '1. Duplicate GlobalIds (GUIDs)' },
       { type: 'p', text: "A GlobalId is the permanent identity of an IFC element — it survives model merges, version updates, and software migrations. When two elements share the same GUID, every tool that relies on stable references (BCF workflows, Revit link tracking, CDE versioning) breaks silently." },
       { type: 'callout', variant: 'tip', text: "In Revit: File → Export → IFC → Modify Setup → Advanced → set \"Export IFC GUIDs\" to \"Keep Existing\". This preserves stable GlobalIds rather than regenerating them on every export." },
+      { type: 'related', to: 'duplicate-guids-ifc', section: 'How to Fix Duplicate GUIDs', why: 'The full fix for the most common error, per authoring tool.' },
       { type: 'h2', text: '2. Orphan Elements' },
       { type: 'p', text: "An orphan is a physical element with no spatial container in the IFC hierarchy — it exists in the file but doesn't appear in Project → Site → Building → Storey. Most viewers skip orphans entirely. The cause is usually elements placed on a level without being associated with a floor plan, or linked-file elements that lost their host storey on export." },
       { type: 'h2', text: '3. Wrong Container' },
@@ -516,6 +597,7 @@ export const BLOG_POSTS: BlogPost[] = [
         'Name every element, even generically ("Wall-001" beats empty string).',
         'Spatial hierarchy: Project → Site → Building → Storey → elements.',
       ]},
+      { type: 'tool', id: 'fix-guides' },
     ],
   },
 
@@ -535,6 +617,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'h2', text: "How It's Calculated" },
       { type: 'p', text: "The score uses a logarithmic penalty model: each validation issue subtracts points from 100, but the penalty diminishes with scale. A model with 1,000 duplicate GUID errors is penalised more than one with 10, but not 100× more — this prevents a large, dense model from looking arbitrarily worse than a small, sparse one for the same underlying problem density." },
       { type: 'p', text: "Issue severity is weighted: schema errors carry 3× the penalty of warnings, which carry 3× the penalty of info checks. The final score is calculated per-model and aggregated when multiple models are open." },
+      { type: 'tool', id: 'validator' },
       { type: 'h2', text: 'What Score Should You Require?' },
       { type: 'ul', items: [
         '≥ 90 — Design development and LOD 300+ coordination deliveries.',
@@ -543,6 +626,7 @@ export const BLOG_POSTS: BlogPost[] = [
         '< 60 — Not suitable for any formal CDE delivery.',
       ]},
       { type: 'callout', variant: 'info', text: "Add a minimum Health Score threshold to your project's BIM Execution Plan. 'IFC deliveries must achieve a Health Score ≥ 80 before upload to the CDE' costs nothing to write and prevents enormous coordination delays." },
+      { type: 'related', to: 'ifc-acceptance-criteria', section: 'The acceptance criteria table', why: 'Where the required score sits among the other acceptance criteria for a delivery.' },
       { type: 'h2', text: 'Why a Single Number Matters' },
       { type: 'p', text: "Detailed validation reports — 400 issues across 12 rule categories — are invaluable for fixing problems. But they're not useful for tracking progress over time or communicating quality to stakeholders who don't work in IFC files." },
       { type: 'p', text: "A Health Score creates a shared reference point that everyone understands: the model is at 73, we need it at 80 before coordination. It turns model quality from a vague aspiration into a measurable deliverable criterion." },
@@ -577,12 +661,14 @@ export const BLOG_POSTS: BlogPost[] = [
         '"Split Walls and Columns by Level": On. Ensures walls are associated with individual storeys.',
       ]},
       { type: 'callout', variant: 'warning', text: "Never export directly to the CDE. A failed delivery that requires re-upload creates a new version in the CDE audit trail and notifies the entire project team. Always validate locally first." },
+      { type: 'tool', id: 'validator', why: 'Check the export before it leaves your machine — the settings only matter if the result passes.' },
       { type: 'h2', text: 'Common Revit-Specific Issues After Export' },
       { type: 'ul', items: [
         'Proxy overuse: Revit families without an IFC mapping export as IfcBuildingElementProxy. Map common families to proper IFC classes in the export mapping table.',
         'Coordinate offset: Verify the project shares coordinates with the survey point before export.',
         'Missing property sets: Revit properties export as custom Psets by default. Review the Pset mapping to ensure required standard Psets are included.',
       ]},
+      { type: 'related', to: 'revit-ifc-export-breaks', section: 'The Diagnostic Workflow', why: 'When the export still breaks: the five usual causes, in the order to check them.' },
     ],
   },
 
@@ -607,11 +693,13 @@ export const BLOG_POSTS: BlogPost[] = [
         'Quantities: Explicit area and volume quantities via IfcElementQuantity are first-class in IFC4, not a workaround.',
         'Infrastructure: IfcFacility and built environment extensions prepare IFC for roads, bridges, and tunnels.',
       ]},
+      { type: 'related', to: 'ifc-coordinates-georeferencing', section: 'IFC4 Georeferencing Entities', why: 'One IFC4 change that matters in practice: real georeferencing with IfcMapConversion.' },
       { type: 'h2', text: 'Stay on IFC2x3 If...' },
       { type: 'p', text: "Your workflow includes any of: Tekla Structures (check your version's IFC4 support level), older Navisworks installations (pre-2020 have incomplete IFC4 geometry support), or contracts that explicitly specify IFC2x3." },
       { type: 'h2', text: 'Upgrade to IFC4 If...' },
       { type: 'p', text: "You're using: Solibri (full IFC4 support since 2019), ArchiCAD 23+ (excellent IFC4 output quality), or any ISO 19650 delivery where the EIR specifies IFC4. Also upgrade if large file sizes are slowing coordination — tessellated geometry typically halves IFC file size." },
       { type: 'callout', variant: 'tip', text: "Check your CDE's supported IFC schema before committing. Some CDEs silently convert IFC4 files to IFC2x3 on upload — defeating the purpose of the upgrade. Ask your CDE administrator for the supported schema list." },
+      { type: 'tool', id: 'viewer', why: 'Open your IFC2x3 or IFC4 export to see what actually reaches the receiver.' },
     ],
   },
 
@@ -649,6 +737,7 @@ export const BLOG_POSTS: BlogPost[] = [
         'Classification system matches the one agreed in the PIR.',
         'Health Score ≥ 80 (structural quality prerequisite for formal delivery).',
       ]},
+      { type: 'related', to: 'ifc-model-handover-documentation', section: '5. The transmittal note', why: 'What the transmittal that accompanies each container should record.' },
       { type: 'h2', text: 'Turning the Checklist Into an Agreement' },
       {
         type: 'p',
@@ -660,6 +749,7 @@ export const BLOG_POSTS: BlogPost[] = [
         headline: 'The machinery behind the checklist',
         body: 'The BIM Information Handbook covers what this checklist sits inside: how a common data environment actually works, the OIR → AIR → EIR → BEP requirement chain, level of information need instead of LOD numbers, delivery planning and handover. 48 pages, free.',
       },
+      { type: 'tool', id: 'handbook' },
     ],
   },
 
@@ -717,6 +807,7 @@ export const BLOG_POSTS: BlogPost[] = [
         cite: 'buildingSMART Forums — common IFC export mistakes',
       },
       { type: 'p', text: "An out-of-range GlobalId will be silently tolerated by lenient parsers and rejected by strict ones — so the same file 'works' in one tool and fails validation in another, which is maddening to diagnose without a checker that flags the range explicitly." },
+      { type: 'related', to: 'duplicate-guids-ifc', section: 'What Duplicate GUIDs Break', why: 'Why GUID problems matter downstream: BCF, clash results and model comparison.' },
       { type: 'h2', text: 'How to Detect Unstable or Invalid GUIDs' },
       { type: 'p', text: "You can't see GUID drift by looking at a single file — you need to compare two exports, or check for invalid format and duplicates within one. Open both revisions in the validator: it flags GlobalIds that are out of the valid range, duplicated within a file, or malformed, in under 30 seconds, entirely in your browser. Nothing is uploaded." },
       {
@@ -727,6 +818,7 @@ export const BLOG_POSTS: BlogPost[] = [
         schema: 'IFC2x3',
         size: '2.4 MB',
       },
+      { type: 'tool', id: 'guid-fixer', why: 'Finds duplicate GlobalIds in a file and repairs them, in the browser — useful when the authoring model can’t be re-exported in time.' },
       { type: 'h2', text: 'How to Keep GUIDs Stable' },
       { type: 'h3', text: 'Revit' },
       { type: 'p', text: "Use the open-source IFC exporter, and in File → Export → IFC → Modify Setup → Advanced, set \"Export IFC GUIDs\" to \"Keep Existing\" (never \"Generate New\"). This reuses the stable GlobalId Revit stores per element instead of minting a new one each export. For elements that split into multiple IFC entities, accept that the sub-entities may not be perfectly stable — anchor your coordination on the host element's ID." },
@@ -776,11 +868,13 @@ export const BLOG_POSTS: BlogPost[] = [
         "Make sure the declared data type (Text, Real, Integer, Boolean) matches the Revit parameter's type.",
         "Verify the parameter exists on the categories you're exporting — a wall Pset line won't populate doors.",
       ]},
+      { type: 'related', to: 'clean-ifc-export-revit', section: 'Step 3: Configure These Settings', why: 'The exporter settings that decide which property sets are written at all.' },
       { type: 'h2', text: "Cause 4: It Works for One Person but Not Another" },
       { type: 'p', text: "A genuinely confusing case reported repeatedly: the same model exports all parameters when one team member runs it, but loses shared parameters when a colleague exports it. The usual culprit is that shared parameters and the custom Pset mapping file are stored locally per machine. If the shared parameter file or the mapping file isn't identical on both workstations, the export silently differs." },
       { type: 'callout', variant: 'warning', text: "Store the shared parameter file and the IFC Pset mapping file on a shared network location or in your project template, and point everyone's Revit at the same copy. Per-machine local files are the reason 'the same export' produces different IFC data for different people." },
       { type: 'h2', text: "Cause 5: Standard Psets Were Never Enabled" },
       { type: 'p', text: "Common Property Sets (Pset_WallCommon, Pset_DoorCommon, and so on) are the schema-standardised data that any receiving tool knows how to read — the passport data of your model. They are not always exported by default. In the IFC export setup, enable \"Export IFC Common Property Sets\" so the standard Psets are written alongside any custom ones." },
+      { type: 'tool', id: 'validator', why: 'Check which property sets actually reached the IFC before you send it.' },
       { type: 'h2', text: "The Pre-Delivery Property Checklist" },
       { type: 'ol', items: [
         "Populate empty parameters in Revit — empty values are never exported.",
@@ -808,6 +902,13 @@ export const BLOG_POSTS: BlogPost[] = [
     category: 'Validation',
     categorySlug: 'validation',
     author: 'IFC Viewer Team',
+    references: [
+      { id: 'iso19650', title: 'ISO 19650-2: Delivery phase of the assets', source: 'ISO', year: '2018', url: 'https://www.iso.org/standard/68080.html', note: 'Defines the CDE workflow and when an information container may be shared — the reason a check belongs BEFORE upload.' },
+      { id: 'bsi-validate', title: 'IFC Validation Service', source: 'buildingSMART International', url: 'https://validate.buildingsmart.org/', note: 'The official conformance checker: schema, normative rules and bSDD. Requires uploading the file.' },
+      { id: 'ifc-schema', title: 'IFC 4.3 documentation', source: 'buildingSMART International', url: 'https://ifc43-docs.standards.buildingsmart.org/', note: 'The standard itself — entity definitions and the rules a conformant file must follow.' },
+      { id: 'ifcopenshell', title: 'IfcOpenShell', source: 'Open-source toolkit', url: 'https://ifcopenshell.org/', note: 'Python/C++ IFC library; its validate module checks schema conformance locally and in CI.' },
+      { id: 'ids', title: 'IFC model checker: schema, quality and IDS', to: 'ifc-model-checker-guide', note: 'How project requirements (IDS) sit on top of schema and quality checks.' },
+    ],
     keywords: ['how to validate an IFC file', 'validate IFC before sending', 'IFC validation checklist', 'free IFC validator', 'buildingSMART validation service', 'IfcOpenShell validate', 'IFC Health Score', 'pre-delivery IFC check'],
     faqs: [
       {
@@ -840,13 +941,14 @@ export const BLOG_POSTS: BlogPost[] = [
       { type: 'p', text: "This is the practical map: what 'valid' means, the three ways to check it, what each one will and won't catch, and the checklist to run in the ten minutes before you hit send." },
       { type: 'h2', text: 'The 60-Second Answer' },
       { type: 'p', text: "If you just need the model checked before a deadline, this is the whole workflow:" },
-      { type: 'ol', items: [
-        'Export to a local folder — never straight to the CDE.',
-        'Open the file in a browser validator: it parses locally, so nothing is uploaded.',
-        'Read the Health Score, then sort the issues by severity rather than by count.',
-        'Fix the causes in the authoring tool — Revit, ArchiCAD, Tekla — and re-export. Never hand-edit the IFC.',
-        'Re-check, confirm a Health Score of 80 or above, then upload and record the score on the transmittal.',
+      { type: 'steps', items: [
+        { title: 'Export to a local folder', body: ['Never straight to the ', { text: 'CDE', def: 'Common Data Environment — the shared project repository where information containers are published and reviewed (ISO 19650).' }, { cite: 'iso19650' }, '.'] },
+        { title: 'Open the file in a browser validator', body: 'It parses locally, so nothing is uploaded.' },
+        { title: 'Read the Health Score, then sort by severity', body: 'Severity, not count: one critical issue matters more than many minor ones.' },
+        { title: 'Fix the causes in the authoring tool and re-export', body: 'Revit, ArchiCAD, Tekla — wherever the model was built.', detail: 'Never hand-edit the IFC text: it routinely breaks GUIDs and references in ways far harder to find than the original problem.', detailLabel: 'Why not edit the IFC?' },
+        { title: 'Re-check, then upload with the score', body: 'Confirm a Health Score of 80 or above and record it on the transmittal.' },
       ]},
+      { type: 'related', to: 'revit-ifc-export-breaks', section: 'The Diagnostic Workflow', why: 'If the issues trace back to a Revit export, this is the order to check the five usual causes in before you re-export.' },
       { type: 'p', text: "The rest of this article is why each step is there, and which tool to reach for when the fast route isn't enough." },
       { type: 'h2', text: "What 'Valid' Actually Means" },
       { type: 'p', text: "There are two layers, and they're independent. A file can pass one and fail the other." },
@@ -858,15 +960,15 @@ export const BLOG_POSTS: BlogPost[] = [
         ],
       },
       { type: 'callout', variant: 'info', text: "A file with zero schema errors can still score 40 on a practical health check — broken spatial hierarchy, thousands of unnamed elements, geometry 10 km from the origin. Schema-valid does not mean delivery-ready." },
-      { type: 'p', text: ["There is a third layer above these two: checking the model against your project's own information requirements with buildingSMART IDS. That belongs to the EIR rather than to the file itself, and it has its own guide — see ", { text: 'IFC Model Checker: schema, quality and IDS', to: 'ifc-model-checker-guide' }, ". This article stays on the two layers you have to clear before any delivery."] },
+      { type: 'p', text: ["There is a third layer above these two: checking the model against your project's own information requirements with buildingSMART IDS", { cite: 'ids' }, ". That belongs to the EIR rather than to the file itself, and it has its own guide — see ", { text: 'IFC Model Checker: schema, quality and IDS', to: 'ifc-model-checker-guide' }, ". This article stays on the two layers you have to clear before any delivery."] },
       { type: 'h2', text: 'Option 1: The buildingSMART Validation Service' },
-      { type: 'p', text: "The official, free, web-based service from buildingSMART International. It judges conformity against the IFC standard: STEP syntax, schema compliance, normative rules, and buildingSMART Data Dictionary alignment. It produces an authoritative pass/fail report — this is the reference for schema correctness." },
+      { type: 'p', text: ["The official, free, web-based service from buildingSMART International", { cite: 'bsi-validate' }, ". It judges conformity against the IFC standard", { cite: 'ifc-schema' }, ": STEP syntax, schema compliance, normative rules, and buildingSMART Data Dictionary alignment. It produces an authoritative pass/fail report — this is the reference for schema correctness."] },
       { type: 'ul', items: [
         "Best for: certifying that a file conforms to the IFC standard, especially for formal or contractual schema-conformance claims.",
         "What it doesn't do: it isn't a practical 'is this good enough to coordinate' score, and you upload the file to a service — a non-starter for confidential project data you can't send to a third party.",
       ]},
       { type: 'h2', text: 'Option 2: IfcOpenShell (for developers)' },
-      { type: 'p', text: "If you write Python, IfcOpenShell validates from the command line: python -m ifcopenshell.validate model.ifc. It's scriptable, free, runs locally, and integrates into CI pipelines for teams that automate QA." },
+      { type: 'p', text: ["If you write Python, IfcOpenShell", { cite: 'ifcopenshell' }, " validates from the command line: python -m ifcopenshell.validate model.ifc. It's scriptable, free, runs locally, and integrates into CI pipelines for teams that automate QA."] },
       {
         type: 'code',
         lang: 'bash',
@@ -973,6 +1075,7 @@ python validate_and_score.py model.ifc`,
           ['ISO 19650 milestone, LOD 300+', '90', 'Score + issue report + resolved-issue log'],
         ],
       },
+      { type: 'related', to: 'ifc-acceptance-criteria', section: 'The acceptance criteria table', why: 'The receiving side of the same rule: one row per criterion, so accepting or rejecting a model is never a judgement call.' },
       { type: 'callout', variant: 'tip', text: "Make it contractual: 'IFC deliveries must achieve a Health Score ≥ 80, validated before upload, with the score attached to the transmittal.' A schema-only check won't enforce delivery quality — a practical score will." },
       { type: 'p', text: ["Once the threshold is agreed, the rest is repetition: export locally, validate, fix the cause, re-export, deliver with the score attached. For the wider picture of what quality means across a whole project, see ", { text: 'The Complete Guide to IFC Quality', to: 'ifc-quality-guide' }, "."] },
     ],
@@ -1028,6 +1131,7 @@ python validate_and_score.py model.ifc`,
         "Geometry compression: deduplicate repeated elements (every identical bolt or baluster references one mesh) and quantize coordinates to shrink the payload.",
         "Reduce the file before you open it: export only the disciplines you need, and zip it (ifcZIP) for transfer.",
       ]},
+      { type: 'related', to: 'reduce-ifc-file-size', section: 'Start Safe: Lossless Methods', why: 'Shrink the file before anyone has to open it — the lossless steps come first.' },
       { type: 'h2', text: 'How to Open a Large Model Without a Server or Upload' },
       { type: 'p', text: "This viewer parses IFC client-side with WebAssembly and caches the converted geometry in the browser's Origin Private File System, so the expensive parse happens once and repeat loads are roughly 10× faster. There's no upload step and no server to set up — you get the convert-once benefit of a commercial pipeline without sending your model anywhere. Federating several discipline models in one view works the same way: load them one after another." },
       {
@@ -1040,6 +1144,7 @@ python validate_and_score.py model.ifc`,
       },
       { type: 'callout', variant: 'tip', text: "If a model still struggles, trim it before loading: export per discipline rather than one monolithic file, drop detail you don't need for the task at hand, and prefer IFC4 — its tessellated geometry is typically far smaller than the equivalent IFC2x3 B-rep notation. See 'IFC2x3 vs IFC4' in this blog." },
       { type: 'p', text: "The takeaway: you don't need a 64 GB workstation or a paid platform to inspect a 1 GB model. You need a pipeline that parses once, caches the result, and only draws what you're looking at — and you can get that in a browser tab." },
+      { type: 'tool', id: 'viewer' },
     ],
   },
 
@@ -1078,6 +1183,7 @@ python validate_and_score.py model.ifc`,
       { type: 'h2', text: 'Cause 3: The Whole Model Is in the Wrong Place' },
       { type: 'p', text: "If the exported model sits far from the origin — or the geometry looks subtly distorted — it's a coordinate problem. IFC is imported according to Revit's Internal Origin regardless of the Project Base Point and Survey Point, and geometry placed far from the world origin can distort due to floating-point precision. This is its own deep topic; the short version is to export with Shared Coordinates and keep the model near the origin." },
       { type: 'p', text: ["For the full survey-point / base-point / georeferencing breakdown, see ", { text: 'IFC Coordinates Are Wrong', to: 'ifc-coordinates-georeferencing' }, " in this blog."] },
+      { type: 'related', to: 'ifc-coordinates-georeferencing', section: 'Revit\'s Three Origins', why: 'Which of Revit\'s three origins the export uses, and why a model lands kilometres away.' },
       { type: 'h2', text: 'Cause 4: Elements Are Missing or Became Proxies' },
       { type: 'p', text: "Two related failures. Elements can vanish if they lost their host storey on export (they become orphans most viewers skip). And Revit families without an IFC class mapping export as IfcBuildingElementProxy — they're technically present but typeless, so downstream tools treat them as generic blobs. If more than a few percent of your model is IfcBuildingElementProxy, your export mapping table needs attention." },
       { type: 'h2', text: 'Cause 5: Properties or GUIDs Came Across Wrong' },
@@ -1093,6 +1199,7 @@ python validate_and_score.py model.ifc`,
         'Run validation, target Health Score ≥ 80, then deliver.',
       ]},
       { type: 'callout', variant: 'warning', text: "Never debug a broken export by editing the IFC text file. Fix the cause in Revit and re-export — a hand-edited IFC almost always introduces new problems (invalid GUIDs, broken references) that are harder to find than the original." },
+      { type: 'tool', id: 'fix-guides' },
     ],
   },
 
@@ -1122,6 +1229,7 @@ python validate_and_score.py model.ifc`,
       },
       { type: 'h2', text: 'Two Layers: Schema Validity vs Practical Health' },
       { type: 'p', text: ["First, the distinction that confuses everyone. Schema validity means the file conforms to the IFC standard's syntax and structure. Practical health means it'll actually work downstream — stable identities, sound hierarchy, sensible coordinates, present data. A file can be schema-valid and practically broken. Most rejected deliveries are schema-valid. For how to check each layer, see ", { text: 'How to Validate an IFC File Before You Send It', to: 'how-to-validate-ifc-file' }, "."] },
+      { type: 'tool', id: 'validator' },
       { type: 'h2', text: 'The Six Failure Categories' },
       {
         type: 'feature-grid',
@@ -1136,6 +1244,7 @@ python validate_and_score.py model.ifc`,
       },
       { type: 'h2', text: 'Category 1: Identity' },
       { type: 'p', text: ["GlobalIds are the permanent identity of every element. They must be unique within a file, valid in format (22 chars, leading character 0–3), and stable across re-exports. See ", { text: 'Duplicate GUIDs in IFC', to: 'duplicate-guids-ifc' }, ' and ', { text: 'Why IFC GUIDs Change on Every Export', to: 'ifc-guids-changing-every-export' }, ' for detection and fixes.'] },
+      { type: 'related', to: 'ifc-guids-changing-every-export', section: 'How to Keep GUIDs Stable', why: 'Keeping identity stable across exports, tool by tool.' },
       { type: 'h2', text: 'Category 2: Spatial Hierarchy' },
       { type: 'p', text: ["IFC mandates a strict containment order. Elements must sit inside a storey, there must be exactly one IfcProject, and aggregate relationships must point at entities that exist. The detailed checklist is in ", { text: 'The 7 Most Common IFC Validation Errors', to: 'common-ifc-validation-errors' }, "."] },
       { type: 'h2', text: 'Category 3: Coordinates' },
@@ -1211,6 +1320,7 @@ python validate_and_score.py model.ifc`,
         "IfcMapConversion — the transform (offset, scale, rotation) from the model's local engineering coordinates to the projected CRS.",
       ]},
       { type: 'callout', variant: 'info', text: "If there's a discrepancy between IfcMapConversion and the data in IfcSite, IfcMapConversion takes priority. Don't rely on IfcSite latitude/longitude alone for precise positioning — the map conversion is the authoritative transform." },
+      { type: 'related', to: 'view-ifc-on-3d-map-online', section: 'What Makes a Map Placement Trustworthy?', why: 'What correct georeferencing looks like once the model is placed on a real map.' },
       { type: 'h2', text: 'Why Geometry Distorts Far From the Origin' },
       { type: 'p', text: "When a model's local coordinates are huge — because someone modelled at true national-grid easting/northing values — 3D engines lose precision. Floating-point numbers have finite resolution; at coordinates in the millions, that resolution is coarse enough to make geometry wobble or jitter. The fix is to model near a local origin and carry the real-world position in IfcMapConversion, not in the geometry itself." },
       { type: 'h2', text: 'Getting It Right on Export' },
@@ -1231,6 +1341,7 @@ python validate_and_score.py model.ifc`,
         size: '2.4 MB',
       },
       { type: 'p', text: ["Coordinates are part of the broader quality picture — for the full pre-delivery framework see ", { text: 'The Complete Guide to IFC Quality', to: 'ifc-quality-guide' }, ". And note that IFC 4.3 extends georeferencing significantly for infrastructure (roads, rail, bridges), where alignment and linear positioning add another layer on top of the entities above."] },
+      { type: 'tool', id: 'viewer', why: 'Open the export and check where it lands before you send it.' },
     ],
   },
 
@@ -1260,6 +1371,7 @@ python validate_and_score.py model.ifc`,
         "Source matters: the same IFC linked from a desktop folder versus from a cloud/CDE folder can produce different results, because the resolver path differs.",
         "GlobalId and mapping mismatches: Archicad and Revit don't always agree on how source elements map to IFC classes, which surfaces as type or identity drift across the round trip.",
       ]},
+      { type: 'related', to: 'ifc-properties-missing-after-export', section: 'Cause 3: Custom Pset Mapping File Problems', why: 'Property mapping is where most round-trip data gets lost.' },
       { type: 'h2', text: 'How to Make the Exchange Reliable' },
       { type: 'ol', items: [
         'Agree the IFC schema and MVD up front (IFC4 Reference View is a good cross-tool default).',
@@ -1277,6 +1389,7 @@ python validate_and_score.py model.ifc`,
         size: '2.4 MB',
       },
       { type: 'p', text: ["Cross-tool exchange is one slice of overall model quality — for the complete pre-delivery framework see ", { text: 'The Complete Guide to IFC Quality', to: 'ifc-quality-guide' }, ', and for stable identities across the round trip see ', { text: 'Why IFC GUIDs Change on Every Export', to: 'ifc-guids-changing-every-export' }, '.'] },
+      { type: 'tool', id: 'validator', why: 'Check each exchanged file with the same rules on both sides of the round trip.' },
     ],
   },
 
@@ -1339,6 +1452,7 @@ python validate_and_score.py model.ifc`,
           ],
         },
       },
+      { type: 'related', to: 'best-free-ifc-viewer', section: 'Decision Matrix: Matching the Tool to Your Workflow', why: 'A situation-by-situation matrix across ten viewers, desktop tools included.' },
       { type: 'h2', text: "Where This Viewer Fits" },
       { type: 'p', text: "This one is deliberately in the private/local camp: it parses IFC in your browser via WebAssembly (zero bytes uploaded, no account), handles files up to ~500 MB with convert-once caching, and — the part most free viewers skip — runs 44 validation rules and returns a Health Score. It goes further than most: drop a buildingSMART .ids file to check the model against contractual delivery requirements (all six IDS 1.0 facets, validated against the official test cases), coordinate issues with full BCF 2.1 / 3.0 import and export, and place a georeferenced model on a real-world 3D map (street, satellite or terrain) — all client-side, no API key, nothing uploaded. So it's not just 'can I see it', it's 'is it any good, does it meet the spec, and where does it sit'." },
       {
@@ -1351,6 +1465,7 @@ python validate_and_score.py model.ifc`,
       },
       { type: 'callout', variant: 'tip', text: "Quick decision rule: if the file is confidential or you need to check its quality, choose a local viewer with validation. If you need cloud storage and collaboration and confidentiality isn't a concern, a platform viewer makes sense. Match the tool to the constraint, not the brand." },
       { type: 'p', text: ["Once you've picked a viewer, the next question is usually whether the model is actually deliverable — for that, see ", { text: 'How to Validate an IFC File Before You Send It', to: 'how-to-validate-ifc-file' }, ' and ', { text: 'The Complete Guide to IFC Quality', to: 'ifc-quality-guide' }, '.'] },
+      { type: 'tool', id: 'viewer' },
     ],
   },
 
@@ -1405,6 +1520,8 @@ python validate_and_score.py model.ifc`,
         size: '2.4 MB',
       },
       { type: 'p', text: ["If the goal is simply to view a huge model rather than deliver a smaller one, the file size may not be the real problem — see ", { text: 'Why Large IFC Files Crash Your Browser', to: 'large-ifc-file-browser-crash' }, " for the viewer-side fixes."] },
+      { type: 'related', to: 'large-ifc-file-browser-crash', section: 'Why Large IFC Files Crash the Browser', why: 'What actually makes a large file fail to open, so you know which reductions matter.' },
+      { type: 'tool', id: 'validator', why: 'Re-run the checks on the smaller file: shrinking must not cost GUIDs, properties or hierarchy.' },
     ],
   },
 
@@ -1497,6 +1614,8 @@ with open("elements.csv", "w", newline="") as f:
         schema: 'IFC2x3',
         size: '2.4 MB',
       },
+      { type: 'related', to: 'view-ifc-web-threejs-fragments', section: 'The Production Pattern: Convert Once, Load Many', why: 'The next step for developers: rendering IFC in a web app without re-parsing it on every load.' },
+      { type: 'tool', id: 'sdk' },
     ],
   },
 
@@ -1574,6 +1693,7 @@ fragments.load(cached);            // fast`,
         "No server-side rendering: web-ifc runs in the browser/Node, not as a no-JS SSR step — plan for client-side or a build-time conversion, not request-time SSR.",
         "Loading optimization: tile and cull large models so you only draw what's near the camera. (See 'Why Large IFC Files Crash Your Browser'.)",
       ]},
+      { type: 'related', to: 'large-ifc-file-browser-crash', section: 'The Strategies That Actually Help', why: 'Memory and parsing strategies for the large files that break naive viewers.' },
       { type: 'h2', text: "Or Don't Build It" },
       { type: 'p', text: "This is exactly the pipeline this viewer runs: web-ifc for parsing, a Fragments-style convert-once step, OPFS caching so repeat loads are ~10× faster, and validation on top. If your goal is to view and check IFCs rather than to build a viewer, you can skip the engineering and just open the file." },
       {
@@ -1591,6 +1711,7 @@ fragments.load(cached);            // fast`,
         title: 'Build your IFC embed',
         description: 'Paste a public IFC URL, choose a layout, and copy the iframe. Live preview updates as you go.',
       },
+      { type: 'tool', id: 'sdk' },
     ],
   },
 
@@ -1639,6 +1760,7 @@ fragments.load(cached);            // fast`,
         'Your email address — only if you voluntarily submit the footer subscription form.',
         'A validation issue summary — only if you click Share Report. The URL encodes Health Score and issue list, not model geometry. You control when and whether to share.',
       ]},
+      { type: 'related', to: 'gdpr-bim-ifc-data-guide', section: 'When Is an IFC File Personal Data?', why: 'The legal side of the same question: when a model counts as personal data under GDPR.' },
       { type: 'h2', text: 'Three NDA Scenarios — What the Rules Say' },
       { type: 'h3', text: "Scenario 1: You're reviewing a client's model under NDA" },
       { type: 'p', text: "You've received an IFC from a client under NDA. You want to run a health check before a coordination meeting. Because the model is processed entirely in your browser, there is no data transfer event that would implicate the NDA. The model never leaves your machine — you're using your browser as a local analysis environment, not a cloud service." },
@@ -1687,6 +1809,7 @@ fragments.load(cached);            // fast`,
         ' documents every data flow, and the MIT-licensed source code on GitHub is fully auditable.',
       ]},
       { type: 'pull-quote', text: "There is no service agreement to review with your client — no data changes hands.", cite: 'IFC Viewer Online FAQ' },
+      { type: 'tool', id: 'validator', why: 'Try it with DevTools open: validate a model and watch that the file never leaves the browser.' },
     ],
   },
 
@@ -1732,6 +1855,7 @@ fragments.load(cached);            // fast`,
           { icon: '⚠️', title: 'Coordination platform (ACC, BIM 360)', body: 'Autodesk provides a DPA as part of their Terms of Service — verify it covers your project data categories and storage region.' },
         ],
       },
+      { type: 'tool', id: 'validator', why: 'Validation that runs entirely in the browser — no upload, so no processor to vet.' },
       { type: 'h2', text: 'Six Questions to Ask Any BIM Tool Vendor' },
       { type: 'ol', items: [
         'Is model data processed locally on the user\'s device, or uploaded to your servers?',
@@ -1741,6 +1865,7 @@ fragments.load(cached);            // fast`,
         'Who are your sub-processors (infrastructure, analytics, storage)?',
         'Are you ISO 27001 or SOC 2 Type II certified?',
       ]},
+      { type: 'related', to: 'bim-tool-it-security-checklist', section: '1. Where is project data stored?', why: 'The IT-security version of the vendor questions, with what a good answer looks like.' },
       { type: 'h2', text: 'IFC Viewer Online: GDPR at a Glance' },
       {
         type: 'feature-grid',
@@ -1790,6 +1915,7 @@ fragments.load(cached);            // fast`,
       { type: 'p', text: "IFC model data is never stored on any server. All parsing, 3D rendering, and validation run in your browser via WebAssembly. The only 'storage' is your browser's Origin Private File System (OPFS) — a sandboxed local area on your own device that no website or server can access. When you close the tab, the data stays on your machine." },
       { type: 'h2', text: '2. Does the tool transmit model data over the internet?' },
       { type: 'p', text: "No. The IFC file is opened by browser File APIs and passed directly to the WebAssembly parser. No XHR or Fetch requests carry model data. Verify this in your browser's DevTools Network tab: filter for XHR/Fetch while loading a file and you will see zero outbound requests for model content." },
+      { type: 'related', to: 'ifc-viewer-confidential-nda-projects', section: 'The 30-Second DevTools Verification', why: 'How to verify the answer yourself in 30 seconds instead of trusting the vendor.' },
       { type: 'h2', text: '3. What data does the tool collect?' },
       { type: 'ul', items: [
         "Anonymous usage events via PostHog: 'file opened', 'validation ran', 'export clicked'. No model content, no filenames, no property values.",
@@ -1921,6 +2047,7 @@ fragments.load(cached);            // fast`,
         body: 'The IFC Delivery Handbook has these clauses in full, an acceptance criteria table you can paste into an EIR appendix, and the two emails to send when a delivery has to go back. 64 pages, free.',
       },
 
+      { type: 'related', to: 'ifc-health-score-guide', section: 'What Each Threshold Means', why: 'What the numbers in the threshold clause mean in practice.' },
       { type: 'h2', text: 'Clause 3 — Identifier stability' },
       { type: 'code', lang: 'text', text: "IFC GlobalIds shall be persistent for the life of the project: the identifier\nof an element shall not change between revisions unless the element itself is\ndeleted and replaced. Task teams shall configure authoring and export tools\naccordingly, and shall report any event that invalidates identifiers (model\nrecreation, round-trip import, template migration) at the time it occurs." },
       { type: 'p', text: "If you add only one clause from this article, add this one. Threshold clauses improve the average delivery; the identifier clause prevents a class of damage that cannot be repaired afterwards." },
@@ -1955,6 +2082,7 @@ fragments.load(cached);            // fast`,
         text: ['That table is the subject of the next article: ', { text: 'IFC acceptance criteria — how to accept or reject a model without an argument', to: 'ifc-acceptance-criteria' }, '. And once a container passes, the question becomes what travels with it, which is covered in ', { text: 'what to hand over with an IFC model', to: 'ifc-model-handover-documentation' }, '.'],
       },
 
+      { type: 'tool', id: 'handbook' },
       { type: 'h2', text: 'The one-paragraph version' },
       { type: 'p', text: "If your BEP is already written and reopening it is politically expensive, add this single paragraph to the information delivery section and you will have captured most of the value:" },
       { type: 'code', lang: 'text', text: "IFC containers issued at S2 or above shall be checked with the project rule\nset immediately before issue, shall reach a Health Score of at least 80/100,\nand shall carry persistent GlobalIds between revisions. The check report\nshall accompany the container; exceptions require the written agreement of\nthe Information Manager." },
@@ -2055,12 +2183,14 @@ fragments.load(cached);            // fast`,
         text: ['Step 1 is the same routine the sender should have run before issuing; ', { text: 'how to check an IFC model before delivery', to: 'how-to-check-ifc-model-before-delivery' }, ' walks through it from the sending side. When both ends run the same checks, the review stops being an inspection and becomes a confirmation.'],
       },
 
+      { type: 'tool', id: 'validator', why: 'Run the review checks on the received file in the browser — nothing is uploaded.' },
       { type: 'h2', text: 'How to write the rejection' },
       { type: 'p', text: "The register matters as much as the content, because the person receiving it is usually behind schedule and rarely at fault personally. Three rules: name the criterion, not the model. Give the cause, not just the symptom. Say what is blocked and for how long." },
       { type: 'code', lang: 'text', text: "Hi {name},\n\nWe've run the agreed pre-acceptance check on {filename} (rev {n}) and it\ncomes back at {score}/100, below the {threshold} we set in clause {x} of\nthe BEP.\n\nThe two findings driving that are:\n  - {rule id} — {plain description} ({n} elements)\n  - {rule id} — {plain description} ({n} elements)\n\nBoth look like export settings rather than modelling, so they should be\nquick — the report is attached with the element references.\n\nWe'll hold coordination on this container until the next issue." },
       { type: 'p', text: "Notice what is absent: any adjective about the model, and any speculation about why it happened. A number, two rule identifiers, a likely cause and a consequence. That is a message nobody has to defend themselves against, which is why it gets acted on instead of escalated." },
       { type: 'callout', variant: 'tip', text: "\"Both look like export settings rather than modelling\" is the most useful sentence in that email. Roughly nine findings in ten are a setting, and saying so out loud converts a criticism into a five-minute fix." },
 
+      { type: 'related', to: 'common-ifc-model-errors', section: 'Overview: The 10 Most Common IFC Errors', why: 'The errors a rejection usually cites, and how the sender fixes each one.' },
       { type: 'h2', text: 'When to accept a model that failed' },
       { type: 'p', text: "Sometimes the right answer is yes anyway — the missing information is outside the level of information need for the stage, or a supplier has not delivered yet, or the alternative is stopping the project. Accepting a failed delivery is a legitimate decision. Accepting it silently is not." },
       { type: 'p', text: "A waived finding needs three things attached: a reason, a person who agreed, and a date. That is the whole difference between a finding accepted and a finding ignored, and it is what stops the same issue being rediscovered as a crisis two stages later." },
@@ -2116,6 +2246,7 @@ fragments.load(cached);            // fast`,
         text: ['If you are not sure which findings in your report are worth reporting on and which are noise, ', { text: 'the most common IFC model errors', to: 'common-ifc-model-errors' }, ' is a reasonable triage list — the structural ones are the ones a receiver cares about.'],
       },
 
+      { type: 'related', to: 'how-to-validate-ifc-file', section: 'What Each Tool Actually Catches', why: 'Which check produces which report — and what each one cannot see.' },
       { type: 'h2', text: '2. The check record' },
       { type: 'p', text: "The weakest link in every quality process is that the check and the claim are separate things. Anyone can say a model scored 92. A check record ties the number to a specific file: the file's own fingerprint, the rule set, the schema, the timestamp, the score." },
       { type: 'p', text: "Two properties make such a record worth more than a screenshot of a panel:" },
@@ -2155,6 +2286,7 @@ fragments.load(cached);            // fast`,
         type: 'p',
         text: ['The criteria the receiver applies to all of this are covered in ', { text: 'IFC acceptance criteria', to: 'ifc-acceptance-criteria' }, ', and the clauses that make them binding in ', { text: 'BEP clauses that actually prevent bad IFC deliveries', to: 'bim-execution-plan-ifc-quality-clauses' }, '. For the ISO 19650 framing around all three, see the ', { text: 'ISO 19650 IFC delivery checklist', to: 'iso19650-ifc-checklist' }, '.'],
       },
+      { type: 'tool', id: 'handbook' },
     ],
   },
 
@@ -2229,6 +2361,7 @@ fragments.load(cached);            // fast`,
         variant: 'info',
         text: "If you need to change geometry — wall thickness, door dimensions, slab height — you need the source model in the original authoring tool. No IFC editor can do this non-destructively. If you need to change property values, names, or fix data quality issues, you don't.",
       },
+      { type: 'related', to: 'revit-ifc-export-breaks', section: 'Cause 5: Properties or GUIDs Came Across Wrong', why: 'Before editing the IFC: when the fix belongs in the authoring tool instead.' },
       {
         type: 'h2',
         text: 'The Honest Tool Comparison',
@@ -2833,6 +2966,7 @@ fragments.load(cached);            // fast`,
           "Tell you whether the model is geometrically correct — some geometry integrity checks are included, but a quality checker is not a clash detection or BIM authoring tool.",
         ],
       },
+      { type: 'related', to: 'ifc-health-score', section: 'The 11 Quality Dimensions That Drive Your Score', why: 'The eleven dimensions a quality check scores, one by one.' },
       { type: 'h2', text: 'Level 3: IDS Validation — Exchange Requirements as Machine-Readable Code' },
       {
         type: 'p',
@@ -2925,6 +3059,7 @@ fragments.load(cached);            // fast`,
         type: 'p',
         text: "Not every team writes IDS from scratch. A practical approach is to maintain a library of reusable IDS profiles: one for Stage 3 architecture, one for MEP Stage 4, one for structural handover. Each profile covers the most common requirements for that phase and discipline, and is extended per-project with client-specific additions. IDS profiles can be loaded directly into the validation engine and composed — you can run multiple .ids files against the same model and aggregate the results.",
       },
+      { type: 'tool', id: 'validator', why: 'Runs all three levels — integrity, quality rules and IDS — in the browser.' },
       { type: 'h2', text: 'How the Three Levels Work Together — The Validation Pipeline' },
       {
         type: 'p',
@@ -3382,6 +3517,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
         variant: 'info',
         text: "The logarithmic scale is the reason a model with 10,000 naming warnings can still score 81 — while a model with 6 broken spatial hierarchies scores 52. Both are real outcomes. The score is not counting issues; it is measuring the quality impact those issues represent.",
       },
+      { type: 'tool', id: 'validator' },
       { type: 'h2', text: 'The 11 Quality Dimensions That Drive Your Score' },
       {
         type: 'p',
@@ -3435,6 +3571,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
         variant: 'tip',
         text: "If you are setting a threshold for the first time and have no project history to calibrate from: start at ≥ 80 for CDE delivery. Run validation on your last three IFC exports to see where your team currently lands. If you are routinely scoring 65, an 80 target with a remediation plan is more useful than a 90 target your team cannot reach.",
       },
+      { type: 'related', to: 'ifc-acceptance-criteria', section: 'When to accept a model that failed', why: 'Scores are thresholds, not verdicts: when a model below the line can still be accepted.' },
       { type: 'h2', text: 'Three Real Project Scenarios: Health Scores in Context' },
       {
         type: 'p',
@@ -3975,6 +4112,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
         type: 'p',
         text: "In practice, most large AEC firms and public sector bodies have data handling policies that technically prohibit uploading project models to unapproved third-party services. These policies are frequently ignored at coordinator level because the policy sits in a document management system and the validator URL was shared in a community forum. Browser-based validation makes compliance the path of least resistance — it removes the upload decision entirely.",
       },
+      { type: 'related', to: 'ifc-viewer-confidential-nda-projects', section: 'What Never Leaves Your Device', why: 'Exactly what stays on the device with a client-side viewer, and what does not.' },
       { type: 'h2', text: 'How WebAssembly Changed Browser-Based BIM Tools' },
       {
         type: 'p',
@@ -4056,6 +4194,20 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
         ],
       },
       {
+        // The table lists four sizes × three links; this answers the one
+        // question a reader brings to it: how long until I can START checking?
+        type: 'bars',
+        title: 'A 250 MB model: minutes before the check can start',
+        unit: ' min',
+        items: [
+          { label: 'Browser, local parse (no upload)', value: 0.7, note: '20–40 s first parse on a modern workstation', highlight: true },
+          { label: 'Upload from the office (10 Mbps)', value: 3.3 },
+          { label: 'Upload over 4G (3 Mbps)', value: 11 },
+          { label: 'Upload from site (1 Mbps)', value: 33 },
+        ],
+        caption: 'Upload time only for server-based tools; their processing adds another 30–90 s.',
+      },
+      {
         type: 'callout',
         variant: 'info',
         text: "Browser local processing (WebAssembly, modern workstation, first parse): 50 MB ~5–10 s · 250 MB ~20–40 s · 1 GB ~90–180 s · 2 GB ~3–6 min. OPFS repeat load (no re-parsing): ~2–5 seconds at any file size.",
@@ -4101,6 +4253,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
           ['Setup complexity',      '✅ Open URL, drag file',           '⚠️ Account / API key required'],
         ],
       },
+      { type: 'tool', id: 'validator' },
       { type: 'h2', text: 'Where Cloud Validation Is Genuinely Better' },
       {
         type: 'p',
@@ -4373,9 +4526,17 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
     ],
     content: [
       {
-        type: 'callout',
-        variant: 'info',
-        text: "TL;DR — IFC Viewer Online for browser-based QA with zero upload and full IDS 1.0; Solibri for enterprise rule-based model checking; BIMVision for free Windows desktop viewing; Trimble Connect or Dalux for cloud collaboration and field use; BIMcollab Zoom for BCF-led coordination. No single tool wins across all dimensions.",
+        // The short answer is "it depends" — so let the reader say on what.
+        type: 'decision',
+        question: 'No single tool wins. What do you need a viewer for?',
+        options: [
+          { label: 'Check a received file before it goes further', verdict: 'IFC Viewer Online', body: 'Browser-based QA with 44 quality rules, a Health Score and full IDS 1.0 — and the file never leaves your machine.' },
+          { label: 'Author custom rules for an organisation', verdict: 'Solibri', body: 'The industry-standard rule engine for bespoke BEP/EIR checks. Free only for non-commercial use.' },
+          { label: 'Just open models on a Windows PC, for free', verdict: 'BIMVision', body: 'A free desktop viewer that is allowed for commercial work. No validation or editing.' },
+          { label: 'Coordinate issues across disciplines', verdict: 'BIMcollab Zoom', body: 'BCF is its core: topics, viewpoints and cloud sync across federated models.' },
+          { label: 'Collaborate in the cloud or open very large files', verdict: 'Trimble Connect', body: 'Cloud-side processing removes the local RAM limit; 5 GB free storage.' },
+          { label: 'Inspect models on site, on a phone', verdict: 'Dalux', body: 'Purpose-built iOS and Android apps with BCF issue capture in the field.' },
+        ],
       },
       {
         type: 'stat-row',
@@ -4696,6 +4857,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
         type: 'p',
         text: "Best for: IFC authoring-tool developers certifying export compliance with buildingSMART schema standards. Not appropriate for BIM coordinators doing project QA. Free.",
       },
+      { type: 'tool', id: 'viewer' },
       {
         type: 'h2',
         text: 'Desktop IFC Viewers',
@@ -4907,6 +5069,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
           ],
         },
       },
+      { type: 'related', to: 'ifc-model-checker-vs-ifc-viewer', section: 'When You Need a Checker', why: 'When a viewer isn\'t enough and the job is really a quality check.' },
       {
         type: 'h2',
         text: 'Decision Matrix: Matching the Tool to Your Workflow',
@@ -5272,6 +5435,7 @@ This is the conceptual model — the penalty shape, not the exact coefficients.`
           },
         ],
       },
+      { type: 'related', to: 'best-ifc-model-checkers-2026', section: 'The Eight Tools: Checking Depth Overview', why: 'How checking depth compares across eight tools, Solibri included.' },
       {
         type: 'h2',
         text: 'Typical Workflows: Where Each Tool Belongs',
@@ -5471,6 +5635,7 @@ Project acceptance or rejection`,
         type: 'p',
         text: "Browser-based tools have zero acquisition cost and zero deployment cost. There are no IT tickets, no installation packages to maintain, no version updates to coordinate across workstations. A new team member, external consultant, or subcontractor accesses IFC Viewer Online by opening a URL — no provisioning, no licence assignment. For organisations with infrequent users who need occasional model checking, this accessibility difference is significant. The licence cost per validated model looks very different for a BIM manager who validates 500 models per year versus a consultant who validates 10.",
       },
+      { type: 'tool', id: 'validator' },
       {
         type: 'h2',
         text: 'Privacy: Browser-Local vs Desktop Processing',
@@ -5806,6 +5971,7 @@ Project acceptance or rejection`,
         variant: 'tip',
         text: 'Expert tip: use 75 as the minimum Health Score for informal coordination and 90 as the bar for formal delivery to the client. Codify these thresholds in your BEP (BIM Execution Plan) so authoring teams know the target before they start modelling.',
       },
+      { type: 'tool', id: 'validator' },
       { type: 'h2', text: 'The Business Case for Systematic Checking' },
       {
         type: 'feature-grid',
@@ -5852,6 +6018,7 @@ Client / FM handover`,
         variant: 'info',
         text: 'ISO 19650-2 clause 5.6 requires information to be reviewed and approved before publication to the CDE. Systematic L1+L2+L3 checking satisfies this requirement with an auditable, repeatable process rather than a manual review that depends on individual attention.',
       },
+      { type: 'related', to: 'how-to-check-ifc-model-before-delivery', section: 'The Four-Step Checking Workflow', why: 'The same levels as a step-by-step routine before each delivery.' },
       { type: 'h2', text: 'When to Check: Six Project Checkpoints' },
       {
         type: 'feature-grid',
@@ -6035,6 +6202,7 @@ Client / FM handover`,
           'When validating against a project IDS specification',
         ],
       },
+      { type: 'tool', id: 'validator' },
       { type: 'h2', text: 'Decision Tree: Which Tool Do You Need?' },
       {
         type: 'code',
@@ -6064,6 +6232,7 @@ Client / FM handover`,
 └─ All of the above in one workflow
     └─ IFC Viewer Online (viewer + L1 + L2 + L3 + Health Score)`,
       },
+      { type: 'related', to: 'best-free-ifc-viewer', section: 'Decision Matrix: Matching the Tool to Your Workflow', why: 'The same decision, tool by tool, across ten viewers.' },
       { type: 'h2', text: 'Tools That Combine Both Functions' },
       {
         type: 'table',
@@ -6163,6 +6332,7 @@ Client / FM handover`,
         type: 'p',
         text: 'A tool that does L1 only and calls itself a checker is misleading you. The rest of this article uses L1/L2/L3 clearly for each tool.',
       },
+      { type: 'related', to: 'ifc-model-checker-guide', section: 'Three Completely Different Validation Problems', why: 'The three validation problems a checker may or may not cover.' },
       { type: 'h2', text: 'The Eight Tools: Checking Depth Overview' },
       {
         type: 'table',
@@ -6179,6 +6349,7 @@ Client / FM handover`,
         ],
         caption: 'Checking depth comparison across eight tools. L2 quality rules and L3 IDS are the meaningful differentiators.',
       },
+      { type: 'tool', id: 'validator' },
       { type: 'h2', text: '1. IFC Viewer Online' },
       {
         type: 'p',
@@ -6489,6 +6660,7 @@ Archive report → Upload to CDE`,
         type: 'p',
         text: 'Fix L1 failures by correcting the export settings, updating the authoring tool exporter, or contacting the software vendor if the issue is a known bug.',
       },
+      { type: 'tool', id: 'validator' },
       { type: 'h2', text: 'Step 3: L2 Quality Check and Health Score' },
       {
         type: 'p',
@@ -6521,6 +6693,7 @@ Archive report → Upload to CDE`,
           'L2 checklist: no geometry with zero volume or broken Boolean operations',
         ],
       },
+      { type: 'related', to: 'common-ifc-model-errors', section: 'Overview: The 10 Most Common IFC Errors', why: 'What the quality check typically finds, and the fix for each.' },
       { type: 'h2', text: 'Step 4: L3 IDS Validation' },
       {
         type: 'p',
@@ -6658,6 +6831,7 @@ Archive report → Upload to CDE`,
         ],
         caption: 'The 10 most common IFC errors, their severity, and downstream impact.',
       },
+      { type: 'tool', id: 'fix-guides' },
       { type: 'h2', text: '1. Duplicate GUIDs' },
       {
         type: 'p',
@@ -6693,6 +6867,7 @@ Archive report → Upload to CDE`,
         variant: 'tip',
         text: 'Expert tip: duplicate GUIDs break BCF coordination because BCF topics reference elements by GUID. If two elements share a GUID, clicking a BCF viewpoint in the coordination model takes you to the wrong element — or both. Catch duplicates before the model enters coordination.',
       },
+      { type: 'related', to: 'duplicate-guids-ifc', section: 'How to Fix Duplicate GUIDs', why: 'The full fix for duplicate GUIDs, per authoring tool.' },
       { type: 'h2', text: '2. Broken Spatial Hierarchy' },
       {
         type: 'p',
@@ -7048,6 +7223,7 @@ Archive report → Upload to CDE`,
         credit: 'Abreu et al. · CRAS Labs @ FEUP',
         license: 'https://creativecommons.org/licenses/by/4.0/',
       },
+      { type: 'related', to: 'ifc-coordinates-georeferencing', section: 'Why Geometry Distorts Far From the Origin', why: 'The same precision problem that makes far-from-origin scans and models jitter.' },
       { type: 'h2', text: 'A Browser Pipeline That Survives Large Scans' },
       { type: 'p', text: 'The browser should never assume that file size equals resident GPU size. Headers are inspected before allocating. The parser applies a point budget, workers keep decoding off the UI thread, and the renderer stores only the attributes the current display mode needs. For spatially indexed COPC or 3D Tiles, the camera selects visible nodes instead of downloading the whole survey.' },
       { type: 'p', text: ['OGC describes 3D Tiles as a hierarchical standard for streaming massive geospatial content including BIM/CAD and point clouds. That hierarchy is the important idea: screen-space error and view selection decide what to load. See the ', { text: 'official OGC 3D Tiles overview', href: 'https://www.ogc.org/standards/3dtiles/' }, '.'] },
@@ -7070,6 +7246,7 @@ Archive report → Upload to CDE`,
         credit: 'Abreu et al. · CRAS Labs @ FEUP',
         license: 'https://creativecommons.org/licenses/by/4.0/',
       },
+      { type: 'tool', id: 'viewer' },
       { type: 'h2', text: 'How to Present It at a Fair' },
       { type: 'ol', items: [
         'Begin with IFC only so the audience understands the designed geometry.',
@@ -7154,6 +7331,7 @@ Archive report → Upload to CDE`,
           ['CRC32', 'Payload integrity', 'Corruption in storage or transport'],
         ],
       },
+      { type: 'tool', id: 'viewer' },
       { type: 'h2', text: 'Backpressure: Newest Valid Frame Wins' },
       { type: 'p', text: 'A reliable network stream can still produce a bad live experience. If decoding takes 120 ms while frames arrive every 80 ms, a normal queue grows forever and the viewer becomes a delayed recording. The correct live policy is bounded: retain two or three reusable slots, reject invalid frames, discard superseded pending work and present latency and drop counts to the user.' },
       {
@@ -7183,6 +7361,7 @@ Archive report → Upload to CDE`,
       },
       { type: 'callout', variant: 'info', text: 'The inline source is simulated. Calling it LIVE would require a real gateway, a documented sensor, calibration/pose data and an end-to-end latency measurement from capture time to display time.' },
       { type: 'p', text: ['For static measured context, return to the ', { text: 'IFC + point-cloud Scan-to-BIM workflow', to: 'ifc-point-cloud-browser-scan-to-bim' }, '. For a pixel-based resource that can use hardware video codecs and still sit inside the 3D scene, see ', { text: 'IFC + video on 3D terrain', to: 'ifc-video-3d-terrain-construction-progress' }, '.'] },
+      { type: 'related', to: 'warehouse-ifc-moving-lidar-digital-twin', section: 'What is actually moving?', why: 'The same frame contract applied to a moving warehouse scene.' },
     ],
   },
 
@@ -7252,6 +7431,12 @@ Archive report → Upload to CDE`,
         width: 1440,
         height: 900,
         credit: 'IFC Viewer Online · actual application capture',
+        annotations: [
+          { x: 61, y: 23, label: 'Video surface', text: 'The MP4 becomes a textured plane in the 3D scene, next to the IFC model.' },
+          { x: 88, y: 49, label: 'Surface preset', text: 'Screen, Terrain or Billboard — the three placement modes explained below.' },
+          { x: 88, y: 77, label: 'Position and appearance', text: 'X/Y/Z in metres, width and opacity, so the video lines up with the model.' },
+          { x: 83, y: 93, label: 'Place automatically', text: 'Positions the video relative to the model for you, instead of by hand.' },
+        ],
       },
       { type: 'h2', text: 'Three Placement Modes, Three Different Jobs' },
       {
@@ -7272,6 +7457,7 @@ Archive report → Upload to CDE`,
           ['Billboard', 'Fairs, guided tours and quick storytelling', 'Less spatially authoritative because it follows the camera'],
         ],
       },
+      { type: 'related', to: 'view-ifc-on-3d-map-online', section: 'What the 3D Map Adds to an IFC Viewer', why: 'Terrain and map context for the same kind of model, from real open data.' },
       { type: 'h2', text: 'Opacity and Terrain Are Product Controls' },
       { type: 'p', text: 'Opacity is useful when the audience needs to see designed geometry through recorded pixels. It is not a decoration slider: at low opacity the video may become impossible to interpret, while at full opacity it can hide the IFC evidence being discussed. A useful default keeps the media legible and offers a one-click comparison state.' },
       { type: 'p', text: 'A ground video also needs a metric width, local position, yaw and a small surface offset. If the application can sample the visible terrain or scene meshes, it can snap the plane onto the surface. The UI should still expose the resulting placement; an automatic snap is a convenience, not a surveyed transform.' },
@@ -7302,6 +7488,7 @@ Archive report → Upload to CDE`,
       ]},
       { type: 'callout', variant: 'tip', text: 'For discoverability, keep the MP4 and poster at stable crawlable URLs and describe the same video consistently in the visible caption, VideoObject markup and sitemap.' },
       { type: 'p', text: ['If the evidence must remain inspectable as XYZ points rather than pixels, use the ', { text: 'temporal LiDAR and MCAP architecture', to: 'real-time-lidar-web-digital-twin-mcap' }, '. If the comparison is static and measured, start with ', { text: 'IFC + point-cloud Scan-to-BIM alignment', to: 'ifc-point-cloud-browser-scan-to-bim' }, '.'] },
+      { type: 'tool', id: 'embed', why: 'Share the model on a web page after the presentation.' },
     ],
   },
 
@@ -7357,6 +7544,7 @@ Archive report → Upload to CDE`,
           ['MCAP recording', 'Portable timestamped example for adapters', 'Generated locally at 2 FPS on demand'],
         ],
       },
+      { type: 'related', to: 'real-time-lidar-web-digital-twin-mcap', section: 'Backpressure: Newest Valid Frame Wins', why: 'Why a live view shows the newest valid frame rather than every frame.' },
       { type: 'h2', text: 'Download the reproducible pair' },
       { type: 'p', text: ['Use the ', { text: 'warehouse IFC4 reference', href: '/models/realtime-lidar/IVO-Warehouse-Operations.ifc' }, ' with the ', { text: 'representative PLY snapshot', href: '/models/realtime-lidar/warehouse-operations-snapshot.ply' }, '. Both originate from the same declared dimensions. The PLY header states that it is synthetic and names its companion IFC.'] },
       { type: 'callout', variant: 'info', text: 'A static PLY is useful for testing alignment and styling. Movement exists only in the temporal replay or the generated MCAP sequence; the article never presents a still file as a live sensor feed.' },
@@ -7365,6 +7553,7 @@ Archive report → Upload to CDE`,
       { type: 'h2', text: 'From this demo to a real warehouse feed' },
       { type: 'p', text: 'A physical deployment needs sensor timestamps, a calibrated sensor-to-site transform, edge filtering and an adapter into the same frame contract. The user interface should then replace the simulated badge with a source status only when those facts are known. WebSocket or WebTransport is the delivery choice; neither fixes poor registration or an unbounded browser queue.' },
       { type: 'p', text: ['For the lower-level packet and buffering design, see ', { text: 'Real-Time LiDAR in a Web Digital Twin', to: 'real-time-lidar-web-digital-twin-mcap' }, '. For a measured static comparison, start with ', { text: 'IFC + point-cloud Scan-to-BIM alignment', to: 'ifc-point-cloud-browser-scan-to-bim' }, '.'] },
+      { type: 'tool', id: 'viewer' },
     ],
   },
 
@@ -7419,11 +7608,13 @@ Archive report → Upload to CDE`,
           ['Timeline status', 'Playback position or acquisition epoch', 'A live connection unless a source is actually connected'],
         ],
       },
+      { type: 'related', to: 'ifc-point-cloud-browser-scan-to-bim', section: 'What Alignment Actually Means', why: 'Observed progress only counts if scan and model are aligned — what that takes.' },
       { type: 'h2', text: 'Download the construction example' },
       { type: 'p', text: ['Open the ', { text: 'construction IFC4 reference', href: '/models/realtime-lidar/IVO-Construction-Progress.ifc' }, ' beside the ', { text: 'representative construction PLY', href: '/models/realtime-lidar/construction-progress-snapshot.ply' }, '. The source generator and tests keep model dimensions, point bounds and fixed replay capacity reproducible.'] },
       { type: 'h2', text: 'How to make a real progress timeline defensible' },
       { type: 'ol', items: ['Preserve the original scan and acquisition timestamp.', 'Register every epoch into one site frame using control, targets or a validated SLAM trajectory.', 'Record coverage and sampling so missing points are not mistaken for missing work.', 'Compare only the relevant IFC elements and publish the tolerance used.', 'Keep human review available before a status becomes an approval or payment event.'] },
       { type: 'callout', variant: 'warning', text: 'The visual distance between a point and IFC surface is only as trustworthy as the registration transform. A polished red heatmap cannot compensate for unknown units, axes or control error.' },
+      { type: 'tool', id: 'viewer' },
       { type: 'h2', text: 'Why the bounded replay matters at a trade fair' },
       { type: 'p', text: 'The example peaks below a fixed 43,000-point buffer and reuses its typed arrays. That keeps the page responsive while the presenter moves the camera and scrubs the timeline. The same controls expose stable and fault-injected transport so the performance story is visible rather than hidden behind a prerecorded screen capture.' },
     ],
@@ -7472,6 +7663,7 @@ Archive report → Upload to CDE`,
       { type: 'h2', text: 'A useful inspection scene answers three questions' },
       { type: 'ol', items: ['Where is the observation in the asset coordinate system?', 'What surrounding geometry and IFC objects give it context?', 'What is measured evidence, what is an algorithmic result and what is an annotation?'] },
       { type: 'p', text: 'Those questions are why the replay does not replace points with a rendered MP4. Video is excellent for texture and narrative, but a point frame still lets the user change viewpoint, query attributes and compare the observation with the model.' },
+      { type: 'related', to: 'ifc-point-cloud-browser-scan-to-bim', section: 'A Browser Pipeline That Survives Large Scans', why: 'How long, dense scans stay responsive in a browser.' },
       { type: 'h2', text: 'Download the tunnel pair' },
       { type: 'p', text: ['Use the ', { text: 'utility tunnel IFC4 model', href: '/models/realtime-lidar/IVO-Utility-Tunnel.ifc' }, ' and the ', { text: 'representative mobile LiDAR PLY', href: '/models/realtime-lidar/utility-tunnel-snapshot.ply' }, ' to test alignment and point styling. Start the live example or export MCAP for movement.'] },
       {
@@ -7485,6 +7677,7 @@ Archive report → Upload to CDE`,
       { type: 'h2', text: 'Performance in a long, repetitive corridor' },
       { type: 'p', text: 'The static service catalogue is created once. Only the trolley, rings, fan and condition patch are rewritten per frame, below a fixed 51,134-point capacity. The viewer draws within its global point budget and can pause, seek or jump to the latest frame without accumulating historical geometry.' },
       { type: 'callout', variant: 'tip', text: 'For a real mobile system, send display-ready levels of detail from the edge. A browser is the right place for interaction and comparison, not for ingesting every raw laser return from the device.' },
+      { type: 'tool', id: 'viewer' },
     ],
   },
 
@@ -7568,6 +7761,7 @@ Archive report → Upload to CDE`,
         height: 900,
         credit: 'IFC Viewer Online',
       },
+      { type: 'related', to: 'ifc-coordinates-georeferencing', section: 'Getting It Right on Export', why: 'How to export the georeferencing that makes this placement correct.' },
       { type: 'h2', text: 'The Ciutadella File Is a Reproducible Test, Not a Mock-up' },
       { type: 'p', text: 'The example is intentionally small enough to inspect. It is a 24 × 12 m exhibition pavilion on a 4 × 6 m grid, with a foyer, mezzanine gallery, double-height hall, glazed façades and pitched standing-seam roof. Its role is to make placement errors obvious against a recognizable street axis.' },
       { type: 'ul', items: [
@@ -7594,6 +7788,7 @@ Archive report → Upload to CDE`,
         ],
       },
       { type: 'callout', variant: 'info', text: 'Map surroundings are context, not survey. Many OpenStreetMap building heights are estimated, procedural trees are contextual and terrain sources have their own resolution and vertical-datum limits.' },
+      { type: 'tool', id: 'viewer' },
       { type: 'h2', text: 'Local IFC Privacy and Online Map Requests Are Separate' },
       {
         type: 'comparison',
@@ -7691,11 +7886,13 @@ export const BLOG_POSTS_ES: BlogPost[] = [
           ['MCAP', 'Secuencia portable para adaptadores', 'Se genera localmente bajo demanda'],
         ],
       },
+      { type: 'related', to: 'lidar-tiempo-real-web-gemelo-digital-mcap', section: 'Backpressure: gana el frame válido más nuevo', why: 'Por qué una vista en vivo muestra el frame válido más reciente y no todos.' },
       { type: 'h2', text: 'Descarga la pareja reproducible' },
       { type: 'p', text: ['Combina el ', { text: 'IFC4 del almacén', href: '/models/realtime-lidar/IVO-Warehouse-Operations.ifc' }, ' con el ', { text: 'snapshot PLY representativo', href: '/models/realtime-lidar/warehouse-operations-snapshot.ply' }, '. Los dos parten de las mismas dimensiones declaradas y el encabezado PLY identifica su carácter sintético.'] },
       { type: 'h2', text: 'Rendimiento y paso a una fuente real' },
       { type: 'ul', items: ['Capacidad fija para impedir que una GPU lenta provoque crecimiento de memoria.', 'Política newest-valid-frame-wins para evitar colas de frames obsoletos.', 'Filtrado y voxelización en edge antes de enviar al navegador.', 'Pausa al ocultar y reutilización de buffers, materiales y geometría.', 'Transformación sensor-a-sitio calibrada y timestamps conocidos antes de retirar la etiqueta de simulación.'] },
       { type: 'p', text: ['La arquitectura de paquetes, CRC y buffer está documentada en ', { text: 'LiDAR en tiempo real para gemelos digitales web', to: 'lidar-tiempo-real-web-gemelo-digital-mcap' }, '. Para levantamientos estáticos consulta ', { text: 'IFC + nube de puntos Scan-to-BIM', to: 'ifc-nube-de-puntos-scan-to-bim-navegador' }, '.'] },
+      { type: 'tool', id: 'viewer' },
     ],
   },
 
@@ -7750,11 +7947,13 @@ export const BLOG_POSTS_ES: BlogPost[] = [
           ['Estado del timeline', 'Posición de reproducción o época', 'Conexión en vivo si no existe una fuente real'],
         ],
       },
+      { type: 'related', to: 'ifc-nube-de-puntos-scan-to-bim-navegador', section: 'La escalera de confianza de alineación', why: 'El progreso observado solo vale si escaneo y modelo están alineados: qué hace falta.' },
       { type: 'h2', text: 'Descarga y valida el ejemplo' },
       { type: 'p', text: ['Carga el ', { text: 'IFC4 de progreso estructural', href: '/models/realtime-lidar/IVO-Construction-Progress.ifc' }, ' junto al ', { text: 'PLY representativo de obra', href: '/models/realtime-lidar/construction-progress-snapshot.ply' }, '. El generador y los tests mantienen dimensiones, límites y capacidad reproducibles.'] },
       { type: 'h2', text: 'Cinco condiciones para una comparación real' },
       { type: 'ol', items: ['Conservar el escaneo original y su fecha.', 'Registrar cada época en un marco común con control o trayectoria SLAM validada.', 'Documentar cobertura para no confundir ausencia de puntos con ausencia de obra.', 'Comparar elementos relevantes y publicar tolerancias.', 'Mantener revisión humana antes de aprobar, certificar o pagar.'] },
       { type: 'callout', variant: 'warning', text: 'La distancia visual entre un punto y una superficie IFC solo es tan fiable como la transformación de registro. Un heatmap atractivo no corrige unidades, ejes o control desconocidos.' },
+      { type: 'tool', id: 'viewer' },
     ],
   },
 
@@ -7801,6 +8000,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
       { type: 'h2', text: 'Tres preguntas que debe responder la escena' },
       { type: 'ol', items: ['¿Dónde está la observación en el sistema del activo?', '¿Qué geometría y objetos IFC le dan contexto?', '¿Qué es evidencia medida, resultado algorítmico o anotación?'] },
       { type: 'p', text: 'Por eso la secuencia no se sustituye por un MP4 renderizado. El vídeo comunica textura y narrativa, pero los puntos permiten cambiar el punto de vista, consultar atributos y comparar con el modelo.' },
+      { type: 'related', to: 'ifc-nube-de-puntos-scan-to-bim-navegador', section: 'Rendimiento sin perder trazabilidad', why: 'Cómo mantener fluido en el navegador un escaneo largo y denso.' },
       { type: 'h2', text: 'Descarga la pareja del túnel' },
       { type: 'p', text: ['Utiliza el ', { text: 'modelo IFC4 del túnel técnico', href: '/models/realtime-lidar/IVO-Utility-Tunnel.ifc' }, ' y el ', { text: 'PLY representativo del LiDAR móvil', href: '/models/realtime-lidar/utility-tunnel-snapshot.ply' }, ' para probar alineación y estilos. El movimiento está en la demo o en el MCAP exportado.'] },
       {
@@ -7814,6 +8014,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
       { type: 'h2', text: 'Rendimiento en un corredor repetitivo' },
       { type: 'p', text: 'Los servicios estáticos se generan una sola vez. Solo el carro, los anillos, el abanico y la zona del muro se reescriben por frame dentro de una capacidad fija. El usuario puede pausar, buscar o saltar al último frame sin acumular geometría histórica.' },
       { type: 'callout', variant: 'tip', text: 'En un sistema móvil real, envía niveles de detalle listos para visualizar desde el edge. El navegador es el lugar de interacción y comparación, no el destino de cada retorno bruto del láser.' },
+      { type: 'tool', id: 'viewer' },
     ],
   },
 
@@ -7863,12 +8064,14 @@ export const BLOG_POSTS_ES: BlogPost[] = [
         schema: 'IFC2x3',
         size: '2.4 MB',
       },
+      { type: 'tool', id: 'validator' },
       { type: 'h2', text: 'Problemas habituales en archivos IFC exportados desde Revit' },
       { type: 'ul', items: [
         'Exceso de proxies: Las familias Revit sin asignación IFC se exportan como IfcBuildingElementProxy. Revisa la tabla de mapeo IFC y asigna las familias más usadas a sus tipos IFC correctos.',
         'Desfase de coordenadas: Comprueba que el proyecto tiene coordenadas compartidas con el punto de agrimensura antes de exportar.',
         'Property sets faltantes: Los parámetros de Revit se exportan por defecto como Psets personalizados. Revisa el mapeo de Psets para incluir los estándar (Pset_WallCommon, etc.).',
       ]},
+      { type: 'related', to: 'errores-ifc-mas-comunes', why: 'Los errores que más aparecen al validar una exportación, y cómo corregir cada uno.' },
     ],
   },
 
@@ -7898,6 +8101,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
           { score: 94, label: 'Calidad excelente' },
         ],
       },
+      { type: 'tool', id: 'validator' },
       { type: 'h2', text: 'Qué significa cada umbral' },
       {
         type: 'feature-grid',
@@ -7909,6 +8113,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
         ],
       },
       { type: 'callout', variant: 'info', text: 'Añade un umbral mínimo de Health Score al PEB de tu proyecto. Una cláusula del tipo "Las entregas IFC deben alcanzar un Health Score ≥ 80 antes de la subida al ECD" no cuesta nada escribirla y evita semanas de retrasos de coordinación.' },
+      { type: 'related', to: 'como-exportar-ifc-desde-revit', section: 'Paso 4: Validar antes de subir', why: 'Dónde encaja la comprobación dentro del flujo de exportación desde Revit.' },
       { type: 'h2', text: 'Puntuación vs. número de problemas: la diferencia clave' },
       { type: 'p', text: 'Un modelo con 800 problemas puede tener una puntuación de 81. Uno con 12 puede tener 34. La diferencia está en la severidad. Ochocientos avisos de nombres vacíos (nivel informativo, penalización mínima) frente a doce errores de IfcProject faltante + agregaciones rotas + referencias espaciales circulares (errores de esquema, peso 3×). Optimiza la puntuación, no el recuento de problemas.' },
     ],
@@ -7931,6 +8136,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
       { type: 'h2', text: '1. GlobalIds duplicados (GUIDs duplicados)' },
       { type: 'p', text: 'El GlobalId es la identidad permanente de un elemento IFC. Sobrevive a fusiones de modelos, actualizaciones de versión y migraciones de software. Cuando dos elementos comparten el mismo GUID, todas las herramientas que dependen de referencias estables (flujos BCF, seguimiento de links en Revit, versionado en el ECD) fallan silenciosamente.' },
       { type: 'callout', variant: 'tip', text: 'En Revit: Archivo → Exportar → IFC → Modificar configuración → Avanzado → pon "Exportar GUIDs IFC" en "Mantener existentes". Esto preserva los GlobalIds estables que Revit asigna internamente en lugar de regenerarlos en cada exportación.' },
+      { type: 'tool', id: 'fix-guides' },
       { type: 'h2', text: '2. Elementos huérfanos' },
       { type: 'p', text: 'Un elemento huérfano es un elemento físico sin contenedor espacial en la jerarquía IFC: existe en el archivo pero no aparece en Proyecto → Emplazamiento → Edificio → Planta. La mayoría de los visualizadores ignoran los huérfanos por completo — son invisibles en el modelo de coordinación.' },
       { type: 'h2', text: '3. Contenedor incorrecto' },
@@ -7960,6 +8166,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
         'Un único IfcProject en la raíz — siempre.',
         'Da nombre a todos los elementos, aunque sea genérico ("Muro-001" es mejor que vacío).',
       ]},
+      { type: 'related', to: 'health-score-ifc-que-es', section: 'Puntuación vs. número de problemas: la diferencia clave', why: 'Por qué la puntuación dice más que el número de errores.' },
     ],
   },
 
@@ -8018,6 +8225,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
         },
       },
       { type: 'callout', variant: 'info', text: 'La respuesta a "¿IFC o RVT para la entrega?" es casi siempre IFC. La pregunta real es: "¿Qué esquema IFC?" — IFC4 para proyectos nuevos, IFC2x3 solo si el ECD o la herramienta receptora lo exige explícitamente.' },
+      { type: 'tool', id: 'viewer' },
       { type: 'h2', text: 'Cuándo usar cada formato' },
       { type: 'h3', text: 'Usa IFC para:' },
       { type: 'ul', items: [
@@ -8040,6 +8248,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
         schema: 'IFC4',
         size: '14 MB',
       },
+      { type: 'related', to: 'como-exportar-ifc-desde-revit', section: 'Paso 2: Elegir IFC4 Reference View', why: 'Qué versión de IFC elegir al exportar, y por qué.' },
     ],
   },
 
@@ -8103,6 +8312,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
         credit: 'Abreu et al. · CRAS Labs @ FEUP',
         license: 'https://creativecommons.org/licenses/by/4.0/',
       },
+      { type: 'related', to: 'progreso-obra-4d-ifc-nube-puntos-temporal', section: 'Diseñado, observado e inferido no son lo mismo', why: 'Diseñado, observado e inferido: por qué separarlos al seguir una obra.' },
       { type: 'h2', text: 'Rendimiento sin perder trazabilidad' },
       { type: 'p', text: 'El tamaño del archivo y el tamaño residente en GPU no son el mismo dato. El visor inspecciona cabeceras antes de reservar, aplica presupuesto, decodifica en workers y reutiliza buffers para RGB, intensidad, clasificación y desviación. En COPC o contenido teselado, la cámara solicita solo los nodos visibles.' },
       { type: 'p', text: ['OGC define 3D Tiles como una jerarquía para transmitir contenido geoespacial masivo, incluyendo BIM/CAD y nubes de puntos. Consulta la ', { text: 'descripción oficial de OGC 3D Tiles', href: 'https://www.ogc.org/standards/3dtiles/' }, '.'] },
@@ -8116,6 +8326,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
         credit: 'Abreu et al. · CRAS Labs @ FEUP',
         license: 'https://creativecommons.org/licenses/by/4.0/',
       },
+      { type: 'tool', id: 'viewer' },
       { type: 'h2', text: 'Guion corto para una feria' },
       { type: 'ol', items: ['Muestra primero el IFC diseñado.', 'Revela la nube y explica el nivel de confianza.', 'Pasa a sección o mapa de desviación.', 'Inspecciona un punto y enseña coordenadas, clase e intensidad.', 'Reinicia la demo local para demostrar que no depende del Wi-Fi.'] },
       { type: 'callout', variant: 'warning', text: 'Una nube que se solapa visualmente con IFC no es automáticamente precisa. Exactitud del instrumento, registro, muestreo, tolerancia BIM y error residual son cantidades diferentes.' },
@@ -8192,6 +8403,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
           ['CRC32', 'Integridad', 'Corrupción'],
         ],
       },
+      { type: 'tool', id: 'viewer' },
       { type: 'h2', text: 'Backpressure: gana el frame válido más nuevo' },
       { type: 'p', text: 'Si llegan frames cada 80 ms y decodificar tarda 120 ms, una cola normal crece indefinidamente. El visor termina mostrando el pasado aunque la conexión siga activa. El enfoque vivo conserva dos o tres slots reutilizables, descarta trabajo obsoleto y muestra edad, pérdidas, inválidos y reconexiones.' },
       { type: 'h2', text: 'MCAP para grabar antes de conectar hardware' },
@@ -8199,6 +8411,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
       { type: 'p', text: ['Compatibilidad de contenedor no significa compatibilidad de mensaje. ', { text: 'ROS sensor_msgs/PointCloud2', href: 'https://github.com/ros2/common_interfaces/blob/rolling/sensor_msgs/msg/PointCloud2.msg' }, ' y ', { text: 'Foxglove PointCloud', href: 'https://docs.foxglove.dev/docs/sdk/schemas/point-cloud' }, ' requieren adaptadores definidos.'] },
       { type: 'callout', variant: 'info', text: 'Para llamarlo LIVE todavía hacen falta gateway real, sensor identificado, calibración y pose, además de medir la latencia completa desde captura hasta pantalla.' },
       { type: 'p', text: ['Para contexto estático vuelve al ', { text: 'flujo Scan-to-BIM con IFC y nube', to: 'ifc-nube-de-puntos-scan-to-bim-navegador' }, '. Para recursos comprimidos en píxeles, consulta ', { text: 'IFC + vídeo sobre terreno 3D', to: 'ifc-video-terreno-3d-seguimiento-obra' }, '.'] },
+      { type: 'related', to: 'gemelo-digital-almacen-ifc-lidar-movimiento', section: 'Movimiento sin crear geometría cada frame', why: 'El mismo contrato de frames aplicado a un almacén en movimiento.' },
     ],
   },
 
@@ -8287,6 +8500,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
           ['Billboard', 'Feria, visita guiada y narrativa rápida', 'Menor autoridad espacial porque sigue a la cámara'],
         ],
       },
+      { type: 'related', to: 'ver-ifc-mapa-3d-online', section: 'Qué aporta el mapa 3D a un visor IFC', why: 'Terreno y contexto de mapa para el mismo tipo de modelo, con datos abiertos reales.' },
       { type: 'h2', text: 'Opacidad y colocación métrica' },
       { type: 'p', text: 'La opacidad permite ver geometría diseñada bajo los píxeles grabados, pero valores extremos ocultan una de las dos evidencias. Un vídeo de suelo también necesita anchura en metros, XYZ local, yaw y un pequeño offset de superficie. El snap automático ayuda, pero no equivale a una transformación topográfica.' },
       {
@@ -8302,6 +8516,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
       { type: 'ul', items: ['Crear el decoder y la VideoTexture solo tras interacción o entrada en viewport.', 'Reutilizar la textura al modificar opacidad o posición.', 'Pausar al ocultar y liberar elemento, textura, material, geometría y URL al eliminar.', 'Mantener un poster estático para personas y crawlers antes de iniciar WebGL.', 'Usar un MP4/WebM local para feria y tratar cámara o pantalla compartida como fuente LIVE explícita.'] },
       { type: 'callout', variant: 'tip', text: 'Mantén MP4 y poster en URLs estables y describe el vídeo de forma coherente en el pie visible, VideoObject y sitemap.' },
       { type: 'p', text: ['Si necesitas conservar XYZ y atributos utiliza ', { text: 'LiDAR temporal con MCAP', to: 'lidar-tiempo-real-web-gemelo-digital-mcap' }, '. Para una comparación estática medida, consulta ', { text: 'IFC + nube de puntos Scan-to-BIM', to: 'ifc-nube-de-puntos-scan-to-bim-navegador' }, '.'] },
+      { type: 'tool', id: 'embed', why: 'Comparte el modelo en una página web después de la presentación.' },
     ],
   },
 
@@ -8385,6 +8600,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
         height: 900,
         credit: 'IFC Viewer Online',
       },
+      { type: 'related', to: 'ifc-video-terreno-3d-seguimiento-obra', section: 'Pantalla, terreno o billboard', why: 'Otra forma de dar contexto al modelo: vídeo de obra colocado en 3D.' },
       { type: 'h2', text: 'El IFC de Ciutadella es una prueba reproducible, no un mock-up' },
       { type: 'p', text: 'El ejemplo es deliberadamente pequeño: un pabellón de exposiciones de 24 × 12 m sobre una retícula de 4 × 6 m, con vestíbulo, entreplanta, sala a doble altura, fachadas acristaladas y cubierta inclinada. Su función es hacer visibles los errores de orientación frente a un eje urbano reconocible.' },
       { type: 'ul', items: [
@@ -8411,6 +8627,7 @@ export const BLOG_POSTS_ES: BlogPost[] = [
         ],
       },
       { type: 'callout', variant: 'info', text: 'El entorno cartográfico es contexto, no levantamiento. Muchas alturas de OpenStreetMap son estimadas, los árboles procedimentales son orientativos y el terreno tiene límites de resolución y datum vertical.' },
+      { type: 'tool', id: 'viewer' },
       { type: 'h2', text: 'Privacidad local del IFC y peticiones online del mapa son cosas distintas' },
       {
         type: 'comparison',
@@ -8507,6 +8724,8 @@ export const BLOG_POSTS_DE: BlogPost[] = [
       { type: 'h2', text: 'Was ist der Health Score?' },
       { type: 'p', text: 'Jede IFC-Datei erhält einen Health Score von 0 bis 100. Er fasst die strukturelle und datentechnische Qualität des Modells in einer einzigen Zahl zusammen. Ein Wert von 87 bedeutet "geringfügige Probleme, bereit für die Koordination". Ein Wert von 43 bedeutet "schwerwiegende Probleme, nicht an das CDE liefern".' },
       { type: 'callout', variant: 'tip', text: 'Tastaturkürzel: F um das ausgewählte Element einzurahmen, H um es auszublenden, I um es zu isolieren, Umschalt+H um die volle Sichtbarkeit wiederherzustellen. Strg+Umschalt+V um die Validierung auszuführen.' },
+      { type: 'related', to: 'ifc-validierung-haeufige-fehler', why: 'Die häufigsten Fehler, die die Prüfung meldet — und wie man sie behebt.' },
+      { type: 'tool', id: 'validator' },
     ],
   },
 
@@ -8526,6 +8745,7 @@ export const BLOG_POSTS_DE: BlogPost[] = [
       { type: 'h2', text: '1. Duplizierte GlobalIds (GUIDs)' },
       { type: 'p', text: 'Ein GlobalId ist die dauerhafte Identität eines IFC-Elements über Modellzusammenführungen, Versionsaktualisierungen und Softwaremigrationen hinweg. Wenn zwei Elemente dieselbe GUID teilen, versagt jedes Werkzeug, das auf stabile Referenzen angewiesen ist — BCF-Workflows, Revit-Links, CDE-Versionierung — lautlos.' },
       { type: 'callout', variant: 'tip', text: 'In Revit: Datei → Exportieren → IFC → Setup ändern → Erweitert → "IFC-GUIDs exportieren" auf "Vorhandene beibehalten" setzen. Dadurch werden die stabilen GlobalIds erhalten, anstatt sie bei jedem Export neu zu generieren.' },
+      { type: 'tool', id: 'fix-guides' },
       { type: 'h2', text: '2. Verwaiste Elemente' },
       { type: 'p', text: 'Ein verwaistes Element ist ein physisches Element ohne räumlichen Container in der IFC-Hierarchie. Es existiert in der Datei, erscheint aber nicht im Baum Projekt → Gelände → Gebäude → Geschoss. Die meisten Viewer überspringen verwaiste Elemente vollständig.' },
       { type: 'h2', text: '3. Falscher Container' },
@@ -8542,6 +8762,7 @@ export const BLOG_POSTS_DE: BlogPost[] = [
         schema: 'IFC2x3',
         size: '2.4 MB',
       },
+      { type: 'related', to: 'ifc-datei-im-browser-oeffnen', section: 'Was ist der Health Score?', why: 'Wie die gefundenen Fehler in eine einzige Bewertung einfließen.' },
     ],
   },
 
@@ -8603,6 +8824,7 @@ export const BLOG_POSTS_FR: BlogPost[] = [
       { type: 'h2', text: "Qu'est-ce que le Health Score ?" },
       { type: 'p', text: "Chaque fichier IFC reçoit un Health Score de 0 à 100. Il résume la qualité structurelle et des données du modèle en un seul chiffre. Un score de 87 signifie 'problèmes mineurs, prêt pour la coordination'. Un score de 43 signifie 'problèmes graves, ne pas livrer à la GED'." },
       { type: 'callout', variant: 'info', text: "Ajoutez un seuil minimum de Health Score dans votre PEB (Plan d'Exécution BIM). Une clause comme 'Les livraisons IFC doivent atteindre un Health Score ≥ 80 avant upload vers la GED' ne coûte rien à écrire et évite des semaines de retard en coordination." },
+      { type: 'tool', id: 'validator' },
     ],
   },
 
