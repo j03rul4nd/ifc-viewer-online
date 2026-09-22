@@ -1,0 +1,215 @@
+/* ─── Editorial blocks ────────────────────────────────────────────────────────
+   The few things Tailwind utilities can't express cleanly: scroll-edge shadows,
+   sticky cells that must paint over their neighbours, and motion that must
+   switch off under prefers-reduced-motion. Everything reads the landing/blog
+   tokens (--surface, --border, --accent…), so .lp-light re-themes it for free. */
+
+.ed-focus:focus-visible,
+.ed-focus :focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ── Table scroller: edge shadows show there is more to the side ───────────── */
+.ed-scroll {
+  position: relative;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.ed-scroll-frame { position: relative; }
+.ed-scroll-frame::before,
+.ed-scroll-frame::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.ed-scroll-frame::before {
+  left: var(--ed-sticky-w, 0px);
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.28), transparent);
+}
+.ed-scroll-frame::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.28), transparent);
+}
+.lp-light .ed-scroll-frame::before { background: linear-gradient(to right, rgba(20, 24, 60, 0.10), transparent); }
+.lp-light .ed-scroll-frame::after  { background: linear-gradient(to left,  rgba(20, 24, 60, 0.10), transparent); }
+.ed-scroll-frame[data-more-start='true']::before,
+.ed-scroll-frame[data-more-end='true']::after { opacity: 1; }
+
+/* Sticky first column: opaque so scrolled cells slide UNDER it. */
+.ed-table .ed-sticky {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface);
+}
+.ed-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-2);
+}
+.ed-table thead th.ed-sticky { z-index: 4; }
+.ed-table tbody tr:nth-child(even) td,
+.ed-table tbody tr:nth-child(even) .ed-sticky {
+  background-color: color-mix(in srgb, var(--surface) 96%, var(--accent));
+}
+.ed-table tbody tr:hover td,
+.ed-table tbody tr:hover .ed-sticky {
+  background-color: color-mix(in srgb, var(--surface) 92%, var(--accent));
+}
+/* Tall tables scroll inside themselves so the header can stay pinned. */
+.ed-scroll[data-tall='true'] { max-height: min(72vh, 640px); overflow-y: auto; }
+
+/* ── Verdict pills ─────────────────────────────────────────────────────────── */
+.ed-pill {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.ed-pill > svg { flex: none; margin-top: 2px; }
+.ed-pill[data-tone='yes'] > svg     { color: var(--ok); }
+.ed-pill[data-tone='no'] > svg      { color: var(--danger); }
+.ed-pill[data-tone='partial'] > svg { color: var(--warn); }
+.ed-pill[data-tone='no'] { color: var(--text-faint); }
+
+/* ── Chips (segmented controls that may overflow on phones) ────────────────── */
+.ed-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px;
+  margin: -2px;
+  scroll-snap-type: x proximity;
+}
+.ed-chips::-webkit-scrollbar { display: none; }
+.ed-chip {
+  flex: none;
+  scroll-snap-align: start;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+.ed-chip:hover { border-color: var(--border-strong); color: var(--text); }
+.ed-chip[aria-pressed='true'],
+.ed-chip[aria-checked='true'] {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  color: var(--text);
+}
+@media (pointer: coarse) { .ed-chip { min-height: 44px; } }
+
+/* ── Disclosure (records cards, step details) ──────────────────────────────── */
+.ed-details > summary { list-style: none; cursor: pointer; }
+.ed-details > summary::-webkit-details-marker { display: none; }
+.ed-details > summary .ed-caret { transition: transform 160ms ease; }
+.ed-details[open] > summary .ed-caret { transform: rotate(90deg); }
+
+/* ── Bars ──────────────────────────────────────────────────────────────────── */
+.ed-bar-fill {
+  transform-origin: left center;
+  transition: transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.ed-bars[data-shown='false'] .ed-bar-fill { transform: scaleX(0); }
+
+/* ── Decision result swap ──────────────────────────────────────────────────── */
+.ed-fade-in { animation: ed-fade-in 200ms ease both; }
+@keyframes ed-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Inline term ───────────────────────────────────────────────────────────── */
+.ed-term {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--accent-2);
+  text-underline-offset: 3px;
+  color: inherit;
+  cursor: help;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ed-bar-fill, .ed-chip, .ed-details > summary .ed-caret, .ed-scroll-frame::before, .ed-scroll-frame::after { transition: none; }
+  .ed-bars[data-shown='false'] .ed-bar-fill { transform: none; }
+  .ed-fade-in { animation: none; }
+}
+
+/* ── Section link: revealed on hover/focus with a mouse, always shown on touch ── */
+@media (hover: hover) and (pointer: fine) {
+  .ed-section-link { opacity: 0; transition: opacity 120ms ease; }
+  :is(h2, h3):hover .ed-section-link,
+  .ed-section-link:focus-visible { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .ed-section-link { transition: none; } }
+
+
+/* ── Lightbox / hotspots ───────────────────────────────────────────────────── */
+.ed-hotspot,
+.ed-hotspot-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 999px;
+  font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85), 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+.ed-hotspot { position: relative; transition: transform 140ms ease; }
+/* 26px visual, 44px touch target. */
+.ed-hotspot::after { content: ''; position: absolute; inset: -9px; border-radius: 999px; }
+.ed-hotspot[data-active='true'],
+.ed-hotspot-num[data-active='true'] { background: var(--warn); color: #111; }
+.ed-hotspot-num { box-shadow: none; width: 22px; height: 22px; font-size: 11px; margin-top: 1px; }
+@media (prefers-reduced-motion: reduce) { .ed-hotspot { transition: none; } }
+
+/* ── Citations ─────────────────────────────────────────────────────────────── */
+.ed-cite {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 2px;
+  padding: 0 4px;
+  border-radius: 5px;
+  vertical-align: super;
+  font: 700 10.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--accent-2);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  position: relative;
+}
+/* Small marker, full-size tap target. */
+button.ed-cite::after { content: ''; position: absolute; inset: -12px -8px; }
+button.ed-cite[aria-expanded='true'] { background: var(--accent); color: #fff; }
+
+/* Arrival highlight after jumping to a reference or back to the text. */
+.ed-flash { animation: ed-flash 1.6s ease-out; }
+@keyframes ed-flash {
+  0%, 30% { background-color: color-mix(in srgb, var(--accent) 22%, transparent); }
+  100%    { background-color: transparent; }
+}
+@media (prefers-reduced-motion: reduce) { .ed-flash { animation: none; outline: 2px solid var(--accent-2); } }
+@media (max-width: 639px) {
+  .ed-hotspot { width: 20px; height: 20px; font-size: 10.5px; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 3px 10px rgba(0, 0, 0, 0.45); }
+}

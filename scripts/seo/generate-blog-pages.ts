@@ -22,6 +22,8 @@
 //
 // Invoked from vite.config.ts (closeBundle) after generateRuleFixPages().
 
+import { toolById, toolCopy, toolHref } from '../../src/lib/blog-tools'
+import { slugify as slugifyHeading } from '../../src/lib/blog-related'
 import path    from 'path'
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
 import {
@@ -315,6 +317,8 @@ function renderRichText(text: RichText, prefix: string): string {
   if (typeof text === 'string') return esc(text)
   return text.map((segment) => {
     if (typeof segment === 'string') return esc(segment)
+    if ('cite' in segment) return `${esc(segment.text ?? '')}<sup><a href="#ref-${esc(segment.cite)}">[${esc(segment.cite)}]</a></sup>`
+    if ('def' in segment) return `<dfn title="${esc(segment.def)}">${esc(segment.text)}</dfn>`
     if ('to' in segment) {
       return `<a href="/${prefix}blog/${encodeURIComponent(segment.to)}/">${esc(segment.text)}</a>`
     }
@@ -344,7 +348,23 @@ function renderFallbackBlock(block: ContentBlock, prefix: string): string {
     case 'code':
       return `<pre><code>${esc(block.text)}</code></pre>`
     case 'callout':
-      return `<aside><p>${esc(block.text)}</p></aside>`
+      return `<aside><p>${renderRichText(block.text, prefix)}</p></aside>`
+    case 'takeaways':
+      return `<section><h2>${esc(block.title ?? 'Key takeaways')}</h2><ul>${block.items.map((item) => `<li>${renderRichText(item, prefix)}</li>`).join('')}</ul></section>`
+    case 'steps':
+      return `<ol>${block.items.map((step) => `<li><strong>${esc(step.title)}</strong>${step.body ? ` ${renderRichText(step.body, prefix)}` : ''}${step.detail ? `<p>${renderRichText(step.detail, prefix)}</p>` : ''}</li>`).join('')}</ol>`
+    case 'decision':
+      return `<section><h3>${esc(block.question)}</h3><dl>${block.options.map((opt) => `<dt>${esc(opt.label)}</dt><dd><strong>${esc(opt.verdict)}</strong> ${renderRichText(opt.body, prefix)}${opt.to ? ` <a href="/${prefix}blog/${encodeURIComponent(opt.to)}/">${esc(opt.linkText ?? 'Read the guide')}</a>` : ''}</dd>`).join('')}</dl></section>`
+    case 'related':
+      return `<aside><p><a href="/${prefix}blog/${encodeURIComponent(block.to)}/${block.section ? `#${slugifyHeading(block.section)}` : ''}">${esc(block.section ?? block.to)}</a>${block.why ? ` — ${esc(block.why)}` : ''}</p></aside>`
+    case 'tool': {
+      const tool = toolById(block.id)
+      if (!tool) return ''
+      const t = toolCopy(tool, prefix.replace('/', '') || 'en')
+      return `<aside><p><a href="${esc(toolHref(tool, prefix.replace('/', '') || 'en'))}">${esc(t.name)}</a> — ${esc(block.why ?? t.blurb)}</p></aside>`
+    }
+    case 'bars':
+      return `<figure>${block.title ? `<h3>${esc(block.title)}</h3>` : ''}<ul>${block.items.map((item) => `<li>${esc(item.label)}: <strong>${item.value}${esc(block.unit ?? '')}</strong>${item.note ? ` — ${esc(item.note)}` : ''}</li>`).join('')}</ul>${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ''}</figure>`
     case 'image': {
       const width = block.width ? ` width="${block.width}"` : ''
       const height = block.height ? ` height="${block.height}"` : ''
@@ -392,6 +412,7 @@ function postBodyFallback(post: BlogPost, prefix: string, primaryImage: SearchIm
             <figure><img src="${esc(primaryImage.url)}" alt="${esc(post.heroAlt ?? post.title)}" width="${primaryImage.width ?? 1200}" height="${primaryImage.height ?? 675}" decoding="async" /><figcaption>${esc(primaryImage.caption)}</figcaption></figure>
           </header>
           ${post.content.map((block) => renderFallbackBlock(block, prefix)).join('\n          ')}
+          ${post.references?.length ? `<section><h2>References</h2><ol>${post.references.map((r) => `<li id="ref-${esc(r.id)}">${r.url ? `<a href="${esc(r.url)}" rel="noopener noreferrer">${esc(r.title)}</a>` : r.to ? `<a href="/${prefix}blog/${encodeURIComponent(r.to)}/">${esc(r.title)}</a>` : esc(r.title)}${r.source ? ` — ${esc(r.source)}` : ''}${r.note ? `. ${esc(r.note)}` : ''}</li>`).join('')}</ol></section>` : ''}
           <p><a href="${articleUrl}">${esc(post.title)}</a></p>
         </article>
       </main>

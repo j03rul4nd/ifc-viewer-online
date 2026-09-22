@@ -4,6 +4,7 @@
 // that actually appear in BIM blog posts (IFC STEP, plain config text).
 
 import React, { useState, useCallback } from 'react'
+import { editorialCopy } from '../../lib/blog-editorial-copy'
 
 // ── Tokenizer ─────────────────────────────────────────────────────────────────
 
@@ -59,11 +60,14 @@ const TOKEN_STYLE: Record<string, string> = {
   'plain':     'text-[var(--text)]',
 }
 
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 interface Props {
   code: string
   lang?: string
+  /** Article language, for the control labels. */
+  articleLang?: string
 }
 
 const LANG_LABEL: Record<string, string> = {
@@ -76,8 +80,14 @@ const LANG_LABEL: Record<string, string> = {
   config: 'CONFIG',
 }
 
-export default function CodeBlock({ code, lang = 'text' }: Props) {
+export default function CodeBlock({ code, lang = 'text', articleLang = 'en' }: Props) {
   const [copied, setCopied] = useState(false)
+  // Long lines on a phone mean sideways scrolling per line; wrapping trades
+  // exact layout for readability, so it's the reader's choice, not ours.
+  const [wrap, setWrap] = useState(lang === 'text')
+  const ui = editorialCopy(articleLang)
+  const longest = Math.max(...code.split('\n').map((l) => l.length))
+  const canWrap = longest > 44
 
   const copy = useCallback(async () => {
     try {
@@ -101,9 +111,22 @@ export default function CodeBlock({ code, lang = 'text' }: Props) {
         <span className="text-[10.5px] font-mono font-bold tracking-[0.1em] text-[var(--text-faint)]">
           {label}
         </span>
+        <div className="flex items-center gap-1 -mr-2">
+        {canWrap && (
+          <button
+            type="button"
+            onClick={() => setWrap((w) => !w)}
+            aria-pressed={wrap}
+            className="min-h-[36px] px-2.5 rounded-md text-[11px] font-mono text-[var(--text-faint)] hover:text-[var(--text)] aria-pressed:text-[var(--accent-2)] [@media(pointer:coarse)]:min-h-[44px]"
+          >
+            {ui.wrapLines}
+          </button>
+        )}
         <button
+          type="button"
           onClick={copy}
-          className="flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-mono
+          aria-live="polite"
+          className="flex min-h-[36px] [@media(pointer:coarse)]:min-h-[44px] items-center gap-1.5 px-2.5 rounded-md text-[11px] font-mono
                      text-[var(--text-faint)] hover:text-[var(--text)] hover:bg-[rgba(255,255,255,0.06)]
                      transition-all active:scale-95"
         >
@@ -112,7 +135,7 @@ export default function CodeBlock({ code, lang = 'text' }: Props) {
               <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                 <path d="M2 6l3 3 5-5" />
               </svg>
-              Copied
+              {ui.copied}
             </>
           ) : (
             <>
@@ -120,22 +143,23 @@ export default function CodeBlock({ code, lang = 'text' }: Props) {
                 <rect x="3" y="3" width="7" height="7" rx="1" />
                 <path d="M9 3V2a1 1 0 00-1-1H2a1 1 0 00-1 1v6a1 1 0 001 1h1" />
               </svg>
-              Copy
+              {ui.copyCode}
             </>
           )}
         </button>
+        </div>
       </div>
 
       {/* Code body */}
-      <div className="overflow-x-auto">
-        <pre className="p-4 text-[12.5px] sm:text-[13px] font-mono leading-[1.75]">
+      <div className="overflow-x-auto" tabIndex={wrap ? undefined : 0} role={wrap ? undefined : 'region'} aria-label={wrap ? undefined : label}>
+        <pre className={`p-4 text-[12.5px] sm:text-[13px] font-mono leading-[1.75] ${wrap ? 'whitespace-pre-wrap break-words' : ''}`}>
           {multiline ? (
             lines.map((line, i) => (
               <div key={i} className="flex">
                 <span className="select-none w-[2.5em] shrink-0 text-right pr-4 text-[var(--text-faint)] opacity-40 text-[11px]">
                   {i + 1}
                 </span>
-                <code className="flex-1">
+                <code className="flex-1 min-w-0">
                   {useHighlight
                     ? tokenize(line).map((tok, j) => (
                         <span key={j} className={TOKEN_STYLE[tok.type] ?? TOKEN_STYLE.plain}>

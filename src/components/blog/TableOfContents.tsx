@@ -23,13 +23,9 @@ export function extractHeadings(blocks: ContentBlock[]): Heading[] {
     }))
 }
 
-export function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-}
+// Lives in lib so the static page generator can compute the same ids.
+import { slugify } from '../../lib/blog-related'
+export { slugify }
 
 // ── Active section tracking ───────────────────────────────────────────────────
 
