@@ -75,6 +75,11 @@ export interface ShotScene {
   visibleModels?: string[]
   /** Only these elements visible. */
   isolate?: { modelId: string; ids: number[] }[]
+  /**
+   * Cumulative stages shown over the shot, in order: at progress p the first
+   * ceil(p·n) stages are visible and nothing else (storeys appearing).
+   */
+  stages?: { modelId: string; ids: number[] }[][]
   /** Elements painted with the overlay colours, the rest ghosted. */
   highlight?: { modelId?: string; ids: number[]; severity: 'error' | 'warning' | 'info' }[]
 }
@@ -226,6 +231,14 @@ function sectionDrafts(
       case 'aerial':
         out.push(make('aerial', 'topDown', m.bounds, m.name, {}, {}))
         break
+      case 'buildup': {
+        // Needs at least a few storeys to read as a building going up.
+        if (m.storeys.length < 3) break
+        const stages = m.storeys.map((st) => [{ modelId: st.modelId, ids: st.ids }])
+        out.push(make('buildup', 'orbit', m.bounds, m.name,
+          { sweepDeg: 80, elevationDeg: 22, easing: 'linear' }, { stages }, undefined, 1.6))
+        break
+      }
       case 'storeys':
         for (const s of pickSpread(m.storeys, recipe.maxStoreys)) {
           out.push(make('storeys', 'focus', minBounds(boxToBounds(s.box), 1), s.label,

@@ -76,11 +76,34 @@ function resetScene(viewer: DirectorViewer, scene: ShotScene, hidden: string[]):
     if (validationMode && result) viewer.setValidationHighlights(result.issues, true)
     else viewer.setValidationHighlights([], false)
   }
-  if (scene.isolate?.length) viewer.isolateElements([], false)
+  if (scene.isolate?.length || scene.stages?.length) viewer.isolateElements([], false)
   for (const id of hidden) viewer.setModelVisible(id, true)
 }
 
-const hasSceneChange = (s: ShotScene) => !!(s.visibleModels || s.isolate?.length || s.highlight?.length)
+const hasSceneChange = (s: ShotScene) => !!(s.visibleModels || s.isolate?.length || s.highlight?.length || s.stages?.length)
+
+/** How many stages are visible at progress p (0–1): the first from the start, all by 85 %. */
+export function stagesAt(p: number, n: number): number {
+  if (n <= 0) return 0
+  return Math.max(1, Math.min(n, Math.ceil((Math.max(0, p) / 0.85) * n)))
+}
+
+/**
+ * Per-frame driver for a staged shot: isolates the union of the visible
+ * stages, only when the count changes.
+ */
+function stageDriver(viewer: DirectorViewer, scene: ShotScene, durationSec: number): ((t: number) => void) | undefined {
+  const stages = scene.stages
+  if (!stages?.length) return undefined
+  let shown = -1
+  return (t) => {
+    const k = stagesAt(durationSec > 0 ? t / durationSec : 1, stages.length)
+    if (k === shown) return
+    shown = k
+    const targets = stages.slice(0, k).flat().flatMap((g) => g.ids.map((expressId) => ({ expressId, modelId: g.modelId })))
+    viewer.isolateElements(targets, true)
+  }
+}
 
 // ── Shot cache ─────────────────────────────────────────────────────────────────
 // Changing the captions, the music, the transition or the order re-plans the
@@ -145,8 +168,10 @@ export async function renderPlannedClip(
     } else {
       const hidden = applyScene(viewer, planned.scene)
       try {
+        const beforeFrame = stageDriver(viewer, planned.scene, planned.shot.durationSec)
+        beforeFrame?.(0)
         blob = await renderShot(viewer, planned.shot, {
-          width: clip.width, height: clip.height, fps, signal,
+          width: clip.width, height: clip.height, fps, signal, beforeFrame,
           warmupFrames: hasSceneChange(planned.scene) ? 3 : 1,
           onProgress: (f) => onShot(i, f),
         })

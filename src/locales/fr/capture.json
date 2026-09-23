@@ -327,7 +327,8 @@
         "issues": "Anomalies de validation",
         "tour": "Visite enregistrée",
         "detail": "Détail",
-        "closing": "Clôture"
+        "closing": "Clôture",
+        "buildup": "Le bâtiment s’élève"
       },
       "sectionHint": {
         "hero": "Recul jusqu’à la maquette entière, avec le titre",
@@ -338,13 +339,15 @@
         "issues": "Les pires anomalies, mises en évidence",
         "tour": "Survol des arrêts de la visite",
         "detail": "Rapprochement sur l’élément sélectionné",
-        "closing": "Dernier tour avec l’appel à l’action"
+        "closing": "Dernier tour avec l’appel à l’action",
+        "buildup": "Un tour pendant que les niveaux apparaissent de bas en haut"
       },
       "empty": {
         "storeys": "Aucun niveau dans cette maquette",
         "systems": "Aucun système identifiable",
         "issues": "Aucune anomalie — lancez d’abord la validation",
-        "tour": "Pas encore de visite — enregistrez-en ou générez-en une"
+        "tour": "Pas encore de visite — enregistrez-en ou générez-en une",
+        "buildup": "Il faut au moins 3 niveaux"
       },
       "emptyGeneric": "Rien à montrer pour cette maquette",
       "shots": "{{n}} plans",

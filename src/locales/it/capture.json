@@ -327,7 +327,8 @@
         "issues": "Criticità di validazione",
         "tour": "Tour registrato",
         "detail": "Dettaglio",
-        "closing": "Chiusura"
+        "closing": "Chiusura",
+        "buildup": "L’edificio cresce"
       },
       "sectionHint": {
         "hero": "Allarga fino al modello intero, con il titolo",
@@ -338,13 +339,15 @@
         "issues": "Le criticità peggiori, evidenziate",
         "tour": "Volo tra le tappe del tour",
         "detail": "Avvicinamento all’elemento selezionato",
-        "closing": "Ultimo giro con l’invito all’azione"
+        "closing": "Ultimo giro con l’invito all’azione",
+        "buildup": "Un giro mentre i piani compaiono dal basso verso l’alto"
       },
       "empty": {
         "storeys": "Nessun piano in questo modello",
         "systems": "Nessun sistema classificabile",
         "issues": "Nessuna criticità — valida prima il modello",
-        "tour": "Ancora nessun tour — registralo o generalo"
+        "tour": "Ancora nessun tour — registralo o generalo",
+        "buildup": "Servono almeno 3 piani"
       },
       "emptyGeneric": "Niente da mostrare per questo modello",
       "shots": "{{n}} inquadrature",

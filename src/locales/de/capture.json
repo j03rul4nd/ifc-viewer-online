@@ -327,7 +327,8 @@
         "issues": "Prüfbefunde",
         "tour": "Aufgezeichnete Tour",
         "detail": "Detail",
-        "closing": "Abschluss"
+        "closing": "Abschluss",
+        "buildup": "Das Gebäude wächst"
       },
       "sectionHint": {
         "hero": "Rückzug auf das ganze Modell, mit Titel",
@@ -338,13 +339,15 @@
         "issues": "Die schwersten Befunde, hervorgehoben",
         "tour": "Flug durch die Tour-Stationen",
         "detail": "Heranfahren an das ausgewählte Element",
-        "closing": "Letzte Runde mit Handlungsaufruf"
+        "closing": "Letzte Runde mit Handlungsaufruf",
+        "buildup": "Eine Runde, während die Geschosse von unten nach oben erscheinen"
       },
       "empty": {
         "storeys": "Keine Geschosse in diesem Modell",
         "systems": "Keine zuordenbaren Systeme",
         "issues": "Keine Befunde – zuerst prüfen",
-        "tour": "Noch keine Tour – aufzeichnen oder erzeugen"
+        "tour": "Noch keine Tour – aufzeichnen oder erzeugen",
+        "buildup": "Braucht mindestens 3 Geschosse"
       },
       "emptyGeneric": "Für dieses Modell nichts zu zeigen",
       "shots": "{{n}} Aufnahmen",
