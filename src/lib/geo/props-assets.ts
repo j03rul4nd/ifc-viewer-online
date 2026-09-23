@@ -27,7 +27,7 @@ const log = createLogger('PropsAssets')
 
 /** Everything scripts/blender/build-props.py produces. */
 export type PropAsset =
-  | 'car' | 'van' | 'bus' | 'train-carriage'
+  | 'car' | 'van' | 'bus' | 'train-carriage' | 'train-cab'
   | 'traffic-signal' | 'catenary-mast'
   | 'tree-broadleaf' | 'tree-conifer'
   | 'street-lamp' | 'platform-canopy'
@@ -40,7 +40,7 @@ export type PropAsset =
   | 'roof-chimney' | 'roof-hvac' | 'roof-tank' | 'roof-stairbox'
 
 export const PROP_ASSETS: readonly PropAsset[] = [
-  'car', 'van', 'bus', 'train-carriage', 'traffic-signal', 'catenary-mast',
+  'car', 'van', 'bus', 'train-carriage', 'train-cab', 'traffic-signal', 'catenary-mast',
   'tree-broadleaf', 'tree-conifer', 'street-lamp', 'platform-canopy',
   'tree-palm', 'tree-columnar', 'tree-blossom', 'tree-olive',
   'bench', 'litter-bin', 'bollard', 'bus-shelter',
@@ -55,7 +55,7 @@ export const PROP_ASSETS: readonly PropAsset[] = [
  * files: an over-estimate passes a `<=` check forever and still misinforms the
  * person deciding whether to download.
  */
-export const PROP_ASSETS_KB = 324
+export const PROP_ASSETS_KB = 427
 
 export const SHANGHAI_PARK_ASSETS = ['tree-camphor', 'tree-ginkgo', 'tree-metasequoia', 'tree-willow', 'shrub', 'reed', 'bench', 'lantern', 'pergola', 'fountain-jets'] as const
 export const SHANGHAI_PARK_ASSETS_KB = 720
@@ -63,7 +63,7 @@ type LoadableAsset = PropAsset | `shanghai/${typeof SHANGHAI_PARK_ASSETS[number]
 
 function assetUrl(name: LoadableAsset): string {
   const base = (import.meta.env.BASE_URL ?? '/') as string
-  return `${base}models/props/${name}.glb${name.startsWith('shanghai/') ? '?v=20260907-r1' : ''}`.replace('//', '/')
+  return `${base}models/props/${name}.glb${name.startsWith('train-') ? '?v=20260923-r1' : name.startsWith('shanghai/') ? '?v=20260907-r1' : ''}`.replace('//', '/')
 }
 
 /** One in-flight or finished load per asset, for the life of the tab. */

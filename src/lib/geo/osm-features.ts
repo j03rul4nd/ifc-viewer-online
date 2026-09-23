@@ -39,6 +39,7 @@ import {
 import { buildSeaPolygons, type CoastlineBbox } from './coastline'
 import { assembleMultipolygon } from './multipolygon'
 import { partitionBuildingParts } from './building-parts'
+import { shanghaiBridgeWidth } from './shanghai-bridges'
 
 export type FeatureKind =
   | 'building' | 'water' | 'green' | 'sand' | 'rock' | 'tree' | 'bridge' | 'road' | 'rail'
@@ -105,6 +106,9 @@ export interface OsmFeature {
 }
 
 export interface FeatureStyle {
+  /** Preserve vertical pedestrian access semantics through parsing. */
+  accessKind?: 'stairs' | 'escalator' | 'elevator'
+  stepCount?: number
   /** Preserve basin semantics; a lake must never acquire invented fountain jets. */
   waterKind?: 'fountain' | 'pond' | 'lake' | 'river' | 'other'
   /** '#rrggbb' from `building:colour` / `roof:colour`, when parseable. */
@@ -147,6 +151,10 @@ export interface FeatureStyle {
   treeShape?: TreeShape
   /** Rail features: a corridor of track, or a station platform slab. */
   railKind?: 'track' | 'platform'
+  railGaugeM?: number
+  railSystem?: string
+  overheadWire?: boolean
+  platformHeightM?: number
   /**
    * A walkable DECK, or a rubble MOLE.
    *
@@ -907,6 +915,7 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
   // A surveyed junction control. Only the signals themselves — a crossing node
   // that merely REFERS to signals is part of that crossing, not a mast.
   if (t['highway'] === 'traffic_signals') return 'signal'
+  if (t['highway'] === 'elevator') return 'road'
 
   // A bridge OUTLINE — `man_made=bridge` — is a real area feature: the deck's
   // own footprint, mapped as a polygon.
@@ -1106,6 +1115,9 @@ export function resolveFeatureStyle(
     const oneway = (t['oneway'] ?? '').toLowerCase()
     return {
       roofShape: 'flat', roofHeightM: 0, tone: roadTone(t),
+      accessKind: t['highway'] === 'elevator' ? 'elevator' : t['highway'] === 'steps'
+        ? (t['conveying'] && t['conveying'] !== 'no' ? 'escalator' : 'stairs') : undefined,
+      stepCount: /^\d+$/.test(t['step_count'] ?? '') ? Math.min(1000, Number(t['step_count'])) : undefined,
       surface: normalizeSurface(t['surface']),
       roadClass: roadClass(t),
       lanes: Number.isFinite(lanes) && lanes > 0 ? Math.min(12, Math.round(lanes)) : undefined,
@@ -1127,6 +1139,10 @@ export function resolveFeatureStyle(
     return {
       roofShape: 'flat', roofHeightM: 0,
       railKind: platform ? 'platform' : 'track',
+      railSystem: t['railway'],
+      railGaugeM: /^(\d+)(;|$)/.test(t['gauge'] ?? '') ? Math.max(.5, Math.min(2, parseFloat(t['gauge']) / 1000)) : 1.435,
+      overheadWire: power === 'contact_line',
+      platformHeightM: platform ? (parseLengthM(t['height']) ?? .55) : undefined,
 
       // `electrified=no` is a real, common answer and must not read as yes.
       electrified: !platform && power !== '' && power !== 'no',
@@ -1327,6 +1343,7 @@ export function parseOsmFeatures(
   if (!Array.isArray(elements)) return []
 
   const out: OsmFeature[] = []
+  const seenElements = new Set<string>()
   /** Shoreline ways, held back to be turned into the sea once all are known. */
   const coastline: LatLonPoint[][] = []
 
@@ -1355,6 +1372,10 @@ export function parseOsmFeatures(
   for (const raw of elements) {
     const el = raw as OverpassEl
     if (!el || typeof el !== 'object') continue
+
+    const elementKey = `${el.type}:${el.id}`
+    if (seenElements.has(elementKey)) continue
+    seenElements.add(elementKey)
 
     // A coastline is not a feature. It is the EDGE of one, and on its own it
     // draws nothing — the water it implies is assembled below, once the whole
@@ -1406,6 +1427,13 @@ export function parseOsmFeatures(
     const height = resolveBuildingHeight(
       el.tags, heightPrior, safeAreaM2(el.geometry) ?? undefined,
     )
+
+    if (style.accessKind === 'elevator' && el.type === 'node') {
+      if (Number.isFinite(el.lat) && Number.isFinite(el.lon)) {
+        out.push({id:`n${el.id}`,kind:'road',point:{lat:el.lat!,lon:el.lon!},height,style})
+      }
+      continue
+    }
 
     if (kind === 'water' && style.waterKind === 'fountain' && el.type === 'node') {
       if (Number.isFinite(el.lat) && Number.isFinite(el.lon)) {
@@ -1503,7 +1531,7 @@ export function parseOsmFeatures(
           widthM: style.crossing
             // The painted band, not the 2 m footway the way is tagged as.
             ? CROSSING_BAND_M
-            : kind === 'road' ? roadWidth(el.tags) : railWidth(el.tags),
+            : kind === 'road' ? (shanghaiBridgeWidth(el.id, el.tags, pts) ?? roadWidth(el.tags)) : railWidth(el.tags),
           style,
           // How it is CARRIED, and what it is FOR — the two halves of the
           // vertical model. Carried alongside `kind` rather than replacing it,
@@ -1520,6 +1548,7 @@ export function parseOsmFeatures(
           id: `w${el.id}`, kind, ring, height, style,
           name: el.tags?.['name'], label: featureLabel(el.tags),
           isBuildingPart: isBuildingPartTag(el.tags),
+          vertical: kind==='rail' ? readVerticalTags(el.tags) : undefined,
         })
       } else drop(el, 'geometry', ringRejection(pts, kind))
       continue
@@ -1538,6 +1567,7 @@ export function parseOsmFeatures(
         if (ring) {
           out.push({
             id: `r${el.id}-${part++}`, kind, ring, height, style,
+            vertical: kind==='rail' ? readVerticalTags(el.tags) : undefined,
             name: el.tags?.['name'], label: featureLabel(el.tags),
           })
         }
@@ -1813,6 +1843,9 @@ export function buildFeaturesQuery(
     // geometry budget that the ways are competing over.
     [`node["natural"="tree"](${b});`, Math.round(maxElements * 0.35)],
     [`node["highway"="traffic_signals"](${b});`, Math.round(maxElements * 0.05)],
+    // Access must survive a dense street result cap. Duplicate ways are removed
+    // by the parser; elevators were previously never requested at all.
+    [`way["highway"="steps"](${b});node["highway"="elevator"](${b});`, Math.round(maxElements * 0.03)],
   ]
 
   return [

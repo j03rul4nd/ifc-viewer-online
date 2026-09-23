@@ -47,7 +47,8 @@ BUDGET = {
     'tree-conifer': 700,
     'street-lamp': 300,
     'platform-canopy': 500,
-    'train-carriage': 400,
+    'train-carriage': 1200,
+    'train-cab': 1400,
     # Round 2. Trees are the expensive family because a crown is spheres; the
     # street furniture and the rooftop kit are boxes and stay tiny on purpose —
     # a chimney is instanced onto every pitched roof in view.
@@ -263,14 +264,13 @@ def build_van():
     return finish('van', parts)
 
 
-def build_train_carriage():
+def build_train_carriage(cab=False):
     """A carriage with a rounded roof and a continuous window band."""
     # Height matters more than it looks: a carriage that tops out at 2.9 m sits
     # barely twice a car's roofline, and the eye reads it as a tram. A real one
     # is close to 4 m above rail, which is nearly three times the car.
     parts = [
         cube('body', (19.0, 2.86, 2.60), (0, 0, 2.30), BODY),
-        cube('windows', (17.2, 2.92, 0.72), (0, 0, 2.90), GLASS),
         cube('skirt', (18.6, 2.62, 0.75), (0, 0, 0.75), TRIM),
     ]
     parts.append(squash(
@@ -279,7 +279,32 @@ def build_train_carriage():
     ))
     for x in (7.0, -7.0):
         parts.append(cube(f'bogie{x}', (2.6, 2.2, 0.5), (x, 0, 0.45), TYRE))
-    return finish('train-carriage', parts)
+        for axle in (-.85,.85):
+            for side in (-1,1):
+                parts.append(cyl('wheel',.43,.12,(x+axle,side*.78,.43),TYRE,verts=8,axis='Y'))
+    for side in (-1,1):
+        for x in (-7,-4.8,-2.6,-.4,1.8,4,6.2):
+            parts.append(cube('window',(1.65,.035,.72),(x,side*1.44,2.85),GLASS))
+        for x in (-8.4,8.4):
+            parts.append(cube('door',(.8,.04,1.9),(x,side*1.44,2.15),TRIM))
+            parts.append(cube('door-glass',(.55,.045,.6),(x,side*1.44,2.75),GLASS))
+        parts.append(cube('blue-belt',(18.8,.04,.18),(0,side*1.44,2.22),(.08,.25,.48,1)))
+    for x in (-9.35,9.35):
+        if cab and x>0: continue
+        parts.append(cube('gangway',(.3,1.4,1.8),(x,0,2.1),TYRE))
+    if cab:
+        # Reshape the driving end, keeping the 19 m placement envelope.
+        for ob in parts:
+            for v in ob.data.vertices:
+                x=v.co.x+ob.location.x
+                if x>6.5:
+                    t=min(1,(x-6.5)/3)
+                    v.co.y*=1-.58*t
+                    v.co.z-=max(0,v.co.z+ob.location.z-1.4)*.32*t
+        parts.append(cube('windscreen',(.025,1.12,.64),(9.505,0,2.47),GLASS))
+        for y in (-.48,.48):
+            parts.append(cube('headlight',(.06,.24,.12),(9.48,y,1.35),(1,.93,.7,1)))
+    return finish('train-cab' if cab else 'train-carriage', parts)
 
 
 def build_tree_broadleaf():
@@ -646,6 +671,7 @@ BUILDERS = {
     'traffic-signal': build_traffic_signal,
     'catenary-mast': build_catenary_mast,
     'train-carriage': build_train_carriage,
+    'train-cab': lambda: build_train_carriage(True),
     'tree-broadleaf': build_tree_broadleaf,
     'tree-conifer': build_tree_conifer,
     'street-lamp': build_street_lamp,
@@ -677,6 +703,8 @@ def main():
     failures = []
 
     for name, build in BUILDERS.items():
+        if os.environ.get('PROPS_ONLY') and name not in os.environ['PROPS_ONLY'].split(','):
+            continue
         reset()
         ob = build()
         tris = tri_count(ob)

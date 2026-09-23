@@ -75,3 +75,7 @@ tsconfig.tsbuildinfo
 # Reality-capture experiment output (renders, EXR depth, .blend, fused clouds)
 experiments/reality-capture/out/
 __pycache__/
+
+# Local Blender review of the shipping Shanghai bridge mesh
+/.tmp/shanghai-bridges/
+/.tmp/shanghai-rail/

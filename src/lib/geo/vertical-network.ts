@@ -498,13 +498,15 @@ export function solveVerticalNetwork(
   for (const w of sorted) {
     const list = overIndex.get(w.id)
     if (!list) continue
-    let deepest = 1
+    const carriedLevels = new Set<number>()
     for (const c of list) {
       const under = sorted.find((x) => x.id === c.underId)
       if (!under) continue
-      deepest = Math.max(deepest, w.tags.layer - under.tags.layer)
+      // Negative tunnel layers and arbitrary OSM layer gaps are not extra
+      // above-ground decks. Only an actual bridge beneath adds a level.
+      if (under.tags.structure === 'bridge') carriedLevels.add(under.tags.layer)
     }
-    stackedUnder.set(w.id, deepest)
+    stackedUnder.set(w.id, 1 + carriedLevels.size)
   }
 
   // ── 1, 2, 4. Per-way plans ──────────────────────────────────────────────────
@@ -551,7 +553,8 @@ export function solveVerticalNetwork(
         // interior holds the deck height, the ends are free to be pulled toward
         // the ground on either side, and the grade limit decides where the ramp
         // actually falls. Pinning the ends would reinstate the cliff.
-        hard[i] = i > 0 && i < n - 1
+        const closedDeck = structureIsUp && w.points[0].distanceToSquared(w.points[w.points.length - 1]) < snapN * snapN
+        hard[i] = closedDeck || (i > 0 && i < n - 1)
         // …and a soft end WISHES FOR THE GROUND, not for the deck. It is a ramp
         // end, and a ramp wants to reach the terrain; the envelope then lifts
         // it exactly as far as the grade forces and no further. Wishing for the
@@ -572,6 +575,29 @@ export function solveVerticalNetwork(
 
   // ── 5. Chains ───────────────────────────────────────────────────────────────
   const index = new NodeIndex(snapN)
+  // A branch may terminate on an INTERIOR vertex of an unsplit closed skywalk.
+  // Endpoint-only chains cannot see that attachment. Pin the branch to the
+  // carried interior station, without connecting mere segment crossings.
+  const interiorDecks = new Map<number, { elevationM: number; functional: FunctionalType }>()
+  const attachmentSeeds = new Map<string, number>()
+  for (let w = 0; w < sorted.length; w++) {
+    if (sorted[w].tags.structure !== 'bridge') continue
+    const plan = plans[w]
+    for (let i = 1; i < sorted[w].points.length - 1; i++) {
+      const p = sorted[w].points[i]
+      interiorDecks.set(index.id(p), {elevationM: plan.core!, functional: sorted[w].functional})
+    }
+  }
+  for (let w = 0; w < sorted.length; w++) {
+    const plan = plans[w], n = plan.densified.points.length
+    for (const i of [0, n - 1]) {
+      const deck = interiorDecks.get(index.id(plan.densified.points[i]))
+      if (!deck || deck.functional !== sorted[w].functional) continue
+      plan.targetM[i] = deck.elevationM
+      plan.hard[i] = true
+      attachmentSeeds.set(`${w}:${i}`, deck.elevationM)
+    }
+  }
   const { chains, endsOf, degree } = buildChains(sorted, index)
 
   const solved: number[][] = plans.map((p) => [...p.targetM])
@@ -635,6 +661,12 @@ export function solveVerticalNetwork(
     }
 
     const { elevationM, relaxed } = lipschitzEnvelope(verts, grade)
+    // The general envelope can relax conflicting hard seeds. An existing deck
+    // attachment is a boundary condition: lift the approach, never detach it.
+    const floor = owners.map(list => Math.max(-Infinity, ...list.map(o => attachmentSeeds.get(`${o.way}:${o.idx}`) ?? -Infinity)))
+    for (let i = 1; i < floor.length; i++) floor[i] = Math.max(floor[i], floor[i-1] - grade * (verts[i].stationM - verts[i-1].stationM))
+    for (let i = floor.length-2; i >= 0; i--) floor[i] = Math.max(floor[i], floor[i+1] - grade * (verts[i+1].stationM - verts[i].stationM))
+    for (let i = 0; i < elevationM.length; i++) elevationM[i] = Math.max(elevationM[i], floor[i])
     for (let v = 0; v < verts.length; v++) {
       for (const o of owners[v]) {
         solved[o.way][o.idx] = elevationM[v]
