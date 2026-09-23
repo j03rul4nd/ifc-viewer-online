@@ -97,6 +97,7 @@ export function tourStops(): TourStop[] {
   if (!tour) return []
   return tour.steps.map((s) => ({
     pose: { position: s.camera.position, target: s.camera.target, fovDeg: DEFAULT_FOV_DEG },
+    aspect: s.aspect,
     caption: s.caption,
     highlight: s.highlightedExpressIds?.length
       ? { modelId: s.modelId, ids: s.highlightedExpressIds, severity: s.issueSeverity }

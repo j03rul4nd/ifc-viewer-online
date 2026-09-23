@@ -35,6 +35,23 @@ import './studio.css'
 
 const FRAME = 1 / 30
 
+/**
+ * Seconds left for the running job, from how fast its progress has moved so
+ * far. Null until there is enough to go on; restarts when progress goes back
+ * (a batch moving from rendering to exporting).
+ */
+function useEta(progress: number | null): number | null {
+  const base = useRef<{ t: number; p: number } | null>(null)
+  if (progress === null) { base.current = null; return null }
+  const now = performance.now()
+  if (!base.current || progress < base.current.p) base.current = { t: now, p: progress }
+  const done = progress - base.current.p
+  const elapsed = (now - base.current.t) / 1000
+  if (done < 0.04 || elapsed < 1.5) return null
+  const left = (elapsed / done) * (1 - progress)
+  return Math.max(1, Math.round(left))
+}
+
 export default function ClipStudio() {
   const { t, i18n } = useTranslation('capture')
   const open = useClipStudioStore((s) => s.open)
@@ -62,6 +79,7 @@ export default function ClipStudio() {
   const [safeZones, setSafeZones] = useState(false)
   const duration = projectDuration(project)
 
+  const eta = useEta(job?.progress ?? null)
   const engine = usePreviewEngine({ canvasRef, project, media, output, playhead, setPlayhead })
 
   // Preview renders at half the output size: sharp on screen, light to draw.
@@ -251,6 +269,7 @@ export default function ClipStudio() {
                   <div className="h-1.5 w-48 overflow-hidden rounded-full bg-white/20">
                     <div className="h-full bg-white transition-[width]" style={{ width: `${Math.round((job.progress ?? 0) * 100)}%` }} />
                   </div>
+                  {eta !== null && <p className="text-[11.5px] text-white/70">{t('studio.remaining', { seconds: eta })}</p>}
                   <button type="button" className="studio-btn" onClick={() => abortRef.current?.abort()}>{t('studio.cancel')}</button>
                 </div>
               )}

@@ -46,8 +46,13 @@ export type MultiModelMode =
 
 export const MULTI_MODEL_MODES: readonly MultiModelMode[] = ['combined', 'sequence', 'separate']
 
+export type CaptionLook = 'clean' | 'bold' | 'minimal'
+export const CAPTION_LOOK_IDS: readonly CaptionLook[] = ['clean', 'bold', 'minimal']
+
 export interface RecipeCaptions {
   enabled: boolean
+  /** Clean lower thirds, bold badges that pop in, or minimal small type. */
+  look?: CaptionLook
   /** Opening title; `{name}` is replaced by the model name. Empty = the model name. */
   title: string
   /** Element count and storeys under the title. */
@@ -89,7 +94,7 @@ export interface Recipe {
 
 // ── Built-in recipes ───────────────────────────────────────────────────────────
 
-const CAPTIONS: RecipeCaptions = { enabled: true, title: '', showStats: true, showScore: true, labelShots: true, cta: '' }
+const CAPTIONS: RecipeCaptions = { enabled: true, look: 'clean', title: '', showStats: true, showScore: true, labelShots: true, cta: '' }
 
 const BASE: Omit<Recipe, 'id' | 'name'> = {
   builtIn: true,
@@ -143,14 +148,14 @@ export const BUILT_IN_RECIPES: readonly Recipe[] = [
     ...BASE, id: 'reel', name: 'Reel',
     format: 'reel', targetSec: 15, pace: 'fast', transition: 'zoom', transitionSec: 0.3, music: 'upbeat',
     sections: ['hero', 'orbit', 'systems', 'aerial', 'closing'], maxSystems: 2,
-    captions: { ...CAPTIONS, labelShots: false, cta: 'ifcvieweronline.eu' },
+    captions: { ...CAPTIONS, look: 'bold', labelShots: false, cta: 'ifcvieweronline.eu' },
     watermark: true,
   },
   {
     ...BASE, id: 'tiktok', name: 'TikTok',
     format: 'tiktok', targetSec: 15, pace: 'fast', transition: 'whip', transitionSec: 0.25, music: 'upbeat',
     sections: ['hero', 'storeys', 'orbit', 'closing'], maxStoreys: 3,
-    captions: { ...CAPTIONS, labelShots: true, cta: 'ifcvieweronline.eu' },
+    captions: { ...CAPTIONS, look: 'bold', labelShots: true, cta: 'ifcvieweronline.eu' },
     watermark: true,
   },
 ]
@@ -228,6 +233,7 @@ export function sanitizeRecipe(input: unknown, fallbackId = 'custom'): Recipe {
     isolateSubjects: bool(o.isolateSubjects, BASE.isolateSubjects),
     captions: {
       enabled: bool(c.enabled, true),
+      look: oneOf(c.look, CAPTION_LOOK_IDS, 'clean'),
       title: str(c.title, 80),
       showStats: bool(c.showStats, true),
       showScore: bool(c.showScore, true),

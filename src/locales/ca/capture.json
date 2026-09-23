@@ -381,7 +381,17 @@
       "fadeOut": "Sortida a negre",
       "deleteTemplate": "Elimina la plantilla",
       "save": "Desa com a plantilla",
-      "generateBatch": "Genera {{n}} vídeos"
-    }
+      "generateBatch": "Genera {{n}} vídeos",
+      "storyboard": "Storyboard",
+      "storyboardSummary": "{{shots}} preses · {{seconds}} s",
+      "storyboardBatch": "{{clips}} vídeos · {{shots}} preses · {{seconds}} s cadascun",
+      "looks": {
+        "clean": "Net",
+        "bold": "Impactant",
+        "minimal": "Mínim"
+      },
+      "reused": "Reutilitzades {{n}} preses ja renderitzades"
+    },
+    "remaining": "Queden uns {{seconds}} s"
   }
 }

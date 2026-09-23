@@ -7,6 +7,7 @@
 
 import { useClipStudioStore } from '../../stores/clipStudioStore'
 import { useValidationStore } from '../../stores/validationStore'
+import { useSceneStore } from '../../stores/sceneStore'
 import { addSource, createProject, makeId, projectDuration, setAllTransitions, type EditProject, type MediaSource } from '../capture/project'
 import { renderShot, type ShotRenderer } from '../capture/media-codec'
 import { createTextOverlay } from '../capture/timeline'
@@ -81,6 +82,45 @@ function resetScene(viewer: DirectorViewer, scene: ShotScene, hidden: string[]):
 
 const hasSceneChange = (s: ShotScene) => !!(s.visibleModels || s.isolate?.length || s.highlight?.length)
 
+// ── Shot cache ─────────────────────────────────────────────────────────────────
+// Changing the captions, the music, the transition or the order re-plans the
+// clip but most shots come out identical. A shot is keyed by everything that
+// decides its pixels — the move, the scene state, the size, the loaded models
+// and where they are, the backdrop — so a re-generate only renders what really
+// changed. In memory only, capped, oldest dropped first.
+
+const CACHE_MAX_BYTES = 400 * 1024 * 1024
+const shotCache = new Map<string, Blob>()
+let cacheBytes = 0
+
+function shotKey(viewer: DirectorViewer & { getModelBounds?: (id?: string) => unknown }, clip: PlannedClip, planned: PlannedClip['shots'][number], fps: number): string {
+  const models = viewer.getLoadedModelIds().map((id) => [id, viewer.getModelBounds?.(id)])
+  // The validation overlay paints every shot while it is on.
+  const overlay = useValidationStore.getState().validationMode
+  return JSON.stringify([planned.shot, planned.scene, clip.width, clip.height, fps, models, useSceneStore.getState().background, overlay])
+}
+
+function cacheGet(key: string): Blob | undefined {
+  const blob = shotCache.get(key)
+  if (blob) { shotCache.delete(key); shotCache.set(key, blob) } // most recent last
+  return blob
+}
+
+function cachePut(key: string, blob: Blob): void {
+  shotCache.set(key, blob)
+  cacheBytes += blob.size
+  for (const [k, b] of shotCache) {
+    if (cacheBytes <= CACHE_MAX_BYTES) break
+    shotCache.delete(k)
+    cacheBytes -= b.size
+  }
+}
+
+export function clearShotCache(): void {
+  shotCache.clear()
+  cacheBytes = 0
+}
+
 // ── Rendering a plan ───────────────────────────────────────────────────────────
 
 /** Render one planned clip into an editable project + its media. */
@@ -91,21 +131,29 @@ export async function renderPlannedClip(
   fps: number,
   onShot: (i: number, fraction: number) => void,
   signal?: AbortSignal,
-): Promise<{ project: EditProject; media: Map<string, SourceMedia> }> {
+): Promise<{ project: EditProject; media: Map<string, SourceMedia>; reused: number }> {
   const media = new Map<string, SourceMedia>()
   let project = createProject()
+  let reused = 0
   for (let i = 0; i < clip.shots.length; i++) {
     const planned = clip.shots[i]
-    const hidden = applyScene(viewer, planned.scene)
-    let blob: Blob
-    try {
-      blob = await renderShot(viewer, planned.shot, {
-        width: clip.width, height: clip.height, fps, signal,
-        warmupFrames: hasSceneChange(planned.scene) ? 3 : 1,
-        onProgress: (f) => onShot(i, f),
-      })
-    } finally {
-      resetScene(viewer, planned.scene, hidden)
+    const key = shotKey(viewer, clip, planned, fps)
+    let blob = cacheGet(key)
+    if (blob) {
+      reused++
+      onShot(i, 1)
+    } else {
+      const hidden = applyScene(viewer, planned.scene)
+      try {
+        blob = await renderShot(viewer, planned.shot, {
+          width: clip.width, height: clip.height, fps, signal,
+          warmupFrames: hasSceneChange(planned.scene) ? 3 : 1,
+          onProgress: (f) => onShot(i, f),
+        })
+      } finally {
+        resetScene(viewer, planned.scene, hidden)
+      }
+      cachePut(key, blob)
     }
     const source: MediaSource = {
       id: makeId('src'), kind: 'shot', label: planned.label,
@@ -120,7 +168,7 @@ export async function renderPlannedClip(
   project = {
     ...project,
     texts: clip.texts.map((t) => createTextOverlay({
-      text: t.text, startSec: t.startSec, endSec: Math.min(total, t.endSec), style: t.style, anchor: t.anchor, anim: 'fade',
+      text: t.text, startSec: t.startSec, endSec: Math.min(total, t.endSec), style: t.style, anchor: t.anchor, anim: t.anim,
     }, total)),
     audio: recipe.music === 'none'
       ? { kind: 'none', trackId: null, fileName: null, volume: 0, fadeSec: 0, offsetSec: 0 }
@@ -128,7 +176,7 @@ export async function renderPlannedClip(
     intro: recipe.fadeIn ? { type: 'black', sec: 0.5 } : { type: 'none', sec: 0 },
     outro: recipe.fadeOut ? { type: 'black', sec: 0.6 } : { type: 'none', sec: 0 },
   }
-  return { project, media }
+  return { project, media, reused }
 }
 
 /**
@@ -142,19 +190,21 @@ export async function runDirector(
   recipe: Recipe,
   labels: RunLabels,
   signal?: AbortSignal,
-): Promise<{ exported: number }> {
+): Promise<{ exported: number; reused: number }> {
   const s = useClipStudioStore.getState()
   s.setPreset(recipe.format)
   s.setOutput({ watermark: recipe.watermark, fill: 'crop' })
   const fps = useClipStudioStore.getState().output.fps
   let exported = 0
+  let reused = 0
   try {
     for (let c = 0; c < clips.length; c++) {
       const clip = clips[c]
       const n = clip.shots.length
-      const { project, media } = await renderPlannedClip(viewer, clip, recipe, fps, (i, f) => {
+      const { project, media, reused: r } = await renderPlannedClip(viewer, clip, recipe, fps, (i, f) => {
         s.setJob({ label: labels.rendering(c + 1, clips.length, i + 1, n), progress: (i + f) / n })
       }, signal)
+      reused += r
 
       if (clips.length > 1) {
         const label = labels.exporting(c + 1, clips.length)
@@ -174,7 +224,7 @@ export async function runDirector(
   } finally {
     s.setJob(null)
   }
-  return { exported }
+  return { exported, reused }
 }
 
 function slug(s: string): string {

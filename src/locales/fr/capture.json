@@ -381,7 +381,17 @@
       "fadeOut": "Fermeture au noir",
       "deleteTemplate": "Supprimer le modèle",
       "save": "Enregistrer comme modèle",
-      "generateBatch": "Générer {{n}} vidéos"
-    }
+      "generateBatch": "Générer {{n}} vidéos",
+      "storyboard": "Storyboard",
+      "storyboardSummary": "{{shots}} plans · {{seconds}} s",
+      "storyboardBatch": "{{clips}} vidéos · {{shots}} plans · {{seconds}} s chacune",
+      "looks": {
+        "clean": "Épuré",
+        "bold": "Percutant",
+        "minimal": "Minimal"
+      },
+      "reused": "{{n}} plans déjà rendus réutilisés"
+    },
+    "remaining": "Environ {{seconds}} s restantes"
   }
 }

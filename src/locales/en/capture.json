@@ -381,7 +381,17 @@
       "fadeOut": "Fade out to black",
       "deleteTemplate": "Delete template",
       "save": "Save as template",
-      "generateBatch": "Generate {{n}} videos"
-    }
+      "generateBatch": "Generate {{n}} videos",
+      "storyboard": "Storyboard",
+      "storyboardSummary": "{{shots}} shots · {{seconds}} s",
+      "storyboardBatch": "{{clips}} videos · {{shots}} shots · {{seconds}} s each",
+      "looks": {
+        "clean": "Clean",
+        "bold": "Bold",
+        "minimal": "Minimal"
+      },
+      "reused": "Reused {{n}} shots already rendered"
+    },
+    "remaining": "About {{seconds}} s left"
   }
 }

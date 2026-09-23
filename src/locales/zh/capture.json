@@ -381,7 +381,17 @@
       "fadeOut": "淡出到黑场",
       "deleteTemplate": "删除模板",
       "save": "另存为模板",
-      "generateBatch": "生成 {{n}} 个视频"
-    }
+      "generateBatch": "生成 {{n}} 个视频",
+      "storyboard": "分镜",
+      "storyboardSummary": "{{shots}} 个镜头 · {{seconds}} 秒",
+      "storyboardBatch": "{{clips}} 个视频 · 每个 {{shots}} 个镜头 · {{seconds}} 秒",
+      "looks": {
+        "clean": "简洁",
+        "bold": "醒目",
+        "minimal": "极简"
+      },
+      "reused": "复用了 {{n}} 个已渲染的镜头"
+    },
+    "remaining": "约剩 {{seconds}} 秒"
   }
 }

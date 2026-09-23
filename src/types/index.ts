@@ -119,6 +119,8 @@ export type ValidationRuleId = keyof RulesConfig
 export interface TourStep {
   id: string
   camera: CameraState
+  /** Aspect of the screen the stop was framed on — lets a video re-frame it for 9:16 or 4:5. */
+  aspect?: number
   modelId?: string
   isolatedCategories?: string[]
   /** Elements to highlight via the existing validation overlay channel. */

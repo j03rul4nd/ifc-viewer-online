@@ -271,6 +271,7 @@ async function buildShowcaseSteps(
       steps.push({
         id: crypto.randomUUID(),
         camera: computeFrameCamera(box, views[i].direction, current.fovDeg, current.aspect),
+        aspect: current.aspect,
         caption: options.showcaseCaptions?.[i],
       })
     }
@@ -279,6 +280,7 @@ async function buildShowcaseSteps(
     steps.push({
       id: crypto.randomUUID(),
       camera: { position: current.position, target: current.target },
+      aspect: current.aspect,
       caption: options.showcaseCaptions?.[0],
     })
   }
@@ -306,6 +308,7 @@ async function issueGroupToStep(
   return {
     id: crypto.randomUUID(),
     camera,
+    aspect: current.aspect,
     modelId: g.modelId,
     highlightedExpressIds: g.expressIds.length > 0 ? g.expressIds : undefined,
     issueRuleId: g.ruleId,

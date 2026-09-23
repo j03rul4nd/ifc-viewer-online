@@ -273,8 +273,9 @@ export async function renderShot(viewer: ShotRenderer, shot: ShotSpec, o: ShotRe
   try {
     for (let w = 0; w < (o.warmupFrames ?? 0); w++) {
       if (o.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+      // No timer here: timers are throttled to 1 s in a background tab, and
+      // renderShotFrame already waits for the geometry to stream in.
       await viewer.renderShotFrame(cameraAt(shot, 0))
-      await new Promise((r) => setTimeout(r, 16))
     }
     for (let i = 0; i < times.length; i++) {
       if (o.signal?.aborted) throw new DOMException('Aborted', 'AbortError')

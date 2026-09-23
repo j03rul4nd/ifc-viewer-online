@@ -16,12 +16,13 @@ import { useModelStore } from '../../stores/modelStore'
 import { CLIP_TRANSITIONS } from '../../lib/capture/project'
 import { BUILTIN_BED_IDS } from '../../lib/capture/audio-library'
 import {
-  MULTI_MODEL_MODES, OUTPUT_FORMATS, PACES, SECTION_KINDS, builtInRecipe, DEFAULT_RECIPE_ID,
+  CAPTION_LOOK_IDS, MULTI_MODEL_MODES, OUTPUT_FORMATS, PACES, SECTION_KINDS, builtInRecipe, DEFAULT_RECIPE_ID,
   type Recipe, type SectionKind,
 } from '../../lib/director/recipe'
 import { allRecipes, deleteRecipe, lastRecipeId, rememberRecipe, saveRecipe } from '../../lib/director/storage'
 import { generatePresentation, inspectScene, NothingToPresentError, type GenerateLabels } from '../../lib/director/generate'
-import type { SceneFacts } from '../../lib/director/plan'
+import { planPresentation, type SceneFacts } from '../../lib/director/plan'
+import { rhythmForMusic } from '../../lib/director/run'
 import type { SystemKey } from '../../lib/director/systems'
 
 interface Props {
@@ -57,6 +58,7 @@ export async function runRecipe(recipe: Recipe, lang: string, labels: GenerateLa
   try {
     const r = await generatePresentation(recipe, lang, labels, signal)
     if (r.exported > 0) toast(t('studio.director.batchDone', { n: r.exported }), 'success')
+    else if (r.reused > 0) toast(t('studio.director.reused', { n: r.reused }), 'info')
   } catch (e) {
     if (e instanceof NothingToPresentError) { toast(t('studio.needModel'), 'warning'); return }
     throw e
@@ -148,6 +150,9 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
   const [facts, setFacts] = useState<SceneFacts | null>(null)
   const modelCount = useModelStore((s) => Object.keys(s.models).length)
   const tourStops = usePresentationStore((s) => s.tour?.steps.length ?? 0)
+  const labels = useDirectorLabels()
+  // The plan is pure and cheap: re-planned on every change, before anything renders.
+  const plan = useMemo(() => (facts ? planPresentation(draft, facts, labels.plan, rhythmForMusic(draft.music)) : null), [facts, draft, labels])
   const set = (patch: Partial<Recipe>) => onChange({ ...draft, ...patch })
   const setCap = (patch: Partial<Recipe['captions']>) => onChange({ ...draft, captions: { ...draft.captions, ...patch } })
 
@@ -261,6 +266,30 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
 
         {/* Right: look and sound */}
         <div className="flex flex-col gap-4">
+          <Field label={t('studio.director.storyboard')}>
+            {plan === null ? (
+              <span className="text-[11.5px] text-[var(--text-faint)]">…</span>
+            ) : plan.length === 0 ? (
+              <span className="text-[11.5px] text-[var(--text-faint)]">{t('studio.needModel')}</span>
+            ) : (
+              <>
+                <span className="text-[12px] text-[var(--text-dim)]">
+                  {plan.length > 1
+                    ? t('studio.director.storyboardBatch', { clips: plan.length, shots: plan[0].shots.length, seconds: Math.round(plan[0].durationSec) })
+                    : t('studio.director.storyboardSummary', { shots: plan[0].shots.length, seconds: Math.round(plan[0].durationSec) })}
+                </span>
+                <div className="studio-storyboard" role="list">
+                  {plan[0].shots.map((sh, i) => (
+                    <span key={i} role="listitem" className={`studio-storyboard-shot is-${sh.section}`}
+                      style={{ flexGrow: sh.shot.durationSec }}
+                      title={`${i + 1}. ${t(`studio.director.section.${sh.section}`)} — ${sh.label} · ${sh.shot.durationSec.toFixed(1)}s`}>
+                      <span className="sr-only">{`${t(`studio.director.section.${sh.section}`)} ${sh.shot.durationSec.toFixed(1)}s`}</span>
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+          </Field>
           <Field label={t('studio.format')}>
             <Chips value={draft.format} options={OUTPUT_FORMATS} label={(f) => t(`studio.platforms.${f}`)} onChange={(f) => set({ format: f })} />
           </Field>
@@ -294,6 +323,7 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
             <Toggle label={t('studio.director.captionsOn')} checked={draft.captions.enabled} onChange={(v) => setCap({ enabled: v })} />
             {draft.captions.enabled && (
               <div className="mt-1 flex flex-col gap-2">
+                <Chips value={draft.captions.look ?? 'clean'} options={CAPTION_LOOK_IDS} label={(l) => t(`studio.director.looks.${l}`)} onChange={(l) => setCap({ look: l })} />
                 <input className="studio-input" value={draft.captions.title} maxLength={80} placeholder={t('studio.director.titlePlaceholder')} onChange={(e) => setCap({ title: e.target.value })} aria-label={t('studio.director.titleLabel')} />
                 <Toggle label={t('studio.director.showStats')} checked={draft.captions.showStats} onChange={(v) => setCap({ showStats: v })} />
                 <Toggle label={t('studio.director.showScore')} hint={t('studio.director.showScoreHint')} checked={draft.captions.showScore} onChange={(v) => setCap({ showScore: v })} />

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { planPresentation, pickSpread, combine, federationName, type ModelFacts, type PlanStrings, type SceneFacts, type Subject } from './plan'
+import { planPresentation, pickSpread, combine, federationName, fitPoseToAspect, type ModelFacts, type PlanStrings, type SceneFacts, type Subject } from './plan'
 import { BUILT_IN_RECIPES, builtInRecipe, sanitizeRecipe, type Recipe } from './recipe'
 import { groupSystems, systemOf } from './systems'
 import { pathAt, type CameraPose } from '../capture/shots'
@@ -94,6 +94,24 @@ describe('planPresentation', () => {
     expect(tour).toHaveLength(2)
     expect(tour[0].shot.type).toBe('path')
     expect(tour[1].shot.keyframes?.[0]).toEqual(pose(0))
+  })
+
+  it('pulls tour stops back for a narrower output, never closer', () => {
+    const pose: CameraPose = { position: { x: 0, y: 0, z: 10 }, target: { x: 0, y: 0, z: 0 }, fovDeg: 45 }
+    expect(fitPoseToAspect(pose, 16 / 9, 16 / 9)).toEqual(pose)
+    expect(fitPoseToAspect(pose, 16 / 9, 2)).toEqual(pose)
+    const reel = fitPoseToAspect(pose, 16 / 9, 9 / 16)
+    expect(reel.position.z).toBeGreaterThan(10)
+    expect(reel.position.z).toBeLessThanOrEqual(22 + 1e-9)
+    expect(reel.target).toEqual(pose.target)
+  })
+
+  it('applies the caption look', () => {
+    const bold = planPresentation(recipe('meeting-demo', { captions: { ...recipe('meeting-demo').captions, look: 'bold' } }), facts([model()]), strings, null)[0]
+    expect(bold.texts.every((t) => t.anim === 'pop')).toBe(true)
+    expect(bold.texts.some((t) => t.style === 'badge')).toBe(true)
+    const minimal = planPresentation(recipe('meeting-demo', { captions: { ...recipe('meeting-demo').captions, look: 'minimal' } }), facts([model()]), strings, null)[0]
+    expect(minimal.texts.some((t) => t.text.includes('elements'))).toBe(false)
   })
 
   it('never prints a score below 70', () => {

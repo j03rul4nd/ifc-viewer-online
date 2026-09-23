@@ -57,6 +57,7 @@ export default function TourRecorder({ viewerApiRef }: TourRecorderProps) {
     const step: TourStep = {
       id: crypto.randomUUID(),
       camera: { position: cam.position, target: cam.target },
+      aspect: cam.aspect,
       modelId: activeModelId ?? undefined,
     }
     addStep(step)
