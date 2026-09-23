@@ -16,7 +16,7 @@ import { useModelStore } from '../../stores/modelStore'
 import { CLIP_TRANSITIONS } from '../../lib/capture/project'
 import { BUILTIN_BED_IDS } from '../../lib/capture/audio-library'
 import {
-  CAPTION_LOOK_IDS, MULTI_MODEL_MODES, OUTPUT_FORMATS, PACES, SECTION_KINDS, builtInRecipe, DEFAULT_RECIPE_ID,
+  CAPTION_LOOK_IDS, EDIT_STYLES, MULTI_MODEL_MODES, OUTPUT_FORMATS, PACES, SECTION_KINDS, builtInRecipe, DEFAULT_RECIPE_ID,
   type Recipe, type SectionKind,
 } from '../../lib/director/recipe'
 import { allRecipes, deleteRecipe, lastRecipeId, rememberRecipe, saveRecipe } from '../../lib/director/storage'
@@ -309,6 +309,9 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
           </Field>
           <Field label={t('studio.director.length', { seconds: draft.targetSec })}>
             <input type="range" className="studio-range" min={6} max={120} step={1} value={draft.targetSec} onChange={(e) => set({ targetSec: Number(e.target.value) })} />
+          </Field>
+          <Field label={t('studio.director.styleLabel')} hint={t(`studio.director.styleHint.${draft.style ?? 'classic'}`)}>
+            <Chips value={draft.style ?? 'classic'} options={EDIT_STYLES} label={(v) => t(`studio.director.styles.${v}`)} onChange={(v) => set({ style: v })} />
           </Field>
           <Field label={t('studio.director.paceLabel')}>
             <Chips value={draft.pace} options={PACES} label={(p) => t(`studio.director.pace.${p}`)} onChange={(p) => set({ pace: p })} />

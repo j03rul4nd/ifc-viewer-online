@@ -90,7 +90,10 @@
       "none": "Aucune",
       "fade": "Fondu",
       "slideUp": "Glissement",
-      "pop": "Rebond"
+      "pop": "Rebond",
+      "words": "Mots",
+      "slam": "Impact",
+      "count": "Compteur"
     },
     "effects": {
       "in": "Ouverture",
@@ -310,7 +313,9 @@
         "tiktok": "TikTok",
         "team-issues": "Anomalies pour l’équipe",
         "fixes-report": "Ce qui a été corrigé",
-        "project-portfolio": "Projets ensemble"
+        "project-portfolio": "Projets ensemble",
+        "launch-2026": "Lancement 2026 · vertical",
+        "launch-2026-wide": "Lancement 2026 · 16:9"
       },
       "pace": {
         "calm": "Posé",
@@ -416,7 +421,16 @@
       "howToFix": "Comment corriger",
       "unassigned": "Non attribué",
       "showDetails": "Afficher les détails",
-      "showDetailsHint": "Éléments concernés, correction, statut BCF — pour les vidéos de revue."
+      "showDetailsHint": "Éléments concernés, correction, statut BCF — pour les vidéos de revue.",
+      "styleLabel": "Style de montage",
+      "styles": {
+        "classic": "Classique",
+        "launch": "Lancement 2026"
+      },
+      "styleHint": {
+        "classic": "Mouvements adoucis, fondus, titres posés.",
+        "launch": "Rampes de vitesse, flou de mouvement, punch sur chaque coupe, titres percutants, chiffres qui défilent, légendes mot à mot."
+      }
     },
     "remaining": "Environ {{seconds}} s restantes"
   }

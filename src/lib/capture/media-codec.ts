@@ -264,6 +264,12 @@ export interface ShotRenderOptions {
    * in the frame that follows.
    */
   beforeFrame?: (t: number) => void | Promise<void>
+  /**
+   * Motion blur: renders this many sub-frames across half a frame's time and
+   * averages them, the way a 180° film shutter smears a fast move. 1 = off.
+   * Costs that many renders per frame — use it on fast moves only.
+   */
+  motionBlur?: number
 }
 
 /**
@@ -287,10 +293,17 @@ export async function renderShot(viewer: ShotRenderer, shot: ShotSpec, o: ShotRe
     for (let i = 0; i < times.length; i++) {
       if (o.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
       await o.beforeFrame?.(times[i])
-      const gl = await viewer.renderShotFrame(cameraAt(shot, times[i]))
-      // Copy in the same task as the render: the WebGL buffer is cleared once
-      // the browser composites.
-      writer.ctx.drawImage(gl, 0, 0, writer.canvas.width, writer.canvas.height)
+      const samples = Math.max(1, Math.min(8, Math.round(o.motionBlur ?? 1)))
+      const shutter = 0.5 / o.fps
+      for (let k = 0; k < samples; k++) {
+        const t = samples === 1 ? times[i] : times[i] - shutter / 2 + (shutter * k) / (samples - 1)
+        const gl = await viewer.renderShotFrame(cameraAt(shot, Math.max(0, t)))
+        // Copy in the same task as the render: the WebGL buffer is cleared once
+        // the browser composites. Running average: sample k weighs 1/(k+1).
+        writer.ctx.globalAlpha = 1 / (k + 1)
+        writer.ctx.drawImage(gl, 0, 0, writer.canvas.width, writer.canvas.height)
+      }
+      writer.ctx.globalAlpha = 1
       await writer.addFrame(i)
       o.onProgress?.((i + 1) / times.length)
     }

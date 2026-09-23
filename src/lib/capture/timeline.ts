@@ -50,9 +50,16 @@ export const TEXT_STYLE_SPECS: Record<TextStyleId, TextStyleSpec> = {
 }
 
 /** Entry/exit motion. 'none' pops in hard; the rest ease over TEXT_ANIM_SEC. */
-export type TextAnimId = 'none' | 'fade' | 'slideUp' | 'pop'
+export type TextAnimId =
+  | 'none' | 'fade' | 'slideUp' | 'pop'
+  | 'words'   // kinetic typography: the words land one by one
+  | 'slam'    // hits hard: oversized, snaps to size with a small overshoot
+  | 'count'   // numbers in the text count up from zero
 
-export const TEXT_ANIMS: readonly TextAnimId[] = ['none', 'fade', 'slideUp', 'pop']
+export const TEXT_ANIMS: readonly TextAnimId[] = ['none', 'fade', 'slideUp', 'pop', 'words', 'slam', 'count']
+
+/** The animations a picture overlay can use (the text-only ones make no sense on an image). */
+export const MEDIA_ANIMS: readonly TextAnimId[] = ['none', 'fade', 'slideUp', 'pop']
 
 /** How long a text entry/exit animation runs, in seconds. */
 export const TEXT_ANIM_SEC = 0.35
@@ -221,6 +228,34 @@ export interface TextRenderState {
   dy: number
   /** Uniform scale multiplier (pop). */
   scale: number
+  /** What to draw instead of the card's text at this moment (words, count). */
+  text?: string
+}
+
+/** Seconds between two words landing in a 'words' card. */
+export const WORD_STEP_SEC = 0.11
+/** How long a 'count' card takes to reach its numbers. */
+export const COUNT_SEC = 0.9
+
+/**
+ * The text with every number scaled to `f` of its value, keeping its format
+ * ("19.241" counts through "9.620", "86/100" through "43/100"). Decimal
+ * places are kept; thousands separators follow the original.
+ */
+export function countText(text: string, f: number): string {
+  const p = clamp(f, 0, 1)
+  // A denominator ("/100") is a scale, not a quantity: it stays put.
+  return text.replace(/(?<![\d/])\d{1,3}(?:([.,\u00a0])\d{3})+(?![\d])|(?<![\d/])\d+(?:[.,]\d+)?/g, (m, sep: string | undefined) => {
+    if (sep !== undefined) {
+      const n = Number(m.split(sep).join(''))
+      const v = Math.round(n * p)
+      return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, sep)
+    }
+    const dec = m.match(/[.,](\d+)$/)
+    const n = Number(m.replace(',', '.'))
+    const v = n * p
+    return dec ? v.toFixed(dec[1].length).replace('.', m.includes(',') ? ',' : '.') : String(Math.round(v))
+  })
 }
 
 /**
@@ -250,6 +285,25 @@ export function textRenderStateAt(o: TextOverlay, t: number): TextRenderState | 
       return { alpha: eased, dy: (1 - eased) * 0.05 * (inP <= outP ? 1 : -1), scale: 1 }
     case 'pop':
       return { alpha: eased, dy: 0, scale: 0.86 + 0.14 * eased }
+    case 'words': {
+      // In: the words land one by one; out: an ordinary fade.
+      const words = o.text.split(/(\s+)/)
+      const real = words.filter((w) => w.trim()).length
+      const shown = Math.min(real, 1 + Math.floor(sinceIn / WORD_STEP_SEC))
+      let k = 0
+      const text = words.filter((w) => (w.trim() ? ++k <= shown : k < shown)).join('').trimEnd()
+      return { alpha: easeOutCubic(outP), dy: 0, scale: 1, text }
+    }
+    case 'slam': {
+      // 1.5× → 1 in a sixth of a second, with a small overshoot below 1.
+      const q = clamp(sinceIn / 0.16, 0, 1)
+      const s = q < 1 ? 1.5 - 0.56 * easeOutCubic(q) : 0.94 + 0.06 * clamp((sinceIn - 0.16) / 0.12, 0, 1)
+      return { alpha: Math.min(clamp(sinceIn / 0.06, 0, 1), easeOutCubic(outP)), dy: 0, scale: s }
+    }
+    case 'count': {
+      const f = easeOutCubic(clamp(sinceIn / Math.min(COUNT_SEC, length * 0.6), 0, 1))
+      return { alpha: eased, dy: 0, scale: 1, text: countText(o.text, f) }
+    }
   }
 }
 

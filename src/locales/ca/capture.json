@@ -90,7 +90,10 @@
       "none": "Cap",
       "fade": "Fosa",
       "slideUp": "Lliscament",
-      "pop": "Rebot"
+      "pop": "Rebot",
+      "words": "Paraules",
+      "slam": "Cop",
+      "count": "Comptador"
     },
     "effects": {
       "in": "Obertura",
@@ -310,7 +313,9 @@
         "tiktok": "TikTok",
         "team-issues": "Incidències per a l’equip",
         "fixes-report": "El que s’ha arreglat",
-        "project-portfolio": "Projectes en conjunt"
+        "project-portfolio": "Projectes en conjunt",
+        "launch-2026": "Llançament 2026 · vertical",
+        "launch-2026-wide": "Llançament 2026 · 16:9"
       },
       "pace": {
         "calm": "Pausat",
@@ -416,7 +421,16 @@
       "howToFix": "Com arreglar-ho",
       "unassigned": "Sense assignar",
       "showDetails": "Mostra els detalls",
-      "showDetailsHint": "Elements afectats, com arreglar-ho i estat BCF: per a vídeos de revisió."
+      "showDetailsHint": "Elements afectats, com arreglar-ho i estat BCF: per a vídeos de revisió.",
+      "styleLabel": "Estil d’edició",
+      "styles": {
+        "classic": "Clàssic",
+        "launch": "Llançament 2026"
+      },
+      "styleHint": {
+        "classic": "Moviments suaus, fosos i títols tranquils.",
+        "launch": "Rampes de velocitat, desenfocament de moviment, cop de zoom a cada tall, títols d’impacte, números que compten i rètols paraula a paraula."
+      }
     },
     "remaining": "Queden uns {{seconds}} s"
   }

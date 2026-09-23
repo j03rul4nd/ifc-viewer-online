@@ -120,7 +120,7 @@ function shotKey(viewer: DirectorViewer & { getModelBounds?: (id?: string) => un
   const models = viewer.getLoadedModelIds().map((id) => [id, viewer.getModelBounds?.(id)])
   // The validation overlay paints every shot while it is on.
   const overlay = useValidationStore.getState().validationMode
-  return JSON.stringify([planned.shot, planned.scene, clip.width, clip.height, fps, models, useSceneStore.getState().background, overlay])
+  return JSON.stringify([planned.shot, planned.scene, clip.width, clip.height, fps, clip.motionBlur, models, useSceneStore.getState().background, overlay])
 }
 
 function cacheGet(key: string): Blob | undefined {
@@ -171,7 +171,7 @@ export async function renderPlannedClip(
         const beforeFrame = stageDriver(viewer, planned.scene, planned.shot.durationSec)
         beforeFrame?.(0)
         blob = await renderShot(viewer, planned.shot, {
-          width: clip.width, height: clip.height, fps, signal, beforeFrame,
+          width: clip.width, height: clip.height, fps, signal, beforeFrame, motionBlur: clip.motionBlur,
           warmupFrames: hasSceneChange(planned.scene) ? 3 : 1,
           onProgress: (f) => onShot(i, f),
         })
@@ -198,7 +198,8 @@ export async function renderPlannedClip(
     audio: recipe.music === 'none'
       ? { kind: 'none', trackId: null, fileName: null, volume: 0, fadeSec: 0, offsetSec: 0 }
       : { kind: 'builtin', trackId: recipe.music, fileName: null, volume: recipe.musicVolume, fadeSec: 0.8, offsetSec: 0 },
-    intro: recipe.fadeIn ? { type: 'black', sec: 0.5 } : { type: 'none', sec: 0 },
+    intro: recipe.fadeIn ? { type: 'black', sec: recipe.style === 'launch' ? 0.15 : 0.5 } : { type: 'none', sec: 0 },
+    ...(clip.punch ? { fx: { punch: clip.punch } } : {}),
     outro: recipe.fadeOut ? { type: 'black', sec: 0.6 } : { type: 'none', sec: 0 },
   }
   return { project, media, reused }

@@ -129,6 +129,35 @@ export interface EditProject {
   /** Fade from a colour at the very start / to a colour at the very end. */
   intro: Fade
   outro: Fade
+  /** Finishing effects applied to the picture (not to text). */
+  fx?: ProjectFx
+}
+
+export interface ProjectFx {
+  /**
+   * Beat punch: at each of these project times the picture jumps in by
+   * `amount` (0.06 = 6 %) and eases back — the "hit" launch edits put on cuts
+   * and on the beat.
+   */
+  punch?: { times: number[]; amount: number }
+}
+
+/** How long a punch takes to settle back, seconds. */
+export const PUNCH_DECAY_SEC = 0.14
+
+/** Picture scale at time t from the beat punches (1 = none). */
+export function punchScale(fx: ProjectFx | undefined, t: number): number {
+  const p = fx?.punch
+  if (!p || p.times.length === 0 || p.amount <= 0) return 1
+  // Latest punch at or before t (times are sorted).
+  let lo = 0, hi = p.times.length - 1, at = -1
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1
+    if (p.times[mid] <= t) { at = mid; lo = mid + 1 } else hi = mid - 1
+  }
+  if (at < 0) return 1
+  const dt = t - p.times[at]
+  return dt > PUNCH_DECAY_SEC * 5 ? 1 : 1 + p.amount * Math.exp(-dt / PUNCH_DECAY_SEC)
 }
 
 export function createProject(): EditProject {

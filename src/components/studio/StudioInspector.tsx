@@ -8,7 +8,7 @@ import {
   CLIP_TRANSITIONS, MAX_SPEED, MAX_TRANSITION_SEC, MIN_SPEED, setAllTransitions, snapCutsToBeats, updateClip,
   type Clip, type ClipTransition, type EditProject, type Framing, type MediaOverlay,
 } from '../../lib/capture/project'
-import { TEXT_ANCHORS, TEXT_ANIMS, TEXT_STYLES, type TextOverlay } from '../../lib/capture/timeline'
+import { MEDIA_ANIMS, TEXT_ANCHORS, TEXT_ANIMS, TEXT_STYLES, type TextOverlay } from '../../lib/capture/timeline'
 import { BUILTIN_BED_IDS, type BuiltInBedId } from '../../lib/capture/audio-library'
 import { rhythmFor } from '../../lib/capture/studio-actions'
 
@@ -224,7 +224,7 @@ function OverlayPanel({ overlay }: { overlay: MediaOverlay }) {
         <Slider label={t('studio.corners')} value={overlay.radius} min={0} max={1} step={0.01} format={pct} onChange={(v) => patch({ radius: v })} />
       </Section>
       <Section title={t('editor.text.anim')}>
-        <Chips value={overlay.anim} options={TEXT_ANIMS} label={(v) => t(`editor.anims.${v}`)} onChange={(v) => patch({ anim: v })} />
+        <Chips value={overlay.anim} options={MEDIA_ANIMS} label={(v) => t(`editor.anims.${v}`)} onChange={(v) => patch({ anim: v })} />
       </Section>
       <button type="button" className="studio-link text-[var(--danger)]" onClick={() => { edit((pr) => ({ ...pr, overlays: pr.overlays.filter((o) => o.id !== overlay.id) })); select(null) }}>
         {t('editor.text.delete')}

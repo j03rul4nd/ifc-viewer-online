@@ -131,7 +131,7 @@ function drawBackdrop(
 
 // ── Text ───────────────────────────────────────────────────────────────────────
 
-interface TextState { alpha: number; dy: number; scale: number }
+interface TextState { alpha: number; dy: number; scale: number; text?: string }
 
 function drawTextOverlay(
   ctx: CanvasRenderingContext2D,
@@ -142,7 +142,8 @@ function drawTextOverlay(
   const spec = TEXT_STYLE_SPECS[overlay.style]
   const { width, height } = layout
   const fontSize = Math.max(8, spec.sizeFrac * height * clampScale(overlay.scale))
-  const content = spec.uppercase ? overlay.text.toUpperCase() : overlay.text
+  const raw = state.text ?? overlay.text
+  const content = spec.uppercase ? raw.toUpperCase() : raw
 
   ctx.save()
   ctx.font = `${spec.weight} ${fontSize}px Inter, system-ui, -apple-system, sans-serif`
