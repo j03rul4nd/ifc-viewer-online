@@ -90,6 +90,60 @@ export async function openVideoReader(blob: Blob): Promise<VideoReader> {
   }
 }
 
+/**
+ * A reader for FORWARD playback — what an export does. Random access decodes
+ * from the previous keyframe on every call (~30× the work at one keyframe per
+ * second); this keeps one decoding iterator running and only restarts it when
+ * asked to jump backwards or far ahead. One per clip, so two clips cut from
+ * the same file never fight over one iterator.
+ */
+export async function openSequentialReader(blob: Blob): Promise<VideoReader> {
+  const input = new Input({ source: new BlobSource(blob), formats: ALL_FORMATS })
+  const track = await input.getPrimaryVideoTrack()
+  if (!track) { input.dispose?.(); throw new Error('No video track in this file') }
+  const durationSec = await input.computeDuration()
+  // No canvas pool: the iterator decodes ahead, and a pooled canvas could be
+  // repainted with a later frame while the caller is still drawing this one.
+  const sink = new CanvasSink(track, { poolSize: 0 })
+  const first = await track.getFirstTimestamp()
+  type W = { canvas: HTMLCanvasElement | OffscreenCanvas; timestamp: number; duration: number }
+  let iter: AsyncGenerator<W, void, unknown> | null = null
+  let current: W | null = null
+  let ahead: W | null = null
+  let done = false
+
+  const restart = async (t: number): Promise<void> => {
+    await iter?.return(undefined)
+    iter = sink.canvases(t)
+    done = false
+    const a = await iter.next()
+    current = a.done ? null : a.value
+    const b = a.done ? { done: true as const, value: undefined } : await iter.next()
+    ahead = b.done ? null : b.value
+    done = !!b.done
+  }
+
+  return {
+    width: track.displayWidth,
+    height: track.displayHeight,
+    durationSec,
+    async frameAt(tIn: number) {
+      const t = Math.max(first, tIn)
+      if (!current || t < current.timestamp - 1e-4 || t > current.timestamp + 2) await restart(t)
+      // Advance while the next frame has already started.
+      while (ahead && ahead.timestamp <= t + 1e-4) {
+        current = ahead
+        if (done || !iter) { ahead = null; break }
+        const n = await iter.next()
+        ahead = n.done ? null : n.value
+        done = !!n.done
+      }
+      return current ? current.canvas : null
+    },
+    dispose() { void iter?.return(undefined); input.dispose?.() },
+  }
+}
+
 // ── Writing video ──────────────────────────────────────────────────────────────
 
 export interface VideoWriter {

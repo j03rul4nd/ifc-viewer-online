@@ -1,0 +1,147 @@
+/* ─── Clip Studio ────────────────────────────────────────────────────────────
+   Layout, controls and timeline pieces. Colours come from the app tokens, so
+   the studio matches the viewer it opens from. Touch targets grow on coarse
+   pointers (tablet, phone). */
+
+.studio-body {
+  display: flex;
+  flex-direction: column;
+}
+@media (min-width: 1024px) {
+  .studio-body {
+    display: grid;
+    grid-template-columns: 264px minmax(0, 1fr) 300px;
+  }
+}
+
+/* The preview keeps the output aspect and fits whichever side runs out first. */
+.studio-canvas-wrap { height: 100%; max-width: 100%; max-height: 100%; }
+@media (max-width: 1023px) {
+  .studio-stage { flex: 0 0 auto; }
+  .studio-canvas-wrap { height: min(46dvh, 560px); }
+}
+
+.studio-h {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* ── Buttons & chips ──────────────────────────────────────────────────────── */
+.studio-btn, .studio-chip, .studio-icon-btn, .studio-play, .studio-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.studio-btn { min-height: 36px; padding: 0 12px; border-radius: 10px; font-size: 12.5px; font-weight: 600; }
+.studio-btn:hover:not(:disabled), .studio-chip:hover:not(:disabled), .studio-icon-btn:hover:not(:disabled) { color: var(--text); border-color: var(--border-strong); }
+.studio-btn--accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+.studio-btn--accent:hover:not(:disabled) { filter: brightness(1.1); color: #fff; }
+.studio-chip { min-height: 32px; padding: 0 10px; border-radius: 8px; font-size: 12px; }
+.studio-chip[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  color: var(--text);
+}
+.studio-icon-btn { justify-content: center; width: 32px; height: 32px; border-radius: 8px; }
+.studio-icon-btn[aria-pressed='true'] { color: var(--accent-2); border-color: var(--accent-2); }
+.studio-play { justify-content: center; width: 40px; height: 40px; border-radius: 999px; background: var(--text); color: var(--bg); border: 0; }
+.studio-btn:disabled, .studio-chip:disabled, .studio-icon-btn:disabled, .studio-play:disabled { opacity: 0.4; cursor: not-allowed; }
+.studio-link { align-self: flex-start; font-size: 12px; color: var(--accent-2); text-decoration: underline; text-underline-offset: 2px; }
+.studio-tab { flex: 1; justify-content: center; min-height: 40px; border-width: 0 0 2px; border-radius: 0; background: transparent; font-size: 12.5px; font-weight: 600; }
+.studio-tab[aria-selected='true'] { color: var(--text); border-bottom-color: var(--accent); }
+
+@media (pointer: coarse) {
+  .studio-btn { min-height: 44px; }
+  .studio-chip { min-height: 40px; }
+  .studio-icon-btn { width: 44px; height: 44px; }
+  .studio-play { width: 52px; height: 52px; }
+}
+
+:where(.studio-root) :focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+
+/* ── Inputs ───────────────────────────────────────────────────────────────── */
+.studio-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 13px;
+}
+.studio-range { width: 100%; accent-color: var(--accent); }
+.studio-anchor { width: 40px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-2); }
+.studio-anchor[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); }
+.studio-swatch { width: 26px; height: 26px; padding: 0; border-radius: 999px; border: 2px solid var(--border); cursor: pointer; }
+.studio-swatch[aria-pressed='true'] { border-color: var(--accent-2); box-shadow: 0 0 0 2px var(--bg) inset; }
+
+.studio-source {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 12px;
+}
+
+/* ── Timeline ─────────────────────────────────────────────────────────────── */
+.studio-timeline-scroll { scrollbar-width: thin; touch-action: pan-x; }
+.studio-clip, .studio-timed {
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.studio-clip[data-kind='shot'] { background: linear-gradient(180deg, #3b4bb8, #2e3a92); }
+.studio-clip[data-kind='capture'] { background: linear-gradient(180deg, #2f7a6b, #245e53); }
+.studio-clip[data-kind='import'] { background: linear-gradient(180deg, #7a4d9e, #5e3a7a); }
+.studio-clip[data-kind='image'] { background: linear-gradient(180deg, #9a6a2b, #7a5220); }
+.studio-timed[data-kind='text'] { background: #b8860b; }
+.studio-timed[data-kind='overlay'] { background: #8a3b6b; }
+.studio-clip--selected { outline: 2px solid #fff; outline-offset: -2px; z-index: 5; }
+.studio-audio { background: color-mix(in srgb, var(--ok) 35%, var(--surface)); color: var(--text); }
+
+.studio-trim {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  cursor: ew-resize;
+  background: rgba(255, 255, 255, 0.18);
+  touch-action: none;
+}
+.studio-trim--start { left: 0; border-radius: 8px 0 0 8px; }
+.studio-trim--end { right: 0; border-radius: 0 8px 8px 0; }
+.studio-trim:hover { background: rgba(255, 255, 255, 0.4); }
+@media (pointer: coarse) { .studio-trim { width: 18px; } }
+
+.studio-diamond {
+  width: 16px;
+  height: 16px;
+  transform-origin: center;
+  rotate: 45deg;
+  border-radius: 3px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border-strong);
+}
+.studio-diamond[data-active='true'] { background: var(--accent-2); border-color: #fff; }
+@media (pointer: coarse) { .studio-diamond { width: 22px; height: 22px; } }
+
+/* ── Safe zones (Reels / TikTok) ──────────────────────────────────────────── */
+.studio-safe span { position: absolute; background: rgba(255, 77, 109, 0.18); outline: 1px dashed rgba(255, 77, 109, 0.8); outline-offset: -1px; }
+.studio-safe__top { left: 0; right: 0; top: 0; height: 12%; }
+.studio-safe__bottom { left: 0; right: 0; bottom: 0; height: 22%; }
+.studio-safe__right { right: 0; top: 12%; bottom: 22%; width: 16%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-btn, .studio-chip, .studio-icon-btn, .studio-play, .studio-tab { transition: none; }
+}

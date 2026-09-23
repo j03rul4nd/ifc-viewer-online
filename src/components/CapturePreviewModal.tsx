@@ -21,6 +21,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import { useCaptureStore } from '../stores/captureStore'
+import { useClipStudioStore } from '../stores/clipStudioStore'
 import { toast } from '../stores/toastStore'
 import { appBus } from '../lib/event-bus'
 import { createLogger } from '../lib/logger'
@@ -493,9 +494,26 @@ export default function CapturePreviewModal() {
               {layout && ` · ${layout.width}×${layout.height}`}
             </span>
           </h2>
-          <button onClick={close} title={t('close')} className="p-1 rounded hover:bg-[var(--surface-2)] text-[var(--text-dim)]">
-            <Icons.X size={14} />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* Hand the capture to the multi-clip studio: cut it with rendered
+                shots, other captures, overlays and music. */}
+            <button
+              onClick={() => {
+                if (!clip) return
+                const blob = clip.blob
+                close()
+                useClipStudioStore.getState().openStudio()
+                void import('../lib/capture/studio-actions').then((m) => m.addCaptureBlob(blob, t('editor.preview')))
+              }}
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold text-[var(--accent-2)] hover:bg-[var(--surface-2)]"
+            >
+              <Icons.Layers size={13} />
+              {t('studio.openInStudio')}
+            </button>
+            <button onClick={close} title={t('close')} className="p-1 rounded hover:bg-[var(--surface-2)] text-[var(--text-dim)]">
+              <Icons.X size={14} />
+            </button>
+          </div>
         </div>
 
         {/* Body: viewer + inspector */}

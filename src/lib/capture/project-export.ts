@@ -5,9 +5,9 @@
 // machine encodes, keeps going in a background tab, and produces identical
 // files for identical projects.
 
-import { sampleProject, projectDuration, type EditProject, type MediaOverlay } from './project'
+import { layoutClips, sampleProject, projectDuration, type EditProject, type MediaOverlay } from './project'
 import { composeProjectFrame, type FramePicture, type ProjectFill } from './project-compositor'
-import { createVideoWriter, mixBed, openVideoReader, pickCodec, type CodecChoice, type VideoReader } from './media-codec'
+import { createVideoWriter, mixBed, openSequentialReader, pickCodec, type CodecChoice, type VideoReader } from './media-codec'
 
 /** Media behind each source id: a video file, or a decoded still. */
 export type SourceMedia = { kind: 'video'; blob: Blob } | { kind: 'image'; image: ImageBitmap | HTMLImageElement; width: number; height: number }
@@ -43,15 +43,23 @@ export async function exportProject(
   const choice = await pickCodec(o.width, o.height, wantsAudio)
   if (!choice) throw new Error('This browser cannot encode video (WebCodecs unavailable)')
 
-  // One reader per video source actually used — clips and video overlays.
+  // One forward-reading decoder per CLIP (and per video overlay), opened when
+  // it first appears and closed once it is behind the playhead: two halves of
+  // one split clip then never share an iterator, and at most the clips on
+  // screen hold a decoder.
   const readers = new Map<string, VideoReader>()
-  const used = new Set([...project.clips.map((c) => c.sourceId), ...project.overlays.map((v) => v.sourceId)])
+  const readerFor = async (key: string, sourceId: string): Promise<VideoReader | null> => {
+    const existing = readers.get(key)
+    if (existing) return existing
+    const m = media.get(sourceId)
+    if (m?.kind !== 'video') return null
+    const r = await openSequentialReader(m.blob)
+    readers.set(key, r)
+    return r
+  }
+  const layout = layoutClips(project)
   const writer = await createVideoWriter({ width: o.width, height: o.height, fps: o.fps, choice })
   try {
-    for (const id of used) {
-      const m = media.get(id)
-      if (m?.kind === 'video') readers.set(id, await openVideoReader(m.blob))
-    }
 
     const frames = Math.max(1, Math.round(duration * o.fps))
     for (let i = 0; i < frames; i++) {
@@ -63,12 +71,16 @@ export async function exportProject(
       // out pooled canvases, and composing between fetches could see one reused.
       const clipPics = new Map<string, FramePicture | null>()
       for (const s of [sample.outgoing, sample.primary]) {
-        if (s) clipPics.set(s.clip.id, await pictureAt(media, readers, s.clip.sourceId, s.sourceTime))
+        if (s) clipPics.set(s.clip.id, await pictureAt(media, await readerFor(s.clip.id, s.clip.sourceId), s.clip.sourceId, s.sourceTime))
       }
       const overlayPics = new Map<string, FramePicture | null>()
       for (const ov of project.overlays) {
         if (t < ov.startSec || t > ov.endSec) continue
-        overlayPics.set(ov.id, await pictureAt(media, readers, ov.sourceId, overlayTime(ov, t)))
+        overlayPics.set(ov.id, await pictureAt(media, await readerFor(ov.id, ov.sourceId), ov.sourceId, overlayTime(ov, t)))
+      }
+      // Free decoders of clips that are finished.
+      for (const p of layout) {
+        if (p.end < t - 0.5 && readers.has(p.clip.id)) { readers.get(p.clip.id)?.dispose(); readers.delete(p.clip.id) }
       }
 
       composeProjectFrame({
@@ -105,14 +117,13 @@ export function overlayTime(ov: MediaOverlay, t: number): number {
 
 async function pictureAt(
   media: ReadonlyMap<string, SourceMedia>,
-  readers: ReadonlyMap<string, VideoReader>,
+  reader: VideoReader | null,
   sourceId: string,
   t: number,
 ): Promise<FramePicture | null> {
   const m = media.get(sourceId)
   if (!m) return null
   if (m.kind === 'image') return { image: m.image, width: m.width, height: m.height }
-  const reader = readers.get(sourceId)
   if (!reader) return null
   const time = reader.durationSec > 0 ? Math.min(t, reader.durationSec - 1e-3) : t
   const image = await reader.frameAt(time)

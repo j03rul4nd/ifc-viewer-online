@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import * as Icons from './Icons'
 import { useSceneStore } from '../stores/sceneStore'
 import { useCaptureStore } from '../stores/captureStore'
+import { useClipStudioStore } from '../stores/clipStudioStore'
 import { toast, toastFromError } from '../stores/toastStore'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useAppEvent } from '../hooks/useAppEvent'
@@ -29,6 +30,7 @@ import type { ViewerAPI } from '../lib/viewer'
 const log = createLogger('CaptureToolbar')
 
 const CapturePreviewModal = React.lazy(() => import('./CapturePreviewModal'))
+const ClipStudio = React.lazy(() => import('./studio/ClipStudio'))
 
 function timestamp(): string {
   return new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19)
@@ -60,6 +62,8 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
   const setRecording = useCaptureStore((s) => s.setRecording)
   const setReplaySupported = useCaptureStore((s) => s.setReplaySupported)
 
+  const studioOpen = useClipStudioStore((s) => s.open)
+  const openStudio = useClipStudioStore((s) => s.openStudio)
   const [capturing, setCapturing] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -276,6 +280,12 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
             for the same reason the preview modal is: exactly one instance owns
             it, so Toolbar + TourPlayer never render two pickers. */}
         {replay && <SceneBackgroundMenu disabled={!hasModel} />}
+        {replay && (
+          <button onClick={openStudio} disabled={!hasModel} title={t('studio.openTooltip')} className={btnBase}>
+            <Icons.Film size={13} />
+            <span className="hidden lg:inline">{t('studio.open')}</span>
+          </button>
+        )}
       </div>
 
       {/* Mobile: screenshot + backdrop (replay unsupported / hidden — graceful
@@ -290,6 +300,11 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
           <Icons.Camera size={14} />
         </button>
         {replay && <SceneBackgroundMenu disabled={!hasModel} />}
+        {replay && (
+          <button onClick={openStudio} disabled={!hasModel} title={t('studio.openTooltip')} aria-label={t('studio.open')} className={btnBase}>
+            <Icons.Film size={14} />
+          </button>
+        )}
       </div>
 
       {/* Preview modal is owned by the replay-owning instance only (avoids a
@@ -297,6 +312,11 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
       {replay && clip && (
         <Suspense fallback={null}>
           <CapturePreviewModal />
+        </Suspense>
+      )}
+      {replay && studioOpen && (
+        <Suspense fallback={null}>
+          <ClipStudio />
         </Suspense>
       )}
     </>
