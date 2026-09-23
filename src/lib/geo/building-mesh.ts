@@ -15,6 +15,7 @@
 // what reads as correct, and is what every city renderer does.
 
 import * as THREE from 'three'
+import { stationForm, stationGeometry } from './shanghai-stations'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import {
   facadeColor, storeyBanding, storeysFor, buildingRegion, roofColorFor, materialTone,
@@ -223,6 +224,21 @@ export function buildBuildingsGeometry(
     const groundZ = frame.zAtElevationM(groundM)
     const baseZ = groundZ + (b.height.minHeightM - skirtM) * metresToNormalized
     const topZ = groundZ + b.height.heightM * metresToNormalized
+
+    const station = stationForm(b)
+    if(station) {
+      const local=ring2d.map(p=>new THREE.Vector2((p.x-centroid.x)/metresToNormalized,(p.y-centroid.y)/metresToNormalized))
+      const g=stationGeometry(station,local)
+      if(!b.height.estimated) g.scale(1,1,b.height.heightM/(station==='south'?36:station==='canopy'?10:30))
+      const p=g.getAttribute('position'),n=g.getAttribute('normal'),c=g.getAttribute('color')
+      for(let i=0;i<p.count;i++) {
+        positions.push(centroid.x+p.getX(i)*metresToNormalized,centroid.y+p.getY(i)*metresToNormalized,groundZ+p.getZ(i)*metresToNormalized)
+        normals.push(n.getX(i),n.getY(i),n.getZ(i)); colors.push(c.getX(i),c.getY(i),c.getZ(i))
+      }
+      g.dispose()
+      if(b.id) ranges.push({id:b.id,start:rangeStart,end:positions.length/3})
+      count++;estimatedCount++;continue
+    }
 
     // ── Monuments whose form the outline cannot carry ─────────────────────────
     if (b.style?.monument === 'arch') {

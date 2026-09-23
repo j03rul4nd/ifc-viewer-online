@@ -179,6 +179,20 @@ describe('topology', () => {
 })
 
 describe('junction surfaces', () => {
+  it('records exact incident sources and open mouths for elevated T junctions', () => {
+    const net = buildRoadNetwork([way('ring',[[-80,0],[0,0],[80,0]],4.25),way('link',[[0,0],[0,80]],2)],SNAP)
+    expect(net.junctions[0].sourceIds.sort()).toEqual(['link','ring'])
+    expect(net.junctions[0].mouths).toHaveLength(3)
+  })
+  it('finishes a widening locally even when OSM supplies only two vertices', () => {
+    const net = buildRoadNetwork([way('wide',[[-50,0],[0,0]],4.25),way('narrow',[[0,0],[150,0]],1.5)],SNAP)
+    const r = net.ribbons.find(r=>r.sourceId==='narrow')!
+    expect(r.centre.length).toBeGreaterThan(5)
+    expect(r.halfWidths[0]).toBeCloseTo(4.25)
+    const end = r.centre.findIndex(p=>p.x >= 21.25)
+    expect(r.halfWidths[end]).toBeCloseTo(1.5)
+    expect(r.halfWidths[r.halfWidths.length-1]).toBe(1.5)
+  })
   const expectSaneJunction = (net: RoadNetwork): void => {
     for (const j of net.junctions) {
       expect(j.polygon.length).toBeGreaterThanOrEqual(3)

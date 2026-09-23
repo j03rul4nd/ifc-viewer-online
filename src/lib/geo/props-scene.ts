@@ -18,6 +18,8 @@
 // Everything is instanced: one draw call per prop type, whatever the count.
 
 import * as THREE from 'three'
+import { trainPlacements } from './train-placement'
+import { sampleProfile, type SolvedProfile } from './vertical-network'
 import { latLonToNormalized, metresToNormalized } from './geo-math'
 import { hashId, variate } from './feature-variation'
 import { createGroundFrame } from './ground-frame'
@@ -34,6 +36,8 @@ function groundFrameFor(opts: PropsOptions): ReturnType<typeof createGroundFrame
 import type { OsmFeature } from './osm-features'
 
 export interface PropsOptions {
+  anchorLon?: number
+  vertical?: ReadonlyMap<string, SolvedProfile> | null
   anchorLat: number
   sampleGroundM?: ((nx: number, ny: number) => number) | null
   anchorElevationM?: number
@@ -410,6 +414,7 @@ export function buildVehicleLayer(
     x: number; y: number; z: number; yaw: number; seed: string
     /** Road wide enough for a bus. Decided at placement, where the width is. */
     wide?: boolean
+    cab?: boolean
   }
   const cars: Placement[] = []
   const carriages: Placement[] = []
@@ -428,6 +433,20 @@ export function buildVehicleLayer(
 
     // Only some ways carry anything — every street occupied looks staged.
     if (variate(f.id, 11) > (isRoad ? 0.55 : 0.3)) continue
+
+    if (isTrack) {
+      if (f.vertical?.structure === 'tunnel' || (f.vertical?.layer ?? 0)<0) continue
+      const profile=opts.vertical?.get(f.id)
+      const sampler=profile ? sampleProfile(profile) : null
+      const line=f.ring.map(p=>{const n=latLonToNormalized(p.lat,p.lon);return new THREE.Vector2(n.nx,n.ny)})
+      const consist=trainPlacements(line,mToN,variate(f.id,12),Math.min(TRAIN_CARRIAGES,MAX_TRAINS*TRAIN_CARRIAGES-carriages.length))
+      for(const [i,at] of consist.entries()) {
+        const sampled=sampler?.sample(at.x,at.y)
+        const z=sampled ? frame.zAtElevationM(sampled.groundM)+(sampled.elevationM-sampled.groundM)*mToN : groundZ(at.x,at.y)
+        carriages.push({...at,yaw:at.yaw+(i===0&&opts.assets?.has('train-cab')?Math.PI:0),cab:i===0||i===consist.length-1,z:z+.38*mToN,seed:`${f.id}#${carriages.length}`})
+      }
+      continue
+    }
 
     const pts = f.ring.map((pt) => latLonToNormalized(pt.lat, pt.lon))
     // Walk the way and drop vehicles at intervals, facing along it.
@@ -513,6 +532,7 @@ export function buildVehicleLayer(
     for (const f of features) {
       if (canopies.length >= MAX_CANOPIES) break
       if (f.kind !== 'rail' || f.style.railKind !== 'platform') continue
+      if(f.vertical?.structure==='tunnel' || (f.vertical?.layer ?? 0)<0) continue
       if (!f.ring || f.ring.length < 3) continue
 
       const pts = f.ring.map((pt) => latLonToNormalized(pt.lat, pt.lon))
@@ -524,14 +544,14 @@ export function buildVehicleLayer(
 
       // One shelter per stretch of platform, spread down the middle of it —
       // real platforms are sheltered in the centre and open at the ends.
-      const n = Math.min(4, Math.max(1, Math.floor(lengthM / CANOPY_EVERY_M)))
+      const n = Math.min(24, Math.max(1, Math.floor(lengthM / CANOPY_EVERY_M)))
       const span = axis.extentU * 0.6
       for (let i = 0; i < n && canopies.length < MAX_CANOPIES; i++) {
         const at = n === 1 ? 0 : -span / 2 + (span * i) / (n - 1)
         const x = axis.cx + Math.cos(axis.yaw) * at
         const y = axis.cy + Math.sin(axis.yaw) * at
         canopies.push({
-          x, y, z: groundZ(x, y), yaw: axis.yaw,
+          x, y, z: groundZ(x, y)+(f.style.platformHeightM ?? .55)*mToN, yaw: axis.yaw,
           // Fit the platform's width; never wider than the asset was authored.
           widthScale: Math.min(1.15, Math.max(0.6, widthM / CANOPY_WIDTH_M)),
         })
@@ -650,6 +670,8 @@ export function buildVehicleLayer(
   const group = new THREE.Group()
   group.name = 'osm-vehicles'
   group.renderOrder = 5
+  const origin=opts.anchorLon===undefined ? {nx:0,ny:0} : latLonToNormalized(opts.anchorLat,opts.anchorLon)
+  group.position.set(origin.nx,origin.ny,0)
 
   const m = new THREE.Matrix4()
   const p = new THREE.Vector3()
@@ -670,7 +692,7 @@ export function buildVehicleLayer(
     )
     mesh.name = name
     spots.forEach((spot, i) => {
-      p.set(spot.x, spot.y, spot.z)
+      p.set(spot.x-origin.nx, spot.y-origin.ny, spot.z)
       q.setFromAxisAngle(zAxis, spot.yaw)
       mesh.setMatrixAt(i, m.compose(p, q, s))
     })
@@ -681,6 +703,7 @@ export function buildVehicleLayer(
   const authoredCar = opts.assets?.get('car') ?? null
   const authoredVan = opts.assets?.get('van') ?? null
   const authoredCarriage = opts.assets?.get('train-carriage') ?? null
+  const authoredCab = opts.assets?.get('train-cab') ?? null
 
   if (authoredCar) {
     // The authored bodies are painted neutral, so ONE mesh per silhouette
@@ -725,9 +748,13 @@ export function buildVehicleLayer(
   }
 
   const train = place(
-    carriages, authoredCarriage ? authoredCarriage.clone() : carriageGeometry(), 'osm-train',
+    authoredCab ? carriages.filter(c=>!c.cab) : carriages, authoredCarriage ? authoredCarriage.clone() : carriageGeometry(), 'osm-train',
   )
   if (train) group.add(train)
+  if(authoredCab) {
+    const cabs=place(carriages.filter(c=>c.cab),authoredCab.clone(),'osm-train-cabs')
+    if(cabs) group.add(cabs)
+  }
 
   const authoredLamp = opts.assets?.get('street-lamp') ?? null
   const lampMesh = place(
@@ -749,7 +776,7 @@ export function buildVehicleLayer(
     mesh.name = 'osm-platform-canopies'
     const cs = new THREE.Vector3()
     canopies.forEach((spot, i) => {
-      p.set(spot.x, spot.y, spot.z)
+      p.set(spot.x-origin.nx, spot.y-origin.ny, spot.z)
       q.setFromAxisAngle(zAxis, spot.yaw)
       // Only across: stretching a shelter lengthways would stretch its columns
       // with it, and a leaning column is worse than a shelter of the wrong size.
