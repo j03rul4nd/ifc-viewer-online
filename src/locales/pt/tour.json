@@ -11,7 +11,9 @@
     "affected_one": "{{count}} elemento afetado",
     "affected_other": "{{count}} elementos afetados",
     "howToFix": "Como corrigir",
-    "goToStep": "Ir para o passo {{n}}"
+    "goToStep": "Ir para o passo {{n}}",
+    "autoplay": "Reproduzir automaticamente",
+    "video": "Transformar em vídeo"
   },
   "recorder": {
     "title": "Tour guiado",

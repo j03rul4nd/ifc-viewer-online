@@ -145,3 +145,28 @@
 @media (prefers-reduced-motion: reduce) {
   .studio-btn, .studio-chip, .studio-icon-btn, .studio-play, .studio-tab { transition: none; }
 }
+
+/* ── Presentation director ────────────────────────────────────────────────── */
+.studio-director-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  padding: 16px;
+}
+@media (min-width: 768px) {
+  .studio-director-body { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; padding: 20px; }
+}
+.studio-director-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 6px 6px 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.studio-director-row .studio-icon-btn { width: 26px; height: 26px; }
+.studio-director-row.is-empty { opacity: 0.6; border-style: dashed; }
+@media (pointer: coarse) {
+  .studio-director-row .studio-icon-btn { width: 40px; height: 40px; }
+}

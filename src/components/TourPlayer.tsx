@@ -24,6 +24,8 @@ import { appBus } from '../lib/event-bus'
 import { buildTourShareUrl } from '../lib/share/tourShareLink'
 import { replayController } from '../lib/capture/replay-controller'
 import { PRESENTATION_TEMPLATES } from '../lib/templates/presentationTemplates'
+import { tourVideoRecipe } from '../lib/director/recipe'
+import { useClipStudioStore } from '../stores/clipStudioStore'
 import { computeTrimToLastSeconds } from '../lib/capture/replay-buffer-core'
 import { exportGif, readClipDuration } from '../lib/capture/gif-export'
 import { createTimeline } from '../lib/capture/timeline'
@@ -73,6 +75,9 @@ const SEVERITY_COLOR = { error: 'var(--danger)', warning: '#F5A623', info: '#3B8
 function stepColor(step: TourStep): string {
   return step.issueSeverity ? SEVERITY_COLOR[step.issueSeverity] : 'var(--accent)'
 }
+
+/** How long each stop is shown when the tour plays itself. */
+const AUTOPLAY_STEP_MS = 6000
 
 /** Above this many steps the dot rail becomes a slim progress bar. */
 const MAX_DOTS = 14
@@ -249,6 +254,25 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
     }
   }, [exporting, templateId, watermark, aspectPreset, t])
 
+  // ── Tour → video: the stops rendered as a presentation clip in Clip Studio,
+  //    at the output size, flying between stops — not a screen recording. ─────
+  const handleVideo = useCallback(() => {
+    if (!tour) return
+    const recipe = tourVideoRecipe(templateId, tour.steps.length)
+    exitPlayback()
+    useClipStudioStore.getState().requestGenerate({ ...recipe, captions: { ...recipe.captions, title: tour.title } })
+  }, [tour, templateId, exitPlayback])
+
+  // ── Auto-advance: the tour plays itself (meeting screen, kiosk, booth).
+  //    Stops at the last step instead of leaving the tour. ──────────────────
+  const [autoplay, setAutoplay] = useState(false)
+  useEffect(() => {
+    if (!autoplay) return
+    if (stepIndex >= total - 1) { setAutoplay(false); return }
+    const id = window.setTimeout(() => setStepIndex(stepIndex + 1), AUTOPLAY_STEP_MS)
+    return () => window.clearTimeout(id)
+  }, [autoplay, stepIndex, total, setStepIndex])
+
   // ── Keyboard: ← → navigate, Esc exits ─────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -418,6 +442,16 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
               : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>}
           </button>
 
+          <button
+            onClick={() => setAutoplay((v) => !v)}
+            disabled={stepIndex >= total - 1 && !autoplay}
+            title={t('player.autoplay')}
+            aria-pressed={autoplay}
+            className={`${navBtn} ${autoplay ? '!text-[var(--accent)] bg-[var(--surface-2)]' : ''}`}
+          >
+            {autoplay ? <Icons.Pause size={14} /> : <Icons.Play size={14} />}
+          </button>
+
           <div className="flex-1" />
 
           {/* Share link — honest limit surfaced via toast for disk-loaded models */}
@@ -438,6 +472,11 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
                 : <Icons.Share size={14} />}
             </button>
           )}
+
+          {/* The tour as a presentation video, edited in Clip Studio */}
+          <button onClick={handleVideo} title={t('player.video')} className={navBtn}>
+            <Icons.Film size={14} />
+          </button>
 
           <button
             onClick={() => setIsolateActive(!isolateActive)}

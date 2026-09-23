@@ -201,7 +201,8 @@
       "topDown": "Vista de cima",
       "dollyIn": "Aproximação",
       "flyby": "Passagem",
-      "focus": "Foco"
+      "focus": "Foco",
+      "path": "Trajetória"
     },
     "platforms": {
       "reel": "Reel do Instagram",
@@ -273,6 +274,114 @@
     "shortcuts": "Espaço reproduzir · S dividir · Del eliminar · D duplicar · T texto · Ctrl+Z desfazer",
     "safeZone": "Mostrar zonas seguras",
     "safeZoneHint": "Onde cada app desenha os seus próprios botões e legendas.",
-    "duration": "{{seconds}} s"
+    "duration": "{{seconds}} s",
+    "director": {
+      "title": "Realizador de apresentações",
+      "hint": "Uma apresentação pronta a partir do próprio modelo: pisos, sistemas, problemas e o seu percurso, enquadrados para o formato e cortados ao ritmo da música.",
+      "template": "Modelo de apresentação",
+      "builtIn": "Modelos",
+      "mine": "Os meus modelos",
+      "generate": "Gerar apresentação",
+      "customize": "Personalizar modelo",
+      "analysing": "A ler o modelo…",
+      "renderingBatch": "Modelo {{clip}}/{{clips}} · tomada {{shot}} de {{shots}}",
+      "exportingBatch": "A exportar vídeo {{clip}} de {{clips}}",
+      "systems": {
+        "structure": "Estrutura",
+        "envelope": "Envolvente",
+        "mep": "Instalações",
+        "interiors": "Interiores"
+      },
+      "statsStoreys": "{{elements}} elementos · {{storeys}} pisos",
+      "stats": "{{elements}} elementos",
+      "score": "Health Score {{score}}/100",
+      "systemCaption": "{{label}} · {{count}} elementos",
+      "issueCaption": "{{label}} · {{count}}",
+      "tourStop": "Paragem {{i}}",
+      "together": "Tudo em conjunto",
+      "batchDone": "{{n}} vídeos transferidos",
+      "saved": "Modelo guardado",
+      "recipes": {
+        "meeting-demo": "Demo para reunião",
+        "client-walkthrough": "Percurso para cliente",
+        "coordination-review": "Revisão de coordenação",
+        "linkedin-teaser": "Teaser para LinkedIn",
+        "reel": "Reel do Instagram",
+        "tiktok": "TikTok"
+      },
+      "pace": {
+        "calm": "Calmo",
+        "normal": "Normal",
+        "fast": "Rápido"
+      },
+      "paceLabel": "Ritmo",
+      "name": "Nome",
+      "sections": "Secções",
+      "sectionsHint": "Por esta ordem. Cada uma só aparece se o modelo tiver algo para mostrar.",
+      "section": {
+        "hero": "Abertura",
+        "orbit": "Órbita",
+        "aerial": "Vista aérea",
+        "storeys": "Piso a piso",
+        "systems": "Sistemas do edifício",
+        "issues": "Problemas de validação",
+        "tour": "Percurso gravado",
+        "detail": "Detalhe",
+        "closing": "Encerramento"
+      },
+      "sectionHint": {
+        "hero": "Afasta até ao modelo completo, com o título",
+        "orbit": "Uma volta ao modelo",
+        "aerial": "Vista em planta que inclina para perspetiva",
+        "storeys": "Cada piso isolado",
+        "systems": "Estrutura, envolvente, instalações",
+        "issues": "Os piores problemas, destacados",
+        "tour": "Voa pelas paragens do percurso",
+        "detail": "Aproximação ao elemento selecionado",
+        "closing": "Última volta com o apelo à ação"
+      },
+      "empty": {
+        "storeys": "Este modelo não tem pisos",
+        "systems": "Não há sistemas classificáveis",
+        "issues": "Sem problemas — valide primeiro",
+        "tour": "Ainda sem percurso — grave ou gere um"
+      },
+      "emptyGeneric": "Nada a mostrar neste modelo",
+      "shots": "{{n}} tomadas",
+      "moveUp": "Subir",
+      "moveDown": "Descer",
+      "maxStoreys": "Máx. pisos",
+      "maxSystems": "Máx. sistemas",
+      "maxIssues": "Máx. problemas",
+      "isolate": "Mostrar pisos e sistemas isolados",
+      "isolateHint": "Oculta o resto do modelo nessas tomadas. Desligado: destacados em contexto.",
+      "multi": "Vários modelos",
+      "multiHint": {
+        "combined": "Um clipe com toda a federação.",
+        "sequence": "Cada modelo sozinho e depois todos juntos.",
+        "separate": "Um vídeo por modelo, exportados e transferidos um a um."
+      },
+      "multiMode": {
+        "combined": "Conjunto",
+        "sequence": "Um a um",
+        "separate": "Um por modelo"
+      },
+      "length": "Duração · {{seconds}} s",
+      "captions": "Textos",
+      "captionsOn": "Mostrar textos",
+      "titlePlaceholder": "Título — {name} é o nome do modelo",
+      "titleLabel": "Título",
+      "showStats": "Número de elementos e pisos",
+      "showScore": "Health Score",
+      "showScoreHint": "Só aparece a partir de 70.",
+      "labelShots": "Legendar cada tomada",
+      "ctaPlaceholder": "Frase final (opcional)",
+      "cta": "Frase final",
+      "fadeIn": "Entrada a partir do preto",
+      "fadeOut": "Saída para preto",
+      "deleteTemplate": "Eliminar modelo",
+      "save": "Guardar como modelo",
+      "generateBatch": "Gerar {{n}} vídeos"
+    }
   }
 }

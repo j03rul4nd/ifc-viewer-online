@@ -8,6 +8,7 @@
 // so undo/redo covers everything the user can change on the timeline.
 
 import { create } from 'zustand'
+import type { Recipe } from '../lib/director/recipe'
 import { devtools } from 'zustand/middleware'
 import { clampTracks, createProject, projectDuration, type EditProject } from '../lib/capture/project'
 import type { SourceMedia } from '../lib/capture/project-export'
@@ -61,6 +62,10 @@ interface ClipStudioState {
   gestureBase: EditProject | null
 
   openStudio: () => void
+  /** A presentation the studio should generate as soon as it is open (tour player, other entry points). */
+  pendingRecipe: Recipe | null
+  requestGenerate: (recipe: Recipe) => void
+  takePendingRecipe: () => Recipe | null
   closeStudio: () => void
   /** Apply a project edit and record it for undo. */
   edit: (fn: (p: EditProject) => EditProject) => void
@@ -98,6 +103,13 @@ export const useClipStudioStore = create<ClipStudioState>()(
       gestureBase: null,
 
       openStudio: () => set({ open: true }, false, 'studio/open'),
+      pendingRecipe: null,
+      requestGenerate: (recipe) => set({ open: true, pendingRecipe: recipe }, false, 'studio/requestGenerate'),
+      takePendingRecipe: () => {
+        const r = get().pendingRecipe
+        if (r) set({ pendingRecipe: null }, false, 'studio/takePending')
+        return r
+      },
       closeStudio: () => set({ open: false, job: null }, false, 'studio/close'),
 
       edit: (fn) => {

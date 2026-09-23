@@ -201,7 +201,8 @@
       "topDown": "Draufsicht",
       "dollyIn": "Heranfahren",
       "flyby": "Vorbeiflug",
-      "focus": "Fokus"
+      "focus": "Fokus",
+      "path": "Pfad"
     },
     "platforms": {
       "reel": "Instagram-Reel",
@@ -273,6 +274,114 @@
     "shortcuts": "Leertaste abspielen · S teilen · Entf löschen · D duplizieren · T Text · Strg+Z rückgängig",
     "safeZone": "Sichere Bereiche zeigen",
     "safeZoneHint": "Wo jede App ihre eigenen Schaltflächen und Beschriftungen zeichnet.",
-    "duration": "{{seconds}} s"
+    "duration": "{{seconds}} s",
+    "director": {
+      "title": "Präsentations-Regie",
+      "hint": "Eine fertige Präsentation direkt aus dem Modell: Geschosse, Gewerke, Befunde und Ihre Tour – passend fürs Format gerahmt und im Takt der Musik geschnitten.",
+      "template": "Vorlage",
+      "builtIn": "Vorlagen",
+      "mine": "Meine Vorlagen",
+      "generate": "Präsentation erzeugen",
+      "customize": "Vorlage anpassen",
+      "analysing": "Modell wird gelesen …",
+      "renderingBatch": "Modell {{clip}}/{{clips}} · Aufnahme {{shot}} von {{shots}}",
+      "exportingBatch": "Exportiere Video {{clip}} von {{clips}}",
+      "systems": {
+        "structure": "Tragwerk",
+        "envelope": "Gebäudehülle",
+        "mep": "TGA",
+        "interiors": "Ausbau"
+      },
+      "statsStoreys": "{{elements}} Elemente · {{storeys}} Geschosse",
+      "stats": "{{elements}} Elemente",
+      "score": "Health Score {{score}}/100",
+      "systemCaption": "{{label}} · {{count}} Elemente",
+      "issueCaption": "{{label}} · {{count}}",
+      "tourStop": "Station {{i}}",
+      "together": "Alles zusammen",
+      "batchDone": "{{n}} Videos heruntergeladen",
+      "saved": "Vorlage gespeichert",
+      "recipes": {
+        "meeting-demo": "Meeting-Demo",
+        "client-walkthrough": "Rundgang für Kunden",
+        "coordination-review": "Koordinationsprüfung",
+        "linkedin-teaser": "LinkedIn-Teaser",
+        "reel": "Instagram-Reel",
+        "tiktok": "TikTok"
+      },
+      "pace": {
+        "calm": "Ruhig",
+        "normal": "Normal",
+        "fast": "Schnell"
+      },
+      "paceLabel": "Tempo",
+      "name": "Name",
+      "sections": "Abschnitte",
+      "sectionsHint": "In dieser Reihenfolge. Jeder erscheint nur, wenn das Modell etwas dafür hat.",
+      "section": {
+        "hero": "Eröffnung",
+        "orbit": "Umkreisen",
+        "aerial": "Luftansicht",
+        "storeys": "Geschoss für Geschoss",
+        "systems": "Gebäudesysteme",
+        "issues": "Prüfbefunde",
+        "tour": "Aufgezeichnete Tour",
+        "detail": "Detail",
+        "closing": "Abschluss"
+      },
+      "sectionHint": {
+        "hero": "Rückzug auf das ganze Modell, mit Titel",
+        "orbit": "Eine Runde um das ganze Modell",
+        "aerial": "Draufsicht, die in die Perspektive kippt",
+        "storeys": "Jedes Geschoss für sich",
+        "systems": "Tragwerk, Hülle, TGA",
+        "issues": "Die schwersten Befunde, hervorgehoben",
+        "tour": "Flug durch die Tour-Stationen",
+        "detail": "Heranfahren an das ausgewählte Element",
+        "closing": "Letzte Runde mit Handlungsaufruf"
+      },
+      "empty": {
+        "storeys": "Keine Geschosse in diesem Modell",
+        "systems": "Keine zuordenbaren Systeme",
+        "issues": "Keine Befunde – zuerst prüfen",
+        "tour": "Noch keine Tour – aufzeichnen oder erzeugen"
+      },
+      "emptyGeneric": "Für dieses Modell nichts zu zeigen",
+      "shots": "{{n}} Aufnahmen",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
+      "maxStoreys": "Max. Geschosse",
+      "maxSystems": "Max. Systeme",
+      "maxIssues": "Max. Befunde",
+      "isolate": "Geschosse und Systeme isoliert zeigen",
+      "isolateHint": "Blendet den Rest des Modells in diesen Aufnahmen aus. Aus: im Kontext hervorgehoben.",
+      "multi": "Mehrere Modelle",
+      "multiHint": {
+        "combined": "Ein Clip mit dem gesamten Verbund.",
+        "sequence": "Jedes Modell einzeln, dann alle zusammen.",
+        "separate": "Ein Video pro Modell, nacheinander exportiert und heruntergeladen."
+      },
+      "multiMode": {
+        "combined": "Gesamt",
+        "sequence": "Einzeln nacheinander",
+        "separate": "Eines pro Modell"
+      },
+      "length": "Länge · {{seconds}} s",
+      "captions": "Texte",
+      "captionsOn": "Texte anzeigen",
+      "titlePlaceholder": "Titel – {name} ist der Modellname",
+      "titleLabel": "Titel",
+      "showStats": "Anzahl Elemente und Geschosse",
+      "showScore": "Health Score",
+      "showScoreHint": "Wird nur ab 70 angezeigt.",
+      "labelShots": "Jede Aufnahme beschriften",
+      "ctaPlaceholder": "Schlusszeile (optional)",
+      "cta": "Schlusszeile",
+      "fadeIn": "Aus Schwarz einblenden",
+      "fadeOut": "Nach Schwarz ausblenden",
+      "deleteTemplate": "Vorlage löschen",
+      "save": "Als Vorlage speichern",
+      "generateBatch": "{{n}} Videos erzeugen"
+    }
   }
 }

@@ -75,10 +75,14 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
     const c = viewerApiRef.current?.getCanvas() ?? null
     canvasRef.current = c
     setCanvasReady(c !== null)
-    // Clip Studio renders camera shots through the same viewer.
-    linkViewer(viewerApiRef.current)
   }, [viewerApiRef])
-  useEffect(() => () => linkViewer(null), [])
+  // Clip Studio renders camera shots through the same viewer. Registered per
+  // toolbar instance, and re-registered after a StrictMode remount.
+  useEffect(() => {
+    if (!canvasReady) return
+    linkViewer(canvasRef, viewerApiRef.current)
+    return () => linkViewer(canvasRef, null)
+  }, [canvasReady, viewerApiRef])
 
   useAppEvent('model:loaded', syncCanvas)
   useEffect(() => {

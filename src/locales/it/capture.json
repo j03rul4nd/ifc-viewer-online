@@ -201,7 +201,8 @@
       "topDown": "Dall’alto",
       "dollyIn": "Carrellata avanti",
       "flyby": "Sorvolo",
-      "focus": "Focus"
+      "focus": "Focus",
+      "path": "Percorso"
     },
     "platforms": {
       "reel": "Reel di Instagram",
@@ -273,6 +274,114 @@
     "shortcuts": "Spazio riproduci · S dividi · Canc elimina · D duplica · T testo · Ctrl+Z annulla",
     "safeZone": "Mostra zone sicure",
     "safeZoneHint": "Dove ogni app disegna i propri pulsanti e didascalie.",
-    "duration": "{{seconds}} s"
+    "duration": "{{seconds}} s",
+    "director": {
+      "title": "Regia delle presentazioni",
+      "hint": "Una presentazione finita dal modello stesso: piani, sistemi, criticità e il tuo tour, inquadrati per il formato e montati a tempo di musica.",
+      "template": "Modello di presentazione",
+      "builtIn": "Modelli",
+      "mine": "I miei modelli",
+      "generate": "Genera presentazione",
+      "customize": "Personalizza modello",
+      "analysing": "Lettura del modello…",
+      "renderingBatch": "Modello {{clip}}/{{clips}} · inquadratura {{shot}} di {{shots}}",
+      "exportingBatch": "Esportazione video {{clip}} di {{clips}}",
+      "systems": {
+        "structure": "Struttura",
+        "envelope": "Involucro",
+        "mep": "Impianti",
+        "interiors": "Interni"
+      },
+      "statsStoreys": "{{elements}} elementi · {{storeys}} piani",
+      "stats": "{{elements}} elementi",
+      "score": "Health Score {{score}}/100",
+      "systemCaption": "{{label}} · {{count}} elementi",
+      "issueCaption": "{{label}} · {{count}}",
+      "tourStop": "Tappa {{i}}",
+      "together": "Tutto insieme",
+      "batchDone": "{{n}} video scaricati",
+      "saved": "Modello salvato",
+      "recipes": {
+        "meeting-demo": "Demo per riunione",
+        "client-walkthrough": "Visita per il cliente",
+        "coordination-review": "Revisione di coordinamento",
+        "linkedin-teaser": "Teaser LinkedIn",
+        "reel": "Reel di Instagram",
+        "tiktok": "TikTok"
+      },
+      "pace": {
+        "calm": "Calmo",
+        "normal": "Normale",
+        "fast": "Veloce"
+      },
+      "paceLabel": "Ritmo",
+      "name": "Nome",
+      "sections": "Sezioni",
+      "sectionsHint": "In quest’ordine. Ognuna compare solo se il modello ha qualcosa da mostrare.",
+      "section": {
+        "hero": "Apertura",
+        "orbit": "Orbita",
+        "aerial": "Vista aerea",
+        "storeys": "Piano per piano",
+        "systems": "Sistemi dell’edificio",
+        "issues": "Criticità di validazione",
+        "tour": "Tour registrato",
+        "detail": "Dettaglio",
+        "closing": "Chiusura"
+      },
+      "sectionHint": {
+        "hero": "Allarga fino al modello intero, con il titolo",
+        "orbit": "Un giro attorno al modello",
+        "aerial": "Vista in pianta che si inclina in prospettiva",
+        "storeys": "Ogni piano da solo",
+        "systems": "Struttura, involucro, impianti",
+        "issues": "Le criticità peggiori, evidenziate",
+        "tour": "Volo tra le tappe del tour",
+        "detail": "Avvicinamento all’elemento selezionato",
+        "closing": "Ultimo giro con l’invito all’azione"
+      },
+      "empty": {
+        "storeys": "Nessun piano in questo modello",
+        "systems": "Nessun sistema classificabile",
+        "issues": "Nessuna criticità — valida prima il modello",
+        "tour": "Ancora nessun tour — registralo o generalo"
+      },
+      "emptyGeneric": "Niente da mostrare per questo modello",
+      "shots": "{{n}} inquadrature",
+      "moveUp": "Sposta su",
+      "moveDown": "Sposta giù",
+      "maxStoreys": "Max. piani",
+      "maxSystems": "Max. sistemi",
+      "maxIssues": "Max. criticità",
+      "isolate": "Mostra piani e sistemi isolati",
+      "isolateHint": "Nasconde il resto del modello in quelle inquadrature. Disattivo: evidenziati nel contesto.",
+      "multi": "Più modelli",
+      "multiHint": {
+        "combined": "Una clip con l’intera federazione.",
+        "sequence": "Ogni modello da solo, poi tutti insieme.",
+        "separate": "Un video per modello, esportati e scaricati uno dopo l’altro."
+      },
+      "multiMode": {
+        "combined": "Insieme",
+        "sequence": "Uno alla volta",
+        "separate": "Uno per modello"
+      },
+      "length": "Durata · {{seconds}} s",
+      "captions": "Testi",
+      "captionsOn": "Mostra testi",
+      "titlePlaceholder": "Titolo — {name} è il nome del modello",
+      "titleLabel": "Titolo",
+      "showStats": "Numero di elementi e piani",
+      "showScore": "Health Score",
+      "showScoreHint": "Mostrato solo da 70 in su.",
+      "labelShots": "Didascalia per ogni inquadratura",
+      "ctaPlaceholder": "Frase finale (facoltativa)",
+      "cta": "Frase finale",
+      "fadeIn": "Apertura dal nero",
+      "fadeOut": "Chiusura al nero",
+      "deleteTemplate": "Elimina modello",
+      "save": "Salva come modello",
+      "generateBatch": "Genera {{n}} video"
+    }
   }
 }

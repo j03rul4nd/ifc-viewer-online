@@ -60,6 +60,9 @@ const NOT_YET_MIGRATED = new Set([
   'mobile/IdsFailurePager.tsx',
   'mobile/MobileActionSheet.tsx',
   'mobile/MobileSheet.tsx',
+  // A full-screen editing workspace (like the viewer itself), not a dialog:
+  // its own dialogs (the director's template editor) do use Modal.
+  'studio/ClipStudio.tsx',
 ])
 
 /** A component that pins a full-screen layer is building a dialog shell. */

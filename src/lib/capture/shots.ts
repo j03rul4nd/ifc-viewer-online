@@ -26,6 +26,7 @@ export type ShotType =
   | 'dollyIn'   // push in toward the model along one direction
   | 'flyby'     // lateral pass across the front
   | 'focus'     // slow arc around one element or area
+  | 'path'      // fly through explicit camera keyframes (tour stops, custom moves)
 
 export const SHOT_TYPES: readonly ShotType[] = ['orbit', 'reveal', 'crane', 'topDown', 'dollyIn', 'flyby', 'focus']
 
@@ -49,6 +50,12 @@ export interface ShotSpec {
   /** Extra room around the subject; 1 = the subject just touches the frame. */
   padding: number
   easing: Easing
+  /**
+   * 'path' only: the poses the camera flies through, in order. The move is
+   * smoothed through them (Catmull-Rom on the eye, eased target), and time is
+   * shared out by distance so the speed stays even between close and far stops.
+   */
+  keyframes?: CameraPose[]
 }
 
 export interface CameraPose {
@@ -77,6 +84,7 @@ export function defaultShot(type: ShotType, bounds: Bounds, aspect: number, dura
     case 'dollyIn': return { ...base, headingDeg: 30, elevationDeg: 18, easing: 'easeOut' }
     case 'flyby':   return { ...base, headingDeg: 0, elevationDeg: 10 }
     case 'focus':   return { ...base, sweepDeg: 40, elevationDeg: 28, padding: 1.6 }
+    case 'path':    return { ...base, easing: 'easeInOut' }
   }
 }
 
@@ -154,6 +162,7 @@ export function shotDistance(s: ShotSpec): number {
 /** Camera pose at `t` seconds into the shot. */
 export function cameraAt(s: ShotSpec, t: number): CameraPose {
   const p = ease(s.easing, clamp01(s.durationSec > 0 ? t / s.durationSec : 1))
+  if (s.type === 'path') return pathAt(s.keyframes ?? [], p, s.fovDeg)
   const c = s.bounds.center
   const d = shotDistance(s)
   const h = s.bounds.size.y
@@ -201,6 +210,48 @@ export function cameraAt(s: ShotSpec, t: number): CameraPose {
       return pose(position, tgt, s.fovDeg)
     }
   }
+}
+
+/**
+ * Pose at progress p (0–1, already eased) along a keyframe path. Segments get
+ * time in proportion to how far the eye travels (plus a floor so a pure
+ * rotation still takes time); the eye follows a Catmull-Rom curve so it never
+ * kinks at a stop, the target and fov interpolate with a smoothstep per segment.
+ */
+export function pathAt(keys: readonly CameraPose[], p: number, fallbackFov = DEFAULT_FOV_DEG): CameraPose {
+  if (keys.length === 0) return pose({ x: 10, y: 10, z: 10 }, { x: 0, y: 0, z: 0 }, fallbackFov)
+  if (keys.length === 1) return keys[0]
+  const lens: number[] = []
+  for (let i = 0; i < keys.length - 1; i++) {
+    const a = keys[i], b = keys[i + 1]
+    const travel = Math.hypot(b.position.x - a.position.x, b.position.y - a.position.y, b.position.z - a.position.z)
+    const turn = Math.hypot(b.target.x - a.target.x, b.target.y - a.target.y, b.target.z - a.target.z)
+    lens.push(travel + turn * 0.5 + 1e-3)
+  }
+  const total = lens.reduce((x, y) => x + y, 0)
+  let at = clamp01(p) * total
+  let i = 0
+  while (i < lens.length - 1 && at > lens[i]) { at -= lens[i]; i++ }
+  const u = clamp01(at / lens[i])
+  const k0 = keys[Math.max(0, i - 1)], k1 = keys[i], k2 = keys[i + 1], k3 = keys[Math.min(keys.length - 1, i + 2)]
+  const position = catmull(k0.position, k1.position, k2.position, k3.position, u)
+  const s = u * u * (3 - 2 * u)
+  return {
+    position,
+    target: lerp3(k1.target, k2.target, s),
+    fovDeg: lerp(k1.fovDeg, k2.fovDeg, s),
+  }
+}
+
+function catmull(p0: Vec3, p1: Vec3, p2: Vec3, p3: Vec3, t: number): Vec3 {
+  const t2 = t * t, t3 = t2 * t
+  const f = (a: number, b: number, c: number, d: number) =>
+    0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3)
+  return { x: f(p0.x, p1.x, p2.x, p3.x), y: f(p0.y, p1.y, p2.y, p3.y), z: f(p0.z, p1.z, p2.z, p3.z) }
+}
+
+function lerp3(a: Vec3, b: Vec3, p: number): Vec3 {
+  return { x: lerp(a.x, b.x, p), y: lerp(a.y, b.y, p), z: lerp(a.z, b.z, p) }
 }
 
 /** Frame timestamps for rendering a shot at `fps` (last frame lands before the end). */

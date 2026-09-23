@@ -201,7 +201,8 @@
       "topDown": "Cenital",
       "dollyIn": "Acercamiento",
       "flyby": "Pasada",
-      "focus": "Enfoque"
+      "focus": "Enfoque",
+      "path": "Trayectoria"
     },
     "platforms": {
       "reel": "Reel de Instagram",
@@ -273,6 +274,114 @@
     "shortcuts": "Espacio reproducir · S cortar · Supr eliminar · D duplicar · T texto · Ctrl+Z deshacer",
     "safeZone": "Mostrar zonas seguras",
     "safeZoneHint": "Donde cada app dibuja sus propios botones y textos.",
-    "duration": "{{seconds}} s"
+    "duration": "{{seconds}} s",
+    "director": {
+      "title": "Director de presentaciones",
+      "hint": "Una presentación terminada a partir del propio modelo: plantas, sistemas, incidencias y tu tour, encuadrados para el formato y cortados al ritmo de la música.",
+      "template": "Plantilla",
+      "builtIn": "Plantillas",
+      "mine": "Mis plantillas",
+      "generate": "Generar presentación",
+      "customize": "Personalizar plantilla",
+      "analysing": "Leyendo el modelo…",
+      "renderingBatch": "Modelo {{clip}}/{{clips}} · toma {{shot}} de {{shots}}",
+      "exportingBatch": "Exportando vídeo {{clip}} de {{clips}}",
+      "systems": {
+        "structure": "Estructura",
+        "envelope": "Envolvente",
+        "mep": "Instalaciones",
+        "interiors": "Interiores"
+      },
+      "statsStoreys": "{{elements}} elementos · {{storeys}} plantas",
+      "stats": "{{elements}} elementos",
+      "score": "Health Score {{score}}/100",
+      "systemCaption": "{{label}} · {{count}} elementos",
+      "issueCaption": "{{label}} · {{count}}",
+      "tourStop": "Parada {{i}}",
+      "together": "Todo el conjunto",
+      "batchDone": "{{n}} vídeos descargados",
+      "saved": "Plantilla guardada",
+      "recipes": {
+        "meeting-demo": "Demo para reunión",
+        "client-walkthrough": "Recorrido para cliente",
+        "coordination-review": "Revisión de coordinación",
+        "linkedin-teaser": "Teaser para LinkedIn",
+        "reel": "Reel de Instagram",
+        "tiktok": "TikTok"
+      },
+      "pace": {
+        "calm": "Pausado",
+        "normal": "Normal",
+        "fast": "Rápido"
+      },
+      "paceLabel": "Ritmo",
+      "name": "Nombre",
+      "sections": "Secciones",
+      "sectionsHint": "En este orden. Cada una solo aparece si el modelo tiene algo que mostrar.",
+      "section": {
+        "hero": "Revelado inicial",
+        "orbit": "Órbita",
+        "aerial": "Vista aérea",
+        "storeys": "Planta a planta",
+        "systems": "Sistemas del edificio",
+        "issues": "Incidencias de validación",
+        "tour": "Tour grabado",
+        "detail": "Detalle",
+        "closing": "Cierre"
+      },
+      "sectionHint": {
+        "hero": "Aleja la cámara hasta el modelo completo, con el título",
+        "orbit": "Una vuelta alrededor del modelo",
+        "aerial": "Vista en planta que se inclina a perspectiva",
+        "storeys": "Cada planta por separado",
+        "systems": "Estructura, envolvente, instalaciones",
+        "issues": "Las peores incidencias, resaltadas",
+        "tour": "Vuela por las paradas del tour",
+        "detail": "Acercamiento al elemento seleccionado",
+        "closing": "Última vuelta con la llamada a la acción"
+      },
+      "empty": {
+        "storeys": "Este modelo no tiene plantas",
+        "systems": "No hay sistemas clasificables",
+        "issues": "Sin incidencias: valida el modelo primero",
+        "tour": "Aún no hay tour: grábalo o genéralo"
+      },
+      "emptyGeneric": "Nada que mostrar en este modelo",
+      "shots": "{{n}} tomas",
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "maxStoreys": "Máx. plantas",
+      "maxSystems": "Máx. sistemas",
+      "maxIssues": "Máx. incidencias",
+      "isolate": "Mostrar plantas y sistemas aislados",
+      "isolateHint": "Oculta el resto del modelo durante esas tomas. Desactivado: resaltados en contexto.",
+      "multi": "Varios modelos",
+      "multiHint": {
+        "combined": "Un clip con toda la federación.",
+        "sequence": "Cada modelo por separado y después todos juntos.",
+        "separate": "Un vídeo por modelo, exportados y descargados uno tras otro."
+      },
+      "multiMode": {
+        "combined": "Conjunto",
+        "sequence": "Uno a uno",
+        "separate": "Uno por modelo"
+      },
+      "length": "Duración · {{seconds}} s",
+      "captions": "Textos",
+      "captionsOn": "Mostrar textos",
+      "titlePlaceholder": "Título ({name} es el nombre del modelo)",
+      "titleLabel": "Título",
+      "showStats": "Número de elementos y plantas",
+      "showScore": "Health Score",
+      "showScoreHint": "Solo se muestra si es 70 o más.",
+      "labelShots": "Rotular cada toma",
+      "ctaPlaceholder": "Frase de cierre (opcional)",
+      "cta": "Frase de cierre",
+      "fadeIn": "Entrada desde negro",
+      "fadeOut": "Salida a negro",
+      "deleteTemplate": "Eliminar plantilla",
+      "save": "Guardar como plantilla",
+      "generateBatch": "Generar {{n}} vídeos"
+    }
   }
 }
