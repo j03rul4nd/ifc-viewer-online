@@ -12,7 +12,13 @@
     "howToFix": "修正方法",
     "goToStep": "ステップ {{n}} へ移動",
     "autoplay": "自動再生",
-    "video": "動画にする"
+    "video": "動画にする",
+    "formats": {
+      "wide": "プレゼン 16:9",
+      "linkedin": "LinkedIn 4:5",
+      "square": "正方形 1:1",
+      "reel": "リール / TikTok 9:16"
+    }
   },
   "recorder": {
     "title": "ガイドツアー",

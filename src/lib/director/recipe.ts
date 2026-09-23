@@ -170,18 +170,20 @@ export function builtInRecipe(id: string): Recipe | undefined {
  * The recipe behind "turn this tour into a video": the tour's stops, framed
  * by a title and a closing turn, long enough for every stop to settle.
  */
-export function tourVideoRecipe(templateId: string | null, stops: number): Recipe {
+export function tourVideoRecipe(templateId: string | null, stops: number, format?: OutputFormat): Recipe {
   const base = builtInRecipe('client-walkthrough')!
   return {
     ...base,
     id: 'tour-video',
     builtIn: false,
     name: 'Tour',
-    format: templateId === 'social' ? 'linkedin' : 'wide',
+    format: format ?? (templateId === 'social' ? 'linkedin' : 'wide'),
     targetSec: Math.round(Math.min(120, Math.max(12, 8 + stops * 4.5))),
     sections: ['hero', 'tour', 'closing'],
     captions: { ...base.captions, labelShots: true, showScore: templateId !== 'client-walkthrough' },
     watermark: templateId === 'social',
+    // Vertical feeds want the bold captions; a meeting screen the clean ones.
+    ...(format === 'reel' || format === 'tiktok' ? { captions: { ...base.captions, look: 'bold' as const, labelShots: true, showScore: templateId !== 'client-walkthrough' } } : {}),
   }
 }
 

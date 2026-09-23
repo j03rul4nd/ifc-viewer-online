@@ -100,10 +100,10 @@ describe('planPresentation', () => {
     const pose: CameraPose = { position: { x: 0, y: 0, z: 10 }, target: { x: 0, y: 0, z: 0 }, fovDeg: 45 }
     expect(fitPoseToAspect(pose, 16 / 9, 16 / 9)).toEqual(pose)
     expect(fitPoseToAspect(pose, 16 / 9, 2)).toEqual(pose)
-    const reel = fitPoseToAspect(pose, 16 / 9, 9 / 16)
-    expect(reel.position.z).toBeGreaterThan(10)
-    expect(reel.position.z).toBeLessThanOrEqual(22 + 1e-9)
-    expect(reel.target).toEqual(pose.target)
+    expect(fitPoseToAspect(pose, 16 / 9, 9 / 16).position.z).toBeCloseTo(10 * 16 / 9)
+    expect(fitPoseToAspect(pose, 16 / 9, 4 / 5).position.z).toBeCloseTo(12.5)
+    expect(fitPoseToAspect(pose, 16 / 9, 1).position.z).toBeCloseTo(10)
+    expect(fitPoseToAspect(pose, 16 / 9, 9 / 16).target).toEqual(pose.target)
   })
 
   it('applies the caption look', () => {

@@ -13,7 +13,13 @@
     "howToFix": "Come risolvere",
     "goToStep": "Vai al passo {{n}}",
     "autoplay": "Riproduci automaticamente",
-    "video": "Trasforma in video"
+    "video": "Trasforma in video",
+    "formats": {
+      "wide": "Presentazione 16:9",
+      "linkedin": "LinkedIn 4:5",
+      "square": "Quadrato 1:1",
+      "reel": "Reel / TikTok 9:16"
+    }
   },
   "recorder": {
     "title": "Tour guidato",
