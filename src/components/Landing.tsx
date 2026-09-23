@@ -758,7 +758,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             </div>
 
             <div
-              className="grid gap-px bg-[var(--border)] border border-[var(--border)] rounded-xl sm:rounded-2xl overflow-hidden"
+              className="lp-card-grid grid border border-[var(--border)] rounded-xl sm:rounded-2xl overflow-hidden"
               style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}
             >
               {PRIVACY_CARDS.map((card, i) => (
@@ -827,7 +827,7 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
 
           {/* Feature cards grid */}
           <div
-            className="grid gap-px bg-[var(--border)] border border-[var(--border)] rounded-xl sm:rounded-2xl overflow-hidden"
+            className="lp-card-grid grid border border-[var(--border)] rounded-xl sm:rounded-2xl overflow-hidden"
             style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}
           >
             {FEATURES.map((f, i) => (
@@ -1316,7 +1316,16 @@ export default function Landing({ onLaunch, onOpenUpload, onOpenDemoGallery, onN
             </div>
           )}
 
-          <div style={{ position: 'relative', zIndex: 1 }}>
+          {/* Light theme: the gradient sweeps through mid-blue, where the dim
+              and faint text fell to ~2.4:1 — and it moves, so contrast changed
+              by the second. A frosted panel keeps the gradient as a frame and
+              every line of text above 4.5:1. */}
+          <div
+            style={{ position: 'relative', zIndex: 1 }}
+            className={landingTheme === 'light'
+              ? 'mx-auto max-w-[680px] rounded-2xl border border-white/70 bg-white/85 px-5 py-9 sm:px-10 sm:py-11 shadow-[0_20px_60px_-24px_rgba(54,69,196,0.45)] backdrop-blur-md'
+              : undefined}
+          >
             <motion.h2
               variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}
               className="font-semibold tracking-[-0.03em] mb-3 sm:mb-4"

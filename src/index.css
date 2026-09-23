@@ -406,6 +406,13 @@ kbd {
   color:          var(--text);
 }
 
+/* Card grids with hairline dividers. Each cell draws its own right and bottom
+   line, so an unfilled last row shows the surface — the old gap-px trick
+   painted the border colour into the empty cell, a solid grey block on the
+   light theme. The container's overflow:hidden trims the outer edges. */
+.lp-card-grid { background: var(--surface); }
+.lp-card-grid > * { box-shadow: 1px 0 0 var(--border), 0 1px 0 var(--border); }
+
 /* Frosted-glass utilities adapted for light backgrounds */
 .lp-light .glass,
 .lp-light .glass-md {
