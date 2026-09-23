@@ -10,7 +10,9 @@
     "isolate": "ハイライト要素を分離表示",
     "affected_other": "対象要素 {{count}} 件",
     "howToFix": "修正方法",
-    "goToStep": "ステップ {{n}} へ移動"
+    "goToStep": "ステップ {{n}} へ移動",
+    "autoplay": "自動再生",
+    "video": "動画にする"
   },
   "recorder": {
     "title": "ガイドツアー",

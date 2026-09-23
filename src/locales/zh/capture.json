@@ -201,7 +201,8 @@
       "topDown": "俯视",
       "dollyIn": "推进",
       "flyby": "飞越",
-      "focus": "聚焦"
+      "focus": "聚焦",
+      "path": "路径"
     },
     "platforms": {
       "reel": "Instagram Reel",
@@ -273,6 +274,114 @@
     "shortcuts": "空格 播放 · S 分割 · Del 删除 · D 复制 · T 文字 · Ctrl+Z 撤销",
     "safeZone": "显示安全区",
     "safeZoneHint": "各应用绘制自身按钮和文字的位置。",
-    "duration": "{{seconds}} 秒"
+    "duration": "{{seconds}} 秒",
+    "director": {
+      "title": "演示导演",
+      "hint": "直接从模型生成完整演示：楼层、系统、问题和你的导览，按格式构图并卡准音乐节拍。",
+      "template": "模板",
+      "builtIn": "模板",
+      "mine": "我的模板",
+      "generate": "生成演示",
+      "customize": "自定义模板",
+      "analysing": "正在读取模型…",
+      "renderingBatch": "模型 {{clip}}/{{clips}} · 镜头 {{shot}}/{{shots}}",
+      "exportingBatch": "正在导出视频 {{clip}}/{{clips}}",
+      "systems": {
+        "structure": "结构",
+        "envelope": "围护",
+        "mep": "机电",
+        "interiors": "室内"
+      },
+      "statsStoreys": "{{elements}} 个构件 · {{storeys}} 个楼层",
+      "stats": "{{elements}} 个构件",
+      "score": "Health Score {{score}}/100",
+      "systemCaption": "{{label}} · {{count}} 个构件",
+      "issueCaption": "{{label}} · {{count}}",
+      "tourStop": "第 {{i}} 站",
+      "together": "整体",
+      "batchDone": "已下载 {{n}} 个视频",
+      "saved": "模板已保存",
+      "recipes": {
+        "meeting-demo": "会议演示",
+        "client-walkthrough": "客户导览",
+        "coordination-review": "协调审查",
+        "linkedin-teaser": "LinkedIn 预告",
+        "reel": "Instagram Reel",
+        "tiktok": "TikTok"
+      },
+      "pace": {
+        "calm": "舒缓",
+        "normal": "适中",
+        "fast": "快速"
+      },
+      "paceLabel": "节奏",
+      "name": "名称",
+      "sections": "段落",
+      "sectionsHint": "按此顺序。模型中有对应内容时才会出现。",
+      "section": {
+        "hero": "开场揭示",
+        "orbit": "环绕",
+        "aerial": "鸟瞰",
+        "storeys": "逐层展示",
+        "systems": "建筑系统",
+        "issues": "校验问题",
+        "tour": "已录制导览",
+        "detail": "细节",
+        "closing": "结尾"
+      },
+      "sectionHint": {
+        "hero": "拉远至整个模型并显示标题",
+        "orbit": "围绕整个模型一圈",
+        "aerial": "平面视图倾斜为透视",
+        "storeys": "单独展示每个楼层",
+        "systems": "结构、围护、机电",
+        "issues": "最严重的问题，高亮显示",
+        "tour": "飞越导览各站",
+        "detail": "推近所选构件",
+        "closing": "最后一圈并显示行动号召"
+      },
+      "empty": {
+        "storeys": "此模型没有楼层",
+        "systems": "没有可归类的系统",
+        "issues": "没有问题——请先运行校验",
+        "tour": "还没有导览——请录制或生成"
+      },
+      "emptyGeneric": "此模型没有可展示的内容",
+      "shots": "{{n}} 个镜头",
+      "moveUp": "上移",
+      "moveDown": "下移",
+      "maxStoreys": "最多楼层",
+      "maxSystems": "最多系统",
+      "maxIssues": "最多问题",
+      "isolate": "单独显示楼层和系统",
+      "isolateHint": "在这些镜头中隐藏模型其余部分。关闭：在上下文中高亮。",
+      "multi": "多个模型",
+      "multiHint": {
+        "combined": "一个展示整个联合模型的视频。",
+        "sequence": "先逐个展示每个模型，再整体展示。",
+        "separate": "每个模型一个视频，依次导出并下载。"
+      },
+      "multiMode": {
+        "combined": "整体",
+        "sequence": "逐个",
+        "separate": "每模型一个"
+      },
+      "length": "时长 · {{seconds}} 秒",
+      "captions": "文字",
+      "captionsOn": "显示文字",
+      "titlePlaceholder": "标题（{name} 为模型名称）",
+      "titleLabel": "标题",
+      "showStats": "构件与楼层数量",
+      "showScore": "Health Score",
+      "showScoreHint": "仅在 70 分及以上时显示。",
+      "labelShots": "为每个镜头加标注",
+      "ctaPlaceholder": "结尾语（可选）",
+      "cta": "结尾语",
+      "fadeIn": "从黑场淡入",
+      "fadeOut": "淡出到黑场",
+      "deleteTemplate": "删除模板",
+      "save": "另存为模板",
+      "generateBatch": "生成 {{n}} 个视频"
+    }
   }
 }

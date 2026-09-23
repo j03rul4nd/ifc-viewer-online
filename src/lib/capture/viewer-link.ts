@@ -7,12 +7,18 @@
 
 import type { ViewerAPI } from '../viewer'
 
-let current: ViewerAPI | null = null
+// Several toolbars can hold the viewer at once (the main toolbar, the tour
+// player's bar, the client layout). Each registers under its own key, so one
+// unmounting never unlinks the viewer from under the others.
+const owners = new Map<object, ViewerAPI>()
 
-export function linkViewer(viewer: ViewerAPI | null): void {
-  current = viewer
+export function linkViewer(owner: object, viewer: ViewerAPI | null): void {
+  if (viewer) owners.set(owner, viewer)
+  else owners.delete(owner)
 }
 
 export function linkedViewer(): ViewerAPI | null {
-  return current
+  let last: ViewerAPI | null = null
+  for (const v of owners.values()) last = v
+  return last
 }

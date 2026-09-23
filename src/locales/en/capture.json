@@ -201,7 +201,8 @@
       "topDown": "Top-down",
       "dollyIn": "Push in",
       "flyby": "Fly-by",
-      "focus": "Focus"
+      "focus": "Focus",
+      "path": "Path"
     },
     "platforms": {
       "reel": "Instagram Reel",
@@ -273,6 +274,114 @@
     "shortcuts": "Space play · S split · Del delete · D duplicate · T text · Ctrl+Z undo",
     "safeZone": "Show safe zones",
     "safeZoneHint": "Where each app draws its own buttons and caption.",
-    "duration": "{{seconds}} s"
+    "duration": "{{seconds}} s",
+    "director": {
+      "title": "Presentation director",
+      "hint": "A finished presentation from the model itself: storeys, systems, findings and your tour, framed for the format and cut to the music.",
+      "template": "Template",
+      "builtIn": "Templates",
+      "mine": "My templates",
+      "generate": "Generate presentation",
+      "customize": "Customize template",
+      "analysing": "Reading the model…",
+      "renderingBatch": "Model {{clip}}/{{clips}} · shot {{shot}} of {{shots}}",
+      "exportingBatch": "Exporting video {{clip}} of {{clips}}",
+      "systems": {
+        "structure": "Structure",
+        "envelope": "Envelope",
+        "mep": "Installations",
+        "interiors": "Interiors"
+      },
+      "statsStoreys": "{{elements}} elements · {{storeys}} storeys",
+      "stats": "{{elements}} elements",
+      "score": "Health Score {{score}}/100",
+      "systemCaption": "{{label}} · {{count}} elements",
+      "issueCaption": "{{label}} · {{count}}",
+      "tourStop": "Stop {{i}}",
+      "together": "All together",
+      "batchDone": "{{n}} videos downloaded",
+      "saved": "Template saved",
+      "recipes": {
+        "meeting-demo": "Meeting demo",
+        "client-walkthrough": "Client walkthrough",
+        "coordination-review": "Coordination review",
+        "linkedin-teaser": "LinkedIn teaser",
+        "reel": "Instagram Reel",
+        "tiktok": "TikTok"
+      },
+      "pace": {
+        "calm": "Calm",
+        "normal": "Normal",
+        "fast": "Fast"
+      },
+      "paceLabel": "Pace",
+      "name": "Name",
+      "sections": "Sections",
+      "sectionsHint": "In this order. Each one only appears if the model has something for it.",
+      "section": {
+        "hero": "Opening reveal",
+        "orbit": "Orbit",
+        "aerial": "Aerial view",
+        "storeys": "Storey by storey",
+        "systems": "Building systems",
+        "issues": "Validation findings",
+        "tour": "Recorded tour",
+        "detail": "Detail",
+        "closing": "Closing"
+      },
+      "sectionHint": {
+        "hero": "Pull back to the whole model, with the title",
+        "orbit": "A turn around the whole model",
+        "aerial": "Plan view tilting into perspective",
+        "storeys": "Each storey alone",
+        "systems": "Structure, envelope, installations",
+        "issues": "The worst findings, highlighted",
+        "tour": "Fly through the tour stops",
+        "detail": "Push in on the selected element",
+        "closing": "Final turn with the call to action"
+      },
+      "empty": {
+        "storeys": "No storeys found in this model",
+        "systems": "No classifiable systems",
+        "issues": "No findings — run validation first",
+        "tour": "No tour yet — record or generate one"
+      },
+      "emptyGeneric": "Nothing to show for this model",
+      "shots": "{{n}} shots",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "maxStoreys": "Max. storeys",
+      "maxSystems": "Max. systems",
+      "maxIssues": "Max. findings",
+      "isolate": "Show storeys and systems alone",
+      "isolateHint": "Hides the rest of the model during those shots. Off: highlighted in context.",
+      "multi": "Several models",
+      "multiHint": {
+        "combined": "One clip showing the whole federation.",
+        "sequence": "Each model on its own, then all together.",
+        "separate": "One video per model, exported and downloaded one after another."
+      },
+      "multiMode": {
+        "combined": "Combined",
+        "sequence": "One by one",
+        "separate": "One per model"
+      },
+      "length": "Length · {{seconds}} s",
+      "captions": "Captions",
+      "captionsOn": "Show captions",
+      "titlePlaceholder": "Title — {name} is the model name",
+      "titleLabel": "Title",
+      "showStats": "Element and storey count",
+      "showScore": "Health Score",
+      "showScoreHint": "Only shown when it is 70 or more.",
+      "labelShots": "Label each shot",
+      "ctaPlaceholder": "Closing line (optional)",
+      "cta": "Closing line",
+      "fadeIn": "Fade in from black",
+      "fadeOut": "Fade out to black",
+      "deleteTemplate": "Delete template",
+      "save": "Save as template",
+      "generateBatch": "Generate {{n}} videos"
+    }
   }
 }

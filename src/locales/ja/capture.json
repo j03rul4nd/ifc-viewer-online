@@ -201,7 +201,8 @@
       "topDown": "真上から",
       "dollyIn": "プッシュイン",
       "flyby": "フライバイ",
-      "focus": "フォーカス"
+      "focus": "フォーカス",
+      "path": "パス"
     },
     "platforms": {
       "reel": "Instagram リール",
@@ -273,6 +274,114 @@
     "shortcuts": "スペース 再生 · S 分割 · Del 削除 · D 複製 · T テキスト · Ctrl+Z 元に戻す",
     "safeZone": "セーフゾーンを表示",
     "safeZoneHint": "各アプリが独自のボタンやキャプションを表示する領域。",
-    "duration": "{{seconds}} 秒"
+    "duration": "{{seconds}} 秒",
+    "director": {
+      "title": "プレゼンテーション・ディレクター",
+      "hint": "モデルそのものから完成したプレゼンを作成：階、システム、指摘事項、ツアーを形式に合わせて構図し、音楽のビートでカット。",
+      "template": "テンプレート",
+      "builtIn": "テンプレート",
+      "mine": "マイテンプレート",
+      "generate": "プレゼンを生成",
+      "customize": "テンプレートをカスタマイズ",
+      "analysing": "モデルを読み込み中…",
+      "renderingBatch": "モデル {{clip}}/{{clips}} · ショット {{shot}}/{{shots}}",
+      "exportingBatch": "動画 {{clip}}/{{clips}} を書き出し中",
+      "systems": {
+        "structure": "構造",
+        "envelope": "外皮",
+        "mep": "設備",
+        "interiors": "内装"
+      },
+      "statsStoreys": "{{elements}} 要素 · {{storeys}} 階",
+      "stats": "{{elements}} 要素",
+      "score": "Health Score {{score}}/100",
+      "systemCaption": "{{label}} · {{count}} 要素",
+      "issueCaption": "{{label}} · {{count}}",
+      "tourStop": "ストップ {{i}}",
+      "together": "全体",
+      "batchDone": "{{n}} 本の動画をダウンロードしました",
+      "saved": "テンプレートを保存しました",
+      "recipes": {
+        "meeting-demo": "会議用デモ",
+        "client-walkthrough": "クライアント向けウォークスルー",
+        "coordination-review": "調整レビュー",
+        "linkedin-teaser": "LinkedIn ティーザー",
+        "reel": "Instagram リール",
+        "tiktok": "TikTok"
+      },
+      "pace": {
+        "calm": "ゆったり",
+        "normal": "標準",
+        "fast": "速い"
+      },
+      "paceLabel": "テンポ",
+      "name": "名前",
+      "sections": "セクション",
+      "sectionsHint": "この順番で。モデルに該当する内容がある場合のみ表示されます。",
+      "section": {
+        "hero": "オープニング",
+        "orbit": "オービット",
+        "aerial": "空撮",
+        "storeys": "階ごと",
+        "systems": "建物のシステム",
+        "issues": "検証の指摘事項",
+        "tour": "記録したツアー",
+        "detail": "ディテール",
+        "closing": "エンディング"
+      },
+      "sectionHint": {
+        "hero": "タイトルとともにモデル全体へ引く",
+        "orbit": "モデルを一周",
+        "aerial": "平面図からパースへ傾ける",
+        "storeys": "各階を単独で",
+        "systems": "構造・外皮・設備",
+        "issues": "重大な指摘事項をハイライト",
+        "tour": "ツアーの各ストップを飛行",
+        "detail": "選択した要素に寄る",
+        "closing": "CTA を添えた最後の一周"
+      },
+      "empty": {
+        "storeys": "このモデルには階がありません",
+        "systems": "分類できるシステムがありません",
+        "issues": "指摘事項なし — 先に検証を実行してください",
+        "tour": "ツアーがまだありません — 記録または生成してください"
+      },
+      "emptyGeneric": "このモデルで表示できるものはありません",
+      "shots": "{{n}} ショット",
+      "moveUp": "上へ",
+      "moveDown": "下へ",
+      "maxStoreys": "最大階数",
+      "maxSystems": "最大システム数",
+      "maxIssues": "最大指摘数",
+      "isolate": "階とシステムを単独表示",
+      "isolateHint": "これらのショットでは他の部分を非表示にします。オフ：文脈の中でハイライト。",
+      "multi": "複数モデル",
+      "multiHint": {
+        "combined": "統合モデル全体を 1 本のクリップに。",
+        "sequence": "各モデルを順に、最後に全体を。",
+        "separate": "モデルごとに 1 本、順番に書き出してダウンロード。"
+      },
+      "multiMode": {
+        "combined": "まとめて",
+        "sequence": "1 つずつ",
+        "separate": "モデルごと"
+      },
+      "length": "長さ · {{seconds}} 秒",
+      "captions": "テキスト",
+      "captionsOn": "テキストを表示",
+      "titlePlaceholder": "タイトル（{name} はモデル名）",
+      "titleLabel": "タイトル",
+      "showStats": "要素数と階数",
+      "showScore": "Health Score",
+      "showScoreHint": "70 以上の場合のみ表示されます。",
+      "labelShots": "各ショットにラベル",
+      "ctaPlaceholder": "締めの一文（任意）",
+      "cta": "締めの一文",
+      "fadeIn": "黒からフェードイン",
+      "fadeOut": "黒へフェードアウト",
+      "deleteTemplate": "テンプレートを削除",
+      "save": "テンプレートとして保存",
+      "generateBatch": "{{n}} 本の動画を生成"
+    }
   }
 }

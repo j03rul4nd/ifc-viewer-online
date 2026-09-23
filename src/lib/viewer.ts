@@ -436,6 +436,11 @@ export interface ViewerAPI {
    */
   getElementsBox(ids: number[], modelId?: string): Promise<{ min: Vec3Like; max: Vec3Like } | null>
   /**
+   * The model's storeys, straight from its spatial structure (no validation
+   * run needed): each with its name and every element contained under it.
+   */
+  getStoreys(modelId?: string): Promise<Array<{ expressId: number; name: string; elementIds: number[] }>>
+  /**
    * Swap the scene backdrop (solid colour or vertical gradient) and the derived
    * fog / grid colours. Purely visual: no geometry, camera or material state is
    * touched, and the change lands in screenshots and replay clips because it is
@@ -2695,6 +2700,41 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         }
       } catch {
         return null
+      }
+    },
+
+    async getStoreys(modelId?: string) {
+      const model = (modelId ? modelObjects.get(modelId) : null) ?? currentModel
+      if (!model) return []
+      try {
+        type Node = { category: string | null; localId: number | null; children?: Node[] }
+        const root = await model.getSpatialStructure() as Node
+        const storeys: Array<{ expressId: number; elementIds: number[] }> = []
+        const collect = (n: Node, out: Set<number>) => {
+          // Grouping nodes (category set, no id) and spatial children both hold elements below.
+          if (n.localId !== null && n.category && !/^IFC(SPACE|ZONE)$/i.test(n.category)) out.add(n.localId)
+          for (const c of n.children ?? []) collect(c, out)
+        }
+        const walk = (n: Node) => {
+          if (n.localId !== null && n.category?.toUpperCase() === 'IFCBUILDINGSTOREY') {
+            const ids = new Set<number>()
+            for (const c of n.children ?? []) collect(c, ids)
+            storeys.push({ expressId: n.localId, elementIds: [...ids] })
+            return
+          }
+          for (const c of n.children ?? []) walk(c)
+        }
+        walk(root)
+        if (storeys.length === 0) return []
+        const data = await model.getItemsData(storeys.map((s) => s.expressId), { attributesDefault: false, attributes: ['Name', 'LongName'] })
+        return storeys.map((s, i) => {
+          const d = data[i] as Record<string, { value?: unknown } | undefined> | undefined
+          const name = String(d?.Name?.value ?? d?.LongName?.value ?? '') || `#${s.expressId}`
+          return { ...s, name }
+        })
+      } catch (e) {
+        console.warn('[Viewer] getStoreys failed:', e)
+        return []
       }
     },
 

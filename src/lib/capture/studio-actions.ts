@@ -147,61 +147,6 @@ export async function addFocusShot(label: string, durationSec = 4, signal?: Abor
   }
 }
 
-// ── Auto clip ──────────────────────────────────────────────────────────────────
-
-export interface AutoClipLabels {
-  rendering: (i: number, n: number) => string
-  shot: (type: ShotType) => string
-}
-
-/**
- * Plan, render every shot, and assemble a finished project for `platform`:
- * shots on the beat, the platform's transition, captions from the model's
- * facts, the matching music bed and a fade out. Replaces the current project
- * (undoable).
- */
-export async function autoClip(platform: Platform, lang: string, labels: AutoClipLabels, signal?: AbortSignal): Promise<void> {
-  const viewer = linkedViewer()
-  const bounds = viewer?.getModelBounds()
-  if (!viewer || !bounds) throw new Error('Open a model first — shots are rendered from the 3D scene')
-  const s = useClipStudioStore.getState()
-  s.setPreset(platform)
-  const spec = PLATFORM_SPECS[platform]
-  const plan = planAutoEdit(platform, bounds, currentModelFacts(), lang)
-
-  const media = new Map(s.media)
-  let project: EditProject = createProject()
-  try {
-    for (let i = 0; i < plan.shots.length; i++) {
-      const shot = plan.shots[i]
-      const label = labels.rendering(i + 1, plan.shots.length)
-      s.setJob({ label, progress: i / plan.shots.length })
-      const blob = await renderShot(viewer, shot, {
-        width: spec.width, height: spec.height, fps: spec.fps, signal,
-        onProgress: (f) => s.setJob({ label, progress: (i + f) / plan.shots.length }),
-      })
-      const source: MediaSource = {
-        id: makeId('src'), kind: 'shot', label: labels.shot(shot.type),
-        durationSec: shot.durationSec, width: spec.width, height: spec.height,
-      }
-      media.set(source.id, { kind: 'video', blob })
-      project = addSource(project, source)
-    }
-  } finally {
-    s.setJob(null)
-  }
-
-  project = setAllTransitions(project, spec.transition, spec.transitionSec)
-  const total = projectDuration(project)
-  project = {
-    ...project,
-    texts: plan.texts.map((t) => createTextOverlay({ text: t.text, startSec: t.startSec, endSec: t.endSec, style: t.style, anchor: t.anchor, anim: 'pop' }, total)),
-    audio: { kind: 'builtin', trackId: spec.bed, fileName: null, volume: 0.7, fadeSec: 0.6, offsetSec: 0 },
-    outro: { type: 'black', sec: 0.5 },
-  }
-  s.replaceProject(project, media)
-}
-
 export function rhythmFor(project: EditProject) {
   if (project.audio.kind === 'builtin' && project.audio.trackId && project.audio.trackId in BED_RHYTHM) {
     return BED_RHYTHM[project.audio.trackId as keyof typeof BED_RHYTHM]

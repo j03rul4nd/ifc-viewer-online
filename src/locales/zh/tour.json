@@ -10,7 +10,9 @@
     "isolate": "隔离高亮构件",
     "affected_other": "{{count}} 个受影响构件",
     "howToFix": "修复方法",
-    "goToStep": "跳到第 {{n}} 步"
+    "goToStep": "跳到第 {{n}} 步",
+    "autoplay": "自动播放",
+    "video": "转为视频"
   },
   "recorder": {
     "title": "引导式导览",

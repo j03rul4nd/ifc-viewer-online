@@ -201,7 +201,8 @@
       "topDown": "Zenital",
       "dollyIn": "Apropament",
       "flyby": "Passada",
-      "focus": "Enfocament"
+      "focus": "Enfocament",
+      "path": "Trajectòria"
     },
     "platforms": {
       "reel": "Reel d’Instagram",
@@ -273,6 +274,114 @@
     "shortcuts": "Espai reprodueix · S talla · Supr elimina · D duplica · T text · Ctrl+Z desfés",
     "safeZone": "Mostra zones segures",
     "safeZoneHint": "On cada app dibuixa els seus propis botons i textos.",
-    "duration": "{{seconds}} s"
+    "duration": "{{seconds}} s",
+    "director": {
+      "title": "Director de presentacions",
+      "hint": "Una presentació acabada a partir del mateix model: plantes, sistemes, incidències i el teu tour, enquadrats per al format i tallats al ritme de la música.",
+      "template": "Plantilla",
+      "builtIn": "Plantilles",
+      "mine": "Les meves plantilles",
+      "generate": "Genera la presentació",
+      "customize": "Personalitza la plantilla",
+      "analysing": "Llegint el model…",
+      "renderingBatch": "Model {{clip}}/{{clips}} · presa {{shot}} de {{shots}}",
+      "exportingBatch": "Exportant el vídeo {{clip}} de {{clips}}",
+      "systems": {
+        "structure": "Estructura",
+        "envelope": "Envolupant",
+        "mep": "Instal·lacions",
+        "interiors": "Interiors"
+      },
+      "statsStoreys": "{{elements}} elements · {{storeys}} plantes",
+      "stats": "{{elements}} elements",
+      "score": "Health Score {{score}}/100",
+      "systemCaption": "{{label}} · {{count}} elements",
+      "issueCaption": "{{label}} · {{count}}",
+      "tourStop": "Parada {{i}}",
+      "together": "Tot el conjunt",
+      "batchDone": "{{n}} vídeos baixats",
+      "saved": "Plantilla desada",
+      "recipes": {
+        "meeting-demo": "Demo per a reunió",
+        "client-walkthrough": "Recorregut per al client",
+        "coordination-review": "Revisió de coordinació",
+        "linkedin-teaser": "Teaser per a LinkedIn",
+        "reel": "Reel d’Instagram",
+        "tiktok": "TikTok"
+      },
+      "pace": {
+        "calm": "Pausat",
+        "normal": "Normal",
+        "fast": "Ràpid"
+      },
+      "paceLabel": "Ritme",
+      "name": "Nom",
+      "sections": "Seccions",
+      "sectionsHint": "En aquest ordre. Cadascuna només apareix si el model té alguna cosa a mostrar.",
+      "section": {
+        "hero": "Revelació inicial",
+        "orbit": "Òrbita",
+        "aerial": "Vista aèria",
+        "storeys": "Planta a planta",
+        "systems": "Sistemes de l’edifici",
+        "issues": "Incidències de validació",
+        "tour": "Tour gravat",
+        "detail": "Detall",
+        "closing": "Tancament"
+      },
+      "sectionHint": {
+        "hero": "Allunya la càmera fins al model sencer, amb el títol",
+        "orbit": "Una volta al voltant del model",
+        "aerial": "Vista en planta que s’inclina a perspectiva",
+        "storeys": "Cada planta per separat",
+        "systems": "Estructura, envolupant, instal·lacions",
+        "issues": "Les pitjors incidències, ressaltades",
+        "tour": "Vola per les parades del tour",
+        "detail": "Apropament a l’element seleccionat",
+        "closing": "Última volta amb la crida a l’acció"
+      },
+      "empty": {
+        "storeys": "Aquest model no té plantes",
+        "systems": "No hi ha sistemes classificables",
+        "issues": "Sense incidències: valida el model primer",
+        "tour": "Encara no hi ha tour: grava’l o genera’l"
+      },
+      "emptyGeneric": "Res a mostrar en aquest model",
+      "shots": "{{n}} preses",
+      "moveUp": "Puja",
+      "moveDown": "Baixa",
+      "maxStoreys": "Màx. plantes",
+      "maxSystems": "Màx. sistemes",
+      "maxIssues": "Màx. incidències",
+      "isolate": "Mostra plantes i sistemes aïllats",
+      "isolateHint": "Amaga la resta del model durant aquestes preses. Desactivat: ressaltats en context.",
+      "multi": "Diversos models",
+      "multiHint": {
+        "combined": "Un clip amb tota la federació.",
+        "sequence": "Cada model per separat i després tots junts.",
+        "separate": "Un vídeo per model, exportats i baixats un rere l’altre."
+      },
+      "multiMode": {
+        "combined": "Conjunt",
+        "sequence": "Un a un",
+        "separate": "Un per model"
+      },
+      "length": "Durada · {{seconds}} s",
+      "captions": "Textos",
+      "captionsOn": "Mostra els textos",
+      "titlePlaceholder": "Títol ({name} és el nom del model)",
+      "titleLabel": "Títol",
+      "showStats": "Nombre d’elements i plantes",
+      "showScore": "Health Score",
+      "showScoreHint": "Només es mostra si és 70 o més.",
+      "labelShots": "Retola cada presa",
+      "ctaPlaceholder": "Frase de tancament (opcional)",
+      "cta": "Frase de tancament",
+      "fadeIn": "Entrada des de negre",
+      "fadeOut": "Sortida a negre",
+      "deleteTemplate": "Elimina la plantilla",
+      "save": "Desa com a plantilla",
+      "generateBatch": "Genera {{n}} vídeos"
+    }
   }
 }

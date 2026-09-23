@@ -251,6 +251,12 @@ export interface ShotRenderOptions {
   fps: number
   onProgress?: (fraction: number) => void
   signal?: AbortSignal
+  /**
+   * Frames rendered and thrown away before recording, at the first pose — lets
+   * a scene change made just before (isolating, hiding a model, a highlight)
+   * finish streaming in so the first recorded frame is already complete.
+   */
+  warmupFrames?: number
 }
 
 /**
@@ -265,6 +271,11 @@ export async function renderShot(viewer: ShotRenderer, shot: ShotSpec, o: ShotRe
   const times = shotFrameTimes(shot, o.fps)
   await viewer.beginShotRender(writer.canvas.width, writer.canvas.height)
   try {
+    for (let w = 0; w < (o.warmupFrames ?? 0); w++) {
+      if (o.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+      await viewer.renderShotFrame(cameraAt(shot, 0))
+      await new Promise((r) => setTimeout(r, 16))
+    }
     for (let i = 0; i < times.length; i++) {
       if (o.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
       const gl = await viewer.renderShotFrame(cameraAt(shot, times[i]))

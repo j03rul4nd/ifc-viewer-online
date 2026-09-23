@@ -22,15 +22,15 @@ import {
 } from '../../lib/capture/project'
 import { createTextOverlay } from '../../lib/capture/timeline'
 import { SHOT_TYPES, type ShotType } from '../../lib/capture/shots'
-import { PLATFORMS, type Platform } from '../../lib/capture/auto-edit'
 import { hasWebCodecs } from '../../lib/capture/media-codec'
 import { formatBytes } from '../../lib/capture/replay-buffer-core'
 import {
-  addCaptureBlob, addFiles, addFocusShot, addShot, autoClip, canRenderShots, exportStudio,
+  addCaptureBlob, addFiles, addFocusShot, addShot, canRenderShots, exportStudio,
 } from '../../lib/capture/studio-actions'
 import { usePreviewEngine } from './usePreviewEngine'
 import { StudioTimeline } from './StudioTimeline'
 import { StudioInspector } from './StudioInspector'
+import { StudioDirector, runRecipe, useDirectorLabels } from './StudioDirector'
 import './studio.css'
 
 const FRAME = 1 / 30
@@ -86,10 +86,14 @@ export default function ClipStudio() {
     }
   }, [engine, t])
 
-  const onAutoClip = (platform: Platform) => run((signal) => autoClip(platform, i18n.language, {
-    rendering: (i, n) => t('studio.rendering', { i, n }),
-    shot: (type) => t(`studio.shots.${type}`),
-  }, signal))
+  // A presentation requested from outside (the tour player's "Video" button).
+  const pendingRecipe = useClipStudioStore((s) => s.pendingRecipe)
+  const directorLabels = useDirectorLabels()
+  useEffect(() => {
+    if (!open || !pendingRecipe || job) return
+    const recipe = useClipStudioStore.getState().takePendingRecipe()
+    if (recipe) void run((signal) => runRecipe(recipe, i18n.language, directorLabels, t as never, signal))
+  }, [open, pendingRecipe, job, run, i18n.language, directorLabels, t])
 
   const onAddShot = (type: ShotType) => run((signal) => addShot(type, t(`studio.shots.${type}`), 4, signal))
 
@@ -158,24 +162,13 @@ export default function ClipStudio() {
 
   const mediaBin = (
     <div className="flex flex-col gap-5 p-4">
-      <section className="flex flex-col gap-2">
-        <h3 className="studio-h">{t('studio.autoClip')}</h3>
-        <p className="text-[11.5px] leading-relaxed text-[var(--text-faint)]">{t('studio.autoClipHint')}</p>
-        <div className="grid grid-cols-1 gap-1.5">
-          {PLATFORMS.map((p) => (
-            <button key={p} type="button" className="studio-btn studio-btn--accent justify-between" disabled={!shotsOk || !!job} onClick={() => onAutoClip(p)}>
-              <span>{t(`studio.platforms.${p}`)}</span>
-              <Icons.Sparkles size={14} aria-hidden="true" />
-            </button>
-          ))}
-        </div>
-        {project.clips.length > 0 && <p className="text-[11px] text-[var(--text-faint)]">{t('studio.autoClipReplace')}</p>}
-      </section>
+      <StudioDirector run={run} busy={!!job} canRender={shotsOk} />
+      {project.clips.length > 0 && <p className="-mt-3 text-[11px] text-[var(--text-faint)]">{t('studio.autoClipReplace')}</p>}
 
       <section className="flex flex-col gap-2">
         <h3 className="studio-h">{t('studio.addShot')}</h3>
         <div className="grid grid-cols-2 gap-1.5">
-          {SHOT_TYPES.filter((s) => s !== 'focus').map((s) => (
+          {SHOT_TYPES.filter((s): s is Exclude<ShotType, 'focus' | 'path'> => s !== 'focus').map((s) => (
             <button key={s} type="button" className="studio-chip justify-center" disabled={!shotsOk || !!job} onClick={() => onAddShot(s)}>
               {t(`studio.shots.${s}`)}
             </button>
