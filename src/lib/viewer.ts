@@ -450,6 +450,24 @@ export interface ViewerAPI {
    */
   getCanvas(): HTMLCanvasElement | null
   /**
+   * Shot rendering (Clip Studio): draw camera moves frame by frame at an
+   * OUTPUT resolution — 1080×1920 for a Reel — instead of recording the screen.
+   *
+   *   begin(w, h)  resizes only the drawing buffer (the canvas keeps its CSS
+   *                size, so nothing reflows), matches the camera's aspect to
+   *                the output, and pauses the renderer's own loop
+   *   frame(pose)  places the camera, waits for Fragments to stream in what
+   *                that pose can see, renders, and returns the canvas — read it
+   *                (drawImage / new VideoFrame) before the next await
+   *   end()        restores size, camera, projection and the render loop
+   *
+   * Always pair begin/end (try/finally): between them the on-screen view is
+   * frozen at the output aspect.
+   */
+  beginShotRender(width: number, height: number): Promise<void>
+  renderShotFrame(pose: { position: Vec3Like; target: Vec3Like; fovDeg: number }): Promise<HTMLCanvasElement>
+  endShotRender(): Promise<void>
+  /**
    * Lazily load and return the GIS map subsystem (separate chunk, created once
    * per viewer, disposed with it). Nothing GIS-related loads until first call.
    */
@@ -998,6 +1016,20 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   }
 
   const fragmentsManager = components.get(OBC.FragmentsManager)
+
+  /** Everything beginShotRender changed, so endShotRender can put it back. */
+  let shotSession: {
+    width: number
+    height: number
+    pixelRatio: number
+    size: THREE.Vector2
+    aspect: number
+    fov: number
+    position: THREE.Vector3
+    target: THREE.Vector3
+    wasOrtho: boolean
+    rendererEnabled: boolean
+  } | null = null
   const ifcLoader        = components.get(OBC.IfcLoader)
 
   // Raw wheel and pointer events can arrive faster than the display refresh.
@@ -2698,6 +2730,93 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       } catch {
         return null
       }
+    },
+
+    // ─── Shot rendering (Clip Studio) ─────────────────────────────────────────
+
+    async beginShotRender(width: number, height: number): Promise<void> {
+      if (shotSession) return
+      const controls = world.camera.controls
+      const pos = new THREE.Vector3()
+      const tgt = new THREE.Vector3()
+      controls.getPosition(pos)
+      controls.getTarget(tgt)
+      const size = wr.getSize(new THREE.Vector2())
+      const wasOrtho = world.camera.projection.current !== 'Perspective'
+      // Shots are perspective moves; an ortho view would ignore the fov.
+      if (wasOrtho) await world.camera.projection.set('Perspective')
+      const cam = world.camera.threePersp
+      shotSession = {
+        width: Math.max(2, Math.round(width)),
+        height: Math.max(2, Math.round(height)),
+        pixelRatio: wr.getPixelRatio(),
+        size,
+        aspect: cam.aspect,
+        fov: cam.fov,
+        position: pos,
+        target: tgt,
+        wasOrtho,
+        rendererEnabled: world.renderer!.enabled,
+      }
+      // Stop the renderer's own loop from painting between our frames.
+      world.renderer!.enabled = false
+      wr.setPixelRatio(1)
+      // updateStyle=false: only the drawing buffer changes size, not the CSS box,
+      // so the layout and the renderer's ResizeObserver never notice.
+      wr.setSize(shotSession.width, shotSession.height, false)
+      cam.aspect = shotSession.width / shotSession.height
+      cam.updateProjectionMatrix()
+    },
+
+    async renderShotFrame(pose): Promise<HTMLCanvasElement> {
+      const s = shotSession
+      if (!s) throw new Error('renderShotFrame called outside beginShotRender/endShotRender')
+      const cam = world.camera.threePersp
+      // A window resize during a long render would reset the buffer — re-assert it.
+      const now = wr.getSize(new THREE.Vector2())
+      if (now.x !== s.width || now.y !== s.height) wr.setSize(s.width, s.height, false)
+      if (cam.fov !== pose.fovDeg || cam.aspect !== s.width / s.height) {
+        cam.fov = pose.fovDeg
+        cam.aspect = s.width / s.height
+        cam.updateProjectionMatrix()
+      }
+      const controls = world.camera.controls
+      await controls.setLookAt(
+        pose.position.x, pose.position.y, pose.position.z,
+        pose.target.x, pose.target.y, pose.target.z,
+        false,
+      )
+      controls.update(0)
+      cam.updateMatrixWorld()
+      // Fragments decides what to stream (and at what detail) from the camera.
+      // Waiting for it is what makes an instant camera jump render complete
+      // geometry instead of whatever the previous pose had loaded.
+      try { await fragmentsManager.core.update(true) } catch { /* render what is loaded */ }
+      wr.render(world.scene.three, cam)
+      return wr.domElement
+    },
+
+    async endShotRender(): Promise<void> {
+      const s = shotSession
+      if (!s) return
+      shotSession = null
+      const cam = world.camera.threePersp
+      wr.setPixelRatio(s.pixelRatio)
+      wr.setSize(s.size.x, s.size.y, false)
+      cam.fov = s.fov
+      cam.aspect = s.aspect
+      cam.updateProjectionMatrix()
+      await world.camera.controls.setLookAt(
+        s.position.x, s.position.y, s.position.z,
+        s.target.x, s.target.y, s.target.z,
+        false,
+      )
+      if (s.wasOrtho) await world.camera.projection.set('Orthographic')
+      world.renderer!.enabled = s.rendererEnabled
+      // Let the renderer re-derive everything from its container (CSS size,
+      // postproduction targets) now that the buffer is back.
+      try { world.renderer!.resize(undefined) } catch { /* next resize event fixes it */ }
+      void fragmentsManager.core.update(true)
     },
 
     // ─── Postproduction ───────────────────────────────────────────────────────

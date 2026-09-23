@@ -74,6 +74,25 @@ export function composeFrame(o: ComposeFrameOptions): void {
   ctx.restore()
 }
 
+/**
+ * Paint the text cards visible at `t` onto a frame of `width`×`height`. The
+ * multi-clip compositor reuses this, so a caption looks identical in both
+ * editors and in every export.
+ */
+export function drawTextCardsAt(
+  ctx: CanvasRenderingContext2D,
+  texts: readonly TextOverlay[],
+  t: number,
+  width: number,
+  height: number,
+): void {
+  const layout = { width, height } as FrameLayout
+  for (const overlay of visibleTextsAt({ texts } as unknown as EditTimeline, t)) {
+    const state = textRenderStateAt(overlay, t)
+    if (state && state.alpha > 0.001) drawTextOverlay(ctx, overlay, state, layout)
+  }
+}
+
 // ── Backdrop ───────────────────────────────────────────────────────────────────
 
 function drawBackdrop(
