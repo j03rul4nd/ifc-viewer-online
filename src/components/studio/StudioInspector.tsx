@@ -279,6 +279,15 @@ function ProjectPanel() {
         )}
       </Section>
 
+      {project.sfx && project.sfx.cues.length > 0 && (
+        <Section title={t('studio.sfxTitle')}>
+          <span className="text-[11.5px] text-[var(--text-dim)]">{t('studio.sfxCount', { n: project.sfx.cues.length })}</span>
+          <Slider label={t('studio.sfxVolume')} value={project.sfx.volume} min={0} max={1} step={0.01} format={(v) => `${Math.round(v * 100)}%`}
+            onChange={(v) => edit((pr) => (pr.sfx ? { ...pr, sfx: { ...pr.sfx, volume: v } } : pr))} />
+          <button type="button" className="studio-link" onClick={() => edit((pr) => ({ ...pr, sfx: undefined }))}>{t('studio.sfxRemove')}</button>
+        </Section>
+      )}
+
       <Section title={t('studio.project')}>
         <span className="text-[11.5px] text-[var(--text-dim)]">{t('studio.intro')}</span>
         <Chips value={project.intro.type} options={fades} label={fadeLabel} onChange={(v) => edit((pr) => ({ ...pr, intro: { ...pr.intro, type: v } }))} />

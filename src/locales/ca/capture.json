@@ -430,8 +430,23 @@
       "styleHint": {
         "classic": "Moviments suaus, fosos i títols tranquils.",
         "launch": "Rampes de velocitat, desenfocament de moviment, cop de zoom a cada tall, títols d’impacte, números que compten i rètols paraula a paraula."
+      },
+      "sfxLabel": "Efectes de so",
+      "sfxLevels": {
+        "off": "Sense efectes",
+        "subtle": "Subtils",
+        "full": "Complets"
+      },
+      "sfxHint": {
+        "off": "Sense efectes: només música.",
+        "subtle": "Un escombrat suau a cada tall.",
+        "full": "Escombrats, cops als títols, pujada de tensió cap al final, retruc quan l’edifici es completa i clics en entrar les paraules."
       }
     },
-    "remaining": "Queden uns {{seconds}} s"
+    "remaining": "Queden uns {{seconds}} s",
+    "sfxVolume": "Volum dels efectes",
+    "sfxRemove": "Treu els efectes de so",
+    "sfxCount": "{{n}} efectes",
+    "sfxTitle": "Efectes de so"
   }
 }

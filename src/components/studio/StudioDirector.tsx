@@ -16,7 +16,7 @@ import { useModelStore } from '../../stores/modelStore'
 import { CLIP_TRANSITIONS } from '../../lib/capture/project'
 import { BUILTIN_BED_IDS } from '../../lib/capture/audio-library'
 import {
-  CAPTION_LOOK_IDS, EDIT_STYLES, MULTI_MODEL_MODES, OUTPUT_FORMATS, PACES, SECTION_KINDS, builtInRecipe, DEFAULT_RECIPE_ID,
+  CAPTION_LOOK_IDS, EDIT_STYLES, MULTI_MODEL_MODES, OUTPUT_FORMATS, SFX_LEVELS, PACES, SECTION_KINDS, builtInRecipe, DEFAULT_RECIPE_ID,
   type Recipe, type SectionKind,
 } from '../../lib/director/recipe'
 import { allRecipes, deleteRecipe, lastRecipeId, rememberRecipe, saveRecipe } from '../../lib/director/storage'
@@ -334,6 +334,9 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
             {draft.music !== 'none' && (
               <Toggle label={t('studio.snapToBeat')} checked={draft.onBeat} onChange={(v) => set({ onBeat: v })} />
             )}
+          </Field>
+          <Field label={t('studio.director.sfxLabel')} hint={t(`studio.director.sfxHint.${draft.sfx ?? 'off'}`)}>
+            <Chips value={draft.sfx ?? 'off'} options={SFX_LEVELS} label={(v) => t(`studio.director.sfxLevels.${v}`)} onChange={(v) => set({ sfx: v })} />
           </Field>
 
           <Field label={t('studio.director.captions')}>

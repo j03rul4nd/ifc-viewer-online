@@ -21,6 +21,7 @@ import {
 import type { AudioSelection } from './timeline'
 import { scheduleAudioEnvelope, resolveAudioOffset } from './audio-library'
 import { cameraAt, shotFrameTimes, type ShotSpec } from './shots'
+import { scheduleSfx, type ProjectSfx } from './sfx'
 
 // ── Capability ─────────────────────────────────────────────────────────────────
 
@@ -217,23 +218,42 @@ export function defaultBitrate(width: number, height: number, fps: number): numb
  * volume, fades and offset — offline, faster than real time, sample-exact.
  */
 export async function mixBed(
-  bed: AudioBuffer,
+  bed: AudioBuffer | null,
   selection: AudioSelection,
   durationSec: number,
   sampleRate = 48_000,
+  sfx?: ProjectSfx,
 ): Promise<AudioBuffer> {
   const length = Math.max(1, Math.ceil(durationSec * sampleRate))
   const ctx = new OfflineAudioContext(2, length, sampleRate)
+  // Music and effects share one bus through a limiter: a hit on top of a loud
+  // bar is squeezed, never clipped.
+  const bus = masterBus(ctx)
+  // Effects sit on top of the music, on the same sample clock.
+  await scheduleSfx(ctx, bus, sfx, 0, 0)
+  if (!bed) return ctx.startRendering()
   const src = ctx.createBufferSource()
   src.buffer = bed
   src.loop = bed.duration < durationSec + resolveAudioOffset(selection, bed.duration)
   const gain = ctx.createGain()
   gain.gain.value = 0
   src.connect(gain)
-  gain.connect(ctx.destination)
+  gain.connect(bus)
   scheduleAudioEnvelope(gain.gain, selection, durationSec, 0)
   src.start(0, resolveAudioOffset(selection, bed.duration))
   return ctx.startRendering()
+}
+
+/** A fast, hard limiter in front of the output — the mix never clips. */
+export function masterBus(ctx: BaseAudioContext): AudioNode {
+  const limiter = ctx.createDynamicsCompressor()
+  limiter.threshold.value = -4
+  limiter.knee.value = 2
+  limiter.ratio.value = 16
+  limiter.attack.value = 0.002
+  limiter.release.value = 0.2
+  limiter.connect(ctx.destination)
+  return limiter
 }
 
 // ── Rendering a 3D shot ────────────────────────────────────────────────────────

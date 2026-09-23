@@ -13,6 +13,7 @@
 // A clip maps one onto the other with in/out points and a speed.
 
 import type { AudioSelection, TextOverlay, TextAnimId } from './timeline'
+import type { ProjectSfx } from './sfx'
 import { DEFAULT_AUDIO } from './timeline'
 
 // ── Sources ────────────────────────────────────────────────────────────────────
@@ -131,6 +132,8 @@ export interface EditProject {
   outro: Fade
   /** Finishing effects applied to the picture (not to text). */
   fx?: ProjectFx
+  /** Sound effects on the timeline (whooshes, hits, risers…). */
+  sfx?: ProjectSfx
 }
 
 export interface ProjectFx {

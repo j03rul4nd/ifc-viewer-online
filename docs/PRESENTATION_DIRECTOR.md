@@ -66,3 +66,10 @@ From the 2026 launch-video grammar (Raycast/Framer/Vercel-style launches, short-
 - **Beat punch**: `project.fx.punch` — the picture (not the text) jumps in 5.5 % on every cut and each bar's downbeat, decays in ~0.14 s (`punchScale`).
 - **Kinetic text**: `slam` titles/CTA, `count` numbers (format kept, denominators untouched), `words` labels; the hook title lands at 0.12 s.
 - Templates: *Launch 2026 · vertical* (Reel, 16 s, whip) and *Launch 2026 · 16:9* (24 s, zoom).
+
+## Sound effects (`recipe.sfx`: off · subtle · full)
+
+- `src/lib/capture/sfx.ts`: whoosh, hit, riser, boom, tick — synthesised with OfflineAudioContext (seeded noise, cached per sample rate), no audio files, no licences.
+- `project.sfx = { cues, volume }`; `cueAt(kind, at)` places a cue so its audible moment (whoosh peak, riser end) lands on `at`.
+- Director (`planSfx`): whoosh on every cut; *full* adds a hit on slammed titles/CTA, ticks as words land, a riser into the last shot, a boom when the building finishes rising.
+- Export mixes music + effects through a limiter (`masterBus`), preview plays them live from the playhead. Verified: peaks land on the cues, no clipping with music.

@@ -430,8 +430,23 @@
       "styleHint": {
         "classic": "Eased camera moves, fades, calm titles.",
         "launch": "Speed-ramped moves, motion blur, a punch on every cut, slammed titles, counting numbers, word-by-word labels."
+      },
+      "sfxLabel": "Sound effects",
+      "sfxLevels": {
+        "off": "Off",
+        "subtle": "Subtle",
+        "full": "Full"
+      },
+      "sfxHint": {
+        "off": "No effects — music only.",
+        "subtle": "A soft whoosh on every cut.",
+        "full": "Whooshes, hits on titles, a riser into the ending, a boom when the building completes, ticks as words land."
       }
     },
-    "remaining": "About {{seconds}} s left"
+    "remaining": "About {{seconds}} s left",
+    "sfxVolume": "Effects volume",
+    "sfxRemove": "Remove sound effects",
+    "sfxCount": "{{n}} effects",
+    "sfxTitle": "Sound effects"
   }
 }

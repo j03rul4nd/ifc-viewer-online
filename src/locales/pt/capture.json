@@ -430,8 +430,23 @@
       "styleHint": {
         "classic": "Movimentos suaves, transições e títulos calmos.",
         "launch": "Rampas de velocidade, desfoque de movimento, zoom de impacto em cada corte, títulos fortes, números que contam e legendas palavra a palavra."
+      },
+      "sfxLabel": "Efeitos sonoros",
+      "sfxLevels": {
+        "off": "Sem efeitos",
+        "subtle": "Subtis",
+        "full": "Completos"
+      },
+      "sfxHint": {
+        "off": "Sem efeitos — só música.",
+        "subtle": "Um whoosh suave em cada corte.",
+        "full": "Whooshes, impactos nos títulos, subida de tensão até ao fim, boom quando o edifício fica completo, cliques a cada palavra."
       }
     },
-    "remaining": "Faltam cerca de {{seconds}} s"
+    "remaining": "Faltam cerca de {{seconds}} s",
+    "sfxVolume": "Volume dos efeitos",
+    "sfxRemove": "Remover efeitos sonoros",
+    "sfxCount": "{{n}} efeitos",
+    "sfxTitle": "Efeitos sonoros"
   }
 }

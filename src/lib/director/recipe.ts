@@ -82,8 +82,14 @@ export interface RecipeCaptions {
 export type EditStyle = 'classic' | 'launch'
 export const EDIT_STYLES: readonly EditStyle[] = ['classic', 'launch']
 
+/** How much sound design the director adds on top of the music. */
+export type SfxLevel = 'off' | 'subtle' | 'full'
+export const SFX_LEVELS: readonly SfxLevel[] = ['off', 'subtle', 'full']
+
 export interface Recipe {
   id: string
+  /** Sound effects: off, whooshes only, or the full launch set. Missing = off. */
+  sfx?: SfxLevel
   /** Cutting grammar; missing = classic. */
   style?: EditStyle
   name: string
@@ -164,14 +170,14 @@ export const BUILT_IN_RECIPES: readonly Recipe[] = [
     watermark: true,
   },
   {
-    ...BASE, id: 'reel', name: 'Reel',
+    ...BASE, id: 'reel', name: 'Reel', sfx: 'subtle',
     format: 'reel', targetSec: 15, pace: 'fast', transition: 'zoom', transitionSec: 0.3, music: 'upbeat',
     sections: ['hero', 'buildup', 'systems', 'closing'], maxSystems: 2,
     captions: { ...CAPTIONS, look: 'bold', labelShots: false, cta: 'ifcvieweronline.eu' },
     watermark: true,
   },
   {
-    ...BASE, id: 'tiktok', name: 'TikTok',
+    ...BASE, id: 'tiktok', name: 'TikTok', sfx: 'subtle',
     format: 'tiktok', targetSec: 15, pace: 'fast', transition: 'whip', transitionSec: 0.25, music: 'upbeat',
     sections: ['hero', 'storeys', 'orbit', 'closing'], maxStoreys: 3,
     captions: { ...CAPTIONS, look: 'bold', labelShots: true, cta: 'ifcvieweronline.eu' },
@@ -198,14 +204,14 @@ export const BUILT_IN_RECIPES: readonly Recipe[] = [
     multiModel: 'groups',
   },
   {
-    ...BASE, id: 'launch-2026', name: 'Launch 2026 (vertical)', style: 'launch',
+    ...BASE, id: 'launch-2026', name: 'Launch 2026 (vertical)', style: 'launch', sfx: 'full',
     format: 'reel', targetSec: 16, pace: 'fast', transition: 'whip', transitionSec: 0.25, music: 'upbeat',
     sections: ['buildup', 'orbit', 'systems', 'aerial', 'closing'], maxSystems: 2,
     captions: { ...CAPTIONS, look: 'bold', labelShots: true, cta: 'ifcvieweronline.eu' },
     watermark: true,
   },
   {
-    ...BASE, id: 'launch-2026-wide', name: 'Launch 2026 (16:9)', style: 'launch',
+    ...BASE, id: 'launch-2026-wide', name: 'Launch 2026 (16:9)', style: 'launch', sfx: 'full',
     format: 'wide', targetSec: 24, pace: 'normal', transition: 'zoom', transitionSec: 0.3, music: 'cinematic',
     sections: ['hero', 'buildup', 'systems', 'storeys', 'closing'], maxSystems: 3, maxStoreys: 3,
     captions: { ...CAPTIONS, look: 'bold', labelShots: true, cta: 'ifcvieweronline.eu' },
@@ -297,6 +303,7 @@ export function sanitizeRecipe(input: unknown, fallbackId = 'custom'): Recipe {
     },
     multiModel: oneOf(o.multiModel, MULTI_MODEL_MODES, BASE.multiModel),
     style: oneOf(o.style, EDIT_STYLES, 'classic'),
+    sfx: oneOf(o.sfx, SFX_LEVELS, 'off'),
     fadeIn: bool(o.fadeIn, true),
     fadeOut: bool(o.fadeOut, true),
     watermark: bool(o.watermark, false),
