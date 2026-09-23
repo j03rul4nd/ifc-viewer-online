@@ -109,7 +109,13 @@
     "deletePlane": "Delete plane",
     "errStart": "Could not start clip-plane mode",
     "errDelete": "Failed to delete plane",
-    "errClear": "Failed to clear planes"
+    "errClear": "Failed to clear planes",
+    "box": "Section box",
+    "boxToSelection": "Box around selection",
+    "boxRemove": "Remove section box",
+    "boxHint": "Select one or more elements to box them in.",
+    "levelCut": "Level cut",
+    "levelHeight": "Cut at {{m}} m"
   },
   "floorPlan": {
     "title": "Floor Plans",

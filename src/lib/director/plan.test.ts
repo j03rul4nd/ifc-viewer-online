@@ -123,6 +123,34 @@ describe('planPresentation', () => {
     expect(flat.shots.some((s) => s.section === 'buildup')).toBe(false)
   })
 
+  it('by project: each group of discipline models alone, then everything', () => {
+    const models = [model('a', { group: 'Hospital' }), model('b', { group: 'Hospital' }), model('c', { group: 'School' })]
+    const [clip] = planPresentation(recipe('meeting-demo', { multiModel: 'groups', sections: ['hero', 'closing'] }), facts(models), strings, null)
+    expect(clip.shots.map((s) => s.scene.visibleModels?.join(',') ?? 'all')).toEqual(['a,b', 'c', 'all', 'all'])
+    expect(clip.shots[0].caption).toBe('Hospital')
+    expect(clip.shots[1].caption).toBe('School')
+  })
+
+  it('review details and the fixes summary', () => {
+    const detailed = subject('issue', 0, 1, { severity: 'error', detail: ['IfcWall · W1', 'How to fix: name it'] })
+    const m = model('m1', { issues: [detailed], fixed: [subject('fixed', 0, 1, { count: 5 })], score: 90, scoreBefore: 70 })
+    const s2: PlanStrings = { ...strings, fixedSummary: (n, b, a) => `${n} fixed ${b}→${a}` }
+    const [clip] = planPresentation(recipe('fixes-report', { onBeat: false }), facts([m]), s2, null)
+    expect(clip.texts.some((t) => t.text === 'IfcWall · W1\nHow to fix: name it')).toBe(true)
+    expect(clip.texts.some((t) => t.text === '5 fixed 70→90')).toBe(true)
+    const [plain] = planPresentation(recipe('meeting-demo', { sections: ['hero', 'issues'] }), facts([m]), s2, null)
+    expect(plain.texts.some((t) => t.text.includes('How to fix'))).toBe(false)
+  })
+
+  it('films a BCF topic from its own camera', () => {
+    const pose: CameraPose = { position: { x: 0, y: 5, z: 20 }, target: { x: 0, y: 5, z: 0 }, fovDeg: 50 }
+    const m = model('m1', { bcf: [subject('Clash at grid B', 0, 1, { pose })] })
+    const [clip] = planPresentation(recipe('team-issues', { multiModel: 'combined' }), facts([m]), strings, null)
+    const shot = clip.shots.find((s) => s.section === 'bcf')!
+    expect(shot.shot.type).toBe('path')
+    expect(shot.shot.keyframes?.[1]).toEqual(pose)
+  })
+
   it('never prints a score below 70', () => {
     const [low] = planPresentation(recipe('meeting-demo'), facts([model('m1', { score: 55 })]), strings, null)
     expect(low.texts.some((t) => t.text.includes('/100'))).toBe(false)

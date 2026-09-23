@@ -49,6 +49,16 @@ export function useDirectorLabels(): GenerateLabels {
       issue: (label, count) => t('studio.director.issueCaption', { label, count }),
       tourStop: (i) => t('studio.director.tourStop', { i }),
       together: t('studio.director.together'),
+      ids: (label, count) => t('studio.director.idsCaption', { label, count }),
+      fixed: (label, count) => t('studio.director.fixedCaption', { label, count }),
+      fixedSummary: (resolved, before, after) => before !== null && after !== null
+        ? t('studio.director.fixedSummaryScore', { resolved, before, after })
+        : t('studio.director.fixedSummary', { resolved }),
+    },
+    review: {
+      more: (n) => t('studio.director.more', { n }),
+      howToFix: t('studio.director.howToFix'),
+      unassigned: t('studio.director.unassigned'),
     },
   }), [t])
 }
@@ -159,7 +169,7 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
   // What the loaded models offer each section — so a toggle never silently does nothing.
   useEffect(() => {
     let live = true
-    void inspectScene(i18n.language, (k) => t(`studio.director.systems.${k}`)).then((f) => { if (live) setFacts(f) })
+    void inspectScene(i18n.language, (k) => t(`studio.director.systems.${k}`), labels.review).then((f) => { if (live) setFacts(f) })
     return () => { live = false }
   }, [i18n.language, t])
 
@@ -172,6 +182,9 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
       case 'systems': return { n: Math.min(draft.maxSystems, sum((m) => m.systems.length)) }
       case 'issues': return { n: Math.min(draft.maxIssues, sum((m) => m.issues.length)) }
       case 'tour': return { n: tourStops }
+      case 'ids': return { n: Math.min(draft.maxIssues, sum((m) => m.ids?.length ?? 0)) }
+      case 'bcf': return { n: Math.min(draft.maxIssues, sum((m) => m.bcf?.length ?? 0)) }
+      case 'fixed': return { n: Math.min(draft.maxIssues, sum((m) => m.fixed?.length ?? 0)) }
       default: return { n: 1 }
     }
   }
@@ -328,6 +341,7 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
                 <input className="studio-input" value={draft.captions.title} maxLength={80} placeholder={t('studio.director.titlePlaceholder')} onChange={(e) => setCap({ title: e.target.value })} aria-label={t('studio.director.titleLabel')} />
                 <Toggle label={t('studio.director.showStats')} checked={draft.captions.showStats} onChange={(v) => setCap({ showStats: v })} />
                 <Toggle label={t('studio.director.showScore')} hint={t('studio.director.showScoreHint')} checked={draft.captions.showScore} onChange={(v) => setCap({ showScore: v })} />
+                <Toggle label={t('studio.director.showDetails')} hint={t('studio.director.showDetailsHint')} checked={!!draft.captions.details} onChange={(v) => setCap({ details: v })} />
                 <Toggle label={t('studio.director.labelShots')} checked={draft.captions.labelShots} onChange={(v) => setCap({ labelShots: v })} />
                 <input className="studio-input" value={draft.captions.cta} maxLength={80} placeholder={t('studio.director.ctaPlaceholder')} onChange={(e) => setCap({ cta: e.target.value })} aria-label={t('studio.director.cta')} />
               </div>

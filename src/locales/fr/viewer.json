@@ -97,7 +97,13 @@
     "deletePlane": "Supprimer le plan",
     "errStart": "Impossible de démarrer le mode plan de coupe",
     "errDelete": "Échec de la suppression du plan",
-    "errClear": "Échec de la suppression des plans"
+    "errClear": "Échec de la suppression des plans",
+    "box": "Boîte de coupe",
+    "boxToSelection": "Boîte autour de la sélection",
+    "boxRemove": "Retirer la boîte de coupe",
+    "boxHint": "Sélectionnez un ou plusieurs éléments pour les isoler dans une boîte.",
+    "levelCut": "Coupe horizontale",
+    "levelHeight": "Coupe à {{m}} m"
   },
   "floorPlan": {
     "title": "Plans d'étage",

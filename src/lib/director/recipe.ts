@@ -30,11 +30,14 @@ export type SectionKind =
   | 'buildup'   // one continuous turn while the storeys appear bottom to top
   | 'systems'   // structure / envelope / MEP / interiors, each isolated
   | 'issues'    // the worst validation findings, highlighted
+  | 'ids'       // failed IDS specifications, the failing elements highlighted
+  | 'bcf'       // BCF topics, from their own viewpoints
+  | 'fixed'     // what was fixed since the previous validation run
   | 'tour'      // fly through the stops of the recorded tour
   | 'detail'    // push in on the selected element (or the model's heart)
   | 'closing'   // slow final turn with the call to action
 
-export const SECTION_KINDS: readonly SectionKind[] = ['hero', 'orbit', 'aerial', 'buildup', 'storeys', 'systems', 'issues', 'tour', 'detail', 'closing']
+export const SECTION_KINDS: readonly SectionKind[] = ['hero', 'orbit', 'aerial', 'buildup', 'storeys', 'systems', 'issues', 'ids', 'bcf', 'fixed', 'tour', 'detail', 'closing']
 
 export type Pace = 'calm' | 'normal' | 'fast'
 export const PACES: readonly Pace[] = ['calm', 'normal', 'fast']
@@ -44,8 +47,9 @@ export type MultiModelMode =
   | 'combined'  // one clip, the federation as a whole
   | 'sequence'  // one clip, each model in turn (others hidden), then all together
   | 'separate'  // one clip PER model — a batch
+  | 'groups'    // one clip, each project (its discipline models together) in turn, then all
 
-export const MULTI_MODEL_MODES: readonly MultiModelMode[] = ['combined', 'sequence', 'separate']
+export const MULTI_MODEL_MODES: readonly MultiModelMode[] = ['combined', 'groups', 'sequence', 'separate']
 
 export type CaptionLook = 'clean' | 'bold' | 'minimal'
 export const CAPTION_LOOK_IDS: readonly CaptionLook[] = ['clean', 'bold', 'minimal']
@@ -64,6 +68,8 @@ export interface RecipeCaptions {
   labelShots: boolean
   /** Closing line; empty = none. */
   cta: string
+  /** Review videos: affected elements, how to fix, BCF status under each finding. */
+  details?: boolean
 }
 
 export interface Recipe {
@@ -159,6 +165,26 @@ export const BUILT_IN_RECIPES: readonly Recipe[] = [
     captions: { ...CAPTIONS, look: 'bold', labelShots: true, cta: 'ifcvieweronline.eu' },
     watermark: true,
   },
+  {
+    ...BASE, id: 'team-issues', name: 'Issues for the team',
+    format: 'wide', targetSec: 75, pace: 'calm', music: 'none', onBeat: false, transition: 'dipBlack', transitionSec: 0.4,
+    sections: ['hero', 'issues', 'ids', 'bcf'], maxIssues: 8, isolateSubjects: false,
+    captions: { ...CAPTIONS, details: true, showScore: true },
+    multiModel: 'groups',
+  },
+  {
+    ...BASE, id: 'fixes-report', name: 'What was fixed',
+    format: 'wide', targetSec: 45, pace: 'calm', music: 'calm', transition: 'crossfade',
+    sections: ['hero', 'fixed', 'issues', 'closing'], maxIssues: 6, isolateSubjects: false,
+    captions: { ...CAPTIONS, details: true, showScore: true },
+    multiModel: 'groups',
+  },
+  {
+    ...BASE, id: 'project-portfolio', name: 'Projects together',
+    format: 'wide', targetSec: 50, pace: 'calm', music: 'cinematic',
+    sections: ['hero', 'buildup', 'systems', 'closing'], maxSystems: 2,
+    multiModel: 'groups',
+  },
 ]
 
 export const DEFAULT_RECIPE_ID = 'meeting-demo'
@@ -237,6 +263,7 @@ export function sanitizeRecipe(input: unknown, fallbackId = 'custom'): Recipe {
     captions: {
       enabled: bool(c.enabled, true),
       look: oneOf(c.look, CAPTION_LOOK_IDS, 'clean'),
+      details: bool(c.details, false),
       title: str(c.title, 80),
       showStats: bool(c.showStats, true),
       showScore: bool(c.showScore, true),

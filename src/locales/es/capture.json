@@ -307,7 +307,10 @@
         "coordination-review": "Revisión de coordinación",
         "linkedin-teaser": "Teaser para LinkedIn",
         "reel": "Reel de Instagram",
-        "tiktok": "TikTok"
+        "tiktok": "TikTok",
+        "team-issues": "Incidencias para el equipo",
+        "fixes-report": "Lo que se ha arreglado",
+        "project-portfolio": "Proyectos en conjunto"
       },
       "pace": {
         "calm": "Pausado",
@@ -328,7 +331,10 @@
         "tour": "Tour grabado",
         "detail": "Detalle",
         "closing": "Cierre",
-        "buildup": "El edificio crece"
+        "buildup": "El edificio crece",
+        "ids": "Fallos IDS",
+        "bcf": "Temas BCF",
+        "fixed": "Lo que se ha arreglado"
       },
       "sectionHint": {
         "hero": "Aleja la cámara hasta el modelo completo, con el título",
@@ -340,14 +346,20 @@
         "tour": "Vuela por las paradas del tour",
         "detail": "Acercamiento al elemento seleccionado",
         "closing": "Última vuelta con la llamada a la acción",
-        "buildup": "Una vuelta mientras las plantas aparecen de abajo arriba"
+        "buildup": "Una vuelta mientras las plantas aparecen de abajo arriba",
+        "ids": "Cada especificación IDS fallida, con los elementos resaltados",
+        "bcf": "Cada tema BCF desde su propio punto de vista",
+        "fixed": "Incidencias de la validación anterior que ya no están"
       },
       "empty": {
         "storeys": "Este modelo no tiene plantas",
         "systems": "No hay sistemas clasificables",
         "issues": "Sin incidencias: valida el modelo primero",
         "tour": "Aún no hay tour: grábalo o genéralo",
-        "buildup": "Necesita al menos 3 plantas"
+        "buildup": "Necesita al menos 3 plantas",
+        "ids": "No hay especificaciones IDS fallidas: pasa antes una comprobación IDS",
+        "bcf": "No hay temas BCF con punto de vista o componentes",
+        "fixed": "Nada que comparar: vuelve a validar después de arreglar"
       },
       "emptyGeneric": "Nada que mostrar en este modelo",
       "shots": "{{n}} tomas",
@@ -362,12 +374,14 @@
       "multiHint": {
         "combined": "Un clip con toda la federación.",
         "sequence": "Cada modelo por separado y después todos juntos.",
-        "separate": "Un vídeo por modelo, exportados y descargados uno tras otro."
+        "separate": "Un vídeo por modelo, exportados y descargados uno tras otro.",
+        "groups": "Cada proyecto (sus modelos de disciplina juntos) por separado y después todos juntos."
       },
       "multiMode": {
         "combined": "Conjunto",
         "sequence": "Uno a uno",
-        "separate": "Uno por modelo"
+        "separate": "Uno por modelo",
+        "groups": "Por proyecto"
       },
       "length": "Duración · {{seconds}} s",
       "captions": "Textos",
@@ -393,7 +407,16 @@
         "bold": "Impactante",
         "minimal": "Mínimo"
       },
-      "reused": "Reutilizadas {{n}} tomas ya renderizadas"
+      "reused": "Reutilizadas {{n}} tomas ya renderizadas",
+      "idsCaption": "IDS · {{label}} · {{count}} fallan",
+      "fixedCaption": "Arreglado · {{label}} · {{count}}",
+      "fixedSummary": "{{resolved}} incidencias arregladas",
+      "fixedSummaryScore": "{{resolved}} incidencias arregladas · Health Score {{before}} → {{after}}",
+      "more": "+{{n}} más",
+      "howToFix": "Cómo arreglarlo",
+      "unassigned": "Sin asignar",
+      "showDetails": "Mostrar detalles",
+      "showDetailsHint": "Elementos afectados, cómo arreglarlo y estado BCF: para vídeos de revisión."
     },
     "remaining": "Quedan unos {{seconds}} s"
   }

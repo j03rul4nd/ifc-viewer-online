@@ -97,7 +97,13 @@
     "deletePlane": "Elimina el pla",
     "errStart": "No s'ha pogut iniciar el mode de pla de tall",
     "errDelete": "No s'ha pogut eliminar el pla",
-    "errClear": "No s'han pogut eliminar els plans"
+    "errClear": "No s'han pogut eliminar els plans",
+    "box": "Caixa de retall",
+    "boxToSelection": "Retalla a la selecció",
+    "boxRemove": "Treu la caixa de retall",
+    "boxHint": "Selecciona un o diversos elements per aïllar-los en una caixa.",
+    "levelCut": "Tall horitzontal",
+    "levelHeight": "Tall a {{m}} m"
   },
   "floorPlan": {
     "title": "Plantes",

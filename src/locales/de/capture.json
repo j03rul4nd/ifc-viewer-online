@@ -307,7 +307,10 @@
         "coordination-review": "Koordinationsprüfung",
         "linkedin-teaser": "LinkedIn-Teaser",
         "reel": "Instagram-Reel",
-        "tiktok": "TikTok"
+        "tiktok": "TikTok",
+        "team-issues": "Befunde fürs Team",
+        "fixes-report": "Was behoben wurde",
+        "project-portfolio": "Projekte zusammen"
       },
       "pace": {
         "calm": "Ruhig",
@@ -328,7 +331,10 @@
         "tour": "Aufgezeichnete Tour",
         "detail": "Detail",
         "closing": "Abschluss",
-        "buildup": "Das Gebäude wächst"
+        "buildup": "Das Gebäude wächst",
+        "ids": "IDS-Fehler",
+        "bcf": "BCF-Themen",
+        "fixed": "Was behoben wurde"
       },
       "sectionHint": {
         "hero": "Rückzug auf das ganze Modell, mit Titel",
@@ -340,14 +346,20 @@
         "tour": "Flug durch die Tour-Stationen",
         "detail": "Heranfahren an das ausgewählte Element",
         "closing": "Letzte Runde mit Handlungsaufruf",
-        "buildup": "Eine Runde, während die Geschosse von unten nach oben erscheinen"
+        "buildup": "Eine Runde, während die Geschosse von unten nach oben erscheinen",
+        "ids": "Jede nicht erfüllte IDS-Spezifikation, fehlerhafte Elemente hervorgehoben",
+        "bcf": "Jedes BCF-Thema aus seinem eigenen Blickpunkt",
+        "fixed": "Befunde der vorigen Prüfung, die jetzt weg sind"
       },
       "empty": {
         "storeys": "Keine Geschosse in diesem Modell",
         "systems": "Keine zuordenbaren Systeme",
         "issues": "Keine Befunde – zuerst prüfen",
         "tour": "Noch keine Tour – aufzeichnen oder erzeugen",
-        "buildup": "Braucht mindestens 3 Geschosse"
+        "buildup": "Braucht mindestens 3 Geschosse",
+        "ids": "Keine fehlgeschlagenen IDS-Spezifikationen – zuerst eine IDS-Prüfung ausführen",
+        "bcf": "Keine BCF-Themen mit Blickpunkt oder Bauteilen",
+        "fixed": "Nichts zu vergleichen – nach dem Beheben erneut prüfen"
       },
       "emptyGeneric": "Für dieses Modell nichts zu zeigen",
       "shots": "{{n}} Aufnahmen",
@@ -362,12 +374,14 @@
       "multiHint": {
         "combined": "Ein Clip mit dem gesamten Verbund.",
         "sequence": "Jedes Modell einzeln, dann alle zusammen.",
-        "separate": "Ein Video pro Modell, nacheinander exportiert und heruntergeladen."
+        "separate": "Ein Video pro Modell, nacheinander exportiert und heruntergeladen.",
+        "groups": "Jedes Projekt (seine Fachmodelle zusammen) einzeln, dann alle Projekte zusammen."
       },
       "multiMode": {
         "combined": "Gesamt",
         "sequence": "Einzeln nacheinander",
-        "separate": "Eines pro Modell"
+        "separate": "Eines pro Modell",
+        "groups": "Nach Projekt"
       },
       "length": "Länge · {{seconds}} s",
       "captions": "Texte",
@@ -393,7 +407,16 @@
         "bold": "Kräftig",
         "minimal": "Minimal"
       },
-      "reused": "{{n}} bereits gerenderte Aufnahmen wiederverwendet"
+      "reused": "{{n}} bereits gerenderte Aufnahmen wiederverwendet",
+      "idsCaption": "IDS · {{label}} · {{count}} fehlerhaft",
+      "fixedCaption": "Behoben · {{label}} · {{count}}",
+      "fixedSummary": "{{resolved}} Befunde behoben",
+      "fixedSummaryScore": "{{resolved}} Befunde behoben · Health Score {{before}} → {{after}}",
+      "more": "+{{n}} weitere",
+      "howToFix": "So beheben",
+      "unassigned": "Nicht zugewiesen",
+      "showDetails": "Details zeigen",
+      "showDetailsHint": "Betroffene Elemente, Lösung, BCF-Status – für Prüfvideos."
     },
     "remaining": "Noch etwa {{seconds}} s"
   }

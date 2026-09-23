@@ -45,3 +45,15 @@ ordinary, editable timeline — or, for a batch, one MP4 per model.
 Torre Poblenou (18 storeys read without validating), Poblenou A/M/S federation in sequence mode,
 tour → video from the player, MP4 export. Batch download (`separate`) is covered by the planner
 tests but was not run end to end in the browser pane.
+
+## Review videos (2026-09-24)
+
+- **Sections** `ids` (failed IDS specs), `bcf` (topics from their own viewpoint; components by GlobalId, or the model the camera looks at), `fixed` (previous validation run vs current, elements found again by GlobalId).
+- **Details** (`captions.details`): affected elements, how to fix (remediation corpus), BCF status/priority/assignee, shown top-left under each finding. The fixes summary ("12 fixed · Health Score 71 → 86") opens the first fix shot.
+- **Groups** (`multiModel: 'groups'`): models grouped by IfcBuilding name (discipline files share it), else project name without its " - discipline" tail. Each group alone, then everything.
+- Built-ins: *Issues for the team*, *What was fixed*, *Projects together*.
+
+## Sections and measurements
+
+- `viewer.setSectionBox(box, margin)` — six hidden managed clip planes (not listed as user planes); `viewer.setLevelCut(y)` — one horizontal plane, moved live by the section panel's slider.
+- Measurement panel: size of the selection (axis-aligned box), totals, copy as tab-separated table.

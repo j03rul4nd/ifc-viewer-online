@@ -3,6 +3,7 @@ import { ViewportPanel } from './ViewportPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useUIStore } from '../stores/uiStore'
+import { useEditorStore } from '../stores/editorStore'
 import { createLogger } from '../lib/logger'
 import type { ViewerAPI } from '../lib/viewer'
 import { trackFeatureUsed } from '../lib/analytics'
@@ -29,6 +30,11 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
   const [planes,   setPlanes]   = useState<PlaneEntry[]>([])
   const [adding,   setAdding]   = useState(false)
   const [opError,  setOpError]  = useState<string | null>(null)
+  const hasSelection = useEditorStore((s) => s.selection.length > 0)
+  const [boxOn, setBoxOn] = useState(false)
+  // Level cut: height as a fraction of the loaded models' height (null = off).
+  const [level, setLevel] = useState<number | null>(null)
+  const [range, setRange] = useState<{ min: number; max: number } | null>(null)
   const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null)
   const addingRef  = useRef(adding)
   useEffect(() => { addingRef.current = adding }, [adding])
@@ -120,11 +126,76 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
     setOpError(null)
     try {
       viewerApiRef.current?.clearClipPlanes()
+      setBoxOn(false)
+      setLevel(null)
       setTimeout(syncPlanes, 50)
     } catch (err) {
       setOpError(t('section.errClear'))
       log.warn('clearClipPlanes:', err)
     }
+  }
+
+  // ── Section box: keep only what surrounds the selection ────────────────────
+  const handleBoxToSelection = async (): Promise<void> => {
+    const viewer = viewerApiRef.current
+    const sel = useEditorStore.getState().selection
+    if (!viewer || sel.length === 0) return
+    setOpError(null)
+    try {
+      // One box around every selected element, per model, merged.
+      const byModel = new Map<string | undefined, number[]>()
+      for (const s of sel) byModel.set(s.modelId, [...(byModel.get(s.modelId) ?? []), s.expressId])
+      let box: { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } } | null = null
+      for (const [modelId, ids] of byModel) {
+        const b = await viewer.getElementsBox(ids, modelId)
+        if (!b) continue
+        box = box ? {
+          min: { x: Math.min(box.min.x, b.min.x), y: Math.min(box.min.y, b.min.y), z: Math.min(box.min.z, b.min.z) },
+          max: { x: Math.max(box.max.x, b.max.x), y: Math.max(box.max.y, b.max.y), z: Math.max(box.max.z, b.max.z) },
+        } : b
+      }
+      if (!box) return
+      viewer.setSectionBox(box, 1)
+      setBoxOn(true)
+      trackFeatureUsed({ feature: 'section_plane' })
+    } catch (err) {
+      setOpError(t('section.errStart'))
+      log.warn('setSectionBox:', err)
+    }
+  }
+
+  const handleBoxOff = (): void => {
+    viewerApiRef.current?.setSectionBox(null)
+    setBoxOn(false)
+  }
+
+  // ── Level cut: a live plan at any height ───────────────────────────────────
+  const modelsRange = useCallback((): { min: number; max: number } | null => {
+    const viewer = viewerApiRef.current
+    if (!viewer) return null
+    let lo = Infinity, hi = -Infinity
+    for (const id of viewer.getLoadedModelIds()) {
+      const b = viewer.getModelBounds(id)
+      if (!b) continue
+      lo = Math.min(lo, b.center.y - b.size.y / 2)
+      hi = Math.max(hi, b.center.y + b.size.y / 2)
+    }
+    return Number.isFinite(lo) && hi > lo ? { min: lo, max: hi } : null
+  }, [viewerApiRef])
+
+  const applyLevel = (fraction: number | null, r = range): void => {
+    setLevel(fraction)
+    if (fraction === null || !r) { viewerApiRef.current?.setLevelCut(null); return }
+    viewerApiRef.current?.setLevelCut(r.min + (r.max - r.min) * fraction)
+  }
+
+  const toggleLevel = (): void => {
+    if (level !== null) { applyLevel(null); return }
+    const r = modelsRange()
+    if (!r) return
+    setRange(r)
+    applyLevel(0.5, r)
+    trackFeatureUsed({ feature: 'section_plane' })
   }
 
   const handleToggle = (id: string, enabled: boolean): void => {
@@ -145,7 +216,7 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
       open={clipPanelOpen}
       label={t('section.title')}
       mobile="dock"
-      widthPx={188}
+      widthPx={224}
       anchor="center"
       centerShift="translateY(-30%)"
     >
@@ -187,6 +258,41 @@ export default function SectionPanel({ viewerApiRef }: SectionPanelProps) {
                   </svg>
                   {t('section.addPlane')}
                 </button>
+              )}
+            </div>
+
+            {/* Section box + level cut */}
+            <div className="border-t border-[var(--border)] p-1.5 flex flex-col gap-1">
+              <div className="px-1 pt-0.5 text-[9.5px] font-mono uppercase tracking-[0.1em] text-[var(--text-faint)]">{t('section.box')}</div>
+              {boxOn ? (
+                <button onClick={handleBoxOff} className="w-full rounded-[8px] px-2.5 py-1.5 text-left text-[12px] font-medium bg-[var(--accent)] text-white">
+                  {t('section.boxRemove')}
+                </button>
+              ) : (
+                <button onClick={() => void handleBoxToSelection()} disabled={!hasSelection}
+                  title={hasSelection ? undefined : t('section.boxHint')}
+                  className="w-full rounded-[8px] px-2.5 py-1.5 text-left text-[12px] font-medium text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] disabled:opacity-40 disabled:cursor-not-allowed">
+                  {t('section.boxToSelection')}
+                </button>
+              )}
+              {!hasSelection && !boxOn && <div className="px-1 text-[10px] leading-snug text-[var(--text-faint)]">{t('section.boxHint')}</div>}
+
+              <div className="mt-1 flex items-center justify-between px-1">
+                <span className="text-[9.5px] font-mono uppercase tracking-[0.1em] text-[var(--text-faint)]">{t('section.levelCut')}</span>
+                <button onClick={toggleLevel} role="switch" aria-checked={level !== null} aria-label={t('section.levelCut')}
+                  className={`h-4 w-7 rounded-full transition-colors ${level !== null ? 'bg-[var(--accent)]' : 'bg-[var(--surface-3,var(--border))]'}`}>
+                  <span className={`block h-3 w-3 rounded-full bg-white transition-transform ${level !== null ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
+              {level !== null && range && (
+                <div className="px-1">
+                  <input type="range" min={0} max={1} step={0.005} value={level}
+                    onChange={(e) => applyLevel(Number(e.target.value))}
+                    aria-label={t('section.levelCut')} className="w-full accent-[var(--accent)]" />
+                  <div className="text-[10.5px] text-[var(--text-dim)] tabular-nums">
+                    {t('section.levelHeight', { m: (range.min + (range.max - range.min) * level).toFixed(2) })}
+                  </div>
+                </div>
               )}
             </div>
 

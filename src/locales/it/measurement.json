@@ -19,7 +19,11 @@
     "escToCancel": "Esc per annullare",
     "finishAreaHint": "Chiudi il poligono e crea la misura dell'area (Invio)",
     "deleteLastHint": "Elimina l'ultima misura (Canc)",
-    "clearAllHint": "Cancella tutte le misure"
+    "clearAllHint": "Cancella tutte le misure",
+    "copy": "Copia come tabella",
+    "copyHint": "Separato da tabulazioni — si incolla in Excel o Sheets",
+    "copied": "Misure copiate",
+    "copyFailed": "Impossibile copiare"
   },
   "units": {
     "km": "{{value}} km",
@@ -27,5 +31,22 @@
     "cm": "{{value}} cm",
     "ha": "{{value}} ha",
     "m2": "{{value}} m²"
+  },
+  "table": {
+    "type": "Tipo",
+    "value": "Valore",
+    "unit": "Unità"
+  },
+  "totals": {
+    "length": "Lunghezza totale",
+    "area": "Area totale"
+  },
+  "selection": {
+    "title_one": "Elemento selezionato",
+    "title_other": "{{count}} elementi selezionati",
+    "width": "Larghezza",
+    "depth": "Profondità",
+    "height": "Altezza",
+    "note": "Box di ingombro secondo gli assi del modello."
   }
 }

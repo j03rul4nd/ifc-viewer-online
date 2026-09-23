@@ -307,7 +307,10 @@
         "coordination-review": "Revue de coordination",
         "linkedin-teaser": "Teaser LinkedIn",
         "reel": "Reel Instagram",
-        "tiktok": "TikTok"
+        "tiktok": "TikTok",
+        "team-issues": "Anomalies pour l’équipe",
+        "fixes-report": "Ce qui a été corrigé",
+        "project-portfolio": "Projets ensemble"
       },
       "pace": {
         "calm": "Posé",
@@ -328,7 +331,10 @@
         "tour": "Visite enregistrée",
         "detail": "Détail",
         "closing": "Clôture",
-        "buildup": "Le bâtiment s’élève"
+        "buildup": "Le bâtiment s’élève",
+        "ids": "Échecs IDS",
+        "bcf": "Sujets BCF",
+        "fixed": "Ce qui a été corrigé"
       },
       "sectionHint": {
         "hero": "Recul jusqu’à la maquette entière, avec le titre",
@@ -340,14 +346,20 @@
         "tour": "Survol des arrêts de la visite",
         "detail": "Rapprochement sur l’élément sélectionné",
         "closing": "Dernier tour avec l’appel à l’action",
-        "buildup": "Un tour pendant que les niveaux apparaissent de bas en haut"
+        "buildup": "Un tour pendant que les niveaux apparaissent de bas en haut",
+        "ids": "Chaque spécification IDS en échec, éléments fautifs mis en évidence",
+        "bcf": "Chaque sujet BCF depuis son propre point de vue",
+        "fixed": "Anomalies de la validation précédente qui ont disparu"
       },
       "empty": {
         "storeys": "Aucun niveau dans cette maquette",
         "systems": "Aucun système identifiable",
         "issues": "Aucune anomalie — lancez d’abord la validation",
         "tour": "Pas encore de visite — enregistrez-en ou générez-en une",
-        "buildup": "Il faut au moins 3 niveaux"
+        "buildup": "Il faut au moins 3 niveaux",
+        "ids": "Aucune spécification IDS en échec — lancez d’abord un contrôle IDS",
+        "bcf": "Aucun sujet BCF avec point de vue ou composants",
+        "fixed": "Rien à comparer — revalidez après correction"
       },
       "emptyGeneric": "Rien à montrer pour cette maquette",
       "shots": "{{n}} plans",
@@ -362,12 +374,14 @@
       "multiHint": {
         "combined": "Un clip avec toute la fédération.",
         "sequence": "Chaque maquette seule, puis toutes ensemble.",
-        "separate": "Une vidéo par maquette, exportées et téléchargées l’une après l’autre."
+        "separate": "Une vidéo par maquette, exportées et téléchargées l’une après l’autre.",
+        "groups": "Chaque projet (ses maquettes métier ensemble) seul, puis tous les projets ensemble."
       },
       "multiMode": {
         "combined": "Ensemble",
         "sequence": "Une par une",
-        "separate": "Une par maquette"
+        "separate": "Une par maquette",
+        "groups": "Par projet"
       },
       "length": "Durée · {{seconds}} s",
       "captions": "Textes",
@@ -393,7 +407,16 @@
         "bold": "Percutant",
         "minimal": "Minimal"
       },
-      "reused": "{{n}} plans déjà rendus réutilisés"
+      "reused": "{{n}} plans déjà rendus réutilisés",
+      "idsCaption": "IDS · {{label}} · {{count}} en échec",
+      "fixedCaption": "Corrigé · {{label}} · {{count}}",
+      "fixedSummary": "{{resolved}} anomalies corrigées",
+      "fixedSummaryScore": "{{resolved}} anomalies corrigées · Health Score {{before}} → {{after}}",
+      "more": "+{{n}} autres",
+      "howToFix": "Comment corriger",
+      "unassigned": "Non attribué",
+      "showDetails": "Afficher les détails",
+      "showDetailsHint": "Éléments concernés, correction, statut BCF — pour les vidéos de revue."
     },
     "remaining": "Environ {{seconds}} s restantes"
   }

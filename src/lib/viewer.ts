@@ -469,6 +469,8 @@ export interface ViewerAPI {
    * run needed): each with its name and every element contained under it.
    */
   getStoreys(modelId?: string): Promise<Array<{ expressId: number; name: string; elementIds: number[] }>>
+  /** Express ids for IFC GlobalIds in one model (null where the model has no such element). */
+  getIdsByGuids(guids: string[], modelId?: string): Promise<(number | null)[]>
   /** Names of the model's IfcProject and IfcBuilding (null when absent or empty). */
   getProjectNames(modelId?: string): Promise<{ project: string | null; building: string | null }>
   /**
@@ -575,8 +577,20 @@ export interface ViewerAPI {
   clearClipPlanes(): void
   /** Toggle a single clip plane's enabled state. */
   toggleClipPlane(id: string, enabled: boolean): void
-  /** Snapshot of all active clip planes. */
+  /** Snapshot of all active clip planes (the section box and the level cut are not listed). */
   getClipPlanes(): { id: string; enabled: boolean; title: string }[]
+  /**
+   * Section box: six planes that keep only what is inside `box` (plus
+   * `margin` metres on every side). Null removes it.
+   */
+  setSectionBox(box: { min: Vec3Like; max: Vec3Like } | null, margin?: number): void
+  /** Whether a section box is on. */
+  hasSectionBox(): boolean
+  /**
+   * Level cut: one horizontal plane at world height `y` that hides
+   * everything above it — a live plan view. Null removes it.
+   */
+  setLevelCut(y: number | null): void
   /**
    * Register a one-shot callback that fires when the next clip plane is placed
    * and auto-deactivates creation mode. Pass null to cancel without placing.
@@ -1215,6 +1229,31 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // ─── Clipping planes (OBC.Clipper) ────────────────────────────────────────────
   const clipper = components.get(OBC.Clipper)
   clipper.enabled = false
+  // Planes the viewer places itself (section box, level cut): hidden helpers,
+  // never listed in the section panel as user planes.
+  const managedPlanes = new Set<string>()
+  let sectionBoxPlanes: string[] = []
+  let levelCutPlane: string | null = null
+  const addManagedPlane = (normal: THREE.Vector3, point: THREE.Vector3): string | null => {
+    try {
+      const id = clipper.createFromNormalAndCoplanarPoint(world, normal, point)
+      const plane = clipper.list.get(id)
+      if (plane) plane.visible = false
+      managedPlanes.add(id)
+      return id
+    } catch (e) {
+      console.warn('[Viewer] clip plane failed:', e)
+      return null
+    }
+  }
+  const dropManagedPlane = (id: string) => {
+    managedPlanes.delete(id)
+    try {
+      const plane = clipper.list.get(id)
+      plane?.dispose()
+      clipper.list.delete(id)
+    } catch { /* already gone */ }
+  }
   clipper.orthogonalY = true
 
   // One-shot callback invoked when a clip plane is placed (auto-deactivates creation mode)
@@ -2734,6 +2773,16 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
+    async getIdsByGuids(guids: string[], modelId?: string) {
+      const model = (modelId ? modelObjects.get(modelId) : null) ?? currentModel
+      if (!model || guids.length === 0) return guids.map(() => null)
+      try {
+        return await model.getLocalIdsByGuids(guids)
+      } catch {
+        return guids.map(() => null)
+      }
+    },
+
     async getProjectNames(modelId?: string) {
       const none = { project: null, building: null }
       const model = (modelId ? modelObjects.get(modelId) : null) ?? currentModel
@@ -3054,7 +3103,48 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
+    setSectionBox(box, margin = 0.3) {
+      for (const id of sectionBoxPlanes) dropManagedPlane(id)
+      sectionBoxPlanes = []
+      if (!box) { void fragmentsManager.core.update(true); return }
+      const lo = new THREE.Vector3(box.min.x - margin, box.min.y - margin, box.min.z - margin)
+      const hi = new THREE.Vector3(box.max.x + margin, box.max.y + margin, box.max.z + margin)
+      // Normals point INTO the box: each plane keeps the side the box is on.
+      const faces: Array<[THREE.Vector3, THREE.Vector3]> = [
+        [new THREE.Vector3(1, 0, 0), lo], [new THREE.Vector3(-1, 0, 0), hi],
+        [new THREE.Vector3(0, 1, 0), lo], [new THREE.Vector3(0, -1, 0), hi],
+        [new THREE.Vector3(0, 0, 1), lo], [new THREE.Vector3(0, 0, -1), hi],
+      ]
+      for (const [n, p] of faces) {
+        const id = addManagedPlane(n, p)
+        if (id) sectionBoxPlanes.push(id)
+      }
+      void fragmentsManager.core.update(true)
+    },
+
+    hasSectionBox() {
+      return sectionBoxPlanes.length > 0
+    },
+
+    setLevelCut(y) {
+      if (y === null || !Number.isFinite(y)) {
+        if (levelCutPlane) dropManagedPlane(levelCutPlane)
+        levelCutPlane = null
+        void fragmentsManager.core.update(true)
+        return
+      }
+      const normal = new THREE.Vector3(0, -1, 0)
+      const point = new THREE.Vector3(0, y, 0)
+      const existing = levelCutPlane ? clipper.list.get(levelCutPlane) : undefined
+      if (existing) existing.setFromNormalAndCoplanarPoint(normal, point)
+      else levelCutPlane = addManagedPlane(normal, point)
+      void fragmentsManager.core.update(true)
+    },
+
     clearClipPlanes() {
+      sectionBoxPlanes = []
+      levelCutPlane = null
+      managedPlanes.clear()
       try {
         clipper.deleteAll()
       } catch (err) {
@@ -3077,6 +3167,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       try {
         let index = 0
         for (const [id, plane] of clipper.list) {
+          if (managedPlanes.has(id)) continue
           index++
           const enabled = typeof plane?.enabled === 'boolean' ? plane.enabled : true
           const title   = (typeof plane?.title === 'string' && plane.title.trim())
@@ -3092,6 +3183,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     cleanupSectionAndPlans() {
       // Remove all clip planes
+      sectionBoxPlanes = []
+      levelCutPlane = null
+      managedPlanes.clear()
       try { clipper.deleteAll() } catch { /* ok */ }
       // Stop any in-progress clip creation
       try {

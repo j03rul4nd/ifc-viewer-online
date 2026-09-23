@@ -2,7 +2,7 @@
 
 import { linkedViewer } from '../capture/viewer-link'
 import { useClipStudioStore } from '../../stores/clipStudioStore'
-import { gatherSceneFacts } from './facts'
+import { gatherSceneFacts, type ReviewWords } from './facts'
 import { planPresentation, type PlanStrings, type SceneFacts } from './plan'
 import { rhythmForMusic, runDirector, type RunLabels } from './run'
 import type { Recipe } from './recipe'
@@ -12,6 +12,7 @@ export interface GenerateLabels extends RunLabels {
   plan: PlanStrings
   system: (key: SystemKey) => string
   analysing: string
+  review: ReviewWords
 }
 
 export class NothingToPresentError extends Error {
@@ -19,10 +20,10 @@ export class NothingToPresentError extends Error {
 }
 
 /** What the current scene offers each section — shown next to the recipe. */
-export async function inspectScene(lang: string, system: (key: SystemKey) => string): Promise<SceneFacts | null> {
+export async function inspectScene(lang: string, system: (key: SystemKey) => string, review?: ReviewWords): Promise<SceneFacts | null> {
   const viewer = linkedViewer()
   if (!viewer) return null
-  return gatherSceneFacts(viewer, { lang, systemLabel: system })
+  return gatherSceneFacts(viewer, { lang, systemLabel: system, review })
 }
 
 export async function generatePresentation(
@@ -35,7 +36,7 @@ export async function generatePresentation(
   let facts: SceneFacts
   try {
     facts = await gatherSceneFacts(viewer, {
-      lang, systemLabel: labels.system,
+      lang, systemLabel: labels.system, review: labels.review,
       maxStoreys: 40, maxIssues: recipe.maxIssues,
     })
   } finally {

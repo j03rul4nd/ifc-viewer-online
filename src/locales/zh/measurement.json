@@ -19,7 +19,11 @@
     "escToCancel": "按 Esc 取消",
     "finishAreaHint": "闭合多边形并创建面积测量（Enter）",
     "deleteLastHint": "删除最后一次测量（Delete）",
-    "clearAllHint": "清除所有测量"
+    "clearAllHint": "清除所有测量",
+    "copy": "复制为表格",
+    "copyHint": "制表符分隔——可直接粘贴到 Excel 或表格",
+    "copied": "已复制测量值",
+    "copyFailed": "复制失败"
   },
   "units": {
     "km": "{{value}} km",
@@ -27,5 +31,22 @@
     "cm": "{{value}} cm",
     "ha": "{{value}} ha",
     "m2": "{{value}} m²"
+  },
+  "table": {
+    "type": "类型",
+    "value": "数值",
+    "unit": "单位"
+  },
+  "totals": {
+    "length": "总长度",
+    "area": "总面积"
+  },
+  "selection": {
+    "title_one": "所选构件",
+    "title_other": "所选 {{count}} 个构件",
+    "width": "宽",
+    "depth": "深",
+    "height": "高",
+    "note": "沿模型坐标轴的包围盒。"
   }
 }

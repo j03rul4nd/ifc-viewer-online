@@ -307,7 +307,10 @@
         "coordination-review": "Revisió de coordinació",
         "linkedin-teaser": "Teaser per a LinkedIn",
         "reel": "Reel d’Instagram",
-        "tiktok": "TikTok"
+        "tiktok": "TikTok",
+        "team-issues": "Incidències per a l’equip",
+        "fixes-report": "El que s’ha arreglat",
+        "project-portfolio": "Projectes en conjunt"
       },
       "pace": {
         "calm": "Pausat",
@@ -328,7 +331,10 @@
         "tour": "Tour gravat",
         "detail": "Detall",
         "closing": "Tancament",
-        "buildup": "L’edifici creix"
+        "buildup": "L’edifici creix",
+        "ids": "Errors IDS",
+        "bcf": "Temes BCF",
+        "fixed": "El que s’ha arreglat"
       },
       "sectionHint": {
         "hero": "Allunya la càmera fins al model sencer, amb el títol",
@@ -340,14 +346,20 @@
         "tour": "Vola per les parades del tour",
         "detail": "Apropament a l’element seleccionat",
         "closing": "Última volta amb la crida a l’acció",
-        "buildup": "Una volta mentre les plantes apareixen de baix a dalt"
+        "buildup": "Una volta mentre les plantes apareixen de baix a dalt",
+        "ids": "Cada especificació IDS fallida, amb els elements ressaltats",
+        "bcf": "Cada tema BCF des del seu punt de vista",
+        "fixed": "Incidències de la validació anterior que ja no hi són"
       },
       "empty": {
         "storeys": "Aquest model no té plantes",
         "systems": "No hi ha sistemes classificables",
         "issues": "Sense incidències: valida el model primer",
         "tour": "Encara no hi ha tour: grava’l o genera’l",
-        "buildup": "Necessita almenys 3 plantes"
+        "buildup": "Necessita almenys 3 plantes",
+        "ids": "No hi ha especificacions IDS fallides: fes abans una comprovació IDS",
+        "bcf": "No hi ha temes BCF amb punt de vista o components",
+        "fixed": "Res a comparar: torna a validar després d’arreglar"
       },
       "emptyGeneric": "Res a mostrar en aquest model",
       "shots": "{{n}} preses",
@@ -362,12 +374,14 @@
       "multiHint": {
         "combined": "Un clip amb tota la federació.",
         "sequence": "Cada model per separat i després tots junts.",
-        "separate": "Un vídeo per model, exportats i baixats un rere l’altre."
+        "separate": "Un vídeo per model, exportats i baixats un rere l’altre.",
+        "groups": "Cada projecte (els seus models de disciplina junts) per separat i després tots junts."
       },
       "multiMode": {
         "combined": "Conjunt",
         "sequence": "Un a un",
-        "separate": "Un per model"
+        "separate": "Un per model",
+        "groups": "Per projecte"
       },
       "length": "Durada · {{seconds}} s",
       "captions": "Textos",
@@ -393,7 +407,16 @@
         "bold": "Impactant",
         "minimal": "Mínim"
       },
-      "reused": "Reutilitzades {{n}} preses ja renderitzades"
+      "reused": "Reutilitzades {{n}} preses ja renderitzades",
+      "idsCaption": "IDS · {{label}} · {{count}} fallen",
+      "fixedCaption": "Arreglat · {{label}} · {{count}}",
+      "fixedSummary": "{{resolved}} incidències arreglades",
+      "fixedSummaryScore": "{{resolved}} incidències arreglades · Health Score {{before}} → {{after}}",
+      "more": "+{{n}} més",
+      "howToFix": "Com arreglar-ho",
+      "unassigned": "Sense assignar",
+      "showDetails": "Mostra els detalls",
+      "showDetailsHint": "Elements afectats, com arreglar-ho i estat BCF: per a vídeos de revisió."
     },
     "remaining": "Queden uns {{seconds}} s"
   }

@@ -307,7 +307,10 @@
         "coordination-review": "Coordination review",
         "linkedin-teaser": "LinkedIn teaser",
         "reel": "Instagram Reel",
-        "tiktok": "TikTok"
+        "tiktok": "TikTok",
+        "team-issues": "Issues for the team",
+        "fixes-report": "What was fixed",
+        "project-portfolio": "Projects together"
       },
       "pace": {
         "calm": "Calm",
@@ -328,7 +331,10 @@
         "tour": "Recorded tour",
         "detail": "Detail",
         "closing": "Closing",
-        "buildup": "Building rises"
+        "buildup": "Building rises",
+        "ids": "IDS failures",
+        "bcf": "BCF topics",
+        "fixed": "What was fixed"
       },
       "sectionHint": {
         "hero": "Pull back to the whole model, with the title",
@@ -340,14 +346,20 @@
         "tour": "Fly through the tour stops",
         "detail": "Push in on the selected element",
         "closing": "Final turn with the call to action",
-        "buildup": "One turn while the storeys appear bottom to top"
+        "buildup": "One turn while the storeys appear bottom to top",
+        "ids": "Each failed IDS specification, failing elements highlighted",
+        "bcf": "Each BCF topic from its own viewpoint",
+        "fixed": "Findings of the previous run that are gone now"
       },
       "empty": {
         "storeys": "No storeys found in this model",
         "systems": "No classifiable systems",
         "issues": "No findings — run validation first",
         "tour": "No tour yet — record or generate one",
-        "buildup": "Needs at least 3 storeys"
+        "buildup": "Needs at least 3 storeys",
+        "ids": "No failed IDS specifications — run an IDS check first",
+        "bcf": "No BCF topics with a viewpoint or components",
+        "fixed": "Nothing to compare — validate again after fixing"
       },
       "emptyGeneric": "Nothing to show for this model",
       "shots": "{{n}} shots",
@@ -362,12 +374,14 @@
       "multiHint": {
         "combined": "One clip showing the whole federation.",
         "sequence": "Each model on its own, then all together.",
-        "separate": "One video per model, exported and downloaded one after another."
+        "separate": "One video per model, exported and downloaded one after another.",
+        "groups": "Each project (its discipline models together) on its own, then all projects together."
       },
       "multiMode": {
         "combined": "Combined",
         "sequence": "One by one",
-        "separate": "One per model"
+        "separate": "One per model",
+        "groups": "By project"
       },
       "length": "Length · {{seconds}} s",
       "captions": "Captions",
@@ -393,7 +407,16 @@
         "bold": "Bold",
         "minimal": "Minimal"
       },
-      "reused": "Reused {{n}} shots already rendered"
+      "reused": "Reused {{n}} shots already rendered",
+      "idsCaption": "IDS · {{label}} · {{count}} failing",
+      "fixedCaption": "Fixed · {{label}} · {{count}}",
+      "fixedSummary": "{{resolved}} findings fixed",
+      "fixedSummaryScore": "{{resolved}} findings fixed · Health Score {{before}} → {{after}}",
+      "more": "+{{n}} more",
+      "howToFix": "How to fix",
+      "unassigned": "Unassigned",
+      "showDetails": "Show details",
+      "showDetailsHint": "Affected elements, how to fix, BCF status — for review videos."
     },
     "remaining": "About {{seconds}} s left"
   }

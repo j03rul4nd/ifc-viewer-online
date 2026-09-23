@@ -19,7 +19,11 @@
     "escToCancel": "Esc でキャンセル",
     "finishAreaHint": "ポリゴンを閉じて面積測定を作成（Enter）",
     "deleteLastHint": "最後の測定を削除（Delete）",
-    "clearAllHint": "すべての測定をクリア"
+    "clearAllHint": "すべての測定をクリア",
+    "copy": "表としてコピー",
+    "copyHint": "タブ区切り — Excel やスプレッドシートに貼り付け可能",
+    "copied": "計測値をコピーしました",
+    "copyFailed": "コピーできませんでした"
   },
   "units": {
     "km": "{{value}} km",
@@ -27,5 +31,22 @@
     "cm": "{{value}} cm",
     "ha": "{{value}} ha",
     "m2": "{{value}} m²"
+  },
+  "table": {
+    "type": "種類",
+    "value": "値",
+    "unit": "単位"
+  },
+  "totals": {
+    "length": "合計長さ",
+    "area": "合計面積"
+  },
+  "selection": {
+    "title_one": "選択中の要素",
+    "title_other": "選択中の {{count}} 要素",
+    "width": "幅",
+    "depth": "奥行き",
+    "height": "高さ",
+    "note": "モデル軸に沿ったバウンディングボックス。"
   }
 }

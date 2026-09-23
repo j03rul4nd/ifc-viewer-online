@@ -97,7 +97,13 @@
     "deletePlane": "删除平面",
     "errStart": "无法启动剖切平面模式",
     "errDelete": "删除平面失败",
-    "errClear": "清除平面失败"
+    "errClear": "清除平面失败",
+    "box": "剖切框",
+    "boxToSelection": "围绕所选构件剖切",
+    "boxRemove": "移除剖切框",
+    "boxHint": "选择一个或多个构件以用剖切框框住。",
+    "levelCut": "水平剖切",
+    "levelHeight": "剖切高度 {{m}} m"
   },
   "floorPlan": {
     "title": "楼层平面",

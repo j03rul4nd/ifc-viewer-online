@@ -19,7 +19,11 @@
     "escToCancel": "Esc to cancel",
     "finishAreaHint": "Close polygon and create area measurement (Enter)",
     "deleteLastHint": "Delete last measurement (Delete)",
-    "clearAllHint": "Clear all measurements"
+    "clearAllHint": "Clear all measurements",
+    "copy": "Copy as table",
+    "copyHint": "Tab-separated — pastes into Excel or Sheets",
+    "copied": "Measurements copied",
+    "copyFailed": "Could not copy"
   },
   "units": {
     "km": "{{value}} km",
@@ -27,5 +31,22 @@
     "cm": "{{value}} cm",
     "ha": "{{value}} ha",
     "m2": "{{value}} m²"
+  },
+  "table": {
+    "type": "Type",
+    "value": "Value",
+    "unit": "Unit"
+  },
+  "totals": {
+    "length": "Total length",
+    "area": "Total area"
+  },
+  "selection": {
+    "title_one": "Selected element",
+    "title_other": "{{count}} selected elements",
+    "width": "Width",
+    "depth": "Depth",
+    "height": "Height",
+    "note": "Bounding box along the model axes."
   }
 }

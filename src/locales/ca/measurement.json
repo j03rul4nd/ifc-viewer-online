@@ -19,7 +19,11 @@
     "escToCancel": "Esc per cancel·lar",
     "finishAreaHint": "Tanca el polígon i crea la mesura d'àrea (Retorn)",
     "deleteLastHint": "Elimina l'última mesura (Supr)",
-    "clearAllHint": "Esborra totes les mesures"
+    "clearAllHint": "Esborra totes les mesures",
+    "copy": "Copia com a taula",
+    "copyHint": "Separat per tabuladors: s’enganxa a Excel o Sheets",
+    "copied": "Mesures copiades",
+    "copyFailed": "No s’ha pogut copiar"
   },
   "units": {
     "km": "{{value}} km",
@@ -27,5 +31,22 @@
     "cm": "{{value}} cm",
     "ha": "{{value}} ha",
     "m2": "{{value}} m²"
+  },
+  "table": {
+    "type": "Tipus",
+    "value": "Valor",
+    "unit": "Unitat"
+  },
+  "totals": {
+    "length": "Longitud total",
+    "area": "Àrea total"
+  },
+  "selection": {
+    "title_one": "Element seleccionat",
+    "title_other": "{{count}} elements seleccionats",
+    "width": "Amplada",
+    "depth": "Fondària",
+    "height": "Alçada",
+    "note": "Caixa envolupant segons els eixos del model."
   }
 }

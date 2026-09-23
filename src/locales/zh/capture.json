@@ -307,7 +307,10 @@
         "coordination-review": "协调审查",
         "linkedin-teaser": "LinkedIn 预告",
         "reel": "Instagram Reel",
-        "tiktok": "TikTok"
+        "tiktok": "TikTok",
+        "team-issues": "团队问题清单",
+        "fixes-report": "已修复内容",
+        "project-portfolio": "项目合集"
       },
       "pace": {
         "calm": "舒缓",
@@ -328,7 +331,10 @@
         "tour": "已录制导览",
         "detail": "细节",
         "closing": "结尾",
-        "buildup": "建筑生长"
+        "buildup": "建筑生长",
+        "ids": "IDS 失败项",
+        "bcf": "BCF 议题",
+        "fixed": "已修复内容"
       },
       "sectionHint": {
         "hero": "拉远至整个模型并显示标题",
@@ -340,14 +346,20 @@
         "tour": "飞越导览各站",
         "detail": "推近所选构件",
         "closing": "最后一圈并显示行动号召",
-        "buildup": "环绕一圈，楼层自下而上逐层出现"
+        "buildup": "环绕一圈，楼层自下而上逐层出现",
+        "ids": "每个未通过的 IDS 规范，失败构件高亮",
+        "bcf": "每个 BCF 议题从其自身视点展示",
+        "fixed": "上次校验中已消失的问题"
       },
       "empty": {
         "storeys": "此模型没有楼层",
         "systems": "没有可归类的系统",
         "issues": "没有问题——请先运行校验",
         "tour": "还没有导览——请录制或生成",
-        "buildup": "至少需要 3 个楼层"
+        "buildup": "至少需要 3 个楼层",
+        "ids": "没有未通过的 IDS 规范——请先运行 IDS 检查",
+        "bcf": "没有带视点或构件的 BCF 议题",
+        "fixed": "无可比较内容——修复后请重新校验"
       },
       "emptyGeneric": "此模型没有可展示的内容",
       "shots": "{{n}} 个镜头",
@@ -362,12 +374,14 @@
       "multiHint": {
         "combined": "一个展示整个联合模型的视频。",
         "sequence": "先逐个展示每个模型，再整体展示。",
-        "separate": "每个模型一个视频，依次导出并下载。"
+        "separate": "每个模型一个视频，依次导出并下载。",
+        "groups": "每个项目（其各专业模型一起）单独展示，最后全部一起。"
       },
       "multiMode": {
         "combined": "整体",
         "sequence": "逐个",
-        "separate": "每模型一个"
+        "separate": "每模型一个",
+        "groups": "按项目"
       },
       "length": "时长 · {{seconds}} 秒",
       "captions": "文字",
@@ -393,7 +407,16 @@
         "bold": "醒目",
         "minimal": "极简"
       },
-      "reused": "复用了 {{n}} 个已渲染的镜头"
+      "reused": "复用了 {{n}} 个已渲染的镜头",
+      "idsCaption": "IDS · {{label}} · {{count}} 个未通过",
+      "fixedCaption": "已修复 · {{label}} · {{count}}",
+      "fixedSummary": "已修复 {{resolved}} 个问题",
+      "fixedSummaryScore": "已修复 {{resolved}} 个问题 · Health Score {{before}} → {{after}}",
+      "more": "另有 {{n}} 个",
+      "howToFix": "修复方法",
+      "unassigned": "未分配",
+      "showDetails": "显示详情",
+      "showDetailsHint": "受影响构件、修复方法、BCF 状态——用于审查视频。"
     },
     "remaining": "约剩 {{seconds}} 秒"
   }

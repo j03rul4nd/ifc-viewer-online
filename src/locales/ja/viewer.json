@@ -97,7 +97,13 @@
     "deletePlane": "プレーンを削除",
     "errStart": "クリッピングプレーンモードを開始できませんでした",
     "errDelete": "プレーンを削除できませんでした",
-    "errClear": "プレーンをクリアできませんでした"
+    "errClear": "プレーンをクリアできませんでした",
+    "box": "セクションボックス",
+    "boxToSelection": "選択範囲をボックスで囲む",
+    "boxRemove": "セクションボックスを解除",
+    "boxHint": "1 つ以上の要素を選択するとボックスで切り出せます。",
+    "levelCut": "水平断面",
+    "levelHeight": "{{m}} m で切断"
   },
   "floorPlan": {
     "title": "平面図",
