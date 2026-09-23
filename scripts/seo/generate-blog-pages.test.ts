@@ -9,11 +9,14 @@ import path from 'path'
 import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'fs'
 import { generateBlogPages, type BlogPagesResult } from './generate-blog-pages'
 import { BLOG_POSTS, BLOG_POSTS_ES, BLOG_POSTS_DE, BLOG_POSTS_FR } from '../../src/lib/blog-posts'
+import { topicsFor } from '../../src/lib/blog-topics'
 
 // Total expected pages across all languages:
-// Each language contributes 1 index page + N post pages
-const LANG_POST_COUNTS = [BLOG_POSTS, BLOG_POSTS_ES, BLOG_POSTS_DE, BLOG_POSTS_FR].filter(a => a.length > 0)
-const EXPECTED_PAGES   = LANG_POST_COUNTS.reduce((sum, arr) => sum + 1 + arr.length, 0)
+// each language contributes 1 index page + N post pages + its topic hubs.
+const LANG_ARRAYS = [['en', BLOG_POSTS], ['es', BLOG_POSTS_ES], ['de', BLOG_POSTS_DE], ['fr', BLOG_POSTS_FR]] as const
+const EXPECTED_PAGES = LANG_ARRAYS
+  .filter(([, arr]) => arr.length > 0)
+  .reduce((sum, [lang, arr]) => sum + 1 + arr.length + topicsFor([...arr], lang).length, 0)
 
 const SITE  = 'https://www.ifcvieweronline.eu'
 const OUT   = path.join(process.cwd(), '.blog-test-out')
@@ -76,7 +79,7 @@ describe('generateBlogPages — summary', () => {
   })
 
   it('writes blog index + one page per post for all languages', () => {
-    // 1 index + N posts per language (EN + ES + DE + FR)
+    // 1 index + N posts + topic hubs per language (EN + ES + DE + FR)
     expect(result.pages).toBe(EXPECTED_PAGES)
   })
 
@@ -137,12 +140,20 @@ describe('generateBlogPages — blog index (/blog/)', () => {
     expect(html).not.toContain('Free Browser-Based BIM Viewer</h1>')
   })
 
-  it('exposes outcome-led paths and newest-first library copy in the static fallback', () => {
+  it('links every topic hub and lists the library in the static fallback', () => {
     const html = readFileSync(file, 'utf-8')
-    expect(html).toContain('Start with the job you need to finish')
-    expect(html).toContain('Build a spatial digital twin')
+    expect(html).toContain('Explore by topic')
+    for (const topic of topicsFor(BLOG_POSTS, 'en')) {
+      expect(html).toContain(`href="${SITE}/blog/topic/${topic.slug}/"`)
+    }
     expect(html).toContain('All IFC guides')
     expect(html).toContain('Newest articles appear first.')
+  })
+
+  it("drops the home page's structured data and keeps only the blog's", () => {
+    const html = readFileSync(file, 'utf-8')
+    expect(html).not.toContain('"WebApplication"')
+    expect(html).toContain('"@type":"Blog"')
   })
 
   it('removes root hreflang and adds self-referencing blog hreflang', () => {
@@ -445,5 +456,49 @@ describe('generateBlogPages — sitemap completeness', () => {
 
     rmSync(partial, { force: true })
     rmSync(dir, { recursive: true, force: true })
+  })
+})
+
+// ── Topic hubs ────────────────────────────────────────────────────────────────
+
+describe('generateBlogPages — topic hubs', () => {
+  const topics = topicsFor(BLOG_POSTS, 'en')
+
+  it('writes a page per English topic, and only for topics with enough guides', () => {
+    expect(topics.length).toBeGreaterThan(0)
+    for (const topic of topics) {
+      expect(existsSync(path.join(OUT, 'blog', 'topic', topic.slug, 'index.html'))).toBe(true)
+      expect(topic.posts.length).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it('gives each hub its own title, canonical, crawlable list and structured data', () => {
+    const topic = topics[0]
+    const html = readFileSync(path.join(OUT, 'blog', 'topic', topic.slug, 'index.html'), 'utf-8')
+    expect(html).toContain(`<title>${topic.copy.title} | IFC Viewer Blog</title>`)
+    expect(html).toContain(`<link rel="canonical" href="${SITE}/blog/topic/${topic.slug}/"`)
+    expect(html).toContain('"@type":"CollectionPage"')
+    expect(html).toContain('"@type":"BreadcrumbList"')
+    for (const post of topic.posts) expect(html).toContain(`href="${SITE}/blog/${post.slug}/"`)
+  })
+
+  it('adds the hubs to the sitemap', () => {
+    const xml = readFileSync(path.join(OUT, 'sitemap.xml'), 'utf-8')
+    for (const topic of topics) expect(xml).toContain(`<loc>${SITE}/blog/topic/${topic.slug}/</loc>`)
+  })
+})
+
+describe('generateBlogPages — article structured data', () => {
+  const post = BLOG_POSTS.find((p) => p.slug === 'how-to-validate-ifc-file')!
+  const html = () => readFileSync(path.join(OUT, 'blog', post.slug, 'index.html'), 'utf-8')
+
+  it('names the organisation as publisher, with its logo', () => {
+    expect(html()).toMatch(/"publisher":\{"@type":"Organization"[^}]*"name":"IFC Viewer Online"/)
+    expect(html()).toContain('/brand/logo.svg')
+  })
+
+  it('carries a breadcrumb up to its topic hub', () => {
+    expect(html()).toContain('"@type":"BreadcrumbList"')
+    expect(html()).toContain(`${SITE}/blog/topic/${post.categorySlug}/`)
   })
 })

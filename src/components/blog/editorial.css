@@ -213,3 +213,20 @@ button.ed-cite[aria-expanded='true'] { background: var(--accent); color: #fff; }
 @media (max-width: 639px) {
   .ed-hotspot { width: 20px; height: 20px; font-size: 10.5px; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 3px 10px rgba(0, 0, 0, 0.45); }
 }
+
+/* ── Category pills ──────────────────────────────────────────────────────────
+   One hue per topic. Dark mode uses light tints; light mode swaps to deeper
+   shades so the label keeps ≥ 4.5:1 contrast on white. */
+.cat-pill { background: rgba(100, 116, 139, 0.12); color: var(--text-dim); }
+.cat-validation    { background: rgba(94, 106, 210, 0.14);  color: #a5adf5; }
+.cat-export-fixes  { background: rgba(251, 191, 36, 0.12);  color: #fbbf24; }
+.cat-tools         { background: rgba(16, 185, 129, 0.12);  color: #34d399; }
+.cat-delivery      { background: rgba(167, 139, 250, 0.14); color: #c4b5fd; }
+.cat-privacy       { background: rgba(244, 114, 182, 0.12); color: #f9a8d4; }
+.cat-digital-twins { background: rgba(34, 211, 238, 0.12);  color: #22d3ee; }
+.lp-light .cat-validation    { background: rgba(54, 69, 196, 0.10);  color: #3645c4; }
+.lp-light .cat-export-fixes  { background: rgba(180, 83, 9, 0.10);   color: #92400e; }
+.lp-light .cat-tools         { background: rgba(4, 120, 87, 0.10);   color: #047857; }
+.lp-light .cat-delivery      { background: rgba(109, 40, 217, 0.10);  color: #6d28d9; }
+.lp-light .cat-privacy       { background: rgba(190, 24, 93, 0.10);   color: #be185d; }
+.lp-light .cat-digital-twins { background: rgba(14, 116, 144, 0.10);  color: #0e7490; }

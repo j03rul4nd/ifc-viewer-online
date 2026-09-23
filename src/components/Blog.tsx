@@ -6,9 +6,7 @@ import { EBOOKS, PRIMARY_EBOOK, ebookById } from '../lib/ebook'
 import SpotlightCard  from './reactbits/SpotlightCard'
 import CountUp        from './reactbits/CountUp'
 import FaultyTerminal from './reactbits/FaultyTerminal'
-import BlurText       from './reactbits/BlurText'
 import SoftAurora     from './reactbits/SoftAurora'
-import Grainient      from './reactbits/Grainient'
 import ReadingProgress             from './blog/ReadingProgress'
 import TableOfContents, { extractHeadings, slugify } from './blog/TableOfContents'
 import CodeBlock                   from './blog/CodeBlock'
@@ -24,12 +22,17 @@ import { QuoteShare, SectionLink, SelectionShare } from './blog/ShareKit'
 import { StatRow } from './blog/EditorialBlocks'
 import { AnnotatedImage } from './blog/ImageViewer'
 import { Citation, PostPreviewLink, ReferenceList, ReferencesProvider } from './blog/References'
-import { ContinueReading, RecsProvider, RelatedPoint, ToolCard, type RecsNav } from './blog/Recommendations'
+import { ContinueReading, RecsProvider, RelatedPoint, ToolCard, readHistory, type RecsNav } from './blog/Recommendations'
+import { relatedPosts } from '../lib/blog-related'
+import { foundationalPosts, freshness, inboundLinks, lastTouched, topicsFor, whatsNew, type Topic } from '../lib/blog-topics'
+import { BLOG_TOOLS, toolCopy, toolHref, type BlogTool } from '../lib/blog-tools'
+import { trackBlogPostOpened, trackBlogSearch, trackBlogToolClicked, trackBlogTopicOpened, type BlogSurface } from '../lib/analytics'
+import './blog/editorial.css'
 import { Bars, Callout, Decision, Steps, Takeaways, Term } from './blog/EditorialBlocks'
 import {
   filterBlogPosts,
   getBlogHubCopy,
-  type BlogJourney,
+  type BlogHubCopy,
   type BlogSort,
 } from '../lib/blog-hub'
 
@@ -102,22 +105,16 @@ function patchDocumentMeta(selector: string, value: string): string {
 
 // ─── Design helpers ───────────────────────────────────────────────────────────
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
+function formatDate(iso: string, lang = 'en'): string {
+  return new Date(iso).toLocaleDateString(lang === 'en' ? 'en-US' : lang, {
     year: 'numeric', month: 'long', day: 'numeric',
   })
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  validation:       'bg-[rgba(239,68,68,0.10)] text-[#f87171]',
-  'best-practices': 'bg-[rgba(94,106,210,0.12)] text-[#818cf8]',
-  'tool-guides':    'bg-[rgba(16,185,129,0.10)] text-[#34d399]',
-  'ifc-tips':       'bg-[rgba(251,191,36,0.10)] text-[#fbbf24]',
-  standards:        'bg-[rgba(167,139,250,0.12)] text-[#a78bfa]',
-  'digital-twins':  'bg-[rgba(34,211,238,0.10)] text-[#22d3ee]',
-}
+/** Category pill colours live in editorial.css (`.cat-pill[data-cat]`), with
+ *  darker light-mode variants — the dark-mode tints fail contrast on white. */
 function catColor(slug: string): string {
-  return CATEGORY_COLORS[slug] ?? 'bg-[rgba(100,116,139,0.12)] text-[var(--text-dim)]'
+  return `cat-pill cat-${slug}`
 }
 
 // ─── Inline rich text (internal/external links inside paragraphs) ──────────────
@@ -566,8 +563,19 @@ function RenderBlock({ block, lang, onNavigateToPost, onNavigateToLanding }: {
 
 // ─── Post card (grid) ─────────────────────────────────────────────────────────
 
-function PostCard({ post, onClick, theme = 'dark' }: { post: BlogPost; onClick: () => void; theme?: 'dark' | 'light' }) {
+function PostCard({ post, onClick, theme = 'dark', from, position, read, copy, lang = 'en' }: {
+  post: BlogPost
+  onClick: () => void
+  theme?: 'dark' | 'light'
+  from: BlogSurface
+  position?: number
+  read: Set<string>
+  copy: BlogHubCopy
+  lang?: string
+}) {
   const [showCover, setShowCover] = React.useState(true)
+  const badges = cardBadges(post, read, copy)
+  const touched = lastTouched(post)
   return (
     <SpotlightCard
       className="group rounded-2xl border border-[var(--border)] bg-[var(--surface)] hover:border-[rgba(94,106,210,0.4)] active:scale-[0.99] hover:-translate-y-[2px] transition-all duration-200 cursor-pointer overflow-hidden"
@@ -576,19 +584,20 @@ function PostCard({ post, onClick, theme = 'dark' }: { post: BlogPost; onClick: 
       <a
         href={postHref(post.slug, post.lang ?? 'en')}
         onClick={(event) => {
+          trackBlogPostOpened({ from, lang, position })
           if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
           event.preventDefault()
           onClick()
         }}
         className="flex flex-col h-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-inset"
-        aria-label={post.title}
       >
-        {/* Cover image strip */}
+        {/* Cover image strip. The covers restate the title as an image, so a
+            phone — where every pixel of height is scroll — skips them. */}
         {showCover && (
-          <div className="relative h-[138px] overflow-hidden bg-[var(--surface-2,#0e0e12)] flex-shrink-0">
+          <div className="relative hidden sm:block h-[138px] overflow-hidden bg-[var(--surface-2,#0e0e12)] flex-shrink-0">
             <img
               src={asset(post.slug)}
-              alt={`${post.title} — IFC Viewer Online article cover`}
+              alt=""
               width={1800}
               height={945}
               loading="lazy"
@@ -604,17 +613,18 @@ function PostCard({ post, onClick, theme = 'dark' }: { post: BlogPost; onClick: 
         )}
 
         <div className="flex flex-col flex-1 p-4 sm:p-5">
-          {/* Category badge */}
-          <div className="mb-3">
-            <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider ${catColor(post.categorySlug)}`}>
-              {post.category.toUpperCase()}
+          {/* Category + at most two decision signals (new/updated, read, demo) */}
+          <div className="mb-3 flex flex-wrap items-center gap-1.5">
+            <span className={`inline-flex px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${catColor(post.categorySlug)}`}>
+              {post.category}
             </span>
+            {badges.map((b) => <Badge key={b.label} {...b} />)}
           </div>
 
           {/* Title */}
-          <h2 className={`flex-1 text-[15px] font-semibold tracking-[-0.01em] leading-[1.35] text-[var(--text)] mb-2 transition-colors line-clamp-2 ${theme === 'dark' ? 'group-hover:text-white' : 'group-hover:text-[var(--accent)]'}`}>
+          <h3 className={`flex-1 text-[15px] font-semibold tracking-[-0.01em] leading-[1.35] text-[var(--text)] mb-2 transition-colors line-clamp-2 ${theme === 'dark' ? 'group-hover:text-white' : 'group-hover:text-[var(--accent)]'}`}>
             {post.title}
-          </h2>
+          </h3>
 
           {/* Excerpt — 2 lines */}
           <p className="text-[13px] leading-[1.6] text-[var(--text-dim)] line-clamp-2 mb-3">
@@ -624,8 +634,8 @@ function PostCard({ post, onClick, theme = 'dark' }: { post: BlogPost; onClick: 
           {/* Meta */}
           <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]">
             <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-faint)]">
-              <span>{formatDate(post.date)}</span>
-              <span>·</span>
+              <time dateTime={touched}>{touched !== post.date ? `${copy.updatedBadge} · ` : ''}{formatDate(touched, lang)}</time>
+              <span aria-hidden="true">·</span>
               <span>{post.readTimeMin} min</span>
             </div>
             <Icons.ArrowRight
@@ -695,12 +705,12 @@ function FeaturedCard({ post, onClick, theme = 'dark', featuredLabel = 'FEATURED
             </span>
           </div>
 
-          <h2
+          <h3
             className={`font-semibold tracking-[-0.03em] leading-[1.2] text-[var(--text)] transition-colors ${theme === 'dark' ? 'group-hover:text-white' : 'group-hover:text-[var(--accent)]'}`}
             style={{ fontSize: 'clamp(18px, 4vw, 28px)' }}
           >
             {post.title}
-          </h2>
+          </h3>
 
           <p className="text-[13.5px] sm:text-[14.5px] leading-[1.7] text-[var(--text-dim)] line-clamp-3 sm:line-clamp-none">
             {post.excerpt}
@@ -785,45 +795,6 @@ function EbookBanner() {
   )
 }
 
-function JourneyIcon({ id }: { id: string }) {
-  const Icon = id === 'start' ? Icons.FileIfc
-    : id === 'validate' ? Icons.Check
-      : id === 'repair' ? Icons.Warn
-        : id === 'deliver' ? Icons.Layers
-          : id === 'choose' ? Icons.Search
-            : Icons.Globe
-  return <Icon size={18} aria-hidden="true" />
-}
-
-function JourneyCard({ journey, active, onSelect }: {
-  journey: BlogJourney
-  active: boolean
-  onSelect: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={active}
-      className={`group min-h-[176px] text-left rounded-2xl border p-5 sm:p-6 cursor-pointer transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
-        active
-          ? 'border-[var(--accent)] bg-[rgba(94,106,210,0.12)]'
-          : 'border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-2)]'
-      }`}
-    >
-      <span className={`inline-flex w-10 h-10 items-center justify-center rounded-xl border ${active ? 'border-[rgba(129,140,248,.45)] bg-[rgba(94,106,210,.18)] text-[var(--accent-2)]' : 'border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-dim)] group-hover:text-[var(--accent-2)]'}`}>
-        <JourneyIcon id={journey.id} />
-      </span>
-      <span className="mt-4 block text-[15px] sm:text-[16px] font-semibold tracking-[-0.015em] text-[var(--text)]">{journey.title}</span>
-      <span className="mt-1.5 block text-[13px] leading-[1.6] text-[var(--text-dim)]">{journey.description}</span>
-      <span className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--accent-2)]">
-        {journey.cta}
-        <Icons.ArrowRight size={12} className="transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true" />
-      </span>
-    </button>
-  )
-}
-
 function LabCard({ post, label, cta, onClick }: { post: BlogPost; label: string; cta: string; onClick: () => void }) {
   return (
     <a
@@ -900,6 +871,258 @@ function BlogFaqSection({ title, description, faqs }: {
   )
 }
 
+// ─── Landing building blocks ──────────────────────────────────────────────────
+
+const TODAY = new Date()
+
+/** Only what helps decide whether to read: freshness first, then read, then demo. */
+function cardBadges(post: BlogPost, read: Set<string>, copy: BlogHubCopy): Array<{ label: string; tone: 'accent' | 'ok' | 'demo' }> {
+  const out: Array<{ label: string; tone: 'accent' | 'ok' | 'demo' }> = []
+  const fresh = freshness(post, TODAY)
+  if (fresh === 'new') out.push({ label: copy.newBadge, tone: 'accent' })
+  else if (fresh === 'updated') out.push({ label: copy.updatedBadge, tone: 'accent' })
+  if (read.has(post.slug)) out.push({ label: copy.readBadge, tone: 'ok' })
+  else if (hasDemo(post)) out.push({ label: copy.demoBadge, tone: 'demo' })
+  return out.slice(0, 2)
+}
+
+function hasDemo(post: BlogPost): boolean {
+  return post.content.some((b) => b.type === 'spatial-demo' || b.type === 'ifc-demo' || b.type === 'embed-configurator')
+}
+
+function Badge({ label, tone }: { label: string; tone: 'accent' | 'ok' | 'demo' }) {
+  const cls = tone === 'ok'
+    ? 'text-[var(--ok)] border-[color-mix(in_srgb,var(--ok)_35%,var(--border))]'
+    : tone === 'demo'
+      ? 'text-[var(--text-dim)] border-[var(--border-strong)]'
+      : 'text-[var(--accent-2)] border-[color-mix(in_srgb,var(--accent)_45%,var(--border))]'
+  return (
+    <span className={`inline-flex h-5 items-center gap-1 rounded-full border px-2 text-[10.5px] font-semibold ${cls}`}>
+      {tone === 'ok' && <Icons.Check size={10} strokeWidth={2.4} aria-hidden="true" />}
+      {label}
+    </span>
+  )
+}
+
+/** SPA link to a post, with the surface it was opened from for analytics. */
+function PostLink({ post, from, position, onNavigate, className, children }: {
+  post: BlogPost
+  from: BlogSurface
+  position?: number
+  onNavigate: (slug: string) => void
+  className?: string
+  children: React.ReactNode
+}) {
+  const lang = post.lang ?? 'en'
+  return (
+    <a
+      href={postHref(post.slug, lang)}
+      onClick={(event) => {
+        trackBlogPostOpened({ from, lang, position })
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
+        event.preventDefault()
+        onNavigate(post.slug)
+      }}
+      className={className}
+    >
+      {children}
+    </a>
+  )
+}
+
+/** A compact, text-first row: for lists where the reader scans titles. */
+function PostRow({ post, from, position, copy, read, onNavigate, lang }: {
+  post: BlogPost
+  from: BlogSurface
+  position: number
+  copy: BlogHubCopy
+  read: Set<string>
+  onNavigate: (slug: string) => void
+  lang: string
+}) {
+  const badges = cardBadges(post, read, copy)
+  const touched = lastTouched(post)
+  return (
+    <li className="py-3.5 first:pt-0 last:pb-0">
+      <PostLink post={post} from={from} position={position} onNavigate={onNavigate} className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]">
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11.5px] text-[var(--text-faint)]">
+          <span className={`inline-flex rounded-full px-2 py-px text-[10px] font-semibold ${catColor(post.categorySlug)}`}>{post.category}</span>
+          <time dateTime={touched}>{touched !== post.date ? `${copy.updatedBadge} · ` : ''}{formatDate(touched, lang)}</time>
+          <span aria-hidden="true">·</span>
+          <span>{post.readTimeMin} min</span>
+          {badges.map((b) => <Badge key={b.label} {...b} />)}
+        </span>
+        <span className="mt-1 block text-[15px] font-semibold leading-snug tracking-[-0.01em] text-[var(--text)] group-hover:text-[var(--accent-2)]">
+          {post.title}
+        </span>
+      </PostLink>
+    </li>
+  )
+}
+
+/**
+ * The hero's animated canvas is decoration, so it must never compete with the
+ * content for the first paint or for a phone's battery: it mounts only on a
+ * wide screen, without reduced motion, once the page is idle. Everyone else
+ * gets the static gradient, which is also what shows until it mounts.
+ */
+function HeroBackdrop({ theme }: { theme: 'dark' | 'light' }) {
+  const [live, setLive] = React.useState(false)
+  React.useEffect(() => {
+    const mq = window.matchMedia?.('(min-width: 1024px) and (prefers-reduced-motion: no-preference)')
+    if (!mq?.matches) return
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void }
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(() => setLive(true), { timeout: 2500 })
+      return () => w.cancelIdleCallback?.(id)
+    }
+    const t = window.setTimeout(() => setLive(true), 1200)
+    return () => window.clearTimeout(t)
+  }, [])
+
+  const staticBg = theme === 'dark'
+    ? 'radial-gradient(ellipse 80% 70% at 15% 0%, rgba(94,106,210,0.22), transparent 60%), radial-gradient(ellipse 60% 60% at 90% 10%, rgba(34,211,238,0.08), transparent 60%)'
+    : 'radial-gradient(ellipse 80% 70% at 15% 0%, rgba(54,69,196,0.14), transparent 60%), linear-gradient(180deg, #eef0ff 0%, var(--bg) 100%)'
+
+  return (
+    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      <div className="absolute inset-0" style={{ background: staticBg }} />
+      {live && theme === 'dark' && (
+        <div className="absolute inset-0 opacity-70">
+          <FaultyTerminal
+            scale={2.2} gridMul={[3, 1]} digitSize={1.0} timeScale={0.15} tint="#5E6AD2"
+            scanlineIntensity={0.7} glitchAmount={0.9} flickerAmount={0.6} noiseAmp={0.9} brightness={0.55}
+            mouseReact={true} mouseStrength={0.35} curvature={0} chromaticAberration={0} pageLoadAnimation={false}
+            className="w-full h-full"
+          />
+        </div>
+      )}
+      {live && theme === 'light' && (
+        <div className="absolute inset-0" style={{ opacity: 0.6 }}>
+          <SoftAurora color1="#3645C4" color2="#6B7FE8" brightness={0.45} speed={0.25} scale={1.2} bandHeight={0.52} bandSpread={0.9} noiseAmplitude={0.8} layerOffset={0.8} />
+        </div>
+      )}
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 40%, var(--bg) 100%)' }} />
+    </div>
+  )
+}
+
+function SectionHeading({ id, title, description, action }: { id: string; title: string; description?: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="max-w-[640px]">
+        <h2 id={id} className="text-[21px] sm:text-[26px] font-semibold tracking-[-0.025em] text-[var(--text)]">{title}</h2>
+        {description && <p className="mt-1.5 text-[14px] leading-[1.65] text-[var(--text-dim)]">{description}</p>}
+      </div>
+      {action}
+    </div>
+  )
+}
+
+function topicHref(slug: string, lang: string): string {
+  const prefix = lang === 'en' ? '' : `${lang}/`
+  return `${BASE}${prefix}blog/topic/${slug}/`
+}
+
+function blogHomeHref(lang: string): string {
+  return `${BASE}${lang === 'en' ? '' : `${lang}/`}blog/`
+}
+
+/** A topic entry: the hub link, and its two most-referenced guides as direct routes. */
+function TopicCard({ topic, lang, copy, onOpenTopic, onNavigate, inbound }: {
+  topic: Topic
+  lang: string
+  copy: BlogHubCopy
+  onOpenTopic: (slug: string, from: BlogSurface) => void
+  onNavigate: (slug: string) => void
+  inbound: Map<string, number>
+}) {
+  const top = [...topic.posts].sort((a, b) => (inbound.get(b.slug) ?? 0) - (inbound.get(a.slug) ?? 0) || b.date.localeCompare(a.date)).slice(0, 2)
+  return (
+    <article className="relative flex h-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-3">
+        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${catColor(topic.slug)}`}>{topic.label}</span>
+        <span className="text-[11.5px] tabular-nums text-[var(--text-faint)]">{copy.topicGuides(topic.posts.length)}</span>
+      </div>
+      <h3 className="mt-3 text-[16px] font-semibold leading-snug tracking-[-0.015em] text-[var(--text)]">
+        <a
+          href={topicHref(topic.slug, lang)}
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+            e.preventDefault()
+            onOpenTopic(topic.slug, 'topic_card')
+          }}
+          // Phone: stretched over the whole card (one big target). From sm up
+          // the card also holds direct guide links, so only the title links.
+          className="hover:text-[var(--accent-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded after:absolute after:inset-0 after:content-[''] sm:after:hidden"
+        >
+          {topic.copy.title}
+        </a>
+      </h3>
+      {/* Phone: the card is a compact route (label, title, count); the intro and
+          the two direct guides appear from sm up, where there is room to scan. */}
+      <p className="mt-1.5 hidden sm:block text-[13px] leading-[1.6] text-[var(--text-dim)] line-clamp-3">{topic.copy.intro}</p>
+      <ul className="mt-3 hidden sm:block space-y-1.5 border-t border-[var(--border)] pt-3" role="list">
+        {top.map((p) => (
+          <li key={p.slug}>
+            <PostLink post={p} from="topic_card" onNavigate={onNavigate} className="group flex items-start gap-2 text-[13px] leading-snug text-[var(--text)] hover:text-[var(--accent-2)]">
+              <Icons.ArrowRight size={12} aria-hidden="true" className="mt-[3px] shrink-0 text-[var(--text-faint)] group-hover:text-[var(--accent-2)]" />
+              <span className="line-clamp-2">{p.title}</span>
+            </PostLink>
+          </li>
+        ))}
+      </ul>
+    </article>
+  )
+}
+
+function ToolLinks({ tools, lang, from }: { tools: BlogTool[]; lang: string; from: BlogSurface }) {
+  return (
+    <ul className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3" role="list">
+      {tools.map((tool) => {
+        const t = toolCopy(tool, lang)
+        return (
+          <li key={tool.id}>
+            <a
+              href={toolHref(tool, lang)}
+              onClick={() => trackBlogToolClicked({ tool: tool.id, from, lang })}
+              className="group flex h-full flex-col rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 transition-colors hover:border-[color-mix(in_srgb,var(--accent)_50%,var(--border))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+            >
+              <span className="text-[14.5px] font-semibold tracking-tight text-[var(--text)]">{t.name}</span>
+              <span className="mt-1 flex-1 text-[13px] leading-[1.6] text-[var(--text-dim)]">{t.blurb}</span>
+              <span className="mt-2.5 inline-flex items-center gap-1 text-[13px] font-medium text-[var(--accent-2)]">
+                {t.action}<Icons.ArrowRight size={12} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
+              </span>
+            </a>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+// ─── Blog list ────────────────────────────────────────────────────────────────
+//
+// The landing is organised around what the reader came to do, in the order a
+// phone reaches it (see docs/BLOG_LANDING.md):
+//
+//   1. hero — what this is, a search, and real questions as shortcuts
+//   2. picked for you — only for a returning reader (read history)
+//   3. start here — the editor's pick + the most-referenced guides
+//   4. explore by topic — each topic is a real, indexable hub page
+//   5. new and updated — for the reader who comes back
+//   6. handbooks (EN) and the 3D lab — the two conversion surfaces
+//   7. the full library — search, topic filter, sort
+//
+// While a search or filter is active, 2–6 step aside so results come first.
+
+const TOPIC_PATH_RE = /\/blog\/topic\/([^/]+)\/?$/
+
+function topicFromPath(): string {
+  if (typeof window === 'undefined') return ''
+  return TOPIC_PATH_RE.exec(window.location.pathname)?.[1] ?? ''
+}
+
 function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingTheme, onToggleLandingTheme }: {
   lang?: string
   onNavigateToPost: (slug: string) => void
@@ -910,31 +1133,82 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
   const posts    = React.useMemo(() => getBlogPostsByLang(lang), [lang])
   const featured = React.useMemo(() => getFeaturedPost(lang), [lang])
   const copy     = React.useMemo(() => getBlogHubCopy(lang), [lang])
+  const topics   = React.useMemo(() => topicsFor(posts, lang), [posts, lang])
+  const inbound  = React.useMemo(() => inboundLinks(posts), [posts])
+  const [topicSlug, setTopicSlug] = React.useState(topicFromPath)
+  const topic = topics.find((t) => t.slug === topicSlug)
+  const [read, setRead] = React.useState<Set<string>>(() => new Set())
   const [query, setQuery] = React.useState('')
   const deferredQuery = React.useDeferredValue(query)
   const [category, setCategory] = React.useState('all')
   const [sort, setSort] = React.useState<BlogSort>('newest')
-  const [activeJourneyId, setActiveJourneyId] = React.useState('')
   const searchRef = React.useRef<HTMLInputElement>(null)
   const resultsRef = React.useRef<HTMLDivElement>(null)
-  const activeJourney = copy.journeys.find((journey) => journey.id === activeJourneyId)
+
+  // Read history is per-browser and only known after mount.
+  React.useEffect(() => { setRead(readHistory()) }, [])
+
+  // Topic hubs are real URLs: follow back/forward between them and the index.
+  React.useEffect(() => {
+    const onPop = () => setTopicSlug(topicFromPath())
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
+  const openTopic = React.useCallback((slug: string, from: BlogSurface | 'breadcrumb') => {
+    history.pushState(null, '', slug ? topicHref(slug, lang) : blogHomeHref(lang))
+    setTopicSlug(slug)
+    setQuery('')
+    setCategory('all')
+    if (slug) trackBlogTopicOpened({ topic: slug, from, lang })
+    window.scrollTo(0, 0)
+  }, [lang])
+
   const categories = React.useMemo(() => {
     const found = new Map<string, string>()
     posts.forEach((post) => found.set(post.categorySlug, post.category))
     return [...found.entries()].sort((a, b) => a[1].localeCompare(b[1]))
   }, [posts])
   const filteredPosts = React.useMemo(
-    () => filterBlogPosts(posts, { query: deferredQuery, category, journey: activeJourney, sort }),
-    [posts, deferredQuery, category, activeJourney, sort],
+    () => filterBlogPosts(posts, { query: deferredQuery, category, sort }),
+    [posts, deferredQuery, category, sort],
   )
-  const hasFilters = query.trim().length > 0 || category !== 'all' || Boolean(activeJourneyId)
-  const gridPosts = hasFilters ? filteredPosts : filteredPosts.filter((post) => post.slug !== featured.slug)
-  const spatialJourney = copy.journeys.find((journey) => journey.id === 'spatial')
+  const hasFilters = query.trim().length > 0 || category !== 'all'
+
+  // Search analytics: one event per settled query, never the text itself.
+  React.useEffect(() => {
+    const q = deferredQuery.trim()
+    if (q.length < 2) return
+    const t = window.setTimeout(() => trackBlogSearch({ query_length: q.length, results: filteredPosts.length, lang }), 900)
+    return () => window.clearTimeout(t)
+  }, [deferredQuery, filteredPosts.length, lang])
+
+  const foundational = React.useMemo(
+    () => foundationalPosts(posts.filter((p) => p.slug !== featured.slug), 2, posts),
+    [posts, featured.slug],
+  )
+  const fresh = React.useMemo(() => whatsNew(posts, 5), [posts])
+  const picked = React.useMemo(() => {
+    if (read.size === 0) return []
+    // Recommend from the most recently published posts the reader has read.
+    const readPosts = posts.filter((p) => read.has(p.slug))
+    const seen = new Set<string>()
+    const out: BlogPost[] = []
+    for (const p of readPosts.slice(0, 5)) {
+      for (const r of relatedPosts(p, posts, 6, read)) {
+        if (read.has(r.post.slug) || seen.has(r.post.slug)) continue
+        seen.add(r.post.slug)
+        out.push(r.post)
+      }
+    }
+    return out.slice(0, 3)
+  }, [posts, read])
+  const spatialTopic = topics.find((t) => t.slug === 'digital-twins')
   const spatialPosts = React.useMemo(
-    () => filterBlogPosts(posts, { journey: spatialJourney, sort: 'newest' }).slice(0, 3),
-    [posts, spatialJourney],
+    () => posts.filter((p) => p.categorySlug === 'digital-twins' && hasDemo(p)).slice(0, 3),
+    [posts],
   )
-  const demoCount = posts.filter((post) => post.content.some((block) => block.type === 'spatial-demo')).length
+  const demoCount = posts.filter(hasDemo).length
 
   const revealResults = React.useCallback(() => {
     window.requestAnimationFrame(() => {
@@ -943,17 +1217,9 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
     })
   }, [])
 
-  const selectJourney = (id: string) => {
-    setActiveJourneyId((current) => current === id ? '' : id)
-    setQuery('')
-    setCategory('all')
-    revealResults()
-  }
-
   const clearFilters = () => {
     setQuery('')
     setCategory('all')
-    setActiveJourneyId('')
     setSort('newest')
     searchRef.current?.focus()
   }
@@ -969,8 +1235,12 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
+  // Head tags follow the view: the index, or the topic hub being shown.
   React.useEffect(() => {
-    const meta = BLOG_LIST_META[lang] ?? BLOG_LIST_META.en
+    const base = BLOG_LIST_META[lang] ?? BLOG_LIST_META.en
+    const meta = topic
+      ? { title: `${topic.copy.title} | IFC Viewer Blog`, description: topic.copy.intro }
+      : base
     const previousTitle = document.title
     const previousLang = document.documentElement.lang
     document.title = meta.title
@@ -983,36 +1253,91 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
       : window.location.href
     if (canonical) canonical.href = canonicalUrl
 
-    const previous = [
-      patchDocumentMeta('meta[name="description"]', meta.description),
-      patchDocumentMeta('meta[property="og:type"]', 'website'),
-      patchDocumentMeta('meta[property="og:title"]', meta.title),
-      patchDocumentMeta('meta[property="og:description"]', meta.description),
-      patchDocumentMeta('meta[property="og:url"]', canonicalUrl),
-      patchDocumentMeta('meta[name="twitter:title"]', meta.title),
-      patchDocumentMeta('meta[name="twitter:description"]', meta.description),
+    const selectors = [
+      'meta[name="description"]',
+      'meta[property="og:type"]',
+      'meta[property="og:title"]',
+      'meta[property="og:description"]',
+      'meta[property="og:url"]',
+      'meta[name="twitter:title"]',
+      'meta[name="twitter:description"]',
     ]
+    const values = [meta.description, 'website', meta.title, meta.description, canonicalUrl, meta.title, meta.description]
+    const previous = selectors.map((selector, i) => patchDocumentMeta(selector, values[i]))
 
     return () => {
       document.title = previousTitle
       document.documentElement.lang = previousLang
       if (canonical) canonical.href = previousCanonical
-      const selectors = [
-        'meta[name="description"]',
-        'meta[property="og:type"]',
-        'meta[property="og:title"]',
-        'meta[property="og:description"]',
-        'meta[property="og:url"]',
-        'meta[name="twitter:title"]',
-        'meta[name="twitter:description"]',
-      ]
       selectors.forEach((selector, index) => patchDocumentMeta(selector, previous[index]))
     }
-  }, [lang])
+  }, [lang, topic])
 
   const navBg = landingTheme === 'dark'
     ? 'bg-[rgba(10,10,14,0.88)]'
     : 'bg-[rgba(245,246,250,0.92)]'
+
+  const nav = (
+    <nav className={`lp-sticky-nav sticky top-0 z-20 border-b border-[var(--border)] backdrop-blur-[14px] ${navBg}`}>
+      <div className="max-w-[1120px] mx-auto px-4 sm:px-7 h-[54px] flex items-center justify-between">
+        <button
+          onClick={onNavigateToLanding}
+          className="flex items-center gap-2 text-[13px] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
+        >
+          <Icons.Chevron size={12} className="rotate-180" />
+          <span>IFC Viewer</span>
+        </button>
+        <a
+          href={blogHomeHref(lang)}
+          onClick={(e) => { if (e.metaKey || e.ctrlKey || e.button !== 0) return; e.preventDefault(); openTopic('', 'breadcrumb') }}
+          className="flex items-center gap-1.5"
+        >
+          <Icons.Logo size={15} className="text-[var(--text-faint)]" aria-hidden="true" />
+          <span className="text-[13.5px] font-semibold tracking-tight">Blog</span>
+        </a>
+        <div className="flex items-center gap-2">
+          <ThemeToggleBtn theme={landingTheme} onToggle={onToggleLandingTheme} />
+          <button
+            onClick={onNavigateToLanding}
+            className="inline-flex items-center gap-1.5 h-[30px] px-3 text-[12.5px] font-semibold rounded-[8px] bg-[var(--accent)] text-white hover:brightness-110 transition-all"
+          >
+            <Icons.ArrowRight size={12} />
+            {lang === 'es' ? 'Abrir visor' : 'Open viewer'}
+          </button>
+        </div>
+      </div>
+    </nav>
+  )
+
+  const footer = (
+    <BlogFooter
+      lang={lang}
+      copy={copy}
+      topics={topics}
+      onOpenTopic={openTopic}
+      onNavigateToLanding={onNavigateToLanding}
+    />
+  )
+
+  if (topic) {
+    return (
+      <motion.div key={topic.slug} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="min-h-screen bg-[var(--bg)]">
+        {nav}
+        <TopicHubView
+          topic={topic}
+          topics={topics}
+          lang={lang}
+          copy={copy}
+          read={read}
+          inbound={inbound}
+          theme={landingTheme}
+          onOpenTopic={openTopic}
+          onNavigateToPost={onNavigateToPost}
+        />
+        {footer}
+      </motion.div>
+    )
+  }
 
   return (
     <motion.div
@@ -1021,122 +1346,34 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
       transition={{ duration: 0.3 }}
       className="min-h-screen bg-[var(--bg)]"
     >
-      {/* ── Sticky nav ── */}
-      <nav className={`lp-sticky-nav sticky top-0 z-20 border-b border-[var(--border)] backdrop-blur-[14px] ${navBg}`}>
-        <div className="max-w-[1120px] mx-auto px-4 sm:px-7 h-[54px] flex items-center justify-between">
-          <button
-            onClick={onNavigateToLanding}
-            className="flex items-center gap-2 text-[13px] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
-          >
-            <Icons.Chevron size={12} className="rotate-180" />
-            <span>IFC Viewer</span>
-          </button>
-          <div className="flex items-center gap-1.5">
-            <Icons.Logo size={15} className="text-[var(--text-faint)]" aria-hidden="true" />
-            <span className="text-[13.5px] font-semibold tracking-tight">Blog</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggleBtn theme={landingTheme} onToggle={onToggleLandingTheme} />
-            <button
-              onClick={onNavigateToLanding}
-              className="inline-flex items-center gap-1.5 h-[30px] px-3 text-[12.5px] font-semibold rounded-[8px] bg-[var(--accent)] text-white hover:brightness-110 transition-all"
-            >
-              <Icons.ArrowRight size={12} />
-              Open viewer
-            </button>
-          </div>
-        </div>
-      </nav>
+      {nav}
 
-      {/* ── Header: FaultyTerminal (dark) / clean gradient (light) ── */}
+      {/* ── 1. Hero: what this is, and the fastest way in ── */}
       <header className="relative overflow-hidden border-b border-[var(--border)]">
-        {landingTheme === 'dark' ? (
-          <>
-            {/* WebGL terminal background */}
-            <div className="absolute inset-0 pointer-events-none">
-              <FaultyTerminal
-                scale={2.2}
-                gridMul={[3, 1]}
-                digitSize={1.0}
-                timeScale={0.15}
-                tint="#5E6AD2"
-                scanlineIntensity={0.7}
-                glitchAmount={0.9}
-                flickerAmount={0.6}
-                noiseAmp={0.9}
-                brightness={0.55}
-                mouseReact={true}
-                mouseStrength={0.35}
-                curvature={0}
-                chromaticAberration={0}
-                pageLoadAnimation={false}
-                className="w-full h-full"
-              />
-            </div>
-            {/* Fade bottom edge into page background */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{ background: 'linear-gradient(to bottom, rgba(10,10,14,0.35) 0%, var(--bg) 100%)' }}
-            />
-          </>
-        ) : (
-          /* Light mode: premium B2B header — Grainient base + SoftAurora accent */
-          <>
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              <Grainient
-                color1="#ECEEFF"
-                color2="#D4D9FF"
-                color3="#F4F5FC"
-                timeSpeed={0.035}
-                warpStrength={0.18}
-                warpFrequency={2.5}
-                warpAmplitude={14.0}
-                grainAmount={0.028}
-                grainScale={2.0}
-                contrast={0.97}
-                saturation={0.35}
-                zoom={0.92}
-                rotationAmount={160.0}
-              />
-            </div>
-            <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ opacity: 0.7 }}>
-              <SoftAurora
-                color1="#3645C4"
-                color2="#6B7FE8"
-                brightness={0.45}
-                speed={0.25}
-                scale={1.2}
-                bandHeight={0.52}
-                bandSpread={0.9}
-                noiseAmplitude={0.8}
-                layerOffset={0.8}
-              />
-            </div>
-          </>
-        )}
-
-        <div className="relative max-w-[1120px] mx-auto px-4 sm:px-7 pt-8 sm:pt-[60px] pb-8 sm:pb-14 z-10">
-          <div className="inline-flex items-center gap-2 mb-3 sm:mb-4 px-2.5 py-1 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[11px] font-mono text-[var(--text-faint)]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
+        <HeroBackdrop theme={landingTheme} />
+        <div className="relative max-w-[1120px] mx-auto px-4 sm:px-7 pt-7 sm:pt-[52px] pb-7 sm:pb-12 z-10">
+          <p className="inline-flex items-center gap-2 mb-3 sm:mb-4 px-2.5 py-1 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[11px] font-mono text-[var(--text-faint)]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" aria-hidden="true" />
             {copy.eyebrow}
-          </div>
+          </p>
 
+          {/* Static on purpose: the heading is the page's largest text — its
+              LCP element — and must paint at once, not fade in from a blur. */}
           <h1
-            aria-label={`${copy.heroLead} ${copy.heroAccent}`}
-            className="font-semibold tracking-[-0.035em] leading-[1.1] text-[var(--text)] mb-3 sm:mb-5 max-w-[640px]"
-            style={{ fontSize: 'clamp(26px, 7vw, 54px)' }}
+            className="font-semibold tracking-[-0.035em] leading-[1.1] text-[var(--text)] mb-3 sm:mb-4 max-w-[680px]"
+            style={{ fontSize: 'clamp(28px, 7vw, 52px)' }}
           >
-            <BlurText text={copy.heroLead} animateBy="words" delay={50} className="block" />
-            <BlurText text={copy.heroAccent} animateBy="words" delay={50} className="block text-[var(--accent-2)]" />
+            <span className="block">{copy.heroLead}</span>
+            <span className="block text-[var(--accent-2)]">{copy.heroAccent}</span>
           </h1>
 
-          <p className="text-[14px] sm:text-[16px] leading-[1.65] text-[var(--text-dim)] max-w-[520px]">
+          <p className="text-[14.5px] sm:text-[16px] leading-[1.65] text-[var(--text-dim)] max-w-[560px]">
             {copy.heroDescription}
           </p>
 
           <form
             role="search"
-            className="mt-6 sm:mt-8 max-w-[720px]"
+            className="mt-5 sm:mt-7 max-w-[720px]"
             onSubmit={(event) => { event.preventDefault(); revealResults() }}
           >
             <label htmlFor="blog-search" className="sr-only">{copy.searchLabel}</label>
@@ -1150,7 +1387,8 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={copy.searchPlaceholder}
                 autoComplete="off"
-                className="w-full h-14 sm:h-[60px] rounded-2xl border border-[var(--border-strong)] bg-[color:var(--surface)] pl-12 pr-24 text-[16px] text-[var(--text)] placeholder:text-[var(--text-faint)] shadow-[0_18px_50px_rgba(0,0,0,.18)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(94,106,210,.24)]"
+                enterKeyHint="search"
+                className="w-full h-14 sm:h-[60px] rounded-2xl border border-[var(--border-strong)] bg-[color:var(--surface)] pl-12 pr-14 sm:pr-24 text-[16px] text-[var(--text)] placeholder:text-[var(--text-faint)] shadow-[0_18px_50px_rgba(0,0,0,.18)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(94,106,210,.24)]"
               />
               {query ? (
                 <button
@@ -1167,7 +1405,31 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
             </div>
           </form>
 
-          <dl className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[11px] sm:text-[12px] text-[var(--text-faint)]">
+          {/* Real questions as one-tap routes — for the reader who knows the
+              problem but not our vocabulary. Scrolls sideways on a phone. */}
+          <div className="mt-3.5 max-w-[720px]">
+            <p className="sr-only">{copy.questionsLabel}</p>
+            <ul className="ed-chips" role="list">
+              {copy.questions.map((question) => (
+                <li key={question.label}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (question.intent === 'spatial' && spatialTopic) { openTopic(spatialTopic.slug, 'library'); return }
+                      setQuery(question.query ?? '')
+                      setCategory('all')
+                      revealResults()
+                    }}
+                    className="ed-chip ed-focus"
+                  >
+                    {question.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <dl className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[11.5px] sm:text-[12px] text-[var(--text-faint)]">
             <div className="flex items-baseline gap-1.5"><dt className="order-2">{copy.guidesStat}</dt><dd className="font-mono font-bold text-[var(--text)]">{posts.length}</dd></div>
             <div className="flex items-baseline gap-1.5"><dt className="order-2">{copy.topicsStat}</dt><dd className="font-mono font-bold text-[var(--text)]">{categories.length}</dd></div>
             <div className="flex items-baseline gap-1.5"><dt className="order-2">{copy.demosStat}</dt><dd className="font-mono font-bold text-[var(--text)]">{demoCount}</dd></div>
@@ -1175,113 +1437,98 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
         </div>
       </header>
 
-      <main className="max-w-[1120px] mx-auto px-4 sm:px-7 py-10 sm:py-16">
-        {/* ── Outcome-led paths ── */}
-        <section aria-labelledby="blog-journeys-title">
-          <div className="max-w-[650px]">
-            <p className="font-mono text-[10px] font-bold tracking-[0.14em] text-[var(--accent-2)]">
-              {lang === 'es' ? 'RECORRIDOS GUIADOS' : 'GUIDED PATHS'}
-            </p>
-            <h2 id="blog-journeys-title" className="mt-2 text-[24px] sm:text-[32px] font-semibold tracking-[-0.03em] text-[var(--text)]">
-              {copy.journeysTitle}
-            </h2>
-            <p className="mt-3 text-[14px] sm:text-[15px] leading-[1.7] text-[var(--text-dim)]">{copy.journeysDescription}</p>
-          </div>
-
-          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {copy.journeys.map((journey) => (
-              <JourneyCard
-                key={journey.id}
-                journey={journey}
-                active={activeJourneyId === journey.id}
-                onSelect={() => selectJourney(journey.id)}
-              />
-            ))}
-          </div>
-        </section>
-
-        {/* ── Question shortcuts ── */}
-        <section className="mt-12 sm:mt-16 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7" aria-labelledby="blog-questions-title">
-          <div className="grid gap-5 lg:grid-cols-[280px_1fr] lg:items-start">
-            <div>
-              <h2 id="blog-questions-title" className="text-[18px] sm:text-[20px] font-semibold tracking-[-0.02em] text-[var(--text)]">{copy.questionsTitle}</h2>
-              <p className="mt-2 text-[13px] leading-[1.65] text-[var(--text-dim)]">{copy.questionsDescription}</p>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {copy.questions.map((question) => (
-                <button
-                  key={question.label}
-                  type="button"
-                  onClick={() => {
-                    setQuery(question.query ?? '')
-                    setActiveJourneyId(question.intent ?? '')
-                    setCategory('all')
-                    revealResults()
-                  }}
-                  className="group min-h-12 flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-left text-[13px] leading-[1.45] text-[var(--text)] cursor-pointer transition-colors hover:border-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-                >
-                  <span>{question.label}</span>
-                  <Icons.ArrowRight size={13} className="shrink-0 text-[var(--text-faint)] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-[var(--accent-2)]" aria-hidden="true" />
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-
+      <main className="max-w-[1120px] mx-auto px-4 sm:px-7 py-8 sm:py-14">
         {!hasFilters && (
           <>
-            {/* ── Editorial starting point ── */}
-            <section className="mt-12 sm:mt-16" aria-labelledby="blog-featured-title">
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <h2 id="blog-featured-title" className="text-[18px] sm:text-[20px] font-semibold tracking-[-0.02em] text-[var(--text)]">
-                  {lang === 'es' ? 'Empieza por aquí' : 'Start here'}
-                </h2>
-                <span className="hidden sm:inline text-[12px] text-[var(--text-faint)]">
-                  {lang === 'es' ? 'Selección editorial' : 'Editor’s pick'}
-                </span>
-              </div>
-              <FeaturedCard
-                post={featured}
-                onClick={() => onNavigateToPost(featured.slug)}
-                theme={landingTheme}
-                featuredLabel={lang === 'es' ? 'DESTACADO' : 'FEATURED'}
-                readLabel={lang === 'es' ? 'Leer' : 'Read'}
-              />
-            </section>
-
-            {/* Free handbooks are English, so they remain on the English index. */}
-            {lang === 'en' && (
-              <section className="mt-12 sm:mt-16" aria-labelledby="blog-handbooks-title">
-                <div className="max-w-[600px]">
-                  <p className="font-mono text-[10px] font-bold tracking-[0.14em] text-[var(--accent-2)]">FREE FIELD GUIDES</p>
-                  <h2 id="blog-handbooks-title" className="mt-2 text-[22px] sm:text-[26px] font-semibold tracking-[-0.025em] text-[var(--text)]">Take the workflow with you</h2>
-                  <p className="mt-2 text-[14px] leading-[1.65] text-[var(--text-dim)]">Downloadable checklists for validation, coordination and IFC delivery.</p>
+            {/* ── 2. Returning reader ── */}
+            {picked.length > 0 && (
+              <section className="mb-12 sm:mb-16" aria-labelledby="blog-continue-title">
+                <SectionHeading id="blog-continue-title" title={copy.continueTitle} description={copy.continueDescription} />
+                <div className="mt-5 grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {picked.map((post, i) => (
+                    <PostCard key={post.slug} post={post} from="continue" position={i} read={read} copy={copy} lang={lang} onClick={() => onNavigateToPost(post.slug)} theme={landingTheme} />
+                  ))}
                 </div>
-                <EbookBanner />
               </section>
             )}
 
-            {/* ── Working spatial examples ── */}
+            {/* ── 3. Start here ── */}
+            <section aria-labelledby="blog-featured-title">
+              <SectionHeading id="blog-featured-title" title={copy.startHereTitle} description={copy.startHereDescription} />
+              <div className="mt-5 grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+                <FeaturedCard
+                  post={featured}
+                  onClick={() => { trackBlogPostOpened({ from: 'start_here', lang, position: 0 }); onNavigateToPost(featured.slug) }}
+                  theme={landingTheme}
+                  featuredLabel={copy.editorsPick.toUpperCase()}
+                  readLabel={lang === 'es' ? 'Leer' : 'Read'}
+                />
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--text-faint)]">{copy.foundationalLabel}</p>
+                  <ul className="mt-3 divide-y divide-[var(--border)]" role="list">
+                    {foundational.map((post, i) => (
+                      <PostRow key={post.slug} post={post} from="start_here" position={i + 1} copy={copy} read={read} lang={lang} onNavigate={onNavigateToPost} />
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            {/* ── 4. Topics — each a real page ── */}
+            {/* One topic is not a choice — it stays linked from the lab and footer. */}
+            {topics.length > 1 && (
+              <section className="mt-12 sm:mt-16" aria-labelledby="blog-topics-title">
+                <SectionHeading id="blog-topics-title" title={copy.topicsTitle} description={copy.topicsDescription} />
+                <div className="mt-5 grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {topics.map((t) => (
+                    <TopicCard key={t.slug} topic={t} lang={lang} copy={copy} inbound={inbound} onOpenTopic={openTopic} onNavigate={onNavigateToPost} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* ── 5. New and updated ── */}
+            <section className="mt-12 sm:mt-16 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-10" aria-labelledby="blog-new-title">
+              <div>
+                <SectionHeading id="blog-new-title" title={copy.whatsNewTitle} description={copy.whatsNewDescription} />
+                <ul className="mt-5 divide-y divide-[var(--border)]" role="list">
+                  {fresh.map((post, i) => (
+                    <PostRow key={post.slug} post={post} from="whats_new" position={i} copy={copy} read={read} lang={lang} onNavigate={onNavigateToPost} />
+                  ))}
+                </ul>
+              </div>
+              {/* Free handbooks are English, so they stay on the English index. */}
+              {lang === 'en' && (
+                <div aria-labelledby="blog-handbooks-title" role="region">
+                  <p className="font-mono text-[10px] font-bold tracking-[0.14em] text-[var(--accent-2)]">FREE FIELD GUIDES</p>
+                  <h2 id="blog-handbooks-title" className="mt-2 text-[21px] sm:text-[26px] font-semibold tracking-[-0.025em] text-[var(--text)]">Take the workflow with you</h2>
+                  <p className="mt-1.5 text-[14px] leading-[1.65] text-[var(--text-dim)]">Downloadable checklists for validation, coordination and IFC delivery.</p>
+                  <EbookBanner />
+                </div>
+              )}
+            </section>
+
+            {/* ── 6. The 3D lab: the digital-twins topic, shown by its demos ── */}
             {spatialPosts.length > 0 && (
               <section className="mt-12 sm:mt-16" aria-labelledby="blog-lab-title">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="max-w-[650px]">
-                    <p className="font-mono text-[10px] font-bold tracking-[0.14em] text-cyan-500">{copy.labBadge}</p>
-                    <h2 id="blog-lab-title" className="mt-2 text-[24px] sm:text-[32px] font-semibold tracking-[-0.03em] text-[var(--text)]">{copy.labTitle}</h2>
-                    <p className="mt-3 text-[14px] sm:text-[15px] leading-[1.7] text-[var(--text-dim)]">{copy.labDescription}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => selectJourney('spatial')}
-                    className="self-start sm:self-auto min-h-11 inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-[13px] font-semibold text-[var(--text)] cursor-pointer transition-colors hover:border-cyan-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-                  >
-                    {copy.journeys.find((journey) => journey.id === 'spatial')?.cta}
-                    <Icons.ArrowRight size={13} aria-hidden="true" />
-                  </button>
-                </div>
-                <div className="mt-7 grid gap-3 sm:gap-4 md:grid-cols-3">
-                  {spatialPosts.map((post) => (
-                    <LabCard key={post.slug} post={post} label={copy.labBadge} cta={copy.labCta} onClick={() => onNavigateToPost(post.slug)} />
+                <SectionHeading
+                  id="blog-lab-title"
+                  title={copy.labTitle}
+                  description={copy.labDescription}
+                  action={spatialTopic && (
+                    <a
+                      href={topicHref(spatialTopic.slug, lang)}
+                      onClick={(e) => { if (e.metaKey || e.ctrlKey || e.button !== 0) return; e.preventDefault(); openTopic(spatialTopic.slug, 'lab') }}
+                      className="self-start sm:self-auto min-h-11 inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-[13px] font-semibold text-[var(--text)] transition-colors hover:border-cyan-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                    >
+                      {copy.exploreTopic}: {spatialTopic.label}
+                      <Icons.ArrowRight size={13} aria-hidden="true" />
+                    </a>
+                  )}
+                />
+                <div className="mt-5 grid gap-3 sm:gap-4 md:grid-cols-3">
+                  {spatialPosts.map((post, i) => (
+                    <LabCard key={post.slug} post={post} label={copy.labBadge} cta={copy.labCta} onClick={() => { trackBlogPostOpened({ from: 'lab', lang, position: i }); onNavigateToPost(post.slug) }} />
                   ))}
                 </div>
               </section>
@@ -1289,74 +1536,48 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
           </>
         )}
 
-        {/* ── Searchable library ── */}
-        <section ref={resultsRef} className="mt-14 sm:mt-20 scroll-mt-20" aria-labelledby="all-guides-title">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-[620px]">
-              <p className="font-mono text-[10px] font-bold tracking-[0.14em] text-[var(--accent-2)]">{lang === 'es' ? 'BIBLIOTECA' : 'LIBRARY'}</p>
-              <h2 id="all-guides-title" className="mt-2 text-[24px] sm:text-[32px] font-semibold tracking-[-0.03em] text-[var(--text)]">{copy.allGuidesTitle}</h2>
-              <p className="mt-3 text-[14px] sm:text-[15px] leading-[1.7] text-[var(--text-dim)]">{copy.allGuidesDescription}</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <label htmlFor="blog-sort" className="text-[12px] font-medium text-[var(--text-dim)]">{copy.sortLabel}</label>
-              <select
-                id="blog-sort"
-                value={sort}
-                onChange={(event) => setSort(event.target.value as BlogSort)}
-                className="min-h-11 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-[13px] text-[var(--text)] outline-none cursor-pointer focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(94,106,210,.24)]"
-              >
-                <option value="newest">{copy.newest}</option>
-                <option value="shortest">{copy.shortest}</option>
-                <option value="title">{copy.alphabetical}</option>
-              </select>
-            </div>
-          </div>
+        {/* ── 7. The library ── */}
+        <section ref={resultsRef} className={`${hasFilters ? 'mt-0' : 'mt-14 sm:mt-20'} scroll-mt-20`} aria-labelledby="all-guides-title">
+          <SectionHeading
+            id="all-guides-title"
+            title={copy.allGuidesTitle}
+            description={copy.allGuidesDescription}
+            action={
+              <div className="flex items-center gap-3">
+                <label htmlFor="blog-sort" className="text-[12px] font-medium text-[var(--text-dim)]">{copy.sortLabel}</label>
+                <select
+                  id="blog-sort"
+                  value={sort}
+                  onChange={(event) => setSort(event.target.value as BlogSort)}
+                  className="min-h-11 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-[13px] text-[var(--text)] outline-none cursor-pointer focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(94,106,210,.24)]"
+                >
+                  <option value="newest">{copy.newest}</option>
+                  <option value="shortest">{copy.shortest}</option>
+                  <option value="title">{copy.alphabetical}</option>
+                </select>
+              </div>
+            }
+          />
 
-          <div className="mt-7 border-y border-[var(--border)] py-4">
-            <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.1em] text-[var(--text-faint)]">{copy.topicsLabel}</p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                aria-pressed={category === 'all'}
-                onClick={() => setCategory('all')}
-                className={`min-h-11 rounded-xl border px-4 text-[12.5px] font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${category === 'all' ? 'border-[var(--accent)] bg-[rgba(94,106,210,.14)] text-[var(--accent-2)]' : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-dim)] hover:border-[var(--border-strong)] hover:text-[var(--text)]'}`}
-              >
+          <div className="mt-5 border-y border-[var(--border)] py-3.5">
+            <p className="mb-2.5 text-[11px] font-medium uppercase tracking-[0.1em] text-[var(--text-faint)]" id="blog-topic-filter-label">{copy.topicsLabel}</p>
+            <div className="ed-chips" role="group" aria-labelledby="blog-topic-filter-label">
+              <button type="button" aria-pressed={category === 'all'} onClick={() => setCategory('all')} className="ed-chip ed-focus">
                 {copy.allTopics}
               </button>
               {categories.map(([slug, label]) => (
-                <button
-                  key={slug}
-                  type="button"
-                  aria-pressed={category === slug}
-                  onClick={() => setCategory(slug)}
-                  className={`min-h-11 rounded-xl border px-4 text-[12.5px] font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${category === slug ? 'border-[var(--accent)] bg-[rgba(94,106,210,.14)] text-[var(--accent-2)]' : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-dim)] hover:border-[var(--border-strong)] hover:text-[var(--text)]'}`}
-                >
+                <button key={slug} type="button" aria-pressed={category === slug} onClick={() => setCategory(slug)} className="ed-chip ed-focus">
                   {label}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="mt-5 min-h-11 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <p aria-live="polite" className="text-[13px] font-medium text-[var(--text-dim)]">
-                <span className="font-mono font-bold text-[var(--text)]">{filteredPosts.length}</span>{' '}
-                {filteredPosts.length === 1 ? copy.oneResult : copy.manyResults}
-              </p>
-              {activeJourney && (
-                <span className="inline-flex min-h-8 items-center gap-2 rounded-lg border border-[rgba(94,106,210,.35)] bg-[rgba(94,106,210,.10)] px-2.5 text-[11.5px] text-[var(--accent-2)]">
-                  {activeJourney.title}
-                  <button
-                    type="button"
-                    onClick={() => setActiveJourneyId('')}
-                    className="w-7 h-7 -mr-1 inline-flex items-center justify-center rounded-md cursor-pointer hover:bg-[rgba(94,106,210,.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-                    aria-label={`${copy.clearFilters}: ${activeJourney.title}`}
-                  >
-                    <Icons.X size={12} aria-hidden="true" />
-                  </button>
-                </span>
-              )}
-            </div>
+          <div className="mt-4 min-h-11 flex flex-wrap items-center justify-between gap-3">
+            <p aria-live="polite" className="text-[13px] font-medium text-[var(--text-dim)]">
+              <span className="font-mono font-bold text-[var(--text)]">{filteredPosts.length}</span>{' '}
+              {filteredPosts.length === 1 ? copy.oneResult : copy.manyResults}
+            </p>
             {hasFilters && (
               <button
                 type="button"
@@ -1369,10 +1590,10 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
             )}
           </div>
 
-          {gridPosts.length > 0 ? (
+          {filteredPosts.length > 0 ? (
             <div className="mt-4 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {gridPosts.map((post) => (
-                <PostCard key={post.slug} post={post} onClick={() => onNavigateToPost(post.slug)} theme={landingTheme} />
+              {filteredPosts.map((post, i) => (
+                <PostCard key={post.slug} post={post} from="library" position={i} read={read} copy={copy} lang={lang} onClick={() => onNavigateToPost(post.slug)} theme={landingTheme} />
               ))}
             </div>
           ) : (
@@ -1395,23 +1616,194 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
       </main>
 
       <BlogFaqSection title={copy.faqTitle} description={copy.faqDescription} faqs={copy.faqs} />
+      {footer}
+    </motion.div>
+  )
+}
 
-      {/* ── Footer CTA ── */}
-      <div className="border-t border-[var(--border)] bg-[var(--surface-2)] py-8 sm:py-12 px-4 text-center">
-        <div className="max-w-[440px] mx-auto">
-          <p className="text-[13.5px] sm:text-[15px] text-[var(--text-dim)] mb-4">
-            {copy.viewerPrompt}
-          </p>
+// ─── Topic hub ────────────────────────────────────────────────────────────────
+// A topic's own page: what it covers, the guide to start with, every article in
+// it, and the tools for its problems — the "pillar" a search for the topic
+// should land on, and what every article's breadcrumb links up to.
+
+function TopicHubView({ topic, topics, lang, copy, read, inbound, theme, onOpenTopic, onNavigateToPost }: {
+  topic: Topic
+  topics: Topic[]
+  lang: string
+  copy: BlogHubCopy
+  read: Set<string>
+  inbound: Map<string, number>
+  theme: 'dark' | 'light'
+  onOpenTopic: (slug: string, from: BlogSurface | 'breadcrumb') => void
+  onNavigateToPost: (slug: string) => void
+}) {
+  const [pillar, ...rest] = [...topic.posts].sort(
+    (a, b) => (inbound.get(b.slug) ?? 0) - (inbound.get(a.slug) ?? 0) || b.date.localeCompare(a.date),
+  )
+  const others = [...rest].sort((a, b) => lastTouched(b).localeCompare(lastTouched(a)))
+  const tools = React.useMemo(() => {
+    const hay = [topic.copy.title, topic.copy.intro, ...topic.posts.flatMap((p) => [p.title, ...(p.keywords ?? [])])].join(' ').toLowerCase()
+    return BLOG_TOOLS
+      .map((t) => ({ t, hits: t.terms.filter((term) => hay.includes(term)).length }))
+      .filter((x) => x.hits > 0)
+      .sort((a, b) => b.hits - a.hits)
+      .slice(0, 3)
+      .map((x) => x.t)
+  }, [topic])
+
+  return (
+    <main className="max-w-[1120px] mx-auto px-4 sm:px-7 pt-6 sm:pt-10 pb-12 sm:pb-16">
+      <nav aria-label="Breadcrumb" className="text-[12.5px] text-[var(--text-faint)]">
+        <ol className="flex flex-wrap items-center gap-1.5" role="list">
+          <li>
+            <a
+              href={blogHomeHref(lang)}
+              onClick={(e) => { if (e.metaKey || e.ctrlKey || e.button !== 0) return; e.preventDefault(); onOpenTopic('', 'breadcrumb') }}
+              className="hover:text-[var(--text)]"
+            >
+              Blog
+            </a>
+          </li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" className="text-[var(--text-dim)]">{topic.label}</li>
+        </ol>
+      </nav>
+
+      <header className="mt-4 max-w-[760px]">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--accent-2)]">
+          {copy.topicEyebrow} · {copy.topicGuides(topic.posts.length)}
+        </p>
+        <h1 className="mt-2 font-semibold tracking-[-0.03em] leading-[1.15] text-[var(--text)]" style={{ fontSize: 'clamp(26px, 6vw, 44px)' }}>
+          {topic.copy.title}
+        </h1>
+        <p className="mt-3 text-[15px] sm:text-[16.5px] leading-[1.65] text-[var(--text-dim)]">{topic.copy.intro}</p>
+      </header>
+
+      {pillar && (
+        <section className="mt-8 sm:mt-10" aria-labelledby="topic-start-title">
+          <h2 id="topic-start-title" className="mb-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-faint)]">{copy.startWith}</h2>
+          <FeaturedCard
+            post={pillar}
+            onClick={() => { trackBlogPostOpened({ from: 'topic_hub', lang, position: 0 }); onNavigateToPost(pillar.slug) }}
+            theme={theme}
+            featuredLabel={copy.foundationalLabel.toUpperCase()}
+            readLabel={lang === 'es' ? 'Leer' : 'Read'}
+          />
+        </section>
+      )}
+
+      {others.length > 0 && (
+        <section className="mt-10 sm:mt-14" aria-labelledby="topic-all-title">
+          <h2 id="topic-all-title" className="text-[21px] sm:text-[26px] font-semibold tracking-[-0.025em] text-[var(--text)]">
+            {copy.topicAllGuides(topic.posts.length)}
+          </h2>
+          <div className="mt-5 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {others.map((post, i) => (
+              <PostCard key={post.slug} post={post} from="topic_hub" position={i + 1} read={read} copy={copy} lang={lang} onClick={() => onNavigateToPost(post.slug)} theme={theme} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {tools.length > 0 && (
+        <section className="mt-10 sm:mt-14" aria-labelledby="topic-tools-title">
+          <h2 id="topic-tools-title" className="mb-4 text-[21px] sm:text-[26px] font-semibold tracking-[-0.025em] text-[var(--text)]">{copy.topicTools}</h2>
+          <ToolLinks tools={tools} lang={lang} from="topic_hub" />
+        </section>
+      )}
+
+      {topics.length > 1 && (
+        <section className="mt-10 sm:mt-14 border-t border-[var(--border)] pt-8" aria-labelledby="topic-others-title">
+          <h2 id="topic-others-title" className="mb-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-faint)]">{copy.otherTopics}</h2>
+          <ul className="flex flex-wrap gap-2" role="list">
+            {topics.filter((t) => t.slug !== topic.slug).map((t) => (
+              <li key={t.slug}>
+                <a
+                  href={topicHref(t.slug, lang)}
+                  onClick={(e) => { if (e.metaKey || e.ctrlKey || e.button !== 0) return; e.preventDefault(); onOpenTopic(t.slug, 'topic_hub') }}
+                  className="ed-chip ed-focus inline-flex items-center gap-2"
+                >
+                  {t.label}<span className="text-[11px] tabular-nums text-[var(--text-faint)]">{t.posts.length}</span>
+                </a>
+              </li>
+            ))}
+            <li>
+              <a
+                href={blogHomeHref(lang)}
+                onClick={(e) => { if (e.metaKey || e.ctrlKey || e.button !== 0) return; e.preventDefault(); onOpenTopic('', 'breadcrumb') }}
+                className="ed-chip ed-focus inline-flex items-center"
+              >
+                {copy.allArticles}
+              </a>
+            </li>
+          </ul>
+        </section>
+      )}
+    </main>
+  )
+}
+
+// ─── Editorial footer ─────────────────────────────────────────────────────────
+// Every topic and tool, one click from any blog page: the crawl path to the
+// hubs, and the route from reading to using the product.
+
+function BlogFooter({ lang, copy, topics, onOpenTopic, onNavigateToLanding }: {
+  lang: string
+  copy: BlogHubCopy
+  topics: Topic[]
+  onOpenTopic: (slug: string, from: BlogSurface | 'breadcrumb') => void
+  onNavigateToLanding: () => void
+}) {
+  const tools = BLOG_TOOLS.filter((t) => ['validator', 'fix-guides', 'viewer', 'embed', 'sdk'].includes(t.id))
+  return (
+    <footer className="border-t border-[var(--border)] bg-[var(--surface-2)]">
+      <div className="max-w-[1120px] mx-auto px-4 sm:px-7 py-10 sm:py-14 grid gap-8 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        <div>
+          <p className="text-[15px] sm:text-[16px] font-semibold text-[var(--text)]">{copy.viewerPrompt}</p>
           <button
             onClick={onNavigateToLanding}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-11 px-6 text-[14px] sm:text-[13.5px] font-semibold rounded-xl bg-[var(--accent)] text-white cursor-pointer hover:brightness-110 active:brightness-90 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-2)]"
+            className="mt-4 w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-11 px-5 text-[14px] font-semibold rounded-xl bg-[var(--accent)] text-white cursor-pointer hover:brightness-110 active:brightness-90 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-2)]"
           >
             {copy.viewerCta}
             <Icons.ArrowRight size={14} />
           </button>
         </div>
+        {topics.length > 0 && (
+          <nav aria-labelledby="blog-footer-topics">
+            <h2 id="blog-footer-topics" className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-faint)]">{copy.footerTopics}</h2>
+            <ul className="mt-3 space-y-0.5" role="list">
+              {topics.map((t) => (
+                <li key={t.slug}>
+                  <a
+                    href={topicHref(t.slug, lang)}
+                    onClick={(e) => { if (e.metaKey || e.ctrlKey || e.button !== 0) return; e.preventDefault(); onOpenTopic(t.slug, 'footer') }}
+                    className="inline-flex min-h-9 items-center text-[13.5px] text-[var(--text-dim)] hover:text-[var(--text)]"
+                  >
+                    {t.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+        <nav aria-labelledby="blog-footer-tools">
+          <h2 id="blog-footer-tools" className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-faint)]">{copy.footerTools}</h2>
+          <ul className="mt-3 space-y-0.5" role="list">
+            {tools.map((tool) => (
+              <li key={tool.id}>
+                <a
+                  href={toolHref(tool, lang)}
+                  onClick={() => trackBlogToolClicked({ tool: tool.id, from: 'footer', lang })}
+                  className="inline-flex min-h-9 items-center text-[13.5px] text-[var(--text-dim)] hover:text-[var(--text)]"
+                >
+                  {toolCopy(tool, lang).name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
-    </motion.div>
+    </footer>
   )
 }
 
@@ -1457,6 +1849,10 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
   onToggleLandingTheme: () => void
 }) {
   const bodyRef = React.useRef<HTMLDivElement>(null)
+  const postTopic = React.useMemo(
+    () => topicsFor(getBlogPostsByLang(post.lang ?? 'en'), post.lang ?? 'en').find((t) => t.slug === post.categorySlug),
+    [post.lang, post.categorySlug],
+  )
   const recsNav = React.useMemo<RecsNav>(() => ({
     lang: post.lang ?? 'en',
     slugify,
@@ -1620,12 +2016,44 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
 
             {/* Article header */}
             <header className="mb-7 sm:mb-10">
-              {/* Category + read time chip row */}
-              <div className="flex items-center justify-between mb-3">
-                <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider ${catColor(post.categorySlug)}`}>
-                  {post.category.toUpperCase()}
-                </span>
-                <span className="text-[11.5px] text-[var(--text-faint)]">{post.readTimeMin} min read</span>
+              {/* Breadcrumb: Blog › Topic. The topic links up to its hub page —
+                  the article's place in the site, for readers and crawlers. */}
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <nav aria-label="Breadcrumb">
+                  <ol className="flex flex-wrap items-center gap-1.5 text-[12px] text-[var(--text-faint)]" role="list">
+                    <li>
+                      <a
+                        href={blogHomeHref(post.lang ?? 'en')}
+                        onClick={(e) => { if (e.metaKey || e.ctrlKey || e.button !== 0) return; e.preventDefault(); onNavigateToBlog() }}
+                        className="hover:text-[var(--text)]"
+                      >
+                        Blog
+                      </a>
+                    </li>
+                    <li aria-hidden="true">/</li>
+                    <li>
+                      {postTopic ? (
+                        <a
+                          href={topicHref(postTopic.slug, post.lang ?? 'en')}
+                          onClick={(e) => {
+                            trackBlogTopicOpened({ topic: postTopic.slug, from: 'breadcrumb', lang: post.lang ?? 'en' })
+                            if (e.metaKey || e.ctrlKey || e.button !== 0) return
+                            e.preventDefault()
+                            onNavigateToBlog()
+                            // The list mounts after this; it reads the topic from the URL.
+                            history.replaceState(null, '', topicHref(postTopic.slug, post.lang ?? 'en'))
+                          }}
+                          className={`inline-flex px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${catColor(post.categorySlug)} hover:brightness-125`}
+                        >
+                          {post.category}
+                        </a>
+                      ) : (
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${catColor(post.categorySlug)}`}>{post.category}</span>
+                      )}
+                    </li>
+                  </ol>
+                </nav>
+                <span className="shrink-0 text-[11.5px] text-[var(--text-faint)]">{post.readTimeMin} min</span>
               </div>
 
               <h1

@@ -22,7 +22,8 @@
 //
 // Invoked from vite.config.ts (closeBundle) after generateRuleFixPages().
 
-import { toolById, toolCopy, toolHref } from '../../src/lib/blog-tools'
+import { BLOG_TOOLS, toolById, toolCopy, toolHref } from '../../src/lib/blog-tools'
+import { foundationalPosts, lastTouched, topicsFor, type Topic } from '../../src/lib/blog-topics'
 import { slugify as slugifyHeading } from '../../src/lib/blog-related'
 import path    from 'path'
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
@@ -36,6 +37,27 @@ import { filterBlogPosts, getBlogHubCopy, sortBlogPosts } from '../../src/lib/bl
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 const OG_IMAGE = `${SITE}/og-image.png`
+
+/**
+ * The publisher of every article is the product, not a person: Google reads
+ * `publisher` as the organisation behind the site and expects its logo.
+ * Authorship stays with the byline on each post.
+ */
+const PUBLISHER = {
+  '@type': 'Organization',
+  '@id': `${SITE}/#organization`,
+  name: 'IFC Viewer Online',
+  url: `${SITE}/`,
+  logo: { '@type': 'ImageObject', url: `${SITE}/brand/logo.svg` },
+  founder: { '@type': 'Person', name: 'Joel Benitez', url: 'https://github.com/j03rul4nd' },
+}
+
+function breadcrumbLd(items: Array<{ name: string; url: string }>): Record<string, unknown> {
+  return {
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, i) => ({ '@type': 'ListItem', position: i + 1, name: item.name, item: item.url })),
+  }
+}
 
 // Map lang → { prefix in URL, blog title, blog description }.
 //
@@ -162,6 +184,12 @@ function tweakHtml(template: string, meta: PageMeta): string {
   // 6. Remove the root hreflang alternates (they'd point to the wrong URL).
   //    Blog pages are English-only; we replace with self-referencing hreflang.
   html = html.replace(/<link\s+rel="alternate"\s+hreflang="[^"]*"\s+href="[^"]*"\s*\/>\s*/g, '')
+
+  // 6b. Drop the home page's JSON-LD. The template is the app's index.html,
+  //     whose WebApplication and FAQPage describe the landing — on a blog page
+  //     that FAQ isn't visible, and on a post with its own FAQ it made two
+  //     conflicting FAQPage blocks. Each page brings its own structured data.
+  html = html.replace(/\s*<script\s+type="application\/ld\+json">[\s\S]*?<\/script>/gi, '')
 
   // 7. Inject blog-specific hreflang + og:image:alt + twitter:image:alt + JSON-LD
   const alternates = meta.alternates?.length
@@ -422,28 +450,22 @@ function postBodyFallback(post: BlogPost, prefix: string, primaryImage: SearchIm
 function blogIndexBodyFallback(posts: BlogPost[], lang: string, prefix: string): string {
   const copy = getBlogHubCopy(lang)
   const sortedPosts = sortBlogPosts(posts, 'newest')
-  const journeys = copy.journeys
-    .map((journey) => {
-      const matches = filterBlogPosts(posts, { journey, sort: 'newest' })
-      if (matches.length === 0) return ''
-      const startingPost = matches[0]
-      return `<article><h3>${esc(journey.title)}</h3><p>${esc(journey.description)}</p><p><a href="${SITE}/${prefix}blog/${startingPost.slug}/">${esc(journey.cta)}</a></p></article>`
-    })
-    .filter(Boolean)
+  const topics = topicsFor(posts, lang)
+    .map((topic) => `<article><h3><a href="${SITE}/${prefix}blog/topic/${topic.slug}/">${esc(topic.copy.title)}</a></h3><p>${esc(topic.copy.intro)}</p></article>`)
     .join('\n          ')
 
   return `<noscript>
       <main id="blog-static-fallback" lang="${esc(lang)}">
         <header><h1>${esc(`${copy.heroLead} ${copy.heroAccent}`)}</h1><p>${esc(copy.heroDescription)}</p></header>
-        <section aria-labelledby="static-blog-journeys">
-          <h2 id="static-blog-journeys">${esc(copy.journeysTitle)}</h2>
-          <p>${esc(copy.journeysDescription)}</p>
-          ${journeys}
-        </section>
+        ${topics ? `<section aria-labelledby="static-blog-topics">
+          <h2 id="static-blog-topics">${esc(copy.topicsTitle)}</h2>
+          <p>${esc(copy.topicsDescription)}</p>
+          ${topics}
+        </section>` : ''}
         <section aria-labelledby="static-blog-library">
           <h2 id="static-blog-library">${esc(copy.allGuidesTitle)}</h2>
           <p>${esc(copy.allGuidesDescription)}</p>
-          ${sortedPosts.map((post) => `<article><a href="${SITE}/${prefix}blog/${post.slug}/"><img src="${mediaUrl(`blog/covers/${post.slug}.png`)}" alt="${esc(`${post.title} — IFC Viewer Online article cover`)}" width="1800" height="945" loading="lazy" decoding="async" /><h3>${esc(post.title)}</h3></a><p>${esc(post.excerpt)}</p></article>`).join('\n          ')}
+          ${sortedPosts.map((post) => `<article><a href="${SITE}/${prefix}blog/${post.slug}/"><img src="${mediaUrl(`blog/covers/${post.slug}.png`)}" alt="" width="1800" height="945" loading="lazy" decoding="async" /><h3>${esc(post.title)}</h3></a><p>${esc(post.excerpt)}</p></article>`).join('\n          ')}
         </section>
         <section aria-labelledby="static-blog-faq">
           <h2 id="static-blog-faq">${esc(copy.faqTitle)}</h2>
@@ -452,6 +474,32 @@ function blogIndexBodyFallback(posts: BlogPost[], lang: string, prefix: string):
         </section>
       </main>
     </noscript>`
+}
+
+/** A topic hub as crawlable HTML: intro, where to start, every guide, the tools. */
+function topicBodyFallback(topic: Topic, posts: BlogPost[], lang: string, prefix: string): string {
+  const copy = getBlogHubCopy(lang)
+  const ordered = orderTopicPosts(topic, posts)
+  const hay = [topic.copy.title, topic.copy.intro, ...topic.posts.flatMap((p) => [p.title, ...(p.keywords ?? [])])].join(' ').toLowerCase()
+  const tools = BLOG_TOOLS.filter((t) => t.terms.some((term) => hay.includes(term))).slice(0, 3)
+  return `<noscript>
+      <main id="blog-static-fallback" lang="${esc(lang)}">
+        <nav aria-label="Breadcrumb"><a href="${SITE}/${prefix}blog/">Blog</a> / ${esc(topic.label)}</nav>
+        <header><h1>${esc(topic.copy.title)}</h1><p>${esc(topic.copy.intro)}</p></header>
+        <section>
+          <h2>${esc(copy.topicAllGuides(topic.posts.length))}</h2>
+          ${ordered.map((post) => `<article><h3><a href="${SITE}/${prefix}blog/${post.slug}/">${esc(post.title)}</a></h3><p>${esc(post.excerpt)}</p></article>`).join('\n          ')}
+        </section>
+        ${tools.length ? `<section><h2>${esc(copy.topicTools)}</h2><ul>${tools.map((tool) => `<li><a href="${esc(toolHref(tool, lang))}">${esc(toolCopy(tool, lang).name)}</a> — ${esc(toolCopy(tool, lang).blurb)}</li>`).join('')}</ul></section>` : ''}
+      </main>
+    </noscript>`
+}
+
+/** The pillar (most referenced) first, then the rest by last update — as the SPA shows them. */
+function orderTopicPosts(topic: Topic, posts: BlogPost[]): BlogPost[] {
+  const [pillar] = foundationalPosts(topic.posts, 1, posts)
+  const rest = topic.posts.filter((p) => p.slug !== pillar?.slug).sort((a, b) => lastTouched(b).localeCompare(lastTouched(a)))
+  return pillar ? [pillar, ...rest] : rest
 }
 
 function postAlternates(post: BlogPost): Array<{ lang: string; href: string }> {
@@ -583,6 +631,61 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
     const urlBase = `${SITE}/${cfg.prefix}blog/`
     const hubCopy = getBlogHubCopy(lang)
     const sortedPosts = sortBlogPosts(posts, 'newest')
+    const topics = topicsFor(posts, lang)
+    const topicSlugs = new Set(topics.map((t) => t.slug))
+
+    // Topic hub pages — /blog/topic/<slug>/, only for topics with enough guides.
+    for (const topic of topics) {
+      try {
+        const canonical = `${urlBase}topic/${topic.slug}/`
+        const ordered = orderTopicPosts(topic, posts)
+        const outDir = path.join(distDir, ...cfg.prefix.split('/').filter(Boolean), 'blog', 'topic', topic.slug)
+        mkdirSync(outDir, { recursive: true })
+        writeFileSync(
+          path.join(outDir, 'index.html'),
+          tweakHtml(template, {
+            title: `${topic.copy.title} | IFC Viewer Blog`,
+            description: topic.copy.intro,
+            canonical,
+            ogType: 'website',
+            bodyFallback: topicBodyFallback(topic, posts, lang, cfg.prefix),
+            // Topics exist per language on their own; no cross-language pairs.
+            alternates: [{ lang, href: canonical }, ...(lang === 'en' ? [{ lang: 'x-default', href: canonical }] : [])],
+            jsonLd: {
+              '@context': 'https://schema.org',
+              '@graph': [
+                {
+                  '@type': 'CollectionPage',
+                  name: topic.copy.title,
+                  description: topic.copy.intro,
+                  url: canonical,
+                  inLanguage: lang,
+                  isPartOf: { '@type': 'Blog', url: urlBase },
+                  publisher: PUBLISHER,
+                  mainEntity: {
+                    '@type': 'ItemList',
+                    itemListElement: ordered.map((p, i) => ({
+                      '@type': 'ListItem',
+                      position: i + 1,
+                      url: `${urlBase}${p.slug}/`,
+                      name: p.title,
+                    })),
+                  },
+                },
+                breadcrumbLd([
+                  { name: 'Blog', url: urlBase },
+                  { name: topic.label, url: canonical },
+                ]),
+              ],
+            },
+          }),
+        )
+        result.pages++
+      } catch (err) {
+        console.error(`[blog-pages][${lang}] Error generating topic "${topic.slug}":`, err)
+        result.errors++
+      }
+    }
 
     // Blog index page
     try {
@@ -609,7 +712,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
                 url: urlBase,
                 description: cfg.blogDesc,
                 inLanguage: lang,
-                publisher: { '@type': 'Person', name: 'Joel Benitez', url: 'https://github.com/j03rul4nd' },
+                publisher: PUBLISHER,
                 blogPost: sortedPosts.map(p => ({
                   '@type': 'BlogPosting',
                   headline: p.title,
@@ -665,14 +768,15 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
             alternates: postAlternates(post),
             jsonLd: {
               '@context': 'https://schema.org',
+              '@graph': [{
               '@type': 'BlogPosting',
               headline: post.title,
               description: postSeoDescription(post),
               datePublished: post.date,
               dateModified: post.dateModified ?? post.date,
               inLanguage: lang,
-              author:    { '@type': 'Organization', name: post.author },
-              publisher: { '@type': 'Person', name: 'Joel Benitez', url: 'https://github.com/j03rul4nd' },
+              author:    { '@type': 'Organization', name: post.author, url: `${SITE}/` },
+              publisher: PUBLISHER,
               url: canonical,
               mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
               image: articleImageJsonLd(post),
@@ -684,6 +788,15 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
               ].join(', '),
               timeRequired: `PT${post.readTimeMin}M`,
               articleSection: post.category,
+              },
+              breadcrumbLd([
+                { name: 'Blog', url: urlBase },
+                ...(topicSlugs.has(post.categorySlug)
+                  ? [{ name: post.category, url: `${urlBase}topic/${post.categorySlug}/` }]
+                  : []),
+                { name: post.title, url: canonical },
+              ]),
+              ],
             },
           }),
         )
@@ -756,6 +869,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
       priority: number,
       changefreq: string,
       post?: BlogPost,
+      alternates?: Array<{ lang: string; href: string }>,
     ): void => {
       const entry = sitemapBlogEntry(
         urlPath,
@@ -764,7 +878,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
         changefreq,
         post ? postImages(post) : [],
         post?.videos,
-        post ? postAlternates(post) : blogIndexAlternates(),
+        post ? postAlternates(post) : alternates ?? blogIndexAlternates(),
       )
       const loc = `${SITE}${urlPath}`
       const existingPattern = new RegExp(`  <url>\\s*<loc>${regexEsc(loc)}</loc>[\\s\\S]*?</url>`)
@@ -780,6 +894,12 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
       const posts = postsFor(lang)
       if (posts.length === 0) continue
       upsertEntry(`/${cfg.prefix}blog/`, today, 0.85, 'weekly')
+      for (const topic of topicsFor(posts, lang)) {
+        const loc = `${SITE}/${cfg.prefix}blog/topic/${topic.slug}/`
+        const lastmod = topic.posts.map(lastTouched).sort().pop() ?? today
+        upsertEntry(`/${cfg.prefix}blog/topic/${topic.slug}/`, lastmod, 0.8, 'weekly', undefined,
+          [{ lang, href: loc }, ...(lang === 'en' ? [{ lang: 'x-default', href: loc }] : [])])
+      }
       posts.forEach(p => upsertEntry(`/${cfg.prefix}blog/${p.slug}/`, p.dateModified ?? p.date, 0.75, 'monthly', p))
     }
 
