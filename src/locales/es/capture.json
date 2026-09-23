@@ -381,7 +381,17 @@
       "fadeOut": "Salida a negro",
       "deleteTemplate": "Eliminar plantilla",
       "save": "Guardar como plantilla",
-      "generateBatch": "Generar {{n}} vídeos"
-    }
+      "generateBatch": "Generar {{n}} vídeos",
+      "storyboard": "Storyboard",
+      "storyboardSummary": "{{shots}} tomas · {{seconds}} s",
+      "storyboardBatch": "{{clips}} vídeos · {{shots}} tomas · {{seconds}} s cada uno",
+      "looks": {
+        "clean": "Limpio",
+        "bold": "Impactante",
+        "minimal": "Mínimo"
+      },
+      "reused": "Reutilizadas {{n}} tomas ya renderizadas"
+    },
+    "remaining": "Quedan unos {{seconds}} s"
   }
 }

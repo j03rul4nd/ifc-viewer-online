@@ -381,7 +381,17 @@
       "fadeOut": "黒へフェードアウト",
       "deleteTemplate": "テンプレートを削除",
       "save": "テンプレートとして保存",
-      "generateBatch": "{{n}} 本の動画を生成"
-    }
+      "generateBatch": "{{n}} 本の動画を生成",
+      "storyboard": "ストーリーボード",
+      "storyboardSummary": "{{shots}} ショット · {{seconds}} 秒",
+      "storyboardBatch": "{{clips}} 本の動画 · 各 {{shots}} ショット · {{seconds}} 秒",
+      "looks": {
+        "clean": "クリーン",
+        "bold": "ボールド",
+        "minimal": "ミニマル"
+      },
+      "reused": "レンダリング済みの {{n}} ショットを再利用しました"
+    },
+    "remaining": "残り約 {{seconds}} 秒"
   }
 }

@@ -8,8 +8,8 @@
 
 import { defaultShot, type Bounds, type CameraPose, type ShotSpec, type ShotType, type Vec3 } from '../capture/shots'
 import type { ClipTransition } from '../capture/project'
-import type { TextAnchor, TextStyleId } from '../capture/timeline'
-import { PACE_SHOT_SEC, type Recipe, type SectionKind } from './recipe'
+import type { TextAnchor, TextAnimId, TextStyleId } from '../capture/timeline'
+import { PACE_SHOT_SEC, type CaptionLook, type Recipe, type SectionKind } from './recipe'
 
 // ── Input ──────────────────────────────────────────────────────────────────────
 
@@ -42,6 +42,8 @@ export interface ModelFacts {
 
 export interface TourStop {
   pose: CameraPose
+  /** Aspect of the screen the stop was framed on (default 16:9). */
+  aspect?: number
   caption?: string
   highlight?: { modelId?: string; ids: number[]; severity?: 'error' | 'warning' | 'info' }
 }
@@ -88,6 +90,7 @@ export interface PlannedShot {
 }
 
 export interface PlannedText {
+  anim: TextAnimId
   text: string
   startSec: number
   endSec: number
@@ -115,6 +118,13 @@ export const FORMAT_SIZE: Record<Recipe['format'], { width: number; height: numb
   square: { width: 1080, height: 1080 },
   reel: { width: 1080, height: 1920 },
   tiktok: { width: 1080, height: 1920 },
+}
+
+/** How a recipe's captions look — one choice instead of five. */
+export const CAPTION_LOOKS: Record<CaptionLook, { title: TextStyleId; subtitle: TextStyleId; label: TextStyleId; cta: TextStyleId; anim: TextAnimId; stats: boolean }> = {
+  clean:   { title: 'title', subtitle: 'subtitle', label: 'lowerThird', cta: 'caption', anim: 'fade', stats: true },
+  bold:    { title: 'title', subtitle: 'badge', label: 'badge', cta: 'badge', anim: 'pop', stats: true },
+  minimal: { title: 'subtitle', subtitle: 'caption', label: 'caption', cta: 'caption', anim: 'fade', stats: false },
 }
 
 /** Only a score worth showing is shown — the same bar as the client badge. */
@@ -242,7 +252,9 @@ function sectionDrafts(
         }
         break
       case 'tour': {
-        const stops = facts.tour
+        // Stops were framed on the presenter's screen; a narrower output needs
+        // the camera further back to keep the same subject in frame.
+        const stops = facts.tour.map((st) => ({ ...st, pose: fitPoseToAspect(st.pose, st.aspect ?? SCREEN_ASPECT, aspect) }))
         for (let i = 0; i < stops.length; i++) {
           const stop = stops[i]
           const from = i === 0 ? pullBack(stop.pose, m.bounds.center, 1.35) : stops[i - 1].pose
@@ -340,11 +352,13 @@ function planTexts(
   const vertical = FORMAT_SIZE[recipe.format].height > FORMAT_SIZE[recipe.format].width
   // Reels and TikTok draw their own UI over the bottom fifth — keep text out of it.
   const low: TextAnchor = vertical ? 'mid-center' : 'bottom-left'
+  const look = CAPTION_LOOKS[recipe.captions.look ?? 'clean']
   const texts: PlannedText[] = []
+  const push = (t: Omit<PlannedText, 'anim'>, anim: TextAnimId = look.anim) => texts.push({ ...t, anim })
   const end = (i: number) => starts[i] + shots[i].shot.durationSec - (i < shots.length - 1 ? overlap : 0)
 
   const heroEnd = end(0)
-  if (title) texts.push({ text: title, startSec: 0.3, endSec: Math.max(1.5, heroEnd - 0.2), style: 'title', anchor: vertical ? 'top-center' : 'mid-center' })
+  if (title) push({ text: title, startSec: 0.3, endSec: Math.max(1.5, heroEnd - 0.2), style: look.title, anchor: vertical ? 'top-center' : 'mid-center' })
   const sub: string[] = []
   if (recipe.captions.showStats) {
     const elements = models.reduce((s, m) => s + m.elementCount, 0)
@@ -354,25 +368,25 @@ function planTexts(
   if (recipe.captions.showScore && models.length === 1 && subject.score !== null && subject.score >= PRESENTABLE_SCORE) {
     sub.push(strings.score(subject.score))
   }
-  if (sub.length) {
+  if (sub.length && look.stats) {
     // Vertical frames have no room under a wrapped title — the facts follow it
     // on the second shot instead of piling onto it.
     if (vertical && shots.length > 1) {
-      texts.push({ text: sub.join(' · '), startSec: round3(starts[1] + overlap + 0.15), endSec: round3(end(1) - 0.15), style: 'subtitle', anchor: 'top-center' })
+      push({ text: sub.join(' · '), startSec: round3(starts[1] + overlap + 0.15), endSec: round3(end(1) - 0.15), style: look.subtitle, anchor: 'top-center' })
     } else {
-      texts.push({ text: sub.join(' · '), startSec: 0.8, endSec: Math.max(2, heroEnd - 0.2), style: 'subtitle', anchor: vertical ? 'top-center' : 'bottom-center' })
+      push({ text: sub.join(' · '), startSec: 0.8, endSec: Math.max(2, heroEnd - 0.2), style: look.subtitle, anchor: vertical ? 'top-center' : 'bottom-center' })
     }
   }
 
   for (let i = 1; i < shots.length; i++) {
     const cap = shots[i].caption
     if (!cap) continue
-    texts.push({ text: cap, startSec: round3(starts[i] + overlap + 0.15), endSec: round3(Math.max(starts[i] + overlap + 1, end(i) - 0.15)), style: 'lowerThird', anchor: low })
+    push({ text: cap, startSec: round3(starts[i] + overlap + 0.15), endSec: round3(Math.max(starts[i] + overlap + 1, end(i) - 0.15)), style: look.label, anchor: low })
   }
   const cta = recipe.captions.cta.trim()
   if (cta && shots.length > 1) {
     const last = shots.length - 1
-    texts.push({ text: cta, startSec: round3(starts[last] + overlap + 0.3), endSec: round3(end(last) - 0.1), style: 'caption', anchor: vertical ? 'mid-center' : 'bottom-center' })
+    push({ text: cta, startSec: round3(starts[last] + overlap + 0.3), endSec: round3(end(last) - 0.1), style: look.cta, anchor: vertical ? 'mid-center' : 'bottom-center' })
   }
   return texts
 }
@@ -406,6 +420,21 @@ function minBounds(b: Bounds, min: number): Bounds {
 function isUsable(b: Bounds | null | undefined): b is Bounds {
   return !!b && [b.center.x, b.center.y, b.center.z, b.size.x, b.size.y, b.size.z].every(Number.isFinite) &&
     Math.max(b.size.x, b.size.y, b.size.z) > 0
+}
+
+/** What a stop recorded on a laptop was framed for. */
+export const SCREEN_ASPECT = 16 / 9
+
+/**
+ * Keep what a pose frames when the output is narrower than the screen it was
+ * framed on: the horizontal field shrinks with the aspect, so pull back by the
+ * ratio (capped — a 9:16 Reel from a 16:9 stop would otherwise fly out 3×).
+ */
+export function fitPoseToAspect(pose: CameraPose, from: number, to: number): CameraPose {
+  if (!(from > 0) || !(to > 0) || to >= from) return pose
+  const vfov = (pose.fovDeg * Math.PI) / 180
+  const h = (a: number) => Math.tan(Math.atan(Math.tan(vfov / 2) * a))
+  return pullBack(pose, pose.target, Math.min(2.2, h(from) / h(to)))
 }
 
 /** Move the eye away from (factor > 1) or toward (< 1) `from`, keeping the target. */

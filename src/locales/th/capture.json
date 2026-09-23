@@ -381,7 +381,17 @@
       "fadeOut": "เฟดออกเป็นสีดำ",
       "deleteTemplate": "ลบเทมเพลต",
       "save": "บันทึกเป็นเทมเพลต",
-      "generateBatch": "สร้างวิดีโอ {{n}} ไฟล์"
-    }
+      "generateBatch": "สร้างวิดีโอ {{n}} ไฟล์",
+      "storyboard": "สตอรีบอร์ด",
+      "storyboardSummary": "{{shots}} ช็อต · {{seconds}} วินาที",
+      "storyboardBatch": "{{clips}} วิดีโอ · ช็อตละ {{shots}} · {{seconds}} วินาทีต่อวิดีโอ",
+      "looks": {
+        "clean": "เรียบ",
+        "bold": "โดดเด่น",
+        "minimal": "มินิมอล"
+      },
+      "reused": "ใช้ช็อตที่เรนเดอร์แล้วซ้ำ {{n}} ช็อต"
+    },
+    "remaining": "เหลืออีกประมาณ {{seconds}} วินาที"
   }
 }

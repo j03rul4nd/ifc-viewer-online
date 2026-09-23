@@ -27,7 +27,7 @@ export async function inspectScene(lang: string, system: (key: SystemKey) => str
 
 export async function generatePresentation(
   recipe: Recipe, lang: string, labels: GenerateLabels, signal?: AbortSignal,
-): Promise<{ clips: number; exported: number }> {
+): Promise<{ clips: number; exported: number; reused: number }> {
   const viewer = linkedViewer()
   if (!viewer) throw new NothingToPresentError()
   const s = useClipStudioStore.getState()
@@ -43,6 +43,6 @@ export async function generatePresentation(
   }
   const clips = planPresentation(recipe, facts, labels.plan, rhythmForMusic(recipe.music))
   if (clips.length === 0) throw new NothingToPresentError()
-  const { exported } = await runDirector(viewer, clips, recipe, labels, signal)
-  return { clips: clips.length, exported }
+  const { exported, reused } = await runDirector(viewer, clips, recipe, labels, signal)
+  return { clips: clips.length, exported, reused }
 }

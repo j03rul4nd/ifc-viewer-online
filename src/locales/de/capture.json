@@ -381,7 +381,17 @@
       "fadeOut": "Nach Schwarz ausblenden",
       "deleteTemplate": "Vorlage löschen",
       "save": "Als Vorlage speichern",
-      "generateBatch": "{{n}} Videos erzeugen"
-    }
+      "generateBatch": "{{n}} Videos erzeugen",
+      "storyboard": "Storyboard",
+      "storyboardSummary": "{{shots}} Aufnahmen · {{seconds}} s",
+      "storyboardBatch": "{{clips}} Videos · je {{shots}} Aufnahmen · {{seconds}} s",
+      "looks": {
+        "clean": "Klar",
+        "bold": "Kräftig",
+        "minimal": "Minimal"
+      },
+      "reused": "{{n}} bereits gerenderte Aufnahmen wiederverwendet"
+    },
+    "remaining": "Noch etwa {{seconds}} s"
   }
 }
