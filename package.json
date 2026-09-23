@@ -65,6 +65,7 @@
     "laz-perf": "^0.0.7",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.469.0",
+    "mediabunny": "1.59.0",
     "ogl": "^1.0.11",
     "posthog-js": "^1.376.0",
     "proj4": "^2.20.9",

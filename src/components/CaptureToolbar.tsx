@@ -18,6 +18,7 @@ import { replayController } from '../lib/capture/replay-controller'
 import { appBus } from '../lib/event-bus'
 import { createLogger } from '../lib/logger'
 import { watermarkPngDataUrl } from '../lib/capture/watermark'
+import { linkViewer } from '../lib/capture/viewer-link'
 import { SceneBackgroundMenu } from './SceneBackgroundMenu'
 import {
   CAPTURE_DURATIONS, MAX_WINDOW_SECONDS, MIN_WINDOW_SECONDS, clampCaptureSeconds,
@@ -70,7 +71,10 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
     const c = viewerApiRef.current?.getCanvas() ?? null
     canvasRef.current = c
     setCanvasReady(c !== null)
+    // Clip Studio renders camera shots through the same viewer.
+    linkViewer(viewerApiRef.current)
   }, [viewerApiRef])
+  useEffect(() => () => linkViewer(null), [])
 
   useAppEvent('model:loaded', syncCanvas)
   useEffect(() => {
