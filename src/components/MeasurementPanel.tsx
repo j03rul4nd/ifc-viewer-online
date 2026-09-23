@@ -3,6 +3,8 @@ import { ViewportPanel } from './ViewportPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useUIStore } from '../stores/uiStore'
+import { useEditorStore } from '../stores/editorStore'
+import { toast } from '../stores/toastStore'
 import type { ViewerAPI } from '../lib/viewer'
 import type { MeasurementTool } from '../stores/uiStore'
 import { trackFeatureUsed } from '../lib/analytics'
@@ -28,6 +30,12 @@ function formatArea(m2: number): string {
 
 function formatValue(entry: MeasurementEntry): string {
   return entry.type === 'length' ? formatLength(entry.value) : formatArea(entry.value)
+}
+
+/** Measurements as a tab-separated table — pastes straight into a spreadsheet. */
+function measurementsTsv(list: readonly MeasurementEntry[], labels: { type: string; value: string; unit: string; length: string; area: string }): string {
+  const rows = list.map((m, i) => [i + 1, m.type === 'length' ? labels.length : labels.area, m.value.toFixed(3), m.type === 'length' ? 'm' : 'm²'].join('\t'))
+  return [['#', labels.type, labels.value, labels.unit].join('\t'), ...rows].join('\n')
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -170,6 +178,30 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
   }
 
   const count = measurements.length
+  const totalLength = measurements.filter((m) => m.type === 'length').reduce((s, m) => s + m.value, 0)
+  const totalArea = measurements.filter((m) => m.type === 'area').reduce((s, m) => s + m.value, 0)
+
+  const handleCopy = async (): Promise<void> => {
+    const tsv = measurementsTsv(measurements, {
+      type: t('table.type'), value: t('table.value'), unit: t('table.unit'), length: t('tools.length'), area: t('tools.area'),
+    })
+    try { await navigator.clipboard.writeText(tsv); toast(t('actions.copied'), 'success') } catch { toast(t('actions.copyFailed'), 'error') }
+  }
+
+  // ── Size of the selected element(s): the box they occupy, in metres ───────
+  const selection = useEditorStore((s) => s.selection)
+  const [selSize, setSelSize] = useState<{ w: number; d: number; h: number } | null>(null)
+  useEffect(() => {
+    if (!measurementPanelOpen || selection.length === 0) { setSelSize(null); return }
+    let live = true
+    const first = selection[0]
+    const ids = selection.filter((s) => s.modelId === first.modelId).map((s) => s.expressId)
+    void viewerApiRef.current?.getElementsBox(ids, first.modelId ?? undefined).then((b) => {
+      if (!live) return
+      setSelSize(b ? { w: b.max.x - b.min.x, d: b.max.z - b.min.z, h: b.max.y - b.min.y } : null)
+    })
+    return () => { live = false }
+  }, [measurementPanelOpen, selection, viewerApiRef])
 
   return (
     <ViewportPanel
@@ -178,7 +210,7 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
       open={measurementPanelOpen}
       label={t('panel.title')}
       mobile="dock"
-      widthPx={180}
+      widthPx={208}
       anchor="center"
     >
             {/* Header */}
@@ -250,6 +282,37 @@ export default function MeasurementPanel({ viewerApiRef }: MeasurementPanelProps
                     </span>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Totals + copy */}
+            {count > 0 && (
+              <div className="border-t border-[var(--border)] px-3 py-1.5 flex flex-col gap-0.5 text-[11px]">
+                {totalLength > 0 && measurements.filter((m) => m.type === 'length').length > 1 && (
+                  <div className="flex justify-between text-[var(--text-dim)]"><span>{t('totals.length')}</span><span className="font-mono tabular-nums text-[var(--text)]">{formatLength(totalLength)}</span></div>
+                )}
+                {totalArea > 0 && measurements.filter((m) => m.type === 'area').length > 1 && (
+                  <div className="flex justify-between text-[var(--text-dim)]"><span>{t('totals.area')}</span><span className="font-mono tabular-nums text-[var(--text)]">{formatArea(totalArea)}</span></div>
+                )}
+                <button onClick={() => void handleCopy()} className="mt-0.5 self-start text-[11px] text-[var(--accent-2,var(--accent))] hover:underline" title={t('actions.copyHint')}>
+                  {t('actions.copy')}
+                </button>
+              </div>
+            )}
+
+            {/* Selected element size */}
+            {selSize && (
+              <div className="border-t border-[var(--border)] px-3 py-2">
+                <div className="text-[9.5px] font-mono uppercase tracking-[0.1em] text-[var(--text-faint)] mb-1">{t('selection.title', { count: selection.length })}</div>
+                <div className="grid grid-cols-3 gap-1 text-center">
+                  {([['w', t('selection.width')], ['d', t('selection.depth')], ['h', t('selection.height')]] as const).map(([k, label]) => (
+                    <div key={k} className="rounded-md bg-[var(--surface-2)] px-1 py-1">
+                      <div className="text-[9.5px] text-[var(--text-faint)]">{label}</div>
+                      <div className="text-[11px] font-mono tabular-nums text-[var(--text)]">{formatLength(selSize[k])}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-1 text-[9.5px] leading-snug text-[var(--text-faint)]">{t('selection.note')}</div>
               </div>
             )}
 

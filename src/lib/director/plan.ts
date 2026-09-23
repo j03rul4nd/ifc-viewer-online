@@ -24,6 +24,10 @@ export interface Subject {
   ids: number[]
   box: Box
   severity?: 'error' | 'warning' | 'info'
+  /** Extra lines for a review video: affected elements, how to fix, status. */
+  detail?: string[]
+  /** A recorded camera for this subject (BCF viewpoints). */
+  pose?: CameraPose
 }
 
 export interface ModelFacts {
@@ -38,6 +42,16 @@ export interface ModelFacts {
   systems: Subject[]
   /** Worst first. */
   issues: Subject[]
+  /** Group the model belongs to (the IFC project it is part of). */
+  group?: string
+  /** Failed IDS specifications. */
+  ids?: Subject[]
+  /** BCF topics with a viewpoint. */
+  bcf?: Subject[]
+  /** Findings of the previous validation run that are gone now. */
+  fixed?: Subject[]
+  /** Health Score of the previous run, when there is one. */
+  scoreBefore?: number | null
 }
 
 export interface TourStop {
@@ -63,6 +77,9 @@ export interface PlanStrings {
   issue: (label: string, count: number) => string
   tourStop: (index: number) => string
   together: string
+  ids?: (label: string, count: number) => string
+  fixed?: (label: string, count: number) => string
+  fixedSummary?: (resolved: number, before: number | null, after: number | null) => string
 }
 
 export interface Rhythm { beatSec: number }
@@ -91,6 +108,8 @@ export interface PlannedShot {
   label: string
   /** Lower-third over this shot, if any. */
   caption?: string
+  /** Detail lines under the caption (review videos). */
+  details?: string[]
   scene: ShotScene
 }
 
@@ -177,6 +196,26 @@ export function planPresentation(recipe: Recipe, facts: SceneFacts, strings: Pla
     return [build(sectionDrafts(recipe, recipe.sections, combined, facts, aspect, strings, undefined), combined, title, models)]
   }
 
+  if (recipe.multiModel === 'groups') {
+    // Each project (group of discipline models) on its own, then all projects together.
+    const groups = groupModels(models)
+    if (groups.length > 1) {
+      const perGroup = recipe.sections.filter((s) => s !== 'closing' && s !== 'tour')
+      const drafts: Draft[] = []
+      for (const g of groups) {
+        const gm = { ...combine(g.models), name: g.name }
+        const own = sectionDrafts(recipe, perGroup, gm, facts, aspect, strings, g.models.map((m) => m.modelId))
+        if (own[0]) own[0] = { ...own[0], shot: { ...own[0].shot, caption: g.name } }
+        drafts.push(...own)
+      }
+      const everything = { ...combined, name: federationName(groups.map((g) => g.name)) }
+      const finale = sectionDrafts(recipe, ['orbit', ...(recipe.sections.includes('closing') ? ['closing' as const] : [])], everything, facts, aspect, strings, undefined)
+      if (finale[0]) finale[0] = { ...finale[0], shot: { ...finale[0].shot, caption: strings.together } }
+      drafts.push(...finale)
+      return [build(drafts, everything, titleFor(recipe, everything.name), models)]
+    }
+  }
+
   // 'sequence': each model on its own (the others hidden), then everything together.
   const perModel = recipe.sections.filter((s) => s !== 'closing' && s !== 'tour')
   const drafts: Draft[] = []
@@ -257,11 +296,37 @@ function sectionDrafts(
         break
       case 'issues':
         for (const s of m.issues.slice(0, recipe.maxIssues)) {
-          out.push(make('issues', 'focus', minBounds(boxToBounds(s.box), 2), s.label,
+          out.push(withDetails(make('issues', 'focus', minBounds(boxToBounds(s.box), 2), s.label,
             { sweepDeg: 35, elevationDeg: 30, padding: 1.8 },
             // Findings are always shown in context — highlighted, never isolated.
             { highlight: [{ modelId: s.modelId, ids: s.ids, severity: s.severity ?? 'warning' }] },
-            recipe.captions.labelShots ? strings.issue(s.label, s.count) : undefined))
+            recipe.captions.labelShots ? strings.issue(s.label, s.count) : undefined), recipe, s))
+        }
+        break
+      case 'ids':
+        for (const sub of (m.ids ?? []).slice(0, recipe.maxIssues)) {
+          out.push(withDetails(make('ids', 'focus', minBounds(boxToBounds(sub.box), 2), sub.label,
+            { sweepDeg: 35, elevationDeg: 30, padding: 1.8 },
+            { highlight: [{ modelId: sub.modelId, ids: sub.ids, severity: 'error' }] },
+            recipe.captions.labelShots ? (strings.ids ?? strings.issue)(sub.label, sub.count) : undefined), recipe, sub))
+        }
+        break
+      case 'fixed':
+        for (const sub of (m.fixed ?? []).slice(0, recipe.maxIssues)) {
+          out.push(withDetails(make('fixed', 'focus', minBounds(boxToBounds(sub.box), 2), sub.label,
+            { sweepDeg: 35, elevationDeg: 30, padding: 1.8 },
+            { highlight: [{ modelId: sub.modelId, ids: sub.ids, severity: 'info' }] },
+            recipe.captions.labelShots ? (strings.fixed ?? strings.issue)(sub.label, sub.count) : undefined), recipe, sub))
+        }
+        break
+      case 'bcf':
+        for (const sub of (m.bcf ?? []).slice(0, recipe.maxIssues)) {
+          const hl = sub.ids.length ? { highlight: [{ modelId: sub.modelId, ids: sub.ids, severity: sub.severity ?? 'warning' }] } : {}
+          const draft = sub.pose
+            // The topic's own camera: fly in to it, then settle.
+            ? make('bcf', 'path', m.bounds, sub.label, { keyframes: [pullBack(fitPoseToAspect(sub.pose, SCREEN_ASPECT, aspect), sub.pose.target, 1.35), fitPoseToAspect(sub.pose, SCREEN_ASPECT, aspect)], easing: 'easeOut' }, hl, recipe.captions.labelShots ? sub.label : undefined)
+            : make('bcf', 'focus', minBounds(boxToBounds(sub.box), 2), sub.label, { sweepDeg: 30, padding: 1.8 }, hl, recipe.captions.labelShots ? sub.label : undefined)
+          out.push(withDetails(draft, recipe, sub))
         }
         break
       case 'tour': {
@@ -299,6 +364,13 @@ function sectionDrafts(
     }
   }
   return out
+}
+
+/** Attach a subject's detail lines when the recipe shows details. */
+function withDetails(d: Draft, recipe: Recipe, sub: Subject): Draft {
+  if (!recipe.captions.details || !sub.detail?.length) return d
+  // Details need reading time: a review shot stays up a little longer.
+  return { ...d, weight: d.weight * 1.3, shot: { ...d.shot, details: sub.detail.slice(0, 4) } }
 }
 
 function subjectScene(recipe: Recipe, s: Subject, severity: 'error' | 'warning' | 'info'): ShotScene {
@@ -396,6 +468,29 @@ function planTexts(
     if (!cap) continue
     push({ text: cap, startSec: round3(starts[i] + overlap + 0.15), endSec: round3(Math.max(starts[i] + overlap + 1, end(i) - 0.15)), style: look.label, anchor: low })
   }
+  // The fixes summary ("12 fixed · Health Score 71 → 86") opens the first fix
+  // shot: on top of its detail lines when it has them, on its own otherwise.
+  const firstFixed = shots.findIndex((sh) => sh.section === 'fixed')
+  let summary: string | null = null
+  if (firstFixed >= 0 && strings.fixedSummary) {
+    const resolved = models.reduce((n, m) => n + (m.fixed ?? []).reduce((k, f) => k + f.count, 0), 0)
+    const withFixes = models.filter((m) => (m.fixed ?? []).length > 0)
+    const single = withFixes.length === 1 ? withFixes[0] : null
+    summary = strings.fixedSummary(resolved, single?.scoreBefore ?? null, single?.score ?? null)
+    if (!shots[firstFixed].details?.length) {
+      push({
+        text: summary,
+        startSec: round3(starts[firstFixed] + overlap + 0.2), endSec: round3(end(firstFixed) - 0.15),
+        style: look.subtitle, anchor: vertical ? 'mid-center' : 'top-center',
+      })
+    }
+  }
+  for (let i = 0; i < shots.length; i++) {
+    const lines = shots[i].details
+    if (!lines?.length) continue
+    const text = (i === firstFixed && summary ? [summary, ...lines] : lines).join('\n')
+    push({ text, startSec: round3(starts[i] + overlap + 0.35), endSec: round3(Math.max(starts[i] + overlap + 1.2, end(i) - 0.15)), style: 'caption', anchor: vertical ? 'top-center' : 'top-left' }, 'fade')
+  }
   const cta = recipe.captions.cta.trim()
   if (cta && shots.length > 1) {
     const last = shots.length - 1
@@ -492,6 +587,10 @@ export function combine(models: ModelFacts[]): ModelFacts {
     storeys: models.flatMap((m) => m.storeys).sort((a, b) => a.box.min.y - b.box.min.y),
     systems: mergeSystems(models.flatMap((m) => m.systems)),
     issues: models.flatMap((m) => m.issues).sort((a, b) => bySeverity[a.severity ?? 'info'] - bySeverity[b.severity ?? 'info'] || b.count - a.count),
+    ids: models.flatMap((m) => m.ids ?? []).sort((a, b) => b.count - a.count),
+    bcf: models.flatMap((m) => m.bcf ?? []),
+    fixed: models.flatMap((m) => m.fixed ?? []).sort((a, b) => b.count - a.count),
+    scoreBefore: null,
   }
 }
 
@@ -507,6 +606,22 @@ export function federationName(names: string[]): string {
   for (let i = 0; words.every((w) => i < w.length - 1 && w[i] === words[0][i]); i++) shared.push(words[0][i])
   if (shared.join(' ').length >= 3) return shared.join(' ')
   return names.length <= 3 ? names.join(' + ') : `${names.slice(0, 2).join(' + ')} +${names.length - 2}`
+}
+
+/**
+ * Loaded models grouped by the project they belong to (IfcProject name, set
+ * by the gatherer as `group`), in load order. Models without a group each
+ * stand alone.
+ */
+export function groupModels(models: ModelFacts[]): { name: string; models: ModelFacts[] }[] {
+  const out: { name: string; models: ModelFacts[] }[] = []
+  for (const m of models) {
+    const key = m.group?.trim()
+    const g = key ? out.find((x) => x.name === key) : undefined
+    if (g) g.models.push(m)
+    else out.push({ name: key || m.name, models: [m] })
+  }
+  return out
 }
 
 /**

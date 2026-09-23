@@ -19,7 +19,11 @@
     "escToCancel": "Esc zum Abbrechen",
     "finishAreaHint": "Polygon schließen und Flächenmessung erstellen (Enter)",
     "deleteLastHint": "Letzte Messung löschen (Entf)",
-    "clearAllHint": "Alle Messungen löschen"
+    "clearAllHint": "Alle Messungen löschen",
+    "copy": "Als Tabelle kopieren",
+    "copyHint": "Tabulatorgetrennt – lässt sich in Excel oder Sheets einfügen",
+    "copied": "Messungen kopiert",
+    "copyFailed": "Kopieren fehlgeschlagen"
   },
   "units": {
     "km": "{{value}} km",
@@ -27,5 +31,22 @@
     "cm": "{{value}} cm",
     "ha": "{{value}} ha",
     "m2": "{{value}} m²"
+  },
+  "table": {
+    "type": "Typ",
+    "value": "Wert",
+    "unit": "Einheit"
+  },
+  "totals": {
+    "length": "Gesamtlänge",
+    "area": "Gesamtfläche"
+  },
+  "selection": {
+    "title_one": "Ausgewähltes Element",
+    "title_other": "{{count}} ausgewählte Elemente",
+    "width": "Breite",
+    "depth": "Tiefe",
+    "height": "Höhe",
+    "note": "Hüllquader entlang der Modellachsen."
   }
 }

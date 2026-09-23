@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { isPlaceholderName, presentableName, shortTitle } from './facts'
+import { groupKey, isPlaceholderName, presentableName, shortTitle } from './facts'
+
+describe('groupKey', () => {
+  it('groups discipline models by their building', () => {
+    expect(groupKey({ project: 'Poblenou Pavilion - Architecture', building: 'Poblenou Pavilion' })).toBe('Poblenou Pavilion')
+    expect(groupKey({ project: 'Hospital Norte - MEP', building: 'Building' })).toBe('Hospital Norte')
+    expect(groupKey({ project: 'Project', building: null })).toBeUndefined()
+  })
+})
 
 describe('presentableName', () => {
   it('prefers the project name the authors gave', () => {

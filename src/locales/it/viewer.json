@@ -97,7 +97,13 @@
     "deletePlane": "Elimina piano",
     "errStart": "Impossibile avviare la modalità piano di taglio",
     "errDelete": "Impossibile eliminare il piano",
-    "errClear": "Impossibile eliminare i piani"
+    "errClear": "Impossibile eliminare i piani",
+    "box": "Box di sezione",
+    "boxToSelection": "Box attorno alla selezione",
+    "boxRemove": "Rimuovi box di sezione",
+    "boxHint": "Seleziona uno o più elementi per racchiuderli in un box.",
+    "levelCut": "Taglio orizzontale",
+    "levelHeight": "Taglio a {{m}} m"
   },
   "floorPlan": {
     "title": "Planimetrie",

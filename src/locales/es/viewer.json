@@ -97,7 +97,13 @@
     "deletePlane": "Eliminar plano",
     "errStart": "No se pudo iniciar el modo de plano de corte",
     "errDelete": "No se pudo eliminar el plano",
-    "errClear": "No se pudieron eliminar los planos"
+    "errClear": "No se pudieron eliminar los planos",
+    "box": "Caja de recorte",
+    "boxToSelection": "Recortar a la selección",
+    "boxRemove": "Quitar caja de recorte",
+    "boxHint": "Selecciona uno o varios elementos para aislarlos en una caja.",
+    "levelCut": "Corte horizontal",
+    "levelHeight": "Corte a {{m}} m"
   },
   "floorPlan": {
     "title": "Plantas",

@@ -19,7 +19,11 @@
     "escToCancel": "Esc para cancelar",
     "finishAreaHint": "Fechar o polígono e criar a medição de área (Enter)",
     "deleteLastHint": "Excluir a última medição (Delete)",
-    "clearAllHint": "Limpar todas as medições"
+    "clearAllHint": "Limpar todas as medições",
+    "copy": "Copiar como tabela",
+    "copyHint": "Separado por tabulações — cola no Excel ou Sheets",
+    "copied": "Medições copiadas",
+    "copyFailed": "Não foi possível copiar"
   },
   "units": {
     "km": "{{value}} km",
@@ -27,5 +31,22 @@
     "cm": "{{value}} cm",
     "ha": "{{value}} ha",
     "m2": "{{value}} m²"
+  },
+  "table": {
+    "type": "Tipo",
+    "value": "Valor",
+    "unit": "Unidade"
+  },
+  "totals": {
+    "length": "Comprimento total",
+    "area": "Área total"
+  },
+  "selection": {
+    "title_one": "Elemento selecionado",
+    "title_other": "{{count}} elementos selecionados",
+    "width": "Largura",
+    "depth": "Profundidade",
+    "height": "Altura",
+    "note": "Caixa envolvente segundo os eixos do modelo."
   }
 }

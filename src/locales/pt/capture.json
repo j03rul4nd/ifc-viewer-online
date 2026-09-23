@@ -307,7 +307,10 @@
         "coordination-review": "Revisão de coordenação",
         "linkedin-teaser": "Teaser para LinkedIn",
         "reel": "Reel do Instagram",
-        "tiktok": "TikTok"
+        "tiktok": "TikTok",
+        "team-issues": "Problemas para a equipa",
+        "fixes-report": "O que foi corrigido",
+        "project-portfolio": "Projetos em conjunto"
       },
       "pace": {
         "calm": "Calmo",
@@ -328,7 +331,10 @@
         "tour": "Percurso gravado",
         "detail": "Detalhe",
         "closing": "Encerramento",
-        "buildup": "O edifício cresce"
+        "buildup": "O edifício cresce",
+        "ids": "Falhas IDS",
+        "bcf": "Tópicos BCF",
+        "fixed": "O que foi corrigido"
       },
       "sectionHint": {
         "hero": "Afasta até ao modelo completo, com o título",
@@ -340,14 +346,20 @@
         "tour": "Voa pelas paragens do percurso",
         "detail": "Aproximação ao elemento selecionado",
         "closing": "Última volta com o apelo à ação",
-        "buildup": "Uma volta enquanto os pisos aparecem de baixo para cima"
+        "buildup": "Uma volta enquanto os pisos aparecem de baixo para cima",
+        "ids": "Cada especificação IDS falhada, elementos destacados",
+        "bcf": "Cada tópico BCF a partir do seu ponto de vista",
+        "fixed": "Problemas da validação anterior que já não existem"
       },
       "empty": {
         "storeys": "Este modelo não tem pisos",
         "systems": "Não há sistemas classificáveis",
         "issues": "Sem problemas — valide primeiro",
         "tour": "Ainda sem percurso — grave ou gere um",
-        "buildup": "Precisa de pelo menos 3 pisos"
+        "buildup": "Precisa de pelo menos 3 pisos",
+        "ids": "Sem especificações IDS falhadas — execute primeiro uma verificação IDS",
+        "bcf": "Sem tópicos BCF com ponto de vista ou componentes",
+        "fixed": "Nada a comparar — valide de novo depois de corrigir"
       },
       "emptyGeneric": "Nada a mostrar neste modelo",
       "shots": "{{n}} tomadas",
@@ -362,12 +374,14 @@
       "multiHint": {
         "combined": "Um clipe com toda a federação.",
         "sequence": "Cada modelo sozinho e depois todos juntos.",
-        "separate": "Um vídeo por modelo, exportados e transferidos um a um."
+        "separate": "Um vídeo por modelo, exportados e transferidos um a um.",
+        "groups": "Cada projeto (os seus modelos de especialidade juntos) sozinho e depois todos juntos."
       },
       "multiMode": {
         "combined": "Conjunto",
         "sequence": "Um a um",
-        "separate": "Um por modelo"
+        "separate": "Um por modelo",
+        "groups": "Por projeto"
       },
       "length": "Duração · {{seconds}} s",
       "captions": "Textos",
@@ -393,7 +407,16 @@
         "bold": "Impactante",
         "minimal": "Mínimo"
       },
-      "reused": "Reutilizadas {{n}} tomadas já renderizadas"
+      "reused": "Reutilizadas {{n}} tomadas já renderizadas",
+      "idsCaption": "IDS · {{label}} · {{count}} falham",
+      "fixedCaption": "Corrigido · {{label}} · {{count}}",
+      "fixedSummary": "{{resolved}} problemas corrigidos",
+      "fixedSummaryScore": "{{resolved}} problemas corrigidos · Health Score {{before}} → {{after}}",
+      "more": "+{{n}} mais",
+      "howToFix": "Como corrigir",
+      "unassigned": "Sem atribuição",
+      "showDetails": "Mostrar detalhes",
+      "showDetailsHint": "Elementos afetados, como corrigir, estado BCF — para vídeos de revisão."
     },
     "remaining": "Faltam cerca de {{seconds}} s"
   }

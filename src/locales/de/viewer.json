@@ -97,7 +97,13 @@
     "deletePlane": "Ebene löschen",
     "errStart": "Schnittebenen-Modus konnte nicht gestartet werden",
     "errDelete": "Ebene konnte nicht gelöscht werden",
-    "errClear": "Ebenen konnten nicht gelöscht werden"
+    "errClear": "Ebenen konnten nicht gelöscht werden",
+    "box": "Schnittbox",
+    "boxToSelection": "Box um die Auswahl",
+    "boxRemove": "Schnittbox entfernen",
+    "boxHint": "Wählen Sie ein oder mehrere Elemente, um sie einzugrenzen.",
+    "levelCut": "Horizontalschnitt",
+    "levelHeight": "Schnitt bei {{m}} m"
   },
   "floorPlan": {
     "title": "Grundrisse",

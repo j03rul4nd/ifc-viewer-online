@@ -307,7 +307,10 @@
         "coordination-review": "調整レビュー",
         "linkedin-teaser": "LinkedIn ティーザー",
         "reel": "Instagram リール",
-        "tiktok": "TikTok"
+        "tiktok": "TikTok",
+        "team-issues": "チーム向け指摘事項",
+        "fixes-report": "修正された内容",
+        "project-portfolio": "プロジェクトまとめ"
       },
       "pace": {
         "calm": "ゆったり",
@@ -328,7 +331,10 @@
         "tour": "記録したツアー",
         "detail": "ディテール",
         "closing": "エンディング",
-        "buildup": "建物が立ち上がる"
+        "buildup": "建物が立ち上がる",
+        "ids": "IDS 不合格",
+        "bcf": "BCF トピック",
+        "fixed": "修正された内容"
       },
       "sectionHint": {
         "hero": "タイトルとともにモデル全体へ引く",
@@ -340,14 +346,20 @@
         "tour": "ツアーの各ストップを飛行",
         "detail": "選択した要素に寄る",
         "closing": "CTA を添えた最後の一周",
-        "buildup": "階が下から順に現れる間に一周"
+        "buildup": "階が下から順に現れる間に一周",
+        "ids": "不合格の IDS 仕様ごとに、該当要素をハイライト",
+        "bcf": "各 BCF トピックをその視点から",
+        "fixed": "前回の検証にあり、今回は解消された指摘"
       },
       "empty": {
         "storeys": "このモデルには階がありません",
         "systems": "分類できるシステムがありません",
         "issues": "指摘事項なし — 先に検証を実行してください",
         "tour": "ツアーがまだありません — 記録または生成してください",
-        "buildup": "3 階以上が必要です"
+        "buildup": "3 階以上が必要です",
+        "ids": "不合格の IDS 仕様はありません — 先に IDS チェックを実行してください",
+        "bcf": "視点または要素を持つ BCF トピックがありません",
+        "fixed": "比較対象がありません — 修正後に再検証してください"
       },
       "emptyGeneric": "このモデルで表示できるものはありません",
       "shots": "{{n}} ショット",
@@ -362,12 +374,14 @@
       "multiHint": {
         "combined": "統合モデル全体を 1 本のクリップに。",
         "sequence": "各モデルを順に、最後に全体を。",
-        "separate": "モデルごとに 1 本、順番に書き出してダウンロード。"
+        "separate": "モデルごとに 1 本、順番に書き出してダウンロード。",
+        "groups": "各プロジェクト（分野別モデルをまとめて）を順に、最後に全体を。"
       },
       "multiMode": {
         "combined": "まとめて",
         "sequence": "1 つずつ",
-        "separate": "モデルごと"
+        "separate": "モデルごと",
+        "groups": "プロジェクトごと"
       },
       "length": "長さ · {{seconds}} 秒",
       "captions": "テキスト",
@@ -393,7 +407,16 @@
         "bold": "ボールド",
         "minimal": "ミニマル"
       },
-      "reused": "レンダリング済みの {{n}} ショットを再利用しました"
+      "reused": "レンダリング済みの {{n}} ショットを再利用しました",
+      "idsCaption": "IDS · {{label}} · {{count}} 件不合格",
+      "fixedCaption": "修正済み · {{label}} · {{count}}",
+      "fixedSummary": "{{resolved}} 件の指摘を修正",
+      "fixedSummaryScore": "{{resolved}} 件の指摘を修正 · Health Score {{before}} → {{after}}",
+      "more": "他 {{n}} 件",
+      "howToFix": "修正方法",
+      "unassigned": "未割り当て",
+      "showDetails": "詳細を表示",
+      "showDetailsHint": "該当要素、修正方法、BCF ステータス — レビュー動画向け。"
     },
     "remaining": "残り約 {{seconds}} 秒"
   }

@@ -97,7 +97,13 @@
     "deletePlane": "Excluir plano",
     "errStart": "Não foi possível iniciar o modo de plano de corte",
     "errDelete": "Falha ao excluir o plano",
-    "errClear": "Falha ao limpar os planos"
+    "errClear": "Falha ao limpar os planos",
+    "box": "Caixa de corte",
+    "boxToSelection": "Caixa à volta da seleção",
+    "boxRemove": "Remover caixa de corte",
+    "boxHint": "Selecione um ou mais elementos para os isolar numa caixa.",
+    "levelCut": "Corte horizontal",
+    "levelHeight": "Corte a {{m}} m"
   },
   "floorPlan": {
     "title": "Plantas baixas",
