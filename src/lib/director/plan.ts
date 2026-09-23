@@ -8,7 +8,8 @@
 
 import { defaultShot, type Bounds, type CameraPose, type ShotSpec, type ShotType, type Vec3 } from '../capture/shots'
 import type { ClipTransition } from '../capture/project'
-import type { TextAnchor, TextAnimId, TextStyleId } from '../capture/timeline'
+import { WORD_STEP_SEC, type TextAnchor, type TextAnimId, type TextStyleId } from '../capture/timeline'
+import { cueAt, type ProjectSfx, type SfxCue } from '../capture/sfx'
 import { PACE_SHOT_SEC, type CaptionLook, type Recipe, type SectionKind } from './recipe'
 
 // ── Input ──────────────────────────────────────────────────────────────────────
@@ -138,6 +139,8 @@ export interface PlannedClip {
   punch?: { times: number[]; amount: number }
   /** Motion-blur sub-frames per rendered frame (1 = off). */
   motionBlur: number
+  /** Sound effects placed on the cut (none when the recipe has them off). */
+  sfx?: ProjectSfx
 }
 
 /** Launch grammar: which moves get a speed ramp (reveals keep their ease-out). */
@@ -195,6 +198,7 @@ export function planPresentation(recipe: Recipe, facts: SceneFacts, strings: Pla
       ...(launch ? { punch: { times: punchTimes(starts, overlap, beat, durationSec), amount: PUNCH_AMOUNT } } : {}),
       // Fast launch cuts get a real shutter; calmer ones stay crisp (and 3× cheaper).
       motionBlur: launch && recipe.pace === 'fast' ? 3 : 1,
+      ...(recipe.sfx && recipe.sfx !== 'off' ? { sfx: planSfx(recipe.sfx, shots, starts, overlap, texts, durationSec) } : {}),
     }
   }
 
@@ -401,6 +405,46 @@ export function punchTimes(starts: number[], overlap: number, beat: Rhythm | nul
   const lone = bars.filter((b) => cuts.every((c) => Math.abs(c - b) > 0.35))
   const all = [...cuts, ...lone].filter((t) => t >= 0.5 && t < duration - 0.2).sort((a, b) => a - b)
   return all.filter((t, i) => i === 0 || t - all[i - 1] > 0.3).map(round3)
+}
+
+/**
+ * The sound design, placed on the cut:
+ * - every cut gets a whoosh peaking on it;
+ * - 'full' adds a hit when a title or the CTA slams in, a riser into the
+ *   last shot, a boom when the building finishes rising, and a soft tick as
+ *   each word of a word-by-word label lands (first eight words).
+ * Effects never start past the end; the same effect twice closer than 0.12 s
+ * (0.05 s for ticks) is played once.
+ */
+export function planSfx(
+  level: 'subtle' | 'full', shots: PlannedShot[], starts: number[], overlap: number,
+  texts: PlannedText[], duration: number,
+): ProjectSfx {
+  const cues: SfxCue[] = []
+  for (let i = 1; i < shots.length; i++) cues.push(cueAt('whoosh', starts[i] + overlap / 2, level === 'full' ? 0.55 : 0.3))
+  if (level === 'full') {
+    for (const t of texts) {
+      if (t.anim === 'slam') cues.push(cueAt('hit', t.startSec, 0.85))
+      if (t.anim === 'words') {
+        const words = t.text.split(/\s+/).filter(Boolean).slice(0, 8)
+        words.forEach((_, k) => cues.push(cueAt('tick', t.startSec + k * WORD_STEP_SEC, 0.22)))
+      }
+    }
+    const last = shots.length - 1
+    if (last > 0) cues.push(cueAt('riser', starts[last] + overlap, 0.5))
+    shots.forEach((sh, i) => {
+      if (sh.section === 'buildup') cues.push(cueAt('boom', starts[i] + sh.shot.durationSec * 0.85, 0.7))
+    })
+  }
+  const inside = cues.filter((c) => c.t < duration - 0.05).sort((a, b) => a.t - b.t)
+  // Same kind closer than 0.12 s is one sound played twice — keep the first.
+  const kept: SfxCue[] = []
+  for (const c of inside) {
+    const gap = c.kind === 'tick' ? 0.05 : 0.12
+    if (kept.some((k) => k.kind === c.kind && Math.abs(k.t - c.t) < gap)) continue
+    kept.push({ ...c, t: round3(c.t) })
+  }
+  return { cues: kept, volume: 0.8 }
 }
 
 /** Attach a subject's detail lines when the recipe shows details. */

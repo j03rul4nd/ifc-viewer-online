@@ -430,8 +430,23 @@
       "styleHint": {
         "classic": "Mouvements adoucis, fondus, titres posés.",
         "launch": "Rampes de vitesse, flou de mouvement, punch sur chaque coupe, titres percutants, chiffres qui défilent, légendes mot à mot."
+      },
+      "sfxLabel": "Effets sonores",
+      "sfxLevels": {
+        "off": "Aucun",
+        "subtle": "Discrets",
+        "full": "Complets"
+      },
+      "sfxHint": {
+        "off": "Aucun effet — musique seule.",
+        "subtle": "Un souffle léger sur chaque coupe.",
+        "full": "Souffles, impacts sur les titres, montée vers la fin, boom quand le bâtiment est complet, clics à chaque mot."
       }
     },
-    "remaining": "Environ {{seconds}} s restantes"
+    "remaining": "Environ {{seconds}} s restantes",
+    "sfxVolume": "Volume des effets",
+    "sfxRemove": "Retirer les effets sonores",
+    "sfxCount": "{{n}} effets",
+    "sfxTitle": "Effets sonores"
   }
 }

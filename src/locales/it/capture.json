@@ -430,8 +430,23 @@
       "styleHint": {
         "classic": "Movimenti morbidi, dissolvenze, titoli calmi.",
         "launch": "Rampe di velocità, motion blur, punch a ogni stacco, titoli d’impatto, numeri che scorrono, didascalie parola per parola."
+      },
+      "sfxLabel": "Effetti sonori",
+      "sfxLevels": {
+        "off": "Nessuno",
+        "subtle": "Discreti",
+        "full": "Completi"
+      },
+      "sfxHint": {
+        "off": "Nessun effetto — solo musica.",
+        "subtle": "Un whoosh leggero a ogni stacco.",
+        "full": "Whoosh, colpi sui titoli, riser verso il finale, boom quando l’edificio è completo, tick a ogni parola."
       }
     },
-    "remaining": "Circa {{seconds}} s rimanenti"
+    "remaining": "Circa {{seconds}} s rimanenti",
+    "sfxVolume": "Volume effetti",
+    "sfxRemove": "Rimuovi effetti sonori",
+    "sfxCount": "{{n}} effetti",
+    "sfxTitle": "Effetti sonori"
   }
 }

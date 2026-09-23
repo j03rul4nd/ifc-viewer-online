@@ -430,8 +430,23 @@
       "styleHint": {
         "classic": "平缓运镜、淡入淡出、沉稳字幕。",
         "launch": "变速运镜、运动模糊、每个剪切点缩放冲击、重击标题、数字滚动、逐词标注。"
+      },
+      "sfxLabel": "音效",
+      "sfxLevels": {
+        "off": "关闭",
+        "subtle": "轻微",
+        "full": "完整"
+      },
+      "sfxHint": {
+        "off": "无音效——只有音乐。",
+        "subtle": "每个剪切点一个轻柔的呼啸声。",
+        "full": "呼啸声、标题重击、结尾前的上升音、建筑完成时的低音轰鸣、逐词出现时的点击声。"
       }
     },
-    "remaining": "约剩 {{seconds}} 秒"
+    "remaining": "约剩 {{seconds}} 秒",
+    "sfxVolume": "音效音量",
+    "sfxRemove": "移除音效",
+    "sfxCount": "{{n}} 个音效",
+    "sfxTitle": "音效"
   }
 }

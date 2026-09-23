@@ -39,7 +39,9 @@ export async function exportProject(
   const duration = projectDuration(project)
   if (duration <= 0) throw new Error('The project is empty')
 
-  const wantsAudio = !!o.bed && project.audio.kind !== 'none'
+  const hasBed = !!o.bed && project.audio.kind !== 'none'
+  const hasSfx = !!project.sfx && project.sfx.cues.length > 0 && project.sfx.volume > 0
+  const wantsAudio = hasBed || hasSfx
   const choice = await pickCodec(o.width, o.height, wantsAudio)
   if (!choice) throw new Error('This browser cannot encode video (WebCodecs unavailable)')
 
@@ -95,9 +97,9 @@ export async function exportProject(
     }
 
     let audio: AudioBuffer | null = null
-    if (wantsAudio && choice.audio && o.bed) {
+    if (wantsAudio && choice.audio) {
       o.onProgress?.(1, 'audio')
-      audio = await mixBed(o.bed, project.audio, duration)
+      audio = await mixBed(hasBed ? o.bed : null, project.audio, duration, 48_000, project.sfx)
     }
     o.onProgress?.(1, 'finishing')
     const blob = await writer.finalize(audio)

@@ -430,8 +430,23 @@
       "styleHint": {
         "classic": "Weiche Kamerafahrten, Blenden, ruhige Titel.",
         "launch": "Speed Ramps, Bewegungsunschärfe, Zoom-Punch auf jedem Schnitt, Titel mit Wucht, hochzählende Zahlen, Beschriftung Wort für Wort."
+      },
+      "sfxLabel": "Soundeffekte",
+      "sfxLevels": {
+        "off": "Aus",
+        "subtle": "Dezent",
+        "full": "Voll"
+      },
+      "sfxHint": {
+        "off": "Keine Effekte – nur Musik.",
+        "subtle": "Ein sanftes Whoosh auf jedem Schnitt.",
+        "full": "Whooshes, Hits auf Titeln, ein Riser zum Schluss, ein Boom, wenn das Gebäude steht, Ticks für jedes Wort."
       }
     },
-    "remaining": "Noch etwa {{seconds}} s"
+    "remaining": "Noch etwa {{seconds}} s",
+    "sfxVolume": "Effektlautstärke",
+    "sfxRemove": "Soundeffekte entfernen",
+    "sfxCount": "{{n}} Effekte",
+    "sfxTitle": "Soundeffekte"
   }
 }

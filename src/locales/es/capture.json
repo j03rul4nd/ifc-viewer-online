@@ -430,8 +430,23 @@
       "styleHint": {
         "classic": "Movimientos suaves, fundidos y títulos tranquilos.",
         "launch": "Rampas de velocidad, desenfoque de movimiento, golpe de zoom en cada corte, títulos de impacto, números que cuentan y rótulos palabra a palabra."
+      },
+      "sfxLabel": "Efectos de sonido",
+      "sfxLevels": {
+        "off": "Sin efectos",
+        "subtle": "Sutiles",
+        "full": "Completos"
+      },
+      "sfxHint": {
+        "off": "Sin efectos: solo música.",
+        "subtle": "Un barrido suave en cada corte.",
+        "full": "Barridos, golpes en los títulos, subida de tensión hacia el final, estruendo cuando el edificio se completa y clics al entrar las palabras."
       }
     },
-    "remaining": "Quedan unos {{seconds}} s"
+    "remaining": "Quedan unos {{seconds}} s",
+    "sfxVolume": "Volumen de efectos",
+    "sfxRemove": "Quitar efectos de sonido",
+    "sfxCount": "{{n}} efectos",
+    "sfxTitle": "Efectos de sonido"
   }
 }

@@ -13,6 +13,8 @@ import { layoutClips, projectDuration, sampleProject, type EditProject } from '.
 import { composeProjectFrame, type FramePicture } from '../../lib/capture/project-compositor'
 import { overlayTime, type SourceMedia } from '../../lib/capture/project-export'
 import { getBuiltInBed, scheduleAudioEnvelope, resolveAudioOffset } from '../../lib/capture/audio-library'
+import { scheduleSfx } from '../../lib/capture/sfx'
+import { masterBus } from '../../lib/capture/media-codec'
 import type { StudioOutput } from '../../stores/clipStudioStore'
 
 /** Beyond this drift (seconds) a playing clip is re-seeked. */
@@ -41,7 +43,7 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
   outputRef.current = output
   const clock = useRef<{ start: number; from: number } | null>(null)
   const raf = useRef(0)
-  const audio = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode } | null>(null)
+  const audio = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode | null; sfx: AudioBufferSourceNode[] } | null>(null)
 
   const urlFor = useCallback((sourceId: string): string | null => {
     const m = mediaRef.current.get(sourceId)
@@ -153,14 +155,24 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
     const a = audio.current
     audio.current = null
     if (!a) return
-    try { a.src.stop() } catch { /* not started */ }
+    try { a.src?.stop() } catch { /* not started */ }
+    for (const s of a.sfx) { try { s.stop() } catch { /* not started */ } }
     void a.ctx.close().catch(() => { /* closed */ })
   }, [])
 
   const startAudio = useCallback(async () => {
     const p = projectRef.current
-    if (p.audio.kind !== 'builtin' || !p.audio.trackId) return
+    const hasBed = p.audio.kind === 'builtin' && !!p.audio.trackId
+    const hasSfx = !!p.sfx && p.sfx.cues.length > 0
+    if (!hasBed && !hasSfx) return
     const ctx = new AudioContext()
+    const bus = masterBus(ctx)
+    const sfxSources = await scheduleSfx(ctx, bus, p.sfx, currentTime(), ctx.currentTime)
+    if (!hasBed) {
+      if (!clock.current) { void ctx.close(); return }
+      audio.current = { ctx, src: null, sfx: sfxSources }
+      return
+    }
     const bed = await getBuiltInBed(p.audio.trackId as Parameters<typeof getBuiltInBed>[0], ctx.sampleRate)
     if (!clock.current) { void ctx.close(); return }
     const duration = projectDuration(p)
@@ -169,12 +181,12 @@ export function usePreviewEngine({ canvasRef, project, media, output, playhead, 
     src.loop = true
     const gain = ctx.createGain()
     src.connect(gain)
-    gain.connect(ctx.destination)
+    gain.connect(bus)
     // The clock may have moved while the bed was generating.
     const now = currentTime()
     scheduleAudioEnvelope(gain.gain, p.audio, duration, ctx.currentTime, now)
     src.start(ctx.currentTime, (resolveAudioOffset(p.audio, bed.duration) + now) % bed.duration)
-    audio.current = { ctx, src }
+    audio.current = { ctx, src, sfx: sfxSources }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

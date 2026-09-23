@@ -200,6 +200,7 @@ export async function renderPlannedClip(
       : { kind: 'builtin', trackId: recipe.music, fileName: null, volume: recipe.musicVolume, fadeSec: 0.8, offsetSec: 0 },
     intro: recipe.fadeIn ? { type: 'black', sec: recipe.style === 'launch' ? 0.15 : 0.5 } : { type: 'none', sec: 0 },
     ...(clip.punch ? { fx: { punch: clip.punch } } : {}),
+    ...(clip.sfx ? { sfx: clip.sfx } : {}),
     outro: recipe.fadeOut ? { type: 'black', sec: 0.6 } : { type: 'none', sec: 0 },
   }
   return { project, media, reused }

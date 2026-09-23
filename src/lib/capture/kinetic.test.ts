@@ -55,3 +55,30 @@ describe('beat punch and speed ramp', async () => {
     for (let x = 0; x < 1; x += 0.05) expect(ease('ramp', x + 0.05)).toBeGreaterThan(ease('ramp', x))
   })
 })
+
+describe('sound effects', async () => {
+  const { cueAt, SFX_ANCHOR } = await import('./sfx')
+  const { planSfx } = await import('../director/plan')
+
+  it('places a cue so its audible moment lands on the mark', () => {
+    expect(cueAt('whoosh', 2).t).toBeCloseTo(2 - SFX_ANCHOR.whoosh)
+    expect(cueAt('riser', 5).t).toBeCloseTo(5 - SFX_ANCHOR.riser)
+    expect(cueAt('riser', 0.5).t).toBe(0)
+  })
+
+  it('whooshes every cut; full adds hits, ticks, a riser and the build-up boom', () => {
+    const shot = (section: string, d: number) => ({ section, shot: { durationSec: d }, label: '', scene: {} }) as never
+    const shots = [shot('buildup', 4), shot('orbit', 3), shot('closing', 3)]
+    const texts = [
+      { text: 'Torre', startSec: 0.12, endSec: 3, anim: 'slam', style: 'title', anchor: 'mid-center' },
+      { text: 'Estructura ya lista', startSec: 4, endSec: 6, anim: 'words', style: 'badge', anchor: 'mid-center' },
+    ] as never
+    const subtle = planSfx('subtle', shots, [0, 3.75, 6.5], 0.25, texts, 9.5)
+    expect(subtle.cues.map((c) => c.kind)).toEqual(['whoosh', 'whoosh'])
+    const full = planSfx('full', shots, [0, 3.75, 6.5], 0.25, texts, 9.5)
+    const kinds = full.cues.map((c) => c.kind)
+    expect(kinds.filter((k) => k === 'tick')).toHaveLength(3)
+    for (const k of ['hit', 'riser', 'boom', 'whoosh']) expect(kinds).toContain(k)
+    expect(full.cues).toEqual([...full.cues].sort((a, b) => a.t - b.t))
+  })
+})
