@@ -5,6 +5,7 @@
 
 import React, { useState, useCallback } from 'react'
 import { editorialCopy } from '../../lib/blog-editorial-copy'
+import './editorial.css'
 
 // ── Tokenizer ─────────────────────────────────────────────────────────────────
 
@@ -105,7 +106,7 @@ export default function CodeBlock({ code, lang = 'text', articleLang = 'en' }: P
   const multiline = lines.length > 3
 
   return (
-    <div className="my-6 rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--surface-2)]">
+    <div className="code-panel my-6 rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--surface-2)]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--border)] bg-[rgba(0,0,0,0.2)]">
         <span className="text-[10.5px] font-mono font-bold tracking-[0.1em] text-[var(--text-faint)]">

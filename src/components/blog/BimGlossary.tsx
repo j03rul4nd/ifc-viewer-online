@@ -54,7 +54,7 @@ export function BimTerm({ term, children }: TermProps) {
         <Tooltip.Trigger asChild>
           <span
             className="border-b border-dashed border-[rgba(94,106,210,0.5)] cursor-help text-[var(--text)]
-                       hover:border-[var(--accent)] hover:text-white transition-colors"
+                       hover:border-[var(--accent)] hover:text-[var(--text)] transition-colors"
           >
             {children}
           </span>

@@ -472,7 +472,7 @@ function IdleState({ title, description }: { title?: string; description?: strin
         </svg>
       </div>
 
-      <p className="text-[11px] text-[rgba(255,255,255,0.35)] font-mono">
+      <p className="text-[11px] text-[rgba(255,255,255,0.62)] font-mono">
         Interactive IFC model · Scroll to load
       </p>
     </div>

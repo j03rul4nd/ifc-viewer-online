@@ -330,10 +330,10 @@ const COPY_BUTTON_ICON: Partial<Record<CopyState, string>> = {
 const COPY_BUTTON_CLASS: Record<CopyState, string> = {
   idle: 'bg-[var(--accent)] text-white hover:brightness-110',
   copying: 'bg-[var(--accent)] text-white opacity-60 cursor-wait',
-  copied: 'bg-[rgba(52,211,153,0.15)] border border-[rgba(52,211,153,0.3)] text-[#34d399]',
-  'error:permission': 'bg-[rgba(251,191,36,0.15)] border border-[rgba(251,191,36,0.3)] text-[#fbbf24]',
-  'error:unavailable': 'bg-[rgba(239,68,68,0.15)] border border-[rgba(239,68,68,0.3)] text-[#f87171]',
-  'error:unknown': 'bg-[rgba(239,68,68,0.15)] border border-[rgba(239,68,68,0.3)] text-[#f87171]',
+  copied: 'bg-[color-mix(in_srgb,var(--ok)_14%,transparent)] border border-[color-mix(in_srgb,var(--ok)_35%,transparent)] text-[var(--ok)]',
+  'error:permission': 'bg-[color-mix(in_srgb,var(--warn)_14%,transparent)] border border-[color-mix(in_srgb,var(--warn)_35%,transparent)] text-[var(--warn)]',
+  'error:unavailable': 'bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] border border-[color-mix(in_srgb,var(--danger)_35%,transparent)] text-[var(--danger)]',
+  'error:unknown': 'bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] border border-[color-mix(in_srgb,var(--danger)_35%,transparent)] text-[var(--danger)]',
 }
 
 const ERROR_HINT_KEY = {

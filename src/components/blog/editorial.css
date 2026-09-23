@@ -230,3 +230,19 @@ button.ed-cite[aria-expanded='true'] { background: var(--accent); color: #fff; }
 .lp-light .cat-delivery      { background: rgba(109, 40, 217, 0.10);  color: #6d28d9; }
 .lp-light .cat-privacy       { background: rgba(190, 24, 93, 0.10);   color: #be185d; }
 .lp-light .cat-digital-twins { background: rgba(14, 116, 144, 0.10);  color: #0e7490; }
+
+/* ── Code panels stay dark in light mode ─────────────────────────────────────
+   The syntax hues (amber classes, green enums, teal strings…) are tuned for a
+   dark ground; on a light grey they fall to ~2:1. A dark panel is also the
+   convention readers expect for code on a light page. Re-scoping the tokens
+   keeps CodeBlock itself theme-agnostic. */
+.lp-light .code-panel {
+  --surface-2:     #12141B;
+  --border:        #262A36;
+  --border-strong: #353A49;
+  --text:          #E8EAF0;
+  --text-dim:      #B4B9CC;
+  --text-faint:    #9096AE;
+  --accent-2:      #A5ADF5;
+  color: var(--text);
+}
