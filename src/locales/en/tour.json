@@ -13,7 +13,13 @@
     "howToFix": "How to fix",
     "goToStep": "Go to step {{n}}",
     "autoplay": "Play automatically",
-    "video": "Turn into a video"
+    "video": "Turn into a video",
+    "formats": {
+      "wide": "Presentation 16:9",
+      "linkedin": "LinkedIn 4:5",
+      "square": "Square 1:1",
+      "reel": "Reel / TikTok 9:16"
+    }
   },
   "recorder": {
     "title": "Guided tour",

@@ -12,7 +12,13 @@
     "howToFix": "修复方法",
     "goToStep": "跳到第 {{n}} 步",
     "autoplay": "自动播放",
-    "video": "转为视频"
+    "video": "转为视频",
+    "formats": {
+      "wide": "演示 16:9",
+      "linkedin": "LinkedIn 4:5",
+      "square": "方形 1:1",
+      "reel": "Reel / TikTok 9:16"
+    }
   },
   "recorder": {
     "title": "引导式导览",

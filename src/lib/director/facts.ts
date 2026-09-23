@@ -20,6 +20,7 @@ export interface FactsViewer {
   getModelBounds(modelId?: string): { center: { x: number; y: number; z: number }; size: { x: number; y: number; z: number } } | null
   getElementsBox(ids: number[], modelId?: string): Promise<Box | null>
   getStoreys(modelId?: string): Promise<Array<{ expressId: number; name: string; elementIds: number[] }>>
+  getProjectNames(modelId?: string): Promise<{ project: string | null; building: string | null }>
 }
 
 export interface FactsOptions {
@@ -80,7 +81,7 @@ export async function gatherSceneFacts(viewer: FactsViewer, o: FactsOptions): Pr
 
     models.push({
       modelId,
-      name: prettyName(info?.fileName ?? modelId),
+      name: presentableName(await viewer.getProjectNames(modelId), info?.fileName ?? modelId),
       bounds,
       elementCount: info?.elementCount ?? 0,
       score: typeof result?.qualityScore === 'number' ? result.qualityScore : null,
@@ -132,6 +133,33 @@ export function collectElements(node: SpatialNode): number[] {
   }
   walk(node)
   return [...ids]
+}
+
+/**
+ * What to call a model on screen: the name its authors gave the project or
+ * building, unless that is a placeholder ("Project", "Default", "0001"…);
+ * otherwise the file name, tidied.
+ */
+export function presentableName(names: { project: string | null; building: string | null }, fileName: string): string {
+  for (const n of [names.project, names.building]) {
+    if (n && !isPlaceholderName(n)) return shortTitle(n)
+  }
+  return prettyName(fileName)
+}
+
+/** A title that fits on screen: long descriptive names are cut at their first clause. */
+export function shortTitle(n: string): string {
+  const s = n.trim().replace(/\s+/g, ' ')
+  if (s.length <= 40) return s
+  const cut = s.split(/\s[-–—|:]\s|,\s/)[0]
+  return cut.length >= 3 && cut.length <= 48 ? cut : `${s.slice(0, 38).trimEnd()}…`
+}
+
+export function isPlaceholderName(n: string): boolean {
+  const s = n.trim()
+  return s.length < 3
+    || /^[\d\s._-]+$/.test(s)
+    || /^(project|projekt|proyecto|projet|progetto|default|unnamed|untitled|sin nombre|building|edificio|gebäude|bâtiment|site|model|ifc ?project|new project|nuevo proyecto|#\d+)$/i.test(s)
 }
 
 export function prettyName(fileName: string): string {

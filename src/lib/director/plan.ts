@@ -427,14 +427,16 @@ export const SCREEN_ASPECT = 16 / 9
 
 /**
  * Keep what a pose frames when the output is narrower than the screen it was
- * framed on: the horizontal field shrinks with the aspect, so pull back by the
- * ratio (capped — a 9:16 Reel from a 16:9 stop would otherwise fly out 3×).
+ * framed on (a 16:9 stop in a 9:16 Reel pulls back 1.78×, in 4:5 1.25×).
  */
 export function fitPoseToAspect(pose: CameraPose, from: number, to: number): CameraPose {
   if (!(from > 0) || !(to > 0) || to >= from) return pose
-  const vfov = (pose.fovDeg * Math.PI) / 180
-  const h = (a: number) => Math.tan(Math.atan(Math.tan(vfov / 2) * a))
-  return pullBack(pose, pose.target, Math.min(2.2, h(from) / h(to)))
+  // A subject framed on screen touches the NARROWER side of the frame: the
+  // height on a landscape screen, the width on a portrait one. In units of the
+  // vertical half-field, that side is min(1, aspect) — pull back by how much
+  // narrower it gets.
+  const factor = Math.min(1, from) / Math.min(1, to)
+  return factor > 1 ? pullBack(pose, pose.target, Math.min(2.2, factor)) : pose
 }
 
 /** Move the eye away from (factor > 1) or toward (< 1) `from`, keeping the target. */

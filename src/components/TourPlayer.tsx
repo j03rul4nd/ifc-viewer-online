@@ -24,7 +24,7 @@ import { appBus } from '../lib/event-bus'
 import { buildTourShareUrl } from '../lib/share/tourShareLink'
 import { replayController } from '../lib/capture/replay-controller'
 import { PRESENTATION_TEMPLATES } from '../lib/templates/presentationTemplates'
-import { tourVideoRecipe } from '../lib/director/recipe'
+import { tourVideoRecipe, type OutputFormat } from '../lib/director/recipe'
 import { useClipStudioStore } from '../stores/clipStudioStore'
 import { computeTrimToLastSeconds } from '../lib/capture/replay-buffer-core'
 import { exportGif, readClipDuration } from '../lib/capture/gif-export'
@@ -75,6 +75,14 @@ const SEVERITY_COLOR = { error: 'var(--danger)', warning: '#F5A623', info: '#3B8
 function stepColor(step: TourStep): string {
   return step.issueSeverity ? SEVERITY_COLOR[step.issueSeverity] : 'var(--accent)'
 }
+
+/** Output formats offered for "turn into a video", with a tiny shape glyph. */
+const VIDEO_FORMATS: readonly { id: Exclude<OutputFormat, 'tiktok'>; ratio: string; w: number; h: number }[] = [
+  { id: 'wide', ratio: '16:9', w: 16, h: 9 },
+  { id: 'linkedin', ratio: '4:5', w: 10, h: 12.5 },
+  { id: 'square', ratio: '1:1', w: 12, h: 12 },
+  { id: 'reel', ratio: '9:16', w: 9, h: 16 },
+]
 
 /** How long each stop is shown when the tour plays itself. */
 const AUTOPLAY_STEP_MS = 6000
@@ -256,9 +264,11 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
 
   // ── Tour → video: the stops rendered as a presentation clip in Clip Studio,
   //    at the output size, flying between stops — not a screen recording. ─────
-  const handleVideo = useCallback(() => {
+  const [videoMenu, setVideoMenu] = useState(false)
+  const handleVideo = useCallback((format: OutputFormat) => {
     if (!tour) return
-    const recipe = tourVideoRecipe(templateId, tour.steps.length)
+    setVideoMenu(false)
+    const recipe = tourVideoRecipe(templateId, tour.steps.length, format)
     exitPlayback()
     useClipStudioStore.getState().requestGenerate({ ...recipe, captions: { ...recipe.captions, title: tour.title } })
   }, [tour, templateId, exitPlayback])
@@ -280,11 +290,11 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
       if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return
       if (e.key === 'ArrowRight') { e.preventDefault(); next() }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); prev() }
-      else if (e.key === 'Escape') { e.preventDefault(); exitPlayback() }
+      else if (e.key === 'Escape') { e.preventDefault(); if (videoMenu) setVideoMenu(false); else exitPlayback() }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [next, prev, exitPlayback])
+  }, [next, prev, exitPlayback, videoMenu])
 
   if (!tour || !step) return null
 
@@ -474,9 +484,24 @@ export default function TourPlayer({ viewerApiRef, ownsCaptureReplay = false, sh
           )}
 
           {/* The tour as a presentation video, edited in Clip Studio */}
-          <button onClick={handleVideo} title={t('player.video')} className={navBtn}>
-            <Icons.Film size={14} />
-          </button>
+          <div className="relative">
+            <button onClick={() => setVideoMenu((v) => !v)} title={t('player.video')} aria-haspopup="menu" aria-expanded={videoMenu} className={`${navBtn} ${videoMenu ? 'bg-[var(--surface-2)] !text-[var(--text)]' : ''}`}>
+              <Icons.Film size={14} />
+            </button>
+            {videoMenu && (
+              <div role="menu" aria-label={t('player.video')} className="absolute bottom-full right-0 mb-2 w-44 rounded-xl border border-[var(--border-strong)] bg-[rgba(12,12,16,0.96)] p-1 shadow-[0_12px_32px_rgba(0,0,0,0.5)]">
+                <p className="px-2 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-faint)]">{t('player.video')}</p>
+                {VIDEO_FORMATS.map((f) => (
+                  <button key={f.id} role="menuitem" onClick={() => handleVideo(f.id)}
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[12.5px] text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]">
+                    <span className="inline-block shrink-0 rounded-[3px] border border-current" style={{ width: f.w, height: f.h }} aria-hidden />
+                    <span className="flex-1">{t(`player.formats.${f.id}`)}</span>
+                    <span className="font-mono text-[10px] text-[var(--text-faint)]">{f.ratio}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <button
             onClick={() => setIsolateActive(!isolateActive)}

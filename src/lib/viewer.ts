@@ -187,6 +187,35 @@ export interface IFCItemData {
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 /** Appearance/filter knobs for the overlay, forwarded to the OverlayController. */
+/** A node of Fragments' spatial structure. */
+interface SpatialItem { category: string | null; localId: number | null; children?: SpatialItem[] }
+
+const SPATIAL_CONTAINERS = new Set(['IFCPROJECT', 'IFCSITE', 'IFCBUILDING', 'IFCBUILDINGSTOREY', 'IFCSPACE', 'IFCZONE', 'IFCFACILITY', 'IFCFACILITYPART'])
+
+/**
+ * Visit every item in a spatial structure with its IFC class. Fragments
+ * returns two shapes — items carrying their own category, and category
+ * GROUP nodes (no id) whose children are the items — so an item's class is
+ * its own category or its group's. Return false to skip an item's subtree.
+ */
+function walkSpatial(node: SpatialItem, visit: (id: number, cls: string, node: SpatialItem) => boolean, groupCls: string | null = null): void {
+  const cls = (node.category ?? groupCls ?? '').toUpperCase()
+  if (node.localId !== null && node.localId !== undefined) {
+    if (!visit(node.localId, cls, node)) return
+    for (const c of node.children ?? []) walkSpatial(c, visit, null)
+    return
+  }
+  // A group node: its children inherit its category.
+  for (const c of node.children ?? []) walkSpatial(c, visit, node.category ?? groupCls)
+}
+
+function itemName(d: unknown): string {
+  const r = d as Record<string, { value?: unknown } | undefined> | undefined
+  // Name is the short label ("Level 01"); LongName is often a sentence.
+  const pick = (v: unknown) => (typeof v === 'string' || typeof v === 'number' ? String(v).trim() : '')
+  return pick(r?.Name?.value) || pick(r?.LongName?.value)
+}
+
 export interface OverlayApplyOptions {
   /** Which severities to paint in colour; the rest fall back to the ghost. */
   severities?: SeverityFilter
@@ -440,6 +469,8 @@ export interface ViewerAPI {
    * run needed): each with its name and every element contained under it.
    */
   getStoreys(modelId?: string): Promise<Array<{ expressId: number; name: string; elementIds: number[] }>>
+  /** Names of the model's IfcProject and IfcBuilding (null when absent or empty). */
+  getProjectNames(modelId?: string): Promise<{ project: string | null; building: string | null }>
   /**
    * Swap the scene backdrop (solid colour or vertical gradient) and the derived
    * fog / grid colours. Purely visual: no geometry, camera or material state is
@@ -2703,35 +2734,47 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
+    async getProjectNames(modelId?: string) {
+      const none = { project: null, building: null }
+      const model = (modelId ? modelObjects.get(modelId) : null) ?? currentModel
+      if (!model) return none
+      try {
+        const root = await model.getSpatialStructure() as SpatialItem
+        const found: Record<string, number> = {}
+        walkSpatial(root, (id, cls) => {
+          if ((cls === 'IFCPROJECT' || cls === 'IFCBUILDING') && !(cls in found)) found[cls] = id
+          return cls !== 'IFCBUILDINGSTOREY'
+        })
+        const wanted = [found.IFCPROJECT, found.IFCBUILDING].filter((id): id is number => id !== undefined)
+        if (wanted.length === 0) return none
+        const data = await model.getItemsData(wanted, { attributesDefault: false, attributes: ['Name', 'LongName'] })
+        const nameOf = (id: number | undefined) => (id === undefined ? null : itemName(data[wanted.indexOf(id)]) || null)
+        return { project: nameOf(found.IFCPROJECT), building: nameOf(found.IFCBUILDING) }
+      } catch {
+        return none
+      }
+    },
+
     async getStoreys(modelId?: string) {
       const model = (modelId ? modelObjects.get(modelId) : null) ?? currentModel
       if (!model) return []
       try {
-        type Node = { category: string | null; localId: number | null; children?: Node[] }
-        const root = await model.getSpatialStructure() as Node
+        const root = await model.getSpatialStructure() as SpatialItem
         const storeys: Array<{ expressId: number; elementIds: number[] }> = []
-        const collect = (n: Node, out: Set<number>) => {
-          // Grouping nodes (category set, no id) and spatial children both hold elements below.
-          if (n.localId !== null && n.category && !/^IFC(SPACE|ZONE)$/i.test(n.category)) out.add(n.localId)
-          for (const c of n.children ?? []) collect(c, out)
-        }
-        const walk = (n: Node) => {
-          if (n.localId !== null && n.category?.toUpperCase() === 'IFCBUILDINGSTOREY') {
-            const ids = new Set<number>()
-            for (const c of n.children ?? []) collect(c, ids)
-            storeys.push({ expressId: n.localId, elementIds: [...ids] })
-            return
-          }
-          for (const c of n.children ?? []) walk(c)
-        }
-        walk(root)
+        walkSpatial(root, (id, cls, node) => {
+          if (cls !== 'IFCBUILDINGSTOREY') return true
+          const ids = new Set<number>()
+          // Everything below the storey that is not itself a spatial container.
+          walkSpatial(node, (cid, ccls) => {
+            if (cid !== id && !SPATIAL_CONTAINERS.has(ccls)) ids.add(cid)
+            return true
+          }, cls)
+          storeys.push({ expressId: id, elementIds: [...ids] })
+          return false
+        })
         if (storeys.length === 0) return []
         const data = await model.getItemsData(storeys.map((s) => s.expressId), { attributesDefault: false, attributes: ['Name', 'LongName'] })
-        return storeys.map((s, i) => {
-          const d = data[i] as Record<string, { value?: unknown } | undefined> | undefined
-          const name = String(d?.Name?.value ?? d?.LongName?.value ?? '') || `#${s.expressId}`
-          return { ...s, name }
-        })
+        return storeys.map((s, i) => ({ ...s, name: itemName(data[i]) || `#${s.expressId}` }))
       } catch (e) {
         console.warn('[Viewer] getStoreys failed:', e)
         return []

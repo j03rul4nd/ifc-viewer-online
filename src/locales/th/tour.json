@@ -12,7 +12,13 @@
     "howToFix": "วิธีแก้ไข",
     "goToStep": "ไปยังขั้นตอนที่ {{n}}",
     "autoplay": "เล่นอัตโนมัติ",
-    "video": "แปลงเป็นวิดีโอ"
+    "video": "แปลงเป็นวิดีโอ",
+    "formats": {
+      "wide": "งานนำเสนอ 16:9",
+      "linkedin": "LinkedIn 4:5",
+      "square": "สี่เหลี่ยม 1:1",
+      "reel": "Reel / TikTok 9:16"
+    }
   },
   "recorder": {
     "title": "ทัวร์นำชม",
