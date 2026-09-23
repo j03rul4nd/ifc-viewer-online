@@ -327,7 +327,8 @@
         "issues": "Incidencias de validación",
         "tour": "Tour grabado",
         "detail": "Detalle",
-        "closing": "Cierre"
+        "closing": "Cierre",
+        "buildup": "El edificio crece"
       },
       "sectionHint": {
         "hero": "Aleja la cámara hasta el modelo completo, con el título",
@@ -338,13 +339,15 @@
         "issues": "Las peores incidencias, resaltadas",
         "tour": "Vuela por las paradas del tour",
         "detail": "Acercamiento al elemento seleccionado",
-        "closing": "Última vuelta con la llamada a la acción"
+        "closing": "Última vuelta con la llamada a la acción",
+        "buildup": "Una vuelta mientras las plantas aparecen de abajo arriba"
       },
       "empty": {
         "storeys": "Este modelo no tiene plantas",
         "systems": "No hay sistemas clasificables",
         "issues": "Sin incidencias: valida el modelo primero",
-        "tour": "Aún no hay tour: grábalo o genéralo"
+        "tour": "Aún no hay tour: grábalo o genéralo",
+        "buildup": "Necesita al menos 3 plantas"
       },
       "emptyGeneric": "Nada que mostrar en este modelo",
       "shots": "{{n}} tomas",

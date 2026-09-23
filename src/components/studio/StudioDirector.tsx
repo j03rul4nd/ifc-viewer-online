@@ -168,6 +168,7 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
     const sum = (f: (m: SceneFacts['models'][number]) => number) => facts.models.reduce((s, m) => s + f(m), 0)
     switch (k) {
       case 'storeys': return { n: Math.min(draft.maxStoreys, sum((m) => m.storeys.length)) }
+      case 'buildup': return { n: facts.models.some((m) => m.storeys.length >= 3) ? 1 : 0 }
       case 'systems': return { n: Math.min(draft.maxSystems, sum((m) => m.systems.length)) }
       case 'issues': return { n: Math.min(draft.maxIssues, sum((m) => m.issues.length)) }
       case 'tour': return { n: tourStops }

@@ -327,7 +327,8 @@
         "issues": "Incidències de validació",
         "tour": "Tour gravat",
         "detail": "Detall",
-        "closing": "Tancament"
+        "closing": "Tancament",
+        "buildup": "L’edifici creix"
       },
       "sectionHint": {
         "hero": "Allunya la càmera fins al model sencer, amb el títol",
@@ -338,13 +339,15 @@
         "issues": "Les pitjors incidències, ressaltades",
         "tour": "Vola per les parades del tour",
         "detail": "Apropament a l’element seleccionat",
-        "closing": "Última volta amb la crida a l’acció"
+        "closing": "Última volta amb la crida a l’acció",
+        "buildup": "Una volta mentre les plantes apareixen de baix a dalt"
       },
       "empty": {
         "storeys": "Aquest model no té plantes",
         "systems": "No hi ha sistemes classificables",
         "issues": "Sense incidències: valida el model primer",
-        "tour": "Encara no hi ha tour: grava’l o genera’l"
+        "tour": "Encara no hi ha tour: grava’l o genera’l",
+        "buildup": "Necessita almenys 3 plantes"
       },
       "emptyGeneric": "Res a mostrar en aquest model",
       "shots": "{{n}} preses",

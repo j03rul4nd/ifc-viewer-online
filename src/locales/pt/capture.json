@@ -327,7 +327,8 @@
         "issues": "Problemas de validação",
         "tour": "Percurso gravado",
         "detail": "Detalhe",
-        "closing": "Encerramento"
+        "closing": "Encerramento",
+        "buildup": "O edifício cresce"
       },
       "sectionHint": {
         "hero": "Afasta até ao modelo completo, com o título",
@@ -338,13 +339,15 @@
         "issues": "Os piores problemas, destacados",
         "tour": "Voa pelas paragens do percurso",
         "detail": "Aproximação ao elemento selecionado",
-        "closing": "Última volta com o apelo à ação"
+        "closing": "Última volta com o apelo à ação",
+        "buildup": "Uma volta enquanto os pisos aparecem de baixo para cima"
       },
       "empty": {
         "storeys": "Este modelo não tem pisos",
         "systems": "Não há sistemas classificáveis",
         "issues": "Sem problemas — valide primeiro",
-        "tour": "Ainda sem percurso — grave ou gere um"
+        "tour": "Ainda sem percurso — grave ou gere um",
+        "buildup": "Precisa de pelo menos 3 pisos"
       },
       "emptyGeneric": "Nada a mostrar neste modelo",
       "shots": "{{n}} tomadas",

@@ -257,6 +257,13 @@ export interface ShotRenderOptions {
    * finish streaming in so the first recorded frame is already complete.
    */
   warmupFrames?: number
+  /**
+   * Called before each recorded frame with its time in the shot — lets the
+   * caller change the scene DURING a move (storeys appearing one by one).
+   * renderShotFrame waits for the geometry, so a change made here is complete
+   * in the frame that follows.
+   */
+  beforeFrame?: (t: number) => void | Promise<void>
 }
 
 /**
@@ -279,6 +286,7 @@ export async function renderShot(viewer: ShotRenderer, shot: ShotSpec, o: ShotRe
     }
     for (let i = 0; i < times.length; i++) {
       if (o.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+      await o.beforeFrame?.(times[i])
       const gl = await viewer.renderShotFrame(cameraAt(shot, times[i]))
       // Copy in the same task as the render: the WebGL buffer is cleared once
       // the browser composites.

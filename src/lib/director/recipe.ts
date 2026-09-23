@@ -27,13 +27,14 @@ export type SectionKind =
   | 'orbit'     // a turn around the whole model
   | 'aerial'    // plan view tilting into perspective
   | 'storeys'   // one shot per storey, that storey alone, bottom to top
+  | 'buildup'   // one continuous turn while the storeys appear bottom to top
   | 'systems'   // structure / envelope / MEP / interiors, each isolated
   | 'issues'    // the worst validation findings, highlighted
   | 'tour'      // fly through the stops of the recorded tour
   | 'detail'    // push in on the selected element (or the model's heart)
   | 'closing'   // slow final turn with the call to action
 
-export const SECTION_KINDS: readonly SectionKind[] = ['hero', 'orbit', 'aerial', 'storeys', 'systems', 'issues', 'tour', 'detail', 'closing']
+export const SECTION_KINDS: readonly SectionKind[] = ['hero', 'orbit', 'aerial', 'buildup', 'storeys', 'systems', 'issues', 'tour', 'detail', 'closing']
 
 export type Pace = 'calm' | 'normal' | 'fast'
 export const PACES: readonly Pace[] = ['calm', 'normal', 'fast']
@@ -123,7 +124,7 @@ export const BUILT_IN_RECIPES: readonly Recipe[] = [
   {
     ...BASE, id: 'meeting-demo', name: 'Meeting demo',
     format: 'wide', targetSec: 45, pace: 'calm', music: 'corporate',
-    sections: ['hero', 'orbit', 'storeys', 'systems', 'closing'],
+    sections: ['hero', 'buildup', 'storeys', 'systems', 'closing'],
   },
   {
     ...BASE, id: 'client-walkthrough', name: 'Client walkthrough',
@@ -140,14 +141,14 @@ export const BUILT_IN_RECIPES: readonly Recipe[] = [
   {
     ...BASE, id: 'linkedin-teaser', name: 'LinkedIn teaser',
     format: 'linkedin', targetSec: 20, pace: 'normal', music: 'corporate',
-    sections: ['hero', 'orbit', 'systems', 'closing'], maxSystems: 3,
+    sections: ['hero', 'buildup', 'systems', 'closing'], maxSystems: 3,
     captions: { ...CAPTIONS, cta: 'Checked in the browser · ifcvieweronline.eu' },
     watermark: true,
   },
   {
     ...BASE, id: 'reel', name: 'Reel',
     format: 'reel', targetSec: 15, pace: 'fast', transition: 'zoom', transitionSec: 0.3, music: 'upbeat',
-    sections: ['hero', 'orbit', 'systems', 'aerial', 'closing'], maxSystems: 2,
+    sections: ['hero', 'buildup', 'systems', 'closing'], maxSystems: 2,
     captions: { ...CAPTIONS, look: 'bold', labelShots: false, cta: 'ifcvieweronline.eu' },
     watermark: true,
   },

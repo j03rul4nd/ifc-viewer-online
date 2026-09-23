@@ -176,7 +176,7 @@
 .studio-storyboard-shot { flex-basis: 0; min-width: 4px; background: var(--surface-2); }
 .studio-storyboard-shot.is-hero, .studio-storyboard-shot.is-closing { background: color-mix(in srgb, var(--accent) 70%, var(--surface)); }
 .studio-storyboard-shot.is-orbit, .studio-storyboard-shot.is-aerial, .studio-storyboard-shot.is-detail { background: color-mix(in srgb, var(--accent) 40%, var(--surface)); }
-.studio-storyboard-shot.is-storeys { background: color-mix(in srgb, #22c55e 55%, var(--surface)); }
+.studio-storyboard-shot.is-storeys, .studio-storyboard-shot.is-buildup { background: color-mix(in srgb, #22c55e 55%, var(--surface)); }
 .studio-storyboard-shot.is-systems { background: color-mix(in srgb, #0ea5e9 55%, var(--surface)); }
 .studio-storyboard-shot.is-issues { background: color-mix(in srgb, #f59e0b 60%, var(--surface)); }
 .studio-storyboard-shot.is-tour { background: color-mix(in srgb, #a855f7 55%, var(--surface)); }

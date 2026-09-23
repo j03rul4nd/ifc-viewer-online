@@ -114,6 +114,15 @@ describe('planPresentation', () => {
     expect(minimal.texts.some((t) => t.text.includes('elements'))).toBe(false)
   })
 
+  it('builds the building up storey by storey in one shot', () => {
+    const [clip] = planPresentation(recipe('meeting-demo', { sections: ['hero', 'buildup', 'closing'] }), facts([model()]), strings, null)
+    const up = clip.shots.find((s) => s.section === 'buildup')!
+    expect(up.scene.stages).toHaveLength(8)
+    expect(up.shot.type).toBe('orbit')
+    const [flat] = planPresentation(recipe('meeting-demo', { sections: ['hero', 'buildup', 'closing'] }), facts([model('m1', { storeys: [] })]), strings, null)
+    expect(flat.shots.some((s) => s.section === 'buildup')).toBe(false)
+  })
+
   it('never prints a score below 70', () => {
     const [low] = planPresentation(recipe('meeting-demo'), facts([model('m1', { score: 55 })]), strings, null)
     expect(low.texts.some((t) => t.text.includes('/100'))).toBe(false)
