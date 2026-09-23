@@ -134,7 +134,16 @@ export interface PlannedClip {
   transitionSec: number
   /** Project length once the transitions overlap. */
   durationSec: number
+  /** Picture punches (launch style): project times, amount. */
+  punch?: { times: number[]; amount: number }
+  /** Motion-blur sub-frames per rendered frame (1 = off). */
+  motionBlur: number
 }
+
+/** Launch grammar: which moves get a speed ramp (reveals keep their ease-out). */
+const RAMPED: readonly ShotType[] = ['orbit', 'focus', 'flyby', 'crane', 'topDown']
+/** How hard a cut punches in. */
+export const PUNCH_AMOUNT = 0.055
 
 export const FORMAT_SIZE: Record<Recipe['format'], { width: number; height: number }> = {
   wide: { width: 1920, height: 1080 },
@@ -180,7 +189,13 @@ export function planPresentation(recipe: Recipe, facts: SceneFacts, strings: Pla
     }
     const durationSec = at
     const texts = recipe.captions.enabled ? planTexts(recipe, shots, starts, overlap, subject, allModels, title, strings) : []
-    return { modelId: subject.modelId, title, width, height, shots, texts, transition, transitionSec: overlap, durationSec }
+    const launch = recipe.style === 'launch'
+    return {
+      modelId: subject.modelId, title, width, height, shots, texts, transition, transitionSec: overlap, durationSec,
+      ...(launch ? { punch: { times: punchTimes(starts, overlap, beat, durationSec), amount: PUNCH_AMOUNT } } : {}),
+      // Fast launch cuts get a real shutter; calmer ones stay crisp (and 3× cheaper).
+      motionBlur: launch && recipe.pace === 'fast' ? 3 : 1,
+    }
   }
 
   if (recipe.multiModel === 'separate' || models.length === 1) {
@@ -251,7 +266,7 @@ function sectionDrafts(
   const make = (section: SectionKind, type: ShotType, bounds: Bounds, label: string, over: Partial<ShotSpec>, scene: ShotScene, caption?: string, weight = 1): Draft => ({
     shot: {
       section,
-      shot: { ...defaultShot(type, bounds, aspect, 4), headingDeg: nextHeading(), ...over },
+      shot: launchEase(recipe, type, { ...defaultShot(type, bounds, aspect, 4), headingDeg: nextHeading(), ...over }),
       label, caption,
       scene: { ...(visibleModels ? { visibleModels } : {}), ...scene },
     },
@@ -366,6 +381,28 @@ function sectionDrafts(
   return out
 }
 
+/** Launch style: speed-ramp the moves that have a hero moment in the middle. */
+function launchEase(recipe: Recipe, type: ShotType, shot: ShotSpec): ShotSpec {
+  if (recipe.style !== 'launch' || !RAMPED.includes(type)) return shot
+  // A ramp needs travel to read: widen the sweep a little.
+  return { ...shot, easing: 'ramp', sweepDeg: shot.sweepDeg * 1.25 }
+}
+
+/**
+ * Where the picture punches in: on every cut, and on each bar's downbeat in
+ * between when there is a beat. Sorted, deduplicated, never in the first
+ * half-second (the opening frame should land clean).
+ */
+export function punchTimes(starts: number[], overlap: number, beat: Rhythm | null, duration: number): number[] {
+  const cuts = starts.slice(1).map((s) => s + overlap)
+  const bars: number[] = []
+  if (beat && beat.beatSec > 0) for (let t = beat.beatSec * 4; t < duration - 0.3; t += beat.beatSec * 4) bars.push(t)
+  // A cut always wins over a bar that falls next to it.
+  const lone = bars.filter((b) => cuts.every((c) => Math.abs(c - b) > 0.35))
+  const all = [...cuts, ...lone].filter((t) => t >= 0.5 && t < duration - 0.2).sort((a, b) => a - b)
+  return all.filter((t, i) => i === 0 || t - all[i - 1] > 0.3).map(round3)
+}
+
 /** Attach a subject's detail lines when the recipe shows details. */
 function withDetails(d: Draft, recipe: Recipe, sub: Subject): Draft {
   if (!recipe.captions.details || !sub.detail?.length) return d
@@ -438,12 +475,17 @@ function planTexts(
   // Reels and TikTok draw their own UI over the bottom fifth — keep text out of it.
   const low: TextAnchor = vertical ? 'mid-center' : 'bottom-left'
   const look = CAPTION_LOOKS[recipe.captions.look ?? 'clean']
+  // Launch grammar: titles slam in, numbers count up, labels land word by word.
+  const launch = recipe.style === 'launch'
+  const anim = (kind: 'title' | 'stats' | 'label' | 'cta'): TextAnimId =>
+    !launch ? look.anim : kind === 'stats' ? 'count' : kind === 'label' ? 'words' : 'slam'
   const texts: PlannedText[] = []
   const push = (t: Omit<PlannedText, 'anim'>, anim: TextAnimId = look.anim) => texts.push({ ...t, anim })
   const end = (i: number) => starts[i] + shots[i].shot.durationSec - (i < shots.length - 1 ? overlap : 0)
 
   const heroEnd = end(0)
-  if (title) push({ text: title, startSec: 0.3, endSec: Math.max(1.5, heroEnd - 0.2), style: look.title, anchor: vertical ? 'top-center' : 'mid-center' })
+  // Launch titles hit within the first beat: no slow fade-in on a feed.
+  if (title) push({ text: title, startSec: launch ? 0.12 : 0.3, endSec: Math.max(1.5, heroEnd - 0.2), style: look.title, anchor: vertical ? 'top-center' : 'mid-center' }, anim('title'))
   const sub: string[] = []
   if (recipe.captions.showStats) {
     const elements = models.reduce((s, m) => s + m.elementCount, 0)
@@ -457,16 +499,16 @@ function planTexts(
     // Vertical frames have no room under a wrapped title — the facts follow it
     // on the second shot instead of piling onto it.
     if (vertical && shots.length > 1) {
-      push({ text: sub.join(' · '), startSec: round3(starts[1] + overlap + 0.15), endSec: round3(end(1) - 0.15), style: look.subtitle, anchor: 'top-center' })
+      push({ text: sub.join(' · '), startSec: round3(starts[1] + overlap + 0.15), endSec: round3(end(1) - 0.15), style: look.subtitle, anchor: 'top-center' }, anim('stats'))
     } else {
-      push({ text: sub.join(' · '), startSec: 0.8, endSec: Math.max(2, heroEnd - 0.2), style: look.subtitle, anchor: vertical ? 'top-center' : 'bottom-center' })
+      push({ text: sub.join(' · '), startSec: 0.8, endSec: Math.max(2, heroEnd - 0.2), style: look.subtitle, anchor: vertical ? 'top-center' : 'bottom-center' }, anim('stats'))
     }
   }
 
   for (let i = 1; i < shots.length; i++) {
     const cap = shots[i].caption
     if (!cap) continue
-    push({ text: cap, startSec: round3(starts[i] + overlap + 0.15), endSec: round3(Math.max(starts[i] + overlap + 1, end(i) - 0.15)), style: look.label, anchor: low })
+    push({ text: cap, startSec: round3(starts[i] + overlap + 0.15), endSec: round3(Math.max(starts[i] + overlap + 1, end(i) - 0.15)), style: look.label, anchor: low }, anim('label'))
   }
   // The fixes summary ("12 fixed · Health Score 71 → 86") opens the first fix
   // shot: on top of its detail lines when it has them, on its own otherwise.
@@ -494,7 +536,7 @@ function planTexts(
   const cta = recipe.captions.cta.trim()
   if (cta && shots.length > 1) {
     const last = shots.length - 1
-    push({ text: cta, startSec: round3(starts[last] + overlap + 0.3), endSec: round3(end(last) - 0.1), style: look.cta, anchor: vertical ? 'mid-center' : 'bottom-center' })
+    push({ text: cta, startSec: round3(starts[last] + overlap + 0.3), endSec: round3(end(last) - 0.1), style: look.cta, anchor: vertical ? 'mid-center' : 'bottom-center' }, anim('cta'))
   }
   return texts
 }

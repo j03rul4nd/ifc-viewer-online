@@ -11,7 +11,7 @@
 // watermark → colour cover. The cover goes last so a dip to black takes the
 // titles with it.
 
-import { framingRect, overlaysAt, type ClipSample, type EditProject, type FrameSample, type MediaOverlay } from './project'
+import { framingRect, overlaysAt, punchScale, type ClipSample, type EditProject, type FrameSample, type MediaOverlay } from './project'
 import { textRenderStateAt } from './timeline'
 import { drawTextCardsAt } from './compositor'
 import { drawWatermark } from './watermark'
@@ -48,11 +48,20 @@ export function composeProjectFrame(o: ComposeProjectOptions): void {
   const primary = sample.primary ? o.frameOf(sample.primary) : null
   const outgoing = sample.outgoing ? o.frameOf(sample.outgoing) : null
 
+  // Beat punch scales the picture about the centre; text stays rock-steady.
+  const punch = punchScale(o.project.fx, o.t)
+  if (punch !== 1) {
+    ctx.save()
+    ctx.translate(width / 2, height / 2)
+    ctx.scale(punch, punch)
+    ctx.translate(-width / 2, -height / 2)
+  }
   if (sample.outgoing && outgoing && primary && sample.primary) {
     drawTransition(ctx, o, { pic: outgoing, clip: sample.outgoing }, { pic: primary, clip: sample.primary })
   } else if (primary && sample.primary) {
     drawClip(ctx, o, primary, sample.primary)
   }
+  if (punch !== 1) ctx.restore()
 
   for (const overlay of overlaysAt(o.project, o.t)) {
     const pic = o.overlayOf(overlay, o.t)

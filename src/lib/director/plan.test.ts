@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { planPresentation, pickSpread, combine, federationName, fitPoseToAspect, type ModelFacts, type PlanStrings, type SceneFacts, type Subject } from './plan'
+import { planPresentation, pickSpread, combine, federationName, fitPoseToAspect, punchTimes, type ModelFacts, type PlanStrings, type SceneFacts, type Subject } from './plan'
 import { BUILT_IN_RECIPES, builtInRecipe, sanitizeRecipe, type Recipe } from './recipe'
 import { groupSystems, systemOf } from './systems'
 import { pathAt, type CameraPose } from '../capture/shots'
@@ -149,6 +149,28 @@ describe('planPresentation', () => {
     const shot = clip.shots.find((s) => s.section === 'bcf')!
     expect(shot.shot.type).toBe('path')
     expect(shot.shot.keyframes?.[1]).toEqual(pose)
+  })
+
+  it('launch style: ramps, blur, punches and kinetic text', () => {
+    const [clip] = planPresentation(recipe('launch-2026'), facts([model()]), strings, { beatSec: 0.5 })
+    expect(clip.shots.some((s) => s.shot.easing === 'ramp')).toBe(true)
+    expect(clip.motionBlur).toBe(3)
+    expect(clip.punch!.times.length).toBeGreaterThan(clip.shots.length - 2)
+    const anims = new Set(clip.texts.map((t) => t.anim))
+    expect(anims.has('slam')).toBe(true)
+    expect(anims.has('count')).toBe(true)
+    const [classic] = planPresentation(recipe('meeting-demo'), facts([model()]), strings, { beatSec: 0.5 })
+    expect(classic.punch).toBeUndefined()
+    expect(classic.motionBlur).toBe(1)
+    expect(classic.shots.every((s) => s.shot.easing !== 'ramp')).toBe(true)
+  })
+
+  it('punches land on cuts and bars, never crowding or at the very start', () => {
+    const t = punchTimes([0, 2, 4], 0.25, { beatSec: 0.5 }, 6)
+    expect(t).toEqual([...t].sort((a, b) => a - b))
+    expect(t[0]).toBeGreaterThanOrEqual(0.5)
+    for (let i = 1; i < t.length; i++) expect(t[i] - t[i - 1]).toBeGreaterThan(0.3)
+    expect(t).toContain(2.25)
   })
 
   it('never prints a score below 70', () => {

@@ -90,7 +90,10 @@
       "none": "无",
       "fade": "淡入淡出",
       "slideUp": "滑动",
-      "pop": "弹出"
+      "pop": "弹出",
+      "words": "逐词",
+      "slam": "重击",
+      "count": "数字滚动"
     },
     "effects": {
       "in": "开场",
@@ -310,7 +313,9 @@
         "tiktok": "TikTok",
         "team-issues": "团队问题清单",
         "fixes-report": "已修复内容",
-        "project-portfolio": "项目合集"
+        "project-portfolio": "项目合集",
+        "launch-2026": "2026 发布会 · 竖屏",
+        "launch-2026-wide": "2026 发布会 · 16:9"
       },
       "pace": {
         "calm": "舒缓",
@@ -416,7 +421,16 @@
       "howToFix": "修复方法",
       "unassigned": "未分配",
       "showDetails": "显示详情",
-      "showDetailsHint": "受影响构件、修复方法、BCF 状态——用于审查视频。"
+      "showDetailsHint": "受影响构件、修复方法、BCF 状态——用于审查视频。",
+      "styleLabel": "剪辑风格",
+      "styles": {
+        "classic": "经典",
+        "launch": "2026 发布会"
+      },
+      "styleHint": {
+        "classic": "平缓运镜、淡入淡出、沉稳字幕。",
+        "launch": "变速运镜、运动模糊、每个剪切点缩放冲击、重击标题、数字滚动、逐词标注。"
+      }
     },
     "remaining": "约剩 {{seconds}} 秒"
   }

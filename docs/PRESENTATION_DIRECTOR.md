@@ -57,3 +57,12 @@ tests but was not run end to end in the browser pane.
 
 - `viewer.setSectionBox(box, margin)` — six hidden managed clip planes (not listed as user planes); `viewer.setLevelCut(y)` — one horizontal plane, moved live by the section panel's slider.
 - Measurement panel: size of the selection (axis-aligned box), totals, copy as tab-separated table.
+
+## Launch 2026 edit style (`recipe.style = 'launch'`)
+
+From the 2026 launch-video grammar (Raycast/Framer/Vercel-style launches, short-form social):
+- **Speed ramp** (`easing: 'ramp'`): fast in, slow through the middle, fast out — on orbit/focus/flyby/crane/topDown.
+- **Motion blur**: `renderShot({ motionBlur: n })` averages n sub-frames over a 180° shutter; used at 3 on fast launch cuts.
+- **Beat punch**: `project.fx.punch` — the picture (not the text) jumps in 5.5 % on every cut and each bar's downbeat, decays in ~0.14 s (`punchScale`).
+- **Kinetic text**: `slam` titles/CTA, `count` numbers (format kept, denominators untouched), `words` labels; the hook title lands at 0.12 s.
+- Templates: *Launch 2026 · vertical* (Reel, 16 s, whip) and *Launch 2026 · 16:9* (24 s, zoom).

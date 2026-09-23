@@ -90,7 +90,10 @@
       "none": "Nenhuma",
       "fade": "Fundido",
       "slideUp": "Deslizar",
-      "pop": "Ressalto"
+      "pop": "Ressalto",
+      "words": "Palavras",
+      "slam": "Impacto",
+      "count": "Contador"
     },
     "effects": {
       "in": "Abertura",
@@ -310,7 +313,9 @@
         "tiktok": "TikTok",
         "team-issues": "Problemas para a equipa",
         "fixes-report": "O que foi corrigido",
-        "project-portfolio": "Projetos em conjunto"
+        "project-portfolio": "Projetos em conjunto",
+        "launch-2026": "Lançamento 2026 · vertical",
+        "launch-2026-wide": "Lançamento 2026 · 16:9"
       },
       "pace": {
         "calm": "Calmo",
@@ -416,7 +421,16 @@
       "howToFix": "Como corrigir",
       "unassigned": "Sem atribuição",
       "showDetails": "Mostrar detalhes",
-      "showDetailsHint": "Elementos afetados, como corrigir, estado BCF — para vídeos de revisão."
+      "showDetailsHint": "Elementos afetados, como corrigir, estado BCF — para vídeos de revisão.",
+      "styleLabel": "Estilo de edição",
+      "styles": {
+        "classic": "Clássico",
+        "launch": "Lançamento 2026"
+      },
+      "styleHint": {
+        "classic": "Movimentos suaves, transições e títulos calmos.",
+        "launch": "Rampas de velocidade, desfoque de movimento, zoom de impacto em cada corte, títulos fortes, números que contam e legendas palavra a palavra."
+      }
     },
     "remaining": "Faltam cerca de {{seconds}} s"
   }

@@ -90,7 +90,10 @@
       "none": "なし",
       "fade": "フェード",
       "slideUp": "スライド",
-      "pop": "ポップ"
+      "pop": "ポップ",
+      "words": "単語ごと",
+      "slam": "スラム",
+      "count": "カウントアップ"
     },
     "effects": {
       "in": "オープニング",
@@ -310,7 +313,9 @@
         "tiktok": "TikTok",
         "team-issues": "チーム向け指摘事項",
         "fixes-report": "修正された内容",
-        "project-portfolio": "プロジェクトまとめ"
+        "project-portfolio": "プロジェクトまとめ",
+        "launch-2026": "ローンチ 2026 · 縦型",
+        "launch-2026-wide": "ローンチ 2026 · 16:9"
       },
       "pace": {
         "calm": "ゆったり",
@@ -416,7 +421,16 @@
       "howToFix": "修正方法",
       "unassigned": "未割り当て",
       "showDetails": "詳細を表示",
-      "showDetailsHint": "該当要素、修正方法、BCF ステータス — レビュー動画向け。"
+      "showDetailsHint": "該当要素、修正方法、BCF ステータス — レビュー動画向け。",
+      "styleLabel": "編集スタイル",
+      "styles": {
+        "classic": "クラシック",
+        "launch": "ローンチ 2026"
+      },
+      "styleHint": {
+        "classic": "なめらかなカメラワーク、フェード、落ち着いたタイトル。",
+        "launch": "スピードランプ、モーションブラー、カットごとのズームパンチ、スラムタイトル、カウントアップ、単語ごとのラベル。"
+      }
     },
     "remaining": "残り約 {{seconds}} 秒"
   }

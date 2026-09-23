@@ -72,8 +72,20 @@ export interface RecipeCaptions {
   details?: boolean
 }
 
+/**
+ * How the clip is cut.
+ * - 'classic': eased camera moves, fades, calm titles.
+ * - 'launch':  the 2026 product-launch grammar — speed-ramped moves, motion
+ *              blur on fast ones, a punch-in on every cut and on the bar,
+ *              slammed titles, counting numbers, word-by-word labels.
+ */
+export type EditStyle = 'classic' | 'launch'
+export const EDIT_STYLES: readonly EditStyle[] = ['classic', 'launch']
+
 export interface Recipe {
   id: string
+  /** Cutting grammar; missing = classic. */
+  style?: EditStyle
   name: string
   builtIn?: boolean
   format: OutputFormat
@@ -185,6 +197,19 @@ export const BUILT_IN_RECIPES: readonly Recipe[] = [
     sections: ['hero', 'buildup', 'systems', 'closing'], maxSystems: 2,
     multiModel: 'groups',
   },
+  {
+    ...BASE, id: 'launch-2026', name: 'Launch 2026 (vertical)', style: 'launch',
+    format: 'reel', targetSec: 16, pace: 'fast', transition: 'whip', transitionSec: 0.25, music: 'upbeat',
+    sections: ['buildup', 'orbit', 'systems', 'aerial', 'closing'], maxSystems: 2,
+    captions: { ...CAPTIONS, look: 'bold', labelShots: true, cta: 'ifcvieweronline.eu' },
+    watermark: true,
+  },
+  {
+    ...BASE, id: 'launch-2026-wide', name: 'Launch 2026 (16:9)', style: 'launch',
+    format: 'wide', targetSec: 24, pace: 'normal', transition: 'zoom', transitionSec: 0.3, music: 'cinematic',
+    sections: ['hero', 'buildup', 'systems', 'storeys', 'closing'], maxSystems: 3, maxStoreys: 3,
+    captions: { ...CAPTIONS, look: 'bold', labelShots: true, cta: 'ifcvieweronline.eu' },
+  },
 ]
 
 export const DEFAULT_RECIPE_ID = 'meeting-demo'
@@ -271,6 +296,7 @@ export function sanitizeRecipe(input: unknown, fallbackId = 'custom'): Recipe {
       cta: str(c.cta, 80),
     },
     multiModel: oneOf(o.multiModel, MULTI_MODEL_MODES, BASE.multiModel),
+    style: oneOf(o.style, EDIT_STYLES, 'classic'),
     fadeIn: bool(o.fadeIn, true),
     fadeOut: bool(o.fadeOut, true),
     watermark: bool(o.watermark, false),

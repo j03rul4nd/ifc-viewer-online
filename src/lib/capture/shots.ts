@@ -30,7 +30,9 @@ export type ShotType =
 
 export const SHOT_TYPES: readonly ShotType[] = ['orbit', 'reveal', 'crane', 'topDown', 'dollyIn', 'flyby', 'focus']
 
-export type Easing = 'linear' | 'easeInOut' | 'easeOut'
+export type Easing =
+  | 'linear' | 'easeInOut' | 'easeOut'
+  | 'ramp'   // speed ramp: fast in, slow through the hero moment, fast out
 
 export interface ShotSpec {
   type: ShotType
@@ -278,10 +280,15 @@ function pose(position: Vec3, target: Vec3, fovDeg: number): CameraPose {
   return { position, target, fovDeg }
 }
 
+/** How hard a speed ramp brakes in the middle (0 = none, <1). */
+export const RAMP_DEPTH = 0.75
+
 export function ease(kind: Easing, p: number): number {
   const x = clamp01(p)
   if (kind === 'linear') return x
   if (kind === 'easeOut') return 1 - Math.pow(1 - x, 3)
+  // Speed 1+k at both ends, 1−k in the middle; monotonic for k < 1.
+  if (kind === 'ramp') return x + (RAMP_DEPTH * Math.sin(2 * Math.PI * x)) / (2 * Math.PI)
   return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2
 }
 

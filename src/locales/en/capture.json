@@ -90,7 +90,10 @@
       "none": "None",
       "fade": "Fade",
       "slideUp": "Slide",
-      "pop": "Pop"
+      "pop": "Pop",
+      "words": "Words",
+      "slam": "Slam",
+      "count": "Count up"
     },
     "effects": {
       "in": "Opening",
@@ -310,7 +313,9 @@
         "tiktok": "TikTok",
         "team-issues": "Issues for the team",
         "fixes-report": "What was fixed",
-        "project-portfolio": "Projects together"
+        "project-portfolio": "Projects together",
+        "launch-2026": "Launch 2026 · vertical",
+        "launch-2026-wide": "Launch 2026 · 16:9"
       },
       "pace": {
         "calm": "Calm",
@@ -416,7 +421,16 @@
       "howToFix": "How to fix",
       "unassigned": "Unassigned",
       "showDetails": "Show details",
-      "showDetailsHint": "Affected elements, how to fix, BCF status — for review videos."
+      "showDetailsHint": "Affected elements, how to fix, BCF status — for review videos.",
+      "styleLabel": "Edit style",
+      "styles": {
+        "classic": "Classic",
+        "launch": "Launch 2026"
+      },
+      "styleHint": {
+        "classic": "Eased camera moves, fades, calm titles.",
+        "launch": "Speed-ramped moves, motion blur, a punch on every cut, slammed titles, counting numbers, word-by-word labels."
+      }
     },
     "remaining": "About {{seconds}} s left"
   }

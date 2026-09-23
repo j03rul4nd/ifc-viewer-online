@@ -90,7 +90,10 @@
       "none": "Keine",
       "fade": "Blende",
       "slideUp": "Schieben",
-      "pop": "Pop"
+      "pop": "Pop",
+      "words": "Wörter",
+      "slam": "Knall",
+      "count": "Hochzählen"
     },
     "effects": {
       "in": "Anfang",
@@ -310,7 +313,9 @@
         "tiktok": "TikTok",
         "team-issues": "Befunde fürs Team",
         "fixes-report": "Was behoben wurde",
-        "project-portfolio": "Projekte zusammen"
+        "project-portfolio": "Projekte zusammen",
+        "launch-2026": "Launch 2026 · Hochformat",
+        "launch-2026-wide": "Launch 2026 · 16:9"
       },
       "pace": {
         "calm": "Ruhig",
@@ -416,7 +421,16 @@
       "howToFix": "So beheben",
       "unassigned": "Nicht zugewiesen",
       "showDetails": "Details zeigen",
-      "showDetailsHint": "Betroffene Elemente, Lösung, BCF-Status – für Prüfvideos."
+      "showDetailsHint": "Betroffene Elemente, Lösung, BCF-Status – für Prüfvideos.",
+      "styleLabel": "Schnittstil",
+      "styles": {
+        "classic": "Klassisch",
+        "launch": "Launch 2026"
+      },
+      "styleHint": {
+        "classic": "Weiche Kamerafahrten, Blenden, ruhige Titel.",
+        "launch": "Speed Ramps, Bewegungsunschärfe, Zoom-Punch auf jedem Schnitt, Titel mit Wucht, hochzählende Zahlen, Beschriftung Wort für Wort."
+      }
     },
     "remaining": "Noch etwa {{seconds}} s"
   }
