@@ -1,5 +1,7 @@
 # Blog component system
 
+> The blog index and topic hubs are documented in [BLOG_LANDING.md](BLOG_LANDING.md).
+
 Posts are **data**, not MDX: each post is an array of `ContentBlock` objects in
 `src/lib/blog-posts.ts`, rendered by `RenderBlock` in `src/components/Blog.tsx`.
 That is the authoring API. Every block is also serialised twice, and a new block

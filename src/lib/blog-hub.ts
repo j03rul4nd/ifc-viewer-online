@@ -60,6 +60,33 @@ export interface BlogHubCopy {
   faqs: BlogFaq[]
   viewerPrompt: string
   viewerCta: string
+  // ── Landing sections (see docs/BLOG_LANDING.md) ──
+  questionsLabel: string
+  startHereTitle: string
+  startHereDescription: string
+  editorsPick: string
+  foundationalLabel: string
+  topicsTitle: string
+  topicsDescription: string
+  topicGuides: (n: number) => string
+  exploreTopic: string
+  whatsNewTitle: string
+  whatsNewDescription: string
+  newBadge: string
+  updatedBadge: string
+  readBadge: string
+  demoBadge: string
+  continueTitle: string
+  continueDescription: string
+  // ── Topic hub ──
+  topicEyebrow: string
+  startWith: string
+  topicAllGuides: (n: number) => string
+  topicTools: string
+  otherTopics: string
+  allArticles: string
+  footerTopics: string
+  footerTools: string
 }
 
 const JOURNEY_TERMS = {
@@ -75,7 +102,7 @@ const EN: BlogHubCopy = {
   eyebrow: 'BIM & IFC knowledge hub',
   heroLead: 'Solve the IFC problem',
   heroAccent: 'blocking your delivery',
-  heroDescription: 'Search practical answers, follow a guided path, or open a real browser demo. Written for BIM coordinators who need a decision or a fix — not another glossary.',
+  heroDescription: 'Search practical answers, explore a topic, or open a real browser demo. Written for BIM coordinators who need a decision or a fix — not another glossary.',
   searchLabel: 'Search the IFC knowledge hub',
   searchPlaceholder: 'Search validation, Revit export, GUIDs, LiDAR…',
   searchHint: 'Press / to search',
@@ -129,13 +156,38 @@ const EN: BlogHubCopy = {
   ],
   viewerPrompt: 'Need the answer from your own model instead of an article?',
   viewerCta: 'Open IFC Viewer free',
+  questionsLabel: 'Common questions',
+  startHereTitle: 'Start here',
+  startHereDescription: 'The editor’s pick, and the guides the rest of the library builds on.',
+  editorsPick: 'Editor’s pick',
+  foundationalLabel: 'Most referenced',
+  topicsTitle: 'Explore by topic',
+  topicsDescription: 'Each topic has its own page: where to start, every guide on it, and the tools that solve its problems.',
+  topicGuides: (n) => `${n} guides`,
+  exploreTopic: 'Explore topic',
+  whatsNewTitle: 'New and updated',
+  whatsNewDescription: 'The latest articles and the ones revised since they were published.',
+  newBadge: 'New',
+  updatedBadge: 'Updated',
+  readBadge: 'Read',
+  demoBadge: '3D demo',
+  continueTitle: 'Picked for you',
+  continueDescription: 'Based on the articles you have read in this browser.',
+  topicEyebrow: 'Topic',
+  startWith: 'Start with',
+  topicAllGuides: (n) => `All ${n} guides on this topic`,
+  topicTools: 'Tools for this topic',
+  otherTopics: 'Other topics',
+  allArticles: 'All articles',
+  footerTopics: 'Topics',
+  footerTools: 'Tools',
 }
 
 const ES: BlogHubCopy = {
   eyebrow: 'Centro de conocimiento BIM e IFC',
   heroLead: 'Resuelve el problema IFC',
   heroAccent: 'que bloquea tu entrega',
-  heroDescription: 'Busca respuestas prácticas, sigue un recorrido guiado o abre una demo real en el navegador. Pensado para coordinadores BIM que necesitan una decisión o una solución.',
+  heroDescription: 'Busca respuestas prácticas, explora un tema o abre una demo real en el navegador. Pensado para coordinadores BIM que necesitan una decisión o una solución.',
   searchLabel: 'Buscar en el centro de conocimiento IFC',
   searchPlaceholder: 'Busca validación, exportación Revit, GUID, LiDAR…',
   searchHint: 'Pulsa / para buscar',
@@ -189,6 +241,31 @@ const ES: BlogHubCopy = {
   ],
   viewerPrompt: '¿Necesitas la respuesta desde tu propio modelo y no desde un artículo?',
   viewerCta: 'Abrir IFC Viewer gratis',
+  questionsLabel: 'Preguntas frecuentes',
+  startHereTitle: 'Empieza por aquí',
+  startHereDescription: 'La selección editorial y las guías sobre las que se apoya el resto de la biblioteca.',
+  editorsPick: 'Selección editorial',
+  foundationalLabel: 'Más referenciada',
+  topicsTitle: 'Explora por tema',
+  topicsDescription: 'Cada tema tiene su propia página: por dónde empezar, todas sus guías y las herramientas que resuelven sus problemas.',
+  topicGuides: (n) => `${n} guías`,
+  exploreTopic: 'Ver tema',
+  whatsNewTitle: 'Novedades y actualizaciones',
+  whatsNewDescription: 'Los artículos más recientes y los revisados desde su publicación.',
+  newBadge: 'Nuevo',
+  updatedBadge: 'Actualizado',
+  readBadge: 'Leído',
+  demoBadge: 'Demo 3D',
+  continueTitle: 'Elegido para ti',
+  continueDescription: 'Según los artículos que has leído en este navegador.',
+  topicEyebrow: 'Tema',
+  startWith: 'Empieza por',
+  topicAllGuides: (n) => `Las ${n} guías de este tema`,
+  topicTools: 'Herramientas para este tema',
+  otherTopics: 'Otros temas',
+  allArticles: 'Todos los artículos',
+  footerTopics: 'Temas',
+  footerTools: 'Herramientas',
 }
 
 export function getBlogHubCopy(lang: string): BlogHubCopy {

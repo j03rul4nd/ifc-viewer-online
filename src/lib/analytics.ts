@@ -399,6 +399,12 @@ export function trackExportClicked(props: {
  *   'floor_plan'          → 2D floor plan view opened
  *   'takeoff'             → quantity takeoff computed
  *   'ebook_download'      → the /ebook lead magnet PDF was downloaded
+ *
+ * Blog discovery (never carries search text — only its length and result count)
+ *   blog_post_opened       → an article opened from a blog surface (`from` says which)
+ *   blog_topic_opened      → a topic hub page opened
+ *   blog_search            → a search settled (debounced) with its result count
+ *   blog_tool_clicked      → a tool CTA clicked from the blog
  */
 export function trackFeatureUsed(props: {
   feature:
@@ -669,4 +675,29 @@ export function trackCertificateDeepVerified(props: {
   result: 'match' | 'mismatch'
 }): void {
   track('certificate_deep_verified', props)
+}
+
+// ── Blog discovery ────────────────────────────────────────────────────────────
+// Which blog surfaces actually move readers deeper, measured rather than
+// guessed. Search events never include the query itself: typed text can carry
+// project or client names.
+
+export type BlogSurface =
+  | 'start_here' | 'topic_card' | 'whats_new' | 'library' | 'continue'
+  | 'topic_hub' | 'lab' | 'related_end' | 'related_inline' | 'footer'
+
+export function trackBlogPostOpened(props: { from: BlogSurface; lang: string; position?: number }): void {
+  track('blog_post_opened', props)
+}
+
+export function trackBlogTopicOpened(props: { topic: string; from: BlogSurface | 'breadcrumb'; lang: string }): void {
+  track('blog_topic_opened', props)
+}
+
+export function trackBlogSearch(props: { query_length: number; results: number; lang: string }): void {
+  track('blog_search', props)
+}
+
+export function trackBlogToolClicked(props: { tool: string; from: BlogSurface | 'article'; lang: string }): void {
+  track('blog_tool_clicked', props)
 }
