@@ -497,6 +497,11 @@ describe('generateBlogPages — article structured data', () => {
     expect(html()).toContain('/brand/logo.svg')
   })
 
+  it('gives dates a time and timezone, and images a url (Rich Results test)', () => {
+    expect(html()).toContain(`"datePublished":"${post.date}T00:00:00+00:00"`)
+    expect(html()).toMatch(/"@type":"ImageObject","url":"https:\/\//)
+  })
+
   it('carries a breadcrumb up to its topic hub', () => {
     expect(html()).toContain('"@type":"BreadcrumbList"')
     expect(html()).toContain(`${SITE}/blog/topic/${post.categorySlug}/`)

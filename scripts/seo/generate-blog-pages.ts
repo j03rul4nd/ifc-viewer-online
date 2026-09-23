@@ -52,6 +52,15 @@ const PUBLISHER = {
   founder: { '@type': 'Person', name: 'Joel Benitez', url: 'https://github.com/j03rul4nd' },
 }
 
+/**
+ * Structured-data dates carry a time and a timezone. Posts store plain
+ * `YYYY-MM-DD`; Google's Rich Results test flags that as incomplete, so the
+ * date is pinned to midnight UTC — the day stays the one the author wrote.
+ */
+function isoDateTime(date: string): string {
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) ? `${date}T00:00:00+00:00` : date
+}
+
 function breadcrumbLd(items: Array<{ name: string; url: string }>): Record<string, unknown> {
   return {
     '@type': 'BreadcrumbList',
@@ -298,6 +307,7 @@ function articleImageJsonLd(post: BlogPost): Array<Record<string, unknown> | str
   if (images.length === 0) return [OG_IMAGE]
   return images.map((image) => ({
     '@type': 'ImageObject',
+    url: image.url,
     contentUrl: image.url,
     caption: image.caption,
     ...(image.credit ? {
@@ -717,7 +727,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
                   '@type': 'BlogPosting',
                   headline: p.title,
                   description: p.excerpt,
-                  datePublished: p.date,
+                  datePublished: isoDateTime(p.date),
                   url: `${SITE}/${cfg.prefix}blog/${p.slug}/`,
                 })),
               },
@@ -763,8 +773,8 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
             imageAlt: post.heroAlt ?? post.title,
             ogType: 'article',
             bodyFallback: postBodyFallback(post, cfg.prefix, primaryImage),
-            publishedTime: post.date,
-            modifiedTime: post.dateModified ?? post.date,
+            publishedTime: isoDateTime(post.date),
+            modifiedTime: isoDateTime(post.dateModified ?? post.date),
             alternates: postAlternates(post),
             jsonLd: {
               '@context': 'https://schema.org',
@@ -772,8 +782,8 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
               '@type': 'BlogPosting',
               headline: post.title,
               description: postSeoDescription(post),
-              datePublished: post.date,
-              dateModified: post.dateModified ?? post.date,
+              datePublished: isoDateTime(post.date),
+              dateModified: isoDateTime(post.dateModified ?? post.date),
               inLanguage: lang,
               author:    { '@type': 'Organization', name: post.author, url: `${SITE}/` },
               publisher: PUBLISHER,

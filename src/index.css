@@ -380,20 +380,30 @@ kbd {
 /* ── B2B Light mode (landing + blog only) ───────────────────────────────────── */
 /* Applied via .lp-light wrapper — never touches the IFC viewer.                */
 
+/* Every token that carries TEXT clears WCAG AA (4.5:1) on both --bg and
+   --surface: the dark palette's faint/accent/status hues were tuned for a
+   black page and dropped to ~3:1 on white, which is what made light mode
+   tiring to read. Contrast on --bg / --surface / --surface-2:
+     text-dim   #363A52  10.3 / 11.1 / 9.8    accent-2  #4150C8  6.1 / 6.5 / 5.7
+     text-faint #5B6180   5.6 /  6.1 / 5.3    danger    #C81E1E  5.3 / 5.7 / 5.0
+     ok         #137333   5.5 /  6.0 / 5.2    warn      #A14A08  5.6 / 6.0 / 5.3 */
 .lp-light {
   --bg:           #F5F6FA;
   --surface:      #FFFFFF;
-  --surface-2:    #ECEDF3;
-  --border:       #DDE0EC;
-  --border-strong:#C2C6D8;
+  --surface-2:    #EEF0F5;
+  --border:       #D9DDE8;
+  --border-strong:#BEC3D4;
   --text:         #0B0D1A;
-  --text-dim:     #414560;
-  --text-faint:   #7D82A0;
+  --text-dim:     #363A52;
+  --text-faint:   #5B6180;
   --accent:       #3645C4;
-  --accent-2:     #5E6AD2;
-  --ok:           #16A34A;
-  --danger:       #DC2626;
-  --warn:         #D97706;
+  --accent-2:     #4150C8;
+  --ok:           #137333;
+  --danger:       #C81E1E;
+  --warn:         #A14A08;
+  /* Text that sets no colour of its own inherits from here, not from the
+     dark theme's :root/body colour (which left it near-white on white). */
+  color:          var(--text);
 }
 
 /* Frosted-glass utilities adapted for light backgrounds */

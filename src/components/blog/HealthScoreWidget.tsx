@@ -86,7 +86,7 @@ export default function HealthScoreWidget({ score, label, size = 'md' }: Props) 
           <circle
             cx={svgSize / 2} cy={svgSize / 2} r={r}
             fill="none"
-            stroke="rgba(255,255,255,0.06)"
+            stroke="var(--border)"
             strokeWidth={stroke}
           />
           {/* Progress arc */}

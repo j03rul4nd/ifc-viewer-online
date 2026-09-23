@@ -760,7 +760,7 @@ function FeaturedCard({ post, onClick, theme = 'dark', featuredLabel = 'FEATURED
 /** Free-handbook shelf on the blog index — real links, so it also feeds /ebook. */
 function EbookBanner() {
   return (
-    <div className="mt-4 sm:mt-5 grid gap-3 sm:gap-4 sm:grid-cols-2">
+    <div className="mt-4 sm:mt-5 grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-1">
       {EBOOKS.map((book) => (
         <a
           key={book.id}
@@ -1820,7 +1820,7 @@ function HeroCoverStrip({ slug, heroImage, alt }: { slug: string; heroImage?: st
     ? `${asset(compactHero)} 800w, ${src} 1600w`
     : undefined
   return (
-    <div className="relative h-[240px] sm:h-[420px] overflow-hidden bg-black border-b border-[var(--border)]">
+    <div className="relative h-[240px] sm:h-[420px] overflow-hidden bg-[var(--surface-2)] border-b border-[var(--border)]">
       <img
         src={src}
         srcSet={srcSet}
@@ -1828,7 +1828,7 @@ function HeroCoverStrip({ slug, heroImage, alt }: { slug: string; heroImage?: st
         alt={alt ?? ''}
         width={1600}
         height={900}
-        className="w-full h-full object-cover object-center opacity-[0.88]"
+        className="w-full h-full object-cover object-center"
         decoding="async"
         onError={() => setVisible(false)}
       />
