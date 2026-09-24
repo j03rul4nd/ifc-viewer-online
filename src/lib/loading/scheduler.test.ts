@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest'
 import {
-  compareCandidates, decideAttach, decideConvert, decideNetwork, effectivePriority, orderCandidates, pickAnchor,
-  type ConvertCandidate, type LaneCandidate,
+  compareCandidates, decideAttach, decideConvert, decideNetwork, decideSlots, effectivePriority, orderCandidates,
+  pickAnchor, type ConvertCandidate, type LaneCandidate,
 } from './scheduler'
 import type { Priority } from './types'
 
@@ -170,6 +170,49 @@ describe('decideNetwork', () => {
       holders: [], candidates: [{ ...c('h', 1), held: true }], max: 2, now: NOW, backlogged: true,
     })
     expect(held).toEqual({ grant: [], blocked: {} })
+  })
+})
+
+describe('decideSlots (decode lane)', () => {
+  const c = (jobId: string, seq: number, over: Partial<LaneCandidate> = {}): LaneCandidate =>
+    ({ jobId, seq, priority: 2, enqueuedAt: NOW, held: false, ...over })
+
+  it('fills the free slots in priority order; the rest wait for a slot', () => {
+    const d = decideSlots({ holders: [], candidates: [c('a', 1), c('b', 2, { priority: 1 }), c('c', 3)], max: 2, now: NOW })
+    expect(d).toEqual({ grant: ['b', 'a'], blocked: { c: 'slot' } })
+  })
+
+  it('counts holders against the slots, and always has at least one', () => {
+    expect(decideSlots({ holders: [{ jobId: 'h' }], candidates: [c('a', 1), c('b', 2)], max: 2, now: NOW }))
+      .toEqual({ grant: ['a'], blocked: { b: 'slot' } })
+    expect(decideSlots({ holders: [], candidates: [c('a', 1), c('b', 2)], max: 0, now: NOW }))
+      .toEqual({ grant: ['a'], blocked: { b: 'slot' } })
+    expect(decideSlots({ holders: [{ jobId: 'h1' }, { jobId: 'h2' }], candidates: [c('a', 1)], max: 2, now: NOW }))
+      .toEqual({ grant: [], blocked: { a: 'slot' } })
+  })
+
+  it('ages: a low-priority decode that waited long enough goes before newer normal work', () => {
+    const oldLow = (waitedMs: number) => c('old-low', 1, { priority: 3, enqueuedAt: NOW - waitedMs })
+    const newNormal = c('new-normal', 2)
+    // Fresh: priority decides.
+    expect(decideSlots({ holders: [], candidates: [newNormal, oldLow(0)], max: 1, now: NOW }))
+      .toEqual({ grant: ['new-normal'], blocked: { 'old-low': 'slot' } })
+    // 46 s later it has climbed to normal, and it was there first.
+    expect(decideSlots({ holders: [], candidates: [newNormal, oldLow(46_000)], max: 1, now: NOW }))
+      .toEqual({ grant: ['old-low'], blocked: { 'new-normal': 'slot' } })
+    // Without a clock (no `now`), no aging.
+    expect(decideSlots({ holders: [], candidates: [newNormal, oldLow(46_000)], max: 1 }).grant).toEqual(['new-normal'])
+  })
+
+  it('never grants a held candidate and gives it no reason', () => {
+    const d = decideSlots({ holders: [], candidates: [c('held', 1, { held: true }), c('b', 2)], max: 2, now: NOW })
+    expect(d).toEqual({ grant: ['b'], blocked: {} })
+  })
+
+  it('has no anchor rule and no memory admission: nothing but slots', () => {
+    // Whatever a candidate would weigh on the convert lane, here it is a slot.
+    const d = decideSlots({ holders: [], candidates: [c('a', 1), c('b', 2), c('c', 3)], max: 3, now: NOW })
+    expect(d.grant).toEqual(['a', 'b', 'c'])
   })
 })
 

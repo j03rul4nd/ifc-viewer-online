@@ -72,11 +72,13 @@ ifc/
 │   │   │                             #   getModelBounds(modelId?), frameAllModels(), isolateModel(id)
 │   │   ├── loading/                  # Model loading & orchestration — see docs/MODEL_LOADING.md, D-29
 │   │   │                             #   load-manager.ts   jobs · batches · lanes · retries · events · metrics
-│   │   │                             #   scheduler.ts      pure lane decisions (network 2 · convert 1 · attach 1, anchor-first)
+│   │   │                             #   scheduler.ts      pure lane decisions (network 2 · convert 1 · attach 1, anchor-first · decode 2 per kind)
 │   │   │                             #   resource-policy / retry-policy / phases / fingerprint / model-id
 │   │   │                             #   ifc-source.ts     the IFC pipeline as an adapter (download → … → commit → stream → index)
 │   │   │                             #   ifc-convert-pool  ifc-parser workers on demand; cancel = terminate()
-│   │   │                             #   external-sources  point cloud / mesh / GIS loads mirrored as tracked jobs
+│   │   │                             #   pointcloud-source / mesh-source  scans and meshes as managed adapters (runners stay the executors)
+│   │   │                             #   source-errors     runner i18n keys → LoadError codes (+ detailKey)
+│   │   │                             #   external-sources  GIS rows mirrored as tracked jobs; watchSourceRemovals
 │   │   │                             #   index.ts          app wiring: singleton manager, commit, appBus/store bridges
 │   │   │                             #   controller.ts     what the UI calls (cancel, retry, hold, reprioritise…)
 │   │   ├── loader.ts                 # useIfcLoader() — thin React face of the loading system: installs the
@@ -240,7 +242,7 @@ flowchart TD
     C --> K[click → select\nhighlight + sidebar properties\nstamps modelId on selection]
 ```
 
-Point clouds, meshes and GIS context keep their own runners. `lib/loading/external-sources.ts` mirrors their store status into *tracked* jobs, so the Loading Center shows every load in flight and each row's Cancel calls that runner's own cancel. The blog `EmbedViewer` (`lib/embed-loader.ts`) is the one IFC path outside the manager.
+Point clouds and meshes are *managed* jobs too (D-30): `lib/loading/pointcloud-source.ts` and `mesh-source.ts` drive pc-runner / mesh-runner through the `decode` lane and the attach lane's anchor rule, with a per-job cancel. Only GIS context is *tracked*: `lib/loading/external-sources.ts` mirrors the geo statuses into rows, and its `watchSourceRemovals` tells the manager when a scan or mesh entry leaves its store by another path (panel X, SDK remove/clear, replay, landing). The blog `EmbedViewer` (`lib/embed-loader.ts`) is the one IFC path outside the manager.
 
 ### IFC validation + auto-tree
 

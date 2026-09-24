@@ -1,7 +1,8 @@
 // ─── Resource policy ──────────────────────────────────────────────────────────
-// What this machine can afford while loading: how many IFC conversions may run
-// side by side, how much transient memory they may claim together, and how
-// the answer changes when the heap fills up or an allocation fails.
+// What this machine can afford while loading: how many IFC conversions (and
+// point cloud / mesh decodes) may run side by side, how much transient memory
+// the conversions may claim together, and how the answer changes when the heap
+// fills up or an allocation fails.
 //
 // Every input is a browser hint that may be missing (Safari and Firefox expose
 // neither `deviceMemory` nor `performance.memory`), so every rule has a
@@ -27,6 +28,15 @@ const CONVERT_BASE_BYTES = 100 * MB
 /** Convert peak ≈ size × 5 — the worker's JS copy, two web-ifc parses and geometry arrays. */
 const CONVERT_SIZE_FACTOR = 5
 const DEV_MAX_CONVERTS_KEY = 'ifc:load-max-converts'
+const DEV_MAX_DECODES_KEY = 'ifc:load-max-decodes'
+/**
+ * Point cloud / mesh decoders at once. A scan parses in its own worker, a mesh
+ * mostly between awaits on the main thread (Draco in its pool), and each is
+ * bounded by its own subsystem's cap (the resident-point budget, the mesh size
+ * checks) rather than by the convert admission estimate — so two may overlap,
+ * a scan beside a site mesh, on a lane that never takes an IFC convert slot.
+ */
+const DEFAULT_MAX_DECODES = 2
 
 // ── Environment probe ─────────────────────────────────────────────────────────
 
@@ -101,10 +111,11 @@ export function readHeap(g: unknown = globalThis): HeapSample | null {
   }
 }
 
-function readDevMaxConverts(): number | null {
+/** A DEV-only lane width override from localStorage (1..8), or null. */
+function readDevMax(key: string): number | null {
   if (!import.meta.env.DEV) return null
   try {
-    const raw = (globalThis as GlobalLike).localStorage?.getItem(DEV_MAX_CONVERTS_KEY)
+    const raw = (globalThis as GlobalLike).localStorage?.getItem(key)
     if (raw == null) return null
     const n = Math.floor(Number(raw))
     return Number.isFinite(n) && n >= 1 ? Math.min(n, 8) : null
@@ -117,6 +128,7 @@ function readDevMaxConverts(): number | null {
 
 export interface PolicyOverrides {
   maxConcurrentConverts: number
+  maxConcurrentDecodes: number
   memoryBudgetBytes: number
   largeFileBytes: number
 }
@@ -151,11 +163,19 @@ export function createResourcePolicy(
   // converts, and a converted model attaches while the next one converts —
   // which the scheduler gives anyway. `ifc:load-max-converts` (DEV) and the
   // override keep the knob for re-measuring on other hardware.
-  const devMax = readDevMaxConverts()
+  const devMax = readDevMax(DEV_MAX_CONVERTS_KEY)
   let baseMax: number
   if (overrides?.maxConcurrentConverts !== undefined) baseMax = Math.max(1, Math.floor(overrides.maxConcurrentConverts))
   else if (devMax !== null) baseMax = devMax
   else baseMax = 1
+
+  // Decodes get their own lane width. `ifc:load-max-decodes` (DEV) mirrors
+  // the convert knob.
+  const devDecodes = readDevMax(DEV_MAX_DECODES_KEY)
+  let baseDecodes: number
+  if (overrides?.maxConcurrentDecodes !== undefined) baseDecodes = Math.max(1, Math.floor(overrides.maxConcurrentDecodes))
+  else if (devDecodes !== null) baseDecodes = devDecodes
+  else baseDecodes = DEFAULT_MAX_DECODES
 
   // Budget for summed convert peaks. `deviceMemory` is rounded and capped at
   // 8 by browsers, so 0.4 × it tops out at 3.2 GB. The main heap limit is NOT
@@ -174,6 +194,11 @@ export function createResourcePolicy(
     return pressure === 'normal' ? baseMax : 1
   }
 
+  /** One decode at a time as soon as the heap is under pressure: a scan's typed arrays live on it. */
+  function maxConcurrentDecodes(): number {
+    return pressure === 'normal' ? baseDecodes : 1
+  }
+
   return {
     snapshot(): PolicySnapshot {
       return {
@@ -183,6 +208,7 @@ export function createResourcePolicy(
         mobile: env.mobile,
         maxConcurrentConverts: maxConcurrentConverts(),
         maxConcurrentDownloads: 2,
+        maxConcurrentDecodes: maxConcurrentDecodes(),
         memoryBudgetBytes: budget,
         largeFileBytes: largeFile,
         pressure,
@@ -195,6 +221,7 @@ export function createResourcePolicy(
     },
     maxConcurrentConverts,
     maxConcurrentDownloads: () => 2,
+    maxConcurrentDecodes,
     memoryBudgetBytes: () => budget,
     largeFileBytes: () => largeFile,
     pressure: () => pressure,

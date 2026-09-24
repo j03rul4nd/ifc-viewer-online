@@ -5,6 +5,8 @@
 //   nothing ever loaded     → not rendered
 //   one job                 → "Loading Hotel_Vela.ifc · 72%"
 //   several                 → "Loading 3 models · 68%"   (size-weighted)
+//                             "Loading 3 files"  when a scan, a mesh or a GIS
+//                             fetch is among them: loads, not models
 //   nothing measuring       → the same label, a turning ring and NO percent
 //                             (a GIS fetch, a header check: "0%" would be made up)
 //   only queued / on hold   → "3 queued"
@@ -12,7 +14,8 @@
 //   unseen failures         → "1 failed" (danger), or a red count badge while
 //                             other work is still running
 //   a burst just ended      → "All models loaded ✓" for 2.5 s — only when a
-//                             model of yours landed in it and nothing failed
+//                             model of yours (managed IFC, not a scan or a
+//                             mesh) landed in it and nothing failed
 //   idle with history       → a quiet icon button (every variant), so the
 //                             Loading Center — failed rows with Retry, timings,
 //                             cache, session metrics — can be reopened at any
@@ -23,13 +26,16 @@
 // shares the bar with every other control and must not push them off-screen.
 //
 // Re-render cost: it subscribes to a handful of summary NUMBERS through a
-// shallow selector, plus the single job's display name as a string — never to
-// the jobs array — so ten progress snapshots a second re-render this chip only
-// when the rounded percent actually moves.
+// shallow selector, plus three primitives derived from the jobs (the single
+// job's display name, whether every active row is a model, how many failed
+// rows are models) — never to the jobs array itself — so ten progress
+// snapshots a second re-render this chip only when the rounded percent, or
+// one of those answers, actually moves.
 //
 // Screen readers get transitions ("Loading 3 models", "1 model failed to
-// load", "All models loaded") through a polite live region — not a stream of
-// percentages, which would make the page unusable while a big file converts.
+// load" — "1 load failed" when it was a scan —, "All models loaded") through a
+// polite live region — not a stream of percentages, which would make the page
+// unusable while a big file converts.
 // Failures are announced from the raw failed count, not from "unseen": with
 // the Loading Center open every failure is "seen" the instant it lands, and a
 // sighted user reading the red row is not the same as being told.
@@ -40,8 +46,8 @@ import { useShallow } from 'zustand/react/shallow'
 import { useLoadingStore, selectCenterOpen } from '../../stores/loadingStore'
 import { useLoadingT } from '../../i18n/hooks/namespaces'
 import {
-  burstBaseline, burstLoadedModels, displayPercent, indicatorModel, singleActiveName,
-  type BurstBaseline, type IndicatorModel,
+  activeAreAllModels, burstBaseline, burstLoadedModels, countFailedModels, displayPercent, failureAnnouncement,
+  indicatorModel, singleActiveName, type BurstBaseline, type IndicatorModel,
 } from './job-view'
 import { CheckGlyph, ClockGlyph, ProgressRing, WarnGlyph } from './glyphs'
 
@@ -71,6 +77,10 @@ export function LoadingIndicator({ variant }: { variant: LoadingIndicatorVariant
   })))
   // Walk the jobs only when there is exactly one active job to name.
   const singleName = useLoadingStore((st) => (st.summary.active === 1 ? singleActiveName(st.jobs) : null))
+  // "models" or "files" for the count, and which new failures were models —
+  // each walked only while there is something of that kind to count.
+  const activeAllModels = useLoadingStore((st) => st.summary.active === 0 || activeAreAllModels(st.jobs))
+  const failedModels = useLoadingStore((st) => (st.summary.failed > 0 ? countFailedModels(st.jobs) : 0))
   const hasHistory = useLoadingStore((st) => st.jobs.length > 0)
   const open = useLoadingStore(selectCenterOpen)
   const toggleCenter = useLoadingStore((st) => st.toggleCenter)
@@ -79,9 +89,9 @@ export function LoadingIndicator({ variant }: { variant: LoadingIndicatorVariant
   // Decided from the burst itself: what had landed or failed is noted when the
   // queue turns busy, and the idle edge asks whether one of YOUR models landed
   // since and nothing failed. Totals cannot answer that — "3 loaded" includes
-  // the model from an hour ago, so a burst that only cancelled a file or only
-  // fetched GIS terrain would end on a green check. The jobs are read from the
-  // store at the two edges only, never subscribed to.
+  // the model from an hour ago, so a burst that only cancelled a file, only
+  // fetched GIS terrain or only brought in a scan would end on a green check.
+  // The jobs are read from the store at the two edges only, never subscribed to.
   const busy = s.active > 0 || s.finishing > 0
   const [showDone, setShowDone] = useState(false)
   const baseline = useRef<BurstBaseline | null>(null)
@@ -102,18 +112,19 @@ export function LoadingIndicator({ variant }: { variant: LoadingIndicatorVariant
   const model = useMemo(() => indicatorModel({
     active: s.active, running: s.running, waiting: s.waiting, queued: s.queued, held: s.held,
     finishing: s.finishing, unseenFailures: s.unseenFailures, percent: s.percent, measuring: s.measuring,
-    singleName, showDone,
-  }, t), [s, singleName, showDone, t])
+    singleName, activeAllModels, showDone,
+  }, t), [s, singleName, activeAllModels, showDone, t])
 
   // ── Announcements (transitions only) ───────────────────────────────────────
   const [announcement, setAnnouncement] = useState('')
   const prevKind = useRef(model.kind)
   const prevFailed = useRef(s.failed)
+  const prevFailedModels = useRef(failedModels)
   useEffect(() => {
     const newFailures = s.failed - prevFailed.current
     let next: string | null = null
     if (newFailures > 0) {
-      next = t('indicator.announce.failed', { count: newFailures })
+      next = failureAnnouncement(newFailures, failedModels - prevFailedModels.current, t)
     } else if (model.kind !== prevKind.current && (model.kind === 'active' || model.kind === 'queued' || model.kind === 'done')) {
       next = model.label
     }
@@ -125,9 +136,11 @@ export function LoadingIndicator({ variant }: { variant: LoadingIndicatorVariant
     }
     prevKind.current = model.kind
     prevFailed.current = s.failed
+    prevFailedModels.current = failedModels
     // `model.label` is read at the transition on purpose: a label change
     // WITHOUT a kind change (another file's name) is not announced.
-  }, [model.kind, s.failed]) // eslint-disable-line react-hooks/exhaustive-deps
+    // `failedModels` is a dependency only so its baseline never goes stale.
+  }, [model.kind, s.failed, failedModels]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Every variant keeps a quiet entry once there is a history: without a
   // toolbar (client / kiosk) or on a phone there is no other way back to a

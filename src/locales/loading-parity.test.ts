@@ -129,13 +129,65 @@ describe('loading locale parity', () => {
     expect(Object.keys(LABEL_MAPS.phase)).toHaveLength(16)
     expect(Object.keys(LABEL_MAPS.phaseActive)).toHaveLength(16)
     expect(Object.keys(LABEL_MAPS.status)).toHaveLength(9)
-    expect(Object.keys(LABEL_MAPS.wait)).toHaveLength(7)
+    expect(Object.keys(LABEL_MAPS.wait)).toHaveLength(8)
     expect(Object.keys(LABEL_MAPS.error)).toHaveLength(16)
     expect(Object.keys(LABEL_MAPS.discipline)).toHaveLength(13)
     expect(Object.keys(LABEL_MAPS.disciplineShort)).toHaveLength(13)
     expect(Object.keys(LABEL_MAPS.priority)).toHaveLength(5)
     expect(Object.keys(LABEL_MAPS.pressure)).toHaveLength(3)
     expect(Object.keys(PLURAL_LABEL_MAPS.counter)).toHaveLength(5)
+  })
+
+  it('overrides a phase per kind only as a pair, and only for real phases', () => {
+    // A noun without its live form (or the reverse) would print a scan's words
+    // in the checklist and the generic ones on the row, for the same step.
+    const phases = new Set(Object.keys(LABEL_MAPS.phase))
+    const nouns = Object.keys(LABEL_MAPS.phasePointcloud).sort()
+    expect(nouns.length).toBeGreaterThan(0)
+    expect(Object.keys(LABEL_MAPS.phaseActivePointcloud).sort()).toEqual(nouns)
+    for (const id of nouns) {
+      expect(phases.has(id), `phaseByKind.pointcloud.${id} is not a phase`).toBe(true)
+      // An override that says what the generic label says is dead weight.
+      expect(EN[LABEL_MAPS.phaseActivePointcloud[id]], id).not.toBe(EN[LABEL_MAPS.phaseActive[id]])
+    }
+  })
+
+  it('gives every IFC-worded error sentence a kind-neutral twin, and the twin names no model', () => {
+    // A scan or a mesh whose failure has no detail key falls back to the
+    // generic sentence; "not a readable IFC model" under a .laz is the bug.
+    // Holding the EN wording to it means a future sentence about IFC cannot
+    // ship without its twin.
+    const errors = LABEL_MAPS.error
+    const twins = LABEL_MAPS.errorGeneric
+    for (const code of Object.keys(twins)) expect(errors[code], `errorGeneric.${code} is not an error code`).toBeDefined()
+    for (const [code, key] of Object.entries(errors)) {
+      if (/\bIFC\b|\bmodels?\b|schema|convert/i.test(EN[key] ?? '')) {
+        expect(twins[code], `error.${code} speaks of IFC; it needs errorGeneric.${code}`).toBeDefined()
+      }
+    }
+    // The locale's own word for "model", as its batch / cache strings use it.
+    const MODEL_WORD: Record<string, RegExp> = {
+      en: /\bmodels?\b/i, ca: /\bmodels?\b/i, de: /Modell/i, es: /modelo/i, fr: /modèle/i, it: /modell/i,
+      pt: /modelo/i, ja: /モデル/, zh: /模型/, th: /โมเดล/,
+    }
+    for (const [lng, dict] of Object.entries(ALL)) {
+      for (const [code, key] of Object.entries(twins)) {
+        const text = dict[key] ?? ''
+        expect(text, `${lng}:${key}`).not.toMatch(/\bIFC\b/)
+        expect(text, `${lng}:${key} names a model`).not.toMatch(MODEL_WORD[lng])
+        // A twin that says what the IFC sentence says is dead weight.
+        expect(text, `${lng}:${key}`).not.toBe(dict[errors[code]])
+      }
+    }
+  })
+
+  it('keeps a kind-neutral count beside every count that says "models"', () => {
+    // The indicator counts scans and meshes too; "Loading 2 models" for two
+    // LAZ files is what the neutral forms are for.
+    for (const [lng, dict] of Object.entries(ALL)) {
+      expect(paramsOf(resolve(dict, 'indicator.loadingManyFiles') ?? ''), `${lng}:loadingManyFiles`).toEqual(['count'])
+      expect(paramsOf(resolve(dict, 'indicator.announce.failedLoads') ?? ''), `${lng}:failedLoads`).toEqual(['count'])
+    }
   })
 
   it('keeps the anchor wait naming the model it waits for', () => {

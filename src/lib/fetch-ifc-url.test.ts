@@ -8,7 +8,7 @@
 // joining the chunks first was one more full copy of the model at the peak.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { fetchIfcFromUrl, lastModifiedFromResponse, IfcUrlFetchError } from './fetch-ifc-url'
+import { fetchIfcFromUrl, fetchFileFromUrl, deriveFileName, lastModifiedFromResponse, IfcUrlFetchError } from './fetch-ifc-url'
 import { fetchDemoModel, DemoFetchError } from '../demo-models/fetchDemoModel'
 import type { DemoModel } from '../demo-models/models'
 import { buildCacheKey } from './opfs-cache'
@@ -207,5 +207,59 @@ describe('fetchDemoModel', () => {
 
     fetchMock.mockImplementation(async () => new Response(new Uint8Array(0)))
     await expect(fetchDemoModel(demo)).rejects.toBeInstanceOf(DemoFetchError)
+  })
+})
+
+// Point clouds and meshes route on the file's own extension, so their downloads
+// must keep it — and must take it from the URL's PATH. A signed URL named with
+// `url.split('/').pop()` came out as "scan.laz?X-Amz-Signature=…", which no
+// reader recognised.
+describe('fetchFileFromUrl', () => {
+  it('names the File from the URL path, query and fragment excluded', async () => {
+    fetchMock.mockResolvedValue(respond({ 'Last-Modified': LAST_MODIFIED }))
+    const file = await fetchFileFromUrl('https://cdn.example/scans/site.copc.laz?X-Amz-Signature=abc&v=2#frag', {
+      fallbackName: 'scan.las',
+    })
+    expect(file.name).toBe('site.copc.laz')
+    expect(file.lastModified).toBe(Date.parse(LAST_MODIFIED))
+  })
+
+  it('keeps any extension (no .ifc forcing) and honours an explicit name', async () => {
+    fetchMock.mockImplementation(async () => respond())
+    expect((await fetchFileFromUrl('https://cdn.example/m/model.gltf', { fallbackName: 'model.glb' })).name).toBe('model.gltf')
+    expect((await fetchFileFromUrl('https://cdn.example/m/x?id=1', { fileName: 'chair.glb', fallbackName: 'model.glb' })).name).toBe('chair.glb')
+  })
+
+  it('falls back when the path has no name', async () => {
+    fetchMock.mockImplementation(async () => respond())
+    expect((await fetchFileFromUrl('https://cdn.example/', { fallbackName: 'scan.las' })).name).toBe('scan.las')
+  })
+
+  it('reports streamed progress and refuses empty bodies and bad schemes', async () => {
+    fetchMock.mockResolvedValueOnce(streamed(PIECES, { 'Content-Length': String(IFC_BYTES.byteLength) }))
+    const onProgress = vi.fn()
+    const file = await fetchFileFromUrl('https://cdn.example/a.ply', { fallbackName: 'scan.ply', onProgress })
+    expect(onProgress).toHaveBeenCalledTimes(PIECES.length)
+    expect(await bytesOf(file)).toEqual(Array.from(IFC_BYTES))
+
+    fetchMock.mockImplementationOnce(async () => new Response(new Uint8Array(0)))
+    await expect(fetchFileFromUrl('https://cdn.example/empty.ply', { fallbackName: 'x.ply' })).rejects.toThrow(/empty/)
+    await expect(fetchFileFromUrl('ftp://cdn.example/a.ply', { fallbackName: 'x.ply' })).rejects.toBeInstanceOf(IfcUrlFetchError)
+  })
+
+  it('surfaces HTTP failures with their status', async () => {
+    fetchMock.mockResolvedValue(new Response('nope', { status: 403, statusText: 'Forbidden' }))
+    await expect(fetchFileFromUrl('https://cdn.example/a.ply', { fallbackName: 'x.ply' })).rejects.toThrow(/HTTP 403/)
+  })
+})
+
+describe('deriveFileName', () => {
+  const u = (s: string) => new URL(s)
+  it('decodes, sanitises and falls back', () => {
+    expect(deriveFileName(undefined, u('https://h/a/My%20Scan.las'), 'x')).toBe('My Scan.las')
+    expect(deriveFileName('  ', u('https://h/a/b.e57?q=1'), 'x')).toBe('b.e57')
+    expect(deriveFileName('we:ird*name.glb', u('https://h/'), 'x')).toBe('we_ird_name.glb')
+    expect(deriveFileName(undefined, u('https://h/a/%E0%A4%A.las'), 'x')).toBe('%E0%A4%A.las')
+    expect(deriveFileName(undefined, u('https://h/'), 'fallback.obj')).toBe('fallback.obj')
   })
 })

@@ -18,10 +18,12 @@ import { ViewportPanel } from './ViewportPanel'
 import { usePointCloudStore } from '../stores/pointCloudStore'
 import { useSceneStore } from '../stores/sceneStore'
 import { useUIStore } from '../stores/uiStore'
-import { loadPointCloud, streamPointCloud, cancelPointCloud, realignCloud } from '../lib/pointcloud/pc-runner'
+import { cancelPointCloud, realignCloud } from '../lib/pointcloud/pc-runner'
+import { submitPointClouds, describeSourceError, cancelLoadsOfKind } from '../lib/loading'
+import { useLoadingStore } from '../stores/loadingStore'
 import { saveCloudProj4 } from '../lib/pointcloud/pc-align'
 import { registerCustomProj4 } from '../lib/geo/crs'
-import { acceptAttribute, isCopcName } from '../lib/pointcloud/pc-format'
+import { acceptAttribute } from '../lib/pointcloud/pc-format'
 import { toast } from '../stores/toastStore'
 import { createLogger } from '../lib/logger'
 import { appBus } from '../lib/event-bus'
@@ -33,7 +35,7 @@ import {
   type SimulatedTransportMode, type SimulatedTransportSnapshot,
 } from '../lib/pointcloud/simulated-live-transport'
 import {
-  DEMO_POINT_CLOUDS, DEMO_SOURCES, fetchDemoPointCloud, formatDemoSize, type DemoPointCloud,
+  DEMO_POINT_CLOUDS, DEMO_SOURCES, formatDemoSize, type DemoPointCloud,
 } from '../demo-models/point-clouds'
 import {
   getTemporalLidarShowcase, TEMPORAL_LIDAR_SHOWCASES, type TemporalShowcaseId,
@@ -60,6 +62,27 @@ const CONFIDENCE_TINT: Record<string, string> = {
   high: '#5E9ED6',
   approximate: '#F5A623',
   manual: '#E5484D',
+}
+
+/**
+ * Follow a job's download on the demo chip that started it — the Loading
+ * Center has the full row; the chip only needs its bar. Resolves once the
+ * download is over (or the job ended without one): the chip is free again
+ * then, even if the job still waits for a decode slot or the scene's anchor.
+ */
+function followDownload(jobId: string, onFraction: (fraction: number) => void): Promise<void> {
+  return new Promise((resolve) => {
+    const check = (s: ReturnType<typeof useLoadingStore.getState>): boolean => {
+      const job = s.jobs.find((j) => j.id === jobId)
+      if (!job) return true
+      const download = job.phases.find((p) => p.id === 'download')
+      if (download) onFraction(download.status === 'done' ? 1 : download.fraction ?? 0)
+      const downloading = download !== undefined && (download.status === 'pending' || download.status === 'active')
+      return !downloading || !['queued', 'running', 'waiting', 'held'].includes(job.status)
+    }
+    if (check(useLoadingStore.getState())) { resolve(); return }
+    const off = useLoadingStore.subscribe((s) => { if (check(s)) { off(); resolve() } })
+  })
 }
 
 export default function PointCloudPanel({
@@ -155,61 +178,40 @@ export default function PointCloudPanel({
   }, [store.clouds.length, getSystem])
 
   // ── Loading ─────────────────────────────────────────────────────────────────
-  const handleFiles = useCallback(async (
-    files: FileList | File[],
-    sourceUrl?: string,
-  ): Promise<void> => {
-    const viewer = viewerApiRef.current
-    if (!viewer) return
-    const system = await viewer.getPointClouds()
-
-    for (const file of Array.from(files)) {
-      const load = {
-        file,
-        system,
-        modelBounds: activeModelId ? viewer.getModelBounds(activeModelId) : viewer.getModelBounds(),
-        modelCoordination: viewer.getModelCoordination(activeModelId ?? undefined),
-        modelId: activeModelId,
-        // A downloaded scan is identified by its URL. Without this the File's
-        // lastModified — the instant of the fetch — becomes its identity, and a
-        // demo would arrive as a brand new scan on every single load.
-        sourceUrl,
-      }
-      // COPC carries an octree, so it streams: the worker stays open and the
-      // camera decides what gets read. Everything else is one-shot.
-      const result = isCopcName(file.name)
-        ? await streamPointCloud(load)
-        : await loadPointCloud(load)
-      if (!result.ok) {
-        toast(describeError(result.errorKey), 'error')
-      } else if (result.cloudId) {
-        // First scan in an empty scene: show the user what they just loaded.
-        if (usePointCloudStore.getState().clouds.length === 1 && sceneModels.length === 0) {
-          system.frame(result.cloudId)
-        }
-      }
-    }
-  }, [viewerApiRef, activeModelId, sceneModels.length, t])
+  // Every scan is a job in the loading queue, one per file — the same path a
+  // drop on the viewer, ?scan= and the SDK take. The queue decides what
+  // decodes when (the decode lane, the resident-point budget), aligns each scan
+  // against the active model once the model that anchors the scene is in,
+  // shows real progress in the Loading Center, frames the first scan of an
+  // empty scene, and toasts a failure itself (the loading hooks), so this
+  // panel neither loops over files nor reports errors of its own. The files
+  // used to go through the runner one at a time with the alignment inputs
+  // captured here, before the model they belonged to had landed.
+  const handleFiles = useCallback((files: FileList | File[]): void => {
+    const list = Array.from(files)
+    if (list.length === 0) return
+    submitPointClouds(list.map((file) => ({ source: { type: 'file', file } })), { origin: 'upload' })
+  }, [])
 
   /**
-   * Fetch a public sample and hand it to the SAME loader a dropped file uses.
-   * Nothing downstream knows a demo is a demo — which is the point: what the
-   * user sees here is exactly what they will see with their own scan.
+   * A public sample, loaded as a URL job: the SAME path a host's
+   * addPointCloudFromUrl takes, with the URL as the scan's identity (a saved
+   * offset survives a reload). The chip's bar follows the job's download.
    */
   const handleDemo = useCallback(async (demo: DemoPointCloud): Promise<void> => {
     setDemoBusy(demo.id)
     setDemoProgress(0)
+    const [handle] = submitPointClouds(
+      [{ source: { type: 'url', url: demo.url, fileName: demo.fileName } }],
+      { origin: 'demo' },
+    )
     try {
-      const file = await fetchDemoPointCloud(demo, { onProgress: setDemoProgress })
-      await handleFiles([file], demo.url)
-    } catch (e) {
-      toast(t('demos.failed'), 'error')
-      log.warn(`demo cloud "${demo.id}" failed:`, e)
+      await followDownload(handle.id, setDemoProgress)
     } finally {
       setDemoBusy(null)
       setDemoProgress(0)
     }
-  }, [handleFiles, t])
+  }, [])
 
   const stopReplay = useCallback((): void => {
     replayControllerRef.current?.dispose()
@@ -443,10 +445,11 @@ export default function PointCloudPanel({
   }, [getSystem])
 
   // ── SDK bridge: `sdk:pointcloud` from the embed postMessage handler ─────────
-  // Loading a scan needs the viewer's PointCloudSystem, the model bounds to
-  // align against and the alignment ladder — all of which live here, so the
-  // embed bridge delegates rather than duplicating any of it. `add` reports the
-  // new cloud id back through `done` so the host can address it afterwards.
+  // Display, placement, inspection and replay live here, so the embed bridge
+  // delegates those. LOADING does not: App submits scans to the loading queue
+  // itself (the `add` case below only serves any other emitter, through the
+  // same queue), and without this panel — the client skin — App removes and
+  // clears scans through the queue as well.
   useEffect(() => appBus.on('sdk:pointcloud', (cmd) => {
     void (async () => {
       try {
@@ -460,31 +463,17 @@ export default function PointCloudPanel({
             break
           }
           case 'add': {
+            // App submits scans to the loading queue itself now; this stays
+            // for any other emitter of the command, and takes the same path.
             if (!cmd.file) throw new Error('No point cloud data provided')
-            const load = {
-              file: cmd.file,
-              sourceUrl: cmd.sourceUrl,
-              system,
-              modelBounds: activeModelId ? viewer.getModelBounds(activeModelId) : viewer.getModelBounds(),
-              modelCoordination: viewer.getModelCoordination(activeModelId ?? undefined),
-              modelId: activeModelId,
-            }
-            // Mirror handleFiles: COPC carries an octree and streams, everything
-            // else is one-shot. A host handing over a .copc.laz must get the same
-            // treatment as a dropped file, not a silently worse path.
-            const result = isCopcName(cmd.file.name)
-              ? await streamPointCloud(load)
-              : await loadPointCloud(load)
-            if (!result.ok || !result.cloudId) {
-              // The runner speaks in i18n keys; resolve to prose the host can read.
-              throw new Error(describeError(result.errorKey))
-            }
-            // Same courtesy the drop target gets: a first scan in an empty
-            // scene is framed, otherwise the camera would sit on nothing.
-            if (usePointCloudStore.getState().clouds.length === 1 && sceneModels.length === 0) {
-              system.frame(result.cloudId)
-            }
-            cmd.done?.(true, result.cloudId)
+            const [handle] = submitPointClouds(
+              [{ source: { type: 'file', file: cmd.file }, sourceUrl: cmd.sourceUrl }],
+              { origin: 'sdk' },
+            )
+            const outcome = await handle.settled
+            if (outcome.status === 'cancelled') throw new Error('Load cancelled')
+            if (outcome.status === 'failed') throw new Error(await describeSourceError(outcome.error))
+            cmd.done?.(true, outcome.resultId)
             return
           }
           case 'remove': {
@@ -496,6 +485,9 @@ export default function PointCloudPanel({
             break
           }
           case 'clear': {
+            // The loads still in the queue too: they have no entry yet, and
+            // would land right after the clear.
+            cancelLoadsOfKind('pointcloud')
             if (usePointCloudStore.getState().clouds.some((cloud) =>
               TEMPORAL_LIDAR_SHOWCASES.some((showcase) => showcase.cloudId === cloud.id))) {
               stopReplay()

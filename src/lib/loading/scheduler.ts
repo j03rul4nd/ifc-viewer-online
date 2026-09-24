@@ -175,6 +175,34 @@ export function decideConvert(input: ConvertInput): LaneDecision {
   return { grant, blocked }
 }
 
+// ── Plain slot lanes (network, decode) ───────────────────────────────────────
+
+export interface SlotInput {
+  holders: readonly { jobId: string }[]
+  candidates: readonly LaneCandidate[]
+  max: number
+  now?: number
+  agingMs?: number
+}
+
+/**
+ * `max` slots, granted in (effective priority, seq) order — aging included, so
+ * a background request still climbs. No anchor rule and no memory admission:
+ * what runs on these lanes is bounded elsewhere (a download by the conversion
+ * backlog, a point cloud by its resident-point budget).
+ */
+export function decideSlots(input: SlotInput): LaneDecision {
+  const ordered = orderCandidates(input.candidates, input.now, input.agingMs)
+  const grant: string[] = []
+  const blocked: Record<string, WaitReason> = {}
+  let free = Math.max(1, Math.floor(input.max)) - input.holders.length
+  for (const c of ordered) {
+    if (free > 0) { grant.push(c.jobId); free-- }
+    else blocked[c.jobId] = 'slot'
+  }
+  return { grant, blocked }
+}
+
 // ── Network lane ──────────────────────────────────────────────────────────────
 
 export interface NetworkInput {
@@ -193,19 +221,10 @@ export interface NetworkInput {
 
 /** Plain slot lane: two downloads at a time, in order — none while conversion is backed up. */
 export function decideNetwork(input: NetworkInput): LaneDecision {
-  const ordered = orderCandidates(input.candidates, input.now, input.agingMs)
-  const grant: string[] = []
+  if (!input.backlogged) return decideSlots(input)
   const blocked: Record<string, WaitReason> = {}
-  if (input.backlogged) {
-    for (const c of ordered) blocked[c.jobId] = 'slot'
-    return { grant, blocked }
-  }
-  let free = Math.max(1, Math.floor(input.max)) - input.holders.length
-  for (const c of ordered) {
-    if (free > 0) { grant.push(c.jobId); free-- }
-    else blocked[c.jobId] = 'slot'
-  }
-  return { grant, blocked }
+  for (const c of orderCandidates(input.candidates, input.now, input.agingMs)) blocked[c.jobId] = 'slot'
+  return { grant: [], blocked }
 }
 
 // ── Attach lane ───────────────────────────────────────────────────────────────

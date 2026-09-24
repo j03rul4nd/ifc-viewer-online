@@ -28,10 +28,12 @@ import { loadingController } from '../../lib/loading/controller'
 import { formatBytes } from '../../lib/utils'
 import { useLoadingT } from '../../i18n/hooks/namespaces'
 import {
-  activePhase, batchDisplayName, describePhaseLine, displayPercent, formatCounters, formatElapsed, formatEta,
-  groupStats, isLiveJob, jobElapsedMs, jobEtaMs, pickFirstLoadFocus, shownPercent, statusGlyphKind, type FirstLoadFocus,
+  activePhase, batchDisplayName, describePhaseLine, displayPercent, errorText, formatCounters, formatElapsed, formatEta,
+  groupStats, isLiveJob, isModelJob, jobElapsedMs, jobEtaMs, pickFirstLoadFocus, shownPercent, stalledText,
+  statusGlyphKind, type FirstLoadFocus,
 } from './job-view'
-import { ERROR_KEYS, PHASE_ACTIVE_KEYS } from './labels'
+import { phaseActiveKey } from './labels'
+import { useDetailResolver } from './useDetailResolver'
 import { useNow } from './useNow'
 import { ProgressBar } from './ProgressBar'
 import { PhaseChecklist } from './PhaseChecklist'
@@ -43,9 +45,12 @@ export function FirstLoadCard() {
   const reduce = useReducedMotion()
   const sceneEmpty = useSceneStore((s) => s.models.length === 0)
   const centerOpen = useLoadingStore(selectCenterOpen)
-  const hasActive = useLoadingStore((s) => s.jobs.some((j) => j.managed && ACTIVE_STATUSES.has(j.status)))
+  // Models only (managed IFC): a scan or a glTF dropped on an empty viewer is
+  // managed now, but the card announces "your model", and `sceneEmpty` counts
+  // models — a cloud landing would leave the scene "empty" and the card over it.
+  const hasActive = useLoadingStore((s) => s.jobs.some((j) => isModelJob(j) && ACTIVE_STATUSES.has(j.status)))
   const hasUnseenFailure = useLoadingStore(
-    (s) => s.summary.unseenFailures > 0 && s.jobs.some((j) => j.managed && j.status === 'failed'),
+    (s) => s.summary.unseenFailures > 0 && s.jobs.some((j) => isModelJob(j) && j.status === 'failed'),
   )
   const visible = sceneEmpty && !centerOpen && (hasActive || hasUnseenFailure)
 
@@ -144,9 +149,10 @@ function Timing({ job }: { job: LoadJobView }) {
 
 function JobView({ job, jobs }: { job: LoadJobView; jobs: readonly LoadJobView[] }) {
   const { t } = useLoadingT()
+  const resolveDetail = useDetailResolver()
   const failed = job.status === 'failed'
   const phase = job.status === 'running' ? activePhase(job) : null
-  const headline = phase ? t(PHASE_ACTIVE_KEYS[phase.id]) : describePhaseLine(job, jobs, t)
+  const headline = phase ? t(phaseActiveKey(job.kind, phase.id)) : describePhaseLine(job, jobs, t)
   const counters = phase ? [formatCounters(phase, t), phase.detail].filter(Boolean).join(' · ') : ''
   // null until something measured: the headline and the sweeping bar carry
   // "working" meanwhile, rather than a big "0%" that looks like a reading.
@@ -166,9 +172,7 @@ function JobView({ job, jobs }: { job: LoadJobView; jobs: readonly LoadJobView[]
 
       {failed && job.error ? (
         <div className="mt-3 rounded-[8px] border border-[rgba(229,72,77,0.3)] bg-[rgba(229,72,77,0.07)] p-2.5">
-          <p className="text-[12px] leading-snug text-[var(--text)]">
-            {t(ERROR_KEYS[job.error.code], { status: job.error.httpStatus != null ? String(job.error.httpStatus) : '—' })}
-          </p>
+          <p className="text-[12px] leading-snug text-[var(--text)]">{errorText(job.error, job.kind, t, resolveDetail).reason}</p>
           <p className="mt-1 text-[10.5px] text-[var(--danger)]">{describePhaseLine(job, jobs, t)}</p>
         </div>
       ) : (
@@ -197,7 +201,7 @@ function JobView({ job, jobs }: { job: LoadJobView; jobs: readonly LoadJobView[]
             <Timing job={job} />
           </div>
           {job.stalled && job.status === 'running' && (
-            <p className="mt-1.5 text-[10.5px] leading-snug text-[var(--warn)]">{t('row.stalled')}</p>
+            <p className="mt-1.5 text-[10.5px] leading-snug text-[var(--warn)]">{stalledText(job, t)}</p>
           )}
         </>
       )}

@@ -7,7 +7,7 @@
 // they complete, which is what lets the viewer show the first points about a
 // second in instead of after the whole parse.
 //
-// Protocol (pc-types.ts): parse → header, chunk×n, done | error.
+// Protocol (pc-types.ts): parse → header · budget · progress×n, chunk×n · done | error.
 // One worker per file, terminated by the runner on completion — the same
 // discipline as geo-extract.worker / ids.worker.
 
@@ -27,12 +27,47 @@ let currentId: string | null = null
 /** The reader held open for a streaming (COPC) session, keyed by cloud id. */
 const sessions = new Map<string, { reader: CopcReader; frameOrigin: { x: number; y: number; z: number } }>()
 
+/** Progress is posted at most this often, unless it moved at least PROGRESS_STEP. */
+const PROGRESS_INTERVAL_MS = 100
+const PROGRESS_STEP = 0.01
+
+// ── Budget hand-off ────────────────────────────────────────────────────────────
+// A whole-file parse posts its header and then parks until the runner grants a
+// point budget (see PointCloudBudgetGrant). Parked parses are resolved with
+// `null` on 'cancel' or when a newer parse supersedes them, so a scan that is
+// waiting for the budget stays cancellable instead of pinning the worker.
+
+const budgetWaiters = new Map<string, (maxPoints: number | null) => void>()
+/** A grant that arrived before its waiter parked — not expected, but never lost. */
+const earlyGrants = new Map<string, number>()
+
+function awaitBudget(id: string): Promise<number | null> {
+  const early = earlyGrants.get(id)
+  if (early !== undefined) { earlyGrants.delete(id); return Promise.resolve(early) }
+  return new Promise((resolve) => budgetWaiters.set(id, resolve))
+}
+
+function grantBudget(id: string, maxPoints: number): void {
+  const waiter = budgetWaiters.get(id)
+  if (!waiter) { earlyGrants.set(id, maxPoints); return }
+  budgetWaiters.delete(id)
+  waiter(maxPoints)
+}
+
+function releaseBudgetWaiters(): void {
+  const waiters = [...budgetWaiters.values()]
+  budgetWaiters.clear()
+  earlyGrants.clear()
+  for (const w of waiters) w(null)
+}
+
 self.onmessage = (event: MessageEvent<PointCloudWorkerIn>): void => {
   const msg = event.data
   if (!msg) return
   switch (msg.type) {
-    case 'cancel':       currentId = null; break
-    case 'parse':        void run(msg); break
+    case 'cancel':       currentId = null; releaseBudgetWaiters(); break
+    case 'parse':        releaseBudgetWaiters(); void run(msg); break
+    case 'budget':       grantBudget(msg.id, msg.maxPoints); break
     case 'stream-open':  void streamOpen(msg); break
     case 'stream-nodes': void streamNodes(msg); break
     case 'stream-close': closeSession(msg.id); break
@@ -197,16 +232,42 @@ async function run(req: PointCloudParseRequest): Promise<void> {
     declaredCount: header.declaredCount,
   })
 
+  // Park until the runner decides how many points this file may keep. Nothing
+  // is read in the meantime: the whole point of the wait is that another scan
+  // may still be holding the budget this one needs.
+  const maxPoints = await awaitBudget(req.id)
+  if (maxPoints === null || stop()) return
+
   // The exact bbox is measured while streaming — for PLY/XYZ the header box is
   // sampled, and the panel must not report an estimate as if it were surveyed.
   const exact = new Bounds()
   let lastProgress = 0
+  let decoded = 0
+  let lastPostAt = 0
+  let lastPostedFraction = -1
+
+  /**
+   * Post read progress on its own clock rather than riding on chunks — see the
+   * 'progress' message. At least PROGRESS_INTERVAL_MS apart unless it moved a
+   * full PROGRESS_STEP, so a fast reader cannot flood the main thread.
+   */
+  const reportProgress = (fraction: number): void => {
+    const now = performance.now()
+    const moved = fraction - lastPostedFraction
+    if (moved <= 0) return
+    if (moved < PROGRESS_STEP && now - lastPostAt < PROGRESS_INTERVAL_MS) return
+    lastPostAt = now
+    lastPostedFraction = fraction
+    post({ type: 'progress', id: req.id, fraction, points: decoded })
+  }
 
   const chunker = new PointChunker({
     origin: header.frame.origin,
     // Chunk granularity follows the point count: few big chunks for a room,
     // hundreds of small ones for a site. See pc-chunker.targetCellsPerAxis.
-    cellSize: cellSizeFor(header.frame.min, header.frame.max, header.declaredCount ?? req.maxPoints),
+    // The GRANTED budget, not the whole cap: a file that declares nothing is
+    // read up to what it was given, and that is the count to size cells for.
+    cellSize: cellSizeFor(header.frame.min, header.frame.max, header.declaredCount ?? maxPoints),
     chunkPoints: req.chunkPoints,
     attributes: header.attributes,
     onChunk: (chunk) => {
@@ -226,6 +287,7 @@ async function run(req: PointCloudParseRequest): Promise<void> {
       i: number, c: number, q: number,
     ): void {
       exact.add(x, y, z)
+      decoded++
       chunker.push(x, y, z, r, g, b, i, c, q)
     },
   }
@@ -233,8 +295,12 @@ async function run(req: PointCloudParseRequest): Promise<void> {
   let pointCount = 0
   try {
     pointCount = await reader.read(consumer, {
-      maxPoints: req.maxPoints,
-      onProgress: (p) => { lastProgress = Math.round(Math.min(1, Math.max(0, p)) * 100) },
+      maxPoints,
+      onProgress: (p) => {
+        const fraction = Math.min(1, Math.max(0, p))
+        lastProgress = Math.round(fraction * 100)
+        if (!stop()) reportProgress(fraction)
+      },
       shouldStop: stop,
     })
     if (stop()) return
@@ -264,8 +330,8 @@ async function run(req: PointCloudParseRequest): Promise<void> {
 
   // "Truncated" means points were left on the floor, not merely that the budget
   // was reached exactly — a file with precisely maxPoints points is complete.
-  const truncated = pointCount >= req.maxPoints &&
-    (header.declaredCount === null || header.declaredCount > req.maxPoints)
+  const truncated = pointCount >= maxPoints &&
+    (header.declaredCount === null || header.declaredCount > maxPoints)
 
   post({ type: 'done', id: req.id, pointCount, truncated, frame })
   currentId = null

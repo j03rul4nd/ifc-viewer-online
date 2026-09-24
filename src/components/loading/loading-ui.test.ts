@@ -40,10 +40,23 @@ function job(patch: Partial<LoadJobView> = {}): LoadJobView {
     progress: { fraction: 0, determinate: false }, stalled: false, attempts: 1, error: null,
     metrics: { submittedAt: 1000, startedAt: 1000, etaMs: null, etaReliable: false, estimatedPeakBytes: 0, phaseDurations: {} },
     resultId: null, fingerprint: null, duplicateOf: null, requestId: null, sourceUrl: null, seq,
-    capabilities: { cancel: true, retry: false, hold: false, resume: false, reprioritize: false, reload: false, remove: false, dismiss: false },
+    capabilities: {
+      cancel: true, retry: false, hold: false, resume: false, reprioritize: false, reload: false, remove: false, dismiss: false,
+      focus: false,
+    },
     ...patch,
   }
 }
+
+/** Capabilities of a settled row (nothing to cancel), with overrides. */
+function settledCaps(patch: Partial<LoadJobView['capabilities']> = {}): LoadJobView['capabilities'] {
+  return {
+    cancel: false, retry: false, hold: false, resume: false, reprioritize: false, reload: false, remove: false, dismiss: true,
+    focus: false, ...patch,
+  }
+}
+
+const FINISHED = { submittedAt: 1, startedAt: 1, finishedAt: 5, etaMs: null, etaReliable: false, estimatedPeakBytes: 0, phaseDurations: {} }
 
 function snapshot(jobs: LoadJobView[], batches: LoadBatchView[] = []): LoadSnapshot {
   const s = emptySnapshot()
@@ -212,12 +225,49 @@ describe('LoadingIndicator', () => {
     }
   })
 
+  it('stays quiet after a burst that only brought in a managed scan', () => {
+    // Managed now — phases, cancel, retry — but a cloud is not a model.
+    render(createElement(LoadingIndicator, { variant: 'toolbar' }))
+    const cloud = job({ kind: 'pointcloud', status: 'running', displayName: 'site.laz' })
+    act(() => useLoadingStore.getState().setSnapshot(snapshot([cloud])))
+    act(() => useLoadingStore.getState().setSnapshot(snapshot([
+      { ...cloud, status: 'loaded', metrics: { ...cloud.metrics, finishedAt: 60 } },
+    ])))
+    expect(host.textContent).not.toContain('All models loaded')
+    expect(liveText()).not.toContain('All models loaded')
+  })
+
   it('counts several jobs and shows queued-only as "N queued"', () => {
     render(createElement(LoadingIndicator, { variant: 'floating' }))
     act(() => useLoadingStore.getState().setSnapshot(snapshot([running(), job({ status: 'queued' })])))
     expect(host.textContent).toContain('Loading 2 models')
     act(() => useLoadingStore.getState().setSnapshot(snapshot([job({ status: 'queued' }), job({ status: 'queued' })])))
     expect(host.textContent).toContain('2 queued')
+  })
+
+  it('counts scans and meshes as files, not models', () => {
+    render(createElement(LoadingIndicator, { variant: 'floating' }))
+    const laz = (name: string): LoadJobView => job({ kind: 'pointcloud', status: 'running', displayName: name })
+    act(() => useLoadingStore.getState().setSnapshot(snapshot([laz('a.laz'), laz('b.laz')])))
+    expect(host.textContent).toContain('Loading 2 files')
+    expect(liveText()).toBe('Loading 2 files')
+    // One model beside a scan is two loads, still not two models.
+    act(() => useLoadingStore.getState().setSnapshot(snapshot([running(), laz('site.laz')])))
+    expect(host.textContent).toContain('Loading 2 files')
+    expect(host.textContent).not.toContain('models')
+  })
+
+  it('announces a failed scan as a failed load, not as a model', () => {
+    render(createElement(LoadingIndicator, { variant: 'toolbar' }))
+    const cloud = job({ kind: 'pointcloud', status: 'running', displayName: 'site.laz' })
+    act(() => useLoadingStore.getState().setSnapshot(snapshot([cloud])))
+    act(() => useLoadingStore.getState().setSnapshot(snapshot([{
+      ...cloud, status: 'failed',
+      error: { code: 'invalid-file', message: 'The downloaded model is empty.', phase: 'download', autoRetryable: false, userRetryable: false, attempt: 1 },
+      metrics: { ...cloud.metrics, finishedAt: 7 },
+    }])))
+    expect(liveText()).toContain('1 load failed')
+    expect(liveText()).not.toContain('model')
   })
 })
 
@@ -226,7 +276,7 @@ describe('LoadingCenter', () => {
     const failed = job({
       status: 'failed', displayName: 'Broken.ifc', phase: 'geometry',
       error: { code: 'parse', message: 'boom', phase: 'geometry', autoRetryable: false, userRetryable: true, attempt: 1 },
-      capabilities: { cancel: false, retry: true, hold: false, resume: false, reprioritize: false, reload: false, remove: false, dismiss: true },
+      capabilities: { cancel: false, retry: true, hold: false, resume: false, reprioritize: false, reload: false, remove: false, dismiss: true, focus: false },
       metrics: { submittedAt: 1, startedAt: 1, finishedAt: 5, etaMs: null, etaReliable: false, estimatedPeakBytes: 0, phaseDurations: {} },
     })
     const r = running()
@@ -326,7 +376,7 @@ describe('LoadingCenter', () => {
   it('offers Retry on a cancelled row the manager can retry', () => {
     const cancelled = job({
       status: 'cancelled', displayName: 'Oops.ifc',
-      capabilities: { cancel: false, retry: true, hold: false, resume: false, reprioritize: false, reload: false, remove: false, dismiss: true },
+      capabilities: { cancel: false, retry: true, hold: false, resume: false, reprioritize: false, reload: false, remove: false, dismiss: true, focus: false },
       metrics: { submittedAt: 1, startedAt: 1, finishedAt: 5, etaMs: null, etaReliable: false, estimatedPeakBytes: 0, phaseDurations: {} },
     })
     act(() => useLoadingStore.getState().setSnapshot(snapshot([cancelled])))
@@ -389,7 +439,128 @@ describe('LoadingCenter', () => {
   })
 })
 
+describe('LoadingCenter — scans and meshes', () => {
+  it('offers "Show in scene" exactly where the manager says something can frame the result', () => {
+    const cloud = job({
+      kind: 'pointcloud', status: 'loaded', displayName: 'site.laz', resultId: 'pc-1',
+      metrics: FINISHED, capabilities: settledCaps({ focus: true, remove: true }),
+    })
+    // A loaded row with a resultId is not enough: nothing frames GIS terrain.
+    const terrain = job({
+      kind: 'gis', managed: false, origin: 'external', status: 'loaded', displayName: 'Site terrain', resultId: 'terrain',
+      metrics: FINISHED, capabilities: settledCaps(),
+    })
+    act(() => useLoadingStore.getState().setSnapshot(snapshot([cloud, terrain])))
+    render(createElement(LoadingCenter, {}))
+    act(() => useLoadingStore.getState().openCenter())
+    const focusButtons = [...document.querySelectorAll<HTMLButtonElement>('#loading-center button[aria-label="Show in scene"]')]
+    expect(focusButtons).toHaveLength(1)
+    act(() => focusButtons[0].click())
+    expect(calls).toContain(`focus:${cloud.id}`)
+  })
+
+  it('leads a failed scan with its own cause, and keeps the generic reason for Advanced', () => {
+    const failed = job({
+      kind: 'pointcloud', status: 'failed', displayName: 'huge.laz', phase: 'decode',
+      error: {
+        code: 'unsupported', message: 'pointcloud error.lazTooLarge', phase: 'decode',
+        autoRetryable: false, userRetryable: false, attempt: 1, detailKey: 'pointcloud:error.lazTooLarge',
+      },
+      metrics: FINISHED, capabilities: settledCaps(),
+    })
+    act(() => useLoadingStore.getState().setSnapshot(snapshot([failed])))
+    render(createElement(LoadingCenter, {}))
+    act(() => useLoadingStore.getState().openCenter(failed.id))
+    const text = (): string => document.getElementById('loading-center')?.textContent ?? ''
+    expect(text()).toContain('too large to decompress in a browser tab')
+    expect(text()).toContain('Failed · Point reading')
+    // Basic: one sentence, the one a person can act on.
+    expect(text()).not.toContain("This file's format, size or link is not supported.")
+
+    // Advanced: the code's generic sentence as a second line — in words for a
+    // file, not the IFC ones ("this model's schema").
+    act(() => useLoadingStore.getState().setDetail('advanced'))
+    expect(text()).toContain("This file's format, size or link is not supported.")
+    expect(text()).not.toContain('schema')
+    expect(text()).toContain('pointcloud:error.lazTooLarge')
+    act(() => useLoadingStore.getState().setDetail('basic'))
+  })
+
+  it('falls back to the kind-neutral generic reason for a detail key no bundle knows', () => {
+    const failed = job({
+      kind: 'mesh', status: 'failed', displayName: 'odd.glb', phase: 'decode',
+      error: {
+        code: 'parse', message: 'mesh error.brandNew', phase: 'decode',
+        autoRetryable: false, userRetryable: true, attempt: 1, detailKey: 'mesh:error.brandNew',
+      },
+      metrics: FINISHED, capabilities: settledCaps({ retry: true }),
+    })
+    act(() => useLoadingStore.getState().setSnapshot(snapshot([failed])))
+    render(createElement(LoadingCenter, {}))
+    act(() => useLoadingStore.getState().openCenter(failed.id))
+    const text = document.getElementById('loading-center')?.textContent ?? ''
+    expect(text).toContain("The file's content could not be processed.")
+    expect(text).not.toContain('The IFC content')
+    expect(text).not.toContain('re-export the model')
+    expect(text).not.toContain('error.brandNew')
+  })
+
+  it('does not call an empty scan download "not a readable IFC model"', () => {
+    // The download helper's failures carry no detail key: the generic
+    // sentence leads, and on a scan it must speak of a file.
+    const failed = job({
+      kind: 'pointcloud', status: 'failed', displayName: 'empty.laz', phase: 'download', origin: 'url',
+      error: {
+        code: 'invalid-file', message: 'The downloaded model is empty.', phase: 'download',
+        autoRetryable: false, userRetryable: false, attempt: 1,
+      },
+      metrics: FINISHED, capabilities: settledCaps(),
+    })
+    act(() => useLoadingStore.getState().setSnapshot(snapshot([failed])))
+    render(createElement(LoadingCenter, {}))
+    act(() => useLoadingStore.getState().openCenter(failed.id))
+    const text = document.getElementById('loading-center')?.textContent ?? ''
+    expect(text).toContain('This file is empty or not a readable file of its type.')
+    expect(text).not.toContain('IFC')
+  })
+
+  it('prints a scan\'s decode in points and says when it waits for the budget', () => {
+    const reading = job({
+      kind: 'pointcloud', status: 'running', displayName: 'a.laz', phase: 'decode',
+      progress: { fraction: 0.3, determinate: true },
+      phases: [{ id: 'decode', status: 'active', weight: 90, fraction: 0.3, done: 1_234_567, total: 4_012_345, unit: 'points' }],
+    })
+    const waiting = job({ kind: 'pointcloud', status: 'waiting', waitReason: 'budget', displayName: 'b.laz', phase: 'place' })
+    act(() => useLoadingStore.getState().setSnapshot(snapshot([reading, waiting])))
+    render(createElement(LoadingCenter, {}))
+    act(() => useLoadingStore.getState().openCenter())
+    const text = document.getElementById('loading-center')?.textContent ?? ''
+    expect(text).toContain('Reading points · 1.2 M / 4.0 M points')
+    expect(text).toContain('Waiting for the point budget (another scan is still loading)')
+  })
+
+  it('lists the decode lane with the other slots in Advanced → Resources', () => {
+    act(() => useLoadingStore.getState().setSnapshot(snapshot([job({ status: 'loaded', metrics: FINISHED })])))
+    act(() => useLoadingStore.getState().setDetail('advanced'))
+    render(createElement(LoadingCenter, {}))
+    act(() => useLoadingStore.getState().openCenter())
+    const resources = [...document.querySelectorAll<HTMLButtonElement>('#loading-center button')].find((b) => b.textContent === 'Resources')
+    act(() => resources?.click())
+    const row = [...document.querySelectorAll('#loading-center dt')].find((dt) => dt.textContent === 'Parallel decodes (scans, 3D models)')
+    expect(row?.nextElementSibling?.textContent).toBe('2')
+    act(() => useLoadingStore.getState().setDetail('basic'))
+  })
+})
+
 describe('FirstLoadCard', () => {
+  it('does not announce a scan or a mesh as the first model', () => {
+    const cloud = job({ kind: 'pointcloud', status: 'running', displayName: 'site.laz' })
+    const mesh = job({ kind: 'mesh', status: 'queued', displayName: 'tree.glb' })
+    act(() => useLoadingStore.getState().setSnapshot(snapshot([cloud, mesh])))
+    render(createElement(FirstLoadCard))
+    expect(host.textContent).toBe('')
+  })
+
   it('shows the primary job with its checklist while the scene is empty, and hides when the center opens', () => {
     act(() => useLoadingStore.getState().setSnapshot(snapshot([running()])))
     render(createElement(FirstLoadCard))

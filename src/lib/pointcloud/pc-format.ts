@@ -47,9 +47,14 @@ export function extensionOf(fileName: string): string {
  * alone reports ".laz". The double extension is the only hint available before
  * reading bytes; the COPC reader still verifies the `copc` info VLR and the LAZ
  * reader picks up anything that lied.
+ *
+ * A bare `.copc` counts too. It is less common but real (some exporters and
+ * object stores drop the `.laz`), and it used to fall through a gap: the
+ * extension said COPC, but the LASF magic said LAS and won, so the file was
+ * parsed whole — a budget's worth of a 400 M-point site instead of a stream.
  */
 export function isCopcName(fileName: string): boolean {
-  return /\.copc\.la[sz]$/i.test(fileName.trim())
+  return /\.copc(\.la[sz])?$/i.test(fileName.trim())
 }
 
 export interface FormatDetection {
@@ -79,7 +84,8 @@ export function detectFormat(fileName: string, magic?: Uint8Array): FormatDetect
   // is LAZ, which shares LAS's signature — there the extension is the only hint
   // available this early, and the LAS reader re-checks the compression bit.
   let format = byExtension === 'laz' && byMagic === 'las' ? 'laz' : (byMagic ?? byExtension)
-  // `.copc.laz` — the octree reader, which reads far less of the file.
+  // `.copc.laz` / `.copc` — the octree reader, which reads far less of the
+  // file. After the magic on purpose: a COPC is a LAZ, so its magic says LAS.
   if (isCopcName(fileName)) format = 'copc'
   if (!format) return { ok: false, errorKey: 'unsupported.unknown' }
   return { ok: true, format }

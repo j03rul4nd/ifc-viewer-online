@@ -2,6 +2,7 @@
   "indicator": {
     "loadingOne": "{{name}} を読み込み中",
     "loadingMany_other": "{{count}} 個のモデルを読み込み中",
+    "loadingManyFiles_other": "{{count}} 個のファイルを読み込み中",
     "queued_other": "{{count}} 件キュー待ち",
     "held_other": "{{count}} 件保留中",
     "failed_other": "{{count}} 件失敗",
@@ -11,7 +12,8 @@
     "close": "モデルの読み込み状況を隠す",
     "estimate": "これまでに完了したステップから推定（ファイルサイズで加重）",
     "announce": {
-      "failed_other": "{{count}} 個のモデルの読み込みに失敗しました"
+      "failed_other": "{{count}} 個のモデルの読み込みに失敗しました",
+      "failedLoads_other": "{{count}} 件の読み込みに失敗しました"
     }
   },
   "center": {
@@ -42,7 +44,9 @@
   "batch": {
     "members": "{{loaded}} / {{total}} 読み込み済み",
     "failed_other": "{{count}} 件失敗",
-    "unnamed_other": "{{count}} 個のモデル"
+    "unnamed_other": "{{count}} 個のモデル",
+    "unnamedScans_other": "{{count}} 件のスキャン",
+    "unnamedMeshes_other": "{{count}} 個の 3D モデル"
   },
   "row": {
     "queuedAt": "キュー待ち · #{{position}}",
@@ -56,6 +60,7 @@
     "speed": "{{speed}}/s",
     "speedEstimated": "≈ {{speed}}/s",
     "stalled": "しばらく進行がありません。大きな IFC クラスは数分かかることがあります。このまま待つか、キャンセルしてください。",
+    "stalledGeneric": "しばらく進行がありません。このまま待つか、キャンセルしてください。",
     "stalledShort": "最近の進行なし",
     "duplicate": "シーン内の既存のモデルと同じ内容です",
     "retrying": "{{attempt}} 回目の試行"
@@ -118,6 +123,18 @@
     "decode": "デコード中",
     "place": "シーンに配置中"
   },
+  "phaseByKind": {
+    "pointcloud": {
+      "identify": "リーダーの準備",
+      "decode": "点の読み取り"
+    }
+  },
+  "phaseActiveByKind": {
+    "pointcloud": {
+      "identify": "リーダーを準備中",
+      "decode": "点を読み取り中"
+    }
+  },
   "status": {
     "queued": "キュー待ち",
     "held": "保留中",
@@ -136,7 +153,8 @@
     "anchor": "{{name}}（座標の基準）を待っています",
     "attach-lane": "別のモデルがシーンに入り終わるのを待っています",
     "backoff": "まもなく再試行します",
-    "viewer": "3D ビューアを待っています"
+    "viewer": "3D ビューアを待っています",
+    "budget": "点数の上限の空きを待っています（別のスキャンを読み込み中）"
   },
   "error": {
     "invalid-file": "このファイルは読み取り可能な IFC モデルではありません。BIM ツールから書き出した .ifc であることを確認してください。",
@@ -155,6 +173,16 @@
     "timeout": "処理に時間がかかりすぎたため停止しました。再試行してください。",
     "cancelled": "読み込みはキャンセルされました。",
     "unknown": "読み込み中に問題が発生しました。再試行するか、技術的詳細を確認してください。"
+  },
+  "errorGeneric": {
+    "invalid-file": "このファイルは空か、その種類のファイルとして読み取れません。ファイルが完全であり、拡張子が内容と一致していることを確認してください。",
+    "unsupported": "このファイルの形式、サイズ、またはリンクには対応していません。",
+    "read-failed": "ファイル、またはその関連ファイル（glTF の .bin など）を読み取れませんでした。移動されたか、ブラウザがアクセス権を失った可能性があります。もう一度追加してください。",
+    "parse": "ファイルの内容を処理できませんでした。再試行で解決することがあります。解決しない場合はファイルを書き出し直してください。",
+    "worker-init": "ファイルリーダーを起動できませんでした。ページを再読み込みしてもう一度お試しください。",
+    "out-of-memory": "ブラウザのメモリが不足しました。他のタブを閉じるか、同時に読み込むファイルの数やサイズを減らしてから再試行してください。",
+    "cache-corrupt": "キャッシュのコピーが破損していました。再試行するとファイルを読み直します。",
+    "scene": "内容をシーンに追加できませんでした。再試行するか、ページを再読み込みしてください。"
   },
   "discipline": {
     "architecture": "意匠",
@@ -252,6 +280,7 @@
     "mobile": "モバイルデバイス",
     "maxConverts": "並列変換数",
     "maxDownloads": "並列ダウンロード数",
+    "maxDecodes": "並列デコード数（スキャン、3D モデル）",
     "budget": "メモリ予算",
     "largeFile": "単独実行のしきい値",
     "pressure": "メモリ負荷",

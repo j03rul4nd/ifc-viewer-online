@@ -1,8 +1,9 @@
 # Model loading and orchestration
 
-How a model gets from a file, a URL or SDK bytes into the scene. This covers
-the queue, the scheduler, the worker pool, memory, the cache, cancellation,
-retry, federated batches, multimodal tracking and how it is observed.
+How a model — an IFC, a point cloud, a mesh — gets from a file, a URL or SDK
+bytes into the scene. This covers the queue, the scheduler, the worker pool,
+memory, the cache, cancellation, retry, federated batches, the non-IFC sources
+and how it is observed.
 
 Code: `src/lib/loading/` (engine), `src/stores/loadingStore.ts` (mirror),
 `src/components/loading/` (UI). Contracts: `src/lib/loading/types.ts`.
@@ -42,11 +43,11 @@ that were hard to see for anything else:
             ┌──────────────▼───────────────────────────────────────────────┐
  Engine     │ LoadManager  (src/lib/loading/load-manager.ts)               │
             │  jobs · batches · lifecycle · retries · events · metrics     │
-            │   ├─ Lanes: network(2, back-pressured) · convert(1, memory-admitted, anchor-reserved) · attach(1, anchor-first)
+            │   ├─ Lanes: network(2, back-pressured) · convert(1, memory-admitted, anchor-reserved) · attach(1, anchor-first) · decode(2 per kind: scans, meshes)
             │   │    decisions by the pure scheduler (scheduler.ts)        │
             │   ├─ ResourcePolicy (resource-policy.ts): cores, memory, pressure
             │   ├─ RetryPolicy (retry-policy.ts): classify → strategy      │
-            │   └─ Adapters: ifc (managed) · pointcloud/mesh/gis (tracked) │
+            │   └─ Adapters: ifc · pointcloud · mesh (managed) · gis (tracked)
             └──────┬───────────────────────────┬───────────────────────────┘
                    │ IFC adapter (ifc-source.ts)│ events (throttled snapshot)
       ┌────────────▼──────────┐    ┌───────────▼───────────┐
@@ -93,10 +94,10 @@ submit ─▶ queued ──(lane granted)──▶ running ──▶ … ──�
   cancel drops memory-backed sources (SDK bytes, downloaded Files). Upload/drop
   Files (disk-backed) and URLs are kept for Retry.
 - **idle** — the manager's `idle` event (and the app's "still loading" state)
-  means no *managed* IFC job is queued, running or waiting. Held jobs and
-  tracked point cloud / mesh / GIS rows never keep the app "loading": deep
+  means no *model* job (managed IFC) is queued, running or waiting. Held
+  jobs, scans, meshes and tracked GIS rows never keep the app "loading": deep
   links, deferred validation and georef extraction wait for models, not for a
-  paused file or a terrain fetch. A reset (landing) emits no `idle`.
+  paused file, a LAZ decode or a terrain fetch. A reset (landing) emits no `idle`.
 - **unloading / removed** — the model was removed (by the user, SDK or reset).
 
 ### Phases (IFC)
@@ -136,13 +137,43 @@ and shows no percentage.
 
 ## 4. Scheduling
 
-Three lanes, each a priority queue ordered by *(effective priority, seq)*:
+Four lanes, each a priority queue ordered by *(effective priority, seq)*:
 
 | Lane | Capacity | Admission |
 |---|---|---|
 | `network` | 2 | — |
 | `convert` | `maxConcurrentConverts` (**1** by default — measured, see below) | memory budget; large files run exclusively; reserved for the anchor of an empty scene |
 | `attach` | 1 | anchor-first when the scene has no IFC model |
+| `decode` | `maxConcurrentDecodes` **per kind** (2 scans + 2 meshes; 1 each under memory pressure) | plain slots — point cloud workers and mesh decodes, never the IFC `convert` lane. Per kind because a scan waiting for the point budget keeps its slot (its worker already holds the file — a LAZ sits whole in its WASM heap), and must not keep a mesh from decoding |
+
+**Model jobs vs. other jobs.** A *model job* is a managed IFC job
+(`managed && kind === 'ifc'`). Only model jobs mean "the app is still loading
+models": the `idle` event, `summary.managedActive` (App's `loadingState`,
+deep links, deferred `?validate` and georef extraction), the first-model reset,
+`cancelAll({ modelsOnly })` (`ifcviewer:clear`), the IFC cache counters and the
+ms/MB ETA calibration. A scan decoding for a minute does not hold back a
+model's validation, and `ifcviewer:clear` still removes models only.
+
+**Why scans and meshes get their own lane.** The `convert` lane has one slot
+because web-ifc conversions measured slower in parallel; a multi-minute LAS
+parse there would block every IFC conversion (and the post-commit `index`
+build). The point cloud decode is another worker with its own reader, the mesh
+decode a short main-thread parse, and neither competes with web-ifc for its
+allocator — so they share a separate two-slot lane. What does bound point
+clouds is the **resident-point budget** (20 M across whole-file clouds): at its
+header each whole-file scan reserves its declared count in pc-runner's ledger,
+and one that does not fit while another scan still holds a reservation waits
+("Waiting for the point budget", `ctx.setWaiting('budget')`) instead of being
+handed the whole remainder — two concurrent loads used to each get the full
+budget and put 2× the cap on the GPU.
+
+**The anchor rule covers scans and meshes too.** A point cloud aligns and a
+mesh sits on the active model's floor; both need the model that anchors the
+scene. The point cloud adapter passes through the `attach` lane (released at
+once) before it starts its worker, and the mesh adapter takes it for the scene
+add, so in an empty scene whose anchor IFC is still converting they wait —
+"Waiting for <anchor> (coordinate base)" — and align against it, instead of
+landing at the origin and needing a Realign.
 
 **Priorities**: `critical 0 · high 1 · normal 2 · low 3 · background 4`.
 Defaults: a single user-picked file → high; batch members → normal (the first
@@ -216,6 +247,9 @@ and the main-thread heap ratio from `performance.memory` when present.
 | IFC → ArrayBuffer for downstream consumers | main thread, async read at commit |
 | Spatial tree (`index` phase) | validator worker, scheduled through the **convert lane at background priority** so it never runs beside a conversion; bounded by a size-scaled timeout |
 | Validation, IDS, geo extraction | their own workers; `?validate` and georef extraction are deferred until the queue is idle |
+| Point cloud read / decode / chunking | one `point-cloud.worker` per scan (decode lane); a COPC's worker stays open for its streaming session |
+| Mesh decode (GLTFLoader / OBJLoader) | main thread (decode lane) — three.js builds textures through `Image`; Draco / KTX2 in their own worker pools |
+| Scan alignment, mesh placement, scene add | main thread, after the attach lane's anchor rule |
 
 **IfcConvertPool** spawns workers on demand (the convert lane, not the pool, bounds how many run).
 Conversion is a synchronous WASM call — the worker cannot even read a message
@@ -316,6 +350,17 @@ Load duplicate anyway"), and unchecks in-batch duplicates. Programmatic loads
 | `parse`, `invalid-file`, `unsupported` | no | manual Retry offered only for `parse` |
 | `cancelled` | no | — |
 
+Point clouds and meshes speak in i18n keys (`error.lazTooLarge`,
+`unsupported.e57`, `error.noEntryFile`). `source-errors.ts` maps each to a code
+and carries the key on as `LoadError.detailKey` ("pointcloud:error.lazTooLarge"),
+which the Loading Center shows instead of the generic sentence. Their errors
+are `autoRetryable: false` except a crashed worker (the policy honours the
+flag): a header `timeout` would otherwise be retried three times with backoff,
+and one scan's worker-heap OOM would pin the whole session at elevated
+pressure. A full point budget stays `userRetryable` (removing a scan makes
+room). A failure toasts once, named, from the `onSourceFailed` hook — never the
+SDK's `model-error`, which is about models.
+
 Max 3 attempts per job; retries never loop. A failure is scoped to its job —
 other jobs and loaded models are untouched. Analytics receive `code@phase`,
 never the raw message (which may contain the file name).
@@ -331,10 +376,23 @@ never the raw message (which may contain the file name).
 | attach | fragments `core.abort(modelId)` → `LoadAbortedError`; partial state disposed on both threads |
 | setup / read | viewer compensates: pivot removed, model disposed, maps cleared |
 | after commit | "cancel" becomes Remove (the normal removal path) |
+| point cloud, any phase | the job's own signal: pc-runner terminates THIS scan's worker, frees its GPU chunks and removes its entry; the promise always settles |
+| mesh, any phase | the job's own signal: checked after every await, the decoded object disposed, the row removed at once (an abandoned glTF parse finishes on its own) |
 
-`reset()` (landing / `ifcviewer:clear`) cancels everything and bumps a session
-epoch that every commit checks, so an in-flight load can no longer repopulate
-the stores after a reset.
+`reset()` (landing) cancels everything and bumps a session epoch that every
+commit checks, so an in-flight load can no longer repopulate the stores after
+a reset. `ifcviewer:clear` cancels model jobs only (`cancelAll({ modelsOnly })`).
+
+**No store-wide cancel token any more.** Point clouds and meshes used to be
+cancelled through a GLOBAL `epoch` in their stores: removing ANY cloud failed
+every sibling still parsing (`error.cancelled` for a perfectly good file) and
+froze every streaming COPC; removing any mesh left a sibling decoding at
+"loading" forever. Now a load is stale only when its own signal aborted, its
+own entry left the store, or the scene was cleared (`clearClouds` /
+`clearMeshes` still bump the epoch). `watchSourceRemovals`
+(external-sources.ts) reports an entry removed by another path — the panel's
+X, the SDK's remove / clear, a temporal replay, the landing page — to the
+manager: a job still loading is cancelled, a loaded one marked removed.
 
 ## 11. Federation and multimodal
 
@@ -351,13 +409,31 @@ ARQ / STR / EST / MEP / HVAC / ELE / PLU / FIRE / LAND / SITE …) for badges.
 status on top of it (ScenePanel "Loading" section, Loading Center batch
 headers).
 
-**Multimodal.** Every source is a job under one abstraction. IFC is *managed*
-(the manager executes it through `ifc-source.ts`). Point clouds, meshes and GIS
-context are *tracked* (`external-sources.ts`): their own runners keep executing
-them (they own alignment, budgets and streaming), and the manager mirrors their
-store status into jobs so the Loading Center shows everything that is loading,
-with cancel wired to each runner's own cancel. Moving their executors into the
-manager is the next step (§13).
+**Multimodal.** Every source is a job under one abstraction.
+
+- **IFC** — managed through `ifc-source.ts`.
+- **Point clouds** — managed through `pointcloud-source.ts`. Phases
+  `download` (URL sources) → `identify` → `place` (anchor wait, worker start,
+  header, alignment) → `decode` (points, a real fraction; a COPC's octree
+  index). pc-runner stays the executor: worker protocol, alignment ladder,
+  resident-point ledger, COPC streaming. The job commits when the whole file
+  is in (a COPC at its index); the streaming session after that is not a
+  phase, it never ends. Remove unloads (closes the stream, frees the GPU).
+- **Meshes** — managed through `mesh-source.ts`. `download` (entry + sidecars,
+  summed byte progress) → `decode` → `place` (attach lane, budget, placement,
+  scene add). One job per MODEL: a multi-file glTF / OBJ is one source (`file`
+  or `url` plus `sidecars`), and a drop of several models is several jobs
+  (`drop-routing.groupMeshFiles`) — before, only the first was imported.
+- **GIS context** — still *tracked* (`external-sources.ts`): the geo system
+  runs it, superseded by the panel's toggles, with no executor to move.
+
+Every entry point goes through the manager: the panels' pickers and demos,
+the global drop, `?scan=`, the SDK's `addPointCloud*` / `addMesh*`. None of
+them needs its panel mounted any more (scans and meshes load in the client
+skin too); the panels keep their display, placement and replay controls. The
+SDK wire contract is unchanged: `{ cloudId }` / `{ meshId }`, a scan's error in
+words, a mesh's as its raw key; a failed or cancelled load now answers at once
+instead of after a 15-minute timeout.
 
 ## 12. Observability
 
@@ -371,13 +447,18 @@ manager is the next step (§13).
   peak heap — in the Loading Center's Advanced view with renderer stats (draw
   calls, triangles, geometries, textures).
 - `globalThis.__ifcLoad` (DEV only): the manager, its snapshot and policy.
+- `ifc:load-max-decodes` (DEV localStorage, 1..8) overrides the decode lane,
+  like `ifc:load-max-converts` for conversions.
 
 ## 13. Next evolutions
 
 - Registry holds `Blob` handles instead of `ArrayBuffer`s and consumers read on
   demand (one IFC copy per model off the heap).
-- Point cloud and mesh executors as managed adapters (their global store
-  epochs currently cancel sibling loads).
+- Duplicate detection for scans and meshes (the fingerprint path is IFC-only).
+- A point budget the user can see: `availablePoints()` is exported, the panel
+  does not show it yet.
+- Move the mesh decode off the main thread where three.js allows it
+  (`createImageBitmap` works in workers; the blocker is TextureLoader / MTLLoader).
 - Self-host the fragments worker (today fetched from unpkg at viewer start).
 - Custom geometry loop over `StreamMeshes` for per-entity progress and
   cooperative cancel; spike multithreaded web-ifc in a classic worker.
@@ -425,31 +506,39 @@ the real app; see §16 for the measured ones.
 
 | File | Cases | What it verifies | Harness |
 |---|---|---|---|
-| `src/lib/loading/load-manager.test.ts` | 61 | Single jobs. Convert concurrency with 2, 5 and 10 jobs, and memory admission. Priority, aging, hold/resume. **Anchor-first attach**, and the convert lane reserved for the anchor. Failures and retries: a crash retries once, OOM retries alone and lowers concurrency, network backoff gives up after 3 attempts. Cancel while queued, converting, waiting or in backoff; lanes taken back from an adapter that never unwinds. Late commits refused after a reset. Event order, 100 ms progress throttle, progress never decreasing, stall detection. `idle` counts managed jobs only, and the global fraction is per wave. Batches settle correctly after dismiss and reload. Held jobs do not age. **Downloads held back while conversion is backed up.** Retention of sources for Retry, and 50-row history. | Fake adapter/run; fake timers and clock |
-| `src/lib/loading/scheduler.test.ts` | 23 | The pure lane decisions: aging (one level per 45 s), slots, exclusive jobs, memory admission, reserving the lane after 30 s, pressure levels. The network lane grants nothing while conversion is backed up. First-submitted anchor, only the anchor attaching into an empty scene, and anchor reservation of the convert lane. | Pure |
-| `src/lib/loading/ifc-source.test.ts` | 52 | The IFC adapter through a **real `LoadManager`**:<br/>• **Phases:** every phase in order with real class counters; registration before `loaded`.<br/>• **Cache:** hit replanning, fingerprint-mismatch miss, `skipCache`, the buffer saved before it is transferred, a bad cached entry evicted and reconverted once. A hit whose viewer never started keeps its entry, and a setup failure does not condemn it.<br/>• **URLs:** progress, 404 not retried, 503 and network errors retried, fallback URL, an automatic retry reusing the downloaded file.<br/>• **Bytes:** identified by a **full SHA-256**; a same-size edit the sample cannot see is a miss; no digest → not cached.<br/>• **Cancel:** during convert, attach and before commit (model taken back out); reset refusing a commit.<br/>• **Retries and lanes:** worker-crash retry on a fresh worker; convert released before attach; late and missing viewer.<br/>• **Background phases:** the tree build and a conversion never overlap (convert lane), and the build has its own budget. Failures there are warnings.<br/>• **Read errors:** OOM vs `read-failed`.<br/>• **Reload** from registry bytes. | Fake pool, viewer, network and cache; fake timers |
+| `src/lib/loading/load-manager.test.ts` | 82 | Single jobs. Convert concurrency with 2, 5 and 10 jobs, and memory admission. Priority, aging, hold/resume. **Anchor-first attach**, and the convert lane reserved for the anchor. Failures and retries: a crash retries once, OOM retries alone and lowers concurrency, network backoff gives up after 3 attempts. Cancel while queued, converting, waiting or in backoff; lanes taken back from an adapter that never unwinds. Late commits refused after a reset. Event order, 100 ms progress throttle, progress never decreasing, stall detection. `idle` counts managed jobs only, and the global fraction is per wave. Batches settle correctly after dismiss and reload. Held jobs do not age. **Downloads held back while conversion is backed up.** Retention of sources for Retry, and 50-row history. | Fake adapter/run; fake timers and clock |
+| `src/lib/loading/scheduler.test.ts` | 28 | The pure lane decisions: aging (one level per 45 s), slots, exclusive jobs, memory admission, reserving the lane after 30 s, pressure levels. The network lane grants nothing while conversion is backed up. First-submitted anchor, only the anchor attaching into an empty scene, and anchor reservation of the convert lane. | Pure |
+| `src/lib/loading/ifc-source.test.ts` | 53 | The IFC adapter through a **real `LoadManager`**:<br/>• **Phases:** every phase in order with real class counters; registration before `loaded`.<br/>• **Cache:** hit replanning, fingerprint-mismatch miss, `skipCache`, the buffer saved before it is transferred, a bad cached entry evicted and reconverted once. A hit whose viewer never started keeps its entry, and a setup failure does not condemn it.<br/>• **URLs:** progress, 404 not retried, 503 and network errors retried, fallback URL, an automatic retry reusing the downloaded file.<br/>• **Bytes:** identified by a **full SHA-256**; a same-size edit the sample cannot see is a miss; no digest → not cached.<br/>• **Cancel:** during convert, attach and before commit (model taken back out); reset refusing a commit.<br/>• **Retries and lanes:** worker-crash retry on a fresh worker; convert released before attach; late and missing viewer.<br/>• **Background phases:** the tree build and a conversion never overlap (convert lane), and the build has its own budget. Failures there are warnings.<br/>• **Read errors:** OOM vs `read-failed`.<br/>• **Reload** from registry bytes. | Fake pool, viewer, network and cache; fake timers |
 | `src/lib/loading/ifc-convert-pool.test.ts` | 42 | Posting a `File` handle, never bytes. Warm reuse. Abort → `terminate()`. `worker-init` / `worker-crash` / `parse` classification. Recycling above the size limit, the idle reaper, `maxIdleWorkers`. Exact per-class counts recovered from the importer's progress floats. | `FakeWorker`; fake timers |
-| `src/lib/loading/retry-policy.test.ts` | 15 | Error classification (abort, network, OOM, GPU, unknown). Backoff: 1 s then 4 s, stopping at attempt 3; the 10 s step is only reachable with `maxAttempts: 4`. `Retry-After` capped at 30 s. 5xx/429 retried, other 4xx not. Once-only remedies. `scene` retried only when the attach came from the cache. Content errors and cancels never auto-retried. Manual retry rules. | Pure |
-| `src/lib/loading/resource-policy.test.ts` | 13 | Environment probing (including hostile getters), one conversion by default, budget capped at 3.2 GB, peak ≈ size × 5 + 100 MB, heap pressure levels, sticky OOM, overrides. | Stubbed probes |
-| `src/lib/loading/phases.test.ts` | 20 | Plan weights for miss, hit and URL. Aggregation excluding background and skipped phases. ETA gates: download ≥ 5 % and 1 s; other phases ≥ 15 %, 3 s and calibrated. The legacy SDK phase mapping. | Pure |
-| `src/lib/loading/external-sources.test.ts` | 19 | Point cloud, mesh and GIS store status mirrored into tracked jobs (progress, error, cancel, removal, late start), `onCancel` wiring, GIS rows background-only and not cancellable. | Real zustand stores and i18n; fake and real manager |
+| `src/lib/loading/retry-policy.test.ts` | 16 | Error classification (abort, network, OOM, GPU, unknown). Backoff: 1 s then 4 s, stopping at attempt 3; the 10 s step is only reachable with `maxAttempts: 4`. `Retry-After` capped at 30 s. 5xx/429 retried, other 4xx not. Once-only remedies. `scene` retried only when the attach came from the cache. Content errors and cancels never auto-retried. Manual retry rules. | Pure |
+| `src/lib/loading/resource-policy.test.ts` | 15 | Environment probing (including hostile getters), one conversion by default, budget capped at 3.2 GB, peak ≈ size × 5 + 100 MB, heap pressure levels, sticky OOM, overrides. | Stubbed probes |
+| `src/lib/loading/phases.test.ts` | 22 | Plan weights for miss, hit and URL. Aggregation excluding background and skipped phases. ETA gates: download ≥ 5 % and 1 s; other phases ≥ 15 %, 3 s and calibrated. The legacy SDK phase mapping. | Pure |
+| `src/lib/loading/external-sources.test.ts` | 12 | GIS status mirrored into background rows (terrain, buildings: loaded / failed / cancelled / removed, late start, stop). `watchSourceRemovals`: a scan / mesh entry that leaves its store is a cancel for a job still loading and a removal for a loaded one; replays and settled jobs ignored; kinds never cross; a throwing manager never breaks the store write. | Real zustand stores and i18n; fake and real manager |
 | `src/lib/loading/viewer-abort.test.ts` | 18 | AbortError shape, recognising fragments' abort string, fraction clamping, restoring the active model after a discard, and `pollModelIdle` (two idle polls 100 ms apart, timeout). | Fake timers |
-| `src/lib/loading/drop-routing.test.ts` | 13 | Mixed drops routed per subsystem, with arrival order kept (the anchor rule). Images count as textures only beside a mesh. `.xml` is not IDS. Drag-over sniffing. Extension lists match the importers. | Plain objects |
+| `src/lib/loading/drop-routing.test.ts` | 18 | Mixed drops routed per subsystem, with arrival order kept (the anchor rule). Images count as textures only beside a mesh. `.xml` is not IDS. Drag-over sniffing. Extension lists match the importers. | Plain objects |
+| `src/lib/loading/pointcloud-source.test.ts` | 20 | The point cloud adapter through a **real `LoadManager`**: identify → place → decode with point counters, the early `resultId`, the job signal and the sourceUrl identity; never a model job; per-scan cancel (a sibling keeps loading); runner keys → `detailKey` and retry rules (timeout never auto-retried, a full budget stays retryable, a crashed worker once); `setWaiting('budget')`; Remove / focus; viewer-unavailable; URL sources (network lane, byte progress, fallback, 404) and SDK bytes; the decode lane's slots **per kind**; the anchor wait in an empty scene; no Reload without a retained source; a retry clearing the old error row; a stuck attempt's slot released when the next starts. | Fake runner, system and network |
+| `src/lib/loading/mesh-source.test.ts` | 9 | The mesh adapter through a real manager: entry + sidecars, decode then place, the decode slot freed while waiting to be placed, per-import cancel, `detailKey`, a multi-file URL source under one network ticket (and its progress counted by files while the byte total is unknown), Remove via mesh-runner, cancel while waiting for the anchor. | Fake runner, system and network |
+| `src/lib/loading/index-sources.test.ts` | 5 | The words a failed scan / mesh reaches the user and an SDK host with: the runner's reason, the HTTP status filled in, the kind-neutral generic sentence, no raw key; the mesh wire key. | Real i18n |
+| `src/lib/pointcloud/pc-runner.test.ts` | 46 | Per-load staleness (a sibling's removal no longer cancels a parse nor freezes a COPC), every exit settling once (cancel before / after the header, stale continuations, a rejecting `resolveAlignment`), the resident-point ledger (waits, wake-ups on any freed room, a fitting request granted at once), the COPC resident count, the up-axis kept at done, bare `.copc` streaming. | Stubbed `Worker`, fake system; fake timers |
+| `src/workers/point-cloud.worker.test.ts` | 4 | The real worker's budget park: no points before `budget`, nothing after a cancel while parked, a short grant flags `truncated`, progress before done. | jsdom; a small ASCII PLY |
+| `src/lib/mesh/mesh-runner.test.ts` · `mesh-loader.test.ts` | 46 · 22 | No row ever left "loading" (a 9-case table), a sibling's removal no longer cancels, abort during decode / placement, a stalled glTF parse removing its row at once; `entryName`, `mtllib` / same-name `.mtl` pairing, glTF causes, texture stats after the drain. | Real OBJ loader and mesh system; stubbed GLTFLoader |
+| `src/stores/pointCloudStore.test.ts` · `meshStore.test.ts` | 15 · 5 | A single removal no longer bumps the epoch (clear still does); removing an absent id notifies nobody. | Real stores |
+| `scripts/post-header-guard.test.ts` | 4 | Every pc-runner continuation after the header is guarded (the shape that used to hang loads silently). | Reads the source |
 | `src/lib/loading/discipline.test.ts` | 8 | Discipline tokens (camelCase, accents, other languages, ISO 19650 role letters) and batch-name inference. | Pure |
 | `src/lib/loading/fingerprint.test.ts` | 6 | `f1:<size>:<hex>` shape, equality and difference, Blob vs bytes parity, FNV fallback. | Pure |
 | `src/lib/loading/load-log.test.ts` | 10 | `[IFC-LOAD]` line format, trace gated by `ifc:log-level`, a throwing `localStorage`, perf-mark cleanup. | Stubs |
 | `src/lib/loading/metrics.test.ts` · `model-id.test.ts` | 7 · 4 | ms/MB running means, counters, peak heap. Model id shape, uniqueness within a millisecond, monotonic even if the clock goes back. | Pure |
-| `src/components/loading/job-view.test.ts` | 45 | The pure view model: phase lines, wait-reason sentences, display order, stats, formatting, ETA display, indicator model, first-load focus, checklist. It never shows 100 % before commit. | Pure |
-| `src/components/loading/loading-ui.test.ts` | 20 | Mounts `LoadingIndicator`, `LoadingCenter`, `FirstLoadCard` and `SceneLoadingSection`.<br/>• **Indicator:** activity rather than a %, while nothing measures; "All models loaded" only after a model actually landed; failures announced; the floating and mobile variants.<br/>• **Center:** real phase lines, Escape without reaching panels, confirming cancel-all and cache clear with focus moved and announced, Retry on a cancelled row, no "0 %", closing on a press outside.<br/>• **First-load card:** batch-led titles.<br/>• **Hand-over:** an upload does not open the Center. | **jsdom**, real stores and i18n, stub controller |
+| `src/components/loading/job-view.test.ts` | 68 | The pure view model: phase lines, wait-reason sentences, display order, stats, formatting, ETA display, indicator model, first-load focus, checklist. It never shows 100 % before commit. | Pure |
+| `src/components/loading/loading-ui.test.ts` | 30 | Mounts `LoadingIndicator`, `LoadingCenter`, `FirstLoadCard` and `SceneLoadingSection`.<br/>• **Indicator:** activity rather than a %, while nothing measures; "All models loaded" only after a model actually landed; failures announced; the floating and mobile variants.<br/>• **Center:** real phase lines, Escape without reaching panels, confirming cancel-all and cache clear with focus moved and announced, Retry on a cancelled row, no "0 %", closing on a press outside.<br/>• **First-load card:** batch-led titles.<br/>• **Hand-over:** an upload does not open the Center. | **jsdom**, real stores and i18n, stub controller |
 | `src/components/loading/useNow.test.ts` | 4 | One shared ticker per interval, cleared with its last subscriber, safe to unsubscribe during a tick. | Fake timers |
-| `src/locales/loading-parity.test.ts` | 8 | `loading` namespace key parity across the 10 locales (plural-aware for ja/th/zh), the same interpolation params, no empty strings, a label for every engine enum, short discipline badges. | Reads JSON |
+| `src/locales/loading-parity.test.ts` | 11 | `loading` namespace key parity across the 10 locales (plural-aware for ja/th/zh), the same interpolation params, no empty strings, a label for every engine enum, short discipline badges. | Reads JSON |
 | `src/locales/toasts-loading-parity.test.ts` | 10 | The 5 loading toast keys exist with the English params in every locale. | Reads JSON |
 | `src/lib/opfs-cache.test.ts` | 43 | Commit order (`.frag` → `.ifc` → meta). Cleanup after a quota error; no 0-byte leftovers. Orphans and their grace period, and another tab's write in progress left alone. LRU eviction within half the quota. Fingerprint checks through `cacheRepo`. | In-memory OPFS mock with swap-file writes and injected failures |
-| `src/lib/fetch-ifc-url.test.ts` | 13 | `Last-Modified` → `lastModified` (0 when missing), building the `File` from streamed chunks, rejecting an empty body, abort pass-through, the demo fallback. | Stubbed `fetch` / `File` |
+| `src/lib/fetch-ifc-url.test.ts` | 19 | `Last-Modified` → `lastModified` (0 when missing), building the `File` from streamed chunks, rejecting an empty body, abort pass-through, the demo fallback. | Stubbed `fetch` / `File` |
 | `src/workers/ifc-parser.worker.test.ts` | 23 | `invalid-file`, `read-failed` and OOM before the importer is built. A posted `File` read inside the worker (`reading` stage first); the legacy transferred-buffer path. Stage order, ProgressData passthrough, a result with no copy, the throttle gate. OOM vs `worker-init` vs `parse` classification. | jsdom; `web-ifc` and fragments **mocked** |
 | `src/lib/upload.utils.test.ts` | 46 | Header and schema checks, fingerprint and duplicate lookup, the single-small-file fast path, batch naming, the import-dialog reducer. | jsdom (real `File` slices) |
 
-At the time of writing these 24 files hold **523 cases, all passing** (`npx vitest run src/lib/loading src/components/loading …`, about 10 s). Two things are not in the table:
+At the time of writing these 34 files hold **771 cases, all passing** (`npx vitest run src/lib/loading src/components/loading …`, about 10 s). Two things are not in the table:
 - `src/lib/loader.test.ts` (19 cases) predates this system. Only its
   `buildCacheKey` and legacy OPFS cases exercise real code; the rest re-implement
   the old loader inside the test.

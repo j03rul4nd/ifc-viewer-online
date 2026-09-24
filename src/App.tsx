@@ -101,10 +101,15 @@ import { expandWithDecomp } from './lib/visibility'
 import { useIfcLoader } from './lib/loader'
 import {
   resetLoading, notifyModelRemoving, notifyModelRemoved, cancelAllLoads, type LoadingHooks,
+  submitPointClouds, submitMeshes, canLoadKind, describeSourceError, sourceErrorKey, type SourceSubmitItem,
+  removeSourceResult, clearSources,
 } from './lib/loading'
 import { legacyPhase } from './lib/loading/phases'
-import { classifyFiles, hasFilePayload, routedCount } from './lib/loading/drop-routing'
-import { ACTIVE_STATUSES, type JobOrigin, type JobOutcome } from './lib/loading/types'
+import {
+  classifyFiles, groupMeshFiles, hasFilePayload, routedCount, fileExtensionOf, MESH_ENTRY_EXTENSIONS,
+} from './lib/loading/drop-routing'
+import { ACTIVE_STATUSES, type JobOrigin, type JobOutcome, type LoadSource } from './lib/loading/types'
+import { fetchFileFromUrl } from './lib/fetch-ifc-url'
 import { useLoadingStore, jobForModel } from './stores/loadingStore'
 import { LoadingCenter, LoadingIndicator, FirstLoadCard } from './components/loading'
 import { publishAggregateResult } from './lib/validator'
@@ -223,6 +228,12 @@ function deriveScanFileName(url: string): string {
   catch { last = '' }
   const name = last.replace(/[\/?:*"<>|]+/g, '_').trim()
   return /\.[a-z0-9]{2,5}$/i.test(name) ? name : `${name || 'scan'}.las`
+}
+
+/** The last path segment of a URL (query and fragment excluded), or ''. */
+function urlPathName(url: string): string {
+  try { return decodeURIComponent(new URL(url, window.location.href).pathname.split('/').pop() ?? '') }
+  catch { return '' }
 }
 
 // Camera presets accepted by the `ifcviewer:view` embed command.
@@ -548,6 +559,10 @@ export default function App() {
   const progressRelayRef = useRef<Map<string, { at: number; percent: number }>>(new Map())
   // IFC files dropped on the viewer, handed to the upload dialog for review.
   const [uploadInitial, setUploadInitial] = useState<File[] | null>(null)
+  // Scans / meshes of a drop whose IFCs are still in the upload dialog (see
+  // routeDroppedFiles), and whether that dialog is open right now.
+  const deferredDropRef = useRef<{ pointcloud: File[]; mesh: File[] } | null>(null)
+  const showUploadRef = useRef(false)
 
   // ── Shared-report route — decode on mount if URL hash contains #report=... ──
   const [sharedReport, setSharedReport] = useState<SharedReportPayload | null>(() => {
@@ -572,6 +587,7 @@ export default function App() {
   const [isolatedElement,      setIsolatedElement]      = useState<number | null>(null)
   const [isolatedElementModel, setIsolatedElementModel] = useState<string | null>(null)
   const [showUpload, setShowUpload]           = useState(false)
+  useEffect(() => { showUploadRef.current = showUpload }, [showUpload])
   const [showExportModal, setShowExportModal] = useState(false)
   const [showEmbedModal, setShowEmbedModal]   = useState(false)
   const [showIdsModal, setShowIdsModal]       = useState(false)
@@ -976,6 +992,18 @@ export default function App() {
       })
     },
 
+    // A scan or a mesh that failed, whatever started it — the panels, a drop,
+    // ?scan=, the SDK. One toast per failure, named, with the runner's own
+    // reason; the panels no longer toast themselves, and a dropped file no
+    // longer fails into the console alone. Never the SDK's model-error: that
+    // event is about models (see LoadingHooks.onSourceFailed).
+    onSourceFailed: (job, error) => {
+      console.warn(`[App] ${job.kind} load failed:`, job.fileName, `${error.code}@${error.phase ?? '-'}`, error.message)
+      void describeSourceError(error, job.kind).then((reason) => {
+        toast(tToasts('model.loadFailedNamed', { fileName: job.displayName, reason }), 'error')
+      })
+    },
+
     onBatchSettled: (batch, counts) => {
       if (counts.loaded + counts.failed === 0) return
       if (counts.failed > 0) {
@@ -1205,9 +1233,11 @@ export default function App() {
   // ── Route dropped files by kind ───────────────────────────────────────────
   // One drop can carry a federation plus its survey: IFCs go to the upload
   // dialog (validation, duplicates, review → the loading queue), scans and
-  // meshes to their panels through the same bus commands the SDK uses, an .ids
-  // to the IDS flow. `classifyFiles` works on extensions only, so none of the
-  // point cloud / mesh code is pulled into the entry chunk to decide.
+  // meshes straight to the loading queue as jobs of their own (one per scan,
+  // one per model — a multi-file glTF is ONE model), an .ids to the IDS flow.
+  // `classifyFiles` works on extensions only, so none of the point cloud /
+  // mesh code is pulled into the entry chunk to decide. Scans and meshes do
+  // not need their panels any more: they load in client mode too.
   const routeDroppedFiles = useCallback((files: File[]): void => {
     const r = classifyFiles(files)
     if (r.ifc.length > 0) {
@@ -1215,21 +1245,53 @@ export default function App() {
       setShowUpload(true)
     }
     if (r.ids.length > 0) void handleIdsFile(r.ids[0])
-    for (const file of r.pointcloud) {
-      void dispatchPanelCommand('sdk:pointcloud', { action: 'add', file },
-        { unavailable: 'Point clouds are not available in this build' })
-        .catch((err: unknown) => console.warn('[App] dropped scan not loaded:', err))
-    }
-    if (r.mesh.length > 0) {
-      void dispatchPanelCommand('sdk:mesh', { action: 'add', files: r.mesh },
-        { unavailable: 'Mesh import is not available in this build' })
-        .catch((err: unknown) => console.warn('[App] dropped mesh not loaded:', err))
+    // Scans and meshes that arrive WITH IFCs wait for the upload dialog: it
+    // reviews the IFCs before they become jobs, and a scan that started
+    // meanwhile found no model to align against (nor an anchor job to wait
+    // for) and landed at its own coordinates. Held here until the dialog
+    // closes — after its submit, so the IFC is queued and anchors the scene.
+    if ((r.ifc.length > 0 || showUploadRef.current) && (r.pointcloud.length > 0 || r.mesh.length > 0)) {
+      const held = deferredDropRef.current ?? { pointcloud: [], mesh: [] }
+      held.pointcloud.push(...r.pointcloud)
+      held.mesh.push(...r.mesh)
+      deferredDropRef.current = held
+    } else {
+      submitDroppedSources(r.pointcloud, r.mesh)
     }
     if (r.bcf.length > 0) toast(tToasts('model.dropBcfHint'), 'info')
     if (r.other.length > 0 && routedCount(r) === 0) {
       toast(tToasts('model.dropUnsupported', { count: r.other.length }), 'warning')
     }
   }, [handleIdsFile, tToasts])
+
+  /** Dropped scans and meshes → the loading queue (one job per scan, one per model). */
+  function submitDroppedSources(pointcloud: File[], mesh: File[]): void {
+    if (pointcloud.length > 0) {
+      if (canLoadKind('pointcloud')) {
+        submitPointClouds(pointcloud.map((file) => ({ source: { type: 'file', file } })), { origin: 'drop' })
+      } else {
+        toast(tToasts('model.dropUnsupported', { count: pointcloud.length }), 'warning')
+      }
+    }
+    if (mesh.length > 0) {
+      const groups = groupMeshFiles(mesh)
+      if (!canLoadKind('mesh')) {
+        toast(tToasts('model.dropUnsupported', { count: mesh.length }), 'warning')
+      } else if (groups.length === 0) {
+        // Only sidecars (.bin, .mtl): nothing to decode. Said, not swallowed.
+        toast(tToasts('model.dropUnsupported', { count: mesh.length }), 'warning')
+      } else {
+        submitMeshes(groups.map((g) => ({ source: { type: 'file', file: g.entry, sidecars: g.sidecars } })), { origin: 'drop' })
+      }
+    }
+  }
+
+  /** The upload dialog closed (after its submit, or dismissed): release what the drop held back. */
+  const releaseDeferredDrop = (): void => {
+    const held = deferredDropRef.current
+    deferredDropRef.current = null
+    if (held) submitDroppedSources(held.pointcloud, held.mesh)
+  }
 
   // Global drop over the viewer. Only OS file drags count (`hasFilePayload`):
   // the scene tree's own row drag-and-drop must pass straight through. While the
@@ -1516,6 +1578,9 @@ export default function App() {
       void viewerApiRef.current?.getPointClouds().then((system) => system.dispose())
     }
     usePointCloudStore.getState().clearClouds()
+    // Imported meshes too: the viewer's mesh system is disposed with it, and
+    // rows left behind listed "ready" models no scene held.
+    useMeshStore.getState().clearMeshes()
     modelRegistry.clear()
     clearScene()
     appBus.emit('model:cleared', undefined)
@@ -1957,42 +2022,67 @@ export default function App() {
 
         // ── Mutating commands (fire-and-forget) ──────────────────────────────
         // ── Point clouds ───────────────────────────────────────────────
-        // Every one delegates to PointCloudPanel rather than reaching into the
-        // loader here: the alignment ladder, the viewer's PointCloudSystem and
-        // the model bounds all live behind that panel, and a second code path
-        // would be a second set of bugs.
+        // Loading goes through the loading queue (a managed job: download
+        // lane with progress, decode lane, the scene anchor, per-job cancel);
+        // every other command delegates to PointCloudPanel, which owns the
+        // display, placement and replay state.
         case 'ifcviewer:add-pointcloud': {
           void respond(async () => {
-            const name = typeof msg.name === 'string' ? msg.name : 'scan.las'
-            let file: File
+            const name = typeof msg.name === 'string' ? msg.name : undefined
+            let source: LoadSource
             if (msg.bytes instanceof ArrayBuffer) {
-              file = new File([msg.bytes], name)
+              source = { type: 'bytes', bytes: msg.bytes, fileName: name ?? 'scan.las' }
             } else if (typeof msg.url === 'string') {
-              const res = await fetch(msg.url)
-              if (!res.ok) throw new Error(`Fetch failed: HTTP ${res.status}`)
-              file = new File([await res.arrayBuffer()], name)
+              // The URL itself is the scan's identity across sessions (saved
+              // offset, proj4, node cache) — the job keeps it as its source.
+              // A name carrying a query is the URL's raw last segment (older
+              // SDK clients default to url.split('/').pop()), not a name: a
+              // signed ".copc.laz?X-Amz-…" would lose the extension the
+              // readers route on. The URL's own path names it then.
+              const usable = name && !/[?#]/.test(name) ? name : undefined
+              source = { type: 'url', url: msg.url, fileName: usable ?? deriveScanFileName(msg.url) }
             } else {
               throw new Error('Provide bytes (ArrayBuffer) or url')
             }
-            const cloudId = await dispatchPanelCommand('sdk:pointcloud',
-              // Pass the URL through when we fetched it: that, not the File we
-              // just wrapped the bytes in, is what identifies this scan later.
-              { action: 'add', file, sourceUrl: typeof msg.url === 'string' ? msg.url : undefined },
-              { unavailable: 'Point clouds are not enabled in this build' })
-            return { cloudId }
+            if (!canLoadKind('pointcloud')) throw new Error('Point clouds are not enabled in this build')
+            const outcome = await submitPointClouds([{ source }], { origin: 'sdk', requestId })[0].settled
+            if (outcome.status === 'loaded') return { cloudId: outcome.resultId }
+            // In words, in the viewer's language — what the host always
+            // received (a cancel too: the runner's own "Loading was cancelled").
+            if (outcome.status === 'cancelled') {
+              throw new Error(await describeSourceError({
+                code: 'cancelled', message: 'cancelled', phase: null, autoRetryable: false, userRetryable: true,
+                attempt: 1, detailKey: 'pointcloud:error.cancelled',
+              }, 'pointcloud'))
+            }
+            throw new Error(await describeSourceError(outcome.error, 'pointcloud'))
           })
           break
         }
+        // Remove and clear work without the panel too: the client skin
+        // mounts none, and a host that can add a scan there must be able to
+        // take it out. With the panel mounted it keeps the say (it also stops
+        // a temporal replay).
         case 'ifcviewer:remove-pointcloud':
           void respond(async () => {
-            await dispatchPanelCommand('sdk:pointcloud',
-              { action: 'remove', cloudId: typeof msg.cloudId === 'string' ? msg.cloudId : undefined },
+            const cloudId = typeof msg.cloudId === 'string' ? msg.cloudId : undefined
+            if (!canLoadKind('pointcloud')) throw new Error('Point clouds are not enabled in this build')
+            if (cloudId && !appBus.hasListeners('sdk:pointcloud')) {
+              await removeSourceResult('pointcloud', cloudId)
+              return { ok: true }
+            }
+            await dispatchPanelCommand('sdk:pointcloud', { action: 'remove', cloudId },
               { unavailable: 'Point clouds are not enabled in this build', timeoutMs: 30_000 })
             return { ok: true }
           })
           break
         case 'ifcviewer:clear-pointclouds':
           void respond(async () => {
+            if (!canLoadKind('pointcloud')) throw new Error('Point clouds are not enabled in this build')
+            if (!appBus.hasListeners('sdk:pointcloud')) {
+              await clearSources('pointcloud')
+              return { ok: true }
+            }
             await dispatchPanelCommand('sdk:pointcloud', { action: 'clear' },
               { unavailable: 'Point clouds are not enabled in this build', timeoutMs: 30_000 })
             return { ok: true }
@@ -2085,14 +2175,13 @@ export default function App() {
           })
           break
         // ── Imported models ────────────────────────────────────────────
-        // Same delegation as scans: MeshPanel owns the loader, the triangle
-        // budget and the placement, so the bridge asks it rather than growing a
-        // second copy of any of that.
+        // Loading goes through the loading queue, as for scans; the other
+        // mesh commands delegate to MeshPanel, which owns placement and
+        // display. One call is ONE model: the entry file plus everything it
+        // references (a .gltf needs its .bin and textures, an .obj its .mtl).
         case 'ifcviewer:add-mesh': {
           void respond(async () => {
             const files: File[] = []
-            // Bytes the host handed over directly. A .gltf needs its .bin and
-            // its textures alongside it, so this is a LIST, not a file.
             if (Array.isArray(msg.files)) {
               for (const f of msg.files as Array<{ name?: unknown; bytes?: unknown }>) {
                 if (typeof f?.name === 'string' && f.bytes instanceof ArrayBuffer) {
@@ -2100,36 +2189,65 @@ export default function App() {
                 }
               }
             }
-            // Or URLs for us to fetch. Fetched in parallel: a glTF with a dozen
-            // textures would otherwise serialise a dozen round trips.
             const urls = Array.isArray(msg.urls) ? (msg.urls as unknown[]).filter((u): u is string => typeof u === 'string') : []
-            if (urls.length > 0) {
-              const fetched = await Promise.all(urls.map(async (url) => {
-                const res = await fetch(url)
-                if (!res.ok) throw new Error(`Fetch failed for ${url}: HTTP ${res.status}`)
-                return new File([await res.arrayBuffer()], url.split('/').pop() ?? 'model.glb')
-              }))
-              files.push(...fetched)
-            }
-            if (files.length === 0) throw new Error('Provide files (name + bytes) or urls')
+            if (files.length === 0 && urls.length === 0) throw new Error('Provide files (name + bytes) or urls')
+            if (!canLoadKind('mesh')) throw new Error('Mesh import is not enabled in this build')
 
-            const meshId = await dispatchPanelCommand('sdk:mesh',
-              { action: 'add', files },
-              { unavailable: 'Mesh import is not enabled in this build' })
-            return { meshId }
+            let item: SourceSubmitItem
+            if (files.length > 0) {
+              // Bytes and URLs together (a raw postMessage can send both):
+              // fetch the URLs here and import everything as one selection,
+              // as before.
+              for (const url of urls) {
+                files.push(await fetchFileFromUrl(url, { fallbackName: 'model.glb', what: 'model' }))
+              }
+              const [group] = groupMeshFiles(files)
+              if (!group) throw new Error('error.noEntryFile')
+              item = { source: { type: 'file', file: group.entry, sidecars: group.sidecars } }
+            } else {
+              // URLs only: downloaded by the job (network lane, byte progress,
+              // cancel). The entry is the first URL whose PATH names a model —
+              // a signed "…/model.gltf?sig=…" is still a .gltf.
+              const entryAt = Math.max(0, urls.findIndex((u) =>
+                (MESH_ENTRY_EXTENSIONS as readonly string[]).includes(fileExtensionOf(urlPathName(u)))))
+              item = {
+                source: {
+                  type: 'url',
+                  url: urls[entryAt],
+                  sidecars: urls.filter((_, i) => i !== entryAt).map((url) => ({ url })),
+                },
+              }
+            }
+            const outcome = await submitMeshes([item], { origin: 'sdk', requestId })[0].settled
+            if (outcome.status === 'loaded') return { meshId: outcome.resultId }
+            if (outcome.status === 'cancelled') throw new Error('error.cancelled')
+            // The mesh wire contract is the raw i18n key ('error.noEntryFile').
+            throw new Error(sourceErrorKey(outcome.error) ?? outcome.error.message)
           })
           break
         }
         case 'ifcviewer:remove-mesh':
           void respond(async () => {
-            await dispatchPanelCommand('sdk:mesh',
-              { action: 'remove', meshId: typeof msg.meshId === 'string' ? msg.meshId : undefined },
+            if (!canLoadKind('mesh')) throw new Error('Mesh import is not enabled in this build')
+            const meshId = typeof msg.meshId === 'string' ? msg.meshId : undefined
+            if (!appBus.hasListeners('sdk:mesh')) {
+              const target = meshId ?? useMeshStore.getState().activeMeshId
+              if (!target) throw new Error('No model loaded')
+              await removeSourceResult('mesh', target)
+              return { ok: true }
+            }
+            await dispatchPanelCommand('sdk:mesh', { action: 'remove', meshId },
               { unavailable: 'Mesh import is not enabled in this build', timeoutMs: 30_000 })
             return { ok: true }
           })
           break
         case 'ifcviewer:clear-meshes':
           void respond(async () => {
+            if (!canLoadKind('mesh')) throw new Error('Mesh import is not enabled in this build')
+            if (!appBus.hasListeners('sdk:mesh')) {
+              await clearSources('mesh')
+              return { ok: true }
+            }
             await dispatchPanelCommand('sdk:mesh', { action: 'clear' },
               { unavailable: 'Mesh import is not enabled in this build', timeoutMs: 30_000 })
             return { ok: true }
@@ -2299,9 +2417,9 @@ export default function App() {
 
   // ── Apply the map / scan deep links once the first model is loaded ─────────
   //
-  // Both go through the same `sdk:*` commands the SDK uses rather than reaching
-  // into the panels: the map needs the georeference ladder and the scan needs
-  // the alignment ladder, and both of those live in the panel that owns them.
+  // The map goes through the same `sdk:site` command the SDK uses (the
+  // georeference ladder lives in its panel); the scans are URL jobs in the
+  // loading queue, like the SDK's addPointCloudFromUrl.
   //
   // They wait for a model because neither means anything without one — the map
   // has nothing to place, and a scan would have nothing to align against.
@@ -2345,27 +2463,19 @@ export default function App() {
       })()
     }
 
-    void (async () => {
-      // Scans one at a time, like the model URLs: two decoding at once compete
-      // for the same worker and the same point budget.
-      for (const url of urlParams.scanUrls) {
-        if (cancelled) return
-        try {
-          const res = await fetch(url, { cache: 'force-cache', mode: 'cors' })
-          if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
-          const file = new File([await res.arrayBuffer()], deriveScanFileName(url))
-          await dispatchPanelCommand('sdk:pointcloud',
-            // The URL, not the File, is the scan's identity across sessions —
-            // see SdkPointCloudCommand.sourceUrl.
-            { action: 'add', file, sourceUrl: url },
-            { unavailable: 'Point clouds are not available in this build' })
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err)
-          console.error('[App] ?scan= deep link failed:', url, message)
-          if (!cancelled) toast(tToasts('model.scanLoadFailed', { message }), 'error')
-        }
+    // The scans are one batch of URL jobs: downloaded in the network lane with
+    // real progress, decoded in the decode lane (the resident-point budget
+    // decides who waits), aligned against the model once it is in. A failure
+    // is toasted by the loading hooks, like any other scan's.
+    if (urlParams.scanUrls.length > 0) {
+      if (canLoadKind('pointcloud')) {
+        submitPointClouds(urlParams.scanUrls.map((url) => ({
+          source: { type: 'url', url, fileName: deriveScanFileName(url) },
+        })), { origin: 'url' })
+      } else {
+        toast(tToasts('model.scanLoadFailed', { message: 'Point clouds are not available in this build' }), 'error')
       }
-    })()
+    }
 
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -3039,7 +3149,7 @@ export default function App() {
       <AnimatePresence>
         {showUpload && (
           <UploadOverlay
-            onClose={() => { setShowUpload(false); setUploadInitial(null) }}
+            onClose={() => { setShowUpload(false); setUploadInitial(null); releaseDeferredDrop() }}
             onOpenDemoGallery={openDemoGallery}
             initialFiles={uploadInitial ?? undefined}
             initialOrigin={uploadInitial ? 'drop' : undefined}

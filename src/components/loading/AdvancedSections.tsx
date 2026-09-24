@@ -87,6 +87,9 @@ function ResourcesBody() {
       <KV label={t('resources.mobile')} value={yesNo(p.mobile)} />
       <KV label={t('resources.maxConverts')} value={p.maxConcurrentConverts} />
       <KV label={t('resources.maxDownloads')} value={p.maxConcurrentDownloads} />
+      {/* The decode lane (scans, meshes) never shares the convert lane's slot,
+          so it gets its own line — already lowered to 1 under memory pressure. */}
+      <KV label={t('resources.maxDecodes')} value={p.maxConcurrentDecodes} />
       <KV label={t('resources.budget')} value={formatBytes(p.memoryBudgetBytes)} />
       <KV label={t('resources.largeFile')} value={formatBytes(p.largeFileBytes)} />
       <KV label={t('resources.pressure')} value={t(PRESSURE_KEYS[p.pressure])} tone={pressureTone} />

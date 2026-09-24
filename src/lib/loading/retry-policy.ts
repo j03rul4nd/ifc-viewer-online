@@ -198,6 +198,13 @@ function manualHints(error: LoadError, fromCache: boolean): RetryHints {
  * cache after the remedy means the remedy does not work for this file, and
  * looping would only hide that. Manual retries are always allowed for
  * anything a retry could fix (and for cancelled jobs): the user is looking.
+ *
+ * An error that says `autoRetryable: false` is never retried automatically,
+ * whatever its code's row says. The table is the default for a code; the
+ * source that raised the error may know better — a scan's header `timeout` is
+ * the file never producing a header, not a network blip, and backing it off
+ * three times is three more minutes of a spinner. Errors classified from
+ * their code alone carry the table's own flag, so this changes nothing for them.
  */
 export function decideRetry(error: LoadError, opts: RetryOptions): RetryDecision {
   const attempt = Math.max(1, Math.floor(opts.attempt))
@@ -213,6 +220,12 @@ export function decideRetry(error: LoadError, opts: RetryOptions): RetryDecision
 
   if (attempt >= maxAttempts) return no(`gave up after ${attempt} attempts`)
 
+  const d = automatic(error, attempt)
+  if (d.retry && error.autoRetryable === false) return no(`${error.code} is marked not retryable automatically`)
+  return d
+}
+
+function automatic(error: LoadError, attempt: number): RetryDecision {
   switch (error.code) {
     case 'network':
     case 'timeout':

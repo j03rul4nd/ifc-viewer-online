@@ -691,4 +691,63 @@ That is documented pain, not commodity polish, so it passes the Roadmap v2 prior
 
 ---
 
-*Last updated: 2026-09-24 · Sprints 1–9 complete · D-21/D-22 (re-audit v2) · D-23 Capture Toolkit · D-24 Tour Mode · D-25 Client Presentation Mode · D-26 Presentation Templates + Share Links · D-27 (privacy-invariant amendment, F6-gated) + D-28 (immutable Submission + append-only AuditLog) added for the conformance-CDE pivot — see `docs/CDE_ROADMAP.md` + `docs/CONFORMANCE_DOMAIN.md` · D-29 centralized model loading manager (2026-09) — see `docs/MODEL_LOADING.md`; D-02/03/04/06/08/10/13/14/16/18/19 annotated*
+## D-30 · Point clouds and meshes as managed load jobs; per-load cancellation
+
+**Date:** 2026-09
+**Status:** ✅ Implemented. Reference: `docs/MODEL_LOADING.md` §4, §9–§11.
+
+**Context:** After D-29, IFC loads ran under the LoadManager while point clouds
+and meshes only had their store status mirrored into tracked rows. Their
+runners were driven from the panels and cancelled through ONE store-wide
+`epoch` each. Several things went wrong because of that:
+- Removing any cloud failed every sibling still parsing and froze every
+  streaming COPC. Removing any mesh left a sibling decoding at "loading"
+  forever.
+- A cancelled scan's promise never settled, so SDK `add()` and `?scan=` hung
+  for 15 minutes.
+- Concurrent whole-file loads each got the full point budget.
+- Dropped scans and meshes were aligned against no model and failed silently.
+- A drop of several meshes imported only the first.
+
+**Decision:**
+- Point clouds and meshes are **managed jobs** with their own adapters
+  (`pointcloud-source.ts`, `mesh-source.ts`). The runners stay the executors,
+  with per-load `AbortSignal`s and callbacks.
+- They run in a new `decode` lane (2 slots per kind, 1 under pressure), never
+  in the IFC `convert` lane.
+- They pass the `attach` lane's anchor rule before aligning or placing.
+- The runners' staleness is per load (own signal, own entry gone, or scene
+  cleared). `removeCloud` / `removeMesh` no longer bump the epoch.
+- The resident-point budget is a reservation ledger in pc-runner: declared
+  counts are reserved at the header, and a scan that does not fit waits.
+- "Model job" (`managed && kind === 'ifc'`) replaces `managed` wherever the app
+  means "still loading models": idle, `managedActive`, `cancelAll({ modelsOnly })`,
+  the App hooks, the IFC counters and the ETA calibration.
+- A removal watcher reports entries that leave the stores by other paths
+  (panel X, SDK, replay, landing).
+- GIS stays tracked.
+
+**Alternatives considered:**
+- *Keep the mirror and only make the epochs per entry.* That fixes the sibling
+  cancel, but leaves no lanes, no budget reservation, no anchor wait, no
+  retry, no real progress, and the panel-mounted executors (`?scan=` fails in
+  the client skin).
+- *Run decodes in the `convert` lane.* A multi-minute LAS parse would block
+  every IFC conversion behind its single measured slot.
+- *Size the decode lane to avoid the budget race.* Serialising scans to one
+  slot throws away a free core. The reservation fixes the race exactly and
+  only waits when the budget is really contended.
+
+**Consequences:**
+- The SDK/postMessage wire is unchanged (`{ cloudId }` / `{ meshId }`, a scan's
+  error in words, a mesh's raw key). A failed or cancelled load now answers at
+  once.
+- Scans and meshes load without their panel mounted (client skin included).
+- `LoadError.detailKey` carries the runner's reason into the Loading Center.
+- `JobContext.setWaiting` shows non-lane waits ('budget', 'viewer').
+- `decideRetry` honours `autoRetryable: false`.
+- Meshes are cleared with the scene on landing.
+
+---
+
+*Last updated: 2026-09-24 · Sprints 1–9 complete · D-21/D-22 (re-audit v2) · D-23 Capture Toolkit · D-24 Tour Mode · D-25 Client Presentation Mode · D-26 Presentation Templates + Share Links · D-27 (privacy-invariant amendment, F6-gated) + D-28 (immutable Submission + append-only AuditLog) added for the conformance-CDE pivot — see `docs/CDE_ROADMAP.md` + `docs/CONFORMANCE_DOMAIN.md` · D-29 centralized model loading manager (2026-09) — see `docs/MODEL_LOADING.md`; D-30 point clouds and meshes as managed jobs; D-02/03/04/06/08/10/13/14/16/18/19 annotated*

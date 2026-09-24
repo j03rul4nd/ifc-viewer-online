@@ -22,7 +22,7 @@ export function emptySession(): SessionMetrics {
 
 export const EMPTY_POLICY: PolicySnapshot = Object.freeze({
   cores: null, deviceMemoryGB: null, crossOriginIsolated: false, mobile: false,
-  maxConcurrentConverts: 1, maxConcurrentDownloads: 2,
+  maxConcurrentConverts: 1, maxConcurrentDownloads: 2, maxConcurrentDecodes: 2,
   memoryBudgetBytes: 2 * 1024 ** 3, largeFileBytes: 150 * 1024 ** 2,
   pressure: 'normal',
 }) as PolicySnapshot

@@ -1,6 +1,6 @@
 // ─── LoadManager ──────────────────────────────────────────────────────────────
 // The one place that knows every load in flight: jobs and batches, their
-// lifecycle, the three shared lanes (network, convert, attach), retries, the
+// lifecycle, the shared lanes (network, convert, attach, decode), retries, the
 // event stream and the session metrics. Framework-agnostic on purpose — no
 // React, no store, no viewer, no worker: adapters do the work through a
 // JobContext, the UI reads snapshots, and everything else is injected
@@ -22,6 +22,10 @@
 //     keeps its object identity across snapshots and React skips it.
 //   • No requestAnimationFrame anywhere: hidden panes never fire it, and a
 //     queue that only advances while visible is a queue that looks frozen.
+//   • "Managed" is not "a model". Point clouds and meshes are managed jobs too
+//     (lanes, cancel, retry), but only `isModelJob` rows — managed IFC — are
+//     "the app is still loading models": the idle edge, `managedActive`,
+//     `cancelAll({ modelsOnly })` and the IFC-only session calibration.
 
 import type {
   AdapterResult, BatchOptions, ExternalJobController, ExternalJobSpec, HeapSample, JobCapabilities,
@@ -34,7 +38,7 @@ import type {
 import { ACTIVE_STATUSES, PRIORITY, TERMINAL_STATUSES } from './types'
 import { emptySession } from './defaults'
 import { aggregateProgress, computeEta, createPhaseStates } from './phases'
-import { decideAttach, decideConvert, decideNetwork, effectivePriority, pickAnchor } from './scheduler'
+import { decideAttach, decideConvert, decideNetwork, decideSlots, effectivePriority, pickAnchor } from './scheduler'
 import { abortError, classifyError, decideRetry, isAbortError } from './retry-policy'
 import { bump, CONVERT_PHASES, recordPhase, recordWorkerEvent, updatePeakHeap } from './metrics'
 import { createJobLogger, perfMark } from './load-log'
@@ -44,7 +48,7 @@ import { createLogger } from '../logger'
 const log = createLogger('Load')
 
 const MB = 1024 * 1024
-const LANES: readonly Lane[] = ['network', 'convert', 'attach']
+const LANES: readonly Lane[] = ['network', 'convert', 'attach', 'decode']
 /** At most one `progress` event per job per this long (phase changes are immediate). */
 const PROGRESS_THROTTLE_MS = 100
 /** Re-pump for aging and re-check stalls this often, only while something is loading. */
@@ -59,14 +63,30 @@ const LOG_EVERY_FRACTION = 0.1
 const LIGHT_PHASES: ReadonlySet<PhaseId> = new Set<PhaseId>(['identify', 'cache-lookup'])
 const BYTE_PHASES: ReadonlySet<PhaseId> = new Set<PhaseId>(['download', 'fetch'])
 const CONVERT_PHASE_SET: ReadonlySet<PhaseId> = new Set<PhaseId>(CONVERT_PHASES)
+/**
+ * The lane a phase's own work runs in. An adapter may enter a phase and only
+ * then queue for its lane — a download reads "download" while it waits for a
+ * network slot, a mesh reads "decode" while it waits for a decode slot — and
+ * that phase has done nothing yet: the job is still `queued` (see refreshStatus).
+ */
+const OWN_LANE: Readonly<Partial<Record<PhaseId, Lane>>> = {
+  download: 'network', fetch: 'network',
+  geometry: 'convert', properties: 'convert', relations: 'convert', serialize: 'convert',
+  attach: 'attach', setup: 'attach', read: 'attach',
+  decode: 'decode',
+}
 /** Statuses the periodic tick cares about (held jobs neither age nor stall). */
 const TICKING: ReadonlySet<JobStatus> = new Set<JobStatus>(['queued', 'waiting', 'running'])
 /**
- * A managed job in one of these is the app "still loading models". Held is
+ * A model job in one of these is the app "still loading models". Held is
  * not: the user parked it, and deep links, deferred validation and georef
  * extraction must not wait on a decision the user may never make.
  */
 const WORKING: ReadonlySet<JobStatus> = new Set<JobStatus>(['queued', 'waiting', 'running'])
+/** What `ctx.setWaiting` accepts — anything else would be a status no label knows. */
+const WAIT_REASONS: ReadonlySet<WaitReason> = new Set<WaitReason>([
+  'slot', 'memory', 'exclusive', 'anchor', 'attach-lane', 'backoff', 'viewer', 'budget',
+])
 /** Finished rows kept as history; older ones are pruned (live and finishing rows never are). */
 const HISTORY_CAP = 50
 /** A removed row is history of a model that is gone: dropped after this long. */
@@ -190,6 +210,13 @@ interface JobRecord {
   waits: Map<Lane, LaneWait>
   /** Lane wait accumulated while the current phase was active (kept out of calibration). */
   activeWaitMs: number
+  /**
+   * A wait the adapter reported that is not a lane (`ctx.setWaiting`): the
+   * point budget, the viewer. Belongs to the current attempt only.
+   */
+  extWait: WaitReason | null
+  /** When the part of `extWait` not yet folded into `activeWaitMs` began. */
+  extWaitSince: number | null
   backoffTimer: TimerHandle | null
   progressTimer: TimerHandle | null
   graceTimer: TimerHandle | null
@@ -244,6 +271,16 @@ function messageOf(err: unknown): string {
   try { return String(err) } catch { return 'unknown' }
 }
 
+/**
+ * A model job: managed IFC. Point cloud and mesh jobs are managed too, but a
+ * scan still decoding must not keep deep links, deferred validation, georef
+ * extraction or `ifcviewer:clear` waiting as if a model were on its way.
+ */
+function isModelJob(r: { managed: boolean; kind: SourceKind }): boolean {
+  return r.managed && r.kind === 'ifc'
+}
+
+/** The main file's name — a multi-file source is named after its entry, never a sidecar. */
 function fallbackName(source: LoadSource): string {
   if (source.type === 'file') return source.file.name
   if (source.type === 'bytes') return source.fileName
@@ -292,7 +329,7 @@ export class LoadManager {
   private readonly batches = new Map<string, BatchRecord>()
   private readonly listeners = new Set<(e: LoadEvent) => void>()
   private readonly holdings: Record<Lane, Map<string, Holding>> = {
-    network: new Map(), convert: new Map(), attach: new Map(),
+    network: new Map(), convert: new Map(), attach: new Map(), decode: new Map(),
   }
 
   private session: SessionMetrics = emptySession()
@@ -311,7 +348,7 @@ export class LoadManager {
   private pumping = false
   private repump = false
   private tickTimer: TimerHandle | null = null
-  /** Some managed job was working at the end of the last op (the `idle` edge). */
+  /** Some model job was working at the end of the last op (the `idle` edge). */
   private wasManagedActive = false
   /**
    * The current wave: every row that was active since the queue was last
@@ -400,16 +437,17 @@ export class LoadManager {
   }
 
   /**
-   * Cancel every active job. `managedOnly` leaves tracked point cloud / mesh /
-   * GIS rows alone: `ifcviewer:clear` means "remove the IFC models", and
-   * cancelling a scan through its runner also fails its siblings (the store's
-   * global epoch). The Loading Center's own "Cancel all" means everything.
+   * Cancel every active job. `modelsOnly` cancels model (IFC) jobs only and
+   * leaves point cloud / mesh jobs and tracked GIS rows alone: `ifcviewer:clear`
+   * has always meant "remove the IFC models", and scans and meshes have their
+   * own clear commands. The Loading Center's own "Cancel all" means everything.
    */
-  cancelAll(opts: { managedOnly?: boolean } = {}): void {
+  cancelAll(opts: { modelsOnly?: boolean } = {}): void {
     this.op(() => {
       for (const rec of [...this.jobs.values()]) {
         if (!ACTIVE_STATUSES.has(rec.status)) continue
-        if (rec.managed || (!opts.managedOnly && rec.onCancel)) this.cancel(rec.id)
+        const cancellable = rec.managed || rec.onCancel !== null
+        if (opts.modelsOnly ? isModelJob(rec) : cancellable) this.cancel(rec.id)
       }
     })
   }
@@ -626,18 +664,28 @@ export class LoadManager {
     })
   }
 
-  /** The app started removing a model through its own path. */
-  markUnloading(resultId: string): void {
+  /**
+   * The app started removing a model through its own path. `kind` narrows the
+   * lookup when ids of different kinds could meet (a cloud id and a model id).
+   */
+  markUnloading(resultId: string, kind?: SourceKind): void {
     this.op(() => {
-      const rec = this.findRecByResult(resultId, (s) => s === 'loaded')
+      const rec = this.findRecByResult(resultId, (s) => s === 'loaded', kind)
       if (rec) this.beginUnload(rec)
     })
   }
 
-  /** The app removed a model through its own path (scene panel, SDK, reset of one model). */
-  markRemoved(resultId: string): void {
+  /**
+   * The app removed a result through its own path (scene panel, SDK, reset of
+   * one model; a cloud or mesh gone from its store). Loaded / unloading rows
+   * only: an ACTIVE job may already carry its resultId — the point cloud and
+   * mesh adapters set it early so the removal watcher can find the job — and
+   * its entry disappearing means "cancel", which is `cancel(jobId)`, not this.
+   * Idempotent: a removed row is not matched again.
+   */
+  markRemoved(resultId: string, kind?: SourceKind): void {
     this.op(() => {
-      const rec = this.findRecByResult(resultId, (s) => s === 'loaded' || s === 'unloading')
+      const rec = this.findRecByResult(resultId, (s) => s === 'loaded' || s === 'unloading', kind)
       if (rec) this.markRemovedRec(rec)
     })
   }
@@ -699,10 +747,43 @@ export class LoadManager {
     return hit ? { jobId: hit.id, resultId: hit.resultId, fileName: hit.fileName, status: hit.status } : null
   }
 
-  /** The latest job that produced (or is producing) this scene resource. */
-  findByResult(resultId: string): LoadJobView | null {
-    const rec = this.findRecByResult(resultId, () => true)
-    return rec ? this.view(rec) : null
+  /**
+   * The job behind a `kind` result: an ACTIVE one first (an adapter set the id
+   * early and is still loading it), then a loaded / unloading one, then any
+   * other row — the latest of its class. This is what the store-removal
+   * watcher asks when a cloud or mesh entry disappears: active → cancel,
+   * loaded → markRemoved, anything else → nothing to do. `kind` is part of the
+   * key: a cloud id and a model id live in different spaces.
+   */
+  findByResult(kind: SourceKind, resultId: string): { jobId: string; status: JobStatus } | null {
+    const rank = (s: JobStatus) => (ACTIVE_STATUSES.has(s) ? 0 : s === 'loaded' || s === 'unloading' ? 1 : 2)
+    let hit: JobRecord | null = null
+    for (const rec of this.jobs.values()) {
+      if (rec.kind !== kind || rec.resultId !== resultId) continue
+      if (!hit) { hit = rec; continue }
+      const d = rank(rec.status) - rank(hit.status)
+      if (d < 0 || (d === 0 && rec.seq > hit.seq)) hit = rec
+    }
+    return hit ? { jobId: hit.id, status: hit.status } : null
+  }
+
+  /**
+   * Frame a loaded non-IFC result through its adapter ("Show in scene" on a
+   * cloud or mesh row). Returns whether it did. IFC rows return false: the
+   * app frames models (the controller's `focusModel` hook), not the manager.
+   */
+  focusResult(jobId: string): boolean {
+    const rec = this.jobs.get(jobId)
+    if (!rec || rec.kind === 'ifc' || !this.capabilities(rec).focus) return false
+    const adapter = rec.adapter
+    if (!adapter || typeof adapter.focus !== 'function') return false
+    try {
+      adapter.focus(rec.resultId as string)
+      return true
+    } catch (err) {
+      rec.log.warn('focus threw', { error: messageOf(err) })
+      return false
+    }
   }
 
   getSnapshot(): LoadSnapshot {
@@ -909,17 +990,17 @@ export class LoadManager {
       if (ACTIVE_STATUSES.has(r.status)) {
         active++
         this.wave.add(r.id)
-        if (r.managed && WORKING.has(r.status)) working++
+        if (isModelJob(r) && WORKING.has(r.status)) working++
       } else if (this.isPrunable(r)) {
         history++
         if (r.status === 'removed' && r.removedAt !== null && now - r.removedAt >= REMOVED_TTL_MS) expired = true
       }
     }
-    // `idle` means no managed job is working. Tracked scans, meshes and GIS
-    // fetches are shown, and a held job is listed, but none of them keeps the
-    // app "loading models": a mesh left 'loading' by its runner's global epoch,
-    // or a job the user parked, would otherwise hold back deferred validation,
-    // georef extraction and deep links for as long as it sat there.
+    // `idle` means no model job is working. Scans, meshes and GIS fetches are
+    // shown, and a held job is listed, but none of them keeps the app "loading
+    // models": a COPC cloud decoding its index, a mesh waiting behind the
+    // anchor, or a job the user parked would otherwise hold back deferred
+    // validation, georef extraction and deep links for as long as it sat there.
     if (this.wasManagedActive && working === 0) this.queue.push({ type: 'idle' })
     this.wasManagedActive = working > 0
     if (active === 0 && (this.wave.size > 0 || this.waveCarriedWeight > 0)) {
@@ -1093,6 +1174,8 @@ export class LoadManager {
       controller: null,
       waits: new Map(),
       activeWaitMs: 0,
+      extWait: null,
+      extWaitSince: null,
       backoffTimer: null,
       progressTimer: null,
       graceTimer: null,
@@ -1217,9 +1300,10 @@ export class LoadManager {
     rec.resolveSettled(outcome)
   }
 
-  private findRecByResult(resultId: string, accept: (s: JobStatus) => boolean): JobRecord | null {
+  private findRecByResult(resultId: string, accept: (s: JobStatus) => boolean, kind?: SourceKind): JobRecord | null {
     let hit: JobRecord | null = null
     for (const rec of this.jobs.values()) {
+      if (kind !== undefined && rec.kind !== kind) continue
       if (rec.resultId === resultId && accept(rec.status) && (!hit || rec.seq > hit.seq)) hit = rec
     }
     return hit
@@ -1247,6 +1331,11 @@ export class LoadManager {
    * be read again, and an SDK host re-sending a model after each failure would
    * otherwise leak one full copy per attempt. A cancel drops everything that
    * lives only in memory; a disk-backed File and a URL stay for Retry.
+   *
+   * Sidecars (a glTF's .bin and textures, an OBJ's .mtl) ride on their source
+   * object: a retained source keeps them for Retry and Reload, a dropped one
+   * drops them with it. Never one without the other — a glTF retried without
+   * its buffers would fail as a different, misleading error.
    */
   private applyRetention(rec: JobRecord, outcome: 'loaded' | 'failed' | 'cancelled' | 'removed'): void {
     const s = rec.source
@@ -1325,6 +1414,14 @@ export class LoadManager {
   /** Fresh attempt state: new token, new signal, fresh phases from the adapter's plan. */
   private prepareAttempt(rec: JobRecord): void {
     const now = this.now()
+    // The previous attempt is abandoned from here on. A cancelled one whose
+    // run never unwound still holds its lanes until its grace timer fires —
+    // and a second cancel (of THIS attempt) clears that timer, which used to
+    // strand the first attempt's slot for good. Take them back now instead.
+    if (rec.token && this.hasHoldings(rec, rec.token)) {
+      rec.log.warn('previous attempt still held lanes — releasing them for the new attempt')
+      this.releaseAttempt(rec, rec.token)
+    }
     rec.attempts += 1
     rec.token = ++this.tokenCounter
     rec.epoch = this.epoch
@@ -1347,6 +1444,15 @@ export class LoadManager {
     rec.committed = false
     rec.finished = false
     rec.activeWaitMs = 0
+    rec.extWait = null
+    rec.extWaitSince = null
+    // The point cloud and mesh adapters report their id early (the runner's
+    // onEntry). Kept across attempts, the failed attempt's id would still find
+    // THIS row — active, so ranked first — and a removal of that errored entry
+    // from its panel would cancel a retry that was going to land. Never a
+    // committed row here: retry is offered from failed / cancelled rows only,
+    // automatic retries never follow a commit, and IFC sets its id at commit.
+    rec.resultId = null
     rec.metrics = {
       ...rec.metrics,
       phaseDurations: {}, etaMs: null, etaReliable: false, lastActivityAt: now, finishedAt: undefined,
@@ -1422,6 +1528,7 @@ export class LoadManager {
       replan: (plan) => this.op(() => this.replan(rec, token, plan)),
       acquire: (lane, req) => this.op(() => this.acquire(rec, token, lane, req)),
       setMeta: (patch) => this.op(() => this.setMeta(rec, token, patch)),
+      setWaiting: (reason) => this.op(() => this.setExtWait(rec, token, reason)),
       throwIfCancelled: () => {
         if (stale() || signal.aborted || rec.cancelRequested) throw abortError()
       },
@@ -1496,11 +1603,18 @@ export class LoadManager {
   private handleFailure(rec: JobRecord, token: number, error: LoadError): void {
     const now = this.now()
     const decision = decideRetry(error, { attempt: rec.attempts, fromCache: rec.metrics.fromCache === true })
-    if (decision.degradeConcurrency || error.code === 'out-of-memory') {
+    // A model's OOM pins the session even when it is not retried (a second one,
+    // converting alone): the main heap the pressure models is what failed.
+    // A scan's or a mesh's is its own worker's WASM heap — a LAZ too large for
+    // it is too large for it alone — and pinning would halve the decode lane
+    // and every IFC conversion for the rest of the session. Only a decision
+    // that asks to degrade does that.
+    if (decision.degradeConcurrency || (error.code === 'out-of-memory' && isModelJob(rec))) {
       this.policy.reportOom()
       this.version++
     }
     for (const p of rec.phases) if (p.status === 'active') this.finishPhase(rec, p, now, 'failed')
+    this.dropExtWait(rec)
     rec.error = error
     rec.phase = error.phase ?? rec.phase
     if (!decision.retry) {
@@ -1509,6 +1623,9 @@ export class LoadManager {
     }
     this.session = bump(this.session, 'retries')
     rec.hints = { ...rec.hints, ...decision.hints }
+    // The failed attempt's early id goes now, not at the next attempt: the
+    // backoff is part of the retry, and its errored entry may be removed meanwhile.
+    rec.resultId = null
     rec.status = 'waiting'
     rec.waitReason = 'backoff'
     rec.log.warn('attempt failed — retrying', {
@@ -1533,6 +1650,7 @@ export class LoadManager {
     this.clearTimers(rec)
     this.dropWaits(rec)
     for (const p of rec.phases) if (p.status === 'active') this.finishPhase(rec, p, now, 'failed')
+    this.dropExtWait(rec)
     rec.status = 'failed'
     rec.waitReason = null
     rec.error = error
@@ -1567,6 +1685,7 @@ export class LoadManager {
     rec.cancelRequested = true
     rec.status = 'cancelled'
     rec.waitReason = null
+    this.dropExtWait(rec)
     rec.stalled = false
     rec.held = false
     rec.heldAt = null
@@ -1620,11 +1739,14 @@ export class LoadManager {
     rec.committed = true
     rec.resultId = resultId
     rec.metrics.fromCache = info.fromCache
+    // A wait the adapter did not clear ends here: a loaded job waits for
+    // nothing. The phases below close net of it (finishPhase folds it in).
     for (const p of rec.phases) {
       if (p.background) continue
       if (p.status === 'active') this.finishPhase(rec, p, now, 'done')
       else if (p.status === 'pending') p.status = 'skipped'
     }
+    this.dropExtWait(rec)
     rec.maxFraction = 1
     rec.determinate = true
     rec.status = 'loaded'
@@ -1640,9 +1762,12 @@ export class LoadManager {
       for (const [k, h] of this.holdings[lane]) if (h.jobId === rec.id && h.token === token) this.holdings[lane].delete(k)
     }
     if (rec.managed) {
+      // Every managed job is a load; only a model converts or hits the cache.
       let s = bump(this.session, 'jobsLoaded')
-      s = bump(s, info.fromCache ? 'cacheHits' : 'cacheMisses')
-      if (!info.fromCache) s = bump(s, 'bytesConverted', rec.sizeBytes)
+      if (isModelJob(rec)) {
+        s = bump(s, info.fromCache ? 'cacheHits' : 'cacheMisses')
+        if (!info.fromCache) s = bump(s, 'bytesConverted', rec.sizeBytes)
+      }
       this.session = s
     }
     this.applyRetention(rec, 'loaded')
@@ -1778,6 +1903,8 @@ export class LoadManager {
   }
 
   private finishPhase(rec: JobRecord, p: PhaseState, now: number, status: 'done' | 'failed'): void {
+    // A viewer / budget wait still open is not this phase's work either.
+    if (rec.extWait !== null && !p.background) this.foldExtWait(rec, now)
     p.status = status
     p.endedAt = now
     if (status === 'done' && p.fraction !== null) p.fraction = 1
@@ -1790,7 +1917,9 @@ export class LoadManager {
     const net = Math.max(0, wall - rec.activeWaitMs)
     rec.metrics.phaseDurations = { ...rec.metrics.phaseDurations, [p.id]: net }
     if (status === 'done') {
-      if (rec.managed) this.session = recordPhase(this.session, p.id, net, rec.sizeBytes)
+      // The ms/MB calibration is an IFC figure: a LAZ's `decode` or a glTF's
+      // `place` would otherwise be averaged into — or predict — a model's phases.
+      if (isModelJob(rec)) this.session = recordPhase(this.session, p.id, net, rec.sizeBytes)
       if (!LIGHT_PHASES.has(p.id)) rec.heavyStarted = true
     }
     rec.activeWaitMs = 0
@@ -1898,6 +2027,7 @@ export class LoadManager {
     const eta = computeEta({
       phases: rec.phases,
       sizeBytes: rec.sizeBytes,
+      kind: rec.kind,
       msPerMB: this.session.msPerMB,
       now,
       activePhaseStartedAt: active?.startedAt !== undefined ? active.startedAt + rec.activeWaitMs : null,
@@ -1955,13 +2085,63 @@ export class LoadManager {
     if (repump && rec.waits.has('convert')) this.pump()
   }
 
+  // ── Adapter-reported waits ──────────────────────────────────────────────────
+
+  /**
+   * `ctx.setWaiting`: the attempt is blocked on something that is not a lane
+   * (the resident-point budget, a viewer not up yet). The row reads `waiting`
+   * with that reason instead of `running` with a bar that does not move — and
+   * the time is kept out of the phase's duration like a lane wait is.
+   */
+  private setExtWait(rec: JobRecord, token: number, reason: WaitReason | null): void {
+    if (rec.token !== token || rec.epoch !== this.epoch || !this.isCurrent(rec)) return
+    if (reason !== null && !WAIT_REASONS.has(reason)) {
+      rec.log.warn('setWaiting ignored: unknown reason', { reason: String(reason) })
+      return
+    }
+    // Only a live, uncommitted attempt waits; a late call from a settled or
+    // committed one must not flip a loaded / cancelled row back to `waiting`.
+    if (rec.committed || rec.cancelRequested || !ACTIVE_STATUSES.has(rec.status)) return
+    if (rec.extWait === reason) return
+    const now = this.now()
+    if (rec.extWait !== null) this.foldExtWait(rec, now)
+    rec.extWait = reason
+    rec.extWaitSince = reason === null ? null : now
+    // Waiting is not silence: the stall clock restarts both ways.
+    rec.metrics.lastActivityAt = now
+    rec.stalled = false
+    rec.log.info(reason === null ? 'wait over' : `waiting: ${reason}`, { phase: rec.phase ?? undefined })
+    this.touch(rec)
+    this.refreshStatus(rec)
+    // A job that stopped (or resumed) waiting changes the summary either way.
+    this.markChanged()
+  }
+
+  /** Charge the open adapter wait so far to the active phase's wait time, not its work. */
+  private foldExtWait(rec: JobRecord, now: number): void {
+    const since = rec.extWaitSince
+    if (since === null) return
+    let activeStart: number | undefined
+    for (const p of rec.phases) if (p.status === 'active' && !p.background) activeStart = p.startedAt
+    if (activeStart !== undefined) rec.activeWaitMs += Math.max(0, now - Math.max(since, activeStart))
+    rec.extWaitSince = now
+  }
+
+  /** The attempt settled (or committed): whatever it said it waited for is over. */
+  private dropExtWait(rec: JobRecord): void {
+    rec.extWait = null
+    rec.extWaitSince = null
+  }
+
   // ── Status ──────────────────────────────────────────────────────────────────
 
   /**
    * Derive the coarse status of an active job from its facts. `queued` means
    * "has not done heavy work yet" — a job that only sniffed its header and is
    * now waiting for a convert slot is still queued; one that converted and
-   * now waits for the attach lane is `waiting`, with the reason.
+   * now waits for the attach lane is `waiting`, with the reason. So is one
+   * that queues from INSIDE a phase that does work (see inStartedPhase). A wait
+   * the adapter reported (`setWaiting`) shows only when no lane wait says more.
    */
   private refreshStatus(rec: JobRecord, quiet = false): void {
     if (!ACTIVE_STATUSES.has(rec.status) || rec.committed) return
@@ -1974,8 +2154,11 @@ export class LoadManager {
       reason = 'backoff'
     } else if (rec.waits.size > 0) {
       for (const w of rec.waits.values()) if (w.reason !== null) { reason = w.reason; break }
-      status = rec.heavyStarted ? 'waiting' : 'queued'
+      status = rec.heavyStarted || this.inStartedPhase(rec) ? 'waiting' : 'queued'
       if (status === 'waiting' && reason === null) reason = 'slot'
+    } else if (rec.extWait !== null) {
+      status = 'waiting'
+      reason = rec.extWait
     } else if ((rec.running || !rec.managed) && (rec.attemptStartedPhase || rec.heavyStarted)) {
       // Tracked jobs have no run() here: entering a phase is what "running" means.
       status = 'running'
@@ -1990,6 +2173,25 @@ export class LoadManager {
     if (status !== prev) rec.log.info(`${prev} → ${status}`, { reason: reason ?? undefined })
     if (status === 'waiting' && reason !== null) this.emitJob('waiting', rec, { reason })
     else if (!quiet) this.markChanged()
+  }
+
+  /**
+   * Is the job waiting on a lane from inside a phase that already does work?
+   * `heavyStarted` only sees FINISHED phases and lane grants. The IFC adapter
+   * closes a phase before it queues, but a scan queues for the attach lane
+   * (the anchor rule) in the middle of `place`: that row had been `running`,
+   * and flipping it back to `queued` would read as "not started" behind an
+   * IFC it is only waiting for. A light phase does not count, nor a
+   * background one, nor a phase whose own lane is the one it waits for — a
+   * download queued for its network slot has downloaded nothing yet.
+   */
+  private inStartedPhase(rec: JobRecord): boolean {
+    for (const p of rec.phases) {
+      if (p.status !== 'active' || p.background || LIGHT_PHASES.has(p.id)) continue
+      const own = OWN_LANE[p.id]
+      if (own === undefined || !rec.waits.has(own)) return true
+    }
+    return false
   }
 
   // ── Lanes ───────────────────────────────────────────────────────────────────
@@ -2129,7 +2331,7 @@ export class LoadManager {
       }
     }
 
-    const waiting: Record<Lane, JobRecord[]> = { network: [], convert: [], attach: [] }
+    const waiting: Record<Lane, JobRecord[]> = { network: [], convert: [], attach: [], decode: [] }
     for (const rec of this.jobs.values()) {
       for (const lane of rec.waits.keys()) waiting[lane].push(rec)
       // Effective priority is a view field: recompute it for everyone waiting.
@@ -2193,6 +2395,29 @@ export class LoadManager {
         now,
       })
       this.applyDecision('attach', d.grant === null ? [] : [d.grant], d.blocked, now)
+    }
+
+    // Non-IFC decoders (point clouds, meshes): plain slots in order, aging
+    // included. No anchor rule — a mesh that must land after the anchor waits
+    // for it on the attach lane — and no memory admission: a scan is bounded
+    // by the resident-point budget, which its runner enforces.
+    //
+    // One pool per KIND, each with the lane's capacity. A scan parked on the
+    // point budget keeps its slot — its worker already holds the file (a LAZ
+    // sits whole in its WASM heap), and releasing the slot would let more
+    // parked workers pile that up — but a mesh needs no point budget, and
+    // must not wait for another scan's whole parse behind it.
+    if (waiting.decode.length > 0) {
+      const holders = [...this.holdings.decode.values()]
+      for (const kind of new Set(waiting.decode.map((r) => r.kind))) {
+        const d = decideSlots({
+          holders: holders.filter((h) => this.jobs.get(h.jobId)?.kind === kind).map((h) => ({ jobId: h.key })),
+          candidates: waiting.decode.filter((r) => r.kind === kind).map((rec) => this.candidate(rec, 'decode')),
+          max: this.policy.maxConcurrentDecodes(),
+          now,
+        })
+        this.applyDecision('decode', d.grant, d.blocked, now)
+      }
     }
   }
 
@@ -2358,13 +2583,19 @@ export class LoadManager {
       cancel: active && (rec.managed || rec.onCancel !== null),
       retry: rec.managed && adapter !== null && rec.source !== null &&
         (s === 'cancelled' || (s === 'failed' && rec.error?.userRetryable === true)),
-      hold: rec.managed && (s === 'queued' || s === 'waiting') && !this.hasHoldings(rec, rec.token),
+      // A job waiting on its adapter (budget, viewer) is mid-run between lanes:
+      // "held" would read as parked while it goes on the moment the wait ends.
+      hold: rec.managed && (s === 'queued' || s === 'waiting') && !this.hasHoldings(rec, rec.token) &&
+        rec.extWait === null,
       resume: s === 'held',
       reprioritize: rec.managed && (s === 'queued' || s === 'waiting' || s === 'held'),
       reload: rec.managed && s === 'loaded' && rec.resultId !== null && !!adapter?.unload &&
         (rec.source !== null || !!adapter.reloadSource),
       remove: s === 'loaded' && (rec.managed ? rec.resultId !== null && !!adapter?.unload : rec.onCancel !== null),
       dismiss: TERMINAL_STATUSES.has(s),
+      // IFC is framed by the app (controller → focusModel), anything else by its adapter.
+      focus: s === 'loaded' && rec.resultId !== null &&
+        (rec.kind === 'ifc' ? rec.managed : typeof adapter?.focus === 'function'),
     }
   }
 
@@ -2443,7 +2674,7 @@ export class LoadManager {
         const w = this.progressWeight(r)
         weights += w
         weighted += w * r.maxFraction
-        if (r.managed && WORKING.has(r.status)) s.managedActive++
+        if (isModelJob(r) && WORKING.has(r.status)) s.managedActive++
         if (!s.measuring && r.status !== 'held') {
           for (const p of r.phases) {
             if (p.status === 'active' && !p.background && p.fraction !== null) { s.measuring = true; break }

@@ -369,6 +369,9 @@ export const RENDER_BUDGET_DEFAULT = 4_000_000
 export const BYTES_PER_POINT = 18
 
 // ── Worker protocol ────────────────────────────────────────────────────────────
+//
+// Whole file:  parse → header · (budget) · progress×n, chunk×n · done | error
+// Streaming:   stream-open → header, index · (stream-nodes → node×n, nodes-done)×n
 
 /**
  * Streaming protocol for COPC, alongside the one-shot `parse`.
@@ -413,17 +416,41 @@ export interface StreamIndexNode {
   pointCount: number
 }
 
+/**
+ * One-shot parse of a whole file.
+ *
+ * Carries NO point budget. The worker opens the file, posts `header`, and then
+ * waits for a `budget` grant before it reads a single point — see
+ * PointCloudBudgetGrant for why the budget can only be decided after the header.
+ */
 export interface PointCloudParseRequest {
   type: 'parse'
   id: string
   file: File
   format: PointCloudFormat
-  maxPoints: number
   chunkPoints: number
+}
+
+/**
+ * The runner's reply to a whole-file `header`: how many points this parse may
+ * keep resident.
+ *
+ * Granted AFTER the header on purpose. The resident-point cap is shared by every
+ * cloud, and a budget read when the parse was requested could only be "whatever
+ * is left right now" — so two scans opened together each read the same
+ * remainder and together blew the cap N times over. Waiting for the header lets
+ * the runner reserve what this file actually declares, and queue it when
+ * another scan still holds the rest.
+ */
+export interface PointCloudBudgetGrant {
+  type: 'budget'
+  id: string
+  maxPoints: number
 }
 
 export type PointCloudWorkerIn =
   | PointCloudParseRequest
+  | PointCloudBudgetGrant
   | PointCloudStreamOpenRequest
   | PointCloudStreamNodesRequest
   | PointCloudStreamCloseRequest
@@ -432,6 +459,15 @@ export type PointCloudWorkerIn =
 export type PointCloudWorkerOut =
   | { type: 'header'; id: string; frame: SourceFrame; attributes: PointAttributesPresent; declaredCount: number | null }
   | { type: 'chunk'; id: string; chunk: PointChunk; progress: number }
+  /**
+   * Read progress, independent of chunks: `fraction` 0-1 as the reader reports
+   * it, `points` decoded so far. Throttled in the worker.
+   *
+   * Exists because chunks are a poor clock. The chunker only emits when a voxel
+   * cell fills, so a compact cloud — a room, a single object — posts nothing
+   * until the final flush and sat at 0 % for its whole parse.
+   */
+  | { type: 'progress'; id: string; fraction: number; points: number }
   /** The octree index, once, in reply to `stream-open`. */
   | {
       type: 'index'
