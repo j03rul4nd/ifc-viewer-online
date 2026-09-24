@@ -37,7 +37,34 @@ describe('landmarks', () => {
     for (const l of LANDMARKS) expect(shipped).toContain(l.asset)
   })
 
-  it('names unique features', () => {
-    expect(new Set(LANDMARKS.map((l) => l.featureId)).size).toBe(LANDMARKS.length)
+  it('finds a building by its parts, when the parser stood its outline down', () => {
+    // The Casa del Guarda's outline w672895475 never reaches the scene.
+    expect(landmarksIn([{ id: 'w672896035' }]).map((l) => l.asset)).toEqual(['casa-del-guarda'])
+  })
+
+  it('keeps the park a point monument is keyed on', () => {
+    const found = landmarksIn([{ id: 'w66713401' }])
+    expect(found.map((l) => l.asset).sort()).toEqual(['portic-bugadera', 'turo-tres-creus'])
+    expect(replacedFeatureIds(found).has('w66713401')).toBe(false)
+  })
+
+  it('finds a landmark nothing mapped stands for by the loaded area', () => {
+    const at = LANDMARKS.find((l) => l.asset === 'torre-calatrava')!.origin
+    const box = (lat: number, lon: number) => ({ south: lat - 0.005, north: lat + 0.005, west: lon - 0.005, east: lon + 0.005 })
+    expect(landmarksIn([], box(at.lat, at.lon)).map((l) => l.asset)).toContain('torre-calatrava')
+    expect(landmarksIn([], box(at.lat + 0.02, at.lon))).toEqual([])
+  })
+
+  it('places the twin Venetian towers from one model, each at its own centroid', () => {
+    const twins = landmarksIn([{ id: 'w305825427' }, { id: 'w305825428' }])
+    expect(twins.map((l) => l.asset)).toEqual(['torre-veneciana', 'torre-veneciana'])
+    expect(twins[0].origin).not.toEqual(twins[1].origin)
+  })
+
+  it('replaces each mapped feature with at most one model', () => {
+    const replaced = LANDMARKS.flatMap((l) => [...replacedFeatureIds([l])])
+    expect(new Set(replaced).size).toBe(replaced.length)
+    const placed = LANDMARKS.map((l) => `${l.asset}@${l.origin.lat},${l.origin.lon}`)
+    expect(new Set(placed).size).toBe(placed.length)
   })
 })
