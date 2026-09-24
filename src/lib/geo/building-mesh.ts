@@ -22,6 +22,7 @@ import {
   defaultRoofShape, defaultRoofFraction, hashId, variate, type FacadeContext,
 } from './feature-variation'
 import { createGroundFrame } from './ground-frame'
+import { GrowableArray, type NumberSink } from './growable-array'
 import type { BuildingHeight } from './buildings'
 import type { FeatureStyle } from './osm-features'
 
@@ -192,12 +193,13 @@ export function buildBuildingsGeometry(
   /** Facade contrast, 0-1. Discreet context keeps the mass and drops the detail. */
   const contrast = neutral ? 0.25 : 1
 
-  const positions: number[] = []
+  // Typed, growing sinks — see growable-array.
+  const positions = new GrowableArray('f64')
   const ranges: BuildingRange[] = []
-  const normals: number[] = []
+  const normals = new GrowableArray('f32')
   // Vertex colours carry a subtle height gradient, so a block of flat-topped
   // extrusions still reads as three-dimensional under an unlit material.
-  const colors: number[] = []
+  const colors = new GrowableArray('f32')
 
   let count = 0
   let estimatedCount = 0
@@ -205,9 +207,9 @@ export function buildBuildingsGeometry(
   // The procedural facade's inputs, per vertex. Zero-filled for everything that
   // is not a procedural wall (roofs, banded facades), which the shader reads as
   // "not mine".
-  const facA: number[] = []
-  const facB: number[] = []
-  const facC: number[] = []
+  const facA = new GrowableArray('f32')
+  const facB = new GrowableArray('f32')
+  const facC = new GrowableArray('f32')
   const padFacade = (): void => {
     const n = positions.length
     while (facA.length < (n / 3) * 4) { facA.push(0, 0, 0, 0); facB.push(0, 0, 0, 0); facC.push(0, 0, 0, 0) }
@@ -568,14 +570,14 @@ export function buildBuildingsGeometry(
   if (count === 0) return null
 
   const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions.toFloat32(), 3))
+  geometry.setAttribute('normal', new THREE.BufferAttribute(normals.toFloat32(), 3))
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors.toFloat32(), 3))
   if (facA.length > 0) {
     padFacade()
-    geometry.setAttribute('aFacA', new THREE.Float32BufferAttribute(facA, 4))
-    geometry.setAttribute('aFacB', new THREE.Float32BufferAttribute(facB, 4))
-    geometry.setAttribute('aFacC', new THREE.Float32BufferAttribute(facC, 4))
+    geometry.setAttribute('aFacA', new THREE.BufferAttribute(facA.toFloat32(), 4))
+    geometry.setAttribute('aFacB', new THREE.BufferAttribute(facB.toFloat32(), 4))
+    geometry.setAttribute('aFacC', new THREE.BufferAttribute(facC.toFloat32(), 4))
   }
   geometry.computeBoundingSphere()
 
@@ -799,7 +801,7 @@ const PARAPET_SHARE = 0.22
  * geometric window reveals nobody can resolve from across a street.
  */
 function pushDetailedWall(
-  positions: number[], normals: number[], colors: number[],
+  positions: NumberSink, normals: NumberSink, colors: NumberSink,
   p0: THREE.Vector2, p1: THREE.Vector2,
   nx: number, ny: number,
   baseZ: number, topZ: number,
@@ -952,7 +954,7 @@ export function orientedFootprint(ring: ReadonlyArray<THREE.Vector2>): {
  * to the street it terminates, shallow depth front to back.
  */
 function pushArch(
-  positions: number[], normals: number[], colors: number[],
+  positions: NumberSink, normals: NumberSink, colors: NumberSink,
   ring: ReadonlyArray<THREE.Vector2>,
   metresToNormalized: number,
   groundZ: number,
@@ -1116,7 +1118,7 @@ function projectToAxis(
 }
 
 function pushTriangle(
-  positions: number[], normals: number[], colors: number[],
+  positions: NumberSink, normals: NumberSink, colors: NumberSink,
   a: THREE.Vector2, b: THREE.Vector2, c: THREE.Vector2,
   az: number, bz: number, cz: number,
   nx: number, ny: number, nz: number,

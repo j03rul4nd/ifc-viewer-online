@@ -22,6 +22,7 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { createLogger } from '../logger'
+import { mapLimited } from './render-scheduler'
 
 const log = createLogger('PropsAssets')
 
@@ -157,6 +158,58 @@ export function loadPropAsset(name: LoadableAsset): Promise<THREE.BufferGeometry
  * key, not a rejection, so showcase mode degrades asset by asset instead of
  * all-or-nothing.
  */
+/**
+ * Which assets THIS scene can use, most visible first.
+ *
+ * Showcase used to download the whole kit — 36 files, ~800 KB — for any site:
+ * boats for a street with no water, carriages where there is no track, both
+ * Barcelona's furniture and the generic set everywhere. Asking the scene first
+ * means a Poblenou block downloads its trees, roof kit and signals, and a
+ * marina adds its boats only when the scenery switch is on.
+ *
+ * Order is download order: what the data draws (roofs, trees, signals,
+ * furniture) before what is invented (cars, boats, trains).
+ */
+export function neededPropAssets(
+  features: ReadonlyArray<{ kind: string; style?: { pierKind?: string; railKind?: string } }>,
+  ctx: { scenery: boolean; barcelona: boolean; signals: boolean },
+): PropAsset[] {
+  const has = (k: string) => features.some((f) => f.kind === k)
+  const out: PropAsset[] = []
+  const add = (...names: PropAsset[]) => { for (const n of names) if (!out.includes(n)) out.push(n) }
+  if (has('building')) add('roof-hvac', 'roof-stairbox', 'roof-tank', 'roof-chimney')
+  if (has('tree') || has('green')) add('tree-broadleaf', 'tree-olive', 'tree-palm', 'tree-columnar', 'tree-blossom', 'tree-conifer')
+  if (ctx.signals && has('signal')) add(ctx.barcelona ? 'traffic-signal-bcn' : 'traffic-signal', 'ped-signal')
+  if (has('furniture')) {
+    add(ctx.barcelona ? 'bench-bcn' : 'bench', ctx.barcelona ? 'waste-basket-bcn' : 'litter-bin',
+      'bollard', 'lamp-park-bcn', ctx.barcelona ? 'lamp-street-bcn' : 'street-lamp', 'fountain-bcn')
+  }
+  const rail = features.some((f) => f.kind === 'rail' && f.style?.railKind !== 'platform')
+  if (rail) add('catenary-mast')
+  if (ctx.scenery && has('road')) {
+    add('car', 'van', 'bus', ctx.barcelona ? 'lamp-street-bcn' : 'street-lamp',
+      ctx.barcelona ? 'bench-bcn' : 'bench', 'bench', 'litter-bin', 'bollard', 'bus-shelter')
+  }
+  if (ctx.scenery && rail) add('train-carriage', 'train-cab', 'platform-canopy')
+  if (ctx.scenery && features.some((f) => f.kind === 'pier' && f.style?.pierKind === 'deck')) {
+    add('boat-motor', 'boat-sail', 'boat-small')
+  }
+  return out
+}
+
+/**
+ * Load a list of assets, at most `concurrency` downloads in flight, in order.
+ * A failed asset is a missing key, as with `loadPropAssets`.
+ */
+export async function loadPropAssetList(
+  names: ReadonlyArray<PropAsset>, concurrency = 4,
+): Promise<Map<PropAsset, THREE.BufferGeometry>> {
+  const out = new Map<PropAsset, THREE.BufferGeometry>()
+  const geos = await mapLimited(names, concurrency, (n) => loadPropAsset(n))
+  names.forEach((n, i) => { const g = geos[i]; if (g) out.set(n, g) })
+  return out
+}
+
 export async function loadPropAssets(): Promise<Map<PropAsset, THREE.BufferGeometry>> {
   const out = new Map<PropAsset, THREE.BufferGeometry>()
   const results = await Promise.all(

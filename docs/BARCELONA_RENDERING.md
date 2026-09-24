@@ -54,3 +54,36 @@ the scratchpad were served to the app from a local caching proxy (pointing
 - The àtic setback of Eixample buildings is not modelled (only the palette and
   storey rhythm). Chamfer facades use the same rhythm as the street facades.
 - Parks: playgrounds and pitches are drawn as green; no play equipment.
+
+## Loading without freezing the page (performance pass)
+
+Measured on the Glòries capture (the densest box), main-thread build of every
+layer at "Detailed":
+
+| | Before | After |
+|---|---|---|
+| Whole rebuild, one blocking task | ~6.2 s | ~1.5 s, split in phases |
+| Road layer | 3.66 s, 1 379 001 vertices | ~0.3 s, 278 325 vertices |
+| Longest task in the browser (Chromium, long-task observer) | the whole rebuild | 263 ms |
+
+- **Allocation, not maths, was the cost.** Profiled: GC 843 ms + the final
+  `number[]` → `Float32Array` copy 648 ms of a 1.4 s road build.
+  `growable-array.ts` writes straight into doubling typed arrays (Float64 for
+  positions, which are rebased before the float32 cast).
+- **Edge-marked crossings were 81 % of the road layer.** The line width was in
+  metres where the rest is normalized: 40 million times too wide, thousands of
+  km off the map, then subdivided to its cap.
+- **Cascade** (`render-scheduler.ts`): blocks are drawn in the first task; the
+  vertical solve, ground, roads, rail, furniture, bridges, trees and scenery
+  follow a phase at a time, handing the main thread back between phases with
+  `scheduler.yield()` (fallbacks: `scheduler.postTask`, MessageChannel,
+  `setTimeout`). Each layer is double-buffered — the old one stays until its
+  replacement exists — and a newer rebuild cancels an older one mid-way.
+- **Shaders** are compiled with `renderer.compileAsync` (`KHR_parallel_shader_compile`)
+  before a layer joins the scene, so no first frame freezes on a compile.
+- **Device budget**: `deviceMemory`, `hardwareConcurrency`, `saveData` /
+  `effectiveType` and a software-rasteriser check (SwiftShader, llvmpipe) set
+  the download concurrency and drop invented scenery on weak devices.
+- **Assets on demand**: showcase asks only for what the scene can draw
+  (`neededPropAssets`), data before scenery, a few downloads at a time; a later
+  scene adds a batch instead of re-downloading the kit.

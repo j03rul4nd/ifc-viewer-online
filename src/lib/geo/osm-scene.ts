@@ -25,6 +25,7 @@
 // a river has no idea where its own bank is.
 
 import * as THREE from 'three'
+import { GrowableArray } from './growable-array'
 import { appendRailDetail } from './rail-detail'
 import {
   laneDividers, arrowOffsets, arrowPlacements, offsetByFraction,
@@ -1449,8 +1450,9 @@ export function buildLinearLayer(
    */
   let lift = baseLift
 
-  const positions: number[] = []
-  const colors: number[] = []
+  // Typed, growing sinks — see growable-array for the 1.5 s this saves.
+  const positions = new GrowableArray('f64')
+  const colors = new GrowableArray('f32')
   /** Where to stand an overhead line mast, for electrified track. */
   const masts: Mast[] = []
   let count = 0
@@ -1978,7 +1980,7 @@ export function buildLinearLayer(
         const a=closed[i-1], b=closed[i]
         const za=structuralZ(a.x,a.y)+lift, zb=structuralZ(b.x,b.y)+lift
         const vertices=[[a.x,a.y,za],[b.x,b.y,zb],[b.x,b.y,zb+platformLift],[a.x,a.y,za+platformLift]]
-        for(const j of [0,1,2,0,2,3]) { positions.push(...vertices[j]); colors.push(...tone.map(c=>c*.72)) }
+        for(const j of [0,1,2,0,2,3]) { const v=vertices[j]; positions.push(v[0],v[1],v[2]); colors.push(tone[0]*.72,tone[1]*.72,tone[2]*.72) }
       }
       for (const quad of bufferCentreline(closed, (PLATFORM_EDGE_M / 2) * mToN)) {
         pushQuad(quad, PLATFORM_EDGE, platformLift + 0.02 * mToN)
@@ -2005,7 +2007,13 @@ export function buildLinearLayer(
         // mark its two long EDGES, which is a different drawing entirely.
         // Barcelona states one of them on 56 crossing ways, `dots` alone on 37,
         // and each was being painted as a zebra.
-        const edge = EDGE_LINE_M / 2
+        // In NORMALIZED units, like `half`. It was metres, which made each edge
+        // line ~40 million times too wide and offset it thousands of km off the
+        // map, where the ground subdivision then split it to its recursion
+        // cap: measured on the Glòries capture, 220 crossings came to 1.12
+        // million vertices — 81 % of the whole road layer — for paint nobody
+        // could see.
+        const edge = (EDGE_LINE_M / 2) * mToN
         const [dash, gap] = markings === 'edges'
           ? [0, 0]
           : markings === 'dashes'
@@ -2496,13 +2504,10 @@ export function buildLinearLayer(
   // At Shanghai's longitude Float32 Mercator loses ~1 m. Rebase BEFORE casting
   // so centimetre railings and curved fascia survive into the GPU buffer.
   const linearOrigin = latLonToNormalized(opts.anchorLat, opts.anchorLon ?? 0)
-  for (let i = 0; i < positions.length; i += 3) {
-    positions[i] -= linearOrigin.nx
-    positions[i + 1] -= linearOrigin.ny
-  }
+  positions.rebase(linearOrigin.nx, linearOrigin.ny)
   const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions.toFloat32(), 3))
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors.toFloat32(), 3))
   geometry.computeVertexNormals()
   geometry.computeBoundingSphere()
 
@@ -2524,16 +2529,23 @@ export function buildLinearLayer(
       solidMaterial.transparent = false
       solidMaterial.depthWrite = true
       solidMaterial.polygonOffset = false
-      const groundIndices: number[] = [], solidIndices: number[] = []
+      // Straight into a typed index: the spread of two number[] this used to
+      // build was a million-element copy on every road rebuild.
+      const vertexCount = positions.length / 3
+      let solidCount = 0
+      for (const [start, end] of solidRanges) solidCount += Math.max(0, end - start)
+      const index = new Uint32Array(vertexCount)
+      let g = 0
+      let sIdx = vertexCount - solidCount
       let cursor = 0
       for (const [start, end] of solidRanges) {
-        for (; cursor < start; cursor++) groundIndices.push(cursor)
-        for (; cursor < end; cursor++) solidIndices.push(cursor)
+        for (; cursor < start; cursor++) index[g++] = cursor
+        for (; cursor < end; cursor++) index[sIdx++] = cursor
       }
-      for (; cursor < positions.length / 3; cursor++) groundIndices.push(cursor)
-      geometry.setIndex([...groundIndices, ...solidIndices])
-      geometry.addGroup(0, groundIndices.length, 0)
-      geometry.addGroup(groundIndices.length, solidIndices.length, 1)
+      for (; cursor < vertexCount; cursor++) index[g++] = cursor
+      geometry.setIndex(new THREE.BufferAttribute(index, 1))
+      geometry.addGroup(0, g, 0)
+      geometry.addGroup(g, solidCount, 1)
       materials = [groundMaterial, solidMaterial]
     }
     const paved = new THREE.Mesh(geometry, materials)

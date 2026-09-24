@@ -781,6 +781,33 @@ describe('buildLinearLayer — corners', () => {
   })
 })
 
+// Non-zebra crossings (`dots`, `dashes`, `edges`) mark the two EDGES of the
+// crossing. The edge width was in metres where the rest is normalized: each
+// line came out ~40 million times too wide, thousands of km off the map, and
+// was then subdivided to its cap — 1.12 M vertices for 220 crossings in Glòries.
+describe('buildLinearLayer — edge-marked crossings', () => {
+  for (const markings of ['dots', 'dashes', 'edges'] as const) {
+    it(`keeps a ${markings} crossing small and on its own spot`, () => {
+      const dLon = 12 / (111_320 * Math.cos((LAT * Math.PI) / 180))
+      const crossing: OsmFeature = {
+        id: `x-${markings}`, kind: 'road',
+        ring: [{ lat: LAT, lon: LON }, { lat: LAT, lon: LON + dLon }],
+        height: { heightM: 0, minHeightM: 0, estimated: true },
+        widthM: 4,
+        style: { roofShape: 'flat', roofHeightM: 0, crossing: true, crossingMarkings: markings, roadClass: 'pedestrian' },
+      }
+      const built = buildLinearLayer([crossing], 'road', OPTS)!
+      const mesh = surfaceOf(built.object)
+      const pos = mesh.geometry.getAttribute('position')
+      expect(pos.count).toBeLessThan(400)
+      const box = new THREE.Box3().setFromBufferAttribute(pos as THREE.BufferAttribute)
+      const mToN = 1 / (40_075_016.686 * Math.cos((LAT * Math.PI) / 180))
+      expect((box.max.x - box.min.x) / mToN).toBeLessThan(20)
+      expect((box.max.y - box.min.y) / mToN).toBeLessThan(10)
+    })
+  }
+})
+
 describe('dashCentreline', () => {
   const line = [new THREE.Vector2(0, 0), new THREE.Vector2(10, 0)]
 

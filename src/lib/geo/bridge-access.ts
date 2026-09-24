@@ -3,6 +3,7 @@ import type { OsmFeature } from './osm-features'
 import { latLonToNormalized } from './geo-math'
 import { sampleProfile, type SolvedProfile } from './vertical-network'
 import { appendBridgeRailing } from './bridge-railing'
+import type { NumberSink } from './growable-array'
 
 export function accessPoint(p: {lat:number;lon:number}): THREE.Vector2 {
   const q=latLonToNormalized(p.lat,p.lon)
@@ -116,7 +117,7 @@ export function railingOutsideElevators(
 }
 /** Treads/riser geometry in the shipping mesh, including a closed stringer. */
 export function appendAccessFlight(
-  positions:number[],colors:number[], left0:THREE.Vector2,left1:THREE.Vector2,
+  positions:NumberSink,colors:NumberSink, left0:THREE.Vector2,left1:THREE.Vector2,
   right0:THREE.Vector2,right1:THREE.Vector2,z0:number,z1:number,unit:number,
   kind:'stairs'|'escalator', steps?:number,
 ):void {
@@ -151,7 +152,7 @@ export function appendAccessFlight(
 /** A mapped elevator shaft: estimated enclosure dimensions, actual XY and
  * connected deck height. Frame and doors distinguish it from a support pier. */
 export function appendAccessElevator(
-  positions:number[],colors:number[],at:THREE.Vector2,direction:THREE.Vector2,
+  positions:NumberSink,colors:NumberSink,at:THREE.Vector2,direction:THREE.Vector2,
   groundZ:number,deckZ:number,unit:number,
 ):void{
   const forward=direction.lengthSq()>.1?direction.clone():new THREE.Vector2(1,0)

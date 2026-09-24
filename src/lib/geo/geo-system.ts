@@ -29,9 +29,10 @@ import { createFacadeMaterial } from './facade-shader'
 import { buildVehicleLayer } from './props-scene'
 import { buildBarrierLayer, buildFurnitureLayer, buildPlacedSignalLayer } from './street-furniture'
 import { buildMarinaBoatLayer } from './marina-boats'
+import { yieldToMain, precompile, deviceBudget } from './render-scheduler'
 import { barcelonaFabric, barcelonaFacadeAt } from './barcelona-fabric'
 import { isBarcelona } from './barcelona-barris'
-import { loadPropAssets, loadShanghaiParkAssets } from './props-assets'
+import { loadPropAssetList, neededPropAssets, loadShanghaiParkAssets, type PropAsset } from './props-assets'
 import { isShanghai } from './shanghai-region'
 import { buildShanghaiParkDetails } from './shanghai-parks'
 import {
@@ -413,11 +414,16 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    */
   let contextTone: ContextTone = 'natural'
   /** Invalidates an asset fetch the user has already navigated away from. */
-  let assetEpoch = 0
+  /** Asset batches still downloading — see ensurePropAssets. */
+  let assetBatchesPending = 0
   /** Decorative vehicles. Not a feature layer: OSM does not map them. */
   let vehiclesEnabled = false
   /** Prop groups, disposed with the rest but not part of layerObjects. */
   const propObjects: THREE.Object3D[] = []
+  /** Bumped by every rebuild and teardown; a cascade phase from an older one stops. */
+  let layerGeneration = 0
+  /** Resolves when the current rebuild's last phase has landed. */
+  let layersSettled: Promise<void> = Promise.resolve()
   /** Authored props, once fetched. Null until showcase mode asks for them. */
   let propAssets: Map<string, THREE.BufferGeometry> | null = null
   let shanghaiAssets: Map<string, THREE.BufferGeometry> | null = null
@@ -1004,26 +1010,73 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * finished into nothing and was never asked for again: Showcase showed
    * procedural trees and cars, and no boats at all.
    */
-  let propAssetsLoading = false
+  //
+  // ON DEMAND, and in batches: only what the current scene can draw is asked
+  // for (see `neededPropAssets`), most visible first, a few downloads at a time
+  // — as many as the device budget allows — and a later scene that needs more
+  // (the scenery switch turned on, a marina in the next district) adds a batch
+  // instead of re-downloading the kit.
+  const propAssetsRequested = new Set<PropAsset>()
   function ensurePropAssets(): void {
-    if (propAssets || propAssetsLoading) return
-    propAssetsLoading = true
-    const epoch = ++assetEpoch
-    void loadPropAssets().then((assets) => {
-      propAssetsLoading = false
-      if (epoch !== assetEpoch) return
-      propAssets = assets
-      if (geoRoot && contextDetail === 'showcase') rebuildLayers()
+    if (!placement) return
+    const wanted = neededPropAssets(osmFeatures ?? [], {
+      scenery: vehiclesEnabled,
+      barcelona: isBarcelona(placement.lat, placement.lon),
+      signals: layerVisibility.signal,
+    })
+    const missing = wanted.filter((n) => !propAssetsRequested.has(n))
+    if (missing.length === 0) return
+    for (const n of missing) propAssetsRequested.add(n)
+    assetBatchesPending++
+    const concurrency = deviceBudget(ctx.renderer.getContext?.() ?? null).fetchConcurrency
+    void loadPropAssetList(missing, concurrency).then((assets) => {
+      propAssets = new Map([...(propAssets ?? new Map()), ...assets])
+      // One rebuild when the LAST outstanding batch lands, whatever order they
+      // finish in — a rebuild per batch would redo the whole cascade each time.
+      if (--assetBatchesPending === 0 && geoRoot && contextDetail === 'showcase') rebuildLayers()
     })
   }
 
   function rebuildLayers(): number {
     if (contextDetail === 'showcase') ensurePropAssets()
-    clearLayers()
-    for (const o of propObjects.splice(0)) { o.removeFromParent(); disposeLayer(o) }
+    // THE CASCADE. A new rebuild supersedes any still running: its generation
+    // is what every later phase checks before it touches the scene.
+    const gen = ++layerGeneration
+    if (!geoRoot || !placement || !osmFeatures) {
+      clearLayers()
+      buildingRanges = []
+      buildingsMesh = null
+      return 0
+    }
+    // DOUBLE-BUFFERED. The previous scene stays on screen while its
+    // replacement is built; each kind is swapped the moment its new objects
+    // exist. Clearing everything first, as this used to, blanked the whole
+    // district for the length of the build on every layer toggle.
+    const staged = new Map<FeatureKind, THREE.Object3D[]>()
+    const stagedProps: THREE.Object3D[] = []
+    const stage = (kind: FeatureKind, object: THREE.Object3D): void => {
+      const list = staged.get(kind)
+      if (list) list.push(object); else staged.set(kind, [object])
+    }
+    const commit = (kinds: ReadonlyArray<FeatureKind>): void => {
+      for (const kind of kinds) {
+        for (const old of layerObjects.get(kind) ?? []) {
+          const at = animatedLayers.indexOf(old)
+          if (at >= 0) animatedLayers.splice(at, 1)
+          disposeLayer(old)
+        }
+        layerObjects.delete(kind)
+        for (const object of staged.get(kind) ?? []) addLayer(kind, object)
+        staged.delete(kind)
+      }
+    }
     buildingRanges = []
     buildingsMesh = null
-    if (!geoRoot || !placement || !osmFeatures) return 0
+    const discard = (): void => {
+      for (const list of staged.values()) for (const o of list) disposeLayer(o)
+      staged.clear()
+      for (const o of stagedProps.splice(0)) disposeLayer(o)
+    }
 
     // Where the model stands, the model wins. Applied ONCE here rather than in
     // each builder: every layer reads this array, so one filter covers roads,
@@ -1101,29 +1154,6 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // The water mask goes in first: over a harbour the raster is measuring
     // moored ships, and no statistic can find ground in a window that has none.
     const waterMask = buildWaterMask(visibleFeatures, { mToN: metresToNormalized(placement!.lat) })
-    opts.vertical = solveSceneVertical(visibleFeatures, opts, waterMask)
-    if (import.meta.env.DEV) {
-      // Console-reachable, dev only. When a road is floating, the geometry
-      // cannot say why — every decision that produced it has been forgotten by
-      // the time it is a triangle. This is where they are still written down.
-      //   __geoVertical.summary()
-      //   __geoVertical.describe('w51')
-      //   __geoVertical.audit()          — which heights are guesses, worst first
-      //   __geoVertical.overlay(true)    — and where they are
-      const solvedNow = opts.vertical
-      ;(globalThis as Record<string, unknown>).__geoVertical = {
-        profiles: solvedNow,
-        summary: () => summariseProfiles(solvedNow.values()),
-        describe: (id: string) => {
-          const hit = solvedNow.get(id)
-          return hit ? describeProfile(hit) : `no vertical profile for "${id}"`
-        },
-        audit: () => describeAudit(auditVertical(solvedNow.values())),
-        overlay: (on = true, includeConfident = false) =>
-          setVerticalOverlay(on ? { includeConfident } : null),
-      }
-    }
-
     const parkDetails = buildShanghaiParkDetails(visibleFeatures, {
       ...opts, excludeAt: modelExclusion(), scenery: vehiclesEnabled,
       waterElevation: ring => groundFrameFor(opts).zAtElevationM(waterLevelM(ring, groundFrameFor(opts), false) + .15),
@@ -1167,7 +1197,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         // Above the flat tiles and the surface layers, so grade-level walls do
         // not z-fight with the basemap or with a park drawn under them.
         mesh.renderOrder = 5
-        addLayer('building', mesh)
+        stage('building', mesh)
         estimatedCount = built.estimatedCount
       }
 
@@ -1178,8 +1208,33 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // Not on the block-interior terraces: a chimney stack four metres up a
       // garden reads as an error, not as a roof.
       const roofProps = buildRoofPropLayer(footprints.filter((f) => !f.interior), opts)
-      if (roofProps) addLayer('building', roofProps.object)
+      if (roofProps) stage('building', roofProps.object)
     }
+    // The blocks go on screen NOW, in the same task: they are what a site view
+    // is read by, and the building count the caller wants comes from them.
+    commit(['building'])
+
+    // Everything else, a phase at a time, handing the main thread back between
+    // phases so what is ready gets painted and input is answered. Each phase's
+    // shader programs are compiled in parallel (KHR_parallel_shader_compile)
+    // before it joins the scene, so no first frame freezes on a compile.
+    const budget = deviceBudget(ctx.renderer.getContext?.() ?? null)
+    const alive = (): boolean => gen === layerGeneration && geoRoot !== null
+    const phase = async (kinds: ReadonlyArray<FeatureKind>): Promise<boolean> => {
+      if (!alive()) return false
+      // The staged objects themselves, parented to a holder for the compile;
+      // `commit` re-parents them under the map root.
+      const fresh = new THREE.Group()
+      for (const k of kinds) for (const o of staged.get(k) ?? []) fresh.add(o)
+      if (fresh.children.length > 0) await precompile(ctx.renderer, fresh, ctx.getActiveCamera(), ctx.scene)
+      if (!alive()) return false
+      commit(kinds)
+      await yieldToMain()
+      return alive()
+    }
+    const cascade = async (): Promise<void> => {
+    await yieldToMain()
+    if (!alive()) return
 
     // Ground cover, coarsest first: greenery, then bare ground over it, then
     // water on top — a river drawn under its own banks would vanish.
@@ -1191,7 +1246,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
         const group = new THREE.Group()
         if (built) group.add(built.object)
         if (detail) group.add(detail)
-        addLayer(layer, group)
+        stage(layer, group)
       }
       // What the layer could NOT draw. A park that fails to triangulate and a
       // park that was never in the data look identical on screen, and guessing
@@ -1199,6 +1254,35 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // builders count both and the number is said out loud here.
       reportSurfaceLoss(layer, visibleFeatures, built)
     }
+    if (!await phase(['green', 'sand', 'rock', 'water'])) return
+    // The vertical field — only the structures and the ways on them read it,
+    // so it is solved here, after the blocks and the ground are on screen,
+    // rather than in front of everything.
+    opts.vertical = solveSceneVertical(visibleFeatures, opts, waterMask)
+    if (import.meta.env.DEV) {
+      // Console-reachable, dev only. When a road is floating, the geometry
+      // cannot say why — every decision that produced it has been forgotten by
+      // the time it is a triangle. This is where they are still written down.
+      //   __geoVertical.summary()
+      //   __geoVertical.describe('w51')
+      //   __geoVertical.audit()          — which heights are guesses, worst first
+      //   __geoVertical.overlay(true)    — and where they are
+      const solvedNow = opts.vertical
+      ;(globalThis as Record<string, unknown>).__geoVertical = {
+        profiles: solvedNow,
+        summary: () => summariseProfiles(solvedNow.values()),
+        describe: (id: string) => {
+          const hit = solvedNow.get(id)
+          return hit ? describeProfile(hit) : `no vertical profile for "${id}"`
+        },
+        audit: () => describeAudit(auditVertical(solvedNow.values())),
+        overlay: (on = true, includeConfident = false) =>
+          setVerticalOverlay(on ? { includeConfident } : null),
+      }
+    }
+
+    await yieldToMain()
+    if (!alive()) return
 
     // Decks at the water's edge, after the water and before the roads that run
     // out along them. A pier stands IN the water it is drawn over, so it has to
@@ -1207,16 +1291,19 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (layerVisibility.pier) {
       const built = buildPierLayer(visibleFeatures, opts)
       reportSurfaceLoss('pier', visibleFeatures, built)
-      if (built) { addLayer('pier', built.object) }
+      if (built) { stage('pier', built.object) }
     }
+    if (!await phase(['pier'])) return
 
     // Ground ribbons before the things that sit on them: roads over greenery,
     // ballast over roads, bridges over everything.
     for (const layer of ['road', 'rail'] as const) {
-      if (!layerVisibility[layer]) continue
-      const built = buildLinearLayer(visibleFeatures, layer, opts)
-      reportSurfaceLoss(layer, visibleFeatures, built)
-      if (built) { addLayer(layer, built.object) }
+      if (layerVisibility[layer]) {
+        const built = buildLinearLayer(visibleFeatures, layer, opts)
+        reportSurfaceLoss(layer, visibleFeatures, built)
+        if (built) { stage(layer, built.object) }
+      }
+      if (!await phase([layer])) return
     }
 
     // Traffic signals are mapped data and get a layer switch like any other.
@@ -1226,7 +1313,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     }
     if (layerVisibility.signal) {
       const built = buildPlacedSignalLayer(visibleFeatures, streetOpts)
-      if (built) addLayer('signal', built.object)
+      if (built) stage('signal', built.object)
     }
     // Mapped benches, lamps, fountains, bins and bollards, and the fences,
     // walls and hedges of parks and gardens. Detail levels only: at 'simple'
@@ -1234,34 +1321,44 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (surfaceQuality() === 'detailed') {
       if (layerVisibility.furniture) {
         const built = buildFurnitureLayer(visibleFeatures, streetOpts)
-        if (built) addLayer('furniture', built.object)
+        if (built) stage('furniture', built.object)
       }
       if (layerVisibility.barrier) {
         const built = buildBarrierLayer(visibleFeatures, streetOpts)
-        if (built) addLayer('barrier', built.object)
+        if (built) stage('barrier', built.object)
       }
     }
+    if (!await phase(['signal', 'furniture', 'barrier'])) return
 
     // Scenery is NOT data. Separate flag, off by default, and the UI says so.
-    if (vehiclesEnabled) {
+    // Invented scenery last and cheapest to drop: on a device that cannot
+    // afford it (see render-scheduler) the cars and boats are skipped.
+    if (vehiclesEnabled && budget.heavyScenery) {
       const built = buildVehicleLayer(visibleFeatures, opts)
-      if (built) { geoRoot.add(built.object); propObjects.push(built.object) }
+      if (built) stagedProps.push(built.object)
       // Boats in the marinas' berths: invented, like the parked cars, so they
       // ride the same switch. Showcase only — they need the authored hulls.
       const boats = buildMarinaBoatLayer(visibleFeatures, { ...opts, waterAt: waterMask })
-      if (boats) { geoRoot.add(boats.object); propObjects.push(boats.object) }
-      if (parkDetails?.scenery.children.length) { geoRoot.add(parkDetails.scenery); propObjects.push(parkDetails.scenery) }
+      if (boats) stagedProps.push(boats.object)
+      if (parkDetails?.scenery.children.length) stagedProps.push(parkDetails.scenery)
     }
+    if (!alive()) { discard(); return }
+    for (const o of propObjects.splice(0)) disposeLayer(o)
+    for (const o of stagedProps.splice(0)) { geoRoot!.add(o); propObjects.push(o) }
+    await yieldToMain()
+    if (!alive()) { discard(); return }
 
     if (layerVisibility.bridge) {
       const built = buildBridgeLayer(visibleFeatures, opts)
-      if (built) { addLayer('bridge', built.object) }
+      if (built) { stage('bridge', built.object) }
     }
+    if (!await phase(['bridge'])) return
 
     if (layerVisibility.tree) {
       const built = buildTreeLayer(visibleFeatures, { ...opts, excludeAt: modelExclusion() })
-      if (built) { addLayer('tree', built.object) }
+      if (built) { stage('tree', built.object) }
     }
+    if (!await phase(['tree'])) return
 
     // Detail groups may have been constructed while their parent layer was off.
     if (parkDetails) for (const group of [parkDetails.water, parkDetails.green, parkDetails.scenery]) {
@@ -1275,6 +1372,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (verticalOverlayOpts) applyVerticalOverlay()
 
     fitShadowCamera()
+    }
+    layersSettled = cascade().finally(() => { if (gen !== layerGeneration) discard() })
     return estimatedCount
   }
 
@@ -1457,9 +1556,13 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   }
 
   function clearLayers(): void {
+    layerGeneration++
     for (const [, objs] of layerObjects) for (const obj of objs) disposeLayer(obj)
     layerObjects.clear()
     animatedLayers.length = 0
+    // The scenery goes with the layers. It used to survive `setBuildings(false)`
+    // and leak across `disable()`, standing in a district that was gone.
+    for (const o of propObjects.splice(0)) disposeLayer(o)
     // The overlay is rebuilt from the next solve rather than carried across it:
     // it describes a specific solved scene, and showing it over a different one
     // would be an instrument reporting on data it no longer holds. The REQUEST
@@ -1502,6 +1605,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       osmFeatures = osmCache.features
       if (osmFeatures.length === 0) return { status: 'empty' }
       const estimatedCount = rebuildLayers()
+      await layersSettled
       return {
         status: 'ready',
         counts: osmCache.counts,
@@ -1546,6 +1650,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
 
     osmFeatures = reply.features
     const estimatedCount = rebuildLayers()
+    await layersSettled
     return {
       status: 'ready', counts: reply.counts, estimatedCount,
       truncated: reply.truncated, overture: reply.overture,

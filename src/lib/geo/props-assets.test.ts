@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import * as THREE from 'three'
 import {
-  PROP_ASSETS, loadPropAsset, loadPropAssets, __clearPropAssetCache,
+  PROP_ASSETS, loadPropAsset, loadPropAssets, __clearPropAssetCache, neededPropAssets,
 } from './props-assets'
 
 const loadAsync = vi.fn()
@@ -94,5 +94,39 @@ describe('loadPropAssets', () => {
   it('never rejects, whatever the network does', async () => {
     loadAsync.mockRejectedValue(new Error('everything is on fire'))
     await expect(loadPropAssets()).resolves.toBeInstanceOf(Map)
+  })
+})
+
+describe('neededPropAssets', () => {
+  const f = (kind: string, style: Record<string, string> = {}) => ({ kind, style })
+
+  it('asks for nothing a scene cannot draw', () => {
+    const street = [f('building'), f('road'), f('tree')]
+    const out = neededPropAssets(street, { scenery: false, barcelona: false, signals: false })
+    expect(out).toContain('tree-broadleaf')
+    expect(out).toContain('roof-hvac')
+    for (const n of ['boat-motor', 'train-carriage', 'car', 'bench-bcn', 'traffic-signal'] as const) {
+      expect(out).not.toContain(n)
+    }
+  })
+
+  it('adds the marina boats only with scenery on and a pontoon in the data', () => {
+    const port = [f('pier', { pierKind: 'deck' }), f('road')]
+    expect(neededPropAssets(port, { scenery: false, barcelona: true, signals: false })).not.toContain('boat-sail')
+    expect(neededPropAssets(port, { scenery: true, barcelona: true, signals: false })).toContain('boat-sail')
+  })
+
+  it('downloads what the data draws before what is invented', () => {
+    const all = [f('building'), f('tree'), f('road'), f('signal'), f('furniture'), f('rail'), f('pier', { pierKind: 'deck' })]
+    const out = neededPropAssets(all, { scenery: true, barcelona: true, signals: true })
+    expect(out.indexOf('roof-hvac')).toBeLessThan(out.indexOf('car'))
+    expect(out.indexOf('bench-bcn')).toBeLessThan(out.indexOf('boat-motor'))
+    expect(new Set(out).size).toBe(out.length)
+  })
+
+  it('picks the regional set by place', () => {
+    const park = [f('furniture'), f('signal')]
+    expect(neededPropAssets(park, { scenery: false, barcelona: true, signals: true })).toContain('bench-bcn')
+    expect(neededPropAssets(park, { scenery: false, barcelona: false, signals: true })).toContain('bench')
   })
 })
