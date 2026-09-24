@@ -73,3 +73,10 @@ From the 2026 launch-video grammar (Raycast/Framer/Vercel-style launches, short-
 - `project.sfx = { cues, volume }`; `cueAt(kind, at)` places a cue so its audible moment (whoosh peak, riser end) lands on `at`.
 - Director (`planSfx`): whoosh on every cut; *full* adds a hit on slammed titles/CTA, ticks as words land, a riser into the last shot, a boom when the building finishes rising.
 - Export mixes music + effects through a limiter (`masterBus`), preview plays them live from the playhead. Verified: peaks land on the cues, no clipping with music.
+
+## Zoom through / pull-out
+
+- `ShotSpec.pathTiming: 'even'` + `zoomKeyframes()` (geometrically spaced distances) = exponential "infinite" zoom with constant apparent speed.
+- `zoomThrough`: accelerating push (`easeIn`) from outside, through the facade, into the middle storey — the next storey shot (a single pick is the middle one) continues from there.
+- `pullOut`: from ~1 m off the selected element, or the middle storey's facade, back to the whole building (linear on the geometric path).
+- Both are in the Launch 2026 templates: pullOut → buildup → zoomThrough → storey → systems → closing.

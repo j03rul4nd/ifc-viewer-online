@@ -339,7 +339,9 @@
         "buildup": "L’edifici creix",
         "ids": "Errors IDS",
         "bcf": "Temes BCF",
-        "fixed": "El que s’ha arreglat"
+        "fixed": "El que s’ha arreglat",
+        "zoomThrough": "Zoom que travessa",
+        "pullOut": "Allunyament d’escala"
       },
       "sectionHint": {
         "hero": "Allunya la càmera fins al model sencer, amb el títol",
@@ -354,7 +356,9 @@
         "buildup": "Una volta mentre les plantes apareixen de baix a dalt",
         "ids": "Cada especificació IDS fallida, amb els elements ressaltats",
         "bcf": "Cada tema BCF des del seu punt de vista",
-        "fixed": "Incidències de la validació anterior que ja no hi són"
+        "fixed": "Incidències de la validació anterior que ja no hi són",
+        "zoomThrough": "Una empenta que accelera, travessa la façana i entra en una planta",
+        "pullOut": "D’un metre d’un detall fins a l’edifici sencer"
       },
       "empty": {
         "storeys": "Aquest model no té plantes",

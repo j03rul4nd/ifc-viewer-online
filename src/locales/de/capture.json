@@ -339,7 +339,9 @@
         "buildup": "Das Gebäude wächst",
         "ids": "IDS-Fehler",
         "bcf": "BCF-Themen",
-        "fixed": "Was behoben wurde"
+        "fixed": "Was behoben wurde",
+        "zoomThrough": "Durchflug",
+        "pullOut": "Rückfahrt"
       },
       "sectionHint": {
         "hero": "Rückzug auf das ganze Modell, mit Titel",
@@ -354,7 +356,9 @@
         "buildup": "Eine Runde, während die Geschosse von unten nach oben erscheinen",
         "ids": "Jede nicht erfüllte IDS-Spezifikation, fehlerhafte Elemente hervorgehoben",
         "bcf": "Jedes BCF-Thema aus seinem eigenen Blickpunkt",
-        "fixed": "Befunde der vorigen Prüfung, die jetzt weg sind"
+        "fixed": "Befunde der vorigen Prüfung, die jetzt weg sind",
+        "zoomThrough": "Ein beschleunigender Flug durch die Fassade in ein Geschoss",
+        "pullOut": "Von einem Meter vor einem Detail zurück zum ganzen Gebäude"
       },
       "empty": {
         "storeys": "Keine Geschosse in diesem Modell",
