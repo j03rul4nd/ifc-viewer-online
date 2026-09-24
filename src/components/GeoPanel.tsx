@@ -27,6 +27,7 @@ import { CONTOUR_INTERVALS } from '../lib/geo/terrain-look'
 import { BUILDINGS_ATTRIBUTION, OVERTURE_ATTRIBUTION } from '../lib/geo/buildings'
 import { collectModelSites, type ModelInput } from '../lib/geo/model-sites'
 import { FEATURE_KINDS, type FeatureKind } from '../lib/geo/osm-features'
+import { PROP_ASSETS_KB } from '../lib/geo/props-assets'
 import { appBus } from '../lib/event-bus'
 import { publishInspectorTarget } from '../lib/inspector'
 import { emitEmbedEvent } from '../lib/url-params'
@@ -1259,7 +1260,7 @@ export default function GeoPanel({ viewerApiRef }: GeoPanelProps) {
                         />
                         <p className="text-[10px] text-[var(--text-faint)] leading-snug">
                           {store.contextDetail === 'showcase'
-                            ? t('layers.facadeShowcaseHint')
+                            ? t('layers.facadeShowcaseHint', { kb: PROP_ASSETS_KB })
                             : t('layers.detailHint')}
                         </p>
 

@@ -136,7 +136,9 @@
       "road": "Roads & paths",
       "rail": "Railways & platforms",
       "signal": "Traffic lights",
-      "pier": "Piers & quays"
+      "pier": "Piers & quays",
+      "furniture": "Benches, lamps & fountains",
+      "barrier": "Fences, walls & hedges"
     },
     "detailLevel": "Detail",
     "detailSimple": "Simple",
@@ -147,7 +149,7 @@
     "vehiclesHint": "Cars, trains, street lamps and platform shelters are NOT mapped data — OpenStreetMap does not record where a car is parked or which kerb carries a lamp. Their placement is invented to make a view feel lived-in, and it is the same every time.",
     "facadeShowcase": "Showcase",
     "shanghaiParkHint": "Shanghai gardens: regional trees and shoreline planting (+720 KB). Planting and furniture are illustrative.",
-    "facadeShowcaseHint": "Showcase swaps in authored 3D models — trees, cars, vans, buses, carriages, signal heads, catenary masts, street lamps and platform shelters — downloaded once from this site (about 136 KB). Everything else works without them.",
+    "facadeShowcaseHint": "Showcase swaps in authored 3D models — trees, cars, vans, buses, carriages, signal heads, catenary masts, street lamps and platform shelters — downloaded once from this site (about {{kb}} KB). Everything else works without them.",
     "contextTone": "Context tone",
     "contextToneNatural": "Natural",
     "contextToneNeutral": "Discreet",

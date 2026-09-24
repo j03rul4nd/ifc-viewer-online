@@ -607,6 +607,26 @@ describe('geo-system · OSM feature cache', () => {
     geo.dispose()
   })
 
+  // THE CASCADE swaps each layer in place. A burst of rebuilds — a tone
+  // flipped twice, a layer toggled mid-build — must leave exactly one copy of
+  // every layer, never two stacked and never none.
+  it('leaves one copy of the district after a burst of rebuilds', async () => {
+    const f = makeFixture()
+    const geo = createGeoSystem(f.ctx)
+    await geo.enable(PLACEMENT, PROVIDER)
+    geo.setContextSuppression({ enabled: false })
+    await geo.setBuildings(true)
+    geo.setContextTone('neutral')
+    geo.setContextTone('natural')
+    geo.setContextTone('neutral')
+    // Let every scheduled phase run out.
+    for (let i = 0; i < 20; i++) await new Promise((r) => setTimeout(r, 0))
+    let meshes = 0
+    f.scene.traverse((o) => { if (o.name === 'osm-buildings') meshes++ })
+    expect(meshes).toBe(1)
+    geo.dispose()
+  })
+
   it('survives a map-mode cycle at the same site', async () => {
     const geo = createGeoSystem(makeFixture().ctx)
     await geo.enable(PLACEMENT, PROVIDER)

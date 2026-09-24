@@ -29,6 +29,63 @@ function squareFootprint(id: string, sizeM: number, heightM = 12): BuildingFootp
 
 const OPTS = { anchorLat: 41.3874 }
 
+/** A perimeter block: a 60 m square with a 30 m courtyard cut out of it. */
+function courtyardBlock(): BuildingFootprint & { holes: Array<Array<{ lat: number; lon: number }>> } {
+  const outer = squareFootprint('court', 60, 20)
+  const lat = 41.3874 + 15 / 111_132
+  const lon = 2.1686 + 15 / (111_320 * Math.cos((41.3874 * Math.PI) / 180))
+  const inner = squareFootprint('void', 30, 20).ring.map((p) => ({
+    lat: p.lat - 41.3874 + lat, lon: p.lon - 2.1686 + lon,
+  }))
+  return { ...outer, holes: [inner] }
+}
+
+describe('courtyards', () => {
+  const centre = (() => {
+    const b = courtyardBlock()
+    const xs = b.holes[0].map((p) => p.lon)
+    const ys = b.holes[0].map((p) => p.lat)
+    return { lat: (Math.min(...ys) + Math.max(...ys)) / 2, lon: (Math.min(...xs) + Math.max(...xs)) / 2 }
+  })()
+
+  for (const detail of ['simple', 'detailed'] as const) {
+    it(`leaves the courtyard open to the sky (${detail})`, async () => {
+      const { latLonToNormalized } = await import('./geo-math')
+      const g = buildBuildingsGeometry([courtyardBlock()], { ...OPTS, detail })!.geometry
+      const pos = g.getAttribute('position')
+      const c = latLonToNormalized(centre.lat, centre.lon)
+      const top = Math.max(...Array.from({ length: pos.count }, (_, i) => pos.getZ(i)))
+      // No roof triangle may cover the courtyard centre.
+      let covered = false
+      for (let i = 0; i < pos.count; i += 3) {
+        const a = [pos.getX(i), pos.getY(i)], b = [pos.getX(i + 1), pos.getY(i + 1)], d = [pos.getX(i + 2), pos.getY(i + 2)]
+        if (Math.min(pos.getZ(i), pos.getZ(i + 1), pos.getZ(i + 2)) < top * 0.5) continue
+        const sgn = (p: number[], q: number[], r: number[]) => (p[0] - r[0]) * (q[1] - r[1]) - (q[0] - r[0]) * (p[1] - r[1])
+        const s1 = sgn([c.nx, c.ny], a, b), s2 = sgn([c.nx, c.ny], b, d), s3 = sgn([c.nx, c.ny], d, a)
+        if ((s1 < 0 && s2 < 0 && s3 < 0) || (s1 > 0 && s2 > 0 && s3 > 0)) covered = true
+      }
+      expect(covered).toBe(false)
+    })
+  }
+
+  it('gives the courtyard walls that face INTO it', async () => {
+    const { latLonToNormalized } = await import('./geo-math')
+    const g = buildBuildingsGeometry([courtyardBlock()], { ...OPTS, detail: 'detailed' })!.geometry
+    const pos = g.getAttribute('position')
+    const nor = g.getAttribute('normal')
+    const c = latLonToNormalized(centre.lat, centre.lon)
+    const halfVoid = 15 / (111_320 * Math.cos((41.3874 * Math.PI) / 180))
+    let inward = 0
+    for (let i = 0; i < pos.count; i++) {
+      if (nor.getZ(i) !== 0) continue
+      const dx = pos.getX(i) - c.nx, dy = pos.getY(i) - c.ny
+      // Vertices on the courtyard wall, whose normal points back at its centre.
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < halfVoid * 1.3 && dx * nor.getX(i) + dy * nor.getY(i) < 0) inward++
+    }
+    expect(inward).toBeGreaterThan(0)
+  })
+})
+
 describe('buildBuildingsGeometry', () => {
   it('builds geometry for a realistic 20 m footprint (the precision regression)', () => {
     const result = buildBuildingsGeometry([squareFootprint('a', 20)], OPTS)

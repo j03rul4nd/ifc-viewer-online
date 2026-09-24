@@ -404,6 +404,12 @@ section gives.
   check, which is how the broken lamp survived. `PROP_ASSETS_KB` is checked in
   BOTH directions: an over-estimate passes a `<=` forever and still misinforms
   the person deciding whether to download.
+- **Boats are the one family whose `z = 0` is NOT the ground.** `boat-*` is
+  authored with `z = 0` at the waterline and the hull below it
+  (`finish(..., bake_origin=True, waterline=True)`), and `loadOne()` skips its
+  re-grounding for them. That skip is exact only because the node carries no
+  transform; the asset test asserts both the identity node and that `z = 0`
+  cuts every hull, so a boat quietly dropped onto the water fails.
 - OSM is volunteer-mapped and uneven: a missing park is not an empty field.
   Report what was found; never let the UI imply absence of data means absence
   of the thing. Roof shapes are the clearest case — in Paris only 20 of 1254
