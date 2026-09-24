@@ -315,7 +315,13 @@
         "fixes-report": "Ce qui a été corrigé",
         "project-portfolio": "Projets ensemble",
         "launch-2026": "Lancement 2026 · vertical",
-        "launch-2026-wide": "Lancement 2026 · 16:9"
+        "launch-2026-wide": "Lancement 2026 · 16:9",
+        "editorial-clay": "Argile éditoriale",
+        "teal-persimmon": "Bleu canard & kaki",
+        "plum-noir-film": "Film plum noir",
+        "brutalist-reel": "Reel brutaliste",
+        "blueprint-tech": "Blueprint",
+        "golden-hour-reel": "Heure dorée"
       },
       "pace": {
         "calm": "Posé",
@@ -447,12 +453,33 @@
         "off": "Aucun effet — musique seule.",
         "subtle": "Un souffle léger sur chaque coupe.",
         "full": "Souffles, impacts sur les titres, montée vers la fin, boom quand le bâtiment est complet, clics à chaque mot."
-      }
+      },
+      "lookLabel": "Look",
+      "looks2": {
+        "native": "Original",
+        "cloud-dancer": "Cloud Dancer",
+        "transformative-teal": "Transformative Teal",
+        "plum-noir": "Plum Noir",
+        "brutalist-mono": "Brutaliste",
+        "blueprint": "Blueprint",
+        "golden-hour": "Heure dorée"
+      },
+      "lookHint": {
+        "native": "La maquette et la scène telles quelles.",
+        "cloud-dancer": "Maquette en argile sur papier chaud (Pantone 2026), serif éditorial, accent terracotta.",
+        "transformative-teal": "Bleu canard profond (WGSN 2026) avec accent kaki — le duo chaud/froid de l’étalonnage.",
+        "plum-noir": "Prune sombre et pierre chaude, accent wasabi, letterbox et grain.",
+        "brutalist-mono": "Gris béton, noir et blanc très contrasté, capitales grasses.",
+        "blueprint": "Maquette blanche translucide sur bleu marine, police monospace, accent cyan.",
+        "golden-hour": "Maquette sable sous un ciel de fin de journée, étalonnage orange/bleu canard, letterbox."
+      },
+      "lookPreview": "Aperçu sur votre maquette"
     },
     "remaining": "Environ {{seconds}} s restantes",
     "sfxVolume": "Volume des effets",
     "sfxRemove": "Retirer les effets sonores",
     "sfxCount": "{{n}} effets",
-    "sfxTitle": "Effets sonores"
+    "sfxTitle": "Effets sonores",
+    "restyleHint": "Change instantanément l’étalonnage et les titres. Les plans 3D gardent leur couleur et leur lumière — régénérez pour les repeindre."
   }
 }

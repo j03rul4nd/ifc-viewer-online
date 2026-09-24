@@ -315,7 +315,13 @@
         "fixes-report": "Lo que se ha arreglado",
         "project-portfolio": "Proyectos en conjunto",
         "launch-2026": "Lanzamiento 2026 · vertical",
-        "launch-2026-wide": "Lanzamiento 2026 · 16:9"
+        "launch-2026-wide": "Lanzamiento 2026 · 16:9",
+        "editorial-clay": "Arcilla editorial",
+        "teal-persimmon": "Verde azulado y caqui",
+        "plum-noir-film": "Plum noir cine",
+        "brutalist-reel": "Reel brutalista",
+        "blueprint-tech": "Plano técnico",
+        "golden-hour-reel": "Hora dorada"
       },
       "pace": {
         "calm": "Pausado",
@@ -447,12 +453,33 @@
         "off": "Sin efectos: solo música.",
         "subtle": "Un barrido suave en cada corte.",
         "full": "Barridos, golpes en los títulos, subida de tensión hacia el final, estruendo cuando el edificio se completa y clics al entrar las palabras."
-      }
+      },
+      "lookLabel": "Look",
+      "looks2": {
+        "native": "Original",
+        "cloud-dancer": "Cloud Dancer",
+        "transformative-teal": "Transformative Teal",
+        "plum-noir": "Plum Noir",
+        "brutalist-mono": "Brutalista",
+        "blueprint": "Plano técnico",
+        "golden-hour": "Hora dorada"
+      },
+      "lookHint": {
+        "native": "El modelo y la escena tal cual.",
+        "cloud-dancer": "Maqueta de arcilla sobre papel cálido (Pantone 2026), serif editorial y acento terracota.",
+        "transformative-teal": "Verde azulado profundo (WGSN 2026) con acento caqui: la pareja cálido/frío del etalonaje de cine.",
+        "plum-noir": "Ciruela oscuro y piedra cálida, acento wasabi, bandas de cine y grano.",
+        "brutalist-mono": "Grises de hormigón, blanco y negro de alto contraste, tipografía mayúscula pesada.",
+        "blueprint": "Modelo blanco translúcido sobre azul marino, tipografía monoespaciada, acento cian.",
+        "golden-hour": "Maqueta color arena bajo un cielo de atardecer, etalonaje naranja/azul, bandas de cine."
+      },
+      "lookPreview": "Vista previa en tu modelo"
     },
     "remaining": "Quedan unos {{seconds}} s",
     "sfxVolume": "Volumen de efectos",
     "sfxRemove": "Quitar efectos de sonido",
     "sfxCount": "{{n}} efectos",
-    "sfxTitle": "Efectos de sonido"
+    "sfxTitle": "Efectos de sonido",
+    "restyleHint": "Cambia al instante el etalonaje y los textos. Las tomas 3D conservan su color y su luz: vuelve a generar para repintarlas."
   }
 }

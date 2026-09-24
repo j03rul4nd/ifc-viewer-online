@@ -86,3 +86,17 @@ From the 2026 launch-video grammar (Raycast/Framer/Vercel-style launches, short-
 - `src/lib/capture/endcard.ts`: 2D canvas card — three gradient blobs drifting over near-black, the title slamming in, stats line, a white URL pill rising at 0.35 s with a light sweep at 0.9 s. Encoded like any shot (2.5 s at 1080×1920 ≈ 1.5 s to render).
 - `PlannedShot.card` — `run.ts` renders it instead of a 3D shot; the CTA lower-third is skipped (the card carries the URL); full SFX puts a hit + boom under it.
 - Launch 2026 templates end on it.
+
+## Looks — art direction (`recipe.look`)
+
+`src/lib/director/looks.ts`. One choice sets five things that agree: model paint per system (`viewer.applyModelPalette`, matte, translucent glass), scene backdrop (and the ground grid hidden), film grade (`src/lib/capture/grade.ts`: tone curve via canvas filter, split tone, vignette, animated grain, 2.39 letterbox on landscape), typography (Geist / Instrument Serif / Geist Mono, ink + muted, case; dark ink gets light plates) and one complementary accent (lower-third bar, URL sweep, end-card blobs). With a look, the title sits in the sky above the building, never on it.
+
+Looks (2026 references): Cloud Dancer (Pantone 2026 — clay on warm paper, serif, terracotta), Transformative Teal (WGSN/Coloro 2026, persimmon accent), Plum Noir (Pinterest 2026, wasabi, letterbox), Brutalist (light concrete on charcoal, grayscale), Blueprint (navy, mono, cyan), Golden hour (sand under sunset, orange/teal, letterbox). Templates: Editorial clay, Teal & persimmon, Plum noir film, Brutalist reel, Blueprint, Golden hour.
+
+The scene is restored after the render (models' own materials, the user's backdrop and grid, the validation overlay). Contrast is tested (ink on card ≥ 4.5:1; building vs backdrop).
+- **Light per look** (`viewer.setLighting`): sky/ground ambient, a key "sun" (colour, strength, azimuth, elevation) and an opposite fill — soft studio for clay, raking warm key for Plum Noir, hard overhead for Brutalist, flat cool for Blueprint, low warm sun for Golden hour. Restored after the render.
+- With letterbox, titles are laid out inside the picture area, not on the bars.
+- Not used: the viewer's AO/edges post-processing is WebGL-only and is off on WebGPU, so looks do not depend on it.
+- **Restyle after generating**: the project panel's look picker (`restyleProject`) re-grades and re-styles the titles instantly, undoable; the 3D shots keep their paint and light (re-generate to repaint).
+- **Dive between projects**: in *By project* with `zoomThrough` in the recipe, an exponential zoom from the whole set into each project precedes its shots (everything visible). *By project* and *One by one* now keep the end card.
+- **Look preview** (`previewLook`): the template editor renders one still of the loaded model in the chosen look (paint, light, backdrop, grade, title) and restores the scene — see the look on this building before generating.

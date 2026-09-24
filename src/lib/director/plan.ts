@@ -11,6 +11,7 @@ import type { ClipTransition } from '../capture/project'
 import { WORD_STEP_SEC, type TextAnchor, type TextAnimId, type TextStyleId } from '../capture/timeline'
 import { cueAt, type ProjectSfx, type SfxCue } from '../capture/sfx'
 import { PACE_SHOT_SEC, type CaptionLook, type Recipe, type SectionKind } from './recipe'
+import { LOOKS, type Grade, type Look } from './looks'
 
 // ── Input ──────────────────────────────────────────────────────────────────────
 
@@ -117,6 +118,11 @@ export interface PlannedShot {
 }
 
 export interface PlannedText {
+  /** Look typography: face, ink, accent, case. */
+  font?: 'sans' | 'serif' | 'mono'
+  color?: string
+  accent?: string
+  uppercase?: boolean
   anim: TextAnimId
   text: string
   startSec: number
@@ -143,6 +149,10 @@ export interface PlannedClip {
   motionBlur: number
   /** Sound effects placed on the cut (none when the recipe has them off). */
   sfx?: ProjectSfx
+  /** Film treatment from the look. */
+  grade?: Grade
+  /** The look everything was styled for. */
+  look: Look
 }
 
 /** Launch grammar: which moves get a speed ramp (reveals keep their ease-out). */
@@ -201,6 +211,8 @@ export function planPresentation(recipe: Recipe, facts: SceneFacts, strings: Pla
       // Fast launch cuts get a real shutter; calmer ones stay crisp (and 3× cheaper).
       motionBlur: launch && recipe.pace === 'fast' ? 3 : 1,
       ...(recipe.sfx && recipe.sfx !== 'off' ? { sfx: planSfx(recipe.sfx, shots, starts, overlap, texts, durationSec) } : {}),
+      ...(lookOf(recipe).grade ? { grade: lookOf(recipe).grade! } : {}),
+      look: lookOf(recipe),
     }
   }
 
@@ -221,16 +233,23 @@ export function planPresentation(recipe: Recipe, facts: SceneFacts, strings: Pla
     // Each project (group of discipline models) on its own, then all projects together.
     const groups = groupModels(models)
     if (groups.length > 1) {
-      const perGroup = recipe.sections.filter((s) => s !== 'closing' && s !== 'tour')
+      const perGroup = recipe.sections.filter((s) => s !== 'closing' && s !== 'tour' && s !== 'endCard')
+      const everything = { ...combined, name: federationName(groups.map((g) => g.name)) }
+      // With a zoom-through in the recipe, the camera dives from the whole set
+      // into each project before showing it: the "portal" between projects.
+      const dive = recipe.sections.includes('zoomThrough')
       const drafts: Draft[] = []
       for (const g of groups) {
         const gm = { ...combine(g.models), name: g.name }
-        const own = sectionDrafts(recipe, perGroup, gm, facts, aspect, strings, g.models.map((m) => m.modelId))
-        if (own[0]) own[0] = { ...own[0], shot: { ...own[0].shot, caption: g.name } }
+        const own = sectionDrafts(recipe, perGroup.filter((s) => !dive || s !== 'zoomThrough'), gm, facts, aspect, strings, g.models.map((m) => m.modelId))
+        if (dive) {
+          drafts.push(diveInto(everything, gm, aspect, g.name, recipe.captions.labelShots))
+        } else if (own[0]) {
+          own[0] = { ...own[0], shot: { ...own[0].shot, caption: g.name } }
+        }
         drafts.push(...own)
       }
-      const everything = { ...combined, name: federationName(groups.map((g) => g.name)) }
-      const finale = sectionDrafts(recipe, ['orbit', ...(recipe.sections.includes('closing') ? ['closing' as const] : [])], everything, facts, aspect, strings, undefined)
+      const finale = sectionDrafts(recipe, ['orbit', ...(recipe.sections.includes('closing') ? ['closing' as const] : []), ...(recipe.sections.includes('endCard') ? ['endCard' as const] : [])], everything, facts, aspect, strings, undefined)
       if (finale[0]) finale[0] = { ...finale[0], shot: { ...finale[0].shot, caption: strings.together } }
       drafts.push(...finale)
       return [build(drafts, everything, titleFor(recipe, everything.name), models)]
@@ -238,7 +257,7 @@ export function planPresentation(recipe: Recipe, facts: SceneFacts, strings: Pla
   }
 
   // 'sequence': each model on its own (the others hidden), then everything together.
-  const perModel = recipe.sections.filter((s) => s !== 'closing' && s !== 'tour')
+  const perModel = recipe.sections.filter((s) => s !== 'closing' && s !== 'tour' && s !== 'endCard')
   const drafts: Draft[] = []
   for (const m of models) {
     const own = sectionDrafts(recipe, perModel, m, facts, aspect, strings, [m.modelId])
@@ -246,7 +265,7 @@ export function planPresentation(recipe: Recipe, facts: SceneFacts, strings: Pla
     if (own[0]) own[0] = { ...own[0], shot: { ...own[0].shot, caption: m.name } }
     drafts.push(...own)
   }
-  const finale = sectionDrafts(recipe, ['orbit', ...(recipe.sections.includes('closing') ? ['closing' as const] : [])], combined, facts, aspect, strings, undefined)
+  const finale = sectionDrafts(recipe, ['orbit', ...(recipe.sections.includes('closing') ? ['closing' as const] : []), ...(recipe.sections.includes('endCard') ? ['endCard' as const] : [])], combined, facts, aspect, strings, undefined)
   if (finale[0]) finale[0] = { ...finale[0], shot: { ...finale[0].shot, caption: strings.together } }
   drafts.push(...finale)
   return [build(drafts, combined, titleFor(recipe, combined.name), models)]
@@ -490,6 +509,10 @@ export function planSfx(
   return { cues: kept, volume: 0.8 }
 }
 
+export function lookOf(recipe: Recipe): Look {
+  return LOOKS[recipe.look ?? 'native'] ?? LOOKS.native
+}
+
 /** Attach a subject's detail lines when the recipe shows details. */
 function withDetails(d: Draft, recipe: Recipe, sub: Subject): Draft {
   if (!recipe.captions.details || !sub.detail?.length) return d
@@ -562,17 +585,31 @@ function planTexts(
   // Reels and TikTok draw their own UI over the bottom fifth — keep text out of it.
   const low: TextAnchor = vertical ? 'mid-center' : 'bottom-left'
   const look = CAPTION_LOOKS[recipe.captions.look ?? 'clean']
+  // Art direction: the look's faces and inks on every line.
+  const art = lookOf(recipe)
+  const styled = (kind: 'title' | 'body' | 'muted'): Pick<PlannedText, 'font' | 'color' | 'accent' | 'uppercase'> => art.id === 'native' ? {} : {
+    font: kind === 'title' ? art.type.titleFamily : art.type.family,
+    color: kind === 'muted' ? art.type.muted : art.type.ink,
+    accent: art.accent,
+    ...(art.type.uppercase && kind !== 'muted' ? { uppercase: true } : {}),
+  }
   // Launch grammar: titles slam in, numbers count up, labels land word by word.
   const launch = recipe.style === 'launch'
   const anim = (kind: 'title' | 'stats' | 'label' | 'cta'): TextAnimId =>
     !launch ? look.anim : kind === 'stats' ? 'count' : kind === 'label' ? 'words' : 'slam'
   const texts: PlannedText[] = []
-  const push = (t: Omit<PlannedText, 'anim'>, anim: TextAnimId = look.anim) => texts.push({ ...t, anim })
+  const push = (t: Omit<PlannedText, 'anim'>, anim: TextAnimId = look.anim) => {
+    const kind = t.style === 'title' || (t.style === look.title && t.anchor !== 'top-left') ? 'title' : t.style === 'caption' ? 'muted' : 'body'
+    texts.push({ ...styled(kind), ...t, anim })
+  }
   const end = (i: number) => starts[i] + shots[i].shot.durationSec - (i < shots.length - 1 ? overlap : 0)
 
   const heroEnd = end(0)
-  // Launch titles hit within the first beat: no slow fade-in on a feed.
-  if (title) push({ text: title, startSec: launch ? 0.12 : 0.3, endSec: Math.max(1.5, heroEnd - 0.2), style: look.title, anchor: vertical ? 'top-center' : 'mid-center' }, anim('title'))
+  // Launch titles hit within the first beat: no slow fade-in on a feed. An
+  // art-directed title sits in the open sky above the building — the
+  // cinematic rule: type never sits on the subject.
+  const titleAnchor: TextAnchor = vertical || art.id !== 'native' ? 'top-center' : 'mid-center'
+  if (title) push({ text: title, startSec: launch ? 0.12 : 0.3, endSec: Math.max(1.5, heroEnd - 0.2), style: look.title, anchor: titleAnchor }, anim('title'))
   const sub: string[] = []
   if (recipe.captions.showStats) {
     const elements = models.reduce((s, m) => s + m.elementCount, 0)
@@ -675,6 +712,32 @@ export function fitPoseToAspect(pose: CameraPose, from: number, to: number): Cam
   // narrower it gets.
   const factor = Math.min(1, from) / Math.min(1, to)
   return factor > 1 ? pullBack(pose, pose.target, Math.min(2.2, factor)) : pose
+}
+
+/**
+ * The dive between projects: from a view of the whole set, an exponential
+ * zoom onto one project, everything still visible — so the audience sees
+ * where this project sits before it has the screen to itself.
+ */
+function diveInto(all: ModelFacts, target: ModelFacts, aspect: number, name: string, label: boolean): Draft {
+  const dir = unitOf(orbitPoint({ x: 0, y: 0, z: 0 }, 1, 30, 28))
+  const far = fitDistance(all.bounds, DEFAULT_FOV_DEG, aspect, 1.05)
+  const near = fitDistance(target.bounds, DEFAULT_FOV_DEG, aspect, 1.1)
+  return {
+    shot: {
+      section: 'zoomThrough',
+      shot: {
+        ...defaultShot('path', target.bounds, aspect, 3),
+        keyframes: zoomKeyframes(all.bounds.center, target.bounds.center, dir, far, near, DEFAULT_FOV_DEG),
+        pathTiming: 'even', easing: 'easeInOut',
+      },
+      label: name,
+      caption: label ? name : undefined,
+      scene: {},
+    },
+    weight: 1,
+    group: 'zoomThrough',
+  }
 }
 
 function unitOf(v: Vec3): Vec3 {

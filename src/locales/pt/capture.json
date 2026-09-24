@@ -315,7 +315,13 @@
         "fixes-report": "O que foi corrigido",
         "project-portfolio": "Projetos em conjunto",
         "launch-2026": "Lançamento 2026 · vertical",
-        "launch-2026-wide": "Lançamento 2026 · 16:9"
+        "launch-2026-wide": "Lançamento 2026 · 16:9",
+        "editorial-clay": "Argila editorial",
+        "teal-persimmon": "Verde-azulado e caqui",
+        "plum-noir-film": "Filme plum noir",
+        "brutalist-reel": "Reel brutalista",
+        "blueprint-tech": "Planta técnica",
+        "golden-hour-reel": "Hora dourada"
       },
       "pace": {
         "calm": "Calmo",
@@ -447,12 +453,33 @@
         "off": "Sem efeitos — só música.",
         "subtle": "Um whoosh suave em cada corte.",
         "full": "Whooshes, impactos nos títulos, subida de tensão até ao fim, boom quando o edifício fica completo, cliques a cada palavra."
-      }
+      },
+      "lookLabel": "Look",
+      "looks2": {
+        "native": "Original",
+        "cloud-dancer": "Cloud Dancer",
+        "transformative-teal": "Transformative Teal",
+        "plum-noir": "Plum Noir",
+        "brutalist-mono": "Brutalista",
+        "blueprint": "Planta técnica",
+        "golden-hour": "Hora dourada"
+      },
+      "lookHint": {
+        "native": "O modelo e a cena tal como estão.",
+        "cloud-dancer": "Maqueta de argila sobre papel quente (Pantone 2026), serifa editorial, acento terracota.",
+        "transformative-teal": "Verde-azulado profundo (WGSN 2026) com acento caqui — o par quente/frio da gradação de cinema.",
+        "plum-noir": "Ameixa escura e pedra quente, acento wasabi, faixas de cinema e grão.",
+        "brutalist-mono": "Cinzentos de betão, preto e branco de alto contraste, maiúsculas fortes.",
+        "blueprint": "Modelo branco translúcido sobre azul-marinho, letra monoespaçada, acento ciano.",
+        "golden-hour": "Maqueta cor de areia sob céu de fim de tarde, gradação laranja/azul, faixas de cinema."
+      },
+      "lookPreview": "Pré-visualização no seu modelo"
     },
     "remaining": "Faltam cerca de {{seconds}} s",
     "sfxVolume": "Volume dos efeitos",
     "sfxRemove": "Remover efeitos sonoros",
     "sfxCount": "{{n}} efeitos",
-    "sfxTitle": "Efeitos sonoros"
+    "sfxTitle": "Efeitos sonoros",
+    "restyleHint": "Muda de imediato a gradação e os textos. As tomadas 3D mantêm a cor e a luz — gere de novo para as repintar."
   }
 }

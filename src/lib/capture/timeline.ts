@@ -83,6 +83,12 @@ export interface TextOverlay {
   anim: TextAnimId
   /** Multiplier on the style's base size, 0.5–2. Lets one style cover a range. */
   scale: number
+  /** Typeface family (art-directed looks); missing = the app's sans. */
+  font?: 'sans' | 'serif' | 'mono'
+  /** Colour of the lower-third edge bar; missing = the app accent. */
+  accent?: string
+  /** Force upper case regardless of the style. */
+  uppercase?: boolean
 }
 
 // ── Transitions ────────────────────────────────────────────────────────────────
@@ -174,6 +180,9 @@ export interface NewTextInput {
   color?: string
   anim?: TextAnimId
   id?: string
+  font?: 'sans' | 'serif' | 'mono'
+  accent?: string
+  uppercase?: boolean
 }
 
 /**
@@ -196,6 +205,9 @@ export function createTextOverlay(input: NewTextInput, duration: number): TextOv
     color: input.color ?? '#ffffff',
     anim: input.anim ?? 'fade',
     scale: 1,
+    ...(input.font ? { font: input.font } : {}),
+    ...(input.accent ? { accent: input.accent } : {}),
+    ...(input.uppercase ? { uppercase: true } : {}),
   }
 }
 

@@ -14,6 +14,7 @@
 
 import type { AudioSelection, TextOverlay, TextAnimId } from './timeline'
 import type { ProjectSfx } from './sfx'
+import type { Grade } from './grade'
 import { DEFAULT_AUDIO } from './timeline'
 
 // ── Sources ────────────────────────────────────────────────────────────────────
@@ -134,6 +135,10 @@ export interface EditProject {
   fx?: ProjectFx
   /** Sound effects on the timeline (whooshes, hits, risers…). */
   sfx?: ProjectSfx
+  /** Film treatment of the picture (art-directed looks). */
+  grade?: Grade
+  /** Which look styled the grade and the titles, for the picker. */
+  lookId?: string
 }
 
 export interface ProjectFx {

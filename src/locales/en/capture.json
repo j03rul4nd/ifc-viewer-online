@@ -315,7 +315,13 @@
         "fixes-report": "What was fixed",
         "project-portfolio": "Projects together",
         "launch-2026": "Launch 2026 · vertical",
-        "launch-2026-wide": "Launch 2026 · 16:9"
+        "launch-2026-wide": "Launch 2026 · 16:9",
+        "editorial-clay": "Editorial clay",
+        "teal-persimmon": "Teal & persimmon",
+        "plum-noir-film": "Plum noir film",
+        "brutalist-reel": "Brutalist reel",
+        "blueprint-tech": "Blueprint",
+        "golden-hour-reel": "Golden hour"
       },
       "pace": {
         "calm": "Calm",
@@ -447,12 +453,33 @@
         "off": "No effects — music only.",
         "subtle": "A soft whoosh on every cut.",
         "full": "Whooshes, hits on titles, a riser into the ending, a boom when the building completes, ticks as words land."
-      }
+      },
+      "lookLabel": "Look",
+      "looks2": {
+        "native": "Native",
+        "cloud-dancer": "Cloud Dancer",
+        "transformative-teal": "Transformative Teal",
+        "plum-noir": "Plum Noir",
+        "brutalist-mono": "Brutalist",
+        "blueprint": "Blueprint",
+        "golden-hour": "Golden hour"
+      },
+      "lookHint": {
+        "native": "The model and scene as they are.",
+        "cloud-dancer": "Clay model on warm paper (Pantone 2026), editorial serif, terracotta accent.",
+        "transformative-teal": "Deep teal (WGSN 2026) with a persimmon accent — the warm/cool pair of film grading.",
+        "plum-noir": "Moody plum and warm stone, wasabi accent, letterbox and grain.",
+        "brutalist-mono": "Concrete greys, high-contrast black and white, heavy uppercase type.",
+        "blueprint": "White translucent model on navy, mono type, cyan accent.",
+        "golden-hour": "Sand model under a late-sun sky, orange/teal grade, letterbox."
+      },
+      "lookPreview": "Preview on your model"
     },
     "remaining": "About {{seconds}} s left",
     "sfxVolume": "Effects volume",
     "sfxRemove": "Remove sound effects",
     "sfxCount": "{{n}} effects",
-    "sfxTitle": "Sound effects"
+    "sfxTitle": "Sound effects",
+    "restyleHint": "Changes the grade and the titles instantly. The 3D shots keep their paint and light — generate again to repaint them."
   }
 }

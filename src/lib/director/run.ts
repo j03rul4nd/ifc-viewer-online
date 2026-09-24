@@ -18,10 +18,17 @@ import { BED_RHYTHM } from '../capture/auto-edit'
 import { downloadBlob } from '../diffStore'
 import type { ValidationIssue } from '../../types'
 import type { Recipe } from './recipe'
+import { ensureLookFonts, type Look } from './looks'
+import type { BackgroundSettings } from '../scene/background'
+import type { SceneLighting } from '../viewer'
 import type { PlannedClip, ShotScene, Rhythm } from './plan'
 
 /** The viewer calls a run needs on top of shot rendering. */
 export interface DirectorViewer extends ShotRenderer {
+  applyModelPalette(palette: Record<'structure' | 'envelope' | 'glazing' | 'mep' | 'interiors' | 'other', string> | null, glazingOpacity?: number): Promise<void>
+  setBackground(settings: BackgroundSettings): void
+  setGridVisible(visible: boolean): boolean
+  setLighting(light: SceneLighting | null): void
   getLoadedModelIds(): string[]
   setModelVisible(modelId: string, visible: boolean): void
   isolateElements(targets: Array<{ expressId: number; modelId?: string | null }>, enabled: boolean): void
@@ -121,7 +128,8 @@ function shotKey(viewer: DirectorViewer & { getModelBounds?: (id?: string) => un
   const models = viewer.getLoadedModelIds().map((id) => [id, viewer.getModelBounds?.(id)])
   // The validation overlay paints every shot while it is on.
   const overlay = useValidationStore.getState().validationMode
-  return JSON.stringify([planned.shot, planned.card, planned.scene, clip.width, clip.height, fps, clip.motionBlur, models, useSceneStore.getState().background, overlay])
+  const look = clip.look.id === 'native' ? useSceneStore.getState().background : clip.look.id
+  return JSON.stringify([planned.shot, planned.card, planned.scene, clip.width, clip.height, fps, clip.motionBlur, models, look, overlay])
 }
 
 function cacheGet(key: string): Blob | undefined {
@@ -167,7 +175,11 @@ export async function renderPlannedClip(
       reused++
       onShot(i, 1)
     } else if (planned.card) {
-      blob = await renderEndCard({ ...planned.card, durationSec: planned.shot.durationSec }, {
+      const lk = clip.look
+      blob = await renderEndCard({
+        ...planned.card, durationSec: planned.shot.durationSec,
+        ...(lk.id !== 'native' ? { accent: lk.accent, base: lk.card.base, blobs: lk.card.blobs, ink: lk.type.ink, muted: lk.type.muted, font: lk.type.titleFamily, uppercase: lk.type.uppercase } : {}),
+      }, {
         width: clip.width, height: clip.height, fps, signal, onProgress: (f) => onShot(i, f),
       })
       cachePut(key, blob)
@@ -183,6 +195,8 @@ export async function renderPlannedClip(
         })
       } finally {
         resetScene(viewer, planned.scene, hidden)
+        // The validation overlay repaints (and then resets) highlights — put the look's paint back.
+        if (planned.scene.highlight?.length && clip.look.palette) await viewer.applyModelPalette(clip.look.palette, clip.look.glazingOpacity)
       }
       cachePut(key, blob)
     }
@@ -200,7 +214,10 @@ export async function renderPlannedClip(
     ...project,
     texts: clip.texts.map((t) => createTextOverlay({
       text: t.text, startSec: t.startSec, endSec: Math.min(total, t.endSec), style: t.style, anchor: t.anchor, anim: t.anim,
+      ...(t.color ? { color: t.color } : {}), ...(t.font ? { font: t.font } : {}), ...(t.accent ? { accent: t.accent } : {}), ...(t.uppercase ? { uppercase: true } : {}),
     }, total)),
+    ...(clip.grade ? { grade: clip.grade } : {}),
+    lookId: clip.look.id,
     audio: recipe.music === 'none'
       ? { kind: 'none', trackId: null, fileName: null, volume: 0, fadeSec: 0, offsetSec: 0 }
       : { kind: 'builtin', trackId: recipe.music, fileName: null, volume: recipe.musicVolume, fadeSec: 0.8, offsetSec: 0 },
@@ -228,6 +245,8 @@ export async function runDirector(
   s.setPreset(recipe.format)
   s.setOutput({ watermark: recipe.watermark, fill: 'crop' })
   const fps = useClipStudioStore.getState().output.fps
+  const look = clips[0]?.look
+  const restore = look ? await applyLook(viewer, look) : async () => {}
   let exported = 0
   let reused = 0
   try {
@@ -255,9 +274,34 @@ export async function runDirector(
       if (c === clips.length - 1) s.replaceProject(project, media)
     }
   } finally {
+    await restore()
     s.setJob(null)
   }
   return { exported, reused }
+}
+
+/**
+ * Put the scene in a look (model paint, backdrop) and hand back the way to
+ * undo it: the user's own backdrop and the models' own materials, with the
+ * validation overlay re-applied if it was on.
+ */
+export async function applyLook(viewer: DirectorViewer, look: Look): Promise<() => Promise<void>> {
+  await ensureLookFonts(look)
+  if (look.id === 'native') return async () => {}
+  const before = useSceneStore.getState().background
+  // A styled backdrop is a seamless sweep: no ground grid on it.
+  const gridWas = viewer.setGridVisible(false)
+  if (look.background) viewer.setBackground({ preset: 'custom', ...look.background })
+  if (look.light) viewer.setLighting(look.light)
+  if (look.palette) await viewer.applyModelPalette(look.palette, look.glazingOpacity)
+  return async () => {
+    if (look.palette) await viewer.applyModelPalette(null)
+    if (look.background) viewer.setBackground(before)
+    viewer.setGridVisible(gridWas)
+    if (look.light) viewer.setLighting(null)
+    const { validationMode, result } = useValidationStore.getState()
+    if (validationMode && result) viewer.setValidationHighlights(result.issues, true)
+  }
 }
 
 function slug(s: string): string {

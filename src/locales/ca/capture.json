@@ -315,7 +315,13 @@
         "fixes-report": "El que s’ha arreglat",
         "project-portfolio": "Projectes en conjunt",
         "launch-2026": "Llançament 2026 · vertical",
-        "launch-2026-wide": "Llançament 2026 · 16:9"
+        "launch-2026-wide": "Llançament 2026 · 16:9",
+        "editorial-clay": "Argila editorial",
+        "teal-persimmon": "Verd blavós i caqui",
+        "plum-noir-film": "Plum noir cine",
+        "brutalist-reel": "Reel brutalista",
+        "blueprint-tech": "Plànol tècnic",
+        "golden-hour-reel": "Hora daurada"
       },
       "pace": {
         "calm": "Pausat",
@@ -447,12 +453,33 @@
         "off": "Sense efectes: només música.",
         "subtle": "Un escombrat suau a cada tall.",
         "full": "Escombrats, cops als títols, pujada de tensió cap al final, retruc quan l’edifici es completa i clics en entrar les paraules."
-      }
+      },
+      "lookLabel": "Look",
+      "looks2": {
+        "native": "Original",
+        "cloud-dancer": "Cloud Dancer",
+        "transformative-teal": "Transformative Teal",
+        "plum-noir": "Plum Noir",
+        "brutalist-mono": "Brutalista",
+        "blueprint": "Plànol tècnic",
+        "golden-hour": "Hora daurada"
+      },
+      "lookHint": {
+        "native": "El model i l’escena tal com són.",
+        "cloud-dancer": "Maqueta d’argila sobre paper càlid (Pantone 2026), serif editorial i accent terracota.",
+        "transformative-teal": "Verd blavós profund (WGSN 2026) amb accent caqui: la parella càlid/fred de l’etalonatge.",
+        "plum-noir": "Pruna fosc i pedra càlida, accent wasabi, bandes de cine i gra.",
+        "brutalist-mono": "Grisos de formigó, blanc i negre d’alt contrast, majúscules pesants.",
+        "blueprint": "Model blanc translúcid sobre blau marí, lletra monoespai, accent cian.",
+        "golden-hour": "Maqueta color sorra sota un cel de capvespre, etalonatge taronja/blau, bandes de cine."
+      },
+      "lookPreview": "Previsualització al teu model"
     },
     "remaining": "Queden uns {{seconds}} s",
     "sfxVolume": "Volum dels efectes",
     "sfxRemove": "Treu els efectes de so",
     "sfxCount": "{{n}} efectes",
-    "sfxTitle": "Efectes de so"
+    "sfxTitle": "Efectes de so",
+    "restyleHint": "Canvia a l’instant l’etalonatge i els textos. Les preses 3D conserven el color i la llum: torna a generar per repintar-les."
   }
 }

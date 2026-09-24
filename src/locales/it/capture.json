@@ -315,7 +315,13 @@
         "fixes-report": "Cosa è stato corretto",
         "project-portfolio": "Progetti insieme",
         "launch-2026": "Lancio 2026 · verticale",
-        "launch-2026-wide": "Lancio 2026 · 16:9"
+        "launch-2026-wide": "Lancio 2026 · 16:9",
+        "editorial-clay": "Argilla editoriale",
+        "teal-persimmon": "Petrolio & cachi",
+        "plum-noir-film": "Film plum noir",
+        "brutalist-reel": "Reel brutalista",
+        "blueprint-tech": "Blueprint",
+        "golden-hour-reel": "Ora d’oro"
       },
       "pace": {
         "calm": "Calmo",
@@ -447,12 +453,33 @@
         "off": "Nessun effetto — solo musica.",
         "subtle": "Un whoosh leggero a ogni stacco.",
         "full": "Whoosh, colpi sui titoli, riser verso il finale, boom quando l’edificio è completo, tick a ogni parola."
-      }
+      },
+      "lookLabel": "Look",
+      "looks2": {
+        "native": "Originale",
+        "cloud-dancer": "Cloud Dancer",
+        "transformative-teal": "Transformative Teal",
+        "plum-noir": "Plum Noir",
+        "brutalist-mono": "Brutalista",
+        "blueprint": "Blueprint",
+        "golden-hour": "Ora d’oro"
+      },
+      "lookHint": {
+        "native": "Il modello e la scena così come sono.",
+        "cloud-dancer": "Plastico in argilla su carta calda (Pantone 2026), serif editoriale, accento terracotta.",
+        "transformative-teal": "Verde petrolio profondo (WGSN 2026) con accento cachi — la coppia caldo/freddo della color correction.",
+        "plum-noir": "Prugna scuro e pietra calda, accento wasabi, letterbox e grana.",
+        "brutalist-mono": "Grigi cemento, bianco e nero ad alto contrasto, maiuscole pesanti.",
+        "blueprint": "Modello bianco traslucido su blu navy, carattere monospaziato, accento ciano.",
+        "golden-hour": "Plastico color sabbia sotto il cielo del tramonto, grading arancio/petrolio, letterbox."
+      },
+      "lookPreview": "Anteprima sul tuo modello"
     },
     "remaining": "Circa {{seconds}} s rimanenti",
     "sfxVolume": "Volume effetti",
     "sfxRemove": "Rimuovi effetti sonori",
     "sfxCount": "{{n}} effetti",
-    "sfxTitle": "Effetti sonori"
+    "sfxTitle": "Effetti sonori",
+    "restyleHint": "Cambia subito grading e titoli. Le inquadrature 3D mantengono colore e luce — rigenera per ridipingerle."
   }
 }

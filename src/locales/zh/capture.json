@@ -315,7 +315,13 @@
         "fixes-report": "已修复内容",
         "project-portfolio": "项目合集",
         "launch-2026": "2026 发布会 · 竖屏",
-        "launch-2026-wide": "2026 发布会 · 16:9"
+        "launch-2026-wide": "2026 发布会 · 16:9",
+        "editorial-clay": "编辑式白模",
+        "teal-persimmon": "青与柿橙",
+        "plum-noir-film": "暗梅电影",
+        "brutalist-reel": "粗野主义短片",
+        "blueprint-tech": "蓝图",
+        "golden-hour-reel": "黄金时刻"
       },
       "pace": {
         "calm": "舒缓",
@@ -447,12 +453,33 @@
         "off": "无音效——只有音乐。",
         "subtle": "每个剪切点一个轻柔的呼啸声。",
         "full": "呼啸声、标题重击、结尾前的上升音、建筑完成时的低音轰鸣、逐词出现时的点击声。"
-      }
+      },
+      "lookLabel": "风格",
+      "looks2": {
+        "native": "原始",
+        "cloud-dancer": "云舞白",
+        "transformative-teal": "蜕变青",
+        "plum-noir": "暗梅",
+        "brutalist-mono": "粗野主义",
+        "blueprint": "蓝图",
+        "golden-hour": "黄金时刻"
+      },
+      "lookHint": {
+        "native": "保持模型与场景原样。",
+        "cloud-dancer": "暖纸背景上的白模（Pantone 2026），编辑式衬线字体，陶土色点缀。",
+        "transformative-teal": "深青色（WGSN 2026）配柿橙点缀——电影调色的冷暖对比。",
+        "plum-noir": "暗梅色与暖石色，芥末绿点缀，宽银幕黑边与颗粒。",
+        "brutalist-mono": "混凝土灰，高对比黑白，粗重大写字体。",
+        "blueprint": "海军蓝上的半透明白模，等宽字体，青色点缀。",
+        "golden-hour": "夕阳天空下的沙色模型，橙青调色，宽银幕黑边。"
+      },
+      "lookPreview": "在你的模型上预览"
     },
     "remaining": "约剩 {{seconds}} 秒",
     "sfxVolume": "音效音量",
     "sfxRemove": "移除音效",
     "sfxCount": "{{n}} 个音效",
-    "sfxTitle": "音效"
+    "sfxTitle": "音效",
+    "restyleHint": "立即更改调色和文字。3D 镜头保留原有配色和光照——重新生成才会重绘。"
   }
 }
