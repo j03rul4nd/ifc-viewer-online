@@ -119,7 +119,88 @@
       "closeAriaLabel": "閉じる",
       "trust1": "WebAssembly — ブラウザ内で実行",
       "trust2": "ログイン不要",
-      "trust3": "最大 2 GB 対応"
+      "trust3": "最大 2 GB 対応",
+      "dropHintMulti": "1 つ以上の .ifc ファイルをここにドロップ",
+      "or": "または",
+      "privacy": "プライバシー"
+    },
+    "dialogLabel": "IFC ファイルを開く",
+    "preparing_other": "{{count}} 個のモデルを準備中…",
+    "preparingDetail": "ファイルの整合性、IFC スキーマ、重複を確認中",
+    "preparingCount": "{{total}} 件中 {{done}} 件を確認済み",
+    "review": {
+      "title_other": "{{count}} 個のモデルを検出",
+      "subtitle": "モデルはバックグラウンドで読み込まれます。その間も作業を続けられます。",
+      "addFiles": "ファイルを追加",
+      "dropToAdd": "離すと選択に追加します",
+      "includeAria": "{{name}} を読み込む",
+      "schemaUnknown": "スキーマ未宣言",
+      "checking": "確認中…",
+      "status": {
+        "valid": "準備完了",
+        "invalid": "読み込み不可",
+        "loaded": "読み込み済み",
+        "loading": "すでに読み込み中",
+        "inSelection": "重複"
+      },
+      "sameContentAs": "{{name}} と同じ内容",
+      "inSelection": "この選択内の {{name}} と同じ内容",
+      "openExisting": "既存のものを開く",
+      "viewProgress": "進行状況を表示",
+      "batchName": "バッチ名",
+      "defaultBatchName_other": "{{count}} 個のモデル",
+      "createGroup": "1 つのプロジェクトとしてグループ化",
+      "createGroupHint": "シーンツリーにグループを作成し、各モデルは読み込まれ次第そこに追加されます。",
+      "summary": "{{total}} 件中 {{selected}} 件を選択 · {{size}}",
+      "loadAll": "すべて読み込む（{{count}}）",
+      "loadSelected": "選択項目を読み込む（{{count}}）",
+      "loadNewOnly": "新しいファイルのみ読み込む（{{count}}）",
+      "loadInBackground": "バックグラウンドで読み込む",
+      "cancel": "キャンセル",
+      "discipline": {
+        "architecture": "意匠",
+        "structure": "構造",
+        "mep": "設備",
+        "hvac": "空調",
+        "plumbing": "給排水衛生",
+        "electrical": "電気",
+        "fire": "消防",
+        "landscape": "外構・造園",
+        "site": "敷地",
+        "civil": "土木",
+        "interior": "内装",
+        "furniture": "家具",
+        "coordination": "統合"
+      }
+    },
+    "duplicate": {
+      "title": "{{name}} はすでに読み込まれています。",
+      "titleLoading": "{{name}} はすでに読み込み中です。",
+      "body": "もう一度読み込むと、同じモデルの 2 つ目のコピーがシーンに追加されます。",
+      "sameContentAs": "{{name}} と同じ内容です。",
+      "openExisting": "既存のものを開く",
+      "viewProgress": "進行状況を表示",
+      "loadAnyway": "それでも重複して読み込む",
+      "cancel": "キャンセル"
+    },
+    "large": {
+      "rowNote": "大容量 — 数分かかる場合があります",
+      "banner": "大容量の IFC を検出しました。このモデルの処理には数分かかる場合があります。読み込み中もビューアは使用できます。",
+      "memoryWarning": "非常に大きな IFC は、ブラウザの WebAssembly メモリ上限（実際には IFC で約 2.5 GB）を超えることがあります。読み込みに失敗した場合は、モデルを分野別または階別に分割すると改善することがよくあります。"
+    },
+    "errors": {
+      "titleMany": "これらのファイルはいずれも読み込めません",
+      "INVALID_EXTENSION": "IFC ファイルではありません（.ifc が必要です）。",
+      "INVALID_MIME": "ファイル形式が IFC として認識されません。",
+      "FILE_TOO_LARGE": "2 GB の上限を超えています。",
+      "FILE_EMPTY": "ファイルが空です。",
+      "UNSUPPORTED_IFC_VERSION": "対応していない IFC スキーマです。対応形式: IFC2x3、IFC4、IFC4x3。",
+      "CORRUPTED_FILE": "有効な IFC ヘッダーではありません — ファイルが破損している可能性があります。",
+      "READ_FAILED": "ファイルを読み取れませんでした。移動されたか、アクセス権が取り消された可能性があります。",
+      "UNKNOWN": "ファイルの確認中に予期しないエラーが発生しました。"
+    },
+    "submitted": {
+      "title_other": "{{count}} 個のモデルをバックグラウンドで読み込み中"
     },
     "active": {
       "drop": ".ifc ファイルをここにドロップ",

@@ -44,6 +44,8 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 - `ArrayBuffer` is *transferred* to the worker (zero-copy). The `file.arrayBuffer()` call on the main thread renders the buffer detached after transfer; the original `File` object remains accessible.
 - `forceSingleThread: true` is passed to `IfcAPI.Init` to prevent Emscripten from spawning pthread sub-workers (which would fail inside a nested ES module worker context).
 
+> **Superseded in part by D-29 (2026-09).** Parsing still runs in `ifc-parser.worker.ts` with `IfcImporter` and `forceSingleThread`. What changed: there is no single reused worker any more. `IfcConvertPool` (`src/lib/loading/ifc-convert-pool.ts`) spawns workers on demand, and the `LoadManager` convert lane decides how many run (one by default, by measurement). The main thread no longer reads the file and transfers an `ArrayBuffer`: it posts the `File` handle and the worker reads the bytes itself. Cancel is `worker.terminate()`. Progress is IfcImporter's per-class `ProgressData`, mapped to the `geometry` / `properties` / `relations` / `serialize` phases instead of a percentage. See `docs/MODEL_LOADING.md` §5.
+
 ---
 
 ## D-03 · OPFS over IndexedDB for model cache
@@ -58,12 +60,16 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 - `localStorage` (5 MB limit; not viable)
 - No cache (parse every time)
 
-**Reason:** OPFS gives direct file handle access (`FileSystemFileHandle.createWritable()`), which is faster than IndexedDB for large binary blobs because there is no serialisation/deserialisation overhead. For 200 MB+ fragment binaries, IndexedDB read latency is measurably higher. OPFS also supports synchronous access from a `SharedWorker`.
+**Reason:** OPFS gives direct file handle access (`FileSystemFileHandle.createWritable()`), which is faster than IndexedDB for large binary blobs because there is no serialisation/deserialisation overhead. For 200 MB+ fragment binaries, IndexedDB read latency is measurably higher. OPFS also offers synchronous access handles (`createSyncAccessHandle`), but only inside dedicated workers, not shared workers or the main thread. The app does not use them yet.
 
 **Consequences:**
 - OPFS is not available in all environments (e.g., some private browsing modes, older Safari). The cache silently no-ops. A `opfsAvailable` boolean is exposed by `useIfcLoader`.
 - OPFS is origin-scoped. Models cached in development (`localhost:3000`) are not accessible in production (different origin).
 - Both `.frag` (fragments binary) and `.ifc` (original IFC bytes) are stored per cache key. The IFC bytes are needed for validation and future IFC export.
+
+> **Superseded in part by D-29 (2026-09).** The last consequence no longer holds: the loading engine stores only `.frag` + `.meta.json`. The IFC bytes that validation, IDS and export use come from the user's `File`, the download or the SDK bytes, read once at commit into `modelRegistry`. No code path read the cached `.ifc` back. Writing it delayed every attach by a full-file write and counted against the cache budget, evicting other models' fragments. A rewrite now also removes a stale `.ifc` left by an older build.
+>
+> An entry also proves itself before it counts as a hit. `.meta.json` is written last, as the commit marker. A lookup needs a parseable meta and a non-empty `.frag` of the recorded size, plus a matching content fingerprint when one is stored. Least-recently-used entries are evicted when the cache would exceed min(4 GB, 50 % of the quota). See `docs/MODEL_LOADING.md` §7.
 
 ---
 
@@ -84,7 +90,12 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 - If the user touches a file (identical bytes, changed `lastModified`), the cache misses unnecessarily and re-parses. Acceptable — always produces a correct result.
 - Cache key is stored in `.meta.json`. Upgrading the cache format requires a migration or cache invalidation.
 
-> ⚠️ NOTE: The cache key should eventually include the `@thatopen/fragments` version (e.g., `v3.4.3`) so that a library upgrade automatically invalidates stale binaries. Not implemented yet.
+> ⚠️ NOTE: The cache key should eventually include the `@thatopen/fragments` version (e.g., `v3.4.3`) so that a library upgrade automatically invalidates stale binaries. Not implemented yet. The key does carry a manual format prefix, `CACHE_VERSION` in `opfs-cache.ts`: `v2` since Sprint 5, and `v3` since the converter stopped applying `COORDINATE_TO_ORIGIN`. The prefix has to be bumped by hand whenever converter settings change what a `.frag` contains.
+
+> **Superseded in part by D-29 (2026-09).** The key is unchanged on purpose: `v3:${name}:${size}:${lastModified}` still names the cache entry, saved georef placement and cached validation results. Two things were added around it:
+> - **Stable keys for fetched files.** A `File` built from a download used to get `lastModified = now`, so URL, demo and `?model=` loads never hit the cache and wrote a new entry every time. `fetchIfcFromUrl` / `fetchDemoModel` now take `lastModified` from the `Last-Modified` header, or 0 when there is none. Measured on the Hotel Vela set: 3/3 hits, 2.4 s instead of 10.5 s cold.
+> - **A content fingerprint.** The alternative rejected above is partly back, in a cheap form. `f1:<size>:<SHA-256 of three 64 KB samples (head, middle, tail)>` takes about a millisecond per file and never reads the whole file. It is stored in the entry's meta: a key hit whose fingerprint differs is stale, so it is evicted and treated as a miss. The same fingerprint drives duplicate detection in the import dialog.
+> - **A full hash for SDK bytes.** Bytes have no mtime, so their key is `name:size:0`, and only the content tells two versions apart. A same-size in-place edit can sit where the samples never look. The whole buffer is already in memory, so bytes sources get `f2:<size>:<SHA-256 of every byte>`, and only that hash vouches for their entry. Without a digest (an insecure context, or over 1 GB) bytes are not cached, and the load gets a key of its own so no cached validation or placement is reused.
 
 ---
 
@@ -119,6 +130,8 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 - The `ArrayBuffer` becomes **detached** on the main thread after transfer. A copy is made before transfer so the IFC bytes are retained for validation and export.
 - The validator worker receives its own copy (`ifcBuffer.slice(0)`), so the original is never detached.
 
+> **Superseded in part by D-29 (2026-09).** The IFC is no longer transferred to the parser at all. The third alternative above was rejected on a wrong premise: a `File` *can* be posted to a worker. Structured clone passes a handle, not the bytes, and the worker reads it with `file.arrayBuffer()`. The pool does exactly that now. It removes the synchronous whole-file copy on the main thread (the `slice(0)` before transfer), and the main-heap cost during conversion drops from 2× the IFC to 0×. The bytes the registry keeps for validation, IDS and export are read once, asynchronously, at commit (the `read` phase). Transfer still matters on the way back and on to the scene. The worker transfers the fragments buffer back, without a copy when the view spans its buffer. The engine writes it to OPFS first and then **transfers** it into the fragments worker (`loadFragments(ArrayBuffer)` detaches it), instead of structured-cloning a `Uint8Array`. The validator's `slice(0)` copy is unchanged.
+
 ---
 
 ## D-07 · COOP/COEP headers always enabled
@@ -150,6 +163,16 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 **Consequences:**
 - The model setup code (`setupLoadedModel`, colour application, camera fit) runs identically on both paths.
 - `loadIfc()` is dead code in the current app flow. If reactivated, verify that `setupLoadedModel` is still called.
+
+> **Superseded in part by D-29 (2026-09).** `loadFragments()` is still the only way into the scene, but App no longer calls it: only the loading system's IFC adapter does. The signature grew an options object: `loadFragments(buffer, fileName, fileSize?, onProgress?, options?: { modelId, signal, onStage, frame })`.
+> - The loading manager mints the `modelId` before the job starts (same `${fileName}-${13 digits}` shape, strictly increasing per page). The viewer only mints one for direct callers, such as the blog embed.
+> - `signal` cancels the load. It uses fragments' `core.abort(modelId)` while the worker holds the model, and a full undo after that.
+> - `onStage` reports fragments' real `decompressing` / `parsing` / `generating` stages (with the real 0..1 fraction of `generating`), then `setup`.
+> - `frame: false` lets federated members land without moving the camera.
+> - An `ArrayBuffer` is transferred into the fragments worker and a `Uint8Array` is copied.
+> - Any rejection leaves the scene exactly as it was.
+>
+> New companions on `ViewerAPI`: `hasModel`, `waitForModelIdle` (for the background `stream` phase) and `getRenderStats`.
 
 ---
 
@@ -183,7 +206,14 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 **Consequences:**
 - Two WASM instances may be active simultaneously (one in each worker). Memory cost is ~60–80 MB each. Acceptable on desktop; may be tight on mobile.
 - The buffer copy (`ifcBuffer.slice(0)`) before postMessage preserves the original for export.
-- The validator worker is a singleton managed by `validator.ts`; it is recreated after fatal errors (e.g., WASM SIGABRT).
+- The validator worker is a singleton managed by `validator.ts`; it is recreated after fatal errors (e.g., WASM SIGABRT). *(Since then it grew into a two-slot pool, `_pool` in `validator.ts`. Slot 0 runs half the rules plus the spatial tree, slot 1 the other half. A slot that errors is respawned on the next call.)*
+
+> **Superseded in part by D-29 (2026-09).** "Two WASM instances" is now "as many as the scheduler admits, plus the enrichment workers".
+> - Conversions go through the loading manager's convert lane. It runs one conversion at a time by default, because concurrent web-ifc conversions were measured to be slower each. The lane is memory-admitted, and large files run alone.
+> - The validator pool, IDS and geo-extract each still bring their own instance.
+> - The spatial-tree build (the `index` phase, a full web-ifc parse in the validator worker) takes a **convert-lane slot at background priority**, so it never runs beside a conversion and waits behind every model not yet on screen.
+> - To keep a federated drop from stacking parses, post-load auto-validation (`?validate`) and georef extraction are deferred until the load queue is idle (`summary.managedActive === 0` / `load:idle`), and then run one model at a time.
+> - Conversion workers that handled a file ≥ 64 MB are terminated after the job (Emscripten heaps never shrink). Idle ones are reaped after 60 s.
 
 ---
 
@@ -240,8 +270,9 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 
 **Consequences:**
 - `useAppEvent(eventName, handler)` is the React-side bridge — subscribes on mount, unsubscribes on unmount.
-- Every event name and payload is declared in `AppEventMap` in `src/types/index.ts`. Adding an event requires updating that interface first.
+- Every event name and payload is declared in `AppEventMap` in `src/lib/event-bus.ts` (it lived in `src/types/index.ts` in Sprint 3). Adding an event requires updating that map first.
 - Avoid using the bus for data that belongs in a Zustand store (synchronous UI state). The bus is for fire-and-forget lifecycle signals.
+- *(D-29, 2026-09)* The loading manager bridges its own event stream onto the bus as `load:queued / started / phase / progress / completed / failed / cancelled / batch-settled / idle`, each carrying `{ jobId, kind, fileName, batchId, requestId }`, plus `model:removed { modelId }`. `model:loaded { modelInfo, fromCache, cacheKey, modelId }` keeps its payload and its timing: after `modelRegistry` and `modelStore` hold the model, before `sceneStore` does. The loading UI does not listen to these events. It reads the throttled `loadingStore` snapshot.
 
 ---
 
@@ -249,7 +280,7 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 
 **Sprint:** 3
 
-**Decision:** All OPFS I/O is mediated through a `CacheRepository` class instance (`cacheRepo`) exported from `src/lib/opfs-cache.ts`. Direct `navigator.storage.getDirectory()` calls must not appear outside that module.
+**Decision:** All OPFS I/O is mediated through a `CacheRepository` class instance (`cacheRepo`) exported from `src/lib/cache-repository.ts`, which wraps the raw functions in `src/lib/opfs-cache.ts`. Direct `navigator.storage.getDirectory()` calls must not appear outside `opfs-cache.ts`.
 
 **Alternatives considered:**
 - Plain functions (`loadFromCache`, `saveToCache`, etc.) — the Sprint 2 approach; harder to mock and harder to swap out the storage backend
@@ -258,8 +289,13 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 **Reason:** Wrapping OPFS in a repository makes `Result<T,E>` returns consistent (the repository constructor can return early if OPFS is unavailable), and makes the storage layer testable without a real browser.
 
 **Consequences:**
-- `cacheRepo` is created once at module scope in `opfs-cache.ts` and imported by `loader.ts`.
-- `CacheRepository.listEntries()`, `.load()`, `.save()`, `.delete()`, `.getStorageEstimate()` are the only public surface.
+- `cacheRepo` is created once at module scope in `cache-repository.ts`.
+- The public surface, all returning `Result<T, Error>`:
+  - entry-level API used by the loading engine: `findEntry(key, fingerprint)`, `saveEntry(key, { fragments, ifc, meta })`, `touch`, `evictForSpace`, `getBudget`, `isAvailable`;
+  - management: `listEntries`, `deleteEntry`, `deleteEntries`, `getStorageInfo`;
+  - legacy per-file calls: `findFragments` / `saveFragments` / `findIfcBuffer` / `saveIfcBuffer`.
+
+> **Updated by D-29 (2026-09).** The cache's main consumer is the IFC source adapter, through `cacheRepoAdapter()` in `src/lib/loading/ifc-source.ts`, not `loader.ts`. That adapter unwraps every `Result` into "a failure is a miss or a skipped write", because no cache problem is ever a reason to fail a load. `useIfcLoader` only lists and deletes entries for the cache readout.
 
 ---
 
@@ -300,6 +336,13 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 - `buildSpatialTree()` in `validator.ts` defers if validation is already running; retries via `appBus.once('validation:complete')`.
 - The tree is rebuilt on every new model load. It is not persisted in OPFS.
 
+> **Superseded in part by D-29 (2026-09).** The tree is still built automatically for every model, but not from `loader.ts`. It is the `index` phase of the model's load job. It is a background phase: it runs after the commit (the model is already interactive) and after the model's first view has streamed to the GPU (`stream`, bounded by a 30 s timeout).
+> - **The build queues for a convert-lane slot at background priority**, because it is another full web-ifc parse. A tree build and a conversion never overlap, and models still loading go first.
+> - **It has a size-scaled budget**, max(120 s, 60 s + 1 s/MB), that starts when the slot is granted.
+> - **A failure or timeout is a warning** on the phase, not a failed load.
+>
+> The Loading Center shows the job as "finishing" while it runs. The deferral behind a running validation is unchanged.
+
 ---
 
 ## D-17 · Per-model pivot groups (not a single shared pivot)
@@ -338,6 +381,8 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 - `modelStore.ifcBuffer` still exists for single-model legacy paths. Do not use it in new multi-model code.
 - `modelRegistry.unregister(id)` must be called in `handleRemoveModel` to free the buffer from memory.
 
+> **Updated by D-29 (2026-09).** Registration is now one function, `commitIfcModel` in `src/lib/loading/index.ts`, and it is the same for every entry point. It runs in a fixed order: `modelRegistry.register` → `modelStore.setModel` → `appBus 'model:loaded'` → App's `onModelLoaded` hook, which adds the model to `sceneStore`. The registry copy is read from the user's `File` (or taken from the SDK's own buffer, with no second copy) at commit, so it is still the largest steady-state memory cost after the GPU. `docs/MODEL_LOADING.md` §13 plans `Blob` handles instead.
+
 ---
 
 ## D-19 · Conditional state reset: only on first model load
@@ -355,6 +400,8 @@ Each entry documents a concrete technical choice made in this codebase. Entries 
 **Consequences:**
 - If the user loads an entirely unrelated second model and wants a clean slate, they must manually clear selection and restore visibility.
 - `handleNavigateToLanding()` still resets everything — that path is a full session reset.
+
+> **Superseded in part by D-29 (2026-09).** `handleFileLoad` is no longer the single entry point (it is a one-line wrapper that queues a file), and with concurrent loads `sceneModels.length === 0` stops being a safe test. Two members of a batch would both see an empty scene. The reset now lives in the loading system's `beforeSubmit` hook, which runs once per submission, whatever its source (dialog, drop, demo, URL, SDK, reload). It resets only when `sceneEmpty` holds, meaning no model is registered *and* no IFC job is active. `handleNavigateToLanding()` first calls `resetLoading()`: it cancels every load, bumps the manager's epoch so a load that is already attaching cannot repopulate the stores, and terminates the conversion workers. Only then does it clear the stores.
 
 ---
 
@@ -564,4 +611,84 @@ Templates are starting points: every store they touch stays freely adjustable af
 
 ---
 
-*Last updated: 2026-07-04 · Sprints 1–9 complete · D-21/D-22 (re-audit v2) · D-23 Capture Toolkit · D-24 Tour Mode · D-25 Client Presentation Mode · D-26 Presentation Templates + Share Links · D-27 (privacy-invariant amendment, F6-gated) + D-28 (immutable Submission + append-only AuditLog) added for the conformance-CDE pivot — see `docs/CDE_ROADMAP.md` + `docs/CONFORMANCE_DOMAIN.md`*
+## D-29 · Centralized model loading manager (jobs, lanes, real phases)
+
+**Date:** 2026-09 (model loading & orchestration rebuild)
+
+**Status:** ✅ Implemented. Reference: `docs/MODEL_LOADING.md`, which wins where older passages disagree.
+
+**Context:** Loading was a single-flight hook (`useIfcLoader` in `loader.ts`) that `App.tsx` drove through a handful of global flags. It worked for one file at a time. It broke, in ways that were hard to see, as soon as federated sets, demo sets, `?model=a,b` and SDK hosts started loading several models:
+- A second load was **rejected**, not queued, and App flagged the whole scene as an error.
+- Progress was fixed checkpoints that went backwards (20 → 0, 99 → 80). The real per-class progress from IfcImporter and fragments' real `generating` fraction were thrown away.
+- **Cancel did nothing.** The overlay button changed its own state while the worker kept parsing.
+- The model id was minted inside the viewer *after* the load, so nothing outside could cancel, prioritise or correlate a load. fragments' `abort(modelId)` existed and was unused.
+- SDK correlation had one pending-request slot, and parse failures sent no `model-error`, so the host just timed out after 120 s.
+- Every progress message re-rendered the whole app.
+- Fetched files got `lastModified = now`, so URL and demo loads never hit the OPFS cache.
+- The full IFC was copied on the main thread before transfer.
+
+That is documented pain, not commodity polish, so it passes the Roadmap v2 prioritisation rule. The full list is in `MODEL_LOADING.md` §1.
+
+**Decision:** Every load is a **job** in one `LoadManager` (`src/lib/loading/`). That covers upload, drop, demo set, `?model=`, `ifcviewer:load`, SDK bytes, companion model and reload. The manager is framework-agnostic: no React, no store, no viewer, no worker. Everything is injected, so it runs in plain node tests.
+- **Phases reported by the code doing the work.** A job runs through `download → identify → cache-lookup → geometry → properties → relations → serialize → cache-write → attach → setup → read`, then the background phases `stream` and `index`. A phase shows a fraction only when that code measures one. Otherwise the UI shows activity.
+- **Statuses:** `queued / held / running / waiting(reason) / loaded / failed / cancelled / unloading / removed`.
+- **Three lanes**, decided by a pure scheduler:
+  - `network`: 2, back-pressured. No download starts while `maxConverts + 1` downloaded files already wait to convert, so downloads never pile whole files on the heap far ahead of conversion.
+  - `convert`: **1 by default**, memory-admitted, large files run alone, and reserved for the anchor of an empty scene. The spatial-tree build (`index`) also takes this lane, at background priority.
+  - `attach`: 1, **anchor-first**. The first-submitted model sets fragments' coordinate base.
+- **Real cancellation:** `worker.terminate()` during conversion, fragments `core.abort(modelId)` during attach, and compensation that removes partial models. `reset()` bumps an epoch that refuses late commits.
+- **A retry policy per error class**, with at most 3 attempts.
+- **Cache:**
+  - stable keys for fetched files;
+  - a content fingerprint in the meta: a sample for files, the full SHA-256 for SDK bytes;
+  - the meta written last, as the commit marker;
+  - LRU eviction;
+  - no `.ifc` copy written any more.
+
+  Duplicate detection is built on the same fingerprint.
+- **The UI reads only a throttled Zustand mirror** (`loadingStore`, ≤ 10 updates/s). App reacts through `LoadingHooks`, which are refreshed every render so a commit never runs a stale closure.
+- **Point clouds, meshes and GIS context are *tracked*, not executed.** Their runners keep their own alignment, budgets and streaming, and the manager mirrors them into jobs.
+
+**Alternatives considered:**
+- **Per-component loading state** (each entry point with its own flags and spinner, as before). Rejected: there is no global view, no queue, no cross-source cancel or priority, and the loading state lived in App's React state.
+- **One worker per file, unbounded concurrency.** Rejected by measurement. On the Hotel Vela set (Chromium, 12 cores, 16 GB, cold cache):
+  - 1 conversion at a time: 7.2 s for the whole set;
+  - 2 concurrent: 7.6 s;
+  - 3 concurrent: 16.0 s, and the 0.2 MB MEP model took 9.8 s instead of 0.09 s.
+
+  IfcImporter builds geometry in JS arrays and web-ifc parses every file twice, so concurrent workers fight over allocation and memory bandwidth, not cores. Peak memory also multiplies (≈ size × 5 + 100 MB per conversion). The overlap that pays is across lanes (download ∥ convert ∥ attach).
+- **web-ifc multithreaded build (web-ifc-mt).** Deferred. Its pthread sub-workers fail inside a nested module worker (D-02). It needs `crossOriginIsolated`, which `coi-serviceworker` does not give the very first visit. It pre-spawns `hardwareConcurrency` threads over a shared 4 GiB memory. A spike in a classic, non-nested worker comes first.
+- **Server-side or SSR processing** (convert in the cloud, or prerender the viewer). Rejected: invariant 1. D-27 permits it only in F6, opt-in and paid, and the viewer is never prerendered (`docs/SEO_PRERENDER_PLAN.md`).
+- **Chosen:** a client-only job manager with separate lanes whose limits come from measurement, adapters that report real signals, and a store that holds serialisable views only.
+
+**Consequences:**
+- Supersedes in part D-02, D-03, D-04, D-06, D-08, D-10, D-16 and D-19, and updates D-13, D-14 and D-18. Each carries a note; history is kept.
+- **The `modelId` is minted before the load.** The shape is unchanged: `${fileName}-${13 digits}`, strictly increasing per page, so two same-named files in one millisecond no longer collide. A retry gets a fresh id.
+- **Registration order is frozen:** registry → `modelStore` → `model:loaded` → App's hook → `sceneStore`. New bus events: `load:*` and `model:removed`.
+- **The SDK and embed wire format is unchanged.** The behaviour is better:
+  - `model-progress` is monotonic per job, correlated by `requestId`, and sent only while the job is loading;
+  - `model-error` now also covers parse and scene failures and cancellations, with `url` for URL loads and `name` otherwise;
+  - the iframe accepts concurrent loads;
+  - `ifcviewer:load` with an array is one batch;
+  - `ifcviewer:clear` cancels in-flight IFC loads first.
+- **Memory:**
+  - the main thread no longer copies the IFC during conversion (the `File` is posted to the worker);
+  - downloads wait while conversion is backed up;
+  - the fragments buffer is transferred, not cloned;
+  - big-file workers are recycled and idle ones reaped;
+  - post-load validation and georef extraction wait for an idle queue.
+- **Observability:**
+  - `[IFC-LOAD]` structured logs on the `Load` channel (`localStorage['ifc:log-level']='trace'` for trace);
+  - `performance.mark` per phase in DEV (`ifc-load:<job>:<phase>`);
+  - session metrics and renderer stats in the Loading Center's Advanced view;
+  - `globalThis.__ifcLoad` in DEV.
+- **New UI:** a toolbar loading chip (a floating variant for presets without a toolbar, a pill on mobile), the Loading Center (popover on desktop, sheet on mobile, with Basic/Advanced views), a first-load card, a "Loading" section in ScenePanel, and a multi-file import dialog with review, duplicates and a large-file notice.
+- **Still outside the manager:**
+  - the blog `EmbedViewer` path (`src/lib/embed-loader.ts`) keeps its own fetch → worker → `loadFragments` pipeline;
+  - point cloud and mesh execution stays in their runners.
+
+  `MODEL_LOADING.md` §13 lists the next steps.
+
+---
+
+*Last updated: 2026-09-24 · Sprints 1–9 complete · D-21/D-22 (re-audit v2) · D-23 Capture Toolkit · D-24 Tour Mode · D-25 Client Presentation Mode · D-26 Presentation Templates + Share Links · D-27 (privacy-invariant amendment, F6-gated) + D-28 (immutable Submission + append-only AuditLog) added for the conformance-CDE pivot — see `docs/CDE_ROADMAP.md` + `docs/CONFORMANCE_DOMAIN.md` · D-29 centralized model loading manager (2026-09) — see `docs/MODEL_LOADING.md`; D-02/03/04/06/08/10/13/14/16/18/19 annotated*

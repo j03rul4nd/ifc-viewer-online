@@ -1,25 +1,31 @@
-<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Puentes de Lujiazui · revisión 3D</title>
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shanghai · revisión de calles y edificios</title>
 <style>html,body{overflow:hidden}aside{max-height:38vh;overflow:auto}</style>
 <style>body{margin:0;background:#bccbd5;font:14px system-ui;color:#183443}aside{position:fixed;z-index:2;top:18px;left:18px;padding:20px;background:#fffffff0;border-radius:12px;max-width:330px}h1{font-size:20px;margin:0 0 12px}button{padding:9px;margin:3px;border:1px solid #abc;border-radius:6px;background:white;cursor:pointer}p{line-height:1.5;font-size:12px}canvas{display:block}</style>
-<aside><h1>Puentes de Lujiazui</h1><button id="ring">Anillo Mingzhu</button><button id="link">Conexiones</button><button id="low">Desde la calle</button><button id="stairs">Escaleras</button><button id="elevator">Ascensor</button><button id="park">Caminos y jardines</button><p>Trazados de escaleras y posición del ascensor: OSM. Dimensiones, cerramientos y barandas aproximados. Anillo: anchura de referencia 8,5 m; altura cartográfica 9 m.</p><p id="stats">Preparando geometría…</p></aside>
+<aside><h1>Shanghai · espacio urbano</h1><p><a href="?district=lujiazui">Lujiazui</a> · <a href="?district=xintiandi">Xintiandi</a></p><button id="ring">Anillo Mingzhu</button><button id="link">Conexiones</button><button id="low">Desde la calle</button><button id="stairs">Escaleras</button><button id="elevator">Ascensor</button><button id="park">Caminos y jardines</button><button id="buildings">Edificios</button><p id="reference">Trazados de escaleras y posición del ascensor: OSM. Dimensiones, cerramientos y barandas aproximados. Anillo: anchura de referencia 8,5 m; altura cartográfica 9 m.</p><p id="stats">Preparando geometría…</p></aside>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import fixture from '/src/lib/geo/__fixtures__/shanghai-parks.json';
+import xintiandiFixture from '/src/lib/geo/__fixtures__/shanghai-xintiandi.json';
 import accessFixture from '/src/lib/geo/__fixtures__/shanghai-access.json';
+import {buildBuildingsGeometry} from '/src/lib/geo/building-mesh.ts';
 import {parseOsmFeatures} from '/src/lib/geo/osm-features.ts';
 import {buildLinearLayer,solveSceneVertical,buildSurfaceLayer,buildTreeLayer} from '/src/lib/geo/osm-scene.ts';
 import {latLonToNormalized,metresToNormalized} from '/src/lib/geo/geo-math.ts';
-const lat=31.24022,lon=121.49599,o=latLonToNormalized(lat,lon),unit=metresToNormalized(lat);
+const district=new URLSearchParams(location.search).get('district'),historic=district==='xintiandi';
+const lat=historic?31.218:31.24022,lon=historic?121.4755:121.49599,o=latLonToNormalized(lat,lon),unit=metresToNormalized(lat);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.setClearColor(0xbccbd5);renderer.toneMapping=THREE.ACESFilmicToneMapping;document.body.append(renderer.domElement);
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,.1,5000);camera.up.set(0,0,1);
 const controls=new OrbitControls(camera,renderer.domElement);scene.add(new THREE.HemisphereLight(0xecf6ff,0x727362,2));const sun=new THREE.DirectionalLight(0xfff0d9,3);sun.position.set(-80,-150,240);scene.add(sun);
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),new THREE.MeshStandardMaterial({color:0xa6b3ac,roughness:1}));ground.position.z=-.1;scene.add(ground);
-const start=performance.now(),features=parseOsmFeatures({elements:[...accessFixture.elements,...fixture.elements]}),opts={anchorLat:lat,anchorLon:lon,quality:'detailed'};opts.vertical=solveSceneVertical(features,opts);
+const start=performance.now(),features=parseOsmFeatures(historic?xintiandiFixture:{elements:[...accessFixture.elements,...fixture.elements]}),opts={anchorLat:lat,anchorLon:lon,quality:'detailed'};opts.vertical=solveSceneVertical(features,opts);
 const roads=buildLinearLayer(features,'road',opts);const root=new THREE.Group();root.scale.setScalar(1/unit);root.position.set(-o.nx/unit,-o.ny/unit,0);root.add(roads.object);scene.add(root);
 const landscape=new THREE.Group();root.add(landscape);
 for(const kind of ['green','water']){const built=buildSurfaceLayer(features,kind,opts);if(built)landscape.add(built.object)}
 const trees=buildTreeLayer(features,opts);if(trees)landscape.add(trees.object);landscape.visible=false;
+const built=buildBuildingsGeometry(features.filter(f=>f.kind==='building'&&f.ring),{...opts,detail:'detailed',lit:true,localOrigin:true});
+let buildings;if(built){buildings=new THREE.Mesh(built.geometry,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.72}));buildings.position.set(built.origin.x,built.origin.y,0);buildings.visible=false;root.add(buildings)}
+document.querySelector('#buildings').onclick=()=>{if(buildings)buildings.visible=!buildings.visible;landscape.visible=true;view([220,-100,0],[780,-780,600])};
 const buildMs=performance.now()-start;
 document.querySelector('#park').onclick=()=>{landscape.visible=true;view([330,-200,0],[720,-730,470])};
 function view(target,eye){controls.target.set(...target);camera.position.set(...eye);controls.update()}
@@ -27,6 +33,7 @@ document.querySelector('#ring').onclick=()=>view([0,0,7],[140,-170,125]);documen
 document.querySelector('#stairs').onclick=()=>view([-25,-60,4],[25,-125,35]);
 const elevatorPoint=latLonToNormalized(31.2395497,121.5001047),ex=(elevatorPoint.nx-o.nx)/unit,ey=(elevatorPoint.ny-o.ny)/unit;
 document.querySelector('#elevator').onclick=()=>view([ex,ey,4],[ex+25,ey-35,23]);
+if(historic){document.querySelector('#reference').textContent='Cartografía © OpenStreetMap, consultada el 24/09/2026. Ventanas y alturas no etiquetadas: aproximaciones tipológicas. No es un levantamiento de fachadas.';for(const id of ['ring','link','low','stairs','elevator'])document.getElementById(id).hidden=true;buildings.visible=true;landscape.visible=true;view([0,0,0],[300,-400,350])}
 window.bridgeQA={ready:true,buildMs,features:features.length,root,scene,camera,renderer};
 let frames=0,t=performance.now();function tick(){requestAnimationFrame(tick);controls.update();renderer.render(scene,camera);frames++;if(performance.now()-t>1000){document.querySelector('#stats').textContent=`${Math.round(frames*1000/(performance.now()-t))} FPS · ${renderer.info.render.calls} llamadas · ${renderer.info.render.triangles.toLocaleString()} triángulos · generación ${buildMs.toFixed(0)} ms`;frames=0;t=performance.now()}}tick();
 onresize=()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()};

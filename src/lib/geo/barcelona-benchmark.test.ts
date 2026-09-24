@@ -56,8 +56,12 @@ describe('Barcelona benchmark · the Eixample block', () => {
 
   it('keeps the courtyards the survey mapped as inner rings', () => {
     // 71 building relations carry an inner ring in the full 800 m box; these
-    // are the ones in this crop. Before, every one was drawn filled.
-    expect(E.features.filter((f) => f.kind === 'building' && f.holes?.length).length).toBe(9)
+    // are the ones in this crop. Before, every one was drawn filled. All but
+    // one are `building:part` relations: the survey maps the courtyards on
+    // the parts, and parts of relations are now kept as parts.
+    const withHoles = E.features.filter((f) => f.kind === 'building' && f.holes?.length)
+    expect(withHoles.length).toBe(17)
+    expect(withHoles.filter((f) => !f.isBuildingPart).length).toBe(1)
   })
 
   it('recognises the perimeter blocks and hollows out their interiors', () => {

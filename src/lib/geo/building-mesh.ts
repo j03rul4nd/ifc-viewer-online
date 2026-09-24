@@ -83,6 +83,8 @@ const SKIRT_M = 6
 
 export interface BuildingMeshResult {
   geometry: THREE.BufferGeometry
+  /** Add this translation to the mesh when localOrigin is enabled. */
+  origin?: THREE.Vector2
   /** Buildings actually included (some rings fail triangulation). */
   count: number
   /** How many of those had an estimated rather than surveyed height. */
@@ -125,6 +127,8 @@ export type BuildingDetail = 'simple' | 'detailed' | 'showcase'
 export type ContextTone = 'natural' | 'neutral'
 
 export interface BuildingMeshOptions {
+  /** Preserve sub-metre facade detail before converting to Float32. */
+  localOrigin?: boolean
   /** Anchor latitude — sets the metres→normalized scale for the whole patch. */
   anchorLat: number
   /** Facade modelling level. Defaults to 'simple'. */
@@ -286,6 +290,8 @@ export function buildBuildingsGeometry(
     // eye checks. The uphill side is then correctly cut into the slope, and the
     // skirt is sized from the actual fall so it always reaches the hillside.
     const centroid = ringCentroid(ring2d)
+    const focus = opts.anchorLon === undefined ? null : latLonToNormalized(opts.anchorLat,opts.anchorLon)
+    const nearFacade = !focus || Math.hypot(centroid.x-focus.nx,centroid.y-focus.ny)/metresToNormalized < 450
     const { minM, maxM } = frame.groundRangeM(ring2d)
     const groundM = minM
     const skirtM = SKIRT_M + Math.max(0, maxM - minM)
@@ -295,7 +301,7 @@ export function buildBuildingsGeometry(
     // Heights stay TRUE metres while the ground follows the exaggerated relief:
     // a 20 m building is 20 m tall whatever the terrain slider says.
     const groundZ = frame.zAtElevationM(groundM)
-    const baseZ = groundZ + (b.height.minHeightM - skirtM) * metresToNormalized
+    const baseZ = groundZ + (b.height.minHeightM - (b.height.minHeightM > 0 ? 0 : skirtM)) * metresToNormalized
     const topZ = groundZ + b.height.heightM * metresToNormalized
 
     const station = stationForm(b)
@@ -558,9 +564,16 @@ export function buildBuildingsGeometry(
 
       // A pavilion's wall is masonry, not a curtain of glazing strips.
       if (detailed && !b.pavilion) {
+        const facadeBaseZ = groundZ + b.height.minHeightM * metresToNormalized
+        // The buried skirt is foundation geometry, not an extra window storey.
+        if (baseZ < facadeBaseZ) {
+          const skirtTint=tintedTriple([shadeBottom,shadeBottom,shadeBottom],wallTint)
+          pushTriangle(positions,normals,colors,p0,p1,p1,baseZ,baseZ,facadeBaseZ,nx,ny,0,skirtTint)
+          pushTriangle(positions,normals,colors,p0,p1,p0,baseZ,facadeBaseZ,facadeBaseZ,nx,ny,0,skirtTint)
+        }
         pushDetailedWall(
           positions, normals, colors, p0, p1, nx, ny,
-          baseZ, wallTopZ, storeys, face, wallTint, contrast,
+          facadeBaseZ, wallTopZ, storeys, face, wallTint, contrast, nearFacade ? b.style?.use : undefined, len/metresToNormalized, b.style?.wallMaterial,
         )
         continue
       }
@@ -577,6 +590,11 @@ export function buildBuildingsGeometry(
 
   if (count === 0) return null
 
+  const origin = opts.localOrigin
+    ? latLonToNormalized(opts.anchorLat, opts.anchorLon ?? footprints[0].ring[0].lon) : undefined
+  // Rebased in float64, before the float32 cast, so a city-wide mesh keeps
+  // its centimetres.
+  if (origin) positions.rebase(origin.nx, origin.ny)
   const geometry = new THREE.BufferGeometry()
   geometry.setAttribute('position', new THREE.BufferAttribute(positions.toFloat32(), 3))
   geometry.setAttribute('normal', new THREE.BufferAttribute(normals.toFloat32(), 3))
@@ -589,7 +607,8 @@ export function buildBuildingsGeometry(
   }
   geometry.computeBoundingSphere()
 
-  return { geometry, count, estimatedCount, ranges }
+  return { geometry, count, estimatedCount, ranges,
+    origin: origin ? new THREE.Vector2(origin.nx,origin.ny) : undefined }
 }
 
 /**
@@ -829,6 +848,7 @@ function pushDetailedWall(
   tint: [number, number, number] | null,
   /** 1 = full glazing rhythm, 0 = a plain wall. Discreet context runs low. */
   contrast = 1,
+  use?: FeatureStyle['use'], widthM = 0, material?: string,
 ): void {
   const bands = Math.max(1, Math.min(MAX_BANDED_STOREYS, storeys))
   const span = topZ - baseZ
@@ -863,8 +883,30 @@ function pushDetailedWall(
     const glazing = faceShade * mix(ground ? 0.30 : 0.44)
     const spandrel = faceShade * mix(ground ? 0.98 : 1.16)
 
-    quad(z0, glassTop, glazing)
-    quad(glassTop, z1, spandrel)
+    const punched = material !== 'glass' && material !== 'mirror'
+      && (use === 'house' || use === 'apartments' || use === 'civic' || use === 'industrial' || use === 'shed')
+    if (!punched) {
+      quad(z0, glassTop, glazing)
+      quad(glassTop, z1, spandrel)
+    } else {
+      // Distinct solid masonry bays; warehouses have sparse high windows.
+      // This is typological detail, not a claim of surveyed window positions.
+      const industrial = use === 'industrial' || use === 'shed'
+      const bays = Math.max(1,Math.min(24,Math.round(widthM/(industrial?8:3.6))))
+      const sill = z0+storeyH*(industrial ? .65 : .23), head=z0+storeyH*.82
+      quad(z0,sill,spandrel);quad(head,z1,spandrel)
+      const strip=(a:number,b:number,shade:number)=>{
+        const q0=p0.clone().lerp(p1,a),q1=p0.clone().lerp(p1,b)
+        const c=tintedTriple([shade,shade,shade],tint)
+        pushTriangle(positions,normals,colors,q0,q1,q1,sill,sill,head,nx,ny,0,c)
+        pushTriangle(positions,normals,colors,q0,q1,q0,sill,head,head,nx,ny,0,c)
+      }
+      for(let j=0;j<bays;j++){
+        strip(j/bays,(j+.22)/bays,spandrel)
+        strip((j+.22)/bays,(j+.78)/bays,glazing)
+        strip((j+.78)/bays,(j+1)/bays,spandrel)
+      }
+    }
   }
 }
 

@@ -7,7 +7,14 @@
     "removeFailed": "Modell konnte nicht entfernt werden: {{message}}",
     "urlLoadFailed": "Das verlinkte Modell konnte nicht geladen werden: {{message}}",
     "mapFailed": "Der Kartenmodus ließ sich nicht öffnen: {{message}}",
-    "scanLoadFailed": "Der verlinkte Scan konnte nicht geladen werden: {{message}}"
+    "scanLoadFailed": "Der verlinkte Scan konnte nicht geladen werden: {{message}}",
+    "loadFailedNamed": "\"{{fileName}}\" konnte nicht geladen werden — {{reason}}",
+    "batchLoaded_one": "{{name}} — {{count}} Modell geladen",
+    "batchLoaded_other": "{{name}} — {{count}} Modelle geladen",
+    "batchPartial": "{{name}} — {{loaded}} geladen, {{failed}} fehlgeschlagen",
+    "dropUnsupported_one": "{{count}} Datei hat kein unterstütztes Format",
+    "dropUnsupported_other": "{{count}} Dateien haben kein unterstütztes Format",
+    "dropBcfHint": "Öffnen Sie das BCF-Panel, um .bcf-Dateien zu importieren"
   },
   "validation": {
     "complete": "Validierung abgeschlossen — {{count}} Problem(e) gefunden",

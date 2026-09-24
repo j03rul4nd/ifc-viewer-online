@@ -1206,7 +1206,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // to fall back to the unlit path and paint the blocks without the sun.
       const litFacades = contextDetail !== 'simple'
       const built = buildBuildingsGeometry(footprints, {
-        ...opts, detail: contextDetail, lit: litFacades, contextTone,
+        ...opts, detail: contextDetail, lit: litFacades, contextTone, localOrigin: true,
         typologyAt: inBarcelona ? barcelonaFacadeAt : null,
       })
       if (built) {
@@ -1217,6 +1217,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
             : new THREE.MeshBasicMaterial({ vertexColors: true }),
         )
         mesh.name = 'osm-buildings'
+        if (built.origin) mesh.position.set(built.origin.x, built.origin.y, 0)
         buildingRanges = built.ranges
         buildingsMesh = mesh
         // Above the flat tiles and the surface layers, so grade-level walls do

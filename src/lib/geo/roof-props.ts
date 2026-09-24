@@ -88,23 +88,17 @@ function ringArea(pts: ReadonlyArray<{ nx: number; ny: number }>): number {
 
 /** Area-weighted centroid. Falls back to the mean for a degenerate ring. */
 function centroid(pts: ReadonlyArray<{ nx: number; ny: number }>): { nx: number; ny: number } {
-  let a = 0
-  let cx = 0
-  let cy = 0
-  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
-    const cross = pts[j].nx * pts[i].ny - pts[i].nx * pts[j].ny
-    a += cross
-    cx += (pts[j].nx + pts[i].nx) * cross
-    cy += (pts[j].ny + pts[i].ny) * cross
+  const ox=pts[0].nx,oy=pts[0].ny
+  let area=0,x=0,y=0
+  for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+    const ax=pts[j].nx-ox,ay=pts[j].ny-oy,bx=pts[i].nx-ox,by=pts[i].ny-oy
+    const cross=ax*by-bx*ay;area+=cross;x+=(ax+bx)*cross;y+=(ay+by)*cross
   }
-  if (Math.abs(a) < 1e-18) {
-    const n = pts.length
-    return {
-      nx: pts.reduce((s, p) => s + p.nx, 0) / n,
-      ny: pts.reduce((s, p) => s + p.ny, 0) / n,
-    }
+  if(Math.abs(area)<1e-18)return {
+    nx:ox+pts.reduce((s,p)=>s+p.nx-ox,0)/pts.length,
+    ny:oy+pts.reduce((s,p)=>s+p.ny-oy,0)/pts.length,
   }
-  return { nx: cx / (3 * a), ny: cy / (3 * a) }
+  return {nx:ox+x/(3*area),ny:oy+y/(3*area)}
 }
 
 /** Ray-cast point-in-polygon. The guard that keeps a tank off the pavement. */

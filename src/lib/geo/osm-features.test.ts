@@ -326,7 +326,7 @@ describe('buildFeaturesQuery', () => {
 
     // Roads are the skeleton of a site view: funded FIRST and funded most.
     expect(q.indexOf('way["highway"]')).toBeLessThan(q.indexOf('["building"]'))
-    expect(caps[0]).toBe(550)
+    expect(caps[0]).toBe(510) // 4% now reserves explicitly mapped pavement areas.
     expect(Math.max(...caps)).toBe(caps[0])
   })
 
