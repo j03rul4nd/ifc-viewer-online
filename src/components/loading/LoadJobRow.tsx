@@ -159,7 +159,11 @@ function RowActions({ job, reveal, touch }: { job: LoadJobView; reveal: boolean;
       </IconButton>,
     )
   }
-  if (loaded && job.resultId) {
+  // "Show in scene" only where something can frame the result: the app for a
+  // model, the adapter for a cloud or a mesh. A loaded row with a resultId is
+  // not enough — a GIS row has one too, and nothing behind it frames terrain
+  // (the controller used to call focusModel with a cloud or a mesh id).
+  if (c.focus) {
     secondary.push(
       <IconButton key="focus" label={t('actions.focus')} touch={touch} onClick={() => loadingController.focus(id)}>
         <FocusIcon size={13} />

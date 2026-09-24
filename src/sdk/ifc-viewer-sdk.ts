@@ -302,7 +302,13 @@ type Listener<T> = (payload: T) => void
 // map event carries `heightEstimated` as a required field on purpose: most OSM
 // heights are inferred from storey counts, and one presented as surveyed is the
 // kind of number that ends up in somebody's shadow study.
-const SDK_VERSION = '1.10.0'
+// 1.10.1: scans and meshes load through the viewer's loading queue. The wire
+// is unchanged; what a host notices: a failed or cancelled add answers at once
+// (it used to hang until the timeout in some cases), `addPointCloudFromUrl`
+// no longer sends the raw last URL segment as the name (a signed URL's query
+// broke the format detection), and `addMesh*` wait as long as scans do (15
+// min) — an import may queue behind a model that is still converting.
+const SDK_VERSION = '1.10.1'
 const DEFAULT_LOAD_TIMEOUT = 120_000
 const REQUEST_TIMEOUT = 30_000
 const FALLBACK_LANGUAGES = LANGUAGES.map((l) => l.code)
@@ -656,11 +662,15 @@ export class IfcViewer {
     ).then((r) => r.cloudId)
   }
 
-  /** Add a scan the viewer fetches itself. The URL must allow CORS. */
+  /**
+   * Add a scan the viewer fetches itself. The URL must allow CORS. Without a
+   * `fileName` the viewer names the scan from the URL's path — a signed URL's
+   * query is never part of the name (its extension is what picks the reader).
+   */
   addPointCloudFromUrl(url: string, fileName?: string): Promise<string> {
     return this.request<{ cloudId: string }>(
       'ifcviewer:add-pointcloud',
-      { url, name: fileName ?? url.split('/').pop() ?? 'scan.las' },
+      fileName ? { url, name: fileName } : { url },
       15 * 60_000,
     ).then((r) => r.cloudId)
   }
@@ -767,19 +777,23 @@ export class IfcViewer {
    */
   addMesh(files: MeshFileInput[]): Promise<string> {
     const transfer = files.map((f) => f.bytes)
+    // As long as a scan's: the import may queue behind a model still
+    // converting (it lands on that model's floor), and a host that gave up
+    // first would see a failure for an import that then appears.
     return this.request<{ meshId: string }>(
-      'ifcviewer:add-mesh', { files }, 5 * 60_000, transfer,
+      'ifcviewer:add-mesh', { files }, 15 * 60_000, transfer,
     ).then((r) => r.meshId)
   }
 
   /**
    * Import a model the viewer fetches itself. Pass every URL the model needs —
-   * the `.gltf` AND its `.bin` and textures — and they are fetched in parallel.
-   * All must allow CORS.
+   * the `.gltf` AND its `.bin` and textures; they are downloaded one after
+   * another, with progress in the viewer's Loading Center. The entry is the
+   * first URL whose path names a .glb / .gltf / .obj. All must allow CORS.
    */
   addMeshFromUrl(urls: string | string[]): Promise<string> {
     return this.request<{ meshId: string }>(
-      'ifcviewer:add-mesh', { urls: Array.isArray(urls) ? urls : [urls] }, 5 * 60_000,
+      'ifcviewer:add-mesh', { urls: Array.isArray(urls) ? urls : [urls] }, 15 * 60_000,
     ).then((r) => r.meshId)
   }
 

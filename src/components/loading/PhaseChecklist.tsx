@@ -10,7 +10,7 @@ import type { LoadJobView, PhaseStatus } from '../../lib/loading/types'
 import { formatDuration } from '../../lib/utils'
 import { useLoadingT } from '../../i18n/hooks/namespaces'
 import { formatCounters, phaseChecklist } from './job-view'
-import { PHASE_KEYS } from './labels'
+import { phaseKey } from './labels'
 import { ArrowGlyph, CheckGlyph, DashGlyph, PendingGlyph, WarnGlyph } from './glyphs'
 
 function Mark({ status }: { status: PhaseStatus }) {
@@ -54,7 +54,7 @@ export function PhaseChecklist({ job, size = 'sm' }: { job: LoadJobView; size?: 
         return (
           <li key={phase.id} className={`flex items-center gap-2 min-w-0 ${text}`}>
             <Mark status={phase.status} />
-            <span className={`truncate ${LABEL_TONE[phase.status]}`}>{t(PHASE_KEYS[phase.id])}</span>
+            <span className={`truncate ${LABEL_TONE[phase.status]}`}>{t(phaseKey(job.kind, phase.id))}</span>
             {phase.background && (
               <span className="shrink-0 text-[9.5px] uppercase tracking-wider text-[var(--text-faint)]">
                 {t('details.afterLoad')}

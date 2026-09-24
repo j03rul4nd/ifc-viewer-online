@@ -6,7 +6,7 @@ import { IFC_PLAN_HIT, ifcPlan } from './phases'
 import { abortError } from './retry-policy'
 import type {
   AdapterResult, JobContext, LoadEvent, LoadJobView, LoadSource, PhasePlanEntry, PhaseReporter, Priority,
-  ResourcePolicy, SourceAdapter, SourceKind, SubmitOptions,
+  ResourcePolicy, SourceAdapter, SourceKind, SubmitOptions, WaitReason,
 } from './types'
 
 const MB = 1024 * 1024
@@ -273,6 +273,127 @@ function harness(opts: HarnessOpts = {}) {
 
 function fileSource(name: string): LoadSource {
   return { type: 'file', file: new File(['x'], name) }
+}
+
+interface DecodeScript {
+  size?: number
+  /** Hold the decode until the test opens it. */
+  block?: boolean
+  /** Report the result id as soon as the decode lane is granted (a runner's onEntry). */
+  earlyId?: boolean
+  /** Use this result id instead of a unique one. */
+  resultId?: string
+  /** Report this decode fraction on entering the phase. */
+  progress?: number
+  /** `ctx.setWaiting('budget')` on entering the decode; 'clear' lifts it after the gate, 'forget' never does. */
+  budgetWait?: 'clear' | 'forget'
+  /** Throw this after the gate. */
+  fail?: unknown
+  /** Throw `fail` only on these attempts (default: every attempt). */
+  failOn?: number[]
+  /** Pass through the attach lane inside `place` — the anchor rule — as the scan adapter does. */
+  anchorGate?: boolean
+  /** Enter `decode` BEFORE queueing for its lane, as the mesh adapter does. */
+  decodeFirst?: boolean
+}
+
+/**
+ * The shape of the point cloud / mesh adapters: identify → place → [decode
+ * lane: decode] → commit. One gate per run (the decode), held by the test.
+ * It queues for its decode slot from inside `place`, so a scan behind two
+ * others reads `waiting · slot`, as the real scan adapter's does.
+ */
+class FakeDecoder implements SourceAdapter {
+  scripts: Record<string, DecodeScript> = {}
+  readonly contexts: Array<{ file: string; ctx: JobContext }> = []
+  readonly reporters: PhaseReporter[] = []
+  readonly decodeOrder: string[] = []
+  readonly focused: string[] = []
+  readonly unloaded: string[] = []
+  private readonly gates = new Map<string, Deferred>()
+  decodeActive = 0
+  maxDecodeActive = 0
+  focus?: (resultId: string) => void
+
+  constructor(readonly kind: SourceKind, opts: { focus?: boolean } = {}) {
+    if (opts.focus !== false) this.focus = (id) => { this.focused.push(id) }
+  }
+
+  plan(): PhasePlanEntry[] {
+    return [{ id: 'identify', weight: 1 }, { id: 'place', weight: 1 }, { id: 'decode', weight: 90 }]
+  }
+  sizeOf(source: LoadSource): number {
+    return this.scripts[this.fileNameOf(source)]?.size ?? 4 * MB
+  }
+  fileNameOf(source: LoadSource): string {
+    if (source.type === 'file') return source.file.name
+    if (source.type === 'bytes') return source.fileName
+    return source.fileName ?? 'remote.laz'
+  }
+  estimate() {
+    return { peakBytes: 0, exclusive: false }
+  }
+  async unload(resultId: string): Promise<void> {
+    this.unloaded.push(resultId)
+  }
+
+  hasGate(file: string): boolean {
+    return this.gates.has(file)
+  }
+  open(file: string): void {
+    const g = this.gates.get(file)
+    if (!g) throw new Error(`no decode gate open for ${file}`)
+    this.gates.delete(file)
+    g.resolve()
+  }
+  lastContext(file: string): JobContext {
+    const c = [...this.contexts].reverse().find((x) => x.file === file)
+    if (!c) throw new Error(`no run for ${file}`)
+    return c.ctx
+  }
+
+  async run(ctx: JobContext): Promise<AdapterResult> {
+    const file = this.fileNameOf(ctx.source)
+    const script = this.scripts[file] ?? {}
+    this.contexts.push({ file, ctx })
+    const resultId = script.resultId ?? `${file}-${this.kind}-${this.contexts.length}`
+    ctx.phase('identify')
+    if (script.decodeFirst) ctx.phase('decode')
+    else ctx.phase('place')
+    if (script.anchorGate) (await ctx.acquire('attach')).release()
+    const lane = await ctx.acquire('decode')
+    this.decodeActive++
+    this.maxDecodeActive = Math.max(this.maxDecodeActive, this.decodeActive)
+    this.decodeOrder.push(file)
+    try {
+      if (script.earlyId) ctx.setMeta({ resultId })
+      const rep = ctx.phase('decode')
+      this.reporters.push(rep)
+      if (script.progress !== undefined) rep.progress(script.progress, { done: 10, total: 100, unit: 'points' })
+      if (script.budgetWait) ctx.setWaiting('budget')
+      if (script.block) {
+        const g = deferred()
+        this.gates.set(file, g)
+        await abortable(g.promise, ctx.signal)
+      }
+      if (script.budgetWait === 'clear') ctx.setWaiting(null)
+      if (script.fail && (!script.failOn || script.failOn.includes(ctx.attempt))) throw script.fail
+    } finally {
+      this.gates.delete(file)
+      this.decodeActive--
+      lane.release()
+    }
+    ctx.committed(resultId, { fromCache: false })
+    return { resultId, fromCache: false }
+  }
+}
+
+/** Register a decoder for `kind` on a harness; its jobs submit as drops. */
+function withDecoder(h: ReturnType<typeof harness>, kind: SourceKind, opts: { focus?: boolean } = {}) {
+  const d = new FakeDecoder(kind, opts)
+  h.mgr.registerAdapter(d)
+  const submit = (name: string, o: Partial<SubmitOptions> = {}) => h.mgr.submit(fileSource(name), kind, { origin: 'drop', ...o })
+  return { d, submit }
 }
 
 function urlSource(name: string): LoadSource {
@@ -605,6 +726,43 @@ describe('LoadManager — anchor rule', () => {
     h.adapter.open('Arch.ifc', 'attach')
     await Promise.all([arch.settled, str.settled, third.settled])
   })
+
+  it('a scan that queues for the anchor from inside `place` is `waiting · anchor`, never back to `queued`', async () => {
+    // The scan adapter passes through the attach lane in the middle of `place`
+    // (it keeps that phase open, unlike the IFC adapter): it had been running.
+    const h = harness()
+    const { d, submit } = withDecoder(h, 'pointcloud')
+    d.scripts['site.laz'] = { anchorGate: true }
+    h.adapter.scripts['Arch.ifc'] = { block: ['convert'] }
+    const arch = h.submit('Arch.ifc')
+    await until(() => h.adapter.hasGate('Arch.ifc', 'convert'))
+    const scan = submit('site.laz')
+    await until(() => h.job(scan.id).waitReason === 'anchor', 'scan waiting for the anchor')
+    expect(h.job(scan.id)).toMatchObject({ status: 'waiting', waitReason: 'anchor', phase: 'place' })
+    expect(h.eventsOf(scan.id).some((e) => e.type === 'waiting' && e.reason === 'anchor')).toBe(true)
+    expect(d.decodeOrder).toEqual([])
+
+    h.adapter.open('Arch.ifc', 'convert')
+    const outcomes = await Promise.all([arch.settled, scan.settled])
+    expect(outcomes.map((o) => o.status)).toEqual(['loaded', 'loaded'])
+    expect(d.decodeOrder).toEqual(['site.laz'])
+  })
+
+  it('a phase queued for its own lane has not started: a mesh waiting inside `decode` for its slot is `queued`', async () => {
+    // As a download waiting for its network slot is (the fairness tests' URL rows).
+    const h = harness({ overrides: { maxConcurrentDecodes: 1 } })
+    const { d, submit } = withDecoder(h, 'mesh')
+    d.scripts['A.glb'] = { block: true }
+    d.scripts['B.glb'] = { decodeFirst: true }
+    const a = submit('A.glb')
+    await until(() => d.hasGate('A.glb'))
+    const b = submit('B.glb')
+    await flush()
+    expect(h.job(b.id)).toMatchObject({ status: 'queued', waitReason: 'slot', phase: 'decode' })
+    d.open('A.glb')
+    const outcomes = await Promise.all([a.settled, b.settled])
+    expect(outcomes.map((o) => o.status)).toEqual(['loaded', 'loaded'])
+  })
 })
 
 describe('LoadManager — failures and retries', () => {
@@ -876,7 +1034,7 @@ describe('LoadManager — lifecycle', () => {
     expect(h.job(a.id).status).toBe('unloading')
     h.mgr.markRemoved(rid)
     expect(h.job(a.id).status).toBe('removed')
-    expect(h.mgr.findByResult(rid)?.id).toBe(a.id)
+    expect(h.mgr.findByResult('ifc', rid)).toEqual({ jobId: a.id, status: 'removed' })
   })
 
   it('dismiss and clearFinished drop finished rows only', async () => {
@@ -1107,24 +1265,30 @@ describe('LoadManager — tracked (external) jobs', () => {
     expect(h.job(b.id).capabilities.retry).toBe(false)
   })
 
-  it('cancelAll({ managedOnly }) leaves tracked loads alone; plain cancelAll() does not', async () => {
-    // `ifcviewer:clear` removes the IFC models; a scan streaming beside them is
-    // the host's, with its own clear command. Cancelling it through its runner
-    // would also fail its siblings (the point cloud store's global epoch).
+  it('cancelAll({ modelsOnly }) leaves tracked loads and managed scans alone; plain cancelAll() does not', async () => {
+    // `ifcviewer:clear` removes the IFC models; a scan or a GIS fetch beside
+    // them is the host's, with its own clear command.
     const h = harness({ overrides: { maxConcurrentConverts: 1 } })
+    const { d, submit: submitScan } = withDecoder(h, 'pointcloud')
     const onCancel = vi.fn()
-    const scan = h.mgr.track({ kind: 'pointcloud', fileName: 'scan.laz', plan: [{ id: 'fetch', weight: 1 }], onCancel })
-    scan.phase('fetch')
+    const gis = h.mgr.track({ kind: 'gis', fileName: 'terrain', plan: [{ id: 'fetch', weight: 1 }], onCancel })
+    gis.phase('fetch')
+    d.scripts['scan.laz'] = { block: true }
+    const scan = submitScan('scan.laz')
     h.adapter.scripts['X.ifc'] = { block: ['convert'] }
     const x = h.submit('X.ifc')
-    await until(() => h.adapter.hasGate('X.ifc', 'convert'))
-    h.mgr.cancelAll({ managedOnly: true })
+    await until(() => h.adapter.hasGate('X.ifc', 'convert') && d.hasGate('scan.laz'))
+    h.mgr.cancelAll({ modelsOnly: true })
     expect((await x.settled).status).toBe('cancelled')
     expect(onCancel).not.toHaveBeenCalled()
+    expect(h.job(gis.id).status).toBe('running')
     expect(h.job(scan.id).status).toBe('running')
+    expect(d.lastContext('scan.laz').signal.aborted).toBe(false)
     h.mgr.cancelAll()
     expect(onCancel).toHaveBeenCalledTimes(1)
-    expect(h.job(scan.id).status).toBe('cancelled')
+    expect(h.job(gis.id).status).toBe('cancelled')
+    expect((await scan.settled).status).toBe('cancelled')
+    expect(d.lastContext('scan.laz').signal.aborted).toBe(true)
   })
 })
 
@@ -1512,5 +1676,474 @@ describe('LoadManager — retention and history', () => {
     expect(h.job(live.id).status).toBe('running')
     h.adapter.open('live.ifc', 'convert')
     await live.settled
+  })
+})
+
+describe('LoadManager — decode lane (point clouds, meshes)', () => {
+  it('runs two decodes at a time, one under memory pressure, and never takes a convert slot', async () => {
+    const h = harness({ overrides: { maxConcurrentConverts: 1 } })
+    const { d, submit } = withDecoder(h, 'pointcloud')
+    for (const n of ['a.laz', 'b.laz', 'c.laz', 'd.laz']) d.scripts[n] = { block: true }
+    h.adapter.scripts['X.ifc'] = { block: ['convert'] }
+    const x = h.submit('X.ifc')
+    await until(() => h.adapter.hasGate('X.ifc', 'convert'))
+    const [a, b, c] = ['a.laz', 'b.laz', 'c.laz'].map((n) => submit(n))
+    await until(() => d.hasGate('a.laz') && d.hasGate('b.laz'))
+    await flush()
+    // The IFC converts alone on its lane; the scans decode beside it on theirs.
+    expect(d.decodeOrder).toEqual(['a.laz', 'b.laz'])
+    expect(h.job(x.id).status).toBe('running')
+    // Queued for its slot from inside `place` (work started): waiting, not queued.
+    expect(h.job(c.id)).toMatchObject({ status: 'waiting', waitReason: 'slot' })
+    expect(h.mgr.getSnapshot().policy.maxConcurrentDecodes).toBe(2)
+
+    d.open('a.laz')
+    expect((await a.settled).status).toBe('loaded')
+    await until(() => d.hasGate('c.laz'), 'c decoding')
+
+    // After an allocation failure the lane narrows to one — two scans' typed
+    // arrays on a heap that already failed once is how the tab dies.
+    h.policy.reportOom()
+    const dd = submit('d.laz')
+    await flush()
+    expect(h.job(dd.id)).toMatchObject({ status: 'waiting', waitReason: 'slot' })
+    d.open('b.laz')
+    await b.settled
+    await flush()
+    expect(d.decodeOrder).not.toContain('d.laz')   // c still holds the only slot
+    d.open('c.laz')
+    await until(() => d.hasGate('d.laz'), 'd decoding')
+    expect(d.maxDecodeActive).toBe(2)
+    expect(h.mgr.getSnapshot().policy).toMatchObject({ maxConcurrentDecodes: 1, pressure: 'elevated' })
+    d.open('d.laz')
+    h.adapter.open('X.ifc', 'convert')
+    const outcomes = await Promise.all([x.settled, c.settled, dd.settled])
+    expect(outcomes.map((o) => o.status)).toEqual(['loaded', 'loaded', 'loaded'])
+    expect(d.decodeOrder).toEqual(['a.laz', 'b.laz', 'c.laz', 'd.laz'])
+  })
+
+  it('decode waits age: a low-priority import that waited long enough goes before newer normal work', async () => {
+    const h = harness({ overrides: { maxConcurrentDecodes: 1 } })
+    const { d, submit } = withDecoder(h, 'mesh')
+    for (const n of ['A.glb', 'low.glb', 'normal.glb']) d.scripts[n] = { block: true }
+    const a = submit('A.glb')
+    await until(() => d.hasGate('A.glb'))
+    const low = submit('low.glb', { priority: 3 })
+    await flush()
+    expect(h.job(low.id)).toMatchObject({ status: 'waiting', waitReason: 'slot', effectivePriority: 3 })
+    await advance(46_000)
+    expect(h.job(low.id).effectivePriority).toBe(2)
+    const normal = submit('normal.glb', { priority: 2 })
+    await flush()
+    d.open('A.glb')
+    await until(() => d.hasGate('low.glb'), 'low decoding')
+    expect(h.job(normal.id)).toMatchObject({ status: 'waiting', waitReason: 'slot' })
+    d.open('low.glb')
+    await until(() => d.hasGate('normal.glb'), 'normal decoding')
+    d.open('normal.glb')
+    await Promise.all([a.settled, low.settled, normal.settled])
+    expect(d.decodeOrder).toEqual(['A.glb', 'low.glb', 'normal.glb'])
+  })
+
+  it('a scan\'s out-of-memory that is not retried leaves the session pressure alone; a model\'s pins it', async () => {
+    const h = harness()
+    const { d, submit } = withDecoder(h, 'pointcloud')
+    // As runnerLoadError raises it: a LAZ too large for its worker's WASM heap,
+    // never retried automatically. That heap is the scan's own, not the main one.
+    d.scripts['huge.laz'] = {
+      fail: { code: 'out-of-memory', message: 'pointcloud error.lazOutOfMemory', autoRetryable: false, userRetryable: true },
+    }
+    const scan = submit('huge.laz')
+    expect((await scan.settled).status).toBe('failed')
+    expect(h.job(scan.id).error).toMatchObject({ code: 'out-of-memory', autoRetryable: false })
+    expect(h.policy.pressure()).toBe('normal')
+    expect(h.mgr.getSnapshot().policy).toMatchObject({ pressure: 'normal', maxConcurrentDecodes: 2, maxConcurrentConverts: 3 })
+
+    // A model's OOM pins it even when it is not retried: the main heap failed.
+    h.adapter.scripts['huge.ifc'] = {
+      failAt: { gate: 'convert', error: { code: 'out-of-memory', message: 'Aborted(OOM)', autoRetryable: false } },
+    }
+    expect((await h.submit('huge.ifc').settled).status).toBe('failed')
+    expect(h.policy.pressure()).toBe('elevated')
+    expect(h.mgr.getSnapshot().policy).toMatchObject({ pressure: 'elevated', maxConcurrentDecodes: 1, maxConcurrentConverts: 1 })
+  })
+})
+
+describe('LoadManager — model jobs (managed IFC) vs scans and meshes', () => {
+  it('idle and managedActive wait for models only: a managed scan or mesh still decoding never keeps the app loading', async () => {
+    const h = harness({ overrides: { maxConcurrentConverts: 1 } })
+    const pc = withDecoder(h, 'pointcloud')
+    const mesh = withDecoder(h, 'mesh')
+    pc.d.scripts['scan.laz'] = { block: true }
+    mesh.d.scripts['site.glb'] = { block: true }
+    const idles = () => h.events.filter((e) => e.type === 'idle').length
+    const summary = () => h.mgr.getSnapshot().summary
+    const scan = pc.submit('scan.laz')
+    const site = mesh.submit('site.glb')
+    await until(() => pc.d.hasGate('scan.laz') && mesh.d.hasGate('site.glb'))
+    expect(summary()).toMatchObject({ active: 2, running: 2, managedActive: 0 })
+
+    h.adapter.scripts['X.ifc'] = { block: ['convert'] }
+    const x = h.submit('X.ifc')
+    await until(() => h.adapter.hasGate('X.ifc', 'convert'))
+    expect(summary()).toMatchObject({ active: 3, managedActive: 1 })
+    h.adapter.open('X.ifc', 'convert')
+    await x.settled
+    await flush()
+    // The model is in: deep links, ?validate and georef may go while the scan and the mesh keep decoding.
+    expect(idles()).toBe(1)
+    expect(summary()).toMatchObject({ active: 2, managedActive: 0 })
+
+    pc.d.open('scan.laz')
+    mesh.d.open('site.glb')
+    await Promise.all([scan.settled, site.settled])
+    await flush()
+    expect(idles()).toBe(1)   // a scan landing is no idle edge
+    expect(summary()).toMatchObject({ loaded: 3, finishing: 0 })
+  })
+
+  it('session: every managed job is counted; only models count cache and bytes, and only models calibrate', async () => {
+    const h = harness()
+    const { d, submit } = withDecoder(h, 'pointcloud')
+    d.scripts['big.laz'] = { size: 50 * MB }
+    d.scripts['bad.laz'] = { fail: { code: 'parse', message: 'bad LAZ header' } }
+    expect((await submit('big.laz').settled).status).toBe('loaded')
+    const bad = submit('bad.laz')
+    expect((await bad.settled).status).toBe('failed')
+    let s = h.mgr.getSnapshot().session
+    expect(s).toMatchObject({ jobsSubmitted: 2, jobsLoaded: 1, jobsFailed: 1, cacheHits: 0, cacheMisses: 0, bytesConverted: 0 })
+    // A LAZ's identify / place / decode must not become (or skew) an IFC's prediction.
+    expect(s.msPerMB).toEqual({})
+    expect(s.msPerMBSamples).toEqual({})
+
+    d.scripts['bad.laz'] = {}
+    const again = h.mgr.retry(bad.id) as NonNullable<ReturnType<typeof h.mgr.retry>>
+    expect((await again.settled).status).toBe('loaded')
+    d.scripts['gone.laz'] = { block: true }
+    const gone = submit('gone.laz')
+    await until(() => d.hasGate('gone.laz'))
+    h.mgr.cancel(gone.id)
+    s = h.mgr.getSnapshot().session
+    expect(s).toMatchObject({ jobsLoaded: 2, retries: 1, jobsCancelled: 1, cacheMisses: 0, bytesConverted: 0 })
+
+    h.adapter.scripts['M.ifc'] = { size: 2 * MB }
+    expect((await h.submit('M.ifc').settled).status).toBe('loaded')
+    s = h.mgr.getSnapshot().session
+    expect(s).toMatchObject({ jobsLoaded: 3, cacheMisses: 1, bytesConverted: 2 * MB })
+    expect(s.msPerMB.geometry).toBeDefined()
+    expect(s.msPerMB.decode).toBeUndefined()
+  })
+
+  it('a scan decoding gets no ETA, however far along', async () => {
+    const h = harness()
+    const { d, submit } = withDecoder(h, 'pointcloud')
+    d.scripts['scan.laz'] = { block: true, progress: 0.1 }
+    const scan = submit('scan.laz')
+    await until(() => d.hasGate('scan.laz'))
+    await advance(10_000)
+    d.reporters[0].progress(0.6, { done: 60, total: 100, unit: 'points' })
+    expect(h.job(scan.id)).toMatchObject({ status: 'running', phase: 'decode', progress: { determinate: true } })
+    expect(h.job(scan.id).metrics).toMatchObject({ etaMs: null, etaReliable: false })
+    d.open('scan.laz')
+    await scan.settled
+  })
+})
+
+describe('LoadManager — adapter-reported waits (ctx.setWaiting)', () => {
+  it('shows `waiting` with the reason, returns to running when cleared, and is not holdable meanwhile', async () => {
+    const h = harness()
+    const { d, submit } = withDecoder(h, 'pointcloud')
+    d.scripts['scan.laz'] = { block: true, budgetWait: 'clear' }
+    const scan = submit('scan.laz')
+    await until(() => d.hasGate('scan.laz'))
+    expect(h.job(scan.id)).toMatchObject({ status: 'waiting', waitReason: 'budget', phase: 'decode' })
+    expect(h.job(scan.id).capabilities).toMatchObject({ hold: false, cancel: true })
+    expect(h.eventsOf(scan.id).some((e) => e.type === 'waiting' && e.reason === 'budget')).toBe(true)
+    expect(h.mgr.getSnapshot().summary).toMatchObject({ waiting: 1, running: 0 })
+
+    const ctx = d.lastContext('scan.laz')
+    ctx.setWaiting(null)
+    expect(h.job(scan.id)).toMatchObject({ status: 'running', waitReason: null })
+    ctx.setWaiting('budget')
+    expect(h.job(scan.id)).toMatchObject({ status: 'waiting', waitReason: 'budget' })
+    // Not a WaitReason: ignored, nothing a label could show.
+    ctx.setWaiting('lunch' as unknown as WaitReason)
+    expect(h.job(scan.id).waitReason).toBe('budget')
+
+    d.open('scan.laz')
+    expect((await scan.settled).status).toBe('loaded')
+    expect(h.job(scan.id)).toMatchObject({ status: 'loaded', waitReason: null })
+    // A late call from the finished attempt cannot flip the loaded row back.
+    ctx.setWaiting('budget')
+    expect(h.job(scan.id)).toMatchObject({ status: 'loaded', waitReason: null })
+  })
+
+  it('never outlives its attempt: cleared at commit, at failure, and ignored from a stale attempt', async () => {
+    const h = harness()
+    const { d, submit } = withDecoder(h, 'pointcloud')
+    // An adapter that forgets to clear: the commit does it.
+    d.scripts['forgot.laz'] = { budgetWait: 'forget' }
+    const forgot = submit('forgot.laz')
+    expect((await forgot.settled).status).toBe('loaded')
+    expect(h.job(forgot.id)).toMatchObject({ status: 'loaded', waitReason: null })
+
+    // A failure while waiting: the row fails with no wait left on it.
+    d.scripts['bad.laz'] = { budgetWait: 'forget', block: true, fail: { code: 'parse', message: 'x' } }
+    const bad = submit('bad.laz')
+    await until(() => d.hasGate('bad.laz'))
+    expect(h.job(bad.id).waitReason).toBe('budget')
+    const stale = d.lastContext('bad.laz')
+    d.open('bad.laz')
+    expect((await bad.settled).status).toBe('failed')
+    expect(h.job(bad.id)).toMatchObject({ status: 'failed', waitReason: null })
+
+    // The retry starts clean, and the failed attempt's context is dead.
+    d.scripts['bad.laz'] = { block: true }
+    const again = h.mgr.retry(bad.id) as NonNullable<ReturnType<typeof h.mgr.retry>>
+    await until(() => d.hasGate('bad.laz'))
+    expect(h.job(bad.id)).toMatchObject({ status: 'running', waitReason: null })
+    stale.setWaiting('budget')
+    expect(h.job(bad.id)).toMatchObject({ status: 'running', waitReason: null })
+
+    // Cancelled while waiting: over, whatever the adapter says next.
+    d.scripts['c.laz'] = { budgetWait: 'forget', block: true }
+    const c = submit('c.laz')
+    await until(() => d.hasGate('c.laz'))
+    const cctx = d.lastContext('c.laz')
+    h.mgr.cancel(c.id)
+    cctx.setWaiting('budget')
+    expect(h.job(c.id)).toMatchObject({ status: 'cancelled', waitReason: null })
+
+    d.open('bad.laz')
+    expect((await again.settled).status).toBe('loaded')
+  })
+
+  it('the time spent waiting is kept out of the phase time, like a lane wait', async () => {
+    const h = harness()
+    const { d, submit } = withDecoder(h, 'pointcloud')
+    d.scripts['scan.laz'] = { block: true, budgetWait: 'clear' }
+    const scan = submit('scan.laz')
+    await until(() => d.hasGate('scan.laz'))
+    await advance(5_000)
+    d.open('scan.laz')
+    await scan.settled
+    expect(h.job(scan.id).metrics.phaseDurations.decode ?? Infinity).toBeLessThan(100)
+  })
+
+  it('a wait on the adapter is never flagged as a stall', async () => {
+    const h = harness()
+    const { d, submit } = withDecoder(h, 'pointcloud')
+    d.scripts['scan.laz'] = { block: true, budgetWait: 'clear' }
+    const scan = submit('scan.laz')
+    await until(() => d.hasGate('scan.laz'))
+    // Two minutes behind another scan's budget: waiting, not stuck.
+    await advance(120_000)
+    expect(h.job(scan.id)).toMatchObject({ status: 'waiting', waitReason: 'budget', stalled: false })
+    d.open('scan.laz')
+    await scan.settled
+  })
+})
+
+describe('LoadManager — focus, removal and lookup by result', () => {
+  it('capabilities.focus: IFC through the app, others through their adapter; focusResult frames non-IFC only', async () => {
+    const h = harness()
+    const pc = withDecoder(h, 'pointcloud')
+    const mesh = withDecoder(h, 'mesh', { focus: false })
+    const x = h.submit('X.ifc')
+    await x.settled
+    expect(h.job(x.id).capabilities.focus).toBe(true)
+    expect(h.mgr.focusResult(x.id)).toBe(false)   // the controller frames models (focusModel)
+
+    pc.d.scripts['scan.laz'] = { block: true }
+    const scan = pc.submit('scan.laz')
+    await until(() => pc.d.hasGate('scan.laz'))
+    expect(h.job(scan.id).capabilities.focus).toBe(false)   // nothing to frame yet
+    expect(h.mgr.focusResult(scan.id)).toBe(false)
+    pc.d.open('scan.laz')
+    await scan.settled
+    const rid = h.job(scan.id).resultId as string
+    expect(h.job(scan.id).capabilities.focus).toBe(true)
+    expect(h.mgr.focusResult(scan.id)).toBe(true)
+    expect(pc.d.focused).toEqual([rid])
+
+    const site = mesh.submit('site.glb')
+    await site.settled
+    expect(h.job(site.id).capabilities.focus).toBe(false)   // its adapter cannot frame
+    expect(h.mgr.focusResult(site.id)).toBe(false)
+
+    const gis = h.mgr.track({ kind: 'gis', fileName: 'terrain', plan: [{ id: 'fetch', weight: 1 }] })
+    gis.loaded('terrain')
+    expect(h.job(gis.id).capabilities.focus).toBe(false)
+
+    // A focus that throws is reported as not done, and the manager carries on.
+    pc.d.focus = () => { throw new Error('no camera') }
+    expect(h.mgr.focusResult(scan.id)).toBe(false)
+    await h.mgr.remove(scan.id)
+    expect(h.job(scan.id)).toMatchObject({ status: 'removed' })
+    expect(h.job(scan.id).capabilities.focus).toBe(false)
+    expect(pc.d.unloaded).toEqual([rid])
+    expect(h.mgr.focusResult('nope')).toBe(false)
+  })
+
+  it('markRemoved leaves an active row alone (its id was set early) and is idempotent once loaded', async () => {
+    const h = harness()
+    const { d, submit } = withDecoder(h, 'pointcloud')
+    d.scripts['scan.laz'] = { block: true, earlyId: true }
+    const scan = submit('scan.laz')
+    await until(() => d.hasGate('scan.laz'))
+    const rid = h.job(scan.id).resultId as string
+    expect(rid).toBeTruthy()
+    h.mgr.markRemoved(rid)
+    h.mgr.markRemoved(rid, 'pointcloud')
+    h.mgr.markUnloading(rid)
+    expect(h.job(scan.id).status).toBe('running')
+    expect(d.lastContext('scan.laz').signal.aborted).toBe(false)
+    expect(h.mgr.findByResult('pointcloud', rid)).toEqual({ jobId: scan.id, status: 'running' })
+
+    d.open('scan.laz')
+    await scan.settled
+    expect(h.mgr.findByResult('pointcloud', rid)).toEqual({ jobId: scan.id, status: 'loaded' })
+    h.mgr.markRemoved(rid, 'mesh')   // another kind's id space: not this row
+    expect(h.job(scan.id).status).toBe('loaded')
+    h.mgr.markRemoved(rid, 'pointcloud')
+    h.mgr.markRemoved(rid, 'pointcloud')
+    expect(h.job(scan.id).status).toBe('removed')
+    expect(h.eventsOf(scan.id).filter((e) => e.type === 'removed')).toHaveLength(1)
+  })
+
+  it('findByResult(kind, id) prefers the active row, then the loaded one, then the latest history', async () => {
+    const h = harness()
+    const { d, submit } = withDecoder(h, 'mesh')
+    d.scripts['old.glb'] = { resultId: 'mesh-7' }
+    d.scripts['new.glb'] = { resultId: 'mesh-7', earlyId: true, block: true }
+    const old = submit('old.glb')
+    await old.settled
+    const fresh = submit('new.glb')
+    await until(() => d.hasGate('new.glb'))
+    expect(h.mgr.findByResult('mesh', 'mesh-7')).toEqual({ jobId: fresh.id, status: 'running' })
+    h.mgr.cancel(fresh.id)
+    expect(h.mgr.findByResult('mesh', 'mesh-7')).toEqual({ jobId: old.id, status: 'loaded' })
+    await h.mgr.remove(old.id)
+    // Only history is left: the latest row.
+    expect(h.mgr.findByResult('mesh', 'mesh-7')).toEqual({ jobId: fresh.id, status: 'cancelled' })
+    expect(h.mgr.findByResult('pointcloud', 'mesh-7')).toBeNull()
+    expect(h.mgr.findByResult('mesh', 'mesh-8')).toBeNull()
+  })
+
+  it('an automatic retry drops the failed attempt\'s early id: removing that errored entry never reaches the retry', async () => {
+    const h = harness({ overrides: { maxConcurrentDecodes: 1 } })
+    const { d, submit } = withDecoder(h, 'pointcloud')
+    // Attempt 1 reports its id early (the runner's onEntry), then its worker dies.
+    d.scripts['crash.laz'] = { earlyId: true, block: true, fail: { code: 'worker-crash', message: 'worker died' }, failOn: [1] }
+    d.scripts['other.laz'] = { block: true }
+    const crash = submit('crash.laz')
+    await until(() => d.hasGate('crash.laz'))
+    const oldId = h.job(crash.id).resultId as string
+    expect(h.mgr.findByResult('pointcloud', oldId)).toEqual({ jobId: crash.id, status: 'running' })
+    const other = submit('other.laz')   // next in line for the only decode slot
+    await flush()
+    d.open('crash.laz')
+    await until(() => h.job(crash.id).waitReason === 'backoff', 'backoff')
+    // The runner keeps the errored entry in its panel meanwhile: its X is a
+    // lookup of oldId, which must find nothing to cancel.
+    expect(h.job(crash.id).resultId).toBeNull()
+    expect(h.mgr.findByResult('pointcloud', oldId)).toBeNull()
+
+    await advance(0)
+    await until(() => d.contexts.filter((c) => c.file === 'crash.laz').length === 2, 'attempt 2')
+    await flush()
+    // Attempt 2 waits behind other.laz — no id of its own yet, and not the old one.
+    expect(h.job(crash.id)).toMatchObject({ attempts: 2, waitReason: 'slot', resultId: null })
+    expect(h.mgr.findByResult('pointcloud', oldId)).toBeNull()
+
+    d.open('other.laz')
+    await until(() => d.hasGate('crash.laz'), 'attempt 2 decoding')
+    const newId = h.job(crash.id).resultId as string
+    expect(newId).toBeTruthy()
+    expect(newId).not.toBe(oldId)
+    d.open('crash.laz')
+    expect((await crash.settled).status).toBe('loaded')
+    expect(h.mgr.findByResult('pointcloud', newId)).toEqual({ jobId: crash.id, status: 'loaded' })
+    expect(h.mgr.findByResult('pointcloud', oldId)).toBeNull()
+    await other.settled
+  })
+
+  it('a manual retry starts without the failed attempt\'s id; the failed row kept it until then', async () => {
+    const h = harness({ overrides: { maxConcurrentDecodes: 1 } })
+    const { d, submit } = withDecoder(h, 'mesh')
+    d.scripts['bad.glb'] = { earlyId: true, fail: { code: 'parse', message: 'bad glTF' }, failOn: [1] }
+    const bad = submit('bad.glb')
+    expect((await bad.settled).status).toBe('failed')
+    const oldId = h.job(bad.id).resultId as string
+    expect(oldId).toBeTruthy()
+    expect(h.mgr.findByResult('mesh', oldId)).toEqual({ jobId: bad.id, status: 'failed' })
+
+    d.scripts['busy.glb'] = { block: true }
+    const busy = submit('busy.glb')
+    await until(() => d.hasGate('busy.glb'))
+    const again = h.mgr.retry(bad.id) as NonNullable<ReturnType<typeof h.mgr.retry>>
+    await flush()
+    // Retrying, behind busy.glb: the errored row's X in the mesh panel must not cancel it.
+    expect(h.job(bad.id)).toMatchObject({ attempts: 2, waitReason: 'slot', resultId: null })
+    expect(h.mgr.findByResult('mesh', oldId)).toBeNull()
+
+    d.open('busy.glb')
+    expect((await again.settled).status).toBe('loaded')
+    expect(h.job(bad.id).resultId).not.toBe(oldId)
+    await busy.settled
+  })
+})
+
+describe('LoadManager — multi-file sources (sidecars)', () => {
+  function gltf(entry: string): Extract<LoadSource, { type: 'file' }> {
+    return { type: 'file', file: new File(['{}'], entry), sidecars: [new File(['b'], 'buffer.bin'), new File(['t'], 'albedo.png')] }
+  }
+
+  it('a disk-backed source keeps its sidecars with it; a memory-backed one drops them with it', async () => {
+    const h = harness()
+    const { d } = withDecoder(h, 'mesh')
+    const dropped = gltf('site.gltf')
+    const drop = h.mgr.submit(dropped, 'mesh', { origin: 'drop' })
+    expect(h.job(drop.id).fileName).toBe('site.gltf')
+    await drop.settled
+    expect(sourceOf(h.mgr, drop.id)).toBe(dropped)
+    expect((sourceOf(h.mgr, drop.id) as typeof dropped).sidecars).toHaveLength(2)
+
+    const demo = h.mgr.submit(gltf('demo.gltf'), 'mesh', { origin: 'demo' })
+    await demo.settled
+    expect(sourceOf(h.mgr, demo.id)).toBeNull()
+
+    // Cancelled: a dropped File (and its sidecars) stays for Retry, and the
+    // retry's attempt gets the whole set back.
+    d.scripts['again.gltf'] = { block: true }
+    const again = h.mgr.submit(gltf('again.gltf'), 'mesh', { origin: 'drop' })
+    await until(() => d.hasGate('again.gltf'))
+    h.mgr.cancel(again.id)
+    expect(h.job(again.id).capabilities.retry).toBe(true)
+    d.scripts['again.gltf'] = {}
+    const retried = h.mgr.retry(again.id) as NonNullable<ReturnType<typeof h.mgr.retry>>
+    expect((await retried.settled).status).toBe('loaded')
+    const src = d.lastContext('again.gltf').source as Extract<LoadSource, { type: 'file' }>
+    expect(src.sidecars?.map((f) => f.name)).toEqual(['buffer.bin', 'albedo.png'])
+
+    // Failed for good: nothing is kept, sidecars included.
+    d.scripts['bad.gltf'] = { fail: { code: 'invalid-file', message: 'no scene' } }
+    const bad = h.mgr.submit(gltf('bad.gltf'), 'mesh', { origin: 'drop' })
+    await bad.settled
+    expect(sourceOf(h.mgr, bad.id)).toBeNull()
+  })
+
+  it('a URL set is named and reported after its main file, never a sidecar', async () => {
+    const h = harness()
+    const src: LoadSource = {
+      type: 'url',
+      url: 'https://cdn.example.com/site/tower.gltf?sig=abc&exp=1',
+      sidecars: [{ url: 'https://cdn.example.com/site/tower.bin?sig=abc' }, { url: 'https://cdn.example.com/site/t.png', fileName: 't.png' }],
+    }
+    // No adapter for 'other': the manager's own fallback names the row.
+    const job = h.mgr.submit(src, 'other', { origin: 'url' })
+    expect(h.job(job.id)).toMatchObject({ fileName: 'tower.gltf', sourceUrl: 'https://cdn.example.com/site/tower.gltf?sig=abc&exp=1' })
+    expect((await job.settled).status).toBe('failed')
+    expect(h.job(job.id).sourceUrl).toBe(src.url)
   })
 })

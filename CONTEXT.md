@@ -46,7 +46,7 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
   - a "Loading" section in ScenePanel;
   - a multi-file import dialog with review, duplicate detection ("Already loaded — Open existing / Load duplicate anyway") and a large-file notice.
 
-  A global drop routes IFC files to that dialog, scans and meshes to their panels, and `.ids` to IDS. Point cloud, mesh and GIS loads show up as tracked jobs.
+  A global drop routes IFC files to that dialog, scans and meshes to the loading queue (one job per scan, one per model — held until the dialog hands its IFCs over, so they align against them), and `.ids` to IDS. Point cloud and mesh loads are managed jobs; GIS context shows up as tracked rows.
 - **Pre-flight IFC guards** — `validateIfcBuffer()` in `ifc-guards.ts` checks for empty buffer, wrong file signature, and file size before WASM initialisation. They run on a 1 KB header slice in the `identify` phase, and again inside the worker.
 - **Toast notifications** — `toastStore` + `ToastContainer.tsx`; all error/warning/info messages surface as non-blocking toasts. `toastFromError()` handles any unknown error type.
 - **3D viewer** — OBC world with WebGL renderer, realistic lighting (hemisphere + directional with shadows), orbit/pan/zoom camera controls.
@@ -113,7 +113,7 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 
 - `loadIfc()` on `ViewerAPI` — still exists and works for direct IFC loading without the cache/worker pipeline, but is not called from `App.tsx`. It is a fallback/testing entry point.
 - Blog `EmbedViewer` (`src/lib/embed-loader.ts`) — its own fetch → parser worker → `loadFragments` path, outside the LoadManager (no queue, no OPFS, no stores).
-- Point cloud and mesh loads are *tracked* by the LoadManager, not executed by it. Their runners still own execution, and their global store epochs can cancel sibling loads (`docs/MODEL_LOADING.md` §13).
+- Point cloud and mesh loads are *managed* by the LoadManager through their adapters (D-30); the runners still execute them. Only GIS context is tracked. Remaining edges are in `docs/MODEL_LOADING.md` §13.
 - GPU memory estimate in `getGpuEstimateBytes()` — uses a rough heuristic based on `WebGLRenderer.info.memory`.
 - `IFCPropertySet.expressId` per property — populated by `formatPsets()` in `viewer.ts` from the `@thatopen` data layer; available when `prop.expressId > 0`.
 
@@ -189,7 +189,7 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 15. **`getDiffsForModel(modelId)` filters the diff history.** Always pass `modelId` when building per-model export payloads.
 16. **Clearing history (`clearHistory()`) only happens in `handleNavigateToLanding`**, after `resetLoading()` has cancelled every load and bumped the epoch. Never call it from a load path (the `beforeSubmit` / `onModelLoaded` hooks).
 17. **Transform callbacks in ScenePanel pass explicit `model.id`.** Do not rely on the viewer's current active model — always be explicit.
-18. **The loading engine stays framework-free, and its UI stays store-only.** The manager, scheduler, policies and phases (`load-manager.ts`, `scheduler.ts`, `resource-policy.ts`, `retry-policy.ts`, `phases.ts`) import no React, store, viewer or worker. The IFC adapter reaches the viewer, pool and cache only through injected deps. App wiring lives in `index.ts`, plus `external-sources.ts` for the tracked stores. The loading UI reads `loadingStore` snapshots and acts through `loadingController`, never through live objects. The store holds serialisable views only: no `File`, buffer, worker or `AbortController`. The engine and its bridges use timers, never `requestAnimationFrame`, because a hidden pane or a background tab would freeze the queue.
+18. **The loading engine stays framework-free, and its UI stays store-only.** The manager, scheduler, policies and phases (`load-manager.ts`, `scheduler.ts`, `resource-policy.ts`, `retry-policy.ts`, `phases.ts`) import no React, store, viewer or worker. The IFC adapter reaches the viewer, pool and cache only through injected deps. App wiring lives in `index.ts`, plus `external-sources.ts` for the GIS mirror and the scan / mesh removal watcher. The loading UI reads `loadingStore` snapshots and acts through `loadingController`, never through live objects. The store holds serialisable views only: no `File`, buffer, worker or `AbortController`. The engine and its bridges use timers, never `requestAnimationFrame`, because a hidden pane or a background tab would freeze the queue.
 
 ---
 

@@ -1089,14 +1089,27 @@ describe('IFC source — lanes', () => {
     expect(h.order).toEqual(['attach A.ifc', 'commit A.ifc', 'attach B.ifc', 'commit B.ifc', 'attach C.ifc', 'commit C.ifc'])
   })
 
-  it('waits for a viewer that appears late', async () => {
+  it('waits for a viewer that appears late, shown as `waiting: viewer`, and keeps the wait out of attach', async () => {
     const readyAt = Date.now() + 2_000
     const h = harness({ viewerReadyAt: readyAt })
     const handle = h.submitFile('Hotel.ifc')
+    await until(() => h.job(handle.id).waitReason === 'viewer', 'waiting for the viewer', 20)
+    expect(h.job(handle.id)).toMatchObject({ status: 'waiting', phase: 'attach' })
+    expect(h.eventsOf(handle.id).some((e) => e.type === 'waiting' && e.reason === 'viewer')).toBe(true)
     const outcome = await settle(handle, 20)
     expect(outcome.status).toBe('loaded')
     expect(Date.now()).toBeGreaterThanOrEqual(readyAt)
     expect(h.viewer.calls).toHaveLength(1)
+    expect(h.job(handle.id)).toMatchObject({ status: 'loaded', waitReason: null })
+    // Two seconds of waiting for the React effect are not the attach's cost.
+    expect(h.job(handle.id).metrics.phaseDurations.attach ?? Infinity).toBeLessThan(1_000)
+  })
+
+  it('a viewer that is already up never shows the viewer wait', async () => {
+    const h = harness()
+    const handle = h.submitFile('Hotel.ifc')
+    expect((await settle(handle)).status).toBe('loaded')
+    expect(h.eventsOf(handle.id).some((e) => e.type === 'waiting' && e.reason === 'viewer')).toBe(false)
   })
 
   it('a viewer that never appears fails as viewer-unavailable after the timeout', async () => {
@@ -1107,6 +1120,7 @@ describe('IFC source — lanes', () => {
     expect(outcome.status).toBe('failed')
     expect(Date.now() - start).toBeGreaterThanOrEqual(15_000)
     expect(h.job(handle.id).error).toMatchObject({ code: 'viewer-unavailable', phase: 'attach', autoRetryable: false })
+    expect(h.job(handle.id).waitReason).toBeNull()
     expect(h.viewer.calls).toHaveLength(0)
   })
 })

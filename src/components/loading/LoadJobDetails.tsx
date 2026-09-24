@@ -8,6 +8,13 @@
 //
 // The technical error message is Advanced-only and folded: it is English, may
 // contain the file name, and is for a bug report, not for the user's decision.
+//
+// A scan or a mesh that failed says WHY in its own words: the adapter carries
+// the runner's key as `error.detailKey` ('pointcloud:error.lazTooLarge'), and
+// that sentence leads. The code's generic sentence ("not supported") is what
+// the retry policy decided on; Advanced keeps it as a second line. Without a
+// detail key the generic sentence leads — in the kind-neutral wording for
+// anything that is not an IFC model, never "not a readable IFC model" on a scan.
 
 import React from 'react'
 import type { LoadJobView, Priority } from '../../lib/loading/types'
@@ -17,9 +24,11 @@ import { loadingController } from '../../lib/loading/controller'
 import { formatBytes, formatDuration } from '../../lib/utils'
 import { useLoadingT } from '../../i18n/hooks/namespaces'
 import {
-  formatElapsed, formatEta, formatRate, isLiveJob, isTicking, jobElapsedMs, jobEtaMs, shortFingerprint,
+  errorText, formatElapsed, formatEta, formatRate, isLiveJob, isTicking, jobElapsedMs, jobEtaMs, shortFingerprint,
+  stalledText,
 } from './job-view'
-import { ERROR_KEYS, PHASE_KEYS, PRIORITY_KEYS, STATUS_KEYS } from './labels'
+import { PRIORITY_KEYS, STATUS_KEYS, phaseKey } from './labels'
+import { useDetailResolver } from './useDetailResolver'
 import { useNow } from './useNow'
 import { PhaseChecklist } from './PhaseChecklist'
 import { TextButton } from './glyphs'
@@ -36,17 +45,20 @@ function priorityName(p: Priority): (typeof PRIORITY_NAMES)[number] {
 
 function ErrorBlock({ job, advanced }: { job: LoadJobView; advanced: boolean }) {
   const { t } = useLoadingT()
+  const resolveDetail = useDetailResolver()
   const error = job.error
   if (!error) return null
   const phase = error.phase ?? job.phase
   const c = job.capabilities
+  const { reason, generic } = errorText(error, job.kind, t, resolveDetail)
   return (
     <div className="rounded-[6px] border border-[rgba(229,72,77,0.3)] bg-[rgba(229,72,77,0.07)] p-2">
-      <p className="text-[11.5px] leading-snug text-[var(--text)]">
-        {t(ERROR_KEYS[error.code], { status: error.httpStatus != null ? String(error.httpStatus) : DASH })}
-      </p>
+      <p className="text-[11.5px] leading-snug text-[var(--text)]">{reason}</p>
+      {advanced && generic && (
+        <p className="mt-1 text-[10.5px] leading-snug text-[var(--text-dim)]">{generic}</p>
+      )}
       <p className="mt-1 text-[10.5px] text-[var(--text-dim)]">
-        {phase ? `${t('details.failedDuring')} · ${t(PHASE_KEYS[phase])} · ` : ''}
+        {phase ? `${t('details.failedDuring')} · ${t(phaseKey(job.kind, phase))} · ` : ''}
         {t('details.attempt', { attempt: error.attempt })}
       </p>
       {(c.retry || c.remove || c.dismiss) && (
@@ -69,7 +81,7 @@ function ErrorBlock({ job, advanced }: { job: LoadJobView; advanced: boolean }) 
             {t('details.technical')}
           </summary>
           <pre className="mt-1 max-h-[140px] overflow-auto whitespace-pre-wrap break-all font-mono text-[10px] leading-snug text-[var(--text-dim)] select-text">
-            {`${error.code}${error.httpStatus != null ? ` ${error.httpStatus}` : ''} @ ${phase ?? '?'}\n${error.message}`}
+            {`${error.code}${error.httpStatus != null ? ` ${error.httpStatus}` : ''} @ ${phase ?? '?'}\n${error.detailKey ? `${error.detailKey}\n` : ''}${error.message}`}
           </pre>
         </details>
       )}
@@ -121,7 +133,12 @@ function MetricsGrid({ job, advanced }: { job: LoadJobView; advanced: boolean })
     // The raw reason: Advanced is the diagnostic view, and the row above
     // already carries the sentence.
     if (job.waitReason) items.push([t('metrics.waitReason'), job.waitReason])
-    if (m.fromCache != null) items.push([t('metrics.cache'), m.fromCache ? t('metrics.hit') : t('metrics.miss')])
+    // Only IFC has a cache (the converted fragments). A scan or a mesh commits
+    // with fromCache:false, and "Cache: miss" on it would read as a cache that
+    // failed to help rather than one that does not exist.
+    if (m.fromCache != null && job.kind === 'ifc') {
+      items.push([t('metrics.cache'), m.fromCache ? t('metrics.hit') : t('metrics.miss')])
+    }
     const fp = shortFingerprint(job.fingerprint)
     if (fp) items.push([t('metrics.fingerprint'), <span key="fp" title={job.fingerprint ?? undefined}>{fp}</span>])
   }
@@ -163,7 +180,7 @@ function MetricsGrid({ job, advanced }: { job: LoadJobView; advanced: boolean })
         <div>
           <p className="mb-1 text-[10px] uppercase tracking-wider font-medium text-[var(--text-faint)]">{t('metrics.phaseDurations')}</p>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-            {durations.map(([id, ms]) => <Metric key={id} label={t(PHASE_KEYS[id])} value={formatDuration(ms)} />)}
+            {durations.map(([id, ms]) => <Metric key={id} label={t(phaseKey(job.kind, id))} value={formatDuration(ms)} />)}
           </dl>
         </div>
       )}
@@ -178,7 +195,7 @@ export function LoadJobDetails({ job, detail }: { job: LoadJobView; detail: Load
     <div className="mt-2 ml-[22px] flex flex-col gap-2.5 rounded-[8px] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] p-2.5">
       {job.status === 'failed' && <ErrorBlock job={job} advanced={advanced} />}
       {job.stalled && job.status === 'running' && (
-        <p className="text-[10.5px] leading-snug text-[var(--warn)]">{t('row.stalled')}</p>
+        <p className="text-[10.5px] leading-snug text-[var(--warn)]">{stalledText(job, t)}</p>
       )}
       {job.duplicateOf && <p className="text-[10.5px] leading-snug text-[var(--text-dim)]">{t('row.duplicate')}</p>}
       <PhaseChecklist job={job} />

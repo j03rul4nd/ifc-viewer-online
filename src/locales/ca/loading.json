@@ -3,6 +3,8 @@
     "loadingOne": "Carregant {{name}}",
     "loadingMany_one": "Carregant {{count}} model",
     "loadingMany_other": "Carregant {{count}} models",
+    "loadingManyFiles_one": "Carregant {{count}} fitxer",
+    "loadingManyFiles_other": "Carregant {{count}} fitxers",
     "queued_one": "{{count}} en cua",
     "queued_other": "{{count}} en cua",
     "held_one": "{{count}} en pausa",
@@ -16,7 +18,9 @@
     "estimate": "Estimat a partir dels passos completats fins ara, ponderat per la mida del fitxer",
     "announce": {
       "failed_one": "{{count}} model no s'ha pogut carregar",
-      "failed_other": "{{count}} models no s'han pogut carregar"
+      "failed_other": "{{count}} models no s'han pogut carregar",
+      "failedLoads_one": "{{count}} càrrega ha fallat",
+      "failedLoads_other": "{{count}} càrregues han fallat"
     }
   },
   "center": {
@@ -55,7 +59,11 @@
     "failed_one": "{{count}} amb error",
     "failed_other": "{{count}} amb error",
     "unnamed_one": "{{count}} model",
-    "unnamed_other": "{{count}} models"
+    "unnamed_other": "{{count}} models",
+    "unnamedScans_one": "{{count}} escaneig",
+    "unnamedScans_other": "{{count}} escaneigs",
+    "unnamedMeshes_one": "{{count}} model 3D",
+    "unnamedMeshes_other": "{{count}} models 3D"
   },
   "row": {
     "queuedAt": "En cua · #{{position}}",
@@ -70,6 +78,7 @@
     "speed": "{{speed}}/s",
     "speedEstimated": "≈ {{speed}}/s",
     "stalled": "Fa estona que no hi ha progrés. Les classes IFC grans poden trigar minuts; continua esperant o cancel·la.",
+    "stalledGeneric": "Fa estona que no hi ha progrés. Continua esperant o cancel·la.",
     "stalledShort": "Sense progrés recent",
     "duplicate": "Mateix contingut que un model que ja és a l'escena",
     "retrying": "Intent {{attempt}}"
@@ -137,6 +146,18 @@
     "decode": "Descodificant",
     "place": "Col·locant a l'escena"
   },
+  "phaseByKind": {
+    "pointcloud": {
+      "identify": "Preparació del lector",
+      "decode": "Lectura de punts"
+    }
+  },
+  "phaseActiveByKind": {
+    "pointcloud": {
+      "identify": "Preparant el lector",
+      "decode": "Llegint punts"
+    }
+  },
   "status": {
     "queued": "En cua",
     "held": "En pausa",
@@ -155,7 +176,8 @@
     "anchor": "Esperant {{name}} (base de coordenades)",
     "attach-lane": "Esperant que un altre model acabi d'entrar a l'escena",
     "backoff": "Es tornarà a intentar aviat",
-    "viewer": "Esperant el visualitzador 3D"
+    "viewer": "Esperant el visualitzador 3D",
+    "budget": "Esperant el pressupost de punts (un altre escaneig encara s'està carregant)"
   },
   "error": {
     "invalid-file": "Aquest fitxer no és un model IFC llegible. Comprova que sigui un .ifc exportat des de la teva eina BIM.",
@@ -174,6 +196,16 @@
     "timeout": "L'operació ha trigat massa i s'ha aturat. Torna-ho a intentar.",
     "cancelled": "S'ha cancel·lat la càrrega.",
     "unknown": "Alguna cosa ha anat malament durant la càrrega. Torna-ho a intentar o revisa els detalls tècnics."
+  },
+  "errorGeneric": {
+    "invalid-file": "Aquest fitxer és buit o no és un fitxer llegible del seu tipus. Comprova que sigui complet i que l'extensió correspongui al contingut.",
+    "unsupported": "El format, la mida o l'enllaç d'aquest fitxer no és compatible.",
+    "read-failed": "No s'ha pogut llegir el fitxer o un dels seus fitxers associats (com el .bin d'un glTF). Potser s'ha mogut o el navegador n'ha perdut l'accés. Torna'l a afegir.",
+    "parse": "No s'ha pogut processar el contingut del fitxer. De vegades tornar-ho a intentar ajuda; si no, torna a exportar el fitxer.",
+    "worker-init": "El lector de fitxers no s'ha pogut iniciar. Torna a carregar la pàgina i prova-ho de nou.",
+    "out-of-memory": "El navegador s'ha quedat sense memòria. Tanca altres pestanyes o carrega menys fitxers alhora, o més petits, i torna-ho a intentar.",
+    "cache-corrupt": "La còpia de la memòria cau estava malmesa. Torna-ho a intentar per llegir el fitxer de nou.",
+    "scene": "No s'ha pogut afegir el contingut a l'escena. Torna-ho a intentar o torna a carregar la pàgina."
   },
   "discipline": {
     "architecture": "Arquitectura",
@@ -271,6 +303,7 @@
     "mobile": "Dispositiu mòbil",
     "maxConverts": "Conversions en paral·lel",
     "maxDownloads": "Baixades en paral·lel",
+    "maxDecodes": "Descodificacions en paral·lel (escanejos, models 3D)",
     "budget": "Pressupost de memòria",
     "largeFile": "En solitari a partir de",
     "pressure": "Pressió de memòria",

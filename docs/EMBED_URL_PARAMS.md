@@ -93,14 +93,20 @@ Three things worth knowing before you build a link:
   what makes it work.
 - **`scan` lands wherever the alignment ladder puts it.** Sharing a projected
   CRS with the model is exact; anything less is labelled as the guess it is.
-- **Neither works with `ui=client`.** The panels that serve them are not mounted
-  in the client skin, so the command has nobody to answer it and you get an
-  error toast. Use `ui=kiosk` for a chrome-less recording instead.
+- **`map` does not work with `ui=client`.** Map mode is served by a panel the
+  client skin does not mount, so the command has nobody to answer it and you get
+  an error toast. Use `ui=kiosk` for a chrome-less recording instead. `scan`
+  does work there: scans load through the loading queue, not through their panel.
 
 Turning on OpenStreetMap surroundings queries a public service (Overpass) and
 can take half a minute; the scan loads in parallel rather than queueing behind it.
-Both show up as rows in the viewer's Loading Center next to the IFC models, but
-their own loaders run them. Neither waits for a conversion slot.
+Both show up as rows in the viewer's Loading Center next to the IFC models. The
+scans are jobs of their own: each downloads with real progress, decodes in a
+lane separate from the IFC conversions (it never waits for a conversion slot),
+aligns against the model, and can be cancelled on its own. A list of scans
+shares the point budget: one that does not fit while another is still loading
+waits for it instead of overflowing the GPU. A failure is toasted with its
+reason (for example "LAZ file too large to decompress in the browser").
 
 ### Granular chrome overrides (embed mode)
 

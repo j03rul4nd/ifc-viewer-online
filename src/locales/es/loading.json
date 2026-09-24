@@ -3,6 +3,8 @@
     "loadingOne": "Cargando {{name}}",
     "loadingMany_one": "Cargando {{count}} modelo",
     "loadingMany_other": "Cargando {{count}} modelos",
+    "loadingManyFiles_one": "Cargando {{count}} archivo",
+    "loadingManyFiles_other": "Cargando {{count}} archivos",
     "queued_one": "{{count}} en cola",
     "queued_other": "{{count}} en cola",
     "held_one": "{{count}} en pausa",
@@ -16,7 +18,9 @@
     "estimate": "Estimado a partir de los pasos completados hasta ahora, ponderado por el tamaño del archivo",
     "announce": {
       "failed_one": "{{count}} modelo no se pudo cargar",
-      "failed_other": "{{count}} modelos no se pudieron cargar"
+      "failed_other": "{{count}} modelos no se pudieron cargar",
+      "failedLoads_one": "{{count}} carga ha fallado",
+      "failedLoads_other": "{{count}} cargas han fallado"
     }
   },
   "center": {
@@ -55,7 +59,11 @@
     "failed_one": "{{count}} fallido",
     "failed_other": "{{count}} fallidos",
     "unnamed_one": "{{count}} modelo",
-    "unnamed_other": "{{count}} modelos"
+    "unnamed_other": "{{count}} modelos",
+    "unnamedScans_one": "{{count}} escaneo",
+    "unnamedScans_other": "{{count}} escaneos",
+    "unnamedMeshes_one": "{{count}} modelo 3D",
+    "unnamedMeshes_other": "{{count}} modelos 3D"
   },
   "row": {
     "queuedAt": "En cola · #{{position}}",
@@ -70,6 +78,7 @@
     "speed": "{{speed}}/s",
     "speedEstimated": "≈ {{speed}}/s",
     "stalled": "Sin progreso desde hace un rato. Las clases IFC grandes pueden tardar minutos; sigue esperando o cancela.",
+    "stalledGeneric": "Sin progreso desde hace un rato. Sigue esperando o cancela.",
     "stalledShort": "Sin progreso reciente",
     "duplicate": "Mismo contenido que un modelo que ya está en la escena",
     "retrying": "Intento {{attempt}}"
@@ -137,6 +146,18 @@
     "decode": "Decodificando",
     "place": "Colocando en la escena"
   },
+  "phaseByKind": {
+    "pointcloud": {
+      "identify": "Preparación del lector",
+      "decode": "Lectura de puntos"
+    }
+  },
+  "phaseActiveByKind": {
+    "pointcloud": {
+      "identify": "Preparando el lector",
+      "decode": "Leyendo puntos"
+    }
+  },
   "status": {
     "queued": "En cola",
     "held": "En pausa",
@@ -155,7 +176,8 @@
     "anchor": "Esperando a {{name}} (base de coordenadas)",
     "attach-lane": "Esperando a que otro modelo termine de entrar en la escena",
     "backoff": "Se reintentará en breve",
-    "viewer": "Esperando al visor 3D"
+    "viewer": "Esperando al visor 3D",
+    "budget": "Esperando al presupuesto de puntos (otro escaneo aún se está cargando)"
   },
   "error": {
     "invalid-file": "Este archivo no es un modelo IFC legible. Comprueba que sea un .ifc exportado desde tu herramienta BIM.",
@@ -174,6 +196,16 @@
     "timeout": "La operación ha tardado demasiado y se ha detenido. Reintenta.",
     "cancelled": "Se ha cancelado la carga.",
     "unknown": "Algo ha salido mal durante la carga. Reintenta o revisa los detalles técnicos."
+  },
+  "errorGeneric": {
+    "invalid-file": "Este archivo está vacío o no es un archivo legible de su tipo. Comprueba que esté completo y que su extensión corresponda a su contenido.",
+    "unsupported": "El formato, el tamaño o el enlace de este archivo no es compatible.",
+    "read-failed": "No se pudo leer el archivo o uno de sus archivos asociados (como el .bin de un glTF). Puede que se haya movido o que el navegador haya perdido el acceso. Vuelve a añadirlo.",
+    "parse": "No se pudo procesar el contenido del archivo. A veces reintentar ayuda; si no, vuelve a exportar el archivo.",
+    "worker-init": "El lector de archivos no ha podido arrancar. Recarga la página e inténtalo de nuevo.",
+    "out-of-memory": "El navegador se ha quedado sin memoria. Cierra otras pestañas o carga menos archivos a la vez, o más pequeños, y reintenta.",
+    "cache-corrupt": "La copia en caché estaba dañada. Reintenta para leer el archivo de nuevo.",
+    "scene": "No se pudo añadir el contenido a la escena. Reintenta o recarga la página."
   },
   "discipline": {
     "architecture": "Arquitectura",
@@ -271,6 +303,7 @@
     "mobile": "Dispositivo móvil",
     "maxConverts": "Conversiones en paralelo",
     "maxDownloads": "Descargas en paralelo",
+    "maxDecodes": "Decodificaciones en paralelo (escaneos, modelos 3D)",
     "budget": "Presupuesto de memoria",
     "largeFile": "En solitario a partir de",
     "pressure": "Presión de memoria",

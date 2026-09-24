@@ -110,7 +110,52 @@ export function classifyFiles(files: readonly File[]): FileRouting {
 
   if (hasMeshEntry) out.mesh.push(...textures)
   else out.other.push(...textures)
+
+  // `.txt` / `.csv` are point lists only when nothing else says otherwise. In
+  // a project folder dropped next to its IFCs they are the README and the
+  // issue export — each one used to become a failed scan and a toast. They
+  // stay scans when the drop is only them, or carries other scans.
+  const ambiguous = out.pointcloud.filter((f) => AMBIGUOUS_TEXT.has(fileExtensionOf(f.name)))
+  const hasRealScan = out.pointcloud.length > ambiguous.length
+  if (ambiguous.length > 0 && !hasRealScan && (out.ifc.length > 0 || hasMeshEntry)) {
+    out.pointcloud = out.pointcloud.filter((f) => !AMBIGUOUS_TEXT.has(fileExtensionOf(f.name)))
+    out.other.push(...ambiguous)
+  }
   return out
+}
+
+/** Text extensions that are a point list only in context (see classifyFiles). */
+const AMBIGUOUS_TEXT: ReadonlySet<string> = new Set(['.txt', '.csv'])
+
+/** One mesh import: the file the loader decodes, and everything it may reference. */
+export interface MeshImportGroup {
+  entry: File
+  /** Every non-entry file of the selection (.bin, .mtl, textures). */
+  sidecars: File[]
+}
+
+/**
+ * Split a mesh bucket into one import per entry file.
+ *
+ * The mesh loader decodes ONE entry file per call, so handing it a drop of
+ * chair.glb + table.glb imported the chair and silently ignored the table.
+ * Each entry now becomes its own import. The sidecars are shared by all of
+ * them rather than guessed apart: the loader resolves a reference by basename
+ * and only mints a URL for a file that is actually referenced, so an unrelated
+ * texture in the list costs nothing — while guessing wrong would lose a
+ * texture. (Pairing an OBJ with its own .mtl is the loader's job; it prefers
+ * the .mtl whose name matches.)
+ *
+ * No entry at all → no group: the caller reports "nothing to import".
+ */
+export function groupMeshFiles(files: readonly File[]): MeshImportGroup[] {
+  const entries: File[] = []
+  const sidecars: File[] = []
+  for (const file of files) {
+    if (MESH_ENTRIES.has(fileExtensionOf(file.name))) entries.push(file)
+    else sidecars.push(file)
+  }
+  return entries.map((entry) => ({ entry, sidecars }))
 }
 
 /** Total number of files that some subsystem will open. */

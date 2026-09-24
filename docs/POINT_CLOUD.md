@@ -23,7 +23,7 @@ temporal rendering roadmap, see
 |---|---|---|---|---|---|---|
 | **LAS** 1.0–1.4, PDRF 0–10, uncompressed | `.las` | ✅ (PDRF 2,3,5,7,8,10) | ✅ | ✅ | — | ✅ |
 | **LAZ** (LASzip-compressed LAS) | `.laz` | ✅ | ✅ | ✅ | — | ✅ |
-| **COPC** (LAZ + octree index) | `.copc.laz` | ✅ | ✅ | ✅ | — | ✅ |
+| **COPC** (LAZ + octree index) | `.copc.laz`, `.copc` | ✅ | ✅ | ✅ | — | ✅ |
 | **PLY** ascii / binary LE / binary BE | `.ply` | ✅ | ✅ | ✅ | ✅ | — |
 | **PCD** ascii / binary / binary_compressed | `.pcd` | ✅ | ✅ | ✅ | ✅ | — |
 | **Text** whitespace / comma / semicolon / tab | `.xyz` `.pts` `.csv` `.asc` `.txt` | ✅ | ✅ | — | — | — |
@@ -70,7 +70,8 @@ evidence, contract and gates.
   mislabel) is re-routed to the LAZ reader rather than refused.
 * **COPC** — the `copc` info VLR (pinned by the spec as the first VLR) and the
   octree hierarchy pages. A `.copc.laz` is routed to the octree reader by its
-  double extension, since `extensionOf` sees only ".laz".
+  double extension, since `extensionOf` sees only ".laz"; a bare `.copc` is
+  routed there too.
 * **PLY** — property names, including the aliases scanners actually emit
   (`red`/`r`/`diffuse_red`, `intensity`/`scalar_intensity`/`reflectance`,
   `confidence`/`quality`/`scalar_confidence`).
@@ -549,7 +550,11 @@ current cap.
 ## 8. Architecture
 
 ```
-PointCloudPanel (React.lazy)         pointCloudStore (Zustand, serialisable only)
+PointCloudPanel · drop · ?scan= · SDK
+        │ submitPointClouds (lib/loading)
+        ▼
+LoadManager ── pointcloud-source (adapter: download · identify · place · decode lanes)
+        │                             pointCloudStore (Zustand, serialisable only)
         │                                     │
         └── pc-runner ────────────────────────┘
               │  worker lifecycle, alignment resolution, chunk hand-off
@@ -578,15 +583,15 @@ PointCloudPanel (React.lazy)         pointCloudStore (Zustand, serialisable only
 | `src/lib/pointcloud/pc-octree.ts` | COPC node selection and residency policy: node bounds, screen-space spacing, parent-before-child refinement, budget, eviction hysteresis. Pure. |
 | `src/lib/pointcloud/pc-material.ts` | The point ShaderMaterial (colour modes, confidence, sprites). |
 | `src/lib/pointcloud/point-cloud-system.ts` | Owns every Three.js resource. Twin of `geo-system` / `solar-system`. |
-| `src/lib/pointcloud/pc-runner.ts` | Worker orchestration + store updates. |
+| `src/lib/pointcloud/pc-runner.ts` | Worker orchestration + store updates, per-load cancellation, and the resident-point reservation ledger. Driven by `src/lib/loading/pointcloud-source.ts` (every load is a LoadManager job, D-30). |
 | `src/lib/pointcloud/temporal-replay.ts` | Finite replay clock: seek, speed, loop and coalesced display frames. |
 | `src/lib/pointcloud/live-point-frame.ts` | Versioned 18-byte point payload, CRC32, strict validation and reusable decode slots. |
 | `src/lib/pointcloud/live-frame-buffer.ts` | Fixed two/three-slot jitter buffer with newest-frame-wins backpressure. |
 | `src/lib/pointcloud/simulated-live-transport.ts` | Deterministic loss, reorder, corruption and reconnect profile used by the exhibition demo. |
 | `src/lib/pointcloud/mcap-point-recording.ts` | Lazy MCAP writer/indexed reader for the application payload; message bodies are iterated by chunk. |
 | `src/workers/point-cloud.worker.ts` | Off-thread parse, streams transferable chunks. |
-| `src/stores/pointCloudStore.ts` | Product state, display prefs, epoch cancellation. |
-| `src/components/PointCloudPanel.tsx` | The UI. Uses the shared `ViewportPanel` shell, so it is a right-hand card on desktop and a two-detent bottom sheet on a phone, like the map and solar panels. |
+| `src/stores/pointCloudStore.ts` | Product state, display prefs, and the scene-clear `epoch` (bumped by `clearClouds` only). Cancellation is per load, in `pc-runner`: a load is stale when its own signal aborts, its own entry is removed (by any path — each load watches its entry) or the scene is cleared, so removing one cloud never cancels a sibling's parse or freezes a streaming COPC. |
+| `src/components/PointCloudPanel.tsx` | The UI (its picker and demos submit jobs; it no longer runs loads itself). Uses the shared `ViewportPanel` shell, so it is a right-hand card on desktop and a two-detent bottom sheet on a phone, like the map and solar panels. |
 
 **What it reuses rather than reinvents:** the scene, camera and renderer
 (`viewer.ts`); `geo-extract.worker` + `crs.ts` + `placement.ts` for the IFC's
