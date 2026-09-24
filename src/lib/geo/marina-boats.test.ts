@@ -67,3 +67,18 @@ describe('planMooredBoats on Port Vell', () => {
     expect(onIt.length).toBeLessThanOrEqual(28)
   })
 })
+
+describe('planLakeBoats on the Ciutadella', async () => {
+  const { planLakeBoats } = await import('./marina-boats')
+  const cfx = (await import('./__fixtures__/barcelona-ciutadella.json')).default as unknown as { _bbox: { south: number; west: number; north: number; east: number } }
+  const cf = parseOsmFeatures(cfx, { bbox: cfx._bbox })
+  const cLat = (cfx._bbox.south + cfx._bbox.north) / 2, cLon = (cfx._bbox.west + cfx._bbox.east) / 2
+  const cm = metresToNormalized(cLat), co = latLonToNormalized(cLat, cLon)
+  const loc = (p: LatLonPoint) => { const n = latLonToNormalized(p.lat, p.lon); return { x: (n.nx - co.nx) / cm, y: (n.ny - co.ny) / cm } }
+  const boats = planLakeBoats(cf, loc)
+  const cmask = buildWaterMask(cf, { mToN: cm })!
+  it('puts rowing boats on the park lake, and only on water', () => {
+    expect(boats.length).toBeGreaterThan(3)
+    for (const b of boats) expect(cmask(co.nx + b.x * cm, co.ny + b.y * cm)).toBe(true)
+  })
+})

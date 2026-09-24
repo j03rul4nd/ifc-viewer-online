@@ -8,7 +8,7 @@ import {
   waterwayWidth, bufferWaterway,
   FEATURE_KINDS, MIN_AREA_M2,
   roadClass, ROAD_CLASS_ROUGHNESS, ROAD_CLASS_KERB_M, buildingUse,
-  isBelowSurface, monumentShape,
+  isBelowSurface, monumentShape, artworkKindOf,
   type OsmFeature,
 } from './osm-features'
 
@@ -52,6 +52,18 @@ describe('classifyFeature', () => {
     const cases: Array<Record<string, string> | undefined> =
       [undefined, {}, { amenity: 'cafe' }, { barrier: 'gate' }, { barrier: 'kerb' }]
     for (const tags of cases) expect(classifyFeature(tags)).toBeNull()
+  })
+})
+
+describe('artworkKindOf', () => {
+  it('draws a named classical sculpture as a figure and a modern one as a sculpture', () => {
+    const art = { tourism: 'artwork', artwork_type: 'sculpture' }
+    // The Cascada's four griffins: named, by a nineteenth-century artist.
+    expect(artworkKindOf({ ...art, name: 'Griu', artist_name: 'Rafael Atché i Ferré' })).toBe('statue')
+    expect(artworkKindOf({ ...art, name: 'Cap de Barcelona', start_date: '1992' })).toBe('sculpture')
+    expect(artworkKindOf({ ...art, name: 'Pont', material: 'steel' })).toBe('sculpture')
+    expect(artworkKindOf({ ...art, name: 'Forma', artwork_subject: 'abstract' })).toBe('sculpture')
+    expect(artworkKindOf(art)).toBe('sculpture')
   })
 })
 

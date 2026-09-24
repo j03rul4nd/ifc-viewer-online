@@ -34,7 +34,8 @@ Litoral, Nus de la Trinitat); three of them are kept as fixtures and pinned by
 - `barcelona-barris.ts` / `.data.ts` — barri lookup and typology profiles (regenerate with `node scripts/geo/build-barcelona-barris.mjs <raw.json>`).
 - `barcelona-fabric.ts` — applies the typology: heights for guesses, perimeter split, facade parameters.
 - `street-furniture.ts` — mapped furniture, barriers, signal placement (pure planners + builders).
-- `marina-boats.ts` — berth plan from pontoons, boats.
+- `marina-boats.ts` — berth plan from pontoons, boats; row boats on park lakes.
+- `landmarks.ts` — hand-modelled landmark registry, loader and layer.
 - `facade-shader.ts` — the procedural facade (attributes `aFacA/B/C` from building-mesh).
 - `shader-glsl.test.ts` — guards injected GLSL against reserved words: the first facade shader named a parameter `half` and every building vanished while still casting its shadow.
 
@@ -53,7 +54,26 @@ the scratchpad were served to the app from a local caching proxy (pointing
   ramp — a data gap (the ramp is untagged as a cutting).
 - The àtic setback of Eixample buildings is not modelled (only the palette and
   storey rhythm). Chamfer facades use the same rhythm as the street facades.
-- Parks: playgrounds and pitches are drawn as green; no play equipment.
+- Parks: landmark models exist for the Ciutadella only; other parks keep the
+  extruded outline for their monuments.
+- A mapped animal sculpture (the Cascada's griffins) is drawn with the figure
+  stand-in: OSM says `artwork_type=sculpture`, not what it represents.
+
+## Parks — the Ciutadella pass
+
+Measured on a capture of the whole Parc de la Ciutadella (300 m half-size
+around 41.388, 2.187; the benchmark fixture is the same box).
+
+| # | Defect | Evidence | Fix |
+|---|---|---|---|
+| 18 | Paths drawn as asphalt | The park's walks are `surface=compacted` / `gravel` — Barcelona's sauló | Warm sauló tone for those surfaces inside the city |
+| 19 | Courts and playgrounds drawn as lawn | `leisure=pitch` / `playground` fell to the green rule | Hard pitches and playgrounds are paved areas, court-coloured by sport; they count as pedestrian ground for furniture |
+| 20 | Statues, busts, play equipment, pergolas never requested | 35 mapped artworks (statues, busts, sculptures), 5 play pieces and 4 pergolas in the park | Queried (`tourism=artwork`, `historic=memorial`, `playground=*`, `amenity=shelter`); stood where surveyed, faced to the nearest path; eight new Blender assets (statue on plinth, bust on pedestal, modern sculpture, slide, springer, swing, row boat, pergola) |
+| 21 | A named 1880s sculpture drawn as an abstract fin | The four griffins of the Cascada are `artwork_type=sculpture` | Named pieces are figures unless the subject, material (steel, Corten…) or a post-1950 date say modern |
+| 22 | The Cascada wrapped in a six-storey block of flats | Way 135115884 (the 1888 terraces, no height) got the Eixample fabric: 19 m, balconies | A building inside a park is a pavilion: plain masonry wall in sandstone / brick / stucco, and one tall storey (9 m) when unheighted — unless it is a palace, museum or chapel of its own size (the Parlament keeps 16 m; `building=palace` now defaults to 16 m) |
+| 23 | Monuments as prisms | Cascada, Hivernacle, Umbracle, Castell dels Tres Dragons, Glorieta, Mamut | `landmarks.ts`: hand-built GLBs authored on the real footprint (`scripts/blender/build-ciutadella-landmarks.py`), placed at the footprint's centroid with no rotation. Showcase only; the model replaces its outline — and the Cascada's also replaces the terraces it carries |
+| 24 | Empty lake | — | Rental row boats on the estany (`water=lake`/`pond` inside a park, ≥ 3 m from shore, 1 per 700 m², at most 14); never on a basin or fountain |
+| 25 | Lawns without their low railings | The park's lawns are fenced with 0.75 m hoops, the park edge with 2 m railings | Fence height by position: 0.75 m inside, 2 m within 4 m of the park boundary |
 
 ## Loading without freezing the page (performance pass)
 

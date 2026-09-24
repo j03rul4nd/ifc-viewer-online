@@ -155,6 +155,7 @@ const yawOfBearing = (deg: number): number => Math.PI / 2 - (deg * Math.PI) / 18
 
 export type FurnitureSlot =
   | 'bench' | 'bin' | 'fountain' | 'bollard' | 'lamp-street' | 'lamp-park'
+  | 'statue' | 'bust' | 'sculpture' | 'slide' | 'springy' | 'swing' | 'pergola'
 
 export interface FurniturePlan { slot: FurnitureSlot; at: Placed }
 
@@ -199,6 +200,22 @@ export function planFurniture(
         const yaw = tagged ?? (path ? Math.atan2(path.at.y - p.y, path.at.x - p.x) : variate(seed, 2) * Math.PI * 2)
         out.push({ slot: 'lamp-park', at: { ...p, z: 0, yaw, seed } })
       }
+      continue
+    }
+
+    // Statues, play equipment, pergolas: they stand where they were surveyed
+    // — a statue is never nudged — and turn to face the nearest path, which is
+    // where the plinth's inscription and the slide's ladder always are.
+    if (kind === 'artwork' || kind === 'playground' || kind === 'shelter') {
+      const slot: FurnitureSlot | null = kind === 'artwork' ? (f.style.artwork ?? null)
+        : kind === 'playground' ? (f.style.play ?? null) : 'pergola'
+      if (!slot) continue
+      if (tagged !== null) { out.push({ slot, at: { ...p, z: 0, yaw: tagged, seed } }); continue }
+      const path = net.nearest(p, 25, (s) => !s.vehicular) ?? net.nearest(p, 40, () => true)
+      const yaw = path && path.dist > 0.2
+        ? Math.atan2(path.at.y - p.y, path.at.x - p.x)
+        : variate(seed, 4) * Math.PI * 2
+      out.push({ slot, at: { ...p, z: 0, yaw, seed } })
       continue
     }
 
@@ -406,6 +423,9 @@ const IRON: [number, number, number] = [0.17, 0.2, 0.19]
 const WOOD: [number, number, number] = [0.5, 0.34, 0.2]
 const GREY: [number, number, number] = [0.45, 0.46, 0.47]
 const GLOW: [number, number, number] = [0.95, 0.88, 0.7]
+const STONE: [number, number, number] = [0.66, 0.62, 0.55]
+const MARBLE: [number, number, number] = [0.86, 0.85, 0.82]
+const BRONZE: [number, number, number] = [0.35, 0.27, 0.2]
 
 /** Every stand-in faces +X, the convention of the authored kit. */
 const PROCEDURAL: Record<FurnitureSlot | 'signal-vehicle' | 'signal-pedestrian', () => THREE.BufferGeometry> = {
@@ -420,6 +440,18 @@ const PROCEDURAL: Record<FurnitureSlot | 'signal-vehicle' | 'signal-pedestrian',
     cyl(0.12, 0.07, 9.5, 0, 0, 0, GREY), boxAt(2.6, 0.1, 0.1, 1.3, 0, 9.3, GREY), boxAt(0.7, 0.28, 0.12, 2.6, 0, 9.2, GLOW),
   ]),
   'lamp-park': () => mergeAll([cyl(0.12, 0.06, 3.6, 0, 0, 0, IRON), boxAt(0.34, 0.34, 0.55, 0, 0, 3.55, GLOW), boxAt(0.42, 0.42, 0.08, 0, 0, 4.1, IRON)]),
+  // Stand-ins only; the authored park kit replaces them in Showcase.
+  statue: () => mergeAll([boxAt(1.1, 1.1, 1.6, 0, 0, 0, STONE), cyl(0.28, 0.22, 1.9, 0, 0, 1.6, MARBLE, 8)]),
+  bust: () => mergeAll([boxAt(0.5, 0.5, 1.5, 0, 0, 0, STONE), boxAt(0.45, 0.3, 0.55, 0, 0, 1.5, MARBLE)]),
+  sculpture: () => mergeAll([boxAt(1.0, 1.0, 0.3, 0, 0, 0, STONE), cyl(0.35, 0.15, 2.2, 0, 0, 0.3, BRONZE, 6)]),
+  slide: () => mergeAll([boxAt(1.2, 1.2, 1.5, -0.8, 0, 0, WOOD), boxAt(2.2, 0.5, 0.08, 0.9, 0, 0.7, [0.7, 0.2, 0.15])]),
+  springy: () => mergeAll([cyl(0.06, 0.06, 0.4, 0, 0, 0, IRON, 6), boxAt(0.7, 0.25, 0.4, 0, 0, 0.4, [0.25, 0.55, 0.3])]),
+  swing: () => mergeAll([boxAt(0.08, 0.08, 2.3, 0, -1.5, 0, IRON), boxAt(0.08, 0.08, 2.3, 0, 1.5, 0, IRON), boxAt(0.08, 3.1, 0.08, 0, 0, 2.3, IRON)]),
+  pergola: () => mergeAll([
+    boxAt(0.12, 0.12, 2.7, -1.8, -1.4, 0, WOOD), boxAt(0.12, 0.12, 2.7, 1.8, -1.4, 0, WOOD),
+    boxAt(0.12, 0.12, 2.7, -1.8, 1.4, 0, WOOD), boxAt(0.12, 0.12, 2.7, 1.8, 1.4, 0, WOOD),
+    boxAt(4.0, 3.0, 0.12, 0, 0, 2.7, [0.3, 0.42, 0.22]),
+  ]),
   'signal-vehicle': () => mergeAll([
     cyl(0.07, 0.06, 3.3, 0, 0, 0, IRON), boxAt(0.22, 0.32, 0.95, 0.12, 0, 2.45, IRON),
     boxAt(0.05, 0.2, 0.2, 0.25, 0, 3.12, [0.9, 0.15, 0.12]), boxAt(0.05, 0.2, 0.2, 0.25, 0, 2.82, [0.95, 0.65, 0.1]),
@@ -442,6 +474,13 @@ function assetFor(slot: keyof typeof PROCEDURAL, bcn: boolean): string[] {
     case 'lamp-park': return bcn ? ['lamp-park-bcn'] : ['lamp-park-bcn']
     case 'signal-vehicle': return bcn ? ['traffic-signal-bcn', 'traffic-signal'] : ['traffic-signal', 'traffic-signal-bcn']
     case 'signal-pedestrian': return ['ped-signal']
+    case 'statue': return ['statue-plinth']
+    case 'bust': return ['bust-pedestal']
+    case 'sculpture': return ['sculpture-modern']
+    case 'slide': return ['playground-slide']
+    case 'springy': return ['playground-springy']
+    case 'swing': return ['playground-swing']
+    case 'pergola': return ['pergola-bcn']
   }
 }
 
@@ -547,6 +586,9 @@ export function buildPlacedSignalLayer(
 
 // ── Barriers ──────────────────────────────────────────────────────────────────
 
+/** A park's lawn-edge railing: the knee-high hoops round the Ciutadella's lawns. */
+const LAWN_FENCE_M = 0.75
+
 /** Default heights when untagged, metres — typical of what each is in a city. */
 const BARRIER_HEIGHT_M: Record<string, number> = {
   fence: 1.6, wall: 2.0, hedge: 1.3, retaining_wall: 1.2, guard_rail: 0.8, city_wall: 6, handrail: 1.0,
@@ -594,9 +636,39 @@ export function buildBarrierLayer(
     for (const k of [0, 1, 2, 0, 2, 3]) { pos.push(p[k][0], p[k][1], p[k][2] + h); nor.push(0, 0, 1); col.push(c[0] * 0.9, c[1] * 0.9, c[2] * 0.9); fence.push(0, h, 0, h) }
   }
 
+  // The parks the barriers stand in, for the untagged fence rule below.
+  const parks = features.filter((f) => f.kind === 'green' && f.style.cover === 'park' && f.ring && f.ring.length >= 3)
+    .map((f) => f.ring!.map(L.toLocal))
+  const insidePark = (p: V): { inside: boolean; edgeM: number } => {
+    let best = { inside: false, edgeM: Infinity }
+    for (const ring of parks) {
+      let hit = false
+      let edge = Infinity
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const a = ring[i], b = ring[j]
+        if ((a.y > p.y) !== (b.y > p.y) && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) hit = !hit
+        const dx = b.x - a.x, dy = b.y - a.y
+        const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy || 1)))
+        edge = Math.min(edge, Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy))
+      }
+      if (hit && (!best.inside || edge < best.edgeM)) best = { inside: true, edgeM: edge }
+    }
+    return best
+  }
+
   for (const f of wanted) {
     const kind = f.style.barrier ?? 'fence'
-    const h = f.style.barrierHeightM ?? BARRIER_HEIGHT_M[kind] ?? 1.5
+    // AN UNTAGGED FENCE IN A PARK IS A LAWN EDGE. 69 of the 81 fences in the
+    // Ciutadella box carry no height, and most of them hoop the lawns at knee
+    // height; drawn at the street default they walled every lawn in 1.6 m of
+    // railing. The ones on the park's own boundary are the perimeter railing.
+    let fenceDefault = BARRIER_HEIGHT_M[kind] ?? 1.5
+    if (kind === 'fence' && f.style.barrierHeightM === undefined && f.ring!.length >= 2) {
+      const mid = L.toLocal(f.ring![Math.floor(f.ring!.length / 2)])
+      const park = insidePark(mid)
+      if (park.inside) fenceDefault = park.edgeM < 4 ? 2.0 : LAWN_FENCE_M
+    }
+    const h = f.style.barrierHeightM ?? fenceDefault
     const tone = BARRIER_TONE[kind] ?? BARRIER_TONE.fence
     const thick = (f.widthM ?? 0.1) / 2
     const pts = f.ring!.map(L.toLocal)

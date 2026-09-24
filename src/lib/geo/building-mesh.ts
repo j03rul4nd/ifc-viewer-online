@@ -48,6 +48,12 @@ export interface BuildingLike {
    * terrace or a garden. See `perimeter-blocks`.
    */
   interior?: boolean
+  /**
+   * A building standing inside a park — a pavilion, a greenhouse, the wings
+   * of a monumental fountain. It is not part of the street fabric, so it gets
+   * no fabric facade (no apartment windows, no balconies).
+   */
+  pavilion?: boolean
 }
 
 /**
@@ -332,7 +338,7 @@ export function buildBuildingsGeometry(
     // almost always. A tagged `roof:shape` is the mapper's own answer and still
     // wins outright; `roofTagged` is what lets the two be told apart.
     const facade: FacadeContext = { use: b.style?.use, region, tone: contextTone }
-    const typ = party && !neutral && opts.typologyAt
+    const typ = party && !neutral && opts.typologyAt && !b.pavilion
       ? opts.typologyAt(b.ring[0].lat, b.ring[0].lon)
       : null
     // Only a building nobody has said anything about gets a shape invented for
@@ -367,7 +373,8 @@ export function buildBuildingsGeometry(
     // towers, where glass and mirror against concrete is most of what makes
     // that skyline read as itself.
     const typRoof = typ ? pickTone(b.interior ? INTERIOR_ROOF_TONES : typ.roofTones, seed, 11) : null
-    const typWall = typ ? jitterTone(pickTone(typ.palette, seed, 12)!, seed) : null
+    const typWall = typ ? jitterTone(pickTone(typ.palette, seed, 12)!, seed)
+      : b.pavilion ? jitterTone(pickTone(PAVILION_WALL_TONES, seed, 12)!, seed) : null
     const roofTint = b.style?.roofColor
       ? hexToRgb(b.style.roofColor)
       : materialTone(b.style?.roofMaterial) ?? typRoof ?? roofColorFor(facade)
@@ -549,7 +556,8 @@ export function buildBuildingsGeometry(
         continue
       }
 
-      if (detailed) {
+      // A pavilion's wall is masonry, not a curtain of glazing strips.
+      if (detailed && !b.pavilion) {
         pushDetailedWall(
           positions, normals, colors, p0, p1, nx, ny,
           baseZ, wallTopZ, storeys, face, wallTint, contrast,
@@ -637,6 +645,17 @@ function ringCentroid(ring: ReadonlyArray<THREE.Vector2>): { x: number; y: numbe
   }
   return { x: ox + cx / (3 * area), y: oy + cy / (3 * area) }
 }
+
+/**
+ * Walls of a park pavilion: the Ciutadella's 1888 brick and Montjuïc
+ * sandstone, and the stucco of a park kiosk. The generic facade guess is a
+ * street palette; in a park it came out as slate-dark boxes beside the Cascada.
+ */
+const PAVILION_WALL_TONES: ReadonlyArray<readonly [number, number, number]> = [
+  [0.78, 0.66, 0.50], [0.74, 0.62, 0.46],   // Montjuïc sandstone
+  [0.66, 0.40, 0.30],                       // exposed brick
+  [0.86, 0.80, 0.68],                       // stucco
+]
 
 /** Roofs of a block interior: planted terraces, clay-tiled terrats, gravel, membrane. */
 const INTERIOR_ROOF_TONES: ReadonlyArray<readonly [number, number, number]> = [

@@ -47,6 +47,12 @@ export type PropAsset =
   // ASSET their z = 0 is the WATERLINE, not the ground: the hull goes below it,
   // and loadOne() keeps it there instead of re-grounding (see isAfloat()).
   | 'boat-motor' | 'boat-sail' | 'boat-small'
+  // Round 5. Parks: the mapped artworks (statue, bust, modern piece), play
+  // equipment and pergolas, plus the lake's rowing boat. Real colours, front
+  // +X. `boat-row` is a boat — waterline at z = 0, kept there by isAfloat().
+  | 'statue-plinth' | 'bust-pedestal' | 'sculpture-modern'
+  | 'playground-slide' | 'playground-springy' | 'playground-swing'
+  | 'boat-row' | 'pergola-bcn'
 
 export const PROP_ASSETS: readonly PropAsset[] = [
   'car', 'van', 'bus', 'train-carriage', 'train-cab', 'traffic-signal', 'catenary-mast',
@@ -57,6 +63,9 @@ export const PROP_ASSETS: readonly PropAsset[] = [
   'bench-bcn', 'lamp-park-bcn', 'lamp-street-bcn', 'fountain-bcn',
   'ped-signal', 'traffic-signal-bcn', 'waste-basket-bcn',
   'boat-motor', 'boat-sail', 'boat-small',
+  'statue-plinth', 'bust-pedestal', 'sculpture-modern',
+  'playground-slide', 'playground-springy', 'playground-swing',
+  'boat-row', 'pergola-bcn',
 ]
 
 /**
@@ -67,7 +76,7 @@ export const PROP_ASSETS: readonly PropAsset[] = [
  * files: an over-estimate passes a `<=` check forever and still misinforms the
  * person deciding whether to download.
  */
-export const PROP_ASSETS_KB = 796
+export const PROP_ASSETS_KB = 1191
 
 export const SHANGHAI_PARK_ASSETS = ['tree-camphor', 'tree-ginkgo', 'tree-metasequoia', 'tree-willow', 'shrub', 'reed', 'bench', 'lantern', 'pergola', 'fountain-jets'] as const
 export const SHANGHAI_PARK_ASSETS_KB = 720
@@ -171,7 +180,9 @@ export function loadPropAsset(name: LoadableAsset): Promise<THREE.BufferGeometry
  * furniture) before what is invented (cars, boats, trains).
  */
 export function neededPropAssets(
-  features: ReadonlyArray<{ kind: string; style?: { pierKind?: string; railKind?: string } }>,
+  features: ReadonlyArray<{ kind: string; style?: {
+    pierKind?: string; railKind?: string; furniture?: string; artwork?: string; play?: string; waterKind?: string
+  } }>,
   ctx: { scenery: boolean; barcelona: boolean; signals: boolean },
 ): PropAsset[] {
   const has = (k: string) => features.some((f) => f.kind === k)
@@ -184,6 +195,24 @@ export function neededPropAssets(
     add(ctx.barcelona ? 'bench-bcn' : 'bench', ctx.barcelona ? 'waste-basket-bcn' : 'litter-bin',
       'bollard', 'lamp-park-bcn', ctx.barcelona ? 'lamp-street-bcn' : 'street-lamp', 'fountain-bcn')
   }
+  // Park furniture, by what was mapped. An artwork or a piece of play kit
+  // whose kind is known asks for its own silhouette; one whose kind is not
+  // stated asks for the whole family, since the placement code will still
+  // choose one of them for it.
+  const furniture = (k: string) => features.filter((f) => f.kind === 'furniture' && f.style?.furniture === k)
+  const ARTWORK: Record<string, PropAsset> = { statue: 'statue-plinth', bust: 'bust-pedestal', sculpture: 'sculpture-modern' }
+  const PLAY: Record<string, PropAsset> = { slide: 'playground-slide', springy: 'playground-springy', swing: 'playground-swing' }
+  for (const f of furniture('artwork')) {
+    const one = f.style?.artwork ? ARTWORK[f.style.artwork] : undefined
+    if (one) add(one)
+    else add('statue-plinth', 'bust-pedestal', 'sculpture-modern')
+  }
+  for (const f of furniture('playground')) {
+    const one = f.style?.play ? PLAY[f.style.play] : undefined
+    if (one) add(one)
+    else add('playground-slide', 'playground-springy', 'playground-swing')
+  }
+  if (furniture('shelter').length) add('pergola-bcn')
   const rail = features.some((f) => f.kind === 'rail' && f.style?.railKind !== 'platform')
   if (rail) add('catenary-mast')
   if (ctx.scenery && has('road')) {
@@ -193,6 +222,15 @@ export function neededPropAssets(
   if (ctx.scenery && rail) add('train-carriage', 'train-cab', 'platform-canopy')
   if (ctx.scenery && features.some((f) => f.kind === 'pier' && f.style?.pierKind === 'deck')) {
     add('boat-motor', 'boat-sail', 'boat-small')
+  }
+  // A boating lake or pond gets the rental rowing boats — invented scenery,
+  // so only with the scenery switch on, like the marina's.
+  // Same test as planLakeBoats: a lake or a pond. The Ciutadella's estany is
+  // `water=lake`; the Cascada's pond beside it is a `basin`, and nobody rows
+  // across a fountain basin.
+  if (ctx.scenery && features.some((f) => f.kind === 'water' && !(f as { isSea?: boolean }).isSea
+    && (f.style?.waterKind === 'lake' || f.style?.waterKind === 'pond'))) {
+    add('boat-row')
   }
   return out
 }

@@ -81,6 +81,17 @@ BUDGET = {
     'boat-motor': 1200,
     'boat-sail': 1200,
     'boat-small': 800,
+    # Round 5: parks. Mapped one by one (a statue is a surveyed node, not a
+    # scatter), so a park has tens of them, never hundreds — the figure and the
+    # climbing plants can afford rounder shapes than a kerbside bollard.
+    'statue-plinth': 1000,
+    'bust-pedestal': 700,
+    'sculpture-modern': 700,
+    'playground-slide': 1200,
+    'playground-springy': 800,
+    'playground-swing': 700,
+    'boat-row': 1000,
+    'pergola-bcn': 1500,
 }
 
 
@@ -1443,6 +1454,490 @@ def build_boat_small():
     return finish('boat-small', parts, bake_origin=True, waterline=True)
 
 
+# ── Round 5: parks ────────────────────────────────────────────────────────────
+# WHY PARKS: the Ciutadella box maps 25 artworks, 14 memorials, playgrounds and
+# a boating lake, and until now every one of them rendered as nothing — a park
+# was trees on grass, the one kind of place where a camera at eye level looks
+# for things to stand next to. These are the silhouettes a 19th-century
+# Barcelona park is recognised by: the marble figure on its moulded pedestal,
+# the bust on a stele, a modern piece in weathering steel, the play kit, the
+# rental rowing boats on the lake and the planted pergola.
+#
+# Real colours, like rounds 3 and 4 — marble is white, corten is rust, and a
+# playground in a tintable grey is not a playground.
+#
+# FACING, per asset (the placement code yaws LOCAL +X toward the path or, for a
+# mapped node with a `direction`, along it):
+#
+#   statue-plinth       the figure faces +X, the bronze plaque is on the +X
+#                       face of the die; pedestal centred on the origin.
+#   bust-pedestal       the bust faces +X (nose, beard), plaque on the +X face.
+#   sculpture-modern    no true front; the two plates open toward +X.
+#   playground-slide    the chute descends toward +X; ladder at -X.
+#   playground-springy  the rider's head (and the child) faces +X.
+#   playground-swing    A-frames at both ends along Y; seats swing along X.
+#   boat-row            BOW +X, WATERLINE at z = 0 — it is a boat and follows
+#                       the Round 4 rules exactly, hence the 'boat-' name that
+#                       props-assets.ts isAfloat() keys on.
+#   pergola-bcn         long axis along X, the two column rows at ±Y.
+#
+# Every one is finish(bake_origin=True); the row boat adds waterline=True.
+#
+# The curved parts (the sculpture's plates, the chute, the spring coil, the
+# vine) are sweep()s: like hull(), they are written vertex by vertex in the
+# asset's own frame and never moved, so there is no transform to get wrong.
+
+STONE = (0.60, 0.55, 0.47)            # warm grey-beige pedestal stone
+STONE_DARK = (0.50, 0.46, 0.40)       # the mouldings, a shade deeper
+MARBLE = (0.88, 0.87, 0.84)
+PLAQUE = (0.30, 0.22, 0.12)           # dark bronze inscription plate
+CORTEN = (0.52, 0.26, 0.12)
+BRONZE = (0.38, 0.28, 0.16)
+GRANITE = (0.34, 0.33, 0.32)
+PLAY_WOOD = (0.62, 0.44, 0.27)        # the pine of Barcelona's play kit
+PLAY_GREEN = (0.22, 0.52, 0.30)
+PLAY_RED = (0.74, 0.22, 0.17)
+PLAY_BLUE = (0.20, 0.40, 0.66)
+PLAY_YELLOW = (0.90, 0.72, 0.16)
+PLAY_STEEL = (0.66, 0.68, 0.70)
+RUBBER = (0.12, 0.12, 0.13)
+ROW_GREEN = (0.13, 0.40, 0.33)        # the sheer band of the lake boats
+OAR_WOOD = (0.80, 0.70, 0.52)          # pale ash, so the oars read on the floor
+STUCCO = (0.85, 0.82, 0.74)           # rendered pergola columns
+PERGOLA_WOOD = (0.45, 0.32, 0.20)
+VINE = (0.25, 0.42, 0.20)
+VINE_LIGHT = (0.33, 0.50, 0.25)
+BOUGAINVILLEA = (0.62, 0.30, 0.48)    # muted: see the blossom tree's note
+
+
+def sweep(name, sections, thick, color, smooth=True):
+    """
+    A solid band through `sections`, a list of (centre, half_width) pairs.
+
+    At each section the band is `2·|half_width|` across (along half_width) and
+    `thick` through (along tangent × half_width). A vertical plate curving in
+    plan is centres at mid-height with a vertical half_width; a coil is centres
+    on the helix with a radial one. Written straight into the asset frame and
+    never moved — see the Round 5 block.
+    """
+    cs = [Vector(c) for c, _ in sections]
+    us = [Vector(u) for _, u in sections]
+    n = len(cs)
+    rings = []
+    for i in range(n):
+        t = (cs[min(i + 1, n - 1)] - cs[max(i - 1, 0)]).normalized()
+        nv = t.cross(us[i]).normalized() * (thick / 2)
+        c, u = cs[i], us[i]
+        rings.append([c + u + nv, c - u + nv, c - u - nv, c + u - nv])
+    faces = []
+    for i in range(n - 1):
+        a, b = rings[i], rings[i + 1]
+        mid = (cs[i] + cs[i + 1]) / 2
+        for k in range(4):
+            q = [a[k], a[(k + 1) % 4], b[(k + 1) % 4], b[k]]
+            hint = sum(q, Vector()) / 4 - mid
+            # Corners 0-1 and 2-3 span the width: those are the broad faces,
+            # shaded smooth along the sweep; the thin edges stay crisp.
+            faces.append((q, hint, smooth and k in (0, 2)))
+    faces.append((rings[0], cs[0] - cs[1], False))
+    faces.append((rings[-1], cs[-1] - cs[-2], False))
+    return _mesh(name, faces, color)
+
+
+def helix(radius, z0, z1, turns, per_turn, half, at=(0, 0), phase=0.0):
+    """Sections for sweep(): a coil about the vertical axis through `at`."""
+    out = []
+    steps = int(turns * per_turn)
+    for i in range(steps + 1):
+        s = i / steps
+        a = phase + 2 * math.pi * turns * s
+        r = Vector((math.cos(a), math.sin(a), 0))
+        out.append((Vector((at[0], at[1], z0 + (z1 - z0) * s)) + r * radius, r * half))
+    return out
+
+
+def build_statue_plinth():
+    """
+    A 19th-century marble figure on a moulded stone pedestal (Ciutadella).
+
+    Pedestal 1.62 m: socle, base mouldings, the die with a bronze plaque on its
+    +X face, cornice and the figure's own marble plinth. The figure is 2.1 m: a
+    standing draped body (the robe's folds are fluting), torso and shoulders,
+    head, the left arm down at the side and the right forearm raised forward.
+    FRONT: the figure and the plaque face local +X. Centred, base at z = 0.
+    """
+    parts = [
+        cube('socle', (1.24, 1.24, 0.18), (0, 0, 0.09), STONE_DARK),
+        cube('torus', (1.10, 1.10, 0.10), (0, 0, 0.23), STONE),
+        cube('scotia', (1.00, 1.00, 0.08), (0, 0, 0.32), STONE_DARK),
+        cube('die', (0.86, 0.86, 0.92), (0, 0, 0.82), STONE),
+        cube('plaque', (0.02, 0.46, 0.30), (0.435, 0, 0.86), PLAQUE),
+        cube('cornice-lo', (0.96, 0.96, 0.08), (0, 0, 1.32), STONE),
+        cube('cornice', (1.08, 1.08, 0.12), (0, 0, 1.42), STONE_DARK),
+        cube('top', (0.98, 0.98, 0.06), (0, 0, 1.51), STONE),
+        cube('plinth', (0.66, 0.66, 0.08), (0, 0, 1.58), MARBLE),
+    ]
+    z0 = 1.62
+
+    def F(z):
+        return z0 + z
+
+    robe = cyl('robe', 0.27, 1.30, (0, 0, 0), MARBLE, verts=16)
+    flute(robe, 0.88)
+    taper(robe, 0.72)
+    squash(robe, (0.72, 1.0, 1.0))
+    robe.location = (0, 0, F(0.68))
+    torso = cyl('torso', 0.20, 0.40, (0, 0, 0), MARBLE, verts=10)
+    taper(torso, 1.12)
+    squash(torso, (0.62, 1.0, 1.0))
+    torso.location = (0, 0, F(1.38))
+    head = sphere('head', 0.14, (0, 0, 0), MARBLE, segments=10, rings=7)
+    squash(head, (1.0, 0.88, 1.12))
+    head.location = (0.01, 0, F(1.91))
+    # Rounded shoulders: a bar reads as a coat hanger at any distance.
+    shoulders = sphere('shoulders', 0.10, (0, 0, 0), MARBLE, segments=10, rings=5)
+    squash(shoulders, (0.85, 2.7, 0.75))
+    shoulders.location = (0, 0, F(1.62))
+    parts += [
+        robe, torso, head, shoulders,
+        cyl('neck', 0.065, 0.12, (0, 0, F(1.72)), MARBLE, verts=8),
+        cube('nose', (0.04, 0.035, 0.05), (0.145, 0, F(1.90)), MARBLE),
+        cyl('girdle', 0.165, 0.05, (0, 0, F(1.22)), MARBLE, verts=10),
+    ]
+    squash(parts[-1], (0.72, 1.0, 1.0))
+    for side in (1, -1):
+        parts.append(cube('foot%d' % side, (0.16, 0.09, 0.07), (0.20, side * 0.09, F(0.035)), MARBLE))
+    # Left arm (+Y) down at the side; right arm (-Y) raised, forearm forward.
+    arms = (((0.00, 0.27, 1.62), (0.03, 0.30, 1.36), (0.10, 0.28, 1.10)),
+            ((0.00, -0.27, 1.62), (0.14, -0.35, 1.42), (0.40, -0.36, 1.62)))
+    for i, (sh, el, wr) in enumerate(arms):
+        sh, el, wr = [(x, y, F(z)) for x, y, z in (sh, el, wr)]
+        parts.append(strut('upper%d' % i, sh, el, 0.10, MARBLE, verts=6))
+        parts.append(strut('fore%d' % i, el, wr, 0.085, MARBLE, verts=6))
+        d = Vector(wr) - Vector(el)
+        parts.append(sphere('hand%d' % i, 0.05, tuple(Vector(wr) + d.normalized() * 0.03),
+                            MARBLE, segments=6, rings=4))
+    # The mantle, off the left shoulder and down the back to the hem.
+    parts.append(sweep('mantle', [
+        ((-0.06, 0.16, F(1.62)), (0, 0.14, 0)),
+        ((-0.15, 0.08, F(1.20)), (0, 0.22, 0)),
+        ((-0.19, 0.03, F(0.75)), (0, 0.24, 0)),
+        ((-0.20, 0.00, F(0.20)), (0, 0.26, 0)),
+    ], 0.05, MARBLE))
+    return finish('statue-plinth', parts, bake_origin=True)
+
+
+def build_bust_pedestal():
+    """
+    A marble bust on a slender stone stele — the memorial every 19th-century
+    park has a dozen of.
+
+    Stele 1.48 m (base, tapering shaft with a bronze plaque on +X, capital);
+    bust 0.72 m (socle, chest widening to rounded shoulders, neck, head with a
+    beard). FRONT: the face and the plaque look along local +X. Centred, base
+    at z = 0.
+    """
+    shaft = cube('shaft', (0.36, 0.36, 1.12), (0, 0, 0), STONE)
+    taper(shaft, 1.20)
+    shaft.location = (0, 0, 0.76)
+    # The bust's silhouette is a wedge: narrow at the cut, broad and ROUNDED at
+    # the shoulders. A box with shoulder stubs read as a robot, and a round
+    # chest as a snowman.
+    chest = cyl('chest', 0.12, 0.28, (0, 0, 0), MARBLE, verts=12)
+    taper(chest, 1.85)
+    squash(chest, (0.58, 1.0, 1.0))
+    chest.location = (0, 0, 1.72)
+    shoulders = sphere('shoulders', 0.10, (0, 0, 0), MARBLE, segments=10, rings=5)
+    squash(shoulders, (1.25, 2.35, 0.75))
+    shoulders.location = (0, 0, 1.855)
+    head = sphere('head', 0.12, (0, 0, 0), MARBLE, segments=10, rings=7)
+    squash(head, (1.0, 0.88, 1.15))
+    head.location = (0.01, 0, 2.07)
+    beard = sphere('beard', 0.065, (0, 0, 0), MARBLE, segments=6, rings=4)
+    squash(beard, (0.9, 1.1, 1.2))
+    beard.location = (0.07, 0, 1.99)
+    parts = [
+        cube('base', (0.62, 0.62, 0.12), (0, 0, 0.06), STONE_DARK),
+        cube('base2', (0.52, 0.52, 0.08), (0, 0, 0.16), STONE),
+        shaft,
+        cube('plaque', (0.02, 0.24, 0.16), (0.205, 0, 0.95), PLAQUE),
+        cube('capital', (0.52, 0.52, 0.08), (0, 0, 1.36), STONE_DARK),
+        cube('top', (0.44, 0.44, 0.08), (0, 0, 1.44), STONE),
+        cyl('socle', 0.13, 0.06, (0, 0, 1.51), MARBLE, verts=10),
+        cyl('socle-neck', 0.08, 0.05, (0, 0, 1.565), MARBLE, verts=10),
+        chest, shoulders,
+        cyl('neck', 0.058, 0.16, (0, 0, 1.93), MARBLE, verts=8),
+        head, beard,
+        cube('nose', (0.035, 0.03, 0.045), (0.125, 0, 2.06), MARBLE),
+    ]
+    return finish('bust-pedestal', parts, bake_origin=True)
+
+
+def build_sculpture_modern():
+    """
+    An abstract modern piece: two curved plates, weathering steel and bronze.
+
+    A tall corten sheet sweeping in plan whose top edge rises from 1.1 m to a
+    2.5 m crest, and a lower bronze sheet curving the other way, rising the
+    other way and leaning toward it, on a low granite base. No true front: the plates open toward
+    local +X. Centred, base at z = 0.
+    """
+    base = 0.16
+    parts = [cube('base', (1.30, 1.50, base), (0, 0, base / 2), GRANITE)]
+    a_sec = []
+    for i in range(15):
+        s = i / 14
+        th = math.radians(-50 + 100 * s)
+        x, y = -1.10 + 0.90 * math.cos(th), 0.90 * math.sin(th)
+        top = 1.10 + 1.40 * s ** 1.4          # a blade rising to its crest at +Y
+        a_sec.append(((x, y, (base + top) / 2), (0, 0, (top - base) / 2)))
+    parts.append(sweep('plate-a', a_sec, 0.05, CORTEN))
+    b_sec = []
+    for i in range(11):
+        s = i / 10
+        th = math.radians(130 + 100 * s)
+        rx, ry = math.cos(th), math.sin(th)
+        top = 0.95 + 0.80 * s
+        h = top - base
+        lo = Vector((1.00 + 0.75 * rx, 0.10 + 0.75 * ry, base))
+        hi = lo + Vector((0.16 * h * rx, 0.16 * h * ry, h))   # leans outward
+        b_sec.append(((lo + hi) / 2, (hi - lo) / 2))
+    parts.append(sweep('plate-b', b_sec, 0.05, BRONZE))
+    return finish('sculpture-modern', parts, bake_origin=True)
+
+
+def build_playground_slide():
+    """
+    A children's slide: timber tower with a pitched roof, ladder, railed deck
+    and the chute.
+
+    Tower posts in pine, green side panels, a blue roof, a red chute that runs
+    out flat at the bottom. FRONT: the chute descends toward local +X; the
+    ladder is on the -X side. ~3.2 m long, 2.4 m to the ridge, base at z = 0.
+    """
+    deck = 1.20
+    parts = [cube('deck', (0.80, 0.80, 0.06), (-0.65, 0, deck - 0.03), PLAY_WOOD)]
+    for x in (-1.00, -0.30):
+        for y in (-0.35, 0.35):
+            parts.append(cube('post%s%s' % (x, y), (0.09, 0.09, 2.12), (x, y, 1.06), PLAY_WOOD))
+    for side in (1, -1):
+        y = side * 0.35
+        parts.append(cube('panel%d' % side, (0.61, 0.03, 0.58), (-0.65, y, deck + 0.33), PLAY_GREEN))
+        parts.append(cube('toprail%d' % side, (0.80, 0.07, 0.05), (-0.65, y, deck + 0.66), PLAY_WOOD))
+        parts.append(cube('eave%d' % side, (0.80, 0.07, 0.07), (-0.65, y, 2.12), PLAY_WOOD))
+        # The roof: two panels meeting at a ridge along X, eaves at ±0.45.
+        roof = spin(cube('roof%d' % side, (1.00, 0.54, 0.04), (0, 0, 0), PLAY_BLUE),
+                    (-side * 0.556, 0, 0))
+        roof.location = (-0.65, side * 0.225, 2.27)
+        parts.append(roof)
+        # Grab bars either side of the chute mouth.
+        parts.append(strut('grab%d' % side, (-0.27, side * 0.30, deck),
+                           (-0.27, side * 0.30, deck + 0.62), 0.035, PLAY_STEEL, verts=6))
+    parts.append(cube('ridge', (1.02, 0.06, 0.05), (-0.65, 0, 2.40), PLAY_WOOD))
+    # Ladder on the -X side: stringers from the ground past the deck, rungs.
+    x0, x1, top = -1.55, -0.98, 1.85
+    for side in (1, -1):
+        parts.append(strut('stringer%d' % side, (x0, side * 0.25, 0), (x1, side * 0.25, top),
+                           0.06, PLAY_WOOD))
+    for i, z in enumerate((0.28, 0.56, 0.84, 1.12)):
+        x = x0 + (x1 - x0) * z / top
+        parts.append(cyl('rung%d' % i, 0.022, 0.50, (x, 0, z), PLAY_STEEL, verts=6, axis='Y'))
+    # The chute: a bed and two side walls swept down the same profile.
+    prof = [(-0.25, 1.21), (-0.12, 1.19), (0.10, 1.06), (0.40, 0.84), (0.70, 0.62),
+            (1.00, 0.44), (1.22, 0.34), (1.38, 0.31), (1.62, 0.30)]
+    parts.append(sweep('chute', [((x, 0, z), (0, 0.24, 0)) for x, z in prof], 0.03, PLAY_RED))
+    for side in (1, -1):
+        parts.append(sweep('wall%d' % side, [((x, side * 0.255, z + 0.09), (0, 0, 0.10))
+                                             for x, z in prof], 0.03, PLAY_RED))
+        parts.append(strut('leg%d' % side, (1.50, side * 0.20, 0), (1.50, side * 0.20, 0.29),
+                           0.05, PLAY_STEEL, verts=6))
+    return finish('playground-slide', parts, bake_origin=True)
+
+
+def build_playground_springy():
+    """
+    A spring rider: a little green horse on a steel coil.
+
+    Base plate, the coil, the rider's body, neck and head with ears, a red
+    saddle, yellow handle and footrest bars, a tail. FRONT: the head (and the
+    child riding it) faces local +X. ~0.93 m tall, coil on the origin.
+    """
+    body = sphere('body', 0.20, (0, 0, 0), PLAY_GREEN, segments=10, rings=6)
+    squash(body, (1.55, 0.75, 0.80))
+    body.location = (0, 0, 0.60)
+    head = sphere('head', 0.10, (0, 0, 0), PLAY_GREEN, segments=8, rings=5)
+    squash(head, (1.50, 0.75, 0.85))
+    head.location = (0.36, 0, 0.85)
+    parts = [
+        cyl('base', 0.22, 0.04, (0, 0, 0.02), GRANITE, verts=10),
+        sweep('coil', helix(0.10, 0.06, 0.43, 4, 10, 0.016), 0.032, PLAY_STEEL),
+        cyl('seat-plate', 0.13, 0.03, (0, 0, 0.44), PLAY_STEEL, verts=10),
+        cyl('foot-plate', 0.13, 0.03, (0, 0, 0.055), PLAY_STEEL, verts=10),
+        body, head,
+        strut('neck', (0.20, 0, 0.64), (0.32, 0, 0.84), 0.13, PLAY_GREEN, verts=8),
+        strut('tail', (-0.28, 0, 0.66), (-0.40, 0, 0.52), 0.05, PLAY_GREEN, verts=5),
+        cube('saddle', (0.22, 0.30, 0.04), (-0.02, 0, 0.765), PLAY_RED),
+        cyl('handle', 0.018, 0.32, (0.30, 0, 0.80), PLAY_YELLOW, verts=6, axis='Y'),
+        cyl('footrest', 0.018, 0.46, (0.10, 0, 0.50), PLAY_YELLOW, verts=6, axis='Y'),
+    ]
+    for side in (1, -1):
+        parts.append(cone('ear%d' % side, 0.03, 0.0, 0.08, (0.32, side * 0.04, 0.945),
+                          PLAY_GREEN, verts=5))
+    return finish('playground-springy', parts, bake_origin=True)
+
+
+def build_playground_swing():
+    """
+    A two-seat swing: timber A-frames at both ends, a round top beam, a flat
+    rubber seat and a red toddler cradle on steel chains.
+
+    FRONT: the A-frames stand at ±Y and the seats swing along local X. 3.2 m
+    along Y, 2.4 m tall, centred, base at z = 0.
+    """
+    beam_z = 2.34
+    parts = [cyl('beam', 0.06, 3.20, (0, 0, beam_z), PLAY_WOOD, verts=8, axis='Y')]
+    for side in (1, -1):
+        y = side * 1.45
+        for sx in (1, -1):
+            parts.append(strut('leg%d%d' % (side, sx), (sx * 0.80, y, 0), (0, y, beam_z - 0.02),
+                               0.10, PLAY_WOOD, verts=8))
+        parts.append(strut('cross%d' % side, (-0.47, y, 0.95), (0.47, y, 0.95), 0.06, PLAY_WOOD))
+    seat_z = 0.45
+    for y, half in ((-0.62, 0.20), (0.62, 0.17)):
+        for s in (1, -1):
+            yy = y + s * half
+            parts.append(cube('clamp%s' % yy, (0.08, 0.05, 0.14), (0, yy, beam_z), PLAY_STEEL))
+            parts.append(strut('chain%s' % yy, (0, yy, beam_z - 0.06), (0, yy, seat_z + 0.02),
+                               0.018, PLAY_STEEL))
+    parts.append(cube('seat', (0.17, 0.46, 0.04), (0, -0.62, seat_z), RUBBER))
+    # The cradle: a box open at the top, with leg holes read as the gap between
+    # its low front and its taller back.
+    parts += [
+        cube('cradle-floor', (0.30, 0.34, 0.05), (0, 0.62, seat_z), PLAY_RED),
+        cube('cradle-back', (0.04, 0.34, 0.26), (-0.15, 0.62, seat_z + 0.13), PLAY_RED),
+        cube('cradle-front', (0.04, 0.34, 0.14), (0.15, 0.62, seat_z + 0.07), PLAY_RED),
+    ]
+    for s in (1, -1):
+        parts.append(cube('cradle-side%d' % s, (0.30, 0.04, 0.18), (0, 0.62 + s * 0.17, seat_z + 0.09),
+                          PLAY_RED))
+    return finish('playground-swing', parts, bake_origin=True)
+
+
+ROW_STATIONS = [
+    (-1.70, 0.52, 0.42, 0.40, -0.02, -0.16, -0.10),  # raked transom
+    (-1.20, 0.66, 0.40, 0.52, -0.04, -0.23, 0.00),
+    (-0.50, 0.72, 0.38, 0.58, -0.05, -0.27, 0.00),
+    (0.20, 0.72, 0.38, 0.56, -0.05, -0.27, 0.00),
+    (0.90, 0.62, 0.40, 0.44, -0.04, -0.23, 0.02),
+    (1.40, 0.40, 0.45, 0.22, -0.03, -0.16, 0.10),
+    (1.65, 0.12, 0.50, 0.05, -0.02, -0.10, 0.18),
+    (1.72, 0.02, 0.52, 0.01, -0.01, -0.06, 0.22),    # stem
+]
+
+
+def _half_breadth(stations, x, z):
+    """Hull half-breadth at (x, z), interpolated between the bracketing stations."""
+    for a, b in zip(stations, stations[1:]):
+        if a[0] <= x <= b[0]:
+            t = (x - a[0]) / (b[0] - a[0])
+            return _hull_pt(a, z, 1).y * (1 - t) + _hull_pt(b, z, 1).y * t
+    return 0.0
+
+
+def build_boat_row():
+    """
+    A rental rowing boat for a park lake (~3.5 × 1.5 m) — the Ciutadella boats.
+
+    Painted clinker-look hull with a green sheer band, open, wooden floor and
+    gunwale, three thwarts (stern sheets, rowing thwart, bow seat), oarlocks,
+    and the two oars shipped fore-and-aft on the thwarts, green blades forward.
+    BOW +X, centred, WATERLINE at z = 0 (keel ~0.27 m below) — a boat, so every
+    Round 4 rule applies (finish(..., waterline=True), identity node).
+    """
+    st = ROW_STATIONS
+    well, wall = 0.28, 0.05
+    parts = hull('row', st, deck=LLAUT_WOOD, sheer_band=(0.10, ROW_GREEN), well=well, wall=wall)
+    parts += rail('gunwale', st, 0.0, LLAUT_WOOD, width=0.06, inset=0.025, posts=False, lift=0.015)
+    seat_tops = []
+    for i, (x, depth) in enumerate(((-1.20, 0.40), (-0.05, 0.22), (0.95, 0.22))):
+        z = _deck_z(st, x) - 0.12
+        w = 2 * (_half_breadth(st, x, z) - wall)
+        parts.append(cube('thwart%d' % i, (depth, w, 0.04), (x, 0, z), LLAUT_WOOD))
+        seat_tops.append(z + 0.02)
+    ox = 0.20
+    for side in (1, -1):
+        y = side * (_half_breadth(st, ox, _deck_z(st, ox)) - 0.02)
+        z = _deck_z(st, ox) + 0.015
+        parts.append(strut('oarlock%d' % side, (ox, y, z), (ox, y, z + 0.09), 0.025, STAINLESS))
+    # The oars rest on the stern and bow seats, bridging the rowing thwart.
+    oz = max(seat_tops[0], seat_tops[2]) + 0.025
+    for side in (1, -1):
+        y = side * 0.22
+        parts.append(strut('oar%d' % side, (-1.35, y, oz), (1.02, y, oz), 0.045, OAR_WOOD, verts=6))
+        parts.append(cube('blade%d' % side, (0.40, 0.13, 0.02), (1.20, y, oz), ROW_GREEN))
+    return finish('boat-row', parts, bake_origin=True, waterline=True)
+
+
+def build_pergola_bcn():
+    """
+    A park pergola bay: two rows of rendered columns, timber beams along the
+    rows, rafters across, and climbing plants over the top.
+
+    Three columns per row (plinth, round shaft, capital), a beam on each row,
+    nine rafters, leafy clumps over the beams (one of bougainvillea) with
+    masses drooping off them, and two vines climbing the corner columns. FRONT: long axis along local X (4 m),
+    column rows at ±Y (3 m), 2.8 m to the top of the planting; centred, base
+    at z = 0.
+    """
+    cols = [(x, y) for x in (-1.80, 0.0, 1.80) for y in (-1.25, 1.25)]
+    parts = []
+    for i, (x, y) in enumerate(cols):
+        parts += [
+            cube('cplinth%d' % i, (0.26, 0.26, 0.20), (x, y, 0.10), STUCCO),
+            cyl('shaft%d' % i, 0.085, 2.00, (x, y, 1.20), STUCCO, verts=8),
+            cube('capital%d' % i, (0.24, 0.24, 0.10), (x, y, 2.25), STUCCO),
+        ]
+    for y in (-1.25, 1.25):
+        parts.append(cube('beam%s' % y, (4.00, 0.14, 0.22), (0, y, 2.41), PERGOLA_WOOD))
+    for i in range(9):
+        parts.append(cube('rafter%d' % i, (0.08, 3.00, 0.12), (-1.80 + 0.45 * i, 0, 2.58), PERGOLA_WOOD))
+    # The planting: irregular clumps along both beams (some spilling over the
+    # outer face), a few reaching across the rafters, and drooping masses
+    # hanging off the beams. Shaded smooth: faceted discs read as lily pads.
+    clumps = [
+        ((-1.60, -1.20, 2.62), 0.40, VINE), ((-0.85, -1.38, 2.58), 0.34, VINE_LIGHT),
+        ((-0.15, -1.18, 2.64), 0.42, VINE), ((0.70, -1.32, 2.60), 0.38, VINE_LIGHT),
+        ((1.50, -1.22, 2.62), 0.36, BOUGAINVILLEA),
+        ((-1.45, 1.30, 2.60), 0.36, VINE_LIGHT), ((-0.60, 1.18, 2.64), 0.42, VINE),
+        ((0.25, 1.36, 2.58), 0.34, VINE_LIGHT), ((1.05, 1.20, 2.63), 0.40, VINE),
+        ((1.75, 1.30, 2.60), 0.32, VINE_LIGHT),
+        ((-1.00, 0.45, 2.64), 0.40, VINE), ((0.55, -0.55, 2.64), 0.36, VINE_LIGHT),
+        ((-0.20, 0.00, 2.62), 0.30, VINE),
+    ]
+    droops = [((-1.10, -1.36), VINE), ((0.95, -1.36), VINE_LIGHT),
+              ((-0.30, 1.36), VINE), ((1.30, 1.36), BOUGAINVILLEA)]
+    leafy = []
+    for i, (at, r, rgb) in enumerate(clumps):
+        m = sphere('clump%d' % i, r, (0, 0, 0), rgb, segments=7, rings=4)
+        squash(m, (1.35, 0.95, 0.55))
+        m.location = at
+        leafy.append(m)
+    for i, ((x, y), rgb) in enumerate(droops):
+        m = sphere('droop%d' % i, 0.22, (0, 0, 0), rgb, segments=7, rings=4)
+        squash(m, (1.1, 0.55, 1.7))
+        m.location = (x, y, 2.22)
+        leafy.append(m)
+    for m in leafy:
+        for poly in m.data.polygons:
+            poly.use_smooth = True
+    parts += leafy
+    # Two vines climbing diagonally opposite corner columns.
+    for i, (x, y) in enumerate(((1.80, -1.25), (-1.80, 1.25))):
+        parts.append(sweep('vine%d' % i, helix(0.11, 0.20, 2.28, 2.5, 6, 0.035, at=(x, y), phase=i),
+                           0.06, VINE, smooth=False))
+    return finish('pergola-bcn', parts, bake_origin=True)
+
+
 BUILDERS = {
     'car': build_car,
     'van': build_van,
@@ -1477,6 +1972,14 @@ BUILDERS = {
     'boat-motor': build_boat_motor,
     'boat-sail': build_boat_sail,
     'boat-small': build_boat_small,
+    'statue-plinth': build_statue_plinth,
+    'bust-pedestal': build_bust_pedestal,
+    'sculpture-modern': build_sculpture_modern,
+    'playground-slide': build_playground_slide,
+    'playground-springy': build_playground_springy,
+    'playground-swing': build_playground_swing,
+    'boat-row': build_boat_row,
+    'pergola-bcn': build_pergola_bcn,
 }
 
 

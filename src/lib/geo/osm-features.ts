@@ -55,7 +55,16 @@ export const FEATURE_KINDS: readonly FeatureKind[] =
  * is placed where furniture would plausibly stand. Barcelona maps it densely:
  * 80 benches, 40 lamps, 25 drinking fountains and 15 bins in the Ciutadella box.
  */
-export type FurnitureKind = 'bench' | 'waste_basket' | 'drinking_water' | 'street_lamp' | 'bollard'
+export type FurnitureKind =
+  | 'bench' | 'waste_basket' | 'drinking_water' | 'street_lamp' | 'bollard'
+  // Park furniture: a statue or bust on its pedestal, a piece of play
+  // equipment, a pergola. Ciutadella alone maps 25 artworks and 14 memorials.
+  | 'artwork' | 'playground' | 'shelter'
+
+/** What an artwork node is, as far as its silhouette goes. */
+export type ArtworkKind = 'statue' | 'bust' | 'sculpture'
+/** The play equipment worth modelling; the rest of `playground=*` is skipped. */
+export type PlayKind = 'slide' | 'springy' | 'swing'
 
 /** A linear barrier: what fences a park, walls a garden, lines a motorway. */
 export type BarrierKind =
@@ -135,6 +144,10 @@ export interface FeatureStyle {
   directionDeg?: number
   /** `lamp_mount`: `pole`, `wall`, `suspended`… a wall lamp has no column. */
   lampMount?: string
+  /** For furniture 'artwork'. */
+  artwork?: ArtworkKind
+  /** For furniture 'playground'. */
+  play?: PlayKind
   /** A linear barrier — see BarrierKind. */
   barrier?: BarrierKind
   /** Tagged barrier height, metres. */
@@ -148,6 +161,8 @@ export interface FeatureStyle {
   signalDirection?: 'forward' | 'backward' | 'both'
   /** A surface car park — paved, vehicular, and an area. */
   parking?: boolean
+  /** A hard court or a playground floor — paved, and an area. */
+  court?: boolean
   /** A signal for pedestrians ONLY — a signalised crossing node. */
   pedestrianSignal?: boolean
   /** A vehicle signal that also carries the crossing's pedestrian heads. */
@@ -370,7 +385,7 @@ const USE_BY_BUILDING: Record<string, BuildingUse> = {
   retail: 'retail', commercial: 'retail', shop: 'retail',
   supermarket: 'retail', kiosk: 'retail', office: 'tower',
 
-  civic: 'civic', public: 'civic', government: 'civic', hospital: 'civic',
+  civic: 'civic', public: 'civic', government: 'civic', hospital: 'civic', palace: 'civic',
   school: 'civic', university: 'civic', college: 'civic', museum: 'civic',
   train_station: 'civic', stadium: 'civic', sports_hall: 'civic',
 
@@ -746,6 +761,9 @@ export function functionalType(
 export function roadClass(tags: Record<string, string> | undefined): RoadClass {
   const cls = (tags?.['highway'] ?? '').toLowerCase()
   if (cls === 'track') return 'track'
+  // Courts and playgrounds are walked on, not driven on.
+  const leisure = tags?.['leisure']
+  if (!cls && (leisure === 'pitch' || leisure === 'playground')) return 'pedestrian'
   return PEDESTRIAN_HIGHWAYS.has(cls) ? 'pedestrian' : 'vehicular'
 }
 
@@ -799,10 +817,47 @@ export function isPavedArea(tags: Record<string, string> | undefined): boolean {
   const t = tags ?? {}
   if (t['area'] === 'yes') return true
   if (t['area'] === 'no') return false
+  // A hard court and a playground are paved ground too — see isHardPitch.
+  if (isHardPitch(t) || t['leisure'] === 'playground') return true
   // A surface car park is paved ground — the bus apron by the cruise
   // terminals, the lots along the Moll de Barcelona — and it is only ever an area.
   if (isSurfaceParking(t)) return true
   return t['highway'] === 'pedestrian'
+}
+
+const HARD_SURFACES = new Set(['asphalt', 'concrete', 'paving_stones', 'tartan', 'acrylic', 'clay', 'paved', 'rubber', 'artificial_turf_no'])
+const HARD_SPORTS = new Set(['basketball', 'table_tennis', 'multi', 'skateboard', 'tennis', 'handball', 'volleyball', 'padel', 'futsal', 'petanque', 'boules', 'fitness'])
+
+/**
+ * A pitch that is a COURT, not a lawn. Drawn with the grass material it was a
+ * basketball court of green tufts — nine of the twelve pitches in the
+ * Ciutadella box are courts (basketball, table tennis, multi-sport, skate).
+ */
+export function isHardPitch(t: Record<string, string>): boolean {
+  if (t['leisure'] !== 'pitch') return false
+  const surface = (t['surface'] ?? '').toLowerCase()
+  if (surface === 'grass' || surface === 'artificial_turf' || surface === 'sand') return false
+  if (HARD_SURFACES.has(surface)) return true
+  return HARD_SPORTS.has((t['sport'] ?? '').split(';')[0].toLowerCase())
+}
+
+/** The paint of a court or the floor of a playground. */
+export function courtTone(t: Record<string, string>): [number, number, number] | undefined {
+  if (t['leisure'] === 'playground') {
+    const s = (t['surface'] ?? '').toLowerCase()
+    if (s === 'rubber' || s === 'tartan') return [0.55, 0.31, 0.25]
+    if (s === 'grass') return undefined
+    // Sauló or sand: what Barcelona's playgrounds are floored with.
+    return [0.74, 0.64, 0.47]
+  }
+  if (!isHardPitch(t)) return undefined
+  const sport = (t['sport'] ?? '').split(';')[0].toLowerCase()
+  const surface = (t['surface'] ?? '').toLowerCase()
+  if (surface === 'clay') return [0.62, 0.35, 0.24]
+  if (sport === 'table_tennis' || sport === 'skateboard' || sport === 'petanque' || sport === 'boules') return [0.60, 0.58, 0.54]
+  if (sport === 'tennis' || sport === 'padel') return [0.24, 0.40, 0.46]
+  // Basketball, multi-sport, handball: the green-painted concrete of a city court.
+  return [0.28, 0.43, 0.36]
 }
 
 /**
@@ -928,10 +983,55 @@ const BARRIER_VALUES = new Set<string>([
   'fence', 'wall', 'hedge', 'retaining_wall', 'guard_rail', 'city_wall', 'handrail',
 ])
 
+/**
+ * The silhouette an artwork has: a figure on a pedestal, a bust on a stele,
+ * or anything else sculptural. Paintings, murals and installations are not
+ * objects to stand in a park and are left out.
+ */
+export function artworkKindOf(t: Record<string, string>): ArtworkKind | undefined {
+  if (t['building']) return undefined
+  const type = (t['artwork_type'] ?? '').toLowerCase()
+  const memorial = (t['memorial'] ?? '').toLowerCase()
+  if (type === 'bust' || memorial === 'bust') return 'bust'
+  if (type === 'statue' || memorial === 'statue') return 'statue'
+  if (t['tourism'] === 'artwork' && /^(sculpture|stone|relief)$/.test(type)) {
+    return isModernSculpture(t) || !t['name'] ? 'sculpture' : 'statue'
+  }
+  return undefined
+}
+
+/**
+ * Is a mapped sculpture a modern piece rather than a figure? `artwork_type`
+ * says "sculpture" for both the four bronze griffins of the Cascada and a
+ * Corten slab; drawn as the abstract stand-in, the griffins were black fins
+ * in the fountain basin. The tags that settle it are the subject, the
+ * material and the date; a NAMED piece that states none of them is, in a
+ * nineteenth-century park, far more often a figure.
+ */
+function isModernSculpture(t: Record<string, string>): boolean {
+  const subject = (t['artwork_subject'] ?? '').toLowerCase()
+  if (subject === 'abstract') return true
+  if (subject === 'figurative' || subject === 'portrait') return false
+  if (/steel|iron|metal|corten|aluminium|aluminum|glass|plastic/.test((t['material'] ?? '').toLowerCase())) return true
+  const year = Number.parseInt(t['start_date'] ?? '', 10)
+  return Number.isFinite(year) && year >= 1950
+}
+
+export function playKindOf(t: Record<string, string>): PlayKind | undefined {
+  const p = (t['playground'] ?? '').toLowerCase()
+  if (p === 'slide' || p === 'structure' || p === 'climbingframe') return 'slide'
+  if (p === 'springy' || p === 'seesaw') return 'springy'
+  if (p === 'swing' || p === 'basketswing') return 'swing'
+  return undefined
+}
+
 /** The furniture a node IS, or undefined. */
 export function furnitureKindOf(t: Record<string, string>): FurnitureKind | undefined {
   const a = t['amenity']
   if (a === 'bench' || a === 'waste_basket' || a === 'drinking_water') return a
+  if (artworkKindOf(t)) return 'artwork'
+  if (playKindOf(t)) return 'playground'
+  if (a === 'shelter' && /^(pergola|sun_shelter)$/.test(t['shelter_type'] ?? '') && !t['building']) return 'shelter'
   if (t['leisure'] === 'picnic_table') return 'bench'
   if (t['highway'] === 'street_lamp') return 'street_lamp'
   if (t['barrier'] === 'bollard') return 'bollard'
@@ -1040,6 +1140,8 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
   }
   if (ROCK_NATURAL.has(t['natural'] ?? '') || t['landuse'] === 'quarry') return 'rock'
 
+  // A court is paved before it is green; see isHardPitch.
+  if (isHardPitch(t)) return 'road'
   if (
     GREEN_LEISURE.has(t['leisure'] ?? '') ||
     GREEN_LANDUSE.has(t['landuse'] ?? '') ||
@@ -1053,6 +1155,7 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
 
   if (ROAD_VALUES.has(t['highway'] ?? '')) return 'road'
   if (isSurfaceParking(t)) return 'road'
+  if (t['leisure'] === 'playground' || isHardPitch(t)) return 'road'
 
   return null
 }
@@ -1151,6 +1254,8 @@ export function resolveFeatureStyle(
       furniture: furnitureKindOf(t),
       directionDeg: parseDirectionDeg(t['direction']),
       lampMount: t['lamp_mount'],
+      artwork: artworkKindOf(t),
+      play: playKindOf(t),
     }
   }
   if (kind === 'barrier') {
@@ -1235,13 +1340,14 @@ export function resolveFeatureStyle(
     const lanes = parseFloat(t['lanes'] ?? '')
     const oneway = (t['oneway'] ?? '').toLowerCase()
     return {
-      roofShape: 'flat', roofHeightM: 0, tone: roadTone(t),
+      roofShape: 'flat', roofHeightM: 0, tone: courtTone(t) ?? roadTone(t),
       accessKind: t['highway'] === 'elevator' ? 'elevator' : t['highway'] === 'steps'
         ? (t['conveying'] && t['conveying'] !== 'no' ? 'escalator' : 'stairs') : undefined,
       stepCount: /^\d+$/.test(t['step_count'] ?? '') ? Math.min(1000, Number(t['step_count'])) : undefined,
       surface: normalizeSurface(t['surface']),
       roadClass: roadClass(t),
       parking: isSurfaceParking(t) || undefined,
+      court: isHardPitch(t) || t['leisure'] === 'playground' || undefined,
       lanes: Number.isFinite(lanes) && lanes > 0 ? Math.min(12, Math.round(lanes)) : undefined,
       // A roundabout is one-way by definition even when nobody tagged it, and
       // painting a centre line down a ring road is the giveaway of a renderer
@@ -2040,7 +2146,7 @@ export function buildFeaturesQuery(
       + area('["waterway"="riverbank"]')
       + `way["waterway"~"^(river|stream|canal|ditch|drain)$"](${b});`
       + area('["landuse"~"^(reservoir|basin)$"]')
-      + area('["leisure"~"^(park|garden|pitch|golf_course|nature_reserve)$"]')
+      + area('["leisure"~"^(park|garden|pitch|golf_course|nature_reserve|playground)$"]')
       + area('["landuse"~"^(grass|forest|meadow|village_green|recreation_ground|allotments|orchard|vineyard|cemetery)$"]')
       + area('["natural"~"^(wood|scrub|grassland|heath|wetland)$"]')
       + area('["natural"~"^(beach|sand|dune|shingle|mud)$"]')
@@ -2079,7 +2185,9 @@ export function buildFeaturesQuery(
     // that surveys them — Barcelona does — they are what a street is made of.
     [
       `node["amenity"~"^(bench|waste_basket|drinking_water)$"](${b});`
-      + `node["highway"="street_lamp"](${b});node["barrier"="bollard"](${b});`,
+      + `node["highway"="street_lamp"](${b});node["barrier"="bollard"](${b});`
+      + `node["tourism"="artwork"](${b});node["historic"="memorial"](${b});`
+      + `node["playground"](${b});node["amenity"="shelter"](${b});`,
       Math.round(maxElements * 0.12),
     ],
     [

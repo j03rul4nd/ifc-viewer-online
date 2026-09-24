@@ -72,8 +72,8 @@ describe('Port Vell benchmark · the survey reaches the parser', () => {
       // column below on purpose: "consumed" and "unrecognised" are different
       // problems and merging them hides the second behind the first.
       'coastline-consumed-into-sea': 9,
-      // Was 57: the 23 barriers, 4 tree rows and 7 car parks are drawn now.
-      'no-classifier-claims-it': 23,
+      // Was 57: the 23 barriers, 4 tree rows, 7 car parks and a court are drawn now.
+      'no-classifier-claims-it': 22,
     })
   })
 })
@@ -323,7 +323,7 @@ describe('Port Vell benchmark · a square is a square', () => {
     expect(promenade.ring!.length).toBeGreaterThan(3)
 
     // Every closed pedestrian way in the box is now an area, and there are six.
-    const areas = FEATURES.filter((f) => f.kind === 'road' && f.widthM === undefined && !f.style.parking)
+    const areas = FEATURES.filter((f) => f.kind === 'road' && f.widthM === undefined && !f.style.parking && !f.style.court)
     expect(areas).toHaveLength(5)   // the sixth is the Rambla de Mar, claimed as a pier
   })
 
@@ -332,7 +332,7 @@ describe('Port Vell benchmark · a square is a square', () => {
     // Over terrain those seven corners are one flat plate across a third of a
     // kilometre; the fill has to be split against the DEM like every other
     // ground surface in the scene.
-    const plaza = FEATURES.filter((f) => f.kind === 'road' && f.widthM === undefined && !f.style.parking)
+    const plaza = FEATURES.filter((f) => f.kind === 'road' && f.widthM === undefined && !f.style.parking && !f.style.court)
     const flat = buildLinearLayer(plaza, 'road', OPTS)!
     const hilly = buildLinearLayer(plaza, 'road', {
       ...OPTS,

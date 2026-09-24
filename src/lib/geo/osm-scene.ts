@@ -26,6 +26,7 @@
 
 import * as THREE from 'three'
 import { GrowableArray } from './growable-array'
+import { isBarcelona } from './barcelona-barris'
 import { appendRailDetail } from './rail-detail'
 import {
   laneDividers, arrowOffsets, arrowPlacements, offsetByFraction,
@@ -1258,6 +1259,9 @@ function mappedAreaPredicate(features: ReadonlyArray<OsmFeature>): (p: THREE.Vec
  */
 const ISLAND_TONE: [number, number, number] = [0.52, 0.51, 0.49]
 
+/** Sauló, Barcelona's park-path sand. */
+const SAULO_TONE: [number, number, number] = [0.76, 0.66, 0.49]
+
 /** A ground way this far above the terrain is a ramp, and gets walls. */
 const RAMP_WALL_MIN_M = 0.45
 /** Ramp walls are rendered concrete: lighter than the asphalt edge they replace. */
@@ -1433,6 +1437,7 @@ export function buildLinearLayer(
   kind: 'road' | 'rail',
   opts: LayerMeshOptions,
 ): LayerMesh<THREE.Object3D> | null {
+  const inBarcelona = isBarcelona(opts.anchorLat, opts.anchorLon ?? 0)
   const frame = groundFrameFor(opts)
   const mToN = frame.mToN
   const baseLift = LINEAR_LIFT_M[kind] * mToN
@@ -1909,7 +1914,11 @@ export function buildLinearLayer(
   for (const f of wanted) {
     if(kind==='rail' && (f.vertical?.structure==='tunnel' || (f.vertical?.layer ?? 0)<0)) continue
     const line = projectRing(f.ring!)
-    const tone = f.style.tone ?? [0.42, 0.42, 0.44]
+    // SAULÓ. Barcelona's park paths are compacted granite sand — the warm,
+    // pale ground of the Ciutadella, Montjuïc and every Eixample square — and
+    // the generic compacted/gravel tones read as grey dirt beside it.
+    const tone = (inBarcelona && (f.style.surface === 'compacted' || f.style.surface === 'gravel')
+      ? SAULO_TONE : f.style.tone) ?? [0.42, 0.42, 0.44]
     // Rail, platforms, paved areas and crossings are emitted here and now, so
     // their profile has to be active for the whole of it.
     activeProfile = profileFor(f.id)

@@ -179,3 +179,101 @@ export function buildMarinaBoatLayer(
   }
   return count > 0 ? { object: group, count } : null
 }
+
+// ── Park lakes ────────────────────────────────────────────────────────────────
+
+/** Rowing boats on a park lake: invented, like the yachts, and as sparse as a weekday. */
+export interface LakeBoat { x: number; y: number; yaw: number }
+
+/**
+ * Where rental rowing boats drift on the ponds INSIDE parks — the Ciutadella's
+ * estany is the one everybody has rowed on. At least 3 m off every shore and
+ * 5 m from each other; one per ~700 m² of water, at most 14 per lake.
+ */
+export function planLakeBoats(
+  features: ReadonlyArray<OsmFeature>, toLocal: (p: LatLonPoint) => V,
+): LakeBoat[] {
+  const parks = features.filter((f) => f.kind === 'green' && f.style.cover === 'park' && f.ring)
+    .map((f) => f.ring!.map(toLocal))
+  const inPoly = (p: V, ring: V[]): boolean => {
+    let hit = false
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const a = ring[i], b = ring[j]
+      if ((a.y > p.y) !== (b.y > p.y) && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) hit = !hit
+    }
+    return hit
+  }
+  const edgeDist = (p: V, ring: V[]): number => {
+    let d = Infinity
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const a = ring[j], b = ring[i], dx = b.x - a.x, dy = b.y - a.y
+      const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy || 1)))
+      d = Math.min(d, Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy))
+    }
+    return d
+  }
+  const out: LakeBoat[] = []
+  for (const f of features) {
+    if (f.kind !== 'water' || !f.ring || f.isSea || f.ring.length < 3) continue
+    // A boating lake or pond — not a river, a fountain, or a monument's basin.
+    if (f.style.waterKind !== 'lake' && f.style.waterKind !== 'pond') continue
+    const ring = f.ring.map(toLocal)
+    let area = 0, minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      area += (ring[j].x + ring[i].x) * (ring[j].y - ring[i].y)
+      minX = Math.min(minX, ring[i].x); maxX = Math.max(maxX, ring[i].x)
+      minY = Math.min(minY, ring[i].y); maxY = Math.max(maxY, ring[i].y)
+    }
+    area = Math.abs(area) / 2
+    if (area < 900 || area > 80000) continue
+    const c = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 }
+    if (!parks.some((p) => inPoly(c, p) || inPoly(ring[0], p))) continue
+    const want = Math.min(14, Math.floor(area / 700))
+    const mine: LakeBoat[] = []
+    for (let k = 0; k < want * 12 && mine.length < want; k++) {
+      const p = { x: minX + variate(`${f.id}:${k}`, 1) * (maxX - minX), y: minY + variate(`${f.id}:${k}`, 2) * (maxY - minY) }
+      if (!inPoly(p, ring) || edgeDist(p, ring) < 3) continue
+      if (mine.some((o) => Math.hypot(o.x - p.x, o.y - p.y) < 5)) continue
+      mine.push({ ...p, yaw: variate(`${f.id}:${k}`, 3) * Math.PI * 2 })
+    }
+    out.push(...mine)
+  }
+  return out
+}
+
+/** The lake boats as one instanced mesh, on each lake's own level. */
+export function buildLakeBoatLayer(
+  features: ReadonlyArray<OsmFeature>,
+  opts: MarinaBoatOptions & { waterZAt: (nx: number, ny: number) => number },
+): { object: THREE.Group; count: number } | null {
+  const geo = opts.assets?.get('boat-row')
+  if (!geo) return null
+  const frame = createGroundFrame({
+    anchorLat: opts.anchorLat, anchorElevationM: opts.anchorElevationM,
+    sampleGroundM: opts.sampleGroundM, exaggeration: opts.exaggeration,
+  })
+  const mToN = frame.mToN
+  const origin = latLonToNormalized(opts.anchorLat, opts.anchorLon ?? 0)
+  const toLocal = (p: LatLonPoint): V => {
+    const q = latLonToNormalized(p.lat, p.lon)
+    return { x: (q.nx - origin.nx) / mToN, y: (q.ny - origin.ny) / mToN }
+  }
+  const boats = planLakeBoats(features, toLocal)
+  if (boats.length === 0) return null
+  const group = new THREE.Group()
+  group.name = 'osm-lake-boats'
+  group.position.set(origin.nx, origin.ny, 0)
+  group.scale.setScalar(mToN)
+  const mesh = new THREE.InstancedMesh(geo.clone(),
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5 }), boats.length)
+  mesh.name = 'osm-lake-boat-row'
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), zAxis = new THREE.Vector3(0, 0, 1), one = new THREE.Vector3(1, 1, 1)
+  boats.forEach((b, i) => {
+    const z = opts.waterZAt(origin.nx + b.x * mToN, origin.ny + b.y * mToN) / mToN
+    mesh.setMatrixAt(i, m.compose(new THREE.Vector3(b.x, b.y, z), q.setFromAxisAngle(zAxis, b.yaw), one))
+  })
+  mesh.instanceMatrix.needsUpdate = true
+  mesh.computeBoundingSphere()
+  group.add(mesh)
+  return { object: group, count: boats.length }
+}

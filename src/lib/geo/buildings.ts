@@ -211,6 +211,10 @@ function defaultHeightForType(type: string | undefined): number {
     case 'cathedral':
     case 'chapel':
       return 14
+    case 'palace':
+      // Three piani nobili and a cornice — the Parlament de Catalunya, the
+      // Palau Reial. The 8 m generic made them bungalows.
+      return 16
     case 'industrial':
     case 'warehouse':
     case 'hangar':

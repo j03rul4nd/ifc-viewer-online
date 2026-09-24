@@ -5,7 +5,8 @@
 // all render, and all pass any check that only counts instances.
 
 import { describe, it, expect } from 'vitest'
-import { planFurniture, planSignals } from './street-furniture'
+import * as THREE from 'three'
+import { planFurniture, planSignals, buildBarrierLayer } from './street-furniture'
 import { resolveFeatureStyle, type OsmFeature, type LatLonPoint } from './osm-features'
 
 const LAT = 41.39
@@ -128,5 +129,47 @@ describe('planSignals — the mast stands at the kerb, facing the traffic it con
     const plans = planSignals([road,
       node('n13', 'signal', { highway: 'traffic_signals', crossing: 'traffic_signals' }, at(0, 0))], toLocal)
     for (const p of plans) expect(Math.abs(p.at.y)).toBeGreaterThan(4)
+  })
+})
+
+describe('planFurniture — park pieces stay where surveyed and face the path', () => {
+  const footway = way('w20', { highway: 'footway' }, [at(-50, 0), at(50, 0)], 4)
+  it('turns a statue toward the path without moving it', () => {
+    const [p] = planFurniture([footway, node('n20', 'furniture', { tourism: 'artwork', artwork_type: 'statue' }, at(0, 6))], toLocal)
+    expect(p.slot).toBe('statue')
+    expect(p.at.y).toBeCloseTo(6, 1)
+    expect(near(p.at.yaw, -Math.PI / 2)).toBe(true)
+  })
+  it('reads busts, sculptures and play equipment, and skips what it cannot draw', () => {
+    const plans = planFurniture([footway,
+      node('n21', 'furniture', { historic: 'memorial', memorial: 'bust' }, at(5, 6)),
+      node('n22', 'furniture', { tourism: 'artwork', artwork_type: 'sculpture' }, at(10, 6)),
+      node('n23', 'furniture', { playground: 'slide' }, at(15, 6)),
+      node('n24', 'furniture', { tourism: 'artwork', artwork_type: 'mural' }, at(20, 6))], toLocal)
+    expect(plans.map((p) => p.slot)).toEqual(['bust', 'sculpture', 'slide'])
+  })
+})
+
+describe('buildBarrierLayer — lawn fences', () => {
+  it('draws an untagged fence inside a park at knee height, and its boundary railing tall', () => {
+    const park: OsmFeature = {
+      id: 'r1', kind: 'green', ring: [at(-100, -100), at(100, -100), at(100, 100), at(-100, 100)],
+      height: H, style: resolveFeatureStyle('green', { leisure: 'park' }),
+    }
+    const fence = (id: string, pts: LatLonPoint[]): OsmFeature => ({
+      id, kind: 'barrier', ring: pts, widthM: 0.08, height: H, style: resolveFeatureStyle('barrier', { barrier: 'fence' }),
+    })
+    const height = (f: OsmFeature): number => {
+      const built = buildBarrierLayer([park, f], { anchorLat: LAT, anchorLon: LON })!
+      let top = -Infinity, low = Infinity
+      built.object.traverse((o) => {
+        const m = o as THREE.Mesh
+        const pos = m.isMesh ? m.geometry.getAttribute('position') : null
+        if (pos) for (let i = 0; i < pos.count; i++) { top = Math.max(top, pos.getZ(i)); low = Math.min(low, pos.getZ(i)) }
+      })
+      return top - low - 0.15   // the panel starts 15 cm below grade
+    }
+    expect(height(fence('w30', [at(-20, 0), at(20, 0)]))).toBeCloseTo(0.75, 1)
+    expect(height(fence('w31', [at(-20, 99), at(20, 99)]))).toBeCloseTo(2.0, 1)
   })
 })

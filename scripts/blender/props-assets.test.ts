@@ -102,6 +102,17 @@ describe('the assets are the size of the real thing', () => {
     'boat-motor':         [10.65, 3.63, 4.16],
     'boat-sail':          [11.10, 3.77, 16.75],
     'boat-small':         [6.07, 2.27, 1.70],
+    // Round 5, parks. Statue and bust are pedestal + figure; the slide's x is
+    // ladder foot to chute run-out, the swing's y the top beam. boat-row is a
+    // boat: z runs from the keel, BELOW the waterline, to the stem head.
+    'statue-plinth':      [1.24, 1.24, 3.69],
+    'bust-pedestal':      [0.62, 0.62, 2.21],
+    'sculpture-modern':   [1.30, 1.54, 2.50],
+    'playground-slide':   [3.20, 0.93, 2.44],
+    'playground-springy': [0.92, 0.46, 0.99],
+    'playground-swing':   [1.69, 3.20, 2.43],
+    'boat-row':           [3.61, 1.46, 0.85],
+    'pergola-bcn':        [4.30, 3.35, 2.87],
   }
 
   /** Boats are authored with z = 0 at the WATERLINE, not the ground. */

@@ -37,6 +37,7 @@ interface FabricBuilding {
   style?: OsmFeature['style']
   isBuildingPart?: boolean
   interior?: boolean
+  pavilion?: boolean
 }
 
 /** Uses whose height follows the street's fabric rather than their own brief. */
@@ -83,7 +84,7 @@ export function barcelonaFabric<T extends FabricBuilding>(
   footprints: ReadonlyArray<T>,
   features: ReadonlyArray<OsmFeature>,
   anchorLat: number,
-): Array<T & { interior?: boolean }> {
+): Array<T & { interior?: boolean; pavilion?: boolean }> {
   const typologyCache = new Map<string, UrbanTypology | null>()
   const typOf = (p: LatLonPoint): UrbanTypology | null => {
     // Cached on a ~50 m grid: a barri boundary is never finer than a street.
@@ -92,8 +93,28 @@ export function barcelonaFabric<T extends FabricBuilding>(
     return typologyCache.get(k)!
   }
 
+  // 0. PAVILIONS. A building inside a park is not the street's fabric. The
+  // Ciutadella measured it: the 1888 terraces flanking the Cascada
+  // (way 135115884, no height) came out as a six-storey block of flats with
+  // balconies wrapped round the fountain. A park building keeps a plain
+  // facade, and an unheighted one of no particular brief is a pavilion — one
+  // tall storey. A palace, a museum or a chapel keeps its own prior: the
+  // Parlament and the Castell dels Tres Dragons stand in the same park.
+  const parks = parkIndex(features)
+  const heightedIn = footprints.map((b) => {
+    if (b.isBuildingPart || !parks(b.ring)) return b
+    const guessed = b.height.basis === 'guess'
+      && (!OWN_BRIEF_USES.has(b.style?.use) || areaM2(b.ring) < PAVILION_MAX_OWN_BRIEF_M2)
+    return {
+      ...b,
+      pavilion: true,
+      height: guessed ? { ...b.height, heightM: Math.min(b.height.heightM, PAVILION_HEIGHT_M) } : b.height,
+    }
+  })
+
   // 1. Heights from the fabric, for guesses only.
-  const heighted = footprints.map((b) => {
+  const heighted = heightedIn.map((b) => {
+    if ((b as { pavilion?: boolean }).pavilion) return b
     if (b.height.basis !== 'guess' || b.isBuildingPart || !b.id) return b
     if (!FABRIC_USES.has(b.style?.use)) return b
     if (areaM2(b.ring) < MIN_FABRIC_AREA_M2) return b
@@ -110,6 +131,33 @@ export function barcelonaFabric<T extends FabricBuilding>(
     return block ? { depthM: block.buildableDepthM, interiorHeightM: block.interiorGroundFloorHeightM } : null
   }, open)
   return split.buildings
+}
+
+/** A park pavilion nobody measured: one tall storey and a cornice. */
+const PAVILION_HEIGHT_M = 9
+/** Park buildings whose height the use prior answers better than a pavilion. */
+const OWN_BRIEF_USES = new Set<BuildingUse | undefined>(['civic', 'temple', 'tower'])
+/** ...unless it is kiosk-sized: a park's toy library is not a town hall. */
+const PAVILION_MAX_OWN_BRIEF_M2 = 300
+
+/** True when a footprint's centre lies inside a mapped park or garden. */
+function parkIndex(features: ReadonlyArray<OsmFeature>): (ring: ReadonlyArray<LatLonPoint>) => boolean {
+  const polys = features
+    .filter((f) => f.kind === 'green' && f.style.cover === 'park' && f.ring && f.ring.length >= 3)
+    .map((f) => {
+      let s = Infinity, w = Infinity, n = -Infinity, e = -Infinity
+      for (const p of f.ring!) {
+        if (p.lat < s) s = p.lat; if (p.lat > n) n = p.lat
+        if (p.lon < w) w = p.lon; if (p.lon > e) e = p.lon
+      }
+      return { ring: f.ring!, s, w, n, e }
+    })
+  return (ring) => {
+    let lat = 0, lon = 0
+    for (const p of ring) { lat += p.lat; lon += p.lon }
+    lat /= ring.length; lon /= ring.length
+    return polys.some((p) => lat >= p.s && lat <= p.n && lon >= p.w && lon <= p.e && inside(lat, lon, p.ring))
+  }
 }
 
 /**

@@ -28,8 +28,9 @@ import {
 import { createFacadeMaterial } from './facade-shader'
 import { buildVehicleLayer } from './props-scene'
 import { buildBarrierLayer, buildFurnitureLayer, buildPlacedSignalLayer } from './street-furniture'
-import { buildMarinaBoatLayer } from './marina-boats'
+import { buildMarinaBoatLayer, buildLakeBoatLayer } from './marina-boats'
 import { yieldToMain, precompile, deviceBudget } from './render-scheduler'
+import { landmarksIn, loadLandmark, buildLandmarkLayer, replacedFeatureIds, type Landmark } from './landmarks'
 import { barcelonaFabric, barcelonaFacadeAt } from './barcelona-fabric'
 import { isBarcelona } from './barcelona-barris'
 import { loadPropAssetList, neededPropAssets, loadShanghaiParkAssets, type PropAsset } from './props-assets'
@@ -1017,6 +1018,19 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
   // (the scenery switch turned on, a marina in the next district) adds a batch
   // instead of re-downloading the kit.
   const propAssetsRequested = new Set<PropAsset>()
+
+  /** Hand-modelled landmarks that have loaded, by asset — see landmarks.ts. */
+  const landmarkGeometry = new Map<string, THREE.BufferGeometry>()
+  const landmarksRequested = new Set<string>()
+  function ensureLandmarks(present: ReadonlyArray<Landmark>): void {
+    const missing = present.filter((l) => !landmarksRequested.has(l.asset))
+    if (missing.length === 0) return
+    for (const l of missing) landmarksRequested.add(l.asset)
+    void Promise.all(missing.map(async (l) => {
+      const g = await loadLandmark(l.asset)
+      if (g) landmarkGeometry.set(l.asset, g)
+    })).then(() => { if (geoRoot && contextDetail === 'showcase') rebuildLayers() })
+  }
   function ensurePropAssets(): void {
     if (!placement) return
     const wanted = neededPropAssets(osmFeatures ?? [], {
@@ -1089,9 +1103,20 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     const kept = hiddenFeatureIds.size > 0
       ? osmFeatures.filter((f) => !hiddenFeatureIds.has(f.id))
       : osmFeatures
-    const visibleFeatures = suppressContext
+    const suppressed = suppressContext
       ? kept.filter(modelSuppressor())
       : kept
+    // LANDMARKS: in Showcase, a loaded hand-built model replaces the mapped
+    // feature it stands for (the building, or the sculpture node).
+    const landmarks = contextDetail === 'showcase' ? landmarksIn(suppressed) : []
+    if (landmarks.length > 0) ensureLandmarks(landmarks)
+    const loadedLandmarks = landmarks
+      .filter((l) => landmarkGeometry.has(l.asset))
+      .map((l) => ({ landmark: l, geometry: landmarkGeometry.get(l.asset)! }))
+    const replaced = replacedFeatureIds(loadedLandmarks.map((l) => l.landmark))
+    const visibleFeatures = replaced.size > 0
+      ? suppressed.filter((f) => !replaced.has(f.id))
+      : suppressed
 
     const opts: LayerMeshOptions = {
       anchorLat: placement.lat,
@@ -1209,6 +1234,10 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // garden reads as an error, not as a roof.
       const roofProps = buildRoofPropLayer(footprints.filter((f) => !f.interior), opts)
       if (roofProps) stage('building', roofProps.object)
+    }
+    if (layerVisibility.building) {
+      const lm = buildLandmarkLayer(loadedLandmarks, opts)
+      if (lm) stage('building', lm)
     }
     // The blocks go on screen NOW, in the same task: they are what a site view
     // is read by, and the building count the caller wants comes from them.
@@ -1340,6 +1369,20 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // ride the same switch. Showcase only — they need the authored hulls.
       const boats = buildMarinaBoatLayer(visibleFeatures, { ...opts, waterAt: waterMask })
       if (boats) stagedProps.push(boats.object)
+      // Rowing boats on the park lakes, each on its own lake's level.
+      const lakeFrame = groundFrameFor(opts)
+      const lakes = visibleFeatures.filter((f) => f.kind === 'water' && f.ring && !f.isSea).map((f) => f.ring!.map((p) => {
+        const n = latLonToNormalized(p.lat, p.lon)
+        return new THREE.Vector2(n.nx, n.ny)
+      }))
+      const lakeBoats = buildLakeBoatLayer(visibleFeatures, {
+        ...opts, waterAt: waterMask,
+        waterZAt: (nx, ny) => {
+          const ring = lakes.find((r) => pointInPolygon({ x: nx, y: ny }, r))
+          return ring ? lakeFrame.zAtElevationM(waterLevelM(ring, lakeFrame, false)) : lakeFrame.groundZ(nx, ny)
+        },
+      })
+      if (lakeBoats) stagedProps.push(lakeBoats.object)
       if (parkDetails?.scenery.children.length) stagedProps.push(parkDetails.scenery)
     }
     if (!alive()) { discard(); return }

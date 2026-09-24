@@ -124,6 +124,43 @@ describe('neededPropAssets', () => {
     expect(new Set(out).size).toBe(out.length)
   })
 
+  it('asks for the park set only when the park furniture is mapped', () => {
+    const all = { scenery: true, barcelona: true, signals: true }
+    const bare = neededPropAssets([f('furniture', { furniture: 'bench' }), f('green')], all)
+    for (const n of ['statue-plinth', 'bust-pedestal', 'sculpture-modern', 'playground-slide',
+      'playground-springy', 'playground-swing', 'pergola-bcn', 'boat-row'] as const) {
+      expect(bare).not.toContain(n)
+    }
+    expect(neededPropAssets([f('furniture', { furniture: 'shelter' })], all)).toContain('pergola-bcn')
+  })
+
+  it('fetches the artwork and play kit a node names, or the whole family when it names none', () => {
+    const ctx = { scenery: false, barcelona: true, signals: false }
+    const bust = neededPropAssets([f('furniture', { furniture: 'artwork', artwork: 'bust' })], ctx)
+    expect(bust).toContain('bust-pedestal')
+    expect(bust).not.toContain('statue-plinth')
+    expect(bust).not.toContain('sculpture-modern')
+    const art = neededPropAssets([f('furniture', { furniture: 'artwork' })], ctx)
+    expect(art).toEqual(expect.arrayContaining(['statue-plinth', 'bust-pedestal', 'sculpture-modern']))
+    const swing = neededPropAssets([f('furniture', { furniture: 'playground', play: 'swing' })], ctx)
+    expect(swing).toContain('playground-swing')
+    expect(swing).not.toContain('playground-slide')
+    const play = neededPropAssets([f('furniture', { furniture: 'playground' })], ctx)
+    expect(play).toEqual(expect.arrayContaining(['playground-slide', 'playground-springy', 'playground-swing']))
+  })
+
+  it('puts rowing boats on a lake or pond only with scenery on — never on a river, fountain or basin', () => {
+    const on = { scenery: true, barcelona: true, signals: false }
+    for (const waterKind of ['pond', 'lake']) {
+      const lake = [f('water', { waterKind })]
+      expect(neededPropAssets(lake, on)).toContain('boat-row')
+      expect(neededPropAssets(lake, { ...on, scenery: false })).not.toContain('boat-row')
+    }
+    for (const waterKind of ['river', 'fountain', 'other']) {
+      expect(neededPropAssets([f('water', { waterKind })], on)).not.toContain('boat-row')
+    }
+  })
+
   it('picks the regional set by place', () => {
     const park = [f('furniture'), f('signal')]
     expect(neededPropAssets(park, { scenery: false, barcelona: true, signals: true })).toContain('bench-bcn')

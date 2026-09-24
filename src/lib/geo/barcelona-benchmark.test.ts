@@ -109,7 +109,11 @@ describe('Barcelona benchmark · the park', () => {
   it('draws what the park survey holds', () => {
     const count = (k: OsmFeature['kind']) => C.features.filter((f) => f.kind === k).length
     expect(count('barrier')).toBe(91)    // railings, walls, hedges — none were requested before
-    expect(count('furniture')).toBe(124) // benches, lanterns, fountains, bins, bollards
+    // Benches, lanterns, fountains, bins, bollards — and the park's statues,
+    // busts, play equipment and pergolas (7 more in this crop).
+    expect(count('furniture')).toBe(131)
+    const art = C.features.filter((f) => ['artwork', 'playground', 'shelter'].includes(f.style.furniture ?? ''))
+    expect(art.length).toBe(7)
   })
 
   it('stands park lanterns on the paths and street lamps at the kerb', () => {
