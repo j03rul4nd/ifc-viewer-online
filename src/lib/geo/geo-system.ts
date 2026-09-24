@@ -1107,13 +1107,13 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     if (layerVisibility.building) {
       const footprints = visibleFeatures
         .filter((f) => f.kind === 'building' && f.ring)
-        .map((f) => ({ id: f.id, ring: f.ring!, height: f.height, style: f.style }))
+        .map((f) => ({ id: f.id, ring: f.ring!, holes: f.holes, height: f.height, style: f.style }))
       // At 'detailed' the facades join the same sun as the ground and the
       // canopies; at 'simple' they stay unlit, which is cheaper and is the
       // right answer when the surroundings are only there for orientation.
       const litFacades = contextDetail === 'detailed'
       const built = buildBuildingsGeometry(footprints, {
-        ...opts, detail: contextDetail, lit: litFacades, contextTone,
+        ...opts, detail: contextDetail, lit: litFacades, contextTone, localOrigin: true,
       })
       if (built) {
         const mesh = new THREE.Mesh(
@@ -1123,6 +1123,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
             : new THREE.MeshBasicMaterial({ vertexColors: true }),
         )
         mesh.name = 'osm-buildings'
+        if (built.origin) mesh.position.set(built.origin.x,built.origin.y,0)
         buildingRanges = built.ranges
         buildingsMesh = mesh
         // Above the flat tiles and the surface layers, so grade-level walls do

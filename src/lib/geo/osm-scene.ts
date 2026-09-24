@@ -1838,6 +1838,9 @@ export function buildLinearLayer(
     activeProfile = profileFor(f.id)
 
     if (f.widthM === undefined) {
+      // Polygon interiors have no centreline profile. A tagged underground
+      // concourse must not become a new paved square on the surface.
+      if (f.vertical?.structure === 'tunnel') continue
       // A paved AREA — a square, an esplanade, a pedestrianised street. Same
       // fill as a platform and deliberately so, but flat on the ground and with
       // no painted edge: a plaza has no platform lip, and drawing one put a
@@ -1854,7 +1857,14 @@ export function buildLinearLayer(
         // costs nothing on the flat map, where `subdivideOnGround` returns the
         // triangle it was given.
         const dense = frame.densify(line)
-        const faces = triangulate(dense, mToN)
+        const holes = (f.holes ?? []).map(h=>frame.densify(projectRing(h)))
+        let faces: number[][] | null
+        if(holes.length){
+          const metric=(r:THREE.Vector2[])=>r.map(p=>new THREE.Vector2(p.x/mToN,p.y/mToN))
+          try { faces=THREE.ShapeUtils.triangulateShape(metric(dense),holes.map(metric)) }
+          catch { faces=null }
+          dense.push(...holes.flat())
+        } else faces = triangulate(dense, mToN)
         if (!faces) { dropped++; continue }
         // Refined against the ground, within a budget. On the flat map
         // `hasTerrain` is false and this is the base triangulation, unchanged.
@@ -1874,6 +1884,7 @@ export function buildLinearLayer(
         // would otherwise be invisible until somebody moved a loop.
         const areaZ = baseLift + PAVED_AREA_LIFT_M * mToN
         for (const [i0, i1, i2] of refined.faces) {
+          if(buriedHere([i0,i1,i2].map(i=>new THREE.Vector2(refined.points[i].x,refined.points[i].y)))) continue
           for (const idx of [i0, i1, i2]) {
             const v = refined.points[idx]
             positions.push(v.x, v.y, structuralZ(v.x, v.y) + areaZ)

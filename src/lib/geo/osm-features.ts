@@ -37,6 +37,7 @@ import {
   readVerticalTags, type VerticalTags, type FunctionalType,
 } from './vertical'
 import { buildSeaPolygons, type CoastlineBbox } from './coastline'
+import { pointInPolygon } from './context-suppression'
 import { assembleMultipolygon } from './multipolygon'
 import { partitionBuildingParts } from './building-parts'
 import { shanghaiBridgeWidth } from './shanghai-bridges'
@@ -59,6 +60,7 @@ export interface OsmFeature {
   /** What the thing IS, in one readable phrase — 'Train station', 'School'. */
   label?: string
   /** Closed ring for area features (buildings, water, green, bridge decks). */
+  holes?: LatLonPoint[][]
   ring?: LatLonPoint[]
   /** Single position for point features (trees). */
   point?: LatLonPoint
@@ -698,8 +700,9 @@ export function functionalType(
 }
 
 export function roadClass(tags: Record<string, string> | undefined): RoadClass {
-  const cls = (tags?.['highway'] ?? '').toLowerCase()
+  const cls = (tags?.['highway'] ?? tags?.['area:highway'] ?? '').toLowerCase()
   if (cls === 'track') return 'track'
+  if (cls === 'sidewalk' || cls === 'crossing') return 'pedestrian'
   return PEDESTRIAN_HIGHWAYS.has(cls) ? 'pedestrian' : 'vehicular'
 }
 
@@ -751,6 +754,7 @@ const CROSSING_TONE: [number, number, number] = [0.82, 0.80, 0.72]
  */
 export function isPavedArea(tags: Record<string, string> | undefined): boolean {
   const t = tags ?? {}
+  if (t['area:highway'] && t['area:highway'] !== 'no') return true
   if (t['area'] === 'yes') return true
   if (t['area'] === 'no') return false
   return t['highway'] === 'pedestrian'
@@ -775,7 +779,7 @@ export function roadTone(tags: Record<string, string> | undefined): [number, num
   const surface = normalizeSurface(tags?.['surface'])
   const fromSurface = surface ? SURFACE_TONES[surface] : undefined
   if (fromSurface) return fromSurface
-  const cls = (tags?.['highway'] ?? '').replace(/_link$/, '')
+  const cls = (tags?.['highway'] ?? tags?.['area:highway'] ?? '').replace(/_link$/, '').replace(/^sidewalk$/, 'footway')
   return ROAD_TONES[cls] ?? [0.41, 0.41, 0.43]
 }
 
@@ -957,7 +961,7 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
   if (RAIL_VALUES.has(t['railway'] ?? '')) return 'rail'
   if (t['public_transport'] === 'platform' && t['railway'] !== undefined) return 'rail'
 
-  if (ROAD_VALUES.has(t['highway'] ?? '')) return 'road'
+  if (ROAD_VALUES.has(t['highway'] ?? '') || (t['area:highway'] && t['area:highway'] !== 'no')) return 'road'
 
   return null
 }
@@ -1516,6 +1520,7 @@ export function parseOsmFeatures(
         if (ring) {
           out.push({
             id: `w${el.id}`, kind, ring, height, style,
+            vertical: readVerticalTags(el.tags),
             name: el.tags?.['name'], label: featureLabel(el.tags),
           })
         } else drop(el, 'geometry', ringRejection(pts, kind))
@@ -1548,7 +1553,7 @@ export function parseOsmFeatures(
           id: `w${el.id}`, kind, ring, height, style,
           name: el.tags?.['name'], label: featureLabel(el.tags),
           isBuildingPart: isBuildingPartTag(el.tags),
-          vertical: kind==='rail' ? readVerticalTags(el.tags) : undefined,
+          vertical: kind==='rail' || kind==='road' ? readVerticalTags(el.tags) : undefined,
         })
       } else drop(el, 'geometry', ringRejection(pts, kind))
       continue
@@ -1561,13 +1566,17 @@ export function parseOsmFeatures(
       // each member on its own is not a coarser answer, it is a different
       // shape — see multipolygon.ts for the measurement that says so.
       let part = 0
-      const outer = assembleMultipolygon(el.members).outer
+      const assembled = assembleMultipolygon(el.members)
+      const outer = assembled.outer
+      const inner = assembled.inner.map(chain => closeRing(chain, kind)).filter((r): r is LatLonPoint[] => r !== null)
       for (const chain of outer) {
         const ring = closeRing(chain, kind)
         if (ring) {
           out.push({
             id: `r${el.id}-${part++}`, kind, ring, height, style,
-            vertical: kind==='rail' ? readVerticalTags(el.tags) : undefined,
+            holes: inner.filter(h => pointInPolygon({x:h[0].lon,y:h[0].lat}, ring.map(p=>({x:p.lon,y:p.lat})))),
+            isBuildingPart: isBuildingPartTag(el.tags),
+            vertical: kind==='rail' || kind==='road' ? readVerticalTags(el.tags) : undefined,
             name: el.tags?.['name'], label: featureLabel(el.tags),
           })
         }
@@ -1801,7 +1810,10 @@ export function buildFeaturesQuery(
   // is the skeleton everything else hangs off, so it is funded first.
   const groups: Array<[string, number]> = [
     // The street network, and the bridges that carry it.
-    [`way["highway"](${b});way["railway"](${b});`, Math.round(maxElements * 0.55)],
+    [`way["highway"](${b});way["railway"](${b});`, Math.round(maxElements * 0.51)],
+    // Explicit paved footprints and pedestrian multipolygons need their own
+    // allocation; highway centrelines cannot recover their actual borders.
+    [area('["area:highway"]') + `relation["highway"="pedestrian"](${b});`, Math.round(maxElements * 0.04)],
     // Bridge OUTLINES only. The linear case needs no funding here: a
     // `bridge=yes` highway is a highway and already arrives in the group above,
     // which is why this share could be cut to pay for the waterfront.
