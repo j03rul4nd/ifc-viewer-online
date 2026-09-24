@@ -9,7 +9,7 @@
 
 ## What this product is
 
-A browser-only IFC model viewer, validator, and non-destructive editor targeting architects and BIM coordinators who work with large, complex building models. The app runs entirely client-side: IFC files are parsed in a Web Worker via WebAssembly, rendered via WebGL (Three.js / @thatopen), and never leave the user's machine. Multiple IFC files can be loaded simultaneously for side-by-side inspection and comparison.
+A browser-only IFC model viewer, validator, and non-destructive editor targeting architects and BIM coordinators who work with large, complex building models. The app runs entirely client-side: IFC files are parsed in Web Workers via WebAssembly, rendered via WebGL (Three.js / @thatopen), and never leave the user's machine. Multiple IFC files can be loaded together (a federated drop, a demo set, `?model=a,b`, SDK calls) for side-by-side inspection and comparison. Every load is a job in one queue, so downloads, conversions and scene attaches overlap, and each job can be followed, cancelled or retried.
 
 ## Who uses it and why
 
@@ -30,9 +30,24 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 ### Works
 
 - **Landing page** — marketing page with hero, feature grid, FAQ, CTA. Fully static, no data dependencies.
-- **IFC loading pipeline** — `useIfcLoader` hook orchestrates: OPFS cache check → Web Worker parse (IfcImporter) → fragments binary → viewer render. Real progress events. Cache persists across page reloads. Emits `model:loaded` (with `modelId`) on `appBus` after every successful load.
-- **Multi-model loading** — N simultaneous IFC files; each model gets its own pivot group, own entry in sceneStore, modelRegistry, validationStore spatial tree, and takeoffStore.
-- **Pre-flight IFC guards** — `validateIfcBuffer()` in `ifc-guards.ts` checks for empty buffer, wrong file signature, and file size before WASM initialisation.
+- **Model loading & orchestration** (`src/lib/loading/`, D-29, `docs/MODEL_LOADING.md`). Every load is a job in one `LoadManager`: upload, drop, demo set, `?model=`, `ifcviewer:load`, SDK bytes, companion model and reload.
+  - **Phases** are reported by the code doing them: `download → identify → cache-lookup → geometry → properties → relations → serialize → cache-write → attach → setup → read`, then the background phases `stream` and `index`. A phase shows a fraction only when it measures one; otherwise the UI shows activity.
+  - **Lanes:**
+    - `network` (2, back-pressured so downloads never run far ahead of conversion);
+    - `convert` (**1 at a time** by default, measured, memory-admitted; the spatial-tree build queues here too, at background priority);
+    - `attach` (1, anchor-first: the first-submitted model sets the coordinate base).
+  - **Real cancel:** `worker.terminate()` while converting, fragments `core.abort` while attaching, and a full undo of partial models.
+  - **Retries** per error class, at most 3 attempts.
+  - **Emits** `model:loaded` (unchanged payload and timing), then `load:*`, on `appBus`. `useIfcLoader` is now only the React face of the manager.
+- **Multi-model loading** — N IFC files per scene, submitted together or one after another; each model gets its own pivot group, own entry in sceneStore, modelRegistry, validationStore spatial tree, and takeoffStore. Batches can become a scene group, and disciplines are inferred from file names.
+- **Loading UI**:
+  - a toolbar chip (`LoadingIndicator`; floating for toolbar-less presets, a pill on mobile) that opens the **Loading Center** (popover on desktop, sheet on mobile) with Basic and Advanced views (Advanced adds session metrics, renderer stats and cache);
+  - a first-load phase checklist on the empty scene;
+  - a "Loading" section in ScenePanel;
+  - a multi-file import dialog with review, duplicate detection ("Already loaded — Open existing / Load duplicate anyway") and a large-file notice.
+
+  A global drop routes IFC files to that dialog, scans and meshes to their panels, and `.ids` to IDS. Point cloud, mesh and GIS loads show up as tracked jobs.
+- **Pre-flight IFC guards** — `validateIfcBuffer()` in `ifc-guards.ts` checks for empty buffer, wrong file signature, and file size before WASM initialisation. They run on a 1 KB header slice in the `identify` phase, and again inside the worker.
 - **Toast notifications** — `toastStore` + `ToastContainer.tsx`; all error/warning/info messages surface as non-blocking toasts. `toastFromError()` handles any unknown error type.
 - **3D viewer** — OBC world with WebGL renderer, realistic lighting (hemisphere + directional with shadows), orbit/pan/zoom camera controls.
 - **Per-category palette** — 25 IFC types have assigned colours and opacity. Applied after every load.
@@ -41,9 +56,13 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 - **Category panel** — lists all IFC types in the loaded model with element counts, colour swatches, hide/show toggles, and isolation.
 - **Filter/isolate** — hide individual categories; isolate a single category; frame camera to a category's bounding box.
 - **Three viewer styles** — `shaded` (default palette), `blueprint` (flat grey), `xray` (global 20% opacity).
-- **OPFS cache management** — list, delete, quota display. Badge when models are cached. Repository pattern wraps all OPFS I/O with `Result<T,E>` returns. Cache key prefix `v2`.
-- **Memory tracking** — polls `performance.measureUserAgentSpecificMemory()` (crossOriginIsolated) or `performance.memory` fallback every 4 s.
-- **Zustand stores (20)** — `modelStore`, `validationStore`, `editorStore`, `uiStore`, `sceneStore`, `toastStore`, `takeoffStore`, `bcfStore`, `idsStore`, `geoStore`, `waiverStore`, `captureStore`, `presentationStore`, `eirStore`, `overlayStore`, `solarStore`, `consentStore`, `cobieStore`, `cloudAccountStore`, `pointCloudStore` — all with Zustand devtools, named actions, and typed selectors. `editorStore` emits `appBus` events on every mutation. (`cloudAccountStore` is the only account-aware store and stays Clerk-free; see the conformance-CDE surface below.)
+- **OPFS cache management** — list, delete, quota display. Badge when models are cached. Repository pattern wraps all OPFS I/O with `Result<T,E>` returns.
+  - **Key:** prefix `v3`, `v3:name:size:lastModified`. The shape is frozen because it also keys georef placement and cached validation. Fetched files take `lastModified` from `Last-Modified` (or 0), so URL and demo loads hit the cache.
+  - **Integrity:** the meta is written last as the commit marker. It stores a content fingerprint: sampled `f1:` for files, full SHA-256 `f2:` for SDK bytes. A mismatch means the entry is stale and gets evicted.
+  - **Contents:** only `.frag` + meta are written (no `.ifc` copy).
+  - **Budget:** LRU eviction within min(4 GB, 50 % of quota).
+- **Memory tracking** — polls `performance.measureUserAgentSpecificMemory()` (crossOriginIsolated) or `performance.memory` fallback every 4 s. Separately, the loading resource policy samples the main-heap ratio. At ≥ 80 % pressure is `elevated` (one conversion at a time), and an OOM keeps it there for the rest of the session. At ≥ 92 % it is `critical`: a conversion starts only when none is running.
+- **Zustand stores (24)** — `modelStore`, `validationStore`, `editorStore`, `uiStore`, `sceneStore`, `toastStore`, `takeoffStore`, `bcfStore`, `idsStore`, `geoStore`, `waiverStore`, `captureStore`, `presentationStore`, `eirStore`, `overlayStore`, `solarStore`, `consentStore`, `cobieStore`, `cloudAccountStore`, `pointCloudStore`, `meshStore`, `videoStore`, `clipStudioStore`, `loadingStore` (read-only mirror of the load manager) — with named actions and typed selectors, and Zustand devtools on all but `consentStore`, `waiverStore` and `cloudAccountStore`. `editorStore` emits `appBus` events on every mutation. (`cloudAccountStore` is the only account-aware store and stays Clerk-free; see the conformance-CDE surface below.)
 - **IFC validation — 44 rules** — `validator.worker.ts` runs rule-based checks off the main thread (18 core + 11 spatial/file-header incl. ISO 19650 + 9 LOD/classification/MEP + 6 geometry/storey integrity). Streams partial results into `validationStore`. Emits `appBus` events for full lifecycle. All messages validated via zod schemas before routing. Full list in `ARCHITECTURE.md`. `DEFAULT_RULES` in `src/types/index.ts` is the canonical count.
 - **buildingSMART IDS 1.0** — `ids.worker.ts` + pure-TS engine (`src/lib/ids/`) check a user-supplied `.ids` spec against the model. All six facets, golden-tested against 100 official bSI testcases. `IdsPanel` docks beside `ValidationPanel`; export to JSON/CSV/HTML/BCF; check-all-models; run-diff; SDK `checkIds()`. See `docs/IDS_IMPLEMENTATION_PLAN.md`.
 - **Point clouds** (flag-gated `VITE_FEATURE_POINTCLOUD`) — loads a survey scan
@@ -59,7 +78,7 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 - **Mobile UI** — `useIsMobile` + `MobileBottomNav` + bottom-sheet IDS/Validation panels (`src/components/mobile/`).
 - **Validation hardening** — honest coverage (`validation-coverage.ts`), actionable score (`explainQualityScore`, "fix first"), Pro controls (`severityOverrides`, `waiverStore`, thresholds), run-diff (`validation-diff.ts` + `RunDiffBar`).
 - **Validation highlights per model** — `validationHighlightedByModel: Map<string, Set<number>>`; each model's errors are tracked independently.
-- **Spatial tree — auto-built on load** — `buildSpatialTree()` triggers automatically after every model load via `build-tree` worker message. `ModelTree.tsx` renders immediately. Virtualised with `@tanstack/react-virtual`.
+- **Spatial tree — auto-built on load** — `buildSpatialTree()` runs automatically for every model as the background `index` phase of its load job, after the commit and the first streamed view. It takes a convert-lane slot at background priority, then sends a `build-tree` worker message. `ModelTree.tsx` renders immediately. Virtualised with `@tanstack/react-virtual`.
 - **Inline editing in tree** — Name, LongName, Description fields editable inline. GlobalId regenerable via double-click + confirmation modal. All edits carry `modelId`.
 - **Property set editing in Sidebar** — Each Pset property value has an inline edit button that commits a `SET_PROPERTY` diff.
 - **ValidationPanel** — `ValidationPanel.tsx` shows validation results with filtering by severity, rule, grouping, text search, and model. **Batch auto-fix button** applies all auto-fixable issues at once. Run button works for multi-model sessions.
@@ -82,11 +101,19 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 - **Conformance-CDE surface (F1/F2 shipped, F2 dark)** — signed `ConformityReport` issuance + public `/verify` (in-browser signature check, printable cert + QR, ×10 i18n, deep verify); the built-but-dark Pro account surface (entitlement, ruleset sync, certificate history, issuer branding, API-key mgmt, Stripe-by-redirect billing, dedicated `/sign-in` `/sign-up` `/account` `/welcome` pages); and the v5 super-admin console (`AdminView.tsx` → `ifc-cloud-api` `/admin/*`). Cloud access is `src/lib/cloud/{api,account,admin}-client.ts` — zero fetch without `VITE_API_URL`; auth code is dynamic-only into the lazy `vendor-auth` chunk. See `docs/CDE_ROADMAP.md`.
 - **F5 — COBie 2.4 + delivery report (client-side, zero backend)** — `src/lib/cobie/*` (IFC→COBie sheet mapping, off-thread extract, lazy `exceljs` XLSX writer, FM-readiness badge), `cobieStore`, and `src/lib/delivery-report.ts` (remediation-first "why this delivery would be rejected" prose from the D-22 corpus). Both wired into `ValidationExportModal` / `ModelInfoPanel`; run entirely in-browser.
 - **Build optimisation** — Vite chunk splitting: `vendor-three`, `vendor-ifc`, `vendor-ui`, app entry; `--max-old-space-size=4096` for Windows OOM fix.
-- **Unit tests** — 11 tests in `loader.test.ts` (Vitest), additional tests in `ifc-guards.test.ts`.
+- **Unit tests** — Vitest across the codebase. Loading has its own suite, 523 cases in 24 files at the time of writing:
+  - `src/lib/loading/*.test.ts`: the manager, scheduler, policies, IFC adapter, convert pool, external tracking and more;
+  - `src/components/loading/*.test.ts`;
+  - `opfs-cache.test.ts`, `fetch-ifc-url.test.ts`, `ifc-parser.worker.test.ts` and `upload.utils.test.ts`;
+  - locale parity guards.
+
+  It runs against fakes (no real web-ifc, OPFS or browser). See `docs/MODEL_LOADING.md` "Testing". `loader.test.ts` (19 cases) is legacy: only its `buildCacheKey` / OPFS cases exercise real code.
 
 ### Partially implemented / stubs
 
 - `loadIfc()` on `ViewerAPI` — still exists and works for direct IFC loading without the cache/worker pipeline, but is not called from `App.tsx`. It is a fallback/testing entry point.
+- Blog `EmbedViewer` (`src/lib/embed-loader.ts`) — its own fetch → parser worker → `loadFragments` path, outside the LoadManager (no queue, no OPFS, no stores).
+- Point cloud and mesh loads are *tracked* by the LoadManager, not executed by it. Their runners still own execution, and their global store epochs can cancel sibling loads (`docs/MODEL_LOADING.md` §13).
 - GPU memory estimate in `getGpuEstimateBytes()` — uses a rough heuristic based on `WebGLRenderer.info.memory`.
 - `IFCPropertySet.expressId` per property — populated by `formatPsets()` in `viewer.ts` from the `@thatopen` data layer; available when `prop.expressId > 0`.
 
@@ -127,6 +154,7 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 | `DECISIONS.md` | Architectural decision log with alternatives, reasons, and consequences |
 | `ROADMAP.md` | Sprint-by-sprint plan (status, goals, deliverables, constraints) |
 | `PROMPTS.md` | Log of Claude Code prompts used to build the project |
+| `docs/MODEL_LOADING.md` | **Model loading & orchestration** — jobs, phases, lanes, scheduling, workers, memory, cache, cancel, retry, federation, observability, technology evaluation, tests (D-29) |
 | `docs/DEPLOYMENT.md` | Vercel deployment, WASM paths, COEP/COOP strategy, production bug history |
 | `docs/REFERENCE_IFC.md` | **IFC Hello World** and **Japanese Temple** — the two reference models we author ourselves (Blender + Bonsai), what they contain, how to rebuild and validate them |
 | `docs/IDS_IMPLEMENTATION_PLAN.md` | buildingSMART IDS 1.0 — engine, facets, worker, golden tests (SHIPPED banner up top) |
@@ -146,22 +174,23 @@ Architects and BIM coordinators who need to quickly inspect and validate IFC exp
 
 1. **No server-side processing of the model.** The IFC file never leaves the browser — no upload endpoints, no server parse/validate. *Clarification (2026-05-29):* **stateless edge Workers are permitted** as long as they never receive the model. The existing Cloudflare Worker (`cf-worker/`) is a pure email proxy; a future shared-report SSR route may receive only the already-computed report summary (score + condensed issue list) for crawlability. Edge compute that touches the IFC bytes remains forbidden. See `DECISIONS.md` D-21. *Amendment (2026-07-04, D-27 — proposed / founder-gated):* server-side model processing becomes permitted **only in F6** and **only** under opt-in + paid-only + 72 h-retention + honest-copy + SSRF-hardened conditions; F0–F5 keep this invariant fully intact (only derived JSON + a locally-computed `sha256` transit the edge). See `DECISIONS.md` D-27 and `docs/CDE_ROADMAP.md` (F6).
 2. **@thatopen/components is the 3D/IFC layer.** Do not add raw `web-ifc` imports to `src/` outside the workers.
-3. **All IFC parsing runs in `src/workers/ifc-parser.worker.ts`.** Main thread must not block during parse.
+3. **All IFC parsing runs in `src/workers/ifc-parser.worker.ts`**, in instances spawned by `IfcConvertPool` and admitted by the LoadManager's convert lane. Main thread must not block during parse, and it does not read the whole IFC during conversion: the `File` is posted and the worker reads it.
 4. **All IFC validation runs in `src/workers/validator.worker.ts`.** Main thread only receives results via the Zustand store.
 5. **TypeScript strict mode.** No `any` escapes. `tsconfig.json` has `strict: true`.
 6. **Do not modify** `tailwind.config.js`, `postcss.config.js`, or Radix UI component internals unless the task explicitly targets them.
 7. **COOP/COEP headers are required.** Set in `vite.config.ts` (dev) and via `coi-serviceworker.js` (production on Vercel — `vercel.json` does not set these headers, so the service worker is what enables cross-origin isolation).
-8. **`loadIfc()` on ViewerAPI is a legacy entry point.** New code must call `loadFragments()` after producing a binary via the worker or cache.
+8. **`loadIfc()` on ViewerAPI is a legacy entry point.** New code that loads a model must **submit a job** (`submitIfcFiles` / `submitIfcUrls` / `submitIfcBytes` from `src/lib/loading`, or the `useIfcLoader` wrappers), never call the viewer itself. Only the IFC source adapter calls `loadFragments()`, passing the pre-minted `modelId` and the job's `signal`.
 9. **Edits are keyed by GlobalId, not Express ID.** Express IDs are reassigned on every IFC re-export; GlobalId is the stable identifier.
 10. **Worker bundles must not externalize bare module specifiers** (`three`, etc.). Externalizing causes unresolvable imports in browser worker context (production-only crash). See `DECISIONS.md` D-11.
 11. **All user model transforms go through `modelPivot`.** Do not modify `model.object.matrix` or `.position` directly — use `ViewerAPI.setModelTransform(transform, modelId)`.
 12. **`sceneStore` holds only serialisable data.** Three.js geometry management stays in `viewer.ts`.
 13. **Worker messages must be validated via zod schemas** in `worker-schemas.ts` before routing. Extend the schemas when adding new message types.
-14. **`modelRegistry` is the authority for IFC buffers per model.** Do not read `modelStore.ifcBuffer` for multi-model operations. Use `modelRegistry.getBuffer(modelId)`.
+14. **`modelRegistry` is the authority for IFC buffers per model.** Do not read `modelStore.ifcBuffer` for multi-model operations. Use `modelRegistry.getBuffer(modelId)`. Registration happens in one place, `commitIfcModel` (`src/lib/loading/index.ts`), in a fixed order: registry → modelStore → `model:loaded` → App hook → sceneStore.
 15. **`getDiffsForModel(modelId)` filters the diff history.** Always pass `modelId` when building per-model export payloads.
-16. **Clearing history (`clearHistory()`) only happens in `handleNavigateToLanding`.** Never call it inside `loadFile`.
+16. **Clearing history (`clearHistory()`) only happens in `handleNavigateToLanding`**, after `resetLoading()` has cancelled every load and bumped the epoch. Never call it from a load path (the `beforeSubmit` / `onModelLoaded` hooks).
 17. **Transform callbacks in ScenePanel pass explicit `model.id`.** Do not rely on the viewer's current active model — always be explicit.
+18. **The loading engine stays framework-free, and its UI stays store-only.** The manager, scheduler, policies and phases (`load-manager.ts`, `scheduler.ts`, `resource-policy.ts`, `retry-policy.ts`, `phases.ts`) import no React, store, viewer or worker. The IFC adapter reaches the viewer, pool and cache only through injected deps. App wiring lives in `index.ts`, plus `external-sources.ts` for the tracked stores. The loading UI reads `loadingStore` snapshots and acts through `loadingController`, never through live objects. The store holds serialisable views only: no `File`, buffer, worker or `AbortController`. The engine and its bridges use timers, never `requestAnimationFrame`, because a hidden pane or a background tab would freeze the queue.
 
 ---
 
-*Last updated: 2026-07-14 (conformance-CDE surface: F1 certificate/`/verify` + F2 built-dark Pro + v5 admin console + F5 COBie/delivery report shipped) · Sprints 1–9 complete + IDS 1.0 / 3D Map (GIS) / Solar / BCF panel / embed+SDK / mobile UI / Capture Toolkit / Tour Mode / Client Mode shipped · 44 validation rules · 20 Zustand stores · 9 workers · Deploy: Vercel (SPA) + Cloudflare Workers (`ifc-cloud-api` paid layer, `cf-worker` stateless) · Forward plan: docs/CDE_ROADMAP.md (F0–F6; F0/F1/F5 shipped, F2 dark) + ROADMAP.md v2*
+*Last updated: 2026-09-24 (model loading & orchestration system — D-29, `docs/MODEL_LOADING.md`) · Previous: 2026-07-14 (conformance-CDE surface: F1 certificate/`/verify` + F2 built-dark Pro + v5 admin console + F5 COBie/delivery report shipped) · Sprints 1–9 complete + IDS 1.0 / 3D Map (GIS) / Solar / BCF panel / embed+SDK / mobile UI / Capture Toolkit / Tour Mode / Client Mode / queued multi-model loading shipped · 44 validation rules · 25 Zustand stores · 10 worker scripts · Deploy: Vercel (SPA) + Cloudflare Workers (`ifc-cloud-api` paid layer, `cf-worker` stateless) · Forward plan: docs/CDE_ROADMAP.md (F0–F6; F0/F1/F5 shipped, F2 dark) + ROADMAP.md v2*

@@ -48,7 +48,7 @@ The **only three moats are distribution/content/brand, not tech**:
 ### Explicitly killed / deferred
 
 - **WebGPU renderer (old Sprint 10)** — ❌ deferred indefinitely. No documented perf pain; custom `BaseRenderer` over OBC is weeks of solo work.
-- **Point clouds / scan-to-BIM / AR (old Sprint 11)** — ❌ killed. Different product, different buyer (surveyors), multi-GB files that violate the no-cache-large-files constraint.
+- **Point clouds / scan-to-BIM / AR (old Sprint 11)** — ❌ killed. Different product, different buyer (surveyors), multi-GB files that violate the no-cache-large-files constraint. *(Point clouds were later reversed and shipped, flag-gated. COPC nodes are streamed on demand under a hard point budget, so whole scans are never loaded; see `CONTEXT.md` and `docs/POINT_CLOUD.md`. Scan-to-BIM and AR remain killed.)*
 - **"Chat with your BIM" / NL query (old Sprint 12)** — ❌ killed as AI slop. The only useful slice (fix guidance) is reclassified as the P1 content table — it is not AI.
 
 > Rationale for the kills is recorded so future sessions don't resurrect them: see this section + `DECISIONS.md` (forward-plan note).
@@ -66,6 +66,13 @@ These were not on the priority table but are now in `main` and verified against 
 - ✅ **Mobile UI** — `useIsMobile`, `MobileBottomNav`, dedicated bottom-sheet variants of the IDS and Validation panels (`src/components/mobile/`).
 - ✅ **Personalized invite & attribution** — cookieless `?ref`/`/i/:code` attribution, `invite-registry.ts`, `InviteRibbon`/`InviteView`/`InviteFeedbackNudge`. Docs: `docs/INVITE_SYSTEM.md`.
 - ✅ **Static SEO** — programmatic `/fix/<rule>/` pages ×10 languages, blog generator, crawlable `/r?d=` report route on the CF Worker.
+- ✅ **Model loading & orchestration (2026-09, D-29)** — one `LoadManager` (`src/lib/loading/`) for every load. Docs: `docs/MODEL_LOADING.md`.
+  - **Why now:** this is not commodity performance, so it passes the prioritisation rule. The documented pain was concrete: federated demo sets and SDK hosts silently dropped models (a second load was rejected), progress went backwards, Cancel did nothing, a failed parse left SDK hosts to time out, and URL/demo loads never hit the cache.
+  - **Jobs and phases:** batches, and real phases reported by the code doing them.
+  - **Lanes:** network 2, convert **1** (measured: concurrent web-ifc conversions are each slower), attach 1 anchor-first.
+  - **Reliability:** real cancel, per-class retries, stable cache keys for fetched files, and fingerprint-based stale-cache and duplicate detection.
+  - **UI:** the toolbar chip, the Loading Center (Basic/Advanced) and a multi-file import dialog. Point cloud, mesh and GIS loads appear as tracked jobs.
+  - **Contract:** the SDK/embed wire format is unchanged.
 
 ---
 
@@ -134,6 +141,13 @@ These were not on the priority table but are now in `main` and verified against 
 - Cache keys are strings in the format `"${name}:${size}:${lastModified}"`. Do not change this format without migrating existing cache entries.
 - `yieldToMain()` must be called between heavy processing chunks. Do not run loops of > 64 items without yielding on the main thread.
 
+> **Superseded in part (2026-09, D-29 — `docs/MODEL_LOADING.md`).** The pipeline above is history. The rules that still hold: parsing only in `ifc-parser.worker.ts`, `loadFragments()` as the only way into the scene, and `yieldToMain()` for main-thread loops. What changed:
+> - **`useIfcLoader` is a thin hook.** The pipeline is the `LoadManager` in `src/lib/loading/`. Every entry point submits a job, with no single-flight guard. `loadFragments` takes `(buffer, fileName, fileSize?, onProgress?, options?)`.
+> - **The IFC is not transferred any more.** The main thread posts the `File` and the worker reads it. The registry copy is read at commit, so no pre-transfer copy is needed.
+> - **Parser workers come from a pool** (`IfcConvertPool`), spawned on demand and cancelled with `terminate()`.
+> - **The cache key is `v3:${name}:${size}:${lastModified}`.** The prefix has been `v2` since Sprint 5 and `v3` since the `COORDINATE_TO_ORIGIN` change. The shape is frozen, and fetched files now get a stable `lastModified`.
+> - **Progress is real phases**, not the `LoadPhase` / percentage checkpoints.
+
 ---
 
 ## Sprint 3 — IFC Validator + Spatial Tree
@@ -147,7 +161,7 @@ These were not on the priority table but are now in `main` and verified against 
 - **Pre-flight IFC guards** — `src/lib/ifc-guards.ts` (`validateIfcBuffer()`) with buffer size and STEP signature checks
 - **Validator worker** — `src/workers/validator.worker.ts` runs `IfcAPI` off the main thread; emits `tree`, `partial`, and `done` messages
 - **Validation orchestrator** — `src/lib/validator.ts` (`runValidation()`): pre-flight check, in-memory result cache, streaming partial issues, worker error recovery
-- **Auto spatial tree on load** — `buildSpatialTree()` called fire-and-forget from `loader.ts` after every model load
+- **Auto spatial tree on load** — `buildSpatialTree()` called fire-and-forget from `loader.ts` after every model load *(since D-29: the background `index` phase of each load job)*
 - **16 validation rules** — RULE_EMPTY_NAME, RULE_EMPTY_LONGNAME, RULE_DUPLICATE_NAME, RULE_NAMING_CONVENTION, RULE_MISSING_TYPE, RULE_DUPLICATE_GUID, RULE_MISSING_PROPERTY_SET, RULE_ORPHAN_ELEMENT, RULE_WRONG_CONTAINER, RULE_BROKEN_AGGREGATE, RULE_INVALID_GUID_FORMAT, RULE_SPATIAL_HIERARCHY, RULE_CIRCULAR_REFERENCE, RULE_EMPTY_PROPERTY_VALUE, RULE_MISSING_MATERIAL, RULE_ELEMENT_IN_BUILDING
 - **Spatial tree** — `ModelTree.tsx` renders the hierarchy, virtualised with `@tanstack/react-virtual`
 - **Inline editing in tree** — Name, LongName, Description editable inline; GlobalId regenerable via confirmation modal
@@ -194,7 +208,7 @@ These were not on the priority table but are now in `main` and verified against 
 **Goal:** Make the app faster for large models, add camera presets, model transform controls, scene management foundation, typed error hierarchy, and quantity takeoff.
 
 **Delivered:**
-- **Cache version prefix** — `CACHE_VERSION = 'v2'` prepended to all OPFS keys
+- **Cache version prefix** — `CACHE_VERSION = 'v2'` prepended to all OPFS keys *(later bumped to `v3` when the converter stopped applying `COORDINATE_TO_ORIGIN`; current key `v3:<name>:<size>:<lastModified>`)*
 - **Streaming validation progress** — live `N%` in Toolbar Validate button with animated underline bar
 - **Cancel validation** — `cancelValidation()` terminates worker mid-run
 - **IFC schema version check** — `RULE_INVALID_IFC_VERSION` (17th rule, `info` severity): detects IFC2x3 and suggests IFC4/4X3
@@ -210,7 +224,7 @@ These were not on the priority table but are now in `main` and verified against 
 
 **Constraints introduced:**
 - `ValidationIssue.globalId` is now `string | null`. Null-check before passing to `buildFixGuidCommand`.
-- OPFS cache key format changed to `v2:<name>:<size>:<lastModified>`. Existing `v1` entries are orphaned.
+- OPFS cache key format changed to `v2:<name>:<size>:<lastModified>`. Existing `v1` entries are orphaned. *(Now `v3:` — see Sprint 2's superseded note. The `v2` entries were orphaned the same way. Being the least recently used, they are the first to go when the cache needs room.)*
 - All user-facing model transforms must go through `modelPivot` — not `model.object.matrix` directly.
 - `sceneStore` holds only serialisable data. Three.js geometry stays in `viewer.ts`.
 
@@ -274,7 +288,7 @@ These were not on the priority table but are now in `main` and verified against 
 **Constraints introduced:**
 - `modelRegistry` is the authority for IFC buffers per model. Do not read `modelStore.ifcBuffer` for multi-model operations.
 - `getDiffsForModel(modelId)` filters the diff history by modelId. Always pass modelId when building export payloads.
-- Clearing history (`clearHistory()`) must only happen in `handleNavigateToLanding`, never during `loadFile`.
+- Clearing history (`clearHistory()`) must only happen in `handleNavigateToLanding`, never during `loadFile`. *(Since D-29 there is no `loadFile` pipeline. The rule reads "never from a load path": not the `beforeSubmit` or `onModelLoaded` hooks. The first-model reset of D-19 now runs in `beforeSubmit` when the scene is empty and nothing is loading.)*
 - Transform callbacks in ScenePanel must pass explicit `model.id` — not rely on "active model" in the viewer.
 
 ---
@@ -418,22 +432,24 @@ BCF (BIM Collaboration Format) is the open standard for IFC issue communication.
 - Tile the model into chunks using `OBC.ModelTiler` (fragmented streaming format)
 - Load-in tiles based on camera frustum
 - Progressive level-of-detail: full geometry when close, simplified mesh at distance
-- `loader.ts` extended: detect tiled models vs single-file models
+- `loader.ts` extended: detect tiled models vs single-file models *(today this would be a new source adapter or phase in `src/lib/loading/`, not `loader.ts`; fragments v3 already streams tiles, LOD and culling from its own workers, see `docs/MODEL_LOADING.md` technology evaluation)*
 
 **Worker pool** — Replace single validator worker with a pool of 2–4 workers
 - Parallel rule execution (assign rule subsets to different workers)
 - Reduces validation time proportionally for large models
 
+> *Status 2026-09:* partly happened outside this deferred sprint. The validator runs as a two-slot pool, each slot taking half the rules. IFC conversion has its own pool (`IfcConvertPool`, D-29), but the convert lane admits **one** conversion at a time, because concurrent web-ifc conversions were measured to be slower each.
+
 **Constraints to add:**
 - WebGPU renderer must be behind a user-visible toggle — do not auto-switch without notice.
-- LOD tiling changes the model binary format; add `v3` OPFS cache prefix if tile format changes.
-- Worker pool must implement graceful shutdown (terminate all workers on dispose).
+- LOD tiling changes the model binary format; bump the OPFS cache prefix if tile format changes (`v3` is already taken by the `COORDINATE_TO_ORIGIN` change, so the next is `v4`).
+- Worker pool must implement graceful shutdown (terminate all workers on dispose). *(The IFC convert pool does: `resetLoading()` → `terminateAll()`; idle workers are reaped after 60 s.)*
 
 ---
 
 ## Sprint 11 — Point Clouds + Scan-to-BIM + AR
 
-**Status:** ❌ KILLED (resolution 2026-05-29). Different product, different buyer (surveyors, not BIM coordinators), and multi-GB scan files violate the "don't cache large files" constraint and the no-backend invariant. Not a fit. See Roadmap v2 above.  
+**Status:** ❌ KILLED (resolution 2026-05-29). Different product, different buyer (surveyors, not BIM coordinators), and multi-GB scan files violate the "don't cache large files" constraint and the no-backend invariant. Not a fit. See Roadmap v2 above. *(Partly reversed: point-cloud overlays shipped later, client-side and flag-gated, via `point-cloud.worker.ts` and streamed COPC; see `docs/POINT_CLOUD.md`. E57 is not supported; scan-to-BIM and AR remain killed. The plan below is historical.)*  
 **Goal:** Support point cloud overlays (LAS/LAZ, E57) for scan-to-BIM workflows, and add basic AR mode for on-site IFC viewing.
 
 ### Planned deliveries
@@ -490,4 +506,4 @@ BCF (BIM Collaboration Format) is the open standard for IFC issue communication.
 
 ---
 
-*Last updated: 2026-06-21 (doc-sync against code) · Sprints 1–9 complete (incl. BCF) · Shipped since: IDS 1.0, 3D Map/GIS, embed+SDK, mobile UI, invite/attribution, validation hardening · Validator = 44 rules · Roadmap v2 (distribution-led) + Solibri-parity backlog are the authoritative forward plan — see top of file · Old Sprints 10–12 deferred/killed*
+*Last updated: 2026-09-24 (model loading & orchestration — D-29, `docs/MODEL_LOADING.md`; Sprint 2/5/6/10 loading notes annotated) · Previous: 2026-06-21 (doc-sync against code) · Sprints 1–9 complete (incl. BCF) · Shipped since: IDS 1.0, 3D Map/GIS, embed+SDK, mobile UI, invite/attribution, validation hardening, queued multi-model loading · Validator = 44 rules · Roadmap v2 (distribution-led) + Solibri-parity backlog are the authoritative forward plan — see top of file · Old Sprints 10–12 deferred/killed*

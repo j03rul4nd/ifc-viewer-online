@@ -11,7 +11,8 @@
 //     so cross-referencing between stores is a single lookup.
 //
 // Lifecycle:
-//   register()    — called by loader.ts after viewer.loadFragments() succeeds.
+//   register()    — called by the loading system's commit (src/lib/loading/index.ts)
+//                   after viewer.loadFragments() succeeds, before `model:loaded`.
 //   unregister()  — called when a model is explicitly removed from the scene.
 //   clear()       — called on navigate-to-landing (full reset).
 

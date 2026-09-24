@@ -13,6 +13,15 @@ import { createOverlayController, type SeverityFilter, type OverlayMaterials } f
 import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
 import { clearInspectorTarget } from './inspector'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
+import { createLogger } from './logger'
+import { mintModelId } from './loading/model-id'
+import {
+  isAbortError, isFragmentsLoadAborted, loadCancelledError, pickActiveAfterDiscard,
+  pollModelIdle, stageFraction, throwIfLoadAborted, type ModelIdleResult,
+} from './loading/viewer-abort'
+import type { RenderStats } from './loading/controller'
+
+const log = createLogger('Viewer')
 
 // ─── Palette & label tables ──────────────────────────────────────────────────
 
@@ -249,6 +258,43 @@ export interface OverlayApplyOptions {
   xray?: boolean
 }
 
+/**
+ * Where a `loadFragments` call is, as reported by the code doing it:
+ *   decompressing / parsing / generating — fragments' own worker stages
+ *     (`generating` carries a real 0..1 fraction; the other two report 1 when
+ *     they finish, never a partial value);
+ *   setup — categories, type map and palette on the main thread (no fraction);
+ *   done  — the model is registered, painted and (optionally) framed.
+ * fragments also emits a `done` of its own when its worker finishes; it is NOT
+ * forwarded, because at that point the model is not usable yet — `done` here
+ * means the whole call succeeded, and it is always the last stage reported.
+ */
+export type LoadFragmentsStage = 'decompressing' | 'parsing' | 'generating' | 'setup' | 'done'
+
+export interface LoadFragmentsOptions {
+  /**
+   * Scene id to register the model under. The loading manager mints it before
+   * the job starts (see loading/model-id.ts) so it can cancel and correlate the
+   * load; omitted, the viewer mints one the same way.
+   */
+  modelId?: string
+  /**
+   * Cancels the load. Before fragments has the model it is aborted inside the
+   * worker (`core.abort`); after, the viewer undoes everything it registered.
+   * Either way the call rejects with DOMException('Load cancelled', 'AbortError')
+   * and the scene is left as it was before the call.
+   */
+  signal?: AbortSignal
+  /** Real stages with their fraction (null = no measurable progress). */
+  onStage?: (stage: LoadFragmentsStage, fraction: number | null) => void
+  /**
+   * Frame the camera on the new model (default true — the historic behaviour).
+   * false leaves the camera alone and only retunes near/far/fog to every loaded
+   * model, so a model that lands off-screen is not clipped or fogged out.
+   */
+  frame?: boolean
+}
+
 export interface ViewerAPI {
   loadIfc(
     file: File,
@@ -258,18 +304,57 @@ export interface ViewerAPI {
     modelObject: unknown
     getElementInfo: (id: string) => SelectedInfo | null
   }>
+  /**
+   * Add a fragments model to the scene (never replaces the loaded ones).
+   *
+   * `buffer` decides who pays for the copy into the fragments worker:
+   *   ArrayBuffer — TRANSFERRED (zero-copy). The caller's buffer is detached
+   *     (byteLength 0) the moment the load starts; write it to a cache first.
+   *   Uint8Array  — structured-cloned (copied); the caller keeps its bytes.
+   *     The historic behaviour, and what the blog embed relies on.
+   *
+   * `onProgress` keeps its historic fixed milestones (5…100) for old callers;
+   * `options.onStage` reports the real stages. Rejects with an AbortError when
+   * `options.signal` cancels it; on any rejection nothing of the model is left
+   * in the scene or the viewer's maps, and the previously active model is
+   * active again.
+   */
   loadFragments(
-    buffer: Uint8Array,
+    buffer: Uint8Array | ArrayBuffer,
     fileName: string,
     fileSize?: number,
     onProgress?: (pct: number) => void,
+    options?: LoadFragmentsOptions,
   ): Promise<{
     modelInfo: ModelInfo
     modelObject: unknown
     getElementInfo: (id: string) => SelectedInfo | null
-    /** Stable ID assigned to this model load. Same ID used in sceneStore, modelRegistry, validationStore. */
+    /**
+     * Scene id of this model — `options.modelId` when given, else minted here.
+     * Same id used in sceneStore, modelRegistry, validationStore.
+     */
     modelId: string
   }>
+  /** True while `modelId` is loaded in the viewer (registered and not removed). */
+  hasModel(modelId: string): boolean
+  /**
+   * Resolve once a loaded model has finished streaming its current view to the
+   * GPU (fragments `isBusy` false on two consecutive polls, 100 ms apart).
+   * 'missing' when the model is not loaded or is removed meanwhile, 'timeout'
+   * after `timeoutMs` of wall time, 'aborted' when `signal` fires. Never
+   * rejects. Polls on timers, so it also ends in a hidden pane or background
+   * tab, where requestAnimationFrame never fires: if streaming stalls there,
+   * the answer is 'timeout', never a hang.
+   */
+  waitForModelIdle(modelId: string, timeoutMs: number, signal?: AbortSignal): Promise<ModelIdleResult>
+  /**
+   * three.js renderer counters for the Loading Center's Advanced view, or null
+   * when the renderer cannot be read. `calls`/`triangles` are for the LAST
+   * render call (three resets them per call): with quality mode
+   * (postproduction) on, that is only the last pass of the frame.
+   * `geometries`/`textures`/`programs` are live GPU allocations.
+   */
+  getRenderStats(): RenderStats | null
   /**
    * Fetches real IFC data for a given expressId.
    * Pass modelId to target a specific loaded model; omit to query the current model.
@@ -1854,17 +1939,77 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   // ─── Setup post-carga ─────────────────────────────────────────────────────
 
+  /**
+   * World-space union of every loaded model's box, pivot transforms applied.
+   * Empty when nothing has geometry. Shared by frameAllModels and by unframed
+   * loads, which must retune the scene to ALL models without moving the camera.
+   */
+  function combinedModelsBox(): THREE.Box3 {
+    const combined = new THREE.Box3()
+    for (const [mid, model] of modelObjects) {
+      const box   = model.box
+      const pivot = modelPivots.get(mid)
+      if (box.isEmpty()) continue
+      if (pivot) {
+        pivot.updateMatrixWorld(true)
+        const m = pivot.matrixWorld
+        // Transform all 8 corners: a rotated/scaled pivot turns the box into an
+        // oriented box, and the AABB of just min+max would be wrong. (Same pattern
+        // as getModelBounds.)
+        const corners: THREE.Vector3[] = [
+          new THREE.Vector3(box.min.x, box.min.y, box.min.z),
+          new THREE.Vector3(box.max.x, box.min.y, box.min.z),
+          new THREE.Vector3(box.min.x, box.max.y, box.min.z),
+          new THREE.Vector3(box.max.x, box.max.y, box.min.z),
+          new THREE.Vector3(box.min.x, box.min.y, box.max.z),
+          new THREE.Vector3(box.max.x, box.min.y, box.max.z),
+          new THREE.Vector3(box.min.x, box.max.y, box.max.z),
+          new THREE.Vector3(box.max.x, box.max.y, box.max.z),
+        ]
+        for (const v of corners) combined.expandByPoint(v.applyMatrix4(m))
+      } else {
+        combined.expandByPoint(box.min)
+        combined.expandByPoint(box.max)
+      }
+    }
+    return combined
+  }
+
+  interface SetupOptions {
+    signal?: AbortSignal
+    /** Default true: tune the scene to this model and fit the camera to it. */
+    frame?: boolean
+    onStage?: LoadFragmentsOptions['onStage']
+  }
+
   async function setupLoadedModel(
     model: FRAGS.FragmentsModel,
     modelId: string,
     fileName: string,
     fileSize: number,
     onProgress?: (pct: number) => void,
+    opts: SetupOptions = {},
   ): Promise<{ modelInfo: ModelInfo; modelObject: unknown; getElementInfo: (id: string) => SelectedInfo | null }> {
 
+    // Every await below yields to the rest of the app, which may cancel this
+    // load or remove the model outright (removeModel on an id it already
+    // knows). Carrying on would paint a disposed model and re-register the type
+    // map of a model nobody holds any more — so each await is a checkpoint, and
+    // the caller's compensation cleans up whatever was registered so far.
+    const checkpoint = (): void => {
+      throwIfLoadAborted(opts.signal)
+      if (modelObjects.get(modelId) !== model) {
+        throw new Error(`[Viewer] model "${modelId}" was removed while it was being set up`)
+      }
+    }
+
+    opts.onStage?.('setup', null)
+
     const categoryNames = await model.getCategories()
+    checkpoint()
     const regexes    = categoryNames.map((c) => new RegExp(`^${c}$`, 'i'))
     const byCategory = await model.getItemsOfCategories(regexes)
+    checkpoint()
 
     // Build a fresh per-model type map (never mutates a map from another model)
     const modelTypeMap = new Map<number, string>()
@@ -1884,17 +2029,23 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       categoryElements.set(canon, arr)
     }
 
-    // Register per-model map and update the current alias
+    // Register per-model map and update the current alias — but only while this
+    // model is still the active one. The alias must describe `currentModel`:
+    // if another load or setActiveModel took the focus during the awaits above,
+    // pointing the alias here would pair that model with this one's types.
     typeMapByModel.set(modelId, modelTypeMap)
-    expressIDToType = modelTypeMap
+    if (currentModelId === modelId) expressIDToType = modelTypeMap
 
     onProgress?.(80)
 
+    // From here on read the LOCAL map, never the alias: every await lets a
+    // concurrent load reassign `expressIDToType`, and this model would then be
+    // painted, counted and labelled with another model's types.
     // Batch setColor/setOpacity by palette entry (≤25 calls instead of one per element)
     const colorBatches:   Map<number, number[]> = new Map()
     const opacityBatches: Map<number, number[]> = new Map()
 
-    for (const [localId, rawType] of expressIDToType.entries()) {
+    for (const [localId, rawType] of modelTypeMap.entries()) {
       const pal = IFC_PALETTE[rawType] ?? IFC_PALETTE[canonicalType(rawType)]
       if (!pal) continue
       const cb = colorBatches.get(pal.color) ?? []; cb.push(localId); colorBatches.set(pal.color, cb)
@@ -1906,13 +2057,23 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     for (const [hex, ids] of colorBatches)       await model.setColor(ids, new THREE.Color(hex))
     for (const [opacity, ids] of opacityBatches) await model.setOpacity(ids, opacity)
+    checkpoint()
 
     onProgress?.(90)
 
-    const box = model.box
-    if (!box.isEmpty()) {
-      tuneSceneToBounds(box)
-      void world.camera.controls.fitToBox(box, true)
+    if (opts.frame !== false) {
+      const box = model.box
+      if (!box.isEmpty()) {
+        tuneSceneToBounds(box)
+        void world.camera.controls.fitToBox(box, true)
+      }
+    } else {
+      // Unframed (a federated member landing behind the one being looked at):
+      // leave the camera where the user put it, but size near/far/fog to the
+      // whole scene — tuned to the previous models alone, a model that lands
+      // beyond them would be clipped by `far` or buried in fog.
+      const all = combinedModelsBox()
+      if (!all.isEmpty()) tuneSceneToBounds(all)
     }
 
     void fragmentsManager.core.update()
@@ -1932,19 +2093,90 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     const modelInfo: ModelInfo = {
       fileName,
       fileSize,
-      elementCount: expressIDToType.size,
+      elementCount: modelTypeMap.size,
       categories,
     }
 
+    // Closes over THIS model's map: the alias would answer for whichever model
+    // is active when a caller asks, which is not necessarily this one.
     const getElementInfo = (id: string): SelectedInfo | null => {
       const localId = parseInt(id, 10)
-      const rawType = expressIDToType.get(localId) ?? 'IFCELEMENT'
+      const rawType = modelTypeMap.get(localId) ?? 'IFCELEMENT'
       const canon   = canonicalType(rawType)
       const name    = `${IFC_DISPLAY_NAMES[canon] ?? prettyType(canon)} #${localId}`
       return { id, name, type: rawType, storey: '', modelId }
     }
 
     return { modelInfo, modelObject: model, getElementInfo }
+  }
+
+  /**
+   * Undo a loadFragments call that got its model from fragments but did not
+   * finish — cancelled during setup, or setup threw. Leaves the viewer as the
+   * call found it: no pivot in the scene, no entry in any per-model map, the
+   * fragments model disposed on both threads, and the focus back on the model
+   * that had it. Before this, a throwing setup left the model drawn in the
+   * scene and registered in every map, with no id handed to anyone who could
+   * remove it.
+   *
+   * Never throws: it runs on the way out of a failure the caller is about to
+   * rethrow, and must not replace that error with its own.
+   */
+  async function discardUncommittedLoad(
+    modelId: string,
+    model: FRAGS.FragmentsModel,
+    previousActiveId: string | null,
+    anchorsScene: boolean,
+  ): Promise<void> {
+    // The maps are keyed by id; only clear them if the id is still ours
+    // (removeModel may have run during setup, and a later load could in
+    // principle have reused the id since).
+    const ownsId = !modelObjects.has(modelId) || modelObjects.get(modelId) === model
+    if (ownsId) {
+      const pivot = modelPivots.get(modelId)
+      if (pivot) world.scene.three.remove(pivot)
+      modelPivots.delete(modelId)
+      pivotTransforms.delete(modelId)
+      modelObjects.delete(modelId)
+      modelCoordination.delete(modelId)
+      typeMapByModel.delete(modelId)
+      modelHidden.delete(modelId)
+      if (hoveredModelId  === modelId) { hoveredLocalId  = null; hoveredModelId  = null }
+      if (selectedModelId === modelId) {
+        selectedLocalId = null
+        selectedModelId = null
+        try { removeSelectionBox() } catch { /* a helper box is not worth masking the load error */ }
+      }
+      overlay.forget(modelId)
+    }
+
+    // Hand the focus back — only if this model still has it. Something that
+    // moved it meanwhile (setActiveModel, removeModel's own promotion) wins.
+    if (currentModel === model) {
+      const nextId = pickActiveAfterDiscard(previousActiveId, modelObjects.keys())
+      currentModel    = nextId ? (modelObjects.get(nextId) ?? null) : null
+      currentModelId  = nextId
+      currentPivot    = nextId ? (modelPivots.get(nextId) ?? null) : null
+      expressIDToType = nextId ? (typeMapByModel.get(nextId) ?? new Map()) : new Map()
+    }
+
+    try {
+      await model.dispose()
+    } catch (err) {
+      log.warn(`discarding "${modelId}": dispose failed`, err)
+    }
+
+    // fragments takes the scene's coordinate base from the first model it
+    // loads, and keeps it. If that was this model and nothing else is loaded,
+    // the next model would be offset against a datum no longer in the scene —
+    // so the base goes too, and the next model anchors the scene as it should.
+    try {
+      if (anchorsScene && fragmentsManager.core.models.list.size === 0) {
+        fragmentsManager.core.baseCoordinates = null
+      }
+    } catch { /* fragments internals changed — keep the base */ }
+
+    void fragmentsManager.core.update()
   }
 
   async function teardownCurrentModel(): Promise<void> {
@@ -1990,7 +2222,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const buffer = new Uint8Array(await file.arrayBuffer())
       onProgress?.(25)
 
-      const assignedId = `${file.name}-${Date.now()}`
+      const assignedId = mintModelId(file.name)
 
       let model: FRAGS.FragmentsModel
       try {
@@ -2033,61 +2265,148 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       return setupLoadedModel(model, assignedId, file.name, file.size, onProgress)
     },
 
-    async loadFragments(buffer, fileName, fileSize, onProgress) {
+    async loadFragments(buffer, fileName, fileSize, onProgress, options) {
+      const signal = options?.signal
+      throwIfLoadAborted(signal)
       await initPromise
+      // The first load waits here for the fragments worker (fetched when the
+      // viewer starts); a cancel that landed meanwhile must not start a parse.
+      throwIfLoadAborted(signal)
       // Do NOT teardown here — multiple models can coexist in the scene.
       // Use removeModel(modelId) for explicit unloading.
 
       onProgress?.(5)
-      const modelId = `${fileName}-${Date.now()}`
-
-      let model: FRAGS.FragmentsModel
-      try {
-        model = await fragmentsManager.core.load(buffer, {
-          modelId,
-          camera: world.camera.three,
-          onProgress: (event) => {
-            const stagePercent: Record<string, number> = {
-              decompressing: 20, parsing: 45, generating: 65, done: 75,
-            }
-            onProgress?.(stagePercent[event.stage] ?? 50)
-          },
-        })
-      } catch (err) {
-        console.error('[Viewer] loadFragments error:', err)
-        throw err
+      // The loading manager mints the id before the job starts, so it can abort
+      // and correlate the load; direct callers (the blog embed, the legacy
+      // loader) still get one minted here, in the same shape.
+      const modelId = options?.modelId ?? mintModelId(fileName)
+      if (modelObjects.has(modelId) || fragmentsManager.core.models.list.has(modelId)) {
+        // fragments keys its model list by id and would silently replace the
+        // loaded model's entry: two models drawn, one of them unreachable.
+        throw new Error(`[Viewer] loadFragments: model id "${modelId}" is already loaded`)
       }
 
-      const pivot = new THREE.Group()
-      pivot.name = `ifc-model-pivot-${modelId}`
-      world.scene.three.add(pivot)
-      pivot.add(model.object)
-      modelPivots.set(modelId, pivot)
-      pivotTransforms.set(modelId, { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: 1 })
+      // A progress listener is the caller's code; it must never fail the load
+      // (or, called from inside fragments' message handler, break fragments).
+      const stage = (s: LoadFragmentsStage, fraction: number | null): void => {
+        if (!options?.onStage) return
+        try { options.onStage(s, fraction) } catch (err) { log.warn('loadFragments onStage listener threw', err) }
+      }
 
-      currentModel   = model
-      currentModelId = modelId
-      currentPivot   = pivot
-      modelObjects.set(modelId, model)
+      // What a cancelled or failed load has to put back.
+      const previousActiveId = currentModelId
+      const anchorsScene     = fragmentsManager.core.baseCoordinates === null
 
-      // Record whatever the loader did to this model's datum, rather than
-      // assuming it did nothing. The converter no longer translates models to
-      // the origin, so this is normally zero — but `loadIfc` still asks for
-      // coordination, and a library default can change under us again. Reading
-      // it once and handing it to whoever needs it is what stops that from
-      // silently misplacing every coordinate-registered thing in the scene.
+      // fragments' own cancel: the worker checks between its stages and rejects
+      // the pending load. It cannot interrupt a stage (inflate is one
+      // synchronous call) and is a no-op once the worker has finished — the
+      // checks after the await cover that window.
+      const onAbort = (): void => {
+        try { fragmentsManager.core.abort(modelId) } catch { /* nothing in flight */ }
+      }
+      signal?.addEventListener('abort', onAbort, { once: true })
+
+      let model: FRAGS.FragmentsModel | null = null
       try {
-        const t = new THREE.Vector3().setFromMatrixPosition(await model.getCoordinationMatrix())
-        if (Number.isFinite(t.x) && Number.isFinite(t.y) && Number.isFinite(t.z)) {
-          modelCoordination.set(modelId, { x: t.x, y: t.y, z: t.z })
+        try {
+          model = await fragmentsManager.core.load(buffer, {
+            modelId,
+            camera: world.camera.three,
+            onProgress: (event) => {
+              const stagePercent: Record<string, number> = {
+                decompressing: 20, parsing: 45, generating: 65, done: 75,
+              }
+              onProgress?.(stagePercent[event.stage] ?? 50)
+              // fragments' own 'done' is its worker finishing, not this call
+              // (see LoadFragmentsStage) — ours is reported after setup.
+              if (event.stage !== 'done') stage(event.stage, stageFraction(event.progress))
+            },
+          })
+        } catch (err) {
+          // fragments already disposed its partial model on both threads.
+          if (signal?.aborted || err instanceof FRAGS.LoadAbortedError || isFragmentsLoadAborted(err)) {
+            throw loadCancelledError()
+          }
+          log.error('loadFragments error:', err)
+          throw err
+        }
+        throwIfLoadAborted(signal)
+
+        const pivot = new THREE.Group()
+        pivot.name = `ifc-model-pivot-${modelId}`
+        world.scene.three.add(pivot)
+        pivot.add(model.object)
+        modelPivots.set(modelId, pivot)
+        pivotTransforms.set(modelId, { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: 1 })
+
+        currentModel   = model
+        currentModelId = modelId
+        currentPivot   = pivot
+        modelObjects.set(modelId, model)
+
+        // Record whatever the loader did to this model's datum, rather than
+        // assuming it did nothing. The converter no longer translates models to
+        // the origin, so this is normally zero — but `loadIfc` still asks for
+        // coordination, and a library default can change under us again. Reading
+        // it once and handing it to whoever needs it is what stops that from
+        // silently misplacing every coordinate-registered thing in the scene.
+        try {
+          const t = new THREE.Vector3().setFromMatrixPosition(await model.getCoordinationMatrix())
+          if (Number.isFinite(t.x) && Number.isFinite(t.y) && Number.isFinite(t.z)) {
+            modelCoordination.set(modelId, { x: t.x, y: t.y, z: t.z })
+          }
+        } catch {
+          // Older fragments build without the accessor. Absent beats invented:
+          // callers read null as "unknown" and leave positions alone.
+        }
+        throwIfLoadAborted(signal)
+
+        const result = await setupLoadedModel(model, modelId, fileName, fileSize ?? 0, onProgress, {
+          signal,
+          frame: options?.frame,
+          onStage: stage,
+        })
+        stage('done', 1)
+        return { ...result, modelId }
+      } catch (err) {
+        // A cancel can surface as any error from the call it interrupted; the
+        // signal is the truth. Either way nothing of this model may stay behind.
+        const cancelled = signal?.aborted === true || isAbortError(err)
+        if (model) {
+          if (!cancelled) log.error(`loadFragments: setup of "${modelId}" failed — model discarded:`, err)
+          await discardUncommittedLoad(modelId, model, previousActiveId, anchorsScene)
+        }
+        if (cancelled) throw isAbortError(err) ? err : loadCancelledError()
+        throw err
+      } finally {
+        signal?.removeEventListener('abort', onAbort)
+      }
+    },
+
+    hasModel(modelId: string): boolean {
+      return modelObjects.has(modelId)
+    },
+
+    waitForModelIdle(modelId: string, timeoutMs: number, signal?: AbortSignal) {
+      return pollModelIdle(() => {
+        const model = modelObjects.get(modelId)
+        return model ? model.isBusy : null
+      }, { timeoutMs, signal })
+    },
+
+    getRenderStats(): RenderStats | null {
+      try {
+        const info = wr.info
+        return {
+          calls:      info.render.calls,
+          triangles:  info.render.triangles,
+          geometries: info.memory.geometries,
+          textures:   info.memory.textures,
+          programs:   info.programs?.length ?? 0,
         }
       } catch {
-        // Older fragments build without the accessor. Absent beats invented:
-        // callers read null as "unknown" and leave positions alone.
+        return null
       }
-
-      const result = await setupLoadedModel(model, modelId, fileName, fileSize ?? 0, onProgress)
-      return { ...result, modelId }
     },
 
     // ─── getItemData ─────────────────────────────────────────────────────────
@@ -2572,33 +2891,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     frameAllModels() {
       if (modelObjects.size === 0) return
-      const combined = new THREE.Box3()
-      for (const [mid, model] of modelObjects) {
-        const box   = model.box
-        const pivot = modelPivots.get(mid)
-        if (box.isEmpty()) continue
-        if (pivot) {
-          pivot.updateMatrixWorld(true)
-          const m = pivot.matrixWorld
-          // Transform all 8 corners: a rotated/scaled pivot turns the box into an
-          // oriented box, and the AABB of just min+max would be wrong. (Same pattern
-          // as getModelBounds.)
-          const corners: THREE.Vector3[] = [
-            new THREE.Vector3(box.min.x, box.min.y, box.min.z),
-            new THREE.Vector3(box.max.x, box.min.y, box.min.z),
-            new THREE.Vector3(box.min.x, box.max.y, box.min.z),
-            new THREE.Vector3(box.max.x, box.max.y, box.min.z),
-            new THREE.Vector3(box.min.x, box.min.y, box.max.z),
-            new THREE.Vector3(box.max.x, box.min.y, box.max.z),
-            new THREE.Vector3(box.min.x, box.max.y, box.max.z),
-            new THREE.Vector3(box.max.x, box.max.y, box.max.z),
-          ]
-          for (const v of corners) combined.expandByPoint(v.applyMatrix4(m))
-        } else {
-          combined.expandByPoint(box.min)
-          combined.expandByPoint(box.max)
-        }
-      }
+      const combined = combinedModelsBox()
       if (!combined.isEmpty()) {
         tuneSceneToBounds(combined)
         void world.camera.controls.fitToBox(combined, true)
@@ -2706,7 +2999,16 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
       pivotTransforms.delete(modelId)
 
-      await model.dispose()
+      // A dispose that throws (worker already gone, a tile half-deleted) must
+      // not strand the model in the maps: it is out of the scene already, and
+      // the callers go on to drop it from every store. Leaving it here made
+      // the id look loaded forever, and every loop over the loaded models
+      // (raycast, filters, framing) kept visiting a disposed one.
+      try {
+        await model.dispose()
+      } catch (err) {
+        log.error(`removeModel: dispose of "${modelId}" failed — dropping it anyway:`, err)
+      }
       modelObjects.delete(modelId)
       modelCoordination.delete(modelId)
       typeMapByModel.delete(modelId)

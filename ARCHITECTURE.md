@@ -12,7 +12,7 @@ ifc/
 │   ├── components/
 │   │   ├── Landing.tsx               # Marketing/hero page with SEO meta, JSON-LD, FAQ schema
 │   │   ├── Viewer.tsx                # Three.js canvas wrapper; bridges React and ViewerAPI
-│   │   ├── Toolbar.tsx               # Top bar: file name, load status, export dropdown/modal, Scene button
+│   │   ├── Toolbar.tsx               # Top bar: file name, loading chip (opens the Loading Center), export dropdown/modal, Scene button
 │   │   ├── Sidebar.tsx               # Right panel: Properties, Categories, Quantities tabs; takeoff panel
 │   │   ├── ModelTree.tsx             # Spatial hierarchy tree (virtualised); full modelId threading
 │   │   ├── ValidationPanel.tsx       # Validation report: severity/rule filters + model filter chips
@@ -26,7 +26,8 @@ ifc/
 │   │   ├── SectionPanel.tsx         # Clipping planes / section cuts
 │   │   ├── EmbedModal.tsx           # Embed snippet generator (iframe + SDK)
 │   │   ├── DemoGallery.tsx          # Curated public demo-model picker
-│   │   ├── ScenePanel.tsx           # Multi-model manager: visibility, isolate, frame, delete, transforms
+│   │   ├── ScenePanel.tsx           # Multi-model manager: visibility, isolate, frame, delete, transforms;
+│   │   │                             #   "Loading" section (per-batch / per-member load status)
 │   │   ├── CaptureToolbar.tsx       # Capture Toolkit: screenshot + replay capture buttons (Toolbar zone D)
 │   │   ├── CapturePreviewModal.tsx  # Clip preview: trim, fps, resolution, watermark, PNG/WebM/GIF export (lazy)
 │   │   ├── TourPlayer.tsx           # Tour Mode playback bar: prev/next, D-22 fix text, isolate, capture,
@@ -36,9 +37,16 @@ ifc/
 │   │   ├── CameraControls.tsx        # Floating camera preset panel (ISO/Top/Front/Right + numpad)
 │   │   ├── ModelInfoPanel.tsx        # Floating pill: active model file size, element count, health badges
 │   │   ├── mobile/                  # MobileBottomNav + bottom-sheet IDS/Validation panels (useIsMobile)
+│   │   ├── loading/                 # Loading UI (reads loadingStore only): LoadingIndicator (toolbar chip ·
+│   │   │                             #   floating variant for toolbar-less presets · mobile pill), LoadingCenter
+│   │   │                             #   (desktop popover / mobile sheet, Basic ↔ Advanced), FirstLoadCard
+│   │   │                             #   (empty-scene phase checklist), SceneLoadingSection (ScenePanel);
+│   │   │                             #   job-view.ts = pure view-model (phase lines, wait reasons, ETA gates)
 │   │   ├── InviteRibbon/View/...    # Personalized invite + attribution UI
 │   │   ├── ErrorBoundary.tsx         # React error boundary; DefaultFallback; withErrorBoundary HOC
-│   │   ├── UploadOverlay.tsx         # Modal: drag-and-drop zone + progress bar
+│   │   ├── UploadOverlay.tsx         # Import dialog: multi-file drop/pick → per-file checks, review,
+│   │   │                             #   duplicate warning, large-file notice → one submission to the queue
+│   │   │                             #   (closes on submit; progress lives in the Loading Center)
 │   │   ├── ToastContainer.tsx        # Non-blocking toast notification renderer
 │   │   └── Icons.tsx                 # All SVG icons as React components (single source of truth)
 │   │
@@ -50,9 +58,11 @@ ifc/
 │   │   ├── useElementFocus.ts        # Encapsulates jumpTo / select / frame / revealInTree handlers
 │   │   ├── usePersistedPreferences.ts# Hydrates treeWidth/treeVisible from localStorage; debounce-saves
 │   │   ├── useKeyboardShortcuts.ts   # Input-aware global keyboard shortcut handler (skips editable targets)
-│   │   ├── useIfcUploadFlow.ts       # Upload drag-and-drop flow hook
+│   │   ├── useIfcUploadFlow.ts       # Import dialog orchestrator: checks + fingerprints + duplicates →
+│   │   │                             #   loadingController.submitFiles / openExisting
 │   │   ├── useCanvasReplayBuffer.ts  # DVR replay buffer: 2 staggered MediaRecorders on canvas.captureStream
-│   │   └── useUploadStateMachine.ts  # FSM for upload overlay states
+│   │   └── useUploadStateMachine.ts  # FSM for the import dialog (idle/dragging → preparing → review |
+│   │                                 #   duplicate | error → submitting); no parse/progress states any more
 │   │
 │   ├── lib/
 │   │   ├── viewer.ts                 # createViewer() factory — multi-model ViewerAPI
@@ -60,8 +70,20 @@ ifc/
 │   │   │                             #   getBestHit() iterates all models
 │   │   │                             #   setCameraPreset, setModelTransform(t, modelId?)
 │   │   │                             #   getModelBounds(modelId?), frameAllModels(), isolateModel(id)
-│   │   ├── loader.ts                 # useIfcLoader() hook — OPFS + worker pipeline + auto-tree trigger
-│   │   │                             #   emits model:loaded with { modelId } on appBus
+│   │   ├── loading/                  # Model loading & orchestration — see docs/MODEL_LOADING.md, D-29
+│   │   │                             #   load-manager.ts   jobs · batches · lanes · retries · events · metrics
+│   │   │                             #   scheduler.ts      pure lane decisions (network 2 · convert 1 · attach 1, anchor-first)
+│   │   │                             #   resource-policy / retry-policy / phases / fingerprint / model-id
+│   │   │                             #   ifc-source.ts     the IFC pipeline as an adapter (download → … → commit → stream → index)
+│   │   │                             #   ifc-convert-pool  ifc-parser workers on demand; cancel = terminate()
+│   │   │                             #   external-sources  point cloud / mesh / GIS loads mirrored as tracked jobs
+│   │   │                             #   index.ts          app wiring: singleton manager, commit, appBus/store bridges
+│   │   │                             #   controller.ts     what the UI calls (cancel, retry, hold, reprioritise…)
+│   │   ├── loader.ts                 # useIfcLoader() — thin React face of the loading system: installs the
+│   │   │                             #   viewer getter + App's LoadingHooks, memory/OPFS readouts, and
+│   │   │                             #   promise-returning loadFile/loadFiles/loadUrls/loadBytes (never reject)
+│   │   ├── embed-loader.ts           # Blog EmbedViewer's own fetch → parser worker → loadFragments path
+│   │   │                             #   (no OPFS, no stores; NOT routed through the LoadManager)
 │   │   ├── validator.ts              # runValidation() + buildSpatialTree() — orchestrates validator worker
 │   │   │                             #   resolves buffer/modelId from modelRegistry or sceneStore.activeModelId
 │   │   ├── diffStore.ts              # Command builders: buildRenameCommand / buildFixGuidCommand /
@@ -73,12 +95,17 @@ ifc/
 │   │   ├── worker-schemas.ts         # Zod schemas + parse helpers for all worker in/out messages
 │   │   ├── ifc-guards.ts             # validateIfcBuffer() — pre-flight buffer + signature checks
 │   │   ├── ifc-guards.test.ts        # Vitest tests for ifc-guards
-│   │   ├── opfs-cache.ts             # OPFS read/write/list/delete for fragments + IFC binaries (v2 prefix)
+│   │   ├── opfs-cache.ts             # OPFS entries (.frag + .meta.json commit marker; the engine no longer
+│   │   │                             #   writes .ifc), key prefix v3, fingerprint check on lookup, LRU budget
 │   │   ├── cache-repository.ts       # CacheRepository class — Repository pattern wrapping all OPFS I/O
+│   │   ├── fetch-ifc-url.ts          # fetchIfcFromUrl(): streamed download with byte progress + AbortSignal;
+│   │   │                             #   File.lastModified = Last-Modified header (or 0) → stable cache key
 │   │   ├── memory-tracker.ts         # getMemoryStats() + startMemoryTracking() polling
-│   │   ├── scheduler.ts              # yieldToMain() + runInChunks() scheduler wrappers
-│   │   ├── event-bus.ts              # TypedEventBus<AppEventMap> + appBus singleton
-│   │   │                             #   model:loaded carries { modelId: string }
+│   │   ├── scheduler.ts              # yieldToMain() + runInChunks() (main-thread yielding — not the
+│   │   │                             #   loading lane scheduler, which is loading/scheduler.ts)
+│   │   ├── event-bus.ts              # TypedEventBus<AppEventMap> + appBus singleton; AppEventMap is declared here
+│   │   │                             #   model:loaded { modelInfo, fromCache, cacheKey, modelId } · model:removed
+│   │   │                             #   load:queued/started/phase/progress/completed/failed/cancelled/batch-settled/idle
 │   │   ├── logger.ts                 # createLogger(channel) — structured, filterable, worker-safe logger
 │   │   ├── result.ts                 # Result<T,E> monad: ok/err/safeAsync/safe/unwrapOr/mapOk
 │   │   ├── invariant.ts              # invariant / assertDefined / assertNever / devWarn
@@ -106,7 +133,9 @@ ifc/
 │   │   ├── benchmark.ts              # Anonymous Health Score percentile benchmark
 │   │   ├── analytics.ts             # PostHog wrapper (no PII); attribution.ts = ?ref / /i/:code
 │   │   ├── utils.ts                  # clamp, lerp, formatBytes, formatDuration, debounce, throttle, …
-│   │   └── loader.test.ts            # Vitest unit tests: cache key, OPFS hit/miss, progress events
+│   │   └── loader.test.ts            # Legacy: buildCacheKey + the legacy OPFS API; most cases re-implement the
+│   │                                 #   old loader inline. Loading coverage lives in loading/*.test.ts
+│   │                                 #   (see docs/MODEL_LOADING.md "Testing")
 │   │
 │   ├── sdk/                          # IfcViewer embeddable JS SDK (iframe + postMessage bridge)
 │   │                                 #   built to public/sdk/ via `npm run build:sdk`
@@ -129,11 +158,17 @@ ifc/
 │   │   ├── waiverStore.ts            # Muted/waived validation issues (Pro control)
 │   │   ├── captureStore.ts           # Capture Toolkit: replay state, capture duration, watermark, clip preview
 │   │   ├── presentationStore.ts      # Tour Mode: tour (session-only), recorder/playback mode, step index
+│   │   ├── loadingStore.ts           # Read-only mirror of the LoadManager snapshot (≤ ~10 updates/s) +
+│   │   │                             #   Loading Center UI state; no File / buffer / worker ever stored
+│   │   ├── …                         # + eir, overlay, solar, consent, cobie, cloudAccount, pointCloud,
+│   │   │                             #   mesh, video, clipStudio (24 stores in total)
 │   │   └── toastStore.ts             # Toast queue + toast() / toastFromError() imperative helpers
-│   │                                 # All 13 stores use Zustand 5 devtools middleware + named actions
+│   │                                 # Stores use Zustand 5 devtools middleware + named actions
+│   │                                 #   (except consent, waiver, cloudAccount)
 │   │
 │   ├── workers/
-│   │   ├── ifc-parser.worker.ts      # IFC bytes → fragments binary (IfcImporter, WASM, no DOM)
+│   │   ├── ifc-parser.worker.ts      # IFC File → fragments binary (IfcImporter, WASM, no DOM); spawned on
+│   │   │                             #   demand by IfcConvertPool, reads the posted File itself
 │   │   ├── validator.worker.ts       # IFC bytes → SpatialTree + ValidationResult (IfcAPI, WASM)
 │   │   │                             #   Handles: 'validate' + 'build-tree' message types
 │   │   ├── export.worker.ts          # Apply diffs → corrected IFC binary (IfcAPI, WASM)
@@ -142,12 +177,14 @@ ifc/
 │   │   ├── bcf-parser.worker.ts      # Parse .bcfzip (BCF 2.1 / 3.0) off the main thread
 │   │   ├── geo-extract.worker.ts     # Extract georeferencing from IFC (Map mode)
 │   │   ├── geo-terrain.worker.ts     # Build 3D terrain mesh from elevation tiles (Map mode)
+│   │   ├── geo-buildings.worker.ts   # OpenStreetMap surroundings (Overpass) parsed off the main thread (Map mode)
+│   │   ├── point-cloud.worker.ts     # LAS/LAZ/COPC/PLY/PCD/text scans → GPU-ready chunks, File sliced not copied
 │   │   └── gif-export.worker.ts      # RGBA frames → animated GIF via gifenc (no WASM, streamed progress)
 │   │
 │   └── types/
 │       └── index.ts                  # All shared TypeScript interfaces and type aliases
 │
-├── docs/                             # DEPLOYMENT (Vercel), IDS_IMPLEMENTATION_PLAN, GIS_MAP_MODE,
+├── docs/                             # MODEL_LOADING (loading & orchestration), DEPLOYMENT (Vercel), IDS_IMPLEMENTATION_PLAN, GIS_MAP_MODE,
 │   │                                 #   GIS_MAP_INTEGRATION_PLAN, IFC_VIEWER_SDK, EMBED_URL_PARAMS,
 │   │                                 #   INVITE_SYSTEM, REFERENCE_IFC, SEO_PRERENDER_PLAN,
 │   │                                 #   TERRAIN_3D_IMPROVEMENT_PLAN, …
@@ -167,35 +204,43 @@ ifc/
 
 ## Data flow
 
-### IFC loading (multi-model)
+### IFC loading (multi-model, queued)
+
+Every entry point submits a job to the one `LoadManager`. The diagram is one job; several run side by side, one lane at a time. The reference is `docs/MODEL_LOADING.md`.
 
 ```mermaid
 flowchart TD
-    A[User drops .ifc file] --> B[App.tsx handleFileLoad]
-    B --> C[useIfcLoader.loadFile]
+    A1[Import dialog / global drop] --> S
+    A2[Demo gallery · companion · reload] --> S
+    A3["?model=a,b · ifcviewer:load (url[])"] --> S
+    A4[SDK add → ifcviewer:load-bytes] --> S
+    S[submitIfcFiles / Urls / Bytes\nlib/loading/index.ts\nbeforeSubmit: first-model reset D-19] --> Q[LoadManager job\nqueued · priority · batch]
 
-    C --> D{OPFS cache hit?}
+    Q --> DL{URL source?}
+    DL -- yes --> N[network lane 2, back-pressured\nfetchIfcFromUrl: byte progress\nlastModified = Last-Modified or 0]
+    DL -- no --> ID
+    N --> ID[identify\nheader sniff + f1 fingerprint]
+    ID --> CL{OPFS entry valid?\nkey v3:name:size:mtime\n+ fingerprint match\nf1 sampled · f2 full for bytes}
 
-    D -- HIT --> E[opfs-cache.loadFromCache\nUint8Array binary]
-    D -- MISS --> F[file.arrayBuffer\ntransfer to worker]
+    CL -- HIT --> AT
+    CL -- MISS --> CV[convert lane 1 · memory-admitted\nIfcConvertPool → ifc-parser.worker\nFile posted, read in the worker\ngeometry → properties → relations → serialize]
+    CV --> CW[cache-write\n.frag, then .meta.json last\nno .ifc copy]
+    CW --> AT[attach lane 1 · anchor-first\nviewer.loadFragments ArrayBuffer transferred\nmodelId minted before · signal · onStage]
+    AT --> SU[setup\ncategories · type map · palette · optional framing]
+    SU --> RD[read\nFile → ArrayBuffer for validator / IDS / export]
+    RD --> C[COMMIT commitIfcModel\nmodelRegistry.register → modelStore.setModel\n→ appBus model:loaded → App hook → sceneStore.addModel]
+    C --> BG[background: stream first view to the GPU\nthen index = buildSpatialTree\nin a convert-lane slot, background priority]
+    C --> UI[load:completed · SDK model-loaded\nloadingStore snapshot → LoadingIndicator / Center]
 
-    F --> G[ifc-parser.worker\nifcGuards pre-flight\nIfcImporter.process\nweb-ifc WASM]
-    G -- progress events --> H[setProgress UI]
-    G -- fragments binary --> I[opfs-cache.saveToCache + saveIfcBuffer\nbackground]
-    G --> E
+    Q -. cancel .-> X[terminate worker · core.abort · compensation\nreset bumps epoch → late commits refused]
+    CV -. error .-> R[retry policy per error class\nmax 3 attempts]
 
-    E --> J[viewer.loadFragments\nfragmentsManager.core.load]
-    J --> K[FragmentsModel in scene\nmodelPivots.set sceneModelId, pivot]
-    K --> L[setupLoadedModel\nbuild expressIDToType map\napply palette colours\nfit camera]
-    L --> M[sceneStore.addModel\nmodelRegistry.register\nappBus model:loaded modelId]
-
-    M --> N[buildSpatialTree — auto\nvalidator.worker build-tree]
-    M --> O[Toolbar/Sidebar update\nScenePanel model row added]
-
-    K --> P[pointermove raycasting\ngetBestHit — all models]
-    P --> Q[highlight / cursor]
-    K --> R[click → select\nhighlight + sidebar properties\nstamps modelId on selection]
+    C --> P[pointermove raycasting\ngetBestHit — all models]
+    P --> H[highlight / cursor]
+    C --> K[click → select\nhighlight + sidebar properties\nstamps modelId on selection]
 ```
+
+Point clouds, meshes and GIS context keep their own runners. `lib/loading/external-sources.ts` mirrors their store status into *tracked* jobs, so the Loading Center shows every load in flight and each row's Cancel calls that runner's own cancel. The blog `EmbedViewer` (`lib/embed-loader.ts`) is the one IFC path outside the manager.
 
 ### IFC validation + auto-tree
 
@@ -238,7 +283,7 @@ flowchart TD
     F -- Uint8Array transferred --> I
 ```
 
-> ⚠️ NOTE: `viewer.loadIfc()` (OBC IfcLoader path) still exists on ViewerAPI but is not called from App.tsx. All loads go through the worker → `loadFragments()` path.
+> ⚠️ NOTE: `viewer.loadIfc()` (OBC IfcLoader path) still exists on ViewerAPI but is not called from App.tsx. All app loads go through the LoadManager's IFC adapter, which calls `loadFragments()` (D-08, D-29).
 
 ---
 
@@ -263,6 +308,7 @@ All stores use **Zustand 5 + devtools middleware** with named actions and typed 
 | `useCaptureStore` | Capture Toolkit: replay recording status, capture duration (5/15/30 s), watermark toggle (persisted), previewed clip (Blob by reference), export progress |
 | `usePresentationStore` | Tour Mode: active `Tour` (session-only, never persisted), `mode` (idle/recording/playing), step index, isolate toggle |
 | `toastStore` | Toast queue; exposes `toast(message, level)` and `toastFromError(err, level, prefix?)` as imperative singletons |
+| `useLoadingStore` | Read-only mirror of the `LoadManager` snapshot (`jobs`, `batches`, `summary`, `session`, `policy`), published at most ~10×/s, plus the Loading Center's own UI state (open, Basic/Advanced). Components subscribe narrowly (the indicator reads `summary` only). Never holds a `File`, buffer, worker or `AbortController`, which stay inside the engine |
 
 **Cross-store facade:** `useModelSession()` hook combines stores into one stable surface for components that need cross-store derived state.
 
@@ -278,8 +324,11 @@ The imperative handle to the 3D world. Created once per Viewer component mount v
 
 | Method | Description |
 |---|---|
-| `loadFragments(buffer, fileName, fileSize?, modelId?, onProgress?)` | Load pre-parsed fragments binary; primary load path; assigns modelId to pivot |
-| `removeModel(id)` | Dispose model geometry and remove pivot from scene |
+| `loadFragments(buffer, fileName, fileSize?, onProgress?, options?)` | Add a fragments model to the scene. This is the only way into the scene. `options = { modelId, signal, onStage, frame }`. The loading manager mints `modelId` before the load (the viewer mints one only for direct callers). `signal` aborts it (fragments `core.abort` in the worker, full undo after that). `onStage` reports the real `decompressing` / `parsing` / `generating` (0..1) / `setup` stages. `frame: false` leaves the camera alone. An `ArrayBuffer` is transferred (detached) and a `Uint8Array` is copied. Any rejection leaves the scene as it was |
+| `hasModel(id)` | Whether the model is loaded (registered and not removed) |
+| `waitForModelIdle(id, timeoutMs, signal?)` | Resolves `'idle' \| 'timeout' \| 'missing' \| 'aborted'` once the model's first view has streamed (fragments `isBusy` false on two polls 100 ms apart). Timer-based, so it ends even in a hidden pane. Never rejects |
+| `getRenderStats()` | three.js renderer counters (calls, triangles, geometries, textures, programs) for the Loading Center's Advanced view |
+| `removeModel(id)` | Dispose model geometry and remove pivot from scene (the app's removal path also unregisters it and emits `model:removed`) |
 | `setActiveModel(id)` | Switch the viewer's current active model |
 | `frameActiveModel()` | Animate camera to active model's AABB |
 | `frameAllModels()` | Animate camera to union AABB of all models |
@@ -307,38 +356,56 @@ Plain JS Map (outside Zustand) storing per-model IFC buffers (`ArrayBuffer`) and
 
 | Method | Description |
 |---|---|
-| `register(id, buffer, typeMap)` | Store buffer + typeMap for a model |
+| `register(entry)` | Store `{ modelId, fileName, ifcBuffer, opfsCacheKey, expressIDToType, loadedAt }`; called once per model by the loading system's commit (`commitIfcModel`) |
 | `getBuffer(id)` | Retrieve IFC buffer for export / validation |
 | `getTypeMap(id)` | Retrieve expressIDToType map |
 | `unregister(id)` | Free buffer reference (call in handleRemoveModel) |
 | `size()` | Number of registered models |
 
+### Loading system (`src/lib/loading/`) — full reference in `docs/MODEL_LOADING.md`
+
+One `LoadManager` singleton (`getLoadManager()` in `loading/index.ts`) owns every load in flight. It is framework-agnostic: no React, store, viewer or worker imports. The policy, the clock, the heap probe and the scene model count are injected, and source adapters do the work through a `JobContext`.
+
+- **Jobs and batches.** `submit(source, kind, opts)` / `submitBatch(items, { name, groupId })`. The source is a `File`, a URL or bytes. The origin (`upload`, `drop`, `url`, `sdk`, `demo`, `companion`, `reload`, `retry`, `external`) sets the default priority: `critical 0 · high 1 · normal 2 · low 3 · background 4`. Aging lifts a waiting job one level every 45 s.
+- **Statuses:** `queued · held · running · waiting(slot | memory | exclusive | anchor | attach-lane | backoff | viewer) · loaded · failed · cancelled · unloading · removed`. `loaded` is the commit point. The background phases `stream` and `index` still run after it, and the job shows as "finishing".
+- **Lanes**, decided by the pure `scheduler.ts`:
+
+  | Lane | Capacity | Rule |
+  |---|---|---|
+  | `network` | 2 | downloads of URL sources; back-pressured: none starts while `maxConverts + 1` downloaded files still wait to convert |
+  | `convert` | 1 by default (measured — `MODEL_LOADING.md` §4) | memory-admitted; large files run alone; reserved for the anchor of an empty scene; the spatial-tree build (`index`) queues here too, at background priority |
+  | `attach` | 1 | anchor-first: the first-submitted IFC job sets fragments' coordinate base |
+
+- **Phases** are reported by the code doing the work: download bytes, IfcImporter per-class counts, fragments' `generating` fraction. Anything else is `null` (activity). The overall % is a monotonic, weighted estimate. ETA is shown only when it can be predicted.
+- **Retry** (`retry-policy.ts`) is decided per error class, with at most 3 attempts. **Cancel** is real, per phase (`MODEL_LOADING.md` §10). `reset()` bumps an epoch that refuses late commits.
+- **Commit** (`commitIfcModel`) is the same for every entry point: `modelRegistry.register` → `modelStore.setModel` → `appBus 'model:loaded'` → App's `onModelLoaded` hook (sceneStore, embed `model-loaded`, analytics, toasts).
+- **Bridges.** Manager events go to `loadingStore` (throttled snapshot) and to `appBus` (`load:*`). App's `LoadingHooks` (`beforeSubmit`, `onModelLoaded`, `onLoadFailed`, `onLoadCancelled`, `onProgress`, `onBatchSettled`, `onIdle`, `removeModel`, `focusModel`, and an optional `createGroup`) are refreshed every render, so a commit never runs a stale closure.
+- **UI actions** go through `loadingController` (`controller.ts`): cancel, cancelAll, retry, hold/resume, setPriority, move, remove, reload, dismiss, focus, openExisting, submitFiles, findDuplicate, listCache/clearCache.
+
 ### `useIfcLoader` (`src/lib/loader.ts`)
 
-React hook that orchestrates the entire load pipeline. Accepts `{ viewerApiRef, onModelLoaded, onError }`. Returns `{ loadFile, resetProgress, progress, memoryStats, cacheEntries, deleteFromCache, isFromCache, opfsAvailable }`.
+The thin React face of the loading system. It accepts `{ viewerApiRef, hooks: LoadingHooks }`. It installs the viewer getter and App's hooks into the manager (`configureLoading` / `setLoadingHooks`) and keeps the memory readout (4 s poll) and the OPFS cache list. It returns `{ loadFile, loadFiles, loadUrls, loadBytes, memoryStats, cacheEntries, deleteFromCache, opfsAvailable }`. The load functions submit jobs and resolve with a `JobOutcome` when the job commits, fails or is cancelled. They never reject. It creates no worker, polls no viewer and does no OPFS I/O of its own. It never calls `clearHistory()`: history only clears in `handleNavigateToLanding`, which first calls `resetLoading()`.
 
-Internally:
-- Lazily creates one `Worker` instance (reused across loads, recreated after error)
-- Waits for `viewerApiRef.current` to become non-null (polls every 50 ms, 10 s timeout)
-- Assigns a `sceneModelId` (UUID) before calling the viewer; passes `modelId: sceneModelId` to `setModel` and `loadFragments`
-- Retains a copy of the IFC buffer before transfer to worker (for validation and export); stored in `modelRegistry`
-- Runs `saveToCache` + `saveIfcBuffer` in background without blocking viewer render
-- Emits `appBus.emit('model:loaded', { modelId: sceneModelId })` after successful load
-- Does NOT call `clearHistory()` — history only clears in `handleNavigateToLanding`
+### IFC conversion pool + parser worker (`src/lib/loading/ifc-convert-pool.ts`, `src/workers/ifc-parser.worker.ts`)
 
-### IFC parser worker (`src/workers/ifc-parser.worker.ts`)
+`IfcConvertPool` spawns `ifc-parser.worker` instances on demand, keeps one warm, terminates any worker that converted a file ≥ 64 MB (Emscripten heaps never shrink) or whose conversion threw, and reaps idle ones after 60 s. It does not cap concurrency; the convert lane does. Cancel is `worker.terminate()`, because conversion is one synchronous WASM call per IFC class and the worker cannot read a message while it runs. The pool respawns on demand. A worker that dies is reported as `worker-crash`, and the retry uses a fresh worker.
 
-Runs in a dedicated ES module worker. Protocol:
+Protocol (ES module worker):
 
-- **IN:** `{ type: 'parse', id, buffer: ArrayBuffer (transferred), fileName }`
-- **OUT:** `{ type: 'progress', id, phase, percent }` → `{ type: 'result', id, fragmentsBuffer: ArrayBuffer (transferred) }` OR `{ type: 'error', id, message }`
+- **IN:** `{ type: 'parse', id, fileName, file: Blob }`. The pool path posts the `File` handle, and the worker reads it. The legacy `buffer: ArrayBuffer (transferred)` is still accepted for the blog `embed-loader`.
+- **OUT:**
+  - `{ type: 'stage', id, stage: 'reading' | 'converting' }`;
+  - `{ type: 'progress', id, phase: 'parsing', percent, fraction, process?, state?, className?, entitiesProcessed? }`: IfcImporter's own `ProgressData`, from which the pool derives exact per-class counts;
+  - then `{ type: 'result', id, fragmentsBuffer: ArrayBuffer (transferred, no copy when the view spans its buffer) }`
+  - or `{ type: 'error', id, message, code? }`, where `code` is `invalid-file | read-failed | out-of-memory | worker-init | parse`.
+- There is deliberately no `cancel` message.
 
-Pre-flight: empty buffer check + IFC STEP signature validation before WASM init.
+Pre-flight: empty-file check and IFC STEP signature validation, both before WASM init.
 `forceSingleThread: true` passed to `IfcAPI.Init` to avoid Emscripten pthread sub-workers.
 
 ### Validator worker (`src/workers/validator.worker.ts`)
 
-Runs in a second dedicated ES module worker. Protocol:
+Runs in dedicated ES module workers kept warm by `validator.ts` as a two-slot pool: slot 0 runs half the rules plus the spatial tree, slot 1 the other half. Protocol:
 
 - **IN (validate):** `{ type: 'validate', id, buffer: ArrayBuffer (transferred copy), rules: RulesConfig }`
 - **IN (tree-only):** `{ type: 'build-tree', id, buffer: ArrayBuffer (transferred copy) }`
@@ -394,13 +461,15 @@ State lives in `geoStore` (epoch pattern to discard stale async). Privacy: tile 
 
 ### `runValidation` + `buildSpatialTree` (`src/lib/validator.ts`)
 
-Singleton-manages the validator worker. Resolves `modelId` from `sceneStore.activeModelId` when not explicitly provided. Gets buffer from `modelRegistry.getBuffer(modelId)`. Checks in-memory cache `cachedResultsByModel`. Copies the buffer before transfer. Streams results into `useValidationStore`. Emits full lifecycle events on `appBus`. If validation is already running when `buildSpatialTree` is called, defers via `appBus.once('validation:complete')`.
+Manages the validator worker pool. Resolves `modelId` from `sceneStore.activeModelId` when not explicitly provided. Gets buffer from `modelRegistry.getBuffer(modelId)`. Checks in-memory cache `cachedResultsByModel`. Copies the buffer before transfer. Streams results into `useValidationStore`. Emits full lifecycle events on `appBus`. If validation is already running when `buildSpatialTree` is called, defers via `appBus.once('validation:complete')`.
+
+`buildSpatialTree` is no longer called by the loader directly. It is the `index` background phase of each IFC load job, which runs after the commit and after the model's first view has streamed. Because it is another full web-ifc parse, it first takes a **convert-lane slot at background priority**: it never runs beside a conversion and waits behind models not yet on screen. A failure or a timeout there (max(120 s, 60 s + 1 s/MB)) is a warning, not a failed load. Post-load auto-validation (`?validate`) and georef extraction wait until no IFC job is active (`summary.managedActive === 0` / `load:idle`), so a federated drop does not stack WASM parses on top of its own conversions.
 
 ### OPFS cache — `CacheRepository` (`src/lib/cache-repository.ts`)
 
-Repository pattern wrapping all OPFS I/O. All methods return `Result<T, Error>`. Cache key format: `"v2:${file.name}:${file.size}:${file.lastModified}"`. Gracefully no-ops when OPFS is unavailable.
+Repository pattern wrapping all OPFS I/O. All methods return `Result<T, Error>`. Cache key format: `"v3:${file.name}:${file.size}:${file.lastModified}"`. The `v3` prefix is `CACHE_VERSION`, bumped when the converter stopped applying `COORDINATE_TO_ORIGIN`. The key also names saved georef placement and cached validation results, so its shape is frozen. Gracefully no-ops when OPFS is unavailable. The loading engine uses the entry-level API (`findEntry(key, fingerprint)`, `saveEntry`, `touch`, `evictForSpace`, `getBudget`) through `cacheRepoAdapter()`, which turns every failure into a miss or a skipped write. No cache problem ever fails a load.
 
-Underlying storage (`src/lib/opfs-cache.ts`) stores fragments binaries as `<key>.frag` and IFC bytes as `<key>.ifc` plus `<key>.meta.json`.
+Underlying storage (`src/lib/opfs-cache.ts`) stores fragments binaries as `<key>.frag` plus `<key>.meta.json`. The layout still allows an IFC copy (`<key>.ifc`), but the loading engine writes `ifc: null`: nothing read the copy back, and a rewrite removes a stale one from older builds. The IFC bytes for validation, IDS and export come from the user's `File`, the download or the SDK bytes, read at commit into `modelRegistry`. An entry is written as a set with the meta last, and the meta is the **commit marker**: a lookup needs a parseable meta and a non-empty `.frag` of the recorded size, or the orphan files are deleted. The meta stores the content fingerprint (`contentHash`): `f1:` (size + SHA-256 of three 64 KB samples) for files, `f2:` (SHA-256 of every byte) for SDK bytes. A key hit whose fingerprint differs is stale, so it is evicted and treated as a miss. Entries are evicted least-recently-used (`lastUsedAt`) to stay within min(4 GB, 50 % of the origin quota). Fetched files get `lastModified` from `Last-Modified` (or 0), so URL and demo loads now hit the cache.
 
 ### `diffStore` (`src/lib/diffStore.ts`)
 
@@ -419,7 +488,13 @@ Command builder helpers for all diff types. Each builder accepts `modelId?`:
 
 ### TypedEventBus (`src/lib/event-bus.ts`)
 
-`appBus` is a singleton `TypedEventBus<AppEventMap>`. Components subscribe via `useAppEvent(event, handler)` hook. Events: `model:loaded { modelId }`, `model:cleared`, `validation:started/progress/complete/failed`, `editor:command-applied/undone/redone/history-cleared`, `cache:saved/deleted`.
+`appBus` is a singleton `TypedEventBus<AppEventMap>`; `AppEventMap` is declared in the same file. Components subscribe via `useAppEvent(event, handler)` hook. Events include:
+- `model:loaded { modelInfo, fromCache, cacheKey, modelId }`. It fires after `modelRegistry` and `modelStore` hold the model and before `sceneStore` does, unchanged by the loading rebuild.
+- `model:removed { modelId }` and `model:cleared`.
+- `load:queued / started / phase / progress / completed / failed / cancelled`, each with `{ jobId, kind, fileName, batchId, requestId }` plus its own fields. Also `load:batch-settled { batchId, name, loaded, failed, cancelled }` and `load:idle`, which fires when no IFC job is queued, running or waiting.
+- `validation:started/progress/complete/failed`, `editor:command-applied/undone/redone/history-cleared`, `cache:saved/deleted`, and the `capture:*`, `tour:*` and `sdk:*` families.
+
+The loading UI reads `loadingStore`, not these events.
 
 ---
 
@@ -432,7 +507,7 @@ Command builder helpers for all diff types. Each builder accepts `modelId?`:
 | `@thatopen/components-front` | Peer dependency; provides frontend-specific OBC components (postpro, measurements, plans). |
 | `three` | Underlying 3D library for OBC. Also used directly for `THREE.Group` (modelPivots), lights, shadow config, and GLB export. |
 | `web-ifc` | The WebAssembly IFC parser. Used by `IfcImporter` (parser worker), `IfcAPI` (validator worker + export worker). Not imported in `src/` outside the workers. |
-| `zustand` | Lightweight state management. 11 stores active. |
+| `zustand` | Lightweight state management. 24 stores active. |
 | `3d-tiles-renderer` | NASA-AMMOS tile renderer for GIS / Map mode (basemap + 3D terrain inside the three.js scene). Lazy-loaded; only when `VITE_FEATURE_GIS` is on. |
 | `proj4` | Coordinate-system transforms for GIS georeferencing (Map mode). |
 | `@tanstack/react-virtual` | Row virtualisation for the spatial tree. Required for models with 10k+ nodes. |
@@ -483,10 +558,10 @@ ScenePanel transform callbacks pass explicit `model.id` so the correct pivot is 
 | `vendor-ui-*.js` | React, Radix UI, Framer Motion, Zustand, Zod, ts-pattern, all other npm packages | ~518 KB |
 | `vendor-three-*.js` | three.js (changes infrequently — long browser cache TTL) | ~1.3 MB |
 | `vendor-ifc-*.js` | @thatopen/* + web-ifc JS side | ~4.5 MB |
-| `*.worker-*.js` (one per worker: ifc-parser, validator, export, ids, bcf-parser, geo-extract, geo-terrain, gif-export) | web-ifc / three.js workers bundle their deps inline (required — see D-11); gif-export is the one lightweight non-WASM worker (~30 KB) | ~3–4.3 MB each (gif-export excepted) |
+| `*.worker-*.js` (one per worker: ifc-parser, validator, export, ids, bcf-parser, geo-extract, geo-terrain, geo-buildings, point-cloud, gif-export) | web-ifc / three.js workers bundle their deps inline (required — see D-11); gif-export is the one lightweight non-WASM worker (~30 KB). The ifc-parser chunk is one script however many instances `IfcConvertPool` spawns | ~3–4.3 MB each for the web-ifc workers (gif-export excepted) |
 
 **Windows build:** `node --max-old-space-size=4096 node_modules/vite/bin/vite.js build` — required because the default Node.js 2 GB heap is exhausted by the 514+ module graph.
 
 ---
 
-*Last updated: 2026-07-02 (Capture Toolkit + Tour Mode) · Sprints 1–9 complete + IDS 1.0 / 3D Map (GIS) / BCF panel / embed+SDK / mobile UI / Capture Toolkit / Tour Mode shipped · 44 validation rules · 20 Zustand stores · 9 workers · Deploy: Vercel · Forward plan: ROADMAP.md Roadmap v2 + Solibri-parity backlog*
+*Last updated: 2026-09-24 (model loading & orchestration system — `src/lib/loading/`, D-29, `docs/MODEL_LOADING.md`) · Previous: 2026-07-02 (Capture Toolkit + Tour Mode) · Sprints 1–9 complete + IDS 1.0 / 3D Map (GIS) / BCF panel / embed+SDK / mobile UI / Capture Toolkit / Tour Mode / queued multi-model loading shipped · 44 validation rules · 25 Zustand stores · 10 worker scripts · Deploy: Vercel · Forward plan: ROADMAP.md Roadmap v2 + Solibri-parity backlog*
