@@ -36,6 +36,7 @@ import {
 } from '../lib/diffStore'
 import { createLogger } from '../lib/logger'
 import type { ViewerAPI } from '../lib/viewer'
+import { LoadingIndicator } from './loading'
 
 const log = createLogger('Toolbar')
 
@@ -585,7 +586,7 @@ export default function Toolbar({
           Logo · app name (always visible)
           Desktop: + status dot · filename · element count
           Mobile:  status dot moves to the right side                        */}
-      <div className="flex items-center gap-2 shrink-0 min-w-0">
+      <div className="flex items-center gap-2 shrink min-w-0">
         <Icons.Logo size={18} className="shrink-0" />
         {/* App name: always visible */}
         <span className="text-[12px] font-semibold tracking-tight text-[var(--text)] whitespace-nowrap hidden xs:inline">
@@ -607,6 +608,9 @@ export default function Toolbar({
               · {elementCount.toLocaleString()}
             </span>
           )}
+          {/* Background loads: "Loading 3 models · 68%" — opens the Loading
+              Center. Renders nothing while nothing is loading. */}
+          <LoadingIndicator variant="toolbar" />
         </div>
       </div>
 
@@ -878,6 +882,7 @@ export default function Toolbar({
           Mobile actions are handled by MobileBottomNav. The toolbar on mobile
           only shows identity + current state so the user can orient themselves. */}
       <div className="flex-1 md:hidden" />
+      <div className="md:hidden flex items-center"><LoadingIndicator variant="mobile" /></div>
       {loadingState !== 'idle' && (
         <div className="md:hidden flex items-center gap-1.5 px-2">
           <span className="font-mono text-[12px]" style={{ color: statusColor }}>●</span>

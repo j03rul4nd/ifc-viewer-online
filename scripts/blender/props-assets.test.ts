@@ -87,7 +87,36 @@ describe('the assets are the size of the real thing', () => {
     'roof-hvac':       [2.77, 1.65, 1.38],
     'roof-stairbox':   [3.30, 2.80, 3.39],
     'roof-tank':       [1.60, 1.68, 2.82],
+    // Round 3, Barcelona. All face +X, so x is the depth toward the street.
+    'bench-bcn':          [0.59, 1.80, 0.86],
+    'lamp-park-bcn':      [0.46, 0.47, 4.29],
+    'lamp-street-bcn':    [3.37, 0.32, 9.65],
+    'fountain-bcn':       [0.79, 0.60, 1.79],
+    'ped-signal':         [0.41, 0.26, 2.83],
+    'traffic-signal-bcn': [0.52, 0.32, 3.53],
+    'waste-basket-bcn':   [0.40, 0.36, 0.92],
+    // Round 4, moored boats. Bow toward +X, so x is length overall (motor
+    // includes the swim platform, sail the stemhead fitting); y is the beam
+    // plus the fenders hung on both sides; z runs from the bottom of the hull,
+    // BELOW the waterline, to the top (the sailing yacht's masthead).
+    'boat-motor':         [10.65, 3.63, 4.16],
+    'boat-sail':          [11.10, 3.77, 16.75],
+    'boat-small':         [6.07, 2.27, 1.70],
+    // Round 5, parks. Statue and bust are pedestal + figure; the slide's x is
+    // ladder foot to chute run-out, the swing's y the top beam. boat-row is a
+    // boat: z runs from the keel, BELOW the waterline, to the stem head.
+    'statue-plinth':      [1.24, 1.24, 3.69],
+    'bust-pedestal':      [0.62, 0.62, 2.21],
+    'sculpture-modern':   [1.30, 1.54, 2.50],
+    'playground-slide':   [3.20, 0.93, 2.44],
+    'playground-springy': [0.92, 0.46, 0.99],
+    'playground-swing':   [1.69, 3.20, 2.43],
+    'boat-row':           [3.61, 1.46, 0.85],
+    'pergola-bcn':        [4.30, 3.35, 2.87],
   }
+
+  /** Boats are authored with z = 0 at the WATERLINE, not the ground. */
+  const isBoat = (name: string) => name.startsWith('boat-')
 
   it('measures every asset, so a new one cannot skip the check', () => {
     // Iterating the table would let an asset added to PROP_ASSETS but not to
@@ -111,21 +140,58 @@ describe('the assets are the size of the real thing', () => {
     }
   })
 
+  function gltfJson(name: string) {
+    const buf = readFileSync(path.join(dir, `${name}.glb`))
+    return JSON.parse(buf.subarray(20, 20 + buf.readUInt32LE(12)).toString('utf8'))
+  }
+
+  function minZ(name: string): number {
+    const gltf = gltfJson(name)
+    let lo = Infinity
+    for (const mesh of gltf.meshes) {
+      for (const prim of mesh.primitives) {
+        lo = Math.min(lo, gltf.accessors[prim.attributes.POSITION].min[2])
+      }
+    }
+    return lo
+  }
+
   it('stands on the ground — nothing is authored floating or buried', () => {
     for (const name of Object.keys(EXPECTED)) {
-      const buf = readFileSync(path.join(dir, `${name}.glb`))
-      const gltf = JSON.parse(
-        buf.subarray(20, 20 + buf.readUInt32LE(12)).toString('utf8'),
-      )
-      let minZ = Infinity
-      for (const mesh of gltf.meshes) {
-        for (const prim of mesh.primitives) {
-          minZ = Math.min(minZ, gltf.accessors[prim.attributes.POSITION].min[2])
-        }
-      }
+      // Boats are the documented exception: see the next test.
+      if (isBoat(name)) continue
+      const z = minZ(name)
       // The build drops every asset to z = 0 so the placement code can put it
       // on the terrain sample without knowing anything about the model.
-      expect(Math.abs(minZ), `${name} base at z = ${minZ}`).toBeLessThan(0.02)
+      expect(Math.abs(z), `${name} base at z = ${z}`).toBeLessThan(0.02)
+    }
+  })
+
+  // A boat's z = 0 is the WATERLINE (build-props.py, "Round 4"), so its hull
+  // must reach below it. A boat that got dropped to min z = 0 like the street
+  // props would sit ON the water like a toy, and would pass the test above.
+  it('floats — the waterline plane z = 0 cuts every boat hull', () => {
+    const boats = Object.keys(EXPECTED).filter(isBoat)
+    expect(boats.length).toBeGreaterThan(0)
+    for (const name of boats) {
+      const z = minZ(name)
+      expect(z, `${name} hull bottom at z = ${z}`).toBeGreaterThan(-1.2)
+      expect(z, `${name} hull bottom at z = ${z}`).toBeLessThan(-0.2)
+    }
+  })
+
+  // props-assets.ts loadOne() skips the re-grounding for 'boat-*' and bakes the
+  // node transform in. That is only exact while the node carries nothing — the
+  // bake_origin=True the builders use. A translated node would move the
+  // waterline by exactly that much, and no extent check could tell.
+  it('ships every boat with an identity node, so its authored waterline survives the loader', () => {
+    for (const name of Object.keys(EXPECTED).filter(isBoat)) {
+      for (const node of gltfJson(name).nodes) {
+        expect(node.translation ?? [0, 0, 0], `${name} node translation`).toEqual([0, 0, 0])
+        expect(node.rotation ?? [0, 0, 0, 1], `${name} node rotation`).toEqual([0, 0, 0, 1])
+        expect(node.scale ?? [1, 1, 1], `${name} node scale`).toEqual([1, 1, 1])
+        expect(node.matrix, `${name} node matrix`).toBeUndefined()
+      }
     }
   })
 })

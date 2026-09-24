@@ -750,6 +750,28 @@ describe('buildLinearLayer — corners', () => {
     expect(verts).toBeGreaterThan(straightVerts)
   })
 
+  // Plaça d'Espanya, Francesc Macià, Tetuan: the centre of a Barcelona
+  // roundabout is a mapped fountain, lawn or square. Paving the island at road
+  // height over it erased the one thing in the middle of the junction.
+  it('does not pave a roundabout island the data has already mapped', () => {
+    const ring = roundabout('w1', 16, 30)
+    // Tagged as a roundabout, as OSM does, so the network solves its island.
+    ring.style = { ...ring.style, roundabout: true, oneway: true, roadClass: 'vehicular' }
+    const dLat = 18 / 111_132
+    const dLon = 18 / (111_320 * Math.cos((LAT * Math.PI) / 180))
+    const lawn: OsmFeature = {
+      id: 'w9', kind: 'green',
+      ring: [{ lat: LAT - dLat, lon: LON - dLon }, { lat: LAT - dLat, lon: LON + dLon },
+        { lat: LAT + dLat, lon: LON + dLon }, { lat: LAT + dLat, lon: LON - dLon }],
+      height: { heightM: 0, minHeightM: 0, estimated: true },
+      style: { roofShape: 'flat', roofHeightM: 0 },
+    }
+    const verts = (fs: OsmFeature[]) =>
+      surfaceOf(buildLinearLayer(fs, 'road', OPTS)!.object).geometry.getAttribute('position').count
+    // With the lawn mapped the island is left to it, so the road layer is lighter.
+    expect(verts([ring, lawn])).toBeLessThan(verts([ring]))
+  })
+
   it('still draws the closing segment of a loop', () => {
     // The ring's last point repeats its first, so the final segment exists and
     // the road has no notch where it meets itself.
@@ -757,6 +779,33 @@ describe('buildLinearLayer — corners', () => {
     expect(built.count).toBe(1)
     expect(surfaceOf(built.object).geometry.getAttribute('position').count).toBeGreaterThan(0)
   })
+})
+
+// Non-zebra crossings (`dots`, `dashes`, `edges`) mark the two EDGES of the
+// crossing. The edge width was in metres where the rest is normalized: each
+// line came out ~40 million times too wide, thousands of km off the map, and
+// was then subdivided to its cap — 1.12 M vertices for 220 crossings in Glòries.
+describe('buildLinearLayer — edge-marked crossings', () => {
+  for (const markings of ['dots', 'dashes', 'edges'] as const) {
+    it(`keeps a ${markings} crossing small and on its own spot`, () => {
+      const dLon = 12 / (111_320 * Math.cos((LAT * Math.PI) / 180))
+      const crossing: OsmFeature = {
+        id: `x-${markings}`, kind: 'road',
+        ring: [{ lat: LAT, lon: LON }, { lat: LAT, lon: LON + dLon }],
+        height: { heightM: 0, minHeightM: 0, estimated: true },
+        widthM: 4,
+        style: { roofShape: 'flat', roofHeightM: 0, crossing: true, crossingMarkings: markings, roadClass: 'pedestrian' },
+      }
+      const built = buildLinearLayer([crossing], 'road', OPTS)!
+      const mesh = surfaceOf(built.object)
+      const pos = mesh.geometry.getAttribute('position')
+      expect(pos.count).toBeLessThan(400)
+      const box = new THREE.Box3().setFromBufferAttribute(pos as THREE.BufferAttribute)
+      const mToN = 1 / (40_075_016.686 * Math.cos((LAT * Math.PI) / 180))
+      expect((box.max.x - box.min.x) / mToN).toBeLessThan(20)
+      expect((box.max.y - box.min.y) / mToN).toBeLessThan(10)
+    })
+  }
 })
 
 describe('dashCentreline', () => {

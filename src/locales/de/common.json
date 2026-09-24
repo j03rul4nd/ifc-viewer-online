@@ -119,7 +119,92 @@
       "closeAriaLabel": "Schließen",
       "trust1": "WebAssembly — läuft im Browser",
       "trust2": "Keine Anmeldung erforderlich",
-      "trust3": "Bis zu 2 GB"
+      "trust3": "Bis zu 2 GB",
+      "dropHintMulti": "Legen Sie hier eine oder mehrere .ifc-Dateien ab",
+      "or": "oder",
+      "privacy": "Datenschutz"
+    },
+    "dialogLabel": "IFC-Dateien öffnen",
+    "preparing_one": "{{count}} Modell wird vorbereitet…",
+    "preparing_other": "{{count}} Modelle werden vorbereitet…",
+    "preparingDetail": "Dateiintegrität, IFC-Schema und Duplikate werden geprüft",
+    "preparingCount": "{{done}} von {{total}} geprüft",
+    "review": {
+      "title_one": "{{count}} Modell erkannt",
+      "title_other": "{{count}} Modelle erkannt",
+      "subtitle": "Die Modelle werden im Hintergrund geladen — Sie können währenddessen weiterarbeiten.",
+      "addFiles": "Dateien hinzufügen",
+      "dropToAdd": "Loslassen, um zur Auswahl hinzuzufügen",
+      "includeAria": "{{name}} laden",
+      "schemaUnknown": "Schema nicht angegeben",
+      "checking": "Wird geprüft…",
+      "status": {
+        "valid": "Bereit",
+        "invalid": "Nicht ladbar",
+        "loaded": "Bereits geladen",
+        "loading": "Wird bereits geladen",
+        "inSelection": "Duplikat"
+      },
+      "sameContentAs": "Gleicher Inhalt wie {{name}}",
+      "inSelection": "Gleicher Inhalt wie {{name}} in dieser Auswahl",
+      "openExisting": "Vorhandenes öffnen",
+      "viewProgress": "Fortschritt anzeigen",
+      "batchName": "Name des Stapels",
+      "defaultBatchName_one": "{{count}} Modell",
+      "defaultBatchName_other": "{{count}} Modelle",
+      "createGroup": "Als ein Projekt gruppieren",
+      "createGroupHint": "Erstellt eine Gruppe im Szenenbaum; jedes Modell wird ihr hinzugefügt, sobald es geladen ist.",
+      "summary": "{{selected}} von {{total}} ausgewählt · {{size}}",
+      "loadAll": "Alle laden ({{count}})",
+      "loadSelected": "Auswahl laden ({{count}})",
+      "loadNewOnly": "Nur neue laden ({{count}})",
+      "loadInBackground": "Im Hintergrund laden",
+      "cancel": "Abbrechen",
+      "discipline": {
+        "architecture": "Architektur",
+        "structure": "Tragwerk",
+        "mep": "TGA",
+        "hvac": "HLK",
+        "plumbing": "Sanitär",
+        "electrical": "Elektro",
+        "fire": "Brandschutz",
+        "landscape": "Landschaft",
+        "site": "Gelände",
+        "civil": "Tiefbau",
+        "interior": "Innenausbau",
+        "furniture": "Möblierung",
+        "coordination": "Koordination"
+      }
+    },
+    "duplicate": {
+      "title": "{{name}} ist bereits geladen.",
+      "titleLoading": "{{name}} wird bereits geladen.",
+      "body": "Erneutes Laden fügt der Szene eine zweite Kopie desselben Modells hinzu.",
+      "sameContentAs": "Gleicher Inhalt wie {{name}}.",
+      "openExisting": "Vorhandenes öffnen",
+      "viewProgress": "Fortschritt anzeigen",
+      "loadAnyway": "Duplikat trotzdem laden",
+      "cancel": "Abbrechen"
+    },
+    "large": {
+      "rowNote": "Groß — kann einige Minuten dauern",
+      "banner": "Große IFC-Datei erkannt. Die Verarbeitung dieses Modells kann einige Minuten dauern. Der Viewer bleibt währenddessen nutzbar.",
+      "memoryWarning": "Sehr große IFC-Dateien können das WebAssembly-Speicherlimit des Browsers überschreiten (in der Praxis rund 2,5 GB IFC). Wenn ein Ladevorgang fehlschlägt, hilft es meist, das Modell nach Gewerk oder Geschoss aufzuteilen."
+    },
+    "errors": {
+      "titleMany": "Keine dieser Dateien kann geladen werden",
+      "INVALID_EXTENSION": "Keine IFC-Datei (.ifc erwartet).",
+      "INVALID_MIME": "Der Dateityp wird nicht als IFC erkannt.",
+      "FILE_TOO_LARGE": "Überschreitet das Limit von 2 GB.",
+      "FILE_EMPTY": "Die Datei ist leer.",
+      "UNSUPPORTED_IFC_VERSION": "IFC-Schema nicht unterstützt. Akzeptiert: IFC2x3, IFC4, IFC4x3.",
+      "CORRUPTED_FILE": "Kein gültiger IFC-Header — die Datei ist möglicherweise beschädigt.",
+      "READ_FAILED": "Die Datei konnte nicht gelesen werden. Sie wurde möglicherweise verschoben, oder der Zugriff wurde entzogen.",
+      "UNKNOWN": "Unerwarteter Fehler beim Prüfen der Datei."
+    },
+    "submitted": {
+      "title_one": "{{count}} Modell wird im Hintergrund geladen",
+      "title_other": "{{count}} Modelle werden im Hintergrund geladen"
     },
     "active": {
       "drop": "Legen Sie Ihre .ifc-Datei hier ab",

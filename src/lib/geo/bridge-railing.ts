@@ -1,8 +1,9 @@
 import * as THREE from 'three'
+import type { NumberSink } from './growable-array'
 
 /** Open metal railing. Dimensions are illustrative, not surveyed fabrication. */
 export function appendBridgeRailing(
-  positions: number[], colors: number[], a: THREE.Vector3, b: THREE.Vector3,
+  positions: NumberSink, colors: NumberSink, a: THREE.Vector3, b: THREE.Vector3,
   unit: number, tone: [number, number, number], heightM = 1.1,
 ): void {
   const delta = b.clone().sub(a)

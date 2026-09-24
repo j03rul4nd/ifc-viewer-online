@@ -155,12 +155,27 @@ export interface MemoryStats {
 }
 
 export interface CacheEntry {
-  /** "${fileName}:${size}:${lastModified}" */
+  /**
+   * `buildCacheKey()` output: "v3:${fileName}:${size}:${lastModified}". The
+   * format is load-bearing beyond the cache — saved georef placement and cached
+   * validation results are keyed by it too — so it never changes shape.
+   */
   key: string
   fileName: string
   fileSize: number
+  /** Bytes of the `.frag`; a lookup whose file size differs is a partial write. */
   fragmentsSize: number
   cachedAt: number
+  /**
+   * Sampled content fingerprint (`f1:…`, loading/fingerprint.ts) of the IFC the
+   * fragments came from. A key hit whose fingerprint differs is stale geometry.
+   * Absent on entries written before it existed — those cannot be checked.
+   */
+  contentHash?: string
+  /** Last time the entry served a load (LRU eviction); falls back to `cachedAt`. */
+  lastUsedAt?: number
+  /** Bytes of the cached `.ifc`, when one was written with the entry. */
+  ifcSize?: number
 }
 
 // ── Validation ────────────────────────────────────────────────────────────────

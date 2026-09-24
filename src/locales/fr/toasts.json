@@ -7,7 +7,14 @@
     "removeFailed": "Impossible de supprimer le modèle : {{message}}",
     "urlLoadFailed": "Impossible de charger le modèle lié : {{message}}",
     "mapFailed": "Le mode carte n'a pas pu s'ouvrir : {{message}}",
-    "scanLoadFailed": "Impossible de charger le scan du lien : {{message}}"
+    "scanLoadFailed": "Impossible de charger le scan du lien : {{message}}",
+    "loadFailedNamed": "Impossible de charger \"{{fileName}}\" — {{reason}}",
+    "batchLoaded_one": "{{name}} — {{count}} modèle chargé",
+    "batchLoaded_other": "{{name}} — {{count}} modèles chargés",
+    "batchPartial": "{{name}} — {{loaded}} chargés, {{failed}} en échec",
+    "dropUnsupported_one": "{{count}} fichier n'est pas dans un format pris en charge",
+    "dropUnsupported_other": "{{count}} fichiers ne sont pas dans un format pris en charge",
+    "dropBcfHint": "Ouvrez le panneau BCF pour importer des fichiers .bcf"
   },
   "validation": {
     "complete": "Validation terminée — {{count}} problème(s) trouvé(s)",

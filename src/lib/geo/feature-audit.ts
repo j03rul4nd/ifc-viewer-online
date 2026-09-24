@@ -112,8 +112,9 @@ export interface FeatureCensus {
 
 /** The id a feature carries back to the element it came from (`r45-2` → `r45`). */
 export const sourceIdOf = (featureId: string): string => {
-  const dash = featureId.indexOf('-')
-  return dash === -1 ? featureId : featureId.slice(0, dash)
+  // `r123-0` is part 0 of a relation; `w456#3` is tree 3 of a tree row.
+  const cut = featureId.search(/[-#]/)
+  return cut === -1 ? featureId : featureId.slice(0, cut)
 }
 
 const elementId = (el: AuditElement): string =>

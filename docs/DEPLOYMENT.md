@@ -19,19 +19,42 @@
 
 ## IFC loading pipeline
 
+Full reference: [`MODEL_LOADING.md`](./MODEL_LOADING.md) (D-29). What matters for a deployment:
+
 ```
-File drop
-  └─ useIfcLoader (src/lib/loader.ts)
-       ├─ OPFS cache check
-       └─ ifc-parser.worker.ts  ← Web Worker (ES module, separate bundle)
-            ├─ @thatopen/fragments IfcImporter
-            └─ web-ifc WASM   (loaded from BASE_URL)
+Upload dialog · drop · demo · ?model= · SDK
+  └─ LoadManager job (src/lib/loading/)
+       ├─ download            fetch, byte progress; File.lastModified = Last-Modified or 0
+       ├─ OPFS cache lookup   key v3:name:size:lastModified + content fingerprint
+       ├─ IfcConvertPool → ifc-parser.worker.ts  ← Web Worker (ES module, separate bundle)
+       │    ├─ @thatopen/fragments IfcImporter
+       │    └─ web-ifc WASM   (loaded from BASE_URL)
+       └─ viewer.loadFragments → fragments worker (fetched at viewer start, see below)
 ```
 
 ### Worker
 
 The IFC parser runs entirely off the main thread in `src/workers/ifc-parser.worker.ts`.
 Vite builds it as an independent ES module chunk in `dist/assets/ifc-parser.worker-HASH.js`.
+`IfcConvertPool` may start several instances of that one script over a session. It
+recycles a worker after a large file and reaps idle ones after 60 s, so the chunk and
+the WASM are fetched once and then served from the HTTP cache.
+
+### Fragments worker (third-party fetch)
+
+`viewer.ts` initialises fragments with `OBC.FragmentsManager.getWorker()`, which
+fetches `https://unpkg.com/@thatopen/fragments@<version>/dist/worker/worker.mjs` when
+the viewer starts. That is the one runtime script the app does not serve itself.
+An unpkg outage or a blocked CDN means no model can attach: conversion succeeds and the
+load fails at `attach`. Self-hosting it is listed in `MODEL_LOADING.md` §13.
+
+### Serving IFC for `?model=` / `ifcviewer:load`
+
+The model host needs CORS (see `EMBED_URL_PARAMS.md`). It should also send a
+`Last-Modified` header. The fetched `File` takes its `lastModified` from it (or 0), and
+that value is part of the OPFS cache key, so a stable header lets repeat visits skip
+conversion. A header that changes on every request (some dynamic endpoints) makes
+every load a cache miss.
 
 ### WASM
 
@@ -107,7 +130,7 @@ Removed `rollupOptions: { external: ['three'] }` from the `worker` config in
 | File | Change |
 |---|---|
 | `vite.config.ts` | Removed `worker.rollupOptions.external: ['three']` |
-| `src/lib/loader.ts` | Improved `errorHandler` to include `filename`, `lineno`, `colno` and a fallback message when `e.message` is empty |
+| `src/lib/loader.ts` | Improved `errorHandler` to include `filename`, `lineno`, `colno` and a fallback message when `e.message` is empty *(2026-09: worker error handling now lives in `src/lib/loading/ifc-convert-pool.ts`, which classifies a worker that fails to start as `worker-init` and one that dies as `worker-crash`, and retries once on a fresh worker)* |
 
 ### Verification
 

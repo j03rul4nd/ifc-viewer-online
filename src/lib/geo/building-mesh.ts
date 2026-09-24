@@ -19,9 +19,10 @@ import { stationForm, stationGeometry } from './shanghai-stations'
 import { latLonToNormalized, WEB_MERCATOR_WORLD_M, cosLatScale } from './geo-math'
 import {
   facadeColor, storeyBanding, storeysFor, buildingRegion, roofColorFor, materialTone,
-  defaultRoofShape, defaultRoofFraction, type FacadeContext,
+  defaultRoofShape, defaultRoofFraction, hashId, variate, type FacadeContext,
 } from './feature-variation'
 import { createGroundFrame } from './ground-frame'
+import { GrowableArray, type NumberSink } from './growable-array'
 import type { BuildingHeight } from './buildings'
 import type { FeatureStyle } from './osm-features'
 
@@ -34,10 +35,44 @@ export interface BuildingLike {
   /** Stable id — seeds the deterministic facade variation. */
   id?: string
   ring: ReadonlyArray<{ lat: number; lon: number }>
+  /**
+   * Courtyards and light wells: inner rings cut out of the footprint. Each gets
+   * its own walls facing INTO the void, and the roof is not laid over it.
+   */
   holes?: ReadonlyArray<ReadonlyArray<{ lat: number; lon: number }>>
   height: BuildingHeight
   /** Roof shape and tagged colours; absent means a plain flat grey block. */
   style?: FeatureStyle
+  /**
+   * The back of a perimeter-block plot — ground floor only, roofed as a
+   * terrace or a garden. See `perimeter-blocks`.
+   */
+  interior?: boolean
+  /**
+   * A building standing inside a park — a pavilion, a greenhouse, the wings
+   * of a monumental fountain. It is not part of the street fabric, so it gets
+   * no fabric facade (no apartment windows, no balconies).
+   */
+  pavilion?: boolean
+}
+
+/**
+ * How a local building fabric looks, for the procedural facade: the rhythm of
+ * its openings, the colour of its shutters, how tall its floors are. Supplied
+ * per building by the caller (see `barcelona-barris`); absent everywhere the
+ * caller knows nothing, which keeps the storey-banded facade.
+ */
+export interface FacadeTypology {
+  palette: ReadonlyArray<readonly [number, number, number]>
+  roofTones: ReadonlyArray<readonly [number, number, number]>
+  groundFloorM: number
+  storeyM: number
+  /** Centre-to-centre window spacing along a facade, m. */
+  bayM: number
+  windowWidthM: number
+  shutterTone: readonly [number, number, number]
+  /** Share of facades whose upper openings are balconies with iron railings. */
+  balconyProbability: number
 }
 
 /** Parapet upstand on a flat roof, metres. */
@@ -133,6 +168,11 @@ export interface BuildingMeshOptions {
    * would mean giving up storey-banded facades to get a quiet street.
    */
   contextTone?: ContextTone
+  /**
+   * The local fabric at a point, or null. Consulted once per building, and
+   * only on the detailed lit path — the procedural facade is a shader feature.
+   */
+  typologyAt?: ((lat: number, lon: number) => FacadeTypology | null) | null
 }
 
 /**
@@ -163,17 +203,32 @@ export function buildBuildingsGeometry(
   /** Facade contrast, 0-1. Discreet context keeps the mass and drops the detail. */
   const contrast = neutral ? 0.25 : 1
 
-  const positions: number[] = []
+  // Typed, growing sinks — see growable-array.
+  const positions = new GrowableArray('f64')
   const ranges: BuildingRange[] = []
-  const normals: number[] = []
+  const normals = new GrowableArray('f32')
   // Vertex colours carry a subtle height gradient, so a block of flat-topped
   // extrusions still reads as three-dimensional under an unlit material.
-  const colors: number[] = []
+  const colors = new GrowableArray('f32')
 
   let count = 0
   let estimatedCount = 0
 
-  for (const b of footprints) {
+  // The procedural facade's inputs, per vertex. Zero-filled for everything that
+  // is not a procedural wall (roofs, banded facades), which the shader reads as
+  // "not mine".
+  const facA = new GrowableArray('f32')
+  const facB = new GrowableArray('f32')
+  const facC = new GrowableArray('f32')
+  const padFacade = (): void => {
+    const n = positions.length
+    while (facA.length < (n / 3) * 4) { facA.push(0, 0, 0, 0); facB.push(0, 0, 0, 0); facC.push(0, 0, 0, 0) }
+  }
+  const party = opts.typologyAt && detailed && lit
+    ? partyWallIndex(footprints, metresToNormalized)
+    : null
+
+  for (const [bi, b] of footprints.entries()) {
     // Project the ring into the normalized frame once.
     const ring2d: THREE.Vector2[] = b.ring.map((p) => {
       const { nx, ny } = latLonToNormalized(p.lat, p.lon)
@@ -195,18 +250,30 @@ export function buildBuildingsGeometry(
       new THREE.Vector2(p.x / metresToNormalized, p.y / metresToNormalized),
     )
 
-    const holes = (b.holes ?? []).map(h => h.map(p => {
-      const {nx,ny}=latLonToNormalized(p.lat,p.lon);return new THREE.Vector2(nx,ny)
-    })).filter(h=>h.length>=3)
-    for(const hole of holes) if(!THREE.ShapeUtils.isClockWise(hole)) hole.reverse()
-    const capPoints = [...ring2d,...holes.flat()]
+    // Courtyards. Wound CLOCKWISE, the opposite of the outer ring, so the one
+    // outward-normal rule used for every wall below points each courtyard wall
+    // into the void — which is the side its windows are on.
+    const holes2d: THREE.Vector2[][] = (b.holes ?? [])
+      .map((h) => h.map((p) => {
+        const { nx, ny } = latLonToNormalized(p.lat, p.lon)
+        return new THREE.Vector2(nx, ny)
+      }))
+      .filter((h) => h.length >= 3)
+    for (const h of holes2d) if (!THREE.ShapeUtils.isClockWise(h)) h.reverse()
+
     let faces: number[][]
     try {
-      faces = THREE.ShapeUtils.triangulateShape(metricRing, holes.map(h=>h.map(p=>new THREE.Vector2(p.x/metresToNormalized,p.y/metresToNormalized))))
+      faces = THREE.ShapeUtils.triangulateShape(
+        metricRing,
+        holes2d.map((h) => h.map((p) =>
+          new THREE.Vector2(p.x / metresToNormalized, p.y / metresToNormalized))),
+      )
     } catch {
       continue // self-intersecting footprint — skip it, never fail the batch
     }
     if (faces.length === 0) continue
+    // Triangle indices address the outer ring followed by every hole, in order.
+    const capPoints: THREE.Vector2[] = holes2d.length ? [...ring2d, ...holes2d.flat()] : ring2d
 
     const rangeStart = positions.length / 3
 
@@ -277,12 +344,24 @@ export function buildBuildingsGeometry(
     // almost always. A tagged `roof:shape` is the mapper's own answer and still
     // wins outright; `roofTagged` is what lets the two be told apart.
     const facade: FacadeContext = { use: b.style?.use, region, tone: contextTone }
+    const typ = party && !neutral && opts.typologyAt && !b.pavilion
+      ? opts.typologyAt(b.ring[0].lat, b.ring[0].lon)
+      : null
     // Only a building nobody has said anything about gets a shape invented for
     // it. An explicit `roof:shape` says so through `roofTagged`; a caller that
     // simply hands us a pitched shape has plainly stated one too, and honouring
     // that keeps the structural BuildingLike contract meaning what it reads as.
     const stated = b.style?.roofTagged === true || (b.style?.roofShape ?? 'flat') !== 'flat'
-    const roofShape = holes.length ? 'flat' : stated ? (b.style?.roofShape ?? 'flat') : defaultRoofShape(facade)
+    // A pitched roof is built by fanning the OUTER ring to a ridge; over a
+    // courtyard that would roof the void, so an inferred shape stays flat there.
+    const roofShape = stated ? (b.style?.roofShape ?? 'flat')
+      : holes2d.length > 0 ? 'flat' : defaultRoofShape(facade)
+    // A SURVEYED pitched roof over a courtyard building is drawn over the whole
+    // outline — its ridge maths only knows the outer ring — so the cap has to
+    // be triangulated the same way.
+    if (roofShape !== 'flat' && holes2d.length > 0) {
+      try { faces = THREE.ShapeUtils.triangulateShape(metricRing, []) } catch { continue }
+    }
     const wallSpanM = Math.max(0, topM - baseM)
     const roofWantedM = stated
       ? (b.style?.roofHeightM ?? 0)
@@ -299,14 +378,17 @@ export function buildBuildingsGeometry(
     // `building:material` is on 8.2% of the Lujiazui patch and lands on the
     // towers, where glass and mirror against concrete is most of what makes
     // that skyline read as itself.
+    const typRoof = typ ? pickTone(b.interior ? INTERIOR_ROOF_TONES : typ.roofTones, seed, 11) : null
+    const typWall = typ ? jitterTone(pickTone(typ.palette, seed, 12)!, seed)
+      : b.pavilion ? jitterTone(pickTone(PAVILION_WALL_TONES, seed, 12)!, seed) : null
     const roofTint = b.style?.roofColor
       ? hexToRgb(b.style.roofColor)
-      : materialTone(b.style?.roofMaterial) ?? roofColorFor(facade)
+      : materialTone(b.style?.roofMaterial) ?? typRoof ?? roofColorFor(facade)
     const wallTint = neutral
       ? facadeColor(seed, facade)
       : b.style?.wallColor
         ? hexToRgb(b.style.wallColor)
-        : materialTone(b.style?.wallMaterial) ?? facadeColor(seed, facade)
+        : materialTone(b.style?.wallMaterial) ?? typWall ?? facadeColor(seed, facade)
     // Lit: the shader does the light, so these are albedo only.
     const roofBase = lit ? 0.88 : roofShade(b.height.heightM)
 
@@ -458,8 +540,23 @@ export function buildBuildingsGeometry(
         pushTriangle(positions,normals,colors,p,next,p,slabBottom,eaveZ,eaveZ,dy/len,-dx/len,0,tinted(roofBase,roofTint))
       }
     }
-    // Inner rings run clockwise so their wall normals face the courtyard.
-    for (const wallRing of (b.style?.openCanopy ? [] : [ring2d,...holes])) for (let i = 0; i < wallRing.length; i++) {
+    // ── Walls ──────────────────────────────────────────────────────────────────
+    // The outer ring and every courtyard. A hole's walls use the same rule —
+    // its clockwise winding is what turns them to face the void.
+    const wallRings = b.style?.openCanopy ? [] : roofShape === 'flat' ? [ring2d, ...holes2d] : [ring2d]
+    // One storey rhythm per building, fitted to its own height so the top
+    // floor is a whole floor rather than whatever the division leaves over.
+    const facadeSeed = (hashId(`${seed}#fac`) % 997) / 997
+    const balcony = typ ? variate(seed, 13) < typ.balconyProbability : false
+    const aboveGroundM = Math.max(0, topM - roofM - groundM)
+    const fittedStorey = typ
+      ? (() => {
+          const upper = Math.max(0, aboveGroundM - PARAPET_M - typ.groundFloorM)
+          const n = Math.max(1, Math.round(upper / typ.storeyM))
+          return upper > 0 ? upper / n : typ.storeyM
+        })()
+      : 0
+    for (const [ri, wallRing] of wallRings.entries()) for (let i = 0; i < wallRing.length; i++) {
       const p0 = wallRing[i]
       const p1 = wallRing[(i + 1) % wallRing.length]
       const ex = p1.x - p0.x
@@ -483,7 +580,30 @@ export function buildBuildingsGeometry(
       // Walls rise to the EAVES, not the ridge — the roof covers the rest.
       const wallTopZ = eaveZ
 
-      if (detailed) {
+      if (typ) {
+        const lenM = len / metresToNormalized
+        const shared = ri === 0 && party!.isParty(bi, p0, p1)
+        const plain = shared || b.interior === true || lenM < 2.2
+        const start = positions.length / 3
+        padFacade()
+        pushTriangle(positions, normals, colors, p0, p1, p1, baseZ, baseZ, wallTopZ, nx, ny, 0,
+          tintedTriple([face, face, face], wallTint))
+        pushTriangle(positions, normals, colors, p0, p1, p0, baseZ, wallTopZ, wallTopZ, nx, ny, 0,
+          tintedTriple([face, face, face], wallTint))
+        const topAbove = (wallTopZ - groundZ) / metresToNormalized
+        const along = [0, lenM, lenM, 0, lenM, 0]
+        const zs = [baseZ, baseZ, wallTopZ, baseZ, wallTopZ, wallTopZ]
+        for (let k = 0; k < 6; k++) {
+          facA.push(along[k], (zs[k] - groundZ) / metresToNormalized, lenM, topAbove)
+          facB.push(typ.groundFloorM, fittedStorey, plain ? 0 : typ.bayM, typ.windowWidthM)
+          facC.push(typ.shutterTone[0], typ.shutterTone[1], typ.shutterTone[2], (balcony ? 1 : 0) + facadeSeed * 0.999)
+        }
+        void start
+        continue
+      }
+
+      // A pavilion's wall is masonry, not a curtain of glazing strips.
+      if (detailed && !b.pavilion) {
         const facadeBaseZ = groundZ + b.height.minHeightM * metresToNormalized
         // The buried skirt is foundation geometry, not an extra window storey.
         if (baseZ < facadeBaseZ) {
@@ -512,13 +632,19 @@ export function buildBuildingsGeometry(
 
   const origin = opts.localOrigin
     ? latLonToNormalized(opts.anchorLat, opts.anchorLon ?? footprints[0].ring[0].lon) : undefined
-  if (origin) for (let i=0;i<positions.length;i+=3) {
-    positions[i]-=origin.nx;positions[i+1]-=origin.ny
-  }
+  // Rebased in float64, before the float32 cast, so a city-wide mesh keeps
+  // its centimetres.
+  if (origin) positions.rebase(origin.nx, origin.ny)
   const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions.toFloat32(), 3))
+  geometry.setAttribute('normal', new THREE.BufferAttribute(normals.toFloat32(), 3))
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors.toFloat32(), 3))
+  if (facA.length > 0) {
+    padFacade()
+    geometry.setAttribute('aFacA', new THREE.BufferAttribute(facA.toFloat32(), 4))
+    geometry.setAttribute('aFacB', new THREE.BufferAttribute(facB.toFloat32(), 4))
+    geometry.setAttribute('aFacC', new THREE.BufferAttribute(facC.toFloat32(), 4))
+  }
   geometry.computeBoundingSphere()
 
   return { geometry, count, estimatedCount, ranges,
@@ -577,6 +703,98 @@ function ringCentroid(ring: ReadonlyArray<THREE.Vector2>): { x: number; y: numbe
     return { x: ox + mx / ring.length, y: oy + my / ring.length }
   }
   return { x: ox + cx / (3 * area), y: oy + cy / (3 * area) }
+}
+
+/**
+ * Walls of a park pavilion: the Ciutadella's 1888 brick and Montjuïc
+ * sandstone, and the stucco of a park kiosk. The generic facade guess is a
+ * street palette; in a park it came out as slate-dark boxes beside the Cascada.
+ */
+const PAVILION_WALL_TONES: ReadonlyArray<readonly [number, number, number]> = [
+  [0.78, 0.66, 0.50], [0.74, 0.62, 0.46],   // Montjuïc sandstone
+  [0.66, 0.40, 0.30],                       // exposed brick
+  [0.86, 0.80, 0.68],                       // stucco
+]
+
+/** Roofs of a block interior: planted terraces, clay-tiled terrats, gravel, membrane. */
+const INTERIOR_ROOF_TONES: ReadonlyArray<readonly [number, number, number]> = [
+  [0.36, 0.47, 0.25], [0.40, 0.52, 0.28], [0.33, 0.43, 0.24],   // planted — the "jardí interior"
+  [0.66, 0.46, 0.35], [0.62, 0.43, 0.33],                       // rajola de terrat
+  [0.60, 0.58, 0.54],                                           // gravel
+  [0.82, 0.81, 0.78],                                           // membrane
+]
+
+function pickTone(
+  tones: ReadonlyArray<readonly [number, number, number]>, seed: string, channel: number,
+): [number, number, number] | null {
+  if (tones.length === 0) return null
+  const t = tones[hashId(`${seed}#${channel}`) % tones.length]
+  return [t[0], t[1], t[2]]
+}
+
+/** The same render is never quite the same twice along a street. */
+function jitterTone(t: [number, number, number], seed: string): [number, number, number] {
+  const k = 0.93 + variate(seed, 14) * 0.14
+  return [Math.min(1, t[0] * k), Math.min(1, t[1] * k), Math.min(1, t[2] * k)]
+}
+
+/**
+ * Which wall edges are PARTY WALLS — shared with a neighbour.
+ *
+ * A party wall has no windows: in a street of attached buildings the side of
+ * a taller one rising over a lower neighbour is the blank "mitgera" every
+ * Eixample skyline is full of, and windows punched into it are the tell of a
+ * generated city. An edge counts as shared when another building has an edge
+ * lying along it (parallel, within 0.6 m, overlapping).
+ */
+function partyWallIndex(
+  footprints: ReadonlyArray<BuildingLike>, mToN: number,
+): { isParty(building: number, a: THREE.Vector2, b: THREE.Vector2): boolean } {
+  const CELL = 12
+  type E = { owner: number; ax: number; ay: number; bx: number; by: number }
+  const grid = new Map<string, E[]>()
+  const toM = (p: { lat: number; lon: number }) => {
+    const n = latLonToNormalized(p.lat, p.lon)
+    return { x: n.nx / mToN, y: n.ny / mToN }
+  }
+  footprints.forEach((f, owner) => {
+    const r = f.ring.map(toM)
+    for (let i = 0; i < r.length; i++) {
+      const a = r[i], b = r[(i + 1) % r.length]
+      const e = { owner, ax: a.x, ay: a.y, bx: b.x, by: b.y }
+      const mx = Math.floor((a.x + b.x) / 2 / CELL), my = Math.floor((a.y + b.y) / 2 / CELL)
+      const k = `${mx},${my}`
+      const list = grid.get(k)
+      if (list) list.push(e); else grid.set(k, [e])
+    }
+  })
+  return {
+    isParty(building, a, b) {
+      const ax = a.x / mToN, ay = a.y / mToN, bx = b.x / mToN, by = b.y / mToN
+      const len = Math.hypot(bx - ax, by - ay)
+      if (len < 0.5) return false
+      const ux = (bx - ax) / len, uy = (by - ay) / len
+      const mx = (ax + bx) / 2, my = (ay + by) / 2
+      const cx = Math.floor(mx / CELL), cy = Math.floor(my / CELL)
+      const reach = Math.ceil(len / 2 / CELL) + 1
+      for (let gx = cx - reach; gx <= cx + reach; gx++) for (let gy = cy - reach; gy <= cy + reach; gy++) {
+        for (const e of grid.get(`${gx},${gy}`) ?? []) {
+          if (e.owner === building) continue
+          const el = Math.hypot(e.bx - e.ax, e.by - e.ay)
+          if (el < 0.5) continue
+          const vx = (e.bx - e.ax) / el, vy = (e.by - e.ay) / el
+          if (Math.abs(ux * vy - uy * vx) > 0.08) continue            // not parallel
+          const off = Math.abs((e.ax - ax) * -uy + (e.ay - ay) * ux)  // distance between the lines
+          if (off > 0.6) continue
+          const t0 = (e.ax - ax) * ux + (e.ay - ay) * uy
+          const t1 = (e.bx - ax) * ux + (e.by - ay) * uy
+          const overlap = Math.min(len, Math.max(t0, t1)) - Math.max(0, Math.min(t0, t1))
+          if (overlap > len * 0.6) return true
+        }
+      }
+      return false
+    },
+  }
 }
 
 /**
@@ -661,7 +879,7 @@ const PARAPET_SHARE = 0.22
  * geometric window reveals nobody can resolve from across a street.
  */
 function pushDetailedWall(
-  positions: number[], normals: number[], colors: number[],
+  positions: NumberSink, normals: NumberSink, colors: NumberSink,
   p0: THREE.Vector2, p1: THREE.Vector2,
   nx: number, ny: number,
   baseZ: number, topZ: number,
@@ -837,7 +1055,7 @@ export function orientedFootprint(ring: ReadonlyArray<THREE.Vector2>): {
  * to the street it terminates, shallow depth front to back.
  */
 function pushArch(
-  positions: number[], normals: number[], colors: number[],
+  positions: NumberSink, normals: NumberSink, colors: NumberSink,
   ring: ReadonlyArray<THREE.Vector2>,
   metresToNormalized: number,
   groundZ: number,
@@ -1001,7 +1219,7 @@ function projectToAxis(
 }
 
 function pushTriangle(
-  positions: number[], normals: number[], colors: number[],
+  positions: NumberSink, normals: NumberSink, colors: NumberSink,
   a: THREE.Vector2, b: THREE.Vector2, c: THREE.Vector2,
   az: number, bz: number, cz: number,
   nx: number, ny: number, nz: number,

@@ -496,7 +496,9 @@ export class IfcViewer {
   private readonly pending = new Map<string, PendingLoad>()
   // Generic query (request/response) correlation, keyed by requestId.
   private readonly requests = new Map<string, { resolve: (v: unknown) => void; reject: (err: Error) => void; timer: ReturnType<typeof setTimeout> }>()
-  // Serialize loads so the app's single-load guard is never hit and order is stable.
+  // Serialize loads so they land in call order and each add() settles before
+  // the next is sent. The viewer itself queues concurrent loads (it no longer
+  // rejects a second one), so this is about predictable ordering for hosts.
   private loadChain: Promise<unknown> = Promise.resolve()
   private reqCounter = 0
   private listeners = new Map<keyof IfcViewerEventMap, Set<Listener<never>>>()

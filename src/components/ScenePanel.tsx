@@ -12,6 +12,7 @@ import type { SceneModel, ModelTransform } from '../types'
 import type { TransformMode } from '../stores/uiStore'
 import { useUIStore } from '../stores/uiStore'
 import { ViewportPanel } from './ViewportPanel'
+import { SceneLoadingSection } from './loading'
 
 interface ScenePanelProps {
   models:         SceneModel[]
@@ -492,6 +493,9 @@ export default function ScenePanel({
       {/* The shell already caps the card; the body just takes what is left and
           scrolls. A second hand-picked height here fought the first one. */}
       <div className="flex-1 min-h-0 overflow-y-auto">
+        {/* Models still loading, queued or failed — the federation as it forms */}
+        <SceneLoadingSection className="px-2 pt-2" />
+
         {/* Model list */}
         <div className="p-2 space-y-1">
           {models.length === 0 && (

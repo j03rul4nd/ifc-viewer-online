@@ -1,8 +1,9 @@
 import { Vector2 } from 'three'
+import type { NumberSink } from './growable-array'
 
 type Tone = [number, number, number]
 /** Batched engineering-scale detail; all inputs and output are in the map frame. */
-export function appendRailDetail(positions: number[], colors: number[], line: Vector2[], unit: number,
+export function appendRailDetail(positions: NumberSink, colors: NumberSink, line: Vector2[], unit: number,
   height: (x: number, y: number) => number, gauge = 1.435, detailed = true, focus?: Vector2, overhead=false): void {
   const near=(p:Vector2)=>!focus || p.distanceTo(focus)<450*unit
   const box = (a: Vector2, b: Vector2, width: number, bottom: number, top: number, tone: Tone) => {

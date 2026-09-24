@@ -74,12 +74,12 @@ export type SuppressionPolicy = Partial<Record<FeatureKind, boolean>>
  * way but leaves the buildings alone.
  */
 export const DEFAULT_POLICY: Record<FacilityKind, SuppressionPolicy> = {
-  building: { building: true, tree: true, signal: true },
-  bridge:   { bridge: true, road: true, rail: true, tree: true, signal: true },
+  building: { building: true, tree: true, signal: true, furniture: true, barrier: true },
+  bridge:   { bridge: true, road: true, rail: true, tree: true, signal: true, furniture: true },
   tunnel:   { bridge: true, road: true, rail: true },
-  road:     { road: true, bridge: true, tree: true, signal: true },
-  railway:  { rail: true, bridge: true, tree: true, signal: true },
-  unknown:  { building: true, tree: true, signal: true },
+  road:     { road: true, bridge: true, tree: true, signal: true, furniture: true },
+  railway:  { rail: true, bridge: true, tree: true, signal: true, furniture: true },
+  unknown:  { building: true, tree: true, signal: true, furniture: true, barrier: true },
 }
 
 /** Default skirt beyond the model outline, metres. */

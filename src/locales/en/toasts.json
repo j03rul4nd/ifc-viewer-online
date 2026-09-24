@@ -7,7 +7,14 @@
     "removeFailed": "Could not remove model: {{message}}",
     "urlLoadFailed": "Could not load the linked model: {{message}}",
     "mapFailed": "Map mode could not open: {{message}}",
-    "scanLoadFailed": "Could not load the linked scan: {{message}}"
+    "scanLoadFailed": "Could not load the linked scan: {{message}}",
+    "loadFailedNamed": "\"{{fileName}}\" could not be loaded — {{reason}}",
+    "batchLoaded_one": "{{name}} — {{count}} model loaded",
+    "batchLoaded_other": "{{name}} — {{count}} models loaded",
+    "batchPartial": "{{name}} — {{loaded}} loaded, {{failed}} failed",
+    "dropUnsupported_one": "{{count}} file is not a supported format",
+    "dropUnsupported_other": "{{count}} files are not a supported format",
+    "dropBcfHint": "Open the BCF panel to import .bcf files"
   },
   "validation": {
     "complete": "Validation complete — {{count}} issues found",
