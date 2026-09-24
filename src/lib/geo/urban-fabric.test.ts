@@ -4,6 +4,7 @@ import { buildBuildingsGeometry, type BuildingLike } from './building-mesh'
 import { parseOsmFeatures, buildFeaturesQuery } from './osm-features'
 import { buildLinearLayer } from './osm-scene'
 import { metresToNormalized } from './geo-math'
+import { roofPropAnchors } from './roof-props'
 
 const lat=31.24,lon=121.50,unit=metresToNormalized(lat)
 const point=(x:number,y:number)=>({lat:lat+y/111320,lon:lon+x/(111320*Math.cos(lat*Math.PI/180))})
@@ -28,6 +29,11 @@ describe('mapped urban fabric',()=>{
   it('keeps the stated clearance below suspended building parts',()=>{
     const g=buildBuildingsGeometry([{...building,height:{...building.height,minHeightM:8}}],opts)!.geometry
     g.computeBoundingBox();expect(g.boundingBox!.min.z/unit).toBeCloseTo(8,4)
+  })
+  it('does not place rooftop equipment over a mapped courtyard',()=>{
+    const b={...building,style:{...building.style!,use:'tower' as const}}
+    expect(roofPropAnchors([b],opts).length).toBeGreaterThan(0)
+    expect(roofPropAnchors([{...b,holes:[ring(.1,19.9)]}],opts)).toHaveLength(0)
   })
   it('retains centimetre precision at Shanghai longitude and typological facade variation',()=>{
     const built=buildBuildingsGeometry([building],opts)!,p=built.geometry.getAttribute('position')
