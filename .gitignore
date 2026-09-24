@@ -79,3 +79,4 @@ __pycache__/
 # Local Blender review of the shipping Shanghai bridge mesh
 /.tmp/shanghai-bridges/
 /.tmp/shanghai-rail/
+/.tmp/shanghai-city/
