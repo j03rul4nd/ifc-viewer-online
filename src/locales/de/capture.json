@@ -341,7 +341,8 @@
         "bcf": "BCF-Themen",
         "fixed": "Was behoben wurde",
         "zoomThrough": "Durchflug",
-        "pullOut": "Rückfahrt"
+        "pullOut": "Rückfahrt",
+        "endCard": "Abspann-Karte"
       },
       "sectionHint": {
         "hero": "Rückzug auf das ganze Modell, mit Titel",
@@ -358,7 +359,8 @@
         "bcf": "Jedes BCF-Thema aus seinem eigenen Blickpunkt",
         "fixed": "Befunde der vorigen Prüfung, die jetzt weg sind",
         "zoomThrough": "Ein beschleunigender Flug durch die Fassade in ein Geschoss",
-        "pullOut": "Von einem Meter vor einem Detail zurück zum ganzen Gebäude"
+        "pullOut": "Von einem Meter vor einem Detail zurück zum ganzen Gebäude",
+        "endCard": "Name und URL über einem wandernden Farbverlauf"
       },
       "empty": {
         "storeys": "Keine Geschosse in diesem Modell",

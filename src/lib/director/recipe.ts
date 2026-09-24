@@ -38,8 +38,9 @@ export type SectionKind =
   | 'tour'      // fly through the stops of the recorded tour
   | 'detail'    // push in on the selected element (or the model's heart)
   | 'closing'   // slow final turn with the call to action
+  | 'endCard'   // the name and the URL over a drifting gradient
 
-export const SECTION_KINDS: readonly SectionKind[] = ['hero', 'pullOut', 'orbit', 'aerial', 'buildup', 'zoomThrough', 'storeys', 'systems', 'issues', 'ids', 'bcf', 'fixed', 'tour', 'detail', 'closing']
+export const SECTION_KINDS: readonly SectionKind[] = ['hero', 'pullOut', 'orbit', 'aerial', 'buildup', 'zoomThrough', 'storeys', 'systems', 'issues', 'ids', 'bcf', 'fixed', 'tour', 'detail', 'closing', 'endCard']
 
 export type Pace = 'calm' | 'normal' | 'fast'
 export const PACES: readonly Pace[] = ['calm', 'normal', 'fast']
@@ -208,14 +209,14 @@ export const BUILT_IN_RECIPES: readonly Recipe[] = [
   {
     ...BASE, id: 'launch-2026', name: 'Launch 2026 (vertical)', style: 'launch', sfx: 'full',
     format: 'reel', targetSec: 16, pace: 'fast', transition: 'whip', transitionSec: 0.25, music: 'upbeat',
-    sections: ['pullOut', 'buildup', 'zoomThrough', 'storeys', 'systems', 'closing'], maxSystems: 1, maxStoreys: 1,
+    sections: ['pullOut', 'buildup', 'zoomThrough', 'storeys', 'systems', 'endCard'], maxSystems: 1, maxStoreys: 1,
     captions: { ...CAPTIONS, look: 'bold', labelShots: true, cta: 'ifcvieweronline.eu' },
     watermark: true,
   },
   {
     ...BASE, id: 'launch-2026-wide', name: 'Launch 2026 (16:9)', style: 'launch', sfx: 'full',
     format: 'wide', targetSec: 24, pace: 'normal', transition: 'zoom', transitionSec: 0.3, music: 'cinematic',
-    sections: ['pullOut', 'buildup', 'zoomThrough', 'storeys', 'systems', 'closing'], maxSystems: 2, maxStoreys: 2,
+    sections: ['pullOut', 'buildup', 'zoomThrough', 'storeys', 'systems', 'closing', 'endCard'], maxSystems: 2, maxStoreys: 2,
     captions: { ...CAPTIONS, look: 'bold', labelShots: true, cta: 'ifcvieweronline.eu' },
   },
 ]

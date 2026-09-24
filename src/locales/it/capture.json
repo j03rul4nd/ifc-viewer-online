@@ -341,7 +341,8 @@
         "bcf": "Argomenti BCF",
         "fixed": "Cosa è stato corretto",
         "zoomThrough": "Zoom attraverso",
-        "pullOut": "Allontanamento di scala"
+        "pullOut": "Allontanamento di scala",
+        "endCard": "Cartello finale"
       },
       "sectionHint": {
         "hero": "Allarga fino al modello intero, con il titolo",
@@ -358,7 +359,8 @@
         "bcf": "Ogni argomento BCF dal suo punto di vista",
         "fixed": "Criticità della validazione precedente ora sparite",
         "zoomThrough": "Una spinta che accelera, attraversa la facciata ed entra in un piano",
-        "pullOut": "Da un metro da un dettaglio fino all’intero edificio"
+        "pullOut": "Da un metro da un dettaglio fino all’intero edificio",
+        "endCard": "Il nome e l’URL su un gradiente in movimento"
       },
       "empty": {
         "storeys": "Nessun piano in questo modello",

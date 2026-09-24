@@ -191,6 +191,14 @@ describe('planPresentation', () => {
     expect(dist(out.keyframes![0])).toBeLessThan(dist(out.keyframes![out.keyframes!.length - 1]))
   })
 
+  it('closes on an end card that carries the URL', () => {
+    const [clip] = planPresentation(recipe('launch-2026'), facts([model()]), strings, { beatSec: 0.5 })
+    const last = clip.shots[clip.shots.length - 1]
+    expect(last.card).toEqual({ title: 'Model m1', subtitle: '1200 elements · 8 storeys', url: 'ifcvieweronline.eu' })
+    expect(clip.texts.some((t) => t.text === 'ifcvieweronline.eu')).toBe(false)
+    expect(clip.sfx!.cues.some((c) => c.kind === 'boom')).toBe(true)
+  })
+
   it('never prints a score below 70', () => {
     const [low] = planPresentation(recipe('meeting-demo'), facts([model('m1', { score: 55 })]), strings, null)
     expect(low.texts.some((t) => t.text.includes('/100'))).toBe(false)

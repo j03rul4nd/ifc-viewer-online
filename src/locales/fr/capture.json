@@ -341,7 +341,8 @@
         "bcf": "Sujets BCF",
         "fixed": "Ce qui a été corrigé",
         "zoomThrough": "Traversée",
-        "pullOut": "Recul d’échelle"
+        "pullOut": "Recul d’échelle",
+        "endCard": "Carton de fin"
       },
       "sectionHint": {
         "hero": "Recul jusqu’à la maquette entière, avec le titre",
@@ -358,7 +359,8 @@
         "bcf": "Chaque sujet BCF depuis son propre point de vue",
         "fixed": "Anomalies de la validation précédente qui ont disparu",
         "zoomThrough": "Une poussée qui accélère, traverse la façade et entre dans un niveau",
-        "pullOut": "D’un mètre d’un détail jusqu’au bâtiment entier"
+        "pullOut": "D’un mètre d’un détail jusqu’au bâtiment entier",
+        "endCard": "Le nom et l’URL sur un dégradé en mouvement"
       },
       "empty": {
         "storeys": "Aucun niveau dans cette maquette",

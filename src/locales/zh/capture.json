@@ -341,7 +341,8 @@
         "bcf": "BCF 议题",
         "fixed": "已修复内容",
         "zoomThrough": "穿越推进",
-        "pullOut": "拉远揭示"
+        "pullOut": "拉远揭示",
+        "endCard": "片尾卡"
       },
       "sectionHint": {
         "hero": "拉远至整个模型并显示标题",
@@ -358,7 +359,8 @@
         "bcf": "每个 BCF 议题从其自身视点展示",
         "fixed": "上次校验中已消失的问题",
         "zoomThrough": "加速推进，穿过立面进入楼层",
-        "pullOut": "从细节前一米拉远到整栋建筑"
+        "pullOut": "从细节前一米拉远到整栋建筑",
+        "endCard": "名称和网址叠加在流动渐变背景上"
       },
       "empty": {
         "storeys": "此模型没有楼层",
