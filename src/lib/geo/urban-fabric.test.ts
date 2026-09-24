@@ -48,6 +48,17 @@ describe('mapped urban fabric',()=>{
     const distant=buildBuildingsGeometry([building],{...opts,anchorLon:lon+.02})!
     expect(distant.geometry.getAttribute('position').count).toBeLessThan(p.count)
   })
+  it('keeps mapped canopies open at pedestrian height',()=>{
+    const b={...building,style:{...building.style!,openCanopy:true}}
+    const g=buildBuildingsGeometry([b],opts)!.geometry,p=g.getAttribute('position')
+    // On the south edge there must be no wall spanning the central doorway.
+    for(let i=0;i<p.count;i+=3){
+      const x=(p.getX(i)+p.getX(i+1)+p.getX(i+2))/3/unit
+      const y=(p.getY(i)+p.getY(i+1)+p.getY(i+2))/3/unit
+      const z=(p.getZ(i)+p.getZ(i+1)+p.getZ(i+2))/3/unit
+      expect(x>1&&x<19&&Math.abs(y)<.1&&z>0&&z<10).toBe(false)
+    }
+  })
   it('loads exact pavement polygons including holes instead of making perimeter ribbons',()=>{
     const closed=(r:ReturnType<typeof ring>)=>[...r,r[0]]
     const features=parseOsmFeatures({elements:[{type:'relation',id:123,tags:{type:'multipolygon','area:highway':'footway',surface:'paving_stones'},members:[

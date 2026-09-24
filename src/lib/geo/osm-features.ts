@@ -132,6 +132,8 @@ export interface FeatureStyle {
   use?: BuildingUse
   /** `roof:shape`, normalised to the shapes we can actually build. */
   roofShape: RoofShape
+  /** Explicit open-sided roof/canopy; supports are approximate. */
+  openCanopy?: boolean
   /**
    * A monument whose form is stated by its tag and cannot be extruded from the
    * outline — see `monumentShape`. Overrides walls and roof entirely.
@@ -288,7 +290,7 @@ export function parseCrossingMarkings(raw: string | undefined): CrossingMarkings
   }
 }
 
-export type RoofShape = 'flat' | 'gabled' | 'pyramidal' | 'skillion' | 'dome'
+export type RoofShape = 'flat' | 'gabled' | 'pyramidal' | 'skillion' | 'dome' | 'mansard'
 
 /**
  * What a building is FOR, in the few categories that change how it looks.
@@ -991,6 +993,8 @@ export function parseOsmColor(raw: string | undefined): string | undefined {
 /** Normalise `roof:shape` to a shape we can actually build. */
 export function parseRoofShape(raw: string | undefined): RoofShape {
   switch ((raw ?? '').trim().toLowerCase()) {
+    case 'mansard':
+      return 'mansard'
     case 'gabled':
     case 'hipped':      // close enough at this scale; both read as a ridge
     case 'half-hipped':
@@ -1163,6 +1167,7 @@ export function resolveFeatureStyle(
     // Lujiazui say `across`, and all 10 in Barcelona: every one of them was
     // being drawn with its ridge ninety degrees out, with the answer in the
     // data. `along` is the default and needs no flag.
+    openCanopy: t['building'] === 'roof' || t['building:part'] === 'roof',
     roofAcross: (t['roof:orientation'] ?? '').trim().toLowerCase() === 'across',
     wallColor: parseOsmColor(t['building:colour'] ?? t['colour']),
     roofColor: parseOsmColor(t['roof:colour']),
