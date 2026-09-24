@@ -17,11 +17,14 @@ not presented as newly discovered Xintiandi survey data.
 ## Changes
 
 - Fetch/classify explicit road and pedestrian surface polygons and pedestrian
-  multipolygons. Respect material tags, elevations and mapped interior holes.
+  multipolygons. Respect material tags and mapped interior holes; retain vertical
+  metadata and omit underground concourses from the surface view.
 - Preserve building courtyard rings through parser, scene assembly and roof
   triangulation; add inward-facing courtyard walls.
 - Respect `min_height` without extending a buried foundation skirt into the
   space under a suspended building part. Do not count foundation depth as floors.
+- Keep roof equipment out of courtyard voids and compute its anchors relative
+  to a local origin to avoid centroid cancellation at Shanghai longitude.
 - Distinguish solid residential/civic window bays, sparse high industrial
   windows, and continuous office/glass bands. Tagged glass overrides the type.
   Window positions are illustrative, not observed facade openings.

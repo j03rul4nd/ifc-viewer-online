@@ -5,6 +5,7 @@ import { parseOsmFeatures, buildFeaturesQuery } from './osm-features'
 import { buildLinearLayer } from './osm-scene'
 import { metresToNormalized } from './geo-math'
 import { roofPropAnchors } from './roof-props'
+import { readVerticalTags } from './vertical'
 
 const lat=31.24,lon=121.50,unit=metresToNormalized(lat)
 const point=(x:number,y:number)=>({lat:lat+y/111320,lon:lon+x/(111320*Math.cos(lat*Math.PI/180))})
@@ -63,6 +64,8 @@ describe('mapped urban fabric',()=>{
       for(let i=0;i<p.count;i+=3)area+=Math.abs((p.getX(i+1)-p.getX(i))*(p.getY(i+2)-p.getY(i))-(p.getY(i+1)-p.getY(i))*(p.getX(i+2)-p.getX(i)))/2/unit**2
     })
     expect(area).toBeCloseTo(336,1)
+    expect(buildLinearLayer(features.map(f=>({...f,vertical:readVerticalTags({tunnel:'yes'})})),
+      'road',{...opts,quality:'detailed'})).toBeNull()
     expect(buildFeaturesQuery({south:31.23,west:121.49,north:31.25,east:121.51})).toContain('["area:highway"]')
   })
 })

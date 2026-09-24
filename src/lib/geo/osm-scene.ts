@@ -1838,6 +1838,9 @@ export function buildLinearLayer(
     activeProfile = profileFor(f.id)
 
     if (f.widthM === undefined) {
+      // Polygon interiors have no centreline profile. A tagged underground
+      // concourse must not become a new paved square on the surface.
+      if (f.vertical?.structure === 'tunnel') continue
       // A paved AREA — a square, an esplanade, a pedestrianised street. Same
       // fill as a platform and deliberately so, but flat on the ground and with
       // no painted edge: a plaza has no platform lip, and drawing one put a
