@@ -94,3 +94,6 @@ From the 2026 launch-video grammar (Raycast/Framer/Vercel-style launches, short-
 Looks (2026 references): Cloud Dancer (Pantone 2026 — clay on warm paper, serif, terracotta), Transformative Teal (WGSN/Coloro 2026, persimmon accent), Plum Noir (Pinterest 2026, wasabi, letterbox), Brutalist (light concrete on charcoal, grayscale), Blueprint (navy, mono, cyan), Golden hour (sand under sunset, orange/teal, letterbox). Templates: Editorial clay, Teal & persimmon, Plum noir film, Brutalist reel, Blueprint, Golden hour.
 
 The scene is restored after the render (models' own materials, the user's backdrop and grid, the validation overlay). Contrast is tested (ink on card ≥ 4.5:1; building vs backdrop).
+- **Light per look** (`viewer.setLighting`): sky/ground ambient, a key "sun" (colour, strength, azimuth, elevation) and an opposite fill — soft studio for clay, raking warm key for Plum Noir, hard overhead for Brutalist, flat cool for Blueprint, low warm sun for Golden hour. Restored after the render.
+- With letterbox, titles are laid out inside the picture area, not on the bars.
+- Not used: the viewer's AO/edges post-processing is WebGL-only and is off on WebGPU, so looks do not depend on it.

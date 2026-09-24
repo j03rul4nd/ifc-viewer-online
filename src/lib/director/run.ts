@@ -20,6 +20,7 @@ import type { ValidationIssue } from '../../types'
 import type { Recipe } from './recipe'
 import { ensureLookFonts, type Look } from './looks'
 import type { BackgroundSettings } from '../scene/background'
+import type { SceneLighting } from '../viewer'
 import type { PlannedClip, ShotScene, Rhythm } from './plan'
 
 /** The viewer calls a run needs on top of shot rendering. */
@@ -27,6 +28,7 @@ export interface DirectorViewer extends ShotRenderer {
   applyModelPalette(palette: Record<'structure' | 'envelope' | 'glazing' | 'mep' | 'interiors' | 'other', string> | null, glazingOpacity?: number): Promise<void>
   setBackground(settings: BackgroundSettings): void
   setGridVisible(visible: boolean): boolean
+  setLighting(light: SceneLighting | null): void
   getLoadedModelIds(): string[]
   setModelVisible(modelId: string, visible: boolean): void
   isolateElements(targets: Array<{ expressId: number; modelId?: string | null }>, enabled: boolean): void
@@ -289,11 +291,13 @@ async function applyLook(viewer: DirectorViewer, look: Look): Promise<() => Prom
   // A styled backdrop is a seamless sweep: no ground grid on it.
   const gridWas = viewer.setGridVisible(false)
   if (look.background) viewer.setBackground({ preset: 'custom', ...look.background })
+  if (look.light) viewer.setLighting(look.light)
   if (look.palette) await viewer.applyModelPalette(look.palette, look.glazingOpacity)
   return async () => {
     if (look.palette) await viewer.applyModelPalette(null)
     if (look.background) viewer.setBackground(before)
     viewer.setGridVisible(gridWas)
+    if (look.light) viewer.setLighting(null)
     const { validationMode, result } = useValidationStore.getState()
     if (validationMode && result) viewer.setValidationHighlights(result.issues, true)
   }

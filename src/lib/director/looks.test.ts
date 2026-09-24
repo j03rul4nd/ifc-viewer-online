@@ -34,6 +34,16 @@ describe('looks', () => {
     }
   })
 
+  it('every art-directed look lights its scene, the native one leaves it alone', () => {
+    expect(LOOKS.native.light).toBeNull()
+    for (const id of LOOK_IDS.filter((x) => x !== 'native')) {
+      const l = LOOKS[id].light!
+      expect(l, id).not.toBeNull()
+      expect(l.elevation).toBeGreaterThan(0)
+      expect(l.keyIntensity).toBeGreaterThan(l.fillIntensity)
+    }
+  })
+
   it('grade: filter string and cinema bars only on landscape', () => {
     const g = LOOKS['plum-noir'].grade!
     expect(gradeFilter(g)).toContain('contrast(1.14)')

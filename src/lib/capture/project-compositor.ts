@@ -11,7 +11,7 @@
 // watermark → colour cover. The cover goes last so a dip to black takes the
 // titles with it.
 
-import { applyGrade, gradeFilter } from './grade'
+import { applyGrade, gradeFilter, letterboxBar } from './grade'
 import { framingRect, overlaysAt, punchScale, type ClipSample, type EditProject, type FrameSample, type MediaOverlay } from './project'
 import { textRenderStateAt } from './timeline'
 import { drawTextCardsAt } from './compositor'
@@ -75,7 +75,16 @@ export function composeProjectFrame(o: ComposeProjectOptions): void {
   // The grade goes over the picture and under the titles.
   applyGrade(ctx, width, height, grade, o.t)
 
-  drawTextCardsAt(ctx, o.project.texts, o.t, width, height)
+  // With cinema bars, titles live inside the picture, never on the bars.
+  const bar = letterboxBar(grade, width, height)
+  if (bar > 0) {
+    ctx.save()
+    ctx.translate(0, bar)
+    drawTextCardsAt(ctx, o.project.texts, o.t, width, height - bar * 2)
+    ctx.restore()
+  } else {
+    drawTextCardsAt(ctx, o.project.texts, o.t, width, height)
+  }
   if (o.watermark) drawWatermark(ctx, width, height)
 
   if (sample.cover.amount > 0.001) {
