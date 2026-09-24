@@ -600,6 +600,60 @@ export function solveVerticalNetwork(
   }
   const { chains, endsOf, degree } = buildChains(sorted, index)
 
+  // ── Clearance floors at every crossing a STRUCTURE makes ──────────────────
+  // The crossing clearance above sets the height of a deck's CORE. It says
+  // nothing about where along the deck the crossing is — and in Barcelona's
+  // data a flyover is cut into pieces of 10 to 20 m, so the piece that crosses
+  // a street is often one whose ends are pulled toward its ground-level
+  // approaches by the junction reconciliation. Measured at Plaça d'Espanya and
+  // the Nus de la Trinitat: decks 0.5 to 2.7 m above the carriageway they
+  // cross. So each crossing also leaves a FLOOR at its own station: the lower
+  // way's level plus the headroom it needs. It is applied like a deck
+  // attachment — raised, and spread along the chain at the legal grade — so it
+  // lifts the approach smoothly instead of putting a step in it.
+  const crossingFloors = new Map<string, number>()
+  /** Ways carrying at least one crossing floor. */
+  const floorWays = new Set<number>()
+  const wayIndex = new Map(sorted.map((w, i) => [w.id, i] as const))
+  /**
+   * (Re)derive the floors from what the lower ways stand at. First from their
+   * INTENT; then, after a solve, from where they actually ended up — a slip
+   * road passing under a flyover is often itself climbing to another deck, and
+   * a floor taken from its ground level leaves the flyover 2.7 m above it
+   * (measured on the Ronda de Dalt at the Nus de la Trinitat).
+   * Returns whether any floor rose.
+   */
+  const deriveFloors = (underLevel: (u: number, j: number) => number): boolean => {
+  let rose = false
+  for (const c of crossings) {
+    const w = wayIndex.get(c.overId)
+    const u = wayIndex.get(c.underId)
+    if (w === undefined || u === undefined) continue
+    if (sorted[w].tags.structure !== 'bridge') continue
+    const over = plans[w].densified
+    // The two stations either side of the crossing: the mesh interpolates
+    // between them, so BOTH have to clear it for the crossing point to.
+    let i = 0
+    while (i < over.stationM.length - 2 && over.stationM[i + 1] < c.stationM) i++
+    const bracket = over.stationM.length > 1 ? [i, i + 1] : [0]
+    const at = over.points[Math.abs(over.stationM[i] - c.stationM) <= Math.abs((over.stationM[i + 1] ?? Infinity) - c.stationM) ? i : i + 1]
+    const under = plans[u]
+    let j = 0
+    for (let k = 1; k < under.densified.points.length; k++) {
+      if (under.densified.points[k].distanceToSquared(at) < under.densified.points[j].distanceToSquared(at)) j = k
+    }
+    const floorM = underLevel(u, j) + CROSSING_CLEARANCE_M[c.underFunctional]
+    for (const k of bracket) {
+      const key = `${w}:${k}`
+      const was = crossingFloors.get(key) ?? -Infinity
+      if (floorM > was + 0.05) { crossingFloors.set(key, floorM); rose = true }
+      floorWays.add(w)
+    }
+  }
+  return rose
+  }
+  deriveFloors((u, j) => Math.max(plans[u].targetM[j], plans[u].ground[j]))
+
   const solved: number[][] = plans.map((p) => [...p.targetM])
   const relaxedWay = new Array<boolean>(sorted.length).fill(false)
 
@@ -663,7 +717,10 @@ export function solveVerticalNetwork(
     const { elevationM, relaxed } = lipschitzEnvelope(verts, grade)
     // The general envelope can relax conflicting hard seeds. An existing deck
     // attachment is a boundary condition: lift the approach, never detach it.
-    const floor = owners.map(list => Math.max(-Infinity, ...list.map(o => attachmentSeeds.get(`${o.way}:${o.idx}`) ?? -Infinity)))
+    const floor = owners.map(list => Math.max(-Infinity, ...list.map(o => Math.max(
+      attachmentSeeds.get(`${o.way}:${o.idx}`) ?? -Infinity,
+      crossingFloors.get(`${o.way}:${o.idx}`) ?? -Infinity,
+    ))))
     for (let i = 1; i < floor.length; i++) floor[i] = Math.max(floor[i], floor[i-1] - grade * (verts[i].stationM - verts[i-1].stationM))
     for (let i = floor.length-2; i >= 0; i--) floor[i] = Math.max(floor[i], floor[i+1] - grade * (verts[i+1].stationM - verts[i].stationM))
     for (let i = 0; i < elevationM.length; i++) elevationM[i] = Math.max(elevationM[i], floor[i])
@@ -675,55 +732,74 @@ export function solveVerticalNetwork(
     }
   }
 
-  // ── 6. First pass: chains solved free ───────────────────────────────────────
-  const noPins = new Map<number, number>()
-  for (const chain of chains) solveChain(chain, noPins)
+  const runPasses = (): void => {
+    // ── 6. First pass: chains solved free ───────────────────────────────────────
+    const noPins = new Map<number, number>()
+    for (const chain of chains) solveChain(chain, noPins)
 
-  // ── 7. Junction reconciliation ──────────────────────────────────────────────
-  // Every arm of a crossroads must arrive at ONE height, or the junction tears
-  // open — the most visible discontinuity there is. Collect what each arm came
-  // to, average them, and re-solve with the node pinned. The MEAN is the
-  // continuous choice: taking the maximum would jack the junction up to its
-  // most ambitious arm and put a step in all the others.
-  //
-  // Iterated, because a pin is not always achievable: an arm that is a bridge
-  // deck right up to the junction cannot come down to meet the others at any
-  // legal grade, and the first consensus will be one it cannot reach. Each pass
-  // moves the consensus toward what the stiff arm can actually do. Three passes
-  // is not a convergence criterion but a budget — cheap, and enough in practice.
+    // ── 7. Junction reconciliation ──────────────────────────────────────────────
+    // Every arm of a crossroads must arrive at ONE height, or the junction tears
+    // open — the most visible discontinuity there is. Collect what each arm came
+    // to, average them, and re-solve with the node pinned. The MEAN is the
+    // continuous choice: taking the maximum would jack the junction up to its
+    // most ambitious arm and put a step in all the others.
+    //
+    // Iterated, because a pin is not always achievable: an arm that is a bridge
+    // deck right up to the junction cannot come down to meet the others at any
+    // legal grade, and the first consensus will be one it cannot reach. Each pass
+    // moves the consensus toward what the stiff arm can actually do. Three passes
+    // is not a convergence criterion but a budget — cheap, and enough in practice.
 
-  /** Every (way, vertex) that touches a junction node, in a fixed order. */
-  const armsAt = new Map<number, Array<{ way: number; idx: number }>>()
-  for (let w = 0; w < sorted.length; w++) {
-    const n = plans[w].densified.points.length
-    for (const [node, idx] of [[endsOf[w][0], 0], [endsOf[w][1], n - 1]] as const) {
-      if ((degree.get(node) ?? 0) < 3) continue
-      const list = armsAt.get(node)
-      if (list) list.push({ way: w, idx })
-      else armsAt.set(node, [{ way: w, idx }])
+    /** Every (way, vertex) that touches a junction node, in a fixed order. */
+    const armsAt = new Map<number, Array<{ way: number; idx: number }>>()
+    for (let w = 0; w < sorted.length; w++) {
+      const n = plans[w].densified.points.length
+      for (const [node, idx] of [[endsOf[w][0], 0], [endsOf[w][1], n - 1]] as const) {
+        if ((degree.get(node) ?? 0) < 3) continue
+        const list = armsAt.get(node)
+        if (list) list.push({ way: w, idx })
+        else armsAt.set(node, [{ way: w, idx }])
+      }
+    }
+
+    if (armsAt.size > 0) {
+      const nodesInOrder = [...armsAt.keys()].sort((a, b) => a - b)
+      const pinned = new Map<number, number>()
+      for (let pass = 0; pass < 3; pass++) {
+        for (const node of nodesInOrder) {
+          const arms = armsAt.get(node)!
+          let sum = 0
+          let owed = -Infinity
+          for (const a of arms) {
+            sum += solved[a.way][a.idx]
+            // A deck that has a crossing to clear just past this node holds the
+            // junction up: averaging it down would drop the deck onto the street
+            // it crosses. The slips meeting it ramp up instead.
+            if (floorWays.has(a.way)) owed = Math.max(owed, solved[a.way][a.idx])
+          }
+          pinned.set(node, Math.max(sum / arms.length, owed))
+        }
+        for (const chain of chains) solveChain(chain, pinned)
+      }
+      // Guarantee, not hope. Whatever the last pass achieved, every arm leaves
+      // the junction from the SAME vertex height. Any residual is a fraction of
+      // a metre spread along an arm, which is a slope; a mismatch here would be a
+      // hole in the road surface, which is not.
+      for (const node of nodesInOrder) {
+        const target = pinned.get(node)!
+        for (const a of armsAt.get(node)!) solved[a.way][a.idx] = target
+      }
     }
   }
-
-  if (armsAt.size > 0) {
-    const nodesInOrder = [...armsAt.keys()].sort((a, b) => a - b)
-    const pinned = new Map<number, number>()
-    for (let pass = 0; pass < 3; pass++) {
-      for (const node of nodesInOrder) {
-        const arms = armsAt.get(node)!
-        let sum = 0
-        for (const a of arms) sum += solved[a.way][a.idx]
-        pinned.set(node, sum / arms.length)
-      }
-      for (const chain of chains) solveChain(chain, pinned)
-    }
-    // Guarantee, not hope. Whatever the last pass achieved, every arm leaves
-    // the junction from the SAME vertex height. Any residual is a fraction of
-    // a metre spread along an arm, which is a slope; a mismatch here would be a
-    // hole in the road surface, which is not.
-    for (const node of nodesInOrder) {
-      const target = pinned.get(node)!
-      for (const a of armsAt.get(node)!) solved[a.way][a.idx] = target
-    }
+  runPasses()
+  // One more round when a lower way turned out to stand higher than intended:
+  // the floors it implies are re-derived from the SOLVED profiles and the
+  // network solved again from its intent, so nothing of the first answer's
+  // compromises is baked in.
+  if (crossings.length > 0 && deriveFloors((u, j) => solved[u][j])) {
+    for (let w = 0; w < plans.length; w++) solved[w] = [...plans[w].targetM]
+    relaxedWay.fill(false)
+    runPasses()
   }
 
   // ── Assemble ────────────────────────────────────────────────────────────────

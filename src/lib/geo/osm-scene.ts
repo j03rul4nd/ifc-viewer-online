@@ -258,12 +258,16 @@ function projectRing(ring: ReadonlyArray<LatLonPoint>): THREE.Vector2[] {
  * polygons collapse to nothing (this cost us ~89 % of buildings once — see
  * building-mesh). Indices are topological, so they apply to the normalized ring.
  */
-function triangulate(ring: THREE.Vector2[], mToN: number): number[][] | null {
+function triangulate(
+  ring: THREE.Vector2[], mToN: number, holes: ReadonlyArray<THREE.Vector2[]> = [],
+): number[][] | null {
   if (ring.length < 3) return null
   if (THREE.ShapeUtils.isClockWise(ring)) ring.reverse()
   const metric = ring.map((p) => new THREE.Vector2(p.x / mToN, p.y / mToN))
   try {
-    const faces = THREE.ShapeUtils.triangulateShape(metric, [])
+    const faces = THREE.ShapeUtils.triangulateShape(
+      metric, holes.map((h) => h.map((p) => new THREE.Vector2(p.x / mToN, p.y / mToN))),
+    )
     return faces.length > 0 ? faces : null
   } catch {
     return null
@@ -305,8 +309,11 @@ function buildSimpleSurface(
 
   for (const f of features) {
     if (f.kind !== layer || !f.ring) continue
-    const ring = projectRing(f.ring)
-    const faces = triangulate(ring, mToN)
+    const outer = projectRing(f.ring)
+    const holes = (f.holes ?? []).map(projectRing).filter((h) => h.length >= 3)
+    const faces = triangulate(outer, mToN, holes)
+    // Indices address the outer ring followed by every hole.
+    const ring = holes.length ? [...outer, ...holes.flat()] : outer
     // A ring the triangulator refuses is a feature the user asked for and will
     // not see. Counted, not swallowed — see LayerMesh.dropped.
     if (!faces) { dropped++; continue }
@@ -315,7 +322,7 @@ function buildSimpleSurface(
     // it — the surface of a river is not the height of its banks.
     let flatZ = 0
     if (layer === 'water') {
-      flatZ = frame.zAtElevationM(waterLevelM(ring, frame, f.isSea === true) + lift)
+      flatZ = frame.zAtElevationM(waterLevelM(outer, frame, f.isSea === true) + lift)
     }
 
     // Ground cover is coloured by WHAT IT IS: a forest is much darker than a
@@ -498,9 +505,22 @@ const MAX_SURFACE_SPLITS = 5
 interface SurfacePiece {
   f: OsmFeature
   /** Ring in layer-local metres, wound counter-clockwise. */
+  /** Outer ring then every hole, concatenated — what `faces` indexes. */
   ringM: Vec2[]
   faces: Face[]
   areaM2: number
+  /** The closed rings themselves, for anything that measures distance to an edge. */
+  boundaries: Vec2[][]
+}
+
+/** Distance from each point to the nearest of several closed rings. */
+function distanceToRings(points: ReadonlyArray<Vec2>, rings: ReadonlyArray<ReadonlyArray<Vec2>>): Float32Array {
+  const out = distanceToRing(points, rings[0])
+  for (let r = 1; r < rings.length; r++) {
+    const d = distanceToRing(points, rings[r])
+    for (let i = 0; i < out.length; i++) if (d[i] < out[i]) out[i] = d[i]
+  }
+  return out
 }
 
 /** Shoelace area of a ring given in metres. Sign discarded. */
@@ -526,20 +546,26 @@ function collectSurfacePieces(
   const items: SurfacePiece[] = []
   let dropped = 0
 
+  const toLocal = (p: LatLonPoint): Vec2 => {
+    const { nx, ny } = latLonToNormalized(p.lat, p.lon)
+    return { x: (nx - originX) / mToN, y: (ny - originY) / mToN }
+  }
   for (const f of wanted) {
-    const ringM: Vec2[] = f.ring!.map((p) => {
-      const { nx, ny } = latLonToNormalized(p.lat, p.lon)
-      return { x: (nx - originX) / mToN, y: (ny - originY) / mToN }
-    })
-    const asVectors = ringM.map((p) => new THREE.Vector2(p.x, p.y))
+    const outerM: Vec2[] = f.ring!.map(toLocal)
+    const asVectors = outerM.map((p) => new THREE.Vector2(p.x, p.y))
     if (THREE.ShapeUtils.isClockWise(asVectors)) {
       asVectors.reverse()
-      ringM.reverse()
+      outerM.reverse()
     }
+    // Holes — the pond cut out of a lawn, the courtyard out of a square. Left
+    // out, the lawn is laid straight across the pond and the two z-fight.
+    const holesM = (f.holes ?? []).map((h) => h.map(toLocal)).filter((h) => h.length >= 3)
 
     let faces: Face[]
     try {
-      const raw = THREE.ShapeUtils.triangulateShape(asVectors, [])
+      const raw = THREE.ShapeUtils.triangulateShape(
+        asVectors, holesM.map((h) => h.map((p) => new THREE.Vector2(p.x, p.y))),
+      )
       if (raw.length === 0) { dropped++; continue }
       faces = raw.map((t) => [t[0], t[1], t[2]] as Face)
     } catch {
@@ -547,7 +573,10 @@ function collectSurfacePieces(
       continue
     }
 
-    items.push({ f, ringM, faces, areaM2: ringAreaM2(ringM) })
+    // Indices address the outer ring followed by each hole, so the points must too.
+    const ringM = holesM.length ? [...outerM, ...holesM.flat()] : outerM
+    const areaM2 = Math.max(0, ringAreaM2(outerM) - holesM.reduce((a, h) => a + ringAreaM2(h), 0))
+    items.push({ f, ringM, faces, areaM2, boundaries: [outerM, ...holesM] })
   }
 
   return { items, dropped }
@@ -643,7 +672,7 @@ function buildDetailedSurface(
   const totalClaim = pieces.items.reduce((a, it) => a + it.areaM2 * weightOf(it), 0)
 
   // PASS 2 — subdivide each feature within its own share.
-  for (const { f, ringM, faces, areaM2 } of pieces.items) {
+  for (const { f, ringM, faces, areaM2, boundaries } of pieces.items) {
     const share = totalClaim > 0
       ? (spare * areaM2 * weightOf({ ringM })) / totalClaim
       : spare / pieces.items.length
@@ -665,11 +694,11 @@ function buildDetailedSurface(
     // Water is level across the whole polygon; the rest follows the ground.
     const flatZ = isWater
       ? frame.zAtElevationM(waterLevelM(
-          ringM.map((p) => new THREE.Vector2(originX + p.x * mToN, originY + p.y * mToN)),
+          boundaries[0].map((p) => new THREE.Vector2(originX + p.x * mToN, originY + p.y * mToN)),
           frame, f.isSea === true,
         ) + lift)
       : 0
-    const shoreDist = isWater ? distanceToRing(mesh.points, ringM) : null
+    const shoreDist = isWater ? distanceToRings(mesh.points, boundaries) : null
 
     for (let i = 0; i < mesh.points.length; i++) {
       const p = mesh.points[i]
@@ -1190,6 +1219,36 @@ const EDGE_DOT_GAP_M = 0.35
 const CENTRE_LINE_TONE: [number, number, number] = [0.80, 0.78, 0.68]
 
 /**
+ * True where a mapped area already says what the ground is — greenery, water,
+ * or a paved pedestrian area. Points are normalized coordinates.
+ */
+function mappedAreaPredicate(features: ReadonlyArray<OsmFeature>): (p: THREE.Vector2) => boolean {
+  const polys: Array<{ ring: THREE.Vector2[]; minX: number; minY: number; maxX: number; maxY: number }> = []
+  for (const f of features) {
+    if (!f.ring || f.ring.length < 3) continue
+    const area = f.kind === 'green' || f.kind === 'water' || f.kind === 'sand'
+      || (f.kind === 'road' && f.widthM === undefined)
+    if (!area) continue
+    const ring = projectRing(f.ring)
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    for (const p of ring) {
+      if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x
+      if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y
+    }
+    polys.push({ ring, minX, minY, maxX, maxY })
+  }
+  const inside = (p: THREE.Vector2, ring: THREE.Vector2[]): boolean => {
+    let hit = false
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const a = ring[i], b = ring[j]
+      if ((a.y > p.y) !== (b.y > p.y) && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) hit = !hit
+    }
+    return hit
+  }
+  return (p) => polys.some((q) => p.x >= q.minX && p.x <= q.maxX && p.y >= q.minY && p.y <= q.maxY && inside(p, q.ring))
+}
+
+/**
  * The centre of a roundabout: paving, a shade lighter than the asphalt round it.
  *
  * Neutral on purpose. The ring being a roundabout is mapped; what stands inside
@@ -1197,6 +1256,11 @@ const CENTRE_LINE_TONE: [number, number, number] = [0.80, 0.78, 0.68]
  * line props-scene draws in its own header.
  */
 const ISLAND_TONE: [number, number, number] = [0.52, 0.51, 0.49]
+
+/** A ground way this far above the terrain is a ramp, and gets walls. */
+const RAMP_WALL_MIN_M = 0.45
+/** Ramp walls are rendered concrete: lighter than the asphalt edge they replace. */
+const RAMP_WALL_SHADE = 1.45
 
 /** The painted safety line along a platform edge. */
 const PLATFORM_EDGE: [number, number, number] = [0.86, 0.72, 0.25]
@@ -1599,7 +1663,7 @@ export function buildLinearLayer(
    */
   const pushSurfaceQuad = (
     quad: THREE.Vector2[], tone: [number, number, number], drop: number,
-    deck: { soffit: boolean; parapet: number; thickness: number } =
+    deck: { soffit: boolean; parapet: number; thickness: number; rampWalls?: boolean } =
       { soffit: false, parapet: 0, thickness: 0 },
   ): void => {
     if (buriedHere(quad)) return
@@ -1616,16 +1680,27 @@ export function buildLinearLayer(
 
     // Edge faces down both sides. On the ground this is a kerb; held clear of
     // it, the same faces are the deck's fascia — see `deck-profile`.
+    // A way ON THE GROUND that has climbed off it — the approach ramp of a
+    // bridge, which the solver lifts at the legal grade — is a solid ramp in
+    // reality: walls down to the ground either side. With a kerb's 5 cm lip it
+    // was a ribbon hanging in the air, black from underneath (measured on the
+    // footbridge approaches in the Ciutadella, 3.8 m up on a `footway`).
+    const bottom = (v: THREE.Vector2, z: number): number =>
+      deck.rampWalls ? Math.min(z - drop, frame.groundZ(v.x, v.y) + lift - drop) : z - drop
+    const wall = deck.rampWalls ? gain(tone, RAMP_WALL_SHADE) : side
     for (const [e0, e1] of [[l0, l1], [r1, r0]] as const) {
       const z0 = structuralZ(e0.x, e0.y) + lift
       const z1 = structuralZ(e1.x, e1.y) + lift
-      for (const [v, z] of [[e0, z0], [e1, z1], [e1, z1 - drop]] as const) {
+      const b0 = bottom(e0, z0)
+      const b1 = bottom(e1, z1)
+      const c = (b0 < z0 - drop - 1e-12 || b1 < z1 - drop - 1e-12) ? wall : side
+      for (const [v, z] of [[e0, z0], [e1, z1], [e1, b1]] as const) {
         positions.push(v.x, v.y, z)
-        colors.push(side[0], side[1], side[2])
+        colors.push(c[0], c[1], c[2])
       }
-      for (const [v, z] of [[e0, z0], [e1, z1 - drop], [e0, z0 - drop]] as const) {
+      for (const [v, z] of [[e0, z0], [e1, b1], [e0, b0]] as const) {
         positions.push(v.x, v.y, z)
-        colors.push(side[0], side[1], side[2])
+        colors.push(c[0], c[1], c[2])
       }
     }
 
@@ -2096,6 +2171,10 @@ export function buildLinearLayer(
         soffit: profile.soffit,
         parapet: profile.parapetM * mToN,
         thickness: PARAPET_T_M * mToN,
+        // Ground-tagged, but lifted somewhere along its length by a structure
+        // it leads onto: build it as a ramp, walled down to the terrain.
+        rampWalls: !profile.soffit && solved !== undefined
+          && solved.elevationM.some((e, k) => e - solved.groundM[k] > RAMP_WALL_MIN_M),
       }
       const ribbonRough = surfaceOf.get(ribbon.sourceId)
       const ribbonStart = ribbonRough === undefined ? -1 : positions.length / 3
@@ -2375,7 +2454,13 @@ export function buildLinearLayer(
     // it does not say what is inside it. A paved island is the answer that is
     // wrong least often, and inventing a lawn on top of mapped geometry would
     // cross the line this file's header draws between data and scenery.
+    // ...unless the data says what IS inside. A mapped garden, fountain or
+    // square in the ring (Plaça d'Espanya's fountain, Francesc Macià's lawn and
+    // pond) is drawn by its own layer, and paving the island on top of it —
+    // at road height, above the ground layers — erased it.
+    const mappedCentre = mappedAreaPredicate(features)
     for (const island of network.islands) {
+      if (mappedCentre(island.centre)) continue
       const poly = island.polygon
       const fanIsland = (p0: THREE.Vector2, p1: THREE.Vector2): void => {
         for (const tri of subdivideOnGround([island.centre, p0, p1], frame)) {

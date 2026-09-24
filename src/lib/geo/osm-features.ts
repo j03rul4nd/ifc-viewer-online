@@ -43,11 +43,23 @@ import { shanghaiBridgeWidth } from './shanghai-bridges'
 
 export type FeatureKind =
   | 'building' | 'water' | 'green' | 'sand' | 'rock' | 'tree' | 'bridge' | 'road' | 'rail'
-  | 'signal' | 'pier'
+  | 'signal' | 'pier' | 'furniture' | 'barrier'
 
 export const FEATURE_KINDS: readonly FeatureKind[] =
   ['building', 'water', 'green', 'sand', 'rock', 'tree', 'bridge', 'road', 'rail', 'signal',
-   'pier']
+   'pier', 'furniture', 'barrier']
+
+/**
+ * Street furniture that is MAPPED — a surveyed bench, lamp or bin at a
+ * surveyed position. Distinct from the invented scenery in props-scene, which
+ * is placed where furniture would plausibly stand. Barcelona maps it densely:
+ * 80 benches, 40 lamps, 25 drinking fountains and 15 bins in the Ciutadella box.
+ */
+export type FurnitureKind = 'bench' | 'waste_basket' | 'drinking_water' | 'street_lamp' | 'bollard'
+
+/** A linear barrier: what fences a park, walls a garden, lines a motorway. */
+export type BarrierKind =
+  | 'fence' | 'wall' | 'hedge' | 'retaining_wall' | 'guard_rail' | 'city_wall' | 'handrail'
 
 export interface LatLonPoint { lat: number; lon: number }
 
@@ -60,6 +72,13 @@ export interface OsmFeature {
   label?: string
   /** Closed ring for area features (buildings, water, green, bridge decks). */
   ring?: LatLonPoint[]
+  /**
+   * INNER rings of a multipolygon that fall inside `ring` — the courtyard of a
+   * block, the pond cut out of a lawn. Absent for a plain way. A consumer that
+   * ignores this draws the area filled, which is how every Eixample block with
+   * a mapped patio used to come out as one solid slab.
+   */
+  holes?: LatLonPoint[][]
   /** Single position for point features (trees). */
   point?: LatLonPoint
   /** Extrusion heights — meaningful for buildings and bridges. */
@@ -106,6 +125,33 @@ export interface OsmFeature {
 }
 
 export interface FeatureStyle {
+  /** Mapped street furniture — see FurnitureKind. */
+  furniture?: FurnitureKind
+  /**
+   * The compass bearing an object FACES, degrees clockwise from north, from
+   * OSM `direction` (numeric or a cardinal like `NE`). For a bench it is the
+   * way a seated person looks; for a signal, the way its lenses point.
+   */
+  directionDeg?: number
+  /** `lamp_mount`: `pole`, `wall`, `suspended`… a wall lamp has no column. */
+  lampMount?: string
+  /** A linear barrier — see BarrierKind. */
+  barrier?: BarrierKind
+  /** Tagged barrier height, metres. */
+  barrierHeightM?: number
+  /** `fence_type` — railings read nothing like chain link. */
+  fenceType?: string
+  /**
+   * Which travel direction along its way a signal controls, from
+   * `traffic_signals:direction` (or `direction`). Absent means unstated.
+   */
+  signalDirection?: 'forward' | 'backward' | 'both'
+  /** A surface car park — paved, vehicular, and an area. */
+  parking?: boolean
+  /** A signal for pedestrians ONLY — a signalised crossing node. */
+  pedestrianSignal?: boolean
+  /** A vehicle signal that also carries the crossing's pedestrian heads. */
+  crossingSignal?: boolean
   /** Preserve vertical pedestrian access semantics through parsing. */
   accessKind?: 'stairs' | 'escalator' | 'elevator'
   stepCount?: number
@@ -753,7 +799,21 @@ export function isPavedArea(tags: Record<string, string> | undefined): boolean {
   const t = tags ?? {}
   if (t['area'] === 'yes') return true
   if (t['area'] === 'no') return false
+  // A surface car park is paved ground — the bus apron by the cruise
+  // terminals, the lots along the Moll de Barcelona — and it is only ever an area.
+  if (isSurfaceParking(t)) return true
   return t['highway'] === 'pedestrian'
+}
+
+/**
+ * A car park ON THE GROUND. The others are not ground: an underground one is
+ * a hole nobody sees, a multi-storey one is a building (and mapped as one),
+ * a rooftop one sits on somebody else's roof.
+ */
+export function isSurfaceParking(t: Record<string, string>): boolean {
+  if (t['amenity'] !== 'parking' || t['building']) return false
+  const kind = (t['parking'] ?? 'surface').toLowerCase()
+  return kind === 'surface' || kind === 'lane' || kind === 'street_side'
 }
 
 export function isCrossing(tags: Record<string, string> | undefined): boolean {
@@ -864,6 +924,33 @@ export function shouldDiscardBelowSurface(
   return isBelowSurface(t)
 }
 
+const BARRIER_VALUES = new Set<string>([
+  'fence', 'wall', 'hedge', 'retaining_wall', 'guard_rail', 'city_wall', 'handrail',
+])
+
+/** The furniture a node IS, or undefined. */
+export function furnitureKindOf(t: Record<string, string>): FurnitureKind | undefined {
+  const a = t['amenity']
+  if (a === 'bench' || a === 'waste_basket' || a === 'drinking_water') return a
+  if (t['leisure'] === 'picnic_table') return 'bench'
+  if (t['highway'] === 'street_lamp') return 'street_lamp'
+  if (t['barrier'] === 'bollard') return 'bollard'
+  return undefined
+}
+
+const CARDINAL: Record<string, number> = {
+  N: 0, NNE: 22.5, NE: 45, ENE: 67.5, E: 90, ESE: 112.5, SE: 135, SSE: 157.5,
+  S: 180, SSW: 202.5, SW: 225, WSW: 247.5, W: 270, WNW: 292.5, NW: 315, NNW: 337.5,
+}
+
+/** OSM `direction` as a bearing: `270`, `NE`, `90;270` (first wins). */
+export function parseDirectionDeg(raw: string | undefined): number | undefined {
+  const v = (raw ?? '').split(';')[0].trim().toUpperCase()
+  if (v === '') return undefined
+  if (/^-?\d+(\.\d+)?$/.test(v)) return ((Number(v) % 360) + 360) % 360
+  return CARDINAL[v]
+}
+
 /**
  * Classify an element from its tags. Order matters and encodes precedence:
  * a bridge carrying a road over a river is a bridge, and a building on a
@@ -915,7 +1002,14 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
   // A surveyed junction control. Only the signals themselves — a crossing node
   // that merely REFERS to signals is part of that crossing, not a mast.
   if (t['highway'] === 'traffic_signals') return 'signal'
+  // A signalised crossing NODE: the lights pedestrians wait at, one per kerb.
+  if (t['crossing'] === 'traffic_signals' && t['highway'] === 'crossing') return 'signal'
   if (t['highway'] === 'elevator') return 'road'
+  if (furnitureKindOf(t)) return 'furniture'
+  if (BARRIER_VALUES.has(t['barrier'] ?? '')) return 'barrier'
+  // A row of street trees mapped as ONE line — 32 of them in the Eixample box.
+  // Expanded into individual trees by the parser.
+  if (t['natural'] === 'tree_row') return 'tree'
 
   // A bridge OUTLINE — `man_made=bridge` — is a real area feature: the deck's
   // own footprint, mapped as a polygon.
@@ -958,6 +1052,7 @@ export function classifyFeature(tags: Record<string, string> | undefined): Featu
   if (t['public_transport'] === 'platform' && t['railway'] !== undefined) return 'rail'
 
   if (ROAD_VALUES.has(t['highway'] ?? '')) return 'road'
+  if (isSurfaceParking(t)) return 'road'
 
   return null
 }
@@ -1050,6 +1145,32 @@ export function resolveFeatureStyle(
   kind: FeatureKind, tags: Record<string, string> | undefined,
 ): FeatureStyle {
   const t = tags ?? {}
+  if (kind === 'furniture') {
+    return {
+      roofShape: 'flat', roofHeightM: 0,
+      furniture: furnitureKindOf(t),
+      directionDeg: parseDirectionDeg(t['direction']),
+      lampMount: t['lamp_mount'],
+    }
+  }
+  if (kind === 'barrier') {
+    const h = parseLengthM(t['height'])
+    return {
+      roofShape: 'flat', roofHeightM: 0,
+      barrier: t['barrier'] as BarrierKind,
+      barrierHeightM: h && h > 0 ? Math.min(12, h) : undefined,
+      fenceType: t['fence_type'],
+    }
+  }
+  if (kind === 'signal') {
+    const d = (t['traffic_signals:direction'] ?? t['direction'] ?? '').toLowerCase()
+    return {
+      roofShape: 'flat', roofHeightM: 0,
+      signalDirection: d === 'forward' || d === 'backward' || d === 'both' ? d : undefined,
+      pedestrianSignal: t['highway'] !== 'traffic_signals',
+      crossingSignal: t['highway'] === 'traffic_signals' && t['crossing'] === 'traffic_signals',
+    }
+  }
   if (kind === 'water') {
     const water = t['water']
     return { roofShape: 'flat', roofHeightM: 0, waterKind: t['amenity'] === 'fountain'
@@ -1120,6 +1241,7 @@ export function resolveFeatureStyle(
       stepCount: /^\d+$/.test(t['step_count'] ?? '') ? Math.min(1000, Number(t['step_count'])) : undefined,
       surface: normalizeSurface(t['surface']),
       roadClass: roadClass(t),
+      parking: isSurfaceParking(t) || undefined,
       lanes: Number.isFinite(lanes) && lanes > 0 ? Math.min(12, Math.round(lanes)) : undefined,
       // A roundabout is one-way by definition even when nobody tagged it, and
       // painting a centre line down a ring road is the giveaway of a renderer
@@ -1217,7 +1339,7 @@ interface OverpassEl {
 const PORT_STRUCTURES = new Set(['pier', 'quay', 'breakwater', 'groyne'])
 
 /** Smallest area worth drawing, m² — below this it is mapping noise. */
-export const MIN_AREA_M2: Record<Exclude<FeatureKind, 'tree' | 'signal'>, number> = {
+export const MIN_AREA_M2: Record<Exclude<FeatureKind, 'tree' | 'signal' | 'furniture' | 'barrier'>, number> = {
   building: 8,
   water: 40,
   green: 60,
@@ -1442,6 +1564,43 @@ export function parseOsmFeatures(
       }
       continue
     }
+    // Mapped furniture: a node with a position and a facing.
+    if (kind === 'furniture') {
+      // A ROW of bollards is mapped as a line — three of them close off the
+      // promenades in the Port Vell box. One post every 1.5 m, like the real row.
+      if (el.type === 'way' && Array.isArray(el.geometry)) {
+        const pts = el.geometry.filter((p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lon))
+        const along = style.furniture === 'bollard' ? spaceAlong(pts, 1.5) : spaceAlong(pts, Infinity)
+        if (along.length === 0 && pts.length > 0) along.push(pts[Math.floor(pts.length / 2)])
+        if (along.length === 0) { drop(el, 'geometry', 'fewer-than-two-points'); continue }
+        along.forEach((point, k) => out.push({
+          id: `w${el.id}#${k}`, kind, point,
+          height: { heightM: 1, minHeightM: 0, estimated: true }, style,
+        }))
+        continue
+      }
+      if (el.type !== 'node' || !Number.isFinite(el.lat) || !Number.isFinite(el.lon)) {
+        drop(el, 'geometry', 'point-kind-without-a-position')
+        continue
+      }
+      out.push({
+        id: `n${el.id}`, kind, point: { lat: el.lat!, lon: el.lon! },
+        height: { heightM: 1, minHeightM: 0, estimated: true }, style,
+      })
+      continue
+    }
+
+    // A fence, wall or hedge is a LINE, closed or not — a hedge round a lawn is
+    // still a hedge, never a green polygon of its own.
+    if (kind === 'barrier') {
+      const pts = el.type === 'way' && Array.isArray(el.geometry)
+        ? el.geometry.filter((p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lon))
+        : []
+      if (pts.length < 2) { drop(el, 'geometry', 'fewer-than-two-points'); continue }
+      out.push({ id: `w${el.id}`, kind, ring: pts, height, style, widthM: barrierThicknessM(style.barrier) })
+      continue
+    }
+
     // Trees and signals are nodes.
     if (kind === 'signal') {
       if (el.type !== 'node' || !Number.isFinite(el.lat) || !Number.isFinite(el.lon)) {
@@ -1452,6 +1611,19 @@ export function parseOsmFeatures(
         id: `n${el.id}`, kind, point: { lat: el.lat!, lon: el.lon! },
         height: { heightM: 3.4, minHeightM: 0, estimated: true }, style,
       })
+      continue
+    }
+
+    // A tree ROW: one line, many trees. Spaced like a street's planting and
+    // emitted as ordinary trees, so everything downstream treats them alike.
+    if (kind === 'tree' && el.type === 'way' && el.tags?.['natural'] === 'tree_row'
+      && Array.isArray(el.geometry)) {
+      const pts = el.geometry.filter((p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lon))
+      const along = spaceAlong(pts, TREE_ROW_SPACING_M)
+      if (along.length === 0) { drop(el, 'geometry', 'fewer-than-two-points'); continue }
+      along.forEach((point, k) => out.push({
+        id: `w${el.id}#${k}`, kind, point, height: treeHeight(el.tags), style,
+      }))
       continue
     }
 
@@ -1561,12 +1733,20 @@ export function parseOsmFeatures(
       // each member on its own is not a coarser answer, it is a different
       // shape — see multipolygon.ts for the measurement that says so.
       let part = 0
-      const outer = assembleMultipolygon(el.members).outer
+      const { outer, inner } = assembleMultipolygon(el.members)
+      const innerRings = inner
+        .map((chain) => (isClosed(chain) ? chain.slice(0, -1) : chain))
+        .filter((r) => r.length >= 3)
       for (const chain of outer) {
         const ring = closeRing(chain, kind)
         if (ring) {
+          // Each inner ring belongs to the outer that contains it. Tested on a
+          // vertex, not the centroid: a U-shaped courtyard's centroid can sit
+          // in the building, but every one of its vertices sits in the outer.
+          const holes = innerRings.filter((h) => pointInLatLonRing(h[0], ring))
           out.push({
             id: `r${el.id}-${part++}`, kind, ring, height, style,
+            ...(holes.length > 0 ? { holes } : {}),
             vertical: kind==='rail' ? readVerticalTags(el.tags) : undefined,
             name: el.tags?.['name'], label: featureLabel(el.tags),
           })
@@ -1707,16 +1887,62 @@ function isClosed(pts: OverpassGeom[]): boolean {
 function ringRejection(pts: OverpassGeom[], kind: FeatureKind): string {
   const ring = pts.length >= 3 && isClosed(pts) ? pts.slice(0, -1) : pts
   if (ring.length < 3) return 'ring-has-fewer-than-three-points'
-  const min = kind === 'tree' || kind === 'signal' ? 0 : MIN_AREA_M2[kind]
+  const min = kind === 'tree' || kind === 'signal' || kind === 'furniture' || kind === 'barrier'
+    ? 0 : MIN_AREA_M2[kind]
   const area = approximateAreaM2(ring)
   return area < min ? `ring-under-min-area-${kind}` : 'ring-rejected'
+}
+
+/** How thick a barrier is drawn — a centreline with a width, like every linear kind. */
+export function barrierThicknessM(kind: BarrierKind | undefined): number {
+  switch (kind) {
+    case 'hedge': return 0.9
+    case 'wall': case 'city_wall': case 'retaining_wall': return 0.35
+    case 'guard_rail': return 0.3
+    default: return 0.08
+  }
+}
+
+/** Street trees in a row stand about this far apart (Barcelona plants at 5-8 m). */
+const TREE_ROW_SPACING_M = 7
+
+/** Points every `stepM` along a polyline, starting half a step in. */
+function spaceAlong(pts: ReadonlyArray<LatLonPoint>, stepM: number): LatLonPoint[] {
+  if (pts.length < 2) return []
+  const out: LatLonPoint[] = []
+  const kLat = 111_320
+  let carry = stepM / 2
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i]
+    const kLon = kLat * Math.cos((a.lat * Math.PI) / 180)
+    const len = Math.hypot((b.lat - a.lat) * kLat, (b.lon - a.lon) * kLon)
+    let t = carry
+    while (t <= len && out.length < 400) {
+      out.push({ lat: a.lat + ((b.lat - a.lat) * t) / len, lon: a.lon + ((b.lon - a.lon) * t) / len })
+      t += stepM
+    }
+    carry = t - len
+  }
+  return out
+}
+
+/** Even-odd point-in-polygon on raw lat/lon — enough to pair an inner ring with its outer. */
+export function pointInLatLonRing(p: LatLonPoint, ring: ReadonlyArray<LatLonPoint>): boolean {
+  let hit = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i], b = ring[j]
+    if ((a.lat > p.lat) !== (b.lat > p.lat)
+      && p.lon < ((b.lon - a.lon) * (p.lat - a.lat)) / (b.lat - a.lat) + a.lon) hit = !hit
+  }
+  return hit
 }
 
 function closeRing(pts: OverpassGeom[], kind: FeatureKind): LatLonPoint[] | null {
   if (pts.length < 3) return null
   const ring = isClosed(pts) ? pts.slice(0, -1) : pts
   if (ring.length < 3) return null
-  const min = kind === 'tree' || kind === 'signal' ? 0 : MIN_AREA_M2[kind]
+  const min = kind === 'tree' || kind === 'signal' || kind === 'furniture' || kind === 'barrier'
+    ? 0 : MIN_AREA_M2[kind]
   if (approximateAreaM2(ring) < min) return null
   return ring
 }
@@ -1820,8 +2046,12 @@ export function buildFeaturesQuery(
       + area('["natural"~"^(beach|sand|dune|shingle|mud)$"]')
       + area('["natural"~"^(bare_rock|rock|scree|stone|glacier)$"]')
       + area('["landuse"~"^(sand|quarry)$"]')
-      + area('["golf"="bunker"]'),
-      Math.round(maxElements * 0.30),
+      + area('["golf"="bunker"]')
+      + area('["amenity"="parking"]'),
+      // Trimmed from 0.30 to pay for the barriers below: the densest park box
+      // measured (Ciutadella) holds ~240 ground-cover polygons in 0.7 km², far
+      // inside this share of a 1.4 km box at any realistic element cap.
+      Math.round(maxElements * 0.25),
     ],
     [area('["railway"="platform"]'), Math.round(maxElements * 0.02)],
     // THE WATERFRONT. None of this was ever requested, and at a harbour that is
@@ -1842,7 +2072,21 @@ export function buildFeaturesQuery(
     // Nodes are cheap — one coordinate each — so they are not taken from the
     // geometry budget that the ways are competing over.
     [`node["natural"="tree"](${b});`, Math.round(maxElements * 0.35)],
-    [`node["highway"="traffic_signals"](${b});`, Math.round(maxElements * 0.05)],
+    [`node["highway"="traffic_signals"](${b});node["crossing"="traffic_signals"](${b});`,
+      Math.round(maxElements * 0.08)],
+    // MAPPED street furniture and the barriers that fence parks and gardens.
+    // Nodes, and short ways: cheap next to the building budget, and in a city
+    // that surveys them — Barcelona does — they are what a street is made of.
+    [
+      `node["amenity"~"^(bench|waste_basket|drinking_water)$"](${b});`
+      + `node["highway"="street_lamp"](${b});node["barrier"="bollard"](${b});`,
+      Math.round(maxElements * 0.12),
+    ],
+    [
+      `way["barrier"~"^(fence|wall|hedge|retaining_wall|guard_rail|city_wall)$"](${b});`
+      + `way["natural"="tree_row"](${b});`,
+      Math.round(maxElements * 0.05),
+    ],
     // Access must survive a dense street result cap. Duplicate ways are removed
     // by the parser; elevators were previously never requested at all.
     [`way["highway"="steps"](${b});node["highway"="elevator"](${b});`, Math.round(maxElements * 0.03)],
@@ -1915,7 +2159,7 @@ export function featureLabel(tags: Record<string, string> | undefined): string |
 export function countByKind(features: ReadonlyArray<OsmFeature>): Record<FeatureKind, number> {
   const counts = {
     building: 0, water: 0, green: 0, sand: 0, rock: 0,
-    tree: 0, bridge: 0, road: 0, rail: 0, signal: 0, pier: 0 }
+    tree: 0, bridge: 0, road: 0, rail: 0, signal: 0, pier: 0, furniture: 0, barrier: 0 }
   for (const f of features) counts[f.kind]++
   return counts
 }

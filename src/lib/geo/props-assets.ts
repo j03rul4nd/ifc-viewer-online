@@ -38,6 +38,14 @@ export type PropAsset =
   | 'tree-palm' | 'tree-columnar' | 'tree-blossom' | 'tree-olive'
   | 'bench' | 'litter-bin' | 'bollard' | 'bus-shelter'
   | 'roof-chimney' | 'roof-hvac' | 'roof-tank' | 'roof-stairbox'
+  // Round 3. Barcelona street furniture, baked in its real paint rather than a
+  // tintable neutral. Every one faces local +X (see build-props.py).
+  | 'bench-bcn' | 'lamp-park-bcn' | 'lamp-street-bcn' | 'fountain-bcn'
+  | 'ped-signal' | 'traffic-signal-bcn' | 'waste-basket-bcn'
+  // Round 4. Moored boats for marinas, bow toward local +X. UNLIKE EVERY OTHER
+  // ASSET their z = 0 is the WATERLINE, not the ground: the hull goes below it,
+  // and loadOne() keeps it there instead of re-grounding (see isAfloat()).
+  | 'boat-motor' | 'boat-sail' | 'boat-small'
 
 export const PROP_ASSETS: readonly PropAsset[] = [
   'car', 'van', 'bus', 'train-carriage', 'train-cab', 'traffic-signal', 'catenary-mast',
@@ -45,6 +53,9 @@ export const PROP_ASSETS: readonly PropAsset[] = [
   'tree-palm', 'tree-columnar', 'tree-blossom', 'tree-olive',
   'bench', 'litter-bin', 'bollard', 'bus-shelter',
   'roof-chimney', 'roof-hvac', 'roof-tank', 'roof-stairbox',
+  'bench-bcn', 'lamp-park-bcn', 'lamp-street-bcn', 'fountain-bcn',
+  'ped-signal', 'traffic-signal-bcn', 'waste-basket-bcn',
+  'boat-motor', 'boat-sail', 'boat-small',
 ]
 
 /**
@@ -55,7 +66,7 @@ export const PROP_ASSETS: readonly PropAsset[] = [
  * files: an over-estimate passes a `<=` check forever and still misinforms the
  * person deciding whether to download.
  */
-export const PROP_ASSETS_KB = 427
+export const PROP_ASSETS_KB = 796
 
 export const SHANGHAI_PARK_ASSETS = ['tree-camphor', 'tree-ginkgo', 'tree-metasequoia', 'tree-willow', 'shrub', 'reed', 'bench', 'lantern', 'pergola', 'fountain-jets'] as const
 export const SHANGHAI_PARK_ASSETS_KB = 720
@@ -64,6 +75,14 @@ type LoadableAsset = PropAsset | `shanghai/${typeof SHANGHAI_PARK_ASSETS[number]
 function assetUrl(name: LoadableAsset): string {
   const base = (import.meta.env.BASE_URL ?? '/') as string
   return `${base}models/props/${name}.glb${name.startsWith('train-') ? '?v=20260923-r1' : name.startsWith('shanghai/') ? '?v=20260907-r1' : ''}`.replace('//', '/')
+}
+
+/**
+ * A boat is authored with z = 0 at its WATERLINE and its hull below it
+ * (build-props.py, "Round 4: moored boats"), so it must not be re-grounded.
+ */
+function isAfloat(name: LoadableAsset): boolean {
+  return name.startsWith('boat-')
 }
 
 /** One in-flight or finished load per asset, for the life of the tab. */
@@ -89,6 +108,27 @@ async function loadOne(name: LoadableAsset): Promise<THREE.BufferGeometry | null
         const geo = mesh.geometry.clone()
         mesh.updateWorldMatrix(true, false)
         geo.applyMatrix4(mesh.matrixWorld)
+        // STAND IT ON THE GROUND. The build drops each LOCAL mesh to z=0, but the
+        // exported node keeps the position of the first part it was joined from,
+        // and the bake above adds that back. Measured through this loader: the
+        // street lamp's base at +3.50 m, the signal at +1.67 m, the bench at
+        // +0.21 m, every car at +0.52 m — lamps hovering over the pavement
+        // while every numeric check on the GLB itself passed. Every asset is
+        // authored standing on z=0, so re-grounding here is exact for all.
+        //
+        // EXCEPT BOATS. Their z = 0 is the waterline and the hull goes ~0.4–0.65 m
+        // below it; re-grounding would sit every boat ON the water. They are left
+        // exactly as authored, which is exact only because they are built with
+        // bake_origin=True: the node carries no transform, so the bake above is
+        // the identity (scripts/blender/props-assets.test.ts asserts it).
+        geo.computeBoundingBox()
+        const floor = geo.boundingBox?.min.z ?? 0
+        if (!isAfloat(name) && Math.abs(floor) > 1e-4) geo.translate(0, 0, -floor)
+        // The legacy bench was authored along X, seat facing +Y; every placement
+        // turns +X toward what the bench faces (the convention the rest of the
+        // kit follows), so it is turned once here rather than at every caller.
+        if (name === 'bench') geo.rotateZ(-Math.PI / 2)
+        geo.computeBoundingBox()
         found = geo
       }
     })

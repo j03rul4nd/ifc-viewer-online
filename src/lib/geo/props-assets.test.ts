@@ -29,13 +29,39 @@ beforeEach(() => {
 
 describe('loadPropAsset', () => {
   it('returns bare geometry with the node transform baked in', async () => {
-    loadAsync.mockResolvedValue(fakeGltf())
+    const gltf = fakeGltf()
+    gltf.scene.children[0].position.set(0.7, -0.4, 2)
+    loadAsync.mockResolvedValue(gltf)
     const geo = (await loadPropAsset('car'))!
     expect(geo.getAttribute('position')).toBeTruthy()
-    // The mesh sat at z = 2; the geometry must carry that, since the caller
-    // composes its own instance matrix and knows nothing about parenting.
+    // The caller composes its own instance matrix and knows nothing about
+    // parenting, so the node's plan offset has to be carried in the geometry.
     geo.computeBoundingBox()
-    expect(geo.boundingBox!.min.z).toBeCloseTo(1.5, 5)
+    expect(geo.boundingBox!.min.x).toBeCloseTo(0.2, 5)
+    expect(geo.boundingBox!.min.y).toBeCloseTo(-0.9, 5)
+  })
+
+  // The exporter leaves each node at the position of the first part it was
+  // joined from, while the mesh itself is authored standing on z=0. Baking
+  // that height back in is what stood the street lamp 3.5 m off the pavement.
+  it('stands every asset on the ground, whatever height its node was left at', async () => {
+    loadAsync.mockResolvedValue(fakeGltf())
+    const geo = (await loadPropAsset('street-lamp'))!
+    geo.computeBoundingBox()
+    expect(geo.boundingBox!.min.z).toBeCloseTo(0, 6)
+    expect(geo.boundingBox!.max.z).toBeCloseTo(1, 6)
+  })
+
+  // A boat's z = 0 is its waterline and the hull reaches below it. Re-grounding
+  // it like a lamp would sit every hull on top of the water.
+  it('keeps a boat at its authored waterline instead of re-grounding it', async () => {
+    const gltf = fakeGltf()
+    gltf.scene.children[0].position.set(0, 0, 0)      // bake_origin: identity node
+    loadAsync.mockResolvedValue(gltf)
+    const geo = (await loadPropAsset('boat-sail'))!
+    geo.computeBoundingBox()
+    expect(geo.boundingBox!.min.z).toBeCloseTo(-0.5, 6)
+    expect(geo.boundingBox!.max.z).toBeCloseTo(0.5, 6)
   })
 
   it('fetches each asset at most once per session', async () => {

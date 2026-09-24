@@ -43,6 +43,13 @@ export interface BuildingHeight {
   minHeightM: number
   /** True when the height was inferred rather than read from the data. */
   estimated: boolean
+  /**
+   * Where the number came from: a `height` tag, a storey count, or nothing at
+   * all. `estimated` cannot tell the last two apart, and they deserve opposite
+   * treatment — a counted 7 storeys is a fact about the front of a plot, a
+   * prior's 20 m is a guess about all of it.
+   */
+  basis?: 'height' | 'levels' | 'guess'
 }
 
 /**
@@ -74,6 +81,7 @@ export function resolveBuildingHeight(
       // and the confidence overlay exist to prevent, and the person who put the
       // number there already told us not to.
       estimated: heightIsFlaggedEstimated(t),
+      basis: 'height',
     }
   }
 
@@ -93,6 +101,7 @@ export function resolveBuildingHeight(
       minHeightM: Math.max(0, Math.min(minLevels * perStorey, h - 0.5)),
       // A level count IS data, but the metres are still not surveyed.
       estimated: true,
+      basis: 'levels',
     }
   }
 
@@ -111,6 +120,7 @@ export function resolveBuildingHeight(
     // Still a guess, and still says so. The prior moves the fallback from
     // "wrong everywhere" to "typical of here"; it does not make it surveyed.
     estimated: true,
+    basis: 'guess',
   }
 }
 

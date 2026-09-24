@@ -50,7 +50,7 @@ describe('classifyFeature', () => {
 
   it('returns null for everything it does not model', () => {
     const cases: Array<Record<string, string> | undefined> =
-      [undefined, {}, { amenity: 'cafe' }, { barrier: 'fence' }]
+      [undefined, {}, { amenity: 'cafe' }, { barrier: 'gate' }, { barrier: 'kerb' }]
     for (const tags of cases) expect(classifyFeature(tags)).toBeNull()
   })
 })
@@ -244,11 +244,32 @@ describe('parseOsmFeatures', () => {
     expect(out[0].kind).toBe('water')
   })
 
+  // An Eixample block mapped as one building with its courtyard as the inner
+  // ring: dropping the inner is what drew every such block as a solid slab.
+  it('keeps the inner rings of a multipolygon as holes of the outer that holds them', () => {
+    const out = parseOsmFeatures({
+      elements: [{
+        type: 'relation', id: 21, tags: { type: 'multipolygon', building: 'apartments' },
+        members: [
+          { type: 'way', role: 'outer', geometry: ring(41.38, 2.17, 0.001) },
+          { type: 'way', role: 'inner', geometry: ring(41.3803, 2.1703, 0.0004) },
+          // A second outer far away must not be handed the courtyard.
+          { type: 'way', role: 'outer', geometry: ring(41.39, 2.18, 0.001) },
+        ],
+      }],
+    })
+    expect(out).toHaveLength(2)
+    const withHole = out.filter((f) => f.holes?.length)
+    expect(withHole).toHaveLength(1)
+    expect(withHole[0].holes![0].length).toBeGreaterThanOrEqual(3)
+    expect(withHole[0].ring![0].lat).toBeCloseTo(41.38, 3)
+  })
+
   it('ignores untagged and unmodelled elements', () => {
     const out = parseOsmFeatures({
       elements: [
         // Mapped, but nothing this scene draws.
-        { type: 'way', id: 30, tags: { barrier: 'fence' }, geometry: ring(41.38, 2.17) },
+        { type: 'way', id: 30, tags: { barrier: 'kerb' }, geometry: ring(41.38, 2.17) },
         { type: 'way', id: 31, tags: { highway: 'proposed' }, geometry: ring(41.385, 2.17) },
         { type: 'way', id: 32, tags: { railway: 'abandoned' }, geometry: ring(41.39, 2.17) },
         { type: 'way', id: 33, geometry: ring(41.395, 2.17) },
@@ -302,7 +323,8 @@ describe('buildFeaturesQuery', () => {
     const caps = [...q.matchAll(/out geom (\d+);/g)].map((m) => Number(m[1]))
     // Ways compete for geometry payload; nodes are one coordinate each and are
     // budgeted separately, so the way groups are what has to stay in bounds.
-    const wayTotal = caps.reduce((a, b) => a + b, 0) - 350 - 50
+    // Node-only groups: trees, signals, furniture.
+    const wayTotal = caps.reduce((a, b) => a + b, 0) - 350 - 80 - 120
     expect(wayTotal).toBeLessThanOrEqual(1000 * 1.4)
   })
 
@@ -334,9 +356,11 @@ describe('road and rail classification', () => {
       expect(classifyFeature({ highway: v })).toBe('road')
     }
     // Not a carriageway, or not built yet.
-    for (const v of ['proposed', 'construction', 'bus_stop', 'street_lamp']) {
+    for (const v of ['proposed', 'construction', 'bus_stop']) {
       expect(classifyFeature({ highway: v })).toBeNull()
     }
+    // A lamp is not a carriageway; it is mapped furniture.
+    expect(classifyFeature({ highway: 'street_lamp' })).toBe('furniture')
   })
 
   it('draws live rail and ignores what is gone or not built', () => {
