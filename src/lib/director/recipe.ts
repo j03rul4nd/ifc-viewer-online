@@ -12,6 +12,7 @@ import type { ClipTransition } from '../capture/project'
 import { CLIP_TRANSITIONS } from '../capture/project'
 import type { BuiltInBedId } from '../capture/audio-library'
 import { BUILTIN_BED_IDS } from '../capture/audio-library'
+import { LOOK_IDS, type LookId } from './looks'
 
 export type OutputFormat = 'reel' | 'tiktok' | 'linkedin' | 'square' | 'wide'
 export const OUTPUT_FORMATS: readonly OutputFormat[] = ['wide', 'linkedin', 'square', 'reel', 'tiktok']
@@ -91,6 +92,8 @@ export const SFX_LEVELS: readonly SfxLevel[] = ['off', 'subtle', 'full']
 
 export interface Recipe {
   id: string
+  /** Art direction (palette, backdrop, grade, type). Missing = native. */
+  look?: LookId
   /** Sound effects: off, whooshes only, or the full launch set. Missing = off. */
   sfx?: SfxLevel
   /** Cutting grammar; missing = classic. */
@@ -219,6 +222,43 @@ export const BUILT_IN_RECIPES: readonly Recipe[] = [
     sections: ['pullOut', 'buildup', 'zoomThrough', 'storeys', 'systems', 'closing', 'endCard'], maxSystems: 2, maxStoreys: 2,
     captions: { ...CAPTIONS, look: 'bold', labelShots: true, cta: 'ifcvieweronline.eu' },
   },
+  // Art-directed presentations: one look each, paced for a meeting screen.
+  {
+    ...BASE, id: 'editorial-clay', name: 'Editorial clay', look: 'cloud-dancer',
+    format: 'wide', targetSec: 30, pace: 'calm', music: 'calm', transition: 'crossfade', transitionSec: 0.8,
+    sections: ['pullOut', 'buildup', 'storeys', 'systems', 'endCard'], maxStoreys: 2, maxSystems: 2,
+    captions: { ...CAPTIONS, look: 'minimal', cta: 'ifcvieweronline.eu' },
+  },
+  {
+    ...BASE, id: 'teal-persimmon', name: 'Teal & persimmon', look: 'transformative-teal', style: 'launch', sfx: 'subtle',
+    format: 'wide', targetSec: 24, pace: 'normal', transition: 'zoom', transitionSec: 0.3, music: 'upbeat',
+    sections: ['pullOut', 'buildup', 'zoomThrough', 'systems', 'endCard'], maxSystems: 3,
+    captions: { ...CAPTIONS, look: 'bold', cta: 'ifcvieweronline.eu' },
+  },
+  {
+    ...BASE, id: 'plum-noir-film', name: 'Plum noir film', look: 'plum-noir', sfx: 'subtle',
+    format: 'wide', targetSec: 32, pace: 'calm', transition: 'dipBlack', transitionSec: 0.6, music: 'cinematic',
+    sections: ['hero', 'buildup', 'aerial', 'storeys', 'endCard'], maxStoreys: 2,
+    captions: { ...CAPTIONS, look: 'clean', cta: 'ifcvieweronline.eu' },
+  },
+  {
+    ...BASE, id: 'brutalist-reel', name: 'Brutalist reel', look: 'brutalist-mono', style: 'launch', sfx: 'full',
+    format: 'reel', targetSec: 15, pace: 'fast', transition: 'whip', transitionSec: 0.25, music: 'upbeat',
+    sections: ['pullOut', 'buildup', 'systems', 'endCard'], maxSystems: 2,
+    captions: { ...CAPTIONS, look: 'bold', cta: 'ifcvieweronline.eu' },
+  },
+  {
+    ...BASE, id: 'blueprint-tech', name: 'Blueprint', look: 'blueprint',
+    format: 'wide', targetSec: 30, pace: 'normal', transition: 'crossfade', music: 'corporate',
+    sections: ['hero', 'systems', 'storeys', 'zoomThrough', 'endCard'], maxSystems: 4, maxStoreys: 2,
+    captions: { ...CAPTIONS, look: 'clean', cta: 'ifcvieweronline.eu' },
+  },
+  {
+    ...BASE, id: 'golden-hour-reel', name: 'Golden hour', look: 'golden-hour', sfx: 'subtle',
+    format: 'linkedin', targetSec: 20, pace: 'normal', transition: 'crossfade', transitionSec: 0.6, music: 'cinematic',
+    sections: ['pullOut', 'orbit', 'aerial', 'endCard'],
+    captions: { ...CAPTIONS, look: 'clean', cta: 'ifcvieweronline.eu' },
+  },
 ]
 
 export const DEFAULT_RECIPE_ID = 'meeting-demo'
@@ -307,6 +347,7 @@ export function sanitizeRecipe(input: unknown, fallbackId = 'custom'): Recipe {
     multiModel: oneOf(o.multiModel, MULTI_MODEL_MODES, BASE.multiModel),
     style: oneOf(o.style, EDIT_STYLES, 'classic'),
     sfx: oneOf(o.sfx, SFX_LEVELS, 'off'),
+    look: oneOf(o.look, LOOK_IDS, 'native'),
     fadeIn: bool(o.fadeIn, true),
     fadeOut: bool(o.fadeOut, true),
     watermark: bool(o.watermark, false),

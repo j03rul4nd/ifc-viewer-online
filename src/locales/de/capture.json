@@ -315,7 +315,13 @@
         "fixes-report": "Was behoben wurde",
         "project-portfolio": "Projekte zusammen",
         "launch-2026": "Launch 2026 · Hochformat",
-        "launch-2026-wide": "Launch 2026 · 16:9"
+        "launch-2026-wide": "Launch 2026 · 16:9",
+        "editorial-clay": "Editorial Ton",
+        "teal-persimmon": "Petrol & Kaki",
+        "plum-noir-film": "Plum-Noir-Film",
+        "brutalist-reel": "Brutalistischer Reel",
+        "blueprint-tech": "Blaupause",
+        "golden-hour-reel": "Goldene Stunde"
       },
       "pace": {
         "calm": "Ruhig",
@@ -447,6 +453,25 @@
         "off": "Keine Effekte – nur Musik.",
         "subtle": "Ein sanftes Whoosh auf jedem Schnitt.",
         "full": "Whooshes, Hits auf Titeln, ein Riser zum Schluss, ein Boom, wenn das Gebäude steht, Ticks für jedes Wort."
+      },
+      "lookLabel": "Look",
+      "looks2": {
+        "native": "Original",
+        "cloud-dancer": "Cloud Dancer",
+        "transformative-teal": "Transformative Teal",
+        "plum-noir": "Plum Noir",
+        "brutalist-mono": "Brutalistisch",
+        "blueprint": "Blaupause",
+        "golden-hour": "Goldene Stunde"
+      },
+      "lookHint": {
+        "native": "Modell und Szene unverändert.",
+        "cloud-dancer": "Tonmodell auf warmem Papier (Pantone 2026), Editorial-Serif, Terrakotta-Akzent.",
+        "transformative-teal": "Tiefes Petrol (WGSN 2026) mit Kaki-Akzent – das Warm/Kalt-Paar des Film-Gradings.",
+        "plum-noir": "Dunkle Pflaume und warmer Stein, Wasabi-Akzent, Letterbox und Korn.",
+        "brutalist-mono": "Betongrau, kontrastreiches Schwarzweiß, kräftige Versalien.",
+        "blueprint": "Weißes transparentes Modell auf Marineblau, Monospace-Schrift, Cyan-Akzent.",
+        "golden-hour": "Sandfarbenes Modell im Abendlicht, Orange/Petrol-Grading, Letterbox."
       }
     },
     "remaining": "Noch etwa {{seconds}} s",

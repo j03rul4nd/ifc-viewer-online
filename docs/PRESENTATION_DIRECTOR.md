@@ -86,3 +86,11 @@ From the 2026 launch-video grammar (Raycast/Framer/Vercel-style launches, short-
 - `src/lib/capture/endcard.ts`: 2D canvas card — three gradient blobs drifting over near-black, the title slamming in, stats line, a white URL pill rising at 0.35 s with a light sweep at 0.9 s. Encoded like any shot (2.5 s at 1080×1920 ≈ 1.5 s to render).
 - `PlannedShot.card` — `run.ts` renders it instead of a 3D shot; the CTA lower-third is skipped (the card carries the URL); full SFX puts a hit + boom under it.
 - Launch 2026 templates end on it.
+
+## Looks — art direction (`recipe.look`)
+
+`src/lib/director/looks.ts`. One choice sets five things that agree: model paint per system (`viewer.applyModelPalette`, matte, translucent glass), scene backdrop (and the ground grid hidden), film grade (`src/lib/capture/grade.ts`: tone curve via canvas filter, split tone, vignette, animated grain, 2.39 letterbox on landscape), typography (Geist / Instrument Serif / Geist Mono, ink + muted, case; dark ink gets light plates) and one complementary accent (lower-third bar, URL sweep, end-card blobs). With a look, the title sits in the sky above the building, never on it.
+
+Looks (2026 references): Cloud Dancer (Pantone 2026 — clay on warm paper, serif, terracotta), Transformative Teal (WGSN/Coloro 2026, persimmon accent), Plum Noir (Pinterest 2026, wasabi, letterbox), Brutalist (light concrete on charcoal, grayscale), Blueprint (navy, mono, cyan), Golden hour (sand under sunset, orange/teal, letterbox). Templates: Editorial clay, Teal & persimmon, Plum noir film, Brutalist reel, Blueprint, Golden hour.
+
+The scene is restored after the render (models' own materials, the user's backdrop and grid, the validation overlay). Contrast is tested (ink on card ≥ 4.5:1; building vs backdrop).
