@@ -109,6 +109,16 @@ function canonicalType(raw: string): string {
   return raw.replace('STANDARDCASE', '').replace('ELEMENTEDCASE', '')
 }
 
+/** Which palette bucket an IFC class is painted with (art-directed looks). */
+function paletteBucket(cls: string): 'structure' | 'envelope' | 'glazing' | 'mep' | 'interiors' | 'other' {
+  if (/^IFC(WINDOW|CURTAINWALL|PLATE)$/.test(cls)) return 'glazing'
+  if (/^IFC(BEAM|COLUMN|SLAB|FOOTING|MEMBER|PILE|REINFORCING|TENDON|STAIRFLIGHT|RAMPFLIGHT)/.test(cls)) return 'structure'
+  if (/^IFC(WALL|ROOF|COVERING|DOOR|SHADINGDEVICE)/.test(cls)) return 'envelope'
+  if (/^IFC(PIPE|DUCT|CABLE|FLOW|ENERGY|DISTRIBUTION|AIRTERMINAL|SANITARY|LIGHTFIXTURE|LAMP|VALVE|PUMP|FAN|BOILER|CHILLER|OUTLET|ELECTRIC|FIRESUPPRESSION|UNITARY|SWITCHING|JUNCTION)/.test(cls)) return 'mep'
+  if (/^IFC(FURNISHING|FURNITURE|SYSTEMFURNITURE|STAIR|RAILING|RAMP)/.test(cls)) return 'interiors'
+  return 'other'
+}
+
 function prettyType(raw: string): string {
   const noPrefix = raw.startsWith('IFC') ? raw.slice(3) : raw
   return noPrefix.charAt(0) + noPrefix.slice(1).toLowerCase()
@@ -469,6 +479,14 @@ export interface ViewerAPI {
    * run needed): each with its name and every element contained under it.
    */
   getStoreys(modelId?: string): Promise<Array<{ expressId: number; name: string; elementIds: number[] }>>
+  /**
+   * Art direction: repaint every loaded model from a palette — structure,
+   * envelope, glazing, MEP, interiors, other — as flat matte colours (glass
+   * translucent). Null puts the models' own materials back.
+   */
+  applyModelPalette(palette: Record<'structure' | 'envelope' | 'glazing' | 'mep' | 'interiors' | 'other', string> | null, glazingOpacity?: number): Promise<void>
+  /** Show or hide the ground grid (art-directed looks hide it); returns what it was. */
+  setGridVisible(visible: boolean): boolean
   /** Express ids for IFC GlobalIds in one model (null where the model has no such element). */
   getIdsByGuids(guids: string[], modelId?: string): Promise<(number | null)[]>
   /** Names of the model's IfcProject and IfcBuilding (null when absent or empty). */
@@ -2771,6 +2789,43 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       } catch {
         return null
       }
+    },
+
+    async applyModelPalette(palette, glazingOpacity = 0.5) {
+      for (const [modelId, model] of modelObjects) {
+        const typeMap = typeMapByModel.get(modelId)
+        if (!typeMap) continue
+        try {
+          await model.resetHighlight()
+          if (!palette) continue
+          const buckets = new Map<keyof typeof palette, number[]>()
+          for (const [id, raw] of typeMap) {
+            const key = paletteBucket(canonicalType(raw))
+            const list = buckets.get(key)
+            if (list) list.push(id)
+            else buckets.set(key, [id])
+          }
+          for (const [key, ids] of buckets) {
+            const glass = key === 'glazing'
+            await model.highlight(ids, {
+              color: new THREE.Color(palette[key]),
+              renderedFaces: FRAGS.RenderedFaces.TWO,
+              opacity: glass ? glazingOpacity : 1,
+              transparent: glass && glazingOpacity < 1,
+              preserveOriginalMaterial: false,
+            })
+          }
+        } catch (e) {
+          console.warn('[Viewer] applyModelPalette:', e)
+        }
+      }
+      try { await fragmentsManager.core.update(true) } catch { /* next frame */ }
+    },
+
+    setGridVisible(visible: boolean) {
+      const was = grid.visible
+      grid.visible = visible
+      return was
     },
 
     async getIdsByGuids(guids: string[], modelId?: string) {

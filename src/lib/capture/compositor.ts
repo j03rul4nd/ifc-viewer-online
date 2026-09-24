@@ -143,10 +143,16 @@ function drawTextOverlay(
   const { width, height } = layout
   const fontSize = Math.max(8, spec.sizeFrac * height * clampScale(overlay.scale))
   const raw = state.text ?? overlay.text
-  const content = spec.uppercase ? raw.toUpperCase() : raw
+  const content = spec.uppercase || overlay.uppercase ? raw.toUpperCase() : raw
+  // Dark ink (light looks) gets a light plate and a soft light halo instead of
+  // the dark shadow that suits white text.
+  const darkInk = inkLuminance(overlay.color) < 0.35
 
   ctx.save()
-  ctx.font = `${spec.weight} ${fontSize}px Inter, system-ui, -apple-system, sans-serif`
+  // Instrument Serif ships one weight: ask for 400 so it is not faux-bolded.
+  const weight = overlay.font === 'serif' ? 400 : spec.weight
+  const size = overlay.font === 'serif' ? fontSize * 1.18 : fontSize
+  ctx.font = `${weight} ${size}px ${FONT_STACKS[overlay.font ?? 'sans']}`
   ctx.textBaseline = 'alphabetic'
   // letterSpacing is Chrome 99+/Safari 16.4+; harmless to set where unsupported.
   setLetterSpacing(ctx, spec.tracking * fontSize)
@@ -171,11 +177,11 @@ function drawTextOverlay(
   ctx.globalAlpha = state.alpha
   ctx.textAlign = align
 
-  drawPlate(ctx, spec.plate, { x, y: y + offsetY, blockWidth, blockHeight, align, fontSize })
+  drawPlate(ctx, spec.plate, { x, y: y + offsetY, blockWidth, blockHeight, align, fontSize }, darkInk, overlay.accent)
 
   ctx.fillStyle = overlay.color
   if (spec.plate === 'shadow') {
-    ctx.shadowColor = 'rgba(0,0,0,0.62)'
+    ctx.shadowColor = darkInk ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.62)'
     ctx.shadowBlur = fontSize * 0.34
     ctx.shadowOffsetY = fontSize * 0.05
   }
@@ -196,7 +202,20 @@ interface PlateBox {
   fontSize: number
 }
 
-function drawPlate(ctx: CanvasRenderingContext2D, plate: 'shadow' | 'pill' | 'bar', box: PlateBox): void {
+const FONT_STACKS: Record<'sans' | 'serif' | 'mono', string> = {
+  sans: 'Inter, Geist, system-ui, -apple-system, sans-serif',
+  serif: '"Instrument Serif", Georgia, "Times New Roman", serif',
+  mono: '"Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+}
+
+function inkLuminance(hex: string): number {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex)
+  if (!m) return 1
+  const n = parseInt(m[1], 16)
+  return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255
+}
+
+function drawPlate(ctx: CanvasRenderingContext2D, plate: 'shadow' | 'pill' | 'bar', box: PlateBox, light = false, accent?: string): void {
   if (plate === 'shadow') return
   const { x, y, blockWidth, blockHeight, align, fontSize } = box
   const padX = fontSize * (plate === 'pill' ? 0.62 : 0.55)
@@ -208,7 +227,7 @@ function drawPlate(ctx: CanvasRenderingContext2D, plate: 'shadow' | 'pill' | 'ba
   const rectH = blockHeight + padY * 2
 
   ctx.save()
-  ctx.fillStyle = 'rgba(9,11,15,0.62)'
+  ctx.fillStyle = light ? 'rgba(255,255,255,0.78)' : 'rgba(9,11,15,0.62)'
   if (plate === 'pill') {
     roundRect(ctx, rectX, rectY, rectW, rectH, rectH / 2)
     ctx.fill()
@@ -216,7 +235,7 @@ function drawPlate(ctx: CanvasRenderingContext2D, plate: 'shadow' | 'pill' | 'ba
     roundRect(ctx, rectX, rectY, rectW, rectH, fontSize * 0.14)
     ctx.fill()
     // Accent edge — the detail that makes a lower third read as broadcast.
-    ctx.fillStyle = '#4C7EF3'
+    ctx.fillStyle = accent ?? '#4C7EF3'
     const barW = Math.max(2, fontSize * 0.1)
     roundRect(ctx, rectX, rectY, barW, rectH, barW / 2)
     ctx.fill()

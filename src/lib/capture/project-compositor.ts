@@ -11,6 +11,7 @@
 // watermark → colour cover. The cover goes last so a dip to black takes the
 // titles with it.
 
+import { applyGrade, gradeFilter } from './grade'
 import { framingRect, overlaysAt, punchScale, type ClipSample, type EditProject, type FrameSample, type MediaOverlay } from './project'
 import { textRenderStateAt } from './timeline'
 import { drawTextCardsAt } from './compositor'
@@ -50,6 +51,9 @@ export function composeProjectFrame(o: ComposeProjectOptions): void {
 
   // Beat punch scales the picture about the centre; text stays rock-steady.
   const punch = punchScale(o.project.fx, o.t)
+  const grade = o.project.grade
+  const filter = gradeFilter(grade)
+  if (filter !== 'none' && typeof ctx.filter === 'string') ctx.filter = filter
   if (punch !== 1) {
     ctx.save()
     ctx.translate(width / 2, height / 2)
@@ -67,6 +71,9 @@ export function composeProjectFrame(o: ComposeProjectOptions): void {
     const pic = o.overlayOf(overlay, o.t)
     if (pic) drawOverlay(ctx, overlay, pic, o.t, width, height)
   }
+  if (filter !== 'none' && typeof ctx.filter === 'string') ctx.filter = 'none'
+  // The grade goes over the picture and under the titles.
+  applyGrade(ctx, width, height, grade, o.t)
 
   drawTextCardsAt(ctx, o.project.texts, o.t, width, height)
   if (o.watermark) drawWatermark(ctx, width, height)

@@ -19,6 +19,7 @@ import {
   CAPTION_LOOK_IDS, EDIT_STYLES, MULTI_MODEL_MODES, OUTPUT_FORMATS, SFX_LEVELS, PACES, SECTION_KINDS, builtInRecipe, DEFAULT_RECIPE_ID,
   type Recipe, type SectionKind,
 } from '../../lib/director/recipe'
+import { LOOK_IDS, LOOKS } from '../../lib/director/looks'
 import { allRecipes, deleteRecipe, lastRecipeId, rememberRecipe, saveRecipe } from '../../lib/director/storage'
 import { generatePresentation, inspectScene, NothingToPresentError, type GenerateLabels } from '../../lib/director/generate'
 import { planPresentation, type SceneFacts } from '../../lib/director/plan'
@@ -309,6 +310,24 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
           </Field>
           <Field label={t('studio.director.length', { seconds: draft.targetSec })}>
             <input type="range" className="studio-range" min={6} max={120} step={1} value={draft.targetSec} onChange={(e) => set({ targetSec: Number(e.target.value) })} />
+          </Field>
+          <Field label={t('studio.director.lookLabel')} hint={t(`studio.director.lookHint.${draft.look ?? 'native'}`)}>
+            <div className="grid grid-cols-2 gap-1.5">
+              {LOOK_IDS.map((id) => {
+                const lk = LOOKS[id]
+                const swatch = [lk.background?.top ?? '#0a0a0c', lk.palette?.envelope ?? '#9aa0ae', lk.palette?.glazing ?? '#6b7a90', lk.accent]
+                return (
+                  <button key={id} type="button" className="studio-look" aria-pressed={(draft.look ?? 'native') === id} onClick={() => set({ look: id })}>
+                    <span className="studio-look-swatch" aria-hidden="true">
+                      {swatch.map((c, i) => <span key={i} style={{ background: c }} />)}
+                    </span>
+                    <span className="studio-look-name" style={{ fontFamily: lk.type.titleFamily === 'serif' ? '"Instrument Serif", serif' : lk.type.titleFamily === 'mono' ? '"Geist Mono", monospace' : undefined }}>
+                      {t(`studio.director.looks2.${id}`)}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
           </Field>
           <Field label={t('studio.director.styleLabel')} hint={t(`studio.director.styleHint.${draft.style ?? 'classic'}`)}>
             <Chips value={draft.style ?? 'classic'} options={EDIT_STYLES} label={(v) => t(`studio.director.styles.${v}`)} onChange={(v) => set({ style: v })} />
