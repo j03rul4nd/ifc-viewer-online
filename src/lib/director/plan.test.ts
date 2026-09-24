@@ -199,6 +199,16 @@ describe('planPresentation', () => {
     expect(clip.sfx!.cues.some((c) => c.kind === 'boom')).toBe(true)
   })
 
+  it('by project with a zoom-through: dives from the whole set into each project, ends on the card', () => {
+    const models = [model('a', { group: 'Hospital' }), model('b', { group: 'School', bounds: { center: { x: 60, y: 10, z: 0 }, size: { x: 20, y: 20, z: 20 } } })]
+    const [clip] = planPresentation(recipe('meeting-demo', { multiModel: 'groups', sections: ['zoomThrough', 'orbit', 'endCard'], targetSec: 60 }), facts(models), strings, null)
+    const dives = clip.shots.filter((s) => s.section === 'zoomThrough')
+    expect(dives).toHaveLength(2)
+    expect(dives.every((d) => d.scene.visibleModels === undefined)).toBe(true)
+    expect(dives.map((d) => d.caption)).toEqual(['Hospital', 'School'])
+    expect(clip.shots[clip.shots.length - 1].card).toBeDefined()
+  })
+
   it('never prints a score below 70', () => {
     const [low] = planPresentation(recipe('meeting-demo'), facts([model('m1', { score: 55 })]), strings, null)
     expect(low.texts.some((t) => t.text.includes('/100'))).toBe(false)

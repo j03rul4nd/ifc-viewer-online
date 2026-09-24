@@ -233,16 +233,23 @@ export function planPresentation(recipe: Recipe, facts: SceneFacts, strings: Pla
     // Each project (group of discipline models) on its own, then all projects together.
     const groups = groupModels(models)
     if (groups.length > 1) {
-      const perGroup = recipe.sections.filter((s) => s !== 'closing' && s !== 'tour')
+      const perGroup = recipe.sections.filter((s) => s !== 'closing' && s !== 'tour' && s !== 'endCard')
+      const everything = { ...combined, name: federationName(groups.map((g) => g.name)) }
+      // With a zoom-through in the recipe, the camera dives from the whole set
+      // into each project before showing it: the "portal" between projects.
+      const dive = recipe.sections.includes('zoomThrough')
       const drafts: Draft[] = []
       for (const g of groups) {
         const gm = { ...combine(g.models), name: g.name }
-        const own = sectionDrafts(recipe, perGroup, gm, facts, aspect, strings, g.models.map((m) => m.modelId))
-        if (own[0]) own[0] = { ...own[0], shot: { ...own[0].shot, caption: g.name } }
+        const own = sectionDrafts(recipe, perGroup.filter((s) => !dive || s !== 'zoomThrough'), gm, facts, aspect, strings, g.models.map((m) => m.modelId))
+        if (dive) {
+          drafts.push(diveInto(everything, gm, aspect, g.name, recipe.captions.labelShots))
+        } else if (own[0]) {
+          own[0] = { ...own[0], shot: { ...own[0].shot, caption: g.name } }
+        }
         drafts.push(...own)
       }
-      const everything = { ...combined, name: federationName(groups.map((g) => g.name)) }
-      const finale = sectionDrafts(recipe, ['orbit', ...(recipe.sections.includes('closing') ? ['closing' as const] : [])], everything, facts, aspect, strings, undefined)
+      const finale = sectionDrafts(recipe, ['orbit', ...(recipe.sections.includes('closing') ? ['closing' as const] : []), ...(recipe.sections.includes('endCard') ? ['endCard' as const] : [])], everything, facts, aspect, strings, undefined)
       if (finale[0]) finale[0] = { ...finale[0], shot: { ...finale[0].shot, caption: strings.together } }
       drafts.push(...finale)
       return [build(drafts, everything, titleFor(recipe, everything.name), models)]
@@ -250,7 +257,7 @@ export function planPresentation(recipe: Recipe, facts: SceneFacts, strings: Pla
   }
 
   // 'sequence': each model on its own (the others hidden), then everything together.
-  const perModel = recipe.sections.filter((s) => s !== 'closing' && s !== 'tour')
+  const perModel = recipe.sections.filter((s) => s !== 'closing' && s !== 'tour' && s !== 'endCard')
   const drafts: Draft[] = []
   for (const m of models) {
     const own = sectionDrafts(recipe, perModel, m, facts, aspect, strings, [m.modelId])
@@ -258,7 +265,7 @@ export function planPresentation(recipe: Recipe, facts: SceneFacts, strings: Pla
     if (own[0]) own[0] = { ...own[0], shot: { ...own[0].shot, caption: m.name } }
     drafts.push(...own)
   }
-  const finale = sectionDrafts(recipe, ['orbit', ...(recipe.sections.includes('closing') ? ['closing' as const] : [])], combined, facts, aspect, strings, undefined)
+  const finale = sectionDrafts(recipe, ['orbit', ...(recipe.sections.includes('closing') ? ['closing' as const] : []), ...(recipe.sections.includes('endCard') ? ['endCard' as const] : [])], combined, facts, aspect, strings, undefined)
   if (finale[0]) finale[0] = { ...finale[0], shot: { ...finale[0].shot, caption: strings.together } }
   drafts.push(...finale)
   return [build(drafts, combined, titleFor(recipe, combined.name), models)]
@@ -705,6 +712,32 @@ export function fitPoseToAspect(pose: CameraPose, from: number, to: number): Cam
   // narrower it gets.
   const factor = Math.min(1, from) / Math.min(1, to)
   return factor > 1 ? pullBack(pose, pose.target, Math.min(2.2, factor)) : pose
+}
+
+/**
+ * The dive between projects: from a view of the whole set, an exponential
+ * zoom onto one project, everything still visible — so the audience sees
+ * where this project sits before it has the screen to itself.
+ */
+function diveInto(all: ModelFacts, target: ModelFacts, aspect: number, name: string, label: boolean): Draft {
+  const dir = unitOf(orbitPoint({ x: 0, y: 0, z: 0 }, 1, 30, 28))
+  const far = fitDistance(all.bounds, DEFAULT_FOV_DEG, aspect, 1.05)
+  const near = fitDistance(target.bounds, DEFAULT_FOV_DEG, aspect, 1.1)
+  return {
+    shot: {
+      section: 'zoomThrough',
+      shot: {
+        ...defaultShot('path', target.bounds, aspect, 3),
+        keyframes: zoomKeyframes(all.bounds.center, target.bounds.center, dir, far, near, DEFAULT_FOV_DEG),
+        pathTiming: 'even', easing: 'easeInOut',
+      },
+      label: name,
+      caption: label ? name : undefined,
+      scene: {},
+    },
+    weight: 1,
+    group: 'zoomThrough',
+  }
 }
 
 function unitOf(v: Vec3): Vec3 {

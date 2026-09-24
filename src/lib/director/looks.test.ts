@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { contrastRatio, LOOK_IDS, LOOKS } from './looks'
+import { contrastRatio, LOOK_IDS, LOOKS, restyleProject } from './looks'
 import { letterboxBar, gradeFilter } from '../capture/grade'
 import { planPresentation, type ModelFacts, type PlanStrings } from './plan'
 import { builtInRecipe, BUILT_IN_RECIPES } from './recipe'
@@ -42,6 +42,21 @@ describe('looks', () => {
       expect(l.elevation).toBeGreaterThan(0)
       expect(l.keyIntensity).toBeGreaterThan(l.fillIntensity)
     }
+  })
+
+  it('restyles an existing project without touching its shots', () => {
+    type T = { style: string; color: string; font?: 'sans' | 'serif' | 'mono'; accent?: string; uppercase?: boolean }
+    const p: { clips: number[]; texts: T[]; grade?: typeof LOOKS['plum-noir']['grade'] & object; lookId?: string } = {
+      clips: [1], texts: [{ style: 'title', color: '#fff' }, { style: 'caption', color: '#fff' }], lookId: 'native',
+    }
+    const clay = restyleProject(p, 'cloud-dancer')
+    expect(clay.texts[0]).toMatchObject({ font: 'serif', color: LOOKS['cloud-dancer'].type.ink })
+    expect(clay.texts[1].color).toBe(LOOKS['cloud-dancer'].type.muted)
+    expect(clay.grade).toEqual(LOOKS['cloud-dancer'].grade)
+    expect(clay.clips).toBe(p.clips)
+    const back = restyleProject(clay, 'native')
+    expect(back.grade).toBeUndefined()
+    expect(back.texts[0].font).toBeUndefined()
   })
 
   it('grade: filter string and cinema bars only on landscape', () => {

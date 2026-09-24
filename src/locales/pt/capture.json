@@ -478,6 +478,7 @@
     "sfxVolume": "Volume dos efeitos",
     "sfxRemove": "Remover efeitos sonoros",
     "sfxCount": "{{n}} efeitos",
-    "sfxTitle": "Efeitos sonoros"
+    "sfxTitle": "Efeitos sonoros",
+    "restyleHint": "Muda de imediato a gradação e os textos. As tomadas 3D mantêm a cor e a luz — gere de novo para as repintar."
   }
 }

@@ -478,6 +478,7 @@
     "sfxVolume": "Volume des effets",
     "sfxRemove": "Retirer les effets sonores",
     "sfxCount": "{{n}} effets",
-    "sfxTitle": "Effets sonores"
+    "sfxTitle": "Effets sonores",
+    "restyleHint": "Change instantanément l’étalonnage et les titres. Les plans 3D gardent leur couleur et leur lumière — régénérez pour les repeindre."
   }
 }

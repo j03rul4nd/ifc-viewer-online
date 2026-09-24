@@ -179,3 +179,30 @@ export function contrastRatio(a: string, b: string): number {
   const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p)
   return (x + 0.05) / (y + 0.05)
 }
+
+/**
+ * Re-style an existing project with a look — instantly, without rendering:
+ * the grade and every title's face, ink, accent and case. The 3D shots keep
+ * the paint and light they were rendered with; re-generate for those.
+ */
+export function restyleProject<P extends { texts: Array<{ style: string; color: string; font?: FontFamily; accent?: string; uppercase?: boolean }>; grade?: Grade; lookId?: string }>(project: P, id: LookId): P {
+  const look = LOOKS[id] ?? LOOKS.native
+  const texts = project.texts.map((t) => {
+    if (look.id === 'native') {
+      const { font: _f, accent: _a, uppercase: _u, ...rest } = t
+      return { ...rest, color: '#ffffff' }
+    }
+    const role = t.style === 'title' ? 'title' : t.style === 'caption' ? 'muted' : 'body'
+    return {
+      ...t,
+      font: role === 'title' ? look.type.titleFamily : look.type.family,
+      color: role === 'muted' ? look.type.muted : look.type.ink,
+      accent: look.accent,
+      uppercase: look.type.uppercase && role !== 'muted' ? true : undefined,
+    }
+  })
+  const next = { ...project, texts, lookId: id }
+  if (look.grade) next.grade = look.grade
+  else delete next.grade
+  return next
+}

@@ -478,6 +478,7 @@
     "sfxVolume": "Volum dels efectes",
     "sfxRemove": "Treu els efectes de so",
     "sfxCount": "{{n}} efectes",
-    "sfxTitle": "Efectes de so"
+    "sfxTitle": "Efectes de so",
+    "restyleHint": "Canvia a l’instant l’etalonatge i els textos. Les preses 3D conserven el color i la llum: torna a generar per repintar-les."
   }
 }
