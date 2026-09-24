@@ -54,8 +54,8 @@ the scratchpad were served to the app from a local caching proxy (pointing
   ramp — a data gap (the ramp is untagged as a cutting).
 - The àtic setback of Eixample buildings is not modelled (only the palette and
   storey rhythm). Chamfer facades use the same rhythm as the street facades.
-- Parks: landmark models exist for the Ciutadella only; other parks keep the
-  extruded outline for their monuments.
+- Landmark models exist for the Ciutadella, Parc Güell and Montjuïc only;
+  elsewhere monuments keep their extruded outline.
 - A mapped animal sculpture (the Cascada's griffins) is drawn with the figure
   stand-in: OSM says `artwork_type=sculpture`, not what it represents.
 
@@ -74,6 +74,40 @@ around 41.388, 2.187; the benchmark fixture is the same box).
 | 23 | Monuments as prisms | Cascada, Hivernacle, Umbracle, Castell dels Tres Dragons, Glorieta, Mamut | `landmarks.ts`: hand-built GLBs authored on the real footprint (`scripts/blender/build-ciutadella-landmarks.py`), placed at the footprint's centroid with no rotation. Showcase only; the model replaces its outline — and the Cascada's also replaces the terraces it carries |
 | 24 | Empty lake | — | Rental row boats on the estany (`water=lake`/`pond` inside a park, ≥ 3 m from shore, 1 per 700 m², at most 14); never on a basin or fountain |
 | 25 | Lawns without their low railings | The park's lawns are fenced with 0.75 m hoops, the park edge with 2 m railings | Fence height by position: 0.75 m inside, 2 m within 4 m of the park boundary |
+
+## Landmarks — Parc Güell and Montjuïc
+
+Hand-built GLBs in `public/models/landmarks/`, registered in
+`src/lib/geo/landmarks.ts`, Showcase only, each authored on its real OSM
+footprint about the footprint's centroid and placed there unrotated. The
+shared Blender kit is `scripts/blender/landmark_kit.py`; each group has its
+script and a site file with the OSM geometry in the model's metre frame:
+
+| Script | Models |
+|---|---|
+| `build-parc-guell-landmarks.py` | Sala Hipòstila + Plaça de la Natura with the serpentine bench, Escalinata del Drac, Casa del Guarda, Pavelló de Consergeria, Casa Museu Gaudí, Turó de les Tres Creus, Pòrtic de la Bugadera |
+| `build-montjuic-landmarks.py` | Palau Nacional (MNAC), Font Màgica, Torres Venecianes (one model, placed twice), Pavelló Mies van der Rohe |
+| `build-anella-olimpica-landmarks.py` | Estadi Olímpic (open bowl, 1929 facade, Marathon Gate, west stand canopy), Palau Sant Jordi, Torre Calatrava |
+| `build-castell-montjuic-landmark.py` | Castell de Montjuïc: keep and Pati d'Armes, bastioned enceinte, moat, bridge and gate |
+
+How a landmark is found, and why it is not just "the outline id":
+
+- The parser stands down every outline that has `building:part`s. The Casa
+  del Guarda, the Casa Museu and the MNAC outlines never reach the scene, so a
+  landmark is found by ANY id it `covers` (its parts) as well as its own.
+- A point monument (Tres Creus, Bugadera) is keyed on the park with
+  `anchorOnly`: the park tells us it is in view and is NOT replaced.
+- `leisure=stadium` and `man_made=tower` are drawn by no classifier: the
+  stadium is found by its grandstand and pitch, the Calatrava tower (`inArea`)
+  whenever its origin is inside the loaded 700 m box.
+- Mapping corrections found on the way: the Consergeria is way 672895651 (the
+  site file's 672895744 is a school building); the 30 × 14 m pool 80 m from
+  the Mies pavilion is not part of it.
+
+Hillsides: the app samples terrain at the origin only, so every
+ground-touching solid runs down to a hidden skirt (−6 to −14 m). The Parc Güell
+stair and Sala were levelled against the same terrain tiles the app uses, so
+the last step meets the Sala floor although the two are placed independently.
 
 ## Loading without freezing the page (performance pass)
 
