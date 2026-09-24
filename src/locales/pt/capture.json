@@ -341,7 +341,8 @@
         "bcf": "Tópicos BCF",
         "fixed": "O que foi corrigido",
         "zoomThrough": "Zoom através",
-        "pullOut": "Afastamento de escala"
+        "pullOut": "Afastamento de escala",
+        "endCard": "Cartão final"
       },
       "sectionHint": {
         "hero": "Afasta até ao modelo completo, com o título",
@@ -358,7 +359,8 @@
         "bcf": "Cada tópico BCF a partir do seu ponto de vista",
         "fixed": "Problemas da validação anterior que já não existem",
         "zoomThrough": "Um avanço que acelera, atravessa a fachada e entra num piso",
-        "pullOut": "De um metro de um detalhe até ao edifício completo"
+        "pullOut": "De um metro de um detalhe até ao edifício completo",
+        "endCard": "O nome e o endereço sobre um degradê em movimento"
       },
       "empty": {
         "storeys": "Este modelo não tem pisos",

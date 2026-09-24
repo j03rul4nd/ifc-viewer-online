@@ -10,6 +10,7 @@ import { useValidationStore } from '../../stores/validationStore'
 import { useSceneStore } from '../../stores/sceneStore'
 import { addSource, createProject, makeId, projectDuration, setAllTransitions, type EditProject, type MediaSource } from '../capture/project'
 import { renderShot, type ShotRenderer } from '../capture/media-codec'
+import { renderEndCard } from '../capture/endcard'
 import { createTextOverlay } from '../capture/timeline'
 import { exportProject, type SourceMedia } from '../capture/project-export'
 import { getBuiltInBed, type BuiltInBedId } from '../capture/audio-library'
@@ -120,7 +121,7 @@ function shotKey(viewer: DirectorViewer & { getModelBounds?: (id?: string) => un
   const models = viewer.getLoadedModelIds().map((id) => [id, viewer.getModelBounds?.(id)])
   // The validation overlay paints every shot while it is on.
   const overlay = useValidationStore.getState().validationMode
-  return JSON.stringify([planned.shot, planned.scene, clip.width, clip.height, fps, clip.motionBlur, models, useSceneStore.getState().background, overlay])
+  return JSON.stringify([planned.shot, planned.card, planned.scene, clip.width, clip.height, fps, clip.motionBlur, models, useSceneStore.getState().background, overlay])
 }
 
 function cacheGet(key: string): Blob | undefined {
@@ -165,6 +166,11 @@ export async function renderPlannedClip(
     if (blob) {
       reused++
       onShot(i, 1)
+    } else if (planned.card) {
+      blob = await renderEndCard({ ...planned.card, durationSec: planned.shot.durationSec }, {
+        width: clip.width, height: clip.height, fps, signal, onProgress: (f) => onShot(i, f),
+      })
+      cachePut(key, blob)
     } else {
       const hidden = applyScene(viewer, planned.scene)
       try {

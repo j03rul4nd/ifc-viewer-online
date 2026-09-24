@@ -80,3 +80,9 @@ From the 2026 launch-video grammar (Raycast/Framer/Vercel-style launches, short-
 - `zoomThrough`: accelerating push (`easeIn`) from outside, through the facade, into the middle storey — the next storey shot (a single pick is the middle one) continues from there.
 - `pullOut`: from ~1 m off the selected element, or the middle storey's facade, back to the whole building (linear on the geometric path).
 - Both are in the Launch 2026 templates: pullOut → buildup → zoomThrough → storey → systems → closing.
+
+## End card (`endCard` section)
+
+- `src/lib/capture/endcard.ts`: 2D canvas card — three gradient blobs drifting over near-black, the title slamming in, stats line, a white URL pill rising at 0.35 s with a light sweep at 0.9 s. Encoded like any shot (2.5 s at 1080×1920 ≈ 1.5 s to render).
+- `PlannedShot.card` — `run.ts` renders it instead of a 3D shot; the CTA lower-third is skipped (the card carries the URL); full SFX puts a hit + boom under it.
+- Launch 2026 templates end on it.

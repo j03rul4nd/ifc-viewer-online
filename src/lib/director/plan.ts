@@ -111,6 +111,8 @@ export interface PlannedShot {
   caption?: string
   /** Detail lines under the caption (review videos). */
   details?: string[]
+  /** A 2D end card instead of a 3D shot: name, facts, URL over a drifting gradient. */
+  card?: { title: string; subtitle?: string; url?: string }
   scene: ShotScene
 }
 
@@ -413,6 +415,12 @@ function sectionDrafts(
       case 'closing':
         out.push(make('closing', 'orbit', m.bounds, m.name, { sweepDeg: 40, elevationDeg: 20, easing: 'easeOut' }, {}, undefined, 1.2))
         break
+      case 'endCard': {
+        const d = make('endCard', 'orbit', m.bounds, m.name, {}, {}, undefined, 0.9)
+        const stats = m.elementCount > 0 ? strings.stats(m.elementCount, m.storeys.length) : undefined
+        out.push({ ...d, shot: { ...d.shot, card: { title: titleFor(recipe, m.name), subtitle: stats, url: recipe.captions.cta.trim() || undefined } } })
+        break
+      }
     }
   }
   return out
@@ -467,6 +475,8 @@ export function planSfx(
     if (last > 0) cues.push(cueAt('riser', starts[last] + overlap, 0.5))
     shots.forEach((sh, i) => {
       if (sh.section === 'buildup') cues.push(cueAt('boom', starts[i] + sh.shot.durationSec * 0.85, 0.7))
+      // The end card's title slams in with a hit and a boom under it.
+      if (sh.card) { cues.push(cueAt('hit', starts[i] + overlap, 0.9)); cues.push(cueAt('boom', starts[i] + overlap, 0.6)) }
     })
   }
   const inside = cues.filter((c) => c.t < duration - 0.05).sort((a, b) => a.t - b.t)
@@ -611,7 +621,8 @@ function planTexts(
     push({ text, startSec: round3(starts[i] + overlap + 0.35), endSec: round3(Math.max(starts[i] + overlap + 1.2, end(i) - 0.15)), style: 'caption', anchor: vertical ? 'top-center' : 'top-left' }, 'fade')
   }
   const cta = recipe.captions.cta.trim()
-  if (cta && shots.length > 1) {
+  // An end card already carries the URL.
+  if (cta && shots.length > 1 && !shots[shots.length - 1].card) {
     const last = shots.length - 1
     push({ text: cta, startSec: round3(starts[last] + overlap + 0.3), endSec: round3(end(last) - 0.1), style: look.cta, anchor: vertical ? 'mid-center' : 'bottom-center' }, anim('cta'))
   }

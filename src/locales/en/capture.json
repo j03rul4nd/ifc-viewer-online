@@ -341,7 +341,8 @@
         "bcf": "BCF topics",
         "fixed": "What was fixed",
         "zoomThrough": "Zoom through",
-        "pullOut": "Pull-out"
+        "pullOut": "Pull-out",
+        "endCard": "End card"
       },
       "sectionHint": {
         "hero": "Pull back to the whole model, with the title",
@@ -358,7 +359,8 @@
         "bcf": "Each BCF topic from its own viewpoint",
         "fixed": "Findings of the previous run that are gone now",
         "zoomThrough": "An accelerating push through the facade into a storey",
-        "pullOut": "From a metre off a detail back to the whole building"
+        "pullOut": "From a metre off a detail back to the whole building",
+        "endCard": "The name and the URL over a drifting gradient"
       },
       "empty": {
         "storeys": "No storeys found in this model",
