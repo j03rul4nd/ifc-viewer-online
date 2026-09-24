@@ -472,7 +472,8 @@
         "brutalist-mono": "Betongrau, kontrastreiches Schwarzweiß, kräftige Versalien.",
         "blueprint": "Weißes transparentes Modell auf Marineblau, Monospace-Schrift, Cyan-Akzent.",
         "golden-hour": "Sandfarbenes Modell im Abendlicht, Orange/Petrol-Grading, Letterbox."
-      }
+      },
+      "lookPreview": "Vorschau an Ihrem Modell"
     },
     "remaining": "Noch etwa {{seconds}} s",
     "sfxVolume": "Effektlautstärke",

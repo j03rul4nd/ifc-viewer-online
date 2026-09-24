@@ -99,3 +99,4 @@ The scene is restored after the render (models' own materials, the user's backdr
 - Not used: the viewer's AO/edges post-processing is WebGL-only and is off on WebGPU, so looks do not depend on it.
 - **Restyle after generating**: the project panel's look picker (`restyleProject`) re-grades and re-styles the titles instantly, undoable; the 3D shots keep their paint and light (re-generate to repaint).
 - **Dive between projects**: in *By project* with `zoomThrough` in the recipe, an exponential zoom from the whole set into each project precedes its shots (everything visible). *By project* and *One by one* now keep the end card.
+- **Look preview** (`previewLook`): the template editor renders one still of the loaded model in the chosen look (paint, light, backdrop, grade, title) and restores the scene — see the look on this building before generating.

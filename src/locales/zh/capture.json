@@ -472,7 +472,8 @@
         "brutalist-mono": "混凝土灰，高对比黑白，粗重大写字体。",
         "blueprint": "海军蓝上的半透明白模，等宽字体，青色点缀。",
         "golden-hour": "夕阳天空下的沙色模型，橙青调色，宽银幕黑边。"
-      }
+      },
+      "lookPreview": "在你的模型上预览"
     },
     "remaining": "约剩 {{seconds}} 秒",
     "sfxVolume": "音效音量",
