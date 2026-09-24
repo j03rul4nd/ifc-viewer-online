@@ -472,7 +472,8 @@
         "brutalist-mono": "Grisos de formigó, blanc i negre d’alt contrast, majúscules pesants.",
         "blueprint": "Model blanc translúcid sobre blau marí, lletra monoespai, accent cian.",
         "golden-hour": "Maqueta color sorra sota un cel de capvespre, etalonatge taronja/blau, bandes de cine."
-      }
+      },
+      "lookPreview": "Previsualització al teu model"
     },
     "remaining": "Queden uns {{seconds}} s",
     "sfxVolume": "Volum dels efectes",

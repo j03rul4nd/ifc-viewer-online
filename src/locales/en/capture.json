@@ -472,7 +472,8 @@
         "brutalist-mono": "Concrete greys, high-contrast black and white, heavy uppercase type.",
         "blueprint": "White translucent model on navy, mono type, cyan accent.",
         "golden-hour": "Sand model under a late-sun sky, orange/teal grade, letterbox."
-      }
+      },
+      "lookPreview": "Preview on your model"
     },
     "remaining": "About {{seconds}} s left",
     "sfxVolume": "Effects volume",

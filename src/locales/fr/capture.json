@@ -472,7 +472,8 @@
         "brutalist-mono": "Gris béton, noir et blanc très contrasté, capitales grasses.",
         "blueprint": "Maquette blanche translucide sur bleu marine, police monospace, accent cyan.",
         "golden-hour": "Maquette sable sous un ciel de fin de journée, étalonnage orange/bleu canard, letterbox."
-      }
+      },
+      "lookPreview": "Aperçu sur votre maquette"
     },
     "remaining": "Environ {{seconds}} s restantes",
     "sfxVolume": "Volume des effets",

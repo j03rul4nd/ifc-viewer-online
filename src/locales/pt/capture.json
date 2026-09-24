@@ -472,7 +472,8 @@
         "brutalist-mono": "Cinzentos de betão, preto e branco de alto contraste, maiúsculas fortes.",
         "blueprint": "Modelo branco translúcido sobre azul-marinho, letra monoespaçada, acento ciano.",
         "golden-hour": "Maqueta cor de areia sob céu de fim de tarde, gradação laranja/azul, faixas de cinema."
-      }
+      },
+      "lookPreview": "Pré-visualização no seu modelo"
     },
     "remaining": "Faltam cerca de {{seconds}} s",
     "sfxVolume": "Volume dos efeitos",

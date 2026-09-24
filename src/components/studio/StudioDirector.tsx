@@ -21,7 +21,7 @@ import {
 } from '../../lib/director/recipe'
 import { LOOK_IDS, LOOKS } from '../../lib/director/looks'
 import { allRecipes, deleteRecipe, lastRecipeId, rememberRecipe, saveRecipe } from '../../lib/director/storage'
-import { generatePresentation, inspectScene, NothingToPresentError, type GenerateLabels } from '../../lib/director/generate'
+import { generatePresentation, inspectScene, NothingToPresentError, previewLook, type GenerateLabels } from '../../lib/director/generate'
 import { planPresentation, type SceneFacts } from '../../lib/director/plan'
 import { rhythmForMusic } from '../../lib/director/run'
 import type { SystemKey } from '../../lib/director/systems'
@@ -159,6 +159,22 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
 }) {
   const { t, i18n } = useTranslation('capture')
   const [facts, setFacts] = useState<SceneFacts | null>(null)
+  // A still of THIS model in the chosen look, re-rendered when the look changes.
+  const [lookStill, setLookStill] = useState<string | null>(null)
+  const [lookBusy, setLookBusy] = useState(false)
+  const previewTitle = facts?.models[0]?.name ?? ''
+  useEffect(() => {
+    if (!canRender) return
+    let live = true
+    setLookBusy(true)
+    const id = window.setTimeout(() => {
+      void previewLook(draft.look ?? 'native', draft.captions.title.trim().replace(/\{name\}/g, previewTitle) || previewTitle)
+        .then((url) => { if (live) setLookStill(url) })
+        .catch(() => { if (live) setLookStill(null) })
+        .finally(() => { if (live) setLookBusy(false) })
+    }, 200)
+    return () => { live = false; window.clearTimeout(id) }
+  }, [draft.look, draft.captions.title, previewTitle, canRender])
   const modelCount = useModelStore((s) => Object.keys(s.models).length)
   const tourStops = usePresentationStore((s) => s.tour?.steps.length ?? 0)
   const labels = useDirectorLabels()
@@ -312,6 +328,11 @@ function DirectorEditor({ draft, nameOf, onChange, onClose, onGenerate, onSave, 
             <input type="range" className="studio-range" min={6} max={120} step={1} value={draft.targetSec} onChange={(e) => set({ targetSec: Number(e.target.value) })} />
           </Field>
           <Field label={t('studio.director.lookLabel')} hint={t(`studio.director.lookHint.${draft.look ?? 'native'}`)}>
+            {canRender && (
+              <div className="studio-look-preview" aria-busy={lookBusy}>
+                {lookStill ? <img src={lookStill} alt={t('studio.director.lookPreview')} /> : <span>{t('studio.director.lookPreview')}</span>}
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-1.5">
               {LOOK_IDS.map((id) => {
                 const lk = LOOKS[id]

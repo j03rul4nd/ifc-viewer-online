@@ -285,7 +285,7 @@ export async function runDirector(
  * undo it: the user's own backdrop and the models' own materials, with the
  * validation overlay re-applied if it was on.
  */
-async function applyLook(viewer: DirectorViewer, look: Look): Promise<() => Promise<void>> {
+export async function applyLook(viewer: DirectorViewer, look: Look): Promise<() => Promise<void>> {
   await ensureLookFonts(look)
   if (look.id === 'native') return async () => {}
   const before = useSceneStore.getState().background

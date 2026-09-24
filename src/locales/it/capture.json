@@ -472,7 +472,8 @@
         "brutalist-mono": "Grigi cemento, bianco e nero ad alto contrasto, maiuscole pesanti.",
         "blueprint": "Modello bianco traslucido su blu navy, carattere monospaziato, accento ciano.",
         "golden-hour": "Plastico color sabbia sotto il cielo del tramonto, grading arancio/petrolio, letterbox."
-      }
+      },
+      "lookPreview": "Anteprima sul tuo modello"
     },
     "remaining": "Circa {{seconds}} s rimanenti",
     "sfxVolume": "Volume effetti",

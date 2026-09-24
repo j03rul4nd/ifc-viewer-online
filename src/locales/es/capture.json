@@ -472,7 +472,8 @@
         "brutalist-mono": "Grises de hormigón, blanco y negro de alto contraste, tipografía mayúscula pesada.",
         "blueprint": "Modelo blanco translúcido sobre azul marino, tipografía monoespaciada, acento cian.",
         "golden-hour": "Maqueta color arena bajo un cielo de atardecer, etalonaje naranja/azul, bandas de cine."
-      }
+      },
+      "lookPreview": "Vista previa en tu modelo"
     },
     "remaining": "Quedan unos {{seconds}} s",
     "sfxVolume": "Volumen de efectos",
