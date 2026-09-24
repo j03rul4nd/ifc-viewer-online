@@ -226,6 +226,20 @@ function itemName(d: unknown): string {
   return pick(r?.Name?.value) || pick(r?.LongName?.value)
 }
 
+/** A lighting setup for art-directed renders (see `setLighting`). */
+export interface SceneLighting {
+  sky: string
+  ground: string
+  ambient: number
+  key: string
+  keyIntensity: number
+  /** Where the sun comes from: degrees around Y, degrees above the horizon. */
+  azimuth: number
+  elevation: number
+  fill: string
+  fillIntensity: number
+}
+
 export interface OverlayApplyOptions {
   /** Which severities to paint in colour; the rest fall back to the ghost. */
   severities?: SeverityFilter
@@ -485,6 +499,12 @@ export interface ViewerAPI {
    * translucent). Null puts the models' own materials back.
    */
   applyModelPalette(palette: Record<'structure' | 'envelope' | 'glazing' | 'mep' | 'interiors' | 'other', string> | null, glazingOpacity?: number): Promise<void>
+  /**
+   * Art direction: the scene's light — sky/ground ambient, a key "sun" (colour,
+   * strength, azimuth and elevation in degrees) and a fill from the opposite
+   * side. Null puts the viewer's own lighting back.
+   */
+  setLighting(light: SceneLighting | null): void
   /** Show or hide the ground grid (art-directed looks hide it); returns what it was. */
   setGridVisible(visible: boolean): boolean
   /** Express ids for IFC GlobalIds in one model (null where the model has no such element). */
@@ -952,6 +972,12 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   const fill = new THREE.DirectionalLight(0x6B7AC8, 0.3)
   fill.position.set(-40, 20, -30)
   world.scene.three.add(fill)
+  // What setLighting(null) restores.
+  const defaultLighting = {
+    sky: hemi.color.clone(), ground: hemi.groundColor.clone(), ambient: hemi.intensity,
+    key: dir.color.clone(), keyIntensity: dir.intensity, keyPos: dir.position.clone(),
+    fill: fill.color.clone(), fillIntensity: fill.intensity, fillPos: fill.position.clone(),
+  }
 
   const grids = components.get(OBC.Grids)
   const grid  = grids.create(world)
@@ -2820,6 +2846,34 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         }
       }
       try { await fragmentsManager.core.update(true) } catch { /* next frame */ }
+    },
+
+    setLighting(light) {
+      if (!light) {
+        hemi.color.copy(defaultLighting.sky)
+        hemi.groundColor.copy(defaultLighting.ground)
+        hemi.intensity = defaultLighting.ambient
+        dir.color.copy(defaultLighting.key)
+        dir.intensity = defaultLighting.keyIntensity
+        dir.position.copy(defaultLighting.keyPos)
+        fill.color.copy(defaultLighting.fill)
+        fill.intensity = defaultLighting.fillIntensity
+        fill.position.copy(defaultLighting.fillPos)
+        return
+      }
+      const az = (light.azimuth * Math.PI) / 180
+      const el = (Math.max(2, Math.min(88, light.elevation)) * Math.PI) / 180
+      const r = defaultLighting.keyPos.length()
+      hemi.color.set(light.sky)
+      hemi.groundColor.set(light.ground)
+      hemi.intensity = light.ambient
+      dir.color.set(light.key)
+      dir.intensity = light.keyIntensity
+      dir.position.set(Math.sin(az) * Math.cos(el) * r, Math.sin(el) * r, Math.cos(az) * Math.cos(el) * r)
+      // The fill comes from the other side, lower, so the shadow side never goes flat black.
+      fill.color.set(light.fill)
+      fill.intensity = light.fillIntensity
+      fill.position.set(-Math.sin(az) * r * 0.8, r * 0.3, -Math.cos(az) * r * 0.8)
     },
 
     setGridVisible(visible: boolean) {

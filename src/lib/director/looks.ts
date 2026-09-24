@@ -22,6 +22,7 @@
 import type { BackgroundSettings } from '../scene/background'
 import type { SystemKey } from './systems'
 import type { Grade } from '../capture/grade'
+import type { SceneLighting } from '../viewer'
 
 export type { Grade }
 
@@ -53,6 +54,8 @@ export interface Look {
   accent: string
   /** End-card gradient blobs (three) and base. */
   card: { base: string; blobs: [string, string, string] }
+  /** Scene light: where the sun is and what colour the shadows take. Null = the viewer's own. */
+  light: SceneLighting | null
 }
 
 const NO_GRADE: Grade = { contrast: 1, saturation: 1, brightness: 1, shadows: '#000000', highlights: '#ffffff', split: 0, vignette: 0, grain: 0, letterbox: 0 }
@@ -63,6 +66,7 @@ export const LOOKS: Record<LookId, Look> = {
     id: 'native', palette: null, glazingOpacity: 1, background: null, grade: null,
     type: { family: 'sans', titleFamily: 'sans', ink: '#ffffff', muted: '#d4d4d8', uppercase: false },
     accent: '#6366f1', card: { base: '#07070b', blobs: ['#6366f1', '#0ea5e9', '#a855f7'] },
+    light: null,
   },
   // Pantone 2026 Cloud Dancer: a clay model on warm paper, an editorial serif in
   // charcoal, one terracotta accent. The Pinterest archviz board look.
@@ -74,6 +78,7 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { ...NO_GRADE, contrast: 1.04, saturation: 0.92, shadows: '#6B5B4B', highlights: '#FFF4E6', split: 0.18, vignette: 0.18, grain: 0.05 },
     type: { family: 'sans', titleFamily: 'serif', ink: '#1F1C19', muted: '#5E5750', uppercase: false },
     accent: '#C4623A', card: { base: '#EFEAE2', blobs: ['#E7C9B4', '#D9D2C5', '#C8D2CF'] },
+    light: { sky: '#FFF8EE', ground: '#9C9082', ambient: 0.7, key: '#FFF1DE', keyIntensity: 1.7, azimuth: 70, elevation: 45, fill: '#DCE4EA', fillIntensity: 0.3 },
   },
   // WGSN/Coloro 2026 Transformative Teal with a persimmon accent — the
   // complementary pair film grading lives on.
@@ -85,6 +90,7 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { ...NO_GRADE, contrast: 1.1, saturation: 1.05, shadows: '#0B5560', highlights: '#FFB27A', split: 0.28, vignette: 0.3, grain: 0.04 },
     type: { family: 'sans', titleFamily: 'sans', ink: '#F4FBF9', muted: '#A8CFC9', uppercase: false },
     accent: '#F26B3A', card: { base: '#041C1F', blobs: ['#0F6E73', '#F26B3A', '#1A3F5C'] },
+    light: { sky: '#9FD6D0', ground: '#0B3336', ambient: 0.85, key: '#FFD2A8', keyIntensity: 1.6, azimuth: 60, elevation: 32, fill: '#3FA3A0', fillIntensity: 0.5 },
   },
   // Pinterest 2026 Plum Noir with wasabi: moody, cinematic, letterboxed, a serif
   // italic mood and warm stone architecture.
@@ -96,6 +102,7 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { ...NO_GRADE, contrast: 1.14, saturation: 0.9, brightness: 0.97, shadows: '#3B1236', highlights: '#FFD9B0', split: 0.3, vignette: 0.42, grain: 0.09, letterbox: 2.39 },
     type: { family: 'sans', titleFamily: 'serif', ink: '#F6EEE7', muted: '#CDB9C6', uppercase: false },
     accent: '#B7C83B', card: { base: '#140A12', blobs: ['#5A2150', '#B7C83B', '#3A1C35'] },
+    light: { sky: '#6E3C66', ground: '#1A0C17', ambient: 0.55, key: '#FFD9B0', keyIntensity: 2.0, azimuth: 110, elevation: 18, fill: '#7A3E72', fillIntensity: 0.35 },
   },
   // Concrete and ink: a grayscale, high-contrast grade, heavy uppercase grotesk.
   'brutalist-mono': {
@@ -107,6 +114,7 @@ export const LOOKS: Record<LookId, Look> = {
     // Light concrete on a charcoal sweep; white grotesk on it.
     type: { family: 'sans', titleFamily: 'sans', ink: '#F5F5F2', muted: '#BDBDB8', uppercase: true },
     accent: '#F5F5F2', card: { base: '#111111', blobs: ['#5E5E5A', '#9A9A96', '#2A2A28'] },
+    light: { sky: '#FFFFFF', ground: '#2A2A28', ambient: 0.7, key: '#FFFFFF', keyIntensity: 2.1, azimuth: 20, elevation: 62, fill: '#9A9A96', fillIntensity: 0.25 },
   },
   // The technical drawing: white translucent model on navy, mono type, cyan.
   blueprint: {
@@ -117,6 +125,7 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { ...NO_GRADE, contrast: 1.06, saturation: 0.9, shadows: '#08234A', highlights: '#DDF3FF', split: 0.2, vignette: 0.25, grain: 0.03 },
     type: { family: 'mono', titleFamily: 'mono', ink: '#EAF4FF', muted: '#9EC3EA', uppercase: true },
     accent: '#5CE1E6', card: { base: '#07182C', blobs: ['#1B4F86', '#5CE1E6', '#0E2F55'] },
+    light: { sky: '#E8F4FF', ground: '#5C7FA8', ambient: 1.3, key: '#E6F3FF', keyIntensity: 0.9, azimuth: 45, elevation: 55, fill: '#BFE0FF', fillIntensity: 0.6 },
   },
   // Late sun: sand model, warm sky, orange/teal split, letterbox and grain.
   'golden-hour': {
@@ -127,6 +136,7 @@ export const LOOKS: Record<LookId, Look> = {
     grade: { ...NO_GRADE, contrast: 1.08, saturation: 1.08, shadows: '#1F5563', highlights: '#FFB86B', split: 0.3, vignette: 0.28, grain: 0.07, letterbox: 2.39 },
     type: { family: 'sans', titleFamily: 'serif', ink: '#FFFFFF', muted: '#FFE7CC', uppercase: false },
     accent: '#1F5563', card: { base: '#2A1810', blobs: ['#F4B777', '#C4623A', '#1F5563'] },
+    light: { sky: '#8FBFD0', ground: '#6B4A33', ambient: 0.7, key: '#FFB468', keyIntensity: 2.3, azimuth: 330, elevation: 14, fill: '#6FA7B8', fillIntensity: 0.5 },
   },
 }
 
