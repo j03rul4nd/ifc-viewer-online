@@ -38,6 +38,7 @@ import {
   type TreeShape, type BuildingRegion, type BroadleafVariant,
 } from './feature-variation'
 import { canopyGeometry, trunkGeometry, TREE_PROPORTIONS } from './tree-geometry'
+import { plantingClearance } from './planting-clearance'
 import { isShanghai } from './shanghai-region'
 import { roofPropAnchors } from './roof-props'
 import type { RoofProp, RoofPropBuilding, RoofPropKind } from './roof-props'
@@ -1974,9 +1975,14 @@ export function buildLinearLayer(
       continue
     }
 
-    const drop = SIDE_DROP_M[kind] * mToN
+    const railBridge = kind === 'rail' && f.vertical?.structure === 'bridge'
+    const deckStart = positions.length / 3
+    // A railway viaduct needs a closed structural section, not a floating
+    // 18 cm ballast sheet. Depth is an illustrative fallback, not a survey.
+    const drop = (railBridge ? 1.1 : SIDE_DROP_M[kind]) * mToN
     const draped = densifyFor(line)
-    for (const quad of bufferCentreline(draped, half)) pushSurfaceQuad(quad, tone, drop)
+    for (const quad of bufferCentreline(draped, half)) pushSurfaceQuad(quad, tone, drop,
+      { soffit: railBridge, parapet: 0, thickness: 0 })
     // Corners: a buffered polyline leaves a wedge open on the outside of every
     // turn. Rail alignments have long radii, so a per-segment buffer plus these
     // wedges is enough; roads go through the mitred path instead.
@@ -1990,7 +1996,7 @@ export function buildLinearLayer(
     // Rails on top of the ballast: two thin steel ribbons. This is what makes a
     // corridor read as "railway" rather than "grey path" from any distance.
     if (kind === 'rail' && f.style.railKind !== 'platform') {
-      const railStart=positions.length/3
+      const railStart=railBridge ? deckStart : positions.length/3
       appendRailDetail(positions,colors,draped,mToN,(x,y)=>structuralZ(x,y)+lift,
         f.style.railGaugeM ?? 1.435,opts.quality==='detailed',opts.anchorLon===undefined?undefined:(()=>{const o=latLonToNormalized(opts.anchorLat,opts.anchorLon);return new THREE.Vector2(o.nx,o.ny)})(),f.style.overheadWire)
       solidRanges.push([railStart,positions.length/3])
@@ -1998,6 +2004,12 @@ export function buildLinearLayer(
     if (kind === 'rail' && (f.style.overheadWire ?? f.style.electrified) && masts.length < MAX_MASTS) {
       for (const at of mastPoints(line, MAST_SPACING_M * mToN, MAST_OFFSET_M * mToN)) {
         if (masts.length >= MAX_MASTS) break
+        // No floating mast foundations outside a narrow mapped viaduct.
+        // Cantilever brackets require geometry we do not have in these tags.
+        const mastLevel = activeProfile?.sample(at.at.x, at.at.y)
+        const elevatedMast = railBridge || (mastLevel !== undefined
+          && mastLevel.elevationM - mastLevel.groundM > 0.5)
+        if (elevatedMast && f.widthM / 2 < MAST_OFFSET_M + 0.35) continue
         // Side poles cannot stand inside an adjacent track's loading envelope.
         // Dense station yards need surveyed gantries, not a pole through a train.
         const blocked=railSegments.some(s=>{
@@ -2013,36 +2025,8 @@ export function buildLinearLayer(
   }
 
   // One network per class, each with its own kerb, its own paint and its own
-  /**
-   * A buried carriageway, marked rather than drawn.
-   *
-   * ── Why absence was not good enough ───────────────────────────────────────
-   *
-   * The rule was that a tunnel's correct appearance is absence: drawing the
-   * bore either z-fights through the ground above it or is occluded anyway, so
-   * emitting it achieves nothing but artefacts. That reasoning is sound for a
-   * road disappearing into a hillside. It is ruinous in Pudong.
-   *
-   * Measured over the 700 m the viewer fetches around the Shanghai World
-   * Financial Center: 57.8 km of vehicular carriageway, of which **21.3 km —
-   * 37% — is tunnelled and therefore drawn nowhere**. Pudong Avenue Tunnel
-   * loses all 11.4 km of itself, East Fuxing Road Tunnel all 4.6 km, and the
-   * Lujiazui Ring Road — the street that goes round the towers the user came
-   * to look at — loses 69% of its length. The network does not read as a
-   * network; it reads as a renderer that failed halfway.
-   *
-   * ── What is honest to draw instead ────────────────────────────────────────
-   *
-   * Not a carriageway. There is no surface road there and pretending otherwise
-   * would put asphalt over somebody's plaza. What OSM does state is the
-   * ALIGNMENT and that it runs under the ground, which is exactly what every
-   * paper map has drawn for a century: a narrow, muted casing that says "this
-   * road continues here, below you".
-   *
-   * So the trace is deliberately unlike a road — a third of the width, darker
-   * than the asphalt around it, and it takes no markings, no kerb and no
-   * camber. Nobody should be able to mistake it for a surface a car is on.
-   */
+  // Alignment traces belong to the schematic view only. In detailed 3D a
+  // tunnel must not paint a fictitious road across the surface park or plaza.
   const pushTunnelTrace = (
     a: THREE.Vector2, b: THREE.Vector2, halfWidth: number,
     tone: [number, number, number],
@@ -2159,7 +2143,7 @@ export function buildLinearLayer(
           // Below the surface: the portal is wherever this first becomes true.
           const midC = ribbon.centre[i].clone().lerp(ribbon.centre[i + 1], (t0 + t1) / 2)
           if (buriedAt(midC.x, midC.y)) {
-            pushTunnelTrace(
+            if (opts.quality !== 'detailed') pushTunnelTrace(
               ribbon.centre[i].clone().lerp(ribbon.centre[i + 1], t0),
               ribbon.centre[i].clone().lerp(ribbon.centre[i + 1], t1),
               ribbon.halfWidths[i], ribbon.tone,
@@ -2913,18 +2897,9 @@ function seededTrees(
     return { x: (nx - originX) / mToN, y: (ny - originY) / mToN }
   }
 
-  /**
-   * Ground the canopy must leave alone: the water and the buildings inside the
-   * very polygons it is planting. A park's outline includes its lake and its
-   * pavilions — see `buildKeepOut` for what that does when nobody tells the
-   * seeder about them.
-   */
-  const blocked = buildKeepOut(
-    features
-      .filter((f) => (f.kind === 'water' || f.kind === 'building')
-        && f.ring && f.ring.length >= 3)
-      .map((f) => f.ring!.map(toMetres)),
-  )
+  // Procedural trunks must respect paths, paved squares and rail corridors.
+  // Surveyed tree points are handled separately and remain authoritative.
+  const blocked = plantingClearance(features, toMetres)
 
   /**
    * What each polygon grows, kept beside the seed regions rather than inside
