@@ -6,7 +6,7 @@
 // The renderer then just executes the plan, so the whole creative logic is
 // unit-testable and identical for one model or a batch of fifty.
 
-import { defaultShot, type Bounds, type CameraPose, type ShotSpec, type ShotType, type Vec3 } from '../capture/shots'
+import { defaultShot, fitDistance, orbitPoint, zoomKeyframes, DEFAULT_FOV_DEG, type Bounds, type CameraPose, type ShotSpec, type ShotType, type Vec3 } from '../capture/shots'
 import type { ClipTransition } from '../capture/project'
 import { WORD_STEP_SEC, type TextAnchor, type TextAnimId, type TextStyleId } from '../capture/timeline'
 import { cueAt, type ProjectSfx, type SfxCue } from '../capture/sfx'
@@ -289,6 +289,39 @@ function sectionDrafts(
       case 'aerial':
         out.push(make('aerial', 'topDown', m.bounds, m.name, {}, {}))
         break
+      case 'zoomThrough': {
+        // Push through the facade into the heart of a storey (or the model),
+        // gathering speed into the cut — the portal into the next shot.
+        const into = m.storeys.length ? m.storeys[Math.floor(m.storeys.length / 2)] : null
+        const target = into ? boxToBounds(into.box).center : m.bounds.center
+        const dir = unitOf(orbitPoint({ x: 0, y: 0, z: 0 }, 1, nextHeading(), 12))
+        const far = fitDistance(m.bounds, DEFAULT_FOV_DEG, aspect, 0.95)
+        out.push(make('zoomThrough', 'path', m.bounds, into?.label ?? m.name, {
+          keyframes: zoomKeyframes(m.bounds.center, target, dir, far, 0.35, DEFAULT_FOV_DEG),
+          pathTiming: 'even', easing: 'easeIn',
+        }, {}, recipe.captions.labelShots && into ? into.label : undefined, 0.8))
+        break
+      }
+      case 'pullOut': {
+        // Start a metre from a detail — the selected element, or a spot on the
+        // facade — and pull back until the whole building sits in its context.
+        const dir = unitOf(orbitPoint({ x: 0, y: 0, z: 0 }, 1, nextHeading(), 18))
+        const d = facts.detail && (!visibleModels || visibleModels.includes(facts.detail.modelId)) ? facts.detail : null
+        const c = m.bounds.center
+        // No detail: the facade of the middle storey (a tower's podium is wider
+        // than the tower — starting at the model's edge would start in the air).
+        const mid = m.storeys.length ? boxToBounds(m.storeys[Math.floor(m.storeys.length / 2)].box) : m.bounds
+        const half = Math.min(mid.size.x, mid.size.z) / 2
+        const start = d ? boxToBounds(d.box).center : { x: mid.center.x + dir.x * half, y: mid.center.y, z: mid.center.z + dir.z * half }
+        const near = d ? Math.max(0.8, Math.hypot(d.box.max.x - d.box.min.x, d.box.max.y - d.box.min.y, d.box.max.z - d.box.min.z) * 1.5) : 1.2
+        const far = fitDistance(m.bounds, DEFAULT_FOV_DEG, aspect, 1.05)
+        out.push(make('pullOut', 'path', m.bounds, d?.label ?? m.name, {
+          keyframes: zoomKeyframes(start, c, dir, near, far, DEFAULT_FOV_DEG),
+          // Linear on a geometric path = the same apparent speed all the way out.
+          pathTiming: 'even', easing: 'linear',
+        }, d ? { highlight: [{ modelId: d.modelId, ids: d.ids, severity: 'info' }] } : {}, undefined, 1.2))
+        break
+      }
       case 'buildup': {
         // Needs at least a few storeys to read as a building going up.
         if (m.storeys.length < 3) break
@@ -633,6 +666,11 @@ export function fitPoseToAspect(pose: CameraPose, from: number, to: number): Cam
   return factor > 1 ? pullBack(pose, pose.target, Math.min(2.2, factor)) : pose
 }
 
+function unitOf(v: Vec3): Vec3 {
+  const l = Math.hypot(v.x, v.y, v.z) || 1
+  return { x: v.x / l, y: v.y / l, z: v.z / l }
+}
+
 /** Move the eye away from (factor > 1) or toward (< 1) `from`, keeping the target. */
 function pullBack(p: CameraPose, from: Vec3, factor: number): CameraPose {
   return {
@@ -645,10 +683,11 @@ function pullBack(p: CameraPose, from: Vec3, factor: number): CameraPose {
   }
 }
 
-/** Up to n items spread evenly — first and last always kept (ground floor and roof). */
+/** Up to n items spread evenly — first and last always kept (ground floor and roof); a single pick is the middle one. */
 export function pickSpread<T>(items: readonly T[], n: number): T[] {
   if (items.length <= n) return [...items]
-  if (n <= 1) return [items[0]]
+  // One storey: the middle one — the one the zoom-through flies into.
+  if (n <= 1) return [items[Math.floor(items.length / 2)]]
   const out: T[] = []
   for (let i = 0; i < n; i++) out.push(items[Math.round((i * (items.length - 1)) / (n - 1))])
   return out

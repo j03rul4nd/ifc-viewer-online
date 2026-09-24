@@ -339,7 +339,9 @@
         "buildup": "O edifício cresce",
         "ids": "Falhas IDS",
         "bcf": "Tópicos BCF",
-        "fixed": "O que foi corrigido"
+        "fixed": "O que foi corrigido",
+        "zoomThrough": "Zoom através",
+        "pullOut": "Afastamento de escala"
       },
       "sectionHint": {
         "hero": "Afasta até ao modelo completo, com o título",
@@ -354,7 +356,9 @@
         "buildup": "Uma volta enquanto os pisos aparecem de baixo para cima",
         "ids": "Cada especificação IDS falhada, elementos destacados",
         "bcf": "Cada tópico BCF a partir do seu ponto de vista",
-        "fixed": "Problemas da validação anterior que já não existem"
+        "fixed": "Problemas da validação anterior que já não existem",
+        "zoomThrough": "Um avanço que acelera, atravessa a fachada e entra num piso",
+        "pullOut": "De um metro de um detalhe até ao edifício completo"
       },
       "empty": {
         "storeys": "Este modelo não tem pisos",

@@ -339,7 +339,9 @@
         "buildup": "建筑生长",
         "ids": "IDS 失败项",
         "bcf": "BCF 议题",
-        "fixed": "已修复内容"
+        "fixed": "已修复内容",
+        "zoomThrough": "穿越推进",
+        "pullOut": "拉远揭示"
       },
       "sectionHint": {
         "hero": "拉远至整个模型并显示标题",
@@ -354,7 +356,9 @@
         "buildup": "环绕一圈，楼层自下而上逐层出现",
         "ids": "每个未通过的 IDS 规范，失败构件高亮",
         "bcf": "每个 BCF 议题从其自身视点展示",
-        "fixed": "上次校验中已消失的问题"
+        "fixed": "上次校验中已消失的问题",
+        "zoomThrough": "加速推进，穿过立面进入楼层",
+        "pullOut": "从细节前一米拉远到整栋建筑"
       },
       "empty": {
         "storeys": "此模型没有楼层",

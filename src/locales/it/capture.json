@@ -339,7 +339,9 @@
         "buildup": "L’edificio cresce",
         "ids": "Errori IDS",
         "bcf": "Argomenti BCF",
-        "fixed": "Cosa è stato corretto"
+        "fixed": "Cosa è stato corretto",
+        "zoomThrough": "Zoom attraverso",
+        "pullOut": "Allontanamento di scala"
       },
       "sectionHint": {
         "hero": "Allarga fino al modello intero, con il titolo",
@@ -354,7 +356,9 @@
         "buildup": "Un giro mentre i piani compaiono dal basso verso l’alto",
         "ids": "Ogni specifica IDS non superata, elementi evidenziati",
         "bcf": "Ogni argomento BCF dal suo punto di vista",
-        "fixed": "Criticità della validazione precedente ora sparite"
+        "fixed": "Criticità della validazione precedente ora sparite",
+        "zoomThrough": "Una spinta che accelera, attraversa la facciata ed entra in un piano",
+        "pullOut": "Da un metro da un dettaglio fino all’intero edificio"
       },
       "empty": {
         "storeys": "Nessun piano in questo modello",

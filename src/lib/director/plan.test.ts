@@ -173,6 +173,24 @@ describe('planPresentation', () => {
     expect(t).toContain(2.25)
   })
 
+  it('zooms through the facade and pulls out to the whole building, exponentially', () => {
+    const [clip] = planPresentation(recipe('meeting-demo', { sections: ['pullOut', 'zoomThrough', 'closing'] }), facts([model()]), strings, null)
+    const through = clip.shots.find((s) => s.section === 'zoomThrough')!.shot
+    const out = clip.shots.find((s) => s.section === 'pullOut')!.shot
+    for (const sh of [through, out]) {
+      expect(sh.type).toBe('path')
+      expect(sh.pathTiming).toBe('even')
+      const d = sh.keyframes!.map((k) => Math.hypot(k.position.x - k.target.x, k.position.y - k.target.y, k.position.z - k.target.z))
+      // Geometric spacing: the ratio between consecutive distances is constant.
+      const r = d.slice(1).map((v, i) => v / d[i])
+      for (const x of r) expect(x).toBeCloseTo(r[0], 5)
+    }
+    expect(through.keyframes![through.keyframes!.length - 1].position.y).toBeCloseTo(through.keyframes![through.keyframes!.length - 1].target.y, 0)
+    const dist = (k: CameraPose) => Math.hypot(k.position.x - k.target.x, k.position.y - k.target.y, k.position.z - k.target.z)
+    expect(dist(through.keyframes![0])).toBeGreaterThan(dist(through.keyframes![through.keyframes!.length - 1]))
+    expect(dist(out.keyframes![0])).toBeLessThan(dist(out.keyframes![out.keyframes!.length - 1]))
+  })
+
   it('never prints a score below 70', () => {
     const [low] = planPresentation(recipe('meeting-demo'), facts([model('m1', { score: 55 })]), strings, null)
     expect(low.texts.some((t) => t.text.includes('/100'))).toBe(false)
@@ -229,6 +247,7 @@ describe('planPresentation', () => {
 describe('helpers', () => {
   it('pickSpread keeps the first and last storey', () => {
     expect(pickSpread([1, 2, 3, 4, 5, 6, 7, 8, 9], 3)).toEqual([1, 5, 9])
+    expect(pickSpread([1, 2, 3, 4, 5], 1)).toEqual([3])
   })
 
   it('names a federation by its shared prefix', () => {

@@ -33,6 +33,7 @@ export const SHOT_TYPES: readonly ShotType[] = ['orbit', 'reveal', 'crane', 'top
 export type Easing =
   | 'linear' | 'easeInOut' | 'easeOut'
   | 'ramp'   // speed ramp: fast in, slow through the hero moment, fast out
+  | 'easeIn' // accelerating — a push that gathers speed into the cut
 
 export interface ShotSpec {
   type: ShotType
@@ -58,6 +59,13 @@ export interface ShotSpec {
    * shared out by distance so the speed stays even between close and far stops.
    */
   keyframes?: CameraPose[]
+  /**
+   * 'path' only. 'distance' (default) shares time by how far the eye travels —
+   * even speed between stops. 'even' gives every keyframe gap the same time:
+   * with keyframes spaced geometrically that is an exponential zoom, the
+   * "infinite zoom" that keeps the same apparent speed from a metre to a city.
+   */
+  pathTiming?: 'distance' | 'even'
 }
 
 export interface CameraPose {
@@ -164,7 +172,7 @@ export function shotDistance(s: ShotSpec): number {
 /** Camera pose at `t` seconds into the shot. */
 export function cameraAt(s: ShotSpec, t: number): CameraPose {
   const p = ease(s.easing, clamp01(s.durationSec > 0 ? t / s.durationSec : 1))
-  if (s.type === 'path') return pathAt(s.keyframes ?? [], p, s.fovDeg)
+  if (s.type === 'path') return pathAt(s.keyframes ?? [], p, s.fovDeg, s.pathTiming)
   const c = s.bounds.center
   const d = shotDistance(s)
   const h = s.bounds.size.y
@@ -220,7 +228,7 @@ export function cameraAt(s: ShotSpec, t: number): CameraPose {
  * rotation still takes time); the eye follows a Catmull-Rom curve so it never
  * kinks at a stop, the target and fov interpolate with a smoothstep per segment.
  */
-export function pathAt(keys: readonly CameraPose[], p: number, fallbackFov = DEFAULT_FOV_DEG): CameraPose {
+export function pathAt(keys: readonly CameraPose[], p: number, fallbackFov = DEFAULT_FOV_DEG, timing: 'distance' | 'even' = 'distance'): CameraPose {
   if (keys.length === 0) return pose({ x: 10, y: 10, z: 10 }, { x: 0, y: 0, z: 0 }, fallbackFov)
   if (keys.length === 1) return keys[0]
   const lens: number[] = []
@@ -228,7 +236,7 @@ export function pathAt(keys: readonly CameraPose[], p: number, fallbackFov = DEF
     const a = keys[i], b = keys[i + 1]
     const travel = Math.hypot(b.position.x - a.position.x, b.position.y - a.position.y, b.position.z - a.position.z)
     const turn = Math.hypot(b.target.x - a.target.x, b.target.y - a.target.y, b.target.z - a.target.z)
-    lens.push(travel + turn * 0.5 + 1e-3)
+    lens.push(timing === 'even' ? 1 : travel + turn * 0.5 + 1e-3)
   }
   const total = lens.reduce((x, y) => x + y, 0)
   let at = clamp01(p) * total
@@ -237,7 +245,8 @@ export function pathAt(keys: readonly CameraPose[], p: number, fallbackFov = DEF
   const u = clamp01(at / lens[i])
   const k0 = keys[Math.max(0, i - 1)], k1 = keys[i], k2 = keys[i + 1], k3 = keys[Math.min(keys.length - 1, i + 2)]
   const position = catmull(k0.position, k1.position, k2.position, k3.position, u)
-  const s = u * u * (3 - 2 * u)
+  // Even timing is one continuous move: no easing at every keyframe.
+  const s = timing === 'even' ? u : u * u * (3 - 2 * u)
   return {
     position,
     target: lerp3(k1.target, k2.target, s),
@@ -254,6 +263,29 @@ function catmull(p0: Vec3, p1: Vec3, p2: Vec3, p3: Vec3, t: number): Vec3 {
 
 function lerp3(a: Vec3, b: Vec3, p: number): Vec3 {
   return { x: lerp(a.x, b.x, p), y: lerp(a.y, b.y, p), z: lerp(a.z, b.z, p) }
+}
+
+/**
+ * Keyframes for an exponential zoom: the eye moves along `dir` (unit, from the
+ * target towards the eye) from `dStart` to `dEnd` metres away, the distances
+ * spaced geometrically so that with 'even' path timing the apparent speed is
+ * constant. The look-at point slides from `targetStart` to `targetEnd` on the
+ * same geometric schedule.
+ */
+export function zoomKeyframes(
+  targetStart: Vec3, targetEnd: Vec3, dir: Vec3, dStart: number, dEnd: number, fovDeg: number, n = 10,
+): CameraPose[] {
+  const a = Math.max(0.05, dStart), b = Math.max(0.05, dEnd)
+  const keys: CameraPose[] = []
+  for (let i = 0; i < n; i++) {
+    const f = n === 1 ? 1 : i / (n - 1)
+    const d = a * Math.pow(b / a, f)
+    // How far along the zoom this is, in the same log space as the distance.
+    const g = Math.abs(Math.log(b / a)) < 1e-6 ? f : Math.log(d / a) / Math.log(b / a)
+    const t = lerp3(targetStart, targetEnd, g)
+    keys.push({ position: { x: t.x + dir.x * d, y: t.y + dir.y * d, z: t.z + dir.z * d }, target: t, fovDeg })
+  }
+  return keys
 }
 
 /** Frame timestamps for rendering a shot at `fps` (last frame lands before the end). */
@@ -287,6 +319,7 @@ export function ease(kind: Easing, p: number): number {
   const x = clamp01(p)
   if (kind === 'linear') return x
   if (kind === 'easeOut') return 1 - Math.pow(1 - x, 3)
+  if (kind === 'easeIn') return x * x * x
   // Speed 1+k at both ends, 1−k in the middle; monotonic for k < 1.
   if (kind === 'ramp') return x + (RAMP_DEPTH * Math.sin(2 * Math.PI * x)) / (2 * Math.PI)
   return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2

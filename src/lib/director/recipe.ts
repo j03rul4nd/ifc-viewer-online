@@ -28,6 +28,8 @@ export type SectionKind =
   | 'aerial'    // plan view tilting into perspective
   | 'storeys'   // one shot per storey, that storey alone, bottom to top
   | 'buildup'   // one continuous turn while the storeys appear bottom to top
+  | 'zoomThrough' // an accelerating push through the facade into a storey
+  | 'pullOut'   // from a metre off a detail back to the whole building
   | 'systems'   // structure / envelope / MEP / interiors, each isolated
   | 'issues'    // the worst validation findings, highlighted
   | 'ids'       // failed IDS specifications, the failing elements highlighted
@@ -37,7 +39,7 @@ export type SectionKind =
   | 'detail'    // push in on the selected element (or the model's heart)
   | 'closing'   // slow final turn with the call to action
 
-export const SECTION_KINDS: readonly SectionKind[] = ['hero', 'orbit', 'aerial', 'buildup', 'storeys', 'systems', 'issues', 'ids', 'bcf', 'fixed', 'tour', 'detail', 'closing']
+export const SECTION_KINDS: readonly SectionKind[] = ['hero', 'pullOut', 'orbit', 'aerial', 'buildup', 'zoomThrough', 'storeys', 'systems', 'issues', 'ids', 'bcf', 'fixed', 'tour', 'detail', 'closing']
 
 export type Pace = 'calm' | 'normal' | 'fast'
 export const PACES: readonly Pace[] = ['calm', 'normal', 'fast']
@@ -206,14 +208,14 @@ export const BUILT_IN_RECIPES: readonly Recipe[] = [
   {
     ...BASE, id: 'launch-2026', name: 'Launch 2026 (vertical)', style: 'launch', sfx: 'full',
     format: 'reel', targetSec: 16, pace: 'fast', transition: 'whip', transitionSec: 0.25, music: 'upbeat',
-    sections: ['buildup', 'orbit', 'systems', 'aerial', 'closing'], maxSystems: 2,
+    sections: ['pullOut', 'buildup', 'zoomThrough', 'storeys', 'systems', 'closing'], maxSystems: 1, maxStoreys: 1,
     captions: { ...CAPTIONS, look: 'bold', labelShots: true, cta: 'ifcvieweronline.eu' },
     watermark: true,
   },
   {
     ...BASE, id: 'launch-2026-wide', name: 'Launch 2026 (16:9)', style: 'launch', sfx: 'full',
     format: 'wide', targetSec: 24, pace: 'normal', transition: 'zoom', transitionSec: 0.3, music: 'cinematic',
-    sections: ['hero', 'buildup', 'systems', 'storeys', 'closing'], maxSystems: 3, maxStoreys: 3,
+    sections: ['pullOut', 'buildup', 'zoomThrough', 'storeys', 'systems', 'closing'], maxSystems: 2, maxStoreys: 2,
     captions: { ...CAPTIONS, look: 'bold', labelShots: true, cta: 'ifcvieweronline.eu' },
   },
 ]

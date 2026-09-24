@@ -339,7 +339,9 @@
         "buildup": "Le bâtiment s’élève",
         "ids": "Échecs IDS",
         "bcf": "Sujets BCF",
-        "fixed": "Ce qui a été corrigé"
+        "fixed": "Ce qui a été corrigé",
+        "zoomThrough": "Traversée",
+        "pullOut": "Recul d’échelle"
       },
       "sectionHint": {
         "hero": "Recul jusqu’à la maquette entière, avec le titre",
@@ -354,7 +356,9 @@
         "buildup": "Un tour pendant que les niveaux apparaissent de bas en haut",
         "ids": "Chaque spécification IDS en échec, éléments fautifs mis en évidence",
         "bcf": "Chaque sujet BCF depuis son propre point de vue",
-        "fixed": "Anomalies de la validation précédente qui ont disparu"
+        "fixed": "Anomalies de la validation précédente qui ont disparu",
+        "zoomThrough": "Une poussée qui accélère, traverse la façade et entre dans un niveau",
+        "pullOut": "D’un mètre d’un détail jusqu’au bâtiment entier"
       },
       "empty": {
         "storeys": "Aucun niveau dans cette maquette",

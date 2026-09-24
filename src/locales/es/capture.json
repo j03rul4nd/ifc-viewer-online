@@ -339,7 +339,9 @@
         "buildup": "El edificio crece",
         "ids": "Fallos IDS",
         "bcf": "Temas BCF",
-        "fixed": "Lo que se ha arreglado"
+        "fixed": "Lo que se ha arreglado",
+        "zoomThrough": "Zoom que atraviesa",
+        "pullOut": "Alejamiento de escala"
       },
       "sectionHint": {
         "hero": "Aleja la cámara hasta el modelo completo, con el título",
@@ -354,7 +356,9 @@
         "buildup": "Una vuelta mientras las plantas aparecen de abajo arriba",
         "ids": "Cada especificación IDS fallida, con los elementos resaltados",
         "bcf": "Cada tema BCF desde su propio punto de vista",
-        "fixed": "Incidencias de la validación anterior que ya no están"
+        "fixed": "Incidencias de la validación anterior que ya no están",
+        "zoomThrough": "Un empujón que acelera, cruza la fachada y entra en una planta",
+        "pullOut": "De un metro de un detalle hasta el edificio completo"
       },
       "empty": {
         "storeys": "Este modelo no tiene plantas",
