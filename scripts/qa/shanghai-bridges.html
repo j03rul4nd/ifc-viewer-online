@@ -1,14 +1,14 @@
 <!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Puentes de Lujiazui · revisión 3D</title>
 <style>html,body{overflow:hidden}aside{max-height:38vh;overflow:auto}</style>
 <style>body{margin:0;background:#bccbd5;font:14px system-ui;color:#183443}aside{position:fixed;z-index:2;top:18px;left:18px;padding:20px;background:#fffffff0;border-radius:12px;max-width:330px}h1{font-size:20px;margin:0 0 12px}button{padding:9px;margin:3px;border:1px solid #abc;border-radius:6px;background:white;cursor:pointer}p{line-height:1.5;font-size:12px}canvas{display:block}</style>
-<aside><h1>Puentes de Lujiazui</h1><button id="ring">Anillo Mingzhu</button><button id="link">Conexiones</button><button id="low">Desde la calle</button><button id="stairs">Escaleras</button><button id="elevator">Ascensor</button><p>Trazados de escaleras y posición del ascensor: OSM. Dimensiones, cerramientos y barandas aproximados. Anillo: anchura de referencia 8,5 m; altura cartográfica 9 m.</p><p id="stats">Preparando geometría…</p></aside>
+<aside><h1>Puentes de Lujiazui</h1><button id="ring">Anillo Mingzhu</button><button id="link">Conexiones</button><button id="low">Desde la calle</button><button id="stairs">Escaleras</button><button id="elevator">Ascensor</button><button id="park">Caminos y jardines</button><p>Trazados de escaleras y posición del ascensor: OSM. Dimensiones, cerramientos y barandas aproximados. Anillo: anchura de referencia 8,5 m; altura cartográfica 9 m.</p><p id="stats">Preparando geometría…</p></aside>
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import fixture from '/src/lib/geo/__fixtures__/shanghai-parks.json';
 import accessFixture from '/src/lib/geo/__fixtures__/shanghai-access.json';
 import {parseOsmFeatures} from '/src/lib/geo/osm-features.ts';
-import {buildLinearLayer,solveSceneVertical} from '/src/lib/geo/osm-scene.ts';
+import {buildLinearLayer,solveSceneVertical,buildSurfaceLayer,buildTreeLayer} from '/src/lib/geo/osm-scene.ts';
 import {latLonToNormalized,metresToNormalized} from '/src/lib/geo/geo-math.ts';
 const lat=31.24022,lon=121.49599,o=latLonToNormalized(lat,lon),unit=metresToNormalized(lat);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.setClearColor(0xbccbd5);renderer.toneMapping=THREE.ACESFilmicToneMapping;document.body.append(renderer.domElement);
@@ -17,7 +17,11 @@ const controls=new OrbitControls(camera,renderer.domElement);scene.add(new THREE
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),new THREE.MeshStandardMaterial({color:0xa6b3ac,roughness:1}));ground.position.z=-.1;scene.add(ground);
 const start=performance.now(),features=parseOsmFeatures({elements:[...accessFixture.elements,...fixture.elements]}),opts={anchorLat:lat,anchorLon:lon,quality:'detailed'};opts.vertical=solveSceneVertical(features,opts);
 const roads=buildLinearLayer(features,'road',opts);const root=new THREE.Group();root.scale.setScalar(1/unit);root.position.set(-o.nx/unit,-o.ny/unit,0);root.add(roads.object);scene.add(root);
+const landscape=new THREE.Group();root.add(landscape);
+for(const kind of ['green','water']){const built=buildSurfaceLayer(features,kind,opts);if(built)landscape.add(built.object)}
+const trees=buildTreeLayer(features,opts);if(trees)landscape.add(trees.object);landscape.visible=false;
 const buildMs=performance.now()-start;
+document.querySelector('#park').onclick=()=>{landscape.visible=true;view([330,-200,0],[720,-730,470])};
 function view(target,eye){controls.target.set(...target);camera.position.set(...eye);controls.update()}
 document.querySelector('#ring').onclick=()=>view([0,0,7],[140,-170,125]);document.querySelector('#link').onclick=()=>view([75,-45,7],[160,-140,62]);document.querySelector('#low').onclick=()=>view([0,0,9],[80,-95,14]);document.querySelector('#ring').click();
 document.querySelector('#stairs').onclick=()=>view([-25,-60,4],[25,-125,35]);
