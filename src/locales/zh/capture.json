@@ -478,6 +478,7 @@
     "sfxVolume": "音效音量",
     "sfxRemove": "移除音效",
     "sfxCount": "{{n}} 个音效",
-    "sfxTitle": "音效"
+    "sfxTitle": "音效",
+    "restyleHint": "立即更改调色和文字。3D 镜头保留原有配色和光照——重新生成才会重绘。"
   }
 }

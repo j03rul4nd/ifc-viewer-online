@@ -478,6 +478,7 @@
     "sfxVolume": "Volume effetti",
     "sfxRemove": "Rimuovi effetti sonori",
     "sfxCount": "{{n}} effetti",
-    "sfxTitle": "Effetti sonori"
+    "sfxTitle": "Effetti sonori",
+    "restyleHint": "Cambia subito grading e titoli. Le inquadrature 3D mantengono colore e luce — rigenera per ridipingerle."
   }
 }

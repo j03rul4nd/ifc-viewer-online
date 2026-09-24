@@ -217,6 +217,7 @@ export async function renderPlannedClip(
       ...(t.color ? { color: t.color } : {}), ...(t.font ? { font: t.font } : {}), ...(t.accent ? { accent: t.accent } : {}), ...(t.uppercase ? { uppercase: true } : {}),
     }, total)),
     ...(clip.grade ? { grade: clip.grade } : {}),
+    lookId: clip.look.id,
     audio: recipe.music === 'none'
       ? { kind: 'none', trackId: null, fileName: null, volume: 0, fadeSec: 0, offsetSec: 0 }
       : { kind: 'builtin', trackId: recipe.music, fileName: null, volume: recipe.musicVolume, fadeSec: 0.8, offsetSec: 0 },

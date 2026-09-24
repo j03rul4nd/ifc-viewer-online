@@ -478,6 +478,7 @@
     "sfxVolume": "Effektlautstärke",
     "sfxRemove": "Soundeffekte entfernen",
     "sfxCount": "{{n}} Effekte",
-    "sfxTitle": "Soundeffekte"
+    "sfxTitle": "Soundeffekte",
+    "restyleHint": "Ändert Grading und Titel sofort. Die 3D-Aufnahmen behalten Farbe und Licht – zum Neueinfärben erneut erzeugen."
   }
 }

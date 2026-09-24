@@ -478,6 +478,7 @@
     "sfxVolume": "Effects volume",
     "sfxRemove": "Remove sound effects",
     "sfxCount": "{{n}} effects",
-    "sfxTitle": "Sound effects"
+    "sfxTitle": "Sound effects",
+    "restyleHint": "Changes the grade and the titles instantly. The 3D shots keep their paint and light — generate again to repaint them."
   }
 }

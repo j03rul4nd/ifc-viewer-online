@@ -478,6 +478,7 @@
     "sfxVolume": "Volumen de efectos",
     "sfxRemove": "Quitar efectos de sonido",
     "sfxCount": "{{n}} efectos",
-    "sfxTitle": "Efectos de sonido"
+    "sfxTitle": "Efectos de sonido",
+    "restyleHint": "Cambia al instante el etalonaje y los textos. Las tomas 3D conservan su color y su luz: vuelve a generar para repintarlas."
   }
 }

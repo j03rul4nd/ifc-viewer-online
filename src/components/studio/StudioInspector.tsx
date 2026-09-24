@@ -11,6 +11,7 @@ import {
 import { MEDIA_ANIMS, TEXT_ANCHORS, TEXT_ANIMS, TEXT_STYLES, type TextOverlay } from '../../lib/capture/timeline'
 import { BUILTIN_BED_IDS, type BuiltInBedId } from '../../lib/capture/audio-library'
 import { rhythmFor } from '../../lib/capture/studio-actions'
+import { LOOK_IDS, LOOKS, restyleProject } from '../../lib/director/looks'
 
 const SPEEDS = [0.5, 1, 1.5, 2, 3]
 const COLORS = ['#ffffff', '#0b0d1a', '#ffd84d', '#ff4d6d', '#4dd2ff', '#7cff8a']
@@ -257,6 +258,22 @@ function ProjectPanel() {
           <input type="checkbox" checked={output.watermark} onChange={(e) => setOutput({ watermark: e.target.checked })} />
           {t('studio.watermark')}
         </label>
+      </Section>
+
+      <Section title={t('studio.director.lookLabel')}>
+        <div className="grid grid-cols-2 gap-1.5">
+          {LOOK_IDS.map((id) => {
+            const lk = LOOKS[id]
+            const swatch = [lk.background?.top ?? '#0a0a0c', lk.palette?.envelope ?? '#9aa0ae', lk.palette?.glazing ?? '#6b7a90', lk.accent]
+            return (
+              <button key={id} type="button" className="studio-look" aria-pressed={(project.lookId ?? 'native') === id} onClick={() => edit((p) => restyleProject(p, id))}>
+                <span className="studio-look-swatch" aria-hidden="true">{swatch.map((c, i) => <span key={i} style={{ background: c }} />)}</span>
+                <span className="studio-look-name">{t(`studio.director.looks2.${id}`)}</span>
+              </button>
+            )
+          })}
+        </div>
+        <p className="text-[11px] leading-relaxed text-[var(--text-faint)]">{t('studio.restyleHint')}</p>
       </Section>
 
       <Section title={t('studio.music')}>

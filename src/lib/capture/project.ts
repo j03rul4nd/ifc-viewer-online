@@ -137,6 +137,8 @@ export interface EditProject {
   sfx?: ProjectSfx
   /** Film treatment of the picture (art-directed looks). */
   grade?: Grade
+  /** Which look styled the grade and the titles, for the picker. */
+  lookId?: string
 }
 
 export interface ProjectFx {
