@@ -12,7 +12,7 @@ const m = [
   { code: "zh", label: "中文" },
   { code: "ja", label: "日本語" },
   { code: "th", label: "ไทย" }
-], g = "1.10.0", y = 12e4, b = 3e4, h = m.map((r) => r.code);
+], g = "1.10.1", y = 12e4, b = 3e4, h = m.map((r) => r.code);
 function P() {
   try {
     return new URL("../", import.meta.url).href;
@@ -226,11 +226,15 @@ const l = class l {
       [s]
     ).then((i) => i.cloudId);
   }
-  /** Add a scan the viewer fetches itself. The URL must allow CORS. */
+  /**
+   * Add a scan the viewer fetches itself. The URL must allow CORS. Without a
+   * `fileName` the viewer names the scan from the URL's path — a signed URL's
+   * query is never part of the name (its extension is what picks the reader).
+   */
   addPointCloudFromUrl(t, e) {
     return this.request(
       "ifcviewer:add-pointcloud",
-      { url: t, name: e ?? t.split("/").pop() ?? "scan.las" },
+      e ? { url: t, name: e } : { url: t },
       15 * 6e4
     ).then((s) => s.cloudId);
   }
@@ -327,20 +331,21 @@ const l = class l {
     return this.request(
       "ifcviewer:add-mesh",
       { files: t },
-      5 * 6e4,
+      15 * 6e4,
       e
     ).then((s) => s.meshId);
   }
   /**
    * Import a model the viewer fetches itself. Pass every URL the model needs —
-   * the `.gltf` AND its `.bin` and textures — and they are fetched in parallel.
-   * All must allow CORS.
+   * the `.gltf` AND its `.bin` and textures; they are downloaded one after
+   * another, with progress in the viewer's Loading Center. The entry is the
+   * first URL whose path names a .glb / .gltf / .obj. All must allow CORS.
    */
   addMeshFromUrl(t) {
     return this.request(
       "ifcviewer:add-mesh",
       { urls: Array.isArray(t) ? t : [t] },
-      5 * 6e4
+      15 * 6e4
     ).then((e) => e.meshId);
   }
   /** Every model currently imported. See MeshInfo on trusting unit and axis. */
