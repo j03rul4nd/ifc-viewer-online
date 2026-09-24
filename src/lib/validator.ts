@@ -433,6 +433,12 @@ function makeTreeHandler(
 
 // ── Spatial tree ──────────────────────────────────────────────────────────────
 
+// Monotonic, not a timestamp: the loading engine runs one tree build per
+// committed model, and two started in the same millisecond (background-tab
+// timers fire aligned) would share an id on the shared worker — the second
+// handler would take the first model's tree.
+let treeRequestSeq = 0
+
 /**
  * Build the spatial tree for a model without running any validation rules.
  * Called automatically after a model loads so the tree is visible immediately.
@@ -468,6 +474,17 @@ export async function buildSpatialTree(modelId?: string): Promise<void> {
     return
   }
 
+  // The registration this tree is for. A model removed (or the scene reset)
+  // while the worker parses must not get a tree back: the store would point
+  // the tree panel at a model that no longer exists. Without an entry there is
+  // nothing to build — resolveBuffer would fall back to the legacy buffer, a
+  // different model's bytes.
+  const entryAtStart = resolvedId ? modelRegistry.get(resolvedId) : null
+  if (resolvedId && !entryAtStart) {
+    log.debug(`buildSpatialTree: "${resolvedId}" is not registered (removed?) — skipping`)
+    return
+  }
+
   const ifcBuffer = resolveBuffer(modelId)
   const bufferError = validateBufferForWorker(ifcBuffer)
   if (bufferError) {
@@ -484,8 +501,12 @@ export async function buildSpatialTree(modelId?: string): Promise<void> {
     return
   }
 
+  // A copy: the transfer detaches what it sends, and the registry keeps its
+  // buffer for validation, IDS and export. The loading engine calls this only
+  // once its index phase holds a convert slot, so the copy and the parse are
+  // inside that admission.
   const bufferCopy = ifcBuffer!.slice(0)
-  const id = `tree-${Date.now()}`
+  const id = `tree-${++treeRequestSeq}`
   log.debug(`Building spatial tree for "${resolvedId ?? 'active'}", id:`, id)
 
   return new Promise<void>((resolve) => {
@@ -497,6 +518,10 @@ export async function buildSpatialTree(modelId?: string): Promise<void> {
     const handler = makeTreeHandler(
       id, worker,
       (msg) => {
+        if (resolvedId && modelRegistry.get(resolvedId) !== entryAtStart) {
+          log.debug(`buildSpatialTree: "${resolvedId}" left the scene while its tree was built — dropped`)
+          return
+        }
         const tree = parseSpatialNodeArray(msg.tree, 'buildSpatialTree')
         log.debug(`Spatial tree ready for "${resolvedId ?? 'active'}", nodes:`, tree.length)
         if (resolvedId) {

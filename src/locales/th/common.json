@@ -119,7 +119,88 @@
       "closeAriaLabel": "ปิด",
       "trust1": "WebAssembly — ทำงานในเบราว์เซอร์",
       "trust2": "ไม่ต้องเข้าสู่ระบบ",
-      "trust3": "รองรับสูงสุด 2 GB"
+      "trust3": "รองรับสูงสุด 2 GB",
+      "dropHintMulti": "วางไฟล์ .ifc หนึ่งไฟล์ขึ้นไปที่นี่",
+      "or": "หรือ",
+      "privacy": "ความเป็นส่วนตัว"
+    },
+    "dialogLabel": "เปิดไฟล์ IFC",
+    "preparing_other": "กำลังเตรียม {{count}} โมเดล…",
+    "preparingDetail": "กำลังตรวจสอบความสมบูรณ์ของไฟล์ สคีมา IFC และรายการซ้ำ",
+    "preparingCount": "ตรวจสอบแล้ว {{done}} จาก {{total}}",
+    "review": {
+      "title_other": "ตรวจพบ {{count}} โมเดล",
+      "subtitle": "โมเดลจะโหลดในเบื้องหลัง — คุณทำงานต่อได้ระหว่างนั้น",
+      "addFiles": "เพิ่มไฟล์",
+      "dropToAdd": "ปล่อยเพื่อเพิ่มลงในรายการที่เลือก",
+      "includeAria": "โหลด {{name}}",
+      "schemaUnknown": "ไม่ได้ระบุสคีมา",
+      "checking": "กำลังตรวจสอบ…",
+      "status": {
+        "valid": "พร้อม",
+        "invalid": "โหลดไม่ได้",
+        "loaded": "โหลดแล้ว",
+        "loading": "กำลังโหลดอยู่",
+        "inSelection": "ซ้ำ"
+      },
+      "sameContentAs": "เนื้อหาเหมือนกับ {{name}}",
+      "inSelection": "เนื้อหาเหมือนกับ {{name}} ในรายการที่เลือกนี้",
+      "openExisting": "เปิดรายการที่มีอยู่",
+      "viewProgress": "ดูความคืบหน้า",
+      "batchName": "ชื่อชุด",
+      "defaultBatchName_other": "{{count}} โมเดล",
+      "createGroup": "จัดกลุ่มเป็นโครงการเดียว",
+      "createGroupHint": "สร้างกลุ่มในแผนผังฉาก แต่ละโมเดลจะเข้าร่วมกลุ่มเมื่อโหลดเสร็จ",
+      "summary": "เลือก {{selected}} จาก {{total}} · {{size}}",
+      "loadAll": "โหลดทั้งหมด ({{count}})",
+      "loadSelected": "โหลดที่เลือก ({{count}})",
+      "loadNewOnly": "โหลดเฉพาะไฟล์ใหม่ ({{count}})",
+      "loadInBackground": "โหลดในเบื้องหลัง",
+      "cancel": "ยกเลิก",
+      "discipline": {
+        "architecture": "สถาปัตยกรรม",
+        "structure": "โครงสร้าง",
+        "mep": "งานระบบ",
+        "hvac": "ปรับอากาศ",
+        "plumbing": "สุขาภิบาล",
+        "electrical": "ไฟฟ้า",
+        "fire": "อัคคีภัย",
+        "landscape": "ภูมิสถาปัตย์",
+        "site": "พื้นที่โครงการ",
+        "civil": "โยธา",
+        "interior": "ตกแต่งภายใน",
+        "furniture": "เฟอร์นิเจอร์",
+        "coordination": "ประสานงาน"
+      }
+    },
+    "duplicate": {
+      "title": "{{name}} โหลดอยู่แล้ว",
+      "titleLoading": "{{name}} กำลังโหลดอยู่แล้ว",
+      "body": "การโหลดอีกครั้งจะเพิ่มสำเนาที่สองของโมเดลเดียวกันลงในฉาก",
+      "sameContentAs": "เนื้อหาเหมือนกับ {{name}}",
+      "openExisting": "เปิดรายการที่มีอยู่",
+      "viewProgress": "ดูความคืบหน้า",
+      "loadAnyway": "โหลดสำเนาซ้ำต่อไป",
+      "cancel": "ยกเลิก"
+    },
+    "large": {
+      "rowNote": "ขนาดใหญ่ — อาจใช้เวลาหลายนาที",
+      "banner": "ตรวจพบ IFC ขนาดใหญ่ โมเดลนี้อาจใช้เวลาประมวลผลหลายนาที โปรแกรมดูยังใช้งานได้ระหว่างการโหลด",
+      "memoryWarning": "IFC ที่ใหญ่มากอาจเกินขีดจำกัดหน่วยความจำ WebAssembly ของเบราว์เซอร์ (ในทางปฏิบัติประมาณ 2.5 GB ของ IFC) หากโหลดไม่สำเร็จ การแบ่งโมเดลตามสาขางานหรือตามชั้นมักช่วยได้"
+    },
+    "errors": {
+      "titleMany": "ไม่มีไฟล์ใดในนี้ที่โหลดได้",
+      "INVALID_EXTENSION": "ไม่ใช่ไฟล์ IFC (ต้องเป็น .ifc)",
+      "INVALID_MIME": "ไม่รู้จักประเภทไฟล์นี้ว่าเป็น IFC",
+      "FILE_TOO_LARGE": "เกินขีดจำกัด 2 GB",
+      "FILE_EMPTY": "ไฟล์ว่างเปล่า",
+      "UNSUPPORTED_IFC_VERSION": "ไม่รองรับสคีมา IFC นี้ รองรับ: IFC2x3, IFC4, IFC4x3",
+      "CORRUPTED_FILE": "ส่วนหัว IFC ไม่ถูกต้อง — ไฟล์อาจเสียหาย",
+      "READ_FAILED": "ไม่สามารถอ่านไฟล์ได้ ไฟล์อาจถูกย้าย หรือสิทธิ์เข้าถึงถูกเพิกถอน",
+      "UNKNOWN": "เกิดข้อผิดพลาดที่ไม่คาดคิดขณะตรวจสอบไฟล์"
+    },
+    "submitted": {
+      "title_other": "กำลังโหลด {{count}} โมเดลในเบื้องหลัง"
     },
     "active": {
       "drop": "วางไฟล์ .ifc ของคุณที่นี่",

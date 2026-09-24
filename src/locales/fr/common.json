@@ -119,7 +119,92 @@
       "closeAriaLabel": "Fermer",
       "trust1": "WebAssembly — exécuté dans le navigateur",
       "trust2": "Aucune connexion requise",
-      "trust3": "Jusqu'à 2 Go"
+      "trust3": "Jusqu'à 2 Go",
+      "dropHintMulti": "Déposez un ou plusieurs fichiers .ifc ici",
+      "or": "ou",
+      "privacy": "Confidentialité"
+    },
+    "dialogLabel": "Ouvrir des fichiers IFC",
+    "preparing_one": "Préparation de {{count}} modèle…",
+    "preparing_other": "Préparation de {{count}} modèles…",
+    "preparingDetail": "Vérification de l'intégrité des fichiers, du schéma IFC et des doublons",
+    "preparingCount": "{{done}} sur {{total}} vérifiés",
+    "review": {
+      "title_one": "{{count}} modèle détecté",
+      "title_other": "{{count}} modèles détectés",
+      "subtitle": "Les modèles se chargent en arrière-plan — vous pouvez continuer à travailler pendant ce temps.",
+      "addFiles": "Ajouter des fichiers",
+      "dropToAdd": "Relâchez pour ajouter à la sélection",
+      "includeAria": "Charger {{name}}",
+      "schemaUnknown": "Schéma non déclaré",
+      "checking": "Vérification…",
+      "status": {
+        "valid": "Prêt",
+        "invalid": "Impossible à charger",
+        "loaded": "Déjà chargé",
+        "loading": "Déjà en cours de chargement",
+        "inSelection": "Doublon"
+      },
+      "sameContentAs": "Même contenu que {{name}}",
+      "inSelection": "Même contenu que {{name}} dans cette sélection",
+      "openExisting": "Ouvrir l'existant",
+      "viewProgress": "Voir la progression",
+      "batchName": "Nom du lot",
+      "defaultBatchName_one": "{{count}} modèle",
+      "defaultBatchName_other": "{{count}} modèles",
+      "createGroup": "Regrouper en un seul projet",
+      "createGroupHint": "Crée un groupe dans l'arborescence de la scène ; chaque modèle le rejoint dès qu'il est chargé.",
+      "summary": "{{selected}} sur {{total}} sélectionnés · {{size}}",
+      "loadAll": "Tout charger ({{count}})",
+      "loadSelected": "Charger la sélection ({{count}})",
+      "loadNewOnly": "Charger uniquement les nouveaux ({{count}})",
+      "loadInBackground": "Charger en arrière-plan",
+      "cancel": "Annuler",
+      "discipline": {
+        "architecture": "Architecture",
+        "structure": "Structure",
+        "mep": "Fluides",
+        "hvac": "CVC",
+        "plumbing": "Plomberie",
+        "electrical": "Électricité",
+        "fire": "Incendie",
+        "landscape": "Paysage",
+        "site": "Site",
+        "civil": "Génie civil",
+        "interior": "Intérieur",
+        "furniture": "Mobilier",
+        "coordination": "Synthèse"
+      }
+    },
+    "duplicate": {
+      "title": "{{name}} est déjà chargé.",
+      "titleLoading": "{{name}} est déjà en cours de chargement.",
+      "body": "Le charger à nouveau ajoute une seconde copie du même modèle à la scène.",
+      "sameContentAs": "Même contenu que {{name}}.",
+      "openExisting": "Ouvrir l'existant",
+      "viewProgress": "Voir la progression",
+      "loadAnyway": "Charger le doublon quand même",
+      "cancel": "Annuler"
+    },
+    "large": {
+      "rowNote": "Volumineux — peut prendre plusieurs minutes",
+      "banner": "IFC volumineux détecté. Le traitement de ce modèle peut prendre plusieurs minutes. Le visualiseur reste utilisable pendant le chargement.",
+      "memoryWarning": "Les IFC très volumineux peuvent dépasser la limite de mémoire WebAssembly du navigateur (environ 2,5 Go d'IFC en pratique). Si un chargement échoue, découper le modèle par discipline ou par niveau aide généralement."
+    },
+    "errors": {
+      "titleMany": "Aucun de ces fichiers ne peut être chargé",
+      "INVALID_EXTENSION": "Ce n'est pas un fichier IFC (.ifc attendu).",
+      "INVALID_MIME": "Le type de fichier n'est pas reconnu comme IFC.",
+      "FILE_TOO_LARGE": "Dépasse la limite de 2 Go.",
+      "FILE_EMPTY": "Le fichier est vide.",
+      "UNSUPPORTED_IFC_VERSION": "Schéma IFC non pris en charge. Acceptés : IFC2x3, IFC4, IFC4x3.",
+      "CORRUPTED_FILE": "En-tête IFC non valide — le fichier est peut-être corrompu.",
+      "READ_FAILED": "Le fichier n'a pas pu être lu. Il a peut-être été déplacé, ou son accès a été révoqué.",
+      "UNKNOWN": "Erreur inattendue lors de la vérification du fichier."
+    },
+    "submitted": {
+      "title_one": "Chargement de {{count}} modèle en arrière-plan",
+      "title_other": "Chargement de {{count}} modèles en arrière-plan"
     },
     "active": {
       "drop": "Déposez votre fichier .ifc ici",

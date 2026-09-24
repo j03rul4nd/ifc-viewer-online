@@ -119,7 +119,92 @@
       "closeAriaLabel": "Chiudi",
       "trust1": "WebAssembly — eseguito nel browser",
       "trust2": "Nessun accesso richiesto",
-      "trust3": "Fino a 2 GB"
+      "trust3": "Fino a 2 GB",
+      "dropHintMulti": "Trascina qui uno o più file .ifc",
+      "or": "o",
+      "privacy": "Privacy"
+    },
+    "dialogLabel": "Apri file IFC",
+    "preparing_one": "Preparazione di {{count}} modello…",
+    "preparing_other": "Preparazione di {{count}} modelli…",
+    "preparingDetail": "Verifica di integrità dei file, schema IFC e duplicati",
+    "preparingCount": "{{done}} di {{total}} verificati",
+    "review": {
+      "title_one": "{{count}} modello rilevato",
+      "title_other": "{{count}} modelli rilevati",
+      "subtitle": "I modelli si caricano in secondo piano — puoi continuare a lavorare nel frattempo.",
+      "addFiles": "Aggiungi file",
+      "dropToAdd": "Rilascia per aggiungere alla selezione",
+      "includeAria": "Carica {{name}}",
+      "schemaUnknown": "Schema non dichiarato",
+      "checking": "Verifica…",
+      "status": {
+        "valid": "Pronto",
+        "invalid": "Non caricabile",
+        "loaded": "Già caricato",
+        "loading": "Già in caricamento",
+        "inSelection": "Duplicato"
+      },
+      "sameContentAs": "Stesso contenuto di {{name}}",
+      "inSelection": "Stesso contenuto di {{name}} in questa selezione",
+      "openExisting": "Apri esistente",
+      "viewProgress": "Vedi avanzamento",
+      "batchName": "Nome del lotto",
+      "defaultBatchName_one": "{{count}} modello",
+      "defaultBatchName_other": "{{count}} modelli",
+      "createGroup": "Raggruppa come un unico progetto",
+      "createGroupHint": "Crea un gruppo nell'albero della scena; ogni modello vi si aggiunge appena caricato.",
+      "summary": "{{selected}} di {{total}} selezionati · {{size}}",
+      "loadAll": "Carica tutti ({{count}})",
+      "loadSelected": "Carica selezionati ({{count}})",
+      "loadNewOnly": "Carica solo i nuovi ({{count}})",
+      "loadInBackground": "Carica in secondo piano",
+      "cancel": "Annulla",
+      "discipline": {
+        "architecture": "Architettura",
+        "structure": "Strutture",
+        "mep": "Impianti",
+        "hvac": "Climatizzazione",
+        "plumbing": "Idrico-sanitario",
+        "electrical": "Elettrico",
+        "fire": "Antincendio",
+        "landscape": "Paesaggio",
+        "site": "Sito",
+        "civil": "Infrastrutture",
+        "interior": "Interni",
+        "furniture": "Arredi",
+        "coordination": "Coordinamento"
+      }
+    },
+    "duplicate": {
+      "title": "{{name}} è già caricato.",
+      "titleLoading": "{{name}} è già in caricamento.",
+      "body": "Caricarlo di nuovo aggiunge alla scena una seconda copia dello stesso modello.",
+      "sameContentAs": "Stesso contenuto di {{name}}.",
+      "openExisting": "Apri esistente",
+      "viewProgress": "Vedi avanzamento",
+      "loadAnyway": "Carica comunque il duplicato",
+      "cancel": "Annulla"
+    },
+    "large": {
+      "rowNote": "Grande — può richiedere diversi minuti",
+      "banner": "Rilevato un IFC di grandi dimensioni. L'elaborazione di questo modello può richiedere diversi minuti. Il visualizzatore resterà utilizzabile durante il caricamento.",
+      "memoryWarning": "Gli IFC molto grandi possono superare il limite di memoria WebAssembly del browser (in pratica circa 2,5 GB di IFC). Se un caricamento non riesce, di solito aiuta suddividere il modello per disciplina o per piano."
+    },
+    "errors": {
+      "titleMany": "Nessuno di questi file può essere caricato",
+      "INVALID_EXTENSION": "Non è un file IFC (atteso .ifc).",
+      "INVALID_MIME": "Il tipo di file non è riconosciuto come IFC.",
+      "FILE_TOO_LARGE": "Supera il limite di 2 GB.",
+      "FILE_EMPTY": "Il file è vuoto.",
+      "UNSUPPORTED_IFC_VERSION": "Schema IFC non supportato. Accettati: IFC2x3, IFC4, IFC4x3.",
+      "CORRUPTED_FILE": "Intestazione IFC non valida — il file potrebbe essere danneggiato.",
+      "READ_FAILED": "Impossibile leggere il file. Potrebbe essere stato spostato o l'accesso potrebbe essere stato revocato.",
+      "UNKNOWN": "Errore imprevisto durante la verifica del file."
+    },
+    "submitted": {
+      "title_one": "Caricamento di {{count}} modello in secondo piano",
+      "title_other": "Caricamento di {{count}} modelli in secondo piano"
     },
     "active": {
       "drop": "Trascina qui il tuo file .ifc",

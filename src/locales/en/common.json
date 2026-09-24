@@ -119,7 +119,92 @@
       "closeAriaLabel": "Close",
       "trust1": "WebAssembly — runs in-browser",
       "trust2": "No login required",
-      "trust3": "Up to 2 GB"
+      "trust3": "Up to 2 GB",
+      "dropHintMulti": "Drop one or more .ifc files here",
+      "or": "or",
+      "privacy": "Privacy"
+    },
+    "dialogLabel": "Open IFC files",
+    "preparing_one": "Preparing {{count}} model…",
+    "preparing_other": "Preparing {{count}} models…",
+    "preparingDetail": "Checking file integrity, IFC schema and duplicates",
+    "preparingCount": "{{done}} of {{total}} checked",
+    "review": {
+      "title_one": "{{count}} model detected",
+      "title_other": "{{count}} models detected",
+      "subtitle": "Models load in the background — you can keep working while they do.",
+      "addFiles": "Add files",
+      "dropToAdd": "Release to add to the selection",
+      "includeAria": "Load {{name}}",
+      "schemaUnknown": "Schema not declared",
+      "checking": "Checking…",
+      "status": {
+        "valid": "Ready",
+        "invalid": "Can't load",
+        "loaded": "Already loaded",
+        "loading": "Already loading",
+        "inSelection": "Duplicate"
+      },
+      "sameContentAs": "Same content as {{name}}",
+      "inSelection": "Same content as {{name}} in this selection",
+      "openExisting": "Open existing",
+      "viewProgress": "View progress",
+      "batchName": "Batch name",
+      "defaultBatchName_one": "{{count}} model",
+      "defaultBatchName_other": "{{count}} models",
+      "createGroup": "Group as one project",
+      "createGroupHint": "Creates a group in the scene tree; each model joins it as it lands.",
+      "summary": "{{selected}} of {{total}} selected · {{size}}",
+      "loadAll": "Load all ({{count}})",
+      "loadSelected": "Load selected ({{count}})",
+      "loadNewOnly": "Load new only ({{count}})",
+      "loadInBackground": "Load in background",
+      "cancel": "Cancel",
+      "discipline": {
+        "architecture": "Architecture",
+        "structure": "Structure",
+        "mep": "MEP",
+        "hvac": "HVAC",
+        "plumbing": "Plumbing",
+        "electrical": "Electrical",
+        "fire": "Fire",
+        "landscape": "Landscape",
+        "site": "Site",
+        "civil": "Civil",
+        "interior": "Interior",
+        "furniture": "Furniture",
+        "coordination": "Coordination"
+      }
+    },
+    "duplicate": {
+      "title": "{{name}} is already loaded.",
+      "titleLoading": "{{name}} is already loading.",
+      "body": "Loading it again adds a second copy of the same model to the scene.",
+      "sameContentAs": "Same content as {{name}}.",
+      "openExisting": "Open existing",
+      "viewProgress": "View progress",
+      "loadAnyway": "Load duplicate anyway",
+      "cancel": "Cancel"
+    },
+    "large": {
+      "rowNote": "Large — may take several minutes",
+      "banner": "Large IFC detected. This model may take several minutes to process. The viewer will remain usable while it loads.",
+      "memoryWarning": "Very large IFCs can exceed the browser's WebAssembly memory limit (around 2.5 GB of IFC in practice). If a load fails, splitting the model by discipline or storey usually helps."
+    },
+    "errors": {
+      "titleMany": "None of these files can be loaded",
+      "INVALID_EXTENSION": "Not an IFC file (.ifc expected).",
+      "INVALID_MIME": "The file type is not recognised as IFC.",
+      "FILE_TOO_LARGE": "Over the 2 GB limit.",
+      "FILE_EMPTY": "The file is empty.",
+      "UNSUPPORTED_IFC_VERSION": "IFC schema not supported. Accepted: IFC2x3, IFC4, IFC4x3.",
+      "CORRUPTED_FILE": "Not a valid IFC header — the file may be corrupted.",
+      "READ_FAILED": "The file could not be read. It may have been moved, or access to it was revoked.",
+      "UNKNOWN": "Unexpected error while checking the file."
+    },
+    "submitted": {
+      "title_one": "Loading {{count}} model in the background",
+      "title_other": "Loading {{count}} models in the background"
     },
     "active": {
       "drop": "Drop your .ifc file here",

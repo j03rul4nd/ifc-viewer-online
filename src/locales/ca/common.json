@@ -119,7 +119,92 @@
       "closeAriaLabel": "Tanca",
       "trust1": "WebAssembly — s'executa al navegador",
       "trust2": "Sense inici de sessió",
-      "trust3": "Fins a 2 GB"
+      "trust3": "Fins a 2 GB",
+      "dropHintMulti": "Deixa anar aquí un o més fitxers .ifc",
+      "or": "o",
+      "privacy": "Privadesa"
+    },
+    "dialogLabel": "Obre fitxers IFC",
+    "preparing_one": "Preparant {{count}} model…",
+    "preparing_other": "Preparant {{count}} models…",
+    "preparingDetail": "Comprovant la integritat del fitxer, l'esquema IFC i els duplicats",
+    "preparingCount": "{{done}} de {{total}} comprovats",
+    "review": {
+      "title_one": "{{count}} model detectat",
+      "title_other": "{{count}} models detectats",
+      "subtitle": "Els models es carreguen en segon pla: pots continuar treballant mentrestant.",
+      "addFiles": "Afegeix fitxers",
+      "dropToAdd": "Deixa anar per afegir-los a la selecció",
+      "includeAria": "Carrega {{name}}",
+      "schemaUnknown": "Esquema no declarat",
+      "checking": "Comprovant…",
+      "status": {
+        "valid": "Llest",
+        "invalid": "No es pot carregar",
+        "loaded": "Ja carregat",
+        "loading": "Ja s'està carregant",
+        "inSelection": "Duplicat"
+      },
+      "sameContentAs": "Mateix contingut que {{name}}",
+      "inSelection": "Mateix contingut que {{name}} en aquesta selecció",
+      "openExisting": "Obre l'existent",
+      "viewProgress": "Mostra el progrés",
+      "batchName": "Nom del lot",
+      "defaultBatchName_one": "{{count}} model",
+      "defaultBatchName_other": "{{count}} models",
+      "createGroup": "Agrupa com un sol projecte",
+      "createGroupHint": "Crea un grup a l'arbre de l'escena; cada model s'hi afegeix quan es carrega.",
+      "summary": "{{selected}} de {{total}} seleccionats · {{size}}",
+      "loadAll": "Carrega-ho tot ({{count}})",
+      "loadSelected": "Carrega els seleccionats ({{count}})",
+      "loadNewOnly": "Carrega només els nous ({{count}})",
+      "loadInBackground": "Carrega en segon pla",
+      "cancel": "Cancel·la",
+      "discipline": {
+        "architecture": "Arquitectura",
+        "structure": "Estructura",
+        "mep": "Instal·lacions",
+        "hvac": "Climatització",
+        "plumbing": "Fontaneria",
+        "electrical": "Electricitat",
+        "fire": "Incendis",
+        "landscape": "Paisatgisme",
+        "site": "Parcel·la",
+        "civil": "Obra civil",
+        "interior": "Interiorisme",
+        "furniture": "Mobiliari",
+        "coordination": "Coordinació"
+      }
+    },
+    "duplicate": {
+      "title": "{{name}} ja està carregat.",
+      "titleLoading": "{{name}} ja s'està carregant.",
+      "body": "Si el tornes a carregar, s'afegirà a l'escena una segona còpia del mateix model.",
+      "sameContentAs": "Mateix contingut que {{name}}.",
+      "openExisting": "Obre l'existent",
+      "viewProgress": "Mostra el progrés",
+      "loadAnyway": "Carrega el duplicat igualment",
+      "cancel": "Cancel·la"
+    },
+    "large": {
+      "rowNote": "Gran — pot trigar uns quants minuts",
+      "banner": "S'ha detectat un IFC gran. Aquest model pot trigar uns quants minuts a processar-se. El visualitzador continuarà sent utilitzable mentre es carrega.",
+      "memoryWarning": "Els IFC molt grans poden superar el límit de memòria de WebAssembly del navegador (a la pràctica, uns 2,5 GB d'IFC). Si una càrrega falla, dividir el model per disciplina o per planta sol ajudar."
+    },
+    "errors": {
+      "titleMany": "Cap d'aquests fitxers no es pot carregar",
+      "INVALID_EXTENSION": "No és un fitxer IFC (s'esperava .ifc).",
+      "INVALID_MIME": "El tipus de fitxer no es reconeix com a IFC.",
+      "FILE_TOO_LARGE": "Supera el límit de 2 GB.",
+      "FILE_EMPTY": "El fitxer és buit.",
+      "UNSUPPORTED_IFC_VERSION": "Esquema IFC no compatible. S'accepten: IFC2x3, IFC4, IFC4x3.",
+      "CORRUPTED_FILE": "La capçalera IFC no és vàlida — potser el fitxer està malmès.",
+      "READ_FAILED": "No s'ha pogut llegir el fitxer. Potser s'ha mogut o se n'ha revocat l'accés.",
+      "UNKNOWN": "Error inesperat en comprovar el fitxer."
+    },
+    "submitted": {
+      "title_one": "Carregant {{count}} model en segon pla",
+      "title_other": "Carregant {{count}} models en segon pla"
     },
     "active": {
       "drop": "Deixa anar el teu fitxer .ifc aquí",

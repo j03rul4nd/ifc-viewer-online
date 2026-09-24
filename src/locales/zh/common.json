@@ -119,7 +119,88 @@
       "closeAriaLabel": "关闭",
       "trust1": "WebAssembly — 在浏览器中运行",
       "trust2": "无需登录",
-      "trust3": "支持最大 2 GB"
+      "trust3": "支持最大 2 GB",
+      "dropHintMulti": "将一个或多个 .ifc 文件拖放至此",
+      "or": "或",
+      "privacy": "隐私"
+    },
+    "dialogLabel": "打开 IFC 文件",
+    "preparing_other": "正在准备 {{count}} 个模型…",
+    "preparingDetail": "正在检查文件完整性、IFC 架构和重复项",
+    "preparingCount": "已检查 {{done}} / {{total}}",
+    "review": {
+      "title_other": "检测到 {{count}} 个模型",
+      "subtitle": "模型在后台加载，期间您可以继续工作。",
+      "addFiles": "添加文件",
+      "dropToAdd": "松开即可添加到选择中",
+      "includeAria": "加载 {{name}}",
+      "schemaUnknown": "未声明架构",
+      "checking": "检查中…",
+      "status": {
+        "valid": "就绪",
+        "invalid": "无法加载",
+        "loaded": "已加载",
+        "loading": "正在加载",
+        "inSelection": "重复"
+      },
+      "sameContentAs": "与 {{name}} 内容相同",
+      "inSelection": "与此选择中的 {{name}} 内容相同",
+      "openExisting": "打开已有模型",
+      "viewProgress": "查看进度",
+      "batchName": "批次名称",
+      "defaultBatchName_other": "{{count}} 个模型",
+      "createGroup": "作为一个项目分组",
+      "createGroupHint": "在场景树中创建一个分组；每个模型加载完成后即加入该分组。",
+      "summary": "已选 {{selected}} / {{total}} · {{size}}",
+      "loadAll": "全部加载（{{count}}）",
+      "loadSelected": "加载所选（{{count}}）",
+      "loadNewOnly": "仅加载新文件（{{count}}）",
+      "loadInBackground": "后台加载",
+      "cancel": "取消",
+      "discipline": {
+        "architecture": "建筑",
+        "structure": "结构",
+        "mep": "机电",
+        "hvac": "暖通",
+        "plumbing": "给排水",
+        "electrical": "电气",
+        "fire": "消防",
+        "landscape": "景观",
+        "site": "场地",
+        "civil": "土木",
+        "interior": "室内",
+        "furniture": "家具",
+        "coordination": "综合协调"
+      }
+    },
+    "duplicate": {
+      "title": "{{name}} 已加载。",
+      "titleLoading": "{{name}} 正在加载。",
+      "body": "再次加载会在场景中添加同一模型的第二个副本。",
+      "sameContentAs": "与 {{name}} 内容相同。",
+      "openExisting": "打开已有模型",
+      "viewProgress": "查看进度",
+      "loadAnyway": "仍然加载副本",
+      "cancel": "取消"
+    },
+    "large": {
+      "rowNote": "大文件 — 可能需要几分钟",
+      "banner": "检测到大型 IFC。此模型可能需要几分钟才能处理完成。加载期间查看器仍可正常使用。",
+      "memoryWarning": "超大型 IFC 可能超出浏览器的 WebAssembly 内存上限（实际约为 2.5 GB 的 IFC）。如果加载失败，按专业或楼层拆分模型通常会有帮助。"
+    },
+    "errors": {
+      "titleMany": "这些文件均无法加载",
+      "INVALID_EXTENSION": "不是 IFC 文件（应为 .ifc）。",
+      "INVALID_MIME": "无法将该文件类型识别为 IFC。",
+      "FILE_TOO_LARGE": "超出 2 GB 上限。",
+      "FILE_EMPTY": "文件为空。",
+      "UNSUPPORTED_IFC_VERSION": "不支持该 IFC 架构。支持：IFC2x3、IFC4、IFC4x3。",
+      "CORRUPTED_FILE": "IFC 文件头无效 — 文件可能已损坏。",
+      "READ_FAILED": "无法读取文件。文件可能已被移动，或访问权限已被撤销。",
+      "UNKNOWN": "检查文件时发生意外错误。"
+    },
+    "submitted": {
+      "title_other": "正在后台加载 {{count}} 个模型"
     },
     "active": {
       "drop": "将 .ifc 文件拖放至此",

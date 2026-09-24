@@ -140,9 +140,39 @@ export interface SdkVideoCommand {
   done?: (ok: boolean, error?: string) => void
 }
 
+/**
+ * Load-job lifecycle, bridged from the loading manager (src/lib/loading). One
+ * `jobId` per job, the way validation events carry a `runId`. These are for
+ * code that reacts to loads (analytics, SDK relays, tests); the UI reads the
+ * loading store instead, which is already throttled and diffed.
+ *
+ * `model:loaded` keeps its exact payload and timing — it still fires after the
+ * registry and modelStore hold the model and before sceneStore does — and
+ * `load:completed` follows it for the same job.
+ */
+export interface LoadJobEventBase {
+  jobId: string
+  kind: string
+  fileName: string
+  batchId: string | null
+  requestId: string | null
+}
+
 export type AppEventMap = {
   'model:loaded':           { modelInfo: ModelInfo; fromCache: boolean; cacheKey: string; modelId: string }
   'model:cleared':          void
+  /** A model left the scene (user, SDK or reset of one model). */
+  'model:removed':          { modelId: string }
+  'load:queued':            LoadJobEventBase & { sizeBytes: number; priority: number; origin: string }
+  'load:started':           LoadJobEventBase
+  'load:phase':             LoadJobEventBase & { phase: string }
+  'load:progress':          LoadJobEventBase & { fraction: number; phase: string | null }
+  'load:completed':         LoadJobEventBase & { resultId: string; fromCache: boolean; durationMs: number }
+  'load:failed':            LoadJobEventBase & { code: string; phase: string | null; autoRetryable: boolean; userRetryable: boolean }
+  'load:cancelled':         LoadJobEventBase & { phase: string | null }
+  'load:batch-settled':     { batchId: string; name: string; loaded: number; failed: number; cancelled: number }
+  /** Nothing is loading any more (background enrichment may still run). */
+  'load:idle':              void
   'validation:started':     { runId: string }
   'validation:progress':    { runId: string; progress: number }
   'validation:complete':    { runId: string; result: ValidationResult; durationMs: number }
@@ -158,7 +188,7 @@ export type AppEventMap = {
   'ui:open-legend':         void
   'capture:started':        { mode: 'replay' }
   'capture:ready':          { kind: 'screenshot' | 'clip'; durationSec?: number }
-  'capture:exported':       { format: 'png' | 'webm' | 'mp4' | 'gif'; target: 'download' | 'clipboard' }
+  'capture:exported':       { format: 'png' | 'webm' | 'mp4' | 'gif' | 'pdf' | 'pptx'; target: 'download' | 'clipboard' }
   'tour:started':           { tourId: string; createdFrom: 'auto' | 'manual'; steps: number }
   'tour:step-changed':      { tourId: string; index: number; total: number }
   'tour:completed':         { tourId: string }

@@ -52,7 +52,9 @@ const l = class l {
     n(this, "pending", /* @__PURE__ */ new Map());
     // Generic query (request/response) correlation, keyed by requestId.
     n(this, "requests", /* @__PURE__ */ new Map());
-    // Serialize loads so the app's single-load guard is never hit and order is stable.
+    // Serialize loads so they land in call order and each add() settles before
+    // the next is sent. The viewer itself queues concurrent loads (it no longer
+    // rejects a second one), so this is about predictable ordering for hosts.
     n(this, "loadChain", Promise.resolve());
     n(this, "reqCounter", 0);
     n(this, "listeners", /* @__PURE__ */ new Map());
