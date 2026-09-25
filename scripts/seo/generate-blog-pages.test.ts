@@ -18,9 +18,13 @@ const LANG_ARRAYS: Array<readonly [string, BlogPost[]]> = [
   ['en', BLOG_POSTS], ['es', BLOG_POSTS_ES], ['de', BLOG_POSTS_DE], ['fr', BLOG_POSTS_FR],
   ...Object.entries(TRANSLATED_POSTS),
 ]
-const EXPECTED_PAGES = LANG_ARRAYS
+// es/de/fr have a hand-written array and a translated pack: one index and one
+// set of hubs per LANGUAGE, over both.
+const BY_LANG = new Map<string, BlogPost[]>()
+for (const [lang, arr] of LANG_ARRAYS) BY_LANG.set(lang, [...(BY_LANG.get(lang) ?? []), ...arr])
+const EXPECTED_PAGES = [...BY_LANG]
   .filter(([, arr]) => arr.length > 0)
-  .reduce((sum, [lang, arr]) => sum + 1 + arr.length + topicsFor([...arr], lang).length, 0)
+  .reduce((sum, [lang, arr]) => sum + 1 + arr.length + topicsFor(arr, lang).length, 0)
 
 const SITE  = 'https://www.ifcvieweronline.eu'
 const OUT   = path.join(process.cwd(), '.blog-test-out')
@@ -397,13 +401,20 @@ describe('generateBlogPages — language grouping', () => {
     }
   })
 
-  it('does not publish English posts under a language prefix', () => {
-    for (const post of BLOG_POSTS) {
-      for (const lang of ['es', 'de', 'fr']) {
-        expect(
-          existsSync(path.join(OUT, lang, 'blog', post.slug, 'index.html')),
-          `${post.slug} is English — it must not exist at /${lang}/blog/`,
-        ).toBe(false)
+  it("publishes an English slug under a prefix only as that language's translation", () => {
+    // The old bug: English posts appended to BLOG_POSTS_FR published their
+    // English text at /fr/blog/<slug>/. A slug under a prefix is now only ever
+    // a translation from that language's pack; where the language has its own
+    // hand-written version, the English slug must not appear there at all.
+    for (const lang of ['es', 'de', 'fr']) {
+      const translated = new Set(TRANSLATED_POSTS[lang].map((p) => p.slug))
+      for (const post of BLOG_POSTS) {
+        const file = path.join(OUT, lang, 'blog', post.slug, 'index.html')
+        if (translated.has(post.slug)) {
+          expect(readFileSync(file, 'utf-8'), `${lang}/${post.slug}`).toContain(`<html lang="${lang}"`)
+        } else {
+          expect(existsSync(file), `${post.slug} has a hand-written ${lang} version — no copy at /${lang}/blog/`).toBe(false)
+        }
       }
     }
   })
@@ -557,7 +568,7 @@ describe('generateBlogPages — translated packs (zh, ja, th)', () => {
 
   it('gives each translated topic hub its own title', () => {
     for (const lang of langs) {
-      for (const topic of topicsFor(TRANSLATED_POSTS[lang], lang)) {
+      for (const topic of topicsFor(BY_LANG.get(lang)!, lang)) {
         expect(page(lang, 'blog', 'topic', topic.slug)).toContain(`<title>${topic.copy.title} | IFC Viewer Blog</title>`)
       }
     }

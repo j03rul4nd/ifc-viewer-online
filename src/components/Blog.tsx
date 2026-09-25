@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { LAZY_BLOG_LANGS, getBlogPost, getBlogPostsByLang, getFeaturedPost, isBlogLanguageReady, loadBlogLanguage, type BlogPost, type ContentBlock, type RichText } from '../lib/blog-posts'
+import { getBlogPost, getBlogPostsByLang, getFeaturedPost, isBlogLanguageReady, loadBlogLanguage, type BlogPost, type ContentBlock, type RichText } from '../lib/blog-posts'
 import * as Icons from './Icons'
 import { EBOOKS, PRIMARY_EBOOK, ebookById } from '../lib/ebook'
 import SpotlightCard  from './reactbits/SpotlightCard'
@@ -94,6 +94,18 @@ const BLOG_LIST_META: Record<string, { title: string; description: string }> = {
   fr: {
     title: 'Blog BIM & IFC — Guides pratiques pour coordinateurs BIM | IFC Viewer',
     description: 'Guides pratiques pour coordinateurs BIM : corriger les erreurs IFC, améliorer le Health Score et livrer des modèles propres à la GED.',
+  },
+  pt: {
+    title: 'Blog de BIM e IFC — Guias práticos para coordenadores BIM | IFC Viewer',
+    description: 'Guias práticos para coordenadores BIM: como corrigir erros de validação IFC, melhorar o Health Score e entregar modelos limpos ao CDE.',
+  },
+  it: {
+    title: 'Blog BIM e IFC — Guide pratiche per BIM coordinator | IFC Viewer',
+    description: 'Guide pratiche per BIM coordinator: come correggere gli errori di validazione IFC, migliorare l’Health Score e consegnare modelli puliti al CDE.',
+  },
+  ca: {
+    title: 'Blog BIM i IFC — Guies pràctiques per a coordinadors BIM | IFC Viewer',
+    description: 'Guies pràctiques per a coordinadors BIM: com corregir errors de validació IFC, millorar l’Health Score i lliurar models nets al CDE.',
   },
   zh: {
     title: 'BIM 与 IFC 博客——BIM 协调员实用指南 | IFC Viewer',
@@ -2123,10 +2135,10 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
 
             <SelectionShare containerRef={bodyRef} pageUrl={`${typeof location !== 'undefined' ? location.origin : ''}${postHref(post.slug, post.lang ?? 'en')}`} title={post.title} lang={post.lang ?? 'en'} />
 
-            {/* BIM Glossary — its definitions are English. Under a Chinese,
-                Japanese or Thai article a block of English prose reads as
-                a page left untranslated, so it stays with the Latin-script posts. */}
-            {!LAZY_BLOG_LANGS.includes(post.lang ?? 'en') && <BimGlossary />}
+            {/* BIM Glossary — its definitions are English, and under an article
+                in another language a block of English prose reads as a page
+                left untranslated. */}
+            {(post.lang ?? 'en') === 'en' && <BimGlossary />}
 
             {/* Bottom CTA */}
             <div className="mt-10 sm:mt-14 pt-8 sm:pt-10 border-t border-[var(--border)] text-center">
