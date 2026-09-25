@@ -23,6 +23,29 @@ import type { RenderStats } from './loading/controller'
 
 const log = createLogger('Viewer')
 
+/** Scene dressing for one Cover Studio capture (see lib/cover/looks.ts). */
+export interface PresentationLook {
+  base: 'original' | 'clay' | 'ghost'
+  baseColor: string
+  baseOpacity: number
+  /** IFC types (e.g. 'IFCWALL') kept solid and painted focusColor. */
+  focusTypes: string[]
+  focusColor: string | null
+  /** Hide the ground grid (drawings: line work, sections, plans). */
+  hideGrid?: boolean
+}
+
+/** Plane cut for a Cover Studio capture. */
+export interface PresentationSection {
+  normal: Vec3Like
+  point: Vec3Like
+  /** Fill for cut solids, '#rrggbb'. */
+  poche: string
+}
+
+/** One storey of an exploded axonometric: element ids per model. */
+export type ExplodeLayer = Array<{ modelId: string; ids: number[] }>
+
 // ─── Palette & label tables ──────────────────────────────────────────────────
 
 export const IFC_PALETTE: Record<string, { color: number; opacity?: number }> = {
@@ -384,6 +407,27 @@ export interface ViewerAPI {
     isolatedModelId?: string | null,
   ): void
   applyStyle(style: ViewerStyle): void
+  /**
+   * Dress the scene for a presentation capture (Cover Studio looks): repaint
+   * non-focus elements as a clay model or ghost them, and paint the focus IFC
+   * types in one colour. null restores the category palette. Resolves once
+   * the fragments have been updated, so a takeSnapshot() right after sees it.
+   */
+  setPresentationLook(look: PresentationLook | null): Promise<void>
+  /**
+   * Cut the scene with one plane for a capture, and paint the cut solids in
+   * `poche` (the architectural section fill). Keeps the side the normal points
+   * TOWARD: normal (0,-1,0) through y=h keeps everything below h — a plan cut.
+   * null removes the cut and restores the materials.
+   */
+  setPresentationSection(section: PresentationSection | null): Promise<void>
+  /**
+   * Exploded axonometric: render each layer (a storey: element ids per model)
+   * alone, lifted by index × gap, over a transparent background, from the
+   * current camera. Returns one PNG data URL per layer, in input order; the
+   * caller stacks them bottom-up. Visibility and positions are restored.
+   */
+  captureExplodedLayers(layers: ExplodeLayer[], gap: number, scale?: number): Promise<string[]>
   /** Frame camera on a set of elements. Targets the active model unless modelId is given. */
   frameElements(ids: number[], modelId?: string): void
   setValidationHighlights(issues: ValidationIssue[], enabled: boolean, options?: OverlayApplyOptions): void
@@ -419,8 +463,12 @@ export interface ViewerAPI {
    */
   setContextMenuCallback(cb: ((payload: { x: number; y: number; info: SelectedInfo } | null) => void) | null): void
   getGpuEstimateBytes(): number
-  /** Fly to a named camera preset (iso, top, front, right, left, back, bottom). */
-  setCameraPreset(preset: CameraPreset): void
+  /**
+   * Fly to a named camera preset (iso, top, front, right, left, back, bottom).
+   * `animate: false` jumps instead: captures can't wait for a flight, which only
+   * advances on rendered frames.
+   */
+  setCameraPreset(preset: CameraPreset, opts?: { animate?: boolean }): void
   /**
    * First-person walk mode: WASD to move, left-drag to look, Q/E for height.
    *
@@ -566,7 +614,7 @@ export interface ViewerAPI {
    * target implied at distance 1), this preserves the stored orbit distance —
    * used by Tour Mode playback.
    */
-  setCameraLookAt(position: Vec3Like, target: Vec3Like): void
+  setCameraLookAt(position: Vec3Like, target: Vec3Like, animate?: boolean): void
   /**
    * World-space merged AABB of a set of elements (serialisable, no THREE
    * objects). Reuses the same getMergedBox path as frameElements. Null when
@@ -603,8 +651,13 @@ export interface ViewerAPI {
    * part of the rendered frame.
    */
   setBackground(settings: BackgroundSettings): void
-  /** Capture a PNG snapshot of the current renderer canvas. Returns a data URL. */
-  takeSnapshot(): string
+  /**
+   * Capture a PNG snapshot of the current renderer canvas. Returns a data URL.
+   * `scale` > 1 renders the frame at that multiple of the on-screen resolution
+   * (print boards), capped at the GPU's render-buffer limit; the on-screen view
+   * is unchanged.
+   */
+  takeSnapshot(scale?: number): string
   /**
    * Stable reference to the WebGL canvas (Capture Toolkit replay buffer).
    * Read-only access — callers must never mutate or re-parent the element.
@@ -1020,6 +1073,26 @@ function parseTypeProps(isTypedBy: unknown): { typeName: string | null; psets: I
 
 // ─── Factory ─────────────────────────────────────────────────────────────────
 
+/**
+ * Paint the category palette onto a model. Batched by palette entry (≤25 calls
+ * instead of one per element). Shared by the load path and by
+ * setPresentationLook(null), which has to put exactly this back.
+ */
+async function paintPalette(model: FRAGS.FragmentsModel, typeMap: Map<number, string>): Promise<void> {
+  const colorBatches:   Map<number, number[]> = new Map()
+  const opacityBatches: Map<number, number[]> = new Map()
+  for (const [localId, rawType] of typeMap.entries()) {
+    const pal = IFC_PALETTE[rawType] ?? IFC_PALETTE[canonicalType(rawType)]
+    if (!pal) continue
+    const cb = colorBatches.get(pal.color) ?? []; cb.push(localId); colorBatches.set(pal.color, cb)
+    if (pal.opacity !== undefined) {
+      const ob = opacityBatches.get(pal.opacity) ?? []; ob.push(localId); opacityBatches.set(pal.opacity, ob)
+    }
+  }
+  for (const [hex, ids] of colorBatches)       await model.setColor(ids, new THREE.Color(hex))
+  for (const [opacity, ids] of opacityBatches) await model.setOpacity(ids, opacity)
+}
+
 export function createViewer(container: HTMLElement): ViewerAPI {
 
   const components = new OBC.Components()
@@ -1420,6 +1493,53 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // Models explicitly hidden at the model level (via setModelVisible / isolateModel).
   // applyFilters skips these so element-level calls never re-show a model-hidden model.
   const modelHidden: Set<string> = new Set()
+  // Cover Studio section capture: materials patched for poché, and the
+  // renderer's planes before the cut (restored by setPresentationSection(null)).
+  const pochePatched = new Map<THREE.MeshLambertMaterial, {
+    side: THREE.Side
+    onBeforeCompile: THREE.MeshLambertMaterial['onBeforeCompile']
+    cacheKey: THREE.MeshLambertMaterial['customProgramCacheKey']
+  }>()
+  let sectionPrevPlanes: THREE.Plane[] | null = null
+  // Grid visibility before a presentation look/section hid it (null = untouched).
+  let presentationGridPrev: boolean | null = null
+  const hidePresentationGrid = (hide: boolean) => {
+    if (hide) {
+      if (presentationGridPrev === null) presentationGridPrev = grid.visible
+      grid.visible = false
+    } else if (presentationGridPrev !== null) {
+      grid.visible = presentationGridPrev
+      presentationGridPrev = null
+    }
+  }
+
+  /**
+   * Run `fn` with the drawing buffer at `scale` × its normal pixel ratio — the
+   * CSS size (and so the camera aspect and framing) is untouched, only the
+   * pixel count grows. Postproduction targets are resized to match, and both
+   * are put back before returning, so the live view never sees the change.
+   */
+  function withRenderScale<T>(scale: number, fn: () => T): T {
+    if (!(scale > 1)) return fn()
+    const renderer = world.renderer!
+    const three = renderer.three
+    const base = three.getPixelRatio()
+    const gl = three.getContext()
+    const limit = Math.min(8192, gl.getParameter(gl.MAX_RENDERBUFFER_SIZE) as number)
+    const css = new THREE.Vector2()
+    three.getSize(css)
+    const longest = Math.max(css.x, css.y, 1)
+    const ratio = Math.min(base * scale, limit / longest)
+    const pp = postproductionReady ? renderer.postproduction : null
+    three.setPixelRatio(ratio)
+    try { pp?.setSize(three.domElement.width, three.domElement.height) } catch { /* not initialised */ }
+    try {
+      return fn()
+    } finally {
+      three.setPixelRatio(base)
+      try { pp?.setSize(three.domElement.width, three.domElement.height) } catch { /* not initialised */ }
+    }
+  }
 
   // Backward-compat reference: always points to the current model's type map
   let expressIDToType: Map<number, string> = new Map()
@@ -2041,22 +2161,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     // From here on read the LOCAL map, never the alias: every await lets a
     // concurrent load reassign `expressIDToType`, and this model would then be
     // painted, counted and labelled with another model's types.
-    // Batch setColor/setOpacity by palette entry (≤25 calls instead of one per element)
-    const colorBatches:   Map<number, number[]> = new Map()
-    const opacityBatches: Map<number, number[]> = new Map()
-
-    for (const [localId, rawType] of modelTypeMap.entries()) {
-      const pal = IFC_PALETTE[rawType] ?? IFC_PALETTE[canonicalType(rawType)]
-      if (!pal) continue
-      const cb = colorBatches.get(pal.color) ?? []; cb.push(localId); colorBatches.set(pal.color, cb)
-      if (pal.opacity !== undefined) {
-        const opKey = pal.opacity
-        const ob = opacityBatches.get(opKey) ?? []; ob.push(localId); opacityBatches.set(opKey, ob)
-      }
-    }
-
-    for (const [hex, ids] of colorBatches)       await model.setColor(ids, new THREE.Color(hex))
-    for (const [opacity, ids] of opacityBatches) await model.setOpacity(ids, opacity)
+    // Batched by palette entry (≤25 calls instead of one per element); shared
+    // with setPresentationLook(null), which has to put exactly this back.
+    await paintPalette(model, modelTypeMap)
     checkpoint()
 
     onProgress?.(90)
@@ -2708,6 +2815,154 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
+    async setPresentationLook(look) {
+      if (!sectionPrevPlanes) hidePresentationGrid(!!look?.hideGrid)
+      if (modelObjects.size === 0) return
+      for (const [modelId, model] of modelObjects) {
+        const typeMap = typeMapByModel.get(modelId) ?? new Map<number, string>()
+        await model.resetOpacity(undefined)
+        await model.resetColor(undefined)
+        if (!look) { await paintPalette(model, typeMap); continue }
+
+        const focus = new Set(look.focusTypes.map((t) => t.toUpperCase()))
+        const focusIds: number[] = []
+        const restIds: number[] = []
+        for (const [localId, rawType] of typeMap) {
+          const t = rawType.toUpperCase()
+          if (focus.has(t) || focus.has(canonicalType(rawType))) focusIds.push(localId)
+          else restIds.push(localId)
+        }
+        if (look.base === 'original') {
+          await paintPalette(model, new Map(restIds.map((id) => [id, typeMap.get(id)!])))
+        } else if (restIds.length) {
+          await model.setColor(restIds, new THREE.Color(look.baseColor))
+        }
+        if (restIds.length && look.baseOpacity < 0.999) await model.setOpacity(restIds, look.baseOpacity)
+        if (focusIds.length) {
+          if (look.focusColor) await model.setColor(focusIds, new THREE.Color(look.focusColor))
+          else await paintPalette(model, new Map(focusIds.map((id) => [id, typeMap.get(id)!])))
+        }
+      }
+      await fragmentsManager.core.update(true)
+    },
+
+    async setPresentationSection(section) {
+      const wr3 = world.renderer!.three
+      // Undo any previous patch first so repeated calls don't stack.
+      for (const [mat, orig] of pochePatched) {
+        mat.side = orig.side
+        mat.onBeforeCompile = orig.onBeforeCompile
+        mat.customProgramCacheKey = orig.cacheKey
+        mat.needsUpdate = true
+      }
+      pochePatched.clear()
+      wr3.clippingPlanes = sectionPrevPlanes ?? wr3.clippingPlanes
+      sectionPrevPlanes = null
+      if (!section) { hidePresentationGrid(false); void fragmentsManager.core.update(true); return }
+      // A cut is a drawing: the ground grid only adds noise to it.
+      hidePresentationGrid(true)
+
+      const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+        new THREE.Vector3(section.normal.x, section.normal.y, section.normal.z).normalize(),
+        new THREE.Vector3(section.point.x, section.point.y, section.point.z),
+      )
+      sectionPrevPlanes = wr3.clippingPlanes
+      wr3.clippingPlanes = [...wr3.clippingPlanes, plane]
+
+      // Poché: a cut closed solid exposes its inside, i.e. back faces. Render
+      // them double-sided and flat-filled — the classic section fill without
+      // stencil caps. Fragment materials are plain MeshLambertMaterial.
+      const c = new THREE.Color(section.poche)
+      const fill = `vec4(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)}, 1.0)`
+      const key = `poche-${section.poche}`
+      for (const model of modelObjects.values()) {
+        model.object.traverse((o) => {
+          const mesh = o as THREE.Mesh
+          if (!mesh.isMesh) return
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+          for (const mat of mats) {
+            if (!(mat instanceof THREE.MeshLambertMaterial) || pochePatched.has(mat)) continue
+            pochePatched.set(mat, { side: mat.side, onBeforeCompile: mat.onBeforeCompile, cacheKey: mat.customProgramCacheKey })
+            mat.side = THREE.DoubleSide
+            mat.onBeforeCompile = (shader) => {
+              shader.fragmentShader = shader.fragmentShader.replace(
+                '#include <dithering_fragment>',
+                `#include <dithering_fragment>\n  if (!gl_FrontFacing) gl_FragColor = ${fill};`,
+              )
+            }
+            mat.customProgramCacheKey = () => key
+            mat.needsUpdate = true
+          }
+        })
+      }
+      await fragmentsManager.core.update(true)
+    },
+
+    async captureExplodedLayers(layers, gap, scale = 1) {
+      const scene3 = world.scene.three
+      const wr3 = world.renderer!.three
+      const prevBg = scene3.background
+      const prevFog = scene3.fog
+      const prevClear = wr3.getClearAlpha()
+      const prevGrid = grid.visible
+      // Hide everything that isn't a model or a light (grid, OSM context,
+      // markers) so each layer is the storey alone on transparency.
+      const pivots = new Set<THREE.Object3D>(modelPivots.values())
+      for (const m of modelObjects.values()) pivots.add(m.object)
+      const hidden: THREE.Object3D[] = []
+      for (const child of scene3.children) {
+        if (pivots.has(child) || (child as THREE.Light).isLight || !child.visible) continue
+        child.visible = false
+        hidden.push(child)
+      }
+      scene3.background = null
+      scene3.fog = null
+      grid.visible = false
+      wr3.setClearAlpha(0)
+
+      const origY = new Map<string, number>()
+      for (const [mid, m] of modelObjects) origY.set(mid, m.object.position.y)
+      const allIds = (mid: string) => [...(typeMapByModel.get(mid)?.keys() ?? [])]
+      const out: string[] = []
+      try {
+        for (let i = 0; i < layers.length; i++) {
+          const wanted = new Map(layers[i].map((l) => [l.modelId, l.ids]))
+          for (const [mid, m] of modelObjects) {
+            if (modelHidden.has(mid)) continue
+            const all = allIds(mid)
+            if (all.length) await m.setVisible(all, false)
+            const ids = wanted.get(mid)
+            if (ids?.length) await m.setVisible(ids, true)
+            m.object.position.y = (origY.get(mid) ?? 0) + i * gap
+            m.object.updateMatrixWorld(true)
+          }
+          await fragmentsManager.core.update(true)
+          await new Promise((r) => setTimeout(r, 250))
+          try { world.camera.controls.update(0) } catch { /* no controls */ }
+          out.push(withRenderScale(scale, () => {
+            wr3.render(scene3, world.camera.three)
+            return wr3.domElement.toDataURL('image/png')
+          }))
+        }
+      } finally {
+        for (const [mid, m] of modelObjects) {
+          m.object.position.y = origY.get(mid) ?? 0
+          m.object.updateMatrixWorld(true)
+          if (modelHidden.has(mid)) continue
+          const all = allIds(mid)
+          if (all.length) await m.setVisible(all, true)
+        }
+        for (const o of hidden) o.visible = true
+        scene3.background = prevBg
+        scene3.fog = prevFog
+        grid.visible = prevGrid
+        wr3.setClearAlpha(prevClear)
+        await fragmentsManager.core.update(true)
+      }
+      return out
+    },
+
+
     setSelectCallback(cb) { selectCallback = cb },
 
     setContextMenuCallback(cb) { contextMenuCallback = cb },
@@ -2726,7 +2981,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     // ─── Camera presets ───────────────────────────────────────────────────────
 
-    setCameraPreset(preset: CameraPreset) {
+    setCameraPreset(preset: CameraPreset, opts?: { animate?: boolean }) {
       const box = currentModel?.box ?? new THREE.Box3(
         new THREE.Vector3(-10, -10, -10),
         new THREE.Vector3(10,  10,  10),
@@ -2758,11 +3013,16 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
       const [ox, oy, oz] = OFFSETS[preset]
 
+      const animate = opts?.animate !== false
       void world.camera.controls.setLookAt(
         center.x + ox, center.y + oy, center.z + oz,
         center.x,       center.y,      center.z,
-        true,
+        animate,
       )
+      if (!animate) {
+        try { world.camera.controls.update(0) } catch { /* no controls yet */ }
+        void fragmentsManager.core.update(true)
+      }
     },
 
     // ─── Model transform ──────────────────────────────────────────────────────
@@ -3096,12 +3356,19 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
-    setCameraLookAt(position: Vec3Like, target: Vec3Like) {
+    setCameraLookAt(position: Vec3Like, target: Vec3Like, animate = true) {
       void world.camera.controls.setLookAt(
         position.x, position.y, position.z,
         target.x, target.y, target.z,
-        true,
+        animate,
       )
+      if (!animate) {
+        // Land the jump now and re-cull fragments for the new view; otherwise
+        // the camera only moves on the next frame and a snapshot taken before it
+        // renders with tiles streamed for the old viewpoint (half a building).
+        try { world.camera.controls.update(0) } catch { /* no controls yet */ }
+        void fragmentsManager.core.update(true)
+      }
     },
 
     async getElementsBox(ids: number[], modelId?: string) {
@@ -3245,26 +3512,31 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       applyBackground(settings)
     },
 
-    takeSnapshot(): string {
+    takeSnapshot(scale = 1): string {
       // The WebGL drawing buffer is cleared after compositing
       // (preserveDrawingBuffer is off), so reading pixels outside the render
       // loop yields a black PNG. Force a synchronous render into the buffer
       // and read it back in the same task.
-      try {
-        const pp = postproductionReady ? world.renderer?.postproduction : null
-        if (pp?.enabled && pp.composer) {
-          pp.composer.render()
-        } else {
-          wr.render(world.scene.three, world.camera.three)
+      // Apply any pending camera-controls state (an instant setLookAt only lands
+      // on the next update) so the frame shows the camera that was asked for.
+      try { world.camera.controls.update(0) } catch { /* no controls yet */ }
+      return withRenderScale(scale, () => {
+        try {
+          const pp = postproductionReady ? world.renderer?.postproduction : null
+          if (pp?.enabled && pp.composer) {
+            pp.composer.render()
+          } else {
+            wr.render(world.scene.three, world.camera.three)
+          }
+        } catch {
+          try { wr.render(world.scene.three, world.camera.three) } catch { /* read whatever the buffer holds */ }
         }
-      } catch {
-        try { wr.render(world.scene.three, world.camera.three) } catch { /* read whatever the buffer holds */ }
-      }
-      try {
-        return wr.domElement.toDataURL('image/png')
-      } catch {
-        return ''
-      }
+        try {
+          return wr.domElement.toDataURL('image/png')
+        } catch {
+          return ''
+        }
+      })
     },
 
     getCanvas(): HTMLCanvasElement | null {
