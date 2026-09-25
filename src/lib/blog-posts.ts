@@ -1,5 +1,6 @@
 // ─── Blog posts ───────────────────────────────────────────────────────────────
-// Content data — no JSX, no imports. All visual rendering lives in Blog.tsx.
+// Content data — no JSX, no static imports (the zh/ja/th packs at the bottom
+// are loaded with dynamic import()). All visual rendering lives in Blog.tsx.
 
 /**
  * Inline rich-text segment, used inside `p` blocks.
@@ -8839,14 +8840,56 @@ export const ALL_BLOG_POSTS: BlogPost[] = [
   ...BLOG_POSTS_FR,
 ]
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Languages loaded on demand ───────────────────────────────────────────────
+// The Chinese, Japanese and Thai libraries are full translations of the
+// English one (src/lib/blog-i18n/), each about as heavy again. Blog.tsx is
+// imported eagerly by App, so a post imported here ships to every visitor,
+// blog reader or not. These packs are fetched only when someone opens that
+// language's blog; build scripts and tests import them all at once through
+// blog-i18n/index.ts instead.
 
-export function getBlogPost(slug: string, lang = 'en'): BlogPost | undefined {
-  return ALL_BLOG_POSTS.find(p => p.slug === slug && (p.lang ?? 'en') === lang)
+const LAZY_PACKS: Record<string, () => Promise<BlogPost[]>> = {
+  zh: () => import('./blog-i18n/zh').then((m) => m.BLOG_POSTS_ZH),
+  ja: () => import('./blog-i18n/ja').then((m) => m.BLOG_POSTS_JA),
+  th: () => import('./blog-i18n/th').then((m) => m.BLOG_POSTS_TH),
 }
 
+export const LAZY_BLOG_LANGS: readonly string[] = Object.keys(LAZY_PACKS)
+
+const loadedPacks = new Map<string, BlogPost[]>()
+const pendingPacks = new Map<string, Promise<void>>()
+
+/** True when the posts of `lang` can be read synchronously. */
+export function isBlogLanguageReady(lang: string): boolean {
+  return !(lang in LAZY_PACKS) || loadedPacks.has(lang)
+}
+
+/** Fetch a lazy language pack. Concurrent calls share one request; a failed one can be retried. */
+export function loadBlogLanguage(lang: string): Promise<void> {
+  if (isBlogLanguageReady(lang)) return Promise.resolve()
+  let pending = pendingPacks.get(lang)
+  if (!pending) {
+    pending = LAZY_PACKS[lang]()
+      .then((posts) => { loadedPacks.set(lang, posts) })
+      .finally(() => pendingPacks.delete(lang))
+    pendingPacks.set(lang, pending)
+  }
+  return pending
+}
+
+/** Make a pack readable without fetching it — for code that imported it directly. */
+export function registerBlogPosts(lang: string, posts: BlogPost[]): void {
+  loadedPacks.set(lang, posts)
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 export function getBlogPostsByLang(lang: string): BlogPost[] {
-  return ALL_BLOG_POSTS.filter(p => (p.lang ?? 'en') === lang)
+  return loadedPacks.get(lang) ?? ALL_BLOG_POSTS.filter(p => (p.lang ?? 'en') === lang)
+}
+
+export function getBlogPost(slug: string, lang = 'en'): BlogPost | undefined {
+  return getBlogPostsByLang(lang).find(p => p.slug === slug)
 }
 
 export function getFeaturedPost(lang = 'en'): BlogPost {

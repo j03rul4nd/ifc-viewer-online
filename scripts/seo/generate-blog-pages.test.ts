@@ -4,16 +4,20 @@
 // runs the real generator into a throwaway output dir whose parent is the
 // repo root, with a minimal fake index.html template.
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import path from 'path'
 import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'fs'
 import { generateBlogPages, type BlogPagesResult } from './generate-blog-pages'
-import { BLOG_POSTS, BLOG_POSTS_ES, BLOG_POSTS_DE, BLOG_POSTS_FR } from '../../src/lib/blog-posts'
+import { BLOG_POSTS, BLOG_POSTS_ES, BLOG_POSTS_DE, BLOG_POSTS_FR, type BlogPost } from '../../src/lib/blog-posts'
+import { TRANSLATED_POSTS } from '../../src/lib/blog-i18n'
 import { topicsFor } from '../../src/lib/blog-topics'
 
 // Total expected pages across all languages:
 // each language contributes 1 index page + N post pages + its topic hubs.
-const LANG_ARRAYS = [['en', BLOG_POSTS], ['es', BLOG_POSTS_ES], ['de', BLOG_POSTS_DE], ['fr', BLOG_POSTS_FR]] as const
+const LANG_ARRAYS: Array<readonly [string, BlogPost[]]> = [
+  ['en', BLOG_POSTS], ['es', BLOG_POSTS_ES], ['de', BLOG_POSTS_DE], ['fr', BLOG_POSTS_FR],
+  ...Object.entries(TRANSLATED_POSTS),
+]
 const EXPECTED_PAGES = LANG_ARRAYS
   .filter(([, arr]) => arr.length > 0)
   .reduce((sum, [lang, arr]) => sum + 1 + arr.length + topicsFor([...arr], lang).length, 0)
@@ -47,6 +51,11 @@ const TEMPLATE_HTML = `<!DOCTYPE html>
 </html>`
 
 let result: BlogPagesResult
+
+// With the zh/ja/th packs a run writes ~250 pages; the tests that run the
+// generator again, or read every translated page, need more than the default
+// 5 s when the suite shares the machine with the rest of the tests.
+vi.setConfig({ testTimeout: 30_000, hookTimeout: 60_000 })
 
 beforeAll(() => {
   rmSync(OUT, { recursive: true, force: true })
@@ -363,12 +372,7 @@ describe('generateBlogPages — llms.txt injection', () => {
 // caught it because every assertion above only looks at BLOG_POSTS.
 
 describe('generateBlogPages — language grouping', () => {
-  const ARRAYS: [string, typeof BLOG_POSTS][] = [
-    ['en', BLOG_POSTS],
-    ['es', BLOG_POSTS_ES],
-    ['de', BLOG_POSTS_DE],
-    ['fr', BLOG_POSTS_FR],
-  ]
+  const ARRAYS = LANG_ARRAYS
 
   it('every post sits in the array matching its own lang', () => {
     for (const [lang, arr] of ARRAYS) {
@@ -505,5 +509,57 @@ describe('generateBlogPages — article structured data', () => {
   it('carries a breadcrumb up to its topic hub', () => {
     expect(html()).toContain('"@type":"BreadcrumbList"')
     expect(html()).toContain(`${SITE}/blog/topic/${post.categorySlug}/`)
+  })
+})
+
+// ── Chinese, Japanese and Thai ────────────────────────────────────────────────
+//
+// These packs are translations of the English library under the same slugs, so
+// the checks are about the pairing: each translation is published under its own
+// prefix, declares its language, and sits in one hreflang cluster with the
+// English original and its siblings.
+
+describe('generateBlogPages — translated packs (zh, ja, th)', () => {
+  const langs = Object.keys(TRANSLATED_POSTS)
+  const page = (...parts: string[]) => readFileSync(path.join(OUT, ...parts, 'index.html'), 'utf-8')
+
+  it('publishes an index and a page per post under each prefix, in that language', () => {
+    for (const lang of langs) {
+      expect(page(lang, 'blog'), `/${lang}/blog/`).toContain(`<html lang="${lang}"`)
+      for (const post of TRANSLATED_POSTS[lang]) {
+        const html = page(lang, 'blog', post.slug)
+        expect(html, `${lang}/${post.slug}`).toContain(`<html lang="${lang}"`)
+        expect(html).toContain(`rel="canonical" href="${SITE}/${lang}/blog/${post.slug}/"`)
+        expect(html).toContain(`"inLanguage":"${lang}"`)
+      }
+    }
+  })
+
+  it('links every translation to its English original and back, with x-default on English', () => {
+    const slug = 'how-to-validate-ifc-file'
+    const clusterOf = (html: string) => [...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map((m) => `${m[1]} ${m[2]}`)
+    const expected = [
+      `en ${SITE}/blog/${slug}/`,
+      ...langs.filter((l) => TRANSLATED_POSTS[l].some((p) => p.slug === slug)).map((l) => `${l} ${SITE}/${l}/blog/${slug}/`),
+      `x-default ${SITE}/blog/${slug}/`,
+    ].sort()
+    expect(clusterOf(page('blog', slug)).sort()).toEqual(expected)
+    for (const lang of langs) {
+      if (TRANSLATED_POSTS[lang].some((p) => p.slug === slug)) expect(clusterOf(page(lang, 'blog', slug)).sort(), lang).toEqual(expected)
+    }
+  })
+
+  it('keeps the page chrome of the static fallback in the article language', () => {
+    const html = page('ja', 'blog', 'how-to-validate-ifc-file')
+    expect(html).toContain('BIM・IFCブログに戻る')
+    expect(html).not.toContain('Back to the BIM &amp; IFC blog')
+  })
+
+  it('gives each translated topic hub its own title', () => {
+    for (const lang of langs) {
+      for (const topic of topicsFor(TRANSLATED_POSTS[lang], lang)) {
+        expect(page(lang, 'blog', 'topic', topic.slug)).toContain(`<title>${topic.copy.title} | IFC Viewer Blog</title>`)
+      }
+    }
   })
 })
