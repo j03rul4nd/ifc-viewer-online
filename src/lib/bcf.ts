@@ -130,16 +130,15 @@ function buildMarkup21(topic: BcfTopic): string {
 
   const comments = t.comments.map((c) => `\n${commentXml(c, '  ')}`).join('')
 
+  // Schema order: Title, Priority, Labels, CreationDate, CreationAuthor,
+  // AssignedTo, Description. 2.1 has no <Label>: <Labels> is itself the
+  // label, repeated once per label (3.0 made it a container).
+  const labels = (t.labels ?? []).map((l) => `\n    <Labels>${xmlEscape(l)}</Labels>`).join('')
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Markup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="markup.xsd">
   <Topic Guid="${t.guid}" TopicType="${xmlEscape(t.topicType || 'Issue')}" TopicStatus="${xmlEscape(t.status || 'Open')}">
-    <Title>${xmlEscape(t.title)}</Title>
-    ${t.description ? `<Description>${xmlEscape(t.description)}</Description>` : ''}
-    ${t.creationDate ? `<CreationDate>${t.creationDate}</CreationDate>` : ''}
-    ${t.creationAuthor ? `<CreationAuthor>${xmlEscape(t.creationAuthor)}</CreationAuthor>` : ''}
-    ${t.priority ? `<Priority>${xmlEscape(t.priority)}</Priority>` : ''}
-    ${t.assignedTo ? `<AssignedTo>${xmlEscape(t.assignedTo)}</AssignedTo>` : ''}
-    ${t.labels && t.labels.length > 0 ? `<Labels>${t.labels.map((l) => `<Label>${xmlEscape(l)}</Label>`).join('')}</Labels>` : ''}
+    <Title>${xmlEscape(t.title)}</Title>${t.priority ? `\n    <Priority>${xmlEscape(t.priority)}</Priority>` : ''}${labels}${t.creationDate ? `\n    <CreationDate>${t.creationDate}</CreationDate>` : ''}${t.creationAuthor ? `\n    <CreationAuthor>${xmlEscape(t.creationAuthor)}</CreationAuthor>` : ''}${t.assignedTo ? `\n    <AssignedTo>${xmlEscape(t.assignedTo)}</AssignedTo>` : ''}${t.description ? `\n    <Description>${xmlEscape(t.description)}</Description>` : ''}
   </Topic>${comments}${vps}
 </Markup>`
 }

@@ -1,6 +1,7 @@
 // ─── bcf.test.ts ────────────────────────────────────────────────────────────
 // Guards the version-aware .bcfzip writer: BCF 2.1 (default) vs BCF 3.0, which
-// differ in the version file and in where Comments/Viewpoints nest in markup.
+// differ in the version file, in where Comments/Viewpoints nest in markup, and
+// in how labels are written.
 // Asserts on the text entries directly (buildBcfTextEntries) — no unzip needed.
 //
 // And the viewpoint frame: the app holds viewpoints in scene axes (y up), a
@@ -49,6 +50,13 @@ function sampleTopic(): BcfTopic {
 
 const GUID = sampleTopic().guid
 
+/** The element names directly under <Topic>, in document order. */
+function topicChildren(markup: string): string[] {
+  const doc = new DOMParser().parseFromString(markup, 'application/xml')
+  expect(doc.getElementsByTagName('parsererror')).toHaveLength(0)
+  return Array.from(doc.getElementsByTagName('Topic')[0].children, (el) => el.tagName)
+}
+
 describe('buildBcfTextEntries', () => {
   it('writes BCF 2.1 by default — Comment/Viewpoints are siblings of Topic', () => {
     const e      = buildBcfTextEntries([sampleTopic()])
@@ -89,6 +97,28 @@ describe('buildBcfTextEntries', () => {
 
     // 3.0 camera requires AspectRatio.
     expect(vp).toContain('<AspectRatio>')
+  })
+
+  it('2.1 writes one <Labels> per label, in schema order; 3.0 a <Label> each inside one <Labels>', () => {
+    const topic = { ...sampleTopic(), assignedTo: 'mep-lead', labels: ['fire', 'mep & hvac'] }
+
+    // 2.1 has no <Label> element, and the tools that read 2.1 expect the
+    // repeated <Labels> its schema defines.
+    const markup21 = buildBcfTextEntries([topic], '2.1')[`${GUID}/markup.bcf`]
+    expect(markup21).toContain('<Labels>fire</Labels>')
+    expect(markup21).toContain('<Labels>mep &amp; hvac</Labels>')
+    expect(markup21.match(/<Labels>/g)).toHaveLength(2)
+    expect(markup21).not.toContain('<Label>')
+    expect(topicChildren(markup21)).toEqual([
+      'Title', 'Priority', 'Labels', 'Labels', 'CreationDate', 'CreationAuthor', 'AssignedTo', 'Description',
+    ])
+
+    const markup30 = buildBcfTextEntries([topic], '3.0')[`${GUID}/markup.bcf`]
+    expect(markup30).toContain('<Labels><Label>fire</Label><Label>mep &amp; hvac</Label></Labels>')
+    expect(markup30.match(/<Labels>/g)).toHaveLength(1)
+    expect(topicChildren(markup30)).toEqual([
+      'Title', 'Priority', 'Labels', 'CreationDate', 'CreationAuthor', 'AssignedTo', 'Description', 'Comments', 'Viewpoints',
+    ])
   })
 
   it('markup never references a snapshot file when the viewpoint has none', () => {
@@ -469,6 +499,41 @@ describe('BCF import: comments', () => {
       author: "O'Neil",
       text:   'Gap ≤ 5 cm\r\nwritten as &lt;',
     }])
+  })
+})
+
+describe('BCF import: labels', () => {
+  it('reads back its own labels from its 2.1 and 3.0 export', () => {
+    for (const version of ['2.1', '3.0'] as const) {
+      const sent = { ...sampleTopic(), labels: ['fire', 'mep & hvac', '<level 02>'] }
+      const [topic] = parseBcfZip(asBuffer(exportBcfZip([sent], version))).topics
+      expect(topic.labels, version).toEqual(sent.labels)
+
+      const [bare] = parseBcfZip(asBuffer(exportBcfZip([{ ...sampleTopic(), labels: [] }], version))).topics
+      expect(bare.labels, version).toBeUndefined()
+    }
+  })
+
+  it('reads every repeated <Labels> of a 2.1 file another tool wrote', () => {
+    // Only the first <Labels> was read, and only for <Label>s inside it, so
+    // a schema-valid 2.1 file came in with no labels at all.
+    const topic = 'eeeeeeee-0000-0000-0000-000000000013'
+    const { topics } = parseBcfZip(zipOf({
+      'bcf.version': '<?xml version="1.0" encoding="UTF-8"?><Version VersionId="2.1"><DetailedVersion>2.1</DetailedVersion></Version>',
+      [`${topic}/markup.bcf`]: `<?xml version="1.0" encoding="UTF-8"?>
+<Markup>
+  <Topic Guid="${topic}" TopicType="Clash" TopicStatus="Active">
+    <Title>Duct through beam</Title>
+    <Priority>Critical</Priority>
+    <Labels>Structural</Labels>
+    <Labels> MEP &amp; HVAC </Labels>
+    <Labels>Level 02</Labels>
+    <CreationDate>2026-09-25T10:00:00Z</CreationDate>
+    <CreationAuthor>coordinator@example.com</CreationAuthor>
+  </Topic>
+</Markup>`,
+    }))
+    expect(topics[0].labels).toEqual(['Structural', 'MEP & HVAC', 'Level 02'])
   })
 })
 

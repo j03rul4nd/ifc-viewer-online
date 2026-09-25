@@ -178,13 +178,15 @@ function parseMarkup(markupXml: string, topicGuid: string): Omit<BcfTopic, 'view
   const author   = text('CreationAuthor')
   const assigned = text('AssignedTo')
 
-  const labels: string[] = []
-  const labelsBlock = tagText(markupXml, 'Labels')
-  if (labelsBlock) {
-    for (const lb of labelsBlock.split(/<\/?Label>/i).filter((_, i) => i % 2 === 1)) {
-      if (lb.trim()) labels.push(xmlUnescape(lb.trim()))
-    }
-  }
+  // Labels: 2.1 repeats <Labels>, each one a label; 3.0 has one <Labels> that
+  // holds a <Label> per label. Each <Labels> is read by what it holds.
+  const labels = elements(topicBlock, 'Labels')
+    .flatMap(({ body }) => {
+      const inner = elements(body, 'Label')
+      return inner.length > 0 ? inner.map((label) => label.body) : [body]
+    })
+    .map((label) => xmlUnescape(label.trim()))
+    .filter(Boolean)
 
   // Comments: beside <Topic> in 2.1, in its <Comments> in 3.0. The text is an
   // inner <Comment>, so each is read from its outer element (see elements).
