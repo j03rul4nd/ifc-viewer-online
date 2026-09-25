@@ -395,6 +395,83 @@ describe('BCF import (parseBcfZip)', () => {
   })
 })
 
+describe('BCF import: comments', () => {
+  /** Two comments, one on a viewpoint and one not, in text the export has to escape. */
+  function topicWithComments(): BcfTopic {
+    const topic = topicToImport()
+    return {
+      ...topic,
+      title:          'Duct & beam <clash>',
+      description:    'Level 2 "east" core: 5 < 10 & 10 > 5',
+      topicType:      'Clash & coordination',
+      creationAuthor: 'R&D <coordination>',
+      labels:         ['fire & smoke', '<mep>'],
+      comments: [
+        {
+          guid:          'cccccccc-0000-0000-0000-000000000003',
+          date:          '2026-06-07T10:05:00.000Z',
+          author:        'reviewer & co',
+          text:          'Pipe < beam soffit & insulation "missing"',
+          viewpointGuid: topic.viewpoints[1].guid,
+        },
+        {
+          guid:   'cccccccc-0000-0000-0000-000000000010',
+          date:   '2026-06-08T09:00:00.000Z',
+          author: 'modeller <MEP>',
+          text:   'Rerouted: clearance 50 mm > 25 mm & <ok>',
+        },
+      ],
+    }
+  }
+
+  it('reads each comment whole, with its viewpoint, from its own 2.1 and 3.0 export', () => {
+    for (const version of ['2.1', '3.0'] as const) {
+      const sent = topicWithComments()
+      const [topic] = parseBcfZip(asBuffer(exportBcfZip([sent], version))).topics
+
+      // Text, author, date, Guid and viewpoint Guid of each, in order. The
+      // inner <Comment> used to end the outer one: text took the <Date> and
+      // <Author> with it, and the <Viewpoint> after it was never read.
+      expect(topic.comments, version).toEqual(sent.comments)
+      expect(topic.comments[1].viewpointGuid, version).toBeUndefined()
+      expect(topic.viewpoints.map((vp) => vp.guid), version).toContain(topic.comments[0].viewpointGuid)
+    }
+  })
+
+  it('decodes the entities the export escapes in title, description, author and labels', () => {
+    for (const version of ['2.1', '3.0'] as const) {
+      const sent = topicWithComments()
+      const [topic] = parseBcfZip(asBuffer(exportBcfZip([sent], version))).topics
+      expect(topic.title, version).toBe(sent.title)
+      expect(topic.description, version).toBe(sent.description)
+      expect(topic.topicType, version).toBe(sent.topicType)
+      expect(topic.creationAuthor, version).toBe(sent.creationAuthor)
+      expect(topic.labels, version).toEqual(sent.labels)
+    }
+  })
+
+  it('decodes &apos; and character references another tool writes, once', () => {
+    const topic = 'eeeeeeee-0000-0000-0000-000000000011'
+    const { topics } = parseBcfZip(zipOf({
+      [`${topic}/markup.bcf`]: `<?xml version="1.0" encoding="UTF-8"?>
+<Markup>
+  <Topic Guid="${topic}"><Title>Bare</Title></Topic>
+  <Comment Guid="cccccccc-0000-0000-0000-000000000012">
+    <Date>2026-09-25T10:05:00Z</Date>
+    <Author>O&apos;Neil</Author>
+    <Comment>Gap &#8804; 5&#160;cm&#xD;&#xA;written as &amp;lt;</Comment>
+  </Comment>
+</Markup>`,
+    }))
+    expect(topics[0].comments).toEqual([{
+      guid:   'cccccccc-0000-0000-0000-000000000012',
+      date:   '2026-09-25T10:05:00Z',
+      author: "O'Neil",
+      text:   'Gap ≤ 5 cm\r\nwritten as &lt;',
+    }])
+  })
+})
+
 describe('BCF import: selected components', () => {
   /** A .bcfv selection as Solibri or BIMcollab write it. */
   const solibriBcfv = `<?xml version="1.0" encoding="UTF-8"?>

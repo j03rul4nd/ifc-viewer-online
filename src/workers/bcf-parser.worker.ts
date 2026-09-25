@@ -17,10 +17,25 @@ function tagText(xml: string, tag: string): string {
   return m ? m[1].trim() : ''
 }
 
+const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" }
+
+/**
+ * Text as it was before it was written into XML: the five named entities and
+ * character references, in one pass so `&amp;lt;` stays `&lt;`. The export
+ * escapes every value (xmlEscape in lib/bcf), and other tools do the same.
+ */
+function xmlUnescape(s: string): string {
+  return s.replace(/&(?:(amp|lt|gt|quot|apos)|#(\d+)|#x([\da-fA-F]+));/g, (ref, name, dec, hex) => {
+    if (name) return ENTITIES[name]
+    const code = dec ? parseInt(dec, 10) : parseInt(hex, 16)
+    return code <= 0x10ffff ? String.fromCodePoint(code) : ref
+  })
+}
+
 /** Extract value of an attribute from a tag opening string or full XML block. */
 function attr(xml: string, name: string): string {
   const m = new RegExp(`\\b${name}="([^"]*)"`, 'i').exec(xml)
-  return m ? m[1] : ''
+  return m ? xmlUnescape(m[1]) : ''
 }
 
 /** Extract all blocks that start with <tag (including attributes) and end with </tag>. */
@@ -36,19 +51,36 @@ function openTag(xml: string, tag: string): string {
 }
 
 /**
- * Every <tag> element, self-closing or not: `open` is its start tag (for attr),
- * `body` what it holds ('' when self-closing). Self-closing is how this app,
- * Solibri and BIMcollab write <Component IfcGuid="…" />. Case-sensitive, as
- * XML is: a BCF 3.0 <ViewPoint> holds a <Viewpoint>, and only the P differs.
+ * Every outermost <tag> element, self-closing or not: `open` is its start tag
+ * (for attr), `body` what it holds ('' when self-closing). Self-closing is how
+ * this app, Solibri and BIMcollab write <Component IfcGuid="…" />. Case-sensitive,
+ * as XML is: a BCF 3.0 <ViewPoint> holds a <Viewpoint>, and only the P differs.
+ * Each ends at its own closing tag, not the first one: a BCF comment is a
+ * <Comment Guid="…"> that holds its text in a <Comment>.
  */
 function elements(xml: string, tag: string): { open: string; body: string }[] {
-  const re = new RegExp(`(<${tag}(?:\\s[^>]*?)?)(?:/>|>([\\s\\S]*?)</${tag}\\s*>)`, 'g')
-  return [...xml.matchAll(re)].map((m) => ({ open: m[1], body: m[2] ?? '' }))
+  const re = new RegExp(`<(/?)${tag}(?:\\s[^>]*?)?(/?)>`, 'g')
+  const found: { open: string; body: string }[] = []
+  let depth = 0
+  let open = ''
+  let start = 0
+  for (const m of xml.matchAll(re)) {
+    const [token, closing, selfClosing] = m
+    if (closing) {
+      if (depth > 0 && --depth === 0) found.push({ open, body: xml.slice(start, m.index) })
+    } else if (selfClosing) {
+      if (depth === 0) found.push({ open: token.slice(0, -2), body: '' })
+    } else if (depth++ === 0) {
+      open = token.slice(0, -1)
+      start = m.index + token.length
+    }
+  }
+  return found
 }
 
-/** Text of the first <tag> child, case-sensitive (see elements). */
+/** Text of the first <tag> child, case-sensitive (see elements), entities decoded. */
 function childText(xml: string, tag: string): string {
-  return elements(xml, tag)[0]?.body.trim() ?? ''
+  return xmlUnescape(elements(xml, tag)[0]?.body.trim() ?? '')
 }
 
 /**
@@ -135,37 +167,34 @@ function parseMarkup(markupXml: string, topicGuid: string): Omit<BcfTopic, 'view
   const topicTag = openTag(markupXml, 'Topic') || openTag(markupXml, 'bim:Topic') || ''
   const guid     = attr(topicTag, 'Guid') || topicGuid
 
-  const title    = tagText(topicBlock, 'Title')
-  const desc     = tagText(topicBlock, 'Description')
-  const status   = attr(topicTag, 'TopicStatus') || tagText(topicBlock, 'TopicStatus')
-  const type     = attr(topicTag, 'TopicType')   || tagText(topicBlock, 'TopicType')
-  const priority = tagText(topicBlock, 'Priority')
-  const created  = tagText(topicBlock, 'CreationDate')
-  const author   = tagText(topicBlock, 'CreationAuthor')
-  const assigned = tagText(topicBlock, 'AssignedTo')
+  const text = (tag: string) => xmlUnescape(tagText(topicBlock, tag))
+
+  const title    = text('Title')
+  const desc     = text('Description')
+  const status   = attr(topicTag, 'TopicStatus') || text('TopicStatus')
+  const type     = attr(topicTag, 'TopicType')   || text('TopicType')
+  const priority = text('Priority')
+  const created  = text('CreationDate')
+  const author   = text('CreationAuthor')
+  const assigned = text('AssignedTo')
 
   const labels: string[] = []
   const labelsBlock = tagText(markupXml, 'Labels')
   if (labelsBlock) {
     for (const lb of labelsBlock.split(/<\/?Label>/i).filter((_, i) => i % 2 === 1)) {
-      if (lb.trim()) labels.push(lb.trim())
+      if (lb.trim()) labels.push(xmlUnescape(lb.trim()))
     }
   }
 
-  // Comments
-  const comments: BcfComment[] = []
-  for (const commentBlock of tagBlocks(markupXml, 'Comment')) {
-    const commentTag = openTag(commentBlock, 'Comment')
-    const cguid = attr(commentTag, 'Guid') || tagText(commentBlock, 'Guid')
-    const vpTag = openTag(commentBlock, 'Viewpoint')
-    comments.push({
-      guid:          cguid || crypto.randomUUID(),
-      date:          tagText(commentBlock, 'Date'),
-      author:        tagText(commentBlock, 'Author'),
-      text:          tagText(commentBlock, 'Comment'),
-      viewpointGuid: attr(vpTag, 'Guid') || undefined,
-    })
-  }
+  // Comments: beside <Topic> in 2.1, in its <Comments> in 3.0. The text is an
+  // inner <Comment>, so each is read from its outer element (see elements).
+  const comments: BcfComment[] = elements(markupXml, 'Comment').map(({ open, body }) => ({
+    guid:          attr(open, 'Guid') || childText(body, 'Guid') || crypto.randomUUID(),
+    date:          childText(body, 'Date'),
+    author:        childText(body, 'Author'),
+    text:          childText(body, 'Comment'),
+    viewpointGuid: attr(elements(body, 'Viewpoint')[0]?.open ?? '', 'Guid') || undefined,
+  }))
 
   return {
     guid,
