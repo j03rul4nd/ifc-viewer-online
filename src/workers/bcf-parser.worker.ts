@@ -6,6 +6,7 @@
 //     { type: 'error', id: string, message: string }
 
 import { unzipSync, strFromU8 } from 'fflate'
+import { viewpointFromBcf } from '../lib/bcf-viewpoint'
 import type { BcfTopic, BcfViewpoint, BcfComment } from '../types'
 
 // ── Minimal XML helpers ───────────────────────────────────────────────────────
@@ -34,6 +35,19 @@ function openTag(xml: string, tag: string): string {
   return m ? m[0] : ''
 }
 
+/**
+ * Base64 of a byte array, in chunks: spreading a whole snapshot into one
+ * String.fromCharCode call overflows the stack once it is a few hundred KB,
+ * which is every real PNG — and fails the whole import with it.
+ */
+export function bytesToBase64(bytes: Uint8Array): string {
+  let bin = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  }
+  return btoa(bin)
+}
+
 function parseFloat3(xml: string, tag: string): { x: number; y: number; z: number } | undefined {
   const block = tagText(xml, tag)
   if (!block) return undefined
@@ -46,7 +60,8 @@ function parseFloat3(xml: string, tag: string): { x: number; y: number; z: numbe
 
 // ── Viewpoint parser ──────────────────────────────────────────────────────────
 
-function parseViewpoint(vpXml: string, vpGuid: string, snapshotB64?: string): BcfViewpoint {
+/** A .bcfv as the app holds it: read in IFC world axes, returned in scene axes. */
+export function parseViewpoint(vpXml: string, vpGuid: string, snapshotB64?: string): BcfViewpoint {
   const vp: BcfViewpoint = { guid: vpGuid }
 
   // Perspective camera
@@ -82,9 +97,19 @@ function parseViewpoint(vpXml: string, vpGuid: string, snapshotB64?: string): Bc
     if (guids.length > 0) vp.componentGuids = guids
   }
 
+  // Clipping planes. The file was read, so "none" is an answer too: opening
+  // this viewpoint shows it uncut, as the tool that wrote it did.
+  const planes: NonNullable<BcfViewpoint['clippingPlanes']> = []
+  for (const planeBlock of tagBlocks(tagText(vpXml, 'ClippingPlanes'), 'ClippingPlane')) {
+    const location  = parseFloat3(planeBlock, 'Location')
+    const direction = parseFloat3(planeBlock, 'Direction')
+    if (location && direction) planes.push({ location, direction })
+  }
+  vp.clippingPlanes = planes
+
   if (snapshotB64) vp.snapshotBase64 = snapshotB64
 
-  return vp
+  return viewpointFromBcf(vp)
 }
 
 // ── Markup parser ─────────────────────────────────────────────────────────────
@@ -195,7 +220,7 @@ function parseBcfZip(buffer: ArrayBuffer): { topics: BcfTopic[]; version: string
 
       let snapshotB64: string | undefined
       if (snapData) {
-        const b64 = btoa(String.fromCharCode(...snapData))
+        const b64 = bytesToBase64(snapData)
         const ext = snapFile.endsWith('.jpg') || snapFile.endsWith('.jpeg') ? 'jpeg' : 'png'
         snapshotB64 = `data:image/${ext};base64,${b64}`
       }

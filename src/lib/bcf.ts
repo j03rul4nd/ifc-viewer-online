@@ -10,6 +10,7 @@ import { useBcfStore }      from '../stores/bcfStore'
 import { appBus }           from './event-bus'
 import { toast }            from '../stores/toastStore'
 import { parseBcfParserMsg } from './worker-schemas'
+import { viewpointToBcf }    from './bcf-viewpoint'
 import type { BcfTopic, BcfComment, BcfExportVersion, ValidationIssue } from '../types'
 
 // ── Import ────────────────────────────────────────────────────────────────────
@@ -177,11 +178,25 @@ function buildMarkupXml(topic: BcfTopic, version: BcfExportVersion): string {
   return version === '3.0' ? buildMarkup30(topic) : buildMarkup21(topic)
 }
 
-function buildViewpointXml(vp: BcfTopic['viewpoints'][number], vpGuid: string, version: BcfExportVersion): string {
+function xyzXml(v: { x: number; y: number; z: number }): string {
+  return `<X>${v.x}</X><Y>${v.y}</Y><Z>${v.z}</Z>`
+}
+
+function buildViewpointXml(sceneVp: BcfTopic['viewpoints'][number], vpGuid: string, version: BcfExportVersion): string {
+  // The app holds viewpoints in scene axes; the file is in IFC world axes.
+  const vp = viewpointToBcf(sceneVp)
   const { cameraPosition: pos, cameraDirection: dir, cameraUp: up, fieldOfView: fov = 60 } = vp
   if (!pos || !dir || !up) return ''
   // AspectRatio is required by the 3.0 PerspectiveCamera schema.
   const aspect = version === '3.0' ? `\n    <AspectRatio>${vp.aspectRatio ?? 1}</AspectRatio>` : ''
+  // Same element names in 2.1 and 3.0, after the camera in both schemas.
+  const clipping = vp.clippingPlanes && vp.clippingPlanes.length > 0 ? `
+  <ClippingPlanes>
+${vp.clippingPlanes.map((p) => `    <ClippingPlane>
+      <Location>${xyzXml(p.location)}</Location>
+      <Direction>${xyzXml(p.direction)}</Direction>
+    </ClippingPlane>`).join('\n')}
+  </ClippingPlanes>` : ''
   return `<?xml version="1.0" encoding="UTF-8"?>
 <VisualizationInfo Guid="${vpGuid}">
   ${vp.componentGuids && vp.componentGuids.length > 0 ? `
@@ -191,11 +206,11 @@ function buildViewpointXml(vp: BcfTopic['viewpoints'][number], vpGuid: string, v
     </Selection>
   </Components>` : ''}
   <PerspectiveCamera>
-    <CameraViewPoint><X>${pos.x}</X><Y>${pos.y}</Y><Z>${pos.z}</Z></CameraViewPoint>
-    <CameraDirection><X>${dir.x}</X><Y>${dir.y}</Y><Z>${dir.z}</Z></CameraDirection>
-    <CameraUpVector><X>${up.x}</X><Y>${up.y}</Y><Z>${up.z}</Z></CameraUpVector>
+    <CameraViewPoint>${xyzXml(pos)}</CameraViewPoint>
+    <CameraDirection>${xyzXml(dir)}</CameraDirection>
+    <CameraUpVector>${xyzXml(up)}</CameraUpVector>
     <FieldOfView>${fov}</FieldOfView>${aspect}
-  </PerspectiveCamera>
+  </PerspectiveCamera>${clipping}
 </VisualizationInfo>`
 }
 

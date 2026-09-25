@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { useShallow } from 'zustand/react/shallow'
 import { useBcfStore } from '../stores/bcfStore'
 import { importBcf, downloadBcfBlob } from '../lib/bcf'
+import { clippingPlanesFromCuts, cutsFromClippingPlanes } from '../lib/bcf-viewpoint'
 import { toast } from '../stores/toastStore'
 import { trackFeatureUsed } from '../lib/analytics'
 import type { BcfTopic, BcfViewpoint, ViewerHandle } from '../types'
@@ -43,6 +44,43 @@ function formatDate(iso?: string): string {
   } catch {
     return ''
   }
+}
+
+// ── Viewpoints ────────────────────────────────────────────────────────────────
+
+/** What the panel needs from the viewer. Sections are optional: a host with no
+ *  section tool still captures and opens cameras. */
+type BcfViewer = Pick<ViewerHandle, 'setCameraViewpoint' | 'getCameraViewpoint' | 'takeSnapshot'>
+  & Partial<Pick<ViewerHandle, 'getSectionPlanes' | 'applySectionPlanes'>>
+
+/** The view as it is now — snapshot, camera and section planes — in scene axes. */
+function captureViewpoint(viewer: BcfViewer): BcfViewpoint {
+  const snapshot = viewer.takeSnapshot?.() || undefined
+  // Camera capture shares the same primitive as Tour Mode (D-24). Before,
+  // only *imported* viewpoints carried a camera — captured ones were
+  // snapshot-only and could not be navigated back to.
+  const cam  = viewer.getCameraViewpoint?.() ?? null
+  const cuts = viewer.getSectionPlanes?.()
+  return {
+    guid: crypto.randomUUID(),
+    snapshotBase64: snapshot,
+    ...(cam ? {
+      cameraPosition:  cam.position,
+      cameraDirection: cam.direction,
+      ...(cam.up ? { cameraUp: cam.up } : {}),
+      fieldOfView:     cam.fovDeg,
+      aspectRatio:     cam.aspect,
+    } : {}),
+    ...(cuts ? { clippingPlanes: clippingPlanesFromCuts(cuts) } : {}),
+  }
+}
+
+/** Fly to a viewpoint and, when it recorded them, put its section planes back. */
+function openViewpoint(viewer: BcfViewer | null | undefined, vp: BcfViewpoint | undefined): void {
+  if (!viewer || !vp?.cameraPosition || !vp.cameraDirection) return
+  viewer.setCameraViewpoint(vp.cameraPosition, vp.cameraDirection)
+  // Absent = taken before planes were recorded: leave the current cuts alone.
+  if (vp.clippingPlanes) viewer.applySectionPlanes?.(cutsFromClippingPlanes(vp.clippingPlanes))
 }
 
 // ── Small shared UI pieces ────────────────────────────────────────────────────
@@ -227,7 +265,7 @@ function BcfTopicCard({ topic, onOpen, onStatusCycle, onNavigate, onDelete }: Ca
 
 interface DetailProps {
   topicGuid: string
-  viewer?:   Pick<ViewerHandle, 'setCameraViewpoint' | 'getCameraViewpoint' | 'takeSnapshot'> | null
+  viewer?:   BcfViewer | null
   onBack:    () => void
   onDeleted: () => void
 }
@@ -273,17 +311,7 @@ function BcfDetailView({ topicGuid, viewer, onBack, onDeleted }: DetailProps) {
 
   const handleCaptureView = () => {
     if (!viewer) return
-    const snapshot = viewer.takeSnapshot?.() ?? undefined
-    // Camera capture shares the same primitive as Tour Mode (D-24). Before,
-    // only *imported* viewpoints carried a camera — captured ones were
-    // snapshot-only and could not be navigated back to.
-    const cam = viewer.getCameraViewpoint?.() ?? null
-    const newVp: BcfViewpoint = {
-      guid: crypto.randomUUID(),
-      snapshotBase64: snapshot,
-      ...(cam ? { cameraPosition: cam.position, cameraDirection: cam.direction } : {}),
-    }
-    save({ viewpoints: [...topic.viewpoints, newVp] })
+    save({ viewpoints: [...topic.viewpoints, captureViewpoint(viewer)] })
     toast(t('bcf.captureAdded'), 'success')
   }
 
@@ -296,11 +324,7 @@ function BcfDetailView({ topicGuid, viewer, onBack, onDeleted }: DetailProps) {
     setNewComment('')
   }
 
-  const handleNavigateVp = (vp: BcfViewpoint) => {
-    if (vp.cameraPosition && vp.cameraDirection) {
-      viewer?.setCameraViewpoint(vp.cameraPosition, vp.cameraDirection)
-    }
-  }
+  const handleNavigateVp = (vp: BcfViewpoint) => openViewpoint(viewer, vp)
 
   return (
     <div className="flex flex-col h-full">
@@ -557,7 +581,7 @@ function BcfDetailView({ topicGuid, viewer, onBack, onDeleted }: DetailProps) {
 // ── BcfCreateForm ─────────────────────────────────────────────────────────────
 
 interface CreateFormProps {
-  viewer?:   Pick<ViewerHandle, 'setCameraViewpoint' | 'getCameraViewpoint' | 'takeSnapshot'> | null
+  viewer?:   BcfViewer | null
   onBack:    () => void
   onCreated: (guid: string) => void
 }
@@ -579,9 +603,7 @@ function BcfCreateForm({ viewer, onBack, onCreated }: CreateFormProps) {
 
   const handleCreate = useCallback(() => {
     if (!title.trim()) return
-    const snapshot  = captureView && viewer ? (viewer.takeSnapshot?.() ?? undefined) : undefined
-    const vpGuid    = crypto.randomUUID()
-    const viewpoints: BcfViewpoint[] = snapshot ? [{ guid: vpGuid, snapshotBase64: snapshot }] : []
+    const viewpoints: BcfViewpoint[] = captureView && viewer ? [captureViewpoint(viewer)] : []
     const guid = crypto.randomUUID()
     const topic: BcfTopic = {
       guid,
@@ -725,7 +747,7 @@ function BcfCreateForm({ viewer, onBack, onCreated }: CreateFormProps) {
 // ── BcfListView ───────────────────────────────────────────────────────────────
 
 interface ListViewProps {
-  viewer?:       Pick<ViewerHandle, 'setCameraViewpoint' | 'getCameraViewpoint' | 'takeSnapshot'> | null
+  viewer?:       BcfViewer | null
   onSelectTopic: (guid: string) => void
   onCreateNew:   () => void
 }
@@ -808,10 +830,7 @@ function BcfListView({ viewer, onSelectTopic, onCreateNew }: ListViewProps) {
   }, [deleteTopic, t])
 
   const handleNavigate = useCallback((topic: BcfTopic) => {
-    const vp = topic.viewpoints[0]
-    if (vp?.cameraPosition && vp?.cameraDirection) {
-      viewer?.setCameraViewpoint(vp.cameraPosition, vp.cameraDirection)
-    }
+    openViewpoint(viewer, topic.viewpoints[0])
   }, [viewer])
 
   const statChips = [
@@ -1001,7 +1020,7 @@ function BcfListView({ viewer, onSelectTopic, onCreateNew }: ListViewProps) {
 // ── BcfPanel (main export) ────────────────────────────────────────────────────
 
 interface BcfPanelProps {
-  viewer?: Pick<ViewerHandle, 'setCameraViewpoint' | 'getCameraViewpoint' | 'takeSnapshot'> | null
+  viewer?: BcfViewer | null
 }
 
 type PanelView = 'list' | 'detail' | 'create'
