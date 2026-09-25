@@ -21,6 +21,8 @@ import { useEditorHistory } from '../hooks/useEditorHistory'
 import { buildRenameCommand, buildFixGuidCommand } from '../lib/diffStore'
 import { generateIfcGuid } from '../lib/diffStore'
 import type { SpatialNode } from '../types'
+import { orderTreesByGroups, withGroupRows, type GroupHeaderRow } from '../lib/tree-groups'
+import { useModelGroups } from '../hooks/useModelGroups'
 
 // ── Imperative handle ─────────────────────────────────────────────────────────
 
@@ -351,10 +353,17 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
     const result        = useValidationStore((s) => s.result)
     const partialIssues = useValidationStore((s) => s.partialIssues)
 
+    // Files in scene-group order, so one building's files sit together under
+    // its group row instead of in load order (see lib/tree-groups).
+    const { groups: sceneGroups } = useModelGroups()
     const allTrees: ModelTreeSource[] = useMemo(
-      () => Object.entries(spatialTreesRecord).map(([modelId, tree]) => ({ modelId, tree })),
-      [spatialTreesRecord],
+      () => orderTreesByGroups(
+        Object.entries(spatialTreesRecord).map(([modelId, tree]) => ({ modelId, tree })),
+        sceneGroups,
+      ),
+      [spatialTreesRecord, sceneGroups],
     )
+    const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
     const { selection, setSelection } = useEditorStore(
       useShallow((s) => ({ selection: s.selection, setSelection: s.setSelection })),
     )
@@ -450,8 +459,11 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
     const flatNodes = useMemo(
       () => isFiltering
         ? flattenTreesFiltered(allTrees, trimmedQuery, { showHeaders: showModelHeaders, fileNameOf })
-        : flattenTrees(allTrees, { expanded, collapsedModels, showHeaders: showModelHeaders, fileNameOf }),
-      [allTrees, expanded, collapsedModels, showModelHeaders, isFiltering, trimmedQuery, fileNameOf],
+        : withGroupRows(
+          flattenTrees(allTrees, { expanded, collapsedModels, showHeaders: showModelHeaders, fileNameOf }),
+          sceneGroups, collapsedGroups,
+        ),
+      [allTrees, expanded, collapsedModels, showModelHeaders, isFiltering, trimmedQuery, fileNameOf, sceneGroups, collapsedGroups],
     )
 
     const virtualizer = useVirtualizer({
@@ -572,12 +584,17 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
         // recomputed from the state we just set rather than read back out of
         // it, so this does not depend on the re-render having landed.
         const collapsedNext = new Set([...collapsedModels].filter((m) => m !== target.modelId))
-        const flat = flattenTrees(allTrees, {
+        // Unfold the target's group too, and index the SAME row list the
+        // virtualiser renders (group rows included) or the scroll lands short.
+        const targetGroup = sceneGroups.find((g) => g.memberIds.includes(target.modelId))?.id
+        const collapsedGroupsNext = new Set([...collapsedGroups].filter((g) => g !== targetGroup))
+        if (collapsedGroupsNext.size !== collapsedGroups.size) setCollapsedGroups(collapsedGroupsNext)
+        const flat = withGroupRows(flattenTrees(allTrees, {
           expanded: expandedNext, collapsedModels: collapsedNext,
           showHeaders: showModelHeaders, fileNameOf,
-        })
+        }), sceneGroups, collapsedGroupsNext)
         const wanted = scopedElementKey(target.modelId, target.expressId)
-        const idx = flat.findIndex((f) => f.kind !== 'model-header' && f.key === wanted)
+        const idx = flat.findIndex((f) => (f.kind === 'spatial' || f.kind === 'element') && f.key === wanted)
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             if (idx !== -1) virtualizer.scrollToIndex(idx, { align: 'center', behavior: 'smooth' })
@@ -595,7 +612,7 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
         return { ok: true, viaHost: true, hostName }
       },
     }), [allTrees, expanded, collapsedModels, showModelHeaders, fileNameOf, virtualizer,
-         hostOf, setSelection, onSelectElement])
+         hostOf, setSelection, onSelectElement, sceneGroups, collapsedGroups])
 
     // ────────────────────────────────────────────────────────────────────────
 
@@ -721,7 +738,17 @@ const ModelTree = forwardRef<ModelTreeHandle, ModelTreeProps>(
                     transform: `translateY(${vRow.start}px)`,
                   }}
                 >
-                  {flat.kind === 'model-header' ? (
+                  {flat.kind === 'group-header' ? (
+                    <GroupHeaderRowView
+                      flat={flat}
+                      onToggle={() => setCollapsedGroups((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(flat.groupId)) next.delete(flat.groupId)
+                        else next.add(flat.groupId)
+                        return next
+                      })}
+                    />
+                  ) : flat.kind === 'model-header' ? (
                     <ModelHeaderRow
                       flat={flat}
                       onToggleCollapse={() =>
@@ -844,6 +871,31 @@ function EyeBtn({
 }
 
 // ── Model header row ──────────────────────────────────────────────────────────
+
+function GroupHeaderRowView({ flat, onToggle }: { flat: GroupHeaderRow; onToggle: () => void }) {
+  const { t } = useTranslation('tree')
+  return (
+    <div
+      className="flex items-center gap-2 px-2 h-[30px] cursor-pointer select-none border-b border-[var(--border)] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] transition-colors"
+      onClick={onToggle}
+      role="button"
+      aria-expanded={!flat.isCollapsed}
+      title={`${flat.isCollapsed ? t('actions.expand') : t('actions.collapse')} · ${flat.label}`}
+    >
+      <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor" className="shrink-0 text-[var(--text-dim)]"
+        style={{ transform: flat.isCollapsed ? 'rotate(-90deg)' : undefined }}>
+        <path d="M0 2.5L4 6.5L8 2.5L7 1.5L4 4.5L1 1.5Z" />
+      </svg>
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" className="shrink-0 text-[var(--accent)]">
+        <path d="M1.5 3.5h4l1 1h4v5.5h-9z" />
+      </svg>
+      <span className="flex-1 min-w-0 truncate text-[11px] font-semibold text-[var(--text)]" title={flat.label}>{flat.label}</span>
+      <span className="text-[10px] text-[var(--text-faint)] font-mono bg-[var(--surface)] px-1.5 py-0.5 rounded-md shrink-0">
+        {flat.count}
+      </span>
+    </div>
+  )
+}
 
 function ModelHeaderRow({
   flat, onToggleCollapse, onOpenScene, onRemove,

@@ -18,7 +18,21 @@
   "cameraControls": {
     "title": "Views",
     "hide": "Hide camera controls",
-    "show": "Show camera views"
+    "show": "Show camera views",
+    "scope": {
+      "label": "Frame",
+      "auto": "Auto",
+      "active": "Active",
+      "group": "Group",
+      "all": "All",
+      "autoHint": "Everything visible; the active site if the scene spans distant sites",
+      "activeHint": "Only the active model",
+      "groupHint": "Every model in the active model's group",
+      "allHint": "All visible models and point clouds"
+    },
+    "narrowed": "Scene spans distant sites — framing the active one.",
+    "showAll": "Show all",
+    "empty": "Nothing visible to frame. Show a model or point cloud first."
   },
   "overlayHud": {
     "error": "Errors",
@@ -155,10 +169,72 @@
       "collapse": "Collapse group",
       "expand": "Expand group",
       "moveTogether": "Move together",
-      "moveTogetherHint": "Move every file of this building as one, keeping their alignment",
-      "scopeModel": "This file",
-      "scopeGroup": "All {{count}} files",
-      "positionOnly": "Moving the set shifts every file by the same amount. Rotation and scale stay per file — turning each one about its own origin would scatter them."
+      "moveTogetherHint": "Move every file of this building as one, keeping their alignment"
+    },
+    "tree": {
+      "myGroups": "My groups",
+      "detectedGroups": "Detected",
+      "newGroupEllipsis": "New group…",
+      "backToAuto": "Back to automatic",
+      "noGroup": "No group",
+      "moveTo": "Move to group",
+      "hide": "Hide",
+      "show": "Show",
+      "hideGroup": "Hide group",
+      "showGroup": "Show group",
+      "points": "{{formatted}} pts",
+      "rename": "Rename",
+      "renameHint": "Double-click to rename",
+      "counts": "{{models}} IFC · {{clouds}} clouds",
+      "frameGroup": "Frame group",
+      "emptyGroup": "Empty group: drag models or clouds here",
+      "looseClouds": "Unassigned point clouds",
+      "dropToCreate": "Drop to create a group",
+      "newGroup": "New group",
+      "defaultName": "Group {{n}}",
+      "groupMenu": "Group options",
+      "pin": "Pin as my own group",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "delete": "Delete group",
+      "basis": {
+        "user": "Manual",
+        "projectGuid": "Same project (GUID)",
+        "projectName": "Same project and site",
+        "proximity": "Geographic proximity",
+        "single": "Single file"
+      }
+    },
+    "scope": {
+      "label": "Scope",
+      "model": "File",
+      "group": "Group ({{count}})",
+      "scene": "Scene ({{count}})",
+      "modelHint": "Edit the active file only",
+      "groupHint": "Move the active file's group (IFC and clouds) as one block",
+      "sceneHint": "Move everything loaded (IFC and clouds) as one block"
+    },
+    "rigid": {
+      "noGeometry": "No geometry to move yet.",
+      "pivot": "Set position",
+      "pivotHint": "Plan centre at the lowest level. Changing it moves the whole set without breaking its alignment.",
+      "turn": "Turn the set",
+      "degrees": "Degrees",
+      "apply": "Turn",
+      "geoTitle": "Georeference (map anchor)",
+      "heading": "heading {{deg}}°",
+      "geoHint": "The map is anchored to this set: moving it here does not change its lat/lon. To calibrate lat/lon and heading, use the location editor.",
+      "calibrate": "Calibrate lat/lon on the map",
+      "resetHint": "Return every member to its original position"
+    },
+    "history": {
+      "undo": "Undo",
+      "redo": "Redo",
+      "temporary": "Move to look",
+      "temporaryHint": "Move freely, then go back to how it was",
+      "temporaryOn": "Temporary changes: they will be undone on restore.",
+      "restore": "Restore",
+      "keep": "Keep"
     }
   },
   "transform": {
