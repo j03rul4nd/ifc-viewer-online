@@ -69,15 +69,46 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
   const [menuOpen, setMenuOpen] = useState(false)
   const [coverOpen, setCoverOpen] = useState(false)
 
-  // ── Canvas acquisition — the only viewer coupling is getCanvas() ─────────────
+  // ── Canvas acquisition ──────────────────────────────────────────────────────
+  // Where this instance owns a replay buffer, it records the viewer's
+  // RECORDING canvas — each frame with the measurement labels painted on —
+  // not the WebGL canvas, whose captureStream has the lines of a measurement
+  // and never its numbers (the labels are HTML). Every replay video and GIF
+  // comes out of that buffer. The recording canvas costs a blit per frame, so
+  // it is held only while a buffer can run; otherwise the plain canvas stands
+  // in (it is also what links this viewer to Clip Studio).
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [canvasReady, setCanvasReady] = useState(false)
+  const holdRef = useRef<{ viewer: ViewerAPI; canvas: HTMLCanvasElement; release: () => void } | null>(null)
+  const wantsRecording = replay && !isMobile
+
+  const releaseRecording = useCallback(() => {
+    holdRef.current?.release()
+    holdRef.current = null
+  }, [])
 
   const syncCanvas = useCallback(() => {
-    const c = viewerApiRef.current?.getCanvas() ?? null
-    canvasRef.current = c
-    setCanvasReady(c !== null)
-  }, [viewerApiRef])
+    const viewer = viewerApiRef.current
+    if (!viewer) { releaseRecording(); canvasRef.current = null; setCanvasReady(false); return }
+    if (wantsRecording) {
+      if (holdRef.current?.viewer !== viewer) {
+        releaseRecording()
+        const held = viewer.acquireRecordingCanvas()
+        holdRef.current = { viewer, canvas: held.canvas, release: held.release }
+      }
+      canvasRef.current = holdRef.current?.canvas ?? null
+    } else {
+      releaseRecording()
+      canvasRef.current = viewer.getCanvas()
+    }
+    setCanvasReady(canvasRef.current !== null)
+  }, [viewerApiRef, wantsRecording, releaseRecording])
+  // Desktop ↔ mobile layout changes which of the two canvases is wanted.
+  useEffect(() => {
+    if (canvasReady) syncCanvas()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantsRecording])
+  useEffect(() => releaseRecording, [releaseRecording])
   // Clip Studio renders camera shots through the same viewer. Registered per
   // toolbar instance, and re-registered after a StrictMode remount.
   useEffect(() => {
@@ -89,8 +120,8 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
   useAppEvent('model:loaded', syncCanvas)
   useEffect(() => {
     if (hasModel && !canvasReady) syncCanvas()
-    if (!hasModel && canvasReady) { canvasRef.current = null; setCanvasReady(false) }
-  }, [hasModel, canvasReady, syncCanvas])
+    if (!hasModel && canvasReady) { releaseRecording(); canvasRef.current = null; setCanvasReady(false) }
+  }, [hasModel, canvasReady, syncCanvas, releaseRecording])
 
   // ── Replay buffer (window = max selectable duration) ─────────────────────────
   const { isRecording, supported, availableSeconds, captureLastSeconds } = useCanvasReplayBuffer(canvasRef, {

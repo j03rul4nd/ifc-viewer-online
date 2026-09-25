@@ -210,7 +210,7 @@ export function useCoverCapture(viewerApiRef: React.MutableRefObject<ViewerAPI |
       if (plane) { await viewer.setPresentationSection({ normal: plane.normal, point: plane.point, poche: POCHE }); sectionOn.current = true }
     }
     await wait(160)
-    const url = viewer.takeSnapshot(live.current.settings.res)
+    const url = viewer.takeSnapshot(live.current.settings.res, { annotations: false })
     if (!url.startsWith('data:image/png')) return null
     const image = await finish(await dataUrlToImage(url), lookId)
     return newShot(label, image)
@@ -326,7 +326,7 @@ export function useCoverCapture(viewerApiRef: React.MutableRefObject<ViewerAPI |
       const y = planCutY(layer.elevation, next)
       await viewer.setPresentationSection({ normal: { x: 0, y: -1, z: 0 }, point: { x: 0, y, z: 0 }, poche: POCHE })
       await wait(400)
-      const url = viewer.takeSnapshot(live.current.settings.res)
+      const url = viewer.takeSnapshot(live.current.settings.res, { annotations: false })
       if (!url.startsWith('data:image/png')) continue
       const image = await finish(await dataUrlToImage(url), lookId)
       out.push(newShot(layer.names.join(' / '), image))
