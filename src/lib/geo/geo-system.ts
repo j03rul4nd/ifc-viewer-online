@@ -1107,8 +1107,14 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       ? kept.filter(modelSuppressor())
       : kept
     // LANDMARKS: in Showcase, a loaded hand-built model replaces the mapped
-    // feature it stands for (the building, or the sculpture node).
-    const landmarks = contextDetail === 'showcase' ? landmarksIn(suppressed) : []
+    // feature it stands for (the building, or the sculpture node). One that no
+    // mapped feature stands for is found by the loaded box instead.
+    const landmarkArea = (() => {
+      const dLat = BUILDINGS_HALF_SIZE_M / 111_320
+      const dLon = dLat / Math.cos((placement.lat * Math.PI) / 180)
+      return { south: placement.lat - dLat, north: placement.lat + dLat, west: placement.lon - dLon, east: placement.lon + dLon }
+    })()
+    const landmarks = contextDetail === 'showcase' ? landmarksIn(suppressed, landmarkArea) : []
     if (landmarks.length > 0) ensureLandmarks(landmarks)
     const loadedLandmarks = landmarks
       .filter((l) => landmarkGeometry.has(l.asset))
