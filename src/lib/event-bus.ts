@@ -188,7 +188,7 @@ export type AppEventMap = {
   'ui:open-legend':         void
   'capture:started':        { mode: 'replay' }
   'capture:ready':          { kind: 'screenshot' | 'clip'; durationSec?: number }
-  'capture:exported':       { format: 'png' | 'webm' | 'mp4' | 'gif' | 'pdf' | 'pptx'; target: 'download' | 'clipboard' }
+  'capture:exported':       { format: 'png' | 'webm' | 'mp4' | 'gif' | 'pdf' | 'pptx'; target: 'download' | 'clipboard' | 'share' }
   'tour:started':           { tourId: string; createdFrom: 'auto' | 'manual'; steps: number }
   'tour:step-changed':      { tourId: string; index: number; total: number }
   'tour:completed':         { tourId: string }

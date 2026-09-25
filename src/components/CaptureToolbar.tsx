@@ -31,6 +31,7 @@ const log = createLogger('CaptureToolbar')
 
 const CapturePreviewModal = React.lazy(() => import('./CapturePreviewModal'))
 const ClipStudio = React.lazy(() => import('./studio/ClipStudio'))
+const CoverStudioModal = React.lazy(() => import('./CoverStudioModal'))
 
 function timestamp(): string {
   return new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19)
@@ -66,6 +67,7 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
   const openStudio = useClipStudioStore((s) => s.openStudio)
   const [capturing, setCapturing] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [coverOpen, setCoverOpen] = useState(false)
 
   // ── Canvas acquisition — the only viewer coupling is getCanvas() ─────────────
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -182,6 +184,15 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
           className={btnBase}
         >
           <Icons.Camera size={13} />
+        </button>
+        <button
+          onClick={() => setCoverOpen(true)}
+          disabled={!hasModel}
+          title={t('cover.open')}
+          aria-label={t('cover.open')}
+          className={btnBase}
+        >
+          <Icons.Sparkles size={13} />
         </button>
 
         {replayAvailable && (
@@ -303,6 +314,15 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
         >
           <Icons.Camera size={14} />
         </button>
+        <button
+          onClick={() => setCoverOpen(true)}
+          disabled={!hasModel}
+          title={t('cover.open')}
+          aria-label={t('cover.open')}
+          className={btnBase}
+        >
+          <Icons.Sparkles size={14} />
+        </button>
         {replay && <SceneBackgroundMenu disabled={!hasModel} />}
         {replay && (
           <button onClick={openStudio} disabled={!hasModel} title={t('studio.openTooltip')} aria-label={t('studio.open')} className={btnBase}>
@@ -321,6 +341,11 @@ export function CaptureToolbar({ viewerApiRef, replay = true }: CaptureToolbarPr
       {replay && studioOpen && (
         <Suspense fallback={null}>
           <ClipStudio />
+        </Suspense>
+      )}
+      {coverOpen && (
+        <Suspense fallback={null}>
+          <CoverStudioModal viewerApiRef={viewerApiRef} onClose={() => setCoverOpen(false)} />
         </Suspense>
       )}
     </>
