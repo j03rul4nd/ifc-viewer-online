@@ -32,6 +32,7 @@ import { variate } from './feature-variation'
 import { COVER_SPACING_M, COVER_TREE_SIZE, type GreenCover } from './osm-features'
 import type { TreeShape } from './feature-variation'
 import type { Vec2 } from './surface-tessellation'
+import { runToEnd, type Steps } from './steps'
 
 /** One greenery polygon offered up for planting, in planar metres. */
 export interface SeedRegion {
@@ -177,14 +178,31 @@ export function buildKeepOut(
   rings: ReadonlyArray<ReadonlyArray<Vec2>>,
   cellM = KEEP_OUT_CELL_M,
 ): (x: number, y: number) => boolean {
+  return runToEnd(keepOutSteps(rings, cellM))
+}
+
+/**
+ * `buildKeepOut`, pausable between rings — see `steps`. The procedural canopy
+ * builds one over every road segment and building of a district, tens of
+ * thousands of rings, which was a long task of its own.
+ *
+ * Cells are keyed by column, then row, as numbers rather than one
+ * `${cx},${cy}` string per cell: same buckets, same order, less work.
+ */
+export function* keepOutSteps(
+  rings: ReadonlyArray<ReadonlyArray<Vec2>>,
+  cellM = KEEP_OUT_CELL_M,
+): Steps<(x: number, y: number) => boolean> {
   const usable = rings.filter((r) => r.length >= 3)
   if (usable.length === 0) return () => false
 
-  const cells = new Map<string, number[]>()
+  const cells = new Map<number, Map<number, number[]>>()
   const always: number[] = []
   const boxes: Array<{ minX: number; minY: number; maxX: number; maxY: number }> = []
 
-  usable.forEach((ring, i) => {
+  for (let i = 0; i < usable.length; i++) {
+    yield
+    const ring = usable[i]
     let minX = Infinity; let minY = Infinity
     let maxX = -Infinity; let maxY = -Infinity
     for (const p of ring) {
@@ -199,19 +217,20 @@ export function buildKeepOut(
     const x1 = Math.floor(maxX / cellM)
     const y0 = Math.floor(minY / cellM)
     const y1 = Math.floor(maxY / cellM)
-    if ((x1 - x0 + 1) * (y1 - y0 + 1) > KEEP_OUT_MAX_CELLS) { always.push(i); return }
+    if ((x1 - x0 + 1) * (y1 - y0 + 1) > KEEP_OUT_MAX_CELLS) { always.push(i); continue }
     for (let cy = y0; cy <= y1; cy++) {
       for (let cx = x0; cx <= x1; cx++) {
-        const key = `${cx},${cy}`
-        const bucket = cells.get(key)
+        let column = cells.get(cx)
+        if (!column) { column = new Map(); cells.set(cx, column) }
+        const bucket = column.get(cy)
         if (bucket) bucket.push(i)
-        else cells.set(key, [i])
+        else column.set(cy, [i])
       }
     }
-  })
+  }
 
   return (x: number, y: number): boolean => {
-    const bucket = cells.get(`${Math.floor(x / cellM)},${Math.floor(y / cellM)}`)
+    const bucket = cells.get(Math.floor(x / cellM))?.get(Math.floor(y / cellM))
     for (const list of [bucket, always]) {
       if (!list) continue
       for (const i of list) {

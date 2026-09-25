@@ -23,7 +23,9 @@
 // colour or material: all of those still win. This module fills blanks.
 
 import { barriAt, isBarcelona, typologyProfile, type UrbanTypology } from './barcelona-barris'
-import { splitPerimeterBlocks } from './perimeter-blocks'
+import { splitPerimeterBlocksSteps } from './perimeter-blocks'
+import { runToEnd, type Steps } from './steps'
+import { runSliced, type SliceOptions } from './render-scheduler'
 import { variate } from './feature-variation'
 import type { FacadeTypology } from './building-mesh'
 import type { OsmFeature, LatLonPoint, BuildingUse } from './osm-features'
@@ -85,6 +87,28 @@ export function barcelonaFabric<T extends FabricBuilding>(
   features: ReadonlyArray<OsmFeature>,
   anchorLat: number,
 ): Array<T & { interior?: boolean; pavilion?: boolean }> {
+  return runToEnd(barcelonaFabricSteps(footprints, features, anchorLat))
+}
+
+/**
+ * `barcelonaFabric`, handing the main thread back while the perimeter blocks
+ * are recognised and split — on a district that was the largest single piece
+ * of the building phase. Same buildings either way; `undefined` means cancelled.
+ */
+export function barcelonaFabricSliced<T extends FabricBuilding>(
+  footprints: ReadonlyArray<T>,
+  features: ReadonlyArray<OsmFeature>,
+  anchorLat: number,
+  slice: SliceOptions = {},
+): Promise<Array<T & { interior?: boolean; pavilion?: boolean }> | undefined> {
+  return runSliced(barcelonaFabricSteps(footprints, features, anchorLat), slice)
+}
+
+function* barcelonaFabricSteps<T extends FabricBuilding>(
+  footprints: ReadonlyArray<T>,
+  features: ReadonlyArray<OsmFeature>,
+  anchorLat: number,
+): Steps<Array<T & { interior?: boolean; pavilion?: boolean }>> {
   const typologyCache = new Map<string, UrbanTypology | null>()
   const typOf = (p: LatLonPoint): UrbanTypology | null => {
     // Cached on a ~50 m grid: a barri boundary is never finer than a street.
@@ -125,7 +149,8 @@ export function barcelonaFabric<T extends FabricBuilding>(
 
   // 2. The block interiors.
   const open = openGroundIndex(features)
-  const split = splitPerimeterBlocks(heighted, anchorLat, (lat, lon) => {
+  yield
+  const split = yield* splitPerimeterBlocksSteps(heighted, anchorLat, (lat, lon) => {
     const t = typOf({ lat, lon })
     const block = t ? typologyProfile(t).cerdaBlock : null
     return block ? { depthM: block.buildableDepthM, interiorHeightM: block.interiorGroundFloorHeightM } : null

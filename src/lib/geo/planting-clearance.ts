@@ -1,5 +1,6 @@
 import type { OsmFeature, LatLonPoint } from './osm-features'
-import { buildKeepOut } from './tree-seeding'
+import { keepOutSteps } from './tree-seeding'
+import { runToEnd, type Steps } from './steps'
 
 type Point = { x: number; y: number }
 
@@ -7,11 +8,19 @@ type Point = { x: number; y: number }
 export function plantingClearance(
   features: ReadonlyArray<OsmFeature>, toMetres: (p: LatLonPoint) => Point,
 ): (x: number, y: number) => boolean {
+  return runToEnd(plantingClearanceSteps(features, toMetres))
+}
+
+/** `plantingClearance`, pausable between features and rings — see `steps`. */
+export function* plantingClearanceSteps(
+  features: ReadonlyArray<OsmFeature>, toMetres: (p: LatLonPoint) => Point,
+): Steps<(x: number, y: number) => boolean> {
   const polygons: Point[][] = []
   for (const f of features) {
     if (!f.ring || f.ring.length < 2) continue
     // Underground infrastructure does not occupy the park above it.
     if (f.vertical?.structure === 'tunnel') continue
+    yield
     const line = f.ring.map(toMetres)
     if (f.kind === 'building' || f.kind === 'water'
       || ((f.kind === 'road' || f.kind === 'rail') && f.widthM === undefined)) {
@@ -37,5 +46,5 @@ export function plantingClearance(
       y: p.y + radius * Math.sin(i * Math.PI / 6),
     })))
   }
-  return buildKeepOut(polygons)
+  return yield* keepOutSteps(polygons)
 }

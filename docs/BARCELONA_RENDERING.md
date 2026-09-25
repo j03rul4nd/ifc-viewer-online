@@ -167,7 +167,7 @@ the browser the longest slice measures 20–36 ms (`linear-layer.bench.ts`).
   `buildLinearLayer` runs it straight through; `buildLinearLayerSliced` runs it
   a 12 ms slice at a time (`runSliced` in `render-scheduler.ts`). A pause carries
   no value and changes no state, so the output is the same bytes either way —
-  `linear-layer-sliced.test.ts` pins that on the Port Vell survey with a pause
+  `sliced-builders.test.ts` pins that on the Port Vell survey with a pause
   after every step.
 - **The whole-buffer passes are chunked too**: the rebase, the float32 casts and
   `computeVertexNormals` (run as three's own routine over runs of triangles,
@@ -182,6 +182,55 @@ the browser the longest slice measures 20–36 ms (`linear-layer.bench.ts`).
 - **Benchmark**: `npx vitest bench --run scripts/geo/linear-layer.bench.ts`, on a
   real Overpass extract of the Poblenou box (`scripts/geo/poblenou-roads.json.gz`).
   It reports total build time and the longest slice.
-- **Still single tasks** in the same rebuild: buildings (270–415 ms), the
-  vertical solve (240–770 ms), ground cover (120–320 ms) and the
-  signal/furniture/barrier phase (90–155 ms). Each would need the same treatment.
+### The rest of the rebuild, sliced (2026-09-25)
+
+The same treatment for every other builder that held the thread, plus four
+exact algorithmic fixes found on the way. Each builder keeps its synchronous
+name and gains a `…Sliced` twin over the same generator; the cascade awaits
+the twins. Measured on the full Poblenou extract in Node, warm-to-cold ranges;
+the right column is the longest single step with a pause after every step
+(a cold first run can add ~40 ms to it):
+
+| Stage | Before, one task | After, longest step |
+|---|---|---|
+| Barcelona fabric (`barcelonaFabricSliced`) | 125–186 ms | 6–16 ms |
+| Buildings mesh (`buildBuildingsGeometrySliced`) | 63–172 ms | 5–35 ms |
+| Vertical solve (`solveSceneVerticalSliced`) | 224–418 ms | 20–44 ms |
+| Greenery (`buildSurfaceLayerSliced`) | 77–222 ms | 10–27 ms |
+| Trees (`buildTreeLayerSliced`) | 77–398 ms | 6–14 ms |
+| Signals / furniture / barriers (`…LayerSliced`) | signals 53–155 ms | 5–19 ms |
+
+- **The blocks moved into the cascade.** They were built in the same task as
+  the call that asked for them; now they are the cascade's first phase. The
+  estimated count reaches `setBuildings` after `layersSettled`, and picking
+  switches to the new mesh in the same task that swaps it in. `geo.settled()`
+  is how a caller — a test, an SDK `done` — waits for a rebuild to land.
+- **`connectedDeck` scanned every feature for every stair vertex.**
+  `deckLookup` indexes the deck vertices once and visits candidates in the
+  scan's order, so every tie resolves as before (a test compares the two point
+  by point). The vertical solve went from 224–259 to 179–195 ms in total.
+- **`ringsTouch` measured every vertex against every segment** of each nearby
+  pair. Vertices and segments clearly out of reach by box are now skipped,
+  with a margin far above rounding. The fabric went from 125–138 ms to
+  24–26 ms warm, 161–186 to 74–82 ms cold.
+- **Keep heavy loop bodies out of generators.** The building mesh's
+  several-hundred-line per-building body, left inline in the generator's loop,
+  ran twice as slow on a first build; as a plain function the generator calls
+  per building it is faster than before slicing (52–55 vs 63–66 ms warm). The
+  road layer's loops already call out to closures and showed no difference.
+- **The keep-out grid built a string per cell** for tens of thousands of road
+  rings; numeric keys, same buckets, same order.
+- **The plain ground cover pushed into `number[]`**; it uses `GrowableArray` now
+  like the roads. On Poblenou that path was mostly garbage collection.
+- Every change was checked the same way: every stage's output, fingerprinted
+  byte for byte on ten real extracts, identical to the code before, run
+  synchronously and sliced with a pause after every step.
+- **In the app**, a full Poblenou rebuild (City preset, a layer toggle) is now
+  90–116 slices over 1.1–1.5 s, and the longest of them is 30–34 ms; the
+  synchronous start of the rebuild is 6–11 ms. Before, the same rebuild held
+  the thread for 271 ms (blocks), 124 ms (ground), 239 ms (vertical),
+  1.3–1.4 s (roads), 170–395 ms (rail) and 93–155 ms (signals).
+- **Still one task**: an exaggeration change re-extrudes the terrain before
+  the rebuild starts, 103–135 ms measured — terrain code, not investigated
+  here. Roof props, landmarks, piers, bridges and the invented scenery stay
+  synchronous; all are small on this data.

@@ -684,11 +684,13 @@ describe('geo-system · OSM feature cache', () => {
       occlusion: 0, detail: 0, contourInterval: 0,
     }
     geo.setTerrainLook(LOOK)
+    await geo.settled()
     const before = buildings()
     expect(before).toBeDefined()
 
     // A sun slider only repaints the hillshade. It must NOT pay for a rebuild.
     geo.setTerrainLook({ ...LOOK, sunAzimuth: 200 })
+    await geo.settled()
     expect(buildings()).toBe(before)
 
     // `detail` moves the ground, so everything on it has to be re-derived —
@@ -721,6 +723,7 @@ describe('geo-system · OSM feature cache', () => {
     const seen: Array<THREE.Object3D | undefined> = [buildings()]
     for (const on of [true, false, true, false]) {
       await geo.setTerrain(on)
+      await geo.settled()
       seen.push(buildings())
     }
     for (const o of seen) expect(o).toBeDefined()

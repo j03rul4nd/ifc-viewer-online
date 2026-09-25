@@ -23,6 +23,8 @@ import {
 } from './feature-variation'
 import { createGroundFrame } from './ground-frame'
 import { GrowableArray, type NumberSink } from './growable-array'
+import { runToEnd, type Steps } from './steps'
+import { runSliced, type SliceOptions } from './render-scheduler'
 import type { BuildingHeight } from './buildings'
 import type { FeatureStyle } from './osm-features'
 
@@ -183,6 +185,27 @@ export function buildBuildingsGeometry(
   footprints: ReadonlyArray<BuildingLike>,
   opts: BuildingMeshOptions,
 ): BuildingMeshResult | null {
+  return runToEnd(buildingsGeometrySteps(footprints, opts))
+}
+
+/**
+ * `buildBuildingsGeometry`, handing the main thread back between buildings —
+ * see `steps`. A district's blocks are a few hundred milliseconds of mesh, and
+ * they used to be built in the very first task of a scene rebuild. The mesh is
+ * the same bytes either way; `undefined` means `alive()` cancelled it.
+ */
+export function buildBuildingsGeometrySliced(
+  footprints: ReadonlyArray<BuildingLike>,
+  opts: BuildingMeshOptions,
+  slice: SliceOptions = {},
+): Promise<BuildingMeshResult | null | undefined> {
+  return runSliced(buildingsGeometrySteps(footprints, opts), slice)
+}
+
+function* buildingsGeometrySteps(
+  footprints: ReadonlyArray<BuildingLike>,
+  opts: BuildingMeshOptions,
+): Steps<BuildingMeshResult | null> {
   const metresToNormalized = 1 / (WEB_MERCATOR_WORLD_M * cosLatScale(opts.anchorLat))
   const frame = createGroundFrame({
     anchorLat: opts.anchorLat,
@@ -228,13 +251,22 @@ export function buildBuildingsGeometry(
     ? partyWallIndex(footprints, metresToNormalized)
     : null
 
-  for (const [bi, b] of footprints.entries()) {
+  /**
+   * One footprint's geometry, appended to the sinks above.
+   *
+   * A plain function the generator calls once per building, NOT the body of
+   * the generator's own loop. Left inside the loop, this several-hundred-line
+   * body made the mesh twice as slow on a first build and half as slow again
+   * warm — a hot loop inside a generator is not optimised mid-run the way a
+   * plain function is. Called from here it is faster than before slicing.
+   */
+  const emitBuilding = (bi: number, b: BuildingLike): void => {
     // Project the ring into the normalized frame once.
     const ring2d: THREE.Vector2[] = b.ring.map((p) => {
       const { nx, ny } = latLonToNormalized(p.lat, p.lon)
       return new THREE.Vector2(nx, ny)
     })
-    if (ring2d.length < 3) continue
+    if (ring2d.length < 3) return
 
     // ShapeUtils triangulates counter-clockwise contours; an OSM ring can be
     // either winding, and the wrong one yields zero triangles (a silent hole).
@@ -269,9 +301,9 @@ export function buildBuildingsGeometry(
           new THREE.Vector2(p.x / metresToNormalized, p.y / metresToNormalized))),
       )
     } catch {
-      continue // self-intersecting footprint — skip it, never fail the batch
+      return // self-intersecting footprint — skip it, never fail the batch
     }
-    if (faces.length === 0) continue
+    if (faces.length === 0) return
     // Triangle indices address the outer ring followed by every hole, in order.
     const capPoints: THREE.Vector2[] = holes2d.length ? [...ring2d, ...holes2d.flat()] : ring2d
 
@@ -316,7 +348,7 @@ export function buildBuildingsGeometry(
       }
       g.dispose()
       if(b.id) ranges.push({id:b.id,start:rangeStart,end:positions.length/3})
-      count++;estimatedCount++;continue
+      count++;estimatedCount++;return
     }
 
     // ── Monuments whose form the outline cannot carry ─────────────────────────
@@ -333,7 +365,7 @@ export function buildBuildingsGeometry(
       if (b.id) ranges.push({ id: b.id, start: rangeStart, end: positions.length / 3 })
       count++
       if (b.height.estimated) estimatedCount++
-      continue
+      return
     }
 
     // ── Roof ───────────────────────────────────────────────────────────────────
@@ -360,7 +392,7 @@ export function buildBuildingsGeometry(
     // outline — its ridge maths only knows the outer ring — so the cap has to
     // be triangulated the same way.
     if (roofShape !== 'flat' && holes2d.length > 0) {
-      try { faces = THREE.ShapeUtils.triangulateShape(metricRing, []) } catch { continue }
+      try { faces = THREE.ShapeUtils.triangulateShape(metricRing, []) } catch { return }
     }
     const wallSpanM = Math.max(0, topM - baseM)
     const roofWantedM = stated
@@ -587,24 +619,30 @@ export function buildBuildingsGeometry(
     count++
     if (b.height.estimated) estimatedCount++
   }
+  for (const [bi, b] of footprints.entries()) {
+    yield
+    emitBuilding(bi, b)
+  }
 
   if (count === 0) return null
+  yield
 
   const origin = opts.localOrigin
     ? latLonToNormalized(opts.anchorLat, opts.anchorLon ?? footprints[0].ring[0].lon) : undefined
   // Rebased in float64, before the float32 cast, so a city-wide mesh keeps
-  // its centimetres.
-  if (origin) positions.rebase(origin.nx, origin.ny)
+  // its centimetres. Every whole-buffer pass goes a chunk per step.
+  if (origin) yield* positions.rebaseSteps(origin.nx, origin.ny)
   const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions.toFloat32(), 3))
-  geometry.setAttribute('normal', new THREE.BufferAttribute(normals.toFloat32(), 3))
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors.toFloat32(), 3))
+  geometry.setAttribute('position', new THREE.BufferAttribute(yield* positions.toFloat32Steps(), 3))
+  geometry.setAttribute('normal', new THREE.BufferAttribute(yield* normals.toFloat32Steps(), 3))
+  geometry.setAttribute('color', new THREE.BufferAttribute(yield* colors.toFloat32Steps(), 3))
   if (facA.length > 0) {
     padFacade()
-    geometry.setAttribute('aFacA', new THREE.BufferAttribute(facA.toFloat32(), 4))
-    geometry.setAttribute('aFacB', new THREE.BufferAttribute(facB.toFloat32(), 4))
-    geometry.setAttribute('aFacC', new THREE.BufferAttribute(facC.toFloat32(), 4))
+    geometry.setAttribute('aFacA', new THREE.BufferAttribute(yield* facA.toFloat32Steps(), 4))
+    geometry.setAttribute('aFacB', new THREE.BufferAttribute(yield* facB.toFloat32Steps(), 4))
+    geometry.setAttribute('aFacC', new THREE.BufferAttribute(yield* facC.toFloat32Steps(), 4))
   }
+  yield
   geometry.computeBoundingSphere()
 
   return { geometry, count, estimatedCount, ranges,

@@ -17,7 +17,7 @@ import { createBasemapEngine, type BasemapEngine } from './basemap-engine'
 import { buildTerrainPatch, tileNormalizedCenter, TERRAIN_EDGE_FADE, type TerrainPatch } from './geo-terrain'
 import { clampTerrainLook, DEFAULT_TERRAIN_LOOK } from './terrain-look'
 import {
-  buildBuildingsGeometry,
+  buildBuildingsGeometrySliced,
   type BuildingDetail, type BuildingRange, type ContextTone,
 } from './building-mesh'
 import {
@@ -27,18 +27,18 @@ import {
 } from './context-suppression'
 import { createFacadeMaterial } from './facade-shader'
 import { buildVehicleLayer } from './props-scene'
-import { buildBarrierLayer, buildFurnitureLayer, buildPlacedSignalLayer } from './street-furniture'
+import { buildBarrierLayerSliced, buildFurnitureLayerSliced, buildPlacedSignalLayerSliced } from './street-furniture'
 import { buildMarinaBoatLayer, buildLakeBoatLayer } from './marina-boats'
 import { yieldToMain, precompile, deviceBudget } from './render-scheduler'
 import { landmarksIn, loadLandmark, buildLandmarkLayer, replacedFeatureIds, type Landmark } from './landmarks'
-import { barcelonaFabric, barcelonaFacadeAt } from './barcelona-fabric'
+import { barcelonaFabricSliced, barcelonaFacadeAt } from './barcelona-fabric'
 import { isBarcelona } from './barcelona-barris'
 import { loadPropAssetList, neededPropAssets, loadShanghaiParkAssets, type PropAsset } from './props-assets'
 import { isShanghai } from './shanghai-region'
 import { buildShanghaiParkDetails } from './shanghai-parks'
 import {
-  buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, buildLinearLayerSliced, disposeLayer,
-  solveSceneVertical, buildWaterMask, buildPierLayer, waterLevelM, type LayerMeshOptions,
+  buildSurfaceLayerSliced, buildBridgeLayer, buildTreeLayerSliced, buildLinearLayerSliced, disposeLayer,
+  solveSceneVerticalSliced, buildWaterMask, buildPierLayer, waterLevelM, type LayerMeshOptions,
 } from './osm-scene'
 import { describeProfile, summariseProfiles } from './vertical-network'
 import {
@@ -1493,9 +1493,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // so it is solved here, after the blocks and the ground are on screen,
       // rather than in front of everything. Once per prelude.
       if (!prelude.verticalSolved && build.some((k) => NEEDS_VERTICAL.has(k))) {
-        solveVertical(prelude)
-        await yieldToMain()
-        if (!alive()) return null
+        if (!await solveVertical(prelude, alive)) return null
       }
 
       const staged: StagedLayer[] = []
@@ -1722,19 +1720,23 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
    * bridges, roads and tunnels each having a private opinion about the
    * vertical axis.
    */
-  function solveVertical(s: ScenePrelude): void {
-    s.verticalSolved = true
+  async function solveVertical(s: ScenePrelude, alive: () => boolean): Promise<boolean> {
     try {
-      s.opts.vertical = solveSceneVertical(s.features, s.opts, s.waterMask)
+      // Sliced like the roads: on a district it is hundreds of milliseconds.
+      const vertical = await solveSceneVerticalSliced(s.features, s.opts, s.waterMask, { alive })
+      // A newer build took over mid-solve; the prelude stays unsolved.
+      if (vertical === undefined) return false
+      s.opts.vertical = vertical
     } catch (err) {
       // Without the solve every way lies on the ground. Wrong at an
       // interchange, right almost everywhere else — and a standing scene is
       // worth more than a correct empty one.
       log.warn('vertical solve failed; ways will lie on the ground:', errorMessage(err))
       s.opts.vertical = null
-      return
     }
-    if (import.meta.env.DEV && s.opts.vertical) {
+    s.verticalSolved = true
+    if (!s.opts.vertical) return true
+    if (import.meta.env.DEV) {
       // Console-reachable, dev only. When a road is floating, the geometry
       // cannot say why — every decision that produced it has been forgotten by
       // the time it is a triangle. This is where they are still written down.
@@ -1755,6 +1757,7 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
           setVerticalOverlay(on ? { includeConfident } : null),
       }
     }
+    return true
   }
 
   /**
@@ -1779,16 +1782,21 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
           }))
         // Barcelona's fabric, barri by barri: storey counts where OSM has none,
         // and the Eixample's hollow blocks restored — see barcelona-fabric.
-        if (s.inBarcelona) footprints = barcelonaFabric(footprints, features, opts.anchorLat)
+        if (s.inBarcelona) {
+          const fabric = await barcelonaFabricSliced(footprints, features, opts.anchorLat, { alive })
+          if (fabric === undefined) return undefined
+          footprints = fabric
+        }
         // At 'detailed' the facades join the same sun as the ground and the
         // canopies; at 'simple' they stay unlit, which is cheaper and is the
         // right answer when the surroundings are only there for orientation.
         // Showcase is detailed plus authored props, so it is lit too.
         const litFacades = contextDetail !== 'simple'
-        const built = buildBuildingsGeometry(footprints, {
+        const built = await buildBuildingsGeometrySliced(footprints, {
           ...opts, detail: contextDetail, lit: litFacades, contextTone, localOrigin: true,
           typologyAt: s.inBarcelona ? barcelonaFacadeAt : null,
-        })
+        }, { alive })
+        if (built === undefined) return undefined
         const objects: THREE.Object3D[] = []
         let mesh: THREE.Mesh | undefined
         if (built) {
@@ -1820,7 +1828,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // Ground cover, coarsest first: greenery, then bare ground over it, then
       // water on top — a river drawn under its own banks would vanish.
       case 'green': case 'sand': case 'rock': case 'water': {
-        const built = buildSurfaceLayer(features, key, opts)
+        const built = await buildSurfaceLayerSliced(features, key, opts, { alive })
+        if (built === undefined) return undefined
         const detail = key === 'water' ? s.parkDetails?.water : key === 'green' ? s.parkDetails?.green : null
         // What the layer could NOT draw. A park that fails to triangulate and a
         // park that was never in the data look identical on screen, and the
@@ -1855,15 +1864,18 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       // Traffic signals are mapped data and get a layer switch like any other.
       // Stood at the kerb, facing the traffic they control — see street-furniture.
       case 'signal': {
-        const built = buildPlacedSignalLayer(features, streetOpts)
+        const built = await buildPlacedSignalLayerSliced(features, streetOpts, { alive })
+        if (built === undefined) return undefined
         return { objects: built ? [built.object] : [] }
       }
       case 'furniture': {
-        const built = buildFurnitureLayer(features, streetOpts)
+        const built = await buildFurnitureLayerSliced(features, streetOpts, { alive })
+        if (built === undefined) return undefined
         return { objects: built ? [built.object] : [] }
       }
       case 'barrier': {
-        const built = buildBarrierLayer(features, streetOpts)
+        const built = await buildBarrierLayerSliced(features, streetOpts, { alive })
+        if (built === undefined) return undefined
         return { objects: built ? [built.object] : [] }
       }
 
@@ -1903,7 +1915,8 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
       }
 
       case 'tree': {
-        const built = buildTreeLayer(features, { ...opts, excludeAt: s.exclusion })
+        const built = await buildTreeLayerSliced(features, { ...opts, excludeAt: s.exclusion }, { alive })
+        if (built === undefined) return undefined
         return { objects: built ? [built.object] : [] }
       }
     }
