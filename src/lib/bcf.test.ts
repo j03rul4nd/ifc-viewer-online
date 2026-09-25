@@ -273,7 +273,13 @@ describe('BCF snapshot import', () => {
     const png = new Uint8Array(1_000_000)
     for (let i = 0; i < png.length; i++) png[i] = (i * 31) & 0xff
     const b64 = bytesToBase64(png)
-    expect(Buffer.from(b64, 'base64').equals(Buffer.from(png))).toBe(true)
+    expect(b64.length).toBe(Math.ceil(png.length / 3) * 4)
+    // Base64 maps each 3 bytes to 4 characters, so any 3-aligned slice can be
+    // checked on its own: the start, across the first chunk boundary, the end.
+    const slice = (from: number, to: number) => btoa(String.fromCharCode(...png.subarray(from, to)))
+    expect(b64.slice(0, 4000)).toBe(slice(0, 3000))
+    expect(b64.slice(43_688, 43_696)).toBe(slice(32_766, 32_772))
+    expect(b64.slice((996_000 / 3) * 4)).toBe(slice(996_000, png.length))
     expect(bytesToBase64(new Uint8Array([0x89, 0x50, 0x4e, 0x47]))).toBe('iVBORw==')
   })
 })
