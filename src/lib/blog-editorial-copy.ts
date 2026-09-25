@@ -2,8 +2,8 @@
 // Control labels for the interactive blog blocks (tables, decisions, terms).
 //
 // Keyed by the ARTICLE's language, not the UI's: a Spanish post read with an
-// English UI must still say "Buscar filas" next to Spanish rows. Posts exist
-// only in these four languages (see blog-posts.ts), so that is all this needs.
+// English UI must still say "Buscar filas" next to Spanish rows. One entry per
+// language that has posts (blog-posts.ts, and the lazy packs in blog-i18n/).
 
 export interface EditorialCopy {
   searchRows: string
@@ -56,6 +56,26 @@ export interface EditorialCopy {
   definition: string
   close: string
   callout: { tip: string; warning: string; info: string }
+  /** The article page around the content: nav, header meta, closing CTA. */
+  post: {
+    allArticles: string
+    blog: string
+    openViewer: string
+    minutes: (n: number) => string
+    bottomPrompt: string
+    bottomCta: string
+    onThisPage: string
+    tableOfContents: string
+    notFound: string
+    backToAll: string
+    read: string
+    loading: string
+    loadFailed: string
+    retry: string
+    /** Static HTML fallback (generate-blog-pages.ts). */
+    backToBlog: string
+    openInteractiveViewer: string
+  }
 }
 
 const en: EditorialCopy = {
@@ -109,6 +129,24 @@ const en: EditorialCopy = {
   definition: 'Definition',
   close: 'Close',
   callout: { tip: 'Tip', warning: 'Warning', info: 'Note' },
+  post: {
+    allArticles: 'All articles',
+    blog: 'Blog',
+    openViewer: 'Open viewer',
+    minutes: (n) => `${n} min`,
+    bottomPrompt: 'Validate your IFC file free — no account, no server upload.',
+    bottomCta: 'Open IFC Viewer',
+    onThisPage: 'On this page',
+    tableOfContents: 'Table of contents',
+    notFound: 'Article not found.',
+    backToAll: 'Back to all articles',
+    read: 'Read',
+    loading: 'Loading articles…',
+    loadFailed: 'The articles in this language could not be loaded.',
+    retry: 'Try again',
+    backToBlog: 'Back to the BIM & IFC blog',
+    openInteractiveViewer: 'Open the interactive IFC viewer',
+  },
 }
 
 const es: EditorialCopy = {
@@ -162,6 +200,24 @@ const es: EditorialCopy = {
   definition: 'Definición',
   close: 'Cerrar',
   callout: { tip: 'Consejo', warning: 'Atención', info: 'Nota' },
+  post: {
+    allArticles: 'Todos los artículos',
+    blog: 'Blog',
+    openViewer: 'Abrir visor',
+    minutes: (n) => `${n} min`,
+    bottomPrompt: 'Valida tu archivo IFC gratis: sin cuenta y sin subirlo a ningún servidor.',
+    bottomCta: 'Abrir IFC Viewer',
+    onThisPage: 'En esta página',
+    tableOfContents: 'Índice',
+    notFound: 'No se ha encontrado el artículo.',
+    backToAll: 'Volver a todos los artículos',
+    read: 'Leer',
+    loading: 'Cargando artículos…',
+    loadFailed: 'No se han podido cargar los artículos en este idioma.',
+    retry: 'Reintentar',
+    backToBlog: 'Volver al blog BIM e IFC',
+    openInteractiveViewer: 'Abrir el visor IFC interactivo',
+  },
 }
 
 const de: EditorialCopy = {
@@ -215,6 +271,24 @@ const de: EditorialCopy = {
   definition: 'Definition',
   close: 'Schließen',
   callout: { tip: 'Tipp', warning: 'Achtung', info: 'Hinweis' },
+  post: {
+    allArticles: 'Alle Artikel',
+    blog: 'Blog',
+    openViewer: 'Viewer öffnen',
+    minutes: (n) => `${n} Min.`,
+    bottomPrompt: 'IFC-Datei kostenlos prüfen – ohne Konto, ohne Upload auf einen Server.',
+    bottomCta: 'IFC Viewer öffnen',
+    onThisPage: 'Auf dieser Seite',
+    tableOfContents: 'Inhaltsverzeichnis',
+    notFound: 'Artikel nicht gefunden.',
+    backToAll: 'Zurück zu allen Artikeln',
+    read: 'Lesen',
+    loading: 'Artikel werden geladen…',
+    loadFailed: 'Die Artikel in dieser Sprache konnten nicht geladen werden.',
+    retry: 'Erneut versuchen',
+    backToBlog: 'Zurück zum BIM- & IFC-Blog',
+    openInteractiveViewer: 'Interaktiven IFC-Viewer öffnen',
+  },
 }
 
 const fr: EditorialCopy = {
@@ -268,9 +342,240 @@ const fr: EditorialCopy = {
   definition: 'Définition',
   close: 'Fermer',
   callout: { tip: 'Astuce', warning: 'Attention', info: 'Note' },
+  post: {
+    allArticles: 'Tous les articles',
+    blog: 'Blog',
+    openViewer: 'Ouvrir la visionneuse',
+    minutes: (n) => `${n} min`,
+    bottomPrompt: 'Validez votre fichier IFC gratuitement — sans compte, sans envoi sur un serveur.',
+    bottomCta: 'Ouvrir IFC Viewer',
+    onThisPage: 'Sur cette page',
+    tableOfContents: 'Sommaire',
+    notFound: 'Article introuvable.',
+    backToAll: 'Retour à tous les articles',
+    read: 'Lire',
+    loading: 'Chargement des articles…',
+    loadFailed: 'Impossible de charger les articles dans cette langue.',
+    retry: 'Réessayer',
+    backToBlog: 'Retour au blog BIM & IFC',
+    openInteractiveViewer: 'Ouvrir la visionneuse IFC interactive',
+  },
 }
 
-const COPY: Record<string, EditorialCopy> = { en, es, de, fr }
+const zh: EditorialCopy = {
+  searchRows: '筛选行',
+  searchPlaceholder: '筛选…',
+  rowsShown: (s, t) => (s === t ? `${t} 行` : `${s} / ${t} 行`),
+  noRows: '没有符合筛选条件的行。',
+  clearSearch: '清除筛选',
+  focusColumn: '比较维度',
+  allColumns: '全部',
+  moreDetails: (n) => `另有 ${n} 项详情`,
+  scrollHint: '左右滑动查看更多列',
+  tableRegion: (c) => `表格：${c}`,
+  takeaways: '要点',
+  step: (n, t) => `第 ${n} 步，共 ${t} 步`,
+  stepDetail: '详情',
+  decisionPick: '选择最接近你情况的一项',
+  readGuide: '阅读指南',
+  copyQuote: '复制引文',
+  enlarge: '放大图片',
+  wrapLines: '自动换行',
+  zoomIn: '放大',
+  quickLook: '快速预览',
+  goToSection: '跳转到该章节',
+  openArticle: '打开文章',
+  inThisArticle: '本文内容',
+  pointOfInterest: '延伸阅读',
+  toolLabel: '工具',
+  nextUp: '接下来读',
+  keepExploring: '继续探索',
+  toolsForTopic: '本主题相关工具',
+  alreadyRead: '已读',
+  minRead: (n) => `阅读约 ${n} 分钟`,
+  reason: { linked: '本文引用', backlink: '基于本文展开', keywords: (k) => `同样涉及：${k}`, category: (c) => `更多相关内容：${c}` },
+  citation: (n, t) => `参考文献 ${n}：${t}`,
+  relatedGuide: '相关指南',
+  source: '来源',
+  openSource: '打开来源',
+  allReferences: '全部参考文献',
+  references: '参考文献',
+  backToCitation: (n) => `返回正文中的引用 ${n}`,
+  backToText: '返回正文',
+  zoomOut: '缩小',
+  resetZoom: '适应屏幕',
+  zoomHint: '双指缩放、滚动或双击放大 · 拖动可移动',
+  copyCode: '复制代码',
+  copied: '已复制',
+  share: '分享',
+  shareQuote: '分享这段引文',
+  copyLink: (x) => `复制“${x}”的链接`,
+  definition: '定义',
+  close: '关闭',
+  callout: { tip: '提示', warning: '注意', info: '说明' },
+  post: {
+    allArticles: '全部文章',
+    blog: '博客',
+    openViewer: '打开查看器',
+    minutes: (n) => `${n} 分钟`,
+    bottomPrompt: '免费验证你的 IFC 文件——无需注册，也不会上传到任何服务器。',
+    bottomCta: '打开 IFC Viewer',
+    onThisPage: '本页目录',
+    tableOfContents: '目录',
+    notFound: '未找到这篇文章。',
+    backToAll: '返回全部文章',
+    read: '阅读',
+    loading: '正在加载文章…',
+    loadFailed: '无法加载该语言的文章。',
+    retry: '重试',
+    backToBlog: '返回 BIM 与 IFC 博客',
+    openInteractiveViewer: '打开交互式 IFC 查看器',
+  },
+}
+
+const ja: EditorialCopy = {
+  searchRows: '行を絞り込む',
+  searchPlaceholder: '絞り込み…',
+  rowsShown: (s, t) => (s === t ? `${t}行` : `${t}行中${s}行`),
+  noRows: 'この条件に一致する行はありません。',
+  clearSearch: '絞り込みを解除',
+  focusColumn: '比較する項目',
+  allColumns: 'すべて',
+  moreDetails: (n) => `ほか${n}件の詳細`,
+  scrollHint: '横にスクロールすると他の列を表示できます',
+  tableRegion: (c) => `表：${c}`,
+  takeaways: 'この記事のポイント',
+  step: (n, t) => `ステップ${n}/${t}`,
+  stepDetail: '詳細',
+  decisionPick: 'ご自身の状況に最も近いものを選んでください',
+  readGuide: 'ガイドを読む',
+  copyQuote: '引用をコピー',
+  enlarge: '画像を拡大',
+  wrapLines: '折り返し',
+  zoomIn: '拡大',
+  quickLook: 'クイックプレビュー',
+  goToSection: 'このセクションへ移動',
+  openArticle: '記事を開く',
+  inThisArticle: 'この記事の内容',
+  pointOfInterest: 'あわせて読みたい',
+  toolLabel: 'ツール',
+  nextUp: '次に読む',
+  keepExploring: 'さらに読む',
+  toolsForTopic: 'このトピックのツール',
+  alreadyRead: '既読',
+  minRead: (n) => `約${n}分で読めます`,
+  reason: { linked: 'この記事で紹介', backlink: 'この記事の発展編', keywords: (k) => `関連トピック：${k}`, category: (c) => `${c}の記事をもっと見る` },
+  citation: (n, t) => `参考文献${n}：${t}`,
+  relatedGuide: '関連ガイド',
+  source: '出典',
+  openSource: '出典を開く',
+  allReferences: 'すべての参考文献',
+  references: '参考文献',
+  backToCitation: (n) => `本文の引用${n}に戻る`,
+  backToText: '本文に戻る',
+  zoomOut: '縮小',
+  resetZoom: '画面に合わせる',
+  zoomHint: 'ピンチ・スクロール・ダブルタップで拡大 · ドラッグで移動',
+  copyCode: 'コードをコピー',
+  copied: 'コピーしました',
+  share: '共有',
+  shareQuote: 'この引用を共有',
+  copyLink: (x) => `「${x}」へのリンクをコピー`,
+  definition: '定義',
+  close: '閉じる',
+  callout: { tip: 'ヒント', warning: '注意', info: 'メモ' },
+  post: {
+    allArticles: 'すべての記事',
+    blog: 'ブログ',
+    openViewer: 'ビューアーを開く',
+    minutes: (n) => `${n}分`,
+    bottomPrompt: 'IFCファイルを無料で検証できます。アカウント登録も、サーバーへのアップロードも不要です。',
+    bottomCta: 'IFC Viewerを開く',
+    onThisPage: '目次',
+    tableOfContents: '目次',
+    notFound: '記事が見つかりません。',
+    backToAll: 'すべての記事に戻る',
+    read: '読む',
+    loading: '記事を読み込んでいます…',
+    loadFailed: 'この言語の記事を読み込めませんでした。',
+    retry: '再試行',
+    backToBlog: 'BIM・IFCブログに戻る',
+    openInteractiveViewer: 'インタラクティブなIFCビューアーを開く',
+  },
+}
+
+const th: EditorialCopy = {
+  searchRows: 'กรองแถว',
+  searchPlaceholder: 'กรอง…',
+  rowsShown: (s, t) => (s === t ? `${t} แถว` : `${s} จาก ${t} แถว`),
+  noRows: 'ไม่มีแถวที่ตรงกับตัวกรองนี้',
+  clearSearch: 'ล้างตัวกรอง',
+  focusColumn: 'เปรียบเทียบตาม',
+  allColumns: 'ทั้งหมด',
+  moreDetails: (n) => `รายละเอียดเพิ่มเติม ${n} รายการ`,
+  scrollHint: 'เลื่อนไปด้านข้างเพื่อดูคอลัมน์เพิ่มเติม',
+  tableRegion: (c) => `ตาราง: ${c}`,
+  takeaways: 'ประเด็นสำคัญ',
+  step: (n, t) => `ขั้นตอนที่ ${n} จาก ${t}`,
+  stepDetail: 'รายละเอียด',
+  decisionPick: 'เลือกสถานการณ์ที่ใกล้เคียงกับคุณมากที่สุด',
+  readGuide: 'อ่านคู่มือ',
+  copyQuote: 'คัดลอกข้อความ',
+  enlarge: 'ขยายภาพ',
+  wrapLines: 'ตัดบรรทัด',
+  zoomIn: 'ซูมเข้า',
+  quickLook: 'ดูตัวอย่าง',
+  goToSection: 'ไปยังหัวข้อนี้',
+  openArticle: 'เปิดบทความ',
+  inThisArticle: 'ในบทความนี้',
+  pointOfInterest: 'น่าอ่านต่อ',
+  toolLabel: 'เครื่องมือ',
+  nextUp: 'อ่านต่อ',
+  keepExploring: 'สำรวจต่อ',
+  toolsForTopic: 'เครื่องมือสำหรับหัวข้อนี้',
+  alreadyRead: 'อ่านแล้ว',
+  minRead: (n) => `อ่าน ${n} นาที`,
+  reason: { linked: 'อ้างถึงในบทความนี้', backlink: 'ต่อยอดจากบทความนี้', keywords: (k) => `เกี่ยวข้องกับ: ${k}`, category: (c) => `เพิ่มเติมในหมวด ${c}` },
+  citation: (n, t) => `เอกสารอ้างอิง ${n}: ${t}`,
+  relatedGuide: 'คู่มือที่เกี่ยวข้อง',
+  source: 'แหล่งที่มา',
+  openSource: 'เปิดแหล่งที่มา',
+  allReferences: 'เอกสารอ้างอิงทั้งหมด',
+  references: 'เอกสารอ้างอิง',
+  backToCitation: (n) => `กลับไปยังการอ้างอิง ${n} ในเนื้อหา`,
+  backToText: 'กลับไปยังเนื้อหา',
+  zoomOut: 'ซูมออก',
+  resetZoom: 'พอดีกับหน้าจอ',
+  zoomHint: 'จีบนิ้ว เลื่อนล้อเมาส์ หรือแตะสองครั้งเพื่อซูม · ลากเพื่อเลื่อน',
+  copyCode: 'คัดลอกโค้ด',
+  copied: 'คัดลอกแล้ว',
+  share: 'แชร์',
+  shareQuote: 'แชร์ข้อความนี้',
+  copyLink: (x) => `คัดลอกลิงก์ไปยัง “${x}”`,
+  definition: 'คำจำกัดความ',
+  close: 'ปิด',
+  callout: { tip: 'เคล็ดลับ', warning: 'คำเตือน', info: 'หมายเหตุ' },
+  post: {
+    allArticles: 'บทความทั้งหมด',
+    blog: 'บล็อก',
+    openViewer: 'เปิดโปรแกรมดู',
+    minutes: (n) => `${n} นาที`,
+    bottomPrompt: 'ตรวจสอบไฟล์ IFC ของคุณได้ฟรี ไม่ต้องสมัครบัญชี และไม่ต้องอัปโหลดขึ้นเซิร์ฟเวอร์',
+    bottomCta: 'เปิด IFC Viewer',
+    onThisPage: 'ในหน้านี้',
+    tableOfContents: 'สารบัญ',
+    notFound: 'ไม่พบบทความนี้',
+    backToAll: 'กลับไปยังบทความทั้งหมด',
+    read: 'อ่าน',
+    loading: 'กำลังโหลดบทความ…',
+    loadFailed: 'ไม่สามารถโหลดบทความในภาษานี้ได้',
+    retry: 'ลองอีกครั้ง',
+    backToBlog: 'กลับไปยังบล็อก BIM และ IFC',
+    openInteractiveViewer: 'เปิดโปรแกรมดู IFC แบบอินเทอร์แอกทีฟ',
+  },
+}
+
+const COPY: Record<string, EditorialCopy> = { en, es, de, fr, zh, ja, th }
 
 export function editorialCopy(lang: string): EditorialCopy {
   return COPY[lang.slice(0, 2)] ?? en

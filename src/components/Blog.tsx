@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { getBlogPost, getBlogPostsByLang, getFeaturedPost, type BlogPost, type ContentBlock, type RichText } from '../lib/blog-posts'
+import { LAZY_BLOG_LANGS, getBlogPost, getBlogPostsByLang, getFeaturedPost, isBlogLanguageReady, loadBlogLanguage, type BlogPost, type ContentBlock, type RichText } from '../lib/blog-posts'
 import * as Icons from './Icons'
 import { EBOOKS, PRIMARY_EBOOK, ebookById } from '../lib/ebook'
 import SpotlightCard  from './reactbits/SpotlightCard'
@@ -18,6 +18,7 @@ import EmbedConfigurator from './blog/EmbedConfigurator'
 import SpatialMediaDemo from './blog/SpatialMediaDemo'
 import SmartTable from './blog/SmartTable'
 import { editorialCopy } from '../lib/blog-editorial-copy'
+import { serpWidth } from '../lib/serp-width'
 import { QuoteShare, SectionLink, SelectionShare } from './blog/ShareKit'
 import { StatRow } from './blog/EditorialBlocks'
 import { AnnotatedImage } from './blog/ImageViewer'
@@ -93,6 +94,18 @@ const BLOG_LIST_META: Record<string, { title: string; description: string }> = {
   fr: {
     title: 'Blog BIM & IFC — Guides pratiques pour coordinateurs BIM | IFC Viewer',
     description: 'Guides pratiques pour coordinateurs BIM : corriger les erreurs IFC, améliorer le Health Score et livrer des modèles propres à la GED.',
+  },
+  zh: {
+    title: 'BIM 与 IFC 博客——BIM 协调员实用指南 | IFC Viewer',
+    description: '面向 BIM 协调员的实用指南：修复 IFC 验证错误、提高 Health Score，并向 CDE 交付干净的模型。',
+  },
+  ja: {
+    title: 'BIM・IFCブログ｜BIMコーディネーターの実践ガイド',
+    description: 'BIMコーディネーター向けの実践ガイド。IFCの検証エラーの直し方、Health Scoreの改善、CDEへのクリーンなモデル納品を解説します。',
+  },
+  th: {
+    title: 'บล็อก BIM และ IFC — คู่มือสำหรับผู้ประสานงาน BIM | IFC Viewer',
+    description: 'คู่มือเชิงปฏิบัติสำหรับผู้ประสานงาน BIM: แก้ข้อผิดพลาดจากการตรวจสอบ IFC ปรับปรุง Health Score และส่งมอบโมเดลที่เรียบร้อยเข้าสู่ CDE',
   },
 }
 
@@ -1133,6 +1146,7 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
   const posts    = React.useMemo(() => getBlogPostsByLang(lang), [lang])
   const featured = React.useMemo(() => getFeaturedPost(lang), [lang])
   const copy     = React.useMemo(() => getBlogHubCopy(lang), [lang])
+  const chrome   = editorialCopy(lang).post
   const topics   = React.useMemo(() => topicsFor(posts, lang), [posts, lang])
   const inbound  = React.useMemo(() => inboundLinks(posts), [posts])
   const [topicSlug, setTopicSlug] = React.useState(topicFromPath)
@@ -1293,7 +1307,7 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
           className="flex items-center gap-1.5"
         >
           <Icons.Logo size={15} className="text-[var(--text-faint)]" aria-hidden="true" />
-          <span className="text-[13.5px] font-semibold tracking-tight">Blog</span>
+          <span className="text-[13.5px] font-semibold tracking-tight">{chrome.blog}</span>
         </a>
         <div className="flex items-center gap-2">
           <ThemeToggleBtn theme={landingTheme} onToggle={onToggleLandingTheme} />
@@ -1302,7 +1316,7 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
             className="inline-flex items-center gap-1.5 h-[30px] px-3 text-[12.5px] font-semibold rounded-[8px] bg-[var(--accent)] text-white hover:brightness-110 transition-all"
           >
             <Icons.ArrowRight size={12} />
-            {lang === 'es' ? 'Abrir visor' : 'Open viewer'}
+            {chrome.openViewer}
           </button>
         </div>
       </div>
@@ -1461,7 +1475,7 @@ function BlogList({ lang = 'en', onNavigateToPost, onNavigateToLanding, landingT
                   onClick={() => { trackBlogPostOpened({ from: 'start_here', lang, position: 0 }); onNavigateToPost(featured.slug) }}
                   theme={landingTheme}
                   featuredLabel={copy.editorsPick.toUpperCase()}
-                  readLabel={lang === 'es' ? 'Leer' : 'Read'}
+                  readLabel={chrome.read}
                 />
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--text-faint)]">{copy.foundationalLabel}</p>
@@ -1687,7 +1701,7 @@ function TopicHubView({ topic, topics, lang, copy, read, inbound, theme, onOpenT
             onClick={() => { trackBlogPostOpened({ from: 'topic_hub', lang, position: 0 }); onNavigateToPost(pillar.slug) }}
             theme={theme}
             featuredLabel={copy.foundationalLabel.toUpperCase()}
-            readLabel={lang === 'es' ? 'Leer' : 'Read'}
+            readLabel={editorialCopy(lang).post.read}
           />
         </section>
       )}
@@ -1905,6 +1919,7 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
     }
   }, [post.slug])
   const headings = extractHeadings(post.content)
+  const chrome = editorialCopy(post.lang ?? 'en').post
 
   // Update document title + OG/Twitter meta while viewing a specific post.
   React.useEffect(() => {
@@ -1912,7 +1927,8 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
     const metaTitle = post.seoTitle ?? post.title
     const metaDescription = post.seoDescription ?? post.excerpt
     const brandedTitle = `${metaTitle} | IFC Viewer Online`
-    document.title = brandedTitle.length <= 64 ? brandedTitle : metaTitle
+    // Same rule as the static page (generate-blog-pages.ts): brand only when it fits.
+    document.title = serpWidth(brandedTitle) <= 60 ? brandedTitle : metaTitle
     const prevLang = document.documentElement.lang
     document.documentElement.lang = post.lang ?? 'en'
 
@@ -1981,13 +1997,13 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
             className="flex items-center gap-2 text-[13px] text-[var(--text-dim)] hover:text-[var(--text)] transition-colors"
           >
             <Icons.Chevron size={12} className="rotate-180" />
-            <span className="hidden sm:inline">All articles</span>
-            <span className="sm:hidden">Blog</span>
+            <span className="hidden sm:inline">{chrome.allArticles}</span>
+            <span className="sm:hidden">{chrome.blog}</span>
           </button>
 
           <div className="hidden sm:flex items-center gap-1.5">
             <Icons.Logo size={15} className="text-[var(--text-faint)]" aria-hidden="true" />
-            <span className="text-[13.5px] font-semibold tracking-tight">Blog</span>
+            <span className="text-[13.5px] font-semibold tracking-tight">{chrome.blog}</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -1997,7 +2013,7 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
               className="inline-flex items-center gap-1.5 h-[30px] px-3 text-[12.5px] font-semibold rounded-[8px] bg-[var(--accent)] text-white hover:brightness-110 transition-all"
             >
               <Icons.ArrowRight size={12} />
-              Open viewer
+              {chrome.openViewer}
             </button>
           </div>
         </div>
@@ -2027,7 +2043,7 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
                         onClick={(e) => { if (e.metaKey || e.ctrlKey || e.button !== 0) return; e.preventDefault(); onNavigateToBlog() }}
                         className="hover:text-[var(--text)]"
                       >
-                        Blog
+                        {chrome.blog}
                       </a>
                     </li>
                     <li aria-hidden="true">/</li>
@@ -2053,7 +2069,7 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
                     </li>
                   </ol>
                 </nav>
-                <span className="shrink-0 text-[11.5px] text-[var(--text-faint)]">{post.readTimeMin} min</span>
+                <span className="shrink-0 text-[11.5px] text-[var(--text-faint)]">{chrome.minutes(post.readTimeMin)}</span>
               </div>
 
               <h1
@@ -2077,7 +2093,7 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
                   </div>
                   <span>{post.author}</span>
                   <span>·</span>
-                  <time dateTime={post.date}>{formatDate(post.date)}</time>
+                  <time dateTime={post.date}>{formatDate(post.date, post.lang ?? 'en')}</time>
                 </div>
                 <CopyForAI post={post} />
               </div>
@@ -2085,7 +2101,7 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
 
             {/* TOC — mobile only (hidden on xl where it's in the sidebar) */}
             <div className="xl:hidden">
-              <TableOfContents headings={headings} />
+              <TableOfContents headings={headings} label={chrome.onThisPage} ariaLabel={chrome.tableOfContents} />
             </div>
 
             {/* Article body */}
@@ -2107,20 +2123,22 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
 
             <SelectionShare containerRef={bodyRef} pageUrl={`${typeof location !== 'undefined' ? location.origin : ''}${postHref(post.slug, post.lang ?? 'en')}`} title={post.title} lang={post.lang ?? 'en'} />
 
-            {/* BIM Glossary */}
-            <BimGlossary />
+            {/* BIM Glossary — its definitions are English. Under a Chinese,
+                Japanese or Thai article a block of English prose reads as
+                a page left untranslated, so it stays with the Latin-script posts. */}
+            {!LAZY_BLOG_LANGS.includes(post.lang ?? 'en') && <BimGlossary />}
 
             {/* Bottom CTA */}
             <div className="mt-10 sm:mt-14 pt-8 sm:pt-10 border-t border-[var(--border)] text-center">
               <p className="text-[13.5px] sm:text-[14px] text-[var(--text-dim)] mb-4">
-                Validate your IFC file free — no account, no server upload.
+                {chrome.bottomPrompt}
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <button
                   onClick={onNavigateToLanding}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-11 sm:h-10 px-5 text-[14px] sm:text-[13.5px] font-semibold rounded-xl bg-[var(--accent)] text-white hover:brightness-110 active:brightness-90 transition-all"
                 >
-                  Open IFC Viewer
+                  {chrome.bottomCta}
                   <Icons.ArrowRight size={14} />
                 </button>
                 <CopyForAI post={post} />
@@ -2130,7 +2148,7 @@ function PostView({ post, onNavigateToBlog, onNavigateToPost, onNavigateToLandin
 
           {/* ── Desktop TOC sidebar — xl+ only (hidden on mobile) ── */}
           <div className="hidden xl:block shrink-0">
-            <TableOfContents headings={headings} />
+            <TableOfContents headings={headings} label={chrome.onThisPage} ariaLabel={chrome.tableOfContents} />
           </div>
         </div>
       </div>
@@ -2154,17 +2172,70 @@ interface BlogProps {
   onToggleLandingTheme: () => void
 }
 
+/**
+ * Whether the posts of `lang` are in memory, loading their pack if not (the
+ * zh/ja/th libraries are fetched on demand — see blog-posts.ts).
+ */
+function useBlogLanguage(lang: string): { state: 'ready' | 'loading' | 'failed'; retry: () => void } {
+  const [, rerender] = React.useReducer((n: number) => n + 1, 0)
+  const [failed, setFailed] = React.useState<string | null>(null)
+  const [attempt, setAttempt] = React.useState(0)
+  const ready = isBlogLanguageReady(lang)
+  React.useEffect(() => {
+    if (ready) return
+    let alive = true
+    setFailed(null)
+    loadBlogLanguage(lang).then(
+      () => { if (alive) rerender() },
+      () => { if (alive) setFailed(lang) },
+    )
+    return () => { alive = false }
+  }, [lang, ready, attempt])
+  return {
+    state: ready ? 'ready' : failed === lang ? 'failed' : 'loading',
+    retry: () => setAttempt((n) => n + 1),
+  }
+}
+
+function BlogMessage({ lang, theme, children }: { lang: string; theme: 'dark' | 'light'; children: React.ReactNode }) {
+  return (
+    <div lang={lang} className={`min-h-screen bg-[var(--bg)] flex flex-col items-center justify-center gap-4 px-4 text-center${theme === 'light' ? ' lp-light' : ''}`}>
+      {children}
+    </div>
+  )
+}
+
 export default function Blog({ slug, lang = 'en', onNavigateToPost, onNavigateToBlog, onNavigateToLanding, landingTheme, onToggleLandingTheme }: BlogProps) {
+  const pack = useBlogLanguage(lang)
+  const chrome = editorialCopy(lang).post
+  if (pack.state === 'loading') {
+    return (
+      <BlogMessage lang={lang} theme={landingTheme}>
+        <span className="h-5 w-5 rounded-full border-2 border-[var(--border)] border-t-[var(--accent)] animate-spin" aria-hidden="true" />
+        <p role="status" className="text-[13px] text-[var(--text-dim)]">{chrome.loading}</p>
+      </BlogMessage>
+    )
+  }
+  if (pack.state === 'failed') {
+    return (
+      <BlogMessage lang={lang} theme={landingTheme}>
+        <p role="alert" className="text-[14px] text-[var(--text-dim)]">{chrome.loadFailed}</p>
+        <button onClick={pack.retry} className="h-9 px-4 rounded-lg bg-[var(--accent)] text-white text-[13px] font-semibold hover:brightness-110">
+          {chrome.retry}
+        </button>
+      </BlogMessage>
+    )
+  }
   if (slug) {
     const post = getBlogPost(slug, lang)
     if (!post) {
       return (
-        <div className={`min-h-screen bg-[var(--bg)] flex flex-col items-center justify-center gap-4 px-4 text-center${landingTheme === 'light' ? ' lp-light' : ''}`}>
-          <p className="text-[14px] text-[var(--text-dim)]">Article not found.</p>
+        <BlogMessage lang={lang} theme={landingTheme}>
+          <p className="text-[14px] text-[var(--text-dim)]">{chrome.notFound}</p>
           <button onClick={onNavigateToBlog} className="text-[13px] text-[var(--accent-2)] hover:underline">
-            ← Back to all articles
+            ← {chrome.backToAll}
           </button>
-        </div>
+        </BlogMessage>
       )
     }
     return (
