@@ -92,7 +92,14 @@
     "memory": "{{mb}} MB on the GPU",
     "truncated": "Stopped at {{count}} points — the file holds more than this viewer keeps in memory at once.",
     "noModel": "No IFC model loaded — the scan is placed on its own.",
-    "partial": "Part of this scan could not be read and is missing from the view. What you see is incomplete."
+    "partial": "Part of this scan could not be read and is missing from the view. What you see is incomplete.",
+    "budget": "Point budget: {{used}} of {{max}}",
+    "budgetNearlyFull": "Point budget: {{used}} of {{max}} — nearly full",
+    "budgetFull": "Point budget: {{used}} of {{max}} — full",
+    "budgetLabel": "Resident point budget",
+    "budgetHint": "Points the loaded scans keep in memory, including scans still loading. A scan that does not fit waits while another scan is still loading; otherwise it loads truncated, or is refused when the budget is full. Streamed COPC clouds are not counted: the Detail setting bounds them.",
+    "budgetReserved": "+ {{reserved}} reserved for scans still loading",
+    "budgetAbout": "About the point budget"
   },
   "align": {
     "title": "Alignment",

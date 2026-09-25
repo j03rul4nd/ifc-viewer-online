@@ -313,6 +313,8 @@ export interface LoadJobView {
   requestId: string | null
   /** The URL a URL job downloads from (embed `model-error {url}` contract), else null. */
   sourceUrl: string | null
+  /** SubmitOptions.sourceVersion, or null when unknown. */
+  sourceVersion: number | null
   /** Submission order — stable tie-breaker and the anchor rule's key. */
   seq: number
   capabilities: JobCapabilities
@@ -417,6 +419,19 @@ export interface SubmitOptions {
   displayName?: string
   /** Pre-computed fingerprint (the import dialog already hashed the file). */
   fingerprint?: string
+  /**
+   * The URL the bytes came from when the source is not a URL itself (a host
+   * fetched them). Part of the job's identity: the same scan asked for by URL
+   * later is found by it.
+   */
+  sourceUrl?: string
+  /**
+   * The local files' version — their newest modification time — when known.
+   * The fingerprint samples a file, and an edit outside the sample keeps it:
+   * two jobs with the same fingerprint and different known versions are not
+   * the same content. Kept in the options so a Reload carries it.
+   */
+  sourceVersion?: number
   /** Frame the camera on this model when it lands (default: true for single loads). */
   frame?: boolean
   /** Force exclusive conversion (no concurrency). */

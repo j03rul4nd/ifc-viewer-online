@@ -16,15 +16,20 @@
 // The check is on the SOURCE rather than on built output: it has to fail while
 // someone is editing copy, not after a deploy.
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
 import { EBOOKS } from '../../src/lib/ebook'
 import { SEO } from './generate-ebook-page'
 import { LEGAL_PAGES } from './generate-legal-pages'
-import { ALL_BLOG_POSTS } from '../../src/lib/blog-posts'
+import { EVERY_BLOG_POST as ALL_BLOG_POSTS } from '../../src/lib/blog-i18n'
+import { serpWidth } from '../../src/lib/serp-width'
 import { LANG_CONFIG } from './generate-blog-pages'
 import { UIS } from './generate-fix-pages'
 import { join, resolve } from 'node:path'
+
+// Loading every language's blog pack is most of this file's cost; under a full
+// parallel run that alone can pass the default 5 s.
+vi.setConfig({ testTimeout: 30_000 })
 
 /** What Google renders. Characters are the usual proxy for its pixel budget. */
 const TITLE_BUDGET = 60
@@ -278,7 +283,7 @@ describe('legal page listings', () => {
 function postTitle(p: { title: string; seoTitle?: string }): string {
   const core = p.seoTitle ?? p.title
   const branded = `${core} | IFC Viewer Online`
-  return branded.length <= TITLE_BUDGET ? branded : core
+  return serpWidth(branded) <= TITLE_BUDGET ? branded : core
 }
 
 describe('blog post listings', () => {
@@ -289,7 +294,7 @@ describe('blog post listings', () => {
 
   it('keeps every title inside what Google renders', () => {
     const over = ALL_BLOG_POSTS
-      .map((p) => ({ slug: p.slug, len: postTitle(p).length }))
+      .map((p) => ({ slug: `${p.lang ?? 'en'}/${p.slug}`, len: serpWidth(postTitle(p)) }))
       .filter((x) => x.len > TITLE_BUDGET)
       .map((x) => `${x.slug} ${x.len}`)
     expect(over, 'blog titles Google will truncate').toEqual([])
@@ -297,7 +302,7 @@ describe('blog post listings', () => {
 
   it('keeps every description inside what Google renders', () => {
     const over = ALL_BLOG_POSTS
-      .map((p) => ({ slug: p.slug, len: (p.seoDescription ?? p.excerpt).length }))
+      .map((p) => ({ slug: `${p.lang ?? 'en'}/${p.slug}`, len: serpWidth(p.seoDescription ?? p.excerpt) }))
       .filter((x) => x.len > DESC_BUDGET)
       .map((x) => `${x.slug} ${x.len}`)
     expect(over, 'blog descriptions Google will cut off').toEqual([])
@@ -307,15 +312,15 @@ describe('blog post listings', () => {
     // The point of the override is that the writing is not the thing being
     // trimmed. If a post has a listing title, its real title should still be
     // the longer, fuller one — otherwise someone shortened the article.
-    const flattened = ALL_BLOG_POSTS.filter((p) => p.seoTitle && p.seoTitle.length > p.title.length)
-    expect(flattened.map((p) => p.slug), 'listing title longer than the article title').toEqual([])
+    const flattened = ALL_BLOG_POSTS.filter((p) => p.seoTitle && serpWidth(p.seoTitle) > serpWidth(p.title))
+    expect(flattened.map((p) => `${p.lang ?? 'en'}/${p.slug}`), 'listing title longer than the article title').toEqual([])
   })
 
   it('does not pad a listing description out to nothing', () => {
     // The opposite failure: trimming to a stub that says less than the title.
     const thin = ALL_BLOG_POSTS
-      .filter((p) => (p.seoDescription ?? p.excerpt).length < 80)
-      .map((p) => p.slug)
+      .filter((p) => serpWidth(p.seoDescription ?? p.excerpt) < 80)
+      .map((p) => `${p.lang ?? 'en'}/${p.slug}`)
     expect(thin, 'blog descriptions too short to say anything').toEqual([])
   })
 })
@@ -336,8 +341,8 @@ describe('blog hub listings', () => {
 
   it('keeps every hub title and description inside what Google renders', () => {
     const over = hubs
-      .filter(([, c]) => c.blogTitle.length > TITLE_BUDGET || c.blogDesc.length > DESC_BUDGET)
-      .map(([lang, c]) => `${lang} T${c.blogTitle.length} D${c.blogDesc.length}`)
+      .filter(([, c]) => serpWidth(c.blogTitle) > TITLE_BUDGET || serpWidth(c.blogDesc) > DESC_BUDGET)
+      .map(([lang, c]) => `${lang} T${serpWidth(c.blogTitle)} D${serpWidth(c.blogDesc)}`)
     expect(over, 'blog hubs Google will truncate').toEqual([])
   })
 })

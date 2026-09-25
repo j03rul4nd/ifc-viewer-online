@@ -332,6 +332,20 @@ already hold the file locally. The cheaper structure that gets the same result:
 4. **Hard ceiling.** 20 M resident points across all clouds. Reaching it stops
    the parse and reports `truncated` in the panel — it never pretends the file
    was fully loaded.
+   Concurrent whole-file loads reserve their declared count at the header.
+   One that does not fit waits while another scan still holds a reservation
+   ("Waiting for the point budget"); otherwise it takes what is left, or is
+   refused when nothing is. The panel shows the budget in use
+   (`budgetUsage()`): the resident points, and apart from them — a lighter
+   segment and its own line — what scans still loading have reserved beyond
+   what they hold, since a plain-text scan reserves everything left until it
+   knows its count. From 90 % the meter turns amber and its text says "nearly
+   full" ("full" at the cap), so the next truncation of a scan dropped after
+   the others have loaded is visible before it happens — the cue counts
+   uploaded points only, since a plain-text scan's open-ended reservation
+   would otherwise read as a full budget; its **?**
+   explains what counts. Streamed COPC clouds are not counted: the Detail
+   setting bounds them.
 
 **Cost per point:** 12 B position + 3 B colour + 1 B intensity + 1 B class +
 1 B confidence = **18 bytes**. A 5 M-point building scan is ~90 MB of VRAM; the

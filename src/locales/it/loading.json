@@ -81,6 +81,8 @@
     "stalledGeneric": "Nessun avanzamento da un po'. Continua ad attendere o annulla.",
     "stalledShort": "Nessun avanzamento recente",
     "duplicate": "Stesso contenuto di un modello già presente nella scena",
+    "duplicateScan": "Stesso contenuto di una scansione già presente nella scena",
+    "duplicateMesh": "Stesso contenuto di un modello 3D già presente nella scena",
     "retrying": "Tentativo {{attempt}}"
   },
   "counter": {
@@ -359,5 +361,22 @@
     "buildings": "Edifici circostanti",
     "pointCloud": "Nuvola di punti",
     "mesh": "Modello 3D"
+  },
+  "duplicate": {
+    "inScene": "«{{name}}» è già nella scena",
+    "loading": "«{{name}}» è già in caricamento",
+    "sameAsInScene": "«{{name}}» ha lo stesso contenuto di «{{existing}}», già nella scena",
+    "sameAsLoading": "«{{name}}» ha lo stesso contenuto di «{{existing}}», già in caricamento",
+    "revealed": "«{{name}}» era già nella scena, nascosto: viene mostrato di nuovo",
+    "revealedSameAs": "«{{name}}» ha lo stesso contenuto di «{{existing}}», che era nascosto: viene mostrato di nuovo",
+    "resumed": "«{{name}}» era in pausa: è tornato in coda",
+    "resumedSameAs": "«{{name}}» ha lo stesso contenuto di «{{existing}}», che era in pausa: è tornato in coda",
+    "manyNamed": "{{names}} sono già nella scena o in caricamento",
+    "revealedSome": "Quelli nascosti vengono mostrati di nuovo.",
+    "resumedSome": "Quelli in pausa sono tornati in coda.",
+    "many_one": "{{count}} file è già nella scena o in caricamento",
+    "many_other": "{{count}} file sono già nella scena o in caricamento",
+    "quoted": "«{{name}}»",
+    "loadAnyway": "Carica comunque una copia"
   }
 }

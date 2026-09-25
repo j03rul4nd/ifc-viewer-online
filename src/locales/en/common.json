@@ -8,6 +8,7 @@
     "save": "Save",
     "cancel": "Cancel",
     "close": "Close",
+    "optionAvailable": "Option available: {{label}}",
     "delete": "Delete",
     "clear": "Clear",
     "reset": "Reset",

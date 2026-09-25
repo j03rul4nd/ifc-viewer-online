@@ -18,8 +18,9 @@ import { ViewportPanel } from './ViewportPanel'
 import { usePointCloudStore } from '../stores/pointCloudStore'
 import { useSceneStore } from '../stores/sceneStore'
 import { useUIStore } from '../stores/uiStore'
-import { cancelPointCloud, realignCloud } from '../lib/pointcloud/pc-runner'
-import { submitPointClouds, describeSourceError, cancelLoadsOfKind } from '../lib/loading'
+import { cancelPointCloud, realignCloud, budgetUsage } from '../lib/pointcloud/pc-runner'
+import PointBudgetMeter from './PointBudgetMeter'
+import { submitPointClouds, loadPointCloudsOnce, describeSourceError, cancelLoadsOfKind } from '../lib/loading'
 import { useLoadingStore } from '../stores/loadingStore'
 import { saveCloudProj4 } from '../lib/pointcloud/pc-align'
 import { registerCustomProj4 } from '../lib/geo/crs'
@@ -115,6 +116,10 @@ export default function PointCloudPanel({
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [stats, setStats] = useState<CloudStats | null>(null)
+  // The resident-point budget as the runner's ledger sees it (whole-file scans
+  // and the reservations of the ones still loading) — why a scan waits or
+  // comes out truncated, shown before it happens rather than after.
+  const [budget, setBudget] = useState<{ resident: number; reserved: number; max: number } | null>(null)
   const [showTransform, setShowTransform] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [demoBusy, setDemoBusy] = useState<string | null>(null)
@@ -165,12 +170,13 @@ export default function PointCloudPanel({
 
   // ── Poll the render stats while anything is loaded ──────────────────────────
   useEffect(() => {
-    if (store.clouds.length === 0) { setStats(null); return }
+    if (store.clouds.length === 0) { setStats(null); setBudget(null); return }
     let cancelled = false
     const read = (): void => {
       void getSystem()?.then((system) => {
         if (!cancelled) setStats(system.getStats())
       })
+      setBudget(budgetUsage())
     }
     read()
     const iv = setInterval(read, 1000)
@@ -190,7 +196,8 @@ export default function PointCloudPanel({
   const handleFiles = useCallback((files: FileList | File[]): void => {
     const list = Array.from(files)
     if (list.length === 0) return
-    submitPointClouds(list.map((file) => ({ source: { type: 'file', file } })), { origin: 'upload' })
+    // A scan already in the scene is framed and offered again, not decoded twice.
+    void loadPointCloudsOnce(list.map((file) => ({ source: { type: 'file', file } })), { origin: 'upload' })
   }, [])
 
   /**
@@ -201,12 +208,13 @@ export default function PointCloudPanel({
   const handleDemo = useCallback(async (demo: DemoPointCloud): Promise<void> => {
     setDemoBusy(demo.id)
     setDemoProgress(0)
-    const [handle] = submitPointClouds(
+    // A demo already open is shown, not downloaded again.
+    const [handle] = await loadPointCloudsOnce(
       [{ source: { type: 'url', url: demo.url, fileName: demo.fileName } }],
       { origin: 'demo' },
     )
     try {
-      await followDownload(handle.id, setDemoProgress)
+      if (handle) await followDownload(handle.id, setDemoProgress)
     } finally {
       setDemoBusy(null)
       setDemoProgress(0)
@@ -1484,6 +1492,10 @@ export default function PointCloudPanel({
                   <div>{t('status.chunks', { count: stats.chunkCount })}</div>
                   <div>{t('status.memory', { mb: Math.round(stats.gpuBytes / 1048576) })}</div>
                 </div>
+              )}
+
+              {budget && budget.resident + budget.reserved > 0 && (
+                <PointBudgetMeter {...budget} t={t} format={formatCount} />
               )}
             </Section>
           )}
