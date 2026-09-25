@@ -17,6 +17,7 @@ import { calibrateLevels, mergeLevels, type Level, type RawStorey } from './meas
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
 import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
 import { clearInspectorTarget } from './inspector'
+import { resolveFraming, presetPose, type FramingItem, type FramingResult, type FramingScope } from './camera-framing'
 import type { Category, ModelInfo, SelectedInfo, ViewerStyle, ValidationIssue, CameraPreset, ModelTransform, CameraViewpoint, Vec3Like } from '../types'
 import { createLogger } from './logger'
 import { mintModelId } from './loading/model-id'
@@ -50,6 +51,20 @@ export interface PresentationSection {
 
 /** One storey of an exploded axonometric: element ids per model. */
 export type ExplodeLayer = Array<{ modelId: string; ids: number[] }>
+
+export interface CameraPresetOptions {
+  scope?: FramingScope
+  /** Group id per model/cloud id (from useModelGroups). Without it every model is its own group. */
+  groupIdOf?: Record<string, string>
+  /** Point clouds the user has visible. Omitted = every loaded cloud, as one item. */
+  visibleCloudIds?: string[]
+  /**
+   * Fly (default) or jump. Captures jump: a flight only advances on rendered
+   * frames, so a snapshot taken while the tab is throttled would still show
+   * the old view.
+   */
+  animate?: boolean
+}
 
 // ─── Palette & label tables ──────────────────────────────────────────────────
 
@@ -469,11 +484,21 @@ export interface ViewerAPI {
   setContextMenuCallback(cb: ((payload: { x: number; y: number; info: SelectedInfo } | null) => void) | null): void
   getGpuEstimateBytes(): number
   /**
-   * Fly to a named camera preset (iso, top, front, right, left, back, bottom).
-   * `animate: false` jumps instead: captures can't wait for a flight, which only
-   * advances on rendered frames.
+   * Fly to a named camera preset (iso, top, front, right, left, back, bottom)
+   * framing a SCOPE of the scene (see lib/camera-framing). Default `auto`:
+   * everything visible, narrowed to the active group when the scene spans
+   * several distant sites. Returns what was framed, or null when nothing is
+   * visible (the camera does not move).
    */
-  setCameraPreset(preset: CameraPreset, opts?: { animate?: boolean }): void
+  setCameraPreset(preset: CameraPreset, opts?: CameraPresetOptions): FramingResult | null
+  /** The world boxes a preset would choose from, with visibility applied. */
+  getFramingItems(opts?: CameraPresetOptions): FramingItem[]
+  /**
+   * Fit the camera to the union of these models / clouds (hidden ones included —
+   * framing a hidden group is how you find where it went). False when none of
+   * the ids has geometry.
+   */
+  frameItems(ids: ReadonlyArray<string>, opts?: CameraPresetOptions): boolean
   /**
    * First-person walk mode: WASD to move, left-drag to look, Q/E for height.
    *
@@ -722,6 +747,12 @@ export interface ViewerAPI {
    * THIS camera; the IFC model is never moved to accommodate them.
    */
   getPointClouds(): Promise<import('./pointcloud/point-cloud-system').PointCloudSystemAPI>
+  /**
+   * The point cloud system if it is already loaded, else null. For callers that
+   * must apply a change in the same tick they read it back (group moves read
+   * the cloud's new bounds right after moving it).
+   */
+  peekPointClouds(): import('./pointcloud/point-cloud-system').PointCloudSystemAPI | null
   /**
    * Lazy mesh importer. Owns every GPU resource a GLB/OBJ import touches; the
    * IFC model is never moved to accommodate one.
@@ -1422,6 +1453,30 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     fragmentsManager.init(workerURL)
     await ifcLoader.setup()
   })()
+
+  /**
+   * A model's bounding box in its PIVOT's space — what every "apply the pivot
+   * matrix to the box" caller below needs.
+   *
+   * NOT `model.box`: that getter already applies `object.matrixWorld`, which
+   * includes the pivot, and it uses whatever matrixWorld was last computed (one
+   * render ago). Transforming it by the pivot again moved/rotated a transformed
+   * model twice, and by a stale amount — framing, footprints and group pivots
+   * all drifted as soon as a model was moved.
+   */
+  function pivotLocalBox(model: FRAGS.FragmentsModel): THREE.Box3 {
+    const raw = (model as unknown as { _bbox?: unknown })._bbox
+    if (raw instanceof THREE.Box3) {
+      model.object.updateMatrix()
+      return raw.clone().applyMatrix4(model.object.matrix)
+    }
+    // Library internals changed: fall back to the world box, un-transformed by
+    // a FRESH pivot matrix. Exact for translation-only pivots.
+    const pivot = model.object.parent
+    if (!pivot) return model.box
+    pivot.updateMatrixWorld(true)
+    return model.box.applyMatrix4(pivot.matrixWorld.clone().invert())
+  }
 
   // ─── Per-model pivot groups ───────────────────────────────────────────────────
   // Each loaded model gets its own THREE.Group pivot so transforms are independent.
@@ -2297,7 +2352,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   function combinedModelsBox(): THREE.Box3 {
     const combined = new THREE.Box3()
     for (const [mid, model] of modelObjects) {
-      const box   = model.box
+      const box   = pivotLocalBox(model)
       const pivot = modelPivots.get(mid)
       if (box.isEmpty()) continue
       if (pivot) {
@@ -3190,48 +3245,96 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     // ─── Camera presets ───────────────────────────────────────────────────────
 
-    setCameraPreset(preset: CameraPreset, opts?: { animate?: boolean }) {
-      const box = currentModel?.box ?? new THREE.Box3(
-        new THREE.Vector3(-10, -10, -10),
-        new THREE.Vector3(10,  10,  10),
-      )
-      const center = new THREE.Vector3()
-      const size   = new THREE.Vector3()
-      box.getCenter(center)
-      box.getSize(size)
+    getFramingItems(opts?: CameraPresetOptions) {
+      const items: FramingItem[] = []
+      for (const [mid, model] of modelObjects) {
+        const box = pivotLocalBox(model)
+        if (box.isEmpty()) continue
+        const world = box.clone()
+        const pivot = modelPivots.get(mid)
+        if (pivot) {
+          pivot.updateMatrixWorld(true)
+          // Box3.applyMatrix4 transforms all 8 corners, so a rotated pivot
+          // still yields a correct world AABB.
+          world.applyMatrix4(pivot.matrixWorld)
+        }
+        items.push({
+          id: mid,
+          kind: 'model',
+          groupId: opts?.groupIdOf?.[mid] ?? null,
+          visible: !modelHidden.has(mid) && model.object.visible,
+          box: { min: world.min.clone(), max: world.max.clone() },
+        })
+      }
+      if (pointCloudInstance) {
+        const ids = opts?.visibleCloudIds
+        if (ids) {
+          for (const id of ids) {
+            const b = pointCloudInstance.getBounds(id)
+            if (b) items.push({ id, kind: 'cloud', groupId: opts?.groupIdOf?.[id] ?? null, visible: true, box: { min: b.min, max: b.max } })
+          }
+        } else {
+          const b = pointCloudInstance.getBounds()
+          if (b) items.push({ id: 'clouds', kind: 'cloud', groupId: null, visible: true, box: { min: b.min, max: b.max } })
+        }
+      }
+      return items
+    },
 
-      // Apply pivot offset so camera targets the transformed model
-      if (currentPivot) {
-        center.add(new THREE.Vector3(
-          currentPivot.position.x,
-          currentPivot.position.y,
-          currentPivot.position.z,
+    frameItems(ids: ReadonlyArray<string>, opts?: CameraPresetOptions) {
+      const want = new Set(ids)
+      const framing = resolveFraming({
+        items: this.getFramingItems({ ...opts, visibleCloudIds: [...want] })
+          .filter((i) => want.has(i.id))
+          .map((i) => ({ ...i, visible: true })),
+        activeModelId: null,
+        scope: 'all',
+      })
+      if (!framing) return false
+      const box = new THREE.Box3(
+        new THREE.Vector3(framing.box.min.x, framing.box.min.y, framing.box.min.z),
+        new THREE.Vector3(framing.box.max.x, framing.box.max.y, framing.box.max.z),
+      )
+      void world.camera.controls.fitToBox(box, true)
+      return true
+    },
+
+    setCameraPreset(preset: CameraPreset, opts?: CameraPresetOptions) {
+      const framing = resolveFraming({
+        items: this.getFramingItems(opts),
+        activeModelId: currentModelId,
+        scope: opts?.scope ?? 'auto',
+      })
+      if (!framing) return null
+
+      const cam = world.camera.three
+      const fov = cam instanceof THREE.PerspectiveCamera ? cam.fov : 45
+      const aspect = cam instanceof THREE.PerspectiveCamera
+        ? cam.aspect
+        : (world.renderer?.three.domElement.clientWidth || 16) / (world.renderer?.three.domElement.clientHeight || 9)
+      const { position, target } = presetPose(framing.box, preset, fov, aspect)
+
+      // Retune near/far/fog to the whole visible scene, not just the framed
+      // part: narrowing the shot must not clip the other site out of existence.
+      const all = resolveFraming({ items: this.getFramingItems(opts), activeModelId: currentModelId, scope: 'all' })
+      if (all) {
+        tuneSceneToBounds(new THREE.Box3(
+          new THREE.Vector3(all.box.min.x, all.box.min.y, all.box.min.z),
+          new THREE.Vector3(all.box.max.x, all.box.max.y, all.box.max.z),
         ))
       }
 
-      const d = Math.max(size.x, size.y, size.z, 4) * 1.6
-
-      const OFFSETS: Record<CameraPreset, [number, number, number]> = {
-        iso:    [d,  d * 0.75, d],
-        top:    [0,  d * 2.2,  0.001],
-        bottom: [0, -d * 2.2,  0.001],
-        front:  [0,  0,         d * 2],
-        back:   [0,  0,        -d * 2],
-        left:   [-d * 2, 0,    0],
-        right:  [d * 2,  0,    0],
-      }
-      const [ox, oy, oz] = OFFSETS[preset]
-
       const animate = opts?.animate !== false
       void world.camera.controls.setLookAt(
-        center.x + ox, center.y + oy, center.z + oz,
-        center.x,       center.y,      center.z,
+        position.x, position.y, position.z,
+        target.x,   target.y,   target.z,
         animate,
       )
       if (!animate) {
         try { world.camera.controls.update(0) } catch { /* no controls yet */ }
         void fragmentsManager.core.update(true)
       }
+      return framing
     },
 
     // ─── Model transform ──────────────────────────────────────────────────────
@@ -3290,7 +3393,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const model = (tid ? modelObjects.get(tid) : null) ?? currentModel
       const pivot = (tid ? modelPivots.get(tid) : null) ?? currentPivot
       if (!model || !pivot) return null
-      const box = model.box
+      const box = pivotLocalBox(model)
       if (box.isEmpty()) return null
 
       pivot.updateMatrixWorld(true)
@@ -3333,7 +3436,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       const model = (tid ? modelObjects.get(tid) : null) ?? currentModel
       const pivot = (tid ? modelPivots.get(tid) : null) ?? currentPivot
       if (!model || !pivot) return null
-      const box = model.box
+      const box = pivotLocalBox(model)
       if (box.isEmpty()) return null
 
       pivot.updateMatrixWorld(true)
@@ -3508,7 +3611,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     frameActiveModel() {
       if (!currentModel) return
-      const box = currentModel.box
+      const box = currentPivot ? pivotLocalBox(currentModel) : currentModel.box
       if (box.isEmpty()) return
       // If the model has a pivot transform, compute the world-space box
       if (currentPivot) {
@@ -4189,6 +4292,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         return videoInstance
       })
       return videoLoadPromise
+    },
+
+    peekPointClouds() {
+      return pointCloudInstance
     },
 
     getPointClouds() {

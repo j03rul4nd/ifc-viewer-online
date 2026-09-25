@@ -18,7 +18,21 @@
   "cameraControls": {
     "title": "Vues",
     "hide": "Masquer les commandes caméra",
-    "show": "Afficher les vues caméra"
+    "show": "Afficher les vues caméra",
+    "scope": {
+      "label": "Cadrer",
+      "auto": "Auto",
+      "active": "Actif",
+      "group": "Groupe",
+      "all": "Tout",
+      "autoHint": "Tout le visible ; le site actif si la scène couvre des sites éloignés",
+      "activeHint": "Seulement le modèle actif",
+      "groupHint": "Tous les modèles du groupe du modèle actif",
+      "allHint": "Tous les modèles et nuages de points visibles"
+    },
+    "narrowed": "La scène couvre des sites éloignés : cadrage du site actif.",
+    "showAll": "Tout voir",
+    "empty": "Rien de visible à cadrer. Affichez un modèle ou un nuage de points."
   },
   "overlays": {
     "validationHighlights": "Surbrillances de validation",
@@ -143,10 +157,72 @@
       "collapse": "Réduire le groupe",
       "expand": "Développer le groupe",
       "moveTogether": "Déplacer ensemble",
-      "moveTogetherHint": "Déplacer tous les fichiers de ce bâtiment d'un bloc, en conservant leur alignement",
-      "scopeModel": "Ce fichier",
-      "scopeGroup": "Les {{count}} fichiers",
-      "positionOnly": "Déplacer l'ensemble décale chaque fichier d'autant. Rotation et échelle restent par fichier : les faire tourner chacun sur son propre origine les disperserait."
+      "moveTogetherHint": "Déplacer tous les fichiers de ce bâtiment d'un bloc, en conservant leur alignement"
+    },
+    "tree": {
+      "myGroups": "Mes groupes",
+      "detectedGroups": "Détectés",
+      "newGroupEllipsis": "Nouveau groupe…",
+      "backToAuto": "Revenir à l'automatique",
+      "noGroup": "Aucun groupe",
+      "moveTo": "Déplacer vers un groupe",
+      "hide": "Masquer",
+      "show": "Afficher",
+      "hideGroup": "Masquer le groupe",
+      "showGroup": "Afficher le groupe",
+      "points": "{{formatted}} pts",
+      "rename": "Renommer",
+      "renameHint": "Double-clic pour renommer",
+      "counts": "{{models}} IFC · {{clouds}} nuages",
+      "frameGroup": "Cadrer le groupe",
+      "emptyGroup": "Groupe vide : glissez ici des modèles ou des nuages",
+      "looseClouds": "Nuages de points non assignés",
+      "dropToCreate": "Déposez pour créer un groupe",
+      "newGroup": "Nouveau groupe",
+      "defaultName": "Groupe {{n}}",
+      "groupMenu": "Options du groupe",
+      "pin": "Figer comme mon groupe",
+      "moveUp": "Monter",
+      "moveDown": "Descendre",
+      "delete": "Supprimer le groupe",
+      "basis": {
+        "user": "Manuel",
+        "projectGuid": "Même projet (GUID)",
+        "projectName": "Même projet et site",
+        "proximity": "Proximité géographique",
+        "single": "Fichier unique"
+      }
+    },
+    "scope": {
+      "label": "Portée",
+      "model": "Fichier",
+      "group": "Groupe ({{count}})",
+      "scene": "Scène ({{count}})",
+      "modelHint": "Modifier uniquement le fichier actif",
+      "groupHint": "Déplacer le groupe du fichier actif (IFC et nuages) d'un seul bloc",
+      "sceneHint": "Déplacer tout ce qui est chargé (IFC et nuages) d'un seul bloc"
+    },
+    "rigid": {
+      "noGeometry": "Aucune géométrie à déplacer pour l'instant.",
+      "pivot": "Position de l'ensemble",
+      "pivotHint": "Centre en plan au niveau le plus bas. La modifier déplace tout l'ensemble sans casser son alignement.",
+      "turn": "Tourner l'ensemble",
+      "degrees": "Degrés",
+      "apply": "Tourner",
+      "geoTitle": "Géoréférence (ancre de la carte)",
+      "heading": "cap {{deg}}°",
+      "geoHint": "La carte est ancrée à cet ensemble : le déplacer ici ne change pas sa lat/lon. Pour calibrer lat/lon et cap, utilisez l'éditeur d'emplacement.",
+      "calibrate": "Calibrer lat/lon sur la carte",
+      "resetHint": "Remettre chaque membre à sa position d'origine"
+    },
+    "history": {
+      "undo": "Annuler",
+      "redo": "Rétablir",
+      "temporary": "Déplacer pour regarder",
+      "temporaryHint": "Déplacez librement, puis revenez à l'état précédent",
+      "temporaryOn": "Changements temporaires : ils seront annulés à la restauration.",
+      "restore": "Restaurer",
+      "keep": "Conserver"
     }
   },
   "transform": {

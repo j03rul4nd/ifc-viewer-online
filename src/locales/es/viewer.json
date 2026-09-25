@@ -18,7 +18,21 @@
   "cameraControls": {
     "title": "Vistas",
     "hide": "Ocultar controles de cámara",
-    "show": "Mostrar vistas de cámara"
+    "show": "Mostrar vistas de cámara",
+    "scope": {
+      "label": "Encuadrar",
+      "auto": "Auto",
+      "active": "Activo",
+      "group": "Grupo",
+      "all": "Todo",
+      "autoHint": "Todo lo visible; el emplazamiento activo si la escena abarca sitios lejanos",
+      "activeHint": "Solo el modelo activo",
+      "groupHint": "Todos los modelos del grupo del modelo activo",
+      "allHint": "Todos los modelos y nubes de puntos visibles"
+    },
+    "narrowed": "La escena abarca sitios lejanos: se encuadra el activo.",
+    "showAll": "Ver todo",
+    "empty": "No hay nada visible que encuadrar. Muestra un modelo o una nube de puntos."
   },
   "overlays": {
     "validationHighlights": "Resaltado de validación",
@@ -143,10 +157,72 @@
       "collapse": "Contraer grupo",
       "expand": "Desplegar grupo",
       "moveTogether": "Mover juntos",
-      "moveTogetherHint": "Mueve todos los archivos de este edificio a la vez, manteniendo su alineación",
-      "scopeModel": "Este archivo",
-      "scopeGroup": "Los {{count}} archivos",
-      "positionOnly": "Mover el conjunto desplaza todos los archivos por igual. La rotación y la escala siguen siendo por archivo: girar cada uno sobre su propio origen los dispersaría."
+      "moveTogetherHint": "Mueve todos los archivos de este edificio a la vez, manteniendo su alineación"
+    },
+    "tree": {
+      "myGroups": "Mis grupos",
+      "detectedGroups": "Detectados",
+      "newGroupEllipsis": "Nuevo grupo…",
+      "backToAuto": "Volver a automático",
+      "noGroup": "Sin grupo",
+      "moveTo": "Mover a grupo",
+      "hide": "Ocultar",
+      "show": "Mostrar",
+      "hideGroup": "Ocultar grupo",
+      "showGroup": "Mostrar grupo",
+      "points": "{{formatted}} pts",
+      "rename": "Renombrar",
+      "renameHint": "Doble clic para renombrar",
+      "counts": "{{models}} IFC · {{clouds}} nubes",
+      "frameGroup": "Encuadrar grupo",
+      "emptyGroup": "Grupo vacío: arrastra aquí modelos o nubes",
+      "looseClouds": "Nubes sin asignar",
+      "dropToCreate": "Suelta para crear un grupo",
+      "newGroup": "Nuevo grupo",
+      "defaultName": "Grupo {{n}}",
+      "groupMenu": "Opciones del grupo",
+      "pin": "Fijar como grupo propio",
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "delete": "Eliminar grupo",
+      "basis": {
+        "user": "Manual",
+        "projectGuid": "Mismo proyecto (GUID)",
+        "projectName": "Mismo proyecto y emplazamiento",
+        "proximity": "Cercanía geográfica",
+        "single": "Archivo único"
+      }
+    },
+    "scope": {
+      "label": "Ámbito",
+      "model": "Archivo",
+      "group": "Grupo ({{count}})",
+      "scene": "Escena ({{count}})",
+      "modelHint": "Edita solo el archivo activo",
+      "groupHint": "Mueve el grupo del archivo activo (IFC y nubes) como un solo bloque",
+      "sceneHint": "Mueve todo lo cargado (IFC y nubes) como un solo bloque"
+    },
+    "rigid": {
+      "noGeometry": "Aún no hay geometría que mover.",
+      "pivot": "Posición del conjunto",
+      "pivotHint": "Centro en planta y cota más baja. Cambiarla desplaza todo el conjunto sin romper su alineación.",
+      "turn": "Girar el conjunto",
+      "degrees": "Grados",
+      "apply": "Girar",
+      "geoTitle": "Georreferencia (ancla del mapa)",
+      "heading": "rumbo {{deg}}°",
+      "geoHint": "El mapa se ancla a este conjunto: moverlo aquí no cambia su lat/lon. Para calibrar lat/lon y rumbo usa el editor de ubicación.",
+      "calibrate": "Calibrar lat/lon en el mapa",
+      "resetHint": "Devuelve todos los miembros a su posición original"
+    },
+    "history": {
+      "undo": "Deshacer",
+      "redo": "Rehacer",
+      "temporary": "Mover para mirar",
+      "temporaryHint": "Mueve libremente y vuelve después a como estaba",
+      "temporaryOn": "Cambios temporales: se desharán al restaurar.",
+      "restore": "Restaurar",
+      "keep": "Conservar"
     }
   },
   "transform": {
