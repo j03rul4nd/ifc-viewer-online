@@ -20,6 +20,8 @@
 // It satisfies `NumberSink` exactly as a `number[]` does, so helpers that only
 // ever `push` and read `length` take either without knowing which.
 
+import type { Steps } from './steps'
+
 /** What a vertex writer needs: append, and count. A `number[]` is one. */
 export interface NumberSink {
   readonly length: number
@@ -79,10 +81,34 @@ export class GrowableArray implements NumberSink {
     for (let i = 0; i + 1 < this.n; i += stride) { buf[i] -= ox; buf[i + 1] -= oy }
   }
 
+  /** `rebase`, `chunk` pairs per step (see `steps`). The result is the same. */
+  *rebaseSteps(ox: number, oy: number, stride = 3, chunk = 1 << 16): Steps<void> {
+    const buf = this.buf
+    for (let start = 0; start + 1 < this.n; start += stride * chunk) {
+      yield
+      const end = Math.min(this.n, start + stride * chunk)
+      for (let i = start; i < end && i + 1 < this.n; i += stride) { buf[i] -= ox; buf[i + 1] -= oy }
+    }
+  }
+
   /** An exact-size Float32Array copy, ready for a BufferAttribute. */
   toFloat32(): Float32Array {
     const out = new Float32Array(this.n)
     out.set(this.buf.subarray(0, this.n))
+    return out
+  }
+
+  /**
+   * `toFloat32` a chunk per step, for a builder that pauses (see `steps`).
+   * A road layer is millions of numbers, and the cast is not a memcpy — every
+   * element is rounded — so in one piece it is a long task of its own.
+   */
+  *toFloat32Steps(chunk = 1 << 18): Steps<Float32Array> {
+    const out = new Float32Array(this.n)
+    for (let at = 0; at < this.n; at += chunk) {
+      yield
+      out.set(this.buf.subarray(at, Math.min(this.n, at + chunk)), at)
+    }
     return out
   }
 }

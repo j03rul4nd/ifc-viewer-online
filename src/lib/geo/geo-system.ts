@@ -37,7 +37,7 @@ import { loadPropAssetList, neededPropAssets, loadShanghaiParkAssets, type PropA
 import { isShanghai } from './shanghai-region'
 import { buildShanghaiParkDetails } from './shanghai-parks'
 import {
-  buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, buildLinearLayer, disposeLayer,
+  buildSurfaceLayer, buildBridgeLayer, buildTreeLayer, buildLinearLayerSliced, disposeLayer,
   solveSceneVertical, buildWaterMask, buildPierLayer, waterLevelM, type LayerMeshOptions,
 } from './osm-scene'
 import { describeProfile, summariseProfiles } from './vertical-network'
@@ -1335,7 +1335,11 @@ export function createGeoSystem(ctx: GeoSystemContext): GeoSystemAPI {
     // ballast over roads, bridges over everything.
     for (const layer of ['road', 'rail'] as const) {
       if (layerVisibility[layer]) {
-        const built = buildLinearLayer(visibleFeatures, layer, opts)
+        // Sliced, not one task: a district's road network is over a million
+        // vertices, and the builder hands the thread back between features,
+        // ribbons and junctions. `undefined` means a newer rebuild took over.
+        const built = await buildLinearLayerSliced(visibleFeatures, layer, opts, { alive })
+        if (built === undefined) return
         reportSurfaceLoss(layer, visibleFeatures, built)
         if (built) { stage(layer, built.object) }
       }

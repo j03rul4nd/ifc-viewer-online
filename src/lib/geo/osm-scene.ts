@@ -61,7 +61,9 @@ import {
   type SolvedProfile, type VerticalWay, type ProfileSampler,
 } from './vertical-network'
 import { createGroundResolver } from './terrain-truth'
-import { buildRoadNetwork, type NetworkWay } from './road-network'
+import { roadNetworkSteps, type NetworkWay } from './road-network'
+import { runToEnd, type Steps } from './steps'
+import { runSliced, type SliceOptions } from './render-scheduler'
 import {
   approachEnd, isSignalised, stopBarQuad,
   STOP_LINE_M, STOP_SETBACK_M, SIGNAL_SEARCH_M,
@@ -1437,6 +1439,34 @@ export function buildLinearLayer(
   kind: 'road' | 'rail',
   opts: LayerMeshOptions,
 ): LayerMesh<THREE.Object3D> | null {
+  return runToEnd(linearLayerSteps(features, kind, opts))
+}
+
+/**
+ * `buildLinearLayer`, handing the main thread back whenever a slice is spent.
+ *
+ * Measured in the app on Poblenou (2 895 ways, 1.17 M vertices) the road layer
+ * was one 1.3–1.4 s task, and no stage of it dominated — the cost is spread
+ * over every vertex, so there was no single loop to make fast. The builder now
+ * pauses between features, ribbons and junctions instead, and the scene
+ * pipeline awaits it: the longest slice is ~50 ms. What comes out is
+ * byte-for-byte what `buildLinearLayer` returns; `undefined` means `alive()`
+ * cancelled it.
+ */
+export function buildLinearLayerSliced(
+  features: ReadonlyArray<OsmFeature>,
+  kind: 'road' | 'rail',
+  opts: LayerMeshOptions,
+  slice: SliceOptions = {},
+): Promise<LayerMesh<THREE.Object3D> | null | undefined> {
+  return runSliced(linearLayerSteps(features, kind, opts), slice)
+}
+
+function* linearLayerSteps(
+  features: ReadonlyArray<OsmFeature>,
+  kind: 'road' | 'rail',
+  opts: LayerMeshOptions,
+): Steps<LayerMesh<THREE.Object3D> | null> {
   const inBarcelona = isBarcelona(opts.anchorLat, opts.anchorLon ?? 0)
   const frame = groundFrameFor(opts)
   const mToN = frame.mToN
@@ -1912,6 +1942,7 @@ export function buildLinearLayer(
     return line.slice(1).map((b,i)=>({a:line[i],b,id:f.id}))
   }) : []
   for (const f of wanted) {
+    yield
     if(kind==='rail' && (f.vertical?.structure==='tunnel' || (f.vertical?.layer ?? 0)<0)) continue
     const line = projectRing(f.ring!)
     // SAULÓ. Barcelona's park paths are compacted granite sand — the warm,
@@ -2174,13 +2205,14 @@ export function buildLinearLayer(
     // nothing at equal depth, and equal depth is exactly what two overlapping
     // networks produce.
     lift = baseLift + CLASS_LIFT_M[cls] * mToN
-    const network = buildRoadNetwork(classWays, { mToN })
+    const network = yield* roadNetworkSteps(classWays, { mToN })
     // Class-wide fallback, still used by the paths that do not go through the
     // road network (rail alignments, area ways). Ribbons override it per way.
     const drop = ROAD_CLASS_KERB_M[cls] * mToN
     const bandStart = positions.length / 3
 
     for (const ribbon of network.ribbons) {
+      yield
       const structuralStart = positions.length / 3
       // The ribbon carries the id of the way it came from, which is the whole
       // reason a trimmed, mitred, tapered ribbon can still be given the right
@@ -2396,6 +2428,7 @@ export function buildLinearLayer(
     // actually stands on. No kerb — a junction is where the kerb is interrupted.
     activeProfile = null
     for (const j of network.junctions) {
+      yield
       const junctionStart = positions.length / 3
       // A junction is where several arms MEET, so it has one height, and the
       // vertical solver has already forced every arm to agree on it. Sampling
@@ -2488,6 +2521,7 @@ export function buildLinearLayer(
     // at road height, above the ground layers — erased it.
     const mappedCentre = mappedAreaPredicate(features)
     for (const island of network.islands) {
+      yield
       if (mappedCentre(island.centre)) continue
       const poly = island.polygon
       const fanIsland = (p0: THREE.Vector2, p1: THREE.Vector2): void => {
@@ -2520,16 +2554,22 @@ export function buildLinearLayer(
   }
 
   if (count === 0) return null
+  yield
 
   // At Shanghai's longitude Float32 Mercator loses ~1 m. Rebase BEFORE casting
   // so centimetre railings and curved fascia survive into the GPU buffer.
   const linearOrigin = latLonToNormalized(opts.anchorLat, opts.anchorLon ?? 0)
-  positions.rebase(linearOrigin.nx, linearOrigin.ny)
+  // A district is millions of numbers each way, so everything that walks the
+  // whole buffer goes a chunk per step: measured on Poblenou the rebase and
+  // cast were one 150 ms task on a cold build, and the normals another 50-65.
+  yield* positions.rebaseSteps(linearOrigin.nx, linearOrigin.ny)
   const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions.toFloat32(), 3))
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors.toFloat32(), 3))
-  geometry.computeVertexNormals()
+  geometry.setAttribute('position', new THREE.BufferAttribute(yield* positions.toFloat32Steps(), 3))
+  geometry.setAttribute('color', new THREE.BufferAttribute(yield* colors.toFloat32Steps(), 3))
+  yield* vertexNormalSteps(geometry)
+  yield
   geometry.computeBoundingSphere()
+  yield
 
   // Detailed: the carriageway joins the same PBR pass as the ground it lies on.
   // A ribbon of unlit tarmac beside lit grass is the last thing in the scene
@@ -2538,6 +2578,7 @@ export function buildLinearLayer(
     // Surveyed materials last: a band pushed later wins, so a class guess
     // covers everything and each way that knows better overrides its own run.
     metricAttributes(geometry, mToN, ROUGHNESS_BY_KIND[kind], [...roughBands, ...surfaceBands])
+    yield
     const groundMaterial = createSurfaceMaterial('asphalt', {
       opacity: kind === 'road' ? 0.94 : 0.96,
     })
@@ -2567,6 +2608,7 @@ export function buildLinearLayer(
       geometry.addGroup(0, g, 0)
       geometry.addGroup(g, solidCount, 1)
       materials = [groundMaterial, solidMaterial]
+      yield
     }
     const paved = new THREE.Mesh(geometry, materials)
     paved.name = `osm-${kind}`
@@ -2592,6 +2634,37 @@ export function buildLinearLayer(
   surface.renderOrder = 4
 
   return finishLinear(surface, masts, kind, mToN, structuralZ, lift, count, opts.assets, dropped)
+}
+
+/** Triangles per step when the linear layer's normals are computed. */
+const NORMAL_TRIANGLES_PER_STEP = 1 << 16
+
+/**
+ * `geometry.computeVertexNormals()`, a run of triangles per step.
+ *
+ * Only for a NON-INDEXED geometry, which is what the linear layer has when it
+ * asks for normals — the solid/ground index is attached later. There, three
+ * takes each triangle's normal from its own three vertices and normalises each
+ * vertex on its own, so running three's routine over consecutive runs of whole
+ * triangles, as views onto one shared buffer, writes exactly what a single call
+ * would. The maths stays three's; only the pauses are new.
+ */
+function* vertexNormalSteps(geometry: THREE.BufferGeometry): Steps<void> {
+  const position = geometry.getAttribute('position') as THREE.BufferAttribute
+  const points = position.array as Float32Array
+  const normals = new Float32Array(position.count * 3)
+  const run = NORMAL_TRIANGLES_PER_STEP * 3
+  for (let v = 0; v < position.count; v += run) {
+    yield
+    const end = Math.min(position.count, v + run)
+    const part = new THREE.BufferGeometry()
+    part.setAttribute('position', new THREE.BufferAttribute(points.subarray(v * 3, end * 3), 3))
+    part.setAttribute('normal', new THREE.BufferAttribute(normals.subarray(v * 3, end * 3), 3))
+    part.computeVertexNormals()
+  }
+  const normal = new THREE.BufferAttribute(normals, 3)
+  normal.needsUpdate = true
+  geometry.setAttribute('normal', normal)
 }
 
 /**

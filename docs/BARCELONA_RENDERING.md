@@ -141,3 +141,47 @@ layer at "Detailed":
 - **Assets on demand**: showcase asks only for what the scene can draw
   (`neededPropAssets`), data before scenery, a few downloads at a time; a later
   scene adds a batch instead of re-downloading the kit.
+
+### The road layer, sliced (2026-09-25)
+
+The cascade yields *between* layers, so one layer is still one task. On the
+Poblenou plot (City preset, 2 895 road ways, 1.17 M road vertices) the road
+layer was the long one. Measured in the running app on a full rebuild:
+
+| | Before | After |
+|---|---|---|
+| Road layer on the main thread | one task, 1 342–1 385 ms | 41 slices; longest 50 ms, the rest ≤ 24 ms |
+| Rail layer | one task, 170–395 ms | 6 slices; longest 20 ms |
+
+Those are wall-clock numbers from a quiet machine. With other processes
+saturating the CPU every task stretches — the buildings task went from 271 ms
+to 500–1 430 ms — and the road slices with it (longest 63–246 ms). Outside
+the browser the longest slice measures 20–36 ms (`linear-layer.bench.ts`).
+
+- **No single stage dominated**, so there was nothing to make fast. Profiled,
+  the time is spread over every vertex (surface quads, profile lookups, the
+  topology pass, the final buffer passes). The builder now pauses instead.
+- **One body, two drivers** (`steps.ts`): `buildLinearLayer`'s body is a
+  generator (`linearLayerSteps`, and `roadNetworkSteps` inside it) that
+  `yield`s between features, ribbons, junctions and buffer chunks.
+  `buildLinearLayer` runs it straight through; `buildLinearLayerSliced` runs it
+  a 12 ms slice at a time (`runSliced` in `render-scheduler.ts`). A pause carries
+  no value and changes no state, so the output is the same bytes either way —
+  `linear-layer-sliced.test.ts` pins that on the Port Vell survey with a pause
+  after every step.
+- **The whole-buffer passes are chunked too**: the rebase, the float32 casts and
+  `computeVertexNormals` (run as three's own routine over runs of triangles,
+  valid because the geometry is still non-indexed then). The rebase and cast
+  were one 150 ms task on a cold build.
+- **An O(n²) that was real, but smaller than it looked**: a ribbon corner cut at
+  a profile station projects onto a segment *end*, which both indexed lookups in
+  `sampleProfile` decline, so it fell through to a full scan per vertex. An exact
+  ring search (`ringNearest`) answers those now, same segment as the scan. On a
+  5 km way that is 19 ms → 5 ms; on Poblenou's profiles it is ~10 % of the rail
+  layer. The profiler put it at 91 % — per-call profiling overhead, not cost.
+- **Benchmark**: `npx vitest bench --run scripts/geo/linear-layer.bench.ts`, on a
+  real Overpass extract of the Poblenou box (`scripts/geo/poblenou-roads.json.gz`).
+  It reports total build time and the longest slice.
+- **Still single tasks** in the same rebuild: buildings (270–415 ms), the
+  vertical solve (240–770 ms), ground cover (120–320 ms) and the
+  signal/furniture/barrier phase (90–155 ms). Each would need the same treatment.

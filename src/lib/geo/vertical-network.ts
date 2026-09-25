@@ -1012,6 +1012,119 @@ export function sampleProfile(p: SolvedProfile): ProfileSampler {
     return g
   }
 
+  /**
+   * EXACT nearest segment, from a second grid searched in growing rings.
+   *
+   * The two lookups above only trust a winner that is strictly INTERIOR to its
+   * segment, so a point that sits on one of the profile's own vertices always
+   * fell through to the full scan. That is not a corner case, it is the common
+   * one: a ribbon is cut at the stations this profile placed, so nearly every
+   * corner of every quad lands on a vertex. That made each vertex O(segments)
+   * and a way O(n²): querying a 5 km alignment the way a ribbon does took
+   * 19 ms, against 5 ms with this. (A profiler put it at 91 % of the rail
+   * layer; that was per-call profiling overhead, not the cost.)
+   *
+   * Searching outward ring by ring, a result is final once no unsearched cell
+   * could hold anything closer, and ties go to the LOWEST index, as they do in
+   * `scanAll`. So this returns the scan's answer, not an approximation of it.
+   * Where it cannot promise that — non-finite input, or a search that has grown
+   * past what the scan would cost — it returns null and the scan runs.
+   */
+  let rings: RingIndex | null | undefined
+  const buildRings = (): RingIndex | null => {
+    const n = pts.length - 1
+    let total = 0
+    let widest = 0
+    for (let i = 0; i < n; i++) {
+      const a = pts[i]
+      const b = pts[i + 1]
+      if (!Number.isFinite(a.x + a.y + b.x + b.y)) return null
+      total += Math.hypot(b.x - a.x, b.y - a.y)
+      widest = Math.max(widest, Math.abs(b.x - a.x), Math.abs(b.y - a.y))
+    }
+    // About one segment per cell, coarsened until no segment spans more than
+    // RING_MAX_SPAN cells a side — which bounds what registering it costs.
+    const cell = Math.max(total / n, widest / RING_MAX_SPAN)
+    if (!(cell > 0) || !Number.isFinite(cell)) return null
+    const cells = new Map<number, Map<number, number[]>>()
+    let loX = Infinity
+    let hiX = -Infinity
+    let loY = Infinity
+    let hiY = -Infinity
+    for (let i = 0; i < n; i++) {
+      const a = pts[i]
+      const b = pts[i + 1]
+      const x0 = Math.floor(Math.min(a.x, b.x) / cell)
+      const x1 = Math.floor(Math.max(a.x, b.x) / cell)
+      const y0 = Math.floor(Math.min(a.y, b.y) / cell)
+      const y1 = Math.floor(Math.max(a.y, b.y) / cell)
+      loX = Math.min(loX, x0); hiX = Math.max(hiX, x1)
+      loY = Math.min(loY, y0); hiY = Math.max(hiY, y1)
+      for (let cx = x0; cx <= x1; cx++) {
+        let column = cells.get(cx)
+        if (!column) { column = new Map(); cells.set(cx, column) }
+        for (let cy = y0; cy <= y1; cy++) {
+          const list = column.get(cy)
+          if (list) list.push(i)
+          else column.set(cy, [i])
+        }
+      }
+    }
+    return { cell, cells, loX, hiX, loY, hiY }
+  }
+
+  const ringNearest = (x: number, y: number): { i: number; t: number } | null => {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+    if (rings === undefined) rings = buildRings()
+    if (!rings) return null
+    const { cell, cells, loX, hiX, loY, hiY } = rings
+    const qx = Math.floor(x / cell)
+    const qy = Math.floor(y / cell)
+    let bestI = -1
+    let bestT = 0
+    let bestD2 = Infinity
+    let work = 0
+    const budget = 4 * (pts.length - 1) + 64
+
+    const visit = (cx: number, cy: number): void => {
+      work++
+      const list = cells.get(cx)?.get(cy)
+      if (!list) return
+      for (const i of list) {
+        work++
+        const got = project(i, x, y)
+        if (got.d2 < bestD2 || (got.d2 === bestD2 && i < bestI)) {
+          bestD2 = got.d2; bestI = i; bestT = got.t
+        }
+      }
+    }
+
+    // Rings wholly outside the indexed cells are empty: start at the first
+    // one that is not.
+    for (let k = Math.max(0, loX - qx, qx - hiX, loY - qy, qy - hiY); ; k++) {
+      // The cells at Chebyshev distance exactly k, clipped to the indexed ones.
+      const xa = Math.max(qx - k, loX)
+      const xb = Math.min(qx + k, hiX)
+      const ya = Math.max(qy - k, loY)
+      const yb = Math.min(qy + k, hiY)
+      for (let cx = xa; cx <= xb; cx++) {
+        if (cx === qx - k || cx === qx + k) {
+          for (let cy = ya; cy <= yb; cy++) visit(cx, cy)
+        } else {
+          if (qy - k >= ya) visit(cx, qy - k)
+          if (k > 0 && qy + k <= yb) visit(cx, qy + k)
+        }
+      }
+      if (work > budget) return null
+      // Everything unsearched lies at least k cells from the query point. The
+      // margin absorbs float rounding in the cell indices, so a segment that
+      // truly ties can never be one this search left out.
+      const covered = qx - k <= loX && qx + k >= hiX && qy - k <= loY && qy + k >= hiY
+      if (covered || bestD2 < (k * cell * RING_MARGIN) ** 2) break
+    }
+    return bestI >= 0 ? { i: bestI, t: bestT } : null
+  }
+
   const nearest = (x: number, y: number): { i: number; t: number } => {
     if (pts.length < 2) return { i: 0, t: 0 }
     const n = pts.length - 1
@@ -1047,6 +1160,10 @@ export function sampleProfile(p: SolvedProfile): ProfileSampler {
         }
       }
       if (bestI >= 0 && bestT > 0 && bestT < 1) { hint = bestI; return { i: bestI, t: bestT } }
+
+      // RINGS: the same answer as the scan below, found without scanning.
+      const exact = ringNearest(x, y)
+      if (exact) { hint = exact.i; return exact }
     }
 
     // Otherwise scan. An early-out on "the last few segments stopped improving"
@@ -1197,6 +1314,24 @@ export const DEFAULT_PROFILE_MAX_SAMPLES = 48
 
 /** Below this many segments a full scan is cheaper than indexing them. */
 const GRID_WORTH_IT = 24
+
+/** Most cells a single segment may span a side in the exact ring index. */
+const RING_MAX_SPAN = 16
+
+/** Safety factor on the ring search's stopping distance — see `ringNearest`. */
+const RING_MARGIN = 1 - 1e-6
+
+/** The exact nearest-segment index behind `ProfileSampler`. */
+interface RingIndex {
+  cell: number
+  /** Segment indices by cell column, then row. */
+  cells: Map<number, Map<number, number[]>>
+  /** Extent of the cells that hold anything. */
+  loX: number
+  hiX: number
+  loY: number
+  hiY: number
+}
 
 /**
  * The junction rule, in one place.
