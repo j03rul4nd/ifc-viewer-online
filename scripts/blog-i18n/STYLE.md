@@ -1,4 +1,4 @@
-# Translation brief — IFC Viewer Online blog → Chinese (Simplified), Japanese, Thai
+# Translation brief — IFC Viewer Online blog → zh, ja, th, es, de, fr, pt, it, ca
 
 ## What you are translating
 
@@ -237,3 +237,185 @@ on…"). Keep that: an experienced practitioner talking to a colleague. No hype,
 | duplicate GUID | GUID ซ้ำ |
 | free | ฟรี |
 | NDA / GDPR | สัญญารักษาความลับ (NDA) / กฎหมายคุ้มครองข้อมูลของสหภาพยุโรป (GDPR) |
+
+---
+
+# Latin-script languages — es, de, fr, pt, it, ca
+
+Everything above applies (files, tags, never-translate list, Health Score gloss,
+first-use glosses in the body, voice). What differs:
+
+- **Budgets**: `seoTitle` **≤ 58 characters**; `seoDescription` **110–155 characters**
+  (the checker's hard limits are 60 and 80–160). German and French run long: write
+  the listing copy for the listing, don't truncate the title.
+- **Search phrasing**: `seoTitle` and `keywords.N` use what a local professional
+  types (es `visor IFC gratis`, de `IFC Viewer kostenlos`, fr `visionneuse IFC gratuite`,
+  pt `visualizador IFC grátis`, it `visualizzatore IFC gratuito`, ca `visor IFC gratuït`).
+- **English terms**: these markets use some English BIM terms as-is (model checker,
+  clash detection, workflow). Prefer the local term where the local industry uses one
+  (the tables below); keep the English in parentheses at first use only when it helps
+  searching.
+- **Health Score** stays in English with no gloss (the product's existing Spanish,
+  German and French pages use it plain).
+- **The author's gender is not stated.** Where a first-person sentence would need a
+  gendered agreement (es `estoy convencido`, fr `je suis convaincu`, pt/it/ca likewise),
+  rephrase or use the plural (`nosotros`, `nous`…).
+- **Typography**: each language's own quotation marks and spacing rules (below).
+  Keep numbers as in the source; use the local decimal separator only in prose
+  numbers, never in code, versions or identifiers (`IFC4.3`, `2.3 MB` in a table
+  cell can stay as written).
+
+## Español — `es`
+
+- Spain Spanish, **tú**, direct and practical (the voice of the existing Spanish posts).
+- Quotes «» or “”; ¿? and ¡! opening marks; no English title case in headings
+  (only the first word and proper nouns capitalised).
+
+| English | Español |
+|---|---|
+| IFC viewer / model checker | visor IFC / verificador de modelos (model checker) |
+| validation | validación |
+| BIM coordinator / BIM manager | coordinador BIM / BIM manager |
+| authoring tool | software de autoría (herramienta de modelado) |
+| export | exportación / exportar |
+| property / property set | propiedad / conjunto de propiedades (Pset) |
+| federated model | modelo federado |
+| clash detection | detección de colisiones |
+| CDE | entorno común de datos (CDE) |
+| BEP / EIR | plan de ejecución BIM (BEP) / requisitos de información (EIR) |
+| handover / delivery | entrega |
+| acceptance criteria | criterios de aceptación |
+| georeferencing | georreferenciación |
+| point cloud / digital twin | nube de puntos / gemelo digital |
+| duplicate GUID | GUID duplicado |
+| free | gratis / gratuito |
+| GDPR | RGPD |
+
+## Deutsch — `de`
+
+- **Sie**, sachlich und präzise, wie eine deutsche BIM-Fachpublikation.
+- Quotes „…“; compound nouns with hyphens around acronyms (`IFC-Datei`, `BIM-Koordinator`).
+- Headings in normal German capitalisation (nouns capitalised, no English title case).
+
+| English | Deutsch |
+|---|---|
+| IFC viewer / model checker | IFC-Viewer / Model Checker (Modellprüfung) |
+| validation | Validierung / Prüfung |
+| BIM coordinator / BIM manager | BIM-Koordinator / BIM-Manager |
+| authoring tool | Autorensoftware (Modellierungswerkzeug) |
+| export | Export / exportieren |
+| property / property set | Eigenschaft / Eigenschaftssatz (Pset) |
+| federated model | Koordinationsmodell / föderiertes Modell |
+| clash detection | Kollisionsprüfung |
+| CDE | gemeinsame Datenumgebung (CDE) |
+| BEP / EIR | BIM-Abwicklungsplan (BAP) / Auftraggeber-Informationsanforderungen (AIA) |
+| handover / delivery | Übergabe / Lieferung |
+| acceptance criteria | Abnahmekriterien |
+| georeferencing | Georeferenzierung |
+| point cloud / digital twin | Punktwolke / digitaler Zwilling |
+| duplicate GUID | doppelte GUID |
+| free | kostenlos |
+| GDPR | DSGVO |
+
+## Français — `fr`
+
+- **vous**, clair et professionnel.
+- Guillemets « … » with non-breaking spaces; a space before : ; ? ! (use a normal space
+  if unsure); headings in sentence case.
+
+| English | Français |
+|---|---|
+| IFC viewer / model checker | visionneuse IFC / outil de vérification de maquette (model checker) |
+| model (BIM model) | maquette numérique / maquette |
+| validation | validation / contrôle |
+| BIM coordinator / BIM manager | coordinateur BIM / BIM manager |
+| authoring tool | logiciel de modélisation |
+| export | export / exporter |
+| property / property set | propriété / jeu de propriétés (Pset) |
+| federated model | maquette fédérée |
+| clash detection | détection des conflits (clash detection) |
+| CDE | environnement commun de données (CDE) |
+| BEP / EIR | convention BIM (BEP) / cahier des charges BIM (EIR) |
+| handover / delivery | remise / livraison |
+| acceptance criteria | critères de réception |
+| georeferencing | géoréférencement |
+| point cloud / digital twin | nuage de points / jumeau numérique |
+| duplicate GUID | GUID en double |
+| free | gratuit |
+| GDPR | RGPD |
+
+## Português (Brasil) — `pt`
+
+- **Brazilian Portuguese** (the site's pt locale): `arquivo`, `você`, `baixar`, `tela`.
+- Aspas “…”; headings in sentence case.
+
+| English | Português (BR) |
+|---|---|
+| IFC viewer / model checker | visualizador IFC / verificador de modelos (model checker) |
+| validation | validação |
+| BIM coordinator / BIM manager | coordenador BIM / gerente BIM |
+| authoring tool | software de autoria |
+| export | exportação / exportar |
+| property / property set | propriedade / conjunto de propriedades (Pset) |
+| federated model | modelo federado |
+| clash detection | detecção de conflitos (clash detection) |
+| CDE | ambiente comum de dados (CDE) |
+| BEP / EIR | plano de execução BIM (BEP) / requisitos de informação (EIR) |
+| handover / delivery | entrega |
+| acceptance criteria | critérios de aceitação |
+| georeferencing | georreferenciamento |
+| point cloud / digital twin | nuvem de pontos / gêmeo digital |
+| duplicate GUID | GUID duplicado |
+| free | grátis / gratuito |
+| GDPR | GDPR (Regulamento Geral de Proteção de Dados da UE); LGPD only if the source is about Brazil (it never is) |
+
+## Italiano — `it`
+
+- **tu**, pratico e professionale.
+- Virgolette « … » or “…”; headings in sentence case.
+- Use the Italian BIM vocabulary of UNI 11337 where it applies.
+
+| English | Italiano |
+|---|---|
+| IFC viewer / model checker | visualizzatore IFC / strumento di model checking (model checker) |
+| validation | validazione / verifica |
+| BIM coordinator / BIM manager | BIM coordinator / BIM manager (roles are used in English in Italy) |
+| authoring tool | software di authoring |
+| export | esportazione / esportare |
+| property / property set | proprietà / set di proprietà (Pset) |
+| federated model | modello federato |
+| clash detection | clash detection (rilevamento delle interferenze) |
+| CDE | ambiente di condivisione dei dati (ACDat/CDE) |
+| BEP / EIR | piano di gestione informativa (pGI/BEP) / capitolato informativo (CI/EIR) |
+| handover / delivery | consegna |
+| acceptance criteria | criteri di accettazione |
+| georeferencing | georeferenziazione |
+| point cloud / digital twin | nuvola di punti / gemello digitale (digital twin) |
+| duplicate GUID | GUID duplicato |
+| free | gratis / gratuito |
+| GDPR | GDPR |
+
+## Català — `ca`
+
+- **tu**, clar i pràctic. Normative Catalan (IEC): `fitxer`, `navegador`, `baixar`.
+- Cometes «…»; l·l with the middle dot; headings in sentence case.
+
+| English | Català |
+|---|---|
+| IFC viewer / model checker | visor IFC / verificador de models (model checker) |
+| validation | validació |
+| BIM coordinator / BIM manager | coordinador BIM / BIM manager |
+| authoring tool | programari d'autoria |
+| export | exportació / exportar |
+| property / property set | propietat / conjunt de propietats (Pset) |
+| federated model | model federat |
+| clash detection | detecció de col·lisions |
+| CDE | entorn comú de dades (CDE) |
+| BEP / EIR | pla d'execució BIM (BEP) / requisits d'informació (EIR) |
+| handover / delivery | lliurament |
+| acceptance criteria | criteris d'acceptació |
+| georeferencing | georeferenciació |
+| point cloud / digital twin | núvol de punts / bessó digital |
+| duplicate GUID | GUID duplicat |
+| free | gratuït |
+| GDPR | RGPD |

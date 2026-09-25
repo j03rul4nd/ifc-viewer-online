@@ -225,6 +225,8 @@ const ENGLISH_PROSE = /(?:\b[a-z]{3,}\b[^a-z]+){3,}/i
  * none of these; an untranslated sentence has several.
  */
 const FUNCTION_WORDS = /\b(?:the|and|or|of|to|for|with|is|are|was|be|in|on|at|by|from|your|you|this|that|it|not|can|will|when|what|how)\b/gi
+/** The subset that is a word in none of es/de/fr/pt/it/ca ("was", "will", "in", "an" are German). */
+const ENGLISH_ONLY = /\b(?:the|and|with|your|you|this|that|is|are|from|what|how|when|which|should|would|could|they|their|there)\b/gi
 
 export interface SegmentProblem { key: string; problem: string }
 
@@ -245,6 +247,11 @@ export function checkSegments(source: Segments, translated: Segments, lang: stri
     if (STRAY_TAG.test(out.replace(TAG, ''))) problems.push({ key, problem: 'malformed inline tag' })
     const grammar = out.replace(TAG, '').match(FUNCTION_WORDS)?.length ?? 0
     if (script && ENGLISH_PROSE.test(src.replace(TAG, '')) && !script.test(out) && grammar >= 2) {
+      problems.push({ key, problem: 'looks untranslated' })
+    }
+    // Latin-script targets can't be told from English by their letters; an
+    // English sentence left in place still has English grammar words.
+    if (!script && lang !== 'en' && ENGLISH_PROSE.test(src.replace(TAG, '')) && (out.replace(TAG, '').match(ENGLISH_ONLY)?.length ?? 0) >= 3) {
       problems.push({ key, problem: 'looks untranslated' })
     }
     if (lang === 'ja' && script && out.length > 24 && SCRIPT_OF.zh.test(out) && !KANA.test(out)) {
@@ -287,4 +294,30 @@ export function relinkSections(
     }
   }
   return dropped
+}
+
+/**
+ * Point links at a different post: a language whose library already has a
+ * hand-written version of an English post keeps that post and gets no
+ * translation of it, so every link to the English slug must go to the
+ * hand-written one instead. A deep link into such a post loses its section —
+ * its headings are its own, not the English ones in the same order.
+ */
+export function retargetLinks(post: BlogPost, bySlug: Map<string, string>): void {
+  const retargetRich = (text: RichText | undefined): void => {
+    if (!text || typeof text === 'string') return
+    for (const seg of text) if (typeof seg !== 'string' && 'to' in seg && bySlug.has(seg.to)) seg.to = bySlug.get(seg.to)!
+  }
+  for (const b of post.content) {
+    switch (b.type) {
+      case 'p': case 'callout': retargetRich(b.text); break
+      case 'takeaways': b.items.forEach(retargetRich); break
+      case 'steps': b.items.forEach((i) => { retargetRich(i.body); retargetRich(i.detail) }); break
+      case 'decision': b.options.forEach((o) => { retargetRich(o.body); if (o.to && bySlug.has(o.to)) o.to = bySlug.get(o.to) }); break
+      case 'related':
+        if (bySlug.has(b.to)) { b.to = bySlug.get(b.to)!; delete b.section }
+        break
+    }
+  }
+  post.references?.forEach((r) => { if (r.to && bySlug.has(r.to)) r.to = bySlug.get(r.to) })
 }

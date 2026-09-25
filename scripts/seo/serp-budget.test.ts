@@ -16,7 +16,7 @@
 // The check is on the SOURCE rather than on built output: it has to fail while
 // someone is editing copy, not after a deploy.
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
 import { EBOOKS } from '../../src/lib/ebook'
 import { SEO } from './generate-ebook-page'
@@ -26,6 +26,10 @@ import { serpWidth } from '../../src/lib/serp-width'
 import { LANG_CONFIG } from './generate-blog-pages'
 import { UIS } from './generate-fix-pages'
 import { join, resolve } from 'node:path'
+
+// Loading every language's blog pack is most of this file's cost; under a full
+// parallel run that alone can pass the default 5 s.
+vi.setConfig({ testTimeout: 30_000 })
 
 /** What Google renders. Characters are the usual proxy for its pixel budget. */
 const TITLE_BUDGET = 60

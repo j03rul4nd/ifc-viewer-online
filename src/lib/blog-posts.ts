@@ -1,6 +1,6 @@
 // ─── Blog posts ───────────────────────────────────────────────────────────────
-// Content data — no JSX, no static imports (the zh/ja/th packs at the bottom
-// are loaded with dynamic import()). All visual rendering lives in Blog.tsx.
+// Content data — no JSX, no static imports (the translated packs at the
+// bottom are loaded with dynamic import()). All visual rendering lives in Blog.tsx.
 
 /**
  * Inline rich-text segment, used inside `p` blocks.
@@ -8021,6 +8021,8 @@ export const BLOG_POSTS_ES: BlogPost[] = [
 
   {
     slug: 'como-exportar-ifc-desde-revit',
+    // Written in this language, not translated: it IS the clean-ifc-export-revit article here.
+    translationKey: 'clean-ifc-export-revit',
     title: 'Cómo exportar un IFC limpio desde Revit: la guía definitiva',
     excerpt: 'La configuración de exportación IFC que viene por defecto en Revit genera decenas de avisos evitables. Esta guía muestra los ajustes exactos que eliminan los errores más comunes antes de que el archivo llegue al ECD.',
     seoDescription: 'La exportación IFC que trae Revit por defecto genera decenas de avisos evitables. Los ajustes exactos que eliminan los errores más comunes antes del ECD.',
@@ -8078,6 +8080,8 @@ export const BLOG_POSTS_ES: BlogPost[] = [
 
   {
     slug: 'health-score-ifc-que-es',
+    // Written in this language, not translated: it IS the ifc-health-score-explained article here.
+    translationKey: 'ifc-health-score-explained',
     title: 'Health Score en IFC: el número que necesita tu proyecto BIM',
     excerpt: 'Un Health Score de 0 a 100 resume la calidad estructural y de datos de un modelo IFC en un solo número. Te explicamos cómo se calcula, qué significa cada umbral y por qué debería estar en el PEB de todos tus proyectos.',
     seoDescription: 'Un Health Score de 0 a 100 resume la calidad de un modelo IFC en un número. Cómo se calcula, qué significa cada umbral y por qué debe estar en el PEB.',
@@ -8122,6 +8126,8 @@ export const BLOG_POSTS_ES: BlogPost[] = [
 
   {
     slug: 'errores-ifc-mas-comunes',
+    // Written in this language, not translated: it IS the common-ifc-validation-errors article here.
+    translationKey: 'common-ifc-validation-errors',
     title: 'Los 7 errores IFC más comunes (y cómo corregirlos antes de la entrega)',
     excerpt: 'GUIDs duplicados, elementos huérfanos y jerarquías espaciales rotas causan más del 80% de los rechazos en el ECD. Aquí tienes cómo detectar y corregir cada uno antes de que el modelo llegue al coordinador.',
     seoTitle: 'Los 7 errores IFC más comunes y cómo corregirlos',
@@ -8173,6 +8179,8 @@ export const BLOG_POSTS_ES: BlogPost[] = [
 
   {
     slug: 'ifc-vs-rvt-que-entregar',
+    // Written in this language, not translated: it IS the ifc-vs-rvt-vs-nwd article here.
+    translationKey: 'ifc-vs-rvt-vs-nwd',
     title: 'IFC vs RVT: ¿qué formato BIM debes entregar en tus proyectos?',
     excerpt: 'El estructurista entrega RVT. El instalador usa NWD. El cliente pide IFC. El jefe de proyecto pide DWG. Aquí tienes cómo navegar el laberinto de formatos y por qué el BIM abierto importa de verdad para la entrega.',
     seoTitle: 'IFC vs RVT: qué formato BIM debes entregar',
@@ -8676,6 +8684,8 @@ export const BLOG_POSTS_DE: BlogPost[] = [
 
   {
     slug: 'ifc-datei-im-browser-oeffnen',
+    // Written in this language, not translated: it IS the view-ifc-online-free article here.
+    translationKey: 'view-ifc-online-free',
     title: 'IFC-Dateien im Browser öffnen — kostenlos, ohne Installation',
     excerpt: 'Ihr Auftraggeber hat Ihnen eine 200 MB große IFC-Datei geschickt. Kein Revit, kein Navisworks installiert. So öffnen, prüfen und validieren Sie die Datei — direkt im Browser.',
     seoDescription: 'Ihr Auftraggeber hat Ihnen eine 200 MB große IFC-Datei geschickt. Kein Revit, kein Navisworks. So öffnen und validieren Sie die Datei direkt im Browser.',
@@ -8732,6 +8742,8 @@ export const BLOG_POSTS_DE: BlogPost[] = [
 
   {
     slug: 'ifc-validierung-haeufige-fehler',
+    // Written in this language, not translated: it IS the common-ifc-validation-errors article here.
+    translationKey: 'common-ifc-validation-errors',
     title: 'Die 5 häufigsten IFC-Fehler vor der CDE-Lieferung',
     excerpt: 'Duplizierte GUIDs, verwaiste Elemente und fehlerhafte räumliche Hierarchien verursachen den Großteil aller Ablehnungen im Common Data Environment. So erkennen und beheben Sie diese Fehler.',
     seoDescription: 'Duplizierte GUIDs, verwaiste Elemente und fehlerhafte räumliche Hierarchien verursachen die meisten Ablehnungen im CDE. So erkennen und beheben Sie sie.',
@@ -8775,6 +8787,8 @@ export const BLOG_POSTS_FR: BlogPost[] = [
 
   {
     slug: 'ouvrir-fichier-ifc-navigateur',
+    // Written in this language, not translated: it IS the view-ifc-online-free article here.
+    translationKey: 'view-ifc-online-free',
     title: 'Ouvrir un fichier IFC dans le navigateur — gratuit, sans installation',
     excerpt: "Votre client vient de vous envoyer un fichier IFC de 200 Mo. Pas de Revit, pas de Navisworks. Voici comment l'ouvrir, l'inspecter et le valider directement dans votre navigateur.",
     seoTitle: 'Ouvrir un fichier IFC dans le navigateur, gratuitement',
@@ -8841,17 +8855,24 @@ export const ALL_BLOG_POSTS: BlogPost[] = [
 ]
 
 // ─── Languages loaded on demand ───────────────────────────────────────────────
-// The Chinese, Japanese and Thai libraries are full translations of the
-// English one (src/lib/blog-i18n/), each about as heavy again. Blog.tsx is
-// imported eagerly by App, so a post imported here ships to every visitor,
-// blog reader or not. These packs are fetched only when someone opens that
-// language's blog; build scripts and tests import them all at once through
-// blog-i18n/index.ts instead.
+// Every other language's library is a translation of the English one
+// (src/lib/blog-i18n/), each about as heavy again. Blog.tsx is imported
+// eagerly by App, so a post imported here ships to every visitor, blog reader
+// or not. These packs are fetched only when someone opens that language's
+// blog; build scripts and tests import them all at once through
+// blog-i18n/index.ts instead. Spanish, German and French keep their
+// hand-written posts above; their packs hold the rest of the library.
 
 const LAZY_PACKS: Record<string, () => Promise<BlogPost[]>> = {
   zh: () => import('./blog-i18n/zh').then((m) => m.BLOG_POSTS_ZH),
   ja: () => import('./blog-i18n/ja').then((m) => m.BLOG_POSTS_JA),
   th: () => import('./blog-i18n/th').then((m) => m.BLOG_POSTS_TH),
+  es: () => import('./blog-i18n/es').then((m) => m.BLOG_POSTS_ES_PACK),
+  de: () => import('./blog-i18n/de').then((m) => m.BLOG_POSTS_DE_PACK),
+  fr: () => import('./blog-i18n/fr').then((m) => m.BLOG_POSTS_FR_PACK),
+  pt: () => import('./blog-i18n/pt').then((m) => m.BLOG_POSTS_PT),
+  it: () => import('./blog-i18n/it').then((m) => m.BLOG_POSTS_IT),
+  ca: () => import('./blog-i18n/ca').then((m) => m.BLOG_POSTS_CA),
 }
 
 export const LAZY_BLOG_LANGS: readonly string[] = Object.keys(LAZY_PACKS)
@@ -8885,7 +8906,9 @@ export function registerBlogPosts(lang: string, posts: BlogPost[]): void {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function getBlogPostsByLang(lang: string): BlogPost[] {
-  return loadedPacks.get(lang) ?? ALL_BLOG_POSTS.filter(p => (p.lang ?? 'en') === lang)
+  const written = ALL_BLOG_POSTS.filter(p => (p.lang ?? 'en') === lang)
+  const pack = loadedPacks.get(lang)
+  return pack ? [...written, ...pack] : written
 }
 
 export function getBlogPost(slug: string, lang = 'en'): BlogPost | undefined {

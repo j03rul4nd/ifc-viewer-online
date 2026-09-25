@@ -104,6 +104,21 @@ export const LANG_CONFIG: Record<string, {
     blogTitle: 'Blog BIM & IFC — Guides pratiques pour coordinateurs BIM',
     blogDesc: 'Guides pratiques pour coordinateurs BIM : corriger les erreurs de validation IFC, améliorer le Health Score et livrer des modèles propres à la GED.',
   },
+  pt: {
+    prefix: 'pt/',
+    blogTitle: 'Blog de BIM e IFC — Guias práticos para coordenadores BIM',
+    blogDesc: 'Guias práticos para coordenadores BIM: como corrigir erros de validação IFC, melhorar o Health Score e entregar modelos limpos ao CDE.',
+  },
+  it: {
+    prefix: 'it/',
+    blogTitle: 'Blog BIM e IFC — Guide pratiche per BIM coordinator',
+    blogDesc: 'Guide pratiche per BIM coordinator: come correggere gli errori di validazione IFC, migliorare l’Health Score e consegnare modelli puliti al CDE.',
+  },
+  ca: {
+    prefix: 'ca/',
+    blogTitle: 'Blog BIM i IFC — Guies pràctiques per a coordinadors BIM',
+    blogDesc: 'Guies pràctiques per a coordinadors BIM: com corregir errors de validació IFC, millorar l’Health Score i lliurar models nets al CDE.',
+  },
   zh: {
     prefix: 'zh/',
     blogTitle: 'BIM 与 IFC 博客——BIM 协调员实用指南',

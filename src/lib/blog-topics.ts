@@ -52,9 +52,159 @@ const TOPIC_COPY: Record<string, Record<string, TopicCopy>> = {
     },
   },
   es: {
+    validation: {
+      title: 'Validación IFC y comprobación de modelos',
+      intro: 'Cómo comprobar un modelo IFC antes de entregarlo —esquema, reglas de calidad, IDS y Health Score— y cómo leer lo que dicen los informes.',
+    },
+    'export-fixes': {
+      title: 'Corregir exportaciones IFC defectuosas',
+      intro: 'Los fallos de exportación que hacen rechazar un modelo —GUID que cambian o se duplican, propiedades perdidas, coordenadas erróneas, archivos enormes— hasta su causa en Revit y otras herramientas.',
+    },
+    tools: {
+      title: 'Herramientas, visores y formatos IFC comparados',
+      intro: 'Qué visor, verificador o editor encaja con cada trabajo, qué formato y versión de IFC entregar y cómo abrir o leer un IFC sin software de escritorio.',
+    },
+    delivery: {
+      title: 'Entrega de IFC e ISO 19650',
+      intro: 'Cómo convertir la calidad del modelo en una rutina pactada: comprobaciones ISO 19650, cláusulas del BEP, criterios de aceptación y qué entregar junto al modelo.',
+    },
+    privacy: {
+      title: 'Privacidad y seguridad de los modelos BIM',
+      intro: 'Qué le pasa a un modelo cuando una herramienta lo procesa: proyectos con NDA, RGPD, preguntas de seguridad para proveedores y procesamiento en navegador frente a la nube.',
+    },
     'digital-twins': {
       title: 'Gemelos digitales IFC: nubes de puntos, LiDAR, vídeo y mapas',
       intro: 'Cómo combinar IFC con nubes de puntos, LiDAR temporal, vídeo de obra y mapas 3D en el navegador; cada guía incluye una demo que puedes abrir.',
+    },
+  },
+  de: {
+    validation: {
+      title: 'IFC-Validierung und Modellprüfung',
+      intro: 'Wie Sie ein IFC-Modell vor der Übergabe prüfen – Schema, Qualitätsregeln, IDS und Health Score – und wie Sie lesen, was die Prüfungen melden.',
+    },
+    'export-fixes': {
+      title: 'Fehlerhafte IFC-Exporte beheben',
+      intro: 'Die Exportprobleme, an denen Modelle scheitern – wechselnde oder doppelte GUIDs, fehlende Eigenschaften, falsche Koordinaten, zu große Dateien – bis zur Ursache in Revit und anderen Werkzeugen verfolgt.',
+    },
+    tools: {
+      title: 'IFC-Werkzeuge, Viewer und Formate im Vergleich',
+      intro: 'Welcher Viewer, Checker oder Editor zur Aufgabe passt, welches Format und welche IFC-Version Sie liefern und wie Sie IFC ohne Desktop-Software öffnen oder auslesen.',
+    },
+    delivery: {
+      title: 'IFC-Übergabe und ISO 19650',
+      intro: 'Modellqualität als vereinbarte Routine: Prüfungen nach ISO 19650, BAP-Klauseln, Abnahmekriterien und was zusammen mit dem Modell übergeben wird.',
+    },
+    privacy: {
+      title: 'Datenschutz und Sicherheit bei BIM-Modellen',
+      intro: 'Was mit einem Modell passiert, wenn ein Werkzeug es verarbeitet: NDA-Projekte, DSGVO, IT-Sicherheitsfragen an Anbieter und Verarbeitung im Browser statt in der Cloud.',
+    },
+    'digital-twins': {
+      title: 'Digitale IFC-Zwillinge: Punktwolken, LiDAR, Video und Karten',
+      intro: 'IFC im Browser mit Punktwolken, zeitlichem LiDAR, Baustellenvideo und 3D-Karten kombinieren – jeder Leitfaden mit einer funktionierenden Demo.',
+    },
+  },
+  fr: {
+    validation: {
+      title: 'Validation IFC et vérification de maquettes',
+      intro: 'Comment contrôler une maquette IFC avant sa livraison — schéma, règles qualité, IDS et Health Score — et comment lire ce que signalent les contrôles.',
+    },
+    'export-fixes': {
+      title: 'Corriger les exports IFC défaillants',
+      intro: 'Les problèmes d’export qui font refuser une maquette — GUID qui changent ou se dupliquent, propriétés manquantes, coordonnées fausses, fichiers trop lourds — remontés jusqu’à leur cause dans Revit et les autres outils.',
+    },
+    tools: {
+      title: 'Outils, visionneuses et formats IFC comparés',
+      intro: 'Quelle visionneuse, quel outil de vérification ou quel éditeur choisir, quel format et quelle version IFC livrer, et comment ouvrir ou lire un IFC sans logiciel installé.',
+    },
+    delivery: {
+      title: 'Livraison IFC et ISO 19650',
+      intro: 'Faire de la qualité de la maquette une routine convenue : contrôles ISO 19650, clauses de la convention BIM, critères de réception et éléments à remettre avec la maquette.',
+    },
+    privacy: {
+      title: 'Confidentialité et sécurité des maquettes BIM',
+      intro: 'Ce que devient une maquette quand un outil la traite : projets sous NDA, RGPD, questions de sécurité à poser aux éditeurs, traitement dans le navigateur ou dans le cloud.',
+    },
+    'digital-twins': {
+      title: 'Jumeaux numériques IFC : nuages de points, LiDAR, vidéo et cartes',
+      intro: 'Associer l’IFC aux nuages de points, au LiDAR temporel, à la vidéo de chantier et aux cartes 3D dans le navigateur — chaque guide avec une démo à ouvrir.',
+    },
+  },
+  pt: {
+    validation: {
+      title: 'Validação de IFC e verificação de modelos',
+      intro: 'Como verificar um modelo IFC antes da entrega — schema, regras de qualidade, IDS e Health Score — e como interpretar o que as verificações apontam.',
+    },
+    'export-fixes': {
+      title: 'Corrigir exportações IFC com defeito',
+      intro: 'Os problemas de exportação que fazem um modelo ser rejeitado — GUIDs que mudam ou se repetem, propriedades faltando, coordenadas erradas, arquivos grandes demais — rastreados até a causa no Revit e em outras ferramentas.',
+    },
+    tools: {
+      title: 'Ferramentas, visualizadores e formatos IFC comparados',
+      intro: 'Qual visualizador, verificador ou editor serve para cada trabalho, qual formato e versão de IFC entregar e como abrir ou ler um IFC sem software de desktop.',
+    },
+    delivery: {
+      title: 'Entrega de IFC e ISO 19650',
+      intro: 'Como transformar a qualidade do modelo em uma rotina combinada: verificações da ISO 19650, cláusulas do BEP, critérios de aceitação e o que entregar junto com o modelo.',
+    },
+    privacy: {
+      title: 'Privacidade e segurança de modelos BIM',
+      intro: 'O que acontece com um modelo quando uma ferramenta o processa: projetos sob NDA, GDPR, perguntas de segurança para fornecedores e processamento no navegador versus na nuvem.',
+    },
+    'digital-twins': {
+      title: 'Gêmeos digitais IFC: nuvens de pontos, LiDAR, vídeo e mapas',
+      intro: 'Como combinar IFC com nuvens de pontos, LiDAR temporal, vídeo de obra e mapas 3D no navegador — cada guia com uma demo que você pode abrir.',
+    },
+  },
+  it: {
+    validation: {
+      title: 'Validazione IFC e model checking',
+      intro: 'Come verificare un modello IFC prima della consegna — schema, regole di qualità, IDS e Health Score — e come leggere ciò che segnalano i controlli.',
+    },
+    'export-fixes': {
+      title: 'Correggere le esportazioni IFC difettose',
+      intro: 'I problemi di esportazione che fanno respingere un modello — GUID che cambiano o si duplicano, proprietà mancanti, coordinate errate, file troppo pesanti — ricondotti alla causa in Revit e negli altri strumenti.',
+    },
+    tools: {
+      title: 'Strumenti, visualizzatori e formati IFC a confronto',
+      intro: 'Quale visualizzatore, checker o editor è adatto al lavoro, quale formato e versione IFC consegnare e come aprire o leggere un IFC senza software desktop.',
+    },
+    delivery: {
+      title: 'Consegna IFC e ISO 19650',
+      intro: 'Trasformare la qualità del modello in una routine concordata: verifiche ISO 19650, clausole del pGI, criteri di accettazione e cosa consegnare insieme al modello.',
+    },
+    privacy: {
+      title: 'Privacy e sicurezza dei modelli BIM',
+      intro: 'Cosa succede a un modello quando uno strumento lo elabora: progetti sotto NDA, GDPR, domande di sicurezza IT per i fornitori ed elaborazione nel browser rispetto al cloud.',
+    },
+    'digital-twins': {
+      title: 'Gemelli digitali IFC: nuvole di punti, LiDAR, video e mappe',
+      intro: 'Combinare IFC con nuvole di punti, LiDAR temporale, video di cantiere e mappe 3D nel browser: ogni guida ha una demo funzionante da aprire.',
+    },
+  },
+  ca: {
+    validation: {
+      title: 'Validació IFC i verificació de models',
+      intro: 'Com comprovar un model IFC abans de lliurar-lo —esquema, regles de qualitat, IDS i Health Score— i com llegir el que diuen les comprovacions.',
+    },
+    'export-fixes': {
+      title: 'Corregir exportacions IFC defectuoses',
+      intro: 'Els problemes d’exportació que fan rebutjar un model —GUID que canvien o es dupliquen, propietats perdudes, coordenades errònies, fitxers massa grans— fins a la causa a Revit i altres eines.',
+    },
+    tools: {
+      title: 'Eines, visors i formats IFC comparats',
+      intro: 'Quin visor, verificador o editor encaixa amb cada feina, quin format i quina versió d’IFC lliurar i com obrir o llegir un IFC sense programari d’escriptori.',
+    },
+    delivery: {
+      title: 'Lliurament d’IFC i ISO 19650',
+      intro: 'Com convertir la qualitat del model en una rutina pactada: comprovacions ISO 19650, clàusules del BEP, criteris d’acceptació i què cal lliurar amb el model.',
+    },
+    privacy: {
+      title: 'Privadesa i seguretat dels models BIM',
+      intro: 'Què li passa a un model quan una eina el processa: projectes amb NDA, RGPD, preguntes de seguretat per als proveïdors i processament al navegador enfront del núvol.',
+    },
+    'digital-twins': {
+      title: 'Bessons digitals IFC: núvols de punts, LiDAR, vídeo i mapes',
+      intro: 'Com combinar l’IFC amb núvols de punts, LiDAR temporal, vídeo d’obra i mapes 3D al navegador; cada guia inclou una demo que pots obrir.',
     },
   },
   zh: {
