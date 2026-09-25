@@ -30,6 +30,8 @@
 // surface-shaders. Both halves are needed: a seamless tile still repeats.
 
 import * as THREE from 'three'
+import { runToEnd, type Steps } from './steps'
+import { runSliced, type SliceOptions } from './render-scheduler'
 
 /**
  * The families that get a baked detail map.
@@ -278,6 +280,22 @@ const cache = new Map<TextureFamily, THREE.DataTexture>()
  * every layer and the terrain all want the same three.
  */
 export function surfaceTexture(family: TextureFamily): THREE.DataTexture {
+  return runToEnd(surfaceTextureSteps(family))
+}
+
+/** Every family, in the order a detailed scene first asks for them. */
+const FAMILIES: ReadonlyArray<TextureFamily> = ['grass', 'shrub', 'sand', 'water', 'rock', 'asphalt']
+
+/** Rows baked per step: a family is a few tens of milliseconds in all. */
+const ROWS_PER_STEP = 32
+
+/**
+ * `surfaceTexture`, pausable between bands of rows — see `steps`. A bake is
+ * 30-100 ms per family and the first detailed scene wants all six, several of
+ * them inside one builder step; baking them ahead in slices keeps that off the
+ * main thread in one piece. Same texels either way.
+ */
+export function* surfaceTextureSteps(family: TextureFamily): Steps<THREE.DataTexture> {
   const hit = cache.get(family)
   if (hit) return hit
 
@@ -291,6 +309,7 @@ export function surfaceTexture(family: TextureFamily): THREE.DataTexture {
   let lo = Infinity
   let hi = -Infinity
   for (let y = 0; y < SIZE; y++) {
+    if (y % ROWS_PER_STEP === 0) yield
     for (let x = 0; x < SIZE; x++) {
       const v = height(x / SIZE, y / SIZE)
       h[y * SIZE + x] = v
@@ -310,6 +329,7 @@ export function surfaceTexture(family: TextureFamily): THREE.DataTexture {
     h[((y + SIZE) % SIZE) * SIZE + ((x + SIZE) % SIZE)]
 
   for (let y = 0; y < SIZE; y++) {
+    if (y % ROWS_PER_STEP === 0) yield
     for (let x = 0; x < SIZE; x++) {
       const i = y * SIZE + x
       // Central differences, wrapped — the wrap is what keeps the normals
@@ -346,6 +366,26 @@ export function surfaceTexture(family: TextureFamily): THREE.DataTexture {
   texture.needsUpdate = true
   cache.set(family, texture)
   return texture
+}
+
+let prebaking: Promise<void> | null = null
+
+/**
+ * Bake every family that is not cached yet, a slice at a time, and resolve
+ * when all are. Call it before anything that would ask for them in one go — a
+ * switch to detailed, the procedural terrain — and those calls find them ready.
+ *
+ * One bake in flight, shared by every caller, and never cancelled: the maps are
+ * kept for the life of the page, so finishing one is never wasted.
+ */
+export function prebakeSurfaceTextures(slice: Omit<SliceOptions, 'alive'> = {}): Promise<void> {
+  if (FAMILIES.every((f) => cache.has(f))) return Promise.resolve()
+  // A bake that throws is not this function's to report: the material that
+  // asks for the map will throw exactly where it always did.
+  prebaking ??= runSliced((function* (): Steps<void> {
+    for (const family of FAMILIES) yield* surfaceTextureSteps(family)
+  })(), slice).then(() => undefined, () => undefined).finally(() => { prebaking = null })
+  return prebaking
 }
 
 /** Drop the shared maps. Only for teardown in tests — nothing else owns them. */

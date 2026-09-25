@@ -230,6 +230,12 @@ the right column is the longest single step with a pause after every step
   synchronous start of the rebuild is 6–11 ms. Before, the same rebuild held
   the thread for 271 ms (blocks), 124 ms (ground), 239 ms (vertical),
   1.3–1.4 s (roads), 170–395 ms (rail) and 93–155 ms (signals).
+- **The first switch to Detailed** baked six procedural detail maps (grass,
+  shrub, sand, water, rock, asphalt; 27–95 ms each) inside single steps: in the
+  builders' material creation, in a shader hook during pre-compilation, and four
+  at once for the procedural relief. `prebakeSurfaceTextures` bakes them first,
+  in slices of at most a few tens of ms, to the same texels. Measured on a first
+  switch: the slices that commit each phase went from 169–826 ms to 59–91 ms.
 - **Still one task**: an exaggeration change re-extrudes the terrain before
   the rebuild starts, 103–135 ms measured — terrain code, not investigated
   here. Roof props, landmarks, piers, bridges and the invented scenery stay
