@@ -43,12 +43,36 @@ describe('pointCloudStore', () => {
     expect(usePointCloudStore.getState().clouds[0].fileSize).toBe(9)
   })
 
-  it('bumps the epoch on removal so in-flight worker output is discarded', () => {
+  it('does NOT bump the epoch on removal — a sibling still parsing must not notice', () => {
+    // The bug this pins: removeCloud bumped the one epoch every runner used as
+    // its cancellation token, so removing ANY cloud failed every other scan
+    // still parsing and froze every COPC already streaming. A load now watches
+    // its own entry instead; the epoch means "scene cleared" and nothing else.
     usePointCloudStore.getState().addCloud(entry('a'))
+    usePointCloudStore.getState().addCloud(entry('b'))
     const before = usePointCloudStore.getState().epoch
     usePointCloudStore.getState().removeCloud('a')
-    expect(usePointCloudStore.getState().epoch).toBe(before + 1)
+    expect(usePointCloudStore.getState().epoch).toBe(before)
+    expect(usePointCloudStore.getState().clouds.map((c) => c.id)).toEqual(['b'])
+  })
+
+  it('clears the active cloud when the last one is removed', () => {
+    usePointCloudStore.getState().addCloud(entry('a'))
+    usePointCloudStore.getState().removeCloud('a')
     expect(usePointCloudStore.getState().activeCloudId).toBeNull()
+  })
+
+  it('treats removing an absent id as a no-op, without notifying subscribers', () => {
+    // The panel's X runs removeCloud after the runner already dropped a
+    // cancelled row; that second call must not wake every load's watcher.
+    usePointCloudStore.getState().addCloud(entry('a'))
+    const before = usePointCloudStore.getState()
+    let notified = 0
+    const unsubscribe = usePointCloudStore.subscribe(() => { notified++ })
+    usePointCloudStore.getState().removeCloud('nope')
+    unsubscribe()
+    expect(notified).toBe(0)
+    expect(usePointCloudStore.getState()).toBe(before)
   })
 
   it('promotes another cloud when the active one is removed', () => {
@@ -58,7 +82,7 @@ describe('pointCloudStore', () => {
     expect(usePointCloudStore.getState().activeCloudId).toBe('a')
   })
 
-  it('bumps the epoch on clearClouds but keeps display preferences', () => {
+  it('bumps the epoch on clearClouds — the one scene-wide cancel — but keeps display preferences', () => {
     usePointCloudStore.getState().addCloud(entry('a'))
     usePointCloudStore.getState().setDisplay({ pointSize: 8 })
     usePointCloudStore.getState().clearClouds()

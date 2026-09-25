@@ -23,6 +23,7 @@
 // on a software rasteriser — and budgets scale from that answer.
 
 import type * as THREE from 'three'
+import type { Steps } from './steps'
 
 type SchedulerLike = {
   yield?: () => Promise<void>
@@ -73,6 +74,44 @@ export function slice(budgetMs = 12): { due(): boolean; reset(): void } {
   return {
     due: () => performance.now() - start > budgetMs || inputPending(),
     reset: () => { start = performance.now() },
+  }
+}
+
+export interface SliceOptions {
+  /** Work per slice before the thread is handed back, ms. */
+  budgetMs?: number
+  /** How to hand it back. Defaults to `yieldToMain`; tests pass a stub. */
+  yieldTo?: () => Promise<void>
+  /**
+   * Asked after every hand-back. False abandons the build — a newer rebuild
+   * has superseded it — and the generator is closed without finishing.
+   */
+  alive?: () => boolean
+}
+
+/**
+ * Drive a step generator (see `steps`) a slice at a time.
+ *
+ * Runs steps until the slice is spent or input is waiting, then yields to the
+ * browser and carries on. Resolves with the generator's result, or `undefined`
+ * when `alive()` said to stop.
+ *
+ * What is built is identical to `runToEnd`: a pause changes when the work
+ * happens, never what it computes.
+ */
+export async function runSliced<T>(steps: Steps<T>, opts: SliceOptions = {}): Promise<T | undefined> {
+  const timer = slice(opts.budgetMs)
+  const yieldTo = opts.yieldTo ?? yieldToMain
+  for (;;) {
+    const r = steps.next()
+    if (r.done) return r.value
+    if (!timer.due()) continue
+    await yieldTo()
+    if (opts.alive && !opts.alive()) {
+      steps.return(undefined as never)
+      return undefined
+    }
+    timer.reset()
   }
 }
 

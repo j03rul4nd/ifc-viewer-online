@@ -82,11 +82,18 @@ export function relatedPosts(current: BlogPost, pool: BlogPost[], limit = 6, rea
 
 // ── Sections of other posts ─────────────────────────────────────────────────
 
-/** Heading → element id. Shared by the TOC, section links and deep links. */
+/**
+ * Heading → element id. Shared by the TOC, section links and deep links.
+ *
+ * Thai, kana and Han are kept: without them every Chinese, Japanese or Thai
+ * heading collapsed to the same empty id, so the table of contents and every
+ * section link pointed nowhere. Latin text slugs exactly as before, so ids
+ * already shared in links keep working.
+ */
 export function slugify(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/[^a-z0-9\s\-\u0E00-\u0E7F\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/g, '')
     .trim()
     .replace(/\s+/g, '-')
 }

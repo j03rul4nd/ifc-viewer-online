@@ -28,12 +28,15 @@ import { slugify as slugifyHeading } from '../../src/lib/blog-related'
 import path    from 'path'
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
 import {
-  ALL_BLOG_POSTS,
   type BlogPost,
   type ContentBlock,
   type RichText,
 } from '../../src/lib/blog-posts'
+// Every language, the lazily-loaded zh/ja/th packs included: the build needs them all.
+import { EVERY_BLOG_POST } from '../../src/lib/blog-i18n'
 import { filterBlogPosts, getBlogHubCopy, sortBlogPosts } from '../../src/lib/blog-hub'
+import { editorialCopy } from '../../src/lib/blog-editorial-copy'
+import { serpWidth } from '../../src/lib/serp-width'
 
 const SITE = (process.env.VITE_SITE_URL || 'https://www.ifcvieweronline.eu').replace(/\/$/, '')
 const OG_IMAGE = `${SITE}/og-image.png`
@@ -101,6 +104,36 @@ export const LANG_CONFIG: Record<string, {
     blogTitle: 'Blog BIM & IFC — Guides pratiques pour coordinateurs BIM',
     blogDesc: 'Guides pratiques pour coordinateurs BIM : corriger les erreurs de validation IFC, améliorer le Health Score et livrer des modèles propres à la GED.',
   },
+  pt: {
+    prefix: 'pt/',
+    blogTitle: 'Blog de BIM e IFC — Guias práticos para coordenadores BIM',
+    blogDesc: 'Guias práticos para coordenadores BIM: como corrigir erros de validação IFC, melhorar o Health Score e entregar modelos limpos ao CDE.',
+  },
+  it: {
+    prefix: 'it/',
+    blogTitle: 'Blog BIM e IFC — Guide pratiche per BIM coordinator',
+    blogDesc: 'Guide pratiche per BIM coordinator: come correggere gli errori di validazione IFC, migliorare l’Health Score e consegnare modelli puliti al CDE.',
+  },
+  ca: {
+    prefix: 'ca/',
+    blogTitle: 'Blog BIM i IFC — Guies pràctiques per a coordinadors BIM',
+    blogDesc: 'Guies pràctiques per a coordinadors BIM: com corregir errors de validació IFC, millorar l’Health Score i lliurar models nets al CDE.',
+  },
+  zh: {
+    prefix: 'zh/',
+    blogTitle: 'BIM 与 IFC 博客——BIM 协调员实用指南',
+    blogDesc: '面向 BIM 协调员的实用指南：修复 IFC 验证错误、提高 Health Score，并向 CDE 交付干净的模型。',
+  },
+  ja: {
+    prefix: 'ja/',
+    blogTitle: 'BIM・IFCブログ｜BIMコーディネーターの実践ガイド',
+    blogDesc: 'BIMコーディネーター向けの実践ガイド。IFCの検証エラーの直し方、Health Scoreの改善、CDEへのクリーンなモデル納品を解説します。',
+  },
+  th: {
+    prefix: 'th/',
+    blogTitle: 'บล็อก BIM และ IFC — คู่มือสำหรับผู้ประสานงาน BIM',
+    blogDesc: 'คู่มือเชิงปฏิบัติสำหรับผู้ประสานงาน BIM: แก้ข้อผิดพลาดจากการตรวจสอบ IFC ปรับปรุง Health Score และส่งมอบโมเดลที่เรียบร้อยเข้าสู่ CDE',
+  },
 }
 
 /**
@@ -109,7 +142,12 @@ export const LANG_CONFIG: Record<string, {
  * and the SPA can never disagree about which URL a post lives at.
  */
 export function postsFor(lang: string): BlogPost[] {
-  return ALL_BLOG_POSTS.filter(p => (p.lang ?? 'en') === lang)
+  return EVERY_BLOG_POST.filter(p => (p.lang ?? 'en') === lang)
+}
+
+/** The language a URL prefix belongs to ('' → en, 'ja/' → ja). */
+function langOf(prefix: string): string {
+  return prefix.replace('/', '') || 'en'
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -131,6 +169,8 @@ function jsonEsc(s: string): string {
 // ── Meta replacement ──────────────────────────────────────────────────────────
 
 interface PageMeta {
+  /** Language of the page, for <html lang> — it picks CJK glyph shapes and the screen-reader voice. */
+  lang: string
   title: string
   description: string
   canonical: string
@@ -151,6 +191,8 @@ interface PageMeta {
  */
 function tweakHtml(template: string, meta: PageMeta): string {
   let html = template
+
+  html = html.replace(/(<html\b[^>]*?\blang=")[^"]*(")/, `$1${esc(meta.lang)}$2`)
 
   html = html.replace(
     /(<meta\s+name="robots"\s+content=")[^"]*(")/,
@@ -191,7 +233,7 @@ function tweakHtml(template: string, meta: PageMeta): string {
   }
 
   // 6. Remove the root hreflang alternates (they'd point to the wrong URL).
-  //    Blog pages are English-only; we replace with self-referencing hreflang.
+  //    Each blog page carries its own cluster (the post's translations), below.
   html = html.replace(/<link\s+rel="alternate"\s+hreflang="[^"]*"\s+href="[^"]*"\s*\/>\s*/g, '')
 
   // 6b. Drop the home page's JSON-LD. The template is the app's index.html,
@@ -343,7 +385,8 @@ const DESC_BUDGET = 160
 function postSeoTitle(post: BlogPost): string {
   const core = post.seoTitle ?? post.title
   const branded = `${core} | IFC Viewer Online`
-  return branded.length <= TITLE_BUDGET ? branded : core
+  // Measured in rendered width: a CJK character is drawn twice as wide.
+  return serpWidth(branded) <= TITLE_BUDGET ? branded : core
 }
 
 /** The meta description for a post: listing copy first, on-page excerpt after. */
@@ -388,18 +431,18 @@ function renderFallbackBlock(block: ContentBlock, prefix: string): string {
     case 'callout':
       return `<aside><p>${renderRichText(block.text, prefix)}</p></aside>`
     case 'takeaways':
-      return `<section><h2>${esc(block.title ?? 'Key takeaways')}</h2><ul>${block.items.map((item) => `<li>${renderRichText(item, prefix)}</li>`).join('')}</ul></section>`
+      return `<section><h2>${esc(block.title ?? editorialCopy(langOf(prefix)).takeaways)}</h2><ul>${block.items.map((item) => `<li>${renderRichText(item, prefix)}</li>`).join('')}</ul></section>`
     case 'steps':
       return `<ol>${block.items.map((step) => `<li><strong>${esc(step.title)}</strong>${step.body ? ` ${renderRichText(step.body, prefix)}` : ''}${step.detail ? `<p>${renderRichText(step.detail, prefix)}</p>` : ''}</li>`).join('')}</ol>`
     case 'decision':
-      return `<section><h3>${esc(block.question)}</h3><dl>${block.options.map((opt) => `<dt>${esc(opt.label)}</dt><dd><strong>${esc(opt.verdict)}</strong> ${renderRichText(opt.body, prefix)}${opt.to ? ` <a href="/${prefix}blog/${encodeURIComponent(opt.to)}/">${esc(opt.linkText ?? 'Read the guide')}</a>` : ''}</dd>`).join('')}</dl></section>`
+      return `<section><h3>${esc(block.question)}</h3><dl>${block.options.map((opt) => `<dt>${esc(opt.label)}</dt><dd><strong>${esc(opt.verdict)}</strong> ${renderRichText(opt.body, prefix)}${opt.to ? ` <a href="/${prefix}blog/${encodeURIComponent(opt.to)}/">${esc(opt.linkText ?? editorialCopy(langOf(prefix)).readGuide)}</a>` : ''}</dd>`).join('')}</dl></section>`
     case 'related':
       return `<aside><p><a href="/${prefix}blog/${encodeURIComponent(block.to)}/${block.section ? `#${slugifyHeading(block.section)}` : ''}">${esc(block.section ?? block.to)}</a>${block.why ? ` — ${esc(block.why)}` : ''}</p></aside>`
     case 'tool': {
       const tool = toolById(block.id)
       if (!tool) return ''
-      const t = toolCopy(tool, prefix.replace('/', '') || 'en')
-      return `<aside><p><a href="${esc(toolHref(tool, prefix.replace('/', '') || 'en'))}">${esc(t.name)}</a> — ${esc(block.why ?? t.blurb)}</p></aside>`
+      const t = toolCopy(tool, langOf(prefix))
+      return `<aside><p><a href="${esc(toolHref(tool, langOf(prefix)))}">${esc(t.name)}</a> — ${esc(block.why ?? t.blurb)}</p></aside>`
     }
     case 'bars':
       return `<figure>${block.title ? `<h3>${esc(block.title)}</h3>` : ''}<ul>${block.items.map((item) => `<li>${esc(item.label)}: <strong>${item.value}${esc(block.unit ?? '')}</strong>${item.note ? ` — ${esc(item.note)}` : ''}</li>`).join('')}</ul>${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ''}</figure>`
@@ -416,9 +459,9 @@ function renderFallbackBlock(block: ContentBlock, prefix: string): string {
       return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><figure><a href="${esc(mediaUrl(block.src))}"><img src="${esc(mediaUrl(block.poster))}" alt="${esc(block.title)}" width="${width}" height="${height}" loading="lazy" decoding="async" /></a>${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ''}</figure></section>`
     }
     case 'ifc-demo':
-      return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><p>${esc(block.schema)} · ${esc(block.size)}</p><p><a href="/${prefix}">${prefix === 'es/' ? 'Abrir el visor IFC interactivo' : 'Open the interactive IFC viewer'}</a></p></section>`
+      return `<section><h2>${esc(block.title)}</h2><p>${esc(block.description)}</p><p>${esc(block.schema)} · ${esc(block.size)}</p><p><a href="/${prefix}">${esc(editorialCopy(langOf(prefix)).post.openInteractiveViewer)}</a></p></section>`
     case 'embed-configurator':
-      return `<section>${block.title ? `<h2>${esc(block.title)}</h2>` : ''}${block.description ? `<p>${esc(block.description)}</p>` : ''}<p><a href="/${prefix}">${prefix === 'es/' ? 'Abrir el visor IFC' : 'Open IFC Viewer'}</a></p></section>`
+      return `<section>${block.title ? `<h2>${esc(block.title)}</h2>` : ''}${block.description ? `<p>${esc(block.description)}</p>` : ''}<p><a href="/${prefix}">${esc(editorialCopy(langOf(prefix)).post.bottomCta)}</a></p></section>`
     case 'stat-row':
       return `<ul>${block.stats.map((stat) => `<li><strong>${esc(`${stat.prefix ?? ''}${stat.value}${stat.suffix ?? ''}`)}</strong> — ${esc(stat.label)}</li>`).join('')}</ul>`
     case 'feature-grid':
@@ -438,19 +481,20 @@ function renderFallbackBlock(block: ContentBlock, prefix: string): string {
 
 function postBodyFallback(post: BlogPost, prefix: string, primaryImage: SearchImage): string {
   const articleUrl = `${SITE}/${prefix}blog/${post.slug}/`
-  const backLabel = post.lang === 'es' ? 'Volver al blog BIM e IFC' : 'Back to the BIM & IFC blog'
+  const ui = editorialCopy(post.lang ?? 'en')
+  const backLabel = ui.post.backToBlog
   return `<noscript>
       <main id="blog-static-fallback">
         <article lang="${esc(post.lang ?? 'en')}">
           <p><a href="${SITE}/${prefix}blog/">${esc(backLabel)}</a></p>
           <header>
-            <p>${esc(post.category)} · ${esc(post.date)} · ${post.readTimeMin} min</p>
+            <p>${esc(post.category)} · ${esc(post.date)} · ${esc(ui.post.minutes(post.readTimeMin))}</p>
             <h1>${esc(post.title)}</h1>
             <p>${esc(post.excerpt)}</p>
             <figure><img src="${esc(primaryImage.url)}" alt="${esc(post.heroAlt ?? post.title)}" width="${primaryImage.width ?? 1200}" height="${primaryImage.height ?? 675}" decoding="async" /><figcaption>${esc(primaryImage.caption)}</figcaption></figure>
           </header>
           ${post.content.map((block) => renderFallbackBlock(block, prefix)).join('\n          ')}
-          ${post.references?.length ? `<section><h2>References</h2><ol>${post.references.map((r) => `<li id="ref-${esc(r.id)}">${r.url ? `<a href="${esc(r.url)}" rel="noopener noreferrer">${esc(r.title)}</a>` : r.to ? `<a href="/${prefix}blog/${encodeURIComponent(r.to)}/">${esc(r.title)}</a>` : esc(r.title)}${r.source ? ` — ${esc(r.source)}` : ''}${r.note ? `. ${esc(r.note)}` : ''}</li>`).join('')}</ol></section>` : ''}
+          ${post.references?.length ? `<section><h2>${esc(ui.references)}</h2><ol>${post.references.map((r) => `<li id="ref-${esc(r.id)}">${r.url ? `<a href="${esc(r.url)}" rel="noopener noreferrer">${esc(r.title)}</a>` : r.to ? `<a href="/${prefix}blog/${encodeURIComponent(r.to)}/">${esc(r.title)}</a>` : esc(r.title)}${r.source ? ` — ${esc(r.source)}` : ''}${r.note ? `. ${esc(r.note)}` : ''}</li>`).join('')}</ol></section>` : ''}
           <p><a href="${articleUrl}">${esc(post.title)}</a></p>
         </article>
       </main>
@@ -512,10 +556,17 @@ function orderTopicPosts(topic: Topic, posts: BlogPost[]): BlogPost[] {
   return pillar ? [pillar, ...rest] : rest
 }
 
+/**
+ * The translation group of a post. Posts translated from English share its
+ * slug (the zh/ja/th packs), so an English post with no explicit key is keyed
+ * by its slug — which is the key its translations carry.
+ */
+function translationGroup(post: BlogPost): string {
+  return post.translationKey ?? post.slug
+}
+
 function postAlternates(post: BlogPost): Array<{ lang: string; href: string }> {
-  const translations = post.translationKey
-    ? ALL_BLOG_POSTS.filter((candidate) => candidate.translationKey === post.translationKey)
-    : [post]
+  const translations = EVERY_BLOG_POST.filter((candidate) => translationGroup(candidate) === translationGroup(post))
   const alternates = translations.map((candidate) => {
     const lang = candidate.lang ?? 'en'
     const prefix = LANG_CONFIG[lang]?.prefix ?? ''
@@ -654,6 +705,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
         writeFileSync(
           path.join(outDir, 'index.html'),
           tweakHtml(template, {
+            lang,
             title: `${topic.copy.title} | IFC Viewer Blog`,
             description: topic.copy.intro,
             canonical,
@@ -704,6 +756,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
       writeFileSync(
         path.join(outDir, 'index.html'),
         tweakHtml(template, {
+            lang,
           title: cfg.blogTitle,
           description: cfg.blogDesc,
           canonical: urlBase,
@@ -766,6 +819,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
         writeFileSync(
           path.join(outDir, 'index.html'),
           tweakHtml(template, {
+            lang,
             title: postSeoTitle(post),
             description: postSeoDescription(post),
             canonical,
@@ -914,7 +968,7 @@ export function generateBlogPages(distDir: string): BlogPagesResult {
     }
 
     if (missing.length > 0) {
-      xml = xml.replace('</urlset>', `\n  <!-- Blog (EN + ES + DE + FR) -->\n${missing.join('\n\n')}\n\n</urlset>`)
+      xml = xml.replace('</urlset>', `\n  <!-- Blog (${Object.keys(LANG_CONFIG).map((l) => l.toUpperCase()).join(' + ')}) -->\n${missing.join('\n\n')}\n\n</urlset>`)
     }
     if (xml !== originalXml) {
       writeFileSync(

@@ -3,9 +3,13 @@
 // live in src/lib/pointcloud/point-cloud-system.ts; this store never holds a
 // Three object or a typed array (repo convention: serialisable state only).
 //
-// Async safety — the EPOCH pattern borrowed from geoStore: every parse captures
-// `epoch` at start and checks it before committing. removeCloud()/clearClouds()
-// bump it, instantly invalidating in-flight worker output.
+// Async safety is PER LOAD. A parse is stale when its own load was aborted, when
+// its own entry is gone, or when `epoch` moved — and only clearClouds() moves
+// it. removeCloud() deliberately does not: it used to bump the same global
+// epoch, so removing ANY cloud (an errored row, an id that was already gone, the
+// four removals a temporal replay makes on start) failed every sibling still
+// parsing with `error.cancelled` and froze every COPC already streaming. See
+// pc-runner for the per-load check.
 
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
@@ -99,7 +103,10 @@ interface PointCloudStore {
   renderBudget: number
   /** Hard ceiling on resident points across all clouds. */
   maxPoints: number
-  /** Cancellation token — bumped whenever a cloud is dropped. */
+  /**
+   * Scene-clear token — bumped by clearClouds() ONLY. Removing one cloud is
+   * detected per load, from that cloud's own entry disappearing; see the header.
+   */
   epoch: number
 
   setPanelOpen: (open: boolean) => void
@@ -163,10 +170,15 @@ export const usePointCloudStore = create<PointCloudStore>()(
       removeCloud: (id) =>
         set(
           (s) => {
+            // An id that is not here changes nothing — returning the same state
+            // keeps a redundant removal (panel X after the runner already
+            // dropped a cancelled row) from notifying every subscriber.
+            if (!s.clouds.some((c) => c.id === id)) return s
             const clouds = s.clouds.filter((c) => c.id !== id)
             return {
               clouds,
-              epoch: s.epoch + 1,
+              // No epoch bump: see the header. The runner of THIS cloud notices
+              // its entry is gone; its siblings must not notice anything.
               activeCloudId: s.activeCloudId === id ? (clouds[clouds.length - 1]?.id ?? null) : s.activeCloudId,
             }
           },

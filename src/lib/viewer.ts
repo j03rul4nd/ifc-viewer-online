@@ -9,6 +9,11 @@ import { bindNavigation } from './camera-nav'
 import { aimPoint } from './aim-point'
 import { bindWalkNavigation, type WalkNavigation, type WalkState } from './camera-walk'
 import { createFrameCoalescer } from './frame-coalescer'
+import { createScenePicker } from './measure/picker'
+import { createMeasureSystem, type MeasureSystem } from './measure/measure-system'
+import { createSectionSystem, type SectionSystem } from './measure/section-system'
+import { toIfcAxes } from './measure/measure-math'
+import { calibrateLevels, mergeLevels, type Level, type RawStorey } from './measure/section-math'
 import { createOverlayController, type SeverityFilter, type OverlayMaterials } from './overlay-controller'
 import { resolveBackground, DEFAULT_BACKGROUND, type BackgroundSettings } from './scene/background'
 import { clearInspectorTarget } from './inspector'
@@ -22,6 +27,29 @@ import {
 import type { RenderStats } from './loading/controller'
 
 const log = createLogger('Viewer')
+
+/** Scene dressing for one Cover Studio capture (see lib/cover/looks.ts). */
+export interface PresentationLook {
+  base: 'original' | 'clay' | 'ghost'
+  baseColor: string
+  baseOpacity: number
+  /** IFC types (e.g. 'IFCWALL') kept solid and painted focusColor. */
+  focusTypes: string[]
+  focusColor: string | null
+  /** Hide the ground grid (drawings: line work, sections, plans). */
+  hideGrid?: boolean
+}
+
+/** Plane cut for a Cover Studio capture. */
+export interface PresentationSection {
+  normal: Vec3Like
+  point: Vec3Like
+  /** Fill for cut solids, '#rrggbb'. */
+  poche: string
+}
+
+/** One storey of an exploded axonometric: element ids per model. */
+export type ExplodeLayer = Array<{ modelId: string; ids: number[] }>
 
 // ─── Palette & label tables ──────────────────────────────────────────────────
 
@@ -384,6 +412,27 @@ export interface ViewerAPI {
     isolatedModelId?: string | null,
   ): void
   applyStyle(style: ViewerStyle): void
+  /**
+   * Dress the scene for a presentation capture (Cover Studio looks): repaint
+   * non-focus elements as a clay model or ghost them, and paint the focus IFC
+   * types in one colour. null restores the category palette. Resolves once
+   * the fragments have been updated, so a takeSnapshot() right after sees it.
+   */
+  setPresentationLook(look: PresentationLook | null): Promise<void>
+  /**
+   * Cut the scene with one plane for a capture, and paint the cut solids in
+   * `poche` (the architectural section fill). Keeps the side the normal points
+   * TOWARD: normal (0,-1,0) through y=h keeps everything below h — a plan cut.
+   * null removes the cut and restores the materials.
+   */
+  setPresentationSection(section: PresentationSection | null): Promise<void>
+  /**
+   * Exploded axonometric: render each layer (a storey: element ids per model)
+   * alone, lifted by index × gap, over a transparent background, from the
+   * current camera. Returns one PNG data URL per layer, in input order; the
+   * caller stacks them bottom-up. Visibility and positions are restored.
+   */
+  captureExplodedLayers(layers: ExplodeLayer[], gap: number, scale?: number): Promise<string[]>
   /** Frame camera on a set of elements. Targets the active model unless modelId is given. */
   frameElements(ids: number[], modelId?: string): void
   setValidationHighlights(issues: ValidationIssue[], enabled: boolean, options?: OverlayApplyOptions): void
@@ -419,8 +468,12 @@ export interface ViewerAPI {
    */
   setContextMenuCallback(cb: ((payload: { x: number; y: number; info: SelectedInfo } | null) => void) | null): void
   getGpuEstimateBytes(): number
-  /** Fly to a named camera preset (iso, top, front, right, left, back, bottom). */
-  setCameraPreset(preset: CameraPreset): void
+  /**
+   * Fly to a named camera preset (iso, top, front, right, left, back, bottom).
+   * `animate: false` jumps instead: captures can't wait for a flight, which only
+   * advances on rendered frames.
+   */
+  setCameraPreset(preset: CameraPreset, opts?: { animate?: boolean }): void
   /**
    * First-person walk mode: WASD to move, left-drag to look, Q/E for height.
    *
@@ -566,7 +619,7 @@ export interface ViewerAPI {
    * target implied at distance 1), this preserves the stored orbit distance —
    * used by Tour Mode playback.
    */
-  setCameraLookAt(position: Vec3Like, target: Vec3Like): void
+  setCameraLookAt(position: Vec3Like, target: Vec3Like, animate?: boolean): void
   /**
    * World-space merged AABB of a set of elements (serialisable, no THREE
    * objects). Reuses the same getMergedBox path as frameElements. Null when
@@ -603,8 +656,25 @@ export interface ViewerAPI {
    * part of the rendered frame.
    */
   setBackground(settings: BackgroundSettings): void
-  /** Capture a PNG snapshot of the current renderer canvas. Returns a data URL. */
-  takeSnapshot(): string
+  /**
+   * Capture a PNG snapshot of the current renderer canvas. Returns a data URL.
+   * `scale` > 1 renders the frame at that multiple of the on-screen resolution
+   * (print boards), capped at the GPU's render-buffer limit; the on-screen view
+   * is unchanged.
+   *
+   * Measurements come WITH their numbers (the labels are HTML, so they are
+   * painted onto the frame here); section handles never appear. Pass
+   * `annotations: false` for a clean presentation image with no measurements.
+   */
+  takeSnapshot(scale?: number, options?: { annotations?: boolean }): string
+  /**
+   * A 2D canvas that repeats every rendered frame WITH the measurement labels
+   * painted on it — the surface a video recording should capture. The labels
+   * are HTML, so a captureStream of the WebGL canvas records the lines of a
+   * measurement and never its numbers. The canvas is only kept up to date
+   * while held: call `release()` when the recording stops.
+   */
+  acquireRecordingCanvas(): { canvas: HTMLCanvasElement; release(): void }
   /**
    * Stable reference to the WebGL canvas (Capture Toolkit replay buffer).
    * Read-only access — callers must never mutate or re-parent the element.
@@ -668,58 +738,29 @@ export interface ViewerAPI {
    */
   setRenderQuality(quality: 'standard' | 'quality'): void
   /**
-   * Activate a measurement tool ('length' or 'area') or return to normal interaction ('none').
-   * While a tool is active pointer click-select and hover-highlight are suppressed.
+   * The measurement engine (lib/measure): the active tool, the measurement being
+   * drawn, every finished measurement and the overlay they draw. While a tool is
+   * active, click-select, hover highlight and the context menu stand down.
    */
-  setMeasurementTool(tool: 'none' | 'length' | 'area'): void
+  getMeasure(): MeasureSystem
   /** Remove all placed measurements from the scene. */
   clearMeasurements(): void
-  /** Delete the most recently placed measurement. */
-  deleteLastMeasurement(): void
-  /** Return the number of placed measurements of each type. */
-  getMeasurementCount(): { length: number; area: number }
-  /** Return all placed measurements with their computed values. */
-  getMeasurements(): Array<{ id: string; type: 'length' | 'area'; value: number }>
-  /**
-   * Finish the area polygon currently being drawn (calls endCreation on the
-   * area measurement tool). No-op if < 3 points have been placed.
-   */
-  finishCurrentMeasurement(): void
 
-  // ─── Clipping planes ─────────────────────────────────────────────────────────
+  // ─── Sections ────────────────────────────────────────────────────────────────
   /**
-   * Put the Clipper into creation mode — the next click on the model surface
-   * creates a clipping plane aligned to the face normal at that point.
+   * Section planes (plan, elevation, face-aligned) and the section box, with
+   * their in-scene handles. Every cut is a global renderer plane, and picking —
+   * selection as well as measurement — only ever hits what the cut left.
    */
-  startAddClipPlane(): void
-  /** Cancel clip-plane creation mode without placing a plane. */
-  stopAddClipPlane(): void
-  /** Delete the clip plane with the given ID, or the one under the cursor if omitted. */
-  deleteClipPlane(id?: string): Promise<void>
-  /** Remove every clipping plane from the scene. */
-  clearClipPlanes(): void
-  /** Toggle a single clip plane's enabled state. */
-  toggleClipPlane(id: string, enabled: boolean): void
-  /** Snapshot of all active clip planes (the section box and the level cut are not listed). */
-  getClipPlanes(): { id: string; enabled: boolean; title: string }[]
+  getSections(): SectionSystem
   /**
-   * Section box: six planes that keep only what is inside `box` (plus
-   * `margin` metres on every side). Null removes it.
+   * Storey levels of every visible model, bottom to top, in scene metres (the
+   * height a plan cut is measured from). Calibrated against the geometry, so
+   * millimetre and offset models come out right; merged across federated
+   * models. Empty when no model has IfcBuildingStorey entities.
    */
-  setSectionBox(box: { min: Vec3Like; max: Vec3Like } | null, margin?: number): void
-  /** Whether a section box is on. */
-  hasSectionBox(): boolean
-  /**
-   * Level cut: one horizontal plane at world height `y` that hides
-   * everything above it — a live plan view. Null removes it.
-   */
-  setLevelCut(y: number | null): void
-  /**
-   * Register a one-shot callback that fires when the next clip plane is placed
-   * and auto-deactivates creation mode. Pass null to cancel without placing.
-   */
-  setClipCreationCallback(cb: (() => void) | null): void
-  /** Remove all clipping planes and close any open storey view. */
+  getStoreyLevels(): Promise<Array<{ name: string; y: number }>>
+  /** Remove all section planes and the box, and close any open storey view. */
   cleanupSectionAndPlans(): void
 
   // ─── Floor plan / storey views ───────────────────────────────────────────────
@@ -1020,6 +1061,26 @@ function parseTypeProps(isTypedBy: unknown): { typeName: string | null; psets: I
 
 // ─── Factory ─────────────────────────────────────────────────────────────────
 
+/**
+ * Paint the category palette onto a model. Batched by palette entry (≤25 calls
+ * instead of one per element). Shared by the load path and by
+ * setPresentationLook(null), which has to put exactly this back.
+ */
+async function paintPalette(model: FRAGS.FragmentsModel, typeMap: Map<number, string>): Promise<void> {
+  const colorBatches:   Map<number, number[]> = new Map()
+  const opacityBatches: Map<number, number[]> = new Map()
+  for (const [localId, rawType] of typeMap.entries()) {
+    const pal = IFC_PALETTE[rawType] ?? IFC_PALETTE[canonicalType(rawType)]
+    if (!pal) continue
+    const cb = colorBatches.get(pal.color) ?? []; cb.push(localId); colorBatches.set(pal.color, cb)
+    if (pal.opacity !== undefined) {
+      const ob = opacityBatches.get(pal.opacity) ?? []; ob.push(localId); opacityBatches.set(pal.opacity, ob)
+    }
+  }
+  for (const [hex, ids] of colorBatches)       await model.setColor(ids, new THREE.Color(hex))
+  for (const [opacity, ids] of opacityBatches) await model.setOpacity(ids, opacity)
+}
+
 export function createViewer(container: HTMLElement): ViewerAPI {
 
   const components = new OBC.Components()
@@ -1218,10 +1279,15 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   const onCameraControl = (): void => {
     pointCloudInstance?.setInteractionActive(true)
     fragmentUpdates.request()
+    // The measurement HUD sits on a projected point: keep it on it. (The system
+    // is created further down; a control event can never precede that, but a
+    // TDZ read would throw, so it is guarded rather than assumed.)
+    try { measureSystem.cameraChanged() } catch { /* not created yet */ }
   }
   const onCameraRest = (): void => {
     pointCloudInstance?.setInteractionActive(false)
     fragmentUpdates.request()
+    try { measureSystem.cameraChanged() } catch { /* not created yet */ }
   }
   world.camera.controls.addEventListener('control', onCameraControl)
   world.camera.controls.addEventListener('rest', onCameraRest)
@@ -1344,51 +1410,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     console.info('[Viewer] PostproductionRenderer unavailable, using standard renderer:', (err as Error)?.message ?? err)
   }
 
-  // ─── Measurement tools ────────────────────────────────────────────────────────
-  const lengthMeasurement = components.get(OBCF.LengthMeasurement)
-  lengthMeasurement.world   = world
-  lengthMeasurement.enabled = false
-
-  const areaMeasurement = components.get(OBCF.AreaMeasurement)
-  areaMeasurement.world   = world
-  areaMeasurement.enabled = false
-
-  let activeMeasurementTool: 'none' | 'length' | 'area' = 'none'
-
-  // ─── Clipping planes (OBC.Clipper) ────────────────────────────────────────────
-  const clipper = components.get(OBC.Clipper)
-  clipper.enabled = false
-  // Planes the viewer places itself (section box, level cut): hidden helpers,
-  // never listed in the section panel as user planes.
-  const managedPlanes = new Set<string>()
-  let sectionBoxPlanes: string[] = []
-  let levelCutPlane: string | null = null
-  const addManagedPlane = (normal: THREE.Vector3, point: THREE.Vector3): string | null => {
-    try {
-      const id = clipper.createFromNormalAndCoplanarPoint(world, normal, point)
-      const plane = clipper.list.get(id)
-      if (plane) plane.visible = false
-      managedPlanes.add(id)
-      return id
-    } catch (e) {
-      console.warn('[Viewer] clip plane failed:', e)
-      return null
-    }
-  }
-  const dropManagedPlane = (id: string) => {
-    managedPlanes.delete(id)
-    try {
-      const plane = clipper.list.get(id)
-      plane?.dispose()
-      clipper.list.delete(id)
-    } catch { /* already gone */ }
-  }
-  clipper.orthogonalY = true
-
-  // One-shot callback invoked when a clip plane is placed (auto-deactivates creation mode)
-  let clipCreationCallback: (() => void) | null = null
-  // Handler ref so we can remove it cleanly
-  let onAfterCreateHandler: ((plane: OBC.SimplePlane) => void) | null = null
+  // Measurement and section tools (lib/measure) are created once the scene
+  // state they read is declared — see "Measurement & sections" below.
 
   // ─── Floor plan / section views (OBC.Views) ───────────────────────────────────
   const views = components.get(OBC.Views)
@@ -1420,6 +1443,53 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   // Models explicitly hidden at the model level (via setModelVisible / isolateModel).
   // applyFilters skips these so element-level calls never re-show a model-hidden model.
   const modelHidden: Set<string> = new Set()
+  // Cover Studio section capture: materials patched for poché, and the
+  // renderer's planes before the cut (restored by setPresentationSection(null)).
+  const pochePatched = new Map<THREE.MeshLambertMaterial, {
+    side: THREE.Side
+    onBeforeCompile: THREE.MeshLambertMaterial['onBeforeCompile']
+    cacheKey: THREE.MeshLambertMaterial['customProgramCacheKey']
+  }>()
+  let sectionPrevPlanes: THREE.Plane[] | null = null
+  // Grid visibility before a presentation look/section hid it (null = untouched).
+  let presentationGridPrev: boolean | null = null
+  const hidePresentationGrid = (hide: boolean) => {
+    if (hide) {
+      if (presentationGridPrev === null) presentationGridPrev = grid.visible
+      grid.visible = false
+    } else if (presentationGridPrev !== null) {
+      grid.visible = presentationGridPrev
+      presentationGridPrev = null
+    }
+  }
+
+  /**
+   * Run `fn` with the drawing buffer at `scale` × its normal pixel ratio — the
+   * CSS size (and so the camera aspect and framing) is untouched, only the
+   * pixel count grows. Postproduction targets are resized to match, and both
+   * are put back before returning, so the live view never sees the change.
+   */
+  function withRenderScale<T>(scale: number, fn: () => T): T {
+    if (!(scale > 1)) return fn()
+    const renderer = world.renderer!
+    const three = renderer.three
+    const base = three.getPixelRatio()
+    const gl = three.getContext()
+    const limit = Math.min(8192, gl.getParameter(gl.MAX_RENDERBUFFER_SIZE) as number)
+    const css = new THREE.Vector2()
+    three.getSize(css)
+    const longest = Math.max(css.x, css.y, 1)
+    const ratio = Math.min(base * scale, limit / longest)
+    const pp = postproductionReady ? renderer.postproduction : null
+    three.setPixelRatio(ratio)
+    try { pp?.setSize(three.domElement.width, three.domElement.height) } catch { /* not initialised */ }
+    try {
+      return fn()
+    } finally {
+      three.setPixelRatio(base)
+      try { pp?.setSize(three.domElement.width, three.domElement.height) } catch { /* not initialised */ }
+    }
+  }
 
   // Backward-compat reference: always points to the current model's type map
   let expressIDToType: Map<number, string> = new Map()
@@ -1788,10 +1858,14 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
   const onPointerMove = async (e: PointerEvent): Promise<void> => {
     aimAt(e)
-
-    // Measurement tools handle their own pointer feedback — skip hover highlight
-    if (activeMeasurementTool !== 'none') return
     if (geoPointerSuppressed) return // map placement editor owns the pointer
+
+    // Section handles first (they only answer while the section panel is
+    // open), then the measurement tool. Both draw their own pointer feedback,
+    // so element hover highlighting stands down while either has the cursor.
+    sectionSystem.pointerMove(e)
+    if (measureSystem.isActive()) { measureSystem.pointerMove(e); return }
+    if (sectionSystem.isPlacing() || sectionSystem.isOverHandle()) return
     if (modelObjects.size === 0) return
 
     const now = performance.now()
@@ -1849,37 +1923,23 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     const dist = Math.hypot(e.clientX - pdX, e.clientY - pdY)
     if (dt > 300 || dist > 5) return   // ignore drags / long-press
 
-    // ── Measurement tools ────────────────────────────────────────────────────
-    // ThatOpen's Measurement base class only registers pointermove + keydown(Esc)
-    // via setEvents(). It does NOT add a click/pointerdown listener.
-    // We must call create() ourselves on each quick click.
-    if (activeMeasurementTool === 'length') {
-      void lengthMeasurement.create()
+    // ── Measurement tools / face section placement ────────────────────────────
+    if (measureSystem.isActive()) {
+      measureSystem.click(e)
       return
     }
-    if (activeMeasurementTool === 'area') {
-      void areaMeasurement.create()
-      return
-    }
+    if (sectionSystem.click(e)) return
 
     aimAt(e)
-
-    // ── Clipper ───────────────────────────────────────────────────────────────
-    if (clipper.enabled) {
-      void clipper.create(world)
-      return
-    }
 
     // ── Element selection ─────────────────────────────────────────────────────
     void commitSelection()
   }
 
-  // Double-click: finish in-progress area polygon (needs ≥ 3 points already placed)
+  // Double-click: while measuring it finishes a path or an area.
   const onDoubleClick = (e: MouseEvent): void => {
-    if (activeMeasurementTool === 'area') {
-      try { areaMeasurement.endCreation?.() } catch { /* ok */ }
-      return
-    }
+    if (measureSystem.doubleClick(e)) return
+    if (sectionSystem.isPlacing()) return
     // ── Walking: double-click is "go there" ───────────────────────────────────
     // Re-centring an orbit means nothing while you are standing in a room, and
     // crossing a building on foot is a minute of holding W. Aim at the floor of
@@ -1912,11 +1972,22 @@ export function createViewer(container: HTMLElement): ViewerAPI {
   }
 
   // Right-click: select the element under the cursor and surface a context menu.
-  // Suppressed while a measurement tool or the clipper is active so their own
-  // interactions aren't hijacked.
+  // While measuring it is the CAD "done" gesture instead: it finishes a path or
+  // an area when there is enough to finish, and otherwise drops the
+  // measurement being drawn. Never the browser's own menu over the canvas.
   const onContextMenu = (e: MouseEvent): void => {
+    if (measureSystem.isActive()) {
+      e.preventDefault()
+      if (measureSystem.getSnapshot().canFinish) measureSystem.finishDraft()
+      else measureSystem.cancelDraft()
+      return
+    }
+    if (sectionSystem.isPlacing()) {
+      e.preventDefault()
+      sectionSystem.cancelFacePlacement()
+      return
+    }
     if (modelObjects.size === 0) return
-    if (activeMeasurementTool !== 'none' || clipper.enabled) return
     e.preventDefault()
     aimAt(e)
     void (async () => {
@@ -1931,13 +2002,292 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     })()
   }
 
+  // ─── Measurement & sections (lib/measure) ─────────────────────────────────
+  //
+  // One picker for both: it tests every hit against the section planes (the
+  // GPU picker the old tools used ignores them, so a click on the inside of a
+  // cut measured the wall that had been cut away), and it snaps in screen
+  // pixels rather than @thatopen's fixed metre.
+  const snapResolver = ((): OBC.SnapResolver | null => {
+    try { return components.get(OBC.SnapResolvers).get() } catch { return null }
+  })()
+  const aimClient = (e: { clientX: number; clientY: number }): { x: number; y: number } => {
+    const locked = typeof document !== 'undefined' && document.pointerLockElement === canvas
+    return aimPoint(locked, canvas.getBoundingClientRect(), e.clientX, e.clientY)
+  }
+  const picker = createScenePicker({
+    canvas,
+    getCamera: () => world.camera.three,
+    getModels: function* () {
+      for (const [id, model] of modelObjects) {
+        if (modelHidden.has(id)) continue
+        yield [id, model] as [string, FRAGS.FragmentsModel]
+      }
+    },
+    getExtraTargets: () => {
+      const roots = new Set<THREE.Object3D>()
+      for (const m of modelObjects.values()) roots.add(m.object)
+      return [...world.meshes].filter((o) => !roots.has(o)) as THREE.Object3D[]
+    },
+    getClippingPlanes: () => wr.clippingPlanes,
+    getSnapResolver: () => snapResolver,
+  })
+
+  const measureSystem: MeasureSystem = createMeasureSystem({
+    scene: world.scene.three,
+    canvas,
+    getCamera: () => world.camera.three,
+    picker,
+    toModelCoordinates: (point, modelId) => {
+      // The picked model's own IFC frame: undo its placement in the scene, then
+      // the loader's coordination. That is the number on the drawings.
+      const pivot = modelId ? modelPivots.get(modelId) : undefined
+      if (!modelId || !pivot) return { coords: toIfcAxes(point), frame: 'scene' }
+      pivot.updateMatrixWorld(true)
+      const local = point.clone().applyMatrix4(pivot.matrixWorld.clone().invert())
+      const c = modelCoordination.get(modelId)
+      if (c) local.sub(new THREE.Vector3(c.x, c.y, c.z))
+      return { coords: toIfcAxes(local), frame: 'model' }
+    },
+    frameBox: (box) => {
+      try { void world.camera.controls.fitToBox(box, true) } catch (err) {
+        console.debug('[Viewer] measurement focus failed:', err instanceof Error ? err.message : err)
+      }
+    },
+    aim: aimClient,
+  })
+
+  // ── Poché: flat-filled cut solids ─────────────────────────────────────────
+  // A cut closed solid exposes its inside, i.e. its back faces. Rendering those
+  // double-sided and flat is the classic section fill without stencil caps.
+  // Shared by the section tool and Cover Studio, which must not stack patches:
+  // the presentation cut wins while it is up, and the section tool's fill comes
+  // back when it is lifted.
+  let sectionPoche: string | null = null
+  let presentationPoche: string | null = null
+  let appliedPoche: string | null = null
+
+  function patchPocheMaterial(mat: unknown, color: string, skipTransparent: boolean): void {
+    if (!(mat instanceof THREE.MeshLambertMaterial) || pochePatched.has(mat)) return
+    // Glass seen through glass would show its own back faces filled.
+    if (skipTransparent && (mat.transparent || mat.opacity < 1)) return
+    const c = new THREE.Color(color)
+    const fill = `vec4(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)}, 1.0)`
+    pochePatched.set(mat, { side: mat.side, onBeforeCompile: mat.onBeforeCompile, cacheKey: mat.customProgramCacheKey })
+    mat.side = THREE.DoubleSide
+    mat.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <dithering_fragment>',
+        `#include <dithering_fragment>\n  if (!gl_FrontFacing) gl_FragColor = ${fill};`,
+      )
+    }
+    const key = `poche-${color}`
+    mat.customProgramCacheKey = () => key
+    mat.needsUpdate = true
+  }
+
+  function clearPoche(): void {
+    for (const [mat, orig] of pochePatched) {
+      mat.side = orig.side
+      mat.onBeforeCompile = orig.onBeforeCompile
+      mat.customProgramCacheKey = orig.cacheKey
+      mat.needsUpdate = true
+    }
+    pochePatched.clear()
+    appliedPoche = null
+  }
+
+  function applyPoche(color: string, skipTransparent: boolean): void {
+    for (const model of modelObjects.values()) {
+      model.object.traverse((o) => {
+        const mesh = o as THREE.Mesh
+        if (!mesh.isMesh) return
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+        for (const mat of mats) patchPocheMaterial(mat, color, skipTransparent)
+      })
+    }
+    appliedPoche = color
+  }
+
+  function syncPoche(): void {
+    const want = presentationPoche ?? sectionPoche
+    if (want === appliedPoche) return
+    clearPoche()
+    if (want) applyPoche(want, presentationPoche === null)
+  }
+
+  // Materials created after the cut (streamed tiles, highlight materials) are
+  // filled too, or the poché would come and go as the camera moved.
+  try {
+    fragmentsManager.core.models.materials.list.onItemSet.add(({ value }) => {
+      if (appliedPoche) patchPocheMaterial(value, appliedPoche, presentationPoche === null)
+    })
+  } catch (err) {
+    console.debug('[Viewer] poché material hook unavailable:', err instanceof Error ? err.message : err)
+  }
+
+  const sectionSystem: SectionSystem = createSectionSystem({
+    scene: world.scene.three,
+    canvas,
+    container,
+    getCamera: () => world.camera.three,
+    picker,
+    setPlane: (active, plane) => { world.renderer!.setPlane(active, plane) },
+    getSceneBounds: () => {
+      const box = combinedModelsBox()
+      return box.isEmpty() ? null : box
+    },
+    getSelectionBounds: async () => {
+      if (selectedLocalId === null || !selectedModelId) return null
+      const model = modelObjects.get(selectedModelId)
+      if (!model) return null
+      try { return await model.getMergedBox([selectedLocalId]) } catch { return null }
+    },
+    setControlsEnabled: (enabled) => { world.camera.controls.enabled = enabled },
+    planesChanged: (final) => {
+      // Fragments cull streamed tiles against the planes too, so moving a cut
+      // must re-run the view or what it uncovers would stay missing.
+      if (final) void fragmentsManager.core.update(true)
+      else fragmentUpdates.request()
+    },
+    setPoche: (color) => { sectionPoche = color; syncPoche() },
+    lookAt: (position, target) => {
+      // A NaN handed to camera-controls poisons it for the session: nothing
+      // it is asked afterwards (framing included) brings the camera back.
+      const finite = [position.x, position.y, position.z, target.x, target.y, target.z].every(Number.isFinite)
+      if (!finite) return
+      try {
+        void world.camera.controls.setLookAt(position.x, position.y, position.z, target.x, target.y, target.z, true)
+      } catch (err) {
+        console.debug('[Viewer] section lookAt failed:', err instanceof Error ? err.message : err)
+      }
+    },
+    aim: aimClient,
+    isPointerBusy: () => measureSystem.isActive(),
+  })
+
+  // Dev handle, like __ifcLoad / __basemapTiles: lets a session inspect the
+  // measurement and section state (and drive the picker) without pixels.
+  if (import.meta.env.DEV) {
+    ;(globalThis as Record<string, unknown>).__measure = {
+      measure: measureSystem, sections: sectionSystem, picker,
+      camera: () => world.camera.three,
+      frame: () => { const b = combinedModelsBox(); if (!b.isEmpty()) void world.camera.controls.fitToBox(b, false) },
+      controls: () => world.camera.controls,
+      recordingCanvas: () => recording?.canvas ?? null,
+    }
+  }
+
+  // ── Recording surface ─────────────────────────────────────────────────────
+  // Copied right after each render (onAfterUpdate runs in the same task, while
+  // the WebGL buffer still holds the frame), then the labels are painted over.
+  // At most ~30 copies a second: the replay buffer samples at 24 fps, and a
+  // blit per 60 Hz frame would be half wasted.
+  let recording: { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; holders: number; last: number } | null = null
+  const RECORD_MIN_INTERVAL_MS = 1000 / 30
+  const paintRecordingFrame = (): void => {
+    const rec = recording
+    if (!rec) return
+    const now = performance.now()
+    if (now - rec.last < RECORD_MIN_INTERVAL_MS) return
+    const src = wr.domElement
+    if (src.width === 0 || src.height === 0) return
+    rec.last = now
+    if (rec.canvas.width !== src.width || rec.canvas.height !== src.height) {
+      rec.canvas.width = src.width
+      rec.canvas.height = src.height
+    }
+    try {
+      rec.ctx.drawImage(src, 0, 0)
+      measureSystem.paintLabels(rec.ctx, src.width, src.height, src.width / Math.max(1, src.clientWidth || src.width))
+    } catch (err) {
+      console.debug('[Viewer] recording frame failed:', err instanceof Error ? err.message : err)
+    }
+  }
+  function acquireRecordingCanvas(): { canvas: HTMLCanvasElement; release(): void } {
+    if (!recording) {
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.max(1, wr.domElement.width)
+      canvas.height = Math.max(1, wr.domElement.height)
+      const ctx = canvas.getContext('2d', { alpha: false })
+      if (!ctx) {
+        // No 2D context (exotic / headless): recording the WebGL canvas is the
+        // honest fallback — lines without labels beats no recording.
+        return { canvas: wr.domElement, release: () => undefined }
+      }
+      recording = { canvas, ctx, holders: 0, last: 0 }
+      world.renderer!.onAfterUpdate.add(paintRecordingFrame)
+    }
+    const rec = recording
+    rec.holders += 1
+    let released = false
+    return {
+      canvas: rec.canvas,
+      release: () => {
+        if (released || recording !== rec) return
+        released = true
+        rec.holders -= 1
+        if (rec.holders > 0) return
+        try { world.renderer!.onAfterUpdate.remove(paintRecordingFrame) } catch { /* disposed */ }
+        recording = null
+      },
+    }
+  }
+
+  // ── Shot frames (Clip Studio, director) ───────────────────────────────────
+  // renderShotFrame hands back a canvas the caller draws into its encoder in
+  // the same task. The labels are HTML, so the WebGL canvas alone gave clips
+  // the lines of every measurement and none of its numbers: they are painted
+  // onto a copy here, and the copy is what the encoder gets.
+  let shotLabels: { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null = null
+  let shotHandlesRestore: (() => void) | null = null
+  function withShotLabels(frame: HTMLCanvasElement, s: number): HTMLCanvasElement {
+    if (!shotLabels) {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return frame
+      shotLabels = { canvas, ctx }
+    }
+    const { canvas, ctx } = shotLabels
+    if (canvas.width !== frame.width || canvas.height !== frame.height) {
+      canvas.width = frame.width
+      canvas.height = frame.height
+    }
+    try {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(frame, 0, 0)
+      return measureSystem.paintLabels(ctx, canvas.width, canvas.height, s) ? canvas : frame
+    } catch {
+      return frame
+    }
+  }
+
+  // Storey levels are read once per set of visible models (and after a move).
+  let storeyLevelsCache: { key: string; levels: Level[] } | null = null
+
+  const onPointerLeave = (): void => { measureSystem.pointerLeave() }
+
   canvas.addEventListener('pointermove',  onPointerMove)
   canvas.addEventListener('pointerdown',  onPointerDown)
   canvas.addEventListener('pointerup',    onPointerUp)
+  canvas.addEventListener('pointerleave', onPointerLeave)
   canvas.addEventListener('dblclick',     onDoubleClick)
   canvas.addEventListener('contextmenu',  onContextMenu)
 
   // ─── Setup post-carga ─────────────────────────────────────────────────────
+
+  /**
+   * Hand the renderer's clipping planes to a model's own raycasting and culling.
+   *
+   * Fragments only honour the planes it is given, and nothing gave it any — so
+   * with a section in place, clicking the exposed inside of a cut SELECTED THE
+   * WALL THAT HAD BEEN CUT AWAY in front of it, and streamed tiles behind the
+   * cut kept being fetched. The getter is live: planes added, moved or removed
+   * later are read on the next raycast and the next view update.
+   */
+  function bindClippingPlanes(model: FRAGS.FragmentsModel): void {
+    try { model.getClippingPlanesEvent = () => wr.clippingPlanes } catch { /* older build */ }
+  }
 
   /**
    * World-space union of every loaded model's box, pivot transforms applied.
@@ -2041,22 +2391,9 @@ export function createViewer(container: HTMLElement): ViewerAPI {
     // From here on read the LOCAL map, never the alias: every await lets a
     // concurrent load reassign `expressIDToType`, and this model would then be
     // painted, counted and labelled with another model's types.
-    // Batch setColor/setOpacity by palette entry (≤25 calls instead of one per element)
-    const colorBatches:   Map<number, number[]> = new Map()
-    const opacityBatches: Map<number, number[]> = new Map()
-
-    for (const [localId, rawType] of modelTypeMap.entries()) {
-      const pal = IFC_PALETTE[rawType] ?? IFC_PALETTE[canonicalType(rawType)]
-      if (!pal) continue
-      const cb = colorBatches.get(pal.color) ?? []; cb.push(localId); colorBatches.set(pal.color, cb)
-      if (pal.opacity !== undefined) {
-        const opKey = pal.opacity
-        const ob = opacityBatches.get(opKey) ?? []; ob.push(localId); opacityBatches.set(opKey, ob)
-      }
-    }
-
-    for (const [hex, ids] of colorBatches)       await model.setColor(ids, new THREE.Color(hex))
-    for (const [opacity, ids] of opacityBatches) await model.setOpacity(ids, opacity)
+    // Batched by palette entry (≤25 calls instead of one per element); shared
+    // with setPresentationLook(null), which has to put exactly this back.
+    await paintPalette(model, modelTypeMap)
     checkpoint()
 
     onProgress?.(90)
@@ -2244,6 +2581,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       currentModelId = assignedId
       currentPivot   = pivot
       modelObjects.set(assignedId, model)
+      bindClippingPlanes(model)
 
       // Record whatever the loader did to this model's datum, rather than
       // assuming it did nothing. The converter no longer translates models to
@@ -2343,6 +2681,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
         currentModelId = modelId
         currentPivot   = pivot
         modelObjects.set(modelId, model)
+        bindClippingPlanes(model)
 
         // Record whatever the loader did to this model's datum, rather than
         // assuming it did nothing. The converter no longer translates models to
@@ -2708,6 +3047,131 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
+    async setPresentationLook(look) {
+      if (!sectionPrevPlanes) hidePresentationGrid(!!look?.hideGrid)
+      if (modelObjects.size === 0) return
+      for (const [modelId, model] of modelObjects) {
+        const typeMap = typeMapByModel.get(modelId) ?? new Map<number, string>()
+        await model.resetOpacity(undefined)
+        await model.resetColor(undefined)
+        if (!look) { await paintPalette(model, typeMap); continue }
+
+        const focus = new Set(look.focusTypes.map((t) => t.toUpperCase()))
+        const focusIds: number[] = []
+        const restIds: number[] = []
+        for (const [localId, rawType] of typeMap) {
+          const t = rawType.toUpperCase()
+          if (focus.has(t) || focus.has(canonicalType(rawType))) focusIds.push(localId)
+          else restIds.push(localId)
+        }
+        if (look.base === 'original') {
+          await paintPalette(model, new Map(restIds.map((id) => [id, typeMap.get(id)!])))
+        } else if (restIds.length) {
+          await model.setColor(restIds, new THREE.Color(look.baseColor))
+        }
+        if (restIds.length && look.baseOpacity < 0.999) await model.setOpacity(restIds, look.baseOpacity)
+        if (focusIds.length) {
+          if (look.focusColor) await model.setColor(focusIds, new THREE.Color(look.focusColor))
+          else await paintPalette(model, new Map(focusIds.map((id) => [id, typeMap.get(id)!])))
+        }
+      }
+      await fragmentsManager.core.update(true)
+    },
+
+    async setPresentationSection(section) {
+      const wr3 = world.renderer!.three
+      wr3.clippingPlanes = sectionPrevPlanes ?? wr3.clippingPlanes
+      sectionPrevPlanes = null
+      if (!section) {
+        // Hand the fill back to the section tool, if it has one up.
+        presentationPoche = null
+        syncPoche()
+        hidePresentationGrid(false)
+        void fragmentsManager.core.update(true)
+        return
+      }
+      // A cut is a drawing: the ground grid only adds noise to it.
+      hidePresentationGrid(true)
+
+      const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+        new THREE.Vector3(section.normal.x, section.normal.y, section.normal.z).normalize(),
+        new THREE.Vector3(section.point.x, section.point.y, section.point.z),
+      )
+      sectionPrevPlanes = wr3.clippingPlanes
+      wr3.clippingPlanes = [...wr3.clippingPlanes, plane]
+
+      // Poché for the cut (see patchPocheMaterial). Takes over from any section
+      // tool fill while the capture is set up.
+      presentationPoche = section.poche
+      syncPoche()
+      await fragmentsManager.core.update(true)
+    },
+
+    async captureExplodedLayers(layers, gap, scale = 1) {
+      const scene3 = world.scene.three
+      const wr3 = world.renderer!.three
+      const prevBg = scene3.background
+      const prevFog = scene3.fog
+      const prevClear = wr3.getClearAlpha()
+      const prevGrid = grid.visible
+      // Hide everything that isn't a model or a light (grid, OSM context,
+      // markers) so each layer is the storey alone on transparency.
+      const pivots = new Set<THREE.Object3D>(modelPivots.values())
+      for (const m of modelObjects.values()) pivots.add(m.object)
+      const hidden: THREE.Object3D[] = []
+      for (const child of scene3.children) {
+        if (pivots.has(child) || (child as THREE.Light).isLight || !child.visible) continue
+        child.visible = false
+        hidden.push(child)
+      }
+      scene3.background = null
+      scene3.fog = null
+      grid.visible = false
+      wr3.setClearAlpha(0)
+
+      const origY = new Map<string, number>()
+      for (const [mid, m] of modelObjects) origY.set(mid, m.object.position.y)
+      const allIds = (mid: string) => [...(typeMapByModel.get(mid)?.keys() ?? [])]
+      const out: string[] = []
+      try {
+        for (let i = 0; i < layers.length; i++) {
+          const wanted = new Map(layers[i].map((l) => [l.modelId, l.ids]))
+          for (const [mid, m] of modelObjects) {
+            if (modelHidden.has(mid)) continue
+            const all = allIds(mid)
+            if (all.length) await m.setVisible(all, false)
+            const ids = wanted.get(mid)
+            if (ids?.length) await m.setVisible(ids, true)
+            m.object.position.y = (origY.get(mid) ?? 0) + i * gap
+            m.object.updateMatrixWorld(true)
+          }
+          await fragmentsManager.core.update(true)
+          await new Promise((r) => setTimeout(r, 250))
+          try { world.camera.controls.update(0) } catch { /* no controls */ }
+          out.push(withRenderScale(scale, () => {
+            wr3.render(scene3, world.camera.three)
+            return wr3.domElement.toDataURL('image/png')
+          }))
+        }
+      } finally {
+        for (const [mid, m] of modelObjects) {
+          m.object.position.y = origY.get(mid) ?? 0
+          m.object.updateMatrixWorld(true)
+          if (modelHidden.has(mid)) continue
+          const all = allIds(mid)
+          if (all.length) await m.setVisible(all, true)
+        }
+        for (const o of hidden) o.visible = true
+        scene3.background = prevBg
+        scene3.fog = prevFog
+        grid.visible = prevGrid
+        wr3.setClearAlpha(prevClear)
+        await fragmentsManager.core.update(true)
+      }
+      return out
+    },
+
+
     setSelectCallback(cb) { selectCallback = cb },
 
     setContextMenuCallback(cb) { contextMenuCallback = cb },
@@ -2726,7 +3190,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     // ─── Camera presets ───────────────────────────────────────────────────────
 
-    setCameraPreset(preset: CameraPreset) {
+    setCameraPreset(preset: CameraPreset, opts?: { animate?: boolean }) {
       const box = currentModel?.box ?? new THREE.Box3(
         new THREE.Vector3(-10, -10, -10),
         new THREE.Vector3(10,  10,  10),
@@ -2758,11 +3222,16 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
       const [ox, oy, oz] = OFFSETS[preset]
 
+      const animate = opts?.animate !== false
       void world.camera.controls.setLookAt(
         center.x + ox, center.y + oy, center.z + oz,
         center.x,       center.y,      center.z,
-        true,
+        animate,
       )
+      if (!animate) {
+        try { world.camera.controls.update(0) } catch { /* no controls yet */ }
+        void fragmentsManager.core.update(true)
+      }
     },
 
     // ─── Model transform ──────────────────────────────────────────────────────
@@ -2794,6 +3263,10 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       pivotTransforms.set(tid, stored)
       void fragmentsManager.core.update()
       refreshSelectionBox()
+      // Snap geometry is cached in WORLD space: a moved model would snap to
+      // where it used to be.
+      try { snapResolver?.clear() } catch { /* ok */ }
+      storeyLevelsCache = null
     },
 
     setSatelliteResolver(fn) { satelliteResolver = fn },
@@ -2808,6 +3281,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       pivotTransforms.set(tid, { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: 1 })
       void fragmentsManager.core.update()
       refreshSelectionBox()
+      try { snapResolver?.clear() } catch { /* ok */ }
+      storeyLevelsCache = null
     },
 
     getModelBounds(modelId?: string) {
@@ -3096,12 +3571,19 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
     },
 
-    setCameraLookAt(position: Vec3Like, target: Vec3Like) {
+    setCameraLookAt(position: Vec3Like, target: Vec3Like, animate = true) {
       void world.camera.controls.setLookAt(
         position.x, position.y, position.z,
         target.x, target.y, target.z,
-        true,
+        animate,
       )
+      if (!animate) {
+        // Land the jump now and re-cull fragments for the new view; otherwise
+        // the camera only moves on the next frame and a snapshot taken before it
+        // renders with tiles streamed for the old viewpoint (half a building).
+        try { world.camera.controls.update(0) } catch { /* no controls yet */ }
+        void fragmentsManager.core.update(true)
+      }
     },
 
     async getElementsBox(ids: number[], modelId?: string) {
@@ -3245,27 +3727,57 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       applyBackground(settings)
     },
 
-    takeSnapshot(): string {
+    takeSnapshot(scale = 1, options: { annotations?: boolean } = {}): string {
+      const annotations = options.annotations !== false
       // The WebGL drawing buffer is cleared after compositing
       // (preserveDrawingBuffer is off), so reading pixels outside the render
       // loop yields a black PNG. Force a synchronous render into the buffer
       // and read it back in the same task.
+      // Apply any pending camera-controls state (an instant setLookAt only lands
+      // on the next update) so the frame shows the camera that was asked for.
+      try { world.camera.controls.update(0) } catch { /* no controls yet */ }
+      // Hidden for this one render only; the next frame shows them again.
+      const restoreHandles = sectionSystem.hideForCapture()
+      const restoreMeasures = annotations ? null : measureSystem.hideForCapture()
       try {
-        const pp = postproductionReady ? world.renderer?.postproduction : null
-        if (pp?.enabled && pp.composer) {
-          pp.composer.render()
-        } else {
-          wr.render(world.scene.three, world.camera.three)
-        }
-      } catch {
-        try { wr.render(world.scene.three, world.camera.three) } catch { /* read whatever the buffer holds */ }
-      }
-      try {
-        return wr.domElement.toDataURL('image/png')
-      } catch {
-        return ''
+        return withRenderScale(scale, () => {
+          try {
+            const pp = postproductionReady ? world.renderer?.postproduction : null
+            if (pp?.enabled && pp.composer) {
+              pp.composer.render()
+            } else {
+              wr.render(world.scene.three, world.camera.three)
+            }
+          } catch {
+            try { wr.render(world.scene.three, world.camera.three) } catch { /* read whatever the buffer holds */ }
+          }
+          try {
+            const frame = wr.domElement
+            if (annotations) {
+              // Copy the frame in the same task (the buffer is not preserved),
+              // then paint the measurement labels over it.
+              const out = document.createElement('canvas')
+              out.width = frame.width
+              out.height = frame.height
+              const ctx = out.getContext('2d')
+              if (ctx) {
+                ctx.drawImage(frame, 0, 0)
+                const s = frame.width / Math.max(1, frame.clientWidth || frame.width)
+                if (measureSystem.paintLabels(ctx, out.width, out.height, s)) return out.toDataURL('image/png')
+              }
+            }
+            return frame.toDataURL('image/png')
+          } catch {
+            return ''
+          }
+        })
+      } finally {
+        restoreHandles()
+        restoreMeasures?.()
       }
     },
+
+    acquireRecordingCanvas,
 
     getCanvas(): HTMLCanvasElement | null {
       try {
@@ -3303,6 +3815,8 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       }
       // Stop the renderer's own loop from painting between our frames.
       world.renderer!.enabled = false
+      // Section handles are interface, not content: never in a clip.
+      shotHandlesRestore = sectionSystem.hideForCapture()
       wr.setPixelRatio(1)
       // updateStyle=false: only the drawing buffer changes size, not the CSS box,
       // so the layout and the renderer's ResizeObserver never notice.
@@ -3336,13 +3850,16 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       // geometry instead of whatever the previous pose had loaded.
       try { await fragmentsManager.core.update(true) } catch { /* render what is loaded */ }
       wr.render(world.scene.three, cam)
-      return wr.domElement
+      // Labels at the size they have on screen, relative to the frame height.
+      return withShotLabels(wr.domElement, s.height / Math.max(1, s.size.y))
     },
 
     async endShotRender(): Promise<void> {
       const s = shotSession
       if (!s) return
       shotSession = null
+      shotHandlesRestore?.()
+      shotHandlesRestore = null
       const cam = world.camera.threePersp
       wr.setPixelRatio(s.pixelRatio)
       wr.setSize(s.size.x, s.size.y, false)
@@ -3378,236 +3895,66 @@ export function createViewer(container: HTMLElement): ViewerAPI {
 
     // ─── Measurements ─────────────────────────────────────────────────────────
 
-    setMeasurementTool(tool: 'none' | 'length' | 'area') {
-      // Deactivate all tools first
-      try { lengthMeasurement.endCreation() } catch { /* in-progress creation — ok */ }
-      try { areaMeasurement.endCreation?.() } catch { /* ok */ }
-
-      lengthMeasurement.enabled = false
-      areaMeasurement.enabled   = false
-      activeMeasurementTool     = tool
-
-      if (tool === 'length') {
-        lengthMeasurement.enabled = true
-        canvas.style.cursor = 'crosshair'
-      } else if (tool === 'area') {
-        areaMeasurement.enabled = true
-        canvas.style.cursor = 'crosshair'
-      } else {
-        canvas.style.cursor = 'default'
-      }
+    getMeasure() {
+      return measureSystem
     },
 
     clearMeasurements() {
-      // DataSet<T> extends Set<T> — iterate and remove each item so the
-      // Measurement class receives onBeforeDelete events to clean up 3D objects.
-      try {
-        for (const item of [...lengthMeasurement.list]) {
-          try { lengthMeasurement.list.delete(item) } catch { /* ok */ }
-        }
-      } catch { /* ok */ }
-      try {
-        for (const item of [...areaMeasurement.list]) {
-          try { areaMeasurement.list.delete(item) } catch { /* ok */ }
-        }
-      } catch { /* ok */ }
+      measureSystem.setTool('none')
+      measureSystem.clear()
     },
 
-    deleteLastMeasurement() {
-      try {
-        if (activeMeasurementTool === 'length') {
-          const items = [...lengthMeasurement.list]
-          const last = items[items.length - 1]
-          if (last) lengthMeasurement.list.delete(last)
-        } else if (activeMeasurementTool === 'area') {
-          const items = [...areaMeasurement.list]
-          const last = items[items.length - 1]
-          if (last) areaMeasurement.list.delete(last)
-        }
-      } catch (err) {
-        console.debug('[Viewer] deleteLastMeasurement:', err)
-      }
+    // ─── Sections ─────────────────────────────────────────────────────────────
+
+    getSections() {
+      return sectionSystem
     },
 
-    getMeasurementCount(): { length: number; area: number } {
-      return {
-        length: lengthMeasurement.list.size,
-        area:   areaMeasurement.list.size,
-      }
-    },
-
-    getMeasurements(): Array<{ id: string; type: 'length' | 'area'; value: number }> {
-      const out: Array<{ id: string; type: 'length' | 'area'; value: number }> = []
-      try {
-        let i = 0
-        for (const item of lengthMeasurement.list) {
-          try { out.push({ id: `length-${i++}`, type: 'length', value: item.value ?? 0 }) } catch { /* skip */ }
-        }
-        i = 0
-        for (const item of areaMeasurement.list) {
-          try { out.push({ id: `area-${i++}`, type: 'area', value: item.value ?? 0 }) } catch { /* skip */ }
-        }
-      } catch { /* ok */ }
-      return out
-    },
-
-    finishCurrentMeasurement(): void {
-      try { areaMeasurement.endCreation?.() } catch { /* ok */ }
-    },
-
-    // ─── Clipping planes ───────────────────────────────────────────────────────
-
-    startAddClipPlane() {
-      // Remove any stale one-shot listener before registering a fresh one
-      if (onAfterCreateHandler) {
-        try { clipper.onAfterCreate.remove(onAfterCreateHandler) } catch { /* ok */ }
-        onAfterCreateHandler = null
-      }
-      clipper.enabled = true
-      canvas.style.cursor = 'crosshair'
-      // Auto-deactivate and fire UI callback after the first plane is placed
-      onAfterCreateHandler = (_plane: OBC.SimplePlane) => {
-        try { clipper.enabled = false } catch { /* ok */ }
-        canvas.style.cursor = 'default'
-        if (onAfterCreateHandler) {
-          try { clipper.onAfterCreate.remove(onAfterCreateHandler) } catch { /* ok */ }
-          onAfterCreateHandler = null
-        }
-        if (clipCreationCallback) {
-          const cb = clipCreationCallback
-          clipCreationCallback = null
-          try { cb() } catch (e) { console.debug('[Viewer] clipCreationCallback threw:', e) }
-        }
-      }
-      clipper.onAfterCreate.add(onAfterCreateHandler)
-    },
-
-    stopAddClipPlane() {
-      clipper.enabled = false
-      canvas.style.cursor = 'default'
-      if (onAfterCreateHandler) {
-        try { clipper.onAfterCreate.remove(onAfterCreateHandler) } catch { /* ok */ }
-        onAfterCreateHandler = null
-      }
-      clipCreationCallback = null
-    },
-
-    setClipCreationCallback(cb: (() => void) | null) {
-      clipCreationCallback = cb
-    },
-
-    async deleteClipPlane(id?: string) {
-      try {
-        if (id !== undefined && id !== '') {
-          const plane = clipper.list.get(id)
-          if (plane) {
-            // dispose() removes from scene; list.delete() removes from registry
-            try { plane.dispose() } catch (e) { console.debug('[Viewer] plane.dispose:', e) }
-            try { clipper.list.delete(id) } catch (e) { console.debug('[Viewer] list.delete:', e) }
+    async getStoreyLevels() {
+      const key = [...modelObjects.keys()].filter((id) => !modelHidden.has(id)).join('|')
+      if (storeyLevelsCache?.key === key) return storeyLevelsCache.levels
+      const all: Level[] = []
+      for (const [modelId, model] of modelObjects) {
+        if (modelHidden.has(modelId)) continue
+        try {
+          const ids = Object.values(await model.getItemsOfCategories([/BUILDINGSTOREY/])).flat()
+          if (ids.length === 0) continue
+          const data = await model.getItemsData(ids, {
+            attributesDefault: true,
+            relationsDefault: { attributes: false, relations: false },
+          }) as Array<Record<string, { value?: unknown } | undefined>>
+          const raw: RawStorey[] = []
+          for (let i = 0; i < ids.length; i++) {
+            const d = data[i] ?? {}
+            const name = String(d.Name?.value ?? d.LongName?.value ?? `#${ids[i]}`)
+            const e = Number(d.Elevation?.value)
+            let contentMinY: number | null = null
+            try {
+              const children = await model.getItemsChildren([ids[i]])
+              if (children.length) {
+                const b = await model.getMergedBox(children)
+                if (!b.isEmpty()) contentMinY = b.min.y
+              }
+            } catch { /* no spatial children: elevation alone */ }
+            raw.push({ name, elevation: Number.isFinite(e) ? e : null, contentMinY })
           }
-        } else {
-          // No id — delete the one under cursor (raycasting)
-          await clipper.delete(world)
+          // World box (model.box already carries the pivot): only the unit guess
+          // for storeys with no contents reads it.
+          const box = model.box
+          all.push(...calibrateLevels(raw, box.min.y, box.max.y))
+        } catch (err) {
+          console.debug('[Viewer] storey levels unavailable:', err instanceof Error ? err.message : err)
         }
-      } catch (err) {
-        console.debug('[Viewer] deleteClipPlane:', err)
       }
-    },
-
-    setSectionBox(box, margin = 0.3) {
-      for (const id of sectionBoxPlanes) dropManagedPlane(id)
-      sectionBoxPlanes = []
-      if (!box) { void fragmentsManager.core.update(true); return }
-      const lo = new THREE.Vector3(box.min.x - margin, box.min.y - margin, box.min.z - margin)
-      const hi = new THREE.Vector3(box.max.x + margin, box.max.y + margin, box.max.z + margin)
-      // Normals point INTO the box: each plane keeps the side the box is on.
-      const faces: Array<[THREE.Vector3, THREE.Vector3]> = [
-        [new THREE.Vector3(1, 0, 0), lo], [new THREE.Vector3(-1, 0, 0), hi],
-        [new THREE.Vector3(0, 1, 0), lo], [new THREE.Vector3(0, -1, 0), hi],
-        [new THREE.Vector3(0, 0, 1), lo], [new THREE.Vector3(0, 0, -1), hi],
-      ]
-      for (const [n, p] of faces) {
-        const id = addManagedPlane(n, p)
-        if (id) sectionBoxPlanes.push(id)
-      }
-      void fragmentsManager.core.update(true)
-    },
-
-    hasSectionBox() {
-      return sectionBoxPlanes.length > 0
-    },
-
-    setLevelCut(y) {
-      if (y === null || !Number.isFinite(y)) {
-        if (levelCutPlane) dropManagedPlane(levelCutPlane)
-        levelCutPlane = null
-        void fragmentsManager.core.update(true)
-        return
-      }
-      const normal = new THREE.Vector3(0, -1, 0)
-      const point = new THREE.Vector3(0, y, 0)
-      const existing = levelCutPlane ? clipper.list.get(levelCutPlane) : undefined
-      if (existing) existing.setFromNormalAndCoplanarPoint(normal, point)
-      else levelCutPlane = addManagedPlane(normal, point)
-      void fragmentsManager.core.update(true)
-    },
-
-    clearClipPlanes() {
-      sectionBoxPlanes = []
-      levelCutPlane = null
-      managedPlanes.clear()
-      try {
-        clipper.deleteAll()
-      } catch (err) {
-        // deleteAll may throw on empty list in some OBC versions
-        console.debug('[Viewer] clearClipPlanes:', err)
-      }
-    },
-
-    toggleClipPlane(id: string, enabled: boolean) {
-      try {
-        const plane = clipper.list.get(id)
-        if (plane) plane.enabled = enabled
-      } catch (err) {
-        console.debug('[Viewer] toggleClipPlane:', err)
-      }
-    },
-
-    getClipPlanes() {
-      const result: { id: string; enabled: boolean; title: string }[] = []
-      try {
-        let index = 0
-        for (const [id, plane] of clipper.list) {
-          if (managedPlanes.has(id)) continue
-          index++
-          const enabled = typeof plane?.enabled === 'boolean' ? plane.enabled : true
-          const title   = (typeof plane?.title === 'string' && plane.title.trim())
-            ? plane.title.trim()
-            : `Plane ${index}`
-          result.push({ id, enabled, title })
-        }
-      } catch (err) {
-        console.debug('[Viewer] getClipPlanes:', err)
-      }
-      return result
+      const levels = mergeLevels(all)
+      storeyLevelsCache = { key, levels }
+      return levels
     },
 
     cleanupSectionAndPlans() {
-      // Remove all clip planes
-      sectionBoxPlanes = []
-      levelCutPlane = null
-      managedPlanes.clear()
-      try { clipper.deleteAll() } catch { /* ok */ }
-      // Stop any in-progress clip creation
-      try {
-        clipper.enabled = false
-        canvas.style.cursor = 'default'
-        if (onAfterCreateHandler) {
-          try { clipper.onAfterCreate.remove(onAfterCreateHandler) } catch { /* ok */ }
-          onAfterCreateHandler = null
-        }
-        clipCreationCallback = null
-      } catch { /* ok */ }
+      // Every plane and the box go, and any face placement in progress.
+      try { sectionSystem.cancelFacePlacement() } catch { /* ok */ }
+      try { sectionSystem.clear() } catch { /* ok */ }
       // Close any open storey view
       try { views.close() } catch { /* ok */ }
       // Restore perspective orbit camera mode
@@ -3919,6 +4266,7 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       canvas.removeEventListener('pointermove',  onPointerMove)
       canvas.removeEventListener('pointerdown',  onPointerDown)
       canvas.removeEventListener('pointerup',    onPointerUp)
+      canvas.removeEventListener('pointerleave', onPointerLeave)
       canvas.removeEventListener('dblclick',     onDoubleClick)
       canvas.removeEventListener('contextmenu',  onContextMenu)
       // Window-level, so nothing else here would have caught it: without this
@@ -3928,9 +4276,13 @@ export function createViewer(container: HTMLElement): ViewerAPI {
       world.camera.controls.removeEventListener('control', onCameraControl)
       world.camera.controls.removeEventListener('rest', onCameraRest)
       fragmentUpdates.dispose()
-      try { lengthMeasurement.dispose() } catch { /* ok */ }
-      try { areaMeasurement.dispose() } catch { /* ok */ }
-      try { clipper.dispose() } catch { /* ok */ }
+      if (recording) {
+        try { world.renderer!.onAfterUpdate.remove(paintRecordingFrame) } catch { /* ok */ }
+        recording = null
+      }
+      try { measureSystem.dispose() } catch { /* ok */ }
+      try { sectionSystem.dispose() } catch { /* ok */ }
+      clearPoche()
       bgTexture?.dispose()
       bgTexture = null
       components.dispose()

@@ -3,6 +3,8 @@
     "loadingOne": "{{name}} wird geladen",
     "loadingMany_one": "{{count}} Modell wird geladen",
     "loadingMany_other": "{{count}} Modelle werden geladen",
+    "loadingManyFiles_one": "{{count}} Datei wird geladen",
+    "loadingManyFiles_other": "{{count}} Dateien werden geladen",
     "queued_one": "{{count}} in Warteschlange",
     "queued_other": "{{count}} in Warteschlange",
     "held_one": "{{count}} angehalten",
@@ -16,7 +18,9 @@
     "estimate": "Geschätzt aus den bisher abgeschlossenen Schritten, gewichtet nach Dateigröße",
     "announce": {
       "failed_one": "{{count}} Modell konnte nicht geladen werden",
-      "failed_other": "{{count}} Modelle konnten nicht geladen werden"
+      "failed_other": "{{count}} Modelle konnten nicht geladen werden",
+      "failedLoads_one": "{{count}} Ladevorgang fehlgeschlagen",
+      "failedLoads_other": "{{count}} Ladevorgänge fehlgeschlagen"
     }
   },
   "center": {
@@ -55,7 +59,11 @@
     "failed_one": "{{count}} fehlgeschlagen",
     "failed_other": "{{count}} fehlgeschlagen",
     "unnamed_one": "{{count}} Modell",
-    "unnamed_other": "{{count}} Modelle"
+    "unnamed_other": "{{count}} Modelle",
+    "unnamedScans_one": "{{count}} Scan",
+    "unnamedScans_other": "{{count}} Scans",
+    "unnamedMeshes_one": "{{count}} 3D-Modell",
+    "unnamedMeshes_other": "{{count}} 3D-Modelle"
   },
   "row": {
     "queuedAt": "In Warteschlange · #{{position}}",
@@ -70,8 +78,11 @@
     "speed": "{{speed}}/s",
     "speedEstimated": "≈ {{speed}}/s",
     "stalled": "Seit einer Weile kein Fortschritt. Große IFC-Klassen können Minuten dauern; warten Sie weiter oder brechen Sie ab.",
+    "stalledGeneric": "Seit einer Weile kein Fortschritt. Warten Sie weiter oder brechen Sie ab.",
     "stalledShort": "Kein aktueller Fortschritt",
     "duplicate": "Gleicher Inhalt wie ein Modell, das bereits in der Szene ist",
+    "duplicateScan": "Gleicher Inhalt wie ein Scan, der bereits in der Szene ist",
+    "duplicateMesh": "Gleicher Inhalt wie ein 3D-Modell, das bereits in der Szene ist",
     "retrying": "Versuch {{attempt}}"
   },
   "counter": {
@@ -137,6 +148,18 @@
     "decode": "Wird dekodiert",
     "place": "Wird in der Szene platziert"
   },
+  "phaseByKind": {
+    "pointcloud": {
+      "identify": "Vorbereitung des Lesers",
+      "decode": "Punkte-Einlesen"
+    }
+  },
+  "phaseActiveByKind": {
+    "pointcloud": {
+      "identify": "Leser wird vorbereitet",
+      "decode": "Punkte werden gelesen"
+    }
+  },
   "status": {
     "queued": "In Warteschlange",
     "held": "Angehalten",
@@ -155,7 +178,8 @@
     "anchor": "Wartet auf {{name}} (Koordinatenbasis)",
     "attach-lane": "Wartet, bis ein anderes Modell vollständig in der Szene ist",
     "backoff": "Neuer Versuch in Kürze",
-    "viewer": "Wartet auf den 3D-Viewer"
+    "viewer": "Wartet auf den 3D-Viewer",
+    "budget": "Wartet auf das Punktbudget (ein anderer Scan wird noch geladen)"
   },
   "error": {
     "invalid-file": "Diese Datei ist kein lesbares IFC-Modell. Prüfen Sie, ob es eine aus Ihrem BIM-Programm exportierte .ifc-Datei ist.",
@@ -174,6 +198,16 @@
     "timeout": "Der Vorgang hat zu lange gedauert und wurde abgebrochen. Versuchen Sie es erneut.",
     "cancelled": "Das Laden wurde abgebrochen.",
     "unknown": "Beim Laden ist etwas schiefgelaufen. Versuchen Sie es erneut oder prüfen Sie die technischen Details."
+  },
+  "errorGeneric": {
+    "invalid-file": "Diese Datei ist leer oder keine lesbare Datei ihres Typs. Prüfen Sie, ob sie vollständig ist und ihre Endung zum Inhalt passt.",
+    "unsupported": "Format, Größe oder Link dieser Datei wird nicht unterstützt.",
+    "read-failed": "Die Datei oder eine ihrer Begleitdateien (etwa die .bin eines glTF) konnte nicht gelesen werden. Sie wurde möglicherweise verschoben, oder der Browser hat den Zugriff darauf verloren. Fügen Sie sie erneut hinzu.",
+    "parse": "Der Inhalt der Datei konnte nicht verarbeitet werden. Ein erneuter Versuch hilft manchmal; andernfalls exportieren Sie die Datei neu.",
+    "worker-init": "Der Dateileser konnte nicht starten. Laden Sie die Seite neu und versuchen Sie es erneut.",
+    "out-of-memory": "Dem Browser ist der Speicher ausgegangen. Schließen Sie andere Tabs oder laden Sie weniger oder kleinere Dateien gleichzeitig und versuchen Sie es dann erneut.",
+    "cache-corrupt": "Die Kopie im Cache war beschädigt. Versuchen Sie es erneut, um die Datei neu einzulesen.",
+    "scene": "Der Inhalt konnte nicht zur Szene hinzugefügt werden. Versuchen Sie es erneut oder laden Sie die Seite neu."
   },
   "discipline": {
     "architecture": "Architektur",
@@ -271,6 +305,7 @@
     "mobile": "Mobilgerät",
     "maxConverts": "Parallele Konvertierungen",
     "maxDownloads": "Parallele Downloads",
+    "maxDecodes": "Parallele Dekodierungen (Scans, 3D-Modelle)",
     "budget": "Speicherbudget",
     "largeFile": "Einzeln ab",
     "pressure": "Speicherdruck",
@@ -326,5 +361,22 @@
     "buildings": "Umgebungsbebauung",
     "pointCloud": "Punktwolke",
     "mesh": "3D-Modell"
+  },
+  "duplicate": {
+    "inScene": "„{{name}}“ ist bereits in der Szene",
+    "loading": "„{{name}}“ wird bereits geladen",
+    "sameAsInScene": "„{{name}}“ hat denselben Inhalt wie „{{existing}}“, das bereits in der Szene ist",
+    "sameAsLoading": "„{{name}}“ hat denselben Inhalt wie „{{existing}}“, das bereits geladen wird",
+    "revealed": "„{{name}}“ war bereits in der Szene, aber ausgeblendet — es wird wieder angezeigt",
+    "revealedSameAs": "„{{name}}“ hat denselben Inhalt wie „{{existing}}“, das ausgeblendet war — es wird wieder angezeigt",
+    "resumed": "„{{name}}“ war angehalten — es steht wieder in der Warteschlange",
+    "resumedSameAs": "„{{name}}“ hat denselben Inhalt wie „{{existing}}“, das angehalten war — es steht wieder in der Warteschlange",
+    "manyNamed": "{{names}} sind bereits in der Szene oder werden geladen",
+    "revealedSome": "Ausgeblendete werden wieder angezeigt.",
+    "resumedSome": "Angehaltene stehen wieder in der Warteschlange.",
+    "many_one": "{{count}} Datei ist bereits in der Szene oder wird geladen",
+    "many_other": "{{count}} Dateien sind bereits in der Szene oder werden geladen",
+    "quoted": "„{{name}}“",
+    "loadAnyway": "Trotzdem als Kopie laden"
   }
 }

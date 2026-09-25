@@ -3,6 +3,8 @@
     "loadingOne": "Chargement de {{name}}",
     "loadingMany_one": "Chargement de {{count}} modèle",
     "loadingMany_other": "Chargement de {{count}} modèles",
+    "loadingManyFiles_one": "Chargement de {{count}} fichier",
+    "loadingManyFiles_other": "Chargement de {{count}} fichiers",
     "queued_one": "{{count}} en file d'attente",
     "queued_other": "{{count}} en file d'attente",
     "held_one": "{{count}} suspendu",
@@ -16,7 +18,9 @@
     "estimate": "Estimation fondée sur les étapes déjà terminées, pondérée par la taille des fichiers",
     "announce": {
       "failed_one": "{{count}} modèle n'a pas pu être chargé",
-      "failed_other": "{{count}} modèles n'ont pas pu être chargés"
+      "failed_other": "{{count}} modèles n'ont pas pu être chargés",
+      "failedLoads_one": "{{count}} chargement a échoué",
+      "failedLoads_other": "{{count}} chargements ont échoué"
     }
   },
   "center": {
@@ -55,7 +59,11 @@
     "failed_one": "{{count}} en échec",
     "failed_other": "{{count}} en échec",
     "unnamed_one": "{{count}} modèle",
-    "unnamed_other": "{{count}} modèles"
+    "unnamed_other": "{{count}} modèles",
+    "unnamedScans_one": "{{count}} scan",
+    "unnamedScans_other": "{{count}} scans",
+    "unnamedMeshes_one": "{{count}} modèle 3D",
+    "unnamedMeshes_other": "{{count}} modèles 3D"
   },
   "row": {
     "queuedAt": "En file d'attente · #{{position}}",
@@ -70,8 +78,11 @@
     "speed": "{{speed}}/s",
     "speedEstimated": "≈ {{speed}}/s",
     "stalled": "Aucune progression depuis un moment. Les grandes classes IFC peuvent prendre plusieurs minutes ; patientez ou annulez.",
+    "stalledGeneric": "Aucune progression depuis un moment ; patientez ou annulez.",
     "stalledShort": "Aucune progression récente",
     "duplicate": "Même contenu qu'un modèle déjà présent dans la scène",
+    "duplicateScan": "Même contenu qu'un scan déjà présent dans la scène",
+    "duplicateMesh": "Même contenu qu'un modèle 3D déjà présent dans la scène",
     "retrying": "Tentative {{attempt}}"
   },
   "counter": {
@@ -137,6 +148,18 @@
     "decode": "Décodage en cours",
     "place": "Placement dans la scène"
   },
+  "phaseByKind": {
+    "pointcloud": {
+      "identify": "Préparation du lecteur",
+      "decode": "Lecture des points"
+    }
+  },
+  "phaseActiveByKind": {
+    "pointcloud": {
+      "identify": "Préparation du lecteur",
+      "decode": "Lecture des points en cours"
+    }
+  },
   "status": {
     "queued": "En file d'attente",
     "held": "Suspendu",
@@ -155,7 +178,8 @@
     "anchor": "En attente de {{name}} (base de coordonnées)",
     "attach-lane": "En attente qu'un autre modèle ait fini d'entrer dans la scène",
     "backoff": "Nouvelle tentative imminente",
-    "viewer": "En attente du visualiseur 3D"
+    "viewer": "En attente du visualiseur 3D",
+    "budget": "En attente du budget de points (un autre relevé est encore en cours de chargement)"
   },
   "error": {
     "invalid-file": "Ce fichier n'est pas un modèle IFC lisible. Vérifiez qu'il s'agit d'un .ifc exporté depuis votre outil BIM.",
@@ -174,6 +198,16 @@
     "timeout": "L'opération a pris trop de temps et a été interrompue. Réessayez.",
     "cancelled": "Le chargement a été annulé.",
     "unknown": "Un problème est survenu pendant le chargement. Réessayez ou consultez les détails techniques."
+  },
+  "errorGeneric": {
+    "invalid-file": "Ce fichier est vide ou n'est pas un fichier lisible de son type. Vérifiez qu'il est complet et que son extension correspond à son contenu.",
+    "unsupported": "Le format, la taille ou le lien de ce fichier n'est pas pris en charge.",
+    "read-failed": "Le fichier, ou l'un de ses fichiers associés (comme le .bin d'un glTF), n'a pas pu être lu. Il a peut-être été déplacé, ou le navigateur n'y a plus accès. Ajoutez-le à nouveau.",
+    "parse": "Le contenu du fichier n'a pas pu être traité. Réessayer aide parfois ; sinon, réexportez le fichier.",
+    "worker-init": "Le lecteur de fichiers n'a pas pu démarrer. Rechargez la page et réessayez.",
+    "out-of-memory": "Le navigateur manque de mémoire. Fermez d'autres onglets ou chargez moins de fichiers à la fois, ou des fichiers plus petits, puis réessayez.",
+    "cache-corrupt": "La copie en cache était endommagée. Réessayez pour relire le fichier.",
+    "scene": "Le contenu n'a pas pu être ajouté à la scène. Réessayez ou rechargez la page."
   },
   "discipline": {
     "architecture": "Architecture",
@@ -271,6 +305,7 @@
     "mobile": "Appareil mobile",
     "maxConverts": "Conversions en parallèle",
     "maxDownloads": "Téléchargements en parallèle",
+    "maxDecodes": "Décodages en parallèle (relevés, modèles 3D)",
     "budget": "Budget mémoire",
     "largeFile": "Seul au-delà de",
     "pressure": "Pression mémoire",
@@ -326,5 +361,22 @@
     "buildings": "Bâtiments environnants",
     "pointCloud": "Nuage de points",
     "mesh": "Modèle 3D"
+  },
+  "duplicate": {
+    "inScene": "« {{name}} » est déjà dans la scène",
+    "loading": "« {{name}} » est déjà en cours de chargement",
+    "sameAsInScene": "« {{name}} » a le même contenu que « {{existing}} », déjà dans la scène",
+    "sameAsLoading": "« {{name}} » a le même contenu que « {{existing}} », déjà en cours de chargement",
+    "revealed": "« {{name}} » était déjà dans la scène, masqué : il est de nouveau affiché",
+    "revealedSameAs": "« {{name}} » a le même contenu que « {{existing}} », qui était masqué : il est de nouveau affiché",
+    "resumed": "« {{name}} » était suspendu : il est de nouveau dans la file",
+    "resumedSameAs": "« {{name}} » a le même contenu que « {{existing}} », qui était suspendu : il est de nouveau dans la file",
+    "manyNamed": "{{names}} sont déjà dans la scène ou en cours de chargement",
+    "revealedSome": "Ceux qui étaient masqués sont de nouveau affichés.",
+    "resumedSome": "Ceux qui étaient suspendus sont de nouveau dans la file.",
+    "many_one": "{{count}} fichier est déjà dans la scène ou en cours de chargement",
+    "many_other": "{{count}} fichiers sont déjà dans la scène ou en cours de chargement",
+    "quoted": "« {{name}} »",
+    "loadAnyway": "Charger une copie quand même"
   }
 }

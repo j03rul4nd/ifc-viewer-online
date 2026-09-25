@@ -3,6 +3,8 @@
     "loadingOne": "Carregando {{name}}",
     "loadingMany_one": "Carregando {{count}} modelo",
     "loadingMany_other": "Carregando {{count}} modelos",
+    "loadingManyFiles_one": "Carregando {{count}} arquivo",
+    "loadingManyFiles_other": "Carregando {{count}} arquivos",
     "queued_one": "{{count}} na fila",
     "queued_other": "{{count}} na fila",
     "held_one": "{{count}} em pausa",
@@ -16,7 +18,9 @@
     "estimate": "Estimado a partir das etapas concluídas até agora, ponderado pelo tamanho do arquivo",
     "announce": {
       "failed_one": "{{count}} modelo não pôde ser carregado",
-      "failed_other": "{{count}} modelos não puderam ser carregados"
+      "failed_other": "{{count}} modelos não puderam ser carregados",
+      "failedLoads_one": "{{count}} carregamento falhou",
+      "failedLoads_other": "{{count}} carregamentos falharam"
     }
   },
   "center": {
@@ -55,7 +59,11 @@
     "failed_one": "{{count}} com falha",
     "failed_other": "{{count}} com falha",
     "unnamed_one": "{{count}} modelo",
-    "unnamed_other": "{{count}} modelos"
+    "unnamed_other": "{{count}} modelos",
+    "unnamedScans_one": "{{count}} varrimento",
+    "unnamedScans_other": "{{count}} varrimentos",
+    "unnamedMeshes_one": "{{count}} modelo 3D",
+    "unnamedMeshes_other": "{{count}} modelos 3D"
   },
   "row": {
     "queuedAt": "Na fila · #{{position}}",
@@ -70,8 +78,11 @@
     "speed": "{{speed}}/s",
     "speedEstimated": "≈ {{speed}}/s",
     "stalled": "Sem progresso há algum tempo. Classes IFC grandes podem levar minutos; continue aguardando ou cancele.",
+    "stalledGeneric": "Sem progresso há algum tempo. Continue aguardando ou cancele.",
     "stalledShort": "Sem progresso recente",
     "duplicate": "Mesmo conteúdo de um modelo que já está na cena",
+    "duplicateScan": "Mesmo conteúdo de uma varredura que já está na cena",
+    "duplicateMesh": "Mesmo conteúdo de um modelo 3D que já está na cena",
     "retrying": "Tentativa {{attempt}}"
   },
   "counter": {
@@ -137,6 +148,18 @@
     "decode": "Decodificando",
     "place": "Posicionando na cena"
   },
+  "phaseByKind": {
+    "pointcloud": {
+      "identify": "Preparação do leitor",
+      "decode": "Leitura dos pontos"
+    }
+  },
+  "phaseActiveByKind": {
+    "pointcloud": {
+      "identify": "Preparando o leitor",
+      "decode": "Lendo os pontos"
+    }
+  },
   "status": {
     "queued": "Na fila",
     "held": "Em pausa",
@@ -155,7 +178,8 @@
     "anchor": "Aguardando {{name}} (base de coordenadas)",
     "attach-lane": "Aguardando outro modelo terminar de entrar na cena",
     "backoff": "Nova tentativa em instantes",
-    "viewer": "Aguardando o visualizador 3D"
+    "viewer": "Aguardando o visualizador 3D",
+    "budget": "Aguardando o orçamento de pontos (outro levantamento ainda está carregando)"
   },
   "error": {
     "invalid-file": "Este arquivo não é um modelo IFC legível. Verifique se é um .ifc exportado da sua ferramenta BIM.",
@@ -174,6 +198,16 @@
     "timeout": "A operação demorou demais e foi interrompida. Tente novamente.",
     "cancelled": "O carregamento foi cancelado.",
     "unknown": "Algo deu errado durante o carregamento. Tente novamente ou verifique os detalhes técnicos."
+  },
+  "errorGeneric": {
+    "invalid-file": "Este arquivo está vazio ou não é um arquivo legível do seu tipo. Verifique se está completo e se a extensão corresponde ao conteúdo.",
+    "unsupported": "O formato, o tamanho ou o link deste arquivo não é suportado.",
+    "read-failed": "Não foi possível ler o arquivo ou um dos seus arquivos associados (como o .bin de um glTF). Ele pode ter sido movido ou o navegador perdeu o acesso a ele. Adicione-o novamente.",
+    "parse": "Não foi possível processar o conteúdo do arquivo. Tentar novamente às vezes ajuda; se não, exporte o arquivo de novo.",
+    "worker-init": "O leitor de arquivos não pôde ser iniciado. Recarregue a página e tente novamente.",
+    "out-of-memory": "O navegador ficou sem memória. Feche outras abas ou carregue menos arquivos de uma vez, ou arquivos menores, e tente novamente.",
+    "cache-corrupt": "A cópia em cache estava danificada. Tente novamente para ler o arquivo de novo.",
+    "scene": "Não foi possível adicionar o conteúdo à cena. Tente novamente ou recarregue a página."
   },
   "discipline": {
     "architecture": "Arquitetura",
@@ -271,6 +305,7 @@
     "mobile": "Dispositivo móvel",
     "maxConverts": "Conversões em paralelo",
     "maxDownloads": "Downloads em paralelo",
+    "maxDecodes": "Decodificações em paralelo (levantamentos, modelos 3D)",
     "budget": "Orçamento de memória",
     "largeFile": "Sozinho acima de",
     "pressure": "Pressão de memória",
@@ -326,5 +361,22 @@
     "buildings": "Edifícios do entorno",
     "pointCloud": "Nuvem de pontos",
     "mesh": "Modelo 3D"
+  },
+  "duplicate": {
+    "inScene": "“{{name}}” já está na cena",
+    "loading": "“{{name}}” já está carregando",
+    "sameAsInScene": "“{{name}}” tem o mesmo conteúdo que “{{existing}}”, que já está na cena",
+    "sameAsLoading": "“{{name}}” tem o mesmo conteúdo que “{{existing}}”, que já está carregando",
+    "revealed": "“{{name}}” já estava na cena, oculto: voltou a ser exibido",
+    "revealedSameAs": "“{{name}}” tem o mesmo conteúdo que “{{existing}}”, que estava oculto: voltou a ser exibido",
+    "resumed": "“{{name}}” estava em pausa: voltou para a fila",
+    "resumedSameAs": "“{{name}}” tem o mesmo conteúdo que “{{existing}}”, que estava em pausa: voltou para a fila",
+    "manyNamed": "{{names}} já estão na cena ou carregando",
+    "revealedSome": "Os ocultos voltaram a ser exibidos.",
+    "resumedSome": "Os que estavam em pausa voltaram para a fila.",
+    "many_one": "{{count}} arquivo já está na cena ou carregando",
+    "many_other": "{{count}} arquivos já estão na cena ou carregando",
+    "quoted": "“{{name}}”",
+    "loadAnyway": "Carregar uma cópia mesmo assim"
   }
 }

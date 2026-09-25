@@ -3,7 +3,9 @@
 // a subtle artefact — it draws a grid across every lawn in the scene.
 
 import { describe, it, expect } from 'vitest'
-import { surfaceTexture, disposeSurfaceTextures, TILE_M, type TextureFamily } from './surface-textures'
+import {
+  surfaceTexture, disposeSurfaceTextures, prebakeSurfaceTextures, TILE_M, type TextureFamily,
+} from './surface-textures'
 
 const FAMILIES: TextureFamily[] = ['grass', 'shrub', 'sand', 'rock', 'water']
 
@@ -150,5 +152,31 @@ describe('surfaceTexture', () => {
     const after = surfaceTexture('sand').image.data as Uint8Array
     // Deterministic: the same site renders the same way in every session.
     expect(Array.from(after.slice(0, 512))).toEqual(Array.from(before.slice(0, 512)))
+  })
+})
+
+describe('prebakeSurfaceTextures', () => {
+  it('bakes every family in slices, to the same texels as a bake in one piece', async () => {
+    const ALL: TextureFamily[] = ['grass', 'shrub', 'sand', 'water', 'rock', 'asphalt']
+    disposeSurfaceTextures()
+    const whole = ALL.map((f) => Array.from(surfaceTexture(f).image.data as Uint8Array))
+    disposeSurfaceTextures()
+
+    let pauses = 0
+    const slice = { budgetMs: 0, yieldTo: () => { pauses++; return Promise.resolve() } }
+    // Two callers, one bake: the second waits on the first rather than starting its own.
+    const [a, b] = [prebakeSurfaceTextures(slice), prebakeSurfaceTextures(slice)]
+    expect(b).toBe(a)
+    await a
+    // Every family was cut up — a bake is several steps, not one.
+    expect(pauses).toBeGreaterThan(ALL.length * 4)
+    ALL.forEach((f, i) => {
+      expect(Array.from(surfaceTexture(f).image.data as Uint8Array), f).toEqual(whole[i])
+    })
+    // Cached now: nothing left to bake, and the answer is immediate.
+    pauses = 0
+    await prebakeSurfaceTextures(slice)
+    expect(pauses).toBe(0)
+    disposeSurfaceTextures()
   })
 })

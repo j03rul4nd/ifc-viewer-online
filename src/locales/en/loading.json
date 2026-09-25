@@ -3,6 +3,8 @@
     "loadingOne": "Loading {{name}}",
     "loadingMany_one": "Loading {{count}} model",
     "loadingMany_other": "Loading {{count}} models",
+    "loadingManyFiles_one": "Loading {{count}} file",
+    "loadingManyFiles_other": "Loading {{count}} files",
     "queued_one": "{{count}} queued",
     "queued_other": "{{count}} queued",
     "held_one": "{{count}} on hold",
@@ -16,7 +18,9 @@
     "estimate": "Estimated from the steps completed so far, weighted by file size",
     "announce": {
       "failed_one": "{{count}} model failed to load",
-      "failed_other": "{{count}} models failed to load"
+      "failed_other": "{{count}} models failed to load",
+      "failedLoads_one": "{{count}} load failed",
+      "failedLoads_other": "{{count}} loads failed"
     }
   },
   "center": {
@@ -55,7 +59,11 @@
     "failed_one": "{{count}} failed",
     "failed_other": "{{count}} failed",
     "unnamed_one": "{{count}} model",
-    "unnamed_other": "{{count}} models"
+    "unnamed_other": "{{count}} models",
+    "unnamedScans_one": "{{count}} scan",
+    "unnamedScans_other": "{{count}} scans",
+    "unnamedMeshes_one": "{{count}} 3D model",
+    "unnamedMeshes_other": "{{count}} 3D models"
   },
   "row": {
     "queuedAt": "Queued · #{{position}}",
@@ -70,8 +78,11 @@
     "speed": "{{speed}}/s",
     "speedEstimated": "≈ {{speed}}/s",
     "stalled": "No progress for a while. Large IFC classes can take minutes; keep waiting or cancel.",
+    "stalledGeneric": "No progress for a while. Keep waiting or cancel.",
     "stalledShort": "No recent progress",
     "duplicate": "Same content as a model already in the scene",
+    "duplicateScan": "Same content as a scan already in the scene",
+    "duplicateMesh": "Same content as a 3D model already in the scene",
     "retrying": "Attempt {{attempt}}"
   },
   "counter": {
@@ -137,6 +148,18 @@
     "decode": "Decoding",
     "place": "Placing in the scene"
   },
+  "phaseByKind": {
+    "pointcloud": {
+      "identify": "Reader setup",
+      "decode": "Point reading"
+    }
+  },
+  "phaseActiveByKind": {
+    "pointcloud": {
+      "identify": "Preparing the reader",
+      "decode": "Reading points"
+    }
+  },
   "status": {
     "queued": "Queued",
     "held": "On hold",
@@ -155,7 +178,8 @@
     "anchor": "Waiting for {{name}} (coordinate base)",
     "attach-lane": "Waiting for another model to finish entering the scene",
     "backoff": "Retrying shortly",
-    "viewer": "Waiting for the 3D viewer"
+    "viewer": "Waiting for the 3D viewer",
+    "budget": "Waiting for the point budget (another scan is still loading)"
   },
   "error": {
     "invalid-file": "This file is not a readable IFC model. Check that it is an .ifc exported from your BIM tool.",
@@ -174,6 +198,16 @@
     "timeout": "The operation took too long and was stopped. Retry.",
     "cancelled": "The load was cancelled.",
     "unknown": "Something went wrong while loading. Retry, or check the technical details."
+  },
+  "errorGeneric": {
+    "invalid-file": "This file is empty or not a readable file of its type. Check that it is complete and that its extension matches its content.",
+    "unsupported": "This file's format, size or link is not supported.",
+    "read-failed": "The file, or one of its companion files (such as a glTF's .bin), could not be read. It may have been moved or the browser lost access to it. Add it again.",
+    "parse": "The file's content could not be processed. Retrying sometimes helps; if not, export the file again.",
+    "worker-init": "The file reader could not start. Reload the page and try again.",
+    "out-of-memory": "The browser ran out of memory. Close other tabs or load fewer or smaller files at once, then retry.",
+    "cache-corrupt": "The cached copy was damaged. Retry to read the file again.",
+    "scene": "The content could not be added to the scene. Retry, or reload the page."
   },
   "discipline": {
     "architecture": "Architecture",
@@ -271,6 +305,7 @@
     "mobile": "Mobile device",
     "maxConverts": "Parallel conversions",
     "maxDownloads": "Parallel downloads",
+    "maxDecodes": "Parallel decodes (scans, 3D models)",
     "budget": "Memory budget",
     "largeFile": "Runs alone above",
     "pressure": "Memory pressure",
@@ -326,5 +361,22 @@
     "buildings": "Surrounding buildings",
     "pointCloud": "Point cloud",
     "mesh": "3D model"
+  },
+  "duplicate": {
+    "inScene": "“{{name}}” is already in the scene",
+    "loading": "“{{name}}” is already loading",
+    "sameAsInScene": "“{{name}}” has the same content as “{{existing}}”, already in the scene",
+    "sameAsLoading": "“{{name}}” has the same content as “{{existing}}”, which is already loading",
+    "revealed": "“{{name}}” was already in the scene, hidden — it is shown again",
+    "revealedSameAs": "“{{name}}” has the same content as “{{existing}}”, which was hidden — it is shown again",
+    "resumed": "“{{name}}” was on hold — it is back in the queue",
+    "resumedSameAs": "“{{name}}” has the same content as “{{existing}}”, which was on hold — it is back in the queue",
+    "manyNamed": "{{names}} are already in the scene or loading",
+    "revealedSome": "Hidden ones are shown again.",
+    "resumedSome": "Ones on hold are back in the queue.",
+    "many_one": "{{count}} file is already in the scene or loading",
+    "many_other": "{{count}} files are already in the scene or loading",
+    "quoted": "“{{name}}”",
+    "loadAnyway": "Load a copy anyway"
   }
 }

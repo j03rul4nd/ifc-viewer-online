@@ -2,6 +2,7 @@
   "indicator": {
     "loadingOne": "正在加载 {{name}}",
     "loadingMany_other": "正在加载 {{count}} 个模型",
+    "loadingManyFiles_other": "正在加载 {{count}} 个文件",
     "queued_other": "{{count}} 个排队中",
     "held_other": "{{count}} 个已暂停",
     "failed_other": "{{count}} 个失败",
@@ -11,7 +12,8 @@
     "close": "隐藏模型加载",
     "estimate": "根据已完成的步骤估算，并按文件大小加权",
     "announce": {
-      "failed_other": "{{count}} 个模型加载失败"
+      "failed_other": "{{count}} 个模型加载失败",
+      "failedLoads_other": "{{count}} 个加载任务失败"
     }
   },
   "center": {
@@ -42,7 +44,9 @@
   "batch": {
     "members": "已加载 {{loaded}} / {{total}}",
     "failed_other": "{{count}} 个失败",
-    "unnamed_other": "{{count}} 个模型"
+    "unnamed_other": "{{count}} 个模型",
+    "unnamedScans_other": "{{count}} 个扫描",
+    "unnamedMeshes_other": "{{count}} 个 3D 模型"
   },
   "row": {
     "queuedAt": "排队中 · #{{position}}",
@@ -56,8 +60,11 @@
     "speed": "{{speed}}/s",
     "speedEstimated": "≈ {{speed}}/s",
     "stalled": "已有一段时间没有进展。较大的 IFC 类可能需要几分钟；请继续等待或取消。",
+    "stalledGeneric": "已有一段时间没有进展。请继续等待或取消。",
     "stalledShort": "近期无进展",
     "duplicate": "与场景中已有模型的内容相同",
+    "duplicateScan": "与场景中已有扫描的内容相同",
+    "duplicateMesh": "与场景中已有 3D 模型的内容相同",
     "retrying": "第 {{attempt}} 次尝试"
   },
   "counter": {
@@ -118,6 +125,18 @@
     "decode": "正在解码",
     "place": "正在放置到场景中"
   },
+  "phaseByKind": {
+    "pointcloud": {
+      "identify": "准备读取器",
+      "decode": "读取点"
+    }
+  },
+  "phaseActiveByKind": {
+    "pointcloud": {
+      "identify": "正在准备读取器",
+      "decode": "正在读取点"
+    }
+  },
   "status": {
     "queued": "排队中",
     "held": "已暂停",
@@ -136,7 +155,8 @@
     "anchor": "等待 {{name}}（坐标基准）",
     "attach-lane": "等待另一个模型完成进入场景",
     "backoff": "即将重试",
-    "viewer": "等待 3D 查看器"
+    "viewer": "等待 3D 查看器",
+    "budget": "等待点数预算（另一个扫描仍在加载）"
   },
   "error": {
     "invalid-file": "此文件不是可读取的 IFC 模型。请确认它是从 BIM 软件导出的 .ifc 文件。",
@@ -155,6 +175,16 @@
     "timeout": "操作耗时过长，已被停止。请重试。",
     "cancelled": "加载已取消。",
     "unknown": "加载时出现问题。请重试或查看技术详情。"
+  },
+  "errorGeneric": {
+    "invalid-file": "此文件为空，或不是可读取的该类型文件。请确认文件完整，且扩展名与内容相符。",
+    "unsupported": "不支持此文件的格式、大小或链接。",
+    "read-failed": "无法读取该文件或其关联文件（例如 glTF 的 .bin）。文件可能已被移动，或浏览器失去了访问权限。请重新添加。",
+    "parse": "无法处理文件内容。重试有时能解决；否则请重新导出该文件。",
+    "worker-init": "文件读取器无法启动。请刷新页面后重试。",
+    "out-of-memory": "浏览器内存不足。请关闭其他标签页，或减少同时加载的文件数量或大小，然后重试。",
+    "cache-corrupt": "缓存副本已损坏。请重试以重新读取文件。",
+    "scene": "无法将内容添加到场景中。请重试或刷新页面。"
   },
   "discipline": {
     "architecture": "建筑",
@@ -252,6 +282,7 @@
     "mobile": "移动设备",
     "maxConverts": "并行转换数",
     "maxDownloads": "并行下载数",
+    "maxDecodes": "并行解码数（扫描、3D 模型）",
     "budget": "内存预算",
     "largeFile": "单独运行阈值",
     "pressure": "内存压力",
@@ -304,5 +335,21 @@
     "buildings": "周边建筑",
     "pointCloud": "点云",
     "mesh": "3D 模型"
+  },
+  "duplicate": {
+    "inScene": "“{{name}}”已在场景中",
+    "loading": "“{{name}}”已在加载中",
+    "sameAsInScene": "“{{name}}”与已在场景中的“{{existing}}”内容相同",
+    "sameAsLoading": "“{{name}}”与正在加载的“{{existing}}”内容相同",
+    "revealed": "“{{name}}”已在场景中但被隐藏，现已重新显示",
+    "revealedSameAs": "“{{name}}”与此前被隐藏的“{{existing}}”内容相同，现已重新显示",
+    "resumed": "“{{name}}”此前已暂停，现已重新排队",
+    "resumedSameAs": "“{{name}}”与此前已暂停的“{{existing}}”内容相同，现已重新排队",
+    "manyNamed": "{{names}}已在场景中或正在加载",
+    "revealedSome": "已重新显示被隐藏的项。",
+    "resumedSome": "已将暂停的项重新排队。",
+    "many_other": "{{count}} 个文件已在场景中或正在加载",
+    "quoted": "“{{name}}”",
+    "loadAnyway": "仍然加载副本"
   }
 }

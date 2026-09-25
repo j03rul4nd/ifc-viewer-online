@@ -12,10 +12,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ViewportPanel } from './ViewportPanel'
 import { useMeshStore } from '../stores/meshStore'
-import { loadMesh, removeMesh as dropMesh, reapply } from '../lib/mesh/mesh-runner'
+import { removeMesh as dropMesh, reapply } from '../lib/mesh/mesh-runner'
+import { submitMeshes, loadMeshesOnce, sourceErrorKey, cancelLoadsOfKind } from '../lib/loading'
+import { groupMeshFiles } from '../lib/loading/drop-routing'
+import { useLoadingStore } from '../stores/loadingStore'
 import { MESH_EXTENSIONS } from '../lib/mesh/mesh-types'
 import {
-  DEMO_MESHES, fetchDemoMesh, formatDemoSize, type DemoMesh,
+  DEMO_MESHES, formatDemoSize, type DemoMesh,
 } from '../demo-models/meshes'
 import { toast } from '../stores/toastStore'
 import { createLogger } from '../lib/logger'
@@ -36,6 +39,27 @@ function formatSize(bytes: number): string {
   if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`
   if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`
   return `${Math.max(1, Math.round(bytes / 1e3))} KB`
+}
+
+/**
+ * Follow a job's download on the demo chip that started it — the Loading
+ * Center has the full row; the chip only needs its bar. Resolves once the
+ * download is over (or the job ended without one): the chip is free again
+ * then, even if the job still waits for a decode slot or the scene's anchor.
+ */
+function followDownload(jobId: string, onFraction: (fraction: number) => void): Promise<void> {
+  return new Promise((resolve) => {
+    const check = (s: ReturnType<typeof useLoadingStore.getState>): boolean => {
+      const job = s.jobs.find((j) => j.id === jobId)
+      if (!job) return true
+      const download = job.phases.find((p) => p.id === 'download')
+      if (download) onFraction(download.status === 'done' ? 1 : download.fraction ?? 0)
+      const downloading = download !== undefined && (download.status === 'pending' || download.status === 'active')
+      return !downloading || !['queued', 'running', 'waiting', 'held'].includes(job.status)
+    }
+    if (check(useLoadingStore.getState())) { resolve(); return }
+    const off = useLoadingStore.subscribe((s) => { if (check(s)) { off(); resolve() } })
+  })
 }
 
 export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Props) {
@@ -62,59 +86,50 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
   }, [viewerApiRef])
 
   // ── Import ─────────────────────────────────────────────────────────────────
-  const handleFiles = useCallback(async (
-    files: FileList | File[],
-    sourceUrl?: string,
-  ): Promise<void> => {
-    const viewer = viewerApiRef.current
-    if (!viewer) return
-    setBusy(true)
-    try {
-      const system = await viewer.getMeshes()
-      // The WHOLE selection goes in together: a .gltf needs its .bin and its
-      // textures, an .obj needs its .mtl. Importing them one at a time gets you
-      // grey geometry, which is the failure that makes the feature pointless.
-      const result = await loadMesh({
-        files: Array.from(files),
-        system,
-        modelBounds: activeModelId ? viewer.getModelBounds(activeModelId) : viewer.getModelBounds(),
-        // A fetched model is identified by its URL. Without this the File we
-        // just wrapped the bytes in carries the fetch time as its identity, so
-        // a demo would arrive as a brand new import on every single load and
-        // whatever the user corrected about it would be forgotten.
-        sourceUrl,
-      })
-      if (!result.ok) {
-        // i18next returns the KEY when it does not know it, so an unmapped
-        // failure would show the user "error.somethingWeird". A generic message
-        // is worse information but it is still a message; the specific one is
-        // in the console for whoever has to diagnose it.
-        toast(describeError(result.errorKey), 'error')
-      } else if (result.meshId) {
-        system.frame(result.meshId)
-      }
-    } catch (e) {
-      log.warn('import failed:', e)
-      toast(t('error.parseFailed'), 'error')
-    } finally {
-      setBusy(false)
+  // Every model is a job in the loading queue — the path a drop on the viewer
+  // and the SDK take too. One job per MODEL: a selection of chair.glb and
+  // table.glb used to import the chair and silently drop the table, because
+  // the loader decodes one entry file per call. Each entry carries the rest of
+  // the selection as its sidecars — a .gltf needs its .bin and textures, an
+  // .obj its .mtl, and importing them apart gives grey geometry. The job
+  // places each model once the model that anchors the scene is in, frames it
+  // (as this panel always did), and toasts a failure itself. Nothing here
+  // waits for the jobs: one may queue behind a converting IFC for minutes, or
+  // be held by the user, and the import button must stay usable meanwhile.
+  const handleFiles = useCallback((files: FileList | File[]): void => {
+    const groups = groupMeshFiles(Array.from(files))
+    if (groups.length === 0) {
+      toast(describeError('error.noEntryFile'), 'error')
+      return
     }
-  }, [viewerApiRef, activeModelId, t])
+    // A model already in the scene is framed and offered again, not imported twice.
+    void loadMeshesOnce(
+      groups.map((g) => ({ source: { type: 'file', file: g.entry, sidecars: g.sidecars } })),
+      { origin: 'upload', frame: true },
+    )
+  }, [describeError])
 
+  /**
+   * A demo, loaded as a URL job with its sidecars (entry first): the URL is
+   * the model's identity, so a unit or placement the user corrected survives
+   * a reload. The chip's bar follows the job's download.
+   */
   const handleDemo = useCallback(async (demo: DemoMesh): Promise<void> => {
+    const [entry, ...sidecars] = demo.urls
+    if (!entry) return
     setDemoBusy(demo.id)
     setDemoProgress(0)
+    const [handle] = await loadMeshesOnce(
+      [{ source: { type: 'url', url: entry, sidecars: sidecars.map((url) => ({ url })) } }],
+      { origin: 'demo', frame: true },
+    )
     try {
-      const files = await fetchDemoMesh(demo, { onProgress: setDemoProgress })
-      await handleFiles(files, demo.urls[0])
-    } catch (e) {
-      log.warn(`demo mesh "${demo.id}" failed:`, e)
-      toast(t('demos.failed'), 'error')
+      if (handle) await followDownload(handle.id, setDemoProgress)
     } finally {
       setDemoBusy(null)
       setDemoProgress(0)
     }
-  }, [handleFiles, t])
+  }, [])
 
   // ── Placement ──────────────────────────────────────────────────────────────
   const nudge = useCallback((patch: Parameters<typeof store.setPlacement>[1]): void => {
@@ -148,9 +163,10 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
   }, [getSystem])
 
   // ── SDK bridge: `sdk:mesh` from the embed postMessage handler ──────────────
-  // Delegates here rather than duplicating the loader, the budget check and the
-  // placement ladder in App.tsx — a second code path would be a second set of
-  // bugs, and this one already owns the viewer handle it all needs.
+  // Placement, units, axes and visibility live here, so the embed bridge
+  // delegates those. LOADING does not: App submits meshes to the loading queue
+  // itself (the `add` case below only serves any other emitter, through the
+  // same queue), and without this panel App removes and clears them there.
   useEffect(() => appBus.on('sdk:mesh', (cmd) => {
     void (async () => {
       try {
@@ -161,16 +177,19 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
 
         switch (cmd.action) {
           case 'add': {
+            // App submits meshes to the loading queue itself now; this stays
+            // for any other emitter of the command, and takes the same path.
             if (!cmd.files?.length) throw new Error('No model files provided')
-            const result = await loadMesh({
-              files: cmd.files,
-              system,
-              modelBounds: activeModelId
-                ? viewer.getModelBounds(activeModelId)
-                : viewer.getModelBounds(),
-            })
-            if (!result.ok) throw new Error(result.errorKey ?? 'error.parseFailed')
-            cmd.done?.(true, result.meshId)
+            const [group] = groupMeshFiles(cmd.files)
+            if (!group) throw new Error('error.noEntryFile')
+            const [handle] = submitMeshes(
+              [{ source: { type: 'file', file: group.entry, sidecars: group.sidecars } }],
+              { origin: 'sdk' },
+            )
+            const outcome = await handle.settled
+            if (outcome.status === 'cancelled') throw new Error('error.cancelled')
+            if (outcome.status === 'failed') throw new Error(sourceErrorKey(outcome.error) ?? 'error.parseFailed')
+            cmd.done?.(true, outcome.resultId)
             return
           }
           case 'remove': {
@@ -179,6 +198,9 @@ export default function MeshPanel({ viewerApiRef, activeModelId, onClose }: Prop
             break
           }
           case 'clear': {
+            // The imports still in the queue too: they have no row yet, and
+            // would land right after the clear.
+            cancelLoadsOfKind('mesh')
             for (const m of [...useMeshStore.getState().meshes]) dropMesh(m.id, system)
             break
           }

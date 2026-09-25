@@ -115,9 +115,28 @@ describe('createResourcePolicy', () => {
     const s = createResourcePolicy(env({ cores: 11, crossOriginIsolated: true })).snapshot()
     expect(s).toEqual({
       cores: 11, deviceMemoryGB: 8, crossOriginIsolated: true, mobile: false,
-      maxConcurrentConverts: 1, maxConcurrentDownloads: 2, memoryBudgetBytes: 3.2 * GB,
+      maxConcurrentConverts: 1, maxConcurrentDownloads: 2, maxConcurrentDecodes: 2, memoryBudgetBytes: 3.2 * GB,
       largeFileBytes: 150 * MB, pressure: 'normal',
     })
+  })
+
+  it('decodes (point clouds, meshes) get two slots of their own, one under any pressure', () => {
+    for (const cores of [1, 4, 11, null]) expect(createResourcePolicy(env({ cores })).maxConcurrentDecodes()).toBe(2)
+    const p = createResourcePolicy(env())
+    expect(p.sample({ used: 85, limit: 100 })).toBe('elevated')
+    expect(p.maxConcurrentDecodes()).toBe(1)
+    expect(p.snapshot().maxConcurrentDecodes).toBe(1)
+    expect(p.sample({ used: 95, limit: 100 })).toBe('critical')
+    expect(p.maxConcurrentDecodes()).toBe(1)
+    expect(p.sample({ used: 10, limit: 100 })).toBe('normal')
+    expect(p.maxConcurrentDecodes()).toBe(2)
+    // An OOM pins it for the session, like the convert lane.
+    p.reportOom()
+    expect(p.maxConcurrentDecodes()).toBe(1)
+    // The convert lane is untouched by the decode width, and vice versa.
+    const both = createResourcePolicy(env(), { maxConcurrentConverts: 3, maxConcurrentDecodes: 4 })
+    expect([both.maxConcurrentConverts(), both.maxConcurrentDecodes()]).toEqual([3, 4])
+    expect(createResourcePolicy(env(), { maxConcurrentDecodes: 0 }).maxConcurrentDecodes()).toBe(1)
   })
 
   it('overrides win', () => {
@@ -134,5 +153,20 @@ describe('createResourcePolicy', () => {
     expect(createResourcePolicy(env({ cores: 4 })).maxConcurrentConverts()).toBe(1)
     vi.stubGlobal('localStorage', { getItem: () => { throw new Error('denied') } })
     expect(createResourcePolicy(env({ cores: 8 })).maxConcurrentConverts()).toBe(1)
+  })
+
+  it('the DEV decode override mirrors the convert one, each on its own key', () => {
+    vi.stubGlobal('localStorage', { getItem: (k: string) => (k === 'ifc:load-max-decodes' ? '4' : null) })
+    const p = createResourcePolicy(env())
+    expect([p.maxConcurrentConverts(), p.maxConcurrentDecodes()]).toEqual([1, 4])
+    vi.stubGlobal('localStorage', { getItem: (k: string) => (k === 'ifc:load-max-converts' ? '3' : null) })
+    expect(createResourcePolicy(env()).maxConcurrentDecodes()).toBe(2)
+    vi.stubGlobal('localStorage', { getItem: () => '99' })
+    expect(createResourcePolicy(env()).maxConcurrentDecodes()).toBe(8)
+    vi.stubGlobal('localStorage', { getItem: () => 'garbage' })
+    expect(createResourcePolicy(env()).maxConcurrentDecodes()).toBe(2)
+    // The explicit override still wins over the DEV key.
+    vi.stubGlobal('localStorage', { getItem: () => '4' })
+    expect(createResourcePolicy(env(), { maxConcurrentDecodes: 1 }).maxConcurrentDecodes()).toBe(1)
   })
 })

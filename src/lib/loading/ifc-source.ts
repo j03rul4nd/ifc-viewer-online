@@ -597,18 +597,33 @@ export function createIfcSourceAdapter(deps: IfcSourceDeps): SourceAdapter {
    * load (a `?model=` URL, an SDK call right after the iframe loads). Poll on
    * timers with a wall-clock deadline — a hidden pane never fires rAF, and a
    * background tab clamps timers, so counting polls would stretch the budget.
+   *
+   * While it polls, the row reads "waiting for the viewer" (`setWaiting`)
+   * instead of a `running` attach whose bar does not move, and the wait stays
+   * out of the attach phase's measured time. Only a viewer missing on the
+   * first look sets it, so the common case reports nothing.
    */
-  async function waitForViewer(signal: AbortSignal): Promise<IfcViewerLike> {
+  async function waitForViewer(ctx: JobContext): Promise<IfcViewerLike> {
+    const { signal } = ctx
     const deadline = now() + viewerTimeoutMs
-    for (;;) {
-      if (signal.aborted) throw abortError()
-      let viewer: IfcViewerLike | null = null
-      try { viewer = deps.getViewer() } catch { viewer = null }
-      if (viewer) return viewer
-      if (now() >= deadline) {
-        throw new IfcSourceError('viewer-unavailable', `The 3D viewer was not ready after ${Math.round(viewerTimeoutMs / 1000)} s`, 'attach')
+    let waiting = false
+    try {
+      for (;;) {
+        if (signal.aborted) throw abortError()
+        let viewer: IfcViewerLike | null = null
+        try { viewer = deps.getViewer() } catch { viewer = null }
+        if (viewer) return viewer
+        if (now() >= deadline) {
+          throw new IfcSourceError('viewer-unavailable', `The 3D viewer was not ready after ${Math.round(viewerTimeoutMs / 1000)} s`, 'attach')
+        }
+        if (!waiting) {
+          waiting = true
+          ctx.setWaiting('viewer')
+        }
+        await sleep(VIEWER_POLL_MS, signal)
       }
-      await sleep(VIEWER_POLL_MS, signal)
+    } finally {
+      if (waiting) ctx.setWaiting(null)
     }
   }
 
@@ -859,7 +874,7 @@ export function createIfcSourceAdapter(deps: IfcSourceDeps): SourceAdapter {
       // Enter 'attach' before waiting for the viewer, so a viewer that never
       // comes up fails the phase it belongs to.
       const attach = enter('attach')
-      viewer = await waitForViewer(signal)
+      viewer = await waitForViewer(ctx)
       ctx.throwIfCancelled()
       // A fresh id per attempt: a retry must not collide with a load the viewer
       // may still be tearing down.

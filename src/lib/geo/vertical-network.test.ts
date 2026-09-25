@@ -497,6 +497,63 @@ describe('sampleProfile · fast paths agree with the reference', () => {
     expect(worst).toBeLessThan(1e-9)
   })
 
+  it('answers a query on one of its own vertices exactly as the scan does', () => {
+    // The case both indexed paths decline: a quad corner cut at a station the
+    // profile placed projects onto a segment END, where t is exactly 0 or 1 and
+    // no winner is "strictly interior". That used to cost a full scan per
+    // vertex — O(n²) along a way — and a ring search answers it now. It must
+    // return the scan's segment: never one that is merely near, and on the tie
+    // between the two segments meeting at the vertex, the one the scan keeps.
+    //
+    // A long alignment that wanders but never doubles back, so that no segment
+    // but the two meeting at a vertex can claim it as interior: every answer
+    // below comes from the ring search, whatever order it is asked in.
+    const wander = (n: number, step: number): VerticalWay => {
+      const pts: Array<[number, number]> = []
+      for (let i = 0; i <= n; i++) pts.push([i * step - 600, Math.sin(i / 3) * step * 0.6])
+      return way('snake', pts, { highway: 'primary', bridge: 'yes', layer: '1' })
+    }
+    let checked = 0
+    for (const shape of [wander(40, 30), wander(300, 4)]) {
+      const solved = solve([shape], (_nx, ny) => (ny / M_TO_N) * 0.03).get('snake')!
+      const fast = sampleProfile(solved)
+      const pts = solved.points
+      expect(pts.length).toBeGreaterThan(24)
+
+      /** The definition, returning the segment and where on it. */
+      const reference = (x: number, y: number): { i: number; t: number } => {
+        let bestI = 0
+        let bestT = 0
+        let bestD2 = Infinity
+        for (let i = 0; i < pts.length - 1; i++) {
+          const a = pts[i]
+          const b = pts[i + 1]
+          const dx = b.x - a.x
+          const dy = b.y - a.y
+          const len2 = dx * dx + dy * dy
+          const t = len2 <= 0 ? 0
+            : Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / len2))
+          const d2 = (x - (a.x + dx * t)) ** 2 + (y - (a.y + dy * t)) ** 2
+          if (d2 < bestD2) { bestD2 = d2; bestI = i; bestT = t }
+        }
+        return { i: bestI, t: bestT }
+      }
+      const lerp = (v: ReadonlyArray<number>, { i, t }: { i: number; t: number }): number =>
+        v[i] + (v[i + 1] - v[i]) * t
+
+      // Every vertex, in an order that keeps the hint useless. Bit for bit.
+      for (let k = 0; k < pts.length; k++) {
+        const { x, y } = pts[(k * 97) % pts.length]
+        const want = reference(x, y)
+        expect(Object.is(fast.at(x, y), lerp(solved.elevationM, want))).toBe(true)
+        expect(Object.is(fast.groundAt(x, y), lerp(solved.groundM, want))).toBe(true)
+        expect(Object.is(fast.stationAt(x, y), lerp(solved.stationM, want))).toBe(true)
+        checked++
+      }
+    }
+    expect(checked).toBeGreaterThan(300)
+  })
+
   it('samples by station and by position consistently', () => {
     const solved = solve([serpentine()], null).get('snake')!
     const s = sampleProfile(solved)

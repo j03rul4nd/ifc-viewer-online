@@ -1,15 +1,17 @@
 // ─── Model loading — shared contracts ─────────────────────────────────────────
 // Every module of the loading system speaks these types: the manager, the pure
-// scheduler and policies, the source adapters (IFC today; point clouds, meshes
-// and GIS are tracked), the Zustand mirror and the UI. Nothing in here imports
+// scheduler and policies, the source adapters (IFC, point clouds and meshes;
+// GIS is tracked), the Zustand mirror and the UI. Nothing in here imports
 // React, three.js, a store or a worker, so the policy code stays testable in
 // plain node and the UI can never reach past the snapshot into live objects.
 //
 // Vocabulary:
-//   job      — one source becoming one scene resource (an IFC file → a model).
+//   job      — one source becoming one scene resource (an IFC file → a model,
+//              a scan → a cloud, a glTF → a mesh).
 //   batch    — jobs submitted together (a federated drop, a demo set, ?model=a,b).
 //   phase    — one real step of a job's pipeline, reported by the code doing it.
-//   lane     — a shared resource a phase must hold: network, convert, attach.
+//   lane     — a shared resource a phase must hold: network, convert, attach,
+//              decode (non-IFC decoders; never competes with convert).
 //   status   — the coarse lifecycle a user reads ("queued", "loaded").
 //
 // See docs/MODEL_LOADING.md for the architecture these contracts implement.
@@ -28,12 +30,21 @@ export type JobOrigin =
   | 'companion'  // a panel asked for its companion model
   | 'reload'     // user reloaded a loaded model
   | 'retry'      // user (or policy) retried a failed job
-  | 'external'   // tracked, not executed, by the manager (point cloud, mesh, GIS)
+  | 'external'   // tracked, not executed, by the manager (GIS)
 
+/**
+ * `sidecars` are the companion files of a multi-file source (a glTF's .bin and
+ * textures, an OBJ's .mtl). They belong to their main file: the name, the
+ * `sourceUrl` and retention all follow the main file, and a sidecar is kept
+ * or dropped only together with it. Only the adapter reads them.
+ */
 export type LoadSource =
-  | { type: 'file';  file: File }
-  | { type: 'url';   url: string; fileName?: string; fallbackUrl?: string }
+  | { type: 'file';  file: File; sidecars?: File[] }
+  | { type: 'url';   url: string; fileName?: string; fallbackUrl?: string; sidecars?: UrlSidecar[] }
   | { type: 'bytes'; bytes: Uint8Array | ArrayBuffer; fileName: string }
+
+/** A companion file of a multi-file source (a glTF's .bin and textures, an OBJ's .mtl). */
+export interface UrlSidecar { url: string; fileName?: string }
 
 // ── Priorities ────────────────────────────────────────────────────────────────
 
@@ -82,6 +93,7 @@ export type WaitReason =
   | 'attach-lane'  // another model is being attached to the scene
   | 'backoff'      // an automatic retry is waiting its backoff delay
   | 'viewer'       // the 3D viewer is not ready yet
+  | 'budget'       // waiting for the resident-point budget (another scan is still loading)
 
 // ── Phases ────────────────────────────────────────────────────────────────────
 
@@ -100,7 +112,7 @@ export type WaitReason =
  *   read         File → ArrayBuffer kept for validator/IDS/export (indeterminate)
  *   stream       first view's tiles streamed to the GPU       (indeterminate, post-commit)
  *   index        spatial tree build in the validator worker   (indeterminate, post-commit)
- * Generic phases used by tracked (external) sources:
+ * Generic phases used by the point cloud / mesh adapters and tracked sources:
  *   fetch, decode, place
  */
 export type PhaseId =
@@ -180,6 +192,12 @@ export interface LoadError {
   retryAfterMs?: number
   /** 1-based attempt that produced this error. */
   attempt: number
+  /**
+   * Namespaced i18n key of the domain cause, e.g. 'pointcloud:error.lazTooLarge',
+   * 'mesh:error.noEntryFile'. Shown by the UI instead of the generic code text
+   * when present. Never contains the file name.
+   */
+  detailKey?: string
 }
 
 /** What the retry policy asks the next attempt to do differently. */
@@ -250,13 +268,18 @@ export interface JobCapabilities {
   reload: boolean
   remove: boolean
   dismiss: boolean
+  /**
+   * "Show in scene": the row is loaded and something can frame its result —
+   * the app for an IFC model, the adapter's `focus()` for a cloud or a mesh.
+   */
+  focus: boolean
 }
 
 export interface LoadJobView {
   id: string
   kind: SourceKind
   origin: JobOrigin
-  /** false = tracked only: executed by its own subsystem (point cloud, mesh, GIS). */
+  /** false = tracked only: executed by its own subsystem (GIS). */
   managed: boolean
   fileName: string
   displayName: string
@@ -290,6 +313,8 @@ export interface LoadJobView {
   requestId: string | null
   /** The URL a URL job downloads from (embed `model-error {url}` contract), else null. */
   sourceUrl: string | null
+  /** SubmitOptions.sourceVersion, or null when unknown. */
+  sourceVersion: number | null
   /** Submission order — stable tie-breaker and the anchor rule's key. */
   seq: number
   capabilities: JobCapabilities
@@ -327,11 +352,12 @@ export interface LoadSummary {
   measuring: boolean
   bytesActive: number
   /**
-   * Managed (IFC) jobs actually working: queued, running or waiting — NOT held
-   * (the user paused them) and NOT tracked point cloud / mesh / GIS rows. This
-   * is what "the app is still loading models" means for deep links, deferred
-   * validation and georef extraction; `active` is what the indicator shows.
-   * The manager's `idle` event fires when this drops to 0.
+   * Model (IFC) jobs actually working: queued, running or waiting — NOT held
+   * (the user paused them), NOT point cloud / mesh jobs (managed, but not
+   * models) and NOT tracked GIS rows. This is what "the app is still loading
+   * models" means for deep links, deferred validation and georef extraction;
+   * `active` is what the indicator shows. The manager's `idle` event fires
+   * when this drops to 0.
    */
   managedActive: number
   /** Failures the user has not looked at yet (drives the indicator's warning state). */
@@ -365,6 +391,8 @@ export interface PolicySnapshot {
   mobile: boolean
   maxConcurrentConverts: number
   maxConcurrentDownloads: number
+  /** Non-IFC decoders (point clouds, meshes) at once — already lowered under memory pressure. */
+  maxConcurrentDecodes: number
   memoryBudgetBytes: number
   largeFileBytes: number
   /** 'normal' | 'elevated' (after an OOM or high heap) | 'critical'. */
@@ -391,6 +419,19 @@ export interface SubmitOptions {
   displayName?: string
   /** Pre-computed fingerprint (the import dialog already hashed the file). */
   fingerprint?: string
+  /**
+   * The URL the bytes came from when the source is not a URL itself (a host
+   * fetched them). Part of the job's identity: the same scan asked for by URL
+   * later is found by it.
+   */
+  sourceUrl?: string
+  /**
+   * The local files' version — their newest modification time — when known.
+   * The fingerprint samples a file, and an edit outside the sample keeps it:
+   * two jobs with the same fingerprint and different known versions are not
+   * the same content. Kept in the options so a Reload carries it.
+   */
+  sourceVersion?: number
   /** Frame the camera on this model when it lands (default: true for single loads). */
   frame?: boolean
   /** Force exclusive conversion (no concurrency). */
@@ -439,7 +480,7 @@ export type LoadEvent =
 
 // ── Adapter contract ──────────────────────────────────────────────────────────
 
-export type Lane = 'network' | 'convert' | 'attach'
+export type Lane = 'network' | 'convert' | 'attach' | 'decode'
 
 export interface LaneRequest {
   /** Estimated peak bytes while holding the lane (convert admission). */
@@ -487,6 +528,12 @@ export interface JobContext {
   /** Block until the lane grants this job; the job shows `waiting`/`queued` meanwhile. */
   acquire(lane: Lane, req?: LaneRequest): Promise<LaneTicket>
   setMeta(patch: JobMetaPatch): void
+  /**
+   * Show the job as `waiting` for a reason that is not a lane — 'budget'
+   * (point budget contended) or 'viewer' (3D viewer not up yet). null clears it.
+   * Cleared automatically at commit and when the attempt settles.
+   */
+  setWaiting(reason: WaitReason | null): void
   /** Throws an AbortError when the job was cancelled. */
   throwIfCancelled(): void
   /** Mark the commit point: after this, cancel means "remove the model". */
@@ -560,6 +607,12 @@ export interface SourceAdapter {
   reloadSource?(resultId: string, retained: LoadSource | null): LoadSource | null
   /** Classify an unknown thrown value into a LoadError (adapter-specific patterns). */
   classify?(err: unknown, phase: PhaseId | null, attempt: number): LoadError
+  /**
+   * Frame a committed result in the scene (Loading Center "Show in scene").
+   * Non-IFC kinds only: an IFC model is framed by the app (the controller's
+   * `focusModel` hook), which owns the camera choreography of a federation.
+   */
+  focus?(resultId: string): void
 }
 
 // ── Resource policy (implemented by resource-policy.ts) ───────────────────────
@@ -582,6 +635,8 @@ export interface ResourcePolicy {
   /** Current convert concurrency — already lowered under memory pressure. */
   maxConcurrentConverts(): number
   maxConcurrentDownloads(): number
+  /** Current decode concurrency (point clouds, meshes) — already lowered under memory pressure. */
+  maxConcurrentDecodes(): number
   memoryBudgetBytes(): number
   largeFileBytes(): number
   pressure(): MemoryPressure
@@ -593,7 +648,7 @@ export interface ResourcePolicy {
 
 // ── Tracked (external) jobs ───────────────────────────────────────────────────
 
-/** A job executed elsewhere (point cloud runner, mesh runner, geo system) but shown here. */
+/** A job executed elsewhere (the geo system's terrain / buildings fetches) but shown here. */
 export interface ExternalJobSpec {
   kind: SourceKind
   fileName: string

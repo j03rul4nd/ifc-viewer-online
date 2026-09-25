@@ -10,6 +10,7 @@ import { describe, it, expect } from 'vitest'
 import {
   classifyFiles,
   fileExtensionOf,
+  groupMeshFiles,
   hasFilePayload,
   routedCount,
   MESH_ENTRY_EXTENSIONS,
@@ -82,6 +83,40 @@ describe('classifyFiles', () => {
     const r = classifyFiles([])
     expect(routedCount(r)).toBe(0)
     expect(r.other).toEqual([])
+  })
+})
+
+describe('classifyFiles — ambiguous text files', () => {
+  it('a README / CSV next to IFCs is not a scan', () => {
+    const r = classifyFiles([file('ARC.ifc'), file('README.txt'), file('issues.csv')])
+    expect(names(r.pointcloud)).toEqual([])
+    expect(names(r.other)).toEqual(['README.txt', 'issues.csv'])
+    expect(names(r.ifc)).toEqual(['ARC.ifc'])
+  })
+
+  it('stays a scan alone, beside other scans, or with no model in the drop', () => {
+    expect(names(classifyFiles([file('points.csv')]).pointcloud)).toEqual(['points.csv'])
+    expect(names(classifyFiles([file('ARC.ifc'), file('site.laz'), file('extra.txt')]).pointcloud)).toEqual(['site.laz', 'extra.txt'])
+    expect(names(classifyFiles([file('a.xyz'), file('b.csv')]).pointcloud)).toEqual(['a.xyz', 'b.csv'])
+    // A mesh entry makes the context a model folder too.
+    expect(names(classifyFiles([file('chair.glb'), file('notes.txt')]).other)).toEqual(['notes.txt'])
+  })
+})
+
+describe('groupMeshFiles', () => {
+  it('makes one import per entry file, sharing every sidecar', () => {
+    const groups = groupMeshFiles([file('chair.glb'), file('table.obj'), file('table.mtl'), file('wood.png'), file('chair.bin')])
+    expect(groups.map((g) => g.entry.name)).toEqual(['chair.glb', 'table.obj'])
+    for (const g of groups) expect(names(g.sidecars)).toEqual(['table.mtl', 'wood.png', 'chair.bin'])
+  })
+
+  it('keeps the arrival order of the entries (batch naming follows it)', () => {
+    expect(groupMeshFiles([file('b.GLB'), file('a.gltf')]).map((g) => g.entry.name)).toEqual(['b.GLB', 'a.gltf'])
+  })
+
+  it('has nothing to import without an entry file', () => {
+    expect(groupMeshFiles([file('model.bin'), file('model.mtl')])).toEqual([])
+    expect(groupMeshFiles([])).toEqual([])
   })
 })
 

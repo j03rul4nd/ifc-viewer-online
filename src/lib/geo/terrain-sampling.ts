@@ -305,29 +305,60 @@ export function hillshade(
   exaggeration = 1,
   softness = 0.5,
 ): number {
-  let x = nx, y = ny, z = nz
-  if (exaggeration !== 1 && nz > 1e-6) {
-    const gx = (nx / nz) * exaggeration
-    const gy = (ny / nz) * exaggeration
-    const len = Math.hypot(gx, gy, 1)
-    x = gx / len; y = gy / len; z = 1 / len
-  }
+  return hillshader(sun, ambient, exaggeration, softness)(nx, ny, nz)
+}
 
+/**
+ * `hillshade` with the light held fixed, for shading a whole grid.
+ *
+ * Everything about the five lights depends on the sun alone, yet `hillshade`
+ * rebuilt them — twenty trig calls — for every normal it was handed, and a
+ * terrain patch hands it 148 000 of them on each re-bake (every step of the
+ * exaggeration slider). Here they are built once. The per-normal arithmetic is
+ * the same operations in the same order, so the result is bit-identical to
+ * calling `hillshade` with the same arguments.
+ */
+export function hillshader(
+  sun: SunDirection = DEFAULT_SUN,
+  ambient = SHADE_AMBIENT_IMAGERY,
+  exaggeration = 1,
+  softness = 0.5,
+): (nx: number, ny: number, nz: number) => number {
   const primary = sunVector(sun)
-  const hard = Math.max(0, x * primary.x + y * primary.y + z * primary.z)
-
-  let soft = 0
+  const px = primary.x, py = primary.y, pz = primary.z
+  // x, y, z, weight per auxiliary light.
+  const lights = new Float64Array(MULTI_LIGHTS.length * 4)
   let totalWeight = 0
-  for (const light of MULTI_LIGHTS) {
+  MULTI_LIGHTS.forEach((light, k) => {
     const v = sunVector({ azimuthDeg: sun.azimuthDeg + light.offsetDeg, altitudeDeg: sun.altitudeDeg })
-    soft += Math.max(0, x * v.x + y * v.y + z * v.z) * light.weight
+    lights[k * 4] = v.x
+    lights[k * 4 + 1] = v.y
+    lights[k * 4 + 2] = v.z
+    lights[k * 4 + 3] = light.weight
     totalWeight += light.weight
-  }
-  soft /= totalWeight
-
+  })
   const s = Math.min(1, Math.max(0, softness))
-  const ndotl = hard * (1 - s) + soft * s
-  return ambient + (1 - ambient) * ndotl
+
+  return (nx, ny, nz) => {
+    let x = nx, y = ny, z = nz
+    if (exaggeration !== 1 && nz > 1e-6) {
+      const gx = (nx / nz) * exaggeration
+      const gy = (ny / nz) * exaggeration
+      const len = Math.hypot(gx, gy, 1)
+      x = gx / len; y = gy / len; z = 1 / len
+    }
+
+    const hard = Math.max(0, x * px + y * py + z * pz)
+
+    let soft = 0
+    for (let o = 0; o < lights.length; o += 4) {
+      soft += Math.max(0, x * lights[o] + y * lights[o + 1] + z * lights[o + 2]) * lights[o + 3]
+    }
+    soft /= totalWeight
+
+    const ndotl = hard * (1 - s) + soft * s
+    return ambient + (1 - ambient) * ndotl
+  }
 }
 
 // ── Sky-view factor (ambient occlusion for terrain) ─────────────────────────────
@@ -534,9 +565,11 @@ export const ROCK_SLOPE_DEG = 38
  * forest.
  */
 export function ecosystemZone(elevationM: number, latDeg: number, slopeDeg: number): EcosystemZone {
-  const snow = snowlineM(latDeg)
-  const tree = treelineM(latDeg)
+  return zoneBelow(elevationM, slopeDeg, snowlineM(latDeg), treelineM(latDeg))
+}
 
+/** `ecosystemZone` with the latitude's snow line and treeline already known. */
+function zoneBelow(elevationM: number, slopeDeg: number, snow: number, tree: number): EcosystemZone {
   if (elevationM >= snow) return 'snow'
   // Steep ground is rock — but not above the snow line, where snow covers it.
   if (slopeDeg >= ROCK_SLOPE_DEG) return 'rock'
@@ -593,43 +626,63 @@ export interface EcosystemMix {
 export function ecosystemBlend(
   elevationM: number, latDeg: number, slopeDeg: number, blendM = 60,
 ): EcosystemMix {
-  const half = blendM / 2
-  const here = ecosystemZone(elevationM, latDeg, slopeDeg)
-  const mix: EcosystemMix = { here, above: here, below: here, wAbove: 0, wBelow: 0 }
-  if (!(blendM > 0)) return mix
-
-  const upper = ecosystemZone(elevationM + half, latDeg, slopeDeg)
-  if (upper !== here) {
-    const boundary = findBoundary(elevationM, elevationM + half, here, latDeg, slopeDeg, true)
-    mix.above = upper
-    mix.wAbove = Math.min(0.5, Math.max(0, (elevationM - (boundary - half)) / blendM))
-  }
-
-  const lower = ecosystemZone(elevationM - half, latDeg, slopeDeg)
-  if (lower !== here) {
-    const boundary = findBoundary(elevationM - half, elevationM, here, latDeg, slopeDeg, false)
-    mix.below = lower
-    mix.wBelow = Math.min(0.5, Math.max(0, ((boundary + half) - elevationM) / blendM))
-  }
-
-  return mix
+  return ecosystemBlender(latDeg, blendM)(elevationM, slopeDeg)
 }
 
 /**
- * Elevation at which the belt stops being `zone`, by bisection.
- * `upward` says which end of the bracket is inside the zone.
+ * `ecosystemBlend` held at one latitude, for classifying a whole grid.
+ *
+ * The snow line and treeline depend on latitude alone, yet `ecosystemZone`
+ * works them out — three cosines and two powers — on every call, and one blend
+ * can make 27 calls (three probes, then a 12-step bisection each way). A
+ * terrain patch blends 148 000 vertices every time its ground moves. Here the
+ * two lines are worked out once; the comparisons and the bisection are the
+ * same, so every blend is bit-identical to `ecosystemBlend`.
  */
-function findBoundary(
-  lo: number, hi: number, zone: EcosystemZone,
-  latDeg: number, slopeDeg: number, upward: boolean,
-): number {
-  for (let i = 0; i < 12; i++) {
-    const mid = (lo + hi) / 2
-    const inZone = ecosystemZone(mid, latDeg, slopeDeg) === zone
-    if (inZone === upward) lo = mid
-    else hi = mid
+export function ecosystemBlender(
+  latDeg: number, blendM = 60,
+): (elevationM: number, slopeDeg: number) => EcosystemMix {
+  const snow = snowlineM(latDeg)
+  const tree = treelineM(latDeg)
+  const half = blendM / 2
+
+  /**
+   * Elevation at which the belt stops being `zone`, by bisection.
+   * `upward` says which end of the bracket is inside the zone.
+   */
+  const findBoundary = (
+    lo: number, hi: number, zone: EcosystemZone, slopeDeg: number, upward: boolean,
+  ): number => {
+    for (let i = 0; i < 12; i++) {
+      const mid = (lo + hi) / 2
+      const inZone = zoneBelow(mid, slopeDeg, snow, tree) === zone
+      if (inZone === upward) lo = mid
+      else hi = mid
+    }
+    return (lo + hi) / 2
   }
-  return (lo + hi) / 2
+
+  return (elevationM, slopeDeg) => {
+    const here = zoneBelow(elevationM, slopeDeg, snow, tree)
+    const mix: EcosystemMix = { here, above: here, below: here, wAbove: 0, wBelow: 0 }
+    if (!(blendM > 0)) return mix
+
+    const upper = zoneBelow(elevationM + half, slopeDeg, snow, tree)
+    if (upper !== here) {
+      const boundary = findBoundary(elevationM, elevationM + half, here, slopeDeg, true)
+      mix.above = upper
+      mix.wAbove = Math.min(0.5, Math.max(0, (elevationM - (boundary - half)) / blendM))
+    }
+
+    const lower = zoneBelow(elevationM - half, slopeDeg, snow, tree)
+    if (lower !== here) {
+      const boundary = findBoundary(elevationM - half, elevationM, here, slopeDeg, false)
+      mix.below = lower
+      mix.wBelow = Math.min(0.5, Math.max(0, ((boundary + half) - elevationM) / blendM))
+    }
+
+    return mix
+  }
 }
 
 /**
@@ -639,7 +692,11 @@ function findBoundary(
 export function ecosystemColorSmooth(
   elevationM: number, latDeg: number, slopeDeg: number, blendM = 60,
 ): { r: number; g: number; b: number } {
-  const mix = ecosystemBlend(elevationM, latDeg, slopeDeg, blendM)
+  return ecosystemMixColor(ecosystemBlend(elevationM, latDeg, slopeDeg, blendM))
+}
+
+/** The colour of a blend — so one blend can give both colour and make-up. */
+export function ecosystemMixColor(mix: EcosystemMix): { r: number; g: number; b: number } {
   const h = ecosystemColor(mix.here)
   if (mix.wAbove === 0 && mix.wBelow === 0) return h
   const a = ecosystemColor(mix.above)
@@ -767,7 +824,11 @@ export function patchMix(
 export function ecosystemGroundSmooth(
   elevationM: number, latDeg: number, slopeDeg: number, blendM = 60,
 ): EcosystemGround {
-  const mix = ecosystemBlend(elevationM, latDeg, slopeDeg, blendM)
+  return ecosystemMixGround(ecosystemBlend(elevationM, latDeg, slopeDeg, blendM))
+}
+
+/** The make-up of a blend, to pair with `ecosystemMixColor`. */
+export function ecosystemMixGround(mix: EcosystemMix): EcosystemGround {
   const h = ZONE_GROUND[mix.here]
   if (mix.wAbove === 0 && mix.wBelow === 0) return h
   const a = ZONE_GROUND[mix.above]

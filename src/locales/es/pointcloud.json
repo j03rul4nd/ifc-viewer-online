@@ -92,7 +92,14 @@
     "memory": "{{mb}} MB en la GPU",
     "truncated": "Detenido en {{count}} puntos: el archivo contiene más de los que este visor mantiene en memoria a la vez.",
     "noModel": "No hay modelo IFC cargado: el escaneo se coloca por su cuenta.",
-    "partial": "Parte de este escaneo no se pudo leer y falta en la vista. Lo que ves está incompleto."
+    "partial": "Parte de este escaneo no se pudo leer y falta en la vista. Lo que ves está incompleto.",
+    "budget": "Presupuesto de puntos: {{used}} de {{max}}",
+    "budgetNearlyFull": "Presupuesto de puntos: {{used}} de {{max}} — casi lleno",
+    "budgetFull": "Presupuesto de puntos: {{used}} de {{max}} — lleno",
+    "budgetLabel": "Presupuesto de puntos en memoria",
+    "budgetHint": "Puntos que los escaneos cargados mantienen en memoria, incluidos los que aún se están cargando. Un escaneo que no cabe espera mientras otro escaneo se está cargando; si no, se carga truncado, o se rechaza cuando el presupuesto está lleno. Las nubes COPC en streaming no cuentan: las limita el ajuste Detalle.",
+    "budgetReserved": "+ {{reserved}} reservados para escaneos que aún se cargan",
+    "budgetAbout": "Sobre el presupuesto de puntos"
   },
   "align": {
     "title": "Alineación",

@@ -88,7 +88,14 @@
     "memory": "GPU 上占用 {{mb}} MB",
     "truncated": "已在 {{count}} 个点处停止——文件中的点数超过本查看器一次能驻留在内存中的数量。",
     "noModel": "未加载 IFC 模型——该扫描单独放置。",
-    "partial": "这个扫描有一部分无法读取，视图中缺失。你看到的并不完整。"
+    "partial": "这个扫描有一部分无法读取，视图中缺失。你看到的并不完整。",
+    "budget": "点数预算：{{used}} / {{max}}",
+    "budgetNearlyFull": "点数预算：{{used}} / {{max}}（即将用满）",
+    "budgetFull": "点数预算：{{used}} / {{max}}（已满）",
+    "budgetLabel": "内存中的点数预算",
+    "budgetHint": "已加载的扫描（含仍在加载的）在内存中保留的点数。放不下的扫描在其他扫描仍在加载时会等待；否则截断加载，预算已满时则被拒绝。流式 COPC 点云不计入，由“细节”设置限制。",
+    "budgetReserved": "+ 为仍在加载的扫描预留 {{reserved}}",
+    "budgetAbout": "关于点数预算"
   },
   "align": {
     "title": "对齐",

@@ -9,7 +9,7 @@
 // attach is the only big main-thread cost. They only shape the ESTIMATED
 // overall %; nothing is scheduled by them.
 
-import type { JobStatus, PhaseId, PhasePlanEntry, PhaseState } from './types'
+import type { JobStatus, PhaseId, PhasePlanEntry, PhaseState, SourceKind } from './types'
 
 // ── Plans ─────────────────────────────────────────────────────────────────────
 
@@ -118,7 +118,12 @@ const MB = 1024 * 1024
 export interface EtaInput {
   phases: readonly PhaseState[]
   sizeBytes: number
-  /** Session calibration: mean wall ms per MB, per phase. */
+  /**
+   * What the job loads (default 'ifc'). The session calibration is measured
+   * on IFC loads only, so for any other kind no phase counts as calibrated.
+   */
+  kind?: SourceKind
+  /** Session calibration: mean wall ms per MB, per phase (IFC loads). */
   msPerMB: Partial<Record<PhaseId, number>>
   now: number
   /** When the active phase started (net of lane waits, if the caller tracks them). */
@@ -141,10 +146,19 @@ export interface EtaInput {
  *      earlier load in this session. One uncalibrated phase ahead and there is
  *      no ETA — "about 40 s" followed by an unmeasured two-minute parse is
  *      worse than showing elapsed time.
+ *
+ * Rule 2 is for IFC only. A scan's decode reports against a total that can
+ * move under it (a budget grant truncates the cloud, a COPC stream keeps
+ * reading nodes as the camera moves), and the calibration was taken on IFC
+ * conversions: an IFC `identify` rate applied to a 2 GB LAZ is a made-up
+ * number. Point clouds and meshes only get the download rule, and only when
+ * nothing is left after the download (nothing of theirs is ever calibrated).
  */
 export function computeEta(input: EtaInput): { etaMs: number | null; reliable: boolean } {
   const none = { etaMs: null, reliable: false }
-  const { phases, sizeBytes, msPerMB, now, activePhaseStartedAt, activeFraction } = input
+  const { phases, sizeBytes, now, activePhaseStartedAt, activeFraction } = input
+  const model = (input.kind ?? 'ifc') === 'ifc'
+  const msPerMB: Partial<Record<PhaseId, number>> = model ? input.msPerMB : {}
   const activeIdx = phases.findIndex((p) => p.status === 'active' && !p.background)
   if (activeIdx < 0 || activePhaseStartedAt == null || activeFraction === null) return none
   const f = clamp01(activeFraction)
@@ -168,6 +182,7 @@ export function computeEta(input: EtaInput): { etaMs: number | null; reliable: b
     if (f <= 0.05 || elapsed <= 1000 || !allCalibrated) return none
     return { etaMs: Math.max(0, Math.round(inPhase + remainingCalibrated)), reliable: true }
   }
+  if (!model) return none
   if (f < 0.15 || elapsed < 3000 || !allCalibrated) return none
   return { etaMs: Math.max(0, Math.round(inPhase + remainingCalibrated)), reliable: true }
 }

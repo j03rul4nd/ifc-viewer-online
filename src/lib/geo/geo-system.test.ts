@@ -8,6 +8,8 @@ import * as THREE from 'three'
 import { createGeoSystem, type GeoSystemContext } from './geo-system'
 import { composeGeoRootTransform, WEB_MERCATOR_WORLD_M, cosLatScale, latLonToTile } from './geo-math'
 import type { GeoPlacement, MapProvider } from './geo-types'
+import type { SceneReport } from './scene-budget'
+import type { FeatureLayerVisibility } from './geo-system'
 
 // ── basemap-engine mock ─────────────────────────────────────────────────────────
 
@@ -61,6 +63,23 @@ vi.mock('./geo-terrain', () => ({
 function fakePatches(): FakePatch[] {
   return terrainMock.patches as FakePatch[]
 }
+
+// ── props-scene mock (pipeline failure isolation) ───────────────────────────────
+// The vehicle builder is the one a test can make throw on demand: it only runs
+// while scenery is switched on, which no other test here does.
+
+const propsMock = vi.hoisted(() => ({ explode: false }))
+
+vi.mock('./props-scene', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./props-scene')>()
+  return {
+    ...actual,
+    buildVehicleLayer: (...args: Parameters<typeof actual.buildVehicleLayer>) => {
+      if (propsMock.explode) throw new Error('vehicle builder exploded')
+      return actual.buildVehicleLayer(...args)
+    },
+  }
+})
 
 // ── Context fixture ─────────────────────────────────────────────────────────────
 
@@ -665,15 +684,19 @@ describe('geo-system · OSM feature cache', () => {
       occlusion: 0, detail: 0, contourInterval: 0,
     }
     geo.setTerrainLook(LOOK)
+    await geo.settled()
     const before = buildings()
     expect(before).toBeDefined()
 
     // A sun slider only repaints the hillshade. It must NOT pay for a rebuild.
     geo.setTerrainLook({ ...LOOK, sunAzimuth: 200 })
+    await geo.settled()
     expect(buildings()).toBe(before)
 
-    // `detail` moves the ground, so everything on it has to be re-derived.
+    // `detail` moves the ground, so everything on it has to be re-derived —
+    // once the slider settles, which `settled()` flushes.
     geo.setTerrainLook({ ...LOOK, sunAzimuth: 200, detail: 0.6 })
+    await geo.settled()
     const after = buildings()
     expect(after).toBeDefined()
     expect(after).not.toBe(before)
@@ -700,6 +723,7 @@ describe('geo-system · OSM feature cache', () => {
     const seen: Array<THREE.Object3D | undefined> = [buildings()]
     for (const on of [true, false, true, false]) {
       await geo.setTerrain(on)
+      await geo.settled()
       seen.push(buildings())
     }
     for (const o of seen) expect(o).toBeDefined()
@@ -846,9 +870,11 @@ describe('geo-system · a federated model is one building', () => {
     expect(buildingsIn(f.scene)).toBeDefined()
 
     geo.setHiddenFeatures(['w908035012'])
+    await geo.settled()
     expect(buildingsIn(f.scene)).toBeUndefined()
 
     geo.setHiddenFeatures([])
+    await geo.settled()
     expect(buildingsIn(f.scene)).toBeDefined()
     geo.dispose()
   })
@@ -862,6 +888,7 @@ describe('geo-system · a federated model is one building', () => {
 
     const before = buildingsIn(f.scene)
     geo.setHiddenFeatures(['w-from-another-site'])
+    await geo.settled()
     const after = buildingsIn(f.scene)
     expect(after).toBeDefined()
     // Rebuilt, not reused: the set genuinely changed, and geo-system cannot
@@ -871,7 +898,178 @@ describe('geo-system · a federated model is one building', () => {
     // The same set twice must NOT rebuild — this is what keeps an unrelated
     // React render from re-extruding the neighbourhood.
     geo.setHiddenFeatures(['w-from-another-site'])
+    await geo.settled()
     expect(buildingsIn(f.scene)).toBe(after)
+    geo.dispose()
+  })
+})
+
+// ── Scene build pipeline ────────────────────────────────────────────────────────
+//
+// The surroundings used to be rebuilt synchronously, in full, for every change:
+// seconds of frozen tab on a dense district, repeated per slider step, and one
+// throwing builder left the scene half torn down. These pin the replacement:
+// coalesced, incremental for layer switches, isolated per layer, and never
+// leaving a caller waiting after a teardown.
+
+describe('geo-system · scene build pipeline', () => {
+  class OneBuildingWorker {
+    onmessage: ((e: MessageEvent<unknown>) => void) | null = null
+    onerror: ((e: ErrorEvent) => void) | null = null
+    postMessage(msg: { id: string }): void {
+      queueMicrotask(() => {
+        this.onmessage?.({
+          data: {
+            type: 'buildings',
+            id: msg.id,
+            features: [{
+              id: 'w1',
+              kind: 'building',
+              ring: [
+                { lat: 41.3871, lon: 2.1734 }, { lat: 41.3872, lon: 2.1734 },
+                { lat: 41.3872, lon: 2.1735 }, { lat: 41.3871, lon: 2.1735 },
+              ],
+              height: { heightM: 12, minHeightM: 0, estimated: false },
+              style: { roofShape: 'flat', roofHeightM: 0 },
+            }],
+            counts: { building: 1, water: 0, green: 0, tree: 0, bridge: 0 },
+            truncated: false,
+          },
+        } as MessageEvent<unknown>)
+      })
+    }
+    terminate(): void { /* no-op */ }
+  }
+
+  const originalWorker = globalThis.Worker
+  beforeEach(() => {
+    propsMock.explode = false
+    ;(globalThis as { Worker: unknown }).Worker = OneBuildingWorker
+  })
+  afterEach(() => { (globalThis as { Worker: unknown }).Worker = originalWorker })
+
+  const buildingsIn = (scene: THREE.Scene): THREE.Object3D | undefined => {
+    let hit: THREE.Object3D | undefined
+    scene.traverse((o) => { if (o.name === 'osm-buildings') hit = o })
+    return hit
+  }
+
+  const ALL_ON: FeatureLayerVisibility = {
+    building: true, water: true, green: true, sand: true, rock: true,
+    tree: true, bridge: true, road: true, rail: true, pier: true,
+    signal: false, furniture: true, barrier: true,
+  }
+
+  async function withNeighbourhood(f = makeFixture()) {
+    const geo = createGeoSystem(f.ctx)
+    await geo.enable(PLACEMENT, PROVIDER)
+    geo.setContextSuppression({ enabled: false })
+    const outcome = await geo.setBuildings(true)
+    expect(outcome.status).toBe('ready')
+    return { f, geo }
+  }
+
+  it('coalesces settings changed together into one build', async () => {
+    const { f, geo } = await withNeighbourhood()
+    const builds: SceneReport[] = []
+    geo.setSceneReportCallback((r) => { if (r.phase === 'ready') builds.push(r) })
+    builds.length = 0 // the snapshot handed over on subscribe
+
+    // What an SDK command or a preset does: several settings in one tick.
+    geo.setContextTone('neutral')
+    geo.setContextDetail('detailed')
+    geo.setHiddenFeatures(['w-elsewhere'])
+    await geo.settled()
+
+    expect(builds).toHaveLength(1)
+    expect(buildingsIn(f.scene)).toBeDefined()
+    geo.dispose()
+  })
+
+  it('switches a layer off on the spot, without rebuilding the others', async () => {
+    const { f, geo } = await withNeighbourhood()
+    const mesh = buildingsIn(f.scene)
+    expect(mesh).toBeDefined()
+
+    geo.setFeatureLayers({ ...ALL_ON, tree: false })
+    await geo.settled()
+    expect(buildingsIn(f.scene)).toBe(mesh) // untouched, not re-extruded
+
+    geo.setFeatureLayers({ ...ALL_ON, tree: false, building: false })
+    expect(buildingsIn(f.scene)).toBeUndefined() // gone synchronously
+
+    geo.setFeatureLayers({ ...ALL_ON, tree: false, building: true })
+    await geo.settled()
+    const back = buildingsIn(f.scene)
+    expect(back).toBeDefined()
+    expect(back).not.toBe(mesh)
+    geo.dispose()
+  })
+
+  it('reports a layer that throws and keeps the rest of the scene standing', async () => {
+    const { f, geo } = await withNeighbourhood()
+    let last: SceneReport | null = null
+    geo.setSceneReportCallback((r) => { last = r })
+
+    propsMock.explode = true
+    geo.setVehicles(true)
+    await geo.settled()
+
+    expect(last!.phase).toBe('ready')
+    expect(last!.failed).toEqual(['scenery'])
+    expect(buildingsIn(f.scene)).toBeDefined()
+
+    // A retry that fails again must not take the map down either…
+    await geo.rebuildScene()
+    expect(buildingsIn(f.scene)).toBeDefined()
+    expect(last!.failed).toEqual(['scenery'])
+
+    // …and one that succeeds clears the failure.
+    propsMock.explode = false
+    await geo.rebuildScene()
+    expect(last!.failed).toEqual([])
+    geo.dispose()
+  })
+
+  it('releases anyone waiting on a build when map mode goes down', async () => {
+    const { f, geo } = await withNeighbourhood()
+    geo.setContextTone('neutral')
+    const waiting = geo.settled()
+    geo.disable()
+    await waiting // resolves — a teardown must never strand a caller
+    expect(buildingsIn(f.scene)).toBeUndefined()
+    geo.dispose()
+  })
+
+  it('reports the triangles it drew and the budget they were held to', async () => {
+    const { geo } = await withNeighbourhood()
+    let last: SceneReport | null = null
+    geo.setSceneReportCallback((r) => { last = r })
+    expect(last!.triangles).toBeGreaterThan(0)
+    expect(last!.layers.find((l) => l.key === 'building')?.status).toBe('ok')
+    expect(Number.isFinite(last!.budget)).toBe(true)
+
+    geo.setBudgetOverride(true)
+    await geo.settled()
+    expect(last!.budgetLifted).toBe(true)
+    expect(last!.budget).toBe(Number.POSITIVE_INFINITY)
+    geo.dispose()
+  })
+
+  it('halves the budget after a lost WebGL context', async () => {
+    const f = makeFixture()
+    const canvas = Object.assign(new EventTarget(), {
+      getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }),
+    })
+    ;(f.ctx.renderer as unknown as { domElement: unknown }).domElement = canvas
+    const { geo } = await withNeighbourhood(f)
+    let last: SceneReport | null = null
+    geo.setSceneReportCallback((r) => { last = r })
+    const before = last!.budget
+
+    canvas.dispatchEvent(new Event('webglcontextlost'))
+    expect(last!.contextLosses).toBe(1)
+    expect(last!.budget).toBe(before / 2)
     geo.dispose()
   })
 })

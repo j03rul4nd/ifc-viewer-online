@@ -4,7 +4,7 @@ import fixture from './__fixtures__/shanghai-parks.json'
 import access from './__fixtures__/shanghai-access.json'
 import {parseOsmFeatures,buildFeaturesQuery} from './osm-features'
 import {solveSceneVertical,buildLinearLayer} from './osm-scene'
-import {accessPoint,connectedDeck,appendAccessFlight,appendAccessElevator,railingOutsideElevators} from './bridge-access'
+import {accessPoint,connectedDeck,deckLookup,appendAccessFlight,appendAccessElevator,railingOutsideElevators} from './bridge-access'
 import {metresToNormalized} from './geo-math'
 import {buildRoadNetwork} from './road-network'
 
@@ -97,4 +97,36 @@ describe('mapped Shanghai vertical access',()=>{
     })
     expect(solids).toBe(1)
   })
+})
+
+describe('deckLookup',()=>{
+  // The index behind solveAccessProfiles. It must give the scan's answer for
+  // every point — same deck, same height, same direction, the same winner on a
+  // tie — or a stair lands on a different deck than it did before it was fast.
+  it('answers exactly as connectedDeck does, on and off the decks',()=>{
+    const lookup=deckLookup(features,profiles,unit)
+    const points:THREE.Vector2[]=[]
+    let k=0
+    for(const f of features){
+      if(!f.ring) continue
+      // Every vertex where an answer can exist — stairs and pedestrian decks —
+      // and a sample of everything else, where the answer must stay null.
+      const near=!!f.style.accessKind || (f.functional==='pedestrian' && profiles.get(f.id)?.structure==='bridge')
+      for(const ll of f.ring){
+        if(!near && k++%40!==0) continue
+        const p=accessPoint(ll)
+        // On the vertex, and a hand's breadth to a stride away from it: inside
+        // the 0.35 m reach, on its edge, and outside it.
+        for(const dm of [0,.2,.34,.36,.8]) points.push(p.clone().add(new THREE.Vector2(dm*unit,-dm*unit*.5)))
+      }
+    }
+    let attached=0
+    for(const p of points){
+      const want=connectedDeck(p,features,profiles,unit)
+      expect(lookup(p)).toEqual(want)
+      if(want) attached++
+    }
+    // The survey really does put points on raised decks.
+    expect(attached).toBeGreaterThan(20)
+  },20_000)
 })

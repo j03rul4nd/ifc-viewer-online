@@ -88,7 +88,14 @@
     "memory": "{{mb}} MB a la GPU",
     "truncated": "S'ha aturat als {{count}} punts — el fitxer en conté més dels que aquest visor manté a la memòria alhora.",
     "noModel": "No hi ha cap model IFC carregat — l'escaneig se situa tot sol.",
-    "partial": "Una part d'aquest escaneig no s'ha pogut llegir i falta a la vista. El que veus és incomplet."
+    "partial": "Una part d'aquest escaneig no s'ha pogut llegir i falta a la vista. El que veus és incomplet.",
+    "budget": "Pressupost de punts: {{used}} de {{max}}",
+    "budgetNearlyFull": "Pressupost de punts: {{used}} de {{max}} — gairebé ple",
+    "budgetFull": "Pressupost de punts: {{used}} de {{max}} — ple",
+    "budgetLabel": "Pressupost de punts en memòria",
+    "budgetHint": "Punts que els escaneigs carregats mantenen en memòria, inclosos els que encara s'estan carregant. Un escaneig que no hi cap espera mentre un altre escaneig s'està carregant; si no, es carrega truncat, o es rebutja quan el pressupost és ple. Els núvols COPC en streaming no compten: els limita l'ajust Detall.",
+    "budgetReserved": "+ {{reserved}} reservats per a escaneigs que encara es carreguen",
+    "budgetAbout": "Sobre el pressupost de punts"
   },
   "align": {
     "title": "Alineació",

@@ -12,21 +12,37 @@
 //   • a speed that is an estimate says so ("≈");
 //   • a percentage never reads 100 until the job has actually committed, and
 //     does not appear at all until something was measured (activity instead);
-//   • "All models loaded" is said only for a burst in which a model landed.
+//   • "All models loaded" is said only for a burst in which a model landed,
+//     and a count says "models" only when every row it counts is one.
+//
+// "Model" means a managed IFC job (`isModelJob`), the manager's own predicate.
+// Point clouds and meshes are managed jobs too — real phases, cancel, retry —
+// but they are not the models the first-load card, the "all loaded" moment and
+// the coordinate-base anchor are about; their rows speak in their own words
+// (points, the reader) through the kind-aware phase keys of labels.ts.
 
 import type { TFunction } from 'i18next'
 import type {
-  LoadBatchView, LoadJobView, LoadSummary, PhaseId, PhaseState, SessionMetrics,
+  LoadBatchView, LoadError, LoadJobView, LoadSummary, PhaseId, PhaseState, SessionMetrics, SourceKind,
 } from '../../lib/loading/types'
 import { ACTIVE_STATUSES, TERMINAL_STATUSES } from '../../lib/loading/types'
 import { formatBytes } from '../../lib/utils'
-import { COUNTER_KEYS, PHASE_ACTIVE_KEYS, PHASE_KEYS, STATUS_KEYS, WAIT_KEYS } from './labels'
+import { COUNTER_KEYS, STATUS_KEYS, WAIT_KEYS, errorKey, phaseActiveKey, phaseKey } from './labels'
 
 export type LoadingT = TFunction<'loading'>
 
 const SEP = ' · '
 
 // ── Status predicates ─────────────────────────────────────────────────────────
+
+/**
+ * A model job: managed IFC — the same predicate as the manager's. A scan still
+ * decoding is not "your model on its way", and a tracked GIS fetch is not
+ * managed at all.
+ */
+export function isModelJob(job: { managed: boolean; kind: SourceKind }): boolean {
+  return job.managed && job.kind === 'ifc'
+}
 
 /** Still needs the user's attention: in flight, or stopped by an error. */
 export function isLiveJob(job: LoadJobView): boolean {
@@ -86,10 +102,37 @@ function byQueueOrder(a: LoadJobView, b: LoadJobView): number {
   return a.effectivePriority - b.effectivePriority || a.seq - b.seq
 }
 
-/** 1-based place among queued jobs, in the order the scheduler would grant them. */
+/**
+ * The queue a job stands in. An IFC waits for a convert slot; a scan and a
+ * mesh share the decode lane. The scheduler grants the two independently, so
+ * an IFC queued for conversion is never "ahead" of a scan, and counting it
+ * would print "#3" beside a mesh that is next in its own line.
+ */
+function queueFamily(kind: SourceKind): string {
+  return kind === 'pointcloud' || kind === 'mesh' ? 'decode' : kind
+}
+
+/**
+ * `queued` means "has done no heavy work yet", not "waits for a slot": a job
+ * that early can already be held by the coordinate-base anchor (a cache hit
+ * behind the first model still converting) or by the point budget. Those rows
+ * print their reason — "Queued · #1" would hide the one thing keeping them —
+ * and they are not in the slot line the other rows are numbered in.
+ */
+function queuedWithReason(job: LoadJobView): boolean {
+  return job.status === 'queued' && (job.waitReason === 'anchor' || job.waitReason === 'budget')
+}
+
+/**
+ * 1-based place among the jobs queued for the same lane family, in the order
+ * the scheduler would grant them; null for a job that is not in a slot line.
+ */
 export function queuePosition(job: LoadJobView, jobs: readonly LoadJobView[]): number | null {
-  if (job.status !== 'queued') return null
-  const queued = jobs.filter((j) => j.status === 'queued').sort(byQueueOrder)
+  if (job.status !== 'queued' || queuedWithReason(job)) return null
+  const family = queueFamily(job.kind)
+  const queued = jobs
+    .filter((j) => j.status === 'queued' && !queuedWithReason(j) && queueFamily(j.kind) === family)
+    .sort(byQueueOrder)
   const i = queued.findIndex((j) => j.id === job.id)
   return i < 0 ? null : i + 1
 }
@@ -97,14 +140,17 @@ export function queuePosition(job: LoadJobView, jobs: readonly LoadJobView[]): n
 /**
  * The job whose model will set the coordinate base: the lowest-seq live IFC
  * job other than this one. Mirrors the attach lane's anchor rule (types.ts,
- * `seq` is "the anchor rule's key"), so the name printed is the one the
- * scheduler is actually waiting for.
+ * `seq` is "the anchor rule's key"; scheduler.ts `pickAnchor`), so the name
+ * printed is the one the scheduler is actually waiting for. That includes
+ * skipping HELD rows: the scheduler passes the anchor on past a model the user
+ * paused, and "Waiting for A.ifc" beside an A that is on hold would name a job
+ * nothing is waiting for.
  */
 export function anchorJobFor(job: LoadJobView, jobs: readonly LoadJobView[]): LoadJobView | null {
   let best: LoadJobView | null = null
   for (const j of jobs) {
     if (j.id === job.id || j.kind !== 'ifc') continue
-    if (TERMINAL_STATUSES.has(j.status) || j.status === 'unloading') continue
+    if (TERMINAL_STATUSES.has(j.status) || j.status === 'unloading' || j.status === 'held') continue
     if (!best || j.seq < best.seq) best = j
   }
   return best
@@ -128,6 +174,35 @@ export function formatBytesPair(done: number, total?: number): string {
   const scale = Math.pow(1024, i)
   const d = i === 0 ? 0 : 1
   return `${(Math.max(0, done) / scale).toFixed(d)} / ${(total / scale).toFixed(d)} ${BYTE_UNITS[i]}`
+}
+
+const MILLION = 1_000_000
+
+/**
+ * "1.2 M / 4.0 M" for point counts. A scan runs to tens of millions of points,
+ * and "1,234,567 / 4,012,345" is a number to read, not to glance at — while a
+ * reader streaming at a few hundred thousand points a second makes the last
+ * digits flicker for nothing. Millions only, both sides in M (like the byte
+ * pair, so the two compare at a glance); below a million the digits are short
+ * enough to print whole.
+ *
+ * The done side is FLOORED to the tenth, the total rounded: rounding both
+ * printed "4.0 M / 4.0 M" from 3.95 M of a 4,012,345-point file on — a counter
+ * reading complete while the row still decodes and says 98 %. In the last
+ * tenth of a million the floored count can still meet the rounded total
+ * (4,003,120 of 4,012,345: both "4.0 M"); there the digits say what a tenth
+ * cannot, rather than a figure that reads finished before the commit.
+ */
+export function formatCountPair(done: number, total?: number): string {
+  const d = Math.max(0, done)
+  const hasTotal = total != null && total > 0
+  if ((hasTotal ? total : d) < MILLION) return hasTotal ? `${formatInt(d)} / ${formatInt(total)}` : formatInt(d)
+  const floorM = (n: number): string => `${(Math.floor(n / (MILLION / 10)) / 10).toFixed(1)} M`
+  if (!hasTotal) return floorM(d)
+  const doneText = floorM(d)
+  const totalText = `${(total / MILLION).toFixed(1)} M`
+  if (d < total && doneText === totalText) return `${formatInt(d)} / ${formatInt(total)}`
+  return `${doneText} / ${totalText}`
 }
 
 export function formatRate(bytesPerSecond: number): string {
@@ -207,7 +282,9 @@ export function formatCounters(phase: PhaseState, t: LoadingT): string | null {
   const { done, total, unit } = phase
   if (done == null && total == null) return null
   if (unit === 'bytes') return formatBytesPair(done ?? 0, total)
-  const value = total != null && total > 0 ? `${formatInt(done ?? 0)} / ${formatInt(total)}` : formatInt(done ?? 0)
+  const value = unit === 'points'
+    ? formatCountPair(done ?? 0, total)
+    : total != null && total > 0 ? `${formatInt(done ?? 0)} / ${formatInt(total)}` : formatInt(done ?? 0)
   if (!unit) return value
   return t(COUNTER_KEYS[unit], { count: Math.round(total ?? done ?? 0), value })
 }
@@ -215,7 +292,7 @@ export function formatCounters(phase: PhaseState, t: LoadingT): string | null {
 function runningLine(job: LoadJobView, t: LoadingT): string {
   const phase = activePhase(job)
   if (!phase) return t(STATUS_KEYS.running)
-  const parts: string[] = [t(PHASE_ACTIVE_KEYS[phase.id])]
+  const parts: string[] = [t(phaseActiveKey(job.kind, phase.id))]
   const counters = formatCounters(phase, t)
   if (counters) parts.push(counters)
   if (phase.detail) parts.push(phase.detail)
@@ -236,9 +313,18 @@ function loadedLine(job: LoadJobView, t: LoadingT): string {
   const parts: string[] = [t(STATUS_KEYS.loaded)]
   const bg = backgroundPhase(job)
   if (bg) {
-    parts.push(t(PHASE_ACTIVE_KEYS[bg.id]))
+    parts.push(t(phaseActiveKey(job.kind, bg.id)))
   } else if (job.metrics.objects != null && job.metrics.objects > 0) {
     parts.push(t('row.objects', { count: job.metrics.objects, value: formatInt(job.metrics.objects) }))
+  } else if (job.kind === 'pointcloud') {
+    // A scan's size is its points, as the decode counted them: "Loaded ·
+    // 999,491 points" says what "224 objects" says for a model. (A COPC
+    // reports none — what it holds follows the camera.)
+    const decode = job.phases.find((p) => p.id === 'decode')
+    if (decode?.unit === 'points' && (decode.done ?? 0) > 0) {
+      const counted = formatCounters({ ...decode, total: undefined }, t)
+      if (counted) parts.push(counted)
+    }
   }
   if (job.metrics.fromCache) parts.push(t('row.fromCache'))
   return parts.join(SEP)
@@ -248,13 +334,15 @@ function loadedLine(job: LoadJobView, t: LoadingT): string {
  * One line that says what a job is doing, with its real numbers:
  *   "Processing geometry · 31 / 48 classes · IFCWALL"
  *   "Downloading · 12.1 / 48.0 MB"
- *   "Queued · #3"
- *   "Waiting for Architecture.ifc (coordinate base)"
+ *   "Queued · #3"                                     (third in its own lane's line)
+ *   "Waiting for Architecture.ifc (coordinate base)"  (waiting — or still queued, but held by the anchor)
  *   "Failed · Geometry processing"
+ *   "Reading points · 1.2 M / 4.0 M points"           (a scan)
  */
 export function describePhaseLine(job: LoadJobView, jobs: readonly LoadJobView[], t: LoadingT): string {
   switch (job.status) {
     case 'queued': {
+      if (queuedWithReason(job)) return waitingLine(job, jobs, t)
       const pos = queuePosition(job, jobs)
       return pos != null ? t('row.queuedAt', { position: pos }) : t(STATUS_KEYS.queued)
     }
@@ -264,12 +352,60 @@ export function describePhaseLine(job: LoadJobView, jobs: readonly LoadJobView[]
     case 'unloading': return t('row.unloading')
     case 'loaded':    return loadedLine(job, t)
     case 'failed': {
-      const phase: PhaseId | null = job.error?.phase ?? job.phase
-      return phase ? t('row.failed', { phase: t(PHASE_KEYS[phase]) }) : t(STATUS_KEYS.failed)
+      const phase = job.error?.phase ?? job.phase
+      return phase ? t('row.failed', { phase: t(phaseKey(job.kind, phase)) }) : t(STATUS_KEYS.failed)
     }
     case 'cancelled': return t(STATUS_KEYS.cancelled)
     case 'removed':   return t('row.removed')
   }
+}
+
+/**
+ * The long stall hint. The IFC one explains the usual cause (one huge class
+ * inside IfcImporter); on a scan or a mesh that sentence would be a made-up
+ * reason, so every other kind gets the plain one.
+ */
+export function stalledText(job: LoadJobView, t: LoadingT): string {
+  return job.kind === 'ifc' ? t('row.stalled') : t('row.stalledGeneric')
+}
+
+// ── Error reason ──────────────────────────────────────────────────────────────
+
+/**
+ * Resolves a LoadError `detailKey` ('pointcloud:error.lazTooLarge') to its
+ * sentence, or null when no loaded bundle has it. Injected by the component
+ * (it owns the namespaces), so this module stays free of i18next's instance.
+ */
+export type DetailResolver = (key: string) => string | null
+
+export interface ErrorText {
+  /** The sentence the user acts on: the domain cause when known, else the code's generic text. */
+  reason: string
+  /**
+   * The code's generic sentence when `reason` is the domain cause — Advanced
+   * shows it as a second line, because it is what decided the retry policy —
+   * else null (it is already the reason).
+   */
+  generic: string | null
+}
+
+/**
+ * Why a job failed, in words. A scan's "That LAZ is too large to decompress in
+ * a browser tab — crop or decimate it first" beats the code's generic "this
+ * model's schema or size is not supported", which is written for IFC and says
+ * nothing a person can do about a point cloud. A detail key the bundles do not
+ * know (a runner key nobody translated yet) falls back to the generic text
+ * rather than printing the raw key.
+ *
+ * The generic text follows the job's `kind` (labels.ts `errorKey`): an empty
+ * download or a refused link under a .laz has no detail key, and the fallback
+ * must not tell it "this file is not a readable IFC model". The same kind-aware
+ * sentence is the Advanced second line, so the two views never disagree.
+ */
+export function errorText(error: LoadError, kind: SourceKind, t: LoadingT, resolveDetail?: DetailResolver): ErrorText {
+  const generic = t(errorKey(kind, error.code), { status: error.httpStatus != null ? String(error.httpStatus) : '—' })
+  const detail = error.detailKey && resolveDetail ? resolveDetail(error.detailKey) : null
+  return detail ? { reason: detail, generic } : { reason: generic, generic: null }
 }
 
 // ── Status glyph ──────────────────────────────────────────────────────────────
@@ -468,6 +604,36 @@ export function singleActiveName(jobs: readonly LoadJobView[]): string | null {
   return found ? found.displayName : null
 }
 
+/**
+ * Every active row is a model job (vacuously true when none is). What lets
+ * the indicator say "Loading 3 models": two LAZ files decoding, or an IFC
+ * beside a scan, are loads but not models — they count as files.
+ */
+export function activeAreAllModels(jobs: readonly LoadJobView[]): boolean {
+  for (const j of jobs) if (ACTIVE_STATUSES.has(j.status) && !isModelJob(j)) return false
+  return true
+}
+
+/** Failed rows that are model jobs — the part of `summary.failed` that may be called "models". */
+export function countFailedModels(jobs: readonly LoadJobView[]): number {
+  let n = 0
+  for (const j of jobs) if (j.status === 'failed' && isModelJob(j)) n++
+  return n
+}
+
+/**
+ * The live-region sentence for `count` new failures, `modelCount` of them
+ * model jobs. "N models failed to load" only when every one of them was a
+ * model; a scan, a mesh or a GIS fetch among them makes it "N loads failed".
+ * The neutral sentence is never wrong about what failed, so any doubt (the
+ * deltas of two counts do not match) falls to it.
+ */
+export function failureAnnouncement(count: number, modelCount: number, t: LoadingT): string {
+  return modelCount === count
+    ? t('indicator.announce.failed', { count })
+    : t('indicator.announce.failedLoads', { count })
+}
+
 export type IndicatorKind = 'hidden' | 'active' | 'queued' | 'finishing' | 'failed' | 'done'
 
 export interface IndicatorInput {
@@ -483,6 +649,12 @@ export interface IndicatorInput {
   /** summary.measuring: some active job's current phase reports real progress. */
   measuring: boolean
   singleName: string | null
+  /**
+   * Every active row is a model job (`activeAreAllModels`), so the count may
+   * say "models"; otherwise it says "files". Required: a caller that forgot
+   * it would count scans as models again.
+   */
+  activeAllModels: boolean
   /** The calm "all loaded" moment after the queue went idle. */
   showDone: boolean
 }
@@ -520,7 +692,9 @@ export function indicatorModel(input: IndicatorInput, t: LoadingT): IndicatorMod
     }
     const label = input.active === 1 && input.singleName
       ? t('indicator.loadingOne', { name: input.singleName })
-      : t('indicator.loadingMany', { count: input.active })
+      : input.activeAllModels
+        ? t('indicator.loadingMany', { count: input.active })
+        : t('indicator.loadingManyFiles', { count: input.active })
     return { kind: 'active', label, percent: input.measuring ? input.percent : null, failures }
   }
   if (input.finishing > 0) return { kind: 'finishing', label: t('indicator.finishing'), percent: null, failures }
@@ -541,7 +715,7 @@ function settleKey(job: LoadJobView): string {
 
 /** What had already landed or failed when a burst of loading began. */
 export interface BurstBaseline {
-  /** Managed jobs already loaded. */
+  /** Model jobs (managed IFC) already loaded. */
   loaded: ReadonlySet<string>
   /** Jobs of any kind already failed. */
   failed: ReadonlySet<string>
@@ -551,7 +725,7 @@ export function burstBaseline(jobs: readonly LoadJobView[]): BurstBaseline {
   const loaded = new Set<string>()
   const failed = new Set<string>()
   for (const j of jobs) {
-    if (j.status === 'loaded' && j.managed) loaded.add(settleKey(j))
+    if (j.status === 'loaded' && isModelJob(j)) loaded.add(settleKey(j))
     else if (j.status === 'failed') failed.add(settleKey(j))
   }
   return { loaded, failed }
@@ -559,17 +733,18 @@ export function burstBaseline(jobs: readonly LoadJobView[]): BurstBaseline {
 
 /**
  * Whether the queue going idle may say "All models loaded": at least one
- * MANAGED job landed during the burst, and nothing failed in it. Decided from
- * the burst itself, not from totals — "3 loaded" in the summary includes
- * models from an hour ago, so a burst that only cancelled a file, or only
- * fetched GIS terrain or a point cloud (tracked rows, not your models), would
- * otherwise end on a green check for a load that never happened.
+ * MODEL job (managed IFC) landed during the burst, and nothing of any kind
+ * failed in it. Decided from the burst itself, not from totals — "3 loaded" in
+ * the summary includes models from an hour ago, so a burst that only
+ * cancelled a file, only fetched GIS terrain, or only brought in a scan or a
+ * glTF (managed rows now, but not models) would otherwise end on a green
+ * check that names a load that never happened.
  */
 export function burstLoadedModels(baseline: BurstBaseline, jobs: readonly LoadJobView[]): boolean {
   let landed = false
   for (const j of jobs) {
     if (j.status === 'failed' && !baseline.failed.has(settleKey(j))) return false
-    if (j.status === 'loaded' && j.managed && !baseline.loaded.has(settleKey(j))) landed = true
+    if (j.status === 'loaded' && isModelJob(j) && !baseline.loaded.has(settleKey(j))) landed = true
   }
   return landed
 }
@@ -581,13 +756,16 @@ export interface FirstLoadFocus {
   /** The job the card leads with: lowest-seq active one, or the newest failure. */
   job: LoadJobView
   batch: LoadBatchView | null
-  /** Batch members in submission order (just [job] in 'job' mode). */
+  /** Model members of the batch in submission order (just [job] in 'job' mode). */
   members: LoadJobView[]
 }
 
 /**
- * What the empty-scene card is about. Managed jobs only: a tracked point cloud
- * or GIS fetch is not "your model" and has its own panel.
+ * What the empty-scene card is about. Model jobs only: a scan or a glTF is
+ * managed too, but it is not "your model" — it has its own panel, and it
+ * lands in a scene that stays "empty" of models, so the card would sit over
+ * the cloud it announces. A tracked GIS fetch is not managed at all. The same
+ * goes for batch members: "Hotel Vela — 2 of 5 models" counts models.
  */
 export function pickFirstLoadFocus(
   jobs: readonly LoadJobView[],
@@ -596,19 +774,19 @@ export function pickFirstLoadFocus(
 ): FirstLoadFocus | null {
   let primary: LoadJobView | null = null
   for (const j of jobs) {
-    if (!j.managed || !ACTIVE_STATUSES.has(j.status)) continue
+    if (!isModelJob(j) || !ACTIVE_STATUSES.has(j.status)) continue
     if (!primary || j.seq < primary.seq) primary = j
   }
   if (!primary && includeFailed) {
     for (const j of jobs) {
-      if (!j.managed || j.status !== 'failed') continue
+      if (!isModelJob(j) || j.status !== 'failed') continue
       if (!primary || j.seq > primary.seq) primary = j
     }
   }
   if (!primary) return null
   const batch = primary.batchId ? batches.find((b) => b.id === primary!.batchId) ?? null : null
   if (batch) {
-    const members = jobs.filter((j) => j.batchId === batch.id).sort((a, b) => a.seq - b.seq)
+    const members = jobs.filter((j) => j.batchId === batch.id && isModelJob(j)).sort((a, b) => a.seq - b.seq)
     if (members.length >= 2) return { mode: 'batch', job: primary, batch, members }
   }
   return { mode: 'job', job: primary, batch: null, members: [primary] }

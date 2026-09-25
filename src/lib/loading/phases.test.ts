@@ -181,6 +181,39 @@ describe('computeEta', () => {
     expect(base({ phases, activeFraction: 1 })).toEqual({ etaMs: 0, reliable: true })
     expect(base({ phases, activeFraction: 1, now: -5 }).etaMs).toBeNull()
   })
+
+  it('point clouds and meshes: no ETA from a decode phase, however far along and whatever is calibrated', () => {
+    // The last phase of a scan, 60 % in 10 s: the IFC rule would say "7 s
+    // left". The total can still move (a budget grant truncates the cloud),
+    // so the honest answer is none.
+    const phases = states([
+      { id: 'identify', weight: 1, status: 'done' },
+      { id: 'place', weight: 1, status: 'done' },
+      { id: 'decode', weight: 90, status: 'active', fraction: 0.6 },
+    ])
+    for (const kind of ['pointcloud', 'mesh'] as const) {
+      expect(base({ phases, kind, activeFraction: 0.6 })).toEqual({ etaMs: null, reliable: false })
+    }
+    // The same shape on an IFC row keeps the IFC rule (default kind).
+    expect(base({ phases, activeFraction: 0.6 }).etaMs).not.toBeNull()
+  })
+
+  it('point clouds and meshes: IFC calibration never predicts their phases; a lone download still gets its rate', () => {
+    const withDecode = states([
+      { id: 'download', weight: 20, status: 'active', fraction: 0.5 },
+      { id: 'identify', weight: 1 },
+      { id: 'decode', weight: 70 },
+    ])
+    // A session that converted IFCs has `identify` (and even a `decode`) figure — neither is a scan's.
+    const msPerMB = { identify: 1, decode: 50 }
+    expect(base({ phases: withDecode, kind: 'pointcloud', activeFraction: 0.5, msPerMB })).toEqual({ etaMs: null, reliable: false })
+    expect(base({ phases: withDecode, kind: 'ifc', activeFraction: 0.5, msPerMB }).etaMs).not.toBeNull()
+    const lone = states([
+      { id: 'download', weight: 20, status: 'active', fraction: 0.5 },
+      { id: 'decode', weight: 70, status: 'skipped' },
+    ])
+    expect(base({ phases: lone, kind: 'mesh', activeFraction: 0.5 })).toEqual({ etaMs: 10_000, reliable: true })
+  })
 })
 
 describe('legacyPhase', () => {

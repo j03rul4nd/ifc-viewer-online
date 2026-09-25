@@ -62,9 +62,13 @@ function useActiveHeading(ids: string[]): string {
 
 interface Props {
   headings: Heading[]
+  /** Visible heading, in the article's language (shown in capitals). */
+  label?: string
+  /** Accessible name of the landmark. */
+  ariaLabel?: string
 }
 
-export default function TableOfContents({ headings }: Props) {
+export default function TableOfContents({ headings, label = 'On this page', ariaLabel = 'Table of contents' }: Props) {
   const [open, setOpen] = useState(false)
   const ids             = headings.map(h => h.id)
   const activeId        = useActiveHeading(ids)
@@ -107,12 +111,12 @@ export default function TableOfContents({ headings }: Props) {
     <>
       {/* ── Desktop sticky sidebar ── */}
       <aside
-        aria-label="Table of contents"
+        aria-label={ariaLabel}
         className="hidden xl:block w-[220px] shrink-0 self-start sticky top-[70px]"
       >
         <div className="border border-[var(--border)] rounded-xl p-3 bg-[var(--surface)]">
           <p className="text-[10px] font-mono font-bold tracking-[0.12em] text-[var(--text-faint)] px-2 mb-3">
-            ON THIS PAGE
+            {label.toUpperCase()}
           </p>
           <List />
         </div>
@@ -125,7 +129,7 @@ export default function TableOfContents({ headings }: Props) {
           className="w-full flex items-center justify-between px-4 py-3.5 text-[13px] font-medium text-[var(--text-dim)] hover:text-[var(--text)] transition-colors min-h-[48px]"
         >
           <span className="flex items-center gap-2 text-[11px] font-mono font-bold tracking-widest text-[var(--text-faint)]">
-            ON THIS PAGE
+            {label.toUpperCase()}
           </span>
           <svg
             width="12" height="12" viewBox="0 0 12 12" fill="none"

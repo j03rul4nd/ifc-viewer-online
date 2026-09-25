@@ -105,6 +105,19 @@ describe('decideRetry — automatic', () => {
       expect(decideRetry(err(code), { attempt: 1 }).retry).toBe(false)
     }
   })
+
+  it('an error marked not auto-retryable is not retried automatically, whatever its code; a manual retry still is', () => {
+    // A scan's header timeout is the file, not the network.
+    for (const code of ['timeout', 'network', 'worker-crash', 'worker-init', 'out-of-memory', 'cache-corrupt'] as const) {
+      const e = err(code, { autoRetryable: false })
+      expect(e.autoRetryable).toBe(false)
+      expect(decideRetry(e, { attempt: 1 })).toMatchObject({ retry: false, degradeConcurrency: false })
+      expect(decideRetry(e, { attempt: 1, manual: true }).retry).toBe(true)
+    }
+    expect(decideRetry(err('http', { httpStatus: 503, autoRetryable: false }), { attempt: 1 }).retry).toBe(false)
+    // The table's own flag is untouched: classified from the code alone, a timeout still backs off.
+    expect(decideRetry(err('timeout'), { attempt: 1 })).toMatchObject({ retry: true, delayMs: 1000 })
+  })
 })
 
 describe('decideRetry — manual', () => {

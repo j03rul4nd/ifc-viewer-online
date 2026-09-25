@@ -51,6 +51,12 @@ const STRUCTURED_CLAIM =
 const MORE_MARKER =
   /\bmore\b|\bmás\b|\bmés\b|de plus|weitere|altre|e mais|另外|ほか|และอีก/iu
 
+// "a score of 92 with a lenient set di regole" — in the translated posts the
+// rule word is often part of "rule set", which says nothing about how many
+// rules there are; the number beside it is a score or a file size.
+const RULESET_AFTER_NUMBER =
+  /^\d{2,3}[^\d\n]{0,15}?(?:set di|conjunto de|conjunt de|jeu de)\s+(?:regole|reglas|regras|regles|règles)/iu
+
 // Every content surface that quotes the rule count, loaded raw at test time
 // (same import.meta.glob idiom as ids-testcases.test.ts — no node builtins,
 // so the browser tsconfig stays clean). Surfaces that only exist in dist/
@@ -61,6 +67,8 @@ const SURFACES = {
   ...import.meta.glob('/README*.md', { query: '?raw', import: 'default', eager: true }),
   ...import.meta.glob('/src/seo/config.ts', { query: '?raw', import: 'default', eager: true }),
   ...import.meta.glob('/src/lib/blog-posts.ts', { query: '?raw', import: 'default', eager: true }),
+  // The Latin-script translation packs; zh/ja/th have their own stricter check in blog-i18n.test.ts.
+  ...import.meta.glob('/src/lib/blog-i18n/{es,de,fr,pt,it,ca}.ts', { query: '?raw', import: 'default', eager: true }),
   ...import.meta.glob('/src/locales/*/landing.json', { query: '?raw', import: 'default', eager: true }),
   ...import.meta.glob('/public/**/index.html', { query: '?raw', import: 'default', eager: true }),
   ...import.meta.glob('/cf-worker/worker.js', { query: '?raw', import: 'default', eager: true }),
@@ -83,6 +91,7 @@ function sweep(file: string, text: string): Offender[] {
       const line = text.slice(0, m.index).split('\n').length
       const context = text.slice(Math.max(0, m.index! - 40), m.index! + 40).replace(/\s+/g, ' ')
       if (MORE_MARKER.test(context)) continue
+      if (RULESET_AFTER_NUMBER.test(text.slice(m.index!, m.index! + 40))) continue
       offenders.push({ file, line, claim, context })
     }
   }

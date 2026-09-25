@@ -13,6 +13,23 @@ byte-identical to a build without the feature. This is the kill switch.
 
 ## What the user sees
 
+0. **Two faces, one state** (2026-09). The panel has a *Basic / Advanced*
+   switch in its header (persisted, `ifc-geo-panel-mode:v1`, Basic by default).
+   **Basic** is four ready-made views — *Flat map · Terrain · City ·
+   Presentation*, each with a light/medium/heavy cost marker — plus the
+   basemap, the terrain and surroundings switches and the quality choice.
+   **Advanced** is every control in five tabs: *Basemap · Terrain ·
+   Surroundings · Placement · Performance*. A preset only writes the ordinary
+   preferences (`src/lib/geo/scene-presets.ts`); the active preset is DERIVED
+   from them, so touching any control reads as "Custom" and there is no second
+   source of truth. Before the map is on, the panel already says whether the
+   model will land by itself or need placing. A **scene status strip** under
+   the primary action reports the build (progress), failed layers (with
+   Retry), layers left out by the geometry budget (with *Load anyway*), a lost
+   GPU context, an automatic quality step-down (with *Restore*) and a slow
+   view (with *Lower quality*) — every warning carries its own remedy.
+   The placement editor is a full-body step reachable from both faces
+   ("Adjust" on the location card).
 1. **Map** button in the toolbar (globe icon, needs a loaded model).
 2. First use shows a **privacy consent** dialog: tile requests reveal the
    approximate site location to the tile provider; the model never leaves the
@@ -123,7 +140,17 @@ byte-identical to a build without the feature. This is the kill switch.
 | Fetch worker (one query, all layers) | `src/workers/geo-buildings.worker.ts` |
 | Placement minimap (Leaflet, lazy) | `src/components/PlacementMiniMap.tsx` |
 | Product state (epoch-guarded) | `src/stores/geoStore.ts` |
-| UI (panel, consent, layers, editor, pill) | `src/components/GeoPanel.tsx` |
+| Triangle budget per device tier, budget gate, frame watch, scene report (pure) | `src/lib/geo/scene-budget.ts` |
+| Scene presets + "which preset is this" (pure) | `src/lib/geo/scene-presets.ts` |
+| UI entry (lazy; composes only) | `src/components/GeoPanel.tsx` |
+| Every panel action — the ONE route both faces and the SDK bridge take | `src/components/geo/useGeoController.ts` |
+| Long-lived subscriptions: `sdk:site`, scene health, adaptive quality, canvas pick/hide | `src/components/geo/useGeoEffects.ts` |
+| Header, primary action, scene status strip | `src/components/geo/chrome.tsx` |
+| Basic face (presets) · Advanced face (tabs) | `src/components/geo/QuickSetup.tsx`, `src/components/geo/AdvancedTabs.tsx` |
+| Advanced tab bodies | `src/components/geo/sections/*.tsx` |
+| Sub-flows: CRS, manual placement, satellite terms, custom source, placement editor, consent | `src/components/geo/flows.tsx` |
+| Attribution pill + hover tooltip | `src/components/geo/MapOverlays.tsx` |
+| Layout primitives (one spacing scale, per-section error boundary) | `src/components/geo/ui.tsx` |
 | Viewer hook (lazy `getGeo()`, ~15 additive lines) | `src/lib/viewer.ts` |
 
 Key invariants:
@@ -142,6 +169,45 @@ Key invariants:
   `manualChunks` explicitly keeps `3d-tiles-renderer`/`proj4`/`leaflet` out of
   the eager vendor chunks — verify with `grep -c leaflet dist/assets/index-*.js`
   (must be 0) after touching the geo import graph.
+
+## Scene build scheduling (2026-09)
+
+The cascade (`render-scheduler.ts`) builds the context phase by phase and
+hands the thread back between them; `geo-system.ts` now schedules those
+builds instead of letting every setter start one:
+
+- **Coalesced** — requests in the same tick share one build; one that arrives
+  mid-build supersedes it at the next phase or slice boundary. Slider-driven
+  rebuilds (exaggeration, micro-relief) wait 220 ms for the drag to settle.
+  Before, every setter extruded the whole district synchronously on its own.
+- **Isolated** — a builder that throws marks its layer `failed`; the other
+  phases still build and commit. The prelude and the vertical solve degrade
+  instead of aborting the scene.
+- **Budgeted** — each layer is admitted, in cascade order, under a triangle
+  budget per device tier (`TRIANGLE_BUDGET`, tier from render-scheduler's
+  `deviceBudget`); what does not fit is reported `skipped`, never silently
+  dropped, and *Load anyway* lifts the budget for the session. A lost WebGL
+  context halves the budget and rebuilds on restore. Invented scenery on a
+  device without `heavyScenery` is reported as left out, not hidden.
+- **Incremental** — a layer switched off is removed on the spot; one switched
+  on is built alone against the cached prelude (full rebuild in Shanghai
+  showcase, whose park detail is shared between layers).
+- **Reported** — per-layer triangles, time and status reach the panel's
+  Performance tab. The RAF feeds a frame watch (ignores hidden pages, which
+  Chrome may throttle rather than freeze, and a 2.5 s grace after each
+  rebuild); sustained < 20 fps drives *adaptive quality*, one detail step at a
+  time, with the old level one click away.
+
+`geo.settled()` resolves once every requested build has landed — tests and the
+SDK bridge (`done` now means built, not requested) await it instead of
+assuming a synchronous first phase.
+
+Measured on Poblenou (1 613 buildings, 2 930 ways, 2 165 trees, 1.46 M
+triangles, City preset) with the sliced road layer: a full rebuild yields 94
+times and its longest slice is ~325 ms (buildings / vertical solve / ground
+cover are still single tasks); before slicing and scheduling the road layer
+alone was one ~1.9 s block. Switching trees back on builds that layer alone
+(~0.5 s here) instead of the ~2.3 s full rebuild.
 
 ## Maintainer notes
 
